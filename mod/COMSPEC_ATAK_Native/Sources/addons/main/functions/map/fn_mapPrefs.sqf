@@ -24,14 +24,17 @@ private _redraw = {
     [] call comspec_atak_native_fnc_saveProfile;
     [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
 };
-private _allShow = ["GRID", "DIST", "ALT", "HDG", "ME", "ZONE"];
+// CURDIST (2.9.36, bandeau NOUVEAU) : distance et gisement vers le curseur dans le bandeau ; absent par défaut (la flèche
+// et le cap donnent alors la vue du personnage, le gisement vers le curseur reste dans l'étiquette de survol).
+private _allShow = ["GRID", "DIST", "ALT", "HDG", "ME", "ZONE", "CURDIST"];
+private _defShow = _allShow - ["CURDIST"];
 switch (_op) do {
     case "band": {
         private _c = uiNamespace getVariable ["COMSPEC_ATAK_BandCfg", createHashMap];
         if ((count _c) > 0) exitWith { _c };
         private _pick = { params ["_var", "_def", "_ok"]; private _v = _prof getVariable [_var, _def]; [_def, _v] select (_v isEqualType _def && {_v in _ok}) };
-        private _show = _prof getVariable ["COMSPEC_ATAK_BandShow", _allShow];
-        if !(_show isEqualType []) then { _show = _allShow; };
+        private _show = _prof getVariable ["COMSPEC_ATAK_BandShow", _defShow];
+        if !(_show isEqualType []) then { _show = _defShow; };
         private _al = _prof getVariable ["COMSPEC_ATAK_BandAlpha", -1];
         if !(_al isEqualType 0) then { _al = -1; };
         private _tx = _prof getVariable ["COMSPEC_ATAK_BandText", 1];
@@ -64,6 +67,12 @@ switch (_op) do {
         uiNamespace setVariable ["COMSPEC_ATAK_BandCfg", createHashMap];
         (uiNamespace getVariable ["COMSPEC_ATAK_MapOverlay", createHashMap]) set ["meL2", ""];
         call _redraw;
+    };
+    case "bandShowSet": {
+        _arg params ["_k", "_v"];
+        private _show = +((["band"] call comspec_atak_native_fnc_mapPrefs) get "show");
+        if (_v isEqualTo (_k in _show)) exitWith {};
+        ["bandShow", _k] call comspec_atak_native_fnc_mapPrefs;
     };
     case "self": {
         private _c = uiNamespace getVariable ["COMSPEC_ATAK_SelfDraw", []];
@@ -153,6 +162,12 @@ switch (_op) do {
                     ["GRILLE", "GRID", "Position du curseur (ou la mienne en porté)"], ["DIST. / GIS.", "DIST", "Distance et gisement depuis moi"], ["ALT", "ALT", "Altitude du terrain"],
                     ["CAP", "HDG", "Mon cap"], ["MOI", "ME", "Mon indicatif, mon équipe et ma grille"], ["ZONE", "ZONE", "Zone de l'app Zones sous le curseur"]
                 ] apply { _x params ["_t", "_k", "_tip"]; [_t, format ["['bandShow', %1] call comspec_atak_native_fnc_mapPrefs;", str _k], _k in _show, _tip] }];
+                if ((_c get "style") isEqualTo "NEW") then {
+                    _rows pushBack ["segment", "Distance / gisement vers le curseur dans le bandeau", [
+                        ["NON", "['bandShowSet', ['CURDIST', false]] call comspec_atak_native_fnc_mapPrefs;", !("CURDIST" in _show), "La flèche et le cap du bandeau donnent la direction de ma vue ; distance et gisement vers le curseur restent dans l'étiquette de survol"],
+                        ["OUI", "['bandShowSet', ['CURDIST', true]] call comspec_atak_native_fnc_mapPrefs;", "CURDIST" in _show, "Comportement de la 2.9.35 : la flèche suit le curseur"]
+                    ]];
+                };
                 _rows pushBack ["segment", "Grille", ["bandSet", "grid", _c get "grid", [
                     ["MGRS", "MGRS", "Zone et carré MGRS, précision de Réglages > Carte"], ["8 CHIFFRES", "8"], ["10 CHIFFRES", "10"], ["LAT / LONG", "LL", "Latitude et longitude approchées"]
                 ]] call _seg];

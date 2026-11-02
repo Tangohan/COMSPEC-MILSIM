@@ -1,0 +1,89 @@
+[APP] Inter-team — escouades et équipes de feu de tout le camp, distances et synchronisation
+
+[h1]Inter-team[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+La vue commune de tout le camp : chaque escouade avec ses équipes de feu, la position de chaque équipe par rapport à vous, et l'état de la synchronisation de ces équipes entre les joueurs, le serveur et Athena. Là où l'app Groupe gère votre groupe, Inter-team montre tous les groupes.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Onglet ESCOUADES[/b] : chaque groupe du camp qui compte au moins un joueur, le vôtre en tête. Type, chef, effectif, nombre de balises BFT en ligne, distance. Dessous, ses équipes de feu (couleur, icône, chef, distance et gisement de l'équipe, description, membres avec leur rôle ; un rond vide signale un membre sans balise), puis les joueurs sans équipe. Boutons [b]CARTE[/b] (centre sur le chef ou sur l'équipe) et [b]SMS[/b] (au chef). En bas : [b]GÉRER MES ÉQUIPES[/b] (app Groupe, onglet ÉQUIPES) et [b]OUVRIR LE BFT[/b].
+[*][b]Onglet ÉQUIPES[/b] : toutes les équipes de feu du camp, de la plus proche à la plus loin (centre des membres vivants). Pour chacune : groupe, membres, membres en ligne, hors de combat, grille, distance, gisement et dispersion. [b]CARTE[/b] et [b]Y ALLER[/b] (itinéraire GPS vers le centre de l'équipe).
+[*][b]Onglet SYNCHRO[/b] : révision du serveur et de votre groupe, nombre d'escouades et d'équipes, joueurs en équipe, pistes BFT (directes, anciennes, perdues). Partie Athena : qui envoie pour votre groupe (le chef ou le premier joueur), dernier envoi, état de la liaison. [b]RESYNCHRONISER[/b] demande au serveur de revérifier les équipes et de renvoyer l'état à tous ; [b]ENVOYER À ATHENA[/b] envoie tout de suite votre groupe.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Avant un mouvement coordonné, ouvrez Inter-team, onglet [b]ÉQUIPES[/b].
+[*]Repérez l'équipe Bravo du groupe voisin : distance, gisement et dispersion.
+[*]Appuyez sur [b]Y ALLER[/b] pour un itinéraire vers elle, ou [b]CARTE[/b] pour la voir.
+[*]Les équipes ne s'affichent pas comme prévu : onglet [b]SYNCHRO[/b], [b]RESYNCHRONISER[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Groupe[/b] : les équipes, couleurs et rôles se créent dans l'app Groupe.
+[*][b]Carte, BFT, Messages[/b] : boutons CARTE, Y ALLER, OUVRIR LE BFT et SMS.
+[*][b]Athena[/b] : escouades et équipes visibles sur le site (back-office, Escouades en jeu). Sans liaison, les équipes restent partagées en jeu seulement.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les groupes entièrement IA n'apparaissent pas.
+[*]Le serveur fait foi : chaque changement d'équipe passe par lui et part à tout le camp.
+[*]Une équipe sans membre vivant affiche « position inconnue ».
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The shared view of the whole side: every squad with its fire teams, each team's position relative to you, and the state of team synchronisation between players, the server and Athena. Where the Squad (Group) app manages your group, Inter-team shows all groups.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]SQUADS tab[/b]: every group of the side with at least one player, yours first. Type, leader, strength, number of BFT beacons online, distance. Below, its fire teams (colour, icon, leader, team distance and bearing, description, members with their role; an empty circle marks a member without a beacon), then the teamless players. Buttons [b]MAP[/b] (centres on the leader or the team) and [b]SMS[/b] (to the leader). At the bottom: [b]MANAGE MY TEAMS[/b] (Squad app, TEAMS tab) and [b]OPEN BFT[/b].
+[*][b]TEAMS tab[/b]: every fire team of the side, nearest to farthest (centre of living members). For each: group, members, members online, out of action, grid, distance, bearing and spread. [b]MAP[/b] and [b]GO THERE[/b] (GPS route to the team's centre).
+[*][b]SYNCHRO tab[/b]: server and group revision, number of squads and teams, players on a team, BFT tracks (direct, old, lost). Athena part: who sends for your group (the leader or the first player), last send, link state. [b]RESYNCHRONISER[/b] (resync) asks the server to re-check the teams and send the state to everyone; [b]SEND TO ATHENA[/b] sends your group right away.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Before a coordinated move, open Inter-team, [b]TEAMS[/b] tab.
+[*]Find Bravo team of the next group: distance, bearing and spread.
+[*]Press [b]GO THERE[/b] for a route to it, or [b]MAP[/b] to see it.
+[*]Teams do not show as expected: [b]SYNCHRO[/b] tab, [b]RESYNCHRONISER[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Squad (Group app)[/b]: teams, colours and roles are created there.
+[*][b]Map, BFT, Messages[/b]: MAP, GO THERE, OPEN BFT and SMS buttons.
+[*][b]Athena[/b]: squads and teams visible on the website (back office, Squads in game). Without the link, teams are shared in game only.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]All-AI groups are not listed.
+[*]The server is the reference: every team change goes through it and out to the whole side.
+[*]A team with no living member shows "position unknown".
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

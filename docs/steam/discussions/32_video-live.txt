@@ -1,0 +1,111 @@
+[APP] Vidéo live — caméras des équipiers, caméras IP fixes et nacelles des drones du camp, avec partage
+
+[i]Message 1/2[/i]
+[h1]Vidéo live[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Regarder en direct, dans l'écran du téléphone, ce que voient vos équipiers (caméra de poitrine de leur ATAK), les caméras IP fixes posées par votre camp et la nacelle des drones alliés en vol. L'image suit le réseau : sa qualité dépend de la liaison, des relais et du brouillage.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Autres accès : clic droit sur un équipier de la carte puis [b]Voir la caméra[/b], [b]VOIR CAMÉRA[/b] dans l'app BFT, et l'action ACE [b]Renommer[/b] d'une caméra posée.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Liste des sources[/b] : [b]Ma caméra (moi)[/b] en tête, puis les équipiers du camp, la section [b]CAMÉRAS FIXES[/b] (nom, distance, état : en ligne, hors liaison, brouillée, pas de réseau, détruite) et [b]DRONES DU CAMP[/b] (drones alliés en vol).
+[*][b]Modes de vision[/b] : [b]JOUR[/b], [b]VISION NOCTURNE[/b], [b]THERMIQUE[/b].
+[*][b]Focale[/b] (− / +) sur votre caméra et les caméras fixes : 14 mm élargit le champ, 70 mm zoome. Une caméra fixe se tourne aussi de 30° à gauche ou à droite (◀ ▶, vue locale) et se renomme ([b]RENOMMER[/b], 16 caractères).
+[*][b]Qualité du flux[/b] : votre propre caméra est rendue en local, sans pertes. Les autres flux passent en HD, SD, BAS ou MINIMAL selon le débit, réévalués toutes les 3 secondes ; sans liaison, pas d'image.
+[*][b]Drones du camp[/b] : vue de la nacelle (ou du pilote) telle que l'opérateur la regarde au terminal UAV, avec son zoom et sa vision. Lecture seule : réticule, point visé (carroyage et distance), cadres sur les cibles, [b]MARQUER LA CIBLE[/b] (cible suivie) et [b]MARQUER LE POINT[/b] (marqueur de la palette sur la carte). Le drone n'est jamais piloté depuis cette app.
+[*][b]PARTAGER[/b] : choisissez la méthode puis le destinataire (un ATAK ou [b]TOUS[/b]). [b]NFC[/b] : téléphones dos à dos, à 2 m, sans réseau. [b]BLUETOOTH[/b] : Bluetooth allumé des deux côtés, à portée Bluetooth, sans réseau. [b]RELAIS[/b] : par le réseau, sans limite de distance ; TOUS vise alors tout le camp, y compris ceux qui arrivent ensuite. [b]RETIRER LES ACCÈS[/b] annule tous les partages d'une source.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Posez une caméra IP : menu ACE [b]Téléphone ATAK › Caméras › Poser une caméra[/b] (l'objet « Caméra IP compacte (ATAK) » doit être dans votre équipement).
+[*]Ouvrez Vidéo live : elle apparaît sous [b]CAMÉRAS FIXES[/b]. Choisissez-la, passez en [b]VISION NOCTURNE[/b] si besoin, réglez la focale.
+[*]Appuyez sur [b]PARTAGER[/b], choisissez [b]RELAIS[/b] puis [b]TOUS[/b] pour que tout le camp la voie.
+[*]Pour suivre le drone d'un équipier, choisissez-le sous [b]DRONES DU CAMP[/b] et utilisez [b]MARQUER LA CIBLE[/b] sur un véhicule ennemi.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Partage des caméras[/b] (serveur) : [i]Partage obligatoire[/i] (par défaut, une caméra n'est visible que par son propriétaire tant qu'il ne l'a pas partagée) ou [i]Tout le camp voit tout[/i].
+[*][b]COMSPEC › ATAK · Simulation › Portée Wi-Fi des caméras fixes (m)[/b] (serveur, 600 m par défaut) : en deçà, la caméra fixe envoie son image directement au téléphone, sans réseau ; au-delà, il faut un relais ou la liaison Athena.
+[*][b]COMSPEC › ATAK · Simulation › Vidéo dépendante des relais[/b] (serveur) : si la mission a des relais ATAK, qualité, fluidité, délai et parasites dépendent de la distance aux relais et du nombre de relais traversés.
+[*][b]COMSPEC › ATAK · Simulation › Portée Bluetooth (m)[/b] (serveur) : portée du partage en Bluetooth.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte et BFT[/b] : accès direct à la caméra d'un équipier ; MARQUER LE POINT pose un marqueur sur la carte.
+[*][b]ACE[/b] : pose, récupération, orientation (±45°) et renommage des caméras fixes passent par le menu d'interaction ACE ([b]Caméra IP[/b] sur l'objet posé). Sans ACE, ces actions n'existent pas.
+[*][b]Drone, Marquer tracking[/b] : une cible marquée depuis la nacelle est suivie et listée dans l'app Marquer tracking.
+[*][b]Bluetooth[/b] : le partage BLUETOOTH demande le Bluetooth allumé dans l'app Bluetooth.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]La caméra n'est rendue que tant que l'app est affichée ; elle s'arrête dès que vous la quittez.
+[*]Une caméra fixe détruite reste hors service : récupérez l'épave par ACE ([b]Retirer la caméra détruite[/b]), l'objet n'est pas rendu.
+[*]Le flux d'un drone passe par la station de son opérateur : sans opérateur à portée, pas d'image.
+[*]Seul le porteur d'un téléphone peut partager sa caméra ; une caméra fixe se partage par qui y a accès.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente dès les premières versions de l'ATAK natif (citée en 1.9.0, octobre 2026) ; drones du camp ajoutés ensuite, focale réglable depuis 2.9.3.
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Watch live, on the phone screen, what your teammates see (chest camera of their ATAK), the fixed IP cameras placed by your side and the gimbal of friendly drones in flight. The image follows the network: its quality depends on the link, the relays and jamming.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app ([b]Live Feed[/b] in English) is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it. Other ways in: right-click a teammate on the map then [b]View camera[/b], [b]VIEW CAMERA[/b] in the BFT app, and the ACE action [b]Rename[/b] on a placed camera.
+
+[h3]Features[/h3]
+[list]
+[*][b]Source list[/b]: [b]My camera (me)[/b] at the top, then teammates of your side, the [b]FIXED CAMERAS[/b] section (name, distance, status: online, out of link, jammed, no network, destroyed) and [b]FRIENDLY DRONES[/b] (friendly drones in flight).
+[*][b]Vision modes[/b]: [b]DAY[/b], [b]NIGHT VISION[/b], [b]THERMAL[/b].
+[*][b]Focal length[/b] (− / +) on your camera and fixed cameras: 14 mm widens the field, 70 mm zooms in. A fixed camera can also be turned 30° left or right (◀ ▶, local view) and renamed (rename button, 16 characters).
+[*][b]Feed quality[/b]: your own camera is rendered locally, lossless. Other feeds switch between HD, SD, LOW or MINIMAL depending on bandwidth, re-evaluated every 3 seconds; without a link, no image.
+[*][b]Friendly drones[/b]: gimbal (or pilot) view as the operator sees it on the UAV terminal, with its zoom and vision. Read only: reticle, aimed point (grid and distance), boxes on targets, [b]MARK TARGET[/b] (tracked target) and [b]MARK POINT[/b] (palette marker on the map). The drone is never flown from this app.
+[*][b]SHARE[/b]: choose the method then the recipient (one ATAK or [b]ALL[/b]). [b]NFC[/b]: phones back to back, within 2 m, no network. [b]BLUETOOTH[/b]: Bluetooth on at both ends, within Bluetooth range, no network. [b]RELAY[/b]: through the network, no distance limit; ALL then means the whole side, including those who arrive later. [b]REVOKE ACCESS[/b] cancels all shares of a source.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Place an IP camera: ACE menu [b]ATAK phone › Cameras › Place a camera[/b] (the "Compact IP camera (ATAK)" item must be in your gear).
+[*]Open Live Feed: it appears under [b]FIXED CAMERAS[/b]. Select it, switch to [b]NIGHT VISION[/b] if needed, set the focal length.
+[*]Press [b]SHARE[/b], choose [b]RELAY[/b] then [b]ALL[/b] so the whole side can see it.
+[*]To follow a teammate's drone, pick it under [b]FRIENDLY DRONES[/b] and use [b]MARK TARGET[/b] on an enemy vehicle.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Camera sharing[/b] (server): [i]Sharing required[/i] (default, a camera is only visible to its owner until shared) or [i]Whole side sees everything[/i].
+[*][b]COMSPEC › ATAK · Simulation › Fixed camera Wi-Fi range (m)[/b] (server, 600 m by default): within it, the fixed camera sends its image straight to the phone, without network; beyond, a relay or the Athena link is needed.
+[*][b]COMSPEC › ATAK · Simulation › Video feeds follow the relays[/b] (server): if the mission has ATAK relays, quality, smoothness, delay and noise depend on distance to relays and the number of relays crossed.
+[*][b]COMSPEC › ATAK · Simulation › Bluetooth range (m)[/b] (server): range of Bluetooth sharing.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map and BFT[/b]: direct access to a teammate's camera; MARK POINT places a marker on the map.
+[*][b]ACE[/b]: placing, recovering, rotating (±45°) and renaming fixed cameras go through the ACE interaction menu ([b]IP Camera[/b] on the placed object). Without ACE, these actions do not exist.
+[*][b]Drone, Mark tracking[/b]: a target marked from the gimbal is tracked and listed in the Mark tracking app.
+[*][b]Bluetooth[/b]: BLUETOOTH sharing needs Bluetooth switched on in the Bluetooth app.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The camera is only rendered while the app is on screen; it stops as soon as you leave it.
+[*]A destroyed fixed camera stays out of service: remove the wreck through ACE ([b]Remove destroyed camera[/b]), the item is not returned.
+[*]A drone feed goes through its operator's station: without an operator in range, no image.
+[*]Only the phone's carrier can share its camera; a fixed camera can be shared by anyone who has access to it.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (mentioned in 1.9.0, October 2026); friendly drones added later, adjustable focal length since 2.9.3.

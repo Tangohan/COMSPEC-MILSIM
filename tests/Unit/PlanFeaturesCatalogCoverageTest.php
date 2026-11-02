@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class PlanFeaturesCatalogCoverageTest extends TestCase
 {
-    private const GATE_METHODS = 'allows|allowsLimitedFeatureModule|allowsWithCatalogDefault|intWithCatalogDefault|quotaStatusForFeature|recordQuotaUse|maybeRecordQuotaSoftBlock';
+    private const GATE_METHODS = 'planIntCap|allows|allowsLimitedFeatureModule|allowsWithCatalogDefault|intWithCatalogDefault|quotaStatusForFeature|recordQuotaUse|maybeRecordQuotaSoftBlock';
 
     private static function root(): string
     {
@@ -81,7 +81,8 @@ final class PlanFeaturesCatalogCoverageTest extends TestCase
                 return null;
             };
             $tokens = [];
-            preg_match_all('/->(?:' . self::GATE_METHODS . ')\(\s*(?:\(int\)\s*)?\$[\w>\-\[\]\'()]*?\s*,\s*([^,()]+)/', $src, $mm);
+            // 1er argument = communauté ou palier (variable, appel, ternaire), 2e = la clé.
+            preg_match_all('/->(?:' . self::GATE_METHODS . ')\(\s*(?:\(int\)\s*)?\$[^,;{}]*?,\s*([^,()]+)/', $src, $mm);
             $tokens = array_merge($tokens, $mm[1]);
             preg_match_all('/recordQuotaLimitReached\([^,]+,[^,]+,\s*([^)]+)\)/', $src, $mm);
             $tokens = array_merge($tokens, $mm[1]);

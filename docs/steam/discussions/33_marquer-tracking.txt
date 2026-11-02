@@ -1,0 +1,113 @@
+[APP] Marquer tracking — cibles marquées au viseur (drone, appareil photo, Vidéo live) et zones interdites au drone
+
+[i]Message 1/2[/i]
+[h1]Marquer tracking[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Retrouver et gérer toutes les cibles que vous avez marquées au viseur (« LOCK ») : avec la caméra du drone appairé, l'appareil photo du téléphone ou le flux d'un drone du camp regardé dans Vidéo live. Chaque cible marquée a un numéro LOCK et un marqueur sur la carte qui la suit tant qu'elle reste visible. L'app liste aussi les zones interdites au drone de votre camp.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Marquer une cible[/b] (hors de l'app) : réticule sur une personne ou un véhicule, puis le bouton de marquage de l'app Drone, [b]MARQUER LA CIBLE[/b] dans Vidéo live, ou la touche [b]T[/b] en mode photo plein écran. La cible doit être assez visible (pas noyée dans la végétation ni derrière un mur).
+[*][b]Cibles marquées[/b] : pour chacune, numéro LOCK, nom, état ([b]ACCROCHÉE[/b], [b]PERDUE[/b], [b]NEUTRALISÉE[/b]), carroyage, distance, dernière vue, heure du marquage et source (drone ou téléphone). Trente cibles au plus sont affichées.
+[*][b]Filtre Afficher[/b] : [b]TOUTES[/b], [b]ACCROCHÉES[/b], [b]PERDUES[/b], [b]NEUTRALISÉES[/b], avec leur nombre.
+[*][b]Boutons d'une cible[/b] : [b]CARTE[/b] (centre la carte dessus), [b]EN MARQUEUR[/b] (marqueur permanent, éditeur de marqueur prérempli), [b]EN FICHE SSE[/b] (ouvre une fiche d'observation FRO préremplie dans l'app FRS / FRM), [b]CAMÉRA DU DRONE[/b] (pointe la caméra du drone appairé sur la cible et la garde dessus, vue incrustée sur la carte), [b]OUBLIER[/b] (retire le marquage). [b]OUBLIER TOUTES LES CIBLES[/b] vide la liste.
+[*][b]Zones interdites au drone[/b] : carroyage du centre, rayon, distance, auteur, avec [b]CARTE[/b], [b]RETIRER[/b] (pour tout le camp) et [b]RETIRER TOUTES LES ZONES[/b]. Une zone se crée par clic droit sur la carte, [b]Zone interdite au drone[/b] : un drone du camp qui y entre en ressort aussitôt, et un ordre qui y mène est refusé.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Avec la caméra du drone, placez le réticule sur un véhicule ennemi et marquez-le : il devient LOCK 001 sur la carte.
+[*]Ouvrez Marquer tracking : la cible est [b]ACCROCHÉE[/b], sa position se met à jour.
+[*]Appuyez sur [b]CAMÉRA DU DRONE[/b] pour que la nacelle reste dessus pendant que vous regardez la carte.
+[*]Quand elle disparaît derrière un bâtiment, elle passe [b]PERDUE[/b] après le délai réglé ; détruite, elle passe [b]NEUTRALISÉE[/b].
+[*]Transformez-la en compte rendu avec [b]EN FICHE SSE[/b], ou en marqueur durable avec [b]EN MARQUEUR[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Marquage de cible › Marquage de cible à la caméra[/b] (serveur) : active le marquage.
+[*][b]COMSPEC › ATAK · Marquage de cible › Le marqueur suit la cible[/b] (serveur) : coché, le marqueur bouge avec la cible tant qu'elle est vue ; décoché, il reste au point de marquage.
+[*][b]COMSPEC › ATAK · Marquage de cible › Délai avant cible perdue (s)[/b] (serveur, 5 s par défaut).
+[*][b]COMSPEC › ATAK · Marquage de cible › Cible perdue[/b] (serveur) : cadre retiré et marqueur laissé, marqueur effacé après délai, tout effacé tout de suite, ou tout gardé.
+[*][b]COMSPEC › ATAK · Marquage de cible › Durée d'un marqueur de cible perdue (s)[/b] (serveur) : aussi pour une cible neutralisée.
+[*][b]COMSPEC › ATAK · Marquage de cible › Reprise automatique de la cible[/b] (serveur) : une cible perdue qui réapparaît est reprise avec le même numéro.
+[*][b]COMSPEC › ATAK · Marquage de cible › Portée du marquage à l'appareil photo (m)[/b] (serveur, 800 m par défaut). La caméra du drone garde sa propre portée.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : chaque cible a un marqueur LOCK qui la suit ; les zones interdites y sont dessinées.
+[*][b]Drone, Photo, Vidéo live[/b] : les trois sources de marquage. CAMÉRA DU DRONE demande un drone appairé.
+[*][b]FRS / FRM et SSE[/b] : EN FICHE SSE ouvre une fiche FRO préremplie avec la cible.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le réticule doit être bien sur la cible ; la tolérance se resserre avec le zoom.
+[*]Une cible marquée depuis Vidéo live n'est suivie que tant que vous regardez le flux.
+[*]La liste des cibles est celle de votre téléphone.
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 1.36.0 (octobre 2026), avec les zones interdites au drone ; marquage au viseur apparu dans la vague du 11 octobre 2026.
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Find and manage every target you marked through a sight ("LOCK"): with the paired drone's camera, the phone camera or the feed of a friendly drone watched in Live Feed. Each marked target gets a LOCK number and a map marker that follows it while it stays visible. The app also lists your side's drone no-fly zones.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app ([b]Mark tracking[/b]) is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Marking a target[/b] (outside the app): reticle on a person or vehicle, then the marking button of the Drone app, [b]MARK TARGET[/b] in Live Feed, or the [b]T[/b] key in fullscreen photo mode. The target must be visible enough (not hidden in vegetation or behind a wall).
+[*][b]Marked targets[/b]: for each, LOCK number, name, state ([b]LOCKED[/b], lost, [b]DOWN[/b]), grid, distance, last seen, marking time and source (drone or phone). At most thirty targets are shown.
+[*][b]Show filter[/b]: [b]ALL[/b], [b]LOCKED[/b], [b]LOST[/b], [b]DOWN[/b], with their count.
+[*][b]Target buttons[/b]: [b]MAP[/b] (centres the map on it), [b]TO MARKER[/b] (permanent marker, pre-filled marker editor), [b]TO SSE SHEET[/b] (opens a pre-filled FRO observation report in the FRS / FRM app), [b]DRONE CAMERA[/b] (points the paired drone's camera at the target and keeps it there, view inset on the map), [b]FORGET[/b] (removes the marking). [b]FORGET ALL TARGETS[/b] empties the list.
+[*][b]Drone no-fly zones[/b]: centre grid, radius, distance, author, with [b]MAP[/b], [b]REMOVE[/b] (for the whole side) and [b]REMOVE ALL ZONES[/b]. A zone is created by right-clicking the map, [b]Drone no-fly zone[/b]: a friendly drone entering it leaves at once, and an order leading into it is refused.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]With the drone camera, put the reticle on an enemy vehicle and mark it: it becomes LOCK 001 on the map.
+[*]Open Mark tracking: the target is [b]LOCKED[/b], its position updates.
+[*]Press [b]DRONE CAMERA[/b] so the gimbal stays on it while you look at the map.
+[*]When it disappears behind a building, it becomes lost after the set delay; destroyed, it becomes [b]DOWN[/b].
+[*]Turn it into a report with [b]TO SSE SHEET[/b], or into a lasting marker with [b]TO MARKER[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Target marking › Sight marking[/b] (server): enables marking.
+[*][b]COMSPEC › ATAK · Target marking › Marker follows the target[/b] (server): ticked, the marker moves with the target while it is seen; unticked, it stays at the marking point.
+[*][b]COMSPEC › ATAK · Target marking › Delay before target lost[/b] (server, 5 s by default).
+[*][b]COMSPEC › ATAK · Target marking › Target lost[/b] (server): box removed and marker left, marker erased after a delay, everything erased at once, or everything kept.
+[*][b]COMSPEC › ATAK · Target marking › Lifetime of a lost marker[/b] (server): also used for a target that is down.
+[*][b]COMSPEC › ATAK · Target marking › Auto hang-up[/b] (server): a lost target that reappears is picked up again with the same number (automatic reacquisition).
+[*][b]COMSPEC › ATAK · Target marking › Phone marking range[/b] (server, 800 m by default). The drone camera keeps its own range.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: each target has a LOCK marker that follows it; no-fly zones are drawn on it.
+[*][b]Drone, Photo, Live Feed[/b]: the three marking sources. DRONE CAMERA requires a paired drone.
+[*][b]FRS / FRM and SSE[/b]: TO SSE SHEET opens an FRO report pre-filled with the target.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The reticle must be right on the target; the tolerance tightens with zoom.
+[*]A target marked from Live Feed is only tracked while you watch the feed.
+[*]The target list is your own phone's.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 1.36.0 (October 2026), together with drone no-fly zones; sight marking appeared in the 11 October 2026 wave.

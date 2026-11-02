@@ -1,0 +1,107 @@
+[APP] FRS / FRM — fiche de renseignement simplifiée, thèmes, pièces jointes, envoi au bureau SSE d'Athena
+
+[i]Message 1/2[/i]
+[h1]FRS / FRM[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Noter tout de suite ce que vous venez de voir ou d'apprendre, sans formulaire lourd : un texte libre, un type de fiche, une urgence, une date, un lieu, un à quatre thèmes et jusqu'à quatre pièces jointes. La fiche part au bureau SSE d'Athena, où elle est classée et exploitée. L'app sert aussi à relire vos fiches et celles de la communauté.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. L'app [b]SSE[/b] l'ouvre aussi, préremplie, avec son bouton [b]Fiche rapide[/b].
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Texte du renseignement[/b] : zone centrale avec compteur, 1000 caractères au plus. Le brouillon est gardé quand vous quittez l'app.
+[*][b]Volet Entête[/b] (à gauche) : [b]Type de fiche[/b] (FRM mission, FRO observation, FRC contact, FRA ambiance, FRT technique), [b]Urgence[/b] (Critique, Urgent, Normal, Routine), [b]Recueil[/b] (HUMINT, IMINT, SIGINT, OSINT, TECHINT, MASINT, GEOINT ou Non précisé), [b]Date et heure de l'événement[/b] (JJ/MM/AAAA HH:MM), [b]Lieu[/b], [b]Repère (carroyage)[/b] avec le bouton [b]MA POSITION[/b], les [b]Thèmes[/b] (un à quatre parmi 17 : terrorisme, insurrection, CBRNE, armement, personnes / cibles, logistique, mouvements, environnement civil, etc.) et [b]Rattacher à un dossier (facultatif)[/b]. [b]EFFACER LA FICHE[/b] vide tout.
+[*][b]Valeurs proposées[/b] : la date du jeu, la localité la plus proche (dans les 3 km) et votre carroyage sont remplis d'office.
+[*][b]Volet Pièces jointes[/b] (à droite) : grille de quatre emplacements. Chaque pièce affiche sa vignette et une croix pour la retirer.
+[*][b]Bouton rond (trombone)[/b] : menu [b]Galerie[/b] (joindre une photo de la photothèque), [b]Athena[/b] (fiches envoyées) et [b]Caméra[/b] (capture de la vue, téléphone masqué le temps de la prise).
+[*][b]Fiches Athena[/b] : onglets [b]MES FICHES[/b], [b]COMMUNAUTÉ[/b] et [b]SESSION[/b] (fiches envoyées pendant la partie, avec leur statut). Une fiche ouverte montre son texte et ses photos ; [b]ACTUALISER[/b] recharge la liste.
+[*][b]Barre du bas[/b] : accueil, mini / plein écran, bouton rond, envoi au bureau SSE.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez FRS / FRM et écrivez ce que vous avez vu (10 caractères au moins).
+[*]Ouvrez le volet [b]Entête[/b] : choisissez le type, l'urgence, la source, vérifiez la date, le lieu et le carroyage, cochez au moins un thème.
+[*]Avec le bouton rond, joignez une capture de la scène ([b]Caméra[/b]) ou une photo déjà prise ([b]Galerie[/b]).
+[*]Appuyez sur l'envoi : un message confirme la référence de la fiche, puis les pièces jointes partent une par une.
+[*]Plus tard, retrouvez la fiche dans [b]Athena › MES FICHES[/b] ou [b]SESSION[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Photo › Dossier des captures d'écran[/b] (personnel) : à renseigner si le téléphone ne trouve pas vos photos et captures (dossier Screenshots de votre profil Arma).
+[*][b]COMSPEC › ATAK · Photo › Vérifier le dossier des captures[/b] (personnel) : affiche le dossier utilisé et la dernière capture trouvée.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : l'envoi et la liste des fiches passent par la liaison Athena (COMSPEC Link). Sans le volet Overwatch de COMSPEC sur le serveur, l'app affiche seulement un avertissement. Les onglets MES FICHES et COMMUNAUTÉ demandent une connexion Athena et un profil autorisé.
+[*][b]Apps SSE, Photo et Galerie[/b] : SSE ouvre une fiche préremplie ; les photos prises avec l'app Photo se joignent depuis la photothèque.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]L'envoi est refusé sans texte d'au moins 10 caractères ou sans thème.
+[*]Liaison coupée : la fiche est gardée en file et partira au retour de la liaison. Ne la ressaisissez pas. Ses pièces jointes ne partent pas avec elle : elles restent sur le brouillon suivant.
+[*]Arma n'affiche que les images JPG et PAA : une capture PNG garde une icône, et une photo PNG d'Athena n'est visible que sur le site.
+[*]Si la capture échoue (dossier des captures plein ou inaccessible), rien n'est joint et un message le signale.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Les fiches de renseignement simplifiées apparaissent en 1.4.19 (août 2026) ; l'app FRS / FRM du téléphone natif est déjà citée dans ATAK natif 1.11.0 (octobre 2026).
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Write down right away what you have just seen or learned, without a heavy form: free text, a report type, an urgency, a date, a location, one to four topics and up to four attachments. The report goes to Athena's SSE desk, where it is filed and exploited. The app also lets you read your own reports and the community's.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it. The [b]SSE[/b] app also opens it, pre-filled, with its [b]Quick record[/b] button.
+
+[h3]Features[/h3]
+[list]
+[*][b]Intel text[/b]: central area with a counter, 1000 characters max. The draft is kept when you leave the app.
+[*][b]Header panel[/b] (left): [b]Report type[/b] (FRM mission, FRO observation, FRC contact, FRA atmospherics, FRT technical), [b]Urgency[/b] (Critical, Urgent, Normal, Routine), [b]Collection[/b] (HUMINT, IMINT, SIGINT, OSINT, TECHINT, MASINT, GEOINT or Not specified), [b]Event date and time[/b] (DD/MM/YYYY HH:MM), [b]Location[/b], [b]Reference (grid)[/b] with the [b]MY POSITION[/b] button, the [b]Topics[/b] (one to four out of 17: terrorism, insurgency, CBRNE, weapons, persons / targets, logistics, movements, civil environment, etc.) and [b]Link to a case file (optional)[/b]. [b]CLEAR REPORT[/b] empties everything.
+[*][b]Suggested values[/b]: the in-game date, the nearest locality (within 3 km) and your grid are filled in for you.
+[*][b]Attachments panel[/b] (right): a grid of four slots. Each attachment shows its thumbnail and a cross to remove it.
+[*][b]Round button (paperclip)[/b]: menu [b]Gallery[/b] (attach a photo from the library), [b]Athena[/b] (sent reports) and [b]Camera[/b] (capture of the view, phone hidden during the shot).
+[*][b]Athena reports[/b]: tabs [b]MY REPORTS[/b], [b]COMMUNITY[/b] and [b]SESSION[/b] (reports sent during the game, with their status). An opened report shows its text and photos; [b]REFRESH[/b] reloads the list.
+[*][b]Bottom bar[/b]: home, mini / fullscreen, round button, send to the SSE desk.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open FRS / FRM and write what you saw (at least 10 characters).
+[*]Open the [b]Header[/b] panel: choose the type, urgency and source, check the date, location and grid, tick at least one topic.
+[*]With the round button, attach a capture of the scene ([b]Camera[/b]) or a photo already taken ([b]Gallery[/b]).
+[*]Press send: a message confirms the report reference, then the attachments are sent one by one.
+[*]Later, find the report in [b]Athena › MY REPORTS[/b] or [b]SESSION[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Photo › Screenshot folder[/b] (personal): set it if the phone does not find your photos and captures (Screenshots folder of your Arma profile).
+[*][b]COMSPEC › ATAK · Photo › Check the screenshot folder[/b] (personal): shows the folder in use and the last capture found.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: sending and the report list go through the Athena link (COMSPEC Link). Without COMSPEC's Overwatch component on the server, the app only shows a warning. The MY REPORTS and COMMUNITY tabs require an Athena connection and an authorised profile.
+[*][b]SSE, Photo and Gallery apps[/b]: SSE opens a pre-filled report; photos taken with the Photo app are attached from the photo library.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Sending is refused without text of at least 10 characters or without a topic.
+[*]Link lost: the report is kept in queue and will be sent when the link returns. Do not re-enter it. Its attachments do not go with it: they stay on the next draft.
+[*]Arma only displays JPG and PAA images: a PNG capture keeps an icon, and a PNG photo from Athena is only visible on the website.
+[*]If the capture fails (screenshot folder full or unreachable), nothing is attached and a message says so.
+[/list]
+
+[h3]Introduced in[/h3]
+Simplified intelligence reports appeared in 1.4.19 (August 2026); the native phone's FRS / FRM app is already mentioned in native ATAK 1.11.0 (October 2026).

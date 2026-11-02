@@ -69,6 +69,8 @@ private _meUpdate = {
         format ["%1<t font='EtelkaMonospaceProBold' size='1.2'>%2°</t> <t font='EtelkaMonospacePro' size='0.95' color='#b7c1bc'>%3</t>",
             format ["<t size='0.78' color='#5cc76b'>%1</t> ", ["HDG", "CAP"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")], [_h] call _az3, [_h] call _cardinal]
     } else { _l2 };
+    // NOUVEAU sans CURDIST : le cap (celui de ma vue) est déjà à gauche avec la flèche ; cette case garde l'indicatif.
+    if !("CURDIST" in _bShow) then { _hd = _l2; _hdgOn = false; };
     [_me, _hd] call _put;
     [_ov getOrDefault ["me2", controlNull], ["", _l2] select _hdgOn] call _put;
 };
@@ -265,8 +267,16 @@ if (!isNull _cur && {!_tapeOnly}) then {
                         case (_dOn): { [[player distance2D _p] call _dT] call _big };
                         default { "" };
                     });
-                    private _da = if (_dOn) then { [([[player distance2D _p] call _dT] call _val) + _sepDot, ""] select !_gOn } else { "" };
-                    if (_dOn) then { _da = _da + ([_az] call _brg); };
+                    // Sans CURDIST (défaut 2.9.36) : flèche et cap = direction de la vue du personnage, pas du curseur.
+                    private _curDist = "CURDIST" call _on;
+                    private _da = if (_dOn && {_curDist}) then { [([[player distance2D _p] call _dT] call _val) + _sepDot, ""] select !_gOn } else { "" };
+                    if (_dOn && {_curDist}) then { _da = _da + ([_az] call _brg); };
+                    private _viewAz = -1;
+                    if (!_curDist && {"HDG" call _on}) then {
+                        private _vd = getCameraViewDirection player;
+                        _viewAz = (((_vd select 0) atan2 (_vd select 1)) + 360) mod 360;
+                        _da = (["CAP"] call _key) + ([_viewAz] call _brg);
+                    };
                     private _rest = [];
                     if (_narrow && {_gOn} && {_zoneTxt isNotEqualTo ""}) then { _rest pushBack _zoneTxt; };
                     if ("ALT" call _on) then { _rest pushBack ((["ALT"] call _key) + ([[getTerrainHeightASL _p] call _aT] call _val)); };
@@ -277,7 +287,7 @@ if (!isNull _cur && {!_tapeOnly}) then {
                     } else {
                         (([_da] select { _x isNotEqualTo "" }) + _rest) joinString _sepDot
                     };
-                    if !(_dOn) then { _az = -1; };
+                    _az = [[-1, _az] select _dOn, _viewAz] select !_curDist;
                 };
             };
             [_cur, _line1] call _put;
