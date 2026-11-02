@@ -23,6 +23,7 @@ use App\Services\Academy\AcademyAccess;
 use App\Services\Academy\AcademyLmsBridge;
 use App\Services\Academy\AcademyCurriculum;
 use App\Services\Academy\AcademyBuiltInCourses;
+use App\Services\Academy\AcademyOffer;
 use App\Services\Academy\AcademyStudio;
 use App\Services\Academy\GoogleSlidesImporter;
 use App\Support\TrainingLmsStaffAccess;
@@ -153,7 +154,13 @@ final class AcademyController
             if ($state !== null) {
                 $selected = $state['snapshot'] ?? $selected;
             }
-            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview') + $lmsData + [
+            // Catalogue et tableau de bord : tout ce que le membre peut obtenir, avec son état.
+            $offer = in_array($space, ['dashboard', 'catalogue'], true)
+                ? AcademyOffer::collect($tenantId, (int) Session::get('user_id'), $tenant, $courses, $states, $lmsData['legacyCourses'] ?? [], $lmsData['legacyEnrollments'] ?? [], $staff)
+                : null;
+            $offerFilters = AcademyOffer::filters($request->queryParams());
+            $offerDetail = $space === 'catalogue' ? $request->queryString('fiche') : '';
+            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail') + $lmsData + [
                 'academyStorageReady' => $academyStorageReady && !$preview,
                 'viewStep' => $request->queryString('step'),
                 'learners' => $space === 'instructor' && $academyStorageReady ? $repository->learners($tenantId) : [],

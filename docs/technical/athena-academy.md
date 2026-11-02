@@ -30,6 +30,19 @@ Le module JTAC et les cursus en sept étapes utilisent le lecteur `/academy/clas
 
 Les tables `academy_courses` et `academy_learners`, ajoutées par `migrations/20261029130000_athena_academy.sql`, restent utilisées pour le carnet privé, les cursus de communauté, les inscriptions, les preuves d’apprentissage et les licences internes en sept étapes. Si ces tables n’ont pas encore été migrées, les formations et outils du LMS existant restent accessibles ; l’inscription Academy est désactivée et un message explique l’indisponibilité du stockage. Aucune nouvelle migration n’est nécessaire pour cette intégration au LMS existant.
 
+### Catalogue et tableau de bord : tout ce qu’on peut obtenir
+
+`/academy/catalogue` est l’entrée unique de tout ce qu’un membre peut suivre ou obtenir. `App\Services\Academy\AcademyOffer` réunit, avec l’état du membre connecté (acquis, expire bientôt, à renouveler, en cours, en attente de validation, conditions remplies, disponible, prérequis manquants) :
+
+- **Formations** : cursus Academy (intégrés ATHENA comme le JTAC, ou rédigés par la communauté) et formations du LMS (communauté et plateforme) ;
+- **Brevets et licences** : qualifications dont le type, le nom ou le gabarit de brevet indique un brevet ou une licence, et formations Academy qui délivrent une licence ;
+- **Qualifications** : toutes celles de la communauté, quel que soit le mode d’obtention (instructeur, formation Academy, automatique sur heures de jeu / de vol / missions, cursus pilote), avec les critères et l’avancement de chacun (`QualificationAwardRuleService::evaluateMember`) ;
+- **Parcours** enregistrés (avancement d’après les étapes acquises), **Compétences** du référentiel (avec ce qui permet de les acquérir) et **Émetteurs** non archivés.
+
+Onglets avec compteurs, recherche globale, filtres (catégorie, émetteur, niveau, mode d’obtention, état pour moi, origine ATHENA / communauté) et tri sont dans l’adresse (`?onglet=&q=&categorie=&emetteur=&niveau=&mode=&etat=&source=&tri=`) ; `?fiche=q-12` (qualification), `p-` (parcours), `c-` (compétence), `e-` (émetteur), `a-` / `n-` (formation) ouvre la fiche détaillée. Une qualification masquée sur la page publique (`show_on_profile = 0`) n’est proposée qu’à l’encadrement et à ses titulaires ; archivées et inactives ne sont jamais listées. Il n’existe pas de demande de qualification en ligne : la fiche invite à contacter un instructeur de l’émetteur. Le brevet PDF se télécharge par la route existante de « Mes qualifications ».
+
+`/academy/dashboard` reprend la même source : « Où j’en suis » (formations en cours et prochaine étape, acquis et échéances, prochain objectif), « À faire maintenant » (reprendre, passer l’évaluation, attente d’un instructeur, renouvellement, conditions remplies), « Mes brevets et qualifications », « Ma progression vers… » (critères automatiques) et un raccourci par onglet du catalogue. Un nouvel arrivant voit « Commencez par… ».
+
 ### Disclaimer à l’ouverture
 
 Le composant commun `views/academy/disclaimer.php` utilise un dialogue natif accessible. À la première visite, il affiche le disclaimer de préversion et l’absence de qualification officielle. Après validation explicite, seul le choix `accepted` est écrit dans `localStorage` sous `athena:academy:disclaimer:2026-10-29-v2`.

@@ -279,3 +279,13 @@ document.querySelectorAll('[data-studio-form]').forEach(form => {
 document.querySelectorAll('.ast-share [data-confirm]').forEach(button => button.addEventListener('click', event => {
   if (!window.confirm(button.dataset.confirm)) event.preventDefault();
 }));
+
+// Catalogue : un filtre changé relance la recherche (le bouton reste là sans JavaScript).
+document.querySelectorAll('form[data-autosubmit]').forEach(form => {
+  form.addEventListener('change', event => {
+    if (event.target instanceof HTMLSelectElement) {
+      if (typeof form.requestSubmit === 'function') form.requestSubmit();
+      else form.submit();
+    }
+  });
+});
