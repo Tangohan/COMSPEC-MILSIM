@@ -207,3 +207,26 @@ if (isServer) then { ["set", [units group _unit, true]] call comspec_atak_native
 `_unit setVariable ["COMSPEC_ATAK_AiAtak", true, true]`. With "Realistic AI on the network" (default on), AI only show
 on the BFT if they really carry an ATAK, and the server sends their PLI points at the network rate with a per-AI GPS
 error, the same for every player, lost or degraded near jammers.
+
+## 9. Appui feu typé : mortiers, artillerie, naval et aérien
+
+Réglages serveur « ATAK · Appui feu » (forçables par la mission avec les réglages CBA de la mission) : système activé
+(décoché = appel de feu générique, comme avant), moyens autorisés, tir exécuté par l'IA, batteries simulées, délais de
+réaction ; réglage personnel des cercles de portée. L'app CAS (onglet APPEL DE FEU) propose alors un MOYEN, les pièces
+de la mission sont reconnues par leur config (calculateur d'artillerie, mortiers statiques, support « Artillery », calibre
+des munitions, mortiers ACE) ; l'IA du camp tire après vérification des droits par le serveur, un servant joueur reçoit
+la mission dans l'app Tâches avec sa solution de tir.
+
+```sqf
+// Forcer le moyen d'une pièce (MORTAR_L, MORTAR_M, MORTAR_H, HOWITZER, MLRS, NAVAL, CAS) : variable publique.
+_gun setVariable ["COMSPEC_ATAK_FsType", "MORTAR_H", true];
+// Pièce (ou groupe) qui ne prend pas de mission de tir, comme pour les ordres aux IA.
+_gun setVariable ["COMSPEC_ATAK_NoOrders", true, true];
+// Donner à un joueur le droit de demander un tir aux pièces IA (sinon : observateur, JTAC, chef, commandant, TOC, Zeus).
+_unit setVariable ["COMSPEC_ATAK_FsCan", true, true];
+```
+
+**English.** "ATAK · Fire support" server settings (mission-overridable): typed fire support on/off (off = generic call
+for fire as before), allowed assets, AI execution, simulated batteries, reaction times; personal range rings setting.
+Force a gun's asset type with `_gun setVariable ["COMSPEC_ATAK_FsType", "MORTAR_H", true]`, protect it with
+`COMSPEC_ATAK_NoOrders`, grant request rights with `_unit setVariable ["COMSPEC_ATAK_FsCan", true, true]`.

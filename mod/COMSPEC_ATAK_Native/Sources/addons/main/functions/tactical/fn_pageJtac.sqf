@@ -390,6 +390,10 @@ switch (_tab) do {
             _rows pushBack ["line", "", "Depuis moi", format ["%1° %2 · %3 MIL · %4", [_az] call _three, [_az] call _card, round (_az * 17.7778), [_d] call _dist], "auto", "", "", "mono"];
             private _fr = _b get "friend";
             _rows pushBack ["line", "", "Amis les plus proches", if ((count _fr) isEqualTo 0) then { "aucun à moins de 3 km" } else { format ["%1 m %2%3", _fr select 0, _fr select 1, ["", " · DANGER CLOSE"] select (_b get "dc")] }, ["auto", "warn"] select (_b get "dc"), "", "", "mono"];
+            // Appui feu typé (fn_fireSupport) : la cible part à l'appel de feu (mortier, obusier, lance-roquettes, naval).
+            if (["on"] call comspec_atak_native_fnc_fireSupport) then {
+                _rows pushBack ["buttons", [["APPEL DE FEU (ARTILLERIE)", ["cff"] call _act, false, true, "Cible envoyée à l'app CAS, onglet APPEL DE FEU : choisissez le moyen (mortier, obusier, lance-roquettes, naval) puis TIR"]]];
+            };
         } else {
             _rows pushBack ["text", format ["<t color='%1'>Visez la cible ou désignez-la au laser puis VERROUILLER, ou posez-la SUR LA CARTE.</t>", _grey]];
         };
