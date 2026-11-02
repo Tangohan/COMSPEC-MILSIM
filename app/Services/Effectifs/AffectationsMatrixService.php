@@ -9,6 +9,7 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Services\Organization\OrgVisibilityService;
 use Throwable;
 
 /**
@@ -73,7 +74,7 @@ final class AffectationsMatrixService
      *   members: list<array<string, mixed>>,
      *   units: list<array<string, mixed>>,
      *   filters: array{jobs: list<string>, roles: list<string>, access: list<string>},
-     *   stats: array{members: int, assigned: int, without_unit: int, without_job: int, empty_units: int, truncated: bool}
+     *   stats: array{members: int, assigned: int, without_unit: int, without_job: int, empty_units: int, seats_authorized: int, seats_vacant: int, truncated: bool}
      * }
      */
     public function build(int $tenantId): array
@@ -198,8 +199,12 @@ final class AffectationsMatrixService
             }
         }
         $seats = $this->seatsByUnit($tenantId);
+        // Confidentialité effective (héritée de l'unité parente), rendue par App\Support\ConfidentialDisplay.
+        $levels = OrgVisibilityService::effectiveUnitLevels($unitRows);
         $units = [];
         $empty = 0;
+        $seatsAuthorized = 0;
+        $seatsFilled = 0;
         foreach ($unitRows as $u) {
             $uid = (int) ($u['id'] ?? 0);
             $c = $codes['units'][$uid] ?? null;
@@ -207,6 +212,10 @@ final class AffectationsMatrixService
             usort($holders, static fn (array $a, array $b): int => [$a['role'] === '' ? 1 : 0, mb_strtolower($a['name'])] <=> [$b['role'] === '' ? 1 : 0, mb_strtolower($b['name'])]);
             if ($holders === []) {
                 $empty++;
+            }
+            if (isset($seats[$uid])) {
+                $seatsAuthorized += $seats[$uid]['authorized'];
+                $seatsFilled += $seats[$uid]['filled'];
             }
             $units[] = [
                 'id' => $uid,
@@ -220,9 +229,11 @@ final class AffectationsMatrixService
                 'segment' => (string) ($c['segment'] ?? ''),
                 'admin_id' => (string) ($c['admin_id'] ?? ''),
                 'commander' => trim((string) ($commanders[$uid] ?? '')),
+                'commander_user_id' => (int) ($u['commander_user_id'] ?? 0),
                 'children' => (int) ($childCount[$uid] ?? 0),
                 'holders' => $holders,
                 'seats' => $seats[$uid] ?? null,
+                'visibility' => (string) ($levels[$uid] ?? 'normal'),
             ];
         }
         // Ordre de l'organigramme : le code suit l'arbre, il sert de clé de tri.
@@ -246,6 +257,8 @@ final class AffectationsMatrixService
                 'without_unit' => count($members) - $assigned,
                 'without_job' => $withoutJob,
                 'empty_units' => $empty,
+                'seats_authorized' => $seatsAuthorized,
+                'seats_vacant' => max(0, $seatsAuthorized - $seatsFilled),
                 'truncated' => $truncated,
             ],
         ];

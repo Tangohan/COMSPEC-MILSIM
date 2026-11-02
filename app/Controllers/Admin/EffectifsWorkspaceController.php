@@ -3605,12 +3605,19 @@ class EffectifsWorkspaceController
             new \App\Services\Effectifs\UnitCodeService()
         ))->build($tenantId);
         $view = (string) $request->query('vue', '');
+        try {
+            $movements = $this->personnelAssignmentRepository->listRecentPrimaryMovementsForTenant($tenantId, 30);
+        } catch (\Throwable) {
+            $movements = [];
+        }
 
         return $this->shell('admin.effectifs_workspace.affectations', [
             'title' => 'Affectations',
             'effectifsNav' => 'affectations',
             'affMatrix' => $matrix,
-            'affView' => $view === 'unites' ? 'units' : 'members',
+            'affMovements' => $movements,
+            // Tableau par unité (maquette 2026-11-02) par défaut ; « ?vue=membres » ouvre la liste par membre.
+            'affView' => $view === 'membres' ? 'members' : 'units',
             'affInitialQuery' => mb_substr(trim((string) $request->query('q', '')), 0, 80, 'UTF-8'),
             'affInitialUnit' => max(0, (int) $request->query('unite', 0)),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -4009,7 +4016,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'effectifs-kit.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,
