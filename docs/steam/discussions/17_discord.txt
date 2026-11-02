@@ -1,0 +1,89 @@
+[APP] Discord — écrire depuis le jeu dans le salon Discord de votre unité, avec votre grille
+
+[h1]Discord[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Envoyer un message court depuis le téléphone, en pleine partie, dans le salon Discord choisi par votre communauté sur Athena : un contact, un SITREP, une demande de soutien, un retour à la base ou un texte libre. Le message est signé « COMSPEC ATAK · votre indicatif » et peut porter votre grille. L'app envoie seulement : elle n'affiche pas les messages du salon.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Envoi rapide[/b] : un appui, le message part avec votre grille. [b]CONTACT[/b] (« Contact ennemi. »), [b]SITREP[/b] (nom du groupe, effectif, valides et hors de combat, calculés automatiquement), [b]BESOIN DE SOUTIEN[/b], [b]RTB[/b] (« Retour à la base. »). Le texte est écrit dans la langue de votre téléphone.
+[*][b]Message[/b] : choisissez le [b]Type[/b] (MESSAGE, CONTACT, SITREP, SOUTIEN, RTB), écrivez le [b]Texte[/b] (500 caractères au plus), puis [b]ENVOYER SUR DISCORD[/b].
+[*][b]Joindre ma grille[/b] : grille à 8 chiffres de votre position au moment de l'envoi (activé par défaut).
+[*][b]Derniers envois[/b] : les 10 derniers messages de la mission avec l'heure, le type et l'état : EN COURS, PUBLIÉ ou REFUSÉ (avec la raison donnée par le site).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Au retour d'une patrouille, ouvrez Discord.
+[*]Choisissez le type [b]SITREP[/b] et écrivez « Patrouille nord terminée, RAS, retour FOB 15 min ».
+[*]Laissez [b]Joindre ma grille[/b] activé et appuyez sur [b]ENVOYER SUR DISCORD[/b].
+[*]Une notification confirme « Message publié sur Discord » ; la ligne passe à PUBLIÉ.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié. Le salon de destination se règle sur Athena par la communauté, pas dans le jeu.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : obligatoire. Le lien du salon reste sur Athena ; le téléphone n'envoie que le texte. Sans liaison Athena, l'app l'indique et rien ne part.
+[*][b]Réseau du téléphone[/b] : le message passe d'abord par le réseau simulé du téléphone (relais, portée).
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Un message toutes les 5 secondes au plus.
+[*]Les mentions (@everyone, @here, @) sont retirées.
+[*]Un message libre vide n'est pas envoyé ; les envois rapides n'ont pas besoin de texte.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Send a short message from the phone, mid-game, to the Discord channel chosen by your community on Athena: a contact, a SITREP, a support request, a return to base or free text. The message is signed "COMSPEC ATAK · your callsign" and can carry your grid. The app only sends: it does not show the channel's messages.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Quick send[/b]: one press, the message leaves with your grid. [b]CONTACT[/b] ("Enemy contact."), [b]SITREP[/b] (group name, strength, fit and out of action, computed automatically), [b]NEED SUPPORT[/b], [b]RTB[/b] ("Returning to base."). The text is written in your phone's language.
+[*][b]Message[/b]: pick the [b]Type[/b] (MESSAGE, CONTACT, SITREP, SUPPORT, RTB), write the [b]Text[/b] (500 characters at most), then [b]SEND TO DISCORD[/b].
+[*][b]Attach my grid[/b]: 8-digit grid of your position at the time of sending (on by default).
+[*][b]Latest sends[/b]: the last 10 messages of the mission with time, type and state: in progress, POSTED or DECLINED (with the reason given by the website).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Back from a patrol, open Discord.
+[*]Pick the [b]SITREP[/b] type and write "North patrol done, nothing to report, back at FOB in 15 min".
+[*]Leave [b]Attach my grid[/b] on and press [b]SEND TO DISCORD[/b].
+[*]A notification confirms "Message posted to Discord"; the line turns POSTED.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting. The target channel is set on Athena by the community, not in game.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: required. The channel link stays on Athena; the phone only sends the text. Without the Athena link, the app says so and nothing is sent.
+[*][b]Phone network[/b]: the message first goes through the phone's simulated network (relays, range).
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]One message every 5 seconds at most.
+[*]Mentions (@everyone, @here, @) are stripped.
+[*]An empty free message is not sent; quick sends need no text.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

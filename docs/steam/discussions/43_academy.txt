@@ -1,0 +1,94 @@
+[APP] Academy — vos cours COMSPEC Academy lus en jeu, et présentés sur les écrans par l'encadrement
+
+[h1]Academy[/h1]
+[i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Academy affiche dans le téléphone les cours COMSPEC Academy du site auxquels vous êtes inscrit : vous lisez vos leçons page par page sans quitter le jeu, et votre progression est enregistrée sur le site. L'encadrement Formation peut aussi ouvrir n'importe quel cours de la communauté et présenter une leçon sur un écran posé dans le jeu.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie Mission du lanceur.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Mes cours en cours[/b] : chaque cours suivi, avec la leçon où vous en êtes, son titre et votre étape (Cours, Démonstration, Cas guidé, Cas sans aide, Évaluation, Débriefing, Validation). Ouvrir reprend la leçon en cours ; pour un cours terminé, Revoir permet de choisir une leçon (Leçon 1, Leçon 2…). ACTUALISER recharge la liste.
+[*][b]Lecture d'une leçon[/b] : nom du cours, « Leçon x / y · page a / b », titre et texte de la page, boutons « Précédente » et « Suivante ».
+[*][b]Progression[/b] : à l'étape Cours ou Démonstration, lire la leçon jusqu'à sa dernière page l'enregistre comme vue sur le site (une notification le confirme). Les exercices et l'évaluation restent à faire sur le site.
+[*][b]Diapositives du cours[/b] : un bouton par présentation du cours, qui l'ouvre dans l'app Briefing (d'où elle peut ensuite être diffusée).
+[*][b]Cours de la communauté[/b] (encadrement Formation seulement) : tous les cours, avec leur nombre de leçons et la mention brouillon ; Choisir puis la leçon à ouvrir.
+[*][b]Écrans à portée[/b] (encadrement Formation, dans une leçon) : écrans COMSPEC et écrans TOC à moins de 30 m, avec leur état (libre, qui diffuse, page affichée). DIFFUSER montre la leçon sur l'écran, ARRÊTER la retire. Les pages que vous tournez sont suivies par l'écran ; si quelqu'un avance l'écran par son menu ACE, votre téléphone suit.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Inscrivez-vous à un cours sur le site Academy.
+[*]En jeu, ouvrez Academy : le cours apparaît dans « Mes cours en cours ». Touchez Ouvrir.
+[*]Lisez avec « Suivante » jusqu'à la dernière page : l'étape est notée comme vue sur le site.
+[*]Instructeur : approchez-vous d'un écran, ouvrez la leçon et touchez DIFFUSER ; les joueurs proches lisent les pages que vous tournez.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena / site Academy[/b] : tout passe par COMSPEC Link avec la session de jeu de votre compte (aucun mot de passe dans le jeu) ; les droits sont ceux du site (élève : cours suivis et leçons atteintes ; encadrement : tous les cours).
+[*][b]Briefing[/b] : ouvre les diapositives du cours.
+[*][b]Écrans COMSPEC et écrans TOC[/b] : diffusion de la leçon ; défilement aussi par le menu ACE de l'écran.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Sans COMSPEC Link, l'app affiche « COMSPEC Link est nécessaire pour lire vos cours Academy. »
+[*]Aucun cours dans la liste : inscrivez-vous d'abord sur le site.
+[*]Les leçons chargées restent en mémoire 10 minutes.
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 2.9.24.
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Academy shows on the phone the COMSPEC Academy courses you are enrolled in on the website: you read your lessons page by page without leaving the game, and your progress is saved on the site. Training staff can also open any community course and present a lesson on a screen placed in the game.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the Mission category of the launcher.
+
+[h3]Features[/h3]
+[list]
+[*][b]My current courses[/b]: each course you follow, with the lesson you are at, its title and your stage (Course, Demonstration, Guided case, Independent case, Assessment, Debrief, Validation). Open resumes the current lesson; for a completed course, Review lets you pick a lesson (Lesson 1, Lesson 2…). REFRESH reloads the list.
+[*][b]Reading a lesson[/b]: course name, "Lesson x / y · page a / b", page title and text, « Previous » and « Next » buttons.
+[*][b]Progress[/b]: at the Course or Demonstration stage, reading the lesson to its last page saves it as seen on the site (a notification confirms it). Exercises and assessment are still done on the site.
+[*][b]Course slides[/b]: one button per course presentation, which opens it in the Briefing app (from where it can then be cast).
+[*][b]Community courses[/b] (training staff only): every course, with its number of lessons and a draft tag; Choose then the lesson to open.
+[*][b]Screens in range[/b] (training staff, inside a lesson): COMSPEC screens and TOC screens within 30 m, with their state (free, who is casting, page shown). CAST shows the lesson on the screen, STOP removes it. The screen follows the pages you turn; if someone moves the screen on through its ACE menu, your phone follows.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Enroll in a course on the Academy website.
+[*]In game, open Academy: the course shows in "My current courses". Tap Open.
+[*]Read with « Next » to the last page: the stage is marked as seen on the site.
+[*]Instructor: walk up to a screen, open the lesson and tap CAST; nearby players read the pages you turn.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena / Academy website[/b]: everything goes through COMSPEC Link with your account's game session (no password in game); rights are those of the site (student: followed courses and reached lessons; staff: every course).
+[*][b]Briefing[/b]: opens the course slides.
+[*][b]COMSPEC screens and TOC screens[/b]: lesson casting; pages can also be turned from the screen's ACE menu.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Without COMSPEC Link, the app shows that COMSPEC Link is needed to read your Academy courses.
+[*]No course in the list: enroll on the site first.
+[*]Loaded lessons stay in memory for 10 minutes.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 2.9.24.

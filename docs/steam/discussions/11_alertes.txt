@@ -1,0 +1,110 @@
+[APP] Alertes — PANIQUE, alertes rapides de contact, téléphones compromis et journal du camp
+
+[i]Message 1/2[/i]
+[h1]Alertes[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Signaler en un geste une détresse ou un contact à tout votre camp, et retrouver toutes les alertes reçues et envoyées depuis le début de la mission. Les alertes partent directement aux téléphones alliés du camp, même sans Athena ; avec la liaison Athena, elles partent aussi au poste. L'app affiche également les avis de l'administration Athena et les téléphones du camp ramassés par l'ennemi.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] (elle n'est pas dans le dock). C'est une app système : elle fait partie du téléphone et ne se désinstalle pas. Autre accès : la touche CBA [b]Bouton PANIQUE (deux appuis)[/b] (Options › Contrôles › Configurer les addons › COMSPEC ATAK), sans touche attribuée par défaut, envoie la PANIQUE sans ouvrir l'app.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : DÉTRESSE ET CONTACT, l'heure, votre grille et une pastille [b]CAMP + POSTE[/b] (Athena joignable) ou [b]CAMP SEULEMENT[/b].
+[*][b]Administration ATHENA[/b] : les avis non validés (compromission, levée, données réinitialisées, certificat, numéro, message imposé par le site) restent en tête jusqu'à [b]COMPRIS[/b] (Athena est prévenu).
+[*][b]PANIQUE[/b] : grand bouton rouge sur toute la largeur. Un premier appui l'arme ([b]CONFIRMER LA PANIQUE[/b]), un second dans les 5 secondes l'envoie ; sinon il revient au repos. L'alerte part à tous les téléphones alliés du camp avec votre indicatif et votre grille.
+[*][b]Alertes rapides[/b] : trois tuiles, [b]CONTACT[/b] (troupes au contact), [b]FIN DE CONTACT[/b] et [b]APPAREIL ABATTU[/b] (aéronef au sol). Un appui envoie l'alerte avec votre position ; un bandeau confirme à qui elle est partie.
+[*][b]SALUTE[/b] : raccourci vers l'app SALUTE pour un compte rendu d'observation complet.
+[*][b]Compromissions[/b] : les ATAK de votre camp ramassés par l'ennemi, avec IMEI, numéro, lieu et heure de la capture, et la dernière position vue sur le réseau. [b]VALIDER[/b] exclut le téléphone du réseau et révoque son certificat sur Athena ; [b]REJETER[/b] la classe en fausse alerte ; [b]CARTE[/b] centre la carte sur la dernière position connue.
+[*][b]Journal[/b] : alertes reçues du camp et envoyées, en cartes de la couleur de leur type, avec auteur, grille et heure. [b]CARTE[/b] centre la carte sur l'alerte. [b]VIDER LE JOURNAL[/b] l'efface sur ce téléphone.
+[*][b]Réception[/b] : une alerte d'un allié fait vibrer le téléphone, affiche une notification et pose un repère sur la carte pendant 10 minutes (rouge pour une PANIQUE, orange pour un contact, vert pour une fin de contact, rouge pour un appareil abattu).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Votre équipe est prise à partie : ouvrez Alertes et appuyez sur [b]CONTACT[/b].
+[*]Tout le camp reçoit « CONTACT · votre indicatif · grille » et un repère orange sur sa carte.
+[*]Une fois l'accrochage terminé, appuyez sur [b]FIN DE CONTACT[/b].
+[*]Blessé et isolé : appuyez deux fois sur [b]PANIQUE[/b] (ou deux fois sur la touche PANIQUE).
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Affichage › Heure des alertes[/b] (par joueur) : heure de la mission, heure locale du PC, Zulu (UTC) ou les deux. Les alertes déjà reçues gardent leur heure.
+[*][b]COMSPEC › ATAK · Capture par l'ennemi › Qui peut déclarer un téléphone volé[/b] (serveur) : « Chefs de groupe, propriétaire et Zeus » (par défaut) ou « Tout le camp » pour VALIDER une compromission.
+[*][b]COMSPEC › ATAK · Simulation › Mode hors connexion[/b] (serveur) : sans réseau, les alertes attendent et arrivent au retour du réseau.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : repères d'alerte pendant 10 minutes ; boutons CARTE du journal et des compromissions.
+[*][b]Athena[/b] : PANIQUE et alertes rapides transmises au poste ; avis de l'administration ; certificat révoqué quand une compromission est validée.
+[*][b]Zeus[/b] : un Zeus peut valider ou rejeter une compromission.
+[*][b]GE[/b] : pour retrouver un ATAK volé, app GE › GÉOLOC avec son IMEI ou son numéro (rappel affiché dans la section Compromissions).
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Seuls les joueurs de votre camp qui ont un téléphone reçoivent les alertes.
+[*]Sans Athena, les alertes restent en jeu (pastille CAMP SEULEMENT).
+[*]Attribuez une touche à PANIQUE : c'est le moyen le plus rapide, téléphone rangé.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Report distress or contact to your whole side in one gesture, and find every alert received and sent since the mission started. Alerts go straight to the friendly phones of your side, even without Athena; with the Athena link, they also go to the post. The app also shows Athena administration notices and the side's phones picked up by the enemy.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category (not in the dock). It is a system app: part of the phone, it cannot be uninstalled. Other way in: the CBA key [b]PANIC button (double press)[/b] (Options › Controls › Configure Addons › COMSPEC ATAK), unbound by default, sends PANIC without opening the app.
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: distress and contact, the time, your grid and a [b]SIDE + POST[/b] (Athena reachable) or [b]SIDE ONLY[/b] badge.
+[*][b]ATHENA administration[/b]: unconfirmed notices (compromise, lift, data reset, certificate, number, message imposed by the website) stay on top until [b]GOT IT[/b] (Athena is told).
+[*][b]PANIC[/b]: large red button across the width. A first press arms it ([b]CONFIRM PANIC[/b]), a second within 5 seconds sends it; otherwise it goes back to rest. The alert goes to every friendly phone of the side with your callsign and grid.
+[*][b]Quick alerts[/b]: three tiles, [b]CONTACT[/b] (troops in contact), [b]END OF CONTACT[/b] and [b]AIRCRAFT SHOT DOWN[/b] (aircraft down). One press sends the alert with your position; a banner confirms who it went to.
+[*][b]SALUTE[/b]: shortcut to the SALUTE app for a full observation report.
+[*][b]Compromises[/b]: your side's ATAKs picked up by the enemy, with IMEI, number, place and time of capture, and the last position seen on the network. [b]CONFIRM[/b] cuts the phone from the network and revokes its certificate on Athena; [b]DISMISS[/b] marks it a false alarm; [b]MAP[/b] centres the map on the last known position.
+[*][b]Log[/b]: alerts received from the side and sent, as cards in their type's colour, with author, grid and time. [b]MAP[/b] centres the map on the alert. [b]CLEAR LOG[/b] wipes it on this phone.
+[*][b]Reception[/b]: an ally's alert vibrates the phone, shows a notification and drops a map marker for 10 minutes (red for PANIC, orange for contact, green for end of contact, red for aircraft shot down).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Your team comes under fire: open Alerts and press [b]CONTACT[/b].
+[*]The whole side gets "CONTACT · your callsign · grid" and an orange marker on their map.
+[*]Once the firefight is over, press [b]END OF CONTACT[/b].
+[*]Wounded and alone: press [b]PANIC[/b] twice (or the PANIC key twice).
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Display › Alert time[/b] (per player): mission time, local PC time, Zulu (UTC) or both. Alerts already received keep their time.
+[*][b]COMSPEC › ATAK · Enemy capture › Who confirms a compromise[/b] (server): "Group leaders, owner and Zeus" (default) or "Whole side" for CONFIRM on a compromise.
+[*][b]COMSPEC › ATAK · Simulation › Offline operation[/b] (server): without network, alerts wait and arrive when the network returns.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: alert markers for 10 minutes; MAP buttons in the log and compromises.
+[*][b]Athena[/b]: PANIC and quick alerts sent to the post; administration notices; certificate revoked when a compromise is confirmed.
+[*][b]Zeus[/b]: a Zeus can confirm or dismiss a compromise.
+[*][b]EW[/b]: to find a stolen ATAK, EW app › GEOLOC with its IMEI or number (reminder shown in the Compromises section).
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Only players of your side who carry a phone receive alerts.
+[*]Without Athena, alerts stay in game (SIDE ONLY badge).
+[*]Bind a key to PANIC: it is the fastest way, phone put away.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

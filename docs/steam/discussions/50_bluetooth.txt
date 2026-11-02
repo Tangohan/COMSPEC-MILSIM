@@ -1,0 +1,137 @@
+[APP] Bluetooth — appairage par code, envoi de sons, musique, photos, données et fiches aux téléphones proches
+
+[i]Message 1/2[/i]
+[h1]Bluetooth[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+L'app Bluetooth relie votre téléphone à ceux des équipiers tout proches, sans aucun réseau. Après un appairage par code, vous leur envoyez un son ou un morceau à faire écouter, une photo, votre position, un itinéraire, un plan ou une fiche SEEK ou SSE. Chaque envoi est une demande que l'autre accepte ou refuse. Le Bluetooth marche aussi en mode avion.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système.
+[*]Le Bluetooth s'allume ou s'éteint aussi depuis le volet rapide (tuile Bluetooth, clic sur l'heure ou la batterie) et dans Réglages, section Connexions.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Interrupteur Bluetooth[/b] : éteint au début de la mission. Allumé, votre ATAK est visible des téléphones à portée (15 m par défaut).
+[*][b]Interrupteur Mode avion[/b] : coupe le réseau (synchro, SMS, BFT) ; le Bluetooth reste disponible.
+[*][b]Appairer un appareil[/b] : [b]AFFICHER MON CODE[/b] montre un code à 6 chiffres valable 2 minutes ([b]CACHER LE CODE[/b] pour le masquer). L'autre saisit ce code dans « Code affiché par l'autre téléphone » puis APPAIRER. Les deux téléphones doivent être à portée.
+[*][b]Demandes reçues[/b] : ce que l'on vous propose, avec l'expéditeur et le type ; ACCEPTER ou REFUSER (la demande expire au bout de 60 s).
+[*][b]Transferts en cours[/b] : pourcentage et barre de progression, bouton ANNULER. Restez à portée jusqu'à la fin ; une photo passe en quelques secondes.
+[*][b]ARRÊTER LE SON EN COURS[/b] : coupe le son que joue votre téléphone.
+[*][b]Appareils appairés[/b] : gardés pour la mission, avec leur état (connecté et distance, hors de portée, Bluetooth éteint, déconnecté). [b]ENVOYER[/b] choisit le destinataire, [b]OUBLIER[/b] supprime l'appairage.
+[*][b]Envoyer à…[/b] : onglets SONS, [b]MUSIQUE[/b], PHOTOS, [b]DONNÉES[/b], [b]FICHES[/b], champ Rechercher ([b]RECHERCHER[/b], [b]EFFACER[/b]), 15 éléments par page. Bouton [b]ENVOYER[/b], ou [b]FAIRE ÉCOUTER[/b] pour un son.
+[list]
+[*]SONS : joué par le haut-parleur de son téléphone, entendu par les joueurs autour.
+[*]MUSIQUE : vos MP3 (Mes fichiers) sont copiés dans son app Musique ; les morceaux du serveur sont joués par son haut-parleur.
+[*]PHOTOS : copiée dans sa Galerie.
+[*]DONNÉES : votre position (repère de 10 min sur sa carte), votre itinéraire (app Itinéraire), un plan (app Plan).
+[*]FICHES : fiches SEEK (journal du terminal) et fiches SSE (personnes enregistrées au SEEK).
+[/list]
+[*][b]Reçus par Bluetooth[/b] : les 8 derniers éléments de la mission, avec l'expéditeur, l'heure et l'endroit où ils sont rangés ; [b]VOIR[/b] affiche une donnée ou une fiche reçue.
+[*][b]Envois récents[/b] : chaque envoi avec son état (accepté, reçu, refusé, échec, hors portée…).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Vous et votre équipier allumez le Bluetooth, à moins de 15 m l'un de l'autre.
+[*]Il appuie sur AFFICHER MON CODE ; vous saisissez son code puis APPAIRER.
+[*]Dans Appareils appairés, appuyez sur ENVOYER à côté de son nom.
+[*]Onglet PHOTOS : ENVOYER sur la photo voulue.
+[*]Il accepte : la photo arrive dans sa Galerie après quelques secondes.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Portée Bluetooth (m)[/b] (serveur, 5 à 100, défaut 15) : distance maximale pour s'appairer, s'envoyer des éléments ou partager une caméra.
+[*][b]COMSPEC › ATAK · Simulation › Portée du son envoyé en Bluetooth (m)[/b] (serveur, 5 à 100, défaut 20) : distance à laquelle les joueurs autour entendent un son joué après un envoi.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Galerie, Musique, Itinéraire, Plan, SEEK et SSE[/b] : sources et destinations des éléments échangés.
+[*][b]Vidéo live[/b] : le bouton PARTAGER peut partager une caméra par Bluetooth, à la même portée, Bluetooth allumé des deux côtés.
+[*][b]Mode avion[/b] : indépendant du Bluetooth.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le transfert s'arrête si l'un des deux sort de portée ; relancez l'envoi.
+[*]Un téléphone éteint, cassé ou indisponible n'a pas de Bluetooth actif.
+[*]Pour envoyer vos propres morceaux, déposez des MP3 dans Documents\Arma 3\COMSPEC_Music.
+[*]Les photos passent par la liaison du mod : sans elle, l'onglet PHOTOS l'indique.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The Bluetooth app links your phone to those of teammates right next to you, with no network at all. After pairing by code, you send them a sound or a track to play, a photo, your position, a route, a plan or a SEEK or SSE sheet. Each send is a request the other accepts or declines. Bluetooth also works in airplane mode.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] brings the phone to a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category.
+[*]Bluetooth can also be turned on or off from the quick panel (Bluetooth tile, click the clock or battery) and in Settings, Connections section.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Bluetooth switch[/b]: off at mission start. When on, your ATAK is visible to phones in range (15 m by default).
+[*][b]Airplane mode switch[/b]: cuts the network (sync, SMS, BFT); Bluetooth stays available.
+[*][b]Pair a device[/b]: [b]SHOW MY CODE[/b] shows a 6-digit code valid for 2 minutes ([b]HIDE CODE[/b] to hide it). The other player types that code in "Code shown by the other phone" then PAIR. Both phones must be in range.
+[*][b]Requests received[/b]: what is offered to you, with sender and type; ACCEPT or DECLINE (the request expires after 60 s).
+[*][b]Transfers in progress[/b]: percentage and progress bar, cancel button. Stay in range until the end; a photo goes through in a few seconds.
+[*][b]STOP CURRENT SOUND[/b]: stops the sound your phone is playing.
+[*][b]Paired devices[/b]: kept for the mission, with their state (connected and distance, out of range, Bluetooth off, disconnected). [b]SEND[/b] picks the recipient, [b]FORGET[/b] removes the pairing.
+[*][b]Send to…[/b]: tabs SOUNDS, [b]MUSIC[/b], PHOTOS, [b]DATA[/b], [b]SHEETS[/b], Search field ([b]SEARCH[/b], [b]CLEAR[/b]), 15 items per page. [b]SEND[/b] button, or [b]PLAY TO THEM[/b] for a sound.
+[list]
+[*]SOUNDS: played by their phone's speaker, heard by players nearby.
+[*]MUSIC: your MP3s (My files) are copied into their Music app; server tracks are played by their speaker.
+[*]PHOTOS: copied into their Gallery.
+[*]DATA: your position (10-minute marker on their map), your route (Route app), a plan (Plan app).
+[*]SHEETS: SEEK sheets (terminal log) and SSE sheets (people registered at the SEEK).
+[/list]
+[*][b]Received by Bluetooth[/b]: the last 8 items of the mission, with sender, time and where they were stored; [b]VIEW[/b] shows a received data item or sheet.
+[*][b]Recent sends[/b]: each send with its state (accepted, received, declined, failed, out of range…).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]You and your teammate turn Bluetooth on, less than 15 m apart.
+[*]They tap SHOW MY CODE; you type their code then PAIR.
+[*]In Paired devices, tap SEND next to their name.
+[*]PHOTOS tab: SEND on the photo you want.
+[*]They accept: the photo lands in their Gallery after a few seconds.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Bluetooth range (m)[/b] (server, 5 to 100, default 15): maximum distance to pair, send items or share a camera.
+[*][b]COMSPEC › ATAK · Simulation › Range of sounds sent over Bluetooth (m)[/b] (server, 5 to 100, default 20): distance at which nearby players hear a sound played after a send.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Gallery, Music, Route, Plan, SEEK and SSE[/b]: sources and destinations of the items exchanged.
+[*][b]Live Feed[/b]: the share button can share a camera over Bluetooth, at the same range, with Bluetooth on at both ends.
+[*][b]Airplane mode[/b]: independent of Bluetooth.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]A transfer stops if either player leaves range; send it again.
+[*]A phone that is off, broken or unavailable has no active Bluetooth.
+[*]To send your own tracks, drop MP3s into Documents\Arma 3\COMSPEC_Music.
+[*]Photos go through the mod's link: without it, the PHOTOS tab says so.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

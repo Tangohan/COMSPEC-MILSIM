@@ -1,0 +1,107 @@
+[APP] Relief — champ de vision, heatmap d'altitude, ligne de vue et bâtiments en vue
+
+[i]Message 1/2[/i]
+[h1]Relief[/h1]
+[i]Catégorie : Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Lire le terrain avant de bouger : ce que vous voyez depuis votre position (et donc ce qui peut vous voir), les points qui vous dominent, si une visée vers un point est dégagée et quels bâtiments ont une vue sur vous. Les résultats se colorent sur l'app Carte.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*]Sortez le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie [b]Navigation[/b], app [b]Relief[/b] (pas dans le dock). Désinstallée : réinstallez-la depuis l'[b]App Store[/b].
+[*]Depuis la [b]Carte[/b] : clic droit > [b]Champ de vision ici[/b], ou sur un équipier > [b]Son champ de vision[/b] ; [b]OUTILS[/b] > [b]Ligne de vue[/b]. Le résultat est repris dans l'app.
+[/list]
+
+[h3]Fonctions[/h3]
+Quatre outils, choisis par les tuiles du haut ; la pastille [b]CALQUE CARTE : AFFICHÉ / MASQUÉ[/b] montre ou cache les résultats sur la carte.
+[list]
+[*][b]CHAMP DE VISION[/b] : grille de 41 × 41 cases autour de l'observateur, calculée en tâche de fond : vert = vu, rouge = caché par le relief, orange = caché par un bâtiment ou la végétation. Réglages : [b]Rayon[/b] 500 m, 1 km ou 2 km ; [b]Obstacles[/b] [b]RELIEF SEUL[/b] ou [b]+ BÂTIMENTS ET ARBRES[/b] (plus lent) ; [b]Hauteur d'œil[/b] [b]AUCUNE[/b], 10 m (toit), 50 m (mât), 150 m (drone) ; [b]Secteur[/b] 360°, 120° ou 60° dans la direction où regarde l'observateur. Boutons [b]CALCULER[/b], [b]EFFACER[/b], et [b]DEPUIS LE DRONE[/b] si un drone est appairé. Résultat : part de terrain vu et caché, dénivelé, point haut, [b]Vues par secteur[/b] (barres de N à NO), [b]VOIR SUR LA CARTE[/b], [b]POINT HAUT SUR LA CARTE[/b]. Si vous avez bougé depuis le calcul, l'app vous invite à le relancer.
+[*][b]HEATMAP[/b] : la même grille en couleurs d'altitude. [b]Couleurs[/b] : [b]ALTITUDE[/b] (du plus bas au plus haut, avec les altitudes de la légende) ou [b]PAR RAPPORT À MOI[/b] (de 40 m plus bas à 40 m plus haut que vous : ce qui vous domine). Résultat : mini, maxi, dénivelé, part du terrain plus haute que vous, carte du point haut avec grille, distance et direction.
+[*][b]LIGNE DE VUE[/b] : de vos yeux vers un point : grille de 4 à 10 chiffres puis [b]TRACER[/b], ou [b]SUR LA CARTE[/b] pour le toucher. Verdict [b]VUE DÉGAGÉE[/b] ou [b]VUE BLOQUÉE[/b] avec la nature de l'obstacle (terrain, bâtiment, végétation, véhicule) et sa distance, distance, azimut, dénivelé, grille de la cible et [b]Profil[/b] du terrain entre vous et la cible.
+[*][b]BÂTIMENTS VUS[/b] : bâtiments de plus de 4 m visibles depuis vos yeux, dans un [b]Rayon[/b] de 200 m, 500 m ou 1 km. [b]CHERCHER[/b] : vus en vert, cachés en rouge pâle sur la carte ; nombre vus et cachés, part vue, le plus proche, et la liste [b]Les plus proches[/b] (« vus depuis ici, donc d'où l'on peut me voir ») avec un bouton [b]CARTE[/b] pour chacun.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Arrivé sur une position, [b]Ctrl+Maj+U[/b] et ouvrez [b]Relief[/b].
+[*]Tuile [b]CHAMP DE VISION[/b] : [b]Rayon[/b] 1 km, [b]Obstacles[/b] [b]+ BÂTIMENTS ET ARBRES[/b], puis [b]CALCULER[/b].
+[*]Lisez les [b]Vues par secteur[/b] pour repérer les directions exposées, puis [b]VOIR SUR LA CARTE[/b].
+[*]Tuile [b]BÂTIMENTS VUS[/b] > [b]CHERCHER[/b] : les bâtiments qui ont une vue sur vous apparaissent en vert.
+[*]Pour vérifier un tir ou une observation, tuile [b]LIGNE DE VUE[/b], tapez la grille et [b]TRACER[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : calques [b]Champ de vision[/b] et [b]Altitudes (heatmap)[/b] (rubrique Relief des calques) ; observateur et secteur tracés ; clic droit [b]Champ de vision ici[/b] (observateur posé au sol), [b]Son champ de vision[/b] (depuis les yeux d'un équipier, dans sa direction), [b]Effacer le champ de vision[/b], [b]Effacer la ligne de vue[/b] ; l'outil [b]Ligne de vue[/b] de la carte fait le même calcul.
+[*][b]Drone[/b] : [b]DEPUIS LE DRONE[/b] calcule le champ de vision depuis la caméra du drone appairé.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le calcul prend quelques secondes selon le rayon, nettement plus avec [b]+ BÂTIMENTS ET ARBRES[/b] à 2 km.
+[*]Une case est « vue » si la ligne de l'œil vers le sol de la case plus 1,7 m (une tête) est libre : c'est une estimation, pas une garantie.
+[*]Allumer le calque Champ de vision sans calcul lance un calcul depuis votre position.
+[*]Les résultats restent sur votre téléphone, ils ne sont pas partagés.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions publiques ; refaite en 1.45.0 (champ de vision, heatmap, ligne de vue, bâtiments vus).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h1]Terrain[/h1]
+[i]Category: Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Read the ground before moving: what you can see from your position (and so what can see you), the points that overlook you, whether a sight line to a point is clear and which buildings have a view on you. Results are coloured on the Map app.
+
+[h3]How to open it[/h3]
+[list]
+[*]Take out the phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, [b]Navigation[/b] category, [b]Terrain[/b] app (not in the dock). Uninstalled: reinstall it from the [b]App Store[/b].
+[*]From the [b]Map[/b]: right click > [b]Field of view here[/b], or on a teammate > [b]Their field of view[/b]; [b]TOOLS[/b] > [b]Line of sight[/b]. The result is picked up in the app.
+[/list]
+
+[h3]Features[/h3]
+Four tools, chosen with the tiles at the top; the [b]MAP LAYER: SHOWN / HIDDEN[/b] chip shows or hides the results on the map.
+[list]
+[*][b]FIELD OF VIEW[/b]: a 41 × 41 grid around the observer, computed in the background: green = seen, red = hidden by terrain, orange = hidden by a building or vegetation. Settings: [b]Radius[/b] 500 m, 1 km or 2 km; [b]Obstacles[/b] [b]TERRAIN ONLY[/b] or [b]+ BUILDINGS AND TREES[/b] (slower); [b]Eye height[/b] [b]NONE[/b], 10 m (roof), 50 m (mast), 150 m (drone); [b]Sector[/b] 360°, 120° or 60° in the direction the observer is looking. Buttons [b]CALCULATE[/b], [b]CLEAR[/b], and [b]FROM THE DRONE[/b] when a drone is paired. Result: share of ground seen and hidden, elevation range, high point, [b]Views by sector[/b] (bars from N to NW), [b]SHOW ON MAP[/b], [b]HIGH POINT ON MAP[/b]. If you have moved since the calculation, the app asks you to run it again.
+[*][b]HEATMAP[/b]: the same grid in elevation colours. [b]Colours[/b]: ALTITUDE (lowest to highest, with the elevations in the legend) or [b]RELATIVE TO ME[/b] (from 40 m below to 40 m above you: what overlooks you). Result: min, max, elevation range, share of ground higher than you, high point card with grid, distance and direction.
+[*][b]LINE OF SIGHT[/b]: from your eyes to a point: 4 to 10-digit grid then [b]DRAW[/b], or [b]ON THE MAP[/b] to touch it. Verdict [b]CLEAR VIEW[/b] or [b]VIEW BLOCKED[/b] with the kind of obstacle (terrain, building, vegetation, vehicle) and its distance, distance, bearing, elevation difference, target grid and terrain [b]Profile[/b] between you and the target.
+[*][b]BUILDINGS IN SIGHT[/b]: buildings over 4 m visible from your eyes, within a [b]Radius[/b] of 200 m, 500 m or 1 km. [b]SEARCH[/b]: seen in green, hidden in pale red on the map; number seen and hidden, share seen, the nearest one, and the [b]Nearest[/b] list ("seen from here, so where I can be seen from") with a map button for each.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Once on a position, [b]Ctrl+Shift+U[/b] and open [b]Terrain[/b].
+[*][b]FIELD OF VIEW[/b] tile: [b]Radius[/b] 1 km, [b]Obstacles[/b] [b]+ BUILDINGS AND TREES[/b], then [b]CALCULATE[/b].
+[*]Read [b]Views by sector[/b] to spot the exposed directions, then [b]SHOW ON MAP[/b].
+[*][b]BUILDINGS IN SIGHT[/b] tile > [b]SEARCH[/b]: buildings with a view on you show in green.
+[*]To check a shot or an observation, [b]LINE OF SIGHT[/b] tile, type the grid and [b]DRAW[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: [b]Field of view[/b] and [b]Elevations (heatmap)[/b] layers (Terrain section of the layers); observer and sector drawn; right click [b]Field of view here[/b] (observer on the ground), [b]Their field of view[/b] (from a teammate's eyes, in their direction), [b]Clear field of view[/b], [b]Clear line of sight[/b]; the map's [b]Line of sight[/b] tool runs the same calculation.
+[*][b]Drone[/b]: [b]FROM THE DRONE[/b] computes the field of view from the paired drone's camera.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The calculation takes a few seconds depending on the radius, much longer with [b]+ BUILDINGS AND TREES[/b] at 2 km.
+[*]A square counts as "seen" if the line from the eye to the square's ground plus 1.7 m (a head) is free: an estimate, not a guarantee.
+[*]Switching on the Field of view layer with nothing computed starts a calculation from your position.
+[*]Results stay on your phone; they are not shared.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first public versions; rebuilt in 1.45.0 (field of view, heatmap, line of sight, buildings in sight).

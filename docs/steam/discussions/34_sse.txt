@@ -1,0 +1,109 @@
+[APP] SSE — console d'exploitation de site : sujet visé, dossier d'équipe, terminal SEEK, fiches rapides
+
+[i]Message 1/2[/i]
+[h1]SSE[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Console d'analyste pour l'exploitation de site (SSE, Sensitive Site Exploitation) : voir d'un coup d'œil le sujet que vous contrôlez, ce que votre groupe sait déjà de lui, le dossier d'opération en cours et les interrogations faites par l'équipe, puis ouvrir le bon module du terminal SEEK ou rédiger une fiche de renseignement préremplie.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Tinder y mène aussi par le bouton [b]CONTRÔLE SSE[/b] d'un profil.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Bandeau[/b] : dossier actif (ou NON CLASSÉ), carroyage, heure, état du terminal ([b]SEEK PRÊT[/b] / [b]SEEK ABSENT[/b]) et du verrou sur un sujet ([b]CIBLE ACQUISE[/b] / [b]AUCUNE CIBLE[/b]).
+[*][b]Indicateurs[/b] : nombre d'[b]INTERROGATIONS[/b], concordances [b]CONFIRMÉES[/b] et [b]POSSIBLES[/b], [b]ENTITÉS[/b] distinctes.
+[*][b]Entité active[/b] : le sujet que vous regardez (une personne à moins de 6 m, vivante ou non), avec [b]VISAGE[/b] (cliché et qualité), [b]CAPTURE[/b] (tête découverte ou sac sur la tête), [b]ANTÉCÉDENTS[/b] (déjà interrogé, résultat et confiance) et [b]DOSSIER[/b]. Les actions de vos équipiers sur ce même sujet s'affichent dessous.
+[*][b]Boutons du sujet[/b] : [b]PHOTO DU VISAGE[/b] (cliché de face joint à sa fiche SEEK, sujet à 4 m au plus, téléphone rangé le temps du cliché), [b]FICHE SUJET[/b] et [b]BIOMÉTRIE[/b] (ouvrent le terminal SEEK sur la page correspondante).
+[*][b]Graphe de liens[/b] : dossier → sujet en vue → personnes déjà interrogées par le groupe.
+[*][b]Dossier de l'opération[/b] : saisissez la référence et appuyez sur [b]UTILISER CE DOSSIER[/b] : elle est transmise à toute votre équipe. [b]NE PLUS CLASSER[/b] l'efface.
+[*][b]Production · fiches rapides[/b] : [b]CRÉER UNE FICHE FRM[/b], [b]CONTACT (FRC)[/b], [b]OBSERVATION (FRO)[/b], [b]TECHNIQUE (FRT)[/b]. La fiche s'ouvre dans l'app FRS / FRM, rattachée au dossier actif et, si un sujet est visé, avec une première ligne (nom, état, heure, carroyage) et le thème Personnes / Cibles. Un brouillon déjà rédigé est gardé (seuls le type et le dossier changent).
+[*][b]Terminal SEEK[/b] : [b]OUVRIR LE TERMINAL SEEK[/b] et accès direct aux modules [b]01 SUJET[/b], [b]03 BIOMÉTRIE[/b], [b]04 CONSTAT[/b], [b]05 PHOTO[/b], [b]06 DOSSIER[/b], [b]07 TERRAIN[/b]. Le téléphone se range pour laisser la souris au terminal.
+[*][b]Chronologie · interrogations[/b] : interrogations du groupe, la plus récente en haut (qui, alias, résultat, confiance, carroyage, référence).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Le chef d'élément saisit la référence du dossier et appuie sur [b]UTILISER CE DOSSIER[/b].
+[*]Face à un suspect (à moins de 6 m), ouvrez SSE : le bandeau passe à [b]CIBLE ACQUISE[/b].
+[*]Appuyez sur [b]PHOTO DU VISAGE[/b], puis [b]BIOMÉTRIE[/b] pour relever ses données et interroger la base depuis le terminal SEEK.
+[*]Revenez dans SSE : l'interrogation apparaît dans la chronologie et les indicateurs.
+[*]Appuyez sur [b]CONTACT (FRC)[/b] pour rédiger la fiche, déjà rattachée au dossier, et envoyez-la depuis FRS / FRM.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié dans les réglages de l'ATAK. L'obligation de porter le terminal SEEK relève du réglage du pack SSE de COMSPEC.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]FRS / FRM[/b] : les fiches rapides s'y ouvrent ; le dossier actif y est repris.
+[*][b]Galerie, Drone[/b] : la bascule SSE d'un cliché du drone utilise le dossier actif.
+[*][b]Terminal SEEK[/b] : les modules s'ouvrent sur le sujet visé. Le module SSE de COMSPEC Overwatch doit être chargé ; sinon l'app affiche « Module indisponible ».
+[*][b]Tinder[/b] : CONTRÔLE SSE ouvre l'app.
+[*][b]Mod COMSPEC SSE (séparé)[/b] : s'il est chargé, il ajoute au téléphone l'app [b]SSE terrain[/b] (même catégorie), avec les onglets [b]CIBLE[/b] (entité visée, personne ou objet : état, exploitation, scellé, photos, documents, SEEK II, branchement du câble DL-7, transmission à Athena, fiche FRS), [b]SITE[/b] (avancement des étapes : photos en place, fouille, biométrie, numérique, scellés, transmission, avec feu vert d'exfiltration), [b]SCELLÉS[/b] (pièces détenues, registre) et [b]JOURNAL[/b]. Les photos prises avec l'app Photo comptent alors comme photos de preuve des pièces cadrées.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Le sujet doit être une personne regardée à moins de 6 m (4 m pour la photo du visage).
+[*]Le dossier partagé demande COMSPEC Link ; sans lui, un message le signale.
+[*]Sans terminal SEEK sur vous, les boutons du terminal sont grisés et l'app vous invite à le récupérer dans votre équipement.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente dès les premières versions de l'ATAK natif (citée en 1.6.1, octobre 2026, avec la photo du visage) ; fiches rapides ajoutées en 1.11.0.
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Analyst console for Sensitive Site Exploitation (SSE): see at a glance the subject you are checking, what your group already knows about them, the current operation case file and the queries made by the team, then open the right SEEK terminal module or write a pre-filled intelligence report.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it. Tinder also leads there through a profile's SSE check button.
+
+[h3]Features[/h3]
+[list]
+[*][b]Banner[/b]: active case file (or UNFILED), grid, time, terminal status ([b]SEEK READY[/b] / [b]SEEK MISSING[/b]) and lock on a subject ([b]TARGET ACQUIRED[/b] / [b]NO TARGET[/b]).
+[*][b]Indicators[/b]: number of [b]QUERIES[/b], [b]CONFIRMED[/b] and [b]POSSIBLE[/b] matches, distinct [b]ENTITIES[/b].
+[*][b]Active entity[/b]: the subject you are looking at (a person within 6 m, alive or not), with [b]FACE[/b] (photo and quality), capture state (head uncovered or bagged), [b]RECORD[/b] (already queried, result and confidence) and [b]FILE[/b]. Your teammates' actions on the same subject are shown below.
+[*][b]Subject buttons[/b]: [b]FACE PHOTO[/b] (front shot attached to their SEEK record, subject within 4 m, phone put away during the shot), [b]SUBJECT RECORD[/b] and [b]BIOMETRICS[/b] (open the SEEK terminal on the matching page).
+[*][b]Link graph[/b]: case file → subject in view → people already queried by the group.
+[*][b]Operation file[/b]: type the reference and press [b]USE THIS FILE[/b]: it is sent to your whole team. [b]STOP FILING[/b] clears it.
+[*][b]Quick reports[/b]: [b]CREATE AN FRM FORM[/b], contact (FRC), observation (FRO), [b]TECHNICAL (FRT)[/b]. The report opens in the FRS / FRM app, linked to the active case file and, if a subject is targeted, with a first line (name, state, time, grid) and the Persons / Targets topic. A draft already written is kept (only type and case file change).
+[*][b]SEEK terminal[/b]: [b]OPEN SEEK TERMINAL[/b] and direct access to the modules [b]01 SUBJECT[/b], [b]03 BIOMETRICS[/b], [b]04 FINDINGS[/b], 05 PHOTO, [b]06 CASE[/b], [b]07 FIELD[/b]. The phone is put away to leave the mouse to the terminal.
+[*][b]Query timeline[/b]: the group's queries, newest at the top (who, alias, result, confidence, grid, reference).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]The element leader types the case reference and presses [b]USE THIS FILE[/b].
+[*]Facing a suspect (within 6 m), open SSE: the banner switches to [b]TARGET ACQUIRED[/b].
+[*]Press [b]FACE PHOTO[/b], then [b]BIOMETRICS[/b] to take their data and query the database from the SEEK terminal.
+[*]Come back to SSE: the query appears in the timeline and the indicators.
+[*]Press the contact (FRC) button to write the report, already linked to the case file, and send it from FRS / FRM.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting in the ATAK settings. Whether the SEEK terminal must be carried depends on the setting of COMSPEC's SSE pack.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]FRS / FRM[/b]: quick reports open there; the active case file is carried over.
+[*][b]Gallery, Drone[/b]: the SSE switch of a drone shot uses the active case file.
+[*][b]SEEK terminal[/b]: modules open on the targeted subject. COMSPEC Overwatch's SSE module must be loaded; otherwise the app shows "Module unavailable".
+[*][b]Tinder[/b]: the SSE check button opens the app.
+[*][b]COMSPEC SSE mod (separate)[/b]: if loaded, it adds the [b]SSE field[/b] app to the phone (same category), with the tabs TARGET (targeted entity, person or object: state, exploitation, seal, photos, documents, SEEK II, DL-7 cable hookup, transmission to Athena, FRS report), SITE (progress of the steps: photos in place, search, biometrics, digital, seals, transmission, with an exfiltration green light), SEALS (items held, register) and LOG. Photos taken with the Photo app then count as evidence photos of the framed items.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The subject must be a person you look at within 6 m (4 m for the face photo).
+[*]The shared case file requires COMSPEC Link; without it, a message says so.
+[*]Without a SEEK terminal on you, the terminal buttons are greyed out and the app asks you to get it from your gear.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (mentioned in 1.6.1, October 2026, with the face photo); quick reports added in 1.11.0.

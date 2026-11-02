@@ -1,0 +1,118 @@
+[APP] Tinder — rencontres entre joueurs pour rire, et derrière, une vraie chasse aux HVT avec tuyaux d'informateurs
+
+[i]Message 1/2[/i]
+[h1]Tinder[/h1]
+[i]Catégorie : Civil · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+En façade, une app de rencontre entre joueurs : on swipe, on like, on matche, pour rire. Derrière, une chasse aux HVT : des informateurs « likent » pour vous envoyer des tuyaux, vrais ou faux, sur les cibles de la carte. Vous les confirmez ou les rejetez, et chaque cible a un dossier qui estime sa position, jusqu'au JACKPOT quand elle est tuée ou capturée.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Civil : Tinder (pas dans le dock par défaut).
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle. App civile : le serveur peut la retirer de tous les téléphones.
+[/list]
+
+[h3]Fonctions[/h3]
+Barre du bas : SWIPE, LIKES, DOSSIERS, MESSAGES, PROFIL ; une pastille rouge signale ce qui est à traiter.
+[list]
+[*][b]SWIPE[/b] : une carte par profil. Grande photo du vrai visage de la personne, rendu en direct (portrait opérateur Athena en premier s'il existe), trois photos (portrait, buste, en pied : toucher la gauche ou la droite de l'image), prénom, âge, distance, grade, rôle et groupe, bio, centres d'intérêt, compatibilité, mention « vous a liké ». [b]PASSER[/b], [b]SUPER LIKE[/b] (un toutes les 10 min, la personne sait que c'est vous), [b]J'AIME[/b] (match si c'est réciproque, notifié des deux côtés). Plus personne : [b]REVOIR LES PROFILS PASSÉS[/b].
+[*][b]Profils particuliers[/b] : de temps en temps, une IA de la carte à moins de 5 km, HVT ou personne SSE, glisse entre deux joueurs. Rien ne la signale : à vous de reconnaître le visage. Un match ouvre une conversation qui donne un indice (lieu-dit, carroyage approximatif, heure) ; [b]OÙ ES-TU ?[/b] (une réponse toutes les 3 min), [b]MARQUER SUR LA CARTE[/b] (zone rose approximative). Un HVT méfiant donne parfois un faux rendez-vous, piège à 1 ou 2 km : ses réponses entrent dans son dossier comme tuyau « Contact direct ».
+[*][b]LIKES[/b] : les tuyaux, en grille floue tant qu'ils ne sont pas traités ([b]NOUVEAUX[/b] / [b]TOUS[/b]). Chacun porte une cotation OTAN : fiabilité de la source de A à F (F tant qu'on ne la connaît pas), crédibilité de 1 à 6 (1 = recoupé). Ouvert : texte, cible, cotation, zone (grille ± m), âge du tuyau, « Partagé par » ; [b]REJETER[/b], [b]SUR LA CARTE[/b], [b]CONFIRMER[/b], [b]DOSSIER[/b]. Un faux tuyau confirmé fausse la position.
+[*][b]DOSSIERS[/b] : une fiche par cible, étapes FIND, FIX, FINISH, EXPLOIT. Position estimée (grille et distance), incertitude, confiance, sources qui se recoupent, tuyaux contradictoires, activité du téléphone de la cible. Deux sources différentes qui se recoupent font un MATCH (étape FIX). [b]MARQUER[/b], [b]PARTAGER[/b] (tuyaux confirmés et frais envoyés aux joueurs de votre groupe), [b]SALUTE[/b] (compte rendu prérempli), [b]CONTRÔLE SSE[/b]. [b]JACKPOT[/b] (cible tuée ou capturée) : vérité de chaque tuyau, vos décisions justes, sources recotées.
+[*][b]MESSAGES[/b] : nouveaux matchs (dont la case LIKES), puis conversations, « [ À TON TOUR ] » d'abord : sources ([b]PLUS DE DÉTAILS ?[/b], une relance toutes les 5 min : une source honnête précise, une source qui ment continue de mentir), profils IA, joueurs matchés ([b]SMS[/b] ouvre Messages).
+[*][b]PROFIL[/b] : votre carte, bio ([b]CHANGER DE BIO[/b]), bascule [b]Apparaître sur Tinder[/b], likes reçus, matchs, et bilan de la chasse (tuyaux reçus, confirmés, informateurs, jackpots, décisions justes).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Notification « Tinder : X vous a liké (tuyau sur …) » : ouvrez [b]LIKES[/b] et le tuyau.
+[*]Source cotée C-3, zone ± 400 m : [b]SUR LA CARTE[/b] pour comparer avec ce que vous savez, puis [b]CONFIRMER[/b] ou [b]REJETER[/b].
+[*]Une deuxième source recoupe : le dossier passe en FIX, avec une position et une incertitude.
+[*][b]PARTAGER[/b] au groupe, [b]SALUTE[/b] au chef, puis allez au contact. Cible capturée : JACKPOT, puis [b]CONTRÔLE SSE[/b] pour l'exploitation.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Apps civiles[/b] (serveur) : retire UberEats et Tinder.
+[*][b]ATAK · Simulation › Tinder : profils HVT et SSE[/b] (serveur) : Jamais, Rarement (1 profil sur 10), Parfois (1 sur 4), Souvent (1 sur 2).
+[*][b]ATAK · Tinder : chasse aux HVT[/b] (serveur) : [b]Tinder : tuyaux sur les HVT[/b] (fréquence ; Jamais = ni tuyaux ni dossiers), [b]Part de faux tuyaux[/b], [b]Péremption d'un tuyau (min)[/b] (45 par défaut), [b]Dérive de la cible (m/s)[/b], [b]Faux rendez-vous d'un HVT matché (%)[/b] (25 par défaut), [b]Les civils font parler[/b], [b]Partage des tuyaux au groupe[/b].
+[*][b]ATAK · Photo › Photos de profil sur fond noir[/b] (joueur) : studio noir, ou la personne en direct dans son décor.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus / Eden[/b] : le module « Tinder : profil HVT / SSE » désigne une IA comme HVT ou SSE et peut régler, pour elle seule, tuyaux, part de faux tuyaux et faux rendez-vous.
+[*][b]COMSPEC SSE[/b] : une IA fouillable devient profil SSE, une personne au profil « Chef / HVT » devient HVT.
+[*][b]ACE[/b] : un HVT menotté ou rendu compte comme capturé.
+[*][b]Carte, SALUTE, Messages[/b] : marquages, compte rendu prérempli, SMS aux joueurs matchés.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Plus il y a de civils autour de vous, plus les informateurs parlent (si le réglage est coché).
+[*]Un tuyau est périmé après le délai réglé, et sa zone grossit avec le temps : la cible bouge.
+[*]Tuyaux et dossiers restent sur votre téléphone ; seul PARTAGER les envoie au groupe.
+[/list]
+
+[h3]Version d'introduction[/h3]
+App présente depuis les premières versions de l'ATAK natif (1.x) ; chasse aux HVT ajoutée en 2.5.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Up front, a dating app between players: swipe, like, match, for fun. Behind it, an HVT hunt: informants "like" you to send tips, true or false, about the targets on the map. You confirm or dismiss them, and each target gets a file that estimates its position, until the JACKPOT when it is killed or captured.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, Civilian category: Tinder (not in the dock by default).
+[*]If you uninstalled it, the App Store reinstalls it. Civilian app: the server can remove it from every phone.
+[/list]
+
+[h3]Features[/h3]
+Bottom bar: SWIPE, LIKES, FILES, MESSAGES, PROFILE; a red badge flags what needs attention.
+[list]
+[*][b]SWIPE[/b]: one card per profile. Large photo of the person's real face, rendered live (Athena operator portrait first if there is one), three photos (portrait, bust, full length: tap the left or right of the picture), first name, age, distance, rank, role and group, bio, interests, compatibility, "liked you" mention. [b]SKIP[/b], [b]SUPER LIKE[/b] (one every 10 min, the person knows it is you), [b]LIKE[/b] (match if mutual, notified on both sides). Nobody left: [b]REVIEW PASSED PROFILES[/b].
+[*][b]Special profiles[/b]: now and then, an AI on the map within 5 km, HVT or SSE person, slips in between two players. Nothing flags it: recognise the face yourself. A match opens a conversation that gives a clue (nearest place, rough grid, time); [b]WHERE ARE YOU?[/b] (one answer every 3 min), [b]MARK ON MAP[/b] (rough pink area). A wary HVT sometimes gives a fake meeting point, a trap 1 or 2 km away: its answers go into its file as a "Direct contact" tip.
+[*][b]LIKES[/b]: the tips, in a blurred grid until handled ([b]NEW[/b] / [b]ALL[/b]). Each carries a NATO rating: source reliability A to F (F until the source is known), credibility 1 to 6 (1 = corroborated). Opened: text, target, rating, area (grid ± m), age of the tip, "Shared by"; [b]DISMISS[/b], [b]ON THE MAP[/b], [b]CONFIRM[/b], [b]FILE[/b]. A confirmed false tip skews the position.
+[*][b]FILES[/b]: one sheet per target, steps FIND, FIX, FINISH, EXPLOIT. Estimated position (grid and distance), uncertainty, confidence, corroborating sources, conflicting tips, target's phone activity. Two different sources that corroborate make a MATCH (FIX step). [b]MARK[/b], [b]SHARE[/b] (confirmed, fresh tips sent to the players of your group), [b]SALUTE[/b] (prefilled report), [b]SSE CHECK[/b]. [b]JACKPOT[/b] (target killed or captured): truth of every tip, your right calls, sources re-rated.
+[*][b]MESSAGES[/b]: new matches (including the LIKES tile), then conversations, "[ YOUR MOVE ]" first: sources ([b]MORE DETAILS?[/b], one follow-up every 5 min: an honest source gets more precise, a lying source keeps lying), AI profiles, matched players ([b]SMS[/b] opens Messages).
+[*][b]PROFILE[/b]: your card, bio ([b]CHANGE BIO[/b]), [b]Appear on Tinder[/b] switch, likes received, matches, and your hunt record (tips received, confirmed, informants, jackpots, right calls).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Notification "Tinder: X liked you (tip on …)": open [b]LIKES[/b] and the tip.
+[*]Source rated C-3, area ± 400 m: [b]ON THE MAP[/b] to compare with what you know, then [b]CONFIRM[/b] or [b]DISMISS[/b].
+[*]A second source corroborates: the file moves to FIX, with a position and an uncertainty.
+[*][b]SHARE[/b] with the group, [b]SALUTE[/b] to the leader, then move in. Target captured: JACKPOT, then [b]SSE CHECK[/b] for exploitation.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Civilian apps[/b] (server): removes UberEats and Tinder.
+[*][b]ATAK · Simulation › Tinder: HVT and SSE profiles[/b] (server): Never, Rare (1 profile in 10), Sometimes (1 in 4), Often (1 in 2).
+[*][b]ATAK · Tinder: HVT hunt[/b] (server): [b]Tinder: HVT tips[/b] (frequency; Never = no tips and no files), [b]Share of false tips[/b], [b]Tip shelf life (min)[/b] (default 45), [b]Target drift (m/s)[/b], [b]Fake meeting point from a matched HVT (%)[/b] (default 25), [b]Civilians talk[/b], [b]Share tips with the squad[/b].
+[*][b]ATAK · Photo › Profile photos on a black background[/b] (player): black studio, or the person live in their surroundings.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus / Eden[/b]: the "Tinder: HVT / SSE profile" module makes an AI an HVT or SSE profile and can set, for that AI only, tips, share of false tips and fake meeting points.
+[*][b]COMSPEC SSE[/b]: a searchable AI becomes an SSE profile, a person with the "Leader / HVT" profile becomes an HVT.
+[*][b]ACE[/b]: a handcuffed or surrendered HVT counts as captured.
+[*][b]Map, SALUTE, Messages[/b]: markers, prefilled report, SMS to matched players.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The more civilians around you, the more informants talk (if the setting is ticked).
+[*]A tip goes stale after the set delay, and its area grows over time: the target moves.
+[*]Tips and files stay on your phone; only SHARE sends them to the group.
+[/list]
+
+[h3]Introduced in[/h3]
+App present since the first native ATAK versions (1.x); HVT hunt added in 2.5.0.

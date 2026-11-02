@@ -1,0 +1,99 @@
+[APP] C2 — tableau de commande : alliés, contacts, ordres à traiter et liaisons perdues
+
+[h1]C2[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Un tableau de commande lisible d'un coup d'œil pour le chef : combien d'alliés sont suivis, combien de contacts sont signalés, combien d'ordres restent à traiter et combien de liaisons sont perdues, puis l'état de votre groupe, les contacts les plus proches et les derniers ordres. Les raccourcis mènent à la carte, au BFT et aux tâches.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Bandeau[/b] : nom de votre groupe, chef, heure et carte de la mission.
+[*][b]Tuiles[/b] : [b]alliés[/b] (pistes amies suivies), [b]contacts[/b] (pistes ennemies signalées, en rouge s'il y en a), [b]ordres à traiter[/b] (en orange s'il y en a), [b]liaisons perdues[/b] (alliés perdus ou hors ligne, en rouge).
+[*][b]Raccourcis[/b] : [b]CARTE[/b], [b]BFT[/b], [b]TÂCHES[/b].
+[*][b]Mon groupe[/b] : jusqu'à 12 membres, le chef marqué d'une étoile, avec leur état (valide, blessé, inconscient, mort), distance et direction.
+[*][b]Mon indicatif[/b] : le même champ que dans l'app Groupe ([b]ENREGISTRER[/b], [b]REVENIR À CELUI D'ATHENA[/b]).
+[*][b]Contacts[/b] : les cinq contacts les plus proches, avec distance, gisement en degrés et en points cardinaux, et fraîcheur (direct, retardé, perdu).
+[*][b]Ordres en cours[/b] : les quatre premiers ordres non terminés, type, émetteur et cible ; les ordres prioritaires en rouge.
+[*][b]NOUVEL ORDRE[/b] : ouvre la rédaction d'un ordre dans l'app Tâches, si vous avez le droit d'en émettre (opérateur d'un PC de TOC, chef de groupe, joueur seul, rôle de chef ou de commandant).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]À l'arrêt, ouvrez C2 : la tuile « liaisons perdues » indique 1.
+[*]Touchez [b]BFT[/b], filtre PERDUS, pour trouver qui a décroché.
+[*]Revenez à C2 : la section Contacts donne le contact le plus proche et son gisement.
+[*]Touchez [b]NOUVEL ORDRE[/b] pour donner la consigne au groupe.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié. Les pistes et leur fraîcheur suivent les réglages du BFT (COMSPEC › ATAK · Simulation › Positions BFT par points (PLI)).
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte, BFT, Tâches[/b] : raccourcis directs.
+[*][b]Athena[/b] : pistes, contacts et ordres reçus du site sont comptés ; avec Athena, le droit d'émettre un ordre suit les règles du site.
+[*][b]Poste TOC[/b] : l'opérateur assis à un PC de TOC peut émettre des ordres.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]C2 est un résumé : pour agir sur une piste, passez par BFT ; pour lire un ordre en entier, par Tâches.
+[*]Si l'état médical des alliés est masqué dans les réglages du téléphone, seul le décès est affiché.
+[*]Sans droit d'émettre, le bouton NOUVEL ORDRE n'apparaît pas.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+A command board readable at a glance for the leader: how many allies are tracked, how many contacts are reported, how many orders are still open and how many links are lost, then your group's state, the nearest contacts and the latest orders. Shortcuts lead to the map, the BFT and the tasks.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Banner[/b]: your group's name, leader, time and mission map.
+[*][b]Tiles[/b]: [b]allies[/b] (friendly tracks followed), [b]contacts[/b] (reported enemy tracks, red if any), [b]orders to handle[/b] (orange if any), [b]lost links[/b] (lost or offline allies, red).
+[*][b]Shortcuts[/b]: [b]MAP[/b], [b]BFT[/b], [b]TASKS[/b].
+[*][b]My group[/b]: up to 12 members, the leader marked with a star, with their state (fit, wounded, unconscious, dead), distance and direction.
+[*][b]My callsign[/b]: the same field as in the Squad (Group) app ([b]SAVE[/b], [b]BACK TO THE ATHENA ONE[/b]).
+[*][b]Contacts[/b]: the five nearest contacts, with distance, bearing in degrees and compass points, and freshness (direct, delayed, lost).
+[*][b]Active orders[/b]: the first four unfinished orders, type, issuer and target; priority orders in red.
+[*][b]NEW ORDER[/b]: opens order writing in the Tasks app, if you are allowed to issue orders (operator at a TOC laptop, group leader, player alone, leader or commander role).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]At a halt, open C2: the "lost links" tile shows 1.
+[*]Tap [b]BFT[/b], LOST filter, to find who dropped out.
+[*]Back in C2, the Contacts section gives the nearest contact and its bearing.
+[*]Tap [b]NEW ORDER[/b] to give the group its instruction.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting. Tracks and their freshness follow the BFT settings (COMSPEC › ATAK · Simulation › BFT positions by reports (PLI)).
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map, BFT, Tasks[/b]: direct shortcuts.
+[*][b]Athena[/b]: tracks, contacts and orders received from the website are counted; with Athena, the right to issue an order follows the website's rules.
+[*][b]TOC post[/b]: the operator seated at a TOC laptop can issue orders.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]C2 is a summary: to act on a track, use BFT; to read a full order, use Tasks.
+[*]If allies' medical state is hidden in the phone settings, only death is shown.
+[*]Without the right to issue orders, the NEW ORDER button does not appear.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).
