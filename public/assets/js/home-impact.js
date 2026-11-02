@@ -1033,3 +1033,38 @@
     }, { threshold: 0.2 });
     io.observe(section);
 })();
+
+/* Communautés : filtres (recrutement, langue) sur les cartes affichées. Sans JavaScript, toutes les cartes restent visibles. */
+(function homeUnitsFilter() {
+    var section = document.querySelector('[data-hu]');
+    if (!section) return;
+    var bar = section.querySelector('[data-hu-filters]');
+    if (!bar) return;
+    var items = section.querySelectorAll('[data-hu-rec]');
+    var none = section.querySelector('[data-hu-none]');
+    bar.hidden = false;
+    bar.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-hu-filter]');
+        if (!b) return;
+        var f = b.getAttribute('data-hu-filter');
+        var shown = 0;
+        Array.prototype.forEach.call(bar.querySelectorAll('[data-hu-filter]'), function (x) {
+            var on = x === b;
+            x.classList.toggle('is-on', on);
+            x.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        Array.prototype.forEach.call(items, function (li) {
+            var ok = f === ''
+                || (f === 'rec' && li.getAttribute('data-hu-rec') === '1')
+                || (f.indexOf('lang:') === 0 && li.getAttribute('data-hu-lang') === f.slice(5));
+            li.hidden = !ok;
+            if (ok) shown++;
+        });
+        Array.prototype.forEach.call(section.querySelectorAll('.hu-feat'), function (ul) {
+            var visible = ul.querySelectorAll('li:not([hidden])').length;
+            ul.hidden = visible === 0;
+            ul.classList.toggle('is-single', visible === 1);
+        });
+        if (none) none.hidden = shown > 0;
+    });
+})();

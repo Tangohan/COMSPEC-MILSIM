@@ -53,8 +53,10 @@ final class HomePublicPageTest extends TestCase
         // Aucun chiffre inventé : ni bloc de chiffres ni compteur quand tout vaut zéro.
         self::assertStringNotContainsString('data-hp-figures', $body);
         self::assertStringNotContainsString('data-hp-count', $body);
-        self::assertStringContainsString('Ils opèrent déjà sur Athena', $body);
-        self::assertStringContainsString('hp-empty', $body);
+        self::assertStringContainsString('Ils opèrent déjà <span>sur Athena.</span>', $body);
+        self::assertStringContainsString('hu-empty', $body);
+        // Aucune carte inventée : seule la carte « Votre unité ici » reste.
+        self::assertStringNotContainsString('class="hu-card"', $body);
         $this->assertSeo($body);
     }
 
@@ -78,10 +80,10 @@ final class HomePublicPageTest extends TestCase
         self::assertStringNotContainsString('Heures de vol', $body);
         self::assertStringNotContainsString('pilot@example.test', $body);
 
-        self::assertStringContainsString('class="hp-card hp-card--featured"', $body);
+        self::assertStringContainsString('class="hu-fcard"', $body);
         self::assertStringContainsString('--u-accent:#d97706', $body);
         self::assertStringContainsString('Recrute', $body);
-        self::assertStringContainsString('Arma 3, FR', $body);
+        self::assertStringContainsString('<span class="hu-tag" translate="no">Arma 3</span><span class="hu-tag">FR</span>', $body);
         $this->assertSeo($body);
     }
 
