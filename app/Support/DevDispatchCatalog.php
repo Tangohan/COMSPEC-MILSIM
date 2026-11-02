@@ -294,7 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1331, '2026-11-02', 'Liens d’invitation : suppression et page aux couleurs du site', 'Un lien d’invitation se supprime désormais depuis la liste ou sa fiche, après confirmation : il cesse de fonctionner, ses statistiques sont effacées et il libère la place dans la limite de liens actifs ; les candidatures et adhésions déjà faites restent intactes. La page ouverte par le lien (athena-comspec.eu/public/i/…) reprend la barre de navigation et le pied de page de l’accueil du site.', [
+            $pr(1333, '2026-11-02', 'Sessions & connexions ATAK : la fonction actuelle remplace l’ancien rôle', 'La page ATAK › Sessions & connexions affichait encore, dans sa colonne « Rôle », le rôle envoyé par le jeu (rôle personnalisé, description du slot ou équipe de feu) au lieu de la fonction tenue sur le site. Chaque opérateur montre désormais son indicatif, puis le membre lié (Prénom N. et trigramme), son grade, la fonction qui lui est attribuée et son unité d’affectation dans l’organigramme. Le rôle choisi en jeu n’apparaît plus qu’à part, sous la mention « Déclaré en jeu », et seulement s’il diffère de la fonction, avec une pastille « Écart ». Les membres masqués ou anonymisés restent sans nom ni lien.', [
+                'Filtres par unité (unités subordonnées comprises) et par fonction',
+                'Colonnes Grade, Fonction · affectation et Version du mod ; « Dernière remontée » remplace « Dernière MAJ »',
+                'Export CSV : membre, trigramme, grade, fonction, unité d’affectation, rôle déclaré en jeu et version du mod',
+            ], [
+                'Fiche opérateur ATAK : fonction, grade, unité d’affectation et rôle déclaré en jeu dans le bloc Identité réseau',
+            ], [
+                'Le rôle remonté du jeu n’est plus présenté comme la fonction de l’opérateur',
+            ], ['atak'], [], 'Portail Athena'),
+
+            $pr(1331,'2026-11-02', 'Liens d’invitation : suppression et page aux couleurs du site', 'Un lien d’invitation se supprime désormais depuis la liste ou sa fiche, après confirmation : il cesse de fonctionner, ses statistiques sont effacées et il libère la place dans la limite de liens actifs ; les candidatures et adhésions déjà faites restent intactes. La page ouverte par le lien (athena-comspec.eu/public/i/…) reprend la barre de navigation et le pied de page de l’accueil du site.', [
                 'Recrutement › Liens d’invitation : bouton Supprimer dans la liste et sur la fiche, avec une fenêtre de confirmation qui détaille ce qui est conservé et ce qui est effacé',
                 'Page d’un lien supprimé : le visiteur voit que la communauté l’a supprimé',
             ], [

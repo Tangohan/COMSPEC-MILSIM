@@ -54554,4 +54554,13 @@ return [
     'Les forces spéciales de l’armée de l’air royale malaisienne : escadron de sauvetage au combat et escadron de protection des forces (contre-terrorisme, libération d’otages), avec les grades de l’armée de l’air malaisienne.' => 'The Royal Malaysian Air Force special forces: combat air rescue squadron and force protection squadron (counter-terrorism, hostage rescue), with Royal Malaysian Air Force ranks.',
     '21 Gerup Gerak Khas (GGK)' => '21st Special Service Group (21 GGK)',
     'Briged Ke-10 Payung Terjun (10 Briged Para)' => '10th Parachute Brigade (10 Briged Para)',
+    'Rôle déclaré en jeu' => 'Role declared in game',
+    'Version du mod' => 'Mod version',
+    'Fonction · affectation' => 'Function · assignment',
+    'Déclaré en jeu :' => 'Declared in game:',
+    'Déclaré en jeu' => 'Declared in game',
+    'Déclaré en jeu (écart)' => 'Declared in game (mismatch)',
+    'Unité de l’équipe' => 'Team unit',
+    'Indicatif, nom, fonction, ID militaire…' => 'Callsign, name, function, military ID…',
+    'Le rôle déclaré en jeu ne correspond pas à la fonction tenue sur le site' => 'The role declared in game does not match the function held on the site',
 ];
