@@ -37,6 +37,10 @@ final class GradeSelectOptions
         'US' => 'États-Unis',
         'GB' => 'Royaume-Uni',
         'MY' => 'Malaisie',
+        'DE' => 'Allemagne',
+        'RU' => 'Russie',
+        'CN' => 'Chine',
+        'NATO' => 'OTAN',
     ];
 
     // Libellés de groupe en anglais : un <optgroup label> n'est pas repris par la traduction du site.
@@ -53,6 +57,10 @@ final class GradeSelectOptions
         'US' => 'United States',
         'GB' => 'United Kingdom',
         'MY' => 'Malaysia',
+        'DE' => 'Germany',
+        'RU' => 'Russia',
+        'CN' => 'China',
+        'NATO' => 'NATO',
     ];
 
     /**

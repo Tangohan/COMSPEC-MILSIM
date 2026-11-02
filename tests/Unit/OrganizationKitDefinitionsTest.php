@@ -115,7 +115,7 @@ final class OrganizationKitDefinitionsTest extends TestCase
             foreach ($kit['job_roles'] as $job) {
                 self::assertContains($job['category_key'], $categories, (string) $job['slug']);
             }
-            // Modèles allemands : aucun barème de grades allemand, le système de la communauté reste inchangé.
+            // Modèles allemands : grades de la Bundeswehr (Heer, Marine, Luftwaffe).
             // Modèles malaisiens et britanniques : grades du registre des systèmes officiels.
             $grades = OrganizationKitDefinitions::isRealUnits($kit) ? array_merge(\App\Support\OfficialGradeSystems::CODES, ['']) : \App\Support\OfficialGradeSystems::CODES;
             self::assertContains($kit['grade_system_code'], $grades);
