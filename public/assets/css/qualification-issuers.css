@@ -123,3 +123,21 @@ html[data-bo-theme="dark"] .qis-logo { color: color-mix(in srgb, var(--c, #94a3b
 @media (prefers-reduced-motion: reduce) {
   .qis-page * { scroll-behavior: auto !important; }
 }
+
+/* Émetteurs réels à importer (par pays) */
+.qis-real__countries { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.qis-real__country { margin: 0; padding: 12px 14px; border: 1px solid var(--k-border); border-radius: 12px; background: var(--k-surface); min-width: 0; }
+.qis-real__country legend { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 0 6px; font-size: 14px; color: var(--k-text); }
+.qcat-flag { border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15); flex: none; vertical-align: -2px; }
+.qis-real__all { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 2px 0 8px; color: var(--k-text); }
+.qis-real__done { margin: 2px 0 8px; font-size: 13px; }
+.qis-real__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 420px; overflow: auto; }
+.qis-real__list li { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 6px 4px; border-top: 1px solid var(--k-border); }
+.qis-real__list li:first-child { border-top: 0; }
+.qis-real__list label { display: flex; gap: 8px; align-items: flex-start; min-width: 0; cursor: pointer; }
+.qis-real__list input { margin-top: 3px; flex: none; }
+.qis-real__id { display: grid; gap: 1px; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--k-text); overflow-wrap: anywhere; }
+.qis-real__id small { color: var(--k-muted); font-size: 12px; }
+.qis-real__list li.is-present .qis-real__id { opacity: 0.7; }
+.qis-real__site { font-size: 12px; white-space: nowrap; color: var(--k-muted); }
+.bo-eff-workspace .qis-real__list .effk-pill { white-space: nowrap; min-height: 26px; padding: 0 10px; font-size: 12px; }

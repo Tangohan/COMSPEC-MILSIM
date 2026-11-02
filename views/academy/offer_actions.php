@@ -38,6 +38,18 @@ $showFiche = !$actionsInDetail;
         <p class="acx-contact"><span>Pour l’obtenir, contactez un instructeur</span><?php if (($it['issuer'] ?? '') !== ''): ?> <span>de</span> <b translate="no"><?= $h($it['issuer']) ?></b><?php endif ?>.</p>
     <?php endif ?>
     <?php if ($showFiche): ?><a class="text-link" href="<?= $h($oxFiche((string) $it['id'])) ?>"><span>Voir les critères</span></a><?php $showFiche = false; endif ?>
+<?php elseif ($it['kind'] === 'reference'): ?>
+    <?php if ($oxCanImport): $oq = is_array($offerQuota ?? null) ? $offerQuota : null; $oqFull = $oq !== null && !$oq['can_add']; ?>
+    <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/catalogue/importer')) ?>" class="acx-import">
+        <?= \App\Core\Csrf::field() ?><input type="hidden" name="one" value="<?= $h((string) $it['ref_id']) ?>"><input type="hidden" name="return_academy" value="1">
+        <button class="button small"<?= $oqFull ? ' disabled aria-describedby="acx-q-' . $h((string) $it['ref_id']) . '"' : '' ?>><?= $oxSymbol('download') ?><span>Importer dans mon référentiel</span></button>
+        <?php if ($oq !== null && !$oq['unlimited'] && ($actionsInDetail || $oqFull)): ?>
+        <p class="acx-quota<?= $oqFull ? ' is-full' : '' ?>" id="acx-q-<?= $h((string) $it['ref_id']) ?>"><b><?= (int) $oq['used'] ?> / <?= (int) $oq['limit'] ?></b> <span>imports sur votre formule</span><?php if ($oq['offer'] !== null): ?> · <a class="acx-plan" href="<?= $h($oq['upgrade_url']) ?>" title="<?= $h($oqFull ? 'Plafond atteint : ce qui est déjà importé reste utilisable. Passez à une formule supérieure pour importer davantage.' : 'Plus d’imports avec une formule supérieure.') ?>"><span>Formule</span> <span translate="no"><?= $h($oq['offer']['name']) ?></span> : <?= $oq['offer']['value'] === 0 ? '<span>illimité</span>' : (int) $oq['offer']['value'] ?></a><?php endif ?></p>
+        <?php endif ?>
+    </form>
+    <?php elseif ($actionsInDetail): ?>
+    <p class="acx-contact">Un responsable de votre communauté peut l’importer dans le référentiel des qualifications.</p>
+    <?php endif ?>
 <?php elseif ($it['kind'] === 'pathway'): ?>
     <?php if (!$actionsInDetail): ?><a class="button small" href="<?= $h($oxFiche((string) $it['id'])) ?>"><span>Voir le parcours</span></a><?php $showFiche = false; endif ?>
     <a class="text-link" href="<?= $h($it['url']) ?>"><span>Ouvrir dans le générateur de parcours</span></a>

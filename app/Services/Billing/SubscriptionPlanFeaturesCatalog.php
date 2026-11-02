@@ -31,11 +31,15 @@ final class SubscriptionPlanFeaturesCatalog
         'pdf_exports',
         'year_review_collective',
         'pilot_qualifications',
+        'qualification_catalog_bulk_import',
     ];
 
     public const INT_FEATURES = [
         'max_members',
         'max_training_courses',
+        'max_catalog_qualification_imports',
+        'max_real_issuer_imports',
+        'max_custom_qualifications',
     ];
 
     /**
@@ -144,6 +148,26 @@ final class SubscriptionPlanFeaturesCatalog
                 'help' => 'Qualifications de pilote attribuées ou proposées aux instructeurs d’après les heures de vol relevées en jeu.',
                 'type' => 'bool',
             ],
+            'qualification_catalog_bulk_import' => [
+                'label' => 'Import d’un pays entier du catalogue de référence',
+                'help' => 'Bouton « Tout importer » : toutes les qualifications d’un pays ou de l’OTAN en un clic.',
+                'type' => 'bool',
+            ],
+            'max_catalog_qualification_imports' => [
+                'label' => 'Qualifications importées du catalogue de référence',
+                'help' => 'Plafond de qualifications réelles importées dans le référentiel (0 = illimité). Celles déjà importées restent utilisables.',
+                'type' => 'int',
+            ],
+            'max_real_issuer_imports' => [
+                'label' => 'Émetteurs réels importés',
+                'help' => 'Plafond d’écoles et centres réels importés depuis la page Émetteurs (0 = illimité). L’émetteur d’une qualification importée suit toujours.',
+                'type' => 'int',
+            ],
+            'max_custom_qualifications' => [
+                'label' => 'Qualifications et brevets créés par la communauté',
+                'help' => 'Plafond de qualifications et brevets créés dans le Studio ou le référentiel (0 = illimité). Ceux déjà créés restent utilisables.',
+                'type' => 'int',
+            ],
             'max_members' => [
                 'label' => 'Nombre max. de membres',
                 'help' => 'Plafond de comptes dans la communauté (0 = illimite).',
@@ -186,8 +210,12 @@ final class SubscriptionPlanFeaturesCatalog
                 'pdf_exports' => false,
                 'year_review_collective' => false,
                 'pilot_qualifications' => false,
+                'qualification_catalog_bulk_import' => false,
                 'max_members' => 10,
                 'max_training_courses' => 5,
+                'max_catalog_qualification_imports' => 10,
+                'max_real_issuer_imports' => 5,
+                'max_custom_qualifications' => 5,
             ],
             'standard' => [
                 'documents' => true,
@@ -210,8 +238,12 @@ final class SubscriptionPlanFeaturesCatalog
                 'pdf_exports' => true,
                 'year_review_collective' => true,
                 'pilot_qualifications' => true,
+                'qualification_catalog_bulk_import' => false,
                 'max_members' => 25,
                 'max_training_courses' => 25,
+                'max_catalog_qualification_imports' => 50,
+                'max_real_issuer_imports' => 25,
+                'max_custom_qualifications' => 30,
             ],
             'pro' => [
                 'documents' => true,
@@ -234,8 +266,12 @@ final class SubscriptionPlanFeaturesCatalog
                 'pdf_exports' => true,
                 'year_review_collective' => true,
                 'pilot_qualifications' => true,
+                'qualification_catalog_bulk_import' => true,
                 'max_members' => 50,
                 'max_training_courses' => 100,
+                'max_catalog_qualification_imports' => 0,
+                'max_real_issuer_imports' => 0,
+                'max_custom_qualifications' => 0,
             ],
             'pro_plus' => [
                 'documents' => true,
@@ -258,8 +294,12 @@ final class SubscriptionPlanFeaturesCatalog
                 'pdf_exports' => true,
                 'year_review_collective' => true,
                 'pilot_qualifications' => true,
+                'qualification_catalog_bulk_import' => true,
                 'max_members' => 80,
                 'max_training_courses' => 0,
+                'max_catalog_qualification_imports' => 0,
+                'max_real_issuer_imports' => 0,
+                'max_custom_qualifications' => 0,
             ],
         ];
     }

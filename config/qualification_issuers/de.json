@@ -1,0 +1,854 @@
+{
+  "pack": "de",
+  "country": "DE",
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé principalement à partir des pages officielles de la Bundeswehr (bundeswehr.de) et de Wikipédia (de/en). La Bundeswehr est en cours de réorganisation (2025-2026) : rattachements et implantations peuvent changer. Les points non confirmés sont signalés dans « uncertain ».",
+    "en": "Compiled mainly from official Bundeswehr pages (bundeswehr.de) and Wikipedia (de/en). The Bundeswehr is being reorganised (2025-2026): parent commands and locations may change. Unconfirmed points are flagged under \"uncertain\"."
+  },
+  "issuers": [
+    {
+      "key": "de-ausbzspezlop",
+      "name": "Ausbildungszentrum Spezielle Operationen",
+      "transliteration": "",
+      "short_name": "AusbZSpezlOp",
+      "type": "training_center",
+      "location": "Pfullendorf (Bade-Wurtemberg)",
+      "location_en": "Pfullendorf, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/ausbildungszentrum-spezielle-operationen",
+      "description": {
+        "fr": "Centre de l'Ausbildungskommando de l'armée de Terre allemande qui assure les stages des forces spéciales et des forces spécialisées (combat individuel, survie/SERE, techniques spéciales), y compris pour des stagiaires étrangers.",
+        "en": "German Army Training Command centre running courses for special forces and specialised forces (individual combat, survival/SERE, special techniques), including for foreign students."
+      },
+      "aliases": [
+        "Ausbildungszentrum Spezielle Operationen"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/ausbildungszentrum-spezielle-operationen",
+          "title": "Ausbildungszentrum Spezielle Operationen (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-ausbstpspezkrh",
+      "name": "Ausbildungsstützpunkt Spezialkräfte Heer",
+      "transliteration": "",
+      "short_name": "AusbStpSpezKrH",
+      "type": "training_center",
+      "location": "Calw (Bade-Wurtemberg)",
+      "location_en": "Calw, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/kommando-spezialkraefte/ausbildungsstuetzpunkt-spezialkraefte-heer",
+      "description": {
+        "fr": "Structure créée en 2021 au sein du KSK, chargée de la procédure de sélection (Potenzialfeststellungsverfahren) et de la formation de base des futurs commandos.",
+        "en": "Unit set up in 2021 within the KSK, running the selection process (Potenzialfeststellungsverfahren) and basic training of future commandos."
+      },
+      "aliases": [
+        "Ausbildungsstützpunkt Spezialkräfte Heer"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/kommando-spezialkraefte/ausbildungsstuetzpunkt-spezialkraefte-heer",
+          "title": "Ausbildungsstützpunkt Spezialkräfte Heer (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-ksk",
+      "name": "Kommando Spezialkräfte",
+      "transliteration": "",
+      "short_name": "KSK",
+      "type": "unit",
+      "location": "Calw (Bade-Wurtemberg)",
+      "location_en": "Calw, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/kommando-spezialkraefte",
+      "description": {
+        "fr": "Unité des forces spéciales de l'armée de Terre allemande, subordonnée à la Division Schnelle Kräfte.",
+        "en": "German Army special forces unit, subordinate to the Rapid Forces Division."
+      },
+      "aliases": [
+        "Kommando Spezialkräfte"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/kommando-spezialkraefte",
+          "title": "Kommando Spezialkräfte (bundeswehr.de)"
+        },
+        {
+          "url": "https://de.wikipedia.org/wiki/Kommando_Spezialkräfte",
+          "title": "Kommando Spezialkräfte (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-ksm",
+      "name": "Kommando Spezialkräfte der Marine",
+      "transliteration": "",
+      "short_name": "KSM",
+      "type": "unit",
+      "location": "Eckernförde (Schleswig-Holstein)",
+      "location_en": "Eckernförde, Germany",
+      "website": "",
+      "description": {
+        "fr": "Unité des forces spéciales de la Marine allemande (nageurs de combat), rattachée à l'Einsatzflottille 1.",
+        "en": "German Navy special forces unit (combat swimmers), part of Einsatzflottille 1."
+      },
+      "aliases": [
+        "Kommando Spezialkräfte der Marine"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Kommando_Spezialkräfte_der_Marine",
+          "title": "Kommando Spezialkräfte der Marine (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-dsk",
+      "name": "Division Schnelle Kräfte",
+      "transliteration": "",
+      "short_name": "DSK",
+      "type": "command",
+      "location": "Stadtallendorf (Hesse)",
+      "location_en": "Stadtallendorf, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte",
+      "description": {
+        "fr": "Division de l'armée de Terre allemande regroupant les forces aéroportées, le KSK et les hélicoptères de l'armée de Terre.",
+        "en": "German Army division grouping the airborne forces, the KSK and Army aviation."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte",
+          "title": "Division Schnelle Kräfte (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-infs",
+      "name": "Infanterieschule",
+      "transliteration": "",
+      "short_name": "InfS",
+      "type": "school",
+      "location": "Hammelburg (Bavière)",
+      "location_en": "Hammelburg, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/infanterieschule",
+      "description": {
+        "fr": "École d'arme de l'infanterie de l'armée de Terre allemande ; elle chapeaute aussi la Luftlande-/Lufttransportschule et la Gebirgs- und Winterkampfschule.",
+        "en": "German Army infantry branch school; it also oversees the Airborne/Air Transport School and the Mountain and Winter Warfare School."
+      },
+      "aliases": [
+        "Infanterieschule"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/infanterieschule",
+          "title": "Infanterieschule (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-llltrsps",
+      "name": "Luftlande-/Lufttransportschule",
+      "transliteration": "",
+      "short_name": "LL/LTrspS",
+      "type": "school",
+      "location": "Altenstadt (Bavière)",
+      "location_en": "Altenstadt, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/infanterieschule/luftlande-lufttransportschule",
+      "description": {
+        "fr": "École rattachée à l'Infanterieschule qui forme les parachutistes (ouverture automatique et chute libre), le personnel de transport et chargement aérien, ainsi que les plieurs et réparateurs de parachutes.",
+        "en": "School under the Infantry School training paratroopers (static line and free fall), air transport and air loading personnel, and parachute riggers and repairers."
+      },
+      "aliases": [
+        "Luftlande-/Lufttransportschule"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/infanterieschule/luftlande-lufttransportschule",
+          "title": "Luftlande-/Lufttransportschule (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-gebwiks",
+      "name": "Gebirgs- und Winterkampfschule",
+      "transliteration": "",
+      "short_name": "GebWiKS",
+      "type": "school",
+      "location": "Mittenwald (Bavière)",
+      "location_en": "Mittenwald, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/infanterieschule/gebirgs-und-winterkampfschule",
+      "description": {
+        "fr": "Centre de formation central de la Bundeswehr pour le combat en montagne et par grand froid (guides de montagne militaires, combat hivernal), subordonné à l'Infanterieschule.",
+        "en": "The Bundeswehr's central training establishment for mountain and cold-weather warfare (military mountain guides, winter combat), subordinate to the Infantry School."
+      },
+      "aliases": [
+        "Gebirgs- und Winterkampfschule",
+        "Ausbildungsstützpunkt Gebirgs- und Winterkampf"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/infanterieschule/gebirgs-und-winterkampfschule",
+          "title": "Gebirgs- und Winterkampfschule (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-gebjgbrig23",
+      "name": "Gebirgsjägerbrigade 23",
+      "transliteration": "",
+      "short_name": "GebJgBrig 23",
+      "type": "command",
+      "location": "Bad Reichenhall (Bavière)",
+      "location_en": "Bad Reichenhall, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/gebirgsjaegerbrigade-23",
+      "description": {
+        "fr": "Brigade de chasseurs de montagne de l'armée de Terre allemande, spécialisée dans le combat en montagne et en conditions hivernales.",
+        "en": "German Army mountain infantry brigade specialised in mountain and winter warfare."
+      },
+      "aliases": [
+        "Gebirgsjägerbrigade 23"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Gebirgsjägerbrigade_23",
+          "title": "Gebirgsjägerbrigade 23 (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-eaz-tragtier-230",
+      "name": "Einsatz- und Ausbildungszentrum für Tragtierwesen 230",
+      "transliteration": "",
+      "short_name": "EAZ Tragtierwesen 230",
+      "type": "training_center",
+      "location": "Bad Reichenhall (Bavière)",
+      "location_en": "Bad Reichenhall, Germany",
+      "website": "",
+      "description": {
+        "fr": "Unité de la Gebirgsjägerbrigade 23 chargée de l'emploi et de la formation au transport par animaux de bât (mulets, chevaux) en montagne.",
+        "en": "Gebirgsjägerbrigade 23 unit responsible for employing and training pack animals (mules, horses) for mountain transport."
+      },
+      "aliases": [
+        "Einsatz- und Ausbildungszentrum für Tragtierwesen 230"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Einsatz-_und_Ausbildungszentrum_für_Tragtierwesen_230",
+          "title": "Einsatz- und Ausbildungszentrum für Tragtierwesen 230 (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-inthubschrausbz",
+      "name": "Internationales Hubschrauberausbildungszentrum",
+      "transliteration": "",
+      "short_name": "IntHubschrAusbZ",
+      "type": "training_center",
+      "location": "Bückeburg (Basse-Saxe)",
+      "location_en": "Bückeburg, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/kommando-hubschrauber/internationales-hubschrauberausbildungszentrum",
+      "description": {
+        "fr": "Centre subordonné au Kommando Hubschrauber qui assure la formation de vol de base de tous les équipages d'hélicoptères allemands ainsi que d'équipages étrangers. Issu le 1er juillet 2015 de la Heeresfliegerwaffenschule.",
+        "en": "Centre under the Helicopter Command providing basic flight training for all German helicopter crews as well as foreign crews. Formed on 1 July 2015 from the Heeresfliegerwaffenschule."
+      },
+      "aliases": [
+        "Internationales Hubschrauberausbildungszentrum",
+        "Heeresfliegerwaffenschule"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/division-schnelle-kraefte/kommando-hubschrauber/internationales-hubschrauberausbildungszentrum",
+          "title": "Internationales Hubschrauberausbildungszentrum (bundeswehr.de)"
+        },
+        {
+          "url": "https://de.wikipedia.org/wiki/Internationales_Hubschrauberausbildungszentrum",
+          "title": "Internationales Hubschrauberausbildungszentrum (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-ausbuebzluftbew",
+      "name": "Ausbildungs- und Übungszentrum Luftbeweglichkeit",
+      "transliteration": "",
+      "short_name": "AusbÜbZLuftbew",
+      "type": "training_center",
+      "location": "Celle (Basse-Saxe)",
+      "location_en": "Celle, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/ausbildungs-und-uebungszentrum-luftbeweglichkeit",
+      "description": {
+        "fr": "Centre de l'Ausbildungskommando qui entraîne les forces aéromobiles de l'armée de Terre, principalement la Division Schnelle Kräfte et la 11e brigade aéromobile néerlandaise.",
+        "en": "Training Command centre that trains the Army's airmobile forces, mainly the Rapid Forces Division and the Dutch 11th Air Assault Brigade."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/ausbildungs-und-uebungszentrum-luftbeweglichkeit",
+          "title": "Ausbildungs- und Übungszentrum Luftbeweglichkeit (bundeswehr.de)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Sigle officiel non confirmé par la page officielle.",
+        "en": "Official abbreviation not confirmed by the official page."
+      }
+    },
+    {
+      "key": "de-hflgausbz-tiger",
+      "name": "Deutsch-Französisches Heeresfliegerausbildungszentrum Tiger",
+      "transliteration": "",
+      "short_name": "DEU/FRA HFlgAusbZ Tiger",
+      "type": "training_center",
+      "location": "Le Cannet-des-Maures (Var, France)",
+      "location_en": "Le Cannet-des-Maures (Le Luc), France",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation franco-allemand des équipages et mécaniciens de l'hélicoptère de combat Tigre, implanté sur la base de l'EALAT au Cannet-des-Maures.",
+        "en": "Franco-German training centre for Tiger attack helicopter crews and technicians, located at the EALAT base at Le Cannet-des-Maures."
+      },
+      "aliases": [
+        "Deutsch-Französisches Heeresfliegerausbildungszentrum Tiger",
+        "École franco-allemande Tigre"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Internationales_Hubschrauberausbildungszentrum",
+          "title": "Internationales Hubschrauberausbildungszentrum (Wikipedia) – formation Tiger"
+        },
+        {
+          "url": "https://de.wikipedia.org/wiki/Liste_der_Bundeswehrstandorte_im_Ausland",
+          "title": "Liste der Bundeswehrstandorte im Ausland (Wikipedia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Pas de page dédiée trouvée ; dénomination et sigle repris du catalogue, à confirmer sur une source officielle.",
+        "en": "No dedicated page found; name and abbreviation taken from the catalogue, to be confirmed by an official source."
+      }
+    },
+    {
+      "key": "de-hsg64",
+      "name": "Hubschraubergeschwader 64",
+      "transliteration": "",
+      "short_name": "HSG 64",
+      "type": "unit",
+      "location": "Laupheim (Bade-Wurtemberg) et Schönewalde/Holzdorf (Brandebourg)",
+      "location_en": "Laupheim and Schönewalde/Holzdorf, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/luftwaffe/organisation-/luftwaffentruppenkommando/hubschraubergeschwader-64",
+      "description": {
+        "fr": "Escadre d'hélicoptères de la Luftwaffe (CH-53, H145M LUH SOF, futur CH-47F), dont une partie est dédiée à l'appui des forces spéciales.",
+        "en": "Luftwaffe helicopter wing (CH-53, H145M LUH SOF, future CH-47F), part of which supports special forces."
+      },
+      "aliases": [
+        "Hubschraubergeschwader 64"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/luftwaffe/organisation-/luftwaffentruppenkommando/hubschraubergeschwader-64",
+          "title": "Hubschraubergeschwader 64 (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/luftwaffe/aktuelles/neuaufstellung-hubschraubergeschwader-64-6165022",
+          "title": "Neuaufstellung Hubschraubergeschwader 64 (bundeswehr.de, 2026)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Réorganisée le 1er octobre 2026 : l'état-major s'installe à Schönewalde/Holzdorf ; la répartition finale des sites reste à confirmer.",
+        "en": "Reorganised on 1 October 2026: the wing staff moves to Schönewalde/Holzdorf; the final site split remains to be confirmed."
+      }
+    },
+    {
+      "key": "de-ltg62",
+      "name": "Lufttransportgeschwader 62",
+      "transliteration": "",
+      "short_name": "LTG 62",
+      "type": "unit",
+      "location": "Wunstorf (Basse-Saxe)",
+      "location_en": "Wunstorf, Germany",
+      "website": "",
+      "description": {
+        "fr": "Escadre de transport aérien de la Luftwaffe équipée de l'A400M, qui forme aussi les équipages A400M.",
+        "en": "Luftwaffe air transport wing flying the A400M, which also trains A400M crews."
+      },
+      "aliases": [
+        "Lufttransportgeschwader 62"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Lufttransportgeschwader_62",
+          "title": "Lufttransportgeschwader 62 (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-objsrgtlw",
+      "name": "Objektschutzregiment der Luftwaffe „Friesland“",
+      "transliteration": "",
+      "short_name": "ObjSRgtLw",
+      "type": "unit",
+      "location": "Schortens (Basse-Saxe)",
+      "location_en": "Schortens, Germany",
+      "website": "",
+      "description": {
+        "fr": "Régiment de protection des installations de la Luftwaffe, qui comprend aussi des capacités de récupération de personnel et de guidage aérien.",
+        "en": "Luftwaffe force protection regiment, which also includes personnel recovery and air guidance capabilities."
+      },
+      "aliases": [
+        "Objektschutzregiment der Luftwaffe „Friesland“"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Objektschutzregiment_der_Luftwaffe",
+          "title": "Objektschutzregiment der Luftwaffe (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-zentrlurmedlw",
+      "name": "Zentrum für Luft- und Raumfahrtmedizin der Luftwaffe",
+      "transliteration": "",
+      "short_name": "ZentrLuRMedLw",
+      "type": "coe",
+      "location": "Cologne (Rhénanie-du-Nord-Westphalie)",
+      "location_en": "Cologne, Germany",
+      "website": "",
+      "description": {
+        "fr": "Centre de médecine aéronautique et spatiale de la Luftwaffe : aptitude médicale du personnel navigant, entraînement physiologique et recherche.",
+        "en": "Luftwaffe aerospace medicine centre: aircrew medical fitness, physiological training and research."
+      },
+      "aliases": [
+        "Zentrum für Luft- und Raumfahrtmedizin der Luftwaffe"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Zentrum_für_Luft-_und_Raumfahrtmedizin_der_Luftwaffe",
+          "title": "Zentrum für Luft- und Raumfahrtmedizin der Luftwaffe (Wikipedia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Le centre est réparti sur plusieurs sites (Cologne, Fürstenfeldbruck, Königsbrück) ; siège principal à confirmer.",
+        "en": "The centre is spread over several sites (Cologne, Fürstenfeldbruck, Königsbrück); main seat to be confirmed."
+      }
+    },
+    {
+      "key": "de-fueakbw",
+      "name": "Führungsakademie der Bundeswehr",
+      "transliteration": "",
+      "short_name": "FüAkBw",
+      "type": "academy",
+      "location": "Hambourg",
+      "location_en": "Hamburg, Germany",
+      "website": "",
+      "description": {
+        "fr": "Établissement d'enseignement militaire supérieur de la Bundeswehr qui forme les officiers d'état-major et les futurs hauts responsables, allemands et étrangers.",
+        "en": "Bundeswehr staff college training German and foreign staff officers and future senior leaders."
+      },
+      "aliases": [
+        "Führungsakademie der Bundeswehr"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Führungsakademie_der_Bundeswehr",
+          "title": "Führungsakademie der Bundeswehr (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-osh",
+      "name": "Offizierschule des Heeres",
+      "transliteration": "",
+      "short_name": "OSH",
+      "type": "school",
+      "location": "Dresde (Saxe)",
+      "location_en": "Dresden, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/offizierschule-des-heeres",
+      "description": {
+        "fr": "École de formation des officiers de l'armée de Terre allemande (formation au commandement et formation tactique).",
+        "en": "German Army officer school (leadership and tactical training)."
+      },
+      "aliases": [
+        "Offizierschule des Heeres"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/offizierschule-des-heeres",
+          "title": "Offizierschule des Heeres (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-ush",
+      "name": "Unteroffizierschule des Heeres",
+      "transliteration": "",
+      "short_name": "USH",
+      "type": "school",
+      "location": "Delitzsch (Saxe)",
+      "location_en": "Delitzsch, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/unteroffizierschule-des-heeres",
+      "description": {
+        "fr": "École de formation des sous-officiers de l'armée de Terre allemande.",
+        "en": "German Army non-commissioned officer school."
+      },
+      "aliases": [
+        "Unteroffizierschule des Heeres"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/unteroffizierschule-des-heeres",
+          "title": "Unteroffizierschule des Heeres (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-pztrs",
+      "name": "Panzertruppenschule",
+      "transliteration": "",
+      "short_name": "PzTrS",
+      "type": "school",
+      "location": "Munster (Basse-Saxe)",
+      "location_en": "Munster, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/panzertruppenschule",
+      "description": {
+        "fr": "École des troupes blindées de l'armée de Terre allemande (blindés, grenadiers, reconnaissance, artillerie). Elle a porté de 2008 à son renommage le nom d'Ausbildungszentrum Munster.",
+        "en": "German Army armoured troops school (armour, armoured infantry, reconnaissance, artillery). It was called Ausbildungszentrum Munster from 2008 until renamed."
+      },
+      "aliases": [
+        "Ausbildungszentrum Munster"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/panzertruppenschule",
+          "title": "Panzertruppenschule (bundeswehr.de)"
+        },
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/aktuelles/alte-neue-panzertruppenschule-5061304",
+          "title": "Alte neue Panzertruppenschule (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-pis",
+      "name": "Pionierschule",
+      "transliteration": "",
+      "short_name": "PiS",
+      "type": "school",
+      "location": "Ingolstadt (Bavière)",
+      "location_en": "Ingolstadt, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/pionierschule",
+      "description": {
+        "fr": "École du génie de l'armée de Terre allemande, dont relève la Kampfmittelabwehrschule.",
+        "en": "German Army engineer school, which oversees the EOD school (Kampfmittelabwehrschule)."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/pionierschule",
+          "title": "Pionierschule (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-kpfmabws",
+      "name": "Kampfmittelabwehrschule",
+      "transliteration": "",
+      "short_name": "KpfmAbwS",
+      "type": "school",
+      "location": "Stetten am kalten Markt (Bade-Wurtemberg)",
+      "location_en": "Stetten am kalten Markt, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/pionierschule/kampfmittelabwehrschule",
+      "description": {
+        "fr": "École centrale de la Bundeswehr pour la neutralisation des munitions et explosifs (EOD/IEDD), rattachée à la Pionierschule.",
+        "en": "The Bundeswehr's central explosive ordnance disposal (EOD/IEDD) school, part of the Engineer School."
+      },
+      "aliases": [
+        "Kampfmittelabwehrschule"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/pionierschule/kampfmittelabwehrschule",
+          "title": "Kampfmittelabwehrschule (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-sabcabw-gschaufg",
+      "name": "Schule ABC-Abwehr und Gesetzliche Schutzaufgaben",
+      "transliteration": "",
+      "short_name": "SABCAbw/GSchAufg",
+      "type": "school",
+      "location": "Sonthofen (Bavière)",
+      "location_en": "Sonthofen, Germany",
+      "website": "",
+      "description": {
+        "fr": "École de la Bundeswehr pour la défense NRBC et les missions légales de protection (protection de l'environnement, sécurité au travail).",
+        "en": "Bundeswehr school for CBRN defence and statutory protection tasks (environmental protection, occupational safety)."
+      },
+      "aliases": [
+        "Schule ABC-Abwehr und Gesetzliche Schutzaufgaben",
+        "ABC-Abwehrschule"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Schule_ABC-Abwehr_und_Gesetzliche_Schutzaufgaben",
+          "title": "Schule ABC-Abwehr und Gesetzliche Schutzaufgaben (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-sfjg-stdstbw",
+      "name": "Schule für Feldjäger und Stabsdienst der Bundeswehr",
+      "transliteration": "",
+      "short_name": "SFJg/StDstBw",
+      "type": "school",
+      "location": "Hanovre (Basse-Saxe)",
+      "location_en": "Hanover, Germany",
+      "website": "",
+      "description": {
+        "fr": "École de la police militaire (Feldjäger) et du service d'état-major de la Bundeswehr.",
+        "en": "Bundeswehr school for the military police (Feldjäger) and staff services."
+      },
+      "aliases": [
+        "Schule für Feldjäger und Stabsdienst der Bundeswehr"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Schule_für_Feldjäger_und_Stabsdienst_der_Bundeswehr",
+          "title": "Schule für Feldjäger und Stabsdienst der Bundeswehr (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-kdofjgbw",
+      "name": "Kommando Feldjäger der Bundeswehr",
+      "transliteration": "",
+      "short_name": "KdoFJgBw",
+      "type": "command",
+      "location": "Hanovre (Basse-Saxe)",
+      "location_en": "Hanover, Germany",
+      "website": "",
+      "description": {
+        "fr": "Commandement de la police militaire (Feldjäger) de la Bundeswehr, dont relèvent les régiments de Feldjäger et l'école des Feldjäger.",
+        "en": "Bundeswehr military police (Feldjäger) command, overseeing the Feldjäger regiments and the Feldjäger school."
+      },
+      "aliases": [
+        "Kommando Feldjäger der Bundeswehr"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Kommando_Feldjäger_der_Bundeswehr",
+          "title": "Kommando Feldjäger der Bundeswehr (Wikipedia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Rattachement susceptible d'avoir changé avec la réorganisation de la Bundeswehr en 2025.",
+        "en": "Parent command may have changed with the 2025 Bundeswehr reorganisation."
+      }
+    },
+    {
+      "key": "de-sdsthundebw",
+      "name": "Schule für Diensthundewesen der Bundeswehr",
+      "transliteration": "",
+      "short_name": "SDstHundeBw",
+      "type": "school",
+      "location": "Ulmen (Rhénanie-Palatinat)",
+      "location_en": "Ulmen, Germany",
+      "website": "",
+      "description": {
+        "fr": "École centrale de la Bundeswehr pour l'élevage, le dressage des chiens militaires et la formation de leurs maîtres-chiens.",
+        "en": "The Bundeswehr's central school for breeding and training military working dogs and their handlers."
+      },
+      "aliases": [
+        "Schule für Diensthundewesen der Bundeswehr"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Schule_für_Diensthundewesen_der_Bundeswehr",
+          "title": "Schule für Diensthundewesen der Bundeswehr (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-msm",
+      "name": "Marineschule Mürwik",
+      "transliteration": "",
+      "short_name": "MSM",
+      "type": "school",
+      "location": "Flensbourg (Schleswig-Holstein)",
+      "location_en": "Flensburg, Germany",
+      "website": "",
+      "description": {
+        "fr": "École de formation des officiers de la Marine allemande.",
+        "en": "German Navy officer school."
+      },
+      "aliases": [
+        "Marineschule Mürwik"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Marineschule_Mürwik",
+          "title": "Marineschule Mürwik (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-seebtl",
+      "name": "Seebataillon",
+      "transliteration": "",
+      "short_name": "SeeBtl",
+      "type": "unit",
+      "location": "Eckernförde (Schleswig-Holstein)",
+      "location_en": "Eckernförde, Germany",
+      "website": "",
+      "description": {
+        "fr": "Bataillon d'infanterie de marine de la Marine allemande (protection embarquée, abordage, plongeurs démineurs, reconnaissance côtière), rattaché à l'Einsatzflottille 1.",
+        "en": "German Navy naval infantry battalion (boarding, force protection, clearance divers, coastal reconnaissance), part of Einsatzflottille 1."
+      },
+      "aliases": [
+        "Seebataillon"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Seebataillon",
+          "title": "Seebataillon (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-eazsm",
+      "name": "Einsatzausbildungszentrum Schadensabwehr Marine",
+      "transliteration": "",
+      "short_name": "EAZS M",
+      "type": "training_center",
+      "location": "Neustadt in Holstein (Schleswig-Holstein)",
+      "location_en": "Neustadt in Holstein, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/marine/struktur/einsatzausbildungszentrum-schadensabwehr",
+      "description": {
+        "fr": "Centre de la Marine allemande pour la formation à la sécurité et à la lutte contre les avaries (incendie, voies d'eau, sauvetage) des marins et des équipages.",
+        "en": "German Navy damage control training centre (firefighting, flooding, rescue) for sailors and whole crews."
+      },
+      "aliases": [
+        "Einsatzausbildungszentrum Schadensabwehr Marine",
+        "Schiffssicherungslehrgruppe"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/marine/struktur/einsatzausbildungszentrum-schadensabwehr",
+          "title": "Einsatzausbildungszentrum Schadensabwehr (bundeswehr.de)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Naval_Damage_Control_Training_Centre",
+          "title": "Naval Damage Control Training Centre (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-unibw-m",
+      "name": "Universität der Bundeswehr München",
+      "transliteration": "",
+      "short_name": "UniBw M",
+      "type": "academy",
+      "location": "Neubiberg (Bavière)",
+      "location_en": "Neubiberg (Munich), Germany",
+      "website": "https://www.unibw.de",
+      "description": {
+        "fr": "Université de la Bundeswehr où les officiers et candidats officiers suivent leurs études supérieures.",
+        "en": "Bundeswehr university where officers and officer candidates complete their academic studies."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Universität_der_Bundeswehr_München",
+          "title": "Universität der Bundeswehr München (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-hsu",
+      "name": "Helmut-Schmidt-Universität / Universität der Bundeswehr Hamburg",
+      "transliteration": "",
+      "short_name": "HSU",
+      "type": "academy",
+      "location": "Hambourg",
+      "location_en": "Hamburg, Germany",
+      "website": "https://www.hsu-hh.de",
+      "description": {
+        "fr": "Université de la Bundeswehr à Hambourg où les officiers et candidats officiers suivent leurs études supérieures.",
+        "en": "Bundeswehr university in Hamburg where officers and officer candidates complete their academic studies."
+      },
+      "aliases": [
+        "Helmut-Schmidt-Universität"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Helmut-Schmidt-Universität",
+          "title": "Helmut-Schmidt-Universität (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "de-guezh",
+      "name": "Gefechtsübungszentrum Heer",
+      "transliteration": "",
+      "short_name": "GÜZ",
+      "type": "training_center",
+      "location": "Letzlingen, Altmark (Saxe-Anhalt)",
+      "location_en": "Letzlingen (Altmark), Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/gefechtsuebungszentrum-heer",
+      "description": {
+        "fr": "Centre d'entraînement au combat de l'armée de Terre allemande avec simulation instrumentée et force adverse.",
+        "en": "German Army combat training centre with instrumented simulation and an opposing force."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/gefechtsuebungszentrum-heer",
+          "title": "Gefechtsübungszentrum Heer (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-vnausbzbw",
+      "name": "Vereinte Nationen Ausbildungszentrum Bundeswehr",
+      "transliteration": "",
+      "short_name": "VNAusbZBw",
+      "type": "training_center",
+      "location": "Hammelburg (Bavière)",
+      "location_en": "Hammelburg, Germany",
+      "website": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/vereinte-nationen-ausbildungszentrum-bundeswehr",
+      "description": {
+        "fr": "Centre de la Bundeswehr qui prépare le personnel aux missions de l'ONU et des opérations de paix (observateurs militaires, préparation au déploiement).",
+        "en": "Bundeswehr centre preparing personnel for UN and peace support missions (military observers, pre-deployment training)."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.bundeswehr.de/de/organisation/heer/struktur/ausbildungskommando/vereinte-nationen-ausbildungszentrum-bundeswehr",
+          "title": "Vereinte Nationen Ausbildungszentrum Bundeswehr (bundeswehr.de)"
+        }
+      ]
+    },
+    {
+      "key": "de-bamad",
+      "name": "Bundesamt für den Militärischen Abschirmdienst",
+      "transliteration": "",
+      "short_name": "BAMAD",
+      "type": "agency",
+      "location": "Cologne (Rhénanie-du-Nord-Westphalie)",
+      "location_en": "Cologne, Germany",
+      "website": "",
+      "description": {
+        "fr": "Service de contre-espionnage et de sécurité militaire de la Bundeswehr, qui réalise notamment les enquêtes d'habilitation de sécurité.",
+        "en": "Bundeswehr military counter-intelligence and security service, which carries out security clearance checks."
+      },
+      "aliases": [
+        "Bundesamt für den Militärischen Abschirmdienst",
+        "Militärischer Abschirmdienst"
+      ],
+      "sources": [
+        {
+          "url": "https://de.wikipedia.org/wiki/Militärischer_Abschirmdienst",
+          "title": "Militärischer Abschirmdienst (Wikipedia)"
+        }
+      ]
+    }
+  ]
+}

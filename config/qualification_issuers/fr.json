@@ -1,0 +1,906 @@
+{
+  "pack": "fr",
+  "country": "FR",
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé à partir des pages officielles du ministère des Armées (defense.gouv.fr), de la Gendarmerie nationale, des Bulletins officiels et de Wikipédia (fr/en). Les organisations évoluent souvent (dissolutions, transferts, changements de nom) : vérifier avant usage officiel. Les points non confirmés sont signalés dans « uncertain ».",
+    "en": "Compiled from official French Ministry of the Armed Forces pages (defense.gouv.fr), the Gendarmerie nationale, official bulletins and Wikipedia (fr/en). Military organisations change often (disbandments, moves, renamings): check before any official use. Unconfirmed points are flagged under \"uncertain\"."
+  },
+  "issuers": [
+    {
+      "key": "fr-cnec",
+      "name": "Centre national d'entraînement commando – 1er régiment de choc",
+      "transliteration": "",
+      "short_name": "CNEC",
+      "type": "training_center",
+      "location": "Mont-Louis et Collioure (Pyrénées-Orientales)",
+      "location_en": "Mont-Louis and Collioure, France",
+      "website": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/centre-national",
+      "description": {
+        "fr": "Centre expert de l'armée de Terre pour la formation et l'entraînement commando, implanté à la citadelle de Mont-Louis et au fort Miradou de Collioure. Il garde le drapeau du 1er régiment de choc et relève du COMECIA.",
+        "en": "The French Army's expert centre for commando training, based at the Mont-Louis citadel and Fort Miradou in Collioure. It keeps the colours of the 1er régiment de choc and reports to COMECIA."
+      },
+      "aliases": [
+        "Centre national d'entraînement commando"
+      ],
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/centre-national",
+          "title": "Centre national d'entraînement commando - 1er régiment de choc (defense.gouv.fr)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/National_Commando_Training_Center",
+          "title": "National Commando Training Center (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-etap",
+      "name": "École des troupes aéroportées",
+      "transliteration": "",
+      "short_name": "ETAP",
+      "type": "school",
+      "location": "Pau (Pyrénées-Atlantiques)",
+      "location_en": "Pau, France",
+      "website": "",
+      "description": {
+        "fr": "École de l'armée de Terre chargée de la formation parachutiste (brevet de parachutiste militaire, chuteurs opérationnels, moniteurs, largueurs, plieurs) pour l'ensemble des armées.",
+        "en": "French Army school responsible for parachute training (military parachutist badge, military free-fall, instructors, jumpmasters, riggers) for all services."
+      },
+      "aliases": [
+        "École des troupes aéroportées"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_des_troupes_aéroportées",
+          "title": "École des troupes aéroportées (Wikipédia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Adresse exacte de la page officielle defense.gouv.fr non vérifiée ; site laissé vide.",
+        "en": "Exact official defense.gouv.fr page not verified; website left empty."
+      }
+    },
+    {
+      "key": "fr-ei",
+      "name": "École de l'infanterie",
+      "transliteration": "",
+      "short_name": "EI",
+      "type": "school",
+      "location": "Draguignan (Var)",
+      "location_en": "Draguignan, France",
+      "website": "",
+      "description": {
+        "fr": "École d'arme de l'infanterie de l'armée de Terre : formation des officiers et sous-officiers d'infanterie, tir et combat débarqué. Installée à Draguignan depuis 2010, elle relève du COMECIA.",
+        "en": "French Army infantry branch school: trains infantry officers and NCOs in shooting and dismounted combat. Based in Draguignan since 2010, it reports to COMECIA."
+      },
+      "aliases": [
+        "École d'application de l'infanterie"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_de_l'infanterie",
+          "title": "École de l'infanterie (Wikipédia)"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/commandement",
+          "title": "COMECIA (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "key": "fr-ealat",
+      "name": "École de l'aviation légère de l'armée de Terre",
+      "transliteration": "",
+      "short_name": "EALAT",
+      "type": "school",
+      "location": "Le Cannet-des-Maures (Var) et Dax (Landes)",
+      "location_en": "Le Cannet-des-Maures and Dax, France",
+      "website": "",
+      "description": {
+        "fr": "École de formation des pilotes et équipages d'hélicoptères de l'armée de Terre, avec une base à Dax (formation initiale) et une au Cannet-des-Maures (formation spécialisée et tactique).",
+        "en": "Training school for French Army helicopter pilots and crews, with a site at Dax (initial training) and one at Le Cannet-des-Maures (advanced and tactical training)."
+      },
+      "aliases": [
+        "École de l’aviation légère de l’armée de Terre"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_de_l'aviation_légère_de_l'Armée_de_terre",
+          "title": "École de l'aviation légère de l'armée de Terre (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cefos-sante",
+      "name": "Centre de formation opérationnelle santé",
+      "transliteration": "",
+      "short_name": "CeFOS",
+      "type": "training_center",
+      "location": "Camp de La Valbonne (Ain)",
+      "location_en": "La Valbonne camp, France",
+      "website": "",
+      "description": {
+        "fr": "Centre du Service de santé des armées qui prépare le personnel de santé, dont les réservistes, à la médecine en opérations par la simulation, avant tout départ en mission.",
+        "en": "French Armed Forces Health Service centre that prepares medical personnel, including reservists, for operational medicine through simulation before deployment."
+      },
+      "aliases": [
+        "Centre de formation opérationnelle santé du régiment médical"
+      ],
+      "sources": [
+        {
+          "url": "https://prod-site-internet-minarm-admin.cloud.defense.gouv.fr/sites/default/files/sante/Le%20progr%C3%A8s_4000%20r%C3%A9servistes%20du%20SSA%20form%C3%A9s%20%C3%A0%20la%20m%C3%A9decine%20de%20guerre.pdf",
+          "title": "Le Progrès – 4000 réservistes du SSA formés à la médecine de guerre"
+        }
+      ],
+      "uncertain": {
+        "fr": "Rattachement exact (Service de santé des armées ou régiment médical, tous deux à La Valbonne) non confirmé par une page officielle. Aucun « CEFOS » des forces spéciales n'a été trouvé : le sigle désigne ce centre santé.",
+        "en": "Exact parent (Armed Forces Health Service or the régiment médical, both at La Valbonne) not confirmed by an official page. No special-forces \"CEFOS\" was found: the acronym refers to this medical centre."
+      }
+    },
+    {
+      "key": "fr-amscc",
+      "name": "Académie militaire de Saint-Cyr Coëtquidan",
+      "transliteration": "",
+      "short_name": "AMSCC",
+      "type": "academy",
+      "location": "Guer (Morbihan)",
+      "location_en": "Guer (Coëtquidan), France",
+      "website": "https://www.st-cyr.terre.defense.gouv.fr",
+      "description": {
+        "fr": "Académie qui regroupe les écoles de formation des officiers de l'armée de Terre : École spéciale militaire de Saint-Cyr, École militaire interarmes et 4e bataillon/École militaire du corps technique et administratif.",
+        "en": "Academy grouping the French Army officer schools: École spéciale militaire de Saint-Cyr, École militaire interarmes and the technical and administrative corps officer school."
+      },
+      "aliases": [
+        "Académie militaire de Saint-Cyr Coëtquidan",
+        "Écoles de Saint-Cyr Coëtquidan"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Académie_militaire_de_Saint-Cyr_Coëtquidan",
+          "title": "Académie militaire de Saint-Cyr Coëtquidan (Wikipédia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Le site officiel renvoie un refus d'accès (403) aux outils automatiques ; non vérifié en navigation.",
+        "en": "The official website returns an access refusal (403) to automated tools; not verified by browsing."
+      }
+    },
+    {
+      "key": "fr-esm",
+      "name": "École spéciale militaire de Saint-Cyr",
+      "transliteration": "",
+      "short_name": "ESM",
+      "type": "school",
+      "location": "Guer (Morbihan)",
+      "location_en": "Guer (Coëtquidan), France",
+      "website": "",
+      "description": {
+        "fr": "Grande école de formation initiale des officiers de carrière de l'armée de Terre recrutés sur concours, composante de l'Académie militaire de Saint-Cyr Coëtquidan.",
+        "en": "Initial training school for French Army career officers recruited by competitive exam, part of the Saint-Cyr Coëtquidan Military Academy."
+      },
+      "aliases": [
+        "Saint-Cyr"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_spéciale_militaire_de_Saint-Cyr",
+          "title": "École spéciale militaire de Saint-Cyr (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-emia",
+      "name": "École militaire interarmes",
+      "transliteration": "",
+      "short_name": "EMIA",
+      "type": "school",
+      "location": "Guer (Morbihan)",
+      "location_en": "Guer (Coëtquidan), France",
+      "website": "",
+      "description": {
+        "fr": "École de formation des officiers de l'armée de Terre issus du recrutement interne (sous-officiers), composante de l'Académie militaire de Saint-Cyr Coëtquidan.",
+        "en": "Officer school for French Army candidates from internal recruitment (NCOs), part of the Saint-Cyr Coëtquidan Military Academy."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_militaire_interarmes",
+          "title": "École militaire interarmes (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-ceito",
+      "name": "Centre d'entraînement de l'infanterie au tir opérationnel",
+      "transliteration": "",
+      "short_name": "CEITO",
+      "type": "training_center",
+      "location": "La Cavalerie, camp du Larzac (Aveyron)",
+      "location_en": "La Cavalerie (Larzac camp), France",
+      "website": "",
+      "description": {
+        "fr": "Centre de l'armée de Terre chargé de l'entraînement et de l'évaluation du tir opérationnel des unités d'infanterie, historiquement implanté au camp du Larzac.",
+        "en": "French Army centre for training and assessing the operational shooting of infantry units, historically based at the Larzac camp."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.assemblee-nationale.fr/dyn/14/questions/QANR5L14QOSD147.pdf",
+          "title": "Assemblée nationale – question orale n° 147 sur le CEITO du Larzac"
+        }
+      ],
+      "uncertain": {
+        "fr": "Un transfert vers Canjuers a été envisagé ; le statut et l'implantation actuels du CEITO ne sont pas confirmés (il n'apparaît pas dans la liste actuelle des centres du COMECIA).",
+        "en": "A move to Canjuers was planned; the CEITO's current status and location are not confirmed (it is not listed among COMECIA's current centres)."
+      }
+    },
+    {
+      "key": "fr-emhm",
+      "name": "École militaire de haute montagne",
+      "transliteration": "",
+      "short_name": "EMHM",
+      "type": "school",
+      "location": "Chamonix-Mont-Blanc (Haute-Savoie)",
+      "location_en": "Chamonix-Mont-Blanc, France",
+      "website": "",
+      "description": {
+        "fr": "École de l'armée de Terre chargée de la formation des cadres au combat en montagne (brevets d'alpinisme et de skieur militaires, chefs de détachement haute montagne) et pôle d'expertise montagne.",
+        "en": "French Army school training cadres in mountain warfare (military mountaineering and ski qualifications, high-mountain detachment leaders) and centre of mountain expertise."
+      },
+      "aliases": [
+        "École militaire de haute montagne"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_militaire_de_haute_montagne",
+          "title": "École militaire de haute montagne (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-gam",
+      "name": "Groupement d'aguerrissement montagne",
+      "transliteration": "",
+      "short_name": "GAM",
+      "type": "training_center",
+      "location": "Modane (Savoie)",
+      "location_en": "Modane, France",
+      "website": "https://www.defense.gouv.fr/terre/groupement-daguerrissement-montagne-gam",
+      "description": {
+        "fr": "Centre de l'armée de Terre dédié à l'aguerrissement et à l'entraînement des unités en milieu montagneux, rattaché au COMECIA.",
+        "en": "French Army centre for hardening and training units in mountain terrain, under COMECIA."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/groupement-daguerrissement-montagne-gam",
+          "title": "Groupement d'aguerrissement montagne (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cefe",
+      "name": "Centre d'entraînement en forêt équatoriale",
+      "transliteration": "",
+      "short_name": "CEFE",
+      "type": "training_center",
+      "location": "Régina (Guyane)",
+      "location_en": "Régina, French Guiana",
+      "website": "",
+      "description": {
+        "fr": "Centre du 3e régiment étranger d'infanterie qui forme les unités françaises et étrangères au combat et à la survie en jungle (stages d'aguerrissement en forêt équatoriale).",
+        "en": "Centre of the 3rd Foreign Infantry Regiment that trains French and foreign units in jungle warfare and survival."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Centre_d'entraînement_en_forêt_équatoriale",
+          "title": "Centre d'entraînement en forêt équatoriale (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-centac",
+      "name": "Centre d'entraînement au combat – 1er bataillon de chasseurs",
+      "transliteration": "",
+      "short_name": "CENTAC",
+      "type": "training_center",
+      "location": "Mailly-le-Camp (Aube)",
+      "location_en": "Mailly-le-Camp, France",
+      "website": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/1er-bataillon",
+      "description": {
+        "fr": "Centre d'entraînement au combat interarmes des sous-groupements tactiques, avec simulation instrumentée et force adverse, rattaché au COMECIA.",
+        "en": "Combined-arms combat training centre for company-level battle groups, with instrumented simulation and an opposing force, under COMECIA."
+      },
+      "aliases": [
+        "Centre d'entraînement au combat"
+      ],
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/1er-bataillon",
+          "title": "CENTAC – 1er bataillon de chasseurs (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cecpc",
+      "name": "Centre d'entraînement et de contrôle des postes de commandement – 3e régiment d'artillerie",
+      "transliteration": "",
+      "short_name": "CECPC",
+      "type": "training_center",
+      "location": "Mailly-le-Camp (Aube)",
+      "location_en": "Mailly-le-Camp, France",
+      "website": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/centre",
+      "description": {
+        "fr": "Centre d'entraînement et d'évaluation des postes de commandement de l'armée de Terre, rattaché au COMECIA.",
+        "en": "French Army centre for training and evaluating command posts, under COMECIA."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/centre",
+          "title": "CECPC – 3e RA (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cenzub",
+      "name": "Centre d'entraînement aux actions en zone urbaine – 94e régiment d'infanterie",
+      "transliteration": "",
+      "short_name": "CENZUB",
+      "type": "training_center",
+      "location": "Sissonne (Aisne)",
+      "location_en": "Sissonne, France",
+      "website": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/centre-0",
+      "description": {
+        "fr": "Centre d'entraînement au combat en zone urbaine de l'armée de Terre, disposant de villages et d'une ville d'entraînement, rattaché au COMECIA.",
+        "en": "French Army urban warfare training centre with purpose-built training villages and town, under COMECIA."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/centre-0",
+          "title": "CENZUB – 94e RI (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "key": "fr-comecia",
+      "name": "Commandement de l'entraînement et des écoles du combat interarmes",
+      "transliteration": "",
+      "short_name": "COMECIA",
+      "type": "command",
+      "location": "Mourmelon-le-Grand (Marne)",
+      "location_en": "Mourmelon-le-Grand, France",
+      "website": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/commandement",
+      "description": {
+        "fr": "Commandement de l'armée de Terre créé le 1er juillet 2018, qui regroupe les écoles d'armes du combat interarmes et les centres d'entraînement (CENTAC, CENZUB, CNEC, etc.).",
+        "en": "French Army command created on 1 July 2018, grouping the combined-arms branch schools and training centres (CENTAC, CENZUB, CNEC, etc.)."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-lentrainement-au-combat-interarmes-comecia/commandement",
+          "title": "Commandement de l'entraînement et des écoles du combat interarmes (defense.gouv.fr)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Localisation de l'état-major (Mourmelon-le-Grand) non confirmée par la page officielle.",
+        "en": "Headquarters location (Mourmelon-le-Grand) not confirmed by the official page."
+      }
+    },
+    {
+      "key": "fr-ecofus",
+      "name": "École des fusiliers marins",
+      "transliteration": "",
+      "short_name": "ECOFUS",
+      "type": "school",
+      "location": "Lorient (Morbihan)",
+      "location_en": "Lorient, France",
+      "website": "",
+      "description": {
+        "fr": "École de la Marine nationale formant les fusiliers marins et assurant le stage commando préalable à l'intégration des commandos Marine.",
+        "en": "French Navy school training naval fusiliers and running the commando course required to join the Commandos Marine."
+      },
+      "aliases": [
+        "École des fusiliers marins"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_des_fusiliers_marins",
+          "title": "École des fusiliers marins (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-alfusco",
+      "name": "Force maritime des fusiliers marins et commandos",
+      "transliteration": "",
+      "short_name": "ALFUSCO",
+      "type": "command",
+      "location": "Lorient (Morbihan)",
+      "location_en": "Lorient, France",
+      "website": "",
+      "description": {
+        "fr": "Force organique de la Marine nationale qui regroupe les unités de fusiliers marins, les commandos Marine et l'École des fusiliers marins, commandée par l'amiral ALFUSCO.",
+        "en": "French Navy force grouping the naval fusilier units, the Commandos Marine and the naval fusilier school, commanded by the ALFUSCO admiral."
+      },
+      "aliases": [
+        "Force maritime des fusiliers marins et commandos"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Force_maritime_des_fusiliers_marins_et_commandos",
+          "title": "Force maritime des fusiliers marins et commandos (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-plongee-marine",
+      "name": "École de plongée de la Marine nationale",
+      "transliteration": "",
+      "short_name": "École de plongée",
+      "type": "school",
+      "location": "Saint-Mandrier-sur-Mer (Var)",
+      "location_en": "Saint-Mandrier-sur-Mer, France",
+      "website": "",
+      "description": {
+        "fr": "École de la Marine nationale implantée sur la presqu'île de Saint-Mandrier, qui forme les plongeurs de la Marine (plongeurs de bord, plongeurs démineurs) et assure la formation initiale des plongeurs de toutes les armées et de la Gendarmerie.",
+        "en": "French Navy school on the Saint-Mandrier peninsula training Navy divers (ship divers, clearance divers) and providing initial diver training for all services and the Gendarmerie."
+      },
+      "aliases": [
+        "École de plongée de la Marine nationale (Saint-Mandrier)"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Pôle_écoles_Méditerranée",
+          "title": "Pôle écoles Méditerranée (Wikipédia)"
+        },
+        {
+          "url": "https://semm.org/wp-content/uploads/2018/05/la-plongee-dans-la-marine-nationale.pdf",
+          "title": "La plongée dans la Marine nationale (SEMM)"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/Plongeur_militaire",
+          "title": "Plongeur militaire (Wikipédia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Sigle officiel non confirmé ; libellé court repris tel quel.",
+        "en": "Official acronym not confirmed; short label kept as used."
+      }
+    },
+    {
+      "key": "fr-1rpima",
+      "name": "1er régiment de parachutistes d'infanterie de marine",
+      "transliteration": "",
+      "short_name": "1er RPIMa",
+      "type": "unit",
+      "location": "Bayonne (Pyrénées-Atlantiques)",
+      "location_en": "Bayonne, France",
+      "website": "",
+      "description": {
+        "fr": "Régiment des forces spéciales de l'armée de Terre (CAST, ex-COM FST) ; sa compagnie d'instruction assure la sélection et la formation initiale des opérateurs.",
+        "en": "French Army special forces regiment (CAST, ex-COM FST); its training company runs operator selection and initial training."
+      },
+      "aliases": [
+        "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_régiment_de_parachutistes_d'infanterie_de_marine",
+          "title": "1er régiment de parachutistes d'infanterie de marine (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-13rdp",
+      "name": "13e régiment de dragons parachutistes",
+      "transliteration": "",
+      "short_name": "13e RDP",
+      "type": "unit",
+      "location": "Martignas-sur-Jalle, camp de Souge (Gironde)",
+      "location_en": "Martignas-sur-Jalle (Souge camp), France",
+      "website": "",
+      "description": {
+        "fr": "Régiment des forces spéciales de l'armée de Terre spécialisé dans le renseignement et la recherche humaine en profondeur ; il dispose d'un centre de formation propre.",
+        "en": "French Army special forces regiment specialised in deep reconnaissance and human intelligence gathering; it runs its own training centre."
+      },
+      "aliases": [
+        "13e régiment de dragons parachutistes",
+        "13e régiment de dragons parachutistes – centre de formation délégué"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/13e_régiment_de_dragons_parachutistes",
+          "title": "13e régiment de dragons parachutistes (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-4rhfs",
+      "name": "4e régiment d'hélicoptères des forces spéciales",
+      "transliteration": "",
+      "short_name": "4e RHFS",
+      "type": "unit",
+      "location": "Pau (Pyrénées-Atlantiques)",
+      "location_en": "Pau, France",
+      "website": "",
+      "description": {
+        "fr": "Régiment d'hélicoptères des forces spéciales de l'armée de Terre (CAST, ex-COM FST), qui forme ses équipages aux procédures spécifiques des opérations spéciales.",
+        "en": "French Army special forces helicopter regiment (CAST, ex-COM FST), training its crews in special operations procedures."
+      },
+      "aliases": [
+        "4e régiment d’hélicoptères des forces spéciales – cellule d’instruction spécialisée"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/4e_régiment_d'hélicoptères_des_forces_spéciales",
+          "title": "4e régiment d'hélicoptères des forces spéciales (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cast",
+      "name": "Commandement des actions spéciales Terre",
+      "transliteration": "",
+      "short_name": "CAST",
+      "type": "command",
+      "location": "Pau (Pyrénées-Atlantiques)",
+      "location_en": "Pau, France",
+      "website": "",
+      "description": {
+        "fr": "Grand commandement de l'armée de Terre qui a succédé le 1er janvier 2024 au commandement des forces spéciales Terre (COM FST). Il regroupe les régiments des forces spéciales Terre (1er RPIMa, 13e RDP, 4e RHFS) et les centres d'action hybride ; ses principaux employeurs sont le COS et la DRM.",
+        "en": "French Army major command that succeeded the Army Special Forces Command (COM FST) on 1 January 2024. It groups the Army special forces regiments (1er RPIMa, 13e RDP, 4e RHFS) and the hybrid action centres; its main users are the COS and the DRM."
+      },
+      "aliases": [
+        "Commandement des forces spéciales Terre",
+        "Brigade des forces spéciales Terre"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Commandement_des_actions_spéciales_terre",
+          "title": "Commandement des actions spéciales terre (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cos",
+      "name": "Commandement des opérations spéciales",
+      "transliteration": "",
+      "short_name": "COS",
+      "type": "command",
+      "location": "Vélizy-Villacoublay (Yvelines)",
+      "location_en": "Vélizy-Villacoublay, France",
+      "website": "",
+      "description": {
+        "fr": "Commandement interarmées placé sous l'autorité du chef d'état-major des armées, qui planifie et conduit les opérations spéciales avec les unités des trois armées.",
+        "en": "Joint command under the French Chief of the Defence Staff that plans and conducts special operations with units from all three services."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Commandement_des_opérations_spéciales",
+          "title": "Commandement des opérations spéciales (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-11bp",
+      "name": "11e brigade parachutiste",
+      "transliteration": "",
+      "short_name": "11e BP",
+      "type": "command",
+      "location": "Balma (Haute-Garonne)",
+      "location_en": "Balma (Toulouse), France",
+      "website": "",
+      "description": {
+        "fr": "Brigade aéroportée de l'armée de Terre ; ses groupements de commandos parachutistes (GCP) sont formés et qualifiés au sein de la brigade.",
+        "en": "French Army airborne brigade; its paratrooper commando groups (GCP) are trained and qualified within the brigade."
+      },
+      "aliases": [
+        "11e brigade parachutiste – groupement de commandos parachutistes"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/11e_brigade_parachutiste",
+          "title": "11e brigade parachutiste (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-ensoa",
+      "name": "École nationale des sous-officiers d'active",
+      "transliteration": "",
+      "short_name": "ENSOA",
+      "type": "school",
+      "location": "Saint-Maixent-l'École (Deux-Sèvres)",
+      "location_en": "Saint-Maixent-l'École, France",
+      "website": "",
+      "description": {
+        "fr": "École de formation initiale des sous-officiers de l'armée de Terre.",
+        "en": "Initial training school for French Army non-commissioned officers."
+      },
+      "aliases": [
+        "École nationale des sous-officiers d’active"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_nationale_des_sous-officiers_d'active",
+          "title": "École nationale des sous-officiers d'active (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cfim",
+      "name": "Centres de formation initiale des militaires du rang",
+      "transliteration": "",
+      "short_name": "CFIM",
+      "type": "training_center",
+      "location": "Plusieurs garnisons en France",
+      "location_en": "Several garrisons, France",
+      "website": "https://www.defense.gouv.fr/terre/centres-formation-initiale-militaires-du-rang-cfim",
+      "description": {
+        "fr": "Réseau de centres de l'armée de Terre, adossés à des brigades, qui assurent la formation générale initiale des engagés militaires du rang.",
+        "en": "Network of French Army centres, attached to brigades, delivering initial basic training to enlisted recruits."
+      },
+      "aliases": [
+        "Centres de formation initiale des militaires du rang"
+      ],
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/centres-formation-initiale-militaires-du-rang-cfim",
+          "title": "Centres de formation initiale des militaires du rang (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "key": "fr-ecole-de-guerre",
+      "name": "École de guerre",
+      "transliteration": "",
+      "short_name": "EDG",
+      "type": "school",
+      "location": "Paris (École militaire, 1 place Joffre)",
+      "location_en": "Paris, France",
+      "website": "",
+      "description": {
+        "fr": "École interarmées d'enseignement militaire supérieur qui forme les officiers français et étrangers aux responsabilités d'état-major et de commandement.",
+        "en": "Joint staff college training French and foreign officers for staff and command responsibilities."
+      },
+      "aliases": [
+        "Collège interarmées de défense"
+      ],
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/dems/brochure%20de%20pr%C3%A9sentation%20de%20l%27EDG_2024.pdf",
+          "title": "Brochure de présentation de l'École de guerre 2024 (defense.gouv.fr)"
+        }
+      ]
+    },
+    {
+      "key": "fr-gign",
+      "name": "Groupe d'intervention de la Gendarmerie nationale",
+      "transliteration": "",
+      "short_name": "GIGN",
+      "type": "unit",
+      "location": "Versailles-Satory (Yvelines)",
+      "location_en": "Versailles-Satory, France",
+      "website": "",
+      "description": {
+        "fr": "Unité d'intervention spécialisée de la Gendarmerie nationale (contre-terrorisme, libération d'otages, interpellations à haut risque), qui assure sa propre sélection et formation.",
+        "en": "Gendarmerie nationale special intervention unit (counter-terrorism, hostage rescue, high-risk arrests), running its own selection and training."
+      },
+      "aliases": [
+        "Groupe d’intervention de la Gendarmerie nationale"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupe_d'intervention_de_la_Gendarmerie_nationale",
+          "title": "Groupe d'intervention de la Gendarmerie nationale (Wikipédia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cpa10",
+      "name": "Commando parachutiste de l'air n° 10",
+      "transliteration": "",
+      "short_name": "CPA 10",
+      "type": "unit",
+      "location": "Base aérienne 123 Orléans-Bricy (Loiret)",
+      "location_en": "Orléans-Bricy Air Base 123, France",
+      "website": "",
+      "description": {
+        "fr": "Unité des forces spéciales de l'armée de l'Air et de l'Espace (contre-terrorisme, guidage aérien, reconnaissance), qui assure ses stages de qualification spécifiques.",
+        "en": "French Air and Space Force special forces unit (counter-terrorism, air guidance, reconnaissance) running its own qualification courses."
+      },
+      "aliases": [
+        "Commando parachutiste de l’air n° 10"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Air_Parachute_Commando_No._10",
+          "title": "Air Parachute Commando No. 10 (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "key": "fr-cpa20",
+      "name": "Commando parachutiste de l'air n° 20",
+      "transliteration": "",
+      "short_name": "CPA 20",
+      "type": "unit",
+      "location": "Base aérienne 115 Orange-Caritat (Vaucluse)",
+      "location_en": "Orange-Caritat Air Base 115, France",
+      "website": "",
+      "description": {
+        "fr": "Commando de l'armée de l'Air et de l'Espace spécialisé dans la protection et la défense des bases et des sites aériens.",
+        "en": "French Air and Space Force commando specialised in air base and site protection and defence."
+      },
+      "aliases": [
+        "Commando parachutiste de l’air n° 20"
+      ],
+      "sources": [
+        {
+          "url": "https://www.techno-science.net/fr/definitions/commando-parachutiste-de-l-air-n-20",
+          "title": "Commando parachutiste de l'air n° 20 (Techno-Science, reprise Wikipédia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Transfert de Dijon vers Orange en 2016 rapporté par une source secondaire ; non confirmé par une page officielle.",
+        "en": "2016 move from Dijon to Orange reported by a secondary source; not confirmed by an official page."
+      }
+    },
+    {
+      "key": "fr-cpa30",
+      "name": "Commando parachutiste de l'air n° 30",
+      "transliteration": "",
+      "short_name": "CPA 30",
+      "type": "unit",
+      "location": "Base aérienne 123 Orléans-Bricy (Loiret)",
+      "location_en": "Orléans-Bricy Air Base 123, France",
+      "website": "",
+      "description": {
+        "fr": "Commando de l'armée de l'Air et de l'Espace spécialisé dans la récupération de personnel isolé (RESCO) et l'accompagnement des missions aériennes.",
+        "en": "French Air and Space Force commando specialised in personnel recovery (CSAR) and support to air missions."
+      },
+      "aliases": [
+        "Commando parachutiste de l’air n° 30"
+      ],
+      "sources": [
+        {
+          "url": "https://www.techno-science.net/fr/definitions/commandos-parachutistes-de-l-air",
+          "title": "Commandos parachutistes de l'air (Techno-Science, reprise Wikipédia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Implantation actuelle (Orléans-Bricy) d'après une seule source non datée.",
+        "en": "Current location (Orléans-Bricy) based on a single undated source."
+      }
+    },
+    {
+      "key": "fr-casv",
+      "name": "Centre air de saut en vol",
+      "transliteration": "",
+      "short_name": "CASV",
+      "type": "training_center",
+      "location": "Base aérienne 123 Orléans-Bricy (Loiret)",
+      "location_en": "Orléans-Bricy Air Base 123, France",
+      "website": "",
+      "description": {
+        "fr": "Centre de l'armée de l'Air et de l'Espace implanté à Orléans-Bricy, chargé de la formation et de l'expertise en saut en parachute depuis aéronef.",
+        "en": "French Air and Space Force centre at Orléans-Bricy responsible for parachute jump training and expertise from aircraft."
+      },
+      "aliases": [
+        "Centre air de saut en vol (Orléans)"
+      ],
+      "sources": [
+        {
+          "url": "https://www.techno-science.net/fr/definitions/base-aerienne-123-orleans-bricy",
+          "title": "Base aérienne 123 Orléans-Bricy (Techno-Science, reprise Wikipédia)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Existence confirmée seulement par la liste des unités de la BA 123 ; rôle détaillé non vérifié.",
+        "en": "Existence only confirmed by the BA 123 unit list; detailed role not verified."
+      }
+    },
+    {
+      "key": "fr-cpocaae",
+      "name": "Centre de préparation opérationnelle du combattant de l'armée de l'Air et de l'Espace",
+      "transliteration": "",
+      "short_name": "CPOCAAE",
+      "type": "training_center",
+      "location": "Base aérienne 115 Orange-Caritat (Vaucluse)",
+      "location_en": "Orange-Caritat Air Base 115, France",
+      "website": "",
+      "description": {
+        "fr": "Centre créé le 1er juillet 2015 qui assure la formation militaire initiale et la préparation opérationnelle au combat des aviateurs.",
+        "en": "Centre created on 1 July 2015 delivering initial military training and combat readiness training for French Air and Space Force personnel."
+      },
+      "aliases": [
+        "Centre de préparation opérationnelle du combattant de l’armée de l’Air et de l’Espace",
+        "Centre de préparation opérationnelle du combattant de l'armée de l'Air"
+      ],
+      "sources": [
+        {
+          "url": "https://www.onisep.fr/ressources/univers-metier/metiers/operateur-operatrice-planification-et-conduite-des-operations-aeriennes",
+          "title": "Onisep – formation au CPOCAA d'Orange"
+        }
+      ]
+    },
+    {
+      "key": "fr-cfaa",
+      "name": "Centre de formation à l'appui aérien",
+      "transliteration": "",
+      "short_name": "CFAA",
+      "type": "training_center",
+      "location": "Base aérienne 133 Nancy-Ochey (Meurthe-et-Moselle)",
+      "location_en": "Nancy-Ochey Air Base 133, France",
+      "website": "",
+      "description": {
+        "fr": "Centre interarmées de formation des contrôleurs aériens avancés (JTAC) et des personnels de l'appui aérien rapproché.",
+        "en": "Joint centre training joint terminal attack controllers (JTAC) and close air support personnel."
+      },
+      "aliases": [
+        "Centre de formation à l’appui aérien (Nancy-Ochey)"
+      ],
+      "sources": [
+        {
+          "url": "https://armement.defense.gouv.fr/sites/default/files/2022-11/856312_2020-06-08%20DI%20CFA-PFC%20SO_soutien%20formation%20JTAC_7.pdf",
+          "title": "DGA – soutien à la formation JTAC (CFAA)"
+        }
+      ]
+    },
+    {
+      "key": "fr-grin-cazaux",
+      "name": "Groupe régional d'intervention NEDEX de Cazaux",
+      "transliteration": "",
+      "short_name": "GrIN",
+      "type": "unit",
+      "location": "Base aérienne 120 Cazaux (Gironde)",
+      "location_en": "Cazaux Air Base 120, France",
+      "website": "",
+      "description": {
+        "fr": "Unité de neutralisation, enlèvement et destruction des explosifs (NEDEX) de l'armée de l'Air et de l'Espace implantée sur la base de Cazaux.",
+        "en": "French Air and Space Force explosive ordnance disposal (EOD) unit based at Cazaux air base."
+      },
+      "aliases": [
+        "Groupement d’intervention NEDEX (Cazaux)"
+      ],
+      "sources": [
+        {
+          "url": "https://traditions-air.fr/texte/documents_pdf/20140107_DP_visite_cazaux.pdf",
+          "title": "Dossier de presse – visite de la BA 120 Cazaux (2014)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Seule source : dossier de presse de 2014 mentionnant le GRIN 23.565 ; dénomination exacte et existence actuelle non confirmées.",
+        "en": "Only source is a 2014 press kit mentioning GRIN 23.565; exact name and current existence not confirmed."
+      }
+    },
+    {
+      "key": "fr-eae",
+      "name": "École de l'air et de l'espace",
+      "transliteration": "",
+      "short_name": "EAE",
+      "type": "school",
+      "location": "Salon-de-Provence (Bouches-du-Rhône)",
+      "location_en": "Salon-de-Provence, France",
+      "website": "https://www.ecole-air-espace.fr",
+      "description": {
+        "fr": "Grande école de formation initiale des officiers de l'armée de l'Air et de l'Espace.",
+        "en": "Initial training school for French Air and Space Force officers."
+      },
+      "aliases": [
+        "École de l'air"
+      ],
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/École_de_l'air_et_de_l'espace",
+          "title": "École de l'air et de l'espace (Wikipédia)"
+        }
+      ]
+    }
+  ]
+}

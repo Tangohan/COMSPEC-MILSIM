@@ -34,6 +34,16 @@ $currentQuery = $query([]);
 $available = count(array_filter($rows, static fn (array $r): bool => !isset($imported[strtoupper((string) $r['code'])])));
 $active = array_filter(array_diff_key($f, ['tri' => 1]), static fn ($v): bool => $v !== '');
 $categories = QC::CATEGORIES;
+// Formule : plafond d’imports (compteur, jamais de perte) et « Tout importer » d’un pays en un clic.
+$quota = is_array($catalogQuota ?? null) ? $catalogQuota : null;
+$bulk = !empty($catalogBulk);
+$bulkOffer = is_array($catalogBulkOffer ?? null) ? $catalogBulkOffer : null;
+$packOf = '';
+foreach ($countries as $c) {
+    if (($c['code'] ?? '') === $f['pays']) {
+        $packOf = (string) $c['pack'];
+    }
+}
 ?>
 <div class="rq rqc" data-rqc data-qualification-url="<?= $h(url('back-office/referentiels/qualifications/catalogue/fiche')) ?>" data-csrf="<?= $h(\App\Core\Csrf::token()) ?>" data-detail="<?= $h((string) ($catalogDetail ?? '')) ?>">
     <div class="rq-top">
@@ -89,7 +99,18 @@ $categories = QC::CATEGORIES;
         <input type="hidden" name="return_query" value="<?= $h($currentQuery) ?>">
         <div class="rqc-bar rqc-bar--sticky">
             <p class="rqc-count" role="status"><span><?= count($rows) ?> qualification(s) sur <?= $total ?> · <?= $available ?> à importer</span><span class="rqc-count__selected" data-rqc-selected hidden></span></p>
+            <?php if ($quota !== null && !$quota['unlimited']): ?>
+            <p class="rqc-quota<?= $quota['can_add'] ? '' : ' is-full' ?>"><b><?= (int) $quota['used'] ?> / <?= (int) $quota['limit'] ?></b> <span>qualifications importées sur votre formule</span><?php if ($quota['offer'] !== null): ?> · <span>Formule <b translate="no"><?= $h((string) $quota['offer']['name']) ?></b> : <?= $quota['offer']['value'] === 0 ? 'illimité' : (int) $quota['offer']['value'] ?></span> <a href="<?= $h((string) $quota['upgrade_url']) ?>">Voir les formules</a><?php endif; ?></p>
+            <?php endif; ?>
             <div class="rqc-actions">
+                <?php if ($packOf !== ''): ?>
+                    <?php if ($bulk): ?>
+                    <input type="hidden" name="pack" value="<?= $h($packOf) ?>">
+                    <button type="submit" name="all" value="1" class="rq-btn">Tout importer ce pays</button>
+                    <?php else: ?>
+                    <span class="rqc-locked" title="Importer toutes les qualifications d’un pays en un clic est inclus dans la formule <?= $h((string) ($bulkOffer['name'] ?? 'Pro')) ?>."><button type="button" class="rq-btn" disabled>Tout importer ce pays</button> <a class="rqc-plan" href="<?= $h(\App\Services\Billing\QualificationCatalogQuota::upgradeUrl()) ?>">Formule <span translate="no"><?= $h((string) ($bulkOffer['name'] ?? 'Pro')) ?></span></a></span>
+                    <?php endif; ?>
+                <?php endif; ?>
                 <button type="button" class="rq-btn" data-rqc-select-all<?= $available === 0 ? ' disabled' : '' ?>>Tout cocher</button>
                 <button type="submit" class="rq-btn rq-btn--primary" data-rqc-import-selection>Importer la sélection</button>
             </div>

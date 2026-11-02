@@ -56,4 +56,5 @@ return [
 'cred_name_required'=>'Donnez-lui un nom (150 caractères au plus).', 'cred_code_invalid'=>'Code invalide : lettres majuscules, chiffres, point, tiret ou trait bas.', 'cred_code_taken'=>'Ce code est déjà utilisé dans votre communauté.',
 'cred_unavailable'=>'Le référentiel des qualifications n’est pas encore installé.', 'cred_rules_pending'=>'Les conditions d’obtention arrivent avec la prochaine mise à jour du site.',
 'cred_rule_error'=>'Les conditions n’ont pas pu être enregistrées. Vérifiez les seuils saisis.', 'cred_badge_failed'=>'Fiche enregistrée, mais l’insigne a été refusé (format ou taille).',
+'cred_quota_reached'=>'Plafond de créations de votre formule atteint : la fiche n’a pas été créée. Les qualifications et brevets existants restent modifiables.', 'cred_quota_line'=>'qualifications et brevets créés sur votre formule', 'cred_quota_unlock'=>'Plus de créations avec la formule', 'cred_quota_unlimited'=>'illimité', 'cred_quota_see'=>'Voir les formules',
 ];

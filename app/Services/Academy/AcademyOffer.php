@@ -16,6 +16,8 @@ use App\Services\Personnel\QualificationCriteriaEngine as Engine;
 use App\Services\Personnel\QualificationTemporalStatusService as Temporal;
 use App\Services\Training\CompetencyCatalogService;
 use App\Services\Training\CompetencyPathwayGenerator;
+use App\Support\JobCatalog\JobCatalog;
+use App\Support\QualificationCatalog\QualificationCatalogExplorer;
 use App\Support\QualificationCriteriaCatalog as Cat;
 use Throwable;
 
@@ -23,6 +25,10 @@ use Throwable;
  * Tout ce qu'un membre peut obtenir, réuni pour le catalogue et le tableau de bord Academy : formations (Academy et
  * LMS), brevets et licences, qualifications de la communauté (quel que soit leur mode d'obtention), parcours de
  * compétence, compétences du référentiel et émetteurs. Chaque élément porte l'état du membre connecté.
+ *
+ * Onglets Qualifications et Brevets : aussi le catalogue de référence (packs pays et OTAN de config/qualification_catalog,
+ * éléments « r-<id> », origine « catalogue ») ; une qualification de la communauté importée de ce catalogue (même code)
+ * a l'origine « referentiel » et remplace l'entrée du catalogue, les autres ont l'origine « communaute ».
  *
  * collect() lit les sources (chacune peut manquer : la page reste utilisable) ; assemble() et filter() sont purs.
  */
@@ -35,7 +41,12 @@ final class AcademyOffer
         'disponible' => ['available'],
         'prerequis' => ['missing', 'blocked'],
     ];
-    public const SORTS = ['pertinence', 'nom', 'etat', 'duree'];
+    public const SORTS = ['pertinence', 'nom', 'etat', 'duree', 'pays', 'niveau'];
+    /** D'où vient une qualification : catalogue de référence (à importer), déjà dans le référentiel, création locale. */
+    public const ORIGINS = ['catalogue', 'referentiel', 'communaute'];
+    /** Nature d'une qualification (filtre « Catégorie » des onglets Qualifications et Brevets). */
+    public const NATURES = ['brevet', 'qualification', 'cursus', 'licence'];
+    public const PER_PAGE = 36;
     private const STATE_ORDER = ['renew' => 0, 'expiring' => 1, 'eligible' => 2, 'progress' => 3, 'pending' => 4, 'available' => 5, 'missing' => 6, 'blocked' => 7, 'held' => 8, 'none' => 9];
 
     /**
@@ -46,7 +57,7 @@ final class AcademyOffer
      * @param list<array<string, mixed>> $legacyEnrollments
      * @return array<string, mixed>
      */
-    public static function collect(int $tenantId, int $userId, ?array $tenant, array $academyCourses, array $states, array $legacyCourses, array $legacyEnrollments, bool $staff): array
+    public static function collect(int $tenantId, int $userId, ?array $tenant, array $academyCourses, array $states, array $legacyCourses, array $legacyEnrollments, bool $staff, bool $withReference = false): array
     {
         $src = [
             'tenant_name' => (string) ($tenant['name'] ?? ''),
@@ -58,6 +69,8 @@ final class AcademyOffer
             'definitions' => [], 'settings' => [], 'pilot' => [], 'prereqs' => [], 'issuers' => [], 'evaluations' => [],
             'names' => ['courses' => [], 'definitions' => [], 'scopes' => []],
             'pathways' => [], 'competencies' => [], 'catalog' => [],
+            // Catalogue de référence (packs pays et OTAN) : seulement pour la page Catalogue.
+            'reference' => $withReference ? (self::safe(static fn (): array => QualificationCatalogExplorer::rows(function_exists('locale') ? (string) locale() : 'fr')) ?? []) : [],
         ];
         if ($tenantId < 1) {
             return self::assemble($src);
@@ -107,7 +120,7 @@ final class AcademyOffer
 
     /**
      * @param array<string, mixed> $src
-     * @return array{items: list<array<string, mixed>>, totals: array<string, int>, names: array<string, mixed>}
+     * @return array{items: list<array<string, mixed>>, totals: array<string, int>, names: array<string, mixed>, references: int}
      */
     public static function assemble(array $src): array
     {
@@ -232,6 +245,11 @@ final class AcademyOffer
         $names['definitions'] = ($names['definitions'] ?? []) + array_map(static fn (array $d): string => (string) ($d['name'] ?? ''), $definitions);
         $staff = !empty($src['staff']);
         $issuerCounts = [];
+        $refByCode = [];
+        foreach ($src['reference'] ?? [] as $row) {
+            $refByCode[strtoupper((string) ($row['code'] ?? ''))] = $row;
+        }
+        $tenantCodes = [];
         foreach ($definitions as $defId => $d) {
             $settings = $src['settings'][$defId] ?? null;
             $ev = $src['evaluations'][$defId] ?? null;
@@ -299,8 +317,21 @@ final class AcademyOffer
             $validity = !empty($d['is_permanent']) || ($months === 0 && $days === 0) ? ['permanent'] : ($months > 0 ? ['months' => $months] : ['days' => $days]);
             $brevet = self::isBrevet($d);
             $tabs = $brevet ? ['brevets', 'qualifications'] : ['qualifications'];
+            $code = strtoupper(trim((string) ($d['code'] ?? '')));
+            $ref = $code !== '' ? ($refByCode[$code] ?? null) : null;
+            if ($code !== '') {
+                $tenantCodes[$code] = true;
+            }
+            $category = trim((string) ($d['category_name'] ?? $d['category'] ?? ''));
             $items[] = [
                 'id' => 'q-' . $defId,
+                'origin' => $ref !== null ? 'referentiel' : 'communaute',
+                'nature' => self::nature((string) ($d['name'] ?? '') . ' ' . (string) ($ref['name'] ?? '') . ' ' . (string) ($ref['official_name'] ?? ''), $brevet, (string) ($ref['category'] ?? ''), (string) ($d['type_name'] ?? '')),
+                'ref_id' => $ref !== null ? (string) $ref['id'] : '',
+                'country' => $ref !== null ? (string) $ref['country'] : '',
+                'country_label' => $ref !== null ? (string) $ref['country_label'] : '',
+                'official_name' => $ref !== null ? (string) $ref['official_name'] : '',
+                'code' => $code,
                 'kind' => 'qualification',
                 'tabs' => $tabs,
                 'title' => (string) ($d['name'] ?? ''),
@@ -310,7 +341,8 @@ final class AcademyOffer
                 'symbol' => $brevet ? 'brevet' : 'qualification',
                 'issuer' => $issuerName,
                 'issuer_id' => $issuerId,
-                'category' => trim((string) ($d['category_name'] ?? $d['category'] ?? '')),
+                // Importée du catalogue : thème du catalogue (la catégorie créée à l'import porte aussi le pays).
+                'category' => $ref !== null ? (string) $ref['category_label'] : $category,
                 'type_name' => trim((string) ($d['type_name'] ?? '')),
                 'level' => !empty($d['uses_levels']) && (int) ($d['levels_count'] ?? 0) > 0 ? 'levels:' . (int) $d['levels_count'] : '',
                 'duration_min' => null,
@@ -328,6 +360,52 @@ final class AcademyOffer
                 'requires_exam' => !empty($d['requires_exam']),
                 // Toutes les conditions automatiques, ou au moins une (règle à un seul bloc ou blocs « au moins un »).
                 'rule_any' => $rule !== [] && count(Engine::criteria($rule)) > 1 && self::ruleIsAny($rule),
+            ];
+        }
+
+        // Catalogue de référence : qualifications réelles par pays et OTAN, pas encore dans le référentiel.
+        foreach ($src['reference'] ?? [] as $row) {
+            $code = strtoupper((string) ($row['code'] ?? ''));
+            if ($code === '' || isset($tenantCodes[$code])) {
+                continue;
+            }
+            $nature = self::nature((string) $row['name'] . ' ' . (string) $row['official_name'], false, (string) $row['category']);
+            $months = $row['validity_months'] ?? null;
+            $items[] = [
+                'id' => 'r-' . $row['id'],
+                'kind' => 'reference',
+                'origin' => 'catalogue',
+                'nature' => $nature,
+                'ref_id' => (string) $row['id'],
+                'tabs' => in_array($nature, ['brevet', 'licence'], true) ? ['brevets', 'qualifications'] : ['qualifications'],
+                'title' => (string) $row['name'],
+                'short' => (string) $row['short_name'],
+                'summary' => (string) $row['description'],
+                'badge' => '',
+                'symbol' => in_array($nature, ['brevet', 'licence'], true) ? 'brevet' : 'qualification',
+                'issuer' => (string) $row['issuer'],
+                'issuer_id' => 0,
+                'issuer_key' => (string) ($row['issuer_key'] ?? ''),
+                'category' => (string) $row['category_label'],
+                'level' => 'ref:' . (string) ($row['level']['key'] ?? 'initial'),
+                'level_estimated' => !empty($row['level']['estimated']),
+                'level_rank' => (int) ($row['level']['rank'] ?? 0),
+                'country' => (string) $row['country'],
+                'country_label' => (string) $row['country_label'],
+                'official_name' => (string) $row['official_name'],
+                'code' => $code,
+                'duration_min' => null,
+                'validity' => is_int($months) && $months > 0 ? ['months' => $months] : [],
+                'modes' => [],
+                'how' => [],
+                'source' => 'reference',
+                'state' => 'none',
+                'pct' => null,
+                'next' => null,
+                'missing' => [],
+                'award' => null,
+                'jobs_count' => (int) ($row['jobs_count'] ?? 0),
+                'academy' => $row['academy'] ?? null,
             ];
         }
 
@@ -454,17 +532,60 @@ final class AcademyOffer
         }
 
         foreach ($items as $k => $it) {
-            $items[$k]['search'] = mb_strtolower(implode(' ', array_filter([$it['title'], $it['short'] ?? '', $it['summary'], $it['issuer'], $it['category'], $it['type_name'] ?? ''], 'is_string')), 'UTF-8');
+            $hay = implode(' ', array_filter([$it['title'], $it['short'] ?? '', $it['summary'], $it['issuer'], $it['category'], $it['type_name'] ?? '', $it['official_name'] ?? '', $it['code'] ?? '', $it['country_label'] ?? ''], 'is_string'));
+            $items[$k]['search'] = self::norm($hay . ' ' . JobCatalog::transliterate($hay));
         }
         $totals = array_fill_keys(self::TABS, 0);
+        $references = 0;
         foreach ($items as $it) {
             foreach ($it['tabs'] as $tab) {
                 $totals[$tab]++;
             }
+            $references += $it['kind'] === 'reference' ? 1 : 0;
         }
-        $totals['tout'] = count($items);
+        // « Tout » : ce que propose la communauté ; le catalogue de référence se parcourt dans ses onglets.
+        $totals['tout'] = count($items) - $references;
 
-        return ['items' => $items, 'totals' => $totals, 'names' => $names];
+        return ['items' => $items, 'totals' => $totals, 'names' => $names, 'references' => $references, 'reference_loaded' => ($src['reference'] ?? []) !== []];
+    }
+
+    /**
+     * Le catalogue de référence (lecture et rapprochements coûteux) n’est chargé que là où il s’affiche : onglets
+     * Qualifications et Brevets, recherche, fiche détaillée.
+     *
+     * @param array<string, mixed> $query
+     */
+    public static function needsReference(array $query): bool
+    {
+        $f = self::filters($query);
+
+        return in_array($f['onglet'], ['qualifications', 'brevets'], true) || $f['q'] !== '' || (is_string($query['fiche'] ?? null) && $query['fiche'] !== '');
+    }
+
+    /** Texte comparable : minuscules, sans accents ni ponctuation, espaces autour. */
+    public static function norm(string $text): string
+    {
+        return ' ' . trim((string) preg_replace('/\s+/u', ' ', JobCatalog::normalize($text))) . ' ';
+    }
+
+    /**
+     * Nature d'une qualification : brevet, licence, cursus ou sélection, ou qualification (d'après son nom, son type et
+     * le thème du catalogue).
+     */
+    public static function nature(string $name, bool $brevet = false, string $refCategory = '', string $typeName = ''): string
+    {
+        $hay = mb_strtolower($name . ' ' . $typeName, 'UTF-8');
+        if (preg_match('/licen[cs]e|lizenz|type rating|\brating\b|qualification de type|лицензи/u', $hay) === 1) {
+            return 'licence';
+        }
+        if ($brevet || preg_match('/brevet|badge|insigne|insignia|\btab\b|wings|abzeichen|tätigkeitsabzeichen|знак|章/u', $hay) === 1) {
+            return 'brevet';
+        }
+        if ($refCategory === 'selection' || preg_match('/sélection|selection|cursus|pipeline|qualification course|auswahl|отбор|选拔/u', $hay) === 1) {
+            return 'cursus';
+        }
+
+        return 'qualification';
     }
 
     /** @param array<string, mixed> $rule */
@@ -519,7 +640,7 @@ final class AcademyOffer
      * Filtres de la page (lus dans l'adresse) ramenés à des valeurs connues.
      *
      * @param array<string, mixed> $query
-     * @return array{onglet: string, q: string, categorie: string, emetteur: string, niveau: string, mode: string, etat: string, source: string, tri: string}
+     * @return array{onglet: string, q: string, categorie: string, emetteur: string, niveau: string, mode: string, etat: string, source: string, tri: string, pays: string, nature: string, origine: string, page: string}
      */
     public static function filters(array $query): array
     {
@@ -534,8 +655,12 @@ final class AcademyOffer
             'niveau' => $s('niveau'),
             'mode' => in_array($s('mode'), ['course', Cat::MODE_MANUAL, Cat::MODE_ACADEMY, Cat::MODE_AUTO, Cat::MODE_PILOT], true) ? $s('mode') : '',
             'etat' => array_key_exists($s('etat'), self::STATE_GROUPS) ? $s('etat') : '',
-            'source' => in_array($s('source'), ['athena', 'community'], true) ? $s('source') : '',
+            'source' => in_array($s('source'), ['athena', 'community', 'reference'], true) ? $s('source') : '',
             'tri' => in_array($s('tri'), self::SORTS, true) ? $s('tri') : 'pertinence',
+            'pays' => preg_match('/^[A-Z]{2,5}$/', strtoupper($s('pays', 10))) === 1 ? strtoupper($s('pays', 10)) : '',
+            'nature' => in_array($s('nature'), self::NATURES, true) ? $s('nature') : '',
+            'origine' => in_array($s('origine'), self::ORIGINS, true) ? $s('origine') : '',
+            'page' => ctype_digit($s('page', 4)) && (int) $s('page', 4) > 1 ? (string) (int) $s('page', 4) : '',
         ];
     }
 
@@ -548,7 +673,7 @@ final class AcademyOffer
      */
     public static function filter(array $items, array $f, bool $searchOnly = false): array
     {
-        $words = array_values(array_filter(preg_split('/\s+/u', mb_strtolower($f['q'] ?? '', 'UTF-8')) ?: [], static fn (string $w): bool => $w !== ''));
+        $words = array_values(array_filter(explode(' ', trim(self::norm((string) ($f['q'] ?? '')))), static fn (string $w): bool => $w !== ''));
         $out = [];
         foreach ($items as $it) {
             foreach ($words as $w) {
@@ -561,10 +686,22 @@ final class AcademyOffer
                 if ($tab !== 'tout' && !in_array($tab, $it['tabs'], true)) {
                     continue;
                 }
+                if ($tab === 'tout' && $it['kind'] === 'reference') {
+                    continue;
+                }
+                if (($f['pays'] ?? '') !== '' && ($it['country'] ?? '') !== $f['pays']) {
+                    continue;
+                }
+                if (($f['nature'] ?? '') !== '' && ($it['nature'] ?? '') !== $f['nature']) {
+                    continue;
+                }
+                if (($f['origine'] ?? '') !== '' && ($it['origin'] ?? '') !== $f['origine']) {
+                    continue;
+                }
                 if (($f['categorie'] ?? '') !== '' && $it['category'] !== $f['categorie']) {
                     continue;
                 }
-                if (($f['emetteur'] ?? '') !== '' && self::issuerKey($it) !== $f['emetteur']) {
+                if (($f['emetteur'] ?? '') !== '' && self::issuerKey($it) !== $f['emetteur'] && !($it['kind'] !== 'issuer' && (string) (int) ($it['issuer_id'] ?? 0) === $f['emetteur'])) {
                     continue;
                 }
                 if (($f['niveau'] ?? '') !== '' && $it['level'] !== $f['niveau']) {
@@ -588,6 +725,8 @@ final class AcademyOffer
             'nom' => $name,
             'etat' => static fn (array $a, array $b): int => [self::STATE_ORDER[$a['state']] ?? 9, $a['title']] <=> [self::STATE_ORDER[$b['state']] ?? 9, $b['title']],
             'duree' => static fn (array $a, array $b): int => [($a['duration_min'] ?? PHP_INT_MAX), $a['title']] <=> [($b['duration_min'] ?? PHP_INT_MAX), $b['title']],
+            'pays' => static fn (array $a, array $b): int => [self::countryRank($a), self::relevance($a), $a['title']] <=> [self::countryRank($b), self::relevance($b), $b['title']],
+            'niveau' => static fn (array $a, array $b): int => [-self::levelRank($a), $a['title']] <=> [-self::levelRank($b), $b['title']],
             // Pertinence : ce qui est en cours ou à renouveler d'abord, puis ce qui est disponible, puis le reste.
             default => static fn (array $a, array $b): int => [self::relevance($a), $a['title']] <=> [self::relevance($b), $b['title']],
         });
@@ -595,10 +734,35 @@ final class AcademyOffer
         return $out;
     }
 
-    /** Clé d'émetteur d'un élément pour le filtre : identifiant de l'émetteur, sinon son nom. @param array<string, mixed> $it */
+    /**
+     * Clé d'émetteur d'un élément pour le filtre : son nom (le même émetteur du catalogue et du référentiel se filtre
+     * ensemble) ; l'identifiant d'un émetteur du référentiel (ancien lien « emetteur=12 ») reste accepté par filter().
+     *
+     * @param array<string, mixed> $it
+     */
     public static function issuerKey(array $it): string
     {
-        return (int) ($it['issuer_id'] ?? 0) > 0 && $it['kind'] !== 'issuer' ? (string) (int) $it['issuer_id'] : ($it['kind'] === 'issuer' ? '' : (string) $it['issuer']);
+        return $it['kind'] === 'issuer' ? '' : (string) $it['issuer'];
+    }
+
+    /** @param array<string, mixed> $it */
+    private static function countryRank(array $it): int
+    {
+        static $order = null;
+        $order ??= array_flip(array_keys(\App\Support\QualificationCatalog\QualificationCatalog::COUNTRIES));
+
+        return ($it['country'] ?? '') === '' ? -1 : ($order[$it['country']] ?? 50);
+    }
+
+    /** @param array<string, mixed> $it */
+    private static function levelRank(array $it): int
+    {
+        if (isset($it['level_rank'])) {
+            return (int) $it['level_rank'];
+        }
+        $level = (string) ($it['level'] ?? '');
+
+        return str_starts_with($level, 'levels:') ? (int) substr($level, 7) : (['initiation' => 1, 'intermediaire' => 2, 'avance' => 3, 'expert' => 5][$level] ?? 0);
     }
 
     /** @param array<string, mixed> $it */
@@ -610,7 +774,7 @@ final class AcademyOffer
             'available' => 2,
             'none' => 3,
             'missing', 'blocked' => 4,
-            default => 5,
+            default => $it['kind'] === 'reference' ? 6 : 5,
         };
     }
 
@@ -618,12 +782,22 @@ final class AcademyOffer
      * Valeurs proposées par chaque filtre, d'après les éléments de l'onglet.
      *
      * @param list<array<string, mixed>> $items
-     * @return array{categories: list<string>, issuers: array<string, string>, levels: list<string>, modes: list<string>, sources: list<string>}
+     * @return array{categories: list<string>, issuers: array<string, string>, levels: list<string>, modes: list<string>, sources: list<string>, countries: array<string, string>, natures: list<string>, origins: array<string, int>}
      */
     public static function facets(array $items): array
     {
-        $cats = $issuers = $levels = $modes = $sources = [];
+        $cats = $issuers = $levels = $modes = $sources = $countries = $natures = [];
+        $origins = array_fill_keys(self::ORIGINS, 0);
         foreach ($items as $it) {
+            if (($it['country'] ?? '') !== '') {
+                $countries[$it['country']] = (string) ($it['country_label'] ?? $it['country']);
+            }
+            if (($it['nature'] ?? '') !== '') {
+                $natures[$it['nature']] = true;
+            }
+            if (isset($it['origin'])) {
+                $origins[$it['origin']]++;
+            }
             if ($it['category'] !== '' && $it['kind'] !== 'issuer') {
                 $cats[$it['category']] = true;
             }
@@ -643,7 +817,13 @@ final class AcademyOffer
         natcasesort($cats);
         asort($issuers, SORT_NATURAL | SORT_FLAG_CASE);
 
-        return ['categories' => array_values($cats), 'issuers' => $issuers, 'levels' => array_keys($levels), 'modes' => array_keys($modes), 'sources' => array_keys($sources)];
+        $order = array_flip(array_keys(\App\Support\QualificationCatalog\QualificationCatalog::COUNTRIES));
+        uksort($countries, static fn (string $a, string $b): int => ($order[$a] ?? 50) <=> ($order[$b] ?? 50) ?: strcmp($a, $b));
+        $levelKeys = array_keys($levels);
+        usort($levelKeys, static fn (string $a, string $b): int => self::levelRank(['level' => $a] + (str_starts_with($a, 'ref:') ? ['level_rank' => QualificationCatalogExplorer::LEVELS[substr($a, 4)]['rank'] ?? 0] : [])) <=> self::levelRank(['level' => $b] + (str_starts_with($b, 'ref:') ? ['level_rank' => QualificationCatalogExplorer::LEVELS[substr($b, 4)]['rank'] ?? 0] : [])) ?: strcmp($a, $b));
+
+        return ['categories' => array_values($cats), 'issuers' => $issuers, 'levels' => $levelKeys, 'modes' => array_keys($modes), 'sources' => array_keys($sources),
+            'countries' => $countries, 'natures' => array_values(array_filter(self::NATURES, static fn (string $n): bool => isset($natures[$n]))), 'origins' => $origins];
     }
 
     /** @param list<array<string, mixed>> $items */

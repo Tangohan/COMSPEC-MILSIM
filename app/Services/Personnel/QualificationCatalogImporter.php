@@ -10,15 +10,19 @@ use App\Support\QualificationCatalog\QualificationCatalog;
  * Import de qualifications du catalogue de référence (config/qualification_catalog : un pack par pays et l’OTAN)
  * dans le référentiel d’une communauté. Chaque qualification choisie devient une fiche du référentiel (code du
  * catalogue, nom et description dans la langue de la personne qui importe, intitulé officiel, mention du pack
- * « qualification de jeu inspirée de …, sans valeur réelle »), rattachée à son émetteur (l’école réelle de l’entrée,
- * sinon l’émetteur de référence du pack ; créé si absent, comme depuis la page Émetteurs) et à la catégorie du
+ * « qualification de jeu inspirée de …, sans valeur réelle »), rattachée à son émetteur (l’émetteur réel du catalogue
+ * des émetteurs si l’entrée a une clé issuer_key, sinon l’école citée par l’entrée, sinon l’émetteur de référence du
+ * pack ; créé si absent, comme depuis la page Émetteurs) et à la catégorie du
  * catalogue. Sans doublon : un code déjà présent dans la communauté est ignoré, une relance ne crée rien. La fiche
  * importée se modifie ensuite librement comme toute autre qualification.
  */
 final class QualificationCatalogImporter
 {
-    public function __construct(private QualificationReferenceWriter $writer)
+    private QualificationIssuerCatalogImporter $issuers;
+
+    public function __construct(private QualificationReferenceWriter $writer, ?QualificationIssuerCatalogImporter $issuers = null)
     {
+        $this->issuers = $issuers ?? new QualificationIssuerCatalogImporter($writer);
     }
 
     public function ready(): bool
@@ -40,12 +44,14 @@ final class QualificationCatalogImporter
 
     /**
      * @param list<string> $ids identifiants d’entrées du catalogue (tous packs)
-     * @return array{created: list<string>, skipped: list<string>, unknown: int, issuer_ids: list<int>, definitions: array<string, int>}
+     * @param int|null $maxCreate plafond de fiches à créer (formule de la communauté) ; null = sans limite. Au-delà,
+     *                            les entrées vont dans blocked (rien n’est créé pour elles).
+     * @return array{created: list<string>, skipped: list<string>, unknown: int, issuer_ids: list<int>, definitions: array<string, int>, blocked: list<string>}
      *         definitions : id du catalogue => fiche du référentiel (créée ou déjà présente)
      */
-    public function import(int $tenantId, array $ids, string $lang, ?int $actorId): array
+    public function import(int $tenantId, array $ids, string $lang, ?int $actorId, ?int $maxCreate = null): array
     {
-        $out = ['created' => [], 'skipped' => [], 'unknown' => 0, 'issuer_ids' => [], 'definitions' => []];
+        $out = ['created' => [], 'skipped' => [], 'unknown' => 0, 'issuer_ids' => [], 'definitions' => [], 'blocked' => []];
         if ($tenantId < 1 || !$this->ready()) {
             return $out;
         }
@@ -76,8 +82,15 @@ final class QualificationCatalogImporter
                     $out['definitions'][(string) $entry['id']] = $this->writer->definitionIdCaseless($tenantId, $code);
                     continue;
                 }
+                if ($maxCreate !== null && count($out['created']) >= $maxCreate) {
+                    $out['blocked'][] = $name;
+                    continue;
+                }
                 $issuer = QualificationCatalog::issuerOf($entry, $lang);
-                $issuerId = $issuers[$issuer['name']] ??= $this->writer->ensureIssuer($tenantId, $issuer['name'], $issuer['short_name'], $issuer['kind'], $issuer['description'], $actorId);
+                // Émetteur réel du catalogue (clé issuer_key) : retrouvé par nom, alias ou sigle, sinon créé.
+                $issuerId = $issuers[$issuer['name']] ??= isset($issuer['key'])
+                    ? $this->issuers->ensure($tenantId, $issuer['key'], $lang, $actorId)
+                    : $this->writer->ensureIssuer($tenantId, $issuer['name'], $issuer['short_name'], $issuer['kind'], $issuer['description'], $actorId);
                 $country = (string) (QualificationCatalog::pack((string) $entry['pack'])['country'] ?? '');
                 $category = (string) $entry['category'];
                 $categoryName = QualificationCatalog::countryLabel($country, $lang) . ' — ' . QualificationCatalog::categoryLabel($category, $lang);

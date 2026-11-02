@@ -56,4 +56,5 @@ return [
 'cred_name_required'=>'Give it a name (150 characters at most).', 'cred_code_invalid'=>'Invalid code: capital letters, digits, dot, hyphen or underscore.', 'cred_code_taken'=>'This code is already used in your community.',
 'cred_unavailable'=>'The qualifications register is not installed yet.', 'cred_rules_pending'=>'Requirements arrive with the next site update.',
 'cred_rule_error'=>'The requirements could not be saved. Check the thresholds entered.', 'cred_badge_failed'=>'Record saved, but the badge was refused (format or size).',
+'cred_quota_reached'=>'Your plan’s creation limit is reached: the record was not created. Existing qualifications and badges remain editable.', 'cred_quota_line'=>'qualifications and badges created on your plan', 'cred_quota_unlock'=>'More creations with the plan', 'cred_quota_unlimited'=>'unlimited', 'cred_quota_see'=>'See plans',
 ];
