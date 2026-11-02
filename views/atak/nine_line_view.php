@@ -3,10 +3,10 @@
  * Page /9-line : rédaction d'un 9-LINE (CAS), d'un 5-LINE ou d'un MEDEVAC ligne par ligne (saisie libre possible),
  * envoi aux pilotes (appareils remontés par le jeu ou indicatifs saisis à la main), carte de transmission et historique
  * avec le statut de chaque destinataire (envoyé, reçu, lu, WILCO, UNABLE).
- * Thème et composants du back-office (jetons --ath-* de back-office-shell.css, mode nuit back-office-dark.css et
- * back-office-theme.js, kit effectifs-kit.css : en-tête effk-ph, panneaux, boutons, pastilles), en densité compacte et
- * valeurs en chasse fixe (atak-nine-line.css). Page autonome (sans menu du back-office) : ouverte par le QR code de
- * l'app JTAC, par tout membre connecté, souvent sur un téléphone ou un second écran.
+ * Mise en page et thème de la maquette « 9-Line - Athena » (2026-11-02) : noir #050505, vert #34d399, Inter et
+ * JetBrains Mono servis par le site (public/assets/fonts/nine-line), bandeau photo (assets/images/night-team.jpg),
+ * cartes numérotées, carte de transmission collante à droite. Styles : public/assets/css/atak-nine-line.css ;
+ * comportement : public/assets/js/atak-nine-line.js. Barre du haut réduite : marque Athena, titre, langue, compte.
  *
  * @var string $apiBase
  * @var string $assetVer
@@ -22,7 +22,6 @@ $ver = static function (string $file) use ($root, $assetVer): string {
 
     return rawurlencode((string) ($assetVer ?? '1')) . ($m ? '.' . (int) $m : '');
 };
-$css = static fn (string $file): string => '<link rel="stylesheet" href="' . $h($base) . '/assets/css/' . $h($file) . '?v=' . $h($ver('css/' . $file)) . '">';
 $fr = ($lang ?? 'en') === 'fr';
 $csrf = \App\Core\Csrf::token();
 $required = \App\Services\Tactical\NineLineBoardService::REQUIRED_LINES;
@@ -30,188 +29,183 @@ $suggestJtac = \App\Services\Tactical\AirBriefService::SUGGESTED_JTAC;
 $suggestAir = \App\Services\Tactical\AirBriefService::SUGGESTED_AIRCRAFT;
 $jtacCs = (string) ($jtacCallsign ?? '');
 $defaultCs = (string) ($defaultCallsign ?? 'JTAC');
+$langHref = static fn (string $code): string => function_exists('locale_switch_url') ? (string) locale_switch_url($code) : (string) url('locale/' . $code);
+$loggedIn = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
 ?>
 <!DOCTYPE html>
 <html lang="<?= $fr ? 'fr' : 'en' ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0d1110">
+  <meta name="theme-color" content="#050505">
+  <meta name="color-scheme" content="dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title><?= $h($title ?? '9-LINE') ?></title>
-  <script>
-  /* Mode nuit : même préférence que le back-office (athena.bo.theme), posé avant l'affichage. */
-  (function () {
-    var pref = 'auto';
-    try { pref = localStorage.getItem('athena.bo.theme') || 'auto'; } catch (e) {}
-    var dark = pref === 'dark' || (pref === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.setAttribute('data-bo-theme', dark ? 'dark' : 'light');
-  })();
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap">
-  <?= $css('back-office-shell.css') ?>
-  <?= $css('back-office-dark.css') ?>
-  <?= $css('effectifs-kit.css') ?>
-  <?= $css('atak-nine-line.css') ?>
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-nine-line.css?v=<?= $h($ver('css/atak-nine-line.css')) ?>">
 </head>
-<body class="bo-shell nl-page">
-<div class="bo-eff-workspace nl-wrap">
-<div class="effk">
-  <header class="effk-ph nl-ph">
-    <div class="effk-ph__copy">
-      <span class="effk-k">ATAK · JTAC</span>
-      <h2><span id="nl-top-kind">9-LINE</span> · demande d’appui aérien</h2>
-    </div>
-    <div class="effk-ph__acts nl-ph__acts">
-      <label class="nl-cs" for="nl-jtac-cs">
-        <span class="effk-k">Indicatif JTAC</span>
-        <span class="nl-inline">
-          <input class="effk-sel nl-input nl-mono" id="nl-jtac-cs" type="text" maxlength="32" list="nl-jtac-suggest" autocomplete="off" spellcheck="false"
-            value="<?= $h($jtacCs) ?>" placeholder="<?= $h($defaultCs) ?>" data-default="<?= $h($defaultCs) ?>">
-          <button type="button" class="effk-btn is-sm" id="nl-jtac-save">OK</button>
-        </span>
-      </label>
-      <datalist id="nl-jtac-suggest"><?php foreach ($suggestJtac as $s): ?><option value="<?= $h($s) ?>"><?php endforeach; ?></datalist>
-      <span class="effk-pill is-ok nl-live" id="nl-live" role="status">connexion…</span>
-      <button type="button" class="ath-theme-toggle nl-theme" data-ath-theme-toggle aria-pressed="false" title="Passer en mode nuit" aria-label="Passer en mode nuit">
-        <svg class="ath-theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
-        <svg class="ath-theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
-      </button>
-    </div>
-  </header>
+<body class="nl-page">
+<svg class="nl-sprite" aria-hidden="true" focusable="false">
+  <symbol id="nl-s-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
+  <symbol id="nl-s-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"></path></symbol>
+  <symbol id="nl-s-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+  <symbol id="nl-s-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="nl-s-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.5"></path></symbol>
+  <symbol id="nl-s-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="1"></rect><path d="M5 15V4a1 1 0 0 1 1-1h11"></path></symbol>
+</svg>
 
-  <div class="effk-stats nl-stats" role="list" aria-label="Demande en cours">
-    <div class="effk-stat" role="listitem"><span class="effk-k">Type</span><b id="nl-rail-kind">CAS</b></div>
-    <div class="effk-stat" role="listitem"><span class="effk-k">Destinataires</span><b id="nl-rail-dest">0</b></div>
-    <div class="effk-stat" role="listitem"><span class="effk-k">Lignes</span><b id="nl-rail-lines">0 / 9</b></div>
-    <div class="effk-stat" role="listitem"><span class="effk-k">Obligatoires</span><b id="nl-progress-text">0 / 3</b></div>
+<header class="hd"><div class="w">
+  <a class="brand" href="<?= $h(url('')) ?>/" aria-label="Athena — <?= $h(__('common.home')) ?>"><img src="<?= $h($base) ?>/assets/brand/athena-embleme-blanc.svg" alt="" width="30" height="26">ATHENA<em>.</em></a>
+  <span class="hd-title" translate="no">9-LINE · JTAC</span>
+  <div class="hr">
+    <nav class="lang" aria-label="<?= $h(__('common.choose_language')) ?>">
+      <?php foreach (['fr', 'en'] as $code): ?>
+        <?php if (($fr ? 'fr' : 'en') === $code): ?>
+          <span class="on" aria-current="true"><?= strtoupper($code) ?></span>
+        <?php else: ?>
+          <a href="<?= $h($langHref($code)) ?>" hreflang="<?= $code ?>" lang="<?= $code ?>"><?= strtoupper($code) ?></a>
+        <?php endif; ?>
+      <?php endforeach; ?>
+    </nav>
+    <?php if ($loggedIn): ?>
+      <a class="cta" href="<?= $h(url('account')) ?>"><?= $h(__('common.account')) ?></a>
+    <?php else: ?>
+      <a class="cta" href="<?= $h(url('login')) ?>"><?= $h(__('common.login')) ?></a>
+    <?php endif; ?>
   </div>
+</div></header>
 
-  <div class="nl-grid">
-    <section class="effk-panel nl-panel nl-col-air" id="nl-sec-aircraft" aria-labelledby="nl-aircraft-title">
-      <div class="nl-panel__h">
-        <span class="nl-step" aria-hidden="true">1</span>
-        <div><h3 id="nl-aircraft-title">Destinataires</h3><small><span id="nl-aircraft-count">—</span> · <span id="nl-aircraft-fresh">—</span></small></div>
+<section class="hero"><div class="w">
+  <div class="htop">
+    <div>
+      <div class="kk"><i></i>ATAK · JTAC · <span id="nl-kick">Appui aérien rapproché</span></div>
+      <h1><span id="nl-top-kind" translate="no">9-LINE</span><span class="dot">.</span></h1>
+      <p class="lede" id="nl-lede">Rédigez la demande ligne par ligne, vérifiez la carte de transmission, puis envoyez-la aux pilotes à l’écoute.</p>
+    </div>
+    <div class="jtac">
+      <label class="lbl" for="nl-jtac-cs">Indicatif JTAC</label>
+      <div class="jrow">
+        <input class="inp" id="nl-jtac-cs" type="text" maxlength="32" list="nl-jtac-suggest" autocomplete="off" spellcheck="false"
+          value="<?= $h($jtacCs) ?>" placeholder="<?= $h($defaultCs) ?>" data-default="<?= $h($defaultCs) ?>">
+        <button type="button" class="btn2" id="nl-jtac-save">OK</button>
+        <span class="sync" role="status"><i></i><span id="nl-live">connexion…</span></span>
       </div>
-      <div class="nl-panel__b">
-        <div class="effk-bar nl-tools">
-          <label class="effk-check"><input type="checkbox" id="nl-players-only" checked> <span>Joueurs uniquement</span></label>
-          <span class="nl-hint" id="nl-ai-hidden"></span>
-        </div>
-        <div id="nl-aircraft" class="nl-aircraft" aria-live="polite"></div>
-        <div class="nl-manual">
-          <label class="effk-k" for="nl-manual-cs">Indicatif saisi à la main</label>
-          <div class="nl-inline">
-            <input class="effk-sel nl-input nl-mono" id="nl-manual-cs" type="text" maxlength="32" list="nl-air-suggest" autocomplete="off" spellcheck="false" placeholder="ex. HOG 21">
-            <button type="button" class="effk-btn is-sm" id="nl-manual-add">Ajouter</button>
+      <datalist id="nl-jtac-suggest"><?php foreach ($suggestJtac as $s): ?><option value="<?= $h($s) ?>"><?php endforeach; ?></datalist>
+    </div>
+  </div>
+  <div class="stats" role="list" aria-label="Demande en cours">
+    <div class="stat" role="listitem"><span class="lbl">Type</span><b class="mono" id="nl-rail-kind" translate="no">CAS</b></div>
+    <div class="stat" role="listitem"><span class="lbl">Destinataires</span><b id="nl-rail-dest">0</b></div>
+    <div class="stat" role="listitem"><span class="lbl">Lignes saisies</span><b id="nl-rail-lines">0<small> / 9</small></b></div>
+    <div class="stat" role="listitem" id="nl-req-stat"><span class="lbl">Obligatoires</span><b id="nl-progress-text">0<small> / 3</small></b></div>
+  </div>
+</div></section>
+
+<main class="main">
+  <div class="col">
+    <section class="card" id="nl-sec-aircraft" aria-labelledby="nl-aircraft-title">
+      <div class="ch"><span class="num">01</span><div><h2 id="nl-aircraft-title">Destinataires</h2><p><span id="nl-aircraft-count">—</span> · <span id="nl-aircraft-fresh">—</span></p></div></div>
+      <div class="cb">
+        <div class="bar"><label class="chk"><input type="checkbox" id="nl-players-only" checked>Joueurs uniquement</label><span class="meta" id="nl-ai-hidden"></span></div>
+        <div id="nl-aircraft" aria-live="polite"></div>
+        <div class="manual">
+          <label class="lbl" for="nl-manual-cs">Indicatif saisi à la main</label>
+          <div class="jrow">
+            <input class="inp" id="nl-manual-cs" type="text" maxlength="32" list="nl-air-suggest" autocomplete="off" spellcheck="false" placeholder="ex. HOG 21">
+            <button type="button" class="btn2" id="nl-manual-add"><svg class="i"><use href="#nl-s-plus"></use></svg>Ajouter</button>
           </div>
           <datalist id="nl-air-suggest"><?php foreach ($suggestAir as $s): ?><option value="<?= $h($s) ?>"><?php endforeach; ?></datalist>
-          <p class="nl-hint">Appareil absent de la liste : le pilote dont l’appareil ou l’indicatif ATAK porte ce nom le reçoit.</p>
+          <div class="chips" id="nl-dest" aria-live="polite"></div>
+          <span class="hint">Appareil absent de la liste : le pilote dont l’appareil ou l’indicatif ATAK porte ce nom reçoit la demande.</span>
         </div>
-        <div id="nl-dest" class="nl-chips" aria-live="polite"></div>
       </div>
     </section>
 
-    <form class="effk-panel nl-panel nl-col-form" id="nl-form" novalidate autocomplete="off" aria-labelledby="nl-form-title">
+    <form class="card" id="nl-form" novalidate autocomplete="off" aria-labelledby="nl-kind-title">
       <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
       <input type="hidden" name="kind" id="nl-kind" value="cas">
       <input type="hidden" name="map_id" id="nl-map" value="1">
-      <div class="nl-panel__h">
-        <span class="nl-step" aria-hidden="true">2</span>
-        <div><h3 id="nl-form-title"><span id="nl-kind-title">9-LINE · Appui aérien rapproché (CAS)</span></h3><small><span id="nl-draft-state">Brouillon vide</span> · <span id="nl-req-note">lignes obligatoires marquées *</span></small></div>
-      </div>
-      <div class="nl-panel__b">
-        <div class="effk-bar nl-bar">
-          <div class="effk-seg" role="group" aria-label="Type de demande">
-            <button type="button" class="is-on" data-kind="cas" aria-pressed="true">9-LINE</button>
+      <div class="ch"><span class="num">02</span><div><h2 id="nl-kind-title">9-LINE · Appui aérien rapproché</h2><p id="nl-draft-state">Brouillon vide · lignes obligatoires marquées</p></div></div>
+      <div class="cb">
+        <div class="bar">
+          <div class="seg" role="group" aria-label="Type de demande">
+            <button type="button" class="on" data-kind="cas" aria-pressed="true">9-LINE</button>
             <button type="button" data-kind="fiveline" aria-pressed="false">5-LINE</button>
             <button type="button" data-kind="medevac" aria-pressed="false">MEDEVAC</button>
           </div>
-          <label class="effk-check" title="Aucune ligne obligatoire ni contrôle de grille : un avertissement seulement">
-            <input type="checkbox" id="nl-free" name="free" value="1"> <span>Saisie libre</span>
-          </label>
+          <label class="chk push" title="Aucune ligne obligatoire ni contrôle de grille : un avertissement seulement"><input type="checkbox" id="nl-free" name="free" value="1">Saisie libre</label>
         </div>
-        <div class="nl-lines" id="nl-lines"></div>
-        <div class="nl-remarks" id="nl-remarks-row">
-          <label class="effk-k" for="nl-remarks">Remarques et restrictions</label>
-          <textarea class="effk-sel nl-input" id="nl-remarks" name="remarks" rows="2" maxlength="1000" placeholder="ex. FAH 270 ± 20, menace SA-7 au sud, DANGER CLOSE"></textarea>
-        </div>
-        <details class="nl-calc" data-only="cas">
-          <summary>Aide au calcul · lignes 2 et 3 (depuis les grilles des lignes 1 et 6)</summary>
-          <div class="nl-inline">
-            <label class="effk-k" for="nl-decl">Déclinaison (° est)</label>
-            <input class="effk-sel nl-input nl-mono nl-narrow" id="nl-decl" type="text" inputmode="decimal" value="0">
-            <button type="button" class="effk-btn is-sm" id="nl-calc-btn">Calculer</button>
+        <div class="lines" id="nl-lines"></div>
+        <details class="calc" id="nl-calc" data-only="cas">
+          <summary><svg class="i"><use href="#nl-s-chev"></use></svg>Aide au calcul · lignes 2 et 3 depuis les grilles des lignes 1 et 6</summary>
+          <div class="cres">
+            <div><span class="lbl">Cap IP → cible</span><b id="nl-c-brg" class="na">—</b></div>
+            <div><span class="lbl">Distance</span><b id="nl-c-nm" class="na">—</b></div>
+            <div><span class="lbl">Distance (m)</span><b id="nl-c-m" class="na">—</b></div>
+            <button type="button" class="btn2" id="nl-calc-btn" disabled>Appliquer</button>
           </div>
-          <p class="nl-hint">Cartes à grille standard (origine en bas à gauche, nord en haut). Les cartes Arma n’ont pas de déclinaison : 0, sauf consigne de votre mission.</p>
-          <p class="nl-calc__out" id="nl-calc-out" aria-live="polite"></p>
+          <p class="hint calc-hint">Saisissez des grilles numériques de même précision (4 à 10 chiffres) en lignes 1 et 6. Sur Arma, le nord magnétique est confondu avec le nord grille.</p>
         </details>
-        <p class="effk-note nl-msg" id="nl-form-msg" role="status" hidden></p>
-        <div class="nl-actions">
-          <button type="submit" class="effk-btn is-primary" id="nl-submit">Transmettre aux pilotes</button>
-          <button type="button" class="effk-btn is-sm" id="nl-reset">Réinitialiser</button>
-        </div>
       </div>
     </form>
 
-    <div class="nl-col-side">
-      <section class="effk-panel nl-panel" id="nl-sec-card" aria-labelledby="nl-card-title">
-        <div class="nl-panel__h">
-          <span class="nl-step" aria-hidden="true">3</span>
-          <div><h3 id="nl-card-title">Carte de transmission</h3><small>À lire à la radio, dans l’ordre</small></div>
+    <section class="card" id="nl-sec-history" aria-labelledby="nl-history-title">
+      <div class="ch"><span class="num">03</span><div><h2 id="nl-history-title">Historique et accusés</h2><p id="nl-history-count">—</p></div>
+        <div class="sp hist-tools">
+          <label class="lbl" for="nl-history-map">Carte</label>
+          <select class="inp sel" id="nl-history-map"><option value="0">Toutes les cartes</option></select>
+          <button type="button" class="btn2 dng" id="nl-clear" hidden>Vider</button>
         </div>
-        <div class="nl-panel__b"><div id="nl-preview"></div></div>
-      </section>
-
-      <section class="effk-panel nl-panel" id="nl-sec-history" aria-labelledby="nl-history-title">
-        <div class="nl-panel__h">
-          <span class="nl-step" aria-hidden="true">4</span>
-          <div><h3 id="nl-history-title">Historique et accusés</h3><small id="nl-history-count">—</small></div>
-        </div>
-        <div class="nl-panel__b">
-          <div class="effk-bar nl-tools">
-            <label class="effk-k" for="nl-history-map">Carte</label>
-            <select class="effk-sel" id="nl-history-map"><option value="0">Toutes les cartes</option></select>
-            <button type="button" class="effk-btn is-sm nl-danger" id="nl-clear" hidden>Vider</button>
-          </div>
-          <div id="nl-selected"></div>
-          <ul class="nl-history" id="nl-history"></ul>
-        </div>
-      </section>
-    </div>
+      </div>
+      <div class="cb">
+        <div id="nl-selected"></div>
+        <ul class="hist" id="nl-history"></ul>
+      </div>
+    </section>
   </div>
 
-  <dialog class="effk-md nl-dialog" id="nl-dialog" aria-labelledby="nl-dialog-title">
-    <form method="dialog" class="nl-dialog__body" id="nl-dialog-form">
-      <span class="effk-k">Confirmation</span>
-      <h3 id="nl-dialog-title"></h3>
-      <p class="nl-dialog__text" id="nl-dialog-text"></p>
-      <div class="nl-dialog__word" id="nl-dialog-word" hidden>
-        <label class="effk-k" for="nl-dialog-input">Tapez SUPPRIMER pour confirmer</label>
-        <input class="effk-sel nl-input" id="nl-dialog-input" type="text" autocomplete="off" spellcheck="false">
-      </div>
-      <div class="nl-actions">
-        <button type="submit" value="ok" class="effk-btn nl-danger-btn" id="nl-dialog-ok">Supprimer</button>
-        <button type="submit" value="cancel" class="effk-btn">Annuler</button>
-      </div>
-    </form>
-  </dialog>
-</div>
-</div>
+  <aside class="side" aria-label="Carte de transmission">
+    <div class="tx">
+      <div class="txh"><h3 id="nl-tx-title" translate="no">9-LINE · CAS</h3><span class="pill drf" id="nl-tx-state"><i></i>Brouillon</span></div>
+      <div class="txb" id="nl-preview"></div>
+      <div class="txf"><span id="nl-tx-to">Tous les appareils à l’écoute</span><span id="nl-tx-save">—</span></div>
+    </div>
+    <div class="qc" id="nl-qc"></div>
+    <div class="acts">
+      <button type="submit" form="nl-form" class="cta big" id="nl-submit"><svg class="i"><use href="#nl-s-send"></use></svg>Transmettre aux pilotes</button>
+      <button type="button" class="btn2 sq" id="nl-copy" title="Copier le texte radio" aria-label="Copier le texte radio"><svg class="i"><use href="#nl-s-copy"></use></svg></button>
+    </div>
+    <button type="button" class="btn2 wide" id="nl-reset">Réinitialiser</button>
+  </aside>
+</main>
 
-  <script>
-    window.NINE_LINE = <?= json_encode([
-        'base' => $base,
-        'lang' => $fr ? 'fr' : 'en',
-        'csrf' => $csrf,
-        'required' => $required,
-        'jtac' => $jtacCs,
-        'jtacDefault' => $defaultCs,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
-  </script>
-  <script src="<?= $h($base) ?>/assets/js/back-office-theme.js?v=<?= $h($ver('js/back-office-theme.js')) ?>" defer></script>
-  <script src="<?= $h($base) ?>/assets/js/atak-nine-line.js?v=<?= $h($ver('js/atak-nine-line.js')) ?>" defer></script>
+<div class="toast" id="nl-toast" role="status" aria-live="polite"><span id="nl-toast-t"></span><button type="button" id="nl-toast-u" hidden>Annuler</button></div>
+
+<dialog class="dlg" id="nl-dialog" aria-labelledby="nl-dialog-title">
+  <form method="dialog" class="dlg-b" id="nl-dialog-form">
+    <span class="lbl">Confirmation</span>
+    <h3 id="nl-dialog-title"></h3>
+    <p class="meta" id="nl-dialog-text"></p>
+    <div class="dlg-word" id="nl-dialog-word" hidden>
+      <label class="lbl" for="nl-dialog-input">Tapez SUPPRIMER pour confirmer</label>
+      <input class="inp" id="nl-dialog-input" type="text" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="dlg-a">
+      <button type="submit" value="cancel" class="btn2">Annuler</button>
+      <button type="submit" value="ok" class="cta dng" id="nl-dialog-ok">Supprimer</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  window.NINE_LINE = <?= json_encode([
+      'base' => $base,
+      'lang' => $fr ? 'fr' : 'en',
+      'csrf' => $csrf,
+      'required' => $required,
+      'jtac' => $jtacCs,
+      'jtacDefault' => $defaultCs,
+  ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+</script>
+<script src="<?= $h($base) ?>/assets/js/atak-nine-line.js?v=<?= $h($ver('js/atak-nine-line.js')) ?>" defer></script>
 </body>
 </html>

@@ -294,6 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1343, '2026-11-02', 'Page 9-LINE : nouvelle présentation, barre du haut allégée', 'La page 9-LINE (QR code et bouton de l’app JTAC) adopte une nouvelle présentation sombre, noir et vert : grand titre sur photo, chiffres de la demande en bandeau, cartes numérotées Destinataires, Rédaction et Historique, lignes en grille de deux colonnes et carte de transmission toujours visible à droite (en bas sur téléphone). La carte indique si la demande est prête ou transmise et liste les lignes obligatoires à corriger ; le texte radio se copie d’un clic, et l’aide au calcul remplit les lignes 2 et 3 depuis les grilles. La barre du haut ne garde que la marque Athena, le titre, la langue et le compte. Toutes les fonctions restent : 9-LINE, 5-LINE et MEDEVAC, saisie libre, destinataires et « Joueurs uniquement », indicatifs, accusés des pilotes, suppression et vidage de l’historique.', [
+                'Carte de transmission : état Brouillon, Prêt ou Transmis, lignes obligatoires à corriger, bouton Copier le texte radio',
+                'Aide au calcul : cap et distance IP → cible calculés en direct, bouton Appliquer',
+                'Réinitialiser avec Annuler dans la notification',
+            ], [
+                'Page 9-LINE : présentation noir et vert, polices servies par le site, lisible sur téléphone (bouton Transmettre en bas d’écran)',
+                'Barre du haut de la page réduite à la marque, au titre, à la langue et au compte',
+            ], [], ['atak'], [
+                'Rien à installer ni à lancer côté serveur.',
+                'Essai : ouvrir athena-comspec.eu/public/9-line sur ordinateur et sur téléphone, rédiger un 5-LINE, vérifier la carte de transmission, transmettre, puis l’historique.',
+            ], 'Portail Athena'),
             $pr(1341, '2026-11-02', 'Cursus pilote : « Évaluer » ne finit plus en erreur', 'Sur la page Cursus pilote du référentiel des qualifications, le bouton « Évaluer maintenant » faisait bien l’évaluation mais affichait ensuite l’erreur « Undefined variable $request ». La page revient désormais normalement après l’évaluation.', [], [], [
                 'Cursus pilote : plus d’erreur « Undefined variable $request » après « Évaluer maintenant »',
             ], ['personnel'], [], 'Portail'),
