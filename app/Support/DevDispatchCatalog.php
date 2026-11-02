@@ -294,6 +294,15 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1318, '2026-11-02', 'Émetteurs des qualifications : liste triable et assistants pas à pas', 'La page Émetteurs du référentiel des qualifications devient un tableau : recherche instantanée, filtres par pays, type, origine (catalogue réel ou création de la communauté) et statut, tri par colonne, pages, et pour chaque émetteur le nombre de qualifications qui l’utilisent. Importer les émetteurs réels et créer un émetteur se font maintenant en trois étapes dans une fenêtre, avec une recherche à chaque étape, un récapitulatif avant l’envoi et le plafond de la formule affiché ; la liste se met à jour sans recharger la page.', [
+                'Liste des émetteurs : tableau triable (nom, pays, type, origine, qualifications, délivrances), recherche, filtres pays / type / origine / statut, 25, 50 ou 100 par page ; les filtres restent dans l’adresse',
+                'Actions sur chaque ligne : modifier, voir les qualifications liées, archiver ou réactiver sans quitter la page',
+                'Importer les émetteurs réels en trois étapes : pays (compteurs par pays, recherche), émetteurs (recherche, type, déjà présents grisés, tout cocher parmi ceux affichés), récapitulatif avec la jauge du plafond de la formule',
+                'Créer un émetteur en trois étapes : identité (nom, sigle, pays, type), détails (localisation, site officiel, présentation en français et en anglais, logo, rattachement, signataire, qualifications délivrées), récapitulatif',
+            ], [
+                'En tapant le nom d’un nouvel émetteur, la page signale un émetteur déjà présent ou un organisme du catalogue réel à importer plutôt',
+                'Chargements visibles (liste en cours d’actualisation, boutons occupés) et messages de réussite ou d’erreur dans la page',
+            ], [], ['personnel', 'platform'], [], 'Portail'),
             $pr(1315, '2026-11-02', 'App Routes, bandeau du curseur de la carte refait, app Réseau lisible', 'Avec le pack 2.9.34, le téléphone gagne l’app Routes : des routes nommées à pied, en véhicule (par les routes au choix), aériennes ou nautiques, avec leurs étapes typées (checkpoint, ligne de phase, ralliement, LZ…), leurs consignes, leurs heures H+ et l’action attendue à chaque étape. Distances, caps, durée et heure d’arrivée sont calculés ; « Suivre la route » guide d’étape en étape. Les routes se partagent à l’équipe, au groupe ou au camp par le réseau ATAK et peuvent s’afficher sur la carte d’Arma, sur Athena et en 3D. Le bandeau du curseur de la carte et l’app Réseau sont refaits pour être lisibles.', [
                 'App Routes (Navigation) : créer, dupliquer, supprimer des routes ; type de tracé à pied, véhicule (option « Suivre les routes »), aérien (couloir) ou nautique ; couleur, épaisseur, style plein, pointillé ou flèches de direction',
                 'Étapes posées d’un clic sur la carte de l’app (ajouter, insérer, déplacer), sur ma position, un marqueur existant ou une grille MGRS ; type, nom, consigne, heure prévue H+ et action attendue pour chacune',
