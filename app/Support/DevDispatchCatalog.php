@@ -294,15 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1344, '2026-11-02', 'ATAK 2.9.40 : marqueurs aux vraies couleurs, carte et pages réparées', 'Sur la carte de l’ATAK, les marqueurs ont désormais exactement la couleur choisie, la même que dans leur fiche : le rouge est rouge vif et non plus rose pâle. Un léger contour autour de l’icône les garde lisibles sur fond sombre, nuit ou satellite ; seuls le noir et le bleu foncé passent à une version claire sur carte sombre. Le pack corrige aussi la carte qui n’acceptait plus aucun clic après une action du menu du clic droit (Zones, Nommer les axes, Zone depuis le clic), ce qui rendait le tracé impossible dans l’app Zones, et les pages qui se superposaient (Athena ou Profil restés sous le lanceur).', [], [
-                'Marqueurs de la carte : couleur exacte et contour de lisibilité, pour les vôtres, ceux des autres joueurs et ceux d’Athena',
+            $pr(1345, '2026-11-02', 'Sur mon téléphone : même présentation que la page 9-LINE, fenêtres de la carte qui se ferment', 'Les pages Sur mon téléphone (comptes rendus, CR fin d’op, carte et briefs air du pilote) reprennent la présentation noir et vert de la page 9-LINE : mêmes polices, grand titre sur photo, barre du haut réduite au logo, au titre, à la langue et au joueur. Dans Briefs air, les briefs non lus sont en tête, chaque brief porte le même badge d’état que l’historique de la page 9-LINE (ENVOYÉ, REÇU, LU, WILCO, UNABLE), et un brief s’ouvre en plein écran, lu ligne par ligne en gros caractères, avec de très grands boutons WILCO et UNABLE. Sur la carte, la fenêtre d’un marqueur se ferme enfin (bouton, Échap, toucher la carte ou glisser vers le bas), et un bouton Plein écran agrandit la carte, choix gardé pendant la session.', [
+                'Briefs air : non lus en tête, badges d’état identiques à la page 9-LINE, lecture plein écran',
+                'Carte : bouton Plein écran (repli pour iPhone), mémorisé pendant la session',
             ], [
-                'Carte : plus de clic bloqué après le menu du clic droit ; tracé de nouveau possible dans l’app Zones',
-                'Plus de page précédente dessinée sous la nouvelle (Athena, Profil sous APPLICATIONS)',
-                'Quitter l’app Zones abandonne le tracé en cours',
-            ], ['atak'], [
-                'Mettez à jour le pack 2.9.40, quittez Arma complètement et relancez.',
-            ], 'Pack 2.9.40'),
+                'Carte du téléphone : la fenêtre d’un marqueur et le bandeau de placement ne se fermaient pas',
+                'Fermeture des fenêtres par Échap, toucher hors fenêtre et glisser vers le bas',
+            ], [], ['atak'], [
+                'Rien à installer ni à lancer côté serveur.',
+                'Essai : ouvrir /m/briefs et /m/carte depuis le QR code SUR MON TÉLÉPHONE, ouvrir puis fermer un marqueur, passer la carte en plein écran.',
+            ], 'Portail Athena'),
             $pr(1343, '2026-11-02', 'Page 9-LINE : nouvelle présentation, barre du haut allégée', 'La page 9-LINE (QR code et bouton de l’app JTAC) adopte une nouvelle présentation sombre, noir et vert : grand titre sur photo, chiffres de la demande en bandeau, cartes numérotées Destinataires, Rédaction et Historique, lignes en grille de deux colonnes et carte de transmission toujours visible à droite (en bas sur téléphone). La carte indique si la demande est prête ou transmise et liste les lignes obligatoires à corriger ; le texte radio se copie d’un clic, et l’aide au calcul remplit les lignes 2 et 3 depuis les grilles. La barre du haut ne garde que la marque Athena, le titre, la langue et le compte. Toutes les fonctions restent : 9-LINE, 5-LINE et MEDEVAC, saisie libre, destinataires et « Joueurs uniquement », indicatifs, accusés des pilotes, suppression et vidage de l’historique.', [
                 'Carte de transmission : état Brouillon, Prêt ou Transmis, lignes obligatoires à corriger, bouton Copier le texte radio',
                 'Aide au calcul : cap et distance IP → cible calculés en direct, bouton Appliquer',
