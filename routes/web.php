@@ -1847,6 +1847,7 @@ return function (Router $router) {
     $router->post('/back-office/roleplay/sessions/nouvelle', [RoleplayGameSessionAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roleplay/sessions/{id}', [RoleplayGameSessionAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/sessions/{id}', [RoleplayGameSessionAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay/sessions/{id}/etat', [RoleplayGameSessionAdminController::class, 'changeState'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay/sessions/{id}/membres/{memberId}', [RoleplayGameSessionAdminController::class, 'memberAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/member-role-display', [AdminConfigurationController::class, 'saveMemberRoleDisplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/roleplay-followup', [RoleplayFollowupAdminController::class, 'immersionSettingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
