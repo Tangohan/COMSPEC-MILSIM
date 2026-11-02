@@ -47,6 +47,13 @@
      "Static-line jumpmaster"
     ]
    },
+   "qualification_refs": [
+    "us-sfas",
+    "us-sfqc",
+    "us-sof-ccc",
+    "us-basic-airborne",
+    "us-jumpmaster"
+   ],
    "billets": {
     "fr": [
      "SFOD-A : commandant de détachement (capitaine, 1 par équipe)",
@@ -121,6 +128,10 @@
      "GT score 110 or higher"
     ]
    },
+   "qualification_refs": [
+    "us-sfwottc",
+    "us-sere-c"
+   ],
    "billets": {
     "fr": [
      "SFOD-A : commandant adjoint (WO1/CW2, 1 par équipe)",
@@ -195,6 +206,12 @@
      "Two or more SF advanced skills"
     ]
    },
+   "qualification_refs": [
+    "us-sfqc",
+    "us-mlc",
+    "us-jumpmaster",
+    "us-mffjm"
+   ],
    "billets": {
     "fr": [
      "SFOD-A : sergent opérations / team sergeant (MSG, 1 par équipe)",
@@ -267,6 +284,9 @@
      "SF Intelligence Sergeant Course (SFISC)"
     ]
    },
+   "qualification_refs": [
+    "us-sfisc"
+   ],
    "billets": {
     "fr": [
      "SFOD-A : sergent adjoint opérations et renseignement (SFC, 1 par équipe)"
@@ -331,6 +351,12 @@
      "Special Operations Language Training (OPI 1+)"
     ]
    },
+   "qualification_refs": [
+    "us-sfqc",
+    "us-sere-c",
+    "us-basic-airborne",
+    "us-solt"
+   ],
    "billets": {
     "fr": [
      "SFOD-A : 2 sergents armement, senior (SFC) et junior (SSG)"
@@ -399,6 +425,12 @@
      "Special Operations Language Training (OPI 1+)"
     ]
    },
+   "qualification_refs": [
+    "us-sfqc",
+    "us-sere-c",
+    "us-basic-airborne",
+    "us-solt"
+   ],
    "billets": {
     "fr": [
      "SFOD-A : 2 sergents génie, senior (SFC) et junior (SSG)"
@@ -469,6 +501,14 @@
      "Special Operations Language Training (OPI 1+)"
     ]
    },
+   "qualification_refs": [
+    "us-sfqc",
+    "us-sf-medical-sergeant",
+    "us-socm",
+    "us-sere-c",
+    "us-basic-airborne",
+    "us-solt"
+   ],
    "billets": {
     "fr": [
      "SFOD-A : 2 sergents infirmiers, senior (SFC) et junior (SSG)"
@@ -537,6 +577,12 @@
      "Special Operations Language Training (OPI 1+)"
     ]
    },
+   "qualification_refs": [
+    "us-sfqc",
+    "us-sere-c",
+    "us-basic-airborne",
+    "us-solt"
+   ],
    "billets": {
     "fr": [
      "SFOD-A : 2 sergents transmissions, senior (SFC) et junior (SSG)"
@@ -607,6 +653,12 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-sf-prep",
+    "us-sfas",
+    "us-sfqc",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -671,6 +723,12 @@
      "Waterborne Infiltration Course"
     ]
    },
+   "qualification_refs": [
+    "us-cdqc",
+    "us-cdsc",
+    "us-cdmt",
+    "us-wic"
+   ],
    "billets": {
     "fr": [
      "SFOD-A spécialisé : plongeur de combat",
@@ -747,6 +805,13 @@
      "MFF Instructor Course"
     ]
    },
+   "qualification_refs": [
+    "us-basic-airborne",
+    "us-mffpc",
+    "us-mffjm",
+    "us-atic",
+    "us-mffic"
+   ],
    "billets": {
     "fr": [
      "Poste codé chute libre (ex. SFOD-A spécialisé)",
@@ -815,6 +880,11 @@
      "Static-line jumpmaster"
     ]
    },
+   "qualification_refs": [
+    "us-sfqc",
+    "us-cgsoc",
+    "us-jumpmaster"
+   ],
    "billets": {
     "fr": [
      "Compagnie FS (état-major SFOD-B + 6 ODA) : commandant (MAJ)"
@@ -875,6 +945,9 @@
      "Prior SFOD-A command"
     ]
    },
+   "qualification_refs": [
+    "us-sfqc"
+   ],
    "billets": {
     "fr": [
      "SFOD-B : officier adjoint (capitaine)"
@@ -933,6 +1006,9 @@
      "Prior service as ODA assistant detachment commander"
     ]
    },
+   "qualification_refs": [
+    "us-sfwottc"
+   ],
    "billets": {
     "fr": [
      "SFOD-B : warrant officer opérations de compagnie (CW3)"
@@ -995,6 +1071,11 @@
      "Two or more SF advanced skills"
     ]
    },
+   "qualification_refs": [
+    "us-smc",
+    "us-jumpmaster",
+    "us-mffjm"
+   ],
    "billets": {
     "fr": [
      "Compagnie FS : sergent-major de compagnie (SGM)",
@@ -1055,6 +1136,10 @@
      "Static-line or MFF jumpmaster"
     ]
    },
+   "qualification_refs": [
+    "us-jumpmaster",
+    "us-mffjm"
+   ],
    "billets": {
     "fr": [
      "SFOD-B : sergent opérations (SFC tenant le poste)",
@@ -1119,6 +1204,10 @@
      "ILE / JPME"
     ]
    },
+   "qualification_refs": [
+    "us-sfqc",
+    "us-cgsoc"
+   ],
    "billets": {
     "fr": [
      "Bataillon FS : commandant (LTC)",
@@ -1183,6 +1272,11 @@
      "Static-line or MFF jumpmaster"
     ]
    },
+   "qualification_refs": [
+    "us-smc",
+    "us-jumpmaster",
+    "us-mffjm"
+   ],
    "billets": {
     "fr": [
      "Bataillon FS : command sergeant major",
@@ -1245,6 +1339,9 @@
      "Current foreign language proficiency"
     ]
    },
+   "qualification_refs": [
+    "us-sfwottc"
+   ],
    "billets": {
     "fr": [
      "Bataillon FS (SFOD-C) : warrant officer opérations (CW4)",
@@ -1307,6 +1404,10 @@
      "Instructor courses (CFDIC, EIC)"
     ]
    },
+   "qualification_refs": [
+    "us-cfdic",
+    "us-eic"
+   ],
    "billets": {
     "fr": [
      "Chef d'équipe d'encadrement : Robin Sage, spécialité, SUT ou SFAS (SFC)",
@@ -1379,6 +1480,10 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-1",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Groupe de combat Ranger : fusilier / fusilier-mitrailleur"
@@ -1451,6 +1556,11 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-1",
+    "us-ranger-school",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Groupe de combat Ranger : chef d'équipe de feu (sergent)"
@@ -1519,6 +1629,11 @@
      "Advanced Leader Course"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-1",
+    "us-ranger-school",
+    "us-alc"
+   ],
    "billets": {
     "fr": [
      "Section de fusiliers Ranger : chef de groupe (SSG)"
@@ -1587,6 +1702,11 @@
      "Senior Leader Course"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-2",
+    "us-ranger-school",
+    "us-slc"
+   ],
    "billets": {
     "fr": [
      "Section de fusiliers Ranger : sous-officier adjoint (SFC)"
@@ -1651,6 +1771,11 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-2",
+    "us-ranger-school",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Section de fusiliers Ranger : chef de section (lieutenant)"
@@ -1719,6 +1844,10 @@
      "Secret clearance eligibility"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-2",
+    "us-ranger-school"
+   ],
    "billets": {
     "fr": [
      "Compagnie de fusiliers Ranger : commandant d'unité (capitaine)"
@@ -1787,6 +1916,11 @@
      "Master Leader Course"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-2",
+    "us-ranger-school",
+    "us-mlc"
+   ],
    "billets": {
     "fr": [
      "Compagnie Ranger : premier sergent (MSG)"
@@ -1851,6 +1985,12 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-1",
+    "us-rasp-2",
+    "us-ranger-school",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Chef de pièce mortier (sergent)",
@@ -1917,6 +2057,11 @@
      "RASP"
     ]
    },
+   "qualification_refs": [
+    "us-socm",
+    "us-nremt",
+    "us-rasp-1"
+   ],
    "billets": {
     "fr": [
      "Compagnie de fusiliers Ranger : infirmier de combat (SGT/SSG)"
@@ -1985,6 +2130,10 @@
      "JTAC qualification (NCOs)"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-1",
+    "us-jtac"
+   ],
    "billets": {
     "fr": [
      "Bataillon Ranger : sous-officier appui feu (SFC)"
@@ -2047,6 +2196,10 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-rasp-1",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -2107,6 +2260,11 @@
      "DLAB 85 or higher"
     ]
    },
+   "qualification_refs": [
+    "us-poas",
+    "us-poqc",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Détachement PSYOP : sous-officier PSYOP (SGT/SSG, x6)",
@@ -2177,6 +2335,11 @@
      "Senior Leader Course"
     ]
    },
+   "qualification_refs": [
+    "us-poqc",
+    "us-jumpmaster",
+    "us-slc"
+   ],
    "billets": {
     "fr": [
      "Détachement PSYOP : chef d'équipe (SFC, x3)",
@@ -2243,6 +2406,11 @@
      "Advanced skill / functional courses"
     ]
    },
+   "qualification_refs": [
+    "us-smc",
+    "us-jsofsea",
+    "us-jumpmaster"
+   ],
    "billets": {
     "fr": [
      "Détachement PSYOP : sergent de détachement (MSG)",
@@ -2311,6 +2479,11 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-poas",
+    "us-poqc",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Détachement PSYOP : commandant de détachement (capitaine)"
@@ -2379,6 +2552,11 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-caas",
+    "us-caqc",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Équipe d'affaires civiles : commandant d'équipe (capitaine)"
@@ -2445,6 +2623,12 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-caas",
+    "us-sof-blc",
+    "us-caqc",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Équipe d'affaires civiles : team sergeant (SFC)"
@@ -2509,6 +2693,11 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-caas",
+    "us-caqc",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Équipe d'affaires civiles : sous-officier reconnaissance civile (SSG)"
@@ -2573,6 +2762,11 @@
      "Civil Affairs Qualification Course"
     ]
    },
+   "qualification_refs": [
+    "us-caas",
+    "us-socm",
+    "us-caqc"
+   ],
    "billets": {
     "fr": [
      "Équipe d'affaires civiles : sergent infirmier (SSG)"
@@ -2641,6 +2835,10 @@
      "Joint Targeting Course"
     ]
    },
+   "qualification_refs": [
+    "us-basic-airborne",
+    "us-ranger-school"
+   ],
    "billets": {
     "fr": [
      "Soutien opérations spéciales : analyste / sergent renseignement",
@@ -2707,6 +2905,9 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Soutien forces spéciales : collecteur / sergent senior HUMINT",
@@ -2769,6 +2970,9 @@
      "Top secret clearance"
     ]
    },
+   "qualification_refs": [
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Soutien forces spéciales : analyste / sergent ROEM",
@@ -2831,6 +3035,10 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-dliflc",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Special Operations Team-Alpha : chef d'équipe (35P confirmé)",
@@ -2893,6 +3101,9 @@
      "Basic Airborne Course"
     ]
    },
+   "qualification_refs": [
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Détachements de soutien transmissions auprès des commandements d'opérations spéciales de théâtre"
@@ -2961,6 +3172,10 @@
      "Partial 18D Special Forces medical course"
     ]
    },
+   "qualification_refs": [
+    "us-basic-airborne",
+    "us-sf-medical-sergeant"
+   ],
    "billets": {
     "fr": [
      "Équipe de réanimation des opérations spéciales (environ 8 personnels de santé)"
@@ -3029,6 +3244,10 @@
      "ASI K7 – SOA MH-60 (Assault) Pilot"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon",
+    "us-160-bmq"
+   ],
    "billets": {
     "fr": [
      "Progression : BMQ → FMQ (commandant de bord toutes missions) → Flight Lead Qualified"
@@ -3095,6 +3314,9 @@
      "ASI K8 – SOA MH-60 DAP Pilot"
     ]
    },
+   "qualification_refs": [
+    "us-160-bmq"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -3161,6 +3383,10 @@
      "ASI K6 – MH-47 Pilot (SOA units)"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon",
+    "us-160-bmq"
+   ],
    "billets": {
     "fr": [
      "CW4 : peut être IP, ASO, MTP ou officier des opérations tactiques en SOA"
@@ -3233,6 +3459,10 @@
      "ASI K3 – SOA MH-6 (Assault) Pilot"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon",
+    "us-160-bmq"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -3301,6 +3531,10 @@
      "ASI K2 – SOA AH-6 (Attack) Pilot"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon",
+    "us-160-bmq"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -3367,6 +3601,10 @@
      "Aircraft BMQ"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon",
+    "us-160-bmq"
+   ],
    "billets": {
     "fr": [
      "Chef de section, bataillon SOA d'hélicoptères d'assaut / moyens : grade CPT"
@@ -3433,6 +3671,9 @@
      "Officer Combat Skills (Green Platoon)"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon"
+   ],
    "billets": {
     "fr": [
      "Commandant de compagnie/détachement SOA (hors HHC) : MAJ",
@@ -3497,6 +3738,9 @@
      "Flight Lead evaluation"
     ]
    },
+   "qualification_refs": [
+    "us-160-fmq"
+   ],
    "billets": {
     "fr": [
      "Conduit la mission aérienne en tant que navigateur principal"
@@ -3559,6 +3803,9 @@
      "Instructor Pilot Course (e.g. A/MH-6M IPC, 23 days)"
     ]
    },
+   "qualification_refs": [
+    "us-160-fmq"
+   ],
    "billets": {
     "fr": [
      "CW4 : IP, ASO, MTP ou officier des opérations tactiques",
@@ -3767,6 +4014,10 @@
      "Dunker (water egress) qualification"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon",
+    "us-160-nrcm"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -3839,6 +4090,10 @@
      "Door gunnery qualification"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon",
+    "us-160-nrcm"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -3905,6 +4160,10 @@
      "Green Platoon"
     ]
    },
+   "qualification_refs": [
+    "us-160-nrcm",
+    "us-160-green-platoon"
+   ],
    "billets": {
     "fr": [
      "Poste opérationnel de sergent-chef (15U3O)"
@@ -3973,6 +4232,9 @@
      "NRCM Standardization Instructor course"
     ]
    },
+   "qualification_refs": [
+    "us-160-nrcm"
+   ],
    "billets": {
     "fr": [
      "SI : participe à la gestion de l'Aircrew Training Program"
@@ -4043,6 +4305,10 @@
      "Fully Mission Qualified Flight Medic"
     ]
    },
+   "qualification_refs": [
+    "us-socm",
+    "us-160-fmq"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4109,6 +4375,9 @@
      "SOF Gray Eagle course (20 days)"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4179,6 +4448,9 @@
      "Officer Combat Skills (Green Platoon)"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4239,6 +4511,9 @@
      "Night Stalker (Green Platoon graduate)"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon"
+   ],
    "billets": {
     "fr": [
      "Encadrement de la compagnie A du SOATB"
@@ -4311,6 +4586,9 @@
      "NCO professional military education"
     ]
    },
+   "qualification_refs": [
+    "us-160-green-platoon"
+   ],
    "billets": {
     "fr": [
      "Chef de groupe / section / service (NCOIC)",
@@ -4377,6 +4655,10 @@
      "AC-130J aircraft qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-upt",
+    "us-afsoc-aircrew-qual"
+   ],
    "billets": {
     "fr": [
      "Équipage AC-130J : 2 pilotes, 2 CSO, 1 opérateur capteurs, 4 special mission aviators"
@@ -4451,6 +4733,10 @@
      "AC-130J aircraft qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-uct",
+    "us-afsoc-aircrew-qual"
+   ],
    "billets": {
     "fr": [
      "Équipage AC-130J : 2 officiers systèmes de combat"
@@ -4527,6 +4813,11 @@
      "AC-130J qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-aircrew-fundamentals",
+    "us-af-sma",
+    "us-afsoc-aircrew-qual"
+   ],
    "billets": {
     "fr": [
      "Équipage AC-130J : 4 special mission aviators, dont un lead gunner"
@@ -4599,6 +4890,10 @@
      "MC-130J aircraft qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-upt",
+    "us-afsoc-aircrew-qual"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4667,6 +4962,10 @@
      "MC-130J mission qualification training"
     ]
    },
+   "qualification_refs": [
+    "us-af-uct",
+    "us-afsoc-aircrew-qual"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4735,6 +5034,11 @@
      "MC-130J qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-aircrew-fundamentals",
+    "us-af-sma",
+    "us-afsoc-aircrew-qual"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4803,6 +5107,10 @@
      "CV-22B aircraft qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-upt",
+    "us-afsoc-aircrew-qual"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4875,6 +5183,11 @@
      "CV-22 qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-aircrew-fundamentals",
+    "us-af-sma",
+    "us-afsoc-aircrew-qual"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4939,6 +5252,9 @@
      "U-28A aircraft qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-upt"
+   ],
    "billets": {
     "fr": [
      "Équipage U-28A : 2 pilotes, 1 CSO, 1 TSO"
@@ -5007,6 +5323,9 @@
      "U-28A qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-uct"
+   ],
    "billets": {
     "fr": [
      "Équipage U-28A : 1 officier systèmes de combat"
@@ -5079,6 +5398,9 @@
      "Survival schools"
     ]
    },
+   "qualification_refs": [
+    "us-af-sere"
+   ],
    "billets": {
     "fr": [
      "Équipage U-28A : 1 opérateur systèmes tactiques",
@@ -5221,6 +5543,9 @@
      "MQ-9 qualification"
     ]
    },
+   "qualification_refs": [
+    "us-af-rpa-sensor"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5283,6 +5608,9 @@
      "Region-specific language training"
     ]
    },
+   "qualification_refs": [
+    "us-af-caamqc"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5431,6 +5759,16 @@
      "Pararescue Apprentice Course"
     ]
    },
+   "qualification_refs": [
+    "us-af-sw-as",
+    "us-af-zulu",
+    "us-af-combat-dive",
+    "us-basic-airborne",
+    "us-mffpc",
+    "us-af-sere",
+    "us-af-pj-paramedic",
+    "us-af-pj-apprentice"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5505,6 +5843,17 @@
      "Special Tactics Training (Hurlburt Field)"
     ]
    },
+   "qualification_refs": [
+    "us-af-sw-as",
+    "us-af-zulu",
+    "us-af-predive",
+    "us-basic-airborne",
+    "us-mffpc",
+    "us-af-sere",
+    "us-af-atc",
+    "us-af-cct-apprentice",
+    "us-af-st-training"
+   ],
    "billets": {
     "fr": [
      "Projeté comme JTAC au sein d'une ODA des Special Forces de l'US Army"
@@ -5583,6 +5932,14 @@
      "Initial Certification Course Phase 2 (Strike Phase)"
     ]
    },
+   "qualification_refs": [
+    "us-af-sw-as",
+    "us-af-zulu",
+    "us-af-tacp-apprentice",
+    "us-basic-airborne",
+    "us-af-sere",
+    "us-af-tacp-icc"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5655,6 +6012,16 @@
      "Special Tactics Training (Hurlburt Field)"
     ]
    },
+   "qualification_refs": [
+    "us-af-sw-as",
+    "us-af-zulu",
+    "us-af-predive",
+    "us-basic-airborne",
+    "us-mffpc",
+    "us-af-sere",
+    "us-af-sr-apprentice",
+    "us-af-st-training"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5723,6 +6090,9 @@
      "SSBI clearance"
     ]
    },
+   "qualification_refs": [
+    "us-af-cct-apprentice"
+   ],
    "billets": {
     "fr": [
      "Officier d'équipe Special Tactics (une équipe ST comprend un STO, des CCT, des PJ et du personnel de soutien)"
@@ -5795,6 +6165,9 @@
      "SSBI clearance"
     ]
    },
+   "qualification_refs": [
+    "us-jtac"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5867,6 +6240,14 @@
      "CRO course"
     ]
    },
+   "qualification_refs": [
+    "us-af-sw-as",
+    "us-af-combat-dive",
+    "us-basic-airborne",
+    "us-mffpc",
+    "us-af-sere",
+    "us-af-cro"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5933,6 +6314,9 @@
      "Secret clearance"
     ]
    },
+   "qualification_refs": [
+    "us-af-sere-specialist"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5991,6 +6375,9 @@
      "JTAC certification"
     ]
    },
+   "qualification_refs": [
+    "us-jtac"
+   ],
    "billets": {
     "fr": [
      "JTAC intégré à une ODA des Special Forces de l'Army",
@@ -6287,6 +6674,13 @@
      "Marine Corps Combatant Diver Course"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-as",
+    "us-marsoc-itc",
+    "us-sere-c",
+    "us-basic-airborne",
+    "us-usmc-combatant-diver"
+   ],
    "billets": {
     "fr": [
      "Marine Special Operations Team (MSOT), 14 Marines"
@@ -6357,6 +6751,10 @@
      "Team Commander's Course"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-as",
+    "us-marsoc-itc"
+   ],
    "billets": {
     "fr": [
      "Commandant d'équipe MSOT",
@@ -6783,6 +7181,11 @@
      "JTAC certification"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-soffc",
+    "us-sere-c",
+    "us-jtac"
+   ],
    "billets": {
     "fr": [
      "MSOT : 1 JTAC d'équipe",
@@ -6853,6 +7256,10 @@
      "MOS-specific communications course"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-soffc",
+    "us-sere-c"
+   ],
    "billets": {
     "fr": [
      "Cellule transmissions de l'état-major de MSOC"
@@ -6915,6 +7322,9 @@
      "SERE (Level C)"
     ]
    },
+   "qualification_refs": [
+    "us-sere-c"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6979,6 +7389,10 @@
      "SERE (Level C)"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-soffc",
+    "us-sere-c"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -7039,6 +7453,11 @@
      "Multi-Disciplined Intelligence Operator Course (MDIOC)"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-soffc",
+    "us-sere-c",
+    "us-marsoc-mdioc"
+   ],
    "billets": {
     "fr": [
      "Cellule de renseignement fusionnée de MSOC"
@@ -7105,6 +7524,11 @@
      "Multi-Disciplined Intelligence Operator Course (MDIOC)"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-soffc",
+    "us-sere-c",
+    "us-marsoc-mdioc"
+   ],
    "billets": {
     "fr": [
      "Cellule de renseignement fusionnée de MSOC"
@@ -7171,6 +7595,11 @@
      "Multi-Disciplined Intelligence Operator Course (MDIOC)"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-soffc",
+    "us-sere-c",
+    "us-marsoc-mdioc"
+   ],
    "billets": {
     "fr": [
      "Cellule de renseignement fusionnée de MSOC"
@@ -7237,6 +7666,11 @@
      "Multi-Disciplined Intelligence Operator Course (MDIOC)"
     ]
    },
+   "qualification_refs": [
+    "us-marsoc-soffc",
+    "us-sere-c",
+    "us-marsoc-mdioc"
+   ],
    "billets": {
     "fr": [
      "Cellule de renseignement fusionnée de MSOC"
@@ -7359,6 +7793,13 @@
      "SEAL Trident"
     ]
    },
+   "qualification_refs": [
+    "us-nsw-orientation",
+    "us-buds",
+    "us-basic-airborne",
+    "us-mffpc",
+    "us-sqt"
+   ],
    "billets": {
     "fr": [
      "Peloton SEAL : opérateur, puis chef de binôme/équipe de feu et LPO de groupe",
@@ -7433,6 +7874,10 @@
      "SEAL Trident"
     ]
    },
+   "qualification_refs": [
+    "us-buds",
+    "us-sqt"
+   ],
    "billets": {
     "fr": [
      "Chef de groupe (LTJG) puis commandant de peloton (LT)",
@@ -7571,6 +8016,9 @@
      "SEAL NEC O26A"
     ]
    },
+   "qualification_refs": [
+    "us-sqt"
+   ],
    "billets": {
     "fr": [
      "SEAL Team : LPO de groupe",
@@ -7757,6 +8205,9 @@
      "SEAL Trident"
     ]
    },
+   "qualification_refs": [
+    "us-sqt"
+   ],
    "billets": {
     "fr": [
      "Peloton SEAL : officier commandant (LT) et officier adjoint / chef de groupe (LTJG)"
@@ -7955,6 +8406,9 @@
      "JSOF Senior Enlisted Academy or Navy Senior Enlisted Academy"
     ]
    },
+   "qualification_refs": [
+    "us-jsofsea"
+   ],
    "billets": {
     "fr": [
      "CMC de team ou de groupe, major opérations, major instruction, conseiller sous-officier ; Force Master Chief de la NSWC (FORCM)"
@@ -8021,6 +8475,10 @@
      "NSW sniper course (NEC O19A)"
     ]
    },
+   "qualification_refs": [
+    "us-sqt",
+    "us-nsw-sniper"
+   ],
    "billets": {
     "fr": [
      "Peloton SEAL : binômes tireur d'élite/reconnaissance",
@@ -8087,6 +8545,10 @@
      "TCCC"
     ]
    },
+   "qualification_refs": [
+    "us-socm",
+    "us-tccc"
+   ],
    "billets": {
     "fr": [
      "Peloton SEAL : département médecine de combat",
@@ -8157,6 +8619,10 @@
      "JTAC Evaluator (NEC 836A)"
     ]
    },
+   "qualification_refs": [
+    "us-jtac",
+    "us-jtac-instructor"
+   ],
    "billets": {
     "fr": [
      "TRADET de groupe NSW : LPO de cellule JTAC ; NAWDC : LPO JTAC"
@@ -8219,6 +8685,9 @@
      "Explosive Breaching RSO (EXBR)"
     ]
    },
+   "qualification_refs": [
+    "us-nsw-breacher"
+   ],
    "billets": {
     "fr": [
      "Peloton SEAL : breacher de l'élément d'assaut, département munitions"
@@ -8281,6 +8750,9 @@
      "SEAL NEC O26A"
     ]
    },
+   "qualification_refs": [
+    "us-sqt"
+   ],
    "billets": {
     "fr": [
      "Peloton SEAL : département transmissions et électronique tactiques"
@@ -8345,6 +8817,9 @@
      "SDV Diving Supervisor (SDSP)"
     ]
    },
+   "qualification_refs": [
+    "us-nsw-dive-supervisor"
+   ],
    "billets": {
     "fr": [
      "Peloton SEAL : département opérations de plongée"
@@ -8409,6 +8884,11 @@
      "SDV Diving Supervisor"
     ]
    },
+   "qualification_refs": [
+    "us-sqt",
+    "us-sdv",
+    "us-nsw-dive-supervisor"
+   ],
    "billets": {
     "fr": [
      "SDV Team : opérateur SDV, LPO de groupe / troop, chef de peloton, major de troop (jalons O23x)"
@@ -8475,6 +8955,11 @@
      "Advanced Special Operations Techniques (NEC O22A)"
     ]
    },
+   "qualification_refs": [
+    "us-sqt",
+    "us-swcc-cqt",
+    "us-asotc"
+   ],
    "billets": {
     "fr": [
      "SRT : LPO de groupe, chef de peloton, major de troop"
@@ -8541,6 +9026,11 @@
      "SWCC insignia"
     ]
    },
+   "qualification_refs": [
+    "us-nsw-orientation",
+    "us-swcc-bcs",
+    "us-swcc-cqt"
+   ],
    "billets": {
     "fr": [
      "Détachement Special Boat : tireur, transmetteur, navigateur, mécanicien, puis chef de bord et chef de patrouille",
@@ -8685,6 +9175,9 @@
      "NSW LPO Course"
     ]
    },
+   "qualification_refs": [
+    "us-swcc-senior-master"
+   ],
    "billets": {
     "fr": [
      "Détachement : chef de bord / chef d'équipage, LPO de détachement, navigateur principal de troop"
@@ -8749,6 +9242,9 @@
      "Detachment LPO milestone (O52L)"
     ]
    },
+   "qualification_refs": [
+    "us-swcc-senior-master"
+   ],
    "billets": {
     "fr": [
      "Special Boat Team : chef de détachement / chef de patrouille"
@@ -8813,6 +9309,9 @@
      "SWCC Master"
     ]
    },
+   "qualification_refs": [
+    "us-swcc-senior-master"
+   ],
    "billets": {
     "fr": [
      "Special Boat Team : major de troop, chef instruction, chef opérations"
@@ -8879,6 +9378,10 @@
      "EOD Tactical Training and Basic Airborne"
     ]
    },
+   "qualification_refs": [
+    "us-navy-eod",
+    "us-basic-airborne"
+   ],
    "billets": {
     "fr": [
      "Renfort des escadrons / task units SEAL",
@@ -8949,6 +9452,10 @@
      "First Class Diver (later)"
     ]
    },
+   "qualification_refs": [
+    "us-navy-diver-2c",
+    "us-navy-diver-1c"
+   ],
    "billets": {
     "fr": [
      "Ateliers de plongée NSW (LOGSU), appui des SDV Teams, appui à l'instruction plongée BUD/S"
@@ -9081,6 +9588,11 @@
      "Reconnaissance Independent Duty Corpsman (L02A, optional)"
     ]
    },
+   "qualification_refs": [
+    "us-fmst",
+    "us-socm",
+    "us-soidc"
+   ],
    "billets": {
     "fr": [
      "Infirmier de peloton de reconnaissance, Force Recon ou d'équipe MARSOC"

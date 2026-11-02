@@ -26,7 +26,7 @@
       "code_system": "",
       "name": {
         "zh": "特战旅副旅长",
-        "pinyin": "tèzhànlǚ fù lǚzhǎng",
+        "zh-Latn": "tèzhànlǚ fù lǚzhǎng",
         "fr": "Commandant en second de brigade d’opérations spéciales",
         "en": "Deputy commander, special operations brigade"
       },
@@ -83,7 +83,7 @@
       "code_system": "",
       "name": {
         "zh": "作训科参谋",
-        "pinyin": "zuòxùnkē cānmóu",
+        "zh-Latn": "zuòxùnkē cānmóu",
         "fr": "Officier d’état-major opérations-entraînement",
         "en": "Operations and training staff officer"
       },
@@ -140,7 +140,7 @@
       "code_system": "",
       "name": {
         "zh": "考评员",
-        "pinyin": "kǎopíngyuán",
+        "zh-Latn": "kǎopíngyuán",
         "fr": "Évaluateur-arbitre d’exercice",
         "en": "Exercise evaluator"
       },
@@ -197,7 +197,7 @@
       "code_system": "",
       "name": {
         "zh": "特战连副连长",
-        "pinyin": "tèzhànlián fù liánzhǎng",
+        "zh-Latn": "tèzhànlián fù liánzhǎng",
         "fr": "Commandant en second de compagnie d’opérations spéciales",
         "en": "Deputy commander, special operations company"
       },
@@ -254,7 +254,7 @@
       "code_system": "",
       "name": {
         "zh": "特战排排长",
-        "pinyin": "tèzhànpái páizhǎng",
+        "zh-Latn": "tèzhànpái páizhǎng",
         "fr": "Chef de section d’opérations spéciales",
         "en": "Special operations platoon leader"
       },
@@ -311,7 +311,7 @@
       "code_system": "",
       "name": {
         "zh": "特战小队长",
-        "pinyin": "tèzhàn xiǎoduìzhǎng",
+        "zh-Latn": "tèzhàn xiǎoduìzhǎng",
         "fr": "Chef d’équipe d’opérations spéciales",
         "en": "Special operations team leader"
       },
@@ -372,7 +372,7 @@
       "code_system": "",
       "name": {
         "zh": "特战副小队长",
-        "pinyin": "tèzhàn fù xiǎoduìzhǎng",
+        "zh-Latn": "tèzhàn fù xiǎoduìzhǎng",
         "fr": "Chef d’équipe adjoint d’opérations spéciales",
         "en": "Deputy special operations team leader"
       },
@@ -427,7 +427,7 @@
       "code_system": "",
       "name": {
         "zh": "班长",
-        "pinyin": "bānzhǎng",
+        "zh-Latn": "bānzhǎng",
         "fr": "Chef de groupe",
         "en": "Squad leader"
       },
@@ -488,7 +488,7 @@
       "code_system": "",
       "name": {
         "zh": "特战队员",
-        "pinyin": "tèzhàn duìyuán",
+        "zh-Latn": "tèzhàn duìyuán",
         "fr": "Opérateur des forces spéciales",
         "en": "Special operations member"
       },
@@ -553,7 +553,7 @@
       "code_system": "",
       "name": {
         "zh": "特战尖兵",
-        "pinyin": "tèzhàn jiānbīng",
+        "zh-Latn": "tèzhàn jiānbīng",
         "fr": "Éclaireur d’élite des forces spéciales",
         "en": "Elite special operations scout"
       },
@@ -612,7 +612,7 @@
       "code_system": "",
       "name": {
         "zh": "狙击手",
-        "pinyin": "jūjīshǒu",
+        "zh-Latn": "jūjīshǒu",
         "fr": "Tireur d’élite",
         "en": "Sniper"
       },
@@ -669,7 +669,7 @@
       "code_system": "",
       "name": {
         "zh": "爆破手",
-        "pinyin": "bàopòshǒu",
+        "zh-Latn": "bàopòshǒu",
         "fr": "Spécialiste destruction",
         "en": "Demolition specialist"
       },
@@ -726,7 +726,7 @@
       "code_system": "",
       "name": {
         "zh": "重火器手",
-        "pinyin": "zhònghuǒqìshǒu",
+        "zh-Latn": "zhònghuǒqìshǒu",
         "fr": "Servant d’arme lourde",
         "en": "Heavy weapons operator"
       },
@@ -783,7 +783,7 @@
       "code_system": "",
       "name": {
         "zh": "侦察引导组队员",
-        "pinyin": "zhēnchá yǐndǎozǔ duìyuán",
+        "zh-Latn": "zhēnchá yǐndǎozǔ duìyuán",
         "fr": "Équipier reconnaissance et guidage",
         "en": "Reconnaissance and guidance cell member"
       },
@@ -844,7 +844,7 @@
       "code_system": "",
       "name": {
         "zh": "近战突击组队员",
-        "pinyin": "jìnzhàn tūjīzǔ duìyuán",
+        "zh-Latn": "jìnzhàn tūjīzǔ duìyuán",
         "fr": "Équipier d’assaut rapproché",
         "en": "Close assault cell member"
       },
@@ -899,7 +899,7 @@
       "code_system": "",
       "name": {
         "zh": "破袭组队员",
-        "pinyin": "pòxízǔ duìyuán",
+        "zh-Latn": "pòxízǔ duìyuán",
         "fr": "Équipier du groupe de destruction-raid",
         "en": "Breaching and raid cell member"
       },
@@ -960,7 +960,7 @@
       "code_system": "",
       "name": {
         "zh": "火力组队员",
-        "pinyin": "huǒlìzǔ duìyuán",
+        "zh-Latn": "huǒlìzǔ duìyuán",
         "fr": "Équipier du groupe feu",
         "en": "Fire cell member"
       },
@@ -1021,7 +1021,7 @@
       "code_system": "",
       "name": {
         "zh": "蛙人",
-        "pinyin": "wārén",
+        "zh-Latn": "wārén",
         "fr": "Nageur de combat (Armée de terre)",
         "en": "Army combat swimmer (frogman)"
       },
@@ -1086,7 +1086,7 @@
       "code_system": "",
       "name": {
         "zh": "女子特战队员",
-        "pinyin": "nǚzǐ tèzhàn duìyuán",
+        "zh-Latn": "nǚzǐ tèzhàn duìyuán",
         "fr": "Opératrice des forces spéciales",
         "en": "Female special operations member"
       },
@@ -1147,7 +1147,7 @@
       "code_system": "",
       "name": {
         "zh": "旅长",
-        "pinyin": "lǚzhǎng",
+        "zh-Latn": "lǚzhǎng",
         "fr": "Commandant de brigade",
         "en": "Brigade commander"
       },
@@ -1208,7 +1208,7 @@
       "code_system": "",
       "name": {
         "zh": "政治委员",
-        "pinyin": "zhèngzhì wěiyuán",
+        "zh-Latn": "zhèngzhì wěiyuán",
         "fr": "Commissaire politique de brigade",
         "en": "Brigade political commissar"
       },
@@ -1269,7 +1269,7 @@
       "code_system": "",
       "name": {
         "zh": "政治工作部主任",
-        "pinyin": "zhèngzhì gōngzuòbù zhǔrèn",
+        "zh-Latn": "zhèngzhì gōngzuòbù zhǔrèn",
         "fr": "Chef du département du travail politique",
         "en": "Director, political work department"
       },
@@ -1326,7 +1326,7 @@
       "code_system": "",
       "name": {
         "zh": "连长",
-        "pinyin": "liánzhǎng",
+        "zh-Latn": "liánzhǎng",
         "fr": "Commandant de compagnie",
         "en": "Company commander"
       },
@@ -1387,7 +1387,7 @@
       "code_system": "",
       "name": {
         "zh": "指导员",
-        "pinyin": "zhǐdǎoyuán",
+        "zh-Latn": "zhǐdǎoyuán",
         "fr": "Instructeur politique de compagnie",
         "en": "Company political instructor"
       },
@@ -1448,7 +1448,7 @@
       "code_system": "",
       "name": {
         "zh": "狙击教练员",
-        "pinyin": "jūjī jiàoliànyuán",
+        "zh-Latn": "jūjī jiàoliànyuán",
         "fr": "Instructrice ou instructeur tireur d’élite",
         "en": "Sniper instructor"
       },
@@ -1507,7 +1507,7 @@
       "code_system": "",
       "name": {
         "zh": "无人机操作手",
-        "pinyin": "wúrénjī cāozuòshǒu",
+        "zh-Latn": "wúrénjī cāozuòshǒu",
         "fr": "Télépilote de drone",
         "en": "UAV operator"
       },
@@ -1568,7 +1568,7 @@
       "code_system": "",
       "name": {
         "zh": "伞降特战队员",
-        "pinyin": "sǎnjiàng tèzhàn duìyuán",
+        "zh-Latn": "sǎnjiàng tèzhàn duìyuán",
         "fr": "Opérateur FS parachutiste",
         "en": "Parachute-qualified special operations member"
       },
@@ -1629,7 +1629,7 @@
       "code_system": "",
       "name": {
         "zh": "敌后侦察小队长",
-        "pinyin": "díhòu zhēnchá xiǎoduìzhǎng",
+        "zh-Latn": "díhòu zhēnchá xiǎoduìzhǎng",
         "fr": "Chef d’équipe de reconnaissance dans la profondeur",
         "en": "Deep reconnaissance team leader"
       },
@@ -1688,7 +1688,7 @@
       "code_system": "",
       "name": {
         "zh": "特战营营长",
-        "pinyin": "tèzhànyíng yíngzhǎng",
+        "zh-Latn": "tèzhànyíng yíngzhǎng",
         "fr": "Commandant de bataillon d’opérations spéciales",
         "en": "Special operations battalion commander"
       },
@@ -1747,7 +1747,7 @@
       "code_system": "",
       "name": {
         "zh": "集训队教练员",
-        "pinyin": "jíxùnduì jiàoliànyuán",
+        "zh-Latn": "jíxùnduì jiàoliànyuán",
         "fr": "Instructeur de stage d’opérations spéciales",
         "en": "Special operations course instructor"
       },
@@ -1804,7 +1804,7 @@
       "code_system": "",
       "name": {
         "zh": "特种侦察兵",
-        "pinyin": "tèzhǒng zhēnchábīng",
+        "zh-Latn": "tèzhǒng zhēnchábīng",
         "fr": "Opérateur de reconnaissance spéciale",
         "en": "Special reconnaissance soldier"
       },
@@ -1871,7 +1871,7 @@
       "code_system": "",
       "name": {
         "zh": "特种作战学院学员",
-        "pinyin": "tèzhǒng zuòzhàn xuéyuàn xuéyuán",
+        "zh-Latn": "tèzhǒng zuòzhàn xuéyuàn xuéyuán",
         "fr": "Élève officier des opérations spéciales",
         "en": "Special operations academy cadet"
       },
@@ -1932,7 +1932,7 @@
       "code_system": "",
       "name": {
         "zh": "直-10前舱飞行员",
-        "pinyin": "Zhí-shí qiáncāng fēixíngyuán",
+        "zh-Latn": "Zhí-shí qiáncāng fēixíngyuán",
         "fr": "Pilote de Z-10, poste avant (armement)",
         "en": "Z-10 front-seat pilot (weapons)"
       },
@@ -1993,7 +1993,7 @@
       "code_system": "",
       "name": {
         "zh": "直-10后舱飞行员",
-        "pinyin": "Zhí-shí hòucāng fēixíngyuán",
+        "zh-Latn": "Zhí-shí hòucāng fēixíngyuán",
         "fr": "Pilote de Z-10, poste arrière",
         "en": "Z-10 rear-seat pilot"
       },
@@ -2050,7 +2050,7 @@
       "code_system": "",
       "name": {
         "zh": "直-20飞行员",
-        "pinyin": "Zhí-èrshí fēixíngyuán",
+        "zh-Latn": "Zhí-èrshí fēixíngyuán",
         "fr": "Pilote d’hélicoptère Z-20",
         "en": "Z-20 helicopter pilot"
       },
@@ -2113,7 +2113,7 @@
       "code_system": "",
       "name": {
         "zh": "武装直升机飞行员",
-        "pinyin": "wǔzhuāng zhíshēngjī fēixíngyuán",
+        "zh-Latn": "wǔzhuāng zhíshēngjī fēixíngyuán",
         "fr": "Pilote d’hélicoptère d’attaque (Z-10, Z-19)",
         "en": "Attack helicopter pilot (Z-10, Z-19)"
       },
@@ -2176,7 +2176,7 @@
       "code_system": "",
       "name": {
         "zh": "运输直升机飞行员",
-        "pinyin": "yùnshū zhíshēngjī fēixíngyuán",
+        "zh-Latn": "yùnshū zhíshēngjī fēixíngyuán",
         "fr": "Pilote d’hélicoptère de transport (Mi-171, Z-8)",
         "en": "Transport helicopter pilot (Mi-171, Z-8)"
       },
@@ -2239,7 +2239,7 @@
       "code_system": "",
       "name": {
         "zh": "副参谋长",
-        "pinyin": "fù cānmóuzhǎng",
+        "zh-Latn": "fù cānmóuzhǎng",
         "fr": "Chef d’état-major adjoint de brigade",
         "en": "Brigade deputy chief of staff"
       },
@@ -2296,7 +2296,7 @@
       "code_system": "",
       "name": {
         "zh": "空中突击兵",
-        "pinyin": "kōngzhōng tūjībīng",
+        "zh-Latn": "kōngzhōng tūjībīng",
         "fr": "Fantassin d’assaut aérien",
         "en": "Air assault trooper"
       },
@@ -2361,7 +2361,7 @@
       "code_system": "",
       "name": {
         "zh": "陆战队员",
-        "pinyin": "lùzhàn duìyuán",
+        "zh-Latn": "lùzhàn duìyuán",
         "fr": "Fusilier marin (Corps des Marines)",
         "en": "Marine"
       },
@@ -2420,7 +2420,7 @@
       "code_system": "",
       "name": {
         "zh": "狙击手",
-        "pinyin": "jūjīshǒu",
+        "zh-Latn": "jūjīshǒu",
         "fr": "Tireur d’élite (Corps des Marines)",
         "en": "Marine sniper"
       },
@@ -2479,7 +2479,7 @@
       "code_system": "",
       "name": {
         "zh": "观察手",
-        "pinyin": "guāncháshǒu",
+        "zh-Latn": "guāncháshǒu",
         "fr": "Observateur de binôme tireur d’élite",
         "en": "Sniper spotter"
       },
@@ -2536,7 +2536,7 @@
       "code_system": "",
       "name": {
         "zh": "两栖装甲车驾驶员",
-        "pinyin": "liǎngqī zhuāngjiǎchē jiàshǐyuán",
+        "zh-Latn": "liǎngqī zhuāngjiǎchē jiàshǐyuán",
         "fr": "Pilote de véhicule blindé amphibie",
         "en": "Amphibious armoured vehicle driver"
       },
@@ -2599,7 +2599,7 @@
       "code_system": "",
       "name": {
         "zh": "两栖突击车车长",
-        "pinyin": "liǎngqī tūjīchē chēzhǎng",
+        "zh-Latn": "liǎngqī tūjīchē chēzhǎng",
         "fr": "Chef de véhicule d’assaut amphibie",
         "en": "Amphibious assault vehicle commander"
       },
@@ -2662,7 +2662,7 @@
       "code_system": "",
       "name": {
         "zh": "两栖侦察兵",
-        "pinyin": "liǎngqī zhēnchábīng",
+        "zh-Latn": "liǎngqī zhēnchábīng",
         "fr": "Éclaireur amphibie",
         "en": "Amphibious reconnaissance scout"
       },
@@ -2721,7 +2721,7 @@
       "code_system": "",
       "name": {
         "zh": "舰载直升机飞行员",
-        "pinyin": "jiànzài zhíshēngjī fēixíngyuán",
+        "zh-Latn": "jiànzài zhíshēngjī fēixíngyuán",
         "fr": "Pilote d’hélicoptère embarqué (Corps des Marines)",
         "en": "Marine Corps shipborne helicopter pilot"
       },
@@ -2788,7 +2788,7 @@
       "code_system": "",
       "name": {
         "zh": "蛟龙突击队队员",
-        "pinyin": "Jiāolóng tūjīduì duìyuán",
+        "zh-Latn": "Jiāolóng tūjīduì duìyuán",
         "fr": "Opérateur du Jiaolong Commando",
         "en": "Jiaolong Commando operator"
       },
@@ -2855,7 +2855,7 @@
       "code_system": "",
       "name": {
         "zh": "班长",
-        "pinyin": "bānzhǎng",
+        "zh-Latn": "bānzhǎng",
         "fr": "Chef de groupe (Jiaolong)",
         "en": "Squad leader (Jiaolong)"
       },
@@ -2914,7 +2914,7 @@
       "code_system": "",
       "name": {
         "zh": "突击手",
-        "pinyin": "tūjīshǒu",
+        "zh-Latn": "tūjīshǒu",
         "fr": "Équipier d’assaut (Jiaolong)",
         "en": "Assaulter (Jiaolong)"
       },
@@ -2971,7 +2971,7 @@
       "code_system": "",
       "name": {
         "zh": "机枪手",
-        "pinyin": "jīqiāngshǒu",
+        "zh-Latn": "jīqiāngshǒu",
         "fr": "Mitrailleur embarqué (Jiaolong)",
         "en": "Door gunner (Jiaolong)"
       },
@@ -3034,7 +3034,7 @@
       "code_system": "",
       "name": {
         "zh": "伞降队员",
-        "pinyin": "sǎnjiàng duìyuán",
+        "zh-Latn": "sǎnjiàng duìyuán",
         "fr": "Chuteur opérationnel (Jiaolong)",
         "en": "Military free-fall parachutist (Jiaolong)"
       },
@@ -3095,7 +3095,7 @@
       "code_system": "",
       "name": {
         "zh": "潜水队员",
-        "pinyin": "qiánshuǐ duìyuán",
+        "zh-Latn": "qiánshuǐ duìyuán",
         "fr": "Nageur de combat (Jiaolong)",
         "en": "Combat diver (Jiaolong)"
       },
@@ -3158,7 +3158,7 @@
       "code_system": "",
       "name": {
         "zh": "中队干部",
-        "pinyin": "zhōngduì gànbù",
+        "zh-Latn": "zhōngduì gànbù",
         "fr": "Officier d’escadron (Jiaolong)",
         "en": "Squadron officer (Jiaolong)"
       },
@@ -3217,7 +3217,7 @@
       "code_system": "",
       "name": {
         "zh": "登临检查队员",
-        "pinyin": "dēnglín jiǎnchá duìyuán",
+        "zh-Latn": "dēnglín jiǎnchá duìyuán",
         "fr": "Équipier de visite et d’abordage",
         "en": "Boarding team member"
       },
@@ -3282,7 +3282,7 @@
       "code_system": "",
       "name": {
         "zh": "蛙人",
-        "pinyin": "wārén",
+        "zh-Latn": "wārén",
         "fr": "Nageur de combat de la Marine",
         "en": "Navy frogman"
       },
@@ -3339,7 +3339,7 @@
       "code_system": "",
       "name": {
         "zh": "伞兵",
-        "pinyin": "sǎnbīng",
+        "zh-Latn": "sǎnbīng",
         "fr": "Parachutiste",
         "en": "Paratrooper"
       },
@@ -3404,7 +3404,7 @@
       "code_system": "",
       "name": {
         "zh": "雷神突击队队员",
-        "pinyin": "Léishén tūjīduì duìyuán",
+        "zh-Latn": "Léishén tūjīduì duìyuán",
         "fr": "Opérateur du commando « Léishén »",
         "en": "“Thunder God” commando operator"
       },
@@ -3469,7 +3469,7 @@
       "code_system": "",
       "name": {
         "zh": "侦察连连长",
-        "pinyin": "zhēnchálián liánzhǎng",
+        "zh-Latn": "zhēnchálián liánzhǎng",
         "fr": "Commandant de compagnie de reconnaissance aéroportée",
         "en": "Airborne reconnaissance company commander"
       },
@@ -3528,7 +3528,7 @@
       "code_system": "",
       "name": {
         "zh": "引导员",
-        "pinyin": "yǐndǎoyuán",
+        "zh-Latn": "yǐndǎoyuán",
         "fr": "Guide-éclaireur aéroporté (pathfinder)",
         "en": "Airborne pathfinder"
       },
@@ -3587,7 +3587,7 @@
       "code_system": "",
       "name": {
         "zh": "机枪手",
-        "pinyin": "jīqiāngshǒu",
+        "zh-Latn": "jīqiāngshǒu",
         "fr": "Mitrailleur parachutiste",
         "en": "Airborne machine gunner"
       },
@@ -3644,7 +3644,7 @@
       "code_system": "",
       "name": {
         "zh": "火箭筒手",
-        "pinyin": "huǒjiàntǒngshǒu",
+        "zh-Latn": "huǒjiàntǒngshǒu",
         "fr": "Tireur lance-roquettes parachutiste",
         "en": "Airborne rocket launcher gunner"
       },
@@ -3705,7 +3705,7 @@
       "code_system": "",
       "name": {
         "zh": "狙击手",
-        "pinyin": "jūjīshǒu",
+        "zh-Latn": "jūjīshǒu",
         "fr": "Tireur d’élite parachutiste",
         "en": "Airborne sniper"
       },
@@ -3766,7 +3766,7 @@
       "code_system": "",
       "name": {
         "zh": "无人机操作手",
-        "pinyin": "wúrénjī cāozuòshǒu",
+        "zh-Latn": "wúrénjī cāozuòshǒu",
         "fr": "Télépilote de drone aéroporté",
         "en": "Airborne UAV operator"
       },
@@ -3823,7 +3823,7 @@
       "code_system": "",
       "name": {
         "zh": "空降战车驾驶员",
-        "pinyin": "kōngjiàng zhànchē jiàshǐyuán",
+        "zh-Latn": "kōngjiàng zhànchē jiàshǐyuán",
         "fr": "Pilote de véhicule de combat aéroporté (ZBD-03)",
         "en": "Airborne fighting vehicle driver (ZBD-03)"
       },
@@ -3884,7 +3884,7 @@
       "code_system": "",
       "name": {
         "zh": "运输机飞行员",
-        "pinyin": "yùnshūjī fēixíngyuán",
+        "zh-Latn": "yùnshūjī fēixíngyuán",
         "fr": "Pilote d’avion de transport",
         "en": "Transport aircraft pilot"
       },
@@ -3949,7 +3949,7 @@
       "code_system": "",
       "name": {
         "zh": "直升机飞行员",
-        "pinyin": "zhíshēngjī fēixíngyuán",
+        "zh-Latn": "zhíshēngjī fēixíngyuán",
         "fr": "Pilote d’hélicoptère du Corps aéroporté",
         "en": "Airborne Corps helicopter pilot"
       },
@@ -4016,7 +4016,7 @@
       "code_system": "",
       "name": {
         "zh": "突击队员",
-        "pinyin": "tūjī duìyuán",
+        "zh-Latn": "tūjī duìyuán",
         "fr": "Opérateur d’assaut (Snow Leopard)",
         "en": "Assault operator (Snow Leopard)"
       },
@@ -4083,7 +4083,7 @@
       "code_system": "",
       "name": {
         "zh": "谈判专家",
-        "pinyin": "tánpàn zhuānjiā",
+        "zh-Latn": "tánpàn zhuānjiā",
         "fr": "Négociateur (Snow Leopard)",
         "en": "Negotiator (Snow Leopard)"
       },
@@ -4140,7 +4140,7 @@
       "code_system": "",
       "name": {
         "zh": "狙击手",
-        "pinyin": "jūjīshǒu",
+        "zh-Latn": "jūjīshǒu",
         "fr": "Tireur d’élite (Falcon)",
         "en": "Sniper (Falcon)"
       },
@@ -4203,7 +4203,7 @@
       "code_system": "",
       "name": {
         "zh": "战斗队副队长",
-        "pinyin": "zhàndòuduì fù duìzhǎng",
+        "zh-Latn": "zhàndòuduì fù duìzhǎng",
         "fr": "Chef adjoint d’équipe de combat (Falcon)",
         "en": "Deputy combat team leader (Falcon)"
       },
@@ -4260,7 +4260,7 @@
       "code_system": "",
       "name": {
         "zh": "排爆手",
-        "pinyin": "páibàoshǒu",
+        "zh-Latn": "páibàoshǒu",
         "fr": "Démineur NEDEX (Falcon)",
         "en": "EOD technician (Falcon)"
       },
@@ -4321,7 +4321,7 @@
       "code_system": "",
       "name": {
         "zh": "反劫机队员",
-        "pinyin": "fǎnjiéjī duìyuán",
+        "zh-Latn": "fǎnjiéjī duìyuán",
         "fr": "Opérateur anti-détournement (Falcon)",
         "en": "Counter-hijack operator (Falcon)"
       },
@@ -4386,7 +4386,7 @@
       "code_system": "",
       "name": {
         "zh": "教导员",
-        "pinyin": "jiàodǎoyuán",
+        "zh-Latn": "jiàodǎoyuán",
         "fr": "Instructeur politique de bataillon (Falcon)",
         "en": "Battalion political instructor (Falcon)"
       },
@@ -4445,7 +4445,7 @@
       "code_system": "",
       "name": {
         "zh": "山鹰突击队队员",
-        "pinyin": "Shānyīng tūjīduì duìyuán",
+        "zh-Latn": "Shānyīng tūjīduì duìyuán",
         "fr": "Opérateur du Mountain Eagle",
         "en": "Mountain Eagle commando operator"
       },

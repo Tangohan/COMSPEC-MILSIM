@@ -11,7 +11,7 @@ final class OrganizationKitDefinitionsTest extends TestCase
 {
     public function testOfficialKitsAreTenantAgnosticAndComplete(): void
     {
-        $kits = OrganizationKitDefinitions::officialKits();
+        $kits = OrganizationKitDefinitions::genericKits();
         self::assertCount(9, $kits);
         self::assertSame(
             [
@@ -25,8 +25,15 @@ final class OrganizationKitDefinitionsTest extends TestCase
                 OrganizationKitDefinitions::PRIVATE_MILITARY,
                 OrganizationKitDefinitions::GAMING_COMMUNITY,
             ],
+            OrganizationKitDefinitions::genericCodes()
+        );
+        // Identifiants existants inchangés, en tête ; les modèles d’unités réelles suivent.
+        self::assertSame(array_column($kits, 'code'), OrganizationKitDefinitions::genericCodes());
+        self::assertSame(
+            array_merge(OrganizationKitDefinitions::genericCodes(), \App\Services\OrganizationCatalog\RealUnitKitDefinitions::codes()),
             OrganizationKitDefinitions::officialCodes()
         );
+        self::assertSame(OrganizationKitDefinitions::officialCodes(), array_column(OrganizationKitDefinitions::officialKits(), 'code'));
 
         foreach ($kits as $kit) {
             self::assertArrayNotHasKey('tenant_id', $kit);
@@ -107,7 +114,9 @@ final class OrganizationKitDefinitionsTest extends TestCase
             foreach ($kit['job_roles'] as $job) {
                 self::assertContains($job['category_key'], $categories, (string) $job['slug']);
             }
-            self::assertContains($kit['grade_system_code'], ['FR_CLASSIC', 'US_CLASSIC']);
+            // Modèles allemands : aucun barème de grades allemand, le système de la communauté reste inchangé.
+            $grades = OrganizationKitDefinitions::isRealUnits($kit) ? ['FR_CLASSIC', 'US_CLASSIC', ''] : ['FR_CLASSIC', 'US_CLASSIC'];
+            self::assertContains($kit['grade_system_code'], $grades);
         }
     }
 
@@ -118,8 +127,11 @@ final class OrganizationKitDefinitionsTest extends TestCase
             OrganizationKitDefinitions::jobDoctrineCodes()
         );
 
+        // Une adresse courte n’appartient qu’à un modèle, sauf une unité réelle reprise par plusieurs modèles
+        // (USSOCOM et USASOC…) : même nom et même code partout, pour compléter la même arborescence.
         $seen = [];
         foreach (OrganizationKitDefinitions::officialKits() as $kit) {
+            $inKit = [];
             foreach (['units', 'job_role_categories', 'job_roles'] as $group) {
                 foreach (is_array($kit[$group] ?? null) ? $kit[$group] : [] as $row) {
                     if (!is_array($row)) {
@@ -130,8 +142,14 @@ final class OrganizationKitDefinitionsTest extends TestCase
                         continue;
                     }
                     $key = $group . ':' . $slug;
-                    self::assertArrayNotHasKey($key, $seen, $key);
-                    $seen[$key] = true;
+                    self::assertArrayNotHasKey($key, $inKit, $kit['code'] . ' ' . $key);
+                    $inKit[$key] = true;
+                    $same = [(string) ($row['name'] ?? ''), (string) ($row['code'] ?? '')];
+                    if (isset($seen[$key])) {
+                        self::assertTrue(OrganizationKitDefinitions::isRealUnits($kit) && $seen[$key][1], $key);
+                        self::assertSame($seen[$key][0], $same, $key);
+                    }
+                    $seen[$key] = [$same, OrganizationKitDefinitions::isRealUnits($kit)];
                 }
             }
         }

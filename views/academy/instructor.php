@@ -98,7 +98,7 @@ $audienceOf = static function (array $course) use ($courseSettings): string {
 <details class="ins-review"<?= $reviewIndex === 1 ? ' open' : '' ?>><summary><?= $h($t('ins_open_review')) ?></summary>
 <?php require __DIR__ . '/course_review.php'; ?>
 <h4><?= $h($t('submitted_debrief')) ?></h4><p class="lesson-text"><?= nl2br($h($item['debriefs'][$item['chapter']] ?? '')) ?></p>
-<?php if (!empty($reviewChapter['validation']['brief'])): ?><p><?= nl2br($h($local($reviewChapter['validation']['brief']))) ?></p><?php endif ?>
+<?php if (!empty($reviewChapter['validation']['brief'])): ?><div class="rt"><?= $rich($reviewChapter['validation']['brief']) ?></div><?php endif ?>
 <?php if (!empty($reviewChapter['validation']['criteria'])): ?><h4><?= $h($t('validation_criteria')) ?></h4><ul class="academy-rubric"><?php foreach ($reviewChapter['validation']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
 <?php if ($own): ?><p class="hint"><?= $h($t('self_validation')) ?></p>
 <?php elseif (!$canHere): ?><p class="hint"><?= $h($t('ins_cannot_validate')) ?></p>
