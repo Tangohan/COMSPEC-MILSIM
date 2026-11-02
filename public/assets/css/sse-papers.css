@@ -1,0 +1,104 @@
+/* RENS › Identités & documents (COMSPEC IDENTITY) — papiers fictifs, bande MRZ, statuts. */
+.idp-sim {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px dashed var(--amber, #f59e0b);
+    border-radius: var(--radius, 0.75rem);
+    color: var(--text, inherit);
+    font-size: 0.85rem;
+}
+.idp-sim strong {
+    letter-spacing: 0.18em;
+    color: var(--amber, #f59e0b);
+}
+.idp-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+.idp-grid > div { min-width: 0; overflow-wrap: anywhere; }
+.idp-card {
+    position: relative;
+    overflow: hidden;
+    max-width: 560px;
+    padding: 1rem 1.1rem 0.9rem;
+    border: 1px solid var(--border, rgba(127, 127, 127, 0.3));
+    border-radius: 12px;
+    background: var(--surface, transparent);
+}
+.idp-card::after {
+    content: "SIMULATION";
+    position: absolute;
+    inset: 40% -10% auto;
+    transform: rotate(-14deg);
+    text-align: center;
+    font-size: 2.6rem;
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    color: var(--amber, #f59e0b);
+    opacity: 0.13;
+    pointer-events: none;
+}
+.idp-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted, inherit);
+}
+.idp-card__name { font-size: 1.15rem; font-weight: 800; color: var(--text-strong, inherit); }
+.idp-mrz {
+    margin: 0.85rem 0 0;
+    padding: 0.55rem 0.6rem;
+    overflow-x: auto;
+    border-radius: 6px;
+    background: rgba(127, 127, 127, 0.1);
+    font-family: "JetBrains Mono", ui-monospace, "Consolas", monospace;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    white-space: pre;
+    color: var(--text-strong, inherit);
+}
+.idp-statuses {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+.idp-statuses label { display: block; margin-bottom: 4px; font-size: 0.8rem; color: var(--muted, inherit); }
+.idp-statuses select,
+.idp-statuses input { width: 100%; }
+.idp-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.idp-actions form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0; }
+.idp-level {
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--border-soft, rgba(127, 127, 127, 0.15));
+}
+.idp-level:first-child { border-top: 0; }
+.idp-level pre {
+    margin: 0.35rem 0 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 0.8rem;
+}
+.idp-verdict--hvt,
+.idp-verdict--recherche,
+.idp-verdict--vole { border-color: var(--red, #dc2626); color: var(--red, #dc2626); }
+.idp-verdict--signale,
+.idp-verdict--revoque,
+.idp-verdict--expire,
+.idp-verdict--inconnu { border-color: var(--amber, #f59e0b); color: var(--amber, #f59e0b); }
+.idp-verdict--ras { border-color: var(--green, #059669); color: var(--green, #059669); }
+.idp-hidden { color: var(--muted, inherit); font-style: italic; }
+@media (max-width: 640px) {
+    .idp-card::after { font-size: 1.6rem; }
+    .idp-mrz { font-size: 0.7rem; }
+}
