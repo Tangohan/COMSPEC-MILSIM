@@ -6,7 +6,10 @@
  */
 $cardMeta = [];
 if ($it['level'] !== '' && $it['kind'] !== 'issuer') {
-    $cardMeta[] = ['Niveau', $oxLevel((string) $it['level'])];
+    $cardMeta[] = ['Niveau', $oxLevel((string) $it['level']) . (!empty($it['level_estimated']) ? ' <small class="acx-muted">estimé</small>' : '')];
+}
+if ((int) ($it['jobs_count'] ?? 0) > 0) {
+    $cardMeta[] = ['Emplois', (int) $it['jobs_count'] . ' <span>' . ((int) $it['jobs_count'] === 1 ? 'emploi la demande' : 'emplois la demandent') . '</span>'];
 }
 if ($oxDuration($it['duration_min'] ?? null) !== '') {
     $cardMeta[] = ['Durée', $h($oxDuration($it['duration_min']))];
@@ -23,18 +26,20 @@ if (!empty($it['grade'])) {
 if (!empty($it['unit'])) {
     $cardMeta[] = ['Unité', '<span translate="no">' . $h($it['unit']) . '</span>'];
 }
-$cardKind = $it['kind'] === 'qualification' && in_array('brevets', $it['tabs'], true) ? 'Brevet' : ($it['kind'] === 'course' && ($it['licence'] ?? '') !== '' ? 'Formation à licence' : $oxKinds[$it['kind']]);
+$cardKind = isset($it['nature']) ? $oxNatures[$it['nature']] : ($it['kind'] === 'course' && ($it['licence'] ?? '') !== '' ? 'Formation à licence' : $oxKinds[$it['kind']]);
 ?>
-<article class="acx-card acx-card--<?= $h($it['kind']) ?> is-<?= $h($it['state']) ?>" data-offer-item>
+<article class="acx-card acx-card--<?= $h($it['kind']) ?> is-<?= $h($it['state']) ?><?= isset($it['origin']) ? ' acx-origin--' . $h($it['origin']) : '' ?>" data-offer-item>
     <header class="acx-card__head">
         <?= $oxBadge($it) ?>
         <div class="acx-card__title">
             <p class="acx-kicker"><span><?= $h($cardKind) ?></span><?php if (($it['category'] ?? '') !== '' && $it['kind'] !== 'issuer'): ?> · <span translate="no"><?= $h($it['category']) ?></span><?php endif ?></p>
             <h3><a href="<?= $h($oxFiche((string) $it['id'])) ?>" translate="no"><?= $h($it['title']) ?></a></h3>
+            <?php if (($it['country'] ?? '') !== '' || ($it['official_name'] ?? '') !== ''): ?><p class="acx-origin-line"><?= $oxCountry((string) ($it['country'] ?? ''), (string) ($it['country_label'] ?? '')) ?><?php if (($it['official_name'] ?? '') !== '' && $it['official_name'] !== $it['title']): ?> <span class="acx-official" translate="no"><?= $h($it['official_name']) ?></span><?php endif ?></p><?php endif ?>
             <?php if (($it['issuer'] ?? '') !== ''): ?><p class="acx-issuer"><span><?= $it['kind'] === 'issuer' ? 'Rattaché à' : ($it['kind'] === 'qualification' ? 'Émetteur :' : 'Proposé par') ?></span> <span translate="no"><?= $h($it['issuer']) ?></span></p><?php endif ?>
         </div>
         <?= $oxStatePill($it) ?>
     </header>
+    <?php if (($it['origin'] ?? '') === 'referentiel'): ?><p class="acx-tag acx-tag--ref"><?= $oxSymbol('check') ?><span>Déjà dans mon référentiel</span> · <span>du catalogue de référence</span></p><?php elseif (($it['origin'] ?? '') === 'communaute'): ?><p class="acx-tag acx-tag--own"><span>Création de la communauté</span></p><?php endif ?>
     <?php if (($it['summary'] ?? '') !== ''): ?><p class="acx-card__sum" translate="no"><?= $h($it['summary']) ?></p><?php endif ?>
     <?php require __DIR__ . '/offer_how.php'; ?>
     <?php if ($it['pct'] !== null && in_array($it['state'], ['progress', 'pending', 'eligible'], true)): ?>

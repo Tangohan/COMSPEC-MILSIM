@@ -312,6 +312,33 @@ final class DevDispatchCatalog
                 'Mettez à jour le pack 2.9.34 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
                 'Réglages serveur dans Options des addons › COMSPEC › ATAK · Routes : partage des routes, routes sur la carte d’Arma et Athena, nombre d’étapes, rayon d’arrivée, vue 3D.',
             ], 'Pack téléphone 2.9.34'),
+            $pr(1314, '2026-11-02', 'Academy : les cartes du tableau de bord ouvrent le catalogue', 'Sur le tableau de bord de l’Academy, un clic sur une carte « Explorer le catalogue » (Formations, Brevets et licences, Qualifications) ouvrait une fenêtre sombre vide avec une simple croix. Les cartes mènent de nouveau au catalogue sur le bon onglet, et seul un clic sur une image de cours l’agrandit.', [], [], [
+                'Academy : un clic n’importe où sur une page de l’Academy (cartes du tableau de bord, liens d’outils) ne déclenche plus l’agrandissement d’image, réservé aux images des cours',
+            ], ['personnel'], [], 'Portail'),
+            $pr(1313, '2026-11-02', 'Cycle de mission expliqué et parties détectées en jeu gérées', 'La page Cycle de mission montre maintenant les sept étapes d’une opération, de la planification aux heures comptées : ce que fait chaque étape, comment elle se déclenche (site, serveur, Zeus) et combien des parties récentes l’ont passée. Chaque partie lancée sur le serveur est rapprochée automatiquement de l’opération planifiée, du cycle de mission ou de l’événement prévu au même créneau (carte et joueurs prévus présents compris) ; vous confirmez, corrigez ou indiquez « aucune ». Dans le suivi des CR, le bouton « Gérer » d’une partie permet de la renommer, de lui donner un type et une catégorie, de l’ignorer (une fois ou à l’avenir) ou de la supprimer, seule ou en groupe.', [
+                'Cycle de mission : étapes expliquées avec leurs liens (planification, briefing, suivi des CR, comptes rendus, heures, sessions de jeu, qualifications, avancement) et réglages de la détection',
+                'Parties détectées : état de chaque étape, opération prévue proposée ou choisie, parties sans opération signalées',
+                'Fenêtre « Gérer » : nom, type, catégorie, opération rattachée, ignorer cette partie ou à l’avenir (même mission ou même carte), supprimer avec le détail de ce qui sera retiré',
+                'Types d’opération enregistrés avec une règle : les prochaines parties qui correspondent sont typées automatiquement ; type proposé d’après le nom de la mission, la durée et le nombre de joueurs',
+                'Catégories modifiables par la communauté, règles d’exclusion et parties supprimées restaurables',
+                'Actions groupées sur les parties cochées : catégoriser, ignorer, compter à nouveau, supprimer',
+            ], [
+                'Une partie ignorée ou supprimée ne compte plus dans le temps de jeu, le temps par rôle, les heures de vol et les heures prises en compte pour les qualifications ; rien n’est effacé',
+            ], [], ['atak', 'platform'], [
+                'Aucune mise à jour du jeu n’est nécessaire. L’administrateur lance run-migrations.php (étape atak_played_operations) pour activer types, règles et rattachements.',
+                'La présence pointée dans Sessions de jeu reste gérée sur sa propre page.',
+            ], 'Portail Athena'),
+            $pr(1312, '2026-11-02', 'Academy : le catalogue des qualifications réelles et les émetteurs réels', 'Le catalogue de l’Academy, onglet Qualifications, présente maintenant le catalogue de référence : environ 500 brevets et qualifications réels des États-Unis, de la France, de l’Allemagne, de la Chine, de la Russie et de l’OTAN, à côté des qualifications de votre communauté. Chaque fiche dit qui la délivre, comment l’obtenir, quelles formations y mènent et quels emplois la demandent ; un responsable l’importe en un clic dans son référentiel. La page Émetteurs propose plus de 200 écoles, centres d’excellence et commandements réels à importer par pays. La formule de la communauté fixe le nombre d’imports et de créations ; le catalogue reste consultable en entier.', [
+                'Catalogue Academy : qualifications par origine (déjà dans mon référentiel, créations de la communauté, catalogue de référence), filtres par pays avec drapeau, catégorie (brevet, qualification, cursus, licence), domaine, niveau et émetteur, pages de résultats',
+                'Fiche d’une qualification de référence : intitulé officiel, émetteur réel (localisation, site officiel), conditions d’obtention, formations Academy, emplois, sources ; bouton « Importer dans mon référentiel »',
+                'Émetteurs : « Importer les émetteurs réels » par pays (OTAN, États-Unis, France, Allemagne, Chine, Russie), sans toucher aux émetteurs déjà présents',
+                'Formules : compteurs d’imports et de créations, import d’un pays entier en un clic avec la formule Pro',
+            ], [
+                'Importer une qualification du catalogue crée aussi son émetteur réel, retrouvé par son nom, un ancien nom ou son sigle s’il existe déjà',
+                'En-tête du catalogue Academy refait (photo pleine largeur, recherche, compteurs) et états vides plus utiles',
+            ], [], ['personnel', 'platform'], [
+                'Qualifications et émetteurs de jeu inspirés d’organismes réels, sans valeur réelle. Ce qui est déjà importé ou créé reste utilisable au-delà du plafond de la formule.',
+            ], 'Portail'),
             $pr(1310, '2026-11-02', 'Écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5', 'Avec le pack 2.9.33, les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy : depuis la 2.9.29, le jeu refusait la taille de l’image posée sur l’écran et il restait noir. La radio ACRE2 ou TFAR reliée à la MPU5 fait passer la voix par le maillage jusqu’aux radios reliées des équipiers sur la même fréquence (réglage serveur, désactivé par défaut).', [
                 'Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu’aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).',
             ], [

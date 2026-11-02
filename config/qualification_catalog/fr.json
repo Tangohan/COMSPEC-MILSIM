@@ -46,6 +46,7 @@
         "name": "École des troupes aéroportées",
         "short_name": "ETAP"
       },
+      "issuer_key": "fr-etap",
       "reference": {
         "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 7 « parachutisme » ; PIA-3.2.1.1(A) BCQ-PARA, livret 1",
         "en": "Decree of 24 May 2023 (specific-skills allowance), annex 7 \"parachuting\"; PIA-3.2.1.1(A) BCQ-PARA, booklet 1"
@@ -100,6 +101,7 @@
         "name": "École des troupes aéroportées",
         "short_name": "ETAP"
       },
+      "issuer_key": "fr-etap",
       "reference": {
         "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2, chapitre 2, section II « Formation de chuteur opérationnel »",
         "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2, chapter 2, section II \"Military free-fall operator training\""
@@ -162,6 +164,7 @@
         "name": "École des troupes aéroportées",
         "short_name": "ETAP"
       },
+      "issuer_key": "fr-etap",
       "reference": {
         "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2 : épreuves et attribution du CAP OPS 3",
         "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2: tests and award of CAP OPS 3"
@@ -214,6 +217,7 @@
         "name": "École des troupes aéroportées",
         "short_name": "ETAP"
       },
+      "issuer_key": "fr-etap",
       "reference": {
         "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2, chapitre 2, section V « Formation de moniteur parachutiste »",
         "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2, chapter 2, section V \"Parachute instructor training\""
@@ -268,6 +272,7 @@
         "name": "Force maritime des fusiliers marins et commandos",
         "short_name": "ALFUSCO"
       },
+      "issuer_key": "fr-alfusco",
       "reference": {
         "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2, chapitre 2, section III « Formation de parachutiste spécialisé de la Marine nationale »",
         "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2, chapter 2, section III \"French Navy specialised parachutist training\""
@@ -320,6 +325,7 @@
         "name": "Centre air de saut en vol (Orléans)",
         "short_name": "CASV"
       },
+      "issuer_key": "fr-casv",
       "reference": {
         "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2, chapitre 2, section IV « Formation des parachutistes spécialisés de l’armée de l’Air et de l’Espace »",
         "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2, chapter 2, section IV \"French Air and Space Force specialised parachutist training\""
@@ -376,6 +382,7 @@
         "name": "École militaire de haute montagne",
         "short_name": "EMHM"
       },
+      "issuer_key": "fr-emhm",
       "reference": {
         "fr": "Présentation de l’EMHM et du groupement de commandos de montagne (sources ouvertes)",
         "en": "Open-source descriptions of EMHM and the Mountain Commando Group"
@@ -426,6 +433,7 @@
         "name": "École militaire de haute montagne",
         "short_name": "EMHM"
       },
+      "issuer_key": "fr-emhm",
       "reference": {
         "fr": "Cursus montagne de l’EMHM (sources ouvertes)",
         "en": "EMHM mountain training track (open sources)"
@@ -472,6 +480,7 @@
         "name": "École militaire de haute montagne",
         "short_name": "EMHM"
       },
+      "issuer_key": "fr-emhm",
       "reference": {
         "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie chef de cordée",
         "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", rope-leader category"
@@ -528,6 +537,7 @@
         "name": "École militaire de haute montagne",
         "short_name": "EMHM"
       },
+      "issuer_key": "fr-emhm",
       "reference": {
         "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie chef de détachement",
         "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", detachment-leader category"
@@ -574,6 +584,7 @@
         "name": "École militaire de haute montagne",
         "short_name": "EMHM"
       },
+      "issuer_key": "fr-emhm",
       "reference": {
         "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie chef de détachement",
         "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", detachment-leader category"
@@ -620,6 +631,7 @@
         "name": "École militaire de haute montagne",
         "short_name": "EMHM"
       },
+      "issuer_key": "fr-emhm",
       "reference": {
         "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie expert",
         "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", expert category"
@@ -704,6 +716,7 @@
         "name": "Centres de formation initiale des militaires du rang",
         "short_name": "CFIM"
       },
+      "issuer_key": "fr-cfim",
       "reference": {
         "fr": "Fiches métiers de l’armée de Terre (sengager.fr)",
         "en": "French Army job descriptions (sengager.fr)"
@@ -758,6 +771,7 @@
         "name": "École nationale des sous-officiers d’active",
         "short_name": "ENSOA"
       },
+      "issuer_key": "fr-ensoa",
       "reference": {
         "fr": "Fiches métiers de l’armée de Terre (sengager.fr)",
         "en": "French Army job descriptions (sengager.fr)"
@@ -804,6 +818,7 @@
         "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
         "short_name": "1er RPIMa"
       },
+      "issuer_key": "fr-1rpima",
       "reference": {
         "fr": "Présentation du 1er RPIMa (ministère des Armées) et fiches métiers sengager.fr",
         "en": "1er RPIMa presentation (Ministry of the Armed Forces) and sengager.fr job descriptions"
@@ -858,6 +873,7 @@
         "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
         "short_name": "1er RPIMa"
       },
+      "issuer_key": "fr-1rpima",
       "reference": {
         "fr": "Présentation du 1er RPIMa (sources ouvertes)",
         "en": "1er RPIMa presentation (open sources)"
@@ -910,6 +926,7 @@
         "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
         "short_name": "1er RPIMa"
       },
+      "issuer_key": "fr-1rpima",
       "reference": {
         "fr": "Présentation du 1er RPIMa (sources ouvertes)",
         "en": "1er RPIMa presentation (open sources)"
@@ -962,6 +979,7 @@
         "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
         "short_name": "1er RPIMa"
       },
+      "issuer_key": "fr-1rpima",
       "reference": {
         "fr": "Présentation du 1er RPIMa (sources ouvertes)",
         "en": "1er RPIMa presentation (open sources)"
@@ -1014,6 +1032,7 @@
         "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
         "short_name": "1er RPIMa"
       },
+      "issuer_key": "fr-1rpima",
       "reference": {
         "fr": "Présentation du 1er RPIMa (sources ouvertes)",
         "en": "1er RPIMa presentation (open sources)"
@@ -1120,6 +1139,7 @@
         "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
         "short_name": "1er RPIMa"
       },
+      "issuer_key": "fr-1rpima",
       "reference": {
         "fr": "Présentation du 1er RPIMa (sources ouvertes)",
         "en": "1er RPIMa presentation (open sources)"
@@ -1258,6 +1278,7 @@
         "name": "13e régiment de dragons parachutistes – centre de formation délégué",
         "short_name": "13e RDP"
       },
+      "issuer_key": "fr-13rdp",
       "reference": {
         "fr": "Arrêté du 24 mai 2023, annexe 6 « combattant terrestre » (certificat technique élémentaire) ; présentation du 13e RDP",
         "en": "Decree of 24 May 2023, annex 6 \"land combatant\" (elementary technical certificate); 13e RDP presentation"
@@ -1314,6 +1335,7 @@
         "name": "13e régiment de dragons parachutistes – centre de formation délégué",
         "short_name": "13e RDP"
       },
+      "issuer_key": "fr-13rdp",
       "reference": {
         "fr": "Ministère des Armées, « Stage Scorpion : les futurs équipiers du 13e RDP à l’épreuve du terrain »",
         "en": "Ministry of the Armed Forces, \"Scorpion course: future 13e RDP operators tested in the field\""
@@ -1356,6 +1378,7 @@
         "name": "13e régiment de dragons parachutistes – centre de formation délégué",
         "short_name": "13e RDP"
       },
+      "issuer_key": "fr-13rdp",
       "reference": {
         "fr": "Présentation du 13e RDP (ministère des Armées)",
         "en": "13e RDP presentation (Ministry of the Armed Forces)"
@@ -1406,6 +1429,7 @@
         "name": "13e régiment de dragons parachutistes – centre de formation délégué",
         "short_name": "13e RDP"
       },
+      "issuer_key": "fr-13rdp",
       "reference": {
         "fr": "Terre Mag, « Le stage de chef d’équipe de recherche aéroportée »",
         "en": "Terre Mag, \"The airborne reconnaissance team leader course\""
@@ -1458,6 +1482,7 @@
         "name": "Centre de formation opérationnelle santé du régiment médical",
         "short_name": "CeFOS"
       },
+      "issuer_key": "fr-cefos-sante",
       "reference": {
         "fr": "Fiche métier « combattant auxiliaire sanitaire » (sengager.fr)",
         "en": "\"Combat medical auxiliary\" job description (sengager.fr)"
@@ -1504,6 +1529,7 @@
         "name": "11e brigade parachutiste – groupement de commandos parachutistes",
         "short_name": "11e BP / GCP"
       },
+      "issuer_key": "fr-11bp",
       "reference": {
         "fr": "Revue Conflits, histoire du groupement de commandos parachutistes",
         "en": "Revue Conflits, history of the Commando Parachute Group"
@@ -1554,6 +1580,7 @@
         "name": "4e régiment d’hélicoptères des forces spéciales – cellule d’instruction spécialisée",
         "short_name": "4e RHFS"
       },
+      "issuer_key": "fr-4rhfs",
       "reference": {
         "fr": "Terre Mag, « La cellule d’instruction spécialisée du 4e RHFS »",
         "en": "Terre Mag, \"The 4e RHFS specialised instruction cell\""
@@ -1600,6 +1627,7 @@
         "name": "École de l’aviation légère de l’armée de Terre",
         "short_name": "EALAT"
       },
+      "issuer_key": "fr-ealat",
       "reference": {
         "fr": "Fiche métier « officier pilote d’hélicoptère / d’avion » (sengager.fr)",
         "en": "\"Helicopter / aircraft pilot officer\" job description (sengager.fr)"
@@ -1692,6 +1720,7 @@
         "name": "École des fusiliers marins",
         "short_name": "ECOFUS"
       },
+      "issuer_key": "fr-ecofus",
       "reference": {
         "fr": "Les Nouvelles de Lorient Agglomération n° 41 (2018), dossier fusiliers marins",
         "en": "Les Nouvelles de Lorient Agglomération no. 41 (2018), naval fusiliers feature"
@@ -1734,6 +1763,7 @@
         "name": "École des fusiliers marins",
         "short_name": "ECOFUS"
       },
+      "issuer_key": "fr-ecofus",
       "reference": {
         "fr": "Cols bleus, « Commandos Marine, des marins d’exception » ; Les Nouvelles de Lorient Agglomération n° 41",
         "en": "Cols bleus, \"Commandos Marine, exceptional sailors\"; Les Nouvelles de Lorient Agglomération no. 41"
@@ -1780,6 +1810,7 @@
         "name": "École des fusiliers marins",
         "short_name": "ECOFUS"
       },
+      "issuer_key": "fr-ecofus",
       "reference": {
         "fr": "Cols bleus, « Commandos Marine, des marins d’exception » ; Les Nouvelles de Lorient Agglomération n° 41",
         "en": "Cols bleus, \"Commandos Marine, exceptional sailors\"; Les Nouvelles de Lorient Agglomération no. 41"
@@ -1830,6 +1861,7 @@
         "name": "École des fusiliers marins",
         "short_name": "ECOFUS"
       },
+      "issuer_key": "fr-ecofus",
       "reference": {
         "fr": "Cols bleus, « Commandos Marine, des marins d’exception » ; Les Nouvelles de Lorient Agglomération n° 41",
         "en": "Cols bleus, \"Commandos Marine, exceptional sailors\"; Les Nouvelles de Lorient Agglomération no. 41"
@@ -1880,6 +1912,7 @@
         "name": "École des fusiliers marins",
         "short_name": "ECOFUS"
       },
+      "issuer_key": "fr-ecofus",
       "reference": {
         "fr": "Cols bleus, « Commandos Marine, des marins d’exception »",
         "en": "Cols bleus, \"Commandos Marine, exceptional sailors\""
@@ -1940,6 +1973,7 @@
         "name": "École de plongée de la Marine nationale (Saint-Mandrier)",
         "short_name": "École de plongée"
       },
+      "issuer_key": "fr-plongee-marine",
       "reference": {
         "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 3 « plongeur militaire »",
         "en": "Decree of 24 May 2023 (specific-skills allowance), annex 3 \"military diver\""
@@ -2120,6 +2154,7 @@
         "name": "Commando parachutiste de l’air n° 10",
         "short_name": "CPA 10"
       },
+      "issuer_key": "fr-cpa10",
       "reference": {
         "fr": "Armée de l’Air et de l’Espace, « CPA 10 : les stagiaires du Belouga en milieu désertique »",
         "en": "French Air and Space Force, \"CPA 10: Belouga trainees in the desert\""
@@ -2162,6 +2197,7 @@
         "name": "Centre de préparation opérationnelle du combattant de l’armée de l’Air et de l’Espace",
         "short_name": "CPOCAAE"
       },
+      "issuer_key": "fr-cpocaae",
       "reference": {
         "fr": "Fiche métier « équipier parachutiste de l’air » (devenir-aviateur.gouv.fr)",
         "en": "\"Air Force paratrooper\" job description (devenir-aviateur.gouv.fr)"
@@ -2204,6 +2240,7 @@
         "name": "Centre de préparation opérationnelle du combattant de l’armée de l’Air et de l’Espace",
         "short_name": "CPOCAAE"
       },
+      "issuer_key": "fr-cpocaae",
       "reference": {
         "fr": "Fiche métier « équipier parachutiste de l’air » (devenir-aviateur.gouv.fr)",
         "en": "\"Air Force paratrooper\" job description (devenir-aviateur.gouv.fr)"
@@ -2372,6 +2409,7 @@
         "name": "Commando parachutiste de l’air n° 20",
         "short_name": "CPA 20"
       },
+      "issuer_key": "fr-cpa20",
       "reference": {
         "fr": "Armée de l’Air et de l’Espace, « Spectral Thunder : le CPA 20 s’entraîne au contrôle aérien tactique »",
         "en": "French Air and Space Force, \"Spectral Thunder: CPA 20 trains in tactical air control\""
@@ -2414,6 +2452,7 @@
         "name": "Centre de formation à l’appui aérien (Nancy-Ochey)",
         "short_name": "CFAA"
       },
+      "issuer_key": "fr-cfaa",
       "reference": {
         "fr": "Qualification JTAC du CFAA, centre accrédité par l’OTAN depuis 2010 ; Esprit défense n° 7 (2023)",
         "en": "CFAA JTAC qualification, centre accredited by NATO since 2010; Esprit défense no. 7 (2023)"
@@ -2464,6 +2503,7 @@
         "name": "Commando parachutiste de l’air n° 10",
         "short_name": "CPA 10"
       },
+      "issuer_key": "fr-cpa10",
       "reference": {
         "fr": "Air actualités n° 729, dossier « Les tireurs haute précision »",
         "en": "Air actualités no. 729, \"High-precision marksmen\" feature"
@@ -2506,6 +2546,7 @@
         "name": "Groupement d’intervention NEDEX (Cazaux)",
         "short_name": "GrIN"
       },
+      "issuer_key": "fr-grin-cazaux",
       "reference": {
         "fr": "Armée de l’Air et de l’Espace, « Démineur, un métier qui détonne » ; arrêté du 24 mai 2023, annexe 4 « dépiégeage militaire »",
         "en": "French Air and Space Force, \"Bomb disposal, an explosive job\"; decree of 24 May 2023, annex 4 \"military EOD\""
@@ -2808,6 +2849,7 @@
         "name": "Groupe d’intervention de la Gendarmerie nationale",
         "short_name": "GIGN"
       },
+      "issuer_key": "fr-gign",
       "reference": {
         "fr": "Présentations publiques du GIGN (sources ouvertes)",
         "en": "Public presentations of the GIGN (open sources)"
@@ -2862,6 +2904,7 @@
         "name": "Groupe d’intervention de la Gendarmerie nationale",
         "short_name": "GIGN"
       },
+      "issuer_key": "fr-gign",
       "reference": {
         "fr": "Présentations publiques du GIGN (sources ouvertes)",
         "en": "Public presentations of the GIGN (open sources)"
@@ -2904,6 +2947,7 @@
         "name": "Groupe d’intervention de la Gendarmerie nationale",
         "short_name": "GIGN"
       },
+      "issuer_key": "fr-gign",
       "reference": {
         "fr": "Rapport d’information du Sénat n° 813 (2024-2025) ; présentations publiques du GIGN",
         "en": "Senate information report no. 813 (2024-2025); public presentations of the GIGN"
@@ -2954,6 +2998,7 @@
         "name": "Groupe d’intervention de la Gendarmerie nationale",
         "short_name": "GIGN"
       },
+      "issuer_key": "fr-gign",
       "reference": {
         "fr": "Présentations publiques du GIGN (sources ouvertes)",
         "en": "Public presentations of the GIGN (open sources)"
@@ -3000,6 +3045,7 @@
         "name": "13e régiment de dragons parachutistes",
         "short_name": "13e RDP"
       },
+      "issuer_key": "fr-13rdp",
       "reference": {
         "fr": "Fiches de poste sengager.fr (exploitant renseignement et spécialiste SIC des forces spéciales)",
         "en": "sengager.fr job descriptions (special forces intelligence analyst and CIS specialist)"
@@ -3106,6 +3152,7 @@
         "name": "École de l’aviation légère de l’armée de Terre",
         "short_name": "EALAT"
       },
+      "issuer_key": "fr-ealat",
       "reference": {
         "fr": "Fiche de poste sengager.fr « préparateur de mission » (technicien simulateur de vol)",
         "en": "sengager.fr job description “mission planner” (flight simulator technician)"
@@ -3153,6 +3200,7 @@
         "name": "Académie militaire de Saint-Cyr Coëtquidan",
         "short_name": "AMSCC"
       },
+      "issuer_key": "fr-amscc",
       "reference": {
         "fr": "Fiche de poste sengager.fr « officier maintenance des matériels aéronautiques »",
         "en": "sengager.fr job description “aviation equipment maintenance officer”"
@@ -3200,6 +3248,7 @@
         "name": "Commando parachutiste de l’air n° 30",
         "short_name": "CPA 30"
       },
+      "issuer_key": "fr-cpa30",
       "reference": {
         "fr": "Actualités de l’armée de l’Air et de l’Espace sur l’entraînement CPA 30 / EH 1/67 Pyrénées (defense.gouv.fr)",
         "en": "French Air and Space Force news on CPA 30 / EH 1/67 Pyrénées training (defense.gouv.fr)"
@@ -3247,6 +3296,7 @@
         "name": "Groupe d’intervention de la Gendarmerie nationale",
         "short_name": "GIGN"
       },
+      "issuer_key": "fr-gign",
       "reference": {
         "fr": "Rapport d’information du Sénat n° 813 (2023-2024) et article Wikipédia sur le GIGN",
         "en": "French Senate information report no. 813 (2023-2024) and Wikipedia article on the GIGN"
@@ -3298,6 +3348,7 @@
         "name": "Groupe d’intervention de la Gendarmerie nationale",
         "short_name": "GIGN"
       },
+      "issuer_key": "fr-gign",
       "reference": {
         "fr": "Article Wikipédia sur le GIGN et rapport d’information du Sénat n° 813 (2023-2024)",
         "en": "Wikipedia article on the GIGN and French Senate information report no. 813 (2023-2024)"

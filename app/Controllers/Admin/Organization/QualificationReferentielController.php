@@ -14,12 +14,15 @@ use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationDefinitionRepository;
 use App\Repositories\QualificationIssuerRepository;
 use App\Repositories\QualificationReferentielRepository;
+use App\Services\Billing\QualificationCatalogQuota;
 use App\Services\Personnel\QualificationAwardRuleService;
 use App\Services\Personnel\QualificationBadgeStorageService;
 use App\Services\Personnel\QualificationCatalogImporter;
+use App\Services\Personnel\QualificationIssuerCatalogImporter;
 use App\Services\Personnel\QualificationReferenceWriter;
 use App\Support\QualificationCatalog\QualificationCatalog;
 use App\Support\QualificationCatalog\QualificationCatalogExplorer;
+use App\Support\QualificationCatalog\QualificationIssuerCatalog;
 use App\Services\Personnel\QualificationCriteriaEngine;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationStatusTransitionService;
@@ -150,6 +153,12 @@ final class QualificationReferentielController
         }
         if ($this->definitions->findByCode($tenantId, $code) !== null) {
             Session::flash('error', 'Ce code est déjà utilisé dans votre communauté.');
+
+            return Response::redirect(url('back-office/referentiels/qualifications/create'));
+        }
+        $quota = $this->qualificationQuota($tenantId);
+        if (!$quota->canAdd(QualificationCatalogQuota::CUSTOM)) {
+            Session::flash('error', self::quotaMessage($quota, QualificationCatalogQuota::CUSTOM, 'qualifications créées'));
 
             return Response::redirect(url('back-office/referentiels/qualifications/create'));
         }
@@ -304,6 +313,26 @@ final class QualificationReferentielController
         });
     }
 
+    /** Ce que la formule permet d’ajouter au référentiel (imports, émetteurs réels, créations) ; admin plateforme : sans limite. */
+    private function qualificationQuota(int $tenantId): QualificationCatalogQuota
+    {
+        try {
+            return QualificationCatalogQuota::forTenant($tenantId, \App\Core\Database::getPdo(), \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class), \App\Core\Gate::getInstance()->isPlatformAdmin());
+        } catch (Throwable) {
+            return QualificationCatalogQuota::unlimited();
+        }
+    }
+
+    /** Message « plafond de la formule atteint » avec la formule qui débloque. */
+    private static function quotaMessage(QualificationCatalogQuota $quota, string $key, string $what): string
+    {
+        $st = $quota->status($key);
+        $offer = $st['offer'];
+
+        return 'Plafond de votre formule atteint : ' . $st['used'] . ' / ' . $st['limit'] . ' ' . $what . '. Ce qui est déjà dans votre référentiel reste utilisable.'
+            . ($offer !== null ? ' Formule ' . $offer['name'] . ' : ' . ($offer['value'] === 0 ? 'illimité' : $offer['value'] . ' ' . $what) . '.' : '');
+    }
+
     private function catalogImporter(): QualificationCatalogImporter
     {
         return new QualificationCatalogImporter(new QualificationReferenceWriter(\App\Core\Database::getPdo()));
@@ -360,6 +389,9 @@ final class QualificationReferentielController
             'catalogTotal' => count($rows),
             'catalogIssuers' => $issuers,
             'catalogImported' => $imported,
+            'catalogQuota' => ($cq = $this->qualificationQuota($tenantId))->status(QualificationCatalogQuota::IMPORTS),
+            'catalogBulk' => $cq->bulk(),
+            'catalogBulkOffer' => QualificationCatalogQuota::upgradeOffer(QualificationCatalogQuota::BULK),
             'catalogDetail' => preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $detail) === 1 ? $detail : '',
         ]);
     }
@@ -461,7 +493,15 @@ final class QualificationReferentielController
             $back = self::catalogBack($request, $packData);
             $raw = $request->input('ids', []);
             $ids = is_array($raw) ? array_values(array_filter(array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $raw))) : [];
+            $quota = $this->qualificationQuota($tenantId);
+            $academy = (string) $request->input('return_academy', '') === '1';
             if ((string) $request->input('all', '') === '1' && $packData !== null) {
+                if (!$quota->bulk()) {
+                    $offer = QualificationCatalogQuota::upgradeOffer(QualificationCatalogQuota::BULK);
+                    Session::flash('error', 'Importer tout un pays en un clic est inclus dans la formule ' . ($offer['name'] ?? 'Pro') . '. Vous pouvez cocher les qualifications une par une, dans la limite de votre formule.');
+
+                    return Response::redirect($back);
+                }
                 $ids = array_map(static fn (array $e): string => (string) ($e['id'] ?? ''), QualificationCatalog::rawEntries($pack));
             }
             // Bouton « Importer » d’une ligne : cette qualification seulement.
@@ -479,8 +519,13 @@ final class QualificationReferentielController
             }
             try {
                 $lang = function_exists('locale') ? (string) locale() : 'fr';
-                $result = $this->catalogImporter()->import($tenantId, array_slice($ids, 0, 200), $lang, $this->actorId());
+                $result = $this->catalogImporter()->import($tenantId, array_slice($ids, 0, 200), $lang, $this->actorId(), $quota->remaining(QualificationCatalogQuota::IMPORTS));
             } catch (Throwable $e) {
+                if ($academy) {
+                    Session::set('academy_notice', 'catalog_import_failed');
+
+                    return Response::redirect(url('academy/catalogue') . '?fiche=' . rawurlencode('r-' . (string) ($ids[0] ?? '')));
+                }
                 if ($json) {
                     error_log('Qualification catalog import: ' . $e->getMessage());
 
@@ -492,12 +537,26 @@ final class QualificationReferentielController
             }
             $created = count($result['created']);
             $skipped = count($result['skipped']);
+            $blocked = count($result['blocked']);
+            // Depuis la fiche du catalogue Academy : retour à la fiche (celle du référentiel si la qualification y est).
+            if ($academy) {
+                $first = (string) ($ids[0] ?? '');
+                $defId = (int) ($result['definitions'][$first] ?? 0);
+                Session::set('academy_notice', $defId > 0 ? ($created > 0 ? 'catalog_imported' : 'catalog_already') : ($blocked > 0 ? 'catalog_quota_reached' : 'catalog_import_failed'));
+
+                return Response::redirect(url('academy/catalogue') . '?fiche=' . rawurlencode($defId > 0 ? 'q-' . $defId : 'r-' . $first));
+            }
+            if ($blocked > 0 && $created === 0 && !$json) {
+                Session::flash('error', self::quotaMessage($quota, QualificationCatalogQuota::IMPORTS, 'qualifications importées'));
+
+                return Response::redirect($back);
+            }
             if ($json) {
                 $definitions = array_filter(array_map('intval', $result['definitions']));
 
                 return Response::json([
                     'ok' => $definitions !== [],
-                    'message' => $definitions === [] ? 'Aucune qualification importée.' : ($created > 0 ? 'Qualification importée dans votre référentiel. Qualification de jeu, sans valeur réelle : réglez ensuite son mode d’obtention.' : 'Cette qualification est déjà dans votre référentiel.'),
+                    'message' => $definitions === [] ? ($blocked > 0 ? self::quotaMessage($quota, QualificationCatalogQuota::IMPORTS, 'qualifications importées') : 'Aucune qualification importée.') : ($created > 0 ? 'Qualification importée dans votre référentiel. Qualification de jeu, sans valeur réelle : réglez ensuite son mode d’obtention.' : 'Cette qualification est déjà dans votre référentiel.'),
                     'created' => $created,
                     'definitions' => array_map(static fn (int $d): array => ['definition_id' => $d, 'url' => url('back-office/referentiels/qualifications/' . $d)], $definitions),
                 ], $definitions !== [] ? 200 : 422)->header('Cache-Control', 'private, no-store');
@@ -506,6 +565,9 @@ final class QualificationReferentielController
                 Session::flash('success', $skipped > 0 ? 'Ces qualifications sont déjà dans votre référentiel : rien à importer.' : 'Aucune qualification importée.');
 
                 return Response::redirect($back);
+            }
+            if ($blocked > 0) {
+                Session::flash('error', $blocked . ' qualification(s) non importée(s) : ' . self::quotaMessage($quota, QualificationCatalogQuota::IMPORTS, 'qualifications importées'));
             }
             Session::flash('success', $skipped > 0
                 ? $created . ' qualification(s) importée(s) du catalogue, ' . $skipped . ' déjà présente(s) ignorée(s). Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.'
@@ -548,7 +610,78 @@ final class QualificationReferentielController
             'units' => $repo->unitOptions($tenantId),
             'enriched' => $repo->enrichedReady(),
             'linkReady' => $repo->linkReady(),
-        ]);
+        ] + $this->realIssuersViewData($tenantId));
+    }
+
+    private function issuerCatalogImporter(): QualificationIssuerCatalogImporter
+    {
+        return new QualificationIssuerCatalogImporter(new QualificationReferenceWriter(\App\Core\Database::getPdo()));
+    }
+
+    /**
+     * Émetteurs réels du catalogue (config/qualification_issuers) par pays, avec ceux déjà présents dans la communauté.
+     *
+     * @return array{realIssuers: list<array<string, mixed>>, realMatched: array<string, int>, realReady: bool}
+     */
+    private function realIssuersViewData(int $tenantId): array
+    {
+        $lang = QualificationCatalog::lang(function_exists('locale') ? (string) locale() : 'fr');
+        $groups = [];
+        foreach (QualificationIssuerCatalog::packs() as $pack => $data) {
+            $country = (string) ($data['country'] ?? '');
+            $entries = QualificationIssuerCatalog::entries($lang, $pack);
+            usort($entries, static fn (array $a, array $b): int => strnatcasecmp($a['short_name'] ?: $a['name'], $b['short_name'] ?: $b['name']));
+            $groups[] = ['pack' => $pack, 'country' => $country, 'label' => QualificationCatalog::countryLabel($country, $lang), 'issuers' => $entries];
+        }
+        $matched = [];
+        $ready = false;
+        try {
+            $importer = $this->issuerCatalogImporter();
+            $ready = $importer->ready();
+            $matched = $importer->matched($tenantId);
+        } catch (Throwable) {
+        }
+
+        return ['realIssuers' => $groups, 'realMatched' => $matched, 'realReady' => $ready, 'realQuota' => $this->qualificationQuota($tenantId)->status(QualificationCatalogQuota::ISSUERS)];
+    }
+
+    /**
+     * « Importer les émetteurs réels » (page Émetteurs) : crée les émetteurs cochés qui manquent à la communauté, sans
+     * toucher à ceux qui existent déjà (même nom, ancien nom ou sigle).
+     */
+    public function importRealIssuers(Request $request, array $params = []): Response
+    {
+        return $this->withTenantPost($request, function (int $tenantId) use ($request) {
+            $raw = $request->input('keys', []);
+            $keys = is_array($raw) ? array_values(array_filter(array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $raw), static fn (string $k): bool => preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $k) === 1)) : [];
+            $back = url(self::ISSUERS) . '#emetteurs-reels';
+            if ($keys === []) {
+                Session::flash('error', 'Cochez au moins un émetteur réel à importer.');
+
+                return Response::redirect($back);
+            }
+            try {
+                $lang = function_exists('locale') ? (string) locale() : 'fr';
+                $quota = $this->qualificationQuota($tenantId);
+                $result = $this->issuerCatalogImporter()->import($tenantId, array_slice($keys, 0, 300), $lang, $this->actorId(), $quota->remaining(QualificationCatalogQuota::ISSUERS));
+            } catch (Throwable $e) {
+                Session::flash('error', 'Import impossible : ' . $e->getMessage());
+
+                return Response::redirect($back);
+            }
+            $created = count($result['created']);
+            $skipped = count($result['skipped']);
+            if ($result['blocked'] !== []) {
+                Session::flash('error', count($result['blocked']) . ' émetteur(s) non importé(s) : ' . self::quotaMessage($quota, QualificationCatalogQuota::ISSUERS, 'émetteurs réels'));
+            }
+            if ($created === 0) {
+                Session::flash('success', $skipped > 0 ? 'Ces émetteurs sont déjà dans votre référentiel : rien à importer.' : 'Aucun émetteur importé.');
+            } else {
+                Session::flash('success', $created . ' émetteur(s) réel(s) importé(s)' . ($skipped > 0 ? ', ' . $skipped . ' déjà présent(s) laissé(s) tel(s) quel(s)' : '') . '. Émetteurs de jeu inspirés d’organismes réels, sans valeur réelle.');
+            }
+
+            return Response::redirect(url(self::ISSUERS));
+        });
     }
 
     public function showIssuer(Request $request, array $params = []): Response

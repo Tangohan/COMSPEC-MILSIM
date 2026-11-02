@@ -179,11 +179,15 @@ final class AcademyController
             }
             // Catalogue et tableau de bord : tout ce que le membre peut obtenir, avec son état.
             $offer = in_array($space, ['dashboard', 'catalogue'], true)
-                ? AcademyOffer::collect($tenantId, (int) Session::get('user_id'), $tenant, $courses, $states, $lmsData['legacyCourses'] ?? [], $lmsData['legacyEnrollments'] ?? [], $staff)
+                ? AcademyOffer::collect($tenantId, (int) Session::get('user_id'), $tenant, $courses, $states, $lmsData['legacyCourses'] ?? [], $lmsData['legacyEnrollments'] ?? [], $staff, $space === 'catalogue' && AcademyOffer::needsReference($request->queryParams()))
                 : null;
             $offerFilters = AcademyOffer::filters($request->queryParams());
             $offerDetail = $space === 'catalogue' ? $request->queryString('fiche') : '';
-            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail') + $lmsData + [
+            // Importer une qualification du catalogue de référence : mêmes droits que la page Catalogue du référentiel.
+            $gate = Gate::getInstance();
+            $offerCanImport = $space === 'catalogue' && ($gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'));
+            $offerQuota = $offerCanImport ? $this->qualificationQuota($tenantId)->status(\App\Services\Billing\QualificationCatalogQuota::IMPORTS) : null;
+            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail', 'offerCanImport', 'offerQuota') + $lmsData + [
                 'academyStorageReady' => $academyStorageReady && !$preview,
                 'viewStep' => $request->queryString('step'),
                 'notice' => Session::get('academy_notice', ''),
@@ -1107,6 +1111,16 @@ final class AcademyController
         return Container::get(AcademyStudioCredentials::class);
     }
 
+    /** Ce que la formule permet d'ajouter au référentiel des qualifications ; administrateur plateforme : sans limite. */
+    private function qualificationQuota(int $tenantId): \App\Services\Billing\QualificationCatalogQuota
+    {
+        try {
+            return \App\Services\Billing\QualificationCatalogQuota::forTenant($tenantId, \App\Core\Database::getPdo(), Container::get(\App\Services\Platform\FeatureGateService::class), Gate::getInstance()->isPlatformAdmin());
+        } catch (\Throwable) {
+            return \App\Services\Billing\QualificationCatalogQuota::unlimited();
+        }
+    }
+
     /** Créer et modifier les qualifications et brevets du Studio : mêmes droits que créer ou modifier un cours. */
     private function canManageCredentials(AcademyRights $rights): bool
     {
@@ -1225,6 +1239,7 @@ final class AcademyController
             'canManage' => $canManage, 'canArchive' => $rights->can('publish'), 'credKind' => $kind, 'credList' => $isList,
             'credOrigin' => $origin, 'credentials' => $credentials->list($tenantId), 'editing' => $editing, 'studioCourses' => $courses,
             'counts' => $this->credentialCounts($tenantId), 'rulesReady' => $credentials->rulesReady(), 'oldForm' => is_array($form) ? $form : [],
+            'credQuota' => $this->qualificationQuota($tenantId)->status(\App\Services\Billing\QualificationCatalogQuota::CUSTOM),
         ];
         if (!$isList) {
             $referentiel = Container::get(\App\Repositories\QualificationReferentielRepository::class);
@@ -1277,6 +1292,11 @@ final class AcademyController
                 $conditions = $request->input('conditions');
                 if (is_array($conditions)) {
                     $form['conditions'] = $conditions;
+                }
+                // Création : dans la limite de la formule (les fiches existantes restent modifiables).
+                if ($id <= 0 && !$this->qualificationQuota($tenantId)->canAdd(\App\Services\Billing\QualificationCatalogQuota::CUSTOM)) {
+                    Session::set('academy_form', $form);
+                    return $back(0, 'cred_quota_reached');
                 }
                 $saved = $credentials->save($tenantId, $id > 0 ? $id : null, $kind, $form, $userId);
                 $notice = $id > 0 ? 'cred_saved' : 'cred_created';

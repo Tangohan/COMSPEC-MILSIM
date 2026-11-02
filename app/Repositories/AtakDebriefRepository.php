@@ -283,8 +283,13 @@ final class AtakDebriefRepository
             return $this->opCache[1];
         }
         $out = [];
-        foreach ($this->ready() ? $this->rows('SELECT mission_key, label, hidden_at FROM atak_debrief_ops WHERE tenant_id = ?', [$tenantId]) : [] as $r) {
-            $out[(string) $r['mission_key']] = ['label' => trim((string) ($r['label'] ?? '')), 'hidden' => !empty($r['hidden_at'])];
+        // deleted_at : partie supprimée depuis la fenêtre « Gérer » (migration atak_played_operations), absente avant.
+        $rows = $this->ready() ? $this->rows('SELECT mission_key, label, hidden_at, deleted_at FROM atak_debrief_ops WHERE tenant_id = ?', [$tenantId]) : [];
+        if ($rows === [] && $this->ready()) {
+            $rows = $this->rows('SELECT mission_key, label, hidden_at FROM atak_debrief_ops WHERE tenant_id = ?', [$tenantId]);
+        }
+        foreach ($rows as $r) {
+            $out[(string) $r['mission_key']] = ['label' => trim((string) ($r['label'] ?? '')), 'hidden' => !empty($r['hidden_at']) || !empty($r['deleted_at'])];
         }
         $this->opCache = [$tenantId, $out];
 

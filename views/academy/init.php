@@ -8,7 +8,8 @@ $copy += require base_path('lang/' . $lang . '/academy_access.php');
 $copy += require base_path('lang/' . $lang . '/academy_studio.php');
 $t = static fn (string $key): string => $copy[$key] ?? $key;
 $h = static fn (mixed $text): string => htmlspecialchars((string) $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-$local = static fn (array $value): string => (string) ($value[$lang] ?? '');
+/* Contenu de cours FR/EN : langue de l'interface, repli sur le français si la traduction manque. */
+$local = static fn (array $value): string => trim((string) ($value[$lang] ?? '')) !== '' ? (string) $value[$lang] : (string) ($value['fr'] ?? '');
 /** Texte d'étape mis en forme (AcademyRichText : échappé puis balisé côté serveur ; texte brut = paragraphes comme avant). */
 $rich = static fn (array $value): string => \App\Services\Academy\AcademyRichText::render($local($value), $copy);
 $link = static fn (string $path = ''): string => url('academy' . ($path !== '' ? '/' . $path : ''));

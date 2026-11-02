@@ -22,12 +22,32 @@ $oxTabHelp = [
     'tout' => 'Tout ce que vous pouvez suivre et obtenir, au même endroit.',
     'formations' => 'Les cours à suivre en ligne : formations ATHENA Academy et formations de votre communauté.',
     'brevets' => 'Les qualifications qui donnent un brevet ou une licence, et les formations qui délivrent une licence.',
-    'qualifications' => 'Toutes les qualifications de votre communauté, quel que soit leur mode d’obtention.',
+    'qualifications' => 'Les qualifications de votre communauté, quel que soit leur mode d’obtention, et le catalogue de référence des qualifications réelles par pays et de l’OTAN.',
     'parcours' => 'Des étapes enchaînées pour atteindre une compétence ou une fonction.',
     'competences' => 'Le référentiel des compétences et ce qui permet de les acquérir.',
     'emetteurs' => 'Les écoles, centres et unités qui délivrent les qualifications.',
 ];
-$oxKinds = ['course' => 'Formation', 'qualification' => 'Qualification', 'pathway' => 'Parcours', 'competency' => 'Compétence', 'issuer' => 'Émetteur'];
+$oxKinds = ['course' => 'Formation', 'qualification' => 'Qualification', 'reference' => 'Qualification de référence', 'pathway' => 'Parcours', 'competency' => 'Compétence', 'issuer' => 'Émetteur'];
+$oxOrigins = [
+    'referentiel' => 'Déjà dans mon référentiel',
+    'communaute' => 'Créations de la communauté',
+    'catalogue' => 'Catalogue de référence',
+];
+$oxOriginHelp = [
+    'referentiel' => 'Qualifications réelles importées du catalogue de référence dans le référentiel de votre communauté.',
+    'communaute' => 'Qualifications et brevets créés par votre communauté, dans le référentiel ou le Studio.',
+    'catalogue' => 'Qualifications et brevets réels par pays et de l’OTAN, prêts à être importés dans votre référentiel.',
+];
+$oxNatures = ['brevet' => 'Brevet', 'qualification' => 'Qualification', 'cursus' => 'Cursus et sélection', 'licence' => 'Licence'];
+$oxCanImport = !empty($offerCanImport);
+$oxCountry = static function (string $code, string $label, bool $native = false) use ($h): string {
+    if ($code === '') {
+        return '';
+    }
+    $nativeName = \App\Support\QualificationCatalog\CatalogCountry::native($code);
+    return '<span class="acx-country">' . \App\Support\QualificationCatalog\CatalogCountry::flag($code) . '<span translate="no">' . $h($label !== '' ? $label : $code) . '</span>'
+        . ($native && $nativeName !== '' && $nativeName !== $label ? ' <span class="acx-country__native" translate="no" lang="' . $h(strtolower($code === 'NATO' ? 'en' : ($code === 'US' ? 'en' : ($code === 'CN' ? 'zh' : $code)))) . '">' . $h($nativeName) . '</span>' : '') . '</span>';
+};
 $oxStates = [
     'held' => 'Acquis',
     'expiring' => 'Expire bientôt',
@@ -48,12 +68,15 @@ $oxModes = [
     'pilot' => 'Cursus pilote (heures de vol)',
 ];
 $oxStateGroups = ['acquis' => 'Acquis', 'en-cours' => 'En cours', 'disponible' => 'Disponible', 'prerequis' => 'Prérequis manquants'];
-$oxSorts = ['pertinence' => 'Pertinence', 'nom' => 'Nom (A → Z)', 'etat' => 'État pour moi', 'duree' => 'Durée'];
-$oxSources = ['athena' => 'ATHENA', 'community' => 'Ma communauté'];
+$oxSorts = ['pertinence' => 'Pertinence', 'nom' => 'Nom (A → Z)', 'etat' => 'État pour moi', 'duree' => 'Durée', 'pays' => 'Pays', 'niveau' => 'Niveau (du plus élevé)'];
+$oxSources = ['athena' => 'ATHENA', 'community' => 'Ma communauté', 'reference' => 'Catalogue de référence'];
 $oxLevelNames = function_exists('training_course_level_labels_fr') ? training_course_level_labels_fr() : [];
 $oxLevel = static function (string $level) use ($h, $oxLevelNames): string {
     if (str_starts_with($level, 'levels:')) {
         return '<span>' . (int) substr($level, 7) . '</span> <span>niveaux</span>';
+    }
+    if (str_starts_with($level, 'ref:')) {
+        return '<span>' . $h(\App\Support\QualificationCatalog\QualificationCatalogExplorer::levelLabel(substr($level, 4), 'fr')) . '</span>';
     }
     return $h($oxLevelNames[$level] ?? $level);
 };
@@ -91,7 +114,8 @@ $oxDate = static function (mixed $raw): string {
 };
 $oxFiche = static fn (string $id): string => $link('catalogue') . '?fiche=' . rawurlencode($id);
 $oxUrl = static function (array $changes = []) use ($link, $offerFilters): string {
-    $q = array_merge($offerFilters, $changes);
+    // Changer un filtre ramène à la première page.
+    $q = array_merge($offerFilters, ['page' => ''], $changes);
     $q = array_filter($q, static fn ($v, $k): bool => $v !== '' && !($k === 'onglet' && $v === 'tout') && !($k === 'tri' && $v === 'pertinence'), ARRAY_FILTER_USE_BOTH);
     return $link('catalogue') . ($q !== [] ? '?' . http_build_query($q) : '');
 };
@@ -122,6 +146,9 @@ $oxBadge = static function (array $it) use ($h, $oxSymbol): string {
 };
 $oxStatePill = static function (array $it) use ($h, $oxStates): string {
     $state = (string) ($it['state'] ?? 'none');
+    if ($it['kind'] === 'reference') {
+        return '<span class="acx-state acx-state--reference">' . $h('Catalogue de référence') . '</span>';
+    }
     if (!isset($oxStates[$state])) {
         return '';
     }

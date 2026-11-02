@@ -85,6 +85,10 @@ $shown = ['tout' => $active, 'communaute' => $mine, 'base' => $base, 'archives' 
 <label class="sth-search"><svg class="i"><use href="#ai-search"/></svg><input type="search" data-studio-search placeholder="<?= $h($t('cred_search')) ?>" aria-label="<?= $h($t('cred_search')) ?>"></label>
 <?php if ($canManage): ?><span class="sp"></span><button class="btn dark" type="button" data-open-dialog="sth-pick">+ <?= $h($t('studio_new')) ?></button><?php endif ?>
 </div>
+<?php $cq = is_array($credQuota ?? null) ? $credQuota : null; if ($canManage && $cq !== null && !$cq['unlimited']): /* Plafond de la formule : compteur, et la formule qui débloque. */ ?>
+<p class="sth-quota<?= $cq['can_add'] ? '' : ' is-full' ?>" role="status"><b><?= (int) $cq['used'] ?> / <?= (int) $cq['limit'] ?></b> <span><?= $h($t('cred_quota_line')) ?></span><?php if ($cq['offer'] !== null): ?> · <span class="sth-plan"><?= $h($t('cred_quota_unlock')) ?> <b translate="no"><?= $h($cq['offer']['name']) ?></b> (<?= $cq['offer']['value'] === 0 ? $h($t('cred_quota_unlimited')) : (int) $cq['offer']['value'] ?>)</span> <a href="<?= $h($cq['upgrade_url']) ?>"><?= $h($t('cred_quota_see')) ?></a><?php endif ?></p>
+<?php if (!$cq['can_add']): ?><p class="sth-hint"><?= $h($t('cred_quota_reached')) ?></p><?php endif ?>
+<?php endif ?>
 <?php if ($origin === 'base'): ?><p class="sth-hint"><?= $h($t('cred_base_help')) ?></p><?php elseif ($origin === 'communaute'): ?><p class="sth-hint"><?= $h($t('cred_mine_help')) ?></p><?php endif ?>
 <?php if ($origin === 'tout'): /* Créations de la communauté d'abord, puis le catalogue de base. */ ?>
 <div class="sth-sec"><h2><?= $h($t('cred_origin_mine')) ?></h2><p><?= $h($t('cred_mine_help')) ?></p></div>

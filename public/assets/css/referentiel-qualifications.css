@@ -453,3 +453,11 @@ html[data-bo-theme="dark"] .rql__tag--mode-academy { background: #13202e; color:
 .rqc-levels__scale dt, .rqc-levels__scale dd { margin: 0; }
 @media (max-width: 640px) { .rqc-levels__scale div { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
 @media (min-width: 641px) { .rqc-filters__sort { grid-column: span 2; } }
+
+/* Catalogue de référence : plafond de la formule et import d’un pays verrouillé */
+.rqc-quota { margin: 0; font-size: 13px; color: #64748b; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.rqc-quota b { color: inherit; font-weight: 800; }
+.rqc-quota.is-full { color: #b45309; }
+.rqc-quota a, .rqc-plan { font-weight: 700; color: #047857; }
+.rqc-locked { display: inline-flex; align-items: center; gap: 6px; }
+.rqc-plan { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: rgba(4, 120, 87, .1); text-decoration: none; }

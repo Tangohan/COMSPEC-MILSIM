@@ -18,6 +18,14 @@ final class AcademyBuiltInCourses
     public const JTAC_VERSION = '2.1.0';
 
     /**
+     * Formations intégrées à l’utilisation de la plateforme (App\Services\Academy\BuiltIn), affichées juste après le
+     * JTAC : « ATHENA — Utiliser et administrer la plateforme ».
+     */
+    public const PLATFORM_COURSES = [
+        BuiltIn\AthenaPlatformCourse::class,
+    ];
+
+    /**
      * Cours intégrés inspirés des standards OTAN publics (App\Services\Academy\BuiltIn), après le JTAC, dans l’ordre
      * d’affichage. Chacun délivre une qualification Athena Academy (AcademyBuiltInQualifications).
      */
@@ -40,7 +48,7 @@ final class AcademyBuiltInCourses
             return self::$all;
         }
         $out = [self::JTAC_KEY => self::jtac()];
-        foreach (self::NATO_COURSES as $class) {
+        foreach ([...self::PLATFORM_COURSES, ...self::NATO_COURSES] as $class) {
             if (class_exists($class)) {
                 $course = $class::course();
                 $out[(string) $course['key']] = $course;

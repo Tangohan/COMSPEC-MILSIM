@@ -1,0 +1,677 @@
+{
+  "pack": "nato",
+  "country": "NATO",
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé à partir des sites officiels de l'OTAN (nato.int, act.nato.int, sites des centres) et de la liste des 30 centres d'excellence accrédités publiée par l'OTAN. Les centres d'excellence (COE) sont financés par des nations cadres et ne font pas partie de la structure de commandement de l'OTAN. Vérifier les intitulés avant tout usage officiel.",
+    "en": "Compiled from official NATO sources (nato.int, act.nato.int, the centres' own websites) and NATO's published list of the 30 accredited Centres of Excellence. COEs are nationally or multinationally funded and are not part of the NATO Command Structure. Check titles before any official use."
+  },
+  "issuers": [
+    {
+      "key": "nato-nsou",
+      "name": "NATO Special Operations University",
+      "short_name": "NSOU",
+      "type": "academy",
+      "location": "Base aérienne de Chièvres, Belgique",
+      "location_en": "Chièvres Air Base, Belgium",
+      "website": "https://www.nshq.nato.int/nsou",
+      "description": {
+        "fr": "Campus physique et virtuel de formation et d'éducation des forces spéciales de l'Alliance et des pays partenaires, créé en 2009. Rattachée au commandement des forces d'opérations spéciales alliées (SOFCOM, ex-NSHQ).",
+        "en": "Physical and virtual training and education campus for Allied and partner special operations forces, established in 2009. Part of the Allied Special Operations Forces Command (SOFCOM, formerly NSHQ)."
+      },
+      "aliases": ["NATO Special Operations University", "NATO Special Operations School", "NSOS"],
+      "sources": [
+        {"url": "https://www.nshq.nato.int/nsou", "title": "NSOU – Allied Special Operations Forces Command"}
+      ]
+    },
+    {
+      "key": "nato-sofcom",
+      "name": "Allied Special Operations Forces Command",
+      "short_name": "SOFCOM",
+      "type": "command",
+      "location": "Mons (SHAPE), Belgique",
+      "location_en": "Mons (SHAPE), Belgium",
+      "website": "https://www.nshq.nato.int",
+      "description": {
+        "fr": "Commandement OTAN des forces d'opérations spéciales, successeur du NATO Special Operations Headquarters (NSHQ). Il fixe les standards SOF de l'Alliance et pilote la NSOU.",
+        "en": "NATO command for special operations forces, successor to the NATO Special Operations Headquarters (NSHQ). It sets Alliance SOF standards and oversees the NSOU."
+      },
+      "aliases": ["NATO Special Operations Headquarters", "NSHQ"],
+      "sources": [
+        {"url": "https://www.nshq.nato.int", "title": "Allied Special Operations Forces Command"},
+        {"url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/special-operations-forces", "title": "NATO – Special Operations Forces"}
+      ],
+      "uncertain": {
+        "fr": "Date exacte du changement d'appellation NSHQ → SOFCOM à confirmer.",
+        "en": "Exact date of the NSHQ → SOFCOM renaming to be confirmed."
+      }
+    },
+    {
+      "key": "nato-nso",
+      "name": "NATO School Oberammergau",
+      "short_name": "NSO",
+      "type": "school",
+      "location": "Oberammergau, Bavière, Allemagne",
+      "location_en": "Oberammergau, Bavaria, Germany",
+      "website": "https://www.natoschool.nato.int",
+      "description": {
+        "fr": "École multinationale de l'OTAN dispensant des cours opérationnels et doctrinaux (planification, ciblage, armes de destruction massive, cyber, etc.) aux personnels des pays alliés et partenaires.",
+        "en": "Multinational NATO school delivering operational and doctrinal courses (planning, targeting, WMD, cyber, etc.) to personnel from Allied and partner nations."
+      },
+      "aliases": ["NATO School Oberammergau", "NATO School"],
+      "sources": [
+        {"url": "https://www.natoschool.nato.int", "title": "NATO School Oberammergau"}
+      ]
+    },
+    {
+      "key": "nato-jftc",
+      "name": "Joint Force Training Centre",
+      "short_name": "JFTC",
+      "type": "training_center",
+      "location": "Bydgoszcz, Pologne",
+      "location_en": "Bydgoszcz, Poland",
+      "website": "https://www.jftc.nato.int",
+      "description": {
+        "fr": "Centre d'entraînement de l'OTAN relevant du Commandement allié Transformation (ACT), chargé de l'entraînement collectif interarmées et tactique des états-majors.",
+        "en": "NATO training centre under Allied Command Transformation (ACT), responsible for joint and tactical-level collective staff training."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.jftc.nato.int", "title": "Joint Force Training Centre"}
+      ]
+    },
+    {
+      "key": "nato-jwc",
+      "name": "Joint Warfare Centre",
+      "short_name": "JWC",
+      "type": "training_center",
+      "location": "Stavanger, Norvège",
+      "location_en": "Stavanger, Norway",
+      "website": "https://www.jwc.nato.int",
+      "description": {
+        "fr": "Centre de l'OTAN relevant de l'ACT qui conçoit et conduit les exercices d'entraînement opérationnel et stratégique des quartiers généraux de l'Alliance.",
+        "en": "NATO centre under ACT that designs and runs operational- and strategic-level training exercises for Alliance headquarters."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.jwc.nato.int", "title": "Joint Warfare Centre"}
+      ]
+    },
+    {
+      "key": "nato-ndc",
+      "name": "NATO Defense College",
+      "short_name": "NDC",
+      "type": "academy",
+      "location": "Rome, Italie",
+      "location_en": "Rome, Italy",
+      "website": "https://www.ndc.nato.int",
+      "description": {
+        "fr": "Collège de défense de l'OTAN formant officiers supérieurs et hauts fonctionnaires aux questions stratégiques et politico-militaires de l'Alliance (Senior Course notamment).",
+        "en": "NATO's college educating senior officers and officials in Alliance strategic and politico-military affairs (notably the Senior Course)."
+      },
+      "aliases": ["NATO Defense College", "Collège de défense de l'OTAN"],
+      "sources": [
+        {"url": "https://www.ndc.nato.int", "title": "NATO Defense College"}
+      ]
+    },
+    {
+      "key": "nato-nci-academy",
+      "name": "NATO Communications and Information Academy",
+      "short_name": "NCI Academy",
+      "type": "academy",
+      "location": "Oeiras, Portugal",
+      "location_en": "Oeiras, Portugal",
+      "website": "https://www.ncia.nato.int/what-we-do/nci-academy",
+      "description": {
+        "fr": "Académie de l'Agence OTAN d'information et de communication (NCIA) formant aux systèmes C4ISR, au cyber et aux réseaux de l'Alliance. Elle a repris en 2019 les missions de la NATO CIS School (NCISS) de Latina (Italie), aujourd'hui fermée, et a été inaugurée officiellement en 2021.",
+        "en": "Academy of the NATO Communications and Information Agency (NCIA) training personnel on Alliance C4ISR, cyber and network systems. In 2019 it took over the role of the now-closed NATO CIS School (NCISS) in Latina, Italy, and was formally inaugurated in 2021."
+      },
+      "aliases": ["NATO Communications and Information Academy", "NCIA Academy", "NATO Communications and Information Systems School", "NATO CIS School", "NCISS"],
+      "sources": [
+        {"url": "https://www.ncia.nato.int/what-we-do/nci-academy", "title": "NCI Academy – NCIA"},
+        {"url": "https://en.wikipedia.org/wiki/NATO_Communications_and_Information_Systems_School", "title": "NATO Communications and Information Systems School – Wikipedia"}
+      ]
+    },
+    {
+      "key": "nato-nmiotc",
+      "name": "NATO Maritime Interdiction Operational Training Centre",
+      "short_name": "NMIOTC",
+      "type": "training_center",
+      "location": "Baie de Souda, Crète, Grèce",
+      "location_en": "Souda Bay, Crete, Greece",
+      "website": "https://www.nmiotc.nato.int",
+      "description": {
+        "fr": "Centre d'entraînement accrédité par l'OTAN formant aux opérations d'interdiction maritime (visite, arraisonnement, fouille et saisie) et à la sûreté maritime.",
+        "en": "NATO-accredited training centre for maritime interdiction operations (visit, board, search and seizure) and maritime security."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.nmiotc.nato.int", "title": "NMIOTC"}
+      ]
+    },
+    {
+      "key": "nato-jmrc",
+      "name": "Joint Multinational Readiness Center",
+      "short_name": "JMRC",
+      "type": "training_center",
+      "location": "Hohenfels, Bavière, Allemagne",
+      "location_en": "Hohenfels, Bavaria, Germany",
+      "website": "",
+      "description": {
+        "fr": "Centre d'entraînement au combat de l'US Army (7th Army Training Command) en Europe, où unités américaines, alliées et partenaires conduisent des rotations d'entraînement multinational. Organisme américain, et non une structure OTAN.",
+        "en": "U.S. Army combat training centre in Europe (7th Army Training Command) where U.S., Allied and partner units conduct multinational training rotations. A U.S. organisation, not a NATO body."
+      },
+      "aliases": ["Joint Multinational Readiness Center"],
+      "sources": [
+        {"url": "https://en.wikipedia.org/wiki/Joint_Multinational_Readiness_Center", "title": "Joint Multinational Readiness Center – Wikipedia"}
+      ],
+      "uncertain": {
+        "fr": "Site officiel non confirmé (pages hébergées par le 7th Army Training Command).",
+        "en": "Official website not confirmed (pages hosted by 7th Army Training Command)."
+      }
+    },
+    {
+      "key": "nato-ncgm",
+      "name": "Nordic Centre for Gender in Military Operations",
+      "short_name": "NCGM",
+      "type": "training_center",
+      "location": "Kungsängen (SWEDINT), près de Stockholm, Suède",
+      "location_en": "Kungsängen (SWEDINT), near Stockholm, Sweden",
+      "website": "https://www.forsvarsmakten.se/en/about-the-swedish-armed-forces/organisation/centres/ncgm/",
+      "description": {
+        "fr": "Centre nordique créé en 2012 au sein des forces armées suédoises (régiment des Gardes), hors structure OTAN, ouvert aux nations partenaires. Département référent de l'OTAN pour le genre dans les opérations depuis 2013 et établissement de formation accrédité OTAN depuis 2018 ; forme notamment les conseillers genre.",
+        "en": "Nordic centre established in 2012 within the Swedish Armed Forces (Life Guards), outside the NATO structure and open to partner nations. NATO Department Head for gender in military operations since 2013 and NATO-accredited education and training facility since 2018; trains gender advisors."
+      },
+      "aliases": ["Nordic Centre for Gender in Military Operations"],
+      "sources": [
+        {"url": "https://www.forsvarsmakten.se/en/about-the-swedish-armed-forces/organisation/centres/ncgm/", "title": "NCGM – Swedish Armed Forces"}
+      ],
+      "uncertain": {
+        "fr": "Souvent décrit comme « partenaire non OTAN » : c'était vrai à sa création, mais la Suède (2024) et la Finlande (2023) sont désormais membres. Il reste un centre national/nordique, non un organe de l'OTAN.",
+        "en": "Often described as a 'non-NATO partner': true when founded, but Sweden (2024) and Finland (2023) are now members. It remains a national/Nordic centre, not a NATO body."
+      }
+    },
+    {
+      "key": "nato-ao-coe",
+      "name": "Air Operations Centre of Excellence",
+      "short_name": "AO COE",
+      "type": "coe",
+      "location": "Lyon, France",
+      "location_en": "Lyon, France",
+      "website": "https://air.defense.gouv.fr/air-operations-coe-caspoa",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN adossé au CASPOA (Centre d'analyse et de simulation pour la préparation aux opérations aériennes) ; forme au commandement et contrôle des opérations aériennes.",
+        "en": "NATO-accredited COE built on the French CASPOA (air operations analysis and simulation centre); trains personnel in air operations command and control."
+      },
+      "aliases": ["CASPOA"],
+      "sources": [
+        {"url": "https://www.nato.int/cps/en/natohq/topics_68372.htm", "title": "NATO – Centres of Excellence"},
+        {"url": "https://air.defense.gouv.fr/air-operations-coe-caspoa", "title": "Air Operations COE – CASPOA"}
+      ]
+    },
+    {
+      "key": "nato-cimic-coe",
+      "name": "Civil-Military Cooperation Centre of Excellence",
+      "short_name": "CCOE",
+      "type": "coe",
+      "location": "La Haye, Pays-Bas",
+      "location_en": "The Hague, Netherlands",
+      "website": "https://www.cimic-coe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la coopération civilo-militaire (CIMIC) ; conduit des cours CIMIC et de coordination civilo-militaire.",
+        "en": "NATO-accredited COE for civil-military cooperation (CIMIC); runs CIMIC and civil-military interaction courses."
+      },
+      "aliases": ["Civil-Military Cooperation Centre of Excellence", "CIMIC COE"],
+      "sources": [
+        {"url": "https://www.cimic-coe.org", "title": "CIMIC Centre of Excellence"},
+        {"url": "https://www.nato.int/cps/en/natohq/topics_68372.htm", "title": "NATO – Centres of Excellence"}
+      ]
+    },
+    {
+      "key": "nato-cwo-coe",
+      "name": "Centre of Excellence Cold Weather Operations",
+      "short_name": "COE-CWO",
+      "type": "coe",
+      "location": "Elverum, Norvège",
+      "location_en": "Elverum, Norway",
+      "website": "https://www.forsvaret.no/en/organisation/centre-of-excellence-cold-weather-operations",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN des forces armées norvégiennes, spécialisé dans les opérations par grand froid et en milieu arctique.",
+        "en": "NATO-accredited COE of the Norwegian Armed Forces specialising in cold-weather and Arctic operations."
+      },
+      "aliases": ["Cold Weather Operations COE"],
+      "sources": [
+        {"url": "https://www.forsvaret.no/en/organisation/centre-of-excellence-cold-weather-operations", "title": "COE Cold Weather Operations – Norwegian Armed Forces"}
+      ]
+    },
+    {
+      "key": "nato-cjos-coe",
+      "name": "Combined Joint Operations from the Sea Centre of Excellence",
+      "short_name": "CJOS COE",
+      "type": "coe",
+      "location": "Norfolk, Virginie, États-Unis",
+      "location_en": "Norfolk, Virginia, United States",
+      "website": "",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN consacré aux opérations interarmées et multinationales depuis la mer (puissance navale, opérations amphibies, sûreté maritime).",
+        "en": "NATO-accredited COE dedicated to combined joint operations from the sea (maritime power, amphibious operations, maritime security)."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.nato.int/cps/en/natohq/topics_68372.htm", "title": "NATO – Centres of Excellence"}
+      ],
+      "uncertain": {
+        "fr": "Le site cjoscoe.org n'est référencé qu'en http par l'OTAN : non retenu.",
+        "en": "cjoscoe.org is only listed over http by NATO: not used."
+      }
+    },
+    {
+      "key": "nato-c2coe",
+      "name": "Command and Control Centre of Excellence",
+      "short_name": "C2COE",
+      "type": "coe",
+      "location": "Utrecht, Pays-Bas",
+      "location_en": "Utrecht, Netherlands",
+      "website": "https://c2coe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour le commandement et le contrôle (C2), soutenant le développement de concepts et la formation des états-majors.",
+        "en": "NATO-accredited COE for command and control (C2), supporting concept development and staff training."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://c2coe.org", "title": "Command and Control Centre of Excellence"}
+      ]
+    },
+    {
+      "key": "nato-ccdcoe",
+      "name": "NATO Cooperative Cyber Defence Centre of Excellence",
+      "short_name": "CCDCOE",
+      "type": "coe",
+      "location": "Tallinn, Estonie",
+      "location_en": "Tallinn, Estonia",
+      "website": "https://www.ccdcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la cyberdéfense : recherche, formation et exercices (Locked Shields), et rédaction du Manuel de Tallinn.",
+        "en": "NATO-accredited cyber defence COE: research, training and exercises (Locked Shields), and author of the Tallinn Manual."
+      },
+      "aliases": ["NATO Cooperative Cyber Defence Centre of Excellence"],
+      "sources": [
+        {"url": "https://www.ccdcoe.org", "title": "CCDCOE"}
+      ]
+    },
+    {
+      "key": "nato-c-ied-coe",
+      "name": "Counter Improvised Explosive Devices Centre of Excellence",
+      "short_name": "C-IED COE",
+      "type": "coe",
+      "location": "Madrid (Hoyo de Manzanares), Espagne",
+      "location_en": "Madrid (Hoyo de Manzanares), Spain",
+      "website": "https://www.ciedcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la lutte contre les engins explosifs improvisés (C-IED), dont l'Espagne est nation cadre ; formation, doctrine et retour d'expérience.",
+        "en": "NATO-accredited COE for countering improvised explosive devices (C-IED), with Spain as framework nation; training, doctrine and lessons learned."
+      },
+      "aliases": ["Counter Improvised Explosive Devices Centre of Excellence"],
+      "sources": [
+        {"url": "https://www.ciedcoe.org", "title": "C-IED Centre of Excellence"}
+      ]
+    },
+    {
+      "key": "nato-ci-coe",
+      "name": "NATO Counter Intelligence Centre of Excellence",
+      "short_name": "NATO CI COE",
+      "type": "coe",
+      "location": "Cracovie, Pologne",
+      "location_en": "Kraków, Poland",
+      "website": "https://cicoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour le contre-renseignement, codirigé par la Pologne et la Slovaquie ; formation et développement de la doctrine CI.",
+        "en": "NATO-accredited counter-intelligence COE, co-led by Poland and Slovakia; CI training and doctrine development."
+      },
+      "aliases": ["NATO Counter Intelligence Centre of Excellence", "CI COE"],
+      "sources": [
+        {"url": "https://cicoe.org", "title": "NATO Counter Intelligence Centre of Excellence"}
+      ]
+    },
+    {
+      "key": "nato-cmdr-coe",
+      "name": "Crisis Management and Disaster Response Centre of Excellence",
+      "short_name": "CMDR COE",
+      "type": "coe",
+      "location": "Sofia, Bulgarie",
+      "location_en": "Sofia, Bulgaria",
+      "website": "https://www.cmdrcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la gestion de crise et la réponse aux catastrophes.",
+        "en": "NATO-accredited COE for crisis management and disaster response."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.cmdrcoe.org", "title": "CMDR COE"}
+      ]
+    },
+    {
+      "key": "nato-coe-dat",
+      "name": "Centre of Excellence Defence Against Terrorism",
+      "short_name": "COE-DAT",
+      "type": "coe",
+      "location": "Ankara, Turquie",
+      "location_en": "Ankara, Türkiye",
+      "website": "https://www.coedat.nato.int",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la lutte contre le terrorisme, dont la Turquie est nation cadre ; cours, séminaires et recherche.",
+        "en": "NATO-accredited COE for defence against terrorism, with Türkiye as framework nation; courses, seminars and research."
+      },
+      "aliases": ["Defence Against Terrorism COE"],
+      "sources": [
+        {"url": "https://www.coedat.nato.int", "title": "COE Defence Against Terrorism"}
+      ]
+    },
+    {
+      "key": "nato-ensec-coe",
+      "name": "NATO Energy Security Centre of Excellence",
+      "short_name": "ENSEC COE",
+      "type": "coe",
+      "location": "Vilnius, Lituanie",
+      "location_en": "Vilnius, Lithuania",
+      "website": "https://www.enseccoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la sécurité énergétique (protection des infrastructures critiques, efficacité énergétique opérationnelle).",
+        "en": "NATO-accredited COE for energy security (critical infrastructure protection, operational energy efficiency)."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.enseccoe.org", "title": "NATO ENSEC COE"}
+      ]
+    },
+    {
+      "key": "nato-eod-coe",
+      "name": "NATO Explosive Ordnance Disposal Centre of Excellence",
+      "short_name": "EOD COE",
+      "type": "coe",
+      "location": "Trenčín, Slovaquie",
+      "location_en": "Trenčín, Slovakia",
+      "website": "https://www.eodcoe.org/en/",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la neutralisation des explosifs et munitions (NEDEX/EOD) ; cours, standardisation et retour d'expérience.",
+        "en": "NATO-accredited explosive ordnance disposal (EOD) COE; courses, standardisation and lessons learned."
+      },
+      "aliases": ["NATO Explosive Ordnance Disposal Centre of Excellence"],
+      "sources": [
+        {"url": "https://www.eodcoe.org/en/", "title": "NATO EOD COE"}
+      ]
+    },
+    {
+      "key": "nato-humint-coe",
+      "name": "NATO Human Intelligence Centre of Excellence",
+      "short_name": "HUMINT COE",
+      "type": "coe",
+      "location": "Oradea, Roumanie",
+      "location_en": "Oradea, Romania",
+      "website": "https://www.natohcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour le renseignement d'origine humaine (HUMINT) ; formation et standardisation.",
+        "en": "NATO-accredited human intelligence (HUMINT) COE; training and standardisation."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.natohcoe.org", "title": "NATO HUMINT COE"}
+      ]
+    },
+    {
+      "key": "nato-iamd-coe",
+      "name": "Integrated Air and Missile Defence Centre of Excellence",
+      "short_name": "IAMD COE",
+      "type": "coe",
+      "location": "La Canée, Crète, Grèce",
+      "location_en": "Chania, Crete, Greece",
+      "website": "https://iamd-coe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la défense aérienne et antimissile intégrée.",
+        "en": "NATO-accredited COE for integrated air and missile defence."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://iamd-coe.org", "title": "IAMD COE"}
+      ]
+    },
+    {
+      "key": "nato-japcc",
+      "name": "Joint Air Power Competence Centre",
+      "short_name": "JAPCC",
+      "type": "coe",
+      "location": "Kalkar, Allemagne",
+      "location_en": "Kalkar, Germany",
+      "website": "https://www.japcc.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la puissance aérienne et spatiale interarmées (concepts, doctrine, études).",
+        "en": "NATO-accredited COE for joint air and space power (concepts, doctrine, studies)."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.japcc.org", "title": "JAPCC"}
+      ]
+    },
+    {
+      "key": "nato-jcbrn-coe",
+      "name": "Joint Chemical, Biological, Radiological and Nuclear Defence Centre of Excellence",
+      "short_name": "JCBRN Defence COE",
+      "type": "coe",
+      "location": "Vyškov, Tchéquie",
+      "location_en": "Vyškov, Czechia",
+      "website": "https://www.jcbrncoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la défense NRBC interarmées ; cours, doctrine et soutien aux exercices.",
+        "en": "NATO-accredited joint CBRN defence COE; courses, doctrine and exercise support."
+      },
+      "aliases": ["Joint Chemical, Biological, Radiological and Nuclear Defence Centre of Excellence"],
+      "sources": [
+        {"url": "https://www.jcbrncoe.org", "title": "JCBRN Defence COE"}
+      ]
+    },
+    {
+      "key": "nato-marsec-coe",
+      "name": "Maritime Security Centre of Excellence",
+      "short_name": "MARSEC COE",
+      "type": "coe",
+      "location": "Istanbul, Turquie",
+      "location_en": "Istanbul, Türkiye",
+      "website": "https://www.marseccoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la sûreté maritime.",
+        "en": "NATO-accredited COE for maritime security."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.marseccoe.org", "title": "MARSEC COE"}
+      ]
+    },
+    {
+      "key": "nato-mileng-coe",
+      "name": "Military Engineering Centre of Excellence",
+      "short_name": "MILENG COE",
+      "type": "coe",
+      "location": "Ingolstadt, Allemagne",
+      "location_en": "Ingolstadt, Germany",
+      "website": "https://milengcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour le génie militaire (interopérabilité, doctrine et formation du génie).",
+        "en": "NATO-accredited COE for military engineering (engineer interoperability, doctrine and training)."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.nato.int/cps/en/natohq/topics_68372.htm", "title": "NATO – Centres of Excellence"}
+      ]
+    },
+    {
+      "key": "nato-milmed-coe",
+      "name": "NATO Centre of Excellence for Military Medicine",
+      "short_name": "MILMED COE",
+      "type": "coe",
+      "location": "Budapest, Hongrie",
+      "location_en": "Budapest, Hungary",
+      "website": "https://www.coemed.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la médecine militaire ; formation, standardisation et retour d'expérience du soutien médical.",
+        "en": "NATO-accredited COE for military medicine; medical support training, standardisation and lessons learned."
+      },
+      "aliases": ["NATO Centre of Excellence for Military Medicine"],
+      "sources": [
+        {"url": "https://www.coemed.org", "title": "NATO MILMED COE"}
+      ]
+    },
+    {
+      "key": "nato-mp-coe",
+      "name": "NATO Military Police Centre of Excellence",
+      "short_name": "NATO MP COE",
+      "type": "coe",
+      "location": "Bydgoszcz, Pologne",
+      "location_en": "Bydgoszcz, Poland",
+      "website": "https://www.mpcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la police militaire ; formation et interopérabilité des unités de police militaire.",
+        "en": "NATO-accredited military police COE; training and interoperability of military police units."
+      },
+      "aliases": ["NATO Military Police Centre of Excellence"],
+      "sources": [
+        {"url": "https://www.mpcoe.org", "title": "NATO MP COE"}
+      ]
+    },
+    {
+      "key": "nato-ms-coe",
+      "name": "Modelling and Simulation Centre of Excellence",
+      "short_name": "M&S COE",
+      "type": "coe",
+      "location": "Rome, Italie",
+      "location_en": "Rome, Italy",
+      "website": "https://www.mscoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la modélisation et la simulation au profit de l'entraînement et de l'aide à la décision.",
+        "en": "NATO-accredited COE for modelling and simulation in support of training and decision-making."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.mscoe.org", "title": "NATO M&S COE"}
+      ]
+    },
+    {
+      "key": "nato-mw-coe",
+      "name": "NATO Mountain Warfare Centre of Excellence",
+      "short_name": "MW COE",
+      "type": "coe",
+      "location": "Poljče, Slovénie",
+      "location_en": "Poljče, Slovenia",
+      "website": "https://www.mwcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour le combat en montagne, dont la Slovénie est nation cadre ; cours et doctrine du combat en milieu montagneux.",
+        "en": "NATO-accredited mountain warfare COE, with Slovenia as framework nation; mountain operations courses and doctrine."
+      },
+      "aliases": ["Mountain Warfare COE"],
+      "sources": [
+        {"url": "https://www.mwcoe.org", "title": "NATO MW COE"}
+      ]
+    },
+    {
+      "key": "nato-nmw-coe",
+      "name": "NATO Naval Mine Warfare Centre of Excellence",
+      "short_name": "NMW COE",
+      "type": "coe",
+      "location": "Ostende, Belgique",
+      "location_en": "Ostend, Belgium",
+      "website": "https://www.nmwcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la guerre des mines navales, associé à l'école belgo-néerlandaise de guerre des mines (EGUERMIN).",
+        "en": "NATO-accredited naval mine warfare COE, associated with the Belgian-Dutch mine warfare school (EGUERMIN)."
+      },
+      "aliases": ["NATO Naval Mine Warfare Centre of Excellence"],
+      "sources": [
+        {"url": "https://www.nmwcoe.org", "title": "NATO NMW COE"}
+      ]
+    },
+    {
+      "key": "nato-csw-coe",
+      "name": "Centre of Excellence for Operations in Confined and Shallow Waters",
+      "short_name": "COE CSW",
+      "type": "coe",
+      "location": "Kiel, Allemagne",
+      "location_en": "Kiel, Germany",
+      "website": "https://www.coecsw.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour les opérations navales en eaux resserrées et peu profondes, dont l'Allemagne est nation cadre.",
+        "en": "NATO-accredited COE for naval operations in confined and shallow waters, with Germany as framework nation."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.coecsw.org", "title": "COE CSW"}
+      ]
+    },
+    {
+      "key": "nato-sfa-coe",
+      "name": "NATO Security Force Assistance Centre of Excellence",
+      "short_name": "NATO SFA COE",
+      "type": "coe",
+      "location": "Rome, Italie",
+      "location_en": "Rome, Italy",
+      "website": "https://www.nsfacoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour l'assistance aux forces de sécurité (conseil, formation et accompagnement de forces partenaires), dont l'Italie est nation cadre.",
+        "en": "NATO-accredited security force assistance COE (advising, training and mentoring partner forces), with Italy as framework nation."
+      },
+      "aliases": ["NATO Security Force Assistance Centre of Excellence"],
+      "sources": [
+        {"url": "https://www.nsfacoe.org", "title": "NATO SFA COE"}
+      ]
+    },
+    {
+      "key": "nato-space-coe",
+      "name": "Space Centre of Excellence",
+      "short_name": "Space COE",
+      "type": "coe",
+      "location": "Toulouse, France",
+      "location_en": "Toulouse, France",
+      "website": "https://www.space-coe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour les opérations spatiales, dont la France est nation cadre.",
+        "en": "NATO-accredited COE for space operations, with France as framework nation."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://www.space-coe.org", "title": "NATO Space COE"}
+      ]
+    },
+    {
+      "key": "nato-sp-coe",
+      "name": "NATO Stability Policing Centre of Excellence",
+      "short_name": "NSPCOE",
+      "type": "coe",
+      "location": "Vicence, Italie",
+      "location_en": "Vicenza, Italy",
+      "website": "https://www.nspcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la police de stabilisation, dont l'Italie (Arme des carabiniers) est nation cadre.",
+        "en": "NATO-accredited stability policing COE, with Italy (Carabinieri) as framework nation."
+      },
+      "aliases": ["NATO Stability Policing Centre of Excellence", "SP COE"],
+      "sources": [
+        {"url": "https://www.nspcoe.org", "title": "NATO SP COE"}
+      ]
+    },
+    {
+      "key": "nato-stratcom-coe",
+      "name": "NATO Strategic Communications Centre of Excellence",
+      "short_name": "StratCom COE",
+      "type": "coe",
+      "location": "Riga, Lettonie",
+      "location_en": "Riga, Latvia",
+      "website": "https://stratcomcoe.org",
+      "description": {
+        "fr": "Centre d'excellence accrédité OTAN pour la communication stratégique (lutte informationnelle, désinformation).",
+        "en": "NATO-accredited COE for strategic communications (information environment, disinformation)."
+      },
+      "aliases": [],
+      "sources": [
+        {"url": "https://stratcomcoe.org", "title": "NATO StratCom COE"}
+      ]
+    }
+  ]
+}

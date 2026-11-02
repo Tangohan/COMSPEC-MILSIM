@@ -1722,6 +1722,7 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/store', [QualificationReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/emetteurs', [QualificationReferentielController::class, 'issuers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs', [QualificationReferentielController::class, 'storeIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/emetteurs/importer-reels', [QualificationReferentielController::class, 'importRealIssuers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/emetteurs/{issuerId}', [QualificationReferentielController::class, 'showIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/modifier', [QualificationReferentielController::class, 'updateIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/archiver', [QualificationReferentielController::class, 'archiveIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1996,6 +1997,8 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/discord-questions/{id}/toggle', [AdminRecruitmentDiscordQuestionsController::class, 'toggle'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/discord-questions/{id}/delete', [AdminRecruitmentDiscordQuestionsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/suivi', [AdminRecruitmentsController::class, 'redirectCandidatePortalSuivi'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Avant « {id} » : sinon l'adresse est prise pour un numéro de dossier et renvoie à la liste des candidatures.
+    $router->get('/back-office/recruitments/codes-invitation', [RecruitmentInviteCodesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}', [AdminRecruitmentsController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboarding'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/onboarding', [AdminRecruitmentsController::class, 'onboardingSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2012,7 +2015,6 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/{id}/bilan-equipe', [AdminRecruitmentsController::class, 'staffRetroSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     
     // Routes pour les codes d'invitation de recrutement
-    $router->get('/back-office/recruitments/codes-invitation', [RecruitmentInviteCodesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/codes-invitation/creer', [RecruitmentInviteCodesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/codes-invitation/creer', [RecruitmentInviteCodesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/codes-invitation/{id}', [RecruitmentInviteCodesController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2188,6 +2190,18 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/suivi-cr/{id}/export.csv', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/relancer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'remind'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/cloturer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // Parties détectées en jeu : fenêtre « Gérer » (suivi des CR, cycle de mission).
+    $router->post('/back-office/atak/parties/enregistrer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/rattacher', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'link'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/ignorer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'ignore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/compter', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'count'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/supprimer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/restaurer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'restore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/groupe', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'bulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/types', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'typeStore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/types/{id}/archiver', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'typeArchive'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/regles/{id}/basculer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'ruleToggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/categories', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'categories'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/export.csv', [\App\Controllers\Admin\AdminAarReportsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/modeles', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesIndex'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

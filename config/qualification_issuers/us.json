@@ -1,0 +1,1393 @@
+{
+  "pack": "us",
+  "country": "US",
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé à partir des sites officiels du département de la Défense et des armées américaines (.mil, .edu), complétés par Wikipédia. Bases renommées : en 2025, l'US Army a rétabli les noms Fort Bragg (ex-Fort Liberty), Fort Benning (ex-Fort Moore), Fort Rucker (ex-Fort Novosel) et Fort Gordon (ex-Fort Eisenhower), désormais attribués à d'autres militaires homonymes.",
+    "en": "Compiled from official U.S. Department of Defense and service websites (.mil, .edu), supplemented by Wikipedia. Renamed bases: in 2025 the U.S. Army restored the names Fort Bragg (ex-Fort Liberty), Fort Benning (ex-Fort Moore), Fort Rucker (ex-Fort Novosel) and Fort Gordon (ex-Fort Eisenhower), now honouring different service members with the same surnames."
+  },
+  "issuers": [
+    {
+      "key": "us-dod",
+      "name": "U.S. Department of Defense",
+      "short_name": "DoD",
+      "type": "agency",
+      "location": "Le Pentagone, Arlington, Virginie",
+      "location_en": "The Pentagon, Arlington, Virginia",
+      "website": "https://www.defense.gov",
+      "description": {
+        "fr": "Département exécutif fédéral responsable des forces armées américaines ; émetteur des normes et qualifications interarmées à l'échelle du ministère.",
+        "en": "Federal executive department responsible for the U.S. armed forces; issues department-wide joint standards and qualifications."
+      },
+      "aliases": [
+        "U.S. Department of Defense",
+        "Department of Defense",
+        "Department of War"
+      ],
+      "sources": [
+        {
+          "url": "https://www.defense.gov",
+          "title": "U.S. Department of Defense"
+        }
+      ],
+      "uncertain": {
+        "fr": "Depuis septembre 2025, l'appellation secondaire « Department of War » est utilisée par décret présidentiel ; le nom légal reste Department of Defense.",
+        "en": "Since September 2025 the secondary title 'Department of War' is used by executive order; the statutory name remains Department of Defense."
+      }
+    },
+    {
+      "key": "us-ussocom",
+      "name": "U.S. Special Operations Command",
+      "short_name": "USSOCOM",
+      "type": "command",
+      "location": "MacDill AFB, Tampa, Floride",
+      "location_en": "MacDill AFB, Tampa, Florida",
+      "website": "https://www.socom.mil",
+      "description": {
+        "fr": "Commandement de combat unifié regroupant les forces d'opérations spéciales des quatre armées ; tutelle de la JSOU et des centres de formation SOF interarmées.",
+        "en": "Unified combatant command for the special operations forces of all services; parent of JSOU and joint SOF training centres."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.socom.mil",
+          "title": "U.S. Special Operations Command"
+        }
+      ]
+    },
+    {
+      "key": "us-usasoc",
+      "name": "U.S. Army Special Operations Command",
+      "short_name": "USASOC",
+      "type": "command",
+      "location": "Fort Bragg, Caroline du Nord",
+      "location_en": "Fort Bragg, North Carolina",
+      "website": "https://www.soc.mil",
+      "description": {
+        "fr": "Composante Army de l'USSOCOM, qui commande notamment les Special Forces, le 75th Ranger Regiment, le 160th SOAR(A) et l'USAJFKSWCS.",
+        "en": "Army component of USSOCOM, commanding among others the Special Forces, the 75th Ranger Regiment, the 160th SOAR(A) and USAJFKSWCS."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.soc.mil",
+          "title": "U.S. Army Special Operations Command"
+        }
+      ]
+    },
+    {
+      "key": "us-usajfkswcs",
+      "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+      "short_name": "USAJFKSWCS",
+      "type": "school",
+      "location": "Fort Bragg, Caroline du Nord",
+      "location_en": "Fort Bragg, North Carolina",
+      "website": "https://www.swcs.mil",
+      "description": {
+        "fr": "Centre et école de l'US Army pour les opérations spéciales (USASOC) : sélection et formation des Special Forces, Civil Affairs et Psychological Operations, et cours SOF avancés. Fort Bragg a porté le nom de Fort Liberty de 2023 à 2025.",
+        "en": "U.S. Army special operations centre and school (USASOC): assessment and training of Special Forces, Civil Affairs and Psychological Operations soldiers, plus advanced SOF courses. Fort Bragg was named Fort Liberty from 2023 to 2025."
+      },
+      "aliases": [
+        "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "SWCS",
+        "JFKSWCS"
+      ],
+      "sources": [
+        {
+          "url": "https://www.swcs.mil",
+          "title": "USAJFKSWCS"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/John_F._Kennedy_Special_Warfare_Center_and_School",
+          "title": "USAJFKSWCS – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-swcs-ncoa",
+      "name": "David K. Thuma Noncommissioned Officer Academy",
+      "short_name": "SWCS NCOA",
+      "type": "school",
+      "location": "Fort Bragg, Caroline du Nord",
+      "location_en": "Fort Bragg, North Carolina",
+      "website": "",
+      "description": {
+        "fr": "Académie des sous-officiers de l'USAJFKSWCS, dispensant la formation professionnelle militaire (cours ALC/SLC) des sous-officiers des forces d'opérations spéciales de l'Army.",
+        "en": "USAJFKSWCS noncommissioned officer academy delivering professional military education (ALC/SLC) for Army special operations NCOs."
+      },
+      "aliases": [
+        "David K. Thuma Noncommissioned Officer Academy (USAJFKSWCS)"
+      ],
+      "sources": [
+        {
+          "url": "https://www.swcs.mil",
+          "title": "USAJFKSWCS"
+        }
+      ],
+      "uncertain": {
+        "fr": "Pas de site propre identifié ; dénomination à confirmer sur swcs.mil.",
+        "en": "No dedicated website identified; name to be confirmed on swcs.mil."
+      }
+    },
+    {
+      "key": "us-mffs",
+      "name": "Military Free Fall School",
+      "short_name": "MFFS",
+      "type": "school",
+      "location": "Yuma Proving Ground, Arizona",
+      "location_en": "Yuma Proving Ground, Arizona",
+      "website": "",
+      "description": {
+        "fr": "École de chute libre opérationnelle (HALO/HAHO) de l'USAJFKSWCS, conduite par le 2nd Battalion, 1st Special Warfare Training Group (Airborne).",
+        "en": "USAJFKSWCS military free-fall (HALO/HAHO) school, run by the 2nd Battalion, 1st Special Warfare Training Group (Airborne)."
+      },
+      "aliases": [
+        "Military Free Fall School (USAJFKSWCS), Yuma Proving Ground"
+      ],
+      "sources": [
+        {
+          "url": "https://www.swcs.mil",
+          "title": "USAJFKSWCS"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/John_F._Kennedy_Special_Warfare_Center_and_School",
+          "title": "USAJFKSWCS – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-sfuwo",
+      "name": "Special Forces Underwater Operations School",
+      "short_name": "SFUWO",
+      "type": "school",
+      "location": "Fleet Key West (Fleming Key), Floride",
+      "location_en": "Fleet Key West (Fleming Key), Florida",
+      "website": "",
+      "description": {
+        "fr": "École de plongée de combat des Special Forces (Combat Diver Qualification Course), rattachée à l'USAJFKSWCS.",
+        "en": "Special Forces combat diver school (Combat Diver Qualification Course), part of USAJFKSWCS."
+      },
+      "aliases": [
+        "Special Forces Underwater Operations School (USAJFKSWCS), Key West"
+      ],
+      "sources": [
+        {
+          "url": "https://www.swcs.mil",
+          "title": "USAJFKSWCS"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/John_F._Kennedy_Special_Warfare_Center_and_School",
+          "title": "USAJFKSWCS – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-jsomtc",
+      "name": "Joint Special Operations Medical Training Center",
+      "short_name": "JSOMTC",
+      "type": "training_center",
+      "location": "Fort Bragg, Caroline du Nord",
+      "location_en": "Fort Bragg, North Carolina",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation médicale interarmées des forces spéciales, géré par l'USAJFKSWCS : Special Operations Combat Medic Course et 18D (Special Forces Medical Sergeant).",
+        "en": "Joint SOF medical training centre run by USAJFKSWCS: Special Operations Combat Medic Course and 18D (Special Forces Medical Sergeant)."
+      },
+      "aliases": [
+        "Joint Special Operations Medical Training Center"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Operations_Combat_Medic",
+          "title": "Special Operations Combat Medic – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-t2com",
+      "name": "U.S. Army Transformation and Training Command",
+      "short_name": "T2COM",
+      "type": "command",
+      "location": "Austin, Texas (éléments à Fort Eustis, Virginie)",
+      "location_en": "Austin, Texas (elements at Fort Eustis, Virginia)",
+      "website": "",
+      "description": {
+        "fr": "Commandement de l'US Army issu en octobre 2025 de la fusion de TRADOC (inactivé le 26 septembre 2025) et de l'Army Futures Command ; responsable de la formation, des écoles et Centers of Excellence, de la doctrine et de la modernisation.",
+        "en": "U.S. Army command formed in October 2025 by merging TRADOC (inactivated on 26 September 2025) and Army Futures Command; responsible for training, schools and Centers of Excellence, doctrine and modernisation."
+      },
+      "aliases": [
+        "U.S. Army Training and Doctrine Command",
+        "TRADOC",
+        "Army Futures Command",
+        "AFC"
+      ],
+      "sources": [
+        {
+          "url": "https://www.ausa.org/news/army-stands-transformation-and-training-command",
+          "title": "Army Stands up Transformation and Training Command – AUSA"
+        },
+        {
+          "url": "https://www.stripes.com/branches/army/2025-09-26/army-tradoc-closes-merger-futures-command-19232892.html",
+          "title": "TRADOC closes ahead of merger – Stars and Stripes"
+        }
+      ],
+      "uncertain": {
+        "fr": "Site officiel non confirmé (domaine tradoc.army.mil non vérifiable) ; siège à Austin, transfert progressif.",
+        "en": "Official website not confirmed (the tradoc.army.mil domain could not be verified); headquartered in Austin, with a gradual move."
+      }
+    },
+    {
+      "key": "us-mcoe",
+      "name": "U.S. Army Maneuver Center of Excellence",
+      "short_name": "MCoE",
+      "type": "school",
+      "location": "Fort Benning, Géorgie",
+      "location_en": "Fort Benning, Georgia",
+      "website": "https://www.benning.army.mil",
+      "description": {
+        "fr": "Centre d'excellence de TRADOC regroupant l'école d'infanterie et l'école de l'arme blindée ; tutelle de l'Airborne and Ranger Training Brigade. Fort Benning s'est appelé Fort Moore de 2023 à 2025.",
+        "en": "TRADOC centre of excellence comprising the Infantry and Armor Schools; parent of the Airborne and Ranger Training Brigade. Fort Benning was named Fort Moore from 2023 to 2025."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.benning.army.mil",
+          "title": "Maneuver Center of Excellence"
+        }
+      ]
+    },
+    {
+      "key": "us-artb",
+      "name": "Airborne and Ranger Training Brigade",
+      "short_name": "ARTB",
+      "type": "school",
+      "location": "Fort Benning, Géorgie",
+      "location_en": "Fort Benning, Georgia",
+      "website": "",
+      "description": {
+        "fr": "Brigade de formation du Maneuver Center of Excellence conduisant le Ranger Course, le Basic Airborne Course, le Jumpmaster Course et le Pathfinder Course.",
+        "en": "Maneuver Center of Excellence training brigade running the Ranger Course, Basic Airborne Course, Jumpmaster Course and Pathfinder Course."
+      },
+      "aliases": [
+        "Airborne and Ranger Training Brigade"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Ranger_School",
+          "title": "Ranger School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-1-507th",
+      "name": "1st Battalion (Airborne), 507th Infantry Regiment",
+      "short_name": "1-507th PIR",
+      "type": "unit",
+      "location": "Fort Benning, Géorgie",
+      "location_en": "Fort Benning, Georgia",
+      "website": "",
+      "description": {
+        "fr": "Bataillon de l'Airborne and Ranger Training Brigade chargé du Basic Airborne Course, du Jumpmaster Course et du Pathfinder Course.",
+        "en": "Airborne and Ranger Training Brigade battalion responsible for the Basic Airborne Course, Jumpmaster Course and Pathfinder Course."
+      },
+      "aliases": [
+        "1st Battalion (Airborne), 507th Infantry Regiment – Airborne and Ranger Training Brigade"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/507th_Infantry_Regiment_(United_States)",
+          "title": "507th Infantry Regiment – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-75th-rr",
+      "name": "75th Ranger Regiment",
+      "short_name": "75th RR",
+      "type": "unit",
+      "location": "Fort Benning, Géorgie",
+      "location_en": "Fort Benning, Georgia",
+      "website": "",
+      "description": {
+        "fr": "Régiment d'infanterie légère d'opérations spéciales de l'USASOC ; conduit sa propre sélection (Ranger Assessment and Selection Program).",
+        "en": "USASOC special operations light infantry regiment; runs its own selection (Ranger Assessment and Selection Program)."
+      },
+      "aliases": [
+        "75th Ranger Regiment"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/75th_Ranger_Regiment",
+          "title": "75th Ranger Regiment – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-160th-soar",
+      "name": "160th Special Operations Aviation Regiment (Airborne)",
+      "short_name": "160th SOAR(A)",
+      "type": "unit",
+      "location": "Fort Campbell, Kentucky",
+      "location_en": "Fort Campbell, Kentucky",
+      "website": "",
+      "description": {
+        "fr": "Régiment d'aviation d'opérations spéciales de l'USASOC (« Night Stalkers »), assurant le transport héliporté et l'appui feu des forces spéciales.",
+        "en": "USASOC special operations aviation regiment ('Night Stalkers') providing helicopter lift and fire support to special operations forces."
+      },
+      "aliases": [
+        "160th Special Operations Aviation Regiment (Airborne)",
+        "Night Stalkers"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/160th_Special_Operations_Aviation_Regiment",
+          "title": "160th SOAR – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-soatb",
+      "name": "Special Operations Aviation Training Battalion",
+      "short_name": "SOATB",
+      "type": "school",
+      "location": "Fort Campbell, Kentucky",
+      "location_en": "Fort Campbell, Kentucky",
+      "website": "",
+      "description": {
+        "fr": "Bataillon de formation du 160th SOAR(A) conduisant la sélection et la qualification initiale des équipages (cours Green Platoon).",
+        "en": "160th SOAR(A) training battalion responsible for assessment and initial qualification of aircrews (Green Platoon course)."
+      },
+      "aliases": [
+        "Special Operations Aviation Training Battalion (160th SOAR(A))"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/160th_Special_Operations_Aviation_Regiment",
+          "title": "160th SOAR – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-usaace",
+      "name": "U.S. Army Aviation Center of Excellence",
+      "short_name": "USAACE",
+      "type": "school",
+      "location": "Fort Rucker, Alabama",
+      "location_en": "Fort Rucker, Alabama",
+      "website": "https://home.army.mil/rucker/",
+      "description": {
+        "fr": "Centre d'excellence de TRADOC pour l'aviation de l'Army : formation des pilotes d'hélicoptères et des opérateurs de drones (ces derniers à Fort Huachuca). Fort Rucker s'est appelé Fort Novosel de 2023 à 2025.",
+        "en": "TRADOC centre of excellence for Army aviation: training of helicopter pilots and UAS operators (the latter at Fort Huachuca). Fort Rucker was named Fort Novosel from 2023 to 2025."
+      },
+      "aliases": [
+        "U.S. Army Aviation Center of Excellence",
+        "U.S. Army Aviation Center of Excellence – UAS training (Fort Huachuca)"
+      ],
+      "sources": [
+        {
+          "url": "https://home.army.mil/rucker/",
+          "title": "Fort Rucker – USAACE"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Aviation_Center_of_Excellence",
+          "title": "USAACE – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Retour au nom Fort Rucker annoncé en juin 2025 ; vérifier l'adresse web définitive.",
+        "en": "Return to the Fort Rucker name announced in June 2025; check the definitive web address."
+      }
+    },
+    {
+      "key": "us-128th-avn-bde",
+      "name": "128th Aviation Brigade",
+      "short_name": "128th Avn Bde",
+      "type": "school",
+      "location": "Fort Eustis (Joint Base Langley-Eustis), Virginie",
+      "location_en": "Fort Eustis (Joint Base Langley-Eustis), Virginia",
+      "website": "",
+      "description": {
+        "fr": "Brigade de l'Aviation Center of Excellence constituant l'U.S. Army Aviation Logistics School, qui forme les mécaniciens et techniciens de maintenance aéronautique.",
+        "en": "Aviation Center of Excellence brigade forming the U.S. Army Aviation Logistics School, which trains aviation maintenance soldiers."
+      },
+      "aliases": [
+        "128th Aviation Brigade (U.S. Army Aviation Logistics School)",
+        "U.S. Army Aviation Logistics School",
+        "USAALS"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Aviation_Center_of_Excellence",
+          "title": "USAACE – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-usaicoe",
+      "name": "U.S. Army Intelligence Center of Excellence",
+      "short_name": "USAICoE",
+      "type": "school",
+      "location": "Fort Huachuca, Arizona",
+      "location_en": "Fort Huachuca, Arizona",
+      "website": "",
+      "description": {
+        "fr": "Centre d'excellence de TRADOC formant les spécialistes du renseignement militaire de l'Army (analystes, HUMINT, SIGINT, contre-renseignement).",
+        "en": "TRADOC centre of excellence training Army military intelligence specialists (analysts, HUMINT, SIGINT, counterintelligence)."
+      },
+      "aliases": [
+        "U.S. Army Intelligence Center of Excellence"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Intelligence_Center",
+          "title": "U.S. Army Intelligence Center – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-cyber-coe",
+      "name": "U.S. Army Cyber Center of Excellence",
+      "short_name": "CCoE",
+      "type": "school",
+      "location": "Fort Gordon, Géorgie",
+      "location_en": "Fort Gordon, Georgia",
+      "website": "https://cybercoe.army.mil",
+      "description": {
+        "fr": "Centre d'excellence de TRADOC regroupant les écoles Cyber, Signal et Electronic Warfare de l'Army. Fort Gordon s'est appelé Fort Eisenhower de 2023 à 2025.",
+        "en": "TRADOC centre of excellence comprising the Army Cyber, Signal and Electronic Warfare schools. Fort Gordon was named Fort Eisenhower from 2023 to 2025."
+      },
+      "aliases": [
+        "U.S. Army Cyber Center of Excellence"
+      ],
+      "sources": [
+        {
+          "url": "https://cybercoe.army.mil",
+          "title": "U.S. Army Cyber Center of Excellence"
+        }
+      ]
+    },
+    {
+      "key": "us-medcoe",
+      "name": "U.S. Army Medical Center of Excellence",
+      "short_name": "MEDCoE",
+      "type": "school",
+      "location": "Joint Base San Antonio-Fort Sam Houston, Texas",
+      "location_en": "Joint Base San Antonio-Fort Sam Houston, Texas",
+      "website": "https://medcoe.army.mil",
+      "description": {
+        "fr": "Centre d'excellence de l'Army pour la formation médicale (infirmiers de combat 68W, personnels de santé) et la doctrine du soutien santé.",
+        "en": "Army centre of excellence for medical training (68W combat medics, health care personnel) and medical support doctrine."
+      },
+      "aliases": [
+        "U.S. Army Medical Center of Excellence"
+      ],
+      "sources": [
+        {
+          "url": "https://medcoe.army.mil",
+          "title": "U.S. Army Medical Center of Excellence"
+        }
+      ]
+    },
+    {
+      "key": "us-usafas",
+      "name": "U.S. Army Field Artillery School",
+      "short_name": "USAFAS",
+      "type": "school",
+      "location": "Fort Sill, Oklahoma",
+      "location_en": "Fort Sill, Oklahoma",
+      "website": "",
+      "description": {
+        "fr": "École de l'artillerie de campagne de l'Army, au sein du Fires Center of Excellence ; forme notamment aux appuis feux et à l'observation (Joint Fires Observer).",
+        "en": "Army field artillery school within the Fires Center of Excellence; trains, among others, fire support and observation personnel (Joint Fires Observer)."
+      },
+      "aliases": [
+        "U.S. Army Field Artillery School"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Field_Artillery_School",
+          "title": "U.S. Army Field Artillery School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-usasma",
+      "name": "U.S. Army Sergeants Major Academy",
+      "short_name": "USASMA",
+      "type": "academy",
+      "location": "Fort Bliss, Texas",
+      "location_en": "Fort Bliss, Texas",
+      "website": "https://www.ncolcoe.army.mil",
+      "description": {
+        "fr": "Académie des sergents-majors de l'Army, au cœur du NCO Leadership Center of Excellence, responsable de la formation professionnelle des sous-officiers supérieurs.",
+        "en": "Army Sergeants Major Academy, core of the NCO Leadership Center of Excellence, responsible for senior NCO professional military education."
+      },
+      "aliases": [
+        "U.S. Army Sergeants Major Academy / NCO Leadership Center of Excellence",
+        "NCO Leadership Center of Excellence",
+        "NCOL CoE"
+      ],
+      "sources": [
+        {
+          "url": "https://www.ncolcoe.army.mil",
+          "title": "NCO Leadership Center of Excellence"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Sergeants_Major_Academy",
+          "title": "USASMA – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-cgsc",
+      "name": "U.S. Army Command and General Staff College",
+      "short_name": "CGSC",
+      "type": "academy",
+      "location": "Fort Leavenworth, Kansas",
+      "location_en": "Fort Leavenworth, Kansas",
+      "website": "",
+      "description": {
+        "fr": "École supérieure d'état-major de l'Army (Army University) formant les officiers de rang intermédiaire au commandement et à la planification.",
+        "en": "Army staff college (Army University) educating mid-grade officers in command and planning."
+      },
+      "aliases": [
+        "U.S. Army Command and General Staff College"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Command_and_General_Staff_College",
+          "title": "CGSC – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-usawc",
+      "name": "U.S. Army War College",
+      "short_name": "USAWC",
+      "type": "academy",
+      "location": "Carlisle Barracks, Pennsylvanie",
+      "location_en": "Carlisle Barracks, Pennsylvania",
+      "website": "https://www.armywarcollege.edu",
+      "description": {
+        "fr": "École de guerre de l'Army formant officiers supérieurs et civils au leadership stratégique.",
+        "en": "Army senior service college educating senior officers and civilians in strategic leadership."
+      },
+      "aliases": [
+        "U.S. Army War College"
+      ],
+      "sources": [
+        {
+          "url": "https://www.armywarcollege.edu",
+          "title": "U.S. Army War College"
+        }
+      ]
+    },
+    {
+      "key": "us-hrc",
+      "name": "U.S. Army Human Resources Command",
+      "short_name": "HRC",
+      "type": "command",
+      "location": "Fort Knox, Kentucky",
+      "location_en": "Fort Knox, Kentucky",
+      "website": "https://www.hrc.army.mil",
+      "description": {
+        "fr": "Commandement des ressources humaines de l'Army (gestion des carrières, affectations, sélections), associé au Command Assessment Program d'évaluation des futurs chefs de corps.",
+        "en": "Army human resources command (career management, assignments, selection boards), associated with the Command Assessment Program for prospective battalion and brigade commanders."
+      },
+      "aliases": [
+        "U.S. Army Human Resources Command – Command Assessment Program"
+      ],
+      "sources": [
+        {
+          "url": "https://www.hrc.army.mil",
+          "title": "U.S. Army Human Resources Command"
+        }
+      ],
+      "uncertain": {
+        "fr": "Le Command Assessment Program a été conçu par l'Army Talent Management Task Force ; son rattachement exact à HRC est à vérifier.",
+        "en": "The Command Assessment Program was designed by the Army Talent Management Task Force; its exact attachment to HRC should be verified."
+      }
+    },
+    {
+      "key": "us-dliflc",
+      "name": "Defense Language Institute Foreign Language Center",
+      "short_name": "DLIFLC",
+      "type": "school",
+      "location": "Presidio of Monterey, Californie",
+      "location_en": "Presidio of Monterey, California",
+      "website": "https://www.dliflc.edu",
+      "description": {
+        "fr": "Institut linguistique du département de la Défense formant les militaires aux langues étrangères et administrant les tests DLPT.",
+        "en": "Department of Defense language institute teaching foreign languages to service members and administering the DLPT tests."
+      },
+      "aliases": [
+        "Defense Language Institute Foreign Language Center",
+        "Defense Language Institute",
+        "DLI"
+      ],
+      "sources": [
+        {
+          "url": "https://www.dliflc.edu",
+          "title": "DLIFLC"
+        }
+      ]
+    },
+    {
+      "key": "us-ndu",
+      "name": "National Defense University",
+      "short_name": "NDU",
+      "type": "academy",
+      "location": "Fort McNair, Washington (D.C.)",
+      "location_en": "Fort Lesley J. McNair, Washington, D.C.",
+      "website": "https://www.ndu.edu",
+      "description": {
+        "fr": "Université interarmées du département de la Défense (National War College, Eisenhower School, etc.) relevant du chef d'état-major interarmées.",
+        "en": "Joint Department of Defense university (National War College, Eisenhower School, etc.) under the Chairman of the Joint Chiefs of Staff."
+      },
+      "aliases": [
+        "National Defense University"
+      ],
+      "sources": [
+        {
+          "url": "https://www.ndu.edu",
+          "title": "National Defense University"
+        }
+      ]
+    },
+    {
+      "key": "us-jsou",
+      "name": "Joint Special Operations University",
+      "short_name": "JSOU",
+      "type": "academy",
+      "location": "MacDill AFB, Tampa, Floride",
+      "location_en": "MacDill AFB, Tampa, Florida",
+      "website": "https://www.jsou.edu",
+      "description": {
+        "fr": "Université de l'USSOCOM dispensant l'éducation professionnelle militaire interarmées propre aux opérations spéciales.",
+        "en": "USSOCOM university delivering joint special operations professional military education."
+      },
+      "aliases": [
+        "Joint Special Operations University"
+      ],
+      "sources": [
+        {
+          "url": "https://www.jsou.edu",
+          "title": "Joint Special Operations University"
+        }
+      ]
+    },
+    {
+      "key": "us-jfs-esc",
+      "name": "Joint Fire Support Executive Steering Committee",
+      "short_name": "JFS ESC",
+      "type": "agency",
+      "location": "Washington (D.C.), États-Unis",
+      "location_en": "Washington, D.C., United States",
+      "website": "",
+      "description": {
+        "fr": "Comité interarmées du DoD qui administre les mémorandums d'accord (MOA) JTAC et JFO fixant les standards de qualification des contrôleurs aériens avancés.",
+        "en": "Joint DoD committee administering the JTAC and JFO memoranda of agreement (MOA) that set qualification standards for terminal attack controllers."
+      },
+      "aliases": [
+        "Joint Fire Support Executive Steering Committee (JTAC MOA)"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Joint_terminal_attack_controller",
+          "title": "Joint terminal attack controller – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Organe de coordination sans site public ; localisation indicative (Joint Staff).",
+        "en": "Coordinating body without a public website; location is indicative (Joint Staff)."
+      }
+    },
+    {
+      "key": "us-jts-dam-neck",
+      "name": "Joint Targeting School",
+      "short_name": "JTS",
+      "type": "school",
+      "location": "Dam Neck, Virginia Beach, Virginie",
+      "location_en": "Dam Neck, Virginia Beach, Virginia",
+      "website": "",
+      "description": {
+        "fr": "École interarmées du ciblage formant les personnels au processus de ciblage interarmées et à l'estimation des dommages collatéraux.",
+        "en": "Joint school training personnel in the joint targeting process and collateral damage estimation."
+      },
+      "aliases": [
+        "Joint Targeting School"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Naval_Air_Station_Oceana",
+          "title": "NAS Oceana / Dam Neck Annex – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Rattachement (Joint Staff J7) et site officiel à confirmer.",
+        "en": "Parent organisation (Joint Staff J7) and official website to be confirmed."
+      }
+    },
+    {
+      "key": "us-dha-jts",
+      "name": "Joint Trauma System",
+      "short_name": "DHA JTS",
+      "type": "agency",
+      "location": "Joint Base San Antonio-Fort Sam Houston, Texas",
+      "location_en": "Joint Base San Antonio-Fort Sam Houston, Texas",
+      "website": "https://jts.health.mil",
+      "description": {
+        "fr": "Organisme de la Defense Health Agency chargé des référentiels de soins traumatologiques ; héberge le Committee on Tactical Combat Casualty Care (CoTCCC) qui publie les lignes directrices TCCC.",
+        "en": "Defense Health Agency organisation responsible for trauma care guidelines; hosts the Committee on Tactical Combat Casualty Care (CoTCCC), which publishes the TCCC guidelines."
+      },
+      "aliases": [
+        "Defense Health Agency – Joint Trauma System (CoTCCC)",
+        "Committee on Tactical Combat Casualty Care",
+        "CoTCCC"
+      ],
+      "sources": [
+        {
+          "url": "https://jts.health.mil",
+          "title": "Joint Trauma System"
+        }
+      ]
+    },
+    {
+      "key": "us-metc",
+      "name": "Medical Education and Training Campus",
+      "short_name": "METC",
+      "type": "training_center",
+      "location": "Joint Base San Antonio-Fort Sam Houston, Texas",
+      "location_en": "Joint Base San Antonio-Fort Sam Houston, Texas",
+      "website": "https://www.metc.mil",
+      "description": {
+        "fr": "Campus interarmées de formation médicale enrôlée (Army, Navy, Air Force), rattaché à la Defense Health Agency.",
+        "en": "Joint enlisted medical training campus (Army, Navy, Air Force) under the Defense Health Agency."
+      },
+      "aliases": [
+        "Medical Education and Training Campus"
+      ],
+      "sources": [
+        {
+          "url": "https://www.metc.mil",
+          "title": "Medical Education and Training Campus"
+        }
+      ]
+    },
+    {
+      "key": "us-dcsa",
+      "name": "Defense Counterintelligence and Security Agency",
+      "short_name": "DCSA",
+      "type": "agency",
+      "location": "Quantico, Virginie",
+      "location_en": "Quantico, Virginia",
+      "website": "https://www.dcsa.mil",
+      "description": {
+        "fr": "Agence du DoD chargée des enquêtes d'habilitation de sécurité et de la sécurité industrielle ; forme via son Center for Development of Security Excellence (CDSE).",
+        "en": "DoD agency responsible for security clearance investigations and industrial security; trains through its Center for Development of Security Excellence (CDSE)."
+      },
+      "aliases": [
+        "Defense Counterintelligence and Security Agency",
+        "Defense Security Service",
+        "DSS"
+      ],
+      "sources": [
+        {
+          "url": "https://www.dcsa.mil",
+          "title": "DCSA"
+        }
+      ]
+    },
+    {
+      "key": "us-nremt",
+      "name": "National Registry of Emergency Medical Technicians",
+      "short_name": "NREMT",
+      "type": "agency",
+      "location": "Columbus, Ohio",
+      "location_en": "Columbus, Ohio",
+      "website": "https://www.nremt.org",
+      "description": {
+        "fr": "Organisme civil national de certification des secouristes et techniciens médicaux d'urgence (EMR, EMT, Paramedic), dont les certifications sont exigées pour de nombreux personnels médicaux militaires.",
+        "en": "Civilian national certification body for emergency medical responders and technicians (EMR, EMT, Paramedic), whose certifications are required for many military medical personnel."
+      },
+      "aliases": [
+        "National Registry of Emergency Medical Technicians",
+        "National Registry"
+      ],
+      "sources": [
+        {
+          "url": "https://www.nremt.org",
+          "title": "National Registry of EMTs"
+        }
+      ]
+    },
+    {
+      "key": "us-navspecwarcom",
+      "name": "Naval Special Warfare Command",
+      "short_name": "NAVSPECWARCOM",
+      "type": "command",
+      "location": "Naval Amphibious Base Coronado, Californie",
+      "location_en": "Naval Amphibious Base Coronado, California",
+      "website": "https://www.nsw.navy.mil",
+      "description": {
+        "fr": "Composante navale de l'USSOCOM, qui commande les SEAL et les Special Warfare Combatant-craft Crewmen.",
+        "en": "Naval component of USSOCOM, commanding the SEALs and Special Warfare Combatant-craft Crewmen."
+      },
+      "aliases": [
+        "Naval Special Warfare Command"
+      ],
+      "sources": [
+        {
+          "url": "https://www.nsw.navy.mil",
+          "title": "Naval Special Warfare Command"
+        }
+      ]
+    },
+    {
+      "key": "us-navspecwarcen",
+      "name": "Naval Special Warfare Center",
+      "short_name": "NAVSPECWARCEN",
+      "type": "school",
+      "location": "Naval Amphibious Base Coronado, Californie",
+      "location_en": "Naval Amphibious Base Coronado, California",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation du Naval Special Warfare Command : sélection BUD/S, SEAL Qualification Training et formation SWCC.",
+        "en": "Naval Special Warfare Command training centre: BUD/S selection, SEAL Qualification Training and SWCC training."
+      },
+      "aliases": [
+        "Naval Special Warfare Center"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Naval_Special_Warfare_Center",
+          "title": "Naval Special Warfare Center – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-nstc",
+      "name": "Naval Service Training Command",
+      "short_name": "NSTC",
+      "type": "command",
+      "location": "Naval Station Great Lakes, Illinois",
+      "location_en": "Naval Station Great Lakes, Illinois",
+      "website": "",
+      "description": {
+        "fr": "Commandement de la Navy chargé de la formation initiale des officiers et des marins (Recruit Training Command, NROTC, Officer Training Command).",
+        "en": "Navy command responsible for initial officer and enlisted training (Recruit Training Command, NROTC, Officer Training Command)."
+      },
+      "aliases": [
+        "Naval Service Training Command"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Naval_Service_Training_Command",
+          "title": "Naval Service Training Command – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-ndstc",
+      "name": "Naval Diving and Salvage Training Center",
+      "short_name": "NDSTC",
+      "type": "school",
+      "location": "Naval Support Activity Panama City, Floride",
+      "location_en": "Naval Support Activity Panama City, Florida",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation interarmées à la plongée militaire et au sauvetage, formant les plongeurs de toutes les armées.",
+        "en": "Joint military diving and salvage training centre that trains divers from all services."
+      },
+      "aliases": [
+        "Naval Diving and Salvage Training Center"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Naval_Diving_and_Salvage_Training_Center",
+          "title": "NDSTC – Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Center_for_Explosive_Ordnance_Disposal_%26_Diving",
+          "title": "Center for EOD & Diving – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-navscoleod",
+      "name": "Naval School Explosive Ordnance Disposal",
+      "short_name": "NAVSCOLEOD",
+      "type": "school",
+      "location": "Eglin AFB, Floride",
+      "location_en": "Eglin AFB, Florida",
+      "website": "",
+      "description": {
+        "fr": "École interarmées de neutralisation des explosifs (EOD), gérée par la Navy (Center for EOD and Diving) et armée par les quatre armées, formant les techniciens EOD de base et avancés.",
+        "en": "Navy-managed joint explosive ordnance disposal school (Center for EOD and Diving), staffed by all four services, providing basic and advanced EOD training."
+      },
+      "aliases": [
+        "Naval School Explosive Ordnance Disposal"
+      ],
+      "sources": [
+        {
+          "url": "https://www.eglin.af.mil/About-Us/Fact-Sheets/Display/Article/390972/naval-school-explosive-ordnance-disposal",
+          "title": "Naval School Explosive Ordnance Disposal – Eglin AFB fact sheet"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Center_for_Explosive_Ordnance_Disposal_%26_Diving",
+          "title": "Center for EOD & Diving – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-nmitc",
+      "name": "Navy and Marine Corps Intelligence Training Center",
+      "short_name": "NMITC",
+      "type": "school",
+      "location": "Dam Neck, Virginia Beach, Virginie",
+      "location_en": "Dam Neck, Virginia Beach, Virginia",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation au renseignement de la Navy et du Marine Corps (analystes, officiers de renseignement).",
+        "en": "Navy and Marine Corps intelligence training centre (analysts, intelligence officers)."
+      },
+      "aliases": [
+        "Navy and Marine Corps Intelligence Training Center"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Training_Support_Center_Hampton_Roads",
+          "title": "Training Support Center Hampton Roads – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-nwc",
+      "name": "U.S. Naval War College",
+      "short_name": "NWC",
+      "type": "academy",
+      "location": "Newport, Rhode Island",
+      "location_en": "Newport, Rhode Island",
+      "website": "https://usnwc.edu",
+      "description": {
+        "fr": "École de guerre de la Navy formant les officiers supérieurs à la stratégie et aux opérations navales et interarmées.",
+        "en": "Navy senior service college educating officers in strategy and naval and joint operations."
+      },
+      "aliases": [
+        "U.S. Naval War College"
+      ],
+      "sources": [
+        {
+          "url": "https://usnwc.edu",
+          "title": "U.S. Naval War College"
+        }
+      ]
+    },
+    {
+      "key": "us-marsoc",
+      "name": "U.S. Marine Corps Forces, Special Operations Command",
+      "short_name": "MARSOC",
+      "type": "command",
+      "location": "Camp Lejeune, Caroline du Nord",
+      "location_en": "Camp Lejeune, North Carolina",
+      "website": "https://www.marsoc.marines.mil",
+      "description": {
+        "fr": "Composante Marine Corps de l'USSOCOM, regroupant les Marine Raiders.",
+        "en": "Marine Corps component of USSOCOM, comprising the Marine Raiders."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://www.marsoc.marines.mil/About",
+          "title": "MARSOC – About"
+        }
+      ]
+    },
+    {
+      "key": "us-mrtc",
+      "name": "Marine Raider Training Center",
+      "short_name": "MRTC",
+      "type": "school",
+      "location": "Camp Lejeune (Stone Bay), Caroline du Nord",
+      "location_en": "Camp Lejeune (Stone Bay), North Carolina",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation du MARSOC chargé de l'évaluation, de la sélection et de la formation des Marine Raiders (Individual Training Course). Il a remplacé en juin 2017 la Marine Special Operations School (MSOS).",
+        "en": "MARSOC training centre responsible for screening, assessment, selection and training of Marine Raiders (Individual Training Course). It replaced the Marine Special Operations School (MSOS) in June 2017."
+      },
+      "aliases": [
+        "Marine Raider Training Center",
+        "Marine Raider Training Center (MARSOC)",
+        "Marine Special Operations School",
+        "MSOS",
+        "MCSOS"
+      ],
+      "sources": [
+        {
+          "url": "https://www.marsoc.marines.mil/About",
+          "title": "MARSOC – About"
+        },
+        {
+          "url": "https://www.marsoc.marines.mil/COMMSTRAT/News/Article/Article/1226601/a-legacy-inherited-marine-raider-training-center-reactivates",
+          "title": "A Legacy Inherited: Marine Raider Training Center Reactivates"
+        }
+      ]
+    },
+    {
+      "key": "us-mcces",
+      "name": "Marine Corps Communication-Electronics School",
+      "short_name": "MCCES",
+      "type": "school",
+      "location": "Marine Corps Air Ground Combat Center Twentynine Palms, Californie",
+      "location_en": "Marine Corps Air Ground Combat Center Twentynine Palms, California",
+      "website": "",
+      "description": {
+        "fr": "École du Marine Corps formant aux transmissions, à l'électronique et au commandement-contrôle, dont des cours de contrôle aérien et d'appui feu du Marine Corps.",
+        "en": "Marine Corps school for communications, electronics and command and control, including Marine air control and fire support courses."
+      },
+      "aliases": [
+        "Marine Corps Communication-Electronics School"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Communication_Electronics_School",
+          "title": "MCCES – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-fmtb",
+      "name": "Field Medical Training Battalion",
+      "short_name": "FMTB",
+      "type": "school",
+      "location": "Camp Lejeune (East), Caroline du Nord / Camp Pendleton (West), Californie",
+      "location_en": "Camp Lejeune (East), North Carolina / Camp Pendleton (West), California",
+      "website": "",
+      "description": {
+        "fr": "Bataillons de la Navy formant les infirmiers (Hospital Corpsmen) au soutien santé de terrain des unités du Marine Corps (Field Medical Service Technician).",
+        "en": "Navy battalions training Hospital Corpsmen for field medical support of Marine Corps units (Field Medical Service Technician)."
+      },
+      "aliases": [
+        "Field Medical Training Battalion (East / West)",
+        "FMTB-East",
+        "FMTB-West"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Hospital_corpsman",
+          "title": "Hospital corpsman – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Deux bataillons distincts (Est/Ouest) regroupés en une entrée ; site officiel non confirmé.",
+        "en": "Two separate battalions (East/West) grouped as one entry; official website not confirmed."
+      }
+    },
+    {
+      "key": "us-aetc",
+      "name": "Air Education and Training Command",
+      "short_name": "AETC",
+      "type": "command",
+      "location": "Joint Base San Antonio-Randolph, Texas",
+      "location_en": "Joint Base San Antonio-Randolph, Texas",
+      "website": "https://www.aetc.af.mil",
+      "description": {
+        "fr": "Commandement majeur de l'US Air Force chargé du recrutement, de la formation et de l'éducation des aviateurs.",
+        "en": "U.S. Air Force major command responsible for recruiting, training and educating Airmen."
+      },
+      "aliases": [
+        "Air Education and Training Command"
+      ],
+      "sources": [
+        {
+          "url": "https://www.aetc.af.mil",
+          "title": "Air Education and Training Command"
+        }
+      ]
+    },
+    {
+      "key": "us-737-trg",
+      "name": "737th Training Group",
+      "short_name": "737 TRG",
+      "type": "unit",
+      "location": "Joint Base San Antonio-Lackland, Texas",
+      "location_en": "Joint Base San Antonio-Lackland, Texas",
+      "website": "",
+      "description": {
+        "fr": "Groupe de formation de l'AETC (37th Training Wing) conduisant la formation militaire initiale (Basic Military Training) de l'Air Force et de la Space Force.",
+        "en": "AETC training group (37th Training Wing) conducting Air Force and Space Force Basic Military Training."
+      },
+      "aliases": [
+        "737th Training Group"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Air_Force_Basic_Military_Training",
+          "title": "USAF Basic Military Training – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-swtw",
+      "name": "Special Warfare Training Wing",
+      "short_name": "SWTW",
+      "type": "unit",
+      "location": "Joint Base San Antonio-Chapman Training Annex, Texas",
+      "location_en": "Joint Base San Antonio-Chapman Training Annex, Texas",
+      "website": "",
+      "description": {
+        "fr": "Escadre de l'AETC chargée de la sélection et de la formation des aviateurs Special Warfare (Pararescue, Combat Control, Special Reconnaissance, TACP).",
+        "en": "AETC wing responsible for selecting and training Air Force Special Warfare Airmen (Pararescue, Combat Control, Special Reconnaissance, TACP)."
+      },
+      "aliases": [
+        "Air Force Special Warfare Training Wing",
+        "Special Warfare Training Wing"
+      ],
+      "sources": [
+        {
+          "url": "https://www.jbsa.mil/News/News/Tag/124913/swtw/",
+          "title": "JBSA News – Special Warfare Training Wing"
+        },
+        {
+          "url": "https://www.halldale.com/articles/15124-us-air-force-activates-special-warfare-training-wing",
+          "title": "US Air Force activates Special Warfare Training Wing – Halldale"
+        }
+      ]
+    },
+    {
+      "key": "us-351-swts",
+      "name": "351st Special Warfare Training Squadron",
+      "short_name": "351st SWTS",
+      "type": "unit",
+      "location": "Kirtland AFB, Nouveau-Mexique",
+      "location_en": "Kirtland AFB, New Mexico",
+      "website": "",
+      "description": {
+        "fr": "Escadron de la Special Warfare Training Wing assurant la formation avancée des Pararescuemen et des Combat Rescue Officers (Pararescue Apprentice Course).",
+        "en": "Special Warfare Training Wing squadron delivering advanced training for Pararescuemen and Combat Rescue Officers (Pararescue Apprentice Course)."
+      },
+      "aliases": [
+        "351st Special Warfare Training Squadron"
+      ],
+      "sources": [
+        {
+          "url": "https://www.jbsa.mil/News/News/Tag/124913/swtw/",
+          "title": "JBSA News – Special Warfare Training Wing"
+        }
+      ],
+      "uncertain": {
+        "fr": "Localisation (Kirtland AFB) à confirmer.",
+        "en": "Location (Kirtland AFB) to be confirmed."
+      }
+    },
+    {
+      "key": "us-336-trg",
+      "name": "336th Training Group",
+      "short_name": "336 TRG",
+      "type": "school",
+      "location": "Fairchild AFB, Washington",
+      "location_en": "Fairchild AFB, Washington",
+      "website": "",
+      "description": {
+        "fr": "Groupe de formation abritant l'U.S. Air Force Survival School : survie, évasion, résistance et fuite (SERE) des équipages et des spécialistes SERE.",
+        "en": "Training group hosting the U.S. Air Force Survival School: survival, evasion, resistance and escape (SERE) training for aircrew and SERE specialists."
+      },
+      "aliases": [
+        "336th Training Group – U.S. Air Force Survival School",
+        "U.S. Air Force Survival School"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/336th_Training_Group",
+          "title": "336th Training Group – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-usafws",
+      "name": "U.S. Air Force Weapons School",
+      "short_name": "USAFWS",
+      "type": "school",
+      "location": "Nellis AFB, Nevada",
+      "location_en": "Nellis AFB, Nevada",
+      "website": "",
+      "description": {
+        "fr": "École de l'US Air Force Warfare Center formant les instructeurs tactiques experts (Weapons Officers) sur l'ensemble des systèmes d'armes de l'Air Force.",
+        "en": "U.S. Air Force Warfare Center school producing expert tactical instructors (Weapons Officers) across Air Force weapon systems."
+      },
+      "aliases": [],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Air_Force_Weapons_School",
+          "title": "USAF Weapons School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-6-cts",
+      "name": "6th Combat Training Squadron",
+      "short_name": "6 CTS",
+      "type": "unit",
+      "location": "Nellis AFB, Nevada",
+      "location_en": "Nellis AFB, Nevada",
+      "website": "",
+      "description": {
+        "fr": "Escadron de formation de l'US Air Force à Nellis AFB chargé de la qualification et du maintien en condition des contrôleurs JTAC (centre de simulation JTAC).",
+        "en": "U.S. Air Force training squadron at Nellis AFB responsible for JTAC qualification and currency training (JTAC simulation facility)."
+      },
+      "aliases": [
+        "6th Combat Training Squadron"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/List_of_United_States_Air_Force_training_squadrons",
+          "title": "List of USAF training squadrons – Wikipedia"
+        },
+        {
+          "url": "https://www.nellis.af.mil/Nellis-News/Tag/124776/6th-cts/",
+          "title": "Nellis AFB – 6th CTS news"
+        }
+      ],
+      "uncertain": {
+        "fr": "Rattachement exact (Air Ground Operations School / 57th Wing) à confirmer.",
+        "en": "Exact parent organisation (Air Ground Operations School / 57th Wing) to be confirmed."
+      }
+    },
+    {
+      "key": "us-afsoc",
+      "name": "Air Force Special Operations Command",
+      "short_name": "AFSOC",
+      "type": "command",
+      "location": "Hurlburt Field, Floride",
+      "location_en": "Hurlburt Field, Florida",
+      "website": "https://www.afsoc.af.mil",
+      "description": {
+        "fr": "Composante Air Force de l'USSOCOM, mettant en œuvre l'aviation d'opérations spéciales et les unités de Special Tactics.",
+        "en": "Air Force component of USSOCOM, operating special operations aviation and Special Tactics units."
+      },
+      "aliases": [
+        "Air Force Special Operations Command"
+      ],
+      "sources": [
+        {
+          "url": "https://www.afsoc.af.mil",
+          "title": "Air Force Special Operations Command"
+        }
+      ]
+    },
+    {
+      "key": "us-stts",
+      "name": "Special Tactics Training Squadron",
+      "short_name": "STTS",
+      "type": "unit",
+      "location": "Hurlburt Field, Floride",
+      "location_en": "Hurlburt Field, Florida",
+      "website": "",
+      "description": {
+        "fr": "Escadron de l'AFSOC (24th Special Operations Wing) assurant la formation avancée des opérateurs Special Tactics avant leur affectation opérationnelle.",
+        "en": "AFSOC squadron (24th Special Operations Wing) providing advanced training for Special Tactics operators before operational assignment."
+      },
+      "aliases": [
+        "Special Tactics Training Squadron"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/24th_Special_Operations_Wing",
+          "title": "24th Special Operations Wing – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-58-sow",
+      "name": "58th Special Operations Wing",
+      "short_name": "58 SOW",
+      "type": "unit",
+      "location": "Kirtland AFB, Nouveau-Mexique",
+      "location_en": "Kirtland AFB, New Mexico",
+      "website": "",
+      "description": {
+        "fr": "Escadre de l'AETC assurant la formation des équipages d'hélicoptères, de convertibles CV-22 et d'avions HC-130 des missions spéciales et de sauvetage au combat.",
+        "en": "AETC wing training aircrews for special operations and combat rescue helicopters, CV-22 tiltrotors and HC-130 aircraft."
+      },
+      "aliases": [
+        "58th Special Operations Wing"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/58th_Special_Operations_Wing",
+          "title": "58th Special Operations Wing – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-371-socts",
+      "name": "371st Special Operations Combat Training Squadron",
+      "short_name": "371 SOCTS",
+      "type": "unit",
+      "location": "Hurlburt Field, Floride",
+      "location_en": "Hurlburt Field, Florida",
+      "website": "",
+      "description": {
+        "fr": "Unité de formation (Formal Training Unit) de la 492nd Special Operations Wing (AFSOC) dispensant la formation au combat spécialisée des forces d'opérations spéciales de l'Air Force (savoir-faire de terrain, qualification de mission, renseignement).",
+        "en": "Formal Training Unit of the 492nd Special Operations Wing (AFSOC) delivering specialised combat training for Air Force special operations forces (field skills, mission qualification, intelligence)."
+      },
+      "aliases": [
+        "371st Special Operations Combat Training Squadron"
+      ],
+      "sources": [
+        {
+          "url": "https://www.afsoc.af.mil/About-Us/Fact-Sheets/Display/Article/4053577/371st-special-operations-combat-training-squadron",
+          "title": "371st SOCTS – AFSOC fact sheet"
+        },
+        {
+          "url": "https://www.dafhistory.af.mil/About-Us/Fact-Sheets/Display/Article/432542/371-special-operations-combat-training-squadron-afsoc",
+          "title": "371 SOCTS – DAF Historical Support Division"
+        }
+      ]
+    },
+    {
+      "key": "us-afms",
+      "name": "Air Force Medical Service",
+      "short_name": "AFMS",
+      "type": "agency",
+      "location": "Defense Health Headquarters, Falls Church, Virginie",
+      "location_en": "Defense Health Headquarters, Falls Church, Virginia",
+      "website": "https://www.airforcemedicine.af.mil",
+      "description": {
+        "fr": "Service de santé de l'US Air Force et de la Space Force, placé sous l'autorité du Surgeon General de l'Air Force.",
+        "en": "Medical service of the U.S. Air Force and Space Force, under the Air Force Surgeon General."
+      },
+      "aliases": [
+        "Air Force Medical Service"
+      ],
+      "sources": [
+        {
+          "url": "https://www.airforcemedicine.af.mil",
+          "title": "Air Force Medical Service"
+        }
+      ]
+    },
+    {
+      "key": "us-holm-center",
+      "name": "Jeanne M. Holm Center for Officer Accessions and Citizen Development",
+      "short_name": "Holm Center",
+      "type": "school",
+      "location": "Maxwell AFB, Alabama",
+      "location_en": "Maxwell AFB, Alabama",
+      "website": "",
+      "description": {
+        "fr": "Centre de l'Air University chargé du recrutement et de la formation initiale des officiers (Officer Training School, AFROTC) et des programmes JROTC et Civil Air Patrol.",
+        "en": "Air University centre responsible for officer accession and initial training (Officer Training School, AFROTC) and the JROTC and Civil Air Patrol programmes."
+      },
+      "aliases": [
+        "Air University – Jeanne M. Holm Center for Officer Accessions and Citizen Development"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Air_Force_Reserve_Officer_Training_Corps",
+          "title": "Air Force ROTC – Wikipedia"
+        }
+      ]
+    }
+  ]
+}
