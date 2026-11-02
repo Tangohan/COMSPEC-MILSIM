@@ -1,3 +1,17 @@
+[h1]COMSPEC ATAK — Mise à jour 2.9.40.AG - Denver[/h1]
+[b]Publication : 02/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 2.9.40, quittez Arma 3 complètement, puis relancez. Rappel : la 2.9.39 a apporté SUR MON TÉLÉPHONE (QR code), les briefs air aux pilotes et le rôle affiché (détail ci-dessous).
+[/quote]
+
+[h2]Corrections[/h2]
+[list]
+[*] Carte : les marqueurs ont exactement la couleur choisie (rouge vif comme dans la fiche), avec un léger contour pour rester lisibles sur fond sombre ou satellite ; seuls le noir et le bleu foncé s'éclaircissent sur carte sombre.
+[*] Carte : après une action du menu du clic droit (Zones, Nommer les axes, Zone depuis le clic…), plus aucun clic ne passait et le tracé dans l'app Zones devenait impossible. Corrigé.
+[*] En ouvrant une app, la page précédente (Athena, Profil…) pouvait rester dessinée par-dessous. Corrigé.
+[*] Quitter l'app Zones abandonne le tracé en cours.
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 2.9.39.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]

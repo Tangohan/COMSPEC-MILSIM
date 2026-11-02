@@ -19,12 +19,22 @@ garde les couleurs brutes et n'y est pour rien.
 `lift` éclaircit en gardant la teinte (mélange vers le blanc : bleu → bleu clair) ; seuls le noir et les gris très foncés
 deviennent gris clair.
 
+## Suite 2.9.40 : couleurs délavées
+Retour en 2.9.39 : marqueur « TEST » rouge, icône rouge vif dans sa fiche mais rose / gris pâle sur la carte. Le
+correctif 2.9.38 modifiait encore la couleur (mélange vers le blanc des couleurs sombres) : il délavait les couleurs au
+lieu de les rendre lisibles. Correction à la racine : l'icône est dessinée avec sa couleur exacte, alpha 1 (la même que
+la fiche), et un halo (même icône 30 % plus grande, noir 0,75, ou blanc 0,7 sous une couleur sombre) assure la
+lisibilité sur fond sombre ou satellite. Seules les couleurs vraiment trop sombres passent à leur version vive sur carte
+sombre, par une table par classe (`ColorBlack` -> gris clair, `ColorBlue` -> #2F6BFF, `ColorWEST`, `ColorCIV`,
+`ColorBrown`). Halo calculé à l'entrée du cache des marqueurs (rien de plus par image qu'un drawIcon). Le mode nuit
+n'assombrit pas les marqueurs (palette seule) : rien à garder. Étiquettes inchangées (`liftLbl`).
+
 ## Fichiers touchés
-`functions/map/fn_mapColors.sqf`
+`functions/map/fn_mapColors.sqf` ; 2.9.40 : aussi `fn_mapGameMarkers.sqf`, `fn_mapOnDraw.sqf`
 
 ## Vérification
 En jeu, fond SOMBRE puis NUIT : marqueurs bleu, rouge, vert, noir posés et modifiés (MODIFIER → couleur) : bleu visible en
 bleu clair, noir en gris clair ; marqueur d'un autre joueur et d'Athena idem.
 
 ## Statut
-corrigé à vérifier en jeu
+corrigé à vérifier en jeu (2.9.40 : rouge, bleu, noir, blanc, jaune sur TOPO, SOMBRE, NUIT, satellite)
