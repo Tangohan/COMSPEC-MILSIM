@@ -51878,4 +51878,5 @@ return [
     '%1 qualification(s) importée(s) du catalogue. Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.' => '%1 qualification(s) imported from the catalogue. In-game qualifications with no real-world value: now set how they are obtained.',
     'Emploi créé, %1 qualification(s) du catalogue ajoutée(s) à ses prérequis. Aucun membre ni droit d’accès n’a été modifié.' => 'Job created, %1 catalogue qualification(s) added to its prerequisites. No member or access right was changed.',
     'Emploi enregistré, %1 qualification(s) du catalogue ajoutée(s) à ses prérequis. Les affectations et les droits restent indépendants.' => 'Job saved, %1 catalogue qualification(s) added to its prerequisites. Assignments and rights remain independent.',
+    'Formations pour bien démarrer' => 'Courses to get started',
 ];
