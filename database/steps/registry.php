@@ -37,4 +37,5 @@ return [
     ['id' => 'org_low_member_reminders', 'label' => 'Communautés à un ou deux membres : rappels aux responsables et liste « Organisations à supprimer »', 'group' => 'schema', 'file' => '3310_org_low_member_reminders.php', 'rerun' => true],
     ['id' => 'tenant_generated_labels', 'label' => 'Libellés des unités et postes générés : personnalisation par communauté et par langue', 'group' => 'schema', 'file' => '3295_tenant_generated_labels.php', 'rerun' => true],
     ['id' => 'unit_assignment_repair', 'label' => 'Affectations : réparation des membres affectés sur leur fiche mais absents des effectifs (double envoi du formulaire)', 'group' => 'schema', 'file' => '3345_unit_assignment_repair.php', 'rerun' => true],
+    ['id' => 'advancement_proposal_decisions', 'label' => 'Avancement : suivi des propositions automatiques des campagnes (retenues, écartées avec motif)', 'group' => 'schema', 'file' => '3385_advancement_proposal_decisions.php', 'rerun' => true],
 ];
