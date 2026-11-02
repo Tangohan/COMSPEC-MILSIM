@@ -28,6 +28,11 @@ if (
     && { [_vehicle] call comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit }
 ) exitWith {false};
 
+// Un seul poste par véhicule : son chef de bord s'il est un joueur relié à Athena (avant, chaque joueur à bord
+// calculait et envoyait le même véhicule).
+private _cmdr = effectiveCommander _vehicle;
+if (isPlayer _cmdr && {_cmdr isNotEqualTo player} && {_cmdr getVariable ["COMSPEC_AtakReporterLinked", false]}) exitWith {false};
+
 // Debounce / grâce REAPP (évite flood extension pendant spike ACE+MRH)
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {false};
 private _lastPost = _vehicle getVariable ["COMSPEC_VehTrackLastAt", -1e9];
@@ -167,9 +172,14 @@ if (!isNull _group) then {
 private _jsonString = [_vehicleData] call comspec_overwatch_connect_fnc_hashMapToJson;
 // Envoi hors du thread de jeu (spawn + extAwait) : appelé depuis un PFH toutes les ~3 s en véhicule,
 // un callExtension synchrone figeait le jeu. Aucun appelant n'utilise le retour.
-[_jsonString] spawn {
-    params ["_json"];
-    ["COMSPECExtension", "UpdateVehicleTracking", [_json]] call comspec_overwatch_connect_fnc_extAwait;
+// Signature : même contenu qu'au dernier envoi (véhicule à l'arrêt) → renvoyé seulement toutes les 30 s.
+private _sig = _vehicle getVariable ["COMSPEC_VehTrackSig", ["", -1e9]];
+if (_jsonString isNotEqualTo (_sig select 0) || {(diag_tickTime - (_sig select 1)) >= 30}) then {
+    _vehicle setVariable ["COMSPEC_VehTrackSig", [_jsonString, diag_tickTime], false];
+    [_jsonString] spawn {
+        params ["_json"];
+        ["COMSPECExtension", "UpdateVehicleTracking", [_json]] call comspec_overwatch_connect_fnc_extAwait;
+    };
 };
 
 // Vérifier alertes critiques (fuel/ammo)
