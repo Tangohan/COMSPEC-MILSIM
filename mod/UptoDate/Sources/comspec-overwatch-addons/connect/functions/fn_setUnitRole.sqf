@@ -1,5 +1,6 @@
 /*
-    Enregistre le rôle tactique du joueur local (mission + profil).
+    Rôle personnalisé du joueur local (ancien réglage web / Overwatch). Même stockage que « Rôle affiché » de l'app
+    Profil de l'ATAK natif : texte non vide = rôle personnalisé, vide = retour à la fonction de la communauté.
     Params: [_role, _persistProfile]
 */
 params [
@@ -10,16 +11,11 @@ params [
 if (!hasInterface) exitWith { false };
 
 _role = trim _role;
-if ((count _role) > 80) then { _role = _role select [0, 80]; };
+if ((count _role) > 40) then { _role = _role select [0, 40]; };
 
-missionNamespace setVariable ["COMSPEC_Role", _role, false];
-player setVariable ["COMSPEC_Role", _role, true];
-
-// Écriture disque seulement si le rôle du profil change (saveProfileNamespace est coûteux).
-if (_persistProfile && {(profileNamespace getVariable ["COMSPEC_Role", ""]) isNotEqualTo _role}) then {
-    profileNamespace setVariable ["COMSPEC_Role", _role];
-    [] call comspec_overwatch_connect_fnc_saveProfile;
-};
+profileNamespace setVariable ["COMSPEC_ATAK_RoleMode", ["custom", "athena"] select (_role isEqualTo "")];
+profileNamespace setVariable ["COMSPEC_ATAK_RoleCustom", _role];
+if (_persistProfile) then { [] call comspec_overwatch_connect_fnc_saveProfile; };
 
 missionNamespace setVariable ["COMSPEC_lastRole", "", false]; // force renvoi position
 true

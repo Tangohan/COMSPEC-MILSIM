@@ -15,6 +15,7 @@
       "ack" id : accusé de réception à l'auteur  "rcpt" [id, camp, uid, nom, LU|ACK, heure] : accusé reçu (le mien)
       "map" id : carte sur le C.R.   "del" id : le retire de ma liste   "web" id : le renvoie à Athena
       "dup" id : nouvelle fiche reprenant ce C.R.  "orderAck" id : accuse réception d'un ordre du commandement (app Tâches)
+      "mobile" avis : fiche remplie sur le vrai téléphone (« Sur mon téléphone », avis mobile_report), envoyée comme ici
     État : uiNamespace COMSPEC_ATAK_RepUi (onglet, type, valeurs, propositions, lignes en défaut, C.R. déplié, photo)
            missionNamespace COMSPEC_ATAK_Reports (id → C.R., les miens et ceux reçus)
            missionNamespace COMSPEC_ATAK_RepDrafts (code → [valeurs, heure, propositions])
@@ -36,6 +37,8 @@ private _def = { params ["_code"]; private _i = _types findIf { (_x select 0) is
 private _textKinds = ["edit", "memo", "num", "dtg", "grid", "combo"];
 // Garde la saisie (textes, listes) avant de redessiner : les boutons sont déjà dans _vals.
 private _save = {
+    // Fiche venue du vrai téléphone (« mobile ») : rien à relire dans les champs de la page.
+    if (_ui getOrDefault ["mobile", false]) exitWith {};
     private _t = [_ui getOrDefault ["type", ""]] call _def;
     if ((count _t) isEqualTo 0 || {(_t select 3) isEqualTo ""}) exitWith {};
     {
@@ -326,6 +329,49 @@ switch (_act) do {
         _ui set ["type", ""];
         _ui set ["tab", "SENT"];
         _ui set ["open", _r get "id"];
+        call _rerender;
+    };
+    case "mobile": {
+        // « Sur mon téléphone » (2.9.39) : fiche remplie sur le vrai téléphone (page Athena /m/cr), reçue par l'avis
+        // « mobile_report » (fn_adminNotices) : ["MCR1", code, [[clé, valeur]...]], lu par parseSimpleArray (aucun code
+        // exécuté). Envoyée par « send » comme une fiche remplie ici ; la fiche en cours du joueur est gardée telle quelle.
+        if !(_arg isEqualType "") exitWith {};
+        if ((_arg select [0, 8]) isNotEqualTo "[""MCR1""") exitWith {};
+        private _a = parseSimpleArray _arg;
+        if !(_a isEqualType []) exitWith {};
+        _a params ["", ["_code", ""], ["_pairs", []]];
+        private _t = [_code] call _def;
+        if ((count _t) isEqualTo 0 || {(_t select 3) isEqualTo ""} || {!(_pairs isEqualType [])}) exitWith {};
+        call _save;
+        call _keepDraft;
+        private _keepUi = [_ui getOrDefault ["type", ""], +_vals, +_auto, _ui getOrDefault ["touched", false], +(_ui getOrDefault ["errors", []]),
+            _ui getOrDefault ["tab", "NEW"], _ui getOrDefault ["open", ""], _ui getOrDefault ["photoPick", false]];
+        private _oldDraft = _drafts getOrDefault [_code, []];
+        private _mv = createHashMap;
+        { if (_x isEqualType [] && {(_x param [0, 0]) isEqualType ""} && {(_x param [1, 0]) isEqualType ""}) then { _mv set [_x select 0, _x select 1]; }; } forEach _pairs;
+        // Heures (genre dtg) : celle du jeu, comme la proposition d'une fiche ouverte ici.
+        private _dtgKeys = ((_t select 5) select { (_x select 1) isEqualTo "dtg" && {((_mv getOrDefault [_x select 0, ""]) isEqualTo "")} }) apply { _x select 0 };
+        if (_dtgKeys isNotEqualTo []) then {
+            private _now = (([["dtg"]] call comspec_atak_native_fnc_reportAuto) getOrDefault ["dtg", ""]);
+            { _mv set [_x, _now]; } forEach _dtgKeys;
+        };
+        _ui set ["type", _code];
+        _ui set ["vals", _mv];
+        _ui set ["auto", createHashMap];
+        _ui set ["errors", []];
+        _ui set ["mobile", true];
+        private _before = count _list;
+        ["send"] call comspec_atak_native_fnc_reportAction;
+        private _sent = (count _list) > _before;
+        _ui set ["mobile", false];
+        _keepUi params ["_kType", "_kVals", "_kAuto", "_kTouched", "_kErr", "_kTab", "_kOpen", "_kPick"];
+        { _ui set [_x select 0, _x select 1]; } forEach [["type", _kType], ["vals", _kVals], ["auto", _kAuto], ["touched", _kTouched], ["errors", _kErr], ["tab", _kTab], ["open", _kOpen], ["photoPick", _kPick]];
+        if ((count _oldDraft) > 0) then { _drafts set [_code, _oldDraft]; };
+        if (!_sent) then {
+            // Fiche incomplète pour l'ATAK : gardée en brouillon, à finir ici.
+            _drafts set [_code, [_mv, [dayTime, "HH:MM"] call BIS_fnc_timeToString, createHashMap]];
+            ["WARNING", "Compte rendu reçu de votre téléphone, à compléter ici (onglet BROUILLONS)", 8, 45, "REPORTS"] call comspec_atak_native_fnc_notify;
+        };
         call _rerender;
     };
     case "recv": {

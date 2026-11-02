@@ -90,6 +90,8 @@ switch (_tab) do {
                     [["ACCUSER RÉCEPTION", ["orderAck", _id] call _act, true], ["VOIR", { ["TASK"] call comspec_atak_native_fnc_navigate; }]], [[0.88, 0.25, 0.22, 1], [0.95, 0.67, 0.2, 1]] select !_hot];
             } forEach (_todo select [0, 4]);
         };
+        // « Sur mon téléphone » (2.9.39) : la même app sur le vrai téléphone, par un QR code (fn_mobileQr).
+        _rows pushBack ["buttons", [["SUR MON TÉLÉPHONE", { [{ ["open", "cr"] call comspec_atak_native_fnc_mobileQr; }] call CBA_fnc_execNextFrame; }, false, true, "QR code à scanner avec votre vrai téléphone : remplissez vos comptes rendus dessus, votre ATAK les envoie"]]];
         // Urgences : trois touches.
         _rows pushBack ["big", [["CONTACT", ["type", "CONTACT"] call _act, "red", true, "Troupes au contact : position, nature, besoin"], ["BLESSÉ", ["type", "EAGLE_DOWN"] call _act, "red", true, "Opérateur à terre, format MIST"], ["SALUTE", ["type", "SALUTE"] call _act, "amber", true, "Observation ennemie lettre par lettre"]]];
         private _fam = "";

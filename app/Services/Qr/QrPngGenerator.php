@@ -137,6 +137,46 @@ final class QrPngGenerator
     }
 
     /**
+     * Matrice du QR code, sans marge : une chaîne de « 0 » (clair) et « 1 » (foncé) par rangée. Sert à dessiner le QR
+     * avec des contrôles dans l'ATAK en jeu (« Sur mon téléphone »), sans image. Null si phpqrcode manque.
+     *
+     * @return list<string>|null
+     */
+    public function matrix(string $payload): ?array
+    {
+        $payload = trim($payload);
+        $lib = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'phpqrcode' . DIRECTORY_SEPARATOR . 'qrlib.php';
+        if ($payload === '' || !is_file($lib)) {
+            return null;
+        }
+        if (!class_exists('QRcode', false)) {
+            require_once $lib;
+        }
+        // phpqrcode (PHP 5) : conversions implicites signalées en PHP 8, sans effet sur la matrice.
+        $level = error_reporting(error_reporting() & ~E_DEPRECATED);
+        try {
+            $frame = \QRcode::text($payload, false, defined('QR_ECLEVEL_M') ? QR_ECLEVEL_M : 1, 1, 0);
+        } catch (\Throwable) {
+            return null;
+        } finally {
+            error_reporting($level);
+        }
+        if (!is_array($frame) || $frame === []) {
+            return null;
+        }
+        $rows = [];
+        foreach ($frame as $row) {
+            $row = (string) $row;
+            if ($row === '' || strspn($row, '01') !== strlen($row)) {
+                return null;
+            }
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
      * @return array{body: string, mime: string}|null
      */
     private function viaPhpQrCode(string $payload, int $sizePixels, int $margin, bool $pngOnly): ?array

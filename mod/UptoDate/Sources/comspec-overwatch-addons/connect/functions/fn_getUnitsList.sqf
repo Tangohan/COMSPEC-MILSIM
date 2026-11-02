@@ -146,7 +146,7 @@ if ((_raw select [0, 3]) isEqualTo "OK|") then {
                     _wx = (_myPos select 0) + (_gx - (_myGrid select 0)) * 10;
                     _wy = (_myPos select 1) + (_gy - (_myGrid select 1)) * 10;
                 };
-                private _roleUse = if (!(_roleAthena isEqualTo "")) then { _roleAthena } else { "Operator" };
+                private _roleUse = _roleAthena;
                 if (_isSelf) then { _roleUse = _myRole; };
                 _byCs set [_key, [_cs, _gx, _gy, _isSelf, _wx, _wy, _roleUse, _ageAthena, _statusAthena, diag_tickTime]];
             };

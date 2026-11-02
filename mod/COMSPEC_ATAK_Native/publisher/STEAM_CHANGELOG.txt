@@ -1,11 +1,40 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.38.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.39.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.38, quittez Arma 3 complètement, puis relancez.
-[b]Changement de défaut :[/b] les plans de zones et les routes sont maintenant [b]partagés à tout le camp[/b] dès leur création et à chaque validation, et vont sur la carte d'Arma. Réglage serveur [b]Portée par défaut des plans et routes[/b] (Camp, Groupe, Équipe ou Privé comme en 2.9.36). L'état des zones ne change toujours que par un joueur.
+[b]Important :[/b] mettez à jour le pack 2.9.39 (COMSPEC Link 2.0.117 inclus), quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]Annuler partout (apps Routes et Zones)[/h2]
+[h2]Sur mon téléphone : vos apps sur votre vrai téléphone[/h2]
+[list]
+[*] Apps [b]Comptes rendus[/b], [b]CR fin d'op[/b] et [b]Carte[/b] (et l'espace BRIEFS AIR du pilote) : bouton [b]SUR MON TÉLÉPHONE[/b]. Un QR code s'affiche en grand, avec l'adresse à taper et le temps restant ; scannez-le avec l'appareil photo de votre vrai téléphone.
+[*] Le téléphone ouvre la version mobile de l'app sur Athena, liée à votre compte et à la partie en cours : compte rendu rapide (contact, SALUTE, SPOTREP, blessé, libre) avec votre position du jeu ou un point choisi sur la carte, CR de fin d'opération, carte de la partie (amis, marqueurs, poser, modifier ou retirer vos marqueurs).
+[*] Ce que vous faites sur le vrai téléphone part dans votre ATAK en jeu et s'envoie comme si vous l'aviez fait dedans ; les marqueurs arrivent dans les ATAK de la partie.
+[*] QR code à usage unique, valable 5 minutes ([b]RÉGÉNÉRER[/b] pour un nouveau). Le jeu doit être relié à votre compte Athena. Déconnexion d'un téléphone : profil Athena, [b]Appareils ATAK[/b].
+[/list]
+
+[h2]Briefs air : 9-LINE et 5-LINE envoyés aux pilotes[/h2]
+[list]
+[*] L'app JTAC envoie les 9-LINE et les nouveaux 5-LINE directement aux pilotes choisis, en saisie guidée ou libre.
+[*] Le pilote les reçoit avec une alerte dans le nouvel espace [b]BRIEFS AIR[/b] de son téléphone et répond [b]WILCO[/b] ou [b]UNABLE[/b] ; il peut aussi les lire en grand sur son vrai téléphone.
+[*] La page 9-LINE du site fait de même, montre l'accusé de chaque pilote et règle les indicatifs du JTAC et des appareils.
+[*] L'ATAK s'ouvre en grand et se manipule à la souris dans tous les aéronefs et véhicules, avec le vol stationnaire automatique en hélicoptère tant qu'il est en main.
+[/list]
+
+[h2]Rôle affiché[/h2]
+[list]
+[*] Touchez votre fiche en haut du centre de contrôle pour ouvrir votre profil ; vous y choisissez votre [b]Rôle affiché[/b] (fonction de la communauté, rôle du slot ou rôle personnalisé).
+[*] Ce rôle est maintenant le même partout (carte, BFT, fiche, Athena) et l'ancien rôle « Breacher » resté bloqué disparaît.
+[/list]
+
+[h2]Composants[/h2]
+[list]
+[*] Téléphone ATAK 2.9.39.AG - Denver
+[*] COMSPEC Link 2.0.117
+[*] Overwatch connect 1.6.32 · Overwatch main 1.4.8
+[/list]
+
+[h2]Rappel 2.9.38 — Annuler partout, app Zones refaite, plans partagés au camp[/h2]
+[b]Annuler partout (apps Routes et Zones)[/b]
 [list]
 [*] [b]ANNULER / RÉTABLIR[/b] (Ctrl+Z / Ctrl+Y) pendant l'édition d'une route ou d'un plan : étapes posées, déplacées, réordonnées, supprimées, style, type, découpage, traits.
 [*] [b]VALIDER[/b] envoie une seule fois ; [b]Annuler les modifications[/b] remet la route comme à l'ouverture, une nouvelle route se fait abandonner.
@@ -13,7 +42,7 @@
 [*] Suppression d'une étape, d'une route, d'un plan, d'une zone ou d'un trait : deux clics, puis bandeau [b]Supprimé · ANNULER[/b] pendant 8 s. Changement d'état d'une zone : il part au bout de 5 s, ANNULER entre-temps et rien ne part. Un découpage lancé se fait annuler.
 [/list]
 
-[h2]App Zones refaite[/h2]
+[b]App Zones refaite[/b]
 [list]
 [*] Carte plus grande avec sa [b]barre d'outils[/b] (sélection, rectangle, polygone, cercle, annuler, rétablir) et panneau en onglets [b]Tracer · Découper · Nommer · Style · Situation[/b] ; GÉNÉRER et PARTAGER en haut ; fiche de zone dans le panneau, avec un vrai bouton [b]SIGNALER[/b] toujours visible.
 [*] [b]Polygone aimanté[/b] : il s'accroche aux routes, aux coins et bords des bâtiments et aux rives (rayon 15, 30 ou 60 m, Alt pour s'en passer), fermé (contour) ou ouvert (trait). Plusieurs contours et traits par plan, sommets modifiables, Suppr pour supprimer. Nouvelle méthode [b]Découper par mes traits[/b].
@@ -22,7 +51,7 @@
 [*] Clic droit sur la carte de l'app : fiche, état, supprimer, tracé aimanté, découper par mes traits.
 [/list]
 
-[h2]Carte, Routes, 3D[/h2]
+[b]Carte, Routes, 3D[/b]
 [list]
 [*] Clic droit sur la carte : [b]supprimer[/b] la route, l'itinéraire, le guidage GPS, la zone ou le plan sous le curseur (ou le masquer chez soi s'il a été reçu), avec ANNULER.
 [*] App Routes : onglet [b]ITINÉRAIRES[/b] pour effacer l'itinéraire de l'app Itinéraire ou le guidage GPS (ligne jaune).
@@ -33,7 +62,7 @@
 [*] Bloc-notes : vue [b]LECTURE[/b] qui défile, [b]PARTAGER EN BLUETOOTH[/b] vers un téléphone appairé, [b]ENVOYER EN MESSAGE[/b].
 [/list]
 
-[h2]Corrections[/h2]
+[b]Corrections[/b]
 [list]
 [*] App Zones : fiche de zone affichée en double, découpage invisible sur la carte claire (contours blancs), petit carré sans légende devant « État de la zone ».
 [*] Carte d'Arma : les marqueurs des zones ne sont refaits que s'ils changent, par petits lots (plus de saccade).
@@ -42,32 +71,3 @@
 [*] Carte sombre : la couleur choisie d'un marqueur est respectée (un bleu ne passe plus en gris).
 [*] Repères d'Athena : un repère supprimé en jeu, ou l'étape d'une route supprimée, ne revient plus.
 [/list]
-
-[h2]Composants[/h2]
-[list]
-[*] Téléphone ATAK 2.9.38.AG - Denver
-[*] COMSPEC Link 2.0.116
-[*] Overwatch connect 1.6.31 · Overwatch main 1.4.8
-[/list]
-
-[h2]Rappel 2.9.37 — Optimisation, moins de saccades et de redessins[/h2]
-[b]Optimisation — Moins de saccades et de baisses d'images[/b]
-[list]
-[*] Un seul joueur relaie pour tout le monde les balises GPS, IA alliées, téléphones, aéronefs et marqueurs posés sur l'ATAK web (ils restent visibles de tous, même sans téléphone).
-[*] Les envois inchangés ne repartent plus (véhicules à l'arrêt, synchro Athena identique, écrans TOC seulement pour ceux qui les regardent).
-[*] Vérifications lourdes espacées ou arrêtées quand rien ne les demande : bâtiment pour le GPS et la liaison, vision nocturne, vidéoprojecteurs, points d'objectif, marqueurs.
-[*] Transfert Bluetooth de photos et musiques plus fluide.
-[/list]
-
-[b]Écrans — Plus de redessins inutiles[/b]
-[list]
-[*] Le BFT se met à jour sur place : défilement et piste choisie gardés.
-[*] L'app Réseau ne se redessine que si ses données changent ; la Liaison allié n'avance que sa barre.
-[*] Rien ne bouge pendant une saisie, et l'écran ne remonte plus en haut quand une page se rafraîchit.
-[/list]
-
-[b]Debug — Onglet PERFS[/b]
-Dernier bilan de 30 s : images par seconde, images lentes, ce qui coûte le plus et nombre de redessins par page. Faites-en une capture pour signaler un ralentissement.
-
-[b]Fiche opérateur[/b]
-La fiche complète part une fois par session (plus de rappel toutes les 15 minutes) ; les vrais changements (arme, tenue…) partent toujours.

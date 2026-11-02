@@ -70,6 +70,7 @@ if (_page isNotEqualTo "LAUNCHER") then {
 if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
 if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; };
 if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; };
+if (_page isEqualTo "MOBILEQR") then { _title = "SUR MON TÉLÉPHONE"; };
 if (_page isEqualTo "FOLDER") then {
     private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
     _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
@@ -130,6 +131,7 @@ switch (_page) do {
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
     case "VIEW3D": { [] call comspec_atak_native_fnc_pageView3d; };
     case "BRIEFING": { [] call comspec_atak_native_fnc_pageBriefing; };
+    case "MOBILEQR": { ["page"] call comspec_atak_native_fnc_mobileQr; };
     default {
         // Modules externes (COMSPEC Modules) : une app déclarée par un autre addon avec function="tag_fnc_page"
         // dans COMSPEC_ATAK_Apps est dessinée par cette fonction. Params : [page, [0, 0, largeur, hauteur]].

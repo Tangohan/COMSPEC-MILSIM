@@ -337,7 +337,7 @@ if (_interactive) then {
     // Barre d'outils à droite (taille choisie dans Réglages > Carte : petite, normale, grande)
     private _tbScale = profileNamespace getVariable ["COMSPEC_ATAK_MapToolbarScale", 1];
     if !(_tbScale isEqualType 0) then { _tbScale = 1; };
-    private _ihMax = (_mh - 2 * _pad) / 7;
+    private _ihMax = (_mh - 2 * _pad) / 8;
     // Normale : comme avant. Grande : jamais plus haute que la carte ne le permet.
     private _ih = (((_ihMax min (_font * 2.1)) * _tbScale) min _ihMax);
     private _iw = _ih / _ratio;
@@ -348,7 +348,9 @@ if (_interactive) then {
         ["zoomin", "map_zoomin", "Zoom avant", { [0.5] call comspec_atak_native_fnc_mapZoom; }],
         ["zoomout", "map_zoomout", "Zoom arrière", { [2] call comspec_atak_native_fnc_mapZoom; }],
         ["MARKER", "map_marker", "Poser un marqueur (clic sur la carte)", { ["MARKER"] call comspec_atak_native_fnc_mapToolMenu; }],
-        ["labels", "map_labels", "Afficher / masquer les indicatifs", { if ((["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 1) exitWith { ["INFO", "Réglage imposé par votre communauté", 3, 20] call comspec_atak_native_fnc_notify; }; profileNamespace setVariable ["COMSPEC_ATAK_Labels", !(profileNamespace getVariable ["COMSPEC_ATAK_Labels", true])]; [] call comspec_atak_native_fnc_mapOverlayUpdate; }]
+        ["labels", "map_labels", "Afficher / masquer les indicatifs", { if ((["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 1) exitWith { ["INFO", "Réglage imposé par votre communauté", 3, 20] call comspec_atak_native_fnc_notify; }; profileNamespace setVariable ["COMSPEC_ATAK_Labels", !(profileNamespace getVariable ["COMSPEC_ATAK_Labels", true])]; [] call comspec_atak_native_fnc_mapOverlayUpdate; }],
+        // « Sur mon téléphone » (2.9.39) : la carte de la partie sur le vrai téléphone, par un QR code (fn_mobileQr).
+        ["phone", "app_athena", "Sur mon téléphone : la carte de la partie sur votre vrai téléphone (QR code)", { [{ ["open", "carte"] call comspec_atak_native_fnc_mobileQr; }] call CBA_fnc_execNextFrame; }]
     ];
     // Drone appairé : bascule carte / vue drone plein écran / vue incrustée.
     if (alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {

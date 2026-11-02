@@ -33,7 +33,8 @@ private _sig = {
         profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"], profileNamespace getVariable ["COMSPEC_ATAK_Silent", false],
         profileNamespace getVariable ["COMSPEC_ATAK_Vibrate", true], (missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false],
         // Fiche opérateur : portrait reçu du site, liaison Athena, heure à la minute.
-        [player] call comspec_atak_native_fnc_avatarPath, missionNamespace getVariable ["COMSPEC_AthenaReady", false], floor (dayTime * 60)]
+        [player] call comspec_atak_native_fnc_avatarPath, missionNamespace getVariable ["COMSPEC_AthenaReady", false], floor (dayTime * 60),
+        player getVariable ["COMSPEC_Role", ""]]
 };
 switch (_act) do {
     case "handle": {
@@ -194,13 +195,19 @@ switch (_act) do {
         _l1 ctrlSetFontHeight (_font * 1.2);
         _l1 ctrlSetTextColor _acc;
         private _l2 = ["COMSPEC_RscText", [_tx, _py + _font * 1.2, _txW, _font * 1.1]] call _mk;
-        _l2 ctrlSetText ((([_name, format ["%1 · %2", _grade, _name]] select (_grade isNotEqualTo ""))) call comspec_atak_native_fnc_tr);
+        // Grade, nom et rôle affiché (fn_displayRole : choix du joueur, fonction de la communauté, slot).
+        private _role = [[player] call comspec_atak_native_fnc_displayRole, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev;
+        _l2 ctrlSetText ((([_grade, _name, _role] select { _x isNotEqualTo "" }) joinString " · ") call comspec_atak_native_fnc_tr);
         _l2 ctrlSetFontHeight _fs;
         _l2 ctrlSetTextColor [0.88, 0.92, 0.90, 1];
         private _l3 = ["COMSPEC_RscText", [_tx, _py + _font * 2.25, _txW, _font * 1.1]] call _mk;
         _l3 ctrlSetText (((([_unit, _tenant] select { _x isNotEqualTo "" }) joinString " · ")) call comspec_atak_native_fnc_tr);
         _l3 ctrlSetFontHeight (_fs * 0.88);
         _l3 ctrlSetTextColor _dimTxt;
+        // Fiche cliquable (photo, indicatif, grade, unité) : ouvre l'app Profil.
+        private _pb = ["COMSPEC_RscButtonInvisible", [0, 0, _w * 0.62, _py + _cardH + _pad * 0.5]] call _mk;
+        _pb ctrlSetTooltip (("Ouvrir mon profil (rôle affiché, qualifications, téléphone)") call comspec_atak_native_fnc_tr);
+        _pb ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; ["PROFILE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }];
         // À droite : heure, date, liaison Athena.
         date params ["_yy", "_mm", "_dd"];
         private _zm = _mm; private _zy = _yy;

@@ -41,7 +41,9 @@ private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", crea
 switch (_act) do {
     case "check": {
         if (!hasInterface) exitWith {};
-        if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_AdminNoticesAt", -1e9]) < 30) exitWith {};
+        // Vrai téléphone ouvert depuis le jeu (« Sur mon téléphone », fn_mobileQr) : ses envois arrivent toutes les 10 s.
+        private _every = [30, 10] select ((missionNamespace getVariable ["COMSPEC_ATAK_MobileUntil", -1]) > diag_tickTime);
+        if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_AdminNoticesAt", -1e9]) < _every) exitWith {};
         if !([] call comspec_atak_native_fnc_bridge) exitWith {};
         // L'avis attend que le joueur ait un téléphone sur lui.
         if (isNull player || {!([player] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
@@ -83,6 +85,20 @@ switch (_act) do {
                 };
                 // Avis déjà validé par le joueur : jamais réaffiché, le COMPRIS repart vers Athena.
                 if (_id isNotEqualTo "" && {_id in _acked}) then { _again pushBackUnique _id; continue };
+                // « Sur mon téléphone » : compte rendu ou CR fin d'op rempli sur le vrai téléphone. Envoyé par cet ATAK
+                // comme s'il avait été rempli ici (image suivante, hors de cette boucle), sans alerte, validé tout de suite.
+                if (_kind in ["mobile_report", "mobile_debrief"]) then {
+                    if (_id isNotEqualTo "" && {!(_id in _seen)}) then {
+                        _seen pushBack _id;
+                        _again pushBackUnique _id;
+                        ["COMSPEC_ATAK_NoticeAck", _id] call _keep;
+                        [{
+                            params ["_kind", "_body"];
+                            if (_kind isEqualTo "mobile_report") then { ["mobile", _body] call comspec_atak_native_fnc_reportAction; } else { ["mobile", _body] call comspec_atak_native_fnc_debrief; };
+                        }, [_kind, _body]] call CBA_fnc_execNextFrame;
+                    };
+                    continue;
+                };
                 if (_id isNotEqualTo "" && {!(_id in _seen)}) then {
                     private _row = [_id, _kind, _level, _title, _body, _ack isEqualTo "1", (["now"] call comspec_atak_native_fnc_clockFmt), _meta];
                     // CR de fin d'opération imposé par le site : la fiche s'ouvre dans l'app CR fin d'op, validée à la remise.

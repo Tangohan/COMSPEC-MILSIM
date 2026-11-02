@@ -1,7 +1,8 @@
 params [["_page", "LAUNCHER"], ["_push", true]];
 _page = toUpper _page;
-// Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos), VIEW3D (carte > Vue 3D ici, actuellement W.I.P).
-private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
+// Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos), VIEW3D (carte > Vue 3D ici, actuellement W.I.P),
+// MOBILEQR (« Sur mon téléphone » des apps Comptes rendus, CR fin d'op et Carte : fn_mobileQr).
+private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER", "MOBILEQR"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
 if !(_page in _allowed) then { _page = "LAUNCHER"; };
 // Vue 3D de la carte : en chantier (menu carte « Vue 3D ici »). Code conservé dans fn_pageView3d.
 if (_page isEqualTo "VIEW3D") exitWith {
