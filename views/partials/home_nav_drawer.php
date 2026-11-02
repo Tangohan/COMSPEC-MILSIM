@@ -57,8 +57,8 @@ $createCommunityHref = $loggedIn ? url('communities/create') : url('register');
         <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.communities'), ENT_QUOTES, 'UTF-8') ?></a>
         <p class="px-3 pt-3 pb-1 hi-kicker text-white/30"><?= htmlspecialchars(__('site.nav_account'), ENT_QUOTES, 'UTF-8') ?></p>
-        <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.login'), ENT_QUOTES, 'UTF-8') ?></a>
-        <a href="<?= htmlspecialchars(url('register'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.register'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a href="<?= htmlspecialchars((string) ($homeTopbarLoginUrl ?? url('login')), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.login'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a href="<?= htmlspecialchars((string) ($homeTopbarRegisterUrl ?? url('register')), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.register'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url('join'), ENT_QUOTES, 'UTF-8') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.join_code'), ENT_QUOTES, 'UTF-8') ?></a>
     <?php endif; ?>
 </nav>

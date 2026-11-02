@@ -46,7 +46,9 @@
 .ilx-page *, .ilx-page *::before, .ilx-page *::after { box-sizing: border-box; }
 
 /* Bandeau : bannière de la communauté sous un voile, contenu + ticket */
-.ilx-hero { position: relative; isolation: isolate; overflow: hidden; padding: clamp(32px, 6vw, 88px) 16px 56px; }
+.ilx-hero { position: relative; isolation: isolate; overflow: hidden; padding: calc(3.75rem + clamp(32px, 6vw, 88px)) 16px 56px; }
+/* Page publique : barre et pied de page de l'accueil (home-impact) ; le fond suit le thème de la page. */
+body.ilx-body.layout-light { background: var(--ilx-bg) !important; color: var(--ilx-ink); font-family: Inter, system-ui, sans-serif; letter-spacing: normal; }
 .ilx-hero__ph { position: absolute; inset: 0; z-index: -2; background: var(--ilx-bg) center 40% / cover no-repeat; filter: saturate(.75); }
 .ilx-hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--ilx-veil); }
 .ilx-wrap { width: 100%; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: clamp(28px, 5vw, 80px); align-items: center; }
@@ -138,3 +140,7 @@
   .ilx-bo-ticket__head, .ilx-bo-ticket__body { padding-left: 16px; padding-right: 16px; }
   .ilx-bo-ticket__qr { width: 120px; height: 120px; }
 }
+
+/* Back-office : bouton de confirmation de suppression (fenêtre ath-dialog) */
+.ilx-btn-danger { background: var(--ath-danger, #c72e2e); border-color: var(--ath-danger, #c72e2e); color: #fff; }
+.ilx-btn-danger:hover { filter: brightness(.92); color: #fff; }

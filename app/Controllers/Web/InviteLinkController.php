@@ -48,6 +48,14 @@ final class InviteLinkController
         $link = InviteLinkService::isWellFormedCode($code) ? $this->links->findByPublicCode($code) : null;
         $tenant = $link !== null ? $this->tenants->findById((int) $link['tenant_id']) : null;
         if ($link === null || !is_array($tenant)) {
+            if ($link === null && InviteLinkService::isWellFormedCode($code) && $this->links->isDeletedPublicCode($code)) {
+                if (PendingInviteLink::code() === $code) {
+                    PendingInviteLink::forget();
+                }
+
+                return $this->unusable(InviteLinkService::unusableMessage(InviteLinkService::STATUS_DELETED), null, 410);
+            }
+
             return $this->unusable(InviteLinkService::unusableMessage('unknown'), null, 404);
         }
         $status = InviteLinkService::status($link);

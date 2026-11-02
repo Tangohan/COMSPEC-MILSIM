@@ -294,6 +294,13 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1330, '2026-11-02', 'Liens d’invitation : suppression et page aux couleurs du site', 'Un lien d’invitation se supprime désormais depuis la liste ou sa fiche, après confirmation : il cesse de fonctionner, ses statistiques sont effacées et il libère la place dans la limite de liens actifs ; les candidatures et adhésions déjà faites restent intactes. La page ouverte par le lien (athena-comspec.eu/public/i/…) reprend la barre de navigation et le pied de page de l’accueil du site.', [
+                'Recrutement › Liens d’invitation : bouton Supprimer dans la liste et sur la fiche, avec une fenêtre de confirmation qui détaille ce qui est conservé et ce qui est effacé',
+                'Page d’un lien supprimé : le visiteur voit que la communauté l’a supprimé',
+            ], [
+                'Page d’invitation /i/… : même barre de navigation (menu, langue, connexion) et même pied de page que l’accueil ; Connexion et Inscription gardent l’invitation',
+            ], [], ['personnel'], [], 'Portail Athena'),
+
             $pr(1327, '2026-11-02', 'Invitations : plus de blocage à tort et une page refaite', 'Certaines communautés Pro+ ne pouvaient plus inviter : la page affichait « Votre formule actuelle limite le nombre de membres » alors que leur formule n’a pas de plafond. Un plafond de membres à 0 compte de nouveau comme illimité, et une formule sans plafond renseigné reprend celui de son palier au lieu de 50. La page Invitations est refaite : chiffres en tête (envoyées, acceptées, en attente, expirées) et membres sur le plafond de la formule (« 42 / illimité »), assistant en trois étapes pour inviter plusieurs adresses à la fois avec rôle, grade d’entrée, unité, durée du lien et message, tableau filtrable et triable pour renvoyer, révoquer ou copier un lien.', [
                 'Inviter plusieurs adresses e-mail en une fois, avec grade d’entrée, durée du lien (1 à 30 jours) et message personnel ajouté à l’e-mail',
                 'Tableau des invitations : recherche, filtre par état, tri par colonne ; renvoyer, révoquer, copier un nouveau lien',
