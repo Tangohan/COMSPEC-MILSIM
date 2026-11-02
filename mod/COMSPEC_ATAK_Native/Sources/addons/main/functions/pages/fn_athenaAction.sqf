@@ -90,7 +90,8 @@ switch (_action) do {
             // En ligne (déjà dans le spawn du verrou AthenaBusy) : un deuxième appui pendant la reconnexion est refusé.
             call {
                 [] call comspec_overwatch_connect_fnc_connect;
-                private _ok = (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isEqualTo "linked";
+                // Session de jeu ouverte (code, Steam ou e-mail, sans clé de communauté) : la liaison est rétablie aussi.
+                private _ok = (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isEqualTo "linked" || {[] call comspec_overwatch_connect_fnc_isReady};
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaHint", [["Reconnexion impossible : voir les étapes de la liaison.", "Liaison Athena rétablie."] select _ok, !_ok, diag_tickTime]];
                 [] call comspec_overwatch_connect_fnc_pollAuth;
                 [] call comspec_overwatch_connect_fnc_reopenTransmitChannel;

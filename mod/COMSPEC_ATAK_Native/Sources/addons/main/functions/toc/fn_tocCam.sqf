@@ -67,6 +67,7 @@ switch (_mode) do {
         if (!isNull _o && {(count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}) then {
             private _sel = ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [2, 0]);
             _o setObjectTexture [_sel, _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+            ["surface", [_o, _sel, false]] call comspec_atak_native_fnc_tocScreen;
         };
         _act deleteAt _i;
         missionNamespace setVariable ["COMSPEC_ATAK_TocCams", _act];
@@ -165,6 +166,7 @@ switch (_mode) do {
                     private _sel = ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [2, 0]);
                     if (isNil { _o getVariable "COMSPEC_ATAK_TocOrig" }) then { _o setVariable ["COMSPEC_ATAK_TocOrig", (getObjectTextures _o) param [_sel, ""]]; };
                     _o setObjectTexture [_sel, [format ["#(argb,%1,%1,1)r2t(%2,1.78)", _res, _e select 2], "#(rgb,8,8,3)color(0,0,0,1)"] select (_res isEqualTo 0)];
+                    ["surface", [_o, _sel, true]] call comspec_atak_native_fnc_tocScreen;
                 };
             };
         } forEach _on;

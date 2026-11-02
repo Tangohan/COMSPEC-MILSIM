@@ -40,7 +40,7 @@ final class AtakGarminWatchTest extends TestCase
         self::assertStringContainsString('"COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"', $w);
         self::assertStringContainsString('_x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"]', $w);
         self::assertStringContainsString('["FACE", "HR", "ALT", "MAP", "COMPASS", "JUMP", "CHRONO", "TIMER", "PHONE", "MUSIC", "DAY"]', $w);
-        self::assertStringContainsString('COMSPEC_RscMapAtak', $w);
+        self::assertStringContainsString('COMSPEC_RscMapWatch', $w);
         self::assertStringContainsString('comspec_atak_native_fnc_gpsPos', $w);
         self::assertStringContainsString('notifHistory', $w);
         self::assertStringContainsString('comspec_atak_native_fnc_canUse', $w);

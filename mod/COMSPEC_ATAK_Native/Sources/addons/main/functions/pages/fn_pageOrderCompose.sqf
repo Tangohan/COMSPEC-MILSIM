@@ -25,6 +25,13 @@ private _targets = [[format ["Mon groupe (%1)", [player, true] call comspec_atak
         _targets pushBack [[_x, true] call comspec_atak_native_fnc_unitGroup, format ["group|%1|%1", _g]];
     };
 } forEach ((allPlayers - [player]) select { side group _x isEqualTo side group player });
+// Groupes IA du camp qui prennent des ordres (fn_aiOrder) : DÉPLACER, TENIR, RECO et RENFORT sont exécutés pour de vrai.
+if (["can", player] call comspec_atak_native_fnc_aiOrder) then {
+    {
+        private _gn = groupId _x;
+        if ((_targets findIf { (_x select 1) isEqualTo format ["group|%1|%1", _gn] }) < 0) then { _targets pushBack [format ["IA · %1", _gn], format ["group|%1|%1", _gn]]; };
+    } forEach ((["groups", [str side group player, getPosATL player]] call comspec_atak_native_fnc_aiOrder) select [0, 12]);
+};
 _targets pushBack ["Tout le monde", "all||Tous"];
 private _rows = [
     ["section", "Nouvel ordre", format ["Émis par %1", ([[player, true] call comspec_atak_native_fnc_unitCallsign, [player, true] call comspec_atak_native_fnc_unitGroup] select { _x isNotEqualTo "" }) joinString " · "]],

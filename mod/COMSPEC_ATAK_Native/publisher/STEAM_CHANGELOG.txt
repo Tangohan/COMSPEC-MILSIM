@@ -1,18 +1,24 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.28.AG - Denver[/h1]
-[b]Publication : 01/11/2026[/b]
+[h1]COMSPEC ATAK — Mise à jour 2.9.29.AG - Denver[/h1]
+[b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.28 (COMSPEC Link 2.0.114 incluse), quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] mettez à jour le pack 2.9.29 (COMSPEC Link 2.0.115 incluse), quittez Arma 3 complètement, puis relancez. Le serveur doit avoir la même version pour les ordres aux IA.
 [/quote]
 
-[h2]Performance — Moins d'à-coups en pleine partie[/h2]
-Le téléphone n'enregistre plus votre profil toutes les deux minutes quand rien n'a changé (cet enregistrement réécrit tout le profil Arma et figeait brièvement l'image). En solo, dans l'éditeur Eden ou en partie hébergée, la recherche des socles de recharge ne parcourt plus tous les objets de la mission chaque minute. Le suivi des balises GPS et des alliés repérés lit plus vite la liste des unités.
+[h2]Correctif — Les ordres aux IA marchent[/h2]
+Clic droit sur la carte du téléphone › Ordre aux IA, app Ordres ou PC du poste TOC : le groupe IA exécute enfin l'ordre (aller, patrouiller, attaquer, tenir, me suivre, embarquer…) et renvoie son état sur la carte. Quand l'ordre est impossible, le téléphone dit pourquoi : pas de réseau, pas le droit, aucun groupe IA, groupe avec un joueur ou protégé par la mission, serveur pas à jour. Dans l'app Ordres, les groupes IA du camp sont dans les destinataires et la grille saisie sert de point.
 
-[h2]Nouveau — Mode profilage pour nous aider[/h2]
-Le jeu saccade encore ? Options › Addon Options › COMSPEC › ATAK · Debug › Profilage (saccades). Jouez 10 minutes, puis envoyez-nous le fichier RPT d'Arma : il indique, toutes les 10 secondes, le temps pris par chaque tâche de fond (COMSPEC et autres mods) et ce qui tournait à chaque saccade. Décochez-le ensuite.
+[h2]Correctif — Grands écrans sur trépied[/h2]
+Grand écran sur trépied standard, noir ou sable : la carte TOC, les diapositives et la caméra en direct s'affichent au lieu d'un écran noir. Les doubles écrans sur trépied ont aussi le menu Écran COMSPEC.
+
+[h2]Correctif — Montre Garmin[/h2]
+La carte reste dans le cadran rond, plus de grand nom de lieu en travers ni de « START | STOP » en double, et l'écran Téléphone de la montre affiche de nouveau les notifications.
+
+[h2]Correctif — App Athena[/h2]
+Plus de « Serveur Athena injoignable » ni de « Reconnexion impossible » quand votre compte est connecté. Une nouvelle étape « Envois vers Athena » dit clairement quand un envoi est refusé, et le jeu n'envoie plus rien à Athena avant d'être connecté.
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 2.9.28.AG - Denver
-[*] COMSPEC Link 2.0.114
-[*] Overwatch connect 1.6.26 · Overwatch main 1.4.8
+[*] Téléphone ATAK 2.9.29.AG - Denver
+[*] COMSPEC Link 2.0.115
+[*] Overwatch connect 1.6.27 · Overwatch main 1.4.8
 [/list]

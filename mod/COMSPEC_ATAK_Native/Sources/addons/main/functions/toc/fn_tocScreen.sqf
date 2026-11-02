@@ -29,6 +29,8 @@
       ["view", [objet, clé, valeur]]       "mode" affichage | "zoom" demi-largeur | "center" position | "auto"
       ["classes"]                          écrans du jeu proposés à la pose [[libellé, classe]...] (classes présentes)
       ["tick"]                             client, chaque seconde (XEH_postInitClient) : textures et rafraîchissement
+      ["surface", [objet, dalle, active]]  client : prépare la dalle pour une image (matière d'écran, dalles superposées
+                                           masquées) ou remet tout (aussi pour fn_screenCast et fn_tocCam)
       ["load", display]                    onLoad du display de la texture
       ["initServer"]                       serveur (XEH_postInitServer)
       ["aceInit"]                          ACE sur les classes d'écran du jeu (partout) : TOC, PIP, diapositives
@@ -80,6 +82,11 @@ switch (_mode) do {
             ["Grand écran sur trépied (noir)", "Land_TripodScreen_01_large_black_F"],
             ["Grand écran sur trépied (sable)", "Land_TripodScreen_01_large_sand_F"],
             ["Double écran sur trépied", "Land_TripodScreen_01_dual_v1_F"],
+            ["Double écran sur trépied (noir)", "Land_TripodScreen_01_dual_v1_black_F"],
+            ["Double écran sur trépied (sable)", "Land_TripodScreen_01_dual_v1_sand_F"],
+            ["Double écran incliné sur trépied", "Land_TripodScreen_01_dual_v2_F"],
+            ["Double écran incliné sur trépied (noir)", "Land_TripodScreen_01_dual_v2_black_F"],
+            ["Double écran incliné sur trépied (sable)", "Land_TripodScreen_01_dual_v2_sand_F"],
             ["TV à écran plat", "Land_FlatTV_01_F"],
             ["Écran de projection", "Land_ProjectorScreen_01_F"],
             ["Poste informatique", "Land_PCSet_01_screen_F"],
@@ -153,6 +160,43 @@ switch (_mode) do {
         ["save"] call comspec_atak_native_fnc_tocPersist;
         true
     };
+    case "surface": {
+        // Dalle prête à montrer une image (TOC, diapositive, caméra), sur ce poste seulement ; false : tout est remis.
+        // Grand écran sur trépied (et ses variantes noire, sable) : dix dalles Screen_0 à Screen_9 superposées, la 0
+        // couvrant tout l'écran, avec la matière « Lamp_lcd » du jeu (lumineuse x200, sans profondeur, pensée pour une
+        // dalle vide) : l'image posée sur la dalle 0 restait noire. Les autres dalles sont masquées et la dalle prend la
+        // matière d'écran du mod (celle de la tablette JPC, jour / nuit), comme le faisait l'ancien pack TOC (matière retirée).
+        _a params [["_o", objNull], ["_sel", 0], ["_on", true]];
+        if (isNull _o) exitWith { false };
+        private _prep = _o getVariable ["COMSPEC_ATAK_SurfPrep", []];
+        if (!_on) exitWith {
+            if (_prep isEqualTo []) exitWith { false };
+            _prep params ["_ps", "_mat", "_sibs"];
+            _o setObjectMaterial [_ps, _mat];
+            { _o setObjectTexture _x; } forEach _sibs;
+            _o setVariable ["COMSPEC_ATAK_SurfPrep", nil];
+            true
+        };
+        if (_prep isNotEqualTo [] && {(_prep select 0) isNotEqualTo _sel}) then { ["surface", [_o, 0, false]] call _fn; _prep = []; };
+        if (_prep isEqualTo []) then {
+            private _names = (getArray (configOf _o >> "hiddenSelections")) apply { toLower _x };
+            private _texs = getObjectTextures _o;
+            private _panes = [];
+            { if ((_x select [0, 7]) isEqualTo "screen_") then { _panes pushBack _forEachIndex; }; } forEach _names;
+            // Plus de deux dalles « screen_ » : mur d'images superposé (pas deux moniteurs côte à côte).
+            private _sibs = [];
+            if ((count _panes) > 2 && {_sel in _panes}) then {
+                { if (_x isNotEqualTo _sel) then { _sibs pushBack [_x, _texs param [_x, ""]]; _o setObjectTexture [_x, ""]; }; } forEach _panes;
+            };
+            _prep = [_sel, (getObjectMaterials _o) param [_sel, ""], _sibs, ""];
+            _o setVariable ["COMSPEC_ATAK_SurfPrep", _prep];
+            ["INFO", "TOC", format ["Écran %1 : image sur la dalle %2 (%3), matière d'origine %4, %5 dalle(s) masquée(s)",
+                typeOf _o, _sel, _names param [_sel, "?"], [_prep select 1, "aucune"] select ((_prep select 1) isEqualTo ""), count _sibs]] call comspec_atak_native_fnc_log;
+        };
+        private _mat = "\z\comspec_atak_native\addons\main\data\" + (["jpc_screen_night.rvmat", "jpc_screen.rvmat"] select (sunOrMoon > 0.5));
+        if ((_prep select 3) isNotEqualTo _mat) then { _prep set [3, _mat]; _o setObjectMaterial [_sel, _mat]; };
+        true
+    };
     case "load": {
         // Le display de la texture arrive ici à sa création : il appartient à l'écran en attente (un seul à la fois).
         // Displays rangés dans uiNamespace (jamais dans une variable d'objet : un display ne se sérialise pas).
@@ -174,7 +218,14 @@ switch (_mode) do {
         private _pend = uiNamespace getVariable ["COMSPEC_ATAK_TocPending", []];
         // Attente du display plus de 4 s : l'écran suivant peut prendre son tour (nouvel essai plus tard).
         if ((count _pend) >= 2 && {diag_tickTime - (_pend select 1) > 4}) then {
-            if (!isNull (_pend select 0)) then { (_pend select 0) setVariable ["COMSPEC_ATAK_TocTex", ""]; };
+            if (!isNull (_pend select 0)) then {
+                (_pend select 0) setVariable ["COMSPEC_ATAK_TocTex", ""];
+                // Trace une fois par écran : l'image n'a jamais été dessinée par le jeu (dalle cachée ou hors champ).
+                if !((_pend select 0) getVariable ["COMSPEC_ATAK_TocLoadWarn", false]) then {
+                    (_pend select 0) setVariable ["COMSPEC_ATAK_TocLoadWarn", true];
+                    ["WARNING", "TOC", format ["Écran TOC %1 : image non chargée en 4 s (dalle %2), nouvel essai", typeOf (_pend select 0), (_pend select 0) getVariable ["COMSPEC_ATAK_TocSel", 0]]] call comspec_atak_native_fnc_log;
+                };
+            };
             _pend = [];
             uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []];
         };
@@ -195,7 +246,12 @@ switch (_mode) do {
                 if ([_o] call _casting || {_o in _live}) then {
                     if (_tex isNotEqualTo "") then {
                         // Caméra en direct : fn_tocCam vient de poser son image, ne pas la recouvrir.
-                        if !(_o in _live) then { _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]; };
+                        // Diapositive déjà posée par fn_screenCast sur ce poste (cas des autres joueurs que le diffuseur) :
+                        // ne pas la recouvrir par la texture d'origine, ni défaire la préparation de la dalle.
+                        if (!(_o in _live) && {(_o getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isEqualTo ""}) then {
+                            _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+                            ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], false]] call _fn;
+                        };
                         _o setVariable ["COMSPEC_ATAK_TocTex", ""];
                         _disps deleteAt _tex;
                         if ((_pend param [0, objNull]) isEqualTo _o) then { uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []]; _pend = []; };
@@ -213,6 +269,7 @@ switch (_mode) do {
                     _pend = [_o, diag_tickTime, _tex];
                     uiNamespace setVariable ["COMSPEC_ATAK_TocPending", _pend];
                     _o setObjectTexture [_sel, format ["#(rgb,%1,%2,1)ui(""COMSPEC_RscTocScreenTexture"",""%3"")", _texW, _texH, _tex]];
+                    ["surface", [_o, _sel, true]] call _fn;
                     _local pushBackUnique _o;
                 };
                 private _disp = _disps getOrDefault [_tex, displayNull];
@@ -222,6 +279,8 @@ switch (_mode) do {
                     // Toujours les premières images (sinon noir tant qu'on ne l'a pas regardé), puis seulement vu et proche.
                     private _seen = (_cam distance _o) < 80 && {(worldToScreen (ASLToAGL getPosASL _o)) isNotEqualTo []};
                     if (_due && {_draws < 3 || {_seen}}) then {
+                        // Matière jour / nuit suivie (rien ne change tant que le soleil ne passe pas l'horizon).
+                        ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], true]] call _fn;
                         _o setVariable ["COMSPEC_ATAK_TocAt", diag_tickTime];
                         _o setVariable ["COMSPEC_ATAK_TocDraws", _draws + 1];
                         ["draw", [_o, _disp]] call _fn;
@@ -233,6 +292,7 @@ switch (_mode) do {
                 // Trop loin, retiré ou détruit : texture d'origine remise, display abandonné.
                 if (_tex isNotEqualTo "") then {
                     _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+                    ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], false]] call _fn;
                     _o setVariable ["COMSPEC_ATAK_TocTex", ""];
                     _disps deleteAt _tex;
                     if ((_pend param [0, objNull]) isEqualTo _o) then { uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []]; _pend = []; };

@@ -7,7 +7,8 @@
                   fond noir de la photo détouré (remplissage depuis les bords), écran rond repéré par ajustement d'un
                   cercle puis rendu transparent, photo mise à l'échelle et centrée pour que l'écran fasse 270 px de
                   rayon au centre d'une texture 1024 (attendu par fn_watch), bracelet adouci aux bords de la texture,
-                  ombre portée douce, bord du verre très léger.
+                  ombre portée douce, bord du verre très léger, seconde inscription « START | STOP » de l'anneau
+                  intérieur effacée (artefact des photos).
   item_garminwatch_*.paa
                   icônes d'inventaire des trois coloris ajoutés (la montre détourée, écran éteint).
   gw_disc.paa     disque blanc plein (fond de l'écran, teinté en noir ; points des jauges).
@@ -114,6 +115,12 @@ def photo_frame(src):
     y2, x2 = np.mgrid[0:N, 0:N].astype(float)
     d2 = np.hypot(x2 - C, y2 - C)
     scr = d2 < RS
+    # Anneau sombre entre l'écran et la lunette : les photos y portent une seconde inscription « START | STOP »
+    # décalée (artefact, en double avec celle de la lunette). Le secteur est repeint à la teinte médiane de l'anneau.
+    ang = np.degrees(np.arctan2(x2 - C, C - y2)) % 360
+    ring = (d2 >= RS) & (d2 <= RS + 32)
+    tint = np.median(rgb[ring & ((ang < 10) | (ang > 95))], axis=0)
+    rgb[ring & (ang > 15) & (ang < 85)] = tint
     edge = np.clip((d2 - (RS - 14)) / 14, 0, 1) ** 1.6 * 0.55
     rgb[scr] = 0
     oa[scr] = edge[scr]

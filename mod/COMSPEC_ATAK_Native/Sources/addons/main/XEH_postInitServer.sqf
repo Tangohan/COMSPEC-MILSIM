@@ -107,10 +107,7 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
 ["comspec_atak_native_localOrder", { [_this param [1, ""], "comspec_atak_native_localOrder", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 // Messagerie sans Athena (canaux général, commandement, groupe : fn_chatSend), rejouée aux arrivants.
 ["comspec_atak_native_chatLocal", { [_this param [5, ""], "comspec_atak_native_chatLocal", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
-// Ordres aux groupes IA (fn_aiOrder) : demandes vérifiées ici, dernier état de chaque groupe gardé pour les arrivants.
-COMSPEC_ATAK_SrvAiOrd = createHashMap;    // camp -> (netId du groupe -> état)
-["comspec_atak_native_aiOrdSrv", { ["srv", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_aiOrdState", { ["keep", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
+// Ordres aux groupes IA (fn_aiOrder) : gestionnaires du serveur branchés dès XEH_preInit (COMSPEC_ATAK_SrvAiOrd).
 // Événements de camp (logistique, MEDEVAC, BDA, comptes rendus, alertes) : relayés par le serveur aux seuls joueurs du camp.
 // CBA_fnc_globalEvent les envoyait aussi au camp adverse, qui les jetait. Le serveur les reçoit comme avant (journal ci-dessus).
 ["comspec_atak_native_sideEvent", {

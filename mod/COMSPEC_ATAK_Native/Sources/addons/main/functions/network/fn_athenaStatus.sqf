@@ -51,6 +51,11 @@ if !(_dllVer isEqualType "") then { _dllVer = ""; };
 // Code de connexion (fn_athenaLink).
 (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]) params ["_ls", "_lc", "_lu", "", "", "_ld"];
 if (_ls isEqualTo "pending" && {diag_tickTime >= _lu}) then { _ls = "expired"; };
+// Session ouverte : un échec plus ancien de la demande de code (réseau, téléphone pas encore pris) ne compte plus.
+// Il restait affiché (« Serveur Athena : injoignable ») alors que le compte était connecté.
+if (_logged && {_ls in ["error", "expired"]}) then { _ls = ""; _ld = ""; };
+// Demande de code coupée faute de téléphone ATAK sur soi (fn_uplinkHold) : rien n'est parti, le serveur n'y est pour rien.
+private _held = (toLower _ld) isEqualTo "uplink_hold";
 // Code refusé par Athena (réponse HTTP 4xx) : le serveur répond, c'est le compte, la communauté ou le mod qui bloque.
 // Mod non officiel (client_untrusted, réponse 401) : refus du pack lui-même, pas du compte.
 private _untrusted = (toLower _ld) isEqualTo "client_untrusted";
@@ -166,6 +171,9 @@ switch (true) do {
     case (_notLinked): {
         ["unlinked", format ["Non connecté : %1 (non lié)", [_cs, name player] select (_cs isEqualTo "")], "Le serveur Athena répond, mais ce jeu n'est relié à aucun compte Athena.", "Reliez-le : OBTENIR MON CODE, puis autorisez-le sur le site.", _red, "code"] call _set;
     };
+    case (_ls isEqualTo "error" && {_held}): {
+        ["disconnected", "Non connecté : pas de téléphone ATAK sur vous", "Sans téléphone ATAK dans votre équipement, rien ne part vers Athena.", "Prenez un téléphone ATAK, puis OBTENIR MON CODE.", _amber, "code"] call _set;
+    };
     case (_ls isEqualTo "error"): {
         ["error", "Erreur : Athena n'a pas donné de code", format ["Le serveur Athena n'a pas répondu (%1).", _ld], "Vérifiez la connexion internet du jeu, puis RÉESSAYER.", _red, "code"] call _set;
     };
@@ -194,11 +202,16 @@ _steps pushBack (switch (_mode) do {
     case "off": { ["Service Athena", "off", "désactivé (ATAK local)", ""] };
     default { ["Service Athena", "warn", "pas encore choisi", ""] };
 });
-private _netKo = !_maint && {_code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_502", "HTTP_504"] || {_ls isEqualTo "error" && {!_refused}}};
+// Injoignable : seulement sans session ouverte (une session READY prouve que le serveur a répondu) et hors coupure
+// faute de téléphone. Session ouverte avec un code réseau : réponses irrégulières, pas « injoignable ».
+private _netCode = _code in ["NETWORK_ERROR", "TIMEOUT", "HTTP_502", "HTTP_504"];
+private _netKo = !_maint && {!_logged} && {_netCode || {_ls isEqualTo "error" && {!_refused} && {!_held}}};
+private _netWarn = !_maint && {_logged} && {_netCode};
 _steps pushBack (switch (true) do {
     case (_mode isEqualTo "off" || {_dllDown}): { ["Serveur Athena", "off", "pas contacté", ""] };
     case (_maint): { ["Serveur Athena", "warn", "en maintenance", "Le site répond mais refuse les connexions le temps d'une mise à jour."] };
     case (_netKo): { ["Serveur Athena", "ko", "injoignable", "Connexion internet du jeu coupée, ou pare-feu."] };
+    case (_netWarn): { ["Serveur Athena", "warn", "réponses irrégulières", "Le serveur a répondu (compte connecté) mais certaines requêtes n'aboutissent pas : connexion instable."] };
     case (_logged || {_refused} || {_link in ["linked", "degraded"]} || {_ls in ["pending", "approved"]} || {_notLinked} || {_why isNotEqualTo []}): { ["Serveur Athena", "ok", format ["athena-comspec.eu%1", _latText], ""] };
     case (_syncing || {_link isEqualTo "connecting"} || {_ls isEqualTo "asking"}): { ["Serveur Athena", "now", "contact en cours", ""] };
     default { ["Serveur Athena", "todo", "pas encore contacté", ""] };
@@ -226,5 +239,38 @@ _steps pushBack (switch (true) do {
     case (_logged): { ["Canal du poste", "warn", "fermé", "Ni ordres ni messages du poste tant qu'il est fermé."] };
     default { ["Canal du poste", ["todo", "off"] select (_mode isEqualTo "off" || {_dllDown}), "fermé", ""] };
 });
+// Envois vers Athena (positions, marqueurs, véhicules…) : dernier refus de COMSPEC Link (GetLastPostError, lu en mémoire,
+// relu toutes les 5 s). Un refus « non autorisé » n'est pas une panne réseau : il est dit tel quel, avec l'envoi visé.
+if (_bridge && {_logged} && {!_dllDown}) then {
+    private _pe = uiNamespace getVariable ["COMSPEC_ATAK_PostErrCheck", [-100, ""]];
+    if (diag_tickTime - (_pe select 0) > 5) then {
+        private _r = ["COMSPECExtension", "GetLastPostError", []] call comspec_overwatch_connect_fnc_extDirect;
+        if (_r isEqualType []) then { _r = _r param [0, ""]; };
+        if !(_r isEqualType "") then { _r = ""; };
+        _pe = [diag_tickTime, _r];
+        uiNamespace setVariable ["COMSPEC_ATAK_PostErrCheck", _pe];
+    };
+    ((_pe select 1) splitString "|") params [["_ok", ""], ["_hc", "none"], ["_path", ""], ["_age", "0"]];
+    private _hcN = parseNumber _hc;
+    private _ageN = parseNumber _age;
+    private _what = switch (true) do {
+        case ((_path find "telemetry") >= 0): { "positions et état du téléphone" };
+        case ((_path find "/position") >= 0): { "position" };
+        case ((_path find "/marker") >= 0): { "marqueurs" };
+        case ((_path find "/vehicles") >= 0): { "véhicules" };
+        case ((_path find "flight-manifest") >= 0): { "manifeste de vol" };
+        case ((_path find "/chat") >= 0): { "messages" };
+        default { "données de jeu" };
+    };
+    _steps pushBack (switch (true) do {
+        case (_ok isNotEqualTo "OK" || {_hc isEqualTo "none"} || {_ageN > 90}): { ["Envois vers Athena", "ok", "acceptés", ""] };
+        case (_hcN isEqualTo 401): { ["Envois vers Athena", "ko", format ["non autorisé : %1", _what call comspec_atak_native_fnc_tr],
+            "Athena répond mais refuse cet envoi : la session du jeu n'est plus reconnue pour lui. RECONNECTER ; si ça continue, NOUVEAU CODE."] };
+        case (_hcN isEqualTo 403): { ["Envois vers Athena", "warn", format ["refusé : %1", _what call comspec_atak_native_fnc_tr], "Athena refuse cet envoi (accès ou offre de la communauté)."] };
+        case (_hcN in [429, 503]): { ["Envois vers Athena", "warn", "ralentis par Athena", "Le site demande d'espacer les envois : ils repartent seuls."] };
+        case (_hcN <= 0): { ["Envois vers Athena", "warn", format ["sans réponse : %1", _what call comspec_atak_native_fnc_tr], "Connexion internet du jeu instable : les envois repartent seuls."] };
+        default { ["Envois vers Athena", "warn", format ["erreur %1 : %2", _hcN, _what call comspec_atak_native_fnc_tr], ""] };
+    });
+};
 _out set ["steps", _steps];
 _out

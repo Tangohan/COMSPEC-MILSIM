@@ -38,6 +38,43 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.29 : ordres aux IA réparés, écrans sur trépied, montre Garmin, état Athena juste (ATAK natif 2.9.29.AG - Denver, COMSPEC Link 2.0.115)
+
+### Résumé joueur
+Type : correctif
+FR : Les ordres aux IA marchent, les grands écrans s'allument, la montre et l'app Athena s'affichent juste
+- Ordres aux IA (clic droit sur la carte, app Ordres, PC du poste TOC) : le groupe exécute enfin l'ordre et renvoie son état. Quand c'est impossible, le téléphone dit pourquoi : pas de réseau, pas le droit, aucun groupe IA, groupe avec un joueur ou protégé, serveur pas à jour. Dans l'app Ordres, les groupes IA du camp sont dans les destinataires et la grille saisie sert de point.
+- Grands écrans sur trépied (standard, noir, sable) : la carte TOC, les diapositives et la caméra en direct s'affichent au lieu d'un écran noir. Les doubles écrans sur trépied ont aussi le menu Écran COMSPEC.
+- Montre Garmin : la carte reste dans le cadran rond, plus de grand nom de lieu en travers ni de « START | STOP » en double, et l'écran Téléphone de la montre affiche de nouveau les notifications.
+- App Athena : plus de « Serveur Athena injoignable » ni de « Reconnexion impossible » quand votre compte est connecté, et une nouvelle étape « Envois vers Athena » dit clairement quand un envoi est refusé.
+EN : AI orders work, large screens light up, the watch and the Athena app display correctly
+- AI orders (right click on the map, Orders app, TOC post computer): the group now carries out the order and reports its status. When it cannot, the phone says why: no network, not allowed, no AI group, group with a player or protected, server not up to date. In the Orders app, your side's AI groups are listed as recipients and the typed grid is used as the point.
+- Tripod large screens (standard, black, sand): the TOC map, slides and live camera show up instead of a black screen. Tripod dual screens also get the COMSPEC Screen menu.
+- Garmin watch: the map stays inside the round dial, no more oversized place name across it or duplicate "START | STOP", and the watch Phone screen shows notifications again.
+- Athena app: no more "Athena server unreachable" or "Reconnection failed" while your account is connected, and a new "Uploads to Athena" step says clearly when an upload is refused.
+
+### Détail technique
+- **Ordres aux IA** (note `docs/bugs/2026-11-02-ordres-ia-jamais-executes.md`) : `fn_aiOrder` appelait `[_g] call BIS_fnc_netId` et `[_nid] call BIS_fnc_groupFromNetId` ; les fonctions BIS contrôlent le type de `_this` (groupe/objet, chaîne) et sortent sans valeur pour un tableau : le serveur ne retrouvait jamais le groupe (erreur côté serveur seulement, rien dans le RPT du joueur, aucun état renvoyé). Valeur nue partout (helpers `_gid` / `_gOf`, mode `"netId"` pour `fn_mapCtxMenu` et `fn_tocLaptop:500`).
+  - Nouveau mode `"why"` (motif lisible) utilisé au clic droit, avant l'envoi et côté serveur (motifs distincts, id de l'ordre joint) ; attente de réponse 30 s (« pas de réponse du serveur ») sauf ordre en file sans réseau (fn_netSend prévient déjà) ; « ordre transmis » remplacé par « ordre envoyé », seulement quand l'envoi part.
+  - Gestionnaires serveur `aiOrdSrv` / `aiOrdState` et `COMSPEC_ATAK_SrvAiOrd` déplacés en `XEH_preInit` (`isServer`), `COMSPEC_ATAK_SrvAiOrdV` public : le client sait si le serveur traite les ordres (mod absent ou plus ancien : motif affiché).
+  - Exécution : simulation dynamique coupée et IA `PATH` / `MOVE` rétablies pour les ordres de déplacement ; groupe passé sur une autre machine : le donneur est prévenu.
+  - Ligne ORDRE AUX IA « indisponible » (chef sans groupe IA, groupes IA sans le droit, serveur pas à jour) : un clic donne le motif.
+  - App Ordres : groupes IA du camp dans les destinataires (« IA · Alpha 1-2 »), ordre à un groupe IA toujours traité sans Athena (Athena ne parle qu'aux joueurs) au point lu par `fn_gridParse` ; APPUI AÉRIEN / FRAGO / DEM-SSE à une IA signalés.
+  - Traces `[DEBUG][AIORDER]` de bout en bout quand le réglage Overwatch « Niveau de journal » est sur Détaillé.
+- **Écrans sur trépied** (note `docs/bugs/2026-11-02-ecrans-noirs.md`) : `Land_TripodScreen_01_large_F` / `_black_F` / `_sand_F` ont 11 sélections (`Screen_0`…`Screen_9`, `Camo_1`), dalles en `Lamp_lcd.rvmat` (sans écriture de profondeur) et dalles 1 à 9 superposées (textures vides sur noir et sable). Nouveau `fn_tocScreen "surface"` (local, sans réseau) : dalles superposées masquées, matière d'écran du PBO (`jpc_screen` jour / nuit), valeurs d'origine remises à la libération ; branché dans `fn_tocScreen`, `fn_screenCast`, `fn_tocCam`. Garde TOC → diapositive (la texture d'origine n'efface plus la diapositive chez les autres joueurs). Doubles écrans `dual_v1_black/sand`, `dual_v2` (toutes teintes) ajoutés aux classes reconnues. `ctrlWebBrowserAction` n'est pas en cause (commande valide, inconnue de HEMTT).
+- **Montre Garmin** : `fn_watch.sqf:1429` `private _h` écrasait la fonction `_H` (SQF insensible à la casse) : « Erreur générique » ligne 1439 à chaque mise à jour (17 fois dans le RPT) ; renommée `_toHex`. Carte ramenée à ±0,97 (coins sous le boîtier, mesuré sur les 4 textures) avec la classe `COMSPEC_RscMapWatch` sans noms de lieux Arma. Inscription « STRT | STOP » des photos sources effacée par `gen_garmin_watch.py`, textures `gw_frame*` / `item_garminwatch_*` regénérées.
+- **App Athena** (note `docs/bugs/2026-11-02-athena-401-injoignable.md`) : l'échec du code de connexion au lancement sans téléphone (`uplink_hold`) restait affiché comme « injoignable » ; `fn_athenaLink` remet l'erreur à zéro une fois connecté, `fn_athenaStatus` ne dit « injoignable » que sans session et ajoute l'étape « Envois vers Athena » (`GetLastPostError` : 401, 403, 429/503, sans réponse) ; `fn_athenaAction` reconnecte aussi avec une session READY. connect 1.6.27 : `PairStart` / `PairStatus` autorisés sans téléphone (`fn_uplinkHold`), liaison « établie » avec une session sans clé de communauté (`fn_connect`). COMSPEC Link 2.0.115 : `HasUsableAuthNow()`, télémétrie, positions, marqueurs, véhicules et manifestes mis en file au lieu de partir sans authentification (les 401 en boucle vus côté site, qui répondait correctement). `fn_distanceServer` : plus de faux « Distance.Batch refusé (COMSPEC Link requis) » quand l'envoi est seulement retenu.
+
+### À tester en jeu
+- **Ordres aux IA, Eden solo** : un joueur seul + un groupe IA du même camp. Carte du téléphone, clic droit près du groupe › ORDRE AUX IA › Aller ici : « ordre envoyé », puis « en cours » et « terminé : arrivé au point », trait sur la carte. Refaire Patrouiller, Tenir, Me suivre, Embarquer (véhicule à moins de 150 m), Posture › Combat (« appliquée »), Annuler. Groupe IA en simulation dynamique ou avec « déplacement » coupé dans Eden : il bouge.
+- **Refus** : groupe avec `this setVariable ["COMSPEC_ATAK_NoOrders", true, true]` → « protégé par la mission » ; joueur non chef d'un groupe à plusieurs joueurs → ligne « indisponible » et motif ; hors réseau → « Pas de réseau : Ordre IA en attente », l'ordre part au retour du signal.
+- **Serveur dédié ou hébergé** (même pack) : mêmes essais depuis un client ; réglage Overwatch « Niveau de journal » sur Détaillé : RPT client `[AIORDER] … demandé`, `envoi`, `réponse reçue` ; RPT serveur `reçu par le serveur`, `accepté`, `exécuté par`, `EXEC` / `DONE`. Avec un client headless : l'ordre s'exécute sur le headless.
+- **App Ordres** : destinataire « IA · <groupe> », DÉPLACER avec une grille : le groupe y va (aussi connecté à Athena). TENIR sans grille : sur place. FRAGO à une IA : message « n'exécute que… ».
+- **PC du poste TOC** : onglet GROUPES › groupe IA › clic droit sur la carte › choisir l'ordre › ORDRE IA : état dans la barre du PC et sur la carte ; la fiche du groupe s'affiche sans erreur.
+- **Écrans** : grand écran noir, sable et standard, de jour et de nuit : ACE › Écran COMSPEC › Affichage TOC, puis Diffusion (diapositives, caméra en direct à moins de 40 m) ; un second joueur voit la même chose, un joueur qui rejoint pendant une diffusion aussi. Écran encore noir : chercher « image non chargée en 4 s » dans le journal.
+- **Montre** : écran CARTE pour les 4 coloris, toutes tailles, vue agrandie, zoom et nuit : aucun coin hors du cadran, aucun nom de lieu ; un seul « START | STOP » ; écran TÉLÉPHONE avec des notifications, plus d'erreur ligne 1439.
+- **Athena** : lancer sans téléphone, prendre un téléphone et se connecter : étapes « Serveur Athena : … ms » et « Envois vers Athena : acceptés », RECONNECTER → « Liaison Athena rétablie » ; côté site, plus de série de 401 sur télémétrie, positions, marqueurs, véhicules et manifestes.
+
 ## Pack 2.9.28 : moins d'à-coups en partie, mode profilage des saccades (ATAK natif 2.9.28.AG - Denver, COMSPEC Link 2.0.114)
 
 ### Résumé joueur
@@ -45,11 +82,13 @@ Type : performance
 FR : Moins d'à-coups en pleine partie et un mode pour mesurer les saccades
 - Le téléphone n'enregistre plus votre profil Arma toutes les deux minutes quand rien n'a changé : cet enregistrement réécrivait tout le profil et figeait brièvement l'image, même téléphone rangé.
 - En solo, dans l'éditeur Eden ou en partie hébergée, la recherche des socles de recharge ne parcourt plus tous les objets de la mission chaque minute, et le suivi des balises GPS lit plus vite la liste des unités.
-- Nouveau réglage Options › Addon Options › COMSPEC › ATAK · Debug › Profilage (saccades) : jouez 10 minutes puis envoyez-nous le fichier RPT, il montre ce qui tournait à chaque saccade.
+- Nouveau réglage Options › Addon Options › COMSPEC › ATAK · Debug › Profilage (saccades) : jouez 10 minutes puis envoyez-nous le fichier RPT, il montre ce qui tournait à chaque saccade.
+
 EN : Fewer hitches in game and a mode to measure stutters
 - The phone no longer saves your Arma profile every two minutes when nothing changed: that save rewrote the whole profile and briefly froze the picture, even with the phone put away.
 - In single player, in the Eden editor or in a hosted game, the search for charging docks no longer goes through every mission object each minute, and GPS beacon tracking reads the unit list faster.
-- New setting Options › Addon Options › COMSPEC › ATAK · Debug › Profiling (stutters): play for 10 minutes then send us the RPT file, it shows what was running at each stutter.
+- New setting Options › Addon Options › COMSPEC › ATAK · Debug › Profiling (stutters): play for 10 minutes then send us the RPT file, it shows what was running at each stutter.
+
 
 ### Détail technique
 - Retour joueurs (Discord, « Semi consistent stutters ») : saccades semi-régulières téléphone fermé mais porté, mod seul + CBA/ACE, aussi en Eden. RPT 2.9.26 du 01/11 sans partie (rien après le chargement de la carte à 19:26) : seules données au démarrage. Note `docs/bugs/2026-11-01-saccades-fond-profilage.md`.
@@ -66,7 +105,8 @@ EN : Fewer hitches in game and a mode to measure stutters
 - Eden, mission locale avec téléphone porté et fermé : activer Profilage (saccades), jouer 10 min ; le RPT doit montrer « Profilage activé », un bilan `[PROF]` toutes les 10 s, des lignes COMSPEC / Autres mods, et les saccades avec leur détail. Décocher : « Profilage arrêté », plus de lignes `[PROF]`, le bilan `[PERF]` 30 s revient.
 - Pendant le profilage, téléphone ouvert : carte, drone, apps, tout doit fonctionner comme avant (boucles enveloppées).
 - Profil : sans SMS ni message, plus d'« Écriture du profil » toutes les 2 min dans les pics ; envoyer un SMS, l'écriture revient dans les 2 min ; SMS retrouvés après un crash.
-- Socle de recharge posé en Eden et posé avec le kit en partie : les téléphones chargent toujours.
+- Socle de recharge posé en Eden et posé avec le kit en partie : les téléphones chargent toujours.
+
 
 ## Pack 2.9.27 : recherche d'apps instantanée, réglages sans rechargement, « Écouter » dans l'app Musique (ATAK natif 2.9.27.AG - Denver, COMSPEC Link 2.0.114)
 

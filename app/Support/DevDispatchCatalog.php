@@ -294,6 +294,23 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1291, '2026-11-02', 'Ordres aux IA réparés, grands écrans allumés, montre et app Athena justes', 'Avec le pack 2.9.29, les groupes IA de votre camp exécutent vraiment les ordres donnés depuis la carte du téléphone, l’app Ordres ou le PC du poste TOC, et renvoient leur état. Quand un ordre est impossible, le téléphone explique pourquoi. Les grands écrans sur trépied affichent enfin la carte TOC, les diapositives et la caméra en direct, la carte de la montre Garmin reste dans son cadran, et l’app Athena n’annonce plus un serveur injoignable quand votre compte est connecté.', [
+                'Groupes IA du camp dans les destinataires de l’app Ordres : DÉPLACER, TENIR, RECO et RENFORT exécutés au point de la grille saisie',
+                'Étape « Envois vers Athena » dans l’app Athena : dit clairement quand un envoi est refusé',
+                'Menu Écran COMSPEC sur les doubles écrans sur trépied (toutes les teintes)',
+            ], [
+                'Ligne « Ordre aux IA » du clic droit visible pour un chef même sans ordre possible : un clic dit pourquoi (aucun groupe IA, pas le droit, serveur pas à jour)',
+                'Un groupe IA gelé par la mission ou par l’éditeur se remet en mouvement quand il reçoit un ordre de déplacement',
+                'Le jeu n’envoie plus rien à Athena avant d’être connecté',
+            ], [
+                'Ordres aux IA jamais exécutés depuis leur arrivée (pack 2.9.26)',
+                'Grands écrans sur trépied (standard, noir, sable) restés noirs en diffusion et en affichage TOC',
+                'Carte de la montre Garmin qui dépassait du cadran, grand nom de lieu en travers, « START | STOP » en double, écran Téléphone de la montre en erreur',
+                '« Serveur Athena injoignable » et « Reconnexion impossible » affichés alors que le compte est connecté',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.29 (liaison 2.0.115 incluse), quittez Arma complètement et relancez. Le serveur doit avoir la même version pour les ordres aux IA.',
+                'Une mission peut protéger un groupe IA des ordres du téléphone : le téléphone l’indique alors au chef.',
+            ], 'Pack téléphone 2.9.29'),
             $pr(1269, '2026-11-02', 'Fonctions : abrégé, icône, étiquettes et fonctions du site masquables', 'Chaque fonction de votre communauté peut recevoir un abrégé (CDG, MED, JTAC…), une icône choisie dans la bibliothèque du site, des étiquettes de couleur et une description affichée au survol. Ces repères apparaissent dans les effectifs, la fiche membre, les postes de l’ORBAT, la page publique du joueur et les choix de fonction. Vous pouvez masquer les fonctions fournies par le site que vous n’utilisez pas, sans rien retirer aux membres qui les occupent, et les fonctions que vous avez créées sont mises en avant.', [
                 'Abrégé de fonction (2 à 8 majuscules, unique dans la communauté), icône de la bibliothèque avec recherche, étiquettes avec suggestions et couleur facultative',
                 'Onglet « Fonctions du site » : masquer ou réafficher une ou plusieurs fonctions, filtre « Afficher les masquées »',

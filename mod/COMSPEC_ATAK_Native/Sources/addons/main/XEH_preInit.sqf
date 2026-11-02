@@ -672,6 +672,15 @@ if (isServer) then { ["comspec_atak_native_dataSrv", { if ((_this param [0, ""])
 if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_native_fnc_vehicleGateway; }] call CBA_fnc_addEventHandler; };
 // Ordres aux groupes IA (fn_aiOrder) : exécutés là où le groupe est local (serveur, client headless, joueur).
 ["comspec_atak_native_aiOrdExec", { ["exec", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
+// Serveur (aussi en solo, Eden et partie hébergée) : demandes vérifiées ici, dernier état de chaque groupe gardé pour
+// les arrivants. Branché dès le preInit, sans dépendre du reste de XEH_postInitServer. COMSPEC_ATAK_SrvAiOrdV dit aux
+// clients que le serveur sait traiter les ordres (version 1 : 2.9.29) ; absent, le téléphone explique pourquoi rien ne part.
+if (isServer) then {
+    if (isNil "COMSPEC_ATAK_SrvAiOrd") then { COMSPEC_ATAK_SrvAiOrd = createHashMap; };    // camp -> (netId du groupe -> état)
+    ["comspec_atak_native_aiOrdSrv", { ["srv", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_aiOrdState", { ["keep", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
+    missionNamespace setVariable ["COMSPEC_ATAK_SrvAiOrdV", 1, true];
+};
 // Téléphones ramassés par l'IA ennemie : actions là où l'unité est locale, état au serveur, alertes aux clients.
 ["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
 if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "giveFail", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };

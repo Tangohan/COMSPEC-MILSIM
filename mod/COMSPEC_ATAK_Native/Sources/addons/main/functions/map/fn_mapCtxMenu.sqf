@@ -74,8 +74,9 @@ switch (_mode) do {
         } forEach (allPlayers select { _x isNotEqualTo player && {alive _x} && {side group _x isEqualTo side group player} && {[_x] call comspec_atak_native_fnc_hasDevice} });
         // Groupe IA du camp pointé (son chef à moins d'un symbole du clic) : choisi pour ORDRE AUX IA.
         private _aiG = grpNull;
-        if (["can", player] call comspec_atak_native_fnc_aiOrder) then {
-            private _gs = ["groups", [str side group player, _w]] call comspec_atak_native_fnc_aiOrder;
+        private _aiCan = ["can", player] call comspec_atak_native_fnc_aiOrder;
+        private _gs = ["groups", [str side group player, _w]] call comspec_atak_native_fnc_aiOrder;
+        if (_aiCan && {_gs isNotEqualTo []}) then {
             private _nearAi = 0.03;
             {
                 private _sp = _map ctrlMapWorldToScreen (getPosASLVisual leader _x);
@@ -86,11 +87,14 @@ switch (_mode) do {
             if (isNull _aiG) then { _aiG = uiNamespace getVariable ["COMSPEC_ATAK_AiPick", grpNull]; };
             if (isNull _aiG || {!(_aiG in _gs)}) then { _aiG = _gs param [0, grpNull]; };
         };
+        // Ligne ORDRE AUX IA indisponible mais montrée (chef sans groupe IA, groupes IA mais pas le droit, serveur sans le
+        // mod à jour) : un clic dit pourquoi au lieu de ne rien proposer. Ni droit ni groupe IA : pas de ligne.
+        private _aiWhy = if (_aiCan || {_gs isNotEqualTo []}) then { ["why", _aiG] call comspec_atak_native_fnc_aiOrder } else { "" };
         // Étape de l'itinéraire pointée : MODIFIER, NAVIGUER VERS, SUPPRIMER L'ÉTAPE.
         private _wpi = [_map, _screen] call comspec_atak_native_fnc_wpAt;
         if (_card) then { _m = ""; _who = objNull; _wpi = -1; };
         _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["unit", [netId _who, ""] select (isNull _who)], ["at", diag_tickTime],
-            ["relay", _rl], ["card", _card], ["wp", _wpi], ["aiG", _aiG]]];
+            ["relay", _rl], ["card", _card], ["wp", _wpi], ["aiG", _aiG], ["aiWhy", _aiWhy]]];
         [] call _unbindEsc;
         private _d = [] call comspec_atak_native_fnc_display;
         if (!isNull _d) then {
@@ -114,6 +118,11 @@ switch (_mode) do {
         private _c = _s getOrDefault ["mapCtx", createHashMap];
         if ((count _c) isEqualTo 0) exitWith {};
         // Sous-menu drone : le menu reste ouvert et se redessine (à l'image suivante, hors du clic du bouton qu'on efface).
+        // Ordre aux IA impossible ici : le motif plutôt qu'un sous-menu qui ne mènerait à rien.
+        if (_arg isEqualTo "AI" && {(_c getOrDefault ["aiWhy", ""]) isNotEqualTo ""}) exitWith {
+            ["close"] call comspec_atak_native_fnc_mapCtxMenu;
+            ["WARNING", _c get "aiWhy", 5, 30] call comspec_atak_native_fnc_notify;
+        };
         if (_arg in ["DRONE", "BACK", "AI", "AIPOST", "AINEXT"]) exitWith {
             // Groupe IA suivant (du plus proche au plus loin du point cliqué).
             if (_arg isEqualTo "AINEXT") then {
@@ -360,11 +369,12 @@ switch (_mode) do {
         private _aiG = _c getOrDefault ["aiG", grpNull];
         private _aiCol = [1, 0.8, 0.25, 1];
         private _aiSub = _c getOrDefault ["sub", ""];
-        if (!isNull _aiG && {({alive _x} count (units _aiG)) > 0} && {_aiSub isEqualTo ""} && {!_card}) then {
-            _rows insert [0, [["AI", "Ordre aux IA", groupId _aiG, _dir + "app_toc.paa", _aiCol]]];
+        private _aiWhy = _c getOrDefault ["aiWhy", ""];
+        if (_aiSub isEqualTo "" && {!_card} && {_aiWhy isNotEqualTo "" || {!isNull _aiG && {({alive _x} count (units _aiG)) > 0}}}) then {
+            _rows insert [0, [["AI", "Ordre aux IA", [groupId _aiG, "indisponible"] select (_aiWhy isNotEqualTo ""), _dir + "app_toc.paa", [_aiCol, [0.55, 0.6, 0.57, 1]] select (_aiWhy isNotEqualTo "")]]];
         };
-        if (!isNull _aiG && {_aiSub in ["AI", "AIPOST"]}) then {
-            private _e = (missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap]) getOrDefault [[_aiG] call BIS_fnc_netId, createHashMap];
+        if (!isNull _aiG && {_aiWhy isEqualTo ""} && {_aiSub in ["AI", "AIPOST"]}) then {
+            private _e = (missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap]) getOrDefault [["netId", _aiG] call comspec_atak_native_fnc_aiOrder, createHashMap];
             private _cur = ["aucun ordre", _e getOrDefault ["lbl", ""]] select ((_e getOrDefault ["lbl", ""]) isNotEqualTo "");
             private _gs = ["groups", [str side group player, _pos]] call comspec_atak_native_fnc_aiOrder;
             private _head = [["AINEXT", ["label", _aiG] call comspec_atak_native_fnc_aiOrder, format ["groupe %1/%2", (_gs find _aiG) + 1, count _gs], _dir + "app_toc.paa", _aiCol]];

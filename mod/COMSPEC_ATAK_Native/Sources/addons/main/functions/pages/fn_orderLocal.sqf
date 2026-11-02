@@ -43,9 +43,14 @@ switch (_act) do {
         ["recv", [_o, _side]] call comspec_atak_native_fnc_orderLocal;
         // Ordre à un groupe IA : exécuté pour de vrai (fn_aiOrder) quand le type a un équivalent.
         private _aiK = (createHashMapFromArray [["MOVE", "MOVE"], ["HOLD", "HOLD"], ["RECON", "PATROL"], ["QRF", "ATTACK"]]) getOrDefault [_kind, ""];
-        if (_tType isEqualTo "group" && {_aiK isNotEqualTo ""}) then {
+        if (_tType isEqualTo "group") then {
             private _gs = (["groups", [_side, getPosATL player]] call comspec_atak_native_fnc_aiOrder) select { (groupId _x) in [_tRef, _tLabel] };
-            if (_gs isNotEqualTo []) then { ["send", [_gs select 0, _aiK, _pos, _toc]] call comspec_atak_native_fnc_aiOrder; };
+            if (_gs isEqualTo []) exitWith {};
+            // APPUI AÉRIEN, FRAGO, DEM-SSE : pas d'équivalent pour une IA, l'ordre reste écrit seulement.
+            if (_aiK isEqualTo "") exitWith {
+                ["WARNING", format ["%1 : un groupe IA n'exécute que DÉPLACER, TENIR, RECO et RENFORT", groupId (_gs select 0)], 4, 30] call comspec_atak_native_fnc_notify;
+            };
+            ["send", [_gs select 0, _aiK, _pos, _toc]] call comspec_atak_native_fnc_aiOrder;
         };
         if (_direct) exitWith { ["comspec_atak_native_sideEvent", ["comspec_atak_native_localOrder", [_o, _side], _side]] call CBA_fnc_serverEvent; _id };
         [{ ["comspec_atak_native_sideEvent", ["comspec_atak_native_localOrder", _this, _this select 1]] call CBA_fnc_serverEvent; }, [_o, _side], "Ordre", 2] call comspec_atak_native_fnc_netSend;

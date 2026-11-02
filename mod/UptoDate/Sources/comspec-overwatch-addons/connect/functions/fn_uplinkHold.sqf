@@ -3,7 +3,8 @@
     Params : [commande DLL]. Retour : true = ne rien envoyer.
       - liaison Athena désactivée (réglage d'addon « comspec_overwatch_enabled » ou service « Non » / full local) :
         tout est coupé sauf les commandes purement locales (journal, empreinte, version) ;
-      - joueur sans téléphone ATAK (ni balise téléphone Zeus) : tout est coupé sauf la connexion au compte.
+      - joueur sans téléphone ATAK (ni balise téléphone Zeus) : tout est coupé sauf la connexion au compte (dont le code
+        de connexion PairStart / PairStatus : bloqué, il laissait « Serveur Athena : injoignable » après la connexion).
     Le changement d'état est écrit une seule fois au journal (pas de spam).
 */
 params [["_cmd", ""]];
@@ -19,7 +20,7 @@ if (_off) exitWith {
     true
 };
 missionNamespace setVariable ["COMSPEC_UplinkHoldOff", false];
-if (_cmd in ["Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore", "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect"]) exitWith { false };
+if (_cmd in ["Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore", "SetSteamId", "LinkBySteam", "RedeemGameLink", "PairStart", "PairStatus", "GetClientIp", "Logout", "Disconnect"]) exitWith { false };
 // Téléphone : relu au plus une fois par seconde (appelé à chaque envoi).
 private _cache = missionNamespace getVariable ["COMSPEC_UplinkHoldCache", [-1e9, false]];
 if ((diag_tickTime - (_cache select 0)) < 1) exitWith { _cache select 1 };
