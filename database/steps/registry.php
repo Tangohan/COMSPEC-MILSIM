@@ -48,4 +48,5 @@ return [
     ['id' => 'academy_access_rules', 'label' => 'Academy : droits d’accès (qui crée, modifie, publie, inscrit, valide, délivre et voit chaque cours)', 'group' => 'schema', 'file' => '3520_academy_access_rules.php', 'rerun' => true],
     ['id' => 'academy_jtac_rich_text_refresh', 'label' => 'Académie : cours JTAC 2.1.0 mis en forme (titres, échanges radio, encadrés) pour les inscrits qui ne l’ont pas encore commencé', 'group' => 'schema', 'file' => '3540_academy_jtac_rich_text_refresh.php', 'rerun' => true],
     ['id' => 'job_catalog_qualification_links', 'label' => 'Emplois : qualifications citées par les catalogues de communauté reliées au référentiel de la communauté', 'group' => 'schema', 'file' => '3550_job_catalog_qualification_links.php', 'rerun' => true],
+    ['id' => 'doctrine_library_custom', 'label' => 'Doctrine : référentiel personnalisable par communauté (références ajoutées, masquées, catégories et rattachements aux documents)', 'group' => 'schema', 'file' => '3560_doctrine_library_custom.php', 'rerun' => true],
 ];
