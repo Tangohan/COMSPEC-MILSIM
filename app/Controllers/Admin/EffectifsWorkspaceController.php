@@ -4648,66 +4648,8 @@ class EffectifsWorkspaceController
      */
     private function jobAssignmentPageData(Request $request, int $tenantId): array
     {
-        $search = trim((string) $request->query('search', ''));
-        $search = $search !== '' ? $search : null;
-        $filterJobRoleId = (int) $request->query('job_role_id', 0);
-        $filterJobRoleId = $filterJobRoleId > 0 ? $filterJobRoleId : null;
-        $onlyUnassigned = $request->query('unassigned') === '1' || $request->query('unassigned') === 'true';
-        if ($onlyUnassigned) {
-            $filterJobRoleId = null;
-        }
-        $page = max(1, (int) $request->query('page', 1));
-        $tenantSettings = $this->tenantRepository->getSettings($tenantId);
-        $pjrAssignSettings = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
-        $perPage = (int) ($pjrAssignSettings['assignments_page_size'] ?? 30);
-        $total = 0;
-        $rows = [];
-        $assignmentPivot = [];
-        $jobRoleOptions = [];
-        if ($this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->personnelProfilesHaveJobRoleColumns()) {
-            $total = $this->personnelJobRoleRepository->countUsersForJobRoleAssignments($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
-            $rows = $this->personnelJobRoleRepository->listUsersForJobRoleAssignments(
-                $tenantId,
-                $search,
-                $filterJobRoleId,
-                $onlyUnassigned,
-                $perPage,
-                ($page - 1) * $perPage
-            );
-            $userIds = array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows), static fn (int $id): bool => $id > 0));
-            $assignmentPivot = $this->personnelJobRoleRepository->pivotTableExists()
-                ? $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, $userIds)
-                : [];
-            $community = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
-            $jobRoleOptions = $this->personnelJobRoleRepository->listRoleOptionsForSelect(
-                $tenantId,
-                (bool) ($pjrAssignSettings['show_english_labels'] ?? false),
-                (bool) ($pjrAssignSettings['show_category_in_role_picklist'] ?? false),
-                OrganizationRoleLabels::mode($community, $this->tenantRepository->findById($tenantId) ?: [])
-            );
-        }
-        $totalPages = max(1, (int) ceil($total / max(1, $perPage)));
-
-        return [
-            'assignmentRows' => $rows,
-            'assignmentPivot' => $assignmentPivot,
-            'jobRoleOptions' => $jobRoleOptions,
-            'jobRolePermissionCounts' => $this->personnelJobRoleRepository->tablesExist()
-                ? $this->personnelJobRoleRepository->permissionCountsForTenant($tenantId)
-                : [],
-            'pjrAssignSettings' => $pjrAssignSettings,
-            'pivotEnabled' => $this->personnelJobRoleRepository->pivotTableExists(),
-            'filters' => [
-                'search' => $search ?? '',
-                'job_role_id' => $filterJobRoleId ?? 0,
-                'unassigned' => $onlyUnassigned,
-            ],
-            'assignmentsTotal' => $total,
-            'assignmentsPage' => $page,
-            'assignmentsPerPage' => $perPage,
-            'assignmentsTotalPages' => $totalPages,
-            'activeTab' => 'assignments',
-        ];
+        // Tableau « Qui tient quel emploi » : filtres, confidentialité et actions groupées dans JobAssignmentBoardController.
+        return \App\Core\Container::get(JobAssignmentBoardController::class)->boardData($request, $tenantId);
     }
 
     private function resolveJobCategoryId(int $tenantId, int $categoryId): int
