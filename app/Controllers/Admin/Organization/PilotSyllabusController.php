@@ -48,7 +48,8 @@ final class PilotSyllabusController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.pilot_syllabus',
-            'backOfficePageCss' => ['referentiel-qualifications.css', 'referentiel-pilot-syllabus.css'],
+            'backOfficePageCss' => ['referentiel-qualifications.css', 'referentiel-pilot-syllabus.css', 'espace-aerien.css'],
+            'boSkipPageHead' => true,
             'title' => 'Cursus pilote',
             'boPageKicker' => 'PERSONNEL · QUALIFICATIONS',
             'boPageTitle' => 'Cursus pilote',
@@ -151,7 +152,7 @@ final class PilotSyllabusController
                 $r['practiced'] + $c['renewed']
             ));
 
-            return Response::redirect(url(self::BASE));
+            return Response::redirect(url(self::back($request)));
         });
     }
 
@@ -164,7 +165,7 @@ final class PilotSyllabusController
             $this->service->decide($tenantId, $awardId, (int) $this->actorId(), $approve, is_platform_admin());
             Session::flash('success', $approve ? 'Palier validé : la qualification est obtenue.' : 'Palier ajourné. Le membre pourra être reproposé depuis sa fiche.');
 
-            return Response::redirect(url(self::BASE));
+            return Response::redirect(url(self::back($request)));
         });
     }
 
@@ -261,7 +262,9 @@ final class PilotSyllabusController
             $this->stepService()->decide($tenantId, $awardId, $approve, (int) $this->actorId(), (int) $request->input('definition_id', 0));
             Session::flash('success', $approve ? 'Palier validé : la qualification est obtenue.' : 'Palier ajourné. Le membre pourra être reproposé depuis sa fiche.');
 
-            return Response::redirect(url(self::BASE) . '#paliers-communaute');
+            $back = self::back($request);
+
+            return Response::redirect(url($back) . ($back === self::BASE ? '#paliers-communaute' : ''));
         });
     }
 
@@ -275,7 +278,15 @@ final class PilotSyllabusController
         return $this->steps ?? throw new \RuntimeException('Les paliers de la communauté ne sont pas disponibles.');
     }
 
-    /** Heures saisies « 2,5 » ou « 2.5 ». */
+    /** Page de retour après une action lancée depuis l'Espace aérien (liste fermée), sinon le cursus. */
+    private static function back(Request $request): string
+    {
+        $back = (string) $request->input('retour', '');
+
+        return preg_match('#^back-office/espace-aerien(\?vue=[a-z]+)?$#', $back) === 1 ? $back : self::BASE;
+    }
+
+        /** Heures saisies « 2,5 » ou « 2.5 ». */
     private static function hours(mixed $raw): float
     {
         return max(0.0, (float) str_replace(',', '.', trim((string) $raw)));

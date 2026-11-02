@@ -88,6 +88,7 @@ $athKpis = [
     ['label' => 'Qualifications obtenues', 'value' => (string) $heldTotal, 'pct' => $heldTotal > 0 ? '100%' : '0%', 'note' => 'Titulaires de chaque palier'],
 ];
 ?>
+<div class="aero-wrap"><?php $aeroTab = 'reglages'; $aeroHud = null; $aeroTabCounts = []; require base_path('views/admin/airspace/_hero.php'); ?></div>
 <div class="pcs">
     <?php if (!$schemaReady): ?>
     <p class="pcs-notice pcs-notice--warn" role="status"><strong>Le cursus pilote n’est pas encore prêt sur ce serveur.</strong> L’administrateur doit lancer les migrations (étape « pilot_qualification_rules »).</p>
@@ -104,15 +105,6 @@ $athKpis = [
     <?php endif; ?>
 
     <div class="bo-qual__toolbar ath-rise" role="group" aria-label="Actions du cursus pilote">
-        <?php if ($rules !== []): ?>
-        <form method="post" action="<?= $h(url($base . '/evaluer')) ?>">
-            <?= \App\Core\Csrf::field() ?>
-            <button type="submit" class="ath-btn ath-btn--solid"<?= $allowed ? '' : ' disabled' ?>>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
-                Évaluer maintenant
-            </button>
-        </form>
-        <?php endif; ?>
         <a href="#installer" class="ath-btn"><?= $rules === [] ? 'Installer un cursus' : 'Ajouter des paliers ou des appareils' ?></a>
         <a href="#paliers-communaute" class="ath-btn">Paliers de la communauté</a>
         <a href="#flotte" class="ath-btn">Appareils et familles</a>

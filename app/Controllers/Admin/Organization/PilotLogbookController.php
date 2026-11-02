@@ -128,7 +128,7 @@ final class PilotLogbookController
     {
         $entryId = (int) ($params['entryId'] ?? 0);
         $back = (string) $request->input('retour', '');
-        $target = preg_match('#^back-office/referentiels/qualifications/cursus-pilote(/carnet/\d+)?$#', $back) === 1 ? $back : self::SYLLABUS;
+        $target = preg_match('#^(back-office/referentiels/qualifications/cursus-pilote(/carnet/\d+)?|back-office/espace-aerien(\?vue=[a-z]+(&carnet=[a-z]+)?)?)$#', $back) === 1 ? $back : self::SYLLABUS;
         [$tenantId, $actorId] = $this->ids();
         if ($tenantId < 1 || $actorId < 1) {
             return Response::redirect(url('login'));

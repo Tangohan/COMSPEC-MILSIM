@@ -1178,6 +1178,17 @@ class Container
                 self::get(\App\Repositories\PilotFleetRepository::class)
             ),
             \App\Repositories\PilotFleetRepository::class => new \App\Repositories\PilotFleetRepository(),
+            \App\Services\Personnel\AirspaceOverviewService::class => new \App\Services\Personnel\AirspaceOverviewService(
+                self::get(\App\Services\Personnel\PilotQualificationService::class),
+                self::get(\App\Repositories\PilotLogbookRepository::class),
+                self::get(\App\Services\Personnel\PilotLogbookService::class),
+                self::get(\App\Services\Personnel\PilotFleetService::class),
+                self::get(\App\Services\Personnel\PilotSyllabusStepService::class)
+            ),
+            \App\Controllers\Admin\Organization\AirspaceController::class => new \App\Controllers\Admin\Organization\AirspaceController(
+                self::get(\App\Services\Personnel\AirspaceOverviewService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
             \App\Repositories\PilotSyllabusStepRepository::class => new \App\Repositories\PilotSyllabusStepRepository(),
             \App\Services\Personnel\PilotFleetService::class => new \App\Services\Personnel\PilotFleetService(
                 self::get(\App\Repositories\PilotFleetRepository::class),

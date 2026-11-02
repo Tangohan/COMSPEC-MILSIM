@@ -1727,6 +1727,7 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/types', [QualificationReferentielController::class, 'storeType'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/cursus-pilote/carnet/{userId}', [PilotLogbookController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/carnet/vols/{entryId}', [PilotLogbookController::class, 'review'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/espace-aerien', [\App\Controllers\Admin\Organization\AirspaceController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/cursus-pilote', [PilotSyllabusController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/installer', [PilotSyllabusController::class, 'install'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/evaluer', [PilotSyllabusController::class, 'evaluate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

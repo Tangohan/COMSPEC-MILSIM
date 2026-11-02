@@ -141,6 +141,24 @@ final class PilotQualificationService
         return $out;
     }
 
+    /**
+     * Heures de chaque membre par périmètre (relevés du mod et carnet contresigné), avec le dernier vol.
+     *
+     * @return array<int, array<string, array{seconds: int, last_flown_at: string}>>
+     */
+    public function totalsByUser(int $tenantId): array
+    {
+        $rowsByUser = $this->rules->pilotRowsByUser($tenantId);
+        $logByUser = $this->logbookByUser($tenantId);
+        $fleet = $this->fleet($tenantId);
+        $out = [];
+        foreach (array_unique(array_merge(array_keys($rowsByUser), array_keys($logByUser))) as $uid) {
+            $out[(int) $uid] = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? [], $fleet), $logByUser[$uid] ?? [], $fleet);
+        }
+
+        return $out;
+    }
+
     /** Catégorie « Pilotage » du référentiel (créée au besoin). */
     public function categoryId(int $tenantId): ?int
     {
