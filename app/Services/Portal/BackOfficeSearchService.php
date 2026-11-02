@@ -366,6 +366,7 @@ final class BackOfficeSearchService
             ['title' => 'Indicatifs radio', 'subtitle' => 'Séries d’indicatifs', 'href' => url('back-office/organisation/indicatifs'), 'keywords' => 'indicatifs callsign radio', 'ok' => $org],
             ['title' => 'E-mails aux membres', 'subtitle' => 'Écrire à tout ou partie de la communauté', 'href' => url('back-office/communications'), 'keywords' => 'e-mail communications envoi message', 'ok' => $org],
             ['title' => 'Doctrine et SOP', 'subtitle' => 'Procédures de l’unité', 'href' => url('back-office/doctrine'), 'keywords' => 'doctrine sop procédures', 'ok' => $org],
+            ['title' => 'Référentiel doctrinal', 'subtitle' => 'Publications de référence FR, US, OTAN, Allemagne', 'href' => url('back-office/doctrine/referentiel'), 'keywords' => 'référentiel doctrine publications AJP FM ZDv TTA règlements', 'ok' => $org],
             ['title' => 'Traçabilité du courrier', 'subtitle' => 'Qui a lu quoi', 'href' => url('back-office/courrier/traceabilite'), 'keywords' => 'courrier traçabilité lecture', 'ok' => $org],
             ['title' => 'Hub des communautés', 'subtitle' => 'Comparer votre communauté aux autres', 'href' => url('hub'), 'keywords' => 'hub communautés comparer classement statistiques recommandations avis note', 'ok' => true],
             ['title' => 'Bourse aux coopérations', 'subtitle' => 'Publier ou répondre à un besoin inter-team', 'href' => url('hub/bourse'), 'keywords' => 'bourse coopération inter-team renfort opfor besoin partenaire', 'ok' => true],
