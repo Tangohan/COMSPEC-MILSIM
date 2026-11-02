@@ -142,7 +142,7 @@ final class PilotSyllabusController
 
     public function evaluate(Request $request, array $params = []): Response
     {
-        return $this->guarded($request, function (int $tenantId): Response {
+        return $this->guarded($request, function (int $tenantId) use ($request): Response {
             $r = $this->service->runAuto($tenantId);
             $c = $this->steps !== null ? $this->steps->evaluate($tenantId) : ['awarded' => 0, 'proposed' => 0, 'renewed' => 0];
             Session::flash('success', sprintf(
