@@ -2,8 +2,8 @@
 class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
-        requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh","3DEN"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","Item_COMSPEC_ATAK_Phone","Item_COMSPEC_ATAK_Phone_S7_OD","Item_COMSPEC_ATAK_Phone_S7_Black","Item_COMSPEC_ATAK_Phone_S23","Item_COMSPEC_ATAK_Phone_iPhone","Item_COMSPEC_ATAK_Phone_IP17","Item_COMSPEC_ATAK_Phone_Rugged","Item_COMSPEC_ATAK_Phone_Sonim","Item_COMSPEC_ATAK_Phone_Tablet","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Screen","COMSPEC_ATAK_Module_TocScreen","COMSPEC_ATAK_Module_AiAtak"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_Phone","COMSPEC_ATAK_Phone_S7_OD","COMSPEC_ATAK_Phone_S7_Black","COMSPEC_ATAK_Phone_S23","COMSPEC_ATAK_Phone_iPhone","COMSPEC_ATAK_Phone_IP17","COMSPEC_ATAK_Phone_Rugged","COMSPEC_ATAK_Phone_Sonim","COMSPEC_ATAK_Phone_Tablet"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh","3DEN","A3_Props_F_Exp_Military_Camps","A3_Structures_F_Heli_Items_Electronics","A3_Structures_F_Civ_InfoBoards","A3_Props_F_Orange_Civilian_InfoBoards"};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_MPU5","Item_COMSPEC_ATAK_EudCable","Item_COMSPEC_ATAK_RadioBattery","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","Item_COMSPEC_ATAK_Phone","Item_COMSPEC_ATAK_Phone_S7_OD","Item_COMSPEC_ATAK_Phone_S7_Black","Item_COMSPEC_ATAK_Phone_S23","Item_COMSPEC_ATAK_Phone_iPhone","Item_COMSPEC_ATAK_Phone_IP17","Item_COMSPEC_ATAK_Phone_Rugged","Item_COMSPEC_ATAK_Phone_Sonim","Item_COMSPEC_ATAK_Phone_Tablet","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Screen_Tripod","COMSPEC_ATAK_Screen_Desk","COMSPEC_ATAK_Screen_Wall","COMSPEC_ATAK_Screen_Dual","COMSPEC_ATAK_ProjScreen","COMSPEC_ATAK_ProjScreen_Wall","COMSPEC_ATAK_Projector","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Screen","COMSPEC_ATAK_Module_TocScreen","COMSPEC_ATAK_Module_AiAtak"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_MPU5","COMSPEC_ATAK_EudCable","COMSPEC_ATAK_RadioBattery","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_Phone","COMSPEC_ATAK_Phone_S7_OD","COMSPEC_ATAK_Phone_S7_Black","COMSPEC_ATAK_Phone_S23","COMSPEC_ATAK_Phone_iPhone","COMSPEC_ATAK_Phone_IP17","COMSPEC_ATAK_Phone_Rugged","COMSPEC_ATAK_Phone_Sonim","COMSPEC_ATAK_Phone_Tablet"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
@@ -38,7 +38,7 @@ class CfgFunctions {
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayConvert {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class netCond {}; class netWeather {}; class netLoad {}; class netConfig {}; class offline {}; class relayNet {}; class relayCond {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaShortUrl {}; class athenaStatus {}; class feedLink {}; class extVersion {}; class mpu5 {}; class jammer {};
+            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class netCond {}; class netWeather {}; class netLoad {}; class netConfig {}; class offline {}; class relayNet {}; class relayCond {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaShortUrl {}; class athenaStatus {}; class feedLink {}; class extVersion {}; class mpu5 {}; class mpuLink {}; class jammer {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
@@ -72,7 +72,7 @@ class CfgFunctions {
             class vehicleTerminal {}; class vehicleGateway {};
         };
         class toc { file="z\comspec_atak_native\addons\main\functions\toc";
-            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {};
+            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
@@ -110,7 +110,7 @@ class CfgFunctions {
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {};
-            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pageStore {}; class pagePhotos {}; class photoMode {}; class photoCam {}; class pageGallery {}; class pageTracking {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class frsAction {}; class frsLibrary {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {}; class pageFires {}; class firesState {}; class firesGuns {}; class firesSave {}; class firesAction {}; class firesCff {}; class firesWind {}; class pageLivecam {}; class pageView3d {}; class livecamStart {}; class livecamStop {}; class livecamUav {}; class pageAlerts {}; class pageSalute {}; class alertsAction {}; class alertsLog {}; class pageMedical {}; class medicalAction {}; class medRoster {}; class pageProfile {}; class profileAction {}; class pageBriefing {}; class chatCommand {}; class briefingAction {}; class briefingCfg {}; class briefingSettings {}; class briefingUrl {}; class briefingSignature {}; class briefingLive {}; class screenCast {}; class fenrir {}; class slideWebData {}; class slideWebShow {}; class moduleScreen {}; class photoLibrary {}; class pageBft {}; class bftAction {}; class bftFilter {}; class groupTypes {}; class groupAction {}; class pageRecents {}; class pageNotifs {}; class pageDebug {}; class pageFood {}; class foodAction {}; class pageDating {}; class datingAction {}; class datingCam {}; class datingSpecials {}; class hvtIntel {}; class pageOsint {}; class osintAction {}; class pageWeather {}; class pageRelief {}; class reliefAction {}; class pageWaveRelay {}; class waveRelayAction {}; class pageLogistics {}; class logisticsAction {}; class logiWeb {}; class pageEw {}; class ewAction {}; class ewEffects {}; class pageBda {}; class bdaAction {}; class bdaLabels {}; class pageCredits {}; class pageResynch {}; class resynchRun {}; class pageOrderCompose {}; class orderAction {}; class orderAck {}; class pageStatus {}; class pageSse {}; class pageC2 {}; class sseAction {}; class pageWanted {}; class wantedAction {}; class pageLinkAlly {}; class linkAllyAction {}; class linkAllyInit {}; class pageDiscord {}; class discordAction {}; class pageNumbers {}; class numbersAction {}; class orderLocal {}; class pageFolder {}; class pageCalc {}; class calcAction {}; class pageNotes {}; class notesAction {};
+            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pageStore {}; class pagePhotos {}; class photoMode {}; class photoCam {}; class pageGallery {}; class pageTracking {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class frsAction {}; class frsLibrary {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {}; class pageFires {}; class firesState {}; class firesGuns {}; class firesSave {}; class firesAction {}; class firesCff {}; class firesWind {}; class fireSupport {}; class pageLivecam {}; class pageView3d {}; class livecamStart {}; class livecamStop {}; class livecamUav {}; class pageAlerts {}; class pageSalute {}; class alertsAction {}; class alertsLog {}; class pageMedical {}; class medicalAction {}; class medRoster {}; class pageProfile {}; class profileAction {}; class pageBriefing {}; class chatCommand {}; class briefingAction {}; class briefingCfg {}; class briefingSettings {}; class briefingUrl {}; class briefingSignature {}; class briefingLive {}; class screenCast {}; class fenrir {}; class slideWebData {}; class slideWebShow {}; class moduleScreen {}; class photoLibrary {}; class pageBft {}; class bftAction {}; class bftFilter {}; class groupTypes {}; class groupAction {}; class pageRecents {}; class pageNotifs {}; class pageDebug {}; class pageFood {}; class foodAction {}; class pageDating {}; class datingAction {}; class datingCam {}; class datingSpecials {}; class hvtIntel {}; class pageOsint {}; class osintAction {}; class pageWeather {}; class pageRelief {}; class reliefAction {}; class pageWaveRelay {}; class waveRelayAction {}; class pageLogistics {}; class logisticsAction {}; class logiWeb {}; class pageEw {}; class ewAction {}; class ewEffects {}; class pageBda {}; class bdaAction {}; class bdaLabels {}; class pageCredits {}; class pageResynch {}; class resynchRun {}; class pageOrderCompose {}; class orderAction {}; class orderAck {}; class pageStatus {}; class pageSse {}; class pageC2 {}; class sseAction {}; class pageWanted {}; class wantedAction {}; class pageLinkAlly {}; class linkAllyAction {}; class linkAllyInit {}; class pageDiscord {}; class discordAction {}; class pageNumbers {}; class numbersAction {}; class orderLocal {}; class pageFolder {}; class pageCalc {}; class calcAction {}; class pageNotes {}; class notesAction {};
         };
     };
 };
@@ -207,16 +207,40 @@ class CfgWeapons {
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=2; };
     };
-    // Radio maillée MPU5 (Wave Relay, fn_mpu5) : pas de modèle 3D propre, modèle et icône de la radio d'Arma.
-    // Portée dans l'inventaire, elle relève la portée du nœud dans le maillage et relaie le débit reçu à l'équipe.
+    // Radio maillée MPU5 (Wave Relay, fn_mpu5, fn_mpuLink) : pas de modèle 3D propre, modèle et icône de la radio d'Arma.
+    // Ancien modèle : portée dans l'inventaire, elle relève la portée du nœud et relaie le débit reçu à l'équipe.
+    // Liaison réaliste (réglage comspec_atak_native_mpu_real) : le téléphone n'a de réseau qu'à travers elle (câble EUD
+    // ou Wi-Fi), elle forme un maillage avec les MPU5 du même canal et les relais de la mission.
     class COMSPEC_ATAK_MPU5: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_09B95E249C";
-        descriptionShort="$STR_COMSPEC_ATAK_CFG_A55435B201";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_B7A0EF529E";
         picture="\A3\Weapons_F\Data\UI\gear_item_radio_ca.paa";
         model="\A3\Weapons_F\Ammo\mag_radio.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=15; };
+    };
+    // Câble EUD (USB-C) entre le téléphone et la radio de données (fn_mpuLink) : exigé pour la liaison par câble, MPU5 ou
+    // radio tactique, si le réglage « Câble EUD obligatoire » est coché. Modèle du câble DL-7.
+    class COMSPEC_ATAK_EudCable: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_E368B137C6";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_080F6D4857";
+        picture="\z\comspec_atak_native\addons\main\data\item_datacable.paa";
+        model="\z\comspec_atak_native\addons\items\data\item3d_datacable.p3d";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=2; };
+    };
+    // Batterie de rechange de la MPU5 (fn_mpuLink "battery", action ACE « Changer la batterie de la MPU5 »). Modèle de la
+    // batterie du téléphone. Le nom de classe ne contient pas « MPU5 » (fn_mpu5 "has" la prendrait pour une radio).
+    class COMSPEC_ATAK_RadioBattery: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_F4C0E14202";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_9CE51F8DD1";
+        picture="\z\comspec_atak_native\addons\main\data\item_battery.paa";
+        model="\z\comspec_atak_native\addons\items\data\item3d_battery.p3d";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=6; };
     };
     // Kit de réparation du téléphone (action ACE « Réparer le téléphone ATAK », consommé ; fn_repairStart).
     class COMSPEC_ATAK_RepairKit: ItemCore {
@@ -501,6 +525,29 @@ class CfgVehicles {
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_DataCable { name="COMSPEC_ATAK_DataCable"; count=1; }; };
     };
+    // Radio MPU5, câble EUD et batterie de radio posés au sol (Eden, Zeus) : une MPU5 au sol reste un nœud du maillage
+    // tant que le joueur qui y relie son téléphone en Wi-Fi est à portée (fn_mpuLink).
+    class Item_COMSPEC_ATAK_MPU5: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_09B95E249C";
+        model="\A3\Weapons_F\Ammo\mag_radio.p3d"; editorPreview="\A3\EditorPreviews_F\Data\CfgVehicles\Item_ItemRadio.jpg";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_MPU5 { name="COMSPEC_ATAK_MPU5"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_EudCable: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_E368B137C6";
+        model="\z\comspec_atak_native\addons\items\data\item3d_datacable.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_datacable_preview.jpg";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_EudCable { name="COMSPEC_ATAK_EudCable"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_RadioBattery: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_F4C0E14202";
+        model="\z\comspec_atak_native\addons\items\data\item3d_battery.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_battery_preview.jpg";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_RadioBattery { name="COMSPEC_ATAK_RadioBattery"; count=1; }; };
+    };
     class Item_COMSPEC_ATAK_Antenna_Stub: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_A200DC2D3C";
@@ -610,6 +657,109 @@ class CfgVehicles {
             };
         };
     };
+    // Écrans TOC, vidéoprojecteur et toiles COMSPEC : vrais modèles du jeu (objets Apex, Helicopters, Laws of War, que
+    // chaque joueur possède), aperçus Eden du jeu. Écrans (comspec_screen=1) : image sur la dalle 0, dalles superposées
+    // vides dès la config (grand écran : Screen_1 à Screen_9 noires et opaques couvraient l'image), matières d'écran du
+    // mod (comspec_screenMat : jour, nuit) ; double écran : dalle 1 recopiée (comspec_screenMirror).
+    // Toiles (comspec_projBoard=1) : tableau blanc du jeu ; l'image va sur une surface plane posée devant lui par chaque
+    // joueur (COMSPEC_ATAK_ProjSurface, fn_projector), seulement quand un projecteur allumé l'éclaire.
+    class Land_TripodScreen_01_large_F;
+    class Land_TripodScreen_01_dual_v1_F;
+    class Land_PCSet_01_screen_F;
+    class Land_FlatTV_01_F;
+    class Land_Projector_01_F;
+    class Land_MapBoard_F;
+    class Land_MapBoard_01_Wall_F;
+    class COMSPEC_ATAK_Screen_Tripod: Land_TripodScreen_01_large_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_8C3886D686";
+        editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        comspec_screen=1;
+        comspec_screenMat[]={"\z\comspec_atak_native\addons\items\data\comspec_screen_on.rvmat","\z\comspec_atak_native\addons\items\data\comspec_screen_night.rvmat"};
+        hiddenSelectionsTextures[]={"#(argb,8,8,3)color(0,0,0,1,co)","","","","","","","","","","a3\props_f_exp\military\camps\data\tripodscreen_01_co.paa"};
+        ace_dragging_canDrag=1; ace_dragging_dragPosition[]={0,1.4,0}; ace_dragging_dragDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=3;
+        class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="[0, 0, 0]"; }; };
+    };
+    class COMSPEC_ATAK_Screen_Dual: Land_TripodScreen_01_dual_v1_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_477D05DF6A";
+        editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        comspec_screen=1; comspec_screenMirror[]={1};
+        comspec_screenMat[]={"\z\comspec_atak_native\addons\items\data\comspec_screen_on.rvmat","\z\comspec_atak_native\addons\items\data\comspec_screen_night.rvmat"};
+        hiddenSelectionsTextures[]={"#(argb,8,8,3)color(0,0,0,1,co)","#(argb,8,8,3)color(0,0,0,1,co)","a3\props_f_exp\military\camps\data\tripodscreen_01_co.paa"};
+        ace_dragging_canDrag=1; ace_dragging_dragPosition[]={0,1.4,0}; ace_dragging_dragDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=3;
+        class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="[0, 0, 0]"; }; };
+    };
+    class COMSPEC_ATAK_Screen_Desk: Land_PCSet_01_screen_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_D875FDECAE";
+        editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        comspec_screen=1;
+        comspec_screenMat[]={"\z\comspec_atak_native\addons\items\data\comspec_screen_on.rvmat","\z\comspec_atak_native\addons\items\data\comspec_screen_night.rvmat"};
+        hiddenSelectionsTextures[]={"#(argb,8,8,3)color(0,0,0,1,co)"};
+        ace_dragging_canCarry=1; ace_dragging_carryPosition[]={0,1,1}; ace_dragging_carryDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=1;
+        class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=3; condition="true"; position="[0, 0, 0]"; }; };
+    };
+    class COMSPEC_ATAK_Screen_Wall: Land_FlatTV_01_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_BFF6157B7C";
+        editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        comspec_screen=1;
+        comspec_screenMat[]={"\z\comspec_atak_native\addons\items\data\comspec_screen_on.rvmat","\z\comspec_atak_native\addons\items\data\comspec_screen_night.rvmat"};
+        hiddenSelectionsTextures[]={"#(argb,8,8,3)color(0,0,0,1,co)"};
+        ace_dragging_canCarry=1; ace_dragging_carryPosition[]={0,1,1}; ace_dragging_carryDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=1;
+        class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=3; condition="true"; position="[0, 0, 0]"; }; };
+    };
+    // Toiles : tableau blanc sur trépied et tableau mural du jeu (blancs tant que rien n'est projeté).
+    class COMSPEC_ATAK_ProjScreen: Land_MapBoard_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_43A7D9BDFC";
+        editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        comspec_projBoard=1;
+        ace_dragging_canDrag=1; ace_dragging_dragPosition[]={0,1.4,0}; ace_dragging_dragDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=2;
+    };
+    class COMSPEC_ATAK_ProjScreen_Wall: Land_MapBoard_01_Wall_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_C3303CA58C";
+        editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        comspec_projBoard=1;
+        ace_dragging_canCarry=1; ace_dragging_carryPosition[]={0,1,1}; ace_dragging_carryDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=1;
+    };
+    // Surface de projection (tools/model_projsurface.py) : rectangle 16:9 posé localement devant le tableau, mis à
+    // l'échelle et incliné comme lui ; invisible sans image (texture vide).
+    class COMSPEC_ATAK_ProjSurface: Static {
+        scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_90D0A0AFFA";
+        model="\z\comspec_atak_native\addons\items\data\comspec_projsurface.p3d";
+        comspec_screen=1;
+        comspec_screenMat[]={"\z\comspec_atak_native\addons\items\data\comspec_proj_on.rvmat","\z\comspec_atak_native\addons\items\data\comspec_proj_night.rvmat"};
+        hiddenSelections[]={"screen"};
+        hiddenSelectionsTextures[]={""};
+        hiddenSelectionsMaterials[]={"\z\comspec_atak_native\addons\items\data\comspec_proj_on.rvmat"};
+    };
+    // Vidéoprojecteur du jeu (fn_projector) : COMSPEC_ATAK_Proj [allumé, tableau] public (joueurs qui rejoignent compris).
+    class COMSPEC_ATAK_Projector: Land_Projector_01_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_81785FF8C2";
+        editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        comspec_projector=1;
+        ace_dragging_canCarry=1; ace_dragging_carryPosition[]={0,0.8,1}; ace_dragging_carryDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=1;
+        class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_06F212475E"; selection=""; distance=3; condition="true"; position="[0, 0, 0]"; }; };
+        class Attributes {
+            class COMSPEC_ATAK_ProjOn {
+                displayName="$STR_COMSPEC_ATAK_CFG_8F3EFAEC0E";
+                tooltip="$STR_COMSPEC_ATAK_CFG_0B8E6B4E77";
+                property="COMSPEC_ATAK_ProjOn"; control="Checkbox"; typeName="BOOL"; defaultValue="false";
+                expression="if (_value && {isServer}) then { [{ [""power"", [_this, true]] call comspec_atak_native_fnc_projector; }, _this, 3] call CBA_fnc_waitAndExecute; };";
+            };
+        };
+    };
     class Item_COMSPEC_ATAK_GarminWatch: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_957A6195AE";
@@ -689,6 +839,13 @@ class CfgVehicles {
     };
     // Modules Zeus / Eden « ATAK · Données » (extraction au câble DL-7).
     #include "modules.hpp"
+};
+// Catégorie Eden / Zeus des objets COMSPEC posables (écrans TOC, projecteurs, toiles).
+class CfgEditorCategories {
+    class COMSPEC_ATAK_EdCat { displayName="COMSPEC"; };
+};
+class CfgEditorSubcategories {
+    class COMSPEC_ATAK_EdSubcat_Screens { displayName="$STR_COMSPEC_ATAK_CFG_46B4D5944D"; };
 };
 class CfgFactionClasses {
     class NO_CATEGORY;

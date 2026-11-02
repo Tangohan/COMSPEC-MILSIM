@@ -56,6 +56,11 @@ private _myDeck = {
 };
 // La dalle visible n'est pas toujours la sélection 0 : un portable a « camo » puis « screen ».
 // On prend la sélection nommée écran quand celle demandée n'en est pas une.
+// Toile de projection : image seulement quand un projecteur allumé l'éclaire (fn_projector, contrôle de ce poste).
+private _lit = {
+    params ["_o"];
+    (getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}
+};
 private _face = {
     params ["_o", "_sel"];
     private _names = getArray (configOf _o >> "hiddenSelections");
@@ -137,7 +142,7 @@ switch (_mode) do {
         };
         // Écran TOC : libérer la dalle avant de poser la diapositive (évite d'enregistrer la texture TOC comme « origine »).
         if ((count (_a getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8 && {(_a getVariable ["COMSPEC_ATAK_TocTex", ""]) isNotEqualTo ""}) then {
-            _a setObjectTexture [_a getVariable ["COMSPEC_ATAK_TocSel", 0], _a getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+            ["paint", [_a, _a getVariable ["COMSPEC_ATAK_TocSel", 0], _a getVariable ["COMSPEC_ATAK_TocOrig", ""]]] call comspec_atak_native_fnc_tocScreen;
             _a setVariable ["COMSPEC_ATAK_TocTex", ""];
             _a setVariable ["COMSPEC_ATAK_ScreenOrig", nil];
             _a setVariable ["COMSPEC_ATAK_ScreenCur", ""];
@@ -156,7 +161,7 @@ switch (_mode) do {
             ["add", [_o, _nm select [0, 32], 50, "", [_o, 0] call _face, true]] call _fn;
         };
         if ((count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8 && {(_o getVariable ["COMSPEC_ATAK_TocTex", ""]) isNotEqualTo ""}) then {
-            _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+            ["paint", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]] call comspec_atak_native_fnc_tocScreen;
             _o setVariable ["COMSPEC_ATAK_TocTex", ""];
             _o setVariable ["COMSPEC_ATAK_ScreenOrig", nil];
             _o setVariable ["COMSPEC_ATAK_ScreenCur", ""];
@@ -233,6 +238,8 @@ switch (_mode) do {
             _o setVariable ["COMSPEC_ATAK_ScreenOrig", nil];
         };
             private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
+            // Toile que plus aucun projecteur n'éclaire : diffusion gardée, image retirée (toile blanche ou enroulée).
+            if !([_o] call _lit) then { _c = []; };
             // Texture voulue : "" = celle d'origine.
             private _want = "";
             // Leçon Academy : page dessinée en texte par ce poste (pas d'image à télécharger).
@@ -359,8 +366,8 @@ switch (_mode) do {
                     _o setVariable ["COMSPEC_ATAK_ScreenAcadShown", []];
                 };
                 // Texture d'origine gardée avant le premier changement, remise à la fin de la diffusion.
-                if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", (getObjectTextures _o) param [_sel, ""]]; };
-                _o setObjectTexture [_sel, [_want, _o getVariable ["COMSPEC_ATAK_ScreenOrig", ""]] select (_want isEqualTo "")];
+                if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", ["orig", [_o, _sel]] call comspec_atak_native_fnc_tocScreen]; };
+                ["paint", [_o, _sel, [_want, _o getVariable ["COMSPEC_ATAK_ScreenOrig", ""]] select (_want isEqualTo "")]] call comspec_atak_native_fnc_tocScreen;
                 // Dalle préparée pour l'image (matière d'écran, dalles superposées du grand écran masquées), remise à la fin.
                 ["surface", [_o, _sel, _want isNotEqualTo ""]] call comspec_atak_native_fnc_tocScreen;
                 _o setVariable ["COMSPEC_ATAK_ScreenCur", _want];
@@ -438,7 +445,7 @@ switch (_mode) do {
         // Écrans retirés (Zeus « Retirer l'écran ») : texture d'origine remise une fois sur ce poste.
         {
             if ((_x getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isNotEqualTo "") then {
-                _x setObjectTexture [_x getVariable ["COMSPEC_ATAK_ScreenSel", 0], _x getVariable ["COMSPEC_ATAK_ScreenOrig", ""]];
+                ["paint", [_x, _x getVariable ["COMSPEC_ATAK_ScreenSel", 0], _x getVariable ["COMSPEC_ATAK_ScreenOrig", ""]]] call comspec_atak_native_fnc_tocScreen;
                 ["surface", [_x, _x getVariable ["COMSPEC_ATAK_ScreenSel", 0], false]] call comspec_atak_native_fnc_tocScreen;
                 _x setVariable ["COMSPEC_ATAK_ScreenCur", ""];
             };

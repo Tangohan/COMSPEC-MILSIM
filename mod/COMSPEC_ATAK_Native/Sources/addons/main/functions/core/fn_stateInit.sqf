@@ -21,7 +21,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_PhotoMode", false];
 { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_NetUpSig", "COMSPEC_ATAK_NetUpPend", "COMSPEC_ATAK_ChatAfter", "COMSPEC_ATAK_ChatSeen"];
 // Dernière MPU5 vue (fn_mpu5) et terminal de bord (XEH_postInitClient) : sans remise à zéro, faux « MPU5 retirée » ou message
 // « Tablette du véhicule disponible » manqué au début de la mission suivante.
-{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Mpu5Was", "COMSPEC_ATAK_TermKind"];
+// Radio de données de la liaison réaliste (fn_mpuLink) : état, maillage et lignes de vue de la mission précédente.
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Mpu5Was", "COMSPEC_ATAK_TermKind", "COMSPEC_ATAK_MpuSt", "COMSPEC_ATAK_MpuStatus", "COMSPEC_ATAK_MpuMesh", "COMSPEC_ATAK_MpuLos", "COMSPEC_ATAK_MpuMeshBusy", "COMSPEC_ATAK_MpuMeshAt"];
 uiNamespace setVariable ["COMSPEC_ATAK_State",_state];
 uiNamespace setVariable ["COMSPEC_ATAK_Data",_data];
 missionNamespace setVariable ["COMSPEC_ATAK_MapTool","SELECT",false];

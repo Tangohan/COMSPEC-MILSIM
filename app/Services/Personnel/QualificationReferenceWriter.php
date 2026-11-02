@@ -55,6 +55,19 @@ final class QualificationReferenceWriter
         return (int) ($st->fetchColumn() ?: 0);
     }
 
+    /** @return array<string, int> code (majuscules) => fiche du référentiel de la communauté (la plus ancienne) */
+    public function definitionIdsByCode(int $tenantId): array
+    {
+        $st = $this->pdo->prepare('SELECT id, code FROM personnel_qualification_definitions WHERE tenant_id = ? ORDER BY id');
+        $st->execute([$tenantId]);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[strtoupper(trim((string) $row['code']))] ??= (int) $row['id'];
+        }
+
+        return $out;
+    }
+
     /** @return array<string, true> codes déjà présents dans le référentiel de la communauté (casse ignorée) */
     public function existingCodes(int $tenantId): array
     {

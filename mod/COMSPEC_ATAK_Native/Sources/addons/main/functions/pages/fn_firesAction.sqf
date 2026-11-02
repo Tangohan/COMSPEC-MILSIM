@@ -2,6 +2,8 @@
     Actions de l'app CAS. Params : [action, argument]
     tab, mode, sheaf, pick, clear, prefill9, prefill5, send9, send5, gunHere, compute, shot, eom
     Écran APPEL DE FEU (fn_firesCff) : gun, ammo, from, clearTgt, newMsn, recall.
+    Appui feu typé (fn_fireSupport, réglage CBA « Appui feu typé ») : fsType (moyen choisi), adj ("ADD" | "DROP" | "LEFT" |
+    "RIGHT" : réglage sur l'axe observateur-cible, un coup), adjStep (pas en m), ffe (EFFICACE : tous les coups au point réglé).
 */
 params [["_action", ""], ["_arg", ""]];
 [] call comspec_atak_native_fnc_firesSave;
@@ -25,6 +27,7 @@ private _gridPos = {
 // Envoi d'un ordre : sans Athena (mode full local, service « Non », pas de COMSPEC Link), ordre du camp par le serveur
 // (fn_orderLocal : app Tâches des destinataires, flux du poste TOC) ; avec Athena, ordre Overwatch (vu sur le web).
 private _local = ["local"] call comspec_atak_native_fnc_orderLocal;
+private _fsOn = ["on"] call comspec_atak_native_fnc_fireSupport;
 private _order = {
     params ["_type", "_target", "_body", ["_prio", "URGENT"], ["_targetType", ""]];
     if (_local) exitWith { ["send", [_type, (createHashMapFromArray [["CAS", "APPUI AÉRIEN"], ["CUSTOM_CFF", "APPEL DE FEU"]]) getOrDefault [_type, ""], "all", "", "", _body, ["ROUTINE", "URGENT"] select (_prio isEqualTo "URGENT")]] call comspec_atak_native_fnc_orderLocal; };
@@ -37,13 +40,44 @@ switch (_action) do {
     case "gun": { _f set ["gun", _arg]; _f deleteAt "solution"; };
     case "ammo": { _f set ["ammo", _arg]; _f deleteAt "solution"; };
     case "from": { _f set ["from", _arg]; _f deleteAt "solution"; };
+    case "fsType": {
+        // Moyen choisi : la liste des pièces est refiltrée (première pièce du moyen), munition et solution revues.
+        _f set ["fsType", _arg];
+        _f deleteAt "gun";
+        _f deleteAt "solution";
+        private _am = (["type", _arg] call comspec_atak_native_fnc_fireSupport) getOrDefault ["ammo", []];
+        if (_am isNotEqualTo [] && {!((_f getOrDefault ["ammo", "HE"]) in _am)}) then { _f set ["ammo", _am select 0]; };
+    };
+    case "adjStep": { _f set ["adjStep", _arg]; };
+    case "adj": {
+        // + / – / G / D : la cible glisse du pas choisi sur l'axe observateur (moi) - cible, puis un coup de réglage.
+        private _t = _f getOrDefault ["target", []];
+        if (!(_f getOrDefault ["active", false]) || {(count _t) < 2}) exitWith { ["Aucune mission en cours : TIR d'abord.", true] call _say; };
+        private _step = _f getOrDefault ["adjStep", 100];
+        private _ot = player getDir _t;
+        private _n = _t getPos [_step, switch (_arg) do { case "ADD": { _ot }; case "DROP": { _ot + 180 }; case "LEFT": { _ot - 90 }; default { _ot + 90 }; }];
+        _n = [_n select 0, _n select 1, 0];
+        _f set ["target", _n];
+        _f set ["tgtGrid", [_n, 10] call comspec_atak_native_fnc_gridRef];
+        _f set ["mode", "GRID"];
+        _f set ["fsPhase", "ADJ"];
+        // Grille posée ici : la saisie de l'écran (ancienne grille) n'est pas relue par le TIR qui suit.
+        _f set ["clearing", true];
+        ["shot"] call comspec_atak_native_fnc_firesAction;
+    };
+    case "ffe": {
+        if !(_f getOrDefault ["active", false]) exitWith { ["Aucune mission en cours : TIR d'abord.", true] call _say; };
+        _f set ["fsPhase", "FFE"];
+        _f set ["clearing", true];
+        ["shot"] call comspec_atak_native_fnc_firesAction;
+    };
     case "clearTgt": {
         { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy"];
         _f set ["clearing", true];
         ["Cible effacée."] call _say;
     };
     case "newMsn": {
-        { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy", "active", "activeGrid"];
+        { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy", "active", "activeGrid", "fsId"];
         _f set ["clearing", true];
         ["Nouvelle mission."] call _say;
     };
@@ -51,7 +85,8 @@ switch (_action) do {
         // Mission du journal : cible, munition, coups et pièce remis dans le formulaire.
         private _m = (_f getOrDefault ["missions", []]) param [_arg, []];
         if ((count _m) < 6) exitWith {};
-        _m params ["", "_g", "", "_r", "", "_k", ["_gun", ""]];
+        _m params ["", "_g", "", "_r", "", "_k", ["_gun", ""], ["_fsT", ""]];
+        if (_fsOn) then { _f set ["fsType", _fsT]; };
         _f set ["mode", "GRID"];
         _f set ["tgtGrid", _g];
         _f set ["rounds", str _r];
@@ -166,7 +201,8 @@ switch (_action) do {
         private _gun = if (_gunId isEqualTo "MAN") then { objNull } else { objectFromNetId _gunId };
         // Pièce détruite depuis le choix : pas de calcul ni d'appel de feu pour l'épave.
         if (!isNull _gun && {!alive _gun}) exitWith { _f set ["gun", "MAN"]; _f deleteAt "solution"; ["Pièce détruite : choisissez une autre pièce.", true] call _say; };
-        private _gunPos = if (isNull _gun) then { [_f getOrDefault ["gunGrid", ""]] call _gridPos } else { getPosATL _gun };
+        // Batterie simulée (appui feu typé) : hors carte, distance et azimut donnés depuis l'observateur.
+        private _gunPos = if (isNull _gun) then { if (_gunId isEqualTo "SIM") then { getPosATL player } else { [_f getOrDefault ["gunGrid", ""]] call _gridPos } } else { getPosATL _gun };
         if ((count _gunPos) < 2) exitWith { ["Choisissez une pièce ou saisissez sa grille.", true] call _say; };
         // Cible
         private _tgt = if ((_f getOrDefault ["mode", "GRID"]) isEqualTo "POLAR") then {
@@ -237,6 +273,29 @@ switch (_action) do {
             ["dist", _gunPos distance2D _tgt], ["mils", (_gunPos getDir _tgt) * 6400 / 360], ["eta", _eta],
             ["inRange", if (isNull _gun) then { _charge > 0 } else { _inRange }], ["grid", [_tgt, 8] call comspec_atak_native_fnc_gridRef], ["mag", _mag]
         ];
+        // Appui feu typé : portées et distance de sécurité du moyen ; batterie simulée et appareil sans balistique de tube.
+        private _fsK = _f getOrDefault ["fsType", ""];
+        if (_fsOn) then {
+            if (_fsK isEqualTo "" && {!isNull _gun}) then { _fsK = ["classify", _gun] call comspec_atak_native_fnc_fireSupport; };
+            private _fsT = ["type", _fsK] call comspec_atak_native_fnc_fireSupport;
+            private _rg = ["range", [_gun, _mag, _fsK]] call comspec_atak_native_fnc_fireSupport;
+            _sol set ["rMin", _rg select 0];
+            _sol set ["rMax", _rg select 1];
+            _sol set ["gunPos", [_gunPos select 0, _gunPos select 1]];
+            (["dc", [_tgt, _fsK]] call comspec_atak_native_fnc_fireSupport) params ["_dcR", "_dcN"];
+            _sol set ["dc", _dcR];
+            _sol set ["friend", _dcN];
+            if (!isNull _gun && {_mag isNotEqualTo ""}) then { _sol set ["inRange", ["inRange", [_gun, _mag, _tgt, _fsK]] call comspec_atak_native_fnc_fireSupport]; };
+            // Pièce manuelle d'un moyen choisi : portée du moyen (plus celle du mortier de 82 mm par défaut).
+            if (isNull _gun && {_gunId isEqualTo "MAN"} && {(_rg select 1) > 0}) then { _sol set ["inRange", _d >= (_rg select 0) && {_d <= (_rg select 1)}]; };
+            if (_gunId isEqualTo "SIM" || {_fsK isEqualTo "CAS"}) then {
+                { _sol set [_x, -1]; } forEach ["charge", "elev", "maxOrd"];
+                _sol set ["inRange", true];
+                private _dl = missionNamespace getVariable ["comspec_atak_native_fs_delay", 1];
+                _sol set ["eta", if (_gunId isEqualTo "SIM") then { (((_fsT getOrDefault ["tof", 30]) * (_dl max 0.35)) max 3) + (_fsT getOrDefault ["react", 45]) * _dl } else { (_gunPos distance2D _tgt) / 150 }];
+            };
+            if (_gunId isEqualTo "SIM") then { _sol set ["gunName", format [("Batterie simulée · %1") call comspec_atak_native_fnc_tr, (_fsT getOrDefault ["short", "APPUI"]) call comspec_atak_native_fnc_tr]]; };
+        };
         _f set ["solution", _sol];
         if (_action isEqualTo "compute") exitWith { ["Solution calculée."] call _say; };
         // TIR
@@ -245,6 +304,46 @@ switch (_action) do {
         private _enemy = trim (_f getOrDefault ["enemy", ""]);
         private _summary = format ["APPEL DE FEU %1 | pièce %2 | cible %3%9 | %4 x%5%6 | az %7 mil | %8 m", [] call _me, _sol get "gunName", _sol get "grid", _ammo, _rounds, ["", " gerbe"] select _sheaf, round (_sol get "mils"), round (_sol get "dist"),
             ["", format [" (%1)", _enemy]] select (_enemy isNotEqualTo "")];
+        // Appui feu typé : mission suivie (fn_fireSupport) ; premier tir, réglage d'un coup ou EFFICACE.
+        if (_fsOn) exitWith {
+            private _fsT = ["type", _fsK] call comspec_atak_native_fnc_fireSupport;
+            private _phase = _f getOrDefault ["fsPhase", "FIRST"];
+            _f deleteAt "fsPhase";
+            if (_phase isNotEqualTo "FIRST" && {!("fsId" in _f)}) then { _phase = "FIRST"; };
+            _rounds = [_rounds min (_fsT getOrDefault ["rounds", 12]), 1] select (_phase isEqualTo "ADJ");
+            if ((_fsT getOrDefault ["ammo", []]) isNotEqualTo [] && {!(_ammo in (_fsT get "ammo"))}) exitWith { ["Munition non disponible pour ce moyen.", true] call _say; };
+            if (!(_sol get "inRange") && {_gunId isNotEqualTo "MAN"}) exitWith { [format ["Cible hors de portée du moyen (%1 à %2 m).", _sol getOrDefault ["rMin", 0], _sol getOrDefault ["rMax", 0]], true] call _say; };
+            if (!isNull _gun && {_mag isEqualTo ""} && {_fsK isNotEqualTo "CAS"}) exitWith { ["Munition absente sur la pièce.", true] call _say; };
+            private _dcClose = (_sol getOrDefault ["friend", -1]) >= 0 && {(_sol get "friend") < (_sol getOrDefault ["dc", 600])};
+            private _m = createHashMapFromArray [["id", ["", _f getOrDefault ["fsId", ""]] select (_phase isNotEqualTo "FIRST")], ["type", _fsK],
+                ["gun", _gunId], ["gunName", _sol get "gunName"], ["gunPos", _sol getOrDefault ["gunPos", []]], ["tgt", [_tgt select 0, _tgt select 1]], ["grid", _sol get "grid"],
+                ["ammo", _ammo], ["rounds", _rounds], ["sheaf", _sheaf && {_phase isNotEqualTo "ADJ"}], ["phase", _phase], ["dcClose", _dcClose], ["enemy", _enemy], ["eta", round (_sol get "eta")]];
+            // Jeton du tir : un réglage ou EFFICACE remplace le tir précédent de la même mission (pièce IA, batterie simulée).
+            _m set ["run", format ["%1#%2", _m get "id", round (diag_tickTime * 10)]];
+            private _how = ["request", _m] call comspec_atak_native_fnc_fireSupport;
+            if ((_how select [0, 1]) isEqualTo "!") exitWith { if ((count _how) > 1) then { [_how select [1], true] call _say; }; };
+            // Ordre écrit (Tâches, poste TOC, Athena) au premier tir seulement : réglages et EFFICACE suivent dans la mission.
+            if (_phase isEqualTo "FIRST") then {
+                ["CUSTOM_CFF", "", _summary + format [" | %1%2", _fsT getOrDefault ["label", "appui générique"], ["", " | DANGER CLOSE"] select _dcClose], "URGENT", "all"] call _order;
+            };
+            _f set ["active", true];
+            _f set ["activeGrid", _sol get "grid"];
+            _f set ["fsId", _m get "id"];
+            private _ph = (createHashMapFromArray [["FIRST", "TIR"], ["ADJ", "RÉGLAGE"], ["FFE", "EFFICACE"]]) get _phase;
+            private _log = _f getOrDefault ["log", []];
+            _log pushBack format ["<t color='#e5483a'>%1</t> %6 · %2 · %3 x%4 · %5", [] call _time, _sol get "grid", _ammo, _rounds, _how, _ph];
+            _f set ["log", _log select [((count _log) - 20) max 0]];
+            if (_phase isEqualTo "FIRST") then {
+                private _msn = _f getOrDefault ["missions", []];
+                _msn pushBack [[] call _time, _sol get "grid", ["HE", "ILM", "FUM"] select ((["HE", "ILLUM", "SMOKE"] find _ammo) max 0), _rounds, _how, _ammo, _gunId, _fsK];
+                _f set ["missions", _msn select [((count _msn) - 20) max 0]];
+            };
+            // Message traduit morceau par morceau (valeurs collées : un seul modèle ne les retrouverait pas).
+            private _tr = { _this call comspec_atak_native_fnc_tr };
+            [format [("%1 demandé (%2).") call _tr, _ph call _tr, _how call _tr] + (["", " " + format [("Impact dans %1 s.") call _tr, round (_sol get "eta")]] select ((_sol get "eta") > 0))
+                + (["", " " + (("DANGER CLOSE : amis plus près que la distance de sécurité.") call _tr)] select _dcClose), _dcClose] call _say;
+            playSound "ClickSoft";
+        };
         private _how = "ordre";
         if (!isNull _gun && {!isNull gunner _gun}) then {
             if (isPlayer gunner _gun) then {
@@ -284,6 +383,9 @@ switch (_action) do {
         private _eomGrid = _f getOrDefault ["activeGrid", _sol getOrDefault ["grid", _f getOrDefault ["tgtGrid", ""]]];
         if (_eomGrid isEqualTo "") then { _eomGrid = _f getOrDefault ["tgtGrid", ""]; };
         ["CUSTOM_CFF", "", format ["FIN DE MISSION %1 | cible %2", [] call _me, _eomGrid], "IMPORTANT", "all"] call _order;
+        // Appui feu typé : la pièce (IA, simulée ou servant joueur) arrête la mission.
+        if (_fsOn && {"fsId" in _f}) then { ["eom", _f get "fsId"] call comspec_atak_native_fnc_fireSupport; };
+        _f deleteAt "fsId";
         _f set ["active", false];
         _f deleteAt "activeGrid";
         private _log = _f getOrDefault ["log", []];

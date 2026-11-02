@@ -177,7 +177,28 @@ Fond de carte : la photo de la carte si le mod @COMSPEC_ATAK_Photo est chargé, 
 if (isServer) then { ["add", [this, "TOC Bravo", "WEST", 0, "SPLIT", true]] call comspec_atak_native_fnc_tocScreen; };
 ["remove", objet] call comspec_atak_native_fnc_tocScreen;
 // Pose d'un écran du jeu : [position ATL, direction, classe, nom, camp, affichage, poste TOC]
-["spawn", [getPosATL player, getDir player, "Land_TripodScreen_01_large_F", "TOC", "WEST"]] call comspec_atak_native_fnc_tocScreen;
+["spawn", [getPosATL player, getDir player, "COMSPEC_ATAK_Screen_Tripod", "TOC", "WEST"]] call comspec_atak_native_fnc_tocScreen;
+```
+
+**Écrans COMSPEC dédiés.** Catégorie Eden / Zeus « COMSPEC › Écrans TOC et projection » : les vrais écrans du jeu
+(grand écran et double écran sur trépied, téléviseur, moniteur de bureau) réglés pour afficher une image : une seule
+dalle (les dalles superposées du grand écran, noires et opaques, sont vides dès la config), matières d'écran du mod
+(lisibles de jour comme de nuit), double écran : même image sur les deux dalles. Même menu ACE « Écran COMSPEC »
+(Diffusion, Affichage TOC, Carte).
+
+**Vidéoprojecteur et tableau (`fn_projector`).** Le vidéoprojecteur du jeu projette sur un tableau blanc du jeu (sur
+trépied ou mural) à moins de 15 m. ACE › Vidéoprojecteur › Projecteur COMSPEC : Allumer / Éteindre, Projeter sur…
+(tableaux en vue), puis Diffusion, Affichage TOC et Carte comme sur un écran, appliqués au tableau. Allumé sans tableau
+choisi, il prend le plus proche dans l'axe de son objectif. L'image (16:9, posée devant la face blanche du côté du
+projecteur, à sa taille et à son inclinaison, `tools/model_projsurface.py`) n'apparaît que si le projecteur est allumé,
+intact, tourné vers le tableau et que rien ne coupe la ligne objectif - tableau (personne, mur, véhicule) ; sinon
+tableau blanc. Attribut Eden « Allumé au lancement ».
+
+```sqf
+["power", [projo1, true]] call comspec_atak_native_fnc_projector;      // allume (tableau le plus proche dans l'axe de l'objectif)
+["link", [projo1, tableau1]] call comspec_atak_native_fnc_projector;   // associe un tableau précis
+["castOn", tableau1] call comspec_atak_native_fnc_screenCast;           // mes diapositives sur le tableau
+["ensure", [tableau1, "MAP"]] call comspec_atak_native_fnc_tocScreen;   // carte du TOC sur le tableau
 ```
 
 **English.** The "ATAK · TOC screen" Eden/Zeus module shows a side's live ATAK network, as computed by the mission
@@ -186,6 +207,9 @@ feed. ACE/scroll actions change the display (map and feed, map, feed, post PIP),
 "TOC post laptop" action opens the laptop's own screen (`fn_tocLaptop`), with no phone: the real Arma map, groups,
 feed, order composer and side messages. "Post PIP" mirrors the operator's laptop on any in-game screen. Screens
 persist across sessions (`fn_tocPersist`, setting "Keep TOC screens").
+COMSPEC screens are the game's own screens (tripod, dual, TV, desk monitor) set up to show one image day and night. The
+COMSPEC video projector (`fn_projector`, the game's projector) projects slides, TOC display, map or camera onto a game
+whiteboard within 15 m when switched on, intact, aimed and in line of sight; otherwise the board stays white.
 
 ## 8. IA équipées d'un ATAK
 
@@ -207,3 +231,26 @@ if (isServer) then { ["set", [units group _unit, true]] call comspec_atak_native
 `_unit setVariable ["COMSPEC_ATAK_AiAtak", true, true]`. With "Realistic AI on the network" (default on), AI only show
 on the BFT if they really carry an ATAK, and the server sends their PLI points at the network rate with a per-AI GPS
 error, the same for every player, lost or degraded near jammers.
+
+## 9. Appui feu typé : mortiers, artillerie, naval et aérien
+
+Réglages serveur « ATAK · Appui feu » (forçables par la mission avec les réglages CBA de la mission) : système activé
+(décoché = appel de feu générique, comme avant), moyens autorisés, tir exécuté par l'IA, batteries simulées, délais de
+réaction ; réglage personnel des cercles de portée. L'app CAS (onglet APPEL DE FEU) propose alors un MOYEN, les pièces
+de la mission sont reconnues par leur config (calculateur d'artillerie, mortiers statiques, support « Artillery », calibre
+des munitions, mortiers ACE) ; l'IA du camp tire après vérification des droits par le serveur, un servant joueur reçoit
+la mission dans l'app Tâches avec sa solution de tir.
+
+```sqf
+// Forcer le moyen d'une pièce (MORTAR_L, MORTAR_M, MORTAR_H, HOWITZER, MLRS, NAVAL, CAS) : variable publique.
+_gun setVariable ["COMSPEC_ATAK_FsType", "MORTAR_H", true];
+// Pièce (ou groupe) qui ne prend pas de mission de tir, comme pour les ordres aux IA.
+_gun setVariable ["COMSPEC_ATAK_NoOrders", true, true];
+// Donner à un joueur le droit de demander un tir aux pièces IA (sinon : observateur, JTAC, chef, commandant, TOC, Zeus).
+_unit setVariable ["COMSPEC_ATAK_FsCan", true, true];
+```
+
+**English.** "ATAK · Fire support" server settings (mission-overridable): typed fire support on/off (off = generic call
+for fire as before), allowed assets, AI execution, simulated batteries, reaction times; personal range rings setting.
+Force a gun's asset type with `_gun setVariable ["COMSPEC_ATAK_FsType", "MORTAR_H", true]`, protect it with
+`COMSPEC_ATAK_NoOrders`, grant request rights with `_unit setVariable ["COMSPEC_ATAK_FsCan", true, true]`.

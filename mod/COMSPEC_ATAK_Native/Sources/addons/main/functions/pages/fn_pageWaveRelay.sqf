@@ -198,6 +198,12 @@ switch (_tab) do {
         } else {
             _rows pushBack ["info", "Radio", format ["téléphone seul · portée %1 (sans MPU5)", [_nr] call _dist]];
         };
+        // Liaison réaliste (fn_mpuLink) : état de la radio de données, réglages dans l'app Réseau.
+        if (["active"] call comspec_atak_native_fnc_mpuLink) then {
+            private _ms = ["status"] call comspec_atak_native_fnc_mpuLink;
+            _rows pushBack ["info", "Radio de données", format ["%1 · <t color='#8a9a93'>réglages : app Réseau</t>",
+                [format ["<t color='#e5483a'>%1</t>", [_ms get "why"] call _esc], format ["<t color='#5cc76b'>%1 saut(s) jusqu'à %2</t>", (_ms get "hops") max 0, [_ms get "gw"] call _esc]] select (_ms get "ok")]];
+        };
         // Téléphone branché sur une radio ACRE2 / TFAR : elle relaie les données comme une MPU5 (réglages du serveur).
         if (missionNamespace getVariable ["comspec_atak_native_radio_data", true]) then {
             private _pl = ["plugged"] call comspec_atak_native_fnc_mpu5;

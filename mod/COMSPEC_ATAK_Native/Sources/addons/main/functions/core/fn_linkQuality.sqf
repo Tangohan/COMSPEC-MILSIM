@@ -11,6 +11,11 @@
     proche du relais résiste). Réglage serveur comspec_atak_native_net_realism : 0 simplifié (ancien modèle), 1 réaliste,
     2 exigeant. Clés en plus : tx (émission possible), margin (dB, -1 sans relais), jitter (ms).
     Réseau exclusivement par relais (fn_relayNet "only") : sans relais reçu, aucun réseau (même simulation coupée).
+    Liaison réaliste téléphone <-> radio (fn_mpuLink, réglage comspec_atak_native_mpu_real) : le téléphone passe par sa
+    radio de données (MPU5 par câble EUD ou Wi-Fi, radio tactique ACRE2 / TFAR par câble) ; débit, latence et pertes
+    sont ceux du maillage jusqu'à la passerelle (relief, sauts, brouilleurs déjà comptés), puis bâtiment, véhicule,
+    brouillage sur le joueur, surcharge... comme avant. Radio obligatoire (comspec_atak_native_mpu_require) : sans radio
+    reliée et en service, aucun réseau, même simulation coupée (Bluetooth et données locales restent possibles).
     Conditions réseau (fn_netCond : site, menu Échap, réglages CBA ; toutes actives par défaut) :
       - météo (fn_netWeather) : pluie, antennes mouillées, orage, vent ; dans le bilan radio avec un relais, en
         équivalent de débit sans relais ; orage et vent ajoutent pertes en rafales et gigue ;
@@ -28,6 +33,15 @@ if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < ([6, 2] s
 // Cache vidé exprès (antenne, dégâts, mode avion, brouillage, test de débit…) : le meilleur relais est recalculé aussi.
 if ((count _cache) isNotEqualTo 2) then { uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", []]; };
 private _q = createHashMap;
+private _mpu = ["status"] call comspec_atak_native_fnc_mpuLink;
+private _mesh = (_mpu get "active") && {_mpu get "ok"} && {(_mpu get "kind") in ["mpu", "tac"]};
+if ((_mpu get "active") && {!(_mpu get "ok")} && {missionNamespace getVariable ["comspec_atak_native_mpu_require", true]}) exitWith {
+    private _why = _mpu getOrDefault ["why", ""];
+    _q = createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", ["Radio sans réseau", "Aucune radio"] select ((_mpu get "kind") isEqualTo "")],
+        ["factors", [[["Radio de données : " + _why, "Aucune radio de données reliée (câble EUD ou Wi-Fi d'une MPU5)"] select ((_mpu get "kind") isEqualTo ""), "aucun réseau"]]], ["sim", true], ["tx", false], ["margin", -1], ["jitter", 0]];
+    uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", [diag_tickTime, _q]];
+    _q
+};
 if !(["sim"] call comspec_atak_native_fnc_netCond) exitWith {
     // Réseau exclusivement par relais : même sans simulation de débit, aucun relais reçu = aucun réseau.
     _q = if ((["only"] call comspec_atak_native_fnc_relayNet) && {(["best"] call comspec_atak_native_fnc_relayNet) isEqualTo []}) then {
@@ -72,6 +86,19 @@ if (_bridge) then {
         if (_zone getOrDefault ["force_disconnect", false]) then { _mul = 0; };
         _f pushBack [format ["Zone %1", _zone getOrDefault ["name", "radio"]], format ["perte %1 %%", _loss]];
     };
+};
+// Radio de données en service (fn_mpuLink) : les relais sont déjà dans son maillage (passerelles).
+if (_mesh) then {
+    _only = false;
+    _req = false;
+    _kbps = (_mpu get "kbps") max 1;
+    _lat = _lat + (_mpu get "lat");
+    _loss = _loss max (_mpu get "loss");
+    private _ms = uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap];
+    private _lk = _mpu get "link";
+    _f pushBack [[format ["MPU5 canal %1 (%2)", _ms getOrDefault ["chan", 1], ["câble EUD", "Wi-Fi"] select (_lk isEqualTo "wifi")], "Radio tactique (données, câble EUD)"] select (_lk isEqualTo "tac"),
+        format ["%1 saut(s) · %2", (_mpu get "hops") max 0, [format ["%1 kbit/s", _mpu get "kbps"], format ["%1 Mbit/s", ((_mpu get "kbps") / 1000) toFixed 1]] select ((_mpu get "kbps") >= 1000)]];
+    if (_lk isEqualTo "wifi") then { _f pushBack [format ["Wi-Fi de la MPU5 (%1 m)", round (_mpu get "wifiD")], format ["%1 %%", round (100 * (_mpu get "wifiQ"))]]; };
 };
 if (_req && {_best isEqualTo []}) then {
     if (_only) then { _mul = 0; _f pushBack ["Aucun relais reçu (réseau exclusivement par relais)", "aucun réseau"]; } else { _mul = _mul * 0.1; _f pushBack ["Aucun relais à portée", "-90 %"]; };
@@ -118,7 +145,7 @@ if ((_eye select 2) < 0) then { _mul = 0; _f pushBack ["Sous l'eau", "aucun sign
 // Masque du relief : 8 directions vers un point haut à 1,5 km. Avec un relais reçu, le relief est déjà dans son
 // bilan radio (modèle réaliste) : on ne le compte pas deux fois.
 private _masked = 0;
-if (_real isEqualTo 0 || {_best isEqualTo []}) then { for "_a" from 0 to 315 step 45 do {
+if (!_mesh && {_real isEqualTo 0 || {_best isEqualTo []}}) then { for "_a" from 0 to 315 step 45 do {
     private _to = _eye vectorAdd [1500 * sin _a, 1500 * cos _a, 0];
     _to set [2, ((getTerrainHeightASL _to) max 0) + 40];
     if (terrainIntersectASL [_eye, _to]) then { _masked = _masked + 1; };
@@ -170,7 +197,7 @@ if (_dmg > 0.3) then { _mul = _mul * (1.15 - _dmg); _f pushBack ["Boîtier du t�
 // Antenne touchée (fn_deviceDamage) : jusqu'à -75 % de débit. Une antenne externe (fn_antenna) la remplace.
 private _ext = ["get"] call comspec_atak_native_fnc_antenna;
 private _ant = (_hp getOrDefault ["parts", createHashMap]) getOrDefault ["antenna", 0];
-if (_ant > 0 && {_ext isEqualTo []}) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
+if (_ant > 0 && {_ext isEqualTo []} && {!(_mesh && {(_mpu get "link") in ["cable", "tac"]})}) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
 // Téléphone presque vide (moins de 10 %) : Android réduit la puissance d'émission.
 if (_real > 0 && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) < 10}) then { _mul = _mul * 0.8; _f pushBack ["Batterie faible : émission réduite", "-20 %"]; };
 // En mouvement rapide (véhicule, aéronef) : évanouissements rapides, changements de relais, plus de pertes et de gigue.
@@ -185,7 +212,7 @@ if (_real > 0 && {_spd > 15}) then {
 // l'équivalent (2 km de pluie compris). Orage et vent : pertes en rafales et gigue en plus dans tous les cas.
 (["global"] call comspec_atak_native_fnc_netWeather) params ["_wxL", "_wxPl", "_wxJit"];
 if (_real > 0) then {
-    if (_best isEqualTo []) then {
+    if (_best isEqualTo [] && {!_mesh}) then {
         private _db = ["path", 2000] call comspec_atak_native_fnc_netWeather;
         { _db = _db + (_x select 1); } forEach _wxL;
         if (_db >= 0.5) then {
@@ -206,6 +233,7 @@ if (_real > 0 && {["congestion"] call comspec_atak_native_fnc_netCond}) then {
         private _e = ["entry", _best select 0] call comspec_atak_native_fnc_relayNet;
         if (_e isNotEqualTo []) then { _ant = _e select 1; _rng = _e select 4; _cap = ((_e select 5) * 1000) max 200; };
     };
+    if (_mesh) then { _cap = (_mpu get "kbps") max 50; };
     (["at", _ant, _rng, _cap] call comspec_atak_native_fnc_netLoad) params ["_u", "_np"];
     if (_u > 0.3) then {
         private _uq = _u min 0.95;
@@ -220,7 +248,7 @@ if (_real > 0 && {["congestion"] call comspec_atak_native_fnc_netCond}) then {
 };
 _mul = 0 max (_mul min 1);
 // Antenne d'extension de débit : pertes atténuées et débit de base relevé (rien à faire sans aucun signal).
-if (_ext isNotEqualTo [] && {_mul > 0}) then {
+if (_ext isNotEqualTo [] && {_mul > 0} && {!_mesh}) then {
     (["boost", _mul] call comspec_atak_native_fnc_antenna) params ["_m2", "_gain", "_name", "_txt"];
     _mul = _m2;
     _kbps = _kbps * _gain;

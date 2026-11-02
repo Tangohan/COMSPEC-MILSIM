@@ -201,6 +201,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Radio maillée MPU5 et voix ACRE2 (fn_mpu5) : détection de l'objet, réseau voix publié, qui émet.
 ["init"] call comspec_atak_native_fnc_mpu5;
+// Liaison réaliste téléphone <-> radio de données (fn_mpuLink, réglage comspec_atak_native_mpu_real) : toutes les 2 s,
+// sans rien faire tant que le réglage est décoché.
+[{ ["tick"] call comspec_atak_native_fnc_mpuLink; }, 2] call COMSPEC_ATAK_PfhSpread;
 ["register"] call comspec_atak_native_fnc_zeusMenu;
 // Attributs ZEN des relais (fenêtre Éditer d'un pylône ou relais) et menu clic droit « ATAK · Relais ».
 ["register"] call comspec_atak_native_fnc_relayZeus;
@@ -458,6 +461,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 }] call CBA_fnc_addEventHandler;
 // Ordres aux groupes IA (fn_aiOrder) : état reçu (carte, PC du poste, notification au donneur d'ordre).
 ["comspec_atak_native_aiOrdState", { ["recv", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
+// Appui feu typé (fn_fireSupport) : état des missions de tir du camp (Tâches, app CAS, carte, poste TOC, servant joueur) ;
+// pièces de la mission relues une fois ici, puis aux événements (rien quand le système est décoché).
+["comspec_atak_native_fsState", { ["recv", _this] call comspec_atak_native_fnc_fireSupport; }] call CBA_fnc_addEventHandler;
+if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspec_atak_native_fnc_fireSupport; };
 
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
 // Seulement avec un téléphone et une carte à l'écran (téléphone ou carte Arma) : inutile sinon.
@@ -566,6 +573,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_screenCast; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Écrans TOC proches : réseau ATAK du camp affiché sur l'objet (texture UI), actions ACE ou molette (fn_tocScreen).
 [{ ["tick"] call comspec_atak_native_fnc_tocScreen; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Vidéoprojecteurs et toiles proches (fn_projector) : toile éclairée ou non, lumières de l'objectif ; menus ACE.
+["aceInit"] call comspec_atak_native_fnc_projector;
+[{ ["tick"] call comspec_atak_native_fnc_projector; }, 2] call COMSPEC_ATAK_PfhSpread;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
 [{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call COMSPEC_ATAK_PfhSpread;
@@ -715,8 +725,15 @@ addMissionEventHandler ["EntityKilled", {
     private _lq = [] call comspec_atak_native_fnc_linkQuality;
     if ((_lq get "bars") isEqualTo 0 || {!(_lq getOrDefault ["tx", true])}) exitWith {};
     // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
-    private _batch = _queue select [0, 5];
-    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
+    // Radio tactique en données (fn_mpuLink) : les envois trop lourds restent en file jusqu'à une liaison MPU5.
+    private _lim = ["maxKb"] call comspec_atak_native_fnc_mpuLink;
+    private _batch = [];
+    private _rest = [];
+    if (_lim < 0) then { _batch = _queue select [0, 5]; _rest = _queue select [5]; } else {
+        { if ((count _batch) < 5 && {(_x param [3, 1]) <= _lim}) then { _batch pushBack _x; } else { _rest pushBack _x; }; } forEach _queue;
+    };
+    if (_batch isEqualTo []) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _rest];
     if !(missionNamespace getVariable ["COMSPEC_ATAK_NetFlushing", false]) then { ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify; };
     missionNamespace setVariable ["COMSPEC_ATAK_NetFlushing", (count _queue) > 5];
     { _x call comspec_atak_native_fnc_netSend; } forEach _batch;
