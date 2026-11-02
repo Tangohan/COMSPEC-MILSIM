@@ -156,6 +156,10 @@ html.orb-full-lock { overflow: hidden; }
 .orb-pill i { width: 6px; height: 6px; border-radius: 50%; }
 .orb-pill--vis { background: rgba(96, 165, 250, .12); color: #93c5fd; }
 .orb-pill--ech { background: transparent; border: 1px solid var(--orb-rule); color: var(--orb-ink-muted); font-weight: 600; }
+/* Adéquation de l’organisation (gestionnaires) : sous-capacité / poste à pourvoir en ambre, le reste en bleu. */
+.orb-pill--adq { cursor: help; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.orb-pill--adq.is-warn { background: rgba(245, 158, 11, .16); color: #fcd34d; }
+.orb-pill--adq.is-info { background: rgba(96, 165, 250, .12); color: #93c5fd; }
 .orb-nd-cmd { display: flex; flex-direction: column; gap: 3px; }
 .orb-ldr { display: grid; grid-template-columns: 16px 52px minmax(0, 1fr); gap: 6px; align-items: center; font-size: 12px; min-width: 0; }
 .orb-ico { width: 16px; height: 16px; flex: none; }

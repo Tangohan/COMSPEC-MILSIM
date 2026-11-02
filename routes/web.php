@@ -708,6 +708,7 @@ return function (Router $router) {
     $router->get('/orbat/pdf', [PersonnelController::class, 'orbatPdf'], [AuthMiddleware::class]);
     $router->get('/api/orbat/roster', [OrbatApiController::class, 'roster'], [AuthMiddleware::class]);
     $router->get('/api/orbat/structure-options', [OrbatApiController::class, 'structureOptions'], [AuthMiddleware::class]);
+    $router->get('/api/orbat/adequation', [OrbatApiController::class, 'adequacy'], [AuthMiddleware::class]);
     $router->post('/api/orbat/chart-type', [OrbatApiController::class, 'chartType'], [AuthMiddleware::class]);
     $router->post('/api/orbat/unit-upload', [OrbatApiController::class, 'uploadUnitMedia'], [AuthMiddleware::class]);
     $router->post('/api/orbat/structure', [OrbatApiController::class, 'structure'], [AuthMiddleware::class]);
@@ -1540,6 +1541,13 @@ return function (Router $router) {
     $router->post('/back-office/integrations/sse-relais/{relayId}/essai', [OrganizationIntegrationsController::class, 'testSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/doctrine/referentiel', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/referentiel', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/references', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'saveEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/references/{id}/archiver', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'archiveEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/doctrine/referentiel/references/{id}/fichier', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'file'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/masquer', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'toggleHidden'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/categories', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'saveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/categories/{id}/archiver', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'archiveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/rattacher', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'link'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine', [DoctrineAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/doctrine/export-lectures', [DoctrineAdminController::class, 'exportCompliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1722,16 +1730,24 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/habilites/{authId}/retirer', [QualificationReferentielController::class, 'deleteIssuerAuthorization'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Catalogue des qualifications de référence (pays et OTAN, jeu) importées au choix, sans doublon.
     $router->get('/back-office/referentiels/qualifications/catalogue', [QualificationReferentielController::class, 'catalog'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/qualifications/catalogue/fiche', [QualificationReferentielController::class, 'catalogEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/catalogue/importer', [QualificationReferentielController::class, 'importCatalog'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/categories', [QualificationReferentielController::class, 'storeCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/types', [QualificationReferentielController::class, 'storeType'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/cursus-pilote/carnet/{userId}', [PilotLogbookController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/carnet/vols/{entryId}', [PilotLogbookController::class, 'review'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/espace-aerien', [\App\Controllers\Admin\Organization\AirspaceController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/cursus-pilote', [PilotSyllabusController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/installer', [PilotSyllabusController::class, 'install'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/evaluer', [PilotSyllabusController::class, 'evaluate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers/{ruleId}', [PilotSyllabusController::class, 'updateRule'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/cursus-pilote/propositions/{awardId}', [PilotSyllabusController::class, 'decide'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/appareils', [PilotSyllabusController::class, 'saveAircraft'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/familles', [PilotSyllabusController::class, 'saveGroup'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers-communaute', [PilotSyllabusController::class, 'saveStep'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers-communaute/propositions/{awardId}', [PilotSyllabusController::class, 'decideStep'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers-communaute/{stepId}', [PilotSyllabusController::class, 'saveStep'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/cursus-pilote/paliers-communaute/{stepId}/action', [PilotSyllabusController::class, 'stepAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/attribuer', [QualificationReferentielController::class, 'awardForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/attribuer', [QualificationReferentielController::class, 'awardStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/brevets/lot', [QualificationReferentielController::class, 'generateCertificateBatch'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1911,6 +1927,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/collections/supprimer', [\App\Controllers\Admin\JobCatalogController::class, 'deleteCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois', [\App\Controllers\Admin\JobCatalogController::class, 'saveEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois/supprimer', [\App\Controllers\Admin\JobCatalogController::class, 'deleteEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois/qualification', [\App\Controllers\Admin\JobCatalogController::class, 'linkQualification'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/prerequis', [\App\Controllers\Admin\JobCatalogController::class, 'savePrerequisites'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/prerequis/reglage', [\App\Controllers\Admin\JobCatalogController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/derogations/revoquer', [\App\Controllers\Admin\JobCatalogController::class, 'revokeWaiver'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1920,6 +1937,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/codes/unites/{id}', [EffectifsDirectoryController::class, 'saveUnitSegment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'commandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'saveCommandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'adequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'saveAdequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/qualifications', [EffectifsWorkspaceController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

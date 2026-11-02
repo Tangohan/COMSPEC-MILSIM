@@ -97,6 +97,35 @@ final class OrbatApiController
         ]);
     }
 
+    /**
+     * Pastilles d’adéquation par unité (sous-capacité de commandement, chef ou adjoint à désigner, effectif…) :
+     * gestionnaires de l’organisation uniquement, jamais en aperçu « vu par un membre ».
+     */
+    public function adequacy(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1 || !Session::get('user_id')) {
+            return Response::json(['success' => false, 'message' => 'Authentification requise'], 401);
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.access') && !$gate->allows('organization.orbat.manage')) {
+            return Response::json(['success' => false, 'message' => 'Droits insuffisants'], 403);
+        }
+        try {
+            $badges = \App\Services\Organization\OrgAdequacyView::orbatBadges(
+                (new \App\Services\Organization\OrgAdequacyService($this->unitRepository))->evaluate($tenantId)
+            );
+        } catch (\Throwable) {
+            $badges = [];
+        }
+
+        return Response::json([
+            'success' => true,
+            'units' => (object) $badges,
+            'detailsUrl' => effectifs_workspace_url('chaine') . '?ecarts=1#eff-adequacy',
+        ]);
+    }
+
     /** Liste plate des unités pour rattachement (gestionnaires uniquement). */
     public function structureOptions(Request $request, array $params = []): Response
     {

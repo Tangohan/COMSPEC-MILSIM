@@ -1174,7 +1174,33 @@ class Container
                 self::get(\App\Repositories\QualificationAwardRepository::class),
                 self::get(\App\Services\Personnel\QualificationStatusTransitionService::class),
                 self::get(\App\Services\Personnel\QualificationCurrencyService::class),
-                self::get(\App\Repositories\PilotLogbookRepository::class)
+                self::get(\App\Repositories\PilotLogbookRepository::class),
+                self::get(\App\Repositories\PilotFleetRepository::class)
+            ),
+            \App\Repositories\PilotFleetRepository::class => new \App\Repositories\PilotFleetRepository(),
+            \App\Services\Personnel\AirspaceOverviewService::class => new \App\Services\Personnel\AirspaceOverviewService(
+                self::get(\App\Services\Personnel\PilotQualificationService::class),
+                self::get(\App\Repositories\PilotLogbookRepository::class),
+                self::get(\App\Services\Personnel\PilotLogbookService::class),
+                self::get(\App\Services\Personnel\PilotFleetService::class),
+                self::get(\App\Services\Personnel\PilotSyllabusStepService::class)
+            ),
+            \App\Controllers\Admin\Organization\AirspaceController::class => new \App\Controllers\Admin\Organization\AirspaceController(
+                self::get(\App\Services\Personnel\AirspaceOverviewService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
+            \App\Repositories\PilotSyllabusStepRepository::class => new \App\Repositories\PilotSyllabusStepRepository(),
+            \App\Services\Personnel\PilotFleetService::class => new \App\Services\Personnel\PilotFleetService(
+                self::get(\App\Repositories\PilotFleetRepository::class),
+                self::get(\App\Services\Personnel\QualificationBadgeStorageService::class),
+                new \App\Repositories\GameItemIconRepository()
+            ),
+            \App\Services\Personnel\PilotSyllabusStepService::class => new \App\Services\Personnel\PilotSyllabusStepService(
+                self::get(\App\Repositories\PilotSyllabusStepRepository::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Services\Personnel\PilotQualificationService::class),
+                self::get(\App\Repositories\PilotQualificationRuleRepository::class)
             ),
             \App\Repositories\PilotLogbookRepository::class => new \App\Repositories\PilotLogbookRepository(),
             \App\Services\Personnel\PilotLogbookService::class => new \App\Services\Personnel\PilotLogbookService(
@@ -1194,7 +1220,9 @@ class Container
             \App\Controllers\Admin\Organization\PilotSyllabusController::class => new \App\Controllers\Admin\Organization\PilotSyllabusController(
                 self::get(\App\Services\Personnel\PilotQualificationService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
-                self::get(\App\Services\Personnel\PilotLogbookService::class)
+                self::get(\App\Services\Personnel\PilotLogbookService::class),
+                self::get(\App\Services\Personnel\PilotFleetService::class),
+                self::get(\App\Services\Personnel\PilotSyllabusStepService::class)
             ),
             \App\Repositories\QualificationAwardRuleRepository::class => new \App\Repositories\QualificationAwardRuleRepository(),
             \App\Services\Personnel\QualificationAwardRuleService::class => new \App\Services\Personnel\QualificationAwardRuleService(
@@ -1206,7 +1234,8 @@ class Container
                 self::get(\App\Repositories\QualificationAwardRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\PilotLogbookRepository::class),
-                self::get(\App\Repositories\GradeRepository::class)
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\PilotFleetRepository::class)
             ),
             \App\Services\Cron\Jobs\QualificationAutoRulesCronJob::class => new \App\Services\Cron\Jobs\QualificationAutoRulesCronJob(
                 self::get(\App\Repositories\QualificationAwardRuleRepository::class),

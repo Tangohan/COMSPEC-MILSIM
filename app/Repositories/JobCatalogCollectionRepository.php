@@ -20,6 +20,8 @@ final class JobCatalogCollectionRepository
 {
     private ?bool $ready = null;
 
+    private ?bool $linksReady = null;
+
     public function __construct(private ?PDO $pdo = null)
     {
     }
@@ -42,6 +44,77 @@ final class JobCatalogCollectionRepository
         } catch (Throwable) {
             return $this->ready = false;
         }
+    }
+
+    /** Colonne des qualifications reliées (étape 3550) : sans elle, les qualifications restent du texte. */
+    public function linksReady(): bool
+    {
+        if ($this->linksReady !== null) {
+            return $this->linksReady;
+        }
+        try {
+            return $this->linksReady = $this->schemaReady() && (new SchemaInspector($this->pdo()))->columnExists('job_catalog_collection_entries', 'qualification_links_json');
+        } catch (Throwable) {
+            return $this->linksReady = false;
+        }
+    }
+
+    /**
+     * Qualifications du référentiel de la communauté qu’un emploi de ses catalogues peut citer (non archivées).
+     *
+     * @return array<int, array{id: int, code: string, name: string}>
+     */
+    public function referentielDefinitions(int $tenantId): array
+    {
+        try {
+            $st = $this->pdo()->prepare('SELECT id, code, name FROM personnel_qualification_definitions WHERE tenant_id = ? AND archived_at IS NULL ORDER BY name, id');
+            $st->execute([$tenantId]);
+            $out = [];
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $out[(int) $row['id']] = ['id' => (int) $row['id'], 'code' => (string) $row['code'], 'name' => (string) $row['name']];
+            }
+
+            return $out;
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Relie (ou délie : $definitionId = 0) une qualification citée par un emploi d’un catalogue de la communauté à une
+     * qualification de son référentiel.
+     *
+     * @return array<string, int> texte => fiche du référentiel, après l’enregistrement
+     */
+    public function linkQualification(int $tenantId, int $entryId, string $text, int $definitionId, int $actorId): array
+    {
+        if (!$this->linksReady()) {
+            throw new InvalidArgumentException('Relier une qualification arrive avec la prochaine mise à jour du site.');
+        }
+        $row = $this->findOwnEntry($tenantId, $entryId);
+        if ($row === null) {
+            throw new InvalidArgumentException('Emploi du catalogue introuvable.');
+        }
+        $text = trim($text);
+        $listed = json_decode((string) ($row['qualifications_json'] ?? ''), true);
+        if ($text === '' || !is_array($listed) || !in_array($text, array_map(static fn ($v): string => trim((string) $v), $listed), true)) {
+            throw new InvalidArgumentException('Cette qualification n’est plus citée par l’emploi.');
+        }
+        if ($definitionId > 0 && !isset($this->referentielDefinitions($tenantId)[$definitionId])) {
+            throw new InvalidArgumentException('Qualification introuvable dans votre référentiel.');
+        }
+        $links = CommunityJobCatalog::links($row['qualification_links_json'] ?? null);
+        $before = $links;
+        if ($definitionId > 0) {
+            $links[$text] = $definitionId;
+        } else {
+            unset($links[$text]);
+        }
+        $this->pdo()->prepare('UPDATE job_catalog_collection_entries SET qualification_links_json = ?, updated_by = ?, updated_at = ? WHERE id = ? AND tenant_id = ?')
+            ->execute([$links !== [] ? json_encode($links, JSON_UNESCAPED_UNICODE) : null, $actorId, self::now(), $entryId, $tenantId]);
+        $this->audit($tenantId, $actorId, 'updated', 'job_catalog_entry', $entryId, ['qualification_links' => $before], ['qualification_links' => $links]);
+
+        return $links;
     }
 
     private static function now(): string
@@ -220,6 +293,11 @@ final class JobCatalogCollectionRepository
         ];
         if ($imagePath !== null) {
             $values['image_path'] = $imagePath !== '' ? $imagePath : null;
+        }
+        // Qualifications reliées : seules restent celles que l’emploi cite encore.
+        if ($old !== null && $this->linksReady()) {
+            $links = array_intersect_key(CommunityJobCatalog::links($old['qualification_links_json'] ?? null), array_flip($data['qualifications']));
+            $values['qualification_links_json'] = $links !== [] ? json_encode($links, JSON_UNESCAPED_UNICODE) : null;
         }
         if ($id > 0) {
             $values['updated_by'] = $actorId;

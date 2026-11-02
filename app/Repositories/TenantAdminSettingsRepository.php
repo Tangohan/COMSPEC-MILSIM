@@ -74,6 +74,10 @@ final class TenantAdminSettingsRepository
             'personnel_hr' => \App\Services\Effectifs\PersonnelHrWorkspaceSettings::sanitize(
                 $current['personnel_hr'] ?? []
             ),
+            // Adéquation de l’organisation : attentes par échelon (chef, adjoint, grades, effectif).
+            'org_adequacy' => \App\Services\Organization\OrgAdequacySettings::sanitize(
+                $current['org_adequacy'] ?? []
+            ),
         ];
     }
 
@@ -158,6 +162,7 @@ final class TenantAdminSettingsRepository
                 'fields' => ['matricule', 'callsign'],
             ],
             'personnel_hr' => \App\Services\Effectifs\PersonnelHrWorkspaceSettings::defaults(),
+            'org_adequacy' => \App\Services\Organization\OrgAdequacySettings::defaults(),
         ];
     }
 

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/partials/adequacy.php';
+
 $m = is_array($member ?? null) ? $member : [];
 $id = (int) ($m['id'] ?? 0);
 $assignments = is_array($memberAssignments ?? null) ? $memberAssignments : [];
@@ -1298,6 +1300,22 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <?php endforeach; ?>
         <?php endif; ?>
     </section>
+    <?php $mAdq = is_array($memberAdequacy ?? null) ? $memberAdequacy : null; ?>
+    <?php if ($mAdq !== null): ?>
+    <?= adq_styles() ?>
+    <section class="eff-fm-card eff-fm-rail__card adq-place" aria-labelledby="eff-fm-place-title" id="eff-fm-place">
+        <div class="eff-fm-card__head"><h3 id="eff-fm-place-title">Place dans l’organisation</h3><?= adq_badge((string) $mAdq['status'], true) ?></div>
+        <dl>
+            <div><dt>Place</dt><dd><?= $h(adq_place_label((string) $mAdq['place'])) ?><?php if (($mAdq['roles'] ?? []) !== []): ?><small><?= adq_roles_html($mAdq['roles']) ?></small><?php endif; ?></dd></div>
+            <div><dt>Chef direct</dt><dd><?php if ((int) $mAdq['chief_id'] > 0): ?><a href="<?= $h(effectifs_workspace_url('membres/' . (int) $mAdq['chief_id'])) ?>"><?= $h((string) $mAdq['chief_label']) ?></a><?php else: ?><span class="eff-fm-muted">Aucun chef désigné</span><?php endif; ?></dd></div>
+            <div><dt>Adjoint</dt><dd><?php if ((int) $mAdq['deputy_id'] > 0): ?><a href="<?= $h(effectifs_workspace_url('membres/' . (int) $mAdq['deputy_id'])) ?>"><?= $h((string) $mAdq['deputy_label']) ?></a><?php else: ?><span class="eff-fm-muted">Pas d’adjoint désigné</span><?php endif; ?></dd></div>
+            <div><dt>Adéquation</dt><dd><?= $h(adq_status_meta((string) $mAdq['status'])[0]) ?></dd></div>
+        </dl>
+        <?= adq_issue_list($mAdq['issues'], $mAdq['people'], static fn (int $pid): string => effectifs_workspace_url('membres/' . $pid), $canManageAssignments) ?>
+        <p class="adq-note">L’adéquation compare le poste tenu aux attentes de son échelon (grade, qualifications, effectif) : elle décrit une capacité de commandement, pas la valeur de la personne.</p>
+        <p class="adq-note"><a href="<?= $h(effectifs_workspace_url('chaine/adequation')) ?>">Voir le référentiel</a></p>
+    </section>
+    <?php endif; ?>
     <?php if ($reportsTo !== '' || $chainLabels !== []): ?>
     <section class="eff-fm-card eff-fm-rail__card">
         <div class="eff-fm-card__head"><h3>Chaîne de commandement</h3></div>

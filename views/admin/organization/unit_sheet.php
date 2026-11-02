@@ -104,6 +104,39 @@ foreach ($derivedCommand as $dc) {
         </div>
     </section>
 
+    <?php $unitAdequacy = is_array($unitAdequacy ?? null) ? $unitAdequacy : null; ?>
+    <?php if ($unitAdequacy !== null):
+        require_once dirname(__DIR__) . '/effectifs_workspace/partials/adequacy.php';
+        $uaIssues = is_array($unitAdequacy['issues_list'] ?? null) ? $unitAdequacy['issues_list'] : [];
+        ?>
+    <?= adq_styles() ?>
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 space-y-4 adq-scope" id="adequation" aria-labelledby="unit-adequacy-title">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="unit-adequacy-title" class="text-lg font-black uppercase tracking-tight text-slate-900">Adéquation de l’unité</h2>
+            <?= adq_badge($uaIssues === [] ? 'ok' : (string) ($unitAdequacy['status'] ?? ''), true) ?>
+        </div>
+        <?php if (($unitAdequacy['standard_label'] ?? '') !== ''): ?>
+            <p class="text-sm text-slate-600">
+                <span>Échelon : <?= $h((string) $unitAdequacy['standard_label']) ?></span>
+                · <span>Chef attendu : <?= $h((string) ($unitAdequacy['leader_label'] ?? '')) ?></span>
+                · <span>Effectif : <?= (int) ($unitAdequacy['strength'] ?? 0) ?> / <?= $h((string) ($unitAdequacy['strength_expected'] ?? '')) ?></span>
+                <?php if (($unitAdequacy['deputy_label'] ?? '') !== '' && (int) ($unitAdequacy['deputy_id'] ?? 0) > 0): ?>
+                    · <span>Adjoint : <?= $h((string) $unitAdequacy['deputy_label']) ?></span>
+                <?php endif; ?>
+            </p>
+        <?php else: ?>
+            <p class="text-sm text-slate-600">Échelon non renseigné : choisissez-le dans l’organigramme pour comparer cette unité au référentiel.</p>
+        <?php endif; ?>
+        <?php if ($uaIssues === []): ?>
+            <p class="text-sm text-slate-600">Aucun écart : chef, adjoint et effectif correspondent à ce que l’échelon attend.</p>
+        <?php else: ?>
+            <?= adq_issue_list($uaIssues, is_array($unitAdequacy['people'] ?? null) ? $unitAdequacy['people'] : [], static fn (int $pid): string => effectifs_workspace_url('membres/' . $pid), true) ?>
+        <?php endif; ?>
+        <p class="adq-note">Capacité de commandement des postes au regard de l’échelon, pas un jugement sur les personnes.</p>
+        <p class="adq-note"><a href="<?= $h(effectifs_workspace_url('chaine/adequation')) ?>">Référentiel et réglages</a></p>
+    </section>
+    <?php endif; ?>
+
     <?php if ($canEdit): ?>
     <section class="rounded-3xl border border-slate-200 bg-white p-6 space-y-4">
         <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Identité</h2>

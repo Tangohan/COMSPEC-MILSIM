@@ -190,6 +190,58 @@ final class PilotLogbookRepository
         return $st->execute([$status, $reviewerId, $note !== null && $note !== '' ? mb_substr($note, 0, 255) : null, $tenantId, $id]);
     }
 
+    /**
+     * Derniers vols de la communauté (tous ou d'un statut), les plus récents d'abord, avec le pilote et le relecteur.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecent(int $tenantId, string $status = '', int $limit = 150): array
+    {
+        if (!$this->schemaReady()) {
+            return [];
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT e.*, u.display_name, u.callsign, r.display_name AS reviewer_name, r.callsign AS reviewer_callsign
+             FROM pilot_logbook_entries e JOIN users u ON u.id = e.user_id LEFT JOIN users r ON r.id = e.reviewed_by
+             WHERE e.tenant_id = ?' . ($status !== '' ? ' AND e.status = ?' : '') . '
+             ORDER BY e.flown_on DESC, e.id DESC LIMIT ' . max(1, min(1000, $limit))
+        );
+        $st->execute($status !== '' ? [$tenantId, $status] : [$tenantId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** Nombre de vols par statut. @return array<string, int> */
+    public function countByStatus(int $tenantId): array
+    {
+        if (!$this->schemaReady()) {
+            return [];
+        }
+        $st = $this->pdo()->prepare('SELECT status, COUNT(*) FROM pilot_logbook_entries WHERE tenant_id = ? GROUP BY status');
+        $st->execute([$tenantId]);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_NUM) ?: [] as [$s, $n]) {
+            $out[(string) $s] = (int) $n;
+        }
+
+        return $out;
+    }
+
+    /** Secondes volées depuis N jours : vols relevés par le mod et vols saisis contresignés. */
+    public function secondsSince(int $tenantId, int $days): int
+    {
+        if (!$this->schemaReady()) {
+            return 0;
+        }
+        $st = $this->pdo()->prepare(
+            "SELECT COALESCE(SUM(seconds), 0) FROM pilot_logbook_entries
+             WHERE tenant_id = ? AND flown_on >= ? AND (source = 'mod' OR status = 'countersigned')"
+        );
+        $st->execute([$tenantId, date('Y-m-d', time() - max(1, $days) * 86400)]);
+
+        return (int) $st->fetchColumn();
+    }
+
     public function deletePilotEntry(int $tenantId, int $id): bool
     {
         $st = $this->pdo()->prepare("DELETE FROM pilot_logbook_entries WHERE tenant_id = ? AND id = ? AND source = 'pilot'");

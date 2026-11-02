@@ -366,6 +366,7 @@ final class BackOfficeSearchService
             ['title' => 'Indicatifs radio', 'subtitle' => 'Séries d’indicatifs', 'href' => url('back-office/organisation/indicatifs'), 'keywords' => 'indicatifs callsign radio', 'ok' => $org],
             ['title' => 'E-mails aux membres', 'subtitle' => 'Écrire à tout ou partie de la communauté', 'href' => url('back-office/communications'), 'keywords' => 'e-mail communications envoi message', 'ok' => $org],
             ['title' => 'Doctrine et SOP', 'subtitle' => 'Procédures de l’unité', 'href' => url('back-office/doctrine'), 'keywords' => 'doctrine sop procédures', 'ok' => $org],
+            ['title' => 'Référentiel doctrinal', 'subtitle' => 'Publications de référence FR, US, OTAN, Allemagne', 'href' => url('back-office/doctrine/referentiel'), 'keywords' => 'référentiel doctrine publications AJP FM ZDv TTA règlements', 'ok' => $org],
             ['title' => 'Traçabilité du courrier', 'subtitle' => 'Qui a lu quoi', 'href' => url('back-office/courrier/traceabilite'), 'keywords' => 'courrier traçabilité lecture', 'ok' => $org],
             ['title' => 'Hub des communautés', 'subtitle' => 'Comparer votre communauté aux autres', 'href' => url('hub'), 'keywords' => 'hub communautés comparer classement statistiques recommandations avis note', 'ok' => true],
             ['title' => 'Bourse aux coopérations', 'subtitle' => 'Publier ou répondre à un besoin inter-team', 'href' => url('hub/bourse'), 'keywords' => 'bourse coopération inter-team renfort opfor besoin partenaire', 'ok' => true],
@@ -409,6 +410,7 @@ final class BackOfficeSearchService
             ['title' => 'Temps d’écran et rôles', 'subtitle' => 'Temps passé par rôle et par joueur', 'href' => url('back-office/metriques-joueurs?onglet=temps-ecran'), 'keywords' => 'temps écran ovl overwatch rôles heures jeu', 'ok' => $res],
             ['title' => 'Métriques joueurs', 'subtitle' => 'Activité en jeu de la communauté', 'href' => url('back-office/metriques-joueurs'), 'keywords' => 'métriques statistiques joueurs ovl overwatch temps de jeu activité', 'ok' => $res],
             ['title' => 'Mon carnet de vol', 'subtitle' => 'Vols, heures et contreseing instructeur', 'href' => url('back-office/ma-situation/carnet-de-vol'), 'keywords' => 'carnet vol logbook pilote heures de vol aviation hélicoptère', 'ok' => true],
+            ['title' => 'Espace aérien', 'subtitle' => 'Ligne de vol, pilotes, carnet de vol et flotte', 'href' => url('back-office/espace-aerien'), 'keywords' => 'espace aerien aviation ligne de vol pilotes heures de vol flotte helicoptere avion', 'ok' => $org],
             ['title' => 'Cursus pilote', 'subtitle' => 'Progression et carnets des pilotes', 'href' => url('back-office/referentiels/qualifications/cursus-pilote'), 'keywords' => 'cursus pilote carnet vol logbook instructeur contreseing aviation', 'ok' => $org],
             // —— ATAK et Overwatch
             ['title' => 'Data Inspector', 'subtitle' => 'Ce que le mod envoie à Athena', 'href' => url('back-office/atak/data-inspector'), 'keywords' => 'data inspector données mod overwatch ovl flux debug', 'ok' => $res],

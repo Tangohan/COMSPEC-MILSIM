@@ -1,0 +1,117 @@
+/*
+ * Adéquation de l’organisation (chaîne de commandement, fiche membre, alertes RH, fiche unité).
+ * Gabarits : views/admin/effectifs_workspace/partials/adequacy.php. Le mode nuit du back-office suit.
+ */
+.adq-scope, .adq-issues, .adq-badge, .adq-place {
+  --adq-text: var(--ath-ink, #0f172a);
+  --adq-muted: var(--ath-muted, #64748b);
+  --adq-line: var(--ath-line, #e2e8f0);
+  --adq-surface: var(--ath-surface, #ffffff);
+  --adq-warn: #b45309;
+  --adq-warn-soft: #fffbeb;
+  --adq-warn-bd: #fcd34d;
+  --adq-info: #1d4ed8;
+  --adq-info-soft: #eff6ff;
+  --adq-info-bd: #bfdbfe;
+  --adq-ok: #047857;
+  --adq-ok-soft: #ecfdf5;
+  --adq-ok-bd: #a7f3d0;
+}
+html[data-bo-theme="dark"] .adq-scope, html[data-bo-theme="dark"] .adq-issues,
+html[data-bo-theme="dark"] .adq-badge, html[data-bo-theme="dark"] .adq-place {
+  --adq-warn: #f0bd5c;
+  --adq-warn-soft: #2a2212;
+  --adq-warn-bd: #4d3c17;
+  --adq-info: #84b9ee;
+  --adq-info-soft: #13202e;
+  --adq-info-bd: #24405e;
+  --adq-ok: #6ee7b7;
+  --adq-ok-soft: #12251d;
+  --adq-ok-bd: #1f4535;
+}
+
+.adq-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--adq-line);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: var(--adq-muted);
+  background: transparent;
+}
+.adq-badge.is-warn { color: var(--adq-warn); background: var(--adq-warn-soft); border-color: var(--adq-warn-bd); }
+.adq-badge.is-info { color: var(--adq-info); background: var(--adq-info-soft); border-color: var(--adq-info-bd); }
+.adq-badge.is-ok { color: var(--adq-ok); background: var(--adq-ok-soft); border-color: var(--adq-ok-bd); }
+
+.adq-issues { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.adq-issue {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--adq-line);
+  border-left: 3px solid var(--adq-info-bd);
+  border-radius: 10px;
+  background: var(--adq-surface);
+  color: var(--adq-text);
+  font-size: 13px;
+  line-height: 1.45;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.adq-issue.is-warn { border-left-color: var(--adq-warn); }
+.adq-issue.is-info { border-left-color: var(--adq-info); }
+.adq-issue__t { font-size: 12px; font-weight: 800; letter-spacing: 0.01em; }
+.adq-issue.is-warn .adq-issue__t { color: var(--adq-warn); }
+.adq-issue.is-info .adq-issue__t { color: var(--adq-info); }
+.adq-issue__c { color: var(--adq-muted); font-size: 12.5px; }
+.adq-issue__c a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.adq-issue__a { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.adq-act {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--adq-line);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--adq-text);
+  text-decoration: none;
+}
+.adq-act:hover { border-color: var(--adq-muted); }
+.adq-more { margin: 6px 0 0; font-size: 12px; color: var(--adq-muted); }
+
+.adq-place { display: grid; gap: 10px; min-width: 0; }
+.adq-place dl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0; }
+.adq-place dl > div { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.adq-place dt { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--adq-muted); }
+.adq-place dd { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--adq-text); min-width: 0; overflow-wrap: anywhere; }
+.adq-place dd small { display: block; font-weight: 500; color: var(--adq-muted); font-size: 12px; }
+.adq-note { margin: 0; font-size: 12px; line-height: 1.45; color: var(--adq-muted); }
+
+.adq-scope .adq-sum { display: flex; flex-wrap: wrap; gap: 6px; }
+.adq-scope .adq-groups { display: grid; gap: 14px; }
+.adq-scope .adq-group > h4 { margin: 0 0 6px; font-size: 13px; font-weight: 800; color: var(--adq-text); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.adq-scope .adq-group > h4 small { font-weight: 600; color: var(--adq-muted); }
+.adq-scope .adq-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.adq-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.adq-table th, .adq-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--adq-line); vertical-align: top; }
+.adq-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--adq-muted); }
+.adq-table input[type="number"], .adq-table select { max-width: 9em; }
+.adq-table select[multiple] { max-width: 16em; min-height: 4.5em; }
+
+@media (max-width: 640px) {
+  .adq-place dl > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .adq-issue { padding: 9px 10px; }
+}
+
+.adq-rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); font-size: 13px; }
+.adq-scope .effk-panel p label, .adq-rules label { cursor: pointer; }
+.adq-table td > label.effk-block { margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--adq-muted); }
+.adq-table td { min-width: 12rem; }

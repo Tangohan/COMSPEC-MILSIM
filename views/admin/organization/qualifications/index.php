@@ -34,6 +34,7 @@ $athKpis = [
 ];
 ?>
 <div class="bo-qual">
+    <?php $rqTab = 'referentiel'; require __DIR__ . '/_tabs.php'; ?>
     <div class="bo-qual__toolbar ath-rise" role="group" aria-label="Actions sur le référentiel">
         <a href="<?= $h(url('back-office/referentiels/qualifications/create')) ?>" class="ath-btn ath-btn--solid">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>

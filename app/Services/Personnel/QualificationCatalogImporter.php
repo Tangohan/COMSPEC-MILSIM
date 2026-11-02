@@ -32,6 +32,12 @@ final class QualificationCatalogImporter
         return $this->ready() ? $this->writer->existingCodes($tenantId) : [];
     }
 
+    /** @return array<string, int> code du catalogue (majuscules) => fiche du référentiel de la communauté */
+    public function importedDefinitions(int $tenantId): array
+    {
+        return $this->ready() ? $this->writer->definitionIdsByCode($tenantId) : [];
+    }
+
     /**
      * @param list<string> $ids identifiants d’entrées du catalogue (tous packs)
      * @return array{created: list<string>, skipped: list<string>, unknown: int, issuer_ids: list<int>, definitions: array<string, int>}
