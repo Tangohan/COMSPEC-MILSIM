@@ -143,6 +143,44 @@ final class DocumentDoctrineRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Tous les documents doctrinaux du tenant, quel que soit leur état (page de pilotage Doctrine),
+     * plus les doctrines de plateforme publiées (lecture seule pour le tenant).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAllForTenant(int $tenantId): array
+    {
+        if (!$this->tableExists() || $tenantId < 1) {
+            return [];
+        }
+        $hasTypes = $this->typesTableExists();
+        $typeJoin = $hasTypes ? 'LEFT JOIN document_types dt ON dt.id = dd.document_type_id' : '';
+        $typeSelect = $hasTypes ? ', dt.label AS type_label, dt.code AS type_code, dt.color AS type_color, dt.code_prefix AS type_prefix' : '';
+        $sql = "SELECT dd.*, d.title, d.status AS document_status, d.updated_at AS document_updated_at,
+                       d.created_at AS document_created_at, d.classification_level,
+                       dv.id AS version_id, dv.version_major, dv.version_minor, dv.version_label, dv.published_at AS version_published_at,
+                       drd.label AS domain_label, drd.doc_prefix AS domain_prefix, drd.color AS domain_color,
+                       drs.code AS subdomain_code, drs.label AS subdomain_label
+                       {$typeSelect}
+                FROM document_doctrines dd
+                INNER JOIN documents d ON d.id = dd.document_id
+                LEFT JOIN document_versions dv ON dv.document_id = d.id AND dv.is_current = 1
+                LEFT JOIN document_reference_domains drd ON drd.id = dd.domain_id
+                LEFT JOIN document_reference_subdomains drs ON drs.id = dd.subdomain_id
+                {$typeJoin}
+                WHERE dd.tenant_id = ? OR (dd.scope = ? AND dd.doctrine_status = ?)
+                ORDER BY COALESCE(dd.updated_at, dd.created_at) DESC, dd.id DESC";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId, 'platform', 'published']);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private function typesTableExists(): bool
     {
         static $exists = null;

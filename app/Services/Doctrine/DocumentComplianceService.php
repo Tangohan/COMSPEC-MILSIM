@@ -87,9 +87,6 @@ final class DocumentComplianceService
             return DoctrineComplianceStatus::NOT_APPLICABLE;
         }
 
-        $requirement = (string) ($doctrine['requirement_level'] ?? 'informative');
-        $ackRequired = !empty($doctrine['acknowledgment_required']) || $requirement === 'mandatory';
-
         $primed = $this->primed;
         if ($primed !== null && $primed['tenant_id'] === $tenantId && $primed['user_id'] === $userId) {
             $latestAck = $primed['latest_ack_by_document'][$documentId] ?? null;
@@ -100,6 +97,22 @@ final class DocumentComplianceService
             $viewed = $this->viewRepository->hasViewed($tenantId, $userId, $currentVersionId);
             $ackCurrent = $this->acknowledgmentRepository->findForUserVersion($tenantId, $userId, $currentVersionId);
         }
+
+        return $this->statusFromFacts($doctrine, $currentVersionId, $ackCurrent, $latestAck, $viewed);
+    }
+
+    /**
+     * Statut d’un destinataire déjà connu à partir de ses accusés et de sa lecture (chargés en masse par l’appelant,
+     * ex. page de pilotage Doctrine). Même règle que statusForUser, sans vérifier l’appartenance à l’audience.
+     *
+     * @param array<string, mixed> $doctrine
+     * @param array<string, mixed>|null $ackCurrent accusé de la version en vigueur
+     * @param array<string, mixed>|null $latestAck dernier accusé du membre sur ce document, toutes versions
+     */
+    public function statusFromFacts(array $doctrine, int $currentVersionId, ?array $ackCurrent, ?array $latestAck, bool $viewed): string
+    {
+        $requirement = (string) ($doctrine['requirement_level'] ?? 'informative');
+        $ackRequired = !empty($doctrine['acknowledgment_required']) || $requirement === 'mandatory';
 
         if ($ackRequired) {
             if ($ackCurrent !== null) {

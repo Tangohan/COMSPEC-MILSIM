@@ -61,6 +61,9 @@ final class AdminDoctrineController
         return Response::view('layout.main', [
             'content' => 'admin/documents/doctrine_nomenclature',
             'title' => 'Nomenclature documentaire',
+            'backOfficePageCss' => ['doctrine-hub.css'],
+            'boSkipPageHead' => true,
+            'can' => $this->navCan(),
             'domains' => $domains,
             'csrf_token' => Csrf::token(),
         ]);
@@ -99,6 +102,9 @@ final class AdminDoctrineController
         return Response::view('layout.main', [
             'content' => 'admin/documents/document_types',
             'title' => 'Types de documents',
+            'backOfficePageCss' => ['doctrine-hub.css'],
+            'boSkipPageHead' => true,
+            'can' => $this->navCan(),
             'types' => $this->typeRepository->listForTenant($tenantId, false),
             'csrf_token' => Csrf::token(),
         ]);
@@ -169,6 +175,9 @@ final class AdminDoctrineController
         return Response::view('layout.main', [
             'content' => 'admin/documents/publish_form',
             'title' => $documentId > 0 ? 'Modifier le document' : 'Publier un document',
+            'backOfficePageCss' => ['doctrine-hub.css'],
+            'boSkipPageHead' => true,
+            'can' => $this->navCan(),
             'document' => $document,
             'doctrine' => $doctrine,
             'audiences' => $audiences,
@@ -280,6 +289,9 @@ final class AdminDoctrineController
         return Response::view('layout.main', [
             'content' => 'admin/documents/new_version_form',
             'title' => 'Nouvelle version',
+            'backOfficePageCss' => ['doctrine-hub.css'],
+            'boSkipPageHead' => true,
+            'can' => $this->navCan(),
             'document' => $document,
             'doctrine' => $doctrine,
             'csrf_token' => Csrf::token(),
@@ -558,6 +570,23 @@ final class AdminDoctrineController
             && $gate->deny('doctrine.create')
             && $gate->deny('documents.upload')
             && $gate->deny('admin.access');
+    }
+
+    /**
+     * Onglets visibles du module Doctrine (helpers views/admin/documents/partials/doctrine_ui.php).
+     *
+     * @return array<string, bool>
+     */
+    private function navCan(): array
+    {
+        $gate = Gate::getInstance();
+
+        return [
+            'create' => !$this->denyCreate(),
+            'manage' => !$this->denyManage(),
+            'publish' => $gate->allows('doctrine.publish') || $gate->allows('documents.publish') || $gate->allows('admin.access'),
+            'compliance' => $gate->allows('doctrine.view_compliance') || !$this->denyManage(),
+        ];
     }
 
     private function denyCreate(): bool
