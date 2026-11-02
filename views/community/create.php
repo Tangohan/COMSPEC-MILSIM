@@ -49,6 +49,8 @@ $kitGroups = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::displ
 $guideUrl = url('communities/create/guide');
 ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/community-create.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<link href="<?= htmlspecialchars(asset_url('assets/css/job-catalog.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<link href="<?= htmlspecialchars(asset_url('assets/css/grade-system-catalog.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
 <div class="community-create">
     <div class="cc-shell">
@@ -661,6 +663,15 @@ $guideUrl = url('communities/create/guide');
                                 <span class="cc-choice__title">United States</span>
                                 <span class="cc-choice__text">Grades classiques des forces armées américaines.</span>
                             </label>
+                            <?php if ($gradesExtraGrouped !== []): ?>
+                            <button type="button" class="cc-choice cc-choice--catalog min-w-[12rem] flex-1 text-left" data-grade-catalog-open="" data-grade-catalog-card aria-haspopup="dialog">
+                                <span class="cc-choice__eyebrow">Autres pays et armées</span>
+                                <span class="cc-choice__title" data-grade-catalog-chosen translate="no" hidden></span>
+                                <span class="cc-choice__title" data-grade-catalog-placeholder-title>Parcourir les catalogues</span>
+                                <span class="cc-choice__text">Royaume-Uni, Allemagne, Russie, Chine, Malaisie, OTAN… : comparez les grades puis choisissez un système.</span>
+                            </button>
+                            <?php endif; ?>
+                            <div hidden data-grade-catalog-options>
                             <?php foreach (array_keys($gradesExtraGrouped) as $extraCode): ?>
                             <?php $extraCard = \App\Support\OfficialGradeSystems::card($extraCode); ?>
                             <label class="cc-choice min-w-[12rem] flex-1">
@@ -670,6 +681,7 @@ $guideUrl = url('communities/create/guide');
                                 <span class="cc-choice__text"><?= htmlspecialchars($extraCard['text'], ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
                             <?php endforeach; ?>
+                            </div>
                             <label class="cc-choice min-w-[12rem] flex-1">
                                 <input type="radio" name="wizard_grade_system_code" value="NONE" class="sr-only" data-grade-system>
                                 <span class="cc-choice__eyebrow">Sans grades</span>
@@ -1109,6 +1121,15 @@ $guideUrl = url('communities/create/guide');
 <script>
 window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
 </script>
+<?php
+$gscCountries = is_array($gradeCatalogCountries ?? null) ? $gradeCatalogCountries : [];
+$gscCurrent = '';
+$gscMode = 'wizard';
+if ($gscCountries !== []) {
+    require dirname(__DIR__) . '/partials/grade_system_catalog.php';
+}
+?>
+<script src="<?= htmlspecialchars(asset_url('assets/js/grade-system-catalog.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
 <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/community-orbat-builder.js"></script>
 <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/community-unit-affiliation.js"></script>
 <script>

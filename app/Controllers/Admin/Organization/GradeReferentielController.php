@@ -18,6 +18,7 @@ use App\Repositories\TenantRepository;
 use App\Services\Advancement\GradeScaleTemplateService;
 use App\Services\GradeDisplayService;
 use App\Support\CustomGradeTemplates;
+use App\Support\GradeSystemCatalog;
 use App\Support\OfficialGradeSystems;
 
 class GradeReferentielController
@@ -64,9 +65,11 @@ class GradeReferentielController
         // Un onglet par système officiel (France, États-Unis, Malaisie…) ; un système absent de la base reste vide.
         $gradesBySystem = [];
         $catalogForExtras = [];
+        $catalogBySystem = [];
         foreach (OfficialGradeSystems::CODES as $officialCode) {
             $gradesBySystem[$officialCode] = $this->gradeRepository->listBySystemCodeForTenantAdmin($officialCode, $tenantId, $categoryFilter);
-            $catalogForExtras = array_merge($catalogForExtras, $this->gradeRepository->listBySystemCode($officialCode));
+            $catalogBySystem[$officialCode] = $this->gradeRepository->listBySystemCode($officialCode);
+            $catalogForExtras = array_merge($catalogForExtras, $catalogBySystem[$officialCode]);
         }
         $gradesFr = $gradesBySystem['FR_CLASSIC'];
         $gradesUs = $gradesBySystem['US_CLASSIC'];
@@ -82,6 +85,8 @@ class GradeReferentielController
             'gradesFr' => $gradesFr,
             'gradesUs' => $gradesUs,
             'gradesBySystem' => $gradesBySystem,
+            // Fenêtre « Systèmes de grades » : tous les systèmes du registre, grades du catalogue commun.
+            'gradeCatalogCountries' => GradeSystemCatalog::countries($catalogBySystem, $systemCode),
             'allGrades' => $allGrades,
             'tenantExtras' => $this->tenantExtras($tenantId, $catalogForExtras),
             'customReady' => $this->custom->ready(),
@@ -94,7 +99,7 @@ class GradeReferentielController
             'gradesHidden' => !empty($settings['grades_hidden']),
             'gradeCategoryFilterId' => $categoryFilter,
             'gradeDisplayService' => $this->gradeDisplayService,
-            'backOfficePageCss' => ['back-office-referentiel-grades.css'],
+            'backOfficePageCss' => ['back-office-referentiel-grades.css', 'job-catalog.css', 'grade-system-catalog.css'],
         ]);
     }
 

@@ -1049,11 +1049,13 @@ class CommunityController
         $gradesUs = $grades->listBySystemCode('US_CLASSIC');
         // Autres systèmes officiels (Malaisie…) proposés dès que leurs grades sont installés.
         $gradesExtraGrouped = [];
+        $catalogRows = ['FR_CLASSIC' => $gradesFr, 'US_CLASSIC' => $gradesUs];
         foreach (\App\Support\OfficialGradeSystems::CODES as $extraCode) {
             if (in_array($extraCode, ['FR_CLASSIC', 'US_CLASSIC'], true)) {
                 continue;
             }
             $extraRows = $grades->listBySystemCode($extraCode);
+            $catalogRows[$extraCode] = $extraRows;
             if ($extraRows !== []) {
                 $gradesExtraGrouped[$extraCode] = $this->groupGradesByCategory($extraRows);
             }
@@ -1070,6 +1072,8 @@ class CommunityController
             'gradesFrGrouped' => $this->groupGradesByCategory($gradesFr),
             'gradesUsGrouped' => $this->groupGradesByCategory($gradesUs),
             'gradesExtraGrouped' => $gradesExtraGrouped,
+            // Étape Grades : fenêtre « Systèmes de grades » (tous les pays et armées du registre).
+            'gradeCatalogCountries' => \App\Support\GradeSystemCatalog::countries($catalogRows),
             'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
             'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
             'orbatPresets' => WizardOrbatPresets::forWizard(),

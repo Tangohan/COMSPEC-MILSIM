@@ -59,7 +59,7 @@ final class GradeSystemsGermanyRussiaChinaNatoTest extends TestCase
                 self::assertLessThanOrEqual(150, mb_strlen($long));
                 self::assertNotSame('', $english, $code);
                 self::assertContains($category, ['OFFICIER', 'SOUS_OFFICIER', 'MDR'], $code);
-                self::assertSame($english, OfficialGradeSystems::english($system, $code));
+                self::assertSame($english !== $long ? $english : '', OfficialGradeSystems::english($system, $code));
                 if ($nato !== 'OF(D)') {
                     $level = GradeLevel::fromCode($nato);
                     self::assertNotNull($level, $system . ' ' . $code);
@@ -187,6 +187,69 @@ final class GradeSystemsGermanyRussiaChinaNatoTest extends TestCase
         self::assertStringContainsString('lang="ru-Latn" translate="no">Podpolkovnik<', $body);
         self::assertStringContainsString('Lieutenant Colonel', $body);
         self::assertStringContainsString('grades russes de l’armée de terre (Сухопутные войска)', $body);
-        self::assertStringNotContainsString('Chine : marine', $body, 'onglet masqué tant que ses grades ne sont pas installés');
+        self::assertStringNotContainsString('Chine : marine', $body, 'plus d’onglet par pays : les systèmes sont dans la fenêtre');
+    }
+
+    public function testCatalogModalListsEverySystemOfTheRegistry(): void
+    {
+        $_SESSION = ['tenant_id' => 42, '_csrf_token' => str_repeat('a', 64)];
+        $GLOBALS['__app_locale'] = 'fr';
+        $installed = ['US_CLASSIC' => [['id' => 1, 'code' => 'CPT', 'label_short' => 'CPT', 'label_long' => 'Captain', 'label_otan' => 'O-3', 'category_code' => 'OFFICIER', 'sort_order' => 3, 'is_commissioned' => 1]]];
+        foreach (['DE_HEER', 'RU_SV'] as $code) {
+            $i = 100;
+            foreach (OfficialGradeSystems::GRADES[$code] as $g) {
+                $installed[$code][] = ['id' => ++$i, 'code' => $g[0], 'label_short' => $g[1], 'label_long' => $g[2], 'label_otan' => $g[4], 'category_code' => $g[5], 'sort_order' => $g[6], 'is_commissioned' => $g[7]];
+            }
+        }
+        $countries = \App\Support\GradeSystemCatalog::countries($installed, 'US_CLASSIC');
+        self::assertSame('US', $countries[0]['country'], 'pays du système actuel en tête');
+        $codes = [];
+        foreach ($countries as $c) {
+            foreach ($c['systems'] as $s) {
+                $codes[] = $s['code'];
+            }
+        }
+        self::assertEqualsCanonicalizing(OfficialGradeSystems::CODES, $codes);
+        $byCode = array_column(array_merge(...array_column($countries, 'systems')), null, 'code');
+        self::assertTrue($byCode['DE_HEER']['installed']);
+        self::assertFalse($byCode['CN_PLAN']['installed'], 'grades lus dans le registre tant que l’étape n’a pas tourné');
+        self::assertCount(20, $byCode['CN_PLAN']['grades']);
+        self::assertSame('OF-9', $byCode['CN_PLAN']['grades'][0]['nato'], 'du plus élevé au plus bas');
+        self::assertSame('Hǎijūn shàngjiàng', $byCode['CN_PLAN']['grades'][0]['roman']);
+
+        $systems = array_fill_keys(OfficialGradeSystems::CODES, []);
+        $body = Response::view('admin.organization.referentiels.grades.index', [
+            'tab' => 'us', 'gradesBySystem' => $systems, 'gradeCatalogCountries' => $countries,
+            'tenantSystemCode' => 'US_CLASSIC', 'tenantExtras' => [], 'customSystems' => [],
+        ])->body();
+        unset($GLOBALS['__app_locale']);
+        foreach (OfficialGradeSystems::CODES as $code) {
+            self::assertStringContainsString('data-grade-catalog-panel="' . $code . '"', $body, $code);
+        }
+        foreach (['Deutschland', 'Россия', '中国', 'Malaysia', 'United Kingdom', 'NATO · OTAN'] as $native) {
+            self::assertStringContainsString($native, $body);
+        }
+        self::assertStringContainsString('data-grade-catalog-open', $body);
+        self::assertStringContainsString('Système de grades de la communauté', $body);
+        self::assertStringContainsString('data-grade-catalog-confirm', $body);
+        self::assertStringContainsString('value="DE_HEER"', $body, 'système installé : formulaire « Utiliser pour la communauté »');
+        self::assertStringNotContainsString('value="CN_PLAN"', $body, 'système non installé : pas de formulaire');
+        self::assertStringContainsString('data-grade-catalog-compare-col hidden translate="no">CPT<', $body, 'Hauptmann (OF-2) = Captain (O-3)');
+        preg_match('~<nav class="grd-ref__tabs"[^>]*>(.*?)</nav>~s', $body, $m);
+        self::assertSame(3, substr_count($m[1] ?? '', '<a '), 'grades officiels, sur mesure, grades d’avancement');
+        self::assertStringContainsString('grade-system-catalog.js', $body);
+    }
+
+    public function testWizardOffersTheCatalogInsteadOfOneCardPerSystem(): void
+    {
+        $view = (string) file_get_contents(self::ROOT . '/views/community/create.php');
+        self::assertStringContainsString('data-grade-catalog-card', $view);
+        self::assertStringContainsString('data-grade-catalog-options', $view);
+        self::assertStringContainsString("\$gscMode = 'wizard'", $view);
+        $ctrl = (string) file_get_contents(self::ROOT . '/app/Controllers/Web/CommunityController.php');
+        self::assertStringContainsString('GradeSystemCatalog::countries($catalogRows)', $ctrl);
+        $js = (string) file_get_contents(self::ROOT . '/public/assets/js/grade-system-catalog.js');
+        self::assertStringContainsString('wizard_grade_system_code', $js);
+        self::assertStringContainsString('requestSubmit', $js);
     }
 }

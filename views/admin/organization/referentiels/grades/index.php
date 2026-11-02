@@ -32,15 +32,18 @@ $hidden = GradeSelectOptions::sorted(array_values(array_filter($rows, static fn 
 $groups = GradeSelectOptions::groups($visible, OfficialGradeSystems::country($tabSystem));
 $systemName = OfficialGradeSystems::name($tabSystem);
 $communitySystem = $customCurrent !== null ? 'custom' : OfficialGradeSystems::tab($tenantSystemCode);
-// Onglets : France et États-Unis toujours, les autres systèmes officiels dès que leurs grades sont installés.
-$tabList = [];
-foreach (OfficialGradeSystems::CODES as $officialCode) {
-    $officialRows = is_array($gradesBySystem[$officialCode] ?? null) ? $gradesBySystem[$officialCode] : [];
-    if ($officialRows !== [] || in_array($officialCode, ['FR_CLASSIC', 'US_CLASSIC'], true) || OfficialGradeSystems::tab($officialCode) === $tab) {
-        $tabList[OfficialGradeSystems::tab($officialCode)] = [OfficialGradeSystems::tabLabel($officialCode), count($officialRows)];
-    }
+// Onglets : les grades officiels (système de la communauté, ou celui consulté), « Sur mesure » et « Grades d’avancement ».
+// Les autres pays et armées se parcourent dans la fenêtre « Systèmes de grades » (partials/grade_system_catalog.php).
+$officialTab = OfficialGradeSystems::codeForTab($tab) !== null ? $tab : ($communitySystem !== 'custom' ? $communitySystem : 'fr');
+$tabList = [$officialTab => ['Grades officiels', 0], 'custom' => ['Sur mesure', count($customSystems)]];
+$communityCode = $customCurrent !== null ? '' : OfficialGradeSystems::normalize($tenantSystemCode);
+$communityRows = $communityCode !== '' && is_array($gradesBySystem[$communityCode] ?? null) ? $gradesBySystem[$communityCode] : [];
+$communityShown = count(array_filter($communityRows, static fn (array $g): bool => !empty($g['is_enabled'])));
+$gradeCatalogCountries = is_array($gradeCatalogCountries ?? null) ? $gradeCatalogCountries : [];
+$gradeCatalogCustom = [];
+foreach ($customSystems as $cs) {
+    $gradeCatalogCustom[] = [(string) ($cs['label'] ?? ''), url('back-office/referentiels/grades') . '?tab=custom&systeme=' . (int) ($cs['id'] ?? 0)];
 }
-$tabList['custom'] = ['Sur mesure', count($customSystems)];
 $renamed = static function (array $g): bool {
     return trim((string) ($g['label_long'] ?? '')) !== trim((string) ($g['catalog_label_long'] ?? $g['label_long'] ?? ''))
         || trim((string) ($g['label_short'] ?? '')) !== trim((string) ($g['catalog_label_short'] ?? $g['label_short'] ?? ''));
@@ -58,7 +61,24 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
         </nav>
     </header>
 
-    <nav class="grd-ref__tabs" data-grade-tabs aria-label="Systèmes de grades">
+    <section class="grd-ref__current" aria-label="Système de grades de la communauté">
+        <p class="grd-ref__current-text">
+            <small>Système de grades de la communauté</small>
+            <?php if (!empty($gradesHidden)): ?>
+                <strong>Aucun grade affiché</strong>
+            <?php elseif ($customCurrent !== null): ?>
+                <span class="jobcat__flag is-community" aria-hidden="true">★</span><strong translate="no"><?= $h($customCurrent['label'] ?? '') ?></strong> · Sur mesure
+            <?php else: ?>
+                <span class="jobcat__flag" data-flag="<?= $h(OfficialGradeSystems::country($communityCode)) ?>" aria-hidden="true"><?= $h(OfficialGradeSystems::country($communityCode)) ?></span><strong><?= $h(OfficialGradeSystems::tabLabel($communityCode)) ?></strong> · <span translate="no"><?= $h(OfficialGradeSystems::card($communityCode)['title']) ?></span> · <span class="grd-ref__current-count"><?= (int) $communityShown ?> grades affichés</span>
+            <?php endif; ?>
+        </p>
+        <div class="grd-ref__current-actions">
+            <button type="button" class="grd-ref__switch" data-grade-catalog-open="<?= $h($communityCode) ?>">Changer de système</button>
+            <button type="button" class="grd-ref__switch grd-ref__switch--ghost" data-grade-catalog-open="">Parcourir les catalogues</button>
+        </div>
+    </section>
+
+    <nav class="grd-ref__tabs" data-grade-tabs aria-label="Grades de la communauté">
         <?php foreach ($tabList + ['perso' => ['Grades d’avancement', count($extrasActive)]] as $key => [$label, $count]): ?>
             <a href="<?= $h($tabUrl($key)) ?>" class="<?= $tab === $key ? 'is-active' : '' ?>" <?= $tab === $key ? 'aria-current="page"' : '' ?>>
                 <?= $h($label) ?>
@@ -165,11 +185,13 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
             <?php endif; ?>
         </p>
         <div class="grd-ref__system-actions">
+            <?php if ($tab !== $communitySystem): ?>
             <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>" onsubmit="return confirm('Passer la communauté aux <?= $h($systemLabels[$targetSystem]) ?> ? Les grades déjà attribués aux membres sont conservés ; les listes proposeront ensuite les <?= $h($systemLabels[$targetSystem]) ?>.');">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="grade_system_code" value="<?= $h($targetCode) ?>">
                 <button type="submit" class="grd-ref__switch">Utiliser les <?= $h($systemLabels[$targetSystem]) ?> pour la communauté</button>
             </form>
+            <?php endif; ?>
             <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>" onsubmit="return confirm('Ne plus afficher aucun grade dans la communauté ? Rien n’est supprimé : vous pourrez les réafficher ici.');">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="grade_system_code" value="NONE">
@@ -237,6 +259,15 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
     </section>
 
     <?php endif; ?>
+    <?php
+    $gscCountries = $gradeCatalogCountries;
+    $gscCurrent = $communityCode;
+    $gscMode = 'referentiel';
+    $gscAction = url('back-office/referentiels/grades/systeme');
+    $gscCustom = $gradeCatalogCustom;
+    require dirname(__DIR__, 4) . '/partials/grade_system_catalog.php';
+    ?>
     <dialog class="grd-ref__dialog" data-grade-dialog aria-label="Modifier un grade"><button type="button" class="grd-ref__dialog-close" data-grade-close>Fermer ×</button><div data-grade-form-slot></div></dialog>
 </div>
 <script src="<?= $h(asset_url('assets/js/back-office-referentiel-grades.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/grade-system-catalog.js')) ?>" defer></script>

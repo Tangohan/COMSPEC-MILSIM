@@ -294,6 +294,18 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1335, '2026-11-02', 'Grades allemands, russes, chinois et OTAN, et fenêtre « Systèmes de grades »', 'Le référentiel des grades propose maintenant les grades de la Bundeswehr, des forces armées russes, de l’Armée populaire de libération et une échelle OTAN générique. Les onglets par pays sont remplacés par une fenêtre de catalogue : pays et armées, recherche dans tous les grades, comparaison avec le système actuel par code OTAN, puis « Utiliser pour la communauté ».', [
+                'Grades : Allemagne (Heer, Marine, Luftwaffe : 29 grades chacun, en allemand), Russie (armée de terre, marine, forces aérospatiales : 20 grades chacun, en cyrillique avec translittération), Chine (陆军, 海军, 空军 : 20 grades chacun, en sinogrammes avec pinyin) et grades OTAN génériques (OR-1 à OR-9, WO, OF-1 à OF-10)',
+                'Fenêtre « Systèmes de grades » : drapeau et nom natif du pays, armées, recherche plein texte (code, abrégé, intitulé, translittération, équivalent anglais, code OTAN), liste ordonnée des grades et comparaison avec le système actuel',
+                'Adéquation de l’organisation : référentiels allemand (Gruppe, Zug, Kompanie), russe (отделение, взвод, рота), chinois (班, 排, 连) et OTAN générique, retenus d’office avec les grades du pays',
+            ], [
+                'Référentiel des grades : un bandeau « Système de grades de la communauté » avec « Changer de système » et « Parcourir les catalogues » ; il reste trois onglets (grades officiels, sur mesure, grades d’avancement)',
+                'Création de communauté, étape Grades : une carte « Autres pays et armées » ouvre la même fenêtre au lieu d’une carte par système',
+                'Modèles d’unités allemands (DSK, KSK, Luftlandebrigade 1, KSM, Seebataillon, HSG 64) : grades de la Bundeswehr appliqués',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grade_systems_de_ru_cn_nato) pour ajouter les grades allemands, russes, chinois et OTAN.',
+                'Essai : Back-office › Référentiel des grades › Parcourir les catalogues › Deutschland › Armée de terre › Utiliser pour la communauté.',
+            ]),
             $pr(1332, '2026-11-02', 'Royaume-Uni : grades britanniques, emplois, qualifications, doctrine et modèles d’unités', 'Une communauté peut choisir le modèle britannique à sa création (étape Grades) ou dans Back-office › Référentiel des grades : British Army et Royal Marines (Private, Trooper, Gunner, Sapper… jusqu’à Field Marshal), Royal Navy ou Royal Air Force, avec abréviations officielles et codes OTAN. Le Royaume-Uni rejoint aussi les catalogues : emplois des forces spéciales et unités spécialisées, brevets et cursus réels avec leurs écoles, publications doctrinales publiques et modèles d’organisation (UKSF, 16 Air Assault, UK Commando Force, Joint Aviation Command, bataillon d’infanterie type).', [
                 'Grades : trois systèmes britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force), proposés à la création de la communauté et dans le référentiel des grades',
                 'Catalogue d’emplois : 111 emplois britanniques sourcés (UKSF, 16 Air Assault, Ranger Regiment, Royal Marines, aviation, EOD, artillerie, RAF Regiment, Royal Navy)',
