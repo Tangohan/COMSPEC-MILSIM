@@ -103,7 +103,7 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call c
         private _h = missionNamespace getVariable [_x, createHashMap];
         if ((count _h) < 300) then { _h set [_m, true]; } else { _h set ["", true]; };
         missionNamespace setVariable [_x, _h];
-    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk"];
+    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk", "COMSPEC_ATAK_MkDirtyWs"];
 }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
