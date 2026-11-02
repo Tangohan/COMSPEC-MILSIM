@@ -123,6 +123,18 @@ switch (_mode) do {
             ["close"] call comspec_atak_native_fnc_mapCtxMenu;
             ["WARNING", _c get "aiWhy", 5, 30] call comspec_atak_native_fnc_notify;
         };
+        // Sous-menu Zones (ZN), ses états (ZNST) et le rayon du découpage (ZN_RAD, menu gardé ouvert).
+        if (_arg in ["ZN", "ZNST", "ZN_RAD"]) exitWith {
+            if (_arg isEqualTo "ZN_RAD") then {
+                private _rs = [150, 300, 600, 1000];
+                private _r = profileNamespace getVariable ["COMSPEC_ATAK_ZnCtxRad", 300];
+                profileNamespace setVariable ["COMSPEC_ATAK_ZnCtxRad", _rs select (((_rs find _r) + 1) mod (count _rs))];
+            };
+            _c set ["sub", ["ZN", "ZNST"] select (_arg isEqualTo "ZNST")];
+            _c set ["at", diag_tickTime];
+            playSound "ClickSoft";
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+        };
         if (_arg in ["DRONE", "BACK", "AI", "AIPOST", "AINEXT"]) exitWith {
             // Groupe IA suivant (du plus proche au plus loin du point cliqué).
             if (_arg isEqualTo "AINEXT") then {
@@ -149,6 +161,36 @@ switch (_mode) do {
             private _g = _c getOrDefault ["aiG", grpNull];
             uiNamespace setVariable ["COMSPEC_ATAK_AiPick", _g];
             ["send", [_g, _arg select [3], [_pos select 0, _pos select 1]]] call comspec_atak_native_fnc_aiOrder;
+        };
+        // Sous-menu Zones : découpage autour du point (nouveau plan, calcul en arrière-plan), zone sous le clic.
+        if ((_arg select [0, 3]) isEqualTo "ZG_") exitWith { ["ctxGen", [_arg select [3], _pos]] call comspec_atak_native_fnc_zoneAction; };
+        if ((_arg select [0, 3]) in ["ZS_", "ZR_", "ZN_"]) exitWith {
+            (_c getOrDefault ["zone", []]) params [["_zbid", ""], ["_zzid", ""]];
+            if (_zbid isEqualTo "") exitWith {};
+            private _v = _arg select [3];
+            switch (_arg select [0, 3]) do {
+                case "ZS_": { ["sit", [_zbid, _zzid, _v, []]] call comspec_atak_native_fnc_zoneAction; };
+                case "ZR_": { ["zoneSet", [_zbid, _zzid, "rm", _v]] call comspec_atak_native_fnc_zoneAction; };
+                default {
+                    switch (_v) do {
+                        case "ENY": { ["#open", [_zbid, _zzid, [_pos select 0, _pos select 1]]] call comspec_atak_native_fnc_pageZones; };
+                        case "VIS": {
+                            private _zb = ["get", _zbid] call comspec_atak_native_fnc_zoneAction;
+                            if ((count _zb) > 0) then { ["set", [_zbid, "vis", !(_zb get "vis")]] call comspec_atak_native_fnc_zoneAction; };
+                        };
+                        case "CITE": {
+                            private _zb = ["get", _zbid] call comspec_atak_native_fnc_zoneAction;
+                            private _zz = ["zone", [_zbid, _zzid]] call comspec_atak_native_fnc_zoneAction;
+                            if ((count _zz) isEqualTo 0) exitWith {};
+                            private _t = ["cite", [_zb, _zz]] call comspec_atak_native_fnc_zoneAction;
+                            ["clip", _t] call comspec_atak_native_fnc_planAction;
+                            uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", _t];
+                            [format [("Copié : %1") call comspec_atak_native_fnc_tr, _t], 3] call comspec_atak_native_fnc_toast;
+                            ["CHAT"] call comspec_atak_native_fnc_navigate;
+                        };
+                    };
+                };
+            };
         };
         switch (_arg) do {
             case "PING": { ["send", _pos] call comspec_atak_native_fnc_mapPing; };
@@ -415,6 +457,49 @@ switch (_mode) do {
             }) + [
                 ["BACK", "Retour", "ordres", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
             ] };
+        };
+        // Zones : une ligne au menu principal, puis le sous-menu (tout part d'un clic : rien d'automatique).
+        private _znSub = _c getOrDefault ["sub", ""];
+        private _znCol = [0.36, 0.78, 0.42, 1];
+        if (_znSub isEqualTo "" && {!_card}) then {
+            _rows pushBack ["ZN", "Zones", "découper, plan, état", _dir + "app_zones.paa", _znCol];
+        };
+        if (_znSub in ["ZN", "ZNST"]) then {
+            private _zr = profileNamespace getVariable ["COMSPEC_ATAK_ZnCtxRad", 300];
+            (_c getOrDefault ["zone", []]) params [["_zbid", ""], ["_zzid", ""]];
+            private _zb = ["get", _zbid] call comspec_atak_native_fnc_zoneAction;
+            private _zz = if (_zbid isEqualTo "") then { [] } else { ["zone", [_zbid, _zzid]] call comspec_atak_native_fnc_zoneAction };
+            _rows = if (_znSub isEqualTo "ZNST") then {
+                ((["states"] call comspec_atak_native_fnc_zoneAction) apply {
+                    ["ZS_" + (_x select 0), _x select 1, ["", "actuel"] select ((_x select 0) isEqualTo (_zz param [6, ""])), _dir + "app_zones.paa", _x select 4]
+                }) + [["ZN", "Retour", "zones", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]]
+            } else {
+                private _r = [
+                    ["ZN_RAD", "Rayon du découpage", format ["%1 m · changer", _zr], _dir + "app_zones.paa", _znCol],
+                    ["ZG_G100", "Découper ici : grille 100 m", "nouveau plan", _dir + "app_zones.paa", _znCol],
+                    ["ZG_G200", "Découper ici : grille 200 m", "nouveau plan", _dir + "app_zones.paa", _znCol],
+                    ["ZG_G500", "Découper ici : grille 500 m", "nouveau plan", _dir + "app_zones.paa", _znCol],
+                    ["ZG_BLOCK", "Découper ici : îlots", "par les routes", _dir + "app_zones.paa", _znCol],
+                    ["ZG_RADIAL", "Découper ici : secteurs", "N, NE… et anneaux", _dir + "app_zones.paa", _znCol],
+                    ["ZG_NEW", "Nouveau plan à partir d'ici", "ouvre l'app Zones", _dir + "app_zones.paa", _znCol],
+                    ["ZG_AXES", "Nommer les axes autour", "MSR, ASR, CP", _dir + "map_route.paa", _znCol]
+                ];
+                if ((count _zz) > 0) then {
+                    private _mineZ = ["isMine", _zbid] call comspec_atak_native_fnc_zoneAction;
+                    _r = [
+                        ["ZONE", format [("Fiche de la zone %1") call comspec_atak_native_fnc_tr, _zz select 1], _zb get "name", _dir + "app_zones.paa", _znCol],
+                        ["ZNST", "Changer l'état", (((["state", _zz select 6] call comspec_atak_native_fnc_zoneAction) select 1) call comspec_atak_native_fnc_tr), _dir + "app_zones.paa", _znCol],
+                        ["ZN_ENY", "Signaler un ennemi ici", "fiche de la zone", _dir + "app_zones.paa", [0.95, 0.35, 0.3, 1]],
+                        ["ZN_CITE", "Citer la zone (@zone)", "dans un message", _dir + "app_zones.paa", _znCol],
+                        ["ZN_VIS", ["Masquer ce plan", "Afficher ce plan"] select !(_zb getOrDefault ["vis", true]), _zb get "name", _dir + "app_zones.paa", _znCol]
+                    ] + ([[], [
+                        ["ZR_FILL", "Rendu : surligné", "cette zone", _dir + "app_zones.paa", _znCol],
+                        ["ZR_LINE", "Rendu : contour", "cette zone", _dir + "app_zones.paa", _znCol],
+                        ["ZR_POINT", "Rendu : point centré", "cette zone", _dir + "app_zones.paa", _znCol]
+                    ]] select _mineZ) + _r;
+                };
+                _r + [["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]]
+            };
         };
         private _rowH = _font * 1.55;
         private _headH = _font * 2.05;
