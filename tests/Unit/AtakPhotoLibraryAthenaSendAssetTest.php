@@ -37,8 +37,11 @@ final class AtakPhotoLibraryAthenaSendAssetTest extends TestCase
         self::assertStringContainsString('listLocalScreenshots', $send);
         self::assertStringContainsString('Aucune vue', $send);
         $ext = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('ATAK_PhotoLibrary', $ext);
-        self::assertStringContainsString('EnumerateIcemanPhotoLibraryDirs', $ext);
+        // COMSPEC Link 2.0.116 : plus aucun parcours des dossiers Workshop (Photo Library IceMan archivée) ;
+        // les captures sont cherchées dans une liste bornée (réglage du joueur, profil Arma, Documents).
+        self::assertStringNotContainsString('EnumerateIcemanPhotoLibraryDirs', $ext);
+        self::assertStringNotContainsString('FindBceScreenshotDir', $ext);
+        self::assertStringContainsString('ComputeShotDirs', $ext);
         ModVersion::assertAtLeast('2.0.52', ModVersion::match('/ExtensionVersion\s*=\s*"([0-9.]+)"/', $ext));
         self::assertStringContainsString('_started = _started + 1', $poll);
         self::assertStringContainsString('rememberLocalPhoto', $bridge);
