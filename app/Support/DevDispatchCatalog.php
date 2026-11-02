@@ -294,6 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1311, '2026-11-02', 'Academy : la formation ATHENA refaite, en français et en anglais', 'Une nouvelle formation intégrée de l’Academy, « ATHENA — Utiliser et administrer la plateforme », remplace l’ancienne présentation du site. En douze chapitres courts, elle couvre la prise en main du portail, puis explique vraiment le back-office : chaque section de la barre latérale, l’organisation et l’ORBAT, les effectifs et les emplois, les qualifications et l’avancement, la doctrine, l’Academy, les opérations, les droits d’accès. Deux chapitres suivent tout le circuit du recrutement, de la vitrine publique à l’intégration (grade d’entrée, matricule, parcours d’accueil, période d’essai), et le dernier explique la liaison du mod ATAK. Chaque écran est cité avec son chemin de menu et son adresse ; chaque chapitre se termine par un quiz commenté.', [
+                'Formation « ATHENA — Utiliser et administrer la plateforme » : douze chapitres, quiz commentés, fiches mémo, qualification Athena Academy délivrée à la fin',
+                'Textes entièrement rédigés en français et en anglais ; la formation suit la langue choisie par chaque membre',
+            ], [
+                'Cours de l’Academy : si un texte manque dans la langue du membre, le français s’affiche au lieu d’un espace vide',
+                'Écran d’accueil et statuts de candidature : traductions anglaises complétées (« Utiliser Athena seul », « Annulée »)',
+            ], [
+                'Codes d’invitation prioritaires : la page s’ouvre de nouveau au lieu de renvoyer à la liste des candidatures',
+            ], ['personnel', 'platform'], [
+                'Pour l’imposer aux recrues : ajoutez une étape « Formation facultative » liée à ce cours dans le modèle de parcours d’accueil.',
+            ], 'Portail'),
             $pr(1310, '2026-11-02', 'Écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5', 'Avec le pack 2.9.33, les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy : depuis la 2.9.29, le jeu refusait la taille de l’image posée sur l’écran et il restait noir. La radio ACRE2 ou TFAR reliée à la MPU5 fait passer la voix par le maillage jusqu’aux radios reliées des équipiers sur la même fréquence (réglage serveur, désactivé par défaut).', [
                 'Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu’aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).',
             ], [
