@@ -9,6 +9,7 @@ require __DIR__ . '/_head.php';
 ?>
     <section class="mm-mapwrap">
       <div class="mm-map" id="mm-map" aria-label="Carte"></div>
+      <button type="button" class="mm-fullbtn" data-map-full aria-pressed="false">Plein écran</button>
       <div class="mm-mapchip" data-my-grid>Position : —</div>
       <div class="mm-fabs">
         <button type="button" class="mm-fab" data-map-me>MOI</button>

@@ -301,6 +301,7 @@
         var x = e.latlng.lng;
         var y = e.latlng.lat;
         if (mode === 'add') { mode = ''; hint.hidden = true; openSheet(null, x, y); return; }
+        if (!mode && !msheet.hidden) { closeSheet(); return; }
         if (mode === 'move' && editing) {
           mode = '';
           hint.hidden = true;
@@ -320,6 +321,30 @@
     $('[data-map-add]').addEventListener('click', function () { mode = 'add'; hint.hidden = false; closeSheet(); });
     $('[data-map-cancel]').addEventListener('click', function () { mode = ''; hint.hidden = true; });
     $('[data-marker-close]').addEventListener('click', closeSheet);
+    // Fermer aussi par Échap et en glissant vers le bas.
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !msheet.hidden) closeSheet(); });
+    var y0 = null;
+    msheet.addEventListener('touchstart', function (e) { y0 = msheet.scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
+    msheet.addEventListener('touchend', function (e) { if (y0 !== null && e.changedTouches[0].clientY - y0 > 80) closeSheet(); y0 = null; });
+    // Carte en grand : Fullscreen API, repli CSS (iOS), choix gardé pendant la session.
+    var wrap = $('.mm-mapwrap');
+    var fbtn = $('[data-map-full]');
+    var setFull = function (on) {
+      wrap.classList.toggle('is-full', on);
+      fbtn.textContent = on ? '✕ Quitter' : 'Plein écran';
+      fbtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      try { sessionStorage.setItem('mm-map-full', on ? '1' : ''); } catch (e) {}
+      if (map) setTimeout(function () { map.invalidateSize(); }, 60);
+    };
+    fbtn.addEventListener('click', function () {
+      var on = !wrap.classList.contains('is-full');
+      if (on && wrap.requestFullscreen) wrap.requestFullscreen().catch(function () {});
+      if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+      setFull(on);
+    });
+    document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && wrap.classList.contains('is-full')) setFull(false); });
+    window.addEventListener('resize', function () { if (map) map.invalidateSize(); });
+    try { if (sessionStorage.getItem('mm-map-full')) setFull(true); } catch (e) {}
     $('[data-marker-move]').addEventListener('click', function () {
       if (!editing) return;
       editing.kind = kindOf();
@@ -355,7 +380,7 @@
       medevac: ['Position de la LZ', 'Fréquence et indicatif', 'Patients par urgence', 'Équipement spécial', 'Patients (couchés / assis)', 'Sécurité de la LZ', 'Marquage de la LZ', 'Nationalité', 'NRBC et terrain']
     };
     var TITLES = { '9line': 'CAS 9-LINE', '5line': '5-LINE', medevac: 'MEDEVAC 9-LINE' };
-    var STATES = { sent: 'Envoyé', received: 'Reçu', read: 'Lu', wilco: 'WILCO', unable: 'UNABLE' };
+    var STATES = { sent: 'ENVOYÉ', received: 'REÇU', read: 'LU', wilco: 'WILCO', unable: 'UNABLE' };
     var known = null;
     var briefs = [];
     var openId = 0;
@@ -367,13 +392,19 @@
     var render = function () {
       if (!briefs.length) { list.innerHTML = '<p class="mm-muted">Aucun brief reçu pour l’instant.</p>'; return; }
       var sorted = briefs.slice().sort(function (a, b) { return (unread(a) ? 0 : 1) - (unread(b) ? 0 : 1) || b.id - a.id; });
-      list.innerHTML = sorted.map(function (b) {
+      var nUnread = sorted.filter(unread).length;
+      var row = function (b) {
         var u = unread(b);
+        var st = STATES[b.status] ? b.status : 'sent';
         return '<button type="button" class="mm-brief' + (u ? ' is-new' : '') + '" data-brief="' + b.id + '">' +
           '<strong>' + esc(TITLES[b.format] || 'BRIEF') + (u ? ' <em>NOUVEAU</em>' : '') + '</strong>' +
           '<span translate="no">' + esc(b.from) + ' → ' + esc(b.to) + '</span>' +
-          '<small>' + esc(b.time) + ' · ' + esc(STATES[b.status] || b.status) + '</small></button>';
-      }).join('');
+          '<small>' + esc(b.time) + '</small><b class="mm-ack ' + st + '">' + esc(STATES[st]) + '</b></button>';
+      };
+      list.innerHTML = (nUnread ? '<p class="mm-unread-h">' + esc('Non lus') + ' · ' + nUnread + '</p>' : '') +
+        sorted.slice(0, nUnread).map(row).join('') +
+        (nUnread && sorted.length > nUnread ? '<p class="mm-unread-h">' + esc('Déjà lus') + '</p>' : '') +
+        sorted.slice(nUnread).map(row).join('');
     };
     var openBrief = function (id) {
       var b = briefs.filter(function (x) { return x.id === id; })[0];
@@ -384,7 +415,8 @@
       $('[data-brief-lines]').innerHTML = labels.map(function (l, i) {
         return '<li><span>' + esc(l) + '</span><b translate="no">' + esc(b.lines[i] || '—') + '</b></li>';
       }).join('') + (b.remarks ? '<li class="mm-lines__rem"><span>Remarques</span><b translate="no">' + esc(b.remarks) + '</b></li>' : '');
-      $('[data-brief-state]').textContent = 'État : ' + (STATES[b.status] || b.status);
+      var bst = unread(b) ? 'read' : (STATES[b.status] ? b.status : 'sent');
+      $('[data-brief-state]').innerHTML = '<b class="mm-ack ' + bst + '">' + esc(STATES[bst]) + '</b>';
       bsheet.hidden = false;
       // Ouvert sur le téléphone : « lu » pour le JTAC (une seule fois).
       if (unread(b)) {
@@ -398,6 +430,7 @@
       if (b) openBrief(Number(b.getAttribute('data-brief')));
     });
     $('[data-brief-close]').addEventListener('click', function () { bsheet.hidden = true; openId = 0; });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !bsheet.hidden) { bsheet.hidden = true; openId = 0; } });
     var poll = function () {
       getJSON('/m/api/briefs').then(function (j) {
         if (!j || !j.ok) {

@@ -3,6 +3,14 @@ private _perfT = diag_tickTime;
 disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
+// Rendu périmé (2.9.40) : un rendu différé (execNextFrame, waitAndExecute) d'une page quittée entre-temps la redessinait
+// par-dessus la page affichée (Athena sous le lanceur). Seul fn_navigate change la page active : tout autre rendu
+// d'une autre page est abandonné.
+private _act = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
+if (_act isNotEqualTo "" && {_act isNotEqualTo _page}) exitWith {
+    diag_log format ["[COMSPEC ATAK][UI] rendu périmé de %1 abandonné (page active : %2)", _page, _act];
+    false
+};
 // Rendus comptés : fn_layoutApply (mise en page seule) ne redessine pas la page si un rendu a suivi.
 uiNamespace setVariable ["COMSPEC_ATAK_RenderSeq", (uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) + 1];
 // Rendus par page sur la fenêtre de 30 s (onglet PERFS du Debug, remis à zéro par fn_perfAcc « report »).

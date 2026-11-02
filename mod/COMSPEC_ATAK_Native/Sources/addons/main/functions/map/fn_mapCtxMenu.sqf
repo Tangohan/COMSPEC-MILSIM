@@ -130,7 +130,11 @@ switch (_mode) do {
     };
     case "close": {
         [] call _unbindEsc;
-        call _wipe;
+        // Contrôles masqués tout de suite, supprimés à l'image suivante (jamais pendant le clic d'un de leurs boutons).
+        private _old = uiNamespace getVariable ["COMSPEC_ATAK_MapCtxCtrls", []];
+        { if (!isNull _x) then { _x ctrlShow false; _x ctrlEnable false; }; } forEach _old;
+        [{ { ctrlDelete _x; } forEach _this; }, _old] call CBA_fnc_execNextFrame;
+        uiNamespace setVariable ["COMSPEC_ATAK_MapCtxCtrls", []];
         _s set ["mapCtx", createHashMap];
     };
     case "act": {
@@ -689,7 +693,10 @@ switch (_mode) do {
                 ["#e6efe9", "#f2685c"] select (_key in ["DELETE", "WPDEL", "ALERTSDEL", "VIEWDEL", "LOSDEL", "NOFLYALL"]), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
             _t ctrlSetFontHeight _font;
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _ry, _w, _rowH]] call _mk;
-            _b ctrlAddEventHandler ["ButtonClick", compile format ["['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu;", _key]];
+            // Ligne exécutée à l'image suivante, hors du clic (2.9.40) : « close » supprimait ce bouton pendant son propre
+            // gestionnaire et le moteur ne laissait plus passer aucun clic (carte figée après NOMMER LES AXES, tracé
+            // impossible après ZONE DEPUIS LE CLIC, carte qui ne répond plus) ; même règle que fn_pageClear.
+            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;", _key]];
             _ry = _ry + _rowH;
         } forEach _rows;
         // Suivis aussi par la page : un rendu complet (changement d'app) les efface avec le reste.

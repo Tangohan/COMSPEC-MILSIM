@@ -54140,4 +54140,6 @@ return [
     'Fictif' => 'Fictional',
     'Code' => 'Code',
     'Document fictif — mention SIMULATION' => 'Fictional document — marked SIMULATION',
+    'Déjà lus' => 'Already read',
+    '✕ Quitter' => '✕ Exit',
 ];

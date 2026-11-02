@@ -43,7 +43,7 @@ if (_full || {(count _dirty) > 0}) then {
             if ((count _c) < 4) then { _c = [0, 0, 0, 1]; };
             _cfg set [_key, _c];
         };
-        [+_c] call _lift
+        [+_c, _cls] call _lift
     };
     // Entrée de dessin d'un marqueur ; [] : rien à dessiner (supprimé, transparent, sans image).
     private _entry = {
@@ -60,8 +60,10 @@ if (_full || {(count _dirty) > 0}) then {
                     _cfg set ["i:" + _type, _ic];
                 };
                 if ((_ic select 0) isEqualTo "" || {(toLower _type) isEqualTo "empty"}) exitWith { [] };
+                // Icône : couleur pleine (alpha 1, comme la fiche du marqueur) ; halo sombre dessous, clair sous une
+                // couleur sombre (marqueur noir sur carte claire), calculé ici une fois par changement du marqueur.
                 private _c = [markerColor _x, _type] call _rgbOf;
-                _c set [3, (_c select 3) * _a];
+                _c set [3, 1];
                 (markerSize _x) params [["_sw", 1], ["_sh", 1]];
                 // Point simple (mil_dot, hd_dot) : le point ne remplit qu'un quart de son image, noir par défaut ; dessiné
                 // ainsi il faisait 7 px sombres sur la carte, invisible. Agrandi, et éclairci s'il est trop sombre.
@@ -69,7 +71,8 @@ if (_full || {(count _dirty) > 0}) then {
                     _sw = _sw * 2; _sh = _sh * 2;
                     if (((_c select 0) + (_c select 1) + (_c select 2)) < 0.45) then { _c = [0.96, 0.84, 0.25, _c select 3]; };
                 };
-                [0, _x, _ic select 0, _c, (_ic select 1) * (abs _sw), (_ic select 1) * (abs _sh), markerDir _x, [0, 1] select ((_ic select 2) > 0)]
+                private _halo = [_pal get "halo", _pal get "haloLight"] select (((_c select 0) * 0.3 + (_c select 1) * 0.59 + (_c select 2) * 0.11) < 0.25);
+                [0, _x, _ic select 0, _c, (_ic select 1) * (abs _sw), (_ic select 1) * (abs _sh), markerDir _x, [0, 1] select ((_ic select 2) > 0), _halo]
             };
             case "POLYLINE": {
                 private _flat = markerPolyline _x;
@@ -141,10 +144,12 @@ private _off = {
     if ((count _x) isEqualTo 0) then { continue };
     switch (_x select 0) do {
         case 0: {
-            _x params ["", "_m", "_icon", "_c", "_w", "_h", "_dir", "_shadow"];
+            _x params ["", "_m", "_icon", "_c", "_w", "_h", "_dir", "_shadow", ["_halo", []]];
             private _pos = getMarkerPos _m;
             if ((_pos select 0) < (_view select 0) || {(_pos select 0) > (_view select 2)} || {(_pos select 1) < (_view select 1)} || {(_pos select 1) > (_view select 3)}) then { continue };
-            _map drawIcon [_icon, _c, _pos, (_w * _mk) max 7, (_h * _mk) max 7, _dir, "", _shadow];
+            private _iw = (_w * _mk) max 7; private _ih = (_h * _mk) max 7;
+            if ((count _halo) > 0) then { _map drawIcon [_icon, _halo, _pos, _iw * 1.3, _ih * 1.3, _dir, "", 0]; };
+            _map drawIcon [_icon, _c, _pos, _iw, _ih, _dir, "", _shadow];
         };
         case 1: {
             _x params ["", "", "_pts", "_c", ["_bb", []]];

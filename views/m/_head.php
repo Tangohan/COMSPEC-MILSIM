@@ -1,6 +1,6 @@
 <?php
 /**
- * En-tête commun des pages « Sur mon téléphone » (/m/…) : plein écran téléphone, thème sombre ATAK, menu des apps.
+ * En-tête commun des pages « Sur mon téléphone » (/m/…) : plein écran téléphone, thème de /9-line (noir, vert, Inter et JetBrains Mono), menu des apps.
  *
  * @var string $title
  * @var string $mobileView
@@ -22,6 +22,9 @@ if (!empty($showBriefs)) {
     $tabs['briefs'] = ['m/briefs', 'Briefs air'];
 }
 $player = trim((string) ($mobileLink['player_name'] ?? ''));
+$langHref = static fn (string $code): string => function_exists('locale_switch_url') ? (string) locale_switch_url($code) : (string) url('locale/' . $code);
+$curLang = function_exists('locale') ? (string) locale() : 'fr';
+$loggedIn = class_exists(\App\Core\Session::class) && (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
 $until = '';
 if (!empty($expiresAt)) {
     $ts = strtotime($expiresAt . ' UTC');
@@ -29,11 +32,11 @@ if (!empty($expiresAt)) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= $h($curLang) ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#070a0e">
+  <meta name="theme-color" content="#050505">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -41,18 +44,21 @@ if (!empty($expiresAt)) {
   <meta name="referrer" content="no-referrer">
   <?php if (!empty($csrf)): ?><meta name="csrf-token" content="<?= $h($csrf) ?>"><?php endif; ?>
   <title><?= $h($title ?? 'Sur mon téléphone — Athena') ?></title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <?php if ($needsMap): ?><link rel="stylesheet" href="<?= $h(url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>"><?php endif; ?>
   <link rel="stylesheet" href="<?= $h(url('assets/css/atak-m.css')) ?>?v=<?= $h($ver) ?>">
 </head>
 <body class="mm-body" data-view="<?= $h($mobileView ?? '') ?>" data-base="<?= $h(rtrim(url(''), '/')) ?>">
 <?php if (!empty($mobileLink)): ?>
   <header class="mm-top">
-    <a class="mm-top__brand" href="<?= $h(url('m')) ?>"><span class="mm-top__mark">ATHENA</span><span class="mm-top__app"><?= $h(explode(' — ', (string) ($title ?? ''))[0]) ?></span></a>
+    <a class="mm-top__brand" href="<?= $h(url('m')) ?>"><img src="<?= $h(url('assets/brand/athena-embleme-blanc.svg')) ?>" alt="" width="26" height="22"><span class="mm-top__mark">ATHENA<em>.</em></span></a>
+    <span class="mm-top__app" translate="no"><?= $h(explode(' — ', (string) ($title ?? ''))[0]) ?></span>
+    <nav class="mm-lang" aria-label="Langue">
+      <?php foreach (['fr', 'en'] as $code): ?>
+        <?php if ($curLang === $code): ?><span class="on" aria-current="true"><?= strtoupper($code) ?></span><?php else: ?><a href="<?= $h($langHref($code)) ?>" hreflang="<?= $code ?>"><?= strtoupper($code) ?></a><?php endif; ?>
+      <?php endforeach; ?>
+    </nav>
     <div class="mm-top__who">
-      <?php if ($player !== ''): ?><span translate="no"><?= $h($player) ?></span><?php endif; ?>
+      <?php if ($player !== ''): ?><span translate="no"><?= $h($player) ?></span><?php elseif ($loggedIn): ?><a href="<?= $h(url('account')) ?>">Compte</a><?php endif; ?>
       <?php if ($until !== ''): ?><small>jusqu’à <?= $h($until) ?></small><?php endif; ?>
     </div>
   </header>
