@@ -294,6 +294,11 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1326, '2026-11-02', 'Invitation : une page d’accueil soignée', 'La page ouverte par un lien d’invitation (athena-comspec.eu/public/i/…) présente la communauté en grand (emblème, bannière, effectif, jeu) avec un ticket d’accès : les étapes à suivre, les boutons et la validité du lien. Elle suit le thème clair ou sombre de l’appareil et s’adapte au téléphone. La fiche d’un lien dans le back-office reprend ce ticket.', [
+                'Page d’invitation /i/… : ticket d’accès avec étapes, code à copier, validité et utilisations restantes ; thème clair ou sombre selon l’appareil',
+                'Recrutement › Liens d’invitation : la fiche du lien présente le lien, son code et son QR code sous forme de ticket',
+            ], [], [], ['personnel'], [], 'Portail Athena'),
+
             $pr(1325, '2026-11-02', 'Liens d’invitation : en anglais de bout en bout', 'Les pages des liens d’invitation (back-office et page publique) gardaient quelques phrases en français en anglais : elles sont désormais entièrement traduites.', [], [], [
                 'Liens d’invitation en anglais : la présentation de la liste, le quota, l’aide de l’adresse personnalisée, l’action « Rejoindre » et le bandeau de candidature restaient en français',
             ], ['personnel'], [], 'Portail Athena'),
