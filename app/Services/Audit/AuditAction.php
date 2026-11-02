@@ -178,6 +178,7 @@ final class AuditAction
     public const PLATFORM_CONTRIBUTOR_UPDATED = 'platform.contributor_updated';
 
     public const SUBSCRIPTION_PLAN_UPDATED = 'platform.subscription_plan_updated';
+    public const SUBSCRIPTION_PLAN_DUPLICATED = 'platform.subscription_plan_duplicated';
 
     /** Affectation manuelle d’une formule à une communauté (opérateur plateforme). */
     public const TENANT_PLAN_ASSIGNED = 'platform.tenant_plan_assigned';
