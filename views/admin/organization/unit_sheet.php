@@ -198,8 +198,8 @@ foreach ($derivedCommand as $dc) {
                                 <label class="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500" for="poste-<?= $bid ?>-emploi">Emploi rattaché</label>
                                 <select id="poste-<?= $bid ?>-emploi" name="posts[<?= $bid ?>][job_role_id]" class="ath-field__select w-full">
                                     <option value="">Aucun</option>
-                                    <?php foreach ($jobRoleOptions as $jr): ?>
-                                        <option value="<?= (int) $jr['id'] ?>" <?= $bJob === (int) $jr['id'] ? 'selected' : '' ?>><?= $h($jr['name']) ?></option>
+                                    <?php foreach ($jobRoleOptions as $jr): if (!empty($jr['hidden']) && $bJob !== (int) $jr['id']) continue; ?>
+                                        <option value="<?= (int) $jr['id'] ?>" <?= $bJob === (int) $jr['id'] ? 'selected' : '' ?>><?= $h((!empty($jr['abbreviation']) ? $jr['abbreviation'] . ' · ' : '') . $jr['name']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -222,8 +222,8 @@ foreach ($derivedCommand as $dc) {
                     <label class="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500" for="poste-nouveau-emploi">Emploi rattaché</label>
                     <select id="poste-nouveau-emploi" name="new_job_role_id" class="ath-field__select w-full">
                         <option value="">Aucun</option>
-                        <?php foreach ($jobRoleOptions as $jr): ?>
-                            <option value="<?= (int) $jr['id'] ?>"><?= $h($jr['name']) ?></option>
+                        <?php foreach ($jobRoleOptions as $jr): if (!empty($jr['hidden'])) continue; ?>
+                            <option value="<?= (int) $jr['id'] ?>"><?= $h((!empty($jr['abbreviation']) ? $jr['abbreviation'] . ' · ' : '') . $jr['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -236,7 +236,8 @@ foreach ($derivedCommand as $dc) {
             <ul class="divide-y divide-slate-100">
                 <?php foreach ($billets as $b): ?>
                     <li class="flex flex-wrap items-center justify-between gap-2 py-3">
-                        <p class="text-sm font-black uppercase text-slate-900"><?= $h($b['title'] ?? '') ?><?php if (!empty($b['is_key_post'])): ?> <span class="text-xs font-semibold normal-case text-slate-500">· poste clé</span><?php endif; ?></p>
+                        <?php $bDecor = ($jobRoleDecorations ?? [])[(int) ($b['job_role_id'] ?? 0)] ?? null; ?>
+                        <p class="text-sm font-black uppercase text-slate-900"><?= \App\Support\JobRoleBadge::html($bDecor) ?><?= $h($b['title'] ?? '') ?><?php if (!empty($b['is_key_post'])): ?> <span class="text-xs font-semibold normal-case text-slate-500">· poste clé</span><?php endif; ?></p>
                         <p class="text-sm font-bold <?= (int) ($b['vacant'] ?? 0) > 0 ? 'text-amber-700' : 'text-emerald-700' ?>"><?= (int) ($b['filled'] ?? 0) ?> / <?= (int) ($b['authorized'] ?? 1) ?></p>
                     </li>
                 <?php endforeach; ?>

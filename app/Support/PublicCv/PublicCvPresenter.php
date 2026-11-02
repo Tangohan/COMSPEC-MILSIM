@@ -69,6 +69,7 @@ final class PublicCvPresenter
 
         // Fonction (emploi) et poste dans l’unité, comme les colonnes du tableur Effectifs.
         $job = null;
+        $jobBadge = null;
         $otherJobs = [];
         $post = null;
         if ($sections['roles']) {
@@ -81,6 +82,7 @@ final class PublicCvPresenter
                 $label = $detail !== null && mb_strtolower($detail) !== mb_strtolower($name) ? $name . ' — ' . $detail : $name;
                 if ($job === null) {
                     $job = $label;
+                    $jobBadge = ['icon' => self::text($j['icon'] ?? null), 'abbreviation' => self::text($j['abbreviation'] ?? null)];
                 } elseif ($label !== $job && !in_array($label, $otherJobs, true)) {
                     $otherJobs[] = $label;
                 }
@@ -303,6 +305,7 @@ final class PublicCvPresenter
             'bio' => $bio,
             'sections' => $sections,
             'job' => $job,
+            'job_badge' => $jobBadge,
             'other_jobs' => $otherJobs,
             'post' => $post,
             'member_since' => $since,

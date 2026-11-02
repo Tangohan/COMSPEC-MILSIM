@@ -6,6 +6,7 @@ $id = (int) ($m['id'] ?? 0);
 $assignments = is_array($memberAssignments ?? null) ? $memberAssignments : [];
 $roleNames = is_array($memberRoleNames ?? null) ? $memberRoleNames : [];
 $jobRoles = is_array($memberJobRoles ?? null) ? $memberJobRoles : [];
+$jobDecorations = is_array($memberJobDecorations ?? null) ? $memberJobDecorations : [];
 $jobRoleOptions = is_array($jobRoleOptions ?? null) ? $jobRoleOptions : [];
 $jobRoleMax = max(1, (int) ($jobRoleMax ?? 5));
 $jobRolesAvailable = (bool) ($jobRolesAvailable ?? false);
@@ -720,9 +721,13 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <?php if ($jobRoles !== []): ?>
             <ul class="eff-fm-fn">
                 <?php foreach ($jobRoles as $jr): ?>
-                    <li>
-                        <b><?= $h((string) ($jr['role_name'] ?? 'Fonction')) ?></b>
+                    <?php $jrDecor = $jobDecorations[(int) ($jr['personnel_job_role_id'] ?? 0)] ?? null; $jrDesc = trim((string) ($jrDecor['description'] ?? '')); ?>
+                    <li<?= $jrDesc !== '' ? ' title="' . $h($jrDesc) . '"' : '' ?>>
+                        <b><?= \App\Support\JobRoleBadge::html($jrDecor, false) ?><?= $h((string) ($jr['role_name'] ?? 'Fonction')) ?></b>
                         <span class="eff-fm-chip<?= !empty($jr['is_primary']) ? ' is-ok' : '' ?>"><?= !empty($jr['is_primary']) ? 'Principale' : 'Secondaire' ?></span>
+                        <?php if (!empty($jrDecor['hidden']) && $canManageAssignments): ?><span class="job-hidden-flag" title="Fonction du site masquée par votre communauté : le membre la garde.">Fonction masquée</span><?php endif; ?>
+                        <?= \App\Support\JobRoleBadge::tags($jrDecor['tags'] ?? []) ?>
+                        <?php if ($jrDesc !== ''): ?><small class="eff-fm-hint" translate="no"><?= $h($jrDesc) ?></small><?php endif; ?>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -1457,10 +1462,10 @@ foreach ($jobRoles as $jr) {
                             $val = (string) $item['value'];
                             $isPrimary = $primaryJobRoleId > 0 && $val === (string) $primaryJobRoleId;
                             ?>
-                            <div class="eff-job-picker__item" data-filter-item data-filter-text="<?= $h(mb_strtolower($item['label'] . ' ' . $item['detail'] . ' ' . $group['label'], 'UTF-8')) ?>">
+                            <div class="eff-job-picker__item<?= ($item['origin'] ?? '') === 'community' ? ' is-community' : '' ?>" data-filter-item data-filter-text="<?= $h(mb_strtolower($item['label'] . ' ' . $item['detail'] . ' ' . $group['label'] . ' ' . ($item['abbreviation'] ?? '') . ' ' . implode(' ', array_column($item['tags'] ?? [], 'name')), 'UTF-8')) ?>"<?= ($item['description'] ?? '') !== '' ? ' title="' . $h((string) $item['description']) . '"' : '' ?>>
                                 <label class="eff-job-picker__check">
                                     <input type="checkbox" name="job_role_ids[]" value="<?= $h($val) ?>" <?= $item['checked'] ? 'checked' : '' ?>>
-                                    <span><strong><?= $h($item['label']) ?></strong><?php if ($item['detail'] !== ''): ?><small><?= $h($item['detail']) ?></small><?php endif; ?></span>
+                                    <span><strong><?= \App\Support\JobRoleBadge::html($item, false) ?><?= $h($item['label']) ?> <?= \App\Support\JobRoleBadge::origin((string) ($item['origin'] ?? '')) ?><?php if (!empty($item['hidden'])): ?> <span class="job-hidden-flag">Masquée</span><?php endif; ?></strong><?php if ($item['detail'] !== ''): ?><small><?= $h($item['detail']) ?></small><?php endif; ?></span>
                                 </label>
                                 <label class="eff-job-picker__primary" title="Fonction principale">
                                     <input type="radio" name="primary_job_role_id" value="<?= $h($val) ?>" <?= $isPrimary ? 'checked' : '' ?>>

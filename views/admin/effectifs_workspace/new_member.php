@@ -167,9 +167,9 @@ $unitRoleSuggestions = ['Chef de groupe', 'Adjoint', 'Chef d’équipe', 'Tireur
                     <details class="eff-nm-jobs__group" data-nm-job-group<?= array_intersect(array_column($items, 'value'), $oldJobs) !== [] ? ' open' : '' ?>>
                         <summary><?= $h((string) ($group['label'] ?? '')) ?> <span><?= count($items) ?></span></summary>
                         <?php foreach ($items as $item): ?>
-                            <label class="eff-nm-job" data-nm-job data-search="<?= $h(mb_strtolower((string) ($item['label'] ?? '') . ' ' . (string) ($item['detail'] ?? ''))) ?>">
+                            <label class="eff-nm-job" data-nm-job data-search="<?= $h(mb_strtolower((string) ($item['label'] ?? '') . ' ' . (string) ($item['detail'] ?? '') . ' ' . (string) ($item['abbreviation'] ?? '') . ' ' . implode(' ', array_column($item['tags'] ?? [], 'name')))) ?>"<?= ($item['description'] ?? '') !== '' ? ' title="' . $h((string) $item['description']) . '"' : '' ?>>
                                 <input type="checkbox" name="job_role_ids[]" value="<?= $h((string) $item['value']) ?>" data-label="<?= $h((string) $item['label']) ?>" <?= in_array((string) $item['value'], $oldJobs, true) ? 'checked' : '' ?>>
-                                <span><?= $h((string) $item['label']) ?><?php if (trim((string) ($item['detail'] ?? '')) !== ''): ?><small><?= $h((string) $item['detail']) ?></small><?php endif; ?></span>
+                                <span><?= \App\Support\JobRoleBadge::html($item, false) ?><?= $h((string) $item['label']) ?> <?= \App\Support\JobRoleBadge::origin((string) ($item['origin'] ?? '')) ?><?php if (trim((string) ($item['detail'] ?? '')) !== ''): ?><small><?= $h((string) $item['detail']) ?></small><?php endif; ?></span>
                             </label>
                         <?php endforeach; ?>
                     </details>

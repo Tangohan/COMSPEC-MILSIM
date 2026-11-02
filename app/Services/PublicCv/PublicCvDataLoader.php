@@ -228,21 +228,32 @@ class PublicCvDataLoader
     /**
      * Fonctions (emplois) du joueur dans la communauté, la principale en tête — comme la colonne « Fonction » des Effectifs.
      *
-     * @return list<array{name: string, detail: string, is_primary: int}>
+     * Seuls l’icône et l’abrégé de la fonction sont repris (repères visuels publics), jamais sa description ni ses étiquettes.
+     *
+     * @return list<array{name: string, detail: string, is_primary: int, icon?: ?string, abbreviation?: ?string}>
      */
     private function jobs(int $userId, int $tenantId): array
     {
         return $this->safe(function () use ($userId, $tenantId): array {
             $st = $this->pdo()->prepare(
-                'SELECT r.name, pj.role_detail AS detail, pj.is_primary
+                'SELECT r.name, pj.role_detail AS detail, pj.is_primary, pj.personnel_job_role_id AS role_id
                  FROM personnel_profile_job_roles pj
                  INNER JOIN personnel_job_roles r ON r.id = pj.personnel_job_role_id AND r.tenant_id = pj.tenant_id
                  WHERE pj.tenant_id = ? AND pj.user_id = ?
                  ORDER BY pj.is_primary DESC, pj.sort_order ASC, pj.id ASC LIMIT 6'
             );
             $st->execute([$tenantId, $userId]);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $decorations = $rows !== [] ? (new \App\Services\Personnel\JobRoleEnrichmentService($this->pdo()))->decorations($tenantId) : [];
+            foreach ($rows as &$row) {
+                $decoration = $decorations[(int) ($row['role_id'] ?? 0)] ?? [];
+                $row['icon'] = $decoration['icon'] ?? null;
+                $row['abbreviation'] = $decoration['abbreviation'] ?? null;
+                unset($row['role_id']);
+            }
+            unset($row);
 
-            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return $rows;
         }) ?? [];
     }
 

@@ -83,6 +83,16 @@ $shown = count($rows);
                 </select>
             </label>
             <?php endif; ?>
+            <?php if (($jobTagOptions ?? []) !== []): ?>
+            <label>Étiquette de fonction
+                <select id="eff-etiquette-fonction" name="etiquette_fonction">
+                    <option value="">Toutes les étiquettes</option>
+                    <?php foreach ($jobTagOptions as $jobTag): ?>
+                        <option value="<?= (int) $jobTag['id'] ?>" translate="no" <?= (int) ($jobTagFilter ?? 0) === (int) $jobTag['id'] ? 'selected' : '' ?>><?= $hq((string) $jobTag['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <?php endif; ?>
             <?php if (count($rosterLanguageCodes) > 1 || $languageFilter !== ''): ?>
             <label>Langue
                 <select id="eff-langue" name="langue">

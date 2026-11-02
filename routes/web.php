@@ -1897,6 +1897,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/categorie', [EffectifsWorkspaceController::class, 'saveJobCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/reglages', [EffectifsWorkspaceController::class, 'saveJobSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/recuperer', [EffectifsWorkspaceController::class, 'recoverJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/masquage', [EffectifsWorkspaceController::class, 'hideSiteJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/etiquettes', [EffectifsWorkspaceController::class, 'saveJobTags'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/affectations', [EffectifsWorkspaceController::class, 'affectations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/recherche', [EffectifsDirectoryController::class, 'search'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/codes/communaute', [EffectifsDirectoryController::class, 'saveCommunityCode'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
