@@ -51627,4 +51627,8 @@ return [
     'Accès · droits à attribuer' => 'Access · rights to grant',
     'À traiter et alertes' => 'To do and alerts',
     '← Avancement' => '← Advancement',
+    'Noms' => 'Names',
+    'Nom copié' => 'Name to copy',
+    'Allemand' => 'German',
+    'nom officiel' => 'official name',
 ];
