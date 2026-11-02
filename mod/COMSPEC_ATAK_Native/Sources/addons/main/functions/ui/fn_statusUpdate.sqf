@@ -193,6 +193,10 @@ private _pageSig = switch (_page) do {
 // BFT et GPS changent presque chaque seconde dans une grosse mission : au plus un rendu complet toutes les 3 s
 // (la signature n'est retenue qu'une fois la page redessinée, le changement n'est donc pas perdu).
 private _sigWait = _page in ["BFT", "GPS"] && {diag_tickTime - (_state getOrDefault ["sigRenderAt", 0]) < 3};
+// Saisie en cours (champ texte actif) : pas de re-rendu sous les doigts du joueur ; la signature n'est pas retenue,
+// la page se redessine dès qu'il quitte le champ.
+private _fc = focusedCtrl _d;
+if (!isNull _fc && {(ctrlType _fc) isEqualTo 2}) then { _sigWait = true; };
 if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_pageSig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
     if (_sigWait) exitWith { _pageSig = _state getOrDefault ["pageSig", []]; };
     _state set ["sigRenderAt", diag_tickTime];

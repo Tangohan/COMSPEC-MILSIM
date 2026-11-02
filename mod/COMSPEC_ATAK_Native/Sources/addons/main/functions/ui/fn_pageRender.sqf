@@ -44,6 +44,14 @@ _st deleteAt "backSub";
 [] call comspec_atak_native_fnc_frsDraftSave;
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;
+// Champ de saisie actif sur la page redessinée : le focus est rendu au même champ (clé de formulaire) après le dessin.
+private _focusKey = "";
+if (_drawn isEqualTo _page) then {
+    private _fc = focusedCtrl _d;
+    if (!isNull _fc && {(ctrlType _fc) isEqualTo 2}) then {
+        { if (_y isEqualTo _fc) exitWith { _focusKey = _x; }; } forEach _form;
+    };
+};
 [] call comspec_atak_native_fnc_pageClear;
 // Lignes à mise à jour sur place (fn_formSet) : celles de la page effacée sont oubliées.
 uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
@@ -164,6 +172,10 @@ if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv selec
         if (isNull _d2 || {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""]) isNotEqualTo _page}) exitWith {};
         (_d2 displayCtrl 88531) ctrlSetScrollValues [_v, -1];
     }, [_page, _sv select 0]] call CBA_fnc_execNextFrame;
+};
+if (_focusKey isNotEqualTo "") then {
+    private _nf = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault [_focusKey, controlNull];
+    if (!isNull _nf && {(ctrlType _nf) isEqualTo 2}) then { ctrlSetFocus _nf; };
 };
 // Toasts recréés après la page pour rester au premier plan.
 [] call comspec_atak_native_fnc_notificationsRender;
