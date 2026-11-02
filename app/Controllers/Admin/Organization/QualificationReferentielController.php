@@ -16,6 +16,9 @@ use App\Repositories\QualificationIssuerRepository;
 use App\Repositories\QualificationReferentielRepository;
 use App\Services\Personnel\QualificationAwardRuleService;
 use App\Services\Personnel\QualificationBadgeStorageService;
+use App\Services\Personnel\QualificationCatalogImporter;
+use App\Services\Personnel\QualificationReferenceWriter;
+use App\Support\QualificationCatalog\QualificationCatalog;
 use App\Services\Personnel\QualificationCriteriaEngine;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationStatusTransitionService;
@@ -297,6 +300,75 @@ final class QualificationReferentielController
 
                 return Response::redirect(url(self::ISSUERS));
             }
+        });
+    }
+
+    private function catalogImporter(): QualificationCatalogImporter
+    {
+        return new QualificationCatalogImporter(new QualificationReferenceWriter(\App\Core\Database::getPdo()));
+    }
+
+    /** Catalogue OTAN : qualifications de référence à importer dans le référentiel (choix, sans doublon). */
+    public function catalog(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantIdOrRedirect();
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $lang = QualificationCatalog::lang(function_exists('locale') ? (string) locale() : 'fr');
+        $pack = QualificationCatalog::pack('nato');
+        $imported = [];
+        try {
+            $imported = $this->catalogImporter()->importedCodes($tenantId);
+        } catch (Throwable) {
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.organization.qualifications.catalog',
+            'title' => 'Catalogue OTAN des qualifications',
+            'backOfficePageCss' => ['referentiel-qualifications.css'],
+            'boSkipPageHead' => true,
+            'catalogLang' => $lang,
+            'catalogPack' => $pack,
+            'catalogEntries' => $pack !== null ? QualificationCatalog::entries($lang, 'nato') : [],
+            'catalogImported' => $imported,
+        ]);
+    }
+
+    public function importCatalog(Request $request, array $params = []): Response
+    {
+        return $this->withTenantPost($request, function (int $tenantId) use ($request) {
+            $back = url('back-office/referentiels/qualifications/catalogue-otan');
+            $raw = $request->input('ids', []);
+            $ids = is_array($raw) ? array_values(array_filter(array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $raw))) : [];
+            if ((string) $request->input('all', '') === '1') {
+                $ids = array_map(static fn (array $e): string => (string) ($e['id'] ?? ''), QualificationCatalog::rawEntries('nato'));
+            }
+            if ($ids === []) {
+                Session::flash('error', 'Cochez au moins une qualification à importer.');
+
+                return Response::redirect($back);
+            }
+            try {
+                $lang = function_exists('locale') ? (string) locale() : 'fr';
+                $result = $this->catalogImporter()->import($tenantId, 'nato', array_slice($ids, 0, 200), $lang, $this->actorId());
+            } catch (Throwable $e) {
+                Session::flash('error', 'Import impossible : ' . $e->getMessage());
+
+                return Response::redirect($back);
+            }
+            $created = count($result['created']);
+            $skipped = count($result['skipped']);
+            if ($created === 0) {
+                Session::flash('success', $skipped > 0 ? 'Ces qualifications sont déjà dans votre référentiel : rien à importer.' : 'Aucune qualification importée.');
+
+                return Response::redirect($back);
+            }
+            Session::flash('success', $skipped > 0
+                ? $created . ' qualification(s) importée(s) du catalogue OTAN, ' . $skipped . ' déjà présente(s) ignorée(s). Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.'
+                : $created . ' qualification(s) importée(s) du catalogue OTAN. Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.');
+
+            return Response::redirect(url('back-office/referentiels/qualifications') . ($result['issuer_id'] ? '?emetteur=' . (int) $result['issuer_id'] : ''));
         });
     }
 
@@ -946,6 +1018,7 @@ final class QualificationReferentielController
             'grades' => $grades,
             'jobs' => $jobs,
             'courses' => $names['courses'],
+            'builtInCourses' => $names['builtin'] ?? [],
             'definitions' => array_filter($names['definitions'], static fn (int $id): bool => $id !== $definitionId, ARRAY_FILTER_USE_KEY),
             'aircraft' => $this->rules->aircraftOptions($tenantId),
             'items' => $this->rules->itemOptions($tenantId),
