@@ -1015,6 +1015,7 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line` (
   `mission_kind` varchar(32) NOT NULL DEFAULT 'cas',
   `mission_id` varchar(128) DEFAULT NULL,
   `author` varchar(255) NOT NULL,
+  `author_user_id` int unsigned DEFAULT NULL,
   `assigned_aircraft` varchar(128) DEFAULT NULL,
   `line1` varchar(255) DEFAULT NULL,
   `line2` varchar(255) DEFAULT NULL,
@@ -1033,6 +1034,7 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line` (
   PRIMARY KEY (`id`),
   KEY `tenant_map` (`tenant_id`,`map_id`),
   KEY `assigned_aircraft` (`assigned_aircraft`),
+  KEY `idx_atak_nine_line_author_user` (`tenant_id`,`author_user_id`),
   CONSTRAINT `atak_nine_line_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

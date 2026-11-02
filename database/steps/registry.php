@@ -55,4 +55,5 @@ return [
     ['id' => 'member_names_trigrams', 'label' => 'Noms des membres : trigrammes uniques par communauté (remplissage initial) et réglage d’affichage (Prénom N., Prénom NOM)', 'group' => 'schema', 'file' => '3600_member_names_trigrams.php', 'rerun' => true],
     ['id' => 'grade_systems_malaysia', 'label' => 'Grades : systèmes malaisiens (Tentera Darat, TLDM, TUDM) ajoutés au catalogue commun, intitulés en malais', 'group' => 'schema', 'file' => '3610_grade_systems_malaysia.php', 'rerun' => true],
     ['id' => 'grades_royaume_uni', 'label' => 'Grades britanniques : British Army et Royal Marines, Royal Navy et Royal Air Force (codes OTAN), proposés à la création d’une communauté et dans le référentiel des grades', 'group' => 'schema', 'file' => '3620_grades_royaume_uni.php', 'rerun' => true],
+    ['id' => 'atak_nine_line_author_user', 'label' => 'Page 9-LINE : auteur des demandes rédigées sur le site (droit de suppression de l’auteur)', 'group' => 'schema', 'file' => '3675_atak_nine_line_author_user.php', 'rerun' => true],
 ];
