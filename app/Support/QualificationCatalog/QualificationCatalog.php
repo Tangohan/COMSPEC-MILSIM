@@ -6,21 +6,32 @@ namespace App\Support\QualificationCatalog;
 
 /**
  * Catalogue de qualifications de référence que chaque communauté peut importer dans son référentiel :
- * fichiers versionnés config/qualification_catalog/<pack>.json (aujourd’hui « nato » : qualifications inspirées
- * des standards et cours OTAN publics). Chaque entrée est bilingue (fr / en) et servie dans la langue du lecteur.
- * Ce sont des qualifications de jeu : l’import ajoute toujours la mention « qualification de jeu inspirée du
- * standard OTAN, sans valeur réelle » (DISCLAIMER).
+ * fichiers versionnés config/qualification_catalog/<pack>.json, un par pays (us, fr, de : brevets et
+ * qualifications réellement cités par les packs d’emplois du même pays) et un pour l’OTAN (standards et cours
+ * OTAN publics). Chaque entrée est bilingue (fr / en) et servie dans la langue du lecteur ; l’intitulé officiel
+ * reste dans la langue du pays. Ce sont des qualifications de jeu : l’import ajoute toujours la mention du pack
+ * (« qualification de jeu inspirée de …, sans valeur réelle »).
  *
- * Format d’un pack : { pack, label{fr,en}, issuer{name, short_name, description{fr,en}}, compiled_at,
- * sources_note{fr,en}, entries[] } ; une entrée : id, code, category, name{fr,en}, short_name, description{fr,en},
- * body{fr,en} (organisme de référence), reference{fr,en} (standard ou cours public), prerequisites{fr[],en[]},
- * validity{fr,en} (texte, vide si aucune source ouverte ne la précise), validity_months (entier ou null),
- * sources[{url,title}].
+ * Format d’un pack : { pack, country, official_lang, label{fr,en}, disclaimer{fr,en}, issuer{name, short_name,
+ * description{fr,en}}, compiled_at, sources_note{fr,en}, entries[] } ; une entrée : id, code, category, name{fr,en},
+ * official_name (intitulé officiel, langue du pays, facultatif), short_name, description{fr,en}, body{fr,en}
+ * (organisme de référence), issuer{name, short_name} (école ou organisme émetteur réel, facultatif : sinon
+ * l’émetteur du pack), reference{fr,en}, prerequisites{fr[],en[]}, validity{fr,en} (vide si aucune source ouverte
+ * ne la précise), validity_months (entier ou null), sources[{url,title}].
+ * Les emplois du catalogue d’emplois désignent ces entrées par leur id (champ qualification_refs).
  */
 final class QualificationCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['nato'];
+    public const PACKS = ['us', 'fr', 'de', 'nato'];
+
+    /** Pays des packs, dans l’ordre des onglets (mêmes codes que le catalogue d’emplois). */
+    public const COUNTRIES = [
+        'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
+        'FR' => ['fr' => 'France', 'en' => 'France'],
+        'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
+        'NATO' => ['fr' => 'OTAN', 'en' => 'NATO'],
+    ];
 
     /** Catégories du catalogue (créées dans le référentiel de la communauté à l’import, si absentes). */
     public const CATEGORIES = [
@@ -34,6 +45,12 @@ final class QualificationCatalog
         'communications' => ['fr' => 'Transmissions et systèmes d’information', 'en' => 'Communications and information systems'],
         'intelligence' => ['fr' => 'Renseignement et ciblage', 'en' => 'Intelligence and targeting'],
         'influence' => ['fr' => 'CIMIC et influence', 'en' => 'CIMIC and influence'],
+        'selection' => ['fr' => 'Sélection et cursus forces spéciales', 'en' => 'Special forces selection and courses'],
+        'airborne' => ['fr' => 'Parachutisme et mise à terre', 'en' => 'Airborne and insertion'],
+        'maritime' => ['fr' => 'Plongée et opérations maritimes', 'en' => 'Diving and maritime operations'],
+        'aviation' => ['fr' => 'Aviation', 'en' => 'Aviation'],
+        'marksmanship' => ['fr' => 'Tir et tireur d’élite', 'en' => 'Marksmanship and sniping'],
+        'environment' => ['fr' => 'Montagne, grand froid et milieux spécifiques', 'en' => 'Mountain, arctic and specialised environments'],
     ];
 
     public const DISCLAIMER = [
@@ -125,9 +142,46 @@ final class QualificationCatalog
         return self::CATEGORIES[$category][self::lang($lang)] ?? $category;
     }
 
-    public static function disclaimer(string $lang): string
+    /** Mention de jeu d’un pack (« qualification de jeu inspirée de …, sans valeur réelle »). */
+    public static function disclaimer(string $lang, ?string $pack = null): string
     {
-        return self::DISCLAIMER[self::lang($lang)];
+        $own = $pack !== null ? self::pick(self::pack($pack)['disclaimer'] ?? '', $lang) : '';
+
+        return $own !== '' ? $own : self::DISCLAIMER[self::lang($lang)];
+    }
+
+    public static function countryLabel(string $country, string $lang): string
+    {
+        return self::COUNTRIES[$country][self::lang($lang)] ?? $country;
+    }
+
+    /**
+     * Émetteur d’une entrée : l’école ou l’organisme réel de l’entrée, sinon l’émetteur de référence du pack.
+     *
+     * @param array<string, mixed> $entry entrée brute (avec son pack)
+     * @return array{name: string, short_name: string, description: string, kind: string}
+     */
+    public static function issuerOf(array $entry, string $lang): array
+    {
+        $pack = self::pack((string) ($entry['pack'] ?? '')) ?? [];
+        $own = is_array($entry['issuer'] ?? null) ? $entry['issuer'] : [];
+        $packIssuer = is_array($pack['issuer'] ?? null) ? $pack['issuer'] : [];
+        $name = trim((string) ($own['name'] ?? ''));
+        if ($name !== '') {
+            return [
+                'name' => mb_substr($name, 0, 200),
+                'short_name' => mb_substr(trim((string) ($own['short_name'] ?? '')), 0, 80),
+                'description' => self::pick($entry['body'] ?? '', $lang),
+                'kind' => 'school',
+            ];
+        }
+
+        return [
+            'name' => trim((string) ($packIssuer['name'] ?? 'OTAN (référence)')),
+            'short_name' => trim((string) ($packIssuer['short_name'] ?? '')),
+            'description' => self::pick($packIssuer['description'] ?? '', $lang),
+            'kind' => 'external',
+        ];
     }
 
     /**
@@ -148,10 +202,16 @@ final class QualificationCatalog
         $months = $entry['validity_months'] ?? null;
         $category = (string) ($entry['category'] ?? '');
 
+        $country = (string) (self::pack((string) ($entry['pack'] ?? ''))['country'] ?? '');
+
         return [
             'id' => (string) ($entry['id'] ?? ''),
             'pack' => (string) ($entry['pack'] ?? ''),
+            'country' => $country,
+            'country_label' => self::countryLabel($country, $lang),
             'code' => (string) ($entry['code'] ?? ''),
+            'official_name' => trim((string) ($entry['official_name'] ?? '')),
+            'issuer' => self::issuerOf($entry, $lang)['name'],
             'category' => $category,
             'category_label' => self::categoryLabel($category, $lang),
             'name' => self::pick($entry['name'] ?? '', $lang),
@@ -212,7 +272,10 @@ final class QualificationCatalog
     {
         $l = self::localize($entry, $lang);
         $en = self::lang($lang) === 'en';
-        $lines = [$l['description'], '', self::disclaimer($lang)];
+        $lines = [$l['description'], '', self::disclaimer($lang, (string) ($entry['pack'] ?? ''))];
+        if ($l['official_name'] !== '' && $l['official_name'] !== $l['name']) {
+            $lines[] = ($en ? 'Official title: ' : 'Intitulé officiel : ') . $l['official_name'];
+        }
         if ($l['body'] !== '') {
             $lines[] = ($en ? 'Reference body: ' : 'Organisme de référence : ') . $l['body'];
         }
@@ -249,6 +312,13 @@ final class QualificationCatalog
         }
         if (!isset(self::CATEGORIES[(string) ($entry['category'] ?? '')])) {
             $p[] = 'catégorie inconnue';
+        }
+        if (mb_strlen(trim((string) ($entry['official_name'] ?? ''))) > 200) {
+            $p[] = 'intitulé officiel trop long';
+        }
+        if (isset($entry['issuer']) && (!is_array($entry['issuer']) || trim((string) ($entry['issuer']['name'] ?? '')) === ''
+            || mb_strlen((string) $entry['issuer']['name']) > 200 || mb_strlen((string) ($entry['issuer']['short_name'] ?? '')) > 80)) {
+            $p[] = 'émetteur invalide';
         }
         $short = trim((string) ($entry['short_name'] ?? ''));
         if ($short === '' || mb_strlen($short) > 20) {

@@ -7,12 +7,13 @@ namespace App\Services\Personnel;
 use App\Support\QualificationCatalog\QualificationCatalog;
 
 /**
- * Import de qualifications du catalogue de référence (config/qualification_catalog, aujourd’hui « OTAN ») dans le
- * référentiel d’une communauté. Chaque qualification choisie devient une fiche du référentiel (code OTAN-…, nom et
- * description dans la langue de la personne qui importe, mention « qualification de jeu inspirée du standard OTAN,
- * sans valeur réelle »), rattachée à l’émetteur « OTAN (référence) » (créé si absent, comme depuis la page
- * Émetteurs) et à la catégorie du catalogue. Sans doublon : un code déjà présent dans la communauté est ignoré, une
- * relance ne crée rien. La fiche importée se modifie ensuite librement comme toute autre qualification.
+ * Import de qualifications du catalogue de référence (config/qualification_catalog : un pack par pays et l’OTAN)
+ * dans le référentiel d’une communauté. Chaque qualification choisie devient une fiche du référentiel (code du
+ * catalogue, nom et description dans la langue de la personne qui importe, intitulé officiel, mention du pack
+ * « qualification de jeu inspirée de …, sans valeur réelle »), rattachée à son émetteur (l’école réelle de l’entrée,
+ * sinon l’émetteur de référence du pack ; créé si absent, comme depuis la page Émetteurs) et à la catégorie du
+ * catalogue. Sans doublon : un code déjà présent dans la communauté est ignoré, une relance ne crée rien. La fiche
+ * importée se modifie ensuite librement comme toute autre qualification.
  */
 final class QualificationCatalogImporter
 {
@@ -25,33 +26,33 @@ final class QualificationCatalogImporter
         return $this->writer->has('personnel_qualification_definitions');
     }
 
-    /** @return array<string, true> codes du catalogue déjà présents dans la communauté */
+    /** @return array<string, true> codes déjà présents dans le référentiel de la communauté */
     public function importedCodes(int $tenantId): array
     {
         return $this->ready() ? $this->writer->existingCodes($tenantId) : [];
     }
 
     /**
-     * @param list<string> $ids identifiants d’entrées du catalogue
-     * @return array{created: list<string>, skipped: list<string>, unknown: int, issuer_id: ?int}
+     * @param list<string> $ids identifiants d’entrées du catalogue (tous packs)
+     * @return array{created: list<string>, skipped: list<string>, unknown: int, issuer_ids: list<int>, definitions: array<string, int>}
+     *         definitions : id du catalogue => fiche du référentiel (créée ou déjà présente)
      */
-    public function import(int $tenantId, string $pack, array $ids, string $lang, ?int $actorId): array
+    public function import(int $tenantId, array $ids, string $lang, ?int $actorId): array
     {
-        $out = ['created' => [], 'skipped' => [], 'unknown' => 0, 'issuer_id' => null];
-        $data = QualificationCatalog::pack($pack);
-        if ($tenantId < 1 || $data === null || !$this->ready()) {
+        $out = ['created' => [], 'skipped' => [], 'unknown' => 0, 'issuer_ids' => [], 'definitions' => []];
+        if ($tenantId < 1 || !$this->ready()) {
             return $out;
         }
         $lang = QualificationCatalog::lang($lang);
-        $wanted = array_fill_keys(array_map('strval', $ids), true);
         $entries = [];
-        foreach (QualificationCatalog::rawEntries($pack) as $entry) {
-            if (isset($wanted[(string) ($entry['id'] ?? '')]) && QualificationCatalog::problems($entry) === []) {
+        foreach (array_values(array_unique(array_map('strval', $ids))) as $id) {
+            $entry = QualificationCatalog::findRaw($id);
+            if ($entry !== null && QualificationCatalog::problems($entry) === []) {
                 $entries[] = $entry;
-                unset($wanted[(string) $entry['id']]);
+            } else {
+                $out['unknown']++;
             }
         }
-        $out['unknown'] = count($wanted);
         if ($entries === []) {
             return $out;
         }
@@ -59,40 +60,36 @@ final class QualificationCatalogImporter
         $pdo->beginTransaction();
         try {
             $existing = $this->writer->existingCodes($tenantId);
-            $issuer = is_array($data['issuer'] ?? null) ? $data['issuer'] : [];
-            $issuerId = null;
+            $issuers = [];
             $categories = [];
             foreach ($entries as $entry) {
                 $code = strtoupper((string) $entry['code']);
                 $name = QualificationCatalog::pick($entry['name'], $lang);
                 if (isset($existing[$code])) {
                     $out['skipped'][] = $name;
+                    $out['definitions'][(string) $entry['id']] = $this->writer->definitionIdCaseless($tenantId, $code);
                     continue;
                 }
-                $issuerId ??= $this->writer->ensureIssuer(
-                    $tenantId,
-                    trim((string) ($issuer['name'] ?? 'OTAN (référence)')),
-                    trim((string) ($issuer['short_name'] ?? 'OTAN')),
-                    'external',
-                    QualificationCatalog::pick($issuer['description'] ?? '', $lang),
-                    $actorId
-                );
+                $issuer = QualificationCatalog::issuerOf($entry, $lang);
+                $issuerId = $issuers[$issuer['name']] ??= $this->writer->ensureIssuer($tenantId, $issuer['name'], $issuer['short_name'], $issuer['kind'], $issuer['description'], $actorId);
+                $country = (string) (QualificationCatalog::pack((string) $entry['pack'])['country'] ?? '');
                 $category = (string) $entry['category'];
-                $categories[$category] ??= $this->writer->ensureCategory($tenantId, (QualificationCatalog::lang($lang) === 'en' ? 'NATO — ' : 'OTAN — ') . QualificationCatalog::categoryLabel($category, $lang));
+                $categoryName = QualificationCatalog::countryLabel($country, $lang) . ' — ' . QualificationCatalog::categoryLabel($category, $lang);
+                $categories[$categoryName] ??= $this->writer->ensureCategory($tenantId, $categoryName);
                 $months = $entry['validity_months'] ?? null;
-                $this->writer->createDefinition($tenantId, [
+                $out['definitions'][(string) $entry['id']] = $this->writer->createDefinition($tenantId, [
                     'code' => $code,
                     'name' => $name,
                     'short_name' => (string) ($entry['short_name'] ?? ''),
                     'description' => QualificationCatalog::definitionDescription($entry, $lang),
-                    'category_id' => $categories[$category],
+                    'category_id' => $categories[$categoryName],
                     'issuer_id' => $issuerId,
                     'validity_months' => is_int($months) && $months > 0 ? $months : null,
                 ], $actorId);
                 $existing[$code] = true;
                 $out['created'][] = $name;
             }
-            $out['issuer_id'] = $issuerId;
+            $out['issuer_ids'] = array_values(array_unique(array_filter(array_map('intval', $issuers))));
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();

@@ -681,6 +681,9 @@
           "Special forces selection and training of the contributing nation"
         ]
       },
+      "qualification_refs": [
+        "nato-jtac"
+      ],
       "billets": {
         "fr": [
           "Équipe SOF : JTAC"
@@ -815,6 +818,9 @@
           "Maritime interdiction training at NMIOTC (Souda Bay)"
         ]
       },
+      "qualification_refs": [
+        "nato-boarding-team"
+      ],
       "billets": {
         "fr": [
           "SOMTU : nageur de combat / commando"
@@ -1079,6 +1085,10 @@
           "Certification under the JTAC MOA (multinational JTAC standardisation agreement)"
         ]
       },
+      "qualification_refs": [
+        "nato-jtac",
+        "nato-laser-operator"
+      ],
       "billets": {
         "fr": [
           "TACP : JTAC",
@@ -1148,6 +1158,9 @@
           "Squadron FAC(A) qualification per ATP-3.3.2.1 TTPs"
         ]
       },
+      "qualification_refs": [
+        "nato-fac-airborne"
+      ],
       "billets": {
         "fr": [
           "Escadron de combat : pilote / navigateur FAC(A)"
@@ -1209,6 +1222,9 @@
           "Qualification compliant with STANAG 3797 (minimum qualifications for forward air controllers and laser operators)"
         ]
       },
+      "qualification_refs": [
+        "nato-fac-airborne"
+      ],
       "billets": {
         "fr": [
           "Unité d’hélicoptères d’attaque : chef de bord ABFAC"
@@ -1270,6 +1286,9 @@
           "ATP-3.3.2.1 close air support TTPs"
         ]
       },
+      "qualification_refs": [
+        "nato-jfo"
+      ],
       "billets": {
         "fr": [
           "FST : observateur"
@@ -1331,6 +1350,9 @@
           "ATP-3.3.2.2 JTAC Program and ATP-3.3.2.1 close air support TTPs"
         ]
       },
+      "qualification_refs": [
+        "nato-jtac"
+      ],
       "billets": {
         "fr": [
           "TACP de brigade : chef d’équipe"
@@ -2095,6 +2117,10 @@
           "Air-centric Personnel Recovery Operatives Course (APROC)"
         ]
       },
+      "qualification_refs": [
+        "nato-jpr",
+        "nato-aproc"
+      ],
       "billets": {
         "fr": [
           "JPRC : directeur, officier de quart"
@@ -2162,6 +2188,10 @@
           "Air-centric Personnel Recovery Operatives Course (APROC)"
         ]
       },
+      "qualification_refs": [
+        "nato-jpr",
+        "nato-aproc"
+      ],
       "billets": {
         "fr": [
           "PRCC de composante : officier PR"
@@ -2227,6 +2257,10 @@
           "Air-centric Personnel Recovery Operatives Course (APROC)"
         ]
       },
+      "qualification_refs": [
+        "nato-jpr",
+        "nato-aproc"
+      ],
       "billets": {
         "fr": [
           "Dispositif CSAR : commandant de mission, chef de patrouille"
@@ -2294,6 +2328,9 @@
           "National tactical helicopter aircrew qualification"
         ]
       },
+      "qualification_refs": [
+        "nato-aproc"
+      ],
       "billets": {
         "fr": [
           "Hélicoptère de récupération : pilote, mécanicien navigant, tireur"
@@ -2357,6 +2394,9 @@
           "Allied Joint Doctrine for Recovery of Personnel in a Hostile Environment (AJP-3.7)"
         ]
       },
+      "qualification_refs": [
+        "nato-jpr"
+      ],
       "billets": {
         "fr": [
           "Force de récupération : chef d’équipe"
@@ -2422,6 +2462,9 @@
           "SERE training"
         ]
       },
+      "qualification_refs": [
+        "nato-sere-c"
+      ],
       "billets": {
         "fr": [
           "Équipe de sauvetage : PJ"
@@ -2489,6 +2532,9 @@
           "Emergency Management of Battlefield Injuries (EMBI) – MILMED COE"
         ]
       },
+      "qualification_refs": [
+        "nato-embi"
+      ],
       "billets": {
         "fr": [
           "Role 1 : médecin chef, médecin d’unité"
@@ -2554,6 +2600,10 @@
           "Major Incident Medical Management and Support (MIMMS) – MILMED COE"
         ]
       },
+      "qualification_refs": [
+        "nato-embi",
+        "nato-mimms"
+      ],
       "billets": {
         "fr": [
           "Role 1 : infirmier, auxiliaire sanitaire"
@@ -2686,6 +2736,9 @@
           "Allied Joint Doctrine for Medical Support (AJP-4.2, formerly AJP-4.10)"
         ]
       },
+      "qualification_refs": [
+        "nato-pecc"
+      ],
       "billets": {
         "fr": [
           "PECC : officier de coordination, régulateur"
@@ -2950,6 +3003,9 @@
           "Basic Field Exploitation Course (BIFEC) – C-IED COE"
         ]
       },
+      "qualification_refs": [
+        "nato-wit"
+      ],
       "billets": {
         "fr": [
           "WIT : chef d’équipe, technicien d’exploitation"
@@ -3017,6 +3073,9 @@
           "Allied Joint Doctrine for Countering IEDs (AJP-3.15)"
         ]
       },
+      "qualification_refs": [
+        "nato-cied-staff-officer"
+      ],
       "billets": {
         "fr": [
           "Cellule C-IED : officier d’état-major"
@@ -3082,6 +3141,9 @@
           "Analyst’s Notebook Users Course (ANUC) – C-IED COE"
         ]
       },
+      "qualification_refs": [
+        "nato-attack-the-network"
+      ],
       "billets": {
         "fr": [
           "Cellule AtN : analyste"
@@ -3143,6 +3205,9 @@
           "NATO Document and Media Exploitation course series (DOMEX) – C-IED COE"
         ]
       },
+      "qualification_refs": [
+        "nato-domex"
+      ],
       "billets": {
         "fr": [
           "Cellule d’exploitation : spécialiste DOMEX"
@@ -3206,6 +3271,9 @@
           "National clearance diver qualification"
         ]
       },
+      "qualification_refs": [
+        "nato-maritime-iedd"
+      ],
       "billets": {
         "fr": [
           "Équipe M-IEDD : plongeur démineur"
@@ -3338,6 +3406,9 @@
           "Hazard Prediction and Assessment Capability (HPAC) course – JCBRN Defence COE"
         ]
       },
+      "qualification_refs": [
+        "nato-cbrn-warning-reporting"
+      ],
       "billets": {
         "fr": [
           "Centre d’alerte NRBC : opérateur, chef de quart"
@@ -3403,6 +3474,9 @@
           "National CBRN specialist qualification"
         ]
       },
+      "qualification_refs": [
+        "nato-cbrn-live-agent"
+      ],
       "billets": {
         "fr": [
           "JAT : expert chimique, biologique ou radiologique"
@@ -3468,6 +3542,9 @@
           "Live Agent Training – JCBRN Defence COE"
         ]
       },
+      "qualification_refs": [
+        "nato-cbrn-live-agent"
+      ],
       "billets": {
         "fr": [
           "Bataillon NRBC : équipier reconnaissance, décontamination, prélèvement"
@@ -4364,6 +4441,9 @@
           "NATO CIMIC Higher Command Course – CIMIC COE"
         ]
       },
+      "qualification_refs": [
+        "nato-cimic-staff-worker"
+      ],
       "billets": {
         "fr": [
           "Branche J9 : officier CIMIC"
@@ -5376,6 +5456,9 @@
           "Prerequisite advanced distributed learning (ADL) module"
         ]
       },
+      "qualification_refs": [
+        "nato-cimic-field-worker"
+      ],
       "billets": {
         "fr": [
           "Équipe CIMIC : chef d’équipe, opérateur"
@@ -6240,6 +6323,11 @@
           "NMIOTC MIO course catalogue"
         ]
       },
+      "qualification_refs": [
+        "nato-cied-mio",
+        "nato-boarding-team",
+        "nato-mio-command-team"
+      ],
       "billets": {
         "fr": [
           "Équipe de visite : chef d’équipe"
@@ -6305,6 +6393,9 @@
           "Course 12000 C-IED in Maritime Interdiction Operations – NMIOTC"
         ]
       },
+      "qualification_refs": [
+        "nato-cied-mio"
+      ],
       "billets": {
         "fr": [
           "Équipe de visite : équipier sécurité, fouille"

@@ -46,6 +46,15 @@ final class QualificationReferenceWriter
         return (int) ($st->fetchColumn() ?: 0);
     }
 
+    /** Fiche dont le code correspond, casse ignorée (0 si aucune). */
+    public function definitionIdCaseless(int $tenantId, string $code): int
+    {
+        $st = $this->pdo->prepare('SELECT id FROM personnel_qualification_definitions WHERE tenant_id = ? AND UPPER(code) = ? ORDER BY id LIMIT 1');
+        $st->execute([$tenantId, strtoupper(trim($code))]);
+
+        return (int) ($st->fetchColumn() ?: 0);
+    }
+
     /** @return array<string, true> codes déjà présents dans le référentiel de la communauté (casse ignorée) */
     public function existingCodes(int $tenantId): array
     {

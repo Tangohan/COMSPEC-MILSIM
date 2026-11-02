@@ -1,8 +1,14 @@
 {
   "pack": "nato",
+  "country": "NATO",
+  "official_lang": "en",
   "label": {
     "fr": "Qualifications de référence OTAN",
     "en": "NATO reference qualifications"
+  },
+  "disclaimer": {
+    "fr": "Qualification de jeu inspirée du standard OTAN, sans valeur réelle.",
+    "en": "In-game qualification inspired by the NATO standard, with no real-world value."
   },
   "issuer": {
     "name": "OTAN (référence)",
@@ -1542,6 +1548,90 @@
         {
           "url": "https://www.cimic-coe.org/courses/nato-cimic-staff-worker-course/",
           "title": "CCOE – NATO CIMIC Staff Worker Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-aproc",
+      "code": "OTAN-APROC",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Cours d’opérateur de récupération de personnel à dominante aérienne (APROC)",
+        "en": "Air-centric personnel recovery operatives course (APROC)"
+      },
+      "official_name": "Air-centric Personnel Recovery Operatives Course (APROC)",
+      "short_name": "APROC",
+      "description": {
+        "fr": "Cours multinational de récupération de personnel destiné surtout aux armées de l’air alliées, centré sur la recherche et le sauvetage au combat (CSAR) classique. Il s’appuie sur la doctrine interarmées alliée AJP-3.7 et forme les opérateurs et le personnel de commandement qui planifient et conduisent une mission de récupération à dominante aérienne.",
+        "en": "Multinational personnel recovery course aimed mainly at Allied air forces and focused on traditional combat search and rescue (CSAR). It builds on Allied joint doctrine AJP-3.7 and trains the operatives and command personnel who plan and conduct an air-centric recovery mission."
+      },
+      "body": {
+        "fr": "European Personnel Recovery Centre (EPRC), base aérienne de Poggio Renatico (Italie)",
+        "en": "European Personnel Recovery Centre (EPRC), Poggio Renatico Air Base (Italy)"
+      },
+      "reference": {
+        "fr": "AJP-3.7 (doctrine interarmées alliée de la récupération de personnel) ; programme de cours de l’EPRC",
+        "en": "AJP-3.7 (Allied joint doctrine for personnel recovery); EPRC course programme"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.japcc.org/articles/no-one-left-behind-rebuilding-natos-rescue-mission/",
+          "title": "JAPCC – No One Left Behind: Rebuilding NATO’s Rescue Mission"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/European_Personnel_Recovery_Centre",
+          "title": "European Personnel Recovery Centre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "nato-cied-mio",
+      "code": "OTAN-CIED-MIO",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Lutte contre les EEI en opérations d’interdiction maritime (cours 12000, NMIOTC)",
+        "en": "C-IED in maritime interdiction operations (course 12000, NMIOTC)"
+      },
+      "official_name": "Course 12000: C-IED in Maritime Interdiction Operations",
+      "short_name": "C-IED MIO",
+      "description": {
+        "fr": "Cours approuvé par l’OTAN qui forme les membres des équipes de visite aux procédures OTAN de renseignement technique sur les armes (« expedient weapons intelligence ») à bord des navires et autres infrastructures maritimes, en appui de la lutte contre les engins explosifs improvisés. Il est dispensé par les instructeurs du centre avec des experts extérieurs (police, FBI).",
+        "en": "NATO-approved course training boarding team personnel in NATO procedures for expedient weapons intelligence tasks aboard vessels and other maritime infrastructure, in support of counter-IED operations. It is delivered by the centre’s instructors together with outside experts (police, FBI)."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 12000 « C-IED in Maritime Interdiction Operations »",
+        "en": "NMIOTC course 12000 “C-IED in Maritime Interdiction Operations”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/pressreleases/nmiotc-course-12000-c-ied-in-maritime-interdiction-operations-2/",
+          "title": "NMIOTC – Course 12000: C-IED in Maritime Interdiction Operations"
+        },
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
         }
       ]
     }

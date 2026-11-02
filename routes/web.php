@@ -1739,9 +1739,9 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/reactiver', [QualificationReferentielController::class, 'restoreIssuer'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/habilites', [QualificationReferentielController::class, 'storeIssuerAuthorization'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/habilites/{authId}/retirer', [QualificationReferentielController::class, 'deleteIssuerAuthorization'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    // Catalogue OTAN : qualifications de référence (jeu) importées au choix, sans doublon.
-    $router->get('/back-office/referentiels/qualifications/catalogue-otan', [QualificationReferentielController::class, 'catalog'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/referentiels/qualifications/catalogue-otan/importer', [QualificationReferentielController::class, 'importCatalog'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Catalogue des qualifications de référence (pays et OTAN, jeu) importées au choix, sans doublon.
+    $router->get('/back-office/referentiels/qualifications/catalogue', [QualificationReferentielController::class, 'catalog'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/catalogue/importer', [QualificationReferentielController::class, 'importCatalog'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/categories', [QualificationReferentielController::class, 'storeCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/types', [QualificationReferentielController::class, 'storeType'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/cursus-pilote/carnet/{userId}', [PilotLogbookController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

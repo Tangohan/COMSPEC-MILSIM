@@ -15,7 +15,9 @@ use App\Support\JobRoleIconLibrary;
  *
  * Format d’un pack : { pack, country, official_lang, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ;
  * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
- * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
+ * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}],
+ * qualification_refs[] (facultatif : ids du catalogue de qualifications, App\Support\QualificationCatalog, des brevets
+ * cités dans qualifications).
  * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de) ; formation : unité courte
  * (« 1er RPIMa », « CPA 10 »), facultative, proposée comme filtre sous le commandement.
  */
@@ -280,6 +282,8 @@ final class JobCatalog
             'icon' => JobRoleIconLibrary::has($icon) ? $icon : '',
             'tags' => array_slice(self::pickList($entry['tags'] ?? [], $lang), 0, JobRoleEnrichmentService::MAX_TAGS),
             'sources' => $sources,
+            'qualification_refs' => self::qualificationRefs($entry),
+            'linked_qualifications' => self::linkedQualifications($entry, $lang),
         ];
     }
 
@@ -300,6 +304,35 @@ final class JobCatalog
             if ($value !== '' && !in_array($value, $out, true)) {
                 $out[$l] = $value;
             }
+        }
+
+        return $out;
+    }
+
+    /** @return list<string> ids du catalogue de qualifications cités par l’entrée */
+    public static function qualificationRefs(array $entry): array
+    {
+        $refs = is_array($entry['qualification_refs'] ?? null) ? $entry['qualification_refs'] : [];
+
+        return array_values(array_unique(array_filter(array_map(static fn ($r): string => is_string($r) ? trim($r) : '', $refs), static fn (string $r): bool => $r !== '')));
+    }
+
+    /**
+     * Qualifications du catalogue liées à un emploi, dans la langue du lecteur (nom, intitulé officiel, émetteur).
+     *
+     * @param array<string, mixed> $entry
+     * @return list<array{id: string, code: string, name: string, official_name: string, issuer: string, country: string}>
+     */
+    public static function linkedQualifications(array $entry, string $lang): array
+    {
+        $out = [];
+        foreach (self::qualificationRefs($entry) as $ref) {
+            $raw = \App\Support\QualificationCatalog\QualificationCatalog::findRaw($ref);
+            if ($raw === null) {
+                continue;
+            }
+            $q = \App\Support\QualificationCatalog\QualificationCatalog::localize($raw, $lang);
+            $out[] = ['id' => $q['id'], 'code' => $q['code'], 'name' => $q['name'], 'official_name' => $q['official_name'], 'issuer' => $q['issuer'], 'country' => $q['country']];
         }
 
         return $out;
@@ -543,6 +576,11 @@ final class JobCatalog
             if (is_array($tags) && (count($tags) > JobRoleEnrichmentService::MAX_TAGS || array_filter($tags, static fn ($t): bool => mb_strlen((string) $t) > JobRoleEnrichmentService::TAG_MAX_LENGTH) !== [])) {
                 $p[] = 'étiquettes trop nombreuses ou trop longues';
             }
+        }
+        $refs = $entry['qualification_refs'] ?? [];
+        if (!is_array($refs) || !array_is_list($refs) || count($refs) > 12
+            || array_filter($refs, static fn ($r): bool => !is_string($r) || preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $r) !== 1) !== []) {
+            $p[] = 'qualification_refs invalides';
         }
         $sources = is_array($entry['sources'] ?? null) ? $entry['sources'] : [];
         if ($sources === []) {

@@ -1,0 +1,2982 @@
+{
+  "pack": "fr",
+  "country": "FR",
+  "official_lang": "fr",
+  "label": {
+    "fr": "Brevets et qualifications militaires français",
+    "en": "French military badges and qualifications"
+  },
+  "disclaimer": {
+    "fr": "Qualification de jeu inspirée d’un brevet ou d’une qualification militaire française réel(le), sans valeur réelle.",
+    "en": "In-game qualification inspired by a real French military badge or qualification, with no real-world value."
+  },
+  "issuer": {
+    "name": "Forces armées françaises (référence)",
+    "short_name": "FAF",
+    "description": {
+      "fr": "Émetteur de référence des qualifications importées du catalogue France quand l’école n’est pas précisée : qualifications de jeu, sans valeur réelle.",
+      "en": "Reference issuer for qualifications imported from the France catalogue when no school is specified: in-game qualifications with no real-world value."
+    }
+  },
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé le 2 novembre 2026 à partir de sources publiques : instruction interarmées PIA-3.2.1.2(A) sur les brevets parachutistes, arrêté du 24 mai 2023 sur la prime de compétences spécifiques (Légifrance), pages et magazines du ministère des Armées (defense.gouv.fr, Terre Mag, Esprit défense, Cols bleus, Air actualités), fiches métiers sengager.fr et devenir-aviateur.gouv.fr, ECPAD, rapport du Sénat, presse spécialisée et Wikipédia en complément ; textes reformulés, rien de classifié ; un champ vide signifie qu’aucune source ouverte ne le précise.",
+    "en": "Compiled on 2 November 2026 from public sources: joint instruction PIA-3.2.1.2(A) on parachute badges, decree of 24 May 2023 on the specific-skills allowance (Légifrance), Ministry of the Armed Forces pages and magazines (defense.gouv.fr, Terre Mag, Esprit défense, Cols bleus, Air actualités), sengager.fr and devenir-aviateur.gouv.fr job descriptions, ECPAD, a French Senate report, trade press and Wikipedia as a complement; texts are paraphrased, nothing classified; an empty field means no open source specifies it."
+  },
+  "entries": [
+    {
+      "id": "fr-brevet-parachutiste",
+      "code": "FR-BMP",
+      "category": "airborne",
+      "name": {
+        "fr": "Brevet militaire de parachutiste",
+        "en": "Military parachutist badge (BMP)"
+      },
+      "official_name": "Brevet militaire de parachutiste",
+      "short_name": "BMP",
+      "description": {
+        "fr": "Brevet de base de tout parachutiste militaire, créé le 1er juin 1946. La formation dure environ deux semaines à l’École des troupes aéroportées de Pau : à l’origine six sauts, aujourd’hui cinq suffisent, dont des sauts « lisses » sans armement, un saut de nuit et un saut technique avec armement et gaine. Il est requis dans les unités parachutistes et figure parmi les titres de l’arrêté sur la prime de compétences spécifiques.",
+        "en": "Basic badge of every French military parachutist, created on 1 June 1946. Training lasts about two weeks at the Airborne Troops School in Pau: originally six jumps, now five are enough, including clean jumps without weapons, a night jump and an equipment jump with weapon and gear bag. It is required in parachute units and is listed in the decree on the specific-skills allowance."
+      },
+      "body": {
+        "fr": "École des troupes aéroportées (Pau), brigade de formation au brevet parachutiste",
+        "en": "Airborne Troops School (Pau), parachutist badge training brigade"
+      },
+      "issuer": {
+        "name": "École des troupes aéroportées",
+        "short_name": "ETAP"
+      },
+      "reference": {
+        "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 7 « parachutisme » ; PIA-3.2.1.1(A) BCQ-PARA, livret 1",
+        "en": "Decree of 24 May 2023 (specific-skills allowance), annex 7 \"parachuting\"; PIA-3.2.1.1(A) BCQ-PARA, booklet 1"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.terre.defense.gouv.fr/amscc/actualites/formation-brevet-militaire-parachutiste-promotion-capitaine-goupil",
+          "title": "Formation « Brevet militaire de parachutiste » pour la promotion Capitaine Goupil – Académie militaire de Saint-Cyr Coëtquidan"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/11e-brigade-parachutiste-11e-bp/ecole-troupes-aeroportees",
+          "title": "École des troupes aéroportées – ministère des Armées"
+        },
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        },
+        {
+          "url": "https://theatrum-belli.com/1er-juin-1946-creation-du-brevet-militaire-de-parachutiste-bmp-1er-juin-1947-creation-de-lecole-des-troupes-aeroportees-etap/",
+          "title": "1er juin 1946 : création du brevet militaire de parachutiste ; 1er juin 1947 : création de l’ETAP – Theatrum Belli"
+        }
+      ]
+    },
+    {
+      "id": "fr-chuteur-operationnel",
+      "code": "FR-CHUTOPS",
+      "category": "airborne",
+      "name": {
+        "fr": "Brevet de chuteur opérationnel (SOGH)",
+        "en": "Military free-fall operator badge (SOGH)"
+      },
+      "official_name": "Brevet de chuteur opérationnel",
+      "short_name": "Chuteur OPS",
+      "description": {
+        "fr": "Brevet de spécialité des militaires destinés à servir dans une équipe de chuteurs opérationnels. Il sanctionne le stage de saut opérationnel à grande hauteur (A TAP 3 400 CHUTEUR OPS) de 13 semaines à l’ETAP : environ 80 sauts, ouverture commandée retardée avec charge, en équipe, de jour et de nuit, et calcul de l’infiltration sous voile (ISV) jusqu’à une dizaine de kilomètres. Il exige les certificats CAP OPS E et CAP OPS 1 et une moyenne d’au moins 10/20 ; l’insigne est homologué GS 30.",
+        "en": "Specialist badge for personnel serving in a military free-fall team. It is awarded after the 13-week high-altitude operational jump course (A TAP 3 400 CHUTEUR OPS) at ETAP: about 80 jumps, delayed-opening jumps with load, in teams, by day and night, and planning of canopy infiltration (ISV) over ten kilometres or more. It requires the CAP OPS E and CAP OPS 1 certificates and an average of at least 10/20; the insignia is registered GS 30."
+      },
+      "body": {
+        "fr": "École des troupes aéroportées (Pau), seule habilitée à former les chuteurs opérationnels",
+        "en": "Airborne Troops School (Pau), the only school authorised to train military free-fall operators"
+      },
+      "issuer": {
+        "name": "École des troupes aéroportées",
+        "short_name": "ETAP"
+      },
+      "reference": {
+        "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2, chapitre 2, section II « Formation de chuteur opérationnel »",
+        "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2, chapter 2, section II \"Military free-fall operator training\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet militaire de parachutiste",
+          "Formation initiale à la chute libre (milieu civil ou centre de formation des armées)",
+          "Conditions de candidature et minima physiques du référentiel des actions de formation (RAF)"
+        ],
+        "en": [
+          "Military parachutist badge",
+          "Initial free-fall training (civilian or armed forces training centre)",
+          "Application conditions and physical minima set by the training reference (RAF)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cicde/20220623-PIA-3.2.1.2A_BCQ-PARA-L2-Vf.pdf",
+          "title": "PIA-3.2.1.2(A) BCQ-PARA, livret 2 : brevets, certificats d’aptitude et qualifications parachutistes de spécialisation (CICDE, 2022)"
+        },
+        {
+          "url": "https://www.terremag.defense.gouv.fr/nos-reportages/lentrainement/les-chuteurs-operationnels-sinfiltrent-par-les-airs",
+          "title": "Les chuteurs opérationnels s’infiltrent par les airs – Terre Mag"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/11e-brigade-parachutiste-11e-bp/ecole-troupes-aeroportees",
+          "title": "École des troupes aéroportées – ministère des Armées"
+        },
+        {
+          "url": "https://theatrum-belli.com/chuteur-operationnel-ou-comment-sinfiltrer-par-les-airs/",
+          "title": "Chuteur opérationnel, ou comment s’infiltrer par les airs – Theatrum Belli"
+        }
+      ]
+    },
+    {
+      "id": "fr-sotgh",
+      "code": "FR-CAPOPS3",
+      "category": "airborne",
+      "name": {
+        "fr": "Qualification au saut opérationnel à très grande hauteur (SOTGH, CAP OPS 3)",
+        "en": "Very high altitude operational jump qualification (SOTGH, CAP OPS 3)"
+      },
+      "official_name": "Certificat d’aptitude au parachutisme opérationnel du 3e degré (CAP OPS 3)",
+      "short_name": "CAP OPS 3",
+      "description": {
+        "fr": "Qualification au saut opérationnel à très grande hauteur, sous oxygène. Elle s’adresse aux chuteurs opérationnels, parachutistes spécialisés et instructeurs SOCR déjà titulaires du CAP OPS 2 et désignés par le commandement. Elle est attribuée après une instruction au sol et une restitution en vol comportant quatre procédures, dont deux avec saut spécifique ; elle est refusée en cas de faute grave de sécurité.",
+        "en": "Qualification for very high altitude operational jumps on oxygen. It is open to military free-fall operators, specialised parachutists and delayed-opening instructors who already hold CAP OPS 2 and are designated by their command. It is awarded after ground instruction and an in-flight phase including four procedures, two of them with a specific jump; it is refused in case of a serious safety fault."
+      },
+      "body": {
+        "fr": "École des troupes aéroportées (campagnes TGH) ; formations du COS et CASV habilités pour leurs stages internes",
+        "en": "Airborne Troops School (very high altitude campaigns); SOF units and the CASV are authorised for internal courses"
+      },
+      "issuer": {
+        "name": "École des troupes aéroportées",
+        "short_name": "ETAP"
+      },
+      "reference": {
+        "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2 : épreuves et attribution du CAP OPS 3",
+        "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2: tests and award of CAP OPS 3"
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet de chuteur opérationnel ou qualification de parachutiste spécialisé",
+          "CAP OPS 2"
+        ],
+        "en": [
+          "Military free-fall badge or specialised parachutist qualification",
+          "CAP OPS 2"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cicde/20220623-PIA-3.2.1.2A_BCQ-PARA-L2-Vf.pdf",
+          "title": "PIA-3.2.1.2(A) BCQ-PARA, livret 2 : brevets, certificats d’aptitude et qualifications parachutistes de spécialisation (CICDE, 2022)"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_r%C3%A9giment_de_parachutistes_d%27infanterie_de_marine",
+          "title": "1er régiment de parachutistes d’infanterie de marine – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-moniteur-parachutiste",
+      "code": "FR-MONIPARA",
+      "category": "airborne",
+      "name": {
+        "fr": "Brevet militaire de moniteur parachutiste",
+        "en": "Military parachute instructor badge"
+      },
+      "official_name": "Brevet militaire de moniteur parachutiste",
+      "short_name": "Moniteur para",
+      "description": {
+        "fr": "Brevet de spécialité des sous-officiers chargés d’encadrer le saut à ouverture automatique, de larguer le personnel et de commander le transport. Le cycle, dispensé à l’ETAP, enchaîne trois semaines de saut à ouverture commandée en individuel puis neuf semaines de formation de moniteur (largage, pédagogie, formation générale, aptitude). Il exige un test d’inspection de câble éliminatoire, le CAP E et une moyenne d’au moins 10/20 ; l’insigne est homologué G 1186.",
+        "en": "Specialist badge for NCOs who supervise static-line jumps, act as jumpmasters and command the transport. The cycle, held at ETAP, combines three weeks of individual free-fall jumping and nine weeks of instructor training (dispatching, teaching, general training, aptitude). It requires a pass/fail static-line inspection test, the CAP E certificate and an average of at least 10/20; the insignia is registered G 1186."
+      },
+      "body": {
+        "fr": "École des troupes aéroportées (Pau)",
+        "en": "Airborne Troops School (Pau)"
+      },
+      "issuer": {
+        "name": "École des troupes aéroportées",
+        "short_name": "ETAP"
+      },
+      "reference": {
+        "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2, chapitre 2, section V « Formation de moniteur parachutiste »",
+        "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2, chapter 2, section V \"Parachute instructor training\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet militaire de parachutiste",
+          "Qualification de chef de groupe de saut (vérifiée en début de stage)",
+          "Conditions de candidature du référentiel des actions de formation (RAF)"
+        ],
+        "en": [
+          "Military parachutist badge",
+          "Jump group leader qualification (checked at the start of the course)",
+          "Application conditions set by the training reference (RAF)"
+        ]
+      },
+      "validity": {
+        "fr": "Maintien soumis aux conditions d’entraînement fixées par la PIA-3.2.1.1(A), livret 1.",
+        "en": "Currency subject to the training requirements of PIA-3.2.1.1(A), booklet 1."
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cicde/20220623-PIA-3.2.1.2A_BCQ-PARA-L2-Vf.pdf",
+          "title": "PIA-3.2.1.2(A) BCQ-PARA, livret 2 : brevets, certificats d’aptitude et qualifications parachutistes de spécialisation (CICDE, 2022)"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/11e-brigade-parachutiste-11e-bp/ecole-troupes-aeroportees",
+          "title": "École des troupes aéroportées – ministère des Armées"
+        }
+      ]
+    },
+    {
+      "id": "fr-paraspe-marine",
+      "code": "FR-PARASPE-MN",
+      "category": "airborne",
+      "name": {
+        "fr": "Parachutiste spécialisé de la Marine nationale",
+        "en": "French Navy specialised parachutist"
+      },
+      "official_name": "Qualification de parachutiste spécialisé de la Marine nationale",
+      "short_name": "Paraspé Marine",
+      "description": {
+        "fr": "Qualification de chute opérationnelle des commandos Marine : saut à ouverture commandée retardée à grande hauteur, avec charge, en équipe, de jour et de nuit. La formation initiale puis spécialisée est conduite par les instructeurs d’ALFUSCO ou du commando Hubert et sanctionnée par les certificats CAP OPS E puis CAP OPS 1. Ses prérogatives sont identiques à celles du chuteur opérationnel, sans droit au port du brevet de chuteur opérationnel.",
+        "en": "Military free-fall qualification of the French Navy commandos: delayed-opening jumps at high altitude, with load, in teams, by day and night. Initial then specialised training is delivered by ALFUSCO or Commando Hubert instructors and sanctioned by the CAP OPS E then CAP OPS 1 certificates. Its prerogatives are the same as those of a military free-fall operator, without entitlement to wear the free-fall badge."
+      },
+      "body": {
+        "fr": "ALFUSCO (bureau 3D / D-TAP) et commando Hubert ; candidature alignée sur celle du stage de l’ETAP",
+        "en": "ALFUSCO (3D office / D-TAP) and Commando Hubert; application rules aligned with the ETAP course"
+      },
+      "issuer": {
+        "name": "Force maritime des fusiliers marins et commandos",
+        "short_name": "ALFUSCO"
+      },
+      "reference": {
+        "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2, chapitre 2, section III « Formation de parachutiste spécialisé de la Marine nationale »",
+        "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2, chapter 2, section III \"French Navy specialised parachutist training\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Affectation en unité de commandos Marine (ou AMS Lorient-Lanester)",
+          "Conditions de candidature identiques à celles du stage de chuteur opérationnel de l’ETAP"
+        ],
+        "en": [
+          "Posting to a Navy commando unit (or AMS Lorient-Lanester)",
+          "Same application conditions as the ETAP free-fall course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cicde/20220623-PIA-3.2.1.2A_BCQ-PARA-L2-Vf.pdf",
+          "title": "PIA-3.2.1.2(A) BCQ-PARA, livret 2 : brevets, certificats d’aptitude et qualifications parachutistes de spécialisation (CICDE, 2022)"
+        },
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        }
+      ]
+    },
+    {
+      "id": "fr-paraspe-air",
+      "code": "FR-PARASPE-AAE",
+      "category": "airborne",
+      "name": {
+        "fr": "Parachutiste spécialisé de l’armée de l’Air et de l’Espace (« chuteur spécialisé »)",
+        "en": "French Air and Space Force specialised parachutist (\"chuteur spécialisé\")"
+      },
+      "official_name": "Qualification de parachutiste spécialisé de l’armée de l’Air et de l’Espace",
+      "short_name": "Paraspé Air",
+      "description": {
+        "fr": "Qualification de chute opérationnelle des commandos parachutistes de l’air des unités d’intervention : saut à ouverture commandée retardée à grande hauteur, avec charge, en équipe, de jour et de nuit. La phase spécialisée est conduite par le Centre air de saut en vol (Orléans) ; depuis 2024, le cursus PARASPÉ NG de huit semaines intègre parachutisme ascensionnel et soufflerie. Les commandos y pratiquent l’infiltration sous voile (ISV) ; prérogatives identiques à celles du chuteur opérationnel.",
+        "en": "Military free-fall qualification of Air Force commando paratroopers in intervention units: delayed-opening jumps at high altitude, with load, in teams, by day and night. The specialised phase is run by the Air free-fall centre (Orléans); since 2024 the eight-week PARASPÉ NG course includes parascending and wind-tunnel training. Commandos train there in canopy infiltration (ISV); prerogatives are the same as those of a military free-fall operator."
+      },
+      "body": {
+        "fr": "Centre air de saut en vol (BA 123 Orléans) ; qualification délivrée par le CFA/BFSA",
+        "en": "Air free-fall centre (Air Base 123 Orléans); qualification awarded by the CFA/BFSA"
+      },
+      "issuer": {
+        "name": "Centre air de saut en vol (Orléans)",
+        "short_name": "CASV"
+      },
+      "reference": {
+        "fr": "PIA-3.2.1.2(A) BCQ-PARA, livret 2, chapitre 2, section IV « Formation des parachutistes spécialisés de l’armée de l’Air et de l’Espace »",
+        "en": "PIA-3.2.1.2(A) BCQ-PARA, booklet 2, chapter 2, section IV \"French Air and Space Force specialised parachutist training\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Affectation en unité d’intervention du CFA/BFSA",
+          "Conditions de candidature identiques à celles du stage de chuteur opérationnel de l’ETAP"
+        ],
+        "en": [
+          "Posting to a CFA/BFSA intervention unit",
+          "Same application conditions as the ETAP free-fall course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cicde/20220623-PIA-3.2.1.2A_BCQ-PARA-L2-Vf.pdf",
+          "title": "PIA-3.2.1.2(A) BCQ-PARA, livret 2 : brevets, certificats d’aptitude et qualifications parachutistes de spécialisation (CICDE, 2022)"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/nouvelle-formation-specifique-commandos-parachutistes-forces-speciales",
+          "title": "Une nouvelle formation spécifique pour les commandos parachutistes des forces spéciales – armée de l’Air et de l’Espace"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/ministere-armees/esprit-defense-numero-5-automne-2022-24-h-quand-les-forces-speciales-air-s-exercent-au-combat.pdf",
+          "title": "24 h quand les forces spéciales Air s’exercent au combat – Esprit défense n° 5 (2022)"
+        }
+      ]
+    },
+    {
+      "id": "fr-parapente-militaire",
+      "code": "FR-PARAPENTE",
+      "category": "airborne",
+      "name": {
+        "fr": "Brevets de parapente militaire (A, B, C)",
+        "en": "Military paragliding badges (A, B, C)"
+      },
+      "official_name": "Brevets de parapente militaire A, B et C",
+      "short_name": "Parapente mil.",
+      "description": {
+        "fr": "Trois brevets successifs de vol en parapente propres à l’armée de Terre, utilisés notamment par le groupement de commandos de montagne pour l’infiltration, savoir-faire validé en 2003. Le niveau C couvre les vols solo par tous temps, sur tous les sites et de nuit. Les commandos pratiquent aussi le décollage tracté par treuil depuis un terrain plat ; l’EMHM forme les instructeurs militaires parapente (IMP).",
+        "en": "Three successive military paragliding badges specific to the French Army, used in particular by the Mountain Commando Group for infiltration, a skill validated in 2003. Level C covers solo flights in all weather, at all sites and at night. Commandos also practise winch-towed take-off from flat ground; EMHM trains the military paragliding instructors (IMP)."
+      },
+      "body": {
+        "fr": "École militaire de haute montagne (Chamonix), formation des instructeurs militaires parapente",
+        "en": "High Mountain Military School (Chamonix), training of military paragliding instructors"
+      },
+      "issuer": {
+        "name": "École militaire de haute montagne",
+        "short_name": "EMHM"
+      },
+      "reference": {
+        "fr": "Présentation de l’EMHM et du groupement de commandos de montagne (sources ouvertes)",
+        "en": "Open-source descriptions of EMHM and the Mountain Commando Group"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/High_Mountain_Military_School",
+          "title": "High Mountain Military School – Wikipedia"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupement_de_commandos_de_montagne",
+          "title": "Groupement de commandos de montagne – Wikipédia"
+        },
+        {
+          "url": "https://www.revueconflits.com/reportage-a-la-27e-brigade-dinfanterie-de-montagne/",
+          "title": "Reportage à la 27e brigade d’infanterie de montagne – Revue Conflits"
+        }
+      ]
+    },
+    {
+      "id": "fr-bam",
+      "code": "FR-BAM",
+      "category": "environment",
+      "name": {
+        "fr": "Brevet d’alpiniste militaire (BAM)",
+        "en": "Military mountaineering badge (BAM)"
+      },
+      "official_name": "Brevet d’alpiniste militaire",
+      "short_name": "BAM",
+      "description": {
+        "fr": "Brevet de base de l’alpinisme militaire dans les troupes de montagne ; associé au brevet de skieur militaire, il forme le brevet d’alpiniste et de skieur militaire (BASM). Il est exigé, avec au moins un an d’expérience en montagne, pour accéder au stage de chef d’équipe de haute montagne.",
+        "en": "Basic military mountaineering badge in the mountain troops; combined with the military skier badge it forms the military mountaineer and skier badge (BASM). Together with at least one year of mountain experience, it is required to enter the high mountain team leader course."
+      },
+      "body": {
+        "fr": "Troupes de montagne de l’armée de Terre, filière de l’École militaire de haute montagne",
+        "en": "French Army mountain troops, High Mountain Military School track"
+      },
+      "issuer": {
+        "name": "École militaire de haute montagne",
+        "short_name": "EMHM"
+      },
+      "reference": {
+        "fr": "Cursus montagne de l’EMHM (sources ouvertes)",
+        "en": "EMHM mountain training track (open sources)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/High_Mountain_Military_School",
+          "title": "High Mountain Military School – Wikipedia"
+        },
+        {
+          "url": "https://foreignlegion.info/2025/09/03/2e-reg-2025-summer-high-mountain-team-leader-course/",
+          "title": "2e REG – 2025 Summer High Mountain Team Leader Course – foreignlegion.info"
+        }
+      ]
+    },
+    {
+      "id": "fr-cehm",
+      "code": "FR-CEHM",
+      "category": "environment",
+      "name": {
+        "fr": "Brevet de chef d’équipe de haute montagne (été / hiver)",
+        "en": "High mountain team leader badge (summer / winter)"
+      },
+      "official_name": "Brevet de chef d’équipe de haute montagne",
+      "short_name": "CEHM",
+      "description": {
+        "fr": "Brevet du niveau « chef de cordée » de la compétence haute montagne, décliné en version été et hiver. Le stage d’été, d’environ deux semaines, apprend à conduire des cordées de deux ou trois personnes, à poser relais et cordes fixes, à pratiquer le sauvetage en crevasse et l’évacuation improvisée, ainsi qu’à évaluer les dangers objectifs. Il est réservé aux caporaux et caporaux-chefs ; son équivalent technique est le brevet de qualification des troupes de montagne (BQTM).",
+        "en": "High mountain badge at the \"rope leader\" level, in summer and winter versions. The roughly two-week summer course teaches leading rope teams of two or three, setting anchors and fixed ropes, crevasse rescue and improvised evacuation, and assessing objective hazards. It is reserved for corporals and senior corporals; its technical equivalent is the mountain troops qualification badge (BQTM)."
+      },
+      "body": {
+        "fr": "Troupes de montagne / École militaire de haute montagne",
+        "en": "Mountain troops / High Mountain Military School"
+      },
+      "issuer": {
+        "name": "École militaire de haute montagne",
+        "short_name": "EMHM"
+      },
+      "reference": {
+        "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie chef de cordée",
+        "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", rope-leader category"
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet d’alpiniste militaire (BAM)",
+          "Au moins un an d’expérience en montagne"
+        ],
+        "en": [
+          "Military mountaineering badge (BAM)",
+          "At least one year of mountain experience"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/High_Mountain_Military_School",
+          "title": "High Mountain Military School – Wikipedia"
+        },
+        {
+          "url": "https://foreignlegion.info/2025/09/03/2e-reg-2025-summer-high-mountain-team-leader-course/",
+          "title": "2e REG – 2025 Summer High Mountain Team Leader Course – foreignlegion.info"
+        }
+      ]
+    },
+    {
+      "id": "fr-cdhm",
+      "code": "FR-CDHM",
+      "category": "environment",
+      "name": {
+        "fr": "Brevet de chef de détachement de haute montagne (sous-officiers)",
+        "en": "High mountain detachment leader badge (NCOs)"
+      },
+      "official_name": "Brevet de chef de détachement de haute montagne",
+      "short_name": "CDHM",
+      "description": {
+        "fr": "Brevet du niveau « chef de détachement » de la compétence haute montagne, destiné aux sous-officiers. Il est délivré à l’issue de la même formation que le brevet de chef d’unité de haute montagne des officiers, qui comporte un stage d’été et un stage d’hiver d’environ six semaines chacun à l’École militaire de haute montagne.",
+        "en": "High mountain badge at the \"detachment leader\" level, intended for NCOs. It is awarded after the same training as the officers’ high mountain unit leader badge, which includes a summer course and a winter course of about six weeks each at the High Mountain Military School."
+      },
+      "body": {
+        "fr": "École militaire de haute montagne (Chamonix)",
+        "en": "High Mountain Military School (Chamonix)"
+      },
+      "issuer": {
+        "name": "École militaire de haute montagne",
+        "short_name": "EMHM"
+      },
+      "reference": {
+        "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie chef de détachement",
+        "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", detachment-leader category"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/High_Mountain_Military_School",
+          "title": "High Mountain Military School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "fr-cuhm",
+      "code": "FR-CUHM",
+      "category": "environment",
+      "name": {
+        "fr": "Brevet de chef d’unité de haute montagne (officiers)",
+        "en": "High mountain unit leader badge (officers)"
+      },
+      "official_name": "Brevet de chef d’unité de haute montagne",
+      "short_name": "CUHM",
+      "description": {
+        "fr": "Équivalent pour les officiers du brevet de chef de détachement de haute montagne, au même niveau « chef de détachement » de la compétence haute montagne. La formation, commune aux deux brevets, comprend un stage d’été et un stage d’hiver d’environ six semaines chacun à l’École militaire de haute montagne.",
+        "en": "Officers’ equivalent of the high mountain detachment leader badge, at the same \"detachment leader\" level of the high mountain skill. The training, common to both badges, includes a summer course and a winter course of about six weeks each at the High Mountain Military School."
+      },
+      "body": {
+        "fr": "École militaire de haute montagne (Chamonix)",
+        "en": "High Mountain Military School (Chamonix)"
+      },
+      "issuer": {
+        "name": "École militaire de haute montagne",
+        "short_name": "EMHM"
+      },
+      "reference": {
+        "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie chef de détachement",
+        "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", detachment-leader category"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/High_Mountain_Military_School",
+          "title": "High Mountain Military School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "fr-moniteur-guide-militaire",
+      "code": "FR-MGM",
+      "category": "environment",
+      "name": {
+        "fr": "Brevet de moniteur guide militaire",
+        "en": "Military mountain guide instructor badge"
+      },
+      "official_name": "Brevet de moniteur guide militaire",
+      "short_name": "Moniteur guide",
+      "description": {
+        "fr": "Brevet du niveau « expert » de la compétence haute montagne, sommet de la filière montagne de l’armée de Terre. Ses titulaires encadrent la formation et l’emploi des troupes en haute montagne en s’appuyant sur l’École militaire de haute montagne, pôle d’expertise montagne et grand froid des armées. Le détail du cursus n’est pas publié en source ouverte.",
+        "en": "High mountain badge at the \"expert\" level, the top of the French Army mountain track. Holders supervise the training and employment of troops in high mountains, relying on the High Mountain Military School, the armed forces’ centre of expertise for mountain and cold-weather operations. The details of the course are not published in open sources."
+      },
+      "body": {
+        "fr": "École militaire de haute montagne (Chamonix)",
+        "en": "High Mountain Military School (Chamonix)"
+      },
+      "issuer": {
+        "name": "École militaire de haute montagne",
+        "short_name": "EMHM"
+      },
+      "reference": {
+        "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie expert",
+        "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", expert category"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        },
+        {
+          "url": "https://www.terre.defense.gouv.fr/emhm/nos-missions",
+          "title": "École militaire de haute montagne – nos missions"
+        }
+      ]
+    },
+    {
+      "id": "fr-guide-haute-montagne",
+      "code": "FR-DEGHM",
+      "category": "environment",
+      "name": {
+        "fr": "Brevet d’État de guide de haute montagne",
+        "en": "State high mountain guide diploma"
+      },
+      "official_name": "Brevet d’État de guide de haute montagne",
+      "short_name": "Guide HM",
+      "description": {
+        "fr": "Diplôme d’État civil de guide de haute montagne. Lorsqu’il est détenu par un militaire, l’arrêté du 24 mai 2023 le reconnaît, à côté du brevet de moniteur guide militaire, comme titre du niveau « expert » de la compétence haute montagne.",
+        "en": "French civilian state diploma of high mountain guide. When held by a service member, the decree of 24 May 2023 recognises it, alongside the military guide instructor badge, as an \"expert\" level title of the high mountain skill."
+      },
+      "body": {
+        "fr": "Diplôme d’État (filière civile des métiers de la montagne)",
+        "en": "State diploma (civilian mountain professions track)"
+      },
+      "reference": {
+        "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 5 « haute montagne », catégorie expert",
+        "en": "Decree of 24 May 2023 (specific-skills allowance), annex 5 \"high mountain\", expert category"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        }
+      ]
+    },
+    {
+      "id": "fr-cfim",
+      "code": "FR-CFIM",
+      "category": "selection",
+      "name": {
+        "fr": "Formation initiale du militaire du rang (CFIM)",
+        "en": "Enlisted initial training (CFIM)"
+      },
+      "official_name": "Formation initiale en centre de formation initiale des militaires du rang",
+      "short_name": "FI CFIM",
+      "description": {
+        "fr": "Formation militaire initiale de neuf semaines, rémunérée, suivie dans un centre de formation initiale des militaires du rang (CFIM) par les engagés de l’armée de Terre. Pour les métiers des forces spéciales, elle précède la formation de spécialité dispensée au régiment d’affectation (1er RPIMa, 13e RDP, 4e RHFS) ou dans une école d’arme.",
+        "en": "Nine-week paid initial military training in an enlisted initial training centre (CFIM) for French Army enlisted recruits. For special forces trades, it precedes the specialist training delivered by the assigned regiment (1er RPIMa, 13e RDP, 4e RHFS) or by a branch school."
+      },
+      "body": {
+        "fr": "Centres de formation initiale des militaires du rang de l’armée de Terre",
+        "en": "French Army enlisted initial training centres"
+      },
+      "issuer": {
+        "name": "Centres de formation initiale des militaires du rang",
+        "short_name": "CFIM"
+      },
+      "reference": {
+        "fr": "Fiches métiers de l’armée de Terre (sengager.fr)",
+        "en": "French Army job descriptions (sengager.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/combattant-forces-speciales",
+          "title": "Combattant forces spéciales – sengager.fr"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/exploitant-renseignement-des-forces-speciales",
+          "title": "Exploitant renseignement des forces spéciales – sengager.fr"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/combattant-auxiliaire-sanitaire",
+          "title": "Combattant auxiliaire sanitaire – sengager.fr"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/mecanicien-aeronautique",
+          "title": "Mécanicien aéronautique – sengager.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-ensoa",
+      "code": "FR-ENSOA",
+      "category": "selection",
+      "name": {
+        "fr": "Formation initiale de sous-officier (ENSOA)",
+        "en": "NCO initial training (ENSOA)"
+      },
+      "official_name": "Formation initiale des sous-officiers à l’École nationale des sous-officiers d’active",
+      "short_name": "FI ENSOA",
+      "description": {
+        "fr": "Formation initiale d’environ six mois, rémunérée, des sous-officiers de recrutement direct de l’armée de Terre, à l’École nationale des sous-officiers d’active de Saint-Maixent. Pour un chef de groupe forces spéciales, elle est suivie d’environ douze mois de formation spécialisée au 13e RDP ou au 1er RPIMa ; pour les techniciens aéronautiques, d’une formation de spécialité.",
+        "en": "Paid initial training of about six months for directly recruited French Army NCOs, at the National School for Active NCOs in Saint-Maixent. For a special forces squad leader it is followed by about twelve months of specialist training at the 13e RDP or the 1er RPIMa; for aviation technicians, by trade training."
+      },
+      "body": {
+        "fr": "École nationale des sous-officiers d’active (Saint-Maixent-l’École)",
+        "en": "National School for Active NCOs (Saint-Maixent-l’École)"
+      },
+      "issuer": {
+        "name": "École nationale des sous-officiers d’active",
+        "short_name": "ENSOA"
+      },
+      "reference": {
+        "fr": "Fiches métiers de l’armée de Terre (sengager.fr)",
+        "en": "French Army job descriptions (sengager.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/chef-de-groupe-forces-speciales",
+          "title": "Chef de groupe forces spéciales – sengager.fr"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/technicien-maintenance-aeronautique",
+          "title": "Technicien maintenance aéronautique – sengager.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-cursus-sas",
+      "code": "FR-SAS",
+      "category": "selection",
+      "name": {
+        "fr": "Formation de base SAS (cursus SAS du 1er RPIMa)",
+        "en": "SAS basic course (1er RPIMa SAS course)"
+      },
+      "official_name": "Cursus SAS du 1er régiment de parachutistes d’infanterie de marine",
+      "short_name": "Cursus SAS",
+      "description": {
+        "fr": "Qualification de base des équipiers du 1er RPIMa, autrefois appelée RAPAS (recherche aéroportée et action spéciale). Après une sélection (préparation militaire FS de quinze jours, entretien), la formation de base SAS dure environ 22 semaines et est conduite par la compagnie d’instruction du régiment ; pour les sous-officiers, la formation spécialisée FS est annoncée à environ douze mois. Les brevetés SAS rejoignent ensuite un stick puis, après une période probatoire, une spécialité.",
+        "en": "Basic qualification of 1er RPIMa operators, formerly called RAPAS (airborne reconnaissance and special action). After selection (15-day SOF military preparation, interview), the SAS basic course lasts about 22 weeks and is run by the regiment’s training company; for NCOs, special forces training is given as about twelve months. SAS-qualified operators then join a stick and, after a probation period, a specialty."
+      },
+      "body": {
+        "fr": "Compagnie d’instruction du 1er RPIMa (Bayonne)",
+        "en": "1er RPIMa training company (Bayonne)"
+      },
+      "issuer": {
+        "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
+        "short_name": "1er RPIMa"
+      },
+      "reference": {
+        "fr": "Présentation du 1er RPIMa (ministère des Armées) et fiches métiers sengager.fr",
+        "en": "1er RPIMa presentation (Ministry of the Armed Forces) and sengager.fr job descriptions"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/1er-regiment-parachutistes-dinfanterie",
+          "title": "1er régiment de parachutistes d’infanterie de marine – ministère des Armées"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_r%C3%A9giment_de_parachutistes_d%27infanterie_de_marine",
+          "title": "1er régiment de parachutistes d’infanterie de marine – Wikipédia"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/combattant-forces-speciales",
+          "title": "Combattant forces spéciales – sengager.fr"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/chef-de-groupe-forces-speciales",
+          "title": "Chef de groupe forces spéciales – sengager.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-sas-po",
+      "code": "FR-SAS-PO",
+      "category": "maritime",
+      "name": {
+        "fr": "Spécialité SAS plongeur offensif (PO)",
+        "en": "SAS offensive diver specialty (PO)"
+      },
+      "official_name": "Spécialité SAS PO (plongeur offensif)",
+      "short_name": "SAS PO",
+      "description": {
+        "fr": "Spécialité complémentaire du 1er RPIMa, acquise après la formation de base SAS et une période probatoire. Elle relève de la 1re compagnie SAS, spécialisée dans les actions subaquatiques et de surface en eaux intérieures. Le contenu détaillé du stage n’est pas publié.",
+        "en": "Additional 1er RPIMa specialty, acquired after the SAS basic course and a probation period. It belongs to the 1st SAS Company, which specialises in underwater and surface actions in inland waters. The detailed course content is not published."
+      },
+      "body": {
+        "fr": "1er RPIMa (Bayonne)",
+        "en": "1er RPIMa (Bayonne)"
+      },
+      "issuer": {
+        "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
+        "short_name": "1er RPIMa"
+      },
+      "reference": {
+        "fr": "Présentation du 1er RPIMa (sources ouvertes)",
+        "en": "1er RPIMa presentation (open sources)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base SAS",
+          "Période probatoire en stick"
+        ],
+        "en": [
+          "SAS basic course",
+          "Probation period in a stick"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/1er-regiment-parachutistes-dinfanterie",
+          "title": "1er régiment de parachutistes d’infanterie de marine – ministère des Armées"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_r%C3%A9giment_de_parachutistes_d%27infanterie_de_marine",
+          "title": "1er régiment de parachutistes d’infanterie de marine – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-sas-jungle",
+      "code": "FR-SAS-JUNGLE",
+      "category": "environment",
+      "name": {
+        "fr": "Équipier SAS jungle",
+        "en": "SAS jungle operator"
+      },
+      "official_name": "Spécialité équipier SAS jungle",
+      "short_name": "SAS jungle",
+      "description": {
+        "fr": "Spécialité complémentaire du 1er RPIMa pour l’action en milieu équatorial, acquise après la formation de base SAS et une période probatoire. Selon les sources ouvertes, les équipiers sont formés au centre d’instruction de guerre dans la jungle de Manaus, au Brésil. Elle relève de la 2e compagnie SAS, spécialisée dans les milieux extrêmes.",
+        "en": "Additional 1er RPIMa specialty for operations in equatorial environments, acquired after the SAS basic course and a probation period. According to open sources, operators are trained at the jungle warfare training centre in Manaus, Brazil. It belongs to the 2nd SAS Company, which specialises in extreme environments."
+      },
+      "body": {
+        "fr": "1er RPIMa (Bayonne)",
+        "en": "1er RPIMa (Bayonne)"
+      },
+      "issuer": {
+        "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
+        "short_name": "1er RPIMa"
+      },
+      "reference": {
+        "fr": "Présentation du 1er RPIMa (sources ouvertes)",
+        "en": "1er RPIMa presentation (open sources)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base SAS",
+          "Période probatoire en stick"
+        ],
+        "en": [
+          "SAS basic course",
+          "Probation period in a stick"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/1er-regiment-parachutistes-dinfanterie",
+          "title": "1er régiment de parachutistes d’infanterie de marine – ministère des Armées"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_r%C3%A9giment_de_parachutistes_d%27infanterie_de_marine",
+          "title": "1er régiment de parachutistes d’infanterie de marine – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-sas-montagne",
+      "code": "FR-SAS-MONT",
+      "category": "environment",
+      "name": {
+        "fr": "Équipier SAS montagne",
+        "en": "SAS mountain operator"
+      },
+      "official_name": "Spécialité équipier SAS montagne",
+      "short_name": "SAS montagne",
+      "description": {
+        "fr": "Spécialité complémentaire du 1er RPIMa pour l’action en montagne et par grand froid, acquise après la formation de base SAS et une période probatoire. Elle relève de la 2e compagnie SAS, qui maîtrise aussi le sabotage et le franchissement vertical. Le contenu détaillé n’est pas publié.",
+        "en": "Additional 1er RPIMa specialty for mountain and cold-weather operations, acquired after the SAS basic course and a probation period. It belongs to the 2nd SAS Company, which also masters sabotage and vertical obstacle crossing. Detailed content is not published."
+      },
+      "body": {
+        "fr": "1er RPIMa (Bayonne)",
+        "en": "1er RPIMa (Bayonne)"
+      },
+      "issuer": {
+        "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
+        "short_name": "1er RPIMa"
+      },
+      "reference": {
+        "fr": "Présentation du 1er RPIMa (sources ouvertes)",
+        "en": "1er RPIMa presentation (open sources)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base SAS",
+          "Période probatoire en stick"
+        ],
+        "en": [
+          "SAS basic course",
+          "Probation period in a stick"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/1er-regiment-parachutistes-dinfanterie",
+          "title": "1er régiment de parachutistes d’infanterie de marine – ministère des Armées"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_r%C3%A9giment_de_parachutistes_d%27infanterie_de_marine",
+          "title": "1er régiment de parachutistes d’infanterie de marine – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-patsas",
+      "code": "FR-PATSAS",
+      "category": "sof",
+      "name": {
+        "fr": "Stage patrouille SAS (PATSAS)",
+        "en": "SAS patrol course (PATSAS)"
+      },
+      "official_name": "Spécialité PATSAS (patrouilles SAS)",
+      "short_name": "PATSAS",
+      "description": {
+        "fr": "Spécialité complémentaire du 1er RPIMa consacrée au combat motorisé tout-terrain : patrouilles de véhicules légers pour la reconnaissance et la destruction dans la profondeur. Elle est propre à la 3e compagnie SAS et s’acquiert après la formation de base SAS et une période probatoire.",
+        "en": "Additional 1er RPIMa specialty dedicated to off-road mobility combat: light vehicle patrols for deep reconnaissance and destruction. It is specific to the 3rd SAS Company and is acquired after the SAS basic course and a probation period."
+      },
+      "body": {
+        "fr": "1er RPIMa (Bayonne)",
+        "en": "1er RPIMa (Bayonne)"
+      },
+      "issuer": {
+        "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
+        "short_name": "1er RPIMa"
+      },
+      "reference": {
+        "fr": "Présentation du 1er RPIMa (sources ouvertes)",
+        "en": "1er RPIMa presentation (open sources)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base SAS",
+          "Période probatoire en stick"
+        ],
+        "en": [
+          "SAS basic course",
+          "Probation period in a stick"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/1er-regiment-parachutistes-dinfanterie",
+          "title": "1er régiment de parachutistes d’infanterie de marine – ministère des Armées"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_r%C3%A9giment_de_parachutistes_d%27infanterie_de_marine",
+          "title": "1er régiment de parachutistes d’infanterie de marine – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-ctlo",
+      "code": "FR-CTLO",
+      "category": "sof",
+      "name": {
+        "fr": "Contre-terrorisme et libération d’otages (CTLO)",
+        "en": "Counter-terrorism and hostage rescue (CTLO)"
+      },
+      "official_name": "Stage contre-terrorisme et libération d’otages (CTLO)",
+      "short_name": "CTLO",
+      "description": {
+        "fr": "Spécialisation des unités de forces spéciales françaises pour l’intervention contre-terroriste et la libération d’otages. Elle est dispensée en interne : stage de perfectionnement de la compagnie d’instruction du 1er RPIMa, stage CTLO du CPA 10 et groupes CTLO des commandos Marine Jaubert, Trepel et Hubert. Le contenu détaillé des stages n’est pas publié.",
+        "en": "Specialisation of French special forces units for counter-terrorist intervention and hostage rescue. It is delivered internally: advanced course of the 1er RPIMa training company, CPA 10 CTLO course and the CTLO groups of Navy commandos Jaubert, Trepel and Hubert. Detailed course content is not published."
+      },
+      "body": {
+        "fr": "Unités des forces spéciales (1er RPIMa, CPA 10, commandos Marine)",
+        "en": "Special forces units (1er RPIMa, CPA 10, Navy commandos)"
+      },
+      "reference": {
+        "fr": "Présentations officielles des unités (ministère des Armées, Cesm)",
+        "en": "Official unit presentations (Ministry of the Armed Forces, CESM)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/1er-regiment-parachutistes-dinfanterie",
+          "title": "1er régiment de parachutistes d’infanterie de marine – ministère des Armées"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_r%C3%A9giment_de_parachutistes_d%27infanterie_de_marine",
+          "title": "1er régiment de parachutistes d’infanterie de marine – Wikipédia"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cesm/bm-185-les-commandos-marine-atout-des-operations-speciales-et-specialisees.pdf",
+          "title": "Les commandos Marine, atout des opérations spéciales et spécialisées – Brèves marines n° 185 (CESM)"
+        },
+        {
+          "url": "https://prod-site-internet-minarm-admin.cloud.defense.gouv.fr/sites/default/files/ministere-armees/28.05.2025%20Stage%20%2522Contre-Terrorisme%20et%20Lib%C3%A9ration%20d%27Otages%2522%20%28CTLO%29%20Commando%20Parachutiste%20de%20l%27Air%20n%C2%B010%20%28CPA10%29.pdf",
+          "title": "Stage « Contre-terrorisme et libération d’otages » (CTLO), CPA 10 – ministère des Armées (2025)"
+        },
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        }
+      ]
+    },
+    {
+      "id": "fr-protection-rapprochee",
+      "code": "FR-PR-FS",
+      "category": "sof",
+      "name": {
+        "fr": "Stage de protection rapprochée (1er RPIMa)",
+        "en": "Close protection course (1er RPIMa)"
+      },
+      "official_name": "Stage de perfectionnement protection rapprochée",
+      "short_name": "Protection rappr.",
+      "description": {
+        "fr": "Stage de perfectionnement de la cellule d’instruction spécialisée de la compagnie d’instruction du 1er RPIMa, qui prépare les équipiers SAS à la protection rapprochée de personnalités (spécialité « gardes du corps », GDC). Il est suivi après la formation de base SAS. Le programme n’est pas publié.",
+        "en": "Advanced course of the specialised instruction cell of the 1er RPIMa training company, preparing SAS operators for close protection of VIPs (\"bodyguard\" specialty, GDC). It is taken after the SAS basic course. The syllabus is not published."
+      },
+      "body": {
+        "fr": "Compagnie d’instruction du 1er RPIMa (Bayonne)",
+        "en": "1er RPIMa training company (Bayonne)"
+      },
+      "issuer": {
+        "name": "1er régiment de parachutistes d’infanterie de marine – compagnie d’instruction",
+        "short_name": "1er RPIMa"
+      },
+      "reference": {
+        "fr": "Présentation du 1er RPIMa (sources ouvertes)",
+        "en": "1er RPIMa presentation (open sources)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de base SAS"
+        ],
+        "en": [
+          "SAS basic course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/1er-regiment-parachutistes-dinfanterie",
+          "title": "1er régiment de parachutistes d’infanterie de marine – ministère des Armées"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/1er_r%C3%A9giment_de_parachutistes_d%27infanterie_de_marine",
+          "title": "1er régiment de parachutistes d’infanterie de marine – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-tireur-elite",
+      "code": "FR-TE",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Tireur d’élite (spécialisation forces spéciales)",
+        "en": "Sniper (special forces specialisation)"
+      },
+      "official_name": "Spécialisation tireur d’élite",
+      "short_name": "Tireur d’élite",
+      "description": {
+        "fr": "Spécialisation de tir de précision des opérateurs des forces spéciales, acquise en complément de la qualification de base : stage de perfectionnement tireur d’élite de la compagnie d’instruction du 1er RPIMa, équipes spéciales de neutralisation et d’observation (ESNO) des commandos Marine de Montfort et de Penfentenyo, spécialité secondaire des opérateurs des groupes action du CPA 10. Au CPA 10, le tireur d’élite reste intégré à son groupe, à la différence du tireur haute précision.",
+        "en": "Precision-shooting specialisation for special forces operators, added to their basic qualification: advanced sniper course of the 1er RPIMa training company, special neutralisation and observation teams (ESNO) of Navy commandos de Montfort and de Penfentenyo, secondary specialty of CPA 10 action-group operators. At CPA 10 the sniper remains within his group, unlike the high-precision marksman."
+      },
+      "body": {
+        "fr": "Unités des forces spéciales (1er RPIMa, commandos Marine, CPA 10)",
+        "en": "Special forces units (1er RPIMa, Navy commandos, CPA 10)"
+      },
+      "reference": {
+        "fr": "Présentations officielles des unités et Air actualités n° 729",
+        "en": "Official unit presentations and Air actualités no. 729"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/1er-regiment-parachutistes-dinfanterie",
+          "title": "1er régiment de parachutistes d’infanterie de marine – ministère des Armées"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cesm/bm-185-les-commandos-marine-atout-des-operations-speciales-et-specialisees.pdf",
+          "title": "Les commandos Marine, atout des opérations spéciales et spécialisées – Brèves marines n° 185 (CESM)"
+        },
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        },
+        {
+          "url": "https://sti.eduscol.education.fr/sites/eduscol.education.fr.sti/files/ressources/techniques/12393/12393-aira729-educ.pdf",
+          "title": "Les tireurs haute précision du CPA 10 – Air actualités n° 729 (Eduscol)"
+        }
+      ]
+    },
+    {
+      "id": "fr-tests-agrement-fs",
+      "code": "FR-AGREMENT-FS",
+      "category": "selection",
+      "name": {
+        "fr": "Tests d’agrément forces spéciales",
+        "en": "Special forces screening tests"
+      },
+      "official_name": "Tests d’agrément des forces spéciales",
+      "short_name": "Agrément FS",
+      "description": {
+        "fr": "Tests de présélection médicaux, physiques et psychologiques que doivent réussir les candidats au stage de chef d’équipe de recherche aéroportée du 13e RDP, lieutenants des écoles d’application ou sous-officiers supérieurs. Leur contenu détaillé n’est pas publié.",
+        "en": "Medical, physical and psychological pre-selection tests that candidates for the 13e RDP airborne reconnaissance team leader course, lieutenants from the branch schools or senior NCOs, must pass. Their detailed content is not published."
+      },
+      "body": {
+        "fr": "Armée de Terre – forces spéciales (Commandement des actions spéciales Terre)",
+        "en": "French Army special forces (Army Special Actions Command)"
+      },
+      "reference": {
+        "fr": "Terre Mag, « Le stage de chef d’équipe de recherche aéroportée »",
+        "en": "Terre Mag, \"The airborne reconnaissance team leader course\""
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.terremag.defense.gouv.fr/enquetes/zoom-sur/le-stage-de-chef-dequipe-de-recherche-aeroportee",
+          "title": "Le stage de chef d’équipe de recherche aéroportée – Terre Mag"
+        }
+      ]
+    },
+    {
+      "id": "fr-cte-ra",
+      "code": "FR-CTE-RA",
+      "category": "intelligence",
+      "name": {
+        "fr": "Certificat technique élémentaire recherche aéroportée (CTE RA)",
+        "en": "Elementary technical certificate, airborne reconnaissance (CTE RA)"
+      },
+      "official_name": "Certificat technique élémentaire RA",
+      "short_name": "CTE RA",
+      "description": {
+        "fr": "Certificat de spécialité des équipiers de la filière recherche aéroportée du 13e RDP (observateur, radiotélégraphiste). Il sanctionne la formation élémentaire de spécialité d’environ 29 semaines, dispensée uniquement au régiment par son centre de formation délégué, après une formation initiale comprenant formation générale, spécialité et adaptation au brevet parachutiste. La filière complète, la plus longue de l’armée de Terre, dure environ 16 mois.",
+        "en": "Specialist certificate of 13e RDP airborne reconnaissance operators (observer, radio operator). It sanctions the elementary specialist training of about 29 weeks, delivered only within the regiment by its delegated training centre, after initial training comprising general training, specialty and parachutist badge course. The full track, the longest in the French Army, lasts about 16 months."
+      },
+      "body": {
+        "fr": "Centre de formation délégué du 13e RDP (Souge)",
+        "en": "13e RDP delegated training centre (Souge)"
+      },
+      "issuer": {
+        "name": "13e régiment de dragons parachutistes – centre de formation délégué",
+        "short_name": "13e RDP"
+      },
+      "reference": {
+        "fr": "Arrêté du 24 mai 2023, annexe 6 « combattant terrestre » (certificat technique élémentaire) ; présentation du 13e RDP",
+        "en": "Decree of 24 May 2023, annex 6 \"land combatant\" (elementary technical certificate); 13e RDP presentation"
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet militaire de parachutiste",
+          "Formation initiale du régiment"
+        ],
+        "en": [
+          "Military parachutist badge",
+          "Regimental initial training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/13e-regiment-dragons-parachutistes",
+          "title": "13e régiment de dragons parachutistes – ministère des Armées"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/terre/actualites/stage-scorpion-futurs-equipiers-du-13e-rdp-a-lepreuve-du-terrain",
+          "title": "Stage Scorpion : les futurs équipiers du 13e RDP à l’épreuve du terrain – ministère des Armées"
+        },
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        }
+      ]
+    },
+    {
+      "id": "fr-stage-scorpion",
+      "code": "FR-SCORPION",
+      "category": "intelligence",
+      "name": {
+        "fr": "Stage Scorpion (qualification technique terrain RA)",
+        "en": "Scorpion course (airborne reconnaissance field qualification)"
+      },
+      "official_name": "Stage Scorpion – qualification technique terrain",
+      "short_name": "Scorpion",
+      "description": {
+        "fr": "Qualification technique terrain (QTT) qui clôt la formation des futurs équipiers de la filière recherche aéroportée du 13e RDP, après près d’un an de formation. Organisé notamment à Djibouti, il restitue les acquis en conditions proches des opérations : infiltration lourdement chargée, conduite de mission, endurance physique et mentale.",
+        "en": "Field technical qualification (QTT) that concludes the training of future 13e RDP airborne reconnaissance operators, after nearly a year of training. Held notably in Djibouti, it tests what was learned in near-operational conditions: heavily loaded infiltration, mission conduct, physical and mental endurance."
+      },
+      "body": {
+        "fr": "13e régiment de dragons parachutistes",
+        "en": "13th Parachute Dragoon Regiment"
+      },
+      "issuer": {
+        "name": "13e régiment de dragons parachutistes – centre de formation délégué",
+        "short_name": "13e RDP"
+      },
+      "reference": {
+        "fr": "Ministère des Armées, « Stage Scorpion : les futurs équipiers du 13e RDP à l’épreuve du terrain »",
+        "en": "Ministry of the Armed Forces, \"Scorpion course: future 13e RDP operators tested in the field\""
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/actualites/stage-scorpion-futurs-equipiers-du-13e-rdp-a-lepreuve-du-terrain",
+          "title": "Stage Scorpion : les futurs équipiers du 13e RDP à l’épreuve du terrain – ministère des Armées"
+        }
+      ]
+    },
+    {
+      "id": "fr-chef-cellule-ra",
+      "code": "FR-CC-ERA",
+      "category": "intelligence",
+      "name": {
+        "fr": "Brevet de chef de cellule en équipe de recherche aéroportée",
+        "en": "Airborne reconnaissance team cell leader badge"
+      },
+      "official_name": "Brevet de chef de cellule en équipe de recherche aéroportée",
+      "short_name": "Chef cellule ERA",
+      "description": {
+        "fr": "Niveau d’encadrement intermédiaire de la filière recherche aéroportée du 13e RDP : le chef de cellule (observation ou radio) encadre une partie de l’équipe de recherche, entre l’équipier et le chef d’équipe. Les petits gradés sont formés au régiment par une formation générale élémentaire d’environ huit semaines.",
+        "en": "Intermediate leadership level of the 13e RDP airborne reconnaissance track: the cell leader (observation or radio) supervises part of the reconnaissance team, between the operator and the team leader. Junior NCOs are trained within the regiment through an elementary general course of about eight weeks."
+      },
+      "body": {
+        "fr": "Centre de formation délégué du 13e RDP (Souge)",
+        "en": "13e RDP delegated training centre (Souge)"
+      },
+      "issuer": {
+        "name": "13e régiment de dragons parachutistes – centre de formation délégué",
+        "short_name": "13e RDP"
+      },
+      "reference": {
+        "fr": "Présentation du 13e RDP (ministère des Armées)",
+        "en": "13e RDP presentation (Ministry of the Armed Forces)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Certificat technique élémentaire RA"
+        ],
+        "en": [
+          "CTE RA"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/13e-regiment-dragons-parachutistes",
+          "title": "13e régiment de dragons parachutistes – ministère des Armées"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/terre/biographie%20adjudant-chef%20Stephane%20Grenier.pdf",
+          "title": "Biographie de l’adjudant-chef Stéphane Grenier, 13e RDP – ministère des Armées"
+        }
+      ]
+    },
+    {
+      "id": "fr-chef-equipe-ra",
+      "code": "FR-CE-ERA",
+      "category": "intelligence",
+      "name": {
+        "fr": "Insigne de chef d’équipe de recherche aéroportée",
+        "en": "Airborne reconnaissance team leader badge"
+      },
+      "official_name": "Stage de chef d’équipe de recherche aéroportée",
+      "short_name": "Chef d’équipe RA",
+      "description": {
+        "fr": "Stage d’environ sept mois (d’août à mi-février), notamment au camp de Souge, qui forme les chefs d’équipe de recherche du 13e RDP : aguerrissement physique et mental puis mises en situation proches des opérations, jalonnés de commissions. Une dizaine de stagiaires seulement reçoivent l’insigne chaque année, au terme d’une commission finale à huis clos ; le millième insigne a été remis en février.",
+        "en": "Course of about seven months (August to mid-February), notably at Camp de Souge, that trains 13e RDP reconnaissance team leaders: physical and mental hardening, then near-operational scenarios, punctuated by review boards. Only about ten trainees receive the badge each year, after a closed final board; the thousandth badge was awarded in February."
+      },
+      "body": {
+        "fr": "13e régiment de dragons parachutistes (Souge)",
+        "en": "13th Parachute Dragoon Regiment (Souge)"
+      },
+      "issuer": {
+        "name": "13e régiment de dragons parachutistes – centre de formation délégué",
+        "short_name": "13e RDP"
+      },
+      "reference": {
+        "fr": "Terre Mag, « Le stage de chef d’équipe de recherche aéroportée »",
+        "en": "Terre Mag, \"The airborne reconnaissance team leader course\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Lieutenant issu d’une division d’application ou sous-officier supérieur",
+          "Tests d’agrément forces spéciales"
+        ],
+        "en": [
+          "Lieutenant from a branch school or senior NCO",
+          "Special forces screening tests"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.terremag.defense.gouv.fr/enquetes/zoom-sur/le-stage-de-chef-dequipe-de-recherche-aeroportee",
+          "title": "Le stage de chef d’équipe de recherche aéroportée – Terre Mag"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/terre/unites-larmee-terre/nos-brigades/commandement-actions-speciales-terre/13e-regiment-dragons-parachutistes",
+          "title": "13e régiment de dragons parachutistes – ministère des Armées"
+        }
+      ]
+    },
+    {
+      "id": "fr-auxiliaire-sanitaire",
+      "code": "FR-AUXSAN",
+      "category": "medical",
+      "name": {
+        "fr": "Formation de combattant auxiliaire sanitaire (CeFOS)",
+        "en": "Combat medical auxiliary training (CeFOS)"
+      },
+      "official_name": "Formation spécialisée de combattant auxiliaire sanitaire",
+      "short_name": "Auxiliaire sanit.",
+      "description": {
+        "fr": "Formation spécialisée d’environ un mois, au centre de formation opérationnelle santé (CeFOS) du régiment médical de La Valbonne, suivie après la formation initiale en CFIM par les combattants auxiliaires sanitaires de l’armée de Terre, y compris ceux des régiments de forces spéciales. Le programme détaillé n’est pas publié sur la fiche métier.",
+        "en": "Specialised training of about one month at the operational medical training centre (CeFOS) of the medical regiment in La Valbonne, taken after CFIM initial training by French Army combat medical auxiliaries, including those of special forces regiments. The detailed syllabus is not given in the job description."
+      },
+      "body": {
+        "fr": "CeFOS – régiment médical (La Valbonne)",
+        "en": "CeFOS – medical regiment (La Valbonne)"
+      },
+      "issuer": {
+        "name": "Centre de formation opérationnelle santé du régiment médical",
+        "short_name": "CeFOS"
+      },
+      "reference": {
+        "fr": "Fiche métier « combattant auxiliaire sanitaire » (sengager.fr)",
+        "en": "\"Combat medical auxiliary\" job description (sengager.fr)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale en CFIM"
+        ],
+        "en": [
+          "CFIM initial training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/combattant-auxiliaire-sanitaire",
+          "title": "Combattant auxiliaire sanitaire – sengager.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-jedburgh",
+      "code": "FR-JEDBURGH",
+      "category": "selection",
+      "name": {
+        "fr": "Stage commando « Jedburgh » (GCP)",
+        "en": "\"Jedburgh\" commando course (GCP)"
+      },
+      "official_name": "Stage Jedburgh",
+      "short_name": "Jedburgh",
+      "description": {
+        "fr": "Formation initiale d’environ quinze semaines suivie par chaque futur commando des groupements de commandos parachutistes de la 11e brigade parachutiste ; son nom renvoie aux équipes interalliées parachutées en 1944. Elle s’inscrit dans un parcours d’au moins douze mois qui comprend aussi le stage de saut opérationnel à grande hauteur de Pau.",
+        "en": "Initial course of about fifteen weeks taken by every future commando of the 11th Parachute Brigade commando groups (GCP); its name recalls the inter-allied teams parachuted in 1944. It is part of a track of at least twelve months that also includes the high-altitude operational jump course in Pau."
+      },
+      "body": {
+        "fr": "Groupement de commandos parachutistes, 11e brigade parachutiste",
+        "en": "Commando Parachute Group, 11th Parachute Brigade"
+      },
+      "issuer": {
+        "name": "11e brigade parachutiste – groupement de commandos parachutistes",
+        "short_name": "11e BP / GCP"
+      },
+      "reference": {
+        "fr": "Revue Conflits, histoire du groupement de commandos parachutistes",
+        "en": "Revue Conflits, history of the Commando Parachute Group"
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet militaire de parachutiste"
+        ],
+        "en": [
+          "Military parachutist badge"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.revueconflits.com/entretien-entre-ciel-et-feu-histoire-du-groupement-de-commandos-parachutistes/",
+          "title": "Entre ciel et feu : histoire du groupement de commandos parachutistes – Revue Conflits"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Commando_Parachute_Group",
+          "title": "Commando Parachute Group – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "fr-orhas",
+      "code": "FR-ORHAS",
+      "category": "sof",
+      "name": {
+        "fr": "Cursus ORHAS (4e RHFS)",
+        "en": "ORHAS course (4e RHFS)"
+      },
+      "official_name": "Cursus d’opérateur en régiment d’hélicoptères d’actions spéciales (ORHAS)",
+      "short_name": "ORHAS",
+      "description": {
+        "fr": "Cursus de trois mois, organisé une fois par an par la cellule d’instruction spécialisée du 4e RHFS pour tout nouvel arrivant, quel que soit son métier ou son grade. Il compte cinq modules : M0 accueil, M1 instruction en escadrille, M2 instruction inter-escadrilles avec l’exercice Gorgones, M3 survie au combat et procédures FS (personnels les plus exposés), M4 adaptation des futurs commandants d’unité au commandement d’un module d’hélicoptères FS. Il s’achève sur les procédures de récupération au combat.",
+        "en": "Three-month course run once a year by the 4e RHFS specialised instruction cell for every newcomer, whatever their trade or rank. It has five modules: M0 induction, M1 squadron instruction, M2 inter-squadron instruction with exercise Gorgones, M3 combat survival and SOF procedures (most exposed personnel), M4 preparation of future unit commanders to command an SOF helicopter module. It ends with combat recovery procedures."
+      },
+      "body": {
+        "fr": "Cellule d’instruction spécialisée du 4e RHFS (Pau)",
+        "en": "4e RHFS specialised instruction cell (Pau)"
+      },
+      "issuer": {
+        "name": "4e régiment d’hélicoptères des forces spéciales – cellule d’instruction spécialisée",
+        "short_name": "4e RHFS"
+      },
+      "reference": {
+        "fr": "Terre Mag, « La cellule d’instruction spécialisée du 4e RHFS »",
+        "en": "Terre Mag, \"The 4e RHFS specialised instruction cell\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Affectation au 4e RHFS"
+        ],
+        "en": [
+          "Posting to the 4e RHFS"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.terremag.defense.gouv.fr/enquetes/zoom-sur/la-cellule-dinstruction-specialisee-du-4e-rhfs-la-formation-au-fil-des",
+          "title": "La cellule d’instruction spécialisée du 4e RHFS – Terre Mag"
+        }
+      ]
+    },
+    {
+      "id": "fr-pilote-ealat",
+      "code": "FR-PIL-ALAT",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation de pilote d’hélicoptère de l’ALAT (EALAT)",
+        "en": "Army Light Aviation helicopter pilot training (EALAT)"
+      },
+      "official_name": "Formation spécialisée de pilote de l’aviation légère de l’armée de Terre",
+      "short_name": "Pilote ALAT",
+      "description": {
+        "fr": "Formation spécialisée des pilotes de l’aviation légère de l’armée de Terre, conduite par l’École de l’aviation légère de l’armée de Terre d’abord à Dax puis au Luc-en-Provence, pendant environ deux ans pour les officiers, après la formation initiale. Les pilotes des forces spéciales rejoignent ensuite le 4e RHFS et son cursus ORHAS.",
+        "en": "Specialised training of French Army Light Aviation pilots, run by the Army Light Aviation School first in Dax then at Le Luc-en-Provence, for about two years for officers, after initial training. Special forces pilots then join the 4e RHFS and its ORHAS course."
+      },
+      "body": {
+        "fr": "École de l’aviation légère de l’armée de Terre (Dax, Le Luc-en-Provence)",
+        "en": "Army Light Aviation School (Dax, Le Luc-en-Provence)"
+      },
+      "issuer": {
+        "name": "École de l’aviation légère de l’armée de Terre",
+        "short_name": "EALAT"
+      },
+      "reference": {
+        "fr": "Fiche métier « officier pilote d’hélicoptère / d’avion » (sengager.fr)",
+        "en": "\"Helicopter / aircraft pilot officer\" job description (sengager.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/officier-pilote-dhelicoptere-davion",
+          "title": "Officier pilote d’hélicoptère / d’avion – sengager.fr"
+        },
+        {
+          "url": "https://www.terremag.defense.gouv.fr/enquetes/zoom-sur/la-cellule-dinstruction-specialisee-du-4e-rhfs-la-formation-au-fil-des",
+          "title": "La cellule d’instruction spécialisée du 4e RHFS – Terre Mag"
+        }
+      ]
+    },
+    {
+      "id": "fr-maintenance-aero-terre",
+      "code": "FR-MAINT-ALAT",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation de spécialité maintenance aéronautique (armée de Terre)",
+        "en": "Army aviation maintenance trade training"
+      },
+      "official_name": "Formation de spécialité maintenance aéronautique",
+      "short_name": "Maint. aéro",
+      "description": {
+        "fr": "Formation de spécialité des personnels de maintenance des hélicoptères de l’armée de Terre, suivie après la formation initiale : environ 8 à 11 mois à Rochefort pour les techniciens sous-officiers, un an (arme de la maintenance puis spécialisation aéronautique) pour les officiers, formation spécialisée pour les mécaniciens militaires du rang. Le métier est exercé notamment au 4e RHFS.",
+        "en": "Trade training for French Army helicopter maintenance personnel, taken after initial training: about 8 to 11 months in Rochefort for NCO technicians, one year (maintenance branch then aviation specialisation) for officers, specialised training for enlisted mechanics. The trade is practised notably at the 4e RHFS."
+      },
+      "body": {
+        "fr": "Écoles de formation de la maintenance aéronautique (dont Rochefort)",
+        "en": "Aviation maintenance training schools (including Rochefort)"
+      },
+      "reference": {
+        "fr": "Fiches métiers de l’armée de Terre (sengager.fr)",
+        "en": "French Army job descriptions (sengager.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/technicien-maintenance-aeronautique",
+          "title": "Technicien maintenance aéronautique – sengager.fr"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/mecanicien-aeronautique",
+          "title": "Mécanicien aéronautique – sengager.fr"
+        },
+        {
+          "url": "https://www.sengager.fr/tous-nos-postes/officier-maintenance-des-materiels-aeronautiques",
+          "title": "Officier maintenance des matériels aéronautiques – sengager.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-ecofus-fi",
+      "code": "FR-FUSMA-FI",
+      "category": "selection",
+      "name": {
+        "fr": "Formation initiale de fusilier marin",
+        "en": "Naval fusilier initial training"
+      },
+      "official_name": "Formation initiale de fusilier marin à l’École des fusiliers marins",
+      "short_name": "FI fusilier",
+      "description": {
+        "fr": "Tous les fusiliers marins, du matelot à l’amiral, sont recrutés, sélectionnés et formés par l’École des fusiliers marins de Lanester : combat, tir, nautisme, topographie et sport. Les quartiers-maîtres de la flotte y suivent une formation d’environ quatre mois, les seconds-maîtres après l’École de maistrance ; environ la moitié des 800 candidats annuels est acceptée. Les fusiliers forment le principal vivier du stage commando.",
+        "en": "All naval fusiliers, from seaman to admiral, are recruited, selected and trained by the Naval Fusiliers School in Lanester: combat, shooting, small boats, land navigation and physical training. Fleet leading seamen follow a course of about four months, petty officers after the NCO school; about half of the 800 yearly applicants are accepted. Fusiliers are the main pool for the commando course."
+      },
+      "body": {
+        "fr": "École des fusiliers marins (Lanester, Lorient)",
+        "en": "Naval Fusiliers School (Lanester, Lorient)"
+      },
+      "issuer": {
+        "name": "École des fusiliers marins",
+        "short_name": "ECOFUS"
+      },
+      "reference": {
+        "fr": "Les Nouvelles de Lorient Agglomération n° 41 (2018), dossier fusiliers marins",
+        "en": "Les Nouvelles de Lorient Agglomération no. 41 (2018), naval fusiliers feature"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.lorient-agglo.bzh/fileadmin/user_upload/Les_Nouvelles/Les_Nouvelles_41/Les_Nouvelles_41_Temoins.pdf",
+          "title": "Fusiliers marins, combattants – Les Nouvelles de Lorient Agglomération n° 41 (2018)"
+        }
+      ]
+    },
+    {
+      "id": "fr-bat-fusilier",
+      "code": "FR-BAT-FUS",
+      "category": "selection",
+      "name": {
+        "fr": "Brevet d’aptitude technique (BAT) de fusilier marin",
+        "en": "Naval fusilier technical aptitude badge (BAT)"
+      },
+      "official_name": "Brevet d’aptitude technique de fusilier marin",
+      "short_name": "BAT fusilier",
+      "description": {
+        "fr": "Premier brevet de carrière de la spécialité, préparé en revenant à l’École des fusiliers marins, en tant que fusilier marin ou fusilier marin breveté commando. Chez les commandos Marine, il correspond au niveau de chef d’équipe, et le béret vert est remis en jeu à chaque étape de qualification.",
+        "en": "First career badge of the specialty, prepared by returning to the Naval Fusiliers School, as a naval fusilier or a commando-qualified fusilier. In the Navy commandos it corresponds to the team leader level, and the green beret is put back on the line at each qualification step."
+      },
+      "body": {
+        "fr": "École des fusiliers marins (Lanester)",
+        "en": "Naval Fusiliers School (Lanester)"
+      },
+      "issuer": {
+        "name": "École des fusiliers marins",
+        "short_name": "ECOFUS"
+      },
+      "reference": {
+        "fr": "Cols bleus, « Commandos Marine, des marins d’exception » ; Les Nouvelles de Lorient Agglomération n° 41",
+        "en": "Cols bleus, \"Commandos Marine, exceptional sailors\"; Les Nouvelles de Lorient Agglomération no. 41"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.lorient-agglo.bzh/fileadmin/user_upload/Les_Nouvelles/Les_Nouvelles_41/Les_Nouvelles_41_Temoins.pdf",
+          "title": "Fusiliers marins, combattants – Les Nouvelles de Lorient Agglomération n° 41 (2018)"
+        },
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        }
+      ]
+    },
+    {
+      "id": "fr-bs-fusilier",
+      "code": "FR-BS-FUS",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Brevet supérieur (BS) de fusilier marin",
+        "en": "Naval fusilier senior badge (BS)"
+      },
+      "official_name": "Brevet supérieur de fusilier marin",
+      "short_name": "BS fusilier",
+      "description": {
+        "fr": "Deuxième brevet de carrière de la spécialité, préparé à l’École des fusiliers marins, en tant que fusilier marin ou fusilier marin breveté commando. Chez les commandos Marine, il correspond au niveau de chef de groupe.",
+        "en": "Second career badge of the specialty, prepared at the Naval Fusiliers School, as a naval fusilier or a commando-qualified fusilier. In the Navy commandos it corresponds to the squad leader level."
+      },
+      "body": {
+        "fr": "École des fusiliers marins (Lanester)",
+        "en": "Naval Fusiliers School (Lanester)"
+      },
+      "issuer": {
+        "name": "École des fusiliers marins",
+        "short_name": "ECOFUS"
+      },
+      "reference": {
+        "fr": "Cols bleus, « Commandos Marine, des marins d’exception » ; Les Nouvelles de Lorient Agglomération n° 41",
+        "en": "Cols bleus, \"Commandos Marine, exceptional sailors\"; Les Nouvelles de Lorient Agglomération no. 41"
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet d’aptitude technique (BAT)"
+        ],
+        "en": [
+          "Technical aptitude badge (BAT)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.lorient-agglo.bzh/fileadmin/user_upload/Les_Nouvelles/Les_Nouvelles_41/Les_Nouvelles_41_Temoins.pdf",
+          "title": "Fusiliers marins, combattants – Les Nouvelles de Lorient Agglomération n° 41 (2018)"
+        },
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        }
+      ]
+    },
+    {
+      "id": "fr-bm-fusilier",
+      "code": "FR-BM-FUS",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Brevet de maîtrise (BM) de fusilier marin",
+        "en": "Naval fusilier master badge (BM)"
+      },
+      "official_name": "Brevet de maîtrise de fusilier marin",
+      "short_name": "BM fusilier",
+      "description": {
+        "fr": "Troisième brevet de carrière de la spécialité, préparé à l’École des fusiliers marins, en tant que fusilier marin ou fusilier marin breveté commando. Chez les commandos Marine, il correspond au niveau de chef de mission.",
+        "en": "Third career badge of the specialty, prepared at the Naval Fusiliers School, as a naval fusilier or a commando-qualified fusilier. In the Navy commandos it corresponds to the mission leader level."
+      },
+      "body": {
+        "fr": "École des fusiliers marins (Lanester)",
+        "en": "Naval Fusiliers School (Lanester)"
+      },
+      "issuer": {
+        "name": "École des fusiliers marins",
+        "short_name": "ECOFUS"
+      },
+      "reference": {
+        "fr": "Cols bleus, « Commandos Marine, des marins d’exception » ; Les Nouvelles de Lorient Agglomération n° 41",
+        "en": "Cols bleus, \"Commandos Marine, exceptional sailors\"; Les Nouvelles de Lorient Agglomération no. 41"
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet supérieur (BS)"
+        ],
+        "en": [
+          "Senior badge (BS)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.lorient-agglo.bzh/fileadmin/user_upload/Les_Nouvelles/Les_Nouvelles_41/Les_Nouvelles_41_Temoins.pdf",
+          "title": "Fusiliers marins, combattants – Les Nouvelles de Lorient Agglomération n° 41 (2018)"
+        },
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        }
+      ]
+    },
+    {
+      "id": "fr-brevet-commando-marine",
+      "code": "FR-BECDO",
+      "category": "selection",
+      "name": {
+        "fr": "Brevet élémentaire commando (stage commando de la Marine)",
+        "en": "Basic commando badge (Navy commando course)"
+      },
+      "official_name": "Brevet élémentaire commando",
+      "short_name": "Béret vert",
+      "description": {
+        "fr": "Brevet obtenu à l’issue du stage commando (Stac) du département commandos de l’École des fusiliers marins, à Lorient, ouvert aux marins de toutes spécialités. Le stage enchaîne quatre semaines d’évaluation et huit semaines de formation élémentaire, puis deux semaines de brevet parachutiste ; il donne le béret vert, porté « couché à droite ». Environ trente des quelque 170 candidats annuels le réussissent ; les officiers y accèdent par la spécialité de fusilier marin commando.",
+        "en": "Badge awarded after the commando course (Stac) of the commando department of the Naval Fusiliers School in Lorient, open to sailors of all specialties. The course has four weeks of assessment and eight weeks of basic training, then two weeks of parachutist badge training; it confers the green beret, worn \"pulled to the right\". About thirty of some 170 yearly candidates pass; officers come through the commando fusilier specialty."
+      },
+      "body": {
+        "fr": "École des fusiliers marins – département commandos (Lorient)",
+        "en": "Naval Fusiliers School – commando department (Lorient)"
+      },
+      "issuer": {
+        "name": "École des fusiliers marins",
+        "short_name": "ECOFUS"
+      },
+      "reference": {
+        "fr": "Cols bleus, « Commandos Marine, des marins d’exception »",
+        "en": "Cols bleus, \"Commandos Marine, exceptional sailors\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Volontariat, préparation et présélection",
+          "Marin après l’École de maistrance, ou quartier-maître / matelot après la formation initiale"
+        ],
+        "en": [
+          "Volunteering, preparation and pre-selection",
+          "Sailor after the NCO school, or leading seaman / seaman after initial training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        },
+        {
+          "url": "https://www.meretmarine.com/fr/defense/devenir-beret-vert-l-ecole-des-commandos-25",
+          "title": "Devenir béret vert : l’école des commandos (2/5) – Mer et Marine"
+        },
+        {
+          "url": "https://www.europe1.fr/societe/on-doit-etre-prets-a-aller-jusquau-bout-deux-futurs-commandos-marine-se-confient-3902944",
+          "title": "Deux futurs commandos Marine se confient – Europe 1"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Commandos_Marine",
+          "title": "Commandos Marine – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "fr-nageur-de-combat",
+      "code": "FR-NC",
+      "category": "maritime",
+      "name": {
+        "fr": "Certificat de nageur de combat",
+        "en": "Combat swimmer certificate"
+      },
+      "official_name": "Certificat de nageur de combat",
+      "short_name": "Nageur de combat",
+      "description": {
+        "fr": "Certificat délivré à l’issue du cours de nageur de combat de l’École de plongée de Saint-Mandrier, l’une des formations les plus sélectives des armées, requis pour servir au commando Hubert. Sept à neuf mois selon les sources : infiltration par air ou par mer, navigation sous-marine sans GPS, pose de charges sur cibles portuaires, sauts suivis de mise à l’eau, raid kayak et longues nages. Un peu plus de mille marins et militaires de l’armée de Terre l’ont obtenu depuis 1952.",
+        "en": "Certificate awarded after the combat swimmer course of the Navy Diving School in Saint-Mandrier, one of the most selective courses in the armed forces, required to serve in Commando Hubert. Seven to nine months depending on sources: air or sea infiltration, underwater navigation without GPS, placing charges on harbour targets, jumps followed by water entry, kayak raids and long swims. Just over a thousand sailors and soldiers have earned it since 1952."
+      },
+      "body": {
+        "fr": "École de plongée de la Marine nationale (Saint-Mandrier)",
+        "en": "French Navy Diving School (Saint-Mandrier)"
+      },
+      "issuer": {
+        "name": "École de plongée de la Marine nationale (Saint-Mandrier)",
+        "short_name": "École de plongée"
+      },
+      "reference": {
+        "fr": "Arrêté du 24 mai 2023 (prime de compétences spécifiques), annexe 3 « plongeur militaire »",
+        "en": "Decree of 24 May 2023 (specific-skills allowance), annex 3 \"military diver\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet élémentaire commando"
+        ],
+        "en": [
+          "Basic commando badge"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.ecpad.fr/nos-realisations/69-a-l-ecole-des-nageurs-de-combat/",
+          "title": "À l’école des nageurs de combat – ECPAD"
+        },
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        },
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        }
+      ]
+    },
+    {
+      "id": "fr-palmeur",
+      "code": "FR-PALMEUR",
+      "category": "maritime",
+      "name": {
+        "fr": "Qualification de palmeur (commandos Marine)",
+        "en": "Fin swimmer qualification (Navy commandos)"
+      },
+      "official_name": "Qualification palmeur",
+      "short_name": "Palmeur",
+      "description": {
+        "fr": "Qualification complémentaire que les commandos Marine peuvent acquérir au fil de leur carrière, comme celle de chuteur opérationnel. Elle se rattache aux infiltrations nautiques de surface, cœur historique des commandos créés pour les assauts nautiques et reconnaissances de plage, et se distingue du certificat de nageur de combat. Son contenu n’est pas publié.",
+        "en": "Additional qualification that Navy commandos may earn during their career, like the military free-fall qualification. It relates to surface water infiltration, the historical core of commandos created for amphibious assaults and beach reconnaissance, and is distinct from the combat swimmer certificate. Its content is not published."
+      },
+      "body": {
+        "fr": "Force maritime des fusiliers marins et commandos",
+        "en": "Naval Fusiliers and Commandos Force"
+      },
+      "reference": {
+        "fr": "Cols bleus, « Commandos Marine, des marins d’exception »",
+        "en": "Cols bleus, \"Commandos Marine, exceptional sailors\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet élémentaire commando"
+        ],
+        "en": [
+          "Basic commando badge"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cesm/bm-185-les-commandos-marine-atout-des-operations-speciales-et-specialisees.pdf",
+          "title": "Les commandos Marine, atout des opérations spéciales et spécialisées – Brèves marines n° 185 (CESM)"
+        }
+      ]
+    },
+    {
+      "id": "fr-sitel-marine",
+      "code": "FR-SITEL",
+      "category": "communications",
+      "name": {
+        "fr": "Spécialité SITEL de la Marine (systèmes d’information et télécommunications)",
+        "en": "Navy SITEL specialty (information systems and telecommunications)"
+      },
+      "official_name": "Spécialité systèmes d’information et télécommunications (SITEL)",
+      "short_name": "SITEL",
+      "description": {
+        "fr": "Spécialité de la Marine nationale consacrée aux systèmes d’information et aux télécommunications. Le commando Kieffer, chargé de la fonction commandement (C2) des opérations spéciales maritimes, accueille chaque année jusqu’à une quinzaine de non-commandos, dont des marins SITEL.",
+        "en": "French Navy specialty dedicated to information systems and telecommunications. Commando Kieffer, in charge of the command (C2) function of maritime special operations, takes in up to fifteen non-commando specialists each year, including SITEL sailors."
+      },
+      "body": {
+        "fr": "Marine nationale",
+        "en": "French Navy"
+      },
+      "reference": {
+        "fr": "Cols bleus, « Commandos Marine, des marins d’exception »",
+        "en": "Cols bleus, \"Commandos Marine, exceptional sailors\""
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/cesm/bm-185-les-commandos-marine-atout-des-operations-speciales-et-specialisees.pdf",
+          "title": "Les commandos Marine, atout des opérations spéciales et spécialisées – Brèves marines n° 185 (CESM)"
+        }
+      ]
+    },
+    {
+      "id": "fr-coa-marine",
+      "code": "FR-COA",
+      "category": "aviation",
+      "name": {
+        "fr": "Spécialité COA de la Marine (contrôleur des opérations aériennes)",
+        "en": "Navy COA specialty (air operations controller)"
+      },
+      "official_name": "Spécialité contrôleur des opérations aériennes (COA)",
+      "short_name": "COA",
+      "description": {
+        "fr": "Spécialité de la Marine nationale consacrée au contrôle des opérations aériennes. Le commando Kieffer accueille chaque année jusqu’à une quinzaine de non-commandos, dont des contrôleurs des opérations aériennes (COA) et des pilotes de l’aéronautique navale ; le détail de leur emploi n’est pas publié.",
+        "en": "French Navy specialty dedicated to air operations control. Commando Kieffer takes in up to fifteen non-commando specialists each year, including air operations controllers (COA) and naval aviation pilots; details of their employment are not published."
+      },
+      "body": {
+        "fr": "Marine nationale",
+        "en": "French Navy"
+      },
+      "reference": {
+        "fr": "Cols bleus, « Commandos Marine, des marins d’exception »",
+        "en": "Cols bleus, \"Commandos Marine, exceptional sailors\""
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.scoop.it/topic/defense-news/p/4091557206/2017/12/29/commandos-marine-des-marins-d-exception",
+          "title": "Commandos Marine, des marins d’exception (reprise de Cols bleus) – scoop.it"
+        }
+      ]
+    },
+    {
+      "id": "fr-belouga",
+      "code": "FR-BELOUGA",
+      "category": "selection",
+      "name": {
+        "fr": "Stage Belouga (intégration au CPA 10)",
+        "en": "Belouga course (CPA 10 entry)"
+      },
+      "official_name": "Stage Belouga",
+      "short_name": "Belouga",
+      "description": {
+        "fr": "Stage du commando parachutiste de l’air n° 10, présenté comme un prérequis qualifiant et indispensable pour intégrer l’unité. Ouvert à des candidats d’autres unités de l’armée de l’Air et de l’Espace, parfois d’autres armées, il forme aux procédures et modes d’action des forces spéciales ; en 2023, sa phase désertique à Djibouti portait sur le combat embarqué, le tir, la progression, l’aéroportage, l’aérolargage, la rusticité et l’autonomie.",
+        "en": "Course of Air Commando Paratroopers No. 10, presented as a qualifying and indispensable prerequisite to join the unit. Open to candidates from other Air and Space Force units, sometimes other services, it teaches special forces procedures and courses of action; in 2023 its desert phase in Djibouti covered mounted combat, shooting, movement, air landing, airdrop, hardiness and autonomy."
+      },
+      "body": {
+        "fr": "Commando parachutiste de l’air n° 10 (Orléans)",
+        "en": "Air Commando Paratroopers No. 10 (Orléans)"
+      },
+      "issuer": {
+        "name": "Commando parachutiste de l’air n° 10",
+        "short_name": "CPA 10"
+      },
+      "reference": {
+        "fr": "Armée de l’Air et de l’Espace, « CPA 10 : les stagiaires du Belouga en milieu désertique »",
+        "en": "French Air and Space Force, \"CPA 10: Belouga trainees in the desert\""
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/cpa-10-stagiaires-du-belouga-milieu-desertique",
+          "title": "CPA 10 : les stagiaires du Belouga en milieu désertique – armée de l’Air et de l’Espace"
+        }
+      ]
+    },
+    {
+      "id": "fr-maquis",
+      "code": "FR-MAQUIS",
+      "category": "selection",
+      "name": {
+        "fr": "Stage Maquis (fusiliers commandos de l’air)",
+        "en": "Maquis course (Air Force commando paratroopers)"
+      },
+      "official_name": "Stage MAQUIS",
+      "short_name": "Maquis",
+      "description": {
+        "fr": "Première phase de formation professionnelle, d’environ cinq semaines sur la base aérienne d’Orange, de l’équipier parachutiste de l’air, après six semaines de formation militaire au Centre de préparation opérationnelle du combattant de l’armée de l’Air. Elle est suivie du stage Matou.",
+        "en": "First professional training phase, about five weeks at Orange air base, of the Air Force paratrooper, after six weeks of military training at the Air Force combat readiness centre. It is followed by the Matou course."
+      },
+      "body": {
+        "fr": "Centre de préparation opérationnelle du combattant de l’armée de l’Air et de l’Espace (Orange)",
+        "en": "Air and Space Force combat readiness centre (Orange)"
+      },
+      "issuer": {
+        "name": "Centre de préparation opérationnelle du combattant de l’armée de l’Air et de l’Espace",
+        "short_name": "CPOCAAE"
+      },
+      "reference": {
+        "fr": "Fiche métier « équipier parachutiste de l’air » (devenir-aviateur.gouv.fr)",
+        "en": "\"Air Force paratrooper\" job description (devenir-aviateur.gouv.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://devenir-aviateur.gouv.fr/choisir-votre-metier/tous-nos-domaines-et-metiers/securite-et-protection/equipier-parachutiste-de-l-air",
+          "title": "Équipier parachutiste de l’air – devenir-aviateur.gouv.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-matou",
+      "code": "FR-MATOU",
+      "category": "selection",
+      "name": {
+        "fr": "Stage Matou (fusiliers commandos de l’air)",
+        "en": "Matou course (Air Force commando paratroopers)"
+      },
+      "official_name": "Stage MATOU",
+      "short_name": "Matou",
+      "description": {
+        "fr": "Seconde phase de formation professionnelle, d’environ huit semaines entre le Centre de préparation opérationnelle du combattant de l’armée de l’Air (Orange) et Pau, de l’équipier parachutiste de l’air, après le stage Maquis. Le parcours complet dure environ dix-neuf semaines.",
+        "en": "Second professional training phase, about eight weeks between the Air Force combat readiness centre (Orange) and Pau, of the Air Force paratrooper, after the Maquis course. The full track lasts about nineteen weeks."
+      },
+      "body": {
+        "fr": "Centre de préparation opérationnelle du combattant de l’armée de l’Air et de l’Espace (Orange, Pau)",
+        "en": "Air and Space Force combat readiness centre (Orange, Pau)"
+      },
+      "issuer": {
+        "name": "Centre de préparation opérationnelle du combattant de l’armée de l’Air et de l’Espace",
+        "short_name": "CPOCAAE"
+      },
+      "reference": {
+        "fr": "Fiche métier « équipier parachutiste de l’air » (devenir-aviateur.gouv.fr)",
+        "en": "\"Air Force paratrooper\" job description (devenir-aviateur.gouv.fr)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Stage Maquis"
+        ],
+        "en": [
+          "Maquis course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://devenir-aviateur.gouv.fr/choisir-votre-metier/tous-nos-domaines-et-metiers/securite-et-protection/equipier-parachutiste-de-l-air",
+          "title": "Équipier parachutiste de l’air – devenir-aviateur.gouv.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-commando-parachutiste-air",
+      "code": "FR-CPA",
+      "category": "selection",
+      "name": {
+        "fr": "Diplôme de commando parachutiste de l’air",
+        "en": "Air Force commando paratrooper diploma"
+      },
+      "official_name": "Diplôme de commando parachutiste de l’air",
+      "short_name": "Commando para air",
+      "description": {
+        "fr": "Qualification des sous-officiers commandos parachutistes de l’air, obtenue au terme d’environ neuf mois : formation militaire initiale de quatre mois à l’École de formation des sous-officiers de Rochefort, stage de protection et défense de huit semaines, puis formation complémentaire de douze semaines pour l’encadrement et les missions en opérations. Le métier impose au moins six sauts en parachute par an.",
+        "en": "Qualification of Air Force commando paratrooper NCOs, earned after about nine months: four months of initial military training at the NCO school in Rochefort, an eight-week protection and defence course, then twelve weeks of further training for leadership and operational missions. The trade requires at least six parachute jumps a year."
+      },
+      "body": {
+        "fr": "Armée de l’Air et de l’Espace – fusiliers commandos de l’air",
+        "en": "French Air and Space Force – Air Force commandos"
+      },
+      "reference": {
+        "fr": "Fiche métier « commando parachutiste de l’air » (devenir-aviateur.gouv.fr)",
+        "en": "\"Air Force commando paratrooper\" job description (devenir-aviateur.gouv.fr)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Baccalauréat général ou technologique",
+          "Moins de 30 ans à la signature du contrat",
+          "Tests de sélection, médicaux et épreuves physiques de la spécialité"
+        ],
+        "en": [
+          "General or technological baccalaureate",
+          "Under 30 when signing the contract",
+          "Selection, medical and specialty physical tests"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://devenir-aviateur.gouv.fr/choisir-votre-metier/tous-nos-domaines-et-metiers/securite-et-protection/commando-parachutiste-de-l-air",
+          "title": "Commando parachutiste de l’air – devenir-aviateur.gouv.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-officier-commando-air",
+      "code": "FR-OFF-FCA",
+      "category": "selection",
+      "name": {
+        "fr": "Formation commando des officiers fusiliers commandos de l’air",
+        "en": "Commando training for Air Force commando officers"
+      },
+      "official_name": "Formation d’officier fusilier commando parachutiste",
+      "short_name": "Off. commando air",
+      "description": {
+        "fr": "Parcours des officiers de terrain des forces de sécurité et d’intervention de l’armée de l’Air et de l’Espace, recrutés à bac+3 : douze semaines à l’École de l’air et de l’espace (Salon-de-Provence), puis une formation professionnelle d’environ un an au centre de préparation opérationnelle, dont sept semaines de protection des installations, huit de protection de la force et 22 semaines de phase commando (récupération d’équipage, appui feu air-sol, aéromobilité).",
+        "en": "Track for Air and Space Force security and intervention field officers, recruited with a bachelor’s degree: twelve weeks at the Air and Space Academy (Salon-de-Provence), then about one year of professional training at the combat readiness centre, including seven weeks of installation protection, eight of force protection and a 22-week commando phase (aircrew recovery, air-to-ground fire support, air mobility)."
+      },
+      "body": {
+        "fr": "École de l’air et de l’espace et centre de préparation opérationnelle du combattant de l’AAE",
+        "en": "Air and Space Academy and Air Force combat readiness centre"
+      },
+      "reference": {
+        "fr": "Fiche métier « officier fusilier commando parachutiste » (devenir-aviateur.gouv.fr)",
+        "en": "\"Commando paratrooper officer\" job description (devenir-aviateur.gouv.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://devenir-aviateur.gouv.fr/choisir-votre-metier/tous-nos-domaines-et-metiers/securite-et-protection/officier-fusilier-commando-parachutiste",
+          "title": "Officier fusilier commando parachutiste – devenir-aviateur.gouv.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-transmetteur-combat-n1",
+      "code": "FR-TRANS-N1",
+      "category": "communications",
+      "name": {
+        "fr": "Stage transmetteur de combat niveau 1",
+        "en": "Level 1 combat radio operator course"
+      },
+      "official_name": "Stage « transmetteur de combat de niveau 1 »",
+      "short_name": "Transmetteur N1",
+      "description": {
+        "fr": "Stage intensif de dix semaines, rattaché à la base aérienne 115 d’Orange, ouvert à tous les commandos parachutistes de l’air, forces spéciales ou non, tous grades confondus. Les stagiaires y maîtrisent une quinzaine de moyens de communication de la HF à la SHF, la conception de réseaux, le chiffrement et les ordres de transmission, ainsi que la réduction des signatures électromagnétiques, en autonomie et en conditions dégradées.",
+        "en": "Intensive ten-week course attached to Air Base 115 Orange, open to all Air Force commando paratroopers, special forces or not, of all ranks. Trainees master about fifteen communication systems from HF to SHF, network design, encryption and signal orders, as well as reducing electromagnetic signatures, autonomously and in degraded conditions."
+      },
+      "body": {
+        "fr": "Base aérienne 115 Orange-Caritat (quartier Geille)",
+        "en": "Air Base 115 Orange-Caritat (Geille barracks)"
+      },
+      "reference": {
+        "fr": "Armée de l’Air et de l’Espace, « Les commandos des CPA se forment à la transmission tactique »",
+        "en": "French Air and Space Force, \"CPA commandos train in tactical communications\""
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/commandos-cpa-se-forment-transmission-tactique",
+          "title": "Les commandos des CPA se forment à la transmission tactique – armée de l’Air et de l’Espace"
+        }
+      ]
+    },
+    {
+      "id": "fr-tacp",
+      "code": "FR-TACP",
+      "category": "air_support",
+      "name": {
+        "fr": "Spécialité TACP (contrôle aérien tactique)",
+        "en": "TACP specialty (tactical air control party)"
+      },
+      "official_name": "Spécialité TACP (Tactical Air Control Party)",
+      "short_name": "TACP",
+      "description": {
+        "fr": "Spécialité des commandos parachutistes de l’air, en particulier du CPA 20, qui assure la coordination entre aéronefs et forces terrestres lors de l’appui aérien rapproché, y compris la désignation d’objectifs. Par groupes de six, de jour comme de nuit, ils guident avions de combat, drones et hélicoptères français ou alliés.",
+        "en": "Specialty of Air Force commando paratroopers, particularly CPA 20, that coordinates aircraft and ground forces during close air support, including target designation. In groups of six, by day and night, they guide French or allied combat aircraft, drones and helicopters."
+      },
+      "body": {
+        "fr": "Commando parachutiste de l’air n° 20 (Dijon)",
+        "en": "Air Commando Paratroopers No. 20 (Dijon)"
+      },
+      "issuer": {
+        "name": "Commando parachutiste de l’air n° 20",
+        "short_name": "CPA 20"
+      },
+      "reference": {
+        "fr": "Armée de l’Air et de l’Espace, « Spectral Thunder : le CPA 20 s’entraîne au contrôle aérien tactique »",
+        "en": "French Air and Space Force, \"Spectral Thunder: CPA 20 trains in tactical air control\""
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/spectral-thunder-cpa-20-sentraine-au-controle-aerien-tactique",
+          "title": "Spectral Thunder : le CPA 20 s’entraîne au contrôle aérien tactique – armée de l’Air et de l’Espace"
+        }
+      ]
+    },
+    {
+      "id": "fr-jtac",
+      "code": "FR-JTAC",
+      "category": "air_support",
+      "name": {
+        "fr": "Qualification JTAC (contrôleur aérien avancé)",
+        "en": "JTAC qualification (joint terminal attack controller)"
+      },
+      "official_name": "Qualification de contrôleur aérien avancé (JTAC)",
+      "short_name": "JTAC",
+      "description": {
+        "fr": "Qualification délivrée par le Centre de formation à l’appui aérien, centre franco-allemand interarmées de Nancy-Ochey accrédité par l’OTAN, à des militaires de toutes armées et de tous grades. Le stage d’environ deux mois, entièrement en anglais, évalue en permanence les stagiaires, qui réalisent une vingtaine de guidages réels et une dizaine en simulateur ; l’OTAN exige au moins douze guidages. Environ 75 candidats, dont 50 Français, la tentent chaque année.",
+        "en": "Qualification awarded by the Air Support Training Centre, a NATO-accredited Franco-German joint centre at Nancy-Ochey, to personnel of all services and ranks. The roughly two-month course, entirely in English, continuously assesses trainees, who perform about twenty live controls and about ten in a simulator; NATO requires at least twelve. About 75 candidates, 50 of them French, attempt it each year."
+      },
+      "body": {
+        "fr": "Centre de formation à l’appui aérien (BA 133 Nancy-Ochey), centre franco-allemand accrédité OTAN",
+        "en": "Air Support Training Centre (Air Base 133 Nancy-Ochey), NATO-accredited Franco-German centre"
+      },
+      "issuer": {
+        "name": "Centre de formation à l’appui aérien (Nancy-Ochey)",
+        "short_name": "CFAA"
+      },
+      "reference": {
+        "fr": "Qualification JTAC du CFAA, centre accrédité par l’OTAN depuis 2010 ; Esprit défense n° 7 (2023)",
+        "en": "CFAA JTAC qualification, centre accredited by NATO since 2010; Esprit défense no. 7 (2023)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/sites/default/files/ministere-armees/esprit-defense-numero-7-printemps-2023-esprit-d-equipe-JTAC-le-controleur-aerien-avance-les-yeux-et-les-oreilles-du-pilote-au-sol.pdf",
+          "title": "Le JTAC, les yeux et les oreilles du pilote au sol – Esprit défense n° 7 (2023)"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/formation-jtac-immersion-conditions-reelles",
+          "title": "Formation JTAC : immersion en conditions réelles – armée de l’Air et de l’Espace"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/tiger-claw-lexercice-pointe-lappui-aerien-haute-intensite",
+          "title": "« Tiger Claw », l’exercice à la pointe de l’appui aérien en haute intensité – armée de l’Air et de l’Espace"
+        }
+      ]
+    },
+    {
+      "id": "fr-afte",
+      "code": "FR-AFTE",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Appui-feu tireur embarqué (AFTE)",
+        "en": "Helicopter-borne marksman fire support (AFTE)"
+      },
+      "official_name": "Appui-feu tireur embarqué (AFTE)",
+      "short_name": "AFTE",
+      "description": {
+        "fr": "Qualification des tireurs haute précision de la cellule THP du CPA 10, créée en 2018, pour tirer depuis un hélicoptère, notamment à bord des Caracal de l’escadron 1/67 « Pyrénées ». Elle complète leurs autres savoir-faire : tir à longue distance en binôme tireur-observateur jusqu’à environ deux kilomètres et tir police en contre-terrorisme.",
+        "en": "Qualification of the CPA 10 high-precision marksmen cell (created in 2018) for shooting from a helicopter, notably aboard Caracal helicopters of the 1/67 \"Pyrénées\" squadron. It complements their other skills: long-range shooting as a shooter-spotter pair out to about two kilometres and police-style counter-terrorism shooting."
+      },
+      "body": {
+        "fr": "Commando parachutiste de l’air n° 10, cellule tir haute précision",
+        "en": "Air Commando Paratroopers No. 10, high-precision shooting cell"
+      },
+      "issuer": {
+        "name": "Commando parachutiste de l’air n° 10",
+        "short_name": "CPA 10"
+      },
+      "reference": {
+        "fr": "Air actualités n° 729, dossier « Les tireurs haute précision »",
+        "en": "Air actualités no. 729, \"High-precision marksmen\" feature"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://sti.eduscol.education.fr/sites/eduscol.education.fr.sti/files/ressources/techniques/12393/12393-aira729-educ.pdf",
+          "title": "Les tireurs haute précision du CPA 10 – Air actualités n° 729 (Eduscol)"
+        }
+      ]
+    },
+    {
+      "id": "fr-nedex-air",
+      "code": "FR-NEDEX-AAE",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Opérateur NEDEX de l’armée de l’Air et de l’Espace",
+        "en": "Air and Space Force EOD operator (NEDEX)"
+      },
+      "official_name": "Formation de démineur NEDEX de l’armée de l’Air et de l’Espace",
+      "short_name": "NEDEX Air",
+      "description": {
+        "fr": "Formation d’environ deux ans des démineurs de l’armée de l’Air et de l’Espace, conduite au groupement d’intervention NEDEX (GrIN) de Cazaux après des évaluations psychotechniques et de personnalité : mise en œuvre d’explosifs, radiographie, interventions sur munitions, engins explosifs improvisés et munitions NRBC. L’armée de l’Air et de l’Espace ne compte qu’une cinquantaine d’opérateurs opérationnels.",
+        "en": "Training of about two years for Air and Space Force bomb disposal operators, run by the NEDEX intervention group (GrIN) in Cazaux after psychometric and personality assessments: use of explosives, X-ray imaging, work on munitions, improvised explosive devices and CBRN munitions. The Air and Space Force has only about fifty operational operators."
+      },
+      "body": {
+        "fr": "Groupement d’intervention NEDEX de l’armée de l’Air et de l’Espace (Cazaux)",
+        "en": "Air and Space Force NEDEX intervention group (Cazaux)"
+      },
+      "issuer": {
+        "name": "Groupement d’intervention NEDEX (Cazaux)",
+        "short_name": "GrIN"
+      },
+      "reference": {
+        "fr": "Armée de l’Air et de l’Espace, « Démineur, un métier qui détonne » ; arrêté du 24 mai 2023, annexe 4 « dépiégeage militaire »",
+        "en": "French Air and Space Force, \"Bomb disposal, an explosive job\"; decree of 24 May 2023, annex 4 \"military EOD\""
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/demineur-metier-qui-detonne",
+          "title": "Démineur, un métier qui détonne – armée de l’Air et de l’Espace"
+        },
+        {
+          "url": "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047584665",
+          "title": "Arrêté du 24 mai 2023 fixant les titres de qualification requis pour l’attribution de la prime de compétences spécifiques des militaires – Légifrance"
+        }
+      ]
+    },
+    {
+      "id": "fr-maitre-chien",
+      "code": "FR-CYNO",
+      "category": "sof",
+      "name": {
+        "fr": "Maître-chien d’unité d’intervention (cynotechnie)",
+        "en": "Intervention unit dog handler (K9)"
+      },
+      "official_name": "Équipier cynophile",
+      "short_name": "Maître-chien",
+      "description": {
+        "fr": "Qualification des commandos qui travaillent en binôme avec un chien au sein des cellules cynophiles des unités d’intervention, comme celles du CPA 10 ou du GIGN. Les chiens ont un double emploi, au mordant et à la recherche ou détection d’explosifs, et sont formés à l’embarquement en aéronef ; il faut près de 18 mois à un binôme pour devenir pleinement opérationnel.",
+        "en": "Qualification of commandos who work with a dog within the K9 cells of intervention units, such as CPA 10 or the GIGN. The dogs have a dual role, bite work and explosives search or detection, and are trained to board aircraft; a team needs nearly 18 months to become fully operational."
+      },
+      "body": {
+        "fr": "Cellules cynophiles des unités (CPA 10, GIGN)",
+        "en": "Unit K9 cells (CPA 10, GIGN)"
+      },
+      "reference": {
+        "fr": "Ministère des Armées, « Maître-chien des forces spéciales » ; présentation du GIGN",
+        "en": "Ministry of the Armed Forces, \"Special forces dog handler\"; GIGN presentation"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/actualites/video-maitre-chien-forces-speciales",
+          "title": "Vidéo : maître-chien des forces spéciales – ministère des Armées"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupe_d%27intervention_de_la_Gendarmerie_nationale",
+          "title": "Groupe d’intervention de la Gendarmerie nationale – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-pilote-helicoptere-aae",
+      "code": "FR-PIL-HELI-AAE",
+      "category": "aviation",
+      "name": {
+        "fr": "Brevet de pilote d’hélicoptère (armée de l’Air et de l’Espace)",
+        "en": "Helicopter pilot wings (French Air and Space Force)"
+      },
+      "official_name": "Brevet de pilote d’hélicoptère",
+      "short_name": "Pilote hélico AAE",
+      "description": {
+        "fr": "Brevet des pilotes d’hélicoptère de l’armée de l’Air et de l’Espace, obtenu après douze semaines de formation militaire initiale à l’École de l’air (Salon-de-Provence) puis environ trois ans de formation professionnelle. Le pilote progresse ensuite de pilote en instruction à copilote puis commandant de bord.",
+        "en": "Wings of French Air and Space Force helicopter pilots, earned after twelve weeks of initial military training at the Air Academy (Salon-de-Provence) and about three years of professional training. The pilot then progresses from pilot under instruction to co-pilot and aircraft commander."
+      },
+      "body": {
+        "fr": "Armée de l’Air et de l’Espace – École de l’air et de l’espace et écoles de pilotage",
+        "en": "French Air and Space Force – Air and Space Academy and flying schools"
+      },
+      "reference": {
+        "fr": "Fiche métier « pilote d’hélicoptère » (devenir-aviateur.gouv.fr)",
+        "en": "\"Helicopter pilot\" job description (devenir-aviateur.gouv.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://devenir-aviateur.gouv.fr/choisir-votre-metier/tous-nos-domaines-et-metiers/pilote-et-navigateur/pilote-d-helicoptere",
+          "title": "Pilote d’hélicoptère – devenir-aviateur.gouv.fr"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/du-puma-au-caracal-capitaine-adrien-lavant-garde",
+          "title": "Du Puma au Caracal : le capitaine Adrien à l’avant-garde – armée de l’Air et de l’Espace"
+        }
+      ]
+    },
+    {
+      "id": "fr-commandant-bord-helicoptere",
+      "code": "FR-CDB-HELI",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification de commandant de bord (hélicoptère, AAE)",
+        "en": "Helicopter aircraft commander qualification (French Air and Space Force)"
+      },
+      "official_name": "Qualification de commandant de bord",
+      "short_name": "Cdt de bord",
+      "description": {
+        "fr": "Qualification qui confie à un pilote d’hélicoptère de l’armée de l’Air et de l’Espace le commandement de l’appareil et de l’équipage. Elle demande environ deux ans sur Fennec ou Puma et quatre ans sur Caracal ; un pilote qui change de machine suit un stage de qualification puis une période de « vieillissement » pour la retrouver avec ses modules techniques (SAMAR, SATER, treuillage en mer).",
+        "en": "Qualification that gives a French Air and Space Force helicopter pilot command of the aircraft and crew. It takes about two years on Fennec or Puma and four years on Caracal; a pilot changing type follows a type qualification course and a \"seasoning\" period to regain it together with technical modules (SAR at sea, SAR over land, sea hoisting)."
+      },
+      "body": {
+        "fr": "Escadrons d’hélicoptères de l’armée de l’Air et de l’Espace (dont l’EH 1/67 « Pyrénées »)",
+        "en": "Air and Space Force helicopter squadrons (including 1/67 \"Pyrénées\")"
+      },
+      "reference": {
+        "fr": "Fiche métier « pilote d’hélicoptère » (devenir-aviateur.gouv.fr) ; « Du Puma au Caracal »",
+        "en": "\"Helicopter pilot\" job description (devenir-aviateur.gouv.fr); \"From Puma to Caracal\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Brevet de pilote d’hélicoptère"
+        ],
+        "en": [
+          "Helicopter pilot wings"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://devenir-aviateur.gouv.fr/choisir-votre-metier/tous-nos-domaines-et-metiers/pilote-et-navigateur/pilote-d-helicoptere",
+          "title": "Pilote d’hélicoptère – devenir-aviateur.gouv.fr"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/du-puma-au-caracal-capitaine-adrien-lavant-garde",
+          "title": "Du Puma au Caracal : le capitaine Adrien à l’avant-garde – armée de l’Air et de l’Espace"
+        }
+      ]
+    },
+    {
+      "id": "fr-ravitaillement-vol-helicoptere",
+      "code": "FR-RAV-HELI",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification au ravitaillement en vol (hélicoptère Caracal)",
+        "en": "Air-to-air refuelling qualification (Caracal helicopter)"
+      },
+      "official_name": "Qualification au ravitaillement en vol de jour et de nuit",
+      "short_name": "Ravito en vol",
+      "description": {
+        "fr": "Qualification des équipages de Caracal de l’escadron d’hélicoptères 1/67 « Pyrénées » au ravitaillement en vol, de jour comme de nuit, auprès d’un A400M Atlas de l’escadron de transport 3/61 « Poitou ». Lors du premier ravitaillement d’un Caracal par A400M au profit des forces spéciales, sept pilotes de Caracal étaient qualifiés.",
+        "en": "Qualification of Caracal crews of the 1/67 \"Pyrénées\" helicopter squadron for air-to-air refuelling, by day and night, from an A400M Atlas of the 3/61 \"Poitou\" transport squadron. At the first refuelling of a Caracal by an A400M for special forces, seven Caracal pilots were qualified."
+      },
+      "body": {
+        "fr": "Escadron d’hélicoptères 1/67 « Pyrénées » (Cazaux)",
+        "en": "1/67 \"Pyrénées\" helicopter squadron (Cazaux)"
+      },
+      "reference": {
+        "fr": "Armée de l’Air et de l’Espace, « Premier ravitaillement en vol d’un Caracal par un A400M Atlas »",
+        "en": "French Air and Space Force, \"First air-to-air refuelling of a Caracal by an A400M Atlas\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Pilote qualifié Caracal"
+        ],
+        "en": [
+          "Caracal-qualified pilot"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/premier-ravitaillement-vol-dun-caracal-a400m-atlas-forces-speciales",
+          "title": "Premier ravitaillement en vol d’un Caracal par un A400M Atlas des forces spéciales – armée de l’Air et de l’Espace"
+        }
+      ]
+    },
+    {
+      "id": "fr-pilote-transport-aae",
+      "code": "FR-PIL-TRANS-AAE",
+      "category": "aviation",
+      "name": {
+        "fr": "Brevet de pilote de transport (armée de l’Air et de l’Espace)",
+        "en": "Transport pilot wings (French Air and Space Force)"
+      },
+      "official_name": "Brevet de pilote de transport",
+      "short_name": "Pilote transport",
+      "description": {
+        "fr": "Brevet des pilotes de transport de l’armée de l’Air et de l’Espace, obtenu après douze semaines de formation militaire initiale à l’École de l’air (Salon-de-Provence) puis environ trois ans de formation professionnelle. Le pilote rejoint ensuite un escadron de transport (A400M, CN-235, C-130) et peut évoluer vers l’instruction ou le commandement.",
+        "en": "Wings of French Air and Space Force transport pilots, earned after twelve weeks of initial military training at the Air Academy (Salon-de-Provence) and about three years of professional training. The pilot then joins a transport squadron (A400M, CN-235, C-130) and may move on to instruction or command."
+      },
+      "body": {
+        "fr": "Armée de l’Air et de l’Espace – École de l’air et de l’espace et écoles de pilotage",
+        "en": "French Air and Space Force – Air and Space Academy and flying schools"
+      },
+      "reference": {
+        "fr": "Fiche métier « pilote de transport » (devenir-aviateur.gouv.fr)",
+        "en": "\"Transport pilot\" job description (devenir-aviateur.gouv.fr)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://devenir-aviateur.gouv.fr/choisir-votre-metier/tous-nos-domaines-et-metiers/pilote-et-navigateur/pilote-de-transport",
+          "title": "Pilote de transport – devenir-aviateur.gouv.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-mecanicien-navigant-aae",
+      "code": "FR-MECNAV-AAE",
+      "category": "aviation",
+      "name": {
+        "fr": "Mécanicien navigant / chef de soute (armée de l’Air et de l’Espace)",
+        "en": "Flight engineer / loadmaster (French Air and Space Force)"
+      },
+      "official_name": "Concours de mécanicien navigant",
+      "short_name": "Méca navigant",
+      "description": {
+        "fr": "Accès par concours, pour des mécaniciens déjà expérimentés, à la fonction de mécanicien navigant de l’armée de l’Air et de l’Espace, suivi d’une formation d’environ un an. Sur A400M, ce navigant est appelé loadmaster ou chef de soute : il gère le chargement, les largages et le ravitaillement en vol côté soute.",
+        "en": "Competitive entry, for already experienced mechanics, to the French Air and Space Force flight engineer function, followed by about one year of training. On the A400M this aircrew member is called loadmaster: he manages loading, airdrops and air-to-air refuelling in the cargo hold."
+      },
+      "body": {
+        "fr": "Armée de l’Air et de l’Espace",
+        "en": "French Air and Space Force"
+      },
+      "reference": {
+        "fr": "Armée de l’Air et de l’Espace, « Pégase 24 : portrait d’un loadmaster sur A400M Atlas »",
+        "en": "French Air and Space Force, \"Pégase 24: portrait of an A400M Atlas loadmaster\""
+      },
+      "prerequisites": {
+        "fr": [
+          "Expérience de mécanicien aéronautique"
+        ],
+        "en": [
+          "Experience as an aircraft mechanic"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/pegase-24-portrait-du-sergent-chef-killien-loadmaster-a400m-atlas",
+          "title": "Pégase 24 : portrait du sergent-chef Killien, loadmaster sur A400M Atlas – armée de l’Air et de l’Espace"
+        },
+        {
+          "url": "https://www.defense.gouv.fr/air/actualites/premier-ravitaillement-vol-dun-caracal-a400m-atlas-forces-speciales",
+          "title": "Premier ravitaillement en vol d’un Caracal par un A400M Atlas des forces spéciales – armée de l’Air et de l’Espace"
+        }
+      ]
+    },
+    {
+      "id": "fr-gign-formation",
+      "code": "FR-GIGN-FI",
+      "category": "selection",
+      "name": {
+        "fr": "Formation initiale des opérationnels du GIGN",
+        "en": "GIGN operator initial training"
+      },
+      "official_name": "Formation initiale commune des opérationnels du GIGN",
+      "short_name": "Formation GIGN",
+      "description": {
+        "fr": "Après une semaine de tests de sélection (environ 5 à 10 % de retenus) et un stage probatoire de huit semaines, les candidats suivent une formation d’environ dix mois commune à toutes les forces du GIGN : neutralisation d’individus, mutineries, contre-terrorisme, surveillance. Ils rejoignent ensuite leur force (intervention, observation-recherche, sécurité-protection) et y complètent leur formation.",
+        "en": "After one week of selection tests (about 5 to 10% kept) and an eight-week probation course, candidates follow about ten months of training common to all GIGN forces: subduing individuals, prison riots, counter-terrorism, surveillance. They then join their force (intervention, observation-reconnaissance, security-protection) and complete their training there."
+      },
+      "body": {
+        "fr": "Groupe d’intervention de la Gendarmerie nationale",
+        "en": "National Gendarmerie Intervention Group"
+      },
+      "issuer": {
+        "name": "Groupe d’intervention de la Gendarmerie nationale",
+        "short_name": "GIGN"
+      },
+      "reference": {
+        "fr": "Présentations publiques du GIGN (sources ouvertes)",
+        "en": "Public presentations of the GIGN (open sources)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Gendarme de carrière volontaire",
+          "Aptitude au parachutisme",
+          "Moins de 34 ans"
+        ],
+        "en": [
+          "Volunteer career gendarme",
+          "Parachute fitness",
+          "Under 34"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupe_d%27intervention_de_la_Gendarmerie_nationale",
+          "title": "Groupe d’intervention de la Gendarmerie nationale – Wikipédia"
+        },
+        {
+          "url": "https://infos.emploipublic.fr/article/le-gign-l-unite-d-elite-de-la-gendarmerie-nationale-eea-7742",
+          "title": "Le GIGN, l’unité d’élite de la Gendarmerie nationale – emploipublic.fr"
+        }
+      ]
+    },
+    {
+      "id": "fr-gign-antenne",
+      "code": "FR-AGIGN",
+      "category": "selection",
+      "name": {
+        "fr": "Formation des antennes GIGN",
+        "en": "GIGN regional branch training"
+      },
+      "official_name": "Formation des gendarmes des antennes du GIGN",
+      "short_name": "Formation AGIGN",
+      "description": {
+        "fr": "Parcours des gendarmes des antennes régionales du GIGN : une semaine de sélection initiale suivie d’environ huit semaines de formation adaptée à la filière.",
+        "en": "Track for gendarmes of the GIGN regional branches: one week of initial selection followed by about eight weeks of training adapted to the branch."
+      },
+      "body": {
+        "fr": "Groupe d’intervention de la Gendarmerie nationale",
+        "en": "National Gendarmerie Intervention Group"
+      },
+      "issuer": {
+        "name": "Groupe d’intervention de la Gendarmerie nationale",
+        "short_name": "GIGN"
+      },
+      "reference": {
+        "fr": "Présentations publiques du GIGN (sources ouvertes)",
+        "en": "Public presentations of the GIGN (open sources)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupe_d%27intervention_de_la_Gendarmerie_nationale",
+          "title": "Groupe d’intervention de la Gendarmerie nationale – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-gign-tir-haute-precision",
+      "code": "FR-GIGN-THP",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Tir de haute précision (GIGN)",
+        "en": "High-precision shooting (GIGN)"
+      },
+      "official_name": "Tireur de haute précision du GIGN",
+      "short_name": "THP GIGN",
+      "description": {
+        "fr": "Capacité de tir de haute précision des unités d’élite. Selon les sources ouvertes, tous les opérationnels du GIGN sont capables de neutraliser une cible jusqu’à environ 400 m, et une trentaine de tireurs longue distance tirent avec précision jusqu’à environ 1 200 m, en binôme tireur-observateur.",
+        "en": "High-precision shooting capability of elite units. According to open sources, every GIGN operator can neutralise a target out to about 400 m, and some thirty long-range shooters engage accurately out to about 1,200 m, working as shooter-spotter pairs."
+      },
+      "body": {
+        "fr": "Groupe d’intervention de la Gendarmerie nationale",
+        "en": "National Gendarmerie Intervention Group"
+      },
+      "issuer": {
+        "name": "Groupe d’intervention de la Gendarmerie nationale",
+        "short_name": "GIGN"
+      },
+      "reference": {
+        "fr": "Rapport d’information du Sénat n° 813 (2024-2025) ; présentations publiques du GIGN",
+        "en": "Senate information report no. 813 (2024-2025); public presentations of the GIGN"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale des opérationnels du GIGN"
+        ],
+        "en": [
+          "GIGN operator initial training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.senat.fr/rap/r24-813/r24-813_mono.html",
+          "title": "Rapport d’information n° 813 (2024-2025) – Sénat"
+        },
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupe_d%27intervention_de_la_Gendarmerie_nationale",
+          "title": "Groupe d’intervention de la Gendarmerie nationale – Wikipédia"
+        }
+      ]
+    },
+    {
+      "id": "fr-gign-effraction",
+      "code": "FR-GIGN-EFFR",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Effraction mécanique et à l’explosif (GIGN)",
+        "en": "Mechanical and explosive breaching (GIGN)"
+      },
+      "official_name": "Spécialiste effraction du GIGN",
+      "short_name": "Effraction",
+      "description": {
+        "fr": "Spécialité de la cellule effraction du GIGN, chargée d’ouvrir des brèches à froid (écarteurs, pinces) ou à chaud (explosifs) au profit des interventions. Tous ses membres sont formés au NEDEX.",
+        "en": "Specialty of the GIGN breaching cell, which opens breaches cold (spreaders, cutters) or hot (explosives) in support of interventions. All its members are EOD-trained."
+      },
+      "body": {
+        "fr": "Groupe d’intervention de la Gendarmerie nationale",
+        "en": "National Gendarmerie Intervention Group"
+      },
+      "issuer": {
+        "name": "Groupe d’intervention de la Gendarmerie nationale",
+        "short_name": "GIGN"
+      },
+      "reference": {
+        "fr": "Présentations publiques du GIGN (sources ouvertes)",
+        "en": "Public presentations of the GIGN (open sources)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale des opérationnels du GIGN"
+        ],
+        "en": [
+          "GIGN operator initial training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://fr.wikipedia.org/wiki/Groupe_d%27intervention_de_la_Gendarmerie_nationale",
+          "title": "Groupe d’intervention de la Gendarmerie nationale – Wikipédia"
+        }
+      ]
+    }
+  ]
+}

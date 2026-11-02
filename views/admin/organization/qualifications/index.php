@@ -42,7 +42,7 @@ $athKpis = [
         <a href="<?= $h(effectifs_workspace_url('qualifications')) ?>" class="ath-btn">Matrice des effectifs</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/attribuer')) ?>" class="ath-btn">Attribuer à un membre</a>
         <a href="<?= $h(url('academy')) ?>" class="ath-btn">Ouvrir l’Academy</a>
-        <a href="<?= $h(url('back-office/referentiels/qualifications/catalogue-otan')) ?>" class="ath-btn" title="Qualifications de jeu inspirées des standards OTAN publics, sans valeur réelle">Importer depuis le catalogue OTAN</a>
+        <a href="<?= $h(url('back-office/referentiels/qualifications/catalogue')) ?>" class="ath-btn" title="Brevets et qualifications de référence (États-Unis, France, Allemagne, OTAN) : qualifications de jeu, sans valeur réelle">Importer depuis le catalogue</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>" class="ath-btn">Émetteurs</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote')) ?>" class="ath-btn">Cursus pilote</a>
     </div>

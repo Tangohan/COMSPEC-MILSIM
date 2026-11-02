@@ -223,3 +223,10 @@
   .eff-jobs-prereq-row { grid-template-columns: minmax(0, 1fr); }
 }
 .eff-jobs-create { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+
+/* Qualifications du catalogue liées à l'emploi et case d'import avec « Copier tout ». */
+.jobcat__quals small { display: inline; color: var(--jc-muted); }
+.jobcat__quals .jobcat__qual-issuer { display: block; font-size: 0.75rem; }
+.jobcat__link-quals { display: flex; align-items: flex-start; gap: 0.45rem; flex-basis: 100%; font-size: 0.82rem; font-weight: 600; color: var(--jc-ink); cursor: pointer; }
+.jobcat__link-quals input { margin-top: 0.15rem; accent-color: var(--jc-accent); }
+.jobcat__link-quals[hidden] { display: none; }
