@@ -19,7 +19,7 @@ namespace App\Services\Doctrine;
 final class DoctrineLibraryCatalog
 {
     /** Packs livrés, dans l’ordre d’affichage du rail. */
-    public const PACKS = ['fr', 'us', 'nato', 'de'];
+    public const PACKS = ['fr', 'us', 'nato', 'de', 'gb'];
 
     /** Préfixe réservé aux références ajoutées par une communauté (clé « custom-<id> »). */
     public const CUSTOM_PREFIX = 'custom-';

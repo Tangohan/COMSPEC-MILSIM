@@ -33,7 +33,7 @@ final class GradeWorkspaceTest extends TestCase
     public function testCatalogueAlwaysShowsCodeEvenWithRenamedOrEmptyAbbreviation(): void
     {
         $body=Response::view('admin.organization.referentiels.grades.index',[
-            'tab'=>'fr','gradesFr'=>[$this->grade(),$this->grade(['id'=>2,'code'=>'FR_SGT','label_short'=>'','label_long'=>'Sergent masqué','is_enabled'=>0])],
+            'tab'=>'fr','gradesBySystem'=>['FR_CLASSIC'=>[$this->grade(),$this->grade(['id'=>2,'code'=>'FR_SGT','label_short'=>'','label_long'=>'Sergent masqué','is_enabled'=>0])]],
         ])->body();
         self::assertStringContainsString('Code : FR_CNE',$body);
         self::assertStringContainsString('CNE renommé',$body);
@@ -72,7 +72,7 @@ final class GradeWorkspaceTest extends TestCase
         Session::flash('error','<script>non</script>');
         $controller=(new \ReflectionClass(GradeReferentielController::class))->newInstanceWithoutConstructor();
         $render=new \ReflectionMethod(GradeReferentielController::class,'gradeView');
-        $response=$render->invoke($controller,new Request(),['content'=>'admin.organization.referentiels.grades.index','tab'=>'fr','gradesFr'=>[$this->grade()]]);
+        $response=$render->invoke($controller,new Request(),['content'=>'admin.organization.referentiels.grades.index','tab'=>'fr','gradesBySystem'=>['FR_CLASSIC'=>[$this->grade()]]]);
         self::assertSame('private, no-store',$response->headerValue('Cache-Control'));
         self::assertSame('X-Grade-Fragment',$response->headerValue('Vary'));
         self::assertStringNotContainsString('<!DOCTYPE',$response->body());
