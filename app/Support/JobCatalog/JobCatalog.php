@@ -405,8 +405,10 @@ final class JobCatalog
             $hay = self::haystack($entry);
             $name = ' ' . self::normalize(self::pick($entry['name'] ?? '', self::lang($lang))) . ' ';
             $score = 0;
-            foreach ($words as $word) {
-                if (!str_contains($hay, $word)) {
+            foreach ($words as $typed) {
+                // Mot tapé en cyrillique : sa translittération compte aussi (« спецназ » trouve l’étiquette « Spetsnaz »).
+                $word = str_contains($hay, $typed) ? $typed : trim(self::normalize(self::transliterate($typed)));
+                if ($word === '' || !str_contains($hay, $word)) {
                     continue 2;
                 }
                 $score += (str_contains($hay, ' ' . $word . ' ') ? 2 : 1) + (str_contains($name, ' ' . $word) ? 1 : 0);

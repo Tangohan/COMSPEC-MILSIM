@@ -175,8 +175,10 @@
 
     function score(entry, query) {
         let total = 0;
-        for (const word of query.words) {
-            if (!entry._hay.includes(word)) return -1;
+        for (const typed of query.words) {
+            // Mot tapé en cyrillique : sa translittération compte aussi (« спецназ » trouve l'étiquette « Spetsnaz »).
+            const word = entry._hay.includes(typed) ? typed : normalize(transliterate(typed)).trim();
+            if (!word || !entry._hay.includes(word)) return -1;
             total += (entry._hay.includes(' ' + word + ' ') ? 2 : 1) + (entry._name.includes(' ' + word) ? 1 : 0);
         }
         if (query.raw && (query.raw === String(entry.abbreviation).toLowerCase() || query.raw === String(entry.code).toLowerCase())) total += 10;

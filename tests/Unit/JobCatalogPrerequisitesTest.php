@@ -260,6 +260,10 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertContains('ru-rosgv-sobr-snaiper', $snipers);
         self::assertContains('ru-vdv-11odshbr-snaiper', $snipers);
         self::assertSame($snipers, array_column(JobCatalog::search('snayper', ['country' => 'RU'], 'fr'), 'id'));
+        // Mot cyrillique cherché aussi sous sa translittération : « спецназ » trouve les étiquettes « Spetsnaz ».
+        $spetsnaz = array_column(JobCatalog::search('spetsnaz', ['country' => 'RU'], 'fr'), 'id');
+        self::assertGreaterThan(10, count($spetsnaz));
+        self::assertEqualsCanonicalizing($spetsnaz, array_column(JobCatalog::search('спецназ', ['country' => 'RU'], 'fr'), 'id'));
         self::assertContains('ru-vdv-83odshbr-pulemetchik', array_column(JobCatalog::search('пулеметчик', [], 'en'), 'id'), 'ё tapé е.');
         self::assertContains('ru-vdv-83odshbr-pulemetchik', array_column(JobCatalog::search('pulemetchik', [], 'en'), 'id'));
         self::assertContains('ru-vks-aa-ka52-komandir-ekipazha', array_column(JobCatalog::search('Ка-52', [], 'fr'), 'id'));
