@@ -661,6 +661,7 @@ return function (Router $router) {
     $router->post('/9-line/vider', [\App\Controllers\Web\AtakNineLineViewController::class, 'clear'], [AuthMiddleware::class]);
     $router->post('/9-line/{id}/supprimer', [\App\Controllers\Web\AtakNineLineViewController::class, 'delete'], [AuthMiddleware::class]);
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
+    $router->post('/account/security/devices/mobile/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revokeMobile'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
@@ -727,6 +728,23 @@ return function (Router $router) {
     $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
     $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
     $router->get('/enlistment/suivi/{token}', [EnlistmentCandidatePortalController::class, 'show']);
+    // « Sur mon téléphone » : apps de l'ATAK en jeu sur le vrai téléphone (QR code à usage unique, session mobile limitée).
+    $router->get('/m', [\App\Controllers\Web\AtakMobileAppsController::class, 'home']);
+    $router->get('/m/cr', [\App\Controllers\Web\AtakMobileAppsController::class, 'cr']);
+    $router->post('/m/cr', [\App\Controllers\Web\AtakMobileAppsController::class, 'crSubmit']);
+    $router->get('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debrief']);
+    $router->post('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debriefSubmit']);
+    $router->get('/m/carte', [\App\Controllers\Web\AtakMobileAppsController::class, 'carte']);
+    $router->get('/m/briefs', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefs']);
+    $router->get('/m/api/carte', [\App\Controllers\Web\AtakMobileAppsController::class, 'carteData']);
+    $router->post('/m/api/marqueurs', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerStore']);
+    $router->post('/m/api/marqueurs/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerUpdate']);
+    $router->post('/m/api/marqueurs/{id}/supprimer', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerDelete']);
+    $router->get('/m/api/briefs', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefsData']);
+    $router->post('/m/api/briefs/{id}/reponse', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefRespond']);
+    $router->get('/m/api/suivi/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'noticeStatus']);
+    $router->post('/m/quitter', [\App\Controllers\Web\AtakMobileAppsController::class, 'logout']);
+    $router->get('/m/{token}', [\App\Controllers\Web\AtakMobileAppsController::class, 'open']);
     // Connexion téléphone ATAK — URL courte (/connect) + alias historique (/atak/connect)
     $router->get('/connect', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeForm']);
     $router->post('/connect/code', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeSubmit']);
@@ -2822,6 +2840,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // ATAK du joueur : ses propres messages et avis de l'administration (COMSPEC Link AdminControl.Poll / AdminControl.Ack).
     $router->post('/api/atak/admin-control/mine', [AtakApiController::class, 'adminControlMine']);
     $router->post('/api/atak/admin-control/mine/ack', [AtakApiController::class, 'adminControlMineAck']);
+    // « Sur mon téléphone » : lien QR à usage unique vers la version mobile d'une app (COMSPEC Link MobileLink.Create).
+    $router->post('/api/atak/mobile-link', [AtakApiController::class, 'mobileLinkCreate']);
     // App Admin de l'ATAK natif : parc de la communauté géré en jeu par un gestionnaire (COMSPEC Link GameAdmin.*).
     $router->post('/api/atak/game-admin/fleet', [AtakApiController::class, 'gameAdminFleet']);
     $router->post('/api/atak/game-admin/action', [AtakApiController::class, 'gameAdminAction']);

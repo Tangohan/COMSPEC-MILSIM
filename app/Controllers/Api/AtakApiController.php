@@ -7492,6 +7492,65 @@ class AtakApiController
         return Response::json(['ok' => true, 'messages' => $messages]);
     }
 
+    /**
+     * « Sur mon téléphone » (COMSPEC Link « MobileLink.Create », 2.0.117) : lien à usage unique (5 min) et matrice du
+     * QR code vers la version mobile d'une app (cr, compte-rendu, carte, briefs) pour le compte de la session de jeu.
+     * Corps : {app, mission_key, player_name, pos_x, pos_y, context, mapId}. Sans compte lié : 403 not_linked.
+     */
+    public function mobileLinkCreate(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['ok' => false, 'error' => 'unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        $actor = $this->guardArmaWrite($request, $tenantId, $sessionUserId === null);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $steam = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        $userId = $sessionUserId;
+        // Sans session de jeu nominative : seulement un Steam vérifié par la garde (session de jeu du serveur).
+        if ($userId === null && $steam !== null && !empty($actor['session_ok'])) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $userId = $user !== null ? (int) $user['id'] : null;
+        }
+        if ($userId === null || $userId < 1) {
+            return Response::json(['ok' => false, 'error' => 'not_linked'], 403);
+        }
+        $context = is_array($body['context'] ?? null) ? $body['context'] : null;
+        $num = static fn ($v): ?float => is_numeric($v) ? (float) $v : null;
+        $res = (new \App\Services\Atak\AtakMobileLinkService())->issue(
+            $tenantId,
+            $userId,
+            $steam,
+            $body['mission_key'] ?? null,
+            $this->mapId($request, true),
+            strtolower(trim((string) ($body['app'] ?? ''))),
+            mb_substr(trim((string) ($body['player_name'] ?? '')), 0, 80),
+            $num($body['pos_x'] ?? null),
+            $num($body['pos_y'] ?? null),
+            $context
+        );
+        if (!$res['ok']) {
+            $status = match ($res['error']) {
+                'rate_limited' => 429,
+                'bad_app' => 400,
+                'unavailable' => 503,
+                default => 403,
+            };
+
+            return Response::json($res, $status);
+        }
+
+        return Response::json($res);
+    }
+
     /** ATAK du joueur (« AdminControl.Ack ») : {ids, state: "delivered" | "acked"}, sur ses propres messages seulement. */
     public function adminControlMineAck(Request $request, array $params = []): Response
     {

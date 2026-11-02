@@ -74,6 +74,10 @@ final class AtakAdminControlRepository
         'phone' => 'info',
         // CR de fin d'opération imposé (AtakDebriefService) : le téléphone ouvre la fiche à remplir ou à lire.
         'debrief' => 'warning',
+        // « Sur mon téléphone » (AtakMobileLinkService) : compte rendu ou CR fin d'op rempli sur le vrai téléphone,
+        // envoyé par l'ATAK du joueur comme s'il l'avait rempli en jeu. Sans alerte.
+        'mobile_report' => 'info',
+        'mobile_debrief' => 'info',
     ];
 
     /** Filtres d'état de la liste. */
