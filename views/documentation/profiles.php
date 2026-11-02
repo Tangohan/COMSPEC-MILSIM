@@ -22,7 +22,7 @@ $levels = [
             <p class="dprof__lead">Deux réglages décident de ce que chacun voit sur Athena : le <strong>profil</strong> de la communauté (quels outils existent) et le <strong>niveau d’accès</strong> de chaque membre (ce qu’il peut en faire).</p>
             <?php if ($current !== null): ?>
                 <p class="dprof__current">Votre communauté utilise le profil <strong><?= $h(TenantTypeConfig::label($current)) ?></strong>.
-                    <?php if ($isManager): ?><a href="<?= $h(url('back-office/organisation/parametres') . '?onglet=profil#profil') ?>">Changer de profil</a><?php endif; ?>
+                    <?php if ($isManager): ?><a href="<?= $h(url('back-office/community') . '?onglet=profil#profil') ?>">Changer de profil</a><?php endif; ?>
                 </p>
             <?php endif; ?>
             <nav class="dprof__toc" aria-label="Sur cette page">

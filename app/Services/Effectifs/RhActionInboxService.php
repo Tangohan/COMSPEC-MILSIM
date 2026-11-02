@@ -245,7 +245,7 @@ final class RhActionInboxService
                     'title' => (string) ($item['label'] ?? 'Alerte'),
                     'detail' => $count . ' situation' . ($count > 1 ? 's' : '') . ' à examiner.',
                     'cta_label' => 'Voir',
-                    'href' => (string) ($item['href'] ?? effectifs_workspace_url('alertes')),
+                    'href' => (string) ($item['href'] ?? effectifs_workspace_url('a-traiter?onglet=alertes')),
                 ];
             }
         } catch (\Throwable) {

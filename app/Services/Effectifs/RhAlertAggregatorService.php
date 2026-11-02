@@ -66,7 +66,7 @@ final class RhAlertAggregatorService
             'severity' => 'Disponibilité',
             'label' => 'Absence prolongée (≥ ' . $absenceDays . ' j)',
             'count' => $absenceCount,
-            'href' => effectifs_workspace_url('alertes'),
+            'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
             'tone' => $absenceCount > 0 ? 'warn' : 'ok',
         ];
 
@@ -76,7 +76,7 @@ final class RhAlertAggregatorService
             'severity' => 'Activité',
             'label' => 'Sans activité depuis ' . $inactivityDays . ' j',
             'count' => $inactiveCount,
-            'href' => effectifs_workspace_url('alertes'),
+            'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
             'tone' => $inactiveCount > 0 ? 'warn' : 'ok',
         ];
 
@@ -101,7 +101,7 @@ final class RhAlertAggregatorService
             'severity' => 'Organigramme',
             'label' => 'Poste sous-pourvu',
             'count' => $vacantBillets,
-            'href' => effectifs_workspace_url('alertes'),
+            'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
             'tone' => $vacantBillets > 0 ? 'warn' : 'ok',
         ];
 

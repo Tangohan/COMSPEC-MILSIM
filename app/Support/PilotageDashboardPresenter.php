@@ -42,7 +42,8 @@ final class PilotageDashboardPresenter
 
         $links = [
             'effectifs' => $link(effectifs_workspace_url()),
-            'operations_center' => $link(url('back-office/centre-operations')),
+            'affectations' => $link(effectifs_workspace_url('affectations')),
+            'access_rights' => $link(effectifs_workspace_url('droits')),
             'events' => $link(url('back-office/events')),
             'recruitments' => $link(url('back-office/recruitments')),
             'elevations' => $link(effectifs_workspace_url('elevations')),
@@ -279,6 +280,10 @@ final class PilotageDashboardPresenter
                 'one' => '1 dossier à compléter', 'many' => '%d dossiers à compléter', 'meta' => 'Effectifs · fonction, grade, rôle ou image manquants', 'cta' => 'Voir'],
             ['n' => isset($in['expired_invitations']) ? (int) $in['expired_invitations'] : (is_array($wq['expired_invitations'] ?? null) ? count($wq['expired_invitations']) : 0), 'link' => $links['invitations'], 'icon' => 'mail', 'tone' => 'warning',
                 'one' => '1 invitation expirée', 'many' => '%d invitations expirées', 'meta' => 'Accès · à renvoyer ou retirer', 'cta' => 'Gérer'],
+            ['n' => is_array($wq['users_without_unit'] ?? null) ? count($wq['users_without_unit']) : 0, 'link' => $links['affectations'], 'icon' => 'user', 'tone' => 'warning',
+                'one' => '1 membre sans unité', 'many' => '%d membres sans unité', 'meta' => 'Effectifs · à affecter', 'cta' => 'Affecter'],
+            ['n' => is_array($wq['users_without_role'] ?? null) ? count($wq['users_without_role']) : 0, 'link' => $links['access_rights'], 'icon' => 'user', 'tone' => 'warning',
+                'one' => '1 membre sans rôle', 'many' => '%d membres sans rôle', 'meta' => 'Accès · droits à attribuer', 'cta' => 'Attribuer'],
             ['n' => (int) ($in['moderation_open'] ?? 0), 'link' => $links['reports'], 'icon' => 'flag', 'tone' => 'danger',
                 'one' => '1 signalement à traiter', 'many' => '%d signalements à traiter', 'meta' => 'Modération', 'cta' => 'Traiter'],
         ];
@@ -315,9 +320,6 @@ final class PilotageDashboardPresenter
         $actions = [];
         if ($links['effectifs'] !== null) {
             $actions[] = ['label' => 'Effectifs', 'href' => $links['effectifs'], 'accent' => true];
-        }
-        if ($links['operations_center'] !== null) {
-            $actions[] = ['label' => 'Centre d’opérations', 'href' => $links['operations_center'], 'accent' => false];
         }
 
         return [

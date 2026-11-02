@@ -586,6 +586,9 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
                     <?php require base_path('views/partials/bo_session_flashes.php'); ?>
                 </div>
                 <?php endif; ?>
+                <?php if (!empty($isBackOfficeShell)): ?>
+                    <?php require base_path('views/partials/bo_page_tabs.php'); ?>
+                <?php endif; ?>
                 <?php
                 $contentPath = str_replace('.', '/', $content);
                 $innerPath = base_path('views/' . $contentPath . '.php');

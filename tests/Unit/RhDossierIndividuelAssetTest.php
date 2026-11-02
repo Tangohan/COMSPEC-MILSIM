@@ -80,10 +80,6 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('function archiveDossier', $offboarding);
         self::assertStringContainsString('function reinstate', $offboarding);
 
-        $hub = (string) file_get_contents($root . '/views/admin/organization/effectifs_hub.php');
-        self::assertStringContainsString('Succession et vivier', $hub);
-        self::assertStringContainsString('Alertes RH', $hub);
-
         foreach (['rh_documents.php', 'rh_mobility.php', 'rh_succession.php', 'rh_alerts.php'] as $view) {
             self::assertFileExists($root . '/views/admin/effectifs_workspace/' . $view);
         }

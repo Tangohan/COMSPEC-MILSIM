@@ -19,8 +19,6 @@ return [
         ['path' => 'jnet/unite', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Fiche d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'jnet', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Tableau d’unité', 'subtitle' => 'Situation réelle de l’unité : personnel, opérations, renseignement et documents.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'back-office', 'group' => 'Pilotage', 'kicker' => 'PILOTAGE', 'title' => 'Tableau de bord', 'subtitle' => 'Synthèse de la communauté, indicateurs et accès rapides.'],
-        ['path' => 'back-office/centre-operations', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations', 'subtitle' => 'Les demandes qui attendent une décision, les incidents en cours et l’historique des actions.'],
-        ['path' => 'back-office/operations-admin', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations', 'subtitle' => 'Les demandes qui attendent une décision, les incidents en cours et l’historique des actions.'],
         ['path' => 'back-office/tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Tableau opérationnel', 'subtitle' => 'Préparez et publiez les fiches que vos membres lisent sur leur mur : permanences, consignes, événements et messages urgents.', 'css' => ['operational-board.css', 'back-office-tableau-operationnel.css'], 'quick' => [
             ['label' => 'Événements', 'href' => 'back-office/events'],
             ['label' => 'Articles', 'href' => 'back-office/articles'],
@@ -33,13 +31,12 @@ return [
         ['path' => 'back-office/configuration-initiale', 'group' => 'Communauté', 'kicker' => 'PREMIERS PAS', 'title' => 'Configuration initiale', 'subtitle' => 'Votre communauté est en ligne. Il reste cinq réglages essentiels : identité, contact, mode d’inscription, modules visibles et rôle attribué aux nouveaux membres.', 'css' => ['back-office-initial-setup.css'], 'quick' => [
             ['label' => 'Enregistrer', 'href' => 'back-office/configuration-initiale#initial-setup-actions'],
             ['label' => 'Besoin d’aide ?', 'href' => 'back-office/onboarding-recovery'],
-            ['label' => 'Paramètres', 'href' => 'back-office/organisation/parametres'],
+            ['label' => 'Paramètres', 'href' => 'back-office/community'],
         ]],
         ['path' => 'back-office/community/presentation', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Page d’accueil publique', 'subtitle' => 'Ce que voient les visiteurs avant de rejoindre : votre page publique, votre carte dans le registre des unités, le contact et le formulaire de candidature.', 'css' => ['back-office-community-settings.css']],
         ['path' => 'back-office/community/discord', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annoncer sur Discord', 'subtitle' => 'Votre communauté dans le salon des communautés du Discord Athena : aperçu de votre post, demande de publication ou de mise à jour, validée par l’administration du site.', 'css' => ['discord-showcase.css']],
         ['path' => 'back-office/community/inscription', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
         ['path' => 'back-office/community', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
-        ['path' => 'back-office/organisation/parametres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
         ['path' => 'back-office/media', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MÉDIAS', 'title' => 'Médias de la communauté', 'subtitle' => 'Les photos et vidéos affichées sur votre page publique.', 'css' => ['back-office-media.css'], 'quick' => [
             ['label' => 'Vitrine publique', 'href' => 'back-office/community/presentation'],
         ]],
@@ -115,10 +112,6 @@ return [
             ['label' => 'Envoyées', 'href' => 'back-office/invitations/envoyees'],
             ['label' => 'Membres', 'href' => 'back-office/users'],
         ]],
-        ['path' => 'back-office/organisation-effectifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Organisation', 'subtitle' => 'Vue d’ensemble sans noms : organigramme, rôles, référentiels et indicateurs utiles aux fiches personnel.', 'css' => ['back-office-effectifs-hub.css'], 'quick' => [
-            ['label' => 'Tableur des membres', 'href' => 'back-office/ressources/effectifs'],
-            ['label' => 'Tableau de bord', 'href' => 'back-office'],
-        ]],
         ['path' => 'back-office/personnel/corrections', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RH', 'title' => 'Corrections de fiches', 'subtitle' => 'Validez les corrections demandées par les membres, ou corrigez une fiche vous-même.', 'css' => ['back-office-corrections.css', 'personnel-dossier.css'], 'quick' => [
             ['label' => 'Effectifs', 'href' => 'back-office/ressources/effectifs'],
             ['label' => 'Annuaire', 'href' => 'personnel'],
@@ -146,7 +139,6 @@ return [
             ['label' => 'Effectifs', 'href' => 'back-office/ressources/effectifs'],
         ]],
         ['path' => 'back-office/organisation/anciennete', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Ancienneté', 'subtitle' => 'Comment l’ancienneté est calculée et affichée sur les fiches des membres.', 'css' => ['back-office-seniority.css']],
-        ['path' => 'back-office/organisation/progression', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Progression & carrière', 'subtitle' => 'Comment un membre progresse : étapes, validations et qualifications requises.'],
         ['path' => 'back-office/organisation/passes', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · PASS', 'title' => 'PASS RH', 'subtitle' => 'Des lots de conditions réutilisables pour ouvrir un poste, accorder une promotion ou noter un membre.', 'quick' => [
             ['label' => 'Nouveau PASS', 'href' => 'back-office/organisation/passes/create'],
             ['label' => 'Avancement', 'href' => 'back-office/rh/avancement'],
@@ -192,37 +184,37 @@ return [
         ['path' => 'back-office/roleplay/immersion', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ARRIVÉE', 'title' => 'Parcours d’immersion', 'subtitle' => 'Décidez comment votre communauté suit l’arrivée d’un membre : étapes, filière, tuteur et dossier prêt.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
             ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
-            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay/regles-phases'],
+            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay-followup?onglet=phases'],
             ['label' => 'Sessions Arma', 'href' => 'back-office/roleplay/sessions'],
-            ['label' => 'Affichage', 'href' => 'back-office/roleplay/immersion#activation-options'],
-            ['label' => 'Étapes et filières', 'href' => 'back-office/roleplay/immersion#listes'],
+            ['label' => 'Affichage', 'href' => 'back-office/roleplay-followup?onglet=immersion#activation-options'],
+            ['label' => 'Étapes et filières', 'href' => 'back-office/roleplay-followup?onglet=immersion#listes'],
         ]],
         ['path' => 'back-office/roleplay/regles-phases', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · PARCOURS', 'title' => 'Parcours RH', 'subtitle' => 'Ordonnez les étapes du parcours et les conditions de passage à l’étape suivante. Un jeu vide n’avance personne.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
-            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay-followup?onglet=immersion'],
             ['label' => 'Sessions Arma', 'href' => 'back-office/roleplay/sessions'],
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
         ]],
         ['path' => 'back-office/roleplay/sessions', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SESSIONS', 'title' => 'Sessions Arma', 'subtitle' => 'Les soirées de jeu dont le temps de présence compte pour le suivi RH des membres.', 'css' => ['back-office-roleplay-sessions.css'], 'quick' => [
             ['label' => 'Nouvelle session', 'href' => 'back-office/roleplay/sessions#nouvelle'],
             ['label' => 'Événements', 'href' => 'back-office/events'],
-            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay/regles-phases'],
-            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay-followup?onglet=phases'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay-followup?onglet=immersion'],
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
         ]],
         ['path' => 'back-office/roleplay-followup/echeances', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ÉCHÉANCES', 'title' => 'Échéances', 'subtitle' => 'Les prochains entretiens, visites médicales et rotations de service, tous membres confondus.', 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
-            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay-followup?onglet=immersion'],
         ]],
         ['path' => 'back-office/roleplay-followup', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SUIVI', 'title' => 'Bureau de suivi', 'subtitle' => 'Où en est chaque membre : tuteur, étape d’immersion, bilans et prochaines échéances.', 'quick' => [
             ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
-            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay-followup?onglet=immersion'],
         ]],
         ['path' => 'back-office/communications/history', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Historique des e-mails', 'subtitle' => 'Les e-mails envoyés aux membres, avec leur date et leurs destinataires.'],
         ['path' => 'back-office/communications/templates', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Modèles d’e-mail', 'subtitle' => 'Des messages prêts à réutiliser pour les envois fréquents.'],
         ['path' => 'back-office/communications/groups', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Listes de diffusion', 'subtitle' => 'Des listes de membres à qui écrire en une fois.'],
         ['path' => 'back-office/communications', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'E-mail aux membres', 'subtitle' => 'Écrivez à toute la communauté, à une unité ou à une liste de diffusion.'],
         ['path' => 'back-office/missions', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · PORTAIL', 'title' => 'Portail missions', 'subtitle' => 'Toutes les missions avec leurs participants, leurs communications ATAK et leurs liaisons.', 'css' => ['back-office-missions-portal.css'], 'quick' => [
-            ['label' => 'Planification', 'href' => 'back-office/planification'],
+            ['label' => 'Planification', 'href' => 'back-office/missions?onglet=planification'],
             ['label' => 'Cycle de mission', 'href' => 'back-office/atak/cycle-mission'],
             ['label' => 'Poste ATAK', 'href' => 'back-office/atak'],
             ['label' => 'Sessions', 'href' => 'back-office/atak/operateurs'],
@@ -263,7 +255,7 @@ return [
         ['path' => 'back-office/atak/roleplay', 'group' => 'ATAK', 'kicker' => 'ATAK · ROLEPLAY', 'title' => 'Mode roleplay', 'subtitle' => 'Les contraintes réalistes imposées aux téléphones de votre communauté : réseau dégradé, relais, capteurs, données chiffrées et zones de brouillage.', 'css' => ['back-office-atak-roleplay.css'], 'quick' => [
             ['label' => 'Contrôle de mission', 'href' => 'back-office/atak/controle-serveur'],
             ['label' => 'Réseau de relais', 'href' => 'back-office/atak/relays-network'],
-            ['label' => 'Configuration réalisme', 'href' => 'back-office/ressources/atak-realism/config'],
+            ['label' => 'Configuration réalisme', 'href' => 'back-office/atak/realisme?onglet=reglages'],
         ]],
         ['path' => 'back-office/atak/controle-serveur', 'group' => 'ATAK', 'kicker' => 'ATAK · MISSION', 'title' => 'Contrôle de mission', 'subtitle' => 'Ce que chaque réglage change vraiment pour vos joueurs, quand il s’applique, et l’état du serveur de jeu de la communauté.'],
         ['path' => 'back-office/atak/relays-network', 'group' => 'ATAK', 'kicker' => 'ATAK · RELAIS', 'title' => 'Réseau de relais', 'subtitle' => 'Les relais radio sur le terrain : état, portée, places disponibles et fiabilité.', 'css' => ['back-office-atak-devices.css'], 'quick' => [

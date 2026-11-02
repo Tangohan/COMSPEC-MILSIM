@@ -22,7 +22,6 @@ final class GateContainerAssetTest extends TestCase
         $root = dirname(__DIR__, 2);
         $files = [
             $root . '/app/Controllers/Admin/Organization/OrganizationMemberNumberController.php',
-            $root . '/app/Controllers/Admin/Organization/OrganizationProgressionHubController.php',
             $root . '/app/Controllers/Admin/Organization/OrganizationCallsignSequencesController.php',
             $root . '/app/Controllers/Admin/Organization/OrganizationCatalogController.php',
         ];
@@ -34,7 +33,6 @@ final class GateContainerAssetTest extends TestCase
 
         $integrations = (string) file_get_contents($root . '/app/Core/ContainerIntegrations.php');
         self::assertStringContainsString('Gate::class => Gate::getInstance()', $integrations);
-        self::assertStringContainsString('OrganizationProgressionHubController::class', $integrations);
         self::assertStringContainsString('OrganizationMemberNumberController::class', $integrations);
         self::assertStringContainsString('OrganizationCallsignSequencesController::class', $integrations);
         self::assertStringContainsString('OrganizationCatalogController::class', $integrations);
