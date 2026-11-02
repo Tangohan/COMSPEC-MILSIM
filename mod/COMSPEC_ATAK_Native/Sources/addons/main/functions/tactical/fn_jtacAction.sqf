@@ -23,6 +23,14 @@
       "mapPick", "tgt" | "ip"         (onglet CARTE) arme ou désarme la pose ; "mapSet", [genre, position] : position posée
       "center", "tgt" | "ip" | "me" | "air"   carte tactique centrée sur la cible, l'IP, le JTAC ou l'appareil
       "recv", [genre, id, données, indicatif, unité]   réception (XEH_postInitClient)
+    Briefs air (fn_airBrief : 9-LINE et 5-LINE dans l'espace BRIEFS AIR des pilotes, accusés WILCO / UNABLE) :
+      "fmt", "9" | "5"                format de l'onglet 9/5-LINE          "free" : bascule SAISIE LIBRE (9-LINE)
+      "medevac"                       ouvre la demande MEDEVAC de l'app Médical
+      "setCs" | "csPick", texte       indicatif JTAC (profil)               "prefill" / "clearFree" : lignes libres
+      "destToggle", netId | "destPlayers" | "mapPlayers"   destinataires, bascules « Joueurs uniquement »
+      "sendAir"                       envoie le brief aux pilotes choisis (et indicatifs saisis)
+      "airOpen", ref | "airAck", [ref, statut] | "airDel", ref | "airReadAll" | "airDelAll"   (pilote) espace BRIEFS AIR
+      "setAirCs" | "airCsPick", texte (pilote) indicatif de son aéronef
 */
 params [["_act", ""], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_Jtac", createHashMap];
@@ -34,6 +42,8 @@ private _render = { [{
     (uiNamespace getVariable ["COMSPEC_ATAK_Jtac", createHashMap]) set ["clearing", false];
 }] call CBA_fnc_execNextFrame; };
 private _me = { private _c = [player] call comspec_atak_native_fnc_unitCallsign; if (_c isEqualTo "") then { groupId group player } else { _c } };
+// Indicatif du JTAC (réglable dans l'onglet 9/5-LINE, fn_airBrief) : appels et briefs du JTAC.
+private _jcs = { ["jtacCs"] call comspec_atak_native_fnc_airBrief };
 private _time = { [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString };
 // Directions en anglais, comme les appels radio air-sol (IN FROM THE WEST).
 private _card = { params ["_deg"]; ["NORTH", "NORTHEAST", "EAST", "SOUTHEAST", "SOUTH", "SOUTHWEST", "WEST", "NORTHWEST"] select ((round (_deg / 45)) mod 8) };
@@ -103,7 +113,7 @@ private _save = {
             if ((trim _v) isEqualTo (_s getOrDefault ["auto_" + _x, ""])) then { _v = ""; };
             _s set [_x, _v];
         };
-    } forEach ["jIp", "j5", "j9", "jFah", "jThreat", "jDc", "jBda"];
+    } forEach ["jIp", "j5", "j9", "jFah", "jThreat", "jDc", "jBda", "jCs", "jDest", "jRem", "aCs", "jL1", "jL2", "jL3", "jL4", "jL5", "jL6", "jL7", "jL8", "jL9", "jF1", "jF2", "jF3", "jF4", "jF5"];
 };
 // Rafraîchissement (XEH_postInitClient, 3 s) : seulement les vues sans saisie, mission en cours.
 if (_act isEqualTo "tick") exitWith {
@@ -209,6 +219,10 @@ switch (_act) do {
         private _a = _arg call BIS_fnc_objectFromNetId;
         _s set ["air", _a];
         _s set ["airAuto", false];
+        // L'appareil choisi pour la mission devient aussi destinataire du brief (espace BRIEFS AIR du pilote).
+        private _dl = _s getOrDefault ["dest", []];
+        _dl pushBackUnique _arg;
+        _s set ["dest", _dl];
         _s set ["ord", ""];
         // Nouvel appareil : la mission en cours (autre appareil) est close.
         private _m = _s getOrDefault ["msn", createHashMap];
@@ -229,6 +243,14 @@ switch (_act) do {
         private _air = _s getOrDefault ["air", objNull];
         private _b = [] call comspec_atak_native_fnc_jtacLines;
         if (isNull _air || {!alive _air}) exitWith { ["WARNING", "Choisissez d'abord un appareil (onglet SITUATION)", 3, 30] call comspec_atak_native_fnc_notify; };
+        // Saisie libre (9-LINE) : les lignes tapées à la main, sans cible exigée (validation souple).
+        private _freeB = (_s getOrDefault ["free", false]) && {(_s getOrDefault ["fmt", "9"]) isEqualTo "9"};
+        if (_freeB) then {
+            _b = +_b;
+            _b set ["lines", ["jL1", "jL2", "jL3", "jL4", "jL5", "jL6", "jL7", "jL8", "jL9"] apply { private _v = trim (_s getOrDefault [_x, ""]); [_v, "-"] select (_v isEqualTo "") }];
+            _b set ["remarks", trim (_s getOrDefault ["jRem", ""])];
+            _b set ["missing", ""];
+        };
         if ((_b getOrDefault ["missing", ""]) isNotEqualTo "") exitWith { ["WARNING", format ["Brief incomplet : %1", _b get "missing"], 4, 30] call comspec_atak_native_fnc_notify; };
         private _m = _s getOrDefault ["msn", createHashMap];
         // Même appareil : nouveau brief de la même mission (correction) ; sinon nouvelle mission.
@@ -243,7 +265,10 @@ switch (_act) do {
         private _lines = _b get "lines";
         // IP et distance de risque en fin de liste : la carte tactique de l'équipage les dessine (un ancien client les ignore).
         private _data = [_lines, _b get "remarks", _b get "type", _b get "method", _b get "ord", _b get "code", _b get "target", _b get "fah", _b get "dc", _s getOrDefault ["ip", []], _b get "risk"];
-        private _sent = [(crew _air), ["brief", _m get "id", _data, [] call _me, player]] call _emit;
+        private _sent = [(crew _air), ["brief", _m get "id", _data, [] call _jcs, player]] call _emit;
+        // Suivi de l'envoi (statut par destinataire : l'équipage le range dans son espace BRIEFS AIR et accuse réception).
+        private _airLbl = ["airCs", _air] call comspec_atak_native_fnc_airBrief;
+        ["track", [_m get "id", "9", format ["%1 | %2", _lines select 5, _lines select 4], [_airLbl]]] call comspec_atak_native_fnc_airBrief;
         [_m, "JTAC", format ["9-LINE pour %1 : %2 | %3 | %4", groupId group _air, _lines select 3, _lines select 5, _lines select 6]] call _log;
         // Athena (pilotes et web) quand le téléphone est relié : même chemin que l'app CAS.
         if ([] call comspec_atak_native_fnc_bridge) then {
@@ -274,6 +299,8 @@ switch (_act) do {
                 round (_b getOrDefault ["risk", 0]), ["false", "true"] select (_b getOrDefault ["dc", false]),
                 [getPosASL player] call _xy, [_near] call _xy, [groupId group _air] call _esc, [getPosASL _air] call _xy,
                 ["false", "true"] select ((_s getOrDefault ["mark", "LASER"]) isEqualTo "LASER"), _b getOrDefault ["code", 1111], _b getOrDefault ["type", 2], [_b getOrDefault ["method", ""]] call _esc, [_b getOrDefault ["ord", ""]] call _esc]];
+            // Destinataire, ref de mission et indicatif JTAC repris par Athena (statut WILCO / UNABLE sur la page /9-line).
+            _f set ["air9", [_m get "id", [_airLbl], _freeB, [] call _jcs]];
             ["send9"] spawn comspec_atak_native_fnc_firesAction; // attente de la DLL sans figer le jeu
         };
         [["INFO", "SUCCESS"] select _sent, [format ["9-LINE à %1 : équipage IA, transmettez-le à la radio", groupId group _air], format ["9-LINE transmis à %1, attente du readback", groupId group _air]] select _sent, 4, 40] call comspec_atak_native_fnc_notify;
@@ -296,7 +323,7 @@ switch (_act) do {
         [_m, _code] call _apply;
         [_m, "JTAC", _text] call _log;
         if (_code isEqualTo "CORRECTION") exitWith { _s set ["tab", "BRIEF"]; call _render; };
-        [(crew _air), ["call", _m get "id", [_code, _text], [] call _me, player]] call _emit;
+        [(crew _air), ["call", _m get "id", [_code, _text], [] call _jcs, player]] call _emit;
         [["INFO", "WARNING"] select (_code isEqualTo "ABORT"), _text, 3, 40] call comspec_atak_native_fnc_notify;
         call _render;
     };
@@ -321,7 +348,7 @@ switch (_act) do {
         private _text = format ["BDA : %1%2", _arg, ["", format [", %1", _txt]] select (_txt isNotEqualTo "")];
         [_m, "BDA"] call _apply;
         [_m, "JTAC", _text] call _log;
-        [(crew _air), ["call", _m get "id", ["BDA", _text], [] call _me, player]] call _emit;
+        [(crew _air), ["call", _m get "id", ["BDA", _text], [] call _jcs, player]] call _emit;
         _s set ["jBda", ""];
         _s set ["clearing", true];
         ["SUCCESS", _text, 3, 30] call comspec_atak_native_fnc_notify;
@@ -357,6 +384,139 @@ switch (_act) do {
         ["MAP"] call comspec_atak_native_fnc_navigate;
         [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
     };
+    // ------------------------------------------------ Briefs air (fn_airBrief), format, saisie libre, indicatifs
+    case "fmt": { _s set ["fmt", _arg]; call _render; };
+    case "free": { _s set ["free", !(_s getOrDefault ["free", false])]; call _render; };
+    case "medevac": {
+        (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["medTab", "MEDEVAC"];
+        [{ ["MEDICAL"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    };
+    case "setCs": {
+        ["setJtacCs", _s getOrDefault ["jCs", ""]] call comspec_atak_native_fnc_airBrief;
+        _s deleteAt "jCs";
+        _s set ["clearing", true];
+        call _render;
+    };
+    case "csPick": {
+        ["setJtacCs", _arg] call comspec_atak_native_fnc_airBrief;
+        _s deleteAt "jCs";
+        _s set ["clearing", true];
+        call _render;
+    };
+    case "prefill": {
+        // Saisie libre et 5-LINE : les valeurs calculées (cible, IP, marquage, amis) complètent les lignes vides.
+        private _b = [] call comspec_atak_native_fnc_jtacLines;
+        private _tg = _b getOrDefault ["target", []];
+        private _hasT = (count _tg) >= 2;
+        private _ln = _b getOrDefault ["lines", []];
+        private _put = { params ["_k", "_v"]; if ((trim (_s getOrDefault [_k, ""])) isEqualTo "" && {!(_v in ["", "-"])}) then { _s set [_k, _v]; }; };
+        if ((_s getOrDefault ["fmt", "9"]) isEqualTo "5") then {
+            ["jF1", format ["%1, 5-LINE, OVER", ["jtacCs"] call comspec_atak_native_fnc_airBrief]] call _put;
+            ["jF2", format ["%1 · balise IR", [player, 8] call comspec_atak_native_fnc_gridRef]] call _put;
+            if (_hasT) then { ["jF3", format ["%1 · %2° %3 m depuis les amis", [_tg, 10] call comspec_atak_native_fnc_gridRef, [round (player getDir _tg), 3] call CBA_fnc_formatNumber, round (player distance2D _tg)]] call _put; };
+            private _desc = _ln param [4, ""];
+            ["jF4", [format ["%1 · %2", _desc, _ln param [6, ""]], _ln param [6, ""]] select (_desc in ["", "-"])] call _put;
+            ["jF5", _b getOrDefault ["remarks", ""]] call _put;
+        } else {
+            { [format ["jL%1", _forEachIndex + 1], _x] call _put; } forEach _ln;
+            ["jRem", _b getOrDefault ["remarks", ""]] call _put;
+        };
+        if (!_hasT) then { ["INFO", "Pas de cible verrouillée : seules les lignes connues sont remplies", 4, 20] call comspec_atak_native_fnc_notify; };
+        _s set ["clearing", true];
+        call _render;
+    };
+    case "clearFree": {
+        { _s deleteAt _x; } forEach ([["jL1", "jL2", "jL3", "jL4", "jL5", "jL6", "jL7", "jL8", "jL9", "jRem"], ["jF1", "jF2", "jF3", "jF4", "jF5"]] select ((_s getOrDefault ["fmt", "9"]) isEqualTo "5"));
+        _s set ["clearing", true];
+        call _render;
+    };
+    case "destToggle": {
+        private _dl = _s getOrDefault ["dest", []];
+        if (_arg in _dl) then { _dl = _dl - [_arg]; } else { _dl pushBack _arg; };
+        _s set ["dest", _dl];
+        call _render;
+    };
+    case "destPlayers": {
+        profileNamespace setVariable ["COMSPEC_ATAK_AirDestPlayers", !(profileNamespace getVariable ["COMSPEC_ATAK_AirDestPlayers", true])];
+        [] call comspec_atak_native_fnc_saveProfile;
+        call _render;
+    };
+    case "mapPlayers": {
+        profileNamespace setVariable ["COMSPEC_ATAK_JtacMapPlayers", !(profileNamespace getVariable ["COMSPEC_ATAK_JtacMapPlayers", false])];
+        [] call comspec_atak_native_fnc_saveProfile;
+        // Carte JTAC : listes relues tout de suite (cache de fn_jtacDraw).
+        uiNamespace setVariable ["COMSPEC_ATAK_JtacDrawCache", [-10, [], []]];
+        call _render;
+    };
+    case "sendAir": {
+        private _fmt = _s getOrDefault ["fmt", "9"];
+        private _free = (_s getOrDefault ["free", false]) || {_fmt isEqualTo "5"};
+        private _lines = [];
+        private _rem = "";
+        switch (true) do {
+            case (_fmt isEqualTo "5"): { _lines = ["jF1", "jF2", "jF3", "jF4", "jF5"] apply { trim (_s getOrDefault [_x, ""]) }; };
+            case (_free): {
+                _lines = ["jL1", "jL2", "jL3", "jL4", "jL5", "jL6", "jL7", "jL8", "jL9"] apply { trim (_s getOrDefault [_x, ""]) };
+                _rem = trim (_s getOrDefault ["jRem", ""]);
+            };
+            default {
+                private _b = [] call comspec_atak_native_fnc_jtacLines;
+                _lines = _b get "lines";
+                _rem = _b get "remarks";
+            };
+        };
+        if ((_lines findIf { !(_x in ["", "-"]) }) < 0) exitWith { ["WARNING", "Brief vide : remplissez au moins une ligne", 3, 30] call comspec_atak_native_fnc_notify; };
+        // Destinataires : aéronefs cochés, puis indicatifs saisis (aéronef ou joueur du camp de même indicatif, sinon Athena seule).
+        private _dest = [];
+        private _known = ["airs", false] call comspec_atak_native_fnc_airBrief;
+        {
+            private _v = _x call BIS_fnc_objectFromNetId;
+            if (!isNull _v && {alive _v}) then { _dest pushBack [["airCs", _v] call comspec_atak_native_fnc_airBrief, _v]; };
+        } forEach (_s getOrDefault ["dest", []]);
+        {
+            private _t = toUpper (trim _x);
+            if (_t isNotEqualTo "" && {(_dest findIf { (toUpper (_x select 0)) isEqualTo _t }) < 0}) then {
+                private _ki = _known findIf { (toUpper (_x select 1)) isEqualTo _t };
+                private _who = if (_ki >= 0) then { (_known select _ki) select 0 } else {
+                    private _side = side group player;
+                    (allPlayers select { alive _x && {side group _x isEqualTo _side} && {(toUpper ([_x] call comspec_atak_native_fnc_unitCallsign)) isEqualTo _t} }) param [0, objNull]
+                };
+                _dest pushBack [_t, _who];
+            };
+        } forEach ((_s getOrDefault ["jDest", ""]) splitString ",;");
+        private _ref = ["send", [_fmt, _lines, _rem, _dest, "", _free]] call comspec_atak_native_fnc_airBrief;
+        if (_ref isEqualTo "") exitWith {};
+        // Lignes conseillées vides : rappel, l'envoi est parti quand même.
+        private _want = [[3, 4, 5], [1, 2, 3]] select (_fmt isEqualTo "5");
+        private _empty = (_want select { (_lines param [_x, ""]) in ["", "-"] }) apply { _x + 1 };
+        if ((count _empty) > 0) then { ["INFO", format ["Envoyé avec des lignes vides : %1", _empty joinString ", "], 4, 20] call comspec_atak_native_fnc_notify; };
+        call _render;
+    };
+    case "airOpen": {
+        _s set ["airOpen", _arg];
+        if (_arg isNotEqualTo "") then { ["ack", [_arg, "READ"]] call comspec_atak_native_fnc_airBrief; };
+        call _render;
+    };
+    case "airAck": { _arg params ["_ref", "_st"]; ["ack", [_ref, _st]] call comspec_atak_native_fnc_airBrief; call _render; };
+    case "airDel": {
+        ["del", _arg] call comspec_atak_native_fnc_airBrief;
+        if ((_s getOrDefault ["airOpen", ""]) isEqualTo _arg) then { _s set ["airOpen", ""]; };
+        call _render;
+    };
+    case "airReadAll": { ["readAll"] call comspec_atak_native_fnc_airBrief; };
+    case "airDelAll": { ["delAll"] call comspec_atak_native_fnc_airBrief; _s set ["airOpen", ""]; };
+    case "setAirCs": {
+        ["setAirCs", _s getOrDefault ["aCs", ""]] call comspec_atak_native_fnc_airBrief;
+        _s deleteAt "aCs";
+        _s set ["clearing", true];
+        call _render;
+    };
+    case "airCsPick": {
+        ["setAirCs", _arg] call comspec_atak_native_fnc_airBrief;
+        _s deleteAt "aCs";
+        _s set ["clearing", true];
+        call _render;
+    };
     case "recv": {
         _arg params [["_kind", ""], ["_id", ""], ["_data", []], ["_from", ""], ["_unit", objNull]];
         if (!hasInterface) exitWith {};
@@ -373,9 +533,11 @@ switch (_act) do {
                 _p set ["data", _data];
                 [_p, "BRIEF"] call _apply;
                 [_p, _from, format ["9-LINE : %1 | %2", (_data select 0) param [3, ""], (_data select 0) param [5, ""]]] call _log;
+                // Espace BRIEFS AIR : le brief de mission y est rangé aussi (même ref) ; alerte, vibreur et accusé REÇU (fn_airBrief).
+                private _veh = vehicle player;
+                ["store", [_id, 0, "9", _from, _unit, [dayTime, "HH:MM"] call BIS_fnc_timeToString, _data select 0, _data param [1, ""],
+                    [[player] call comspec_atak_native_fnc_unitCallsign, ["airCs", _veh] call comspec_atak_native_fnc_airBrief] select (_veh isNotEqualTo player), "game", ""]] call comspec_atak_native_fnc_airBrief;
                 _s set ["view", "PILOT"];
-                ["WARNING", format ["CAS : 9-LINE de %1 · cible %2", _from, (_data select 0) param [5, ""]], 10, 85] call comspec_atak_native_fnc_notify;
-                [] call comspec_atak_native_fnc_vibrate;
                 if (call _isActive) then { call _render; };
             };
             case "call": {

@@ -1026,6 +1026,7 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line` (
   `line7` varchar(255) DEFAULT NULL,
   `line8` varchar(255) DEFAULT NULL,
   `line9` text DEFAULT NULL,
+  `remarks` text DEFAULT NULL,
   `lines_checked` json DEFAULT NULL,
   `geo_json` text DEFAULT NULL,
   `status` varchar(50) DEFAULT 'DRAFT',
@@ -1036,6 +1037,39 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line` (
   KEY `assigned_aircraft` (`assigned_aircraft`),
   KEY `idx_atak_nine_line_author_user` (`tenant_id`,`author_user_id`),
   CONSTRAINT `atak_nine_line_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_nine_line_recipients` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `nine_line_id` int unsigned NOT NULL,
+  `callsign` varchar(64) NOT NULL,
+  `label` varchar(64) DEFAULT NULL,
+  `crew_names` varchar(500) DEFAULT NULL,
+  `status` varchar(16) NOT NULL DEFAULT 'sent',
+  `received_at` datetime DEFAULT NULL,
+  `read_at` datetime DEFAULT NULL,
+  `ack_at` datetime DEFAULT NULL,
+  `ack_by` varchar(64) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_nine_line_recipient` (`nine_line_id`,`callsign`),
+  KEY `idx_nine_line_recipient_tenant` (`tenant_id`,`created_at`),
+  CONSTRAINT `atak_nine_line_recipients_line_fk` FOREIGN KEY (`nine_line_id`) REFERENCES `atak_nine_line` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_brief_callsigns` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `scope` varchar(16) NOT NULL,
+  `owner_key` varchar(128) NOT NULL,
+  `callsign` varchar(64) NOT NULL,
+  `updated_by_user_id` int unsigned DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_brief_callsign` (`tenant_id`,`scope`,`owner_key`),
+  CONSTRAINT `atak_brief_callsigns_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `atak_orders` (

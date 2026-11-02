@@ -1,11 +1,13 @@
 /*
  * COMSPEC Athena — page /9-line (QR code et bouton de l'app JTAC de l'ATAK natif, ou seconde fenêtre du PC).
- * - Appareils remontés par le jeu (GET /9-line/appareils, toutes les 5 s) : pilote, équipage, position, fraîcheur ;
- *   sélection des destinataires du 9-LINE.
- * - Formulaire ligne par ligne (CAS ou MEDEVAC), aides et contrôle par ligne, brouillon gardé dans ce navigateur,
- *   aide au calcul des lignes 2 et 3, carte de transmission tenue à jour.
- * - Historique (GET /9-line/feed, toutes les 5 s) : affichage, reprise dans le formulaire, suppression (auteur ou
- *   responsable), vidage de l'historique (responsable, mot de confirmation).
+ * - Destinataires : appareils remontés par le jeu (GET /9-line/appareils, toutes les 5 s : pilote, équipage, position,
+ *   fraîcheur ; « Joueurs uniquement » masque les appareils sans joueur à bord), indicatif affiché modifiable
+ *   (POST /9-line/appareils/indicatif), indicatifs saisis à la main.
+ * - Formulaire ligne par ligne : 9-LINE (CAS), 5-LINE (ATP 3-09.32) ou MEDEVAC, saisie libre (aucune ligne obligatoire,
+ *   avertissements seulement), aides et contrôle par ligne, brouillon gardé dans ce navigateur, aide au calcul des
+ *   lignes 2 et 3, carte de transmission tenue à jour. Indicatif JTAC du membre (POST /9-line/indicatif).
+ * - Historique (GET /9-line/feed, toutes les 5 s) : statut de chaque destinataire (envoyé, reçu, lu, WILCO, UNABLE),
+ *   reprise dans le formulaire, suppression (auteur ou responsable), vidage (responsable, mot de confirmation).
  * Textes en français : traduits à l'affichage par i18n_dom.js (lang/en/site_auto.php, js-bundle).
  */
 (function () {
@@ -14,12 +16,16 @@
   var cfg = window.NINE_LINE || {};
   var base = String(cfg.base || '').replace(/\/$/, '');
   var locale = cfg.lang === 'fr' ? 'fr-FR' : 'en-GB';
-  var REQUIRED = cfg.required || { cas: [4, 5, 6], medevac: [1, 2, 3] };
+  var REQUIRED = cfg.required || { cas: [4, 5, 6], medevac: [1, 2, 3], fiveline: [2, 3, 4] };
   var DRAFT_KEY = 'athena.nl.draft';
+  var PLAYERS_KEY = 'athena.nl.playersOnly';
+  var MAX = 9;
 
   var DEFS = {
     cas: {
-      title: 'Appui aérien rapproché (CAS)',
+      tag: '9-LINE',
+      rail: 'CAS',
+      title: '9-LINE · Appui aérien rapproché (CAS)',
       lines: [
         ['IP / BP', 'Point initial ou d’attente, d’où l’appareil commence son attaque.', 'ex. IP DELTA ou 0123 4567'],
         ['Cap', 'Cap magnétique de l’IP vers la cible, avec la déviation (gauche / droite).', 'ex. 245° M, déviation droite'],
@@ -29,11 +35,25 @@
         ['Position cible', 'Grille de 4 à 10 chiffres (MGRS : zone facultative).', 'ex. 0234 5678'],
         ['Marquage', 'Comment la cible est désignée : laser (code), fumigène, IR, aucun.', 'ex. Laser 1688'],
         ['Amis', 'Direction et distance des troupes amies les plus proches de la cible.', 'ex. Sud 600 m'],
-        ['Dégagement', 'Sortie après l’attaque, puis remarques (menaces, restrictions, contrôle).', 'ex. Sortie nord-est vers IP DELTA. Menace SA-7 au sud.']
+        ['Dégagement', 'Sortie après l’attaque : direction, altitude, point de regroupement.', 'ex. Sortie nord-est vers IP DELTA']
+      ]
+    },
+    fiveline: {
+      tag: '5-LINE',
+      rail: '5-LINE',
+      title: '5-LINE · Brief CAS court (hélicoptère, appareil déjà sur zone)',
+      lines: [
+        ['Observateur / alerte', 'Indicatif de l’observateur (JTAC) et ordre d’alerte : « 5-LINE », type de contrôle.', 'ex. HAMMER 11, 5-LINE, type 2'],
+        ['Position amie / marquage', 'Position des amis et leur marquage (panneau, IR, fumigène).', 'ex. 0231 5642, panneau VS-17'],
+        ['Position cible', 'Grille, ou direction et distance depuis le marquage ami.', 'ex. Nord 400 m de mon marquage'],
+        ['Description / marquage cible', 'Nature de la cible et son marquage (laser, IR, fumigène).', 'ex. Mitrailleuse dans le bâtiment, fumigène rouge'],
+        ['Remarques / restrictions', 'Axe d’attaque, armement, menaces, DANGER CLOSE, restrictions de tir.', 'ex. FAH 270 ± 20, roquettes seulement, menace SA-7']
       ]
     },
     medevac: {
-      title: 'Évacuation sanitaire (MEDEVAC)',
+      tag: 'MEDEVAC',
+      rail: 'MEDEVAC',
+      title: 'MEDEVAC · Évacuation sanitaire',
       lines: [
         ['Point de prise en charge', 'Grille de la zone de poser (LZ).', 'ex. 0234 5678'],
         ['Fréquence et indicatif', 'Fréquence radio et indicatif à contacter sur place.', 'ex. 45.500 / TANGO 2'],
@@ -53,14 +73,23 @@
     heading: 'Cap entre 000 et 360.',
     grid: 'Grille de 4 à 10 chiffres (ex. 0234 5678), zone MGRS facultative.'
   };
+  var WARN = {
+    required: 'Ligne vide : à préciser à la radio si besoin.',
+    heading: 'Cap inhabituel (au-delà de 360).',
+    grid: 'Grille peu lisible : vérifiez-la.'
+  };
+  var ACK = { sent: 'ENVOYÉ', received: 'REÇU', read: 'LU', wilco: 'WILCO', unable: 'UNABLE' };
   var SEATS = { driver: 'Pilote', gunner: 'Tireur', commander: 'Chef de bord', cargo: 'Passager' };
   var TYPES = { helicopter: 'Hélicoptère', plane: 'Avion', uav: 'Drone' };
+  var RENAME_TIP = 'Changer l’indicatif affiché de cet appareil';
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('nl-form');
   var kindInput = $('nl-kind');
   var mapInput = $('nl-map');
   var live = $('nl-live');
+  var freeBox = $('nl-free');
+  var playersBox = $('nl-players-only');
   var kind = 'cas';
   var selected = {};
   var aircraft = [];
@@ -68,7 +97,9 @@
   var canClear = false;
   var pinned = null;
   var historyMap = 0;
+  var renaming = '';
   var csrf = String(cfg.csrf || '');
+  var jtac = String(cfg.jtac || '');
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -90,46 +121,60 @@
     if (sec < 60) return fmt('il y a %1 s', sec);
     return fmt('il y a %1 min', Math.floor(sec / 60));
   }
+  function cleanCs(v) { return String(v || '').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, 32); }
+  function lineCount(k) { return (k || kind) === 'fiveline' ? 5 : 9; }
   function field(n) { return $('nl-line' + n); }
-  function value(n) { var el = field(n); return el ? el.value.trim() : ''; }
+  function value(n) { var el = field(n); return el && n <= lineCount() ? el.value.trim() : ''; }
   function isRequired(n) { return (REQUIRED[kind] || []).indexOf(n) !== -1; }
+  function isFree() { return !!freeBox.checked; }
+  function myCallsign() { return jtac || String(cfg.jtacDefault || 'JTAC'); }
+  function kindOf(it) { return it.mission_kind === 'medevac' ? 'medevac' : (it.mission_kind === 'fiveline' ? 'fiveline' : 'cas'); }
 
-  // ---------- Champs ligne par ligne ----------
-  Array.prototype.forEach.call(document.querySelectorAll('.nl-lines[data-lines]'), function (box) {
-    box.innerHTML = box.getAttribute('data-lines').split(',').map(function (v) {
-      var n = Number(v);
-      var input = n === 9
-        ? '<textarea class="input-field nl-input" id="nl-line9" name="line9" rows="2" maxlength="1000" aria-describedby="nl-help9 nl-err9"></textarea>'
-        : '<input class="input-field nl-input" id="nl-line' + n + '" name="line' + n + '" type="text" maxlength="255" aria-describedby="nl-help' + n + ' nl-err' + n + '">';
-      return '<div class="ce-field nl-line" data-line="' + n + '">'
-        + '<label class="ce-label" for="nl-line' + n + '"><span class="nl-num" aria-hidden="true">' + n + '</span>'
+  // ---------- Champs ligne par ligne (9 champs, les 4 derniers masqués en 5-LINE) ----------
+  (function build() {
+    var html = '';
+    for (var n = 1; n <= MAX; n++) {
+      var input = '<textarea class="effk-sel nl-input" id="nl-line' + n + '" name="line' + n + '" rows="1" maxlength="1000" aria-describedby="nl-help' + n + ' nl-err' + n + '"></textarea>';
+      html += '<div class="nl-line" data-line="' + n + '">'
+        + '<label class="nl-line__lbl" for="nl-line' + n + '"><span class="nl-num" aria-hidden="true">' + n + '</span>'
         + '<span class="nl-label" id="nl-label' + n + '"></span><span class="nl-req" aria-hidden="true">*</span></label>'
         + input
-        + '<span class="ce-label-hint" id="nl-help' + n + '"></span>'
+        + '<span class="nl-help" id="nl-help' + n + '"></span>'
         + '<span class="nl-err" id="nl-err' + n + '" role="alert"></span></div>';
-    }).join('');
-  });
+    }
+    $('nl-lines').innerHTML = html;
+  })();
 
   function applyKind(next, keepValues) {
-    kind = next === 'medevac' ? 'medevac' : 'cas';
+    kind = DEFS[next] ? next : 'cas';
     kindInput.value = kind;
     var def = DEFS[kind];
-    for (var n = 1; n <= 9; n++) {
+    var count = lineCount();
+    for (var n = 1; n <= MAX; n++) {
+      var row = field(n).closest('.nl-line');
+      var on = n <= count;
+      row.hidden = !on;
+      if (!on) continue;
       var d = def.lines[n - 1];
       $('nl-label' + n).textContent = d[0];
       $('nl-help' + n).textContent = d[1];
       field(n).setAttribute('placeholder', d[2]);
-      var row = field(n).closest('.nl-line');
-      row.classList.toggle('is-required', isRequired(n));
-      field(n).toggleAttribute('required', isRequired(n));
+      field(n).setAttribute('maxlength', n === count ? '1000' : '255');
+      row.classList.toggle('is-required', isRequired(n) && !isFree());
+      row.classList.toggle('is-wide', kind === 'fiveline' && n === 5);
       setError(n, '');
     }
+    $('nl-lines').classList.toggle('is-five', kind === 'fiveline');
+    $('nl-remarks-row').hidden = kind === 'fiveline';
+    if (kind === 'fiveline' && !value(1)) field(1).value = myCallsign() + ', 5-LINE';
     $('nl-kind-title').textContent = def.title;
-    $('nl-rail-kind').textContent = kind === 'medevac' ? 'MEDEVAC' : 'CAS';
+    $('nl-top-kind').textContent = def.tag;
+    $('nl-rail-kind').textContent = def.rail;
+    $('nl-req-note').textContent = isFree() ? 'saisie libre : aucune ligne obligatoire' : 'lignes obligatoires marquées *';
     Array.prototype.forEach.call(document.querySelectorAll('[data-kind]'), function (b) {
-      var on = b.getAttribute('data-kind') === kind;
-      b.classList.toggle('is-active', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var on2 = b.getAttribute('data-kind') === kind;
+      b.classList.toggle('is-on', on2);
+      b.setAttribute('aria-pressed', on2 ? 'true' : 'false');
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-only]'), function (el) {
       el.hidden = el.getAttribute('data-only') !== kind;
@@ -138,187 +183,312 @@
     refresh();
   }
 
-  // ---------- Contrôle par ligne ----------
-  function gridOk(txt) { return grid(txt) !== null; }
+  // ---------- Contrôle par ligne (saisie libre : avertissements, jamais bloquant) ----------
   function check(n) {
     var v = value(n);
+    var count = lineCount();
     if (!v) return isRequired(n) ? 'required' : '';
-    if (v.length > (n === 9 ? 1000 : 255)) return 'too_long';
+    if (v.length > (n === count ? 1000 : 255)) return 'too_long';
     if (kind === 'cas' && n === 2) {
       var m = v.match(/^(\d{1,3})/);
       if (m && Number(m[1]) > 360) return 'heading';
     }
-    if ((kind === 'cas' && n === 6) || (kind === 'medevac' && n === 1)) {
-      if (!gridOk(v)) return kind === 'cas' ? 'grid' : '';
-    }
+    if (kind === 'cas' && n === 6 && !grid(v)) return 'grid';
     return '';
   }
+  function blocking(code) { return code === 'too_long' || (code && !isFree()); }
   function setError(n, code) {
     var el = $('nl-err' + n);
     if (!el) return;
-    el.textContent = code ? (ERR[code] || code) : '';
+    var warn = code && !blocking(code);
+    el.textContent = code ? (warn ? (WARN[code] || ERR[code] || code) : (ERR[code] || code)) : '';
+    el.classList.toggle('is-warn', !!warn);
     var f = field(n);
-    f.classList.toggle('is-invalid', !!code);
-    f.setAttribute('aria-invalid', code ? 'true' : 'false');
+    f.classList.toggle('is-invalid', !!code && !warn);
+    f.classList.toggle('is-warn', !!warn);
+    f.setAttribute('aria-invalid', code && !warn ? 'true' : 'false');
   }
   function validateAll() {
     var first = 0;
-    for (var n = 1; n <= 9; n++) {
+    for (var n = 1; n <= lineCount(); n++) {
       var code = check(n);
       setError(n, code);
-      if (code && !first) first = n;
+      if (blocking(code) && !first) first = n;
     }
     return first;
   }
 
   // ---------- Brouillon (ce navigateur seulement) ----------
   function saveDraft() {
-    var d = { kind: kind, lines: {} };
-    for (var n = 1; n <= 9; n++) d.lines[n] = field(n).value;
+    var d = { kind: kind, free: isFree(), lines: {}, remarks: $('nl-remarks').value };
+    for (var n = 1; n <= MAX; n++) d.lines[n] = field(n).value;
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch (e) {}
   }
   function loadDraft() {
     var d = null;
     try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { d = null; }
     if (!d || typeof d !== 'object') return 'cas';
-    for (var n = 1; n <= 9; n++) field(n).value = d.lines && d.lines[n] ? String(d.lines[n]) : '';
-    return d.kind === 'medevac' ? 'medevac' : 'cas';
+    for (var n = 1; n <= MAX; n++) field(n).value = d.lines && d.lines[n] ? String(d.lines[n]) : '';
+    $('nl-remarks').value = d.remarks ? String(d.remarks) : '';
+    freeBox.checked = !!d.free;
+    return DEFS[d.kind] ? d.kind : 'cas';
   }
   function resetForm() {
-    for (var n = 1; n <= 9; n++) { field(n).value = ''; setError(n, ''); }
+    for (var n = 1; n <= MAX; n++) { field(n).value = ''; setError(n, ''); }
+    $('nl-remarks').value = '';
     try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
     $('nl-calc-out').textContent = '';
     message('', '');
+    if (kind === 'fiveline') field(1).value = myCallsign() + ', 5-LINE';
     refresh();
   }
 
-  // ---------- Avancement, carte de transmission ----------
+  // ---------- Carte de transmission ----------
+  function acks(list) {
+    if (!list || !list.length) return '';
+    return '<div class="nl-acks">' + list.map(function (r) {
+      var st = ACK[r.status] ? r.status : 'sent';
+      var tip = r.ack_by ? fmt('par %1', r.ack_by) : '';
+      return '<span class="nl-ack is-' + st + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' + raw(r.label || r.callsign) + ' <b>' + esc(ACK[st]) + '</b></span>';
+    }).join('') + '</div>';
+  }
   function card(it, opts) {
     opts = opts || {};
-    var k = it.mission_kind === 'medevac' ? 'medevac' : 'cas';
+    var k = kindOf(it);
+    var count = lineCount(k);
     var rows = '';
-    for (var n = 1; n <= 9; n++) {
+    for (var n = 1; n <= count; n++) {
       var v = it['line' + n] || '';
       rows += '<li class="' + (v ? '' : 'is-empty') + '"><i>' + n + '</i><em>' + esc(DEFS[k].lines[n - 1][0]) + '</em>'
         + '<b>' + (v ? raw(v) : '<span class="nl-none">néant</span>') + '</b></li>';
     }
+    if (k !== 'fiveline' && it.remarks) {
+      rows += '<li><i>+</i><em>Remarques</em><b>' + raw(it.remarks) + '</b></li>';
+    }
     var dest = it.assigned_aircraft ? raw(it.assigned_aircraft) : '<span class="nl-none">tous les appareils à l’écoute</span>';
     return '<article class="nl-card' + (opts.draft ? ' is-draft' : '') + '">'
-      + '<header class="nl-card__head"><span class="nl-card__kind">' + (k === 'medevac' ? 'MEDEVAC' : 'CAS') + ' · 9-LINE</span>'
+      + '<header class="nl-card__head"><span class="nl-card__kind" translate="no">' + esc(DEFS[k].tag) + (k === 'cas' ? ' · CAS' : '') + '</span>'
       + '<span class="nl-card__stamp">' + esc(opts.stamp || '') + '</span></header>'
       + '<p class="nl-card__to"><span>Destinataires</span> ' + dest + '</p>'
       + '<ol class="nl-card__lines">' + rows + '</ol>'
+      + (opts.acks ? acks(it.recipients) : '')
       + (opts.foot ? '<footer class="nl-card__foot">' + opts.foot + '</footer>' : '')
       + '</article>';
   }
+  function destList() { return Object.keys(selected); }
   function destLabel() {
-    return Object.keys(selected).join(', ');
+    return destList().map(function (cs) { return selected[cs].label || cs; }).join(', ');
   }
   function refresh() {
     var filled = 0;
-    var req = REQUIRED[kind] || [];
+    var count = lineCount();
+    var req = isFree() ? [] : (REQUIRED[kind] || []);
     var reqOk = 0;
-    var draft = { mission_kind: kind, assigned_aircraft: destLabel() };
-    for (var n = 1; n <= 9; n++) {
+    var draft = { mission_kind: kind, assigned_aircraft: destLabel(), remarks: $('nl-remarks').value.trim() };
+    for (var n = 1; n <= count; n++) {
       var v = value(n);
       draft['line' + n] = v;
       if (v) filled++;
       if (v && req.indexOf(n) !== -1) reqOk++;
     }
-    $('nl-rail-lines').textContent = filled + ' / 9';
-    $('nl-rail-dest').textContent = String(Object.keys(selected).length);
-    $('nl-progress').style.width = Math.round(filled / 9 * 100) + '%';
-    $('nl-progress-text').textContent = fmt('Lignes obligatoires : %1 / %2', reqOk, req.length);
+    $('nl-rail-lines').textContent = filled + ' / ' + count;
+    $('nl-rail-dest').textContent = String(destList().length);
+    $('nl-progress-text').textContent = req.length ? reqOk + ' / ' + req.length : '—';
     $('nl-draft-state').textContent = filled ? fmt('%1 ligne(s) renseignée(s)', filled) : 'Brouillon vide';
     $('nl-preview').innerHTML = card(draft, { draft: true, stamp: 'Brouillon' });
+    renderDest();
   }
 
-  // ---------- Appareils remontés par le jeu ----------
-  function person(p) {
+  // ---------- Destinataires ----------
+  function person(p, crewKnown) {
     if (!p) return '<span class="nl-none">inconnu</span>';
     var out = '<b>' + raw(p.label || p.game_name || '') + '</b>';
     if (p.name) out += ' <span class="nl-person__name">' + raw(p.name) + '</span>';
-    if (!p.linked) out += ' <span class="nl-tag" title="Nom reçu du jeu, sans compte Athena reconnu">jeu</span>';
+    if (!p.player && crewKnown) out += ' <span class="nl-tag is-ia">IA</span>';
+    else if (!p.linked) out += ' <span class="nl-tag" title="Nom reçu du jeu, sans compte Athena reconnu">jeu</span>';
     return out;
+  }
+  function visibleAircraft() {
+    return playersBox.checked ? aircraft.filter(function (a) { return a.has_player || selected[a.callsign]; }) : aircraft;
   }
   function renderAircraft() {
     var box = $('nl-aircraft');
-    var count = $('nl-aircraft-count');
-    var fresh = $('nl-aircraft-fresh');
+    var list = visibleAircraft();
+    var hidden = aircraft.length - list.length;
+    $('nl-ai-hidden').textContent = hidden > 0 ? fmt('%1 appareil(s) sans joueur masqué(s)', hidden) : '';
     if (!aircraft.length) {
-      count.textContent = 'Aucun appareil';
-      fresh.textContent = '—';
-      box.innerHTML = '<div class="ce-notice ce-notice--info nl-empty"><p class="ce-notice__kicker">Aucune donnée</p>'
-        + '<p class="ce-notice__title">Aucun appareil remonté par le jeu</p>'
-        + '<p class="ce-notice__lead">Le mod doit être connecté à Athena (COMSPEC Link) et un aéronef doit avoir quelqu’un à bord. Vous pouvez quand même rédiger et transmettre le 9-LINE sans destinataire.</p></div>'
-        + selectedOrphans();
+      $('nl-aircraft-count').textContent = 'Aucun appareil';
+      $('nl-aircraft-fresh').textContent = '—';
+      box.innerHTML = '<div class="nl-empty"><b>Aucun appareil remonté par le jeu</b>Le mod doit être connecté à Athena (COMSPEC Link) et un aéronef doit avoir quelqu’un à bord. Vous pouvez quand même saisir un indicatif à la main ci-dessous.</div>';
       return;
     }
     var liveN = aircraft.filter(function (a) { return a.live; }).length;
-    count.textContent = fmt('%1 appareil(s), %2 en direct', aircraft.length, liveN);
-    fresh.textContent = fmt('Dernière remontée %1', ago(Math.min.apply(null, aircraft.map(function (a) { return a.age_s; }))));
-    box.innerHTML = aircraft.map(function (a) {
+    $('nl-aircraft-count').textContent = fmt('%1 appareil(s), %2 en direct', aircraft.length, liveN);
+    $('nl-aircraft-fresh').textContent = fmt('Dernière remontée %1', ago(Math.min.apply(null, aircraft.map(function (a) { return a.age_s; }))));
+    if (!list.length) {
+      box.innerHTML = '<div class="nl-empty"><b>Aucun appareil avec un joueur à bord</b>Décochez « Joueurs uniquement » pour voir les appareils de l’IA.</div>';
+      return;
+    }
+    box.innerHTML = list.map(function (a) {
       var on = !!selected[a.callsign];
       var crew = (a.crew || []).filter(function (c) { return c.seat !== 'driver'; });
       var facts = [];
       if (a.grid) facts.push('<span><em>Grille</em> ' + raw(a.grid) + '</span>');
-      if (a.alt_m !== null && a.alt_m !== undefined) facts.push('<span><em>Altitude</em> ' + raw(a.alt_ft + ' ft · ' + a.alt_m + ' m') + '</span>');
+      if (a.alt_m !== null && a.alt_m !== undefined) facts.push('<span><em>Alt</em> ' + raw(a.alt_ft + ' ft') + '</span>');
       if (a.heading !== null && a.heading !== undefined) facts.push('<span><em>Cap</em> ' + raw(('00' + a.heading).slice(-3) + '°') + '</span>');
-      if (a.fuel_pct !== null && a.fuel_pct !== undefined) facts.push('<span><em>Carburant</em> ' + raw(a.fuel_pct + ' %') + '</span>');
-      if (a.freq) facts.push('<span><em>Fréquence</em> ' + raw(a.freq) + '</span>');
+      if (a.fuel_pct !== null && a.fuel_pct !== undefined) facts.push('<span><em>Carb.</em> ' + raw(a.fuel_pct + ' %') + '</span>');
+      if (a.freq) facts.push('<span><em>Fréq.</em> ' + raw(a.freq) + '</span>');
       if (a.laser) facts.push('<span><em>Laser</em> ' + raw(a.laser) + '</span>');
       var state = !a.live ? '<span class="nl-state is-lost">Signal perdu</span>'
         : (String(a.status).toUpperCase() === 'IN-FLIGHT' ? '<span class="nl-state is-air">En vol</span>' : '<span class="nl-state is-ground">Au sol</span>');
+      var label = a.label || a.callsign;
+      var edit = renaming === a.callsign
+        ? '<span class="nl-ac__rename"><input class="effk-sel nl-input nl-mono" data-rename-input="' + esc(a.callsign) + '" maxlength="32" list="nl-air-suggest" value="' + esc(label) + '">'
+          + '<button type="button" class="effk-btn is-sm" data-rename-save="' + esc(a.callsign) + '">OK</button>'
+          + '<button type="button" class="effk-btn is-sm" data-rename-cancel="1">Annuler</button></span>'
+        : '';
       return '<label class="nl-ac' + (on ? ' is-selected' : '') + (a.live ? '' : ' is-stale') + '">'
         + '<input type="checkbox" class="nl-ac__check" value="' + esc(a.callsign) + '" data-map="' + a.map_id + '"' + (on ? ' checked' : '') + '>'
         + '<span class="nl-ac__body">'
-        + '<span class="nl-ac__top"><b class="nl-ac__cs">' + raw(a.callsign) + '</b>' + state + '</span>'
+        + '<span class="nl-ac__top"><b class="nl-ac__cs">' + raw(label) + '</b>'
+        + (label !== a.callsign ? '<span class="nl-ac__orig" title="Indicatif remonté par le jeu">' + raw(a.callsign) + '</span>' : '')
+        + state
+        + '<button type="button" class="effk-btn is-sm nl-ac__edit" data-rename="' + esc(a.callsign) + '" title="' + esc(RENAME_TIP) + '">' + esc('Indicatif') + '</button></span>'
+        + edit
         + '<span class="nl-ac__model">' + raw(a.model || '') + (TYPES[a.aircraft_type] ? ' · ' + esc(TYPES[a.aircraft_type]) : '')
-        + (a.map_name ? ' · ' + raw(a.map_name) : '') + '</span>'
-        + '<span class="nl-ac__pilot"><em>Pilote</em> ' + person(a.pilot) + '</span>'
+        + (a.map_name ? ' · ' + raw(a.map_name) : '') + ' · ' + esc(fmt('mis à jour %1', ago(a.age_s))) + '</span>'
+        + '<span class="nl-ac__pilot"><em>Pilote</em> ' + person(a.pilot, a.crew_count > 0) + '</span>'
         + (crew.length ? '<span class="nl-ac__crew"><em>Équipage</em> ' + crew.map(function (c) {
-          return person(c) + ' <span class="nl-seat">' + esc(SEATS[c.seat] || SEATS.cargo) + '</span>';
+          return person(c, true) + ' <span class="nl-seat">' + esc(SEATS[c.seat] || SEATS.cargo) + '</span>';
         }).join(' · ') + '</span>' : '')
         + '<span class="nl-ac__facts">' + facts.join('') + '</span>'
-        + '<span class="nl-ac__age">' + esc(fmt('Mis à jour %1', ago(a.age_s))) + '</span>'
         + '</span></label>';
-    }).join('') + selectedOrphans();
+    }).join('');
   }
-  /** Destinataires choisis dont l'appareil n'est plus remonté : gardés, et retirables. */
-  function selectedOrphans() {
-    var known = {};
-    aircraft.forEach(function (a) { known[a.callsign] = true; });
-    var orphans = Object.keys(selected).filter(function (cs) { return !known[cs]; });
-    if (!orphans.length) return '';
-    return '<p class="nl-orphans">Toujours destinataires, plus remontés par le jeu : ' + orphans.map(function (cs) {
-      return '<button type="button" class="nl-chip" data-unselect="' + esc(cs) + '">' + raw(cs) + ' ×</button>';
-    }).join(' ') + '</p>';
+  /** Destinataires choisis (appareils de la liste et indicatifs saisis) : retirables d'un clic. */
+  function renderDest() {
+    var cs = destList();
+    $('nl-dest').innerHTML = cs.map(function (c) {
+      var s = selected[c];
+      var known = aircraft.some(function (a) { return a.callsign === c; });
+      return '<button type="button" class="nl-chip" data-unselect="' + esc(c) + '" title="' + esc(known ? 'Retirer ce destinataire' : 'Saisi à la main ou plus remonté par le jeu : retirer') + '">' + raw(s.label || c) + ' ×</button>';
+    }).join('');
   }
+  function addManual() {
+    var input = $('nl-manual-cs');
+    var cs = cleanCs(input.value);
+    if (!cs) { input.focus(); return; }
+    selected[cs] = { label: cs, manual: true, map: Number(mapInput.value) || 1 };
+    input.value = '';
+    renderAircraft();
+    refresh();
+  }
+  $('nl-manual-add').addEventListener('click', addManual);
+  $('nl-manual-cs').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addManual(); } });
   $('nl-aircraft').addEventListener('change', function (e) {
     var cb = e.target.closest('.nl-ac__check');
     if (!cb) return;
-    if (cb.checked) selected[cb.value] = Number(cb.getAttribute('data-map')) || 1;
+    var a = aircraft.filter(function (x) { return x.callsign === cb.value; })[0] || {};
+    if (cb.checked) selected[cb.value] = { label: a.label || cb.value, map: Number(cb.getAttribute('data-map')) || 1 };
     else delete selected[cb.value];
-    var maps = Object.keys(selected).map(function (k) { return selected[k]; });
+    var maps = destList().map(function (k) { return selected[k].map; }).filter(Boolean);
     if (maps.length) mapInput.value = String(maps[0]);
     renderAircraft();
     refresh();
   });
   $('nl-aircraft').addEventListener('click', function (e) {
+    var t = e.target;
+    var r = t.closest('[data-rename]');
+    var save = t.closest('[data-rename-save]');
+    var cancel = t.closest('[data-rename-cancel]');
+    if (t.closest('.nl-ac__rename input')) return;
+    if (!r && !save && !cancel) return;
+    e.preventDefault();
+    if (cancel) { renaming = ''; renderAircraft(); return; }
+    if (r) {
+      renaming = r.getAttribute('data-rename');
+      renderAircraft();
+      var inp = document.querySelector('[data-rename-input]');
+      if (inp) { inp.focus(); inp.select(); }
+      return;
+    }
+    saveRename(save.getAttribute('data-rename-save'));
+  });
+  $('nl-aircraft').addEventListener('keydown', function (e) {
+    var inp = e.target.closest('[data-rename-input]');
+    if (!inp) return;
+    if (e.key === 'Enter') { e.preventDefault(); saveRename(inp.getAttribute('data-rename-input')); }
+    if (e.key === 'Escape') { renaming = ''; renderAircraft(); }
+  });
+  function saveRename(cs) {
+    var inp = document.querySelector('[data-rename-input]');
+    var fd = new FormData();
+    fd.append('callsign', cs);
+    fd.append('label', cleanCs(inp ? inp.value : ''));
+    post('/9-line/appareils/indicatif', fd).then(function (r) {
+      if (!r.ok) { message('err', r.error || 'Indicatif non enregistré.'); return; }
+      renaming = '';
+      aircraft.forEach(function (a) { if (a.callsign === cs) a.label = r.label || cs; });
+      if (selected[cs]) selected[cs].label = r.label || cs;
+      message('ok', fmt('Indicatif affiché : %1 (remonté par le jeu : %2).', r.label || cs, cs));
+      renderAircraft();
+      refresh();
+    });
+  }
+  $('nl-dest').addEventListener('click', function (e) {
     var b = e.target.closest('[data-unselect]');
     if (!b) return;
     delete selected[b.getAttribute('data-unselect')];
     renderAircraft();
     refresh();
   });
+  playersBox.addEventListener('change', function () {
+    try { localStorage.setItem(PLAYERS_KEY, playersBox.checked ? '1' : '0'); } catch (e) {}
+    renderAircraft();
+  });
+
+  // ---------- Indicatif JTAC ----------
+  function saveJtac() {
+    var inp = $('nl-jtac-cs');
+    var cs = cleanCs(inp.value);
+    var fd = new FormData();
+    fd.append('callsign', cs);
+    post('/9-line/indicatif', fd).then(function (r) {
+      if (!r.ok) { message('err', r.error || 'Indicatif non enregistré.'); return; }
+      jtac = r.callsign || '';
+      inp.value = jtac;
+      message('ok', jtac ? fmt('Indicatif JTAC : %1.', jtac) : fmt('Indicatif JTAC : celui d’Athena (%1).', r.author || myCallsign()));
+      if (kind === 'fiveline' && /, 5-LINE$/.test(value(1))) { field(1).value = myCallsign() + ', 5-LINE'; refresh(); }
+    });
+  }
+  $('nl-jtac-save').addEventListener('click', saveJtac);
+  $('nl-jtac-cs').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveJtac(); } });
 
   // ---------- Historique ----------
+  function summary(it) {
+    var k = kindOf(it);
+    if (k === 'fiveline') return (it.line3 || '?') + ' · ' + (it.line4 || '');
+    if (k === 'medevac') return (it.line1 || '?') + ' · ' + (it.line3 || '');
+    return (it.line1 || 'IP') + ' → ' + (it.line6 || '?');
+  }
+  function ackShort(list) {
+    if (!list || !list.length) return '';
+    var n = { wilco: 0, unable: 0, read: 0, received: 0, sent: 0 };
+    list.forEach(function (r) { n[r.status] = (n[r.status] || 0) + 1; });
+    var parts = [];
+    if (n.wilco) parts.push(n.wilco + ' WILCO');
+    if (n.unable) parts.push(n.unable + ' UNABLE');
+    if (n.read) parts.push(fmt('%1 lu(s)', n.read));
+    if (n.received) parts.push(fmt('%1 reçu(s)', n.received));
+    if (n.sent) parts.push(fmt('%1 en attente', n.sent));
+    return parts.join(' · ');
+  }
   function renderHistory() {
     var list = $('nl-history');
-    $('nl-history-count').textContent = items.length ? fmt('%1 9-LINE', items.length) : 'Aucun 9-LINE';
+    $('nl-history-count').textContent = items.length ? fmt('%1 demande(s)', items.length) : 'Aucune demande';
     $('nl-clear').hidden = !canClear || !items.length;
     if (!items.length) {
-      $('nl-selected').innerHTML = '<div class="ce-notice ce-notice--muted"><p class="ce-notice__lead">Aucun 9-LINE pour l’instant. Rédigez-en un ci-dessus, ou dans l’app JTAC du jeu (TRANSMETTRE LE 9-LINE) : il apparaît ici en quelques secondes.</p></div>';
+      $('nl-selected').innerHTML = '<p class="nl-hint">Aucune demande pour l’instant. Rédigez-en une ici, ou dans l’app JTAC du jeu : elle apparaît en quelques secondes, avec les accusés des pilotes.</p>';
       list.innerHTML = '';
       return;
     }
@@ -327,18 +497,18 @@
       + (cur.map_name ? '<span>' + raw(cur.map_name) + '</span>' : '')
       + '<span>' + raw(when(cur.updated_at || cur.created_at)) + '</span>'
       + (cur.status ? '<span class="nl-tag" translate="no">' + esc(cur.status) + '</span>' : '');
-    $('nl-selected').innerHTML = card(cur, { stamp: cur.id === items[0].id ? 'Dernier reçu' : 'Sélectionné', foot: foot });
+    $('nl-selected').innerHTML = card(cur, { stamp: cur.id === items[0].id ? 'Dernier reçu' : 'Sélectionné', foot: foot, acks: true });
     list.innerHTML = items.map(function (it) {
-      var k = it.mission_kind === 'medevac' ? 'MEDEVAC' : 'CAS';
+      var ak = ackShort(it.recipients);
       return '<li class="nl-hist' + (it.id === cur.id ? ' is-on' : '') + '">'
         + '<button type="button" class="nl-hist__main" data-show="' + it.id + '">'
-        + '<span class="nl-hist__kind" translate="no">' + k + '</span>'
-        + '<span class="nl-hist__what">' + raw((it.line1 || 'IP') + ' → ' + (it.line6 || '?')) + '</span>'
+        + '<span class="nl-hist__kind" translate="no">' + esc(DEFS[kindOf(it)].tag) + '</span>'
+        + '<span class="nl-hist__what">' + raw(summary(it)) + '</span>'
         + '<small>' + raw(it.author || 'JTAC') + ' · ' + raw(when(it.updated_at || it.created_at))
-        + (it.assigned_aircraft ? ' · ' + raw(it.assigned_aircraft) : '') + '</small></button>'
+        + (it.assigned_aircraft ? ' · ' + raw(it.assigned_aircraft) : '') + (ak ? ' · ' + esc(ak) : '') + '</small></button>'
         + '<span class="nl-hist__acts">'
-        + '<button type="button" class="ce-btn ce-btn--soft nl-mini" data-reuse="' + it.id + '">Reprendre</button>'
-        + (it.can_delete ? '<button type="button" class="ce-btn ce-btn--soft nl-mini nl-danger" data-delete="' + it.id + '">Supprimer</button>' : '')
+        + '<button type="button" class="effk-btn is-sm" data-reuse="' + it.id + '">Reprendre</button>'
+        + (it.can_delete ? '<button type="button" class="effk-btn is-sm nl-danger" data-delete="' + it.id + '">Supprimer</button>' : '')
         + '</span></li>';
     }).join('');
   }
@@ -356,18 +526,19 @@
       renderHistory();
       $('nl-selected').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } else if (reuse) {
-      applyKind(it.mission_kind, true);
-      for (var n = 1; n <= 9; n++) field(n).value = it['line' + n] || '';
+      applyKind(kindOf(it), true);
+      for (var n = 1; n <= MAX; n++) field(n).value = n <= lineCount() ? (it['line' + n] || '') : '';
+      $('nl-remarks').value = it.remarks || '';
       saveDraft();
       refresh();
       message('info', 'Lignes reprises dans le formulaire : vérifiez-les avant de transmettre.');
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (del) {
-      confirmBox('Supprimer ce 9-LINE ?', fmt('%1 → %2, par %3. La suppression est définitive, pour tous les membres et dans le jeu.', it.line1 || 'IP', it.line6 || '?', it.author || 'JTAC'), false, function () {
+      confirmBox('Supprimer cette demande ?', fmt('%1, par %2. La suppression est définitive, pour tous les membres et dans le jeu.', summary(it), it.author || 'JTAC'), false, function () {
         post('/9-line/' + id + '/supprimer', new FormData()).then(function (r) {
           if (!r.ok) { message('err', r.error || 'Suppression impossible.'); return; }
           if (pinned === id) pinned = null;
-          message('ok', '9-LINE supprimé.');
+          message('ok', 'Demande supprimée.');
           pollFeed();
         });
       });
@@ -381,14 +552,14 @@
   $('nl-clear').addEventListener('click', function () {
     var sel = $('nl-history-map');
     var scope = historyMap ? fmt('de la carte %1', sel.options[sel.selectedIndex].text) : 'de toutes les cartes';
-    confirmBox('Vider l’historique ?', fmt('Tous les 9-LINE %1 seront supprimés définitivement, pour tous les membres et dans le jeu.', scope), true, function (word) {
+    confirmBox('Vider l’historique ?', fmt('Toutes les demandes %1 seront supprimées définitivement, pour tous les membres et dans le jeu.', scope), true, function (word) {
       var fd = new FormData();
       fd.append('confirm', word);
       fd.append('map_id', String(historyMap));
       post('/9-line/vider', fd).then(function (r) {
         if (!r.ok) { message('err', r.error || 'Suppression impossible.'); return; }
         pinned = null;
-        message('ok', fmt('%1 9-LINE supprimé(s).', r.deleted || 0));
+        message('ok', fmt('%1 demande(s) supprimée(s).', r.deleted || 0));
         pollFeed();
       });
     });
@@ -471,13 +642,14 @@
       online(true);
     }).catch(function (err) {
       online(false);
-      if (err && err.message === 'login') $('nl-selected').innerHTML = '<p class="ce-help">Connectez-vous à Athena pour voir les 9-LINE.</p>';
+      if (err && err.message === 'login') $('nl-selected').innerHTML = '<p class="nl-hint">Connectez-vous à Athena pour voir les 9-LINE.</p>';
     });
   }
   function pollAircraft() {
     return getJson('/9-line/appareils').then(function (j) {
       aircraft = (j && j.items) || [];
-      renderAircraft();
+      if (!renaming || !document.querySelector('[data-rename-input]:focus')) renderAircraft();
+      renderDest();
     }).catch(function () {});
   }
 
@@ -485,7 +657,7 @@
   function message(type, text) {
     var el = $('nl-form-msg');
     el.hidden = !text;
-    el.className = 'ce-notice nl-form-msg ' + (type === 'ok' ? 'ce-notice--info is-ok' : (type === 'err' ? 'ce-notice--warn' : 'ce-notice--muted'));
+    el.className = 'effk-note nl-msg ' + (type === 'ok' ? 'is-ok' : (type === 'err' ? 'is-warn' : 'is-info'));
     el.textContent = text || '';
   }
   form.addEventListener('submit', function (e) {
@@ -497,25 +669,28 @@
       return;
     }
     var fd = new FormData(form);
-    Object.keys(selected).forEach(function (cs) { fd.append('aircraft[]', cs); });
+    for (var n = lineCount() + 1; n <= MAX; n++) fd.delete('line' + n);
+    if (!isFree()) fd.delete('free');
+    destList().forEach(function (cs) { fd.append('aircraft[]', cs); });
     var btn = $('nl-submit');
     btn.disabled = true;
+    var to = destLabel();
     post('/9-line', fd).then(function (r) {
       btn.disabled = false;
       if (!r.ok) {
-        if (r.errors) Object.keys(r.errors).forEach(function (n) { setError(Number(n), r.errors[n]); });
+        if (r.errors) Object.keys(r.errors).forEach(function (k) { setError(Number(k), r.errors[k]); });
         message('err', r.error || 'Envoi impossible.');
         return;
       }
       resetForm();
       pinned = null;
-      message('ok', Object.keys(selected).length ? fmt('9-LINE transmis à %1.', destLabel()) : '9-LINE transmis.');
-      pollFeed().then(function () { $('nl-sec-history').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      message('ok', to ? fmt('%1 transmis à %2 : le pilote le reçoit dans BRIEFS AIR, son accusé s’affiche dans l’historique.', DEFS[kind].tag, to) : fmt('%1 transmis.', DEFS[kind].tag));
+      pollFeed().then(function () { $('nl-sec-history').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
     });
   });
   $('nl-reset').addEventListener('click', function () {
     var any = false;
-    for (var n = 1; n <= 9; n++) if (value(n)) any = true;
+    for (var n = 1; n <= lineCount(); n++) if (value(n)) any = true;
     if (any && !window.confirm('Effacer toutes les lignes du formulaire ?')) return;
     resetForm();
     field(1).focus();
@@ -523,6 +698,7 @@
   Array.prototype.forEach.call(document.querySelectorAll('[data-kind]'), function (b) {
     b.addEventListener('click', function () { applyKind(b.getAttribute('data-kind'), false); });
   });
+  freeBox.addEventListener('change', function () { applyKind(kind, false); validateAll(); });
   form.addEventListener('input', function (e) {
     var row = e.target.closest('.nl-line');
     if (row) {
@@ -580,6 +756,7 @@
   });
 
   // ---------- Démarrage ----------
+  try { playersBox.checked = localStorage.getItem(PLAYERS_KEY) !== '0'; } catch (e) {}
   applyKind(loadDraft(), true);
   renderAircraft();
   pollFeed();

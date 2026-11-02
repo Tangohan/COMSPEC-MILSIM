@@ -142,15 +142,23 @@ switch (_action) do {
         // 9-line déjà en vol vers Athena : on le dit, et la géométrie JTAC (servie une fois) reste pour le prochain envoi.
         if (_bridge && {missionNamespace getVariable ["COMSPEC_ATAK_Fires9Busy", false]}) exitWith { ["Envoi en cours…", true] call _say; };
         private _lines = ["n1","n2","n3","n4","n5","n6","n7","n8","n9"] apply { trim (_f getOrDefault [_x, ""]) };
-        if ((_lines select 5) isEqualTo "" || {(_lines select 4) isEqualTo ""}) exitWith { ["Lignes 5 (description) et 6 (position) obligatoires.", true] call _say; };
+        // Brief de mission de l'app JTAC (fn_jtacAction "brief") : ref, destinataire, saisie libre et indicatif JTAC, servis
+        // une seule fois ; en saisie libre, aucune ligne n'est exigée.
+        private _air9 = _f getOrDefault ["air9", []];
+        _f deleteAt "air9";
+        _air9 params [["_ref9", ""], ["_dest9", []], ["_free9", false], ["_cs9", ""]];
+        if (!_free9 && {(_lines select 5) isEqualTo "" || {(_lines select 4) isEqualTo ""}}) exitWith { ["Lignes 5 (description) et 6 (position) obligatoires.", true] call _say; };
         private _rem = trim (_f getOrDefault ["nr", ""]);
         private _esc = { params ["_s"]; [[[_s, "\", "\\"] call CBA_fnc_replace, """", "\"""] call CBA_fnc_replace, toString [10], " "] call CBA_fnc_replace };
         private _mapId = missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]];
         // Géométrie posée par l'app JTAC (objet JSON déjà formé), servie une seule fois : l'app CAS seule n'en a pas.
         private _geo = _f getOrDefault ["geo", ""];
         _f deleteAt "geo";
-        private _json = format ['{"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"CAS","remarks":"%3","lines":{%4}%5}', _mapId, [[] call _me] call _esc, [_rem] call _esc,
-            (_lines apply { format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc] }) joinString ",", ["", format [',"geo":%1', _geo]] select (_geo isNotEqualTo "")];
+        private _extra = if (_ref9 isEqualTo "") then { "" } else {
+            format [',"format":"9line","free":%1,"mission_id":"%2","recipients":[%3]', ["false", "true"] select _free9, [_ref9] call _esc, (_dest9 apply { format ['"%1"', [_x] call _esc] }) joinString ","]
+        };
+        private _json = format ['{"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"CAS","remarks":"%3","lines":{%4}%5%6}', _mapId, [[[] call _me, _cs9] select (_cs9 isNotEqualTo "")] call _esc, [_rem] call _esc,
+            (_lines apply { format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc] }) joinString ",", ["", format [',"geo":%1', _geo]] select (_geo isNotEqualTo ""), _extra];
         private _text = format ["9-LINE %1 | 1 %2 | 2 %3 | 3 %4 | 4 %5 | 5 %6 | 6 %7 | 7 %8 | 8 %9 | 9 %10%11", [] call _me,
             _lines select 0, _lines select 1, _lines select 2, _lines select 3, _lines select 4, _lines select 5, _lines select 6, _lines select 7, _lines select 8,
             ["", format [" | REM %1", _rem]] select (_rem isNotEqualTo "")];
@@ -183,6 +191,14 @@ switch (_action) do {
         private _lines = ["f1","f2","f3","f4","f5"] apply { trim (_f getOrDefault [_x, ""]) };
         if ((_lines select 2) isEqualTo "") exitWith { ["Ligne 3 (position de la cible) obligatoire.", true] call _say; };
         ["CAS", "", format ["5-LINE | 1 %1 | 2 %2 | 3 %3 | 4 %4 | 5 %5", _lines select 0, _lines select 1, _lines select 2, _lines select 3, _lines select 4], "URGENT", "all"] call _order;
+        // Athena (historique de la page /9-line, pilotes reliés) : même table que les 9-LINE, au format 5-LINE.
+        if (_bridge && {!_local}) then {
+            private _esc = { params ["_s"]; [[[_s, "\", "\\"] call CBA_fnc_replace, """", "\"""] call CBA_fnc_replace, toString [10], " "] call CBA_fnc_replace };
+            private _mapId = missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]];
+            private _json = format ['{"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"5LINE","format":"5line","free":true,"mission_id":"B%3%4","remarks":"","lines":{%5},"recipients":[]}',
+                _mapId, [[] call _me] call _esc, getPlayerUID player, round (diag_tickTime * 1000), (_lines apply { format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc] }) joinString ","];
+            [_json] spawn { params ["_json"]; (["COMSPECExtension", "SubmitNineLine", [_json]] call comspec_atak_native_fnc_extAwait); };
+        };
         private _log = _f getOrDefault ["log", []];
         _log pushBack format ["<t color='#5cc76b'>%1</t> 5-LINE · %2", [] call _time, _lines select 2];
         _f set ["log", _log select [((count _log) - 20) max 0]];

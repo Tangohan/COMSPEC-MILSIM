@@ -15,6 +15,8 @@ if (_state getOrDefault ["texture", false]) then { ["close"] call comspec_atak_n
 private _wasInteractive = _state getOrDefault ["interactive", false];
 // Alternat radio encore appuyé (fn_keyPass) : relâché, sinon la radio resterait en émission téléphone rangé.
 if (_wasInteractive) then { ["release"] call comspec_atak_native_fnc_keyPass; };
+// Vol stationnaire automatique engagé à la prise en main (fn_vehicleKeys) : la main est rendue au pilote.
+if (_wasInteractive) then { ["close"] call comspec_atak_native_fnc_vehicleKeys; };
 // Interaction avec la miniature (fn_miniInteract) finie : le mode en main choisi par le joueur est remis.
 if (_wasInteractive && {(uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isNotEqualTo ""}) then {
     profileNamespace setVariable ["COMSPEC_ATAK_Mode", uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", "FULL"]];

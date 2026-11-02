@@ -29,6 +29,14 @@ final class NineLineBoardService
     public const REQUIRED_LINES = [
         CasNineLineRepository::KIND_CAS => [4, 5, 6],
         CasNineLineRepository::KIND_MEDEVAC => [1, 2, 3],
+        CasNineLineRepository::KIND_FIVE => [2, 3, 4],
+    ];
+
+    /** Nombre de lignes par type (5-LINE : lignes 1 à 5). */
+    public const LINE_COUNT = [
+        CasNineLineRepository::KIND_CAS => 9,
+        CasNineLineRepository::KIND_MEDEVAC => 9,
+        CasNineLineRepository::KIND_FIVE => 5,
     ];
 
     private ?bool $hasAuthorUser = null;
@@ -37,6 +45,7 @@ final class NineLineBoardService
         private ?PDO $pdo = null,
         private ?CasNineLineRepository $repo = null,
         private ?MemberNameService $names = null,
+        private ?AirBriefService $briefs = null,
     ) {
     }
 
@@ -56,9 +65,17 @@ final class NineLineBoardService
         $sql .= ' ORDER BY COALESCE(n.updated_at, n.created_at) DESC, n.id DESC LIMIT ' . max(1, min(100, $limit));
         $st = $this->db()->prepare($sql);
         $st->execute($params);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        try {
+            $recipients = $this->briefs()->forLines($tenantId, array_map(static fn (array $r): int => (int) $r['id'], $rows));
+        } catch (\Throwable) {
+            $recipients = [];
+        }
         $out = [];
-        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
-            $out[] = $this->present($row, $userId, $manager);
+        foreach ($rows as $row) {
+            $item = $this->present($row, $userId, $manager);
+            $item['recipients'] = $recipients[(int) $row['id']] ?? [];
+            $out[] = $item;
         }
 
         return $out;
@@ -87,25 +104,32 @@ final class NineLineBoardService
     }
 
     /**
-     * Contrôle d'un 9-LINE rédigé sur le site : lignes obligatoires, longueurs, cap et grille lisibles.
+     * Contrôle d'un 9-LINE ou 5-LINE rédigé sur le site : lignes obligatoires, longueurs, cap et grille lisibles.
+     * Saisie libre : seules les longueurs bloquent (le reste n'est qu'un avertissement, côté page).
      *
-     * @param array<int, string> $lines numéro de ligne (1 à 9) => texte
+     * @param array<int, string> $lines numéro de ligne (1 à 9, ou 1 à 5) => texte
      * @return array<int, string> numéro de ligne => code d'erreur (required, too_long, heading, grid ; vide si tout est bon)
      */
-    public static function validate(string $kind, array $lines): array
+    public static function validate(string $kind, array $lines, bool $free = false): array
     {
-        $kind = $kind === CasNineLineRepository::KIND_MEDEVAC ? CasNineLineRepository::KIND_MEDEVAC : CasNineLineRepository::KIND_CAS;
+        $kind = CasNineLineRepository::normalizeKind($kind);
+        $count = self::LINE_COUNT[$kind];
         $errors = [];
-        foreach (self::REQUIRED_LINES[$kind] as $n) {
-            if (trim((string) ($lines[$n] ?? '')) === '') {
-                $errors[$n] = 'required';
+        if (!$free) {
+            foreach (self::REQUIRED_LINES[$kind] as $n) {
+                if (trim((string) ($lines[$n] ?? '')) === '') {
+                    $errors[$n] = 'required';
+                }
             }
         }
-        for ($n = 1; $n <= 9; $n++) {
+        for ($n = 1; $n <= $count; $n++) {
             $v = trim((string) ($lines[$n] ?? ''));
-            if ($v !== '' && mb_strlen($v) > ($n === 9 ? 1000 : 255)) {
+            if ($v !== '' && mb_strlen($v) > ($n === $count ? 1000 : 255)) {
                 $errors[$n] = 'too_long';
             }
+        }
+        if ($free) {
+            return $errors;
         }
         if ($kind === CasNineLineRepository::KIND_CAS && !isset($errors[2])) {
             $heading = trim((string) ($lines[2] ?? ''));
@@ -151,28 +175,42 @@ final class NineLineBoardService
     }
 
     /**
-     * Enregistre un 9-LINE rédigé sur le site (même table que l'app JTAC : visible en jeu et dans Overwatch).
+     * Enregistre un 9-LINE, 5-LINE ou MEDEVAC rédigé sur le site (même table que l'app JTAC : visible en jeu et dans
+     * Overwatch) et ses destinataires (statut « envoyé ») : le pilote le reçoit dans l'espace BRIEFS AIR de son
+     * téléphone (boîte GET /api/cas?assignedTo=~air|…).
      *
      * @param array<int, string> $lines
-     * @param list<string> $aircraft indicatifs des appareils destinataires
+     * @param list<string|array{callsign?: mixed, label?: mixed, crew?: mixed}> $aircraft destinataires (indicatifs)
      * @return array<string, mixed>
      */
-    public function create(int $tenantId, int $userId, string $author, string $kind, array $lines, array $aircraft, int $mapId): array
+    public function create(int $tenantId, int $userId, string $author, string $kind, array $lines, array $aircraft, int $mapId, string $remarks = ''): array
     {
-        $payload = ['assigned_aircraft' => self::aircraftLabel($aircraft)];
+        $kind = CasNineLineRepository::normalizeKind($kind);
+        $recipients = AirBriefService::normalizeRecipients($aircraft);
+        $labels = array_map(static fn (array $r): string => $r['callsign'], $recipients);
+        $payload = ['assigned_aircraft' => self::aircraftLabel($labels), 'remarks' => trim($remarks)];
         for ($n = 1; $n <= 9; $n++) {
-            $payload['line' . $n] = trim((string) ($lines[$n] ?? ''));
+            $payload['line' . $n] = $n <= self::LINE_COUNT[$kind] ? trim((string) ($lines[$n] ?? '')) : '';
         }
         $author = trim($author) !== '' ? trim($author) : 'JTAC';
         $mapId = max(1, $mapId);
-        $row = $kind === CasNineLineRepository::KIND_MEDEVAC
-            ? $this->repo()->createMedevac($tenantId, $mapId, $author, $payload)
-            : $this->repo()->createCas($tenantId, $mapId, $author, $payload);
+        $row = match ($kind) {
+            CasNineLineRepository::KIND_MEDEVAC => $this->repo()->createMedevac($tenantId, $mapId, $author, $payload),
+            CasNineLineRepository::KIND_FIVE => $this->repo()->createFive($tenantId, $mapId, $author, $payload),
+            default => $this->repo()->createCas($tenantId, $mapId, $author, $payload),
+        };
         $id = (int) ($row['id'] ?? 0);
         if ($id > 0 && $userId > 0 && $this->hasAuthorUserColumn()) {
             $this->db()->prepare('UPDATE atak_nine_line SET author_user_id = ? WHERE tenant_id = ? AND id = ?')
                 ->execute([$userId, $tenantId, $id]);
             $row['author_user_id'] = $userId;
+        }
+        if ($id > 0 && $recipients !== []) {
+            try {
+                $row['recipients'] = $this->briefs()->addRecipients($tenantId, $id, $recipients);
+            } catch (\Throwable $e) {
+                error_log('[9-line] destinataires : ' . $e->getMessage());
+            }
         }
 
         return $row;
@@ -224,6 +262,7 @@ final class NineLineBoardService
             return ['result' => 'forbidden', 'row' => $row];
         }
         $this->repo()->deleteCas($tenantId, $id);
+        $this->dropRecipients('nine_line_id = ?', [$id], $tenantId);
 
         return ['result' => 'ok', 'row' => $row];
     }
@@ -237,10 +276,28 @@ final class NineLineBoardService
             $sql .= ' AND map_id = ?';
             $params[] = $mapId;
         }
+        if ($mapId !== null && $mapId > 0) {
+            $this->dropRecipients('nine_line_id IN (SELECT id FROM atak_nine_line WHERE tenant_id = ? AND map_id = ?)', [$tenantId, $mapId], $tenantId);
+        } else {
+            $this->dropRecipients('1 = 1', [], $tenantId);
+        }
         $st = $this->db()->prepare($sql);
         $st->execute($params);
 
         return $st->rowCount();
+    }
+
+    /**
+     * Destinataires supprimés avec leurs demandes (cascade de la clé étrangère ; explicite pour les bases sans).
+     *
+     * @param list<int> $params
+     */
+    private function dropRecipients(string $where, array $params, int $tenantId): void
+    {
+        try {
+            $this->db()->prepare('DELETE FROM atak_nine_line_recipients WHERE tenant_id = ? AND ' . $where)->execute(array_merge([$tenantId], $params));
+        } catch (\Throwable) {
+        }
     }
 
     /**
@@ -275,6 +332,11 @@ final class NineLineBoardService
             $gameNames[] = (string) ($r['pilot'] ?? '');
         }
         $members = $this->membersByGameName($tenantId, $gameNames);
+        try {
+            $overrides = $this->briefs()->aircraftOverrides($tenantId);
+        } catch (\Throwable) {
+            $overrides = [];
+        }
         $out = [];
         foreach ($rows as $i => $r) {
             $updated = strtotime((string) ($r['updated_at'] ?? '')) ?: 0;
@@ -298,9 +360,16 @@ final class NineLineBoardService
             $x = $r['pos_x'] !== null ? (float) $r['pos_x'] : null;
             $y = $r['pos_y'] !== null ? (float) $r['pos_y'] : null;
             $alt = $r['alt'] !== null ? (float) $r['alt'] : null;
+            $reported = (string) $r['callsign'];
+            $hasPlayer = ($pilot['player'] ?? false) === true;
+            foreach ($crew as $c) {
+                $hasPlayer = $hasPlayer || $c['player'];
+            }
             $out[] = [
                 'id' => (int) $r['id'],
-                'callsign' => (string) $r['callsign'],
+                'callsign' => $reported,
+                'label' => $overrides[AirBriefService::cleanCallsign($reported)] ?? $reported,
+                'has_player' => $hasPlayer,
                 'model' => (string) ($r['model'] ?? ''),
                 'aircraft_type' => (string) ($r['aircraft_type'] ?? ''),
                 'map_id' => (int) $r['map_id'],
@@ -407,12 +476,14 @@ final class NineLineBoardService
      */
     private function present(array $row, int $userId, bool $manager): array
     {
-        $kind = strtolower(trim((string) ($row['mission_kind'] ?? CasNineLineRepository::KIND_CAS)));
+        $kind = CasNineLineRepository::normalizeKind($row['mission_kind'] ?? CasNineLineRepository::KIND_CAS);
         $item = [
             'id' => (int) $row['id'],
             'map_id' => (int) ($row['map_id'] ?? 1),
             'map_name' => (string) ($row['map_name'] ?? ''),
-            'mission_kind' => $kind === CasNineLineRepository::KIND_MEDEVAC ? CasNineLineRepository::KIND_MEDEVAC : CasNineLineRepository::KIND_CAS,
+            'mission_kind' => $kind,
+            'format' => AirBriefService::format($kind),
+            'remarks' => (string) ($row['remarks'] ?? ''),
             'author' => (string) ($row['author'] ?? ''),
             'from_site' => (int) ($row['author_user_id'] ?? 0) > 0,
             'assigned_aircraft' => (string) ($row['assigned_aircraft'] ?? ''),
@@ -439,6 +510,11 @@ final class NineLineBoardService
         }
 
         return $this->hasAuthorUser;
+    }
+
+    private function briefs(): AirBriefService
+    {
+        return $this->briefs ??= new AirBriefService($this->db());
     }
 
     private function repo(): CasNineLineRepository

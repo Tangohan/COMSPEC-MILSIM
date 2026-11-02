@@ -150,6 +150,8 @@ if (_interactive) then {
         if (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) then { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; };
         false
     }];
+    // Pilote aux commandes d'un aéronef : avertissement discret, vol stationnaire automatique en hélicoptère (fn_vehicleKeys).
+    ["open"] call comspec_atak_native_fnc_vehicleKeys;
 };
 
 [] call comspec_atak_native_fnc_schedulerStart;

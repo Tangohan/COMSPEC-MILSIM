@@ -875,6 +875,9 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",
     ["ATAK pour les équipages d'hélico et d'avion", "Pilote, copilote et tireurs d'un hélicoptère ou d'un avion ont l'ATAK sur la tablette de bord, même sans téléphone ou avec un téléphone vide ou cassé. Elle se range quand on descend."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_phone_autohover", "CHECKBOX",
+    ["Vol stationnaire auto avec l'ATAK en main (hélico)", "Réglage personnel. Pilote d'un hélicoptère presque immobile en vol : prendre l'ATAK en main engage le vol stationnaire automatique, rendu à la fermeture du téléphone (la souris sert alors au téléphone, le clavier reste aux commandes)."],
+    _team, true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_vehicle_terminal", "LIST",
     ["Tablette dans les véhicules", "Conducteur, tireur et chef de bord d'un véhicule ou d'un bateau ont l'ATAK sur une tablette fixée à bord, sans avoir besoin de téléphone. « Avec le kit installé » : seulement dans les véhicules équipés du kit tablette (action ACE)."],
     _team, [["all", "kit", "off"], ["Tous les véhicules", "Avec le kit installé", "Aucun"], 0], 1] call comspec_atak_native_fnc_addSetting;

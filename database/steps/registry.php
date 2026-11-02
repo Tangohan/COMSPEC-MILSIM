@@ -59,4 +59,5 @@ return [
     ['id' => 'atak_nine_line_author_user', 'label' => 'Page 9-LINE : auteur des demandes rédigées sur le site (droit de suppression de l’auteur)', 'group' => 'schema', 'file' => '3675_atak_nine_line_author_user.php', 'rerun' => true],
     ['id' => 'qualification_issuer_fields', 'label' => 'Qualifications : pays, localisation, site officiel et présentation anglaise des émetteurs dans des champs à part (repris de leur présentation), émetteurs réels reliés au catalogue', 'group' => 'schema', 'file' => '3680_qualification_issuer_fields.php', 'rerun' => true],
     ['id' => 'atak_mobile_links', 'label' => 'Sur mon téléphone : liens QR à usage unique vers les apps mobiles (comptes rendus, CR fin d’op, carte, briefs air) et sessions mobiles révocables', 'group' => 'schema', 'file' => '3690_atak_mobile_links.php', 'rerun' => true],
+    ['id' => 'atak_nine_line_recipients', 'label' => '9-LINE et 5-LINE : envoi au pilote (destinataires, accusés reçu, lu, WILCO, UNABLE) et indicatifs JTAC et appareils choisis sur le site', 'group' => 'schema', 'file' => '3720_atak_nine_line_recipients.php', 'rerun' => true],
 ];

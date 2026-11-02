@@ -12606,6 +12606,22 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $assignedTo = $request->query('assignedTo') ?? $request->query('assigned_to');
         $status = $request->query('status');
+        // Boîte du pilote (espace BRIEFS AIR du téléphone) : assignedTo=~air|nom1|nom2 (GetCASForCallsign de la DLL).
+        if (is_string($assignedTo) && str_starts_with($assignedTo, \App\Services\Tactical\AirBriefService::INBOX_PREFIX)) {
+            $names = array_slice(explode('|', substr($assignedTo, strlen(\App\Services\Tactical\AirBriefService::INBOX_PREFIX))), 0, 8);
+            try {
+                $briefs = new \App\Services\Tactical\AirBriefService();
+                $body = \App\Services\Tactical\AirBriefService::inboxSqf($briefs->inbox($tenantId, $names));
+            } catch (\Throwable) {
+                $body = '[]';
+            }
+
+            return (new Response())
+                ->setStatusCode(200)
+                ->header('Content-Type', 'text/plain; charset=UTF-8')
+                ->header('Cache-Control', 'no-store')
+                ->setBody($body);
+        }
         try {
             $rows = $this->casRepo->listCas($tenantId, $mapId, $assignedTo, $status, CasNineLineRepository::KIND_CAS);
 
@@ -12625,12 +12641,25 @@ class AtakApiController
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $author = $body['author'] ?? $body['jtac'] ?? 'JTAC';
-        $row = $this->casRepo->createCas($tenantId, $mapId, $author, $body);
+        // 5-LINE de l'app JTAC (format « 5line » ou mission_kind « 5LINE ») : même table, lignes 1 à 5.
+        $kind = CasNineLineRepository::normalizeKind($body['format'] ?? $body['mission_kind'] ?? $body['missionKind'] ?? 'cas');
+        $row = $kind === CasNineLineRepository::KIND_FIVE
+            ? $this->casRepo->createFive($tenantId, $mapId, (string) $author, $body)
+            : $this->casRepo->createCas($tenantId, $mapId, (string) $author, $body);
+        // Destinataires choisis dans l'app JTAC : statut suivi jusqu'à l'accusé du pilote (WILCO / UNABLE).
+        $recipients = is_array($body['recipients'] ?? null) ? $body['recipients'] : [];
+        if ($recipients !== [] && (int) ($row['id'] ?? 0) > 0) {
+            try {
+                $row['recipients'] = (new \App\Services\Tactical\AirBriefService())->addRecipients($tenantId, (int) $row['id'], $recipients);
+            } catch (\Throwable $e) {
+                error_log('[api/cas] destinataires : ' . $e->getMessage());
+            }
+        }
         $this->activityLog->record(
             $tenantId,
             $mapId,
             AtakActivityLogService::TYPE_NINE_LINE,
-            'Demande d’appui aérien envoyée — ' . $author,
+            ($kind === CasNineLineRepository::KIND_FIVE ? '5-LINE envoyé — ' : 'Demande d’appui aérien envoyée — ') . $author,
             (string) $author
         );
         return Response::json($row, 201);
@@ -12711,12 +12740,29 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $id = (int) ($params['id'] ?? 0);
         $body = $this->jsonBody($request);
         $status = $body['status'] ?? '';
         if ($status === '') {
             return Response::json(['error' => 'status required'], 400);
         }
+        // Accusé du pilote (« WILCO:HOG 21 », SendCASState de la DLL) : ref = mission_id du jeu ou identifiant Athena.
+        $ack = \App\Services\Tactical\AirBriefService::parseAck($status);
+        if ($ack !== null) {
+            try {
+                $res = (new \App\Services\Tactical\AirBriefService())->acknowledge($tenantId, (string) ($params['id'] ?? ''), $ack[0], $ack[1]);
+            } catch (\Throwable) {
+                $res = ['result' => 'unavailable', 'recipient' => null];
+            }
+            if ($res['result'] === 'not_found') {
+                return Response::json(['error' => 'Not found'], 404);
+            }
+            if ($res['result'] === 'unavailable') {
+                return Response::json(['error' => 'unavailable'], 503);
+            }
+
+            return Response::json(['ok' => true, 'recipient' => $res['recipient']]);
+        }
+        $id = (int) ($params['id'] ?? 0);
         $row = $this->casRepo->updateCasStatus($tenantId, $id, $status);
         if ($row === null) {
             return Response::json(['error' => 'Not found or invalid status'], 404);

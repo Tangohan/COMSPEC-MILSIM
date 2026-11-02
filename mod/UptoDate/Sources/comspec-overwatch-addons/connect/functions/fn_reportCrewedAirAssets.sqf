@@ -85,7 +85,9 @@ if (_airAssets isEqualTo []) exitWith { false };
     if (_model isEqualTo "") then { _model = typeOf _x; };
     if (_model isEqualTo "") then { _model = "Aeronef"; };
 
-    private _callsign = _x getVariable ["COMSPEC_Callsign", ""];
+    // Indicatif choisi par le pilote dans l'ATAK natif (espace BRIEFS AIR de l'app JTAC), sinon celui du véhicule.
+    private _callsign = _x getVariable ["COMSPEC_ATAK_AirCs", ""];
+    if (!(_callsign isEqualType "") || {_callsign isEqualTo ""}) then { _callsign = _x getVariable ["COMSPEC_Callsign", ""]; };
     if (!(_callsign isEqualType "") || {_callsign isEqualTo ""}) then {
         _callsign = _x getVariable ["COMSPEC_GpsCallsign", ""];
     };
