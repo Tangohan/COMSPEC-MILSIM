@@ -75,6 +75,11 @@ final class QualificationCriteriaEngine
     {
         $type = (string) ($c['type'] ?? 'metric');
         if ($type === 'academy') {
+            // Cours intégré de l’Academy (JTAC, cours inspirés des standards OTAN) : désigné par sa clé.
+            $key = (string) ($c['course_key'] ?? '');
+            if ($key !== '') {
+                return preg_match('/\A[a-z0-9-]{1,64}\z/', $key) === 1 ? ['type' => 'academy', 'course_key' => $key] : null;
+            }
             $id = (int) ($c['course_id'] ?? 0);
 
             return $id > 0 ? ['type' => 'academy', 'course_id' => $id] : null;
@@ -117,7 +122,8 @@ final class QualificationCriteriaEngine
      * @param array<string, mixed> $rule règle normalisée
      * @param callable(array<string, mixed>): ?float $measure valeur mesurée d'un critère (null : donnée absente, compte 0)
      * @param callable(int): bool $holdsQualification le membre détient-il cette qualification (valide)
-     * @param callable(int): bool $passedCourse le membre a-t-il une attestation valide de cette formation
+     * @param callable(int|string): bool $passedCourse le membre a-t-il une attestation valide de cette formation (id) ou
+     *                                                 terminé ce cours intégré (clé)
      * @return array{met: bool, pct: int, op: string, groups: list<array{op: string, met: bool, pct: int, items: list<array{criterion: array<string, mixed>, met: bool, current: float, target: float, pct: int}>}>}
      */
     public static function evaluate(array $rule, callable $measure, callable $holdsQualification, callable $passedCourse): array
@@ -128,7 +134,9 @@ final class QualificationCriteriaEngine
             foreach ($g['items'] as $c) {
                 $type = (string) ($c['type'] ?? 'metric');
                 if ($type === 'academy' || $type === 'qualification') {
-                    $ok = $type === 'academy' ? $passedCourse((int) $c['course_id']) : $holdsQualification((int) $c['definition_id']);
+                    $ok = $type === 'academy'
+                        ? $passedCourse(isset($c['course_key']) ? (string) $c['course_key'] : (int) $c['course_id'])
+                        : $holdsQualification((int) $c['definition_id']);
                     $items[] = ['criterion' => $c, 'met' => $ok, 'current' => $ok ? 1.0 : 0.0, 'target' => 1.0, 'pct' => $ok ? 100 : 0];
                     continue;
                 }
@@ -224,7 +232,8 @@ final class QualificationCriteriaEngine
             return [];
         }
         foreach ($criteria as $c) {
-            if (($c['type'] ?? '') !== 'academy') {
+            // Un cours intégré n’a pas d’attestation à rattacher : la règle est évaluée membre par membre.
+            if (($c['type'] ?? '') !== 'academy' || isset($c['course_key'])) {
                 return [];
             }
         }

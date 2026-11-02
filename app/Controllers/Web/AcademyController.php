@@ -225,6 +225,7 @@ final class AcademyController
                         }
                         return AcademyCurriculum::validateChapter($state, $state['snapshot'], $userId, $comment, time());
                     });
+                    $this->awardBuiltInQualification($repository, $tenantId, $learnerId, $key, $userId);
                 }
                 $returnSpace = 'instructor';
             } else {
@@ -237,6 +238,30 @@ final class AcademyController
             return $this->error(in_array($e->getMessage(), ['locked', 'reflection_required', 'not_enrolled'], true) ? $e->getMessage() : 'invalid_content', 422);
         } catch (\PDOException) {
             return $this->error('unavailable', 503);
+        }
+    }
+
+    /**
+     * Dernier chapitre d’un cours intégré validé : la qualification Athena Academy du cours est créée si besoin dans le
+     * référentiel (mode « Formation Academy ») puis attribuée par la règle automatique. Ne bloque jamais la validation.
+     */
+    private function awardBuiltInQualification(AcademyRepository $repository, int $tenantId, int $learnerId, string $key, int $instructorId): void
+    {
+        if (!isset(AcademyBuiltInCourses::qualifications()[$key])) {
+            return;
+        }
+        try {
+            $state = $repository->states($tenantId, $learnerId)[$key] ?? null;
+            if (!is_array($state) || ($state['completed'] ?? false) !== true) {
+                return;
+            }
+            $definitionId = \App\Services\Academy\AcademyBuiltInQualifications::forPdo(\App\Core\Database::getPdo())
+                ->ensureDefinition($tenantId, $key, function_exists('locale') ? (string) locale() : 'fr', $instructorId);
+            if ($definitionId > 0) {
+                Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->runAuto($tenantId, $definitionId);
+            }
+        } catch (\Throwable $e) {
+            error_log('[academy] qualification du cours ' . $key . ' : ' . $e->getMessage());
         }
     }
 
@@ -435,7 +460,7 @@ final class AcademyController
             }
             // Nouvelle version d'un cours publié : l'original reste en ligne jusqu'à la publication. Copie : cours indépendant.
             $copy = $source;
-            unset($copy['built_in'], $copy['demo'], $copy['replaces'], $copy['updated_at'], $copy['archived']);
+            unset($copy['built_in'], $copy['license_code'], $copy['qualification'], $copy['demo'], $copy['replaces'], $copy['updated_at'], $copy['archived']);
             $revision = $action === 'studio_revise' && $course !== null && $course['published'];
             if ($revision) {
                 $copy['replaces'] = $key;

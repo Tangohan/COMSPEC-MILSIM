@@ -63,6 +63,7 @@
     node.querySelector('[data-qr-min]').value = c.min != null ? c.min : '';
     node.querySelector('[data-qr-window]').value = String(c.window_days || 0);
     if (c.course_id) node.querySelector('[data-qr-course]').value = String(c.course_id);
+    if (c.course_key) node.querySelector('[data-qr-course]').value = 'key:' + c.course_key;
     if (c.definition_id) node.querySelector('[data-qr-def]').value = String(c.definition_id);
     syncItem(node, c.scope != null ? c.scope : null);
     node.querySelector('[data-qr-type]').addEventListener('change', function () { syncItem(node, null); write(); });
@@ -93,7 +94,10 @@
       Array.prototype.forEach.call(gEl.querySelectorAll('[data-qr-item]'), function (it) {
         var type = it.querySelector('[data-qr-type]').value;
         if (type === 'academy') {
-          var cid = parseInt(it.querySelector('[data-qr-course]').value, 10);
+          var courseValue = it.querySelector('[data-qr-course]').value;
+          // Cours intégré de l'Academy (JTAC, cours OTAN) : « key:<clé> » ; formation de la communauté : son numéro.
+          if (courseValue.indexOf('key:') === 0) { items.push({ type: 'academy', course_key: courseValue.slice(4) }); return; }
+          var cid = parseInt(courseValue, 10);
           if (cid > 0) items.push({ type: 'academy', course_id: cid });
           return;
         }

@@ -243,6 +243,11 @@ final class QualificationCriteriaCatalog
     {
         $type = (string) ($c['type'] ?? 'metric');
         if ($type === 'academy') {
+            if (isset($c['course_key'])) {
+                $key = (string) $c['course_key'];
+
+                return 'Réussir le cours Academy « ' . ($names['builtin'][$key] ?? $key) . ' »';
+            }
             $id = (int) ($c['course_id'] ?? 0);
 
             return 'Réussir la formation Academy « ' . ($names['courses'][$id] ?? ('#' . $id)) . ' »';
