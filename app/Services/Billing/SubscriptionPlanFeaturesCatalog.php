@@ -182,12 +182,12 @@ final class SubscriptionPlanFeaturesCatalog
             ],
             'max_members' => [
                 'label' => 'Nombre max. de membres',
-                'help' => 'Plafond de comptes dans la communauté (0 = illimite).',
+                'help' => 'Plafond de comptes dans la communauté (0 = illimité).',
                 'type' => 'int',
             ],
             'max_training_courses' => [
                 'label' => 'Nombre max. de parcours',
-                'help' => 'Plafond de formations catalogue (0 = illimite).',
+                'help' => 'Plafond de formations catalogue (0 = illimité).',
                 'type' => 'int',
             ],
         ];
@@ -350,14 +350,19 @@ final class SubscriptionPlanFeaturesCatalog
      *
      * @return array<string, bool|int>
      */
-    public static function buildFeaturesFromForm(array $input, array $existing = []): array
+    public static function buildFeaturesFromForm(array $input, array $existing = [], string $slug = ''): array
     {
         $out = $existing;
         foreach (self::BOOL_FEATURES as $key) {
             $out[$key] = !empty($input['feature_' . $key]);
         }
+        $catalog = $slug !== '' ? self::defaultsForSlug($slug) : [];
         foreach (self::INT_FEATURES as $key) {
-            $raw = $input['feature_' . $key] ?? ($existing[$key] ?? 0);
+            $raw = $input['feature_' . $key] ?? null;
+            if (!is_numeric(is_string($raw) ? trim($raw) : $raw)) {
+                // Champ vidé ou absent : on garde le plafond actuel (sinon celui du catalogue), jamais « illimité » par accident.
+                $raw = $existing[$key] ?? ($catalog[$key] ?? 0);
+            }
             $out[$key] = max(0, (int) $raw);
         }
 
