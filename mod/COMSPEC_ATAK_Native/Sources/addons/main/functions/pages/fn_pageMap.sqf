@@ -78,15 +78,22 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
     _ov set ["heading", _hd];
 };
 
-// Bandeau d'information (bas gauche) : une seule pastille, deux cases séparées d'un filet, même hauteur, liseré vert
-// à gauche. Case 1 : curseur (en main) ou ma position (porté) ; case 2 : mon cap, mon indicatif et mon équipe de feu
-// (couleur de l'anneau autour de mon symbole). Ligne 1 = valeur principale en grand, ligne 2 = détails en petit gris
-// (fn_mapOverlayUpdate). Largeur calée sur le texte (avant : bandeau étiré jusqu'à la carte « moi », à moitié vide)
-// et rectangle gardé pour que les noms des repères et des lieux ne passent plus dessous (fn_mapMarkerText).
-// Police = petite police × taille des textes de carte (Réglages > Carte).
+// Bandeau d'information : style, éléments, position, fond et taille choisis par le joueur dans le volet de configuration
+// de la carte (fn_mapPrefs « band », profil) :
+//   NEW (2.9.34, par défaut) : une pastille, deux cases séparées d'un filet (case 1 : curseur en main ou ma position
+//     porté ; case 2 : mon cap, mon indicatif et mon équipe de feu), ligne 1 en grand, détails en ligne 2, flèche du gisement ;
+//   CLASSIC (rendu d'avant 2.9.34) : mêmes cases, un seul texte par case (valeur en grand, détails dessous) ;
+//   COMPACT : une seule ligne ; HIDDEN : aucun bandeau.
+// La case 2 n'existe que si le cap ou « moi » est affiché. Largeur calée sur le texte, rectangle gardé pour que les noms
+// des repères et des lieux ne passent plus dessous (fn_mapMarkerText). Police = petite police × taille des textes de carte
+// (Réglages > Carte) × taille du texte du bandeau.
+private _bc = ["band"] call comspec_atak_native_fnc_mapPrefs;
+private _bStyle = _bc get "style";
+private _bShow = _bc get "show";
+private _bTop = (_bc get "pos") isEqualTo "TOP";
 private _mini = _l get "mini";
 private _mts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
-private _panFs = _fs * ([0.78, 0.7] select _mini) * _mts;
+private _panFs = _fs * ([0.78, 0.7] select _mini) * _mts * (_bc get "text");
 private _panW = ((((_mw * 0.34) min (_font * 9 / _ratio)) * ([1, 0.75] select _mini)) * (_mts max 1)) min (_mw * ([0.44, 0.62] select _mini));
 private _panIn = _pad * 0.6;
 // En main, la barre d'outils occupe le bord droit : le bandeau s'arrête avant.
@@ -95,66 +102,116 @@ private _toolCol = [0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _
 private _chW = _panFs * 0.6 / _ratio;
 private _cellIn = _panIn / _ratio * 1.2;
 private _avail = (_mw - 2 * _pad - _toolCol) max (_panW * 1.2);
-// Case 2 : « CAP 317° NNO » (mon cap, étiqueté) en ligne 1, « TA1 BLEU · 1519 1729 » en petit en ligne 2 (sans grille
-// en porté et en mini : la case 1 la donne).
-private _meW = ((([19, 14] select _mini) * _chW) + _cellIn * 2) min (_avail * 0.45);
-// Case 1, en main : ligne 1 « CURSEUR 33T XE 1513 1736 » (grille MGRS complète, une seule fois), ligne 2 flèche du
-// gisement + « 94 m · 317° NO · ALT 17 m ». Case trop étroite (_curWrap) : altitude (et réseau) en ligne 3 ; encore plus
-// étroite (_curNarrow) : la zone MGRS passe aussi en ligne 3, la ligne 1 ne garde que la grille. Calque réseau
-// affiché : débit et perte sous le curseur en ligne 3 (toujours trois lignes).
-private _curNeed = 31 * _chW + _cellIn * 2;
-private _curW = (_avail - _meW) min (_curNeed max (_panW * 0.9));
-private _curNarrow = _curW < (24 * _chW + _cellIn * 2);
-private _curWrap = _interactive && {_curNarrow || {_curW < (_curNeed * 0.94)} || {profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]}};
-// Hauteurs : ligne 1 (valeur en taille 1,2), lignes de détail (taille 0,9 du contrôle).
-private _l1H = _panFs * 1.45;
-private _l2H = _panFs * 1.12;
-private _panH = _l1H + _l2H * ([1, 2] select _curWrap) + _panIn * 1.5;
-private _py0 = _by + _mh - _panH - _pad;
+private _meOn = ("HDG" in _bShow) || {"ME" in _bShow};
+private _bandH = 0;
+private _stripW = 0;
 private _px0 = _bx + _pad;
-private _stripW = _curW + _meW;
-// Fond plus opaque qu'avant (0,74) : lisible sur le sable, la neige et les cartes claires.
-private _bg = ["COMSPEC_RscText", [_px0, _py0, _stripW, _panH]] call _mk;
-_bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, 0.86];
-private _edge = ["COMSPEC_RscText", [_px0, _py0, pixelW * 3, _panH]] call _mk;
-_edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9];
-private _sep = ["COMSPEC_RscText", [_px0 + _curW, _py0 + _panIn, pixelW, _panH - _panIn * 2]] call _mk;
-_sep ctrlSetBackgroundColor [0.55, 0.62, 0.58, 0.35];
-private _ly1 = _py0 + _panIn * 0.75;
-private _ly2 = _ly1 + _l1H;
+private _py0 = _by + _pad;
+private _hud = [];
+_ov set ["bandStyle", _bStyle];
 private _txtCtl = {
     params ["_x0", "_y0", "_w", "_h", "_fh"];
     private _t = ["COMSPEC_RscStructuredText", [_x0, _y0, _w, _h]] call _mk;
     _t ctrlSetFontHeight (_fh max COMSPEC_ATAK_FontMin);
     _t
 };
-private _cx1 = _px0 + pixelW * 3 + _cellIn;
-private _cw1 = _curW - pixelW * 3 - _cellIn * 1.6;
-private _cur = [_cx1, _ly1, _cw1, _l1H, _panFs] call _txtCtl;
-// Flèche du gisement (moi -> curseur, ou A -> B), nord en haut comme la carte : en main seulement (porté : ma position).
-private _arS = _l2H * 0.82;
-private _arW = [0, _arS / _ratio] select _interactive;
-if (_interactive) then {
-    private _arw = ["COMSPEC_RscIcon", [_cx1, _ly2 + (_l2H - _arS) / 2, _arW, _arS], _dir + "nav_straight.paa"] call _mk;
-    _arw ctrlSetTextColor [0.36, 0.85, 0.42, 1];
-    _arw ctrlShow false;
-    _ov set ["cursorArrow", _arw];
+// Place la pastille (en bas à gauche, ou en haut au centre), son fond, son liseré vert et le filet entre les cases.
+private _place = {
+    params ["_sepX", "_defAlpha"];
+    _py0 = [_by + _mh - _bandH - _pad, _by + _pad] select _bTop;
+    _px0 = [_bx + _pad, (_bx + (_mw - _toolCol - _stripW) / 2) max (_bx + _pad)] select _bTop;
+    private _bg = ["COMSPEC_RscText", [_px0, _py0, _stripW, _bandH]] call _mk;
+    _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, [_bc get "alpha", _defAlpha] select ((_bc get "alpha") < 0)];
+    private _edge = ["COMSPEC_RscText", [_px0, _py0, pixelW * 3, _bandH]] call _mk;
+    _edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9];
+    if (_sepX > 0) then {
+        private _sep = ["COMSPEC_RscText", [_px0 + _sepX, _py0 + _panIn, pixelW, _bandH - _panIn * 2]] call _mk;
+        _sep ctrlSetBackgroundColor [0.55, 0.62, 0.58, 0.35];
+    };
 };
-private _arGap = [0, _chW * 0.5] select _interactive;
-private _cur2 = [_cx1 + _arW + _arGap, _ly2, _cw1 - _arW - _arGap, _l2H * ([1, 2] select _curWrap), _panFs * 0.9] call _txtCtl;
-private _cx2 = _px0 + _curW + _cellIn;
-private _cw2 = _meW - _cellIn * 1.6;
-private _me = [_cx2, _ly1, _cw2, _l1H, _panFs] call _txtCtl;
-private _me2 = [_cx2, _ly2, _cw2, _l2H, _panFs * 0.9] call _txtCtl;
-_ov set ["cursor", _cur];
-_ov set ["cursor2", _cur2];
-_ov set ["cursorWrap", _curWrap];
-_ov set ["cursorNarrow", _curNarrow];
-_ov set ["me", _me];
-_ov set ["me2", _me2];
+switch (_bStyle) do {
+    case "HIDDEN": {};
+    case "COMPACT": {
+        // Une ligne : « 33T XE 1513 1736 · 94 m 317° NO · ALT 17 m · CAP 042° · B-04 ».
+        _stripW = _avail min ((([52, 40] select _mini) * _chW) + _cellIn * 2);
+        _bandH = _panFs * 1.3 + _panIn;
+        [0, 0.86] call _place;
+        private _cur = [_px0 + pixelW * 3 + _cellIn, _py0 + _panIn / 2, _stripW - pixelW * 3 - _cellIn * 1.6, _panFs * 1.3, _panFs] call _txtCtl;
+        _ov set ["cursor", _cur];
+    };
+    case "CLASSIC": {
+        // Rendu d'avant 2.9.34 : case 1 « CURSEUR 1732 1750  2135 m · 085° E » (taille 1,2) et détails en dessous ; trop
+        // étroite : distance et azimut en ligne 2, MGRS et altitude en ligne 3. Case 2 : « 317° NO » en grand, indicatif dessous.
+        private _panLine = _panFs * 1.18;
+        private _meW = [0, ((([18, 13] select _mini) * _chW) + _cellIn * 2) min (_avail * 0.45)] select _meOn;
+        private _curNeed = ([36, 30] select _mini) * 1.2 * _chW + _cellIn * 2;
+        private _curW = (_avail - _meW) min (_curNeed max (_panW * 0.9));
+        private _curWrap = _curW < (_curNeed * 0.92);
+        _bandH = _panLine * ([2.15, 3.1] select _curWrap) + _panIn * 2;
+        _stripW = _curW + _meW;
+        [[0, _curW] select _meOn, 0.74] call _place;
+        private _cell = {
+            params ["_x0", "_w"];
+            [_x0 + _cellIn, _py0 + _panIn * 0.7, _w - _cellIn * 1.6, _bandH - _panIn * 1.2, _panFs] call _txtCtl
+        };
+        _ov set ["cursor", [_px0 + pixelW * 3, _curW - pixelW * 3] call _cell];
+        _ov set ["cursorWrap", _curWrap];
+        if (_meOn) then { _ov set ["me", [_px0 + _curW, _meW] call _cell]; };
+    };
+    default {
+        // Case 2 : « CAP 317° NNO » (mon cap, étiqueté) en ligne 1, « TA1 BLEU · 1519 1729 » en petit en ligne 2 (sans
+        // grille en porté et en mini : la case 1 la donne).
+        private _meW = [0, ((([19, 14] select _mini) * _chW) + _cellIn * 2) min (_avail * 0.45)] select _meOn;
+        // Case 1, en main : ligne 1 « CURSEUR 33T XE 1513 1736 » (grille MGRS complète, une seule fois), ligne 2 flèche du
+        // gisement + « 94 m · 317° NO · ALT 17 m ». Case trop étroite (_curWrap) : altitude (et réseau) en ligne 3 ; encore
+        // plus étroite (_curNarrow) : la zone MGRS passe aussi en ligne 3, la ligne 1 ne garde que la grille. Calque réseau
+        // affiché : débit et perte sous le curseur en ligne 3 (toujours trois lignes).
+        private _curNeed = 31 * _chW + _cellIn * 2;
+        private _curW = (_avail - _meW) min (_curNeed max (_panW * 0.9));
+        private _curNarrow = _curW < (24 * _chW + _cellIn * 2);
+        private _curWrap = _interactive && {_curNarrow || {_curW < (_curNeed * 0.94)} || {profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]}};
+        // Hauteurs : ligne 1 (valeur en taille 1,2), lignes de détail (taille 0,9 du contrôle).
+        private _l1H = _panFs * 1.45;
+        private _l2H = _panFs * 1.12;
+        _bandH = _l1H + _l2H * ([1, 2] select _curWrap) + _panIn * 1.5;
+        _stripW = _curW + _meW;
+        // Fond plus opaque qu'avant (0,74) : lisible sur le sable, la neige et les cartes claires.
+        [[0, _curW] select _meOn, 0.86] call _place;
+        private _ly1 = _py0 + _panIn * 0.75;
+        private _ly2 = _ly1 + _l1H;
+        private _cx1 = _px0 + pixelW * 3 + _cellIn;
+        private _cw1 = _curW - pixelW * 3 - _cellIn * 1.6;
+        private _cur = [_cx1, _ly1, _cw1, _l1H, _panFs] call _txtCtl;
+        // Flèche du gisement (moi -> curseur, ou A -> B), nord en haut comme la carte : en main seulement (porté : ma
+        // position), si la distance et le gisement sont affichés.
+        private _arOn = _interactive && {"DIST" in _bShow};
+        private _arS = _l2H * 0.82;
+        private _arW = [0, _arS / _ratio] select _arOn;
+        if (_arOn) then {
+            private _arw = ["COMSPEC_RscIcon", [_cx1, _ly2 + (_l2H - _arS) / 2, _arW, _arS], _dir + "nav_straight.paa"] call _mk;
+            _arw ctrlSetTextColor [0.36, 0.85, 0.42, 1];
+            _arw ctrlShow false;
+            _ov set ["cursorArrow", _arw];
+        };
+        private _arGap = [0, _chW * 0.5] select _arOn;
+        private _cur2 = [_cx1 + _arW + _arGap, _ly2, _cw1 - _arW - _arGap, _l2H * ([1, 2] select _curWrap), _panFs * 0.9] call _txtCtl;
+        _ov set ["cursor", _cur];
+        _ov set ["cursor2", _cur2];
+        _ov set ["cursorWrap", _curWrap];
+        _ov set ["cursorNarrow", _curNarrow];
+        if (_meOn) then {
+            private _cx2 = _px0 + _curW + _cellIn;
+            private _cw2 = _meW - _cellIn * 1.6;
+            _ov set ["me", [_cx2, _ly1, _cw2, _l1H, _panFs] call _txtCtl];
+            _ov set ["me2", [_cx2, _ly2, _cw2, _l2H, _panFs * 0.9] call _txtCtl];
+        };
+    };
+};
+// Hauteur prise en bas de la carte par le bandeau (boutons OUTILS / RECHERCHER, fiches et panneaux posés au-dessus).
+private _panH = [0, _bandH] select (!_bTop && {_bandH > 0});
 // Rectangles de l'interface posée sur la carte, relatifs au coin de la carte, avec sa taille : fn_mapHudRects les
 // rend aux noms des repères, des lieux et aux cartouches, qui ne passent plus dessous.
-private _hud = [[_px0 - _bx, _py0 - _by, _px0 + _stripW - _bx, _py0 + _panH - _by]];
+if (_bandH > 0) then { _hud pushBack [_px0 - _bx, _py0 - _by, _px0 + _stripW - _bx, _py0 + _bandH - _by]; };
 private _hdC = _ov getOrDefault ["heading", controlNull];
 if (!isNull _hdC) then { (ctrlPosition _hdC) params ["_hx", "_hy", "_hw", "_hh"]; _hud pushBack [_hx - _bx, _hy - _by, _hx + _hw - _bx, _hy + _hh - _by]; };
 uiNamespace setVariable ["COMSPEC_ATAK_MapHudRects", [[_mw, _mh], _hud]];
@@ -443,6 +500,15 @@ if (_interactive) then {
                 private _per = [count _opts, ceil ((count _opts) / 2)] select ((count _opts) > 3);
                 for "_i" from 0 to ((count _opts) - 1) step _per do { _rows pushBack ["segment", "", _opts select [_i, _per]]; };
             };
+            // Bandeau du curseur et mon point GPS : choix du joueur (profil), préparés au changement (fn_mapPrefs).
+            private _bcNow = ["band"] call comspec_atak_native_fnc_mapPrefs;
+            // Ces deux sections sont repliées par défaut (leur clé dans le profil veut dire « dépliée »).
+            private _bandOpen = _full || {"band" in _folds};
+            _rows pushBack ["fold", "Bandeau du curseur", (createHashMapFromArray [["NEW", "NOUVEAU"], ["CLASSIC", "CLASSIQUE"], ["COMPACT", "COMPACT"], ["HIDDEN", "MASQUÉ"]]) get (_bcNow get "style"), _bandOpen, "band" call _foldCode];
+            if (_bandOpen) then { _rows append (["rows", "band"] call comspec_atak_native_fnc_mapPrefs); };
+            private _meOpen = _full || {"me" in _folds};
+            _rows pushBack ["fold", "Mon point GPS", (createHashMapFromArray [["ARROW", "FLÈCHE"], ["CHEVRON", "CHEVRON"], ["DOT", "POINT"], ["CIRCLE", "CERCLE"], ["TRIANGLE", "TRIANGLE"], ["NATO", "AMI APP-6"]]) getOrDefault [(["self"] call comspec_atak_native_fnc_mapPrefs) select 6, "FLÈCHE"], _meOpen, "me" call _foldCode];
+            if (_meOpen) then { _rows append (["rows", "self"] call comspec_atak_native_fnc_mapPrefs); };
             // Calques par thème : [clé, titre, [[libellé, espace (P profil, M mission, C réglage CBA du joueur), variable,
             // défaut, clé communauté (verrou Athena) ou "", explication affichée en vue CONFIGURATION]...]]
             private _groups = [
@@ -467,7 +533,8 @@ if (_interactive) then {
                 ["intel", "Renseignement", [
                     ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true, "", "Zones dangereuses et de jeu envoyées par Athena"],
                     ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true, "", "Émetteurs ennemis estimés par les relais (Athena)"],
-                    ["Guerre électronique", "P", "COMSPEC_ATAK_LayerEw", true, "", "Relèvements, brouilleurs et géolocalisations (app EW)"]
+                    ["Guerre électronique", "P", "COMSPEC_ATAK_LayerEw", true, "", "Relèvements, brouilleurs et géolocalisations (app EW)"],
+                    ["Plans de zones", "P", "COMSPEC_ATAK_ZonesShow", true, "", "Zones nommées, axes MSR / ASR et situation par zone (app Zones)"]
                 ]],
                 ["net", "Réseau et logistique", [
                     ["Relais", "P", "COMSPEC_ATAK_RelaysLayer", true, "", "Relais radio et passerelles de véhicule de votre camp"],

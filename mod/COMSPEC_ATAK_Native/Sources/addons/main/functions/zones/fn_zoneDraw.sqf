@@ -1,0 +1,151 @@
+/*
+    Plans de zones sur une carte (événement Draw) : carte de l'app Carte (fn_mapOnDraw, si « Zones sur la carte ATAK »
+    est allumé) et carte de l'app Zones (fn_zoneMap). Rien n'est recalculé à l'image : boîtes, surfaces et triangles sont
+    gardés par révision (fn_zoneAction "geo" / "tri") ; seules les zones dans la vue sont dessinées.
+      - rendu SURLIGNÉ : remplissage léger (couleur de l'état, sinon du type) et contour à la couleur du type ;
+        CONTOUR : contour seul (couleur de l'état, sinon du type) ; POINT CENTRÉ : point et nom seulement ;
+        une zone qui ferait moins de 6 pixels passe en point ;
+      - nom de la zone et état abrégé quand la zone est assez grande à l'écran (ou en point), nombre de signalements ;
+      - nom du plan au-dessus de sa boîte ;
+      - axes MSR / ASR : bande claire et trait (surligné), trait seul (contour) ou nom seul (point) ; points de contrôle ;
+      - bâtiments numérotés : zone choisie ou zoom rapproché ;
+      - carte de l'app : zone choisie cerclée de blanc, zone de travail en tirets.
+    Params : [carte, échelle des symboles, échelle des textes, plan modifié (id, "" : aucun), zone choisie (id)]
+*/
+params ["_map", ["_sc", 1], ["_ts", 1], ["_edit", ""], ["_sel", ""]];
+if (isNil {missionNamespace getVariable "COMSPEC_ATAK_ZnMine"}) then { ["mine"] call comspec_atak_native_fnc_zoneAction; };
+private _mine = missionNamespace getVariable ["COMSPEC_ATAK_ZnMine", createHashMap];
+private _rx = missionNamespace getVariable ["COMSPEC_ATAK_ZnRx", createHashMap];
+if (((count _mine) + (count _rx)) isEqualTo 0) exitWith {};
+private _list = ((values _mine) + (values _rx)) select { (_x get "vis") || {(_x get "id") isEqualTo _edit} };
+if ((count _list) isEqualTo 0) exitWith {};
+(ctrlPosition _map) params ["_cx", "_cy", "_cw", "_ch"];
+private _tl = _map ctrlMapScreenToWorld [_cx, _cy];
+private _br = _map ctrlMapScreenToWorld [_cx + _cw, _cy + _ch];
+private _mpx = ["mpx", _map] call comspec_atak_native_fnc_planGfx;
+if (_mpx <= 0) exitWith {};
+private _mg = 40 * _mpx;
+private _vx0 = ((_tl select 0) min (_br select 0)) - _mg; private _vx1 = ((_tl select 0) max (_br select 0)) + _mg;
+private _vy0 = ((_tl select 1) min (_br select 1)) - _mg; private _vy1 = ((_tl select 1) max (_br select 1)) + _mg;
+private _font = COMSPEC_ATAK_FontSet select 1;
+private _clear = "#(argb,8,8,3)color(0,0,0,0)";
+private _tex = "#(rgb,8,8,3)color(1,1,1,1)";
+private _dot = "\A3\ui_f\data\map\markers\military\dot_CA.paa";
+private _ring = "\A3\ui_f\data\map\markers\military\circle_CA.paa";
+private _tri = "\A3\ui_f\data\map\markers\military\triangle_CA.paa";
+private _fr = (missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr";
+// Couleurs et abrégés : tables fixes, faites une fois par langue.
+private _tab = uiNamespace getVariable ["COMSPEC_ATAK_ZnTab", []];
+if ((_tab param [0, ""]) isNotEqualTo (["en", "fr"] select _fr)) then {
+    private _s = createHashMap; private _t = createHashMap;
+    { _s set [_x select 0, [_x select 4, _x select ([3, 2] select _fr)]]; } forEach (["states"] call comspec_atak_native_fnc_zoneAction);
+    { _t set [_x select 0, _x select 2]; } forEach (["types"] call comspec_atak_native_fnc_zoneAction);
+    _tab = [["en", "fr"] select _fr, _s, _t];
+    uiNamespace setVariable ["COMSPEC_ATAK_ZnTab", _tab];
+};
+_tab params ["", "_stTab", "_tyTab"];
+private _scale = ctrlMapScale _map;
+private _tsz = 0.024 * _ts;
+{
+    private _b = _x;
+    private _id = _b get "id";
+    private _g = ["geo", _b] call comspec_atak_native_fnc_zoneAction;
+    (_g select 1) params ["_X0", "_Y0", "_X1", "_Y1"];
+    if (_X1 < _vx0 || {_X0 > _vx1} || {_Y1 < _vy0} || {_Y0 > _vy1}) then { continue };
+    private _isEdit = _id isEqualTo _edit;
+    private _a = [[0.85, 1] select (_id in _mine), 1] select _isEdit;
+    private _render = _b get "render";
+    private _zbb = _g select 2;
+    private _p3 = _g select 4;
+    private _tris = createHashMap;
+    if (_render isEqualTo "FILL" || {((_b get "zones") findIf { (_x select 5) isEqualTo "FILL" }) >= 0}) then { _tris = ["tri", _b] call comspec_atak_native_fnc_zoneAction; };
+    // Zone de travail (carte de l'app) : tirets blancs.
+    if (_isEdit && {(count (_g select 5)) >= 3}) then {
+        ["poly", _map, [_g select 5, [1, 1, 1, 0.7], 2, true, 0, _mpx]] call comspec_atak_native_fnc_planGfx;
+    };
+    private _showBld = _scale < 0.012;
+    {
+        _x params ["_zid", "_name", "_pts", "_lp", "_ty", "_rm", "_st", "", "", "_reps", "_bld", ["_rect", []]];
+        (_zbb select _forEachIndex) params ["_x0", "_y0", "_x1", "_y1"];
+        if (_x1 < _vx0 || {_x0 > _vx1} || {_y1 < _vy0} || {_y0 > _vy1}) then { continue };
+        if (_rm isEqualTo "") then { _rm = _render; };
+        private _sizePx = (((_x1 - _x0) max (_y1 - _y0))) / _mpx;
+        if (_sizePx < 6) then { _rm = "POINT"; };
+        private _tc = +(_tyTab getOrDefault [_ty, [1, 1, 1, 1]]);
+        (_stTab getOrDefault [_st, [[0.62, 0.66, 0.64, 1], ""]]) params ["_scol", "_sab"];
+        private _hasSt = _st isNotEqualTo "UNREC";
+        private _isSel = _isEdit && {_zid isEqualTo _sel};
+        private _lc = +([_tc, _scol] select _hasSt);
+        _tc set [3, 0.9 * _a];
+        _lc set [3, _a];
+        private _c3 = [_lp select 0, _lp select 1, 0];
+        switch (_rm) do {
+            case "FILL": {
+                private _fc = +([_tc, _scol] select _hasSt);
+                _fc set [3, [0.12, 0.26] select _hasSt];
+                if ((count _rect) isEqualTo 4) then {
+                    _map drawRectangle [[_rect select 0, _rect select 1, 0], _rect select 2, _rect select 3, 0, _fc, _tex];
+                    _map drawRectangle [[_rect select 0, _rect select 1, 0], _rect select 2, _rect select 3, 0, _tc, ""];
+                } else {
+                    private _t = _tris getOrDefault [_zid, []];
+                    if ((count _t) >= 3) then { _map drawTriangle [_t, _fc, _tex]; };
+                    _map drawPolygon [_p3 select _forEachIndex, _tc];
+                };
+            };
+            case "LINE": {
+                if ((count _rect) isEqualTo 4) then { _map drawRectangle [[_rect select 0, _rect select 1, 0], _rect select 2, _rect select 3, 0, _lc, ""]; } else { _map drawPolygon [_p3 select _forEachIndex, _lc]; };
+                if (_hasSt) then { ["poly", _map, [_p3 select _forEachIndex, _lc, 2, false, 0, _mpx]] call comspec_atak_native_fnc_planGfx; };
+            };
+            default {
+                _map drawIcon [_dot, [0, 0, 0, 0.55 * _a], _c3, 15 * _sc, 15 * _sc, 0, "", 0];
+                _map drawIcon [_dot, _lc, _c3, 11 * _sc, 11 * _sc, 0, "", 0];
+            };
+        };
+        if (_isSel) then {
+            ["poly", _map, [_p3 select _forEachIndex, [1, 1, 1, 0.95], 3, false, 0, _mpx]] call comspec_atak_native_fnc_planGfx;
+        };
+        // Étiquette : assez de place à l'écran, ou point centré.
+        if (_rm isEqualTo "POINT" || {_sizePx > 34} || {_isSel}) then {
+            private _t = _name;
+            if (_hasSt) then { _t = format ["%1 · %2", _t, _sab]; };
+            if ((count _reps) > 0) then { _t = format ["%1 (%2)", _t, count _reps]; };
+            if (_rm isEqualTo "POINT") then {
+                _map drawIcon [_clear, [1, 1, 1, _a], _c3, 0, 0, 0, " " + _t, 2, _tsz, _font, "right"];
+            } else {
+                _map drawIcon [_clear, [1, 1, 1, _a], _c3, 0, 0, 0, _t, 2, _tsz * ([1, 1.15] select (_sizePx > 120)), _font, "center"];
+            };
+        };
+        // Bâtiments numérotés.
+        if ((count _bld) > 0 && {_showBld || {_isSel}}) then {
+            {
+                _x params ["_bx", "_by", "_ba", "_bb", "_bd", ["_fl", 1]];
+                private _bp = [_bx, _by, 0];
+                _map drawRectangle [_bp, _ba, _bb, _bd, [0.95, 0.67, 0.20, 0.85 * _a], ""];
+                _map drawIcon [_clear, [1, 1, 1, _a], _bp, 0, 0, 0, [str (_forEachIndex + 1), format ["%1·%2", _forEachIndex + 1, _fl]] select (_fl > 1 && {_scale < 0.005}), 2, _tsz * 0.85, _font, "center"];
+            } forEach _bld;
+        };
+    } forEach (_b get "zones");
+    // Axes et points de contrôle.
+    {
+        _x params ["", "_name", "_cls", "_pts", "", ["_rm", ""]];
+        if (_rm isEqualTo "") then { _rm = _render; };
+        private _col = [[0.35, 0.85, 0.40, _a], [0.30, 0.58, 1, _a]] select (_cls isEqualTo "MSR");
+        private _p3a = _pts apply { [_x select 0, _x select 1, 0] };
+        if (_rm isNotEqualTo "POINT") then {
+            if (_rm isEqualTo "FILL") then { ["line", _map, [_p3a, [_col select 0, _col select 1, _col select 2, 0.28 * _a], 11, false, false, false, _mpx]] call comspec_atak_native_fnc_planGfx; };
+            ["line", _map, [_p3a, _col, [3, 4] select (_cls isEqualTo "MSR"), false, false, false, _mpx]] call comspec_atak_native_fnc_planGfx;
+        };
+        private _mid = _p3a select (floor ((count _p3a) / 2));
+        ["label", _map, [_mid, _name, _col, _tsz, _mpx, [0, 14], true]] call comspec_atak_native_fnc_planGfx;
+    } forEach (_b get "axes");
+    {
+        _x params ["", "_lbl", "_p"];
+        private _q = [_p select 0, _p select 1, 0];
+        _map drawIcon [_tri, [0, 0, 0, 0.6 * _a], _q, 19 * _sc, 19 * _sc, 0, "", 0];
+        _map drawIcon [_tri, [1, 0.82, 0.2, _a], _q, 15 * _sc, 15 * _sc, 0, " " + _lbl, 2, _tsz, _font, "right"];
+    } forEach (_b get "cps");
+    // Nom du plan au-dessus de sa boîte.
+    if (((_X1 - _X0) / _mpx) > 40) then {
+        ["label", _map, [[(_X0 + _X1) / 2, _Y1, 0], _b get "name", [1, 1, 1, 0.95 * _a], _tsz * 1.05, _mpx, [0, -14], true]] call comspec_atak_native_fnc_planGfx;
+    };
+} forEach _list;
