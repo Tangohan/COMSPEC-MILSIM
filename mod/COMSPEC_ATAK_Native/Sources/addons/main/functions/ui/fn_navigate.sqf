@@ -53,6 +53,12 @@ _s set ["history", _history];
 // Retour arrière ou redessin sans empilement : fn_pageRender retrouve le défilement de la page.
 _s set ["scrollRestore", !_push];
 _s set ["activePage", _page];
+// App Zones quittée : tracé en cours abandonné (aucun outil ni saisie de clic ne survit à un changement d'app).
+if (_prevPage isEqualTo "ZONES" && {_page isNotEqualTo "ZONES"}) then {
+    private _zu = uiNamespace getVariable ["COMSPEC_ATAK_ZnUi", createHashMap];
+    if ((_zu getOrDefault ["tool", ""]) isNotEqualTo "") then { diag_log format ["[COMSPEC ATAK][MAP] outil Zones %1 abandonné (app quittée)", _zu get "tool"]; };
+    { _zu set _x; } forEach [["tool", ""], ["draftPts", []], ["snap", []], ["vtx", -1], ["alt", false]];
+};
 // Lanceur : apps récentes (profil, gardées d'une partie à l'autre) et apps déjà ouvertes (fin de la pastille NOUVEAU).
 if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER"])}) then {
     private _rec = profileNamespace getVariable ["COMSPEC_ATAK_AppRecent", []];

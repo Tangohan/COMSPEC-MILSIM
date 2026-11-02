@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.40 : marqueurs aux vraies couleurs, carte qui ne se fige plus après le menu du clic droit, pages qui ne se superposent plus (ATAK natif 2.9.40.AG - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Marqueurs aux vraies couleurs, carte et pages réparées
+- Sur la carte de l'ATAK, les marqueurs ont maintenant exactement la couleur choisie (le rouge est rouge vif, comme dans la fiche), entourés d'un léger contour pour rester lisibles sur fond sombre ou satellite. Seuls le noir et le bleu foncé passent à une version claire sur carte sombre.
+- Après une action du menu du clic droit de la carte (Zones, Nommer les axes, Zone depuis le clic…), la carte acceptait plus aucun clic et le tracé dans l'app Zones devenait impossible : corrigé.
+- En ouvrant une app (par exemple APPLICATIONS), la page précédente (Athena, Profil…) pouvait rester dessinée par-dessous : corrigé.
+- Quitter l'app Zones abandonne le tracé en cours.
+EN : Markers in their true colours, map and pages fixed
+- On the ATAK map, markers now have exactly the chosen colour (red is bright red, as in the marker card), with a light outline to stay readable on dark or satellite maps. Only black and dark blue switch to a lighter version on dark maps.
+- After an action from the map right-click menu (Zones, Name the axes, Zone from click…), the map no longer accepted any click and drawing in the Zones app became impossible: fixed.
+- When opening an app (for example APPLICATIONS), the previous page (Athena, Profile…) could stay drawn underneath: fixed.
+- Leaving the Zones app drops the drawing in progress.
+
+### Détail technique
+- **Couleurs** (`fn_mapColors`) : « lift » [couleur, classe] ne mélange plus vers le blanc ; table explicite par classe pour la carte sombre (ColorBlack -> gris clair, ColorBlue -> #2F6BFF, ColorWEST, ColorCIV, ColorBrown…). Halo (`halo` noir 0,75 / `haloLight` blanc 0,7 sous une couleur sombre) dessiné 30 % plus grand sous l'icône dans `fn_mapGameMarkers` (calculé à l'entrée du cache, alpha de l'icône 1) et pour les repères Athena (`fn_mapOnDraw`). Étiquettes inchangées (`liftLbl`).
+- **Clics perdus** (`fn_mapCtxMenu`) : les lignes du menu s'exécutaient dans leur propre ButtonClick et « close » supprimait ce bouton pendant son gestionnaire ; le moteur ne laissait ensuite plus passer de clic (même défaut que fn_pageClear 25/10). Action différée d'une image, contrôles du menu masqués puis supprimés à l'image suivante.
+- **Pages superposées** (`fn_pageRender`) : un rendu différé (execNextFrame / waitAndExecute) d'une page quittée la redessinait par-dessus la page active. Tout rendu d'une page autre que la page active (posée par `fn_navigate` seul) est abandonné et journalisé `[UI]`.
+- **Zones** (`fn_navigate`) : outil et points du tracé remis à zéro en quittant l'app (journal `[MAP]`).
+
 ## Pack 2.9.39 : Sur mon téléphone (QR code vers les apps mobiles), briefs air aux pilotes, rôle affiché (ATAK natif 2.9.39.AG - Denver, COMSPEC Link 2.0.117)
 
 ### Résumé joueur
