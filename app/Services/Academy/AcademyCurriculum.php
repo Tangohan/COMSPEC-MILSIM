@@ -176,6 +176,13 @@ final class AcademyCurriculum
         foreach ($question['options'] as $option) {
             self::bilingual($option);
         }
+        // Facultatif : pourquoi chaque choix convient ou non, affiché après une réponse validée.
+        if (isset($question['option_feedback'])) {
+            self::listSize($question['option_feedback'], 3, 3);
+            foreach ($question['option_feedback'] as $rationale) {
+                self::bilingual($rationale);
+            }
+        }
     }
 
     private static function bilingual(mixed $value): void
@@ -301,7 +308,11 @@ final class AcademyCurriculum
             || !empty($state['completed']) || mb_strlen(trim($comment)) < 10 || mb_strlen($comment) > 5000) {
             throw new \DomainException('locked');
         }
-        $internalLicense = ($course['key'] ?? '') === 'jtac-licence-ath-academy' && ($course['built_in'] ?? false) === true;
+        // Cours intégrés (JTAC et cours inspirés des standards OTAN) : évaluation réussie et débriefing exigés, licence
+        // ATH-ACADEMY numérotée à la fin. Les anciennes copies du JTAC n’ont pas de license_code : « JTAC ».
+        $internalLicense = ($course['built_in'] ?? false) === true
+            && (($course['key'] ?? '') === 'jtac-licence-ath-academy' || isset($course['license_code']));
+        $licenseCode = preg_match('/\A[A-Z0-9]{2,12}\z/', (string) ($course['license_code'] ?? '')) === 1 ? (string) $course['license_code'] : 'JTAC';
         if ($internalLicense) {
             $passingAttempts = array_filter($state['attempts'] ?? [], static fn (array $attempt): bool =>
                 ($attempt['chapter'] ?? null) === $index && empty($attempt['expired'])
@@ -318,7 +329,7 @@ final class AcademyCurriculum
             $state['completed'] = true;
             if ($internalLicense) {
                 $state['license'] = [
-                    'number' => 'ATH-ACADEMY-JTAC-' . strtoupper(bin2hex(random_bytes(6))),
+                    'number' => 'ATH-ACADEMY-' . $licenseCode . '-' . strtoupper(bin2hex(random_bytes(6))),
                     'issued_at' => $now,
                     'validated_by' => $instructorId,
                     'course_version' => $course['version'] ?? '1.0',

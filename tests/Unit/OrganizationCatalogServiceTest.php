@@ -332,4 +332,103 @@ final class OrganizationCatalogServiceTest extends TestCase
         self::assertSame(count($kit['job_roles']), $createdJobs);
         self::assertStringNotContainsString('rôle', strtolower((string) ($out['report']['summary'] ?? '')));
     }
+
+    public function testRealUnitKitsBuildOneTreeAcrossModelsAndKeepGradesWhenNoneIsGiven(): void
+    {
+        $kits = array_column(\App\Services\OrganizationCatalog\RealUnitKitDefinitions::kits(), null, 'code');
+        $rows = [];
+        foreach ($kits as $code => $kit) {
+            $rows[$code] = [
+                'id' => count($rows) + 50,
+                'code' => $code,
+                'title' => $kit['title'],
+                'summary' => $kit['summary'],
+                'version' => 1,
+                'visibility' => 'official',
+                'owner_tenant_id' => null,
+                'definition_json' => json_encode($kit),
+            ];
+        }
+        $catalog = $this->createMock(OrganizationCatalogRepository::class);
+        $catalog->method('tablesExist')->willReturn(true);
+        $catalog->method('upsertOfficial')->willReturn(1);
+        $catalog->method('findByCode')->willReturnCallback(static fn (string $code): ?array => $rows[$code] ?? null);
+
+        /** @var array<string, array{id: int, parent_id: ?int, name: string, code: ?string}> $store */
+        $store = [];
+        $seq = 0;
+        $units = $this->createMock(UnitRepository::class);
+        $units->method('allForTenant')->willReturn([]);
+        $units->method('findBySlugForTenant')->willReturnCallback(static function (int $tenantId, string $slug) use (&$store): ?array {
+            return $store[$slug] ?? null;
+        });
+        $units->method('create')->willReturnCallback(static function (int $tenantId, array $data) use (&$store, &$seq): array {
+            $row = ['id' => ++$seq, 'parent_id' => $data['parent_id'], 'name' => (string) $data['name'], 'code' => $data['code'], 'type' => $data['type']];
+            $store[(string) $data['slug']] = $row;
+
+            return $row;
+        });
+        $jobRoles = $this->createMock(PersonnelJobRoleRepository::class);
+        $jobRoles->method('tablesExist')->willReturn(true);
+        $jobRoles->expects($this->never())->method('createRole');
+        $roles = $this->createMock(RoleRepository::class);
+        $roles->expects($this->never())->method('createOrganizationRole');
+        $settings = [];
+        $tenants = $this->createMock(TenantRepository::class);
+        $tenants->method('getSettings')->willReturnCallback(static function () use (&$settings): array {
+            return $settings;
+        });
+        $tenants->method('mergeSettings')->willReturnCallback(static function (int $tenantId, array $patch) use (&$settings): void {
+            $settings = array_merge($settings, $patch);
+        });
+        $pdo = $this->createMock(PDO::class);
+        $pdo->method('inTransaction')->willReturn(false);
+
+        $svc = new OrganizationCatalogService(
+            $catalog,
+            $units,
+            $jobRoles,
+            $roles,
+            $this->createMock(PermissionRepository::class),
+            $this->createMock(TenantRolePermissionPresetService::class),
+            $tenants,
+            $this->createMock(AuditService::class),
+            $this->createMock(ConfigurationUpdateService::class),
+            $pdo
+        );
+
+        $prefix = \App\Services\OrganizationCatalog\RealUnitKitDefinitions::PREFIX;
+        // Modèle allemand d’abord : aucun système de grades imposé.
+        self::assertTrue($svc->apply(5, $prefix . 'de_hsg64', [], 1)['ok']);
+        self::assertSame([], $settings);
+        $store = [];
+
+        $first = $svc->apply(5, $prefix . 'us_ussocom', [], 1);
+        self::assertTrue($first['ok']);
+        self::assertSame('US_CLASSIC', $settings['grade_system_code'] ?? null);
+        self::assertSame(count($kits[$prefix . 'us_ussocom']['units']), $first['report']['units_added']);
+        self::assertNull($store['us-ussocom']['parent_id']);
+        self::assertSame($store['us-tsoc']['id'], $store['us-socafrica']['parent_id']);
+        self::assertSame($store['us-ussocom']['id'], $store['us-usasoc']['parent_id']);
+        self::assertSame('SOCAFRICA', $store['us-socafrica']['code']);
+        self::assertArrayNotHasKey('us-1sfc', $store);
+
+        // USASOC ensuite : la racine existe déjà, ses subordonnées s’y rattachent.
+        $second = $svc->apply(5, $prefix . 'us_usasoc', [], 1);
+        self::assertTrue($second['ok']);
+        self::assertSame(1, $second['report']['units_kept']);
+        self::assertSame(count($kits[$prefix . 'us_usasoc']['units']) - 1, $second['report']['units_added']);
+        self::assertSame($store['us-usasoc']['id'], $store['us-1sfc']['parent_id']);
+        self::assertSame($store['us-1sfc']['id'], $store['us-3sfg']['parent_id']);
+        self::assertSame('United States Special Operations Command', $store['us-ussocom']['name']);
+
+        $item = $svc->getVisibleItem(5, $prefix . 'de_ksk');
+        self::assertIsArray($item);
+        self::assertTrue($item['real_units']);
+        self::assertNotEmpty($item['sources']);
+        self::assertSame('KSK', $item['origin']['command']);
+        self::assertGreaterThan(0, $item['job_catalog_count']);
+        self::assertSame('de-ksk', $item['unit_outline'][0]['id']);
+        self::assertSame('command', $item['unit_outline'][0]['echelon']);
+    }
 }

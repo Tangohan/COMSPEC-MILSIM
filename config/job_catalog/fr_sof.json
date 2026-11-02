@@ -43,6 +43,10 @@
      "Special forces specialist training at the 1er RPIMa (SAS course, training company)"
     ]
    },
+   "qualification_refs": [
+    "fr-cfim",
+    "fr-cursus-sas"
+   ],
    "billets": {
     "fr": [
      "Stick action spéciale (une dizaine de commandos) : équipier"
@@ -106,6 +110,10 @@
      "Special forces specialist training at the 1er RPIMa (12 months)"
     ]
    },
+   "qualification_refs": [
+    "fr-ensoa",
+    "fr-cursus-sas"
+   ],
    "billets": {
     "fr": [
      "Stick action spéciale : chef d'une équipe de combattants (sous-officier)"
@@ -279,6 +287,9 @@
      "Canopy infiltration (ISV)"
     ]
    },
+   "qualification_refs": [
+    "fr-chuteur-operationnel"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -336,6 +347,9 @@
      "SAS PO specialty (offensive diver)"
     ]
    },
+   "qualification_refs": [
+    "fr-sas-po"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -395,6 +409,10 @@
      "SAS mountain team member"
     ]
    },
+   "qualification_refs": [
+    "fr-sas-jungle",
+    "fr-sas-montagne"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -454,6 +472,9 @@
      "SAS patrol course (PATSAS)"
     ]
    },
+   "qualification_refs": [
+    "fr-patsas"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -560,6 +581,9 @@
      "Advanced sniper course (1er RPIMa training company)"
     ]
    },
+   "qualification_refs": [
+    "fr-tireur-elite"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -613,6 +637,9 @@
      "Counter-terrorism and hostage rescue course (CTLO)"
     ]
    },
+   "qualification_refs": [
+    "fr-ctlo"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -674,6 +701,9 @@
      "Advanced close protection course (1er RPIMa training company)"
     ]
    },
+   "qualification_refs": [
+    "fr-protection-rapprochee"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -829,6 +859,10 @@
      "Specialist training at CeFOS, La Valbonne (1 month)"
     ]
    },
+   "qualification_refs": [
+    "fr-cfim",
+    "fr-auxiliaire-sanitaire"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -888,6 +922,9 @@
      "2-month specialist training (CFIM Dieuze or a signals regiment)"
     ]
    },
+   "qualification_refs": [
+    "fr-cfim"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -1783,6 +1820,11 @@
      "Scorpion course (RA field technical qualification)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-parachutiste",
+    "fr-cte-ra",
+    "fr-stage-scorpion"
+   ],
    "billets": {
     "fr": [
      "Équipe de recherche : équipier (militaire du rang)"
@@ -1850,6 +1892,10 @@
      "CTE RA (elementary technical certificate, airborne reconnaissance)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-parachutiste",
+    "fr-cte-ra"
+   ],
    "billets": {
     "fr": [
      "Équipe de recherche : observateur (cellule d'observation)"
@@ -1917,6 +1963,10 @@
      "CTE RA (elementary technical certificate, airborne reconnaissance)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-parachutiste",
+    "fr-cte-ra"
+   ],
    "billets": {
     "fr": [
      "Équipe de recherche : radiotélégraphiste (cellule radio)"
@@ -1982,6 +2032,11 @@
      "Airborne reconnaissance team cell leader qualification"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-parachutiste",
+    "fr-cte-ra",
+    "fr-chef-cellule-ra"
+   ],
    "billets": {
     "fr": [
      "Équipe de recherche : chef de cellule d'observation (sous-officier)"
@@ -2049,6 +2104,10 @@
      "CTE RA (elementary technical certificate, airborne reconnaissance)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-parachutiste",
+    "fr-cte-ra"
+   ],
    "billets": {
     "fr": [
      "Équipe de recherche : chef de cellule radio (sous-officier)"
@@ -2110,6 +2169,11 @@
      "Military parachutist badge (brevet parachutiste)"
     ]
    },
+   "qualification_refs": [
+    "fr-tests-agrement-fs",
+    "fr-chef-equipe-ra",
+    "fr-brevet-parachutiste"
+   ],
    "billets": {
     "fr": [
      "Équipe de recherche : chef d'équipe (lieutenant ou sous-officier supérieur)"
@@ -2179,6 +2243,10 @@
      "Military parachutist badge (brevet parachutiste)"
     ]
    },
+   "qualification_refs": [
+    "fr-chuteur-operationnel",
+    "fr-brevet-parachutiste"
+   ],
    "billets": {
     "fr": [
      "Équipe de recherche : chuteur opérationnel ; chef d'équipe de chuteurs opérationnels"
@@ -2246,6 +2314,10 @@
      "CTE RA (elementary technical certificate, airborne reconnaissance)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-parachutiste",
+    "fr-cte-ra"
+   ],
    "billets": {
     "fr": [
      "Escadron nautique : équipier d'équipe de recherche"
@@ -2309,6 +2381,9 @@
      "Specialist training at the 13e RDP (Souge)"
     ]
    },
+   "qualification_refs": [
+    "fr-cfim"
+   ],
    "billets": {
     "fr": [
      "Chaîne d'exploitation du renseignement : technicien exploitant"
@@ -2372,6 +2447,9 @@
      "Specialist training at the 13e RDP (Souge)"
     ]
    },
+   "qualification_refs": [
+    "fr-cfim"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -2655,6 +2733,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "qualification_refs": [
+    "fr-pilote-ealat",
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "Équipage Caracal : 2 pilotes dont 1 chef de mission"
@@ -2722,6 +2804,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "qualification_refs": [
+    "fr-pilote-ealat",
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "EOS 1 : pilote de Cougar"
@@ -2789,6 +2875,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "qualification_refs": [
+    "fr-pilote-ealat",
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -2848,6 +2938,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "qualification_refs": [
+    "fr-pilote-ealat",
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "Équipage Tigre : 1 pilote à l'avant"
@@ -2911,6 +3005,9 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "qualification_refs": [
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "Équipage Tigre : 1 chef de mission à l'arrière ; équipage Gazelle : pilote, chef de mission, tireur"
@@ -2978,6 +3075,10 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "qualification_refs": [
+    "fr-pilote-ealat",
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "EOS 2 : pilote de Gazelle"
@@ -3039,6 +3140,9 @@
      "EALAT pilot training"
     ]
    },
+   "qualification_refs": [
+    "fr-pilote-ealat"
+   ],
    "billets": {
     "fr": [
      "Équipage Puma : pilote, chef de bord, MECNAV, MOS"
@@ -3100,6 +3204,9 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "qualification_refs": [
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "Équipage Caracal : 1 mécanicien navigant"
@@ -3165,6 +3272,9 @@
      "ORHAS course, including module M3 (combat survival and SF procedures)"
     ]
    },
+   "qualification_refs": [
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "Équipage Caracal : 2 membres d'équipage opérations spéciales"
@@ -3230,6 +3340,9 @@
      "ORHAS course (4e RHFS specialised training cell)"
     ]
    },
+   "qualification_refs": [
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "Équipage Gazelle : 1 tireur (Gatling ou TE)"
@@ -3291,6 +3404,9 @@
      "ORHAS course, module M4 (preparation to command an SF helicopter package)"
     ]
    },
+   "qualification_refs": [
+    "fr-orhas"
+   ],
    "billets": {
     "fr": [
      "Régiment : un état-major et sept escadrilles des opérations spéciales (EOS)"
@@ -3468,6 +3584,10 @@
      "Aircraft mechanic specialist training"
     ]
    },
+   "qualification_refs": [
+    "fr-cfim",
+    "fr-maintenance-aero-terre"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -3531,6 +3651,10 @@
      "Specialist training at Rochefort (8 to 11 months)"
     ]
    },
+   "qualification_refs": [
+    "fr-ensoa",
+    "fr-maintenance-aero-terre"
+   ],
    "billets": {
     "fr": [
      "Équipe de dépannage : chef d'équipe (sous-officier)"
@@ -3594,6 +3718,9 @@
      "Aircraft maintenance specialist training (about 1 year)"
     ]
    },
+   "qualification_refs": [
+    "fr-maintenance-aero-terre"
+   ],
    "billets": {
     "fr": [
      "Section de maintenance : chef de section (20 à 50 personnels)"
@@ -3657,6 +3784,9 @@
      "Specialist training at EALAT Dax (about 6.5 months)"
     ]
    },
+   "qualification_refs": [
+    "fr-ensoa"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -3777,6 +3907,12 @@
      "Fusilier BAT, BS then BM career badges (technical, senior, master)"
     ]
    },
+   "qualification_refs": [
+    "fr-ecofus-fi",
+    "fr-bat-fusilier",
+    "fr-bs-fusilier",
+    "fr-bm-fusilier"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -3838,6 +3974,9 @@
      "Basic commando badge (green beret)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine"
+   ],
    "billets": {
     "fr": [
      "Stage commando : deux instructeurs responsables et leurs adjoints, renforcés par des commandos"
@@ -3958,6 +4097,10 @@
      "Military parachutist badge (end of commando course)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-brevet-parachutiste"
+   ],
    "billets": {
     "fr": [
      "Commando de combat : trois groupes d'action spéciale et un groupe spécialisé"
@@ -4025,6 +4168,10 @@
      "Team leader level (BAT equivalent, technical aptitude badge)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-bat-fusilier"
+   ],
    "billets": {
     "fr": [
      "Groupe d'action : chef d'équipe"
@@ -4088,6 +4235,10 @@
      "Group leader level (BS equivalent, senior badge)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-bs-fusilier"
+   ],
    "billets": {
     "fr": [
      "Commando de combat : un chef par groupe d'action spéciale ou groupe spécialisé"
@@ -4151,6 +4302,10 @@
      "Mission leader level (BM equivalent, master badge)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-bm-fusilier"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4204,6 +4359,9 @@
      "Commando marine fusilier specialty (officer)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine"
+   ],
    "billets": {
     "fr": [
      "Commando : commandant d'unité (capitaine de corvette pour Ponchardier en 2015)"
@@ -4271,6 +4429,10 @@
      "Military free-fall qualification (chuteur opérationnel)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-paraspe-marine"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4334,6 +4496,10 @@
      "Fin swimmer qualification (palmeur)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-palmeur"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4397,6 +4563,10 @@
      "Sniper specialisation"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-tireur-elite"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4460,6 +4630,10 @@
      "CTLO specialisation (counter-terrorism and hostage rescue)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-ctlo"
+   ],
    "billets": {
     "fr": [
      "Commando Jaubert : groupe spécialisé CTLO et trois groupes d'action spéciale"
@@ -4527,6 +4701,10 @@
      "CTLO specialisation (counter-terrorism and hostage rescue)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-ctlo"
+   ],
    "billets": {
     "fr": [
      "Commando Trépel : groupe spécialisé CTLO et trois groupes d'action spéciale"
@@ -4592,6 +4770,9 @@
      "Basic commando badge"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine"
+   ],
    "billets": {
     "fr": [
      "Commando de Penfentenyo : groupe spécialisé ESNO et trois groupes d'action spéciale"
@@ -4657,6 +4838,9 @@
      "Basic commando badge"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine"
+   ],
    "billets": {
     "fr": [
      "Commando de Montfort : groupe spécialisé ESNO et trois groupes d'action spéciale"
@@ -4724,6 +4908,10 @@
      "Combat swimmer certificate (Navy Diving School, Saint-Mandrier)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-nageur-de-combat"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -4791,6 +4979,10 @@
      "CTLO specialisation (counter-terrorism and hostage rescue)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-commando-marine",
+    "fr-ctlo"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5141,6 +5333,9 @@
      "Navy SITEL specialty (information systems and telecoms)"
     ]
    },
+   "qualification_refs": [
+    "fr-sitel-marine"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5198,6 +5393,9 @@
      "Navy COA specialty (air operations controller)"
     ]
    },
+   "qualification_refs": [
+    "fr-coa-marine"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5680,6 +5878,10 @@
      "Counter-terrorism and hostage rescue procedures (CTLO)"
     ]
    },
+   "qualification_refs": [
+    "fr-belouga",
+    "fr-ctlo"
+   ],
    "billets": {
     "fr": [
      "Groupe action : opérateur"
@@ -5804,6 +6006,10 @@
      "JTAC (Joint Terminal Attack Controller)"
     ]
    },
+   "qualification_refs": [
+    "fr-jtac",
+    "nato-jtac"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -5867,6 +6073,10 @@
      "High-altitude operational jump (SOGH), qualification in progress"
     ]
    },
+   "qualification_refs": [
+    "fr-afte",
+    "fr-paraspe-air"
+   ],
    "billets": {
     "fr": [
      "Cellule THP : binôme tireur / observateur (spotter)",
@@ -5926,6 +6136,9 @@
      "Designated marksman (secondary specialty)"
     ]
    },
+   "qualification_refs": [
+    "fr-tireur-elite"
+   ],
    "billets": {
     "fr": [
      "Groupe action : opérateur tireur d'élite"
@@ -5985,6 +6198,9 @@
      "Canopy infiltration (ISV)"
     ]
    },
+   "qualification_refs": [
+    "fr-paraspe-air"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6046,6 +6262,9 @@
      "Dog handler (about 18 months of training)"
     ]
    },
+   "qualification_refs": [
+    "fr-maitre-chien"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6099,6 +6318,9 @@
      "Combat signaller level 1 course (10 weeks)"
     ]
    },
+   "qualification_refs": [
+    "fr-transmetteur-combat-n1"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6278,6 +6500,9 @@
      "EOD (explosive ordnance disposal)"
     ]
    },
+   "qualification_refs": [
+    "fr-nedex-air"
+   ],
    "billets": {
     "fr": [
      "Cellule EOD du CPA 30"
@@ -6339,6 +6564,11 @@
      "Military parachutist badge"
     ]
    },
+   "qualification_refs": [
+    "fr-maquis",
+    "fr-matou",
+    "fr-brevet-parachutiste"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6410,6 +6640,9 @@
      "TACP specialty"
     ]
    },
+   "qualification_refs": [
+    "fr-tacp"
+   ],
    "billets": {
     "fr": [
      "Équipe TACP : six commandos"
@@ -6469,6 +6702,10 @@
      "Military parachutist badge"
     ]
    },
+   "qualification_refs": [
+    "fr-moniteur-parachutiste",
+    "fr-brevet-parachutiste"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6526,6 +6763,11 @@
      "Air-to-air refuelling (day / night)"
     ]
    },
+   "qualification_refs": [
+    "fr-pilote-helicoptere-aae",
+    "fr-commandant-bord-helicoptere",
+    "fr-ravitaillement-vol-helicoptere"
+   ],
    "billets": {
     "fr": [
      "Équipage Caracal : 2 pilotes (pilote, copilote / commandant de bord)"
@@ -6770,6 +7012,9 @@
      "Military transport pilot wings"
     ]
    },
+   "qualification_refs": [
+    "fr-pilote-transport-aae"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6837,6 +7082,9 @@
      "Flight engineer competitive selection"
     ]
    },
+   "qualification_refs": [
+    "fr-mecanicien-navigant-aae"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -6961,6 +7209,9 @@
      "Air parachute commando diploma"
     ]
    },
+   "qualification_refs": [
+    "fr-commando-parachutiste-air"
+   ],
    "billets": {
     "fr": [
      "Groupe : chef de groupe (sergent à adjudant-chef)"
@@ -7022,6 +7273,10 @@
      "Matou course (8 weeks)"
     ]
    },
+   "qualification_refs": [
+    "fr-maquis",
+    "fr-matou"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -7075,6 +7330,9 @@
      "Commando training (aircrew recovery, air-to-ground fire support, air mobility)"
     ]
    },
+   "qualification_refs": [
+    "fr-officier-commando-air"
+   ],
    "billets": {
     "fr": [
      "Section de fusiliers commandos : chef de section (sous-lieutenant à capitaine)"
@@ -7136,6 +7394,11 @@
      "Military free-fall badge (13-week SOGH high-altitude jump course, ETAP Pau)"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-parachutiste",
+    "fr-jedburgh",
+    "fr-chuteur-operationnel"
+   ],
    "billets": {
     "fr": [
      "Équipe commando : une dizaine de commandos, dans chaque régiment de la 11e BP sauf le régiment du train"
@@ -7209,6 +7472,10 @@
      "High-altitude oxygen jump"
     ]
    },
+   "qualification_refs": [
+    "fr-chuteur-operationnel",
+    "fr-sotgh"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -7382,6 +7649,10 @@
      "JTAC qualification (forward air controller)"
     ]
    },
+   "qualification_refs": [
+    "fr-jtac",
+    "nato-jtac"
+   ],
    "billets": {
     "fr": [
      "SGCP : élément de coordination avec la 3e dimension (JTAC)"
@@ -7441,6 +7712,10 @@
      "Military free-fall badge"
     ]
    },
+   "qualification_refs": [
+    "fr-brevet-parachutiste",
+    "fr-chuteur-operationnel"
+   ],
    "billets": {
     "fr": [
      "Compagnie d'appui du 2e REP : section de commandos parachutistes (GCP)"
@@ -7565,6 +7840,9 @@
      "Military paragliding badges (A, B, C)"
     ]
    },
+   "qualification_refs": [
+    "fr-parapente-militaire"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -7630,6 +7908,10 @@
      "High mountain team leader badge (summer / winter)"
     ]
    },
+   "qualification_refs": [
+    "fr-bam",
+    "fr-cehm"
+   ],
    "billets": {
     "fr": [
      "Cordée : chef de cordée (2 à 3 personnes), brevet réservé aux caporaux et caporaux-chefs"
@@ -7697,6 +7979,10 @@
      "High mountain unit leader badge (officers)"
     ]
    },
+   "qualification_refs": [
+    "fr-cdhm",
+    "fr-cuhm"
+   ],
    "billets": {
     "fr": [
      "Détachement de haute montagne : chef de détachement (sous-officier, CDHM) ou chef d'unité (officier, CUHM)"
@@ -7764,6 +8050,10 @@
      "State high-mountain guide diploma (where held)"
     ]
    },
+   "qualification_refs": [
+    "fr-moniteur-guide-militaire",
+    "fr-guide-haute-montagne"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -7835,6 +8125,10 @@
      "Diving (depending on section)"
     ]
    },
+   "qualification_refs": [
+    "fr-gign-formation",
+    "fr-chuteur-operationnel"
+   ],
    "billets": {
     "fr": [
      "Échelon central : environ 85 personnels affectés à l'intervention (objectif 100)",
@@ -7904,6 +8198,9 @@
      "Ten-month common initial training, then observation-research specialisation"
     ]
    },
+   "qualification_refs": [
+    "fr-gign-formation"
+   ],
    "billets": {
     "fr": [
      "Échelon central : effectif visé de 60 personnels (contre 50)"
@@ -7967,6 +8264,9 @@
      "Ten-month common initial training, then security-protection specialisation"
     ]
    },
+   "qualification_refs": [
+    "fr-gign-formation"
+   ],
    "billets": {
     "fr": [
      "Échelon central : effectif visé de 60 personnels (contre 50)",
@@ -8036,6 +8336,9 @@
      "Basic sniper training common to all operators (open sources)"
     ]
    },
+   "qualification_refs": [
+    "fr-gign-tir-haute-precision"
+   ],
    "billets": {
     "fr": [
      "Binôme : un tireur et un observateur"
@@ -8158,6 +8461,9 @@
      "Mechanical and explosive breaching"
     ]
    },
+   "qualification_refs": [
+    "fr-gign-effraction"
+   ],
    "billets": {
     "fr": [],
     "en": []
@@ -8215,6 +8521,9 @@
      "K9 handling (attack, explosives detection)"
     ]
    },
+   "qualification_refs": [
+    "fr-maitre-chien"
+   ],
    "billets": {
     "fr": [
      "Binôme : un maître-chien et son chien"
@@ -8333,6 +8642,9 @@
      "Two-month initial training tailored to the career track"
     ]
    },
+   "qualification_refs": [
+    "fr-gign-antenne"
+   ],
    "billets": {
     "fr": [
      "Antenne GIGN : de 24 (Mayotte) à 46 personnels (Cayenne)"

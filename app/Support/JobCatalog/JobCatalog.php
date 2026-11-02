@@ -15,15 +15,19 @@ use App\Support\JobRoleIconLibrary;
  *
  * Format d’un pack : { pack, country, official_lang, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ;
  * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
- * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
+ * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}],
+ * qualification_refs[] (facultatif : ids du catalogue de qualifications, App\Support\QualificationCatalog, des brevets
+ * cités dans qualifications).
  * official_lang : langue des appellations officielles du pays (« en » par défaut ; « de » : name porte aussi une clé de ;
- * « zh » : clé zh en caractères simplifiés et clé pinyin, romanisation avec tons, cherchée aussi sans tons) ; formation : unité courte
+ * « zh » : clé zh en caractères simplifiés ; « ru » : clé ru en cyrillique) ; un nom officiel en alphabet non latin a sa
+ * romanisation sous la clé <langue>-Latn (« zh-Latn » : pinyin avec tons, « ru-Latn » : translittération usuelle), cherchée
+ * aussi sans accents ni tons et d’un seul tenant (latinForms) ; formation : unité courte
  * (« 1er RPIMa », « CPA 10 »), facultative, proposée comme filtre sous le commandement.
  */
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof'];
+    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof', 'ru_sof', 'nato'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -32,12 +36,15 @@ final class JobCatalog
     /** Filtres exacts de la recherche, dans l’ordre de la fenêtre (pays → armée → commandement → unité → type). */
     public const FILTERS = ['country', 'branch', 'command', 'formation', 'type', 'pack'];
 
-    /** Pays des packs, dans l’ordre d’affichage des catégories (code ISO 3166-1 alpha-2). */
+    /** Pays des packs, dans l’ordre d’affichage des catégories (code ISO 3166-1 alpha-2 ; « NATO » pour l’OTAN). */
     public const COUNTRIES = [
         'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
         'FR' => ['fr' => 'France', 'en' => 'France'],
         'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
         'CN' => ['fr' => 'Chine', 'en' => 'China'],
+        'RU' => ['fr' => 'Russie', 'en' => 'Russia'],
+        // Fonctions interalliées standardisées (pas un pays) : code « NATO », emblème dessiné en CSS.
+        'NATO' => ['fr' => 'OTAN', 'en' => 'NATO'],
     ];
 
     /** Armées d’un pays ; une armée absente reprend le libellé générique de LABELS['branch']. */
@@ -71,6 +78,28 @@ final class JobCatalog
             'air_force' => ['fr' => 'Force aérienne de l’APL (解放军空军)', 'en' => 'PLA Air Force (解放军空军)'],
             'gendarmerie' => ['fr' => 'Police armée du peuple (武警部队)', 'en' => 'People’s Armed Police (武警部队)'],
         ],
+        // Sigles russes translittérés ; la sécurité intérieure (Rosgvardia, FSB) est hors des forces armées.
+        'RU' => [
+            'army' => ['fr' => 'Forces terrestres et VDV (troupes aéroportées)', 'en' => 'Ground Forces and VDV (Airborne Forces)'],
+            'navy' => ['fr' => 'VMF (marine)', 'en' => 'Russian Navy (VMF)'],
+            'air_force' => ['fr' => 'VKS (forces aérospatiales)', 'en' => 'Aerospace Forces (VKS)'],
+            'marine_corps' => ['fr' => 'Morskaya pekhota (infanterie de marine)', 'en' => 'Naval Infantry (Morskaya pekhota)'],
+            'gendarmerie' => ['fr' => 'Sécurité intérieure (Rosgvardia, FSB), hors armées', 'en' => 'Internal security (Rosgvardia, FSB), not armed forces'],
+            'joint' => ['fr' => 'Interarmées (KSSO, état-major général)', 'en' => 'Joint (KSSO, General Staff)'],
+        ],
+        'NATO' => [
+            'army' => ['fr' => 'Composante terrestre (LCC)', 'en' => 'Land component (LCC)'],
+            'navy' => ['fr' => 'Composante maritime (MCC)', 'en' => 'Maritime component (MCC)'],
+            'air_force' => ['fr' => 'Composante aérienne (ACC)', 'en' => 'Air component (ACC)'],
+            'joint' => ['fr' => 'Interarmées et interalliés', 'en' => 'Joint and combined'],
+        ],
+    ];
+
+    /** Translittération latine usuelle du russe (recherche ; ё et е s’écrivent « e »). */
+    private const CYRILLIC = [
+        'а' => 'a', 'б' => 'b', 'в' => 'v', 'г' => 'g', 'д' => 'd', 'е' => 'e', 'ё' => 'e', 'ж' => 'zh', 'з' => 'z', 'и' => 'i', 'й' => 'y',
+        'к' => 'k', 'л' => 'l', 'м' => 'm', 'н' => 'n', 'о' => 'o', 'п' => 'p', 'р' => 'r', 'с' => 's', 'т' => 't', 'у' => 'u', 'ф' => 'f',
+        'х' => 'kh', 'ц' => 'ts', 'ч' => 'ch', 'ш' => 'sh', 'щ' => 'shch', 'ъ' => '', 'ы' => 'y', 'ь' => '', 'э' => 'e', 'ю' => 'yu', 'я' => 'ya',
     ];
 
     /** Libellés des filtres, contenus du catalogue (langue du lecteur). */
@@ -282,11 +311,13 @@ final class JobCatalog
             'icon' => JobRoleIconLibrary::has($icon) ? $icon : '',
             'tags' => array_slice(self::pickList($entry['tags'] ?? [], $lang), 0, JobRoleEnrichmentService::MAX_TAGS),
             'sources' => $sources,
+            'qualification_refs' => self::qualificationRefs($entry),
+            'linked_qualifications' => self::linkedQualifications($entry, $lang),
         ];
     }
 
     /**
-     * Noms de l’emploi par langue, nom officiel (langue du pays) en premier, puis la langue du lecteur, puis
+     * Noms de l’emploi par langue, nom officiel (langue du pays) en premier, puis sa translittération, puis la langue du lecteur, puis
      * l’anglais, puis les autres langues livrées ; un nom identique à un précédent n’est pas répété.
      *
      * @param array<string, mixed> $entry
@@ -295,14 +326,43 @@ final class JobCatalog
     public static function names(array $entry, string $lang): array
     {
         $name = is_array($entry['name'] ?? null) ? $entry['name'] : [];
-        // La romanisation (pinyin) suit le nom officiel qu’elle transcrit.
-        $order = array_unique(array_merge([(string) ($entry['official_lang'] ?? 'en'), 'pinyin', self::lang($lang), 'en'], array_map('strval', array_keys($name))));
+        // La romanisation (« zh-Latn », « ru-Latn ») suit le nom officiel qu’elle transcrit.
+        $order = array_unique(array_merge([(string) ($entry['official_lang'] ?? 'en'), self::latinKey($entry), self::lang($lang), 'en'], array_map('strval', array_keys($name))));
         $out = [];
         foreach ($order as $l) {
             $value = trim((string) ($name[$l] ?? ''));
             if ($value !== '' && !in_array($value, $out, true)) {
                 $out[$l] = $value;
             }
+        }
+
+        return $out;
+    }
+
+    /** @return list<string> ids du catalogue de qualifications cités par l’entrée */
+    public static function qualificationRefs(array $entry): array
+    {
+        $refs = is_array($entry['qualification_refs'] ?? null) ? $entry['qualification_refs'] : [];
+
+        return array_values(array_unique(array_filter(array_map(static fn ($r): string => is_string($r) ? trim($r) : '', $refs), static fn (string $r): bool => $r !== '')));
+    }
+
+    /**
+     * Qualifications du catalogue liées à un emploi, dans la langue du lecteur (nom, intitulé officiel, émetteur).
+     *
+     * @param array<string, mixed> $entry
+     * @return list<array{id: string, code: string, name: string, official_name: string, issuer: string, country: string}>
+     */
+    public static function linkedQualifications(array $entry, string $lang): array
+    {
+        $out = [];
+        foreach (self::qualificationRefs($entry) as $ref) {
+            $raw = \App\Support\QualificationCatalog\QualificationCatalog::findRaw($ref);
+            if ($raw === null) {
+                continue;
+            }
+            $q = \App\Support\QualificationCatalog\QualificationCatalog::localize($raw, $lang);
+            $out[] = ['id' => $q['id'], 'code' => $q['code'], 'name' => $q['name'], 'official_name' => $q['official_name'], 'issuer' => $q['issuer'], 'country' => $q['country']];
         }
 
         return $out;
@@ -334,17 +394,21 @@ final class JobCatalog
         } else {
             $text = strtr($text, ['ß' => 'ss', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ç' => 'c', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u', 'ÿ' => 'y', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae',
                 // Tons du pinyin (« jūjīshǒu » → « jujishou »).
-                'ā' => 'a', 'ǎ' => 'a', 'ē' => 'e', 'ě' => 'e', 'ī' => 'i', 'ǐ' => 'i', 'ì' => 'i', 'ō' => 'o', 'ǒ' => 'o', 'ò' => 'o', 'ū' => 'u', 'ǔ' => 'u', 'ǖ' => 'u', 'ǘ' => 'u', 'ǚ' => 'u', 'ǜ' => 'u']);
+                'ā' => 'a', 'ǎ' => 'a', 'ē' => 'e', 'ě' => 'e', 'ī' => 'i', 'ǐ' => 'i', 'ì' => 'i', 'ō' => 'o', 'ǒ' => 'o', 'ò' => 'o', 'ū' => 'u', 'ǔ' => 'u', 'ǖ' => 'u', 'ǘ' => 'u', 'ǚ' => 'u', 'ǜ' => 'u',
+                // Cyrillique : comme la décomposition Unicode (ё → е, й → и).
+                'ё' => 'е', 'й' => 'и']);
         }
 
         // « ß » n’a pas de forme décomposée : « Straße » se cherche « strasse ».
         return (string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', str_replace('ß', 'ss', $text));
     }
 
-    /** Graphie allemande sans tréma (« Fallschirmjäger » → « Fallschirmjaeger »), pour la recherche. */
+    /** Graphie allemande sans tréma (« Fallschirmjäger » → « Fallschirmjaeger ») et russe en latin (« Спецназ » → « spetsnaz »), pour la recherche. */
     public static function transliterate(string $text): string
     {
-        return strtr($text, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue']);
+        $text = strtr($text, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue']);
+
+        return preg_match('/\p{Cyrillic}/u', $text) === 1 ? strtr(mb_strtolower($text, 'UTF-8'), self::CYRILLIC) : $text;
     }
 
     /** Texte cherché d’une entrée : noms, abrégé, code, unité, commandement, branche et étiquettes dans les deux langues. */
@@ -372,22 +436,32 @@ final class JobCatalog
         $german = self::transliterate($text);
 
         // « 18B » se trouve aussi en tapant « 18 b » ; « Fallschirmjäger » en tapant « fallschirmjager » ou « fallschirmjaeger ».
-        return ' ' . self::normalize($text) . ' ' . ($german !== $text ? self::normalize($german) . ' ' : '') . self::pinyinForms((string) ($entry['name']['pinyin'] ?? '')) . strtolower(str_replace(' ', '', $code)) . ' ';
+        return ' ' . self::normalize($text) . ' ' . ($german !== $text ? self::normalize($german) . ' ' : '') . self::latinForms((string) ($entry['name'][self::latinKey($entry)] ?? '')) . strtolower(str_replace(' ', '', $code)) . ' ';
     }
 
     /**
-     * Pinyin cherché sans tons (la normalisation les retire) aussi d’un seul tenant (« tezhongzuozhan ») et avec « v »
-     * pour « ü » (« lvzhang »), comme on le tape au clavier.
+     * Clé de la romanisation du nom officiel : « <langue>-Latn » (« zh-Latn » pour le pinyin, « ru-Latn » pour le russe).
+     *
+     * @param array<string, mixed> $entry
      */
-    public static function pinyinForms(string $pinyin): string
+    public static function latinKey(array $entry): string
     {
-        if (trim($pinyin) === '') {
+        return (string) ($entry['official_lang'] ?? 'en') . '-Latn';
+    }
+
+    /**
+     * Romanisation (« zh-Latn », « ru-Latn ») cherchée comme on la tape au clavier : sans accents ni tons (la normalisation
+     * les retire), aussi d’un seul tenant (« tezhongzuozhan », « boevoyplovets ») et avec « v » pour « ü » du pinyin (« lvzhang »).
+     */
+    public static function latinForms(string $latin): string
+    {
+        if (trim($latin) === '') {
             return '';
         }
-        $flat = self::normalize($pinyin);
+        $flat = self::normalize($latin);
         $forms = [str_replace(' ', '', $flat)];
-        if (preg_match('/[üǖǘǚǜÜǕǗǙǛ]/u', $pinyin) === 1) {
-            $v = self::normalize((string) preg_replace('/[üǖǘǚǜÜǕǗǙǛ]/u', 'v', $pinyin));
+        if (preg_match('/[üǖǘǚǜÜǕǗǙǛ]/u', $latin) === 1) {
+            $v = self::normalize((string) preg_replace('/[üǖǘǚǜÜǕǗǙǛ]/u', 'v', $latin));
             $forms[] = $v;
             $forms[] = str_replace(' ', '', $v);
         }
@@ -416,8 +490,10 @@ final class JobCatalog
             $hay = self::haystack($entry);
             $name = ' ' . self::normalize(self::pick($entry['name'] ?? '', self::lang($lang))) . ' ';
             $score = 0;
-            foreach ($words as $word) {
-                if (!str_contains($hay, $word)) {
+            foreach ($words as $typed) {
+                // Mot tapé en cyrillique : sa translittération compte aussi (« спецназ » trouve l’étiquette « Spetsnaz »).
+                $word = str_contains($hay, $typed) ? $typed : trim(self::normalize(self::transliterate($typed)));
+                if ($word === '' || !str_contains($hay, $word)) {
                     continue 2;
                 }
                 $score += (str_contains($hay, ' ' . $word . ' ') ? 2 : 1) + (str_contains($name, ' ' . $word) ? 1 : 0);
@@ -521,7 +597,8 @@ final class JobCatalog
     {
         $id = (string) ($entry['id'] ?? '');
         $p = [];
-        if (preg_match('/^[a-z]{2,3}-[a-z0-9-]{2,60}$/', $id) !== 1) {
+        // Préfixe : code pays en minuscules (« us- », « fr- ») ou « nato- » pour les fonctions interalliées.
+        if (preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $id) !== 1) {
             $p[] = 'id invalide';
         }
         if (!in_array($entry['branch'] ?? null, self::BRANCHES, true)) {
@@ -567,6 +644,11 @@ final class JobCatalog
             if (is_array($tags) && (count($tags) > JobRoleEnrichmentService::MAX_TAGS || array_filter($tags, static fn ($t): bool => mb_strlen((string) $t) > JobRoleEnrichmentService::TAG_MAX_LENGTH) !== [])) {
                 $p[] = 'étiquettes trop nombreuses ou trop longues';
             }
+        }
+        $refs = $entry['qualification_refs'] ?? [];
+        if (!is_array($refs) || !array_is_list($refs) || count($refs) > 12
+            || array_filter($refs, static fn ($r): bool => !is_string($r) || preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $r) !== 1) !== []) {
+            $p[] = 'qualification_refs invalides';
         }
         $sources = is_array($entry['sources'] ?? null) ? $entry['sources'] : [];
         if ($sources === []) {
