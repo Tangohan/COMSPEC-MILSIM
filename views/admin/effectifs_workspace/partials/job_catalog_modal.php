@@ -68,7 +68,13 @@ $catalogUrl = effectifs_workspace_url('fonctions/catalogue');
         </section>
         <p class="jobcat__placeholder" data-job-catalog-placeholder>Choisissez un emploi dans la liste pour voir sa fiche.</p>
     </div>
-    <footer class="jobcat__foot"><p data-job-catalog-note translate="no"></p><p>Informations publiques et reformulées, sans contenu classifié. Un champ laissé vide signifie qu’aucune source officielle ne le précise.</p></footer>
+    <footer class="jobcat__foot">
+        <details class="jobcat__notes" data-job-catalog-notes>
+            <summary><span class="jobcat__notes-line" data-job-catalog-note-line translate="no"></span><span class="jobcat__notes-toggle"><span class="jobcat__notes-more" data-job-catalog-note-more>Voir les sources</span><span class="jobcat__notes-less">Masquer les sources</span></span></summary>
+            <div class="jobcat__notes-panel"><ul class="jobcat__notes-list" data-job-catalog-note-list translate="no"></ul><p>Informations publiques et reformulées, sans contenu classifié. Un champ laissé vide signifie qu’aucune source officielle ne le précise.</p></div>
+        </details>
+        <span hidden data-job-catalog-label="sources">Sources</span><span hidden data-job-catalog-label="catalogs">catalogues</span><span hidden data-job-catalog-label="see-sources">Voir les sources</span><span hidden data-job-catalog-label="see-more">Voir plus</span>
+    </footer>
     <p class="eff-sr-only" data-job-catalog-live role="status" aria-live="polite"></p>
 </div>
 </dialog>

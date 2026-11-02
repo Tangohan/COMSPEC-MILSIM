@@ -16,6 +16,9 @@ use App\Repositories\UserRepository;
 use App\Core\Gate;
 use App\Repositories\CompetencyPathwayRepository;
 use App\Services\Training\CompetencyCatalogService;
+use App\Services\Training\CompetencyCommandBoard;
+use App\Support\EffectifsLmsAccess;
+use App\Support\OrgVisibilityCapabilities;
 use App\Services\Training\CompetencyPathwayGenerator;
 use App\Services\Training\CompetencyUserJourneyService;
 use App\Support\TrainingLmsStaffAccess;
@@ -255,10 +258,25 @@ final class TrainingCompetencyController
             );
         }
 
+        $groupsByUser = [];
+        foreach ($assignmentsByMatrix as $mid => $rows) {
+            foreach ($rows as $row) {
+                $groupsByUser[(int) ($row['user_id'] ?? 0)][] = (int) $mid;
+            }
+        }
+        try {
+            $board = (new CompetencyCommandBoard())->build($tenantId, OrgVisibilityCapabilities::fromGate(), $groupsByUser);
+        } catch (\Throwable) {
+            $board = CompetencyCommandBoard::compute([], [], [], [], [], [], [], [], time()) + ['schema_ready' => true, 'load_error' => true];
+        }
+        $gate = Gate::getInstance();
+
         return Response::view('layout.training_lms_staff_shell', [
-            'title' => 'Commandement — Compétences',
+            'title' => 'Vue commandement — Compétences',
             'content' => 'admin.training.competency_command',
-            'trainingAdminNav' => 'dashboard',
+            'competencyBoard' => $board,
+            'competencyCanOpenMembers' => EffectifsLmsAccess::allows($gate),
+            'trainingAdminNav' => 'command',
             'totalModules' => $this->trainingShellTotalModules($tenantId),
             'competencyMatrices' => $matrices,
             'competencyUsers' => $users,
