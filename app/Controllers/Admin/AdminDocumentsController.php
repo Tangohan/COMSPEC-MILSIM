@@ -70,11 +70,11 @@ class AdminDocumentsController
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
         $tenantId = (int) $tenantId;
-        $categoryId = $request->input('category') ? (int) $request->input('category') : null;
-        $status = $request->input('status') ? trim((string) $request->input('status')) : null;
-        $search = $request->input('q') ? trim((string) $request->input('q')) : null;
-        $documentType = $request->input('document_type') ? trim((string) $request->input('document_type')) : null;
-        $classificationLevel = $request->input('classification_level') ? trim((string) $request->input('classification_level')) : null;
+        $categoryId = ((int) $request->queryString('category') ?: null);
+        $status = (trim($request->queryString('status')) ?: null);
+        $search = (trim($request->queryString('q')) ?: null);
+        $documentType = (trim($request->queryString('document_type')) ?: null);
+        $classificationLevel = (trim($request->queryString('classification_level')) ?: null);
         $documents = $this->documentRepository->listForTenant($tenantId, $categoryId, $status, $search, null, null, $documentType, $classificationLevel);
         $staleCount = 0;
         foreach ($documents as &$docRow) {

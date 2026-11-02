@@ -33,11 +33,11 @@ final class AirspaceController
         if ($tenantId <= 0) {
             return Response::redirect(url('login'));
         }
-        $view = (string) $request->input('vue', 'ligne');
+        $view = $request->queryString('vue', 'ligne');
         $view = in_array($view, self::VIEWS, true) ? $view : 'ligne';
-        $logFilter = (string) $request->input('carnet', '');
+        $logFilter = $request->queryString('carnet', '');
         $logFilter = in_array($logFilter, ['declared', 'countersigned', 'rejected', 'verified'], true) ? $logFilter : '';
-        $track = (string) $request->input('filiere', PilotSyllabusCatalog::TRACK_HELI);
+        $track = $request->queryString('filiere', PilotSyllabusCatalog::TRACK_HELI);
         $track = in_array($track, [PilotSyllabusCatalog::TRACK_HELI, PilotSyllabusCatalog::TRACK_PLANE, 'other'], true) ? $track : PilotSyllabusCatalog::TRACK_HELI;
         $actorId = (int) Session::get('user_id');
 

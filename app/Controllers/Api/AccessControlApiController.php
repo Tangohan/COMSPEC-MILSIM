@@ -241,14 +241,14 @@ final class AccessControlApiController
     public function simulation(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        $user = $this->users->findById((int) $request->input('user_id', 0), $tenantId);
+        $user = $this->users->findById((int) ($request->query('user_id') ?? $request->input('user_id', 0)), $tenantId);
         if (!$user) {
             return Response::json(['ok' => false, 'error' => 'user_not_found'], 404);
         }
 
         return Response::json([
             'ok' => true,
-            'data' => $this->acs->decision($user, $request->inputString('resource', 'documents'), strtoupper($request->inputString('action', 'READ'))),
+            'data' => $this->acs->decision($user, $request->queryString('resource', $request->inputString('resource', 'documents')), strtoupper($request->queryString('action', $request->inputString('action', 'READ')))),
         ]);
     }
 }

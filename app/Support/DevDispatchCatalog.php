@@ -304,6 +304,20 @@ final class DevDispatchCatalog
                 'Mettez à jour le pack 2.9.32 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
                 'Liaison réaliste (réglage « Liaison téléphone-radio réaliste ») : prévoyez une MPU5 et un Câble EUD par joueur qui doit avoir du réseau.',
             ], 'Pack téléphone 2.9.32'),
+            $pr(1306, '2026-11-02', 'Recherches, filtres et onglets de nouveau pris en compte', 'Plusieurs pages ignoraient ce qui était demandé dans l’adresse : la recherche, le tri et les filtres de la documentation, le filtre de Mes documents, les onglets des sessions de jeu de rôle, le filtre des catégories ou le simulateur d’accès affichaient toujours la vue par défaut. Ces choix sont de nouveau appliqués, par formulaire comme par lien direct, et le téléchargement d’un document à signature obligatoire fonctionne de nouveau après la signature.', [], [], [
+                'Documentation et gestion des documents : recherche, catégorie, statut, type, classification et tri de nouveau appliqués',
+                'Mes documents : le filtre choisi (à lire, obligatoires, en retard, lus) est de nouveau appliqué',
+                'Back-office : onglets des sessions de jeu de rôle, filtre des catégories, simulateur d’accès, export des lectures d’un document, réglage des annonces de coopération et formule offerte présélectionnée',
+                'Téléchargement d’un document à signature obligatoire de nouveau possible une fois la signature faite',
+            ], ['platform'], [
+                'Aucune donnée n’a été modifiée : seule la lecture des paramètres de l’adresse était en cause.',
+            ], 'Portail'),
+            $pr(1305, '2026-11-02', 'Espace aérien : les onglets s’ouvrent de nouveau', 'Dans le back-office, la page Espace aérien affichait toujours la ligne de vol, quel que soit l’onglet choisi. Les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières s’ouvrent de nouveau, par clic comme par lien direct, et les filtres du carnet de vol et de la filière du cursus sont pris en compte.', [], [], [
+                'Espace aérien : les onglets Cursus pilote, Pilotes, Carnet de vol et Flotte et filières affichaient la ligne de vol au lieu de leur contenu',
+                'Filtres du carnet de vol (à contresigner, contresignés, refusés, relevés en jeu) et choix de la filière du cursus de nouveau appliqués',
+            ], ['platform', 'personnel'], [
+                'Aucune donnée n’a été modifiée : seul l’affichage de la page était en cause.',
+            ], 'Portail'),
             $pr(1300, '2026-11-02', 'Appel de feu typé, vraie radio MPU5, nouveaux écrans et vidéoprojecteur', 'Avec le pack 2.9.31, l’appel de feu de l’app CAS choisit un moyen réel (mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou appui aérien) avec ses portées, ses munitions, ses délais et sa distance de sécurité : les pièces IA de votre camp tirent vraiment et un joueur servant reçoit la mission. La MPU5 devient une vraie radio de données : le téléphone s’y relie par câble ou par Wi-Fi, les radios du même canal forment un maillage avec les relais de la mission. De nouveaux écrans COMSPEC sur les modèles du jeu affichent une image nette de jour comme de nuit, et un vidéoprojecteur projette diapositives, affichage TOC, carte ou caméra sur un tableau blanc. Tout se règle dans les options des addons et peut être désactivé.', [
                 'Appel de feu typé dans l’app CAS : mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou CAS, portées, munitions, délais et distance de sécurité',
                 'Tir réel des pièces IA du camp, mission envoyée au joueur servant dans l’app Tâches ; réglage + / – / G / D, EFFICACE, FIN DE MISSION',

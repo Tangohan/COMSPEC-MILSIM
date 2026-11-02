@@ -43,8 +43,8 @@ final class SystemCooperationAnnouncementsController
         if (! $this->templates->tableExists()) {
             return Response::redirect(url('admin'));
         }
-        $eventKey = trim((string) $request->input('event', (string) ($params['event'] ?? '')));
-        $channel = trim((string) $request->input('channel', (string) ($params['channel'] ?? '')));
+        $eventKey = trim($request->queryString('event', (string) ($params['event'] ?? '')));
+        $channel = trim($request->queryString('channel', (string) ($params['channel'] ?? '')));
         if (! CooperationAnnouncementEvents::isKnown($eventKey) || ! isset(CooperationAnnouncementEvents::channelLabels()[$channel])) {
             Session::flash('error', 'Sélection de gabarit invalide.');
 
