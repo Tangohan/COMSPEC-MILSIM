@@ -531,31 +531,32 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     _sim, [[0, 30, 50, 70, 90], ["Aucun effet", "30 %", "50 %", "70 % (défaut)", "90 %"], 3], 1] call comspec_atak_native_fnc_addSetting;
 // Téléphone branché sur une radio ACRE2 ou TFAR (fn_mpu5 "plug") : la radio relaie les données comme une MPU5.
 ["comspec_atak_native_radio_data", "CHECKBOX",
-    ["Données par radio ACRE2 / TFAR", "Le joueur peut brancher son téléphone sur sa radio (app Wave Relay) : elle relaie ses données et celles de l'équipe, comme une MPU5, avec la portée et le débit ci-dessous. La radio personnelle 343 ne compte pas."],
+    ["Données par radio ACRE2 / TFAR", "Le joueur peut brancher son téléphone sur sa radio (app Wave Relay) : elle relaie ses données et celles de l'équipe, comme une MPU5, avec la portée et le débit ci-dessous. La radio personnelle 343 ne compte pas. Ignoré avec la « Liaison téléphone-radio réaliste » : seule une MPU5 relie alors le téléphone."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_radio_lr_range", "SLIDER", ["Radio longue portée : portée données (m)", "Portée dans le maillage d'un téléphone branché sur une radio longue portée."],
     _sim, [500, 30000, 10000, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_radio_lr_gain", "SLIDER", ["Radio longue portée : gain (dB)", "Marge radio ajoutée à la liaison vers les relais. 6 dB double à peu près la portée."],
     _sim, [0, 15, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_radio_lr_mbps", "SLIDER", ["Radio longue portée : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio tactique transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
+["comspec_atak_native_radio_lr_mbps", "SLIDER", ["Radio longue portée : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio ACRE2 / TFAR transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
     _sim, [0.1, 20, 2, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_radio_sw_range", "SLIDER", ["Radio portative : portée données (m)", "Portée dans le maillage d'un téléphone branché sur une radio portative."],
     _sim, [500, 30000, 2000, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_radio_sw_gain", "SLIDER", ["Radio portative : gain (dB)", "Marge radio ajoutée à la liaison vers les relais. 6 dB double à peu près la portée."],
     _sim, [0, 15, 4, 0], 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_radio_sw_mbps", "SLIDER", ["Radio portative : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio tactique transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
+["comspec_atak_native_radio_sw_mbps", "SLIDER", ["Radio portative : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio ACRE2 / TFAR transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
     _sim, [0.1, 20, 0.5, 1], 1] call comspec_atak_native_fnc_addSetting;
 // Liaison réaliste téléphone <-> radio de données (fn_mpuLink) : désactivée par défaut (comportement d'avant). Réglages
-// serveur, une mission peut les imposer (cba_settings.sqf de la mission).
+// serveur, une mission peut les imposer (cba_settings.sqf de la mission). Seule une MPU5 relie le téléphone : les réglages
+// du repli ACRE2 / TFAR de la 2.9.31 (comspec_atak_native_mpu_tac_*) sont retirés.
 private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_real", "CHECKBOX",
-    ["Liaison téléphone-radio réaliste", "Comme sur le terrain, le téléphone n'a pas de réseau tactique à lui : il passe par une radio de données reliée par câble EUD ou par le Wi-Fi d'une MPU5 (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Les MPU5 allumées sur le même canal forment un maillage avec les relais de la mission. Décoché : comportement d'avant."],
+    ["Liaison téléphone-radio réaliste", "Comme sur le terrain, le téléphone n'a pas de réseau tactique à lui : il passe par une MPU5 reliée par câble EUD ou par son Wi-Fi (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Les MPU5 allumées sur le même canal forment un maillage avec les relais de la mission. Sans MPU5 : pas de réseau de données (une radio ACRE2 / TFAR ne relie pas le téléphone). Décoché : comportement d'avant."],
     _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mpu_require", "CHECKBOX",
-    ["Radio de données obligatoire", "Sans radio reliée et en service, plus aucun réseau (le Bluetooth entre téléphones et les données déjà reçues restent). Décoché : sans radio, le téléphone garde son réseau d'avant ; la radio ne fait que l'améliorer."],
+    ["Radio de données obligatoire", "Sans MPU5 : pas de réseau de données (une MPU5 reliée et en service est nécessaire ; le Bluetooth entre téléphones et les données déjà reçues restent). Décoché : sans MPU5, le téléphone garde son réseau d'avant ; la MPU5 ne fait que l'améliorer."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mpu_cable", "CHECKBOX",
-    ["Câble EUD obligatoire", "Il faut l'objet « Câble EUD » dans l'inventaire pour relier le téléphone à la MPU5 ou à une radio tactique par câble."],
+    ["Câble EUD obligatoire", "Il faut l'objet « Câble EUD » dans l'inventaire pour relier le téléphone à la MPU5 par câble."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mpu_wifi", "CHECKBOX",
     ["Wi-Fi de la MPU5 autorisé", "Le téléphone peut se relier sans câble au Wi-Fi d'une MPU5 portée ou posée au sol, à quelques mètres."],
@@ -569,15 +570,6 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_hop_ms", "SLIDER",
     ["Latence par saut du maillage (ms)", "Délai ajouté par chaque radio traversée jusqu'à la passerelle. La portée (6 W) et le débit d'une MPU5 sont les réglages « Portée de la MPU5 » et « Débit relayé par une MPU5 » (section Simulation)."],
     _mpuCat, [0, 300, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_mpu_tac_kbps", "SLIDER",
-    ["Radio tactique : débit de données (kbit/s)", "Débit d'une radio portative ACRE2 / TFAR (PRC-152, PRC-148…) reliée en données ; une radio longue portée (PRC-117, véhicule) en a 4 fois plus. Autorisées par le réglage « Données par radio ACRE2 / TFAR » (section Simulation)."],
-    _mpuCat, [2, 500, 32, 0], 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_mpu_tac_ms", "SLIDER",
-    ["Radio tactique : latence (ms)", "Délai de chaque envoi par une radio tactique."],
-    _mpuCat, [100, 5000, 1200, 0], 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_mpu_tac_maxkb", "SLIDER",
-    ["Radio tactique : taille maximale d'un envoi (Ko)", "Au-delà (photos, fichiers), l'envoi attend une liaison MPU5. Pas de vidéo par radio tactique."],
-    _mpuCat, [5, 500, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

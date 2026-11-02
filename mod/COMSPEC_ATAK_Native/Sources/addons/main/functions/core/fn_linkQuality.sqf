@@ -12,7 +12,7 @@
     2 exigeant. Clés en plus : tx (émission possible), margin (dB, -1 sans relais), jitter (ms).
     Réseau exclusivement par relais (fn_relayNet "only") : sans relais reçu, aucun réseau (même simulation coupée).
     Liaison réaliste téléphone <-> radio (fn_mpuLink, réglage comspec_atak_native_mpu_real) : le téléphone passe par sa
-    radio de données (MPU5 par câble EUD ou Wi-Fi, radio tactique ACRE2 / TFAR par câble) ; débit, latence et pertes
+    radio de données, une MPU5 reliée par câble EUD ou Wi-Fi (sans MPU5 : pas de réseau de données) ; débit, latence et pertes
     sont ceux du maillage jusqu'à la passerelle (relief, sauts, brouilleurs déjà comptés), puis bâtiment, véhicule,
     brouillage sur le joueur, surcharge... comme avant. Radio obligatoire (comspec_atak_native_mpu_require) : sans radio
     reliée et en service, aucun réseau, même simulation coupée (Bluetooth et données locales restent possibles).
@@ -34,11 +34,11 @@ if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < ([6, 2] s
 if ((count _cache) isNotEqualTo 2) then { uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", []]; };
 private _q = createHashMap;
 private _mpu = ["status"] call comspec_atak_native_fnc_mpuLink;
-private _mesh = (_mpu get "active") && {_mpu get "ok"} && {(_mpu get "kind") in ["mpu", "tac"]};
+private _mesh = (_mpu get "active") && {_mpu get "ok"} && {(_mpu get "kind") isEqualTo "mpu"};
 if ((_mpu get "active") && {!(_mpu get "ok")} && {missionNamespace getVariable ["comspec_atak_native_mpu_require", true]}) exitWith {
     private _why = _mpu getOrDefault ["why", ""];
-    _q = createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", ["Radio sans réseau", "Aucune radio"] select ((_mpu get "kind") isEqualTo "")],
-        ["factors", [[["Radio de données : " + _why, "Aucune radio de données reliée (câble EUD ou Wi-Fi d'une MPU5)"] select ((_mpu get "kind") isEqualTo ""), "aucun réseau"]]], ["sim", true], ["tx", false], ["margin", -1], ["jitter", 0]];
+    _q = createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", ["Radio sans réseau", "Sans MPU5"] select ((_mpu get "kind") isEqualTo "")],
+        ["factors", [[["MPU5 : " + _why, "Sans MPU5 : pas de réseau de données (reliez une MPU5 par câble EUD ou Wi-Fi)"] select ((_mpu get "kind") isEqualTo ""), "aucun réseau"]]], ["sim", true], ["tx", false], ["margin", -1], ["jitter", 0]];
     uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", [diag_tickTime, _q]];
     _q
 };
@@ -96,7 +96,7 @@ if (_mesh) then {
     _loss = _loss max (_mpu get "loss");
     private _ms = uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap];
     private _lk = _mpu get "link";
-    _f pushBack [[format ["MPU5 canal %1 (%2)", _ms getOrDefault ["chan", 1], ["câble EUD", "Wi-Fi"] select (_lk isEqualTo "wifi")], "Radio tactique (données, câble EUD)"] select (_lk isEqualTo "tac"),
+    _f pushBack [format ["MPU5 canal %1 (%2)", _ms getOrDefault ["chan", 1], ["câble EUD", "Wi-Fi"] select (_lk isEqualTo "wifi")],
         format ["%1 saut(s) · %2", (_mpu get "hops") max 0, [format ["%1 kbit/s", _mpu get "kbps"], format ["%1 Mbit/s", ((_mpu get "kbps") / 1000) toFixed 1]] select ((_mpu get "kbps") >= 1000)]];
     if (_lk isEqualTo "wifi") then { _f pushBack [format ["Wi-Fi de la MPU5 (%1 m)", round (_mpu get "wifiD")], format ["%1 %%", round (100 * (_mpu get "wifiQ"))]]; };
 };
@@ -197,7 +197,7 @@ if (_dmg > 0.3) then { _mul = _mul * (1.15 - _dmg); _f pushBack ["Boîtier du t�
 // Antenne touchée (fn_deviceDamage) : jusqu'à -75 % de débit. Une antenne externe (fn_antenna) la remplace.
 private _ext = ["get"] call comspec_atak_native_fnc_antenna;
 private _ant = (_hp getOrDefault ["parts", createHashMap]) getOrDefault ["antenna", 0];
-if (_ant > 0 && {_ext isEqualTo []} && {!(_mesh && {(_mpu get "link") in ["cable", "tac"]})}) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
+if (_ant > 0 && {_ext isEqualTo []} && {!(_mesh && {(_mpu get "link") isEqualTo "cable"})}) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
 // Téléphone presque vide (moins de 10 %) : Android réduit la puissance d'émission.
 if (_real > 0 && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) < 10}) then { _mul = _mul * 0.8; _f pushBack ["Batterie faible : émission réduite", "-20 %"]; };
 // En mouvement rapide (véhicule, aéronef) : évanouissements rapides, changements de relais, plus de pertes et de gigue.

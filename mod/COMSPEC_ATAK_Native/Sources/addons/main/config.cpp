@@ -220,12 +220,12 @@ class CfgWeapons {
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=15; };
     };
-    // Câble EUD (USB-C) entre le téléphone et la radio de données (fn_mpuLink) : exigé pour la liaison par câble, MPU5 ou
-    // radio tactique, si le réglage « Câble EUD obligatoire » est coché. Modèle du câble DL-7.
+    // Câble EUD (USB-C) entre le téléphone et la MPU5 (fn_mpuLink) : exigé pour la liaison par câble si le réglage
+    // « Câble EUD obligatoire » est coché. Modèle du câble DL-7.
     class COMSPEC_ATAK_EudCable: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_E368B137C6";
-        descriptionShort="$STR_COMSPEC_ATAK_CFG_080F6D4857";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_3FB197C75A";
         picture="\z\comspec_atak_native\addons\main\data\item_datacable.paa";
         model="\z\comspec_atak_native\addons\items\data\item3d_datacable.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";

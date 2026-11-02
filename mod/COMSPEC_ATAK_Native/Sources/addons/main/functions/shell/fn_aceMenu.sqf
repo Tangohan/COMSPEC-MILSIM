@@ -10,7 +10,7 @@
       Relais ATAK (sur l'objet relais) ▸ état, couper, allumer, changer la batterie
       Effacement d'urgence
       Débrancher le câble DL-7 (pendant une extraction)
-      Radio de données (liaison réaliste, fn_mpuLink) ▸ relier à la MPU5 (câble / Wi-Fi), à la radio tactique, batterie
+      Radio de données (liaison réaliste, fn_mpuLink) ▸ relier à la MPU5 (câble / Wi-Fi), batterie
     Appelé une fois depuis XEH_postInitClient, avant les actions d'entretien.
 */
 if (!hasInterface || {isNil "ace_interact_menu_fnc_createAction"}) exitWith { false };
@@ -218,7 +218,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
     { ["disconnect"] call comspec_atak_native_fnc_dataAction; },
     { ((uiNamespace getVariable ["COMSPEC_ATAK_DataLink", createHashMap]) getOrDefault ["phase", ""]) isNotEqualTo "" }] call _add;
 
-// Radio de données (liaison réaliste, fn_mpuLink) : relier le téléphone à la MPU5 ou à la radio tactique, batterie.
+// Radio de données (liaison réaliste, fn_mpuLink) : relier le téléphone à la MPU5, batterie.
 ["aceInit"] call comspec_atak_native_fnc_mpuLink;
 // Caméras IP fixes : « Caméras > Poser une caméra » et actions sur la caméra posée (fn_camAction).
 ["aceInit"] call comspec_atak_native_fnc_camAction;
