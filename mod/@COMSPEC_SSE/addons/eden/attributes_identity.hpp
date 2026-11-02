@@ -1,0 +1,78 @@
+/*
+    Attributs Eden — papiers d'identité (addon identity).
+
+    Variables écrites sur le SERVEUR seulement, sans diffusion : la nature des papiers (couverture, faux) et leur
+    qualité font partie de la vérité, que les joueurs ne doivent pas pouvoir lire sur l'unité.
+      COMSPEC_ID_Carry    auto | none | card | passport | license | card_license | card_passport
+      COMSPEC_ID_Country  auto | ALT | TNA | LVN | MLD          COMSPEC_ID_Kind  civil | cover | forged
+      COMSPEC_ID_Quality  0-100 (faux)
+    Automatique : les joueurs n'ont rien, les IA ont des papiers selon leur camp (réglages COMSPEC SSE › Identité).
+*/
+class COMSPEC_SSE_Papiers {
+    displayName = "$STR_COMSPEC_SSE_CFG_0B5D97E4D8";
+    collapsed = 1;
+    class Attributes {
+        class COMSPEC_ID_Carry {
+            displayName = "$STR_COMSPEC_SSE_CFG_8E5DEC6D7C";
+            tooltip = "$STR_COMSPEC_SSE_CFG_F85EC29CD3";
+            property = "COMSPEC_ID_Carry";
+            control = "Combo";
+            expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_Carry', _value]; };";
+            defaultValue = "'auto'";
+            typeName = "STRING";
+            condition = "objectBrain";
+            class values {
+                class Auto { name = "$STR_COMSPEC_SSE_CFG_F8A3C37BEB"; value = "auto"; default = 1; };
+                class None { name = "$STR_COMSPEC_SSE_CFG_D8B59B204A"; value = "none"; };
+                class Card { name = "$STR_COMSPEC_SSE_CFG_D1155ABCAA"; value = "card"; };
+                class Passport { name = "$STR_COMSPEC_SSE_CFG_0D7912ADCF"; value = "passport"; };
+                class License { name = "$STR_COMSPEC_SSE_CFG_D1E45DF088"; value = "license"; };
+                class CardLicense { name = "$STR_COMSPEC_SSE_CFG_D430406714"; value = "card_license"; };
+                class CardPassport { name = "$STR_COMSPEC_SSE_CFG_BEF57EAA88"; value = "card_passport"; };
+            };
+        };
+        class COMSPEC_ID_Country {
+            displayName = "$STR_COMSPEC_SSE_CFG_6A56979958";
+            tooltip = "$STR_COMSPEC_SSE_CFG_3DDBED6623";
+            property = "COMSPEC_ID_Country";
+            control = "Combo";
+            expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_Country', _value]; };";
+            defaultValue = "'auto'";
+            typeName = "STRING";
+            condition = "objectBrain";
+            class values {
+                class Auto { name = "$STR_COMSPEC_SSE_CFG_F8A3C37BEB"; value = "auto"; default = 1; };
+                class ALT { name = "$STR_COMSPEC_SSE_CFG_4FFC3A9C10"; value = "ALT"; };
+                class TNA { name = "$STR_COMSPEC_SSE_CFG_7336D48B54"; value = "TNA"; };
+                class LVN { name = "$STR_COMSPEC_SSE_CFG_300D164467"; value = "LVN"; };
+                class MLD { name = "$STR_COMSPEC_SSE_CFG_73B65B11ED"; value = "MLD"; };
+            };
+        };
+        class COMSPEC_ID_Kind {
+            displayName = "$STR_COMSPEC_SSE_CFG_BD419A13FB";
+            tooltip = "$STR_COMSPEC_SSE_CFG_26DEC05427";
+            property = "COMSPEC_ID_Kind";
+            control = "Combo";
+            expression = "if (isServer && {_value isNotEqualTo 'civil'}) then { _this setVariable ['COMSPEC_ID_Kind', _value]; };";
+            defaultValue = "'civil'";
+            typeName = "STRING";
+            condition = "objectBrain";
+            class values {
+                class Civil { name = "$STR_COMSPEC_SSE_CFG_45FF8F0E18"; value = "civil"; default = 1; };
+                class Cover { name = "$STR_COMSPEC_SSE_CFG_95F9CC59DC"; value = "cover"; };
+                class Forged { name = "$STR_COMSPEC_SSE_CFG_9A36AFA781"; value = "forged"; };
+            };
+        };
+        class COMSPEC_ID_Quality {
+            displayName = "$STR_COMSPEC_SSE_CFG_FA56F3752E";
+            tooltip = "$STR_COMSPEC_SSE_CFG_3507EC6D79";
+            property = "COMSPEC_ID_Quality";
+            control = "Edit";
+            expression = "if (isServer) then { _this setVariable ['COMSPEC_ID_Quality', (_value max 0) min 100]; };";
+            defaultValue = "60";
+            validate = "number";
+            typeName = "NUMBER";
+            condition = "objectBrain";
+        };
+    };
+};
