@@ -102,7 +102,8 @@ final class PilotLogbookRepository
         if (!$this->schemaReady()) {
             return [];
         }
-        $st = $this->pdo()->prepare("SELECT * FROM pilot_logbook_entries WHERE tenant_id = ? AND status = 'countersigned'");
+        $st = $this->pdo()->prepare("SELECT * FROM pilot_logbook_entries WHERE tenant_id = ? AND status = 'countersigned'"
+            . \App\Support\AtakPlayedOpExclusion::clause('pilot_logbook_entries.mission_key', 'pilot_logbook_entries.tenant_id', $this->pdo()));
         $st->execute([$tenantId]);
         $out = [];
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
@@ -235,7 +236,7 @@ final class PilotLogbookRepository
         }
         $st = $this->pdo()->prepare(
             "SELECT COALESCE(SUM(seconds), 0) FROM pilot_logbook_entries
-             WHERE tenant_id = ? AND flown_on >= ? AND (source = 'mod' OR status = 'countersigned')"
+             WHERE tenant_id = ? AND flown_on >= ? AND (source = 'mod' OR status = 'countersigned')" . \App\Support\AtakPlayedOpExclusion::clause('pilot_logbook_entries.mission_key', 'pilot_logbook_entries.tenant_id', $this->pdo())
         );
         $st->execute([$tenantId, date('Y-m-d', time() - max(1, $days) * 86400)]);
 

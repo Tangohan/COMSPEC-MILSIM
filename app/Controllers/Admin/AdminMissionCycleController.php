@@ -8,11 +8,18 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AtakDebriefRepository;
 use App\Repositories\AtakMapRepository;
 use App\Repositories\TheatreMissionCycleRepository;
+use App\Services\Atak\PlayedOperationsService;
+use App\Services\Personnel\RoleplayGameSessionSettings;
+use App\Services\Rbac\RolePermissionMatrixCatalog;
+use App\Support\ModuleFeatureAccess;
 
 /**
- * Hub back-office — cycle de mission (briefing → exécution → après-action).
+ * Hub back-office — cycle de mission : planification → briefing → début détecté en jeu → déroulé → fin → débriefing →
+ * heures et présence. Montre l'état de chaque étape pour les parties détectées (PlayedOperationsService), leur
+ * rattachement à l'opération prévue, et garde le cycle manuel (préparation → en cours → clôturée) de la carte tactique.
  */
 final class AdminMissionCycleController
 {
@@ -49,22 +56,42 @@ final class AdminMissionCycleController
             $focus = $presented[0];
         }
 
+        $played = null;
+        try {
+            $played = (new PlayedOperationsService())->overview($tenantId);
+        } catch (\Throwable) {
+        }
+        $sessionSettings = RoleplayGameSessionSettings::defaults();
+        $debriefSettings = null;
+        try {
+            $sessionSettings = RoleplayGameSessionSettings::forTenant($tenantId);
+            $debriefRepo = new AtakDebriefRepository();
+            $debriefSettings = $debriefRepo->ready() ? $debriefRepo->settings($tenantId) : null;
+        } catch (\Throwable) {
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.mission_cycle.index',
             'title' => 'Cycle de mission',
+            'isBackOfficeShell' => true,
             'boPageGroup' => 'Opérations',
             'boPageTitle' => 'Cycle de mission',
-            'boPageKicker' => 'OPÉRATIONS · POSTE DE COMMANDEMENT',
-            'boPageSubtitle' => 'Préparez le briefing, ouvrez la mission pour l’exécution sur la carte, puis clôturez pour le bilan après-action.',
+            'boPageKicker' => 'OPÉRATIONS · DE LA PLANIFICATION AUX HEURES',
+            'boPageSubtitle' => 'Chaque étape d’une opération, de la planification aux heures comptées : ce qui est détecté en jeu, ce qui reste à faire, et les parties à rattacher.',
             'boPageQuick' => [
-                ['label' => 'Créer une mission', 'href' => '#bo-mcycle-create'],
-                ['label' => 'Diapositives de briefing', 'href' => url('back-office/atak/briefing-slides')],
-                ['label' => 'Carte tactique', 'href' => url('tacmap')],
+                ['label' => 'Parties détectées', 'href' => '#bo-mcycle-parties'],
+                ['label' => 'Planification', 'href' => url('back-office/missions') . '?onglet=planification'],
+                ['label' => 'Suivi des CR', 'href' => url('back-office/atak/comptes-rendus') . '?onglet=suivi'],
             ],
-            'backOfficePageCss' => ['back-office-mission-cycle.css'],
+            'backOfficePageCss' => ['back-office-aar.css', 'back-office-mission-cycle.css', 'back-office-played-ops.css'],
             'missionCycleList' => $presented,
             'missionCycleFocus' => $focus,
             'missionCycleWorkspaces' => $workspaces,
+            'missionCyclePlayed' => $played,
+            'missionCycleSessionSettings' => $sessionSettings,
+            'missionCycleDebriefSettings' => $debriefSettings,
+            'missionCycleCanManage' => ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'),
+            'csrfToken' => Csrf::token(),
         ]);
     }
 

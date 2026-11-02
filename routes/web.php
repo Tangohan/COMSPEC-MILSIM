@@ -2190,6 +2190,18 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/suivi-cr/{id}/export.csv', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/relancer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'remind'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/suivi-cr/{id}/cloturer', [\App\Controllers\Admin\AdminAtakDebriefController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // Parties détectées en jeu : fenêtre « Gérer » (suivi des CR, cycle de mission).
+    $router->post('/back-office/atak/parties/enregistrer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/rattacher', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'link'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/ignorer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'ignore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/compter', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'count'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/supprimer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/restaurer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'restore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/groupe', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'bulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/types', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'typeStore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/types/{id}/archiver', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'typeArchive'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/regles/{id}/basculer', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'ruleToggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/parties/categories', [\App\Controllers\Admin\AdminAtakPlayedOpsController::class, 'categories'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/nouveau', [\App\Controllers\Admin\AdminAarReportsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/export.csv', [\App\Controllers\Admin\AdminAarReportsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/modeles', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesIndex'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

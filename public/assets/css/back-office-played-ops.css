@@ -1,0 +1,73 @@
+/* Parties détectées en jeu (views/admin/partials/played_ops_manager.php) : liste, fenêtre « Gérer », réglages. */
+.bo-po { display: grid; gap: 12px; margin-top: 14px; }
+.bo-po__head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-start; justify-content: space-between; }
+.bo-po__title { margin: 0; font-size: 14px; font-weight: 900; color: var(--ath-ink); }
+.bo-po__lead { margin: 4px 0 0; max-width: 62rem; font-size: 11.5px; line-height: 1.55; color: var(--ath-muted); }
+.bo-po__warn, .bo-po__alert { margin: 0; padding: 8px 12px; font-size: 11.5px; border: 1px solid var(--ath-warn-bd, #f2ddb4); background: var(--ath-warn-bg, #fdf3e2); color: var(--ath-ink); }
+.bo-po-muted { color: var(--ath-muted); font-size: 11px; }
+.bo-po-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.bo-po__filters button.bo-aar-seg__btn { background: transparent; border-top: 0; border-bottom: 0; border-left: 0; cursor: pointer; font-family: inherit; }
+.bo-po__filters button.bo-aar-seg__btn.is-active { background: var(--ath-ink); }
+
+.bo-po__bulk { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 8px 10px; border: 1px solid var(--ath-line); background: var(--ath-surface); font-size: 11.5px; }
+.bo-po__bulk label { display: inline-flex; gap: 6px; align-items: center; }
+.bo-po__bulk-count { font-weight: 800; }
+.bo-po__confirm { display: inline-flex; gap: 6px; align-items: center; font-size: 11.5px; }
+
+.bo-po__table-wrap { overflow-x: auto; border: 1px solid var(--ath-line); background: var(--ath-surface); }
+.bo-po__table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.bo-po__table th { text-align: left; padding: 7px 9px; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--ath-muted); border-bottom: 1px solid var(--ath-line); white-space: nowrap; }
+.bo-po__table td { padding: 7px 9px; border-bottom: 1px solid var(--ath-line); vertical-align: top; }
+.bo-po__table tbody tr:hover { background: var(--ath-row-hover); }
+.bo-po__row.is-ignored td { opacity: .62; }
+.bo-po__check { width: 28px; }
+.bo-po__name { font-weight: 800; color: var(--ath-ink); }
+.bo-po__key { display: block; margin-top: 2px; font-family: var(--ath-mono); font-size: 10px; color: var(--ath-subtle); word-break: break-all; }
+.bo-po__unlinked { color: var(--ath-warn, #c98a12); font-weight: 800; }
+.bo-po__actions { text-align: right; white-space: nowrap; }
+.bo-po-chip { display: inline-block; padding: 1px 7px; border-left: 3px solid var(--po-c, #3b6ea5); background: color-mix(in srgb, var(--po-c, #3b6ea5) 12%, transparent); font-weight: 800; }
+
+.bo-po__steps { display: flex; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.bo-po__step { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--ath-line); background: transparent; vertical-align: middle; }
+.bo-po__step.is-done { background: var(--ath-accent, #0b8a5c); border-color: var(--ath-accent, #0b8a5c); }
+.bo-po__step.is-auto { background: var(--ath-info, #1e6fbf); border-color: var(--ath-info, #1e6fbf); }
+.bo-po__step.is-live { background: var(--ath-accent-bright, #12d18e); border-color: var(--ath-accent-bright, #12d18e); }
+.bo-po__step.is-todo { background: var(--ath-warn, #c98a12); border-color: var(--ath-warn, #c98a12); }
+.bo-po__step.is-off { background: repeating-linear-gradient(45deg, var(--ath-danger, #c72e2e) 0 2px, transparent 2px 4px); border-color: var(--ath-danger, #c72e2e); }
+.bo-po__legend { margin: 0; font-size: 10.5px; color: var(--ath-muted); display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+
+.bo-po-dlg { max-height: min(92dvh, 52rem); }
+.bo-po-dlg__head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
+.bo-po-dlg__body { max-height: min(70dvh, 40rem); display: grid; gap: 12px; }
+.bo-po-dlg__h { margin: 0 0 6px; font-size: 12px; font-weight: 900; color: var(--ath-ink); }
+.bo-po-dlg__form { display: grid; gap: 8px; margin: 0; }
+.bo-po-dlg__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 8px 12px; }
+.bo-po-dlg__grid label, .bo-po-dlg__form label { display: grid; gap: 3px; font-size: 11px; font-weight: 700; color: var(--ath-ink); }
+.bo-po-dlg__grid small, .bo-po-dlg__form small { font-weight: 400; color: var(--ath-muted); }
+.bo-po-dlg__grid input[type="text"], .bo-po-dlg__grid select, .bo-po-dlg__form input[type="text"], .bo-po-dlg__form select, .bo-po-dlg__form textarea { width: 100%; min-height: 32px; padding: 5px 8px; border: 1px solid var(--ath-line); background: var(--ath-bg, #fff); color: var(--ath-ink); font: inherit; font-size: 12px; }
+.bo-po-dlg__grid input[type="color"] { width: 3rem; height: 32px; padding: 0; border: 1px solid var(--ath-line); }
+.bo-po-dlg__why { margin: 0; font-size: 11px; color: var(--ath-muted); }
+.bo-po-dlg__actions { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bo-po-dlg__sec { border: 1px solid var(--ath-line); padding: 8px 10px; }
+.bo-po-dlg__sec > summary { cursor: pointer; font-size: 12px; font-weight: 900; color: var(--ath-ink); }
+.bo-po-dlg__sec[open] > summary { margin-bottom: 8px; }
+.bo-po-dlg__sec--danger { border-color: var(--ath-danger-bg, #fdecec); }
+.bo-po-dlg__sec--danger > summary { color: var(--ath-danger, #c72e2e); }
+.bo-po-dlg__split { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 12px; }
+.bo-po-dlg__split p { margin: 0; font-size: 11.5px; }
+
+.bo-po__settings { border: 1px solid var(--ath-line); background: var(--ath-surface); padding: 8px 12px; }
+.bo-po__settings > summary { cursor: pointer; font-size: 12px; font-weight: 900; color: var(--ath-ink); }
+.bo-po__settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 14px; margin-top: 10px; }
+.bo-po__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.bo-po__list li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: 11.5px; }
+.bo-po__list form { margin: 0 0 0 auto; }
+
+@media (max-width: 640px) {
+  .bo-po__table thead { display: none; }
+  .bo-po__table, .bo-po__table tbody, .bo-po__table tr, .bo-po__table td { display: block; width: 100%; }
+  .bo-po__table tr { border-bottom: 1px solid var(--ath-line); padding: 6px 0; }
+  .bo-po__table td { border: 0; padding: 3px 9px; }
+  .bo-po__check { width: auto; }
+  .bo-po__actions { text-align: left; }
+}

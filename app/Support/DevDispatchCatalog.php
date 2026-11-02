@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1313, '2026-11-02', 'Cycle de mission expliqué et parties détectées en jeu gérées', 'La page Cycle de mission montre maintenant les sept étapes d’une opération, de la planification aux heures comptées : ce que fait chaque étape, comment elle se déclenche (site, serveur, Zeus) et combien des parties récentes l’ont passée. Chaque partie lancée sur le serveur est rapprochée automatiquement de l’opération planifiée, du cycle de mission ou de l’événement prévu au même créneau (carte et joueurs prévus présents compris) ; vous confirmez, corrigez ou indiquez « aucune ». Dans le suivi des CR, le bouton « Gérer » d’une partie permet de la renommer, de lui donner un type et une catégorie, de l’ignorer (une fois ou à l’avenir) ou de la supprimer, seule ou en groupe.', [
+                'Cycle de mission : étapes expliquées avec leurs liens (planification, briefing, suivi des CR, comptes rendus, heures, sessions de jeu, qualifications, avancement) et réglages de la détection',
+                'Parties détectées : état de chaque étape, opération prévue proposée ou choisie, parties sans opération signalées',
+                'Fenêtre « Gérer » : nom, type, catégorie, opération rattachée, ignorer cette partie ou à l’avenir (même mission ou même carte), supprimer avec le détail de ce qui sera retiré',
+                'Types d’opération enregistrés avec une règle : les prochaines parties qui correspondent sont typées automatiquement ; type proposé d’après le nom de la mission, la durée et le nombre de joueurs',
+                'Catégories modifiables par la communauté, règles d’exclusion et parties supprimées restaurables',
+                'Actions groupées sur les parties cochées : catégoriser, ignorer, compter à nouveau, supprimer',
+            ], [
+                'Une partie ignorée ou supprimée ne compte plus dans le temps de jeu, le temps par rôle, les heures de vol et les heures prises en compte pour les qualifications ; rien n’est effacé',
+            ], [], ['atak', 'platform'], [
+                'Aucune mise à jour du jeu n’est nécessaire. L’administrateur lance run-migrations.php (étape atak_played_operations) pour activer types, règles et rattachements.',
+                'La présence pointée dans Sessions de jeu reste gérée sur sa propre page.',
+            ], 'Portail Athena'),
             $pr(1312, '2026-11-02', 'Academy : le catalogue des qualifications réelles et les émetteurs réels', 'Le catalogue de l’Academy, onglet Qualifications, présente maintenant le catalogue de référence : environ 500 brevets et qualifications réels des États-Unis, de la France, de l’Allemagne, de la Chine, de la Russie et de l’OTAN, à côté des qualifications de votre communauté. Chaque fiche dit qui la délivre, comment l’obtenir, quelles formations y mènent et quels emplois la demandent ; un responsable l’importe en un clic dans son référentiel. La page Émetteurs propose plus de 200 écoles, centres d’excellence et commandements réels à importer par pays. La formule de la communauté fixe le nombre d’imports et de créations ; le catalogue reste consultable en entier.', [
                 'Catalogue Academy : qualifications par origine (déjà dans mon référentiel, créations de la communauté, catalogue de référence), filtres par pays avec drapeau, catégorie (brevet, qualification, cursus, licence), domaine, niveau et émetteur, pages de résultats',
                 'Fiche d’une qualification de référence : intitulé officiel, émetteur réel (localisation, site officiel), conditions d’obtention, formations Academy, emplois, sources ; bouton « Importer dans mon référentiel »',
