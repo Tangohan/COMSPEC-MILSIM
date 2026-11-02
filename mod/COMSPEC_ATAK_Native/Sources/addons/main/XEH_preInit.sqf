@@ -166,9 +166,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Partage des plans de zones", "Les joueurs peuvent envoyer leurs plans de zones (app Zones) à leur équipe, leur groupe ou leur camp, avec les états et signalements des zones, par le réseau du téléphone. Décoché : chaque plan reste sur son téléphone."],
     ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zones_arma", "CHECKBOX",
-    ["Zones sur la carte d'Arma et Athena", "Coché par défaut (2.9.37) : un plan a son option « Carte d'Arma et Athena » allumée ; cases, contours, traits, étiquettes, axes et points de contrôle deviennent des marqueurs de la carte d'Arma, visibles de tout le canal (le camp pour un plan partagé au camp), comme une carte de briefing, et partent au site Athena si le plan est partagé. Décoché (comme en 2.9.36) : les plans restent sur les téléphones."],
+    ["Zones sur la carte d'Arma et Athena", "Coché par défaut (2.9.38) : un plan a son option « Carte d'Arma et Athena » allumée ; cases, contours, traits, étiquettes, axes et points de contrôle deviennent des marqueurs de la carte d'Arma, visibles de tout le canal (le camp pour un plan partagé au camp), comme une carte de briefing, et partent au site Athena si le plan est partagé. Décoché (comme en 2.9.36) : les plans restent sur les téléphones."],
     ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
-// Portée d'un plan de zones ou d'une route à sa création (2.9.37 : tout le camp par défaut, renvoyé à chaque
+// Portée d'un plan de zones ou d'une route à sa création (2.9.38 : tout le camp par défaut, renvoyé à chaque
 // modification validée) ; chaque plan ou route garde sa portée modifiable.
 ["comspec_atak_native_plan_scope", "LIST",
     ["Portée par défaut des plans et routes", "À la création d'un plan de zones (app Zones) ou d'une route (app Routes), qui le reçoit sans cliquer PARTAGER : tout le camp (par défaut), le groupe, l'équipe, ou personne (privé, comme en 2.9.36). L'état des zones ne change toujours que par une action d'un joueur."],

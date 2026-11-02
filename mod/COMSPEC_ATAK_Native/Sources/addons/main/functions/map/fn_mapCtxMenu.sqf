@@ -93,7 +93,7 @@ switch (_mode) do {
         // Étape de l'itinéraire pointée : MODIFIER, NAVIGUER VERS, SUPPRIMER L'ÉTAPE.
         private _wpi = [_map, _screen] call comspec_atak_native_fnc_wpAt;
         if (_card) then { _m = ""; _who = objNull; _wpi = -1; };
-        // Éléments supprimables sous le clic (2.9.37) : route de l'app Routes, itinéraire (app Itinéraire), guidage GPS,
+        // Éléments supprimables sous le clic (2.9.38) : route de l'app Routes, itinéraire (app Itinéraire), guidage GPS,
         // zone et plan de l'app Zones ; [genre, id, nom, à moi].
         private _dels = [];
         if (!_card) then {

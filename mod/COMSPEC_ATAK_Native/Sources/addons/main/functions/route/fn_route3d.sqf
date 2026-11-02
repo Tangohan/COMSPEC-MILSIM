@@ -1,6 +1,6 @@
 /*
     Vue 3D des routes (option « Vue 3D » d'une route, réglage client comspec_atak_native_route_3d) : trait posé sur le
-    terrain et repère de chaque étape dans le monde. 2.9.37 : seulement JVN allumée (currentVisionMode 1, même règle
+    terrain et repère de chaque étape dans le monde. 2.9.38 : seulement JVN allumée (currentVisionMode 1, même règle
     que l'affichage ECOTI) et seulement la route suivie, à 3D cochée, à partir de l'étape visée (étapes atteintes
     retirées tout de suite : fn_routeAction rappelle cette fonction à chaque étape, à l'arrêt et à la fin du suivi).
     Sans JVN, sans suivi ou sans 3D : aucun événement Draw3D (coût nul).

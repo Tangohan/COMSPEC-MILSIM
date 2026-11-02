@@ -1,7 +1,7 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.37.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.38.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.37, quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] mettez à jour le pack 2.9.38, quittez Arma 3 complètement, puis relancez.
 [b]Changement de défaut :[/b] les plans de zones et les routes sont maintenant [b]partagés à tout le camp[/b] dès leur création et à chaque validation, et vont sur la carte d'Arma. Réglage serveur [b]Portée par défaut des plans et routes[/b] (Camp, Groupe, Équipe ou Privé comme en 2.9.36). L'état des zones ne change toujours que par un joueur.
 [/quote]
 
@@ -34,11 +34,13 @@
 [list]
 [*] App Zones : fiche de zone affichée en double, découpage invisible sur la carte claire (contours blancs), petit carré sans légende devant « État de la zone ».
 [*] Carte d'Arma : les marqueurs des zones ne sont refaits que s'ils changent, par petits lots (plus de saccade).
+[*] App Routes : une route supprimée ou une ancienne version ne revient plus (rejeu au serveur, retour du réseau).
+[*] Profil et app Athena : « Fonction » montre votre fonction actuelle, plus l'ancien rôle de communauté.
 [/list]
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 2.9.37.AG - Denver
+[*] Téléphone ATAK 2.9.38.AG - Denver
 [*] COMSPEC Link 2.0.116
 [*] Overwatch connect 1.6.29 · Overwatch main 1.4.8
 [/list]
@@ -48,7 +50,7 @@
 [list]
 [*] Un contact ennemi posé dans une zone (marqueur ennemi, TIC, SALUTE, compte rendu) ne la passe plus « ennemi signalé » toute seule. Nouveau réglage serveur [b]Contact dans une zone[/b] : [b]Manuel[/b] (par défaut, l'opérateur met l'état lui-même), [b]Proposer[/b] (question OUI / NON dans l'app Zones pour celui qui a posé le contact et l'auteur du plan, sans effet sans réponse) ou [b]Automatique[/b] (comme en 2.9.35).
 [*] L'ancien réglage « Contacts ennemis dans les zones » est remplacé : tous les serveurs repartent sur Manuel.
-[*] Zones sur la carte d'Arma : [b]désactivé par défaut[/b] en 2.9.36 (remis par défaut en 2.9.37, voir plus haut). Si le serveur l'autorise, le site Athena ne reçoit que les plans partagés.
+[*] Zones sur la carte d'Arma : [b]désactivé par défaut[/b] en 2.9.36 (remis par défaut en 2.9.38, voir plus haut). Si le serveur l'autorise, le site Athena ne reçoit que les plans partagés.
 [*] [b]Clic droit sur la carte › Zones[/b] : découper ici (grille 100, 200 ou 500 m, îlots, secteurs, rayon au choix), nouveau plan à partir d'ici, nommer les axes autour ; sur une zone : sa fiche, changer l'état, signaler un ennemi, citer @zone, masquer le plan, rendu.
 [/list]
 

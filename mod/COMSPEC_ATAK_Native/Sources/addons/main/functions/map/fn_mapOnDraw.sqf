@@ -345,7 +345,7 @@ if (_selfCfg select 4) then {
             _lblCands pushBack [[[[3, 1] select _mine, 2] select _hostile, 0] select (_x isEqualTo _selected), _x, _pos, toUpper _cs, _hostile, ((_color select 3) max 0.45) min 1, _freshness];
         };
     };
-    // Unité sélectionnée (2.9.37) : crochets d'angle fins à la couleur de la sélection (réglages carte) sur un halo très
+    // Unité sélectionnée (2.9.38) : crochets d'angle fins à la couleur de la sélection (réglages carte) sur un halo très
     // léger, proportionnels à l'icône, qui encadrent le symbole sans le masquer ni cacher l'étiquette ; pulsation discrète.
     // (Avant : gros anneau blanc opaque par-dessus le symbole et l'étiquette.)
     if (_x isEqualTo _selected) then {

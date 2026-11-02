@@ -10,7 +10,7 @@
       - axes MSR / ASR : bande claire et trait (surligné), trait seul (contour) ou nom seul (point) ; points de contrôle ;
       - bâtiments numérotés : zone choisie ou zoom rapproché ;
       - carte de l'app : zone choisie cerclée de blanc, zone de travail en tirets ;
-      - couleurs et style (2.9.37) : thème du plan (OTAN, contraste élevé, vision nocturne) et couleurs choisies par type
+      - couleurs et style (2.9.38) : thème du plan (OTAN, contraste élevé, vision nocturne) et couleurs choisies par type
         et par état (fn_zoneAction "pal", gardées par révision), style propre d'une zone (couleur, opacité, épaisseur,
         trait), étiquette (taille, fond, position, nom / numéro / état) ; contours et traits tracés du plan (lines) ;
         épaisseur 1 px et trait plein : drawPolygon / drawRectangle (le moins coûteux), sinon fn_planGfx.

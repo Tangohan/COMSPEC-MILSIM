@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## Pack 2.9.37 : annuler partout, app Zones refaite (polygone aimanté, couleurs, onglets), plans et routes partagés au camp (ATAK natif 2.9.37.AG - Denver)
+## Pack 2.9.38 : annuler partout, app Zones refaite (polygone aimanté, couleurs, onglets), plans et routes partagés au camp (ATAK natif 2.9.38.AG - Denver)
 
 ### Résumé joueur
 Type : nouveauté
@@ -68,9 +68,14 @@ EN : Undo everywhere, Zones app redesigned, plans shared with the whole side
 - **Carte d'Arma différentielle** (`armaNow`, `mkStep`) : un marqueur par clé (forme, couleur, texte, canal) dans `mkz` ; seuls les marqueurs dont la clé change sont refaits, créations par lots de 30 par image (plus de ~250 createMarker / deleteMarker dans la même image).
 - `fn_mapCtxMenu` : éléments supprimables sous le clic (`routeAction "at"`, itinéraire, guidage GPS, zone, plan), ligne ou sous-menu « Supprimer… », deux clics, `fn_undoSnack` (nouveau, bandeau 8 s sur n'importe quelle app) ; Zones : « Contour / Trait aimanté à partir d'ici » (`ctxGen` MAGC / MAGO).
 - App Carte : sélection d'unité en crochets d'angle fins (couleur `sel` des réglages, halo léger, pulsation) au lieu de l'anneau opaque ; volet « Unité sélectionnée » : VIBRER (`fn_bftAction "vibe"`, 5 s entre deux, file sans réseau), SMS, PING, CENTRER, ROUTE VERS.
+- **Routes reçues qui revenaient** : `recv` ignore une version de révision plus ancienne que celle déjà reçue, et toute version d'une route retirée (pierre tombale `COMSPEC_ATAK_RteGone` : révision au retrait par l'auteur, définitive pour une route reçue supprimée par le joueur) ; journal `[ROUTE]` de chaque version ignorée. Rejeu du serveur, file sans réseau et mises à jour en retard ne recréent plus une route ni ses étapes.
+- **Profil / Athena** : « Fonction » affiche `comspec_profile_function` (fonction actuelle envoyée par le site) ; l'ancien rôle de communauté `comspec_profile_role` seulement si la fonction est vide, sous le libellé « Rôle ».
+- Fusion de la vague d'optimisation (branche `atak/perf-vague`) avant le build.
 - i18n : environ 240 entrées FR / EN ajoutées (`tools/i18n.py merge`).
 
 ### À tester en jeu
+- **Routes reçues** (2 joueurs) : l'auteur supprime une route partagée, ou le receveur la supprime chez lui : elle ne revient ni au rejeu (joueur qui rejoint), ni au retour du réseau ; RPT : lignes `[ROUTE]`.
+- **Profil** : app Profil et app Athena, ligne « Fonction » : la fonction du site, pas l'ancien rôle.
 - **Routes** : nouvelle route, AJOUTER 3 étapes, Échap : mode CHOISIR, étapes gardées ; AJOUTER puis ANNULER (barre de la carte) : étapes retirées ; Ctrl+Z / Ctrl+Y ; X deux clics puis ANNULER du bandeau ; ANNULER LES MODIFICATIONS sur une route existante ; ABANDONNER sur une nouvelle. Route partagée (2 joueurs) : rien ne part pendant l'édition, un seul envoi à VALIDER ou au retour à la liste. Onglet ITINÉRAIRES : effacer l'itinéraire de l'app Itinéraire et le guidage GPS, puis ANNULER.
 - **3D** : route à « Affichage 3D » suivie, JVN allumée : trait et étapes restantes ; étape atteinte : disparaît ; JVN éteinte ou suivi arrêté : plus rien.
 - **Zones, découpage** : plan sur Athira, rectangle ~300 × 250 m, grille 200 m : aperçu jaune avant GÉNÉRER, cases visibles après (thèmes OTAN / contraste élevé / vision nocturne) ; grille 1000 m : message « choisissez … m » ; ANNULER LE CALCUL sur des îlots ; Ctrl+Z après GÉNÉRER : ancien découpage.

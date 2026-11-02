@@ -209,7 +209,7 @@ switch (_act) do {
         private _n = 1;
         while { ((values _mine) findIf { (_x get "name") isEqualTo format [("Route %1") call _tr, _n] }) >= 0 } do { _n = _n + 1; };
         if (_name isEqualTo "") then { _name = format [("Route %1") call _tr, _n]; };
-        // 2.9.37 : partagée d'office (réglage serveur, le camp par défaut) et sur la carte d'Arma ; envoyée à la validation.
+        // 2.9.38 : partagée d'office (réglage serveur, le camp par défaut) et sur la carte d'Arma ; envoyée à la validation.
         private _dsc = ((missionNamespace getVariable ["comspec_atak_native_plan_scope", 3]) max 0) min 3;
         if !(missionNamespace getVariable ["comspec_atak_native_route_share", true]) then { _dsc = 0; };
         private _r = createHashMapFromArray [

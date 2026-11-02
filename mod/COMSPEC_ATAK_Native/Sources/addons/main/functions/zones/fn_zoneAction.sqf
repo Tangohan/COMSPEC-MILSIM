@@ -233,7 +233,7 @@ switch (_act) do {
             ["cut", "GRID"], ["size", 200], ["fmt", "GRG"], ["snap", true], ["sec", 8], ["rings", 1], ["secFmt", "CARD"], ["minA", 2500],
             ["tracks", false], ["prefix", _code select [0, 1]], ["theme", "CITY"], ["asr", 3], ["axMin", 300], ["setPre", "OBJ"], ["setTheme", "NATO"], ["radius", 300]
         ];
-        // 2.9.37 : plan partagé d'office (réglage serveur, le camp par défaut) et sur la carte d'Arma, renvoyé à chaque
+        // 2.9.38 : plan partagé d'office (réglage serveur, le camp par défaut) et sur la carte d'Arma, renvoyé à chaque
         // modification validée ; l'état des zones, lui, ne change toujours que par un joueur.
         private _dsc = ((missionNamespace getVariable ["comspec_atak_native_plan_scope", 3]) max 0) min 3;
         if !(missionNamespace getVariable ["comspec_atak_native_zones_share", true]) then { _dsc = 0; };
@@ -1247,7 +1247,7 @@ switch (_act) do {
         }
     };
     // Carte d'Arma et Athena : cases en rectangles (pleins ou bordés), autres zones et contours en polyligne fermée,
-    // traits en polyligne, étiquette au centre (nom et état), axes, points de contrôle. Différentiel (2.9.37) : chaque
+    // traits en polyligne, étiquette au centre (nom et état), axes, points de contrôle. Différentiel (2.9.38) : chaque
     // marqueur a une clé (sa forme, sa couleur, son texte, son canal) ; seuls ceux dont la clé change sont refaits, et
     // les créations sont étalées (30 par image). Athena n'a pas de polygone plein : seules les cases y sont remplies.
     case "armaNow": {

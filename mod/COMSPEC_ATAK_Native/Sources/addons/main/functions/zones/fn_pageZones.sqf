@@ -2,7 +2,7 @@
     App Zones (page ZONES) : battleplan de situation. Vues (uiNamespace COMSPEC_ATAK_ZnUi, clé view) :
       LIST  onglets MES PLANS / REÇUS / SITUATION (zones par état, derniers signalements avec l'heure), affichage sur la
             carte ATAK, nouveau plan, SIGNALER ICI (zone sous ma position) ;
-      EDIT  (2.9.37) grande carte de l'app avec sa barre d'outils (sélection, rectangle, polygone [aimanté, fermé ou
+      EDIT  (2.9.38) grande carte de l'app avec sa barre d'outils (sélection, rectangle, polygone [aimanté, fermé ou
             ouvert], cercle, annuler, rétablir ; fn_zoneMap) et panneau latéral en onglets :
               TRACER    zone de travail, polygone aimanté, contours et traits (choisir, sommets, style, supprimer) ;
               DÉCOUPER  méthode (grille, îlots, secteurs, une zone, mes traits), aperçu, GÉNÉRER / ANNULER LE CALCUL, axes ;

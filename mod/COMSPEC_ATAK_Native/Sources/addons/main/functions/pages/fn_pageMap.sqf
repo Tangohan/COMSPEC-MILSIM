@@ -486,7 +486,7 @@ if (_interactive) then {
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
             uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0)];
             if (_sitOpen) then { _rows pushBack ["text", [true] call comspec_atak_native_fnc_inspectorUpdate, [0.06, 0.075, 0.068, 0.96], "COMSPEC_ATAK_InspTextCtrl"]; };
-            // Unité sélectionnée, allié joueur : actions (2.9.37) par fn_bftAction (même vibreur et même SMS que l'app BFT).
+            // Unité sélectionnée, allié joueur : actions (2.9.38) par fn_bftAction (même vibreur et même SMS que l'app BFT).
             private _so = _sel getOrDefault ["object", objNull];
             if (_sitOpen && {(count _sel) > 0} && {(_sel getOrDefault ["affiliation", ""]) isEqualTo "friend"}) then {
                 private _ok = !isNull _so && {isPlayer _so} && {_so isNotEqualTo player} && {[_so] call comspec_atak_native_fnc_hasDevice};
