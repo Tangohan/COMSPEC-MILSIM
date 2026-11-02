@@ -112,7 +112,7 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
 // CBA_fnc_globalEvent les envoyait aussi au camp adverse, qui les jetait. Le serveur les reçoit comme avant (journal ci-dessus).
 ["comspec_atak_native_sideEvent", {
     params [["_ev", ""], ["_args", []], ["_side", ""]];
-    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert", "comspec_atak_native_orderAck", "comspec_atak_native_reportRcpt", "comspec_atak_native_tocMsg", "comspec_atak_native_localOrder", "comspec_atak_native_chatLocal", "comspec_atak_native_aiOrdState"]) exitWith {};
+    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert", "comspec_atak_native_orderAck", "comspec_atak_native_reportRcpt", "comspec_atak_native_tocMsg", "comspec_atak_native_localOrder", "comspec_atak_native_chatLocal", "comspec_atak_native_aiOrdState", "comspec_atak_native_fsState"]) exitWith {};
     [_ev, _args] call CBA_fnc_localEvent;
     private _to = allPlayers select { !local _x && {(str side group _x) isEqualTo _side} };
     // Compte rendu : auteur retenu pour ses accusés ; « MON GROUPE » ne part qu'aux joueurs du groupe (le client filtre aussi).
@@ -184,6 +184,8 @@ COMSPEC_ATAK_FtCheck = {
     private _log = (COMSPEC_ATAK_SrvLog getOrDefault [_side, []]) + (COMSPEC_ATAK_SrvSeen getOrDefault [_side, []]);
     // Dernier état des ordres aux groupes IA du camp (fn_aiOrder) : un par groupe.
     { _log pushBack ["comspec_atak_native_aiOrdState", [_x, (keys _y) apply { [_x, _y get _x] }, _side]]; } forEach (COMSPEC_ATAK_SrvAiOrd getOrDefault [_side, createHashMap]);
+    // Missions de tir du camp (fn_fireSupport) : dernier état de chacune.
+    { _log pushBack ["comspec_atak_native_fsState", [_x, (keys _y) apply { [_x, _y get _x] }, _side]]; } forEach (COMSPEC_ATAK_SrvFs getOrDefault [_side, createHashMap]);
     private _me = getPlayerUID _unit;
     {
         if (_y isEqualTo _me) then {

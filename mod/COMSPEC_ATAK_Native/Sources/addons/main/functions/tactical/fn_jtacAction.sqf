@@ -129,6 +129,18 @@ switch (_act) do {
         call _render;
     };
     case "unlock": { _s set ["target", []]; call _render; };
+    case "cff": {
+        // Appui feu typé (fn_fireSupport) : la cible verrouillée part à l'appel de feu de l'app CAS (moyen à choisir, puis TIR).
+        private _t = _s getOrDefault ["target", []];
+        if ((count _t) < 2) exitWith { ["WARNING", "Verrouillez d'abord une cible", 3, 20] call comspec_atak_native_fnc_notify; };
+        private _p = [_t select 0, _t select 1, 0];
+        private _f = [] call comspec_atak_native_fnc_firesState;
+        { _f set _x; } forEach [["tab", "cff"], ["target", _p], ["tgtGrid", [_p, 10] call comspec_atak_native_fnc_gridRef], ["mode", "GRID"], ["clearing", true]];
+        _f deleteAt "solution";
+        ["FIRES"] call comspec_atak_native_fnc_navigate;
+        // Champs de l'app CAS déjà affichés (ancienne cible) pas relus pendant ce redessin (fn_firesSave).
+        [{ (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call CBA_fnc_execNextFrame;
+    };
     case "ipAuto": { _s set ["ipAuto", true]; _s set ["jIp", ""]; call _render; };
     case "pickIn": {
         _s set ["mapPick", _arg];

@@ -456,6 +456,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 }] call CBA_fnc_addEventHandler;
 // Ordres aux groupes IA (fn_aiOrder) : état reçu (carte, PC du poste, notification au donneur d'ordre).
 ["comspec_atak_native_aiOrdState", { ["recv", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
+// Appui feu typé (fn_fireSupport) : état des missions de tir du camp (Tâches, app CAS, carte, poste TOC, servant joueur) ;
+// pièces de la mission relues une fois ici, puis aux événements (rien quand le système est décoché).
+["comspec_atak_native_fsState", { ["recv", _this] call comspec_atak_native_fnc_fireSupport; }] call CBA_fnc_addEventHandler;
+if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspec_atak_native_fnc_fireSupport; };
 
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
 // Seulement avec un téléphone et une carte à l'écran (téléphone ou carte Arma) : inutile sinon.

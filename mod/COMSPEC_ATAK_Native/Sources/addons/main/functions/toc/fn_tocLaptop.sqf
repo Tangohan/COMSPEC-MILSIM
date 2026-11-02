@@ -550,7 +550,8 @@ switch (_mode) do {
                         _x getOrDefault ["time", ""], [_x getOrDefault ["typeLabel", _x getOrDefault ["type", ""]]] call _esc, [["tout le camp", _x getOrDefault ["target", ""]] select ((_x getOrDefault ["target", ""]) isNotEqualTo "")] call _esc,
                         _x getOrDefault ["priority", ""], _n getOrDefault ["SEEN", 0], _n getOrDefault ["ACK", 0], _n getOrDefault ["EXEC", 0], _n getOrDefault ["DONE", 0]];
                 } forEach ((_mine select [0 max ((count _mine) - 5)]) apply { _x });
-                (_ui get "oInfo") ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
+                // Missions de tir du camp (appui feu typé, fn_fireSupport) : texte déjà traduit, ajouté après.
+                (_ui get "oInfo") ctrlSetStructuredText parseText (((((_s) call comspec_atak_native_fnc_tr) + (["tocText"] call comspec_atak_native_fnc_fireSupport))) call comspec_atak_native_fnc_tr);
             };
             case "CAMP": {
                 private _cd = _ui get "cDest";
@@ -653,6 +654,8 @@ switch (_mode) do {
         { _x params ["_c", "_p", "_k"]; _map drawIcon ["\A3\ui_f\data\map\markers\military\warning_CA.paa", _c, _p, 22, 22, 0, [_p, _k, 0.85] call _lbl, 1, _ts * 0.85, "RobotoCondensedBold", "right"]; } forEach _evs;
         // Ordres aux groupes IA du camp (fn_aiOrder).
         ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_aiOrder;
+        // Appui feu typé (fn_fireSupport) : missions de tir du camp, portées et distance de sécurité.
+        ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_fireSupport;
         // Objectif de l'ordre en cours de rédaction (clic droit).
         private _op = _draft getOrDefault ["pos", []];
         if ((count _op) >= 2) then {

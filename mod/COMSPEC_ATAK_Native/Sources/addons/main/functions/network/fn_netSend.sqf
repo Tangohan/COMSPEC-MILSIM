@@ -34,7 +34,7 @@ if !(_q get "sim") exitWith { ["IMMÉDIAT", "simulation coupée"] call _trace; _
 if ((_q get "bars") isEqualTo 0 || {!(_q getOrDefault ["tx", true])}) exitWith {
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if (_key isNotEqualTo "") then { _queue = _queue select { (_x param [5, ""]) isNotEqualTo _key }; };
-    private _urgent = { params ["_l"]; _l = toLower _l; (["medevac", "alerte", "salute", "jtac", "rapport", "blessure", "décès", "panique", "accusé"] findIf { (_l find _x) >= 0 }) >= 0 };
+    private _urgent = { params ["_l"]; _l = toLower _l; (["medevac", "alerte", "salute", "jtac", "rapport", "blessure", "décès", "panique", "accusé", "appel de feu"] findIf { (_l find _x) >= 0 }) >= 0 };
     // Priorité : un envoi urgent se place après le dernier urgent déjà en file, devant les envois ordinaires.
     if ([_label] call _urgent) then {
         private _at = _queue findIf { !([_x param [2, ""]] call _urgent) };
