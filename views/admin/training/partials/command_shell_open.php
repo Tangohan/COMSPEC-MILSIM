@@ -33,7 +33,7 @@ $navGroups = [
         'label' => 'Compétences',
         'items' => [
             ['href' => training_lms_admin_url('competences/modules'), 'label' => 'Modules ALPHA → DELTA', 'class' => trim($is('competences'))],
-            ['href' => training_lms_admin_url('competences/commandement'), 'label' => 'Groupes de suivi', 'class' => ''],
+            ['href' => training_lms_admin_url('competences/commandement'), 'label' => 'Vue commandement', 'class' => trim($is('command'))],
             ['href' => training_lms_admin_url('competences/validation'), 'label' => 'Validations', 'class' => ''],
         ],
     ],
