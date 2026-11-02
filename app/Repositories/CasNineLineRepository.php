@@ -21,6 +21,11 @@ class CasNineLineRepository
 
     public const KIND_CAS = 'cas';
     public const KIND_MEDEVAC = 'medevac';
+    /** 5-LINE (brief CAS court, ATP 3-09.32) : lignes 1 à 5 de la même table. */
+    public const KIND_FIVE = 'fiveline';
+
+    /** Types connus (mission_kind). */
+    public const KINDS = [self::KIND_CAS, self::KIND_MEDEVAC, self::KIND_FIVE];
 
     private ?bool $hasMissionKind = null;
 
@@ -44,10 +49,31 @@ class CasNineLineRepository
             $st->execute(['atak_nine_line', 'mission_kind']);
             $this->hasMissionKind = (bool) $st->fetchColumn();
         } catch (\Throwable) {
-            $this->hasMissionKind = false;
+            // Base sans information_schema (sqlite des tests) : la colonne se lit directement.
+            try {
+                $this->hasMissionKind = $this->pdo()->query('SELECT mission_kind FROM atak_nine_line LIMIT 1') !== false;
+            } catch (\Throwable) {
+                $this->hasMissionKind = false;
+            }
         }
 
         return $this->hasMissionKind;
+    }
+
+    private ?bool $hasRemarks = null;
+
+    /** Colonne remarks (migration 3720). */
+    private function hasRemarksColumn(): bool
+    {
+        if ($this->hasRemarks === null) {
+            try {
+                $this->hasRemarks = $this->pdo()->query('SELECT remarks FROM atak_nine_line LIMIT 1') !== false;
+            } catch (\Throwable) {
+                $this->hasRemarks = false;
+            }
+        }
+
+        return $this->hasRemarks;
     }
 
     private function hasGeoColumn(): bool
@@ -135,8 +161,8 @@ class CasNineLineRepository
         $params = [$tenantId, $mapId];
         if ($this->hasMissionKindColumn()) {
             $sql .= ' AND mission_kind = ?';
-            $params[] = $kind === self::KIND_MEDEVAC ? self::KIND_MEDEVAC : self::KIND_CAS;
-        } elseif ($kind === self::KIND_MEDEVAC) {
+            $params[] = self::normalizeKind($kind);
+        } elseif ($kind !== self::KIND_CAS) {
             return [];
         }
         if ($assignedTo !== null && $assignedTo !== '') {
@@ -177,9 +203,28 @@ class CasNineLineRepository
         return $this->createMission($tenantId, $mapId, $author, $payload, self::KIND_MEDEVAC);
     }
 
+    public function createFive(int $tenantId, int $mapId, string $author, array $payload): array
+    {
+        return $this->createMission($tenantId, $mapId, $author, $payload, self::KIND_FIVE);
+    }
+
+    /** cas, medevac ou fiveline (« 5LINE », « 5-line », « five » du jeu compris) ; cas par défaut. */
+    public static function normalizeKind(mixed $kind): string
+    {
+        $k = strtolower(trim(is_scalar($kind) ? (string) $kind : ''));
+        if ($k === self::KIND_MEDEVAC) {
+            return self::KIND_MEDEVAC;
+        }
+        if (in_array($k, [self::KIND_FIVE, '5line', '5-line', 'five', 'five_line', 'five-line'], true)) {
+            return self::KIND_FIVE;
+        }
+
+        return self::KIND_CAS;
+    }
+
     private function createMission(int $tenantId, int $mapId, string $author, array $payload, string $kind): array
     {
-        if ($kind === self::KIND_MEDEVAC && !$this->hasMissionKindColumn()) {
+        if ($kind !== self::KIND_CAS && !$this->hasMissionKindColumn()) {
             throw new \RuntimeException('migration_required');
         }
         $missionId = $payload['missionId'] ?? $payload['mission_id'] ?? null;
@@ -260,6 +305,11 @@ class CasNineLineRepository
             ]);
         }
         $id = (int) $this->pdo()->lastInsertId();
+        $remarks = trim(is_scalar($payload['remarks'] ?? null) ? (string) $payload['remarks'] : '');
+        if ($remarks !== '' && $this->hasRemarksColumn()) {
+            $this->pdo()->prepare('UPDATE atak_nine_line SET remarks = ? WHERE tenant_id = ? AND id = ?')
+                ->execute([mb_substr($remarks, 0, 2000), $tenantId, $id]);
+        }
         $geo = self::sanitizeGeo($payload['geo'] ?? null);
         if ($geo !== null && $this->hasGeoColumn()) {
             $this->pdo()->prepare('UPDATE atak_nine_line SET geo_json = ? WHERE tenant_id = ? AND id = ?')
@@ -366,8 +416,7 @@ class CasNineLineRepository
         unset($row['geo_json']);
         $row['missionId'] = $row['mission_id'] ?? null;
         $row['assignedAircraft'] = $row['assigned_aircraft'] ?? null;
-        $kind = strtolower(trim((string) ($row['mission_kind'] ?? self::KIND_CAS)));
-        $row['mission_kind'] = $kind === self::KIND_MEDEVAC ? self::KIND_MEDEVAC : self::KIND_CAS;
+        $row['mission_kind'] = self::normalizeKind($row['mission_kind'] ?? self::KIND_CAS);
         $row['missionKind'] = $row['mission_kind'];
         return $row;
     }

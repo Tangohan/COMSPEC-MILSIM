@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\CasNineLineRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Personnel\MemberNameService;
+use App\Services\Tactical\AirBriefService;
 use App\Services\Tactical\NineLineBoardService;
 use App\Services\Qr\QrPngGenerator;
 use App\Support\AtakPlanAccess;
@@ -20,10 +21,13 @@ use App\Support\LoginIntendedDestination;
  * 9-LINE du JTAC sur un autre écran : page /9-line, ouverte en scannant le QR code de l'app JTAC de l'ATAK natif
  * (onglet 9-LINE) ou par son bouton OUVRIR LA PAGE 9-LINE (seconde fenêtre du PC).
  *
- * Rédaction ligne par ligne (CAS ou MEDEVAC) au thème du questionnaire d'enrôlement (community-enlistment.css),
- * choix des appareils destinataires parmi ceux remontés par le jeu (pilote et équipage), carte de transmission,
- * historique avec suppression (auteur ou responsable) et vidage (responsable). Un 9-LINE rédigé ici rejoint la même
- * table que ceux de l'app JTAC (atak_nine_line) : il est visible en jeu et dans Overwatch.
+ * Rédaction ligne par ligne (9-LINE CAS, 5-LINE, MEDEVAC ; saisie libre possible) au thème noir et vert du
+ * questionnaire de la preview (athena-preview.css, /retour-preview), en densité compacte (atak-nine-line.css) ;
+ * destinataires parmi les appareils remontés par le jeu (pilote et équipage, joueurs uniquement au choix) ou saisis à
+ * la main ; carte de transmission ; historique avec le statut de chaque destinataire (envoyé, reçu, lu, WILCO,
+ * UNABLE), suppression (auteur ou responsable) et vidage (responsable). Indicatif JTAC du membre et indicatif affiché
+ * des appareils réglables ici (atak_brief_callsigns). Une demande rédigée ici rejoint la même table que celles de
+ * l'app JTAC (atak_nine_line) : visible en jeu (espace BRIEFS AIR du pilote) et dans Overwatch.
  */
 final class AtakNineLineViewController
 {
@@ -52,13 +56,15 @@ final class AtakNineLineViewController
             'apiBase' => rtrim((string) url(''), '/'),
             'assetVer' => \App\Support\BuildVersion::id(),
             'lang' => function_exists('locale') && str_starts_with((string) locale(), 'fr') ? 'fr' : 'en',
+            'jtacCallsign' => self::jtacCallsignFor($tenantId, (int) Session::get('user_id')),
+            'defaultCallsign' => self::authorLabel($tenantId, (int) Session::get('user_id')),
         ]);
     }
 
     /** Mot à taper pour vider l'historique (français, ou anglais sur la page traduite). */
     public const CLEAR_WORDS = ['SUPPRIMER', 'DELETE'];
 
-    public function __construct(private ?NineLineBoardService $board = null)
+    public function __construct(private ?NineLineBoardService $board = null, private ?AirBriefService $briefs = null)
     {
     }
 
@@ -83,7 +89,7 @@ final class AtakNineLineViewController
             $maps = [];
         }
 
-        return self::noStore(['ok' => true, 'items' => $items, 'maps' => $maps, 'can_clear' => $manager]);
+        return self::noStore(['ok' => true, 'items' => $items, 'maps' => $maps, 'can_clear' => $manager, 'jtac_callsign' => self::jtacCallsignFor($tenantId, $userId) ?? '']);
     }
 
     /** Aéronefs avec équipage remontés par le jeu (pilote, équipage, position, fraîcheur). */
@@ -107,7 +113,10 @@ final class AtakNineLineViewController
         ]);
     }
 
-    /** POST /9-line : 9-LINE rédigé sur la page, adressé aux appareils choisis. */
+    /**
+     * POST /9-line : 9-LINE, 5-LINE ou MEDEVAC rédigé sur la page, envoyé aux appareils choisis (indicatifs remontés
+     * par le jeu ou saisis à la main). Saisie libre (free=1) : seules les longueurs bloquent.
+     */
     public function store(Request $request, array $params = []): Response
     {
         $ctx = $this->context(true, $request);
@@ -115,34 +124,83 @@ final class AtakNineLineViewController
             return $ctx;
         }
         [$tenantId, $userId] = $ctx;
-        $kind = $request->inputString('kind') === CasNineLineRepository::KIND_MEDEVAC
-            ? CasNineLineRepository::KIND_MEDEVAC
-            : CasNineLineRepository::KIND_CAS;
+        $kind = CasNineLineRepository::normalizeKind($request->inputString('kind'));
+        $free = in_array($request->inputString('free'), ['1', 'on', 'true'], true);
         $lines = [];
-        for ($n = 1; $n <= 9; $n++) {
+        for ($n = 1; $n <= NineLineBoardService::LINE_COUNT[$kind]; $n++) {
             $lines[$n] = trim($request->inputString('line' . $n));
         }
-        $errors = NineLineBoardService::validate($kind, $lines);
+        $errors = NineLineBoardService::validate($kind, $lines, $free);
         if ($errors !== []) {
             return Response::json(['ok' => false, 'error' => 'Vérifiez les lignes signalées.', 'errors' => $errors], 422);
         }
+        $remarks = $kind === CasNineLineRepository::KIND_FIVE ? '' : mb_substr(trim($request->inputString('remarks')), 0, 1000);
         $rawAircraft = $request->input('aircraft', []);
         $aircraft = is_array($rawAircraft) ? array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $rawAircraft) : [];
         $mapId = (int) $request->inputString('map_id', '1');
         try {
-            $row = $this->board()->create($tenantId, $userId, self::authorLabel($tenantId, $userId), $kind, $lines, $aircraft, $mapId);
+            $row = $this->board()->create($tenantId, $userId, self::authorFor($tenantId, $userId), $kind, $lines, $aircraft, $mapId, $remarks);
         } catch (\Throwable) {
             return Response::json(['ok' => false, 'error' => 'Enregistrement impossible pour le moment. Réessayez dans un instant.'], 503);
         }
         $id = (int) ($row['id'] ?? 0);
         self::audit('atak.nine_line.created', $tenantId, $userId, $id, [], [
             'kind' => $kind,
+            'free' => $free,
             'map_id' => (int) ($row['map_id'] ?? $mapId),
             'assigned_aircraft' => (string) ($row['assigned_aircraft'] ?? ''),
-            'line6' => $lines[6],
+            'target' => $lines[$kind === CasNineLineRepository::KIND_FIVE ? 3 : 6] ?? '',
         ]);
 
-        return Response::json(['ok' => true, 'id' => $id], 201);
+        return Response::json(['ok' => true, 'id' => $id, 'recipients' => $row['recipients'] ?? []], 201);
+    }
+
+    /** POST /9-line/indicatif : indicatif JTAC de ce membre (vide = son indicatif Athena). */
+    public function jtacCallsign(Request $request, array $params = []): Response
+    {
+        $ctx = $this->context(true, $request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId] = $ctx;
+        $callsign = AirBriefService::cleanCallsign($request->inputString('callsign'));
+        try {
+            $ok = $this->briefs()->setJtacCallsign($tenantId, $userId, $callsign);
+        } catch (\Throwable) {
+            $ok = false;
+        }
+        if (!$ok) {
+            return Response::json(['ok' => false, 'error' => 'Indicatif non enregistré : réessayez plus tard.'], 503);
+        }
+        self::audit('atak.nine_line.jtac_callsign', $tenantId, $userId, null, [], ['callsign' => $callsign]);
+
+        return Response::json(['ok' => true, 'callsign' => $callsign, 'author' => self::authorFor($tenantId, $userId)]);
+    }
+
+    /** POST /9-line/appareils/indicatif : indicatif affiché d'un appareil remonté par le jeu (vide = celui du jeu). */
+    public function aircraftCallsign(Request $request, array $params = []): Response
+    {
+        $ctx = $this->context(true, $request);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId] = $ctx;
+        $reported = AirBriefService::cleanCallsign($request->inputString('callsign'));
+        $label = AirBriefService::cleanCallsign($request->inputString('label'));
+        if ($reported === '') {
+            return Response::json(['ok' => false, 'error' => 'Appareil inconnu.'], 422);
+        }
+        try {
+            $ok = $this->briefs()->setAircraftCallsign($tenantId, $reported, $label === $reported ? '' : $label, $userId);
+        } catch (\Throwable) {
+            $ok = false;
+        }
+        if (!$ok) {
+            return Response::json(['ok' => false, 'error' => 'Indicatif non enregistré : réessayez plus tard.'], 503);
+        }
+        self::audit('atak.nine_line.aircraft_callsign', $tenantId, $userId, null, ['callsign' => $reported], ['label' => $label]);
+
+        return Response::json(['ok' => true, 'callsign' => $reported, 'label' => $label !== '' ? $label : $reported]);
     }
 
     /** POST /9-line/{id}/delete : par son auteur ou un responsable, dans la communauté de la session. */
@@ -228,6 +286,21 @@ final class AtakNineLineViewController
         return [$tenantId, $userId];
     }
 
+    /** Auteur d'une demande rédigée ici : l'indicatif JTAC choisi sur la page, sinon celui d'Athena. */
+    private static function authorFor(int $tenantId, int $userId): string
+    {
+        return self::jtacCallsignFor($tenantId, $userId) ?? self::authorLabel($tenantId, $userId);
+    }
+
+    private static function jtacCallsignFor(int $tenantId, int $userId): ?string
+    {
+        try {
+            return (new AirBriefService())->jtacCallsign($tenantId, $userId);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     /** Auteur affiché d'un 9-LINE rédigé sur le site : en C2, l'indicatif d'abord, sinon « Prénom N. ». */
     private static function authorLabel(int $tenantId, int $userId): string
     {
@@ -277,6 +350,11 @@ final class AtakNineLineViewController
     private function board(): NineLineBoardService
     {
         return $this->board ??= new NineLineBoardService();
+    }
+
+    private function briefs(): AirBriefService
+    {
+        return $this->briefs ??= new AirBriefService();
     }
 
     /** PNG du QR code de cette page (adresse publique du site). */

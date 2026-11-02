@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1340, '2026-11-02', 'Page 9-LINE : 5-LINE, envoi au pilote et accusés, thème du back-office', 'La page 9-LINE prend le thème du back-office (mode jour ou nuit) et devient compacte : destinataires, rédaction en grille, carte de transmission et historique tiennent sur un écran. On y rédige un 9-LINE, un 5-LINE (brief CAS court : observateur, position amie, position et description de la cible, remarques) ou un MEDEVAC, en saisie guidée ou en saisie libre (aucune ligne obligatoire, simples avertissements). La demande part aux pilotes choisis parmi les appareils remontés par le jeu (« Joueurs uniquement » masque ceux de l’IA) ou à un indicatif tapé à la main ; le pilote la reçoit dans l’espace BRIEFS AIR de son téléphone en jeu, et son accusé (reçu, lu, WILCO, UNABLE) s’affiche dans l’historique. Chaque membre règle son indicatif JTAC, et l’indicatif affiché d’un appareil se change sur la page.', [
+                'Page 9-LINE : choix 9-LINE / 5-LINE / MEDEVAC, saisie libre, remarques et restrictions',
+                'Destinataires : appareils remontés par le jeu (case « Joueurs uniquement »), indicatif saisi à la main, indicatif affiché modifiable',
+                'Historique : statut de chaque destinataire (envoyé, reçu, lu, WILCO, UNABLE)',
+                'Indicatif JTAC du membre, repris comme émetteur de ses demandes',
+                'Back-office : entrée « 9-LINE et 5-LINE » dans la rubrique ATAK',
+            ], [
+                'Page 9-LINE au thème du back-office, compacte, valeurs en chasse fixe, lisible sur téléphone',
+            ], [], ['atak'], [
+                'L’administrateur lance run-migrations.php (étape atak_nine_line_recipients) : destinataires, accusés, remarques et indicatifs.',
+                'La partie jeu (espace BRIEFS AIR du pilote, 5-LINE et envoi depuis l’app JTAC) arrive avec la version 2.9.39 du mod.',
+                'Essai : un pilote joueur dans un aéronef avec le mod connecté ; sur athena-comspec.eu/public/9-line, cochez son appareil, transmettez un 5-LINE, puis vérifiez REÇU puis WILCO dans l’historique après sa réponse.',
+            ], 'Portail Athena'),
             $pr(1339, '2026-11-02', 'Wiki ATAK : une page par app du téléphone, en français et en anglais', 'Le site a maintenant un wiki public du mod COMSPEC ATAK (athena-comspec.eu/public/wiki/atak). Chaque app du téléphone a sa page : à quoi elle sert, comment l’ouvrir, ses fonctions, un pas-à-pas, ses réglages serveur, ses liens avec Athena, ACE, ACRE, TFAR et Zeus. Les apps citées dans une page mènent à leur propre page. L’accueil du wiki présente le mod, ses prérequis et l’installation ; deux pages d’aide couvrent l’installation, le serveur dédié et l’envoi des logs, puis les réglages serveur. La page Nouveautés reprend, version par version, ce qui change pour les joueurs. Une recherche parcourt toutes les pages, sans tenir compte des accents. Le wiki suit la langue du site et se met à jour avec les textes du mod.', [
                 'Wiki ATAK : accueil, sommaire des apps par catégorie avec leur nom de classe, une page par app, aide installation et serveur, réglages serveur, nouveautés, recherche',
                 'Fil d’Ariane, sommaire de chaque page, app précédente et suivante, lien vers le Workshop Steam',

@@ -508,13 +508,19 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _lineIdx = _lineIdx + 1;
             private _bgL = ["COMSPEC_RscText", [_pad, _y, _w, _h - pixelH * 2]] call _mk;
             _bgL ctrlSetBackgroundColor ([[0.055, 0.07, 0.064, 1], [0.07, 0.088, 0.08, 1]] select _odd);
-            // Pastille du numéro, carrée à l'écran.
-            private _nw = (_h * 0.7) * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]) * (((count _num) max 2) / 2);
-            private _nb = ["COMSPEC_RscText", [_pad * 1.5, _y + _h * 0.15, _nw, _h * 0.7 - pixelH * 2]] call _mk;
-            _nb ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, [0.9, 0.25] select (_num isEqualTo "")];
-            private _nt = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + (_h - _fs * 1.25) / 2, _nw, _fs * 1.25]] call _mk;
-            _nt ctrlSetStructuredText parseText ((format ["<t align='center' font='%2' color='#08100c'>%1</t>", _num, [(COMSPEC_ATAK_FontSet select 1), "EtelkaMonospaceProBold"] select _mono]) call comspec_atak_native_fnc_tr);
-            private _lx = _pad * 2.5 + _nw;
+            // Pastille du numéro, carrée à l'écran ; sans numéro, pas de pastille (une case vide sans légende n'a pas de sens) :
+            // le libellé prend la place.
+            private _noNum = _num isEqualTo "";
+            private _nw = [(_h * 0.7) * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]) * (((count _num) max 2) / 2), 0] select _noNum;
+            private _nb = controlNull;
+            private _nt = controlNull;
+            if (!_noNum) then {
+                _nb = ["COMSPEC_RscText", [_pad * 1.5, _y + _h * 0.15, _nw, _h * 0.7 - pixelH * 2]] call _mk;
+                _nb ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.9];
+                _nt = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + (_h - _fs * 1.25) / 2, _nw, _fs * 1.25]] call _mk;
+                _nt ctrlSetStructuredText parseText ((format ["<t align='center' font='%2' color='#08100c'>%1</t>", _num, [(COMSPEC_ATAK_FontSet select 1), "EtelkaMonospaceProBold"] select _mono]) call comspec_atak_native_fnc_tr);
+            };
+            private _lx = [_pad * 2.5 + _nw, _pad * 1.5] select _noNum;
             private _lw = (_w * 0.46) - _nw - _pad;
             private _vx = _pad + _w * 0.46;
             private _vw = _w * 0.54 - _pad;
@@ -532,10 +538,12 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _h = _need;
                 _bgL ctrlSetPosition [_pad, _y, _w, _h - pixelH * 2];
                 _bgL ctrlCommit 0;
-                _nb ctrlSetPosition [_pad * 1.5, _y + (_h - _h0 * 0.7) / 2, _nw, _h0 * 0.7 - pixelH * 2];
-                _nb ctrlCommit 0;
-                _nt ctrlSetPosition [_pad * 1.5, _y + (_h - _fs * 1.25) / 2, _nw, _fs * 1.25];
-                _nt ctrlCommit 0;
+                if (!_noNum) then {
+                    _nb ctrlSetPosition [_pad * 1.5, _y + (_h - _h0 * 0.7) / 2, _nw, _h0 * 0.7 - pixelH * 2];
+                    _nb ctrlCommit 0;
+                    _nt ctrlSetPosition [_pad * 1.5, _y + (_h - _fs * 1.25) / 2, _nw, _fs * 1.25];
+                    _nt ctrlCommit 0;
+                };
             };
             private _th = (ctrlTextHeight _lt) min _h;
             _lt ctrlSetPosition [_lx, _y + (_h - _th) / 2, _lw, _th];
