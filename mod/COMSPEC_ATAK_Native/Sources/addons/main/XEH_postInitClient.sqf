@@ -577,6 +577,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_tocScreen; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Vidéoprojecteurs et toiles proches (fn_projector) : toile éclairée ou non, lumières de l'objectif ; menus ACE.
 ["aceInit"] call comspec_atak_native_fnc_projector;
+// Aucun projecteur dans la mission (cas courant) : le passage de 2 s s'arrête net (deux nearestObjects à 160 m évités).
+["COMSPEC_ATAK_Projector", "init", { COMSPEC_ATAK_ProjAny = true; }, true, [], true] call CBA_fnc_addClassEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_projector; }, 2] call COMSPEC_ATAK_PfhSpread;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
