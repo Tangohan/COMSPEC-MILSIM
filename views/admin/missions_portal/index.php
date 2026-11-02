@@ -70,7 +70,7 @@ $commsDot = match ((string) ($comms['overall'] ?? '')) {
     </form>
     <?php endif; ?>
     <div class="bo-mportal__actions">
-        <a class="bo-mportal__btn" href="<?= $h(url('back-office/planification')) ?>">Planifier une mission</a>
+        <a class="bo-mportal__btn" href="<?= $h(url('back-office/missions?onglet=planification')) ?>">Planifier une mission</a>
         <a class="bo-mportal__btn bo-mportal__btn--ghost" href="<?= $h(url('back-office/atak/cycle-mission')) ?>">Cycle de mission</a>
         <a class="bo-mportal__btn bo-mportal__btn--ghost" href="<?= $h(url('back-office/atak')) ?>">Poste de situation</a>
     </div>
@@ -228,7 +228,7 @@ $commsDot = match ((string) ($comms['overall'] ?? '')) {
         <?php elseif ($plans === []): ?>
             <p class="bo-mportal__empty">Aucun plan pour le moment. Créez-en un depuis la planification.</p>
             <div class="bo-mportal__actions" style="margin-top:0.75rem;">
-                <a class="bo-mportal__btn" href="<?= $h(url('back-office/planification')) ?>">Ouvrir la planification</a>
+                <a class="bo-mportal__btn" href="<?= $h(url('back-office/missions?onglet=planification')) ?>">Ouvrir la planification</a>
             </div>
         <?php else: ?>
             <ul class="bo-mportal__list">

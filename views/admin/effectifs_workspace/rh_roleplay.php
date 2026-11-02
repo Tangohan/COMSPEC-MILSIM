@@ -27,7 +27,7 @@ $typeLabels = [
 ?>
 <section class="eff-rh-hero">
     <div class="eff-pg__actions">
-        <a class="eff-catalog__btn" href="<?= $h(url('back-office/roleplay/regles-phases')) ?>">Configurer le parcours</a>
+        <a class="eff-catalog__btn" href="<?= $h(url('back-office/roleplay-followup?onglet=phases')) ?>">Configurer le parcours</a>
         <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= $h(url('back-office/roleplay-followup')) ?>">Ouvrir le suivi complet</a>
     </div>
     <p class="eff-page-kicker">Dossier RH</p>

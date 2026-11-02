@@ -84,7 +84,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
     <div class="pil-banner pil-banner--warn" role="alert">
         <?= $pilIcon('warn') ?>
         <span class="pil-banner__text"><b>Les candidats ne peuvent pas rejoindre votre Discord.</b> Le recrutement passe par Discord, mais aucun lien d’invitation n’est enregistré.</span>
-        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/organisation/parametres') . '?onglet=inscription#coordonnees') ?>">Ajouter le lien</a>
+        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/community') . '?onglet=inscription#coordonnees') ?>">Ajouter le lien</a>
     </div>
     <?php endif; ?>
 
@@ -92,7 +92,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
     <div class="pil-banner pil-banner--warn" role="alert">
         <?= $pilIcon('warn') ?>
         <span class="pil-banner__text"><b><?= $missingMediaCount > 1 ? (int) $missingMediaCount . ' photos de profil ont été perdues' : '1 photo de profil a été perdue' ?> lors de la migration.</b> Demandez aux membres concernés de la remettre en ligne depuis Mon compte › Image / Portrait.</span>
-        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/centre-operations') . '#anomalies-medias') ?>">Voir les membres concernés</a>
+        <a class="pil-banner__cta" href="<?= $pilH(url('back-office/organisation/qualite-donnees') . '#dq-photos') ?>">Voir les membres concernés</a>
     </div>
     <?php endif; ?>
 

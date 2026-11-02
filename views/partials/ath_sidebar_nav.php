@@ -155,7 +155,7 @@ $rhChildren = [
     [
         'label' => 'Suivi des dossiers',
         'children' => [
-            ['label' => 'Alertes RH', 'href' => effectifs_workspace_url('alertes'), 'active' => $navAt($effPath . '/alertes')],
+            ['label' => 'À traiter et alertes', 'href' => effectifs_workspace_url('a-traiter'), 'active' => $navAt($effPath . '/a-traiter')],
             ['label' => 'Corrections de fiches', 'href' => url('back-office/personnel/corrections'), 'active' => $navAt('back-office/personnel/corrections')],
             ['label' => 'Demandes d’accès élevé', 'href' => effectifs_workspace_url('elevations'), 'active' => $navAt($effPath . '/elevations')],
             ['label' => 'Documents RH', 'href' => effectifs_workspace_url('documents-rh'), 'active' => $navAt($effPath . '/documents-rh')],
@@ -166,7 +166,6 @@ $rhChildren = [
         'children' => [
             ['label' => 'Avancement', 'href' => url('back-office/rh/avancement'), 'active' => $navAt('back-office/rh/avancement')],
             ['label' => 'Ancienneté', 'href' => url('back-office/organisation/anciennete'), 'active' => $navAt('back-office/organisation/anciennete')],
-            ['label' => 'Intégration', 'href' => effectifs_workspace_url('integration'), 'active' => $navAt($effPath . '/integration')],
             ['label' => 'Mobilité', 'href' => effectifs_workspace_url('mobilite'), 'active' => $navAt($effPath . '/mobilite')],
             ['label' => 'Relève et succession', 'href' => effectifs_workspace_url('vivier'), 'active' => $navAt($effPath . '/vivier')],
         ],
@@ -179,11 +178,9 @@ $orbatChildren = [
     [
         'label' => 'Structure',
         'children' => [
-            ['label' => 'Organigramme', 'href' => url('back-office/organisation/structure'), 'active' => !empty($boNavStructure)],
-            ['label' => 'Unités', 'href' => url('back-office/units'), 'active' => $navAt('back-office/units')],
+            ['label' => 'Organigramme', 'href' => orbat_page_url(), 'active' => !empty($boNavStructure) || $p === 'orbat'],
             ['label' => 'Groupes', 'href' => url('back-office/groups'), 'active' => $navAt('back-office/groups')],
             ['label' => 'Équipes', 'href' => url('back-office/teams'), 'active' => $navAt('back-office/teams')],
-            ['label' => 'Postes', 'href' => url('back-office/positions'), 'active' => $navAt('back-office/positions')],
             ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
         ],
     ],
@@ -228,7 +225,6 @@ $accessChildren = [
 // Métriques joueurs : ce que le jeu remonte (temps d'écran, distances, heures de vol, montre Garmin).
 $metricsChildren = [
     ['label' => 'Vue d’ensemble', 'href' => url('back-office/metriques-joueurs'), 'active' => $navAt('back-office/metriques-joueurs')],
-    ['label' => 'Temps d’écran et rôles', 'href' => url('back-office/atak/temps-ecran'), 'active' => $navAt('back-office/atak/temps-ecran')],
     ['label' => 'Heures de jeu (tableur)', 'href' => url('back-office/atak/heures'), 'active' => $navAt('back-office/atak/heures')],
     ['label' => 'Escouades en jeu', 'href' => url('back-office/atak/escouades'), 'active' => $navAt('back-office/atak/escouades')],
 ];
@@ -243,15 +239,7 @@ $indicatorsChildren = [
 $roleplayChildren = [
     ['label' => 'Bureau de suivi', 'href' => url('back-office/roleplay-followup'), 'active' => $navRoleplayActive && !$navRoleplayDeadlinesActive],
     ['label' => 'Échéances', 'href' => url('back-office/roleplay-followup/echeances'), 'active' => $navRoleplayDeadlinesActive],
-    ['label' => 'Dossiers roleplay', 'href' => effectifs_workspace_url('roleplay'), 'active' => $navAt($effPath . '/roleplay')],
     ['label' => 'Sessions Arma', 'href' => url('back-office/roleplay/sessions'), 'active' => $navAt('back-office/roleplay/sessions')],
-    [
-        'label' => 'Parcours',
-        'children' => [
-            ['label' => 'Parcours d’immersion', 'href' => url('back-office/roleplay/immersion'), 'active' => $navRoleplayImmersionActive],
-            ['label' => 'Parcours RH', 'href' => url('back-office/roleplay/regles-phases'), 'active' => $navAt('back-office/roleplay/regles-phases')],
-        ],
-    ],
 ];
 
 // ——— OPÉRATIONS ———
@@ -263,7 +251,14 @@ $eventsChildren = [
 
 $aarChildren = [
     ['label' => 'Comptes rendus post-op', 'href' => url('back-office/atak/comptes-rendus'), 'active' => $boNavAar],
-    ['label' => 'CR des joueurs (fin d’op)', 'href' => url('back-office/atak/suivi-cr'), 'active' => !empty($boNavDebrief)],
+    ['label' => 'Remontées des joueurs', 'href' => url('back-office/remontees'), 'active' => $navAt('back-office/remontees')],
+];
+
+// Missions : le portail, le cycle (briefing → exécution → après-action) et les diapositives vues sur le téléphone en jeu.
+$missionsChildren = [
+    ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'active' => $boNavMissionsPortal],
+    ['label' => 'Cycle de mission', 'href' => url('back-office/atak/cycle-mission'), 'active' => $navAt('back-office/atak/cycle-mission')],
+    ['label' => 'Diapositives de briefing', 'href' => url('back-office/atak/briefing-slides'), 'active' => $navAt('back-office/atak/briefing-slides')],
 ];
 
 $cooperationChildren = [
@@ -338,7 +333,6 @@ $materielChildren = [
 $atakResChildren = [
     ['label' => 'Configuration ATAK', 'href' => url('back-office/ressources/atak-config'), 'active' => $navAt('back-office/ressources/atak-config')],
     ['label' => 'Serveurs de jeu', 'href' => url('back-office/ressources/serveurs-de-jeu'), 'active' => $navAt('back-office/ressources/serveurs-de-jeu')],
-    ['label' => 'Réglages réalisme', 'href' => url('back-office/ressources/atak-realism/config'), 'active' => $navAt('back-office/ressources/atak-realism')],
     [
         'label' => 'Mods',
         'children' => [
@@ -353,14 +347,6 @@ $atakResChildren = [
 $doctrineChildren = [
     ['label' => 'Doctrine et SOP', 'href' => url('back-office/doctrine'), 'active' => $navAt('back-office/doctrine')],
     ['label' => 'Fichiers partagés', 'href' => url('back-office/partage'), 'active' => $navAt('back-office/partage')],
-    [
-        'label' => 'Gestion documentaire',
-        'children' => [
-            ['label' => 'Conformité', 'href' => url('back-office/documents/compliance'), 'active' => $navAt('back-office/documents/compliance')],
-            ['label' => 'Nomenclature', 'href' => url('back-office/documents/nomenclature'), 'active' => $navAt('back-office/documents/nomenclature')],
-            ['label' => 'Types de documents', 'href' => url('back-office/documents/types'), 'active' => $navAt('back-office/documents/types')],
-        ],
-    ],
 ];
 
 // ——— COMMUNAUTÉ ———
@@ -547,7 +533,6 @@ if ($isOperatorBoNav) {
             'label' => 'PILOTAGE',
             'items' => array_values(array_filter([
                 ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
-                ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations'), 'icon' => 'ops', 'active' => $navAt('back-office/centre-operations', 'back-office/operations-admin')],
                 $canMurOperationnel
                     ? ['label' => 'Tableau opérationnel', 'href' => url('back-office/tableau-operationnel'), 'icon' => 'wall', 'active' => $boNavOpsBoard || $boNavPortalOpsBoard]
                     : null,
@@ -579,7 +564,7 @@ if ($isOperatorBoNav) {
                 ],
                 [
                     'label' => 'Dossiers RH',
-                    'href' => effectifs_workspace_url('alertes'),
+                    'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
                     'icon' => 'path',
                     'children' => $rhChildren,
                 ],
@@ -591,9 +576,8 @@ if ($isOperatorBoNav) {
             'items' => [
                 [
                     'label' => 'Organisation',
-                    'href' => url('back-office/organisation-effectifs'),
+                    'href' => orbat_page_url(),
                     'icon' => 'orbat',
-                    'active' => $p === 'back-office/organisation-effectifs',
                     'children' => $orbatChildren,
                 ],
                 [
@@ -628,8 +612,12 @@ if ($isOperatorBoNav) {
                     'icon' => 'rsvp',
                     'children' => $eventsChildren,
                 ],
-                ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'cal', 'active' => $boNavPlanning],
-                ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => $boNavMissionsPortal],
+                [
+                    'label' => 'Missions',
+                    'href' => url('back-office/missions'),
+                    'icon' => 'orbat',
+                    'children' => $missionsChildren,
+                ],
                 ['label' => 'Carte tactique', 'href' => url('back-office/operations/carte-tactique'), 'icon' => 'ops', 'active' => $navTacticalMapActive],
                 [
                     'label' => 'Comptes rendus',

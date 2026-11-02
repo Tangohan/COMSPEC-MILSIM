@@ -21,10 +21,6 @@ final class ContainerIntegrations
                 Container::get(\App\Repositories\TenantRepository::class),
                 Container::get(\App\Services\Community\CommunityPageEditorAccess::class),
             ),
-            \App\Controllers\Admin\Organization\OrganizationProgressionHubController::class => new \App\Controllers\Admin\Organization\OrganizationProgressionHubController(
-                Container::get(\App\Services\Auth\AuthService::class),
-                Gate::getInstance(),
-            ),
             \App\Controllers\Admin\Organization\OrganizationMemberNumberController::class => new \App\Controllers\Admin\Organization\OrganizationMemberNumberController(
                 Container::get(\App\Services\Auth\AuthService::class),
                 Container::get(\App\Services\Personnel\TenantMemberNumberService::class),

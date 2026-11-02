@@ -44,8 +44,6 @@ class OrganizationAdminMiddleware
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/recruitment/reference-format') && ($gate->allows('organization.recruitment.openings.manage') || $gate->allows('organization.recruitment.manage'))) {
                 $scopedOrgAccess = true;
-            } elseif (str_starts_with($path, '/back-office/organisation-effectifs') && $gate->allows('organization.effectifs.hub.view')) {
-                $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/ressources/effectifs') && (
                 // Garder en phase avec EffectifsLmsAccess::allows() — personnel.profile.view exclu
                 // volontairement (voir ce fichier pour le pourquoi).
@@ -55,12 +53,6 @@ class OrganizationAdminMiddleware
                 || $gate->allows('personnel.assignments.manage')
                 || $gate->allows('personnel.grades.manage')
                 || $gate->allows('personnel.status.manage')
-            )) {
-                $scopedOrgAccess = true;
-            } elseif (str_starts_with($path, '/back-office/organisation/progression') && (
-                $gate->allows('personnel.progression.view')
-                || $gate->allows('personnel.progression.manage')
-                || $gate->allows('personnel.progression.configure')
             )) {
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/organisation/matricules') && (

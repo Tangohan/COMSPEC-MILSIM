@@ -60,7 +60,7 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
                 <a href="<?= $h($refreshUrl) ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Actualiser</a>
                 <a href="<?= $h($exportUrl) ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Exporter CSV</a>
                 <a href="<?= $h(url('atak')) ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Ouvrir la carte</a>
-                <a href="<?= $h(url('back-office/atak/fire-teams')) ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Équipes de feu</a>
+                <a href="<?= $h(url('back-office/atak/escouades?onglet=fire-teams')) ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Équipes de feu</a>
             </div>
         </div>
         <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">

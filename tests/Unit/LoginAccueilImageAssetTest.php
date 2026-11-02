@@ -68,7 +68,7 @@ final class LoginAccueilImageAssetTest extends TestCase
         self::assertStringContainsString('LOGIN_ACCUEIL_IMAGES_V1', $catalog);
         self::assertStringContainsString('hasLoginAccueilImage', $probe);
         self::assertStringContainsString('LOGIN_ACCUEIL_IMAGES_V1', $seed);
-        self::assertStringContainsString('back-office/organisation/parametres#accueil-connexion', $catalog);
+        self::assertStringContainsString('back-office/community#accueil-connexion', $catalog);
         self::assertStringContainsString("markCompleted(\$tenantId, 'LOGIN_ACCUEIL_IMAGES_V1'", $bootstrap);
         self::assertStringContainsString('tenant_login_accueil_images_migration', $run);
         self::assertFileExists($root . '/bootstrap/tenant_login_accueil_images_migration.php');

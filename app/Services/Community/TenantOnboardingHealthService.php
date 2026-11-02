@@ -85,7 +85,7 @@ final class TenantOnboardingHealthService
                 'Il manque une unité de tête dans l’organigramme (groupe, compagnie ou équivalent).',
                 $roots >= 1,
                 true,
-                'back-office/organisation-effectifs',
+                'orbat',
                 'Ouvrir la structure des effectifs'
             ),
             $this->checklistItem(
