@@ -294,7 +294,7 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1334, '2026-11-02', 'Annuler partout, app Zones refaite, plans partagés au camp', 'Avec le pack 2.9.38, les apps Routes et Zones savent annuler : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER qui n’envoie qu’une fois, bandeau « Supprimé · ANNULER » après chaque suppression. L’app Zones est refaite : grande carte avec barre d’outils, panneau en onglets, polygone aimanté aux routes, bâtiments et rives, découpage par vos traits, aperçu avant de générer et couleurs au choix. Les plans et les routes partent maintenant à tout le camp et vont sur la carte d’Arma ; l’état des zones ne change toujours que par un joueur.', [
+            $pr(1335, '2026-11-02', 'Annuler partout, app Zones refaite, plans partagés au camp', 'Avec le pack 2.9.38, les apps Routes et Zones savent annuler : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER qui n’envoie qu’une fois, bandeau « Supprimé · ANNULER » après chaque suppression. L’app Zones est refaite : grande carte avec barre d’outils, panneau en onglets, polygone aimanté aux routes, bâtiments et rives, découpage par vos traits, aperçu avant de générer et couleurs au choix. Les plans et les routes partent maintenant à tout le camp et vont sur la carte d’Arma ; l’état des zones ne change toujours que par un joueur.', [
                 'Apps Routes et Zones : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER (un seul envoi), ANNULER LES MODIFICATIONS (route comme à l’ouverture, nouvelle route abandonnée)',
                 'App Routes : mode CHOISIR par défaut, barre TERMINER / ANNULER sur la carte pendant AJOUTER, INSÉRER ou DÉPLACER, Échap ou clic droit pour en sortir ; onglet ITINÉRAIRES pour effacer l’itinéraire de l’app Itinéraire ou le guidage GPS',
                 'Suppression d’étape, de route, de plan, de zone ou de trait : deux clics, puis ANNULER pendant 8 secondes ; un changement d’état de zone part au bout de 5 secondes, annulable d’ici là ; un découpage lancé s’annule',
@@ -315,17 +315,32 @@ final class DevDispatchCatalog
                 'Mettez à jour le pack 2.9.38, quittez Arma complètement et relancez.',
                 'Changement de défaut : plans et routes partent au camp et vont sur la carte d’Arma. Pour revenir au comportement de la 2.9.36 : Options des addons › COMSPEC › ATAK · Plan / Zones › « Portée par défaut des plans et routes » sur Privé, et « Zones sur la carte d’Arma et Athena » décoché.',
             ], 'Pack téléphone 2.9.38'),
-            $pr(1324, '2026-11-02', 'App Zones sans automatisme, menu Zones au clic droit, bandeau du curseur', 'Avec le pack 2.9.36, l’app Zones ne change plus rien toute seule. Un contact ennemi posé dans une zone ne la fait plus passer « ennemi signalé » : par défaut l’opérateur met l’état lui-même, et le serveur peut choisir de proposer le changement (question OUI / NON) ou de le faire automatiquement comme avant. Les zones ne vont plus sur la carte d’Arma par défaut, car tout le camp les y voyait sans appareil. Un menu Zones arrive au clic droit de la carte et le bandeau du curseur montre la direction de votre vue.', [
-                'Nouveau réglage serveur « Contact dans une zone » : Manuel (par défaut, rien ne se passe), Proposer (celui qui a posé le contact et l’auteur du plan reçoivent « Contact en B-04 : passer la zone en ennemi signalé ? », OUI / NON dans l’app Zones, sans effet sans réponse) ou Automatique (comportement de la 2.9.35)',
-                'Zones sur la carte d’Arma et Athena : désactivé par défaut (réaliste) ; quand le serveur l’autorise, un plan n’est envoyé au site Athena que s’il est partagé',
-                'Le nom de la zone sous le curseur reste affiché dans le bandeau : c’est l’affichage de vos plans sur votre propre téléphone',
-                'Clic droit sur la carte › Zones : découper ici (grille 100, 200 ou 500 m, îlots, secteurs, rayon au choix), nouveau plan à partir d’ici, nommer les axes autour ; sur une zone : fiche, état, signaler un ennemi, citer @zone, masquer, rendu',
-                'Bandeau du curseur (style Nouveau) : flèche et cap selon la direction de votre vue ; distance et gisement vers le curseur dans l’étiquette de survol, ou dans le bandeau sur option',
-                'Traductions anglaises corrigées (IN PROGRESS, CANCEL, ESTABLISHED, rubriques des réglages ATAK, retour de l’app Routes)',
-            ], [], [], ['atak'], [
-                'Mettez à jour le pack 2.9.36, quittez Arma complètement et relancez.',
-                'L’ancien réglage « Contacts ennemis dans les zones » (coché par défaut) est remplacé : tous les serveurs repartent sur Manuel, à remettre sur Proposer ou Automatique dans Options des addons › COMSPEC › ATAK · Plan / Zones si vous le souhaitez.',
-            ], 'Pack téléphone 2.9.36'),
+            $pr(1334, '2026-11-02', 'Optimisation du téléphone : moins de saccades et d’écrans qui se redessinent', 'Le pack 2.9.37 est une vague d’optimisation, après des retours de baisses d’images et de saccades. Les tâches de fond du téléphone et de la liaison Athena font beaucoup moins de calculs en double : un seul joueur relaie balises, aéronefs et marqueurs web pour tout le monde, les envois inchangés ne repartent plus, les vérifications lourdes (bâtiment, vision nocturne, écrans TOC, projecteurs) sont espacées ou arrêtées quand rien ne les demande. Les pages ne se redessinent plus pour rien : le BFT se met à jour sur place, l’app Réseau seulement quand ses données changent, et plus rien ne bouge pendant une saisie ni ne remonte en haut de page. La fiche opérateur complète part une fois par session.', [
+                'Debug › PERFS : dernier bilan de 30 s (images par seconde, images lentes, fonctions les plus coûteuses, nombre de redessins par page) pour signaler un ralentissement',
+            ], [
+                'Moins de saccades : relais élu une fois pour les balises GPS, IA alliées, téléphones et aéronefs ; marqueurs web Athena tirés par un seul joueur (toujours visibles de tous) ; écrans TOC envoyés aux seuls joueurs qui les regardent',
+                'Moins de calculs : liste des unités et marqueurs du BFT gardée d’un passage à l’autre, synchro Athena ignorée quand la réponse n’a pas changé, toit / murs du GPS et de la liaison partagés, vision nocturne (ECOTI) espacée, aucun calcul de projecteur sans projecteur',
+                'Moins de redessins : BFT mis à jour sur place, app Réseau seulement si ses données changent, barre de la Liaison allié seule, page GPS par case de 25 m',
+                'Plus de remontée d’écran : défilement gardé quand la page se redessine (BFT compris), saisie jamais interrompue par un rafraîchissement',
+                'Fiche opérateur complète envoyée une fois par session (plus de rappel toutes les 15 min) ; les changements réels partent toujours',
+                'Transfert Bluetooth de photos et musiques plus fluide (fichier ouvert une seule fois)',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 2.9.37, quittez Arma complètement et relancez.',
+                'En cas de saccades : Debug › PERFS, puis capture de l’écran pour le signaler.',
+            ], 'Pack téléphone 2.9.37'),
+            $pr(1332, '2026-11-02', 'Royaume-Uni : grades britanniques, emplois, qualifications, doctrine et modèles d’unités', 'Une communauté peut choisir le modèle britannique à sa création (étape Grades) ou dans Back-office › Référentiel des grades : British Army et Royal Marines (Private, Trooper, Gunner, Sapper… jusqu’à Field Marshal), Royal Navy ou Royal Air Force, avec abréviations officielles et codes OTAN. Le Royaume-Uni rejoint aussi les catalogues : emplois des forces spéciales et unités spécialisées, brevets et cursus réels avec leurs écoles, publications doctrinales publiques et modèles d’organisation (UKSF, 16 Air Assault, UK Commando Force, Joint Aviation Command, bataillon d’infanterie type).', [
+                'Grades : trois systèmes britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force), proposés à la création de la communauté et dans le référentiel des grades',
+                'Catalogue d’emplois : 111 emplois britanniques sourcés (UKSF, 16 Air Assault, Ranger Regiment, Royal Marines, aviation, EOD, artillerie, RAF Regiment, Royal Navy)',
+                'Catalogue des qualifications : 52 brevets et cursus britanniques (UKSF Selection, All Arms Commando Course, P Company, Brecon, JTAC, CMT…) et 29 émetteurs réels (CTCRM Lympstone, Infantry Battle School, RMA Sandhurst…)',
+                'Référentiel doctrinal : 35 publications britanniques publiques (JDP 0-01, JDP 01, Land Operations, JSP 383…)',
+                'Modèles d’organisation : UKSF, 16 Air Assault Brigade Combat Team, UK Commando Force, Joint Aviation Command et bataillon d’infanterie britannique type jusqu’aux fire teams',
+            ], [
+                'Adéquation de l’organisation : référentiel britannique (section commandée par un Corporal, platoon par un Lieutenant et un Platoon Sergeant, compagnie par un Major), retenu d’office avec les grades britanniques',
+                'Catalogues : drapeau du Royaume-Uni et nom « United Kingdom »',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grades_royaume_uni) pour ajouter les grades britanniques.',
+                'Essai : Back-office › Référentiel des grades › onglet Royaume-Uni : British Army et Royal Marines › Utiliser pour la communauté ; puis Organisation › Modèles › Royaume-Uni.',
+            ]),
             $pr(1331, '2026-11-02', 'Liens d’invitation : suppression et page aux couleurs du site', 'Un lien d’invitation se supprime désormais depuis la liste ou sa fiche, après confirmation : il cesse de fonctionner, ses statistiques sont effacées et il libère la place dans la limite de liens actifs ; les candidatures et adhésions déjà faites restent intactes. La page ouverte par le lien (athena-comspec.eu/public/i/…) reprend la barre de navigation et le pied de page de l’accueil du site.', [
                 'Recrutement › Liens d’invitation : bouton Supprimer dans la liste et sur la fiche, avec une fenêtre de confirmation qui détaille ce qui est conservé et ce qui est effacé',
                 'Page d’un lien supprimé : le visiteur voit que la communauté l’a supprimé',
@@ -333,6 +348,19 @@ final class DevDispatchCatalog
                 'Page d’invitation /i/… : même barre de navigation (menu, langue, connexion) et même pied de page que l’accueil ; Connexion et Inscription gardent l’invitation',
             ], [], ['personnel'], [], 'Portail Athena'),
 
+            $pr(1330, '2026-11-02', 'Malaisie : grades, emplois, qualifications et modèles d’unités', 'La Malaisie rejoint les pays du site. Le référentiel des grades propose les grades de l’Angkatan Tentera Malaysia, système d’origine britannique, en malais avec leur équivalent anglais et leur code OTAN : armée de terre (Tentera Darat, de Prebet à Jeneral), marine (TLDM) et armée de l’air (TUDM). Le catalogue d’emplois ajoute 81 emplois malaisiens sourcés (Grup Gerak Khas, 10 Briged Para, Askar Melayu, Renjer, PASKAL, PASKAU, aviation de l’armée, et à part la police : VAT 69 et UTK), reliés à 31 qualifications et 19 écoles et unités réelles. Cinq modèles d’organisation inspirés d’unités réelles s’appliquent avec les grades malaisiens, dont un bataillon de l’Askar Melayu détaillé jusqu’au seksyen, et l’adéquation de l’organisation suit le modèle britannique (le chef de seksyen est un Koperal).', [
+                'Référentiel des grades : onglets Malaisie (armée de terre, marine, armée de l’air), intitulés malais, abrégés usuels, équivalent anglais et code OTAN ; bouton pour utiliser ces grades dans la communauté',
+                'Création de communauté : les grades malaisiens se choisissent à l’étape Grades, avec aperçu et grade du fondateur',
+                'Catalogue d’emplois : pays Malaisie (drapeau, nom « Malaysia »), 81 emplois avec intitulé officiel malais, traductions française et anglaise, brevets et formations reliés',
+                'Qualifications : catalogue malaisien (31 cursus réels : Kursus Asas Komando, PASKAL, PASKAU, parachutisme, tireur d’élite, cours de police…) et 19 émetteurs réels (PULPAK, PULADA, UPNM, Maktab Turus Angkatan Tentera…)',
+                'Modèles d’organisation : 21 Gerup Gerak Khas, 10 Briged Para, bataillon 9 RAMD (Para) avec kompeni, platun et seksyen, PASKAL et PASKAU',
+                'Adéquation de l’organisation : référentiel malaisien (modèle britannique), retenu d’office avec les grades malaisiens',
+            ], [
+                'Les listes de grades regroupent la Malaisie sous son nom ; le système de grades d’un modèle d’organisation malaisien est indiqué sur sa carte',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grade_systems_malaysia) pour installer les grades malaisiens ; les emplois, qualifications et modèles d’unités sont disponibles sans migration.',
+                'Essai : Référentiel des grades › Malaisie : armée de terre › « Utiliser les grades malaisiens… », puis Effectifs › attribuer « Kapten » à un membre.',
+            ], 'Portail Athena'),
             $pr(1329, '2026-11-02', 'Administration des formules : tableau comparatif et fiche par formule', 'Administration › Formules d’accès devient un tableau comparatif : une colonne par formule, une ligne par paramètre, rangés par groupe (membres et organisation, Academy et qualifications, recrutement, ATAK et jeu, documents, marque et intégrations) et repliables, avec une recherche et le nombre de communautés sur chaque formule. Chaque formule s’ouvre sur une fiche à onglets : interrupteurs pour les modules, nombre ou case « Illimité » pour les plafonds, aperçu de la page des formules telle que la voit le client, liste des communautés qui dépasseraient un plafond abaissé (rien ne leur est retiré) et historique des modifications. Une formule se duplique en un clic. La page publique des formules calcule désormais son comparatif depuis les vraies valeurs des formules.', [
                 'Tableau comparatif des formules : groupes repliables, recherche d’un paramètre, communautés par formule, boutons Modifier et Dupliquer',
                 'Fiche d’une formule : onglets par groupe, interrupteurs, quotas avec case « Illimité », contrôle des valeurs à l’enregistrement',
@@ -368,6 +396,17 @@ final class DevDispatchCatalog
                 'Liens d’invitation en anglais : la présentation de la liste, le quota, l’aide de l’adresse personnalisée, l’action « Rejoindre » et le bandeau de candidature restaient en français',
             ], ['personnel'], [], 'Portail Athena'),
 
+            $pr(1324, '2026-11-02', 'App Zones sans automatisme, menu Zones au clic droit, bandeau du curseur', 'Avec le pack 2.9.36, l’app Zones ne change plus rien toute seule. Un contact ennemi posé dans une zone ne la fait plus passer « ennemi signalé » : par défaut l’opérateur met l’état lui-même, et le serveur peut choisir de proposer le changement (question OUI / NON) ou de le faire automatiquement comme avant. Les zones ne vont plus sur la carte d’Arma par défaut, car tout le camp les y voyait sans appareil. Un menu Zones arrive au clic droit de la carte et le bandeau du curseur montre la direction de votre vue.', [
+                'Nouveau réglage serveur « Contact dans une zone » : Manuel (par défaut, rien ne se passe), Proposer (celui qui a posé le contact et l’auteur du plan reçoivent « Contact en B-04 : passer la zone en ennemi signalé ? », OUI / NON dans l’app Zones, sans effet sans réponse) ou Automatique (comportement de la 2.9.35)',
+                'Zones sur la carte d’Arma et Athena : désactivé par défaut (réaliste) ; quand le serveur l’autorise, un plan n’est envoyé au site Athena que s’il est partagé',
+                'Le nom de la zone sous le curseur reste affiché dans le bandeau : c’est l’affichage de vos plans sur votre propre téléphone',
+                'Clic droit sur la carte › Zones : découper ici (grille 100, 200 ou 500 m, îlots, secteurs, rayon au choix), nouveau plan à partir d’ici, nommer les axes autour ; sur une zone : fiche, état, signaler un ennemi, citer @zone, masquer, rendu',
+                'Bandeau du curseur (style Nouveau) : flèche et cap selon la direction de votre vue ; distance et gisement vers le curseur dans l’étiquette de survol, ou dans le bandeau sur option',
+                'Traductions anglaises corrigées (IN PROGRESS, CANCEL, ESTABLISHED, rubriques des réglages ATAK, retour de l’app Routes)',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack 2.9.36, quittez Arma complètement et relancez.',
+                'L’ancien réglage « Contacts ennemis dans les zones » (coché par défaut) est remplacé : tous les serveurs repartent sur Manuel, à remettre sur Proposer ou Automatique dans Options des addons › COMSPEC › ATAK · Plan / Zones si vous le souhaitez.',
+            ], 'Pack téléphone 2.9.36'),
             $pr(1323, '2026-11-02', 'Liens d’invitation : la mise en page revient', 'Les pages Recrutement › Liens d’invitation s’affichaient sans mise en page : elles retrouvent le style du back-office, comme les codes prioritaires.', [], [], [
                 'Recrutement › Liens d’invitation : liste, création, fiche et modification s’affichaient sans mise en page ; elles retrouvent le style du back-office',
             ], ['personnel'], [], 'Portail Athena'),

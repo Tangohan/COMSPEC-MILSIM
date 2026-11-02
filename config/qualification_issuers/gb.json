@@ -1,0 +1,919 @@
+{
+  "pack": "gb",
+  "country": "GB",
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé à partir de sources publiques : pages officielles de la British Army (army.mod.uk, jobs.army.mod.uk, Soldier Magazine), de la Royal Navy (royalnavy.mod.uk), de la Royal Air Force (raf.mod.uk), de la Defence Academy (da.mod.uk), de GOV.UK et du Parlement (Hansard), catalogue International Defence Training (Army) 2026 et Wikipédia en complément. Les points non confirmés sont signalés dans « uncertain ».",
+    "en": "Compiled from public sources: official British Army (army.mod.uk, jobs.army.mod.uk, Soldier Magazine), Royal Navy (royalnavy.mod.uk), Royal Air Force (raf.mod.uk), Defence Academy (da.mod.uk), GOV.UK and Parliament (Hansard) pages, the 2026 International Defence Training (Army) catalogue and Wikipedia as a complement. Unconfirmed points are flagged under \"uncertain\"."
+  },
+  "issuers": [
+    {
+      "key": "gb-uksf",
+      "name": "United Kingdom Special Forces",
+      "transliteration": "",
+      "short_name": "UKSF",
+      "type": "command",
+      "location": "Royaume-Uni (direction : Director Special Forces, Londres)",
+      "location_en": "United Kingdom (led by Director Special Forces, London)",
+      "website": "",
+      "description": {
+        "fr": "Groupe des forces spéciales britanniques placé sous le Director Special Forces : 22 SAS, SBS, SRR, 18 (UKSF) Signal Regiment, SFSG et unités de réserve (21 et 23 SAS, SBS(R)). Il organise la sélection commune des forces spéciales (Briefing Course, Aptitude, formation tactique).",
+        "en": "UK special forces group under the Director Special Forces: 22 SAS, SBS, SRR, 18 (UKSF) Signal Regiment, SFSG and reserve units (21 and 23 SAS, SBS(R)). It runs the joint special forces selection (Briefing Course, Aptitude, tactical training)."
+      },
+      "aliases": [
+        "UK Special Forces",
+        "Director Special Forces",
+        "UKSF Group"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/uk-special-forces-reserve/21-23-special-air-service-sas/",
+          "title": "21 & 23 Special Air Service (SAS) (army.mod.uk)"
+        },
+        {
+          "url": "https://publications.parliament.uk/pa/cm200405/cmhansrd/vo050405/wmstext/50405m01.htm",
+          "title": "House of Commons written ministerial statements, 5 April 2005 (Special Reconnaissance Regiment)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_Kingdom_Special_Forces_Selection",
+          "title": "United Kingdom Special Forces Selection – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Le MoD ne publie pas de page officielle propre à l’UKSF ; l’organisation interne de la sélection régulière n’est connue que par la page des réserves et la presse.",
+        "en": "The MoD publishes no dedicated UKSF page; the internal organisation of regular selection is known only from the reserve pages and the press."
+      }
+    },
+    {
+      "key": "gb-srr",
+      "name": "Special Reconnaissance Regiment",
+      "transliteration": "",
+      "short_name": "SRR",
+      "type": "unit",
+      "location": "Royaume-Uni (implantation non publiée)",
+      "location_en": "United Kingdom (location not published)",
+      "website": "",
+      "description": {
+        "fr": "Régiment des forces spéciales créé le 6 avril 2005 au sein du groupe UKSF, sous le commandement du Director Special Forces, spécialisé dans la reconnaissance et la surveillance. Il recrute des volontaires, hommes et femmes, des trois armées.",
+        "en": "Special forces regiment stood up on 6 April 2005 within the UKSF group, under the command of the Director Special Forces, specialising in reconnaissance and surveillance. It recruits male and female volunteers from all three services."
+      },
+      "aliases": [
+        "Special Reconnaissance Regiment (SRR)"
+      ],
+      "sources": [
+        {
+          "url": "https://publications.parliament.uk/pa/cm200405/cmhansrd/vo050405/wmstext/50405m01.htm",
+          "title": "House of Commons written ministerial statements, 5 April 2005 (Special Reconnaissance Regiment)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Reconnaissance_Regiment",
+          "title": "Special Reconnaissance Regiment – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Aucune page officielle actuelle ; implantation et processus de sélection non publiés.",
+        "en": "No current official page; location and selection process not published."
+      }
+    },
+    {
+      "key": "gb-sfsg",
+      "name": "Special Forces Support Group",
+      "transliteration": "",
+      "short_name": "SFSG",
+      "type": "unit",
+      "location": "MOD St Athan (pays de Galles)",
+      "location_en": "MOD St Athan, Wales",
+      "website": "",
+      "description": {
+        "fr": "Unité d’appui des forces spéciales créée le 3 avril 2006 à partir du 1st Battalion The Parachute Regiment, renforcée par une compagnie de Royal Marines et un élément du RAF Regiment.",
+        "en": "Special forces support unit established on 3 April 2006 around 1st Battalion The Parachute Regiment, reinforced by a Royal Marines company and an RAF Regiment element."
+      },
+      "aliases": [
+        "Special Forces Support Group (SFSG)"
+      ],
+      "sources": [
+        {
+          "url": "https://publications.parliament.uk/pa/cm200708/cmhansrd/cm071112/text/71112w0013.htm",
+          "title": "House of Commons written answers, 12 November 2007 (Special Forces Support Group)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Forces_Support_Group",
+          "title": "Special Forces Support Group – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Implantation et composition actuelles non confirmées par une page officielle récente.",
+        "en": "Current location and composition not confirmed by a recent official page."
+      }
+    },
+    {
+      "key": "gb-18-uksf-sig-regt",
+      "name": "18 (UKSF) Signal Regiment",
+      "transliteration": "",
+      "short_name": "18 (UKSF) Sig Regt",
+      "type": "unit",
+      "location": "Royaume-Uni (implantation non publiée)",
+      "location_en": "United Kingdom (location not published)",
+      "website": "",
+      "description": {
+        "fr": "Régiment de transmissions du groupe UKSF, qui forme et emploie les Special Forces Communicators ; sa composante de réserve est le 63 (UKSF) Signal Squadron.",
+        "en": "Signals regiment of the UKSF group, which trains and employs Special Forces Communicators; its reserve component is 63 (UKSF) Signal Squadron."
+      },
+      "aliases": [
+        "18 (United Kingdom Special Forces) Signal Regiment",
+        "63 (UKSF) Signal Squadron"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/uk-special-forces-reserve/63-uksf-signal-squadron/",
+          "title": "63 (UKSF) Signal Squadron (army.mod.uk)"
+        },
+        {
+          "url": "https://soldier.army.mod.uk/issues/january-2025/soldier-life/the-pinnacle-of-soldiering-what-you-might-not-know-about-joining-uk-special-forces",
+          "title": "What you might not know about joining UK Special Forces (Soldier Magazine, Jan 2025)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/18_(UKSF)_Signal_Regiment",
+          "title": "18 (UKSF) Signal Regiment – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Pas de page officielle propre au régiment d’active ; contenu du cours connu par Wikipédia.",
+        "en": "No official page for the regular regiment; course content known from Wikipedia."
+      }
+    },
+    {
+      "key": "gb-sbs",
+      "name": "Special Boat Service",
+      "transliteration": "",
+      "short_name": "SBS",
+      "type": "unit",
+      "location": "Poole (Dorset)",
+      "location_en": "Poole, Dorset",
+      "website": "https://www.royalnavy.mod.uk/organisation/units-and-squadrons/special-boat-service/special-boat-service",
+      "description": {
+        "fr": "Unité des forces spéciales de la Royal Navy, créée pendant la Seconde Guerre mondiale, spécialisée dans les opérations maritimes ; elle comprend une composante de réserve, le SBS(R).",
+        "en": "Royal Navy special forces unit formed during the Second World War, specialising in maritime operations; it includes a reserve component, SBS(R)."
+      },
+      "aliases": [
+        "Special Boat Service (SBS)",
+        "Special Boat Service Reserve"
+      ],
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/organisation/units-and-squadrons/special-boat-service/special-boat-service",
+          "title": "Special Boat Service (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/organisation/units-and-squadrons/special-boat-service/special-boat-service/special-boat-service-reserve",
+          "title": "Special Boat Service Reserve (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Boat_Service",
+          "title": "Special Boat Service – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Implantation à Poole donnée par Wikipédia, non par la page officielle.",
+        "en": "Poole location given by Wikipedia, not by the official page."
+      }
+    },
+    {
+      "key": "gb-ranger-regiment",
+      "name": "The Ranger Regiment",
+      "transliteration": "",
+      "short_name": "Ranger Regt",
+      "type": "unit",
+      "location": "Royaume-Uni (quatre bataillons)",
+      "location_en": "United Kingdom (four battalions)",
+      "website": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/the-ranger-regiment/",
+      "description": {
+        "fr": "Régiment d’opérations spéciales terrestres de la British Army, cœur de la Land Special Operations Force, qui opère aux côtés de partenaires étrangers. Il recrute par le Ranger Preparation Course et le Ranger Qualification Course.",
+        "en": "British Army land special operations regiment, core of the Land Special Operations Force, operating alongside foreign partners. It recruits through the Ranger Preparation Course and the Ranger Qualification Course."
+      },
+      "aliases": [
+        "Ranger Regiment"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/the-ranger-regiment/",
+          "title": "The Ranger Regiment (army.mod.uk)"
+        },
+        {
+          "url": "https://www.gov.uk/government/news/scottish-troops-to-pioneer-armys-new-ranger-regiment",
+          "title": "Scottish troops to pioneer Army's new Ranger Regiment (GOV.UK)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Ranger_Regiment",
+          "title": "Ranger Regiment – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-ctcrm",
+      "name": "Commando Training Centre Royal Marines",
+      "transliteration": "",
+      "short_name": "CTCRM",
+      "type": "training_center",
+      "location": "Lympstone (Devon)",
+      "location_en": "Lympstone, Devon",
+      "website": "https://www.royalnavy.mod.uk/locations-and-operations/bases-and-stations/ctcrm-lympstone",
+      "description": {
+        "fr": "Principal centre de formation des Royal Marines : formation initiale commando des recrues et des officiers, All Arms Commando Course et nombreux cours de spécialité (Mountain Leader, armes lourdes, tireur d’élite).",
+        "en": "Main Royal Marines training base: initial commando training of recruits and officers, the All Arms Commando Course and many specialist courses (Mountain Leader, heavy weapons, sniper)."
+      },
+      "aliases": [
+        "CTCRM Lympstone",
+        "Commando Training Centre"
+      ],
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/locations-and-operations/bases-and-stations/ctcrm-lympstone",
+          "title": "CTCRM Lympstone (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/royal-marines/joining-process/commando-initial-training",
+          "title": "Royal Marines Commando initial training (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Commando_Training_Centre_Royal_Marines",
+          "title": "Commando Training Centre Royal Marines – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-mltc",
+      "name": "Mountain Leader Training Cadre",
+      "transliteration": "",
+      "short_name": "MLTC",
+      "type": "unit",
+      "location": "CTCRM Lympstone et Norvège (entraînement hivernal)",
+      "location_en": "CTCRM Lympstone and Norway (winter training)",
+      "website": "",
+      "description": {
+        "fr": "Cellule des Royal Marines qui forme les Mountain Leaders (ML2, ML1) et dispense le cours de combat par grand froid (Cold Weather Warfare Course) en Norvège.",
+        "en": "Royal Marines cadre that trains Mountain Leaders (ML2, ML1) and delivers the Cold Weather Warfare Course in Norway."
+      },
+      "aliases": [
+        "Royal Marines Mountain Leader Training Cadre"
+      ],
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/news/2021/february/02/210202-arctic-commandos",
+          "title": "Royal Marines begin intensive Arctic training (royalnavy.mod.uk, Feb 2021)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines/mountain-leader-2",
+          "title": "Mountain Leader 2 (ML2) (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Leader_Training_Cadre",
+          "title": "Mountain Leader Training Cadre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-10-trg-sqn-rm",
+      "name": "10 Training Squadron Royal Marines",
+      "transliteration": "",
+      "short_name": "10 Trg Sqn RM",
+      "type": "unit",
+      "location": "RM Tamar, HMNB Devonport (Plymouth)",
+      "location_en": "RM Tamar, HMNB Devonport, Plymouth",
+      "website": "",
+      "description": {
+        "fr": "Escadron d’instruction des Royal Marines qui dispense les qualifications de chalands de débarquement (LC2, LC1) et le cours d’officier de chalands (LCOQC).",
+        "en": "Royal Marines training squadron delivering the landing craft qualifications (LC2, LC1) and the Landing Craft Officers' Qualifying Course (LCOQC)."
+      },
+      "aliases": [
+        "10 Training Squadron, Royal Marines Tamar"
+      ],
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines-amphibious-training/landing-craft-2",
+          "title": "Landing Craft 2 (LC2) (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines-amphibious-training/landing-craft-officers-qualifying-course",
+          "title": "Landing Craft Officers' Qualifying Course (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/news/2025/august/05/20250805-raiding-and-landing-craft-operators-qualify-after-intensive-training",
+          "title": "Royal Marines small boat and landing craft operators qualify (royalnavy.mod.uk, Aug 2025)"
+        }
+      ]
+    },
+    {
+      "key": "gb-itc-catterick",
+      "name": "Infantry Training Centre Catterick",
+      "transliteration": "",
+      "short_name": "ITC Catterick",
+      "type": "training_center",
+      "location": "Catterick Garrison (Yorkshire du Nord)",
+      "location_en": "Catterick Garrison, North Yorkshire",
+      "website": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/itc-catterick/",
+      "description": {
+        "fr": "Centre qui forme tous les fantassins et les soldats du Royal Armoured Corps (Combat Infantry Course, dont la version PARA) ; il accueille la Pegasus Company.",
+        "en": "Centre training all the Army's infantry and Royal Armoured Corps soldiers (Combat Infantry Course, including the PARA version); home of Pegasus Company."
+      },
+      "aliases": [
+        "Infantry Training Centre"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/itc-catterick/",
+          "title": "Infantry Training Centre Catterick (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "key": "gb-pegasus-company",
+      "name": "Pegasus Company",
+      "transliteration": "",
+      "short_name": "P Coy",
+      "type": "unit",
+      "location": "Infantry Training Centre, Catterick",
+      "location_en": "Infantry Training Centre, Catterick",
+      "website": "",
+      "description": {
+        "fr": "Organisation de formation et de sélection des troupes aéroportées, armée par des membres du Parachute Regiment et de la 16 Air Assault Brigade ; elle conduit la sélection pré-parachutiste (P Company) des régulières et des réservistes.",
+        "en": "Airborne forces training and selection organisation staffed by members of the Parachute Regiment and 16 Air Assault Brigade; it runs pre-parachute selection (P Company) for regulars and reservists."
+      },
+      "aliases": [
+        "P Company",
+        "Pegasus Company (P Coy)"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/news/first-female-soldier-passes-p-company/",
+          "title": "First female soldier passes P Company (army.mod.uk, Oct 2022)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/infantry/parachute-regiment/",
+          "title": "The Parachute Regiment (army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/P_Company",
+          "title": "P Company – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-16-aa-bct",
+      "name": "16 Air Assault Brigade Combat Team",
+      "transliteration": "",
+      "short_name": "16 AA BCT",
+      "type": "command",
+      "location": "Colchester (Essex)",
+      "location_en": "Colchester, Essex",
+      "website": "",
+      "description": {
+        "fr": "Grande unité aéroportée et aéromobile de la British Army, qui regroupe le Parachute Regiment et ses appuis ; elle comprend le Pathfinder Platoon, unité de reconnaissance chargée de reconnaître et baliser les zones de mise à terre.",
+        "en": "British Army airborne and air assault formation grouping the Parachute Regiment and its supporting units; it includes the Pathfinder Platoon, the reconnaissance unit tasked with finding and marking drop and landing zones."
+      },
+      "aliases": [
+        "16 Air Assault Brigade",
+        "Pathfinder Platoon"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/news/pathfinders-are-first-in-on-british-and-german-military-co-operation/",
+          "title": "Pathfinders are 'first in' on British and German military co-operation (army.mod.uk, Jan 2025)"
+        },
+        {
+          "url": "https://www.army.mod.uk/news/first-female-soldier-passes-p-company/",
+          "title": "First female soldier passes P Company (army.mod.uk, Oct 2022)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Pathfinder_Platoon",
+          "title": "Pathfinder Platoon – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-ibs-brecon",
+      "name": "Infantry Battle School",
+      "transliteration": "",
+      "short_name": "IBS",
+      "type": "school",
+      "location": "Dering Lines, Brecon (pays de Galles) ; Jungle Warfare Division au Brunei",
+      "location_en": "Dering Lines, Brecon, Wales; Jungle Warfare Division in Brunei",
+      "website": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/infantry-battle-school/",
+      "description": {
+        "fr": "École du Land Warfare Centre qui forme les chefs de l’infanterie : Platoon Commanders' Division, Senior Division, Junior Division et Infantry Weapons Division (PCBC, PSBC, SCBC, instructeurs tir, combat urbain et jungle).",
+        "en": "Land Warfare Centre school training infantry commanders: Platoon Commanders' Division, Senior Division, Junior Division and Infantry Weapons Division (PCBC, PSBC, SCBC, weapons, urban and jungle instructors)."
+      },
+      "aliases": [
+        "Infantry Battle School Brecon",
+        "IBS Brecon",
+        "Infantry Battle School, Brecon"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/infantry-battle-school/",
+          "title": "The Infantry Battle School (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Infantry_Battle_School",
+          "title": "Infantry Battle School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-cams",
+      "name": "Combined Arms Manoeuvre School",
+      "transliteration": "",
+      "short_name": "CAMS",
+      "type": "school",
+      "location": "Waterloo Lines, Warminster (Wiltshire)",
+      "location_en": "Waterloo Lines, Warminster, Wiltshire",
+      "website": "",
+      "description": {
+        "fr": "École du Combat Manoeuvre Centre (Land Warfare Centre) issue de l’ancienne Support Weapons School et de la Reconnaissance and Armoured Tactics Division : armes d’appui de l’infanterie (mortier, Javelin, tireurs d’élite, mitrailleuses).",
+        "en": "Combat Manoeuvre Centre (Land Warfare Centre) school formed from the former Support Weapons School and the Reconnaissance and Armoured Tactics Division: infantry support weapons (mortar, Javelin, snipers, machine guns)."
+      },
+      "aliases": [
+        "Support Weapons School",
+        "Specialist Weapons School",
+        "SWS Warminster"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/formations-divisions-and-brigades/land-warfare-centre/combat-manoeuvre-centre/",
+          "title": "Combat Manoeuvre Centre (army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Waterloo_Lines",
+          "title": "Waterloo Lines – Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Le catalogue IDT (2026) cite encore « SWS Warminster » ; le nom CAMS est donné par Wikipédia et la presse, pas confirmé par une page officielle consultée.",
+        "en": "The 2026 IDT catalogue still says 'SWS Warminster'; the CAMS name comes from Wikipedia and the press, not confirmed by an official page consulted."
+      }
+    },
+    {
+      "key": "gb-rmas",
+      "name": "Royal Military Academy Sandhurst",
+      "transliteration": "",
+      "short_name": "RMAS",
+      "type": "academy",
+      "location": "Camberley (Surrey)",
+      "location_en": "Camberley, Surrey",
+      "website": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/rma-sandhurst/",
+      "description": {
+        "fr": "Académie où sont formés tous les officiers de la British Army (devise « Serve to Lead ») : Regular Commissioning Course de 44 semaines et Commissioning Course Short pour la réserve.",
+        "en": "Academy where all British Army officers are trained (motto 'Serve to Lead'): the 44-week Regular Commissioning Course and the Commissioning Course Short for reservists."
+      },
+      "aliases": [
+        "RMA Sandhurst",
+        "Sandhurst"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/rma-sandhurst/",
+          "title": "Royal Military Academy Sandhurst (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/rma-sandhurst/officer-training",
+          "title": "RMA Sandhurst officer training (army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Royal_Military_Academy_Sandhurst",
+          "title": "Royal Military Academy Sandhurst – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-rsa",
+      "name": "The Royal School of Artillery",
+      "transliteration": "",
+      "short_name": "RSA",
+      "type": "school",
+      "location": "Larkhill Garrison (Wiltshire)",
+      "location_en": "Larkhill Garrison, Wiltshire",
+      "website": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/the-royal-school-of-artillery/",
+      "description": {
+        "fr": "Principal établissement de formation de l’artillerie britannique, créé en 1915, groupe opérationnel du Land Warfare Centre : observateurs, équipes d’appui-feux (FST), commandants de batterie, ciblage.",
+        "en": "Principal artillery training establishment of the British Army, founded in 1915, an operations group of the Land Warfare Centre: observers, fire support teams (FST), battery commanders, targeting."
+      },
+      "aliases": [
+        "Royal School of Artillery",
+        "Royal School of Artillery Larkhill"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/the-royal-school-of-artillery/",
+          "title": "The Royal School of Artillery (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/formations-divisions-and-brigades/land-warfare-centre/",
+          "title": "Land Warfare Centre (army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Royal_School_of_Artillery",
+          "title": "Royal School of Artillery – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-jfactsu",
+      "name": "Joint Forward Air Control Training and Standardisation Unit",
+      "transliteration": "",
+      "short_name": "JFACTSU",
+      "type": "unit",
+      "location": "RAF Leeming (Yorkshire du Nord)",
+      "location_en": "RAF Leeming, North Yorkshire",
+      "website": "",
+      "description": {
+        "fr": "Seule école de la Défense britannique accréditée par l’OTAN et les forces américaines pour former les contrôleurs JTAC ; unité hébergée à RAF Leeming, orientée par la Joint Air Land Organisation (RAF High Wycombe).",
+        "en": "The only NATO and US Joint Services accredited schoolhouse in UK Defence to train Joint Terminal Attack Controllers; lodger unit at RAF Leeming, directed by the Joint Air Land Organisation (RAF High Wycombe)."
+      },
+      "aliases": [
+        "Joint Forward Air Control Training and Standards Unit",
+        "JFACTSU RAF Leeming"
+      ],
+      "sources": [
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-leeming/",
+          "title": "RAF Leeming (raf.mod.uk)"
+        },
+        {
+          "url": "https://www.contractsfinder.service.gov.uk/Notice/f0956905-c628-46c2-8509-1d0da13d11bc",
+          "title": "JFACTSU contract notice (Contracts Finder, GOV.UK)"
+        }
+      ]
+    },
+    {
+      "key": "gb-raf-pts",
+      "name": "No 1 Parachute Training School",
+      "transliteration": "",
+      "short_name": "No 1 PTS",
+      "type": "school",
+      "location": "RAF Brize Norton (Oxfordshire)",
+      "location_en": "RAF Brize Norton, Oxfordshire",
+      "website": "",
+      "description": {
+        "fr": "École de parachutisme de la RAF, issue de l’école créée à Ringway en 1940 et rattachée à l’Airborne Delivery Wing ; elle délivre toute la formation initiale des parachutistes des trois armées (Basic Parachute Course).",
+        "en": "RAF parachute school descended from the school formed at Ringway in 1940, part of the Airborne Delivery Wing; it delivers all initial parachute training for the three services (Basic Parachute Course)."
+      },
+      "aliases": [
+        "No. 1 Parachute Training School RAF",
+        "No 1 Parachute Training School RAF Brize Norton"
+      ],
+      "sources": [
+        {
+          "url": "https://www.gov.uk/government/news/raf-parachute-jumping-instructors-celebrate-70-years",
+          "title": "RAF Parachute Jumping Instructors celebrate 70 years (GOV.UK)"
+        },
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-brize-norton/",
+          "title": "RAF Brize Norton (raf.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Airborne_Delivery_Wing",
+          "title": "Airborne Delivery Wing – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-raf-adw",
+      "name": "Airborne Delivery Wing",
+      "transliteration": "",
+      "short_name": "ADW",
+      "type": "unit",
+      "location": "RAF Brize Norton (Oxfordshire)",
+      "location_en": "RAF Brize Norton, Oxfordshire",
+      "website": "",
+      "description": {
+        "fr": "Escadre de la RAF, foyer du parachutisme militaire britannique : elle forme parachutistes et Parachute Jumping Instructors des trois armées et fournit l’équipe de présentation des Falcons.",
+        "en": "RAF wing that is home to UK military parachuting: it trains parachutists and Parachute Jumping Instructors for the three services and provides the Falcons display team."
+      },
+      "aliases": [
+        "RAF Airborne Delivery Wing"
+      ],
+      "sources": [
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-brize-norton/news/parachute-jumping-instructors-graduate/",
+          "title": "Parachute jumping instructors graduate (raf.mod.uk, May 2025)"
+        },
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-brize-norton/",
+          "title": "RAF Brize Norton (raf.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Airborne_Delivery_Wing",
+          "title": "Airborne Delivery Wing – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-dma",
+      "name": "Defence Medical Academy",
+      "transliteration": "",
+      "short_name": "DMA",
+      "type": "academy",
+      "location": "DMS Whittington, Lichfield (Staffordshire)",
+      "location_en": "DMS Whittington, Lichfield, Staffordshire",
+      "website": "",
+      "description": {
+        "fr": "Académie du service de santé des armées (UK Strategic Command) qui regroupe notamment la Defence School of Healthcare Training : formation des Combat Medical Technicians, BATLS, préhospitalier militaire et instructeurs Team Medic.",
+        "en": "Defence Medical Services academy (UK Strategic Command) including the Defence School of Healthcare Training: Combat Medical Technician training, BATLS, military pre-hospital care and Team Medic instructors."
+      },
+      "aliases": [
+        "DMS Whittington",
+        "Defence School of Healthcare Training"
+      ],
+      "sources": [
+        {
+          "url": "https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1068451/DMA_Prospectus_April_2022_43_.pdf",
+          "title": "Defence Medical Academy course prospectus, April 2022 (GOV.UK, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Defence_Medical_Academy",
+          "title": "Defence Medical Academy – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-dst",
+      "name": "Defence School of Transport",
+      "transliteration": "",
+      "short_name": "DST",
+      "type": "school",
+      "location": "Leconfield (Yorkshire de l’Est)",
+      "location_en": "Leconfield, East Yorkshire",
+      "website": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-school-of-transport/",
+      "description": {
+        "fr": "École interarmées de conduite : permis civils (LATT), conduite des véhicules militaires (111 et 112 Driver Training Squadrons), gestion du transport et matières dangereuses.",
+        "en": "Tri-service driving school: civil licence acquisition (LATT), military vehicle driving (111 and 112 Driver Training Squadrons), transport management and hazardous materials."
+      },
+      "aliases": [
+        "Defence School of Transport Leconfield",
+        "DST Leconfield"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-school-of-transport/",
+          "title": "Defence School of Transport (army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Defence_School_of_Transport",
+          "title": "Defence School of Transport – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-dems",
+      "name": "Defence Explosive Ordnance Disposal, Munitions and Search Training Regiment",
+      "transliteration": "",
+      "short_name": "DEMS Trg Regt",
+      "type": "training_center",
+      "location": "St George's Barracks, Bicester (Oxfordshire) et Marlborough Barracks, Kineton (Warwickshire)",
+      "location_en": "St George's Barracks, Bicester, Oxfordshire and Marlborough Barracks, Kineton, Warwickshire",
+      "website": "https://www.army.mod.uk/learn-and-explore/about-the-army/formations-divisions-and-brigades/field-army-troops/land-warfare-centre/royal-school-of-military-engineering-group/defence-explosive-ordnance-disposal-munitions-and-search/",
+      "description": {
+        "fr": "Régiment d’instruction seul responsable, pour l’Army et la Royal Navy, de la formation à la fouille, à la neutralisation, au stockage et à la sécurité des explosifs : escadrons Munitions, Search, IED Disposal et Conventional Munitions Disposal.",
+        "en": "Training regiment solely responsible, for the Army and Royal Navy, for training in search, disposal, storage and explosive safety: Munitions, Search, IED Disposal and Conventional Munitions Disposal squadrons."
+      },
+      "aliases": [
+        "Defence EOD, Munitions and Search Training Regiment",
+        "DEMS Training Regiment",
+        "Army School of Ammunition"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/formations-divisions-and-brigades/field-army-troops/land-warfare-centre/royal-school-of-military-engineering-group/defence-explosive-ordnance-disposal-munitions-and-search/",
+          "title": "Defence Explosive Ordnance Disposal, Munitions and Search (army.mod.uk)"
+        },
+        {
+          "url": "https://www.gov.uk/government/news/100-million-bomb-disposal-training-facility-opens",
+          "title": "£100 million bomb disposal training facility opens (GOV.UK)"
+        },
+        {
+          "url": "https://jobs.army.mod.uk/roles/royal-logistic-corps/ammunition-technician/",
+          "title": "Ammunition Technician, Royal Logistic Corps (jobs.army.mod.uk)"
+        }
+      ],
+      "uncertain": {
+        "fr": "« Army School of Ammunition » est un ancien nom (Kineton) donné à titre d’alias, non confirmé par la page officielle.",
+        "en": "'Army School of Ammunition' is a former name (Kineton) given as an alias, not confirmed by the official page."
+      }
+    },
+    {
+      "key": "gb-11-eod-search-regt",
+      "name": "11 Explosive Ordnance Disposal and Search Regiment",
+      "transliteration": "",
+      "short_name": "11 EOD & Search Regt",
+      "type": "unit",
+      "location": "Didcot (Oxfordshire), escadrons répartis au Royaume-Uni",
+      "location_en": "Didcot, Oxfordshire, with squadrons across the UK",
+      "website": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/royal-logistic-corps/regular-units/11-explosive-ordnance-disposal-and-search-regiment/",
+      "description": {
+        "fr": "Régiment du Royal Logistic Corps spécialisé dans la neutralisation des engins explosifs improvisés et des munitions conventionnelles ; il emploie les Ammunition Technicians et les opérateurs IEDD.",
+        "en": "Royal Logistic Corps regiment specialising in improvised explosive device and conventional munitions disposal; it employs Ammunition Technicians and IEDD operators."
+      },
+      "aliases": [
+        "11 EOD & Search Regiment RLC",
+        "11 Explosive Ordnance Disposal and Search Regiment RLC"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/royal-logistic-corps/regular-units/11-explosive-ordnance-disposal-and-search-regiment/",
+          "title": "11 Explosive Ordnance Disposal and Search Regiment (army.mod.uk)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Implantation de l’état-major (Didcot) déduite de la liste des escadrons ; à confirmer.",
+        "en": "Headquarters location (Didcot) inferred from the squadron list; to be confirmed."
+      }
+    },
+    {
+      "key": "gb-dds",
+      "name": "Defence Diving School",
+      "transliteration": "",
+      "short_name": "DDS",
+      "type": "school",
+      "location": "Horsea Island, Portsmouth (Hampshire)",
+      "location_en": "Horsea Island, Portsmouth, Hampshire",
+      "website": "https://www.royalnavy.mod.uk/locations-and-operations/bases-and-stations/hms-collingwood/defence-diving-school",
+      "description": {
+        "fr": "École interarmées de plongée militaire (rattachée à HMS Collingwood) : formation de base de tous les plongeurs démineurs de la Royal Navy et des plongeurs de l’Army, avec lac d’eau salée de 1 km et caissons de recompression.",
+        "en": "Joint Service military diving school (under HMS Collingwood): basic training for all Royal Navy clearance divers and Army divers, with a 1 km salt-water lake and recompression chambers."
+      },
+      "aliases": [
+        "Defence Diving School Horsea Island"
+      ],
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/locations-and-operations/bases-and-stations/hms-collingwood/defence-diving-school",
+          "title": "Defence Diving School (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Defence_Diving_School",
+          "title": "Defence Diving School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-aacen",
+      "name": "Army Aviation Centre",
+      "transliteration": "",
+      "short_name": "AACen",
+      "type": "training_center",
+      "location": "Middle Wallop, Stockbridge (Hampshire)",
+      "location_en": "Middle Wallop, Stockbridge, Hampshire",
+      "website": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/aviation/",
+      "description": {
+        "fr": "Centre de formation de l’Army Air Corps (ex-School of Army Aviation, renommé en 2009) : 2 (Training) Regiment AAC pour les personnels au sol et 7 (Training) Regiment AAC pour le vol sur AH-64E Apache.",
+        "en": "Army Air Corps training centre (formerly the School of Army Aviation, renamed in 2009): 2 (Training) Regiment AAC for groundcrew and 7 (Training) Regiment AAC for AH-64E Apache flying training."
+      },
+      "aliases": [
+        "Army Aviation Centre Middle Wallop",
+        "School of Army Aviation"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/aviation/",
+          "title": "Army Aviation Centre (army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Army_Aviation_Centre",
+          "title": "Army Aviation Centre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-dsto",
+      "name": "Defence SERE Training Organisation",
+      "transliteration": "",
+      "short_name": "DSTO",
+      "type": "training_center",
+      "location": "RAF St Mawgan (Cornouailles)",
+      "location_en": "RAF St Mawgan, Cornwall",
+      "website": "",
+      "description": {
+        "fr": "Organisme interarmées de formation SERE (survie, évasion, résistance, extraction) et conduite après capture, installé à RAF St Mawgan, qui forme environ 5 000 personnels de la Défense par an.",
+        "en": "Joint organisation for SERE (survive, evade, resist, extract) and conduct-after-capture training, based at RAF St Mawgan, training around 5,000 Defence personnel a year."
+      },
+      "aliases": [
+        "Defence Survive, Evade, Resist, Extract (SERE) Training Organisation",
+        "Defence SERE Training Organisation (DSTO)"
+      ],
+      "sources": [
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-st-mawgan/",
+          "title": "RAF St Mawgan (raf.mod.uk)"
+        },
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-st-mawgan/news/raf-st-mawgan-welcomes-nato-partners/",
+          "title": "RAF St Mawgan welcomes NATO partners (raf.mod.uk)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Rattachement (Robson Academy of Resilience, RAF Cranwell) cité par une offre d’emploi, non vérifié sur une page officielle.",
+        "en": "Parent organisation (Robson Academy of Resilience, RAF Cranwell) cited by a vacancy notice, not checked on an official page."
+      }
+    },
+    {
+      "key": "gb-dcbrnc",
+      "name": "Defence Chemical, Biological, Radiological and Nuclear Centre",
+      "transliteration": "",
+      "short_name": "DCBRNC",
+      "type": "coe",
+      "location": "Winterbourne Gunner, près de Salisbury (Wiltshire)",
+      "location_en": "Winterbourne Gunner, near Salisbury, Wiltshire",
+      "website": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-cbrn-centre/",
+      "description": {
+        "fr": "Centre interarmées qui conçoit et dispense les cours de défense NRBC qualifiant les personnels des trois armées pour les emplois opérationnels, d’instruction et d’état-major ; son élément d’instruction est la Defence CBRN School.",
+        "en": "Joint centre designing and running CBRN defence courses that qualify personnel of all three services for operational, training and staff appointments; its instructional element is the Defence CBRN School."
+      },
+      "aliases": [
+        "Defence CBRN Centre",
+        "Defence CBRN School"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-cbrn-centre/",
+          "title": "Defence CBRN Centre (army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Defence_CBRN_Centre",
+          "title": "Defence CBRN Centre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-jscsc",
+      "name": "Joint Services Command and Staff College",
+      "transliteration": "",
+      "short_name": "JSCSC",
+      "type": "academy",
+      "location": "Defence Academy, Shrivenham (Oxfordshire)",
+      "location_en": "Defence Academy, Shrivenham, Oxfordshire",
+      "website": "https://www.da.mod.uk/courses/advanced-command-and-staff-course/",
+      "description": {
+        "fr": "Collège d’état-major interarmées de la Defence Academy : Advanced Command and Staff Course (lié aux masters du King's College London) et Intermediate Command and Staff Course (Land).",
+        "en": "Joint staff college of the Defence Academy: the Advanced Command and Staff Course (linked to King's College London master's programmes) and the Intermediate Command and Staff Course (Land)."
+      },
+      "aliases": [
+        "Defence Academy of the United Kingdom",
+        "Defence Academy, Shrivenham"
+      ],
+      "sources": [
+        {
+          "url": "https://www.da.mod.uk/courses/advanced-command-and-staff-course/",
+          "title": "Advanced Command and Staff Course (Defence Academy)"
+        },
+        {
+          "url": "https://www.da.mod.uk/courses/",
+          "title": "Defence Academy courses (da.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Joint_Services_Command_and_Staff_College",
+          "title": "Joint Services Command and Staff College – Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "gb-dscis",
+      "name": "Defence School of Communications and Information Systems",
+      "transliteration": "",
+      "short_name": "DSCIS",
+      "type": "school",
+      "location": "Blandford Camp (Dorset)",
+      "location_en": "Blandford Camp, Dorset",
+      "website": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-school-of-communications-information-systems-dscis/",
+      "description": {
+        "fr": "École des transmissions et systèmes d’information de la Défense, qui forme notamment les spécialistes du Royal Corps of Signals (cours de base, Class 1, superviseurs).",
+        "en": "Defence school for communications and information systems, training in particular Royal Corps of Signals specialists (basic trade, Class 1 upgrader and supervisor courses)."
+      },
+      "aliases": [
+        "Defence School of Communications Information Systems",
+        "DSCIS Blandford"
+      ],
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-school-of-communications-information-systems-dscis/",
+          "title": "Defence School of Communications Information Systems (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    }
+  ]
+}

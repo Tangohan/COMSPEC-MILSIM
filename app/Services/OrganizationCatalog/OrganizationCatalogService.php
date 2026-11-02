@@ -152,6 +152,12 @@ final class OrganizationCatalogService
         return match (strtoupper(trim($code))) {
             'US_CLASSIC' => 'Système de grades américain',
             'FR_CLASSIC' => 'Système de grades français',
+            'GB_ARMY' => 'Système de grades britannique (British Army et Royal Marines)',
+            'GB_RN' => 'Système de grades britannique (Royal Navy)',
+            'GB_RAF' => 'Système de grades britannique (Royal Air Force)',
+            'GB_ARMY' => 'Système de grades britannique (British Army et Royal Marines)',
+            'GB_RN' => 'Système de grades britannique (Royal Navy)',
+            'GB_RAF' => 'Système de grades britannique (Royal Air Force)',
             'MY_CLASSIC' => 'Système de grades malaisien (Tentera Darat)',
             'MY_TLDM' => 'Système de grades malaisien (marine, TLDM)',
             'MY_TUDM' => 'Système de grades malaisien (armée de l’air, TUDM)',
@@ -519,11 +525,7 @@ final class OrganizationCatalogService
                 if (!$dryRun) {
                     $this->tenants->mergeSettings($tenantId, ['grade_system_code' => $wanted]);
                 }
-                $gradeNote = match ($wanted) {
-                    'US_CLASSIC' => 'Système de grades américain retenu.',
-                    'MY_CLASSIC', 'MY_TLDM', 'MY_TUDM' => 'Système de grades malaisien retenu.',
-                    default => 'Système de grades français retenu.',
-                };
+                $gradeNote = self::gradeSystemLabel($wanted) . ' retenu.';
             } else {
                 $gradeNote = 'Système de grades déjà en place, inchangé.';
             }
@@ -573,7 +575,7 @@ final class OrganizationCatalogService
                             'code' => $u['code'] ?? null,
                             'parent_id' => $parentId,
                             'display_order' => (int) ($u['display_order'] ?? 0),
-                        ]);
+                        ] + (isset(\App\Support\UnitMilitarySymbol::ECHELONS[(string) ($u['unit_echelon'] ?? '')]) ? ['echelon' => (string) $u['unit_echelon']] : []));
                         $newId = (int) ($created['id'] ?? 0);
                     } else {
                         $newId = 0;
