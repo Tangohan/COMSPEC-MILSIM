@@ -224,22 +224,34 @@ final class AtakNineLineBoardTest extends TestCase
         }
     }
 
-    public function testViewUsesTheBackOfficeTheme(): void
+    public function testViewFollowsTheMockupWithAMinimalHeader(): void
     {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak/nine_line_view.php');
-        self::assertStringNotContainsString('community-enlistment.css', $view, 'plus le thème du questionnaire d’enrôlement');
-        foreach (['back-office-shell.css', 'back-office-dark.css', 'effectifs-kit.css', 'atak-nine-line.css', 'back-office-theme.js'] as $asset) {
-            self::assertStringContainsString($asset, $view, $asset);
-        }
-        self::assertStringContainsString('class="bo-shell nl-page"', $view);
-        self::assertStringContainsString('class="bo-eff-workspace nl-wrap"', $view);
-        self::assertStringContainsString('data-ath-theme-toggle', $view, 'mode jour / nuit du back-office');
+        $root = dirname(__DIR__, 2);
+        $view = (string) file_get_contents($root . '/views/atak/nine_line_view.php');
+        self::assertStringNotContainsString('community-enlistment.css', $view);
+        self::assertStringNotContainsString('back-office-shell.css', $view, 'plus le thème du back-office');
+        self::assertStringNotContainsString('fonts.googleapis', $view, 'aucune dépendance externe');
+        self::assertStringContainsString('atak-nine-line.css', $view);
+        self::assertStringContainsString('class="nl-page"', $view);
         self::assertStringContainsString('Csrf::token()', $view);
-        foreach (['data-kind="cas"', 'data-kind="fiveline"', 'data-kind="medevac"', 'id="nl-free"', 'id="nl-players-only"', 'id="nl-manual-cs"', 'id="nl-jtac-cs"'] as $needle) {
+        foreach (['data-kind="cas"', 'data-kind="fiveline"', 'data-kind="medevac"', 'id="nl-free"', 'id="nl-players-only"', 'id="nl-manual-cs"', 'id="nl-jtac-cs"', 'id="nl-history"', 'id="nl-clear"', 'id="nl-submit"', 'form="nl-form"'] as $needle) {
             self::assertStringContainsString($needle, $view, $needle);
         }
-        self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/css/atak-nine-line.css');
-        self::assertStringContainsString("url('9-line')", (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/ath_sidebar_nav.php'), 'entrée 9-LINE sous ATAK');
+        // Barre du haut réduite : marque, titre, langue, compte ; aucun lien de navigation publique.
+        foreach (["url('communities')", "url('sse')", "url('atak-natif')", "url('wiki/atak')", "url('a-propos')", 'home_topbar'] as $nav) {
+            self::assertStringNotContainsString($nav, $view, $nav);
+        }
+        self::assertStringContainsString('locale_switch_url', $view);
+        self::assertStringContainsString("url('account')", $view);
+        $css = (string) file_get_contents($root . '/public/assets/css/atak-nine-line.css');
+        foreach (['../fonts/nine-line/inter-latin.woff2', '../fonts/nine-line/jetbrains-mono-latin.woff2', '../images/night-team.jpg', '--accent: #34d399'] as $needle) {
+            self::assertStringContainsString($needle, $css, $needle);
+        }
+        foreach (['inter-latin.woff2', 'inter-latin-italic-900.woff2', 'jetbrains-mono-latin.woff2'] as $font) {
+            self::assertFileExists($root . '/public/assets/fonts/nine-line/' . $font);
+        }
+        self::assertFileExists($root . '/public/assets/images/night-team.jpg');
+        self::assertStringContainsString("url('9-line')", (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php'), 'entrée 9-LINE sous ATAK');
     }
 
     public function testScriptCallsTheEndpointsWithTheToken(): void

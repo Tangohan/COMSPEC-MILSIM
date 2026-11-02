@@ -294,6 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1343, '2026-11-02', 'Page 9-LINE : nouvelle présentation, barre du haut allégée', 'La page 9-LINE (QR code et bouton de l’app JTAC) adopte une nouvelle présentation sombre, noir et vert : grand titre sur photo, chiffres de la demande en bandeau, cartes numérotées Destinataires, Rédaction et Historique, lignes en grille de deux colonnes et carte de transmission toujours visible à droite (en bas sur téléphone). La carte indique si la demande est prête ou transmise et liste les lignes obligatoires à corriger ; le texte radio se copie d’un clic, et l’aide au calcul remplit les lignes 2 et 3 depuis les grilles. La barre du haut ne garde que la marque Athena, le titre, la langue et le compte. Toutes les fonctions restent : 9-LINE, 5-LINE et MEDEVAC, saisie libre, destinataires et « Joueurs uniquement », indicatifs, accusés des pilotes, suppression et vidage de l’historique.', [
+                'Carte de transmission : état Brouillon, Prêt ou Transmis, lignes obligatoires à corriger, bouton Copier le texte radio',
+                'Aide au calcul : cap et distance IP → cible calculés en direct, bouton Appliquer',
+                'Réinitialiser avec Annuler dans la notification',
+            ], [
+                'Page 9-LINE : présentation noir et vert, polices servies par le site, lisible sur téléphone (bouton Transmettre en bas d’écran)',
+                'Barre du haut de la page réduite à la marque, au titre, à la langue et au compte',
+            ], [], ['atak'], [
+                'Rien à installer ni à lancer côté serveur.',
+                'Essai : ouvrir athena-comspec.eu/public/9-line sur ordinateur et sur téléphone, rédiger un 5-LINE, vérifier la carte de transmission, transmettre, puis l’historique.',
+            ], 'Portail Athena'),
             $pr(1342, '2026-11-02', 'Sur mon téléphone : vos apps de l’ATAK sur votre vrai téléphone', 'Avec le pack 2.9.39, les apps Comptes rendus, CR fin d’op et Carte du téléphone en jeu, et l’espace BRIEFS AIR du pilote, ont un bouton SUR MON TÉLÉPHONE. Il affiche un QR code, valable 5 minutes et pour une seule utilisation, à scanner avec son vrai téléphone : la version mobile de l’app s’ouvre sur Athena, liée au compte du joueur et à la partie en cours. On y remplit un compte rendu rapide (contact, SALUTE, SPOTREP, blessé ou libre) avec sa position du jeu ou un point choisi sur la carte, on remet son compte rendu de fin d’opération, on suit la carte de la partie (amis et marqueurs) et on y pose, modifie ou retire ses marqueurs. Le pilote ou un membre d’équipage lit ses 9-LINE et 5-LINE en grand et répond WILCO ou UNABLE. Ce qui est fait sur le vrai téléphone part dans l’ATAK du joueur en jeu, qui l’envoie comme s’il avait été rempli dedans. Le pack apporte aussi les briefs air envoyés aux pilotes depuis l’app JTAC et un rôle affiché unique, choisi dans le profil.', [
                 'Bouton SUR MON TÉLÉPHONE dans les apps Comptes rendus, CR fin d’op, Carte et dans l’espace BRIEFS AIR : QR code en grand, adresse à taper, temps restant, RÉGÉNÉRER',
                 'Pages mobiles : compte rendu rapide, CR de fin d’opération, carte de la partie, briefs air du pilote (WILCO, UNABLE, lu, alerte à l’arrivée)',
