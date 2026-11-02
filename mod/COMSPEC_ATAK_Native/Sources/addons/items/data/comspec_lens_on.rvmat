@@ -1,9 +1,0 @@
-// Objectif du projecteur allumé (fn_projector) : lueur chaude, visible de jour comme de nuit.
-ambient[]={0,0,0,1};
-diffuse[]={0,0,0,1};
-forcedDiffuse[]={0,0,0,0};
-emmisive[]={2.5,2.2,1.8,1};
-specular[]={0.8,0.8,0.8,1};
-specularPower=120;
-PixelShaderID="Normal";
-VertexShaderID="Basic";

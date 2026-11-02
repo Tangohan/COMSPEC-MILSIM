@@ -1,9 +1,0 @@
-// Écran COMSPEC éteint : dalle noire brillante, logo discret, aucune lumière propre.
-ambient[]={0.6,0.6,0.6,1};
-diffuse[]={0.6,0.6,0.6,1};
-forcedDiffuse[]={0,0,0,0};
-emmisive[]={0,0,0,1};
-specular[]={0.35,0.35,0.35,1};
-specularPower=90;
-PixelShaderID="Normal";
-VertexShaderID="Basic";
