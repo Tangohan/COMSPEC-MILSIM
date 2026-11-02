@@ -57,6 +57,20 @@ $dt = static function (?array $row, string $key) use ($h): string {
     return $ts ? $h(date('Y-m-d\TH:i', $ts)) : '';
 };
 $isEdit = $docId > 0;
+// Pré-remplissage depuis Doctrine › Référentiel (« Créer un document à partir de cette référence »).
+$fromRef = !$isEdit && is_array($fromReference ?? null) ? $fromReference : null;
+if ($fromRef !== null) {
+    $refTitle = (string) ($fromRef['title_local'] !== '' ? $fromRef['title_local'] : $fromRef['title']);
+    $document = ['title' => mb_substr($fromRef['code'] . ' — ' . $refTitle, 0, 255)];
+    $refLink = $fromRef['source_url'] !== '' ? ' <a href="' . dct_e($fromRef['source_url']) . '" rel="noopener">' . dct_e($fromRef['source_label']) . '</a>' : '';
+    $doctrine = [
+        'summary' => '',
+        'issuing_label' => '',
+        'body_html' => '<p><strong>' . (\App\Services\Doctrine\DoctrineLibraryCatalog::lang() === 'en' ? 'Reference:' : 'Référence :') . '</strong> '
+            . dct_e($fromRef['code'] . ' — ' . $fromRef['title'] . ($fromRef['issuer'] !== '' ? ' (' . $fromRef['issuer'] . ($fromRef['edition'] !== '' ? ', ' . $fromRef['edition'] : '') . ')' : ''))
+            . $refLink . '</p><p></p>',
+    ];
+}
 $stateLabel = \App\Services\Doctrine\DoctrineHubService::stateLabel(match ($status) {
     'review', 'approval' => 'review',
     'published' => 'published',
@@ -82,6 +96,10 @@ $headHtml = dct_head(
         <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
         <input type="hidden" name="document_id" value="<?= $docId ?>">
         <input type="hidden" name="action" id="doc-publish-action" value="save">
+        <?php if ($fromRef !== null): ?>
+        <input type="hidden" name="source_reference" value="<?= $h($fromRef['key']) ?>">
+        <p class="dct-flash is-ok" role="status" style="grid-column:1/-1"><?= dct_icon('book') ?><span>Pré-rempli à partir de la référence <b translate="no"><?= $h($fromRef['code']) ?></b> du référentiel doctrinal. Le document y sera rattaché à l’enregistrement.</span></p>
+        <?php endif; ?>
 
         <div style="display:grid;gap:16px;min-width:0">
             <section class="dct-form" aria-labelledby="dct-p-id">

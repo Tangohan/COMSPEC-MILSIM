@@ -1541,6 +1541,13 @@ return function (Router $router) {
     $router->post('/back-office/integrations/sse-relais/{relayId}/essai', [OrganizationIntegrationsController::class, 'testSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/doctrine/referentiel', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/referentiel', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/references', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'saveEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/references/{id}/archiver', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'archiveEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/doctrine/referentiel/references/{id}/fichier', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'file'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/masquer', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'toggleHidden'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/categories', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'saveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/categories/{id}/archiver', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'archiveCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel/rattacher', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'link'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine', [DoctrineAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/doctrine/export-lectures', [DoctrineAdminController::class, 'exportCompliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
