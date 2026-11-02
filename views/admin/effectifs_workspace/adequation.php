@@ -29,6 +29,7 @@ $profileLabels = [
     OrgAdequacySettings::PROFILE_AUTO => 'Selon la doctrine de la communauté',
     EchelonStandards::PROFILE_FR => 'Référentiel français',
     EchelonStandards::PROFILE_US => 'Référentiel américain',
+    EchelonStandards::PROFILE_GB => 'Référentiel britannique',
 ];
 $dis = $canEdit ? '' : ' disabled';
 
@@ -69,7 +70,11 @@ $multi = static function (string $name, string $id, array $options, array $selec
         'Ce que chaque échelon attend de son chef et de son adjoint : grade, qualifications de commandement, effectif et sous-unités. La chaîne de commandement, la fiche membre et les alertes RH comparent l’organisation réelle à ces attentes.',
         $backLink
     );
-    $profileName = EchelonStandards::sanitizeProfile($profile) === EchelonStandards::PROFILE_US ? 'Référentiel américain' : 'Référentiel français';
+    $profileName = match (EchelonStandards::sanitizeProfile($profile)) {
+        EchelonStandards::PROFILE_US => 'Référentiel américain',
+        EchelonStandards::PROFILE_GB => 'Référentiel britannique',
+        default => 'Référentiel français',
+    };
     ?>
 
     <section class="effk-panel">

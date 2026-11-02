@@ -651,7 +651,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertNotEmpty($body['entries']);
         self::assertSame('air_force', $body['entries'][0]['branch']);
         self::assertArrayHasKey('branch', $body['facets']);
-        self::assertSame(['US', 'FR', 'DE', 'CN', 'RU', 'NATO'], array_column($body['countries'], 'code'));
+        self::assertSame(['US', 'FR', 'DE', 'CN', 'RU', 'GB', 'NATO'], array_column($body['countries'], 'code'));
         $_GET = ['q' => 'nageur de combat', 'country' => 'FR'];
         $body = json_decode((new JobCatalogController())->catalogue(new Request())->body(), true);
         self::assertNotEmpty($body['entries']);

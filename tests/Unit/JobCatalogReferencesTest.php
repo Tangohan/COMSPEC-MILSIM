@@ -42,7 +42,7 @@ final class JobCatalogReferencesTest extends TestCase
             self::assertNotContains('reference_keys invalides', JobCatalog::problems($job), $job['id']);
         }
         self::assertSame([], $orphans, 'références orphelines');
-        self::assertSame(['US', 'FR', 'DE', 'CN', 'RU', 'NATO'], array_keys($countries));
+        self::assertSame(['US', 'FR', 'DE', 'CN', 'RU', 'GB', 'NATO'], array_keys($countries));
     }
 
     public function testJobSheetServesEachReferenceInTheReaderLanguageWithItsKind(): void

@@ -29,7 +29,7 @@ use App\Support\JobRoleIconLibrary;
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof', 'ru_sof', 'nato'];
+    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof', 'ru_sof', 'gb_sof', 'nato'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -45,6 +45,7 @@ final class JobCatalog
         'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
         'CN' => ['fr' => 'Chine', 'en' => 'China'],
         'RU' => ['fr' => 'Russie', 'en' => 'Russia'],
+        'GB' => ['fr' => 'Royaume-Uni', 'en' => 'United Kingdom'],
         // Fonctions interalliées standardisées (pas un pays) : code « NATO », emblème dessiné en CSS.
         'NATO' => ['fr' => 'OTAN', 'en' => 'NATO'],
     ];
@@ -88,6 +89,14 @@ final class JobCatalog
             'marine_corps' => ['fr' => 'Morskaya pekhota (infanterie de marine)', 'en' => 'Naval Infantry (Morskaya pekhota)'],
             'gendarmerie' => ['fr' => 'Sécurité intérieure (Rosgvardia, FSB), hors armées', 'en' => 'Internal security (Rosgvardia, FSB), not armed forces'],
             'joint' => ['fr' => 'Interarmées (KSSO, état-major général)', 'en' => 'Joint (KSSO, General Staff)'],
+        ],
+        // Royal Marines : infanterie commando de la Royal Navy (Naval Service), classée à part comme les Marines.
+        'GB' => [
+            'army' => ['fr' => 'British Army (armée de terre)', 'en' => 'British Army'],
+            'navy' => ['fr' => 'Royal Navy (marine)', 'en' => 'Royal Navy'],
+            'air_force' => ['fr' => 'Royal Air Force (armée de l’air)', 'en' => 'Royal Air Force'],
+            'marine_corps' => ['fr' => 'Royal Marines (commandos de la Royal Navy)', 'en' => 'Royal Marines'],
+            'joint' => ['fr' => 'Interarmées (UKSF, Joint Helicopter Command)', 'en' => 'Joint (UKSF, Joint Helicopter Command)'],
         ],
         'NATO' => [
             'army' => ['fr' => 'Composante terrestre (LCC)', 'en' => 'Land component (LCC)'],

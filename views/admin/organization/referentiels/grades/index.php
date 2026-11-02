@@ -2,31 +2,34 @@
 /**
  * Référentiel des grades de la communauté.
  *
- * Une liste par système (France, États-Unis), groupée par catégorie et classée du grade le plus élevé au plus bas.
+ * Une liste par système partagé (France, États-Unis, Royaume-Uni : British Army et Royal Marines, Royal Navy, Royal
+ * Air Force ; App\Support\SharedGradeSystems), groupée par catégorie et classée du grade le plus élevé au plus bas.
  * Les grades du catalogue partagé se masquent / se réaffichent (rien n'est supprimé) ; les grades créés par la
  * communauté appartiennent au système d'avancement et ont leur propre onglet (?tab=perso).
  * Les systèmes entièrement sur mesure (SCP, Star Wars…) ont l’onglet ?tab=custom (partial _custom.php).
  */
 
 use App\Support\GradeSelectOptions;
+use App\Support\SharedGradeSystems;
 
-$tab = in_array($tab ?? 'fr', ['us', 'perso', 'custom'], true) ? $tab : 'fr';
+$tab = in_array($tab ?? 'fr', [...SharedGradeSystems::tabs(), 'perso', 'custom'], true) ? $tab : 'fr';
 $customSystems = is_array($customSystems ?? null) ? $customSystems : [];
 $customCurrent = is_array($customCurrent ?? null) ? $customCurrent : null;
-$gradesFr = is_array($gradesFr ?? null) ? $gradesFr : [];
-$gradesUs = is_array($gradesUs ?? null) ? $gradesUs : [];
+$gradesBySystem = is_array($gradesBySystem ?? null) ? $gradesBySystem : [];
 $tenantExtras = is_array($tenantExtras ?? null) ? $tenantExtras : [];
 $tenantSystemCode = strtoupper(trim((string) ($tenantSystemCode ?? 'FR_CLASSIC')));
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $extrasActive = array_values(array_filter($tenantExtras, static fn (array $g): bool => empty($g['archived_at'])));
 $extrasArchived = array_values(array_filter($tenantExtras, static fn (array $g): bool => !empty($g['archived_at'])));
-$rows = $tab === 'us' ? $gradesUs : $gradesFr;
+// Système de l’onglet affiché (onglet « perso » ou « custom » : liste française, non affichée).
+$tabSystem = SharedGradeSystems::codeForTab($tab) ?? SharedGradeSystems::DEFAULT;
+$rows = is_array($gradesBySystem[$tabSystem] ?? null) ? $gradesBySystem[$tabSystem] : [];
 $visible = array_values(array_filter($rows, static fn (array $g): bool => !empty($g['is_enabled'])));
 $hidden = GradeSelectOptions::sorted(array_values(array_filter($rows, static fn (array $g): bool => empty($g['is_enabled']))));
-$groups = GradeSelectOptions::groups($visible, $tab === 'us' ? 'US' : 'FR');
-$systemName = $tab === 'us' ? 'américains' : 'français';
-$communitySystem = $customCurrent !== null ? 'custom' : (str_starts_with($tenantSystemCode, 'US') ? 'us' : 'fr');
+$groups = GradeSelectOptions::groups($visible, SharedGradeSystems::country($tabSystem));
+$systemName = SharedGradeSystems::name($tabSystem);
+$communitySystem = $customCurrent !== null ? 'custom' : SharedGradeSystems::tab($tenantSystemCode);
 $renamed = static function (array $g): bool {
     return trim((string) ($g['label_long'] ?? '')) !== trim((string) ($g['catalog_label_long'] ?? $g['label_long'] ?? ''))
         || trim((string) ($g['label_short'] ?? '')) !== trim((string) ($g['catalog_label_short'] ?? $g['label_short'] ?? ''));
@@ -45,7 +48,13 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
     </header>
 
     <nav class="grd-ref__tabs" data-grade-tabs aria-label="Systèmes de grades">
-        <?php foreach (['fr' => ['Grades français', count($gradesFr)], 'us' => ['Grades américains', count($gradesUs)], 'custom' => ['Sur mesure', count($customSystems)], 'perso' => ['Grades d’avancement', count($extrasActive)]] as $key => [$label, $count]): ?>
+        <?php
+        $tabItems = [];
+        foreach (SharedGradeSystems::all() as $sharedCode => $shared) {
+            $tabItems[$shared['tab']] = [$shared['tab_label'], count($gradesBySystem[$sharedCode] ?? [])];
+        }
+        ?>
+        <?php foreach ($tabItems + ['custom' => ['Sur mesure', count($customSystems)], 'perso' => ['Grades d’avancement', count($extrasActive)]] as $key => [$label, $count]): ?>
             <a href="<?= $h($tabUrl($key)) ?>" class="<?= $tab === $key ? 'is-active' : '' ?>" <?= $tab === $key ? 'aria-current="page"' : '' ?>>
                 <?= $h($label) ?>
                 <?php if ($key === 'perso' || ($key === 'custom' && $count > 0)): ?><span class="grd-ref__count"><?= (int) $count ?></span><?php endif; ?>
@@ -67,7 +76,7 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
         <div class="grd-ref__panel-head grd-ref__panel-head--row">
             <div>
                 <h2>Grades d’avancement créés par la communauté</h2>
-                <p>Ces grades n’existent pas dans le catalogue. Ils servent aux règles d’avancement et aux campagnes (paliers, conditions, historique). Ils ne remplacent pas les grades affichés sur les fiches : pour renommer un grade, utilisez « Renommer » dans les onglets français ou américain ; pour une échelle entièrement à vous (SCP, Star Wars…), utilisez l’onglet « Sur mesure ».</p>
+                <p>Ces grades n’existent pas dans le catalogue. Ils servent aux règles d’avancement et aux campagnes (paliers, conditions, historique). Ils ne remplacent pas les grades affichés sur les fiches : pour renommer un grade, utilisez « Renommer » dans les onglets des grades français, américains ou britanniques ; pour une échelle entièrement à vous (SCP, Star Wars…), utilisez l’onglet « Sur mesure ».</p>
             </div>
             <a class="grd-ref__btn" data-grade-edit href="<?= $h(url('back-office/referentiels/grades/create') . '?tab=perso') ?>">Créer un grade d’avancement</a>
         </div>
@@ -119,7 +128,11 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
     <?php else: ?>
 
     <?php
-    $systemLabels = ['fr' => 'grades français', 'us' => 'grades américains', 'custom' => 'grades sur mesure « ' . (string) ($customCurrent['label'] ?? '') . ' »'];
+    $systemLabels = [];
+    foreach (SharedGradeSystems::all() as $shared) {
+        $systemLabels[$shared['tab']] = $shared['name'];
+    }
+    $systemLabels += ['custom' => 'grades sur mesure « ' . (string) ($customCurrent['label'] ?? '') . ' »'];
     $otherSystem = $communitySystem === 'fr' ? 'us' : 'fr';
     $targetSystem = $tab !== $communitySystem ? $tab : $otherSystem;
     ?>
@@ -131,8 +144,8 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
         </p>
         <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>">
             <?= \App\Core\Csrf::field() ?>
-            <input type="hidden" name="grade_system_code" value="<?= $tab === 'us' ? 'US_CLASSIC' : 'FR_CLASSIC' ?>">
-            <button type="submit" class="grd-ref__switch">Afficher les <?= $h($systemLabels[$tab === 'us' ? 'us' : 'fr']) ?></button>
+            <input type="hidden" name="grade_system_code" value="<?= $h($tabSystem) ?>">
+            <button type="submit" class="grd-ref__switch">Afficher les <?= $h($systemLabels[SharedGradeSystems::tab($tabSystem)]) ?></button>
         </form>
     </div>
     <?php else: ?>
@@ -149,7 +162,7 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
         <div class="grd-ref__system-actions">
             <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>" onsubmit="return confirm('Passer la communauté aux <?= $h($systemLabels[$targetSystem]) ?> ? Les grades déjà attribués aux membres sont conservés ; les listes proposeront ensuite les <?= $h($systemLabels[$targetSystem]) ?>.');">
                 <?= \App\Core\Csrf::field() ?>
-                <input type="hidden" name="grade_system_code" value="<?= $targetSystem === 'us' ? 'US_CLASSIC' : 'FR_CLASSIC' ?>">
+                <input type="hidden" name="grade_system_code" value="<?= $h(SharedGradeSystems::codeForTab($targetSystem) ?? SharedGradeSystems::DEFAULT) ?>">
                 <button type="submit" class="grd-ref__switch">Utiliser les <?= $h($systemLabels[$targetSystem]) ?> pour la communauté</button>
             </form>
             <form method="post" action="<?= $h(url('back-office/referentiels/grades/systeme')) ?>" onsubmit="return confirm('Ne plus afficher aucun grade dans la communauté ? Rien n’est supprimé : vous pourrez les réafficher ici.');">
@@ -163,11 +176,11 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
 
     <section class="grd-ref__panel">
         <div class="grd-ref__panel-head">
-            <h2><?= count($visible) ?> grades <?= $h($systemName) ?> affichés</h2>
+            <h2><?= count($visible) ?> <?= $h($systemName) ?> affichés</h2>
             <p>Classés par catégorie, du plus élevé au plus bas. « Masquer » retire un grade des listes sans rien supprimer.</p>
         </div>
         <?php if ($groups === []): ?>
-            <p class="grd-ref__empty">Aucun grade <?= $h($systemName) ?> affiché.</p>
+            <p class="grd-ref__empty">Aucun des <?= $h($systemName) ?> n’est affiché.</p>
         <?php endif; ?>
         <?php foreach ($groups as $group): ?>
             <h3 class="grd-ref__group"><?= $h($group['label']) ?> <small><?= count($group['grades']) ?></small></h3>

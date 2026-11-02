@@ -1044,9 +1044,17 @@ class CommunityController
         $billingConfigured = $this->planPayments()->schemaReady();
         $billingProvider = 'paypal';
 
+        // Référentiels de grades proposés : français, américain, britanniques (British Army et Royal Marines, Royal Navy, RAF).
         $grades = new GradeRepository();
-        $gradesFr = $grades->listBySystemCode('FR_CLASSIC');
-        $gradesUs = $grades->listBySystemCode('US_CLASSIC');
+        $wizardGradeSystems = [];
+        foreach (\App\Support\SharedGradeSystems::all() as $gsCode => $gsDef) {
+            $wizardGradeSystems[$gsCode] = [
+                'title' => $gsDef['title'],
+                'text' => $gsDef['text'],
+                'country' => $gsDef['country'],
+                'grouped' => $this->groupGradesByCategory($grades->listBySystemCode($gsCode)),
+            ];
+        }
 
         return Response::view('layout.main', [
             'title' => 'Créer une communauté',
@@ -1054,10 +1062,7 @@ class CommunityController
             'stripeConfigured' => $billingConfigured,
             'billingConfigured' => $billingConfigured,
             'billingProvider' => $billingProvider,
-            'gradesFr' => $gradesFr,
-            'gradesUs' => $gradesUs,
-            'gradesFrGrouped' => $this->groupGradesByCategory($gradesFr),
-            'gradesUsGrouped' => $this->groupGradesByCategory($gradesUs),
+            'wizardGradeSystems' => $wizardGradeSystems,
             'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
             'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
             'orbatPresets' => WizardOrbatPresets::forWizard(),

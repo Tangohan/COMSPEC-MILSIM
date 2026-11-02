@@ -7,7 +7,7 @@ namespace App\Services\Organization;
 /**
  * Référentiel des échelons de commandement : ce qu’un échelon attend de son chef et de son adjoint.
  *
- * Pour chaque échelon (clé de UnitMilitarySymbol::ECHELONS) et chaque doctrine (américaine, française) :
+ * Pour chaque échelon (clé de UnitMilitarySymbol::ECHELONS) et chaque doctrine (américaine, française, britannique) :
  * fonction du chef, adjoint attendu ou non, plage de grades du chef et de l’adjoint (niveaux GradeLevel, codes OTAN
  * STANAG 2116), effectif de référence et sous-unités attendues.
  *
@@ -21,6 +21,11 @@ namespace App\Services\Organization;
  *   DA PAM 600-25 « U.S. Army NCO Professional Development Guide » (grades des chefs et cursus NCOES).
  * - FR : documentation publique de l’armée de Terre (defense.gouv.fr, organisation du groupe de combat et de la section
  *   d’infanterie) ; Code de la défense, art. L4131-1 (hiérarchie des grades).
+ * - GB : Infantry Battle School (army.mod.uk) : Section Commanders' Battle Course pour les chefs de section (Corporal),
+ *   Platoon Sergeants' Battle Course, Platoon Commanders' Battle Course ; Armed Forces Act 2006, Explanatory Notes, Annex B
+ *   (équivalences de grades) ; organisation publique de l’infanterie britannique (fire team de 4, section de 8, platoon
+ *   d’une trentaine, company commandée par un Major avec un Company Sergeant Major, battalion par un Lieutenant Colonel
+ *   avec un Regimental Sergeant Major).
  * - OTAN : STANAG 2116 (codes OR / OF qui rendent les grades des deux systèmes comparables).
  */
 final class EchelonStandards
@@ -28,6 +33,8 @@ final class EchelonStandards
     public const PROFILE_US = 'us';
 
     public const PROFILE_FR = 'fr';
+
+    public const PROFILE_GB = 'gb';
 
     /** Échelons voisins évalués avec le référentiel d’un échelon équivalent (même marque sur le symbole). */
     public const ALIASES = [
@@ -39,7 +46,7 @@ final class EchelonStandards
     /** @return list<string> */
     public static function profiles(): array
     {
-        return [self::PROFILE_FR, self::PROFILE_US];
+        return [self::PROFILE_FR, self::PROFILE_US, self::PROFILE_GB];
     }
 
     public static function sanitizeProfile(mixed $raw): string
@@ -74,7 +81,11 @@ final class EchelonStandards
      */
     public static function all(string $profile): array
     {
-        return self::sanitizeProfile($profile) === self::PROFILE_US ? self::american() : self::french();
+        return match (self::sanitizeProfile($profile)) {
+            self::PROFILE_US => self::american(),
+            self::PROFILE_GB => self::british(),
+            default => self::french(),
+        };
     }
 
     /** @return array<string, mixed>|null */
@@ -110,6 +121,34 @@ final class EchelonStandards
             'regiment' => self::def('regiment', 6, 'Regiment', 'Regimental commander', [14, 14], 'Command sergeant major ou executive officer', true, false, [9, 13], [1500, 3500], ['bataillon'], [2, 4],
                 'Un état-major et plusieurs bataillons (ordre de grandeur : le régiment n’est plus un échelon type de l’infanterie américaine).',
                 '', ['Ordre de grandeur, à ajuster par la communauté']),
+        ];
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    private static function british(): array
+    {
+        $ibs = 'Infantry Battle School, Brecon (army.mod.uk) : SCBC, PSBC, PCBC';
+        $afa = 'Armed Forces Act 2006, Explanatory Notes, Annex B (legislation.gov.uk) ; STANAG 2116';
+
+        return [
+            'equipe' => self::def('equipe', 1, 'Fire team', 'Fire team commander (Lance Corporal)', [3, 3], 'Aucun adjoint : le Lance Corporal commande seul son équipe', false, false, null, [4, 4], [], [0, 0],
+                'Plus petite cellule de combat : quatre soldats sous un Lance Corporal. Deux par section.',
+                'Junior NCO cadre (Lance Corporal)', [$ibs, $afa]),
+            'groupe' => self::def('groupe', 2, 'Section', 'Section commander (Corporal)', [4, 4], 'Section second-in-command (Lance Corporal)', true, true, [3, 3], [8, 8], ['equipe'], [2, 2],
+                'Un Corporal chef de section, un Lance Corporal adjoint et deux fire teams de quatre (Charlie et Delta).',
+                'Section Commanders’ Battle Course (Junior Brecon)', [$ibs, $afa]),
+            'section' => self::def('section', 3, 'Platoon', 'Platoon commander (Second Lieutenant ou Lieutenant)', [10, 10], 'Platoon Sergeant (Sergeant)', true, false, [6, 6], [27, 35], ['groupe'], [3, 3],
+                'Un quartier général de peloton (platoon commander, platoon sergeant, radio, parfois mortier léger ou tireur d’élite) et trois sections.',
+                'Platoon Commanders’ Battle Course ; Platoon Sergeants’ Battle Course (Senior Brecon) pour le platoon sergeant', [$ibs, $afa]),
+            'compagnie' => self::def('compagnie', 4, 'Company', 'Officer Commanding (Major)', [12, 12], 'Company second-in-command (Captain) et Company Sergeant Major (WO2)', true, false, [8, 11], [90, 130], ['section'], [3, 4],
+                'Un quartier général de compagnie (OC, 2IC, CSM, CQMS) et trois platoons.',
+                'Company Sergeant Major : Warrant Officer Class 2', [$afa]),
+            'bataillon' => self::def('bataillon', 5, 'Battalion', 'Commanding Officer (Lieutenant Colonel)', [13, 13], 'Battalion second-in-command (Major) et Regimental Sergeant Major (WO1)', true, false, [9, 12], [500, 700], ['compagnie'], [4, 6],
+                'Un quartier général, une headquarters company, une support company (mortiers, antichars, reconnaissance, tireurs d’élite) et trois compagnies de fusiliers.',
+                'Regimental Sergeant Major : Warrant Officer Class 1', [$afa]),
+            'regiment' => self::def('regiment', 6, 'Regiment', 'Commanding Officer (Lieutenant Colonel)', [13, 14], 'Second-in-command (Major) et Regimental Sergeant Major (WO1)', true, false, [9, 12], [400, 800], ['compagnie', 'bataillon'], [3, 6],
+                'Dans l’armée britannique, un régiment d’armes (cavalerie, artillerie, génie, transmissions) a la taille d’un bataillon : squadrons ou batteries ; un régiment d’infanterie regroupe plusieurs bataillons.',
+                '', ['Ordre de grandeur, à ajuster par la communauté', $afa]),
         ];
     }
 

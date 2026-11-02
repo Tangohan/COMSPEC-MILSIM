@@ -44,7 +44,7 @@ final class RealUnitKitDefinitionsTest extends TestCase
             self::assertStringNotContainsString('"tenant_id"', (string) json_encode($kit));
             self::assertNotSame('', trim((string) $kit['title']), $code);
             self::assertNotSame('', trim((string) $kit['summary']), $code);
-            self::assertContains($kit['origin']['country'], ['US', 'FR', 'DE'], $code);
+            self::assertContains($kit['origin']['country'], ['US', 'FR', 'DE', 'GB'], $code);
             self::assertNotSame('', (string) $kit['origin']['branch'], $code);
             self::assertNotSame('', (string) $kit['origin']['command'], $code);
             self::assertNotEmpty($kit['sources'], $code);
@@ -148,7 +148,7 @@ final class RealUnitKitDefinitionsTest extends TestCase
     public function testDisplayGroupsAndSearch(): void
     {
         $groups = OrganizationKitDefinitions::displayGroups(OrganizationKitDefinitions::officialKits(), 'fr');
-        self::assertSame(['generic', 'US', 'FR', 'DE'], array_column($groups, 'key'));
+        self::assertSame(['generic', 'US', 'FR', 'DE', 'GB'], array_column($groups, 'key'));
         self::assertSame('États-Unis', $groups[1]['label']);
         self::assertSame(['joint', 'army', 'navy', 'air_force', 'marine_corps'], array_column($groups[1]['branches'], 'key'));
         self::assertSame(count(OrganizationKitDefinitions::officialKits()), array_sum(array_column($groups, 'count')));
