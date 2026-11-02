@@ -10,21 +10,50 @@ use App\Support\JobRoleIconLibrary;
 /**
  * Catalogue d’emplois de référence (inspiration à la création d’un emploi) : fichiers versionnés
  * config/job_catalog/<pack>.json, un par pays ou par armée. Chaque entrée est bilingue (fr / en) et servie dans la
- * langue du lecteur, sans passer par le dictionnaire du site. Ajouter un pack = déposer le fichier et l’inscrire
- * dans PACKS.
+ * langue du lecteur, sans passer par le dictionnaire du site. Ajouter un pays = déposer le fichier, l’inscrire dans
+ * PACKS et donner son nom dans COUNTRIES (et, si besoin, les libellés de ses armées dans BRANCH_LABELS).
  *
- * Format d’un pack : { pack, country, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ; une entrée :
- * id, branch, command, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation, description{fr,en},
- * qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
+ * Format d’un pack : { pack, country, official_lang, label{fr,en}, compiled_at, sources_note{fr,en}, entries[] } ;
+ * une entrée : id, branch, command, formation, unit{fr,en}, type, code, code_system, name{fr,en}, abbreviation,
+ * description{fr,en}, qualifications{fr[],en[]}, billets{fr[],en[]}, icon, tags{fr[],en[]}, sources[{url,title}].
+ * official_lang : langue des appellations officielles du pays (« en » par défaut) ; formation : unité courte
+ * (« 1er RPIMa », « CPA 10 »), facultative, proposée comme filtre sous le commandement.
  */
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof'];
+    public const PACKS = ['us_sof', 'fr_sof'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
-    public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'joint'];
-    public const CODE_SYSTEMS = ['', 'MOS', 'WO_MOS', 'AOC', 'AFSC', 'NEC', 'RATING', 'DESIGNATOR'];
+    public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
+    public const CODE_SYSTEMS = ['', 'MOS', 'WO_MOS', 'AOC', 'AFSC', 'NEC', 'RATING', 'DESIGNATOR', 'SPECIALITE'];
+
+    /** Filtres exacts de la recherche, dans l’ordre de la fenêtre (pays → armée → commandement → unité → type). */
+    public const FILTERS = ['country', 'branch', 'command', 'formation', 'type', 'pack'];
+
+    /** Pays des packs, dans l’ordre d’affichage des catégories (code ISO 3166-1 alpha-2). */
+    public const COUNTRIES = [
+        'US' => ['fr' => 'États-Unis', 'en' => 'United States'],
+        'FR' => ['fr' => 'France', 'en' => 'France'],
+    ];
+
+    /** Armées d’un pays ; une armée absente reprend le libellé générique de LABELS['branch']. */
+    private const BRANCH_LABELS = [
+        'US' => [
+            'army' => ['fr' => 'US Army (armée de terre)', 'en' => 'US Army'],
+            'navy' => ['fr' => 'US Navy (marine)', 'en' => 'US Navy'],
+            'air_force' => ['fr' => 'US Air Force (armée de l’air)', 'en' => 'US Air Force'],
+            'marine_corps' => ['fr' => 'US Marine Corps', 'en' => 'US Marine Corps'],
+            'joint' => ['fr' => 'Interarmées (USSOCOM)', 'en' => 'Joint (USSOCOM)'],
+        ],
+        'FR' => [
+            'army' => ['fr' => 'Armée de Terre', 'en' => 'French Army'],
+            'navy' => ['fr' => 'Marine nationale', 'en' => 'French Navy'],
+            'air_force' => ['fr' => 'Armée de l’Air et de l’Espace', 'en' => 'French Air and Space Force'],
+            'gendarmerie' => ['fr' => 'Gendarmerie nationale', 'en' => 'French Gendarmerie'],
+            'joint' => ['fr' => 'Interarmées (COS)', 'en' => 'Joint (COS)'],
+        ],
+    ];
 
     /** Libellés des filtres, contenus du catalogue (langue du lecteur). */
     private const LABELS = [
@@ -35,10 +64,11 @@ final class JobCatalog
             'aviation' => ['fr' => 'Aviation', 'en' => 'Aviation'],
         ],
         'branch' => [
-            'army' => ['fr' => 'US Army (armée de terre)', 'en' => 'US Army'],
-            'navy' => ['fr' => 'US Navy (marine)', 'en' => 'US Navy'],
-            'air_force' => ['fr' => 'US Air Force (armée de l’air)', 'en' => 'US Air Force'],
-            'marine_corps' => ['fr' => 'US Marine Corps', 'en' => 'US Marine Corps'],
+            'army' => ['fr' => 'Armées de terre', 'en' => 'Armies'],
+            'navy' => ['fr' => 'Marines', 'en' => 'Navies'],
+            'air_force' => ['fr' => 'Armées de l’air', 'en' => 'Air forces'],
+            'marine_corps' => ['fr' => 'Infanterie de marine (Marine Corps)', 'en' => 'Marine Corps'],
+            'gendarmerie' => ['fr' => 'Gendarmerie', 'en' => 'Gendarmerie'],
             'joint' => ['fr' => 'Interarmées', 'en' => 'Joint'],
         ],
         'code_system' => [
@@ -50,6 +80,7 @@ final class JobCatalog
             'NEC' => ['fr' => 'NEC (qualification Navy)', 'en' => 'NEC'],
             'RATING' => ['fr' => 'Rating (spécialité Navy)', 'en' => 'Rating'],
             'DESIGNATOR' => ['fr' => 'Désignateur d’officier Navy', 'en' => 'Navy officer designator'],
+            'SPECIALITE' => ['fr' => 'Spécialité', 'en' => 'French specialty'],
         ],
     ];
 
@@ -101,7 +132,7 @@ final class JobCatalog
         foreach (self::packs() as $pack => $data) {
             foreach ($data['entries'] as $entry) {
                 if (is_array($entry)) {
-                    $out[] = $entry + ['pack' => $pack, 'country' => (string) ($data['country'] ?? '')];
+                    $out[] = $entry + ['pack' => $pack, 'country' => (string) ($data['country'] ?? ''), 'official_lang' => self::lang((string) ($data['official_lang'] ?? 'en'))];
                 }
             }
         }
@@ -144,6 +175,37 @@ final class JobCatalog
         return self::LABELS[$kind][$key][self::lang($lang)] ?? $key;
     }
 
+    /** Armée d’un pays (« Marine nationale », « US Navy ») ; libellé générique pour un pays sans libellé propre. */
+    public static function branchLabel(string $country, string $branch, string $lang): string
+    {
+        return self::BRANCH_LABELS[$country][$branch][self::lang($lang)] ?? self::label('branch', $branch, $lang);
+    }
+
+    public static function countryLabel(string $country, string $lang): string
+    {
+        return self::COUNTRIES[$country][self::lang($lang)] ?? $country;
+    }
+
+    /** @return list<array{code: string, label: string, count: int}> pays livrés, dans l’ordre de COUNTRIES */
+    public static function countries(string $lang): array
+    {
+        $counts = [];
+        foreach (self::rawEntries() as $entry) {
+            $c = (string) ($entry['country'] ?? '');
+            $counts[$c] = ($counts[$c] ?? 0) + 1;
+        }
+        $order = array_flip(array_keys(self::COUNTRIES));
+        uksort($counts, static fn (string $a, string $b): int => [$order[$a] ?? 99, $a] <=> [$order[$b] ?? 99, $b]);
+        $out = [];
+        foreach ($counts as $code => $count) {
+            if ($code !== '') {
+                $out[] = ['code' => (string) $code, 'label' => self::countryLabel((string) $code, $lang), 'count' => $count];
+            }
+        }
+
+        return $out;
+    }
+
     /**
      * Entrée dans la langue du lecteur, prête pour l’affichage et la copie dans un emploi.
      *
@@ -153,6 +215,8 @@ final class JobCatalog
     public static function localize(array $entry, string $lang): array
     {
         $lang = self::lang($lang);
+        $other = $lang === 'en' ? 'fr' : 'en';
+        $country = (string) ($entry['country'] ?? '');
         $branch = (string) ($entry['branch'] ?? '');
         $type = (string) ($entry['type'] ?? '');
         $icon = (string) ($entry['icon'] ?? '');
@@ -167,10 +231,12 @@ final class JobCatalog
         return [
             'id' => (string) ($entry['id'] ?? ''),
             'pack' => (string) ($entry['pack'] ?? ''),
-            'country' => (string) ($entry['country'] ?? ''),
+            'country' => $country,
+            'country_label' => self::countryLabel($country, $lang),
             'branch' => $branch,
-            'branch_label' => self::label('branch', $branch, $lang),
+            'branch_label' => self::branchLabel($country, $branch, $lang),
             'command' => (string) ($entry['command'] ?? ''),
+            'formation' => trim((string) ($entry['formation'] ?? '')),
             'unit' => self::pick($entry['unit'] ?? '', $lang),
             'type' => $type,
             'type_label' => self::label('type', $type, $lang),
@@ -178,7 +244,9 @@ final class JobCatalog
             'code_system' => (string) ($entry['code_system'] ?? ''),
             'code_system_label' => self::label('code_system', (string) ($entry['code_system'] ?? ''), $lang),
             'name' => self::pick($entry['name'] ?? '', $lang),
-            'official_name' => self::pick($entry['name'] ?? '', 'en'),
+            'official_name' => self::pick($entry['name'] ?? '', (string) ($entry['official_lang'] ?? 'en')),
+            // Recherche seulement (pas affiché) : nom, unité, brevets et étiquettes dans l’autre langue.
+            'alt' => implode(' ', array_merge([self::pick($entry['name'] ?? '', $other), self::pick($entry['unit'] ?? '', $other)], self::pickList($entry['qualifications'] ?? [], $other), self::pickList($entry['tags'] ?? [], $other))),
             'abbreviation' => (string) ($entry['abbreviation'] ?? ''),
             'description' => self::pick($entry['description'] ?? '', $lang),
             'qualifications' => self::pickList($entry['qualifications'] ?? [], $lang),
@@ -222,20 +290,21 @@ final class JobCatalog
     /** Texte cherché d’une entrée : noms, abrégé, code, unité, commandement, branche et étiquettes dans les deux langues. */
     public static function haystack(array $entry): string
     {
-        $parts = [(string) ($entry['id'] ?? ''), (string) ($entry['abbreviation'] ?? ''), (string) ($entry['code'] ?? ''), (string) ($entry['command'] ?? '')];
+        $parts = [(string) ($entry['id'] ?? ''), (string) ($entry['abbreviation'] ?? ''), (string) ($entry['code'] ?? ''), (string) ($entry['command'] ?? ''), (string) ($entry['formation'] ?? '')];
         foreach (['name', 'unit'] as $field) {
             foreach (['fr', 'en'] as $l) {
                 $parts[] = self::pick($entry[$field] ?? '', $l);
             }
         }
-        foreach (['tags'] as $field) {
+        foreach (['tags', 'qualifications'] as $field) {
             foreach (['fr', 'en'] as $l) {
                 $parts[] = implode(' ', self::pickList($entry[$field] ?? [], $l));
             }
         }
         foreach (['fr', 'en'] as $l) {
-            $parts[] = self::label('branch', (string) ($entry['branch'] ?? ''), $l);
+            $parts[] = self::branchLabel((string) ($entry['country'] ?? ''), (string) ($entry['branch'] ?? ''), $l);
             $parts[] = self::label('type', (string) ($entry['type'] ?? ''), $l);
+            $parts[] = self::countryLabel((string) ($entry['country'] ?? ''), $l);
         }
         $code = (string) ($entry['code'] ?? '');
 
@@ -244,10 +313,10 @@ final class JobCatalog
     }
 
     /**
-     * Recherche plein texte (tous les mots, sans accents ni casse) et filtres exacts. Le nom et l’abrégé exacts
-     * passent en tête.
+     * Recherche plein texte tous pays (tous les mots, sans accents ni casse ; noms, unités, brevets et étiquettes dans
+     * les deux langues) et filtres exacts combinables. Le nom et l’abrégé exacts passent en tête.
      *
-     * @param array{branch?: string, command?: string, type?: string, pack?: string} $filters
+     * @param array{country?: string, branch?: string, command?: string, formation?: string, type?: string, pack?: string} $filters
      * @return list<array<string, mixed>>
      */
     public static function search(string $query, array $filters, string $lang): array
@@ -255,19 +324,20 @@ final class JobCatalog
         $words = array_values(array_filter(explode(' ', self::normalize($query)), static fn (string $w): bool => $w !== ''));
         $hits = [];
         foreach (self::rawEntries() as $position => $entry) {
-            foreach (['branch', 'command', 'type', 'pack'] as $f) {
+            foreach (self::FILTERS as $f) {
                 $want = trim((string) ($filters[$f] ?? ''));
                 if ($want !== '' && (string) ($entry[$f] ?? '') !== $want) {
                     continue 2;
                 }
             }
             $hay = self::haystack($entry);
+            $name = ' ' . self::normalize(self::pick($entry['name'] ?? '', self::lang($lang))) . ' ';
             $score = 0;
             foreach ($words as $word) {
                 if (!str_contains($hay, $word)) {
                     continue 2;
                 }
-                $score += str_contains($hay, ' ' . $word . ' ') ? 2 : 1;
+                $score += (str_contains($hay, ' ' . $word . ' ') ? 2 : 1) + (str_contains($name, ' ' . $word) ? 1 : 0);
             }
             $abbr = strtolower((string) ($entry['abbreviation'] ?? ''));
             $code = strtolower((string) ($entry['code'] ?? ''));
@@ -282,16 +352,34 @@ final class JobCatalog
         return array_map(static fn (array $h): array => self::localize($h[2], $lang), $hits);
     }
 
-    /** @return array{branch: array<string, string>, command: array<string, string>, type: array<string, string>, pack: array<string, string>} */
-    public static function facets(string $lang): array
+    /**
+     * Valeurs des filtres. Une armée présente dans un seul pays prend le libellé de ce pays (« Marine nationale »),
+     * sinon le libellé générique (« Marines »).
+     *
+     * @param array<string, string> $filters filtres déjà choisis (ex. ['country' => 'FR']) : seules les valeurs encore possibles
+     * @return array{country: array<string, string>, branch: array<string, string>, command: array<string, string>, formation: array<string, string>, type: array<string, string>, pack: array<string, string>}
+     */
+    public static function facets(string $lang, array $filters = []): array
     {
-        $out = ['branch' => [], 'command' => [], 'type' => [], 'pack' => []];
+        $out = ['country' => [], 'branch' => [], 'command' => [], 'formation' => [], 'type' => [], 'pack' => []];
+        $branchCountries = [];
         foreach (self::rawEntries() as $entry) {
+            foreach (self::FILTERS as $f) {
+                $want = trim((string) ($filters[$f] ?? ''));
+                if ($want !== '' && (string) ($entry[$f] ?? '') !== $want) {
+                    continue 2;
+                }
+            }
+            $country = (string) ($entry['country'] ?? '');
             $branch = (string) ($entry['branch'] ?? '');
             $type = (string) ($entry['type'] ?? '');
             $command = (string) ($entry['command'] ?? '');
+            $formation = trim((string) ($entry['formation'] ?? ''));
+            if ($country !== '') {
+                $out['country'][$country] = self::countryLabel($country, $lang);
+            }
             if ($branch !== '') {
-                $out['branch'][$branch] = self::label('branch', $branch, $lang);
+                $branchCountries[$branch][$country] = true;
             }
             if ($type !== '') {
                 $out['type'][$type] = self::label('type', $type, $lang);
@@ -299,11 +387,20 @@ final class JobCatalog
             if ($command !== '') {
                 $out['command'][$command] = $command;
             }
+            if ($formation !== '') {
+                $out['formation'][$formation] = $formation;
+            }
+        }
+        foreach ($branchCountries as $branch => $countries) {
+            $out['branch'][$branch] = count($countries) === 1 ? self::branchLabel((string) array_key_first($countries), $branch, $lang) : self::label('branch', $branch, $lang);
         }
         foreach (self::packs() as $pack => $data) {
             $out['pack'][$pack] = self::pick($data['label'] ?? $pack, self::lang($lang));
         }
+        $countryOrder = array_flip(array_keys(self::COUNTRIES));
+        uksort($out['country'], static fn (string $a, string $b): int => ($countryOrder[$a] ?? 99) <=> ($countryOrder[$b] ?? 99));
         ksort($out['command']);
+        ksort($out['formation'], SORT_NATURAL | SORT_FLAG_CASE);
         $order = array_flip(array_merge(self::BRANCHES, self::TYPES));
         foreach (['branch', 'type'] as $k) {
             uksort($out[$k], static fn (string $a, string $b): int => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
@@ -312,7 +409,7 @@ final class JobCatalog
         return $out;
     }
 
-    /** @return list<array{pack: string, label: string, country: string, compiled_at: string, sources_note: string, count: int}> */
+    /** @return list<array{pack: string, label: string, country: string, country_label: string, compiled_at: string, sources_note: string, count: int}> */
     public static function packSummaries(string $lang): array
     {
         $out = [];
@@ -321,6 +418,7 @@ final class JobCatalog
                 'pack' => $pack,
                 'label' => self::pick($data['label'] ?? $pack, self::lang($lang)),
                 'country' => (string) ($data['country'] ?? ''),
+                'country_label' => self::countryLabel((string) ($data['country'] ?? ''), $lang),
                 'compiled_at' => (string) ($data['compiled_at'] ?? ''),
                 'sources_note' => self::pick($data['sources_note'] ?? '', self::lang($lang)),
                 'count' => count($data['entries']),
@@ -354,6 +452,9 @@ final class JobCatalog
         }
         if (trim((string) ($entry['command'] ?? '')) === '') {
             $p[] = 'commandement manquant';
+        }
+        if (mb_strlen(trim((string) ($entry['formation'] ?? ''))) > 40) {
+            $p[] = 'formation trop longue';
         }
         foreach (['name' => 120, 'description' => 500, 'unit' => 200] as $field => $max) {
             foreach (['fr', 'en'] as $l) {
