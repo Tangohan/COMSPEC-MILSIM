@@ -53663,4 +53663,7 @@ return [
     'Armée de terre' => 'Army',
     'Armée de l’air' => 'Air Force',
     'Interarmées' => 'Joint',
+    'Facultatif : affichée aux membres qui lisent le site en anglais.' => 'Optional: shown to members who read the site in English.',
+    'Localisation :' => 'Location:',
+    'Site officiel :' => 'Official website:',
 ];

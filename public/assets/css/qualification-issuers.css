@@ -298,3 +298,10 @@ html[data-bo-theme="dark"] .qis-wiz__err { color: #f08a8a; }
 
 /* Tout élément masqué le reste, même quand le kit lui donne un display (boutons, notes). */
 .qis-page [hidden] { display: none !important; }
+
+/* Pays (fiche et modification de l’émetteur) */
+.qis-countries { display: flex; flex-wrap: wrap; gap: .4rem; }
+.qis-country-opt { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .6rem; border: 1px solid var(--effk-line, #d0d5dd); border-radius: 999px; cursor: pointer; }
+.qis-country-opt:has(input:checked) { border-color: currentColor; font-weight: 600; }
+.qis-country-opt .qcat-flag { width: 1.2rem; height: auto; }
+.qis-facts { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; list-style: none; padding: 0; margin: 0 0 1rem; }

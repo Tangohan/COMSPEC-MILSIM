@@ -243,8 +243,9 @@ final class QualificationIssuerCatalog
      * jeu, nom d’origine, type, localisation, site officiel, sources.
      *
      * @param array<string, mixed> $issuer émetteur brut
+     * @param bool $details lignes localisation et site officiel (schéma sans les colonnes de l’étape 3680)
      */
-    public static function description(array $issuer, string $lang): string
+    public static function description(array $issuer, string $lang, bool $details = true): string
     {
         $l = self::localize($issuer, $lang);
         $en = QualificationCatalog::lang($lang) === 'en';
@@ -254,10 +255,10 @@ final class QualificationIssuerCatalog
         if ($l['transliteration'] !== '') {
             $lines[] = ($en ? 'Transliteration: ' : 'Transcription : ') . $l['transliteration'];
         }
-        if ($l['location'] !== '') {
+        if ($details && $l['location'] !== '') {
             $lines[] = ($en ? 'Location: ' : 'Localisation : ') . $l['location'];
         }
-        if ($l['website'] !== '') {
+        if ($details && $l['website'] !== '') {
             $lines[] = ($en ? 'Official website: ' : 'Site officiel : ') . $l['website'];
         }
         if ($l['sources'] !== []) {

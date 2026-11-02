@@ -81,8 +81,12 @@ final class QualificationReferenceWriter
         return $out;
     }
 
-    /** Émetteur trouvé par son nom, ou créé (module Émetteurs) ; null sans table des émetteurs. */
-    public function ensureIssuer(int $tenantId, string $name, string $shortName, string $kind, string $description, ?int $actorId): ?int
+    /**
+     * Émetteur trouvé par son nom, ou créé (module Émetteurs) ; null sans table des émetteurs.
+     *
+     * @param array<string, string> $extra colonnes de l’étape 3680 (issuer_key, country_code…), écrites si présentes
+     */
+    public function ensureIssuer(int $tenantId, string $name, string $shortName, string $kind, string $description, ?int $actorId, array $extra = []): ?int
     {
         if (!$this->has('qualification_issuers')) {
             return null;
@@ -102,6 +106,12 @@ final class QualificationReferenceWriter
         if ($this->has('qualification_issuers', 'created_by')) {
             $cols[] = 'created_by';
             $vals[] = $actorId;
+        }
+        foreach ($extra as $col => $val) {
+            if (preg_match('/^[a-z_]{2,40}$/', (string) $col) === 1 && $this->has('qualification_issuers', (string) $col)) {
+                $cols[] = (string) $col;
+                $vals[] = $val === '' ? null : $val;
+            }
         }
         $this->pdo->prepare('INSERT INTO qualification_issuers (' . implode(', ', $cols) . ') VALUES (' . implode(', ', array_fill(0, count($cols), '?')) . ')')->execute($vals);
 

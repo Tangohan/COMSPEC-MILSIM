@@ -308,15 +308,7 @@ final class QualificationReferentielController
                 return $this->issuerReply($json, false, 'Le site officiel doit être une adresse complète, par exemple https://www.exemple.fr.', url(self::ISSUERS) . '#nouvel-emetteur', [], 422);
             }
             try {
-                $payload = $this->issuerPayload($request);
-                $payload['description'] = IssuerDetails::compose([
-                    'description' => $request->input('description'),
-                    'description_en' => $request->input('description_en'),
-                    'country' => $request->input('country'),
-                    'location' => $request->input('location'),
-                    'website' => $website,
-                ]);
-                $id = $this->issuerRepo()->create($tenantId, $payload, $this->actorId());
+                $id = $this->issuerRepo()->create($tenantId, $this->issuerPayload($request), $this->actorId());
                 $warning = $this->saveIssuerExtras($tenantId, $id, $request);
                 if ($warning !== null && !$json) {
                     Session::flash('error', $warning);
@@ -641,6 +633,7 @@ final class QualificationReferentielController
             return $tenantId;
         }
         $repo = $this->issuerRepo();
+        // Filtres pays / type appliqués dans la page (?pays=, ?type=) : la liste complète est envoyée.
         $issuers = $repo->listForTenant($tenantId);
         $logoUrls = [];
         foreach ($issuers as $i) {
@@ -658,8 +651,8 @@ final class QualificationReferentielController
         $issuerMeta = [];
         foreach ($issuers as $i) {
             $iid = (int) $i['id'];
-            $key = $keyOf[$iid] ?? '';
-            $country = $key !== '' ? (string) (QualificationIssuerCatalog::find($key)['country'] ?? '') : IssuerDetails::country((string) ($i['description'] ?? ''));
+            $key = (string) ($i['issuer_key'] ?? '') !== '' ? (string) $i['issuer_key'] : ($keyOf[$iid] ?? '');
+            $country = (string) ($i['country_code'] ?? '') !== '' ? (string) $i['country_code'] : ($key !== '' ? (string) (QualificationIssuerCatalog::find($key)['country'] ?? '') : '');
             $issuerMeta[$iid] = [
                 'origin' => $key !== '' ? 'catalog' : 'custom',
                 'country' => $country,
@@ -829,6 +822,8 @@ final class QualificationReferentielController
             'enriched' => $repo->enrichedReady(),
             'linkReady' => $repo->linkReady(),
             'authorizationsReady' => $repo->authorizationsReady(),
+            'countries' => QualificationCatalog::COUNTRIES,
+            'lang' => QualificationCatalog::lang(function_exists('locale') ? (string) locale() : 'fr'),
         ]);
     }
 
@@ -845,6 +840,12 @@ final class QualificationReferentielController
             }
             if (trim((string) $request->input('name', '')) === '') {
                 Session::flash('error', 'Le nom de l’émetteur est obligatoire.');
+
+                return Response::redirect($back . '#modifier');
+            }
+            $website = trim((string) $request->input('website', ''));
+            if ($website !== '' && !IssuerDetails::validWebsite($website)) {
+                Session::flash('error', 'Le site officiel doit être une adresse complète, par exemple https://www.exemple.fr.');
 
                 return Response::redirect($back . '#modifier');
             }
@@ -944,6 +945,10 @@ final class QualificationReferentielController
             'issuer_kind' => (string) $request->input('issuer_kind', 'unit'),
             'parent_issuer_id' => $request->input('parent_issuer_id'),
             'description' => $request->input('description'),
+            'description_en' => $request->input('description_en'),
+            'country_code' => $request->input('country'),
+            'location' => $request->input('location'),
+            'website_url' => $request->input('website'),
             'unit_id' => $request->input('unit_id'),
             'signatory_name' => $request->input('signatory_name'),
             'signatory_title' => $request->input('signatory_title'),

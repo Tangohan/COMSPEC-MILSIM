@@ -98,8 +98,26 @@ $attachedCount = count(array_filter($linkedDefinitions, static fn (array $d): bo
             <button type="submit" class="effk-btn is-sm">Réactiver</button>
         </form>
     <?php endif; ?>
-    <?php if (trim((string) ($issuer['description'] ?? '')) !== ''): ?>
-        <p class="qis-lead"><?= nl2br(effk_e((string) $issuer['description'])) ?></p>
+    <?php
+    $showLang = (string) ($lang ?? 'fr');
+    $showDesc = trim((string) ($issuer['description'] ?? ''));
+    $showDescEn = trim((string) ($issuer['description_en'] ?? ''));
+    if ($showLang === 'en' && $showDescEn !== '') {
+        $showDesc = $showDescEn;
+    }
+    $showCountry = (string) ($issuer['country_code'] ?? '');
+    $showLoc = trim((string) ($issuer['location'] ?? ''));
+    $showWeb = trim((string) ($issuer['website_url'] ?? ''));
+    ?>
+    <?php if ($showDesc !== ''): ?>
+        <p class="qis-lead"><?= nl2br(effk_e($showDesc)) ?></p>
+    <?php endif; ?>
+    <?php if ($showCountry !== '' || $showLoc !== '' || $showWeb !== ''): ?>
+    <ul class="qis-facts" role="list">
+        <?php if ($showCountry !== ''): ?><li><span class="qis-country"><?= \App\Support\QualificationCatalog\CatalogCountry::flag($showCountry) ?> <span><?= effk_e(\App\Support\QualificationCatalog\QualificationCatalog::countryLabel($showCountry, $showLang)) ?></span></span></li><?php endif; ?>
+        <?php if ($showLoc !== ''): ?><li>Localisation : <?= effk_e($showLoc) ?></li><?php endif; ?>
+        <?php if ($showWeb !== ''): ?><li>Site officiel : <a href="<?= effk_e($showWeb) ?>" rel="noopener noreferrer" target="_blank"><?= effk_e((string) (parse_url($showWeb, PHP_URL_HOST) ?: $showWeb)) ?></a></li><?php endif; ?>
+    </ul>
     <?php endif; ?>
 
     <?= effk_stats([

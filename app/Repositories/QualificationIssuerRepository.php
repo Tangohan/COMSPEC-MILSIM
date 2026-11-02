@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\Migrations\SchemaInspector;
+use App\Support\QualificationCatalog\IssuerDetails;
+use App\Support\QualificationCatalog\QualificationCatalog;
 use PDO;
 use Throwable;
 
@@ -38,12 +41,7 @@ final class QualificationIssuerRepository
         $key = $table . '.' . $column;
         if (!isset($this->columnCache[$key])) {
             try {
-                $st = $this->pdo()->prepare(
-                    'SELECT 1 FROM information_schema.COLUMNS
-                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
-                );
-                $st->execute([$table, $column]);
-                $this->columnCache[$key] = (bool) $st->fetchColumn();
+                $this->columnCache[$key] = (new SchemaInspector($this->pdo()))->columnExists($table, $column);
             } catch (Throwable) {
                 $this->columnCache[$key] = false;
             }
@@ -57,11 +55,7 @@ final class QualificationIssuerRepository
         $key = $table . '.*';
         if (!isset($this->columnCache[$key])) {
             try {
-                $st = $this->pdo()->prepare(
-                    'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
-                );
-                $st->execute([$table]);
-                $this->columnCache[$key] = (bool) $st->fetchColumn();
+                $this->columnCache[$key] = (new SchemaInspector($this->pdo()))->tableExists($table);
             } catch (Throwable) {
                 $this->columnCache[$key] = false;
             }
@@ -74,6 +68,42 @@ final class QualificationIssuerRepository
     public function enrichedReady(): bool
     {
         return $this->hasColumn('qualification_issuers', 'archived_at');
+    }
+
+    /** Étape 3680 appliquée : pays, localisation, site, présentation anglaise et clé du catalogue en colonnes. */
+    public function fieldsReady(): bool
+    {
+        return $this->hasColumn('qualification_issuers', 'country_code');
+    }
+
+    /** Code pays du catalogue (US, FR, NATO…) ou null. */
+    public static function normalizeCountry(mixed $code): ?string
+    {
+        $code = strtoupper(trim((string) ($code ?? '')));
+
+        return isset(QualificationCatalog::COUNTRIES[$code]) ? $code : null;
+    }
+
+    /**
+     * Lecture de repli : détails encore écrits en lignes dans la présentation (avant l’étape 3680, ou ligne restante)
+     * reportés dans les champs vides ; la présentation lue n’en garde que le texte libre.
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    public static function withFields(array $row): array
+    {
+        $split = IssuerDetails::split((string) ($row['description'] ?? ''));
+        foreach (['country_code', 'location', 'website_url', 'description_en'] as $f) {
+            if (trim((string) ($row[$f] ?? '')) === '') {
+                $row[$f] = $split[$f];
+            }
+        }
+        $row['description'] = $split['description'];
+        $row['issuer_key'] = (string) ($row['issuer_key'] ?? '');
+        $row['issuer_type'] = (string) ($row['issuer_type'] ?? '');
+
+        return $row;
     }
 
     public function linkReady(): bool
@@ -91,8 +121,11 @@ final class QualificationIssuerRepository
         return in_array($kind, self::KINDS, true) ? $kind : 'unit';
     }
 
-    /** @return list<array<string, mixed>> */
-    public function listForTenant(int $tenantId): array
+    /**
+     * @param array{country?: string, kind?: string} $filters pays (code du catalogue) et type d’émetteur
+     * @return list<array<string, mixed>>
+     */
+    public function listForTenant(int $tenantId, array $filters = []): array
     {
         if (!$this->hasTable('qualification_issuers')) {
             return [];
@@ -106,11 +139,19 @@ final class QualificationIssuerRepository
         try {
             $st = $this->pdo()->prepare($sql);
             $st->execute([$tenantId]);
-
-            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $rows = array_map([self::class, 'withFields'], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
         } catch (Throwable) {
             return [];
         }
+        $country = self::normalizeCountry($filters['country'] ?? null);
+        $kind = trim((string) ($filters['kind'] ?? ''));
+        $kind = in_array($kind, self::KINDS, true) ? $kind : '';
+        if ($country === null && $kind === '') {
+            return $rows;
+        }
+
+        return array_values(array_filter($rows, static fn (array $r): bool => ($country === null || $r['country_code'] === $country)
+            && ($kind === '' || (string) $r['issuer_kind'] === $kind)));
     }
 
     /** @return array<string, mixed>|null */
@@ -127,7 +168,8 @@ final class QualificationIssuerRepository
 
     /**
      * @param array<string, mixed> $data name, short_name, issuer_kind, parent_issuer_id, description, unit_id,
-     *                                   signatory_name, signatory_title
+     *                                   signatory_name, signatory_title, country_code, location, website_url,
+     *                                   description_en, issuer_key, issuer_type
      */
     public function create(int $tenantId, array $data, ?int $actorId = null): int
     {
@@ -146,6 +188,12 @@ final class QualificationIssuerRepository
             }
             $cols[] = 'created_by';
             $vals[] = $actorId;
+        }
+        if ($this->fieldsReady()) {
+            $cols[] = 'issuer_key';
+            $vals[] = self::nullableText($data['issuer_key'] ?? null, 80);
+            $cols[] = 'issuer_type';
+            $vals[] = self::nullableText($data['issuer_type'] ?? null, 30);
         }
         $st = $this->pdo()->prepare(
             'INSERT INTO qualification_issuers (' . implode(', ', $cols) . ') VALUES ('
@@ -486,12 +534,32 @@ final class QualificationIssuerRepository
      */
     private function detailValues(array $data): array
     {
-        return [
+        $out = [
             'description' => self::nullableText($data['description'] ?? null, 2000),
             'unit_id' => self::nullableId($data['unit_id'] ?? null),
             'signatory_name' => self::nullableText($data['signatory_name'] ?? null, 150),
             'signatory_title' => self::nullableText($data['signatory_title'] ?? null, 150),
         ];
+        if ($this->fieldsReady()) {
+            $website = trim((string) ($data['website_url'] ?? ''));
+            $out += [
+                'country_code' => self::normalizeCountry($data['country_code'] ?? null),
+                'location' => self::nullableText($data['location'] ?? null, 200),
+                'website_url' => $website !== '' && IssuerDetails::validWebsite($website) ? mb_substr($website, 0, 300) : null,
+                'description_en' => self::nullableText($data['description_en'] ?? null, 2000),
+            ];
+        } else {
+            // Schéma antérieur à l’étape 3680 : détails écrits en lignes dans la présentation (repli déprécié).
+            $out['description'] = self::nullableText(IssuerDetails::compose([
+                'description' => $data['description'] ?? '',
+                'description_en' => $data['description_en'] ?? '',
+                'country' => $data['country_code'] ?? '',
+                'location' => $data['location'] ?? '',
+                'website' => $data['website_url'] ?? '',
+            ]), 2000);
+        }
+
+        return $out;
     }
 
     private static function nullableText(mixed $v, int $max): ?string

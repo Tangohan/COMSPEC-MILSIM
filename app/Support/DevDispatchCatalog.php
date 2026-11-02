@@ -294,6 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1338, '2026-11-02', 'Émetteurs des qualifications : pays, localisation et site dans des champs à part', 'Le pays, la localisation, le site officiel et la présentation en anglais d’un émetteur ont maintenant leurs propres champs, au lieu d’être écrits à la suite de sa présentation. La fiche de l’émetteur les affiche à part (drapeau, lieu, lien vers le site) et le formulaire de modification les propose séparément, avec le pays à choisir dans une liste avec drapeaux. Les émetteurs existants sont repris automatiquement : les détails sont retirés de la présentation, qui garde son texte, et les émetteurs réels importés sont reliés à leur fiche du catalogue.', [
+                'Modifier un émetteur : pays (liste avec drapeaux), localisation, site officiel, présentation en français et en anglais',
+                'Fiche de l’émetteur : pays, localisation et site officiel affichés à part ; présentation anglaise pour les membres qui lisent le site en anglais',
+            ], [
+                'Liste des émetteurs : le filtre par pays s’appuie sur le pays enregistré',
+                'Émetteurs réels importés : reliés à leur fiche du catalogue, retrouvés même après un changement de nom',
+            ], [], ['personnel', 'platform'], [
+                'L’administrateur lance run-migrations.php (étape qualification_issuer_fields) : les détails des émetteurs existants passent dans les nouveaux champs.',
+                'Essai : Référentiels › Qualifications › Émetteurs, ouvrez un émetteur créé ou importé : pays, localisation et site apparaissent à part, et la présentation ne les répète plus.',
+            ], 'Portail'),
             $pr(1337, '2026-11-02', 'Page 9-LINE : rédaction, appareils en l’air et historique', 'La page 9-LINE (athena-comspec.eu/public/9-line, QR code et bouton de l’app JTAC) est refaite au thème du questionnaire d’enrôlement. Le 9-LINE se rédige ligne par ligne, en CAS ou en MEDEVAC, avec une aide et un contrôle sur chaque ligne et le calcul du cap et de la distance depuis l’IP et la cible. Les aéronefs avec équipage remontés par le jeu s’affichent avec leur pilote et leur équipage (indicatif, puis prénom et initiale du nom quand le membre est reconnu), leur position, leur altitude, leur état et l’heure de la dernière remontée ; on coche le ou les appareils destinataires. Une carte de transmission récapitule la demande à lire à la radio. L’historique permet de reprendre un 9-LINE dans le formulaire, de le supprimer (son auteur ou un responsable) et, pour un responsable, de vider l’historique d’une carte ou de toutes.', [
                 'Page 9-LINE : formulaire ligne par ligne (CAS ou MEDEVAC), lignes obligatoires signalées, brouillon gardé dans le navigateur, bouton Réinitialiser le formulaire',
                 'Appareils remontés par le jeu : indicatif, appareil, grille, altitude, cap, carburant, pilote et équipage, état (en vol, au sol, signal perdu) ; choix des destinataires',
