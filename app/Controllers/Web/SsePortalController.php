@@ -4043,6 +4043,7 @@ final class SsePortalController
             ],
             'timeline' => $timeline,
             'provenance' => [],
+            'idPapers' => SseIdentityRegistryController::personPapers($this->tenantId(), $id),
             'canManage' => $this->canManage(),
             'activeNav' => 'identites',
         ]);
