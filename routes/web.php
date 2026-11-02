@@ -1695,8 +1695,13 @@ return function (Router $router) {
     $router->get('/back-office/rh/avancement', [AdvancementAdminController::class, 'campaigns'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/rh/avancement/create', [AdvancementAdminController::class, 'campaignCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/store', [AdvancementAdminController::class, 'campaignStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/reglages', [AdvancementAdminController::class, 'proposalSettingsSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/rh/avancement/{id}', [AdvancementAdminController::class, 'campaignShow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/candidatures', [AdvancementAdminController::class, 'candidacyStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/propositions/retenir', [AdvancementAdminController::class, 'proposalAccept'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/propositions/retenir-tout', [AdvancementAdminController::class, 'proposalAcceptAll'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/propositions/ecarter', [AdvancementAdminController::class, 'proposalDismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/rh/avancement/{id}/propositions/retablir', [AdvancementAdminController::class, 'proposalRestore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/reverifier', [AdvancementAdminController::class, 'recheck'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/cloturer', [AdvancementAdminController::class, 'closeCampaign'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/rh/avancement/{id}/commission', [AdvancementAdminController::class, 'openCommission'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
