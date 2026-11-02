@@ -179,6 +179,21 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertSame($hits, array_column(JobCatalog::search('Fallschirmjäger', ['country' => 'DE'], 'fr'), 'id'));
         self::assertSame($hits, array_column(JobCatalog::search('fallschirmjaeger', ['country' => 'DE'], 'fr'), 'id'));
         self::assertContains('de-marine-ksm-kampfschwimmer', array_column(JobCatalog::search('kampfschwimmer', [], 'en'), 'id'));
+        // Noms par langue : officiel d’abord, puis la langue du lecteur, puis l’anglais (US : anglais officiel + français).
+        $kf = $byId['de-heer-ksk-kommandofeldwebel']['name'];
+        self::assertSame(['de' => $kf['de'], 'fr' => $kf['fr'], 'en' => $kf['en']], JobCatalog::find('de-heer-ksk-kommandofeldwebel', 'fr')['names']);
+        self::assertSame(['de' => $kf['de'], 'en' => $kf['en'], 'fr' => $kf['fr']], JobCatalog::find('de-heer-ksk-kommandofeldwebel', 'en')['names']);
+        $us = array_values(array_filter(JobCatalog::rawEntries(), static fn (array $e): bool => $e['country'] === 'US'))[0];
+        self::assertSame(['en', 'fr'], array_keys(JobCatalog::find((string) $us['id'], 'fr')['names']));
+        $fr = array_values(array_filter(JobCatalog::rawEntries(), static fn (array $e): bool => $e['country'] === 'FR'))[0];
+        self::assertSame(['fr', 'en'], array_keys(JobCatalog::find((string) $fr['id'], 'en')['names']));
+        self::assertSame(['fr', 'en'], array_keys(JobCatalog::find((string) $fr['id'], 'fr')['names']));
+        // Recherche dans les trois langues, quelle que soit la langue du lecteur.
+        foreach ([$kf['de'], $kf['fr'], $kf['en']] as $q) {
+            foreach (['fr', 'en'] as $reader) {
+                self::assertContains('de-heer-ksk-kommandofeldwebel', array_column(JobCatalog::search($q, ['country' => 'DE'], $reader), 'id'), $q . ' / ' . $reader);
+            }
+        }
     }
 
     public function testContentIsServedInTheReadersLanguageAndSearchCoversCodesNamesUnitsAndFilters(): void
