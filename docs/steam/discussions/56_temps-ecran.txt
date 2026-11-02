@@ -1,0 +1,95 @@
+[APP] Temps d'écran — temps passé sur le téléphone, par app et par rôle, envoyé à Athena
+
+[h1]Temps d'écran[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Comme le bien-être numérique d'Android : combien de temps votre téléphone est resté affiché (en main ou porté dans un coin), dans quelles apps, et combien de temps vous avez tenu chaque rôle (pilote, chef d'équipe…). Ces temps remontent sur votre fiche Athena.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système : Temps d'écran (pas dans le dock par défaut).
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]CETTE MISSION[/b] : temps d'écran de la mission, avec la part en main et la part porté ; temps de jeu ; les 12 apps les plus utilisées (barre, durée, part du total). Section Athena : dernier envoi, temps en attente, qui envoie le temps de jeu et les rôles (ce téléphone, ou le serveur « même sans batterie ni réseau »), bouton [b]ENVOYER MAINTENANT[/b].
+[*][b]AUJOURD'HUI[/b] : temps d'écran du jour sur ce PC, toutes missions confondues, et les 12 apps les plus utilisées.
+[*][b]RÔLES[/b] : le rôle que vous tenez en ce moment et le temps passé dans chaque rôle pendant la mission (poste d'équipage, sinon rôle d'équipe de feu, sinon spécialité ou slot). [b]CHOISIR MON RÔLE[/b] ouvre l'app Groupe sur l'équipe de feu.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]En fin de mission, ouvrez Temps d'écran, onglet [b]CETTE MISSION[/b] : vous voyez par exemple 42 min d'écran, dont 30 min porté.
+[*]Regardez quelles apps vous ont occupé le plus (Carte, Messages…).
+[*]Onglet [b]RÔLES[/b] : vérifiez le temps compté comme chef d'équipe ou pilote.
+[*]Touchez [b]ENVOYER MAINTENANT[/b] avant de quitter si vous voulez que tout parte tout de suite.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list][*][b]COMSPEC › ATAK · Équipes et suivi › Temps d'écran et temps par rôle[/b] (serveur) : décoché, rien n'est compté et l'app l'annonce en tête.[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : envoi toutes les 5 min sur votre fiche de membre. Ce qui n'a pas pu partir (pas de liaison, plantage, déconnexion) est gardé sur ce PC et renvoyé à la mission suivante.
+[*][b]Serveur[/b] : le temps de jeu et les rôles sont comptés par le serveur, même si votre téléphone est cassé, vide ou sans réseau.
+[*][b]Groupe[/b] : le rôle d'équipe de feu choisi dans Groupe compte dans RÔLES.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]L'écran ne compte pas quand vous êtes mort ou en pause.
+[*]AUJOURD'HUI est propre à ce PC : il repart à zéro chaque jour.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Like Android's digital wellbeing: how long your phone was on screen (in hand or carried in a corner), in which apps, and how long you held each role (pilot, team leader…). These times are sent to your Athena member card.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category: Screen time (not in the dock by default).
+[*]If you uninstalled it, the App Store reinstalls it.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]THIS MISSION[/b]: screen time for the mission, split into in hand and carried; play time; the 12 most used apps (bar, duration, share of total). Athena section: last sent, pending time, who sends play time and roles (this phone, or the server "even without battery or network"), [b]SEND NOW[/b] button.
+[*][b]TODAY[/b]: today's screen time on this PC, all missions combined, and the 12 most used apps.
+[*][b]ROLES[/b]: the role you currently hold and the time spent in each role during the mission (crew position, otherwise fire team role, otherwise specialty or slot). [b]CHOOSE MY ROLE[/b] opens the Squad app on the fire team.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]At the end of a mission, open Screen time, [b]THIS MISSION[/b] tab: you see for example 42 min of screen time, 30 min of it carried.
+[*]Check which apps kept you busiest (Map, Messages…).
+[*][b]ROLES[/b] tab: check the time counted as team leader or pilot.
+[*]Tap [b]SEND NOW[/b] before leaving if you want everything sent right away.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list][*][b]COMSPEC › ATAK · Teams and tracking › Screen time and time per role[/b] (server): unticked, nothing is counted and the app says so at the top.[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: sent every 5 min to your member card. What could not be sent (no link, crash, disconnect) is kept on this PC and sent at the next mission.
+[*][b]Server[/b]: play time and roles are counted by the server, even if your phone is broken, flat or without network.
+[*][b]Squad[/b]: the fire team role chosen in Squad counts in ROLES.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Screen time does not count while you are dead or paused.
+[*]TODAY is specific to this PC: it starts again from zero every day.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

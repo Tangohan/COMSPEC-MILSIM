@@ -1,0 +1,89 @@
+[APP] Sniper — solution de tir longue distance : élévation et dérive en MRAD / MOA, télémètre, vent, table de tir
+
+[h1]Sniper[/h1]
+[i]Catégorie : Spécialités · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Calculer la correction d'un tir à longue distance avec l'arme que vous tenez : élévation et dérive (en MRAD et en MOA), temps de vol et vitesse à l'impact, à partir de la distance de la cible, de l'angle de site et du vent, plus une table de tir complète. L'écran s'appelle « Tireur d'élite » dans l'app.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Spécialités[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Arme détectée[/b] : arme en main et chargeur courant (sinon le premier chargeur de l'arme), avec vitesse initiale (V0) et zérotage lus sur l'arme. Sans arme chargée, l'app le dit.
+[*][b]Solution[/b] : élévation en MRAD depuis votre zéro (et en MOA), dérive en MRAD et MOA avec le sens de la correction (« corrigez à GAUCHE » ou « à DROITE »), temps de vol et vitesse à l'impact.
+[*][b]Distance de la cible (m)[/b] : saisie puis [b]CALCULER[/b], ou [b]TÉLÉMÉTRER[/b] : le point visé par votre arme (jusqu'à 3 km) donne la distance et l'angle de site ; la chute est alors calculée sur la distance horizontale.
+[*][b]Vent[/b] : vent du jeu projeté sur votre axe de tir (travers et face, avec sa force et sa direction), ou vent [b]SAISI[/b] en m/s, venant de [b]GAUCHE (9 h)[/b] ou de [b]DROITE (3 h)[/b] (source [b]JEU[/b] ou [b]SAISI[/b]).
+[*][b]Table de tir[/b] : tous les 100 m jusqu'à la portée utile de la munition (600 à 2 000 m) : élévation MRAD et MOA, dérive pour le vent affiché, temps de vol, vitesse ; la ligne la plus proche de votre distance est surlignée. Recalculée seulement quand l'arme, la munition ou le zérotage change.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Arme en main, zérotez la lunette comme d'habitude, ouvrez l'app.
+[*]Visez la cible et [b]TÉLÉMÉTRER[/b] (ou saisissez la distance et [b]CALCULER[/b]).
+[*]Gardez le vent [b]JEU[/b] ou passez en [b]SAISI[/b] si vous l'estimez vous-même.
+[*]Affichez l'élévation et la dérive dans la lunette, puis tirez.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b] : l'app utilise le modèle balistique d'Arma ; avec la balistique avancée d'ACE, préférez l'ATragMX pour les très longues distances (l'app le rappelle).
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]La dérive due au vent suit la règle du retard (vent travers × écart entre temps de vol réel et dans le vide) : c'est une estimation, pas une simulation ACE.
+[*]CALCULER après une saisie remet l'angle de site à zéro ; retélémétrez pour un tir en pente.
+[*]Le télémètre ne renvoie rien au-delà de 3 km.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Compute the correction for a long-range shot with the weapon you hold: elevation and windage (in MRAD and MOA), time of flight and impact velocity, from target distance, slope angle and wind, plus a full range card. The screen is titled "Sniper" in the app.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Specialized[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Detected weapon[/b]: weapon in hand and current magazine (otherwise the weapon's first magazine), with muzzle velocity (V0) and zeroing read from the weapon. Without a loaded weapon, the app says so.
+[*][b]Solution[/b]: elevation in MRAD from your zero (and in MOA), windage in MRAD and MOA with the correction side (correct LEFT or RIGHT), time of flight and impact velocity.
+[*][b]Target distance (m)[/b]: type it then [b]CALCULATE[/b], or [b]RANGEFIND[/b]: the point aimed by your weapon (up to 3 km) gives the distance and the slope angle; drop is then computed on the horizontal distance.
+[*][b]Wind[/b]: [b]Game wind[/b] projected on your line of fire (cross and head wind, with its strength and direction), or [b]ENTERED[/b] wind in m/s, [b]Coming from[/b] [b]LEFT (9 o'clock)[/b] or [b]RIGHT (3 o'clock)[/b] (source game or entered).
+[*][b]Range card[/b]: every 100 m up to the ammunition's useful range (600 to 2,000 m): elevation MRAD and MOA, windage for the displayed wind, time of flight, velocity; the row closest to your distance is highlighted. Recomputed only when weapon, ammunition or zeroing changes.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Weapon in hand, zero the scope as usual, open the app.
+[*]Aim at the target and [b]RANGEFIND[/b] (or type the distance and [b]CALCULATE[/b]).
+[*]Keep the game wind or switch to [b]ENTERED[/b] if you estimate it yourself.
+[*]Dial the elevation and windage in the scope, then fire.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b]: the app uses Arma's ballistic model; with ACE advanced ballistics, prefer the ATragMX for very long ranges (the app reminds you).
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Wind drift follows the lag rule (cross wind × difference between real and vacuum time of flight): an estimate, not an ACE simulation.
+[*]CALCULATE after typing resets the slope angle to zero; rangefind again for a sloped shot.
+[*]The rangefinder returns nothing beyond 3 km.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

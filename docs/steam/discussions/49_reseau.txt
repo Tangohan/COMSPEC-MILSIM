@@ -1,0 +1,135 @@
+[APP] Réseau — chemin de la liaison, relais, radio de données MPU5, débit simulé et état du téléphone
+
+[i]Message 1/2[/i]
+[h1]Réseau[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+L'app Réseau explique pourquoi votre téléphone passe bien, mal ou pas du tout. Elle montre le chemin de vos données jusqu'à Athena, les relais et passerelles autour de vous, votre radio de données MPU5, le débit simulé, ce qui attend d'être envoyé et l'état matériel du téléphone. La page se met à jour seule toutes les 5 secondes tant qu'elle est affichée.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système.
+[*]Volet rapide (clic sur l'heure ou la batterie dans la barre d'état) : tuile Réseau.
+[*]Réglages, section Athéna et synchronisation : bouton [b]DÉTAIL[/b].
+[/list]
+
+[h3]Fonctions[/h3]
+Chaque section se replie (chevron) ; les quatre premières sont ouvertes par défaut et votre choix est gardé.
+[list]
+[*][b]Chemin de la liaison[/b] : schéma Téléphone → porteur (antenne interne, relais, passerelle de véhicule, MPU5…) → COMSPEC Link → Athena, chaque saut avec sa couleur d'état, sa distance et ses barres de signal (mode avion, aucun relais, Athena hors ligne…).
+[*][b]Radio de données[/b] (si la liaison téléphone-radio réaliste est active) : MPU5 sur vous ou posée, liaison au téléphone (câble EUD ou Wi-Fi avec distance), canal, puissance, batterie, maillage, débit et latence estimés. Boutons ALLUMER / ÉTEINDRE, [b]PUISSANCE[/b], CANAL − et CANAL +, [b]CÂBLE EUD[/b], WI-FI, [b]DÉBRANCHER[/b], BATTERIE (avec une batterie de rechange).
+[*][b]Voix radio par le maillage[/b] (si le réglage serveur est actif) : radio ACRE2 ou TFAR reliée à la MPU5, état et équipiers joignables ; boutons RELIER (une de vos radios) et [b]DÉBRANCHER LA RADIO[/b].
+[*][b]Indicateurs[/b] : tuiles Stabilité, Latence, Perte de paquets, Paquets envoyés, Dernière position envoyée à Athena, Réponse Athena.
+[*][b]Passerelles et relais[/b] : jusqu'à 10 relais radio, passerelles de véhicule, postes de commandement et MPU5 d'équipiers de votre camp, avec distance, portée, débit, fréquence, perte, latence et santé. Celui utilisé est marqué [b]CONNECTÉ[/b], les autres donnent leur raison (hors portée, détruit, éteint, brouillé…). Ligne Maillage Wave Relay (passerelle, nombre de sauts).
+[*][b]Zone radio[/b] : zone de couverture de la mission, perte minimale, latence ajoutée, liaison instable simulée, relais utilisé ; boutons [b]MESURER LA LATENCE[/b] et [b]ROUVRIR LE CANAL[/b].
+[*][b]Débit du téléphone[/b] : qualité, débit, latence, perte, temps estimé pour une photo (600 Ko) et pour un message, envois en attente de réseau, et ce qui gêne (bâtiment, relief, météo, brouillage…).
+[*][b]Hors connexion[/b] : en ligne ou hors connexion depuis combien de temps, dernière synchro, envois en file, reçus en attente au relais.
+[*][b]Synchronisation avec Athena[/b] : volume envoyé et reçu, requêtes, latence moyenne, réponses inchangées ; seul ce qui change est envoyé.
+[*][b]File d'envoi Athena[/b] : envois en file et en cours, nouveaux essais et échecs.
+[*][b]État du téléphone[/b] : écran et boîtier, usure, batterie, autonomie, consommation par poste ; boutons [b]TEST DE DÉBIT[/b] et [b]REDÉMARRER[/b].
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Vos messages ne partent plus : ouvrez Réseau.
+[*]Chemin de la liaison : repérez le saut en rouge (par exemple « aucun relais à portée »).
+[*]Passerelles et relais : lisez la raison du relais le plus proche et rapprochez-vous, ou montez dans un véhicule passerelle.
+[*]Avec une MPU5 : section Radio de données, branchez le CÂBLE EUD et allumez-la.
+[*]TEST DE DÉBIT pour vérifier ; vos envois en file partent au retour du réseau.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Réseau réaliste[/b] (serveur) : décoché, réseau parfait partout et section Débit marquée « simulation coupée ».
+[*][b]COMSPEC › ATAK · Simulation › Mode hors connexion[/b] (serveur) : rétention des envois et réceptions sans réseau.
+[*][b]COMSPEC › ATAK · Simulation › Réseau uniquement par les relais[/b] (serveur) : loin de tout relais, plus de réseau.
+[*][b]COMSPEC › ATAK · Simulation › La météo gêne le réseau[/b], [b]Saturation du réseau[/b], [b]Véhicules relais et PC mobile[/b] et les portées et débits des relais (serveur).
+[*][b]COMSPEC › ATAK · Radio de données (MPU5) › Liaison téléphone-radio réaliste[/b], [b]Radio de données obligatoire[/b], [b]Voix ACRE/TFAR relayée par le maillage MPU5[/b] (serveur) : font apparaître les sections Radio de données et Voix.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b] : réparation par l'action « Réparer le téléphone ATAK » avec une trousse à outils, ou « Changer de téléphone ATAK » avec un appareil de rechange. La MPU5 se règle aussi par le menu ACE Téléphone ATAK > Radio de données.
+[*][b]ACRE / TFAR[/b] : nécessaires pour la section Voix radio par le maillage.
+[*][b]Athena[/b] : Indicateurs, Zone radio, Synchronisation et File d'envoi décrivent la liaison au portail.
+[*][b]Mode avion[/b] : coupe tout le réseau, affiché dans le chemin de la liaison.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les relais affichés sont ceux de votre camp que la mission déclare ; sans aucun relais, la section le dit.
+[*]Si COMSPEC Overwatch n'est pas chargé, relais, zones et simulations ne sont pas disponibles.
+[*]Les valeurs sont simulées : elles reflètent le terrain du jeu, pas votre connexion internet.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The Network app explains why your phone gets through well, badly or not at all. It shows the path of your data to Athena, the relays and gateways around you, your MPU5 data radio, the simulated throughput, what is waiting to be sent and the phone's hardware state. The page refreshes by itself every 5 seconds while on screen.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] brings the phone to a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category.
+[*]Quick panel (click the clock or battery in the status bar): Network tile.
+[*]Settings, Athena and sync section: [b]DETAIL[/b] button.
+[/list]
+
+[h3]Features[/h3]
+Each section folds (chevron); the first four are open by default and your choice is kept.
+[list]
+[*][b]Link path[/b]: diagram Phone → carrier (internal antenna, relay, vehicle gateway, MPU5…) → COMSPEC Link → Athena, each hop with its state colour, distance and signal bars (airplane mode, no relay, Athena offline…).
+[*][b]Data radio[/b] (when the realistic phone-radio link is on): MPU5 on you or placed, link to the phone (EUD cable or Wi-Fi with distance), channel, power, battery, mesh, estimated throughput and latency. On / [b]TURN OFF[/b] button, [b]POWER[/b], CHANNEL − and CHANNEL +, [b]EUD CABLE[/b], WI-FI, [b]UNPLUG[/b], BATTERY (with a spare battery).
+[*][b]Radio voice over the mesh[/b] (when the server setting is on): ACRE2 or TFAR radio bridged to the MPU5, state and reachable teammates; LINK buttons (one of your radios) and [b]UNPLUG THE RADIO[/b].
+[*][b]Indicators[/b]: tiles Stability, Latency, Packet loss, Packets sent, Last position sent to Athena, Athena response.
+[*][b]Gateways and relays[/b]: up to 10 radio relays, vehicle gateways, command posts and teammates' MPU5 on your side, with distance, range, throughput, frequency, loss, latency and health. The one in use is marked [b]CONNECTED[/b], the others give their reason (out of range, destroyed, off, jammed…). Wave Relay mesh line (gateway, number of hops).
+[*][b]Radio zone[/b]: the mission's coverage zone, minimum loss, added latency, degraded link simulation, relay in use; buttons [b]MEASURE LATENCY[/b] and [b]REOPEN CHANNEL[/b].
+[*][b]Phone throughput[/b]: quality, throughput, latency, loss, estimated time for a photo (600 KB) and for a message, sends waiting for network, and what is in the way (building, terrain, weather, jamming…).
+[*][b]Offline[/b]: online, or offline for how long, last sync, queued sends, received items waiting at the relay.
+[*][b]Sync with Athena[/b]: volume sent and received, requests, average latency, unchanged replies; only what changes is sent.
+[*][b]Athena send queue[/b]: queued and in-progress sends, retries and failures.
+[*][b]Phone status[/b]: screen and case, wear, battery, battery life, consumption per item; buttons [b]THROUGHPUT TEST[/b] and [b]RESTART[/b].
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Your messages no longer go out: open Network.
+[*]Link path: find the hop in red (for example "no relay in range").
+[*]Gateways and relays: read the reason for the nearest relay and move closer, or get into a gateway vehicle.
+[*]With an MPU5: Data radio section, plug the EUD CABLE and switch it on.
+[*]THROUGHPUT TEST to check; your queued sends go out when the network returns.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Simulated network throughput[/b] (server): unchecked, perfect network everywhere and the throughput section reads "simulation off".
+[*][b]COMSPEC › ATAK · Simulation › Offline operation[/b] (server): sends and receptions held while there is no network.
+[*][b]COMSPEC › ATAK · Simulation › Network through relays only[/b] (server): away from every relay, no network at all.
+[*][b]COMSPEC › ATAK · Simulation › Weather on the network[/b], [b]Network congestion[/b], [b]Vehicle gateways and mobile CP[/b] and relay ranges and throughputs (server).
+[*][b]COMSPEC › ATAK · Data radio (MPU5) › Realistic phone-radio link[/b], [b]Data radio required[/b], [b]ACRE/TFAR voice relayed over the MPU5 mesh[/b] (server): these make the Data radio and Voice sections appear.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b]: repair with the ACE action "Repair ATAK phone" and a toolkit, or "Swap ATAK phone" with a spare device. The MPU5 can also be set from the ACE menu ATAK phone > Data radio.
+[*][b]ACRE / TFAR[/b]: required for the Radio voice over the mesh section.
+[*][b]Athena[/b]: Indicators, Radio zone, Sync and Send queue describe the link to the portal.
+[*][b]Airplane mode[/b]: cuts the whole network, shown in the link path.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The relays shown are those of your side declared by the mission; with no relay at all, the section says so.
+[*]If COMSPEC Overwatch is not loaded, relays, zones and simulations are unavailable.
+[*]Values are simulated: they reflect in-game terrain, not your internet connection.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

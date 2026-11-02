@@ -341,4 +341,25 @@ final class InviteLinkTest extends TestCase
             self::assertTrue($this->links->consumeUse(self::OWN, $id));
         }
     }
+
+    public function testBackOfficePagesLoadAthStylesheets(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/RecruitmentInviteLinksController.php');
+        self::assertStringContainsString("'recruitmentAthUi' => true", $ctrl, 'sans ce drapeau, back-office-shell.css n’est pas chargé');
+        $css = (string) file_get_contents($root . '/public/assets/css/back-office-shell.css')
+            . (string) file_get_contents($root . '/public/assets/css/recruitment_offers_ath.css');
+        $views = glob($root . '/views/admin/organization/recruitment_invite_links/*.php') ?: [];
+        self::assertNotEmpty($views);
+        foreach ($views as $view) {
+            preg_match_all('/class="([^"<]*)"/', (string) file_get_contents($view), $m);
+            foreach ($m[1] as $list) {
+                foreach (preg_split('/\s+/', trim($list)) ?: [] as $cls) {
+                    if (str_starts_with($cls, 'ath-')) {
+                        self::assertMatchesRegularExpression('/\.' . preg_quote($cls, '/') . '\b/', $css, basename($view) . ' : ' . $cls);
+                    }
+                }
+            }
+        }
+    }
 }

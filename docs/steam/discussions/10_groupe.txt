@@ -1,0 +1,105 @@
+[APP] Groupe — membres, équipes de feu, rôles, indicatif et changement de groupe
+
+[i]Message 1/2[/i]
+[h1]Groupe[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Voir et gérer votre groupe Arma depuis le téléphone : qui en fait partie, où sont les membres et dans quel état, les équipes de feu et les rôles de chacun, votre indicatif. L'app permet aussi de rejoindre un autre groupe de votre camp ou de quitter le vôtre. Ce qui est réglé ici est visible par tout le camp (carte, BFT, Inter-team).
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] et dans le dock en bas de l'écran d'accueil. Si elle a été désinstallée, l'App Store permet de la réinstaller. Autre accès : le bouton [b]GÉRER MES ÉQUIPES[/b] de l'app [b]Inter-team[/b] ouvre directement l'onglet ÉQUIPES.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Onglet MON GROUPE[/b] : fiche du groupe (symbole OTAN, nom, type, effectif, nombre d'équipes, chef, ouvert ou fermé), puis un bandeau de bilan (APTES / BLESSÉS / HORS DE COMBAT si l'état médical des alliés est visible, et la distance du membre le plus loin).
+[*][b]Membres[/b] : chef d'abord, puis vous, puis du plus proche au plus loin. Pour chacun : photo ou initiale aux couleurs de son équipe, rôle, état (Apte, Blessé, Inconscient, Mort), distance et direction (« 340 m NE »). Boutons [b]SMS[/b] (ouvre Messages), [b]CARTE[/b] (centre la carte sur lui) et, pour le chef, [b]CHEF[/b] (passe le commandement).
+[*][b]Personnaliser le groupe[/b] (chef seulement, section repliable) : [b]RENOMMER[/b] (32 caractères, nom unique dans le camp), [b]Type[/b] (Infanterie, Reconnaissance, Mécanisé, Motorisé, Blindé, Commandement, Médical, Génie / soutien, Logistique, Appui feux, Aérien, Drones) puis [b]APPLIQUER[/b], et [b]Groupe fermé[/b] (personne ne peut le rejoindre depuis son téléphone).
+[*][b]Mon indicatif[/b] : saisissez votre indicatif et [b]ENREGISTRER[/b]. Il est gardé hors ligne et, avec Athena, envoyé à votre fiche ; [b]REVENIR À CELUI D'ATHENA[/b] retire votre choix.
+[*][b]QUITTER LE GROUPE[/b] : crée un nouveau groupe à votre nom, que d'autres peuvent rejoindre.
+[*][b]Onglet ÉQUIPES[/b] : équipes de feu du groupe (8 au plus). [b]CRÉER UNE ÉQUIPE[/b] (nom proposé Alpha, Bravo…, couleur, icône, description : mission, secteur, consignes) : vous en devenez le chef d'équipe. [b]REJOINDRE[/b], [b]QUITTER[/b], [b]MODIFIER[/b], [b]FERMER L'ÉQUIPE[/b] / [b]OUVRIR L'ÉQUIPE[/b], [b]DISSOUDRE[/b] (ses membres passent sans équipe).
+[*][b]Mon rôle[/b] (section repliable) : choisissez un rôle dans la liste (rôles du mod, fonctions d'Athena, rôles créés en jeu) puis [b]PRENDRE[/b]. [b]NOUVEAU RÔLE[/b] crée un rôle retenu sur Athena pour toute la communauté ; [b]RECHARGER[/b] relit les rôles d'Athena.
+[*][b]Placer un membre[/b] (chef de groupe, ou chef d'équipe pour son équipe) : mettre un membre dans une équipe et lui donner un rôle.
+[*][b]Onglet GROUPES[/b] : les autres groupes de votre camp qui comptent au moins un joueur, du plus proche au plus loin (type, effectif, chef, distance). [b]REJOINDRE[/b], ou [b]FERMÉ[/b] si le chef l'a fermé.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Chef de groupe : ouvrez Groupe, dépliez [b]Personnaliser le groupe[/b], renommez le groupe et choisissez son type.
+[*]Onglet [b]ÉQUIPES[/b] : [b]CRÉER UNE ÉQUIPE[/b] (Alpha, couleur rouge), puis une seconde (Bravo).
+[*]Dépliez [b]Placer un membre[/b] et répartissez les joueurs avec leur rôle.
+[*]Les couleurs apparaissent aussitôt sur la carte, le BFT et Inter-team pour tout le camp.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié. L'affichage de l'état médical des alliés suit le réglage de réalisme du téléphone (Réglages du téléphone).
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte et BFT[/b] : nom, type et équipes du groupe s'y affichent ; CARTE centre la carte sur un membre.
+[*][b]Messages[/b] : SMS ouvre la conversation avec le membre.
+[*][b]Athena[/b] : indicatif, équipes et rôles envoyés avec l'escouade ; rôles créés en jeu proposés à chaque mission. Un indicatif changé sur le site revient sur le téléphone à la mission suivante.
+[*][b]ACE[/b] : un joueur inconscient sous ACE apparaît « Inconscient ».
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Seul le chef peut renommer, changer le type, fermer le groupe ou passer le commandement. Seul dans votre groupe, vous en êtes le chef.
+[*]Rejoindre ou quitter un groupe vous retire de votre équipe de feu.
+[*]Le chef du groupe rejoint est prévenu par une notification.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[i]On an English phone the app is shown as "Squad".[/i]
+[h3]What it is for[/h3]
+See and manage your Arma group from the phone: who is in it, where members are and in what state, fire teams and everyone's role, your callsign. The app also lets you join another group of your side or leave yours. What you set here is visible to the whole side (map, BFT, Inter-team).
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category and in the dock at the bottom of the home screen. If it was uninstalled, the App Store reinstalls it. Other way in: the [b]MANAGE MY TEAMS[/b] button of the [b]Inter-team[/b] app opens the TEAMS tab directly.
+
+[h3]Features[/h3]
+[list]
+[*][b]MY GROUP tab[/b]: group card (NATO symbol, name, type, strength, number of teams, leader, open or closed), then a summary strip (FIT / WOUNDED / OUT OF ACTION when allies' medical state is visible, and the distance of the farthest member).
+[*][b]Members[/b]: leader first, then you, then nearest to farthest. For each: photo or initial in their team colour, role, state (Fit, Wounded, Unconscious, Dead), distance and direction ("340 m NE"). Buttons [b]SMS[/b] (opens Messages), [b]MAP[/b] (centres the map on them) and, for the leader, [b]CHEF[/b] (hands over command; label not translated).
+[*][b]Customise the group[/b] (leader only, foldable section): [b]RENOMMER[/b] (rename, 32 characters, unique name in the side), [b]Type[/b] (Infantry, Recon, Mechanized, Motorized, Armor, Command, Medical, Engineers / support, Logistics, Fire support, Air, Drones) then [b]APPLIQUER[/b] (apply), and [b]Closed group[/b] (nobody can join it from their phone).
+[*][b]My callsign[/b]: type your callsign and [b]SAVE[/b]. It is kept offline and, with Athena, sent to your profile; [b]BACK TO THE ATHENA ONE[/b] removes your choice.
+[*][b]LEAVE GROUP[/b]: creates a new group in your name that others can join.
+[*][b]TEAMS tab[/b]: the group's fire teams (8 at most). [b]CREATE A TEAM[/b] (suggested name Alpha, Bravo…, colour, icon, description: mission, sector, instructions): you become its team leader. [b]JOIN[/b], [b]QUITTER[/b] (leave), [b]EDIT[/b], [b]CLOSE THE TEAM[/b] / [b]OPEN THE TEAM[/b], [b]DISBAND[/b] (its members become teamless).
+[*][b]My role[/b] (foldable section): pick a role in the list (mod roles, Athena jobs, roles created in game) then [b]PRENDRE[/b] (take). [b]NEW ROLE[/b] creates a role kept on Athena for the whole community; [b]RELOAD[/b] re-reads Athena's roles.
+[*][b]Assign a member[/b] (group leader, or team leader for their own team): put a member in a team and give them a role.
+[*][b]GROUPS tab[/b]: the other groups of your side with at least one player, nearest to farthest (type, strength, leader, distance). [b]JOIN[/b], or [b]CLOSED[/b] if the leader closed it.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Group leader: open Squad, unfold [b]Customise the group[/b], rename the group (RENOMMER) and pick its type.
+[*][b]TEAMS[/b] tab: [b]CREATE A TEAM[/b] (Alpha, red), then a second one (Bravo).
+[*]Unfold [b]Assign a member[/b] and spread players with their role.
+[*]The colours show at once on the map, BFT and Inter-team for the whole side.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting. Whether allies' medical state is shown follows the phone's realism setting (phone Settings app).
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map and BFT[/b]: the group's name, type and teams show there; MAP centres the map on a member.
+[*][b]Messages[/b]: SMS opens the conversation with the member.
+[*][b]Athena[/b]: callsign, teams and roles are sent with the squad; roles created in game are offered at every mission. A callsign changed on the website comes back to the phone at the next mission.
+[*][b]ACE[/b]: a player unconscious under ACE shows as "Unconscious".
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Only the leader can rename, change the type, close the group or hand over command. Alone in your group, you are its leader.
+[*]Joining or leaving a group removes you from your fire team.
+[*]The leader of the group you join gets a notification.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

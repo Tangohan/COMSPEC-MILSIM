@@ -1,0 +1,109 @@
+[APP] Galerie — photos du téléphone et clichés du drone, envoi à Athena et suivi de réception
+
+[i]Message 1/2[/i]
+[h1]Galerie[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Retrouver les photos gardées sur le téléphone (prises avec l'app Photo, captures d'écran Arma) et les clichés de la caméra du drone, les envoyer ou les renvoyer à Athena, suivre leur réception et les supprimer. Les photos se prennent dans l'app Photo ; la Galerie en est séparée, comme sur un vrai téléphone.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. L'app Photo y mène aussi par son bouton [b]GALERIE[/b].
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Onglets[/b] : [b]TOUT[/b], [b]TÉLÉPHONE[/b] (photos du téléphone et captures d'écran, les plus récentes en premier), [b]DRONE[/b] (clichés pris avec la caméra du drone) et [b]ENVOIS[/b].
+[*][b]Ligne d'une photo[/b] : nom et état d'envoi (PAS ENCORE ENVOYÉE, ENVOI EN COURS, ENVOI REFUSÉ, REÇUE PAR ATHENA, SUR ATHENA), avec les boutons [b]DÉTAILS[/b], [b]ENVOYER[/b] / [b]RENVOYER[/b] et [b]SUPPRIMER[/b] (un second appui sur [b]CONFIRMER[/b] valide).
+[*][b]Fiche d'une photo[/b] ([b]DÉTAILS[/b]) : emplacement du fichier, état d'envoi, envoi ou suppression.
+[*][b]Fiche d'un cliché du drone[/b] : position du drone, date et heure, [b]Titre (60 caractères)[/b], [b]Description[/b], bascules [b]SSE (exploitation de site)[/b] et [b]Confidentiel[/b], puis [b]ENREGISTRER[/b] (garde la fiche sur le téléphone sans rien envoyer) ou [b]ENVOYER À ATHENA[/b]. Un cliché sans fiche remplie est marqué [b]FICHE À COMPLÉTER[/b] (bouton [b]COMPLÉTER[/b]).
+[*][b]Actions générales[/b] : [b]ACTUALISER[/b] (relit les photos du téléphone et demande à Athena lesquelles elle a déjà), [b]ENVOYER LES NOUVELLES[/b] (envoie celles qu'Athena n'a pas encore, une toutes les 2 secondes), [b]TOUT SUPPRIMER[/b], [b]PRENDRE UNE PHOTO[/b] (ouvre l'app Photo).
+[*][b]Onglet ENVOIS[/b] : compteurs, dernier retour d'Athena (photo reçue ou refusée, avec la raison), clichés du drone en cours d'envoi ou refusés, historique des photos reçues pendant la session.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Après une patrouille sans réseau, ouvrez la Galerie, onglet [b]TÉLÉPHONE[/b].
+[*]Appuyez sur [b]ACTUALISER[/b] pour savoir ce qu'Athena a déjà.
+[*]Appuyez sur [b]ENVOYER LES NOUVELLES[/b] : les photos manquantes partent une à une.
+[*]Pour un cliché du drone, ouvrez [b]DÉTAILS[/b], donnez un titre et une description, cochez SSE si besoin, puis [b]ENVOYER À ATHENA[/b].
+[*]Suivez le résultat dans l'onglet [b]ENVOIS[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Photo › Dossier des captures d'écran[/b] (personnel) : vide par défaut (dossier Screenshots de votre profil Arma). À renseigner si vos photos n'apparaissent jamais.
+[*][b]COMSPEC › ATAK · Photo › Vérifier le dossier des captures[/b] (personnel) : affiche le dossier utilisé, le nombre d'images et la dernière capture trouvée.
+[*][b]COMSPEC › ATAK · Photo › Floutage automatique des visages[/b] et réglages de flou (personnels) : appliqués aussi aux photos envoyées depuis la Galerie.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : l'envoi passe par la liaison Athena et suit le débit simulé du réseau du téléphone. Une photo déjà reçue reste sur Athena (onglet Photos) même si vous la supprimez du téléphone.
+[*][b]Apps Photo et Drone[/b] : la Galerie montre leurs photos et clichés ; [b]ENVOYER LES NOUVELLES[/b] laisse de côté les clichés du drone, qui partent avec leur fiche.
+[*][b]App SSE[/b] : la bascule SSE d'un cliché du drone le rattache au dossier SSE actif ; sans dossier actif, il est marqué SSE sans dossier.
+[*][b]FRS / FRM[/b] : la même photothèque sert à joindre des photos à une fiche.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]La Galerie ne montre pas d'aperçu des images : elle liste les fichiers et leur état.
+[*]Un cliché du drone en cours d'envoi ne peut pas être supprimé.
+[*]Si Athena ne répond pas, appuyez de nouveau sur [b]ACTUALISER[/b].
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 1.18.0 (octobre 2026), écran revu en 1.48.0.
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Find the photos kept on the phone (taken with the Photo app, Arma screenshots) and the drone camera shots, send or resend them to Athena, track their reception and delete them. Photos are taken in the Photo app; the Gallery is separate, as on a real phone.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app ([b]Gallery[/b]) is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it. The Photo app also leads there through its [b]GALLERY[/b] button.
+
+[h3]Features[/h3]
+[list]
+[*][b]Tabs[/b]: [b]ALL[/b], [b]PHONE[/b] (phone photos and screenshots, newest first), [b]DRONE[/b] (shots taken with the drone camera) and [b]UPLOADS[/b].
+[*][b]Photo row[/b]: name and upload status (NOT SENT YET, UPLOAD IN PROGRESS, UPLOAD REFUSED, RECEIVED BY ATHENA, ON ATHENA), with the buttons [b]DETAILS[/b], [b]SEND[/b] / resend and [b]DELETE[/b] (a second press on [b]CONFIRM[/b] validates).
+[*][b]Photo record[/b] ([b]DETAILS[/b]): file location, upload status, send or delete.
+[*][b]Drone shot record[/b]: drone position, date and time, [b]Title (60 characters)[/b], [b]Description[/b], switches [b]SSE (sensitive site exploitation)[/b] and [b]Confidential[/b], then [b]SAVE[/b] (keeps the record on the phone without sending anything) or [b]SEND TO ATHENA[/b]. A shot without a filled record is flagged [b]RECORD TO COMPLETE[/b] ([b]COMPLETE[/b] button).
+[*][b]General actions[/b]: [b]REFRESH[/b] (rereads the phone photos and asks Athena which ones it already has), [b]SEND NEW ONES[/b] (sends those Athena does not have yet, one every 2 seconds), [b]DELETE ALL[/b], [b]TAKE A PHOTO[/b] (opens the Photo app).
+[*][b]UPLOADS tab[/b]: counters, last Athena response (photo received or refused, with the reason), drone shots being sent or refused, history of photos received during the session.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]After a patrol without network, open the Gallery, [b]PHONE[/b] tab.
+[*]Press [b]REFRESH[/b] to know what Athena already has.
+[*]Press [b]SEND NEW ONES[/b]: the missing photos are sent one by one.
+[*]For a drone shot, open [b]DETAILS[/b], give a title and a description, tick SSE if needed, then [b]SEND TO ATHENA[/b].
+[*]Follow the result in the [b]UPLOADS[/b] tab.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Photo › Screenshot folder[/b] (personal): empty by default (Screenshots folder of your Arma profile). Set it if your photos never appear.
+[*][b]COMSPEC › ATAK · Photo › Check the screenshot folder[/b] (personal): shows the folder in use, the number of images and the last capture found.
+[*][b]COMSPEC › ATAK · Photo › Automatic face blur[/b] and blur settings (personal): also applied to photos sent from the Gallery.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: uploads go through the Athena link and follow the simulated bandwidth of the phone network. A photo already received stays on Athena (Photos tab) even if you delete it from the phone.
+[*][b]Photo and Drone apps[/b]: the Gallery shows their photos and shots; [b]SEND NEW ONES[/b] skips drone shots, which are sent with their record.
+[*][b]SSE app[/b]: the SSE switch of a drone shot links it to the active SSE case file; without an active case file, it is flagged SSE without a case file.
+[*][b]FRS / FRM[/b]: the same photo library is used to attach photos to a report.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]The Gallery does not show image previews: it lists the files and their status.
+[*]A drone shot being uploaded cannot be deleted.
+[*]If Athena does not answer, press [b]REFRESH[/b] again.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 1.18.0 (October 2026), screen reworked in 1.48.0.

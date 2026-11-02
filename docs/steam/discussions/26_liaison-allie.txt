@@ -1,0 +1,108 @@
+[APP] Liaison allié — relier son ATAK à celui d'un équipier à terre : identité, rapport, données à renvoyer
+
+[i]Message 1/2[/i]
+[h1]Liaison allié[/h1]
+[i]Catégorie : Spécialités · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Relier votre téléphone, par NFC ou par câble, à celui d'un équipier tué, inconscient, ou dont l'ATAK est éteint ou détruit : lire son identité et l'état de son appareil, envoyer son rapport de décès ou de blessure, et renvoyer les données restées bloquées dans son téléphone. Dans l'app, l'écran s'appelle « Liaison ATAK ».
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Spécialités[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Avec ACE : interaction sur l'équipier, [b]Relier mon ATAK à son téléphone[/b] (barre de progression ACE).
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Accueil[/b] : état en un coup d'œil (appareils à portée de lien, ou équipiers à moins de 50 m à approcher) et trois étapes : s'approcher à 2 m, [b]RELIER[/b] puis garder le contact, lire et envoyer.
+[*][b]À portée de lien[/b] (moins de 2 m) : équipiers portant un téléphone (corps à terre, ou allié valide) et téléphones posés ou tombés au sol dont le propriétaire est connu. Nom, état (KIA, inconscient, valide), distance, état du téléphone (intact, fêlé, éteint, détruit) ; bouton [b]RELIER[/b]. [b]À proximité[/b] : équipiers à moins de 50 m, marqués [b]TROP LOIN[/b]. [b]ACTUALISER[/b].
+[*][b]Liaison en cours[/b] : lien NFC de 4 s (téléphones l'un contre l'autre), ou câble USB-C de 8 s si son appareil est éteint, à batterie vide ou détruit. Restez à 2 m ; [b]ANNULER[/b]. S'éloigner coupe le lien.
+[*][b]En-tête relié[/b] : nom, état, indicatif, état et batterie de son téléphone, type de lien et heure. Source des données : mémoire lue en direct ; joueur déconnecté, dernière sauvegarde de l'appareil (faite toutes les 30 s) ; sinon mémoire illisible, identité lue sur la plaque et l'équipement.
+[*][b]Son téléphone[/b] : diagnostic de ce qui est cassé et à quel point.
+[*][b]Identité[/b] : matricule, nom et prénom, grade, groupe sanguin, affectation, fonction, groupe en jeu, numéro du téléphone et IMEI.
+[*][b]Rapport de décès[/b] ou [b]Rapport de blessure[/b] : constat ou bilan relevé sur place ; [b]ENVOYER LE RAPPORT DE DÉCÈS[/b] (ou [b]DE BLESSURE[/b]) l'envoie au camp (alerte par le réseau du jeu) et, avec la liaison Athena, au poste (alerte « opérateur à terre »).
+[*][b]Données non transmises[/b] : envois restés en file sans réseau, photos refusées par Athena, brouillon FRS, note de reco ; [b]RENVOYER TOUT[/b] les renvoie, crédités « récupéré sur l'ATAK de … ».
+[*][b]RELIRE[/b] relit la mémoire, [b]DÉCONNECTER[/b] coupe le lien.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Un équipier est tombé : approchez-vous à moins de 2 m de son corps (ou de son téléphone au sol) et ouvrez l'app.
+[*][b]RELIER[/b] et gardez le contact jusqu'à 100 %.
+[*]Vérifiez son identité, puis [b]ENVOYER LE RAPPORT DE DÉCÈS[/b] (ou [b]DE BLESSURE[/b]).
+[*]S'il reste des données non transmises : [b]RENVOYER TOUT[/b], puis [b]DÉCONNECTER[/b].
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Données médicales › Afficher : Liaison NFC / câble avec un blessé, rapports[/b] (serveur) et les réglages par donnée (état, groupe sanguin…) : une donnée masquée n'apparaît pas dans la liaison ni dans les rapports. Quand l'état est masqué, seul le décès reste visible.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b] : action d'interaction avec barre de progression ; groupe sanguin et matricule repris de la plaque d'identité et d'ACE Médical ; état inconscient lu dans ACE.
+[*][b]Athena[/b] : rapports envoyés au poste et renvoi des photos et envois en attente quand la liaison est là ; sans Athena, le rapport part quand même au camp.
+[*][b]Alertes[/b] : le rapport de décès ou de blessure arrive en alerte chez votre camp.
+[*][b]FRS / Reco[/b] : brouillons repris parmi les données à renvoyer.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Il faut votre propre téléphone, et l'équipier doit en porter un (ou son téléphone doit être au sol à côté).
+[*]Un joueur déconnecté : seule la liste de ses envois en file est lue, ils ne peuvent plus repartir.
+[*]Un téléphone posé au sol garde le nom de son propriétaire : on peut s'y relier même loin du corps.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x) ; écran d'accueil refait en 1.8.1.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Link your phone, by NFC or by cable, to the phone of a teammate who is killed, unconscious, or whose ATAK is off or destroyed: read their identity and device state, send their death or injury report, and resend the data stuck in their phone. The app is named [b]ATAK Link[/b] in English; the screen inside reads [b]ATAK link[/b].
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Specialized[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it. With ACE: interact with the teammate, [b]Link my ATAK to their phone[/b] (ACE progress bar).
+
+[h3]Features[/h3]
+[list]
+[*][b]Home[/b]: status at a glance (devices within link range, or teammates within 50 m to approach) and three steps: get within 2 m, [b]LINK[/b] then keep contact, read and send.
+[*][b]Within link range[/b] (under 2 m): teammates carrying a phone (body on the ground, or friendly in good health) and phones put down or dropped whose owner is known. Name, state (KIA, unconscious, fit), distance, phone state (intact, cracked, off, destroyed); [b]LINK[/b] button. [b]Nearby[/b]: teammates within 50 m, marked [b]TOO FAR[/b]. [b]REFRESH[/b].
+[*][b]Link in progress[/b]: 4 s NFC link (phones held together), or 8 s USB-C cable if their device is off, out of battery or destroyed. Stay within 2 m; cancel. Moving away cuts the link.
+[*][b]Linked header[/b]: name, state, callsign, state and battery of their phone, link type and time. Data source: memory read live; disconnected player, last device backup (made every 30 s); otherwise unreadable memory, identity read from the dog tag and equipment.
+[*][b]Their phone[/b]: diagnosis of what is broken and how badly.
+[*][b]Identity[/b]: service number, full name, rank, blood type, assignment, job, in-game group, phone number and IMEI.
+[*][b]Death report[/b] or [b]Injury report[/b]: finding or assessment made on the spot; the send button sends it to your side (alert over the in-game network) and, with the Athena link, to the post ("operator down" alert).
+[*][b]Unsent data[/b]: submissions left queued without network, photos refused by Athena, FRS draft, recon note; [b]RESEND ALL[/b] resends them, credited "recovered from X's ATAK".
+[*][b]RELOAD[/b] reads the memory again, [b]DISCONNECT[/b] cuts the link.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]A teammate is down: get within 2 m of the body (or of their phone on the ground) and open the app.
+[*][b]LINK[/b] and keep contact up to 100 %.
+[*]Check their identity, then send the death or injury report.
+[*]If unsent data remains: [b]RESEND ALL[/b], then [b]DISCONNECT[/b].
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Données médicales › Show: NFC / cable link with a casualty, reports[/b] (server) and the per-item settings (state, blood type…): a hidden item does not appear in the link nor in the reports. When the state is hidden, only death stays visible.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]ACE[/b]: interaction action with progress bar; blood type and service number taken from the dog tag and ACE Medical; unconscious state read from ACE.
+[*][b]Athena[/b]: reports sent to the post and resend of pending photos and submissions when the link is up; without Athena, the report still goes to your side.
+[*][b]Alerts[/b]: the death or injury report reaches your side as an alert.
+[*][b]FRS / Recon[/b]: drafts are listed among the data to resend.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]You need your own phone, and the teammate must carry one (or their phone must lie nearby).
+[*]Disconnected player: only the list of their queued submissions is read; they can no longer be sent.
+[*]A phone put down on the ground keeps its owner's name: you can link to it even far from the body.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x); home screen rebuilt in 1.8.1.

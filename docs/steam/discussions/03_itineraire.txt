@@ -1,0 +1,121 @@
+[APP] Itinéraire — points de passage typés, navigation étape par étape et partage en direct au groupe
+
+[i]Message 1/2[/i]
+[h1]Itinéraire[/h1]
+[i]Catégorie : Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Poser rapidement sur la carte une suite d'étapes nommées et typées (départ, point de contrôle, ralliement, objectif, LZ, arrivée), puis naviguer de l'une à l'autre avec une flèche de cap. L'itinéraire est partagé en direct avec votre groupe (ou votre camp) et vous pouvez lancer la navigation chez tous d'un seul bouton.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*]Sortez le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie [b]Navigation[/b], app [b]Itinéraire[/b] (pas dans le dock). Désinstallée : réinstallez-la depuis l'[b]App Store[/b].
+[*]Depuis la [b]Carte[/b] : clic droit > [b]Point de passage[/b], ou [b]OUTILS[/b] > [b]Points de passage[/b] : les étapes se posent et se modifient directement sur la carte.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : nombre d'étapes, longueur totale et nom de l'équipier qui a modifié l'itinéraire en dernier.
+[*][b]Étape active[/b] : « CAP SUR » (ou « EN PAUSE : ») avec numéro, nom, distance, azimut et grille ; boutons [b]<[/b], [b]NAVIGUER[/b] / [b]PAUSE[/b], [b]>[/b] ; [b]Reste à parcourir[/b] depuis vous, avec le temps à pied.
+[*][b]Navigation[/b] : à 25 m d'une étape, notification et vibreur, l'étape suivante devient active ; à la dernière, « Dernière étape atteinte ». Sur la carte, une flèche de cap et la distance s'affichent en bas, aussi téléphone porté.
+[*][b]GPS VERS L'ÉTAPE[/b] : itinéraire routier de l'app GPS vers l'étape active.
+[*][b]FAIRE NAVIGUER LE GROUPE[/b] : envoie l'itinéraire et lance la navigation chez tous ceux qui le partagent (groupe, ou camp).
+[*][b]Partage[/b] : [b]MOI SEUL[/b] (reste sur votre téléphone), [b]GROUPE[/b] (par défaut : chaque étape posée, modifiée ou supprimée s'affiche aussitôt chez votre groupe), [b]CAMP[/b] (tout votre camp le voit).
+[*][b]Étapes[/b] : numéro, nom, type, distance et azimut depuis l'étape précédente (depuis vous pour la première), grille ; [b]ALLER[/b] (cap sur cette étape), [b]MODIFIER[/b] (sur la carte), [b]X[/b] (supprimer). [b]INVERSER[/b] l'ordre, [b]TOUT EFFACER[/b], [b]COPIER DANS L'APP ROUTES[/b] (crée une route nommée avec ces étapes).
+[*][b]Types[/b] : Étape, Départ, Point de contrôle, Ralliement, Objectif, Poser / LZ, Arrivée, chacun avec son icône et sa couleur. Nom automatique par type (CP 3, RP 1…, Départ « SP » et Arrivée « FIN » sans numéro), ou nom saisi (24 caractères).
+[*][b]Fiche sur la carte[/b] (mode Points de passage) : clic droit pour choisir le point puis [b]VALIDER[/b], ou clic gauche pour poser tout de suite ; nom, [b]TYPE[/b], [b]PARTAGE[/b], case [b]Plusieurs étapes[/b] (la fiche reste ouverte après VALIDER). Clic sur une étape existante : renommer, changer le type, [b]DÉPLACER ICI[/b], [b]◀ AVANT[/b] / [b]APRÈS ▶[/b], [b]NAVIGUER[/b], [b]SUPPRIMER[/b], [b]+ NOUVELLE ÉTAPE[/b].
+[*][b]Tracé[/b] : traits épais avec chevrons, distances des tronçons au zoom rapproché, tronçons déjà parcourus estompés.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Dans l'app, choisissez [b]GROUPE[/b] dans [b]Partage[/b], puis [b]POSER LES ÉTAPES SUR LA CARTE[/b].
+[*]Dans la fiche, type [b]Départ[/b], cochez [b]Plusieurs étapes[/b] ; clic droit sur le point, [b]VALIDER[/b].
+[*]Changez le type ([b]Point de contrôle[/b], [b]Objectif[/b]…) et posez les étapes suivantes de la même façon.
+[*]Revenez dans l'app : [b]FAIRE NAVIGUER LE GROUPE[/b]. Chacun reçoit l'itinéraire et la navigation démarre.
+[*]Suivez la flèche de cap ; l'étape suivante s'active seule à 25 m.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié. L'envoi passe par le réseau simulé du téléphone (rubrique [b]COMSPEC › ATAK · Simulation[/b]).
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : pose, modification et tracé des étapes ; clic droit sur une étape : [b]Modifier l'étape[/b], [b]Naviguer vers l'étape[/b], [b]Supprimer l'étape[/b].
+[*][b]GPS[/b] : [b]GPS VERS L'ÉTAPE[/b], et le raccourci de l'étape active dans l'app GPS.
+[*][b]Routes[/b] : [b]COPIER DANS L'APP ROUTES[/b] reprend les étapes dans une route nommée (type de tracé, consignes, heure prévue).
+[*][b]Réseau[/b] : sans signal, l'envoi part au retour du réseau ; le serveur garde l'itinéraire du groupe et le remet aux joueurs qui arrivent en cours de partie.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]30 étapes au maximum.
+[*]Un seul itinéraire à la fois : en partage, la dernière version reçue d'un équipier remplace la vôtre. Pour plusieurs itinéraires nommés, utilisez l'app Routes.
+[*]Changer le type d'une étape au nom automatique la renomme (« WP 2 » devient « CP 1 ») ; un nom saisi est gardé.
+[*]Le temps « à pied » suppose 5 km/h en ligne droite entre les étapes.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions publiques ; refaite en 2.0.1 (pose au clic droit, noms et types d'étapes, partage en direct).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h1]Route[/h1]
+[i]Category: Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Quickly place on the map a series of named, typed waypoints (start, checkpoint, rally, objective, LZ, arrival), then navigate from one to the next with a heading arrow. The route is shared live with your squad (or your side) and one button starts navigation for everyone.
+
+[h3]How to open it[/h3]
+[list]
+[*]Take out the phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, [b]Navigation[/b] category, [b]Route[/b] app (not in the dock). Uninstalled: reinstall it from the [b]App Store[/b].
+[*]From the [b]Map[/b]: right click > [b]Waypoint[/b], or [b]TOOLS[/b] > [b]Waypoints[/b]: waypoints are placed and edited right on the map.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: number of waypoints, total length and the teammate who last changed the route.
+[*][b]Active waypoint[/b]: "HEAD TO" (or "PAUSED:") with number, name, distance, bearing and grid; buttons [b]<[/b], [b]NAVIGATE[/b] / PAUSE, [b]>[/b]; [b]Remaining[/b] from you, with walking time.
+[*][b]Navigation[/b]: within 25 m of a waypoint, notification and vibration, the next one becomes active; at the last one, "Last stop reached". On the map, a heading arrow and the distance show at the bottom, even with the phone carried.
+[*][b]GPS TO STOP[/b]: road route from the GPS app to the active waypoint.
+[*][b]SEND GROUP ON ROUTE[/b]: sends the route and starts navigation for everyone sharing it (squad, or side).
+[*][b]Sharing[/b]: [b]ONLY ME[/b] (stays on your phone), [b]GROUP[/b] (default: every waypoint placed, edited or deleted shows at once for your squad), [b]SIDE[/b] (your whole side sees it).
+[*][b]Stops[/b]: number, name, type, distance and bearing from the previous waypoint (from you for the first), grid; [b]GO[/b] (head to this waypoint), [b]EDIT[/b] (on the map), [b]X[/b] (delete). [b]REVERSE[/b] the order, [b]CLEAR ALL[/b], [b]COPY TO THE ROUTES APP[/b] (creates a named route with these waypoints).
+[*][b]Types[/b]: Waypoint, Start, Checkpoint, Rally, Objective, Landing / LZ, Arrival, each with its icon and colour. Automatic name by type (CP 3, RP 1…, Start "SP" and Arrival "END" without a number), or a typed name (24 characters).
+[*][b]Map card[/b] (Waypoints mode): right click to choose the point then [b]CONFIRM[/b], or left click to place at once; name, type, [b]SHARING[/b], multiple waypoints box (the card stays open after CONFIRM). Click an existing waypoint: rename, change type, [b]MOVE HERE[/b], [b]◀ EARLIER[/b] / [b]LATER ▶[/b], [b]NAVIGATE[/b], [b]DELETE[/b], new waypoint.
+[*][b]Drawing[/b]: thick lines with chevrons, leg distances when zoomed in, legs already travelled faded.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]In the app, choose [b]GROUP[/b] under [b]Sharing[/b], then [b]PLACE WAYPOINTS ON THE MAP[/b].
+[*]In the card, type [b]Start[/b], tick multiple waypoints; right click the point, [b]CONFIRM[/b].
+[*]Change the type ([b]Checkpoint[/b], [b]Objective[/b]…) and place the next waypoints the same way.
+[*]Back in the app: [b]SEND GROUP ON ROUTE[/b]. Everyone receives the route and navigation starts.
+[*]Follow the heading arrow; the next waypoint activates on its own at 25 m.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting. Sending goes through the phone's simulated network ([b]COMSPEC › ATAK · Simulation[/b] section).
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: placing, editing and drawing waypoints; right click a waypoint: [b]Edit waypoint[/b], [b]Navigate to waypoint[/b], [b]Delete waypoint[/b].
+[*][b]GPS[/b]: [b]GPS TO STOP[/b], and the active waypoint shortcut in the GPS app.
+[*][b]Routes[/b]: [b]COPY TO THE ROUTES APP[/b] turns the waypoints into a named route (route type, instructions, planned time).
+[*][b]Network[/b]: without signal, sending waits for the network to return; the server keeps the squad's route and gives it to players joining mid-game.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]30 waypoints maximum.
+[*]One route at a time: when shared, the latest version received from a teammate replaces yours. For several named routes, use the Routes app.
+[*]Changing the type of an automatically named waypoint renames it ("WP 2" becomes "CP 1"); a typed name is kept.
+[*]Walking time assumes 5 km/h in a straight line between waypoints.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first public versions; rebuilt in 2.0.1 (right-click placing, waypoint names and types, live sharing).

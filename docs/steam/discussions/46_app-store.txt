@@ -1,0 +1,129 @@
+[APP] App Store — installer, désinstaller et retrouver les apps du téléphone, règles imposées par l'encadrement
+
+[i]Message 1/2[/i]
+[h1]App Store[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+L'App Store choisit les apps présentes sur votre écran d'accueil et dans le dock. Un téléphone neuf a toutes ses apps ; une app ajoutée par une mise à jour arrive installée, avec la pastille NOUVEAU. Vous désinstallez ce qui ne vous sert pas et le réinstallez à tout moment. L'encadrement (serveur, mission, Zeus ou communauté Athena) peut rendre une app obligatoire ou l'interdire : l'App Store l'affiche.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système : App Store (pas dans le dock).
+[*]Réglages, section Applications : bouton [b]OUVRIR L'APP STORE[/b].
+[*]En ouvrant une app désinstallée (raccourci, notification, autre app), le message « … n'est pas installée : App Store » s'affiche et l'App Store s'ouvre, recherche déjà remplie avec le nom de l'app.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : nombre d'apps installées et à installer. Si l'encadrement impose quelque chose, un bandeau jaune indique combien d'apps sont obligatoires ou interdites, et par qui (serveur, mission, communauté).
+[*][b]Recherche[/b] : champ « Rechercher une app » puis [b]CHERCHER[/b] ; elle porte sur le nom, la catégorie et la description, en français comme dans la langue affichée. [b]EFFACER LA RECHERCHE[/b] la vide.
+[*][b]Onglets[/b] : [b]TOUT[/b], [b]INSTALLÉES[/b], [b]À INSTALLER[/b] (désinstallées et interdites), et [b]IMPOSÉES[/b] seulement quand l'encadrement impose ou interdit au moins une app.
+[*][b]Nouveautés[/b] : dans TOUT, sans recherche, les apps arrivées avec les dernières versions et pas encore ouvertes sont listées en tête. Le reste est rangé par catégorie, avec le nombre d'apps installées de chacune.
+[*][b]Fiche d'une app[/b] : icône, nom, pastilles (SYSTÈME, OBLIGATOIRE, INTERDITE, INSTALLÉE, NOUVEAU, W.I.P), catégorie, description, « imposé par : … » et, s'il y a lieu, pourquoi elle est indisponible ici.
+[*][b]OUVRIR[/b] : lance l'app.
+[*][b]INSTALLER[/b] : le bouton passe à « INSTALLATION… » environ une seconde, puis l'app arrive sur l'écran d'accueil.
+[*][b]DÉSINSTALLER[/b] puis [b]CONFIRMER[/b] : deux appuis. L'app quitte l'écran d'accueil et le dock, et son épingle éventuelle est retirée.
+[*][b]TOUT RÉINSTALLER[/b] (en bas, s'il reste des apps désinstallées) : remet toutes les apps permises.
+[*][b]Apps du téléphone[/b] : Réglages, App Store et Alertes sont marquées SYSTÈME et ne se désinstallent pas. Admin et Poste TOC n'apparaissent pas dans l'App Store : elles suivent vos droits ou votre poste.
+[*][b]App obligatoire[/b] : installée, sans bouton DÉSINSTALLER. [b]App interdite[/b] : grisée avec un bouton INTERDITE inactif, retirée de l'écran d'accueil et du dock, et elle ne s'ouvre plus. Si une app ouverte devient interdite, le téléphone l'annonce et revient à l'écran d'accueil.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez l'App Store, onglet INSTALLÉES.
+[*]Sur une app dont vous n'avez pas besoin, appuyez sur DÉSINSTALLER, puis CONFIRMER.
+[*]Plus tard, onglet À INSTALLER : appuyez sur INSTALLER, ou cherchez l'app par son nom.
+[*]Pour revenir à un téléphone complet : TOUT RÉINSTALLER.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Apps obligatoires[/b] (serveur) : noms de classe séparés par des virgules (ex. Map, Chat, Bft). Toujours installées, impossibles à désinstaller.
+[*][b]COMSPEC › ATAK · Simulation › Apps interdites[/b] (serveur) : noms de classe (ex. Dating, Food). Personne ne peut les installer ni les ouvrir ; elles restent visibles avec la mention INTERDITE.
+[*][b]COMSPEC › ATAK · Simulation › Apps retirées[/b] (serveur) : l'app n'existe plus du tout, même dans l'App Store.
+[*][b]COMSPEC › ATAK · Simulation › Apps civiles[/b] (serveur) : décoché, UberEats et Tinder sont indisponibles (« Apps civiles coupées par le serveur »).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus et admin[/b] : l'app Admin, onglet APPS, règle chaque app pour la partie : LIBRE, OBLIGATOIRE ou INTERDITE.
+[*][b]Athena[/b] : la communauté peut imposer ou interdire des apps depuis le site (Contrôle serveur, Apps du téléphone). Si vous avez répondu Non au service Athena, Athena, Synchro, Discord et Recherchés sont indisponibles (« Demande le service Athéna »).
+[*][b]Réglages[/b] : la section Applications compte les apps installées et à installer.
+[/list]
+Les règles du serveur, de la mission et d'Athena se cumulent ; une interdiction l'emporte toujours.
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Désinstaller une app la retire seulement de l'écran d'accueil et du dock : ce qu'elle fait en fond (BFT, messages reçus, alertes) continue.
+[*]Vos choix sont gardés d'une partie à l'autre, sur votre profil.
+[*]L'installation est simulée : aucun téléchargement réel.
+[/list]
+
+[h3]Version d'introduction[/h3]
+ATAK natif 2.5.0.
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The App Store decides which apps appear on your home screen and in the dock. A new phone has all its apps; an app added by an update arrives installed, with the NEW badge. You uninstall what you do not need and reinstall it at any time. Command (server, mission, Zeus or the Athena community) can make an app mandatory or forbid it, and the App Store shows it.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] brings the phone to a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category: App Store (not in the dock).
+[*]Settings, Applications section: [b]OPEN THE APP STORE[/b] button.
+[*]When you open an uninstalled app (shortcut, notification, another app), the message "… is not installed: App Store" shows and the App Store opens with the search already filled with that app's name.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: number of installed apps and apps to install. If command enforces something, a yellow banner says how many apps are mandatory or forbidden, and by whom (server, mission, community).
+[*][b]Search[/b]: "Search for an app" field then [b]SEARCH[/b]; it matches the name, category and description, in French and in the displayed language. [b]CLEAR SEARCH[/b] empties it.
+[*][b]Tabs[/b]: [b]ALL[/b], [b]INSTALLED[/b], [b]TO INSTALL[/b] (uninstalled and forbidden), and [b]ENFORCED[/b] only when command makes at least one app mandatory or forbidden.
+[*][b]What's new[/b]: in ALL, with no search, apps that arrived with the latest versions and were never opened are listed first. The rest is sorted by category, with how many of each are installed.
+[*][b]App entry[/b]: icon, name, badges (SYSTEM, MANDATORY, FORBIDDEN, INSTALLED, NEW, W.I.P), category, description, "enforced by: …" and, when relevant, why it is unavailable here.
+[*][b]OPEN[/b]: launches the app.
+[*][b]INSTALL[/b]: the button shows "INSTALLING…" for about a second, then the app lands on the home screen.
+[*][b]UNINSTALL[/b] then [b]CONFIRM[/b]: two taps. The app leaves the home screen and the dock, and its pin, if any, is removed.
+[*][b]REINSTALL ALL[/b] (at the bottom, when some apps are uninstalled): puts back every allowed app.
+[*][b]Built-in apps[/b]: Settings, App Store and Alerts are marked SYSTEM and cannot be uninstalled. Admin and TOC post are not listed in the App Store: they follow your rights or your post.
+[*][b]Mandatory app[/b]: installed, with no UNINSTALL button. [b]Forbidden app[/b]: greyed out with an inactive FORBIDDEN button, removed from the home screen and dock, and it no longer opens. If an open app becomes forbidden, the phone says so and returns to the home screen.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open the App Store, INSTALLED tab.
+[*]On an app you do not need, tap UNINSTALL, then CONFIRM.
+[*]Later, TO INSTALL tab: tap INSTALL, or search the app by name.
+[*]To get a full phone back: REINSTALL ALL.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Mandatory apps[/b] (server): class names separated by commas (e.g. Map, Chat, Bft). Always installed, cannot be uninstalled.
+[*][b]COMSPEC › ATAK · Simulation › Forbidden apps[/b] (server): class names (e.g. Dating, Food). Nobody can install or open them; they stay listed marked FORBIDDEN.
+[*][b]COMSPEC › ATAK · Simulation › Disabled apps[/b] (server): the app no longer exists at all, not even in the App Store.
+[*][b]COMSPEC › ATAK · Simulation › Civilian apps[/b] (server): unchecked, UberEats and Tinder are unavailable ("civilian apps turned off by the server").
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Zeus and admins[/b]: the Admin app, APPS tab, sets each app for the game: FREE, MANDATORY or FORBIDDEN.
+[*][b]Athena[/b]: the community can enforce or forbid apps from the website (Server control, Phone apps). If you answered No to the Athena service, Athena, Sync, Discord and Target Deck are unavailable ("requires the Athena service").
+[*][b]Settings[/b]: the Applications section counts installed apps and apps to install.
+[/list]
+Server, mission and Athena rules add up; a ban always wins.
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Uninstalling an app only removes it from the home screen and the dock: what it does in the background (BFT, received messages, alerts) keeps running.
+[*]Your choices are kept from one game to the next, in your profile.
+[*]Installing is simulated: nothing is actually downloaded.
+[/list]
+
+[h3]Introduced in[/h3]
+Native ATAK 2.5.0.

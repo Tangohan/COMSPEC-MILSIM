@@ -535,6 +535,7 @@ final class RecruitmentInviteLinksController
             'recruitmentLmsTitle' => $title,
             'recruitmentSidebarCounts' => $this->enlistments->countsByStatusForTenant($this->tenantId()),
             'recruitmentAdminNav' => 'invite_links',
+            'recruitmentAthUi' => true,
             'showPortalFooter' => false,
         ]);
     }
