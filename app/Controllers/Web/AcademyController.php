@@ -26,6 +26,7 @@ use App\Services\Academy\AcademyLmsBridge;
 use App\Services\Academy\AcademyCurriculum;
 use App\Services\Academy\AcademyBuiltInCourses;
 use App\Services\Academy\AcademyRichText;
+use App\Services\Academy\AcademyOffer;
 use App\Services\Academy\AcademyStudio;
 use App\Services\Training\TrainingCourseMediaUploadService;
 use App\Services\Academy\GoogleSlidesImporter;
@@ -175,7 +176,13 @@ final class AcademyController
             if ($state !== null) {
                 $selected = $state['snapshot'] ?? $selected;
             }
-            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview') + $lmsData + [
+            // Catalogue et tableau de bord : tout ce que le membre peut obtenir, avec son état.
+            $offer = in_array($space, ['dashboard', 'catalogue'], true)
+                ? AcademyOffer::collect($tenantId, (int) Session::get('user_id'), $tenant, $courses, $states, $lmsData['legacyCourses'] ?? [], $lmsData['legacyEnrollments'] ?? [], $staff)
+                : null;
+            $offerFilters = AcademyOffer::filters($request->queryParams());
+            $offerDetail = $space === 'catalogue' ? $request->queryString('fiche') : '';
+            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail') + $lmsData + [
                 'academyStorageReady' => $academyStorageReady && !$preview,
                 'viewStep' => $request->queryString('step'),
                 'notice' => Session::get('academy_notice', ''),
@@ -267,6 +274,7 @@ final class AcademyController
                         }
                         return AcademyCurriculum::validateChapter($state, $state['snapshot'], $userId, $comment, time());
                     });
+                    $this->awardBuiltInQualification($repository, $tenantId, $learnerId, $key, $userId);
                     $this->audit('academy.learner.validated', $tenantId, $key, ['learner' => $learnerId, 'chapter' => is_scalar($expectedChapter) ? (int) $expectedChapter : null]);
                 }
                 $returnSpace = 'instructor';
@@ -294,6 +302,30 @@ final class AcademyController
             return $this->error(in_array($e->getMessage(), ['locked', 'reflection_required', 'not_enrolled'], true) ? $e->getMessage() : 'invalid_content', 422);
         } catch (\PDOException) {
             return $this->error('unavailable', 503);
+        }
+    }
+
+    /**
+     * Dernier chapitre d’un cours intégré validé : la qualification Athena Academy du cours est créée si besoin dans le
+     * référentiel (mode « Formation Academy ») puis attribuée par la règle automatique. Ne bloque jamais la validation.
+     */
+    private function awardBuiltInQualification(AcademyRepository $repository, int $tenantId, int $learnerId, string $key, int $instructorId): void
+    {
+        if (!isset(AcademyBuiltInCourses::qualifications()[$key])) {
+            return;
+        }
+        try {
+            $state = $repository->states($tenantId, $learnerId)[$key] ?? null;
+            if (!is_array($state) || ($state['completed'] ?? false) !== true) {
+                return;
+            }
+            $definitionId = \App\Services\Academy\AcademyBuiltInQualifications::forPdo(\App\Core\Database::getPdo())
+                ->ensureDefinition($tenantId, $key, function_exists('locale') ? (string) locale() : 'fr', $instructorId);
+            if ($definitionId > 0) {
+                Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->runAuto($tenantId, $definitionId);
+            }
+        } catch (\Throwable $e) {
+            error_log('[academy] qualification du cours ' . $key . ' : ' . $e->getMessage());
         }
     }
 
@@ -603,7 +635,7 @@ final class AcademyController
             }
             // Nouvelle version d'un cours publié : l'original reste en ligne jusqu'à la publication. Copie : cours indépendant.
             $copy = $source;
-            unset($copy['built_in'], $copy['demo'], $copy['replaces'], $copy['updated_at'], $copy['archived']);
+            unset($copy['built_in'], $copy['license_code'], $copy['qualification'], $copy['demo'], $copy['replaces'], $copy['updated_at'], $copy['archived']);
             $revision = $action === 'studio_revise' && $course !== null && $course['published'];
             if ($revision) {
                 $copy['replaces'] = $key;

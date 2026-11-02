@@ -216,6 +216,20 @@ final class QualificationAwardRuleRepository
     }
 
     /**
+     * Cours intégrés de l’Academy terminés (JTAC, cours inspirés des standards OTAN), par membre : membre => clé => true.
+     *
+     * @return array<int, array<string, bool>>
+     */
+    public function builtInCourseCompletions(int $tenantId): array
+    {
+        try {
+            return \App\Services\Academy\AcademyBuiltInQualifications::forPdo($this->pdo())->completions($tenantId);
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * Rattache à une qualification les attestations Academy de ces formations qui ne le sont pas encore.
      *
      * @param list<int> $courseIds

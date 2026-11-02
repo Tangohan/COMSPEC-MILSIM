@@ -10,6 +10,7 @@ require base_path('views/training/partials/lms_head.php');
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy.css')) ?>">
 <?php $customTopbar = $customTopbar ?? false; /* Salle de cours et Studio : maquettes dédiées, avec leur propre barre d'en-tête. */ ?>
 <?php if ($customTopbar): ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy-workspace.css')) ?>"><?php endif ?>
+<?php if (in_array($space ?? '', ['dashboard', 'catalogue'], true)): ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy-offer.css')) ?>"><?php endif ?>
 <?php if (in_array($space ?? '', ['studio', 'shared'], true)): ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy-studio.css')) ?>"><?php endif ?>
 <script src="<?= $h(asset_url('assets/js/academy.js')) ?>" defer></script>
 <?php if (in_array($space ?? '', ['instructor', 'droits', 'studio'], true)): /* Espace instructeur, droits d'accès et réglages d'accès d'un cours. */ ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy-instructor.css')) ?>"><script src="<?= $h(asset_url('assets/js/academy-access.js')) ?>" defer></script><?php endif ?>

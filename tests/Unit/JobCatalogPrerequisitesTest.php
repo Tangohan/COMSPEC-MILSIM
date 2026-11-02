@@ -82,9 +82,16 @@ final class JobCatalogPrerequisitesTest extends TestCase
             self::assertNotSame('', trim((string) ($pack['sources_note']['fr'] ?? '')));
             self::assertNotSame('', trim((string) ($pack['sources_note']['en'] ?? '')));
             $entries = array_values(array_filter($all, static fn (array $e): bool => $e['pack'] === $name));
-            // Chine : moins de sources ouvertes détaillées sur les billets (voir sources_note du pack), seuil plus bas.
-            self::assertGreaterThanOrEqual($name === 'cn_sof' ? 60 : 80, count($entries), $name);
-            self::assertLessThanOrEqual(150, count($entries), $name);
+            // Bornes par pack : un pays couvre toutes ses armées (80 à 150) ; l’OTAN ne liste que les fonctions
+            // interalliées standardisées et décrites publiquement, moins nombreuses (60 à 120) ; Chine : moins de
+            // sources ouvertes détaillées sur les billets (voir sources_note du pack), seuil plus bas (60 à 150).
+            [$min, $max] = match ($name) {
+                'nato' => [60, 120],
+                'cn_sof' => [60, 150],
+                default => [80, 150],
+            };
+            self::assertGreaterThanOrEqual($min, count($entries), $name);
+            self::assertLessThanOrEqual($max, count($entries), $name);
             $prefix = strtolower((string) $pack['country']) . '-';
             $problems = [];
             foreach ($entries as $entry) {
@@ -108,6 +115,39 @@ final class JobCatalogPrerequisitesTest extends TestCase
         foreach (['army', 'navy', 'air_force', 'marine_corps'] as $branch) {
             self::assertGreaterThanOrEqual(10, $us[$branch] ?? 0, 'US ' . $branch);
         }
+    }
+
+    public function testNatoPackListsCombinedFunctionsUnderItsOwnCategory(): void
+    {
+        $pack = JobCatalog::packs()['nato'] ?? null;
+        self::assertIsArray($pack);
+        self::assertSame(['NATO', 'en'], [$pack['country'], $pack['official_lang']]);
+        self::assertSame('OTAN', JobCatalog::countryLabel('NATO', 'fr'));
+        self::assertSame('NATO', JobCatalog::countryLabel('NATO', 'en'));
+        self::assertContains(['code' => 'NATO', 'label' => 'OTAN', 'count' => count($pack['entries'])], JobCatalog::countries('fr'));
+        $entries = array_values(array_filter(JobCatalog::rawEntries(), static fn (array $e): bool => $e['country'] === 'NATO'));
+        self::assertSame(count($pack['entries']), count($entries));
+        foreach ($entries as $entry) {
+            self::assertStringStartsWith('nato-', (string) $entry['id']);
+            self::assertNotSame('', trim((string) ($entry['formation'] ?? '')), $entry['id'] . ' : unité courte manquante.');
+        }
+        $types = array_count_values(array_column($entries, 'type'));
+        foreach (JobCatalog::TYPES as $type) {
+            self::assertGreaterThan(0, $types[$type] ?? 0, 'OTAN : type ' . $type);
+        }
+        // Fonctions interalliées attendues, trouvées par leur abrégé et filtrées sur la catégorie OTAN.
+        $abbrs = array_column($entries, 'abbreviation');
+        foreach (['JTAC', 'JFO'] as $abbr) {
+            self::assertContains($abbr, $abbrs);
+            $hits = JobCatalog::search($abbr, ['country' => 'NATO'], 'fr');
+            self::assertNotSame([], $hits);
+            self::assertSame($abbr, $hits[0]['abbreviation']);
+            self::assertSame('OTAN', $hits[0]['country_label']);
+        }
+        self::assertSame([], array_filter(JobCatalog::search('', ['country' => 'NATO'], 'en'), static fn (array $e): bool => $e['country'] !== 'NATO'));
+        self::assertSame('Interarmées et interalliés', JobCatalog::branchLabel('NATO', 'joint', 'fr'));
+        $css = (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/css/job-catalog.css');
+        self::assertStringContainsString('.jobcat__flag[data-flag="NATO"]', $css, 'emblème OTAN dessiné en CSS');
     }
 
     public function testFrenchPackCoversTheSpecialForcesOfEachServiceWithFrenchOfficialNames(): void
@@ -466,7 +506,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertNotEmpty($body['entries']);
         self::assertSame('air_force', $body['entries'][0]['branch']);
         self::assertArrayHasKey('branch', $body['facets']);
-        self::assertSame(['US', 'FR', 'DE', 'CN'], array_column($body['countries'], 'code'));
+        self::assertSame(['US', 'FR', 'DE', 'CN', 'NATO'], array_column($body['countries'], 'code'));
         $_GET = ['q' => 'nageur de combat', 'country' => 'FR'];
         $body = json_decode((new JobCatalogController())->catalogue(new Request())->body(), true);
         self::assertNotEmpty($body['entries']);

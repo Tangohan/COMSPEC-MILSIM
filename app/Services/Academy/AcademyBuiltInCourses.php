@@ -17,17 +17,55 @@ final class AcademyBuiltInCourses
     public const JTAC_KEY = 'jtac-licence-ath-academy';
     public const JTAC_VERSION = '2.1.0';
 
+    /**
+     * Cours intégrés inspirés des standards OTAN publics (App\Services\Academy\BuiltIn), après le JTAC, dans l’ordre
+     * d’affichage. Chacun délivre une qualification Athena Academy (AcademyBuiltInQualifications).
+     */
+    public const NATO_COURSES = [
+        BuiltIn\NatoRadioProcedureCourse::class,
+        BuiltIn\NatoContactReportCourse::class,
+        BuiltIn\NatoMedevacCourse::class,
+        BuiltIn\NatoCallForFireCourse::class,
+        BuiltIn\NatoFratricidePreventionCourse::class,
+        BuiltIn\NatoFiveParagraphOrderCourse::class,
+    ];
+
+    /** @var array<string, array<string, mixed>>|null */
+    private static ?array $all = null;
+
     /** @return array<string, array<string, mixed>> */
     public static function all(): array
     {
-        $course = self::jtac();
+        if (self::$all !== null) {
+            return self::$all;
+        }
+        $out = [self::JTAC_KEY => self::jtac()];
+        foreach (self::NATO_COURSES as $class) {
+            if (class_exists($class)) {
+                $course = $class::course();
+                $out[(string) $course['key']] = $course;
+            }
+        }
 
-        return [self::JTAC_KEY => $course];
+        return self::$all = $out;
     }
 
     public static function find(string $key): ?array
     {
-        return $key === self::JTAC_KEY ? self::jtac() : null;
+        return self::all()[$key] ?? null;
+    }
+
+    /** @return array<string, array<string, mixed>> clé du cours => qualification Athena Academy délivrée */
+    public static function qualifications(): array
+    {
+        $out = [];
+        foreach (self::all() as $key => $course) {
+            if (is_array($course['qualification'] ?? null)) {
+                $out[$key] = $course['qualification'];
+            }
+        }
+
+        return $out;
     }
 
     private static function text(string $fr, string $en): array
@@ -60,6 +98,19 @@ final class AcademyBuiltInCourses
             'duration_minutes' => 180,
             'published' => true,
             'built_in' => true,
+            'license_code' => 'JTAC',
+            'qualification' => [
+                'code' => 'ACAD-JTAC',
+                'license_code' => 'JTAC',
+                'name' => self::text('Licence JTAC ATH-ACADEMY', 'ATH-ACADEMY JTAC Licence'),
+                'short_name' => 'JTAC',
+                'description' => self::text(
+                    'Guidage d’un appui aérien rapproché en jeu selon la procédure de la communauté : contact initial, situation update, game plan, CAS brief 9-line, attaque terminale et BDA. Délivrée par le cours JTAC de l’Academy après validation instructeur des six chapitres. Qualification de jeu, sans valeur réelle.',
+                    'In-game close air support control following the community procedure: initial contact, situation update, game plan, 9-line CAS brief, terminal attack and BDA. Awarded by the Academy JTAC course after instructor validation of all six chapters. In-game qualification with no real-world value.'
+                ),
+                'reference' => self::text('Inspirée des procédures JTAC alliées publiques (STANAG 3797 / ATP-3.3.2.1, termes OTAN)', 'Inspired by public allied JTAC procedures (STANAG 3797 / ATP-3.3.2.1, NATO terms)'),
+                'validity_months' => null,
+            ],
             'chapters' => [
                 self::initialContact(),
                 self::situationUpdate(),
