@@ -1,7 +1,8 @@
 /*
     Fiche de la tenue choisie : portrait de l'auteur (sinon la tenue en silhouette), nom, collection, auteur, date,
     badge d'état de synchro et sa phrase d'explication, pastilles (obligatoire / mise en avant / favori), pièces en
-    icônes légendées (8 cases), contenu, boutons d'action. Sans tenue : invite à choisir.
+    icônes légendées (8 cases), alerte des objets absents des mods, poids et remplissage des contenants, munitions et
+    matériel résumés (arsenalLoadoutStats), contenu, boutons d'action. Sans tenue : invite à choisir.
     Les libellés et l'état des actions sont gardés (COMSPEC_ArsenalActState) pour le menu clic droit des cartes.
     Params : [display, loadout, titre, méta (texte structuré)] ; l'état vient de la ligne sélectionnée.
 */
@@ -10,6 +11,8 @@ if (isNull _display) exitWith {};
 private _grp = _display getVariable ["COMSPEC_ArsenalOverlay", controlNull];
 if (isNull _grp) exitWith {};
 private _isCloud = (_grp getVariable ["COMSPEC_ArsenalTab", "local"]) isEqualTo "cloud";
+private _ico = _grp getVariable ["COMSPEC_ArsenalIco", ""];
+private _sm = _grp getVariable ["COMSPEC_ArsenalStMin", 0];
 private _has = _caption isNotEqualTo "";
 private _row = (_grp getVariable ["COMSPEC_ArsenalShown", []]) param [_grp getVariable ["COMSPEC_ArsenalSelected", -1], []];
 private _offline = _grp getVariable ["COMSPEC_ArsenalOffline", false];
@@ -31,7 +34,7 @@ private _author = if (_row isEqualTo []) then { "" } else { if (_isCloud) then {
 private _head = _grp getVariable ["COMSPEC_ArsenalDetailHead", controlNull];
 if (!isNull _head) then {
     _head ctrlSetStructuredText parseText (((if (_has) then {
-        format ["<t size='1.1' font='%3' color='#eef7f1'>%1</t><br/><t size='0.74' color='#8fa596'>%2</t>", _caption, (_meta) call comspec_overwatch_connect_fnc_tr, (_grp getVariable ["COMSPEC_ArsenalFonts", ["", "RobotoCondensedBold"]]) select 1]
+        format ["<t size='1.12' font='%3' color='#eef7f1'>%1</t><br/><t size='%4' color='#9fb3a6'>%2</t>", _caption, (_meta) call comspec_overwatch_connect_fnc_tr, (_grp getVariable ["COMSPEC_ArsenalFonts", ["", "RobotoCondensedBold"]]) select 1, 0.78 max _sm]
     } else {
         ("<t size='1.05' color='#b5c7bb'>Choisissez une tenue parmi les cartes</t><br/><t size='0.8' color='#8fa596'>Ses pièces, son auteur, son portrait et son état s'affichent ici.</t>") call comspec_overwatch_connect_fnc_tr
     })) call comspec_overwatch_connect_fnc_tr);
@@ -104,14 +107,14 @@ if (!isNull _badge) then {
 // Pastilles, chacune précédée du signe qu'elle porte sur les cartes.
 if (!isNull _flagsC) then {
     private _chips = [];
-    if (_has && {_mand}) then { _chips pushBack format ["<t color='#f2ab33'>● %1</t>", if (_badgeTxt isNotEqualTo "") then { _badgeTxt } else { ("Obligatoire") call comspec_overwatch_connect_fnc_tr }]; };
-    if (_has && {_feat}) then { _chips pushBack format ["<t color='#7ec8ff'>◆ %1</t>", ("Mise en avant") call comspec_overwatch_connect_fnc_tr]; };
-    if (_has && {_fav}) then { _chips pushBack format ["<t color='#f0d060'>★ %1</t>", ("Favori") call comspec_overwatch_connect_fnc_tr]; };
+    if (_has && {_mand}) then { _chips pushBack format ["<img image='%2required_ca.paa' color='#f2ab33'/> <t color='#f2ab33'>%1</t>", if (_badgeTxt isNotEqualTo "") then { _badgeTxt } else { ("Obligatoire") call comspec_overwatch_connect_fnc_tr }, _ico]; };
+    if (_has && {_feat}) then { _chips pushBack format ["<img image='%2featured_ca.paa' color='#7ec8ff'/> <t color='#7ec8ff'>%1</t>", ("Mise en avant") call comspec_overwatch_connect_fnc_tr, _ico]; };
+    if (_has && {_fav}) then { _chips pushBack format ["<img image='%2star_ca.paa' color='#f0d060'/> <t color='#f0d060'>%1</t>", ("Favori") call comspec_overwatch_connect_fnc_tr, _ico]; };
     if (_has && {_author isNotEqualTo ""}) then { _chips pushBack format ["<t color='#b5c7bb'>%1</t>", format [("Envoyée par %1") call comspec_overwatch_connect_fnc_tr, _author]]; };
-    _flagsC ctrlSetStructuredText parseText (((if (_chips isEqualTo []) then { "" } else { format ["<t size='0.74'>%1</t>", _chips joinString "     "] })) call comspec_overwatch_connect_fnc_tr);
+    _flagsC ctrlSetStructuredText parseText (((if (_chips isEqualTo []) then { "" } else { format ["<t size='%2'>%1</t>", _chips joinString "     ", 0.78 max _sm] })) call comspec_overwatch_connect_fnc_tr);
 };
 if (!isNull _noteC) then {
-    _noteC ctrlSetStructuredText parseText (((if (_has) then { format ["<t size='0.78' color='#c4d2c8'>%1</t>", (_note) call comspec_overwatch_connect_fnc_tr] } else { "" })) call comspec_overwatch_connect_fnc_tr);
+    _noteC ctrlSetStructuredText parseText (((if (_has) then { format ["<t size='%2' color='#c9d6cd'>%1</t>", (_note) call comspec_overwatch_connect_fnc_tr, 0.8 max _sm] } else { "" })) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Comparaison avec la tenue portée (menu « Comparer ») : les 8 emplacements principaux, classe par classe.
@@ -128,6 +131,8 @@ if (_cmpOn) then {
 };
 // Objets que les mods chargés ne connaissent pas : ils ne seraient pas enfilés.
 private _missing = if (_has && {_loadout isNotEqualTo []}) then { [_loadout] call comspec_overwatch_connect_fnc_arsenalMissingItems } else { [] };
+// Poids, remplissage et contenu résumé (config seulement, mémorisé par classe).
+private _stats = if (_has && {_loadout isNotEqualTo []}) then { [_loadout] call comspec_overwatch_connect_fnc_arsenalLoadoutStats } else { [] };
 
 // Pièces : icône et légende (traduite) ; info-bulle avec le nom de l'objet. Comparaison : case différente en orange.
 // Afficher aussi sans image (mods absents) : la case reste utile avec le libellé.
@@ -159,7 +164,7 @@ if (!isNull _names) then {
         case ((count _lines) > 0): {
             private _top = [];
             if (_missing isNotEqualTo []) then {
-                _top pushBack format ["<t color='#e06a5a'>%1</t>", format [("%1 objet(s) absents de vos mods, ils ne seront pas enfilés : %2") call comspec_overwatch_connect_fnc_tr, count _missing, ((_missing select [0, 8]) joinString ", ") + (["", "…"] select ((count _missing) > 8))]];
+                _top pushBack format ["<img image='%2warn_ca.paa' color='#e06a5a'/> <t color='#ff8a78'>%1</t>", format [("%1 objet(s) absents de vos mods, ils ne seront pas enfilés : %2") call comspec_overwatch_connect_fnc_tr, count _missing, ((_missing select [0, 8]) joinString ", ") + (["", "…"] select ((count _missing) > 8))], _ico];
             };
             if (_cmpOn) then {
                 _top pushBack (if (_diffKinds isEqualTo []) then {
@@ -168,12 +173,30 @@ if (!isNull _names) then {
                     format ["<t color='#f2ab33'>%1</t>", format [("Différent de la tenue portée : %1") call comspec_overwatch_connect_fnc_tr, (_diffKinds apply { (_x) call comspec_overwatch_connect_fnc_tr }) joinString ", "]]
                 });
             };
+            // Poids estimé, remplissage des contenants (orange au-delà de 85 %, rouge plein), puis munitions et matériel.
+            if (_stats isNotEqualTo []) then {
+                _stats params ["_kg", "_loads", "_cats"];
+                private _ld = _loads apply {
+                    _x params ["_slot", "_pct"];
+                    format ["%1 <t color='%3'>%2 %4</t>", (_slot) call comspec_overwatch_connect_fnc_tr, _pct, switch (true) do { case (_pct > 100): { "#ff8a78" }; case (_pct > 85): { "#f2ab33" }; default { "#d6e2da" }; }, "%"]
+                };
+                _top pushBack format ["<img image='%1weight_ca.paa' color='#9fb3a6'/> <t color='#eef7f1'>%2</t>%3", _ico,
+                    format [("Poids estimé : %1 kg") call comspec_overwatch_connect_fnc_tr, _kg],
+                    if (_ld isEqualTo []) then { "" } else { "   <t color='#8fa596'>·</t>   " + (_ld joinString "   ") }];
+                {
+                    _x params ["_cat", "_items"];
+                    private _parts = (_items select [0, 6]) apply { format ["%1× %2", _x select 1, _x select 0] };
+                    if ((count _items) > 6) then { _parts pushBack format [("+%1 autre(s)") call comspec_overwatch_connect_fnc_tr, (count _items) - 6]; };
+                    _top pushBack format ["<t color='#8fa596'>%1</t>   %2", (_cat) call comspec_overwatch_connect_fnc_tr, _parts joinString ", "];
+                } forEach _cats;
+                _top pushBack "";
+            };
             (_top + [_lines joinString "<br/>"]) joinString "<br/>"
         };
         case (_err isEqualTo "too_large"): { format ["<t color='#ffb080'>%1</t>", ("Tenue trop lourde pour l'aperçu en jeu : ouvrez-la sur le poste Athena.") call comspec_overwatch_connect_fnc_tr] };
         default { format ["<t color='#8fa596'>%1</t>", ("Équipement non disponible pour cette tenue.") call comspec_overwatch_connect_fnc_tr] };
     };
-    _names ctrlSetStructuredText parseText ((format ["<t size='0.84' color='#d6e2da'>%1</t>", _txt]) call comspec_overwatch_connect_fnc_tr);
+    _names ctrlSetStructuredText parseText ((format ["<t size='%2' color='#d6e2da'>%1</t>", _txt, 0.84 max _sm]) call comspec_overwatch_connect_fnc_tr);
     (ctrlPosition _names) params ["_nx", "_ny", "_nw"];
     _names ctrlSetPosition [_nx, _ny, _nw, (ctrlTextHeight _names) max 0.01];
     _names ctrlCommit 0;
