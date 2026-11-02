@@ -51691,6 +51691,8 @@ return [
     'L’escadre d’hélicoptères de la Luftwaffe : groupe navigant, groupe technique et groupe SOF Air au profit des forces spéciales. Sans système de grades.' => 'The Luftwaffe helicopter wing: flying group, technical group and the SOF Air group supporting special forces. No rank system.',
     'Modèles inspirés d’unités réelles' => 'Templates inspired by real units',
     'Organisation publique simplifiée de commandements et d’unités réels, à adapter : sans effectifs ni noms de personnes, chaque unité cite une source ouverte. Les noms restent ceux du pays et se traduisent ensuite.' => 'A simplified public organisation of real commands and units, to adapt: no strengths or personal names, and every unit cites an open source. Names stay in the country’s language and can be translated afterwards.',
+    'Chinois' => 'Chinese',
+    'Pinyin (chinois en alphabet latin)' => 'Pinyin (Chinese in Latin script)',
     '. Mêmes champs que les catalogues officiels : il se cherche, se filtre et se copie de la même façon.' => '. Same fields as the official catalogs: it can be searched, filtered and copied the same way.',
     'Abrégé (2 à 8 lettres ou chiffres)' => 'Abbreviation (2 to 8 letters or digits)',
     'Agrandir ou réduire la fenêtre (Alt + Entrée)' => 'Enlarge or shrink the window (Alt + Enter)',

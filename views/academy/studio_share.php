@@ -22,18 +22,22 @@ $hidden = static fn () => $csrf . '<input type="hidden" name="course" value="' .
 <form method="post" action="<?= $h($link('action/studio_share_add')) ?>" class="sh-add"><?= $hidden() ?>
 <label class="sh-find"><svg class="i"><use href="#ai-search"/></svg><input type="search" data-member-filter placeholder="<?= $h($t('share_search')) ?>" aria-label="<?= $h($t('share_search')) ?>"></label>
 <div class="sh-row"><label class="grow"><span class="sr-only"><?= $h($t('share_member')) ?></span><select class="in" name="share_user" required data-member-select><option value=""><?= $h($t('share_choose_member')) ?></option><?php foreach ($members as $memberId => $memberName): if (in_array($memberId, $sharedIds, true)) continue; ?><option value="<?= (int) $memberId ?>"><?= $h($memberName) ?></option><?php endforeach ?></select></label>
-<label><span class="sr-only"><?= $h($t('share_role')) ?></span><select class="in" name="share_role"><option value="viewer"><?= $h($t('role_viewer')) ?></option><option value="editor"><?= $h($t('role_editor')) ?></option></select></label>
+<label><span class="sr-only"><?= $h($t('share_role')) ?></span><select class="in" name="share_role"><option value="viewer"><?= $h($t('role_viewer')) ?></option><option value="editor"><?= $h($t('role_editor')) ?></option><option value="instructor"><?= $h($t('role_instructor')) ?></option></select></label>
 <button class="btn dark"><?= $h($t('share_invite')) ?></button></div>
-<p class="h"><?= $h($t('share_roles_help')) ?></p>
+<p class="h"><?= $h($t('share_roles_help_v2')) ?></p>
 </form>
 <ul class="sh-list" aria-label="<?= $h($t('share_who')) ?>">
-<li><span class="av" aria-hidden="true">★</span><span class="grow"><b><?= $h($t('share_staff')) ?></b><small><?= $h($t('share_staff_help')) ?></small></span><span class="role"><?= $h($t('role_owner')) ?></span></li>
+<li><span class="av" aria-hidden="true">★</span><span class="grow"><b><?= $h($t('share_staff')) ?></b><small><?= $h($t('share_staff_help_v2')) ?></small></span><span class="role"><?= $h($t('role_owner')) ?></span></li>
 <?php foreach ($shared as $share): $name = $members[$share['user_id']] ?? '#' . $share['user_id']; ?>
 <li><span class="av" aria-hidden="true"><?= $h(mb_strtoupper(mb_substr($name, 0, 1))) ?></span><span class="grow"><b><?= $h($name) ?></b><small><?= $h($t('share_since')) ?> <?= $h(date('d/m/Y', (int) strtotime($share['created_at']))) ?></small></span>
-<form method="post" action="<?= $h($link('action/studio_share_add')) ?>" class="sh-inline"><?= $hidden() ?><input type="hidden" name="share_user" value="<?= (int) $share['user_id'] ?>"><label><span class="sr-only"><?= $h($t('share_role')) ?> · <?= $h($name) ?></span><select class="in sm" name="share_role" data-autosubmit><option value="viewer"<?= $share['role'] === 'viewer' ? ' selected' : '' ?>><?= $h($t('role_viewer')) ?></option><option value="editor"<?= $share['role'] === 'editor' ? ' selected' : '' ?>><?= $h($t('role_editor')) ?></option></select></label><noscript><button class="btn"><?= $h($t('update')) ?></button></noscript></form>
+<form method="post" action="<?= $h($link('action/studio_share_add')) ?>" class="sh-inline"><?= $hidden() ?><input type="hidden" name="share_user" value="<?= (int) $share['user_id'] ?>"><label><span class="sr-only"><?= $h($t('share_role')) ?> · <?= $h($name) ?></span><select class="in sm" name="share_role" data-autosubmit><option value="viewer"<?= $share['role'] === 'viewer' ? ' selected' : '' ?>><?= $h($t('role_viewer')) ?></option><option value="editor"<?= $share['role'] === 'editor' ? ' selected' : '' ?>><?= $h($t('role_editor')) ?></option><option value="instructor"<?= $share['role'] === 'instructor' ? ' selected' : '' ?>><?= $h($t('role_instructor')) ?></option></select></label><noscript><button class="btn"><?= $h($t('update')) ?></button></noscript></form>
 <form method="post" action="<?= $h($link('action/studio_share_remove')) ?>" class="sh-inline"><?= $hidden() ?><input type="hidden" name="share_user" value="<?= (int) $share['user_id'] ?>"><button class="ib dg" title="<?= $h($t('share_remove')) ?>"><svg class="i"><use href="#ai-trash"/></svg><span class="sr-only"><?= $h($t('share_remove')) ?> · <?= $h($name) ?></span></button></form></li>
 <?php endforeach ?>
 </ul></section>
+<section class="sh-sec" aria-labelledby="sh-audience" id="qui-voit"><h3 id="sh-audience"><?= $h($t('audience_question')) ?></h3>
+<?php $accessCourse = ['key' => $key, 'published' => !empty($course['published']), 'built_in' => false]; $accessData = $sharing['access'] ?? ['ready' => false]; $accessReturn = ''; require __DIR__ . '/course_access_form.php'; ?>
+</section>
+<?php if (!empty($sharing['canLink']) || !isset($sharing['canLink'])): ?>
 <section class="sh-sec" aria-labelledby="sh-link"><h3 id="sh-link"><?= $h($t('share_link_title')) ?></h3>
 <form method="post" action="<?= $h($link('action/studio_link_save')) ?>" class="sh-linkform" data-link-form><?= $hidden() ?>
 <div class="sh-access"><span class="av link" aria-hidden="true"><svg class="i"><use href="#ai-link"/></svg></span>
@@ -49,6 +53,7 @@ $hidden = static fn () => $csrf . '<input type="hidden" name="course" value="' .
 <form method="post" action="<?= $h($link('action/studio_link_regenerate')) ?>" class="sh-regen"><?= $hidden() ?><input type="hidden" name="link_access" value="<?= $h($shareLink['access']) ?>"><input type="hidden" name="link_role" value="<?= $h($shareLink['role']) ?>"><input type="hidden" name="link_expiry" value="keep"><button class="ib" data-confirm="<?= $h($t('link_regenerate_confirm')) ?>"><svg class="i"><use href="#ai-refresh"/></svg><?= $h($t('link_regenerate')) ?></button><span class="h"><?= $h($t('link_regenerate_help')) ?></span></form>
 <?php endif ?>
 </section>
+<?php endif ?>
 <?php endif ?>
 </div>
 <div class="mf"><span class="h"><?= $h($t('share_audit_note')) ?></span><button class="btn dark" type="button" data-close-dialog><?= $h($t('done')) ?></button></div>
