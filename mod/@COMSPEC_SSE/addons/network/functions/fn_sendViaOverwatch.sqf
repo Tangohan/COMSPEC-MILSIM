@@ -51,6 +51,8 @@ private _needsPersonApi = (
 // SendSSE / GENERIC (fiches génériques, payload plat legacy) : repli texte sendIntel autorisé sans DLL.
 private _needsTypedApi = _needsPersonApi
     || {(toUpper _command) isEqualTo "SUBMITSSEDIGITAL"}
+    // Contrôles d'identité (addon identity) : fiche typée, jamais de repli en note HUMINT.
+    || {(toUpper _command) isEqualTo "SUBMITIDCHECK"}
     || {(toUpper _kind) isEqualTo "DIGITAL"};
 
 // Envoi par l'extension (fiches typées Athena). Renvoie true si l'extension répond OK.

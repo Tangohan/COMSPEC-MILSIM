@@ -44,7 +44,7 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_C1AD41F8F0";
             property = "COMSPEC_SSE_BioFalsePapers";
             control = "Combo";
-            expression = "if (_value isNotEqualTo 'auto') then { if (isServer) then { _this setVariable ['COMSPEC_SSE_BioFalsePapers', _value, true]; }; };";
+            expression = "if (_value isNotEqualTo 'auto') then { if (isServer) then { _this setVariable ['COMSPEC_SSE_BioFalsePapers', _value]; }; };";
             defaultValue = "'auto'";
             typeName = "STRING";
             condition = "objectBrain";
@@ -59,7 +59,8 @@ class COMSPEC_SSE_Biometrie {
             tooltip = "$STR_COMSPEC_SSE_CFG_C9D8D09F08";
             property = "COMSPEC_SSE_BioTrueName";
             control = "Edit";
-            expression = "if (_value isNotEqualTo '') then { if (isServer) then { _this setVariable ['COMSPEC_SSE_BioTrueName', _value, true]; }; };";
+            // Vraie identité : serveur seulement, jamais diffusée (fn_bioProfile ne la lit que sur le serveur, fn_bioRecord).
+            expression = "if (_value isNotEqualTo '') then { if (isServer) then { _this setVariable ['COMSPEC_SSE_BioTrueName', _value]; }; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain";

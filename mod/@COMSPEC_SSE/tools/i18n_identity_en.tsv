@@ -1,0 +1,194 @@
+Contrôle d'identité	Identity check
+Demander les papiers	Ask for papers
+Contrôler l'identité	Check identity
+Fouiller les papiers	Search for papers
+Documents trouvés	Documents found
+Rendre un document	Return a document
+Mes papiers	My papers
+Présenter mes papiers	Show my papers
+Refuser	Refuse
+Consulter mes papiers	Read my papers
+Contrôler les occupants	Check occupants
+Faire descendre	Order out
+Examiner (contrôle visuel)	Examine (visual check)
+Saisir	Seize
+Présenter	Show
+Remettre	Hand over
+Rendre : %1	Return: %1
+Papiers, s'il vous plaît…	Papers, please…
+Fouille des papiers…	Searching for papers…
+Examen du document…	Examining the document…
+Saisie du document…	Seizing the document…
+Vous rendez le document…	Returning the document…
+Lecture du document…	Reading the document…
+Vous tendez votre document…	Showing your document…
+Vous remettez votre document…	Handing over your document…
+Contrôle des occupants…	Checking occupants…
+Vous faites descendre les occupants…	Ordering the occupants out…
+Lecture de la bande MRZ…	Reading the MRZ…
+Lecture de la puce NFC…	Reading the NFC chip…
+Interrogation de la base…	Querying the database…
+RECTO / VERSO	FRONT / BACK
+Scanner avec l'ATAK	Scan with the ATAK
+FERMER	CLOSE
+SIMULATION · document fictif	SIMULATION · fictional document
+SIMULATION · votre document	SIMULATION · your document
+Carte d'identité	Identity card
+Passeport	Passport
+Permis de conduire	Driving licence
+Document vierge	Blank document
+Il affirme ne pas avoir de papiers sur lui.	He claims he has no papers on him.
+Il désigne sa poche : vous prenez ses papiers.	He points to his pocket: you take his papers.
+Il fouille ses poches et vous tend ses papiers.	He searches his pockets and hands you his papers.
+Il hésite, puis refuse de montrer ses papiers.	He hesitates, then refuses to show his papers.
+Il recule, puis s'enfuit en courant !	He backs off, then runs away!
+Il refuse sèchement et vous fixe, la main près de son arme.	He flatly refuses and stares at you, hand near his weapon.
+Il vous tend ses papiers avec assurance.	He confidently hands you his papers.
+Il vous tend ses papiers sans un mot.	He hands you his papers without a word.
+La personne ne répond pas : fouillez-la.	The person does not respond: search them.
+Il descend du véhicule.	He gets out of the vehicle.
+Demande envoyée.	Request sent.
+Demande faite : il doit présenter ses papiers.	Request made: he has to show his papers.
+Demande faite à %1 : il doit présenter ses papiers (Mes papiers).	Request made to %1: they have to show their papers (My papers).
+%1 vous demande vos papiers. Menu ACE personnel › Mes papiers : présenter ou refuser.	%1 is asking for your papers. ACE self menu › My papers: show or refuse.
+%1 vous présente : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité.	%1 shows you: %2. ACE menu › Identity check › Check identity.
+%1 vous présente : %2.	%1 shows you: %2.
+%1 vous remet : %2.	%1 hands you: %2.
+%1 vous rend un document.	%1 returns a document to you.
+%1 vous présente un document vierge (aucun titulaire).	%1 shows you a blank document (no holder).
+%1 refuse de présenter ses papiers.	%1 refuses to show their papers.
+%1 fouille vos papiers.	%1 is searching your papers.
+%1 a saisi un de vos documents.	%1 seized one of your documents.
+%1 vous demande de descendre du véhicule.	%1 orders you out of the vehicle.
+Vous refusez de présenter vos papiers.	You refuse to show your papers.
+Personne à qui présenter vos papiers : regardez-la, à moins de 3 m.	Nobody to show your papers to: look at them, within 3 m.
+Personne à qui présenter vos papiers à moins de 3 m.	Nobody to show your papers to within 3 m.
+Ce document n'est plus dans votre inventaire.	This document is no longer in your inventory.
+Ce document ne vous a pas été présenté (ou plus).	This document was not shown to you (or no longer is).
+Document introuvable ou plus présenté.	Document not found or no longer shown.
+Approchez-vous du document.	Get closer to the document.
+Lecteur NFC : approchez-vous à moins de 1,5 m du document.	NFC reader: get within 1.5 m of the document.
+Il faut qu'il vous ait présenté ce document, ou qu'il soit entravé.	He must have shown you this document, or be restrained.
+Le document n'est plus là.	The document is no longer there.
+Saisie impossible : plus d'exemplaire disponible.	Cannot seize: no document copy available.
+Véhicule trop loin ou en mouvement.	Vehicle too far or moving.
+Aucun occupant à contrôler.	No occupant to check.
+Fouille : aucun document trouvé.	Search: no document found.
+Fouille : %1 document(s). Menu ACE › Contrôle d'identité : examiner ou saisir.	Search: %1 document(s). ACE menu › Identity check: examine or seize.
+Document saisi sur %1 : il est dans votre inventaire (chaîne de possession ouverte).	Document seized from %1: it is in your inventory (chain of custody opened).
+Document rendu à %1.	Document returned to %1.
+Document vierge : aucun titulaire, rien d'imprimé.	Blank document: no holder, nothing printed.
+Pas de téléphone ATAK sur vous : impossible de scanner le document.	No ATAK phone on you: cannot scan the document.
+Examen visuel : rien d'anormal.	Visual check: nothing abnormal.
+Trop sombre pour bien examiner le document : éclairez-le.	Too dark to examine the document properly: light it up.
+Hologramme de sécurité absent.	Security hologram missing.
+La photo semble rapportée : bord décollé, plastification reprise.	The photo looks replaced: lifted edge, redone lamination.
+Caractères du nom irréguliers : police différente du reste du document.	Irregular name characters: font differs from the rest of the document.
+Document expiré depuis le %1.	Document expired since %1.
+Document expiré (%1).	Document expired (%1).
+Document expiré.	Document expired.
+Pas de bande MRZ sur ce document.	No MRZ on this document.
+MRZ : chiffre de contrôle du numéro faux.	MRZ: wrong document number check digit.
+MRZ : chiffre de contrôle de la date de naissance faux.	MRZ: wrong date of birth check digit.
+MRZ : chiffre de contrôle de la date d'expiration faux.	MRZ: wrong expiry date check digit.
+MRZ : chiffre de contrôle global faux.	MRZ: wrong composite check digit.
+MRZ illisible ou mal formée.	MRZ unreadable or malformed.
+MRZ différente du recto : le nom ne correspond pas.	MRZ differs from the front: the name does not match.
+MRZ différente du recto : la date de naissance ne correspond pas.	MRZ differs from the front: the date of birth does not match.
+MRZ conforme ICAO, chiffres de contrôle justes, identique au recto.	MRZ ICAO compliant, check digits correct, matches the front.
+Ce document n'a pas de puce.	This document has no chip.
+Aucune puce détectée sur un document qui doit en avoir une.	No chip detected on a document that should have one.
+Puce présente mais illisible (endommagée ou non personnalisée).	Chip present but unreadable (damaged or not personalised).
+Puce lue : la photo enregistrée n'est pas celle imprimée.	Chip read: the stored photo is not the printed one.
+Puce lue : signature invalide, données différentes du document.	Chip read: invalid signature, data differs from the document.
+Puce lue : signature valide, données identiques au document.	Chip read: valid signature, data matches the document.
+Numéro inconnu de la base du pays : jamais délivré.	Number unknown to the country's database: never issued.
+Document signalé VOLÉ.	Document reported STOLEN.
+Document déclaré perdu.	Document reported lost.
+Document RÉVOQUÉ par l'autorité.	Document REVOKED by the authority.
+La base attribue ce numéro à une autre personne.	The database assigns this number to another person.
+AVIS : personne %1 (réf. %2).	NOTICE: person %1 (ref. %2).
+sous surveillance	under watch
+RECHERCHÉE	WANTED
+Base du pays : document délivré, valide, aucun signalement.	Country database: document issued, valid, no report.
+Document vierge : aucun titulaire, aucun numéro délivré.	Blank document: no holder, no number issued.
+Athena injoignable : base locale seule.	Athena unreachable: local database only.
+Athena : réponse illisible, base locale seule.	Athena: unreadable reply, local database only.
+Athena ne connaît plus ce document.	Athena no longer knows this document.
+Athena : document délivré, valide%1.	Athena: document issued, valid%1.
+Athena : ce document appartient à %1 %2%3.	Athena: this document belongs to %1 %2%3.
+Athena : %1%2.	Athena: %1%2.
+CONTRÔLE	CHECK
+HISTORIQUE	HISTORY
+Aucun contrôle	No check
+Aucun contrôle en cours	No check in progress
+Les contrôles faits pendant la mission s'affichent ici.	Checks made during the mission appear here.
+Menu ACE sur une personne : Contrôle d'identité, Demander les papiers, puis Contrôler l'identité.	ACE menu on a person: Identity check, Ask for papers, then Check identity.
+Né(e) le	Born on
+Expire le	Expires on
+Contrôlé	Checked person
+Voir	View
+N0 VISUEL	N0 VISUAL
+N2 PUCE	N2 CHIP
+N3 BASE	N3 DATABASE
+N0 · Examen visuel	N0 · Visual check
+N1 · Bande MRZ	N1 · MRZ
+N2 · Puce NFC	N2 · NFC chip
+N3 · Base	N3 · Database
+Lire la MRZ (N1)	Read the MRZ (N1)
+Lire la puce (N2)	Read the chip (N2)
+Interroger la base (N3)	Query the database (N3)
+Transmettre à Athena	Send to Athena
+Transmis	Sent
+transmis	sent
+Joindre à une FRM	Attach to an FRM
+Envoi au portail Athena (file d'attente hors liaison).	Sent to the Athena portal (queued when offline).
+Sans liaison Athena : mis en file d'attente.	No Athena link: queued.
+SIMULATION : documents et pays fictifs.	SIMULATION: fictional documents and countries.
+RAS : DOCUMENT CONFORME	CLEAR: DOCUMENT GENUINE
+DOUTE : À APPROFONDIR	DOUBT: CHECK FURTHER
+DOCUMENT EXPIRÉ	DOCUMENT EXPIRED
+NUMÉRO INCONNU : FAUX PROBABLE	UNKNOWN NUMBER: LIKELY FAKE
+FAUX DOCUMENT	FAKE DOCUMENT
+DOCUMENT VOLÉ	STOLEN DOCUMENT
+DOCUMENT RÉVOQUÉ	REVOKED DOCUMENT
+PERSONNE SOUS SURVEILLANCE	PERSON UNDER WATCH
+PERSONNE RECHERCHÉE	WANTED PERSON
+HVT : CIBLE PRIORITAIRE	HVT: PRIORITY TARGET
+Contrôle ID : %1 — %2	ID check: %1 — %2
+Contrôle transmis à Athena (%1).	Check sent to Athena (%1).
+Pas de liaison Athena : contrôle mis en file d'attente, envoyé au retour de la liaison.	No Athena link: check queued, sent when the link is back.
+Fiche FRM pré-remplie avec le contrôle	FRM report pre-filled with the check
+Contrôle ID	ID Check
+Difficulté des contrôles	Check difficulty
+Réaliste	Realistic
+Arcade : les anomalies se voient facilement. Réaliste : un bon faux passe souvent l'examen visuel, la nuit tout est plus dur.	Arcade: anomalies are easy to spot. Realistic: a good fake often passes the visual check, everything is harder at night.
+Papiers d'identité fictifs, contrôle par le menu ACE et l'app Contrôle ID du téléphone.	Fictional identity papers, checked through the ACE menu and the phone's ID Check app.
+Pays des papiers	Country of the papers
+Selon la carte	Based on the map
+Pays fictif des papiers délivrés. Selon la carte : Altis et Stratis → Altis, Tanoa → Tanoa, Livonia → Livonie, Malden → Malden.	Fictional country of issued papers. Based on the map: Altis and Stratis → Altis, Tanoa → Tanoa, Livonia → Livonia, Malden → Malden.
+Papiers des IA	AI papers
+Les IA ont des papiers selon leur camp (civils, insurgés, cibles). Les joueurs n'en ont que par l'attribut Eden, le kit ou le module Zeus.	AI carry papers depending on their side (civilians, insurgents, targets). Players only get papers from the Eden attribute, their kit or the Zeus module.
+Civils qui présentent leurs papiers (%)	Civilians who show their papers (%)
+Part des civils qui tendent leurs papiers quand on les leur demande.	Share of civilians who hand over their papers when asked.
+Insurgés porteurs de faux papiers (%)	Insurgents carrying forged papers (%)
+Part des combattants ennemis qui ont de faux papiers. Les autres n'en ont pas.	Share of enemy fighters with forged papers. The others have none.
+Durée d'une présentation (s)	Presentation duration (s)
+Temps pendant lequel un document présenté peut être contrôlé par celui à qui on l'a tendu.	How long a shown document can be checked by the person it was shown to.
+Transmission automatique à Athena	Automatic sending to Athena
+Chaque contrôle terminé part tout seul vers Athena. Décoché : bouton Transmettre de l'app Contrôle ID.	Each completed check is sent to Athena automatically. Unticked: Send button of the ID Check app.
+Documents et avis d'Athena	Athena documents and notices
+Avec la liaison, les documents délivrés et les personnes signalées de votre communauté sont chargés au début de la mission.	With the link, your community's issued documents and flagged persons are loaded at mission start.
+Opération Athena	Athena operation
+Facultatif : clé de l'opération Athena dont on charge les documents. Vide : documents de la carte seulement.	Optional: key of the Athena operation whose documents are loaded. Empty: map documents only.
+Identité	Identity
+COMSPEC SSE · Identité	COMSPEC SSE · Identity
+Donner des papiers	Give papers
+Signaler volé / révoquer	Report stolen / revoke
+Voir les vrais papiers	View true papers
+Placez le module sur une personne.	Place the module on a person.
+Papiers donnés à %1 : %2.	Papers given to %1: %2.
+Échec : papiers non délivrés.	Failed: papers not issued.
+Vrais papiers de %1 :	True papers of %1:
+aucun document.	no document.
+Fiches : COMSPEC Overwatch doit être chargé	Reports: COMSPEC Overwatch must be loaded
