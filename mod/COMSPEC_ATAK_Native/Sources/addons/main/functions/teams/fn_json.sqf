@@ -7,6 +7,8 @@ switch (typeName _v) do {
     case "HASHMAP": { "{" + ((keys _v) apply { ([_x] call comspec_atak_native_fnc_json) + ":" + ([_v get _x] call comspec_atak_native_fnc_json) } joinString ",") + "}" };
     case "ARRAY": { "[" + ((_v apply { [_x] call comspec_atak_native_fnc_json }) joinString ",") + "]" };
     case "STRING": {
+        // Rien à remplacer (cas courant) : test natif au lieu de cinq CBA_fnc_replace. Même sortie.
+        if (_v regexMatch "[^\x00-\x1f""\\]*") exitWith { """" + _v + """" };
         private _t = [_v, "\", "\\"] call CBA_fnc_replace;
         _t = [_t, """", "\"""] call CBA_fnc_replace;
         _t = [_t, toString [10], "\n"] call CBA_fnc_replace;

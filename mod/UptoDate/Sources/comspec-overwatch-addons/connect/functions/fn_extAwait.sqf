@@ -24,8 +24,9 @@ if (!canSuspend && {!(_ext in _noAsync)} && {!isNil "COMSPEC_ExtensionCallbackEH
     ["ERR|unscheduled", 0, 0]
 };
 // Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
+// Commande rapide (liste fn_extFast : mémoire, cache, mise en file) : appel direct aussi, sans ticket ni attente du rappel.
 private _pt = diag_tickTime;
-if (!canSuspend || {_ext in _noAsync} || {isNil "COMSPEC_ExtensionCallbackEH"}) exitWith { private _r = _ext callExtension [_cmd, _args]; if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; }; _r };
+if (!canSuspend || {_ext in _noAsync} || {isNil "COMSPEC_ExtensionCallbackEH"} || {[_cmd] call comspec_overwatch_connect_fnc_extFast}) exitWith { private _r = _ext callExtension [_cmd, _args]; if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; }; _r };
 // Bloc non ordonnancé (isNil {}) : lecture + écriture du compteur et création de la table sans suspension possible,
 // sinon deux scripts suspendus entre les deux obtenaient le même ticket.
 private _n = 0;

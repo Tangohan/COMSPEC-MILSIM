@@ -99,7 +99,7 @@ private _mapRect = [_bx, _by + _topH, _bw, _bh - _topH - _botH];
 uiNamespace setVariable ["COMSPEC_ATAK_PlanLayout", createHashMapFromArray [["body", [_bx, _by, _bw, _bh]], ["map", _mapRect], ["top", _topH], ["bot", _botH], ["rowH", _rowH], ["gap", _gap], ["pad", _pad]]];
 private _map = ["COMSPEC_RscMap", _mapRect, "", false] call comspec_atak_native_fnc_pageCtrl;
 _ctrls set ["map", _map];
-_map ctrlAddEventHandler ["Draw", { ["draw", _this] call comspec_atak_native_fnc_planMap; }];
+_map ctrlAddEventHandler ["Draw", { private _t = diag_tickTime; ["draw", _this] call comspec_atak_native_fnc_planMap; ["carte Plan (image)", _t] call comspec_atak_native_fnc_perfAcc; }];
 if (_inter) then {
     _map ctrlAddEventHandler ["MouseButtonDown", { ["down", _this] call comspec_atak_native_fnc_planMap; }];
     _map ctrlAddEventHandler ["MouseButtonUp", { ["up", _this] call comspec_atak_native_fnc_planMap; }];

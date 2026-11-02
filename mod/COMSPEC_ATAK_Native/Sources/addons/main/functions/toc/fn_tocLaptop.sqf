@@ -152,7 +152,7 @@ switch (_mode) do {
         private _bh = _hi - _th - _sb - _H * 0.008;
         private _mw = _wi * 0.655;
         private _map = ["COMSPEC_RscMapToc", [_xi, _by, _mw, _bh], "map"] call _mk;
-        _map ctrlAddEventHandler ["Draw", { ["draw", _this select 0] call comspec_atak_native_fnc_tocLaptop; }];
+        _map ctrlAddEventHandler ["Draw", { private _t = diag_tickTime; ["draw", _this select 0] call comspec_atak_native_fnc_tocLaptop; ["carte PC du poste (image)", _t] call comspec_atak_native_fnc_perfAcc; }];
         _map ctrlAddEventHandler ["MouseButtonClick", {
             params ["_m", "_b", "_mx", "_my"];
             if (_b isEqualTo 1) then { ["click", _m ctrlMapScreenToWorld [_mx, _my]] call comspec_atak_native_fnc_tocLaptop; };

@@ -19,6 +19,15 @@ if (_u isEqualType objNull) then { _obj = _u; } else { if (_u isEqualType create
 if (_obj isEqualTo player || {_e getOrDefault ["self", false]}) exitWith { true };
 if (!isNull _obj && {(side group _obj) isNotEqualTo (side group player)}) exitWith { true };
 if ((_e getOrDefault ["affiliation", "friend"]) isNotEqualTo "friend") exitWith { true };
+private _hAi = profileNamespace getVariable ["COMSPEC_ATAK_HideAllyAi", false];
+private _hAir = profileNamespace getVariable ["COMSPEC_ATAK_BftHideAir", false];
+private _hVeh = profileNamespace getVariable ["COMSPEC_ATAK_BftHideVeh", false];
+private _hLost = profileNamespace getVariable ["COMSPEC_ATAK_BftHideLost", false];
+private _hOff = profileNamespace getVariable ["COMSPEC_ATAK_BftHideOffline", false];
+private _max = profileNamespace getVariable ["COMSPEC_ATAK_BftMaxDist", 0];
+if !(_max isEqualType 0) then { _max = 0; };
+// Aucun filtre actif (cas courant) : appelé pour chaque piste à chaque rafraîchissement, sortie sans calculer le type.
+if (!_hAi && {!_hAir} && {!_hVeh} && {!_hLost} && {!_hOff} && {_max <= 0}) exitWith { true };
 private _type = _e getOrDefault ["type", ""];
 if (_type isEqualTo "") then {
     _type = switch (true) do {
@@ -30,13 +39,11 @@ if (_type isEqualTo "") then {
     };
 };
 private _fr = _e getOrDefault ["freshness", "LIVE"];
-if ((profileNamespace getVariable ["COMSPEC_ATAK_HideAllyAi", false]) && {!isNull _obj} && {!isPlayer _obj}) exitWith { false };
-if ((profileNamespace getVariable ["COMSPEC_ATAK_BftHideAir", false]) && {_type isEqualTo "air" || {!isNull _obj && {(vehicle _obj) isKindOf "Air"}}}) exitWith { false };
-if ((profileNamespace getVariable ["COMSPEC_ATAK_BftHideVeh", false]) && {_type in ["vehicle", "armor"]}) exitWith { false };
-if ((profileNamespace getVariable ["COMSPEC_ATAK_BftHideLost", false]) && {_fr in ["STALE", "LOST"]}) exitWith { false };
-if ((profileNamespace getVariable ["COMSPEC_ATAK_BftHideOffline", false]) && {_fr isEqualTo "OFFLINE"}) exitWith { false };
-private _max = profileNamespace getVariable ["COMSPEC_ATAK_BftMaxDist", 0];
-if !(_max isEqualType 0) then { _max = 0; };
+if (_hAi && {!isNull _obj} && {!isPlayer _obj}) exitWith { false };
+if (_hAir && {_type isEqualTo "air" || {!isNull _obj && {(vehicle _obj) isKindOf "Air"}}}) exitWith { false };
+if (_hVeh && {_type in ["vehicle", "armor"]}) exitWith { false };
+if (_hLost && {_fr in ["STALE", "LOST"]}) exitWith { false };
+if (_hOff && {_fr isEqualTo "OFFLINE"}) exitWith { false };
 private _pos = if ((count _e) > 0) then { _e getOrDefault ["position", [0, 0, 0]] } else { getPosASL _obj };
 if (_max > 0 && {(player distance2D _pos) > _max}) exitWith { false };
 true

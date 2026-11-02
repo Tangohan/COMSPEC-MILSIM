@@ -185,7 +185,7 @@ private _pageSig = switch (_page) do {
         // Le texte saisi est gardé avant un éventuel re-rendu.
         (uiNamespace getVariable ["COMSPEC_ATAK_Gps", createHashMap]) set ["grid", ["gpsGrid", ""] call comspec_atak_native_fnc_formValue];
         private _rt = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
-        [count _rt, _rt getOrDefault ["idx", 0], round ((getPosASL player) select 0) / 25, round ((getPosASL player) select 1) / 25, missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]]
+        [count _rt, _rt getOrDefault ["idx", 0], round (((getPosASL player) select 0) / 25), round (((getPosASL player) select 1) / 25), missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]]
     };
     case "GROUP": { (units group player) apply { [name _x, alive _x, lifeState _x, round ((damage _x) * 4)] } };
     default { [] };
@@ -193,9 +193,16 @@ private _pageSig = switch (_page) do {
 // BFT et GPS changent presque chaque seconde dans une grosse mission : au plus un rendu complet toutes les 3 s
 // (la signature n'est retenue qu'une fois la page redessinée, le changement n'est donc pas perdu).
 private _sigWait = _page in ["BFT", "GPS"] && {diag_tickTime - (_state getOrDefault ["sigRenderAt", 0]) < 3};
+// Saisie en cours (champ texte actif) : pas de re-rendu sous les doigts du joueur ; la signature n'est pas retenue,
+// la page se redessine dès qu'il quitte le champ.
+private _fc = focusedCtrl _d;
+if (!isNull _fc && {(ctrlType _fc) isEqualTo 2}) then { _sigWait = true; };
 if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_pageSig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
     if (_sigWait) exitWith { _pageSig = _state getOrDefault ["pageSig", []]; };
     _state set ["sigRenderAt", diag_tickTime];
+    // BFT : lignes, en-tête et fiche réécrites sur place quand c'est possible (aucun contrôle recréé, défilement gardé).
+    private _pt = diag_tickTime;
+    if (_page isEqualTo "BFT" && {["update"] call comspec_atak_native_fnc_pageBft}) exitWith { ["page BFT (mise à jour)", _pt] call comspec_atak_native_fnc_perfAcc; };
     [_page] call comspec_atak_native_fnc_pageRender;
 };
 _state set ["pageSig", _pageSig];
