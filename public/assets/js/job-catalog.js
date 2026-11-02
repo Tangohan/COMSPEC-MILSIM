@@ -31,20 +31,30 @@
     const LIMITS = {name: 120, abbreviation: 8, description: 500, tags: 400, code: 40};
     // Sans accents ni casse ; « ß » (sans forme décomposée) devient « ss ».
     const normalize = value => String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase().replace(/ß/g, 'ss').replace(/[^\p{L}\p{N}]+/gu, ' ');
-    // Graphie allemande sans tréma : « Fallschirmjäger » se trouve aussi en tapant « fallschirmjaeger ».
-    const transliterate = value => value.replace(/[äöüÄÖÜ]/g, c => ({ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue'})[c]);
+    // Graphie allemande sans tréma : « Fallschirmjäger » se trouve aussi en tapant « fallschirmjaeger » ;
+    // russe en latin usuel (même table que JobCatalog::CYRILLIC) : « Спецназ » se trouve en tapant « spetsnaz ».
+    const CYRILLIC = {а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya'};
+    const transliterate = value => {
+        const latin = value.replace(/[äöüÄÖÜ]/g, c => ({ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue'})[c]);
+        return /\p{Script=Cyrillic}/u.test(latin) ? latin.toLowerCase().replace(/[а-яё]/g, c => CYRILLIC[c]) : latin;
+    };
     const dialog = () => document.querySelector('[data-job-catalog]');
     const form = () => document.querySelector('form[data-job-catalog-form]');
     const isEnglish = () => (document.documentElement.lang || 'fr').slice(0, 2) === 'en';
     const branchKey = entry => entry.country + ':' + entry.branch;
-    // Nom officiel (langue du pays) en titre ; traductions (langue du lecteur, puis anglais) en ligne secondaire.
+    // Nom officiel (langue du pays) en titre ; romanisation (« zh-Latn », « ru-Latn ») dessous, puis traductions (langue du
+    // lecteur, puis anglais) en ligne secondaire.
     const officialTitle = entry => entry.official_name || entry.name;
+    // Romanisation du nom officiel en alphabet non latin, clé « <langue>-Latn » (« zh-Latn » : pinyin, « ru-Latn » : russe
+    // translittéré) : ligne à part sous le titre, donc exclue des traductions.
+    const latinKey = entry => (entry.official_lang || 'en') + '-Latn';
+    const romanized = entry => (entry.names || {})[latinKey(entry)] || '';
     const translations = entry => Object.entries(entry.names || {}).slice(1).filter(([lang]) => lang === 'en' || lang === (isEnglish() ? 'en' : 'fr'));
     // Langue HTML d'un nom : caractères chinois simplifiés (police CJK, glyphes simplifiés) et pinyin.
-    const htmlLang = lang => ({zh: 'zh-Hans', pinyin: 'zh-Latn-pinyin'})[lang] || lang;
-    const pinyin = entry => (entry.names || {}).pinyin || '';
-    // Pinyin sans tons d'un seul tenant (« tezhongzuozhan ») et avec « v » pour « ü » (« lvzhang »).
-    const pinyinForms = text => {
+    const htmlLang = lang => ({zh: 'zh-Hans', 'zh-Latn': 'zh-Latn-pinyin'})[lang] || lang;
+    // Romanisation cherchée sans accents ni tons, aussi d'un seul tenant (« tezhongzuozhan », « boevoyplovets ») et
+    // avec « v » pour « ü » du pinyin (« lvzhang »), comme on la tape au clavier.
+    const latinForms = text => {
         if (!text) return '';
         const flat = normalize(text).trim();
         const v = /[üǖǘǚǜÜǕǗǙǛ]/.test(text) ? normalize(text.replace(/[üǖǘǚǜÜǕǗǙǛ]/g, 'v')).trim() : '';
@@ -85,7 +95,7 @@
             entry.formation, entry.branch_label, entry.country_label, entry.type_label, (entry.tags || []).join(' '),
             (entry.qualifications || []).join(' '), entry.id].join(' ');
         const german = transliterate(text);
-        return ' ' + normalize(text) + ' ' + (german !== text ? normalize(german) + ' ' : '') + pinyinForms(pinyin(entry)) + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
+        return ' ' + normalize(text) + ' ' + (german !== text ? normalize(german) + ' ' : '') + latinForms(romanized(entry)) + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
     }
 
     async function load() {
@@ -179,8 +189,10 @@
 
     function score(entry, query) {
         let total = 0;
-        for (const word of query.words) {
-            if (!entry._hay.includes(word)) return -1;
+        for (const typed of query.words) {
+            // Mot tapé en cyrillique : sa translittération compte aussi (« спецназ » trouve l'étiquette « Spetsnaz »).
+            const word = entry._hay.includes(typed) ? typed : normalize(transliterate(typed)).trim();
+            if (!word || !entry._hay.includes(word)) return -1;
             total += (entry._hay.includes(' ' + word + ' ') ? 2 : 1) + (entry._name.includes(' ' + word) ? 1 : 0);
         }
         if (query.raw && (query.raw === String(entry.abbreviation).toLowerCase() || query.raw === String(entry.code).toLowerCase())) total += 10;
@@ -316,10 +328,10 @@
         const meta = el('small');
         meta.appendChild(highlight([entry.formation || entry.command, entry.type_label, entry.formation ? '' : entry.unit].filter(Boolean).join(' · '), words));
         button.append(title);
-        if (pinyin(entry)) {
+        if (romanized(entry)) {
             const roman = el('span', 'jobcat__result-roman');
-            roman.lang = htmlLang('pinyin');
-            roman.appendChild(highlight(pinyin(entry), words));
+            roman.lang = htmlLang(latinKey(entry));
+            roman.appendChild(highlight(romanized(entry), words));
             button.append(roman);
         }
         const others = translations(entry);
@@ -498,7 +510,7 @@
         detail.querySelector('h3[data-jc="official_name"]').lang = htmlLang(entry.official_lang || 'en');
         const official = detail.querySelector('[data-jc-translations]');
         official.textContent = '';
-        (pinyin(entry) ? [['pinyin', pinyin(entry)]] : []).concat(translations(entry)).forEach(([lang, text], i) => {
+        (romanized(entry) ? [[latinKey(entry), romanized(entry)]] : []).concat(translations(entry)).forEach(([lang, text], i) => {
             if (i) official.appendChild(document.createTextNode(' · '));
             const node = el('span', '', text);
             node.lang = htmlLang(lang);
@@ -552,6 +564,22 @@
                 target.appendChild(el(key === 'tags' ? 'span' : 'li', key === 'tags' ? 'job-tag job-tag--slate' : '', text));
             });
         });
+        // Qualifications du catalogue liées (brevets cités) : nom, intitulé officiel et école émettrice.
+        const quals = detail.querySelector('[data-jc-quals]');
+        if (quals) {
+            quals.textContent = '';
+            (entry.linked_qualifications || []).forEach(q => {
+                const li = el('li', '', q.name);
+                if (q.official_name && q.official_name !== q.name) li.appendChild(el('small', 'jobcat__qual-official', ' — ' + q.official_name));
+                if (q.issuer) li.appendChild(el('small', 'jobcat__qual-issuer', q.issuer));
+                quals.appendChild(li);
+            });
+        }
+        const linkBox = detail.querySelector('[data-jc-link-quals]');
+        if (linkBox) {
+            linkBox.hidden = !(entry.linked_qualifications || []).length;
+            linkBox.querySelector('input').checked = false;
+        }
         const sources = detail.querySelector('[data-jc-list="sources"]');
         sources.textContent = '';
         (entry.sources || []).forEach(source => {
@@ -842,6 +870,29 @@
         return true;
     }
 
+    /**
+     * Case « importer les qualifications liées » : champs cachés lus à l'enregistrement de l'emploi (qualifications
+     * importées sans doublon et ajoutées aux prérequis). Décochée : rien n'est envoyé.
+     */
+    function linkQualifications() {
+        const target = form();
+        if (!target) return;
+        target.querySelectorAll('[data-catalog-qual]').forEach(node => node.remove());
+        const wanted = dialog()?.querySelector('[data-job-catalog-link-quals]')?.checked;
+        const refs = (current.linked_qualifications || []).map(q => q.id);
+        if (!wanted || !refs.length) return;
+        const add = (name, value) => {
+            const input = el('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            input.dataset.catalogQual = '';
+            target.appendChild(input);
+        };
+        add('catalog_qualifications_prereq', '1');
+        refs.forEach(ref => add('catalog_qualification_refs[]', ref));
+    }
+
     /** Ce que « Copier tout » écrit dans la fiche : champs, valeur résumée, champ déjà rempli remplacé ou non. */
     function copyPlan() {
         const keys = ['name', 'abbreviation', 'description', 'code'].filter(key => valueOf(key) && plain(key));
@@ -896,6 +947,7 @@
         if (!plan.length || !(await confirmCopy(plan))) return;
         const keys = plan.map(item => item.key).filter(key => key !== 'icon' && key !== 'tags');
         keys.forEach(key => copyOne(key, true));
+        linkQualifications();
         if (current.icon) setIcon(current.icon);
         if ((current.tags || []).length) mergeTags(current.tags);
         close();
