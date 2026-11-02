@@ -54,11 +54,33 @@ final class SeniorityPrePlatformService
         }
         $this->tenantDefaultsService->ensureStandardPack($tenantId);
         $defId = $this->seniorityRepository->findDefinitionIdByTenantAndCode($tenantId, self::CODE_ORG);
-        if ($defId === null) {
+        $fromSeniority = $defId === null ? null : $this->seniorityRepository->earliestStartForDefinitionTenant($tenantId, $defId);
+
+        return $fromSeniority ?? $this->readOrgFoundingFromRootUnits($tenantId);
+    }
+
+    /**
+     * Date de création déjà renseignée ailleurs sur le site : « date de création publique » des unités de tête
+     * (Organisation > Unités, ORBAT). Sert de valeur par défaut tant que l'ancienneté n'a pas sa propre date.
+     */
+    private function readOrgFoundingFromRootUnits(int $tenantId): ?string
+    {
+        if ($tenantId < 1) {
+            return null;
+        }
+        try {
+            $pdo = \App\Core\Database::getPdo();
+            $stmt = $pdo->prepare(
+                'SELECT MIN(public_founded_on) FROM units
+                 WHERE tenant_id = ? AND (parent_id IS NULL OR parent_id = 0) AND public_founded_on IS NOT NULL'
+            );
+            $stmt->execute([$tenantId]);
+            $raw = $stmt->fetchColumn();
+        } catch (\Throwable) {
             return null;
         }
 
-        return $this->seniorityRepository->earliestStartForDefinitionTenant($tenantId, $defId);
+        return $this->normalizeDateString(is_string($raw) ? substr($raw, 0, 10) : null);
     }
 
     public function hasReviewedOrgFounding(int $tenantId): bool
