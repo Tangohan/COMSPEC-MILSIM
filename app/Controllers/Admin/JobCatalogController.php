@@ -10,17 +10,22 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\JobCatalogCollectionRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Community\CommunityMediaUploadService;
 use App\Services\Personnel\JobPrerequisiteService;
 use App\Services\Personnel\JobPrerequisiteViewData;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 use App\Support\EffectifsLmsAccess;
+use App\Support\JobCatalog\CommunityJobCatalog;
 use App\Support\JobCatalog\JobCatalog;
+use InvalidArgumentException;
 
 /**
- * Emplois & fonctions : catalogue d’emplois de référence (fenêtre « Chercher dans le catalogue »), prérequis d’un
- * emploi, dérogations et réglage « prérequis bloquants ou indicatifs ».
+ * Emplois & fonctions : catalogue d’emplois de référence (fenêtre « Chercher dans le catalogue ») — catalogues
+ * officiels par pays et catalogues de communauté (création, emplois, images, partage) —, prérequis d’un emploi,
+ * dérogations et réglage « prérequis bloquants ou indicatifs ».
  */
 final class JobCatalogController
 {
@@ -28,7 +33,19 @@ final class JobCatalogController
         private ?PersonnelJobRoleRepository $jobRoles = null,
         private ?TenantRepository $tenants = null,
         private ?JobPrerequisiteService $prerequisites = null,
+        private ?JobCatalogCollectionRepository $collections = null,
+        private ?CommunityMediaUploadService $media = null,
     ) {
+    }
+
+    private function collections(): JobCatalogCollectionRepository
+    {
+        return $this->collections ??= new JobCatalogCollectionRepository();
+    }
+
+    private function media(): CommunityMediaUploadService
+    {
+        return $this->media ??= new CommunityMediaUploadService();
     }
 
     private function jobRoles(): PersonnelJobRoleRepository
@@ -71,15 +88,192 @@ final class JobCatalogController
             $filters[$f] = mb_substr(trim((string) $request->queryString($f, '')), 0, 40);
         }
         $entries = $query !== '' || array_filter($filters) !== [] ? JobCatalog::search(mb_substr($query, 0, 120), $filters, $lang) : JobCatalog::entries($lang);
+        $community = $this->communityCatalog((int) Session::get('tenant_id'), $lang);
 
         return Response::json([
             'ok' => true,
             'lang' => $lang,
-            'packs' => JobCatalog::packSummaries($lang),
-            'countries' => JobCatalog::countries($lang),
+            'packs' => array_merge(JobCatalog::packSummaries($lang), $community['packs']),
+            'countries' => array_merge(JobCatalog::countries($lang), $community['countries']),
             'facets' => JobCatalog::facets($lang),
-            'entries' => $entries,
-        ])->header('Cache-Control', 'private, max-age=600')->header('Vary', 'Cookie');
+            'entries' => array_merge($entries, $query === '' && array_filter($filters) === [] ? $community['entries'] : []),
+            'community_ready' => $this->collections()->schemaReady(),
+        ])->header('Cache-Control', 'private, no-cache')->header('Vary', 'Cookie');
+    }
+
+    /**
+     * Catalogues de la communauté et catalogues partagés par d’autres, au format de la fenêtre.
+     *
+     * @return array{countries: list<array<string, mixed>>, packs: list<array<string, mixed>>, entries: list<array<string, mixed>>}
+     */
+    private function communityCatalog(int $tenantId, string $lang): array
+    {
+        try {
+            $collections = $this->collections()->visibleCollections($tenantId);
+            $entries = $this->collections()->entriesFor(array_map(static fn (array $c): int => (int) $c['id'], $collections));
+
+            return CommunityJobCatalog::toCatalog($collections, $entries, $tenantId, $lang, static fn (string $path): string => url($path));
+        } catch (\Throwable $e) {
+            error_log('Job catalog collections: ' . $e->getMessage());
+
+            return ['countries' => [], 'packs' => [], 'entries' => []];
+        }
+    }
+
+    /** Réponse JSON des écritures de la fenêtre (catalogues de communauté). */
+    private function answer(bool $ok, string $message, array $extra = [], int $status = 422): Response
+    {
+        return Response::json(['ok' => $ok, 'message' => $message] + $extra, $ok ? 200 : $status)->header('Cache-Control', 'private, no-store');
+    }
+
+    /** Mêmes personnes que la gestion des emplois ; jeton CSRF ; tables présentes. */
+    private function collectionGuard(Request $request): ?Response
+    {
+        if (!(int) Session::get('user_id') || !(int) Session::get('tenant_id')) {
+            return $this->answer(false, 'Session expirée. Reconnectez-vous.', [], 401);
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageRoles($gate)) {
+            return $this->answer(false, 'Vous n’êtes pas habilité à modifier les emplois.', [], 403);
+        }
+        if (!Csrf::verify($request)) {
+            return $this->answer(false, 'Session expirée. Rechargez la page avant de réessayer.', [], 419);
+        }
+        if (!$this->collections()->schemaReady()) {
+            return $this->answer(false, 'Les catalogues de communauté arrivent avec la prochaine mise à jour du site.', [], 503);
+        }
+
+        return null;
+    }
+
+    /**
+     * Image envoyée (JPG, PNG ou WebP, 8 Mo maximum, contrôlée par CommunityMediaUploadService) : chemin enregistré,
+     * '' si l’image est retirée, null si rien ne change.
+     *
+     * @param list<string> $replaced chemins remplacés, à effacer après l’enregistrement
+     */
+    private function upload(string $field, int $tenantId, Request $request, string $current, array &$replaced): ?string
+    {
+        $file = $_FILES[$field] ?? null;
+        if (is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $stored = $this->media()->storeImage($file, $tenantId);
+            if ($stored['error'] !== null || $stored['path'] === null) {
+                throw new InvalidArgumentException((string) ($stored['error'] ?? 'Image non enregistrée.'));
+            }
+            if ($current !== '') {
+                $replaced[] = $current;
+            }
+
+            return $stored['path'];
+        }
+        if ($request->input('remove_' . $field) === '1') {
+            if ($current !== '') {
+                $replaced[] = $current;
+            }
+
+            return '';
+        }
+
+        return null;
+    }
+
+    /** Crée ou modifie un catalogue de la communauté (nom, description, icône, couleur, emblème, bannière, partage). */
+    public function saveCollection(Request $request, array $params = []): Response
+    {
+        if ($denied = $this->collectionGuard($request)) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) $request->inputString('collection_id', '0');
+        $replaced = [];
+        try {
+            $data = CommunityJobCatalog::normalizeCollection([
+                'name' => $request->input('name', ''), 'description' => $request->input('description', ''), 'icon' => $request->input('icon', ''),
+                'color' => $request->input('color', ''), 'is_public' => $request->input('is_public', '0'),
+            ]);
+            $current = $id > 0 ? $this->collections()->findOwn($tenantId, $id) : null;
+            if ($id > 0 && $current === null) {
+                return $this->answer(false, 'Catalogue introuvable.', [], 404);
+            }
+            $emblem = $this->upload('emblem', $tenantId, $request, (string) ($current['emblem_path'] ?? ''), $replaced);
+            $banner = $this->upload('banner', $tenantId, $request, (string) ($current['banner_path'] ?? ''), $replaced);
+            $saved = $this->collections()->saveCollection($tenantId, $id, $data, $emblem, $banner, (int) Session::get('user_id'));
+        } catch (InvalidArgumentException $e) {
+            return $this->answer(false, $e->getMessage());
+        } catch (\Throwable $e) {
+            error_log('Job catalog collection save: ' . $e->getMessage());
+
+            return $this->answer(false, 'Le catalogue n’a pas été enregistré. Réessayez.', [], 503);
+        }
+        array_map([$this->media(), 'deleteStoredFile'], $replaced);
+
+        return $this->answer(true, $id > 0 ? 'Catalogue enregistré.' : 'Catalogue créé. Ajoutez-y vos emplois.', ['code' => CommunityJobCatalog::code($saved['id'])]);
+    }
+
+    /** Supprime un catalogue de la communauté, ses emplois et ses images. */
+    public function deleteCollection(Request $request, array $params = []): Response
+    {
+        if ($denied = $this->collectionGuard($request)) {
+            return $denied;
+        }
+        try {
+            $paths = $this->collections()->deleteCollection((int) Session::get('tenant_id'), (int) $request->inputString('collection_id', '0'), (int) Session::get('user_id'));
+        } catch (InvalidArgumentException $e) {
+            return $this->answer(false, $e->getMessage(), [], 404);
+        }
+        array_map([$this->media(), 'deleteStoredFile'], $paths);
+
+        return $this->answer(true, 'Catalogue supprimé avec ses emplois.');
+    }
+
+    /** Crée ou modifie un emploi d’un catalogue de la communauté. */
+    public function saveEntry(Request $request, array $params = []): Response
+    {
+        if ($denied = $this->collectionGuard($request)) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $collectionId = (int) $request->inputString('collection_id', '0');
+        $id = (int) $request->inputString('entry_id', '0');
+        $replaced = [];
+        try {
+            $data = CommunityJobCatalog::normalizeEntry([
+                'name' => $request->input('name', ''), 'abbreviation' => $request->input('abbreviation', ''), 'category' => $request->input('category', ''),
+                'unit' => $request->input('unit', ''), 'type' => $request->input('type', ''), 'description' => $request->input('description', ''),
+                'qualifications' => $request->input('qualifications', ''), 'icon' => $request->input('icon', ''), 'tags' => $request->input('tags', ''),
+            ]);
+            $current = $id > 0 ? $this->collections()->findOwnEntry($tenantId, $id) : null;
+            if ($id > 0 && $current === null) {
+                return $this->answer(false, 'Emploi du catalogue introuvable.', [], 404);
+            }
+            $image = $this->upload('image', $tenantId, $request, (string) ($current['image_path'] ?? ''), $replaced);
+            $saved = $this->collections()->saveEntry($tenantId, $collectionId, $id, $data, $image, (int) Session::get('user_id'));
+        } catch (InvalidArgumentException $e) {
+            return $this->answer(false, $e->getMessage());
+        } catch (\Throwable $e) {
+            error_log('Job catalog entry save: ' . $e->getMessage());
+
+            return $this->answer(false, 'L’emploi n’a pas été enregistré. Réessayez.', [], 503);
+        }
+        array_map([$this->media(), 'deleteStoredFile'], $replaced);
+
+        return $this->answer(true, $id > 0 ? 'Emploi du catalogue enregistré.' : 'Emploi ajouté au catalogue.', ['id' => CommunityJobCatalog::code($collectionId) . '-' . $saved['id']]);
+    }
+
+    /** Supprime un emploi d’un catalogue de la communauté. */
+    public function deleteEntry(Request $request, array $params = []): Response
+    {
+        if ($denied = $this->collectionGuard($request)) {
+            return $denied;
+        }
+        try {
+            $path = $this->collections()->deleteEntry((int) Session::get('tenant_id'), (int) $request->inputString('entry_id', '0'), (int) Session::get('user_id'));
+        } catch (InvalidArgumentException $e) {
+            return $this->answer(false, $e->getMessage(), [], 404);
+        }
+        $this->media()->deleteStoredFile($path);
+
+        return $this->answer(true, 'Emploi retiré du catalogue.');
     }
 
     private function writeGuard(Request $request): ?Response
