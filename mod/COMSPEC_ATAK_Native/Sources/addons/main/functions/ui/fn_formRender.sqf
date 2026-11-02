@@ -13,6 +13,7 @@
       ["person", image, texte structuré, [[libellé, code, principal, actif, aide]...], couleur image]  (ligne compacte : vignette, texte, boutons à droite ;
           principal = true, false ou "red" pour un bouton de confirmation)
       ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé, id]
+      ["qr", rangées « 0 »/« 1 », part de la largeur]   QR code dessiné en contrôles (fn_mobileQr), carré, marge comprise
       ["fold", titre, résumé, ouverte, code, id]   en-tête de section repliable : barre pleine largeur cliquable, chevron
           à droite ; le contenu qui suit n'est ajouté par la page que si la section est ouverte
       ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône, [min, max], id]
@@ -47,8 +48,9 @@
           liseré et pastille d'icône à la couleur de l'état, titre en gras, état à droite, texte en dessous ; les cartes
           d'une même rangée prennent la hauteur de la plus haute
       ["empty", icône, titre, sous-titre]   état vide centré : grande icône pâle, titre et explication
-      ["status", image, couleur RGBA, titre, texte, action]   carte d'état (app Athena) : liseré et titre à la couleur de
-          l'état, image carrée à gauche, explication dessous, action à faire en ambre (facultative) ; hauteur au contenu
+      ["status", image, couleur RGBA, titre, texte, action, code]   carte d'état (app Athena) : liseré et titre à la couleur de
+          l'état, image carrée à gauche, explication dessous, action à faire en ambre (facultative) ; hauteur au contenu ;
+          code (facultatif) : clic sur la carte
       ["check", niveau, libellé, valeur, aide]   étape d'une chaîne (liaison) : pastille d'icône (niveau "ok" | "now" |
           "warn" | "ko" | "todo" | "off"), libellé à gauche, valeur à droite, aide en petit dessous ; hauteur au contenu
     id (facultatif, switch / slider / fold) : la ligne se met à jour sur place par fn_formSet, sans redessiner la page.
@@ -770,7 +772,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         };
         case "status": {
             // Carte d'état : la situation en toutes lettres, sans code ni jargon (app Athena).
-            _row params ["", "_pic", ["_col", [0.36, 0.78, 0.42, 1]], ["_title", ""], ["_txt", ""], ["_act", ""]];
+            _row params ["", "_pic", ["_col", [0.36, 0.78, 0.42, 1]], ["_title", ""], ["_txt", ""], ["_act", ""], ["_open", {}]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
             private _ih = _font * 2.6;
             private _iw = _ih * _ratio;
@@ -796,6 +798,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _t ctrlSetPosition [_tx, _y + _ip + (((_ih - _th) / 2) max 0), _tw, _th];
             _t ctrlCommit 0;
             { _x ctrlSetPositionH _h; _x ctrlCommit 0; } forEach [_card, _bar];
+            // Carte cliquable (8e paramètre, facultatif) : bouton invisible sur toute la carte.
+            if (_open isNotEqualTo {}) then { [["COMSPEC_RscButtonInvisible", [_pad, _y, _w, _h]] call _mk, _open] call _click; };
             _y = _y + _h + _pad / 2;
         };
         case "check": {
@@ -912,6 +916,42 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _bgI ctrlSetBackgroundColor [0, 0, 0, 0.6];
             ["COMSPEC_RscSlide", [_pad, _y, _w - _pad, _ih], _pic] call _mk;
             _y = _y + _ih + _pad;
+        };
+        case "qr": {
+            // QR code dessiné module par module (« Sur mon téléphone », fn_mobileQr) : carré blanc avec sa marge de 4
+            // modules, une bande noire par suite de modules foncés d'une rangée (pas d'image, rien à télécharger).
+            // Params : [rangées de « 0 » / « 1 », part de la largeur (0,2 à 1)]. Carré à l'écran (COMSPEC_ATAK_Ratio).
+            _row params ["", ["_qrRows", []], ["_frac", 0.8]];
+            private _n = count _qrRows;
+            if (_n >= 21) then {
+                private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+                private _side = _w * ((_frac max 0.2) min 1);
+                private _m = _side / (_n + 8);
+                private _mh = _m * _ratio;
+                private _x0 = _pad + (_w - _side) / 2;
+                private _y0 = _y;
+                private _q = ["COMSPEC_RscText", [_x0, _y0, _side, _side * _ratio]] call _mk;
+                _q ctrlSetBackgroundColor [1, 1, 1, 1];
+                {
+                    private _r = toArray _x;
+                    private _ry0 = _y0 + (_forEachIndex + 4) * _mh;
+                    private _i = 0;
+                    private _len = count _r;
+                    while { _i < _len } do {
+                        if ((_r select _i) isEqualTo 49) then {
+                            private _j = _i;
+                            while { _j < _len && {(_r select _j) isEqualTo 49} } do { _j = _j + 1; };
+                            // Bande un poil plus large et plus haute : pas de fente claire entre deux modules voisins.
+                            private _b = ["COMSPEC_RscText", [_x0 + (_i + 4) * _m, _ry0, (_j - _i) * _m + pixelW * 0.5, _mh + pixelH * 0.5]] call _mk;
+                            _b ctrlSetBackgroundColor [0, 0, 0, 1];
+                            _i = _j;
+                        } else {
+                            _i = _i + 1;
+                        };
+                    };
+                } forEach _qrRows;
+                _y = _y0 + _side * _ratio + _pad;
+            };
         };
         case "password": {
             // Mot de passe masqué : on garde la vraie valeur à part et on n'affiche que des points.

@@ -16,6 +16,7 @@
       "sMode" / "sTarget" / "sForce" / "sLift" réf / "sRemind" réf / "sPull"   panneau du commandement
       "track" suivi            suivi des demandes faites en jeu, renvoyé par le serveur
       "forced" demande         ma demande est partie : prévient Athena (joueurs visés)
+      "mobile" avis             réponses du vrai téléphone (« Sur mon téléphone », avis mobile_debrief) : remise comme ici
     Questions : [id, type (text, textarea, select, checkbox), libellé, aide, requis 0/1, [options]]
     État : missionNamespace COMSPEC_ATAK_Dbf (id → fiche), COMSPEC_ATAK_DbfCfg, COMSPEC_ATAK_DbfTrack ;
            uiNamespace COMSPEC_ATAK_DbfUi (onglet, fiche ouverte, réglages du panneau, lignes en défaut).
@@ -126,6 +127,8 @@ private _cur = {
 private _save = {
     params ["_e"];
     if ((count _e) isEqualTo 0) exitWith {};
+    // Réponses venues du vrai téléphone (« mobile ») : les champs de la page ne les remplacent pas.
+    if (_ui getOrDefault ["mobile", false]) exitWith {};
     private _vals = _e get "vals";
     {
         _x params ["_k", "_t"];
@@ -244,6 +247,31 @@ switch (_act) do {
         _e set ["answers", _extra];
         ["SUCCESS", "Compte rendu de fin d'opération remis", 4, 50, "DEBRIEF"] call comspec_atak_native_fnc_notify;
         call _rerender;
+    };
+    case "mobile": {
+        // « Sur mon téléphone » (2.9.39) : fiche remplie (ou lue) sur le vrai téléphone (page Athena /m/compte-rendu),
+        // reçue par l'avis « mobile_debrief » (fn_adminNotices) : ["MDB1", id, [[question, réponse]...], send | read],
+        // lu par parseSimpleArray (aucun code exécuté). Remise par « send » / « read » comme si elle était faite ici.
+        if !(_arg isEqualType "") exitWith {};
+        if ((_arg select [0, 8]) isNotEqualTo "[""MDB1""") exitWith {};
+        private _a = parseSimpleArray _arg;
+        if !(_a isEqualType []) exitWith {};
+        _a params ["", ["_id", ""], ["_pairs", []], ["_how", "send"]];
+        private _e = _all getOrDefault [_id, createHashMap];
+        if ((count _e) isEqualTo 0) exitWith {
+            ["WARNING", "CR fin d'op reçu de votre téléphone, mais cette fiche n'est plus dans ce téléphone", 6, 40, "DEBRIEF"] call comspec_atak_native_fnc_notify;
+        };
+        if ((_e get "state") isEqualTo "done") exitWith {};
+        private _vals = _e get "vals";
+        if (_pairs isEqualType []) then {
+            { if (_x isEqualType [] && {(_x param [0, 0]) isEqualType ""} && {(_x param [1, 0]) isEqualType ""}) then { _vals set [_x select 0, _x select 1]; }; } forEach _pairs;
+        };
+        private _keepOpen = _ui getOrDefault ["open", ""];
+        _ui set ["open", _id];
+        _ui set ["mobile", true];
+        [["send", "read"] select (_how isEqualTo "read")] call comspec_atak_native_fnc_debrief;
+        _ui set ["mobile", false];
+        if (_keepOpen isNotEqualTo "") then { _ui set ["open", _keepOpen]; };
     };
     case "read": {
         private _e = call _cur;

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.116";
+    private const string ExtensionVersion = "2.0.117";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -4074,6 +4074,63 @@ public static partial class Extension
             catch (Exception ex) { return FormatCaughtError(ex); }
         }
 
+        // « Sur mon téléphone » (2.0.117) : lien à usage unique (5 min) vers la version mobile d'une app (CR, CR fin d'op,
+        // carte, briefs air) sur Athena, lié au compte de la session de jeu, à la partie et à la communauté.
+        // args: [json {app, mission_key, player_uid, context}] → OK|url\tadresse courte\tsecondes de validité\tapp
+        //       puis une ligne par rangée du QR code (« 0 » clair, « 1 » foncé) ; ERR|not_linked, ERR|http_429…
+        if (function == "MobileLink.Create")
+        {
+            if (!InAsyncWorker.Value) return "ERR|use_async";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|not_linked";
+            if (!TryBuildRequestUri(_baseUrl, "/api/atak/mobile-link", out var mlUri, out var mlErr) || mlUri is null)
+                return "ERR|" + mlErr;
+            try
+            {
+                using var mlCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                using var resp = SendJsonPost(mlUri.AbsoluteUri, EnrichAtakPayload(args.Length > 0 ? args[0] : "{}"), mlCts.Token);
+                var body = ReadContentUtf8(resp, mlCts.Token);
+                string Field(JsonElement r, string k)
+                {
+                    if (!r.TryGetProperty(k, out var v)) return "";
+                    var t = v.ValueKind switch
+                    {
+                        JsonValueKind.String => v.GetString() ?? "",
+                        JsonValueKind.Number => v.GetRawText(),
+                        _ => "",
+                    };
+                    return t.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+                }
+                if (!resp.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        using var errDoc = JsonDocument.Parse(body);
+                        var code = Field(errDoc.RootElement, "error");
+                        if (code.Length > 0 && code.Length <= 40) return "ERR|" + code;
+                    }
+                    catch (JsonException) { }
+                    return "ERR|http_" + (int)resp.StatusCode;
+                }
+                using var doc = JsonDocument.Parse(body);
+                var root = doc.RootElement;
+                var sb = new StringBuilder("OK|");
+                sb.Append(Field(root, "url")).Append('\t').Append(Field(root, "short_url")).Append('\t')
+                  .Append(Field(root, "expires_in")).Append('\t').Append(Field(root, "app"));
+                if (root.TryGetProperty("qr", out var qr) && qr.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var row in qr.EnumerateArray().Take(80))
+                    {
+                        var s = row.ValueKind == JsonValueKind.String ? row.GetString() ?? "" : "";
+                        if (s.Length == 0 || s.Length > 80 || s.Any(c => c != '0' && c != '1')) return "ERR|bad_qr";
+                        sb.Append('\n').Append(s);
+                    }
+                }
+                return sb.ToString();
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
         // L'ATAK signale ses messages affichés (delivered) ou validés par le joueur (acked).
         // args: [ids séparés par des virgules, "delivered" | "acked", player_uid] → OK|queued
         if (function == "AdminControl.Ack")
@@ -4200,7 +4257,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,MobileLink";
         }
 
         if (function == "GetCapabilities")

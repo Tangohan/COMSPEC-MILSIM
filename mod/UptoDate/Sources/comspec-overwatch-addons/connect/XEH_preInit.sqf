@@ -902,11 +902,7 @@ if (!(_savedCallsign isEqualTo "")) then {
     missionNamespace setVariable ["COMSPEC_Callsign", _savedCallsign, false];
 };
 
-// Rôle tactique + file d’alertes tablette
-private _savedRole = trim (profileNamespace getVariable ["COMSPEC_Role", ""]);
-if (!(_savedRole isEqualTo "")) then {
-    missionNamespace setVariable ["COMSPEC_Role", _savedRole, false];
-};
+// Rôle affiché : comspec_atak_native_fnc_displayRole (l'ancien profil COMSPEC_Role, ex. « Breacher », n'est plus relu).
 private _savedTeam = toUpper (trim (profileNamespace getVariable ["COMSPEC_AssignedTeam", ""]));
 if (_savedTeam in ["RED", "GREEN", "BLUE", "YELLOW", "MAIN"]) then {
     missionNamespace setVariable ["COMSPEC_AssignedTeam", _savedTeam, false];

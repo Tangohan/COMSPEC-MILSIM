@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakRealismRepository;
 use App\Repositories\UserRepository;
+use App\Services\Atak\AtakMobileLinkService;
 use App\Services\Atak\OperatorDeviceActivityService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
@@ -59,6 +60,7 @@ final class AtakDeviceSecurityController
             'deviceLogDigests' => $overview['deviceLogDigests'],
             'appActivity' => $overview['appActivity'],
             'linkEvents' => $overview['linkEvents'],
+            'mobileLinks' => $this->mobileLinks($tenantId, $userId),
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
@@ -95,5 +97,35 @@ final class AtakDeviceSecurityController
         }
 
         return Response::redirect(url('account/security/devices'));
+    }
+
+    /** « Sur mon téléphone » : coupe une session mobile (ou toutes avec link_id = 0). */
+    public function revokeMobile(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('account/security/devices'));
+        }
+        $n = (new AtakMobileLinkService())->revoke((int) ($user['tenant_id'] ?? 0), (int) ($user['id'] ?? 0), max(0, (int) $request->input('link_id', 0)));
+        Session::flash($n > 0 ? 'success' : 'error', $n > 0 ? 'Téléphone déconnecté : il devra scanner un nouveau QR code dans le jeu.' : 'Aucun téléphone à déconnecter.');
+
+        return Response::redirect(url('account/security/devices') . '#appareils-connectes');
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function mobileLinks(int $tenantId, int $userId): array
+    {
+        try {
+            $repo = new \App\Repositories\AtakMobileLinkRepository();
+
+            return $repo->ready() ? $repo->listForUser($tenantId, $userId) : [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }

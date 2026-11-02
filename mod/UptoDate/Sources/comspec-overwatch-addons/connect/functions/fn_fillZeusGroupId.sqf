@@ -60,16 +60,8 @@ if (_obj isEqualTo player) then {
 };
 if (_opName isEqualTo "") then { _opName = [name _obj] call _fncClean; };
 
-private _role = "";
-if (_obj isEqualTo player) then {
-    _role = [missionNamespace getVariable ["comspec_profile_function", ""]] call _fncClean;
-    if (_role isEqualTo "") then {
-        _role = [missionNamespace getVariable ["comspec_profile_role", ""]] call _fncClean;
-    };
-};
-if (_role isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_getUnitRole"}) then {
-    _role = [[_obj] call comspec_overwatch_connect_fnc_getUnitRole] call _fncClean;
-};
+// Rôle affiché (règle unique : choix du joueur, fonction de la communauté, slot).
+private _role = [[_obj] call comspec_overwatch_connect_fnc_getUnitRole] call _fncClean;
 if ((toLower _role) in ["operator", "operateur"]) then { _role = ""; };
 
 private _grp = group _obj;

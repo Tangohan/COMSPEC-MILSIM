@@ -58,7 +58,7 @@ final class AtakMedicalRosterTest extends TestCase
     {
         $ext = $this->read('mod/UptoDate/COMSPECExtension/Extension.cs');
         self::assertStringContainsString('if (function == "MedicalRoster" || function == "MedicalRosterInfo") return MedicalRosterCommand(function, args, token);', $ext);
-        self::assertStringContainsString(',MedicalRoster";', $ext);
+        self::assertMatchesRegularExpression('/,MedicalRoster[,"]/', $ext);
         $cache = $this->read('mod/UptoDate/COMSPECExtension/Extension_MedicalRoster.cs');
         self::assertStringContainsString('"medical_roster.json"', $cache);
         self::assertStringContainsString('/api/atak/medical-roster', $cache);

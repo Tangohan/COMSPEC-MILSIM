@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.39 : Sur mon téléphone (QR code vers les apps mobiles), briefs air aux pilotes, rôle affiché (ATAK natif 2.9.39.AG - Denver, COMSPEC Link 2.0.117)
+
+### Résumé joueur
+Type : nouveauté
+FR : Vos apps sur votre vrai téléphone, briefs air aux pilotes, rôle affiché unique
+- Apps Comptes rendus, CR fin d'op et Carte (et BRIEFS AIR du pilote) : bouton SUR MON TÉLÉPHONE. Scannez le QR code avec votre vrai téléphone pour remplir vos comptes rendus, votre CR de fin d'opération ou suivre la carte de la partie dessus ; votre ATAK en jeu les envoie comme si vous l'aviez fait dedans.
+- L'app JTAC envoie désormais les 9-LINE et les nouveaux 5-LINE directement aux pilotes choisis, en saisie guidée ou libre, et le pilote les reçoit avec une alerte dans le nouvel espace BRIEFS AIR de son téléphone pour répondre WILCO ou UNABLE. La page 9-LINE du site fait de même, montre l'accusé de chaque pilote et permet de régler les indicatifs du JTAC et des appareils.
+- L'ATAK s'ouvre aussi en grand et se manipule à la souris dans tous les aéronefs et véhicules, avec le vol stationnaire automatique en hélicoptère tant qu'il est en main.
+- Touchez votre fiche en haut du centre de contrôle pour ouvrir votre profil ; vous y choisissez votre « Rôle affiché » (fonction de la communauté, rôle du slot ou rôle personnalisé). Ce rôle est maintenant le même partout (carte, BFT, fiche, Athena) et l'ancien rôle « Breacher » resté bloqué disparaît.
+EN : Your apps on your real phone, air briefs to pilots, a single displayed role
+- Reports, End-of-op report and Map apps (and the pilot's AIR BRIEFS): ON MY PHONE button. Scan the QR code with your real phone to fill in your reports, your end-of-op report or follow the game map on it; your in-game ATAK sends them as if you had done it there.
+- The JTAC app now sends 9-LINEs and the new 5-LINEs straight to the chosen pilots, with guided or free entry, and pilots get an alert in the new AIR BRIEFS space on their phone to answer WILCO or UNABLE. The website 9-LINE page does the same, shows each pilot's acknowledgement and lets you set JTAC and aircraft callsigns.
+- The ATAK also opens full screen and works with the mouse in every aircraft and vehicle, with helicopter auto-hover while it is in hand.
+- Tap your card at the top of the control center to open your profile, where you pick your "Displayed role" (community function, slot role or a custom role). That role is now the same everywhere (map, BFT, card, Athena), and the old stuck "Breacher" role is gone.
+
+### Détail technique
+- **Sur mon téléphone, jeu** (`fn_mobileQr`, page `MOBILEQR`) : boutons dans `fn_pageReports` (onglet NOUVEAU), `fn_pageDebrief` (MES CR), outil `phone` de la barre de `fn_pageMap`, espace BRIEFS AIR de `fn_pageJtac`. Demande `MobileLink.Create` (COMSPEC Link 2.0.117, POST `/api/atak/mobile-link`, `EnrichAtakPayload`) : `OK|url\tcourte\tsecondes\tapp` puis une rangée `0/1` du QR par ligne ; QR dessiné par la nouvelle ligne `qr` de `fn_formRender` (fond blanc, une bande noire par suite de modules foncés, marge de 4 modules), compte à rebours (PFH 1 s), RÉGÉNÉRER, messages sans liaison (`not_linked`, Athena coupé, Link trop ancien, débit). Fiche du CR fin d'op en cours envoyée en `context`.
+- **Retour en jeu** : avis Athena `mobile_report` / `mobile_debrief` (`atak_admin_messages`, relève `AdminControl.Poll` toutes les 10 s pendant 8 h après un QR) ; `fn_adminNotices` les confie à `fn_reportAction "mobile"` (`["MCR1", code, [[clé, valeur]...]]`, `send` comme en jeu, heure DTG du jeu, fiche du joueur gardée, brouillon si incomplet) et `fn_debrief "mobile"` (`["MDB1", id, [[question, réponse]...], send|read]`), puis valide l'avis. Marqueurs : canal `atak_markers` (sondé par `GetMarkers`).
+- **Site** : `AtakMobileLinkService` / `AtakMobileLinkRepository` (table `atak_mobile_links`, étape 3690) : jeton 20 signes (≈ 99 bits, empreinte SHA-256), usage unique atomique, 5 min, compte de la session de jeu (ou Steam vérifié par la garde), communauté, clé de mission ; session mobile 8 h (`Session::regenerate`), révocable (`/account/security/devices`, « Téléphones ouverts depuis le jeu »). `AtakMobileAppsController` : `/m/{jeton}`, `/m/cr`, `/m/compte-rendu`, `/m/carte`, `/m/briefs` (pilote ou équipage reconnu dans `atak_air_assets`, boîte et accusés `AirBriefService`), POST avec `X-CSRF-Token`, `FileRateLimiter` (ouverture 20 / 10 min par IP, 40 envois / min, 10 QR / 10 min par joueur), audit `security.event`. `QrPngGenerator::matrix()`.
+- **Rôle affiché** (`fn_displayRole`, connect `fn_getUnitRole` / `fn_setUnitRole` / `fn_getUnitsList` / `fn_fillZeusGroupId`) et **briefs air** (`fn_airBrief`, `fn_vehicleKeys`, `AirBriefService`, étape 3720) : voir leurs PR. connect 1.6.32.
+
 ## Pack 2.9.38 : annuler partout, app Zones refaite (polygone aimanté, couleurs, onglets), plans et routes partagés au camp (ATAK natif 2.9.38.AG - Denver)
 
 ### Résumé joueur

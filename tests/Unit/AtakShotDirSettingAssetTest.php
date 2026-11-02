@@ -63,7 +63,7 @@ final class AtakShotDirSettingAssetTest extends TestCase
         self::assertStringContainsString('"Shots.Check"', $fn);
         self::assertStringContainsString('profileName', $fn);
         self::assertStringContainsString('VÉRIFIER LE DOSSIER', $settings);
-        self::assertStringContainsString('#define LINK_VERSION_STR "2.0.116"', $hpp);
+        ModVersion::assertAtLeast('2.0.116', ModVersion::match('/#define LINK_VERSION_STR "([0-9.]+)"/', $hpp));
         self::assertStringContainsString('"Dossier des captures d\'écran", "Screenshot folder"', $en);
     }
 

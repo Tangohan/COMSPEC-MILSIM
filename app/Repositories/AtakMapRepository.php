@@ -45,6 +45,21 @@ class AtakMapRepository
         return $row;
     }
 
+    /** Carte par son numéro (map_id des unités, marqueurs et briefs du jeu). */
+    public function getById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM atak_maps WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+        if (isset($row['config']) && is_string($row['config'])) {
+            $row['config'] = json_decode($row['config'], true) ?? [];
+        }
+        return $row;
+    }
+
     /**
      * Returns the map config to use for the overlay (tenant default or fallback to altis).
      */

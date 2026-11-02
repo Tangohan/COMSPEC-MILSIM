@@ -868,6 +868,10 @@ private _fs = ["COMSPEC", "ATAK · Appui feu"];
     ["Cercles de portée et zone dangereuse", "Réglage personnel : sur la carte du téléphone et du poste TOC, portées min et max de la pièce choisie et distance de sécurité (danger close) autour de la cible. Les missions de tir en cours restent affichées."],
     _fs, true, 0] call comspec_atak_native_fnc_addSetting;
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
+// Rôle affiché (fn_displayRole) : le joueur le choisit dans l'app Profil, sauf si le serveur impose la fonction Athena.
+["comspec_atak_native_role_force_community", "CHECKBOX",
+    ["Imposer la fonction de la communauté comme rôle", "Décoché par défaut : chaque joueur choisit son rôle affiché dans l'app Profil (fonction de la communauté, rôle du slot ou rôle personnalisé). Coché : la fonction tenue sur Athena est affichée partout (carte, BFT, fiche, Athena) dès qu'elle existe ; sans fonction, le choix du joueur s'applique."],
+    _team, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aircrew", "CHECKBOX",
     ["ATAK pour les équipages d'hélico et d'avion", "Pilote, copilote et tireurs d'un hélicoptère ou d'un avion ont l'ATAK sur la tablette de bord, même sans téléphone ou avec un téléphone vide ou cassé. Elle se range quand on descend."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;

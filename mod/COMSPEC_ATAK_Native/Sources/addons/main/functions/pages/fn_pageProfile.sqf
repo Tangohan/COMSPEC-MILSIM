@@ -19,15 +19,33 @@ private _logo = [player] call comspec_atak_native_fnc_avatarPath;
 if (_logo isEqualTo "") then { _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa"; };
 _rows pushBack ["hero", _logo, format ["<t size='1.3' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t size='1.05'>%2</t><br/><t color='#c9d4cf'>%3 · %4</t><br/><t size='0.85' color='#8a9a93'>%5</t>",
     ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v, ["comspec_profile_name", name player] call _v,
-    ["comspec_profile_grade"] call _v, [[missionNamespace getVariable ["comspec_profile_function", ""], ["comspec_profile_role", roleDescription player] call _v] select ((missionNamespace getVariable ["comspec_profile_function", ""]) isEqualTo ""), [_unitFull]] call comspec_atak_native_fnc_abbrev, ["comspec_tenant_name", "Hors ligne"] call _v]];
+    ["comspec_profile_grade"] call _v, [[[player] call comspec_atak_native_fnc_displayRole, "—"] select (([player] call comspec_atak_native_fnc_displayRole) isEqualTo ""), [_unitFull]] call comspec_atak_native_fnc_abbrev, ["comspec_tenant_name", "Hors ligne"] call _v]];
 // Unité et fonction abrégées (règle Athena) ; le nom complet suit quand il diffère.
 _rows pushBack ["info", "Unité (ORBAT)", [_unitShort, "—"] select (_unitShort isEqualTo "")];
 if (_unitShort isNotEqualTo _unitFull) then { _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>%1</t>", _unitFull]]; };
-private _fn = ["comspec_profile_function"] call _v;
-// Fonction actuelle ; sans fonction, l'ancien rôle de communauté sous le libellé « Rôle ».
-private _role = ["comspec_profile_role"] call _v;
-if (_fn isEqualTo "—" && {_role isNotEqualTo "—"}) then { _rows pushBack ["info", "Rôle", [_role, [_unitFull]] call comspec_atak_native_fnc_abbrev]; } else {
-    _rows pushBack ["info", "Fonction", [[_fn, [_unitFull]] call comspec_atak_native_fnc_abbrev, _fn] select (_fn isEqualTo "—")];
+// Rôle affiché (fn_displayRole) : fonction de la communauté par défaut, rôle du slot ou rôle personnalisé.
+([player, "sources"] call comspec_atak_native_fnc_displayRole) params ["_rMode", "_rCustom", "_rFn", "_rSlot", "_rForced"];
+private _ab = { params ["_t"]; [[_t, [_unitFull]] call comspec_atak_native_fnc_abbrev, "—"] select (_t isEqualTo "") };
+private _shown = [player] call comspec_atak_native_fnc_displayRole;
+_rows pushBack ["info", "Fonction (Athena)", [_rFn] call _ab];
+_rows pushBack ["info", "Rôle affiché", ["<t color='#8a9a93'>aucun</t>", [_shown] call _ab] select (_shown isNotEqualTo "")];
+private _setMode = { params ["_m"]; compile format ["['roleMode', '%1'] call comspec_atak_native_fnc_profileAction;", _m] };
+if (_rForced) then {
+    _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Le serveur impose la fonction de la communauté comme rôle affiché.</t>"];
+} else {
+    _rows pushBack ["segment", "Choisir le rôle affiché", [
+        [format ["ATHENA : %1", [_rFn] call _ab], ["athena"] call _setMode, _rMode isEqualTo "athena", "Fonction de la communauté (Athena)"],
+        [format ["SLOT : %1", [_rSlot] call _ab], ["slot"] call _setMode, _rMode isEqualTo "slot", "Rôle de la mission (slot)"],
+        ["PERSONNALISÉ", ["custom"] call _setMode, _rMode isEqualTo "custom", "Rôle choisi dans la liste ou saisi"]
+    ], "carte, BFT, fiche et Athena"];
+    if (_rMode isEqualTo "custom") then {
+        // Rôles usuels : ceux des équipes de feu (chef d'équipe, auxiliaire sanitaire, JTAC, EOD, pilote…) et Breacher.
+        private _usual = (([] call comspec_atak_native_fnc_ftCatalog) get "roles") apply { _x select 1 };
+        { _usual pushBackUnique _x; } forEach ["Breacher", "Médecin", "Chef de groupe"];
+        private _items = [["Choisir un rôle usuel…", ""]] + (_usual apply { [_x, _x] });
+        _rows pushBack ["combo", "profRoleList", "Rôle usuel", _items, _rCustom, ["PRENDRE", { params ["_r"]; ["roleCustom", _r] call comspec_atak_native_fnc_profileAction; }]];
+        _rows pushBack ["field", "profRoleText", "Ou texte libre (40 caractères)", _rCustom, "ENREGISTRER", { ["roleCustom", ["profRoleText"] call comspec_atak_native_fnc_formValue] call comspec_atak_native_fnc_profileAction; }];
+    };
 };
 private _grp = [player, true] call comspec_atak_native_fnc_unitGroup;
 if (_grp isNotEqualTo _unitShort) then { _rows pushBack ["info", "Groupe", _grp]; };

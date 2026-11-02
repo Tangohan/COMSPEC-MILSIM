@@ -185,6 +185,8 @@ if (_view isEqualTo "AIR") exitWith {
             _rows pushBack ["segment", "", ["VIPER", "HOG", "DUDE", "REAPER"] apply { [_x, ["airCsPick", format ["%1 11", _x]] call _act, false, "Indicatif d'aviation courant"] }];
         };
         private _n = count _inbox;
+        // « Sur mon téléphone » (2.9.39) : les briefs de l'appareil sur le vrai téléphone du pilote (fn_mobileQr).
+        _rows pushBack ["buttons", [["SUR MON TÉLÉPHONE", { [{ ["open", "briefs"] call comspec_atak_native_fnc_mobileQr; }] call CBA_fnc_execNextFrame; }, false, true, "QR code à scanner avec votre vrai téléphone : lisez les briefs en grand et répondez WILCO ou UNABLE dessus"]]];
         _rows pushBack ["section", "Briefs reçus", [format ["%1 brief(s), %2 non lu(s)", _n, _unread], "9-LINE et 5-LINE des JTAC (jeu ou Athena)"] select (_n isEqualTo 0)];
         if (_n isEqualTo 0) then {
             _rows pushBack ["empty", _ico, "Aucun brief reçu", "Les 9-LINE et 5-LINE envoyés à votre appareil par un JTAC, en jeu ou depuis la page Athena 9-LINE, arrivent ici avec une alerte."];
