@@ -16,7 +16,7 @@
 [olist]
 [*]S'abonner à CBA_A3 et à COMSPEC ATAK sur le Workshop.
 [*]Activer les deux mods dans le lanceur Arma 3.
-[*]En jeu, avoir un téléphone dans son équipement (par défaut, l'item est obligatoire : réglable par le serveur), puis [b]Ctrl+U[/b] pour porter le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] (ou [b]Alt+U[/b]) pour le prendre en main. Les touches se changent dans Options › Contrôles › Configurer les addons › COMSPEC ATAK.
+[*]En jeu, avoir un téléphone dans son équipement (par défaut, l'item est obligatoire : réglable par le serveur), puis [b]Ctrl+U[/b] pour porter le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] (ou [b]Alt+U[/b]) pour le prendre en main, [b]Maj+U[/b] pour utiliser la miniature à la souris sans l'agrandir (nouvel appui, Échap ou clic à côté pour revenir au jeu). Les touches se changent dans Options › Contrôles › Configurer les addons › COMSPEC ATAK.
 [*]Après une mise à jour du mod, quittez Arma complètement avant de relancer.
 [/list]
 
@@ -58,7 +58,7 @@
 [olist]
 [*]Subscribe to CBA_A3 and COMSPEC ATAK on the Workshop.
 [*]Enable both mods in the Arma 3 launcher.
-[*]In game, carry a phone in your inventory (required by default; the server can change this), then press [b]Ctrl+U[/b] to wear the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] (or [b]Alt+U[/b]) to take it in hand. Keys can be changed in Options › Controls › Configure Addons › COMSPEC ATAK.
+[*]In game, carry a phone in your inventory (required by default; the server can change this), then press [b]Ctrl+U[/b] to wear the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] (or [b]Alt+U[/b]) to take it in hand, [b]Shift+U[/b] to use the miniature with the mouse without enlarging it (press again, Escape or click beside it to get back to the game). Keys can be changed in Options › Controls › Configure Addons › COMSPEC ATAK.
 [*]After a mod update, quit Arma completely before restarting.
 [/olist]
 

@@ -93,6 +93,32 @@ if (_interactive) then {
     if (!isNull _d46 && {(_d46 getVariable ["COMSPEC_KeyBlockEh", -1]) < 0}) then {
         _d46 setVariable ["COMSPEC_KeyBlockEh", _d46 displayAddEventHandler ["KeyDown", { _this call comspec_atak_native_fnc_keyBlock }]];
     };
+    // Interaction avec la miniature (fn_miniInteract) : bordure à l'accent autour de l'écran, clic hors du téléphone =
+    // retour au jeu (la miniature reste affichée).
+    if ((uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isNotEqualTo "") then {
+        private _vis = ([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["visible", []];
+        if ((count _vis) isEqualTo 4) then {
+            _vis params ["_vx", "_vy", "_vw", "_vh"];
+            ([] call comspec_atak_native_fnc_accent) params ["_acc"];
+            private _t = pixelH * 2; private _tw = pixelW * 2;
+            {
+                private _c = _display ctrlCreate ["COMSPEC_RscText", -1];
+                _c ctrlSetPosition _x; _c ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.85]; _c ctrlEnable false; _c ctrlCommit 0;
+            } forEach [[_vx - _tw, _vy - _t, _vw + _tw * 2, _t], [_vx - _tw, _vy + _vh, _vw + _tw * 2, _t], [_vx - _tw, _vy, _tw, _vh], [_vx + _vw, _vy, _tw, _vh]];
+        };
+        _display displayAddEventHandler ["MouseButtonDown", {
+            params ["", "_button", "_mx", "_my"];
+            if ((uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isEqualTo "") exitWith { false };
+            private _v = ([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["visible", []];
+            // Écran agrandi de 15 % : la coque autour de l'écran (glisser le téléphone) compte comme « sur le téléphone ».
+            if ((count _v) < 4) exitWith { false };
+            _v params ["_vx", "_vy", "_vw", "_vh"];
+            if (_mx < (_vx - _vw * 0.15) || {_mx > (_vx + _vw * 1.15)} || {_my < (_vy - _vh * 0.15)} || {_my > (_vy + _vh * 1.15)}) then {
+                [{ [] call comspec_atak_native_fnc_miniInteract; }] call CBA_fnc_execNextFrame;
+            };
+            false
+        }];
+    };
     _display displayAddEventHandler ["MouseButtonDown", { params ["", "_button"]; ["DOWN", _button] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseMoving", { ["MOVE"] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseButtonUp", { ["UP"] call comspec_atak_native_fnc_phoneDrag; }];

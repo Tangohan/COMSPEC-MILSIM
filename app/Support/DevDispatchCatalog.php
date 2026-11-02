@@ -303,6 +303,9 @@ final class DevDispatchCatalog
                 'Aperçu du découpage avant GÉNÉRER et message clair si rien ne tient ; couleurs : thèmes OTAN, contraste élevé, vision nocturne, couleurs par type et par état, opacité, épaisseur, tirets, étiquettes, style d’une zone ou de tout un type',
                 'Plans de zones et routes partagés au camp par défaut et affichés sur la carte d’Arma (réglage serveur « Portée par défaut des plans et routes »)',
                 'Clic droit sur la carte : supprimer la route, l’itinéraire, la zone ou le plan sous le curseur (ou le masquer chez soi), avec ANNULER ; unité sélectionnée : VIBRER, SMS, PING, CENTRER, ROUTE VERS',
+                'Nouveau raccourci Maj+U : utiliser la miniature du téléphone à la souris, sans l’agrandir (nouvel appui, Échap ou clic à côté pour revenir au jeu)',
+                'Bloc-notes : vue LECTURE qui défile, PARTAGER EN BLUETOOTH vers un téléphone appairé, ENVOYER EN MESSAGE',
+                'Calques › Forces : « Traits entre alliés » et « Trait vers mon relais », masqués par défaut comme les cercles de précision',
             ], [
                 'Routes en 3D seulement avec la JVN allumée et pendant le suivi ; une étape atteinte disparaît aussitôt',
                 'Sélection d’une unité sur la carte : coins fins au lieu du gros cercle blanc qui cachait le symbole',
@@ -311,6 +314,8 @@ final class DevDispatchCatalog
                 'App Zones : fiche de zone affichée en double, découpage invisible sur la carte claire, petit carré sans légende devant « État de la zone »',
                 'App Routes : une route supprimée, ou une ancienne version, ne revient plus au rejeu du serveur ni au retour du réseau',
                 'Profil et app Athena : « Fonction » montre la fonction actuelle et non l’ancien rôle de communauté',
+                'Carte sombre : la couleur choisie d’un marqueur est respectée (un bleu ne passait plus qu’en gris)',
+                'Repères d’Athena : un repère supprimé en jeu, ou l’étape d’une route supprimée, n’est plus recréé au relevé suivant',
             ], ['atak'], [
                 'Mettez à jour le pack 2.9.38, quittez Arma complètement et relancez.',
                 'Changement de défaut : plans et routes partent au camp et vont sur la carte d’Arma. Pour revenir au comportement de la 2.9.36 : Options des addons › COMSPEC › ATAK · Plan / Zones › « Portée par défaut des plans et routes » sur Privé, et « Zones sur la carte d’Arma et Athena » décoché.',

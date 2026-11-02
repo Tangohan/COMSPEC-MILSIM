@@ -122,7 +122,7 @@ if (_target isNotEqualTo "") then {
         case "snd": { "Il accepte ou refuse ; le son sort du haut-parleur de son téléphone" };
         case "mus": { "Mes fichiers : le morceau est copié dans son app Musique. Serveur : joué par son haut-parleur" };
         case "pho": { "La photo est copiée dans sa Galerie (quelques secondes, restez à portée)" };
-        case "data": { "Position (repère 10 min), itinéraire (app Points de passage), plans (app Plan)" };
+        case "data": { "Position (repère 10 min), itinéraire (app Points de passage), plans (app Plan), notes (Bloc-notes)" };
         default { "Fiches SEEK (journal du terminal) et fiches SSE (personnes enregistrées au SEEK)" };
     };
     _rows append [

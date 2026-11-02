@@ -46,12 +46,12 @@ FR : Annuler partout, app Zones refaite, plans partagés à tout le camp
 - Apps Routes et Zones : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER qui envoie une seule fois, et un bandeau « Supprimé · ANNULER » après chaque suppression ; un changement d'état de zone part au bout de 5 secondes, annulable d'ici là.
 - App Zones : grande carte avec barre d'outils, panneau en onglets, polygone aimanté aux routes, bâtiments et rives (fermé ou en trait), découpage par vos traits, aperçu avant de générer, couleurs, thèmes et étiquettes au choix, vrai bouton SIGNALER.
 - Les plans de zones et les routes partent maintenant à tout le camp dès leur création et à chaque validation, et s'affichent sur la carte d'Arma ; le serveur peut revenir au partage manuel. L'état des zones ne change toujours que par un joueur.
-- Clic droit sur la carte : supprimer une route, un itinéraire, une zone ou un plan ; unité sélectionnée : VIBRER, SMS, PING ; routes en 3D seulement avec la JVN pendant le suivi.
+- Clic droit sur la carte : supprimer une route, un itinéraire, une zone ou un plan ; unité sélectionnée : VIBRER, SMS, PING ; Maj+U pour utiliser la miniature à la souris sans l'agrandir ; Bloc-notes lisible et partageable en Bluetooth ; carte plus sobre (traits entre alliés et cercles masqués par défaut, couleurs des marqueurs respectées).
 EN : Undo everywhere, Zones app redesigned, plans shared with the whole side
 - Routes and Zones apps: UNDO / REDO (Ctrl+Z / Ctrl+Y), SAVE that sends only once, and a "Deleted · UNDO" banner after every deletion; a zone state change is sent after 5 seconds and can be undone until then.
 - Zones app: big map with a toolbar, tabbed panel, polygon that snaps to roads, buildings and shores (closed or as a line), division by your own lines, preview before generating, colours, themes and labels of your choice, a real REPORT button.
 - Zone plans and routes now go to the whole side as soon as they are created and each time you save, and show on the Arma map; the server can go back to manual sharing. Zone states still only change through a player.
-- Right-click on the map: delete a route, an itinerary, a zone or a plan; selected unit: BUZZ, SMS, PING; 3D routes only with night vision while following.
+- Right-click on the map: delete a route, an itinerary, a zone or a plan; selected unit: BUZZ, SMS, PING; Shift+U to use the miniature with the mouse without enlarging it; readable Notepad, shareable by Bluetooth; cleaner map (lines between friendlies and circles hidden by default, marker colours kept).
 
 ### Détail technique
 - **Routes, édition** (`fn_routeAction` `editBegin` / `editCommit` / `editRevert` / `undo` / `redo` / `editInfo`, `COMSPEC_ATAK_RteEdit`) : état empaqueté gardé avant chaque modification (`_snap` dans `stepAdd`, `stepSet`, `stepMove`, `stepUp` / `stepDown`, `stepDel`, `reverse`, `set` hors affichage), 30 pas ; `_restore` ne reprend ni l'affichage ni le partage (vis, d3, arma, live, scope), relance le tracé par les routes si besoin. Pendant l'édition, `_changed` n'envoie rien (ni partage en direct ni `armaNow`) : un seul envoi à `editCommit` (VALIDER, retour à la liste, autre app ou téléphone reposé : `tick`). PARTAGER valide d'abord (`editCommit true`). Nouvelle route abandonnée par `editRevert`. `trash` / `untrash` : route gardée 8 s avant `del`.
@@ -70,12 +70,22 @@ EN : Undo everywhere, Zones app redesigned, plans shared with the whole side
 - App Carte : sélection d'unité en crochets d'angle fins (couleur `sel` des réglages, halo léger, pulsation) au lieu de l'anneau opaque ; volet « Unité sélectionnée » : VIBRER (`fn_bftAction "vibe"`, 5 s entre deux, file sans réseau), SMS, PING, CENTRER, ROUTE VERS.
 - **Routes reçues qui revenaient** : `recv` ignore une version de révision plus ancienne que celle déjà reçue, et toute version d'une route retirée (pierre tombale `COMSPEC_ATAK_RteGone` : révision au retrait par l'auteur, définitive pour une route reçue supprimée par le joueur) ; journal `[ROUTE]` de chaque version ignorée. Rejeu du serveur, file sans réseau et mises à jour en retard ne recréent plus une route ni ses étapes.
 - **Profil / Athena** : « Fonction » affiche `comspec_profile_function` (fonction actuelle envoyée par le site) ; l'ancien rôle de communauté `comspec_profile_role` seulement si la fonction est vide, sous le libellé « Rôle ».
-- Fusion de la vague d'optimisation (branche `atak/perf-vague`) avant le build.
+- **Calques › Forces** (`fn_pageMap`, `fn_meshDraw`, `fn_ewDraw`, `fn_mapOnDraw`, `fn_watchMapDraw`) : les traits vert / orange / rouge entre TA1 et YA1 sont les liens du maillage Wave Relay entre téléphones (avec leurs cercles de nœud) : nouvelle bascule « Traits entre alliés » (`COMSPEC_ATAK_MeshLinks`, défaut non ; masqués, le calcul `scan` n'est même plus appelé) ; « Trait vers mon relais » (`COMSPEC_ATAK_RelayLine`, défaut non) ; « Cercles de précision » (`COMSPEC_ATAK_AccRings`) défaut **non** pour soi (cercle d'erreur GPS de `fn_ewDraw`) et les alliés. Un joueur qui n'a jamais touché ces bascules prend le nouveau défaut (variable de profil absente) ; bandeau INFO de l'état réel, au changement seulement.
+- **Couleur des marqueurs sur fond sombre** (`fn_mapColors` `lift`) : une couleur sombre est éclaircie en gardant sa teinte (le bleu pur passait en gris clair) ; noir et gris foncés seuls en gris clair. Note : `docs/bugs/2026-11-02-couleur-marqueurs-carte-sombre.md`.
+- **Repères web recréés** (Overwatch connect **1.6.31**, `fn_pollAthenaMarkers`) : pierres tombales pour un repère web créé par ce poste puis supprimé en jeu, et pour les copies web des formes retirées par l'ATAK (signature position + texte posée par `fn_markerWeb` quand la suppression est annoncée avant `deleteMarker` : routes, zones) ; journal `[MARKERS]`.
+- **Interagir avec la miniature** (`fn_miniInteract`, raccourci CBA `PhoneMiniUse`, Maj+U par défaut, libre dans le mod) : téléphone en main à la taille et à la place de la miniature (mode en main MINI existant), mode choisi par le joueur remis à la fermeture (`fn_displayUnload`), bordure à l'accent et clic hors du téléphone (écran + 15 %) pour revenir au jeu (`fn_displayLoad`), touche relue téléphone en main (`fn_open`), Réglages › Accès et touches (`fn_keybinds`), sujet d'aide Steam 90 mis à jour.
+- **Bloc-notes** (`fn_pageNotes`, `fn_notesAction`) : vue LECTURE (texte entier, défilement de la page gardé), MODIFIER, PARTAGER EN BLUETOOTH (nouvelle sorte `note` de `fn_btItems` : onglet Données de l'app Bluetooth, reçue dans les notes « reçue de … »), ENVOYER EN MESSAGE (brouillon de la messagerie) ; zone de saisie de 14 lignes.
+- Fusion de la vague d'optimisation 2.9.37 (`origin/atak/perf-vague`) avant le build.
 - i18n : environ 240 entrées FR / EN ajoutées (`tools/i18n.py merge`).
 
 ### À tester en jeu
 - **Routes reçues** (2 joueurs) : l'auteur supprime une route partagée, ou le receveur la supprime chez lui : elle ne revient ni au rejeu (joueur qui rejoint), ni au retour du réseau ; RPT : lignes `[ROUTE]`.
 - **Profil** : app Profil et app Athena, ligne « Fonction » : la fonction du site, pas l'ancien rôle.
+- **Calques › Forces** : par défaut, plus de traits entre TA1 et YA1 ni de cercles autour de vous et des alliés (calque Wave Relay allumé) ; chaque bascule les rend ; bandeau « masqués » / « affichés » conforme.
+- **Couleur des marqueurs** : fond SOMBRE et NUIT, marqueur bleu posé puis modifié : bleu clair, pas gris ; marqueurs reçus d'un joueur et d'Athena.
+- **Repères Athena** : marqueur posé sur l'ATAK web, supprimé en jeu : ne revient pas au relevé suivant ; route avec carte d'Arma supprimée : ses étapes ne reviennent pas.
+- **Miniature** : Maj+U téléphone rangé, puis porté : la miniature passe en interaction (bordure, souris, personnage immobile) ; Maj+U, Échap ou clic à côté : retour au jeu ; Alt+U garde le grand.
+- **Bloc-notes** : longue note : LIRE défile ; MODIFIER ; PARTAGER EN BLUETOOTH vers un téléphone appairé (note « reçue de … ») ; ENVOYER EN MESSAGE.
 - **Routes** : nouvelle route, AJOUTER 3 étapes, Échap : mode CHOISIR, étapes gardées ; AJOUTER puis ANNULER (barre de la carte) : étapes retirées ; Ctrl+Z / Ctrl+Y ; X deux clics puis ANNULER du bandeau ; ANNULER LES MODIFICATIONS sur une route existante ; ABANDONNER sur une nouvelle. Route partagée (2 joueurs) : rien ne part pendant l'édition, un seul envoi à VALIDER ou au retour à la liste. Onglet ITINÉRAIRES : effacer l'itinéraire de l'app Itinéraire et le guidage GPS, puis ANNULER.
 - **3D** : route à « Affichage 3D » suivie, JVN allumée : trait et étapes restantes ; étape atteinte : disparaît ; JVN éteinte ou suivi arrêté : plus rien.
 - **Zones, découpage** : plan sur Athira, rectangle ~300 × 250 m, grille 200 m : aperçu jaune avant GÉNÉRER, cases visibles après (thèmes OTAN / contraste élevé / vision nocturne) ; grille 1000 m : message « choisissez … m » ; ANNULER LE CALCUL sur des îlots ; Ctrl+Z après GÉNÉRER : ancien découpage.
@@ -85,6 +95,9 @@ EN : Undo everywhere, Zones app redesigned, plans shared with the whole side
 - **Partage par défaut** : nouveau plan généré : reçu par un joueur du camp et visible sur la carte d'Arma ; réglage serveur Privé : comme en 2.9.36 ; joueur qui rejoint : plan reçu.
 - **Clic droit de l'app Carte** : sur une route, un itinéraire, une zone, un plan (plusieurs à la fois : sous-menu) : CONFIRMER puis bandeau ANNULER ; plan reçu : « Masquer chez moi ». Unité sélectionnée : coins fins, VIBRER chez l'autre joueur (et 5 s d'attente), SMS, PING.
 - **Carte d'Arma** : gros découpage (200 cases) sur la carte d'Arma : pas de saccade, un état changé ne refait qu'un marqueur.
+
+---
+
 ## Pack 2.9.37 : optimisation, moins de saccades et de redessins (ATAK natif 2.9.37.AG - Denver)
 
 ### Résumé joueur

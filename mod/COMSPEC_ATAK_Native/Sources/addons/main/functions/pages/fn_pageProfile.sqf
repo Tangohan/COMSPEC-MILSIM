@@ -19,7 +19,7 @@ private _logo = [player] call comspec_atak_native_fnc_avatarPath;
 if (_logo isEqualTo "") then { _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa"; };
 _rows pushBack ["hero", _logo, format ["<t size='1.3' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t size='1.05'>%2</t><br/><t color='#c9d4cf'>%3 · %4</t><br/><t size='0.85' color='#8a9a93'>%5</t>",
     ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v, ["comspec_profile_name", name player] call _v,
-    ["comspec_profile_grade"] call _v, [[[missionNamespace getVariable ["comspec_profile_function", ""], ["comspec_profile_role", roleDescription player] call _v] select ((missionNamespace getVariable ["comspec_profile_function", ""]) isEqualTo ""), [_unitFull]] call comspec_atak_native_fnc_abbrev, ["comspec_tenant_name", "Hors ligne"] call _v]];
+    ["comspec_profile_grade"] call _v, [[missionNamespace getVariable ["comspec_profile_function", ""], ["comspec_profile_role", roleDescription player] call _v] select ((missionNamespace getVariable ["comspec_profile_function", ""]) isEqualTo ""), [_unitFull]] call comspec_atak_native_fnc_abbrev, ["comspec_tenant_name", "Hors ligne"] call _v]];
 // Unité et fonction abrégées (règle Athena) ; le nom complet suit quand il diffère.
 _rows pushBack ["info", "Unité (ORBAT)", [_unitShort, "—"] select (_unitShort isEqualTo "")];
 if (_unitShort isNotEqualTo _unitFull) then { _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>%1</t>", _unitFull]]; };

@@ -8,6 +8,7 @@
       plan  plan enregistré de l'app Plan (ref = numéro dans la bibliothèque)
       seek  fiche SEEK : une interrogation du journal du terminal (ref = clé du sujet)
       sse   fiche SSE : personne enregistrée au SEEK (ref = clé de la fiche, missionNamespace COMSPEC_SSE_Sheets)
+      note  note du Bloc-notes (ref = id de la note ; reçue : ajoutée aux notes, marquée « reçue de … »)
     Params : [action, argument]
       ["list", onglet]          onglet "pho" | "mp3" | "data" | "sheet" → lignes
       ["payload", [kind, ref]]  données envoyées (petites sortes) ; [] si l'élément n'existe plus
@@ -54,6 +55,10 @@ switch (_act) do {
                     _x params [["_n", "Plan"], ["_w", ""], ["_its", []], ["_d", ""]];
                     _out pushBack ["plan", str _forEachIndex, _n, format ["Plan · %1 éléments · %2%3", count _its, _w, ["", format [" · %1", _d]] select (_d isNotEqualTo "")], 0];
                 } forEach (profileNamespace getVariable ["COMSPEC_ATAK_PlanLib", []]);
+                {
+                    _x params [["_nid", ""], ["_nt", ""], ["_nb", ""]];
+                    _out pushBack ["note", _nid, [_nt, ("Sans titre") call comspec_atak_native_fnc_tr] select (_nt isEqualTo ""), format [("Note · %1 caractère(s)") call comspec_atak_native_fnc_tr, count _nb], 0];
+                } forEach ((profileNamespace getVariable ["COMSPEC_ATAK_Notes", []]) select { _x isEqualType [] && {(count _x) >= 3} });
                 _out
             };
             case "sheet": {
@@ -79,6 +84,10 @@ switch (_act) do {
             case "plan": { +((profileNamespace getVariable ["COMSPEC_ATAK_PlanLib", []]) param [parseNumber _ref, []]) };
             case "seek": { +(((call _seekHist) select { (_x select 9) isEqualTo _ref }) param [0, []]) };
             case "sse": { +(((call _sheets) select { (_x select 0) isEqualTo _ref }) param [0, []]) };
+            case "note": {
+                private _n = ((profileNamespace getVariable ["COMSPEC_ATAK_Notes", []]) select { _x isEqualType [] && {(_x param [0, ""]) isEqualTo _ref} }) param [0, []];
+                [[], [_n select 1, (_n select 2) select [0, 4000]]] select ((count _n) >= 3)
+            };
             default { [] };
         }
     };
@@ -108,6 +117,11 @@ switch (_act) do {
                 profileNamespace setVariable ["COMSPEC_ATAK_PlanLib", _l select [((count _l) - 30) max 0]];
                 [] call comspec_atak_native_fnc_saveProfile;
                 format ["plan « %1 » ajouté à la bibliothèque de l'app Plan", _n]
+            };
+            case "note": {
+                _data params [["_t", ""], ["_b", ""]];
+                if !(_t isEqualType "" && {_b isEqualType ""}) exitWith { "" };
+                ["receive", [_t, _b, _from]] call comspec_atak_native_fnc_notesAction
             };
             case "seek": {
                 if ((count _data) < 10) exitWith { "" };
@@ -158,6 +172,7 @@ switch (_act) do {
             };
             case "wp": { _data apply { [_x param [1, "WP"], [_x param [0, [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef] } };
             case "pos": { [["Position", [_data param [0, [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef], ["De", _data param [1, ""]]] };
+            case "note": { [["Titre", _data param [0, ""]], ["Texte", (_data param [1, ""]) select [0, 300]]] };
             default { [] };
         }
     };
