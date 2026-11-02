@@ -659,6 +659,8 @@ return function (Router $router) {
     $router->get('/9-line/appareils', [\App\Controllers\Web\AtakNineLineViewController::class, 'aircraft'], [AuthMiddleware::class]);
     $router->post('/9-line', [\App\Controllers\Web\AtakNineLineViewController::class, 'store'], [AuthMiddleware::class]);
     $router->post('/9-line/vider', [\App\Controllers\Web\AtakNineLineViewController::class, 'clear'], [AuthMiddleware::class]);
+    $router->post('/9-line/indicatif', [\App\Controllers\Web\AtakNineLineViewController::class, 'jtacCallsign'], [AuthMiddleware::class]);
+    $router->post('/9-line/appareils/indicatif', [\App\Controllers\Web\AtakNineLineViewController::class, 'aircraftCallsign'], [AuthMiddleware::class]);
     $router->post('/9-line/{id}/supprimer', [\App\Controllers\Web\AtakNineLineViewController::class, 'delete'], [AuthMiddleware::class]);
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);

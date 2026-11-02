@@ -224,16 +224,22 @@ final class AtakNineLineBoardTest extends TestCase
         }
     }
 
-    public function testViewUsesTheQuestionnaireTheme(): void
+    public function testViewUsesTheBackOfficeTheme(): void
     {
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/atak/nine_line_view.php');
-        self::assertStringContainsString('assets/css/community-enlistment.css', $view, 'thème du questionnaire réutilisé, pas copié');
-        self::assertStringContainsString('assets/css/atak-nine-line.css', $view);
-        self::assertStringContainsString('class="ce nl-page"', $view);
-        self::assertStringContainsString('ce-form-layout', $view);
+        self::assertStringNotContainsString('community-enlistment.css', $view, 'plus le thème du questionnaire d’enrôlement');
+        foreach (['back-office-shell.css', 'back-office-dark.css', 'effectifs-kit.css', 'atak-nine-line.css', 'back-office-theme.js'] as $asset) {
+            self::assertStringContainsString($asset, $view, $asset);
+        }
+        self::assertStringContainsString('class="bo-shell nl-page"', $view);
+        self::assertStringContainsString('class="bo-eff-workspace nl-wrap"', $view);
+        self::assertStringContainsString('data-ath-theme-toggle', $view, 'mode jour / nuit du back-office');
         self::assertStringContainsString('Csrf::token()', $view);
-        self::assertStringContainsString('back-office-theme.js', $view, 'mode jour / nuit du site');
+        foreach (['data-kind="cas"', 'data-kind="fiveline"', 'data-kind="medevac"', 'id="nl-free"', 'id="nl-players-only"', 'id="nl-manual-cs"', 'id="nl-jtac-cs"'] as $needle) {
+            self::assertStringContainsString($needle, $view, $needle);
+        }
         self::assertFileExists(dirname(__DIR__, 2) . '/public/assets/css/atak-nine-line.css');
+        self::assertStringContainsString("url('9-line')", (string) file_get_contents(dirname(__DIR__, 2) . '/views/partials/ath_sidebar_nav.php'), 'entrée 9-LINE sous ATAK');
     }
 
     public function testScriptCallsTheEndpointsWithTheToken(): void

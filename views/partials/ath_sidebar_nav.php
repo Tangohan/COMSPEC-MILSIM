@@ -300,6 +300,8 @@ $jnetChildren = [
 
 // ——— ATAK ———
 $atakSupervisionChildren = [
+    // Page autonome (QR code de l'app JTAC) : 9-LINE, 5-LINE, envoi aux pilotes et accusés.
+    ['label' => '9-LINE et 5-LINE', 'href' => url('9-line'), 'active' => $navAt('9-line')],
     ['label' => 'Réseau de relais', 'href' => url('back-office/atak/relays-network'), 'active' => $navAtakRelaysActive],
     ['label' => 'Data Inspector', 'href' => url('back-office/atak/data-inspector'), 'active' => $navAt('back-office/atak/data-inspector')],
     ['label' => 'Files d’envoi Athena', 'href' => url('back-office/atak/files-envoi'), 'active' => $navAt('back-office/atak/files-envoi')],

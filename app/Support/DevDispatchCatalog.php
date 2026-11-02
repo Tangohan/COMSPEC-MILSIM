@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1340, '2026-11-02', 'Page 9-LINE : 5-LINE, envoi au pilote et accusés, thème du back-office', 'La page 9-LINE prend le thème du back-office (mode jour ou nuit) et devient compacte : destinataires, rédaction en grille, carte de transmission et historique tiennent sur un écran. On y rédige un 9-LINE, un 5-LINE (brief CAS court : observateur, position amie, position et description de la cible, remarques) ou un MEDEVAC, en saisie guidée ou en saisie libre (aucune ligne obligatoire, simples avertissements). La demande part aux pilotes choisis parmi les appareils remontés par le jeu (« Joueurs uniquement » masque ceux de l’IA) ou à un indicatif tapé à la main ; le pilote la reçoit dans l’espace BRIEFS AIR de son téléphone en jeu, et son accusé (reçu, lu, WILCO, UNABLE) s’affiche dans l’historique. Chaque membre règle son indicatif JTAC, et l’indicatif affiché d’un appareil se change sur la page.', [
+                'Page 9-LINE : choix 9-LINE / 5-LINE / MEDEVAC, saisie libre, remarques et restrictions',
+                'Destinataires : appareils remontés par le jeu (case « Joueurs uniquement »), indicatif saisi à la main, indicatif affiché modifiable',
+                'Historique : statut de chaque destinataire (envoyé, reçu, lu, WILCO, UNABLE)',
+                'Indicatif JTAC du membre, repris comme émetteur de ses demandes',
+                'Back-office : entrée « 9-LINE et 5-LINE » dans la rubrique ATAK',
+            ], [
+                'Page 9-LINE au thème du back-office, compacte, valeurs en chasse fixe, lisible sur téléphone',
+            ], [], ['atak'], [
+                'L’administrateur lance run-migrations.php (étape atak_nine_line_recipients) : destinataires, accusés, remarques et indicatifs.',
+                'La partie jeu (espace BRIEFS AIR du pilote, 5-LINE et envoi depuis l’app JTAC) arrive avec la version 2.9.39 du mod.',
+                'Essai : un pilote joueur dans un aéronef avec le mod connecté ; sur athena-comspec.eu/public/9-line, cochez son appareil, transmettez un 5-LINE, puis vérifiez REÇU puis WILCO dans l’historique après sa réponse.',
+            ], 'Portail Athena'),
             $pr(1338, '2026-11-02', 'Émetteurs des qualifications : pays, localisation et site dans des champs à part', 'Le pays, la localisation, le site officiel et la présentation en anglais d’un émetteur ont maintenant leurs propres champs, au lieu d’être écrits à la suite de sa présentation. La fiche de l’émetteur les affiche à part (drapeau, lieu, lien vers le site) et le formulaire de modification les propose séparément, avec le pays à choisir dans une liste avec drapeaux. Les émetteurs existants sont repris automatiquement : les détails sont retirés de la présentation, qui garde son texte, et les émetteurs réels importés sont reliés à leur fiche du catalogue.', [
                 'Modifier un émetteur : pays (liste avec drapeaux), localisation, site officiel, présentation en français et en anglais',
                 'Fiche de l’émetteur : pays, localisation et site officiel affichés à part ; présentation anglaise pour les membres qui lisent le site en anglais',
