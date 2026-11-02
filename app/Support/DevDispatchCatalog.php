@@ -294,6 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1328, '2026-11-02', 'Noms des membres : prénom et nom d’abord, trigrammes automatiques', 'Partout sur le site, un membre apparaît d’abord sous le prénom et le nom de son personnage : « Jean D. » dans les listes (organigramme, annuaire, tableur des effectifs, Academy), « Jean DUPONT » sur sa fiche. L’indicatif et le pseudo restent visibles en second. La carte tactique, ATAK et les ordres gardent l’indicatif en premier. Chaque membre reçoit un trigramme d’état-major (Jean DUPONT → JDU), unique dans la communauté : en cas de doublon, la variante suivante est proposée (JDP, JDT…). Le trigramme ne change plus quand le nom change ; le membre ou un responsable peut le modifier, et il sert de paraphe dans les documents. Un membre masqué reste masqué : ni son nom ni son trigramme n’apparaissent.', [
+                'Organisation › Noms et trigrammes : format des noms dans les listes et sur les fiches (Prénom N., Prénom NOM, trigramme ou indicatif), grade devant le nom, trigrammes activés ou non',
+                'Trigrammes attribués automatiquement à tous les membres (accents et particules « de », « van der » ignorés, noms composés gérés), uniques par communauté, modifiables à la main avec contrôle des doublons',
+                'Fiche du membre : trigramme et pseudo affichés, trigramme modifiable dans « Modifier ma fiche »',
+                'Organigramme : trigramme à côté du nom des cadres et des membres',
+                'Documents : champs « Trigramme (paraphe) », « Nom abrégé » et « Trigramme du supérieur »',
+            ], [
+                'Organigramme, annuaire, tableur des effectifs et Academy : « Prénom N. » à la place de l’indicatif ou du pseudo, indicatif en second',
+                'Fiche du membre : « Prénom NOM » en titre',
+            ], [], ['personnel'], [], 'Portail'),
             $pr(1327, '2026-11-02', 'Invitations : plus de blocage à tort et une page refaite', 'Certaines communautés Pro+ ne pouvaient plus inviter : la page affichait « Votre formule actuelle limite le nombre de membres » alors que leur formule n’a pas de plafond. Un plafond de membres à 0 compte de nouveau comme illimité, et une formule sans plafond renseigné reprend celui de son palier au lieu de 50. La page Invitations est refaite : chiffres en tête (envoyées, acceptées, en attente, expirées) et membres sur le plafond de la formule (« 42 / illimité »), assistant en trois étapes pour inviter plusieurs adresses à la fois avec rôle, grade d’entrée, unité, durée du lien et message, tableau filtrable et triable pour renvoyer, révoquer ou copier un lien.', [
                 'Inviter plusieurs adresses e-mail en une fois, avec grade d’entrée, durée du lien (1 à 30 jours) et message personnel ajouté à l’e-mail',
                 'Tableau des invitations : recherche, filtre par état, tri par colonne ; renvoyer, révoquer, copier un nouveau lien',

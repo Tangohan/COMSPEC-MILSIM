@@ -499,7 +499,72 @@ class PersonnelController
             'tenantName' => $tenantName,
             'canAccessEffectifsLms' => $canAccessEffectifsLms,
             'canSeeInactiveDirectory' => $canSeeInactive,
+            'memberIdentities' => $this->memberIdentities($tenantId, $userIds),
         ]);
+    }
+
+    /**
+     * Trigramme saisi sur la fiche (membre ou encadrement) : unique dans la communauté, sinon refusé avec un message ;
+     * laissé vide, le trigramme actuel est conservé (ou attribué automatiquement s’il manque).
+     */
+    private function saveMemberTrigram(Request $request, int $tenantId, int $userId): ?string
+    {
+        if ($request->input('member_trigram') === null) {
+            return null;
+        }
+        try {
+            if (!\App\Services\Personnel\MemberNameSettings::forTenant($tenantId)['trigrams_enabled']) {
+                return null;
+            }
+            $names = new \App\Services\Personnel\MemberNameService();
+            $wanted = trim($request->inputString('member_trigram'));
+            if ($wanted !== '' && \App\Support\MemberName::normalizeTrigram($wanted) !== $names->trigramFor($tenantId, $userId)) {
+                $r = $names->setTrigram($tenantId, $userId, $wanted);
+                if (!$r['ok']) {
+                    return 'Trigramme non modifié : ' . (string) ($r['error'] ?? 'refusé.');
+                }
+            }
+            $names->ensureTrigram($tenantId, $userId);
+        } catch (\Throwable $e) {
+            error_log('[noms] trigramme de la fiche : ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Trigramme du membre pour sa fiche : attribué automatiquement s’il n’en a pas encore (puis stable).
+     */
+    private function memberTrigramForFile(int $tenantId, int $userId): string
+    {
+        try {
+            if (!\App\Services\Personnel\MemberNameSettings::forTenant($tenantId)['trigrams_enabled']) {
+                return '';
+            }
+
+            return (string) ((new \App\Services\Personnel\MemberNameService())->ensureTrigram($tenantId, $userId) ?? '');
+        } catch (\Throwable $e) {
+            error_log('[noms] trigramme de la fiche : ' . $e->getMessage());
+
+            return '';
+        }
+    }
+
+    /**
+     * Prénom, nom du personnage et trigramme des membres listés (affichage « Prénom N. »), sans faire tomber la page.
+     *
+     * @param list<int> $userIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function memberIdentities(int $tenantId, array $userIds): array
+    {
+        try {
+            return (new \App\Services\Personnel\MemberNameService())->identitiesFor($tenantId, $userIds);
+        } catch (\Throwable $e) {
+            error_log('[noms] annuaire : ' . $e->getMessage());
+
+            return [];
+        }
     }
 
     public function me(Request $request, array $params = []): Response
@@ -1284,6 +1349,7 @@ class PersonnelController
             'personnelVisibilityConsequence' => VisibilityLevel::consequence($visibilityMeta['visibility_level'], 'personnel'),
             'personnelAssignmentVisibilityConsequence' => VisibilityLevel::consequence($visibilityMeta['assignment_visibility'], 'personnel'),
             'personnelAnonymizedForViewer' => $personnelAnonymizedForViewer,
+            'memberTrigram' => $personnelAnonymizedForViewer ? '' : $this->memberTrigramForFile((int) $tenantId, (int) $target['id']),
             'assignmentRedactedForViewer' => $assignmentRedactedForViewer,
             'visibilityPreviewAs' => $previewAs,
             'visibilityLevelOptions' => [
@@ -2034,6 +2100,7 @@ class PersonnelController
 
         return Response::view($embeddedInEffectifs ? 'personnel.edit' : ($fromEffectifs ? 'layout.effectifs_lms' : 'layout.main'), [
             'content' => 'personnel.edit',
+            'memberTrigram' => $this->memberTrigramForFile((int) $tenantId, (int) $uid),
             'gameLanguage' => $gameLanguage,
             'gameLanguageCodes' => \App\Support\CommunityLanguages::communityLanguages($gameLanguageCommunity),
             'title' => 'Modifier ma fiche',
@@ -2806,6 +2873,7 @@ class PersonnelController
                 }
             }
         }
+        $trigramNotice = ($isSelf || $canStaffEdit) ? $this->saveMemberTrigram($request, (int) $tenantId, (int) $target['id']) : null;
 
         if ($isSelf || $canStaffEdit) {
             $displayUpsert = [
@@ -2851,6 +2919,9 @@ class PersonnelController
             }
         }
 
+        if ($trigramNotice !== null) {
+            Session::flash('error', $trigramNotice);
+        }
         if ($orbatQueued) {
             Session::flash('success', 'Dossier enregistré. La demande d’affectation a été transmise : un responsable Ressources humaines ou Gestionnaire doit la confirmer avant mise à jour.');
         } elseif ($orbatNotice !== null && $orbatNotice !== '') {
