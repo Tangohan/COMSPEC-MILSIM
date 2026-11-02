@@ -14,7 +14,9 @@ use App\Repositories\AtakRealismRepository;
 use App\Repositories\FireTeamRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Services\Atak\AtakOperatorPersonnelService;
 use App\Support\ModuleFeatureAccess;
+use App\Support\OrgVisibilityCapabilities;
 
 /**
  * Tableur des opérateurs ATAK / Athena actuellement en liaison (back-office).
@@ -29,6 +31,7 @@ final class AdminAtakOperatorsController
         private UserRepository $userRepository,
         private UserProfileRepository $userProfileRepository,
         private ?AtakRealismRepository $realismRepository = null,
+        private ?AtakOperatorPersonnelService $personnel = null,
     ) {
         $this->realismRepository ??= new AtakRealismRepository();
     }
@@ -51,6 +54,10 @@ final class AdminAtakOperatorsController
             'atakOperatorsMapId' => $bundle['mapId'],
             'atakOperatorsFilter' => $bundle['filter'],
             'atakOperatorsQuery' => $bundle['q'],
+            'atakOperatorsUnitId' => $bundle['unitId'],
+            'atakOperatorsFunctionId' => $bundle['functionId'],
+            'atakOperatorsUnitOptions' => $bundle['unitOptions'],
+            'atakOperatorsFunctionOptions' => $bundle['functionOptions'],
             'atakOperatorsRefreshSeconds' => 30,
         ]);
     }
@@ -153,11 +160,16 @@ final class AdminAtakOperatorsController
 
         $titleCall = $requested !== '' ? $requested : 'opérateur';
         $linkedUid = is_array($live) ? (int) ($live['linked_user_id'] ?? 0) : 0;
-        if ($linkedUid < 1 && is_array($opId)) {
+        // Membre masqué ou anonymisé : pas de portrait, de lien ni de statistiques nominatives.
+        $masked = is_array($live) && in_array((string) ($live['person_state'] ?? ''), ['anonymized', 'hidden'], true);
+        if (!$masked && $linkedUid < 1 && is_array($opId)) {
             $linkedUid = (int) ($opId['user_id'] ?? 0);
         }
-        if ($linkedUid < 1 && is_array($terminal)) {
+        if (!$masked && $linkedUid < 1 && is_array($terminal)) {
             $linkedUid = (int) ($terminal['user_id'] ?? 0);
+        }
+        if ($masked && is_array($terminal)) {
+            $terminal['display_name'] = '';
         }
         $roleTimes = [];
         $playStats = null;
@@ -250,8 +262,13 @@ final class AdminAtakOperatorsController
         $sep = ';';
         fputcsv($fh, [
             'Indicatif',
+            'Membre',
+            'Trigramme',
+            'Grade',
+            'Fonction',
+            'Unité d’affectation',
+            'Rôle déclaré en jeu',
             'ID militaire',
-            'Rôle',
             'Statut liaison',
             'Grille',
             'Cap',
@@ -260,14 +277,20 @@ final class AdminAtakOperatorsController
             'Compte lié',
             'Steam',
             'Dernière mise à jour',
+            'Version du mod',
             'Carte',
         ], $sep, '"', '\\');
 
         foreach ($bundle['rows'] as $row) {
             fputcsv($fh, [
                 (string) ($row['call_sign'] ?? ''),
+                (string) ($row['person_name'] ?? ''),
+                (string) ($row['person_trigram'] ?? ''),
+                (string) ($row['grade_short'] ?? ''),
+                (string) ($row['function_label'] ?? ''),
+                (string) (($row['assignment_unit_path'] ?? '') !== '' ? $row['assignment_unit_path'] : ($row['assignment_unit_label'] ?? '')),
+                (string) ($row['game_role'] ?? ''),
                 (string) ($row['military_id'] ?? ''),
-                (string) ($row['role_label'] ?? ''),
                 $statusLabels[(string) ($row['status'] ?? '')] ?? (string) ($row['status'] ?? ''),
                 (string) ($row['grid_ref'] ?? ''),
                 $row['heading_label'] !== '' ? (string) $row['heading_label'] : '',
@@ -276,6 +299,7 @@ final class AdminAtakOperatorsController
                 (string) ($row['linked_display_name'] ?? ''),
                 (string) ($row['steam_id'] ?? ''),
                 (string) ($row['updated_at_label'] ?? ''),
+                (string) ($row['mod_version'] ?? ''),
                 (string) ($row['map_label'] ?? ''),
             ], $sep, '"', '\\');
         }
@@ -299,7 +323,11 @@ final class AdminAtakOperatorsController
      *   maps: list<array{id:int,label:string}>,
      *   mapId: int,
      *   filter: string,
-     *   q: string
+     *   q: string,
+     *   unitId: int,
+     *   functionId: int,
+     *   unitOptions: list<array{id:int,label:string}>,
+     *   functionOptions: list<array{id:int,label:string}>
      * }
      */
     private function buildRoster(int $tenantId, Request $request, ?string $forceFilter = null): array
@@ -339,6 +367,8 @@ final class AdminAtakOperatorsController
             $filter = 'liaison';
         }
         $q = $forceFilter !== null ? '' : trim((string) ($request->query('q') ?? ''));
+        $unitFilter = $forceFilter !== null ? 0 : max(0, (int) ($request->query('unite') ?? 0));
+        $functionFilter = $forceFilter !== null ? 0 : max(0, (int) ($request->query('fonction') ?? 0));
 
         $units = $this->atak->getUnits($tenantId, $mapId);
         $callsignUsers = $this->callsignUserIndex($tenantId);
@@ -429,18 +459,18 @@ final class AdminAtakOperatorsController
                 $ft = $fireTeamIndex['by_user'][$linkedUserId];
             }
 
-            $role = trim((string) ($unit['role'] ?? ''));
-            if ($role === '') {
-                $extra = $unit['extra'] ?? null;
-                if (is_string($extra) && $extra !== '') {
-                    $decoded = json_decode($extra, true);
-                    if (is_array($decoded)) {
-                        $role = trim((string) ($decoded['role'] ?? ''));
-                    }
-                } elseif (is_array($extra)) {
-                    $role = trim((string) ($extra['role'] ?? ''));
-                }
+            // Rôle tel que le jeu le déclare (rôle personnalisé, slot, équipe) : affiché à part, jamais comme fonction.
+            $extra = $unit['extra'] ?? null;
+            if (is_string($extra) && $extra !== '') {
+                $decoded = json_decode($extra, true);
+                $extra = is_array($decoded) ? $decoded : [];
             }
+            $extra = is_array($extra) ? $extra : [];
+            $gameRole = trim((string) ($unit['role'] ?? ''));
+            if ($gameRole === '') {
+                $gameRole = trim((string) ($extra['role'] ?? ''));
+            }
+            $modVersion = trim((string) ($extra['mod_version'] ?? $extra['modVersion'] ?? ''));
 
             $heading = $unit['heading'] ?? null;
             $headingLabel = '';
@@ -455,7 +485,8 @@ final class AdminAtakOperatorsController
                 'id' => (int) ($unit['id'] ?? 0),
                 'call_sign' => $callSign,
                 'military_id' => $mid,
-                'role_label' => $role,
+                'game_role_raw' => $gameRole,
+                'mod_version' => mb_substr($modVersion, 0, 48),
                 'status' => $status,
                 'grid_ref' => trim((string) ($unit['grid_ref'] ?? '')),
                 'pos_x' => $unit['pos_x'] ?? null,
@@ -476,10 +507,6 @@ final class AdminAtakOperatorsController
                 'map_label' => $mapsById[$mapId] ?? ('Carte #' . $mapId),
                 'map_url' => url('atak') . (count($maps) > 1 ? '?mapId=' . $mapId : ''),
             ];
-
-            if ($q !== '' && !$this->rowMatchesQuery($row, $q)) {
-                continue;
-            }
 
             $rows[] = $row;
         }
@@ -503,6 +530,37 @@ final class AdminAtakOperatorsController
             }
             $stats['total'] = $stats['linked'] + $stats['delayed'] + $stats['offline'];
         }
+        $rows = $this->withPersonnel($tenantId, $rows);
+
+        // Choix des filtres : unités de la chaîne d’affectation et fonctions des opérateurs listés.
+        $unitOptions = [];
+        $functionOptions = [];
+        foreach ($rows as $r) {
+            $path = [];
+            foreach ($r['assignment_unit_chain'] as $link) {
+                $path[] = (string) $link['name'];
+                $unitOptions[(int) $link['id']] ??= ['id' => (int) $link['id'], 'label' => implode(' / ', $path)];
+            }
+            foreach ($r['functions'] as $fn) {
+                if ((string) $fn['name'] !== '') {
+                    $functionOptions[(int) $fn['id']] ??= ['id' => (int) $fn['id'], 'label' => (string) $fn['name']];
+                }
+            }
+        }
+        $byLabel = static fn (array $a, array $b): int => strnatcasecmp($a['label'], $b['label']);
+        usort($unitOptions, $byLabel);
+        usort($functionOptions, $byLabel);
+
+        $rows = array_values(array_filter($rows, function (array $r) use ($q, $unitFilter, $functionFilter): bool {
+            if ($unitFilter > 0 && !in_array($unitFilter, array_map(static fn (array $l): int => (int) $l['id'], $r['assignment_unit_chain']), true)) {
+                return false;
+            }
+            if ($functionFilter > 0 && !in_array($functionFilter, array_map(static fn (array $f): int => (int) $f['id'], $r['functions']), true)) {
+                return false;
+            }
+
+            return $q === '' || $this->rowMatchesQuery($r, $q);
+        }));
         $stats['shown'] = count($rows);
 
         return [
@@ -512,7 +570,88 @@ final class AdminAtakOperatorsController
             'mapId' => $mapId,
             'filter' => $filter,
             'q' => $q,
+            'unitId' => $unitFilter,
+            'functionId' => $functionFilter,
+            'unitOptions' => $unitOptions,
+            'functionOptions' => $functionOptions,
         ];
+    }
+
+    /**
+     * Situation actuelle du compte lié (nom, grade, fonction, unité d’affectation) et rôle déclaré en jeu à part.
+     * Membre masqué ou anonymisé : ni nom, ni lien, ni Steam ; seul l’indicatif remonté du jeu reste.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withPersonnel(int $tenantId, array $rows): array
+    {
+        $ids = [];
+        foreach ($rows as $r) {
+            if ((int) ($r['linked_user_id'] ?? 0) > 0) {
+                $ids[] = (int) $r['linked_user_id'];
+            }
+        }
+        $people = [];
+        if ($ids !== []) {
+            try {
+                $people = $this->personnelService()->forUsers($tenantId, $ids, OrgVisibilityCapabilities::fromGate());
+            } catch (\Throwable $e) {
+                error_log('ATAK operators: personnel lookup failed: ' . $e->getMessage());
+            }
+        }
+
+        return array_map(
+            static fn (array $r): array => self::decorateRow($r, ($uid = (int) ($r['linked_user_id'] ?? 0)) > 0 ? ($people[$uid] ?? null) : null),
+            $rows
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $r ligne du tableur (compte lié, rôle brut du jeu)
+     * @param array<string, mixed>|null $p situation du compte ({@see AtakOperatorPersonnelService::forUsers()})
+     * @return array<string, mixed>
+     */
+    public static function decorateRow(array $r, ?array $p): array
+    {
+        $linked = (int) ($r['linked_user_id'] ?? 0) > 0;
+        $state = is_array($p) ? (string) ($p['state'] ?? 'visible') : ($linked ? 'visible' : 'unlinked');
+        $visible = is_array($p) && $state === 'visible';
+        if (is_array($p) && !$visible) {
+            $r['linked_user_id'] = null;
+            $r['linked_url'] = null;
+            $r['linked_display_name'] = (string) ($p['masked_label'] ?? '');
+            $r['steam_id'] = '';
+        } elseif ($visible && (string) ($p['name'] ?? '') !== '') {
+            $r['linked_display_name'] = (string) $p['name'];
+        }
+        $function = $visible ? (string) ($p['function_label'] ?? '') : '';
+        $declared = AtakOperatorPersonnelService::declaredRole((string) ($r['game_role_raw'] ?? ''), $function);
+        unset($r['game_role_raw']);
+
+        return array_merge($r, [
+            'person_state' => $state,
+            'person_name' => $state === 'visible' ? (string) ($r['linked_display_name'] ?? '') : '',
+            'person_trigram' => $visible ? (string) ($p['trigram'] ?? '') : '',
+            'grade_short' => $visible ? (string) ($p['grade_short'] ?? '') : '',
+            'grade_long' => $visible ? (string) ($p['grade_long'] ?? '') : '',
+            'function_label' => $function,
+            'functions' => $visible && is_array($p['functions'] ?? null) ? $p['functions'] : [],
+            'assignment_unit_label' => $visible ? (string) ($p['unit_label'] ?? '') : '',
+            'assignment_unit_path' => $visible ? (string) ($p['unit_path'] ?? '') : '',
+            'assignment_unit_chain' => $visible && is_array($p['unit_chain'] ?? null) ? $p['unit_chain'] : [],
+            'game_role' => $declared['label'],
+            'game_role_differs' => $declared['differs'],
+        ]);
+    }
+
+    private function personnelService(): AtakOperatorPersonnelService
+    {
+        return $this->personnel ??= new AtakOperatorPersonnelService(
+            new \App\Repositories\PersonnelJobRoleRepository(),
+            $this->userRepository,
+            new \App\Repositories\UnitRepository(),
+        );
     }
 
     /**
@@ -652,7 +791,11 @@ final class AdminAtakOperatorsController
         $haystacks = [
             (string) ($row['call_sign'] ?? ''),
             (string) ($row['military_id'] ?? ''),
-            (string) ($row['role_label'] ?? ''),
+            (string) ($row['person_name'] ?? ''),
+            (string) ($row['person_trigram'] ?? ''),
+            (string) ($row['function_label'] ?? ''),
+            (string) ($row['assignment_unit_path'] ?? ''),
+            (string) ($row['game_role'] ?? ''),
             (string) ($row['grid_ref'] ?? ''),
             (string) ($row['unit_group_label'] ?? ''),
             (string) ($row['fire_team_label'] ?? ''),

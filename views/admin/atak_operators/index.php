@@ -16,6 +16,10 @@ $mapId = (int) ($atakOperatorsMapId ?? 1);
 $filter = (string) ($atakOperatorsFilter ?? 'liaison');
 $q = (string) ($atakOperatorsQuery ?? '');
 $refreshSeconds = max(15, (int) ($atakOperatorsRefreshSeconds ?? 30));
+$unitId = (int) ($atakOperatorsUnitId ?? 0);
+$functionId = (int) ($atakOperatorsFunctionId ?? 0);
+$unitOptions = is_array($atakOperatorsUnitOptions ?? null) ? $atakOperatorsUnitOptions : [];
+$functionOptions = is_array($atakOperatorsFunctionOptions ?? null) ? $atakOperatorsFunctionOptions : [];
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
@@ -27,14 +31,18 @@ $statusMeta = static function (string $status): array {
     };
 };
 
-$baseQuery = static function (array $overrides = []) use ($mapId, $filter, $q): string {
+$baseQuery = static function (array $overrides = []) use ($mapId, $filter, $q, $unitId, $functionId): string {
     $params = array_merge([
         'carte' => $mapId,
         'statut' => $filter,
         'q' => $q,
+        'unite' => $unitId,
+        'fonction' => $functionId,
     ], $overrides);
-    if (($params['q'] ?? '') === '') {
-        unset($params['q']);
+    foreach (['q', 'unite', 'fonction'] as $key) {
+        if (($params[$key] ?? '') === '' || ($params[$key] ?? 0) === 0) {
+            unset($params[$key]);
+        }
     }
     return http_build_query($params);
 };
@@ -88,7 +96,7 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
             <div class="flex-1 min-w-[12rem]">
                 <label for="atak-op-q" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Recherche</label>
                 <input id="atak-op-q" type="search" name="q" value="<?= $h($q) ?>"
-                       placeholder="Indicatif, ID militaire, rôle, compte…"
+                       placeholder="Indicatif, nom, fonction, ID militaire…"
                        class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200">
             </div>
             <div class="w-full lg:w-48">
@@ -100,6 +108,30 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
                     <option value="hors_ligne" <?= $filter === 'hors_ligne' ? 'selected' : '' ?>>Hors ligne seulement</option>
                 </select>
             </div>
+            <?php if ($unitOptions !== [] || $unitId > 0): ?>
+                <div class="w-full lg:w-56">
+                    <label for="atak-op-unite" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Unité</label>
+                    <select id="atak-op-unite" name="unite"
+                            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                        <option value="0">Toutes les unités</option>
+                        <?php foreach ($unitOptions as $u): ?>
+                            <option value="<?= (int) $u['id'] ?>" <?= (int) $u['id'] === $unitId ? 'selected' : '' ?>><?= $h($u['label']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+            <?php if ($functionOptions !== [] || $functionId > 0): ?>
+                <div class="w-full lg:w-56">
+                    <label for="atak-op-fonction" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Fonction</label>
+                    <select id="atak-op-fonction" name="fonction"
+                            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                        <option value="0">Toutes les fonctions</option>
+                        <?php foreach ($functionOptions as $fo): ?>
+                            <option value="<?= (int) $fo['id'] ?>" <?= (int) $fo['id'] === $functionId ? 'selected' : '' ?>><?= $h($fo['label']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
             <?php if (count($maps) > 1): ?>
                 <div class="w-full lg:w-56">
                     <label for="atak-op-carte" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Carte</label>
@@ -141,15 +173,16 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
                     <thead class="bg-slate-100 border-b border-slate-200 text-[11px] uppercase tracking-wide text-slate-500 sticky top-0">
                         <tr>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Indicatif</th>
-                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">ID militaire</th>
-                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Rôle</th>
+                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Membre</th>
+                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Grade</th>
+                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Fonction · affectation</th>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Statut liaison</th>
+                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">ID militaire</th>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Grille</th>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Cap</th>
-                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Unité / groupe</th>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Équipe de feu</th>
-                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Compte lié</th>
-                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Dernière MAJ</th>
+                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Dernière remontée</th>
+                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Version du mod</th>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Carte</th>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Fiche</th>
                         </tr>
@@ -161,6 +194,14 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
                             $linkedName = trim((string) ($row['linked_display_name'] ?? ''));
                             $ftId = (int) ($row['fire_team_id'] ?? 0);
                             $ftLabel = trim((string) ($row['fire_team_label'] ?? ''));
+                            $ftUnit = trim((string) ($row['unit_group_label'] ?? ''));
+                            $personState = (string) ($row['person_state'] ?? 'unlinked');
+                            $trigram = trim((string) ($row['person_trigram'] ?? ''));
+                            $functionLabel = trim((string) ($row['function_label'] ?? ''));
+                            $assignmentPath = trim((string) ($row['assignment_unit_path'] ?? ''));
+                            $assignment = trim((string) ($row['assignment_unit_label'] ?? ''));
+                            $gameRole = trim((string) ($row['game_role'] ?? ''));
+                            $gameRoleDiffers = !empty($row['game_role_differs']);
                             $callSign = trim((string) ($row['call_sign'] ?? ''));
                             $ficheUrl = $callSign !== ''
                                 ? url('back-office/atak/fiche-operateur?indicatif=' . rawurlencode($callSign))
@@ -174,33 +215,61 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
                                         <?= $h($callSign) ?>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-3 py-2 text-slate-700 font-mono text-[12px] whitespace-nowrap"><?= $h($row['military_id'] ?? '') !== '' ? $h($row['military_id']) : '—' ?></td>
-                                <td class="px-3 py-2 text-slate-700 whitespace-nowrap"><?= $h($row['role_label'] ?? '') !== '' ? $h($row['role_label']) : '—' ?></td>
+                                <td class="px-3 py-2 text-slate-700">
+                                    <?php if ($personState === 'anonymized' || $personState === 'hidden'): ?>
+                                        <span class="italic text-slate-500"><?= $h($linkedName !== '' ? $linkedName : '—') ?></span>
+                                    <?php elseif ($linkedName !== ''): ?>
+                                        <?php if ($linkedUrl !== ''): ?>
+                                            <a class="font-semibold text-slate-900 underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h($linkedUrl) ?>"><?= $h($linkedName) ?></a>
+                                        <?php else: ?>
+                                            <span class="font-semibold text-slate-900"><?= $h($linkedName) ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($trigram !== ''): ?>
+                                            <span class="ml-1 rounded border border-slate-200 bg-slate-50 px-1 font-mono text-[11px] text-slate-600"><?= $h($trigram) ?></span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="text-slate-400">Non lié</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="px-3 py-2 text-slate-700 whitespace-nowrap" title="<?= $h($row['grade_long'] ?? '') ?>"><?= $h($row['grade_short'] ?? '') !== '' ? $h($row['grade_short']) : '—' ?></td>
+                                <td class="px-3 py-2 text-slate-700">
+                                    <?php if ($functionLabel !== ''): ?>
+                                        <span class="font-semibold text-slate-900"><?= $h($functionLabel) ?></span>
+                                    <?php elseif ($personState === 'visible'): ?>
+                                        <span class="text-slate-400">Aucune fonction</span>
+                                    <?php else: ?>
+                                        <span class="text-slate-400">—</span>
+                                    <?php endif; ?>
+                                    <?php if ($assignment !== ''): ?>
+                                        <span class="block text-[12px] text-slate-500" title="<?= $h($assignmentPath) ?>"><?= $h($assignment) ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($gameRole !== ''): ?>
+                                        <span class="mt-0.5 block text-[11px] text-slate-500">
+                                            <?php if ($gameRoleDiffers): ?>
+                                                <span class="mr-1 inline-flex items-center rounded border border-amber-200 bg-amber-50 px-1 font-semibold text-amber-900" title="Le rôle déclaré en jeu ne correspond pas à la fonction tenue sur le site">Écart</span>
+                                            <?php endif; ?>
+                                            Déclaré en jeu : <?= $h($gameRole) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="px-3 py-2 whitespace-nowrap">
                                     <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold <?= $h($st['class']) ?>">
                                         <?= $h($st['label']) ?>
                                     </span>
                                 </td>
+                                <td class="px-3 py-2 text-slate-700 font-mono text-[12px] whitespace-nowrap"><?= $h($row['military_id'] ?? '') !== '' ? $h($row['military_id']) : '—' ?></td>
                                 <td class="px-3 py-2 text-slate-700 font-mono text-[12px] whitespace-nowrap"><?= $h($row['grid_ref'] ?? '') !== '' ? $h($row['grid_ref']) : '—' ?></td>
                                 <td class="px-3 py-2 text-slate-700 whitespace-nowrap"><?= $h($row['heading_label'] ?? '') !== '' ? $h($row['heading_label']) : '—' ?></td>
-                                <td class="px-3 py-2 text-slate-700"><?= $h($row['unit_group_label'] ?? '') !== '' ? $h($row['unit_group_label']) : '—' ?></td>
                                 <td class="px-3 py-2 text-slate-700">
                                     <?php if ($ftId > 0 && $ftLabel !== ''): ?>
                                         <a class="font-semibold text-slate-900 underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h(url('back-office/atak/fire-teams/' . $ftId)) ?>"><?= $h($ftLabel) ?></a>
+                                        <?php if ($ftUnit !== ''): ?><span class="block text-[12px] text-slate-500"><?= $h($ftUnit) ?></span><?php endif; ?>
                                     <?php else: ?>
                                         —
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-3 py-2 text-slate-700">
-                                    <?php if ($linkedUrl !== '' && $linkedName !== ''): ?>
-                                        <a class="font-semibold text-slate-900 underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h($linkedUrl) ?>"><?= $h($linkedName) ?></a>
-                                    <?php elseif ($linkedName !== ''): ?>
-                                        <?= $h($linkedName) ?>
-                                    <?php else: ?>
-                                        <span class="text-slate-400">Non lié</span>
-                                    <?php endif; ?>
-                                </td>
                                 <td class="px-3 py-2 text-slate-600 whitespace-nowrap" title="<?= $h($row['updated_at'] ?? '') ?>"><?= $h($row['updated_at_label'] ?? '—') ?></td>
+                                <td class="px-3 py-2 text-slate-600 font-mono text-[12px] whitespace-nowrap"><?= $h($row['mod_version'] ?? '') !== '' ? $h($row['mod_version']) : '—' ?></td>
                                 <td class="px-3 py-2 whitespace-nowrap">
                                     <a class="font-semibold text-slate-900 underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h($row['map_url'] ?? url('atak')) ?>">Voir</a>
                                 </td>

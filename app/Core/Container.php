@@ -2358,7 +2358,12 @@ class Container
                 self::get(\App\Repositories\FireTeamRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
-                self::get(\App\Repositories\AtakRealismRepository::class)
+                self::get(\App\Repositories\AtakRealismRepository::class),
+                new \App\Services\Atak\AtakOperatorPersonnelService(
+                    self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                    self::get(UserRepository::class),
+                    self::get(\App\Repositories\UnitRepository::class),
+                )
             ),
             \App\Controllers\Api\FireTeamApiController::class => new \App\Controllers\Api\FireTeamApiController(
                 self::get(\App\Repositories\FireTeamRepository::class),

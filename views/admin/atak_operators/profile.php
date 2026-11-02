@@ -61,7 +61,14 @@ $memberUrl = $field($live, 'linked_url');
 if ($memberUrl === '' && $userId > 0) {
     $memberUrl = url('personnel/' . $userId);
 }
-$role = $field($live, 'role_label');
+// Fonction tenue sur le site (attributions de fonctions) ; le rôle envoyé par le jeu n’est qu’un « déclaré en jeu ».
+$role = $field($live, 'function_label');
+$grade = $field($live, 'grade_short');
+$trigram = $field($live, 'person_trigram');
+$assignment = $field($live, 'assignment_unit_path') !== '' ? $field($live, 'assignment_unit_path') : $field($live, 'assignment_unit_label');
+$gameRole = $field($live, 'game_role');
+$gameRoleDiffers = is_array($live) && !empty($live['game_role_differs']);
+$modVersion = $field($live, 'mod_version');
 $team = $field($live, 'fire_team_label');
 $teamColor = $field($live, 'fire_team_color');
 if ($teamColor !== '' && preg_match('/^#[0-9a-f]{3,8}$/i', $teamColor) !== 1) {
@@ -390,10 +397,16 @@ $row = static function (string $label, string $value, bool $mono = false, bool $
                     <dl class="aop-dl">
                         <?= $row('Indicatif', $selected, true, true) ?>
                         <?= $row('ID militaire', $militaryId, true, true) ?>
-                        <?= $row('Rôle', $role) ?>
+                        <?= $row('Compte lié', $displayName . ($trigram !== '' ? ' · ' . $trigram : '')) ?>
+                        <?= $row('Grade', $grade) ?>
+                        <?= $row('Fonction', $role) ?>
+                        <?= $row('Unité d’affectation', $assignment) ?>
+                        <?php if ($gameRole !== ''): ?>
+                            <?= $row($gameRoleDiffers ? 'Déclaré en jeu (écart)' : 'Déclaré en jeu', $gameRole) ?>
+                        <?php endif; ?>
                         <?= $row('Équipe', $team) ?>
-                        <?= $row('Unité', $unitGroup) ?>
-                        <?= $row('Compte lié', $displayName) ?>
+                        <?= $row('Unité de l’équipe', $unitGroup) ?>
+                        <?= $row('Version du mod', $modVersion) ?>
                     </dl>
                 </article>
             </div>

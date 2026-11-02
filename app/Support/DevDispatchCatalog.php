@@ -306,6 +306,16 @@ final class DevDispatchCatalog
                 'L’administrateur lance run-migrations.php (étape grade_systems_de_ru_cn_nato) pour ajouter les grades allemands, russes, chinois et OTAN.',
                 'Essai : Back-office › Référentiel des grades › Parcourir les catalogues › Deutschland › Armée de terre › Utiliser pour la communauté.',
             ]),
+            $pr(1333, '2026-11-02', 'Sessions & connexions ATAK : la fonction actuelle remplace l’ancien rôle', 'La page ATAK › Sessions & connexions affichait encore, dans sa colonne « Rôle », le rôle envoyé par le jeu (rôle personnalisé, description du slot ou équipe de feu) au lieu de la fonction tenue sur le site. Chaque opérateur montre désormais son indicatif, puis le membre lié (Prénom N. et trigramme), son grade, la fonction qui lui est attribuée et son unité d’affectation dans l’organigramme. Le rôle choisi en jeu n’apparaît plus qu’à part, sous la mention « Déclaré en jeu », et seulement s’il diffère de la fonction, avec une pastille « Écart ». Les membres masqués ou anonymisés restent sans nom ni lien.', [
+                'Filtres par unité (unités subordonnées comprises) et par fonction',
+                'Colonnes Grade, Fonction · affectation et Version du mod ; « Dernière remontée » remplace « Dernière MAJ »',
+                'Export CSV : membre, trigramme, grade, fonction, unité d’affectation, rôle déclaré en jeu et version du mod',
+            ], [
+                'Fiche opérateur ATAK : fonction, grade, unité d’affectation et rôle déclaré en jeu dans le bloc Identité réseau',
+            ], [
+                'Le rôle remonté du jeu n’est plus présenté comme la fonction de l’opérateur',
+            ], ['atak'], [], 'Portail Athena'),
+
             $pr(1332, '2026-11-02', 'Royaume-Uni : grades britanniques, emplois, qualifications, doctrine et modèles d’unités', 'Une communauté peut choisir le modèle britannique à sa création (étape Grades) ou dans Back-office › Référentiel des grades : British Army et Royal Marines (Private, Trooper, Gunner, Sapper… jusqu’à Field Marshal), Royal Navy ou Royal Air Force, avec abréviations officielles et codes OTAN. Le Royaume-Uni rejoint aussi les catalogues : emplois des forces spéciales et unités spécialisées, brevets et cursus réels avec leurs écoles, publications doctrinales publiques et modèles d’organisation (UKSF, 16 Air Assault, UK Commando Force, Joint Aviation Command, bataillon d’infanterie type).', [
                 'Grades : trois systèmes britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force), proposés à la création de la communauté et dans le référentiel des grades',
                 'Catalogue d’emplois : 111 emplois britanniques sourcés (UKSF, 16 Air Assault, Ranger Regiment, Royal Marines, aviation, EOD, artillerie, RAF Regiment, Royal Navy)',
