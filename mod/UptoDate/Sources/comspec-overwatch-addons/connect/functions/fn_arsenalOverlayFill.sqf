@@ -24,6 +24,18 @@ private _collIdx = [2, 3] select _isCloud;
 private _nameIdx = [1, 2] select _isCloud;
 private _guiH = ((((safezoneW / safezoneH) min 1.2) / 1.2) / 25);
 private _uw = _guiH * pixelW / pixelH;
+private _ico = _grp getVariable ["COMSPEC_ArsenalIco", ""];
+// Taille relative minimale des textes structurés (plancher en pixels, voir arsenalOverlayShow).
+private _sm = _grp getVariable ["COMSPEC_ArsenalStMin", 0];
+// Bouton à icône : l'icône suit le bouton (affichée, masquée, grisée quand il est inactif).
+private _showB = {
+    params ["_b", "_on", ["_en", true]];
+    if (isNull _b) exitWith {};
+    _b ctrlShow _on;
+    _b ctrlEnable _en;
+    private _p = _b getVariable ["ico", controlNull];
+    if (!isNull _p) then { _p ctrlShow _on; _p ctrlSetTextColor ([[0.36, 0.42, 0.38, 1], [0.90, 0.94, 0.91, 1]] select _en); };
+};
 // État affiché d'une ligne (voir arsenalStateInfo).
 private _stateOf = if (_isCloud) then {
     { switch (true) do { case (_this select 11): { "new" }; case ((_this select 10) in ["in", "diff", "check"]): { _this select 10 }; case (_this select 8): { "mine" }; default { "out" }; } }
@@ -131,9 +143,28 @@ private _q = if (isNull _search) then { "" } else { toLower trim (ctrlText _sear
 private _ph = _grp getVariable ["COMSPEC_ArsenalSearchPh", controlNull];
 if (!isNull _ph) then { _ph ctrlShow (_q isEqualTo ""); };
 private _clr = _grp getVariable ["COMSPEC_ArsenalSearchClear", controlNull];
-if (!isNull _clr) then { _clr ctrlShow (_q isNotEqualTo ""); };
+if (!isNull _clr) then { [_clr, _q isNotEqualTo ""] call _showB; (_clr getVariable ["ico", controlNull]) ctrlSetTextColor [0.58, 0.64, 0.60, 1]; };
 private _words = _q splitString " ";
-// Texte de recherche de chaque tenue (nom, collection, auteur, badge, état, pastilles) : une fois par chargement.
+// Pièces des cartes : arme, gilet, sac, casque (arsenalLoadoutIcons), retenues par contenu ;
+// tenue du site pas encore chargée : silhouettes grisées, rien n'est demandé au réseau pour une carte.
+private _memo = missionNamespace getVariable ["COMSPEC_ArsenalIconMemo", nil];
+if (isNil "_memo" || {(count _memo) > 600}) then { _memo = createHashMap; missionNamespace setVariable ["COMSPEC_ArsenalIconMemo", _memo, false]; };
+private _cloudLos = missionNamespace getVariable ["COMSPEC_ArsenalCloudLoadouts", createHashMap];
+private _ui = "\a3\ui_f\data\gui\rsc\rscdisplayarsenal\";
+private _slotPh = ["primaryweapon_ca.paa", "vest_ca.paa", "backpack_ca.paa", "headgear_ca.paa"] apply { _ui + _x };
+private _cardIcons = {
+    params ["_r"];
+    private _key = if (_isCloud) then { format ["c|%1|%2", _r select 0, _r select 9] } else { format ["l|%1|%2", toLower (_r select 0), _r select 5] };
+    if (_key in _memo) exitWith { _memo get _key };
+    private _data = if (_isCloud) then { _cloudLos getOrDefault [(_r select 0) + "|" + (_r select 9), []] } else { _r select 3 };
+    if (_data isEqualTo []) exitWith { [] };
+    private _ic = [_data] call comspec_overwatch_connect_fnc_arsenalLoadoutIcons;
+    private _get = { (_ic param [_this, []]) params [["_kind", ""], ["_cls", ""], ["_p", ""], ["_dn", ""]]; [_p, _kind, _dn] };
+    private _out = [2 call _get, [0 call _get, 3 call _get, 5 call _get, 4 call _get]];
+    _memo set [_key, _out];
+    _out
+};
+// Texte de recherche de chaque tenue (nom, collection, auteur, badge, état, pastilles, pièces) : une fois par chargement.
 private _hayMap = _grp getVariable ["COMSPEC_ArsenalHay", nil];
 if (isNil "_hayMap" || {_mode isEqualTo "data"}) then { _hayMap = createHashMap; _grp setVariable ["COMSPEC_ArsenalHay", _hayMap]; };
 private _hays = _hayMap getOrDefault [_tab, []];
@@ -147,7 +178,9 @@ if ((count _hays) isNotEqualTo (count _rows)) then {
             _r select 1, _r select _collIdx, _author, _badge, _st, (_st) call comspec_overwatch_connect_fnc_tr,
             ["", "favori"] select (if (_isCloud) then { _r select 6 } else { _r param [7, false] }),
             ["", "mise en avant"] select (if (_isCloud) then { _r param [12, false] } else { _r param [8, false] }),
-            ["", "obligatoire"] select (if (_isCloud) then { _r param [13, false] } else { _r param [9, false] })
+            ["", "obligatoire"] select (if (_isCloud) then { _r param [13, false] } else { _r param [9, false] }),
+            // Pièces principales (nom affiché : « M4A1 », « Carrier Rig »…), déjà en mémoire pour les cartes.
+            [_r] call { ([_this select 0] call _cardIcons) params [["_u", []], ["_sl", []]]; (([_u] + _sl) apply { _x param [2, ""] }) joinString " " }
         ] joinString " ")
     };
     _hayMap set [_tab, _hays];
@@ -197,8 +230,8 @@ for "_i" from _off to ((count _chipDefs) - 1) do {
 for "_i" from _used to ((count _chips) - 1) do { (_chips select _i) ctrlShow false; };
 _grp setVariable ["COMSPEC_ArsenalChipCount", _used];
 _grp setVariable ["COMSPEC_ArsenalChipOffset", _off];
-if (!isNull _aPrev) then { _aPrev ctrlShow (_off > 0); };
-if (!isNull _aNext) then { _aNext ctrlShow _more; };
+[_aPrev, _off > 0] call _showB;
+[_aNext, _more] call _showB;
 
 // Cartes : collection, puis tri.
 private _shown = _base select { _coll isEqualTo "" || {(_x select _collIdx) isEqualTo _coll} };
@@ -262,25 +295,7 @@ private _page = switch (true) do {
 _page = (_page max 0) min (_pages - 1);
 _grp setVariable ["COMSPEC_ArsenalPage", _page];
 
-// Écriture des cartes de la page. Pièces : arme, gilet, sac, casque (arsenalLoadoutIcons), retenues par contenu ;
-// tenue du site pas encore chargée : silhouettes grisées, rien n'est demandé au réseau pour une carte.
-private _memo = missionNamespace getVariable ["COMSPEC_ArsenalIconMemo", nil];
-if (isNil "_memo" || {(count _memo) > 600}) then { _memo = createHashMap; missionNamespace setVariable ["COMSPEC_ArsenalIconMemo", _memo, false]; };
-private _cloudLos = missionNamespace getVariable ["COMSPEC_ArsenalCloudLoadouts", createHashMap];
-private _ui = "\a3\ui_f\data\gui\rsc\rscdisplayarsenal\";
-private _slotPh = ["primaryweapon_ca.paa", "vest_ca.paa", "backpack_ca.paa", "headgear_ca.paa"] apply { _ui + _x };
-private _cardIcons = {
-    params ["_r"];
-    private _key = if (_isCloud) then { format ["c|%1|%2", _r select 0, _r select 9] } else { format ["l|%1|%2", toLower (_r select 0), _r select 5] };
-    if (_key in _memo) exitWith { _memo get _key };
-    private _data = if (_isCloud) then { _cloudLos getOrDefault [(_r select 0) + "|" + (_r select 9), []] } else { _r select 3 };
-    if (_data isEqualTo []) exitWith { [] };
-    private _ic = [_data] call comspec_overwatch_connect_fnc_arsenalLoadoutIcons;
-    private _get = { (_ic param [_this, []]) params [["_kind", ""], ["_cls", ""], ["_p", ""], ["_dn", ""]]; [_p, _kind, _dn] };
-    private _out = [2 call _get, [0 call _get, 3 call _get, 5 call _get, 4 call _get]];
-    _memo set [_key, _out];
-    _out
-};
+// Écriture des cartes de la page.
 {
     _x params ["_hit", "_outer", "_inner", "_stripe", "_pbg", "_ppic", "_check", "_name", "_flags", "_meta", "_badge", "_icons", "_all", "_tW"];
     private _i = _page * _per + _forEachIndex;
@@ -299,15 +314,21 @@ private _cardIcons = {
     private _author = if (_isCloud) then { _r select 4 } else { _r param [6, ""] };
     _stripe ctrlSetBackgroundColor ([[0.22, 0.27, 0.24, 1], _rgba] select (_label isNotEqualTo ""));
     // Nom (raccourci de sa collection) et pastilles favori / mise en avant / obligatoire à sa droite.
+    // Icônes du mod (pas de glyphes) : obligatoire (cercle « ! » orange), mise en avant (signet bleu), favori (étoile).
     private _glyphs = [];
-    if (_mand) then { _glyphs pushBack "<t color='#f2ab33'>●</t>"; };
-    if (_feat) then { _glyphs pushBack "<t color='#7ec8ff'>◆</t>"; };
-    if (_fav) then { _glyphs pushBack "<t color='#f0d060'>★</t>"; };
-    _flags ctrlSetStructuredText parseText (((format ["<t align='right' size='0.7'>%1</t>", _glyphs joinString " "])) call comspec_overwatch_connect_fnc_tr);
-    (ctrlPosition _name) params ["_nx", "_ny", "", "_nh"];
-    _name ctrlSetPosition [_nx, _ny, _tW - (count _glyphs) * 0.62 * _uw, _nh];
+    if (_mand) then { _glyphs pushBack format ["<img image='%1required_ca.paa' color='#f2ab33'/>", _ico]; };
+    if (_feat) then { _glyphs pushBack format ["<img image='%1featured_ca.paa' color='#7ec8ff'/>", _ico]; };
+    if (_fav) then { _glyphs pushBack format ["<img image='%1star_ca.paa' color='#f0d060'/>", _ico]; };
+    _flags ctrlSetStructuredText parseText (((format ["<t align='right' size='0.86'>%1</t>", _glyphs joinString " "])) call comspec_overwatch_connect_fnc_tr);
+    (_name getVariable ["rect", ctrlPosition _name]) params ["_nx", "_ny", "", "_nh"];
+    _name ctrlSetPosition [_nx, _ny, _tW - (count _glyphs) * 0.85 * _uw, _nh];
     _name ctrlCommit 0;
     _name ctrlSetText (_r select _nameIdx); // i18n:brut
+    // Squelette du chargement (arsenalOverlayBeginLoad) effacé.
+    { _x ctrlSetBackgroundColor [0, 0, 0, 0]; } forEach [_name, _meta];
+    (_meta getVariable ["rect", ctrlPosition _meta]) params ["_mx", "_my", "", "_mh"];
+    _meta ctrlSetPosition [_mx, _my, _tW, _mh];
+    _meta ctrlCommit 0;
     _name ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.95, 0.72, 0.28, 1]] select _mand);
     _meta ctrlSetText (if (_author isEqualTo "") then { _r select _collIdx } else { format ["%1 · %2", _r select _collIdx, _author] }); // i18n:brut
     // Badge d'état : texte de la couleur de l'état sur un fond teinté, à la largeur du texte.
@@ -337,10 +358,12 @@ private _cardIcons = {
 
 // Pages : ‹ n / N ›, masquées s'il n'y en a qu'une.
 (_grp getVariable ["COMSPEC_ArsenalPager", []]) params [["_pgPrev", controlNull], ["_pgLabel", controlNull], ["_pgNext", controlNull]];
-{ if (!isNull _x) then { _x ctrlShow (_pages > 1); }; } forEach [_pgPrev, _pgLabel, _pgNext];
-if (!isNull _pgPrev) then { _pgPrev ctrlEnable (_page > 0); };
-if (!isNull _pgNext) then { _pgNext ctrlEnable (_page < (_pages - 1)); };
-if (!isNull _pgLabel) then { _pgLabel ctrlSetStructuredText parseText (((format ["<t align='center' size='0.62' color='#8fa596'>%1 / %2</t>", _page + 1, _pages])) call comspec_overwatch_connect_fnc_tr); };
+[_pgPrev, _pages > 1, _page > 0] call _showB;
+[_pgNext, _pages > 1, _page < (_pages - 1)] call _showB;
+if (!isNull _pgLabel) then {
+    _pgLabel ctrlShow (_pages > 1);
+    _pgLabel ctrlSetStructuredText parseText (((format ["<t align='center' size='%3' color='#a9b8ae'>%1 / %2</t>", _page + 1, _pages, 0.72 max _sm])) call comspec_overwatch_connect_fnc_tr);
+};
 
 // État vide : une phrase qui dit pourquoi et quoi faire.
 private _empty = _grp getVariable ["COMSPEC_ArsenalEmpty", controlNull];
@@ -355,7 +378,7 @@ if (!isNull _empty) then {
             case (_stateKey isEqualTo "fav"): { "Aucune tenue en favori : marquez-en sur le site Athena (Équipement)." };
             default { "Aucune tenue ne correspond : changez la recherche, l'état ou la collection." };
         };
-        _empty ctrlSetStructuredText parseText (((format ["<t align='center' size='0.85' color='#a9b8ae'>%1</t>", (_msg) call comspec_overwatch_connect_fnc_tr])) call comspec_overwatch_connect_fnc_tr);
+        _empty ctrlSetStructuredText parseText (((format ["<t align='center' size='%2' color='#b5c4ba'>%1</t>", (_msg) call comspec_overwatch_connect_fnc_tr, 0.9 max _sm])) call comspec_overwatch_connect_fnc_tr);
     };
 };
 
@@ -368,10 +391,10 @@ if (!isNull _status) then {
     } else {
         format ["<t color='#e0a050'>%1</t>", ("Pas encore de copie locale Documents") call comspec_overwatch_connect_fnc_tr]
     };
-    _status ctrlSetStructuredText parseText (((format ["<t align='right' size='0.66' color='#8fa596'>%1<br/>%2 · %3</t>",
+    _status ctrlSetStructuredText parseText (((format ["<t align='right' size='%4' color='#9fb3a6'>%1<br/>%2 · %3</t>",
         _syncTxt,
         if (_offline) then { format ["<t color='#e0a050'>%1</t>", ("Athena hors ligne") call comspec_overwatch_connect_fnc_tr] } else { format [("Liste du site du %1") call comspec_overwatch_connect_fnc_tr, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] },
-        format [("%1 affichée(s) sur %2") call comspec_overwatch_connect_fnc_tr, count _shown, count _rows]])) call comspec_overwatch_connect_fnc_tr);
+        format [("%1 affichée(s) sur %2") call comspec_overwatch_connect_fnc_tr, count _shown, count _rows], 0.7 max _sm])) call comspec_overwatch_connect_fnc_tr);
     _status ctrlSetTooltip (((if (_syncPath isEqualTo "") then { "" } else { format [("Emplacement : %1") call comspec_overwatch_connect_fnc_tr, _syncPath] })) call comspec_overwatch_connect_fnc_tr);
 };
 
@@ -393,15 +416,16 @@ if (!isNull _bulk) then {
         "Envoie au site les tenues affichées qui n'y sont pas encore, ou qui ont changé ici. Les autres ne sont pas renvoyées.",
         "Importe dans votre arsenal les tenues affichées que vous n'avez pas encore. Aucune de vos tenues n'est remplacée."
     ] select _isCloud) call comspec_overwatch_connect_fnc_tr);
-    _bulk ctrlEnable (_n > 0 && {!_offline});
+    _bulk ctrlEnable (_n > 0 && {!_offline} && {!(_grp getVariable ["COMSPEC_ArsenalBusy", false])});
 };
 [_grp] call (_grp getVariable ["COMSPEC_ArsenalPickRefresh", {}]);
 private _help = _grp getVariable ["COMSPEC_ArsenalHelp", controlNull];
 if (!isNull _help) then {
-    _help ctrlSetStructuredText parseText (((format ["<t align='right' size='0.7' color='#6f8577'>%1</t>", ([
-        "Clic : fiche · double-clic : enfiler · clic droit : actions · molette : pages",
-        "Un clic coche ou décoche une tenue. Tout cocher suit la recherche et la collection."
-    ] select _pick) call comspec_overwatch_connect_fnc_tr])) call comspec_overwatch_connect_fnc_tr);
+    _help ctrlSetStructuredText parseText (((format ["<t align='right' size='%2' color='#8fa596'>%1</t>", ([
+        "Double-clic ou Entrée : enfiler · clic droit : actions · flèches : parcourir",
+        "Clic ou Entrée : cocher · Tout cocher suit le filtre"
+    ] select _pick) call comspec_overwatch_connect_fnc_tr, 0.74 max _sm])) call comspec_overwatch_connect_fnc_tr);
+    _help ctrlSetTooltip ((["Clavier, une fois une carte cliquée : flèches pour passer d'une carte à l'autre, Page préc. / suiv. pour changer de page, Entrée pour enfiler, Suppr pour supprimer (avec confirmation), Ctrl+C pour copier la tenue. Dans la recherche, flèche bas pour aller aux cartes.", "Clavier : flèches pour parcourir, Entrée coche ou décoche la carte."] select _pick) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Fiche : vidée sans tenue choisie ; redessinée après un rechargement (son état a pu changer).

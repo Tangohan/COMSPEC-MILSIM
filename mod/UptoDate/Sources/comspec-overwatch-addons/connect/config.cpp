@@ -147,6 +147,7 @@ class CfgFunctions {
             class arsenalNormalizeLoadout {};
             class arsenalItemPicture {};
             class arsenalLoadoutIcons {};
+            class arsenalLoadoutStats {};
             class arsenalCloudLoadout {};
             class arsenalListWardrobes {};
             class arsenalApplyLoadout {};

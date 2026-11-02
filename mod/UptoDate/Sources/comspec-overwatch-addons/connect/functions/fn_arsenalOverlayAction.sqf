@@ -29,6 +29,10 @@
       "pick" / "markAll"                  Mes tenues : sélection multiple (un clic coche), tout (dé)cocher l'affiché
       "deleteMarked" / "undoDelete"       supprimer les tenues cochées en une fois, les remettre (dernière suppression)
       "loadoutsOpen", display / "loadoutsClosed"   écran « Mes équipements » d'ACE ouvert / fermé (arsenalInitOverlay)
+      "nav", sens / "navFocus"            clavier sur les cartes : left / right / up / down / pgUp / pgDn / home / end
+                                          (la page suit), focus sur la carte choisie (flèche bas dans la recherche)
+      "navEnter" / "navDelete" / "navCopy"   Entrée (enfiler ; sélection multiple : cocher), Suppr (supprimer, avec
+                                          confirmation), Ctrl+C (copier la tenue)
     Chaque action dit son issue sur la ligne de retour du pied (en cours, réussie, impossible) ; les messages
     d'arsenalPushAll / arsenalPullAll restent affichés comme avant.
 */
@@ -293,6 +297,55 @@ switch (_act) do {
             };
         };
     };
+    // Clavier sur les cartes (arsenalOverlayShow) : la tenue choisie se déplace, la page suit, la carte garde le
+    // focus. Sélection multiple : les flèches déplacent seulement le cadre, Entrée coche.
+    case "navFocus";
+    case "nav": {
+        private _shown = _g getVariable ["COMSPEC_ArsenalShown", []];
+        private _n = count _shown;
+        if (_n isEqualTo 0) exitWith {};
+        private _cards = _g getVariable ["COMSPEC_ArsenalCards", []];
+        private _per = (count _cards) max 1;
+        private _cols = (_g getVariable ["COMSPEC_ArsenalCols", 1]) max 1;
+        private _page = _g getVariable ["COMSPEC_ArsenalPage", 0];
+        private _cur = _g getVariable ["COMSPEC_ArsenalSelected", -1];
+        private _new = switch (true) do {
+            case (_cur < 0 || {_act isEqualTo "navFocus"}): { [_cur, _page * _per] select (_cur < 0 || {(floor (_cur / _per)) isNotEqualTo _page}) };
+            case (_arg isEqualTo "left"): { _cur - 1 };
+            case (_arg isEqualTo "right"): { _cur + 1 };
+            case (_arg isEqualTo "up"): { _cur - _cols };
+            case (_arg isEqualTo "down"): { _cur + _cols };
+            case (_arg isEqualTo "pgUp"): { _cur - _per };
+            case (_arg isEqualTo "pgDn"): { _cur + _per };
+            case (_arg isEqualTo "home"): { 0 };
+            case (_arg isEqualTo "end"): { _n - 1 };
+            default { _cur };
+        };
+        _new = (_new max 0) min (_n - 1);
+        private _np = floor (_new / _per);
+        if (_np isNotEqualTo _page) then { _g setVariable ["COMSPEC_ArsenalPage", _np]; ["page"] call _fill; };
+        if (!_isCloud && {_g getVariable ["COMSPEC_ArsenalPickMode", false]}) then {
+            _g setVariable ["COMSPEC_ArsenalSelected", _new];
+            [_g] call (_g getVariable ["COMSPEC_ArsenalPaintCards", {}]);
+        } else {
+            if (_new isNotEqualTo _cur || {(_g getVariable ["COMSPEC_ArsenalSelKey", []]) isEqualTo []}) then { ["select", _new] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
+        };
+        private _i = _cards findIf { ((_x select 0) getVariable ["idx", -1]) isEqualTo _new };
+        if (_i >= 0) then { ctrlSetFocus ((_cards select _i) select 0); };
+    };
+    case "navEnter": {
+        private _i = _g getVariable ["COMSPEC_ArsenalSelected", -1];
+        if (_i < 0) exitWith {};
+        ([["apply", _i], ["select", _i]] select (!_isCloud && {_g getVariable ["COMSPEC_ArsenalPickMode", false]})) call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+    };
+    case "navDelete": {
+        if ((_g getVariable ["COMSPEC_ArsenalSelected", -1]) < 0 || {!_isCloud && {_g getVariable ["COMSPEC_ArsenalPickMode", false]}}) exitWith {};
+        (_g getVariable ["COMSPEC_ArsenalActState", []]) params [["_has", false], "", ["_del", ["", false]]];
+        if (_has && {_del select 1}) then { ["remove"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; } else {
+            ["Impossible de retirer cette tenue ici : seul son auteur ou un responsable peut le faire, avec Athena joignable.", "warn"] call _hint;
+        };
+    };
+    case "navCopy": { if ((_g getVariable ["COMSPEC_ArsenalSelected", -1]) >= 0) then { ["copy"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }; };
     // Menu clic droit d'une carte (ou « … » de la fiche), à la souris, gardé dans le panneau ; le focus va à sa
     // première ligne active (sinon la carte cliquée, qui garde le focus, se dessinait par-dessus). [] = séparateur.
     case "moreMenu": { ["menu", _g getVariable ["COMSPEC_ArsenalSelected", -1]] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
@@ -406,7 +459,7 @@ switch (_act) do {
         (_g getVariable ["COMSPEC_ArsenalMenu", []]) params [["_scrim", controlNull]];
         if (isNull _ask) exitWith {};
         _g setVariable ["COMSPEC_ArsenalAskKind", _kind];
-        _t ctrlSetStructuredText parseText (((format ["<t size='0.8' color='#dce8e0'>%1</t>", (_title) call comspec_overwatch_connect_fnc_tr])) call comspec_overwatch_connect_fnc_tr);
+        _t ctrlSetStructuredText parseText (((format ["<t size='%2' color='#dce8e0'>%1</t>", (_title) call comspec_overwatch_connect_fnc_tr, 0.82 max (_g getVariable ["COMSPEC_ArsenalStMin", 0])])) call comspec_overwatch_connect_fnc_tr);
         _e ctrlSetText _prefill; // i18n:brut
         _scrim ctrlShow true;
         _ask ctrlShow true;
