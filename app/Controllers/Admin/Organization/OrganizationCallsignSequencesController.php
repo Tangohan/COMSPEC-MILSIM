@@ -33,7 +33,7 @@ final class OrganizationCallsignSequencesController
         if (!$this->canManage()) {
             Session::flash('error', 'Vous n’avez pas l’habilitation pour gérer les indicatifs.');
 
-            return Response::redirect(url('back-office/organisation-effectifs'));
+            return Response::redirect(url('back-office'));
         }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {

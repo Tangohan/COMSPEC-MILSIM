@@ -134,6 +134,6 @@ $renderRow = static function (array $item, bool $canManage, string $mode) use ($
     <p class="text-sm text-slate-500">
         <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="underline hover:text-slate-800">Retour au tableau de bord</a>
         ·
-        <a href="<?= htmlspecialchars(url('back-office/organisation/parametres'), ENT_QUOTES, 'UTF-8') ?>" class="underline hover:text-slate-800">Paramètres de la communauté</a>
+        <a href="<?= htmlspecialchars(url('back-office/community'), ENT_QUOTES, 'UTF-8') ?>" class="underline hover:text-slate-800">Paramètres de la communauté</a>
     </p>
 </div>

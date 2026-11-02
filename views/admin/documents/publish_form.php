@@ -108,7 +108,7 @@ $headHtml = dct_head(
                                 <option value="<?= (int) $t['id'] ?>"<?= (int) ($doctrine['document_type_id'] ?? 0) === (int) $t['id'] ? ' selected' : '' ?>><?= $h($t['label'] ?? '') ?> (<?= $h($t['code_prefix'] ?? '') ?>)</option>
                             <?php endforeach; ?>
                         </select>
-                        <?php if ($types === []): ?><small>Aucun type actif : <a href="<?= $h(url('back-office/documents/types')) ?>">créez un type</a> avant de publier.</small><?php endif; ?>
+                        <?php if ($types === []): ?><small>Aucun type actif : <a href="<?= $h(url('back-office/doctrine?onglet=types')) ?>">créez un type</a> avant de publier.</small><?php endif; ?>
                     </label>
                     <label class="dct-fl"><span>Domaine <small>facultatif</small></span>
                         <select name="domain_id"<?= $isEdit ? ' disabled' : '' ?>>

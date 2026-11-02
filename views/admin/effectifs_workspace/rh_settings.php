@@ -111,7 +111,7 @@ $mode = (($hr['advancement_mode'] ?? 'propose') === 'apply') ? 'apply' : 'propos
             <label><input type="checkbox" name="rp_followup_optional" value="1" <?= !empty($rp['optional']) ? 'checked' : '' ?>> Le suivi reste facultatif pour les membres</label>
         </div>
         <p class="bo-eff-settings__link">
-            <a href="<?= $h(url('back-office/roleplay/immersion')) ?>">Personnaliser les étapes et les filières</a>
+            <a href="<?= $h(url('back-office/roleplay-followup?onglet=immersion')) ?>">Personnaliser les étapes et les filières</a>
         </p>
     </section>
 

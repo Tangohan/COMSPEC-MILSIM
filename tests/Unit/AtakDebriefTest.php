@@ -82,12 +82,13 @@ final class AtakDebriefTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
-        foreach (['/back-office/atak/suivi-cr', '/back-office/atak/suivi-cr/imposer', '/back-office/atak/suivi-cr/reglages', '/back-office/atak/suivi-cr/{id}/relancer'] as $path) {
+        foreach (['/back-office/atak/suivi-cr/imposer', '/back-office/atak/suivi-cr/reglages', '/back-office/atak/suivi-cr/{id}/relancer'] as $path) {
             self::assertStringContainsString("'" . $path . "'", $routes);
         }
-        self::assertLessThan(strpos($routes, "'/back-office/atak/comptes-rendus/{id}'"), strpos($routes, "'/back-office/atak/suivi-cr'"));
+        // La page est l’onglet « suivi » des comptes rendus (l’ancienne adresse redirige en 301).
+        self::assertStringContainsString("'legacy' => 'back-office/atak/suivi-cr'", (string) file_get_contents($root . '/app/Support/BackOfficeTabs.php'));
         self::assertStringContainsString("'back-office/atak/suivi-cr'", (string) file_get_contents($root . '/config/back_office_pages.php'));
-        self::assertStringContainsString("back-office/atak/suivi-cr", (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php'));
+        self::assertStringContainsString("url('back-office/atak/comptes-rendus')", (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php'));
         self::assertStringContainsString("'atak_debrief'", \Tests\Support\MigrationPipelineSource::read($root));
         self::assertFileExists($root . '/public/assets/css/back-office-debrief.css');
 

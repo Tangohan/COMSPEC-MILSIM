@@ -52,12 +52,12 @@ final class MissionPlanningController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/planification'));
+            return Response::redirect(url('back-office/missions?onglet=planification'));
         }
         if (!$this->planning->tablesReady()) {
             Session::flash('error', 'La planification n’est pas encore disponible. Exécutez les mises à jour de la base.');
 
-            return Response::redirect(url('back-office/planification'));
+            return Response::redirect(url('back-office/missions?onglet=planification'));
         }
         $orgSource = (string) $request->input('org_source', 'orbat');
         if (!in_array($orgSource, ['orbat', 'template'], true)) {
@@ -89,7 +89,7 @@ final class MissionPlanningController
         if ($board === null) {
             Session::flash('error', 'Plan introuvable.');
 
-            return Response::redirect(url('back-office/planification'));
+            return Response::redirect(url('back-office/missions?onglet=planification'));
         }
         $tab = (string) ($request->query('vue') ?? 'planning');
         if (!in_array($tab, ['planning', 'organisation', 'documents'], true)) {
@@ -301,13 +301,13 @@ final class MissionPlanningController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/planification'));
+            return Response::redirect(url('back-office/missions?onglet=planification'));
         }
         $id = (int) ($params['id'] ?? 0);
         if ($id < 1 || $this->planning->board($tenantId, $id) === null) {
             Session::flash('error', 'Plan introuvable.');
 
-            return Response::redirect(url('back-office/planification'));
+            return Response::redirect(url('back-office/missions?onglet=planification'));
         }
 
         return $then($tenantId, $id);
