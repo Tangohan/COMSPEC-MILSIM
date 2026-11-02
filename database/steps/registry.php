@@ -43,4 +43,5 @@ return [
     ['id' => 'qualification_academy_reprise', 'label' => 'Qualifications : reprise des attestations Academy dans le référentiel (une qualification par formation, attestations rattachées)', 'group' => 'schema', 'file' => '3435_qualification_academy_reprise.php', 'rerun' => true],
     ['id' => 'personnel_job_role_prerequisites', 'label' => 'Emplois : prérequis (doctrines, heures de jeu et de vol, qualifications, compétences) et dérogations motivées', 'group' => 'schema', 'file' => '3440_personnel_job_role_prerequisites.php', 'rerun' => true],
     ['id' => 'qualification_issuers_enrichment', 'label' => 'Qualifications : émetteurs (description, unité, signataire du brevet, logo, archivage, qualifications rattachées, habilités)', 'group' => 'schema', 'file' => '3470_qualification_issuers_enrichment.php', 'rerun' => true],
+    ['id' => 'academy_access_rules', 'label' => 'Academy : droits d’accès (qui crée, modifie, publie, inscrit, valide, délivre et voit chaque cours)', 'group' => 'schema', 'file' => '3520_academy_access_rules.php', 'rerun' => true],
 ];

@@ -14,7 +14,10 @@ use PDO;
  */
 final class AcademyCourseShareRepository
 {
-    public const ROLES = ['viewer', 'editor'];
+    /** Lecteur : aperçu stagiaire. Éditeur : modifie le brouillon. Instructeur : suit et valide les stagiaires de ce cours. */
+    public const ROLES = ['viewer', 'editor', 'instructor'];
+    /** Rôles qu'un lien d'accès peut donner : l'instructeur est toujours une invitation nominative. */
+    public const LINK_ROLES = ['viewer', 'editor'];
     public const ACCESS = ['community', 'public'];
 
     private PDO $pdo;
@@ -102,7 +105,7 @@ final class AcademyCourseShareRepository
     public function saveLink(int $tenantId, string $key, string $access, string $role, ?int $expiresAt, int $by, bool $regenerate): ?string
     {
         // Un lien public reste en lecture seule : personne hors communauté ne modifie une formation.
-        if (!in_array($access, self::ACCESS, true) || !in_array($role, self::ROLES, true) || ($access === 'public' && $role !== 'viewer')) {
+        if (!in_array($access, self::ACCESS, true) || !in_array($role, self::LINK_ROLES, true) || ($access === 'public' && $role !== 'viewer')) {
             throw new \InvalidArgumentException('invalid_content');
         }
         $expires = $expiresAt !== null ? date('Y-m-d H:i:s', $expiresAt) : null;
