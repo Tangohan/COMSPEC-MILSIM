@@ -1,0 +1,90 @@
+[img]https://athena-comspec.eu/assets/workshop/atak-natif/fr/banniere.png[/img]
+
+[h1]FRANÇAIS[/h1]
+[b]COMSPEC ATAK[/b] : un vrai smartphone tactique ATAK dans Arma 3. Porté dans un coin de l'écran (Ctrl+U) ou pris en main (Ctrl+Maj+U), avec plus de 60 apps, un réseau radio réaliste et une liaison en direct avec [url=https://athena-comspec.eu/public]Athena[/url], le portail web COMSPEC. Gratuit, en français et en anglais, jouable sans Athena.
+
+[h2]Prérequis[/h2]
+[list]
+[*][b]Obligatoire :[/b] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url], sur les clients ET le serveur.
+[*][b]Optionnels, détectés seuls :[/b] ACE3 (médical, arsenal, actions), ACRE2 ou TFAR (radios), ZEN (modules Zeus), Live Presentation (FENRIR), COMSPEC SSE.
+[*]Ne chargez pas l'ancien COMSPEC Overwatch : il est intégré.
+[/list]
+
+[h2]Les apps[/h2]
+[list]
+[*][b]Navigation :[/b] Carte (marqueurs, traits par les routes, ligne de vue, fonds satellite), GPS, Routes, Itinéraire, Relief, Météo, Distances.
+[*][b]Communication :[/b] Messages, SMS, Groupe, Alertes, BFT, C2, Wave Relay, Numéros.
+[*][b]Feux :[/b] appel de feu typé (mortiers, obusier, roquettes, naval, CAS), JTAC 9-LINE, NINE LINE, drones.
+[*][b]Renseignement :[/b] SALUTE, Reco, FRS, Photo, Galerie, Vidéo live, Extraction DL-7, Recherchés.
+[*][b]Mission :[/b] Poste TOC, Tâches, Comptes rendus, CR fin d'op, Briefing, Academy, Plan, Logistique, Rejeu.
+[*][b]Spécialités :[/b] Médical, Sniper, Brèche, Explosifs, Guerre électronique, Anti-drone.
+[*][b]Civil :[/b] Musique, Calculette, Bloc-notes, Tinder (chasse aux HVT)… et un App Store.
+[/list]
+
+[h2]Sur le terrain[/h2]
+[list]
+[*]MPU5 maillée, relais, pylônes 3D destructibles ; le réseau suit relief, météo et brouillage. Voix ACRE2/TFAR relayée par le maillage (option).
+[*]Drones pilotables, caméras IP et casque, marquage de cibles.
+[*]Ordres aux IA depuis la carte ou le PC du poste TOC.
+[*]Écrans TOC, TV et vidéoprojecteur : carte, diapositives, caméras.
+[*]Montre Garmin, batterie et socle de recharge, JVN tactiques, 9 téléphones et tablettes.
+[*]Profils de réalisme Milsim / Standard / Arcade ; un ATAK perdu peut être ramassé par l'IA ennemie et trahir l'équipe.
+[/list]
+
+[h2]Zeus, missions, serveur[/h2]
+Modules Eden/Zeus : contrôle Zeus, IA avec ATAK, brouilleur, relais, écrans, données à extraire, écran TOC. Le Zeus peut couper, verrouiller, brouiller ou abîmer un ATAK. Plus de 200 réglages CBA (Options › Options des addons › COMSPEC), dont le mode full local sans Athena et les apps imposées ou interdites. Moddeurs : ajoutez vos apps et calques (COMSPEC Modules).
+
+[h2]Athena[/h2]
+Liez votre compte (Steam, e-mail ou code) : positions, marqueurs, comptes rendus et photos arrivent sur le poste web, distances, heures de vol et temps de jeu sur votre fiche. En jeu : tenues de l'arsenal ACE, cours Academy, dossiers médicaux, diapositives, musique du site. Votre communauté choisit ce qui est envoyé.
+
+[h2]Installation[/h2]
+Abonnez-vous à CBA_A3 et à ce mod, chargez-les sur le serveur, ajoutez la clé [b]keys\comspec_atak_native.bikey[/b]. Après une mise à jour, quittez Arma complètement.
+
+[h2]Support et licence[/h2]
+Bug : lancez [b]Envoyer_mes_logs.bat[/b] et postez le zip sur le [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et redistribution interdites. Idées inspirées de BCE (Aaren) et Simple Map Tools (POLPOX), sans code repris. Chinois : RickLeo et MOYA.
+
+[hr][/hr]
+[img]https://athena-comspec.eu/assets/workshop/atak-natif/en/banniere.png[/img]
+
+[h1]ENGLISH[/h1]
+[b]COMSPEC ATAK[/b]: a real tactical ATAK smartphone in Arma 3. Carry it in a corner of the screen (Ctrl+U) or take it in hand (Ctrl+Shift+U), with 60+ apps, a realistic radio network and a live link to [url=https://athena-comspec.eu/public]Athena[/url], the COMSPEC web portal. Free, in English and French, playable without Athena.
+
+[h2]Requirements[/h2]
+[list]
+[*][b]Required:[/b] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url], on clients AND server.
+[*][b]Optional, auto-detected:[/b] ACE3 (medical, arsenal, actions), ACRE2 or TFAR (radios), ZEN (Zeus modules), Live Presentation (FENRIR), COMSPEC SSE.
+[*]Do not load the old COMSPEC Overwatch: it is built in.
+[/list]
+
+[h2]Apps[/h2]
+[list]
+[*][b]Navigation:[/b] Map (markers, road-following lines, line of sight, satellite maps), GPS, Routes, Waypoints, Terrain, Weather, Distances.
+[*][b]Comms:[/b] Messages, SMS, Group, Alerts, BFT, C2, Wave Relay, Numbers.
+[*][b]Fires:[/b] typed fire missions (mortars, howitzer, rockets, naval, CAS), JTAC 9-LINE, NINE LINE, drones.
+[*][b]Intel:[/b] SALUTE, Recon, Photo, Gallery, Live video, DL-7 extraction, Wanted.
+[*][b]Mission:[/b] TOC post, Tasks, Reports, After-action report, Briefing, Academy, Plan, Logistics, Replay.
+[*][b]Specialties:[/b] Medical, Sniper, Breach, Explosives, Electronic warfare, Counter-drone.
+[*][b]Civilian:[/b] Music, Calculator, Notes, Tinder (HVT hunt)… and an App Store.
+[/list]
+
+[h2]In the field[/h2]
+[list]
+[*]MPU5 mesh, relays, destructible 3D towers; the network follows terrain, weather and jamming. ACRE2/TFAR voice relayed over the mesh (option).
+[*]Flyable drones, IP and helmet cameras, target marking.
+[*]AI orders from the map or the TOC laptop.
+[*]TOC screens, TVs and projector: map, slides, cameras.
+[*]Garmin watch, battery and charging dock, NVG tactical overlay, 9 phones and tablets.
+[*]Milsim / Standard / Arcade realism profiles; a lost ATAK can be picked up by enemy AI and betray the team.
+[/list]
+
+[h2]Zeus, missions, server[/h2]
+Eden/Zeus modules: Zeus control, AI with ATAK, jammer, relay, screens, data to extract, TOC screen. Zeus can disable, lock, jam or damage an ATAK. 200+ CBA settings (Options › Addon Options › COMSPEC), including full local mode without Athena and required or forbidden apps. Modders: add your own apps and map layers (COMSPEC Modules).
+
+[h2]Athena[/h2]
+Link your account (Steam, e-mail or code): positions, markers, reports and photos reach the web command post, distances, flight hours and play time your profile. In game: ACE arsenal loadouts, Academy courses, medical records, slides, site music. Your community chooses what is sent.
+
+[h2]Installation[/h2]
+Subscribe to CBA_A3 and this mod, load them on the server, add the [b]keys\comspec_atak_native.bikey[/b] key. After an update, quit Arma completely.
+
+[h2]Support and license[/h2]
+Bug: run [b]Envoyer_mes_logs.bat[/b] and post the zip on the [url=https://discord.gg/CCpJA6Nks]COMSPEC Discord[/url]. © 2026 COMSPEC, COMSPEC license: personal use from this Workshop page; copying, modifying and redistributing are forbidden. Ideas inspired by BCE (Aaren) and Simple Map Tools (POLPOX), no code reused. Chinese: RickLeo and MOYA.
