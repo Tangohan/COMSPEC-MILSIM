@@ -294,7 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1300, '2026-11-02', 'Appel de feu typé, vraie radio MPU5, nouveaux écrans et vidéoprojecteur', 'Avec le pack 2.9.31, l’appel de feu de l’app CAS choisit un moyen réel (mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou appui aérien) avec ses portées, ses munitions, ses délais et sa distance de sécurité : les pièces IA de votre camp tirent vraiment et un joueur servant reçoit la mission. La MPU5 devient une vraie radio de données : le téléphone s’y relie par câble ou par Wi-Fi, les radios du même canal forment un maillage, et une radio tactique ACRE ou TFAR prend le relais à bas débit. De nouveaux écrans COMSPEC sur les modèles du jeu affichent une image nette de jour comme de nuit, et un vidéoprojecteur projette diapositives, affichage TOC, carte ou caméra sur un tableau blanc. Tout se règle dans les options des addons et peut être désactivé.', [
+            $pr(1306, '2026-11-02', 'Seule la MPU5 relie le téléphone au réseau', 'Avec le pack 2.9.32, le repli par radio tactique en données disparaît : en liaison téléphone-radio réaliste, seule une radio de données MPU5, reliée par le Câble EUD ou par son Wi-Fi, donne du réseau au téléphone. Sans MPU5, pas de réseau de données ; le Bluetooth entre téléphones et les données déjà reçues restent. Les radios ACRE ou TFAR gardent leur rôle d’avant quand la liaison réaliste est décochée.', [], [
+                'App Réseau, menu ACE Radio de données et réglages : plus de bouton ni d’action Radio tactique, message clair « Sans MPU5 : pas de réseau de données »',
+                'Bouton Brancher sur ma radio de l’app Wave Relay masqué en liaison réaliste ; le réglage « Données par radio ACRE2 / TFAR » n’y est plus pris en compte',
+                'Réglages Radio tactique (débit, latence, taille maximale) retirés de ATAK · Radio de données (MPU5)',
+            ], [
+                'Téléphone relié à une radio tactique : il revient à « aucune radio reliée » avec le message « Liaison radio tactique retirée : reliez une MPU5 »',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.32 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
+                'Liaison réaliste (réglage « Liaison téléphone-radio réaliste ») : prévoyez une MPU5 et un Câble EUD par joueur qui doit avoir du réseau.',
+            ], 'Pack téléphone 2.9.32'),
+            $pr(1300, '2026-11-02', 'Appel de feu typé, vraie radio MPU5, nouveaux écrans et vidéoprojecteur', 'Avec le pack 2.9.31, l’appel de feu de l’app CAS choisit un moyen réel (mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou appui aérien) avec ses portées, ses munitions, ses délais et sa distance de sécurité : les pièces IA de votre camp tirent vraiment et un joueur servant reçoit la mission. La MPU5 devient une vraie radio de données : le téléphone s’y relie par câble ou par Wi-Fi, les radios du même canal forment un maillage avec les relais de la mission. De nouveaux écrans COMSPEC sur les modèles du jeu affichent une image nette de jour comme de nuit, et un vidéoprojecteur projette diapositives, affichage TOC, carte ou caméra sur un tableau blanc. Tout se règle dans les options des addons et peut être désactivé.', [
                 'Appel de feu typé dans l’app CAS : mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou CAS, portées, munitions, délais et distance de sécurité',
                 'Tir réel des pièces IA du camp, mission envoyée au joueur servant dans l’app Tâches ; réglage + / – / G / D, EFFICACE, FIN DE MISSION',
                 'Cercles de portée et missions de tir sur la carte du téléphone et le PC du poste TOC, appel d’artillerie depuis l’app JTAC',
@@ -303,7 +313,7 @@ final class DevDispatchCatalog
                 'Écrans COMSPEC (grand et double écran sur trépied, téléviseur, moniteur du jeu) avec une image nette de jour comme de nuit',
                 'Vidéoprojecteur COMSPEC : diapositives, affichage TOC, carte ou caméra sur un tableau blanc sur trépied ou mural, s’il est allumé, tourné vers le tableau et sans obstacle',
             ], [
-                'Sans MPU5, une radio tactique ACRE ou TFAR transporte les données à bas débit : photos en attente d’une MPU5, pas de vidéo',
+                'En liaison réaliste, seule la MPU5 relie le téléphone au réseau de données (Bluetooth et données déjà reçues gardés sans elle)',
                 'Réglages Options des addons › COMSPEC › ATAK · Appui feu et ATAK · Radio de données (MPU5), que la mission peut imposer',
             ], [], ['atak'], [
                 'Mettez à jour le pack 2.9.31 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',

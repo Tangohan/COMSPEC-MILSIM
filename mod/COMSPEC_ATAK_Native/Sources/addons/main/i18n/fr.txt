@@ -1449,7 +1449,7 @@
 ["USB digital media collected on site.", "Support numérique USB collecté sur site."],
 ["USB drive", "Clé USB"],
 ["USB stick (evidence)", "Clé USB (preuve)"],
-["USB-C cable between the ATAK phone and a data radio (MPU5, tactical radio). ACE menu ATAK phone > Data radio.", "Câble USB-C entre le téléphone ATAK et une radio de données (MPU5, radio tactique). Menu ACE Téléphone ATAK > Radio de données."],
+["USB-C cable between the ATAK phone and an MPU5 data radio. ACE menu ATAK phone > Data radio.", "Câble USB-C entre le téléphone ATAK et une radio de données MPU5. Menu ACE Téléphone ATAK > Radio de données."],
 ["Unchecked: no fingerprints / iris / DNA for SEEK.", "Décoché : pas d'empreintes / iris / ADN pour SEEK."],
 ["Unchecked: no paper documents generated.", "Décoché : aucun document papier généré."],
 ["Unchecked: no phone generated.", "Décoché : aucun téléphone généré."],

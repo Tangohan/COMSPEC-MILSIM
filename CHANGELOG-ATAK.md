@@ -38,18 +38,46 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.32 : retrait du repli radio tactique en données, seule la MPU5 relie le téléphone (ATAK natif 2.9.32.AG - Denver, COMSPEC Link 2.0.116)
+
+### Résumé joueur
+Type : correctif
+FR : Retrait du repli radio tactique en données : seule la MPU5 relie le téléphone au réseau en mode réaliste
+- En « Liaison téléphone-radio réaliste », seule une radio de données MPU5, reliée par le Câble EUD ou par son Wi-Fi, donne du réseau au téléphone.
+- Sans MPU5 : pas de réseau de données. Le Bluetooth entre téléphones et les données déjà reçues restent.
+- Plus de bouton RADIO TACTIQUE dans l'app Réseau, plus d'action « Relier à la radio tactique » dans le menu ACE, plus de réglages Radio tactique.
+- Un téléphone qui était relié à une radio tactique revient à « aucune radio reliée », avec le message « Liaison radio tactique retirée : reliez une MPU5 ».
+EN : Tactical radio data fallback removed: only the MPU5 links the phone to the network in realistic mode
+- With "Realistic phone-radio link", only an MPU5 data radio, linked by the EUD cable or its Wi-Fi, gives the phone a network.
+- Without an MPU5: no data network. Bluetooth between phones and data already received remain.
+- No more TACTICAL RADIO button in the Network app, no more "Link to the tactical radio" ACE action, no more Tactical radio settings.
+- A phone that was linked to a tactical radio goes back to "no radio linked", with the message "Tactical radio link removed: link an MPU5".
+
+### Détail technique
+- `fn_mpuLink` : chemin `tac` retiré (`link ["tac"]`, `linked`, `heavy`, `maxKb`, `videoBlock`, nœud `TAC` du maillage, latence et débit de la radio tactique, `view` `tacOk` / `tac`, action ACE `COMSPEC_ATAK_MpuTac`) ; `kind` vaut `""`, `mpu` ou `veh`, `link` `""`, `cable` ou `wifi`. Migration au `tick` : liaison autre que câble / Wi-Fi ou `COMSPEC_ATAK_RadioPlug` non vide en liaison réaliste → « aucune radio reliée » + notification. Raison sans radio : « sans MPU5 : pas de réseau de données ».
+- `fn_netSend`, boucle de vidage de `XEH_postInitClient`, `fn_videoLink` : retour au comportement d'avant la 2.9.31 (plus de tri des envois lourds, plus de vidéo refusée par radio tactique). `fn_linkQuality`, `fn_pageNetwork` (bouton RADIO TACTIQUE, lignes radio tactique), `fn_aceMenu`, `fn_relayNet` (commentaire) : mentions retirées, textes « Sans MPU5 : pas de réseau de données ».
+- Réglage préexistant `comspec_atak_native_radio_data` (« Données par radio ACRE2 / TFAR », ancien modèle depuis 2.9.2x) : gardé tel quel hors liaison réaliste ; ignoré en liaison réaliste (`fn_mpu5 "plug"` refuse avec un message, `"plugged"` renvoie `[]`, bouton BRANCHER SUR MA RADIO de l'app Wave Relay masqué). Description complétée.
+- Réglages CBA retirés : `comspec_atak_native_mpu_tac_kbps`, `mpu_tac_ms`, `mpu_tac_maxkb`. Descriptions de `mpu_real`, `mpu_require`, `mpu_cable` et du Câble EUD (`stringtable.xml`) sans radio tactique. Entrées mortes retirées de `i18n/en.txt` (et `fr.txt` régénéré).
+- connect 1.6.28 et COMSPEC Link 2.0.116 inchangés (aucun fichier connect ni C# modifié).
+
+### À tester en jeu
+- **Liaison réaliste cochée, sans MPU5** (avec ACRE2 ou TFAR chargé) : aucun réseau, raison « Sans MPU5 : pas de réseau de données » dans l'app Réseau ; pas de bouton RADIO TACTIQUE ni d'action ACE « Relier le téléphone à la radio tactique » ; app Wave Relay : pas de BRANCHER SUR MA RADIO. Bluetooth entre deux téléphones toujours possible.
+- **MPU5** : Câble EUD puis Wi-Fi → réseau, maillage, canal, puissance, batterie, DÉBRANCHER comme en 2.9.31 ; photo et vidéo passent normalement par la MPU5.
+- **Liaison réaliste décochée** : BRANCHER SUR MA RADIO (app Wave Relay) sur une radio ACRE2 / TFAR fonctionne comme avant la 2.9.31.
+- **Migration** : radio ACRE / TFAR branchée en mode ancien, puis Zeus / admin coche la liaison réaliste en cours de mission : message « Liaison radio tactique retirée : reliez une MPU5 », plus de radio reliée.
+
 ## Pack 2.9.31 : appui feu typé, MPU5 et liaison téléphone-radio réalistes, écrans et vidéoprojecteur COMSPEC (ATAK natif 2.9.31.AG - Denver, COMSPEC Link 2.0.116)
 
 ### Résumé joueur
 Type : nouveauté
 FR : Appui feu typé, vraie radio MPU5, nouveaux écrans et vidéoprojecteur
 - Appel de feu typé : mortier 60, 81 ou 120, obusier, lance-roquettes, naval ou CAS, avec portées, munitions, délais et distance de sécurité ; l'IA tire vraiment, un servant joueur reçoit la mission ; réglage + / – / G / D, EFFICACE, FIN DE MISSION ; cercles de portée sur les cartes.
-- MPU5 fonctionnelle : liaison réaliste téléphone-radio (câble EUD ou Wi-Fi), maillage multi-sauts par canal, relief, brouillage, batterie et puissance ; section Radio de données dans l'app Réseau ; sans MPU5, une radio tactique ACRE ou TFAR prend le relais à bas débit (pas de photo ni de vidéo).
+- MPU5 fonctionnelle : liaison réaliste téléphone-radio (câble EUD ou Wi-Fi), maillage multi-sauts par canal, relief, brouillage, batterie et puissance ; section Radio de données dans l'app Réseau.
 - Nouveaux écrans COMSPEC (grand et double écran sur trépied, téléviseur, moniteur du jeu) avec une image nette de jour comme de nuit, et vidéoprojecteur COMSPEC qui projette diapositives, affichage TOC, carte ou caméra sur un tableau blanc (si allumé, tourné vers le tableau, ligne de vue libre).
 - Nouveaux objets Câble EUD et Batterie de radio MPU5, MPU5 posable au sol ; tout se règle dans Options des addons › COMSPEC (ATAK · Appui feu, ATAK · Radio de données (MPU5)) et peut être désactivé.
 EN : Typed fire support, a real MPU5 radio, new screens and video projector
 - Typed call for fire: 60, 81 or 120 mm mortar, howitzer, rocket launcher, naval or CAS, with ranges, ammunition, timings and danger-close distance; the AI really fires, a player gunner receives the mission; adjust + / – / L / R, EFFECTIVE, END OF MISSION; range rings on the maps.
-- Working MPU5: realistic phone-to-radio link (EUD cable or Wi-Fi), multi-hop mesh per channel, terrain, jamming, battery and power; Data radio section in the Network app; without an MPU5, an ACRE or TFAR tactical radio takes over at low speed (no photos or video).
+- Working MPU5: realistic phone-to-radio link (EUD cable or Wi-Fi), multi-hop mesh per channel, terrain, jamming, battery and power; Data radio section in the Network app.
 - New COMSPEC screens (large and dual tripod screen, TV, the game's monitor) with a sharp image by day and night, and a COMSPEC video projector that projects slides, TOC display, map or camera onto a whiteboard (when switched on, aimed at the board, clear line of sight).
 - New EUD cable and MPU5 radio battery items, the MPU5 can be placed on the ground; everything is set in Addon Options › COMSPEC (ATAK · Fire support, ATAK · Data radio (MPU5)) and can be turned off.
 
@@ -59,11 +87,11 @@ EN : Typed fire support, a real MPU5 radio, new screens and video projector
 - Tir IA par le serveur (`srv` : droits, motifs de refus ; `exec` sur la machine du servant par `comspec_atak_native_fsExec` ; `sim` batterie simulée), états NEW / ACK / EXEC / SHOT / SPLASH / DONE / FAIL / EOM publiés au camp (`comspec_atak_native_fsState`) et rejoués aux arrivants (`COMSPEC_ATAK_SrvFs`) ; appareil IA par `fn_aiOrder` ATTACK ; servant joueur : mission dans Tâches + notification + solution (REÇU, COUPS PARTIS, IMPOSSIBLE).
 - Carte du téléphone et du PC TOC (`fn_mapOnDraw`, `fn_tocLaptop`) : cercles de portée, zone dangereuse, missions en cours ; TOC ORDRES et Tâches (`fn_pageTasks`) : missions de tir ; JTAC (`fn_pageJtac`, `fn_jtacAction`) : APPEL DE FEU (ARTILLERIE). `fn_netSend` : « appel de feu » parmi les envois urgents.
 - Réglages CBA « ATAK · Appui feu » : `comspec_atak_native_fs_enabled` (coché par défaut ; décoché = appel de feu générique d'avant), `fs_ai`, `fs_sim`, `fs_delay` (serveur, forçables par la mission), `fs_rings` (client). MODULES.md section 9.
-- **Liaison téléphone-radio de données** (branche `atak/mpu-liaison-radio`) : nouveau `fn_mpuLink` : MPU5 reliée par câble EUD ou Wi-Fi (portée réglable), maillage multi-sauts avec les MPU5 du même canal et les relais de la mission (passerelles sur tous les canaux ; sinon MPU5 du chef de groupe, sinon la radio du joueur), puissance 1 / 3 / 6 W, relief (`fn_radioLink "coarse"` en cache 30 s), brouilleurs, batterie propre, radio posée au sol (Wi-Fi seulement) ; radio tactique ACRE2 / TFAR en repli (débit, latence, taille maximale, ×4 pour une longue portée). `tick` toutes les 2 s, maillage au plus toutes les 4 s dans un script planifié, `COMSPEC_ATAK_MpuNode` publiée seulement quand elle change.
-- `fn_linkQuality` / `fn_relayNet` / `fn_netSend` / `fn_videoLink` : réseau du maillage, plus de liaison directe aux relais, envois trop lourds gardés en file (`heavy` / `maxKb`, boucle de vidage de `XEH_postInitClient`), pas de vidéo par radio tactique. Aussi `fn_mpu5`, `fn_stateInit`, `fn_aceMenu` (menu ACE Radio de données), `fn_pageWaveRelay` / `fn_waveRelayAction`.
+- **Liaison téléphone-radio de données** (branche `atak/mpu-liaison-radio`) : nouveau `fn_mpuLink` : MPU5 reliée par câble EUD ou Wi-Fi (portée réglable), maillage multi-sauts avec les MPU5 du même canal et les relais de la mission (passerelles sur tous les canaux ; sinon MPU5 du chef de groupe, sinon la radio du joueur), puissance 1 / 3 / 6 W, relief (`fn_radioLink "coarse"` en cache 30 s), brouilleurs, batterie propre, radio posée au sol (Wi-Fi seulement) ; repli ACRE2 / TFAR en données (retiré en 2.9.32). `tick` toutes les 2 s, maillage au plus toutes les 4 s dans un script planifié, `COMSPEC_ATAK_MpuNode` publiée seulement quand elle change.
+- `fn_linkQuality` / `fn_relayNet` / `fn_netSend` / `fn_videoLink` : réseau du maillage, plus de liaison directe aux relais (envois lourds et vidéo du repli ACRE2 / TFAR retirés en 2.9.32). Aussi `fn_mpu5`, `fn_stateInit`, `fn_aceMenu` (menu ACE Radio de données), `fn_pageWaveRelay` / `fn_waveRelayAction`.
 - App Réseau (`fn_pageNetwork`) : section Radio de données (état, canal, puissance, batterie, nœuds, sauts, débit, latence) et boutons.
 - Objets `COMSPEC_ATAK_EudCable`, `COMSPEC_ATAK_RadioBattery`, MPU5 posable (`Item_COMSPEC_ATAK_MPU5`, Eden, Zeus) ; chaînes `stringtable.xml` / `fr.txt`.
-- Réglages CBA « ATAK · Radio de données (MPU5) », désactivés par défaut (`comspec_atak_native_mpu_real` décoché = comportement d'avant) : `mpu_require`, `mpu_cable`, `mpu_wifi`, `mpu_wifi_range`, `mpu_hours`, `mpu_hop_ms`, `mpu_tac_kbps`, `mpu_tac_ms`, `mpu_tac_maxkb`.
+- Réglages CBA « ATAK · Radio de données (MPU5) », désactivés par défaut (`comspec_atak_native_mpu_real` décoché = comportement d'avant) : `mpu_require`, `mpu_cable`, `mpu_wifi`, `mpu_wifi_range`, `mpu_hours`, `mpu_hop_ms` (et `mpu_tac_*`, retirés en 2.9.32).
 - **Écrans et vidéoprojecteur COMSPEC sur les vrais modèles du jeu** (branche `atak/ecran-toc-modele`, nouveaux pour main ; les modèles générés de la branche sont abandonnés) : les classes COMSPEC (aperçus Eden du jeu) héritent des objets du jeu ; grand écran et double écran sur trépied, téléviseur, moniteur de bureau : dalle 0 seule (`Screen_1` à `Screen_9` noires et opaques, vides dès la config), matières `comspec_screen_on` / `comspec_screen_night`, double écran : dalle 1 recopiée. Vidéoprojecteur `COMSPEC_ATAK_Projector` (`Land_Projector_01_F`, objectif pris sur la boîte englobante) et nouveau `fn_projector` (Allumer / Éteindre, Projeter sur…, tableau le plus proche dans l'axe, 15 m, ligne de vue objectif - tableau, attribut Eden « Allumé au lancement ») ; toiles `COMSPEC_ATAK_ProjScreen` / `_Wall` (tableau blanc sur trépied et mural) : image sur une surface 16:9 minimale (`comspec_projsurface.p3d`, `tools/model_projsurface.py`) posée devant la face blanche, mesurée par rayons. Pose de l'image centralisée (`fn_tocScreen "paint"`), `fn_screenCast`, `fn_tocCam`, `fn_moduleTocScreen`, `modules.hpp`, catégorie Eden / Zeus « COMSPEC › Écrans TOC et projection ». Projecteur de plafond et toile enroulable abandonnés. MODULES.md.
 - Fusions : conflits `i18n/en.txt` (union des deux entrées voisines), `config.cpp` (`requiredAddons` des écrans, `units[]` = union MPU5 + écrans) et `stringtable.xml` (deux clés gardées). connect 1.6.28 et COMSPEC Link 2.0.116 inchangés (aucun fichier connect ni C# modifié).
 
@@ -73,7 +101,6 @@ EN : Typed fire support, a real MPU5 radio, new screens and video projector
 - **CAS, naval, batterie simulée** : appareil IA qui attaque la zone ; batterie simulée sans pièce ; cercles de portée et zones sur la carte du téléphone et du PC TOC, missions dans TOC ORDRES et Tâches, JTAC › APPEL DE FEU (ARTILLERIE). Réglage décoché : appel de feu d'avant.
 - **MPU5 réaliste** (cocher « Liaison téléphone-radio réaliste ») : sans radio, plus de réseau (Bluetooth et données reçues gardés) ; MPU5 + Câble EUD → réseau ; sans câble, Wi-Fi jusqu'à la portée réglée, coupure au-delà, reprise en revenant ; MPU5 posée au sol.
 - **Maillage** : trois joueurs avec MPU5 sur le même canal, éloignés : sauts visibles dans l'app Réseau (nœuds, sauts, latence) ; changement de canal, puissance 1 / 3 / 6 W, relief entre deux joueurs, brouilleur Zeus ; batterie vide puis « Changer la batterie de la MPU5 ».
-- **Radio tactique** (ACRE2 ou TFAR, sans MPU5) : messages et positions passent lentement, photo mise en file jusqu'à une MPU5, vidéo refusée.
 - **Réglage décoché** : réseau et MPU5 comme en 2.9.30 ; pas de baisse d'images (mode Profilage).
 - **Écrans COMSPEC** (Eden / Zeus › COMSPEC › Écrans TOC et projection) : grand écran et double écran sur trépied, téléviseur, moniteur : image nette de jour et de nuit, sans dalle noire par-dessus ; double écran : même image sur les deux ; menu ACE Écran COMSPEC (Diffusion, Affichage TOC, Carte) et caméra du TOC.
 - **Vidéoprojecteur** : ACE › Vidéoprojecteur › Projecteur COMSPEC › Allumer, Projeter sur… un tableau blanc sur trépied puis mural à moins de 15 m : diapositives, affichage TOC, carte, caméra ; image à la bonne taille et inclinaison ; éteint, détruit, tourné ailleurs ou quelqu'un / un mur / un véhicule entre l'objectif et le tableau → tableau blanc ; attribut Eden « Allumé au lancement » ; vu pareil par un deuxième joueur et un arrivant.
