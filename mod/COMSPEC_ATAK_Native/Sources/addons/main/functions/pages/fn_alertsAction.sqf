@@ -36,6 +36,8 @@ switch (_action) do {
         [{ ["comspec_atak_native_sideEvent", ["comspec_atak_native_alert", _this, _this select 5]] call CBA_fnc_serverEvent; }, [_arg, _me, getPosASL player, _grid, "", str side group player], _label, 1] call comspec_atak_native_fnc_netSend;
         if (_bridge) then { [_arg, format ["%1 — %2", _label, _me], getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert; };
         [_arg, "Moi", getPosASL player, _grid, ""] call comspec_atak_native_fnc_alertsLog;
+        // App Zones : contact (TIC) dans une zone affichée : elle passe « ennemi signalé ».
+        if (_arg isEqualTo "TIC") then { ["contact", [getPosASL player, "UNK", "", "TIC"]] call comspec_atak_native_fnc_zoneAction; };
         _s set ["alertsHint", format ["%1 envoyé %2 · %3 · %4", _label, ["au camp", "au camp et au poste"] select _bridge, _grid, (["now"] call comspec_atak_native_fnc_clockFmt)]];
         call _saveDraft;
         call _render;
@@ -55,6 +57,8 @@ switch (_action) do {
         private _sg = [_pos, 8] call comspec_atak_native_fnc_gridRef;
         [{ ["comspec_atak_native_sideEvent", ["comspec_atak_native_alert", _this, _this select 5]] call CBA_fnc_serverEvent; }, ["SALUTE", _me, ATLToASL [_pos select 0, _pos select 1, 0], _sg, _txt, str side group player], "SALUTE", 1] call comspec_atak_native_fnc_netSend;
         ["SALUTE", "Moi", ATLToASL [_pos select 0, _pos select 1, 0], _sg, _txt] call comspec_atak_native_fnc_alertsLog;
+        // App Zones : la zone qui contient le lieu du SALUTE passe « ennemi signalé », avec la taille et le texte.
+        ["contact", [_pos, "UNK", (trim (_d getOrDefault ["sS", ""])) select [0, 12], "SALUTE · " + _txt]] call comspec_atak_native_fnc_zoneAction;
         _s set ["saluteHint", format ["SALUTE envoyé %1 · %2", ["au camp", "au camp et au poste"] select _bridge, (["now"] call comspec_atak_native_fnc_clockFmt)]];
         uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
         call _render;

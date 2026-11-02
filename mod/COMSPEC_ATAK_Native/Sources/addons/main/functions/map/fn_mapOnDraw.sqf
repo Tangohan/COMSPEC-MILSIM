@@ -248,6 +248,16 @@ private _uy0 = (_uA select 1) min (_uB select 1); private _uy1 = (_uA select 1) 
 private _cluW = ((_ux1 - _ux0) / 14) max 1;
 private _clu = createHashMap;
 private _uxR = _ux1 - (_ux1 - _ux0) * 0.3;
+// Mon point GPS (volet de configuration de la carte, fn_mapPrefs « self ») : réglages préparés au changement.
+private _selfCfg = ["self"] call comspec_atak_native_fnc_mapPrefs;
+private _selfLbl = _selfCfg select 5;
+// Trace (fil d'Ariane) de mes positions, sous les symboles.
+if (_selfCfg select 4) then {
+    private _tp = ["trailPts"] call comspec_atak_native_fnc_mapPrefs;
+    private _tc = +_selfRgb; _tc set [3, 0.55];
+    for "_i" from 1 to ((count _tp) - 1) do { _map drawLine [[(_tp select (_i - 1)) select 0, (_tp select (_i - 1)) select 1, 0], [(_tp select _i) select 0, (_tp select _i) select 1, 0], _tc]; };
+    if ((count _tp) > 0) then { _map drawLine [[(_tp select -1) select 0, (_tp select -1) select 1, 0], _selfGps, _tc]; };
+};
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
@@ -289,6 +299,19 @@ private _uxR = _ux1 - (_ux1 - _ux0) * 0.3;
     if (_ewBft && {!_self}) then { _color set [3, ((_color select 3) min 0.65) * 0.5]; };
     private _dir = _entity getOrDefault ["heading",0];
     if ((_dc select 3) isNotEqualTo "") then { _icon = _dc select 3; _dir = 0; };
+    // Moi : forme, taille et cône de cap choisis (flèche du symbole d'unité par défaut).
+    if (_self) then {
+        _selfCfg params ["_sIcon", "_sOrient", "_sMul", "_sCone"];
+        if (_sIcon isNotEqualTo "") then { _icon = _sIcon; if (!_sOrient) then { _dir = 0; }; };
+        _size = _size * _sMul;
+        if (_sCone) then {
+            private _ed = eyeDirection player;
+            private _eh = (_ed select 0) atan2 (_ed select 1);
+            private _cl = _size * 3.2 * (["mpx", _map] call comspec_atak_native_fnc_planGfx);
+            private _cc = +_color; _cc set [3, 0.22];
+            _map drawTriangle [[_pos, _pos getPos [_cl, _eh - 28], _pos getPos [_cl, _eh], _pos, _pos getPos [_cl, _eh], _pos getPos [_cl, _eh + 28]], _cc, "#(rgb,8,8,3)color(1,1,1,1)"];
+        };
+    };
     // Fraîcheur gardée après la palette ami / moi (qui remet l'alpha à 1) : piste figée ou perdue toujours estompée.
     if (_freshness isEqualTo "STALE") then { _color set [3, (_color select 3) min _aStale]; };
     if (_freshness in ["LOST","OFFLINE"]) then { _color set [3, (_color select 3) min _aLost]; };
@@ -302,7 +325,8 @@ private _uxR = _ux1 - (_ux1 - _ux0) * 0.3;
     private _acc = _entity getOrDefault ["acc", 0];
     if (!_self && {_acc >= 10} && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", true]}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
     _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
-    if (_lblOn && {!_boxOn} && {_scale < 0.25} && {_eniOn || {!_hostile}}) then {
+    // Mon indicatif : AUTO comme les autres unités, ON toujours, OFF jamais (fn_mapPrefs « self »).
+    if ((_self && {_selfLbl isEqualTo "ON"}) || {_lblOn && {!_boxOn} && {_scale < 0.25} && {_eniOn || {!_hostile}} && {!_self || {_selfLbl isNotEqualTo "OFF"}}}) then {
         private _cs = _dc select 7;
         if (_cs isNotEqualTo "" && {_self || {_x isEqualTo _selected} || {
             private _ck = [floor ((_pos select 0) / _cluW), floor ((_pos select 1) / _cluW)];
@@ -520,6 +544,8 @@ if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualT
     _map drawIcon [_dot, [0.36, 0.78, 0.42, 1], _ap, 6, 6, 0, "  " + (("POINT DE POSE · VALIDER") call comspec_atak_native_fnc_tr), 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
 
+// App Zones : plans affichés (bascule « Zones sur la carte ATAK »), dans la vue seulement, sous les routes (fn_zoneDraw).
+if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesShow", true]) then { [_map, _k * _is, _ts] call comspec_atak_native_fnc_zoneDraw; };
 // Points de passage : tronçons, étapes nommées et typées, point choisi en mode POINTS DE PASSAGE (fn_wpDraw).
 [_map, _k * _is, _ts, _cursor] call comspec_atak_native_fnc_wpDraw;
 // App Routes : routes affichées, dans la vue seulement, tracé gardé par révision (fn_routeDraw).

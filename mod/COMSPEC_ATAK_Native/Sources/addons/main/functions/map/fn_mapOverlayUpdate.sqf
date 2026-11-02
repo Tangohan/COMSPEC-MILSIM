@@ -28,16 +28,21 @@ private _sepDot = "<t color='#7f8c86'> · </t>";
 // Azimut sur trois chiffres (« 085° ») et distance en m puis en km.
 private _az3 = { params ["_a"]; private _t = str ((round _a) mod 360); while {(count _t) < 3} do { _t = "0" + _t; }; _t };
 private _distTxt = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 2]] select (_d >= 1000) };
-// Case 2 du bandeau : ligne 1 « CAP 317° NNO » (mon cap, étiqueté comme tel) ; ligne 2 mon indicatif à la couleur de
-// mon équipe de feu (celle de l'anneau autour de mon symbole) avec son nom, et ma grille en main (porté : déjà dans la
-// case 1 ; mini : sans). Appelée aussi par la boussole à chaque degré : le cap du bandeau suit en direct.
-// Boussole (_fast) : ligne 2 reprise du dernier passage complet (une fois par seconde) ; seul le cap est refait.
+// Bandeau choisi par le joueur (fn_mapPrefs « band ») : style NEW | CLASSIC | COMPACT | HIDDEN et éléments affichés.
+private _bc = ["band"] call comspec_atak_native_fnc_mapPrefs;
+private _bStyle = _bc get "style";
+private _bShow = _bc get "show";
+// Case 2 du bandeau (NEW) : ligne 1 « CAP 317° NNO » (mon cap, étiqueté comme tel) ; ligne 2 mon indicatif à la couleur
+// de mon équipe de feu (celle de l'anneau autour de mon symbole) avec son nom, et ma grille en main (porté : déjà dans la
+// case 1 ; mini : sans). CLASSIC (rendu d'avant 2.9.34) : « 317° NO » en grand, l'indicatif dessous, dans un seul texte.
+// Cap (HDG) ou indicatif (ME) masqués : l'autre prend la ligne 1. Appelée aussi par la boussole à chaque degré : le cap
+// suit en direct. Boussole (_fast) : indicatif repris du dernier passage complet (une fois par seconde) ; seul le cap est refait.
 private _meUpdate = {
     params ["_h", ["_fast", false]];
     private _me = _ov getOrDefault ["me", controlNull];
     if (isNull _me) exitWith {};
     private _l2 = _ov getOrDefault ["meL2", ""];
-    if (!_fast || {_l2 isEqualTo ""}) then {
+    if (("ME" in _bShow) && {!_fast || {_l2 isEqualTo ""}}) then {
         private _ft = [player] call comspec_atak_native_fnc_ftInfo;
         private _inFt = (_ft get "id") isNotEqualTo "";
         // Indicatif tel quel (jamais traduit), raccourci proprement s'il est long.
@@ -50,13 +55,22 @@ private _meUpdate = {
             _l2 = _l2 + format [" <t color='%2'>%1</t>", _fn, _ft get "hex"];
         };
         if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
-            _l2 = _l2 + _sepDot + format ["<t font='EtelkaMonospacePro' color='#c9d2cd'>%1</t>", [player] call comspec_atak_native_fnc_gridRef];
+            _l2 = _l2 + _sepDot + format ["<t font='EtelkaMonospacePro' color='#c9d2cd'>%1</t>", ["grid", [getPosASL player, ""]] call comspec_atak_native_fnc_mapPrefs];
         };
         _ov set ["meL2", _l2];
     };
-    [_me, format ["%1<t font='EtelkaMonospaceProBold' size='1.2'>%2°</t> <t font='EtelkaMonospacePro' size='0.95' color='#b7c1bc'>%3</t>",
-        format ["<t size='0.78' color='#5cc76b'>%1</t> ", ["HDG", "CAP"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")], [_h] call _az3, [_h] call _cardinal]] call _put;
-    [_ov getOrDefault ["me2", controlNull], _l2] call _put;
+    if !("ME" in _bShow) then { _l2 = ""; };
+    private _hdgOn = "HDG" in _bShow;
+    if (_bStyle isEqualTo "CLASSIC") exitWith {
+        private _hd = if (_hdgOn) then { format ["<t font='EtelkaMonospaceProBold' size='1.2'>%1°</t> <t font='EtelkaMonospacePro' size='0.85' color='#b7c1bc'>%2</t>", [_h] call _az3, [_h, 8] call comspec_atak_native_fnc_cardinal] } else { "" };
+        [_me, ([_hd, format ["<t size='0.85' color='#b7c1bc'>%1</t>", _l2]] select { _x isNotEqualTo "" && {_x isNotEqualTo "<t size='0.85' color='#b7c1bc'></t>"} }) joinString "<br/>"] call _put;
+    };
+    private _hd = if (_hdgOn) then {
+        format ["%1<t font='EtelkaMonospaceProBold' size='1.2'>%2°</t> <t font='EtelkaMonospacePro' size='0.95' color='#b7c1bc'>%3</t>",
+            format ["<t size='0.78' color='#5cc76b'>%1</t> ", ["HDG", "CAP"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")], [_h] call _az3, [_h] call _cardinal]
+    } else { _l2 };
+    [_me, _hd] call _put;
+    [_ov getOrDefault ["me2", controlNull], ["", _l2] select _hdgOn] call _put;
 };
 if (_compassOnly) exitWith {
     private _h = getDirVisual (vehicle player);
@@ -79,11 +93,13 @@ if (_compassOnly) exitWith {
 params ["", "", ["_tapeOnly", false]];
 
 private _cur = _ov getOrDefault ["cursor", controlNull];
+// Bandeau compact : une ligne refaite au passage complet (le cap y suit une fois par seconde, pas à chaque degré).
 // Bandeau de la boussole seul (à chaque degré) : panneau curseur / MOI laissé au passage complet (une fois par seconde)
 // et aux mouvements de souris (grilles, réseau sous le curseur et textes refaits presque à chaque image sinon).
 if (!isNull _cur && {!_tapeOnly}) then {
     private _p = _s getOrDefault ["cursorPos", []];
     private _measure = _s getOrDefault ["mapMeasure", []];
+    private _inter = _s getOrDefault ["interactive", false];
     // Zone MGRS de la carte (zone UTM + bande, carré de 100 km si ACE le fournit), calculée une fois par carte.
     private _zone = uiNamespace getVariable ["COMSPEC_ATAK_MgrsZone", ["", ""]];
     if ((_zone select 0) isNotEqualTo worldName) then {
@@ -102,70 +118,176 @@ if (!isNull _cur && {!_tapeOnly}) then {
         _zone = [worldName, _z];
         uiNamespace setVariable ["COMSPEC_ATAK_MgrsZone", _zone];
     };
-    // Bandeau d'information, case 1 (contrôles de fn_pageMap) :
-    //   ligne 1 (cursor)  : libellé discret + position en grand : « CURSEUR 33T XE 1513 1736 » (grille MGRS complète,
-    //                       une seule fois, à la précision des Réglages) ; porté : « MOI … » ; mesure : « A-B 2.13 km » ;
-    //   ligne 2 (cursor2) : derrière la flèche du gisement (cursorArrow, nord en haut) « 94 m · 317° NO · ALT 17 m » ;
-    //                       case étroite (cursorWrap) : altitude et réseau en ligne 3 ; très étroite (cursorNarrow) : la
-    //                       zone MGRS passe aussi en ligne 3.
-    private _wrap = _ov getOrDefault ["cursorWrap", false];
-    private _narrow = _ov getOrDefault ["cursorNarrow", false];
-    private _cur2 = _ov getOrDefault ["cursor2", controlNull];
-    private _arw = _ov getOrDefault ["cursorArrow", controlNull];
+    private _on = { _this in _bShow };
+    private _mgrs = (_bc get "grid") isEqualTo "MGRS";
+    private _dT = { ["dist", _this select 0] call comspec_atak_native_fnc_mapPrefs };
+    private _aT = { ["alt", _this select 0] call comspec_atak_native_fnc_mapPrefs };
+    // Grille du point (format choisi) ; porté : 8 chiffres au moins en MGRS.
+    private _gT = {
+        params ["_q", ["_dig", -1]];
+        if (_mgrs && {_dig > 0}) exitWith { [_q, _dig] call comspec_atak_native_fnc_gridRef };
+        ["grid", [_q, ""]] call comspec_atak_native_fnc_mapPrefs
+    };
     private _big = { format ["<t font='EtelkaMonospaceProBold' size='1.2'>%1</t>", _this select 0] };
-    private _zoneTxt = format ["<t font='EtelkaMonospacePro' size='0.85' color='#b7c1bc'>%1</t> ", _zone select 1];
+    private _zoneTxt = ["", format ["<t font='EtelkaMonospacePro' size='0.85' color='#b7c1bc'>%1</t> ", _zone select 1]] select _mgrs;
     private _val = { format ["<t font='EtelkaMonospaceProBold' color='#eef2ef'>%1</t>", _this select 0] };
     private _brg = { params ["_az"]; format ["%1 %2", [format ["%1°", [_az] call _az3]] call _val, format ["<t font='EtelkaMonospacePro' color='#b7c1bc'>%1</t>", [_az] call _cardinal]] };
     private _nl = "<br/>";
-    private _line1 = "";
-    private _line2 = "";
-    private _az = -1;
-    switch (true) do {
-        case ((count _measure) >= 2): {
-            _measure params ["_a", "_b"];
-            _az = _a getDir _b;
-            private _dAlt = round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a));
-            _line1 = (["A-B", "#f2ab33"] call _lbl) + ([[_a distance2D _b] call _distTxt] call _big);
-            _line2 = ([_az] call _brg) + _sepDot + (["Δ ALT"] call _key) + ([format ["%1%2 m", ["", "+"] select (_dAlt > 0), _dAlt]] call _val);
-        };
-        case (!(_s getOrDefault ["interactive", false])): {
-            // Téléphone porté : pas de curseur, la case donne ma position (grille à 8 chiffres au moins).
-            private _pp = getPosASL (vehicle player);
-            private _dig = (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) max 8;
-            _line1 = (["MOI"] call _lbl) + (["", _zoneTxt] select !_narrow) + ([[_pp, _dig] call comspec_atak_native_fnc_gridRef] call _big);
-            _line2 = ([_zoneTxt + "<t color='#7f8c86'>· </t>", ""] select !_narrow) + (["ALT"] call _key) + ([format ["%1 m", round (_pp select 2)]] call _val);
-        };
-        case ((count _p) < 2): {
-            _line1 = (["CURSEUR"] call _lbl) + format ["<t color='#8a9a93'>%1</t>", ("survolez la carte") call comspec_atak_native_fnc_tr];
-        };
-        default {
-            _az = player getDir _p;
-            _line1 = (["CURSEUR"] call _lbl) + (["", _zoneTxt] select !_narrow) + ([[_p] call comspec_atak_native_fnc_gridRef] call _big);
-            // Couverture réseau calculée (app Wave Relay) et calque affiché : débit et perte sous le curseur.
-            private _net = "";
-            if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
-                private _cv = ["at", _p] call comspec_atak_native_fnc_relayNet;
-                if (_cv isNotEqualTo []) then {
-                    _net = _sepDot + ([
-                        (["RÉSEAU"] call _key) + ([format ["%1 Mbit/s", (_cv select 0) toFixed 1]] call _val) + format [" <t color='#b7c1bc'>%1 %%</t>", _cv select 1],
-                        format ["<t color='#e5483a'>%1</t>", ("ZONE BLANCHE") call comspec_atak_native_fnc_tr]
-                    ] select ((_cv select 0) <= 0));
-                };
-            };
-            private _da = ([[player distance2D _p] call _distTxt] call _val) + _sepDot + ([_az] call _brg);
-            private _alt = (["ALT"] call _key) + ([format ["%1 m", round (getTerrainHeightASL _p)]] call _val);
-            _line2 = if (_wrap) then {
-                _da + _nl + ([_zoneTxt + "<t color='#7f8c86'>· </t>", ""] select !_narrow) + _alt + _net
-            } else {
-                _da + _sepDot + _alt + _net
-            };
+    // Zone de l'app Zones sous le curseur (ou sous moi en porté) : nom à la couleur de son état, plan, état (fn_zoneAction).
+    private _zq = [_p, getPosASL (vehicle player)] select !_inter;
+    private _zn = if (("ZONE" call _on) && {(count _measure) < 2} && {(count _zq) >= 2}) then { ["atText", [_zq]] call comspec_atak_native_fnc_zoneAction } else { "" };
+    // Couverture réseau calculée (app Wave Relay) et calque affiché : débit et perte sous le curseur.
+    private _net = "";
+    if (_inter && {(count _p) >= 2} && {(count _measure) < 2} && {profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]}) then {
+        private _cv = ["at", _p] call comspec_atak_native_fnc_relayNet;
+        if (_cv isNotEqualTo []) then {
+            _net = [
+                (["RÉSEAU"] call _key) + ([format ["%1 Mbit/s", (_cv select 0) toFixed 1]] call _val) + format [" <t color='#b7c1bc'>%1 %%</t>", _cv select 1],
+                format ["<t color='#e5483a'>%1</t>", ("ZONE BLANCHE") call comspec_atak_native_fnc_tr]
+            ] select ((_cv select 0) <= 0);
         };
     };
-    [_cur, _line1] call _put;
-    [_cur2, _line2] call _put;
-    // Flèche du gisement : tournée seulement quand le degré change.
+    private _az = -1;
+    switch (_bStyle) do {
+        case "COMPACT": {
+            // Une ligne : grille, distance et gisement, altitude, cap, zone.
+            private _parts = [];
+            private _h = getDirVisual (vehicle player);
+            switch (true) do {
+                case ((count _measure) >= 2): {
+                    _measure params ["_a", "_b"];
+                    _parts pushBack ((["A-B", "#f2ab33"] call _lbl) + ([[_a distance2D _b] call _dT] call _val) + " " + ([_a getDir _b] call _brg));
+                };
+                case (!_inter): {
+                    private _pp = getPosASL (vehicle player);
+                    if ("GRID" call _on) then { _parts pushBack ((["MOI"] call _lbl) + _zoneTxt + ([[_pp, (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) max 8] call _gT] call _val)); };
+                    if ("ALT" call _on) then { _parts pushBack ((["ALT"] call _key) + ([[_pp select 2] call _aT] call _val)); };
+                };
+                case ((count _p) < 2): { _parts pushBack ((["CURSEUR"] call _lbl) + format ["<t color='#8a9a93'>%1</t>", ("survolez la carte") call comspec_atak_native_fnc_tr]); };
+                default {
+                    if ("GRID" call _on) then { _parts pushBack (_zoneTxt + ([[_p] call _gT] call _val)); };
+                    if ("DIST" call _on) then { _parts pushBack (([[player distance2D _p] call _dT] call _val) + " " + ([player getDir _p] call _brg)); };
+                    if ("ALT" call _on) then { _parts pushBack ((["ALT"] call _key) + ([[getTerrainHeightASL _p] call _aT] call _val)); };
+                    if (_net isNotEqualTo "") then { _parts pushBack _net; };
+                };
+            };
+            if ("HDG" call _on) then { _parts pushBack ((["CAP"] call _key) + ([format ["%1°", [_h] call _az3]] call _val)); };
+            if (_zn isNotEqualTo "") then { _parts pushBack _zn; };
+            [_cur, _parts joinString _sepDot] call _put;
+        };
+        case "CLASSIC": {
+            // Rendu d'avant 2.9.34, un seul texte : valeur en grand puis détails gris (corrigé : libellés seuls traduits,
+            // « ALT 17 m », point cardinal jamais pris pour un mot).
+            private _wrap = _ov getOrDefault ["cursorWrap", false];
+            private _sub = { format ["<br/><t size='0.85' color='#b7c1bc'>%1</t>", _this select 0] };
+            private _card8 = { [_this select 0, 8] call comspec_atak_native_fnc_cardinal };
+            private _txt = switch (true) do {
+                case ((count _measure) >= 2): {
+                    _measure params ["_a", "_b"];
+                    private _azm = _a getDir _b;
+                    private _dAlt = round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a));
+                    format ["<t font='EtelkaMonospacePro'>%1%2  %3° %4%5</t>", ["A-B", "#f2ab33"] call _lbl, [[_a distance2D _b] call _dT] call _big, [_azm] call _az3, [_azm] call _card8,
+                        [(["Δ ALT"] call _key) + format ["%1%2", ["", "+"] select (_dAlt > 0), [_dAlt] call _aT]] call _sub]
+                };
+                case (!_inter): {
+                    private _pp = getPosASL (vehicle player);
+                    private _g8 = [_pp, (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) max 8] call _gT;
+                    private _det = [];
+                    if ("GRID" call _on && {_mgrs}) then { _det pushBack ((["MGRS"] call _key) + format ["%1 %2", _zone select 1, _g8]); };
+                    if ("ALT" call _on) then { _det pushBack ((["ALT"] call _key) + ([_pp select 2] call _aT)); };
+                    if (_zn isNotEqualTo "") then { _det pushBack _zn; };
+                    format ["<t font='EtelkaMonospacePro'>%1%2%3</t>", ["MOI"] call _lbl, [["", _g8] select ("GRID" call _on)] call _big, ["", [_det joinString " · "] call _sub] select ((count _det) > 0)]
+                };
+                case ((count _p) < 2): { format ["<t font='EtelkaMonospacePro'>%1<t color='#8a9a93'>%2</t></t>", ["CURSEUR"] call _lbl, ("survolez la carte") call comspec_atak_native_fnc_tr] };
+                default {
+                    _az = player getDir _p;
+                    private _g = [_p] call _gT;
+                    private _da = ["", format ["%1 · %2° %3", [player distance2D _p] call _dT, [_az] call _az3, [_az] call _card8]] select ("DIST" call _on);
+                    private _det = [];
+                    if ("GRID" call _on && {_mgrs}) then { _det pushBack ((["MGRS"] call _key) + format ["%1 %2", _zone select 1, [_p, 8] call comspec_atak_native_fnc_gridRef]); };
+                    if ("ALT" call _on) then { _det pushBack ((["ALT"] call _key) + ([getTerrainHeightASL _p] call _aT)); };
+                    if (_net isNotEqualTo "") then { _det pushBack _net; };
+                    if (_zn isNotEqualTo "") then { _det pushBack _zn; };
+                    private _head = (["CURSEUR"] call _lbl) + ([["", _g] select ("GRID" call _on)] call _big);
+                    private _detT = ["", [_det joinString " · "] call _sub] select ((count _det) > 0);
+                    if (_wrap) then {
+                        format ["<t font='EtelkaMonospacePro'>%1%2%3</t>", _head, ["", [_da] call _sub] select (_da isNotEqualTo ""), _detT]
+                    } else {
+                        format ["<t font='EtelkaMonospacePro'>%1  %2%3</t>", _head, _da, _detT]
+                    }
+                };
+            };
+            [_cur, _txt] call _put;
+        };
+        default {
+            // Bandeau d'information, case 1 (contrôles de fn_pageMap) :
+            //   ligne 1 (cursor)  : libellé discret + position en grand : « CURSEUR 33T XE 1513 1736 » (grille MGRS complète,
+            //                       une seule fois, à la précision des Réglages) ; porté : « MOI … » ; mesure : « A-B 2.13 km » ;
+            //                       grille masquée : la distance prend sa place ;
+            //   ligne 2 (cursor2) : derrière la flèche du gisement (cursorArrow, nord en haut) « 94 m · 317° NO · ALT 17 m »
+            //                       et la zone de l'app Zones ; case étroite (cursorWrap) : altitude, réseau et zone en ligne 3 ;
+            //                       très étroite (cursorNarrow) : la zone MGRS passe aussi en ligne 3.
+            private _wrap = _ov getOrDefault ["cursorWrap", false];
+            private _narrow = _ov getOrDefault ["cursorNarrow", false];
+            private _cur2 = _ov getOrDefault ["cursor2", controlNull];
+            private _line1 = "";
+            private _line2 = "";
+            switch (true) do {
+                case ((count _measure) >= 2): {
+                    _measure params ["_a", "_b"];
+                    _az = _a getDir _b;
+                    private _dAlt = round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a));
+                    _line1 = (["A-B", "#f2ab33"] call _lbl) + ([[_a distance2D _b] call _dT] call _big);
+                    _line2 = ([_az] call _brg) + _sepDot + (["Δ ALT"] call _key) + ([format ["%1%2", ["", "+"] select (_dAlt > 0), [_dAlt] call _aT]] call _val);
+                };
+                case (!_inter): {
+                    // Téléphone porté : pas de curseur, la case donne ma position (grille à 8 chiffres au moins).
+                    private _pp = getPosASL (vehicle player);
+                    _line1 = (["MOI"] call _lbl) + ([
+                        (["", _zoneTxt] select !_narrow) + ([[_pp, (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) max 8] call _gT] call _big),
+                        [[_pp select 2] call _aT] call _big
+                    ] select !("GRID" call _on));
+                    private _l2 = [];
+                    if (_narrow && {"GRID" call _on} && {_zoneTxt isNotEqualTo ""}) then { _l2 pushBack _zoneTxt; };
+                    if ("ALT" call _on && {"GRID" call _on}) then { _l2 pushBack ((["ALT"] call _key) + ([[_pp select 2] call _aT] call _val)); };
+                    if (_zn isNotEqualTo "") then { _l2 pushBack _zn; };
+                    _line2 = _l2 joinString _sepDot;
+                };
+                case ((count _p) < 2): {
+                    _line1 = (["CURSEUR"] call _lbl) + format ["<t color='#8a9a93'>%1</t>", ("survolez la carte") call comspec_atak_native_fnc_tr];
+                };
+                default {
+                    _az = player getDir _p;
+                    private _gOn = "GRID" call _on;
+                    private _dOn = "DIST" call _on;
+                    _line1 = (["CURSEUR"] call _lbl) + (switch (true) do {
+                        case (_gOn): { (["", _zoneTxt] select !_narrow) + ([[_p] call _gT] call _big) };
+                        case (_dOn): { [[player distance2D _p] call _dT] call _big };
+                        default { "" };
+                    });
+                    private _da = if (_dOn) then { [([[player distance2D _p] call _dT] call _val) + _sepDot, ""] select !_gOn } else { "" };
+                    if (_dOn) then { _da = _da + ([_az] call _brg); };
+                    private _rest = [];
+                    if (_narrow && {_gOn} && {_zoneTxt isNotEqualTo ""}) then { _rest pushBack _zoneTxt; };
+                    if ("ALT" call _on) then { _rest pushBack ((["ALT"] call _key) + ([[getTerrainHeightASL _p] call _aT] call _val)); };
+                    if (_net isNotEqualTo "") then { _rest pushBack _net; };
+                    if (_zn isNotEqualTo "") then { _rest pushBack _zn; };
+                    _line2 = if (_wrap && {_da isNotEqualTo ""}) then {
+                        _da + (["", _nl + (_rest joinString _sepDot)] select ((count _rest) > 0))
+                    } else {
+                        (([_da] select { _x isNotEqualTo "" }) + _rest) joinString _sepDot
+                    };
+                    if !(_dOn) then { _az = -1; };
+                };
+            };
+            [_cur, _line1] call _put;
+            [_cur2, _line2] call _put;
+        };
+    };
+    // Flèche du gisement (bandeau NEW) : tournée seulement quand le degré change.
+    private _arw = _ov getOrDefault ["cursorArrow", controlNull];
     if (!isNull _arw) then {
-        if (_az < 0) exitWith { if (ctrlShown _arw) then { _arw ctrlShow false; }; };
+        if (_az < 0 || {_bStyle isNotEqualTo "NEW"}) exitWith { if (ctrlShown _arw) then { _arw ctrlShow false; }; };
         if !(ctrlShown _arw) then { _arw ctrlShow true; };
         private _deg = round _az;
         if ((_arw getVariable ["deg", -1]) isNotEqualTo _deg) then { _arw setVariable ["deg", _deg]; _arw ctrlSetAngle [_deg, 0.5, 0.5]; };
