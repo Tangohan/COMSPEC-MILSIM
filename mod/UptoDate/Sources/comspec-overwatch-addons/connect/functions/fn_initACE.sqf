@@ -231,7 +231,7 @@ private _link = _root + ["COMSPEC_Link"];
     ["clear"] call comspec_overwatch_connect_fnc_ecotiRouteEdit;
 }, _sit, {
     ([] call comspec_overwatch_connect_fnc_ecotiIsAvailable)
-    && {(count (missionNamespace getVariable ["COMSPEC_EcotiRoutePoints", []])) > 0}
+    && {(count (missionNamespace getVariable ["COMSPEC_EcotiRoutePoints", []])) > 0 || {!isNil "comspec_atak_native_fnc_routeAction" && {(["jvnCount"] call comspec_atak_native_fnc_routeAction) > 0}}}
 }] call _fnc_leaf;
 
 ["COMSPEC_Ping", "Envoyer Ping", {

@@ -54,6 +54,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 [{ ["srv"] call comspec_atak_native_fnc_relayCond; }, 2] call COMSPEC_ATAK_PfhSpread;
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)
 COMSPEC_ATAK_SrvRoutes = createHashMap;   // netId du groupe -> [points, auteur]
+COMSPEC_ATAK_SrvRte = createHashMap;      // app Routes : id -> [route (paires), portée 1-3, camp, netId du groupe, équipe de feu, auteur]
 // Accusés LU/ACK des comptes rendus : envoyés au seul auteur et gardés à part, un par lecteur (le dernier l'emporte),
 // pour que le journal ci-dessus garde ses 200 événements utiles. Rejoués à l'auteur seul quand il revient.
 COMSPEC_ATAK_SrvRepBy = createHashMap;    // id du C.R. -> UID de son auteur
@@ -141,6 +142,15 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
     };
     if (_to isNotEqualTo []) then { [_ev, _args, _to] call CBA_fnc_targetEvent; };
 }] call CBA_fnc_addEventHandler;
+// App Routes : routes partagées gardées pour les joueurs qui arrivent ensuite (rejouées par syncReq), 300 au plus.
+["comspec_atak_native_routeSrv", {
+    params [["_op", ""], ["_id", ""], ["_pk", []], ["_sc", 2], ["_side", ""], ["_grp", ""], ["_ft", ""], ["_who", ""]];
+    if !(_id isEqualType "" && {_id isNotEqualTo ""}) exitWith {};
+    if (_op isEqualTo "del") exitWith { COMSPEC_ATAK_SrvRte deleteAt _id; };
+    COMSPEC_ATAK_SrvRte set [_id, [_pk, _sc, _side, _grp, _ft, _who]];
+    { if (isNull (groupFromNetId ((COMSPEC_ATAK_SrvRte get _x) select 3)) && {((COMSPEC_ATAK_SrvRte get _x) select 1) < 3}) then { COMSPEC_ATAK_SrvRte deleteAt _x; }; } forEach (keys COMSPEC_ATAK_SrvRte);
+    while { (count COMSPEC_ATAK_SrvRte) > 300 } do { COMSPEC_ATAK_SrvRte deleteAt ((keys COMSPEC_ATAK_SrvRte) select 0); };
+}] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_wpStore", {
     params ["_grp", "_pts", "_who"];
     // Itinéraire effacé par le groupe : plus rien à rejouer aux arrivants.
@@ -153,6 +163,9 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
 // Clé de la session (Athena range les escouades et équipes envoyées par mission jouée).
 // Date sur deux chiffres (AAAAMMJJHHMM) : sans zéro, 9 h 03 donnait « 93 » et la date de la session était illisible.
 missionNamespace setVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2#%3", missionName, worldName, ((systemTimeUTC select [0, 5]) apply { [str _x, "0" + str _x] select (_x < 10) }) joinString ""], true];
+// Nom du serveur (détection des parties sur Athena) : champ à part « server_name » des relevés, la clé ci-dessus garde
+// son format (le site s'en sert pour regrouper). Vide en solo et dans l'éditeur.
+missionNamespace setVariable ["COMSPEC_ATAK_ServerName", [serverName, ""] select (!isMultiplayer || {is3DENPreview}), true];
 // Contrôle de cohérence : unités dont l'équipe n'existe plus dans leur groupe (changement de groupe hors téléphone,
 // équipe dissoute) remises sans équipe. Toutes les 10 s, et à la demande (Inter-team > RESYNCHRONISER, arrivée d'un joueur).
 COMSPEC_ATAK_FtCheck = {
@@ -192,6 +205,13 @@ COMSPEC_ATAK_FtCheck = {
             { _log pushBack ["comspec_atak_native_reportRcpt", _y]; } forEach (COMSPEC_ATAK_SrvRcpt getOrDefault [_x, createHashMap]);
         };
     } forEach COMSPEC_ATAK_SrvRepBy;
+    // Routes partagées (app Routes) qui concernent l'arrivant : son camp, son groupe, son équipe de feu.
+    {
+        _y params ["_pk", "_sc", "_rs", "_rg", "_rf", "_who"];
+        if (_rs isEqualTo _side && {_sc >= 3 || {_rg isEqualTo (netId group _unit) && {_sc >= 2 || {_rf isEqualTo "" || {_rf isEqualTo (_unit getVariable ["COMSPEC_FT", ""])}}}}}) then {
+            _log pushBack ["comspec_atak_native_route", ["set", _pk, _who, _sc]];
+        };
+    } forEach COMSPEC_ATAK_SrvRte;
     ["comspec_atak_native_syncData", [_log, COMSPEC_ATAK_SrvRoutes getOrDefault [netId group _unit, []]], _unit] call CBA_fnc_targetEvent;
     // Plans de briefing des camps (fn_planServer) : plus dans la file JIP, envoyés ici à l'arrivant (tous, comme la file
     // JIP le faisait : un joueur qui change de camp retrouve le plan de son nouveau camp).

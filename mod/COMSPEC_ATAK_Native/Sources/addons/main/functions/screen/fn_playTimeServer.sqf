@@ -76,7 +76,7 @@ for "_i" from 0 to ((count _uids) - 1) step 25 do {
     } forEach (_uids select [_i, 25]);
     if (_players isNotEqualTo []) then {
         _tried = true;
-        _r = (["COMSPECExtension", "ScreenTime.Batch", [[createHashMapFromArray [["mission_key", _mk], ["players", _players]]] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
+        _r = (["COMSPECExtension", "ScreenTime.Batch", [[createHashMapFromArray [["mission_key", _mk], ["server_name", missionNamespace getVariable ["COMSPEC_ATAK_ServerName", ""]], ["players", _players]]] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
         if (_r isEqualType []) then { _r = _r param [0, ""]; };
         if ((_r select [0, 3]) isEqualTo "OK|") then {
             {

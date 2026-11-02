@@ -1,24 +1,33 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.33.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.34.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.33 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] mettez à jour le pack 2.9.34 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]Correctif — Écrans et vidéoprojecteur[/h2]
-Les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy. Depuis la 2.9.29, l'image restait noire : le jeu refusait la taille de l'image posée sur l'écran. Chaque diffusion est maintenant tracée dans le journal (écran visé, image posée ou raison du refus).
+[h2]Nouveauté — App Routes[/h2]
+Nouvelle app [b]Routes[/b] (section Navigation) : créez, dupliquez et supprimez des routes nommées, et retrouvez celles partagées par votre équipe, votre groupe ou votre camp.
+[list]
+[*] [b]Type de tracé[/b] : à pied, véhicule (option « Suivre les routes » : chaque tronçon passe par le réseau routier), aérien (ligne droite et couloir de vol) ou nautique. Couleur, épaisseur et style (plein, pointillé, flèches de direction).
+[*] [b]Étapes[/b] : clic sur la carte de l'app (ajouter, insérer après une étape, déplacer), ma position, un marqueur existant ou une grille MGRS. Chaque étape a un type (départ, point de passage, checkpoint, ligne de phase, ralliement, ralliement objectif, objectif, LZ, PZ, point de dislocation, arrivée), un nom, une consigne, une heure prévue H+ et une action attendue.
+[*] [b]Calculs[/b] : distance et cap de chaque tronçon, distance totale, durée selon la vitesse réglable, heure d'arrivée.
+[*] [b]Suivre la route[/b] : étape visée, distance, cap, arrivée, reste et progression ; le téléphone vibre à chaque étape atteinte et la montre Garmin pointe l'étape visée.
+[*] [b]Affichage[/b] : carte ATAK, carte d'Arma et site Athena (tracé et étapes en marqueurs), vue 3D dans le monde.
+[*] [b]Partage[/b] à l'équipe, au groupe ou au camp par le réseau ATAK : sans réseau, la route part au retour du signal ; les joueurs qui arrivent la reçoivent aussi.
+[*] Les actions ACE « Ajouter un point d'itinéraire » et « Effacer l'itinéraire » (infos tactiques JVN) remplissent la route « Itinéraire JVN » de l'app. L'app Itinéraire peut copier ses étapes dans l'app Routes.
+[/list]
 
-[h2]Nouveauté — Voix radio par le maillage MPU5[/h2]
-Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu'aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).
+[h2]Carte — Bandeau du curseur refait[/h2]
+Grille MGRS complète affichée une seule fois, « ALT 17 m », distance et gisement avec une petite flèche orientée. À droite, votre cap est clairement étiqueté (« CAP 317° NNO ») et les points cardinaux vont sur 16 directions : plus de « 317° NON ». Fond plus sombre, lisible sur les cartes claires.
 
-[h2]Arsenal ACE[/h2]
-Une ligne de diagnostic est écrite dans le journal à chaque ouverture de l'arsenal ACE, pour comprendre les arsenaux qui n'affichent que l'équipement porté. Rien n'est modifié dans l'arsenal.
+[h2]App Réseau — Texte lisible[/h2]
+Le texte est nettement plus grand, une information par ligne (libellé à gauche, valeur à droite). Les sections se replient d'un clic avec un résumé de leur état, et votre choix est gardé. Boutons plus grands.
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 2.9.33.AG - Denver
+[*] Téléphone ATAK 2.9.34.AG - Denver
 [*] COMSPEC Link 2.0.116
-[*] Overwatch connect 1.6.28 · Overwatch main 1.4.8
+[*] Overwatch connect 1.6.29 · Overwatch main 1.4.8
 [/list]
 
-[h2]Rappel 2.9.32 — Seule la MPU5 relie le téléphone en mode réaliste[/h2]
-Avec le réglage « Liaison téléphone-radio réaliste », le téléphone n'a de réseau qu'à travers une radio de données MPU5 (Câble EUD ou Wi-Fi) ; sans MPU5, pas de réseau de données (Bluetooth et données déjà reçues gardés). Plus de bouton, d'action ACE ni de réglages Radio tactique ; liaison réaliste décochée, brancher le téléphone sur sa radio ACRE ou TFAR depuis l'app Wave Relay fonctionne comme avant.
+[h2]Rappel 2.9.33 — Écrans et voix radio par le maillage MPU5[/h2]
+Les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy (image noire depuis la 2.9.29). Radio ACRE2 ou TFAR reliée à la MPU5 : la voix passe par le maillage jusqu'aux radios reliées des équipiers sur la même fréquence (réglage serveur, désactivé par défaut).

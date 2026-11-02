@@ -38,6 +38,51 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.34 : app Routes, bandeau du curseur de la carte refait, app Réseau lisible (ATAK natif 2.9.34.AG - Denver, COMSPEC Link 2.0.116)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouvelle app Routes, bandeau du curseur de la carte refait, app Réseau lisible
+- App Routes (Navigation) : routes nommées à pied, en véhicule (par les routes si vous voulez), aériennes ou nautiques, avec couleur, épaisseur et style ; étapes posées d'un clic sur la carte de l'app, sur votre position, un marqueur ou une grille, chacune avec son type (checkpoint, ligne de phase, ralliement, LZ…), sa consigne, son heure H+ et son action attendue.
+- Distances, caps, durée et heure d'arrivée calculés ; « Suivre la route » guide d'étape en étape, fait vibrer le téléphone à chaque étape et oriente la montre Garmin. Routes partagées à l'équipe, au groupe ou au camp (sans réseau, elles partent au retour du signal), affichables sur la carte d'Arma, sur Athena et en 3D.
+- Carte : le bandeau du curseur montre la grille MGRS une seule fois, « ALT 17 m », la distance et le gisement avec une flèche, et votre cap clairement étiqueté (plus de « 317° NON »).
+- App Réseau : texte nettement plus grand, une information par ligne, sections repliables qui gardent votre choix.
+EN : New Routes app, map cursor bar redesigned, readable Network app
+- Routes app (Navigation): named routes on foot, by vehicle (following roads if you want), by air or by water, with colour, width and style; steps placed with a click on the app's map, on your position, a marker or a grid, each with its type (checkpoint, phase line, rally point, LZ…), instruction, H+ time and expected action.
+- Distances, headings, duration and arrival time are calculated; "Follow the route" guides you step by step, vibrates the phone at each step and points the Garmin watch. Routes can be shared with your team, squad or side (without network they are sent when the signal returns) and shown on the Arma map, on Athena and in 3D.
+- Map: the cursor bar shows the MGRS grid once, "ALT 17 m", distance and bearing with an arrow, and your heading clearly labelled (no more "317° NON").
+- Network app: much larger text, one piece of information per line, foldable sections that remember your choice.
+
+### Détail technique
+- **App Routes** (`functions/route`, page `ROUTE`, classe `Route`, `new=1`, section Navigation, ordre 15, icône `data/app_route.paa`, dessin `ICONS["app_route"]` de `tools/gen_assets.py`) :
+  - `fn_routeAction` : données et actions. Mes routes `COMSPEC_ATAK_RteMine` (profil, par carte : `COMSPEC_ATAK_Rte_<worldName>`, écriture regroupée 2 s puis `fn_saveProfile`), reçues `COMSPEC_ATAK_RteRx`, route suivie `COMSPEC_ATAK_RteFollow`. Route : id, nom, type (FOOT / VEH / AIR / SEA), routes, vitesse, couloir, couleur, épaisseur, style, vis / arma / d3, heure H, étapes `[pos, type, nom, consigne, H+, action]`, tronçons routiers, révision, portée du partage. `fn_routeUnpack` vérifie et borne tout ce qui vient du profil ou du réseau.
+  - Véhicule « Suivre les routes » : `fn_roadPath` par tronçon en `spawn` (jeton de génération, tronçons inchangés repris), lignes droites pendant le calcul ; pas de nouveau moteur d'itinéraire.
+  - Calculs : `stats` (distance et cap par tronçon, cumul, total, durée), `followInfo` (étape visée, distance, cap, reste, durées, progression ; allure réelle si l'on avance, sinon celle de la route).
+  - Guidage : `tick` chaque seconde (`COMSPEC_ATAK_PfhSpread`) ; rayon d'arrivée réglable, × 1 / 2,4 / 8 / 3 selon le type ; notification et vibreur à l'étape (action et consigne rappelées) ; montre Garmin : `fn_watch "send"` au départ, puis point `wpt` mis à jour.
+  - Partage : `fn_netSend` (clé `rte:<id>`, file sans réseau), `CBA_fnc_targetEvent comspec_atak_native_route` à l'équipe de feu (`COMSPEC_FT`), au groupe ou au camp, retenu hors réseau par `fn_offline "hold"` ; mises à jour renvoyées en direct (regroupées 1,5 s) ; serveur `COMSPEC_ATAK_SrvRte` (300 au plus) rejoué aux arrivants par `syncReq` selon camp, groupe et équipe.
+  - Carte d'Arma et Athena : polyligne (200 points au plus) et un repère par étape, par `fn_markerNet "create"` (canal du groupe, du camp si partagée au camp) puis `fn_markerWeb` (EH Overwatch muets pendant la pose, comme les traits). Athena reçoit ces formes par le chemin existant (`syncMapMarker`) et dessine déjà les polylignes avec couleur et libellé (`arma-map-markers.js`) : aucun changement du site.
+  - Dessin : `fn_routeDraw` (app Carte via `fn_mapOnDraw`, et carte de l'app) : routes affichées seulement, boîte englobante hors vue sautée, tracé gardé par révision (`geo`), primitives de `fn_planGfx` (trait épais, pointillé, pointe), couloir aérien, ligne de phase perpendiculaire, tronçon en cours et tirets vers l'étape visée. `fn_route3d` : liste préparée chaque seconde (1,5 km, 400 morceaux au plus), Draw3D posé seulement si une route a la 3D.
+  - Interface `fn_pageRoute` (vues LIST, EDIT, STEP, MARKERS, FOLLOW) et `fn_routeMap` (carte de l'app, calage de la vue comme l'app Plan) : dans la vue EDIT, un clic ne refait que la fiche (`#refresh`, champs saisis gardés en brouillon, défilement gardé) ; interrupteurs mis à jour sur place (`fn_formSet`) ; guidage mis à jour sur place chaque seconde (`#live`) ; rendus en double sautés (`COMSPEC_ATAK_RteDrawnAt`).
+  - Réglages CBA « ATAK · Routes » : `comspec_atak_native_route_share`, `_route_arma` (serveur), `_route_max` (étapes, 40), `_route_arrive` (m, 25), `_route_3d` (client).
+  - App Itinéraire : bouton « COPIER DANS L'APP ROUTES » (`fn_routeAction "import"`).
+- **Actions ACE JVN (Overwatch connect 1.6.29)** : quand l'ATAK natif est chargé, `fn_ecotiRouteEdit` envoie le point regardé à la route « Itinéraire JVN » de l'app (`jvnAdd`, 3D cochée) et « Effacer l'itinéraire » la supprime (`jvnClear`) ; condition d'« Effacer » dans `fn_initACE` (`jvnCount`). Sans l'ATAK natif : tracé local comme avant.
+- **Bandeau du curseur** (`fn_mapOverlayUpdate`, `fn_pageMap`) : nouveau `fn_cardinal` (16 points, FR / EN, jamais repassé par `fn_tr`). Causes : « MGRS … · MGRS ALT m17 » venait du second libellé gris qui réutilisait `%1` ; « 317° NON » venait de « NO » seul dans sa balise, traduit par `fr.txt` (« No » → « Non »). Seuls les libellés sont traduits, le texte est posé tel quel. Case curseur : grille MGRS complète une fois, puis flèche (`nav_straight`, tournée au gisement), distance, gisement et « ALT n m » ; passage à la ligne quand la case est étroite. Case droite : « CAP 317° NNO » (HDG en anglais), indicatif et équipe. Fond 0,86.
+- **App Réseau** (`fn_pageNetwork`) : facteur de taille appliqué deux fois retiré (légendes à ~0,4 du corps, sous `COMSPEC_ATAK_FontMin`) ; tailles de 0,88 à 1,4 du corps ; une information par ligne sur deux colonnes ; sections repliables avec résumé (`COMSPEC_ATAK_NetOpen` dans le profil) ; boutons à 1,95 × le corps, clics différés d'une image.
+- **Nom du serveur pour Athena** (détection des parties, site #1313) : `COMSPEC_ATAK_ServerName` (public, `serverName`, vide en solo et dans l'éditeur) posé à côté de `COMSPEC_ATAK_MissionKey` (format inchangé) et envoyé en champ `server_name` dans `ScreenTime.Report`, `ScreenTime.Batch` et `Distance.Batch`. COMSPEC Link relaie déjà le JSON tel quel (`EnrichAtakPayload`) : pas de changement C#.
+- i18n : environ 200 entrées FR / EN ajoutées (`tools/i18n.py merge`). COMSPEC Link 2.0.116 inchangée.
+
+### À tester en jeu
+- **Routes, création** : app Routes › + NOUVELLE ROUTE ; clics sur la carte de l'app (AJOUTER), choisir une étape puis INSÉRER APRÈS et DÉPLACER ; + MA POSITION, + MARQUEUR, grille « 012 345 » ; ▲ / ▼ / X ; FICHE : nom, type, action, H+, consigne, ENREGISTRER. La carte de l'app garde sa vue à chaque clic et la fiche ne remonte pas.
+- **Tracé** : À PIED, VÉHICULE (Suivre les routes : le tracé suit les routes après quelques secondes), AÉRIEN (couloir), NAUTIQUE ; couleurs, épaisseurs, PLEIN / POINTILLÉ / FLÈCHES sur la carte de l'app et sur l'app Carte ; zoom rapproché : distance et cap des tronçons.
+- **Suivre** : SUIVRE, puis marcher jusqu'aux étapes : vibreur, notification avec action et consigne, frise et chiffres mis à jour chaque seconde ; ◀ PRÉC. / SUIV. ▶ / ARRÊTER ; montre Garmin (boussole) vers l'étape ; téléphone porté : vue de guidage.
+- **Partage** (2 joueurs du même groupe) : ÉQUIPE / GROUPE / CAMP, modification renvoyée en direct, RETIRER LE PARTAGE ; liaison réaliste sans MPU5 : « partira au retour du signal », puis réception au retour du réseau ; joueur qui rejoint : route reçue sans notification.
+- **Carte d'Arma et Athena** : interrupteur coché : polyligne et repères sur la carte d'Arma et sur la carte Athena ; route modifiée : repères refaits ; décoché ou route supprimée : repères retirés partout.
+- **3D** : Vue 3D cochée : trait au sol et repères des étapes jusqu'à 1,5 km ; décochée : plus rien (aucun Draw3D posé).
+- **JVN** (infos tactiques JVN actives) : ACE › Ajouter un point d'itinéraire : route « Itinéraire JVN » dans l'app, en 3D ; Effacer l'itinéraire : la route disparaît.
+- **Bandeau du curseur** : en français et en anglais, mesure A-B, téléphone porté, mode mini, précision 6 / 8 / 10 chiffres : grille une seule fois, « ALT n m », « CAP xxx° NNO », jamais « NON ».
+- **App Réseau** : mini, plein écran portrait et paysage, taille du texte 0,8 et 1,35 : rien de rogné ; sections repliées ou dépliées gardées.
+- **Athena** : relevé de temps de jeu et de distances d'une partie sur serveur dédié : champ `server_name` reçu par le site.
+
 ## Pack 2.9.33 : écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5, diagnostic de l'arsenal ACE (ATAK natif 2.9.33.AG - Denver, COMSPEC Link 2.0.116)
 
 ### Résumé joueur
