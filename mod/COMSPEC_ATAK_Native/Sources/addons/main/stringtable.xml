@@ -37,6 +37,11 @@
             <English>CS-10 charging dock (10 ATAK phones)</English>
             <French>Socle de recharge CS-10 (10 téléphones ATAK)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_06F212475E">
+            <Original>Video projector</Original>
+            <English>Video projector</English>
+            <French>Vidéoprojecteur</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_0913AEF2ED">
             <Original>COMSPEC — ATAK · Network</Original>
             <English>COMSPEC — ATAK · Network</English>
@@ -307,6 +312,11 @@
             <English>Relay in service at mission start.</English>
             <French>Relais en service au début de la mission.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_3CD55460F3">
+            <Original>Wall-mounted TOC screen (COMSPEC)</Original>
+            <English>Wall-mounted TOC screen (COMSPEC)</English>
+            <French>Écran TOC mural (COMSPEC)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_3DEB745651">
             <Original>Type</Original>
             <English>Type</English>
@@ -316,6 +326,11 @@
             <Original>C 4,940 MHz</Original>
             <English>C 4,940 MHz</English>
             <French>C 4 940 MHz</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_41D5DDB858">
+            <Original>COMSPEC screen</Original>
+            <English>COMSPEC screen</English>
+            <French>Écran COMSPEC</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_4230BFC2CE">
             <Original>If the module is not synced to any object: object created at its position.</Original>
@@ -327,10 +342,20 @@
             <English>A relay placed on the map runs on mains. Battery only for an intended field relay: it shuts down when empty and players replace the battery via ACE.</English>
             <French>Un relais posé sur la carte est sur secteur. Batterie seulement pour un relais de campagne voulu : il s'éteint à vide et les joueurs changent la batterie par ACE.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_46B4D5944D">
+            <Original>TOC screens and projection</Original>
+            <English>TOC screens and projection</English>
+            <French>Écrans TOC et projection</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_46B8C2431E">
             <Original>Zeus control</Original>
             <English>Zeus control</English>
             <French>Contrôle Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_477D05DF6A">
+            <Original>Dual TOC screen on tripod (COMSPEC)</Original>
+            <English>Dual TOC screen on tripod (COMSPEC)</English>
+            <French>Double écran TOC sur trépied (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_47E44D31D4">
             <Original>Battery 8 h</Original>
@@ -547,6 +572,11 @@
             <English>Allowed attempts</English>
             <French>Essais permis</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_713A1EA320">
+            <Original>The projector turns on at mission start and projects onto the nearest screen in front of its lens (within 15 m, in line of sight).</Original>
+            <English>The projector turns on at mission start and projects onto the nearest screen in front of its lens (within 15 m, in line of sight).</English>
+            <French>Le projecteur s'allume au début de la mission et projette sur la toile la plus proche devant son objectif (moins de 15 m, en ligne de vue).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_71B0559CE2">
             <Original>Battery 2 h</Original>
             <English>Battery 2 h</English>
@@ -561,6 +591,11 @@
             <Original>FORCE ACCESS button: bypasses the password after the time below, with the cable plugged in.</Original>
             <English>FORCE ACCESS button: bypasses the password after the time below, with the cable plugged in.</English>
             <French>Bouton FORCER L'ACCÈS : contourne le mot de passe après la durée ci-dessous, câble branché.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7A020E97B0">
+            <Original>Tripod projection screen (COMSPEC)</Original>
+            <English>Tripod projection screen (COMSPEC)</English>
+            <French>Toile de projection sur trépied (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_7A53A95812">
             <Original>Files to download with the DL-7 cable from the ATAK, on any object: login screen, password, forcing, alarm. Sync objects (Eden) or drop the module on the object (Zeus); with no object, the chosen device is created.</Original>
@@ -647,6 +682,11 @@
             <English>Ethernet RJ45</English>
             <French>Ethernet RJ45</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_81785FF8C2">
+            <Original>Video projector (COMSPEC)</Original>
+            <English>Video projector (COMSPEC)</English>
+            <French>Vidéoprojecteur (COMSPEC)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_838F8C2B63">
             <Original>#rrggbb, empty = theme colour.</Original>
             <English>#rrggbb, empty = theme colour.</English>
@@ -687,10 +727,20 @@
             <English>One block per file, separated by a --- line. First line: name | type (texte, document, identifiants, coord, image, audio). Following lines: content.</English>
             <French>Un bloc par fichier, séparés par une ligne ---. Première ligne : nom | type (texte, document, identifiants, coord, image, audio). Lignes suivantes : contenu.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8C3886D686">
+            <Original>Large TOC screen on tripod (COMSPEC)</Original>
+            <English>Large TOC screen on tripod (COMSPEC)</English>
+            <French>Grand écran TOC sur trépied (COMSPEC)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_8E77DB9711">
             <Original>Always (trap)</Original>
             <English>Always (trap)</English>
             <French>Toujours (piège)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8F3EFAEC0E">
+            <Original>On at mission start</Original>
+            <English>On at mission start</English>
+            <French>Allumé au lancement</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_8F41F620E8">
             <Original>Desktop computer</Original>
@@ -721,6 +771,11 @@
             <Original>Spare lithium battery for the COMSPEC ATAK phone. ACE action "Swap ATAK battery": 100%, the phone restarts.</Original>
             <English>Spare lithium battery for the COMSPEC ATAK phone. ACE action "Swap ATAK battery": 100%, the phone restarts.</English>
             <French>Batterie lithium de rechange du téléphone COMSPEC ATAK. Action ACE « Changer la batterie ATAK » : 100 %, le téléphone redémarre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_9BBAFEDC11">
+            <Original>Desk TOC screen (COMSPEC)</Original>
+            <English>Desk TOC screen (COMSPEC)</English>
+            <French>Écran TOC de table (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_9BEF18E007">
             <Original>NVG screen filter (ATAK)</Original>
@@ -1017,6 +1072,11 @@
             <English>COMSPEC — ATAK</English>
             <French>COMSPEC — ATAK</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D06CE7667B">
+            <Original>Projection screen</Original>
+            <English>Projection screen</English>
+            <French>Toile de projection</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_D3B023EABC">
             <Original>Phone</Original>
             <English>Phone</English>
@@ -1086,6 +1146,11 @@
             <Original>Yes (HVT hunt)</Original>
             <English>Yes (HVT hunt)</English>
             <French>Oui (chasse aux HVT)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E3C43974E8">
+            <Original>Wall projection screen (COMSPEC)</Original>
+            <English>Wall projection screen (COMSPEC)</English>
+            <French>Toile de projection murale (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_E4E74278CD">
             <Original>ATAK relays</Original>
@@ -1201,6 +1266,11 @@
             <Original>Port</Original>
             <English>Port</English>
             <French>Port</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FE5CD5456F">
+            <Original>Ceiling video projector (COMSPEC)</Original>
+            <English>Ceiling video projector (COMSPEC)</English>
+            <French>Vidéoprojecteur de plafond (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FF273F9B2F">
             <Original>Garmin watch (misc item)</Original>

@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh","3DEN"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","Item_COMSPEC_ATAK_Phone","Item_COMSPEC_ATAK_Phone_S7_OD","Item_COMSPEC_ATAK_Phone_S7_Black","Item_COMSPEC_ATAK_Phone_S23","Item_COMSPEC_ATAK_Phone_iPhone","Item_COMSPEC_ATAK_Phone_IP17","Item_COMSPEC_ATAK_Phone_Rugged","Item_COMSPEC_ATAK_Phone_Sonim","Item_COMSPEC_ATAK_Phone_Tablet","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Screen","COMSPEC_ATAK_Module_TocScreen","COMSPEC_ATAK_Module_AiAtak"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_Phone","COMSPEC_ATAK_Phone_S7_OD","COMSPEC_ATAK_Phone_S7_Black","COMSPEC_ATAK_Phone_S23","COMSPEC_ATAK_Phone_iPhone","COMSPEC_ATAK_Phone_IP17","COMSPEC_ATAK_Phone_Rugged","COMSPEC_ATAK_Phone_Sonim","COMSPEC_ATAK_Phone_Tablet"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","Item_COMSPEC_ATAK_Phone","Item_COMSPEC_ATAK_Phone_S7_OD","Item_COMSPEC_ATAK_Phone_S7_Black","Item_COMSPEC_ATAK_Phone_S23","Item_COMSPEC_ATAK_Phone_iPhone","Item_COMSPEC_ATAK_Phone_IP17","Item_COMSPEC_ATAK_Phone_Rugged","Item_COMSPEC_ATAK_Phone_Sonim","Item_COMSPEC_ATAK_Phone_Tablet","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Screen_Tripod","COMSPEC_ATAK_Screen_Desk","COMSPEC_ATAK_Screen_Wall","COMSPEC_ATAK_Screen_Dual","COMSPEC_ATAK_ProjScreen","COMSPEC_ATAK_ProjScreen_Wall","COMSPEC_ATAK_Projector","COMSPEC_ATAK_Projector_Ceiling","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Screen","COMSPEC_ATAK_Module_TocScreen","COMSPEC_ATAK_Module_AiAtak"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_Phone","COMSPEC_ATAK_Phone_S7_OD","COMSPEC_ATAK_Phone_S7_Black","COMSPEC_ATAK_Phone_S23","COMSPEC_ATAK_Phone_iPhone","COMSPEC_ATAK_Phone_IP17","COMSPEC_ATAK_Phone_Rugged","COMSPEC_ATAK_Phone_Sonim","COMSPEC_ATAK_Phone_Tablet"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
@@ -72,7 +72,7 @@ class CfgFunctions {
             class vehicleTerminal {}; class vehicleGateway {};
         };
         class toc { file="z\comspec_atak_native\addons\main\functions\toc";
-            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {};
+            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
@@ -610,6 +610,115 @@ class CfgVehicles {
             };
         };
     };
+    // Écrans TOC, vidéoprojecteurs et toiles COMSPEC (tools/model_screens.py, modèles MLOD du PBO items) : une seule
+    // surface d'affichage par objet (sélection « screen », 16:9, UV plein cadre), sans dalles superposées ni matière
+    // Lamp_lcd du jeu. Image posée par chaque joueur (fn_tocScreen, fn_screenCast, fn_tocCam) ; matières d'écran du mod
+    // (comspec_screenMat : jour, nuit) ; texture d'origine = hiddenSelectionsTextures (comspec_screen=1).
+    // Toiles (comspec_projScreen=1) : image seulement quand un projecteur allumé l'éclaire (fn_projector).
+    class COMSPEC_ATAK_Screen_Base: Static {
+        scope=0; scopeCurator=0; author="COMSPEC";
+        icon="iconObject_1x1"; mapSize=1.5;
+        vehicleClass="Items"; editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        destrType="DestructNo"; armor=60;
+        comspec_screen=1; comspec_projScreen=0;
+        comspec_screenMat[]={"\z\comspec_atak_native\addons\items\data\comspec_screen_on.rvmat","\z\comspec_atak_native\addons\items\data\comspec_screen_night.rvmat"};
+        hiddenSelections[]={"screen"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\items\data\comspec_screen_off_co.paa"};
+        hiddenSelectionsMaterials[]={"\z\comspec_atak_native\addons\items\data\comspec_screen_off.rvmat"};
+        ace_dragging_canDrag=1; ace_dragging_dragPosition[]={0,1.4,0}; ace_dragging_dragDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=2;
+        class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="[0, 0.1, 1.2]"; }; };
+    };
+    class COMSPEC_ATAK_Screen_Tripod: COMSPEC_ATAK_Screen_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_8C3886D686";
+        model="\z\comspec_atak_native\addons\items\data\comspec_screen_tripod.p3d";
+        editorPreview="\z\comspec_atak_native\addons\items\data\comspec_screen_tripod_preview.jpg";
+        ace_cargo_size=3;
+    };
+    class COMSPEC_ATAK_Screen_Desk: COMSPEC_ATAK_Screen_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_9BBAFEDC11";
+        model="\z\comspec_atak_native\addons\items\data\comspec_screen_desk.p3d";
+        editorPreview="\z\comspec_atak_native\addons\items\data\comspec_screen_desk_preview.jpg";
+        mapSize=1.1; ace_cargo_size=1;
+        ace_dragging_canCarry=1; ace_dragging_carryPosition[]={0,1,1}; ace_dragging_carryDirection=0;
+        class ACE_Actions: ACE_Actions { class ACE_MainActions: ACE_MainActions { distance=3; position="[0, 0.1, 0.45]"; }; };
+    };
+    class COMSPEC_ATAK_Screen_Wall: COMSPEC_ATAK_Screen_Desk {
+        displayName="$STR_COMSPEC_ATAK_CFG_3CD55460F3";
+        model="\z\comspec_atak_native\addons\items\data\comspec_screen_wall.p3d";
+        editorPreview="\z\comspec_atak_native\addons\items\data\comspec_screen_wall_preview.jpg";
+        class ACE_Actions: ACE_Actions { class ACE_MainActions: ACE_MainActions { position="[0, 0.15, 0.32]"; }; };
+    };
+    class COMSPEC_ATAK_Screen_Dual: COMSPEC_ATAK_Screen_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_477D05DF6A";
+        model="\z\comspec_atak_native\addons\items\data\comspec_screen_dual.p3d";
+        editorPreview="\z\comspec_atak_native\addons\items\data\comspec_screen_dual_preview.jpg";
+        mapSize=2.2; ace_cargo_size=4;
+        class ACE_Actions: ACE_Actions { class ACE_MainActions: ACE_MainActions { position="[0, 0.1, 1.1]"; }; };
+    };
+    // Toiles de projection : tissu blanc mat (non lumineux) ; image et matière « éclairée » posées seulement quand un
+    // projecteur allumé la vise en ligne de vue (fn_projector). Enroulée : toile masquée (COMSPEC_ATAK_ProjRolled).
+    class COMSPEC_ATAK_ProjScreen_Base: COMSPEC_ATAK_Screen_Base {
+        comspec_projScreen=1;
+        comspec_screenMat[]={"\z\comspec_atak_native\addons\items\data\comspec_proj_on.rvmat","\z\comspec_atak_native\addons\items\data\comspec_proj_night.rvmat"};
+        hiddenSelectionsTextures[]={"#(argb,8,8,3)color(0.93,0.93,0.91,1,co)"};
+        hiddenSelectionsMaterials[]={"\z\comspec_atak_native\addons\items\data\comspec_canvas.rvmat"};
+        class ACE_Actions: ACE_Actions { class ACE_MainActions: ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_D06CE7667B"; position="[0, 0.1, 1.2]"; }; };
+    };
+    class COMSPEC_ATAK_ProjScreen: COMSPEC_ATAK_ProjScreen_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_7A020E97B0";
+        model="\z\comspec_atak_native\addons\items\data\comspec_projscreen.p3d";
+        editorPreview="\z\comspec_atak_native\addons\items\data\comspec_projscreen_preview.jpg";
+        mapSize=2.2; ace_cargo_size=2;
+    };
+    class COMSPEC_ATAK_ProjScreen_Wall: COMSPEC_ATAK_ProjScreen_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_E3C43974E8";
+        model="\z\comspec_atak_native\addons\items\data\comspec_projscreen_wall.p3d";
+        editorPreview="\z\comspec_atak_native\addons\items\data\comspec_projscreen_wall_preview.jpg";
+        mapSize=2.2; ace_cargo_size=2;
+        class ACE_Actions: ACE_Actions { class ACE_MainActions: ACE_MainActions { position="[0, 0.15, 0.6]"; }; };
+    };
+    // Vidéoprojecteurs (fn_projector) : COMSPEC_ATAK_Proj [allumé, toile] public (joueurs qui rejoignent compris) ;
+    // objectif et axe optique : points mémoire objectif / objectif_dir ; sélection « lens » allumée par chaque joueur.
+    class COMSPEC_ATAK_Projector_Base: Static {
+        scope=0; scopeCurator=0; author="COMSPEC";
+        icon="iconObject_1x1"; mapSize=0.5;
+        vehicleClass="Items"; editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
+        destrType="DestructNo"; armor=8;
+        comspec_projector=1;
+        hiddenSelections[]={"lens"};
+        hiddenSelectionsTextures[]={"#(argb,8,8,3)color(0.05,0.06,0.08,1,co)"};
+        hiddenSelectionsMaterials[]={"\z\comspec_atak_native\addons\items\data\comspec_lens.rvmat"};
+        ace_dragging_canCarry=1; ace_dragging_carryPosition[]={0,0.8,1}; ace_dragging_carryDirection=0;
+        ace_dragging_canDrag=1; ace_dragging_dragPosition[]={0,1,0}; ace_dragging_dragDirection=0;
+        ace_cargo_canLoad=1; ace_cargo_size=1;
+        class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_06F212475E"; selection=""; distance=3; condition="true"; position="[0, 0, 0.08]"; }; };
+        class Attributes {
+            class COMSPEC_ATAK_ProjOn {
+                displayName="$STR_COMSPEC_ATAK_CFG_8F3EFAEC0E";
+                tooltip="$STR_COMSPEC_ATAK_CFG_713A1EA320";
+                property="COMSPEC_ATAK_ProjOn"; control="Checkbox"; typeName="BOOL"; defaultValue="false";
+                expression="if (_value && {isServer}) then { [{ [""power"", [_this, true]] call comspec_atak_native_fnc_projector; }, _this, 3] call CBA_fnc_waitAndExecute; };";
+            };
+        };
+    };
+    class COMSPEC_ATAK_Projector: COMSPEC_ATAK_Projector_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_81785FF8C2";
+        model="\z\comspec_atak_native\addons\items\data\comspec_projector.p3d";
+        editorPreview="\z\comspec_atak_native\addons\items\data\comspec_projector_preview.jpg";
+    };
+    class COMSPEC_ATAK_Projector_Ceiling: COMSPEC_ATAK_Projector_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_FE5CD5456F";
+        model="\z\comspec_atak_native\addons\items\data\comspec_projector_ceil.p3d";
+        editorPreview="\z\comspec_atak_native\addons\items\data\comspec_projector_ceil_preview.jpg";
+    };
     class Item_COMSPEC_ATAK_GarminWatch: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_957A6195AE";
@@ -689,6 +798,13 @@ class CfgVehicles {
     };
     // Modules Zeus / Eden « ATAK · Données » (extraction au câble DL-7).
     #include "modules.hpp"
+};
+// Catégorie Eden / Zeus des objets COMSPEC posables (écrans TOC, projecteurs, toiles).
+class CfgEditorCategories {
+    class COMSPEC_ATAK_EdCat { displayName="COMSPEC"; };
+};
+class CfgEditorSubcategories {
+    class COMSPEC_ATAK_EdSubcat_Screens { displayName="$STR_COMSPEC_ATAK_CFG_46B4D5944D"; };
 };
 class CfgFactionClasses {
     class NO_CATEGORY;

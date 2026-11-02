@@ -56,6 +56,11 @@ private _myDeck = {
 };
 // La dalle visible n'est pas toujours la sélection 0 : un portable a « camo » puis « screen ».
 // On prend la sélection nommée écran quand celle demandée n'en est pas une.
+// Toile de projection : image seulement quand un projecteur allumé l'éclaire (fn_projector, contrôle de ce poste).
+private _lit = {
+    params ["_o"];
+    !(_o isKindOf "COMSPEC_ATAK_ProjScreen_Base") || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}
+};
 private _face = {
     params ["_o", "_sel"];
     private _names = getArray (configOf _o >> "hiddenSelections");
@@ -233,6 +238,8 @@ switch (_mode) do {
             _o setVariable ["COMSPEC_ATAK_ScreenOrig", nil];
         };
             private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
+            // Toile que plus aucun projecteur n'éclaire : diffusion gardée, image retirée (toile blanche ou enroulée).
+            if !([_o] call _lit) then { _c = []; };
             // Texture voulue : "" = celle d'origine.
             private _want = "";
             // Leçon Academy : page dessinée en texte par ce poste (pas d'image à télécharger).
@@ -359,7 +366,7 @@ switch (_mode) do {
                     _o setVariable ["COMSPEC_ATAK_ScreenAcadShown", []];
                 };
                 // Texture d'origine gardée avant le premier changement, remise à la fin de la diffusion.
-                if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", (getObjectTextures _o) param [_sel, ""]]; };
+                if (isNil { _o getVariable "COMSPEC_ATAK_ScreenOrig" }) then { _o setVariable ["COMSPEC_ATAK_ScreenOrig", ["orig", [_o, _sel]] call comspec_atak_native_fnc_tocScreen]; };
                 _o setObjectTexture [_sel, [_want, _o getVariable ["COMSPEC_ATAK_ScreenOrig", ""]] select (_want isEqualTo "")];
                 // Dalle préparée pour l'image (matière d'écran, dalles superposées du grand écran masquées), remise à la fin.
                 ["surface", [_o, _sel, _want isNotEqualTo ""]] call comspec_atak_native_fnc_tocScreen;
