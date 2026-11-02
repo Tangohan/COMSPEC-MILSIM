@@ -19,6 +19,7 @@ use App\Services\Personnel\QualificationBadgeStorageService;
 use App\Services\Personnel\QualificationCatalogImporter;
 use App\Services\Personnel\QualificationReferenceWriter;
 use App\Support\QualificationCatalog\QualificationCatalog;
+use App\Support\QualificationCatalog\QualificationCatalogExplorer;
 use App\Services\Personnel\QualificationCriteriaEngine;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationStatusTransitionService;
@@ -309,8 +310,10 @@ final class QualificationReferentielController
     }
 
     /**
-     * Catalogue de qualifications de référence par pays (États-Unis, France, Allemagne) et OTAN : un onglet par pays
-     * (?pays=US), import au choix, sans doublon.
+     * Catalogue de référence : toutes les qualifications des packs par pays et de l’OTAN (et de tout pack ajouté),
+     * filtrables et triables depuis l’adresse (pays, catégorie, niveau, émetteur, cours Academy, déjà importée ou non,
+     * recherche FR / EN / intitulé officiel), avec leur niveau, leurs emplois liés et l’import au choix sans doublon.
+     * ?pays=US reste l’adresse des onglets par pays d’origine.
      */
     public function catalog(Request $request, array $params = []): Response
     {
@@ -319,6 +322,7 @@ final class QualificationReferentielController
             return $tenantId;
         }
         $lang = QualificationCatalog::lang(function_exists('locale') ? (string) locale() : 'fr');
+        $rows = QualificationCatalogExplorer::rows($lang);
         $countries = [];
         foreach (QualificationCatalog::packs() as $name => $data) {
             $code = (string) ($data['country'] ?? '');
@@ -328,42 +332,147 @@ final class QualificationReferentielController
         }
         $order = array_flip(array_keys(QualificationCatalog::COUNTRIES));
         uksort($countries, static fn (string $a, string $b): int => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
-        $wanted = strtoupper(trim((string) $request->query('pays', '')));
-        $country = isset($countries[$wanted]) ? $wanted : (string) (array_key_first($countries) ?? '');
-        $packName = $countries[$country]['pack'] ?? '';
+        $filters = QualificationCatalogExplorer::filters($request->queryParams());
+        if (!isset($countries[$filters['pays']])) {
+            $filters['pays'] = '';
+        }
         $imported = [];
         try {
-            $imported = $this->catalogImporter()->importedCodes($tenantId);
+            $imported = $this->catalogImporter()->importedDefinitions($tenantId);
         } catch (Throwable) {
         }
+        $issuers = array_values(array_unique(array_column($rows, 'issuer')));
+        sort($issuers, SORT_NATURAL | SORT_FLAG_CASE);
+        if (!in_array($filters['emetteur'], $issuers, true)) {
+            $filters['emetteur'] = '';
+        }
+        $detail = $request->queryString('fiche');
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.catalog',
-            'title' => 'Catalogue des qualifications de référence',
+            'title' => 'Catalogue de référence des qualifications',
             'backOfficePageCss' => ['referentiel-qualifications.css', 'job-catalog.css'],
             'boSkipPageHead' => true,
             'catalogLang' => $lang,
             'catalogCountries' => array_values($countries),
-            'catalogCountry' => $country,
-            'catalogPack' => $packName !== '' ? QualificationCatalog::pack($packName) : null,
-            'catalogPackName' => $packName,
-            'catalogEntries' => $packName !== '' ? QualificationCatalog::entries($lang, $packName) : [],
+            'catalogFilters' => $filters,
+            'catalogRows' => QualificationCatalogExplorer::filter($rows, $filters, $imported),
+            'catalogTotal' => count($rows),
+            'catalogIssuers' => $issuers,
             'catalogImported' => $imported,
+            'catalogDetail' => preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $detail) === 1 ? $detail : '',
         ]);
     }
 
+    /** Adresse de la fenêtre « Chercher dans le catalogue » des emplois : un emploi ouvert, ou les emplois qui exigent une qualification. */
+    public static function jobCatalogUrl(string $jobId = '', string $qualificationId = ''): string
+    {
+        $query = ['nouveau' => '1', 'catalogue' => '1'] + ($jobId !== '' ? ['catalogue_emploi' => $jobId] : []) + ($qualificationId !== '' ? ['catalogue_qualif' => $qualificationId] : []);
+
+        return effectifs_workspace_url('fonctions') . '?' . http_build_query($query);
+    }
+
+    /**
+     * Cours intégré de l’Academy avec ses adresses : sa fiche dans le catalogue Academy (onglet Formations) et le catalogue.
+     *
+     * @param array<string, string>|null $course
+     * @return array<string, string>|null
+     */
+    public static function academyUrls(?array $course): ?array
+    {
+        if ($course === null) {
+            return null;
+        }
+
+        return $course + [
+            'url' => url('academy/catalogue') . '?' . http_build_query(['onglet' => 'formations', 'fiche' => 'a-' . $course['key']]),
+            'catalogue_url' => url('academy/catalogue') . '?onglet=formations',
+        ];
+    }
+
+    /**
+     * Fiche détaillée d’une qualification du catalogue (JSON), pour la fenêtre des emplois et la page Catalogue de
+     * référence : contenu du catalogue dans la langue du lecteur, fiche déjà importée dans la communauté, cours
+     * Academy et emplois liés avec leurs adresses.
+     */
+    public function catalogEntry(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1 || (int) Session::get('user_id') < 1) {
+            return Response::json(['ok' => false, 'message' => 'Session expirée. Reconnectez-vous.'], 401);
+        }
+        $lang = QualificationCatalog::lang(function_exists('locale') ? (string) locale() : 'fr');
+        $id = trim($request->queryString('id'));
+        $detail = preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', $id) === 1 ? QualificationCatalogExplorer::detail($id, $lang) : null;
+        if ($detail === null) {
+            return Response::json(['ok' => false, 'message' => 'Qualification introuvable dans le catalogue.'], 404);
+        }
+        $imported = [];
+        $ready = false;
+        try {
+            $importer = $this->catalogImporter();
+            $ready = $importer->ready();
+            $imported = $importer->importedDefinitions($tenantId);
+        } catch (Throwable) {
+        }
+        $definitionId = (int) ($imported[strtoupper((string) $detail['code'])] ?? 0);
+        $detail['imported'] = $definitionId > 0 ? ['definition_id' => $definitionId, 'url' => url('back-office/referentiels/qualifications/' . $definitionId)] : null;
+        $detail['academy'] = self::academyUrls($detail['academy']);
+        $detail['jobs'] = array_map(static fn (array $j): array => $j + ['url' => self::jobCatalogUrl($j['id'])], $detail['jobs']);
+        $detail['jobs_url'] = $detail['jobs'] !== [] ? self::jobCatalogUrl('', $id) : '';
+        $detail['catalogue_url'] = url('back-office/referentiels/qualifications/catalogue') . '?' . http_build_query(['fiche' => $id]);
+
+        return Response::json([
+            'ok' => true,
+            'qualification' => $detail,
+            'can_import' => $ready,
+            'import_url' => url('back-office/referentiels/qualifications/catalogue/importer'),
+            'academy_catalogue_url' => url('academy/catalogue') . '?onglet=formations',
+        ])->header('Cache-Control', 'private, no-cache')->header('Vary', 'Cookie');
+    }
+
+    /** Retour après import : page du catalogue avec ses filtres (adresse interne seulement). */
+    private static function catalogBack(Request $request, ?array $packData): string
+    {
+        $base = url('back-office/referentiels/qualifications/catalogue');
+        $query = (string) $request->input('return_query', '');
+        if ($query !== '' && preg_match('/^[A-Za-z0-9_=&%+.\-]{1,600}$/', $query) === 1) {
+            return $base . '?' . $query;
+        }
+
+        return $base . ($packData !== null ? '?pays=' . rawurlencode((string) ($packData['country'] ?? '')) : '');
+    }
+
+    /**
+     * Import de qualifications du catalogue (cases cochées, « Tout importer » d’un pack) : formulaire de la page
+     * Catalogue de référence (redirection) ou fiche détaillée (Accept: application/json : réponse JSON avec la fiche
+     * du référentiel créée ou déjà présente).
+     */
     public function importCatalog(Request $request, array $params = []): Response
     {
-        return $this->withTenantPost($request, function (int $tenantId) use ($request) {
+        $json = str_contains((string) $request->header('Accept'), 'application/json');
+        if ($json && ((int) Session::get('tenant_id') < 1 || !Csrf::validate((string) $request->input('_csrf_token', '')))) {
+            return Response::json(['ok' => false, 'message' => 'Session expirée. Rechargez la page avant de réessayer.'], 419);
+        }
+
+        return $this->withTenantPost($request, function (int $tenantId) use ($request, $json) {
             $pack = (string) $request->input('pack', '');
-            $packData = QualificationCatalog::pack($pack);
-            $back = url('back-office/referentiels/qualifications/catalogue') . ($packData !== null ? '?pays=' . rawurlencode((string) ($packData['country'] ?? '')) : '');
+            $packData = $pack !== '' ? QualificationCatalog::pack($pack) : null;
+            $back = self::catalogBack($request, $packData);
             $raw = $request->input('ids', []);
             $ids = is_array($raw) ? array_values(array_filter(array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $raw))) : [];
             if ((string) $request->input('all', '') === '1' && $packData !== null) {
                 $ids = array_map(static fn (array $e): string => (string) ($e['id'] ?? ''), QualificationCatalog::rawEntries($pack));
             }
+            // Bouton « Importer » d’une ligne : cette qualification seulement.
+            $one = $request->input('one', '');
+            if (is_string($one) && $one !== '') {
+                $ids = [$one];
+            }
             if ($ids === []) {
+                if ($json) {
+                    return Response::json(['ok' => false, 'message' => 'Cochez au moins une qualification à importer.'], 422);
+                }
                 Session::flash('error', 'Cochez au moins une qualification à importer.');
 
                 return Response::redirect($back);
@@ -372,12 +481,27 @@ final class QualificationReferentielController
                 $lang = function_exists('locale') ? (string) locale() : 'fr';
                 $result = $this->catalogImporter()->import($tenantId, array_slice($ids, 0, 200), $lang, $this->actorId());
             } catch (Throwable $e) {
+                if ($json) {
+                    error_log('Qualification catalog import: ' . $e->getMessage());
+
+                    return Response::json(['ok' => false, 'message' => 'Import impossible. Réessayez.'], 503);
+                }
                 Session::flash('error', 'Import impossible : ' . $e->getMessage());
 
                 return Response::redirect($back);
             }
             $created = count($result['created']);
             $skipped = count($result['skipped']);
+            if ($json) {
+                $definitions = array_filter(array_map('intval', $result['definitions']));
+
+                return Response::json([
+                    'ok' => $definitions !== [],
+                    'message' => $definitions === [] ? 'Aucune qualification importée.' : ($created > 0 ? 'Qualification importée dans votre référentiel. Qualification de jeu, sans valeur réelle : réglez ensuite son mode d’obtention.' : 'Cette qualification est déjà dans votre référentiel.'),
+                    'created' => $created,
+                    'definitions' => array_map(static fn (int $d): array => ['definition_id' => $d, 'url' => url('back-office/referentiels/qualifications/' . $d)], $definitions),
+                ], $definitions !== [] ? 200 : 422)->header('Cache-Control', 'private, no-store');
+            }
             if ($created === 0) {
                 Session::flash('success', $skipped > 0 ? 'Ces qualifications sont déjà dans votre référentiel : rien à importer.' : 'Aucune qualification importée.');
 
@@ -386,6 +510,9 @@ final class QualificationReferentielController
             Session::flash('success', $skipped > 0
                 ? $created . ' qualification(s) importée(s) du catalogue, ' . $skipped . ' déjà présente(s) ignorée(s). Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.'
                 : $created . ' qualification(s) importée(s) du catalogue. Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.');
+            if ($request->input('return_query', '') !== '') {
+                return Response::redirect($back);
+            }
             $issuers = $result['issuer_ids'];
 
             return Response::redirect(url('back-office/referentiels/qualifications') . (count($issuers) === 1 ? '?emetteur=' . (int) $issuers[0] : ''));

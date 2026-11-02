@@ -121,6 +121,24 @@ final class CommunityJobCatalog
         ];
     }
 
+    /**
+     * Qualifications reliées d’un emploi (colonne qualification_links_json) : texte cité => fiche du référentiel.
+     *
+     * @return array<string, int>
+     */
+    public static function links(mixed $raw): array
+    {
+        $map = is_string($raw) && $raw !== '' ? json_decode($raw, true) : [];
+        $out = [];
+        foreach (is_array($map) ? $map : [] as $text => $id) {
+            if (is_string($text) && trim($text) !== '' && is_numeric($id) && (int) $id > 0) {
+                $out[trim($text)] = (int) $id;
+            }
+        }
+
+        return $out;
+    }
+
     /** @return list<string> */
     private static function jsonList(mixed $raw): array
     {
@@ -136,9 +154,11 @@ final class CommunityJobCatalog
      * @param list<array<string, mixed>> $collections lignes job_catalog_collections (+ author_name)
      * @param list<array<string, mixed>> $entries lignes job_catalog_collection_entries
      * @param callable(string): string $mediaUrl chemin enregistré → URL publique
+     * @param array<int, array{id: int, code: string, name: string}> $definitions référentiel de la communauté du lecteur :
+     *        les qualifications reliées ne sont montrées que sur ses propres catalogues
      * @return array{countries: list<array<string, mixed>>, packs: list<array<string, mixed>>, entries: list<array<string, mixed>>}
      */
-    public static function toCatalog(array $collections, array $entries, int $tenantId, string $lang, callable $mediaUrl): array
+    public static function toCatalog(array $collections, array $entries, int $tenantId, string $lang, callable $mediaUrl, array $definitions = []): array
     {
         $lang = JobCatalog::lang($lang);
         $byCollection = [];
@@ -169,6 +189,10 @@ final class CommunityJobCatalog
                 $type = (string) ($row['type'] ?? 'operator');
                 $entryName = (string) $row['name'];
                 $qualifications = self::jsonList($row['qualifications_json'] ?? '');
+                $links = $own ? self::links($row['qualification_links_json'] ?? null) : [];
+                // Aligné sur qualifications : fiche du référentiel reliée (encore présente), sinon null.
+                $linked = array_map(static fn (string $q): ?array => isset($links[$q], $definitions[$links[$q]])
+                    ? ['definition_id' => $links[$q], 'name' => $definitions[$links[$q]]['name'], 'code' => $definitions[$links[$q]]['code']] : null, $qualifications);
                 $tags = self::jsonList($row['tags_json'] ?? '');
                 $unit = trim((string) ($row['unit'] ?? ''));
                 $out['entries'][] = [
@@ -181,7 +205,7 @@ final class CommunityJobCatalog
                     // Langue du nom inconnue (saisie libre) : pas de liste de noms par langue.
                     'name' => $entryName, 'official_name' => $entryName, 'official_lang' => '', 'names' => [], 'alt' => '',
                     'abbreviation' => (string) ($row['abbreviation'] ?? ''), 'description' => (string) ($row['description'] ?? ''),
-                    'qualifications' => $qualifications, 'billets' => [],
+                    'qualifications' => $qualifications, 'qualification_definitions' => $linked, 'billets' => [],
                     'icon' => JobRoleIconLibrary::has((string) ($row['icon'] ?? '')) ? (string) $row['icon'] : '',
                     'tags' => $tags, 'sources' => [],
                     'image_url' => trim((string) ($row['image_path'] ?? '')) !== '' ? $mediaUrl((string) $row['image_path']) : '',

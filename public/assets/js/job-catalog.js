@@ -9,6 +9,11 @@
  * Catalogues de communauté : affichés comme des pays (emblème, bannière), créés et complétés depuis la fenêtre
  * (formulaires envoyés en JSON) ; fenêtre agrandissable (mémorisé, Alt + Entrée) ; fenêtre de confirmation avant
  * « Copier tout » (récapitulatif, champs remplacés, « Ne plus afficher »).
+ * Brevets, qualifications et formations de la fiche : une qualification du catalogue par pays s'ouvre en sous-fiche
+ * dans la fenêtre (assets/js/qualification-sheet.js : « ← Retour à l'emploi », Échap revient à l'emploi), un cours
+ * Academy mène à sa fiche du catalogue Academy, un texte libre propose de chercher le brevet dans les qualifications ;
+ * dans un catalogue de la communauté, l'auteur peut relier le texte à une qualification de son référentiel.
+ * Adresse : catalogue_emploi=<id> ouvre un emploi, catalogue_qualif=<id> filtre les emplois qui exigent une qualification.
  */
 (() => {
     'use strict';
@@ -20,6 +25,8 @@
     let current = null;
     let opener = null;
     let timer = 0;
+    // Emplois qui exigent une qualification (lien « emplois liés » du catalogue de qualifications) ; non mémorisé.
+    let requiredBy = '';
     const STORE = 'athena.jobCatalog.filters.v2';
     const EXPANDED = 'athena.jobCatalog.expanded.v1';
     const SKIP_CONFIRM = 'athena.jobCatalog.skipCopyConfirm.v1';
@@ -368,6 +375,7 @@
             holder.appendChild(chip);
         };
         if (query.text) add('q', query.text);
+        if (requiredBy) add('qualif', qualificationName(requiredBy));
         if (state.country) add('country', data.countries.find(c => c.code === state.country)?.label || state.country);
         ['branch', 'command', 'formation', 'type'].forEach(key => {
             if (!state[key]) return;
@@ -412,7 +420,7 @@
         });
         box.querySelector('[data-job-catalog-sort]').value = state.sort;
         box.querySelector('[data-job-catalog-group]').checked = state.group;
-        const hits = sorted(scored.filter(({entry}) => passes(entry, null)));
+        const hits = sorted(scored.filter(({entry}) => passes(entry, null) && (!requiredBy || (entry.qualification_refs || []).includes(requiredBy))));
         const list = box.querySelector('[data-job-catalog-results]');
         list.textContent = '';
         list.classList.toggle('is-grouped', state.group);
@@ -503,6 +511,7 @@
         const box = dialog();
         current = entry;
         const detail = box.querySelector('[data-job-catalog-detail]');
+        hideQualification();
         detail.hidden = false;
         box.querySelector('[data-job-catalog-placeholder]').hidden = true;
         box.querySelector('.jobcat__frame').classList.add('is-detail');
@@ -557,21 +566,25 @@
             const value = entry[key];
             row.hidden = key === 'names' ? false : Array.isArray(value) ? value.length === 0 : !value;
         });
-        ['qualifications', 'billets', 'tags'].forEach(key => {
+        ['billets', 'tags'].forEach(key => {
             const target = detail.querySelector('[data-jc-list="' + key + '"]');
             target.textContent = '';
             (entry[key] || []).forEach(text => {
                 target.appendChild(el(key === 'tags' ? 'span' : 'li', key === 'tags' ? 'job-tag job-tag--slate' : '', text));
             });
         });
-        // Qualifications du catalogue liées (brevets cités) : nom, intitulé officiel et école émettrice.
+        qualificationList(detail.querySelector('[data-jc-list="qualifications"]'), entry);
+        // Qualifications du catalogue liées (brevets cités) : nom, intitulé officiel, école émettrice, niveau, formation Academy.
         const quals = detail.querySelector('[data-jc-quals]');
         if (quals) {
             quals.textContent = '';
             (entry.linked_qualifications || []).forEach(q => {
-                const li = el('li', '', q.name);
-                if (q.official_name && q.official_name !== q.name) li.appendChild(el('small', 'jobcat__qual-official', ' — ' + q.official_name));
-                if (q.issuer) li.appendChild(el('small', 'jobcat__qual-issuer', q.issuer));
+                const li = el('li');
+                const open = qualButton(q.id, q.name);
+                if (q.official_name && q.official_name !== q.name) open.appendChild(el('small', 'jobcat__qual-official', ' — ' + q.official_name));
+                li.appendChild(open);
+                if (q.issuer) li.appendChild(el('small', 'jobcat__qual-issuer', q.issuer + (q.level ? ' · ' + q.level : '')));
+                if (q.academy) li.appendChild(academyLink(q.academy));
                 quals.appendChild(li);
             });
         }
@@ -610,6 +623,150 @@
         });
         detail.scrollTop = 0;
         detail.focus({preventScroll: true});
+    }
+
+    /** Nom d'une qualification du catalogue d'après les emplois chargés (puce « Exige »). */
+    function qualificationName(id) {
+        for (const entry of data?.entries || []) {
+            const q = (entry.linked_qualifications || []).find(item => item.id === id);
+            if (q) return q.name;
+        }
+        return id;
+    }
+
+    /** Bouton qui ouvre la sous-fiche d'une qualification du catalogue. */
+    function qualButton(id, text) {
+        const button = el('button', 'jobcat__qual-open');
+        button.type = 'button';
+        button.dataset.jobCatalogQual = id;
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.append(el('span', '', text));
+        button.title = label('open-qual');
+        return button;
+    }
+
+    /** Lien vers la fiche du cours dans le catalogue Academy (onglet Formations). */
+    function academyLink(course) {
+        const box = dialog();
+        const link = el('a', 'jobcat__academy', label('academy-course') + ' · ' + course.title);
+        link.href = box.dataset.academyUrl + '?onglet=formations&fiche=' + encodeURIComponent('a-' + course.key);
+        link.setAttribute('translate', 'no');
+        return link;
+    }
+
+    /**
+     * Brevets, qualifications et formations typiques : qualification du catalogue = sous-fiche ; texte libre = recherche
+     * proposée dans les qualifications ; catalogue de la communauté = qualification reliée au référentiel (l'auteur relie
+     * ou délie).
+     */
+    function qualificationList(target, entry) {
+        const box = dialog();
+        target.textContent = '';
+        const links = entry.qualification_links || [];
+        const defs = entry.qualification_definitions || [];
+        (entry.qualifications || []).forEach((text, i) => {
+            const li = el('li', 'jobcat__qual-item');
+            if (links[i]) {
+                li.appendChild(qualButton(links[i], text));
+                const q = (entry.linked_qualifications || []).find(item => item.id === links[i]);
+                if (q?.academy) li.appendChild(academyLink(q.academy));
+            } else if (defs[i]) {
+                const link = el('a', 'jobcat__qual-ref', text);
+                link.href = box.dataset.referentielUrl + '/' + defs[i].definition_id;
+                link.title = label('open-ref') + ' : ' + defs[i].name;
+                li.appendChild(link);
+                li.appendChild(el('small', 'jobcat__qual-issuer', label('linked-to') + ' ' + defs[i].name));
+                if (entry.editable && (data.referentiel || []).length) li.appendChild(linkControl(entry, text, defs[i].definition_id));
+            } else {
+                li.appendChild(el('span', '', text));
+                const search = el('a', 'jobcat__qual-search', label('search-qual'));
+                search.href = box.dataset.qualificationSearchUrl + '?q=' + encodeURIComponent(text);
+                search.target = '_blank';
+                search.rel = 'noopener';
+                search.setAttribute('aria-label', label('search-qual') + ' : ' + text);
+                li.appendChild(search);
+                if (entry.community && entry.editable && (data.referentiel || []).length) li.appendChild(linkControl(entry, text, 0));
+            }
+            target.appendChild(li);
+        });
+    }
+
+    /** Relier (ou délier) une qualification citée à une qualification du référentiel de la communauté. */
+    function linkControl(entry, text, currentId) {
+        const wrap = el('span', 'jobcat__qual-link');
+        const select = el('select');
+        select.setAttribute('aria-label', label('link-ref') + ' : ' + text);
+        const none = el('option', '', currentId ? label('unlink') : label('link-ref'));
+        none.value = '0';
+        select.appendChild(none);
+        data.referentiel.forEach(def => {
+            const option = el('option', '', def.name + (def.code ? ' (' + def.code + ')' : ''));
+            option.value = String(def.id);
+            select.appendChild(option);
+        });
+        select.value = String(currentId || 0);
+        select.setAttribute('translate', 'no');
+        select.addEventListener('change', async () => {
+            const body = new FormData();
+            body.append('entry_id', String(entry.entry_id));
+            body.append('text', text);
+            body.append('definition_id', select.value);
+            select.disabled = true;
+            const json = await send(dialog().dataset.entryUrl + '/qualification', body, null);
+            select.disabled = false;
+            if (json) reload(entry.country, entry.id);
+        });
+        wrap.appendChild(select);
+        return wrap;
+    }
+
+    function qsheet() {
+        return dialog().querySelector('[data-job-catalog-qsheet]');
+    }
+
+    /** Sous-fiche d'une qualification du catalogue, à la place de la fiche de l'emploi (la fenêtre reste ouverte). */
+    function openQualification(id) {
+        const box = dialog();
+        const section = qsheet();
+        if (!section || !window.AthenaQualificationSheet) return;
+        box.querySelector('[data-job-catalog-detail]').hidden = true;
+        box.querySelector('[data-job-catalog-placeholder]').hidden = true;
+        box.querySelector('.jobcat__frame').classList.add('is-detail');
+        section.hidden = false;
+        section.scrollTop = 0;
+        window.AthenaQualificationSheet.open(section, id, {
+            url: box.dataset.qualificationUrl,
+            csrf: box.dataset.csrf || '',
+            back: current ? label('back-job') : label('back-list'),
+            onBack: closeQualification,
+            onQualification: openQualification,
+            onJob: job => {
+                const entry = data?.entries.find(e => e.id === job.id);
+                if (entry) show(entry);
+            },
+            announce,
+        }).then(() => { if (!section.hidden) section.focus({preventScroll: true}); });
+    }
+
+    function hideQualification() {
+        const section = qsheet();
+        if (section) section.hidden = true;
+    }
+
+    function closeQualification() {
+        const box = dialog();
+        const section = qsheet();
+        const id = section?.dataset.qsheetId || '';
+        hideQualification();
+        if (current) {
+            const detail = box.querySelector('[data-job-catalog-detail]');
+            detail.hidden = false;
+            const opener = detail.querySelector('[data-job-catalog-qual="' + CSS.escape(id) + '"]');
+            (opener || detail).focus({preventScroll: false});
+        } else {
+            box.querySelector('[data-job-catalog-placeholder]').hidden = false;
+            back();
+        }
     }
 
     function back() {
@@ -771,7 +928,9 @@
 
     function unset(key) {
         const box = dialog();
-        if (key === 'q') {
+        if (key === 'qualif') {
+            requiredBy = '';
+        } else if (key === 'q') {
             box.querySelector('[data-job-catalog-search]').value = '';
         } else {
             state[key] = '';
@@ -786,6 +945,7 @@
     function reset() {
         const box = dialog();
         box.querySelector('[data-job-catalog-search]').value = '';
+        requiredBy = '';
         FILTERS.forEach(key => { state[key] = ''; });
         render();
         box.querySelector('[data-job-catalog-search]').focus();
@@ -968,6 +1128,8 @@
         if (event.target === box) { close(); return; }
         if (event.target.closest('[data-job-catalog-close]')) { close(); return; }
         if (event.target.closest('[data-job-catalog-back]')) { back(); return; }
+        const qual = event.target.closest('[data-job-catalog-qual]');
+        if (qual) { openQualification(qual.dataset.jobCatalogQual); return; }
         if (event.target.closest('[data-job-catalog-expand]')) { setExpanded(!box.classList.contains('is-expanded')); return; }
         if (!data) return;
         if (event.target.closest('[data-job-catalog-new-collection]')) { openCollectionForm(null); return; }
@@ -1077,6 +1239,11 @@
             else if (!event.shiftKey && event.target === last) { event.preventDefault(); first.focus(); }
             return;
         }
+        if (event.key === 'Escape' && qsheet() && !qsheet().hidden) {
+            event.preventDefault();
+            closeQualification();
+            return;
+        }
         if (event.key === 'Escape' && box.querySelector('.jobcat__frame').classList.contains('is-detail') && window.matchMedia('(max-width: 760px)').matches) {
             event.preventDefault();
             back();
@@ -1107,6 +1274,11 @@
         const next = event.key === 'Home' ? results[0] : event.key === 'End' ? results[results.length - 1] : results[i + (event.key === 'ArrowDown' ? 1 : -1)];
         if (next) next.focus(); else if (event.key === 'ArrowUp') box.querySelector('[data-job-catalog-search]').focus();
     });
+
+    // Échap dans la sous-fiche : retour à l'emploi, la fenêtre reste ouverte.
+    document.addEventListener('cancel', event => {
+        if (event.target.matches?.('[data-job-catalog]') && qsheet() && !qsheet().hidden) { event.preventDefault(); closeQualification(); }
+    }, true);
 
     document.addEventListener('close', event => {
         if (!event.target.matches?.('[data-job-catalog]')) return;
@@ -1173,7 +1345,15 @@
         const flag = document.querySelector('[data-job-catalog-autoopen]:not([data-done])');
         if (!flag) return;
         flag.setAttribute('data-done', '1');
-        open(document.querySelector('[data-job-catalog-open]'));
+        const params = new URLSearchParams(window.location.search);
+        const wantedJob = params.get('catalogue_emploi') || '';
+        requiredBy = /^[a-z]{2,4}-[a-z0-9-]{2,60}$/.test(params.get('catalogue_qualif') || '') ? params.get('catalogue_qualif') : '';
+        open(document.querySelector('[data-job-catalog-open]')).then(() => {
+            if (!data) return;
+            if (requiredBy) { state.country = ''; render(); }
+            const entry = wantedJob ? data.entries.find(e => e.id === wantedJob) : null;
+            if (entry) { state.country = ''; render(); show(entry); }
+        });
     }
     new MutationObserver(autoOpen).observe(document.documentElement, {childList: true, subtree: true});
     autoOpen();

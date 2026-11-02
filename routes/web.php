@@ -1729,6 +1729,7 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/emetteurs/{issuerId}/habilites/{authId}/retirer', [QualificationReferentielController::class, 'deleteIssuerAuthorization'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Catalogue des qualifications de référence (pays et OTAN, jeu) importées au choix, sans doublon.
     $router->get('/back-office/referentiels/qualifications/catalogue', [QualificationReferentielController::class, 'catalog'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/qualifications/catalogue/fiche', [QualificationReferentielController::class, 'catalogEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/catalogue/importer', [QualificationReferentielController::class, 'importCatalog'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/categories', [QualificationReferentielController::class, 'storeCategory'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/types', [QualificationReferentielController::class, 'storeType'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1918,6 +1919,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/collections/supprimer', [\App\Controllers\Admin\JobCatalogController::class, 'deleteCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois', [\App\Controllers\Admin\JobCatalogController::class, 'saveEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois/supprimer', [\App\Controllers\Admin\JobCatalogController::class, 'deleteEntry'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/catalogue/emplois/qualification', [\App\Controllers\Admin\JobCatalogController::class, 'linkQualification'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/prerequis', [\App\Controllers\Admin\JobCatalogController::class, 'savePrerequisites'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/prerequis/reglage', [\App\Controllers\Admin\JobCatalogController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/derogations/revoquer', [\App\Controllers\Admin\JobCatalogController::class, 'revokeWaiver'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

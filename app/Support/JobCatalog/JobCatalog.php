@@ -141,6 +141,7 @@ final class JobCatalog
     {
         self::$directory = $directory;
         self::$packs = null;
+        \App\Support\QualificationCatalog\QualificationCatalogExplorer::reset();
     }
 
     private static function directory(): string
@@ -312,6 +313,7 @@ final class JobCatalog
             'tags' => array_slice(self::pickList($entry['tags'] ?? [], $lang), 0, JobRoleEnrichmentService::MAX_TAGS),
             'sources' => $sources,
             'qualification_refs' => self::qualificationRefs($entry),
+            'qualification_links' => self::qualificationLinks($entry, $lang),
             'linked_qualifications' => self::linkedQualifications($entry, $lang),
         ];
     }
@@ -348,10 +350,38 @@ final class JobCatalog
     }
 
     /**
-     * Qualifications du catalogue liées à un emploi, dans la langue du lecteur (nom, intitulé officiel, émetteur).
+     * Pour chaque brevet cité en texte (qualifications, langue du lecteur), la qualification liée du catalogue qu’il
+     * désigne (id) ou '' : rapprochement par abrégé, intitulé officiel ou nom (QualificationCatalogExplorer::matchText),
+     * limité aux qualification_refs de l’emploi.
      *
      * @param array<string, mixed> $entry
-     * @return list<array{id: string, code: string, name: string, official_name: string, issuer: string, country: string}>
+     * @return list<string>
+     */
+    public static function qualificationLinks(array $entry, string $lang): array
+    {
+        $shown = self::pickList($entry['qualifications'] ?? [], $lang);
+        $fr = array_values(is_array($entry['qualifications']['fr'] ?? null) ? $entry['qualifications']['fr'] : []);
+        $en = array_values(is_array($entry['qualifications']['en'] ?? null) ? $entry['qualifications']['en'] : []);
+        $candidates = array_values(array_filter(array_map(static fn (string $ref): ?array => \App\Support\QualificationCatalog\QualificationCatalog::findRaw($ref), self::qualificationRefs($entry))));
+        if ($candidates === []) {
+            return array_fill(0, count($shown), '');
+        }
+        $aligned = count($fr) === count($en);
+        $out = [];
+        foreach ($shown as $i => $text) {
+            $both = $aligned ? trim((string) ($fr[$i] ?? '')) . ' | ' . trim((string) ($en[$i] ?? '')) : $text;
+            $out[] = \App\Support\QualificationCatalog\QualificationCatalogExplorer::matchText($both, $candidates)[0] ?? '';
+        }
+
+        return $out;
+    }
+
+    /**
+     * Qualifications du catalogue liées à un emploi, dans la langue du lecteur (nom, intitulé officiel, émetteur,
+     * niveau, cours Academy correspondant).
+     *
+     * @param array<string, mixed> $entry
+     * @return list<array{id: string, code: string, name: string, official_name: string, issuer: string, country: string, level: string, academy: array<string, string>|null}>
      */
     public static function linkedQualifications(array $entry, string $lang): array
     {
@@ -362,7 +392,10 @@ final class JobCatalog
                 continue;
             }
             $q = \App\Support\QualificationCatalog\QualificationCatalog::localize($raw, $lang);
-            $out[] = ['id' => $q['id'], 'code' => $q['code'], 'name' => $q['name'], 'official_name' => $q['official_name'], 'issuer' => $q['issuer'], 'country' => $q['country']];
+            $level = \App\Support\QualificationCatalog\QualificationCatalogExplorer::level($raw);
+            $out[] = ['id' => $q['id'], 'code' => $q['code'], 'name' => $q['name'], 'official_name' => $q['official_name'], 'issuer' => $q['issuer'], 'country' => $q['country'],
+                'level' => \App\Support\QualificationCatalog\QualificationCatalogExplorer::levelLabel($level['key'], $lang),
+                'academy' => \App\Support\QualificationCatalog\QualificationCatalogExplorer::academyCourse($q['id'], $lang)];
         }
 
         return $out;
