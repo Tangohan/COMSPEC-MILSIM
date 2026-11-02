@@ -1098,6 +1098,10 @@ addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_di
 }] call CBA_fnc_addEventHandler;
 [{ ["comspec_atak_native_syncReq", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 [{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call COMSPEC_ATAK_PfhSpread;
+// App Routes : route reçue ou retirée (équipe, groupe, camp ; retenue hors réseau, rejouée par le serveur à l'arrivée),
+// puis chaque seconde : arrivée aux étapes de la route suivie et vue 3D (fn_routeAction "tick").
+["comspec_atak_native_route", { if (["hold", ["comspec_atak_native_route", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_routeAction; }] call CBA_fnc_addEventHandler;
+[{ ["tick"] call comspec_atak_native_fnc_routeAction; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Breacher : top de brèche reçu du chef de colonne.
 ["comspec_atak_native_breach", { _this call comspec_atak_native_fnc_breachTop; }] call CBA_fnc_addEventHandler;
 // Carte : ping d'un membre de mon camp (menu clic droit, fn_mapPing).

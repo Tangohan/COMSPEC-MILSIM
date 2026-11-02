@@ -101,6 +101,7 @@ private _items = [];
 private _payload = createHashMapFromArray [
     ["player_uid", getPlayerUID player], ["call_sign", [player] call comspec_atak_native_fnc_unitCallsign],
     ["mission_key", missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]]],
+    ["server_name", missionNamespace getVariable ["COMSPEC_ATAK_ServerName", ""]],
     ["items", _items]
 ];
 private _r = (["COMSPECExtension", "ScreenTime.Report", [[_payload] call comspec_atak_native_fnc_json]] call comspec_overwatch_connect_fnc_extDirect);
