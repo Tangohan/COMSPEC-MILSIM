@@ -148,6 +148,19 @@ final class AdvancementWorkflowService
             throw new RuntimeException('Seule une campagne ouverte ou clôturée peut passer en commission.');
         }
         $this->repository->updateCampaignStatus($campaignId, $tenantId, self::STATUS_COMMISSION);
+        // Membres et date choisis à la création de la campagne : conservés si rien n’est saisi au passage en commission.
+        $existing = $this->repository->findCommission($campaignId);
+        if ($existing !== null) {
+            if ($members === []) {
+                foreach (is_array($existing['members'] ?? null) ? $existing['members'] : [] as $member) {
+                    $members[] = ['personnel_id' => (int) ($member['personnel_id'] ?? 0), 'role' => (string) ($member['role'] ?? 'titulaire')];
+                }
+            }
+            if ($meetingDate === null || trim($meetingDate) === '') {
+                $meetingDate = (string) ($existing['meeting_date'] ?? '');
+            }
+            $minutesDocumentId ??= isset($existing['minutes_document_id']) ? (int) $existing['minutes_document_id'] : null;
+        }
         $this->repository->saveCommission($campaignId, $meetingDate, $minutesDocumentId, $members);
     }
 

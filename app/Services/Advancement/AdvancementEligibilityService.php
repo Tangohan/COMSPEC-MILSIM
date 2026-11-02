@@ -200,7 +200,7 @@ final class AdvancementEligibilityService
                     'key' => 'temps_de_grade',
                     'label' => 'Temps de grade',
                     'met' => false,
-                    'detail' => $detail . ' · échéance le ' . $dueOn,
+                    'detail' => $detail . ' · échéance le ' . AdvancementProposalEngine::formatDate($dueOn),
                 ];
                 $empty['eligibility_reason'] = $detail;
                 $empty['conditions'] = $conditions;
@@ -211,7 +211,7 @@ final class AdvancementEligibilityService
                 'key' => 'temps_de_grade',
                 'label' => 'Temps de grade',
                 'met' => true,
-                'detail' => $monthsInGrade . ' mois sur ' . $requiredMonths . ' requis' . ($dueOn !== null ? ' · acquis au ' . $dueOn : ''),
+                'detail' => $monthsInGrade . ' mois sur ' . $requiredMonths . ' requis' . ($dueOn !== null ? ' · acquis au ' . AdvancementProposalEngine::formatDate($dueOn) : ''),
             ];
         }
 
