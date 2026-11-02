@@ -294,6 +294,15 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1318, '2026-11-02', 'Academy : les instructeurs savent où valider', 'Sur le tableau de bord de l’Academy, l’encadrement trouve en tête un bloc « À traiter » : chapitres à valider, qualifications et brevets proposés à approuver, demandes d’inscription, évaluations échouées, stagiaires en retard et séances à venir, chacun avec son compteur. Un chapitre se lit et se valide dans une fenêtre, sans changer de page ; une demande d’inscription ou une qualification proposée s’accepte ou se refuse en un clic. L’espace instructeur réunit tout dans une seule file, triable et filtrable, avec des actions groupées et une aide « Comment valider un chapitre ? ». Le menu affiche « Espace instructeur » avec le nombre d’éléments à traiter, et le stagiaire voit que son chapitre attend la validation d’un instructeur.', [
+                'Tableau de bord Academy (encadrement) : bloc « À traiter » avec compteurs et liens directs vers la file filtrée',
+                'Validation rapide d’un chapitre dans une fenêtre : résultat de l’évaluation, réponses, débriefing, critères et commentaire',
+                'Espace instructeur : file de travail unique triable par type, cours, stagiaire et ancienneté, filtres par type, actions groupées (valider, accepter, approuver, refuser)',
+                'Demandes d’inscription et qualifications proposées : accepter ou refuser depuis l’Academy, retour à la file',
+                'Menu de l’Academy : nombre d’éléments à traiter à côté de « Espace instructeur »',
+            ], [
+                'Mes formations et tableau de bord : « En attente de validation par un instructeur » quand le débriefing est envoyé',
+            ], [], ['personnel'], [], 'Portail'),
             $pr(1315, '2026-11-02', 'App Routes, bandeau du curseur de la carte refait, app Réseau lisible', 'Avec le pack 2.9.34, le téléphone gagne l’app Routes : des routes nommées à pied, en véhicule (par les routes au choix), aériennes ou nautiques, avec leurs étapes typées (checkpoint, ligne de phase, ralliement, LZ…), leurs consignes, leurs heures H+ et l’action attendue à chaque étape. Distances, caps, durée et heure d’arrivée sont calculés ; « Suivre la route » guide d’étape en étape. Les routes se partagent à l’équipe, au groupe ou au camp par le réseau ATAK et peuvent s’afficher sur la carte d’Arma, sur Athena et en 3D. Le bandeau du curseur de la carte et l’app Réseau sont refaits pour être lisibles.', [
                 'App Routes (Navigation) : créer, dupliquer, supprimer des routes ; type de tracé à pied, véhicule (option « Suivre les routes »), aérien (couloir) ou nautique ; couleur, épaisseur, style plein, pointillé ou flèches de direction',
                 'Étapes posées d’un clic sur la carte de l’app (ajouter, insérer, déplacer), sur ma position, un marqueur existant ou une grille MGRS ; type, nom, consigne, heure prévue H+ et action attendue pour chacune',

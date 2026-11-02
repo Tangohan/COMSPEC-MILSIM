@@ -18226,6 +18226,7 @@ return [
     'En attente de validation' => 'Awaiting validation',
     'En attente de validation de l’e-mail' => 'Awaiting e-mail validation',
     'En attente de validation des deux côtés' => 'Awaiting validation from both sides',
+    'En attente de validation par un instructeur' => 'Awaiting validation by an instructor',
     'En attente de validation par un responsable ATAK' => 'Awaiting validation by an ATAK lead',
     'En attente de validation. Une fois validé, le bouton « Signer » sera disponible.' => 'Awaiting approval. Once approved, the “Sign” button will be available.',
     'En attente de votre validation' => 'Awaiting your approval',
