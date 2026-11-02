@@ -51631,6 +51631,8 @@ return [
     'Nom copié' => 'Name to copy',
     'Allemand' => 'German',
     'nom officiel' => 'official name',
+    'Chinois' => 'Chinese',
+    'Pinyin (chinois en alphabet latin)' => 'Pinyin (Chinese in Latin script)',
     '. Mêmes champs que les catalogues officiels : il se cherche, se filtre et se copie de la même façon.' => '. Same fields as the official catalogs: it can be searched, filtered and copied the same way.',
     'Abrégé (2 à 8 lettres ou chiffres)' => 'Abbreviation (2 to 8 letters or digits)',
     'Agrandir ou réduire la fenêtre (Alt + Entrée)' => 'Enlarge or shrink the window (Alt + Enter)',

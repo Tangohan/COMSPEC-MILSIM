@@ -40,6 +40,16 @@
     // Nom officiel (langue du pays) en titre ; traductions (langue du lecteur, puis anglais) en ligne secondaire.
     const officialTitle = entry => entry.official_name || entry.name;
     const translations = entry => Object.entries(entry.names || {}).slice(1).filter(([lang]) => lang === 'en' || lang === (isEnglish() ? 'en' : 'fr'));
+    // Langue HTML d'un nom : caractères chinois simplifiés (police CJK, glyphes simplifiés) et pinyin.
+    const htmlLang = lang => ({zh: 'zh-Hans', pinyin: 'zh-Latn-pinyin'})[lang] || lang;
+    const pinyin = entry => (entry.names || {}).pinyin || '';
+    // Pinyin sans tons d'un seul tenant (« tezhongzuozhan ») et avec « v » pour « ü » (« lvzhang »).
+    const pinyinForms = text => {
+        if (!text) return '';
+        const flat = normalize(text).trim();
+        const v = /[üǖǘǚǜÜǕǗǙǛ]/.test(text) ? normalize(text.replace(/[üǖǘǚǜÜǕǗǙǛ]/g, 'v')).trim() : '';
+        return [flat.replace(/ /g, ''), v, v.replace(/ /g, '')].filter(Boolean).join(' ') + ' ';
+    };
     const el = (tag, className, text) => {
         const node = document.createElement(tag);
         if (className) node.className = className;
@@ -75,7 +85,7 @@
             entry.formation, entry.branch_label, entry.country_label, entry.type_label, (entry.tags || []).join(' '),
             (entry.qualifications || []).join(' '), entry.id].join(' ');
         const german = transliterate(text);
-        return ' ' + normalize(text) + ' ' + (german !== text ? normalize(german) + ' ' : '') + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
+        return ' ' + normalize(text) + ' ' + (german !== text ? normalize(german) + ' ' : '') + pinyinForms(pinyin(entry)) + String(entry.code || '').toLowerCase().replace(/\s+/g, '') + ' ';
     }
 
     async function load() {
@@ -296,6 +306,7 @@
         }
         const name = el('span', 'jobcat__result-name');
         name.appendChild(highlight(entry.official_name || entry.name, words));
+        name.lang = htmlLang(entry.official_lang || 'en');
         title.appendChild(name);
         if (entry.code) {
             const code = el('code');
@@ -305,6 +316,12 @@
         const meta = el('small');
         meta.appendChild(highlight([entry.formation || entry.command, entry.type_label, entry.formation ? '' : entry.unit].filter(Boolean).join(' · '), words));
         button.append(title);
+        if (pinyin(entry)) {
+            const roman = el('span', 'jobcat__result-roman');
+            roman.lang = htmlLang('pinyin');
+            roman.appendChild(highlight(pinyin(entry), words));
+            button.append(roman);
+        }
         const others = translations(entry);
         if (others.length) {
             const alt = el('span', 'jobcat__result-alt');
@@ -478,11 +495,14 @@
         box.querySelector('[data-job-catalog-placeholder]').hidden = true;
         box.querySelector('.jobcat__frame').classList.add('is-detail');
         detail.querySelectorAll('[data-jc]').forEach(node => { node.textContent = entry[node.dataset.jc] || ''; node.hidden = !entry[node.dataset.jc]; });
+        detail.querySelector('h3[data-jc="official_name"]').lang = htmlLang(entry.official_lang || 'en');
         const official = detail.querySelector('[data-jc-translations]');
         official.textContent = '';
-        translations(entry).forEach(([lang, text], i) => {
+        (pinyin(entry) ? [['pinyin', pinyin(entry)]] : []).concat(translations(entry)).forEach(([lang, text], i) => {
             if (i) official.appendChild(document.createTextNode(' · '));
-            official.append(langCode(lang), document.createTextNode(text));
+            const node = el('span', '', text);
+            node.lang = htmlLang(lang);
+            official.append(langCode(lang), node);
         });
         official.hidden = !official.childNodes.length;
         const names = detail.querySelector('[data-jc-names]');
@@ -500,6 +520,7 @@
             copy.dataset.lang = lang;
             copy.setAttribute('aria-label', label('copy-name') + (lang ? ' (' + label('lang-' + lang) + ')' : ''));
             const name = el('span', 'jobcat__names-text', text);
+            if (lang) name.lang = htmlLang(lang);
             if (i === 0 && lang) name.appendChild(el('small', '', ' — ' + label('official')));
             if (lang) item.append(langCode(lang));
             item.append(name, copy);

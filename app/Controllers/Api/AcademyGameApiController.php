@@ -43,7 +43,7 @@ final class AcademyGameApiController
         $lang = $this->lang($request);
         try {
             $repo = new AcademyRepository();
-            $body = AcademyGameLesson::coursesBody($repo->states($tenantId, $userId), $staff ? $repo->courses($tenantId, true) : [], $staff, $lang);
+            $body = AcademyGameLesson::coursesBody($repo->states($tenantId, $userId), $staff ? $this->manageable($repo->courses($tenantId, true), $tenantId, $userId) : [], $staff, $lang);
         } catch (\PDOException | \JsonException) {
             return $this->text('unavailable', 503);
         }
@@ -69,7 +69,7 @@ final class AcademyGameApiController
             // L'élève lit sa copie du cours (celle de son inscription) ; l'encadrement, le cours publié ou en brouillon.
             $course = is_array($state['snapshot'] ?? null) ? $state['snapshot'] : null;
             if ($staff && $course === null) {
-                foreach ($repo->courses($tenantId, true) as $c) {
+                foreach ($this->manageable($repo->courses($tenantId, true), $tenantId, $userId) as $c) {
                     if (($c['key'] ?? '') === $key) {
                         $course = $c;
                         break;
@@ -157,6 +157,18 @@ final class AcademyGameApiController
         }
 
         return [$tenantId, $userId, $staff];
+    }
+
+    /**
+     * Cours que l'encadrement peut ouvrir en jeu : mêmes droits que le Studio (brouillons privés d'un autre auteur exclus).
+     *
+     * @param list<array<string,mixed>> $courses
+     * @return list<array<string,mixed>>
+     */
+    private function manageable(array $courses, int $tenantId, int $userId): array
+    {
+        $rights = \App\Services\Academy\AcademyRights::current($tenantId, $userId);
+        return array_values(array_filter($courses, static fn (array $course): bool => $rights->studioRole($course) !== null || $rights->canTeach((string) ($course['key'] ?? ''))));
     }
 
     private function lang(Request $request): string
