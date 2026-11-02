@@ -41,7 +41,7 @@ final class PersonnelHrDeskAssetTest extends TestCase
 
         self::assertStringContainsString('Établir une pièce', $docs);
         self::assertStringContainsString('data-rh-issue-preview', $docs);
-        self::assertStringContainsString('eff-rh-paper', $docs);
+        self::assertStringContainsString('edr-a4', $docs);
         self::assertStringContainsString('Avancements de grade', $settings);
         self::assertStringContainsString('PERSONNEL_HR_DESK_V1', $catalog);
         self::assertStringContainsString('personnel_auto_advancement', $cron);

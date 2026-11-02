@@ -37,6 +37,7 @@ use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Effectifs\PersonnelCommandChainService;
 use App\Services\Effectifs\UnitCodeService;
+use App\Services\Personnel\JobRoleEnrichmentService;
 use App\Services\Personnel\JobRolePickerService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
@@ -192,6 +193,8 @@ class EffectifsWorkspaceController
             $rosterView = 'general';
         }
         $jobFilter = mb_substr(trim((string) $request->query('fonction', '')), 0, 120, 'UTF-8');
+        // Filtre « étiquette de fonction » : membres qui occupent au moins une fonction portant l'étiquette.
+        $jobTagFilter = max(0, (int) $request->query('etiquette_fonction', 0));
         // Regroupement de la maquette : par unité (ordre de commandement), par grade, ou liste simple.
         $explicitSort = trim((string) $request->query('tri', '')) !== '';
         $group = trim((string) $request->query('groupe', ''));
@@ -232,7 +235,7 @@ class EffectifsWorkspaceController
 
         $languageCommunity = $this->communitySettingsFor($tenantId);
         $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
-        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $unitFilter > 0 || $gradeCategoryFilter !== '';
+        $needsFullLoad = $sort !== 'nom' || $languageFilter !== '' || $jobFilter !== '' || $jobTagFilter > 0 || $unitFilter > 0 || $gradeCategoryFilter !== '';
         if ($needsFullLoad) {
             $fetchLimit = min(2000, max($total, 1));
             $baseUsers = $this->userRepository->listForTenant(
@@ -264,6 +267,11 @@ class EffectifsWorkspaceController
             if ($jobFilter !== '') {
                 // Filtre « fonction » : la fonction principale commence par l'emploi choisi (ex. « Medic — CLS »).
                 $allRows = array_values(array_filter($allRows, static fn (array $r): bool => mb_stripos(trim((string) ($r['job_role_display'] ?? '')), $jobFilter, 0, 'UTF-8') === 0));
+                $total = count($allRows);
+            }
+            if ($jobTagFilter > 0) {
+                $taggedUsers = (new JobRoleEnrichmentService())->userIdsWithTag($tenantId, $jobTagFilter);
+                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => isset($taggedUsers[(int) ($r['id'] ?? 0)])));
                 $total = count($allRows);
             }
             if ($unitFilter > 0) {
@@ -353,7 +361,9 @@ class EffectifsWorkspaceController
                 'langue' => $languageFilter,
                 'vue' => $rosterView,
                 'fonction' => $jobFilter,
+                'etiquette_fonction' => $jobTagFilter,
             ],
+            'rosterJobTags' => (new JobRoleEnrichmentService())->tags($tenantId),
             'rosterView' => $rosterView,
             'canExportPdf' => self::pdfExportsAllowed($tenantId),
             'rosterJobRoleOptions' => $this->rosterJobRoleOptions($tenantId),
@@ -505,6 +515,7 @@ class EffectifsWorkspaceController
             if (!$this->personnelJobRoleRepository->tablesExist() || !$this->personnelJobRoleRepository->pivotTableExists()) {
                 return $out;
             }
+            $decorations = (new JobRoleEnrichmentService())->decorations($tenantId);
             foreach ($this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, $userIds) as $uid => $assigned) {
                 foreach ($assigned as $a) {
                     $name = trim((string) ($a['role_name'] ?? ''));
@@ -513,6 +524,7 @@ class EffectifsWorkspaceController
                         'id' => (int) ($a['personnel_job_role_id'] ?? 0),
                         'label' => $detail !== '' && $name !== '' ? $name . ' — ' . $detail : ($name !== '' ? $name : $detail),
                         'primary' => !empty($a['is_primary']),
+                        'decoration' => $decorations[(int) ($a['personnel_job_role_id'] ?? 0)] ?? null,
                     ];
                 }
             }
@@ -526,6 +538,36 @@ class EffectifsWorkspaceController
         }
 
         return $out;
+    }
+
+    /**
+     * PDF des effectifs : l'abrégé de la fonction principale précède son libellé (« CDG · Chef de groupe »).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withPrimaryJobAbbreviation(int $tenantId, array $rows): array
+    {
+        try {
+            $decorations = (new JobRoleEnrichmentService())->decorations($tenantId);
+            if ($decorations === [] || !$this->personnelJobRoleRepository->pivotTableExists()) {
+                return $rows;
+            }
+            $assigned = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows));
+        } catch (\Throwable) {
+            return $rows;
+        }
+        foreach ($rows as &$row) {
+            $primary = $assigned[(int) ($row['id'] ?? 0)][0] ?? null;
+            $abbr = $primary !== null ? (string) ($decorations[(int) $primary['personnel_job_role_id']]['abbreviation'] ?? '') : '';
+            $display = trim((string) ($row['job_role_display'] ?? ''));
+            if ($abbr !== '' && $display !== '' && !str_starts_with($display, $abbr . ' · ')) {
+                $row['job_role_display'] = $abbr . ' · ' . $display;
+            }
+        }
+        unset($row);
+
+        return $rows;
     }
 
     /** Réglages de détection de doublons (matricule, nom, callsign…). */
@@ -755,6 +797,12 @@ class EffectifsWorkspaceController
         if ($jobFilter !== '') {
             $rows = array_values(array_filter($rows, static fn (array $r): bool => mb_stripos(trim((string) ($r['job_role_display'] ?? '')), $jobFilter, 0, 'UTF-8') === 0));
         }
+        $jobTagFilter = max(0, (int) $request->query('etiquette_fonction', 0));
+        if ($jobTagFilter > 0) {
+            $taggedUsers = (new JobRoleEnrichmentService())->userIdsWithTag($tenantId, $jobTagFilter);
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => isset($taggedUsers[(int) ($r['id'] ?? 0)])));
+        }
+        $rows = $this->withPrimaryJobAbbreviation($tenantId, $rows);
         $rows = $this->attachRosterFieldData($tenantId, $rows, $view === 'medical');
         $rows = $this->sortRosterRows($rows, $sort);
 
@@ -1363,6 +1411,7 @@ class EffectifsWorkspaceController
             'currentAccessRoleId' => $currentAccessRoleId,
             'accessProfiles' => CommunityAccessProfiles::definitions(),
             'memberJobRoles' => $jobRoles,
+            'memberJobDecorations' => (new JobRoleEnrichmentService())->decorations($tenantId),
             'jobRoleOptions' => $jobRoleOptions,
             'jobRoleMax' => $jobRoleMax,
             'jobRolesAvailable' => $jobRolesAvailable,
@@ -3071,7 +3120,13 @@ class EffectifsWorkspaceController
                 'jobsReferenceWorkspace'=>true,
             ]);
         }
-        if (!in_array($vue, ['catalogue','categories','recuperation','historique','reglages'], true)) $vue='catalogue';
+        if (!in_array($vue, ['catalogue','categories','recuperation','historique','reglages','site'], true)) $vue='catalogue';
+        if ($vue === 'site') {
+            return $this->jobWorkspaceResponse($request, $this->siteJobCatalogData($request, $tenantId) + [
+                'title'=>'Emplois et fonctions', 'effectifsNav'=>'fonctions', 'jobsVue'=>'site',
+                'canManageAssignments'=>$canManage, 'csrfToken'=>Csrf::token(),
+            ]);
+        }
         if (in_array($vue, ['historique','recuperation','reglages'], true)) {
             if (!$canManage) return $this->jobReply($request, false, 'La gestion des emplois est réservée aux responsables habilités.', [], 403);
             $data = ['title'=>'Emplois et fonctions', 'effectifsNav'=>'fonctions', 'jobsVue'=>$vue,
@@ -3084,6 +3139,9 @@ class EffectifsWorkspaceController
                 $data['jobArchives'] = $history->archives($tenantId, $data['jobArchiveCursor']);
             } elseif ($vue === 'reglages') {
                 $data['jobSyncSettings'] = PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId));
+                $tagService = new JobRoleEnrichmentService();
+                $data['jobTags'] = $tagService->tags($tenantId);
+                $data['jobEnrichmentReady'] = $tagService->schemaReady();
             } else {
                 $data['jobRecoveryLabels'] = $this->jobRecoveryLabels($request);
                 try {
@@ -3099,8 +3157,22 @@ class EffectifsWorkspaceController
         $roles = $this->personnelJobRoleRepository->listRolesWithCategory($tenantId);
         $structure = new PersonnelJobRoleStructureService();
         $metadata = $structure->listMetadata($tenantId);
-        foreach ($roles as &$role) $role['structure'] = $metadata[(int)$role['id']] ?? [];
+        $enrichment = new JobRoleEnrichmentService();
+        $decorations = $enrichment->decorations($tenantId);
+        foreach ($roles as &$role) {
+            $role['structure'] = $metadata[(int)$role['id']] ?? [];
+            $role['decoration'] = $decorations[(int)$role['id']] ?? ['abbreviation'=>null,'icon'=>null,'icon_is_default'=>false,'description'=>'','tags'=>[],'origin'=>JobRoleEnrichmentService::origin($role),'hidden'=>false];
+        }
         unset($role);
+        // Fonctions créées par la communauté en tête, puis celles du site et de l’ORBAT (ordre d’origine conservé).
+        $originRank = [JobRoleEnrichmentService::ORIGIN_COMMUNITY=>0, JobRoleEnrichmentService::ORIGIN_SITE=>1, JobRoleEnrichmentService::ORIGIN_ORBAT=>2];
+        $position = 0;
+        foreach ($roles as &$role) $role['_position'] = $position++;
+        unset($role);
+        usort($roles, static fn(array $a, array $b): int => [$originRank[$a['decoration']['origin']] ?? 3, $a['_position']] <=> [$originRank[$b['decoration']['origin']] ?? 3, $b['_position']]);
+        $showHidden = $request->queryString('masquees', '0') === '1';
+        $tagFilter = max(0, (int)$request->queryString('etiquette', '0'));
+        $hiddenCount = count(array_filter($roles, static fn(array $r): bool => !empty($r['decoration']['hidden'])));
         // Old category URLs open the same browser and its category editor.
         $categoryFilter = (int)$request->queryString('categorie_emplois', $request->queryString('categorie', '0'));
         $filterCategory = null;
@@ -3115,6 +3187,9 @@ class EffectifsWorkspaceController
         // A selected job must stay in the visible branch; stale or foreign IDs never select another job.
         $included = $categoryFilter > 0 ? array_fill_keys(PersonnelJobCategoryTree::descendantIds($categories, $categoryFilter), true) : null;
         $visible = $included === null ? $roles : array_values(array_filter($roles, static fn(array $r):bool=>isset($included[(int)$r['category_id']])));
+        // Les fonctions du site masquées restent consultables (filtre « Afficher les masquées » ou fiche ouverte).
+        if (!$showHidden) $visible = array_values(array_filter($visible, static fn(array $r): bool => empty($r['decoration']['hidden']) || (int)$r['id'] === $selectedId));
+        if ($tagFilter > 0) $visible = array_values(array_filter($visible, static fn(array $r): bool => in_array($tagFilter, array_column($r['decoration']['tags'], 'id'), true)));
         if ($selected && $included !== null && !isset($included[(int)$selected['category_id']])) $selected=null;
         $options = ['ready'=>$structure->schemaReady(),'roles'=>$roles,'units'=>[],'grades'=>[],'specialties'=>[],'kinds'=>PersonnelJobRoleStructureService::KINDS];
         // Grades, specialties and units are only needed while editing a job.
@@ -3129,8 +3204,90 @@ class EffectifsWorkspaceController
             'editingJobCategory'=>$editingCategory,'creatingJobCategory'=>$creatingCategory,
             'newCategoryParent'=>(int)$request->queryString('parent','0'),
             'newJobParent'=>(int)$request->queryString('sous_emploi','0'),
+            'jobTags'=>$enrichment->tags($tenantId),'jobEnrichmentReady'=>$enrichment->schemaReady(),
+            'jobShowHidden'=>$showHidden,'jobTagFilter'=>$tagFilter,'jobHiddenCount'=>$hiddenCount,
+            'jobIconLibrary'=>\App\Support\JobRoleIconLibrary::all(),
+            'jobHolderCount'=>$selected ? count($holders[(int)$selected['id']] ?? []) : 0,
         ];
         return $this->jobWorkspaceResponse($request, $data);
+    }
+
+    /**
+     * Onglet « Fonctions du site » : le référentiel fourni par Athena, avec l’état masqué / affiché pour la communauté
+     * et le nombre de membres qui occupent chaque fonction (ils la gardent si elle est masquée).
+     *
+     * @return array<string, mixed>
+     */
+    private function siteJobCatalogData(Request $request, int $tenantId): array
+    {
+        $enrichment = new JobRoleEnrichmentService();
+        $hidden = $enrichment->hiddenCatalogSlugs($tenantId);
+        $holders = $enrichment->holderCounts($tenantId);
+        $roleIdBySlug = [];
+        foreach ($this->personnelJobRoleRepository->listRolesWithCategory($tenantId) as $role) {
+            $roleIdBySlug[(string)($role['slug'] ?? '')] = (int)$role['id'];
+        }
+        $showHidden = $request->queryString('masquees', '0') === '1';
+        $groups = [];
+        foreach (JobRoleEnrichmentService::catalogBySlug() as $slug => $entry) {
+            $roleId = $roleIdBySlug[$slug] ?? 0;
+            $isHidden = isset($hidden[$slug]);
+            if ($isHidden && !$showHidden) continue;
+            $category = trim((string)($entry['category'] ?? '')) ?: 'Autres';
+            $groups[$category][] = [
+                'slug'=>$slug, 'name'=>(string)$entry['name'], 'subcategory'=>(string)($entry['subcategory'] ?? ''),
+                'description'=>(string)($entry['description'] ?? ''), 'icon'=>JobRoleEnrichmentService::defaultIconForCatalogSlug($slug),
+                'hidden'=>$isHidden, 'role_id'=>$roleId, 'holders'=>$roleId > 0 ? (int)($holders[$roleId] ?? 0) : 0,
+            ];
+        }
+        return ['siteJobGroups'=>$groups, 'jobShowHidden'=>$showHidden, 'jobHiddenCount'=>count($hidden),
+            'jobEnrichmentReady'=>$enrichment->hidingReady()];
+    }
+
+    /** Masquer / réafficher des fonctions du site pour la communauté (action groupée ou depuis la fiche). */
+    public function hideSiteJobRoles(Request $request, array $params = []): Response
+    {
+        if ($denied=$this->jobWriteGuard($request)) return $denied;
+        $tenantId=(int)Session::get('tenant_id');
+        $raw=$request->input('slugs',[]);
+        $slugs=is_array($raw)?array_values($raw):[];
+        $hide=$request->input('action')!=='show';
+        $emploi=(int)$request->inputString('emploi','0');
+        $back=$emploi>0 ? ['emploi'=>$emploi,'masquees'=>1] : ['vue'=>'site']+($request->inputString('masquees','0')==='1'?['masquees'=>1]:[]);
+        if ($slugs===[]) return $this->jobReply($request,false,'Cochez au moins une fonction.',$back);
+        $enrichment=new JobRoleEnrichmentService();
+        if (!$enrichment->hidingReady()) return $this->jobReply($request,false,'Le masquage des fonctions arrive avec la prochaine mise à jour du site.',$back,503);
+        try {
+            $changed=$enrichment->setCatalogHidden($tenantId,$slugs,$hide,(int)Session::get('user_id'));
+        } catch (\PDOException $e) {
+            error_log('Effectifs jobs hide: '.$e->getMessage());
+            return $this->jobReply($request,false,'Le changement n’a pas été enregistré. Réessayez.',$back,503);
+        }
+        $message=$hide
+            ? sprintf('%d fonction(s) masquée(s). Les membres qui les occupent les gardent.', $changed)
+            : sprintf('%d fonction(s) de nouveau proposée(s).', $changed);
+        return $this->jobReply($request,true,$message,$back);
+    }
+
+    /** Couleur ou suppression des étiquettes de fonctions de la communauté (onglet Réglages). */
+    public function saveJobTags(Request $request, array $params = []): Response
+    {
+        if ($denied=$this->jobWriteGuard($request)) return $denied;
+        $tenantId=(int)Session::get('tenant_id');
+        $enrichment=new JobRoleEnrichmentService();
+        if (!$enrichment->tagsReady()) return $this->jobReply($request,false,'Les étiquettes arrivent avec la prochaine mise à jour du site.',['vue'=>'reglages'],503);
+        $delete=(int)$request->inputString('delete_tag','0');
+        if ($delete>0) {
+            $ok=$enrichment->deleteTag($tenantId,$delete);
+            return $this->jobReply($request,$ok,$ok?'Étiquette supprimée. Les fonctions restent inchangées.':'Étiquette introuvable.',['vue'=>'reglages'],404);
+        }
+        $colors=$request->input('tag_color',[]);
+        $owned=array_column($enrichment->tags($tenantId),'id');
+        foreach (is_array($colors)?$colors:[] as $tagId=>$color) {
+            if (!in_array((int)$tagId,$owned,true)) continue;
+            $enrichment->updateTagColor($tenantId,(int)$tagId,is_scalar($color)?(string)$color:null);
+        }
+        return $this->jobReply($request,true,'Couleurs des étiquettes enregistrées.',['vue'=>'reglages']);
     }
 
     private function jobWorkspaceResponse(Request $request, array $data): Response
@@ -3187,7 +3344,13 @@ class EffectifsWorkspaceController
             if ($check['errors'] !== []) throw new \InvalidArgumentException(implode(' ',array_values($check['errors'])));
             $metadata=$check['metadata'];
         }
-        return [trim($name),trim($description),$categoryId,$metadata];
+        $enrichment=null;
+        if ($request->input('enrichment_enabled') === '1') {
+            $enrichment=(new JobRoleEnrichmentService())->validate($tenantId,$roleId,[
+                'abbreviation'=>$request->input('abbreviation',''),'icon'=>$request->input('icon',''),'tags'=>$request->input('tags',''),
+            ]);
+        }
+        return [trim($name),trim($description),$categoryId,$metadata,$enrichment];
     }
 
     public function createJobRole(Request $request, array $params = []): Response
@@ -3198,12 +3361,13 @@ class EffectifsWorkspaceController
         try {
             $pdo->beginTransaction();
             $this->lockJobTenant($pdo, $tenantId);
-            [$name,$description,$categoryId,$metadata]=$this->jobValues($request,$tenantId,0);
+            [$name,$description,$categoryId,$metadata,$enrichment]=$this->jobValues($request,$tenantId,0);
             if ($categoryId===0) $categoryId=$this->resolveJobCategoryId($tenantId,0);
             $slug=$this->personnelJobRoleRepository->uniqueSlugFromName($tenantId,$name);
             $id=$this->personnelJobRoleRepository->createRole($tenantId,$categoryId,$name,$slug,$description?:null,0,false);
             if ($metadata!==null) (new PersonnelJobRoleStructureService())->save($tenantId,$id,$metadata);
-            $this->recordJobChange('job_role', $id, 'created', [], ['name'=>$name,'slug'=>$slug,'description'=>$description,'category_id'=>$categoryId,'structure'=>$metadata ?? []]);
+            if ($enrichment!==null) (new JobRoleEnrichmentService())->save($tenantId,$id,$enrichment);
+            $this->recordJobChange('job_role', $id, 'created', [], ['name'=>$name,'slug'=>$slug,'description'=>$description,'category_id'=>$categoryId,'structure'=>$metadata ?? []]+($enrichment ?? []));
             $pdo->commit();
             return $this->jobReply($request,true,'Emploi créé. Aucun membre ni droit d’accès n’a été modifié.',['emploi'=>$id]);
         } catch (\InvalidArgumentException $e) {
@@ -3231,11 +3395,12 @@ class EffectifsWorkspaceController
                 return $this->jobReply($request,false,'Emploi introuvable.',[],404);
             }
             $existing['structure']=(new PersonnelJobRoleStructureService())->listMetadata($tenantId)[$id] ?? [];
-            [$name,$description,$categoryId,$metadata]=$this->jobValues($request,$tenantId,$id);
+            [$name,$description,$categoryId,$metadata,$enrichment]=$this->jobValues($request,$tenantId,$id);
             if ($categoryId===0) $categoryId=$this->resolveJobCategoryId($tenantId,0);
             $this->personnelJobRoleRepository->updateRole($id,$tenantId,$categoryId,$name,(string)$existing['slug'],$description?:null,(int)($existing['sort_order']??0),$existing['mos_code']??null,$existing['mos_specialty_title']??null);
             if ($metadata!==null) (new PersonnelJobRoleStructureService())->save($tenantId,$id,$metadata);
-            $this->recordJobChange('job_role', $id, 'updated', $existing, array_replace($existing, ['name'=>$name,'description'=>$description,'category_id'=>$categoryId,'structure'=>$metadata ?? $existing['structure']]));
+            if ($enrichment!==null) (new JobRoleEnrichmentService())->save($tenantId,$id,$enrichment);
+            $this->recordJobChange('job_role', $id, 'updated', $existing, array_replace($existing, ['name'=>$name,'description'=>$description,'category_id'=>$categoryId,'structure'=>$metadata ?? $existing['structure']], $enrichment ?? []));
             $pdo->commit();
             return $this->jobReply($request,true,'Emploi enregistré. Les affectations et les droits restent indépendants.',['emploi'=>$id]);
         } catch (\InvalidArgumentException $e) {

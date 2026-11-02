@@ -86,16 +86,49 @@ final class RhDossierWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
+        $ready = $this->hrDocuments->tableExists();
+        // ?user_id= : coffre d’un seul membre (lien « Pièces du dossier RH » de la fiche).
+        $scopeId = (int) $request->query('user_id', 0);
+        $scopeUser = $scopeId > 0 ? $this->userRepository->findById($scopeId, $tenantId) : null;
+        $scopeId = $scopeUser !== null ? $scopeId : 0;
+        $orgUsers = $this->userRepository->listForTenant($tenantId, null, 'active', null, 200, 0, true);
+        if ($scopeUser !== null && !in_array($scopeId, array_map(static fn (array $u): int => (int) ($u['id'] ?? 0), $orgUsers), true)) {
+            $orgUsers[] = $scopeUser;
+        }
+        $docs = [];
+        if ($ready && $scopeUser !== null) {
+            foreach ($this->hrDocuments->listForUser($tenantId, $scopeId) as $row) {
+                $docs[] = $row + ['user_display_name' => $scopeUser['display_name'] ?? '', 'user_email' => $scopeUser['email'] ?? ''];
+            }
+        } elseif ($ready) {
+            $docs = $this->hrDocuments->listRecentForTenant($tenantId, 100);
+        }
+        $unitNames = [];
+        try {
+            foreach ($this->unitRepository->allForTenant($tenantId) as $unit) {
+                $unitNames[(int) ($unit['id'] ?? 0)] = (string) ($unit['name'] ?? '');
+            }
+        } catch (\Throwable) {
+        }
+        $summary = $ready
+            ? $this->hrDocuments->summaryForTenant($tenantId, $scopeId > 0 ? $scopeId : null)
+            : ['total' => 0, 'member' => 0, 'staff' => 0, 'month' => 0, 'by_type' => []];
 
         return $this->shell('admin.effectifs_workspace.rh_documents', [
             'title' => 'Documents RH',
             'effectifsNav' => 'rh_documents',
-            'hrDocuments' => $this->hrDocuments->tableExists()
-                ? $this->hrDocuments->listRecentForTenant($tenantId, 60)
-                : [],
-            'hrDocumentsCount' => $this->hrDocuments->tableExists()
-                ? $this->hrDocuments->countForTenant($tenantId)
-                : 0,
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'effectifs-documents-rh.css'],
+            'hrDocuments' => $docs,
+            'hrDocumentsCount' => $summary['total'],
+            'hrDocumentsSummary' => $summary,
+            'hrScopeUser' => $scopeUser,
+            'hrUnitNames' => $unitNames,
+            'hrTenantId' => $tenantId,
+            'hrCommunityName' => (static function (?array $tenant): string {
+                $tenant ??= [];
+
+                return trim(function_exists('community_display_name') ? (string) community_display_name($tenant) : (string) ($tenant['name'] ?? ''));
+            })($this->tenants->findById($tenantId)),
             'hrDocTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'hrPdfTypeLabels' => array_intersect_key(
                 PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
@@ -103,10 +136,18 @@ final class RhDossierWorkspaceController
             ),
             'hrWorkspaceSettings' => PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings),
             'hrSchemaReady' => $this->hrDocuments->tableExists(),
-            'orgUsers' => $this->userRepository->listForTenant($tenantId, null, 'active', null, 200, 0, true),
+            'orgUsers' => $orgUsers,
             'csrfToken' => Csrf::token(),
             'canManage' => EffectifsLmsAccess::canEditProfiles(Gate::getInstance()),
         ]);
+    }
+
+    /** Retour au coffre après un dépôt : on reste sur le membre ouvert si la page l’était (champ return_user). */
+    private function documentsRedirect(Request $request): Response
+    {
+        $uid = (int) $request->input('return_user', 0);
+
+        return Response::redirect(effectifs_workspace_url('documents-rh' . ($uid > 0 ? '?user_id=' . $uid : '')));
     }
 
     public function storeDocument(Request $request, array $params = []): Response
@@ -118,17 +159,17 @@ final class RhDossierWorkspaceController
         if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
             Session::flash('error', 'Vous n’êtes pas habilité à ajouter un document RH.');
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         if (!$this->hrDocuments->tableExists()) {
             Session::flash('error', 'L’enregistrement des pièces n’est pas encore disponible. Contactez l’encadrement si le problème persiste.');
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) $request->input('user_id');
@@ -146,7 +187,7 @@ final class RhDossierWorkspaceController
         if ($userId < 1 || $this->userRepository->findById($userId, $tenantId) === null) {
             Session::flash('error', 'Membre introuvable.');
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         if (!in_array($docType, PersonnelHrDocumentRepository::DOC_TYPES, true)) {
             $docType = 'autre';
@@ -158,7 +199,7 @@ final class RhDossierWorkspaceController
         if ($stored['error'] !== null) {
             Session::flash('error', $stored['error']);
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         $filePath = $stored['path'];
         $originalName = $stored['original_name'];
@@ -168,7 +209,7 @@ final class RhDossierWorkspaceController
         if ($filePath === null) {
             Session::flash('error', 'Déposez un fichier ou indiquez où retrouver la pièce.');
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         $id = $this->hrDocuments->create(
             $tenantId,
@@ -185,7 +226,7 @@ final class RhDossierWorkspaceController
             ? 'Document RH enregistré sur le dossier.'
             : 'Impossible d’enregistrer le document.');
 
-        return Response::redirect(effectifs_workspace_url('documents-rh'));
+        return $this->documentsRedirect($request);
     }
 
     public function downloadDocument(Request $request, array $params = []): Response
@@ -215,12 +256,12 @@ final class RhDossierWorkspaceController
         if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
             Session::flash('error', 'Vous n’êtes pas habilité à établir une pièce.');
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) $request->input('user_id');
@@ -231,7 +272,7 @@ final class RhDossierWorkspaceController
         if ($userId < 1 || $this->userRepository->findById($userId, $tenantId) === null) {
             Session::flash('error', 'Membre introuvable.');
 
-            return Response::redirect(effectifs_workspace_url('documents-rh'));
+            return $this->documentsRedirect($request);
         }
         $out = $this->hrPdf->issueAndStore(
             $tenantId,
@@ -246,7 +287,7 @@ final class RhDossierWorkspaceController
         );
         Session::flash($out['ok'] ? 'success' : 'error', $out['message']);
 
-        return Response::redirect(effectifs_workspace_url('documents-rh'));
+        return $this->documentsRedirect($request);
     }
 
     public function mobility(Request $request, array $params = []): Response

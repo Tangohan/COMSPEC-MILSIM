@@ -105,6 +105,7 @@ final class UnitSheetController
             ],
             'canEdit' => $canEdit,
             'jobRoleOptions' => $canEdit ? $this->jobRoleOptions($tenantId) : [],
+            'jobRoleDecorations' => $this->jobRoleDecorations($tenantId),
             'postsUrl' => url('back-office/organisation/unites/' . $unitId . '/postes'),
             'csrf' => Csrf::token(),
             'structureUrl' => url('back-office/organisation/structure'),
@@ -344,7 +345,7 @@ final class UnitSheetController
         return Response::redirect($back);
     }
 
-    /** @return list<array{id:int,name:string}> */
+    /** @return list<array{id:int,name:string,abbreviation:?string,hidden:bool}> */
     private function jobRoleOptions(int $tenantId): array
     {
         try {
@@ -352,15 +353,28 @@ final class UnitSheetController
         } catch (\Throwable) {
             return [];
         }
+        $decorations = $this->jobRoleDecorations($tenantId);
         $out = [];
         foreach ($rows as $r) {
             $id = (int) ($r['id'] ?? 0);
             if ($id > 0) {
-                $out[] = ['id' => $id, 'name' => trim((string) ($r['name'] ?? '')) ?: 'Emploi'];
+                // Une fonction du site masquée reste valable pour les postes qui l'utilisent déjà (la vue ne la propose plus ailleurs).
+                $out[] = ['id' => $id, 'name' => trim((string) ($r['name'] ?? '')) ?: 'Emploi',
+                    'abbreviation' => $decorations[$id]['abbreviation'] ?? null, 'hidden' => !empty($decorations[$id]['hidden'])];
             }
         }
 
         return $out;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function jobRoleDecorations(int $tenantId): array
+    {
+        try {
+            return (new \App\Services\Personnel\JobRoleEnrichmentService())->decorations($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /** Code interne du poste, unique dans l’unité, déduit de l’intitulé (jamais affiché à l’utilisateur). */

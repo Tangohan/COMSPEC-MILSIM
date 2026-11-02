@@ -112,6 +112,40 @@ final class PersonnelHrDocumentRepository
     }
 
     /**
+     * Décompte des pièces actives (toute la communauté, ou un seul membre) : total, visibilité, mois en cours, types.
+     *
+     * @return array{total: int, member: int, staff: int, month: int, by_type: array<string, int>}
+     */
+    public function summaryForTenant(int $tenantId, ?int $userId = null): array
+    {
+        $out = ['total' => 0, 'member' => 0, 'staff' => 0, 'month' => 0, 'by_type' => []];
+        if (!$this->tableExists() || $tenantId < 1) {
+            return $out;
+        }
+        $where = 'tenant_id = ? AND archived_at IS NULL';
+        $params = [$tenantId];
+        if ($userId !== null && $userId > 0) {
+            $where .= ' AND user_id = ?';
+            $params[] = $userId;
+        }
+        $st = $this->pdo->prepare(
+            "SELECT doc_type, visibility, COUNT(*) AS n, SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS m
+             FROM personnel_hr_documents WHERE {$where} GROUP BY doc_type, visibility"
+        );
+        $st->execute(array_merge([date('Y-m-01 00:00:00')], $params));
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $n = (int) ($row['n'] ?? 0);
+            $type = (string) ($row['doc_type'] ?? 'autre');
+            $out['total'] += $n;
+            $out['month'] += (int) ($row['m'] ?? 0);
+            $out[($row['visibility'] ?? '') === 'MEMBER' ? 'member' : 'staff'] += $n;
+            $out['by_type'][$type] = ($out['by_type'][$type] ?? 0) + $n;
+        }
+
+        return $out;
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function findById(int $id, int $tenantId): ?array
