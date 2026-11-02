@@ -185,7 +185,7 @@ private _pageSig = switch (_page) do {
         // Le texte saisi est gardé avant un éventuel re-rendu.
         (uiNamespace getVariable ["COMSPEC_ATAK_Gps", createHashMap]) set ["grid", ["gpsGrid", ""] call comspec_atak_native_fnc_formValue];
         private _rt = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
-        [count _rt, _rt getOrDefault ["idx", 0], round ((getPosASL player) select 0) / 25, round ((getPosASL player) select 1) / 25, missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]]
+        [count _rt, _rt getOrDefault ["idx", 0], round (((getPosASL player) select 0) / 25), round (((getPosASL player) select 1) / 25), missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]]
     };
     case "GROUP": { (units group player) apply { [name _x, alive _x, lifeState _x, round ((damage _x) * 4)] } };
     default { [] };
