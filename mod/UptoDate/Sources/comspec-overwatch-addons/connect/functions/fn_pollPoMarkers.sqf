@@ -99,12 +99,27 @@ if (!(_announced isEqualType [])) then { _announced = []; };
 // leur nombre change ; entre deux, seuls les candidats retenus sont suivis (le tri complet toutes les 2 s,
 // avec chaînes et règles pour chaque marqueur, coûtait cher avec beaucoup de marqueurs).
 // Existence testée par getMarkerColor ("" = absent) : plus d'index hashmap reconstruit à chaque passage.
-private _allMk = allMapMarkers;
+// Tri refait seulement si un marqueur a changé (EH ci-dessous, hors anneaux et repères COMSPEC qu'il écarte), si les
+// règles de la communauté changent, ou toutes les 30 s (texte BCE résolu à part, sans EH).
+if (isNil "COMSPEC_PoDirtyEh") then {
+    COMSPEC_PoDirtyEh = true;
+    COMSPEC_PoDirty = true;
+    { addMissionEventHandler [_x, {
+        private _l = toLower (_this select 0);
+        if ((_l select [0, 9]) isEqualTo "_comspec_" || {(_l find "comspec_gps_wp_") == 0} || {(_l find "comspec_gps_rt_") == 0} || {(_l find "comspec_webmk_") == 0}) exitWith {};
+        COMSPEC_PoDirty = true;
+    }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
+};
 private _cands = missionNamespace getVariable ["COMSPEC_PoCandidates", []];
+private _rulesNow = missionNamespace getVariable ["COMSPEC_MarkerDetectionRules", []];
 if (
-    (diag_tickTime - (missionNamespace getVariable ["COMSPEC_PoScanAt", -1e9])) >= 10
-    || {(count _allMk) != (missionNamespace getVariable ["COMSPEC_PoScanCount", -1])}
+    COMSPEC_PoDirty
+    || {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_PoScanAt", -1e9])) >= 30}
+    || {_rulesNow isNotEqualTo (missionNamespace getVariable ["COMSPEC_PoScanRules", []])}
 ) then {
+    COMSPEC_PoDirty = false;
+    missionNamespace setVariable ["COMSPEC_PoScanRules", if (_rulesNow isEqualType []) then { +_rulesNow } else { _rulesNow }, false];
+    private _allMk = allMapMarkers;
     _cands = [];
     {
         private _name = _x;
@@ -131,7 +146,6 @@ if (
     } forEach _allMk;
     missionNamespace setVariable ["COMSPEC_PoCandidates", _cands, false];
     missionNamespace setVariable ["COMSPEC_PoScanAt", diag_tickTime, false];
-    missionNamespace setVariable ["COMSPEC_PoScanCount", count _allMk, false];
 };
 
 {
