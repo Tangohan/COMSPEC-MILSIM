@@ -124,7 +124,7 @@ final class AdminFireTeamsController
         if (!$this->fireTeams->tablesReady()) {
             Session::flash('error', 'Les équipes de feu ne sont pas encore disponibles. Exécutez les migrations.');
 
-            return Response::redirect(url('back-office/atak/fire-teams'));
+            return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
         }
 
         $kind = $request->input('kind') === FireTeamRepository::KIND_PERMANENT
@@ -185,14 +185,14 @@ final class AdminFireTeamsController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if ($tenantId <= 0 || $id < 1) {
-            return Response::redirect(url('back-office/atak/fire-teams'));
+            return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
         }
 
         $team = $this->fireTeams->findByIdForTenant($id, $tenantId);
         if (!$team) {
             Session::flash('error', 'Équipe introuvable.');
 
-            return Response::redirect(url('back-office/atak/fire-teams'));
+            return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
         }
 
         $memberIds = [];
@@ -233,7 +233,7 @@ final class AdminFireTeamsController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if ($tenantId <= 0 || $id < 1) {
-            return Response::redirect(url('back-office/atak/fire-teams'));
+            return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
@@ -273,7 +273,7 @@ final class AdminFireTeamsController
         if (!$team) {
             Session::flash('error', 'Impossible de modifier cette équipe (introuvable ou déjà dissoute).');
 
-            return Response::redirect(url('back-office/atak/fire-teams'));
+            return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
         }
 
         $this->applyMembersFromRequest($request, $id, $tenantId);
@@ -339,7 +339,7 @@ final class AdminFireTeamsController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if ($tenantId <= 0 || $id < 1) {
-            return Response::redirect(url('back-office/atak/fire-teams'));
+            return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
@@ -363,7 +363,7 @@ final class AdminFireTeamsController
             Session::flash('error', 'Impossible de dissoudre cette équipe.');
         }
 
-        return Response::redirect(url('back-office/atak/fire-teams'));
+        return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -371,12 +371,12 @@ final class AdminFireTeamsController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         if ($tenantId <= 0 || $id < 1) {
-            return Response::redirect(url('back-office/atak/fire-teams'));
+            return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/atak/fire-teams'));
+            return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
         }
 
         if ($this->fireTeams->softDelete($id, $tenantId)) {
@@ -385,7 +385,7 @@ final class AdminFireTeamsController
             Session::flash('error', 'Impossible de retirer cette équipe.');
         }
 
-        return Response::redirect(url('back-office/atak/fire-teams'));
+        return Response::redirect(url('back-office/atak/escouades?onglet=fire-teams'));
     }
 
     private function applyMembersFromRequest(Request $request, int $teamId, int $tenantId): void

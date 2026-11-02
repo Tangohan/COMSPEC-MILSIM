@@ -73,6 +73,6 @@ final class ConfigurationUpdateIntroMiddleware
 
         Session::set('configuration_updates_intro_shown', true);
 
-        return Response::redirect(url('back-office/nouveautes-organisation'));
+        return Response::redirect(url('back-office/mise-a-niveau?onglet=nouveautes'));
     }
 }

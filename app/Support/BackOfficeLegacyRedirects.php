@@ -32,11 +32,25 @@ final class BackOfficeLegacyRedirects
         'back-office/ressources/forum-config' => 'back-office',
         'back-office/onboarding-members' => 'back-office/integration-membres',
         'back-office/personnel/advanced-edit' => 'admin/system/advanced-fiche-edit',
+        // Résumé d’integration-membres : la page complète le remplace.
+        'back-office/ressources/effectifs/integration' => 'back-office/integration-membres',
+        // Page de liens vers l’avancement, les indicatifs et les matricules.
+        'back-office/organisation/progression' => 'back-office/rh/avancement',
     ];
+
+    /**
+     * Toutes les anciennes adresses : pages retirées + pages devenues onglets (BackOfficeTabs).
+     *
+     * @return array<string, string>
+     */
+    public static function map(): array
+    {
+        return self::MAP + BackOfficeTabs::legacyRedirects();
+    }
 
     public static function target(string $legacyPath): ?string
     {
-        return self::MAP[trim($legacyPath, '/')] ?? null;
+        return self::map()[trim($legacyPath, '/')] ?? null;
     }
 
     /**

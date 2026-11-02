@@ -62,9 +62,12 @@ final class PlatformAdminSkinAssetTest extends TestCase
         $platformNav = (string) file_get_contents($root . '/views/partials/platform_admin_sidebar.php');
         $pages = (string) file_get_contents($root . '/config/back_office_pages.php');
 
-        foreach (['back-office/ressources/atak-realism/config', 'back-office/ressources/atak-mod-blocks', 'back-office/ressources/atak-diffusion-rapports', 'back-office/content-moderation'] as $path) {
+        foreach (['back-office/ressources/atak-mod-blocks', 'back-office/ressources/atak-diffusion-rapports', 'back-office/content-moderation'] as $path) {
             self::assertStringContainsString("url('" . $path . "')", $nav, $path);
         }
+        // Réglages réalisme : onglet de « Parc de terminaux » (atak/realisme), toujours au menu.
+        self::assertStringContainsString("url('back-office/atak/realisme')", $nav);
+        self::assertStringContainsString("'legacy' => 'back-office/ressources/atak-realism/config'", (string) file_get_contents($root . '/app/Support/BackOfficeTabs.php'));
         foreach (['back-office/ressources/atak-mod-blocks', 'back-office/ressources/atak-diffusion-rapports', 'back-office/ressources/atak-realism'] as $path) {
             self::assertStringContainsString("'path' => '" . $path . "'", $pages, $path);
         }

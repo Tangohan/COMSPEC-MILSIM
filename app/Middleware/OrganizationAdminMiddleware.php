@@ -55,12 +55,6 @@ class OrganizationAdminMiddleware
                 || $gate->allows('personnel.status.manage')
             )) {
                 $scopedOrgAccess = true;
-            } elseif (str_starts_with($path, '/back-office/organisation/progression') && (
-                $gate->allows('personnel.progression.view')
-                || $gate->allows('personnel.progression.manage')
-                || $gate->allows('personnel.progression.configure')
-            )) {
-                $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/organisation/matricules') && (
                 $gate->allows('personnel.member_number.manage')
                 || $gate->allows('admin.members.manage')

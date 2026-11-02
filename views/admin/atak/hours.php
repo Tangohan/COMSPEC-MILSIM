@@ -88,7 +88,7 @@ $periodLabel = $from !== '' || $to !== ''
                     <?php $active = $from === '' && $to === '' && (int) $n === $days; ?>
                     <a href="<?= $h($link(['jours' => (string) $n, 'du' => null, 'au' => null])) ?>" class="aksq__period<?= $active ? ' is-active' : '' ?>"<?= $active ? ' aria-current="page"' : '' ?>><?= $h($label) ?></a>
                 <?php endforeach; ?>
-                <a href="<?= $h(url('back-office/atak/temps-ecran')) ?>" class="aksq__link">Temps d’écran et rôles</a>
+                <a href="<?= $h(url('back-office/metriques-joueurs?onglet=temps-ecran')) ?>" class="aksq__link">Temps d’écran et rôles</a>
                 <a href="<?= $h(url('back-office/atak/escouades')) ?>" class="aksq__link">Escouades en jeu</a>
             </nav>
             <form method="get" action="<?= $h(url('back-office/atak/heures')) ?>" class="akhr__filters">

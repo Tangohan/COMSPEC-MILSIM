@@ -51625,4 +51625,6 @@ return [
     '1 membre sans rôle' => '1 member without an access role',
     '%1 membres sans rôle' => '%1 members without an access role',
     'Accès · droits à attribuer' => 'Access · rights to grant',
+    'À traiter et alertes' => 'To do and alerts',
+    '← Avancement' => '← Advancement',
 ];

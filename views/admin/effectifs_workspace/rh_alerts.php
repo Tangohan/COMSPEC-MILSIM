@@ -51,7 +51,7 @@ $tipById = [
         <?php foreach ($items as $item): ?>
             <?php
             $itemCount = (int) ($item['count'] ?? 0);
-            $href = (string) ($item['href'] ?? effectifs_workspace_url('alertes'));
+            $href = (string) ($item['href'] ?? effectifs_workspace_url('a-traiter?onglet=alertes'));
             $tone = (string) ($item['tone'] ?? 'ok');
             $id = (string) ($item['id'] ?? '');
             $tip = $tipById[$id] ?? '';

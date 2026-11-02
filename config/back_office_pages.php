@@ -139,7 +139,6 @@ return [
             ['label' => 'Effectifs', 'href' => 'back-office/ressources/effectifs'],
         ]],
         ['path' => 'back-office/organisation/anciennete', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Ancienneté', 'subtitle' => 'Comment l’ancienneté est calculée et affichée sur les fiches des membres.', 'css' => ['back-office-seniority.css']],
-        ['path' => 'back-office/organisation/progression', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Progression & carrière', 'subtitle' => 'Comment un membre progresse : étapes, validations et qualifications requises.'],
         ['path' => 'back-office/organisation/passes', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · PASS', 'title' => 'PASS RH', 'subtitle' => 'Des lots de conditions réutilisables pour ouvrir un poste, accorder une promotion ou noter un membre.', 'quick' => [
             ['label' => 'Nouveau PASS', 'href' => 'back-office/organisation/passes/create'],
             ['label' => 'Avancement', 'href' => 'back-office/rh/avancement'],
@@ -185,37 +184,37 @@ return [
         ['path' => 'back-office/roleplay/immersion', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ARRIVÉE', 'title' => 'Parcours d’immersion', 'subtitle' => 'Décidez comment votre communauté suit l’arrivée d’un membre : étapes, filière, tuteur et dossier prêt.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
             ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
-            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay/regles-phases'],
+            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay-followup?onglet=phases'],
             ['label' => 'Sessions Arma', 'href' => 'back-office/roleplay/sessions'],
-            ['label' => 'Affichage', 'href' => 'back-office/roleplay/immersion#activation-options'],
-            ['label' => 'Étapes et filières', 'href' => 'back-office/roleplay/immersion#listes'],
+            ['label' => 'Affichage', 'href' => 'back-office/roleplay-followup?onglet=immersion#activation-options'],
+            ['label' => 'Étapes et filières', 'href' => 'back-office/roleplay-followup?onglet=immersion#listes'],
         ]],
         ['path' => 'back-office/roleplay/regles-phases', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · PARCOURS', 'title' => 'Parcours RH', 'subtitle' => 'Ordonnez les étapes du parcours et les conditions de passage à l’étape suivante. Un jeu vide n’avance personne.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
-            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay-followup?onglet=immersion'],
             ['label' => 'Sessions Arma', 'href' => 'back-office/roleplay/sessions'],
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
         ]],
         ['path' => 'back-office/roleplay/sessions', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SESSIONS', 'title' => 'Sessions Arma', 'subtitle' => 'Les soirées de jeu dont le temps de présence compte pour le suivi RH des membres.', 'css' => ['back-office-roleplay-sessions.css'], 'quick' => [
             ['label' => 'Nouvelle session', 'href' => 'back-office/roleplay/sessions#nouvelle'],
             ['label' => 'Événements', 'href' => 'back-office/events'],
-            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay/regles-phases'],
-            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours RH', 'href' => 'back-office/roleplay-followup?onglet=phases'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay-followup?onglet=immersion'],
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
         ]],
         ['path' => 'back-office/roleplay-followup/echeances', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · ÉCHÉANCES', 'title' => 'Échéances', 'subtitle' => 'Les prochains entretiens, visites médicales et rotations de service, tous membres confondus.', 'quick' => [
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
-            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay-followup?onglet=immersion'],
         ]],
         ['path' => 'back-office/roleplay-followup', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SUIVI', 'title' => 'Bureau de suivi', 'subtitle' => 'Où en est chaque membre : tuteur, étape d’immersion, bilans et prochaines échéances.', 'quick' => [
             ['label' => 'Échéances', 'href' => 'back-office/roleplay-followup/echeances'],
-            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
+            ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay-followup?onglet=immersion'],
         ]],
         ['path' => 'back-office/communications/history', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Historique des e-mails', 'subtitle' => 'Les e-mails envoyés aux membres, avec leur date et leurs destinataires.'],
         ['path' => 'back-office/communications/templates', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Modèles d’e-mail', 'subtitle' => 'Des messages prêts à réutiliser pour les envois fréquents.'],
         ['path' => 'back-office/communications/groups', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Listes de diffusion', 'subtitle' => 'Des listes de membres à qui écrire en une fois.'],
         ['path' => 'back-office/communications', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'E-mail aux membres', 'subtitle' => 'Écrivez à toute la communauté, à une unité ou à une liste de diffusion.'],
         ['path' => 'back-office/missions', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · PORTAIL', 'title' => 'Portail missions', 'subtitle' => 'Toutes les missions avec leurs participants, leurs communications ATAK et leurs liaisons.', 'css' => ['back-office-missions-portal.css'], 'quick' => [
-            ['label' => 'Planification', 'href' => 'back-office/planification'],
+            ['label' => 'Planification', 'href' => 'back-office/missions?onglet=planification'],
             ['label' => 'Cycle de mission', 'href' => 'back-office/atak/cycle-mission'],
             ['label' => 'Poste ATAK', 'href' => 'back-office/atak'],
             ['label' => 'Sessions', 'href' => 'back-office/atak/operateurs'],
@@ -256,7 +255,7 @@ return [
         ['path' => 'back-office/atak/roleplay', 'group' => 'ATAK', 'kicker' => 'ATAK · ROLEPLAY', 'title' => 'Mode roleplay', 'subtitle' => 'Les contraintes réalistes imposées aux téléphones de votre communauté : réseau dégradé, relais, capteurs, données chiffrées et zones de brouillage.', 'css' => ['back-office-atak-roleplay.css'], 'quick' => [
             ['label' => 'Contrôle de mission', 'href' => 'back-office/atak/controle-serveur'],
             ['label' => 'Réseau de relais', 'href' => 'back-office/atak/relays-network'],
-            ['label' => 'Configuration réalisme', 'href' => 'back-office/ressources/atak-realism/config'],
+            ['label' => 'Configuration réalisme', 'href' => 'back-office/atak/realisme?onglet=reglages'],
         ]],
         ['path' => 'back-office/atak/controle-serveur', 'group' => 'ATAK', 'kicker' => 'ATAK · MISSION', 'title' => 'Contrôle de mission', 'subtitle' => 'Ce que chaque réglage change vraiment pour vos joueurs, quand il s’applique, et l’état du serveur de jeu de la communauté.'],
         ['path' => 'back-office/atak/relays-network', 'group' => 'ATAK', 'kicker' => 'ATAK · RELAIS', 'title' => 'Réseau de relais', 'subtitle' => 'Les relais radio sur le terrain : état, portée, places disponibles et fiabilité.', 'css' => ['back-office-atak-devices.css'], 'quick' => [

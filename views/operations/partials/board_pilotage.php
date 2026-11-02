@@ -178,7 +178,7 @@ $showCockpit = $canEvents || $canArticles || $canAtak || $canSlides || $canEffec
         <?php endif; ?>
         <?php if ($canOpsCenter): ?>
             <a class="bo-tbo-lever" href="<?= $h(url('back-office/courrier/traceabilite')) ?>">Courrier</a>
-            <a class="bo-tbo-lever" href="<?= $h(url('back-office/planification')) ?>">Planification</a>
+            <a class="bo-tbo-lever" href="<?= $h(url('back-office/missions?onglet=planification')) ?>">Planification</a>
         <?php endif; ?>
     </nav>
     <?php endif; ?>

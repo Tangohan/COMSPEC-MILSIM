@@ -58,8 +58,8 @@ foreach ($sessions as $s) {
                 <?php foreach ([1 => '24 h', 7 => '7 jours', 14 => '14 jours', 30 => '30 jours'] as $n => $label): ?>
                     <a href="<?= $h(url('back-office/atak/escouades?jours=' . $n)) ?>" class="aksq__period<?= $n === $days ? ' is-active' : '' ?>"<?= $n === $days ? ' aria-current="page"' : '' ?>><?= $h($label) ?></a>
                 <?php endforeach; ?>
-                <a href="<?= $h(url('back-office/atak/fire-teams')) ?>" class="aksq__link">Équipes de feu du site</a>
-                <a href="<?= $h(url('back-office/atak/temps-ecran')) ?>" class="aksq__link">Temps d’écran et rôles</a>
+                <a href="<?= $h(url('back-office/atak/escouades?onglet=fire-teams')) ?>" class="aksq__link">Équipes de feu du site</a>
+                <a href="<?= $h(url('back-office/metriques-joueurs?onglet=temps-ecran')) ?>" class="aksq__link">Temps d’écran et rôles</a>
             </nav>
         </header>
 

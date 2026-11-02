@@ -312,7 +312,7 @@ $zoneRowHtml = static function (array $row, string $title) use ($h, $zoneEffectO
                 <ul class="bo-rp-card__body bo-rp-links">
                     <li><a class="bo-rp-link" href="<?= $h(url('back-office/atak/controle-serveur')) ?>">Contrôle de mission</a></li>
                     <li><a class="bo-rp-link" href="<?= $h(url('back-office/atak/relays-network')) ?>">Réseau de relais</a></li>
-                    <li><a class="bo-rp-link" href="<?= $h(url('back-office/ressources/atak-realism/config')) ?>">Configuration réalisme</a></li>
+                    <li><a class="bo-rp-link" href="<?= $h(url('back-office/atak/realisme?onglet=reglages')) ?>">Configuration réalisme</a></li>
                     <li><a class="bo-rp-link" href="<?= $h(url('atak')) ?>">Carte tactique</a></li>
                 </ul>
             </nav>

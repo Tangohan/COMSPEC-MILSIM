@@ -22,8 +22,8 @@ $tabs = [
     ['elevations', 'Élévations', 'elevations', (int) ($elevationOpenCount ?? 0), ''],
     ['roles', 'Accès', 'roles', 0, 'Organisation'],
     ['fonctions', 'Emplois', 'fonctions', 0, 'Organisation'],
-    ['rh_alerts', 'Alertes', 'alertes', (int) ($rhAlertTotalCount ?? 0), 'Suivi des dossiers'],
-    ['rh_integration', 'Intégration', 'integration', (int) ($integrationOpenCount ?? 0), 'Suivi des dossiers'],
+    // Alertes : onglet de « À traiter » (même service, mêmes seuils).
+    ['rh_alerts', 'Alertes', 'a-traiter?onglet=alertes', (int) ($rhAlertTotalCount ?? 0), 'Suivi des dossiers'],
     ['invitations', 'Invitations', 'invitations', 0, 'Suivi des dossiers'],
     ['rh_mobility', 'Mobilité', 'mobilite', (int) ($mobilityPendingCount ?? 0), 'Suivi des dossiers'],
     ['rh_succession', 'Vivier', 'vivier', 0, 'Suivi des dossiers'],
@@ -152,12 +152,12 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
                     <span class="bo-eff-sv__v"><?= $attentionCount ?></span>
                     <span class="bo-eff-sv__h">dossiers, affectations, échéances</span>
                 </a>
-                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('integration')) ?>">
+                <a class="bo-eff-sv" href="<?= $h(url('back-office/integration-membres')) ?>">
                     <span class="bo-eff-sv__t">En intégration<i style="background:#0284c7"></i></span>
                     <span class="bo-eff-sv__v"><?= (int) ($integrationOpenCount ?? 0) ?></span>
                     <span class="bo-eff-sv__h">parcours d’intégration ouverts</span>
                 </a>
-                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('alertes')) ?>">
+                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('a-traiter?onglet=alertes')) ?>">
                     <span class="bo-eff-sv__t">Absences<i style="background:#d97706"></i></span>
                     <span class="bo-eff-sv__v"><?= (int) ($hero['absent_today'] ?? 0) ?></span>
                     <span class="bo-eff-sv__h">absents aujourd’hui</span>

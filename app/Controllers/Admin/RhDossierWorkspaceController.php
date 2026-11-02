@@ -654,30 +654,6 @@ final class RhDossierWorkspaceController
         ]);
     }
 
-    public function integration(Request $request, array $params = []): Response
-    {
-        $denied = $this->denyUnlessAccess();
-        if ($denied !== null) {
-            return $denied;
-        }
-        $tenantId = (int) Session::get('tenant_id');
-        $rows = [];
-        $hasTemplate = false;
-        try {
-            $rows = $this->integrations->listDashboard($tenantId, [], 120);
-            $hasTemplate = $this->integrationTemplates->hasActiveTemplate($tenantId);
-        } catch (\Throwable) {
-        }
-
-        return $this->shell('admin.effectifs_workspace.rh_integration', [
-            'title' => 'Intégration',
-            'effectifsNav' => 'rh_integration',
-            'integrationRows' => $rows,
-            'integrationStatusLabels' => MemberIntegrationCatalog::statusLabels(),
-            'integrationHasTemplate' => $hasTemplate,
-        ]);
-    }
-
     public function settings(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();

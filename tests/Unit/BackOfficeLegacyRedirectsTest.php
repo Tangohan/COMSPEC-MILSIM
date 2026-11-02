@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Router;
 use App\Support\BackOfficeLegacyRedirects;
+use App\Support\BackOfficeTabs;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -64,6 +65,22 @@ final class BackOfficeLegacyRedirectsTest extends TestCase
             ['/back-office/ressources/forum-config', [], '/back-office'],
             ['/back-office/onboarding-members', [], '/back-office/integration-membres'],
             ['/back-office/personnel/advanced-edit', [], '/admin/system/advanced-fiche-edit'],
+            ['/back-office/ressources/effectifs/integration', [], '/back-office/integration-membres'],
+            ['/back-office/organisation/progression', [], '/back-office/rh/avancement'],
+            // Pages devenues onglets : filtres d’origine conservés, onglet de la cible prioritaire.
+            ['/back-office/planification', [], '/back-office/missions?onglet=planification'],
+            ['/back-office/atak/suivi-cr', ['cr' => '12'], '/back-office/atak/comptes-rendus?cr=12&onglet=suivi'],
+            ['/back-office/roleplay/immersion', [], '/back-office/roleplay-followup?onglet=immersion'],
+            ['/back-office/roleplay/regles-phases', ['phase' => '3'], '/back-office/roleplay-followup?phase=3&onglet=phases'],
+            ['/back-office/ressources/effectifs/roleplay', [], '/back-office/roleplay-followup?onglet=dossiers'],
+            ['/back-office/atak/temps-ecran', ['jours' => '7'], '/back-office/metriques-joueurs?jours=7&onglet=temps-ecran'],
+            ['/back-office/atak/fire-teams', ['vue' => 'mission'], '/back-office/atak/escouades?vue=mission&onglet=fire-teams'],
+            ['/back-office/ressources/atak-realism/config', [], '/back-office/atak/realisme?onglet=reglages'],
+            ['/back-office/documents/compliance', ['document_id' => '4'], '/back-office/doctrine?document_id=4&onglet=conformite'],
+            ['/back-office/documents/nomenclature', [], '/back-office/doctrine?onglet=nomenclature'],
+            ['/back-office/documents/types', ['onglet' => 'vieux'], '/back-office/doctrine?onglet=types'],
+            ['/back-office/nouveautes-organisation', [], '/back-office/mise-a-niveau?onglet=nouveautes'],
+            ['/back-office/ressources/effectifs/alertes', [], '/back-office/ressources/effectifs/a-traiter?onglet=alertes'],
         ];
     }
 
@@ -83,7 +100,7 @@ final class BackOfficeLegacyRedirectsTest extends TestCase
     public function testEveryMapEntryIsCoveredAndAnswersBeforeAnyOtherRoute(): void
     {
         $covered = array_map(static fn (array $row): string => ltrim($row[0], '/'), self::redirects());
-        foreach (array_keys(BackOfficeLegacyRedirects::MAP) as $legacy) {
+        foreach (array_keys(BackOfficeLegacyRedirects::map()) as $legacy) {
             self::assertContains($legacy, $covered, $legacy . ' : ajoutez un cas à redirects()');
             [$route] = $this->match('GET', '/' . $legacy);
             self::assertInstanceOf(\Closure::class, $route['handler'], $legacy);
@@ -122,8 +139,56 @@ final class BackOfficeLegacyRedirectsTest extends TestCase
 
     public function testFormsKeepPostingToTheirAddresses(): void
     {
-        [$route] = $this->match('POST', '/back-office/organisation/parametres');
-        self::assertIsArray($route['handler']);
-        self::assertSame('update', $route['handler'][1]);
+        $posts = [
+            '/back-office/organisation/parametres' => 'update',
+            '/back-office/planification' => 'store',
+            '/back-office/roleplay/immersion' => 'immersionSettingsUpdate',
+            '/back-office/roleplay/regles-phases' => 'save',
+            '/back-office/documents/types' => 'typesSave',
+            '/back-office/documents/nomenclature' => 'nomenclatureSave',
+        ];
+        foreach ($posts as $path => $action) {
+            [$route] = $this->match('POST', $path);
+            self::assertIsArray($route['handler'], $path);
+            self::assertSame($action, $route['handler'][1], $path);
+        }
+    }
+
+    public function testEachTabHomeIsServedByTheTabDispatcherWithTheOldControllers(): void
+    {
+        foreach (BackOfficeTabs::FAMILIES as $base => $family) {
+            [$route] = $this->match('GET', '/' . $base);
+            self::assertInstanceOf(\Closure::class, $route['handler'], $base);
+            self::assertTrue(method_exists($family['handler'][0], $family['handler'][1]), $base);
+            self::assertNotSame([], $family['middleware'], $base);
+            foreach ($family['tabs'] as $key => $tab) {
+                self::assertTrue(method_exists($tab['handler'][0], $tab['handler'][1]), $base . ' › ' . $key);
+                self::assertContains('App\\Middleware\\AuthMiddleware', $tab['middleware'], $key);
+                self::assertSame($base . '?onglet=' . $key, BackOfficeLegacyRedirects::target($tab['legacy']), $tab['legacy']);
+                // En-tête et styles : ceux de l’ancienne page.
+                self::assertSame($tab['legacy'], BackOfficeTabs::contentPath($base, $key));
+            }
+        }
+        self::assertSame('back-office/missions', BackOfficeTabs::contentPath('back-office/missions', 'inconnu'));
+    }
+
+    public function testTabBarListsTheHomeAndOnlyAllowedTabs(): void
+    {
+        $bar = BackOfficeTabs::barFor('back-office/roleplay-followup', 'immersion');
+        self::assertIsArray($bar);
+        self::assertCount(4, $bar);
+        self::assertFalse($bar[0]['active']);
+        self::assertSame([false, true, false], array_map(static fn (array $t): bool => $t['active'], array_slice($bar, 1)));
+        self::assertStringEndsWith('/back-office/roleplay-followup?onglet=immersion', $bar[2]['href']);
+
+        $onlyPhases = BackOfficeTabs::barFor('back-office/roleplay-followup', '', static fn (string $legacy): bool => $legacy === 'back-office/roleplay/regles-phases');
+        self::assertSame(['Bureau de suivi', 'Parcours RH'], array_column((array) $onlyPhases, 'label'));
+        self::assertTrue($onlyPhases[0]['active']);
+
+        // Pages qui ont déjà leurs onglets, ou sans onglet autorisé : pas de seconde barre.
+        self::assertNull(BackOfficeTabs::barFor('back-office/doctrine', ''));
+        self::assertNull(BackOfficeTabs::barFor('back-office/ressources/effectifs/a-traiter', 'alertes'));
+        self::assertNull(BackOfficeTabs::barFor('back-office/missions', '', static fn (): bool => false));
+        self::assertNull(BackOfficeTabs::barFor('back-office/events', ''));
     }
 }
