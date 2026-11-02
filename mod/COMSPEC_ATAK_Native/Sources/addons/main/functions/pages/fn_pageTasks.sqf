@@ -101,6 +101,9 @@ _rows append [["section", "Ordres du TOC", ([format ["%1 ordre(s), %2 à traiter
     };
 } forEach _orders;
 
+// Missions de tir du camp (appui feu typé, fn_fireSupport) : servant joueur (REÇU, COUPS PARTIS) ou demandeur (RÉGLER, FIN).
+_rows append (["rows"] call comspec_atak_native_fnc_fireSupport);
+
 // Tâches de la mission : la tâche suivie est en tête.
 private _tasks = simpleTasks player;
 private _curT = currentTask player;

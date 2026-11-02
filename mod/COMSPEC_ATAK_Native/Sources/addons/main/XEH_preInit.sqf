@@ -545,6 +545,39 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     _sim, [0, 15, 4, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_radio_sw_mbps", "SLIDER", ["Radio portative : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio tactique transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
     _sim, [0.1, 20, 0.5, 1], 1] call comspec_atak_native_fnc_addSetting;
+// Liaison réaliste téléphone <-> radio de données (fn_mpuLink) : désactivée par défaut (comportement d'avant). Réglages
+// serveur, une mission peut les imposer (cba_settings.sqf de la mission).
+private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
+["comspec_atak_native_mpu_real", "CHECKBOX",
+    ["Liaison téléphone-radio réaliste", "Comme sur le terrain, le téléphone n'a pas de réseau tactique à lui : il passe par une radio de données reliée par câble EUD ou par le Wi-Fi d'une MPU5 (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Les MPU5 allumées sur le même canal forment un maillage avec les relais de la mission. Décoché : comportement d'avant."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_require", "CHECKBOX",
+    ["Radio de données obligatoire", "Sans radio reliée et en service, plus aucun réseau (le Bluetooth entre téléphones et les données déjà reçues restent). Décoché : sans radio, le téléphone garde son réseau d'avant ; la radio ne fait que l'améliorer."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_cable", "CHECKBOX",
+    ["Câble EUD obligatoire", "Il faut l'objet « Câble EUD » dans l'inventaire pour relier le téléphone à la MPU5 ou à une radio tactique par câble."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_wifi", "CHECKBOX",
+    ["Wi-Fi de la MPU5 autorisé", "Le téléphone peut se relier sans câble au Wi-Fi d'une MPU5 portée ou posée au sol, à quelques mètres."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_wifi_range", "SLIDER",
+    ["Portée du Wi-Fi de la MPU5 (m)", "Au-delà, la liaison Wi-Fi tombe (elle revient seule en se rapprochant de la radio)."],
+    _mpuCat, [2, 50, 8, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_hours", "SLIDER",
+    ["Autonomie de la MPU5 (heures)", "Durée d'une batterie pleine à pleine puissance (6 W). À 3 W elle tient environ 1,3 fois plus, à 1 W presque 2 fois plus. Batterie vide : radio coupée, plus de maillage."],
+    _mpuCat, [0.5, 48, 10, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_hop_ms", "SLIDER",
+    ["Latence par saut du maillage (ms)", "Délai ajouté par chaque radio traversée jusqu'à la passerelle. La portée (6 W) et le débit d'une MPU5 sont les réglages « Portée de la MPU5 » et « Débit relayé par une MPU5 » (section Simulation)."],
+    _mpuCat, [0, 300, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_tac_kbps", "SLIDER",
+    ["Radio tactique : débit de données (kbit/s)", "Débit d'une radio portative ACRE2 / TFAR (PRC-152, PRC-148…) reliée en données ; une radio longue portée (PRC-117, véhicule) en a 4 fois plus. Autorisées par le réglage « Données par radio ACRE2 / TFAR » (section Simulation)."],
+    _mpuCat, [2, 500, 32, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_tac_ms", "SLIDER",
+    ["Radio tactique : latence (ms)", "Délai de chaque envoi par une radio tactique."],
+    _mpuCat, [100, 5000, 1200, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_tac_maxkb", "SLIDER",
+    ["Radio tactique : taille maximale d'un envoi (Ko)", "Au-delà (photos, fichiers), l'envoi attend une liaison MPU5. Pas de vidéo par radio tactique."],
+    _mpuCat, [5, 500, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -696,6 +729,16 @@ if (isServer) then {
     ["comspec_atak_native_aiOrdState", { ["keep", _this] call comspec_atak_native_fnc_aiOrder; }] call CBA_fnc_addEventHandler;
     missionNamespace setVariable ["COMSPEC_ATAK_SrvAiOrdV", 1, true];
 };
+// Appui feu typé (fn_fireSupport) : tir là où le servant IA est local ; serveur : demandes vérifiées, batteries
+// simulées, dernier état des missions gardé pour les arrivants. COMSPEC_ATAK_SrvFsV : le serveur sait les traiter.
+["comspec_atak_native_fsExec", { ["exec", _this] call comspec_atak_native_fnc_fireSupport; }] call CBA_fnc_addEventHandler;
+if (isServer) then {
+    if (isNil "COMSPEC_ATAK_SrvFs") then { COMSPEC_ATAK_SrvFs = createHashMap; };      // camp -> (id -> état)
+    if (isNil "COMSPEC_ATAK_SrvFsRun") then { COMSPEC_ATAK_SrvFsRun = createHashMap; };  // id -> tir simulé en cours
+    ["comspec_atak_native_fsSrv", { ["srv", _this] call comspec_atak_native_fnc_fireSupport; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_fsState", { ["keep", _this] call comspec_atak_native_fnc_fireSupport; }] call CBA_fnc_addEventHandler;
+    missionNamespace setVariable ["COMSPEC_ATAK_SrvFsV", 1, true];
+};
 // Téléphones ramassés par l'IA ennemie : actions là où l'unité est locale, état au serveur, alertes aux clients.
 ["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
 if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "giveFail", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };
@@ -761,6 +804,29 @@ private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak_item", "EDITBOX",
     ["Objet donné aux IA", "Classe de l'objet ATAK mis dans l'inventaire des IA équipées (COMSPEC_ATAK_Phone par défaut)."],
     _ai, "COMSPEC_ATAK_Phone", 1] call comspec_atak_native_fnc_addSetting;
+// Appui feu typé (fn_fireSupport) : complète l'app CAS (APPEL DE FEU), la carte, Tâches, le poste TOC et l'app JTAC.
+// Réglages serveur (forçables par la mission), sauf l'affichage des cercles (réglage personnel).
+private _fs = ["COMSPEC", "ATAK · Appui feu"];
+["comspec_atak_native_fs_enabled", "CHECKBOX",
+    ["Appui feu typé", "Coché : l'appel de feu (app CAS, onglet APPEL DE FEU) choisit un moyen (mortier léger, moyen ou lourd, obusier, lance-roquettes, appui naval ou aérien) avec ses portées, délais, munitions, coups et sa distance de sécurité ; les pièces de la mission sont reconnues, l'IA du camp peut tirer et les servants joueurs reçoivent la mission. Décoché : appel de feu générique, comme avant."],
+    _fs, true, 1, { if (_this && {hasInterface}) then { ["scan"] call comspec_atak_native_fnc_fireSupport; }; }] call comspec_atak_native_fnc_addSetting;
+{
+    _x params ["_k", "_t"];
+    [format ["comspec_atak_native_fs_t_%1", toLower _k], "CHECKBOX", [_t, "Décoché : ce moyen n'est plus proposé dans l'appel de feu et le serveur refuse ses demandes."], _fs, true, 1] call comspec_atak_native_fnc_addSetting;
+} forEach [["MORTAR_L", "Moyen autorisé : mortier léger 60 mm"], ["MORTAR_M", "Moyen autorisé : mortier moyen 81/82 mm"], ["MORTAR_H", "Moyen autorisé : mortier lourd 120 mm"],
+    ["HOWITZER", "Moyen autorisé : obusier 105/155 mm"], ["MLRS", "Moyen autorisé : lance-roquettes multiples"], ["NAVAL", "Moyen autorisé : appui naval"], ["CAS", "Moyen autorisé : appui aérien (CAS)"]];
+["comspec_atak_native_fs_ai", "CHECKBOX",
+    ["Tir exécuté par l'IA", "Coché : une demande à une pièce de votre camp servie par l'IA est tirée pour de vrai (droits vérifiés par le serveur : observateur, JTAC, chef, commandant, poste TOC ou Zeus) ; un appareil IA reçoit l'ordre d'attaquer la zone. Décoché : la demande reste écrite."],
+    _fs, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_fs_sim", "CHECKBOX",
+    ["Batteries simulées", "Coché : chaque moyen autorisé propose une batterie simulée (hors carte, sans pièce réelle) : les coups tombent sur la cible après le délai et la durée de vol du moyen. Pratique quand la mission n'a pas de pièce."],
+    _fs, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_fs_delay", "LIST",
+    ["Délais de réaction", "Temps entre la demande et le départ des coups (pièce IA ou simulée) : réalistes (de 30 s pour un mortier léger à 3 min pour un appui aérien), réduits au tiers, ou aucun."],
+    _fs, [[1, 0.35, 0], ["Réalistes", "Réduits", "Aucun"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_fs_rings", "CHECKBOX",
+    ["Cercles de portée et zone dangereuse", "Réglage personnel : sur la carte du téléphone et du poste TOC, portées min et max de la pièce choisie et distance de sécurité (danger close) autour de la cible. Les missions de tir en cours restent affichées."],
+    _fs, true, 0] call comspec_atak_native_fnc_addSetting;
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",
     ["ATAK pour les équipages d'hélico et d'avion", "Pilote, copilote et tireurs d'un hélicoptère ou d'un avion ont l'ATAK sur la tablette de bord, même sans téléphone ou avec un téléphone vide ou cassé. Elle se range quand on descend."],

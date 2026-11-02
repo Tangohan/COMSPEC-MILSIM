@@ -66,7 +66,7 @@ switch (_mode) do {
         // Diapositives lancées sur l'écran : fn_screenCast pose déjà son image, ne pas la recouvrir par l'origine.
         if (!isNull _o && {(count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}) then {
             private _sel = ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [2, 0]);
-            _o setObjectTexture [_sel, _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+            ["paint", [_o, _sel, _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]] call comspec_atak_native_fnc_tocScreen;
             ["surface", [_o, _sel, false]] call comspec_atak_native_fnc_tocScreen;
         };
         _act deleteAt _i;
@@ -88,6 +88,8 @@ switch (_mode) do {
             (count _c) >= 8 && {(_c select 3) isEqualTo "CAM"} && {alive _o} && {(_eye distance _o) < _range}
                 && {(_c select 1) isEqualTo "" || {(_c select 1) isEqualTo _side}}
                 && {(count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}
+                // Toile de projection : seulement éclairée par un projecteur allumé (fn_projector).
+                && {(getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}}
                 && {alive objectFromNetId (_o getVariable ["COMSPEC_ATAK_TocCam", ""])}
                 // Regardé il y a moins de 3 s : un coup d'œil ailleurs ne coupe pas l'image, personne devant = pas de rendu.
                 && {call {
@@ -164,8 +166,8 @@ switch (_mode) do {
                 if (_res isNotEqualTo (_e select 7)) then {
                     _e set [7, _res];
                     private _sel = ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [2, 0]);
-                    if (isNil { _o getVariable "COMSPEC_ATAK_TocOrig" }) then { _o setVariable ["COMSPEC_ATAK_TocOrig", (getObjectTextures _o) param [_sel, ""]]; };
-                    _o setObjectTexture [_sel, [format ["#(argb,%1,%1,1)r2t(%2,1.78)", _res, _e select 2], "#(rgb,8,8,3)color(0,0,0,1)"] select (_res isEqualTo 0)];
+                    if (isNil { _o getVariable "COMSPEC_ATAK_TocOrig" }) then { _o setVariable ["COMSPEC_ATAK_TocOrig", ["orig", [_o, _sel]] call comspec_atak_native_fnc_tocScreen]; };
+                    ["paint", [_o, _sel, [format ["#(argb,%1,%1,1)r2t(%2,1.78)", _res, _e select 2], "#(rgb,8,8,3)color(0,0,0,1)"] select (_res isEqualTo 0)]] call comspec_atak_native_fnc_tocScreen;
                     ["surface", [_o, _sel, true]] call comspec_atak_native_fnc_tocScreen;
                 };
             };

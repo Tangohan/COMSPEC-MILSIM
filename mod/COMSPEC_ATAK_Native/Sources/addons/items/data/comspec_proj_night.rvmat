@@ -1,0 +1,9 @@
+// Toile éclairée par un projecteur allumé, de nuit : lumière du projecteur seule.
+ambient[]={0.2,0.2,0.2,1};
+diffuse[]={0.2,0.2,0.2,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={0.55,0.55,0.55,1};
+specular[]={0.02,0.02,0.02,1};
+specularPower=4;
+PixelShaderID="Normal";
+VertexShaderID="Basic";
