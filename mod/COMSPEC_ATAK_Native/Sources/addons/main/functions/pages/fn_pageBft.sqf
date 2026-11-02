@@ -427,6 +427,13 @@ uiNamespace setVariable ["COMSPEC_ATAK_BftRows", _rows];
 if (_selIdx < 0 && {_firstRow >= 0} && {(_tracks findIf { (_x select 1) isEqualTo _selId }) < 0}) then { _selIdx = _firstRow; _selId = _ids select _firstRow; _s set ["bftSel", _selId]; };
 if (_selIdx >= 0 && {(lbCurSel _list) isNotEqualTo _selIdx}) then { _list lbSetCurSel _selIdx; };
 if (!_upd) then {
+// Défilement du tableau retrouvé après un rendu complet de la même page (clic, sélection) : avant, retour en haut.
+// Ancien tableau (masqué par fn_pageClear, supprimé à l'image suivante) : sa position est relue.
+private _oldList = (_live getOrDefault ["ctrls", []]) param [1, controlNull];
+if (!isNull _oldList && {(_live getOrDefault ["drawnSeq", -1]) isEqualTo ((uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) - 1)}) then {
+    private _lsv = ctrlScrollValues _oldList;
+    if ((_lsv select 0) > 0) then { _list ctrlSetScrollValues [_lsv select 0, -1]; };
+};
 _list ctrlAddEventHandler ["LBSelChanged", {
     params ["", "_i"];
     ((uiNamespace getVariable ["COMSPEC_ATAK_BftRows", []]) param [_i, []]) params [["_k", ""], ["_v", ""]];
