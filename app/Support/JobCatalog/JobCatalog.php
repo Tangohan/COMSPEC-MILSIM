@@ -29,7 +29,7 @@ use App\Support\JobRoleIconLibrary;
 final class JobCatalog
 {
     /** Packs livrés (nom du fichier sans extension). */
-    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof', 'ru_sof', 'nato'];
+    public const PACKS = ['us_sof', 'fr_sof', 'de_sof', 'cn_sof', 'ru_sof', 'my_sof', 'nato'];
 
     public const TYPES = ['operator', 'command', 'support', 'aviation'];
     public const BRANCHES = ['army', 'navy', 'air_force', 'marine_corps', 'gendarmerie', 'joint'];
@@ -45,6 +45,7 @@ final class JobCatalog
         'DE' => ['fr' => 'Allemagne', 'en' => 'Germany'],
         'CN' => ['fr' => 'Chine', 'en' => 'China'],
         'RU' => ['fr' => 'Russie', 'en' => 'Russia'],
+        'MY' => ['fr' => 'Malaisie', 'en' => 'Malaysia'],
         // Fonctions interalliées standardisées (pas un pays) : code « NATO », emblème dessiné en CSS.
         'NATO' => ['fr' => 'OTAN', 'en' => 'NATO'],
     ];
@@ -88,6 +89,14 @@ final class JobCatalog
             'marine_corps' => ['fr' => 'Morskaya pekhota (infanterie de marine)', 'en' => 'Naval Infantry (Morskaya pekhota)'],
             'gendarmerie' => ['fr' => 'Sécurité intérieure (Rosgvardia, FSB), hors armées', 'en' => 'Internal security (Rosgvardia, FSB), not armed forces'],
             'joint' => ['fr' => 'Interarmées (KSSO, état-major général)', 'en' => 'Joint (KSSO, General Staff)'],
+        ],
+        // Nom malais officiel de l’armée gardé dans les deux langues ; la police (PDRM) est hors des forces armées.
+        'MY' => [
+            'army' => ['fr' => 'Tentera Darat Malaysia (armée de terre)', 'en' => 'Malaysian Army (Tentera Darat Malaysia)'],
+            'navy' => ['fr' => 'Tentera Laut Diraja Malaysia (marine, TLDM)', 'en' => 'Royal Malaysian Navy (Tentera Laut Diraja Malaysia)'],
+            'air_force' => ['fr' => 'Tentera Udara Diraja Malaysia (armée de l’air, TUDM)', 'en' => 'Royal Malaysian Air Force (Tentera Udara Diraja Malaysia)'],
+            'gendarmerie' => ['fr' => 'Polis Diraja Malaysia (PDRM), police, hors armées', 'en' => 'Royal Malaysia Police (Polis Diraja Malaysia), not armed forces'],
+            'joint' => ['fr' => 'Interarmées (Angkatan Tentera Malaysia)', 'en' => 'Joint (Malaysian Armed Forces)'],
         ],
         'NATO' => [
             'army' => ['fr' => 'Composante terrestre (LCC)', 'en' => 'Land component (LCC)'],

@@ -190,5 +190,7 @@ final class QualificationIssuerCatalogTest extends TestCase
         self::assertFalse(AcademyOffer::needsReference(['onglet' => 'formations']));
         self::assertStringContainsString('<svg', CatalogCountry::flag('DE'));
         self::assertSame('Россия', CatalogCountry::native('RU'));
+        self::assertSame('Malaysia', CatalogCountry::native('MY'));
+        self::assertStringContainsString('<svg', CatalogCountry::flag('MY'));
     }
 }

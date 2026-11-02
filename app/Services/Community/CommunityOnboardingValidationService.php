@@ -11,7 +11,7 @@ use App\Authorization\TenantPermissionCatalog;
  */
 final class CommunityOnboardingValidationService
 {
-    public const GRADE_SYSTEMS = ['FR_CLASSIC', 'US_CLASSIC'];
+    public const GRADE_SYSTEMS = \App\Support\OfficialGradeSystems::CODES;
 
     /** @return list<string> */
     public static function wizardAssignableSlugs(): array
@@ -70,7 +70,7 @@ final class CommunityOnboardingValidationService
             $wizard['grade_system_code'] = $code;
         }
         if (!in_array($code, self::GRADE_SYSTEMS, true)) {
-            $errors[] = 'Choisissez un référentiel de grades (modèle français ou américain).';
+            $errors[] = 'Choisissez un référentiel de grades (modèle français, américain ou malaisien).';
             $step = $step ?? 'grades';
         }
 

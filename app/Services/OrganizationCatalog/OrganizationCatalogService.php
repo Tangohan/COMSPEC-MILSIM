@@ -152,6 +152,9 @@ final class OrganizationCatalogService
         return match (strtoupper(trim($code))) {
             'US_CLASSIC' => 'Système de grades américain',
             'FR_CLASSIC' => 'Système de grades français',
+            'MY_CLASSIC' => 'Système de grades malaisien (Tentera Darat)',
+            'MY_TLDM' => 'Système de grades malaisien (marine, TLDM)',
+            'MY_TUDM' => 'Système de grades malaisien (armée de l’air, TUDM)',
             '' => 'Aucun système de grades choisi',
             default => 'Système de grades déjà en place',
         };
@@ -516,9 +519,11 @@ final class OrganizationCatalogService
                 if (!$dryRun) {
                     $this->tenants->mergeSettings($tenantId, ['grade_system_code' => $wanted]);
                 }
-                $gradeNote = $wanted === 'US_CLASSIC'
-                    ? 'Système de grades américain retenu.'
-                    : 'Système de grades français retenu.';
+                $gradeNote = match ($wanted) {
+                    'US_CLASSIC' => 'Système de grades américain retenu.',
+                    'MY_CLASSIC', 'MY_TLDM', 'MY_TUDM' => 'Système de grades malaisien retenu.',
+                    default => 'Système de grades français retenu.',
+                };
             } else {
                 $gradeNote = 'Système de grades déjà en place, inchangé.';
             }

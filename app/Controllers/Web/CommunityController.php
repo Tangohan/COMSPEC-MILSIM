@@ -1047,6 +1047,17 @@ class CommunityController
         $grades = new GradeRepository();
         $gradesFr = $grades->listBySystemCode('FR_CLASSIC');
         $gradesUs = $grades->listBySystemCode('US_CLASSIC');
+        // Autres systèmes officiels (Malaisie…) proposés dès que leurs grades sont installés.
+        $gradesExtraGrouped = [];
+        foreach (\App\Support\OfficialGradeSystems::CODES as $extraCode) {
+            if (in_array($extraCode, ['FR_CLASSIC', 'US_CLASSIC'], true)) {
+                continue;
+            }
+            $extraRows = $grades->listBySystemCode($extraCode);
+            if ($extraRows !== []) {
+                $gradesExtraGrouped[$extraCode] = $this->groupGradesByCategory($extraRows);
+            }
+        }
 
         return Response::view('layout.main', [
             'title' => 'Créer une communauté',
@@ -1058,6 +1069,7 @@ class CommunityController
             'gradesUs' => $gradesUs,
             'gradesFrGrouped' => $this->groupGradesByCategory($gradesFr),
             'gradesUsGrouped' => $this->groupGradesByCategory($gradesUs),
+            'gradesExtraGrouped' => $gradesExtraGrouped,
             'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
             'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
             'orbatPresets' => WizardOrbatPresets::forWizard(),

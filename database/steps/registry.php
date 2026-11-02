@@ -53,4 +53,5 @@ return [
     ['id' => 'atak_played_operations', 'label' => 'Parties détectées en jeu : types, catégories, règles « ignorer à l’avenir », suppression réversible et rattachement aux opérations planifiées', 'group' => 'schema', 'file' => '3580_atak_played_operations.php', 'rerun' => true],
     ['id' => 'recruitment_invite_links', 'label' => 'Recrutement : liens d’invitation partageables (/i/code) pour candidater ou rejoindre la communauté, avec expiration, nombre d’utilisations et statistiques', 'group' => 'schema', 'file' => '3590_recruitment_invite_links.php', 'rerun' => true],
     ['id' => 'member_names_trigrams', 'label' => 'Noms des membres : trigrammes uniques par communauté (remplissage initial) et réglage d’affichage (Prénom N., Prénom NOM)', 'group' => 'schema', 'file' => '3600_member_names_trigrams.php', 'rerun' => true],
+    ['id' => 'grade_systems_malaysia', 'label' => 'Grades : systèmes malaisiens (Tentera Darat, TLDM, TUDM) ajoutés au catalogue commun, intitulés en malais', 'group' => 'schema', 'file' => '3610_grade_systems_malaysia.php', 'rerun' => true],
 ];
