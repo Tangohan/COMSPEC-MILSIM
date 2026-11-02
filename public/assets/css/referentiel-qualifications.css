@@ -352,3 +352,5 @@ html[data-bo-theme="dark"] .rql__tag--perm { color: #8cc4ff; background: #13243a
 .rql__tag--mode-auto { background: var(--rq-accent-bg); color: var(--rq-accent); }
 .rql__tag--mode-pilot { background: var(--rq-warn-bg); color: var(--rq-warn); }
 html[data-bo-theme="dark"] .rql__tag--mode-academy { background: #13202e; color: #84b9ee; }
+.rql-issuer-filter { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--ath-line, #e2e8f0); border-radius: 10px; background: var(--ath-line-soft, #f1f5f9); color: var(--ath-ink, #0f172a); font-size: 13.5px; }
+.rql-issuer-filter a b { color: inherit; }

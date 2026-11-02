@@ -155,6 +155,17 @@ final class QualificationCertificatePdfService
         }
         $badgeAbs = $this->badges->absolutePath(is_string($badgePath) ? $badgePath : null);
         $temporal = $this->temporal->resolve($award);
+        $signatory = ['name' => '', 'title' => ''];
+        if ((int) ($award['issuer_id'] ?? 0) > 0) {
+            try {
+                $issuerRow = (new \App\Repositories\QualificationIssuerRepository())->find($tenantId, (int) $award['issuer_id']);
+                $signatory = [
+                    'name' => trim((string) ($issuerRow['signatory_name'] ?? '')),
+                    'title' => trim((string) ($issuerRow['signatory_title'] ?? '')),
+                ];
+            } catch (\Throwable) {
+            }
+        }
 
         $viewData = [
             'award' => $award,
@@ -169,6 +180,8 @@ final class QualificationCertificatePdfService
             'qualification_name' => (string) ($award['definition_name'] ?? $award['qualification_name'] ?? ''),
             'level_name' => (string) ($award['level_name'] ?? $award['level'] ?? ''),
             'issuer_name' => trim((string) ($award['issuer_name'] ?? '')) !== '' ? (string) $award['issuer_name'] : $tenantName,
+            'issuer_signatory_name' => $signatory['name'],
+            'issuer_signatory_title' => $signatory['title'],
             'obtained_at' => $this->formatDate($award['obtained_at'] ?? null),
             'expires_at' => $this->formatDate($award['expires_at'] ?? null),
             'temporal_label' => $temporal['label'] !== '' ? $temporal['label'] : 'Valide',

@@ -48,13 +48,24 @@ $flashError = \App\Core\Session::getFlash('error');
         </div>
         <?php endif; ?>
         <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Organisme émetteur</label>
-            <select name="issuer_id" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+            <?php
+            $issuerSelected = (int) ($prefill['issuer_id'] ?? 0);
+            if ($issuerSelected <= 0) {
+                $issuerSelected = (int) ($issuerPreset ?? 0) > 0 ? (int) $issuerPreset : (int) (($definition ?? [])['default_issuer_id'] ?? 0);
+            }
+            ?>
+            <label for="award-issuer" class="block text-xs font-semibold text-slate-600 mb-1">Émetteur</label>
+            <select id="award-issuer" name="issuer_id" aria-describedby="award-issuer-help" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
                 <option value="">—</option>
-                <?php foreach ($issuers as $i): ?>
-                    <option value="<?= (int) $i['id'] ?>"><?= htmlspecialchars((string) $i['name']) ?></option>
+                <?php foreach ($issuers as $i):
+                    $iid = (int) $i['id'];
+                    if (!empty($i['archived_at']) && $iid !== $issuerSelected) {
+                        continue;
+                    } ?>
+                    <option value="<?= $iid ?>"<?= $iid === $issuerSelected ? ' selected' : '' ?>><?= htmlspecialchars((string) $i['name']) ?></option>
                 <?php endforeach; ?>
             </select>
+            <p id="award-issuer-help" class="mt-1 text-xs text-slate-500">Son nom figure sur le brevet. Proposé d’office quand la qualification a un émetteur habituel. <a class="underline" href="<?= url('back-office/referentiels/qualifications/emetteurs') ?>">Gérer les émetteurs</a></p>
         </div>
         <div class="grid md:grid-cols-2 gap-4">
             <div>

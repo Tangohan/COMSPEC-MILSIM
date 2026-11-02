@@ -1225,3 +1225,4 @@ Finances	identique en anglais	views/admin/system/plan_payments.php
 vs %1	identique en anglais	views/admin/system/plan_payments.php
 Intervention — %1	identique en anglais	views/admin/system/tenant_intervention.php
 Studio — version	identique en anglais	views/admin/training/studio_edit.php
+Centre d’instruction CAS	nom propre d’exemple (émetteur fictif)	views/admin/organization/qualifications/_issuer_fields.php
