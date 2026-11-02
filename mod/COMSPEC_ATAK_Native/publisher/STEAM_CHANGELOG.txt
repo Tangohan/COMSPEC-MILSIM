@@ -1,33 +1,30 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.34.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.35.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.34 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] mettez à jour le pack 2.9.35 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]Nouveauté — App Routes[/h2]
-Nouvelle app [b]Routes[/b] (section Navigation) : créez, dupliquez et supprimez des routes nommées, et retrouvez celles partagées par votre équipe, votre groupe ou votre camp.
+[h2]Nouveauté — App Zones (battleplan)[/h2]
+Nouvelle app [b]Zones[/b] (section Mission) pour découper le terrain, nommer et numéroter les zones et suivre la situation zone par zone.
 [list]
-[*] [b]Type de tracé[/b] : à pied, véhicule (option « Suivre les routes » : chaque tronçon passe par le réseau routier), aérien (ligne droite et couloir de vol) ou nautique. Couleur, épaisseur et style (plein, pointillé, flèches de direction).
-[*] [b]Étapes[/b] : clic sur la carte de l'app (ajouter, insérer après une étape, déplacer), ma position, un marqueur existant ou une grille MGRS. Chaque étape a un type (départ, point de passage, checkpoint, ligne de phase, ralliement, ralliement objectif, objectif, LZ, PZ, point de dislocation, arrivée), un nom, une consigne, une heure prévue H+ et une action attendue.
-[*] [b]Calculs[/b] : distance et cap de chaque tronçon, distance totale, durée selon la vitesse réglable, heure d'arrivée.
-[*] [b]Suivre la route[/b] : étape visée, distance, cap, arrivée, reste et progression ; le téléphone vibre à chaque étape atteinte et la montre Garmin pointe l'étape visée.
-[*] [b]Affichage[/b] : carte ATAK, carte d'Arma et site Athena (tracé et étapes en marqueurs), vue 3D dans le monde.
-[*] [b]Partage[/b] à l'équipe, au groupe ou au camp par le réseau ATAK : sans réseau, la route part au retour du signal ; les joueurs qui arrivent la reçoivent aussi.
-[*] Les actions ACE « Ajouter un point d'itinéraire » et « Effacer l'itinéraire » (infos tactiques JVN) remplissent la route « Itinéraire JVN » de l'app. L'app Itinéraire peut copier ses étapes dans l'app Routes.
+[*] [b]Découpage automatique[/b] d'une zone de travail (rectangle, polygone, cercle autour d'un objectif ou de vous) : grille de référence A1, B2… ou numérotée en serpentin (cases de 50 m à 1 km, calées sur le carroyage), îlots et quartiers délimités par les routes de la carte, secteurs N, NE… ou numérotés avec anneaux, ou une seule zone. Préfixe et noms de code au choix (OTAN, villes, animaux).
+[*] [b]Bâtiments numérotés[/b] dans une zone, avec leurs étages.
+[*] [b]Axes routiers[/b] nommés tout seuls : MSR pour le grand axe, ASR pour les suivants (MSR TAMPA, ASR DOVER…), carrefours en points de contrôle CP1, CP2… ; chaque axe peut devenir une route de l'app Routes.
+[*] [b]Rendu[/b] au choix par plan, zone ou axe : surligné, contour seul ou simple point centré avec le nom ; couleurs par type (ami, ennemi, neutre, inconnu, objectif, restreinte) et par état ; bascule globale sur la carte.
+[*] [b]Situation[/b] : état de chaque zone en un clic (non reconnue, claire, contact, ennemi signalé, tenue par ami, interdite), signalements avec nature, effectif et heure, tableau de situation. Un contact ennemi posé ou signalé dans une zone (marqueur ennemi, TIC, SALUTE, compte rendu) la met à jour tout seul.
+[*] La zone sous le curseur s'affiche dans le bandeau de la carte, le clic droit ouvre sa fiche, et [b]@zone[/b] la cite dans un message ou un compte rendu.
+[*] [b]Partage[/b] à l'équipe, au groupe ou au camp par le réseau ATAK (sans réseau, envoi au retour du signal ; plans et situation remis aux joueurs qui arrivent), sur la carte d'Arma et sur Athena.
 [/list]
 
-[h2]Carte — Bandeau du curseur refait[/h2]
-Grille MGRS complète affichée une seule fois, « ALT 17 m », distance et gisement avec une petite flèche orientée. À droite, votre cap est clairement étiqueté (« CAP 317° NNO ») et les points cardinaux vont sur 16 directions : plus de « 317° NON ». Fond plus sombre, lisible sur les cartes claires.
-
-[h2]App Réseau — Texte lisible[/h2]
-Le texte est nettement plus grand, une information par ligne (libellé à gauche, valeur à droite). Les sections se replient d'un clic avec un résumé de leur état, et votre choix est gardé. Boutons plus grands.
+[h2]Carte — Bandeau du curseur et point GPS à votre goût[/h2]
+Dans le volet de configuration de la carte : choisissez le bandeau du curseur [b]Nouveau[/b], [b]Classique[/b] (comme avant la 2.9.34, sans ses défauts), [b]Compact[/b] ou [b]Masqué[/b], ce qu'il affiche (grille, distance et gisement, altitude, cap, indicatif, zone), le format de grille (MGRS, 8 ou 10 chiffres, latitude-longitude), les unités (m / km ou ft / mi), sa position, son fond et sa taille. Votre point GPS se règle aussi : forme (flèche par défaut, chevron, point, cercle, triangle, symbole ami), couleur, taille, cône de cap, trace de vos positions et indicatif.
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 2.9.34.AG - Denver
+[*] Téléphone ATAK 2.9.35.AG - Denver
 [*] COMSPEC Link 2.0.116
 [*] Overwatch connect 1.6.29 · Overwatch main 1.4.8
 [/list]
 
-[h2]Rappel 2.9.33 — Écrans et voix radio par le maillage MPU5[/h2]
-Les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy (image noire depuis la 2.9.29). Radio ACRE2 ou TFAR reliée à la MPU5 : la voix passe par le maillage jusqu'aux radios reliées des équipiers sur la même fréquence (réglage serveur, désactivé par défaut).
+[h2]Rappel 2.9.34 — App Routes, bandeau du curseur, app Réseau[/h2]
+Nouvelle app Routes : routes nommées à pied, en véhicule (par les routes), aériennes ou nautiques, étapes typées avec consigne, H+ et action attendue, calculs, « Suivre la route » et partage. Bandeau du curseur refait (grille MGRS une fois, « ALT 17 m », cap étiqueté) et app Réseau nettement plus lisible.
