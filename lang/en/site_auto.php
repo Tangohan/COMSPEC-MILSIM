@@ -51638,4 +51638,5 @@ return [
     '%1 qualification(s) importée(s) du catalogue OTAN, %2 déjà présente(s) ignorée(s). Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.' => '%1 qualification(s) imported from the NATO catalogue, %2 already present skipped. In-game qualifications with no real-world value: now set how they are obtained.',
     '%1 qualification(s) importée(s) du catalogue OTAN. Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.' => '%1 qualification(s) imported from the NATO catalogue. In-game qualifications with no real-world value: now set how they are obtained.',
     'Réussir le cours Academy « %1 »' => 'Pass the Academy course “%1”',
+    'Inspirez-vous d’un emploi de référence (forces spéciales américaines, françaises et allemandes, fonctions interalliées OTAN) : copiez tout ou un seul champ, puis adaptez avant d’enregistrer.' => 'Start from a reference job (US, French and German special forces, NATO combined functions): copy everything or a single field, then adapt it before saving.',
 ];
