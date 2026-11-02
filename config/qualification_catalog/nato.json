@@ -1,0 +1,1639 @@
+{
+  "pack": "nato",
+  "country": "NATO",
+  "official_lang": "en",
+  "label": {
+    "fr": "Qualifications de référence OTAN",
+    "en": "NATO reference qualifications"
+  },
+  "disclaimer": {
+    "fr": "Qualification de jeu inspirée du standard OTAN, sans valeur réelle.",
+    "en": "In-game qualification inspired by the NATO standard, with no real-world value."
+  },
+  "issuer": {
+    "name": "OTAN (référence)",
+    "short_name": "OTAN",
+    "description": {
+      "fr": "Émetteur de référence des qualifications importées du catalogue OTAN : qualifications de jeu inspirées des standards et cours OTAN publics, sans valeur réelle.",
+      "en": "Reference issuer for qualifications imported from the NATO catalogue: in-game qualifications inspired by public NATO standards and courses, with no real-world value."
+    }
+  },
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé le 2 novembre 2026 à partir de sources publiques : catalogues de cours des centres d’excellence OTAN (MILMED, C-IED, EOD, JCBRN, CIMIC, combat en montagne), du NMIOTC et du JAPCC, pages thématiques de nato.int, documents du BILC sur le STANAG 6001, programme d’un cours JTAC approuvé OTAN, presse spécialisée et Wikipédia en complément ; textes reformulés, rien de classifié ; un champ vide signifie qu’aucune source ouverte ne le précise.",
+    "en": "Compiled on 2 November 2026 from public sources: course catalogues of NATO centres of excellence (MILMED, C-IED, EOD, JCBRN, CIMIC, mountain warfare), NMIOTC and JAPCC, nato.int topic pages, BILC documents on STANAG 6001, the syllabus of a NATO-approved JTAC course, trade press and Wikipedia as a complement; texts are paraphrased, nothing classified; an empty field means no open source specifies it."
+  },
+  "entries": [
+    {
+      "id": "nato-jtac",
+      "code": "OTAN-JTAC",
+      "category": "air_support",
+      "name": {
+        "fr": "JTAC qualifié (STANAG 3797)",
+        "en": "Qualified JTAC (STANAG 3797)"
+      },
+      "short_name": "JTAC",
+      "description": {
+        "fr": "Contrôleur d’attaque terminale interarmées, appelé contrôleur aérien avancé (FAC) dans la norme OTAN : il guide depuis une position avancée les aéronefs qui effectuent l’appui aérien rapproché (CAS) au profit des troupes au sol. La formation couvre la planification d’une mission CAS, l’espace aérien (ACO, ATO, SPINS), les procédures de communication sol-air et le choix des armements, puis des contrôles réels et simulés sur aéronefs à voilure fixe et tournante.",
+        "en": "Joint terminal attack controller, called forward air controller (FAC) in the NATO standard: from a forward position, directs the aircraft providing close air support (CAS) to ground troops. Training covers CAS mission planning, airspace control (ACO, ATO, SPINS), ground-air communication procedures and weaponeering, followed by live and simulated controls with fixed- and rotary-wing aircraft."
+      },
+      "body": {
+        "fr": "Normes minimales OTAN (STANAG 3797) et JTAC Memorandum of Agreement (JFS ESC, États-Unis) ; écoles nationales accréditées (ex. ItaJAOS)",
+        "en": "NATO minimum standards (STANAG 3797) and the JTAC Memorandum of Agreement (US JFS ESC); accredited national schools (e.g. ItaJAOS)"
+      },
+      "reference": {
+        "fr": "STANAG 3797 (qualifications minimales des FAC) ; ATP-3.3.2.1 (CAS) ; liste des tâches essentielles du JTAC (JTAC METL) ; JTAC MOA",
+        "en": "STANAG 3797 (minimum qualifications for FACs); ATP-3.3.2.1 (CAS); JTAC mission essential task list (JTAC METL); JTAC MOA"
+      },
+      "prerequisites": {
+        "fr": [
+          "Anglais SLP 3332 selon le STANAG 6001 (exigence du cours italien ItaJAOS)",
+          "Habilitation NATO SECRET (exigence du cours ItaJAOS)"
+        ],
+        "en": [
+          "English SLP 3332 under STANAG 6001 (requirement of the Italian ItaJAOS course)",
+          "NATO SECRET clearance (ItaJAOS course requirement)"
+        ]
+      },
+      "validity": {
+        "fr": "Maintien en condition (currency) : nombre minimal de contrôles à réaliser chaque année, fixé par le STANAG 3797 et le JTAC MOA ; une partie peut être effectuée sur simulateur accrédité.",
+        "en": "Currency: a minimum number of controls must be completed every year, as set by STANAG 3797 and the JTAC MOA; part of them may be performed on an accredited simulator."
+      },
+      "validity_months": 12,
+      "sources": [
+        {
+          "url": "https://businessinfo.shephardmedia.com/industry-insights/military-training-in-focus-2023/jtac",
+          "title": "Staying in control – Shephard, Military training in focus 2023"
+        },
+        {
+          "url": "https://www.difesa.it/assets/allegati/46596/itajaos_jtac.pdf",
+          "title": "ItaJAOS – Joint Terminal Attack Controller course (NATO approved)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Forward_air_control",
+          "title": "Forward air control – Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Joint_terminal_attack_controller",
+          "title": "Joint terminal attack controller – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "nato-fac-airborne",
+      "code": "OTAN-FACA",
+      "category": "air_support",
+      "name": {
+        "fr": "Contrôleur aérien avancé aéroporté (FAC(A) / ABFAC)",
+        "en": "Airborne forward air controller (FAC(A) / ABFAC)"
+      },
+      "short_name": "FAC(A)",
+      "description": {
+        "fr": "Contrôleur aérien avancé opérant depuis un aéronef : à bord d’un avion (FAC-A) ou d’un hélicoptère (ABFAC) selon la terminologie OTAN. Il assure, depuis les airs, la coordination et le guidage terminal de l’appui aérien rapproché, en relais ou en complément du contrôleur au sol. Ses qualifications minimales relèvent, comme celles du FAC au sol, de la norme OTAN dédiée.",
+        "en": "Forward air controller operating from an aircraft: a fixed-wing aircraft (FAC-A) or a helicopter (ABFAC) in NATO terminology. From the air, it coordinates and provides terminal guidance for close air support, relaying or complementing the ground controller. Its minimum qualifications, like those of the ground FAC, fall under the dedicated NATO standard."
+      },
+      "body": {
+        "fr": "Normes OTAN des contrôleurs aériens avancés (NSO / JAPCC)",
+        "en": "NATO forward air controller standards (NSO / JAPCC)"
+      },
+      "reference": {
+        "fr": "STANAG 3797 (qualifications minimales des FAC) ; ATP-3.3.2.1 (CAS)",
+        "en": "STANAG 3797 (minimum qualifications for FACs); ATP-3.3.2.1 (CAS)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Forward_air_control",
+          "title": "Forward air control – Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Forward_observers_in_the_U.S._military",
+          "title": "Forward observers in the U.S. military (Joint fires observer) – Wikipedia"
+        },
+        {
+          "url": "https://www.japcc.org/competencies/cas/",
+          "title": "JAPCC – Close Air Support"
+        }
+      ]
+    },
+    {
+      "id": "nato-cuas",
+      "code": "OTAN-CUAS",
+      "category": "air_support",
+      "name": {
+        "fr": "Fondamentaux de la lutte anti-drones (C-UAS, JAPCC)",
+        "en": "Counter-UAS fundamentals (C-UAS, JAPCC)"
+      },
+      "short_name": "C-UAS",
+      "description": {
+        "fr": "Formation de base à la lutte contre les systèmes aériens sans équipage, ouverte à tous les grades de la communauté C-UAS de l’OTAN. Elle traite des tactiques d’emploi des drones, de la menace qu’ils représentent, des méthodes de détection, de la neutralisation passive et active, puis de la planification C-UAS au moyen d’un exercice sur table.",
+        "en": "Foundation course on countering uncrewed aircraft systems, open to all ranks of the NATO C-UAS community of interest. It covers drone tactics, techniques and procedures, the threat they pose, detection methods, passive and active mitigation, and C-UAS planning through a tabletop exercise."
+      },
+      "body": {
+        "fr": "Joint Air Power Competence Centre (JAPCC), Kalkar",
+        "en": "Joint Air Power Competence Centre (JAPCC), Kalkar"
+      },
+      "reference": {
+        "fr": "JAPCC C-UAS Fundamentals Training Course (proposé chaque mois depuis août 2025)",
+        "en": "JAPCC C-UAS Fundamentals Training Course (offered monthly since August 2025)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.japcc.org/training/",
+          "title": "JAPCC – Training (C-UAS Fundamentals Training Course)"
+        }
+      ]
+    },
+    {
+      "id": "nato-jfo",
+      "code": "OTAN-JFO",
+      "category": "fires",
+      "name": {
+        "fr": "Observateur des feux interarmées (JFO)",
+        "en": "Joint fires observer (JFO)"
+      },
+      "short_name": "JFO",
+      "description": {
+        "fr": "Observateur formé à demander, conduire et régler les tirs de mortier, d’artillerie et d’appui naval, et à fournir au JTAC ou au FAC(A) les informations de ciblage nécessaires à l’appui aérien rapproché. Il sait déconflicter plusieurs moyens de feux sol et air dans le temps et dans l’espace et contribue à la planification des feux au niveau compagnie. Le cours de référence dure deux semaines et repose sur des simulations notées.",
+        "en": "Observer trained to request, control and adjust mortar, artillery and naval gunfire, and to pass the JTAC or FAC(A) the targeting information required for close air support. Able to deconflict several ground and air fire assets in time and space, and contributes to company-level fire support planning. The reference course lasts two weeks and is built on graded simulations."
+      },
+      "body": {
+        "fr": "Cours JFO alliés (Fort Sill ; Warrior Preparation Center, Einsiedlerhof, Allemagne)",
+        "en": "Allied JFO courses (Fort Sill; Warrior Preparation Center, Einsiedlerhof, Germany)"
+      },
+      "reference": {
+        "fr": "Joint Fires Observer : qualification interarmées d’origine américaine, utilisée en appui des JTAC alliés",
+        "en": "Joint Fires Observer: joint qualification of US origin, used in support of Allied JTACs"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Forward_observers_in_the_U.S._military",
+          "title": "Forward observers in the U.S. military (Joint fires observer) – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "nato-laser-operator",
+      "code": "OTAN-LASER-OP",
+      "category": "fires",
+      "name": {
+        "fr": "Opérateur laser en appui du contrôleur aérien avancé",
+        "en": "Laser operator in support of forward air controllers"
+      },
+      "short_name": "Opé. laser",
+      "description": {
+        "fr": "Opérateur de désignateur laser travaillant au profit d’un FAC ou d’un JTAC pour marquer ou désigner les objectifs des munitions guidées. La norme OTAN qui fixe les qualifications minimales des contrôleurs aériens avancés couvre aussi ces opérateurs laser, afin de réduire les risques de tirs fratricides dans les opérations air-sol.",
+        "en": "Laser designator operator working for a FAC or JTAC to mark or designate targets for guided munitions. The NATO standard setting the minimum qualifications of forward air controllers also covers these laser operators, in order to reduce the risk of fratricide in air-to-ground operations."
+      },
+      "body": {
+        "fr": "Normes OTAN des contrôleurs aériens avancés (NSO / JAPCC)",
+        "en": "NATO forward air controller standards (NSO / JAPCC)"
+      },
+      "reference": {
+        "fr": "STANAG 3797 « Minimum qualifications for forward air controllers & laser operators in support of forward air controllers »",
+        "en": "STANAG 3797 “Minimum qualifications for forward air controllers & laser operators in support of forward air controllers”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Forward_air_control",
+          "title": "Forward air control – Wikipedia"
+        },
+        {
+          "url": "https://businessinfo.shephardmedia.com/industry-insights/military-training-in-focus-2023/jtac",
+          "title": "Staying in control – Shephard, Military training in focus 2023"
+        }
+      ]
+    },
+    {
+      "id": "nato-maritime-sniper",
+      "code": "OTAN-SNIPER-MAR",
+      "category": "sof",
+      "name": {
+        "fr": "Tireur d’élite maritime (NMIOTC)",
+        "en": "Maritime sniper (NMIOTC)"
+      },
+      "short_name": "Sniper mar.",
+      "description": {
+        "fr": "Formation des équipes et tireurs d’élite aux pratiques OTAN pour engager des objectifs fixes ou mobiles en mer. Les modules couvrent le tir depuis la terre vers la mer, depuis un hélicoptère et depuis un navire, dans les dimensions tactique et opérative de l’emploi du tireur d’élite.",
+        "en": "Trains sniper teams and individual snipers in NATO practices for engaging stationary or moving targets at sea. Modules cover land-to-sea shooting, shooting from a helicopter and shooting from a ship, across the tactical and operational dimensions of sniper employment."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 27000 « Maritime Sniper Course » (ETOC SOF-SO-35603)",
+        "en": "NMIOTC course 27000 “Maritime Sniper Course” (ETOC SOF-SO-35603)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        }
+      ]
+    },
+    {
+      "id": "nato-boarding-team",
+      "code": "OTAN-BOARDING",
+      "category": "sof",
+      "name": {
+        "fr": "Membre d’équipe de visite (MIO, NMIOTC)",
+        "en": "Boarding team member (MIO, NMIOTC)"
+      },
+      "short_name": "Boarding",
+      "description": {
+        "fr": "Qualification des équipes de visite chargées d’aborder un navire suspect lors d’opérations d’interdiction maritime selon la doctrine OTAN. Le volet théorique traite de la mission, de l’inspection documentaire et des cargaisons, du renseignement, de la planification tactique et de la psychologie de l’équipage ; le volet pratique entraîne à l’inspection de conteneurs, au tir en espace confiné et au ratissage tactique à bord.",
+        "en": "Qualification for boarding teams tasked with boarding a suspect vessel during maritime interdiction operations under NATO doctrine. The theoretical part covers mission requirements, document and cargo inspection, intelligence, tactical planning and crew psychology; the practical part trains container inspection, shooting in confined spaces and tactical sweeps on board."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 2000 et 3000 « Boarding Team Theoretical / Practical Issues » (ETOC MOP-MO-21203) ; ATP-71",
+        "en": "NMIOTC courses 2000 and 3000 “Boarding Team Theoretical / Practical Issues” (ETOC MOP-MO-21203); ATP-71"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours 2000 (volet théorique) préalable au cours 3000",
+          "Anglais SLP 3232 selon le STANAG 6001"
+        ],
+        "en": [
+          "Course 2000 (theory) is a prerequisite for course 3000",
+          "English SLP 3232 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        }
+      ]
+    },
+    {
+      "id": "nato-coastal-critical-sites",
+      "code": "OTAN-MIO-CCS",
+      "category": "sof",
+      "name": {
+        "fr": "Intervention sur sites côtiers critiques (MIO MPSI CCS)",
+        "en": "Coastal critical sites intervention (MIO MPSI CCS)"
+      },
+      "short_name": "MIO CCS",
+      "description": {
+        "fr": "Cours destiné aux forces spéciales, aux unités de type SOF et à leurs appuis, pour planifier et conduire une intervention sur un site côtier critique lors d’un incident de sécurité grave. Les modules abordent les règles d’engagement, la planification tactique, la progression à l’extérieur et à l’intérieur du site, l’effraction, le contrôle des suspects, le tir de combat, l’insertion et l’extraction, puis un exercice final.",
+        "en": "Course for special operations forces, SOF-like units and SOF enablers, to plan and conduct an intervention on a coastal critical site during a serious security incident. Modules address rules of engagement, tactical planning, movement outside and inside the site, breaching, suspect control, combat marksmanship, insertion and extraction, and a final tactical exercise."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 20000 « MIO MPSI CCS » (ETOC SOF-SO-36734)",
+        "en": "NMIOTC course 20000 “MIO MPSI CCS” (ETOC SOF-SO-36734)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Anglais SLP 3232 selon le STANAG 6001"
+        ],
+        "en": [
+          "English SLP 3232 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        }
+      ]
+    },
+    {
+      "id": "nato-sof-aviation",
+      "code": "OTAN-SOF-AVN",
+      "category": "sof",
+      "name": {
+        "fr": "Équipage d’aviation des opérations spéciales (MSAP)",
+        "en": "Special operations aviation aircrew (MSAP)"
+      },
+      "short_name": "SOF Avn",
+      "description": {
+        "fr": "Qualification des équipages d’hélicoptères chargés du transport des forces spéciales, formés selon les standards OTAN pour renforcer l’interopérabilité entre alliés. Le programme multinational de Zadar (Croatie) associe une phase académique et une phase en vol, en milieu montagneux, maritime et insulaire.",
+        "en": "Qualification for helicopter crews tasked with transporting special operations forces, trained to NATO standards to improve interoperability between Allies. The multinational programme in Zadar (Croatia) combines an academic phase and a flying phase in mountain, maritime and island settings."
+      },
+      "body": {
+        "fr": "Multinational Special Aviation Programme (Bulgarie, Croatie, Hongrie, Slovénie), soutenu par le commandement SOF de l’OTAN (NSHQ, devenu SOFCOM)",
+        "en": "Multinational Special Aviation Programme (Bulgaria, Croatia, Hungary, Slovenia), supported by NATO’s SOF headquarters (NSHQ, now SOFCOM)"
+      },
+      "reference": {
+        "fr": "Standards OTAN des opérations spéciales ; programme MSAP ouvert en décembre 2019",
+        "en": "NATO special operations standards; MSAP programme opened in December 2019"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.nato.int/en/news-and-events/articles/news/2019/12/11/multinational-special-operations-aviation-training-centre-opens-in-croatia",
+          "title": "NATO – Multinational Special Operations Aviation training centre opens in Croatia"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/special-operations-forces",
+          "title": "NATO – Special Operations Forces"
+        }
+      ]
+    },
+    {
+      "id": "nato-tccc-cls",
+      "code": "OTAN-TCCC-CLS",
+      "category": "medical",
+      "name": {
+        "fr": "Secourisme au combat TCCC / CLS (opérations maritimes)",
+        "en": "TCCC / Combat lifesaver (maritime operations)"
+      },
+      "short_name": "TCCC-CLS",
+      "description": {
+        "fr": "Formation au sauvetage au combat selon les principes TCCC, adaptée aux opérations maritimes à la suite des retours d’expérience des exercices du centre. Elle suit les phases de la prise en charge : soins sous le feu, gestes immédiats face aux blessures vitales en phase de soins tactiques, stabilisation, traitement des blessures non vitales et préparation à l’évacuation.",
+        "en": "Combat casualty care training based on TCCC principles, tailored to maritime operations following lessons learned from the centre’s exercises. It follows the phases of care: care under fire, immediate actions for life-threatening injuries in tactical field care, stabilisation, management of non-life-threatening conditions and preparation for evacuation."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 26000 « TCCC / CLS in Maritime Operations » (ETOC MED-MS-35547) ; lignes directrices TCCC",
+        "en": "NMIOTC course 26000 “TCCC / CLS in Maritime Operations” (ETOC MED-MS-35547); TCCC guidelines"
+      },
+      "prerequisites": {
+        "fr": [
+          "Anglais SLP 3232 selon le STANAG 6001"
+        ],
+        "en": [
+          "English SLP 3232 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Tactical_Combat_Casualty_Care",
+          "title": "Tactical Combat Casualty Care – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "nato-maritime-combat-care",
+      "code": "OTAN-MED-MAR",
+      "category": "medical",
+      "name": {
+        "fr": "Soins de combat en milieu maritime (rôle 1 et soins prolongés)",
+        "en": "Medical combat care in maritime operations (Role 1 and prolonged care)"
+      },
+      "short_name": "Med. maritime",
+      "description": {
+        "fr": "Complément destiné au personnel de santé des forces spéciales et conventionnelles pour soigner au point de blessure (rôle 1) dans le milieu maritime : extraction en espace confiné, sauvetage dans l’eau, déplacement des blessés à bord. Il prépare aussi aux soins prolongés (PCC), avec surveillance et téléconsultation, lorsque l’évacuation vers le rôle suivant est retardée.",
+        "en": "Upgrade for SOF and conventional medical personnel to treat casualties at the point of injury (Role 1) in the maritime domain: confined-space extraction, water rescue and casualty movement on board. It also prepares for prolonged casualty care (PCC), with monitoring and telemedicine, when evacuation to the next role of care is delayed."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 21000 « Medical Combat Care in Maritime Operations » (ETOC MED-MS-34411)",
+        "en": "NMIOTC course 21000 “Medical Combat Care in Maritime Operations” (ETOC MED-MS-34411)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification médicale existante (cours de mise à niveau)",
+          "Anglais SLP 3232 selon le STANAG 6001"
+        ],
+        "en": [
+          "Existing medical proficiency (upgrade course)",
+          "English SLP 3232 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        }
+      ]
+    },
+    {
+      "id": "nato-embi",
+      "code": "OTAN-EMBI",
+      "category": "medical",
+      "name": {
+        "fr": "Prise en charge d’urgence des blessés de guerre (EMBI)",
+        "en": "Emergency management of battlefield injuries (EMBI)"
+      },
+      "short_name": "EMBI",
+      "description": {
+        "fr": "Cours international annuel qui apporte aux professionnels de santé militaires l’état de l’art de la prise en charge d’urgence des blessés au combat. Il insiste sur la coopération multinationale en phase préhospitalière : différences culturelles, écarts de capacités et de compétences médicales, et résolution des difficultés propres aux équipes alliées.",
+        "en": "Annual international course giving military health professionals state-of-the-art knowledge of the emergency management of battlefield injuries. It focuses on multinational cooperation in the pre-hospital phase: cultural differences, gaps in medical capabilities and skills, and solving issues specific to Allied teams."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de médecine militaire (MILMED COE), Budapest",
+        "en": "NATO Centre of Excellence for Military Medicine (MILMED COE), Budapest"
+      },
+      "reference": {
+        "fr": "MILMED COE, cours EMBI (cours « listed » OTAN)",
+        "en": "MILMED COE EMBI course (NATO listed course)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Connaissances médicales de base (médecin, infirmier ou technicien)",
+          "Anglais SLP 3232 selon le STANAG 6001"
+        ],
+        "en": [
+          "Basic medical knowledge (doctor, nurse or technician)",
+          "English SLP 3232 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.coemed.org/courses/course_desc/embi",
+          "title": "MILMED COE – EMBI course"
+        }
+      ]
+    },
+    {
+      "id": "nato-mimms",
+      "code": "OTAN-MIMMS",
+      "category": "medical",
+      "name": {
+        "fr": "Gestion médicale d’un afflux massif de blessés (MIMMS)",
+        "en": "Major incident medical management and support (MIMMS)"
+      },
+      "short_name": "MIMMS",
+      "description": {
+        "fr": "Cours qui donne les connaissances et savoir-faire nécessaires pour diriger, en environnement militaire, le site d’un accident ou d’une attaque faisant de nombreuses victimes. Il repose sur la méthode CSCATTT (commandement, sécurité, communication, évaluation, triage, traitement, transport), des exercices sur table et un exercice pratique, validés par un test.",
+        "en": "Course giving the knowledge and skills needed to manage, in a military environment, the scene of an incident producing many casualties. It is built on the CSCATTT method (command, safety, communication, assessment, triage, treatment, transport), tabletop exercises and a practical exercise, validated by a test."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de médecine militaire (MILMED COE), Budapest",
+        "en": "NATO Centre of Excellence for Military Medicine (MILMED COE), Budapest"
+      },
+      "reference": {
+        "fr": "MILMED COE, cours MIMMS, approuvé OTAN (ETOC MED-MS-3719)",
+        "en": "MILMED COE MIMMS course, NATO approved (ETOC MED-MS-3719)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation médicale",
+          "Lectures préparatoires et QCM préalable à rendre avant le cours"
+        ],
+        "en": [
+          "Medical background",
+          "Pre-reading and pre-course multiple-choice test"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.coemed.org/courses/course_desc/mimms",
+          "title": "MILMED COE – MIMMS course"
+        }
+      ]
+    },
+    {
+      "id": "nato-pecc",
+      "code": "OTAN-PECC",
+      "category": "medical",
+      "name": {
+        "fr": "Cellule de coordination des évacuations sanitaires (PECC)",
+        "en": "Patient evacuation coordination cell (PECC)"
+      },
+      "short_name": "PECC",
+      "description": {
+        "fr": "Qualification des personnels affectés à une cellule de coordination des évacuations de patients en opération multinationale. Elle couvre le soutien médical OTAN, les fonctions et responsabilités de la PECC, ainsi que la collecte et la gestion de l’information pour conserver une vision claire de la situation et organiser les évacuations.",
+        "en": "Qualification for personnel assigned to a patient evacuation coordination cell in a multinational operation. It covers the NATO medical support system, the PECC’s functions and responsibilities, and how to collect and manage information to keep situational awareness and organise evacuations."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de médecine militaire (MILMED COE)",
+        "en": "NATO Centre of Excellence for Military Medicine (MILMED COE)"
+      },
+      "reference": {
+        "fr": "MILMED COE, cours PECC, approuvé OTAN (ETOC MED-MS-3723) ; module en ligne ADL 425",
+        "en": "MILMED COE PECC course, NATO approved (ETOC MED-MS-3723); online module ADL 425"
+      },
+      "prerequisites": {
+        "fr": [
+          "Maîtrise des outils bureautiques courants",
+          "Utile : notions de MIMMS ou des procédures d’afflux massif (MASCAL)",
+          "Anglais SLP 3322 selon le STANAG 6001"
+        ],
+        "en": [
+          "Familiarity with common office software",
+          "Useful: basic knowledge of MIMMS or MASCAL procedures",
+          "English SLP 3322 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.coemed.org/courses/course_desc/pecc",
+          "title": "MILMED COE – PECC course"
+        },
+        {
+          "url": "https://www.coemed.org/courses/course_desc/adl_425",
+          "title": "MILMED COE – ADL 425 PECC (Basic Principles)"
+        }
+      ]
+    },
+    {
+      "id": "nato-imed",
+      "code": "OTAN-I-MED",
+      "category": "medical",
+      "name": {
+        "fr": "Prise en charge médicale des irradiés (I-MED)",
+        "en": "Medical management of radiation injuries (I-MED)"
+      },
+      "short_name": "I-MED",
+      "description": {
+        "fr": "Cours consacré à la réponse médicale aux urgences impliquant une exposition aux rayonnements, après un accident, un incident ou un attentat radiologique ou nucléaire. Il traite du traitement des blessés irradiés, de la protection du personnel soignant par les équipements de protection et du contrôle de la contamination pendant le transport et les soins.",
+        "en": "Course on the medical response to emergencies involving radiation exposure after a radiological or nuclear accident, incident or attack. It covers the treatment of irradiated casualties, protecting medical staff with personal protective equipment, and contamination control during transport and treatment."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de médecine militaire (MILMED COE)",
+        "en": "NATO Centre of Excellence for Military Medicine (MILMED COE)"
+      },
+      "reference": {
+        "fr": "MILMED COE, cours I-MED, approuvé OTAN (ETOC MED-MS-25678)",
+        "en": "MILMED COE I-MED course, NATO approved (ETOC MED-MS-25678)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Expérience médicale ou de gestion des urgences, notions de médecine des rayonnements",
+          "Anglais SLP 2222 selon le STANAG 6001"
+        ],
+        "en": [
+          "Medical or emergency management background, basic knowledge of radiation medicine",
+          "English SLP 2222 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.coemed.org/courses/course_desc/imed",
+          "title": "MILMED COE – I-MED course"
+        }
+      ]
+    },
+    {
+      "id": "nato-jpr",
+      "code": "OTAN-JPR",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Spécialiste de la récupération de personnel (JPR)",
+        "en": "Joint personnel recovery specialist (JPR)"
+      },
+      "short_name": "JPR",
+      "description": {
+        "fr": "La récupération de personnel est la fonction interarmées qui réunit les efforts militaires, diplomatiques et civils pour récupérer et réintégrer du personnel isolé. Le spécialiste maîtrise les cinq tâches d’exécution : signaler l’événement, localiser et authentifier la personne isolée, la soutenir, la récupérer, puis organiser sa réintégration.",
+        "en": "Personnel recovery is the joint function combining military, diplomatic and civil efforts to recover and reintegrate isolated personnel. The specialist masters the five execution tasks: report the isolating event, locate and authenticate the isolated person, support them, recover them, then reintegrate them."
+      },
+      "body": {
+        "fr": "Joint Air Power Competence Centre (JAPCC) ; European Personnel Recovery Centre",
+        "en": "Joint Air Power Competence Centre (JAPCC); European Personnel Recovery Centre"
+      },
+      "reference": {
+        "fr": "AJP-3.7 (doctrine interarmées alliée de la récupération de personnel)",
+        "en": "AJP-3.7 (Allied joint doctrine for personnel recovery)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.japcc.org/competencies/jpr/",
+          "title": "JAPCC – Joint Personnel Recovery"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Personnel_recovery",
+          "title": "Personnel recovery – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "nato-sere-b",
+      "code": "OTAN-SERE-B",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Survie, évasion, résistance et échappée – niveau B",
+        "en": "Survival, evasion, resistance and escape – level B"
+      },
+      "short_name": "SERE B",
+      "description": {
+        "fr": "Niveau de formation SERE destiné aux personnels engagés ou susceptibles d’être engagés en avant des arrières de la division, jusqu’à la ligne avant des troupes amies, en particulier les équipages d’aéronefs. Il porte surtout sur la survie et l’évasion, la résistance n’étant abordée que pour la phase initiale de la capture.",
+        "en": "SERE training level for personnel operating, or expected to operate, forward of the division rear boundary up to the forward line of own troops, especially aircrew. It focuses on survival and evasion, with resistance covered only for the initial capture phase."
+      },
+      "body": {
+        "fr": "Joint Personnel Recovery Agency (États-Unis) ; écoles SERE nationales",
+        "en": "Joint Personnel Recovery Agency (US); national SERE schools"
+      },
+      "reference": {
+        "fr": "Niveaux SERE A/B/C de la directive DoD 1300.7 (États-Unis) ; doctrine OTAN de récupération de personnel AJP-3.7",
+        "en": "SERE levels A/B/C of DoD Directive 1300.7 (US); NATO personnel recovery doctrine AJP-3.7"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Survival,_Evasion,_Resistance_and_Escape",
+          "title": "Survival, Evasion, Resistance and Escape – Wikipedia"
+        },
+        {
+          "url": "https://www.japcc.org/competencies/jpr/",
+          "title": "JAPCC – Joint Personnel Recovery"
+        }
+      ]
+    },
+    {
+      "id": "nato-sere-c",
+      "code": "OTAN-SERE-C",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Survie, évasion, résistance et échappée – niveau C",
+        "en": "Survival, evasion, resistance and escape – level C"
+      },
+      "short_name": "SERE C",
+      "description": {
+        "fr": "Niveau SERE le plus élevé, réservé aux personnels exposés à un risque élevé de capture ou dont la fonction, le grade ou l’ancienneté en font des cibles d’exploitation privilégiées. Il insiste sur la résistance à l’exploitation et à l’interrogatoire, la survie en isolement et en captivité, et l’évasion.",
+        "en": "Highest SERE level, for personnel at high risk of capture or whose position, rank or seniority make them preferred targets for exploitation. It focuses on resistance to exploitation and interrogation, survival in isolation and captivity, and escape."
+      },
+      "body": {
+        "fr": "Joint Personnel Recovery Agency (États-Unis) ; écoles SERE nationales",
+        "en": "Joint Personnel Recovery Agency (US); national SERE schools"
+      },
+      "reference": {
+        "fr": "Niveaux SERE A/B/C de la directive DoD 1300.7 (États-Unis) ; doctrine OTAN de récupération de personnel AJP-3.7",
+        "en": "SERE levels A/B/C of DoD Directive 1300.7 (US); NATO personnel recovery doctrine AJP-3.7"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Survival,_Evasion,_Resistance_and_Escape",
+          "title": "Survival, Evasion, Resistance and Escape – Wikipedia"
+        },
+        {
+          "url": "https://www.japcc.org/competencies/jpr/",
+          "title": "JAPCC – Joint Personnel Recovery"
+        }
+      ]
+    },
+    {
+      "id": "nato-wit",
+      "code": "OTAN-WIT",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Équipe de renseignement sur les armes (WIT)",
+        "en": "Weapons intelligence team (WIT)"
+      },
+      "short_name": "WIT",
+      "description": {
+        "fr": "Formation d’exploitation de niveau 1 et de renseignement technique sur les armes pour les équipes qui interviennent après un incident d’engin explosif improvisé, avant leur déploiement. Les stagiaires apprennent à recueillir, analyser et rendre compte des informations tactiques, techniques et forensiques sur le site, au profit du cycle opérations-renseignement et de l’attaque des réseaux.",
+        "en": "Level 1 exploitation and weapons technical intelligence training for teams responding to improvised explosive device incidents, delivered before deployment. Trainees learn to collect, analyse and report tactical, technical and forensic information at the point of exploitation, feeding the operations and intelligence cycle and attack-the-network activities."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de lutte contre les engins explosifs improvisés (C-IED COE), Madrid",
+        "en": "NATO Counter-IED Centre of Excellence (C-IED COE), Madrid"
+      },
+      "reference": {
+        "fr": "C-IED COE, Weapons Intelligence Team Course ; plan d’action C-IED de l’OTAN",
+        "en": "C-IED COE Weapons Intelligence Team Course; NATO C-IED Action Plan"
+      },
+      "prerequisites": {
+        "fr": [
+          "Grade OR-4 à OR-8 ou OF-1 à OF-3 (ou équivalent civil)",
+          "Expérience EOD, génie, renseignement, police militaire, forces spéciales ou infanterie",
+          "Anglais SLP 3232 recommandé selon le STANAG 6001"
+        ],
+        "en": [
+          "Rank OR-4 to OR-8 or OF-1 to OF-3 (or civilian equivalent)",
+          "EOD, engineer, intelligence, military police, special operations or infantry background",
+          "English SLP 3232 recommended under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.ciedcoe.org/weapons-intelligence-team-course-wit/",
+          "title": "C-IED COE – Weapons Intelligence Team Course"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/improvised-explosive-devices",
+          "title": "NATO – Improvised explosive devices"
+        }
+      ]
+    },
+    {
+      "id": "nato-eod-sot",
+      "code": "OTAN-EOD-SOT",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Officier d’état-major EOD (EOD SOT)",
+        "en": "EOD staff officer (EOD SOT)"
+      },
+      "short_name": "EOD SOT",
+      "description": {
+        "fr": "Formation des officiers et sous-officiers supérieurs d’état-major au niveau de base requis par les standards OTAN et ONU pour planifier, préparer, commander et coordonner les opérations de neutralisation des explosifs et munitions dans une opération multinationale, aux niveaux bataillon et brigade. Elle traite de la gestion des risques liés aux munitions et des capacités et limites des moyens EOD déployés.",
+        "en": "Trains staff officers and senior NCOs to the basic level required by NATO and UN standards to plan, prepare, command and coordinate explosive ordnance disposal operations in a multinational operation, at battalion and brigade level. It covers explosive ordnance risk management and the capabilities and limitations of deployed EOD assets."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN EOD (EOD COE), Trenčín",
+        "en": "NATO EOD Centre of Excellence (EOD COE), Trenčín"
+      },
+      "reference": {
+        "fr": "EOD COE, NATO EOD Staff Officer Training ; directive Bi-SC 075-007",
+        "en": "EOD COE NATO EOD Staff Officer Training; Bi-SC Directive 075-007"
+      },
+      "prerequisites": {
+        "fr": [
+          "Réussite au test de la phase d’enseignement à distance (ADL)",
+          "Grade OF-1 à OF-4, ou sous-officier supérieur d’état-major",
+          "Anglais SLP 2222 souhaité selon le STANAG 6001"
+        ],
+        "en": [
+          "Pass the distance learning (ADL) phase test",
+          "Rank OF-1 to OF-4, or senior staff NCO",
+          "English SLP 2222 desired under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.eodcoe.org/en/education-training/education-individual-training-et-activities-2026/nato-eod-sot-mtt/",
+          "title": "EOD COE – NATO EOD Staff Officer Training"
+        }
+      ]
+    },
+    {
+      "id": "nato-hme-advanced",
+      "code": "OTAN-HME-ADV",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Explosifs artisanaux – niveau avancé (HMEC-A)",
+        "en": "Home-made explosives – advanced (HMEC-A)"
+      },
+      "short_name": "HME avancé",
+      "description": {
+        "fr": "Cours destiné aux personnels qualifiés EOD, spécialistes du renseignement technique sur les armes et forces spéciales, pour intervenir en sécurité face aux explosifs artisanaux. Ils apprennent à reconnaître les précurseurs et mélanges, à identifier les matières inconnues et leurs dangers, à traiter un laboratoire clandestin comme une scène de preuve puis à éliminer ces dangers.",
+        "en": "Course for EOD-qualified personnel, weapons technical intelligence specialists and SOF, to respond safely to home-made explosives. They learn to recognise precursors and mixtures, identify unknown materials and their hazards, process a clandestine laboratory as an evidence scene and then dispose of the hazards."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN EOD (EOD COE), Trenčín",
+        "en": "NATO EOD Centre of Excellence (EOD COE), Trenčín"
+      },
+      "reference": {
+        "fr": "EOD COE, Home-Made Explosives Course – Advanced ; directive Bi-SC 075-007",
+        "en": "EOD COE Home-Made Explosives Course – Advanced; Bi-SC Directive 075-007"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification EOD, spécialité WTI ou appartenance aux forces spéciales",
+          "Anglais SLP 2222 souhaité selon le STANAG 6001"
+        ],
+        "en": [
+          "EOD qualification, WTI specialty or SOF membership",
+          "English SLP 2222 desired under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.eodcoe.org/en/education-training/education-individual-training-et-activities-2026/home-made-explosives-course-advanced/",
+          "title": "EOD COE – Home-Made Explosives Course – Advanced"
+        }
+      ]
+    },
+    {
+      "id": "nato-maritime-iedd",
+      "code": "OTAN-M-IEDD",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Neutralisation d’engins explosifs improvisés en milieu maritime (M-IEDD)",
+        "en": "Maritime IED disposal (M-IEDD)"
+      },
+      "short_name": "M-IEDD",
+      "description": {
+        "fr": "Formation des démineurs pour mener des opérations de neutralisation d’engins explosifs improvisés à bord des navires et dans les infrastructures maritimes, en appui de la lutte contre les EEI. Elle couvre les concepts, principes et équipements propres au milieu maritime, les techniques d’insertion à bord et les méthodes IEDD adaptées.",
+        "en": "Trains EOD personnel to conduct improvised explosive device disposal on board vessels and within maritime infrastructure, in support of counter-IED operations. It covers the concepts, principles and equipment specific to the maritime environment, ship insertion techniques and adapted IEDD methods."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 14000 « Maritime IED Disposal » (ETOC MEG-EO-32008)",
+        "en": "NMIOTC course 14000 “Maritime IED Disposal” (ETOC MEG-EO-32008)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification EOD",
+          "Anglais SLP 3232 selon le STANAG 6001"
+        ],
+        "en": [
+          "EOD qualification",
+          "English SLP 3232 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/pressreleases/nmiotc-course-14000-maritime-ied-disposal-m-iedd-2/",
+          "title": "NMIOTC – Course 14000 « Maritime IED Disposal (M-IEDD) »"
+        },
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        }
+      ]
+    },
+    {
+      "id": "nato-cbrn-live-agent",
+      "code": "OTAN-NRBC-LAT",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Entraînement en ambiance toxique réelle (Live Agent Training)",
+        "en": "Live agent training (CBRN)"
+      },
+      "short_name": "LAT",
+      "description": {
+        "fr": "Entraînement destiné à travailler en confiance, en tenue de protection, dans un environnement contenant de véritables agents chimiques de guerre (dont ceux du groupe Novitchok) et des produits chimiques industriels toxiques. Les stagiaires pratiquent l’emploi de l’équipement de protection individuelle, la détection des agents et la décontamination immédiate et opérationnelle.",
+        "en": "Training to work confidently, in protective clothing, in an environment containing real chemical warfare agents (including the Novichok group) and toxic industrial chemicals. Trainees practise the use of individual protective equipment, agent detection, and immediate and operational decontamination."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de défense NRBC (JCBRN Defence COE), Vyškov",
+        "en": "NATO Joint CBRN Defence Centre of Excellence (JCBRN Defence COE), Vyškov"
+      },
+      "reference": {
+        "fr": "JCBRN Defence COE, Live Agent Training (cours « listed » OTAN, ETOC WMD-CD-31883)",
+        "en": "JCBRN Defence COE Live Agent Training (NATO listed course, ETOC WMD-CD-31883)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Certificat médical d’aptitude normalisé",
+          "Visage rasé pour l’étanchéité du masque (moustache tolérée)",
+          "Prise de sang avant et après l’entraînement en zone contaminée"
+        ],
+        "en": [
+          "Standardised medical fitness certificate",
+          "Clean-shaven face for mask seal (moustaches allowed)",
+          "Blood sample before and after training in the hazard area"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.jcbrncoe.org/courses/live-agent-training-2/",
+          "title": "JCBRN Defence COE – Live Agent Training"
+        }
+      ]
+    },
+    {
+      "id": "nato-cbrn-warning-reporting",
+      "code": "OTAN-NRBC-WR",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Centre d’alerte et de compte rendu NRBC (CBRN W&R)",
+        "en": "CBRN warning and reporting centre (CBRN W&R)"
+      },
+      "short_name": "NRBC W&R",
+      "description": {
+        "fr": "Formation du personnel d’un centre d’alerte et de compte rendu NRBC pour alimenter les systèmes OTAN ou nationaux et donner au commandement une vision en temps réel de la situation NRBC. Elle couvre l’organisation, les principes et procédures d’alerte et de compte rendu, en opération de défense collective comme hors zone, et l’emploi des outils automatisés.",
+        "en": "Trains the staff of a CBRN warning and reporting centre to feed NATO or national systems and give commanders a real-time picture of the CBRN situation. It covers W&R organisation, principles and procedures, in collective defence and out-of-area operations, and the use of automated tools."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de défense NRBC (JCBRN Defence COE), Vyškov",
+        "en": "NATO Joint CBRN Defence Centre of Excellence (JCBRN Defence COE), Vyškov"
+      },
+      "reference": {
+        "fr": "JCBRN Defence COE, CBRN Warning and Reporting Centre Management, approuvé OTAN (ETOC WMD-MD-25631)",
+        "en": "JCBRN Defence COE CBRN Warning and Reporting Centre Management, NATO approved (ETOC WMD-MD-25631)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Personnel NRBC chargé d’un plan ou d’une organisation d’alerte et de compte rendu"
+        ],
+        "en": [
+          "CBRN staff responsible for a warning and reporting plan or organisation"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.jcbrncoe.org/courses/cbrn-warning-and-reporting-centre-management/",
+          "title": "JCBRN Defence COE – CBRN Warning and Reporting Centre Management"
+        }
+      ]
+    },
+    {
+      "id": "nato-cied-staff-officer",
+      "code": "OTAN-CIED-SO",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Officier d’état-major C-IED (CSOC)",
+        "en": "C-IED staff officer (CSOC)"
+      },
+      "short_name": "C-IED SO",
+      "description": {
+        "fr": "Formation des officiers et assistants d’état-major chargés de la lutte contre les engins explosifs improvisés aux niveaux tactique supérieur et opératif. Ils apprennent à animer et coordonner l’effort C-IED en mobilisant les autres cellules de l’état-major, et à devenir l’expert et le conseiller principal du commandant dans ce domaine.",
+        "en": "Trains C-IED staff officers and senior staff assistants at the upper tactical and operational levels. They learn to facilitate and coordinate the C-IED effort by drawing on the other staff branches, and to become the commander’s main subject matter expert and adviser in this field."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de lutte contre les engins explosifs improvisés (C-IED COE), Madrid",
+        "en": "NATO Counter-IED Centre of Excellence (C-IED COE), Madrid"
+      },
+      "reference": {
+        "fr": "C-IED COE, C-IED Staff Officers Course (CSOC)",
+        "en": "C-IED COE C-IED Staff Officers Course (CSOC)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Poste C-IED en état-major OTAN ou national (J2, J3, J5, J7) ou équivalent",
+          "Anglais SLP 3232 selon le STANAG 6001"
+        ],
+        "en": [
+          "C-IED post in a NATO or national HQ (J2, J3, J5, J7) or equivalent",
+          "English SLP 3232 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.ciedcoe.org/c-ied-staff-officers-course-csoc/",
+          "title": "C-IED COE – C-IED Staff Officers Course"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/improvised-explosive-devices",
+          "title": "NATO – Improvised explosive devices"
+        }
+      ]
+    },
+    {
+      "id": "nato-mio-command-team",
+      "code": "OTAN-MIO-CMD",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Équipe de commandement d’interdiction maritime (MIO)",
+        "en": "Maritime interdiction command team (MIO)"
+      },
+      "short_name": "MIO Cmd",
+      "description": {
+        "fr": "Formation des équipes de commandement d’un bâtiment à l’application de la doctrine et des procédures OTAN d’interdiction maritime. Elle couvre la planification, les messages opérationnels, l’appui du renseignement, le cadre juridique et les règles d’engagement, l’organisation des équipes, l’appui aérien, la collecte de preuves, la biométrie et la négociation, avec un entraînement sur simulateur.",
+        "en": "Trains a ship’s command team to apply NATO maritime interdiction doctrine and procedures. It covers planning, operational messages, intelligence support, the legal framework and rules of engagement, team organisation, air support, evidence collection, biometrics and negotiation, with simulator training."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 1000 « Command Team MIO Issues » (ETOC MOP-MO-31201)",
+        "en": "NMIOTC course 1000 “Command Team MIO Issues” (ETOC MOP-MO-31201)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Anglais SLP 3232 selon le STANAG 6001"
+        ],
+        "en": [
+          "English SLP 3232 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/education-and-training",
+          "title": "NATO – Education and training"
+        }
+      ]
+    },
+    {
+      "id": "nato-mountain-leader",
+      "code": "OTAN-MW-SUL",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Chef de petite unité en combat de montagne (MW COE)",
+        "en": "Mountain warfare small unit leader (MW COE)"
+      },
+      "short_name": "Chef montagne",
+      "description": {
+        "fr": "Formation de deux semaines des officiers et sous-officiers des niveaux groupe, section et compagnie au combat en montagne. Elle traite de l’influence du terrain et du climat sur les fonctions opérationnelles, du commandement en situation critique et de l’équipement, puis met les stagiaires en situation tactique : franchissement d’obstacles, évacuation de blessés en terrain difficile, planification jusqu’au niveau compagnie.",
+        "en": "Two-week course for officers and NCOs at team, platoon and company level in mountain warfare. It covers the influence of terrain and climate on combat functions, leadership in critical situations and equipment, then places students in a tactical scenario: crossing obstacles, casualty rescue in difficult terrain and planning up to company level."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN du combat en montagne (MW COE), avec l’Académie militaire des forces terrestres polonaise",
+        "en": "NATO Mountain Warfare Centre of Excellence (MW COE), with the Polish Military University of Land Forces"
+      },
+      "reference": {
+        "fr": "MW COE, Mountain Warfare Small Unit Leaders Course (ETOC LOP-LO-35586)",
+        "en": "MW COE Mountain Warfare Small Unit Leaders Course (ETOC LOP-LO-35586)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Savoir-faire de planification tactique groupe/section (TLP)",
+          "Modules d’enseignement à distance JADL et MW COE",
+          "Anglais SLP 2222 minimum, 3232 recommandé, selon le STANAG 6001"
+        ],
+        "en": [
+          "Squad/platoon tactical planning skills (TLP)",
+          "JADL and MW COE e-learning modules",
+          "English SLP 2222 minimum, 3232 recommended, under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.mwcoe.org/event/mountain-warfare-small-unit-leaders-course-in-poland/",
+          "title": "MW COE – Mountain Warfare Small Unit Leaders Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-slp-2",
+      "code": "OTAN-SLP-2222",
+      "category": "communications",
+      "name": {
+        "fr": "Profil linguistique SLP 2222 « fonctionnel » (STANAG 6001)",
+        "en": "Language profile SLP 2222 “functional” (STANAG 6001)"
+      },
+      "short_name": "SLP 2222",
+      "description": {
+        "fr": "Niveau 2 du STANAG 6001 dans les quatre compétences (compréhension orale, expression orale, compréhension écrite, expression écrite). Il permet de traiter les sujets courants et professionnels de routine, de suivre ou donner un compte rendu d’incident ou une consigne technique, d’utiliser les procédures radio standard et de comprendre l’essentiel du trafic radio sur les mouvements de troupes.",
+        "en": "STANAG 6001 level 2 in all four skills (listening, speaking, reading, writing). It allows handling everyday and routine work-related matters, following or giving an incident report or technical instruction, using standard radio procedures and understanding the main points of radio traffic on troop movements."
+      },
+      "body": {
+        "fr": "Bureau de coordination linguistique internationale (BILC)",
+        "en": "Bureau for International Language Co-ordination (BILC)"
+      },
+      "reference": {
+        "fr": "STANAG 6001 éd. 5 « Language Proficiency Levels » ; ATrainP-5",
+        "en": "STANAG 6001 Ed. 5 “Language Proficiency Levels”; ATrainP-5"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nato-bilc.org/stanag-6001/",
+          "title": "BILC – STANAG 6001"
+        },
+        {
+          "url": "https://nato-bilc.org/wp-content/uploads/2024/11/STANAG-6001-Overview-Feb-2019.pdf",
+          "title": "BILC – STANAG 6001 Ed. 5, Overview of Language Proficiency Levels (février 2019)"
+        },
+        {
+          "url": "https://nato-bilc.org/wp-content/uploads/2024/11/ATrainP-5-EDA-V2-E.pdf",
+          "title": "ATrainP-5 – Language Proficiency Levels (STANAG 6001)"
+        }
+      ]
+    },
+    {
+      "id": "nato-slp-3",
+      "code": "OTAN-SLP-3333",
+      "category": "communications",
+      "name": {
+        "fr": "Profil linguistique SLP 3333 « professionnel » (STANAG 6001)",
+        "en": "Language profile SLP 3333 “professional” (STANAG 6001)"
+      },
+      "short_name": "SLP 3333",
+      "description": {
+        "fr": "Niveau 3 du STANAG 6001 dans les quatre compétences : la langue est employée dans la plupart des situations sociales et professionnelles, y compris les réunions, les comptes rendus sur des sujets complexes et les discussions techniques. Il permet de participer à des échanges militaires imprévus, de traiter les problèmes propres à l’unité et de tenir une fonction de représentation ; de nombreux cours OTAN exigent un profil proche (ex. SLP 3232).",
+        "en": "STANAG 6001 level 3 in all four skills: the language is used in most social and professional situations, including meetings, reports on complex issues and technical discussions. It allows taking part in unplanned military discussions, dealing with unit-specific problems and performing a representative role; many NATO courses require a similar profile (e.g. SLP 3232)."
+      },
+      "body": {
+        "fr": "Bureau de coordination linguistique internationale (BILC)",
+        "en": "Bureau for International Language Co-ordination (BILC)"
+      },
+      "reference": {
+        "fr": "STANAG 6001 éd. 5 « Language Proficiency Levels » ; ATrainP-5",
+        "en": "STANAG 6001 Ed. 5 “Language Proficiency Levels”; ATrainP-5"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nato-bilc.org/stanag-6001/",
+          "title": "BILC – STANAG 6001"
+        },
+        {
+          "url": "https://nato-bilc.org/wp-content/uploads/2024/11/STANAG-6001-Overview-Feb-2019.pdf",
+          "title": "BILC – STANAG 6001 Ed. 5, Overview of Language Proficiency Levels (février 2019)"
+        },
+        {
+          "url": "https://nato-bilc.org/wp-content/uploads/2024/11/ATrainP-5-EDA-V2-E.pdf",
+          "title": "ATrainP-5 – Language Proficiency Levels (STANAG 6001)"
+        }
+      ]
+    },
+    {
+      "id": "nato-acp125",
+      "code": "OTAN-ACP125",
+      "category": "communications",
+      "name": {
+        "fr": "Procédures radiotéléphoniques alliées (ACP 125)",
+        "en": "Allied radiotelephone procedures (ACP 125)"
+      },
+      "short_name": "ACP 125",
+      "description": {
+        "fr": "Maîtrise des procédures radiotéléphoniques interalliées : structure des appels, mots de procédure (THIS IS, ROGER, SAY AGAIN, OVER, OUT…), alphabet phonétique et discipline de réseau. Le manuel ACP 125 publié par le Combined Communications-Electronics Board en fixe le glossaire le plus formel ; ses suppléments définissent aussi des mots de procédure propres aux réseaux de conduite des tirs.",
+        "en": "Command of Allied radiotelephone procedures: call structure, procedure words (THIS IS, ROGER, SAY AGAIN, OVER, OUT…), phonetic alphabet and net discipline. The ACP 125 manual published by the Combined Communications-Electronics Board sets out the most formal glossary; its supplements also define procedure words specific to fire control nets."
+      },
+      "body": {
+        "fr": "Combined Communications-Electronics Board (CCEB) ; procédures adoptées par l’OTAN",
+        "en": "Combined Communications-Electronics Board (CCEB); procedures adopted by NATO"
+      },
+      "reference": {
+        "fr": "ACP 125(F) « Communication Instructions – Radiotelephone Procedure »",
+        "en": "ACP 125(F) “Communication Instructions – Radiotelephone Procedure”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Procedure_word",
+          "title": "Procedure word (ACP 125) – Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/NATO_phonetic_alphabet",
+          "title": "NATO phonetic alphabet – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "nato-attack-the-network",
+      "code": "OTAN-ATN",
+      "category": "intelligence",
+      "name": {
+        "fr": "Attaque des réseaux – niveau opératif (AtNOC)",
+        "en": "Attack the networks – operational level (AtNOC)"
+      },
+      "short_name": "AtN",
+      "description": {
+        "fr": "Cours qui donne une compréhension pluridisciplinaire de l’approche « attaque des réseaux » contre les engins explosifs improvisés et les réseaux qui les fabriquent et les posent. Il suit quatre blocs : comprendre l’environnement de la menace, analyser les réseaux humains, les engager par des moyens létaux, non létaux et non militaires, puis intégrer cette démarche dans les processus d’un état-major.",
+        "en": "Course giving a multidisciplinary understanding of the attack-the-networks approach against improvised explosive devices and the networks that build and emplace them. It follows four blocks: understanding the threat environment, analysing human networks, engaging them by lethal, non-lethal and non-military means, and integrating the approach into headquarters processes."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de lutte contre les engins explosifs improvisés (C-IED COE), Madrid",
+        "en": "NATO Counter-IED Centre of Excellence (C-IED COE), Madrid"
+      },
+      "reference": {
+        "fr": "C-IED COE, Attack the Networks Operational Course ; plan d’action C-IED de l’OTAN (attaque des réseaux)",
+        "en": "C-IED COE Attack the Networks Operational Course; NATO C-IED Action Plan (attack the networks)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier OF-3 et plus, ou sous-officier OR-8 et plus (ou équivalent civil)",
+          "Expérience en renseignement, opérations, planification, ciblage, C-IED, CIMIC ou activités d’information"
+        ],
+        "en": [
+          "Officer OF-3 and above, or NCO OR-8 and above (or civilian equivalent)",
+          "Background in intelligence, operations, planning, targeting, C-IED, CIMIC or information activities"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.ciedcoe.org/attack-the-network-operational-course-atnoc/",
+          "title": "C-IED COE – Attack the Networks Operational Course"
+        },
+        {
+          "url": "https://www.nato.int/en/what-we-do/deterrence-and-defence/improvised-explosive-devices",
+          "title": "NATO – Improvised explosive devices"
+        }
+      ]
+    },
+    {
+      "id": "nato-domex",
+      "code": "OTAN-DOMEX",
+      "category": "intelligence",
+      "name": {
+        "fr": "Exploitation de documents et de supports (DOMEX)",
+        "en": "Document and media exploitation (DOMEX)"
+      },
+      "short_name": "DOMEX",
+      "description": {
+        "fr": "Spécialité d’exploitation technique au service du renseignement : recueil, préservation, traitement et analyse des documents papier (DOCEX), des supports numériques (MEDEX) et des téléphones et appareils mobiles (CELLEX) saisis sur le terrain. Le matériel exploitable est traité de façon forensiquement fiable, au profit des missions tactiques comme des besoins de renseignement.",
+        "en": "Technical exploitation specialty supporting intelligence: collection, preservation, processing and analysis of paper documents (DOCEX), digital media (MEDEX) and phones and mobile devices (CELLEX) seized in the field. Exploitable material is handled in a forensically sound manner, supporting both tactical missions and intelligence needs."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de lutte contre les engins explosifs improvisés (C-IED COE), Madrid",
+        "en": "NATO Counter-IED Centre of Excellence (C-IED COE), Madrid"
+      },
+      "reference": {
+        "fr": "C-IED COE, série de cours VNCF NATO DOMEX",
+        "en": "C-IED COE VNCF NATO DOMEX course series"
+      },
+      "prerequisites": {
+        "fr": [
+          "Membre formé d’une équipe d’exploitation de terrain (FET), d’une WIT ou spécialiste équivalent",
+          "Grade OR-3 à OR-9 ou OF-1 à OF-4 (ou équivalent)"
+        ],
+        "en": [
+          "Trained member of a field exploitation team (FET), a WIT or equivalent specialist",
+          "Rank OR-3 to OR-9 or OF-1 to OF-4 (or equivalent)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.ciedcoe.org/vncf-nato-document-and-media-exploitation-course-series-domex/",
+          "title": "C-IED COE – VNCF NATO DOMEX course"
+        }
+      ]
+    },
+    {
+      "id": "nato-biometrics-sse",
+      "code": "OTAN-BIO-SSE",
+      "category": "intelligence",
+      "name": {
+        "fr": "Collecte biométrique et exploitation de site (opérations maritimes)",
+        "en": "Biometrics collection and tactical site exploitation (maritime)"
+      },
+      "short_name": "Biométrie",
+      "description": {
+        "fr": "Cours qui présente la biométrie et l’exploitation forensique de site, leur place dans le cycle du renseignement OTAN, et la manière d’obtenir les résultats de correspondance biométrique et l’appui du renseignement d’identité (I2) par le portail d’exploitation de l’OTAN (NEX) pendant les opérations maritimes.",
+        "en": "Course introducing biometrics and forensic site exploitation, their place in the NATO intelligence cycle, and how to obtain biometric match results and identity intelligence (I2) support through the NATO Exploitation Portal (NEX) during maritime operations."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 18000 « Maritime Biometrics Collection and Tactical Forensic Site Exploitation » (ETOC INT-BI-37127)",
+        "en": "NMIOTC course 18000 “Maritime Biometrics Collection and Tactical Forensic Site Exploitation” (ETOC INT-BI-37127)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Anglais SLP 2332 selon le STANAG 6001"
+        ],
+        "en": [
+          "English SLP 2332 under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        }
+      ]
+    },
+    {
+      "id": "nato-cimic-field-worker",
+      "code": "OTAN-CIMIC-FW",
+      "category": "influence",
+      "name": {
+        "fr": "Opérateur CIMIC de terrain (NCFWC)",
+        "en": "CIMIC field worker (NCFWC)"
+      },
+      "short_name": "CIMIC terrain",
+      "description": {
+        "fr": "Formation de deux semaines au travail de coopération civilo-militaire au niveau tactique, en temps de paix, de crise et de conflit. Les stagiaires étudient l’effet des opérations sur les civils et l’influence des facteurs civils sur les opérations, et s’exercent au contact des acteurs non militaires, à la communication interculturelle, à la négociation, au compte rendu et au conseil de l’échelon supérieur.",
+        "en": "Two-week course on civil-military cooperation work at the tactical level in peacetime, crisis and conflict. Students study how military activity affects civilians and how civilian factors shape operations, and practise working with non-military actors, cross-cultural communication, negotiation, reporting and advising their higher echelon."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de coopération civilo-militaire (CCOE), La Haye",
+        "en": "NATO Civil-Military Cooperation Centre of Excellence (CCOE), The Hague"
+      },
+      "reference": {
+        "fr": "CCOE, NATO CIMIC Field Worker Course ; doctrine CIMIC de l’OTAN",
+        "en": "CCOE NATO CIMIC Field Worker Course; NATO CIMIC doctrine"
+      },
+      "prerequisites": {
+        "fr": [
+          "Personnel CIMIC OR-5 à OF-4 ou équivalent civil",
+          "Modules ADL 037, ADL 143 et ADL 169",
+          "Anglais SLP 3332 (officiers) ou 2221 (sous-officiers) selon le STANAG 6001"
+        ],
+        "en": [
+          "CIMIC personnel OR-5 to OF-4 or civilian equivalent",
+          "ADL modules 037, 143 and 169",
+          "English SLP 3332 (officers) or 2221 (NCOs) under STANAG 6001"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.cimic-coe.org/courses/nato-cimic-field-worker-course/",
+          "title": "CCOE – NATO CIMIC Field Worker Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-cimic-staff-worker",
+      "code": "OTAN-CIMIC-SW",
+      "category": "influence",
+      "name": {
+        "fr": "Officier d’état-major CIMIC (NCSWC)",
+        "en": "CIMIC staff worker (NCSWC)"
+      },
+      "short_name": "CIMIC EM",
+      "description": {
+        "fr": "Formation des officiers et sous-officiers affectés aux fonctions CIMIC en état-major, jusqu’au niveau corps ou commandement de composante. Elle prépare au travail d’état-major et aux processus militaires, à la contribution CIMIC à la situation commune, à la communication et à la négociation à tous les niveaux, et au conseil de l’état-major sur les aspects culturels.",
+        "en": "Trains officers and NCOs appointed to CIMIC staff posts, up to corps or component command level. It prepares for staff work and military processes, the CIMIC contribution to the common operational picture, communication and negotiation at all levels, and advising the staff on cultural aspects."
+      },
+      "body": {
+        "fr": "Centre d’excellence OTAN de coopération civilo-militaire (CCOE), La Haye",
+        "en": "NATO Civil-Military Cooperation Centre of Excellence (CCOE), The Hague"
+      },
+      "reference": {
+        "fr": "CCOE, NATO CIMIC Staff Worker Course ; doctrine CIMIC de l’OTAN",
+        "en": "CCOE NATO CIMIC Staff Worker Course; NATO CIMIC doctrine"
+      },
+      "prerequisites": {
+        "fr": [
+          "Personnel CIMIC OR-5 à OF-4, étudiant M-CMI ou équivalent civil",
+          "Modules ADL 037, ADL 143 et ADL 169",
+          "Anglais SLP 3332 (officiers) ou 2221 (sous-officiers) selon le STANAG 6001",
+          "Recommandé : cours CIMIC de terrain (NCFWC)"
+        ],
+        "en": [
+          "CIMIC personnel OR-5 to OF-4, M-CMI student or civilian equivalent",
+          "ADL modules 037, 143 and 169",
+          "English SLP 3332 (officers) or 2221 (NCOs) under STANAG 6001",
+          "Recommended: CIMIC Field Worker Course (NCFWC)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.cimic-coe.org/courses/nato-cimic-staff-worker-course/",
+          "title": "CCOE – NATO CIMIC Staff Worker Course"
+        }
+      ]
+    },
+    {
+      "id": "nato-aproc",
+      "code": "OTAN-APROC",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Cours d’opérateur de récupération de personnel à dominante aérienne (APROC)",
+        "en": "Air-centric personnel recovery operatives course (APROC)"
+      },
+      "official_name": "Air-centric Personnel Recovery Operatives Course (APROC)",
+      "short_name": "APROC",
+      "description": {
+        "fr": "Cours multinational de récupération de personnel destiné surtout aux armées de l’air alliées, centré sur la recherche et le sauvetage au combat (CSAR) classique. Il s’appuie sur la doctrine interarmées alliée AJP-3.7 et forme les opérateurs et le personnel de commandement qui planifient et conduisent une mission de récupération à dominante aérienne.",
+        "en": "Multinational personnel recovery course aimed mainly at Allied air forces and focused on traditional combat search and rescue (CSAR). It builds on Allied joint doctrine AJP-3.7 and trains the operatives and command personnel who plan and conduct an air-centric recovery mission."
+      },
+      "body": {
+        "fr": "European Personnel Recovery Centre (EPRC), base aérienne de Poggio Renatico (Italie)",
+        "en": "European Personnel Recovery Centre (EPRC), Poggio Renatico Air Base (Italy)"
+      },
+      "reference": {
+        "fr": "AJP-3.7 (doctrine interarmées alliée de la récupération de personnel) ; programme de cours de l’EPRC",
+        "en": "AJP-3.7 (Allied joint doctrine for personnel recovery); EPRC course programme"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.japcc.org/articles/no-one-left-behind-rebuilding-natos-rescue-mission/",
+          "title": "JAPCC – No One Left Behind: Rebuilding NATO’s Rescue Mission"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/European_Personnel_Recovery_Centre",
+          "title": "European Personnel Recovery Centre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "nato-cied-mio",
+      "code": "OTAN-CIED-MIO",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Lutte contre les EEI en opérations d’interdiction maritime (cours 12000, NMIOTC)",
+        "en": "C-IED in maritime interdiction operations (course 12000, NMIOTC)"
+      },
+      "official_name": "Course 12000: C-IED in Maritime Interdiction Operations",
+      "short_name": "C-IED MIO",
+      "description": {
+        "fr": "Cours approuvé par l’OTAN qui forme les membres des équipes de visite aux procédures OTAN de renseignement technique sur les armes (« expedient weapons intelligence ») à bord des navires et autres infrastructures maritimes, en appui de la lutte contre les engins explosifs improvisés. Il est dispensé par les instructeurs du centre avec des experts extérieurs (police, FBI).",
+        "en": "NATO-approved course training boarding team personnel in NATO procedures for expedient weapons intelligence tasks aboard vessels and other maritime infrastructure, in support of counter-IED operations. It is delivered by the centre’s instructors together with outside experts (police, FBI)."
+      },
+      "body": {
+        "fr": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), baie de Souda",
+        "en": "NATO Maritime Interdiction Operational Training Centre (NMIOTC), Souda Bay"
+      },
+      "reference": {
+        "fr": "NMIOTC, cours 12000 « C-IED in Maritime Interdiction Operations »",
+        "en": "NMIOTC course 12000 “C-IED in Maritime Interdiction Operations”"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://nmiotc.nato.int/pressreleases/nmiotc-course-12000-c-ied-in-maritime-interdiction-operations-2/",
+          "title": "NMIOTC – Course 12000: C-IED in Maritime Interdiction Operations"
+        },
+        {
+          "url": "https://nmiotc.nato.int/education-and-training/course-catalogue/",
+          "title": "NMIOTC – Course Catalogue"
+        }
+      ]
+    }
+  ]
+}
