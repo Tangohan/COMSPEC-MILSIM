@@ -204,6 +204,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 // Liaison réaliste téléphone <-> radio de données (fn_mpuLink, réglage comspec_atak_native_mpu_real) : toutes les 2 s,
 // sans rien faire tant que le réglage est décoché.
 [{ ["tick"] call comspec_atak_native_fnc_mpuLink; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice, réglage comspec_atak_native_mpu_voice) : toutes les 2 s.
+[{ ["tick"] call comspec_atak_native_fnc_mpuVoice; }, 2] call COMSPEC_ATAK_PfhSpread;
 ["register"] call comspec_atak_native_fnc_zeusMenu;
 // Attributs ZEN des relais (fenêtre Éditer d'un pylône ou relais) et menu clic droit « ATAK · Relais ».
 ["register"] call comspec_atak_native_fnc_relayZeus;
