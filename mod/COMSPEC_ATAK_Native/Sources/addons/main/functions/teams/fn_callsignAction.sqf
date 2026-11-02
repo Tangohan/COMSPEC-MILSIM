@@ -49,7 +49,7 @@ switch (_act) do {
             private _file = [(["get"] call comspec_atak_native_fnc_localCfg) getOrDefault ["callsign", ""]] call _clean;
             if ((count _file) >= 2 && {_file isNotEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_MyCallsign", ""])}) then {
                 profileNamespace setVariable ["COMSPEC_ATAK_MyCallsign", _file];
-                saveProfileNamespace;
+                [] call comspec_atak_native_fnc_saveProfile;
             };
         };
         [[profileNamespace getVariable ["COMSPEC_ATAK_MyCallsign", ""]] call _clean] call _publish;
@@ -67,7 +67,7 @@ switch (_act) do {
         if (_cs isEqualTo "") exitWith { ["clear"] call comspec_atak_native_fnc_callsignAction };
         if ((count _cs) < 2) exitWith { ["WARNING", "Indicatif trop court (2 caractères au moins)", 3, 20] call comspec_atak_native_fnc_notify; false };
         profileNamespace setVariable ["COMSPEC_ATAK_MyCallsign", _cs];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         [_cs] call _cfgSave;
         [_cs] call _publish;
         [true] call comspec_atak_native_fnc_squadSync;
@@ -77,7 +77,7 @@ switch (_act) do {
     };
     case "clear": {
         profileNamespace setVariable ["COMSPEC_ATAK_MyCallsign", ""];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         [""] call _cfgSave;
         [""] call _publish;
         ["INFO", "Indicatif personnalisé retiré : celui d'Athena ou de la mission s'applique", 4, 30] call comspec_atak_native_fnc_notify;

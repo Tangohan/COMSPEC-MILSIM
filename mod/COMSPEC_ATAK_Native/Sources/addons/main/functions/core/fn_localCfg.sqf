@@ -172,7 +172,7 @@ switch (_act) do {
         private _cfg = [["get"] call comspec_atak_native_fnc_localCfg] call _norm;
         missionNamespace setVariable ["COMSPEC_ATAK_LocalCfg", _cfg];
         profileNamespace setVariable ["COMSPEC_ATAK_LocalCfgSave", _cfg call _enc];
-        saveProfileNamespace;
+        [] call comspec_atak_native_fnc_saveProfile;
         private _json = [_cfg] call comspec_atak_native_fnc_json;
         private _ok = false;
         if (((["LocalBegin"] call comspec_atak_native_fnc_extensionCall) select [0, 3]) isEqualTo "OK|") then {
