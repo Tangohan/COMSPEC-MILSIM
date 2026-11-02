@@ -207,12 +207,13 @@ final class CommunityJobCatalogTest extends TestCase
         self::assertSame(['Commissaire'], array_column($mine, 'name'));
         self::assertTrue($mine[0]['editable']);
         self::assertSame('Commandement et encadrement', $mine[0]['type_label']);
-        self::assertSame(['US', 'FR', 'DE', $code], array_column($json['countries'], 'code'));
+        // Pays officiels livrés d’abord, puis le catalogue de la communauté.
+        self::assertSame(array_merge(array_column(JobCatalog::countries('fr'), 'code'), [$code]), array_column($json['countries'], 'code'));
 
         // Une autre communauté ne voit pas le catalogue privé.
         $_SESSION = ['user_id' => 9, 'tenant_id' => 15];
         $json = json_decode((new JobCatalogController())->catalogue(new Request())->body(), true);
-        self::assertSame(['US', 'FR', 'DE'], array_column($json['countries'], 'code'));
+        self::assertSame(array_column(JobCatalog::countries('fr'), 'code'), array_column($json['countries'], 'code'));
 
         // Suppression par la communauté auteur seulement.
         self::assertSame(404, $this->post('deleteEntry', ['entry_id' => '1'], ['personnel.assignments.manage'], 15)[0]);
