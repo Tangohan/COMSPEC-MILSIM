@@ -80,8 +80,10 @@ private _carries = {
     _c select 0
 };
 private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends", true];
-// Méta pour retirer les fantômes Athena (pseudo Steam à côté de l'indicatif tactique).
-private _friendMeta = [];
+// Méta pour retirer les fantômes Athena (pseudo Steam à côté de l'indicatif tactique), indexée : pseudo Steam dont
+// l'indicatif tactique est autre ; indicatif -> positions (avant : chaque piste Athena parcourait tous les alliés).
+private _metaName = createHashMap;
+private _metaCs = createHashMap;
 {
     private _obj = _x;
     if (isNull _obj || {!alive _obj}) then { continue };
@@ -192,7 +194,14 @@ private _friendMeta = [];
     _track set ["icon", _obj getVariable ["COMSPEC_ATAK_Icon", ""]];
     _track set ["orbat", _obj getVariable ["COMSPEC_ATAK_Orbat", ""]];
     if (side group _obj isEqualTo side group player) then {
-        _friendMeta pushBack [toLower (name _obj), toLower _callsign, _pos];
+        private _sn = toLower (name _obj);
+        private _tcs = toLower _callsign;
+        if (_tcs isNotEqualTo "") then {
+            if (_tcs isNotEqualTo _sn) then { _metaName set [_sn, true]; };
+            private _l = _metaCs getOrDefault [_tcs, []];
+            if ((count _l) isEqualTo 0) then { _metaCs set [_tcs, _l]; };
+            _l pushBack _pos;
+        };
     };
 } forEach (_fl select 0);
 
@@ -204,12 +213,7 @@ private _friendMeta = [];
     if (isNil "_remote") then { continue };
     private _rcs = toLower (_remote getOrDefault ["callsign", ""]);
     private _rpos = _remote getOrDefault ["position", [0, 0, 0]];
-    private _drop = false;
-    {
-        _x params ["_sn", "_tcs", "_fp"];
-        if (_rcs isEqualTo _sn && {_tcs isNotEqualTo "" && {_tcs isNotEqualTo _sn}}) exitWith { _drop = true; };
-        if (_rcs isEqualTo _tcs && {_tcs isNotEqualTo ""} && {(_fp distance2D _rpos) < 35}) exitWith { _drop = true; };
-    } forEach _friendMeta;
+    private _drop = (_rcs in _metaName) || {((_metaCs getOrDefault [_rcs, []]) findIf { (_x distance2D _rpos) < 35 }) >= 0};
     if (_drop) then { _units deleteAt _x; };
 } forEach (keys _units);
 
