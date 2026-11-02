@@ -12,9 +12,9 @@
 
 [h2]Les apps[/h2]
 [list]
-[*][b]Navigation :[/b] Carte (marqueurs, traits par les routes, ligne de vue, fonds satellite), GPS, Routes, Itinéraire, Relief, Météo, Distances.
+[*][b]Navigation :[/b] Carte (marqueurs, traits par les routes, ligne de vue, fonds satellite, bandeau du curseur et point GPS à votre goût), GPS, Routes, Zones (battleplan : découpage, axes nommés, état des zones), Itinéraire, Relief, Météo, Distances.
 [*][b]Communication :[/b] Messages, SMS, Groupe, Alertes, BFT, C2, Wave Relay, Numéros.
-[*][b]Feux :[/b] appel de feu typé (mortiers, obusier, roquettes, naval, CAS), JTAC 9-LINE, NINE LINE, drones.
+[*][b]Feux :[/b] appel de feu typé (mortiers, obusier, roquettes, naval, CAS), JTAC 9-LINE et 5-LINE envoyés aux pilotes (BRIEFS AIR), drones.
 [*][b]Renseignement :[/b] SALUTE, Reco, FRS, Photo, Galerie, Vidéo live, Extraction DL-7, Recherchés.
 [*][b]Mission :[/b] Poste TOC, Tâches, Comptes rendus, CR fin d'op, Briefing, Academy, Plan, Logistique, Rejeu.
 [*][b]Spécialités :[/b] Médical, Sniper, Brèche, Explosifs, Guerre électronique, Anti-drone.
@@ -25,6 +25,7 @@
 [list]
 [*]MPU5 maillée, relais, pylônes 3D destructibles ; le réseau suit relief, météo et brouillage. Voix ACRE2/TFAR relayée par le maillage (option).
 [*]Drones pilotables, caméras IP et casque, marquage de cibles.
+[*][b]Nouveau en 3.0, COMSPEC IDENTITY[/b] (avec COMSPEC SSE) : papiers d'identité pour joueurs et civils, contrôle au menu ACE et app Contrôle ID (bande MRZ, puce NFC, fichiers Athena).
 [*]Ordres aux IA depuis la carte ou le PC du poste TOC.
 [*]Écrans TOC, TV et vidéoprojecteur : carte, diapositives, caméras.
 [*]Montre Garmin, batterie et socle de recharge, JVN tactiques, 9 téléphones et tablettes.
@@ -35,7 +36,7 @@
 Modules Eden/Zeus : contrôle Zeus, IA avec ATAK, brouilleur, relais, écrans, données à extraire, écran TOC. Le Zeus peut couper, verrouiller, brouiller ou abîmer un ATAK. Plus de 200 réglages CBA (Options › Options des addons › COMSPEC), dont le mode full local sans Athena et les apps imposées ou interdites. Moddeurs : ajoutez vos apps et calques (COMSPEC Modules).
 
 [h2]Athena[/h2]
-Liez votre compte (Steam, e-mail ou code) : positions, marqueurs, comptes rendus et photos arrivent sur le poste web, distances, heures de vol et temps de jeu sur votre fiche. En jeu : tenues de l'arsenal ACE, cours Academy, dossiers médicaux, diapositives, musique du site. Votre communauté choisit ce qui est envoyé.
+Liez votre compte (Steam, e-mail ou code) : positions, marqueurs, comptes rendus et photos arrivent sur le poste web, distances, heures de vol et temps de jeu sur votre fiche. En jeu : tenues de l'arsenal ACE, cours Academy, dossiers médicaux, diapositives, musique du site. SUR MON TÉLÉPHONE : un QR code ouvre vos comptes rendus et la carte sur votre vrai téléphone. Votre communauté choisit ce qui est envoyé.
 
 [h2]Installation[/h2]
 Abonnez-vous à CBA_A3 et à ce mod, chargez-les sur le serveur, ajoutez la clé [b]keys\comspec_atak_native.bikey[/b]. Après une mise à jour, quittez Arma complètement.
@@ -58,9 +59,9 @@ Bug : lancez [b]Envoyer_mes_logs.bat[/b] et postez le zip sur le [url=https://di
 
 [h2]Apps[/h2]
 [list]
-[*][b]Navigation:[/b] Map (markers, road-following lines, line of sight, satellite maps), GPS, Routes, Waypoints, Terrain, Weather, Distances.
+[*][b]Navigation:[/b] Map (markers, road-following lines, line of sight, satellite maps, cursor bar and GPS dot your way), GPS, Routes, Zones (battleplan: grid, named axes, zone states), Waypoints, Terrain, Weather, Distances.
 [*][b]Comms:[/b] Messages, SMS, Group, Alerts, BFT, C2, Wave Relay, Numbers.
-[*][b]Fires:[/b] typed fire missions (mortars, howitzer, rockets, naval, CAS), JTAC 9-LINE, NINE LINE, drones.
+[*][b]Fires:[/b] typed fire missions (mortars, howitzer, rockets, naval, CAS), JTAC 9-LINE and 5-LINE sent to pilots (AIR BRIEFS), drones.
 [*][b]Intel:[/b] SALUTE, Recon, Photo, Gallery, Live video, DL-7 extraction, Wanted.
 [*][b]Mission:[/b] TOC post, Tasks, Reports, After-action report, Briefing, Academy, Plan, Logistics, Replay.
 [*][b]Specialties:[/b] Medical, Sniper, Breach, Explosives, Electronic warfare, Counter-drone.
@@ -71,6 +72,7 @@ Bug : lancez [b]Envoyer_mes_logs.bat[/b] et postez le zip sur le [url=https://di
 [list]
 [*]MPU5 mesh, relays, destructible 3D towers; the network follows terrain, weather and jamming. ACRE2/TFAR voice relayed over the mesh (option).
 [*]Flyable drones, IP and helmet cameras, target marking.
+[*][b]New in 3.0, COMSPEC IDENTITY[/b] (with COMSPEC SSE): identity papers for players and civilians, ACE menu checks and the ID Check app (MRZ strip, NFC chip, Athena files).
 [*]AI orders from the map or the TOC laptop.
 [*]TOC screens, TVs and projector: map, slides, cameras.
 [*]Garmin watch, battery and charging dock, NVG tactical overlay, 9 phones and tablets.
@@ -81,7 +83,7 @@ Bug : lancez [b]Envoyer_mes_logs.bat[/b] et postez le zip sur le [url=https://di
 Eden/Zeus modules: Zeus control, AI with ATAK, jammer, relay, screens, data to extract, TOC screen. Zeus can disable, lock, jam or damage an ATAK. 200+ CBA settings (Options › Addon Options › COMSPEC), including full local mode without Athena and required or forbidden apps. Modders: add your own apps and map layers (COMSPEC Modules).
 
 [h2]Athena[/h2]
-Link your account (Steam, e-mail or code): positions, markers, reports and photos reach the web command post, distances, flight hours and play time your profile. In game: ACE arsenal loadouts, Academy courses, medical records, slides, site music. Your community chooses what is sent.
+Link your account (Steam, e-mail or code): positions, markers, reports and photos reach the web command post, distances, flight hours and play time on your profile. In game: ACE arsenal loadouts, Academy courses, medical records, slides, site music. ON MY PHONE: a QR code opens your reports and the map on your real phone. Your community chooses what is sent.
 
 [h2]Installation[/h2]
 Subscribe to CBA_A3 and this mod, load them on the server, add the [b]keys\comspec_atak_native.bikey[/b] key. After an update, quit Arma completely.

@@ -38,6 +38,62 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 3.0.0 : COMSPEC IDENTITY, le contrôle d'identité sur le terrain, et tout ce que la génération 2.9 a apporté (ATAK natif 3.0.0.AG - Austin, COMSPEC Link 2.0.118)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 3.0 : COMSPEC IDENTITY, les papiers d'identité et leur contrôle sur le terrain
+- Avec le mod SSE 1.1.0, chaque personnage (joueur, civil ou IA) peut porter une carte d'identité, un passeport ou un permis. Menu ACE : demander les papiers, les contrôler, fouiller, saisir ou rendre, présenter ou consulter vos propres papiers, contrôler les occupants d'un véhicule ou les faire descendre.
+- Nouvelle app Contrôle ID dans l'ATAK : examen à l'œil, lecture de la bande MRZ, lecture de la puce NFC et vérification dans les fichiers d'Athena (papier signalé, recherché, volé, expiré, révoqué ou inconnu), historique des contrôles, Transmettre à Athena et Joindre à une FRM.
+- Depuis la 2.9 : radio de données MPU5 et maillage qui relaie votre voix ACRE2 / TFAR, apps Routes et Zones (battleplan), 9-LINE et 5-LINE envoyés aux pilotes avec BRIEFS AIR, QR code SUR MON TÉLÉPHONE pour vos apps sur votre vrai téléphone.
+- Et aussi : bandeau du curseur et point GPS à votre goût, beaucoup moins de saccades, un seul rôle affiché partout, miniature utilisable à la souris (Maj+U), ATAK au-dessus des cockpits. Ce pack contient COMSPEC Link 2.0.118 : quittez Arma 3 complètement après la mise à jour.
+EN : ATAK 3.0: COMSPEC IDENTITY, identity papers and field ID checks
+- With the SSE mod 1.1.0, every character (player, civilian or AI) can carry an ID card, a passport or a driving licence. ACE menu: ask for papers, check them, search, seize or give back, show or view your own papers, check a vehicle's occupants or order them out.
+- New ID Check app in the ATAK: visual inspection, reading the MRZ strip, reading the NFC chip and checking Athena's files (paper flagged, wanted, stolen, expired, revoked or unknown), check history, Send to Athena and Attach to an FRM.
+- Since 2.9: MPU5 data radio and a mesh that relays your ACRE2 / TFAR voice, Routes and Zones apps (battleplan), 9-LINE and 5-LINE sent to pilots with AIR BRIEFS, ON MY PHONE QR code to use your apps on your real phone.
+- Also: cursor bar and GPS dot the way you like them, far fewer stutters, one displayed role everywhere, miniature usable with the mouse (Shift+U), ATAK above cockpits. This pack includes COMSPEC Link 2.0.118: fully quit Arma 3 after updating.
+
+### Récapitulatif joueur : la génération 2.9 en un coup d'œil
+FR :
+- **COMSPEC IDENTITY (3.0.0, avec le SSE 1.1.0)** : papiers d'identité par personnage (carte d'identité, passeport, permis, chacun avec son numéro et sa bande MRZ), contrôle par le menu ACE et par l'app Contrôle ID en quatre niveaux (visuel, MRZ, puce NFC, fichiers Athena), réactions des IA au contrôle, contrôles entre joueurs, modules Zeus et attribut « Papiers » dans Eden. Sur Athena, l'encadrement prépare et émet les papiers dans Référentiel › Identités & documents et retrouve chaque contrôle sur la fiche de la personne.
+- **Radio de données MPU5 et maillage (2.9.31 à 2.9.33)** : la MPU5 relie le téléphone au réseau (Câble EUD ou Wi-Fi), maillage multi-sauts par canal avec relief, brouillage, batterie et puissance ; reliez votre radio ACRE2 ou TFAR à votre MPU5 et votre voix passe par le maillage jusqu'aux radios reliées de vos équipiers, sans limite de distance.
+- **Appui feu typé (2.9.31)** : mortier, obusier, lance-roquettes, naval ou CAS avec portées, munitions, délais et distance de sécurité ; l'IA tire vraiment, un servant joueur reçoit la mission.
+- **App Routes (2.9.34)** : routes nommées à pied, en véhicule, aériennes ou nautiques, étapes typées avec consigne et heure H+, distances, caps et heure d'arrivée, « Suivre la route » avec vibration et montre Garmin, partage, carte d'Arma, Athena et 3D.
+- **App Zones, le battleplan (2.9.35 à 2.9.41)** : zone de travail découpée en grille, îlots ou secteurs, polygone aimanté aux routes et bâtiments, axes nommés (MSR, PL, OBJ, CP…) avec thèmes de noms de code au choix, état et signalements de chaque zone, ANNULER / RÉTABLIR, plans partagés au camp, sur la carte d'Arma et sur Athena, menu Zones au clic droit.
+- **Carte à votre goût (2.9.34 à 2.9.40)** : bandeau du curseur refait et personnalisable (grille, altitude, distance, gisement, cap, zone sous le curseur), point GPS personnalisable (forme, couleur, taille, cône, trace), marqueurs aux vraies couleurs, carte plus sobre.
+- **Briefs air (2.9.39)** : l'app JTAC envoie les 9-LINE et les 5-LINE directement aux pilotes ; le pilote les reçoit dans BRIEFS AIR et répond WILCO ou UNABLE ; la page 9-LINE du site fait de même.
+- **SUR MON TÉLÉPHONE (2.9.39)** : un QR code ouvre Comptes rendus, CR fin d'op, Carte et BRIEFS AIR sur votre vrai téléphone ; ce que vous y faites part de votre ATAK en jeu.
+- **Rôle affiché unique (2.9.39)** : choisi dans votre profil (fonction de la communauté, rôle du slot ou personnalisé), le même sur la carte, le BFT, la fiche et Athena.
+- **ATAK en cockpit et miniature interactive (2.9.38 à 2.9.41)** : l'ATAK s'ouvre en grand dans tous les aéronefs et véhicules (vol stationnaire automatique en hélicoptère), s'affiche au-dessus des cockpits cliquables ; Maj+U utilise la miniature à la souris sans l'agrandir ; action ACE « ATAK : réparer l'affichage ».
+- **Optimisations (2.9.28, 2.9.37)** : un seul joueur relaie balises, aéronefs et marqueurs web pour tout le monde, pages redessinées seulement quand elles changent, onglet Debug › PERFS pour signaler un ralentissement.
+- **Et encore** : ordres aux IA réparés, grands écrans sur trépied, écrans COMSPEC et vidéoprojecteur, photos cherchées au bon endroit, Tenues Athena plus lisibles, app Réseau lisible, Bloc-notes partageable en Bluetooth.
+EN :
+- **COMSPEC IDENTITY (3.0.0, with SSE 1.1.0)**: identity papers per character (ID card, passport, driving licence, each with its number and MRZ strip), checks through the ACE menu and the ID Check app at four levels (visual, MRZ, NFC chip, Athena files), AI reactions to checks, player-to-player checks, Zeus modules and a "Papers" attribute in Eden. On Athena, staff prepare and issue papers in Reference › Identities & documents and find every check on the person's record.
+- **MPU5 data radio and mesh (2.9.31 to 2.9.33)**: the MPU5 links the phone to the network (EUD cable or Wi-Fi), multi-hop mesh per channel with terrain, jamming, battery and power; link your ACRE2 or TFAR radio to your MPU5 and your voice travels through the mesh to your teammates' linked radios, with no distance limit.
+- **Typed fire support (2.9.31)**: mortar, howitzer, rocket launcher, naval or CAS with ranges, ammunition, delays and danger close distance; the AI really fires, a player gunner receives the mission.
+- **Routes app (2.9.34)**: named routes on foot, by vehicle, by air or by sea, typed steps with instructions and H+ time, distances, headings and arrival time, "Follow the route" with vibration and the Garmin watch, sharing, Arma map, Athena and 3D.
+- **Zones app, the battleplan (2.9.35 to 2.9.41)**: work area divided into a grid, blocks or sectors, polygon snapped to roads and buildings, named axes (MSR, PL, OBJ, CP…) with code name themes of your choice, state and reports for every zone, UNDO / REDO, plans shared with the side, on the Arma map and on Athena, Zones menu on right-click.
+- **Your own map (2.9.34 to 2.9.40)**: cursor bar rebuilt and customisable (grid, altitude, distance, bearing, heading, zone under the cursor), customisable GPS dot (shape, colour, size, cone, trail), markers in their true colours, a cleaner map.
+- **Air briefs (2.9.39)**: the JTAC app sends 9-LINEs and 5-LINEs straight to pilots; the pilot gets them in AIR BRIEFS and answers WILCO or UNABLE; the site's 9-LINE page does the same.
+- **ON MY PHONE (2.9.39)**: a QR code opens Reports, End-of-op report, Map and AIR BRIEFS on your real phone; what you do there is sent from your in-game ATAK.
+- **One displayed role (2.9.39)**: chosen in your profile (community function, slot role or custom), the same on the map, the BFT, the record and Athena.
+- **ATAK in the cockpit and interactive miniature (2.9.38 to 2.9.41)**: the ATAK opens full screen in every aircraft and vehicle (automatic hover in helicopters), shows above clickable cockpits; Shift+U uses the miniature with the mouse without enlarging it; ACE action "ATAK: repair the display".
+- **Optimisations (2.9.28, 2.9.37)**: a single player relays beacons, aircraft and web markers for everyone, pages redrawn only when they change, Debug › PERFS tab to report a slowdown.
+- **And more**: AI orders fixed, large tripod screens, COMSPEC screens and video projector, photos looked for in the right place, clearer Athena Outfits, readable Network app, Notepad shareable over Bluetooth.
+
+### Détail technique
+- **Version 3.0.0** (décision TTRD, `docs/VERSIONING.md` : MAJEUR) : `VERSION` / `VERSION_STR` « 3.0.0 », `VERSION_NAME` « 3.0.0.AG - Austin » (nouveau nom de série pour la génération 3, prochain nom de ville du catalogue). `LINK_VERSION_STR` « 2.0.118 » (déjà aligné par la PR du Lot 1 site + DLL). Wiki : index des apps « COMSPEC ATAK 3.0.0 ».
+- **COMSPEC Link 2.0.118** (code de la PR du Lot 1, DLL construite pour la première fois dans ce pack) : `GetIdentityPack`, `GetIdentityPackChunk`, `QueryIdDocument`, `SubmitIdCheck`, annoncées par `GetAtakFeatures` ; Link et DLL de l'ATAK natif.
+- **SSE 1.1.0** (mod séparé, publié avec ce pack) : addon `identity` (papiers par exemplaire, registre serveur, MRZ ICAO TD1 / TD3 identique au site, actions ACE, app Contrôle ID déclarée depuis le SSE, réactions IA, modules Zeus, attributs Eden).
+- **i18n** : 194 phrases de l'addon identity fusionnées dans le dictionnaire (`tools/i18n.py merge mod/@COMSPEC_SSE/tools/i18n_identity_en.tsv`).
+- **Site** : `/api/atak/version` annonce 3.0.0 ; les ATAK 2.9.x reçoivent la notification « mise à jour disponible » (non bloquante). Aucun plancher de version n'est relevé : le refus « mod trop ancien » ne dépend que de la version minimale réglée par chaque communauté et du plancher plateforme de la DLL, inchangés. `AtakReleaseInfoTest` tolère les fins de ligne CRLF d'un checkout Windows.
+
+### À tester en jeu
+- Réglages › À propos, app Debug, Crédits, journal de session : « 3.0.0.AG - Austin · <date> <commit> » ; app Debug › DLL : COMSPEC Link 2.0.118, aucune alerte « DLL d'une autre version ».
+- Avec un ATAK 2.9.41 encore installé (autre poste) : notification « mise à jour disponible » 3.0.0, connexion à Athena toujours possible.
+- Avec le SSE 1.1.0 : app Contrôle ID présente ; contrôle N0 à N3 d'un civil IA (pack d'identités chargé, verdict Athena en ligne), Transmettre à Athena puis contrôle visible sur Athena (Référentiel › Identités & documents, fiche de la personne).
+- Sans le SSE : aucune app Contrôle ID, aucune erreur au démarrage.
+
 ## Pack 2.9.41 : ATAK visible au-dessus des cockpits, téléphone réparé après la descente, thèmes de nommage des axes et des zones (ATAK natif 2.9.41.AG - Denver)
 
 ### Résumé joueur
