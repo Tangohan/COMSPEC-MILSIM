@@ -679,7 +679,7 @@ switch (_act) do {
                     _shots = _shots + 1;
                     call _poll;
                     if (_failRun >= 5) then {
-                        _why = "Cinq images de suite n'ont pas été écrites par le jeu : dossier Screenshots plein (maxScreenShotFolderSizeMB) ou disque plein.";
+                        _why = "Cinq images de suite introuvables : dossier Screenshots plein (maxScreenShotFolderSizeMB), disque plein, ou captures rangées ailleurs (vérifiez le réglage Dossier des captures d'écran, Options des addons › COMSPEC › ATAK · Photo).";
                         missionNamespace setVariable ["COMSPEC_ATAK_MapCapStop", true];
                     };
                     if (_free >= 0 && {_free < 3}) then {

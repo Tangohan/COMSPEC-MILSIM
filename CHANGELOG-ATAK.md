@@ -38,6 +38,39 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.30 : photos cherchées au bon endroit, réglage « Dossier des captures d'écran » (ATAK natif 2.9.30.AG - Denver, COMSPEC Link 2.0.116)
+
+### Résumé joueur
+Type : correctif
+FR : Vos photos sont cherchées au bon endroit, et vous pouvez choisir le dossier
+- Le téléphone ne fouille plus tout le disque (dossiers des mods Workshop, bibliothèques Steam…) pour retrouver une photo : il regarde seulement le dossier Screenshots de votre profil Arma, puis Documents\Arma 3\Screenshots. Fini les petits gels à la première photo.
+- Nouveau réglage Options › Options des addons › COMSPEC › ATAK · Photo › Dossier des captures d'écran : laissez-le vide (automatique) ou collez le dossier où Arma range vos captures si vos photos ne sont jamais trouvées (profil ou dossier Documents déplacé).
+- Case « Vérifier le dossier des captures » au même endroit, et Réglages du téléphone › À propos › Photos : le dossier utilisé, le nombre d'images et la dernière capture trouvée.
+- Photo introuvable : le téléphone dit dans quel dossier il a cherché, au lieu d'un simple échec.
+EN : Your photos are looked for in the right place, and you can choose the folder
+- The phone no longer searches the whole disk (Workshop mod folders, Steam libraries…) to find a photo: it only looks in the Screenshots folder of your Arma profile, then Documents\Arma 3\Screenshots. No more short freezes on the first photo.
+- New setting Options › Addon Options › COMSPEC › ATAK · Photo › Screenshot folder: leave it empty (automatic) or paste the folder where Arma saves your screenshots if your photos are never found (moved profile or Documents folder).
+- "Check the screenshot folder" box in the same place, and phone Settings › About › Photos: the folder in use, the number of images and the latest screenshot found.
+- Photo not found: the phone says which folder it looked in, instead of a plain failure.
+
+### Détail technique
+- **Avant** (question « notre mod cherche encore le screen partout ? », note `docs/bugs/2026-11-02-photos-recherche-captures-partout.md`) : `screenshot "COMSPEC_….png"` écrit dans `<profil>\Screenshots` ; COMSPEC Link (photos, `NotifyNewPhoto`, `StageCapture`, `ListLocalScreenshots`, fiches SEEK / FRS) et la DLL native (`MapCap.Collect`) le cherchaient via `EnumerateScreenshotDirs` / `EnumeratePhotoLookupDirs` : `Documents\Arma 3` (+ chaque sous-dossier), `Arma 3 - Other Profiles` (+ chaque profil), les mêmes sous `UserProfile\OneDrive\Documents`, `-profiles=` (`<p>\<nom>`, `<p>`), `%LOCALAPPDATA%\Arma 3` et ses sous-dossiers, le dossier du jeu et ses sous-dossiers, **chaque mod de `!Workshop`** (Screenshot, Screenshots, `addons\ATAK_PhotoLibrary`), parents des profils ; `FindBceScreenshotDir` lisait `libraryfolders.vdf` et `C:`…`H:\SteamLibrary`. Recherche par nom : un niveau de sous-dossiers (`EnumerateFilesShallow`). Liste refaite à chaque appel (`MapCap.Collect` toutes les 400 ms pendant 30 s, `TryReadableImageFile` à chaque candidat). `NotifyNewPhoto` (commande rapide, fil du jeu) démarrait les watchers en direct ; `ResolveLocalImagePath` gardait `Thread.Sleep(50)` × 6 (fil Async ou file des photos).
+- **Après** : `ScreenshotDirs()` borné et mis en cache 5 s : (a) réglage du joueur ; (b) profil Arma utilisé (nom transmis par `Shots.Config` depuis `profileName`, sinon `-name` ; `-profiles=` : `Users\<nom>\Screenshots`, `<nom>\Screenshots`, `Screenshots`) — défaut si `<nom>.Arma3Profile` est dans `Documents\Arma 3`, sinon `Other Profiles\<nom>` (brut, `%20`, sinon liste des profils sur un niveau, décodée) ; (c) `Documents\Arma 3\Screenshots` puis `%OneDrive%\Documents`. `Captures` COMSPEC ajouté en fin de liste pour les recherches. Watchers sur ces dossiers seulement (plus sur `Captures`), démarrés en `Task.Run`, refaits quand le dossier change. Supprimés : `EnumerateIcemanPhotoLibraryDirs`, `EnumerateLooseScreenshotDirs`, `EnumerateFilesShallow`, `IsScreenshotCaptureDir`, `IsLocalArma3Root`, `EnumerateArmaLaunchScreenshotDirs`, `RemapMissingWorkshopScreenshotPath`, `FindBceScreenshotDir`, `EnumerateArmaInstallRoots`, `EnumerateSteamLibraryRoots` ; `GetBceScreenshotDir` répond `ERR|not_found` (addon archivé `atak_athena`).
+- **Commandes** (deux DLL) : `Shots.Config [dossier, profil]` (mémoire, appel direct, `OK|auto|user` ou `ERR|network|not_absolute|parent|drive_root|invalid|too_long`) ; `Shots.Check` (par `Async`) → `OK|origine|dossier|existe|lisible|images|dernière|âge s|refus|saisie|ordre`. Validation : `X:\…` seulement, pas de `\\`, pas de lecteur réseau (`DriveType.Network`), pas de `.` / `..`, pas de racine, variables d'environnement acceptées. Lecture seule : pas de ménage du quota ni de patch `.Arma3Profile` dans ce dossier ; suppression (Galerie, cliché drone) limitée aux images `COMSPEC_…` / `cmap_…`. `NoteGameCommand` ignore `Shots.*` (ne rouvre pas la liaison).
+- **Échec** : `file_not_found` porte `in=<dossier en service>` ; connect `fn_extensionCallback` (`_fnc_shotMissing`) : « Capture introuvable dans <dossier> : vérifiez le réglage Dossier des captures d'écran… » pour les photos, visages SEEK et pièces de fiche, plus une notification du téléphone (app Photos). Capture de la carte : motif d'arrêt après 5 images absentes renvoie au réglage.
+- **ATAK natif** : `fn_shotDir` (`apply` / `check` / `text`), réglages CBA `comspec_atak_native_shot_dir` (EDITBOX, client) et `comspec_atak_native_shot_check` (case qui lance la vérification puis se décoche), application au `postInitClient` et à chaque changement ; Réglages › À propos › Photos (dossier, VÉRIFIER LE DOSSIER, vérification automatique une fois par minute à l'ouverture). i18n : 37 entrées.
+- connect 1.6.28 (`fn_extensionCallback`). Tests `AtakShotDirSettingAssetTest`, assertions Workshop / `%LOCALAPPDATA%` mises à jour.
+
+### À tester en jeu
+- **Réglage vide, profil par défaut** : photo avec l'appareil du téléphone : envoyée, Réglages › À propos › Photos montre `Documents\Arma 3\Screenshots (profil Arma « … »)`, le nombre d'images et la dernière.
+- **Autre profil** (Arma 3 - Other Profiles, nom avec espace) : même chose, dossier `…\Other Profiles\<nom>\Screenshots`.
+- **Réglage rempli** avec le bon dossier : VÉRIFIER LE DOSSIER → « dossier du réglage » ; avec `\\serveur\x`, `Captures` (relatif), `C:\`, un dossier absent : notification de refus, repli sur le profil, motif dans la vérification.
+- **Options des addons › COMSPEC › ATAK · Photo › Vérifier le dossier des captures** : cocher puis OK → message à l'écran, la case se décoche.
+- **Photo introuvable** : réglage sur un dossier vide alors qu'Arma écrit ailleurs n'empêche pas l'envoi (profil en (b)) ; pour forcer l'échec, qualité HDR basse → « Capture introuvable dans … ».
+- **Drone, Galerie** (envoi, suppression d'un cliché), **fiches** (FRS, SEEK visage, pièce jointe), **capture de la carte** : comme avant.
+- **Lancement `-profiles=D:\ArmaProfils -name=Test`** : dossier détecté sous `D:\ArmaProfils`, photos trouvées.
+- Aucun gel à la première photo (mode Profilage : plus de pic `DLL NotifyNewPhoto`).
+
 ## Pack 2.9.29 : ordres aux IA réparés, écrans sur trépied, montre Garmin, état Athena juste, Tenues Athena plus lisibles (ATAK natif 2.9.29.AG - Denver, COMSPEC Link 2.0.115)
 
 ### Résumé joueur
