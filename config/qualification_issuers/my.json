@@ -1,0 +1,550 @@
+{
+  "pack": "my",
+  "country": "MY",
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé le 2 novembre 2026 à partir de sources publiques : sites officiels (upnm.edu.my, rmp.gov.my, mkn.gov.my, berita.rtm.gov.my), presse malaisienne (Bernama, Utusan Malaysia, Sinar Harian, Kosmo, The Star, New Straits Times, Malaysiakini, Air Times, Defence Security Asia, Sarawak Tribune), Shephard, et Wikipédia en complément. Les sites btdm.my, mymilitarytimes.com, malaysiandefence.com et bharian.com.my étaient inaccessibles ; aucun contournement n'a été utilisé. Les émetteurs de police (PDRM) sont hors forces armées. Les points non confirmés sont signalés dans « uncertain ».",
+    "en": "Compiled on 2 November 2026 from public sources: official websites (upnm.edu.my, rmp.gov.my, mkn.gov.my, berita.rtm.gov.my), Malaysian press (Bernama, Utusan Malaysia, Sinar Harian, Kosmo, The Star, New Straits Times, Malaysiakini, Air Times, Defence Security Asia, Sarawak Tribune), Shephard, and Wikipedia as a complement. The btdm.my, mymilitarytimes.com, malaysiandefence.com and bharian.com.my sites could not be reached; no workaround was used. Police (PDRM) issuers are outside the armed forces. Unconfirmed points are flagged under \"uncertain\"."
+  },
+  "issuers": [
+    {
+      "key": "my-pulpak",
+      "name": "Pusat Latihan Peperangan Khusus",
+      "short_name": "PULPAK",
+      "type": "training_center",
+      "location": "Sungai Udang (Melaka)",
+      "location_en": "Sungai Udang, Malacca, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Centre d'entraînement à la guerre spéciale de l'armée de terre malaisienne, rattaché au 21 Gerup Gerak Khas. Il organise le cours de base commando (béret vert), les cours de tireur d'élite des forces spéciales et, selon des sources secondaires, le parachutisme, la chute libre, la plongée et les explosifs.",
+        "en": "Malaysian Army Special Warfare Training Centre, under 21 Gerup Gerak Khas. It runs the basic commando course (green beret) and the special forces sniper courses and, according to secondary sources, parachuting, free fall, diving and demolition courses."
+      },
+      "aliases": [
+        "Special Warfare Training Centre",
+        "Pusat Latihan Peperangan Khas",
+        "SWTC"
+      ],
+      "sources": [
+        {
+          "url": "https://www.sinarharian.com.my/article/661907/berita/semasa/leftenan-muda-berbangsa-cina-berjaya-tamat-kursus-asas-komando",
+          "title": "Leftenan Muda berbangsa Cina berjaya tamat kursus asas komando — Sinar Harian (29 avril 2024)"
+        },
+        {
+          "url": "https://berita.rtm.gov.my/nasional/senarai-berita-nasional/senarai-artikel/40-penembak-hendap-gerak-khas-tamat-latihan/",
+          "title": "40 penembak hendap Gerak Khas tamat latihan — Berita RTM (4 octobre 2026)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Warfare_Training_Centre_(Malaysia)",
+          "title": "Special Warfare Training Centre (Malaysia) — Wikipedia"
+        }
+      ],
+      "uncertain": {
+        "fr": "Le nom est écrit « Khusus » (presse 2024–2026) ou « Khas » (sources plus anciennes). Les cérémonies de clôture du cours commando ont lieu à Sungai Udang ou à Mersing selon les années.",
+        "en": "The name is spelled \"Khusus\" (2024–2026 press) or \"Khas\" (older sources). Commando course closing ceremonies are held at Sungai Udang or Mersing depending on the year."
+      }
+    },
+    {
+      "key": "my-21-ggk",
+      "name": "21 Gerup Gerak Khas",
+      "short_name": "21 GGK",
+      "type": "command",
+      "location": "Kem Iskandar, Mersing (Johor)",
+      "location_en": "Iskandar Camp, Mersing, Johor, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Formation des forces spéciales de l'armée de terre (Gerak Khas, béret vert) qui regroupe le 11 Rejimen Gerak Khas, les régiments 21 et 22 Komando, le PULPAK et la garnison. Son état-major est au camp Iskandar de Mersing.",
+        "en": "Malaysian Army special forces formation (Gerak Khas, green beret) grouping 11 Rejimen Gerak Khas, the 21st and 22nd Commando regiments, PULPAK and the garrison. Its headquarters is at Iskandar Camp, Mersing."
+      },
+      "aliases": [
+        "Grup Gerak Khas",
+        "Gerup Gerak Khas",
+        "21st Special Service Group"
+      ],
+      "sources": [
+        {
+          "url": "https://defencesecurityasia.com/komando-ggk-panglima-adi/",
+          "title": "Mej Jen Adi Ridzwan Ambil Alih Tampuk Panglima 21 Grup Gerak Khas — Defence Security Asia (14 mai 2023)"
+        },
+        {
+          "url": "https://www.utusan.com.my/nasional/2019/09/11-rgk-berani-mati/",
+          "title": "11 RGK « berani mati » — Utusan Malaysia (12 septembre 2019)"
+        },
+        {
+          "url": "https://www.nst.com.my/amp/news/regional/2025/10/1287825/21-ggk-operators-told-enhance-skills-safeguard-unit-integrity",
+          "title": "21 GGK operators told to enhance skills, safeguard unit integrity — New Straits Times (5 octobre 2025)"
+        }
+      ]
+    },
+    {
+      "key": "my-pulada",
+      "name": "Pusat Latihan Tempur Tentera Darat",
+      "short_name": "PULADA",
+      "type": "training_center",
+      "location": "Ulu Tiram (Johor)",
+      "location_en": "Ulu Tiram, Johor, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Centre d'entraînement au combat de l'armée de terre malaisienne, dans le Johor. Il conduit notamment le cours de combat des jeunes officiers (Kursus Tempur Pegawai Muda).",
+        "en": "Malaysian Army Combat Training Centre in Johor. Among other courses it runs the young officers' combat course (Kursus Tempur Pegawai Muda)."
+      },
+      "aliases": [
+        "Army Combat Training Centre",
+        "Kem Pusat Latihan Tempur Tentera Darat"
+      ],
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/nasional/2023/10/dua-penuntut-pulada-terima-rawatan-di-icu-beransur-pulih/",
+          "title": "Strok haba: Dua penuntut Pulada terima rawatan di ICU beransur pulih — Utusan Malaysia (16 octobre 2023)"
+        }
+      ],
+      "uncertain": {
+        "fr": "La presse situe le centre à Ulu Tiram ou à Kota Tinggi (Johor). Le centre de guerre en jungle cité par certaines sources n'a pas été confirmé comme entité distincte.",
+        "en": "The press places the centre at Ulu Tiram or Kota Tinggi (Johor). The jungle warfare school mentioned by some sources could not be confirmed as a separate entity."
+      }
+    },
+    {
+      "key": "my-pusasda",
+      "name": "Pusat Latihan Asas Tentera Darat",
+      "short_name": "PUSASDA",
+      "type": "training_center",
+      "location": "Port Dickson (Negeri Sembilan)",
+      "location_en": "Port Dickson, Negeri Sembilan, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation initiale de l'armée de terre où les recrues (perajurit muda) suivent environ six mois d'instruction de base.",
+        "en": "Malaysian Army basic training centre where recruits (perajurit muda) undergo about six months of basic training."
+      },
+      "aliases": [
+        "Army Basic Training Centre",
+        "Pusat Latihan Asas TD"
+      ],
+      "sources": [
+        {
+          "url": "https://www.sinarharian.com.my/article/126407/kesiapsiagaan-tentera-darat",
+          "title": "Kesiapsiagaan Tentera Darat — Sinar Harian (2 mars 2021)"
+        }
+      ]
+    },
+    {
+      "key": "my-atd",
+      "name": "Akademi Tentera Darat",
+      "short_name": "ATD",
+      "type": "academy",
+      "location": "",
+      "location_en": "",
+      "website": "",
+      "description": {
+        "fr": "Académie de l'armée de terre malaisienne, l'un des établissements dont les élèves officiers sont nommés lors de la prise d'armes de commissionnement de Sungai Besi.",
+        "en": "Malaysian Army Academy, one of the institutions whose officer cadets are commissioned at the Sungai Besi commissioning parade."
+      },
+      "aliases": [
+        "Malaysian Army Academy"
+      ],
+      "sources": [
+        {
+          "url": "https://www.kosmo.com.my/?p=787629",
+          "title": "Perbarisan pentauliahan de 509 pegawai kadet ATM, Kem Perdana Sungai Besi — Kosmo (28 juin 2025)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Localisation et durée du cursus non trouvées en source ouverte.",
+        "en": "Location and course length not found in open sources."
+      }
+    },
+    {
+      "key": "my-alk-upnm",
+      "name": "Akademi Latihan Ketenteraan, Universiti Pertahanan Nasional Malaysia",
+      "short_name": "ALK UPNM",
+      "type": "academy",
+      "location": "Kem Perdana Sungai Besi, Kuala Lumpur",
+      "location_en": "Kem Perdana Sungai Besi, Kuala Lumpur, Malaysia",
+      "website": "https://upnm.edu.my/",
+      "description": {
+        "fr": "Académie de formation militaire de l'Université nationale de défense de Malaisie (UPNM) : elle encadre les élèves officiers (pegawai kadet), organisés en huit compagnies, pendant leurs études universitaires et prépare leur commissionnement.",
+        "en": "Military Training Academy of the National Defence University of Malaysia (UPNM): it trains officer cadets (pegawai kadet), organised in eight companies, during their university studies and prepares their commissioning."
+      },
+      "aliases": [
+        "Akademi Latihan Ketenteraan",
+        "Military Training Academy",
+        "Universiti Pertahanan Nasional Malaysia",
+        "National Defence University of Malaysia",
+        "UPNM"
+      ],
+      "sources": [
+        {
+          "url": "https://upnm.edu.my/index.php/en/about-en/administration/military-training-academy",
+          "title": "Military Training Academy (Akademi Latihan Ketenteraan) — Universiti Pertahanan Nasional Malaysia"
+        },
+        {
+          "url": "https://www.kosmo.com.my/?p=787629",
+          "title": "Perbarisan pentauliahan de 509 pegawai kadet ATM, Kem Perdana Sungai Besi — Kosmo (28 juin 2025)"
+        }
+      ]
+    },
+    {
+      "key": "my-ktu",
+      "name": "Kolej Tentera Udara",
+      "short_name": "KTU",
+      "type": "academy",
+      "location": "Alor Setar (Kedah)",
+      "location_en": "Alor Setar, Kedah, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Collège de l'armée de l'air royale malaisienne (TUDM) : formation des élèves officiers (école des officiers, KTU-SLP) et instituts de formation au pilotage (INSPEN), y compris la phase hélicoptère.",
+        "en": "Royal Malaysian Air Force (RMAF) college: officer cadet training (officers' school, KTU-SLP) and flying training institutes (INSPEN), including the helicopter phase."
+      },
+      "aliases": [
+        "Kolej Tentera Udara - Sekolah Latihan Pegawai",
+        "KTU-SLP",
+        "RMAF College"
+      ],
+      "sources": [
+        {
+          "url": "https://www.kosmo.com.my/?p=237164",
+          "title": "Lapan pegawai TD, TLDM terima sayap penerbangan — Kosmo (16 février 2022)"
+        },
+        {
+          "url": "https://www.kosmo.com.my/?p=787629",
+          "title": "Perbarisan pentauliahan de 509 pegawai kadet ATM, Kem Perdana Sungai Besi — Kosmo (28 juin 2025)"
+        }
+      ]
+    },
+    {
+      "key": "my-kdsi",
+      "name": "Kapal Diraja Sultan Idris I",
+      "short_name": "KDSI I",
+      "type": "school",
+      "location": "",
+      "location_en": "",
+      "website": "",
+      "description": {
+        "fr": "Établissement de formation de la marine royale malaisienne (TLDM) dont les élèves officiers sont commissionnés lors de la prise d'armes interarmées de Sungai Besi.",
+        "en": "Royal Malaysian Navy (RMN) training establishment whose officer cadets are commissioned at the joint Sungai Besi commissioning parade."
+      },
+      "aliases": [
+        "KD Sultan Idris I"
+      ],
+      "sources": [
+        {
+          "url": "https://www.kosmo.com.my/?p=787629",
+          "title": "Perbarisan pentauliahan de 509 pegawai kadet ATM, Kem Perdana Sungai Besi — Kosmo (28 juin 2025)"
+        }
+      ],
+      "uncertain": {
+        "fr": "Localisation non confirmée par la source ouverte retenue.",
+        "en": "Location not confirmed by the open source used."
+      }
+    },
+    {
+      "key": "my-tldm-tanjung-pengelih",
+      "name": "Pangkalan TLDM Tanjung Pengelih",
+      "short_name": "TLDM Tanjung Pengelih",
+      "type": "training_center",
+      "location": "Kota Tinggi (Johor)",
+      "location_en": "Kota Tinggi, Johor, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Base de la marine royale malaisienne où les recrues suivent le cours de base de la marine (KATL) de six mois.",
+        "en": "Royal Malaysian Navy base where recruits attend the six-month naval basic course (KATL)."
+      },
+      "aliases": [
+        "RMN Base Tanjung Pengelih"
+      ],
+      "sources": [
+        {
+          "url": "https://berita.rtm.gov.my/nasional/senarai-berita-nasional/senarai-artikel/645-perajurit-muda-tamat-katl-di-pangkalan-tldm-tanjung-pengelih/",
+          "title": "645 perajurit muda tamat KATL di Pangkalan TLDM Tanjung Pengelih — Berita RTM (7 décembre 2024)"
+        }
+      ]
+    },
+    {
+      "key": "my-mtat",
+      "name": "Maktab Turus Angkatan Tentera",
+      "short_name": "MTAT",
+      "type": "academy",
+      "location": "PUSPAHANAS, Putrajaya",
+      "location_en": "PUSPAHANAS, Putrajaya, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Collège d'état-major des forces armées malaisiennes : formation interarmées des commandants (majors) au niveau diplôme de troisième cycle. Installé au Centre national d'études de défense (PUSPAHANAS) à Putrajaya depuis 2019.",
+        "en": "Malaysian Armed Forces Staff College: joint education of majors at postgraduate diploma level. Located at the National Centre of Defence Studies (PUSPAHANAS) in Putrajaya since 2019."
+      },
+      "aliases": [
+        "Armed Forces Staff College",
+        "Malaysian Armed Forces Staff College"
+      ],
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/pilihan-utusan/2025/12/pembelajaran-berterusan-kekuatan-atm-dalam-era-pertahanan-moden/",
+          "title": "Pembelajaran berterusan kekuatan ATM dalam era pertahanan moden — Utusan Malaysia (7 décembre 2025)"
+        },
+        {
+          "url": "https://www.malaysiakini.com/announcement/762806",
+          "title": "MKN, MPAT and MTAT graduation ceremonies are held together, today — Malaysiakini (6 décembre 2025)"
+        }
+      ]
+    },
+    {
+      "key": "my-mpat",
+      "name": "Maktab Pertahanan Angkatan Tentera",
+      "short_name": "MPAT",
+      "type": "academy",
+      "location": "PUSPAHANAS, Putrajaya",
+      "location_en": "PUSPAHANAS, Putrajaya, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Collège de défense des forces armées malaisiennes : formation des lieutenants-colonels et hauts fonctionnaires, sanctionnée par un master en sciences sociales (études de défense).",
+        "en": "Malaysian Armed Forces Defence College: course for lieutenant colonels and senior civil servants, leading to a Master of Social Sciences (Defence Studies)."
+      },
+      "aliases": [
+        "Armed Forces Defence College"
+      ],
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/pilihan-utusan/2025/12/pembelajaran-berterusan-kekuatan-atm-dalam-era-pertahanan-moden/",
+          "title": "Pembelajaran berterusan kekuatan ATM dalam era pertahanan moden — Utusan Malaysia (7 décembre 2025)"
+        },
+        {
+          "url": "https://www.malaysiakini.com/announcement/762806",
+          "title": "MKN, MPAT and MTAT graduation ceremonies are held together, today — Malaysiakini (6 décembre 2025)"
+        }
+      ]
+    },
+    {
+      "key": "my-10-briged-para",
+      "name": "Briged Ke-10 Payung Terjun",
+      "short_name": "10 Briged (Para)",
+      "type": "unit",
+      "location": "Kem Terendak (Melaka)",
+      "location_en": "Terendak Camp, Malacca, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Brigade parachutiste de l'armée de terre, composante de la force de déploiement rapide (Pasukan Aturgerak Cepat). Elle organise le cours de base de la force de déploiement rapide (APAC), condition du béret marron.",
+        "en": "Malaysian Army parachute brigade, core of the Rapid Deployment Force (Pasukan Aturgerak Cepat). It runs the Rapid Deployment Force basic course (APAC), the requirement for the maroon beret."
+      },
+      "aliases": [
+        "10 Briged Para",
+        "10 Briged (PARA)",
+        "10th Parachute Brigade",
+        "Pasukan Aturgerak Cepat"
+      ],
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/?p=24817",
+          "title": "10 Briged Para hanya tumpu jalani latihan tugas spesifik — Utusan Malaysia (9 octobre 2020)"
+        },
+        {
+          "url": "https://www.mkn.gov.my/web/ms/2022/02/13/27230/",
+          "title": "Majlis Penutup Kursus Asas Pasukan AturGerak Cepat (APAC) 10-Briged (PARA) Siri 2/2021 — Majlis Keselamatan Negara"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/10th_Parachute_Brigade_(Malaysia)",
+          "title": "10th Parachute Brigade (Malaysia) — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "my-pl-paskal",
+      "name": "Pusat Latihan PASKAL, KD Panglima Garang",
+      "short_name": "KD Panglima Garang",
+      "type": "training_center",
+      "location": "Pangkalan TLDM Lumut (Perak)",
+      "location_en": "RMN Lumut Base, Perak, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Centre d'entraînement des forces spéciales de la marine (PASKAL) à la base de Lumut, inauguré en 2021 : plateforme pétrolière d'entraînement, stands de tir, maison de combat et bassin de plongée. Il conduit le cours de base PASKAL.",
+        "en": "Training centre of the Navy special forces (PASKAL) at Lumut base, commissioned in 2021: training oil platform, firing ranges, combat house and diving pool. It runs the PASKAL basic course."
+      },
+      "aliases": [
+        "KD Panglima Garang",
+        "Pusat Latihan Pasukan Khas Laut",
+        "PASKAL Training Centre",
+        "Pusat Latihan Paskal KD Panglima Garang"
+      ],
+      "sources": [
+        {
+          "url": "https://www.bernama.com/en/general/news.php?id=2009230",
+          "title": "Paskal members reminded to never tarnish team's image, dignity — Bernama (1er octobre 2021)"
+        },
+        {
+          "url": "https://defencesecurityasia.com/sultan-panglima-garang-paskal/",
+          "title": "KD Panglima Garang, Pusat Latihan PASKAL Yang Lengkap — Defence Security Asia (1er octobre 2021)"
+        },
+        {
+          "url": "https://www.sinarharian.com.my/article/681033/edisi/perak/12-daripada-56-pelatih-lulus-bergelar-paskal",
+          "title": "12 daripada 56 pelatih lulus bergelar PASKAL — Sinar Harian (19 août 2024)"
+        }
+      ]
+    },
+    {
+      "key": "my-sltt",
+      "name": "Sekolah Latihan Tempur TUDM",
+      "short_name": "SLTT",
+      "type": "school",
+      "location": "Bukit Ibam, Rompin (Pahang)",
+      "location_en": "Bukit Ibam, Rompin, Pahang, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "École d'entraînement au combat de l'armée de l'air royale malaisienne, qui conduit le cours de base PASKAU (béret bleu) de douze semaines.",
+        "en": "Royal Malaysian Air Force Combat Training School, which runs the twelve-week PASKAU basic course (blue beret)."
+      },
+      "aliases": [
+        "RMAF Combat Training School",
+        "Sekolah Latihan Tempur Tentera Udara Diraja Malaysia"
+      ],
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/nasional/2025/10/tengku-mahkota-pahang-catat-sejarah-kerabat-pahang-pertama-tamat-kursus-paskau/",
+          "title": "Tengku Mahkota Pahang catat sejarah (Kursus Asas Paskau Siri 32/25) — Utusan Malaysia (26 octobre 2025)"
+        }
+      ]
+    },
+    {
+      "key": "my-putd",
+      "name": "Pasukan Udara Tentera Darat",
+      "short_name": "PUTD",
+      "type": "command",
+      "location": "Kem Mahkota, Kluang (Johor)",
+      "location_en": "Kem Mahkota, Kluang, Johor, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Aviation légère de l'armée de terre malaisienne, créée en 1994 à Kluang : hélicoptères AW109 (Rejimen 881) et MD530G (escadron 883), formation au pilotage des officiers de l'aviation de l'armée.",
+        "en": "Malaysian Army Air Corps, formed in 1994 at Kluang: AW109 (Rejimen 881) and MD530G (883 Squadron) helicopters, and army aviation officer flying training."
+      },
+      "aliases": [
+        "Malaysian Army Air Corps",
+        "Malaysian Army Aviation"
+      ],
+      "sources": [
+        {
+          "url": "https://defencesecurityasia.com/helikopter-agusta-a109-tentera-darat-mendarat-cemas-di-kluang-tiga-anggota-cedera/",
+          "title": "Helikopter Agusta A109 Tentera Darat Mendarat Cemas di Kluang, Tiga Anggota Cedera — Defence Security Asia (28 juin 2024)"
+        },
+        {
+          "url": "https://www.utusan.com.my/berita/2021/09/6-helikopter-baharu-putd-bakal-tiba-akhir-tahun-ini/",
+          "title": "6 helikopter baharu PUTD bakal tiba akhir tahun ini — Utusan Malaysia (19 septembre 2021)"
+        },
+        {
+          "url": "https://www.shephardmedia.com/news/air-warfare/malaysian-army-tests-its-md-530g-helicopters/",
+          "title": "Malaysian Army tests its MD 530G helicopters — Shephard (29 juin 2022)"
+        }
+      ]
+    },
+    {
+      "key": "my-pulapol",
+      "name": "Pusat Latihan Polis",
+      "short_name": "PULAPOL",
+      "type": "training_center",
+      "location": "Kuala Lumpur",
+      "location_en": "Kuala Lumpur, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation de la police royale malaisienne (PDRM) à Kuala Lumpur : formation de base des inspecteurs (PLAK, neuf mois) et d'autres cursus de police.",
+        "en": "Royal Malaysia Police (PDRM) training centre in Kuala Lumpur: basic inspector training (PLAK, nine months) and other police courses."
+      },
+      "aliases": [
+        "Police Training Centre",
+        "Pulapol Kuala Lumpur"
+      ],
+      "sources": [
+        {
+          "url": "https://www.sinarharian.com.my/article/634959/berita/semasa/tinggalkan-kerjaya-jurutera-demi-minat-jadi-polis",
+          "title": "Tinggalkan kerjaya jurutera demi minat jadi polis — Sinar Harian (17 novembre 2023)"
+        },
+        {
+          "url": "https://berita.rtm.gov.my/nasional/senarai-berita-nasional/senarai-artikel/549-inspektor-suksis-uitm-terima-tauliah/",
+          "title": "549 Inspektor SUKSIS UiTM terima tauliah — Berita RTM (24 août 2026)"
+        }
+      ]
+    },
+    {
+      "key": "my-69-komando",
+      "name": "69 Komando, Pasukan Gerakan Khas",
+      "short_name": "69 Komando",
+      "type": "unit",
+      "location": "Kem Sultan Nazrin Shah, Ulu Kinta, Ipoh (Perak)",
+      "location_en": "Sultan Nazrin Shah Camp, Ulu Kinta, Ipoh, Perak, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Unité commando de la police royale malaisienne (dite VAT 69), au sein du Pasukan Gerakan Khas. Elle organise ses propres cours (contre-terrorisme, tireur d'élite, parachutisme, largage) au camp Sultan Nazrin Shah d'Ulu Kinta. Unité de police, hors forces armées.",
+        "en": "Royal Malaysia Police commando unit (known as VAT 69), part of Pasukan Gerakan Khas. It runs its own courses (counter-terrorism, sniper, parachuting, despatching) at Sultan Nazrin Shah Camp, Ulu Kinta. A police unit, not part of the armed forces."
+      },
+      "aliases": [
+        "69 Komando",
+        "VAT 69",
+        "69 Commando",
+        "VAT 69 Komando"
+      ],
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/nasional/2025/09/56-pegawai-anggota-elit-pdrm-atm-tamat-kursus-cct-dan-sniper/",
+          "title": "56 pegawai anggota elit PDRM, ATM tamat kursus CCT dan sniper — Utusan Malaysia (3 septembre 2025)"
+        },
+        {
+          "url": "https://www.nst.com.my/amp/news/nation/2026/07/1482694/vat-69-five-decades-defending-malaysia-insurgents-terrorists",
+          "title": "VAT 69: Five decades of defending Malaysia from insurgents, terrorists — New Straits Times (7 juillet 2026)"
+        },
+        {
+          "url": "https://www.rmp.gov.my/news-detail/2014/06/11/sayap-penerjunan-satu-kemegahan-unit-elit",
+          "title": "Sayap Penerjunan, satu kemegahan unit elit — Polis Diraja Malaysia (rmp.gov.my)"
+        }
+      ]
+    },
+    {
+      "key": "my-utk",
+      "name": "Unit Tindakhas, Pasukan Gerakan Khas",
+      "short_name": "UTK",
+      "type": "unit",
+      "location": "Bukit Aman, Kuala Lumpur",
+      "location_en": "Bukit Aman, Kuala Lumpur, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Unité d'intervention de la police royale malaisienne (Special Actions Unit), au sein du Pasukan Gerakan Khas : contre-terrorisme et protection rapprochée. Elle forme ses tireurs d'élite et ses parachutistes. Unité de police, hors forces armées.",
+        "en": "Royal Malaysia Police Special Actions Unit, part of Pasukan Gerakan Khas: counter-terrorism and close protection. It trains its own snipers and parachutists. A police unit, not part of the armed forces."
+      },
+      "aliases": [
+        "Unit Tindakhas",
+        "Unit Tindakan Khas",
+        "Unit Tindak Khas",
+        "Special Actions Unit"
+      ],
+      "sources": [
+        {
+          "url": "https://www.thestar.com.my/news/nation/2025/06/12/for-mum-and-dad-insp-intan-only-woman-to-complete-utk-training-series-12025",
+          "title": "For mum and dad: Insp Intan only woman to complete UTK training series 1/2025 — The Star (12 juin 2025)"
+        },
+        {
+          "url": "https://defencesecurityasia.com/sniper-utk-pdrm-latihan/",
+          "title": "Sniper Unit Tindak Khas (UTK) « Buat Kemunculan » — Defence Security Asia (23 août 2022)"
+        },
+        {
+          "url": "https://www.rmp.gov.my/news-detail/2014/06/11/sayap-penerjunan-satu-kemegahan-unit-elit",
+          "title": "Sayap Penerjunan, satu kemegahan unit elit — Polis Diraja Malaysia (rmp.gov.my)"
+        }
+      ]
+    },
+    {
+      "key": "my-pga-sabah",
+      "name": "Briged Sabah, Pasukan Gerakan Am",
+      "short_name": "Briged Sabah PGA",
+      "type": "unit",
+      "location": "Lahad Datu (Sabah)",
+      "location_en": "Lahad Datu, Sabah, Malaysia",
+      "website": "",
+      "description": {
+        "fr": "Brigade de Sabah de la force de police de campagne (Pasukan Gerakan Am, PGA) de la police royale malaisienne. Elle organise depuis 2023 un cours annuel de combat maritime à Lahad Datu. Unité de police.",
+        "en": "Sabah Brigade of the Royal Malaysia Police General Operations Force (Pasukan Gerakan Am, PGA). Since 2023 it has run an annual sea combat course at Lahad Datu. A police unit."
+      },
+      "aliases": [
+        "Briged Sabah PGA",
+        "Sabah PGA Brigade"
+      ],
+      "sources": [
+        {
+          "url": "https://berita.rtm.gov.my/?p=457716",
+          "title": "PDRM perkukuh keselamatan perairan Sabah, 43 pegawai tamat Kursus Sea Combat Brigade — Berita RTM (14 février 2026)"
+        }
+      ]
+    }
+  ]
+}

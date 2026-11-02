@@ -30,6 +30,7 @@ final class QualificationCatalogImportTest extends TestCase
         'cn' => ['CN', 'cn-', 'CN-', 'zh'],
         'ru' => ['RU', 'ru-', 'RU-', 'ru'],
         'gb' => ['GB', 'gb-', 'GB-', 'en'],
+        'my' => ['MY', 'my-', 'MY-', 'ms'],
         'nato' => ['NATO', 'nato-', 'OTAN-', 'en'],
     ];
 
@@ -42,7 +43,7 @@ final class QualificationCatalogImportTest extends TestCase
     public function testShippedCatalogsAreValidUniqueSourcedAndBilingualPerCountry(): void
     {
         self::assertSame(QualificationCatalog::PACKS, array_keys(QualificationCatalog::packs()), 'chaque pack inscrit est livré et lisible');
-        self::assertSame(['US', 'FR', 'DE', 'CN', 'RU', 'GB', 'NATO'], array_keys(QualificationCatalog::COUNTRIES));
+        self::assertSame(['US', 'FR', 'DE', 'CN', 'RU', 'GB', 'MY', 'NATO'], array_keys(QualificationCatalog::COUNTRIES));
         $allIds = [];
         $allCodes = [];
         foreach (self::PACKS as $name => [$country, $idPrefix, $codePrefix, $official]) {
@@ -97,7 +98,7 @@ final class QualificationCatalogImportTest extends TestCase
                 $linkedJobs[$job['country']] = ($linkedJobs[$job['country']] ?? 0) + 1;
             }
         }
-        foreach (['US', 'FR', 'DE', 'CN', 'RU', 'GB', 'NATO'] as $country) {
+        foreach (['US', 'FR', 'DE', 'CN', 'RU', 'GB', 'MY', 'NATO'] as $country) {
             self::assertGreaterThan(0, $linkedJobs[$country] ?? 0, 'emplois ' . $country . ' reliés à leurs brevets');
         }
         // La fiche d’un emploi relié montre ses qualifications dans la langue du lecteur.

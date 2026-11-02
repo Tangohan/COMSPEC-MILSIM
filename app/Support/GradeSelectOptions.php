@@ -36,6 +36,7 @@ final class GradeSelectOptions
         'FR' => 'France',
         'US' => 'États-Unis',
         'GB' => 'Royaume-Uni',
+        'MY' => 'Malaisie',
     ];
 
     // Libellés de groupe en anglais : un <optgroup label> n'est pas repris par la traduction du site.
@@ -51,6 +52,7 @@ final class GradeSelectOptions
         'FR' => 'France',
         'US' => 'United States',
         'GB' => 'United Kingdom',
+        'MY' => 'Malaysia',
     ];
 
     /**

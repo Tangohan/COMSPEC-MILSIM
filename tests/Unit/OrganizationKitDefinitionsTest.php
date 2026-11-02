@@ -116,7 +116,8 @@ final class OrganizationKitDefinitionsTest extends TestCase
                 self::assertContains($job['category_key'], $categories, (string) $job['slug']);
             }
             // Modèles allemands : aucun barème de grades allemand, le système de la communauté reste inchangé.
-            $grades = OrganizationKitDefinitions::isRealUnits($kit) ? [...\App\Support\SharedGradeSystems::CODES, ''] : \App\Support\SharedGradeSystems::CODES;
+            // Modèles malaisiens : grades malaisiens (armée de terre, marine, armée de l’air).
+            $grades = OrganizationKitDefinitions::isRealUnits($kit) ? array_merge(\App\Support\OfficialGradeSystems::CODES, ['']) : ['FR_CLASSIC', 'US_CLASSIC'];
             self::assertContains($kit['grade_system_code'], $grades);
         }
     }

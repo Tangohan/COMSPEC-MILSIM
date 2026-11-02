@@ -7,7 +7,7 @@ namespace App\Services\Organization;
 /**
  * Référentiel des échelons de commandement : ce qu’un échelon attend de son chef et de son adjoint.
  *
- * Pour chaque échelon (clé de UnitMilitarySymbol::ECHELONS) et chaque doctrine (américaine, française, britannique) :
+ * Pour chaque échelon (clé de UnitMilitarySymbol::ECHELONS) et chaque doctrine (américaine, française, britannique, malaisienne) :
  * fonction du chef, adjoint attendu ou non, plage de grades du chef et de l’adjoint (niveaux GradeLevel, codes OTAN
  * STANAG 2116), effectif de référence et sous-unités attendues.
  *
@@ -26,6 +26,10 @@ namespace App\Services\Organization;
  *   (équivalences de grades) ; organisation publique de l’infanterie britannique (fire team de 4, section de 8, platoon
  *   d’une trentaine, company commandée par un Major avec un Company Sergeant Major, battalion par un Lieutenant Colonel
  *   avec un Regimental Sergeant Major).
+ * - MY : Angkatan Tentera Malaysia, organisation d’origine britannique (seksyen de huit à dix commandé par un Koperal
+ *   secondé par un Lans Koperal, platun d’un Leftenan et d’un Sarjan, kompeni d’un Mejar, batalion d’un Leftenan Kolonel) :
+ *   articles publics sur l’infanterie malaisienne (Infantry Corps (Malaysia), 9 RAMD (Para)) et sur la section d’infanterie
+ *   de modèle britannique (Wikipédia « Section (military unit) »).
  * - OTAN : STANAG 2116 (codes OR / OF qui rendent les grades des deux systèmes comparables).
  */
 final class EchelonStandards
@@ -35,6 +39,8 @@ final class EchelonStandards
     public const PROFILE_FR = 'fr';
 
     public const PROFILE_GB = 'gb';
+    /** Armée malaisienne (système d’origine britannique : seksyen commandé par un Koperal). */
+    public const PROFILE_MY = 'my';
 
     /** Échelons voisins évalués avec le référentiel d’un échelon équivalent (même marque sur le symbole). */
     public const ALIASES = [
@@ -46,7 +52,7 @@ final class EchelonStandards
     /** @return list<string> */
     public static function profiles(): array
     {
-        return [self::PROFILE_FR, self::PROFILE_US, self::PROFILE_GB];
+        return [self::PROFILE_FR, self::PROFILE_US, self::PROFILE_GB, self::PROFILE_MY];
     }
 
     public static function sanitizeProfile(mixed $raw): string
@@ -84,6 +90,7 @@ final class EchelonStandards
         return match (self::sanitizeProfile($profile)) {
             self::PROFILE_US => self::american(),
             self::PROFILE_GB => self::british(),
+            self::PROFILE_MY => self::malaysian(),
             default => self::french(),
         };
     }
@@ -177,6 +184,39 @@ final class EchelonStandards
             'regiment' => self::def('regiment', 6, 'Régiment', 'Chef de corps', [14, 14], 'Chef de corps adjoint', true, false, [13, 13], [600, 1200], ['compagnie', 'bataillon'], [3, 8],
                 'Un état-major, une compagnie de commandement et de logistique, plusieurs compagnies de combat.',
                 '', [$at, $code]),
+        ];
+    }
+
+    /**
+     * Armée malaisienne (Tentera Darat) : articulation d’infanterie d’origine britannique, intitulés malais.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function malaysian(): array
+    {
+        $inf = 'Infantry Corps (Malaysia) et 9th Battalion (Parachute), Royal Malay Regiment (Wikipédia)';
+        $sec = 'Section (military unit), modèle britannique : Koperal chef de seksyen, Lans Koperal adjoint (Wikipédia)';
+        $rank = 'Grades de l’Angkatan Tentera Malaysia et codes OTAN STANAG 2116 (Wikipédia « Malaysian military ranks »)';
+
+        return [
+            'equipe' => self::def('equipe', 1, 'Tim', 'Ketua Tim', [3, 4], 'Aucun adjoint : le chef d’équipe commande seul sa cellule', false, false, null, [4, 4], [], [0, 0],
+                'Deux équipes de quatre par seksyen (modèle britannique) : l’une conduite par le Koperal, l’autre par le Lans Koperal.',
+                '', [$sec, $rank]),
+            'groupe' => self::def('groupe', 2, 'Seksyen', 'Ketua Seksyen (Koperal)', [4, 4], 'Penolong Ketua Seksyen (Lans Koperal)', true, true, [3, 3], [8, 10], ['equipe'], [2, 2],
+                'Un Koperal chef de seksyen, un Lans Koperal adjoint et six à huit soldats, en deux équipes.',
+                '', [$sec, $rank]),
+            'section' => self::def('section', 3, 'Platun', 'Komander Platun (Leftenan Muda ou Leftenan)', [10, 10], 'Sarjan Platun', true, false, [6, 6], [25, 35], ['groupe'], [3, 3],
+                'Un commandement de platun (officier, Sarjan, radio) et trois seksyen.',
+                '', [$sec, $rank]),
+            'compagnie' => self::def('compagnie', 4, 'Kompeni', 'Pegawai Memerintah Kompeni (Mejar ou Kapten)', [11, 12], 'Penolong Pegawai Memerintah Kompeni (Kapten)', true, false, [10, 11], [90, 130], ['section'], [3, 4],
+                'Un commandement de kompeni (commandant, adjoint, Sarjan Mejar Kompeni) et trois platun.',
+                '', [$inf, $rank]),
+            'bataillon' => self::def('bataillon', 5, 'Batalion', 'Pegawai Memerintah (Leftenan Kolonel)', [13, 13], 'Penolong Pegawai Memerintah (Mejar)', true, false, [12, 12], [500, 800], ['compagnie'], [4, 6],
+                'Un état-major (Markas Batalion), quatre kompeni de fusiliers (A à D) et une kompeni d’appui (Kompeni Bantuan : mortiers, mitrailleuses lourdes, antichar, transmissions).',
+                '', [$inf, $rank]),
+            'regiment' => self::def('regiment', 6, 'Rejimen', 'Pegawai Memerintah Rejimen (Leftenan Kolonel ou Kolonel)', [13, 14], 'Penolong Pegawai Memerintah (Mejar)', true, false, [12, 12], [300, 900], ['compagnie', 'bataillon'], [3, 6],
+                'Unité de la taille d’un bataillon (rejimen Gerak Khas, artillerie, génie) ; les grands régiments d’infanterie (RAMD, RRD) regroupent des bataillons sans être un échelon de commandement.',
+                '', [$inf, $rank]),
         ];
     }
 

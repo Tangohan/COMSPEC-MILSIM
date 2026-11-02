@@ -393,7 +393,7 @@ final class TenantBootstrapService
             throw new \InvalidArgumentException('Le grade sélectionné pour le fondateur ne correspond pas au référentiel choisi.');
         }
 
-        $defaultCode = \App\Support\SharedGradeSystems::founderCode($gradeSystemCode);
+        $defaultCode = \App\Support\OfficialGradeSystems::founderGrade($gradeSystemCode);
         $pick = $pdo->prepare(
             "SELECT g.id FROM grades g
              INNER JOIN grade_systems gs ON gs.id = g.grade_system_id

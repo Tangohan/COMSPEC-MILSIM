@@ -1,0 +1,1587 @@
+{
+  "pack": "my",
+  "country": "MY",
+  "official_lang": "ms",
+  "label": {
+    "fr": "Brevets et qualifications militaires et de police malaisiens",
+    "en": "Malaysian military and police badges and qualifications"
+  },
+  "disclaimer": {
+    "fr": "Qualification de jeu inspirée d'une qualification ou d'une formation militaire ou de police malaisienne réelle, sans valeur réelle.",
+    "en": "In-game qualification inspired by a real Malaysian military or police qualification or course, with no real-world value."
+  },
+  "issuer": {
+    "name": "Angkatan Tentera Malaysia (rujukan)",
+    "short_name": "ATM",
+    "description": {
+      "fr": "Émetteur de référence des qualifications importées du catalogue malaisien quand l'école n'est pas précisée : qualifications de jeu, sans valeur réelle.",
+      "en": "Reference issuer for qualifications imported from the Malaysian catalogue when no school is specified: in-game qualifications, with no real-world value."
+    }
+  },
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé le 2 novembre 2026 à partir de sources publiques : sites officiels (upnm.edu.my, rmp.gov.my, mkn.gov.my, berita.rtm.gov.my), presse malaisienne (Bernama, Utusan Malaysia, Sinar Harian, Kosmo, The Star, NST, Malaysiakini, Air Times, Defence Security Asia) et Wikipédia anglais en complément ; textes reformulés, rien de classifié. Intitulés officiels en malais. Les entrées marquées « source faible » ne reposent que sur Wikipédia. Les cours de la police royale (PDRM) sont signalés comme tels. Un champ vide signifie qu'aucune source ouverte ne le précise.",
+    "en": "Compiled on 2 November 2026 from public sources: official websites (upnm.edu.my, rmp.gov.my, mkn.gov.my, berita.rtm.gov.my), Malaysian press (Bernama, Utusan Malaysia, Sinar Harian, Kosmo, The Star, NST, Malaysiakini, Air Times, Defence Security Asia) and English Wikipedia as a complement; paraphrased texts, nothing classified. Official titles in Malay. Entries marked \"weak source\" rest on Wikipedia only. Royal Malaysia Police (PDRM) courses are flagged as such. An empty field means no open source specifies it."
+  },
+  "entries": [
+    {
+      "id": "my-kursus-asas-komando",
+      "code": "MY-KAK",
+      "category": "selection",
+      "name": {
+        "fr": "Cours de base commando (Kursus Asas Komando)",
+        "en": "Basic Commando Course (Kursus Asas Komando)"
+      },
+      "official_name": "Kursus Asas Komando",
+      "short_name": "KAK",
+      "description": {
+        "fr": "Cours de sélection et de formation commando de douze semaines, organisé en séries annuelles (AK/1, AK/2…) par le PULPAK pour le 21 Gerup Gerak Khas. Les lauréats reçoivent le béret vert et le couteau commando ; le taux de réussite publié tourne autour de 25 à 40 %. Ouvert aux officiers et militaires du rang de toute l'armée de terre.",
+        "en": "Twelve-week commando selection and training course, run in yearly series (AK/1, AK/2…) by PULPAK for 21 Gerup Gerak Khas. Graduates receive the green beret and the commando knife; published pass rates are around 25 to 40%. Open to officers and other ranks from the whole army."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia, 21 Gerup Gerak Khas",
+        "en": "Malaysian Army, 21 Gerup Gerak Khas"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire en service"
+        ],
+        "en": [
+          "Serving military member"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.sinarharian.com.my/article/661907/berita/semasa/leftenan-muda-berbangsa-cina-berjaya-tamat-kursus-asas-komando",
+          "title": "Leftenan Muda berbangsa Cina berjaya tamat kursus asas komando — Sinar Harian (29 avril 2024)"
+        },
+        {
+          "url": "https://www.nst.com.my/amp/news/regional/2025/10/1287825/21-ggk-operators-told-enhance-skills-safeguard-unit-integrity",
+          "title": "21 GGK operators told to enhance skills, safeguard unit integrity — New Straits Times (5 octobre 2025)"
+        },
+        {
+          "url": "https://berita.rtm.gov.my/?p=94952",
+          "title": "Chan Ming Youn, penuntut tunggal berbangsa Cina tamatkan kursus komando — Berita RTM (30 avril 2024)"
+        }
+      ]
+    },
+    {
+      "id": "my-sniper-gerak-khas",
+      "code": "MY-SNIPER-GK",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Tireur d'élite des forces spéciales (Kursus Ahli Sniper Gerak Khas)",
+        "en": "Special Forces Sniper Course (Kursus Ahli Sniper Gerak Khas)"
+      },
+      "official_name": "Kursus Ahli Sniper Gerak Khas",
+      "short_name": "Sniper GK",
+      "description": {
+        "fr": "Cours de tireur d'élite de quatre semaines organisé par le PULPAK, dont la série 1/2026 s'est tenue au champ de tir international de Langkawi. Il forme les tireurs d'élite des régiments Gerak Khas et accueille aussi des stagiaires de Brunei et de l'agence maritime malaisienne.",
+        "en": "Four-week sniper course run by PULPAK; series 1/2026 was held at the Langkawi international shooting range. It trains snipers of the Gerak Khas regiments and also hosts trainees from Brunei and the Malaysian Maritime Enforcement Agency."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia, 21 Gerup Gerak Khas",
+        "en": "Malaysian Army, 21 Gerup Gerak Khas"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de base commando (Kursus Asas Komando)"
+        ],
+        "en": [
+          "Basic Commando Course (Kursus Asas Komando)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://berita.rtm.gov.my/nasional/senarai-berita-nasional/senarai-artikel/40-penembak-hendap-gerak-khas-tamat-latihan/",
+          "title": "40 penembak hendap Gerak Khas tamat latihan — Berita RTM (4 octobre 2026)"
+        }
+      ]
+    },
+    {
+      "id": "my-penyelia-sniper-gerak-khas",
+      "code": "MY-PSNIPER-GK",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Superviseur de tireurs d'élite des forces spéciales (Kursus Penyelia Sniper Gerak Khas)",
+        "en": "Special Forces Sniper Supervisor Course (Kursus Penyelia Sniper Gerak Khas)"
+      },
+      "official_name": "Kursus Penyelia Sniper Gerak Khas",
+      "short_name": "Penyelia Sniper",
+      "description": {
+        "fr": "Cours de quatre semaines du PULPAK, conduit en parallèle du cours de tireur d'élite, qui forme les superviseurs chargés d'encadrer les équipes de tireurs d'élite des régiments Gerak Khas.",
+        "en": "Four-week PULPAK course, run alongside the sniper course, training the supervisors who oversee sniper teams in the Gerak Khas regiments."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia, 21 Gerup Gerak Khas",
+        "en": "Malaysian Army, 21 Gerup Gerak Khas"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Tireur d'élite qualifié (Kursus Ahli Sniper Gerak Khas)"
+        ],
+        "en": [
+          "Qualified sniper (Kursus Ahli Sniper Gerak Khas)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://berita.rtm.gov.my/nasional/senarai-berita-nasional/senarai-artikel/40-penembak-hendap-gerak-khas-tamat-latihan/",
+          "title": "40 penembak hendap Gerak Khas tamat latihan — Berita RTM (4 octobre 2026)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-payung-terjun",
+      "code": "MY-KAPT",
+      "category": "airborne",
+      "name": {
+        "fr": "Cours de base de parachutisme (Kursus Asas Payung Terjun)",
+        "en": "Basic Parachute Course (Kursus Asas Payung Terjun)"
+      },
+      "official_name": "Kursus Asas Payung Terjun",
+      "short_name": "KAPT",
+      "description": {
+        "fr": "Cours de parachutisme à ouverture automatique de l'aile parachutiste du PULPAK, à Sungai Udang : instruction au sol, semaine de tour puis semaine de sauts (en général huit sauts, dont au moins deux en tenue de combat). Il ouvre droit à l'insigne de parachutiste (Lencana Payung Terjun) et précède le cours APAC de la 10e brigade parachutiste.",
+        "en": "Static-line parachute course of the PULPAK parachute wing at Sungai Udang: ground training, tower week then jump week (generally eight jumps, at least two with full combat gear). It qualifies for the parachutist badge (Lencana Payung Terjun) and precedes the 10th Parachute Brigade APAC course."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia (armée de terre)",
+        "en": "Malaysian Army (Tentera Darat Malaysia)"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Liste des cours du centre (Wikipédia anglais, source secondaire)",
+        "en": "Centre course list (English Wikipedia, secondary source)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire en service"
+        ],
+        "en": [
+          "Serving military member"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Parachutist_Badge_(Malaysia)",
+          "title": "Parachutist Badge (Malaysia) — Wikipedia [source faible]"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Warfare_Training_Centre_(Malaysia)",
+          "title": "Special Warfare Training Centre (Malaysia) — Wikipedia [source faible]"
+        }
+      ],
+      "source_quality": "weak"
+    },
+    {
+      "id": "my-kursus-terjun-bebas",
+      "code": "MY-KTB",
+      "category": "airborne",
+      "name": {
+        "fr": "Cours de chute libre (Kursus Terjun Bebas)",
+        "en": "Free Fall Course (Kursus Terjun Bebas)"
+      },
+      "official_name": "Kursus Terjun Bebas",
+      "short_name": "Terjun Bebas",
+      "description": {
+        "fr": "Cours de chute libre opérationnelle de l'aile parachutiste du PULPAK, suivi d'un niveau avancé HALO/HAHO. L'insigne de parachutiste à ouverture commandée suppose l'insigne de base, ce cours et 21 sauts en chute libre, dont quatre en tenue de combat.",
+        "en": "Military free fall course of the PULPAK parachute wing, followed by an advanced HALO/HAHO level. The free fall parachutist badge requires the basic badge, this course and 21 free fall jumps, four of them with combat gear."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia (armée de terre)",
+        "en": "Malaysian Army (Tentera Darat Malaysia)"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Liste des cours du centre (Wikipédia anglais, source secondaire)",
+        "en": "Centre course list (English Wikipedia, secondary source)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de base de parachutisme (Kursus Asas Payung Terjun)"
+        ],
+        "en": [
+          "Basic Parachute Course (Kursus Asas Payung Terjun)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Parachutist_Badge_(Malaysia)",
+          "title": "Parachutist Badge (Malaysia) — Wikipedia [source faible]"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Pathfinder_Company_(Malaysia)",
+          "title": "Pathfinder Company (Malaysia) — Wikipedia [source faible]"
+        }
+      ],
+      "source_quality": "weak"
+    },
+    {
+      "id": "my-kursus-ketua-penerjunan",
+      "code": "MY-KKP",
+      "category": "airborne",
+      "name": {
+        "fr": "Chef largueur (Kursus Ketua Penerjunan)",
+        "en": "Jumpmaster Course (Kursus Ketua Penerjunan)"
+      },
+      "official_name": "Kursus Ketua Penerjunan",
+      "short_name": "Ketua Penerjunan",
+      "description": {
+        "fr": "Cours de chef largueur de l'aile parachutiste du PULPAK, qui qualifie pour contrôler le largage des parachutistes depuis l'aéronef. L'insigne correspondant suppose l'insigne de parachutiste confirmé et 21 sauts à ouverture automatique, dont 18 en tenue de combat.",
+        "en": "PULPAK parachute wing jumpmaster course, qualifying to control the dispatch of paratroopers from the aircraft. The matching badge requires the senior parachutist badge and 21 static-line jumps, 18 of them with combat gear."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia (armée de terre)",
+        "en": "Malaysian Army (Tentera Darat Malaysia)"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Liste des cours du centre (Wikipédia anglais, source secondaire)",
+        "en": "Centre course list (English Wikipedia, secondary source)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de base de parachutisme (Kursus Asas Payung Terjun)"
+        ],
+        "en": [
+          "Basic Parachute Course (Kursus Asas Payung Terjun)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Parachutist_Badge_(Malaysia)",
+          "title": "Parachutist Badge (Malaysia) — Wikipedia [source faible]"
+        }
+      ],
+      "source_quality": "weak"
+    },
+    {
+      "id": "my-kursus-pandu-arah",
+      "code": "MY-KPA",
+      "category": "airborne",
+      "name": {
+        "fr": "Cours d'éclaireur parachutiste (Kursus Pandu Arah, pathfinder)",
+        "en": "Pathfinder Course (Kursus Pandu Arah)"
+      },
+      "official_name": "Kursus Pandu Arah",
+      "short_name": "Pandu Arah",
+      "description": {
+        "fr": "Cours pathfinder de sept semaines conduit par le PULPAK pour les éclaireurs de la compagnie Pandura de la 10e brigade parachutiste, précédé d'un stage préparatoire d'un mois en unité. Il conditionne l'insigne Pandura avec le brevet de parachutiste.",
+        "en": "Seven-week pathfinder course run by PULPAK for the scouts of the 10th Parachute Brigade Pandura company, preceded by a month-long unit-level preparatory course. Together with the parachutist badge it is required for the Pandura badge."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia (armée de terre)",
+        "en": "Malaysian Army (Tentera Darat Malaysia)"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Liste des cours du centre (Wikipédia anglais, source secondaire)",
+        "en": "Centre course list (English Wikipedia, secondary source)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de base de parachutisme (Kursus Asas Payung Terjun)"
+        ],
+        "en": [
+          "Basic Parachute Course (Kursus Asas Payung Terjun)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Pathfinder_Company_(Malaysia)",
+          "title": "Pathfinder Company (Malaysia) — Wikipedia [source faible]"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Warfare_Training_Centre_(Malaysia)",
+          "title": "Special Warfare Training Centre (Malaysia) — Wikipedia [source faible]"
+        }
+      ],
+      "source_quality": "weak"
+    },
+    {
+      "id": "my-kursus-juruselam",
+      "code": "MY-KJS",
+      "category": "maritime",
+      "name": {
+        "fr": "Cours de plongeur (Kursus Juruselam)",
+        "en": "Diver Course (Kursus Juruselam)"
+      },
+      "official_name": "Kursus Juruselam",
+      "short_name": "Juruselam",
+      "description": {
+        "fr": "Cours de plongée de l'aile amphibie du PULPAK, base des qualifications de nageur de combat des forces spéciales de l'armée de terre (nageur de combat, chef d'équipe, instructeur).",
+        "en": "Diving course of the PULPAK amphibious wing, the basis of army special forces combat swimmer qualifications (combat swimmer, team leader, instructor)."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia, 21 Gerup Gerak Khas",
+        "en": "Malaysian Army, 21 Gerup Gerak Khas"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Liste des cours du centre (Wikipédia anglais, source secondaire)",
+        "en": "Centre course list (English Wikipedia, secondary source)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de base commando (Kursus Asas Komando)"
+        ],
+        "en": [
+          "Basic Commando Course (Kursus Asas Komando)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Warfare_Training_Centre_(Malaysia)",
+          "title": "Special Warfare Training Centre (Malaysia) — Wikipedia [source faible]"
+        }
+      ],
+      "source_quality": "weak"
+    },
+    {
+      "id": "my-kursus-asas-letupan",
+      "code": "MY-KAL",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Cours de base explosifs (Kursus Asas Letupan)",
+        "en": "Basic Demolition Course (Kursus Asas Letupan)"
+      },
+      "official_name": "Kursus Asas Letupan",
+      "short_name": "Asas Letupan",
+      "description": {
+        "fr": "Cours de base de destruction et d'emploi des explosifs dispensé par l'aile amphibie du PULPAK aux personnels des forces spéciales.",
+        "en": "Basic demolition and explosives course taught by the PULPAK amphibious wing to special forces personnel."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia, 21 Gerup Gerak Khas",
+        "en": "Malaysian Army, 21 Gerup Gerak Khas"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Liste des cours du centre (Wikipédia anglais, source secondaire)",
+        "en": "Centre course list (English Wikipedia, secondary source)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de base commando (Kursus Asas Komando)"
+        ],
+        "en": [
+          "Basic Commando Course (Kursus Asas Komando)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Warfare_Training_Centre_(Malaysia)",
+          "title": "Special Warfare Training Centre (Malaysia) — Wikipedia [source faible]"
+        }
+      ],
+      "source_quality": "weak"
+    },
+    {
+      "id": "my-kursus-letupan-khas",
+      "code": "MY-KLK",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Cours d'explosifs spéciaux (Kursus Letupan Khas)",
+        "en": "Special Demolition Course (Kursus Letupan Khas)"
+      },
+      "official_name": "Kursus Letupan Khas",
+      "short_name": "Letupan Khas",
+      "description": {
+        "fr": "Cours avancé de destruction du PULPAK, qui fait suite au cours de base explosifs pour les spécialistes des forces spéciales.",
+        "en": "Advanced PULPAK demolition course following the basic demolition course for special forces specialists."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia, 21 Gerup Gerak Khas",
+        "en": "Malaysian Army, 21 Gerup Gerak Khas"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Peperangan Khusus",
+        "short_name": "PULPAK"
+      },
+      "issuer_key": "my-pulpak",
+      "reference": {
+        "fr": "Liste des cours du centre (Wikipédia anglais, source secondaire)",
+        "en": "Centre course list (English Wikipedia, secondary source)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de base explosifs (Kursus Asas Letupan)"
+        ],
+        "en": [
+          "Basic Demolition Course (Kursus Asas Letupan)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Warfare_Training_Centre_(Malaysia)",
+          "title": "Special Warfare Training Centre (Malaysia) — Wikipedia [source faible]"
+        }
+      ],
+      "source_quality": "weak"
+    },
+    {
+      "id": "my-kursus-apac",
+      "code": "MY-APAC",
+      "category": "airborne",
+      "name": {
+        "fr": "Cours de base de la force de déploiement rapide (Kursus Asas Pasukan Aturgerak Cepat, APAC)",
+        "en": "Rapid Deployment Force Basic Course (Kursus Asas Pasukan Aturgerak Cepat, APAC)"
+      },
+      "official_name": "Kursus Asas Pasukan Aturgerak Cepat",
+      "short_name": "APAC",
+      "description": {
+        "fr": "Cours d'environ un mois (cinq semaines en 2021) de la 10e brigade parachutiste, organisé en séries et parfois de façon décentralisée par les bataillons (18 RAMD (Para), 8 RRD (Para)). Il éprouve l'endurance physique et mentale et se conclut par une démonstration et une cérémonie à Kuala Terengganu ; il ouvre au béret marron de la force de déploiement rapide.",
+        "en": "Course of about one month (five weeks in 2021) of the 10th Parachute Brigade, run in series and sometimes decentralised to the battalions (18 RAMD (Para), 8 RRD (Para)). It tests physical and mental endurance and ends with a demonstration and ceremony in Kuala Terengganu; it leads to the Rapid Deployment Force maroon beret."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia, 10 Briged (Para)",
+        "en": "Malaysian Army, 10th Parachute Brigade"
+      },
+      "issuer": {
+        "name": "Briged Ke-10 Payung Terjun",
+        "short_name": "10 Briged (Para)"
+      },
+      "issuer_key": "my-10-briged-para",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de base de parachutisme (Kursus Asas Payung Terjun)"
+        ],
+        "en": [
+          "Basic Parachute Course (Kursus Asas Payung Terjun)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.mkn.gov.my/web/ms/2022/02/13/27230/",
+          "title": "Majlis Penutup Kursus Asas Pasukan AturGerak Cepat (APAC) 10-Briged (PARA) Siri 2/2021 — Majlis Keselamatan Negara"
+        },
+        {
+          "url": "https://www.airtimes.my/2022/01/10/kursus-asas-pac-uji-ketahanan-mental-fizikal-anggota-tentera-darat/",
+          "title": "Kursus asas PAC uji ketahanan mental, fizikal anggota Tentera Darat — Air Times (10 janvier 2022)"
+        },
+        {
+          "url": "https://www.utusan.com.my/nasional/2025/08/anak-bekas-komando-jadikan-bapa-inspirasi-tamat-latihan-apac/",
+          "title": "Anak bekas komando jadikan bapa inspirasi tamat latihan APAC — Utusan Malaysia (17 août 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-paskal",
+      "code": "MY-KAPASKAL",
+      "category": "selection",
+      "name": {
+        "fr": "Cours de base PASKAL (Kursus Asas Pasukan Khas Laut)",
+        "en": "PASKAL Basic Course (Kursus Asas Pasukan Khas Laut)"
+      },
+      "official_name": "Kursus Asas Pasukan Khas Laut",
+      "short_name": "Kursus Asas PASKAL",
+      "description": {
+        "fr": "Cours de sélection des forces spéciales de la marine, d'environ cinq mois, au centre d'entraînement PASKAL de Lumut. Il enchaîne camp, jungle, marais, mer, évasion et épreuve finale, avec des épreuves de nage pieds et poings liés. Les lauréats reçoivent le béret violet ; en 2024, 12 stagiaires sur 56 ont réussi.",
+        "en": "Navy special forces selection course of about five months at the PASKAL training centre in Lumut. It moves through camp, jungle, swamp, sea, escape and evasion and a final test, including swimming with hands and feet tied. Graduates receive the purple beret; in 2024, 12 out of 56 trainees passed."
+      },
+      "body": {
+        "fr": "Tentera Laut Diraja Malaysia (marine royale)",
+        "en": "Royal Malaysian Navy (TLDM)"
+      },
+      "issuer": {
+        "name": "Pusat Latihan PASKAL, KD Panglima Garang",
+        "short_name": "KD Panglima Garang"
+      },
+      "issuer_key": "my-pl-paskal",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Marin de la TLDM"
+        ],
+        "en": [
+          "Royal Malaysian Navy member"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.sinarharian.com.my/article/681033/edisi/perak/12-daripada-56-pelatih-lulus-bergelar-paskal",
+          "title": "12 daripada 56 pelatih lulus bergelar PASKAL — Sinar Harian (19 août 2024)"
+        },
+        {
+          "url": "https://defencesecurityasia.com/terjun-di-laut-dengan-kaki-tangan-diikat/",
+          "title": "Terjun Di Laut Dengan Kaki, Tangan Diikat (Kursus Asas Paskal Siri 70/2021) — Defence Security Asia (5 septembre 2021)"
+        },
+        {
+          "url": "https://www.utusan.com.my/nasional/2022/10/keupayaan-paskal-harus-seiring-cabaran-semasa/",
+          "title": "Keupayaan Paskal harus seiring cabaran semasa — Utusan Malaysia (1er octobre 2022)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-paskau",
+      "code": "MY-KAPASKAU",
+      "category": "selection",
+      "name": {
+        "fr": "Cours de base PASKAU (Kursus Asas Pasukan Khas TUDM)",
+        "en": "PASKAU Basic Course (Kursus Asas Pasukan Khas TUDM)"
+      },
+      "official_name": "Kursus Asas Pasukan Khas Tentera Udara Diraja Malaysia",
+      "short_name": "Kursus Asas PASKAU",
+      "description": {
+        "fr": "Cours de sélection de douze semaines des forces spéciales de l'armée de l'air, conduit par l'école d'entraînement au combat de Bukit Ibam. Il comprend cinq phases (camp, jungle, marche de 160 km, mer, SERE) et donne le béret bleu PASKAU ; 22 stagiaires sur 53 ont réussi la série 32/25.",
+        "en": "Twelve-week air force special forces selection course run by the Bukit Ibam combat training school. It has five phases (camp, jungle, 160 km march, sea, SERE) and awards the PASKAU blue beret; 22 out of 53 trainees passed series 32/25."
+      },
+      "body": {
+        "fr": "Tentera Udara Diraja Malaysia (armée de l'air royale)",
+        "en": "Royal Malaysian Air Force (TUDM)"
+      },
+      "issuer": {
+        "name": "Sekolah Latihan Tempur TUDM",
+        "short_name": "SLTT"
+      },
+      "issuer_key": "my-sltt",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire de la TUDM"
+        ],
+        "en": [
+          "Royal Malaysian Air Force member"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/nasional/2025/10/tengku-mahkota-pahang-catat-sejarah-kerabat-pahang-pertama-tamat-kursus-paskau/",
+          "title": "Tengku Mahkota Pahang catat sejarah (Kursus Asas Paskau Siri 32/25) — Utusan Malaysia (26 octobre 2025)"
+        },
+        {
+          "url": "https://www.sinarharian.com.my/ampArticle/754152",
+          "title": "Hari ini amat istimewa, lahirnya anggota PASKAU dalam kalangan keluarga diraja Pahang — Sinar Harian (26 octobre 2025)"
+        },
+        {
+          "url": "https://www.bernama.com/bm/news.php?id=2483458",
+          "title": "Sultan Pahang Bangga Tengku Hassanal Tamat Kursus Asas PASKAU — Bernama (26 octobre 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-ctt-69-komando",
+      "code": "MY-CTT-69",
+      "category": "sof",
+      "name": {
+        "fr": "Équipe contre-terroriste (Kursus Counter Terrorist Team, CTT) — police",
+        "en": "Counter Terrorist Team Course (Kursus Counter Terrorist Team, CTT) — police"
+      },
+      "official_name": "Kursus Counter Terrorist Team",
+      "short_name": "CTT",
+      "description": {
+        "fr": "Cours de contre-terrorisme de la police (69 Komando) d'environ onze semaines au camp Sultan Nazrin Shah d'Ulu Kinta : tir, raids tactiques, combat rapproché et simulations de crise. La série 1/2025 réunissait des policiers du 69 Komando et des militaires du GGK, de PASKAL et de PASKAU. Cours de police, hors forces armées.",
+        "en": "Police counter-terrorism course (69 Komando) of about eleven weeks at Sultan Nazrin Shah Camp, Ulu Kinta: shooting, tactical raids, close-quarter combat and crisis simulations. Series 1/2025 brought together 69 Komando police officers and GGK, PASKAL and PASKAU personnel. A police course, outside the armed forces."
+      },
+      "body": {
+        "fr": "Polis Diraja Malaysia (police royale), Pasukan Gerakan Khas",
+        "en": "Royal Malaysia Police (PDRM), Pasukan Gerakan Khas"
+      },
+      "issuer": {
+        "name": "69 Komando, Pasukan Gerakan Khas",
+        "short_name": "69 Komando"
+      },
+      "issuer_key": "my-69-komando",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Policier ou militaire des forces spéciales"
+        ],
+        "en": [
+          "Special forces police officer or soldier"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/nasional/2025/09/56-pegawai-anggota-elit-pdrm-atm-tamat-kursus-cct-dan-sniper/",
+          "title": "56 pegawai anggota elit PDRM, ATM tamat kursus CCT dan sniper — Utusan Malaysia (3 septembre 2025)"
+        },
+        {
+          "url": "https://www.thestar.com.my/news/nation/2025/09/04/56-complete-commando-sniper-course",
+          "title": "56 complete commando, sniper course — The Star (4 septembre 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-sniper-69-komando",
+      "code": "MY-SNIPER-69",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Tireur d'élite 69 Komando (Kursus Sniper 69 Komando) — police",
+        "en": "69 Komando Sniper Course (Kursus Sniper 69 Komando) — police"
+      },
+      "official_name": "Kursus Sniper 69 Komando",
+      "short_name": "Sniper 69",
+      "description": {
+        "fr": "Cours de tireur d'élite de la police organisé par le 69 Komando au camp Sultan Nazrin Shah (stand de 1,2 km). La série 1/2025 a formé des policiers du 69 Komando et des marins de PASKAL. Cours de police.",
+        "en": "Police sniper course run by 69 Komando at Sultan Nazrin Shah Camp (1.2 km range). Series 1/2025 trained 69 Komando police officers and PASKAL personnel. A police course."
+      },
+      "body": {
+        "fr": "Polis Diraja Malaysia (police royale), Pasukan Gerakan Khas",
+        "en": "Royal Malaysia Police (PDRM), Pasukan Gerakan Khas"
+      },
+      "issuer": {
+        "name": "69 Komando, Pasukan Gerakan Khas",
+        "short_name": "69 Komando"
+      },
+      "issuer_key": "my-69-komando",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Policier ou militaire des forces spéciales"
+        ],
+        "en": [
+          "Special forces police officer or soldier"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/nasional/2025/09/56-pegawai-anggota-elit-pdrm-atm-tamat-kursus-cct-dan-sniper/",
+          "title": "56 pegawai anggota elit PDRM, ATM tamat kursus CCT dan sniper — Utusan Malaysia (3 septembre 2025)"
+        },
+        {
+          "url": "https://www.thestar.com.my/news/nation/2025/09/04/56-complete-commando-sniper-course",
+          "title": "56 complete commando, sniper course — The Star (4 septembre 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-taktikal-payung-terjun-pdrm",
+      "code": "MY-KTPT-PDRM",
+      "category": "airborne",
+      "name": {
+        "fr": "Parachutisme tactique de la police (Kursus Taktikal Payung Terjun)",
+        "en": "Police Tactical Parachute Course (Kursus Taktikal Payung Terjun)"
+      },
+      "official_name": "Kursus Taktikal Payung Terjun",
+      "short_name": "Payung Terjun PDRM",
+      "description": {
+        "fr": "Cours de parachutisme des unités du Pasukan Gerakan Khas (69 Komando, UTK) : instruction de trois semaines puis une semaine de sauts à l'ancien aérodrome de Tekah, à Taiping. Il permet le port de l'aile de parachutiste de la police et suit le cours CTT dans le cursus du 69 Komando. Cours de police.",
+        "en": "Parachute course of the Pasukan Gerakan Khas units (69 Komando, UTK): three weeks of instruction then a jump week at the former Tekah airfield, Taiping. It allows the wearing of police parachute wings and follows the CTT course in the 69 Komando sequence. A police course."
+      },
+      "body": {
+        "fr": "Polis Diraja Malaysia (police royale), Pasukan Gerakan Khas",
+        "en": "Royal Malaysia Police (PDRM), Pasukan Gerakan Khas"
+      },
+      "issuer": {
+        "name": "69 Komando, Pasukan Gerakan Khas",
+        "short_name": "69 Komando"
+      },
+      "issuer_key": "my-69-komando",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Policier du Pasukan Gerakan Khas"
+        ],
+        "en": [
+          "Pasukan Gerakan Khas police officer"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.rmp.gov.my/news-detail/2014/06/11/sayap-penerjunan-satu-kemegahan-unit-elit",
+          "title": "Sayap Penerjunan, satu kemegahan unit elit — Polis Diraja Malaysia (rmp.gov.my)"
+        },
+        {
+          "url": "https://www.utusan.com.my/nasional/2025/09/56-pegawai-anggota-elit-pdrm-atm-tamat-kursus-cct-dan-sniper/",
+          "title": "56 pegawai anggota elit PDRM, ATM tamat kursus CCT dan sniper — Utusan Malaysia (3 septembre 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-para-bebas-69-komando",
+      "code": "MY-KAPB-69",
+      "category": "airborne",
+      "name": {
+        "fr": "Chute libre de base 69 Komando (Kursus Asas Para Bebas 69 Komando) — police",
+        "en": "69 Komando Basic Free Fall Course (Kursus Asas Para Bebas 69 Komando) — police"
+      },
+      "official_name": "Kursus Asas Para Bebas 69 Komando",
+      "short_name": "Para Bebas 69",
+      "description": {
+        "fr": "Cours de chute libre du 69 Komando pour des policiers déjà parachutistes, avec instruction à Ulu Kinta et sauts à Tekah (Taiping). Les chuteurs du 69 Komando sautent notamment depuis le Cessna Caravan de l'unité aérienne de la police. Cours de police.",
+        "en": "69 Komando free fall course for police officers already qualified as parachutists, with instruction at Ulu Kinta and jumps at Tekah (Taiping). 69 Komando free fallers jump from the police air unit's Cessna Caravan, among others. A police course."
+      },
+      "body": {
+        "fr": "Polis Diraja Malaysia (police royale), Pasukan Gerakan Khas",
+        "en": "Royal Malaysia Police (PDRM), Pasukan Gerakan Khas"
+      },
+      "issuer": {
+        "name": "69 Komando, Pasukan Gerakan Khas",
+        "short_name": "69 Komando"
+      },
+      "issuer_key": "my-69-komando",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Parachutisme tactique de la police (Kursus Taktikal Payung Terjun)"
+        ],
+        "en": [
+          "Police Tactical Parachute Course (Kursus Taktikal Payung Terjun)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.rmp.gov.my/news-detail/2014/06/11/sayap-penerjunan-satu-kemegahan-unit-elit",
+          "title": "Sayap Penerjunan, satu kemegahan unit elit — Polis Diraja Malaysia (rmp.gov.my)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-taktikal-despatcher",
+      "code": "MY-KATD-69",
+      "category": "airborne",
+      "name": {
+        "fr": "Largueur tactique (Kursus Asas Taktikal Despatcher) — police",
+        "en": "Basic Tactical Despatcher Course (Kursus Asas Taktikal Despatcher) — police"
+      },
+      "official_name": "Kursus Asas Taktikal Despatcher",
+      "short_name": "Despatcher",
+      "description": {
+        "fr": "Cours d'un mois du 69 Komando, au complexe parachutiste d'Ulu Kinta, qui forme les largueurs chargés de préparer et de contrôler le largage des parachutistes et des charges. La série 1/2021 accueillait aussi des policiers du bataillon Senoi Praaq de la PGA. Cours de police.",
+        "en": "One-month 69 Komando course at the Ulu Kinta parachute complex, training despatchers who prepare and control the dispatch of parachutists and loads. Series 1/2021 also included police officers from the PGA Senoi Praaq battalion. A police course."
+      },
+      "body": {
+        "fr": "Polis Diraja Malaysia (police royale), Pasukan Gerakan Khas",
+        "en": "Royal Malaysia Police (PDRM), Pasukan Gerakan Khas"
+      },
+      "issuer": {
+        "name": "69 Komando, Pasukan Gerakan Khas",
+        "short_name": "69 Komando"
+      },
+      "issuer_key": "my-69-komando",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Parachutisme tactique de la police (Kursus Taktikal Payung Terjun)"
+        ],
+        "en": [
+          "Police Tactical Parachute Course (Kursus Taktikal Payung Terjun)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.kosmo.com.my/?p=189842",
+          "title": "69 Komando perlu kuasai pelbagai kemahiran — Kosmo (29 octobre 2021)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-sniper-utk",
+      "code": "MY-SNIPER-UTK",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Tireur d'élite UTK (Kursus Asas Sniper Unit Tindakhas) — police",
+        "en": "UTK Basic Sniper Course (Kursus Asas Sniper Unit Tindakhas) — police"
+      },
+      "official_name": "Kursus Asas Sniper Unit Tindakhas",
+      "short_name": "Sniper UTK",
+      "description": {
+        "fr": "Cours de tireur d'élite de près d'un mois de l'Unit Tindakhas, tenu au champ de tir international de Langkawi ; la série 1/2022 a qualifié 18 policiers, dont des membres de la Special Branch. Cours de police.",
+        "en": "Unit Tindakhas sniper course of nearly one month, held at the Langkawi international shooting range; series 1/2022 qualified 18 police officers, including Special Branch members. A police course."
+      },
+      "body": {
+        "fr": "Polis Diraja Malaysia (police royale), Pasukan Gerakan Khas",
+        "en": "Royal Malaysia Police (PDRM), Pasukan Gerakan Khas"
+      },
+      "issuer": {
+        "name": "Unit Tindakhas, Pasukan Gerakan Khas",
+        "short_name": "UTK"
+      },
+      "issuer_key": "my-utk",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Policier de la PDRM"
+        ],
+        "en": [
+          "PDRM police officer"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://defencesecurityasia.com/sniper-utk-pdrm-latihan/",
+          "title": "Sniper Unit Tindak Khas (UTK) « Buat Kemunculan » — Defence Security Asia (23 août 2022)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-sea-combat",
+      "code": "MY-SECOM-PGA",
+      "category": "maritime",
+      "name": {
+        "fr": "Combat maritime de la police (Kursus Asas Sea Combat) — police",
+        "en": "Police Basic Sea Combat Course (Kursus Asas Sea Combat) — police"
+      },
+      "official_name": "Kursus Asas Sea Combat Brigade Sabah Pasukan Gerakan Am",
+      "short_name": "Sea Combat",
+      "description": {
+        "fr": "Cours annuel (depuis 2023) de la brigade de Sabah de la PGA à Lahad Datu : navigation, conduite d'embarcations de combat, tactiques d'assaut en mer et recueil de renseignement contre la criminalité transfrontalière et la piraterie. Une phase « Sea Combat » figure aussi dans le cursus des stagiaires du 69 Komando. Cours de police.",
+        "en": "Annual course (since 2023) of the PGA Sabah Brigade at Lahad Datu: navigation, combat boat handling, sea assault tactics and intelligence gathering against cross-border crime and piracy. A \"Sea Combat\" phase also appears in the 69 Komando trainee sequence. A police course."
+      },
+      "body": {
+        "fr": "Polis Diraja Malaysia (police royale), Pasukan Gerakan Am",
+        "en": "Royal Malaysia Police (PDRM), Pasukan Gerakan Am"
+      },
+      "issuer": {
+        "name": "Briged Sabah, Pasukan Gerakan Am",
+        "short_name": "Briged Sabah PGA"
+      },
+      "issuer_key": "my-pga-sabah",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Policier de la PDRM"
+        ],
+        "en": [
+          "PDRM police officer"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://berita.rtm.gov.my/?p=457716",
+          "title": "PDRM perkukuh keselamatan perairan Sabah, 43 pegawai tamat Kursus Sea Combat Brigade — Berita RTM (14 février 2026)"
+        },
+        {
+          "url": "https://www.utusan.com.my/nasional/2025/09/56-pegawai-anggota-elit-pdrm-atm-tamat-kursus-cct-dan-sniper/",
+          "title": "56 pegawai anggota elit PDRM, ATM tamat kursus CCT dan sniper — Utusan Malaysia (3 septembre 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-plak-inspektor",
+      "code": "MY-PLAK-INSP",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation de base des inspecteurs de police (Program Latihan Asas Kepolisan Inspektor)",
+        "en": "Police Inspector Basic Training (Program Latihan Asas Kepolisan Inspektor)"
+      },
+      "official_name": "Program Latihan Asas Kepolisan Inspektor",
+      "short_name": "PLAK Inspektor",
+      "description": {
+        "fr": "Formation initiale de neuf mois des inspecteurs stagiaires de la police royale malaisienne au PULAPOL de Kuala Lumpur, conclue par une prise d'armes. Un raccourcissement à six mois pour certains diplômés est à l'étude. Formation de police.",
+        "en": "Nine-month initial training for Royal Malaysia Police probationary inspectors at PULAPOL Kuala Lumpur, ending with a passing-out parade. A shorter six-month version for some graduates is under study. A police course."
+      },
+      "body": {
+        "fr": "Polis Diraja Malaysia (police royale)",
+        "en": "Royal Malaysia Police (PDRM)"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Polis",
+        "short_name": "PULAPOL"
+      },
+      "issuer_key": "my-pulapol",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Diplôme universitaire et recrutement comme inspecteur stagiaire"
+        ],
+        "en": [
+          "University degree and recruitment as probationary inspector"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.sinarharian.com.my/article/634959/berita/semasa/tinggalkan-kerjaya-jurutera-demi-minat-jadi-polis",
+          "title": "Tinggalkan kerjaya jurutera demi minat jadi polis — Sinar Harian (17 novembre 2023)"
+        },
+        {
+          "url": "https://berita.rtm.gov.my/nasional/senarai-berita-nasional/senarai-artikel/549-inspektor-suksis-uitm-terima-tauliah/",
+          "title": "549 Inspektor SUKSIS UiTM terima tauliah — Berita RTM (24 août 2026)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-tempur-pegawai-muda",
+      "code": "MY-KTPM",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de combat des jeunes officiers (Kursus Tempur Pegawai Muda)",
+        "en": "Young Officers' Combat Course (Kursus Tempur Pegawai Muda)"
+      },
+      "official_name": "Kursus Tempur Pegawai Muda",
+      "short_name": "KTPM",
+      "description": {
+        "fr": "Cours de base du PULADA, d'environ quatre mois (série 3/2023 : septembre 2023 à janvier 2024), qui développe la compétence tactique et le professionnalisme des jeunes officiers de l'armée de terre avant leurs premiers commandements de section.",
+        "en": "Basic PULADA course of about four months (series 3/2023: September 2023 to January 2024) developing the tactical competence and professionalism of young army officers before their first platoon commands."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia (armée de terre)",
+        "en": "Malaysian Army (Tentera Darat Malaysia)"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Tempur Tentera Darat",
+        "short_name": "PULADA"
+      },
+      "issuer_key": "my-pulada",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier nouvellement commissionné"
+        ],
+        "en": [
+          "Newly commissioned officer"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/nasional/2023/10/dua-penuntut-pulada-terima-rawatan-di-icu-beransur-pulih/",
+          "title": "Strok haba: Dua penuntut Pulada terima rawatan di ICU beransur pulih — Utusan Malaysia (16 octobre 2023)"
+        }
+      ]
+    },
+    {
+      "id": "my-latihan-asas-perajurit-muda",
+      "code": "MY-LAPM",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation de base des recrues de l'armée de terre (Latihan Asas Perajurit Muda)",
+        "en": "Army Recruit Basic Training (Latihan Asas Perajurit Muda)"
+      },
+      "official_name": "Latihan Asas Perajurit Muda",
+      "short_name": "Perajurit Muda",
+      "description": {
+        "fr": "Instruction de base d'environ six mois des recrues (perajurit muda) de l'armée de terre au PUSASDA de Port Dickson, conclue par une prise d'armes de fin de formation.",
+        "en": "About six months of basic training for army recruits (perajurit muda) at PUSASDA, Port Dickson, ending with a passing-out parade."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia (armée de terre)",
+        "en": "Malaysian Army (Tentera Darat Malaysia)"
+      },
+      "issuer": {
+        "name": "Pusat Latihan Asas Tentera Darat",
+        "short_name": "PUSASDA"
+      },
+      "issuer_key": "my-pusasda",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Recrutement dans l'armée de terre"
+        ],
+        "en": [
+          "Enlistment in the army"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.sinarharian.com.my/article/126407/kesiapsiagaan-tentera-darat",
+          "title": "Kesiapsiagaan Tentera Darat — Sinar Harian (2 mars 2021)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-tentera-laut",
+      "code": "MY-KATL",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de base de la marine (Kursus Asas Tentera Laut, KATL)",
+        "en": "Naval Basic Course (Kursus Asas Tentera Laut, KATL)"
+      },
+      "official_name": "Kursus Asas Tentera Laut",
+      "short_name": "KATL",
+      "description": {
+        "fr": "Formation initiale de six mois des recrues de la marine royale malaisienne à la base de Tanjung Pengelih ; la série 227/24 a formé 645 marins.",
+        "en": "Six-month initial training of Royal Malaysian Navy recruits at Tanjung Pengelih base; series 227/24 trained 645 sailors."
+      },
+      "body": {
+        "fr": "Tentera Laut Diraja Malaysia (marine royale)",
+        "en": "Royal Malaysian Navy (TLDM)"
+      },
+      "issuer": {
+        "name": "Pangkalan TLDM Tanjung Pengelih",
+        "short_name": "TLDM Tanjung Pengelih"
+      },
+      "issuer_key": "my-tldm-tanjung-pengelih",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Recrutement dans la marine"
+        ],
+        "en": [
+          "Enlistment in the navy"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://berita.rtm.gov.my/nasional/senarai-berita-nasional/senarai-artikel/645-perajurit-muda-tamat-katl-di-pangkalan-tldm-tanjung-pengelih/",
+          "title": "645 perajurit muda tamat KATL di Pangkalan TLDM Tanjung Pengelih — Berita RTM (7 décembre 2024)"
+        }
+      ]
+    },
+    {
+      "id": "my-pegawai-kadet-alk-upnm",
+      "code": "MY-PK-ALK",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Élève officier de l'UPNM (Pegawai Kadet ALK UPNM)",
+        "en": "UPNM officer cadet (Pegawai Kadet ALK UPNM)"
+      },
+      "official_name": "Latihan Pegawai Kadet, Akademi Latihan Ketenteraan UPNM",
+      "short_name": "Kadet ALK",
+      "description": {
+        "fr": "Cursus des élèves officiers de l'Université nationale de défense : études universitaires et formation militaire encadrée par l'ALK (tests physiques et de combat, combat à mains nues, commandement), jusqu'au commissionnement comme officier des forces armées.",
+        "en": "Officer cadet path at the National Defence University: university studies and military training run by ALK (fitness and combat tests, unarmed combat, leadership), up to commissioning as an armed forces officer."
+      },
+      "body": {
+        "fr": "Angkatan Tentera Malaysia (forces armées)",
+        "en": "Malaysian Armed Forces (ATM)"
+      },
+      "issuer": {
+        "name": "Akademi Latihan Ketenteraan, Universiti Pertahanan Nasional Malaysia",
+        "short_name": "ALK UPNM"
+      },
+      "issuer_key": "my-alk-upnm",
+      "reference": {
+        "fr": "Présentation officielle de l'ALK et prise d'armes de commissionnement",
+        "en": "Official ALK presentation and commissioning parade"
+      },
+      "prerequisites": {
+        "fr": [
+          "Admission à l'UPNM comme élève officier"
+        ],
+        "en": [
+          "Admission to UPNM as officer cadet"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://upnm.edu.my/index.php/en/about-en/administration/military-training-academy",
+          "title": "Military Training Academy (Akademi Latihan Ketenteraan) — Universiti Pertahanan Nasional Malaysia"
+        },
+        {
+          "url": "https://www.kosmo.com.my/?p=787629",
+          "title": "Perbarisan pentauliahan de 509 pegawai kadet ATM, Kem Perdana Sungai Besi — Kosmo (28 juin 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-pegawai-kadet-atd",
+      "code": "MY-PK-ATD",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Élève officier de l'Académie de l'armée de terre (Pegawai Kadet ATD)",
+        "en": "Army Academy officer cadet (Pegawai Kadet ATD)"
+      },
+      "official_name": "Latihan Pegawai Kadet, Akademi Tentera Darat",
+      "short_name": "Kadet ATD",
+      "description": {
+        "fr": "Formation d'élève officier de l'armée de terre à l'Akademi Tentera Darat, conclue par la prise d'armes interarmées de commissionnement de Sungai Besi présidée par le roi (509 élèves officiers commissionnés en juin 2025).",
+        "en": "Army officer cadet training at the Akademi Tentera Darat, ending with the joint commissioning parade at Sungai Besi presided over by the King (509 officer cadets commissioned in June 2025)."
+      },
+      "body": {
+        "fr": "Tentera Darat Malaysia (armée de terre)",
+        "en": "Malaysian Army (Tentera Darat Malaysia)"
+      },
+      "issuer": {
+        "name": "Akademi Tentera Darat",
+        "short_name": "ATD"
+      },
+      "issuer_key": "my-atd",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.kosmo.com.my/?p=787629",
+          "title": "Perbarisan pentauliahan de 509 pegawai kadet ATM, Kem Perdana Sungai Besi — Kosmo (28 juin 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-pegawai-kadet-ktu",
+      "code": "MY-PK-KTU",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Élève officier de l'armée de l'air (Pegawai Kadet KTU-SLP)",
+        "en": "Air Force officer cadet (Pegawai Kadet KTU-SLP)"
+      },
+      "official_name": "Latihan Pegawai Kadet, Kolej Tentera Udara - Sekolah Latihan Pegawai",
+      "short_name": "Kadet KTU",
+      "description": {
+        "fr": "Formation d'élève officier de l'armée de l'air royale au collège de l'armée de l'air (école des officiers), conclue par le commissionnement interarmées de Sungai Besi.",
+        "en": "Royal Malaysian Air Force officer cadet training at the Air Force College (officers' school), ending with the joint commissioning at Sungai Besi."
+      },
+      "body": {
+        "fr": "Tentera Udara Diraja Malaysia (armée de l'air royale)",
+        "en": "Royal Malaysian Air Force (TUDM)"
+      },
+      "issuer": {
+        "name": "Kolej Tentera Udara",
+        "short_name": "KTU"
+      },
+      "issuer_key": "my-ktu",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.kosmo.com.my/?p=787629",
+          "title": "Perbarisan pentauliahan de 509 pegawai kadet ATM, Kem Perdana Sungai Besi — Kosmo (28 juin 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-pegawai-kadet-kdsi",
+      "code": "MY-PK-KDSI",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Élève officier de la marine (Pegawai Kadet KDSI I)",
+        "en": "Navy officer cadet (Pegawai Kadet KDSI I)"
+      },
+      "official_name": "Latihan Pegawai Kadet, Kapal Diraja Sultan Idris I",
+      "short_name": "Kadet KDSI",
+      "description": {
+        "fr": "Formation d'élève officier de la marine royale au KD Sultan Idris I, conclue par le commissionnement interarmées de Sungai Besi.",
+        "en": "Royal Malaysian Navy officer cadet training at KD Sultan Idris I, ending with the joint commissioning at Sungai Besi."
+      },
+      "body": {
+        "fr": "Tentera Laut Diraja Malaysia (marine royale)",
+        "en": "Royal Malaysian Navy (TLDM)"
+      },
+      "issuer": {
+        "name": "Kapal Diraja Sultan Idris I",
+        "short_name": "KDSI I"
+      },
+      "issuer_key": "my-kdsi",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://www.kosmo.com.my/?p=787629",
+          "title": "Perbarisan pentauliahan de 509 pegawai kadet ATM, Kem Perdana Sungai Besi — Kosmo (28 juin 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-mtat",
+      "code": "MY-MTAT",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours d'état-major interarmées (Kursus Maktab Turus Angkatan Tentera)",
+        "en": "Armed Forces Staff College Course (Kursus Maktab Turus Angkatan Tentera)"
+      },
+      "official_name": "Kursus Maktab Turus Angkatan Tentera",
+      "short_name": "Kursus MTAT",
+      "description": {
+        "fr": "Cours d'état-major des commandants (majors et équivalents) des trois armées, sanctionné par un diplôme, un certificat et l'insigne MTAT. Il forme à la planification et à la conduite des opérations interarmées et à la gestion des ressources ; la série 54/2025 comptait 176 stagiaires dont 33 officiers étrangers.",
+        "en": "Staff course for majors and equivalents from the three services, awarding a diploma, a certificate and the MTAT badge. It teaches planning and conduct of joint operations and resource management; series 54/2025 had 176 students including 33 foreign officers."
+      },
+      "body": {
+        "fr": "Angkatan Tentera Malaysia (forces armées)",
+        "en": "Malaysian Armed Forces (ATM)"
+      },
+      "issuer": {
+        "name": "Maktab Turus Angkatan Tentera",
+        "short_name": "MTAT"
+      },
+      "issuer_key": "my-mtat",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Grade de commandant (major) ou équivalent"
+        ],
+        "en": [
+          "Rank of major or equivalent"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/pilihan-utusan/2025/12/pembelajaran-berterusan-kekuatan-atm-dalam-era-pertahanan-moden/",
+          "title": "Pembelajaran berterusan kekuatan ATM dalam era pertahanan moden — Utusan Malaysia (7 décembre 2025)"
+        },
+        {
+          "url": "https://www.malaysiakini.com/announcement/762806",
+          "title": "MKN, MPAT and MTAT graduation ceremonies are held together, today — Malaysiakini (6 décembre 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-mpat",
+      "code": "MY-MPAT",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours du Collège de défense (Kursus Maktab Pertahanan Angkatan Tentera)",
+        "en": "Armed Forces Defence College Course (Kursus Maktab Pertahanan Angkatan Tentera)"
+      },
+      "official_name": "Kursus Maktab Pertahanan Angkatan Tentera",
+      "short_name": "Kursus MPAT",
+      "description": {
+        "fr": "Cours de haut niveau pour lieutenants-colonels des trois armées, de la police, de l'agence maritime et de la fonction publique, sanctionné par un master en sciences sociales (études de défense) ; la série 45/2025 comptait 70 stagiaires.",
+        "en": "Senior course for lieutenant colonels from the three services, the police, the maritime agency and the civil service, awarding a Master of Social Sciences (Defence Studies); series 45/2025 had 70 students."
+      },
+      "body": {
+        "fr": "Angkatan Tentera Malaysia (forces armées)",
+        "en": "Malaysian Armed Forces (ATM)"
+      },
+      "issuer": {
+        "name": "Maktab Pertahanan Angkatan Tentera",
+        "short_name": "MPAT"
+      },
+      "issuer_key": "my-mpat",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Grade de lieutenant-colonel ou équivalent"
+        ],
+        "en": [
+          "Rank of lieutenant colonel or equivalent"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://www.utusan.com.my/pilihan-utusan/2025/12/pembelajaran-berterusan-kekuatan-atm-dalam-era-pertahanan-moden/",
+          "title": "Pembelajaran berterusan kekuatan ATM dalam era pertahanan moden — Utusan Malaysia (7 décembre 2025)"
+        },
+        {
+          "url": "https://www.malaysiakini.com/announcement/762806",
+          "title": "MKN, MPAT and MTAT graduation ceremonies are held together, today — Malaysiakini (6 décembre 2025)"
+        }
+      ]
+    },
+    {
+      "id": "my-kursus-asas-penerbangan-helikopter",
+      "code": "MY-KAPH",
+      "category": "aviation",
+      "name": {
+        "fr": "Pilotage de base sur hélicoptère (Kursus Asas Penerbangan Helikopter)",
+        "en": "Basic Helicopter Flying Course (Kursus Asas Penerbangan Helikopter)"
+      },
+      "official_name": "Kursus Asas Penerbangan Helikopter",
+      "short_name": "KAPH",
+      "description": {
+        "fr": "Phase hélicoptère de la formation au pilotage de l'armée de l'air royale, à l'INSPEN 2 du collège de l'armée de l'air d'Alor Setar, sur EC120B Colibri, après le pilotage de base à l'INSPEN 1. Une série spéciale (62/21) a breveté des pilotes de l'armée de terre et de la marine, qui ont reçu leurs ailes de pilote.",
+        "en": "Helicopter phase of RMAF flying training at INSPEN 2 of the Air Force College, Alor Setar, on the EC120B Colibri, after basic flying at INSPEN 1. A special series (62/21) qualified army and navy pilots, who received their flying wings."
+      },
+      "body": {
+        "fr": "Tentera Udara Diraja Malaysia (armée de l'air royale)",
+        "en": "Royal Malaysian Air Force (TUDM)"
+      },
+      "issuer": {
+        "name": "Kolej Tentera Udara",
+        "short_name": "KTU"
+      },
+      "issuer_key": "my-ktu",
+      "reference": {
+        "fr": "Comptes rendus de presse sur la clôture du cours",
+        "en": "Press reports on the course closing ceremony"
+      },
+      "prerequisites": {
+        "fr": [
+          "Pilotage de base à l'INSPEN 1"
+        ],
+        "en": [
+          "Basic flying training at INSPEN 1"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://www.kosmo.com.my/?p=237164",
+          "title": "Lapan pegawai TD, TLDM terima sayap penerbangan — Kosmo (16 février 2022)"
+        }
+      ]
+    }
+  ]
+}

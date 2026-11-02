@@ -1044,16 +1044,19 @@ class CommunityController
         $billingConfigured = $this->planPayments()->schemaReady();
         $billingProvider = 'paypal';
 
-        // Référentiels de grades proposés : français, américain, britanniques (British Army et Royal Marines, Royal Navy, RAF).
         $grades = new GradeRepository();
-        $wizardGradeSystems = [];
-        foreach (\App\Support\SharedGradeSystems::all() as $gsCode => $gsDef) {
-            $wizardGradeSystems[$gsCode] = [
-                'title' => $gsDef['title'],
-                'text' => $gsDef['text'],
-                'country' => $gsDef['country'],
-                'grouped' => $this->groupGradesByCategory($grades->listBySystemCode($gsCode)),
-            ];
+        $gradesFr = $grades->listBySystemCode('FR_CLASSIC');
+        $gradesUs = $grades->listBySystemCode('US_CLASSIC');
+        // Autres systèmes officiels (Malaisie…) proposés dès que leurs grades sont installés.
+        $gradesExtraGrouped = [];
+        foreach (\App\Support\OfficialGradeSystems::CODES as $extraCode) {
+            if (in_array($extraCode, ['FR_CLASSIC', 'US_CLASSIC'], true)) {
+                continue;
+            }
+            $extraRows = $grades->listBySystemCode($extraCode);
+            if ($extraRows !== []) {
+                $gradesExtraGrouped[$extraCode] = $this->groupGradesByCategory($extraRows);
+            }
         }
 
         return Response::view('layout.main', [
@@ -1062,7 +1065,11 @@ class CommunityController
             'stripeConfigured' => $billingConfigured,
             'billingConfigured' => $billingConfigured,
             'billingProvider' => $billingProvider,
-            'wizardGradeSystems' => $wizardGradeSystems,
+            'gradesFr' => $gradesFr,
+            'gradesUs' => $gradesUs,
+            'gradesFrGrouped' => $this->groupGradesByCategory($gradesFr),
+            'gradesUsGrouped' => $this->groupGradesByCategory($gradesUs),
+            'gradesExtraGrouped' => $gradesExtraGrouped,
             'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
             'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
             'orbatPresets' => WizardOrbatPresets::forWizard(),

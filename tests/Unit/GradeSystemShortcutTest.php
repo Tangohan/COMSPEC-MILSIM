@@ -17,7 +17,7 @@ final class GradeSystemShortcutTest extends TestCase
 
         $ctrl = (string) file_get_contents($root . '/app/Controllers/Admin/Organization/GradeReferentielController.php');
         self::assertStringContainsString('public function setSystem(', $ctrl);
-        self::assertStringContainsString('SharedGradeSystems::isShared($code)', $ctrl);
+        self::assertStringContainsString("in_array(\$code, OfficialGradeSystems::CODES, true)", $ctrl);
         self::assertStringContainsString('Csrf::validate', $ctrl);
         self::assertStringContainsString("mergeSettings(\$tenantId, ['grade_system_code' => \$code])", $ctrl);
 
