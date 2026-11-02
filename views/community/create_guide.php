@@ -172,6 +172,9 @@ $steps = [
                     <p class="cc-section__text">Un modèle ajoute des unités, des fonctions (emplois du dossier) et parfois des rôles d’accès. Un seul se choisit dans l’assistant ; tous restent applicables plus tard depuis le back-office, avec un aperçu de ce qui sera ajouté.</p>
                     <div class="cc-guide__cards">
                         <?php foreach ($officialKits as $kit): ?>
+                        <?php if (\App\Services\OrganizationCatalog\OrganizationKitDefinitions::isRealUnits($kit)) {
+                            continue;
+                        } ?>
                         <article class="cc-guide__card">
                             <p class="cc-guide__eyebrow"><?= $h(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit)) ?></p>
                             <h3><?= $h((string) ($kit['title'] ?? '')) ?></h3>
@@ -183,6 +186,23 @@ $steps = [
                         </article>
                         <?php endforeach; ?>
                     </div>
+                    <?php $realGroups = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::displayGroups(array_values(array_filter($officialKits, [\App\Services\OrganizationCatalog\OrganizationKitDefinitions::class, 'isRealUnits'])), function_exists('site_lang') && site_lang() === 'en' ? 'en' : 'fr'); ?>
+                    <?php if ($realGroups !== []): ?>
+                    <h3 class="cc-section__title mt-6">Modèles inspirés d’unités réelles</h3>
+                    <p class="cc-section__text">Organisation publique simplifiée de commandements et d’unités réels, à adapter : sans effectifs ni noms de personnes, chaque unité cite une source ouverte. Les noms restent ceux du pays et se traduisent ensuite.</p>
+                    <ul class="cc-guide__list">
+                        <?php foreach ($realGroups as $realGroup): ?>
+                        <li><strong><?= $h((string) $realGroup['label']) ?></strong> : <?php
+                            $realTitles = [];
+                            foreach ($realGroup['branches'] as $realBranch) {
+                                foreach ($realBranch['items'] as $realKit) {
+                                    $realTitles[] = (string) ($realKit['title'] ?? '');
+                                }
+                            }
+                            ?><?php foreach ($realTitles as $realIndex => $realTitle): ?><?= $realIndex > 0 ? ' · ' : '' ?><span><?= $h($realTitle) ?></span><?php endforeach; ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php endif; ?>
                 </section>
 
                 <section class="cc-section" id="apres-creation">

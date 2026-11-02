@@ -43,6 +43,7 @@ $wizardSteps = [
 $orbatPresets = is_array($orbatPresets ?? null) ? $orbatPresets : \App\Services\Community\WizardOrbatPresets::forWizard();
 $officialKits = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::officialKits();
 $jobDoctrineKits = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::jobDoctrineCodes();
+$kitGroups = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::displayGroups($officialKits, function_exists('site_lang') && site_lang() === 'en' ? 'en' : 'fr');
 $guideUrl = url('communities/create/guide');
 ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/community-create.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
@@ -487,7 +488,7 @@ $guideUrl = url('communities/create/guide');
                         </details>
                         <div class="mt-4">
                             <label class="cc-label" for="cc-kit-filter">Filtrer les modèles</label>
-                            <input type="search" id="cc-kit-filter" class="cc-field" placeholder="Ex. infanterie, hélicoptère, SOF, gaming…" autocomplete="off">
+                            <input type="search" id="cc-kit-filter" class="cc-field" placeholder="Ex. SOCAFRICA, Rangers, KSK, CPA 10, infanterie, gaming…" autocomplete="off">
                         </div>
                         <div class="mt-4 space-y-3" id="cc-kit-list">
                             <label class="cc-choice">
@@ -496,19 +497,43 @@ $guideUrl = url('communities/create/guide');
                                 <span class="cc-choice__title">Sans modèle supplémentaire</span>
                                 <span class="cc-choice__text">Vous gardez uniquement la structure et les rôles définis dans cet assistant. Le catalogue restera disponible plus tard dans le back-office.</span>
                             </label>
-                            <?php foreach ($officialKits as $kit): ?>
-                            <?php
-                            $kitIsJobCatalog = in_array((string) ($kit['code'] ?? ''), $jobDoctrineKits, true);
-                            $kitGrades = ((string) ($kit['grade_system_code'] ?? '')) === 'US_CLASSIC' ? 'Grades américains' : 'Grades français';
-                            $kitSearch = mb_strtolower((string) ($kit['title'] ?? '') . ' ' . (string) ($kit['summary'] ?? '') . ' ' . implode(' ', array_column($kit['job_roles'] ?? [], 'name')));
-                            ?>
-                            <label class="cc-choice" data-kit-search="<?= htmlspecialchars($kitSearch, ENT_QUOTES, 'UTF-8') ?>">
-                                <input type="radio" name="wizard_catalog_kit_code" value="<?= htmlspecialchars((string) ($kit['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="sr-only">
-                                <span class="cc-choice__eyebrow"><?= $kitIsJobCatalog ? 'Catalogue d’emplois' : 'Modèle officiel' ?> · <?= htmlspecialchars($kitGrades, ENT_QUOTES, 'UTF-8') ?></span>
-                                <span class="cc-choice__title"><?= htmlspecialchars((string) ($kit['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                <span class="cc-choice__meta"><?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?></span>
-                            </label>
+                            <?php foreach ($kitGroups as $kitGroup): ?>
+                            <?php $kitGroupReal = !in_array($kitGroup['key'], ['generic', 'private'], true); ?>
+                            <details class="cc-kit-group" data-kit-group<?= $kitGroup['key'] === 'generic' ? ' open data-kit-open' : '' ?>>
+                                <summary class="cc-kit-group__head">
+                                    <span class="cc-kit-group__title"><?= htmlspecialchars((string) $kitGroup['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="cc-kit-group__count"><?= (int) $kitGroup['count'] ?> modèle<?= (int) $kitGroup['count'] > 1 ? 's' : '' ?></span>
+                                </summary>
+                                <?php if ($kitGroupReal): ?>
+                                <p class="cc-kit-group__note">Inspiré d’unités réelles, à adapter : organisation publique simplifiée, sans effectifs ni noms de personnes. Les sources sont citées dans le Catalogue de l’organisation.</p>
+                                <?php endif; ?>
+                                <?php foreach ($kitGroup['branches'] as $kitBranch): ?>
+                                <div class="cc-kit-group__branch" data-kit-branch>
+                                    <?php if ((string) $kitBranch['label'] !== ''): ?>
+                                    <p class="cc-kit-group__branch-title"><?= htmlspecialchars((string) $kitBranch['label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php endif; ?>
+                                    <?php foreach ($kitBranch['items'] as $kit): ?>
+                                    <?php
+                                    $kitCode = (string) ($kit['code'] ?? '');
+                                    $kitIsJobCatalog = in_array($kitCode, $jobDoctrineKits, true);
+                                    $kitIsReal = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::isRealUnits($kit);
+                                    $kitGradeCode = (string) ($kit['grade_system_code'] ?? '');
+                                    $kitGrades = $kitGradeCode === 'US_CLASSIC' ? 'Grades américains' : ($kitGradeCode === 'FR_CLASSIC' ? 'Grades français' : 'Sans système de grades');
+                                    $kitEyebrow = $kitIsReal ? 'Inspiré d’unités réelles' : ($kitIsJobCatalog ? 'Catalogue d’emplois' : 'Modèle officiel');
+                                    $kitCommand = $kitIsReal ? (string) ($kit['origin']['command'] ?? '') : '';
+                                    $kitJobs = $kitIsReal ? \App\Services\OrganizationCatalog\RealUnitKitDefinitions::jobCatalogCount($kit) : 0;
+                                    ?>
+                                    <label class="cc-choice" data-kit-search="<?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::searchText($kit), ENT_QUOTES, 'UTF-8') ?>">
+                                        <input type="radio" name="wizard_catalog_kit_code" value="<?= htmlspecialchars($kitCode, ENT_QUOTES, 'UTF-8') ?>" class="sr-only">
+                                        <span class="cc-choice__eyebrow"><span><?= $kitEyebrow ?></span><?php if ($kitCommand !== ''): ?> · <span translate="no"><?= htmlspecialchars($kitCommand, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?> · <span><?= htmlspecialchars($kitGrades, ENT_QUOTES, 'UTF-8') ?></span></span>
+                                        <span class="cc-choice__title"><?= htmlspecialchars((string) ($kit['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="cc-choice__text"><?= htmlspecialchars((string) ($kit['summary'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="cc-choice__meta"><?= htmlspecialchars(\App\Services\OrganizationCatalog\OrganizationKitDefinitions::volumeLabel($kit), ENT_QUOTES, 'UTF-8') ?><?php if ($kitJobs > 1): ?> · <?= $kitJobs ?> emplois sourcés au catalogue d’emplois<?php elseif ($kitJobs === 1): ?> · 1 emploi sourcé au catalogue d’emplois<?php endif; ?></span>
+                                    </label>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endforeach; ?>
+                            </details>
                             <?php endforeach; ?>
                             <p class="cc-hint hidden" id="cc-kit-empty">Aucun modèle ne correspond. Effacez le filtre pour tout afficher.</p>
                         </div>
@@ -1402,6 +1427,17 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
                 var checked = card.querySelector('input:checked');
                 card.classList.toggle('hidden', !ok && !checked);
                 if (ok) shown++;
+            });
+            // Groupes pays et armées : masqués sans résultat, ouverts tant qu’un filtre est saisi.
+            document.querySelectorAll('#cc-kit-list [data-kit-group]').forEach(function (group) {
+                var visible = 0;
+                group.querySelectorAll('[data-kit-branch]').forEach(function (branch) {
+                    var n = branch.querySelectorAll('[data-kit-search]:not(.hidden)').length;
+                    branch.classList.toggle('hidden', n === 0);
+                    visible += n;
+                });
+                group.classList.toggle('hidden', visible === 0);
+                group.open = tokens.length > 0 ? visible > 0 : group.hasAttribute('data-kit-open') || !!group.querySelector('input:checked');
             });
             if (kitEmpty) kitEmpty.classList.toggle('hidden', shown > 0 || tokens.length === 0);
         });

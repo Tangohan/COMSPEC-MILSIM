@@ -335,3 +335,14 @@ html[data-bo-theme="dark"] .account-hub__device-icon {
   color: #57f9cb;
 }
 html[data-bo-theme="dark"] .account-hub__device-title { color: #eef2f6; }
+/* Catalogue de l’organisation : recherche, groupes pays / armée, unités réelles. */
+html[data-bo-theme="dark"] .bo-catalog__filter input {
+  background: #111513;
+  border-color: #2b3430;
+  color: #eef2f6;
+}
+html[data-bo-theme="dark"] .bo-catalog__real-note { color: #f7c15a; }
+html[data-bo-theme="dark"] .bo-catalog__branch-title { color: #a2b3ab; }
+html[data-bo-theme="dark"] .bo-catalog__tree-code { color: #5ef2bd; }
+html[data-bo-theme="dark"] .bo-catalog__sources a { color: #7cc4f5; }
+html[data-bo-theme="dark"] .bo-catalog__hero .bo-catalog__real-note { color: #fcd34d; }

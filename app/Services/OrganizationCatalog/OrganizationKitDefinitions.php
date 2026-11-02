@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\OrganizationCatalog;
 
+use App\Support\JobCatalog\JobCatalog;
+
 /**
  * Modèles officiels Athena (source PHP versionnée). Jamais d’identifiants de communauté.
  */
@@ -20,9 +22,19 @@ final class OrganizationKitDefinitions
     public const PRIVATE_MILITARY = 'official.private_military';
 
     /**
+     * Modèles génériques puis modèles inspirés d’unités réelles (RealUnitKitDefinitions).
+     *
      * @return list<array<string, mixed>>
      */
     public static function officialKits(): array
+    {
+        return array_merge(self::genericKits(), RealUnitKitDefinitions::kits());
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public static function genericKits(): array
     {
         return [
             self::frenchArmy(),
@@ -41,6 +53,14 @@ final class OrganizationKitDefinitions
      * @return list<string>
      */
     public static function officialCodes(): array
+    {
+        return array_merge(self::genericCodes(), RealUnitKitDefinitions::codes());
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function genericCodes(): array
     {
         return [
             self::FRENCH_ARMY,
@@ -61,6 +81,108 @@ final class OrganizationKitDefinitions
     public static function jobDoctrineCodes(): array
     {
         return [self::FRENCH_ARMY, self::US_SOF];
+    }
+
+    /**
+     * Modèles regroupés pour l’affichage : génériques, puis par pays → armée (commandement sur chaque carte), puis
+     * modèles de la communauté. Accepte des définitions ou des éléments du catalogue (clé « definition »).
+     *
+     * @param list<array<string, mixed>> $items
+     * @return list<array{key: string, label: string, count: int, branches: list<array{key: string, label: string, items: list<array<string, mixed>>}>}>
+     */
+    public static function displayGroups(array $items, string $lang = 'fr'): array
+    {
+        $lang = $lang === 'en' ? 'en' : 'fr';
+        $groups = [];
+        foreach ($items as $item) {
+            $def = is_array($item['definition'] ?? null) ? $item['definition'] : $item;
+            $origin = is_array($def['origin'] ?? null) ? $def['origin'] : [];
+            $country = strtoupper(trim((string) ($origin['country'] ?? '')));
+            $private = isset($item['visibility']) && (string) $item['visibility'] !== 'official';
+            if ($private) {
+                $key = 'private';
+                $label = $lang === 'en' ? 'This organisation’s templates' : 'Modèles de cette organisation';
+                $branch = '';
+            } elseif ($country === '') {
+                $key = 'generic';
+                $label = $lang === 'en' ? 'Generic templates' : 'Modèles génériques';
+                $branch = '';
+            } else {
+                $key = $country;
+                $label = \App\Support\JobCatalog\JobCatalog::countryLabel($country, $lang);
+                $branch = (string) ($origin['branch'] ?? '');
+            }
+            $groups[$key] ??= ['key' => $key, 'label' => $label, 'count' => 0, 'branches' => []];
+            $groups[$key]['count']++;
+            if (!isset($groups[$key]['branches'][$branch])) {
+                $groups[$key]['branches'][$branch] = [
+                    'key' => $branch,
+                    'label' => $branch === '' ? '' : \App\Support\JobCatalog\JobCatalog::branchLabel($country, $branch, $lang),
+                    'items' => [],
+                ];
+            }
+            $groups[$key]['branches'][$branch]['items'][] = $item;
+        }
+        $countryOrder = array_flip(array_keys(\App\Support\JobCatalog\JobCatalog::COUNTRIES));
+        $branchOrder = array_flip(['joint', 'army', 'navy', 'air_force', 'marine_corps', 'gendarmerie']);
+        uksort($groups, static function (string $a, string $b) use ($countryOrder): int {
+            $rank = static fn (string $k): array => match ($k) {
+                'generic' => [0, 0, ''],
+                'private' => [2, 0, ''],
+                default => [1, $countryOrder[$k] ?? 99, $k],
+            };
+
+            return $rank($a) <=> $rank($b);
+        });
+        $out = [];
+        foreach ($groups as $group) {
+            $branches = $group['branches'];
+            uksort($branches, static fn (string $a, string $b): int => [$branchOrder[$a] ?? 99, $a] <=> [$branchOrder[$b] ?? 99, $b]);
+            $group['branches'] = array_values($branches);
+            $out[] = $group;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Texte de recherche d’un modèle : titre, résumé, fonctions, unités (noms, traductions, codes), pays, armée et
+     * commandement dans les deux langues.
+     *
+     * @param array<string, mixed> $definition
+     */
+    public static function searchText(array $definition): string
+    {
+        $bits = [(string) ($definition['title'] ?? ''), (string) ($definition['summary'] ?? '')];
+        $bits = array_merge($bits, array_map('strval', array_column($definition['job_roles'] ?? [], 'name')));
+        foreach (is_array($definition['units'] ?? null) ? $definition['units'] : [] as $unit) {
+            if (!is_array($unit)) {
+                continue;
+            }
+            $slug = (string) ($unit['slug'] ?? '');
+            $bits[] = (string) ($unit['name'] ?? '');
+            $bits[] = (string) ($unit['code'] ?? '');
+            foreach (['fr', 'en'] as $l) {
+                $bits[] = (string) (RealUnitKitDefinitions::translation($slug, $l) ?? '');
+            }
+        }
+        $origin = is_array($definition['origin'] ?? null) ? $definition['origin'] : [];
+        $country = (string) ($origin['country'] ?? '');
+        if ($country !== '') {
+            foreach (['fr', 'en'] as $l) {
+                $bits[] = \App\Support\JobCatalog\JobCatalog::countryLabel($country, $l);
+                $bits[] = \App\Support\JobCatalog\JobCatalog::branchLabel($country, (string) ($origin['branch'] ?? ''), $l);
+            }
+            $bits[] = (string) ($origin['command'] ?? '');
+        }
+
+        return mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', implode(' ', array_filter($bits, static fn (string $b): bool => $b !== '')))));
+    }
+
+    /** Modèle inspiré d’unités réelles (« à adapter »). @param array<string, mixed> $definition */
+    public static function isRealUnits(array $definition): bool
+    {
+        return !empty($definition['real_units']);
     }
 
     /**
