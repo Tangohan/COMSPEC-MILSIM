@@ -51616,4 +51616,6 @@ return [
     'Nom copié' => 'Name to copy',
     'Allemand' => 'German',
     'nom officiel' => 'official name',
+    'Chinois' => 'Chinese',
+    'Pinyin (chinois en alphabet latin)' => 'Pinyin (Chinese in Latin script)',
 ];
