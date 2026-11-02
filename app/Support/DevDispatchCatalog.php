@@ -294,7 +294,22 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1321, '2026-11-02', 'Liens d’invitation à partager, comme sur Discord', 'Recrutement › Liens d’invitation crée des liens à partager (athena-comspec.eu/public/i/…) : la personne qui l’ouvre découvre votre communauté (nom, emblème, bannière, jeu, membres) puis candidate ou rejoint la communauté. Sans compte, elle en crée un : l’invitation est gardée pendant l’inscription et la confirmation de l’adresse, puis la ramène sur le lien. Chaque lien a son nom interne, sa durée (30 minutes à 7 jours, une date ou jamais), son nombre d’utilisations, son action et ses statistiques ; il se copie, s’affiche en QR code, se révoque et se réactive.', [
+            $pr(1326, '2026-11-02', 'Invitations : plus de blocage à tort et une page refaite', 'Certaines communautés Pro+ ne pouvaient plus inviter : la page affichait « Votre formule actuelle limite le nombre de membres » alors que leur formule n’a pas de plafond. Un plafond de membres à 0 compte de nouveau comme illimité, et une formule sans plafond renseigné reprend celui de son palier au lieu de 50. La page Invitations est refaite : chiffres en tête (envoyées, acceptées, en attente, expirées) et membres sur le plafond de la formule (« 42 / illimité »), assistant en trois étapes pour inviter plusieurs adresses à la fois avec rôle, grade d’entrée, unité, durée du lien et message, tableau filtrable et triable pour renvoyer, révoquer ou copier un lien.', [
+                'Inviter plusieurs adresses e-mail en une fois, avec grade d’entrée, durée du lien (1 à 30 jours) et message personnel ajouté à l’e-mail',
+                'Tableau des invitations : recherche, filtre par état, tri par colonne ; renvoyer, révoquer, copier un nouveau lien',
+                'Jauge des membres sur le plafond de la formule, lien vers les formules seulement quand le plafond est réellement atteint',
+            ], [
+                'Les liens tout juste envoyés s’affichent une fois pour les transmettre soi-même',
+                'Accès direct aux liens d’invitation partageables',
+            ], [
+                'Formules : un plafond de membres à 0 bloquait toutes les invitations au lieu de signifier « illimité »',
+                'Formules : un plafond absent valait 50 membres au lieu du plafond de la formule',
+                'Une formule offerte inférieure ou l’essai fondateur ne font plus redescendre une communauté Pro+',
+                'Modifier une formule : un plafond vidé garde sa valeur au lieu de devenir illimité',
+            ], ['personnel'], [
+                'Essai : Back-office › Invitations, « Inviter des membres » avec deux adresses, puis « Copier le lien » et « Renvoyer » sur une invitation en attente.',
+            ], 'Portail Athena'),
+            $pr(1321,'2026-11-02', 'Liens d’invitation à partager, comme sur Discord', 'Recrutement › Liens d’invitation crée des liens à partager (athena-comspec.eu/public/i/…) : la personne qui l’ouvre découvre votre communauté (nom, emblème, bannière, jeu, membres) puis candidate ou rejoint la communauté. Sans compte, elle en crée un : l’invitation est gardée pendant l’inscription et la confirmation de l’adresse, puis la ramène sur le lien. Chaque lien a son nom interne, sa durée (30 minutes à 7 jours, une date ou jamais), son nombre d’utilisations, son action et ses statistiques ; il se copie, s’affiche en QR code, se révoque et se réactive.', [
                 'Recrutement › Liens d’invitation : création, fiche, modification, révocation, réactivation, copie du lien et QR code à télécharger',
                 'Action « Candidater » : formulaire de la communauté préparé (type de candidature, offre, unité visée, code prioritaire appliqué d’office)',
                 'Action « Rejoindre » : adhésion directe avec grade d’entrée et unité d’affectation, ou demande soumise à l’approbation de l’équipe dans la file du recrutement',

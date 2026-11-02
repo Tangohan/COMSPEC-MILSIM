@@ -1,0 +1,189 @@
+/*
+ * Invitations — composants communs (maquette « Invitation - Athena », 2026-11-02), réutilisables par
+ * Back-office › Invitations et les pages « Liens d'invitation ».
+ *
+ * - .iath-hero : bandeau sombre (dans les deux thèmes, comme l'organigramme du kit) : sur-titre à pastille pulsée
+ *   (.iath-kk), titre italique capitales à point d'accent (.iath-title), chapeau, actions, bande de faits (.iath-facts).
+ * - .iath-b1 / .iath-b2 : boutons principal (accent) et secondaire, capitales espacées.
+ * - .iath-ticket : carte « billet » (filet d'accent, perforation .iath-perf, étapes numérotées .iath-steps, pied .iath-ticket__f).
+ * - .iath-code : code / lien à copier (mono, bordure pointillée). .iath-badge : état (en attente, acceptée…).
+ * - .iath-toast : message bref en bas d'écran (copie).
+ * Couleurs : jetons --ath-* du back-office (mode nuit html[data-bo-theme="dark"]) ; accent maquette #34d399.
+ * Aucune police ni ressource externe.
+ */
+
+.iath {
+  --iath-void: #070908;
+  --iath-panel: #0b0f0e;
+  --iath-ink: #f4f4f0;
+  --iath-mut: rgba(244, 244, 240, 0.62);
+  --iath-dim: rgba(244, 244, 240, 0.36);
+  --iath-rule: rgba(244, 244, 240, 0.14);
+  --iath-acc: #34d399;
+  --iath-acc2: #6ee7b7;
+  --iath-acc-ink: #052e1c;
+  --iath-acc-line: rgba(52, 211, 153, 0.28);
+  /* Parties claires (cartes, tableaux) : jetons du back-office. */
+  --iath-surface: var(--ath-surface, #ffffff);
+  --iath-text: var(--ath-ink, #0f172a);
+  --iath-muted: var(--ath-muted, #64748b);
+  --iath-line: var(--ath-line, #e2e8f0);
+  --iath-sunken: var(--ath-line-soft, #f1f5f9);
+  --iath-accent: var(--ath-accent, #059669);
+  --iath-mono: var(--ath-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+}
+
+/* ——— Bandeau ——— */
+.iath-hero {
+  position: relative; isolation: isolate; overflow: hidden; border-radius: 16px;
+  padding: clamp(20px, 3vw, 32px) clamp(18px, 3vw, 36px) 0;
+  background-color: var(--iath-void); color: var(--iath-ink);
+  border: 1px solid #151b1a; box-shadow: 0 30px 60px -40px rgba(0, 0, 0, 0.8);
+}
+.iath-hero::before {
+  content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none;
+  background: radial-gradient(120% 140% at 100% 0%, rgba(52, 211, 153, 0.16), transparent 55%), linear-gradient(100deg, rgba(7, 9, 8, 0.97), rgba(6, 38, 28, 0.55));
+}
+.iath-hero::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(244, 244, 240, 0.025) 0 1px, transparent 1px 3px);
+}
+.iath-hero a { color: var(--iath-acc); }
+.iath-hero a:hover { color: var(--iath-acc2); }
+.iath-hero__top { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.iath-hero__copy { min-width: 0; flex: 1 1 380px; }
+.iath-hero__acts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.iath-kk {
+  display: flex; align-items: center; gap: 10px; margin: 0;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--iath-acc);
+}
+.iath-kk i { width: 7px; height: 7px; border-radius: 50%; background: var(--iath-acc); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2); animation: iath-pulse 2.4s ease-in-out infinite; flex: none; }
+@keyframes iath-pulse { 50% { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0.05); } }
+.iath-title {
+  margin: 14px 0 0; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.045em;
+  line-height: 0.9; font-size: clamp(38px, 5.4vw, 68px); color: var(--iath-ink); text-wrap: balance;
+}
+.iath-title span { color: var(--iath-acc); }
+.iath-lead { margin: 12px 0 0; font-size: 15px; line-height: 1.6; color: var(--iath-mut); max-width: 62ch; text-wrap: pretty; }
+.iath-lead b { color: var(--iath-ink); font-weight: 600; }
+
+/* Bande de faits (chiffres) */
+.iath-facts {
+  display: flex; flex-wrap: wrap; margin: 24px calc(-1 * clamp(18px, 3vw, 36px)) 0; padding: 0 clamp(18px, 3vw, 36px);
+  border-top: 1px solid var(--iath-rule); list-style: none;
+}
+.iath-facts > * { padding: 16px 26px 18px 0; margin-right: 26px; border-right: 1px solid var(--iath-rule); min-width: 0; color: inherit; text-decoration: none; }
+.iath-facts > *:last-child { border-right: 0; margin-right: 0; }
+.iath-facts a:hover .iath-facts__v { color: var(--iath-acc2); }
+.iath-facts__k { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--iath-dim); }
+.iath-facts__v {
+  display: flex; align-items: center; gap: 10px; margin-top: 6px; color: var(--iath-ink);
+  font-size: 28px; font-weight: 900; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1.05;
+}
+.iath-facts__v small { font-size: 14px; font-weight: 600; color: var(--iath-mut); letter-spacing: 0; }
+.iath-facts__v.is-ok { color: var(--iath-acc); }
+.iath-facts__v.is-warn { color: #fbbf24; }
+.iath-facts__v.is-bad { color: #f87171; }
+.iath-facts__h { display: block; margin-top: 2px; font-size: 12px; color: var(--iath-dim); }
+.iath-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--iath-acc); flex: none; }
+.iath-dot.is-warn { background: #fbbf24; }
+.iath-dot.is-bad { background: #f87171; }
+
+/* ——— Boutons ——— */
+.iath-b1, .iath-b2 {
+  height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 20px;
+  font: inherit; font-size: 11.5px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap;
+  border-radius: 3px; cursor: pointer; text-decoration: none; transition: background 0.15s, transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.iath-b1 { background: var(--iath-acc); border: 1px solid var(--iath-acc); color: var(--iath-acc-ink); }
+.iath .iath-b1:hover, .iath-b1:hover { background: var(--iath-acc2); color: var(--iath-acc-ink); transform: translateY(-1px); box-shadow: 0 14px 34px -14px rgba(52, 211, 153, 0.7); }
+.iath-b1 .effk-i, .iath-b1 svg { transition: transform 0.15s; }
+.iath-b1:hover .effk-i, .iath-b1:hover svg { transform: translateX(3px); }
+.iath-b2 { background: transparent; border: 1px solid var(--iath-rule); color: var(--iath-ink); }
+.iath .iath-hero .iath-b2:hover, .iath-b2:hover { border-color: rgba(244, 244, 240, 0.4); color: var(--iath-ink); background: rgba(244, 244, 240, 0.04); }
+.iath-b1[disabled], .iath-b2[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+/* Variante sur fond clair (cartes, fenêtres) */
+.iath-b2.is-light { border-color: var(--iath-line); color: var(--iath-text); }
+.iath .iath-b2.is-light:hover, .iath-b2.is-light:hover { border-color: var(--iath-muted); color: var(--iath-text); background: var(--iath-sunken); }
+
+/* ——— Billet ——— */
+.iath-ticket {
+  position: relative; background: var(--iath-surface); color: var(--iath-text);
+  border: 1px solid var(--iath-line); border-radius: 6px; box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.45);
+}
+.iath-ticket::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--iath-acc); border-radius: 6px 6px 0 0; }
+.iath-ticket__h { padding: 22px 24px 18px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.iath-ticket__k { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--iath-muted); }
+.iath-ticket__t { margin: 6px 0 0; font-size: 21px; font-weight: 800; letter-spacing: -0.02em; color: var(--iath-text); }
+.iath-ticket__f { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-top: 1px solid var(--iath-line); font-size: 12.5px; color: var(--iath-muted); flex-wrap: wrap; }
+.iath-ticket__f b { color: var(--iath-text); font-weight: 600; }
+.iath-perf { position: relative; height: 1px; margin: 0 14px; background-image: linear-gradient(90deg, var(--iath-line) 50%, transparent 0); background-size: 10px 1px; }
+.iath-perf::before, .iath-perf::after {
+  content: ""; position: absolute; top: -10px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--iath-page, var(--ath-bg, #f1f5f9)); border: 1px solid var(--iath-line);
+}
+.iath-perf::before { left: -25px; clip-path: inset(0 0 0 50%); }
+.iath-perf::after { right: -25px; clip-path: inset(0 50% 0 0); }
+dialog .iath-perf::before, dialog .iath-perf::after { display: none; }
+
+/* Étapes numérotées (ds-stepper habillé, ou liste simple) */
+.iath-steps .ds-stepper, ol.iath-steps { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px 22px; flex-wrap: wrap; }
+.iath-steps .ds-stepper__item, ol.iath-steps > li { display: inline-flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: var(--iath-muted); }
+.iath-steps .ds-stepper__num, ol.iath-steps .iath-n {
+  width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
+  font: 700 11.5px var(--iath-mono); border: 1px solid var(--iath-line); color: var(--iath-muted); background: transparent;
+}
+.iath-steps .ds-stepper__item--active, ol.iath-steps > li.is-on { color: var(--iath-text); }
+.iath-steps .ds-stepper__item--active .ds-stepper__num, ol.iath-steps > li.is-on .iath-n { background: var(--iath-acc); border-color: var(--iath-acc); color: var(--iath-acc-ink); }
+.iath-steps .ds-stepper__item--done { color: var(--iath-accent); }
+.iath-steps .ds-stepper__item--done .ds-stepper__num { border-color: var(--iath-acc); color: var(--iath-accent); }
+
+/* ——— Code / lien à copier ——— */
+.iath-code {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%; min-width: 0;
+  font: 500 12px var(--iath-mono); color: var(--iath-accent); padding: 6px 9px;
+  border: 1px dashed color-mix(in srgb, var(--iath-acc) 60%, transparent); border-radius: 3px; background: transparent;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.iath-code:hover { background: rgba(52, 211, 153, 0.08); }
+.iath-code[disabled] { opacity: 0.5; cursor: progress; }
+
+/* ——— Badges d'état ——— */
+.iath-badge {
+  display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--iath-line); background: var(--iath-sunken); color: var(--iath-muted);
+}
+.iath-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.iath-badge.is-pending { color: #b45309; background: #fffbeb; border-color: #fcd34d; }
+.iath-badge.is-accepted { color: #065f46; background: #ecfdf5; border-color: #a7f3d0; }
+.iath-badge.is-expired { color: #64748b; }
+.iath-badge.is-revoked { color: #94a3b8; text-decoration: line-through; text-decoration-thickness: 1px; }
+html[data-bo-theme="dark"] .iath-badge.is-pending { color: #f0bd5c; background: #2a2212; border-color: #4d3c17; }
+html[data-bo-theme="dark"] .iath-badge.is-accepted { color: #6ee7b7; background: #12251d; border-color: #1f4535; }
+
+/* ——— Message bref ——— */
+.iath-toast {
+  position: fixed; left: 50%; bottom: 24px; z-index: 1000; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  max-width: calc(100vw - 32px); background: var(--iath-ink, #f4f4f0); color: #050505; font-size: 14px; font-weight: 600;
+  padding: 12px 18px; border-radius: 4px; box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6); transition: opacity 0.2s, transform 0.2s;
+}
+.iath-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+.iath-toast.is-bad { background: #7f1d1d; color: #fff; }
+
+@media (max-width: 620px) {
+  .iath-facts > * { padding-right: 16px; margin-right: 16px; }
+  .iath-facts__v { font-size: 22px; }
+  .iath-hero__acts { width: 100%; }
+  .iath-hero__acts > * { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iath-kk i, .iath-b1, .iath-toast { animation: none; transition: none; }
+}
+
+/* Le kit colore les liens de la page : la bande de faits garde ses couleurs. */
+.bo-eff-workspace .iath .iath-facts a,
+.bo-eff-workspace .iath .iath-facts a:hover { color: inherit; text-decoration: none; }
+.bo-eff-workspace .iath .iath-hero a.iath-b2 { color: var(--iath-ink); }
+.bo-eff-workspace .iath a.iath-b1 { color: var(--iath-acc-ink); }
+.bo-eff-workspace .iath a.iath-b2.is-light { color: var(--iath-text); }

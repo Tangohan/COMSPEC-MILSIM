@@ -1492,6 +1492,8 @@ return function (Router $router) {
     $router->get('/back-office/invitations/envoyees', [InvitationAdminController::class, 'sent'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->post('/back-office/invitations', [InvitationAdminController::class, 'store'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->post('/back-office/invitations/revoke', [InvitationAdminController::class, 'revoke'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
+    $router->post('/back-office/invitations/renvoyer', [InvitationAdminController::class, 'resend'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
+    $router->post('/back-office/invitations/lien', [InvitationAdminController::class, 'link'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->get('/back-office/dashboard-pins', [DashboardPinsAdminController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/back-office/dashboard-pins/create', [DashboardPinsAdminController::class, 'create'], [AuthMiddleware::class]);
     $router->post('/back-office/dashboard-pins/store', [DashboardPinsAdminController::class, 'store'], [AuthMiddleware::class]);
