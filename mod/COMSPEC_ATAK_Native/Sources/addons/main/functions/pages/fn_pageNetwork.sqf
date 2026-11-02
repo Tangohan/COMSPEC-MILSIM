@@ -7,7 +7,8 @@
     Liaison allié. Rafraîchie toutes les 5 s tant qu'elle est affichée.
     Liaison réaliste téléphone <-> radio (fn_mpuLink, réglage comspec_atak_native_mpu_real) : le porteur est la radio de
     données ; section « Radio de données » (radio, liaison au téléphone, canal, puissance, batterie, maillage, nœuds,
-    débit et latence estimés) avec ses boutons (allumer, canal, puissance, câble EUD, Wi-Fi, radio tactique, débrancher).
+    débit et latence estimés) avec ses boutons (allumer, canal, puissance, câble EUD, Wi-Fi, débrancher). Sans MPU5 :
+    pas de réseau de données.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -144,11 +145,10 @@ private _bearer = switch (true) do {
         private _kd = _mpuS get "kind";
         private _lk = _mpuS get "link";
         private _ms = uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap];
-        [["Radio de données", "MPU5 · Wave Relay", "Radio tactique"] select ((["", "mpu", "tac"] find _kd) max 0),
+        [["Radio de données", "MPU5 · Wave Relay"] select (_kd isEqualTo "mpu"),
             switch (_lk) do {
                 case "cable": { format ["Câble EUD · canal %1", _ms getOrDefault ["chan", 1]] };
                 case "wifi": { format ["Wi-Fi · canal %1", _ms getOrDefault ["chan", 1]] };
-                case "tac": { [(uiNamespace getVariable ["COMSPEC_ATAK_RadioPlug", []]) param [2, "Radio"]] call _esc };
                 default { "Non reliée" };
             },
             [[_mpuS get "why"] call _esc, format ["%1 saut(s) jusqu'à %2 · %3 · %4 ms", (_mpuS get "hops") max 0, [_mpuS get "gw"] call _esc, [_mpuS get "kbps"] call _kbTxt, _mpuS get "lat"]] select (_mpuS get "ok"),
@@ -279,25 +279,21 @@ if (_wide) then {
 if (_mpuOn) then {
     private _v = ["view"] call comspec_atak_native_fnc_mpuLink;
     private _lk = _v get "link";
-    ["Radio de données", "MPU5 Wave Relay ou radio tactique : le téléphone n'a de réseau qu'à travers elle"] call _section;
+    ["Radio de données", ["MPU5 Wave Relay : elle améliore le réseau du téléphone", "MPU5 Wave Relay : le téléphone n'a de réseau qu'à travers elle. Sans MPU5 : pas de réseau de données"] select _mpuReq] call _section;
     ["Radio", switch (true) do {
-        case (_lk isEqualTo "tac"): { format ["<t color='#5cc76b'>%1</t> (radio tactique, bas débit)", [_v get "tac"] call _esc] };
         case (_v get "carried"): { format ["MPU5 sur vous · <t color='%1'>%2</t>", ["#e5483a", "#5cc76b"] select (_v get "on"), ["éteinte", "allumée"] select (_v get "on")] };
         case (_v get "posed"): { format ["MPU5 posée à %1 m · <t color='%2'>%3</t>", _v get "posedD", ["#e5483a", "#5cc76b"] select (_v get "on"), ["éteinte", "allumée"] select (_v get "on")] };
-        default { "<t color='#e5483a'>aucune MPU5 sur vous</t>" };
+        default { ["<t color='#e5483a'>aucune MPU5 sur vous</t>", "<t color='#e5483a'>aucune MPU5 sur vous · sans MPU5 : pas de réseau de données</t>"] select _mpuReq };
     }] call _info;
     ["Liaison au téléphone", switch (_lk) do {
         case "cable": { "<t color='#5cc76b'>câble EUD branché</t>" };
         case "wifi": { private _d = _mpuS get "wifiD"; format ["<t color='%1'>Wi-Fi</t> · %2 m / %3 m · %4 %%", ["#e5483a", "#5cc76b"] select ((_mpuS get "wifiQ") > 0), round (_d max 0), round (_v get "wifiR"), round (100 * (_mpuS get "wifiQ"))] };
-        case "tac": { "<t color='#5cc76b'>câble EUD branché sur la radio tactique</t>" };
         default { format ["<t color='#e5483a'>non reliée</t>%1", ["", " · <t color='#f2ab33'>câble EUD absent</t>"] select ((_v get "cableReq") && {!(_v get "cable")})] };
     }] call _info;
-    if (_lk isNotEqualTo "tac") then {
-        ["Canal du maillage", format ["Canal %1 · %2 MHz <t color='#8a9a93'>(même canal = même maillage)</t>", _v get "chan", _v get "freq"]] call _info;
-        ["Puissance", format ["%1 · portée %2", _v get "pwrLabel", [_v get "range"] call _dist]] call _info;
-        ["Batterie de la radio", format ["<t color='%1'>%2 %%</t> <t color='#8a9a93'>· environ %3 h %4 · %5</t>", switch (true) do { case ((_v get "batt") <= 5): { "#e5483a" }; case ((_v get "batt") <= 20): { "#f2ab33" }; default { "#5cc76b" }; },
-            _v get "batt", floor ((_v get "left") / 60), (_v get "left") mod 60, ["pas de batterie de rechange", "batterie de rechange sur vous"] select (_v get "spare")]] call _info;
-    };
+    ["Canal du maillage", format ["Canal %1 · %2 MHz <t color='#8a9a93'>(même canal = même maillage)</t>", _v get "chan", _v get "freq"]] call _info;
+    ["Puissance", format ["%1 · portée %2", _v get "pwrLabel", [_v get "range"] call _dist]] call _info;
+    ["Batterie de la radio", format ["<t color='%1'>%2 %%</t> <t color='#8a9a93'>· environ %3 h %4 · %5</t>", switch (true) do { case ((_v get "batt") <= 5): { "#e5483a" }; case ((_v get "batt") <= 20): { "#f2ab33" }; default { "#5cc76b" }; },
+        _v get "batt", floor ((_v get "left") / 60), (_v get "left") mod 60, ["pas de batterie de rechange", "batterie de rechange sur vous"] select (_v get "spare")]] call _info;
     ["Maillage", if (_mpuS get "ok") then {
         format ["<t color='#5cc76b'>%1</t> · %2", switch (_mpuS get "mode") do {
             case "self": { "maillage autonome (aucun relais dans la mission)" };
@@ -319,7 +315,7 @@ if (_mpuOn) then {
                     [format ["%1 saut(s) · %2", _nh, [_nb] call _kbTxt], "<t color='#e5483a'>hors maillage</t>"] select (_nh < 0)]] call _info;
         } forEach _nl;
     } else {
-        if (_lk in ["cable", "wifi", "tac"] && {_mpuS get "ok"}) then { ["<t size='0.85' color='#8a9a93'>Aucun autre nœud sur ce canal : montez sur un point haut ou rapprochez-vous d'une MPU5 ou d'un relais.</t>"] call _para; };
+        if (_lk in ["cable", "wifi"] && {_mpuS get "ok"}) then { ["<t size='0.85' color='#8a9a93'>Aucun autre nœud sur ce canal : montez sur un point haut ou rapprochez-vous d'une MPU5 ou d'un relais.</t>"] call _para; };
     };
     _y = _y + _pad * 0.3;
     if (_v get "carried" || {_v get "posed"}) then {
@@ -333,9 +329,8 @@ if (_mpuOn) then {
     private _btn = [];
     if (_lk isNotEqualTo "cable" && {_v get "carried"}) then { _btn pushBack ["CÂBLE EUD", { ["link", ["cable"]] call comspec_atak_native_fnc_mpuLink; }, _lk isEqualTo ""]; };
     if (_lk isNotEqualTo "wifi" && {_v get "wifi"}) then { _btn pushBack ["WI-FI", { ["link", ["wifi"]] call comspec_atak_native_fnc_mpuLink; }]; };
-    if (_lk isNotEqualTo "tac" && {_v get "tacOk"}) then { _btn pushBack ["RADIO TACTIQUE", { ["link", ["tac"]] call comspec_atak_native_fnc_mpuLink; }]; };
     if (_lk isNotEqualTo "") then { _btn pushBack ["DÉBRANCHER", { ["unlink"] call comspec_atak_native_fnc_mpuLink; }]; };
-    if ((_v get "spare") && {(_v get "batt") < 95} && {_lk isNotEqualTo "tac"}) then { _btn pushBack ["BATTERIE", { ["battery"] call comspec_atak_native_fnc_mpuLink; }]; };
+    if ((_v get "spare") && {(_v get "batt") < 95}) then { _btn pushBack ["BATTERIE", { ["battery"] call comspec_atak_native_fnc_mpuLink; }]; };
     if (_btn isNotEqualTo []) then { [_btn] call _buttons; };
 };
 

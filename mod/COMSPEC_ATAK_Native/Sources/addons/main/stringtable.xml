@@ -42,11 +42,6 @@
             <English>Video projector</English>
             <French>Vidéoprojecteur</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_080F6D4857">
-            <Original>USB-C cable between the ATAK phone and a data radio (MPU5, tactical radio). ACE menu ATAK phone &gt; Data radio.</Original>
-            <English>USB-C cable between the ATAK phone and a data radio (MPU5, tactical radio). ACE menu ATAK phone &gt; Data radio.</English>
-            <French>Câble USB-C entre le téléphone ATAK et une radio de données (MPU5, radio tactique). Menu ACE Téléphone ATAK &gt; Radio de données.</French>
-        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_0913AEF2ED">
             <Original>COMSPEC — ATAK · Network</Original>
             <English>COMSPEC — ATAK · Network</English>
@@ -331,6 +326,11 @@
             <Original>C 4,940 MHz</Original>
             <English>C 4,940 MHz</English>
             <French>C 4 940 MHz</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_3FB197C75A">
+            <Original>USB-C cable between the ATAK phone and an MPU5 data radio. ACE menu ATAK phone &gt; Data radio.</Original>
+            <English>USB-C cable between the ATAK phone and an MPU5 data radio. ACE menu ATAK phone &gt; Data radio.</English>
+            <French>Câble USB-C entre le téléphone ATAK et une radio de données MPU5. Menu ACE Téléphone ATAK &gt; Radio de données.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_41D5DDB858">
             <Original>COMSPEC screen</Original>

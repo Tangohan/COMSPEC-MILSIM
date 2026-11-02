@@ -226,7 +226,7 @@ switch (_act) do {
         // demandent dans la même seconde, et chaque calcul lance des dizaines de lancers de rayons (relief, feuillage, bâtiments).
         private _bc = uiNamespace getVariable ["COMSPEC_ATAK_RelayBest", []];
         if ((count _bc) isEqualTo 2 && {diag_tickTime - (_bc select 0) < ([6, 1.5] select !isNull ([] call comspec_atak_native_fnc_display))}) exitWith { _bc select 1 };
-        // Liaison réaliste (fn_mpuLink) : le téléphone n'a pas de radio tactique propre, il ne parle aux relais qu'à
+        // Liaison réaliste (fn_mpuLink) : le téléphone n'a pas de radio réseau propre, il ne parle aux relais qu'à
         // travers sa radio de données (maillage de fn_mpuLink).
         if (["noDirect"] call comspec_atak_native_fnc_mpuLink) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_RelayLast", objNull];
