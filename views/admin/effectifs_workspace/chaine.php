@@ -134,13 +134,16 @@ $chips = static function (int $unitId) use ($h, $membersByUnit, $unitById, $chip
 $none = '<span class="effk-mem__none">Aucun membre</span>';
 
 /** Sous-unités (récursif) : poste de chef, membres, puis leurs propres sous-unités. */
-$branch = static function (int $unitId, int $depth = 0) use (&$branch, $childrenOf, $unitById, $slot, $chips, $none): string {
+$branch = static function (int $unitId, int $depth = 0) use (&$branch, $childrenOf, $unitById, $membersByUnit, $slot, $chips, $none, $h): string {
     $out = '';
     foreach ($childrenOf[$unitId] ?? [] as $cid) {
         $c = $unitById[$cid];
         $badge = effk_unit_level_badge((string) ($c['visibility'] ?? ''));
         $memberChips = $chips($cid);
-        $out .= '<div class="effk-grp">'
+        $grpCount = count($membersByUnit[$cid] ?? []);
+        $out .= '<div class="effk-grp" style="--c:' . effk_unit_color($cid) . '">'
+            . '<div class="effk-grp__h"><i aria-hidden="true"></i><b>' . $h((string) ($c['name'] ?? '')) . '</b>'
+            . '<small>' . $grpCount . ' membre' . ($grpCount > 1 ? 's' : '') . '</small></div>'
             . ($badge !== '' ? '<div class="effk-grp__conf">' . $badge . '</div>' : '')
             . $slot($c, 'grp')
             . '<div class="effk-mem">' . ($memberChips !== '' ? $memberChips : $none) . '</div>'
