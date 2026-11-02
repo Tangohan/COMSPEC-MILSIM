@@ -156,7 +156,8 @@ final class PilotFleetRepository
             $st = $this->pdo()->prepare(
                 "SELECT user_id, vehicle_class, MAX(vehicle_label) AS vehicle_label, MAX(vehicle_kind) AS vehicle_kind, COUNT(*) AS flights
                  FROM pilot_logbook_entries
-                 WHERE tenant_id = ? AND seconds > 0 AND (source = 'mod' OR status = 'countersigned')
+                 WHERE tenant_id = ? AND seconds > 0 AND (source = 'mod' OR status = 'countersigned')"
+                . \App\Support\AtakPlayedOpExclusion::clause('pilot_logbook_entries.mission_key', 'pilot_logbook_entries.tenant_id', $this->pdo()) . "
                  GROUP BY user_id, vehicle_class"
             );
             $st->execute([$tenantId]);

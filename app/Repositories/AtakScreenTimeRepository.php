@@ -239,6 +239,7 @@ class AtakScreenTimeRepository
             $where .= ' AND t.day >= (CURRENT_DATE - INTERVAL ? DAY)';
             $args[] = $days - 1;
         }
+        $where .= $this->excluded('t.');
         $st = $this->pdo()->prepare(
             "SELECT t.user_id, t.kind, t.item_key, MAX(t.item_label) AS item_label, SUM(t.seconds) AS seconds, MAX(t.day) AS last_day,
                     u.display_name, u.callsign
@@ -308,6 +309,7 @@ class AtakScreenTimeRepository
             $where .= ' AND day >= (CURRENT_DATE - INTERVAL ? DAY)';
             $args[] = $days - 1;
         }
+        $where .= $this->excluded('atak_screen_time.');
         $mask = $this->hasColumn('source_mask') ? 'BIT_OR(source_mask)' : '0';
         $corrected = $this->correctedKeys($tenantId, $userId);
         try {
@@ -354,7 +356,7 @@ class AtakScreenTimeRepository
             return [];
         }
         $sql = "SELECT item_key, MAX(item_label) AS label, SUM(seconds) AS seconds, COUNT(DISTINCT user_id) AS members
-                FROM atak_screen_time WHERE tenant_id = ? AND kind = 'role'";
+                FROM atak_screen_time WHERE tenant_id = ? AND kind = 'role'" . $this->excluded('atak_screen_time.');
         $args = [$tenantId];
         if ($days > 0) {
             $sql .= ' AND day >= (CURRENT_DATE - INTERVAL ? DAY)';
@@ -383,7 +385,7 @@ class AtakScreenTimeRepository
         try {
             $st = $this->pdo()->prepare(
                 "SELECT day, {$mk} AS mission_key, SUM(seconds) AS seconds FROM atak_screen_time
-                 WHERE tenant_id = ? AND user_id = ? AND kind = 'play' AND item_key = 'TOTAL' AND seconds > 0
+                 WHERE tenant_id = ? AND user_id = ? AND kind = 'play' AND item_key = 'TOTAL' AND seconds > 0" . $this->excluded('atak_screen_time.') . "
                  GROUP BY day, {$mk}"
             );
             $st->execute([$tenantId, $userId]);
@@ -471,6 +473,7 @@ class AtakScreenTimeRepository
             $where .= ' AND t.user_id = ?';
             $args[] = $userId;
         }
+        $where .= $this->excluded('t.');
         // Une session = une clé de mission ; les lignes d'avant la clé comptent une session par jour.
         $sessions = $this->hasColumn('mission_key')
             ? "COUNT(DISTINCT CASE WHEN t.mission_key <> '' THEN t.mission_key ELSE CONCAT('jour:', t.day) END)"
@@ -546,6 +549,17 @@ class AtakScreenTimeRepository
         usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
         return $out;
+    }
+
+    /**
+     * Parties ignorées ou supprimées (cycle de mission, suivi des CR) retirées des heures : « AND … » ou '' (colonne
+     * mission_key ou migration atak_played_operations absente).
+     */
+    private function excluded(string $prefix): string
+    {
+        return $this->hasColumn('mission_key')
+            ? \App\Support\AtakPlayedOpExclusion::clause($prefix . 'mission_key', $prefix . 'tenant_id', $this->pdo())
+            : '';
     }
 
     /** Colonne optionnelle de atak_screen_time (mission_key, source_mask), lue une fois par processus. */
