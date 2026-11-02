@@ -204,6 +204,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 // Liaison réaliste téléphone <-> radio de données (fn_mpuLink, réglage comspec_atak_native_mpu_real) : toutes les 2 s,
 // sans rien faire tant que le réglage est décoché.
 [{ ["tick"] call comspec_atak_native_fnc_mpuLink; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice, réglage comspec_atak_native_mpu_voice) : toutes les 2 s.
+[{ ["tick"] call comspec_atak_native_fnc_mpuVoice; }, 2] call COMSPEC_ATAK_PfhSpread;
 ["register"] call comspec_atak_native_fnc_zeusMenu;
 // Attributs ZEN des relais (fenêtre Éditer d'un pylône ou relais) et menu clic droit « ATAK · Relais ».
 ["register"] call comspec_atak_native_fnc_relayZeus;
@@ -1184,5 +1186,19 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
 // image suivante, puis 5 s plus tard pour les addons déclarés après.
 [{ [] call comspec_atak_native_fnc_keyRelang; }] call CBA_fnc_execNextFrame;
 [{ [] call comspec_atak_native_fnc_keyRelang; }, [], 5] call CBA_fnc_waitAndExecute;
-["ace_arsenal_displayOpened", { diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arsenal ACE ouvert (%1 FPS)", round diag_fps]; }] call CBA_fnc_addEventHandler;
+["ace_arsenal_displayOpened", {
+    diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arsenal ACE ouvert (%1 FPS)", round diag_fps];
+    // Diagnostic seul (rien n'est modifié) : arsenal « vide » signalé en 2.9.31, liste de gauche réduite à l'arme portée.
+    // Dit si ACE a reçu une liste d'objets vide ou s'il est en mode « Objets : Favoris ».
+    [{
+        params ["_d"];
+        if (isNull _d) exitWith {};
+        private _flat = missionNamespace getVariable ["ace_arsenal_virtualItemsFlat", createHashMap];
+        private _box = missionNamespace getVariable ["ace_arsenal_currentBox", objNull];
+        diag_log format ["[COMSPEC ATAK NATIVE][INFO][ARSENAL] Liste de gauche : %1 ligne(s) ; objets de l'arsenal : %2 ; arsenal complet : %3 ; mode Favoris : %4 ; boîte : %5",
+            lbSize (_d displayCtrl 13), if (_flat isEqualType createHashMap) then { count _flat } else { -1 },
+            missionNamespace getVariable ["ace_arsenal_ignoredVirtualItems", false], missionNamespace getVariable ["ace_arsenal_favoritesOnly", false],
+            if (isNull _box) then { "aucune" } else { typeOf _box }];
+    }, _this, 1] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
 diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "postInit client", round ((diag_tickTime - _perfT0) * 1000)];

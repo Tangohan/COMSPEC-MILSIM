@@ -20,6 +20,9 @@
     planifié (un seul à la fois), lignes de vue gardées 30 s ; fn_linkQuality ne lit que le dernier état ("status").
     Variable publique : COMSPEC_ATAK_MpuNode = [réseau ("C<canal>"), portée m, objet antenne (joueur ou radio posée)]
     ou [] ; publiée seulement quand elle change.
+    Voix ACRE2 / TFAR relayée par le maillage (fn_mpuVoice, réglage comspec_atak_native_mpu_voice) : une radio pontée sur
+    la MPU5 suffit pour que le maillage soit calculé (téléphone relié ou non) ; "mesh" donne aussi "reach" (netId du
+    porteur -> sauts, nœuds joints) et "vkey" (cœur de réseau commun : "R<camp>" relais, "L<netId du chef>" groupe).
       "active"   -> vrai si le réalisme est actif
       "status"   -> HashMap : active, kind ("" | "mpu" | "veh"), link ("" | "cable" | "wifi"), ok, why,
                     kbps, lat, loss, hops, gw, via, mode ("relay" | "lead" | "self"), nodes, wifiD, wifiQ
@@ -297,6 +300,8 @@ switch (_act) do {
             };
         };
         uiNamespace setVariable ["COMSPEC_ATAK_MpuStatus", _s];
+        // Voix radio pontée sur la MPU5 portée (fn_mpuVoice) : maillage calculé même sans téléphone relié.
+        if (!_need && {_on} && {_carried} && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isNotEqualTo []} && {missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]}) then { _need = true; };
         // Réseau perdu ou retrouvé par la radio : notification (pas en double avec celle de la coupure du lien).
         private _wasOk = _old getOrDefault ["ok", false];
         if ((_s get "ok") isNotEqualTo _wasOk || {(_s get "kind") isNotEqualTo (_old getOrDefault ["kind", ""])}) then {
@@ -424,6 +429,15 @@ switch (_act) do {
             } forEach _nodes;
         };
         private _res = createHashMapFromArray [["key", _key], ["at", diag_tickTime], ["mode", _mode], ["ok", _goal >= 0]];
+        // Voix par le maillage (fn_mpuVoice) : porteurs joints (netId -> sauts) et cœur de réseau commun.
+        private _reach = createHashMap;
+        { if (_forEachIndex > 0 && {!isNull (_x select 5)} && {(_hop select _forEachIndex) >= 0}) then { _reach set [netId (_x select 5), _hop select _forEachIndex]; }; } forEach _nodes;
+        _res set ["reach", _reach];
+        _res set ["vkey", [switch (_mode) do {
+            case "relay": { "R" + str _side };
+            case "lead": { "L" + netId (leader group player) };
+            default { ["", "L" + netId player] select ((leader group player) isEqualTo player) };
+        }, ""] select (_goal < 0)];
         if (_goal >= 0) then {
             private _h = _hop select _goal;
             private _via = _goal;
@@ -486,6 +500,17 @@ switch (_act) do {
             }, { "COMSPEC_ATAK_RadioBattery" in (items player) && {((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["batt", 100]) < 95} }],
             ["COMSPEC_ATAK_MpuInfo", "État de la radio", { ["info"] call comspec_atak_native_fnc_mpuLink; }, { true }]
         ];
+        // Pont radio (fn_mpuVoice) : la radio active ACRE2 / TFAR reliée à la MPU5 par câble audio, nom de la radio dans l'action.
+        ["CAManBase", 1, _path, ["COMSPEC_ATAK_MpuVoiceOn", "Relier ma radio à la MPU5 (voix)", "", { ["bridge"] call comspec_atak_native_fnc_mpuVoice; },
+            { (missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isEqualTo []}
+                && {!isNil "acre_api_fnc_getCurrentRadioList" || {!isNil "TFAR_fnc_activeSwRadio"}} && {["has", [player]] call comspec_atak_native_fnc_mpu5} },
+            {}, [], [0, 0, 0], 2, [false, false, false, false, false], {
+                params ["", "", "", "_ad"];
+                private _p = ["preferred"] call comspec_atak_native_fnc_mpuVoice;
+                if (_p isNotEqualTo []) then { _ad set [1, format [("Relier ma radio %1 à la MPU5 (voix)" call comspec_atak_native_fnc_tr), _p select 2]]; };
+            }] call comspec_atak_native_fnc_aceAction, true] call ace_interact_menu_fnc_addActionToClass;
+        ["CAManBase", 1, _path, ["COMSPEC_ATAK_MpuVoiceOff", "Débrancher ma radio de la MPU5 (voix)", "", { ["unbridge"] call comspec_atak_native_fnc_mpuVoice; },
+            { (missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isNotEqualTo [] }] call comspec_atak_native_fnc_aceAction, true] call ace_interact_menu_fnc_addActionToClass;
         true
     };
 };

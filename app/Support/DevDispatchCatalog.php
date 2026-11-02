@@ -294,6 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1310, '2026-11-02', 'Écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5', 'Avec le pack 2.9.33, les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy : depuis la 2.9.29, le jeu refusait la taille de l’image posée sur l’écran et il restait noir. La radio ACRE2 ou TFAR reliée à la MPU5 fait passer la voix par le maillage jusqu’aux radios reliées des équipiers sur la même fréquence (réglage serveur, désactivé par défaut).', [
+                'Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu’aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).',
+            ], [
+                'Chaque diffusion sur un écran est tracée dans le journal : écran visé, image posée ou raison du refus',
+                'Arsenal ACE : une ligne de diagnostic à chaque ouverture, pour comprendre les arsenaux qui n’affichent que l’équipement porté',
+            ], [
+                'Écrans TOC, écrans COMSPEC et vidéoprojecteur : carte du TOC, diapositives et leçons Academy de nouveau affichées (image noire depuis la 2.9.29)',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.33 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
+                'Voix par le maillage : l’administrateur du serveur coche « Voix ACRE/TFAR relayée par le maillage MPU5 », avec la liaison téléphone-radio réaliste, dans Options des addons › COMSPEC › ATAK · Radio de données (MPU5).',
+            ], 'Pack téléphone 2.9.33'),
             $pr(1309, '2026-11-02', 'Studio Academy : créer ses qualifications et ses brevets', 'Le Studio de l’Academy ne sert plus seulement à écrire des cours. Le bouton « Nouveau » propose une formation, une qualification ou un brevet. Une qualification se règle comme dans le référentiel : portée, catégorie, émetteur, validité, examen, et conditions d’obtention (cours réussis, heures de jeu, heures de vol par appareil, qualifications préalables). Un brevet ajoute son insigne, son gabarit de PDF et son numéro. Chaque cours peut délivrer une qualification ou un brevet à la réussite, et chaque fiche montre les cours qui y mènent ; les onglets Qualifications et Brevets séparent les créations de la communauté du catalogue de base.', [
                 'Studio : menu « Nouveau » (formation, qualification, brevet) et onglets Formations, Qualifications, Brevets',
                 'Fiches qualification et brevet dans le Studio : identité, portée, catégorie, émetteur, validité, examen, conditions d’obtention, insigne et numéro du brevet',

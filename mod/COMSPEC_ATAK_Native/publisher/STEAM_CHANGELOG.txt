@@ -1,21 +1,24 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.32.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.33.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.32 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] mettez à jour le pack 2.9.33 (COMSPEC Link 2.0.116 incluse), quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]Correctif — Retrait du repli radio tactique en données[/h2]
-Seule la MPU5 relie le téléphone au réseau en mode réaliste. Avec le réglage « Liaison téléphone-radio réaliste », le téléphone n'a de réseau qu'à travers une radio de données MPU5, reliée par le Câble EUD ou par son Wi-Fi. Sans MPU5 : pas de réseau de données ; le Bluetooth entre téléphones et les données déjà reçues restent. Une radio ACRE ou TFAR ne relie plus le téléphone dans ce mode.
+[h2]Correctif — Écrans et vidéoprojecteur[/h2]
+Les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy. Depuis la 2.9.29, l'image restait noire : le jeu refusait la taille de l'image posée sur l'écran. Chaque diffusion est maintenant tracée dans le journal (écran visé, image posée ou raison du refus).
 
-[h2]Correctif — Menus et réglages simplifiés[/h2]
-Plus de bouton RADIO TACTIQUE dans l'app Réseau, plus d'action « Relier le téléphone à la radio tactique » dans le menu ACE Radio de données, plus de réglages Radio tactique (débit, latence, taille maximale) dans Options des addons › COMSPEC › ATAK · Radio de données (MPU5). Un téléphone qui était relié à une radio tactique revient à « aucune radio reliée », avec le message « Liaison radio tactique retirée : reliez une MPU5 ».
+[h2]Nouveauté — Voix radio par le maillage MPU5[/h2]
+Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu'aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).
 
-[h2]Inchangé[/h2]
-Liaison réaliste décochée (par défaut) : brancher le téléphone sur sa radio ACRE ou TFAR depuis l'app Wave Relay fonctionne comme avant. La MPU5, son maillage, le Câble EUD, le Wi-Fi, la batterie et la puissance ne changent pas.
+[h2]Arsenal ACE[/h2]
+Une ligne de diagnostic est écrite dans le journal à chaque ouverture de l'arsenal ACE, pour comprendre les arsenaux qui n'affichent que l'équipement porté. Rien n'est modifié dans l'arsenal.
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 2.9.32.AG - Denver
+[*] Téléphone ATAK 2.9.33.AG - Denver
 [*] COMSPEC Link 2.0.116
 [*] Overwatch connect 1.6.28 · Overwatch main 1.4.8
 [/list]
+
+[h2]Rappel 2.9.32 — Seule la MPU5 relie le téléphone en mode réaliste[/h2]
+Avec le réglage « Liaison téléphone-radio réaliste », le téléphone n'a de réseau qu'à travers une radio de données MPU5 (Câble EUD ou Wi-Fi) ; sans MPU5, pas de réseau de données (Bluetooth et données déjà reçues gardés). Plus de bouton, d'action ACE ni de réglages Radio tactique ; liaison réaliste décochée, brancher le téléphone sur sa radio ACRE ou TFAR depuis l'app Wave Relay fonctionne comme avant.

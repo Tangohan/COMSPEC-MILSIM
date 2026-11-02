@@ -570,6 +570,10 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_hop_ms", "SLIDER",
     ["Latence par saut du maillage (ms)", "Délai ajouté par chaque radio traversée jusqu'à la passerelle. La portée (6 W) et le débit d'une MPU5 sont les réglages « Portée de la MPU5 » et « Débit relayé par une MPU5 » (section Simulation)."],
     _mpuCat, [0, 300, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP, désactivée par défaut.
+["comspec_atak_native_mpu_voice", "CHECKBOX",
+    ["Voix ACRE/TFAR relayée par le maillage MPU5", "Comme une passerelle radio sur IP : un joueur relie sa radio ACRE2 ou TFAR à sa MPU5 par câble audio (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Entre deux radios ainsi reliées, réglées sur la même fréquence, la voix passe par le maillage (MPU5, relais, pylônes, véhicules) : la distance et le relief ne la coupent plus. Hors maillage : portée radio normale. Nécessite la liaison téléphone-radio réaliste. TFAR : la portée de réception de la radio reliée s'allonge jusqu'au correspondant relié le plus lointain."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

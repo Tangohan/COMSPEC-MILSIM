@@ -7,6 +7,6 @@ private _buf = missionNamespace getVariable ["COMSPEC_ATAK_Log", []];
 _buf pushBack [diag_tickTime, toUpper _level, toUpper _module, _message];
 if ((count _buf) > 300) then { _buf deleteAt 0; };
 missionNamespace setVariable ["COMSPEC_ATAK_Log", _buf];
-if ((toUpper _module) in ["CAMERA", "PHOTO", "DRONE", "PERF", "BRIEFING"] && {!isNil "comspec_overwatch_connect_fnc_log"}) then {
+if ((toUpper _module) in ["CAMERA", "PHOTO", "DRONE", "PERF", "BRIEFING", "SCREEN", "TOC"] &&{!isNil "comspec_overwatch_connect_fnc_log"}) then {
     [toUpper _level, "ATAK " + (toUpper _module), _message] call comspec_overwatch_connect_fnc_log;
 };

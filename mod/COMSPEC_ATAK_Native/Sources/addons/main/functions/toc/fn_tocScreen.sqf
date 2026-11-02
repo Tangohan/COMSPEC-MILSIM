@@ -3,7 +3,7 @@
     informatique) qui affiche en direct le réseau ATAK d'un camp, tel que le serveur de la mission le voit
     (fn_tocFeed) : carte avec les nœuds ATAK (joueurs et IA équipées, à leur dernier point PLI, en direct / ancien /
     perdu / hors ligne), marqueurs de la mission, derniers comptes rendus, alertes et messages du poste, état du réseau.
-    L'écran est une texture UI (#(rgb,1600,900,1)ui("COMSPEC_RscTocScreenTexture", nom unique)) posée par chaque joueur
+    L'écran est une texture UI (#(rgb,2048,1024,1)ui("COMSPEC_RscTocScreenTexture", nom unique)) posée par chaque joueur
     sur l'objet (setObjectTexture local), rafraîchie toutes les 2 s quand l'écran est proche et visible. Une carte Arma
     ne se dessine pas dans une texture UI (fn_jpcMap) : le fond est la photo de la carte (mod @COMSPEC_ATAK_Photo,
     fn_photoMap) ou, sans lui, la carte d'ensemble du terrain (pictureMap), avec le quadrillage kilométrique.
@@ -46,8 +46,12 @@
 */
 params [["_mode", "tick"], ["_a", objNull]];
 private _fn = comspec_atak_native_fnc_tocScreen;
+// Mise en page en pixels virtuels 1600 x 900 (positions relatives au display). La texture elle-même est en puissances
+// de 2 (2048 x 1024, _texSpec) : Arma refuse une texture procédurale de 1600 x 900 (« Cannot load texture », écrans
+// noirs de la 2.9.31, journal de TTRD du 02/11).
 private _texW = 1600;
 private _texH = 900;
+private _texSpec = "#(rgb,2048,1024,1)";
 // [nom, camp, index, affichage, demi-largeur, centre, poste TOC, posé en jeu]
 private _cfgOf = {
     params ["_o"];
@@ -271,6 +275,7 @@ switch (_mode) do {
         uiNamespace setVariable ["COMSPEC_ATAK_TocDisps", _disps];
         _o setVariable ["COMSPEC_ATAK_TocDraws", 0];
         uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []];
+        ["INFO", "SCREEN", format ["Écran TOC %1 : texture UI %2 chargée, image dessinée", typeOf _o, _p param [2, ""]]] call comspec_atak_native_fnc_log;
     };
     case "tick": {
         if (!hasInterface || {isNull player}) exitWith {};
@@ -331,7 +336,11 @@ switch (_mode) do {
                     _o setVariable ["COMSPEC_ATAK_TocSel", _sel];
                     _pend = [_o, diag_tickTime, _tex];
                     uiNamespace setVariable ["COMSPEC_ATAK_TocPending", _pend];
-                    ["paint", [_o, _sel, format ["#(rgb,%1,%2,1)ui(""COMSPEC_RscTocScreenTexture"",""%3"")", _texW, _texH, _tex]]] call _fn;
+                    if !(_o getVariable ["COMSPEC_ATAK_TocReqLog", false]) then {
+                        _o setVariable ["COMSPEC_ATAK_TocReqLog", true];
+                        ["INFO", "SCREEN", format ["Écran TOC %1 (%2) : affichage %3, texture UI %4 demandée sur la dalle %5 (%6)", typeOf _o, _cfg select 0, _cfg select 3, _tex, _sel, (getArray (configOf _o >> "hiddenSelections")) param [_sel, "?"]]] call comspec_atak_native_fnc_log;
+                    };
+                    ["paint", [_o, _sel, format ["%1ui(""COMSPEC_RscTocScreenTexture"",""%2"")", _texSpec, _tex]]] call _fn;
                     ["surface", [_o, _sel, true]] call _fn;
                     _local pushBackUnique _o;
                 };
