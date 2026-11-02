@@ -160,6 +160,7 @@ class Model:
             p.faces.append(((i, j, n + j, n + i), mat, [(i / n, 1), (j / n, 1), (j / n, 0), (i / n, 0)], True))
         disc = [(0.5 + 0.5 * math.cos(2 * math.pi * i / n), 0.5 + 0.5 * math.sin(2 * math.pi * i / n)) for i in range(n)]
         p.faces.append((tuple(range(n)), mat, disc, False))
+        p.faces.append((tuple(range(n, 2 * n)), mat, disc, False))      # bouchon avant (ombre fermée)
         self._orient(p)
         self.parts.append(p)
         if cap_mat:
@@ -408,7 +409,8 @@ def lod_bytes(res, verts, faces, sels=None, props=(), masses=None, smooth_edges=
         for i in fs:
             fb[i] = 1
         out += tagg(name, bytes(vb) + bytes(fb))
-    out += b"\x00" + asciiz("#EndOfFile#") + struct.pack("<I", 0)
+    # Fin des TAGG marquée active (octet 1) : sinon Binarize lit la suite comme une sélection sans nom (modèle refusé).
+    out += b"\x01" + asciiz("#EndOfFile#") + struct.pack("<I", 0)
     out += struct.pack("<f", res)
     return out
 
