@@ -98,26 +98,53 @@ final class JobCatalogController
             'facets' => JobCatalog::facets($lang),
             'entries' => array_merge($entries, $query === '' && array_filter($filters) === [] ? $community['entries'] : []),
             'community_ready' => $this->collections()->schemaReady(),
+            // Qualifications du référentiel proposées pour relier celles que citent les emplois des catalogues de la communauté.
+            'referentiel' => $community['referentiel'],
         ])->header('Cache-Control', 'private, no-cache')->header('Vary', 'Cookie');
     }
 
     /**
      * Catalogues de la communauté et catalogues partagés par d’autres, au format de la fenêtre.
      *
-     * @return array{countries: list<array<string, mixed>>, packs: list<array<string, mixed>>, entries: list<array<string, mixed>>}
+     * @return array{countries: list<array<string, mixed>>, packs: list<array<string, mixed>>, entries: list<array<string, mixed>>, referentiel: list<array{id: int, code: string, name: string}>}
      */
     private function communityCatalog(int $tenantId, string $lang): array
     {
         try {
             $collections = $this->collections()->visibleCollections($tenantId);
             $entries = $this->collections()->entriesFor(array_map(static fn (array $c): int => (int) $c['id'], $collections));
+            $own = array_filter($collections, static fn (array $c): bool => (int) $c['tenant_id'] === $tenantId) !== [];
+            $definitions = $own && $this->collections()->linksReady() ? $this->collections()->referentielDefinitions($tenantId) : [];
+            $gate = Gate::getInstance();
+            $canLink = EffectifsLmsAccess::canManageAssignments($gate) || EffectifsLmsAccess::canManageRoles($gate);
 
-            return CommunityJobCatalog::toCatalog($collections, $entries, $tenantId, $lang, static fn (string $path): string => url($path));
+            return CommunityJobCatalog::toCatalog($collections, $entries, $tenantId, $lang, static fn (string $path): string => url($path), $definitions)
+                + ['referentiel' => $canLink ? array_values($definitions) : []];
         } catch (\Throwable $e) {
             error_log('Job catalog collections: ' . $e->getMessage());
 
-            return ['countries' => [], 'packs' => [], 'entries' => []];
+            return ['countries' => [], 'packs' => [], 'entries' => [], 'referentiel' => []];
         }
+    }
+
+    /** Relie une qualification citée par un emploi d’un catalogue de la communauté à une qualification de son référentiel (0 : délie). */
+    public function linkQualification(Request $request, array $params = []): Response
+    {
+        if ($denied = $this->collectionGuard($request)) {
+            return $denied;
+        }
+        $definitionId = (int) $request->inputString('definition_id', '0');
+        try {
+            $this->collections()->linkQualification((int) Session::get('tenant_id'), (int) $request->inputString('entry_id', '0'), (string) $request->input('text', ''), $definitionId, (int) Session::get('user_id'));
+        } catch (InvalidArgumentException $e) {
+            return $this->answer(false, $e->getMessage(), [], 422);
+        } catch (\Throwable $e) {
+            error_log('Job catalog qualification link: ' . $e->getMessage());
+
+            return $this->answer(false, 'Le lien n’a pas été enregistré. Réessayez.', [], 503);
+        }
+
+        return $this->answer(true, $definitionId > 0 ? 'Qualification reliée à votre référentiel.' : 'Lien vers le référentiel retiré.');
     }
 
     /** Réponse JSON des écritures de la fenêtre (catalogues de communauté). */

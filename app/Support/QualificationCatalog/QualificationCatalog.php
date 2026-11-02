@@ -68,6 +68,7 @@ final class QualificationCatalog
     {
         self::$directory = $directory;
         self::$packs = null;
+        \App\Support\QualificationCatalog\QualificationCatalogExplorer::reset();
     }
 
     private static function directory(): string
@@ -87,7 +88,10 @@ final class QualificationCatalog
             return self::$packs;
         }
         $out = [];
-        foreach (self::PACKS as $pack) {
+        // Packs inscrits, puis tout pack déposé ensuite dans le dossier (nouveau pays servi sans autre changement).
+        $extra = array_map(static fn (string $f): string => basename($f, '.json'), glob(self::directory() . '/*.json') ?: []);
+        sort($extra);
+        foreach (array_values(array_unique(array_merge(self::PACKS, array_filter($extra, static fn (string $p): bool => preg_match('/^[a-z]{2,8}$/', $p) === 1)))) as $pack) {
             $file = self::directory() . '/' . $pack . '.json';
             if (!is_file($file)) {
                 continue;
@@ -152,7 +156,17 @@ final class QualificationCatalog
 
     public static function countryLabel(string $country, string $lang): string
     {
-        return self::COUNTRIES[$country][self::lang($lang)] ?? $country;
+        if (isset(self::COUNTRIES[$country])) {
+            return self::COUNTRIES[$country][self::lang($lang)];
+        }
+        // Pays d’un pack ajouté sans libellé ici : nom du pack.
+        foreach (self::packs() as $data) {
+            if ((string) ($data['country'] ?? '') === $country) {
+                return self::pick($data['label'] ?? '', $lang) ?: $country;
+            }
+        }
+
+        return $country;
     }
 
     /**

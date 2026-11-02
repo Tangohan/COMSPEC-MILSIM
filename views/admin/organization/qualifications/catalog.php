@@ -2,97 +2,139 @@
 declare(strict_types=1);
 
 /**
- * Catalogue des qualifications de référence : un onglet par pays (États-Unis, France, Allemagne) et l’OTAN,
- * à importer dans le référentiel. Contenu du catalogue servi dans la langue du lecteur (translate="no" : il n’est
- * pas repris par le dictionnaire). Drapeaux et emblème OTAN dessinés en CSS (job-catalog.css, .jobcat__flag).
+ * Catalogue de référence des qualifications (onglet de la page Qualifications) : toutes les qualifications des packs
+ * par pays et de l’OTAN, filtrables et triables depuis l’adresse (pays, catégorie, niveau, émetteur, cours Academy,
+ * déjà importée ou non, recherche FR / EN / intitulé officiel), avec leur niveau, leurs emplois liés et l’import au
+ * choix, sans doublon. « Voir la fiche » ouvre la fiche détaillée commune avec la fenêtre des emplois
+ * (assets/js/qualification-sheet.js). Contenu du catalogue servi dans la langue du lecteur (translate="no").
+ * Drapeaux et emblème OTAN dessinés en CSS (job-catalog.css, .jobcat__flag).
  */
-$pack = is_array($catalogPack ?? null) ? $catalogPack : null;
-$packName = (string) ($catalogPackName ?? '');
-$entries = is_array($catalogEntries ?? null) ? $catalogEntries : [];
+use App\Controllers\Admin\Organization\QualificationReferentielController as Ctrl;
+use App\Support\QualificationCatalog\QualificationCatalog as QC;
+use App\Support\QualificationCatalog\QualificationCatalogExplorer as QX;
+
+$rows = is_array($catalogRows ?? null) ? $catalogRows : [];
 $imported = is_array($catalogImported ?? null) ? $catalogImported : [];
 $countries = is_array($catalogCountries ?? null) ? $catalogCountries : [];
-$current = (string) ($catalogCountry ?? '');
+$issuers = is_array($catalogIssuers ?? null) ? $catalogIssuers : [];
+$f = is_array($catalogFilters ?? null) ? $catalogFilters : QX::filters([]);
 $lang = (string) ($catalogLang ?? 'fr');
+$total = (int) ($catalogTotal ?? count($rows));
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-$pick = static fn ($pair): string => \App\Support\QualificationCatalog\QualificationCatalog::pick($pair, $lang);
+$base = url('back-office/referentiels/qualifications/catalogue');
+$query = static function (array $change) use ($f): string {
+    $q = array_filter(array_merge($f, $change), static fn ($v): bool => $v !== '' && $v !== null);
+    if (($q['tri'] ?? '') === 'pays') {
+        unset($q['tri']);
+    }
 
-$byCategory = [];
-foreach ($entries as $entry) {
-    $byCategory[(string) $entry['category']][] = $entry;
-}
-$order = array_flip(array_keys(\App\Support\QualificationCatalog\QualificationCatalog::CATEGORIES));
-uksort($byCategory, static fn (string $a, string $b): int => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
-$available = count(array_filter($entries, static fn (array $e): bool => !isset($imported[strtoupper((string) $e['code'])])));
-$disclaimer = $pack !== null ? $pick($pack['disclaimer'] ?? '') : '';
+    return http_build_query($q);
+};
+$currentQuery = $query([]);
+$available = count(array_filter($rows, static fn (array $r): bool => !isset($imported[strtoupper((string) $r['code'])])));
+$active = array_filter(array_diff_key($f, ['tri' => 1]), static fn ($v): bool => $v !== '');
+$categories = QC::CATEGORIES;
 ?>
-<div class="rq rqc">
+<div class="rq rqc" data-rqc data-qualification-url="<?= $h(url('back-office/referentiels/qualifications/catalogue/fiche')) ?>" data-csrf="<?= $h(\App\Core\Csrf::token()) ?>" data-detail="<?= $h((string) ($catalogDetail ?? '')) ?>">
     <div class="rq-top">
-        <a class="rq-back" href="<?= $h(url('back-office/referentiels/qualifications')) ?>">← Qualifications</a>
+        <?php $rqTab = 'catalogue'; require __DIR__ . '/_tabs.php'; ?>
         <div class="rq-top__row">
             <div>
-                <p class="rq-kicker">PERSONNEL · QUALIFICATIONS · CATALOGUE</p>
-                <h1>Importer depuis le catalogue</h1>
-                <p class="rq-lead">Brevets et qualifications de référence par pays (ceux que citent les emplois du catalogue d’emplois) et de l’OTAN, avec leur intitulé officiel, l’école ou l’organisme qui les délivre et leurs sources publiques. Cochez ceux qui servent à votre communauté : chacun devient une fiche de votre référentiel, rattachée à son émetteur (créé s’il manque), que vous pourrez ensuite modifier et régler (à la main, par une formation Academy ou automatiquement). Une qualification déjà présente n’est jamais importée deux fois.</p>
+                <p class="rq-kicker">PERSONNEL · QUALIFICATIONS · CATALOGUE DE RÉFÉRENCE</p>
+                <h1>Catalogue de référence</h1>
+                <p class="rq-lead">Brevets et qualifications réels par pays et de l’OTAN, avec leur intitulé officiel, l’école ou l’organisme qui les délivre, leurs prérequis, les emplois du catalogue d’emplois qui les exigent et les formations Academy qui y préparent. Importez ceux qui servent à votre communauté : chacun devient une fiche de votre référentiel, rattachée à son émetteur, que vous réglez ensuite. Une qualification déjà présente n’est jamais importée deux fois.</p>
             </div>
         </div>
     </div>
 
     <nav class="rqc-tabs" aria-label="Pays du catalogue">
-        <?php foreach ($countries as $c): $on = $c['code'] === $current; ?>
-        <a class="rqc-tab<?= $on ? ' is-on' : '' ?>" href="<?= $h(url('back-office/referentiels/qualifications/catalogue') . '?pays=' . rawurlencode((string) $c['code'])) ?>"<?= $on ? ' aria-current="page"' : '' ?>><span class="jobcat__flag" data-flag="<?= $h((string) $c['code']) ?>" aria-hidden="true"><?= $h((string) $c['code']) ?></span><span translate="no"><?= $h((string) $c['label']) ?></span><span class="rqc-tab__count"><?= (int) $c['count'] ?></span></a>
+        <a class="rqc-tab<?= $f['pays'] === '' ? ' is-on' : '' ?>" href="<?= $h($base . '?' . $query(['pays' => ''])) ?>"<?= $f['pays'] === '' ? ' aria-current="page"' : '' ?>><span>Tous les pays</span><span class="rqc-tab__count"><?= $total ?></span></a>
+        <?php foreach ($countries as $c): $on = $c['code'] === $f['pays']; ?>
+        <a class="rqc-tab<?= $on ? ' is-on' : '' ?>" href="<?= $h($base . '?' . $query(['pays' => (string) $c['code']])) ?>"<?= $on ? ' aria-current="page"' : '' ?>><span class="jobcat__flag" data-flag="<?= $h((string) $c['code']) ?>" aria-hidden="true"><?= $h((string) $c['code']) ?></span><span translate="no"><?= $h((string) $c['label']) ?></span><span class="rqc-tab__count"><?= (int) $c['count'] ?></span></a>
         <?php endforeach; ?>
     </nav>
 
-    <p class="rqc-warn" role="note"><strong translate="no"><?= $h($disclaimer !== '' ? $disclaimer : \App\Support\QualificationCatalog\QualificationCatalog::disclaimer($lang)) ?></strong> Cette mention est reprise dans la description de chaque qualification importée. Les références citées sont publiques ; rien de classifié.</p>
+    <form method="get" action="<?= $h($base) ?>" class="rqc-filters" role="search" data-rqc-filters>
+        <?php if ($f['pays'] !== ''): ?><input type="hidden" name="pays" value="<?= $h($f['pays']) ?>"><?php endif; ?>
+        <label class="rqc-filters__search"><span>Rechercher</span><input type="search" name="q" value="<?= $h($f['q']) ?>" placeholder="Nom, sigle, intitulé officiel, école…"></label>
+        <label><span>Catégorie</span><select name="categorie"><option value="">Toutes</option><?php foreach ($categories as $key => $labels): ?><option value="<?= $h($key) ?>"<?= $f['categorie'] === $key ? ' selected' : '' ?> translate="no"><?= $h(QC::categoryLabel($key, $lang)) ?></option><?php endforeach; ?></select></label>
+        <label><span>Niveau</span><select name="niveau"><option value="">Tous</option><?php foreach (QX::LEVELS as $key => $level): ?><option value="<?= $h($key) ?>"<?= $f['niveau'] === $key ? ' selected' : '' ?> translate="no"><?= (int) $level['rank'] ?> · <?= $h(QX::levelLabel($key, $lang)) ?></option><?php endforeach; ?></select></label>
+        <label><span>Émetteur</span><select name="emetteur"><option value="">Tous</option><?php foreach ($issuers as $issuer): ?><option value="<?= $h((string) $issuer) ?>"<?= $f['emetteur'] === $issuer ? ' selected' : '' ?> translate="no"><?= $h((string) $issuer) ?></option><?php endforeach; ?></select></label>
+        <label><span>Dans le référentiel</span><select name="etat"><option value="">Toutes</option><option value="a-importer"<?= $f['etat'] === 'a-importer' ? ' selected' : '' ?>>À importer</option><option value="importee"<?= $f['etat'] === 'importee' ? ' selected' : '' ?>>Déjà importées</option></select></label>
+        <label class="rqc-filters__sort"><span>Trier par</span><select name="tri"><option value="pays"<?= $f['tri'] === 'pays' ? ' selected' : '' ?>>Pays puis catégorie</option><option value="nom"<?= $f['tri'] === 'nom' ? ' selected' : '' ?>>Nom</option><option value="categorie"<?= $f['tri'] === 'categorie' ? ' selected' : '' ?>>Catégorie</option><option value="niveau"<?= $f['tri'] === 'niveau' ? ' selected' : '' ?>>Niveau (le plus élevé d’abord)</option><option value="emplois"<?= $f['tri'] === 'emplois' ? ' selected' : '' ?>>Nombre d’emplois liés</option></select></label>
+        <div class="rqc-filters__check"><input type="checkbox" id="rqc-academy" name="academy" value="1"<?= $f['academy'] === '1' ? ' checked' : '' ?>><label for="rqc-academy">Avec une formation Academy</label></div>
+        <div class="rqc-filters__actions"><button type="submit" class="rq-btn rq-btn--primary">Filtrer</button><?php if ($active !== []): ?><a class="rq-btn" href="<?= $h($base) ?>">Réinitialiser les filtres</a><?php endif; ?></div>
+    </form>
 
-    <?php if ($pack === null || $entries === []): ?>
-        <p class="rqc-empty">Le catalogue de ce pays n’est pas disponible pour le moment.</p>
-    <?php else: ?>
-    <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/catalogue/importer')) ?>" class="rqc-form">
+    <details class="rqc-levels">
+        <summary>Comment le niveau est-il établi ?</summary>
+        <p>Les packs ne donnent pas de niveau officiel : il est estimé d’après l’intitulé et les prérequis, sur une échelle commune à tous les pays. Une qualification qui porterait un niveau sourcé dans son pack l’affiche sans la mention « estimé ».</p>
+        <dl class="rqc-levels__scale">
+            <?php foreach ([
+                'initial' => 'Sans prérequis.',
+                'qualified' => 'Demande des prérequis.',
+                'confirmed' => 'Cours avancé, de chef ou de chef d’équipe, ou dont un prérequis demande lui-même une qualification.',
+                'instructor' => 'Instructeur ou moniteur.',
+                'expert' => 'Instructeur évaluateur, niveau « master », ou instructeur qui doit déjà être instructeur.',
+            ] as $key => $rule): ?>
+            <div><dt><span class="rqc-level" data-level="<?= $h($key) ?>"><b><?= (int) QX::LEVELS[$key]['rank'] ?></b> <span translate="no"><?= $h(QX::levelLabel($key, $lang)) ?></span></span></dt><dd><?= $h($rule) ?></dd></div>
+            <?php endforeach; ?>
+        </dl>
+    </details>
+
+    <p class="rqc-warn" role="note">Qualifications de jeu inspirées des brevets réels, sans valeur réelle : la mention de chaque pack est reprise dans la description des qualifications importées. Les références citées sont publiques ; rien de classifié.</p>
+
+    <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/catalogue/importer')) ?>" class="rqc-form" data-rqc-import>
         <?= \App\Core\Csrf::field() ?>
-        <input type="hidden" name="pack" value="<?= $h($packName) ?>">
-        <div class="rqc-bar">
-            <p class="rqc-count"><?= count($entries) ?> qualifications au catalogue · <?= $available ?> à importer</p>
+        <input type="hidden" name="return_query" value="<?= $h($currentQuery) ?>">
+        <div class="rqc-bar rqc-bar--sticky">
+            <p class="rqc-count" role="status"><span><?= count($rows) ?> qualification(s) sur <?= $total ?> · <?= $available ?> à importer</span><span class="rqc-count__selected" data-rqc-selected hidden></span></p>
             <div class="rqc-actions">
-                <button type="submit" class="rq-btn rq-btn--primary">Importer la sélection</button>
-                <button type="submit" name="all" value="1" class="rq-btn"<?= $available === 0 ? ' disabled' : '' ?>>Tout importer</button>
+                <button type="button" class="rq-btn" data-rqc-select-all<?= $available === 0 ? ' disabled' : '' ?>>Tout cocher</button>
+                <button type="submit" class="rq-btn rq-btn--primary" data-rqc-import-selection>Importer la sélection</button>
             </div>
         </div>
 
-        <?php foreach ($byCategory as $category => $list): ?>
-        <section class="rqc-cat" aria-labelledby="rqc-<?= $h($category) ?>">
-            <h2 id="rqc-<?= $h($category) ?>" translate="no"><?= $h((string) $list[0]['category_label']) ?></h2>
-            <ul class="rqc-list">
-                <?php foreach ($list as $entry):
-                    $done = isset($imported[strtoupper((string) $entry['code'])]);
-                    $inputId = 'rqc-' . $h((string) $entry['id']);
-                    $official = (string) $entry['official_name'];
-                ?>
-                <li class="rqc-item<?= $done ? ' is-done' : '' ?>">
-                    <input type="checkbox" name="ids[]" value="<?= $h((string) $entry['id']) ?>" id="<?= $inputId ?>"<?= $done ? ' disabled' : '' ?>>
-                    <div class="rqc-item__body">
-                        <label for="<?= $inputId ?>" class="rqc-item__name"><span translate="no"><?= $h($official !== '' ? $official : (string) $entry['name']) ?></span> <span class="rqc-code rq-mono" translate="no"><?= $h((string) $entry['code']) ?></span><?php if ($done): ?> <span class="rqc-done">Déjà dans votre référentiel</span><?php endif; ?></label>
-                        <?php if ($official !== '' && $official !== $entry['name']): ?><p class="rqc-item__translated" translate="no"><?= $h((string) $entry['name']) ?></p><?php endif; ?>
-                        <p class="rqc-item__desc" translate="no"><?= $h((string) $entry['description']) ?></p>
-                        <dl class="rqc-meta">
-                            <?php if ($entry['issuer'] !== ''): ?><div><dt>Émetteur</dt><dd translate="no"><?= $h((string) $entry['issuer']) ?></dd></div><?php endif; ?>
-                            <?php if ($entry['body'] !== '' && $entry['body'] !== $entry['issuer']): ?><div><dt>Organisme</dt><dd translate="no"><?= $h((string) $entry['body']) ?></dd></div><?php endif; ?>
-                            <?php if ($entry['reference'] !== ''): ?><div><dt>Référence publique</dt><dd translate="no"><?= $h((string) $entry['reference']) ?></dd></div><?php endif; ?>
-                            <?php if ($entry['prerequisites'] !== []): ?><div><dt>Prérequis</dt><dd translate="no"><?= $h(implode(' ; ', $entry['prerequisites'])) ?></dd></div><?php endif; ?>
-                            <?php if ($entry['validity'] !== ''): ?><div><dt>Validité</dt><dd translate="no"><?= $h((string) $entry['validity']) ?></dd></div><?php endif; ?>
-                            <?php if ($entry['sources'] !== []): ?><div><dt>Sources</dt><dd><?php foreach ($entry['sources'] as $i => $source): ?><?= $i > 0 ? ' · ' : '' ?><a href="<?= $h((string) $source['url']) ?>" target="_blank" rel="noopener noreferrer" translate="no"><?= $h((string) ($source['title'] !== '' ? $source['title'] : (parse_url((string) $source['url'], PHP_URL_HOST) ?: $source['url']))) ?></a><?php endforeach; ?></dd></div><?php endif; ?>
-                        </dl>
+        <?php if ($rows === []): ?>
+            <p class="rqc-empty">Aucune qualification du catalogue ne correspond à ces filtres. <a href="<?= $h($base) ?>">Réinitialiser les filtres</a></p>
+        <?php else: ?>
+        <ul class="rqc-list rqc-grid">
+            <?php foreach ($rows as $r):
+                $definitionId = (int) ($imported[strtoupper((string) $r['code'])] ?? 0);
+                $done = $definitionId > 0;
+                $inputId = 'rqc-' . $h((string) $r['id']);
+                $official = (string) $r['official_name'];
+                $title = $official !== '' ? $official : (string) $r['name'];
+                $level = $r['level'];
+            ?>
+            <li class="rqc-item rqc-card<?= $done ? ' is-done' : '' ?>" data-rqc-row="<?= $h((string) $r['id']) ?>">
+                <input type="checkbox" name="ids[]" value="<?= $h((string) $r['id']) ?>" id="<?= $inputId ?>"<?= $done ? ' disabled' : '' ?> aria-label="Cocher pour importer : <?= $h($title) ?>">
+                <div class="rqc-item__body">
+                    <p class="rqc-card__origin" translate="no"><span class="jobcat__flag" data-flag="<?= $h((string) $r['country']) ?>" aria-hidden="true"><?= $h((string) $r['country']) ?></span><span><?= $h((string) $r['country_label']) ?></span><span>·</span><span><?= $h((string) $r['category_label']) ?></span></p>
+                    <label for="<?= $inputId ?>" class="rqc-item__name"><span translate="no"><?= $h($title) ?></span> <span class="rqc-code rq-mono" translate="no"><?= $h((string) $r['code']) ?></span></label>
+                    <?php if ($official !== '' && $official !== $r['name']): ?><p class="rqc-item__translated" translate="no"><?= $h((string) $r['name']) ?></p><?php endif; ?>
+                    <p class="rqc-card__tags">
+                        <span class="rqc-level" data-level="<?= $h((string) $level['key']) ?>" title="<?= $level['estimated'] ? 'Niveau estimé d’après l’intitulé et les prérequis' : 'Niveau donné par le pack' ?>"><b><?= (int) $level['rank'] ?></b> <span translate="no"><?= $h((string) $level['label']) ?></span><?php if ($level['estimated']): ?> <small>estimé</small><?php endif; ?></span>
+                        <?php if ($r['issuer'] !== ''): ?><span class="rqc-issuer" translate="no"><?= $h((string) $r['issuer']) ?></span><?php endif; ?>
+                        <?php if ($r['academy'] !== null): $course = Ctrl::academyUrls($r['academy']); ?><a class="rqc-academy" href="<?= $h((string) $course['url']) ?>">Formation Academy<span translate="no"> · <?= $h((string) $course['title']) ?></span></a><?php endif; ?>
+                    </p>
+                    <p class="rqc-item__desc" translate="no"><?= $h((string) $r['description']) ?></p>
+                    <div class="rqc-card__foot">
+                        <?php if ((int) $r['jobs_count'] > 0): ?><a class="rqc-jobs" href="<?= $h(Ctrl::jobCatalogUrl('', (string) $r['id'])) ?>"><?= (int) $r['jobs_count'] ?> emploi(s) lié(s)</a><?php else: ?><span class="rqc-jobs is-none">Aucun emploi lié</span><?php endif; ?>
+                        <?php if ($done): ?><span class="rqc-done">Déjà dans votre référentiel</span> <a class="rqc-open" href="<?= $h(url('back-office/referentiels/qualifications/' . $definitionId)) ?>">Ouvrir sa fiche</a><?php else: ?><button type="submit" name="one" value="<?= $h((string) $r['id']) ?>" class="rq-btn rq-btn--sm">Importer</button><?php endif; ?>
+                        <a class="rq-btn rq-btn--sm" href="<?= $h($base . '?' . $query(['fiche' => (string) $r['id']])) ?>" data-rqc-open="<?= $h((string) $r['id']) ?>" aria-haspopup="dialog">Voir la fiche</a>
                     </div>
-                </li>
-                <?php endforeach; ?>
-            </ul>
-        </section>
-        <?php endforeach; ?>
-
-        <div class="rqc-bar rqc-bar--end">
-            <p class="rqc-count" translate="no"><?= $h($pick($pack['sources_note'] ?? '')) ?></p>
-            <button type="submit" class="rq-btn rq-btn--primary">Importer la sélection</button>
-        </div>
+                </div>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
     </form>
-    <?php endif; ?>
+
+    <dialog class="rqc-dialog" data-rqc-dialog aria-label="Fiche de la qualification du catalogue">
+        <div class="rqc-dialog__bar"><button type="button" class="rqc-dialog__close" data-rqc-close aria-label="Fermer la fiche">×</button></div>
+        <div class="rqc-sheet" data-rqc-sheet tabindex="-1"></div>
+    </dialog>
 </div>
+<script src="<?= $h(asset_url('assets/js/qualification-sheet.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/qualification-catalog-page.js')) ?>" defer></script>

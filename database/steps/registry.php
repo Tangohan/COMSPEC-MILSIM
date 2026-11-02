@@ -47,4 +47,5 @@ return [
     ['id' => 'academy_builtin_qualifications', 'label' => 'Academy : qualifications Athena Academy des cours intégrés (JTAC, cours inspirés des standards OTAN) pour les communautés dont un membre les a terminés', 'group' => 'schema', 'file' => '3490_academy_builtin_qualifications.php', 'rerun' => true],
     ['id' => 'academy_access_rules', 'label' => 'Academy : droits d’accès (qui crée, modifie, publie, inscrit, valide, délivre et voit chaque cours)', 'group' => 'schema', 'file' => '3520_academy_access_rules.php', 'rerun' => true],
     ['id' => 'academy_jtac_rich_text_refresh', 'label' => 'Académie : cours JTAC 2.1.0 mis en forme (titres, échanges radio, encadrés) pour les inscrits qui ne l’ont pas encore commencé', 'group' => 'schema', 'file' => '3540_academy_jtac_rich_text_refresh.php', 'rerun' => true],
+    ['id' => 'job_catalog_qualification_links', 'label' => 'Emplois : qualifications citées par les catalogues de communauté reliées au référentiel de la communauté', 'group' => 'schema', 'file' => '3550_job_catalog_qualification_links.php', 'rerun' => true],
 ];
