@@ -1140,9 +1140,43 @@ class PersonnelController
             $advancementPanel = null;
         }
 
+        // « Votre place dans l’organisation » : titulaire du dossier, ou encadrement habilité ; jamais quand l’affectation
+        // est masquée au lecteur. Chef et adjoint passent par la confidentialité du lecteur (ConfidentialDisplay).
+        $orgPlace = null;
+        if (($isSelf || $canStaffView) && !$assignmentRedactedForViewer && !$personnelAnonymizedForViewer) {
+            try {
+                $adequacy = (new \App\Services\Organization\OrgAdequacyService())->evaluate((int) $tenantId);
+                $draft = \App\Services\Organization\OrgAdequacyView::forPerson($adequacy, $uid);
+                if ($draft !== null) {
+                    $ids = array_values(array_filter([(int) $draft['chief_id'], (int) $draft['deputy_id']]));
+                    $vis = $ids !== [] ? $this->unitRepository->personnelVisibilityByUserIdsForTenant((int) $tenantId, $ids) : [];
+                    $orgPlace = \App\Services\Organization\OrgAdequacyView::forPerson(
+                        $adequacy,
+                        $uid,
+                        static function (int $id, string $known) use ($vis, $viewCaps): string {
+                            $meta = $vis[$id] ?? null;
+                            if (is_array($meta) && $viewCaps->shouldAnonymizePersonnel((string) ($meta['visibility_level'] ?? 'normal'))) {
+                                $custom = trim((string) ($meta['anonymized_label'] ?? ''));
+
+                                return \App\Support\ConfidentialDisplay::personLabel($custom !== '' ? $custom : null);
+                            }
+
+                            return $known;
+                        }
+                    );
+                    if ($orgPlace !== null) {
+                        $orgPlace['is_self'] = $isSelf;
+                    }
+                }
+            } catch (\Throwable) {
+                $orgPlace = null;
+            }
+        }
+
         return Response::view('layout.main', [
             'content' => 'personnel.file',
             'title' => 'Fiche personnel',
+            'orgPlace' => $orgPlace,
             'advancementPanel' => $advancementPanel,
             'advancementPanelIsSelf' => $isSelf,
             'backOfficePageCss' => ['personnel-dossier.css', 'back-office-advancement.css'],

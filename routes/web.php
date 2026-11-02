@@ -708,6 +708,7 @@ return function (Router $router) {
     $router->get('/orbat/pdf', [PersonnelController::class, 'orbatPdf'], [AuthMiddleware::class]);
     $router->get('/api/orbat/roster', [OrbatApiController::class, 'roster'], [AuthMiddleware::class]);
     $router->get('/api/orbat/structure-options', [OrbatApiController::class, 'structureOptions'], [AuthMiddleware::class]);
+    $router->get('/api/orbat/adequation', [OrbatApiController::class, 'adequacy'], [AuthMiddleware::class]);
     $router->post('/api/orbat/chart-type', [OrbatApiController::class, 'chartType'], [AuthMiddleware::class]);
     $router->post('/api/orbat/unit-upload', [OrbatApiController::class, 'uploadUnitMedia'], [AuthMiddleware::class]);
     $router->post('/api/orbat/structure', [OrbatApiController::class, 'structure'], [AuthMiddleware::class]);
@@ -1936,6 +1937,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/codes/unites/{id}', [EffectifsDirectoryController::class, 'saveUnitSegment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'commandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/chaine', [EffectifsWorkspaceController::class, 'saveCommandChain'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'adequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'saveAdequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/qualifications', [EffectifsWorkspaceController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

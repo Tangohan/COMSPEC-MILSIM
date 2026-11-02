@@ -70,6 +70,49 @@ L’autorité émettrice et la diffusion utilisent :
 
 Aucune structure organisationnelle parallèle n’est créée.
 
+## Référentiel des échelons et adéquation de l’organisation
+
+Chaque échelon (équipe / fire team, groupe / squad, section / platoon, compagnie / company, bataillon / battalion,
+régiment) porte des attentes : fonction du chef, adjoint attendu ou non, plage de grades du chef et de l’adjoint,
+effectif de référence et sous-unités attendues. Code : `App\Services\Organization\EchelonStandards` (valeurs par
+défaut), `OrgAdequacySettings` (réglages par communauté), `OrgAdequacyEngine` (moteur déterministe),
+`OrgAdequacyService` (chargement), `OrgAdequacyView` (extraits fiche, unité, ORBAT).
+
+Valeurs par défaut (niveaux OTAN STANAG 2116 : OR-n, OF-n ; les codes US E-n / O-n du référentiel des grades y sont
+ramenés) :
+
+| Échelon | US : chef | US : adjoint | FR : chef | FR : adjoint | Effectif US / FR | Sous-unités |
+| --- | --- | --- | --- | --- | --- | --- |
+| Équipe / Fire team | Team leader, SGT (OR-5) | aucun | Chef d’équipe, CCH–SGT (OR-4–5) | aucun | 4 / 3–4 | — |
+| Groupe / Squad | Squad leader, SSG (OR-6) | team leader le plus ancien, SGT (adjoint de fait) | Chef de groupe, SGT–SCH (OR-5–6) | chef de la seconde équipe (adjoint de fait) | 8–9 / 8–10 | 2 équipes |
+| Section / Platoon | Platoon leader, 2LT/1LT (OF-1) | Platoon sergeant, SFC (OR-7) | Chef de section, ADJ à LT (OR-7–OF-1) | sous-officier adjoint, SCH–ADJ | 30–42 / 30–40 | 3–4 groupes |
+| Compagnie / Company | Company commander, CPT (OF-2) | First sergeant ou XO (OR-8–OF-1) | Commandant d’unité, CNE (OF-2) | officier adjoint, LT–CNE | 100–150 | 3–4 (US) / 3–5 (FR) sections |
+| Bataillon / Battalion | Battalion commander, LTC (OF-4) | CSM ou XO (OR-9–OF-3) | Chef de bataillon, CDT–LCL | officier adjoint, CNE–CDT | 500–800 | 3–5 compagnies |
+| Régiment | COL (OF-5), ordre de grandeur | CSM ou XO | Chef de corps, COL | chef de corps adjoint, LCL | 1 500–3 500 / 600–1 200 | 2–4 bataillons / 3–8 compagnies |
+
+Sources : ATP 3-21.8 *Infantry Platoon and Squad* (2016, remplace FM 3-21.8), ATP 3-21.10 *Infantry Rifle Company*,
+ATP 3-21.20 *Infantry Battalion*, DA PAM 600-25 (cursus NCO) ; documentation publique de l’armée de Terre sur
+l’organisation de l’infanterie, Code de la défense art. L4131-1 (hiérarchie des grades) ; STANAG 2116.
+
+Les peloton, escadron et batterie sont évalués comme la section et la compagnie. L’échelon d’une unité est celui
+choisi dans l’ORBAT (`units.echelon`), sinon celui déduit de son nom et de son type.
+
+Écarts produits (chacun expliqué en clair, avec des actions) : chef à désigner, sous-capacité de commandement (grade,
+qualification de commandement ou emploi du chef ou de l’adjoint sous l’attendu), adjoint attendu manquant,
+surqualification (grade d’au moins *marge* niveaux au-dessus de la plage, 2 par défaut, ou qualifications d’un échelon
+supérieur), sous-effectif, sureffectif, sous-unités manquantes, échelon ou grade à renseigner, personne sans place,
+personne sans chef. Formulation neutre : capacité de commandement du poste, jamais jugement sur la personne.
+
+Réglages (Effectifs › Chaîne › Référentiel et réglages de l’adéquation, stockés dans `settings.admin_runtime.org_adequacy`
+de la communauté, sans migration) : contrôle actif, référentiel appliqué (doctrine de la communauté, FR ou US), marge de
+surqualification, règles activables, et par échelon : actif, plages de grades du chef et de l’adjoint, adjoint exigé,
+effectif, sous-unités, qualifications de commandement et emploi attendus du chef. Seules les valeurs modifiées sont
+stockées ; le reste suit le référentiel.
+
+Affichage : chaîne de commandement (pastilles, adjoint sous chaque chef, panneau des écarts, filtre `?ecarts=1`),
+fiche membre du bureau effectifs et fiche personnel (« Votre place dans l’organisation » pour le titulaire), fiche
+unité, ORBAT (pastille par unité, gestionnaires seulement, jamais en aperçu « vu par un membre »), alertes RH.
+
 ## Tenant vs plateforme
 
 | Scope | `tenant_id` | Édition |

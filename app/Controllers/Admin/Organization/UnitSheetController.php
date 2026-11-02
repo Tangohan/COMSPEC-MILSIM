@@ -77,6 +77,19 @@ final class UnitSheetController
         $canEdit = Gate::getInstance()->allows('organization.orbat.manage')
             || Gate::getInstance()->allows('admin.organization');
 
+        // Adéquation de l’unité (chef, adjoint, effectif, sous-unités) : gestionnaires seulement.
+        $unitAdequacy = null;
+        if ($canEdit) {
+            try {
+                $unitAdequacy = \App\Services\Organization\OrgAdequacyView::forUnit(
+                    (new \App\Services\Organization\OrgAdequacyService())->evaluate($tenantId),
+                    $unitId
+                );
+            } catch (\Throwable) {
+                $unitAdequacy = null;
+            }
+        }
+
         $unitTypeLabel = '';
         $unitTypeId = (int) ($unit['unit_type_id'] ?? 0);
         foreach ($types as $t) {
@@ -97,6 +110,7 @@ final class UnitSheetController
             'documents' => $docs,
             'commander' => $commander,
             'derivedCommand' => $derived,
+            'unitAdequacy' => $unitAdequacy,
             'adminStatusOptions' => UnitAdminStatus::options(),
             'visibilityOptions' => [
                 ['id' => VisibilityLevel::NORMAL, 'label' => 'Normale'],

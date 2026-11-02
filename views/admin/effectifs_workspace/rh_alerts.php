@@ -199,6 +199,32 @@ $tipById = [
             <p class="eff-rh-list-card__more"><a href="<?= $h(effectifs_workspace_url('vivier')) ?>">Préparer une relève dans le vivier →</a></p>
         <?php endif; ?>
     </section>
+    <?php
+    $adq = is_array($rhAdequacy ?? null) && !empty($rhAdequacy['enabled']) ? $rhAdequacy : null;
+    if ($adq !== null):
+        require_once base_path('views/admin/effectifs_workspace/partials/adequacy.php');
+        $adqSummary = is_array($adq['summary'] ?? null) ? $adq['summary'] : [];
+        $adqTop = array_values(array_filter(is_array($adq['issues'] ?? null) ? $adq['issues'] : [], static fn (array $i): bool => ($i['tone'] ?? '') === 'warn' || ($i['kind'] ?? '') === 'over'));
+        ?>
+    <?= adq_styles() ?>
+    <section class="eff-rh-list-card adq-scope" id="rh-adequacy" aria-labelledby="rh-adequacy-title">
+        <div class="eff-rh-list-card__head">
+            <h2 class="eff-rh-list-card__title" id="rh-adequacy-title">Adéquation de l’organisation</h2>
+            <span class="eff-rh-list-card__count<?= (int) ($adqSummary['warn'] ?? 0) > 0 ? ' is-warn' : '' ?>"><?= (int) ($adqSummary['total'] ?? 0) ?></span>
+        </div>
+        <?php if ((int) ($adqSummary['total'] ?? 0) === 0): ?>
+            <p class="eff-rh-list-card__empty">Chaque personne a sa place et chaque poste est tenu au niveau attendu par son échelon.</p>
+        <?php else: ?>
+            <div class="adq-sum">
+                <?php foreach (adq_summary_items($adqSummary) as [$sLabel, $sCount, $sTone]): ?>
+                    <span class="adq-badge is-<?= $h($sTone) ?>"><span><?= $h($sLabel) ?></span> <b><?= (int) $sCount ?></b></span>
+                <?php endforeach; ?>
+            </div>
+            <?= adq_issue_list($adqTop, is_array($adq['people'] ?? null) ? $adq['people'] : [], static fn (int $pid): string => effectifs_workspace_url('membres/' . $pid), true, 6) ?>
+        <?php endif; ?>
+        <p class="eff-rh-list-card__more"><a href="<?= $h(effectifs_workspace_url('chaine') . '?ecarts=1#eff-adequacy') ?>">Voir tous les écarts dans la chaîne de commandement →</a></p>
+    </section>
+    <?php endif; ?>
 </div>
 <?php if (($countById['mobility_pending'] ?? 0) > 0): ?>
 <p class="bo-eff-jump">

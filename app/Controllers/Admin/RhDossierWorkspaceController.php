@@ -590,8 +590,15 @@ final class RhDossierWorkspaceController
         $inactivity = (int) ($hr['inactivity_days'] ?? RhAlertAggregatorService::INACTIVITY_DAYS);
         $absence = (int) ($hr['absence_days'] ?? RhAlertAggregatorService::PROLONGED_ABSENCE_DAYS);
         $summary = $this->rhAlerts->summarize($tenantId, $inactivity, $absence);
+        $adequacy = null;
+        try {
+            $adequacy = (new \App\Services\Organization\OrgAdequacyService())->evaluate($tenantId);
+        } catch (\Throwable) {
+            $adequacy = null;
+        }
 
         return $this->shell('admin.effectifs_workspace.rh_alerts', [
+            'rhAdequacy' => $adequacy,
             'title' => 'Alertes RH',
             'effectifsNav' => 'rh_alerts',
             'rhAlertSummary' => $summary,
