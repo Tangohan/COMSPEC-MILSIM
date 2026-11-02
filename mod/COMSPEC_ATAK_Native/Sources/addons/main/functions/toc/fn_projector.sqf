@@ -196,7 +196,7 @@ switch (_mode) do {
         true
     };
     case "tick": {
-        if (!hasInterface) exitWith { false };
+        if (!hasInterface || {isNil "COMSPEC_ATAK_ProjAny"}) exitWith { false };
         private _eye = positionCameraToWorld [0, 0, 0];
         private _projs = nearestObjects [_eye, ["COMSPEC_ATAK_Projector"], 160];
         private _bds = nearestObjects [_eye, _boards, 160];

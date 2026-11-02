@@ -1,3 +1,6 @@
+// _keepScroll : même page redessinée (fn_pageRender) : défilement laissé en place (avant : remis en haut puis
+// rétabli, l'écran sautait).
+params [["_keepScroll", false]];
 disableSerialization;
 private _edit = uiNamespace getVariable ["COMSPEC_ATAK_ChatEdit", controlNull];
 if (!isNull _edit) then { uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ctrlText _edit]; };
@@ -18,5 +21,5 @@ uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 { if (!isNull _x) then { _x ctrlShow false; }; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []]);
 uiNamespace setVariable ["COMSPEC_ATAK_Form", createHashMap];
 private _d = ([] call comspec_atak_native_fnc_display);
-if (!isNull _d) then { (_d displayCtrl 88531) ctrlSetScrollValues [0, 0]; };
+if (!_keepScroll && {!isNull _d}) then { (_d displayCtrl 88531) ctrlSetScrollValues [0, 0]; };
 true

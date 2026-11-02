@@ -40,7 +40,7 @@ private _btn = {
 private _ctlH = _rowH * 3 + _pad * 4;
 private _mapH = _bh - _ctlH;
 private _map = ["COMSPEC_RscMap", [_bx, _by, _bw, _mapH], "", false] call comspec_atak_native_fnc_pageCtrl;
-_map ctrlAddEventHandler ["Draw", { [_this select 0] call comspec_atak_native_fnc_aarDraw; }];
+_map ctrlAddEventHandler ["Draw", { private _t = diag_tickTime; [_this select 0] call comspec_atak_native_fnc_aarDraw; ["carte AAR (image)", _t] call comspec_atak_native_fnc_perfAcc; }];
 private _view = uiNamespace getVariable ["COMSPEC_ATAK_AarView", []];
 if ((count _view) isEqualTo 2) then {
     _map ctrlMapAnimAdd [0, _view select 0, _view select 1];

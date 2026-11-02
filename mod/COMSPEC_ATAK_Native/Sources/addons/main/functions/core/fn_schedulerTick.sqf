@@ -1,4 +1,5 @@
 disableSerialization;
+private _perfT = diag_tickTime;
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _display = _state getOrDefault ["display",displayNull];
 if (isNull _display) exitWith { [] call comspec_atak_native_fnc_schedulerStop };
@@ -22,3 +23,4 @@ if ((_now - (_state getOrDefault ["lastRemote",0])) >= _refresh) then { _state s
 // Réponses d'Athena (positions, télémétrie) : lues en mémoire dans COMSPEC Link pour l'app Réseau et la barre d'état.
 if ((_now - (_state getOrDefault ["lastPulse",0])) >= 5) then { _state set ["lastPulse",_now]; [] call comspec_atak_native_fnc_athenaPulse; };
 if ((_now - (_state getOrDefault ["lastSlow",0])) >= 10) then { _state set ["lastSlow",_now]; [] call comspec_atak_native_fnc_importLegacyData; };
+["téléphone : passage 0,2 s", _perfT] call comspec_atak_native_fnc_perfAcc;

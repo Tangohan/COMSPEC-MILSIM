@@ -1,10 +1,40 @@
-[h1]COMSPEC ATAK — Mise à jour 2.9.36.AG - Denver[/h1]
+[h1]COMSPEC ATAK — Mise à jour 2.9.37.AG - Denver[/h1]
 [b]Publication : 02/11/2026[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 2.9.36, quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] mettez à jour le pack 2.9.37, quittez Arma 3 complètement, puis relancez.
 [/quote]
 
-[h2]App Zones — Plus rien d'automatique sans votre accord[/h2]
+[h2]Optimisation — Moins de saccades et de baisses d'images[/h2]
+[list]
+[*] Un seul joueur relaie pour tout le monde les balises GPS, IA alliées, téléphones, aéronefs et marqueurs posés sur l'ATAK web (ils restent visibles de tous, même sans téléphone).
+[*] Les envois inchangés ne repartent plus (véhicules à l'arrêt, synchro Athena identique, écrans TOC seulement pour ceux qui les regardent).
+[*] Vérifications lourdes espacées ou arrêtées quand rien ne les demande : bâtiment pour le GPS et la liaison, vision nocturne, vidéoprojecteurs, points d'objectif, marqueurs.
+[*] Transfert Bluetooth de photos et musiques plus fluide.
+[/list]
+
+[h2]Écrans — Plus de redessins inutiles[/h2]
+[list]
+[*] Le BFT se met à jour sur place : défilement et piste choisie gardés.
+[*] L'app Réseau ne se redessine que si ses données changent ; la Liaison allié n'avance que sa barre.
+[*] Rien ne bouge pendant une saisie, et l'écran ne remonte plus en haut quand une page se rafraîchit.
+[/list]
+
+[h2]Debug — Onglet PERFS[/h2]
+Dernier bilan de 30 s : images par seconde, images lentes, ce qui coûte le plus et nombre de redessins par page. Faites-en une capture pour signaler un ralentissement.
+
+[h2]Fiche opérateur[/h2]
+La fiche complète part une fois par session (plus de rappel toutes les 15 minutes) ; les vrais changements (arme, tenue…) partent toujours.
+
+[h2]Composants[/h2]
+[list]
+[*] Téléphone ATAK 2.9.37.AG - Denver
+[*] COMSPEC Link 2.0.116
+[*] Overwatch connect 1.6.30 · Overwatch main 1.4.8
+[/list]
+
+[h2]Rappel 2.9.36 — App Zones sans automatisme, menu Zones au clic droit[/h2]
+
+[h3]App Zones — Plus rien d'automatique sans votre accord[/h3]
 [list]
 [*] Un contact ennemi posé dans une zone (marqueur ennemi, TIC, SALUTE, compte rendu) ne la passe plus « ennemi signalé » toute seule. Nouveau réglage serveur [b]Contact dans une zone[/b] : [b]Manuel[/b] (par défaut, l'opérateur met l'état lui-même), [b]Proposer[/b] (question OUI / NON dans l'app Zones pour celui qui a posé le contact et l'auteur du plan, sans effet sans réponse) ou [b]Automatique[/b] (comme en 2.9.35).
 [*] L'ancien réglage « Contacts ennemis dans les zones » est remplacé : tous les serveurs repartent sur Manuel.
@@ -12,18 +42,11 @@
 [*] [b]Clic droit sur la carte › Zones[/b] : découper ici (grille 100, 200 ou 500 m, îlots, secteurs, rayon au choix), nouveau plan à partir d'ici, nommer les axes autour ; sur une zone : sa fiche, changer l'état, signaler un ennemi, citer @zone, masquer le plan, rendu.
 [/list]
 
-[h2]Carte — Bandeau du curseur[/h2]
+[h3]Carte — Bandeau du curseur[/h3]
 La flèche et le cap du bandeau (style Nouveau) montrent maintenant la [b]direction de votre vue[/b] ; la distance et le gisement vers le curseur restent dans l'étiquette près du curseur. L'ancien comportement se remet dans le volet de la carte (« Distance / gisement vers le curseur dans le bandeau »).
 
-[h2]Traductions[/h2]
+[h3]Traductions[/h3]
 Corrections anglaises : IN PROGRESS, CANCEL, ESTABLISHED, reprise automatique de la cible, rubriques des réglages ATAK, retour de l'app Routes.
-
-[h2]Composants[/h2]
-[list]
-[*] Téléphone ATAK 2.9.36.AG - Denver
-[*] COMSPEC Link 2.0.116
-[*] Overwatch connect 1.6.29 · Overwatch main 1.4.8
-[/list]
 
 [h2]Rappel 2.9.35 — App Zones (battleplan), bandeau du curseur et point GPS[/h2]
 Nouvelle app [b]Zones[/b] (section Mission) pour découper le terrain, nommer et numéroter les zones et suivre la situation zone par zone.

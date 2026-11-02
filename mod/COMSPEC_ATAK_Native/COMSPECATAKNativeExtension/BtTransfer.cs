@@ -25,10 +25,11 @@ public static partial class Extension
     private const long BtMusicMax = 30L * 1024 * 1024;
     private static readonly string[] BtPhotoExtensions = [".jpg", ".jpeg", ".png"];
 
-    private sealed class BtSend { public string Path = ""; public long Size; public DateTime At = DateTime.UtcNow; }
+    // Fs : fichier gardé ouvert pendant tout le transfert (avant : une ouverture par morceau de 3 Ko, 10 000 pour 30 Mo).
+    private sealed class BtSend { public string Path = ""; public long Size; public DateTime At = DateTime.UtcNow; public FileStream? Fs; }
     // Chunks : morceaux déjà écrits — un morceau renvoyé (nouvel essai) ne compte qu'une fois, sinon Got atteignait
     // Size avec un trou (zéros) et BtRecvEnd acceptait un fichier incomplet.
-    private sealed class BtRecv { public string Temp = ""; public string Kind = ""; public string Name = ""; public long Size; public long Got; public HashSet<long> Chunks = new(); public DateTime At = DateTime.UtcNow; }
+    private sealed class BtRecv { public string Temp = ""; public string Kind = ""; public string Name = ""; public long Size; public long Got; public HashSet<long> Chunks = new(); public DateTime At = DateTime.UtcNow; public FileStream? Fs; }
 
     private static readonly ConcurrentDictionary<string, BtSend> BtSends = new();
     private static readonly ConcurrentDictionary<string, BtRecv> BtRecvs = new();
@@ -37,18 +38,25 @@ public static partial class Extension
     private const int BtMaxEntries = 32;
     private static readonly TimeSpan BtEntryTtl = TimeSpan.FromMinutes(30);
 
+    private static void BtClose(object? entry)
+    {
+        if (entry is BtSend s) lock (s) { s.Fs?.Dispose(); s.Fs = null; }
+        else if (entry is BtRecv r) lock (r) { r.Fs?.Dispose(); r.Fs = null; }
+    }
+
     private static void BtPurgeStale()
     {
         var cutoff = DateTime.UtcNow - BtEntryTtl;
         foreach (var kv in BtSends)
         {
-            if (kv.Value.At < cutoff) BtSends.TryRemove(kv.Key, out _);
+            if (kv.Value.At < cutoff && BtSends.TryRemove(kv.Key, out var s)) BtClose(s);
         }
         foreach (var kv in BtRecvs)
         {
             if (kv.Value.At >= cutoff) continue;
             if (BtRecvs.TryRemove(kv.Key, out var r))
             {
+                BtClose(r);
                 try { File.Delete(r.Temp); } catch { /* ignoré */ }
             }
         }
@@ -59,6 +67,7 @@ public static partial class Extension
                 var oldest = bag.OrderBy(kv => atOf(kv.Value)).FirstOrDefault();
                 if (oldest.Key is null) break;
                 if (!bag.TryRemove(oldest.Key, out var removed)) break;
+                BtClose(removed);
                 if (removed is BtRecv r)
                 {
                     try { File.Delete(r.Temp); } catch { /* ignoré */ }
@@ -179,8 +188,9 @@ public static partial class Extension
                     if (n < 0 || offset >= s.Size) return "ERR|morceau hors du fichier";
                     var len = (int)Math.Min(BtChunk, s.Size - offset);
                     var buf = new byte[len];
-                    using (var fs = new FileStream(s.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    lock (s)
                     {
+                        var fs = s.Fs ??= new FileStream(s.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                         fs.Seek(offset, SeekOrigin.Begin);
                         var read = 0;
                         while (read < len)
@@ -194,7 +204,7 @@ public static partial class Extension
                     return "OK|" + Convert.ToBase64String(buf);
                 }
                 case "BtFileClose":
-                    BtSends.TryRemove(Arg(0), out _);
+                    if (BtSends.TryRemove(Arg(0), out var closed)) BtClose(closed);
                     return "OK|0";
                 case "BtRecvOpen":
                 {
@@ -207,6 +217,8 @@ public static partial class Extension
                     if (size <= 0 || size > max) return "ERR|taille refusée";
                     var ext = Path.GetExtension(name).ToLowerInvariant();
                     if (kind == "photo" ? !BtPhotoExtensions.Contains(ext) : !MusicExtensions.Contains(ext)) return "ERR|extension refusée";
+                    // Même id rouvert (nouvel essai) : l'ancien fichier ouvert bloquerait la recréation.
+                    if (BtRecvs.TryRemove(id, out var previous)) BtClose(previous);
                     var temp = Path.Combine(BtTempFolder(), id + ".part");
                     using (var fs = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None)) fs.SetLength(size);
                     BtRecvs[id] = new BtRecv { Temp = temp, Kind = kind, Name = name, Size = size, At = DateTime.UtcNow };
@@ -219,13 +231,11 @@ public static partial class Extension
                     var data = Convert.FromBase64String(Arg(2));
                     var offset = n * BtChunk;
                     if (n < 0 || offset + data.Length > r.Size) return "ERR|morceau hors du fichier";
-                    using (var fs = new FileStream(r.Temp, FileMode.Open, FileAccess.Write, FileShare.None))
-                    {
-                        fs.Seek(offset, SeekOrigin.Begin);
-                        fs.Write(data, 0, data.Length);
-                    }
                     lock (r)
                     {
+                        var fs = r.Fs ??= new FileStream(r.Temp, FileMode.Open, FileAccess.Write, FileShare.None);
+                        fs.Seek(offset, SeekOrigin.Begin);
+                        fs.Write(data, 0, data.Length);
                         if (r.Chunks.Add(n)) r.Got += data.Length;
                         return "OK|" + r.Got.ToString(CultureInfo.InvariantCulture);
                     }
@@ -234,6 +244,7 @@ public static partial class Extension
                 {
                     var id = BtSafeName(Arg(0));
                     if (!BtRecvs.TryRemove(id, out var r)) return "ERR|réception inconnue";
+                    BtClose(r);
                     if (r.Got < r.Size)
                     {
                         try { File.Delete(r.Temp); } catch { /* fichier encore ouvert : supprimé par BtTempFolder après une heure */ }
@@ -273,6 +284,7 @@ public static partial class Extension
                 {
                     if (BtRecvs.TryRemove(BtSafeName(Arg(0)), out var r))
                     {
+                        BtClose(r);
                         try { File.Delete(r.Temp); } catch { /* ignoré */ }
                     }
                     return "OK|0";

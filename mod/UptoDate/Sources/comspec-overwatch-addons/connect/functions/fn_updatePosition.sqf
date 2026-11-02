@@ -84,15 +84,12 @@ if (
 private _pos = getPosWorld _unit;
 private _posAsl = getPosASL _unit;
 private _aslZ = _posAsl select 2;
-private _grid = mapGridPosition _unit;
 
 // Menu / spawn origine (0,0) : ne jamais appeler UpdatePosition (spam journal Liaison côté Athena)
 if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith {
     ["origin_00"] call _fnc_skip;
     if (_force) then { "origin" } else { nil };
 };
-private _callSign = [] call comspec_overwatch_connect_fnc_getCallsign;
-private _role = [_unit] call comspec_overwatch_connect_fnc_getUnitRole;
 
 private _medicalState = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
 private _medicalParts = _medicalState splitString "|";
@@ -245,9 +242,6 @@ private _lastVehSig = missionNamespace getVariable ["COMSPEC_lastVehSig", ""];
 private _lastSendTime = missionNamespace getVariable ["COMSPEC_lastSendTime", 0];
 private _now = diag_tickTime;
 
-private _groupName = [_unit] call comspec_overwatch_connect_fnc_inGameGroupLabel;
-if (!(_groupName isEqualType "")) then { _groupName = str _groupName; };
-_groupName = trim _groupName;
 
 private _vehSig = format [
     "%1|%2",
@@ -265,13 +259,9 @@ private _headingDelta = if (!(_lastHeading isEqualType 0) || {_lastHeading < 0})
     _d
 };
 private _headingChanged = _headingDelta > _headingTh;
-private _nameChanged = _callSign != _lastName;
-private _roleChanged = _role != _lastRole;
 private _radioChanged = _radioSig != _lastRadio;
 private _medicalChanged = _medicalSig != _lastMedical;
-private _groupChanged = _groupName != _lastGroup;
 private _vehChanged = _vehSig != _lastVehSig;
-private _stateChanged = _nameChanged || _roleChanged || _radioChanged || _medicalChanged || _groupChanged || _vehChanged;
 private _minOk = (_now - _lastSendTime) >= _posMin;
 private _heartbeatOk = (_now - _lastSendTime) >= _heartbeat;
 private _txUrgent = _radioChanged && {
@@ -345,6 +335,19 @@ if (_vehChanged || _medicalChanged) then {
     };
 };
 
+// Rien d'urgent (PTT, KO, combat) et intervalle minimal pas écoulé : rien ne partira (toutes les règles ci-dessous
+// exigent _minOk ou le battement). Indicatif, rôle, groupe et grille ne sont lus qu'au-delà (appel chaque seconde).
+if (!_force && {!_minOk} && {!_heartbeatOk} && {!_txUrgent} && {!_medUrgent} && {!_combatUrgent}) exitWith {};
+private _grid = mapGridPosition _unit;
+private _callSign = [] call comspec_overwatch_connect_fnc_getCallsign;
+private _role = [_unit] call comspec_overwatch_connect_fnc_getUnitRole;
+private _groupName = [_unit] call comspec_overwatch_connect_fnc_inGameGroupLabel;
+if (!(_groupName isEqualType "")) then { _groupName = str _groupName; };
+_groupName = trim _groupName;
+private _nameChanged = _callSign != _lastName;
+private _roleChanged = _role != _lastRole;
+private _groupChanged = _groupName != _lastGroup;
+private _stateChanged = _nameChanged || _roleChanged || _radioChanged || _medicalChanged || _groupChanged || _vehChanged;
 private _shouldSend = _force || _txUrgent || _medUrgent || _combatUrgent;
 switch (_policy) do {
     case 0: {

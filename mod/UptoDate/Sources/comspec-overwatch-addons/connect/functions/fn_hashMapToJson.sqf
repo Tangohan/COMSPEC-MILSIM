@@ -24,6 +24,8 @@ private _bs = toString [92];
 // (un saut de ligne brut dans un nom rendait tout le corps illisible → HTTP 400 côté Athena).
 private _fnc_str = {
     params ["_s"];
+    // Rien à échapper (cas courant) : test natif, sans la boucle par caractère ci-dessous. Sortie identique.
+    if (_s regexMatch "[^\x00-\x1f""\\]*") exitWith { _dq + _s + _dq };
     // Caractère par caractère : splitString écarte les segments vides, si bien que
     // guillemets / antislashs en tête, en fin ou doublés disparaissaient du texte.
     private _out = [];

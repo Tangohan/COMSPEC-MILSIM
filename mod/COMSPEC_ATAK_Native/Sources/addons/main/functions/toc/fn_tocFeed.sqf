@@ -22,6 +22,7 @@ switch (_mode) do {
         COMSPEC_ATAK_TocEvents = createHashMap;
         COMSPEC_ATAK_TocDev = createHashMap;
         COMSPEC_ATAK_TocLast = createHashMap;
+        COMSPEC_ATAK_TocSent = createHashMap;
         private _now = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
         // Événements de camp relayés par le serveur (comspec_atak_native_sideEvent les rejoue ici en local).
         ["comspec_atak_native_report", {
@@ -130,6 +131,15 @@ switch (_mode) do {
         };
         {
             private _side = _x;
+            // Lecteurs : joueurs du camp au PC du poste ou à moins de 200 m d'un écran de ce camp (fn_tocScreen ne dessine
+            // qu'à 150 m). Personne : ni calcul ni envoi pour ce camp.
+            private _viewers = allPlayers select {
+                (str side group _x) isEqualTo _side && {
+                    (((_x getVariable ["COMSPEC_ATAK_TocView", []]) param [0, ""]) isEqualTo _side)
+                    || {private _p = _x; (_screens findIf { (_x distance _p) < 200 && {(((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", _side])} }) >= 0}
+                }
+            };
+            if (_viewers isEqualTo []) then { continue };
             private _nodes = [];
             private _byVeh = createHashMap;
             private _nP = 0; private _nAi = 0;
@@ -181,8 +191,17 @@ switch (_mode) do {
             } forEach allUnits;
             // Envoyé aux seuls joueurs du camp (seuls lecteurs : fn_tocScreen / fn_tocLaptop), pas de file JIP ; l'hôte lit la valeur locale.
             private _var = format ["COMSPEC_ATAK_TocFeed_%1", _side];
-            missionNamespace setVariable [_var, [_now, _nodes, +(COMSPEC_ATAK_TocEvents getOrDefault [_side, []]), [_jam, _relays, _nP, _nAi]]];
-            { (owner _x) publicVariableClient _var; } forEach (allPlayers select { !local _x && {(str side group _x) isEqualTo _side} });
+            private _feed = [_now, _nodes, +(COMSPEC_ATAK_TocEvents getOrDefault [_side, []]), [_jam, _relays, _nP, _nAi]];
+            missionNamespace setVariable [_var, _feed];
+            // Renvoi à tous les lecteurs si le contenu change, sinon toutes les 9 s (l'écran passe en « RETARD » à 12 s) ;
+            // un nouveau lecteur le reçoit tout de suite.
+            private _owners = (_viewers select { !local _x }) apply { owner _x };
+            private _h = hashValue (_feed select [1, 3]);
+            private _st = COMSPEC_ATAK_TocSent getOrDefault [_side, [0, -1e9, []]];
+            private _all = _h isNotEqualTo (_st select 0) || {(diag_tickTime - (_st select 1)) > 9};
+            private _to = [_owners - (_st select 2), _owners] select _all;
+            { _x publicVariableClient _var; } forEach _to;
+            COMSPEC_ATAK_TocSent set [_side, [[_st select 0, _h] select _all, [_st select 1, diag_tickTime] select _all, [(_st select 2) + _to, _owners] select _all]];
         } forEach _sides;
         // Ménage : unités disparues.
         if ((count COMSPEC_ATAK_TocDev) > 600) then { COMSPEC_ATAK_TocDev = createHashMap; COMSPEC_ATAK_TocLast = createHashMap; };

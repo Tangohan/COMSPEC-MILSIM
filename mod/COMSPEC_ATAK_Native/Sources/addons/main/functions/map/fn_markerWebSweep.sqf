@@ -32,6 +32,35 @@ if ((missionNamespace getVariable ["COMSPEC_ATAK_MkSweepRev", -1]) isEqualTo _re
 private _skip = ["poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_", "comspec_tabletmk_", "comspec_webmk_", "comspec_shape_",
     "comspec_relay_", "comspec_recon_", "_comspec_po_ring_", "_comspec_det_ring_", "comspec_gps_", "ctab_u_"];
 private _prev = uiNamespace getVariable ["COMSPEC_ATAK_MkSnap", createHashMap];
+// Carnet des marqueurs changés (EH de XEH_postInitClient) : seuls ceux-là sont relus et comparés. Passage complet au
+// premier envoi, après un budget épuisé, sans instantané ou si le carnet a débordé (clé "").
+private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyWs", createHashMap];
+missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyWs", createHashMap];
+private _full = ("" in _dirty) || {(missionNamespace getVariable ["COMSPEC_ATAK_MkSweepRev", -1]) < 0} || {(count _prev) isEqualTo 0};
+if (!_full) exitWith {
+    private _left = createHashMap;
+    private _budget = 40;
+    {
+        private _n = _x;
+        if ((markerShape _n) isEqualTo "") then {
+            if (_n in _prev) then { [_n, true, true] call comspec_overwatch_connect_fnc_syncMapMarker; _prev deleteAt _n; };
+            continue
+        };
+        private _ln = toLower _n;
+        if ((_skip findIf { (_ln find _x) isEqualTo 0 }) >= 0) then { continue };
+        if ((_n select [0, 1]) isEqualTo "_" && {!([_n] call comspec_overwatch_connect_fnc_isSyncableMapMarker)}) then { continue };
+        if ((markerShape _n) isNotEqualTo "POLYLINE" && {(markerType _n) isEqualTo ""} && {(markerShape _n) isEqualTo "ICON"}) then { continue };
+        private _sig = str [markerPos _n, markerType _n, markerText _n, markerColor _n, markerDir _n, markerAlpha _n, markerShape _n, markerSize _n, markerBrush _n];
+        if ((_prev getOrDefault [_n, ""]) isEqualTo _sig) then { continue };
+        // Hors budget : gardé au carnet pour le passage suivant.
+        if (_budget <= 0) then { _left set [_n, true]; continue };
+        _budget = _budget - 1;
+        [_n, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+        _prev set [_n, _sig];
+    } forEach (keys _dirty);
+    if ((count _left) > 0) then { (missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyWs", createHashMap]) merge _left; };
+    missionNamespace setVariable ["COMSPEC_ATAK_MkSweepRev", [_rev - 1, _rev] select ((count _left) isEqualTo 0)];
+};
 private _next = createHashMap;
 private _budget = 40;
 {

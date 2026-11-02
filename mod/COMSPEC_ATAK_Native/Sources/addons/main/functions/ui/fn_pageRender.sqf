@@ -5,6 +5,10 @@ private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
 // Rendus comptés : fn_layoutApply (mise en page seule) ne redessine pas la page si un rendu a suivi.
 uiNamespace setVariable ["COMSPEC_ATAK_RenderSeq", (uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) + 1];
+// Rendus par page sur la fenêtre de 30 s (onglet PERFS du Debug, remis à zéro par fn_perfAcc « report »).
+private _rc = uiNamespace getVariable ["COMSPEC_ATAK_RenderCount", createHashMap];
+_rc set [_page, (_rc getOrDefault [_page, 0]) + 1];
+uiNamespace setVariable ["COMSPEC_ATAK_RenderCount", _rc];
 // Garder la saisie en cours de l'app Athena quand la page se redessine.
 private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
 if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
@@ -44,7 +48,15 @@ _st deleteAt "backSub";
 [] call comspec_atak_native_fnc_frsDraftSave;
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;
-[] call comspec_atak_native_fnc_pageClear;
+// Champ de saisie actif sur la page redessinée : le focus est rendu au même champ (clé de formulaire) après le dessin.
+private _focusKey = "";
+if (_drawn isEqualTo _page) then {
+    private _fc = focusedCtrl _d;
+    if (!isNull _fc && {(ctrlType _fc) isEqualTo 2}) then {
+        { if (_y isEqualTo _fc) exitWith { _focusKey = _x; }; } forEach _form;
+    };
+};
+[_drawn isEqualTo _page && {!(_page in ["MAP", "CHAT"])}] call comspec_atak_native_fnc_pageClear;
 // Lignes à mise à jour sur place (fn_formSet) : celles de la page effacée sont oubliées.
 uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
 // Calques hors zone de contenu : recréés plus bas, après la page.
@@ -164,6 +176,10 @@ if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv selec
         if (isNull _d2 || {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""]) isNotEqualTo _page}) exitWith {};
         (_d2 displayCtrl 88531) ctrlSetScrollValues [_v, -1];
     }, [_page, _sv select 0]] call CBA_fnc_execNextFrame;
+};
+if (_focusKey isNotEqualTo "") then {
+    private _nf = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault [_focusKey, controlNull];
+    if (!isNull _nf && {(ctrlType _nf) isEqualTo 2}) then { ctrlSetFocus _nf; };
 };
 // Toasts recréés après la page pour rester au premier plan.
 [] call comspec_atak_native_fnc_notificationsRender;

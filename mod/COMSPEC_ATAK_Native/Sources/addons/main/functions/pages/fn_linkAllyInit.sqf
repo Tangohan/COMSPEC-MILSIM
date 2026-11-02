@@ -56,7 +56,13 @@ addMissionEventHandler ["EntityKilled", { params ["_unit", "_killer", "_inst"]; 
         if (diag_tickTime >= (_st getOrDefault ["start", 0]) + (_st getOrDefault ["dur", 4])) then {
             ["linked"] call comspec_atak_native_fnc_linkAllyAction;
         } else {
-            if (_active) then { ["LINKALLY"] call comspec_atak_native_fnc_pageRender; };
+            if (_active) then {
+                // Seule la barre avance (contrôle gardé par fn_pageLinkAlly) ; page redessinée si elle n'est pas affichée.
+                private _bar = uiNamespace getVariable ["COMSPEC_ATAK_LinkAllyBar", controlNull];
+                if (isNull _bar || {!ctrlShown _bar}) then { ["LINKALLY"] call comspec_atak_native_fnc_pageRender; } else {
+                    _bar ctrlSetStructuredText parseText (([_st] call (uiNamespace getVariable ["COMSPEC_ATAK_LinkAllyBarTxt", { "" }])) call comspec_atak_native_fnc_tr);
+                };
+            };
         };
     };
     if (_phase isEqualTo "" && {_active}) then {

@@ -38,6 +38,39 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 2.9.37 : optimisation, moins de saccades et de redessins (ATAK natif 2.9.37.AG - Denver)
+
+### Résumé joueur
+Type : performance
+FR : Le téléphone et la liaison Athena consomment beaucoup moins
+- Moins de saccades et de baisses d'images : un seul joueur relaie balises GPS, aéronefs et marqueurs web pour tout le monde, les envois inchangés ne repartent plus et les vérifications lourdes sont espacées.
+- Les pages ne se redessinent plus pour rien : le BFT se met à jour sur place, l'app Réseau seulement quand ses données changent, rien ne bouge pendant une saisie et l'écran ne remonte plus en haut.
+- Nouvel onglet Debug › PERFS : le dernier bilan de 30 s (images par seconde, images lentes, ce qui coûte le plus) pour signaler un ralentissement.
+- La fiche opérateur complète part une fois par session ; seuls les vrais changements repartent ensuite.
+EN : The phone and the Athena link use far less
+- Fewer stutters and frame drops: a single player relays GPS beacons, aircraft and web markers for everyone, unchanged updates are no longer resent and heavy checks run less often.
+- Pages no longer redraw for nothing: the BFT updates in place, the Network app only when its data changes, nothing moves while you type and the screen no longer jumps back to the top.
+- New Debug › PERFS tab: the last 30 s report (frames per second, slow frames, what costs the most) to report a slowdown.
+- The full operator profile is sent once per session; only real changes are sent after that.
+
+### Détail technique
+- Vague perf (un commit `perf(Pn)` par point, retirables un par un). connect 1.6.30 ; DLL ATAK natif reconstruite (BtTransfer : flux gardé ouvert par poignée).
+- Relais : `fn_initGpsBeacons` élit le relais (plus petit UID lié) avant les boucles, repli `isNearestAtakReporter` au-delà de 1 km ; `fn_reportCrewedAirAssets` sort tôt hors relais / équipage ; `fn_pollAthenaMarkers` : un seul poste lié et équipé interroge Athena, marqueurs toujours globaux, retraits calculés depuis la carte ; `fn_updateVehicleTracking` : chef de bord relié seul + signature (30 s) ; `fn_tocFeed` : lecteurs seulement (PC du poste, 200 m d'un écran), renvoi si `hashValue` change ou toutes les 9 s.
+- Calculs : `fn_localDataRefresh` (cache de pistes persistant purgé 30 s, carnet des marqueurs patché, grille des doublons seulement si la révision Athena change, fantômes Athena indexés) ; `fn_poll*` : signature = texte brut de la DLL, sortie avant relecture ; `hashMapToJson` / `fn_json` : raccourci `regexMatch` ; `fn_planWeb` : JSON dans le spawn ; `fn_extAwait` : appel direct des commandes `fn_extFast` ; rayons toit / murs partagés (`fn_gpsFix`, `fn_linkQuality`, 3 m / 10 s) ; ECOTI listes 1 Hz, tube 2 Hz ; `fn_updatePosition` : sortie avant indicatif / rôle / groupe si rien ne part ; `fn_pollPoMarkers` : drapeau sale par EH ; projecteurs : drapeau d'EH de classe ; zones Zeus : un PFH de 10 s ; `saveProfileNamespace` directs remplacés par `fnc_saveProfile` ; petits balayages (zones roleplay hors zone, super ping cTab, relais le plus proche 1 s, `fn_markerWebSweep` par carnet, `fn_bftFilter`).
+- Redessins : BFT `["update"]` sur place depuis `fn_statusUpdate` ; `fn_pageNetwork` empreinte avant rendu ; pas de re-rendu automatique pendant une saisie, focus rendu au même champ ; Liaison allié : barre seule ; page GPS arrondie à 25 m ; défilement gardé (`fn_pageClear`, BFT, clé de formulaire = page + rang + onglet).
+- Fiche opérateur : plus de rappel « heartbeat » de 15 min (`fn_operatorProfileTick`).
+- Mesure : Debug › PERFS (`COMSPEC_ATAK_PerfLast`, top 12, rendus par page), chronométrage du passage 0,2 s et des Draw (AAR, montre, Plan, JTAC, PC du poste).
+- SPOTREP #1324 (2.9.36) rétabli : perdu par une fusion de main.
+
+### À tester en jeu
+- Partie à plusieurs joueurs liés : balises GPS, IA alliées, aéronefs et marqueurs web toujours sur le site Athena, sans doublon ; marqueur posé sur l'ATAK web visible d'un joueur sans téléphone.
+- BFT ouvert en mouvement : lignes et fiche à jour, défilement et sélection gardés ; ORBAT replié / déplié.
+- Saisie (messagerie, GPS, Réseau) : rien ne se redessine pendant la frappe.
+- Écran TOC à moins de 200 m et PC du poste : « EN DIRECT » ; transfert Bluetooth d'une musique.
+- Debug › PERFS après 30 s ; profilage CBA pour comparer avec la 2.9.36.
+
+---
+
 ## Pack 2.9.36 : app Zones sans automatisme, menu Zones au clic droit, bandeau du curseur (ATAK natif 2.9.36.AG - Denver)
 
 ### Résumé joueur
