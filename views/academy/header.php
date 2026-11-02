@@ -15,8 +15,13 @@ require base_path('views/training/partials/lms_head.php');
 <script src="<?= $h(asset_url('assets/js/academy.js')) ?>" defer></script>
 <?php if (in_array($space ?? '', ['instructor', 'droits', 'studio'], true)): /* Espace instructeur, droits d'accès et réglages d'accès d'un cours. */ ?><link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy-instructor.css')) ?>"><script src="<?= $h(asset_url('assets/js/academy-access.js')) ?>" defer></script><?php endif ?>
 <?php if ($customTopbar): ?><script type="module" src="<?= $h(asset_url('assets/js/academy-deck.js')) ?>"></script><?php endif ?>
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/academy-richtext.css')) ?>">
+<script src="<?= $h(asset_url('assets/js/academy-richtext.js')) ?>" defer></script>
+<?php if ($customTopbar): /* Mode nuit de la salle de cours et du Studio : même préférence que le reste du site (athena.bo.theme), posée avant l'affichage. */ ?>
+<script>(function(){var p='auto';try{p=localStorage.getItem('athena.bo.theme')||'auto';}catch(e){}var d=p==='dark'||(p==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-bo-theme',d?'dark':'light');})();</script>
+<?php endif ?>
 </head>
-<body class="academy-app<?= $customTopbar ? ' academy-workspace academy-workspace--' . $h($space) : '' ?>">
+<body class="academy-app<?= $customTopbar ? ' academy-workspace academy-workspace--' . $h($space) : '' ?>" data-rt-close="<?= $h($t('rt_close')) ?>" data-rt-zoom="<?= $h($t('rt_zoom')) ?>">
 <a class="skip" href="#main"><?= $h($t('skip_to_content')) ?></a>
 <?php if (!$customTopbar): ?>
 <?php /* En-tête unique des pages Academy : marque, mention de préversion (ouvre l’avertissement complet), organisation, langue, retour vers ATHENA. */ ?>

@@ -176,6 +176,13 @@ final class AcademyCurriculum
         foreach ($question['options'] as $option) {
             self::bilingual($option);
         }
+        // Facultatif : pourquoi chaque choix convient ou non, affiché après une réponse validée.
+        if (isset($question['option_feedback'])) {
+            self::listSize($question['option_feedback'], 3, 3);
+            foreach ($question['option_feedback'] as $rationale) {
+                self::bilingual($rationale);
+            }
+        }
     }
 
     private static function bilingual(mixed $value): void

@@ -53,7 +53,7 @@ final class AcademyJtacCourseTest extends TestCase
     {
         $course = self::course();
         self::assertSame($course, AcademyCurriculum::validate($course));
-        self::assertSame('2.0.1', $course['version']);
+        self::assertSame('2.1.0', $course['version']);
         self::assertTrue($course['built_in']);
         self::assertCount(6, $course['chapters']);
         $titles = array_map(static fn (array $c): string => $c['title']['fr'] . ' | ' . $c['title']['en'], $course['chapters']);
@@ -151,13 +151,41 @@ final class AcademyJtacCourseTest extends TestCase
             $state = AcademyCurriculum::validateChapter($state, $course, 99, 'Phrase radio répétée correctement en session.', $now++);
         }
         self::assertTrue($state['completed']);
-        self::assertSame('2.0.1', $state['license']['course_version']);
+        self::assertSame('2.1.0', $state['license']['course_version']);
         self::assertSame('simulation', $state['license']['scope']);
         self::assertCount(6, $state['validations']);
     }
 
+    public function testLessonsAndDemonstrationsUseTheRichTextFormatInBothLanguages(): void
+    {
+        $labels = ['rt_analysis' => 'Analyse', 'rt_radio' => 'Échange radio'];
+        // Copie de travail Windows : les textes nowdoc peuvent arriver en CRLF ; le rendu les normalise aussi.
+        $lf = static fn (string $text): string => str_replace("\r\n", "\n", $text);
+        foreach (self::course()['chapters'] as $index => $chapter) {
+            foreach (['fr', 'en'] as $lang) {
+                $theory = $lf($chapter['theory'][$lang]);
+                $demo = $lf($chapter['demonstration'][$lang]);
+                self::assertMatchesRegularExpression('/^## 01 — /m', $theory, "Chapitre {$index} {$lang} : sections titrées");
+                self::assertMatchesRegularExpression('/^:::(astuce|tip) \d\d — /m', $theory, "Chapitre {$index} {$lang} : synthèse encadrée");
+                self::assertMatchesRegularExpression('/^## /', $demo, "Chapitre {$index} {$lang} : titre de la démonstration");
+                self::assertStringContainsString(':::transmission', $demo);
+                self::assertMatchesRegularExpression('/^:::(analyse Commentaire|analysis Comment)$/m', $demo, "Chapitre {$index} {$lang} : commentaires encadrés");
+                self::assertMatchesRegularExpression('/^:::note /m', $demo, "Chapitre {$index} {$lang} : situation de départ");
+                // Les messages radio n'ont plus de guillemets : le bloc « transmission » les signale.
+                self::assertDoesNotMatchRegularExpression('/^[A-Z][\w -]{0,30} ?: [«“]/mu', $demo);
+                $html = \App\Services\Academy\AcademyRichText::render($demo, $labels);
+                self::assertStringContainsString('<figure class="rt-radio">', $html);
+                self::assertStringContainsString('<b class="rt-tx__who">Bastion</b>', $html);
+                self::assertStringContainsString('rt-callout--analysis', $html);
+                self::assertStringNotContainsString(':::', $html, "Chapitre {$index} {$lang} : tous les blocs sont fermés");
+                self::assertStringNotContainsString(':::', \App\Services\Academy\AcademyRichText::render($theory, $labels));
+            }
+        }
+        self::assertStringContainsString("Bastion : Ligne 1 : IP CARRIÈRE.\n:::\n:::analyse Commentaire\nLa carrière est un point naturel", $lf(self::course()['chapters'][3]['demonstration']['fr']));
+    }
+
     /** Exécute l'étape comme run-migrations.php : fichier inclus avec $pdo et $root, sortie capturée. */
-    private static function runStep(PDO $pdo): string
+    private static function runStep(PDO $pdo, string $id = 'academy_jtac_v2_refresh', string $file = '3280_academy_jtac_v2_refresh.php'): string
     {
         $root = dirname(__DIR__, 2);
         $migrationFlush = static function (): void {
@@ -165,9 +193,9 @@ final class AcademyJtacCourseTest extends TestCase
         $migrationEnsurePdo = static function (): void {
         };
         require $root . '/database/steps/_context.php';
-        $step = MigrationRegistry::find($root, 'academy_jtac_v2_refresh');
+        $step = MigrationRegistry::find($root, $id);
         self::assertNotNull($step);
-        self::assertSame('3280_academy_jtac_v2_refresh.php', $step['file']);
+        self::assertSame($file, $step['file']);
         ob_start();
         try {
             require $step['path'];
@@ -178,10 +206,18 @@ final class AcademyJtacCourseTest extends TestCase
         return $output;
     }
 
-    public function testRefreshStepOnlyUpdatesUntouchedEnrolmentsAndIsIdempotent(): void
+    /** @return list<array{0:string,1:string}> */
+    public static function refreshSteps(): array
     {
+        return [['academy_jtac_v2_refresh', '3280_academy_jtac_v2_refresh.php'], ['academy_jtac_rich_text_refresh', '3540_academy_jtac_rich_text_refresh.php']];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('refreshSteps')]
+    public function testRefreshStepOnlyUpdatesUntouchedEnrolmentsAndIsIdempotent(string $id, string $file): void
+    {
+        $runStep = static fn (PDO $pdo): string => self::runStep($pdo, $id, $file);
         $pdo = new MysqlDdlSqlitePdo();
-        self::assertStringContainsString('[OK]', self::runStep($pdo), 'Sans table : aucune erreur');
+        self::assertStringContainsString('[OK]', $runStep($pdo), 'Sans table : aucune erreur');
         (new \App\Support\Migrations\SchemaInspector($pdo))->runSqlFile(dirname(__DIR__, 2) . '/migrations/20261029130000_athena_academy.sql');
         $old = ['key' => AcademyBuiltInCourses::JTAC_KEY, 'version' => '1.0', 'chapters' => [['title' => ['fr' => 'Ancien', 'en' => 'Old']]]];
         $rows = [
@@ -197,7 +233,7 @@ final class AcademyJtacCourseTest extends TestCase
         $insert->execute([14, 4, 'course-community', json_encode($rows[4], JSON_UNESCAPED_UNICODE)]);
         $read = static fn (): array => $pdo->query('SELECT user_id, course_key, state_json FROM academy_learners ORDER BY user_id, course_key')->fetchAll(PDO::FETCH_ASSOC);
 
-        $out = self::runStep($pdo);
+        $out = $runStep($pdo);
         self::assertStringContainsString('2 inscription(s)', $out);
         self::assertStringContainsString('2 parcours', $out);
         $after = [];
@@ -214,7 +250,7 @@ final class AcademyJtacCourseTest extends TestCase
         self::assertSame($old, $after['4:course-community']['snapshot'], 'Autre cours non touché');
 
         $before = $read();
-        self::assertStringContainsString('0 inscription(s)', self::runStep($pdo));
+        self::assertStringContainsString('0 inscription(s)', $runStep($pdo));
         self::assertSame($before, $read(), 'Second passage sans modification');
     }
 }
