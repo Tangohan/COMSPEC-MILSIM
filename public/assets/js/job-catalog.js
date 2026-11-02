@@ -520,15 +520,10 @@
             copy.dataset.lang = lang;
             copy.setAttribute('aria-label', label('copy-name') + (lang ? ' (' + label('lang-' + lang) + ')' : ''));
             const name = el('span', 'jobcat__names-text', text);
-<<<<<<< HEAD
-            name.lang = htmlLang(lang);
-            if (i === 0) name.appendChild(el('small', '', ' — ' + label('official')));
-            item.append(langCode(lang), name, copy);
-=======
+            if (lang) name.lang = htmlLang(lang);
             if (i === 0 && lang) name.appendChild(el('small', '', ' — ' + label('official')));
             if (lang) item.append(langCode(lang));
             item.append(name, copy);
->>>>>>> origin/main
             names.appendChild(item);
             const option = el('option', '', lang.toUpperCase() + ' · ' + text + (i === 0 ? ' (' + label('official') + ')' : ''));
             option.value = lang;
