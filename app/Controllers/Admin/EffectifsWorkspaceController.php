@@ -114,10 +114,9 @@ class EffectifsWorkspaceController
     }
 
     /**
-     * Tableau des recyclages : qualifications échues ou proches de l'échéance.
-     *
-     * Répond à la question métier « quelle qualification expire bientôt ? », restée sans
-     * réponse tant que `personnel_qualifications` n'était jamais alimentée.
+     * Matrice des qualifications : chaque membre face à chaque qualification du référentiel (qualifié, expire bientôt,
+     * expirée, en cours, rien), avec délivrance, mise en formation et retrait sur place. Toutes les qualifications,
+     * pas seulement celles de l'Academy.
      */
     public function qualifications(Request $request, array $params = []): Response
     {
@@ -126,40 +125,40 @@ class EffectifsWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
-
-        // Fenêtre d'observation : 30 / 60 / 90 jours, 60 par défaut.
-        $within = (int) $request->query('horizon', 60);
-        if (!in_array($within, [30, 60, 90], true)) {
-            $within = 60;
-        }
-
-        $ready = $this->personnelQualificationRepository->trainingLinkReady();
-        $rows = $ready
-            ? $this->personnelQualificationRepository->listExpiringForTenant($tenantId, $within, 300)
-            : [];
-
-        // Répartition : déjà échues vs à renouveler, pour hiérarchiser l'action.
-        $expired = [];
-        $expiring = [];
-        $today = date('Y-m-d');
-        foreach ($rows as $row) {
-            $exp = substr((string) ($row['expires_at'] ?? ''), 0, 10);
-            if ($exp !== '' && $exp < $today) {
-                $expired[] = $row;
-            } else {
-                $expiring[] = $row;
-            }
+        $service = \App\Core\Container::get(\App\Services\Personnel\QualificationAwardRuleService::class);
+        try {
+            $matrix = $service->matrix($tenantId);
+        } catch (\Throwable) {
+            $matrix = ['definitions' => [], 'members' => [], 'cells' => [], 'counts' => ['ok' => 0, 'soon' => 0, 'exp' => 0, 'train' => 0], 'units' => [], 'coverage' => [], 'totals' => [], 'unlinked_academy' => 0];
         }
 
         return $this->shell('admin.effectifs_workspace.qualifications', [
             'title' => 'Qualifications',
             'effectifsNav' => 'qualifications',
-            'qualificationsReady' => $ready,
-            'qualificationsHorizon' => $within,
-            'qualificationsExpired' => $expired,
-            'qualificationsExpiring' => $expiring,
-            'qualificationsExpiringCount' => count($expired) + count($expiring),
+            'qualificationMatrix' => $matrix,
+            'qualificationsExpiringCount' => (int) $matrix['counts']['soon'] + (int) $matrix['counts']['exp'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css'],
         ]);
+    }
+
+    /** Progression du membre vers les qualifications automatiques (fiche du membre). @return list<array<string, mixed>> */
+    private function memberQualificationProgress(int $tenantId, int $userId): array
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->memberProgress($tenantId, $userId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function qualificationNames(int $tenantId): array
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->names($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function roster(Request $request, array $params = []): Response
@@ -1412,6 +1411,7 @@ class EffectifsWorkspaceController
             'accessProfiles' => CommunityAccessProfiles::definitions(),
             'memberJobRoles' => $jobRoles,
             'memberJobDecorations' => (new JobRoleEnrichmentService())->decorations($tenantId),
+            'memberJobPrerequisites' => \App\Services\Personnel\JobPrerequisiteViewData::forMember($tenantId, (int) $row['id'], $jobRoles, $this->jobTenantSettings($tenantId)),
             'jobRoleOptions' => $jobRoleOptions,
             'jobRoleMax' => $jobRoleMax,
             'jobRolesAvailable' => $jobRolesAvailable,
@@ -1436,6 +1436,8 @@ class EffectifsWorkspaceController
             'orgFoundingDate' => $this->seniorityPrePlatform->getOrgFoundingDate($tenantId),
             'memberRoleIds' => $roleIds,
             'memberQualifications' => $qualifications,
+            'qualificationProgress' => $this->memberQualificationProgress($tenantId, $id),
+            'progressNames' => $this->qualificationNames($tenantId),
             'qualificationTemporal' => $qualificationTemporal,
             'qualificationBadge' => $qualificationBadge,
             'memberAbsences' => $absences,
@@ -1455,7 +1457,7 @@ class EffectifsWorkspaceController
             'hrDocumentTypeLabels' => PersonnelHrDocumentRepository::DOC_TYPE_LABELS,
             'mobilityTypeLabels' => PersonnelMobilityRequestRepository::TYPE_LABELS,
             'absenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'decorations-kit.css', 'effectifs-pages.css', 'back-office-effectifs-fiche.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'qualifications-matrix.css'],
             'loadDecorationsKit' => true,
             'effMemberUnitCode' => (new UnitCodeService())->forUnit($tenantId, (int) ($row['unit_id'] ?? 0)),
             'memberInvitePanel' => $this->memberInvitePanel($tenantId, $user),
@@ -1821,6 +1823,37 @@ class EffectifsWorkspaceController
             'is_primary' => $roleId === $primaryId,
         ], $ids);
 
+        // Prérequis des emplois ajoutés : avertissement, refus (communauté en mode bloquant) ou dérogation motivée.
+        $prereqWarning = '';
+        try {
+            $prereq = (new \App\Services\Personnel\JobPrerequisiteService())->gate(
+                $tenantId,
+                $id,
+                array_values(array_diff($ids, array_keys($details))),
+                (string) $request->input('prereq_waiver_reason', ''),
+                \App\Services\Personnel\JobPrerequisiteViewData::canWaive(Gate::getInstance()),
+                (bool) $settings['prerequisites_blocking'],
+                (int) Session::get('user_id')
+            );
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect($redirect);
+        } catch (\Throwable $e) {
+            error_log('Effectifs functions: prerequisites check failed: ' . $e->getMessage());
+            $prereq = ['allowed' => true, 'unmet' => [], 'waived' => [], 'warned' => []];
+        }
+        if (!$prereq['allowed']) {
+            Session::flash('error', 'Prérequis non remplis pour ' . $this->jobRoleNames($tenantId, array_keys($prereq['unmet'])) . '. Indiquez un motif de dérogation pour attribuer quand même.');
+
+            return Response::redirect($redirect);
+        }
+        if ($prereq['waived'] !== []) {
+            $prereqWarning = 'Dérogation enregistrée pour ' . $this->jobRoleNames($tenantId, $prereq['waived']) . '.';
+        } elseif ($prereq['warned'] !== []) {
+            $prereqWarning = 'Attention : prérequis non remplis pour ' . $this->jobRoleNames($tenantId, $prereq['warned']) . '.';
+        }
+
         // La persistance des fonctions est l'opération principale. Les synchronisations
         // de confort qui suivent ne doivent pas transformer une sauvegarde réussie en
         // faux message d'échec (la table pivot a déjà validé sa transaction).
@@ -1857,8 +1890,33 @@ class EffectifsWorkspaceController
         }
 
         Session::flash('success', 'Fonctions du membre mises à jour.');
+        if ($prereqWarning !== '') {
+            Session::flash('warning', $prereqWarning);
+        }
 
         return Response::redirect($redirect);
+    }
+
+    /** Réglages de la communauté pour les prérequis ; une lecture impossible laisse les prérequis indicatifs. */
+    private function jobTenantSettings(int $tenantId): array
+    {
+        try {
+            return $this->tenantRepository->getSettings($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** Noms d’emplois pour un message (« Médecin, JTAC »). */
+    private function jobRoleNames(int $tenantId, array $roleIds): string
+    {
+        $names = [];
+        foreach ($roleIds as $roleId) {
+            $role = $this->personnelJobRoleRepository->findRoleById((int) $roleId, $tenantId);
+            $names[] = '« ' . (string) ($role['name'] ?? ('#' . (int) $roleId)) . ' »';
+        }
+
+        return implode(', ', $names);
     }
 
     /** Rôle tenu dans l’unité principale (fenêtre « Rôle » du tableur). Même droit que les affectations. */
@@ -3142,6 +3200,8 @@ class EffectifsWorkspaceController
                 $tagService = new JobRoleEnrichmentService();
                 $data['jobTags'] = $tagService->tags($tenantId);
                 $data['jobEnrichmentReady'] = $tagService->schemaReady();
+                $data['jobPrereqBlocking'] = $data['jobSyncSettings']['prerequisites_blocking'];
+                $data['jobPrereqReady'] = (new \App\Services\Personnel\JobPrerequisiteService())->schemaReady();
             } else {
                 $data['jobRecoveryLabels'] = $this->jobRecoveryLabels($request);
                 try {
@@ -3208,7 +3268,10 @@ class EffectifsWorkspaceController
             'jobShowHidden'=>$showHidden,'jobTagFilter'=>$tagFilter,'jobHiddenCount'=>$hiddenCount,
             'jobIconLibrary'=>\App\Support\JobRoleIconLibrary::all(),
             'jobHolderCount'=>$selected ? count($holders[(int)$selected['id']] ?? []) : 0,
+            'jobCatalogAutoOpen'=>$creating && $request->queryString('catalogue', '0') === '1',
         ];
+        // Prérequis de l’emploi ouvert : critères, titulaires qui les remplissent, dérogations (JobPrerequisiteViewData).
+        $data += \App\Services\Personnel\JobPrerequisiteViewData::forJobSheet($tenantId, $selected, $holders, $canManage, $selected ? $this->jobTenantSettings($tenantId) : []);
         return $this->jobWorkspaceResponse($request, $data);
     }
 

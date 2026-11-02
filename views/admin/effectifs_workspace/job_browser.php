@@ -38,7 +38,7 @@ if(!isset($roleById[$newParent]))$newParent=0;
     </aside>
     <section class="eff-jobs-catalogue" aria-label="Emplois de la catégorie">
         <div class="eff-jobs-pane-head"><div><p class="eff-category-path"><?= $filterId>0?$h($categoryLabel($jobCatalogueCategory)):'Votre organisation' ?></p><h2><?= $filterId>0?$h($jobCatalogueCategory['name']):'Tous les emplois' ?> <span><?= count($roles) ?></span></h2></div>
-        <?php if($canManage): ?><a class="eff-btn eff-btn--primary" data-jobs-nav href="<?= $h($jobUrl(['nouveau'=>1]+$inCategory)) ?>">+ Créer un emploi</a><?php endif ?></div>
+        <?php if($canManage): ?><span class="eff-jobs-create"><a class="eff-btn" data-jobs-nav href="<?= $h($jobUrl(['nouveau'=>1,'catalogue'=>1]+$inCategory)) ?>">Depuis le catalogue</a><a class="eff-btn eff-btn--primary" data-jobs-nav href="<?= $h($jobUrl(['nouveau'=>1]+$inCategory)) ?>">+ Créer un emploi</a></span><?php endif ?></div>
         <?php if($filterId>0): ?><div class="eff-jobs-branch-actions"><span>Sous-catégories comprises</span><?php if($canManage): ?><a data-jobs-nav href="<?= $h($jobUrl(['nouvelle_categorie'=>1,'parent'=>$filterId]+$inCategory)) ?>">+ Sous-catégorie</a><a data-jobs-nav href="<?= $h($jobUrl(['modifier_categorie'=>1]+$inCategory)) ?>">Renommer / déplacer</a><?php endif ?></div><?php endif ?>
         <input class="eff-jobs-search" type="search" data-jobs-search placeholder="Nom, abrégé, étiquette, catégorie…" aria-label="Rechercher un emploi">
         <?php $tagFilterId=(int)($jobTagFilter??0); $listQuery=$inCategory+(!empty($jobShowHidden)?['masquees'=>1]:[]); ?>

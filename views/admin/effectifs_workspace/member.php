@@ -731,6 +731,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                     </li>
                 <?php endforeach; ?>
             </ul>
+            <?php require __DIR__ . '/partials/job_prerequisites_member.php'; ?>
         <?php else: ?>
             <p class="eff-fm-lead">Aucune fonction attribuée.</p>
         <?php endif; ?>
@@ -981,9 +982,13 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
+        <?php if (!empty($qualificationProgress)): ?>
+            <h4 class="eff-fm-sub">En progression vers une qualification automatique</h4>
+            <?php require base_path('views/partials/qualification_progress.php'); ?>
+        <?php endif; ?>
         <div class="eff-fm-row">
             <a class="eff-btn" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . (int) $id, ENT_QUOTES, 'UTF-8') ?>">Attribuer une qualification</a>
-            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('qualifications'), ENT_QUOTES, 'UTF-8') ?>">Piloter les échéances</a>
+            <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('qualifications'), ENT_QUOTES, 'UTF-8') ?>">Matrice des qualifications</a>
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications'), ENT_QUOTES, 'UTF-8') ?>">Référentiel</a>
         </div>
     </article>
@@ -1478,6 +1483,7 @@ foreach ($jobRoles as $jr) {
             <?php endforeach; ?>
             <p class="eff-card__hint" data-filter-empty hidden>Aucune fonction ne correspond. <a href="<?= $h(effectifs_workspace_url('fonctions')) ?>">Créer une fonction pour la communauté</a></p>
         </div>
+        <?php require __DIR__ . '/partials/job_prerequisites_dialog.php'; ?>
         <footer class="eff-dialog__foot">
             <a class="eff-btn eff-btn--ghost" href="<?= $h(effectifs_workspace_url('fonctions')) ?>">Gérer le catalogue</a>
             <span class="eff-dialog__spacer"></span>

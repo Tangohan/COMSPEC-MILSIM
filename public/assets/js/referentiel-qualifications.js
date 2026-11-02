@@ -218,6 +218,7 @@
     var empty = listRoot.querySelector('[data-rql-empty]');
     var countEl = listRoot.querySelector('[data-rql-count]');
     var showArchived = listRoot.querySelector('[data-rql-archived]');
+    var modeSel = listRoot.querySelector('[data-rql-mode]');
     var cat = '';
 
     function apply() {
@@ -227,7 +228,8 @@
       Array.prototype.forEach.call(rows, function (r) {
         var ok = (!q || norm(r.getAttribute('data-search')).indexOf(q) !== -1)
           && (!cat || r.getAttribute('data-cat') === cat)
-          && (arch || r.getAttribute('data-archived') !== '1');
+          && (arch || r.getAttribute('data-archived') !== '1')
+          && (!modeSel || !modeSel.value || (r.getAttribute('data-modes') || '').indexOf(' ' + modeSel.value + ' ') !== -1);
         r.hidden = !ok;
         if (ok) shown++;
       });
@@ -244,6 +246,7 @@
     });
     if (search) search.addEventListener('input', apply);
     if (showArchived) showArchived.addEventListener('change', apply);
+    if (modeSel) modeSel.addEventListener('change', apply);
     apply();
   }
 })();

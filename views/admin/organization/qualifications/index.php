@@ -5,6 +5,8 @@ $definitions = is_array($definitions ?? null) ? $definitions : [];
 $categories = is_array($categories ?? null) ? $categories : [];
 $types = is_array($types ?? null) ? $types : [];
 $badgeUrls = is_array($badgeUrls ?? null) ? $badgeUrls : [];
+$modesByDef = is_array($modesByDef ?? null) ? $modesByDef : [];
+$modeLabels = \App\Support\QualificationCriteriaCatalog::modeLabels();
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
 $activeCount = 0;
@@ -37,7 +39,9 @@ $athKpis = [
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
             Nouvelle qualification
         </a>
+        <a href="<?= $h(effectifs_workspace_url('qualifications')) ?>" class="ath-btn">Matrice des effectifs</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/attribuer')) ?>" class="ath-btn">Attribuer à un membre</a>
+        <a href="<?= $h(url('academy')) ?>" class="ath-btn">Ouvrir l’Academy</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>" class="ath-btn">Organismes émetteurs</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote')) ?>" class="ath-btn">Cursus pilote</a>
     </div>
@@ -65,6 +69,15 @@ $athKpis = [
                     <span class="sr-only">Rechercher une qualification</span>
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
                     <input type="search" placeholder="Nom, code, catégorie…" data-rql-search>
+                </label>
+                <label class="rql__mode">
+                    <span class="sr-only">Mode d’obtention</span>
+                    <select data-rql-mode>
+                        <option value="">Tous les modes d’obtention</option>
+                        <?php foreach ($modeLabels as $mk => $ml): ?>
+                            <option value="<?= $h($mk) ?>"><?= $h($ml) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </label>
                 <?php if ($archivedCount > 0): ?>
                 <label class="rql__switch"><input type="checkbox" data-rql-archived> Archivées</label>
@@ -101,9 +114,10 @@ $athKpis = [
                 $badge = $badgeUrls[$did] ?? '';
                 $short = trim((string) ($d['short_name'] ?? '')) ?: (string) ($d['code'] ?? '?');
                 $searchTxt = implode(' ', [(string) ($d['name'] ?? ''), (string) ($d['code'] ?? ''), (string) ($d['short_name'] ?? ''), $cn, $tn]);
+                $dModes = $modesByDef[$did] ?? [\App\Support\QualificationCriteriaCatalog::MODE_MANUAL];
                 ?>
-            <li data-rql-row data-cat="<?= $h($cn !== '' ? $cn : '__none') ?>" data-archived="<?= $archived ? '1' : '0' ?>" data-search="<?= $h($searchTxt) ?>"<?= $archived ? ' hidden' : '' ?>>
-                <a class="rql__row<?= $archived ? ' is-archived' : '' ?>" href="<?= $h(url('back-office/referentiels/qualifications/' . $did . '/edit')) ?>">
+            <li data-rql-row data-cat="<?= $h($cn !== '' ? $cn : '__none') ?>" data-modes="<?= $h(' ' . implode(' ', $dModes) . ' ') ?>" data-archived="<?= $archived ? '1' : '0' ?>" data-search="<?= $h($searchTxt) ?>"<?= $archived ? ' hidden' : '' ?>>
+                <a class="rql__row<?= $archived ? ' is-archived' : '' ?>" href="<?= $h(url('back-office/referentiels/qualifications/' . $did)) ?>">
                     <span class="rql__badge">
                         <?php if ($badge !== ''): ?>
                             <img src="<?= $h($badge) ?>" alt="" loading="lazy">
@@ -124,6 +138,7 @@ $athKpis = [
                         <?php if ($levelsN > 0): ?><span class="rql__tag"><?= $levelsN ?> niveau<?= $levelsN > 1 ? 'x' : '' ?></span><?php endif; ?>
                         <?php if (!empty($d['requires_exam'])): ?><span class="rql__tag rql__tag--soft">Examen</span><?php endif; ?>
                         <?php if (!empty($d['requires_panel'])): ?><span class="rql__tag rql__tag--soft">Jury</span><?php endif; ?>
+                        <?php foreach ($dModes as $mk): ?><span class="rql__tag rql__tag--mode-<?= $h($mk) ?>"><?= $h($modeLabels[$mk] ?? $mk) ?></span><?php endforeach; ?>
                         <?php if ($archived): ?><span class="rql__tag rql__tag--muted">Archivée</span><?php endif; ?>
                     </span>
                     <span class="rql__holders<?= $holders === 0 && !$archived ? ' is-zero' : '' ?>"><b><?= $holders ?></b> titulaire<?= $holders > 1 ? 's' : '' ?></span>

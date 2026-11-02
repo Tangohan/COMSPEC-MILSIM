@@ -8,10 +8,14 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\GradeRepository;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationDefinitionRepository;
 use App\Repositories\QualificationReferentielRepository;
+use App\Services\Personnel\QualificationAwardRuleService;
 use App\Services\Personnel\QualificationBadgeStorageService;
+use App\Services\Personnel\QualificationCriteriaEngine;
 use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationStatusTransitionService;
 use App\Services\Personnel\QualificationTemporalStatusService;
@@ -30,6 +34,9 @@ final class QualificationReferentielController
         private QualificationTemporalStatusService $temporal,
         private QualificationBadgeStorageService $badges,
         private QualificationCertificatePdfService $certificates,
+        private ?QualificationAwardRuleService $rules = null,
+        private ?GradeRepository $grades = null,
+        private ?PersonnelJobRoleRepository $jobRoles = null,
     ) {
     }
 
@@ -48,14 +55,30 @@ final class QualificationReferentielController
             }
         }
 
+        $modesByDef = [];
+        $settingsAll = [];
+        $pilotDefs = [];
+        try {
+            $settingsAll = (new \App\Repositories\QualificationAwardRuleRepository())->listForTenant($tenantId);
+            foreach ((new \App\Repositories\PilotQualificationRuleRepository())->listForTenant($tenantId) as $pr) {
+                $pilotDefs[(int) $pr['definition_id']] = true;
+            }
+        } catch (Throwable) {
+        }
+        foreach ($definitions as $d) {
+            $did = (int) ($d['id'] ?? 0);
+            $modesByDef[$did] = QualificationCriteriaEngine::modes($settingsAll[$did] ?? null, isset($pilotDefs[$did]));
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.index',
+            'modesByDef' => $modesByDef,
             'backOfficePageCss' => ['referentiel-qualifications.css'],
             'badgeUrls' => $badgeUrls,
             'title' => 'Référentiel des qualifications',
             'boPageKicker' => 'PERSONNEL · QUALIFICATIONS',
             'boPageTitle' => 'Qualifications',
-            'boPageSubtitle' => 'Ce que les membres savent faire : définissez les qualifications, leurs niveaux et leur durée de validité, puis attribuez-les.',
+            'boPageSubtitle' => 'Ce que les membres savent faire : définissez les qualifications et la façon de les obtenir (à la main, par une formation Academy ou automatiquement d’après les heures de jeu, de vol, les missions…), puis suivez qui les détient.',
             'definitions' => $definitions,
             'categories' => $this->referentiel->listCategories($tenantId),
             'types' => $this->referentiel->listTypes($tenantId),
@@ -85,7 +108,7 @@ final class QualificationReferentielController
             'customFields' => [],
             'permissionGrants' => [],
             'holders' => [],
-        ]);
+        ] + $this->obtentionViewData($tenantId, 0));
     }
 
     public function store(Request $request, array $params = []): Response
@@ -114,6 +137,7 @@ final class QualificationReferentielController
         try {
             $id = $this->definitions->create($tenantId, $this->definitionPayload($request), $this->actorId());
             Session::flash('success', 'Qualification créée.');
+            $this->saveObtention($tenantId, $id, $request);
 
             return Response::redirect(url('back-office/referentiels/qualifications/' . $id . '/edit'));
         } catch (Throwable $e) {
@@ -155,7 +179,7 @@ final class QualificationReferentielController
             'allDefinitions' => $this->definitions->listForTenant($tenantId),
             'badgeUrl' => $this->badges->publicUrl($definition['badge_media_path'] ?? null),
             'temporal' => $this->temporal,
-        ]);
+        ] + $this->obtentionViewData($tenantId, $id));
     }
 
     public function update(Request $request, array $params = []): Response
@@ -173,6 +197,7 @@ final class QualificationReferentielController
         try {
             $this->definitions->update($tenantId, $id, $this->definitionPayload($request), $this->actorId());
             Session::flash('success', 'Qualification mise à jour.');
+            $this->saveObtention($tenantId, $id, $request);
         } catch (Throwable $e) {
             Session::flash('error', 'Mise à jour impossible : ' . $e->getMessage());
         }
@@ -644,6 +669,64 @@ final class QualificationReferentielController
             });
 
         return $response;
+    }
+
+    /** Modes d'obtention, prérequis et visibilité envoyés avec le formulaire de la qualification. */
+    private function saveObtention(int $tenantId, int $definitionId, Request $request): void
+    {
+        if ($this->rules === null || $request->input('obtention_form') === null) {
+            return;
+        }
+        try {
+            $this->rules->saveFromInput($tenantId, $definitionId, [
+                'allow_manual' => $request->input('allow_manual'),
+                'auto_enabled' => $request->input('auto_enabled'),
+                'auto_mode' => $request->input('auto_mode'),
+                'rule_json' => $request->input('rule_json'),
+                'prereq_grade_id' => $request->input('prereq_grade_id'),
+                'prereq_job_role_id' => $request->input('prereq_job_role_id'),
+                'show_on_profile' => $request->input('show_on_profile'),
+                'show_on_orbat' => $request->input('show_on_orbat'),
+                'min_holders_per_unit' => $request->input('min_holders_per_unit'),
+            ], $this->actorId());
+        } catch (Throwable $e) {
+            Session::flash('error', 'Modes d’obtention non enregistrés : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Données du bloc « Comment l’obtenir » du formulaire : réglages, critères disponibles et listes de choix.
+     *
+     * @return array<string, mixed>
+     */
+    private function obtentionViewData(int $tenantId, int $definitionId): array
+    {
+        if ($this->rules === null) {
+            return ['obtention' => null];
+        }
+        $grades = [];
+        $jobs = [];
+        try {
+            $grades = $this->grades?->listForTenant($tenantId) ?? [];
+        } catch (Throwable) {
+        }
+        try {
+            $jobs = $this->jobRoles !== null && $this->jobRoles->tablesExist() ? $this->jobRoles->listRoleOptionsForSelect($tenantId) : [];
+        } catch (Throwable) {
+        }
+        $names = $this->rules->names($tenantId);
+
+        return ['obtention' => [
+            'ready' => $this->rules->schemaReady(),
+            'settings' => $definitionId > 0 ? $this->rules->settings($tenantId, $definitionId) : QualificationAwardRuleService::defaults() + ['rule' => []],
+            'grades' => $grades,
+            'jobs' => $jobs,
+            'courses' => $names['courses'],
+            'definitions' => array_filter($names['definitions'], static fn (int $id): bool => $id !== $definitionId, ARRAY_FILTER_USE_KEY),
+            'aircraft' => $this->rules->aircraftOptions($tenantId),
+            'items' => $this->rules->itemOptions($tenantId),
+            'sessionCategories' => $this->rules->sessionCategories($tenantId),
+        ]];
     }
 
     /** @return array<string, mixed> */
