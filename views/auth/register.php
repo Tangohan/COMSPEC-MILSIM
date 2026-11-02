@@ -5,6 +5,8 @@ $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
 $old = is_array($register_old ?? null) ? $register_old : [];
 $prefillCc = (string) ($prefill_community_code ?? ($old['community_code'] ?? ''));
 $prefillSlug = (string) ($prefill_tenant_slug ?? '');
+$inviteLinkCode = (string) ($invite_link_code ?? '');
+$inviteLinkCommunity = (string) ($invite_link_community ?? '');
 $val = static function (array $old, string $key, string $default = '') : string {
     $v = $old[$key] ?? $default;
 
@@ -99,6 +101,14 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
         <button type="button" class="rg-preview__more" data-preview-open aria-haspopup="dialog"><?= $t('auth.register_preview_more') ?></button>
     </div>
 
+    <?php if ($inviteLinkCode !== ''): ?>
+    <p class="ds-pill" role="status">
+        Invitation gardée :
+        <span translate="no"><?= $e($inviteLinkCommunity !== '' ? $inviteLinkCommunity : $inviteLinkCode) ?></span>
+        — vous y reviendrez après la confirmation de votre adresse.
+    </p>
+    <?php endif; ?>
+
     <?php if ($prefillSlug !== ''): ?>
     <p class="ds-pill" role="status">
         <?= $t('auth.register_space_targeted') ?>
@@ -128,6 +138,9 @@ $eyeIcons = '<svg class="rg-eye__show" viewBox="0 0 24 24" width="20" height="20
           data-msg-terms="<?= $t('auth.register_err_terms') ?>"
           data-msg-summary="<?= $t('auth.register_err_summary') ?>">
         <?= \App\Core\Csrf::field() ?>
+        <?php if ($inviteLinkCode !== ''): ?>
+        <input type="hidden" name="invite" value="<?= $e($inviteLinkCode) ?>">
+        <?php endif; ?>
         <p class="rg-summary" data-error-summary role="alert" tabindex="-1" hidden></p>
 
         <fieldset class="rg-section">

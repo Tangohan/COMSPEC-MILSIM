@@ -1,0 +1,138 @@
+[APP] Musique — lecteur avec haut-parleur partagé : vos fichiers, pistes du serveur, liens web et bibliothèque Athena
+
+[i]Message 1/2[/i]
+[h1]Musique[/h1]
+[i]Catégorie : Civil · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Un lecteur de musique dans le téléphone. Vous écoutez seul dans vos écouteurs, ou vous passez en haut-parleur : les joueurs proches entendent le même passage, plus fort en s'approchant. Sources : vos fichiers, les musiques d'Arma, des mods et de la mission, des liens web (fichiers ou webradios) et la bibliothèque du site Athena.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Civil : Musique (pas dans le dock par défaut).
+[*]Montre Garmin : sa page Musique commande la lecture (avance, volume, morceau suivant ou précédent).
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle. App civile : le serveur peut la retirer de tous les téléphones.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Ligne de morceau[/b] (partout) : [b]ÉCOUTER[/b] (lance le morceau et met la liste en file), [b]+ FILE[/b], [b]FAV[/b] (favoris).
+[*][b]LECTEUR[/b] : lecture / pause, précédent, suivant, barre de progression (toucher pour aller à un point), icônes aléatoire et répéter (non, la file, le morceau). Dessous, des sections repliables, une seule ouverte :
+[list]
+[*][b]Son[/b] : volume des écouteurs (vous seul), volume du haut-parleur, bascule [b]Haut-parleur[/b], et [b]Entendre les haut-parleurs proches[/b] (quand vous n'écoutez rien, la musique d'un téléphone voisin passe dans votre casque).
+[*][b]File d'attente[/b] : [b]JOUER[/b], [b]MONTER[/b], [b]RETIRER[/b] par morceau, [b]VIDER LA FILE[/b] (garde le morceau en cours).
+[*][b]Favoris[/b] : [b]TOUT LIRE[/b] et la liste.
+[*][b]Haut-parleurs autour de moi[/b] : joueurs proches en haut-parleur, distance, audible ou hors de portée, titre joué.
+[/list]
+[*][b]ATHENA[/b] : bibliothèque du site, vues [b]GLOBALE[/b], [b]COMMUNAUTÉ[/b], [b]MON ORGA[/b], [b]PLAYLISTS[/b] (publiques, de l'organisation, les vôtres) et [b]MES ENVOIS[/b]. Recherche par titre ou artiste, [b]TOUT LIRE[/b], [b]ACTUALISER[/b]. Les morceaux sont mis en ligne par les joueurs sur le site (Mon espace › Musique), téléchargés une fois puis gardés en cache ; une vue se recharge seule si elle date de plus d'une minute.
+[*][b]FICHIERS[/b] : vos MP3, WAV, WMA, M4A ou AAC déposés dans Documents\Arma 3\COMSPEC_Music (sous-dossiers compris). [b]ACTUALISER[/b], [b]OUVRIR LE DOSSIER[/b], [b]TOUT LIRE[/b].
+[*][b]SERVEUR[/b] : « Radio de la mission » (liens choisis par l'organisateur), puis la bibliothèque du serveur (pistes d'Arma, des mods et de la mission, entendues de tous), avec recherche, filtre par genre et pages de 20 ([b]PRÉCÉDENTS[/b] / [b]SUIVANTS[/b]).
+[*][b]LIEN[/b] : adresse d'un fichier MP3, WAV, WMA, M4A ou AAC (80 Mo au plus, gardé en cache) ou d'une webradio MP3, titre facultatif, [b]ÉCOUTER[/b] ; liste des liens récents avec [b]RETIRER[/b].
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Au bivouac, ouvrez Musique, onglet [b]SERVEUR[/b], cherchez un titre et touchez [b]ÉCOUTER[/b].
+[*]Onglet [b]LECTEUR[/b], section Son : activez [b]Haut-parleur[/b] et réglez son volume.
+[*]Les joueurs à portée entendent le morceau, calé sur le même passage ; ils vous voient dans « Haut-parleurs autour de moi ».
+[*]Ajoutez d'autres morceaux avec [b]+ FILE[/b] ; [b]FAV[/b] les garde pour la prochaine fois.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Musique › App Musique[/b] (serveur) : décoché, l'app affiche « La musique est désactivée sur ce serveur ».
+[*][b]Haut-parleur[/b] (serveur) : autorise la musique entendue par les joueurs proches.
+[*][b]Portée du haut-parleur (m)[/b] (serveur, 5 à 100 m, 30 par défaut) : le son baisse avec la distance.
+[*][b]Liens audio (URL)[/b] (serveur) : autorise l'onglet LIEN.
+[*][b]Bibliothèque Athena[/b] (serveur) : autorise l'onglet ATHENA.
+[*][b]Radio de la mission[/b] (serveur) : liens proposés à tous dans SERVEUR, au format Titre|https://...;Titre 2|https://...
+[*][b]COMSPEC › ATAK · Simulation › Apps civiles[/b] (serveur) : décoché, Musique disparaît de tous les téléphones.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena / COMSPEC Link[/b] : onglet ATHENA ; la lecture des fichiers et des liens passe par la DLL du mod.
+[*][b]Bluetooth[/b] : un morceau reçu d'un autre joueur arrive dans FICHIERS.
+[*][b]Zeus[/b] : peut couper les haut-parleurs d'un joueur à distance ; la musique s'arrête et ne repart pas.
+[*][b]Montre Garmin[/b] : commandes de lecture depuis la montre.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]En haut-parleur, un fichier local n'est entendu par les autres que s'ils ont le même fichier : pour une écoute commune, préférez SERVEUR ou LIEN.
+[*]Les pages YouTube, Spotify ou Deezer ne sont pas des fichiers audio : illisibles.
+[*]Les pistes SERVEUR passent par le moteur d'Arma : leur volume dépend aussi du réglage Musique d'Arma (Options › Audio).
+[*]Le son est atténué entre l'intérieur et l'extérieur d'un véhicule. La musique s'arrête si vous mourez ou si le téléphone devient inutilisable.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+A music player in the phone. Listen alone in your earphones, or switch to the speaker: nearby players hear the same passage, louder as they come closer. Sources: your files, music from Arma, mods and the mission, web links (files or web radios) and the Athena website library.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, Civilian category: Music (not in the dock by default).
+[*]Garmin watch: its Music page controls playback (seek, volume, next or previous track).
+[*]If you uninstalled it, the App Store reinstalls it. Civilian app: the server can remove it from every phone.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Track row[/b] (everywhere): [b]LISTEN[/b] (plays the track and queues the list), [b]+ QUEUE[/b], [b]FAV[/b] (favourites).
+[*][b]PLAYER[/b]: play / pause, previous, next, progress bar (tap to jump), shuffle and repeat icons (off, the queue, the track). Below, foldable sections, one open at a time:
+[list]
+[*][b]Sound[/b]: earphone volume (you only), speaker volume, [b]Speaker[/b] switch, and [b]Hear nearby speakers[/b] (when you play nothing, a nearby phone's music plays in your headset).
+[*][b]Queue[/b]: [b]PLAY[/b], [b]CLIMB[/b] (move up), [b]REMOVE[/b] per track, [b]CLEAR QUEUE[/b] (keeps the current track).
+[*][b]Favourites[/b]: [b]PLAY ALL[/b] and the list.
+[*][b]Speakers around me[/b]: nearby players on speaker, distance, audible or out of range, track playing.
+[/list]
+[*][b]ATHENA[/b]: website library, views [b]GLOBAL[/b], [b]COMMUNITY[/b], [b]MY ORG[/b], [b]PLAYLISTS[/b] (public, organisation, yours) and [b]MY UPLOADS[/b]. Search by title or artist, [b]PLAY ALL[/b], [b]REFRESH[/b]. Tracks are uploaded by players on the website (My space › Music), downloaded once then cached; a view reloads by itself if it is more than a minute old.
+[*][b]FILES[/b]: your MP3, WAV, WMA, M4A or AAC files placed in Documents\Arma 3\COMSPEC_Music (subfolders included). [b]REFRESH[/b], [b]OPEN FOLDER[/b], [b]PLAY ALL[/b].
+[*][b]SERVER[/b]: "Mission radio" (links chosen by the organiser), then the server library (tracks from Arma, mods and the mission, heard by everyone), with search, genre filter and pages of 20 ([b]PREVIOUS[/b] / [b]NEXT[/b]).
+[*][b]LINK[/b]: address of an MP3, WAV, WMA, M4A or AAC file (80 MB max, cached) or of an MP3 web radio, optional title, [b]LISTEN[/b]; list of recent links with [b]REMOVE[/b].
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]At the bivouac, open Music, [b]SERVER[/b] tab, search a title and tap [b]LISTEN[/b].
+[*][b]PLAYER[/b] tab, Sound section: turn on [b]Speaker[/b] and set its volume.
+[*]Players in range hear the track, synced to the same passage; they see you under "Speakers around me".
+[*]Add more tracks with [b]+ QUEUE[/b]; [b]FAV[/b] keeps them for next time.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Music › Music app[/b] (server): unticked, the app shows "Music is disabled on this server".
+[*][b]Speaker[/b] (server): allows music heard by nearby players.
+[*][b]Speaker range (m)[/b] (server, 5 to 100 m, default 30): sound fades with distance.
+[*][b]Link playback (URL)[/b] (server): allows the LINK tab.
+[*][b]Athena library[/b] (server): allows the ATHENA tab.
+[*][b]Mission radio[/b] (server): links offered to everyone in SERVER, as Title|https://...;Title 2|https://...
+[*][b]COMSPEC › ATAK · Simulation › Civilian apps[/b] (server): unticked, Music disappears from every phone.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena / COMSPEC Link[/b]: ATHENA tab; files and links are played through the mod's DLL.
+[*][b]Bluetooth[/b]: a track received from another player lands in FILES.
+[*][b]Zeus[/b]: can mute a player's speakers remotely; the music stops and does not restart.
+[*][b]Garmin watch[/b]: playback controls from the watch.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]On speaker, other players only hear a local file if they have the same file: for shared listening, prefer SERVER or LINK.
+[*]YouTube, Spotify or Deezer pages are not audio files: they cannot be played.
+[*]SERVER tracks go through the Arma engine: their volume also depends on Arma's Music setting (Options › Audio).
+[*]Sound is muffled between inside and outside a vehicle. Music stops if you die or the phone becomes unusable.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

@@ -294,7 +294,7 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1327, '2026-11-02', 'Noms des membres : prénom et nom d’abord, trigrammes automatiques', 'Partout sur le site, un membre apparaît d’abord sous le prénom et le nom de son personnage : « Jean D. » dans les listes (organigramme, annuaire, tableur des effectifs, Academy), « Jean DUPONT » sur sa fiche. L’indicatif et le pseudo restent visibles en second. La carte tactique, ATAK et les ordres gardent l’indicatif en premier. Chaque membre reçoit un trigramme d’état-major (Jean DUPONT → JDU), unique dans la communauté : en cas de doublon, la variante suivante est proposée (JDP, JDT…). Le trigramme ne change plus quand le nom change ; le membre ou un responsable peut le modifier, et il sert de paraphe dans les documents. Un membre masqué reste masqué : ni son nom ni son trigramme n’apparaissent.', [
+            $pr(1328, '2026-11-02', 'Noms des membres : prénom et nom d’abord, trigrammes automatiques', 'Partout sur le site, un membre apparaît d’abord sous le prénom et le nom de son personnage : « Jean D. » dans les listes (organigramme, annuaire, tableur des effectifs, Academy), « Jean DUPONT » sur sa fiche. L’indicatif et le pseudo restent visibles en second. La carte tactique, ATAK et les ordres gardent l’indicatif en premier. Chaque membre reçoit un trigramme d’état-major (Jean DUPONT → JDU), unique dans la communauté : en cas de doublon, la variante suivante est proposée (JDP, JDT…). Le trigramme ne change plus quand le nom change ; le membre ou un responsable peut le modifier, et il sert de paraphe dans les documents. Un membre masqué reste masqué : ni son nom ni son trigramme n’apparaissent.', [
                 'Organisation › Noms et trigrammes : format des noms dans les listes et sur les fiches (Prénom N., Prénom NOM, trigramme ou indicatif), grade devant le nom, trigrammes activés ou non',
                 'Trigrammes attribués automatiquement à tous les membres (accents et particules « de », « van der » ignorés, noms composés gérés), uniques par communauté, modifiables à la main avec contrôle des doublons',
                 'Fiche du membre : trigramme et pseudo affichés, trigramme modifiable dans « Modifier ma fiche »',
@@ -304,6 +304,54 @@ final class DevDispatchCatalog
                 'Organigramme, annuaire, tableur des effectifs et Academy : « Prénom N. » à la place de l’indicatif ou du pseudo, indicatif en second',
                 'Fiche du membre : « Prénom NOM » en titre',
             ], [], ['personnel'], [], 'Portail'),
+            $pr(1327, '2026-11-02', 'Invitations : plus de blocage à tort et une page refaite', 'Certaines communautés Pro+ ne pouvaient plus inviter : la page affichait « Votre formule actuelle limite le nombre de membres » alors que leur formule n’a pas de plafond. Un plafond de membres à 0 compte de nouveau comme illimité, et une formule sans plafond renseigné reprend celui de son palier au lieu de 50. La page Invitations est refaite : chiffres en tête (envoyées, acceptées, en attente, expirées) et membres sur le plafond de la formule (« 42 / illimité »), assistant en trois étapes pour inviter plusieurs adresses à la fois avec rôle, grade d’entrée, unité, durée du lien et message, tableau filtrable et triable pour renvoyer, révoquer ou copier un lien.', [
+                'Inviter plusieurs adresses e-mail en une fois, avec grade d’entrée, durée du lien (1 à 30 jours) et message personnel ajouté à l’e-mail',
+                'Tableau des invitations : recherche, filtre par état, tri par colonne ; renvoyer, révoquer, copier un nouveau lien',
+                'Jauge des membres sur le plafond de la formule, lien vers les formules seulement quand le plafond est réellement atteint',
+            ], [
+                'Les liens tout juste envoyés s’affichent une fois pour les transmettre soi-même',
+                'Accès direct aux liens d’invitation partageables',
+            ], [
+                'Formules : un plafond de membres à 0 bloquait toutes les invitations au lieu de signifier « illimité »',
+                'Formules : un plafond absent valait 50 membres au lieu du plafond de la formule',
+                'Une formule offerte inférieure ou l’essai fondateur ne font plus redescendre une communauté Pro+',
+                'Modifier une formule : un plafond vidé garde sa valeur au lieu de devenir illimité',
+            ], ['personnel'], [
+                'Essai : Back-office › Invitations, « Inviter des membres » avec deux adresses, puis « Copier le lien » et « Renvoyer » sur une invitation en attente.',
+            ], 'Portail Athena'),
+            $pr(1325, '2026-11-02', 'Liens d’invitation : en anglais de bout en bout', 'Les pages des liens d’invitation (back-office et page publique) gardaient quelques phrases en français en anglais : elles sont désormais entièrement traduites.', [], [], [
+                'Liens d’invitation en anglais : la présentation de la liste, le quota, l’aide de l’adresse personnalisée, l’action « Rejoindre » et le bandeau de candidature restaient en français',
+            ], ['personnel'], [], 'Portail Athena'),
+
+            $pr(1323, '2026-11-02', 'Liens d’invitation : la mise en page revient', 'Les pages Recrutement › Liens d’invitation s’affichaient sans mise en page : elles retrouvent le style du back-office, comme les codes prioritaires.', [], [], [
+                'Recrutement › Liens d’invitation : liste, création, fiche et modification s’affichaient sans mise en page ; elles retrouvent le style du back-office',
+            ], ['personnel'], [], 'Portail Athena'),
+
+            $pr(1321, '2026-11-02', 'Liens d’invitation à partager, comme sur Discord', 'Recrutement › Liens d’invitation crée des liens à partager (athena-comspec.eu/public/i/…) : la personne qui l’ouvre découvre votre communauté (nom, emblème, bannière, jeu, membres) puis candidate ou rejoint la communauté. Sans compte, elle en crée un : l’invitation est gardée pendant l’inscription et la confirmation de l’adresse, puis la ramène sur le lien. Chaque lien a son nom interne, sa durée (30 minutes à 7 jours, une date ou jamais), son nombre d’utilisations, son action et ses statistiques ; il se copie, s’affiche en QR code, se révoque et se réactive.', [
+                'Recrutement › Liens d’invitation : création, fiche, modification, révocation, réactivation, copie du lien et QR code à télécharger',
+                'Action « Candidater » : formulaire de la communauté préparé (type de candidature, offre, unité visée, code prioritaire appliqué d’office)',
+                'Action « Rejoindre » : adhésion directe avec grade d’entrée et unité d’affectation, ou demande soumise à l’approbation de l’équipe dans la file du recrutement',
+                'Page d’invitation publique : vitrine de la communauté puis « Candidater », « Rejoindre », « Créer mon compte » ou « J’ai déjà un compte », message clair pour un lien expiré, épuisé ou désactivé',
+                'Statistiques par lien : clics, comptes créés, candidatures, adhésions et demandes, derniers usages reliés aux dossiers',
+                'Adresse personnalisée (ex. /i/tfj) sur les formules payantes ; formule gratuite : 2 liens actifs à la fois, les liens déjà actifs ne sont jamais coupés',
+            ], [
+                'Un lien d’invitation collé dans la page « Rejoindre avec un code » ouvre sa page d’invitation',
+                'Recherche du back-office : « liens d’invitation »',
+            ], [
+                'Codes prioritaires (Recrutement › Codes prioritaires) : la page tombait en erreur ; elle s’ouvre de nouveau',
+            ], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape recruitment_invite_links) pour activer les liens d’invitation.',
+                'Essai : Recrutement › Liens d’invitation › Créer un lien, ouvrez-le dans une fenêtre privée, créez un compte et confirmez l’adresse : vous revenez sur le lien.',
+            ], 'Portail Athena'),
+            $pr(1320, '2026-11-02', 'Émetteurs des qualifications : liste triable et assistants pas à pas', 'La page Émetteurs du référentiel des qualifications devient un tableau : recherche instantanée, filtres par pays, type, origine (catalogue réel ou création de la communauté) et statut, tri par colonne, pages, et pour chaque émetteur le nombre de qualifications qui l’utilisent. Importer les émetteurs réels et créer un émetteur se font maintenant en trois étapes dans une fenêtre, avec une recherche à chaque étape, un récapitulatif avant l’envoi et le plafond de la formule affiché ; la liste se met à jour sans recharger la page.', [
+                'Liste des émetteurs : tableau triable (nom, pays, type, origine, qualifications, délivrances), recherche, filtres pays / type / origine / statut, 25, 50 ou 100 par page ; les filtres restent dans l’adresse',
+                'Actions sur chaque ligne : modifier, voir les qualifications liées, archiver ou réactiver sans quitter la page',
+                'Importer les émetteurs réels en trois étapes : pays (compteurs par pays, recherche), émetteurs (recherche, type, déjà présents grisés, tout cocher parmi ceux affichés), récapitulatif avec la jauge du plafond de la formule',
+                'Créer un émetteur en trois étapes : identité (nom, sigle, pays, type), détails (localisation, site officiel, présentation en français et en anglais, logo, rattachement, signataire, qualifications délivrées), récapitulatif',
+            ], [
+                'En tapant le nom d’un nouvel émetteur, la page signale un émetteur déjà présent ou un organisme du catalogue réel à importer plutôt',
+                'Chargements visibles (liste en cours d’actualisation, boutons occupés) et messages de réussite ou d’erreur dans la page',
+            ], [], ['personnel', 'platform'], [], 'Portail'),
             $pr(1319, '2026-11-02', 'Academy : les instructeurs savent où valider', 'Sur le tableau de bord de l’Academy, l’encadrement trouve en tête un bloc « À traiter » : chapitres à valider, qualifications et brevets proposés à approuver, demandes d’inscription, évaluations échouées, stagiaires en retard et séances à venir, chacun avec son compteur. Un chapitre se lit et se valide dans une fenêtre, sans changer de page ; une demande d’inscription ou une qualification proposée s’accepte ou se refuse en un clic. L’espace instructeur réunit tout dans une seule file, triable et filtrable, avec des actions groupées et une aide « Comment valider un chapitre ? ». Le menu affiche « Espace instructeur » avec le nombre d’éléments à traiter, et le stagiaire voit que son chapitre attend la validation d’un instructeur.', [
                 'Tableau de bord Academy (encadrement) : bloc « À traiter » avec compteurs et liens directs vers la file filtrée',
                 'Validation rapide d’un chapitre dans une fenêtre : résultat de l’évaluation, réponses, débriefing, critères et commentaire',
@@ -313,14 +361,22 @@ final class DevDispatchCatalog
             ], [
                 'Mes formations et tableau de bord : « En attente de validation par un instructeur » quand le débriefing est envoyé',
             ], [], ['personnel'], [], 'Portail'),
-            $pr(1317, '2026-11-02', 'App Zones (battleplan), bandeau du curseur et point GPS personnalisables', 'Avec le pack 2.9.35, le téléphone gagne l’app Zones : une zone de travail se découpe toute seule en grille de référence A1, B2…, en îlots délimités par les routes ou en secteurs N, NE…, chaque zone nommée et numérotée, les bâtiments numérotés avec leurs étages et les grands axes routiers nommés MSR et ASR avec leurs points de contrôle. Chaque zone a un état et ses signalements : on signale un ennemi dans « B-04 » en un clic, un contact posé dans une zone la met à jour, et la situation se partage à l’équipe, au groupe ou au camp. Sur la carte, le bandeau du curseur se choisit (nouveau, classique d’avant la 2.9.34, compact ou masqué) et votre point GPS se règle.', [
+            $pr(1318, '2026-11-02', 'Publier un document : un assistant en cinq étapes', 'La page « Publier un document » de la doctrine devient un assistant pas à pas : le texte, le classement, les destinataires, la lecture attendue, puis un récapitulatif avant de publier. Une barre de progression indique où vous en êtes, chaque étape vérifie l’essentiel avant d’avancer avec un message clair sous le champ concerné, et le récapitulatif renvoie d’un clic vers l’étape à corriger. Tous les réglages précédents sont conservés.', [
+                'Import d’un texte existant par glisser-déposer (page web, texte ou Markdown) et aperçu du document tel que le lecteur le verra',
+                'Destinataires en listes à cocher : recherche dans chaque liste (unités, emplois, rôles, membres), « Tout cocher », compteur par liste et total',
+                'Saisie conservée sur l’appareil jusqu’à l’enregistrement : après une fermeture ou un enregistrement refusé, la page propose de la reprendre',
+            ], [
+                'Indicateur d’attente pendant l’enregistrement et la publication, et pendant le chargement de l’éditeur',
+                'Dates vérifiées : la date limite de lecture et la fin d’application doivent suivre la prise d’effet',
+            ], [], ['command'], [], 'Portail'),
+            $pr(1317, '2026-11-02', 'App Zones (battleplan), bandeau du curseur et point GPS personnalisables', 'Avec le pack 2.9.35, le téléphone gagne l’app Zones : une zone de travail se découpe toute seule en grille de référence A1, B2…, en îlots délimités par les routes ou en secteurs N, NE…, chaque zone nommée et numérotée, les bâtiments numérotés avec leurs étages et les grands axes routiers nommés MSR et ASR avec leurs points de contrôle. Chaque zone a un état et ses signalements : on signale un ennemi dans « B-04 » en un clic, un contact posé dans une zone peut la mettre à jour, sur proposition ou selon le réglage du serveur, et la situation se partage à l’équipe, au groupe ou au camp. Sur la carte, le bandeau du curseur se choisit (nouveau, classique d’avant la 2.9.34, compact ou masqué) et votre point GPS se règle.', [
                 'App Zones (Mission) : zone de travail en rectangle, polygone, cercle ou autour de moi, découpée en grille GRG (A1… ou numéros en serpentin, cases de 50 m à 1 km), en îlots délimités par les routes de la carte, en secteurs N, NE… ou numérotés avec anneaux, ou en une seule zone ; préfixe et noms de code au choix',
                 'Bâtiments d’une zone numérotés du nord au sud, avec leurs étages',
                 'Grands axes routiers nommés automatiquement (MSR puis ASR, thème villes, animaux ou OTAN) avec leurs carrefours en points de contrôle CP1… ; chaque axe peut devenir une route de l’app Routes',
                 'Rendu par plan, zone ou axe : surligné, contour seul ou point centré avec le nom ; couleurs par type et par état ; bascule globale sur la carte',
                 'Situation par zone : état en un clic (non reconnue, claire, contact, ennemi signalé, tenue par ami, interdite), signalements avec nature, effectif et heure, tableau de situation, SIGNALER ICI et ligne « Zone … · signaler » au clic droit de la carte',
-                'Un contact ennemi posé ou signalé dans une zone (marqueur ennemi, TIC, SALUTE, compte rendu CONTACT ou SPOTREP) met la zone à jour ; @zone cite la zone dans un message ou un compte rendu ; la zone sous le curseur s’affiche dans le bandeau',
-                'Plans et situation partagés à l’équipe, au groupe ou au camp par le réseau ATAK (sans réseau, envoi au retour du signal ; remis aux joueurs qui arrivent), sur la carte d’Arma et sur Athena',
+                'Un contact ennemi posé ou signalé dans une zone (marqueur ennemi, TIC, SALUTE, compte rendu CONTACT ou SPOTREP) peut mettre la zone à jour, sur proposition ou selon le réglage du serveur ; @zone cite la zone dans un message ou un compte rendu ; la zone sous le curseur s’affiche dans le bandeau',
+                'Plans et situation partagés à l’équipe, au groupe ou au camp par le réseau ATAK (sans réseau, envoi au retour du signal ; remis aux joueurs qui arrivent) et, si le serveur l’autorise, sur la carte d’Arma et sur Athena',
                 'Carte : bandeau du curseur au choix (nouveau, classique, compact, masqué), éléments affichés, format de grille, unités, position, fond et taille ; mon point GPS : forme, couleur, taille, cône de cap, trace et indicatif',
             ], [
                 'Le bandeau classique d’avant la 2.9.34 revient au choix, sans ses anciens défauts (« ALT 17 m », jamais « NON »)',

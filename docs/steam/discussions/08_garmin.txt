@@ -1,0 +1,142 @@
+[APP] Garmin — montre au poignet, Body Battery, cardio, stress, sommeil, activités et défis
+
+[i]Message 1/2[/i]
+[h1]Garmin[/h1]
+[i]Catégorie : Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Deux choses liées : une vraie montre Garmin au poignet (heure, boussole, carte, altimètre, chrono, minuteur, Jumpmaster, heure H du groupe…) et l'app Garmin du téléphone, qui montre ce que la montre mesure pendant vos parties : pas, fréquence cardiaque, stress, sommeil / repos, Body Battery, activités et défis.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Il faut la montre[/b] : portez la « Montre Garmin » dans l'emplacement montre de l'inventaire, ou gardez la « Montre Garmin (objet divers) » dans votre équipement. Quatre coloris : noire, coyote, FreeCandy, drapeau US.
+[*][b]L'app[/b] : sortez le téléphone ([b]Ctrl+U[/b] le porte dans un coin, [b]Ctrl+Maj+U[/b] le prend en main), écran d'accueil › [b]Navigation[/b] › [b]Garmin[/b] (pas dans le dock ; réinstallable depuis l'[b]App Store[/b]).
+[*][b]La montre[/b] : touche « Montre » du jeu ([b]O[/b]) : appui court = allumer puis écran suivant, appui long = éteindre. Elle remplace la montre d'Arma ; sans montre Garmin, la touche garde son effet habituel.
+[/list]
+
+[h3]Fonctions de l'app[/h3]
+[list]
+[*][b]Accueil[/b] : Body Battery du jour et sa courbe (stress, repos, niveau), aperçu (fréquence cardiaque et zones, repos, stress, sommeil / repos, pas), [b]Hier[/b], [b]7 derniers jours[/b] (courses, pas, cardio au repos, stress, sommeil) ; « +N rechargés pendant … hors du jeu » à votre retour.
+[*][b]Activités[/b] : reconnues seules (course à pied, marche, trajet en véhicule, vol, saut, bateau, nage), closes après 90 s d'arrêt ; lieu, distance, temps, allure ou vitesse ; activité en cours affichée.
+[*][b]Défis[/b] : 100 000 pas, Marathon de la semaine (42,2 km à pied), Coureur (3 courses), 5 km d'une traite, Para (un saut), sur 7 jours, avec avancement et [b]RELEVÉ[/b] une fois réussis ; [b]Objectif de pas[/b] du jour : 6 000 à 15 000.
+[*]Bouton de synchro en haut à droite : relit les mesures tout de suite.
+[/list]
+
+[h3]Écrans de la montre[/h3]
+[list]
+[*][b]Cadran[/b] : heure du jeu, date, batterie, Body Battery, objectif de pas, cardio, pas, soleil, température, stress (ou morceau en cours), phase de la lune.
+[*][b]Cardio[/b] (zones 1 à 5, courbe 12 min), [b]Altimètre[/b] (baromètre, START l'étalonne sur le GPS), [b]Carte[/b] (vous et les alliés du suivi), [b]Boussole[/b] (cap, MGRS, START marque votre position et la couronne pointe vers elle).
+[*][b]Jumpmaster[/b] (HALO / HAHO) : hauteur, vitesse de chute, altitude d'ouverture, point visé ; armée, elle vibre à 300 m de l'ouverture puis à l'ouverture, même éteinte.
+[*][b]Chrono[/b] (tours), [b]Minuteur[/b] (vibre à la fin), [b]Téléphone[/b] (batterie, 3 dernières notifications, faire sonner), [b]Musique[/b] (lecteur du téléphone), [b]Ma journée[/b].
+[*][b]Menu des commandes[/b] (appui long LIGHT) : vue agrandie, mode nuit (rouge), rouge auto (JVN), ne pas déranger, mode furtif, luminosité, heure H au groupe, marquer ma position, trouver mon téléphone, éteindre.
+[*][b]Heure H au groupe[/b] (chef de groupe) : compte à rebours de la durée du minuteur sur les montres de tout le groupe, qui vibrent à H-1 min puis au top.
+[*]Notifications du téléphone en bandeau 5 s sur la montre allumée (sauf ne pas déranger).
+[/list]
+
+[h3]Les 5 boutons (touches modifiables)[/h3]
+[list]
+[*][b]LIGHT[/b] Ctrl+Alt+O (court : luminosité, long : menu), [b]UP[/b] Ctrl+O (écran précédent), [b]DOWN[/b] O (écran suivant), [b]START[/b] Maj+O (action de l'écran), [b]BACK[/b] Alt+O (retour, tour, éteindre) ; [b]Ctrl+Maj+O[/b] : vue agrandie, cliquable à la souris, molette, Échap pour revenir.
+[*]Toutes modifiables dans les touches CBA (COMSPEC ATAK) ou dans le téléphone : Réglages › Accès et touches › Montre Garmin ; d'autres raccourcis sans touche par défaut (chrono, minuteur, mode nuit, Jumpmaster…).
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Mettez la Montre Garmin dans l'emplacement montre.
+[*]Avant un saut : O jusqu'à Jumpmaster, START pour régler l'ouverture (UP / DOWN par 100 m), puis armer.
+[*]Après la mission, ouvrez l'app Garmin › Activités : votre saut et votre marche y sont.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Garmin › Montre Garmin obligatoire[/b] (serveur, coché) : sans montre, rien n'est mesuré ni envoyé ; décoché, le téléphone mesure seul.
+[*][b]COMSPEC › ATAK · Garmin › Taille de la montre Garmin (touche O)[/b] (joueur) : petite, moyenne, grande.
+[*][b]COMSPEC › ATAK · Garmin › Place de la montre Garmin (touche O)[/b] (joueur) : gauche, centre, droite.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : clic droit › [b]Envoyer à la montre[/b] (téléphone allumé) : la boussole pointe ce point.
+[*][b]Routes[/b] : pendant « Suivre la route », la boussole pointe l'étape visée.
+[*][b]Athena[/b] : mesures envoyées toutes les 5 min sur la fiche du membre (téléphone relié à Athena) ; l'app affiche l'état de l'envoi.
+[*][b]ACE[/b] : fréquence cardiaque d'ACE si le mod est chargé, sinon estimée (effort, fatigue, stress).
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Mesures gardées sur ce PC, par jour réel (14 jours, 40 activités) : elles reviennent avec la montre.
+[*]Le sommeil compte inconscient ou immobile allongé / assis au calme plus de 2 min.
+[*]La montre ne s'ouvre jamais seule ; inconscient, elle ne répond plus.
+[/list]
+
+[h3]Version d'introduction[/h3]
+App Garmin en 1.97.0 ; montre au poignet en 2.4.0 ; 4 coloris, 5 boutons, heure H et Jumpmaster en 2.5.0.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Two linked things: a real Garmin watch on your wrist (time, compass, map, altimeter, stopwatch, timer, Jumpmaster, squad H-hour…) and the phone's Garmin app, which shows what the watch measures during your games: steps, heart rate, stress, sleep / rest, Body Battery, activities and challenges.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]You need the watch[/b]: wear the « Garmin watch » in the watch slot of the inventory, or keep the « Garmin watch (misc item) » in your gear. Four colourways: black, coyote, FreeCandy, US flag.
+[*][b]The app[/b]: take out the phone ([b]Ctrl+U[/b] carries it in a corner, [b]Ctrl+Shift+U[/b] takes it in hand), home screen › [b]Navigation[/b] › [b]Garmin[/b] (not in the dock; can be reinstalled from the [b]App Store[/b]).
+[*][b]The watch[/b]: the game's « Watch » key ([b]O[/b]): short press = turn on then next screen, long press = turn off. It replaces the Arma watch; without a Garmin watch the key keeps its usual effect.
+[/list]
+
+[h3]App features[/h3]
+[list]
+[*][b]Home[/b]: today's Body Battery and its curve (stress, rest, level), at a glance (heart rate and zones, resting rate, stress, sleep / rest, steps), [b]Yesterday[/b], [b]Last 7 days[/b] (runs, steps, resting heart rate, stress, sleep); « +N recharged during … away from the game » when you come back.
+[*][b]Activities[/b]: recognised on their own (running, walking, vehicle ride, flight, jump, boat, swimming), closed after 90 s stopped; place, distance, time, pace or speed; current activity shown.
+[*][b]Challenges[/b]: 100,000 steps, Weekly marathon (42.2 km on foot), Runner (3 runs), 5 km in one go, Jump (one jump), over 7 days, with progress and [b]DONE[/b] once achieved; daily [b]Step goal[/b]: 6,000 to 15,000.
+[*]Sync button at the top right: reads the measurements right away.
+[/list]
+
+[h3]Watch screens[/h3]
+[list]
+[*][b]Watch face[/b]: game time, date, battery, Body Battery, step goal, heart rate, steps, sun, temperature, stress (or current track), moon phase.
+[*][b]Heart rate[/b] (zones 1 to 5, 12 min curve), [b]Altimeter[/b] (barometric, START calibrates it on GPS), [b]Map[/b] (you and tracked allies), [b]Compass[/b] (heading, MGRS, START marks your position and the ring points to it).
+[*][b]Jumpmaster[/b] (HALO / HAHO): height, fall speed, opening altitude, target point; when armed it vibrates 300 m before opening then at opening, even switched off.
+[*][b]Stopwatch[/b] (laps), [b]Timer[/b] (vibrates at the end), [b]Phone[/b] (battery, last 3 notifications, make it ring), [b]Music[/b] (phone player), [b]My day[/b].
+[*][b]Command menu[/b] (long press LIGHT): large view, night mode (red), auto red (NVG), do not disturb, stealth mode, brightness, H-hour to group, mark my position, find my phone, turn off.
+[*][b]H-hour to group[/b] (squad leader): countdown of the timer duration on the watches of the whole squad, which vibrate at H-1 min then at zero.
+[*]Phone notifications appear as a 5 s banner on the watch when it is on (except in do not disturb).
+[/list]
+
+[h3]The 5 buttons (rebindable keys)[/h3]
+[list]
+[*][b]LIGHT[/b] Ctrl+Alt+O (short: brightness, long: menu), [b]UP[/b] Ctrl+O (previous screen), [b]DOWN[/b] O (next screen), [b]START[/b] Shift+O (screen action), [b]BACK[/b] Alt+O (back, lap, turn off); [b]Ctrl+Shift+O[/b]: large view, clickable with the mouse, mouse wheel, Esc to go back.
+[*]All rebindable in the CBA keys (COMSPEC ATAK) or in the phone: Settings › Access and keys › Garmin watch; more shortcuts with no default key (stopwatch, timer, night mode, Jumpmaster…).
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Put the Garmin watch in the watch slot.
+[*]Before a jump: O until Jumpmaster, START to set the opening altitude (UP / DOWN by 100 m), then arm.
+[*]After the mission, open the Garmin app › Activities: your jump and your walk are there.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Garmin › Garmin watch required[/b] (server, ticked): without a watch nothing is measured or sent; unticked, the phone measures on its own.
+[*][b]COMSPEC › ATAK · Garmin › Garmin watch size (O key)[/b] (player): small, medium, large.
+[*][b]COMSPEC › ATAK · Garmin › Garmin watch position (O key)[/b] (player): left, centre, right.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: right-click › [b]Send to watch[/b] (phone on): the compass points to that spot.
+[*][b]Routes[/b]: during « Follow the route », the compass points to the target step.
+[*][b]Athena[/b]: measurements sent every 5 min to the member file (phone linked to Athena); the app shows the send status.
+[*][b]ACE[/b]: ACE heart rate if the mod is loaded, otherwise estimated (effort, fatigue, stress).
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Measurements are kept on this PC, per real day (14 days, 40 activities): they come back with the watch.
+[*]Sleep counts when unconscious, or lying / sitting still and calm for more than 2 min.
+[*]The watch never opens on its own; when you are unconscious it no longer responds.
+[/list]
+
+[h3]Introduced in[/h3]
+Garmin app in 1.97.0; wrist watch in 2.4.0; 4 colourways, 5 buttons, H-hour and Jumpmaster in 2.5.0.

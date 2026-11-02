@@ -24,8 +24,10 @@ final class RoutedControllersContainerWiringTest extends TestCase
             $container .= (string) file_get_contents($file);
         }
         preg_match_all('/\\\\?(App\\\\Controllers\\\\[A-Za-z0-9_\\\\]+)::class/', $routes, $m);
+        // Contrôleurs importés par « use » et cités par leur nom court (codes prioritaires en erreur, 02/11/2026).
+        preg_match_all('/^use\s+(App\\\\Controllers\\\\[A-Za-z0-9_\\\\]+);/m', $routes, $imports);
         $missing = [];
-        foreach (array_unique($m[1]) as $class) {
+        foreach (array_unique(array_merge($m[1], $imports[1])) as $class) {
             if (!class_exists($class)) {
                 continue;
             }

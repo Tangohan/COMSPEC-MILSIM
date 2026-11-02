@@ -125,7 +125,7 @@ final class InvitationAcceptController
         }
 
         $pdo = Database::getPdo();
-        $gradeId = self::entryGradeIdForTenant($tenantId);
+        $gradeId = self::invitedGradeId($tenantId, $inv) ?: self::entryGradeIdForTenant($tenantId);
         if ($gradeId <= 0) {
             Session::flash('error', 'Configuration de la communauté incomplète (grades).');
 
@@ -301,7 +301,35 @@ final class InvitationAcceptController
      * Grade d'entrée d'une recrue : le plus bas grade non officier du référentiel de la communauté
      * (sort_order le plus grand, militaires du rang d'abord). Ancien schéma (grades par communauté) pris en charge.
      */
-    private static function entryGradeIdForTenant(int $tenantId): int
+    /**
+     * Grade d'entrée choisi sur l'invitation (back-office), s'il est encore actif dans le référentiel ; 0 sinon.
+     *
+     * @param array<string, mixed> $inv
+     */
+    private static function invitedGradeId(int $tenantId, array $inv): int
+    {
+        $payload = json_decode((string) ($inv['invitation_payload'] ?? ''), true);
+        $wanted = is_array($payload) ? (int) ($payload['grade_id'] ?? 0) : 0;
+        if ($wanted <= 0) {
+            return 0;
+        }
+        try {
+            $grades = new \App\Repositories\GradeRepository();
+            if (!$grades->isReferentielTablePresent()) {
+                return 0;
+            }
+            foreach ($grades->listForTenant($tenantId) as $g) {
+                if ((int) ($g['id'] ?? 0) === $wanted && (int) ($g['is_active'] ?? 1) === 1) {
+                    return $wanted;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return 0;
+    }
+
+    public static function entryGradeIdForTenant(int $tenantId): int
     {
         $grades = new \App\Repositories\GradeRepository();
         if ($grades->isReferentielTablePresent()) {

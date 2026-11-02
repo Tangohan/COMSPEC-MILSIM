@@ -765,7 +765,9 @@ final class EmailService
         string $roleLabel,
         string $inviterLabel,
         int $tenantId,
-        ?string $replyToEmail = null
+        ?string $replyToEmail = null,
+        string $personalMessage = '',
+        int $validDays = 7
     ): bool {
         return $this->sendTemplated(
             EmailEvents::COMMUNITY_INVITATION,
@@ -777,6 +779,8 @@ final class EmailService
                 'acceptUrl' => $acceptUrl,
                 'roleLabel' => $roleLabel,
                 'inviterLabel' => $inviterLabel,
+                'personalMessage' => $personalMessage,
+                'validDays' => max(1, $validDays),
             ],
             $tenantId,
             $replyToEmail,

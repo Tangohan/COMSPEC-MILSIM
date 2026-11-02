@@ -496,6 +496,7 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
 
                 <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="ce-form<?= $compactAccountOpening ? ' enlist-compact-default' : '' ?>" id="recruitment-form" data-can-use-account="<?= $canUseAccount ? '1' : '0' ?>" data-compact-opening="<?= $compactAccountOpening ? '1' : '0' ?>">
                     <?= \App\Core\Csrf::field() ?>
+                    <?php require base_path('views/enlistment/_invite_link.php'); ?>
                     <?php if ($tenantSlugForForm !== ''): ?>
                         <input type="hidden" name="enlistment_tenant_slug" value="<?= htmlspecialchars($tenantSlugForForm) ?>">
                     <?php endif; ?>

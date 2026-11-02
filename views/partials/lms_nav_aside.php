@@ -100,6 +100,7 @@ $icon = static function (string $key): string {
         'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
         'template' => '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/>',
         'discord' => '<path d="M8 12h.01M16 12h.01"/><path d="M7.5 7.5c3-1.3 6-1.3 9 0 1.6 2.4 2.4 5 2.2 8-1.4 1.1-2.8 1.8-4.2 2.2l-.9-1.6M7.5 7.5C5.9 9.9 5.1 12.5 5.3 15.5c1.4 1.1 2.8 1.8 4.2 2.2l.9-1.6"/>',
+        'link' => '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
         'key' => '<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/>',
         'sitemap' => '<rect x="9" y="2.5" width="6" height="5" rx="1"/><rect x="2.5" y="16.5" width="6" height="5" rx="1"/><rect x="15.5" y="16.5" width="6" height="5" rx="1"/><path d="M12 7.5v4M5.5 16.5v-2.5h13v2.5"/>',
         'back' => '<path d="M19 12H5M12 19l-7-7 7-7"/>',

@@ -1,0 +1,118 @@
+[APP] Profil — fiche opérateur, identité du téléphone, certificat, réparations, batterie et relais le plus proche
+
+[i]Message 1/2[/i]
+[h1]Profil[/h1]
+[i]Catégorie : Système · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Le Profil réunit sur une page qui vous êtes (fiche opérateur Athena, unité, qualifications) et l'état de votre téléphone : identité roleplay, certificat de chiffrement, pannes, propreté de l'écran, batterie et relais le plus proche. C'est aussi l'endroit d'où l'on répare, nettoie et change la batterie.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*][b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie Système : Profil (pas dans le dock par défaut, ajoutable dans Réglages > Personnalisation > Dock).
+[*]Si vous l'avez désinstallée, l'App Store la réinstalle.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]En-tête[/b] : portrait opérateur Athena (sinon le logo ATAK), indicatif, nom, grade, fonction abrégée et nom de la communauté (« Hors ligne » sans Athena).
+[*][b]Unité (ORBAT)[/b], [b]Fonction[/b], [b]Groupe[/b] (s'il diffère de l'unité) et [b]Compte Steam lié[/b] (oui / non).
+[*][b]Mon téléphone[/b] : numéro, IMEI et adresse MAC du téléphone. Hors ligne, le numéro est provisoire et Athena le garde à la connexion ; une fois attribué par Athena, le modèle de numéro est indiqué. Bouton [b]COPIER LE NUMÉRO[/b] (presse-papiers).
+[*][b]Qualifications[/b] : vos attributions en cours sur Athena, avec leur état (valide, expire bientôt, période de grâce) et leur date de fin. Demande la liaison Athena (COMSPEC Link).
+[*][b]Certificat du terminal[/b] (avec Athena) : état, référence, échéance et compromission (aucune, appareil capturé, clé compromise). [b]DEMANDER UN CERTIFICAT[/b] apparaît si le certificat manque, a expiré ou a été révoqué. Clé compromise : le trafic est illisible et seul le poste (Zeus ou site) peut régénérer la clé.
+[*][b]État du téléphone[/b] (réalisme Overwatch, avec Athena) : alimentation, écran, liaison et appareil, avec le niveau de réalisme. Boutons [b]RALLUMER[/b], [b]RÉPARER L'ÉCRAN[/b] et [b]RÉVISION COMPLÈTE[/b] tant que l'appareil n'est pas détruit.
+[*][b]Diagnostic du téléphone[/b] : écran, batterie, haut-parleur, GPS, antenne et propreté, en pourcentage. [b]RÉPARER[/b] (actif seulement s'il y a quelque chose à réparer et le matériel sur vous), [b]NETTOYER L'ÉCRAN[/b] et [b]NETTOYAGE COMPLET[/b].
+[*][b]Batterie[/b] : niveau, autonomie estimée au rythme réel (ou « en charge »), nombre de batteries de rechange sur vous, et [b]CHANGER LA BATTERIE[/b] si vous en avez une.
+[*][b]Relais le plus proche[/b] (avec Athena) : nom et grille du relais, distance et portée (à portée / hors portée), postes connectés sur le nombre de places et fiabilité ; sinon « Aucun relais déployé ».
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Après une explosion, l'écran est fissuré : ouvrez Profil et regardez « Diagnostic du téléphone ».
+[*]Ayez un « Kit de réparation ATAK » ou une caisse à outils dans l'inventaire, puis touchez [b]RÉPARER[/b] : 12 s avec le kit (consommé), 20 s avec la caisse (gardée). Le téléphone redémarre réparé.
+[*]L'écran est sale ou couvert de sang : [b]NETTOYER L'ÉCRAN[/b] (quelques secondes, deux passages pour le sang) ou [b]NETTOYAGE COMPLET[/b] (10 s, tout part). Aucun objet n'est nécessaire.
+[*]Batterie basse : [b]CHANGER LA BATTERIE[/b] ; une batterie de rechange est consommée et le téléphone redémarre à 100 %.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Batterie réaliste[/b] (serveur) : sans elle, la section Batterie indique « Simulation coupée ».
+[*][b]COMSPEC › ATAK · Simulation › Dégâts du téléphone[/b] et [b]Saleté et sang sur l'écran[/b] (serveur) : ce que montre le diagnostic.
+[*][b]COMSPEC › ATAK · Accès au téléphone › Batteries de rechange[/b] et [b]Batteries d'autres mods (mots-clés)[/b] (serveur) : objets acceptés comme batterie (la « Batterie ATAK », COMSPEC_ATAK_Battery, marche toujours).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena / COMSPEC Link[/b] : portrait, unité, qualifications, certificat, état Overwatch et relais. Sans liaison, ces sections sont vides ou masquées ; identité, diagnostic et batterie restent.
+[*][b]ACE[/b] : les mêmes réparations, nettoyages et changement de batterie existent dans le menu ACE « Téléphone ATAK » (Entretien), avec barre de progression ACE.
+[*][b]Zeus / poste[/b] : seul le poste régénère une clé compromise.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*][b]RALLUMER[/b] passe par COMSPEC Overwatch ; sans lui, un message l'indique.
+[*]L'identité du téléphone (numéro, IMEI) peut être traçable par d'autres camps en géolocalisation selon la mission.
+[*]Recharge : véhicule moteur allumé, batterie externe ou socle CS-10.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Profile gathers on one page who you are (Athena operator card, unit, qualifications) and the state of your phone: roleplay identity, encryption certificate, faults, screen cleanliness, battery and nearest relay. It is also where you repair, clean and swap the battery.
+
+[h3]How to open it[/h3]
+[list]
+[*][b]Ctrl+U[/b] carries the phone in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, System category: Profile (not in the dock by default; add it in Settings > Customization > Dock).
+[*]If you uninstalled it, the App Store reinstalls it.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]Header[/b]: Athena operator portrait (otherwise the ATAK logo), callsign, name, rank, short role and community name ("Offline" without Athena).
+[*][b]Unit (ORBAT)[/b], [b]Role[/b], [b]Squad[/b] (if different from the unit) and [b]Linked Steam account[/b] (yes / no).
+[*][b]My phone[/b]: the phone's number, IMEI and MAC address. Offline, the number is temporary and Athena keeps it when you connect; once assigned by Athena, the number format is shown. [b]COPY NUMBER[/b] button (clipboard).
+[*][b]Qualifications[/b]: your current Athena assignments, with their state (valid, expiring soon, grace period) and end date. Requires the Athena link (COMSPEC Link).
+[*][b]Terminal certificate[/b] (with Athena): state, reference, expiry and compromise (none, device captured, key compromised). [b]REQUEST CERTIFICATE[/b] appears if the certificate is missing, expired or revoked. Key compromised: traffic is unreadable and only the command post (Zeus or website) can regenerate the key.
+[*][b]Phone status[/b] (Overwatch realism, with Athena): power, screen, link and device, with the realism level. [b]POWER ON[/b], [b]REPAIR SCREEN[/b] and [b]FULL SERVICE[/b] buttons while the device is not destroyed.
+[*][b]Phone diagnostics[/b]: screen, battery, speaker, GPS, antenna and cleanliness, in percent. [b]REPAIR[/b] (enabled only if something needs repair and you carry the tools), [b]CLEAN SCREEN[/b] and [b]FULL CLEAN[/b].
+[*][b]Battery[/b]: level, battery life estimated at the real drain rate (or "charging"), number of spare batteries on you, and [b]SWAP BATTERY[/b] if you have one.
+[*][b]Nearest relay[/b] (with Athena): relay name and grid, distance and range (in range / out of range), connected stations over available slots and reliability; otherwise "No relay deployed".
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]After an explosion the screen is cracked: open Profile and check "Phone diagnostics".
+[*]Carry an "ATAK repair kit" or a toolkit, then tap [b]REPAIR[/b]: 12 s with the kit (consumed), 20 s with the toolkit (kept). The phone reboots repaired.
+[*]The screen is dirty or bloody: [b]CLEAN SCREEN[/b] (a few seconds, two passes for blood) or [b]FULL CLEAN[/b] (10 s, everything goes). No item needed.
+[*]Low battery: [b]SWAP BATTERY[/b]; one spare battery is consumed and the phone reboots at 100 %.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Simulated battery[/b] (server): without it, the Battery section reads "Simulation disabled (settings)".
+[*][b]COMSPEC › ATAK · Simulation › Phone damage[/b] and [b]Dirt and blood on screen[/b] (server): what the diagnostics show.
+[*][b]COMSPEC › ATAK · Phone access › Spare batteries[/b] and [b]Other mods' batteries (patterns)[/b] (server): items accepted as a battery (the "ATAK battery", COMSPEC_ATAK_Battery, always works).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena / COMSPEC Link[/b]: portrait, unit, qualifications, certificate, Overwatch status and relay. Without the link these sections are empty or hidden; identity, diagnostics and battery remain.
+[*][b]ACE[/b]: the same repairs, cleaning and battery swap exist in the ACE menu "ATAK phone" (Maintenance), with an ACE progress bar.
+[*][b]Zeus / command post[/b]: only the post regenerates a compromised key.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*][b]POWER ON[/b] goes through COMSPEC Overwatch; without it, a message says so.
+[*]The phone identity (number, IMEI) may be traceable by other sides through geolocation, depending on the mission.
+[*]Charging: vehicle with engine running, external battery or CS-10 dock.
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

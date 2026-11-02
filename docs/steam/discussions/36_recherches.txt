@@ -1,0 +1,92 @@
+[APP] Recherchés — avis de recherche d'Athena : personnes prioritaires, liste de surveillance, dossiers d'intérêt
+
+[h1]Recherchés[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Consulter sur le terrain ce qu'Athena demande de rechercher : les personnes prioritaires (HVT) du registre SSE de la communauté avec leur photo, la liste de surveillance (nom, alias, niveau de menace) et les dossiers d'intérêt prioritaires ou critiques, avec les éléments à recueillir. Pratique pour reconnaître un sujet avant un contrôle.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Liste des avis[/b] : nom, alias, niveau et référence, avec la photo quand elle est disponible, et le bouton [b]FICHE[/b].
+[*][b]Filtre[/b] : [b]TOUS[/b], [b]PERSONNES[/b], [b]SURVEILLANCE[/b], [b]DOSSIERS[/b], avec leur nombre.
+[*][b]Fiche d'un avis[/b] : nom, alias (« dit … »), niveau, référence, photo, [b]Éléments connus[/b] et date de mise à jour, avec [b]RETOUR[/b] et [b]CONTRÔLE SSE[/b] (ouvre l'app SSE).
+[*][b]ACTUALISER[/b] : relit les avis d'Athena (l'heure de la dernière lecture s'affiche sur le bouton). Les avis se chargent d'eux-mêmes à la première ouverture.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Avant la patrouille, ouvrez Recherchés et appuyez sur [b]ACTUALISER[/b].
+[*]Filtrez sur [b]PERSONNES[/b] et ouvrez la [b]FICHE[/b] des sujets du secteur : retenez visage, alias et éléments connus.
+[*]En cas de contact, appuyez sur [b]CONTRÔLE SSE[/b] pour passer au contrôle d'identité dans l'app SSE.
+[*]Rendez compte ensuite par une fiche FRS / FRM au bureau SSE.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b] : les avis viennent d'Athena par la liaison COMSPEC Link. Il faut le volet Overwatch de COMSPEC sur le serveur (sinon l'app affiche seulement un avertissement), une connexion Athena et un profil qui a accès au SSE.
+[*][b]SSE et FRS / FRM[/b] : CONTRÔLE SSE ouvre l'app SSE ; la fiche rappelle de rendre compte par une FRS.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Arma n'affiche que les photos JPG et PAA : une photo PNG n'est visible que sur Athena.
+[*]Une photo qui n'a pas pu être téléchargée est retentée une minute plus tard, à l'actualisation suivante.
+[*]Les avis d'une mission précédente sont oubliés à la première ouverture dans une nouvelle mission.
+[*]Après un appui sur ACTUALISER, une nouvelle lecture n'est pas relancée tant que la précédente est en cours (30 secondes au plus).
+[/list]
+
+[h3]Version d'introduction[/h3]
+Présente depuis les premières versions de l'ATAK natif (1.x).
+
+[hr][/hr]
+
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Check in the field what Athena asks you to look for: the community SSE register's priority persons (HVT) with their photo, the watchlist (name, alias, threat level) and the priority or critical files of interest, with the elements to collect. Handy to recognise a subject before a check.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app ([b]Target Deck[/b] in English) is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Notice list[/b]: name, alias, level and reference, with the photo when available, and the record button.
+[*][b]Filter[/b]: [b]ALL[/b], [b]PEOPLE[/b], [b]WATCHLIST[/b], [b]FILES[/b], with their count.
+[*][b]Notice record[/b]: name, alias ("aka …"), level, reference, photo, [b]Known elements[/b] and update date, with a back button and [b]SSE CHECK[/b] (opens the SSE app).
+[*][b]REFRESH[/b]: rereads the notices from Athena (the time of the last read is shown on the button). Notices load by themselves on first opening.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Before the patrol, open Target Deck and press [b]REFRESH[/b].
+[*]Filter on [b]PEOPLE[/b] and open the record of the subjects in your sector: remember face, alias and known elements.
+[*]On contact, press [b]SSE CHECK[/b] to move on to the identity check in the SSE app.
+[*]Then report with an FRS / FRM report to the SSE desk.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Athena[/b]: notices come from Athena through the COMSPEC Link. COMSPEC's Overwatch component is required on the server (otherwise the app only shows a warning), plus an Athena connection and a profile with SSE access.
+[*][b]SSE and FRS / FRM[/b]: SSE CHECK opens the SSE app; the record reminds you to report with an FRS.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]Arma only displays JPG and PAA photos: a PNG photo is only visible on Athena.
+[*]A photo that could not be downloaded is retried one minute later, on the next refresh.
+[*]Notices from a previous mission are forgotten on first opening in a new mission.
+[*]After pressing REFRESH, no new read starts while the previous one is running (30 seconds at most).
+[/list]
+
+[h3]Introduced in[/h3]
+Present since the first native ATAK versions (1.x).

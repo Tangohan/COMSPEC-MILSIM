@@ -1,0 +1,98 @@
+[APP] SALUTE — compte rendu d'observation en six lettres, envoyé au camp et au poste
+
+[h1]SALUTE[/h1]
+[i]Catégorie : Renseignement · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Rédiger et envoyer un compte rendu d'observation au format SALUTE : Size (volume), Activity (activité), Location (localisation), Unit (unité, tenue), Time (heure), Equipment (équipement). Les joueurs de votre camp le reçoivent en alerte avec un repère sur la carte ; si la liaison Athena est en place, il part aussi au poste.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est rangée dans la catégorie [b]Renseignement[/b] (elle n'est pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller. Autres accès : la ligne SALUTE de l'app [b]Alertes[/b], et le bouton SALUTE du dossier d'un HVT dans [b]Tinder[/b], qui ouvre un SALUTE prérempli.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Une ligne par lettre[/b] : grande lettre, libellé, exemple et champ de saisie. [b]S[/b] Volume (« 6 PAX, 2 pick-up »), [b]A[/b] Activité (« patrouille vers le nord »), [b]L[/b] Localisation (carroyage de 6 à 10 chiffres), [b]U[/b] Unité, tenue (uniforme, insignes), [b]T[/b] Heure d'observation, [b]E[/b] Équipement (armes, véhicules, matériel).
+[*][b]Boutons rapides[/b] : sur L, [b]ICI[/b] (votre position) et [b]VISÉ[/b] (le point sous votre regard) ; sur T, [b]MAINTENANT[/b]. Sous L s'affichent la distance et l'azimut du lieu saisi.
+[*][b]Pastilles d'état[/b] : [b]CAMP SEULEMENT[/b] ou [b]CAMP + POSTE[/b] (selon la liaison Athena) et le nombre de lettres remplies sur 6.
+[*][b]ENVOYER LE SALUTE[/b] et [b]EFFACER[/b] (vide le compte rendu).
+[*][b]Derniers SALUTE[/b] : les huit derniers comptes rendus de la mission (envoyés et reçus), avec auteur, heure, carroyage et texte.
+[*][b]Disposition[/b] : en paysage, S, A, U à gauche et L, T, E à droite ; en portrait, l'un sous l'autre avec défilement.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez SALUTE et remplissez [b]S[/b] (« 4 PAX ») et [b]A[/b] (« installent un barrage »).
+[*]Sur [b]L[/b], appuyez sur [b]VISÉ[/b] en regardant la position, ou sur [b]ICI[/b].
+[*]Appuyez sur [b]MAINTENANT[/b] pour l'heure, complétez U et E si vous le pouvez.
+[*]Appuyez sur [b]ENVOYER LE SALUTE[/b] : un message confirme l'envoi (au camp, ou au camp et au poste) et le formulaire se vide.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+Aucun réglage dédié.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : chez les joueurs du camp qui le reçoivent, le SALUTE pose un repère d'alerte local pendant 10 minutes, avec notification et vibreur.
+[*][b]Alertes[/b] : le SALUTE entre dans le journal des alertes.
+[*][b]Athena[/b] : avec la liaison Athena (volet Overwatch de COMSPEC), le SALUTE part aussi au poste, avec la position du lieu. Sans liaison, il reste entre joueurs du camp.
+[*][b]Tinder[/b] : le dossier d'un HVT peut préremplir un SALUTE (nom, recoupement des sources, dernière position connue, confiance).
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Il faut au moins deux lettres remplies pour envoyer ; l'app conseille d'y mettre la taille ou l'activité.
+[*]Si le carroyage de L ne se lit pas, votre propre position est utilisée (l'app vous prévient).
+[*]Le brouillon est gardé quand vous changez d'app.
+[/list]
+
+[h3]Version d'introduction[/h3]
+App séparée depuis ATAK natif 1.42.0 (octobre 2026) ; le SALUTE se faisait avant depuis l'app Alertes.
+
+[hr][/hr]
+
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Write and send an observation report in SALUTE format: Size, Activity, Location, Unit (unit, uniform), Time, Equipment. Players on your side receive it as an alert with a map marker; if the Athena link is up, it is also sent to the command post.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app is in the [b]Intelligence[/b] category (it is not in the dock). If it was uninstalled, the App Store reinstalls it. Other ways in: the SALUTE row of the [b]Alerts[/b] app, and the SALUTE button of an HVT file in [b]Tinder[/b], which opens a pre-filled SALUTE.
+
+[h3]Features[/h3]
+[list]
+[*][b]One row per letter[/b]: big letter, label, example and input field. [b]S[/b] Size ("6 PAX, 2 pick-ups"), [b]A[/b] Activity ("patrol heading north"), [b]L[/b] Location (6 to 10 digit grid), [b]U[/b] Unit, uniform (uniform, insignia), [b]T[/b] Time observed, [b]E[/b] Equipment (weapons, vehicles, gear).
+[*][b]Quick buttons[/b]: on L, [b]HERE[/b] (your position) and [b]AIMED[/b] (the point you are looking at); on T, [b]NOW[/b]. Distance and bearing to the entered location are shown under L.
+[*][b]Status chips[/b]: [b]SIDE ONLY[/b] or [b]SIDE + POST[/b] (depending on the Athena link) and the number of letters filled out of 6.
+[*][b]SEND SALUTE[/b] and [b]CLEAR[/b] (empties the report).
+[*][b]Latest SALUTE[/b]: the last eight reports of the mission (sent and received), with author, time, grid and text.
+[*][b]Layout[/b]: in landscape, S, A, U on the left and L, T, E on the right; in portrait, one under the other with scrolling.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open SALUTE and fill [b]S[/b] ("4 PAX") and [b]A[/b] ("setting up a roadblock").
+[*]On [b]L[/b], press [b]AIMED[/b] while looking at the position, or [b]HERE[/b].
+[*]Press [b]NOW[/b] for the time, fill U and E if you can.
+[*]Press [b]SEND SALUTE[/b]: a message confirms the send (to the side, or to the side and the post) and the form is cleared.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+No dedicated setting.
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: for the players on your side who receive it, the SALUTE places a local alert marker for 10 minutes, with a notification and vibration.
+[*][b]Alerts[/b]: the SALUTE is added to the alert log.
+[*][b]Athena[/b]: with the Athena link (COMSPEC's Overwatch component), the SALUTE also goes to the post, with the location's position. Without the link, it stays between players on your side.
+[*][b]Tinder[/b]: an HVT file can pre-fill a SALUTE (name, source cross-checking, last known position, confidence).
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]At least two letters must be filled to send; the app advises including size or activity.
+[*]If the L grid cannot be read, your own position is used (the app warns you).
+[*]The draft is kept when you switch apps.
+[/list]
+
+[h3]Introduced in[/h3]
+Separate app since native ATAK 1.42.0 (October 2026); SALUTE used to be done from the Alerts app.

@@ -1,0 +1,140 @@
+[APP] Routes — routes nommées, étapes typées, guidage d'étape en étape et partage
+
+[i]Message 1/2[/i]
+[h1]Routes[/h1]
+[i]Catégorie : Navigation · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+Préparer et suivre des itinéraires complets : routes nommées à pied, en véhicule, aériennes ou nautiques, faites d'étapes typées (départ, checkpoint, ligne de phase, LZ…) avec consigne, heure prévue et action attendue. L'app calcule distances, caps, durée et heure d'arrivée, vous guide d'étape en étape et partage la route avec votre équipe, votre groupe ou votre camp.
+
+[h3]Comment l'ouvrir[/h3]
+[list]
+[*]Sortez le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris).
+[*]Écran d'accueil, catégorie [b]Navigation[/b], app [b]Routes[/b] (pas dans le dock). Désinstallée par erreur : réinstallez-la depuis l'[b]App Store[/b].
+[*]Depuis l'app [b]Itinéraire[/b] : bouton [b]COPIER DANS L'APP ROUTES[/b].
+[*]Téléphone porté (Ctrl+U, sans souris) : l'app affiche le guidage si une route est suivie, sinon la liste.
+[/list]
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Liste[/b] : onglets [b]MES ROUTES[/b] et [b]REÇUES[/b], avec distance, durée et étiquettes (partagée, carte d'Arma, 3D, masquée) ; boutons [b]OUVRIR[/b], [b]SUIVRE[/b], [b]AFFICHER / MASQUER[/b] ; [b]+ NOUVELLE ROUTE[/b] et [b]IMPORTER L'ITINÉRAIRE[/b] (reprend les étapes de l'app Itinéraire).
+[*][b]Carte de l'app[/b] : mode de clic [b]AJOUTER[/b] (en fin de route), [b]INSÉRER APRÈS[/b] (après l'étape choisie) ou [b]DÉPLACER[/b] (l'étape choisie) ; clic sur une étape pour la choisir, clic droit pour la désélectionner. Aussi [b]+ MA POSITION[/b], [b]+ MARQUEUR[/b] (marqueurs les plus proches de vous) et une grille MGRS de 4 à 10 chiffres.
+[*][b]Étapes[/b] : 11 types (Départ, Point de passage, Checkpoint, Ligne de phase, Point de ralliement, Ralliement objectif, Objectif, LZ, PZ, Point de dislocation, Arrivée), nom automatique (CP 2, RP 1…), réordonnables avec ▲ / ▼, supprimables avec X.
+[*][b]FICHE d'une étape[/b] : nom, type, action attendue (Halte, Compte rendu radio, Regroupement, Changer de formation, Attendre l'ordre, Franchissement, Observation, Embarquement, Débarquement, Assaut, Silence radio), heure H+ en minutes, consigne ; distances et caps vers l'étape précédente, la suivante, depuis le départ et depuis vous, altitude ; [b]MA POSITION ICI[/b], [b]DÉPLACER SUR LA CARTE[/b], [b]SUIVRE D'ICI[/b].
+[*][b]Calculs[/b] : distance totale, durée estimée à la vitesse prévue, heure d'arrivée si départ maintenant ; distance, cap et durée de chaque tronçon.
+[*][b]Type de tracé[/b] : À pied (4 km/h), Véhicule (40 km/h, option [b]Suivre les routes[/b] : le tracé passe par le réseau routier, calculé en quelques secondes), Aérien (180 km/h, couloir de vol de largeur réglable), Nautique (25 km/h) ; vitesse prévue modifiable.
+[*][b]Style[/b] : 8 couleurs, épaisseur FINE / NORMALE / ÉPAISSE, trait PLEIN, POINTILLÉ ou FLÈCHES de direction. Zoom rapproché : distance et cap affichés sur chaque tronçon.
+[*][b]Heure H[/b] (HH:MM) : chaque étape affiche son heure prévue (« H+15 (14:45) »).
+[*][b]Affichage[/b] : [b]Carte ATAK[/b] (route sur l'app Carte du téléphone), [b]Carte d'Arma et Athena[/b] (tracé et étapes en marqueurs sur le canal du groupe, du camp si partagée au camp, et envoyés au site Athena), [b]Vue 3D[/b] (trait au sol et repères des étapes dans le monde, à moins de 1,5 km).
+[*][b]Partage[/b] : [b]Envoyer à[/b] ÉQUIPE (votre équipe de feu, le groupe si vous n'en avez pas), GROUPE ou CAMP, par le réseau ATAK ; chaque modification est renvoyée ; [b]RETIRER LE PARTAGE[/b]. Sans réseau, l'envoi part au retour du signal ; les joueurs qui arrivent plus tard la reçoivent aussi.
+[*][b]Routes reçues[/b] : lecture seule (seuls Carte ATAK et Vue 3D se règlent) ; [b]DUPLIQUER[/b] en fait une copie modifiable.
+[*][b]Gestion[/b] : renommer, [b]DUPLIQUER[/b], [b]INVERSER[/b] (départ et arrivée échangés), [b]SUPPRIMER[/b] (deux clics). Vos routes sont gardées sur votre PC, par carte.
+[*][b]Suivre la route[/b] : étape visée, distance et cap, arrivée à l'étape, reste et heure de fin, progression, frise des étapes, mis à jour chaque seconde ; [b]◀ PRÉC.[/b], [b]SUIV. ▶[/b], [b]ARRÊTER[/b], [b]VOIR SUR LA CARTE[/b]. Départ sur l'étape la plus proche (pas forcément la première). À chaque étape atteinte : vibration, notification avec l'action et la consigne, passage à la suivante. Sur l'app Carte, le tronçon en cours est en vert, avec des tirets de vous à l'étape visée.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Routes › [b]+ NOUVELLE ROUTE[/b] ; choisissez le type de tracé et renommez-la.
+[*]Cliquez sur la carte de l'app pour poser les étapes (mode AJOUTER), ou utilisez + MA POSITION, + MARQUEUR ou une grille.
+[*]Ouvrez la [b]FICHE[/b] de chaque étape : type, action attendue, H+, consigne, puis [b]ENREGISTRER[/b].
+[*]Posez l'heure H, puis [b]Envoyer à[/b] GROUPE.
+[*]Au départ, [b]SUIVRE[/b] : marchez, le téléphone vibre à chaque étape.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Routes › Partage des routes[/b] (serveur) : décoché, chaque route reste sur son téléphone.
+[*][b]COMSPEC › ATAK · Routes › Routes sur la carte d'Arma et Athena[/b] (serveur) : décoché, l'option Carte d'Arma et Athena est refusée.
+[*][b]COMSPEC › ATAK · Routes › Étapes par route au plus[/b] (serveur) : 5 à 80, 40 par défaut.
+[*][b]COMSPEC › ATAK · Routes › Rayon d'arrivée à une étape (à pied, m)[/b] (joueur) : 25 m par défaut, x2,4 en véhicule, x3 sur l'eau, x8 en vol.
+[*][b]COMSPEC › ATAK · Routes › Vue 3D des routes[/b] (joueur) : décoché, jamais de 3D.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Carte[/b] : les routes affichées sont dessinées sur l'app Carte.
+[*][b]Itinéraire[/b] : import des points de passage dans une nouvelle route.
+[*][b]Garmin[/b] : pendant le suivi, la boussole de la montre Garmin pointe l'étape visée.
+[*][b]Athena[/b] : avec l'option Carte d'Arma et Athena, le tracé apparaît sur la carte du site.
+[*][b]ACE + Overwatch[/b] : avec les infos tactiques dans les JVN, l'action ACE [b]Ajouter un point d'itinéraire[/b] ajoute le point regardé à la route « Itinéraire JVN » (3D cochée) ; [b]Effacer l'itinéraire[/b] la supprime.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]60 routes personnelles au plus ; routes reçues gardées pour la partie seulement.
+[*]Suivre les routes : un tronçon sans route praticable reste en ligne droite (notification).
+[*]Le tracé sur la carte d'Arma est allégé à 200 points.
+[*]Le partage passe par le réseau du téléphone : pas de signal, pas d'envoi immédiat.
+[/list]
+
+[h3]Version d'introduction[/h3]
+2.9.34 (nouvelle app).
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+Plan and follow full itineraries: named routes on foot, by vehicle, by air or by water, made of typed steps (start, checkpoint, phase line, LZ…) with an instruction, a planned time and an expected action. The app calculates distances, headings, duration and arrival time, guides you step by step and shares the route with your team, squad or side.
+
+[h3]How to open it[/h3]
+[list]
+[*]Take out the phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse).
+[*]Home screen, [b]Navigation[/b] category, [b]Routes[/b] app (not in the dock). Uninstalled by mistake: reinstall it from the [b]App Store[/b].
+[*]From the Itinerary app (named « Route » in English): [b]COPY TO THE ROUTES APP[/b] button.
+[*]Phone carried (Ctrl+U, no mouse): the app shows guidance if a route is followed, otherwise the list.
+[/list]
+
+[h3]Features[/h3]
+[list]
+[*][b]List[/b]: [b]MY ROUTES[/b] and [b]RECEIVED[/b] tabs, with distance, duration and tags (shared, Arma map, 3D, hidden); [b]OPEN[/b], [b]FOLLOW[/b], [b]SHOW / HIDE[/b] buttons; [b]+ NEW ROUTE[/b] and [b]IMPORT ITINERARY[/b] (takes the steps of the Itinerary app).
+[*][b]App map[/b]: map click mode [b]ADD[/b] (at the end), [b]INSERT AFTER[/b] (after the selected step) or [b]MOVE[/b] (the selected step); click a step to select it, right-click to deselect. Also [b]+ MY POSITION[/b], [b]+ MARKER[/b] (markers closest to you) and a 4 to 10 digit MGRS grid.
+[*][b]Steps[/b]: 11 types (Start, Waypoint, Checkpoint, Phase line, Rally point, Objective rally point, Objective, LZ, PZ, Release point, Arrival), automatic name (CP 2, RP 1…), reorder with ▲ / ▼, delete with X.
+[*][b]Step RECORD[/b]: name, type, expected action (Halt, Radio report, Regroup, Change formation, Wait for orders, Crossing, Observation, Mount up, Dismount, Assault, Radio silence), H+ time in minutes, instruction; distances and headings from the previous step, to the next one, from the start and from you, altitude; [b]MY POSITION HERE[/b], [b]MOVE ON THE MAP[/b], [b]FOLLOW FROM HERE[/b].
+[*][b]Calculations[/b]: total distance, estimated time at the planned speed, arrival if leaving now; distance, heading and time of each leg.
+[*][b]Route type[/b]: On foot (4 km/h), Vehicle (40 km/h, [b]Follow roads[/b] option: the path uses the road network, computed in a few seconds), Air (180 km/h, flight corridor with adjustable width), Waterborne (25 km/h); planned speed can be changed.
+[*][b]Style[/b]: 8 colours, THIN / NORMAL / THICK width, solid line (button left as PLEIN), DASHED or direction ARROWS. Close zoom: distance and heading shown on each leg.
+[*][b]H-hour[/b] (HH:MM): each step shows its planned time (« H+15 (14:45) »).
+[*][b]Display[/b]: [b]ATAK map[/b] (route on the phone's Map app), [b]Arma map and Athena[/b] (path and steps as markers on the group channel, side channel if shared with the side, and sent to the Athena site), [b]3D view[/b] (line on the ground and step markers in the world, within 1.5 km).
+[*][b]Sharing[/b]: [b]Send to[/b] TEAM (your fire team, the squad if you have none), GROUP or SIDE, over the ATAK network; every change is sent again; [b]STOP SHARING[/b]. Without network it goes out when the signal returns; players who join later get it too.
+[*][b]Received routes[/b]: read-only (only ATAK map and 3D view can be set); [b]DUPLICATE[/b] makes an editable copy.
+[*][b]Management[/b]: rename, [b]DUPLICATE[/b], [b]REVERSE[/b] (start and arrival swapped), [b]DELETE[/b] (two clicks). Your routes are kept on your PC, per map.
+[*][b]Follow the route[/b]: target step, distance and heading, arrival at the step, remaining distance and end time, progress, step strip, updated every second; [b]◀ PREV.[/b], [b]NEXT ▶[/b], [b]STOP[/b], [b]SHOW ON MAP[/b]. Starts on the nearest step (not always the first). At each step reached: vibration, notification with the action and instruction, move to the next one. On the Map app, the current leg is green, with dashes from you to the target step.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Routes › [b]+ NEW ROUTE[/b]; pick the route type and rename it.
+[*]Click the app map to place the steps (ADD mode), or use + MY POSITION, + MARKER or a grid.
+[*]Open each step's [b]RECORD[/b]: type, expected action, H+, instruction, then [b]SAVE[/b].
+[*]Set the H-hour, then [b]Send to[/b] GROUP.
+[*]At departure, [b]FOLLOW[/b]: walk, the phone vibrates at each step.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Routes › Route sharing[/b] (server): unticked, each route stays on its phone.
+[*][b]COMSPEC › ATAK · Routes › Routes on the Arma map and Athena[/b] (server): unticked, the Arma map and Athena option is refused.
+[*][b]COMSPEC › ATAK · Routes › Maximum steps per route[/b] (server): 5 to 80, 40 by default.
+[*][b]COMSPEC › ATAK · Routes › Step arrival radius (on foot, m)[/b] (player): 25 m by default, x2.4 by vehicle, x3 on water, x8 in flight.
+[*][b]COMSPEC › ATAK · Routes › 3D view of routes[/b] (player): unticked, never any 3D.
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Map[/b]: displayed routes are drawn on the Map app.
+[*][b]Itinerary[/b]: import of its waypoints into a new route.
+[*][b]Garmin[/b]: while following, the Garmin watch compass points to the target step.
+[*][b]Athena[/b]: with the Arma map and Athena option, the path appears on the site's map.
+[*][b]ACE + Overwatch[/b]: with tactical info in NVGs, the ACE action « Ajouter un point d'itinéraire » (add a route point) adds the point you look at to the « NVG route » (3D ticked); « Effacer l'itinéraire » (clear) deletes it.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]60 personal routes at most; received routes are kept for the session only.
+[*]Follow roads: a leg with no usable road stays a straight line (notification).
+[*]The path on the Arma map is simplified to 200 points.
+[*]Sharing goes over the phone network: no signal, no immediate send.
+[/list]
+
+[h3]Introduced in[/h3]
+2.9.34 (new app).

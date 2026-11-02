@@ -130,6 +130,13 @@ final class RateLimitMiddleware
             return [45, 300, 'rl:activite_mark:' . $path . ':' . $actorKey];
         }
 
+        // Liens d'invitation /i/<code> : page (essais de codes au hasard freinés) et adhésion.
+        if (str_starts_with($path, '/i/')) {
+            return $method === 'GET'
+                ? [60, 600, 'rl:invite_link:GET:' . $ip]
+                : [15, 600, 'rl:invite_link:POST:' . $actorKey];
+        }
+
         $routes = [
             '/login' => [30, 300],
             '/login/select-community' => [40, 300],

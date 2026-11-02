@@ -82,6 +82,6 @@ final class MemberNamesWiringTest extends TestCase
         $ids = array_column($registry, 'id');
         self::assertContains('member_names_trigrams', $ids);
         self::assertSame(count($ids), count(array_unique($ids)));
-        self::assertContains('3590_member_names_trigrams.php', array_column($registry, 'file'));
+        self::assertContains('3600_member_names_trigrams.php', array_column($registry, 'file'));
     }
 }

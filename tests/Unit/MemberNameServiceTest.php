@@ -62,7 +62,7 @@ final class MemberNameServiceTest extends TestCase
         $root = dirname(__DIR__, 2);
         ob_start();
         try {
-            require $root . '/database/steps/3590_member_names_trigrams.php';
+            require $root . '/database/steps/3600_member_names_trigrams.php';
         } finally {
             $out = (string) ob_get_clean();
         }

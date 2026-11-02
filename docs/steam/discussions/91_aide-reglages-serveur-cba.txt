@@ -1,0 +1,109 @@
+[AIDE] Réglages serveur (CBA) — où les trouver et ceux à connaître
+
+[i]Message 1/2[/i]
+[h1]Réglages serveur (CBA)[/h1]
+[i]COMSPEC ATAK 2.9.34 · plus de 200 réglages[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]Où les trouver[/h3]
+[list]
+[*]Menu principal ou Échap › [b]Options › Options des addons[/b], catégorie [b]COMSPEC[/b], sous-rubriques [b]ATAK · …[/b] (et [b]Overwatch · …[/b] pour la liaison Athena, les infos tactiques JVN et le roleplay).
+[*]Onglet [b]Serveur[/b] : connecté en admin sur le serveur, ou dans l'éditeur pour une mission (onglet Mission). Cochez « forcer » pour imposer une valeur aux joueurs.
+[*]Onglet [b]Client[/b] : les réglages personnels (langue, police, intro, flou des photos, montre Garmin…).
+[*]Chaque réglage a une bulle d'aide en jeu : passez la souris sur son nom.
+[/list]
+
+[h3]Le premier à choisir : le profil de réalisme[/h3]
+[b]ATAK · Simulation › Profil de réalisme[/b] :
+[list]
+[*][b]Milsim[/b] (par défaut) : réseau radio, météo, saturation, pertes, BFT toutes les 10 s, GPS moins précis à couvert, batterie : tout à sa valeur réelle.
+[*][b]Standard[/b] : les mêmes simulations, en plus doux (BFT toutes les 5 s, pas d'attente des satellites).
+[*][b]Arcade[/b] : réseau parfait, BFT en direct, GPS exact, batterie infinie.
+[*][b]Personnalisé[/b] : seuls les réglages détaillés de la rubrique comptent.
+[/list]
+
+[h3]Rubriques et réglages clés[/h3]
+[list]
+[*][b]Accès au téléphone[/b] : Item obligatoire pour utiliser l'ATAK, téléphones et batteries d'autres mods (mots-clés, classes exactes), tablettes et MicroDAGR acceptés, téléphone rangé destructible.
+[*][b]Modèle et items requis[/b] : modèle de téléphone affiché (S7 par défaut).
+[*][b]Simulation[/b] : profil de réalisme, dégâts et saleté de l'écran, guerre électronique pour tous, brouilleurs (Crows, TFAR, objets d'autres mods), batterie et réseau réalistes, portées et débits MPU5 / relais / radios ACRE2-TFAR, réseau uniquement par les relais, mode hors connexion, GPS réaliste, BFT par points (PLI), partage des caméras, portée Bluetooth, drones armés, Rejeu de mission.
+[*][b]Apps (dans Simulation)[/b] : [b]Apps retirées[/b], [b]Apps obligatoires[/b], [b]Apps interdites[/b] (noms de classe séparés par des virgules, ex. Dating, Food), [b]Apps civiles[/b] (UberEats et Tinder), Tinder : profils HVT et SSE.
+[*][b]Radio de données (MPU5)[/b] : liaison téléphone-radio réaliste, radio de données obligatoire, câble EUD obligatoire, Wi-Fi de la MPU5, autonomie, latence par saut, [b]Voix ACRE/TFAR relayée par le maillage MPU5[/b] (désactivé par défaut).
+[*][b]Batterie et mémoire[/b] : autonomie en main, batterie au début de la mission, recharge en véhicule, mémoire vive et apps gardées en fond.
+[*][b]Socle de recharge[/b] : vitesse de charge, charge entre deux parties, socles conservés, qui peut reprendre un téléphone.
+[*][b]Carte[/b] : style des noms, diffusion des marqueurs (carte d'Arma ou réseau ATAK uniquement), fenêtre de création, canal, nom et numérotation des marqueurs.
+[*][b]Routes[/b] : partage des routes, routes sur la carte d'Arma et Athena, étapes par route, rayon d'arrivée, vue 3D.
+[*][b]Géolocalisation[/b] : géolocalisation des téléphones, réservée aux opérateurs GE, son propre camp, IA, précision, mise à jour, prévenir la cible, carte SIM localisable téléphone éteint.
+[*][b]Capture par l'ennemi[/b] : l'IA ennemie ramasse les téléphones, casse le code, chasse les joueurs ; qui peut déclarer un téléphone volé.
+[*][b]Marquage de cible[/b] : marquage à la caméra, le marqueur suit la cible, cible perdue, reprise automatique, portée.
+[*][b]Appui feu[/b] : appui feu typé, tir exécuté par l'IA, batteries simulées, délais de réaction, cercles de portée et zone dangereuse.
+[*][b]Équipes et suivi[/b] : ATAK pour les équipages d'hélico et d'avion, tablette dans les véhicules, écrans visibles la nuit, temps d'écran, distances parcourues, plan de briefing (qui peut dessiner).
+[*][b]IA[/b] : IA équipées d'un ATAK (visibles au BFT), IA réalistes sur le réseau, objet donné aux IA.
+[*][b]Mode local et poste TOC[/b] : [b]Mode full local (sans Athena)[/b], PC portables de TOC, tous les ordinateurs portables servent de PC de TOC, garder les écrans TOC, caméras en direct sur les écrans.
+[*][b]Extraction de données[/b] : câble DL-7 obligatoire, longueur du câble, vitesse des transferts.
+[*][b]Musique[/b] : app Musique, haut-parleur et portée, liens audio, bibliothèque Athena, radio de la mission.
+[*][b]Tinder : chasse aux HVT[/b] : tuyaux, part de faux tuyaux, péremption, dérive, faux rendez-vous, les civils font parler, partage au groupe.
+[*][b]Garmin[/b] : montre obligatoire, taille et place de la montre (touche O).
+[*][b]Admin[/b] : gestionnaires en jeu (UID Steam), Zeus peut imposer le CR de fin d'opération.
+[*][b]Interface, Affichage, Intro, Gilet, Gestes, Photo, Debug[/b] : surtout des réglages personnels (taille du téléphone en main, heure des alertes, téléphone visible en 3D, menu d'actions, intro, flou des visages, rapport de démarrage).
+[/list]
+
+[h3]Astuces[/h3]
+[list]
+[*]Une app interdite par la mission, le Zeus (app Admin) ou la communauté Athena l'emporte sur une app obligatoire.
+[*]Les noms de classe des apps sont ceux de l'index des apps (ex. Map, Chat, Fires, Dating). Une app retirée disparaît aussi de l'App Store.
+[*]Serveur sans Athena : Mode full local. Joueur qui refuse Athena : il répond Non au service Athena, les apps Athena, Synchro, Discord et Recherchés sont masquées pour lui.
+[/list]
+
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]Where to find them[/h3]
+[list]
+[*]Main menu or Escape › [b]Options › Addon Options[/b], [b]COMSPEC[/b] category, [b]ATAK · …[/b] sub-sections (and [b]Overwatch · …[/b] for the Athena link, NVG tactical info and roleplay).
+[*][b]Server[/b] tab: logged in as server admin, or in the editor for a mission (Mission tab). Tick "force" to impose a value on players.
+[*][b]Client[/b] tab: personal settings (language, font, intro, photo blur, Garmin watch…).
+[*]Every setting has an in-game tooltip: hover its name.
+[/list]
+
+[h3]The first one to pick: the realism profile[/h3]
+[b]ATAK · Simulation › Realism profile[/b]:
+[list]
+[*][b]Milsim[/b] (default): radio network, weather, congestion, losses, BFT every 10 s, GPS less accurate under cover, battery: everything at its real value.
+[*][b]Standard[/b]: the same simulations, softer (BFT every 5 s, no satellite wait).
+[*][b]Arcade[/b]: perfect network, live BFT, exact GPS, endless battery.
+[*][b]Custom[/b]: only the detailed settings of the section count.
+[/list]
+
+[h3]Sections and key settings[/h3]
+[list]
+[*][b]Phone access[/b]: Required item to have ATAK, phones and batteries from other mods (patterns, exact classes), tablets and DAGRs count too, stowed phone can be destroyed.
+[*][b]Model and required items[/b]: phone model shown (S7 by default).
+[*][b]Simulation[/b]: realism profile, screen damage and dirt, electronic warfare open to all, jammers (Crows, TFAR, other mods' objects), simulated battery and network, MPU5 / relay / ACRE2-TFAR radio ranges and throughput, network through relays only, offline operation, realistic GPS, BFT positions by reports (PLI), camera sharing, Bluetooth range, armed drones, mission replay.
+[*][b]Apps (in Simulation)[/b]: [b]Disabled apps[/b], [b]Mandatory apps[/b], [b]Forbidden apps[/b] (class names separated by commas, e.g. Dating, Food), [b]Civilian apps[/b] (UberEats and Tinder), Tinder: HVT and SSE profiles.
+[*][b]Data radio (MPU5)[/b]: realistic phone-radio link, data radio required, EUD cable required, MPU5 Wi-Fi, battery life, latency per mesh hop, [b]ACRE/TFAR voice relayed over the MPU5 mesh[/b] (off by default).
+[*][b]Battery and memory[/b]: battery life in hand, charge at mission start, vehicle charging, phone RAM and apps kept in background.
+[*][b]Charging dock[/b]: charge rate, charge between sessions, remembered docks, who can take back a phone.
+[*][b]Map[/b]: name styles, marker distribution (Arma map or ATAK network only), placement menu, channel, marker names and numbering.
+[*][b]Routes[/b]: route sharing, routes on the Arma map and Athena, steps per route, arrival radius, 3D view.
+[*][b]Geolocation[/b]: phone tracing, reserved for EW operators, own side, AI, accuracy, refresh, warn target, SIM card emergency mode.
+[*][b]Enemy capture[/b]: enemy AI picks up phones, cracks the lock code, hunts players; who confirms a compromise.
+[*][b]Target marking[/b]: sight marking, marker follows the target, target lost, auto re-acquire, range.
+[*][b]Fire support[/b]: typed fire support, AI-executed fire, simulated batteries, reaction times, range rings and danger area.
+[*][b]Teams and tracking[/b]: ATAK for aircrews, tablet in vehicles, screen glow at night, screen time, distance travelled, briefing plan editing.
+[*][b]AI[/b]: AI with an ATAK (shown on the BFT), realistic AI on the network, item given to AI.
+[*][b]Local mode and TOC post[/b]: [b]Full local mode (no Athena)[/b], TOC laptops, every laptop works as a TOC laptop, keep TOC screens, live cameras on screens.
+[*][b]Data extraction[/b]: DL-7 cable required, cable length, transfer speed.
+[*][b]Music[/b]: Music app, speaker and range, audio links, Athena library, mission radio.
+[*][b]Tinder: HVT hunt[/b]: tips, share of false tips, shelf life, drift, fake meetings, civilians talk, share with the squad.
+[*][b]Garmin[/b]: watch required, watch size and position (O key).
+[*][b]Admin[/b]: in-game managers (Steam UID), Zeus can require the end-of-operation report.
+[*][b]Interface, Display, Intro, Vest, Gestures, Photo, Debug[/b]: mostly personal settings (phone size in hand, alert time, visible 3D phone, action menu, intro, face blur, startup check).
+[/list]
+
+[h3]Tips[/h3]
+[list]
+[*]An app forbidden by the mission, the Zeus (Admin app) or the Athena community wins over a mandatory app.
+[*]App class names are those of the app index (e.g. Map, Chat, Fires, Dating). A disabled app also disappears from the App Store.
+[*]Server without Athena: Full local mode. Player who declines Athena: they answer No to the Athena service; the Athena, Sync, Discord and Wanted apps are hidden for them.
+[/list]

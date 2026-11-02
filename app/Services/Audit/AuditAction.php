@@ -62,6 +62,15 @@ final class AuditAction
     public const INVITATION_ACCEPTED = 'invitation.accepted';
     public const INVITATION_REVOKED = 'invitation.revoked';
 
+    /** Liens d'invitation partageables (/i/<code>). */
+    public const INVITE_LINK_CREATED = 'invite_link.created';
+    public const INVITE_LINK_UPDATED = 'invite_link.updated';
+    public const INVITE_LINK_REVOKED = 'invite_link.revoked';
+    public const INVITE_LINK_REACTIVATED = 'invite_link.reactivated';
+    public const INVITE_LINK_JOINED = 'invite_link.joined';
+    public const INVITE_LINK_JOIN_REQUESTED = 'invite_link.join_requested';
+    public const INVITE_LINK_APPLIED = 'invite_link.applied';
+
     /** Liens « compléter son profil » (Effectifs). */
     public const PROFILE_INVITE_CREATED = 'profile_invite.created';
     public const PROFILE_INVITE_OPENED = 'profile_invite.opened';

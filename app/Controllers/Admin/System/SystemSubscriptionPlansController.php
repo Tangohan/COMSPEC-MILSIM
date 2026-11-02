@@ -98,7 +98,7 @@ final class SystemSubscriptionPlansController
                 $existingFeatures = $decoded;
             }
         }
-        $features = SubscriptionPlanFeaturesCatalog::buildFeaturesFromForm($request->all(), $existingFeatures);
+        $features = SubscriptionPlanFeaturesCatalog::buildFeaturesFromForm($request->all(), $existingFeatures, (string) ($before['slug'] ?? ''));
         $featuresJson = json_encode($features, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
         $limitsRaw = trim((string) $request->input('limits_json', ''));

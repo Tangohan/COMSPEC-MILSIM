@@ -32,6 +32,7 @@ final class SubscriptionPlanFeaturesCatalog
         'year_review_collective',
         'pilot_qualifications',
         'qualification_catalog_bulk_import',
+        'invite_link_custom_slug',
     ];
 
     public const INT_FEATURES = [
@@ -40,6 +41,7 @@ final class SubscriptionPlanFeaturesCatalog
         'max_catalog_qualification_imports',
         'max_real_issuer_imports',
         'max_custom_qualifications',
+        'max_active_invite_links',
     ];
 
     /**
@@ -168,14 +170,24 @@ final class SubscriptionPlanFeaturesCatalog
                 'help' => 'Plafond de qualifications et brevets créés dans le Studio ou le référentiel (0 = illimité). Ceux déjà créés restent utilisables.',
                 'type' => 'int',
             ],
+            'invite_link_custom_slug' => [
+                'label' => 'Liens d’invitation à adresse personnalisée',
+                'help' => 'Adresse choisie pour un lien d’invitation (ex. /i/tfj) au lieu d’un code généré.',
+                'type' => 'bool',
+            ],
+            'max_active_invite_links' => [
+                'label' => 'Liens d’invitation actifs',
+                'help' => 'Liens d’invitation utilisables en même temps (0 = illimité). Les liens déjà actifs ne sont jamais coupés.',
+                'type' => 'int',
+            ],
             'max_members' => [
                 'label' => 'Nombre max. de membres',
-                'help' => 'Plafond de comptes dans la communauté (0 = illimite).',
+                'help' => 'Plafond de comptes dans la communauté (0 = illimité).',
                 'type' => 'int',
             ],
             'max_training_courses' => [
                 'label' => 'Nombre max. de parcours',
-                'help' => 'Plafond de formations catalogue (0 = illimite).',
+                'help' => 'Plafond de formations catalogue (0 = illimité).',
                 'type' => 'int',
             ],
         ];
@@ -211,11 +223,13 @@ final class SubscriptionPlanFeaturesCatalog
                 'year_review_collective' => false,
                 'pilot_qualifications' => false,
                 'qualification_catalog_bulk_import' => false,
+                'invite_link_custom_slug' => false,
                 'max_members' => 10,
                 'max_training_courses' => 5,
                 'max_catalog_qualification_imports' => 10,
                 'max_real_issuer_imports' => 5,
                 'max_custom_qualifications' => 5,
+                'max_active_invite_links' => 2,
             ],
             'standard' => [
                 'documents' => true,
@@ -239,11 +253,13 @@ final class SubscriptionPlanFeaturesCatalog
                 'year_review_collective' => true,
                 'pilot_qualifications' => true,
                 'qualification_catalog_bulk_import' => false,
+                'invite_link_custom_slug' => true,
                 'max_members' => 25,
                 'max_training_courses' => 25,
                 'max_catalog_qualification_imports' => 50,
                 'max_real_issuer_imports' => 25,
                 'max_custom_qualifications' => 30,
+                'max_active_invite_links' => 0,
             ],
             'pro' => [
                 'documents' => true,
@@ -267,11 +283,13 @@ final class SubscriptionPlanFeaturesCatalog
                 'year_review_collective' => true,
                 'pilot_qualifications' => true,
                 'qualification_catalog_bulk_import' => true,
+                'invite_link_custom_slug' => true,
                 'max_members' => 50,
                 'max_training_courses' => 100,
                 'max_catalog_qualification_imports' => 0,
                 'max_real_issuer_imports' => 0,
                 'max_custom_qualifications' => 0,
+                'max_active_invite_links' => 0,
             ],
             'pro_plus' => [
                 'documents' => true,
@@ -295,11 +313,13 @@ final class SubscriptionPlanFeaturesCatalog
                 'year_review_collective' => true,
                 'pilot_qualifications' => true,
                 'qualification_catalog_bulk_import' => true,
+                'invite_link_custom_slug' => true,
                 'max_members' => 80,
                 'max_training_courses' => 0,
                 'max_catalog_qualification_imports' => 0,
                 'max_real_issuer_imports' => 0,
                 'max_custom_qualifications' => 0,
+                'max_active_invite_links' => 0,
             ],
         ];
     }
@@ -330,14 +350,19 @@ final class SubscriptionPlanFeaturesCatalog
      *
      * @return array<string, bool|int>
      */
-    public static function buildFeaturesFromForm(array $input, array $existing = []): array
+    public static function buildFeaturesFromForm(array $input, array $existing = [], string $slug = ''): array
     {
         $out = $existing;
         foreach (self::BOOL_FEATURES as $key) {
             $out[$key] = !empty($input['feature_' . $key]);
         }
+        $catalog = $slug !== '' ? self::defaultsForSlug($slug) : [];
         foreach (self::INT_FEATURES as $key) {
-            $raw = $input['feature_' . $key] ?? ($existing[$key] ?? 0);
+            $raw = $input['feature_' . $key] ?? null;
+            if (!is_numeric(is_string($raw) ? trim($raw) : $raw)) {
+                // Champ vidé ou absent : on garde le plafond actuel (sinon celui du catalogue), jamais « illimité » par accident.
+                $raw = $existing[$key] ?? ($catalog[$key] ?? 0);
+            }
             $out[$key] = max(0, (int) $raw);
         }
 
