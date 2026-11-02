@@ -294,19 +294,23 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1346, '2026-11-03', 'Bureau SSE : registre des identités et des papiers, contrôles d’identité reçus du terrain', 'Le bureau SSE gagne la rubrique Référentiel › Identités & documents. On y crée des identités fictives, à la main ou tirées au sort avec « Générer » (même tirage que le générateur du mod SSE : une graine donne toujours la même personne), et leurs papiers : carte d’identité, passeport et permis de conduire des quatre pays fictifs Altis, Tanoa, Livonie et Malden. Le numéro suit le format du pays et la bande de lecture automatique est calculée comme sur un vrai document de voyage. Chaque papier passe de brouillon à validé puis émis, et peut être révoqué ; ses statuts se règlent un par un : origine, intégrité, validité, signalement, détenteur et puce. Seuls les papiers émis seront remis au serveur de jeu, et la vérification en ligne d’un papier présenté répondra comme un vrai fichier (en règle, signalé, recherché, cible prioritaire, inconnu, annulé, volé ou expiré) sans jamais trahir une couverture ni un faux. Les contrôles faits en jeu arrivent dans la liste Contrôles reçus, détaillés niveau par niveau et reliés au papier et à la personne ; la fiche personne affiche ses papiers et ses contrôles. Tout est marqué SIMULATION, et la nature réelle d’une identité reste réservée à l’habilitation Confidentiel.', [
-                'Référentiel › Identités & documents : registre des papiers et des identités, filtres, fiches détaillées',
-                'Création d’une identité à la main ou par tirage au sort, et de ses papiers avec numéro et bande de lecture calculés',
-                'Cycle du papier : brouillon, validé, émis, révoqué (avec motif), et statuts réglables un par un',
-                'Contrôles reçus du terrain, détaillés par niveau (examen visuel, bande, puce, fichiers), reliés au papier et à la personne',
-                'Fiche personne : bloc « Documents et contrôles »',
-                'Pays fictifs Altis, Tanoa, Livonie et Malden proposés à chaque communauté',
-            ], [], [], ['intel'], [
-                'L’administrateur lance run-migrations.php (étape atak_sse_identity).',
-                'La partie jeu (contrôle d’identité avec ACE et app Contrôle ID) arrive avec la prochaine mise à jour du mod SSE ; la liaison COMSPEC Link 2.0.118 sortira avec le prochain pack ATAK.',
-                'Essai : sur le bureau SSE, Référentiel › Identités & documents, cliquer « Nouvelle identité », « Générer », enregistrer, préparer un passeport, le valider puis l’émettre.',
-            ], 'Portail Athena'),
-            $pr(1345,'2026-11-02', 'Sur mon téléphone : même présentation que la page 9-LINE, fenêtres de la carte qui se ferment', 'Les pages Sur mon téléphone (comptes rendus, CR fin d’op, carte et briefs air du pilote) reprennent la présentation noir et vert de la page 9-LINE : mêmes polices, grand titre sur photo, barre du haut réduite au logo, au titre, à la langue et au joueur. Dans Briefs air, les briefs non lus sont en tête, chaque brief porte le même badge d’état que l’historique de la page 9-LINE (ENVOYÉ, REÇU, LU, WILCO, UNABLE), et un brief s’ouvre en plein écran, lu ligne par ligne en gros caractères, avec de très grands boutons WILCO et UNABLE. Sur la carte, la fenêtre d’un marqueur se ferme enfin (bouton, Échap, toucher la carte ou glisser vers le bas), et un bouton Plein écran agrandit la carte, choix gardé pendant la session.', [
+            $pr(1347, '2026-11-03', 'ATAK 2.9.41 : l’ATAK au-dessus des cockpits, téléphone réparé après la descente, noms de code au choix', 'Dans un avion à cockpit cliquable comme l’A-10C, dans un hélicoptère ou un véhicule, l’ATAK pris en main et la miniature utilisée à la souris restaient parfois cachés derrière les écrans du cockpit alors que la souris leur était donnée : ils s’affichent désormais par-dessus, et la touche Prendre en main les remet devant s’ils restaient masqués. Après être descendu d’un appareil, le téléphone ne s’ouvrait plus du tout, puis revenait tout seul avec un fin cadre bleu autour de tout l’écran : monter, descendre, changer de place, mourir ou réapparaître remet désormais le téléphone au propre, et une action ACE sur soi, « ATAK : réparer l’affichage », remet tout à zéro en un geste. Dans l’app Zones, le chef choisit le thème des noms de code de ses axes et de ses zones : villes françaises, américaines, britanniques ou allemandes, planètes et lunes, alphabet OTAN, animaux, ou les graphiques de contrôle de la doctrine OTAN (MSR TAMPA, PL MARS, OBJ LYON, CP1). Après une zone de travail posée, l’app propose tout de suite de la découper ou de tracer dessus.', [
+                'App Zones, onglet NOMMER et clic droit › Nommer les axes autour : thème des noms de code (villes de quatre pays, planètes et lunes, alphabet OTAN, animaux, doctrine OTAN MIL-STD), gardé pour les prochains plans et partagé avec le plan',
+                'Doctrine OTAN : abréviation selon l’élément (MSR, ASR, PL, LD, LOA, OBJ, NAI, BP, LZ, ROZ, CP, RP…), changeable élément par élément, suivie d’un nom du thème choisi',
+                'Action ACE sur soi « ATAK : réparer l’affichage »',
+            ], [
+                'Jamais deux fois le même nom dans un plan ; renommage à la main de chaque axe',
+                'Après « Nouveau plan à partir d’ici » ou une zone de travail tracée : choix DÉCOUPER ou TRACER',
+                'Rectangle et cercle de l’app Zones en cliquant-glissant, ou en deux clics comme avant',
+                'Le cadre bleu de la miniature utilisée à la souris suit exactement le téléphone et disparaît dès que l’on rend la main',
+            ], [
+                'ATAK en grand et miniature à la souris invisibles derrière un cockpit cliquable (A-10C), un écran de bord ou l’interface d’un autre mod',
+                'Téléphone qui ne s’ouvrait plus après la descente d’un appareil, puis revenait avec un cadre bleu autour de tout l’écran',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.41, quittez Arma complètement et relancez.',
+                'Rappel 2.9.40 : marqueurs aux vraies couleurs, carte débloquée après le menu du clic droit, pages qui ne se superposent plus.',
+            ], 'Pack 2.9.41'),
+            $pr(1345, '2026-11-02', 'Sur mon téléphone : même présentation que la page 9-LINE, fenêtres de la carte qui se ferment', 'Les pages Sur mon téléphone (comptes rendus, CR fin d’op, carte et briefs air du pilote) reprennent la présentation noir et vert de la page 9-LINE : mêmes polices, grand titre sur photo, barre du haut réduite au logo, au titre, à la langue et au joueur. Dans Briefs air, les briefs non lus sont en tête, chaque brief porte le même badge d’état que l’historique de la page 9-LINE (ENVOYÉ, REÇU, LU, WILCO, UNABLE), et un brief s’ouvre en plein écran, lu ligne par ligne en gros caractères, avec de très grands boutons WILCO et UNABLE. Sur la carte, la fenêtre d’un marqueur se ferme enfin (bouton, Échap, toucher la carte ou glisser vers le bas), et un bouton Plein écran agrandit la carte, choix gardé pendant la session.', [
                 'Briefs air : non lus en tête, badges d’état identiques à la page 9-LINE, lecture plein écran',
                 'Carte : bouton Plein écran (repli pour iPhone), mémorisé pendant la session',
             ], [
@@ -316,6 +320,15 @@ final class DevDispatchCatalog
                 'Rien à installer ni à lancer côté serveur.',
                 'Essai : ouvrir /m/briefs et /m/carte depuis le QR code SUR MON TÉLÉPHONE, ouvrir puis fermer un marqueur, passer la carte en plein écran.',
             ], 'Portail Athena'),
+            $pr(1344, '2026-11-02', 'ATAK 2.9.40 : marqueurs aux vraies couleurs, carte et pages réparées', 'Sur la carte de l’ATAK, les marqueurs ont désormais exactement la couleur choisie, la même que dans leur fiche : le rouge est rouge vif et non plus rose pâle. Un léger contour autour de l’icône les garde lisibles sur fond sombre, nuit ou satellite ; seuls le noir et le bleu foncé passent à une version claire sur carte sombre. Le pack corrige aussi la carte qui n’acceptait plus aucun clic après une action du menu du clic droit (Zones, Nommer les axes, Zone depuis le clic), ce qui rendait le tracé impossible dans l’app Zones, et les pages qui se superposaient (Athena ou Profil restés sous le lanceur).', [], [
+                'Marqueurs de la carte : couleur exacte et contour de lisibilité, pour les vôtres, ceux des autres joueurs et ceux d’Athena',
+            ], [
+                'Carte : plus de clic bloqué après le menu du clic droit ; tracé de nouveau possible dans l’app Zones',
+                'Plus de page précédente dessinée sous la nouvelle (Athena, Profil sous APPLICATIONS)',
+                'Quitter l’app Zones abandonne le tracé en cours',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.40, quittez Arma complètement et relancez.',
+            ], 'Pack 2.9.40'),
             $pr(1343, '2026-11-02', 'Page 9-LINE : nouvelle présentation, barre du haut allégée', 'La page 9-LINE (QR code et bouton de l’app JTAC) adopte une nouvelle présentation sombre, noir et vert : grand titre sur photo, chiffres de la demande en bandeau, cartes numérotées Destinataires, Rédaction et Historique, lignes en grille de deux colonnes et carte de transmission toujours visible à droite (en bas sur téléphone). La carte indique si la demande est prête ou transmise et liste les lignes obligatoires à corriger ; le texte radio se copie d’un clic, et l’aide au calcul remplit les lignes 2 et 3 depuis les grilles. La barre du haut ne garde que la marque Athena, le titre, la langue et le compte. Toutes les fonctions restent : 9-LINE, 5-LINE et MEDEVAC, saisie libre, destinataires et « Joueurs uniquement », indicatifs, accusés des pilotes, suppression et vidage de l’historique.', [
                 'Carte de transmission : état Brouillon, Prêt ou Transmis, lignes obligatoires à corriger, bouton Copier le texte radio',
                 'Aide au calcul : cap et distance IP → cible calculés en direct, bouton Appliquer',

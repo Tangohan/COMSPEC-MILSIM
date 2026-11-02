@@ -72,6 +72,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_KeyMain", { [] call comspec_atak_nat
 missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
     uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_close; };
+    // Tout l'état d'interaction remis à zéro (displays orphelins, interaction miniature, relais de bord : 2.9.41).
+    ["reset", "mort ou inconscient"] call comspec_atak_native_fnc_vehicleKeys;
 }];
 // Mesure ACE Vector 21 transmise (azimut + distance) : marqueur sur la carte de l'ATAK (fn_lasePoint).
 ["ace_vector_rangefinderData", { params [["_d", 0], ["_az", 0], ["_inc", 0]]; ["vector", [_d, _az, _inc]] call comspec_atak_native_fnc_lasePoint; }] call CBA_fnc_addEventHandler;
@@ -510,6 +512,14 @@ player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_l
 }, 2] call COMSPEC_ATAK_PfhSpread;
 // À bord : touches du téléphone reprises sur les fenêtres de cockpit ou de bord qui gardent le clavier (fn_vehicleKeys).
 [{ ["tick"] call comspec_atak_native_fnc_vehicleKeys; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Montée, descente, changement de véhicule ou de place, nouvelle unité (réapparition, contrôle Zeus) : tout l'état
+// d'interaction du téléphone remis à zéro (fn_vehicleKeys « reset », 2.9.41) ; mort : COMSPEC_ATAK_StowDown.
+["vehicle", {
+    params ["_u", "_new"];
+    ["reset", ["montée ou changement de véhicule", "descente"] select (_new isEqualTo _u)] call comspec_atak_native_fnc_vehicleKeys;
+}] call CBA_fnc_addPlayerEventHandler;
+["turret", { ["reset", "changement de place"] call comspec_atak_native_fnc_vehicleKeys; }] call CBA_fnc_addPlayerEventHandler;
+["unit", { ["reset", "nouvelle unité"] call comspec_atak_native_fnc_vehicleKeys; }] call CBA_fnc_addPlayerEventHandler;
 // Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).
 [{ ["tick"] call comspec_atak_native_fnc_screenGlow; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).

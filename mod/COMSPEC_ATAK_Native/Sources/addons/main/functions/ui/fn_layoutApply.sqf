@@ -26,6 +26,29 @@ private _set = {
 };
 
 private _phone = [88509, _l get "phone"] call _set;
+// Bordure à l'accent de l'interaction avec la miniature (Maj+U, fn_miniInteract) : exactement autour du cadre visible
+// du téléphone, suivie à chaque mise en page (glisser, position, orientation) ; retirée hors de cette interaction.
+private _bord = _d getVariable ["COMSPEC_MiniBorder", []];
+if (_interactive && {_l get "mini"} && {(uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isNotEqualTo ""}) then {
+    (_l get "visible") params ["_vx", "_vy", "_vw", "_vh"];
+    if ((count _bord) isNotEqualTo 4) then {
+        ([] call comspec_atak_native_fnc_accent) params ["_acc"];
+        _bord = [0, 1, 2, 3] apply {
+            private _c = _d ctrlCreate ["COMSPEC_RscText", -1];
+            _c ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.85];
+            _c ctrlEnable false;
+            _c
+        };
+        _d setVariable ["COMSPEC_MiniBorder", _bord];
+    };
+    private _t = pixelH * 2; private _tw = pixelW * 2;
+    {
+        (_bord select _forEachIndex) ctrlSetPosition _x;
+        (_bord select _forEachIndex) ctrlCommit 0;
+    } forEach [[_vx - _tw, _vy - _t, _vw + _tw * 2, _t], [_vx - _tw, _vy + _vh, _vw + _tw * 2, _t], [_vx - _tw, _vy, _tw, _vh], [_vx + _vw, _vy, _tw, _vh]];
+} else {
+    if ((count _bord) > 0) then { { ctrlDelete _x; } forEach _bord; _d setVariable ["COMSPEC_MiniBorder", []]; };
+};
 _phone ctrlSetText (((_l get "phoneTexture")) call comspec_atak_native_fnc_tr);
 (_l get "device") params ["_dx", "_dy", "_dw", "_dh"];
 (_l get "status") params ["", "_sy", "", "_sh"];

@@ -12,9 +12,16 @@ if (!hasInterface) exitWith { false };
 // Même appui vu deux fois dans la même image (raccourci CBA et fenêtre de bord, fn_vehicleKeys) : un seul basculement.
 if ((uiNamespace getVariable ["COMSPEC_ATAK_ToggleFrame", -1]) isEqualTo diag_frameNo) exitWith { false };
 uiNamespace setVariable ["COMSPEC_ATAK_ToggleFrame", diag_frameNo];
+["heal"] call comspec_atak_native_fnc_vehicleKeys;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _d = [] call comspec_atak_native_fnc_display;
+// En main mais caché sous une fenêtre de cockpit ou d'un autre mod : remis au premier plan (fn_vehicleKeys, 2.9.41).
+if (!isNull _d && {_s getOrDefault ["interactive", false]} && {["covered", _d] call comspec_atak_native_fnc_vehicleKeys}) exitWith {
+    ["INFO", "ATAK", "Téléphone en main caché sous une autre fenêtre : rouvert au premier plan"] call comspec_atak_native_fnc_log;
+    [true] call comspec_atak_native_fnc_open
+};
 if (!isNull _d && {_s getOrDefault ["interactive", false]}) exitWith {
+    ["INFO", "ATAK", "Interagir avec la miniature : fin, retour au jeu"] call comspec_atak_native_fnc_log;
     uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", true];
     [] call comspec_atak_native_fnc_close;
     false
@@ -26,4 +33,12 @@ if ((uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isEqualTo "") th
 };
 profileNamespace setVariable ["COMSPEC_ATAK_Mode", "MINI"];
 uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", true];
-[true] call comspec_atak_native_fnc_open
+["INFO", "ATAK", format ["Interagir avec la miniature : début%1", ["", " à bord"] select !isNull objectParent player]] call comspec_atak_native_fnc_log;
+// Ouverture refusée : l'interaction n'a pas commencé, le mode du joueur est remis tout de suite.
+if !([true] call comspec_atak_native_fnc_open) exitWith {
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", "FULL"]];
+    uiNamespace setVariable ["COMSPEC_ATAK_MiniPrevMode", ""];
+    ["WARNING", "ATAK", "Interagir avec la miniature : téléphone impossible à ouvrir"] call comspec_atak_native_fnc_log;
+    false
+};
+true
