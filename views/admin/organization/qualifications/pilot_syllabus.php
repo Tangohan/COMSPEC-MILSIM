@@ -72,11 +72,19 @@ $declaredFlights = is_array($declaredFlights ?? null) ? $declaredFlights : [];
 $canReviewTrack = is_array($canReviewTrack ?? null) ? $canReviewTrack : [];
 $logbookUrl = static fn (int $uid): string => url($base . '/carnet/' . $uid);
 $heldTotal = array_sum(array_map(static fn (array $r): int => count($r['groups'][Eng::HELD]), $rules));
+$customSteps = is_array($customSteps ?? null) ? $customSteps : [];
+$customPending = [];
+foreach ($customSteps as $cs) {
+    $heldTotal += (int) $cs['summary']['held'];
+    foreach ($cs['summary']['pending'] as $p) {
+        $customPending[] = ['step' => $cs, 'item' => $p];
+    }
+}
 
 $athKpis = [
-    ['label' => 'Paliers du cursus', 'value' => (string) count($rules), 'pct' => $rules !== [] ? '100%' : '0%', 'note' => count($rules) > 0 ? count(array_filter($rules, static fn (array $r): bool => !empty($r['is_enabled']))) . ' actif(s)' : 'Installez un cursus ci-dessous'],
+    ['label' => 'Paliers du cursus', 'value' => (string) (count($rules) + count($customSteps)), 'pct' => $rules !== [] ? '100%' : '0%', 'note' => count($rules) > 0 ? count(array_filter($rules, static fn (array $r): bool => !empty($r['is_enabled']))) . ' actif(s)' : 'Installez un cursus ci-dessous'],
     ['label' => 'Pilotes suivis', 'value' => (string) count($pilotIds), 'pct' => $pilotIds !== [] ? '100%' : '0%', 'note' => 'Membres avec des heures de vol en jeu'],
-    ['label' => 'À valider', 'value' => (string) count($pending), 'tone' => $pending !== [] ? '#c27a1a' : '#0b8a5c', 'pct' => $pending !== [] ? '100%' : '0%', 'note' => $pending !== [] ? 'Propositions en attente d’un instructeur' : 'Aucune proposition en attente'],
+    ['label' => 'À valider', 'value' => (string) (count($pending) + count($customPending)), 'tone' => $pending !== [] || $customPending !== [] ? '#c27a1a' : '#0b8a5c', 'pct' => $pending !== [] || $customPending !== [] ? '100%' : '0%', 'note' => $pending !== [] || $customPending !== [] ? 'Propositions en attente d’un instructeur' : 'Aucune proposition en attente'],
     ['label' => 'Qualifications obtenues', 'value' => (string) $heldTotal, 'pct' => $heldTotal > 0 ? '100%' : '0%', 'note' => 'Titulaires de chaque palier'],
 ];
 ?>
@@ -106,6 +114,8 @@ $athKpis = [
         </form>
         <?php endif; ?>
         <a href="#installer" class="ath-btn"><?= $rules === [] ? 'Installer un cursus' : 'Ajouter des paliers ou des appareils' ?></a>
+        <a href="#paliers-communaute" class="ath-btn">Paliers de la communauté</a>
+        <a href="#flotte" class="ath-btn">Appareils et familles</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications')) ?>" class="ath-btn">Toutes les qualifications</a>
     </div>
 
@@ -118,14 +128,15 @@ $athKpis = [
             <li><b>Un palier atteint est attribué ou proposé.</b> Toutes les heures, chaque membre qui a les heures et le palier précédent reçoit la qualification (palier « automatique ») ou une proposition « en évaluation ».</li>
             <li><b>Un instructeur valide, comme dans la vraie vie.</b> Le lâché solo, la qualification de type ou le vol de nuit se valident après un vol avec un instructeur de la filière. On ne se valide pas soi-même.</li>
             <li><b>Le carnet de vol complète, comme dans la vraie vie.</b> Chaque pilote note ses vols et ses heures de nuit, aux instruments ou en patrouille dans « Mon carnet de vol » ; un instructeur contresigne, puis elles comptent.</li>
+            <li><b>Vos appareils et vos paliers.</b> Les appareils réellement pilotés sont proposés à l’installation ; créez vos propres appareils, familles et paliers, délivrés par le même moteur que les qualifications automatiques.</li>
             <li><b>Le maintien de qualification suit le dernier vol.</b> Un pilote qui n’a pas volé sur le type depuis 90 jours n’est plus « à jour » ; il le redevient dès son prochain vol.</li>
         </ol>
     </section>
 
-    <?php if ($pending !== []): ?>
+    <?php if ($pending !== [] || $customPending !== []): ?>
     <section class="pcs-pending ath-card" aria-labelledby="pcs-pending-title">
         <header class="pcs-sec__head">
-            <h2 id="pcs-pending-title">À valider par un instructeur <span class="rql__count"><?= count($pending) ?></span></h2>
+            <h2 id="pcs-pending-title">À valider par un instructeur <span class="rql__count"><?= count($pending) + count($customPending) ?></span></h2>
             <p>Le membre a les heures demandées. Validez après le contrôle en vol, ou ajournez s’il doit encore s’entraîner.</p>
         </header>
         <ul class="pcs-pending__list">
@@ -152,6 +163,28 @@ $athKpis = [
                 <?php if ($canValidate && $allowed): ?>
                 <form method="post" action="<?= $h(url($base . '/propositions/' . (int) $it['award_id'])) ?>" class="pcs-pending__actions">
                     <?= \App\Core\Csrf::field() ?>
+                    <button type="submit" name="decision" value="valider" class="ath-btn ath-btn--solid">Valider</button>
+                    <button type="submit" name="decision" value="ajourner" class="ath-btn">Ajourner</button>
+                </form>
+                <?php endif; ?>
+            </li>
+            <?php endforeach; ?>
+            <?php foreach ($customPending as $cp):
+                $cm = $cp['item']['member'];
+                $cName = trim((string) $cm['display_name']) !== '' ? (string) $cm['display_name'] : ((string) $cm['callsign'] !== '' ? (string) $cm['callsign'] : 'Membre');
+                $cMine = (int) $cm['user_id'] === $actorId;
+                ?>
+            <li class="pcs-pending__row">
+                <span class="pcs-pending__badge"><?= $h(mb_substr((string) ($cp['step']['definition_short_name'] ?? '') ?: 'PAL', 0, 6)) ?></span>
+                <span class="pcs-pending__main">
+                    <a class="pcs-pending__who" href="<?= $h($logbookUrl((int) $cm['user_id'])) ?>" title="Ouvrir son carnet de vol"><?= $h($cName) ?></a>
+                    <span class="pcs-pending__what"><?= $h((string) $cp['step']['definition_name']) ?> · palier de la communauté, conditions remplies</span>
+                    <?php if ($cMine): ?><span class="pcs-pending__hint">Votre propre proposition : un autre instructeur doit la valider.</span><?php endif; ?>
+                </span>
+                <?php if (!$cMine && $allowed && (int) $cp['item']['award_id'] > 0): ?>
+                <form method="post" action="<?= $h(url($base . '/paliers-communaute/propositions/' . (int) $cp['item']['award_id'])) ?>" class="pcs-pending__actions">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="definition_id" value="<?= (int) $cp['step']['definition_id'] ?>">
                     <button type="submit" name="decision" value="valider" class="ath-btn ath-btn--solid">Valider</button>
                     <button type="submit" name="decision" value="ajourner" class="ath-btn">Ajourner</button>
                 </form>
@@ -278,61 +311,10 @@ $athKpis = [
     </section>
     <?php endforeach; ?>
 
-    <section class="pcs-install ath-card" id="installer" aria-labelledby="pcs-install-title">
-        <header class="pcs-sec__head">
-            <h2 id="pcs-install-title"><?= $rules === [] ? 'Installer un cursus' : 'Ajouter des paliers ou des appareils' ?></h2>
-            <p>Les qualifications sont créées dans votre référentiel (catégorie « Pilotage »), avec leurs prérequis. Celles déjà installées sont reprises sans doublon. Les seuils restent modifiables ensuite.</p>
-        </header>
-        <?php foreach ($tracks as $trackKey => $trackInfo):
-            $flownHere = $flown[$trackKey] ?? [];
-            $flownKeys = array_column($flownHere, 'key');
-            ?>
-        <details class="pcs-install__track"<?= $trackKey === Cat::TRACK_HELI ? ' open' : '' ?>>
-            <summary>Filière <?= $h(mb_strtolower($trackInfo['label'])) ?><?= $flownHere !== [] ? ' · ' . count($flownHere) . ' type(s) déjà piloté(s) dans la communauté' : '' ?></summary>
-            <form method="post" action="<?= $h(url($base . '/installer')) ?>" class="pcs-install__form">
-                <?= \App\Core\Csrf::field() ?>
-                <input type="hidden" name="track" value="<?= $h($trackKey) ?>">
-                <fieldset>
-                    <legend>Appareils (qualification de type, pilote opérationnel, commandant de bord, instructeur)</legend>
-                    <div class="pcs-chips">
-                        <?php foreach ($flownHere as $f): ?>
-                        <label class="pcs-chip is-flown">
-                            <input type="checkbox" name="families[]" value="<?= $h($f['key']) ?>" checked>
-                            <span><?= $h($f['label']) ?> <small><?= $h(number_format($f['hours'], 1, ',', ' ')) ?> h · <?= (int) $f['pilots'] ?> pilote<?= $f['pilots'] > 1 ? 's' : '' ?></small></span>
-                            <?php if (str_starts_with($f['key'], 'class:')): ?><input type="hidden" name="family_labels[<?= $h($f['key']) ?>]" value="<?= $h($f['label']) ?>"><?php endif; ?>
-                        </label>
-                        <?php endforeach; ?>
-                        <?php foreach ($knownFamilies[$trackKey] ?? [] as $fKey => $fLabel):
-                            if (in_array($fKey, $flownKeys, true)) {
-                                continue;
-                            } ?>
-                        <label class="pcs-chip">
-                            <input type="checkbox" name="families[]" value="<?= $h($fKey) ?>">
-                            <span><?= $h($fLabel) ?></span>
-                        </label>
-                        <?php endforeach; ?>
-                    </div>
-                </fieldset>
-                <fieldset>
-                    <legend>Paliers</legend>
-                    <div class="pcs-tiers">
-                        <?php foreach ($tiers as $tKey => $t): ?>
-                        <label class="pcs-tier">
-                            <input type="checkbox" name="tiers[]" value="<?= $h($tKey) ?>" checked>
-                            <span class="pcs-tier__body">
-                                <span class="pcs-tier__name"><b><?= $h($t['short']) ?></b> <?= $h($t['label']) ?> <em><?= $t['mode'] === Cat::MODE_DIRECT ? 'automatique' : 'instructeur' ?></em></span>
-                                <span class="pcs-tier__game">Jeu : <?= $h($hours((float) $t['min_scope_hours'])) ?> <?= $t['per'] === Cat::PER_FAMILY ? 'sur le type' : 'en ' . $h($trackInfo['noun']) ?><?= (float) $t['min_track_hours'] > 0 ? ', ' . $h($hours((float) $t['min_track_hours'])) . ' en ' . $h($trackInfo['noun']) : '' ?><?= $t['cond'] !== null ? ', dont ' . $h($hours((float) $t['min_cond_hours'])) . ' ' . $h(Cat::conditions()[$t['cond']] ?? '') . ' au carnet' : '' ?><?= $t['currency_days'] ? ' · à jour ' . (int) $t['currency_days'] . ' jours après le dernier vol' : '' ?></span>
-                                <span class="pcs-tier__real">Vraie vie : <?= $h((string) ($t['real'][$trackKey] ?? '')) ?></span>
-                                <?php if ($t['data_note'] !== ''): ?><span class="pcs-tier__note"><?= $h($t['data_note']) ?></span><?php endif; ?>
-                            </span>
-                        </label>
-                        <?php endforeach; ?>
-                    </div>
-                </fieldset>
-                <button type="submit" class="ath-btn ath-btn--solid"<?= $allowed && $schemaReady ? '' : ' disabled' ?>>Installer la filière <?= $h(mb_strtolower($trackInfo['label'])) ?></button>
-            </form>
-        </details>
-        <?php endforeach; ?>
-        <p class="pcs-install__foot">Les seuils du jeu sont ramenés à l’échelle d’une communauté qui vole quelques heures par semaine : les minimums réels se comptent en dizaines ou centaines d’heures. Les références (EASA Part-FCL, FAA 14 CFR Part 61, US Army TC 3-04.11) sont des repères publics, pas une certification.</p>
-    </section>
+    <?php require __DIR__ . '/_pilot_steps.php'; ?>
+
+    <?php require __DIR__ . '/_pilot_install.php'; ?>
+
+    <?php require __DIR__ . '/_pilot_fleet.php'; ?>
 </div>
+<script src="<?= $h(asset_url('assets/js/pilot-syllabus-fleet.js')) ?>" defer></script>

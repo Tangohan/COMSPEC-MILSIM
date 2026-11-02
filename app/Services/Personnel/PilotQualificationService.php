@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Personnel;
 
-use App\Repositories\AtakDistanceRepository;
+use App\Repositories\PilotFleetRepository;
 use App\Repositories\PilotLogbookRepository;
 use App\Repositories\PilotQualificationRuleRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\QualificationDefinitionRepository;
 use App\Repositories\QualificationReferentielRepository;
+use App\Support\PilotFleet;
 use App\Support\PilotSyllabusCatalog;
 use App\Support\QualificationAdminStatus;
 use RuntimeException;
@@ -34,7 +35,18 @@ final class PilotQualificationService
         private QualificationStatusTransitionService $transitions,
         private ?QualificationCurrencyService $currency = null,
         private ?PilotLogbookRepository $logbook = null,
+        private ?PilotFleetRepository $fleet = null,
     ) {
+    }
+
+    /** Appareils et familles de la communauté (ceux reconnus par le site tant qu'elle n'a rien réglé). */
+    public function fleet(int $tenantId): PilotFleet
+    {
+        try {
+            return $this->fleet?->fleet($tenantId) ?? PilotFleet::empty();
+        } catch (Throwable) {
+            return PilotFleet::empty();
+        }
     }
 
     public function schemaReady(): bool
@@ -58,6 +70,7 @@ final class PilotQualificationService
         ));
         $logByUser = $this->logbookByUser($tenantId);
         $members = $this->rules->memberNames($tenantId, array_merge(array_keys($rowsByUser), array_keys($awardsByUser), array_keys($logByUser)));
+        $fleet = $this->fleet($tenantId);
 
         $out = [];
         $pending = 0;
@@ -65,7 +78,7 @@ final class PilotQualificationService
         foreach ($rules as $rule) {
             $groups = [PilotQualificationEngine::ELIGIBLE => [], PilotQualificationEngine::PENDING => [], PilotQualificationEngine::HELD => [], PilotQualificationEngine::PROGRESS => [], PilotQualificationEngine::BLOCKED => []];
             foreach ($members as $uid => $_m) {
-                $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? []), $logByUser[$uid] ?? []);
+                $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? [], $fleet), $logByUser[$uid] ?? [], $fleet);
                 $awards = PilotQualificationEngine::awardsByDefinition($awardsByUser[$uid] ?? []);
                 $ev = PilotQualificationEngine::evaluate($rule, $totals, $awards);
                 if ($ev['state'] === PilotQualificationEngine::PROGRESS && $ev['scope_hours'] <= 0) {
@@ -85,7 +98,7 @@ final class PilotQualificationService
         return [
             'rules' => $out,
             'members' => $members,
-            'flown_families' => $this->flownFamilies($rowsByUser),
+            'flown_families' => $this->flownFamilies($rowsByUser, $fleet),
             'pending_total' => $pending,
             'eligible_total' => $eligible,
         ];
@@ -108,7 +121,8 @@ final class PilotQualificationService
             array_map(static fn (array $r): int => (int) $r['definition_id'], $rules),
             array_map(static fn (array $r): int => (int) ($r['prereq_definition_id'] ?? 0), $rules)
         ))[$userId] ?? [];
-        $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rows), $this->logbookByUser($tenantId)[$userId] ?? []);
+        $fleet = $this->fleet($tenantId);
+        $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rows, $fleet), $this->logbookByUser($tenantId)[$userId] ?? [], $fleet);
         $awards = PilotQualificationEngine::awardsByDefinition($awardRows);
         $out = [];
         foreach ($rules as $rule) {
@@ -125,6 +139,12 @@ final class PilotQualificationService
         });
 
         return $out;
+    }
+
+    /** Catégorie « Pilotage » du référentiel (créée au besoin). */
+    public function categoryId(int $tenantId): ?int
+    {
+        return $this->pilotCategoryId($tenantId);
     }
 
     /**
@@ -154,6 +174,11 @@ final class PilotQualificationService
         }
         $wanted = array_values(array_intersect(array_keys($tiers), $wanted));
         $known = PilotSyllabusCatalog::knownFamilies($track);
+        foreach ($this->fleet($tenantId)->aircraftRows() as $aKey => $aRow) {
+            if (empty($aRow['archived_at']) && trim((string) ($aRow['name'] ?? '')) !== '') {
+                $known[(string) $aKey] = (string) $aRow['name'];
+            }
+        }
         $families = [];
         foreach ($familyKeys as $key) {
             $key = trim((string) $key);
@@ -304,9 +329,10 @@ final class PilotQualificationService
         );
         $awardsByUser = $this->rules->awardsByUser($tenantId, $defIds);
         $members = $this->rules->memberNames($tenantId, array_merge(array_keys($rowsByUser), array_keys($logByUser)));
+        $fleet = $this->fleet($tenantId);
 
         foreach (array_keys($members) as $uid) {
-            $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? []), $logByUser[$uid] ?? []);
+            $totals = PilotQualificationEngine::mergeLogbook(PilotQualificationEngine::scopeTotals($rowsByUser[$uid] ?? [], $fleet), $logByUser[$uid] ?? [], $fleet);
             $awards = PilotQualificationEngine::awardsByDefinition($awardsByUser[$uid] ?? []);
             // Les paliers sont dans l'ordre du cursus : un palier obtenu dans ce passage débloque le suivant au passage d'après.
             foreach ($rules as $rule) {
@@ -480,13 +506,13 @@ final class PilotQualificationService
      * @param array<int, list<array<string, mixed>>> $rowsByUser
      * @return array<string, list<array{key: string, label: string, hours: float, pilots: int}>>
      */
-    private function flownFamilies(array $rowsByUser): array
+    private function flownFamilies(array $rowsByUser, PilotFleet $fleet): array
     {
         $acc = [];
         foreach ($rowsByUser as $uid => $rows) {
             foreach ($rows as $row) {
-                $fam = AtakDistanceRepository::aircraftFamily((string) ($row['vehicle_class'] ?? ''), (string) ($row['vehicle_label'] ?? ''));
-                $track = PilotSyllabusCatalog::familyTrack($fam['key'], (string) ($row['vehicle_kind'] ?? ''));
+                $fam = $fleet->resolve((string) ($row['vehicle_class'] ?? ''), (string) ($row['vehicle_label'] ?? ''), (string) ($row['vehicle_kind'] ?? ''));
+                $track = $fam['track'] === PilotFleet::TRACK_OTHER ? PilotSyllabusCatalog::normalizeTrack((string) ($row['vehicle_kind'] ?? '')) : $fam['track'];
                 $acc[$track][$fam['key']] ??= ['key' => $fam['key'], 'label' => $fam['label'], 'seconds' => 0, 'pilots' => []];
                 $acc[$track][$fam['key']]['seconds'] += (int) ($row['seconds'] ?? 0);
                 $acc[$track][$fam['key']]['pilots'][$uid] = true;

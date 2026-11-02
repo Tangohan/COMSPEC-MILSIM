@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Personnel;
 
-use App\Repositories\AtakDistanceRepository;
+use App\Support\PilotFleet;
 use App\Support\PilotSyllabusCatalog;
 use App\Support\QualificationAdminStatus;
 
@@ -22,13 +22,16 @@ final class PilotQualificationEngine
     public const PROGRESS = 'progress';
 
     /**
-     * Heures d'un membre par périmètre : « kind:heli », « kind:plane » et « family:<clé> », avec le dernier vol.
+     * Heures d'un membre par périmètre : « kind:heli », « kind:plane », « family:<clé> » (appareil reconnu, et appareil
+     * de la communauté quand la classe y est rattachée) et « group:<famille> », avec le dernier vol.
      *
      * @param list<array<string, mixed>> $rows lignes atak_pilot_time d'un membre (vehicle_class, vehicle_label, vehicle_kind, seconds, last_flown_at)
+     * @param PilotFleet|null $fleet appareils et familles de la communauté (null : ceux reconnus par le site)
      * @return array<string, array{seconds: int, last_flown_at: string}>
      */
-    public static function scopeTotals(array $rows): array
+    public static function scopeTotals(array $rows, ?PilotFleet $fleet = null): array
     {
+        $fleet ??= PilotFleet::empty();
         $out = [];
         foreach ($rows as $row) {
             $seconds = max(0, (int) ($row['seconds'] ?? 0));
@@ -36,9 +39,8 @@ final class PilotQualificationEngine
                 continue;
             }
             $kind = ($row['vehicle_kind'] ?? '') === 'plane' ? 'plane' : 'heli';
-            $family = AtakDistanceRepository::aircraftFamily((string) ($row['vehicle_class'] ?? ''), (string) ($row['vehicle_label'] ?? ''));
             $last = (string) ($row['last_flown_at'] ?? '');
-            foreach (['kind:' . $kind, 'family:' . $family['key']] as $scope) {
+            foreach ($fleet->scopes((string) ($row['vehicle_class'] ?? ''), (string) ($row['vehicle_label'] ?? ''), $kind) as $scope) {
                 $prev = $out[$scope] ?? ['seconds' => 0, 'last_flown_at' => ''];
                 $out[$scope] = [
                     'seconds' => $prev['seconds'] + $seconds,
@@ -59,8 +61,9 @@ final class PilotQualificationEngine
      * @param list<array<string, mixed>> $entries lignes pilot_logbook_entries d'un membre
      * @return array<string, array{seconds: int, last_flown_at: string}>
      */
-    public static function mergeLogbook(array $totals, array $entries): array
+    public static function mergeLogbook(array $totals, array $entries, ?PilotFleet $fleet = null): array
     {
+        $fleet ??= PilotFleet::empty();
         $add = static function (array &$totals, string $scope, int $seconds, string $at): void {
             if ($seconds < 1) {
                 return;
@@ -80,9 +83,9 @@ final class PilotQualificationEngine
             $at = $at !== '' && strlen($at) === 10 ? $at . ' 00:00:00' : $at;
             $seconds = max(0, (int) ($e['seconds'] ?? 0));
             if (($e['source'] ?? '') === 'pilot') {
-                $family = AtakDistanceRepository::aircraftFamily((string) ($e['vehicle_class'] ?? ''), (string) ($e['vehicle_label'] ?? ''));
-                $add($totals, 'kind:' . $kind, $seconds, $at);
-                $add($totals, 'family:' . $family['key'], $seconds, $at);
+                foreach ($fleet->scopes((string) ($e['vehicle_class'] ?? ''), (string) ($e['vehicle_label'] ?? ''), $kind) as $scope) {
+                    $add($totals, $scope, $seconds, $at);
+                }
             }
             foreach (['night' => 'night_seconds', 'ifr' => 'ifr_seconds', 'formation' => 'formation_seconds'] as $cond => $col) {
                 $add($totals, 'cond:' . $cond . ':' . $kind, min($seconds, max(0, (int) ($e[$col] ?? 0))), $at);

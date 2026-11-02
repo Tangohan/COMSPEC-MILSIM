@@ -189,6 +189,11 @@ $sessionCats = is_array($ob['sessionCategories'] ?? null) ? $ob['sessionCategori
                     <?php foreach ($aircraft['family'] as [$v, $l]): ?><option value="<?= $e($v) ?>"><?= $e($l) ?></option><?php endforeach; ?>
                 </optgroup>
                 <?php endif; ?>
+                <?php if (!empty($aircraft['group'])): ?>
+                <optgroup label="Famille d’emploi (transport, attaque…)">
+                    <?php foreach ($aircraft['group'] as [$v, $l]): ?><option value="<?= $e($v) ?>"><?= $e($l) ?></option><?php endforeach; ?>
+                </optgroup>
+                <?php endif; ?>
                 <?php if (!empty($aircraft['class'])): ?>
                 <optgroup label="Appareil précis vu en jeu">
                     <?php foreach ($aircraft['class'] as [$v, $l]): ?><option value="<?= $e($v) ?>"><?= $e($l) ?></option><?php endforeach; ?>
