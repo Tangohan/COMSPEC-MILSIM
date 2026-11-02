@@ -159,15 +159,20 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Rayon d'arrivée à une étape (à pied, m)", "Distance à laquelle « Suivre la route » annonce l'étape atteinte et passe à la suivante (25 m par défaut). Multiplié en véhicule (x2,4), sur l'eau (x3) et en vol (x8)."],
     ["COMSPEC", "ATAK · Routes"], [5, 100, 25, 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_route_3d", "CHECKBOX",
-    ["Vue 3D des routes", "Option « Vue 3D » d'une route : trait et étapes affichés dans le monde (à moins de 1,5 km). Décoché : jamais de 3D, même si une route la demande."],
+    ["Affichage 3D des routes (JVN uniquement)", "Option « Affichage 3D » d'une route : pendant « Suivre la route » et JVN allumée seulement, trait et étapes restantes affichés dans le monde (à moins de 1,5 km) ; une étape atteinte disparaît aussitôt. Décoché : jamais de 3D, même si une route la demande."],
     ["COMSPEC", "ATAK · Routes"], true, 0] call comspec_atak_native_fnc_addSetting;
 // App Zones (fn_zoneAction, fn_zoneGen) : partage, carte d'Arma et Athena, plafonds du découpage, contacts, curseur.
 ["comspec_atak_native_zones_share", "CHECKBOX",
     ["Partage des plans de zones", "Les joueurs peuvent envoyer leurs plans de zones (app Zones) à leur équipe, leur groupe ou leur camp, avec les états et signalements des zones, par le réseau du téléphone. Décoché : chaque plan reste sur son téléphone."],
     ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zones_arma", "CHECKBOX",
-    ["Zones sur la carte d'Arma et Athena", "Décoché par défaut (réaliste) : les plans de zones restent sur les téléphones, seuls ceux qui ont un appareil et à qui le plan est partagé les voient. Coché (confort) : l'auteur d'un plan peut activer son option « Carte d'Arma et Athena » ; cases, contours, étiquettes, axes et points de contrôle deviennent des marqueurs de la carte d'Arma, visibles de tout le canal sans appareil, et partent au site Athena si le plan est partagé."],
-    ["COMSPEC", "ATAK · Plan / Zones"], false, 1] call comspec_atak_native_fnc_addSetting;
+    ["Zones sur la carte d'Arma et Athena", "Coché par défaut (2.9.38) : un plan a son option « Carte d'Arma et Athena » allumée ; cases, contours, traits, étiquettes, axes et points de contrôle deviennent des marqueurs de la carte d'Arma, visibles de tout le canal (le camp pour un plan partagé au camp), comme une carte de briefing, et partent au site Athena si le plan est partagé. Décoché (comme en 2.9.36) : les plans restent sur les téléphones."],
+    ["COMSPEC", "ATAK · Plan / Zones"], true, 1] call comspec_atak_native_fnc_addSetting;
+// Portée d'un plan de zones ou d'une route à sa création (2.9.38 : tout le camp par défaut, renvoyé à chaque
+// modification validée) ; chaque plan ou route garde sa portée modifiable.
+["comspec_atak_native_plan_scope", "LIST",
+    ["Portée par défaut des plans et routes", "À la création d'un plan de zones (app Zones) ou d'une route (app Routes), qui le reçoit sans cliquer PARTAGER : tout le camp (par défaut), le groupe, l'équipe, ou personne (privé, comme en 2.9.36). L'état des zones ne change toujours que par une action d'un joueur."],
+    ["COMSPEC", "ATAK · Plan / Zones"], [[3, 2, 1, 0], ["Camp", "Groupe", "Équipe", "Privé"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_zones_maxcells", "SLIDER",
     ["Cases de grille au plus", "Nombre de cases d'une grille générée (200 par défaut). Au-delà, prendre des cases plus grandes."],
     ["COMSPEC", "ATAK · Plan / Zones"], [20, 600, 200, 0], 1] call comspec_atak_native_fnc_addSetting;

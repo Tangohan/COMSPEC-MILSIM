@@ -592,7 +592,9 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _nb ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, [0.9, 0.25] select (_num isEqualTo "")];
             private _nt = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + (_hHead - _fs * 1.25) / 2, _nw, _fs * 1.25]] call _mk;
             _nt ctrlSetStructuredText parseText ((format ["<t align='center' font='%2' color='#08100c'>%1</t>", _num, COMSPEC_ATAK_FontSet select 1]) call comspec_atak_native_fnc_tr);
-            private _lx = _pad * 2.5 + _nw;
+            // Sans numéro : pas de pastille (elle restait en carré pâle sans légende, app Zones « État de la zone »).
+            if (_num isEqualTo "") then { _nb ctrlShow false; _nt ctrlShow false; _nw = 0; };
+            private _lx = [_pad * 2.5 + _nw, _pad * 1.5] select (_num isEqualTo "");
             private _lw = [(_w * 0.46) - _nw - _pad, _w - _nw - _pad * 2.5] select _wide;
             private _vx = _pad + _w * 0.46;
             private _vw = _w * 0.54 - _pad;

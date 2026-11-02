@@ -44,6 +44,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
             _map drawRectangle [_p, _a, _a, 0, _col, _fill];
         } forEach _cells;
     };
+    // Traits entre alliés et cercles des téléphones : bascule « Traits entre alliés » (masqués par défaut, 2.9.38) ;
+    // masqués, rien n'est calculé ni dessiné.
+    if !(profileNamespace getVariable ["COMSPEC_ATAK_MeshLinks", false]) exitWith {};
     // Le calcul (lignes de vue entre antennes) est mis en cache 3 s par l'action « scan ».
     private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
     private _nodes = _mesh getOrDefault ["nodes", []];
@@ -112,8 +115,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
                 };
             };
         };
-        // Relais utilisé : pointillé de mon téléphone à son antenne (trait plein en mode léger).
-        if (_use) then {
+        // Relais utilisé : pointillé de mon téléphone à son antenne (trait plein en mode léger), bascule « Trait vers mon
+        // relais » (masqué par défaut, 2.9.38).
+        if (_use && {profileNamespace getVariable ["COMSPEC_ATAK_RelayLine", false]}) then {
             private _me = getPosASLVisual (vehicle player);
             if (_hudLite) then {
                 _map drawLine [_me, _p, [0.36, 0.85, 0.42, 0.65]];

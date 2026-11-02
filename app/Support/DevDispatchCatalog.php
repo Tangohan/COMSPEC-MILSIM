@@ -294,28 +294,45 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1335, '2026-11-02', 'Grades allemands, russes, chinois et OTAN, et fenêtre « Systèmes de grades »', 'Le référentiel des grades propose maintenant les grades de la Bundeswehr, des forces armées russes, de l’Armée populaire de libération et une échelle OTAN générique. Les onglets par pays sont remplacés par une fenêtre de catalogue : pays et armées, recherche dans tous les grades, comparaison avec le système actuel par code OTAN, puis « Utiliser pour la communauté ».', [
-                'Grades : Allemagne (Heer, Marine, Luftwaffe : 29 grades chacun, en allemand), Russie (armée de terre, marine, forces aérospatiales : 20 grades chacun, en cyrillique avec translittération), Chine (陆军, 海军, 空军 : 20 grades chacun, en sinogrammes avec pinyin) et grades OTAN génériques (OR-1 à OR-9, WO, OF-1 à OF-10)',
-                'Fenêtre « Systèmes de grades » : drapeau et nom natif du pays, armées, recherche plein texte (code, abrégé, intitulé, translittération, équivalent anglais, code OTAN), liste ordonnée des grades et comparaison avec le système actuel',
-                'Adéquation de l’organisation : référentiels allemand (Gruppe, Zug, Kompanie), russe (отделение, взвод, рота), chinois (班, 排, 连) et OTAN générique, retenus d’office avec les grades du pays',
+            $pr(1336, '2026-11-02', 'Annuler partout, app Zones refaite, plans partagés au camp', 'Avec le pack 2.9.38, les apps Routes et Zones savent annuler : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER qui n’envoie qu’une fois, bandeau « Supprimé · ANNULER » après chaque suppression. L’app Zones est refaite : grande carte avec barre d’outils, panneau en onglets, polygone aimanté aux routes, bâtiments et rives, découpage par vos traits, aperçu avant de générer et couleurs au choix. Les plans et les routes partent maintenant à tout le camp et vont sur la carte d’Arma ; l’état des zones ne change toujours que par un joueur.', [
+                'Apps Routes et Zones : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER (un seul envoi), ANNULER LES MODIFICATIONS (route comme à l’ouverture, nouvelle route abandonnée)',
+                'App Routes : mode CHOISIR par défaut, barre TERMINER / ANNULER sur la carte pendant AJOUTER, INSÉRER ou DÉPLACER, Échap ou clic droit pour en sortir ; onglet ITINÉRAIRES pour effacer l’itinéraire de l’app Itinéraire ou le guidage GPS',
+                'Suppression d’étape, de route, de plan, de zone ou de trait : deux clics, puis ANNULER pendant 8 secondes ; un changement d’état de zone part au bout de 5 secondes, annulable d’ici là ; un découpage lancé s’annule',
+                'App Zones : carte agrandie et barre d’outils (sélection, rectangle, polygone, cercle, annuler, rétablir), onglets Tracer, Découper, Nommer, Style, Situation, fiche de zone dans le panneau avec un bouton SIGNALER toujours visible',
+                'Polygone aimanté (routes, coins et bords des bâtiments, rives ; rayon 15, 30 ou 60 m ; Alt pour s’en passer), fermé ou en trait ; plusieurs contours et traits par plan, sommets modifiables ; nouvelle méthode « Découper par mes traits »',
+                'Aperçu du découpage avant GÉNÉRER et message clair si rien ne tient ; couleurs : thèmes OTAN, contraste élevé, vision nocturne, couleurs par type et par état, opacité, épaisseur, tirets, étiquettes, style d’une zone ou de tout un type',
+                'Plans de zones et routes partagés au camp par défaut et affichés sur la carte d’Arma (réglage serveur « Portée par défaut des plans et routes »)',
+                'Clic droit sur la carte : supprimer la route, l’itinéraire, la zone ou le plan sous le curseur (ou le masquer chez soi), avec ANNULER ; unité sélectionnée : VIBRER, SMS, PING, CENTRER, ROUTE VERS',
+                'Nouveau raccourci Maj+U : utiliser la miniature du téléphone à la souris, sans l’agrandir (nouvel appui, Échap ou clic à côté pour revenir au jeu)',
+                'Bloc-notes : vue LECTURE qui défile, PARTAGER EN BLUETOOTH vers un téléphone appairé, ENVOYER EN MESSAGE',
+                'Calques › Forces : « Traits entre alliés » et « Trait vers mon relais », masqués par défaut comme les cercles de précision',
             ], [
-                'Référentiel des grades : un bandeau « Système de grades de la communauté » avec « Changer de système » et « Parcourir les catalogues » ; il reste trois onglets (grades officiels, sur mesure, grades d’avancement)',
-                'Création de communauté, étape Grades : une carte « Autres pays et armées » ouvre la même fenêtre au lieu d’une carte par système',
-                'Modèles d’unités allemands (DSK, KSK, Luftlandebrigade 1, KSM, Seebataillon, HSG 64) : grades de la Bundeswehr appliqués',
-            ], [], ['personnel'], [
-                'L’administrateur lance run-migrations.php (étape grade_systems_de_ru_cn_nato) pour ajouter les grades allemands, russes, chinois et OTAN.',
-                'Essai : Back-office › Référentiel des grades › Parcourir les catalogues › Deutschland › Armée de terre › Utiliser pour la communauté.',
-            ]),
-            $pr(1333, '2026-11-02', 'Sessions & connexions ATAK : la fonction actuelle remplace l’ancien rôle', 'La page ATAK › Sessions & connexions affichait encore, dans sa colonne « Rôle », le rôle envoyé par le jeu (rôle personnalisé, description du slot ou équipe de feu) au lieu de la fonction tenue sur le site. Chaque opérateur montre désormais son indicatif, puis le membre lié (Prénom N. et trigramme), son grade, la fonction qui lui est attribuée et son unité d’affectation dans l’organigramme. Le rôle choisi en jeu n’apparaît plus qu’à part, sous la mention « Déclaré en jeu », et seulement s’il diffère de la fonction, avec une pastille « Écart ». Les membres masqués ou anonymisés restent sans nom ni lien.', [
-                'Filtres par unité (unités subordonnées comprises) et par fonction',
-                'Colonnes Grade, Fonction · affectation et Version du mod ; « Dernière remontée » remplace « Dernière MAJ »',
-                'Export CSV : membre, trigramme, grade, fonction, unité d’affectation, rôle déclaré en jeu et version du mod',
+                'Routes en 3D seulement avec la JVN allumée et pendant le suivi ; une étape atteinte disparaît aussitôt',
+                'Sélection d’une unité sur la carte : coins fins au lieu du gros cercle blanc qui cachait le symbole',
+                'Carte d’Arma : seuls les marqueurs de zone qui changent sont refaits, par petits lots (plus de saccade sur un gros découpage)',
             ], [
-                'Fiche opérateur ATAK : fonction, grade, unité d’affectation et rôle déclaré en jeu dans le bloc Identité réseau',
+                'App Zones : fiche de zone affichée en double, découpage invisible sur la carte claire, petit carré sans légende devant « État de la zone »',
+                'App Routes : une route supprimée, ou une ancienne version, ne revient plus au rejeu du serveur ni au retour du réseau',
+                'Profil et app Athena : « Fonction » montre la fonction actuelle et non l’ancien rôle de communauté',
+                'Carte sombre : la couleur choisie d’un marqueur est respectée (un bleu ne passait plus qu’en gris)',
+                'Repères d’Athena : un repère supprimé en jeu, ou l’étape d’une route supprimée, n’est plus recréé au relevé suivant',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.38, quittez Arma complètement et relancez.',
+                'Changement de défaut : plans et routes partent au camp et vont sur la carte d’Arma. Pour revenir au comportement de la 2.9.36 : Options des addons › COMSPEC › ATAK · Plan / Zones › « Portée par défaut des plans et routes » sur Privé, et « Zones sur la carte d’Arma et Athena » décoché.',
+            ], 'Pack téléphone 2.9.38'),
+            $pr(1334, '2026-11-02', 'Optimisation du téléphone : moins de saccades et d’écrans qui se redessinent', 'Le pack 2.9.37 est une vague d’optimisation, après des retours de baisses d’images et de saccades. Les tâches de fond du téléphone et de la liaison Athena font beaucoup moins de calculs en double : un seul joueur relaie balises, aéronefs et marqueurs web pour tout le monde, les envois inchangés ne repartent plus, les vérifications lourdes (bâtiment, vision nocturne, écrans TOC, projecteurs) sont espacées ou arrêtées quand rien ne les demande. Les pages ne se redessinent plus pour rien : le BFT se met à jour sur place, l’app Réseau seulement quand ses données changent, et plus rien ne bouge pendant une saisie ni ne remonte en haut de page. La fiche opérateur complète part une fois par session.', [
+                'Debug › PERFS : dernier bilan de 30 s (images par seconde, images lentes, fonctions les plus coûteuses, nombre de redessins par page) pour signaler un ralentissement',
             ], [
-                'Le rôle remonté du jeu n’est plus présenté comme la fonction de l’opérateur',
-            ], ['atak'], [], 'Portail Athena'),
-
+                'Moins de saccades : relais élu une fois pour les balises GPS, IA alliées, téléphones et aéronefs ; marqueurs web Athena tirés par un seul joueur (toujours visibles de tous) ; écrans TOC envoyés aux seuls joueurs qui les regardent',
+                'Moins de calculs : liste des unités et marqueurs du BFT gardée d’un passage à l’autre, synchro Athena ignorée quand la réponse n’a pas changé, toit / murs du GPS et de la liaison partagés, vision nocturne (ECOTI) espacée, aucun calcul de projecteur sans projecteur',
+                'Moins de redessins : BFT mis à jour sur place, app Réseau seulement si ses données changent, barre de la Liaison allié seule, page GPS par case de 25 m',
+                'Plus de remontée d’écran : défilement gardé quand la page se redessine (BFT compris), saisie jamais interrompue par un rafraîchissement',
+                'Fiche opérateur complète envoyée une fois par session (plus de rappel toutes les 15 min) ; les changements réels partent toujours',
+                'Transfert Bluetooth de photos et musiques plus fluide (fichier ouvert une seule fois)',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 2.9.37, quittez Arma complètement et relancez.',
+                'En cas de saccades : Debug › PERFS, puis capture de l’écran pour le signaler.',
+            ], 'Pack téléphone 2.9.37'),
             $pr(1332, '2026-11-02', 'Royaume-Uni : grades britanniques, emplois, qualifications, doctrine et modèles d’unités', 'Une communauté peut choisir le modèle britannique à sa création (étape Grades) ou dans Back-office › Référentiel des grades : British Army et Royal Marines (Private, Trooper, Gunner, Sapper… jusqu’à Field Marshal), Royal Navy ou Royal Air Force, avec abréviations officielles et codes OTAN. Le Royaume-Uni rejoint aussi les catalogues : emplois des forces spéciales et unités spécialisées, brevets et cursus réels avec leurs écoles, publications doctrinales publiques et modèles d’organisation (UKSF, 16 Air Assault, UK Commando Force, Joint Aviation Command, bataillon d’infanterie type).', [
                 'Grades : trois systèmes britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force), proposés à la création de la communauté et dans le référentiel des grades',
                 'Catalogue d’emplois : 111 emplois britanniques sourcés (UKSF, 16 Air Assault, Ranger Regiment, Royal Marines, aviation, EOD, artillerie, RAF Regiment, Royal Navy)',

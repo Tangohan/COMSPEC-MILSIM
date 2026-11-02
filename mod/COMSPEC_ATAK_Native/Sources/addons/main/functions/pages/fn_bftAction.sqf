@@ -4,6 +4,8 @@
       "buzz"        : ouvre le vibreur (message rapide ou texte libre) dans la fiche de la piste
       "buzzSend" t  : fait vibrer son téléphone avec le message t (sans t : texte saisi, ou vibreur seul)
       "buzzCancel"  : referme le vibreur
+      "vibe"        : vibreur seul, depuis le volet « Unité sélectionnée » de l'app Carte (pas de rendu de l'app BFT)
+      "ping"        : ping de carte sur sa position, visible de tout le camp (fn_mapPing)
     Le destinataire reçoit l'événement comspec_atak_native_buzz [indicatif, grille, texte, position, émetteur] :
     vibrations, alerte à l'écran de son téléphone (fn_buzzAlert) et accusé « VU » renvoyé à l'émetteur.
 */
@@ -23,6 +25,21 @@ switch (_act) do {
         _s set ["bftBuzz", _s getOrDefault ["bftSel", ""]];
         uiNamespace setVariable ["COMSPEC_ATAK_BuzzDraft", ""];
         ["BFT"] call comspec_atak_native_fnc_pageRender;
+    };
+    case "vibe": {
+        if (isNull _obj || {!isPlayer _obj} || {!([_obj] call comspec_atak_native_fnc_hasDevice)}) exitWith { ["INFO", "Pas de téléphone ATAK chez cet allié", 3] call comspec_atak_native_fnc_notify; };
+        private _cd = missionNamespace getVariable ["COMSPEC_ATAK_BuzzAt", createHashMap];
+        private _k = netId _obj;
+        if ((diag_tickTime - (_cd getOrDefault [_k, -1e9])) < 5) exitWith { ["INFO", "Patientez quelques secondes avant de refaire vibrer.", 3] call comspec_atak_native_fnc_notify; };
+        _cd set [_k, diag_tickTime];
+        missionNamespace setVariable ["COMSPEC_ATAK_BuzzAt", _cd];
+        private _res = [{ params ["_t", "_from", "_grid", "_txt", "_pos", "_me"]; ["comspec_atak_native_buzz", [_from, _grid, _txt, _pos, _me], _t] call CBA_fnc_targetEvent; },
+            [_obj, [player] call comspec_atak_native_fnc_unitCallsign, [getPosASL player, 6] call comspec_atak_native_fnc_gridRef, "", getPosASL player, player], "Vibreur", 1] call comspec_atak_native_fnc_netSend;
+        [["INFO", "WARNING"] select (_res isEqualTo "QUEUED"), [format ["Vibreur envoyé à %1", _e getOrDefault ["callsign", name _obj]], "Pas de réseau : le vibreur partira au retour du signal"] select (_res isEqualTo "QUEUED"), 3] call comspec_atak_native_fnc_notify;
+    };
+    case "ping": {
+        private _p = [_e getOrDefault ["position", [0, 0, 0]], getPosATL _obj] select !isNull _obj;
+        ["send", _p] call comspec_atak_native_fnc_mapPing;
     };
     case "buzzCancel": { _s set ["bftBuzz", ""]; ["BFT"] call comspec_atak_native_fnc_pageRender; };
     case "buzzSend": {

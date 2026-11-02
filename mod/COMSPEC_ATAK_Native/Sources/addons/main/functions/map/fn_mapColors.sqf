@@ -53,9 +53,16 @@ _pal set ["lblLine", [0.86, 0.89, 0.92, 0.6]];
 _pal set ["grid", [[0.05, 0.05, 0.05, 0.95], [0.90, 0.94, 0.91, 0.95]] select _dark];
 _pal set ["gridSh", [0, 2] select _dark];
 _pal set ["dark", _dark];
+// Couleur trop sombre pour la carte sombre : éclaircie en gardant sa teinte (2.9.38 : un bleu pur, de luminance 0,11,
+// passait en gris clair et la couleur choisie d'un marqueur ne se voyait plus) ; seuls le noir et les gris très foncés
+// deviennent gris clair.
 private _lift = {
     params ["_c"];
-    if (((_c select 0) * 0.3 + (_c select 1) * 0.59 + (_c select 2) * 0.11) < 0.22) then { [0.78, 0.80, 0.80, _c select 3] } else { _c }
+    if (((_c select 0) * 0.3 + (_c select 1) * 0.59 + (_c select 2) * 0.11) >= 0.22) exitWith { _c };
+    private _mx = (_c select 0) max (_c select 1) max (_c select 2);
+    private _mn = (_c select 0) min (_c select 1) min (_c select 2);
+    if (_mx < 0.25 || {(_mx - _mn) < 0.12}) exitWith { [0.78, 0.80, 0.80, _c select 3] };
+    [(_c select 0) * 0.55 + 0.42, (_c select 1) * 0.55 + 0.42, (_c select 2) * 0.55 + 0.42, _c select 3]
 };
 _pal set ["lift", [{ _this select 0 }, _lift] select _dark];
 // Liseré d'une plaque d'étiquette (fond toujours sombre) : toujours éclairci.

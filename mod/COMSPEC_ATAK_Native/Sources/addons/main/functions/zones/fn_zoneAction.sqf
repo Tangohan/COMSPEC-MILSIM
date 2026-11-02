@@ -10,11 +10,20 @@
     Plan (HashMap) : id, name (« OBJ BRAVO »), owner, uid, rev, scope (0 moi, 1 équipe, 2 groupe, 3 camp), live, vis,
       arma, render (FILL surligné | LINE contour | POINT point centré), aff (type par défaut des zones), area (zone de
       travail [RECT [[x0, y0], [x1, y1]] | POLY [points] | CIRCLE [[x, y], rayon]]), gp (réglages du découpage, HashMap),
-      zones, axes, cps, from (auteur d'un plan reçu), side / grp / ft (destinataires de la situation) ; en mémoire
-      seulement : mk (marqueurs d'Arma), genTok / busy (calcul en cours), syncTok, geo (boîtes et surfaces).
+      zones, axes, cps, lines (contours et traits tracés), st (style du plan, HashMap), from (auteur d'un plan reçu),
+      side / grp / ft (destinataires de la situation) ; en mémoire seulement : mk / mkz (marqueurs d'Arma et leur clé),
+      genTok / busy (calcul en cours), syncTok, geo (boîtes et surfaces), palc (couleurs résolues).
     Zone : [id, nom, points [[x, y]...], point d'étiquette [x, y], type, rendu ("" : celui du plan), état, horodatage
       (serverTime), auteur de l'état, signalements, bâtiments [[x, y, demi-largeur, demi-longueur, cap, étages]...],
-      rectangle [x, y, a, b] (case de grille) ou []].
+      rectangle [x, y, a, b] (case de grille) ou [], style [couleur (classe CfgMarkerColors, "" : celle du plan),
+      opacité du remplissage (-1), épaisseur px (-1), trait ("" | SOLID | DASH | DOT | ARROW)]].
+    Contour / trait : [id, nom, points, fermé, style [couleur, épaisseur, trait]].
+    Style du plan (st) : theme (NATO | HC contraste élevé | NV vision nocturne), fillA, width, dash, lblSize, lblBg,
+      lblPos (C centre | N au-dessus), lblMode (NAME_ST | NAME | NUM | NONE), tcol / scol (type / état -> classe de
+      couleur, palette de l'app Routes : même couleur sur la carte ATAK, d'Arma et Athena).
+    Édition (vue EDIT de l'app, un de mes plans) : missionNamespace COMSPEC_ATAK_ZnEdit (id, undo, redo, dirty) ;
+      pendant l'édition, ni renvoi du plan partagé ni marqueurs d'Arma : un seul envoi à la validation (editCommit).
+    Changement d'état depuis l'app : appliqué tout de suite, envoyé 5 s plus tard (ANNULER entre-temps : rien ne part).
     Signalement : [id, horodatage, « HH:MM », auteur, nature, effectif, texte, position [x, y]].
     Axe : [id, nom (« MSR TAMPA »), MSR | ASR, points, longueur (m), rendu]. Point de contrôle : [n, « CP3 », [x, y], axe].
     Params : [action, argument] — voir les « case ».
@@ -39,8 +48,21 @@ private _types = [
     ["HOS", "Ennemi", [0.95, 0.20, 0.15, 1], "ColorOPFOR"],
     ["NEU", "Neutre", [0.25, 0.80, 0.35, 1], "ColorGreen"],
     ["UNK", "Inconnu", [1, 0.85, 0.20, 1], "ColorYellow"],
-    ["RES", "Restreinte", [0.75, 0.35, 0.95, 1], "ColorCIV"]
+    ["RES", "Restreinte", [0.75, 0.35, 0.95, 1], "ColorCIV"],
+    ["LZ", "LZ / poser", [0.20, 0.85, 0.90, 1], "ColorPink"]
 ];
+// Thèmes de couleurs : types, états, opacité du remplissage, épaisseur par défaut. NATO : symbologie standard (le
+// « Repère » est sombre : visible sur la carte claire) ; HC : contraste élevé ; NV : vision nocturne (teintes sourdes).
+private _pals = createHashMapFromArray [
+    ["NATO", [createHashMapFromArray [["GEN", [0.16, 0.19, 0.18, 1]], ["OBJ", [1, 0.55, 0.10, 1]], ["FRD", [0.25, 0.55, 1, 1]], ["HOS", [0.95, 0.20, 0.15, 1]], ["NEU", [0.25, 0.80, 0.35, 1]], ["UNK", [1, 0.85, 0.20, 1]], ["RES", [0.75, 0.35, 0.95, 1]], ["LZ", [0.20, 0.85, 0.90, 1]]],
+        createHashMapFromArray [["UNREC", [0.62, 0.66, 0.64, 1]], ["CLEAR", [0.30, 0.82, 0.38, 1]], ["CONT", [1, 0.60, 0.12, 1]], ["ENY", [0.95, 0.20, 0.15, 1]], ["FRD", [0.25, 0.55, 1, 1]], ["DENY", [0.72, 0.32, 0.92, 1]]], 0.15, 1]],
+    ["HC", [createHashMapFromArray [["GEN", [0, 0, 0, 1]], ["OBJ", [1, 0.45, 0, 1]], ["FRD", [0, 0.35, 1, 1]], ["HOS", [1, 0, 0, 1]], ["NEU", [0, 0.7, 0, 1]], ["UNK", [1, 0.9, 0, 1]], ["RES", [0.8, 0, 1, 1]], ["LZ", [0, 0.9, 1, 1]]],
+        createHashMapFromArray [["UNREC", [0.35, 0.35, 0.35, 1]], ["CLEAR", [0, 0.85, 0, 1]], ["CONT", [1, 0.5, 0, 1]], ["ENY", [1, 0, 0, 1]], ["FRD", [0, 0.4, 1, 1]], ["DENY", [0.8, 0, 1, 1]]], 0.25, 2]],
+    ["NV", [createHashMapFromArray [["GEN", [0.25, 0.45, 0.25, 1]], ["OBJ", [0.6, 0.5, 0.2, 1]], ["FRD", [0.2, 0.45, 0.35, 1]], ["HOS", [0.6, 0.15, 0.1, 1]], ["NEU", [0.2, 0.55, 0.2, 1]], ["UNK", [0.55, 0.5, 0.15, 1]], ["RES", [0.4, 0.3, 0.45, 1]], ["LZ", [0.2, 0.5, 0.45, 1]]],
+        createHashMapFromArray [["UNREC", [0.3, 0.38, 0.3, 1]], ["CLEAR", [0.2, 0.55, 0.2, 1]], ["CONT", [0.6, 0.4, 0.1, 1]], ["ENY", [0.65, 0.15, 0.1, 1]], ["FRD", [0.15, 0.35, 0.5, 1]], ["DENY", [0.45, 0.2, 0.5, 1]]], 0.12, 1]]
+];
+// Style par défaut d'un plan.
+private _stDef = { createHashMapFromArray [["theme", "NATO"], ["fillA", -1], ["width", -1], ["dash", "SOLID"], ["lblSize", 1], ["lblBg", false], ["lblPos", "C"], ["lblMode", "NAME_ST"], ["tcol", createHashMap], ["scol", createHashMap]] };
 private _natures = [
     ["UNK", "Inconnue"], ["INF", "Infanterie"], ["MOT", "Motorisé"], ["MECA", "Mécanisé / blindé"], ["REC", "Reconnaissance"],
     ["ART", "Tirs indirects"], ["AA", "Antiaérien"], ["AIR", "Aérien / drone"], ["SNI", "Tireur embusqué"], ["IED", "EEI / piège"],
@@ -69,6 +91,31 @@ if (isNil "_mine") then {
     } forEach (profileNamespace getVariable [format ["COMSPEC_ATAK_Zn_%1", worldName], []]);
 };
 private _get = { params ["_id"]; _mine getOrDefault [_id, _rx getOrDefault [_id, createHashMap]] };
+// Édition en cours (un de mes plans) : état empaqueté gardé avant chaque modification (ANNULER), 25 pas au plus.
+private _ed = missionNamespace getVariable ["COMSPEC_ATAK_ZnEdit", createHashMap];
+private _editing = { params ["_id"]; (_ed getOrDefault ["id", ""]) isEqualTo _id };
+private _snap = {
+    params ["_b"];
+    if !([_b get "id"] call _editing) exitWith {};
+    private _u = _ed get "undo";
+    _u pushBack +(["pack", _b] call comspec_atak_native_fnc_zoneAction);
+    if ((count _u) > 25) then { _u deleteAt 0; };
+    _ed set ["redo", []];
+    _ed set ["dirty", true];
+};
+// Plan remis dans un état empaqueté : découpage, axes, traits, style, nom (affichage, partage et situation gardés).
+private _restore = {
+    params ["_b", "_pk"];
+    private _n = [_pk] call comspec_atak_native_fnc_zoneUnpack;
+    if ((count _n) isEqualTo 0) exitWith {};
+    // Situation des zones gardée (elle se donne hors de l'édition) : reprise par id de zone.
+    private _sit = createHashMap;
+    { _sit set [_x select 0, [_x select 6, _x select 7, _x select 8, _x select 9]]; } forEach (_b get "zones");
+    { private _s = _sit getOrDefault [_x select 0, []]; if ((count _s) > 0) then { _x set [6, _s select 0]; _x set [7, _s select 1]; _x set [8, _s select 2]; _x set [9, _s select 3]; }; } forEach (_n get "zones");
+    { _b set [_x, _n get _x]; } forEach ["name", "render", "aff", "area", "gp", "zones", "axes", "cps", "lines", "st"];
+    _b set ["genTok", (_b getOrDefault ["genTok", 0]) + 1];
+    _b set ["busy", ""];
+};
 private _zoneOf = { params ["_b", "_zid"]; private _zs = _b getOrDefault ["zones", []]; private _i = _zs findIf { (_x select 0) isEqualTo _zid }; [[], _zs select _i] select (_i >= 0) };
 private _bump = { missionNamespace setVariable ["COMSPEC_ATAK_ZnRev", (missionNamespace getVariable ["COMSPEC_ATAK_ZnRev", 0]) + 1]; };
 private _refresh = {
@@ -93,6 +140,8 @@ private _changed = {
     call _bump;
     if ((_b get "id") in _mine) then {
         call _save;
+        // Plan en cours d'édition : renvoi et marqueurs d'Arma à la validation.
+        if ([_b get "id"] call _editing) exitWith { _ed set ["dirty", true]; };
         private _id = _b get "id";
         private _tok = (_b getOrDefault ["syncTok", 0]) + 1;
         _b set ["syncTok", _tok];
@@ -163,10 +212,11 @@ switch (_act) do {
     // Plan -> paires (profil, réseau) ; cases de grille envoyées sans leurs coins (refaits d'après le rectangle).
     case "pack": {
         private _b = _arg;
-        ((keys _b) select { !(_x in ["mk", "genTok", "busy", "syncTok", "geo"]) }) apply {
+        ((keys _b) select { !(_x in ["mk", "mkz", "mkTok", "genTok", "busy", "syncTok", "geo", "palc"]) }) apply {
             private _v = _b get _x;
             switch (_x) do {
                 case "gp": { _v = (keys _v) apply { [_x, _v get _x] }; };
+                case "st": { _v = (keys _v) apply { private _w = _v get _x; [_x, [_w, (keys _w) apply { [_x, _w get _x] }] select (_w isEqualType createHashMap)] }; };
                 case "zones": { _v = _v apply { if ((count (_x param [11, []])) isEqualTo 4) then { private _z = +_x; _z set [2, []]; _z } else { _x } }; };
             };
             [_x, _v]
@@ -183,10 +233,14 @@ switch (_act) do {
             ["cut", "GRID"], ["size", 200], ["fmt", "GRG"], ["snap", true], ["sec", 8], ["rings", 1], ["secFmt", "CARD"], ["minA", 2500],
             ["tracks", false], ["prefix", _code select [0, 1]], ["theme", "CITY"], ["asr", 3], ["axMin", 300], ["setPre", "OBJ"], ["setTheme", "NATO"], ["radius", 300]
         ];
+        // 2.9.38 : plan partagé d'office (réglage serveur, le camp par défaut) et sur la carte d'Arma, renvoyé à chaque
+        // modification validée ; l'état des zones, lui, ne change toujours que par un joueur.
+        private _dsc = ((missionNamespace getVariable ["comspec_atak_native_plan_scope", 3]) max 0) min 3;
+        if !(missionNamespace getVariable ["comspec_atak_native_zones_share", true]) then { _dsc = 0; };
         private _b = createHashMapFromArray [
             ["id", _id], ["name", [_name, 24] call _clean], ["owner", [player] call comspec_atak_native_fnc_unitCallsign], ["uid", getPlayerUID player],
-            ["rev", 1], ["scope", 0], ["live", false], ["vis", true], ["arma", false], ["render", "FILL"], ["aff", "GEN"], ["area", []], ["gp", _gp],
-            ["zones", []], ["axes", []], ["cps", []], ["from", ""], ["side", str side group player], ["grp", netId group player], ["ft", ""], ["mk", []]
+            ["rev", 1], ["scope", _dsc], ["live", _dsc > 0], ["vis", true], ["arma", (missionNamespace getVariable ["comspec_atak_native_zones_arma", true]) && {_dsc > 0}], ["render", "FILL"], ["aff", "GEN"], ["area", []], ["gp", _gp],
+            ["zones", []], ["axes", []], ["cps", []], ["lines", []], ["st", call _stDef], ["from", ""], ["side", str side group player], ["grp", netId group player], ["ft", ""], ["mk", []]
         ];
         _mine set [_id, _b];
         call _save; call _bump; call _refresh;
@@ -201,6 +255,7 @@ switch (_act) do {
         private _list = _themes getOrDefault [_gp getOrDefault ["setTheme", "NATO"], _themes get "NATO"];
         private _cur = ((_b get "name") splitString " ") param [1, ""];
         private _i = ((_list find _cur) + 1) max 0;
+        [_b] call _snap;
         private _code = "";
         for "_k" from 0 to ((count _list) - 1) do {
             private _c = _list select ((_i + _k) mod (count _list));
@@ -226,8 +281,8 @@ switch (_act) do {
     case "del": {
         private _b = [_arg] call _get;
         if ((count _b) isEqualTo 0) exitWith { false };
-        { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_b getOrDefault ["mk", []]);
-        _b set ["mk", []];
+        { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_b getOrDefault ["mk", []]);
+        _b set ["mk", []]; _b set ["mkz", createHashMap]; _b set ["mkTok", (_b getOrDefault ["mkTok", 0]) + 1];
         if (_arg in _mine) then {
             if ((_b get "scope") > 0) then { ["unshare", _arg] call comspec_atak_native_fnc_zoneAction; };
             _mine deleteAt _arg;
@@ -247,14 +302,16 @@ switch (_act) do {
         };
         if (_key isEqualTo "name") then { _v = [_v, 24] call _clean; if (_v isEqualTo "") then { _v = _b get "name"; }; };
         if ((_b getOrDefault [_key, ""]) isEqualTo _v) exitWith { false };
+        if (_key in ["name", "render", "aff"]) then { [_b] call _snap; };
         _b set [_key, _v];
         switch (_key) do {
             case "vis": { call _save; call _bump; call _refresh; };
             case "live": { call _save; };
             // Type par défaut : appliqué à toutes les zones.
-            case "aff": { { _x set [4, _v]; } forEach (_b get "zones"); [_b, false] call _changed; };
+            case "aff": { { _x set [4, _v]; } forEach (_b get "zones"); [_b] call _changed; };
+            case "render": { [_b] call _changed; };
             case "arma": {
-                if (_v && {!(missionNamespace getVariable ["comspec_atak_native_zones_arma", false])}) exitWith {
+                if (_v && {!(missionNamespace getVariable ["comspec_atak_native_zones_arma", true])}) exitWith {
                     _b set ["arma", false];
                     ["WARNING", "Zones sur la carte d'Arma désactivées par le serveur", 3, 20] call comspec_atak_native_fnc_notify;
                 };
@@ -280,6 +337,7 @@ switch (_act) do {
         _arg params ["_id", "_kind", "_data"];
         private _b = _mine getOrDefault [_id, createHashMap];
         if ((count _b) isEqualTo 0) exitWith { false };
+        [_b] call _snap;
         _b set ["area", [_kind, _data]];
         [_b, true, false] call _changed;
         true
@@ -306,8 +364,24 @@ switch (_act) do {
     // Menu clic droit de la carte, sous-menu Zones : [genre G100 | G200 | G500 | BLOCK | RADIAL | AXES | NEW, point].
     // Nouveau plan, zone de travail en cercle autour du point (rayon choisi dans le menu), puis le calcul demandé.
     case "ctxGen": {
-        _arg params [["_kind", ""], ["_pos", []]];
+        _arg params [["_kind", ""], ["_pos", []], ["_bid", ""]];
         if ((count _pos) < 2) exitWith { "" };
+        // Contour / trait aimanté à partir du point : sur le plan sous le clic s'il est à moi, sinon un nouveau plan ;
+        // l'app Zones s'ouvre sur l'outil POLYGONE, premier point posé.
+        if (_kind in ["MAGC", "MAGO"]) exitWith {
+            private _id = [_bid, ""] select !(_bid in _mine);
+            if (_id isEqualTo "") then { _id = ["new", [""]] call comspec_atak_native_fnc_zoneAction; };
+            if (_id isEqualTo "") exitWith { "" };
+            ["#ui", ["open", _id]] call comspec_atak_native_fnc_pageZones;
+            private _u = uiNamespace getVariable ["COMSPEC_ATAK_ZnUi", createHashMap];
+            private _open = _kind isEqualTo "MAGO";
+            private _s = ["at", [[_pos select 0, _pos select 1], _u getOrDefault ["polyR", 30]]] call comspec_atak_native_fnc_zoneSnap;
+            { _u set _x; } forEach [["tool", "POLY"], ["polyMag", true], ["polyOpen", _open], ["polyFor", [["LINE", "AREA"] select ((count ((_mine get _id) get "area")) isEqualTo 0), "LINE"] select _open],
+                ["draftPts", [[[_pos select 0, _pos select 1], _s select 0] select ((count _s) > 0)]], ["ztab", "DRAW"]];
+            uiNamespace setVariable ["COMSPEC_ATAK_ZnView", [0.02, [_pos select 0, _pos select 1]]];
+            ["ZONES"] call comspec_atak_native_fnc_navigate;
+            _id
+        };
         private _r = ((profileNamespace getVariable ["COMSPEC_ATAK_ZnCtxRad", 300]) max 50) min 5000;
         private _id = ["new", [""]] call comspec_atak_native_fnc_zoneAction;
         if (_id isEqualTo "") exitWith { "" };
@@ -343,6 +417,27 @@ switch (_act) do {
         _b set ["busy", toUpper _act];
         call _refresh;
         [["ZONES", "AXES", "BLD"] select (["gen", "axes", "bld"] find _act), _id, _tok, _zid] spawn comspec_atak_native_fnc_zoneGen;
+        // Garde-fou : calcul arrêté par une erreur (plus de réponse au bout de 90 s) : le plan n'attend plus.
+        [{
+            params ["_id", "_tok"];
+            private _b = ["get", _id] call comspec_atak_native_fnc_zoneAction;
+            if ((_b getOrDefault ["genTok", -1]) isEqualTo _tok && {(_b getOrDefault ["busy", ""]) isNotEqualTo ""}) then {
+                _b set ["busy", ""];
+                ["WARNING", "Calcul des zones interrompu : réessayez (zone plus petite, cases plus grandes)", 5, 20] call comspec_atak_native_fnc_notify;
+                ["WARNING", "ZONES", format ["Calcul sans réponse au bout de 90 s (plan %1)", _id]] call comspec_atak_native_fnc_log;
+                ["#refresh"] call comspec_atak_native_fnc_pageZones;
+            };
+        }, [_id, _tok], 90] call CBA_fnc_waitAndExecute;
+        true
+    };
+    // ANNULER LE CALCUL : le résultat du calcul en cours sera jeté (jeton changé), rien ne change.
+    case "genCancel": {
+        private _b = _mine getOrDefault [_arg, createHashMap];
+        if ((count _b) isEqualTo 0 || {(_b getOrDefault ["busy", ""]) isEqualTo ""}) exitWith { false };
+        _b set ["genTok", (_b getOrDefault ["genTok", 0]) + 1];
+        _b set ["busy", ""];
+        ["INFO", "Calcul annulé : rien n'a changé", 2, 10] call comspec_atak_native_fnc_notify;
+        call _refresh;
         true
     };
     case "genDone": {
@@ -351,6 +446,7 @@ switch (_act) do {
         if ((count _b) isEqualTo 0 || {(_b getOrDefault ["genTok", -1]) isNotEqualTo _tok}) exitWith {};
         _b set ["busy", ""];
         if ((count _zones) > 0) then {
+            [_b] call _snap;
             _b set ["zones", _zones];
             [_b] call _changed;
             ["SUCCESS", format ["%1 : %2 zone(s) nommée(s) et numérotée(s)", _b get "name", count _zones], 3, 20] call comspec_atak_native_fnc_notify;
@@ -363,6 +459,7 @@ switch (_act) do {
         if ((count _b) isEqualTo 0 || {(_b getOrDefault ["genTok", -1]) isNotEqualTo _tok}) exitWith {};
         _b set ["busy", ""];
         if ((count _axes) > 0) then {
+            [_b] call _snap;
             _b set ["axes", _axes];
             _b set ["cps", _cps];
             [_b] call _changed;
@@ -377,6 +474,7 @@ switch (_act) do {
         _b set ["busy", ""];
         private _z = [_b, _zid] call _zoneOf;
         if ((count _z) isEqualTo 0) exitWith { call _refresh; };
+        [_b] call _snap;
         _z set [10, _list];
         [_b, false] call _changed;
         ["SUCCESS", format ["Zone %1 : %2 bâtiment(s) numéroté(s)", _z select 1, count _list], 3, 20] call comspec_atak_native_fnc_notify;
@@ -388,6 +486,7 @@ switch (_act) do {
         if ((count _b) isEqualTo 0) exitWith { false };
         private _z = [_b, _zid] call _zoneOf;
         if ((count _z) isEqualTo 0) exitWith { false };
+        [_b] call _snap;
         switch (_key) do {
             case "label": { _v = [_v, 16] call _clean; if (_v isNotEqualTo "") then { _z set [1, _v]; }; };
             case "type": { if ((_types findIf { (_x select 0) isEqualTo _v }) >= 0) then { _z set [4, _v]; }; };
@@ -395,7 +494,28 @@ switch (_act) do {
             case "bldClear": { _z set [10, []]; };
             case "del": { (_b get "zones") deleteAt ((_b get "zones") findIf { (_x select 0) isEqualTo _zid }); };
         };
-        [_b, _key isEqualTo "del"] call _changed;
+        [_b, _key in ["del", "type", "rm"]] call _changed;
+        true
+    };
+    // Zone retirée hors de l'édition (menu du clic droit de l'app Carte) : [id, id de zone] -> [index, zone] pour
+    // « zoneRestore » ([id, index, zone]), le temps du bandeau ANNULER.
+    case "zoneCut": {
+        _arg params ["_id", "_zid"];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0) exitWith { [] };
+        private _i = (_b get "zones") findIf { (_x select 0) isEqualTo _zid };
+        if (_i < 0) exitWith { [] };
+        [_b] call _snap;
+        private _z = (_b get "zones") deleteAt _i;
+        [_b] call _changed;
+        [_i, _z]
+    };
+    case "zoneRestore": {
+        _arg params ["_id", "_i", "_z"];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0 || {((_b get "zones") findIf { (_x select 0) isEqualTo (_z select 0) }) >= 0}) exitWith { false };
+        (_b get "zones") insert [(_i max 0) min (count (_b get "zones")), [_z]];
+        [_b] call _changed;
         true
     };
     case "axisSet": {
@@ -405,6 +525,7 @@ switch (_act) do {
         private _ax = _b get "axes";
         private _i = _ax findIf { (_x select 0) isEqualTo _aid };
         if (_i < 0) exitWith { false };
+        [_b] call _snap;
         switch (_key) do {
             case "name": { _v = toUpper ([_v, 24] call _clean); if (_v isNotEqualTo "") then { private _old = (_ax select _i) select 1; (_ax select _i) set [1, _v]; { if ((_x select 3) isEqualTo _old) then { _x set [3, _v]; }; } forEach (_b get "cps"); }; };
             case "rm": { (_ax select _i) set [5, [_v, ""] select !(_v in ["FILL", "LINE", "POINT"])]; };
@@ -437,6 +558,47 @@ switch (_act) do {
         ["SUCCESS", format ["Route %1 créée dans l'app Routes (%2 point(s) de contrôle)", _name, count _cps], 4, 20] call comspec_atak_native_fnc_notify;
         _rid
     };
+    // État donné depuis l'app (un clic) : appliqué ici tout de suite, envoyé dans 5 s ; « sitUndo » entre-temps le
+    // retire sans rien envoyer. [id, id de zone, état].
+    case "sitSoon": {
+        _arg params ["_id", "_zid", ["_st", ""]];
+        private _b = [_id] call _get;
+        private _z = [_b, _zid] call _zoneOf;
+        if ((count _z) isEqualTo 0 || {_st isEqualTo ""} || {(_z select 6) isEqualTo _st}) exitWith { false };
+        private _q = missionNamespace getVariable ["COMSPEC_ATAK_ZnSitQ", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZnSitQ", _q];
+        private _k = _id + "|" + _zid;
+        // État d'avant gardé (le premier, si plusieurs clics se suivent) ; heure locale seulement, rien ne part.
+        private _old = _q getOrDefault [_k, []];
+        private _prev = if ((count _old) > 0) then { _old select 0 } else { [_z select 6, _z select 7, _z select 8] };
+        private _tok = diag_tickTime;
+        _q set [_k, [_prev, _st, _tok]];
+        _z set [6, _st]; _z set [8, [player] call comspec_atak_native_fnc_unitCallsign];
+        [_b, false, false] call _changed;
+        [{
+            params ["_id", "_zid", "_k", "_tok"];
+            private _q = missionNamespace getVariable ["COMSPEC_ATAK_ZnSitQ", createHashMap];
+            private _e = _q getOrDefault [_k, []];
+            if ((_e param [2, -1]) isNotEqualTo _tok) exitWith {};
+            _q deleteAt _k;
+            ["sit", [_id, _zid, _e select 1, []]] call comspec_atak_native_fnc_zoneAction;
+        }, [_id, _zid, _k, _tok], 5] call CBA_fnc_waitAndExecute;
+        true
+    };
+    case "sitUndo": {
+        _arg params ["_id", "_zid"];
+        private _q = missionNamespace getVariable ["COMSPEC_ATAK_ZnSitQ", createHashMap];
+        private _e = _q getOrDefault [_id + "|" + _zid, []];
+        if ((count _e) isEqualTo 0) exitWith { false };
+        _q deleteAt (_id + "|" + _zid);
+        private _b = [_id] call _get;
+        private _z = [_b, _zid] call _zoneOf;
+        if ((count _z) isEqualTo 0) exitWith { false };
+        (_e select 0) params ["_s0", "_t0", "_by0"];
+        _z set [6, _s0]; _z set [7, _t0]; _z set [8, _by0];
+        [_b, false, false] call _changed;
+        true
+    };
     // Situation donnée ici : [id, id de zone, état ("" : inchangé), signalement [nature, effectif, texte, position] ou []].
     case "sit": {
         _arg params ["_id", "_zid", ["_st", ""], ["_rep", []]];
@@ -454,6 +616,10 @@ switch (_act) do {
                 [dayTime, "HH:MM"] call BIS_fnc_timeToString, _who, _nat, [_size, 12] call _clean, [_txt, 120] call _clean, [round (_pos select 0), round (_pos select 1)]];
         };
         if (_st isEqualTo "" && {(count _reps) isEqualTo 0}) exitWith { false };
+        // État en attente d'envoi (sitSoon) remplacé par celui-ci.
+        (missionNamespace getVariable ["COMSPEC_ATAK_ZnSitQ", createHashMap]) deleteAt (_id + "|" + _zid);
+        // Zone déjà passée localement à cet état (sitSoon) : l'heure la plus récente l'emporte, l'état est bien appliqué.
+        if (_st isNotEqualTo "" && {(_z select 7) > _stamp}) then { _z set [7, _stamp]; };
         [_b, _zid, _st, _stamp, _who, _reps] call _apply;
         [_b, false, false] call _changed;
         private _shared = (_b getOrDefault ["scope", 0]) > 0;
@@ -499,7 +665,7 @@ switch (_act) do {
         private _b = _mine getOrDefault [_id, createHashMap];
         if ((count _b) isEqualTo 0) exitWith { false };
         if !(missionNamespace getVariable ["comspec_atak_native_zones_share", true]) exitWith { ["WARNING", "Partage des zones désactivé par le serveur", 3, 20] call comspec_atak_native_fnc_notify; false };
-        if (((count (_b get "zones")) + (count (_b get "axes"))) isEqualTo 0) exitWith { ["INFO", "Plan sans zone ni axe : rien à envoyer", 3, 10] call comspec_atak_native_fnc_notify; false };
+        if (((count (_b get "zones")) + (count (_b get "axes")) + (count (_b getOrDefault ["lines", []]))) isEqualTo 0 && {(count (_b get "area")) isEqualTo 0}) exitWith { if !(_quiet) then { ["INFO", "Plan vide : rien à envoyer", 3, 10] call comspec_atak_native_fnc_notify; }; false };
         if ((_b get "scope") > _sc) then { ["unshare", _id] call comspec_atak_native_fnc_zoneAction; };
         _b set ["scope", _sc];
         _b set ["live", true];
@@ -627,6 +793,250 @@ switch (_act) do {
             };
         };
     };
+    // Édition d'un de mes plans (vue EDIT) : [id]. Une autre édition ouverte est d'abord validée.
+    case "editBegin": {
+        if !(_arg in _mine) exitWith { false };
+        if ([_arg] call _editing) exitWith { true };
+        if ((count _ed) > 0) then { ["editCommit"] call comspec_atak_native_fnc_zoneAction; };
+        _ed = createHashMapFromArray [["id", _arg], ["undo", []], ["redo", []], ["dirty", false], ["at", diag_tickTime]];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZnEdit", _ed];
+        true
+    };
+    case "editInfo": { _ed };
+    // Validation : fin de l'édition, puis un seul renvoi (plan partagé, carte d'Arma) si le plan a changé.
+    case "editCommit": {
+        if ((count _ed) isEqualTo 0) exitWith { false };
+        private _id = _ed get "id";
+        private _dirty = _ed get "dirty";
+        _ed = createHashMap;
+        missionNamespace setVariable ["COMSPEC_ATAK_ZnEdit", _ed];
+        if (_dirty && {_id in _mine}) then { [_mine get _id, false] call _changed; };
+        _dirty
+    };
+    // Édition laissée ouverte (autre app, téléphone reposé) : validée (appelé chaque seconde par fn_routeAction "tick").
+    case "editTick": {
+        if ((count _ed) isEqualTo 0) exitWith {};
+        private _sx = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        if ((_sx getOrDefault ["activePage", ""]) isNotEqualTo "ZONES" || {!(_sx getOrDefault ["interactive", false])}) then { ["editCommit"] call comspec_atak_native_fnc_zoneAction; };
+    };
+    case "undo";
+    case "redo": {
+        if ((count _ed) isEqualTo 0) exitWith { false };
+        private _b = _mine getOrDefault [_ed get "id", createHashMap];
+        if ((count _b) isEqualTo 0) exitWith { false };
+        private _from = _ed get (["redo", "undo"] select (_act isEqualTo "undo"));
+        private _to = _ed get (["undo", "redo"] select (_act isEqualTo "undo"));
+        if ((count _from) isEqualTo 0) exitWith { false };
+        _to pushBack +(["pack", _b] call comspec_atak_native_fnc_zoneAction);
+        [_b, _from deleteAt ((count _from) - 1)] call _restore;
+        _ed set ["dirty", true];
+        [_b] call _changed;
+        true
+    };
+    // Plan supprimé, gardé 8 s (ANNULER) avant d'être retiré partout.
+    case "trash": {
+        private _b = _mine getOrDefault [_arg, createHashMap];
+        if ((count _b) isEqualTo 0) exitWith { ["del", _arg] call comspec_atak_native_fnc_zoneAction };
+        if ([_arg] call _editing) then { _ed = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_ZnEdit", _ed]; };
+        private _bin = missionNamespace getVariable ["COMSPEC_ATAK_ZnTrash", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_ZnTrash", _bin];
+        private _tok = diag_tickTime;
+        _bin set [_arg, [_b, _tok]];
+        _mine deleteAt _arg;
+        call _save; call _bump; call _refresh;
+        [{
+            params ["_id", "_tok"];
+            private _bin = missionNamespace getVariable ["COMSPEC_ATAK_ZnTrash", createHashMap];
+            private _e = _bin getOrDefault [_id, []];
+            if ((_e param [1, -1]) isNotEqualTo _tok) exitWith {};
+            _bin deleteAt _id;
+            (missionNamespace getVariable ["COMSPEC_ATAK_ZnMine", createHashMap]) set [_id, _e select 0];
+            ["del", _id] call comspec_atak_native_fnc_zoneAction;
+        }, [_arg, _tok], 8] call CBA_fnc_waitAndExecute;
+        true
+    };
+    case "untrash": {
+        private _bin = missionNamespace getVariable ["COMSPEC_ATAK_ZnTrash", createHashMap];
+        private _e = _bin getOrDefault [_arg, []];
+        if ((count _e) isEqualTo 0) exitWith { false };
+        _bin deleteAt _arg;
+        _mine set [_arg, _e select 0];
+        call _save; call _bump; call _refresh;
+        true
+    };
+    // Contours et traits tracés : [id, points, fermé] -> id du trait ("" : refusé).
+    case "lineAdd": {
+        _arg params ["_id", "_pts", ["_closed", false], ["_name", ""]];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0 || {(count _pts) < ([2, 3] select _closed)}) exitWith { "" };
+        private _ls = _b getOrDefault ["lines", []];
+        if ((count _ls) >= 40) exitWith { ["WARNING", "40 contours ou traits au plus par plan", 3, 10] call comspec_atak_native_fnc_notify; "" };
+        [_b] call _snap;
+        private _n = 1;
+        while { (_ls findIf { (_x select 0) isEqualTo format ["l%1", _n] }) >= 0 } do { _n = _n + 1; };
+        private _lid = format ["l%1", _n];
+        if (_name isEqualTo "") then { _name = format [[("Trait %1") call _tr, ("Contour %1") call _tr] select _closed, _n]; };
+        _ls pushBack [_lid, [_name, 16] call _clean, (_pts select [0, 300]) apply { [round ((_x select 0) * 10) / 10, round ((_x select 1) * 10) / 10] }, _closed, ["", -1, ""]];
+        _b set ["lines", _ls];
+        [_b] call _changed;
+        _lid
+    };
+    // [id, id du trait, clé (name | style | closed | del | vmove | vdel | vins | asArea), valeur, index du sommet].
+    case "lineSet": {
+        _arg params ["_id", "_lid", "_key", ["_v", ""], ["_i", -1]];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0) exitWith { false };
+        private _ls = _b getOrDefault ["lines", []];
+        private _k = _ls findIf { (_x select 0) isEqualTo _lid };
+        if (_k < 0) exitWith { false };
+        private _l = _ls select _k;
+        private _pts = _l select 2;
+        if (_key in ["vmove", "vdel", "vins"] && {_i < 0 || {_i > count _pts}}) exitWith { false };
+        if (_key isEqualTo "vdel" && {(count _pts) <= ([2, 3] select (_l select 3))}) exitWith { ["INFO", "Pas moins de sommets : supprimez plutôt le trait", 2, 10] call comspec_atak_native_fnc_notify; false };
+        [_b] call _snap;
+        switch (_key) do {
+            case "name": { _v = [_v, 16] call _clean; if (_v isNotEqualTo "") then { _l set [1, _v]; }; };
+            case "style": { _l set [4, _v]; };
+            case "closed": { if (_v && {(count _pts) < 3}) exitWith {}; _l set [3, _v]; };
+            case "del": { _ls deleteAt _k; };
+            case "vmove": { _pts set [_i, [_v select 0, _v select 1]]; };
+            case "vdel": { _pts deleteAt _i; };
+            case "vins": { _pts insert [_i, [[_v select 0, _v select 1]]]; };
+            case "asArea": { if ((count _pts) >= 3) then { _b set ["area", ["POLY", +(_pts select [0, 60])]]; }; };
+        };
+        [_b] call _changed;
+        true
+    };
+    // Trait ou contour d'un plan sous un point de l'écran : [plan, carte, point écran, px] -> [id, sommet, milieu] ou [].
+    //   sommet : index du sommet sous le point (-1) ; milieu : index du segment dont le milieu est sous le point (-1).
+    case "lineAt": {
+        _arg params ["_b", "_map", "_sp", ["_px", 10]];
+        private _best = []; private _bd = pixelW * _px;
+        {
+            _x params ["_lid", "", "_pts", "_closed"];
+            private _n = count _pts;
+            private _scr = _pts apply { _map ctrlMapWorldToScreen _x };
+            {
+                private _d = _x distance2D _sp;
+                if (_d < _bd) then { _bd = _d; _best = [_lid, _forEachIndex, -1]; };
+            } forEach _scr;
+            for "_i" from 0 to (_n - ([2, 1] select _closed)) do {
+                private _a = _scr select _i; private _c = _scr select ((_i + 1) mod _n);
+                private _m = [((_a select 0) + (_c select 0)) / 2, ((_a select 1) + (_c select 1)) / 2];
+                private _dm = _m distance2D _sp;
+                if (_dm < _bd * 0.8) then { _bd = _dm; _best = [_lid, -1, _i]; };
+                // Distance au segment (écran).
+                private _ab = [(_c select 0) - (_a select 0), (_c select 1) - (_a select 1)];
+                private _l2 = ((_ab select 0) ^ 2) + ((_ab select 1) ^ 2);
+                if (_l2 > 0) then {
+                    private _t = ((((_sp select 0) - (_a select 0)) * (_ab select 0) + ((_sp select 1) - (_a select 1)) * (_ab select 1)) / _l2) max 0 min 1;
+                    private _ds = [(_a select 0) + (_ab select 0) * _t, (_a select 1) + (_ab select 1) * _t] distance2D _sp;
+                    if (_ds < _bd && {(count _best) isEqualTo 0 || {(_best select 0) isNotEqualTo _lid}}) then { _bd = _ds; _best = [_lid, -1, -1]; };
+                };
+            };
+        } forEach (_b getOrDefault ["lines", []]);
+        _best
+    };
+    // Style : [id, clé du style du plan, valeur] ; clés tcol / scol : valeur [type ou état, classe de couleur ("" : thème)].
+    case "style": {
+        _arg params ["_id", "_key", "_v"];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0) exitWith { false };
+        [_b] call _snap;
+        private _st = _b getOrDefault ["st", call _stDef];
+        _b set ["st", _st];
+        if (_key in ["tcol", "scol"]) then {
+            private _m = _st getOrDefault [_key, createHashMap];
+            _st set [_key, _m];
+            _v params ["_k", "_c"];
+            if (_c isEqualTo "") then { _m deleteAt _k; } else { _m set [_k, _c]; };
+        } else {
+            if (_key isEqualTo "theme") then { _st set ["fillA", -1]; _st set ["width", -1]; };
+            _st set [_key, _v];
+        };
+        [_b] call _changed;
+        true
+    };
+    // Style d'une sélection de zones : [id, ids de zone ([] : toutes celles du type), style [couleur, opacité, épaisseur,
+    // trait], type (avec ids [] : toutes les zones de ce type)].
+    case "zoneStyle": {
+        _arg params ["_id", ["_zids", []], ["_sty", ["", -1, -1, ""]], ["_ty", ""]];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0) exitWith { 0 };
+        [_b] call _snap;
+        private _n = 0;
+        {
+            if ((_x select 0) in _zids || {(count _zids) isEqualTo 0 && {_ty isNotEqualTo ""} && {(_x select 4) isEqualTo _ty}}) then { _x set [12, +_sty]; _n = _n + 1; };
+        } forEach (_b get "zones");
+        [_b] call _changed;
+        _n
+    };
+    // Couleurs résolues d'un plan (thème, couleurs choisies), gardées par révision : HashMap type, state (clé ->
+    // RGBA), fillA, width, dash, lblSize, lblBg, lblPos, lblMode, theme.
+    case "pal": {
+        private _b = _arg;
+        private _c = _b getOrDefault ["palc", []];
+        if ((_c param [0, -1]) isEqualTo (_b get "rev")) exitWith { _c select 1 };
+        private _st = _b getOrDefault ["st", createHashMap];
+        private _th = _st getOrDefault ["theme", "NATO"];
+        (_pals getOrDefault [_th, _pals get "NATO"]) params ["_tp", "_sp", "_fa", "_w"];
+        private _rgba = { params ["_cls"]; ["rgba", _cls] call comspec_atak_native_fnc_routeAction };
+        private _ty = createHashMap; private _ss = createHashMap;
+        { _ty set [_x, +(_tp get _x)]; } forEach (keys _tp);
+        { _ss set [_x, +(_sp get _x)]; } forEach (keys _sp);
+        { _ty set [_x, [((_st get "tcol") get _x)] call _rgba]; } forEach (keys (_st getOrDefault ["tcol", createHashMap]));
+        { _ss set [_x, [((_st get "scol") get _x)] call _rgba]; } forEach (keys (_st getOrDefault ["scol", createHashMap]));
+        private _fA = _st getOrDefault ["fillA", -1];
+        private _wd = _st getOrDefault ["width", -1];
+        private _p = createHashMapFromArray [["type", _ty], ["state", _ss], ["fillA", [_fa, _fA] select (_fA >= 0)], ["width", [_w, _wd] select (_wd > 0)],
+            ["dash", _st getOrDefault ["dash", "SOLID"]], ["lblSize", _st getOrDefault ["lblSize", 1]], ["lblBg", _st getOrDefault ["lblBg", false]],
+            ["lblPos", _st getOrDefault ["lblPos", "C"]], ["lblMode", _st getOrDefault ["lblMode", "NAME_ST"]], ["theme", _th]];
+        _b set ["palc", [_b get "rev", _p]];
+        _p
+    };
+    case "themes3": { [["NATO", "OTAN standard"], ["HC", "Contraste élevé"], ["NV", "Vision nocturne"]] };
+    // Aperçu du découpage avant GÉNÉRER (grille, secteurs, une zone) : [contours [[x, y]...]...], gardé tant que la
+    // zone de travail et les réglages ne changent pas. Îlots et traits : [] (calcul trop lourd pour un aperçu).
+    case "preview": {
+        private _b = _arg;
+        private _gp = _b getOrDefault ["gp", createHashMap];
+        private _cut = _gp getOrDefault ["cut", "GRID"];
+        private _key = str [_b getOrDefault ["area", []], _cut, _gp getOrDefault ["size", 200], _gp getOrDefault ["snap", true], _gp getOrDefault ["sec", 8], _gp getOrDefault ["rings", 1]];
+        private _c = uiNamespace getVariable ["COMSPEC_ATAK_ZnPrev", []];
+        if ((_c param [0, ""]) isEqualTo _key) exitWith { _c select 1 };
+        (["areaPoly", _b] call comspec_atak_native_fnc_zoneAction) params ["_ap", "_ak", "_ac", "_ar"];
+        private _out = [];
+        if ((count _ap) >= 3) then {
+            private _ap3 = _ap apply { [_x select 0, _x select 1, 0] };
+            (["bbox", [_ap]] call comspec_atak_native_fnc_zoneGeom) params ["_bx0", "_by0", "_bx1", "_by1"];
+            switch (_cut) do {
+                case "GRID": {
+                    private _S = ((_gp getOrDefault ["size", 200]) max 50) min 2000;
+                    private _x0 = _bx0; private _y0 = _by0;
+                    if (_gp getOrDefault ["snap", true]) then { _x0 = (floor (_bx0 / _S)) * _S; _y0 = (floor (_by0 / _S)) * _S; };
+                    private _nx = ceil ((_bx1 - _x0) / _S) max 1; private _ny = ceil ((_by1 - _y0) / _S) max 1;
+                    if ((_nx * _ny) > 2400) exitWith {};
+                    for "_j" from 0 to (_ny - 1) do {
+                        for "_i" from 0 to (_nx - 1) do {
+                            private _cx = _x0 + (_i + 0.5) * _S; private _cy = _y0 + (_j + 0.5) * _S;
+                            if ([_cx, _cy, 0] inPolygon _ap3) then { _out pushBack [[_cx, _cy, _S / 2]]; };
+                        };
+                    };
+                };
+                case "RADIAL": {
+                    private _k = _gp getOrDefault ["sec", 8]; if !(_k in [4, 8, 16]) then { _k = 8; };
+                    private _m = ((_gp getOrDefault ["rings", 1]) max 1) min 3;
+                    private _cc = _ac; private _r0 = _ar;
+                    if (_ak isNotEqualTo "CIRCLE") then { _cc = ["centroid", [_ap]] call comspec_atak_native_fnc_zoneGeom; _r0 = (((_bx1 - _bx0) max (_by1 - _by0)) / 2) max 50; };
+                    for "_r" from 1 to _m do { for "_i" from 0 to (_k - 1) do { private _a = _i * 360 / _k; _out pushBack (["ring", [_cc, _r0 * (_r - 1) / _m, _r0 * _r / _m, _a - 180 / _k, _a + 180 / _k]] call comspec_atak_native_fnc_zoneGeom); }; };
+                };
+                case "SINGLE": { _out pushBack _ap; };
+                default {};
+            };
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_ZnPrev", [_key, _out]];
+        _out
+    };
     // Boîtes et surfaces des zones, gardées par révision : [révision, boîte du plan, boîtes des zones, surfaces, points 3D].
     case "geo": {
         private _b = _arg;
@@ -645,6 +1055,9 @@ switch (_act) do {
         {
             { _X0 = _X0 min (_x select 0); _Y0 = _Y0 min (_x select 1); _X1 = _X1 max (_x select 0); _Y1 = _Y1 max (_x select 1); } forEach (_x select 3);
         } forEach (_b get "axes");
+        {
+            { _X0 = _X0 min (_x select 0); _Y0 = _Y0 min (_x select 1); _X1 = _X1 max (_x select 0); _Y1 = _Y1 max (_x select 1); } forEach (_x select 2);
+        } forEach (_b getOrDefault ["lines", []]);
         private _ap = (["areaPoly", _b] call comspec_atak_native_fnc_zoneAction) select 0;
         { _X0 = _X0 min (_x select 0); _Y0 = _Y0 min (_x select 1); _X1 = _X1 max (_x select 0); _Y1 = _Y1 max (_x select 1); } forEach _ap;
         _g = [_b get "rev", [_X0, _Y0, _X1, _Y1], _zb, _za, _p3, _ap apply { [_x select 0, _x select 1, 0] }];
@@ -833,107 +1246,121 @@ switch (_act) do {
             default { "UNK" };
         }
     };
-    // Carte d'Arma et Athena : cases en rectangles (pleins ou bordés), autres zones en polyligne fermée, étiquette au
-    // centre (nom et état), axes en polyligne, points de contrôle. Refait en entier à chaque modification (regroupée).
-    // Athena n'a pas de polygone plein dans les marqueurs : seules les cases de grille y sont remplies.
+    // Carte d'Arma et Athena : cases en rectangles (pleins ou bordés), autres zones et contours en polyligne fermée,
+    // traits en polyligne, étiquette au centre (nom et état), axes, points de contrôle. Différentiel (2.9.38) : chaque
+    // marqueur a une clé (sa forme, sa couleur, son texte, son canal) ; seuls ceux dont la clé change sont refaits, et
+    // les créations sont étalées (30 par image). Athena n'a pas de polygone plein : seules les cases y sont remplies.
     case "armaNow": {
         private _b = _mine getOrDefault [_arg, createHashMap];
         if ((count _b) isEqualTo 0) exitWith {};
-        { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_b getOrDefault ["mk", []]);
-        _b set ["mk", []];
-        if (!(_b get "arma") || {!(missionNamespace getVariable ["comspec_atak_native_zones_arma", false])} || {((count (_b get "zones")) + (count (_b get "axes"))) isEqualTo 0}) exitWith {};
+        private _old = _b getOrDefault ["mkz", createHashMap];
+        private _want = [];
+        private _on = (_b get "arma") && {missionNamespace getVariable ["comspec_atak_native_zones_arma", true]};
         private _ch = [3, 1] select ((_b get "scope") >= 3);
-        private _mk = [];
+        if (_on) then {
+            private _cap = (missionNamespace getVariable ["comspec_atak_native_zones_armamax", 60]) max 10 min 200;
+            private _ptsOnly = (count (_b get "zones")) > _cap;
+            {
+                _x params ["", "_name", "_pts", "_lp", "_ty", "_rm", "_st", "", "", "_reps", "", ["_rect", []], ["_zs", []]];
+                if (_rm isEqualTo "") then { _rm = _b get "render"; };
+                private _zc = _zs param [0, ""];
+                private _col = [[([_ty] call _typeRow) select 3, _zc] select (_zc isNotEqualTo ""), ([_st] call _stateRow) select 5] select (_st isNotEqualTo "UNREC");
+                if (!_ptsOnly && {_rm isNotEqualTo "POINT"}) then {
+                    if ((count _rect) isEqualTo 4) then {
+                        _want pushBack ["RECT", [_rect select 0, _rect select 1], [_rect select 2, _rect select 3], ["Border", "Solid"] select (_rm isEqualTo "FILL"), [0.9, 0.45] select (_rm isEqualTo "FILL"), _col];
+                    } else {
+                        if ((count _pts) >= 3) then {
+                            private _flat = [];
+                            { _flat append [round (_x select 0), round (_x select 1)]; } forEach ((_pts select [0, 199]) + [_pts select 0]);
+                            _want pushBack ["POLY", _flat, _col, ""];
+                        };
+                    };
+                };
+                _want pushBack ["ICON", [round (_lp select 0), round (_lp select 1)], "mil_dot", 0.6,
+                    format ["%1%2%3", _name, ["", " · " + ((([_st] call _stateRow) select 1) call _tr)] select (_st isNotEqualTo "UNREC"), ["", format [" (%1)", count _reps]] select ((count _reps) > 0)], _col];
+            } forEach (_b get "zones");
+            {
+                _x params ["", "_name", "_cls", "_pts"];
+                if ((count _pts) >= 2) then {
+                    private _flat = [];
+                    { _flat append [round (_x select 0), round (_x select 1)]; } forEach (_pts select [0, 200]);
+                    private _c = ["ColorGreen", "ColorBlue"] select (_cls isEqualTo "MSR");
+                    _want pushBack ["POLY", _flat, _c, ""];
+                    private _mid = _pts select (floor ((count _pts) / 2));
+                    _want pushBack ["ICON", [round (_mid select 0), round (_mid select 1)], "mil_dot", 0.5, _name, _c];
+                };
+            } forEach (_b get "axes");
+            { _x params ["", "_lbl", "_p"]; _want pushBack ["ICON", [round (_p select 0), round (_p select 1)], "mil_triangle", 0.6, _lbl, "ColorYellow"]; } forEach (_b get "cps");
+            {
+                _x params ["", "_ln", "_lpts", "_closed", ["_ls", []]];
+                private _c = [([_b get "aff"] call _typeRow) select 3, _ls param [0, ""]] select ((_ls param [0, ""]) isNotEqualTo "");
+                private _flat = [];
+                { _flat append [round (_x select 0), round (_x select 1)]; } forEach ((_lpts select [0, 199]) + ([[], [_lpts select 0]] select _closed));
+                _want pushBack ["POLY", _flat, _c, _ln];
+            } forEach (_b getOrDefault ["lines", []]);
+            if (_ptsOnly && {(count _old) isEqualTo 0}) then { ["INFO", format ["Plus de %1 zones : seules leurs étiquettes vont sur la carte d'Arma et Athena", _cap], 4, 20] call comspec_atak_native_fnc_notify; };
+        };
+        // Clés voulues : gardées si déjà posées, sinon à créer ; les autres marqueurs sont retirés.
+        private _new = createHashMap;
+        private _todo = [];
+        {
+            private _k = str [_x, _ch];
+            if (_k in _old && {(_old get _k) isNotEqualTo ""}) then { _new set [_k, _old get _k]; _old deleteAt _k; } else { if !(_k in _new) then { _todo pushBack [_k, _x]; _new set [_k, ""]; }; };
+        } forEach _want;
+        { private _m = _old get _x; if (_m isNotEqualTo "") then { [_m, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _m; }; } forEach (keys _old);
+        _b set ["mkz", _new];
+        _b set ["mk", (values _new) select { _x isNotEqualTo "" }];
+        _b set ["mkTok", (_b getOrDefault ["mkTok", 0]) + 1];
+        if ((count _todo) isEqualTo 0) exitWith {};
+        // Créations étalées : 30 marqueurs par image (gros découpage : aucun pic).
+        ["mkStep", [_arg, _b get "mkTok", _todo, _ch]] call comspec_atak_native_fnc_zoneAction;
+    };
+    // Création d'un lot de marqueurs (armaNow) : 30 par appel, la suite à l'image suivante ; lot d'une ancienne version
+    // (armaNow relancé entre-temps) abandonné.
+    case "mkStep": {
+        _arg params ["_id", "_tok", "_todo", "_ch"];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0 || {(_b getOrDefault ["mkTok", -1]) isNotEqualTo _tok}) exitWith {};
+        private _mkz = _b getOrDefault ["mkz", createHashMap];
         private _mkName = {
             private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
             missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
             format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _ch]
         };
-        private _cap = (missionNamespace getVariable ["comspec_atak_native_zones_armamax", 60]) max 10 min 200;
-        private _ptsOnly = (count (_b get "zones")) > _cap;
+        private _made = [];
+        // Overwatch (EH MarkerCreated) enverrait un point vide avant la forme : muet le temps de poser les marqueurs.
         missionNamespace setVariable ["COMSPEC_MarkerEhMuted", (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1];
         {
-            _x params ["", "_name", "_pts", "_lp", "_ty", "_rm", "_st", "", "", "_reps", "", ["_rect", []]];
-            if (_rm isEqualTo "") then { _rm = _b get "render"; };
-            private _col = [([_ty] call _typeRow) select 3, ([_st] call _stateRow) select 5] select (_st isNotEqualTo "UNREC");
-            if (!_ptsOnly && {_rm isNotEqualTo "POINT"}) then {
-                if ((count _rect) isEqualTo 4) then {
-                    private _m = ["create", [call _mkName, [_rect select 0, _rect select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
-                    if (_m isNotEqualTo "") then {
-                        _m setMarkerShapeLocal "RECTANGLE";
-                        _m setMarkerSizeLocal [_rect select 2, _rect select 3];
-                        _m setMarkerBrushLocal (["Border", "Solid"] select (_rm isEqualTo "FILL"));
-                        _m setMarkerAlphaLocal ([0.9, 0.45] select (_rm isEqualTo "FILL"));
-                        _m setMarkerColor _col;
-                        _mk pushBack _m;
-                    };
-                } else {
-                    if ((count _pts) >= 3) then {
-                        private _flat = [];
-                        { _flat append [_x select 0, _x select 1]; } forEach ((_pts select [0, 199]) + [_pts select 0]);
-                        private _m = ["create", [call _mkName, [(_pts select 0) select 0, (_pts select 0) select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
-                        if (_m isNotEqualTo "") then {
-                            _m setMarkerShapeLocal "POLYLINE";
-                            _m setMarkerPolylineLocal _flat;
-                            _m setMarkerColor _col;
-                            _mk pushBack _m;
-                        };
-                    };
+            _x params ["_k", "_d"];
+            private _m = "";
+            switch (_d select 0) do {
+                case "RECT": {
+                    _d params ["", "_p", "_sz", "_br", "_al", "_col"];
+                    _m = ["create", [call _mkName, [_p select 0, _p select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
+                    if (_m isNotEqualTo "") then { _m setMarkerShapeLocal "RECTANGLE"; _m setMarkerSizeLocal _sz; _m setMarkerBrushLocal _br; _m setMarkerAlphaLocal _al; _m setMarkerColor _col; };
+                };
+                case "POLY": {
+                    _d params ["", "_flat", "_col", ["_txt", ""]];
+                    _m = ["create", [call _mkName, [_flat select 0, _flat select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
+                    if (_m isNotEqualTo "") then { _m setMarkerShapeLocal "POLYLINE"; _m setMarkerPolylineLocal _flat; if (_txt isNotEqualTo "") then { _m setMarkerTextLocal _txt; }; _m setMarkerColor _col; };
+                };
+                default {
+                    _d params ["", "_p", "_type", "_sz", "_txt", "_col"];
+                    _m = ["create", [call _mkName, [_p select 0, _p select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
+                    if (_m isNotEqualTo "") then { _m setMarkerTypeLocal _type; _m setMarkerSizeLocal [_sz, _sz]; _m setMarkerTextLocal _txt; _m setMarkerColor _col; };
                 };
             };
-            private _m = ["create", [call _mkName, [_lp select 0, _lp select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
-            if (_m isNotEqualTo "") then {
-                _m setMarkerTypeLocal "mil_dot";
-                _m setMarkerSizeLocal [0.6, 0.6];
-                _m setMarkerTextLocal format ["%1%2%3", _name, ["", " · " + ((([_st] call _stateRow) select 1) call _tr)] select (_st isNotEqualTo "UNREC"), ["", format [" (%1)", count _reps]] select ((count _reps) > 0)];
-                _m setMarkerColor _col;
-                _mk pushBack _m;
-            };
-        } forEach (_b get "zones");
-        {
-            _x params ["", "_name", "_cls", "_pts"];
-            if ((count _pts) >= 2) then {
-                private _flat = [];
-                { _flat append [_x select 0, _x select 1]; } forEach (_pts select [0, 200]);
-                private _m = ["create", [call _mkName, [(_pts select 0) select 0, (_pts select 0) select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
-                if (_m isNotEqualTo "") then {
-                    _m setMarkerShapeLocal "POLYLINE";
-                    _m setMarkerPolylineLocal _flat;
-                    _m setMarkerColor (["ColorGreen", "ColorBlue"] select (_cls isEqualTo "MSR"));
-                    _mk pushBack _m;
-                };
-                private _mid = _pts select (floor ((count _pts) / 2));
-                private _l = ["create", [call _mkName, [_mid select 0, _mid select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
-                if (_l isNotEqualTo "") then {
-                    _l setMarkerTypeLocal "mil_dot";
-                    _l setMarkerSizeLocal [0.5, 0.5];
-                    _l setMarkerTextLocal _name;
-                    _l setMarkerColor (["ColorGreen", "ColorBlue"] select (_cls isEqualTo "MSR"));
-                    _mk pushBack _l;
-                };
-            };
-        } forEach (_b get "axes");
-        {
-            _x params ["", "_lbl", "_p"];
-            private _m = ["create", [call _mkName, [_p select 0, _p select 1, 0], _ch]] call comspec_atak_native_fnc_markerNet;
-            if (_m isNotEqualTo "") then {
-                _m setMarkerTypeLocal "mil_triangle";
-                _m setMarkerSizeLocal [0.6, 0.6];
-                _m setMarkerTextLocal _lbl;
-                _m setMarkerColor "ColorYellow";
-                _mk pushBack _m;
-            };
-        } forEach (_b get "cps");
+            if (_m isEqualTo "") then { _mkz deleteAt _k; } else { _mkz set [_k, _m]; _made pushBack _m; };
+        } forEach (_todo select [0, 30]);
         missionNamespace setVariable ["COMSPEC_MarkerEhMuted", ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1) max 0];
-        if ((count _mk) isEqualTo 0) exitWith { ["WARNING", "Marqueurs refusés sur ce canal", 3, 20] call comspec_atak_native_fnc_notify; };
-        if (_ptsOnly) then { ["INFO", format ["Plus de %1 zones : seules leurs étiquettes vont sur la carte d'Arma et Athena", _cap], 4, 20] call comspec_atak_native_fnc_notify; };
-        _b set ["mk", _mk];
+        (_b getOrDefault ["mk", []]) append _made;
         // Site Athena : seulement si le plan est partagé (sinon ses marqueurs ne vont qu'au canal, sans le site).
         if ((_b get "scope") > 0) then {
-            { [_x] call comspec_atak_native_fnc_markerWeb; } forEach _mk;
+            { [_x] call comspec_atak_native_fnc_markerWeb; } forEach _made;
         } else {
-            [{ { ["touch", [_x, false]] call comspec_atak_native_fnc_markerNet; } forEach _this; }, _mk, 0.5] call CBA_fnc_waitAndExecute;
+            [{ { ["touch", [_x, false]] call comspec_atak_native_fnc_markerNet; } forEach _this; }, _made, 0.5] call CBA_fnc_waitAndExecute;
         };
+        if ((count _todo) > 30) then { [{ ["mkStep", _this] call comspec_atak_native_fnc_zoneAction; }, [_id, _tok, _todo select [30], _ch]] call CBA_fnc_execNextFrame; };
     };
     default { nil };
 };

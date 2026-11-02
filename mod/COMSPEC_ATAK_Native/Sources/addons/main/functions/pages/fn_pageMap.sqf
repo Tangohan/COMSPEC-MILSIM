@@ -408,10 +408,18 @@ if (_interactive) then {
                 if (_var isEqualTo "COMSPEC_ATAK_SigintLayer") then { [] spawn comspec_atak_native_fnc_sigintPoll; };
                 // Calque allumé : on dit ce qu'il montre, ou pourquoi il n'y a rien à voir (sans donnée, le calque semblait en panne).
                 private _on = _n getVariable [_var, _def];
+                // Bascules d'affichage pur : l'état réel, au changement seulement.
+                if (_var in ["COMSPEC_ATAK_AccRings", "COMSPEC_ATAK_MeshLinks", "COMSPEC_ATAK_RelayLine"]) exitWith {
+                    ["INFO", switch (_var) do {
+                        case "COMSPEC_ATAK_AccRings": { ["Cercles de précision masqués (vous et les alliés)", "Cercles de précision affichés : orange pour vous si le GPS est imprécis, couleur de l'unité pour les alliés"] select _on };
+                        case "COMSPEC_ATAK_MeshLinks": { ["Traits entre alliés masqués", "Traits entre alliés affichés (liens du maillage, avec le calque Wave Relay)"] select _on };
+                        default { ["Trait vers mon relais masqué", "Trait vers mon relais affiché"] select _on };
+                    }, 3, 20] call comspec_atak_native_fnc_notify;
+                    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                };
                 if (_on) then {
                     private _msg = switch (_var) do {
                         case "COMSPEC_ATAK_LayerFriends": { format ["Alliés : %1 unité(s) amie(s) sur la carte", { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" } count values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap])] };
-                        case "COMSPEC_ATAK_AccRings": { "Cercles de précision affichés : orange pour vous si le GPS est imprécis, couleur de l'unité pour les alliés" };
                         case "COMSPEC_ATAK_ZonesLayer": {
                             private _z = (count (missionNamespace getVariable ["COMSPEC_DangerZones", []])) + (count (missionNamespace getVariable ["COMSPEC_RoleplayZones", []])) + (count ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["zones", []]));
                             ["Zones Athena : aucune zone reçue pour cette carte", format ["Zones Athena : %1 zone(s)", _z]] select (_z > 0)
@@ -486,6 +494,21 @@ if (_interactive) then {
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
             uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0)];
             if (_sitOpen) then { _rows pushBack ["text", [true] call comspec_atak_native_fnc_inspectorUpdate, [0.06, 0.075, 0.068, 0.96], "COMSPEC_ATAK_InspTextCtrl"]; };
+            // Unité sélectionnée, allié joueur : actions (2.9.38) par fn_bftAction (même vibreur et même SMS que l'app BFT).
+            private _so = _sel getOrDefault ["object", objNull];
+            if (_sitOpen && {(count _sel) > 0} && {(_sel getOrDefault ["affiliation", ""]) isEqualTo "friend"}) then {
+                private _ok = !isNull _so && {isPlayer _so} && {_so isNotEqualTo player} && {[_so] call comspec_atak_native_fnc_hasDevice};
+                private _go = { params ["_a"]; compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['bftSel', %1]; [%2] call comspec_atak_native_fnc_bftAction;", str (_sel getOrDefault ["id", ""]), str _a] };
+                _rows pushBack ["buttons", [
+                    ["VIBRER", ["vibe"] call _go, false, _ok, ["Pas de téléphone ATAK chez cet allié", "Fait vibrer son téléphone (une fois toutes les 5 s)"] select _ok],
+                    ["SMS", ["sms"] call _go, false, _ok, "Ouvre Messages avec lui"],
+                    ["PING", ["ping"] call _go, false, true, "Ping sur sa position, visible de tout le camp"]
+                ]];
+                _rows pushBack ["buttons", [
+                    ["CENTRER", ["center"] call _go, false, true, "Centre la carte sur lui"],
+                    ["ROUTE VERS", ["route"] call _go, false, true, "Guidage GPS jusqu'à lui"]
+                ]];
+            };
             // Fond de carte : boutons sur deux rangées au-delà de trois (TOPO CLAIR SOMBRE / NUIT SATELLITE HYBRIDE, PHOTO en plus).
             private _style = [] call comspec_atak_native_fnc_mapStyle;
             private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"], ["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]];
@@ -521,7 +544,9 @@ if (_interactive) then {
                 ]],
                 ["forces", "Forces", [
                     ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, "", "Unités amies (joueurs et IA) sur la carte"],
-                    ["Cercles de précision", "P", "COMSPEC_ATAK_AccRings", true, "", "Cercle autour de chaque position selon la précision du GPS. Orange pour vous, couleur de l'unité pour les alliés."]
+                    ["Cercles de précision", "P", "COMSPEC_ATAK_AccRings", false, "", "Cercle autour de chaque position selon la précision du GPS. Orange pour vous, couleur de l'unité pour les alliés. Masqués par défaut (2.9.38)."],
+                    ["Traits entre alliés", "P", "COMSPEC_ATAK_MeshLinks", false, "", "Liens du réseau maillé entre téléphones (vert : bon, orange : moyen, rouge : faible) et cercle de chaque téléphone, avec le calque Wave Relay. Masqués par défaut."],
+                    ["Trait vers mon relais", "P", "COMSPEC_ATAK_RelayLine", false, "", "Pointillé de mon téléphone au relais qu'il utilise (calque Relais). Masqué par défaut."]
                 ]],
                 ["places", "Repères et lieux", [
                     ["Coordonnées des marqueurs", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Grille sous chaque marqueur posé"],
