@@ -319,6 +319,15 @@ final class DevDispatchCatalog
                 'En tapant le nom d’un nouvel émetteur, la page signale un émetteur déjà présent ou un organisme du catalogue réel à importer plutôt',
                 'Chargements visibles (liste en cours d’actualisation, boutons occupés) et messages de réussite ou d’erreur dans la page',
             ], [], ['personnel', 'platform'], [], 'Portail'),
+            $pr(1319, '2026-11-02', 'Academy : les instructeurs savent où valider', 'Sur le tableau de bord de l’Academy, l’encadrement trouve en tête un bloc « À traiter » : chapitres à valider, qualifications et brevets proposés à approuver, demandes d’inscription, évaluations échouées, stagiaires en retard et séances à venir, chacun avec son compteur. Un chapitre se lit et se valide dans une fenêtre, sans changer de page ; une demande d’inscription ou une qualification proposée s’accepte ou se refuse en un clic. L’espace instructeur réunit tout dans une seule file, triable et filtrable, avec des actions groupées et une aide « Comment valider un chapitre ? ». Le menu affiche « Espace instructeur » avec le nombre d’éléments à traiter, et le stagiaire voit que son chapitre attend la validation d’un instructeur.', [
+                'Tableau de bord Academy (encadrement) : bloc « À traiter » avec compteurs et liens directs vers la file filtrée',
+                'Validation rapide d’un chapitre dans une fenêtre : résultat de l’évaluation, réponses, débriefing, critères et commentaire',
+                'Espace instructeur : file de travail unique triable par type, cours, stagiaire et ancienneté, filtres par type, actions groupées (valider, accepter, approuver, refuser)',
+                'Demandes d’inscription et qualifications proposées : accepter ou refuser depuis l’Academy, retour à la file',
+                'Menu de l’Academy : nombre d’éléments à traiter à côté de « Espace instructeur »',
+            ], [
+                'Mes formations et tableau de bord : « En attente de validation par un instructeur » quand le débriefing est envoyé',
+            ], [], ['personnel'], [], 'Portail'),
             $pr(1318, '2026-11-02', 'Publier un document : un assistant en cinq étapes', 'La page « Publier un document » de la doctrine devient un assistant pas à pas : le texte, le classement, les destinataires, la lecture attendue, puis un récapitulatif avant de publier. Une barre de progression indique où vous en êtes, chaque étape vérifie l’essentiel avant d’avancer avec un message clair sous le champ concerné, et le récapitulatif renvoie d’un clic vers l’étape à corriger. Tous les réglages précédents sont conservés.', [
                 'Import d’un texte existant par glisser-déposer (page web, texte ou Markdown) et aperçu du document tel que le lecteur le verra',
                 'Destinataires en listes à cocher : recherche dans chaque liste (unités, emplois, rôles, membres), « Tout cocher », compteur par liste et total',

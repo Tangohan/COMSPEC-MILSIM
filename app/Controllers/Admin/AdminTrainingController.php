@@ -384,7 +384,7 @@ class AdminTrainingController
         $tenantId = (int) Session::get('tenant_id');
         $actorId = (int) Session::get('user_id');
         $enrollmentId = (int) ($params['id'] ?? 0);
-        $redirect = Response::redirect(training_lms_admin_url('enrollments'));
+        $redirect = Response::redirect($this->enrollmentDecisionReturn($request, 0));
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée, réessayez.');
 
@@ -415,7 +415,7 @@ class AdminTrainingController
         } catch (\Throwable $e) {
             Session::flash('error', 'Le statut a été mis à jour, mais le démarrage du parcours a échoué. Vérifiez la structure de la formation.');
 
-            return Response::redirect(training_lms_admin_url('enrollments') . '?course_id=' . $courseId);
+            return Response::redirect($this->enrollmentDecisionReturn($request, $courseId));
         }
         $this->auditService->logEnrollmentAssigned($tenantId, $actorId, $enrollmentId, [
             'user_id' => $userId,
@@ -426,7 +426,7 @@ class AdminTrainingController
         $this->notifyLearnerSelfEnrollApproved($tenantId, $userId, $course);
         Session::flash('success', 'Inscription validée. L’apprenant peut commencer le parcours.');
 
-        return Response::redirect(training_lms_admin_url('enrollments') . '?course_id=' . $courseId);
+        return Response::redirect($this->enrollmentDecisionReturn($request, $courseId));
     }
 
     public function declineEnrollment(Request $request, array $params = []): Response
@@ -434,7 +434,7 @@ class AdminTrainingController
         $tenantId = (int) Session::get('tenant_id');
         $actorId = (int) Session::get('user_id');
         $enrollmentId = (int) ($params['id'] ?? 0);
-        $redirect = Response::redirect(training_lms_admin_url('enrollments'));
+        $redirect = Response::redirect($this->enrollmentDecisionReturn($request, 0));
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée, réessayez.');
 
@@ -469,7 +469,7 @@ class AdminTrainingController
         $this->notifyLearnerSelfEnrollDeclined($tenantId, $userId, $course);
         Session::flash('success', 'La demande d’inscription a été refusée. Un message a été envoyé à l’apprenant.');
 
-        return Response::redirect(training_lms_admin_url('enrollments') . '?course_id=' . $courseId);
+        return Response::redirect($this->enrollmentDecisionReturn($request, $courseId));
     }
 
     public function reports(Request $request, array $params = []): Response
@@ -1097,6 +1097,16 @@ class AdminTrainingController
     /**
      * @param array<string, mixed> $course
      */
+    /** Après une réponse à une demande : retour à la file de l'espace instructeur Academy si la demande y a été traitée. */
+    private function enrollmentDecisionReturn(Request $request, int $courseId): string
+    {
+        if ($request->inputString('return_to') === 'academy') {
+            return url('academy/instructor') . '#file';
+        }
+
+        return training_lms_admin_url('enrollments') . ($courseId > 0 ? '?course_id=' . $courseId : '');
+    }
+
     private function canActorManagePendingEnrollment(array $course, int $actorId): bool
     {
         if ($course === []) {

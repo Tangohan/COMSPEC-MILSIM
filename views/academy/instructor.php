@@ -1,6 +1,7 @@
 <?php
 /**
- * Espace instructeur : rôle expliqué, « À traiter » (débriefings à valider, examens à reprendre, demandes d'inscription),
+ * Espace instructeur : rôle expliqué, file de travail unique (queue_table.php : chapitres, qualifications proposées,
+ * demandes d'inscription, examens à reprendre, stagiaires sans activité),
  * cours encadrés et séances, élèves et leur progression, raccourcis Studio / Salle de cours / Droits d'accès.
  * Données préparées par AcademyController::instructorData() ; chaque formulaire est revérifié côté serveur.
  */
@@ -49,7 +50,6 @@ foreach ($learners as $learner) {
         $stalled[] = $learner;
     }
 }
-$todoCount = count($toValidate) + count($examFollowUp) + ($pendingRequests > 0 ? 1 : 0);
 $statusOf = static function (array $course): string {
     if (!empty($course['built_in'])) return 'builtin';
     if (!empty($course['archived'])) return 'archived';
@@ -82,38 +82,7 @@ $audienceOf = static function (array $course) use ($courseSettings): string {
 <div><dt><?= $h($t('ins_stat_courses')) ?></dt><dd><?= count($managed) ?></dd></div>
 </dl>
 
-<section class="ins-sec" id="a-traiter" aria-labelledby="ins-todo"><div class="ins-sec__head"><h2 id="ins-todo"><?= $h($t('ins_todo')) ?></h2><span class="pill<?= $todoCount ? ' accent' : '' ?>"><?= $todoCount ?></span></div>
-<?php if ($todoCount === 0): ?>
-<div class="ins-empty"><b><?= $h($t('ins_todo_empty')) ?></b><p><?= $h($t('ins_todo_empty_help')) ?></p></div>
-<?php endif ?>
-<?php $reviewIndex = 0; foreach ($toValidate as $learner): $item = $learner['state']; $reviewIndex++;
-    $reviewState = $item; $reviewChapter = $item['snapshot']['chapters'][$item['chapter']] ?? null; if ($reviewChapter === null) continue;
-    $final = (int) $item['chapter'] + 1 >= count($item['snapshot']['chapters']);
-    $own = (int) $learner['user_id'] === $me;
-    $canHere = $teach === null ? $can['validate'] : (isset($teach[$learner['course_key']]) || $can['validate']); ?>
-<article class="ins-task" aria-labelledby="task-<?= $reviewIndex ?>">
-<header><span class="pill accent"><?= $h($t($final ? 'ins_task_final' : 'ins_task_debrief')) ?></span>
-<h3 id="task-<?= $reviewIndex ?>"><?= $h($memberName((int) $learner['user_id'])) ?> · <?= $h($titles[$learner['course_key']] ?? '') ?></h3>
-<p><?= $h($t('chapter')) ?> <?= (int) $item['chapter'] + 1 ?> · <?= $h($local($reviewChapter['title'])) ?> · <?= $h(sprintf($t('ins_sent_on'), $when($learner['updated_at'] ?? ($item['updated'] ?? null)))) ?></p></header>
-<details class="ins-review"<?= $reviewIndex === 1 ? ' open' : '' ?>><summary><?= $h($t('ins_open_review')) ?></summary>
-<?php require __DIR__ . '/course_review.php'; ?>
-<h4><?= $h($t('submitted_debrief')) ?></h4><p class="lesson-text"><?= nl2br($h($item['debriefs'][$item['chapter']] ?? '')) ?></p>
-<?php if (!empty($reviewChapter['validation']['brief'])): ?><div class="rt"><?= $rich($reviewChapter['validation']['brief']) ?></div><?php endif ?>
-<?php if (!empty($reviewChapter['validation']['criteria'])): ?><h4><?= $h($t('validation_criteria')) ?></h4><ul class="academy-rubric"><?php foreach ($reviewChapter['validation']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
-<?php if ($own): ?><p class="hint"><?= $h($t('self_validation')) ?></p>
-<?php elseif (!$canHere): ?><p class="hint"><?= $h($t('ins_cannot_validate')) ?></p>
-<?php elseif ($final && !$can['certify']): ?><p class="hint"><?= $h($t('ins_final_needs_certify')) ?></p>
-<?php else: $formStart('validate', $learner['course_key']); ?><input type="hidden" name="learner" value="<?= (int) $learner['user_id'] ?>"><input type="hidden" name="expected_chapter" value="<?= (int) $item['chapter'] ?>">
-<label for="comment-<?= $reviewIndex ?>"><?= $h($t('comment')) ?></label><textarea id="comment-<?= $reviewIndex ?>" name="comment" rows="5" minlength="10" maxlength="5000" required></textarea>
-<?php if ($final): ?><p class="hint"><?= $h($t('ins_final_note')) ?></p><?php endif ?>
-<button class="button"><?= $h($t($final ? 'ins_validate_final' : 'validate')) ?> ✓</button></form><?php endif ?>
-</details></article>
-<?php endforeach ?>
-<?php if ($examFollowUp): ?><div class="ins-list"><h3><?= $h($t('ins_exam_followup')) ?></h3><p class="muted"><?= $h($t('ins_exam_followup_help')) ?></p><ul>
-<?php foreach ($examFollowUp as $learner): $attempt = $learner['attempt']; ?><li><b><?= $h($memberName((int) $learner['user_id'])) ?></b><span><?= $h($titles[$learner['course_key']] ?? '') ?> · <?= $h($t('chapter')) ?> <?= (int) $attempt['chapter'] + 1 ?></span><span class="pill"><?= $h(!empty($attempt['expired']) ? $t('ins_exam_expired') : sprintf($t('ins_exam_score'), (int) ($attempt['score'] ?? 0))) ?></span><small><?= $h($when($attempt['at'] ?? null)) ?></small></li><?php endforeach ?>
-</ul></div><?php endif ?>
-<?php if ($pendingRequests > 0): ?><div class="ins-list"><h3><?= $h($t('ins_requests')) ?></h3><p class="muted"><?= $h(sprintf($t($pendingRequests === 1 ? 'ins_requests_one' : 'ins_requests_many'), $pendingRequests)) ?></p><a class="text-link" href="<?= $h(url('formation/enrollments')) ?>"><?= $h($t('ins_requests_open')) ?> ↗</a></div><?php endif ?>
-</section>
+<?php require __DIR__ . '/queue_table.php'; ?>
 
 <div class="ins-cols">
 <section class="ins-sec" id="mes-cours" aria-labelledby="ins-courses"><div class="ins-sec__head"><h2 id="ins-courses"><?= $h($t('ins_my_courses')) ?></h2><?php if ($can['create']): ?><a class="text-link" href="<?= $h($link('studio')) ?>">+ <?= $h($t('studio_new_course')) ?></a><?php endif ?></div>
@@ -147,7 +116,7 @@ $audienceOf = static function (array $course) use ($courseSettings): string {
 <?php else: ?><div class="table-scroll"><table class="ins-table"><thead><tr><th scope="col"><?= $h($t('learner')) ?></th><th scope="col"><?= $h($t('ins_course')) ?></th><th scope="col"><?= $h($t('progress')) ?></th><th scope="col"><?= $h($t('ins_state')) ?></th><th scope="col"><?= $h($t('ins_last_activity')) ?></th></tr></thead><tbody>
 <?php foreach ($learners as $learner): $item = $learner['state']; $value = $percent($item);
     $state = !empty($item['license']) ? 'license' : (!empty($item['completed']) ? 'completed' : ((int) ($item['stage'] ?? 0) === 6 ? 'pending' : 'in_progress')); ?>
-<tr><td data-label="<?= $h($t('learner')) ?>"><b><?= $h($memberName((int) $learner['user_id'])) ?></b></td><td data-label="<?= $h($t('ins_course')) ?>"><?= $h($titles[$learner['course_key']] ?? '') ?></td>
+<tr id="eleve-<?= (int) $learner['user_id'] ?>-<?= $h($learner['course_key']) ?>"><td data-label="<?= $h($t('learner')) ?>"><b><?= $h($memberName((int) $learner['user_id'])) ?></b></td><td data-label="<?= $h($t('ins_course')) ?>"><?= $h($titles[$learner['course_key']] ?? '') ?></td>
 <td data-label="<?= $h($t('progress')) ?>"><span class="ins-bar" role="img" aria-label="<?= $value ?> %"><i style="width:<?= $value ?>%"></i></span><small><?= $value ?> %</small></td>
 <td data-label="<?= $h($t('ins_state')) ?>"><span class="tag s-<?= $state ?>"><?= $h($t($state === 'license' ? 'ins_state_license' : $state)) ?></span></td>
 <td data-label="<?= $h($t('ins_last_activity')) ?>"><?= $h($when($learner['updated_at'] ?? ($item['updated'] ?? null))) ?></td></tr>

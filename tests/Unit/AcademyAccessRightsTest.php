@@ -226,6 +226,27 @@ final class AcademyAccessRightsTest extends AcademyStudioTestCase
         self::assertTrue((new AcademyRepository($this->pdo))->states(10, 8)[$key]['completed']);
     }
 
+    public function testDashboardMenuAndQueueShowWhatAwaitsTheInstructor(): void
+    {
+        $key = $this->publishedCourse();
+        $this->learnerAwaitingValidation($key, 8, 0);
+        $GLOBALS['__app_locale'] = 'fr';
+        $dashboard = $this->page('dashboard')->body();
+        self::assertStringContainsString('id="a-traiter"', $dashboard);
+        self::assertStringContainsString('id="dlg-chapter-8-' . $key . '"', $dashboard);
+        self::assertStringContainsString('name="return" value="dashboard"', $dashboard);
+        self::assertMatchesRegularExpression('/Espace instructeur<\/span>.*?lms-nav__badge">1</s', $this->page('library')->body(), 'Badge du menu, lecture légère');
+        self::assertStringContainsString('id="chapter-8-' . $key . '"', $this->page('instructor')->body());
+        // Validation rapide depuis le tableau de bord : retour au bloc « À traiter », plus rien à valider.
+        $response = $this->post('validate', ['course' => $key, 'learner' => '8', 'expected_chapter' => '0', 'comment' => 'Très bon débriefing.', 'return' => 'dashboard']);
+        self::assertSame(303, $response->statusCode());
+        self::assertStringEndsWith('/academy/dashboard#a-traiter', (string) $response->headerValue('Location'));
+        self::assertStringContainsString('Rien à valider.', $this->page('dashboard')->body());
+        // Un simple membre ne voit ni le bloc ni le badge.
+        $this->as(9);
+        self::assertStringNotContainsString('id="a-traiter"', $this->page('dashboard')->body());
+    }
+
     public function testAuthorWithoutGlobalEditRightEditsOnlyTheirOwnDraftAndCannotPublish(): void
     {
         $other = $this->newDraft();

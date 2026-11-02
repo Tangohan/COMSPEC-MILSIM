@@ -17,7 +17,7 @@ $tileEnrolled = !empty($it['enrolled']) || in_array($it['state'], ['progress', '
         <?php if ($tileEnrolled && $it['pct'] !== null): ?>
             <div class="acd-tile__progress">
                 <?= $oxBar((int) $it['pct'], 'Progression') ?>
-                <p><b><?= (int) $it['pct'] ?> %</b><?php if ($tileNext !== null): ?> <span class="acd-tile__next"><span>Prochaine étape :</span> <span>chapitre</span> <?= (int) $tileNext['chapter'] ?> · <span><?= $h($t($tileNext['stage'])) ?></span></span><?php elseif ($it['state'] === 'pending'): ?> <span class="acd-tile__next"><span>En attente de validation</span></span><?php endif ?></p>
+                <p><b><?= (int) $it['pct'] ?> %</b><?php if ($tileNext !== null): ?> <span class="acd-tile__next"><span>Prochaine étape :</span> <span>chapitre</span> <?= (int) $tileNext['chapter'] ?> · <span><?= $h($t($tileNext['stage'])) ?></span></span><?php elseif ($it['state'] === 'pending'): ?> <span class="acd-tile__next"><span>En attente de validation par un instructeur</span></span><?php endif ?></p>
             </div>
         <?php else: ?>
             <?php $tileMeta = array_filter([$oxDuration($it['duration_min'] ?? null) !== '' ? $h($oxDuration($it['duration_min'])) : '', !empty($it['chapters']) ? (int) $it['chapters'] . ' <span>' . ((int) $it['chapters'] === 1 ? 'chapitre' : 'chapitres') . '</span>' : '']); ?>
