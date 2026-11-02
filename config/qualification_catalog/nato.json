@@ -1657,6 +1657,7 @@
         "name": "NATO Special Operations University",
         "short_name": "NSOU"
       },
+      "issuer_key": "nato-nsou",
       "reference": {
         "fr": "Catalogue de cours de la NSOU (cursus SOCC) ; AJP-3.5",
         "en": "NSOU course catalogue (SOCC curriculum); AJP-3.5"
@@ -1704,6 +1705,7 @@
         "name": "NATO School Oberammergau",
         "short_name": "NSO"
       },
+      "issuer_key": "nato-nso",
       "reference": {
         "fr": "Catalogue de cours de la NATO School Oberammergau (département renseignement)",
         "en": "NATO School Oberammergau course catalogue (intelligence department)"
@@ -2264,6 +2266,7 @@
         "name": "NATO Centre of Excellence for Military Medicine",
         "short_name": "MILMED COE"
       },
+      "issuer_key": "nato-milmed-coe",
       "reference": {
         "fr": "MILMED COE, fiche du cours MEDEVAL ; AMedP-1.6, 1.7 et 1.8 (STANAG 2560)",
         "en": "MILMED COE MEDEVAL course description; AMedP-1.6, 1.7 and 1.8 (STANAG 2560)"
@@ -2362,6 +2365,7 @@
         "name": "NATO Explosive Ordnance Disposal Centre of Excellence",
         "short_name": "EOD COE"
       },
+      "issuer_key": "nato-eod-coe",
       "reference": {
         "fr": "Catalogue « Education & Training » de l’EOD COE ; AJP-3.18",
         "en": "EOD COE Education & Training catalogue; AJP-3.18"
@@ -2452,6 +2456,7 @@
         "name": "Counter Improvised Explosive Devices Centre of Excellence",
         "short_name": "C-IED COE"
       },
+      "issuer_key": "nato-c-ied-coe",
       "reference": {
         "fr": "C-IED COE, fiche du cours BIFEC ; AJP-3.15",
         "en": "C-IED COE BIFEC course page; AJP-3.15"
@@ -2501,6 +2506,7 @@
         "name": "Counter Improvised Explosive Devices Centre of Excellence",
         "short_name": "C-IED COE"
       },
+      "issuer_key": "nato-c-ied-coe",
       "reference": {
         "fr": "C-IED COE, fiche du cours ANUC",
         "en": "C-IED COE ANUC course page"
@@ -2595,6 +2601,7 @@
         "name": "Joint Chemical, Biological, Radiological and Nuclear Defence Centre of Excellence",
         "short_name": "JCBRN Defence COE"
       },
+      "issuer_key": "nato-jcbrn-coe",
       "reference": {
         "fr": "JCBRN Defence COE, fiche du cours (ETOC WMD-CD-25633) ; AJP-3.23",
         "en": "JCBRN Defence COE course page (ETOC WMD-CD-25633); AJP-3.23"
@@ -2642,6 +2649,7 @@
         "name": "Joint Chemical, Biological, Radiological and Nuclear Defence Centre of Excellence",
         "short_name": "JCBRN Defence COE"
       },
+      "issuer_key": "nato-jcbrn-coe",
       "reference": {
         "fr": "JCBRN Defence COE, fiche du cours HPAC",
         "en": "JCBRN Defence COE HPAC course page"
@@ -2689,6 +2697,7 @@
         "name": "NATO Defense College",
         "short_name": "NDC"
       },
+      "issuer_key": "nato-ndc",
       "reference": {
         "fr": "Programme du Senior Course du NATO Defense College",
         "en": "NATO Defense College Senior Course programme"
@@ -2736,6 +2745,7 @@
         "name": "NATO School Oberammergau",
         "short_name": "NSO"
       },
+      "issuer_key": "nato-nso",
       "reference": {
         "fr": "Catalogue de cours de la NATO School Oberammergau ; AJP-5",
         "en": "NATO School Oberammergau course catalogue; AJP-5"
@@ -2783,6 +2793,7 @@
         "name": "NATO Counter Intelligence Centre of Excellence",
         "short_name": "NATO CI COE"
       },
+      "issuer_key": "nato-ci-coe",
       "reference": {
         "fr": "Catalogue de formation du NATO CI COE",
         "en": "NATO CI COE training catalogue"
@@ -2830,6 +2841,7 @@
         "name": "NATO Communications and Information Academy",
         "short_name": "NCI Academy"
       },
+      "issuer_key": "nato-nci-academy",
       "reference": {
         "fr": "Catalogue de cours de la NCI Academy ; AJP-6",
         "en": "NCI Academy course catalogue; AJP-6"
@@ -2877,6 +2889,7 @@
         "name": "Civil-Military Cooperation Centre of Excellence",
         "short_name": "CCOE"
       },
+      "issuer_key": "nato-cimic-coe",
       "reference": {
         "fr": "CIMIC COE, fiche du cours NCHCC ; AJP-3.19",
         "en": "CIMIC COE NCHCC course page; AJP-3.19"
@@ -2928,6 +2941,7 @@
         "name": "NATO School Oberammergau",
         "short_name": "NSO"
       },
+      "issuer_key": "nato-nso",
       "reference": {
         "fr": "Catalogue de cours de la NATO School Oberammergau (département juridique) ; AJP-3.9",
         "en": "NATO School Oberammergau course catalogue (legal department); AJP-3.9"
@@ -2981,6 +2995,7 @@
         "name": "Nordic Centre for Gender in Military Operations",
         "short_name": "NCGM"
       },
+      "issuer_key": "nato-ncgm",
       "reference": {
         "fr": "Invitations et programme du cours GENAD du NCGM",
         "en": "NCGM GENAD course invitations and programme"
@@ -3126,6 +3141,7 @@
         "name": "NATO Cooperative Cyber Defence Centre of Excellence",
         "short_name": "CCDCOE"
       },
+      "issuer_key": "nato-ccdcoe",
       "reference": {
         "fr": "Catalogue de formation et exercices du CCDCOE ; AJP-3.20",
         "en": "CCDCOE training catalogue and exercises; AJP-3.20"
@@ -3220,6 +3236,7 @@
         "name": "Civil-Military Cooperation Centre of Excellence",
         "short_name": "CCOE"
       },
+      "issuer_key": "nato-cimic-coe",
       "reference": {
         "fr": "CIMIC COE, prérequis du NATO CIMIC Field Worker Course",
         "en": "CIMIC COE, NATO CIMIC Field Worker Course prerequisites"
@@ -3263,6 +3280,7 @@
         "name": "Civil-Military Cooperation Centre of Excellence",
         "short_name": "CCOE"
       },
+      "issuer_key": "nato-cimic-coe",
       "reference": {
         "fr": "CIMIC COE, fiche du cours NCFSC ; AJP-3.19",
         "en": "CIMIC COE NCFSC course page; AJP-3.19"
@@ -3312,6 +3330,7 @@
         "name": "Civil-Military Cooperation Centre of Excellence",
         "short_name": "CCOE"
       },
+      "issuer_key": "nato-cimic-coe",
       "reference": {
         "fr": "CIMIC COE, fiche du cours NCLC ; AJP-3.19",
         "en": "CIMIC COE NCLC course page; AJP-3.19"
@@ -3408,6 +3427,7 @@
         "name": "Joint Multinational Readiness Center",
         "short_name": "JMRC"
       },
+      "issuer_key": "nato-jmrc",
       "reference": {
         "fr": "Préparation OMLT de la FIAS (OTAN)",
         "en": "ISAF OMLT pre-deployment training (NATO)"
@@ -3455,6 +3475,7 @@
         "name": "NATO Security Force Assistance Centre of Excellence",
         "short_name": "NATO SFA COE"
       },
+      "issuer_key": "nato-sfa-coe",
       "reference": {
         "fr": "NATO SFA COE, fiche du SFA Operators Course ; AJP-3.16",
         "en": "NATO SFA COE SFA Operators Course page; AJP-3.16"
@@ -3502,6 +3523,7 @@
         "name": "NATO Security Force Assistance Centre of Excellence",
         "short_name": "NATO SFA COE"
       },
+      "issuer_key": "nato-sfa-coe",
       "reference": {
         "fr": "NATO SFA COE, fiche du cours ADL 362 ; AJP-3.16",
         "en": "NATO SFA COE ADL 362 course page; AJP-3.16"
@@ -3545,6 +3567,7 @@
         "name": "NATO Security Force Assistance Centre of Excellence",
         "short_name": "NATO SFA COE"
       },
+      "issuer_key": "nato-sfa-coe",
       "reference": {
         "fr": "NATO SFA COE, fiche du séminaire ; AJP-3.16",
         "en": "NATO SFA COE seminar page; AJP-3.16"
@@ -3690,6 +3713,7 @@
         "name": "NATO Naval Mine Warfare Centre of Excellence",
         "short_name": "NMW COE"
       },
+      "issuer_key": "nato-nmw-coe",
       "reference": {
         "fr": "Catalogue de formation du NMW COE / EGUERMIN ; AJP-3.1",
         "en": "NMW COE / EGUERMIN training catalogue; AJP-3.1"
@@ -3737,6 +3761,7 @@
         "name": "NATO Military Police Centre of Excellence",
         "short_name": "NATO MP COE"
       },
+      "issuer_key": "nato-mp-coe",
       "reference": {
         "fr": "Catalogue de formation du NATO MP COE ; AJP-3.14",
         "en": "NATO MP COE training catalogue; AJP-3.14"
@@ -3784,6 +3809,7 @@
         "name": "NATO Stability Policing Centre of Excellence",
         "short_name": "NSPCOE"
       },
+      "issuer_key": "nato-sp-coe",
       "reference": {
         "fr": "Catalogue de formation du NSPCOE ; AJP-3.22",
         "en": "NSPCOE training catalogue; AJP-3.22"

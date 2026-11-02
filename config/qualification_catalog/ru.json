@@ -46,6 +46,7 @@
         "name": "Рязанское гвардейское высшее воздушно-десантное командное училище",
         "short_name": "РВВДКУ"
       },
+      "issuer_key": "ru-rvvdku",
       "reference": {
         "fr": "Présentation de l’école et de ses spécialités (Wikipédia ru/en)",
         "en": "Overview of the school and its specialties (Russian/English Wikipedia)"
@@ -99,6 +100,7 @@
         "name": "Рязанское гвардейское высшее воздушно-десантное командное училище",
         "short_name": "РВВДКУ"
       },
+      "issuer_key": "ru-rvvdku",
       "reference": {
         "fr": "Liste des spécialités de l’école (Wikipédia ru/en)",
         "en": "List of the school’s specialties (Russian/English Wikipedia)"
@@ -146,6 +148,7 @@
         "name": "Рязанское гвардейское высшее воздушно-десантное командное училище",
         "short_name": "РВВДКУ"
       },
+      "issuer_key": "ru-rvvdku",
       "reference": {
         "fr": "Liste des spécialités de l’école (Wikipédia ru)",
         "en": "List of the school’s specialties (Russian Wikipedia)"
@@ -193,6 +196,7 @@
         "name": "Дальневосточное высшее общевойсковое командное училище",
         "short_name": "ДВОКУ"
       },
+      "issuer_key": "ru-dvoku",
       "reference": {
         "fr": "Présentation de l’école (Wikipédia ru)",
         "en": "Overview of the school (Russian Wikipedia)"
@@ -240,6 +244,7 @@
         "name": "Новосибирское высшее военное командное училище",
         "short_name": "НВВКУ"
       },
+      "issuer_key": "ru-nvvku",
       "reference": {
         "fr": "Présentation de l’école et de ses spécialités (Wikipédia ru)",
         "en": "Overview of the school and its specialties (Russian Wikipedia)"
@@ -338,6 +343,7 @@
         "name": "Военный университет Министерства обороны Российской Федерации",
         "short_name": "ВУ МО РФ"
       },
+      "issuer_key": "ru-vu-mo",
       "reference": {
         "fr": "Biographie publique d’un adjoint militaro-politique spetsnaz (Wikipédia ru)",
         "en": "Public biography of a spetsnaz military-political deputy (Russian Wikipedia)"
@@ -385,6 +391,7 @@
         "name": "Общевойсковая академия Вооружённых сил Российской Федерации",
         "short_name": "ОВА ВС РФ"
       },
+      "issuer_key": "ru-ova",
       "reference": {
         "fr": "Présentation de l’académie (Wikipédia ru)",
         "en": "Overview of the academy (Russian Wikipedia)"
@@ -432,6 +439,7 @@
         "name": "Военная академия Генерального штаба Вооружённых сил Российской Федерации",
         "short_name": "ВАГШ ВС РФ"
       },
+      "issuer_key": "ru-vagsh",
       "reference": {
         "fr": "Présentation de l’académie (Wikipédia ru)",
         "en": "Overview of the academy (Russian Wikipedia)"
@@ -479,6 +487,7 @@
         "name": "Военная академия войсковой ПВО ВС РФ",
         "short_name": "ВА ВПВО ВС РФ"
       },
+      "issuer_key": "ru-va-vpvo",
       "reference": {
         "fr": "Biographie publique d’Alexandre Prokhorenko et présentation de l’académie (Wikipédia ru)",
         "en": "Public biography of Aleksandr Prokhorenko and overview of the academy (Russian Wikipedia)"
@@ -526,6 +535,7 @@
         "name": "Военная академия войсковой ПВО ВС РФ",
         "short_name": "ВА ВПВО ВС РФ"
       },
+      "issuer_key": "ru-va-vpvo",
       "reference": {
         "fr": "Témoignage sur le métier d’авианаводчик (MK.ru) et biographie publique (Wikipédia ru)",
         "en": "Account of the avianavodchik trade (MK.ru) and public biography (Russian Wikipedia)"
@@ -573,6 +583,7 @@
         "name": "Михайловская военная артиллерийская академия",
         "short_name": "МВАА"
       },
+      "issuer_key": "ru-mvaa",
       "reference": {
         "fr": "Présentation de l’académie (Wikipédia ru)",
         "en": "Overview of the academy (Russian Wikipedia)"
@@ -1678,6 +1689,7 @@
         "name": "Федеральная служба войск национальной гвардии Российской Федерации",
         "short_name": "Росгвардия"
       },
+      "issuer_key": "ru-rosgvardiya",
       "reference": {
         "fr": "Pages officielles de la Rosgvardia sur les SOBR et les OMON",
         "en": "Official Rosgvardiya pages on SOBR and OMON"
@@ -1725,6 +1737,7 @@
         "name": "Военный университет Министерства обороны Российской Федерации",
         "short_name": "ВУ МО РФ"
       },
+      "issuer_key": "ru-vu-mo",
       "reference": {
         "fr": "Articles sur les forces d’opérations spéciales russes (1prime, Wikipédia)",
         "en": "Articles on Russian special operations forces (1prime, Wikipedia)"
@@ -1917,6 +1930,7 @@
         "name": "242-й учебный центр ВДВ",
         "short_name": "242 УЦ ВДВ"
       },
+      "issuer_key": "ru-242-uts-vdv",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
         "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
@@ -1964,6 +1978,7 @@
         "name": "242-й учебный центр ВДВ",
         "short_name": "242 УЦ ВДВ"
       },
+      "issuer_key": "ru-242-uts-vdv",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
         "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
@@ -2015,6 +2030,7 @@
         "name": "242-й учебный центр ВДВ",
         "short_name": "242 УЦ ВДВ"
       },
+      "issuer_key": "ru-242-uts-vdv",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
         "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
@@ -2062,6 +2078,7 @@
         "name": "242-й учебный центр ВДВ",
         "short_name": "242 УЦ ВДВ"
       },
+      "issuer_key": "ru-242-uts-vdv",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
         "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
@@ -2109,6 +2126,7 @@
         "name": "242-й учебный центр ВДВ",
         "short_name": "242 УЦ ВДВ"
       },
+      "issuer_key": "ru-242-uts-vdv",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
         "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
@@ -2156,6 +2174,7 @@
         "name": "242-й учебный центр ВДВ",
         "short_name": "242 УЦ ВДВ"
       },
+      "issuer_key": "ru-242-uts-vdv",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le 242e centre d’instruction des VDV",
         "en": "Russian Wikipedia article on the VDV 242nd Training Centre"
@@ -2442,6 +2461,7 @@
         "name": "61-я отдельная бригада морской пехоты Северного флота",
         "short_name": "61 ОБрМП"
       },
+      "issuer_key": "ru-61-obrmp",
       "reference": {
         "fr": "Article Wikipédia (ru) sur la 61e brigade d’infanterie de marine",
         "en": "Russian Wikipedia article on the 61st Naval Infantry Brigade"
@@ -2489,6 +2509,7 @@
         "name": "Сызранское высшее военное авиационное училище лётчиков (филиал ВУНЦ ВВС «ВВА»)",
         "short_name": "СВВАУЛ"
       },
+      "issuer_key": "ru-svvaul",
       "reference": {
         "fr": "Présentation de l’école (Wikipédia ru/en)",
         "en": "Overview of the school (Russian/English Wikipedia)"
@@ -2536,6 +2557,7 @@
         "name": "344-й центр боевого применения и переучивания лётного состава армейской авиации",
         "short_name": "344 ЦБПиПЛС"
       },
+      "issuer_key": "ru-344-tsbp-aa",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le 344e centre",
         "en": "Russian Wikipedia article on the 344th centre"
@@ -2634,6 +2656,7 @@
         "name": "Министерство обороны Российской Федерации",
         "short_name": "МО РФ"
       },
+      "issuer_key": "ru-mo-rf",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le 344e centre et sur la patrouille Berkouty",
         "en": "Russian Wikipedia articles on the 344th centre and the Berkuty display team"
@@ -2681,6 +2704,7 @@
         "name": "Федеральная служба войск национальной гвардии Российской Федерации",
         "short_name": "Росгвардия"
       },
+      "issuer_key": "ru-rosgvardiya",
       "reference": {
         "fr": "Page officielle de la Rosgvardia sur les SOBR (conditions de recrutement)",
         "en": "Official Rosgvardiya page on SOBR (recruitment conditions)"
@@ -2728,6 +2752,7 @@
         "name": "Федеральная служба войск национальной гвардии Российской Федерации",
         "short_name": "Росгвардия"
       },
+      "issuer_key": "ru-rosgvardiya",
       "reference": {
         "fr": "Article Wikipédia (ru) sur le béret cerise et pages officielles de la Rosgvardia",
         "en": "Russian Wikipedia article on the crimson beret and official Rosgvardiya pages"
@@ -2951,6 +2976,7 @@
         "name": "Центр специального назначения ФСБ России",
         "short_name": "ЦСН ФСБ"
       },
+      "issuer_key": "ru-tsn-fsb",
       "reference": {
         "fr": "Articles Wikipédia sur Alpha et Vympel et presse (Kommersant)",
         "en": "Wikipedia articles on Alpha and Vympel and press (Kommersant)"

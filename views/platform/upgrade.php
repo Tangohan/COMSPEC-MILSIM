@@ -115,6 +115,7 @@ $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Documents, messagerie</li>
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Effectifs et formations de base</li>
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Quotas limités sur certains modules</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span> Catalogue des qualifications réelles consultable en entier : 10 imports, 5 émetteurs réels, 5 qualifications créées</li>
                             </ul>
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -124,6 +125,7 @@ $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Événements, courrier, mur opérationnel</li>
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Carte tactique ATAK</li>
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Alertes communauté</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500"></span> Qualifications réelles : 50 imports, 25 émetteurs réels, 30 qualifications et brevets créés, cursus pilote</li>
                             </ul>
                         </div>
                         <div class="relative rounded-2xl border border-emerald-200/80 bg-gradient-to-b from-white to-emerald-50/40 p-5 shadow-sm ring-1 ring-emerald-500/10">
@@ -134,6 +136,7 @@ $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Recrutement et coopération</li>
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Analytics organisation</li>
                                 <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Plafonds relevés</li>
+                                <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"></span> Qualifications réelles et émetteurs illimités, import d’un pays entier en un clic, créations illimitées</li>
                             </ul>
                         </div>
                     </div>

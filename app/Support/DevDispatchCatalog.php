@@ -294,16 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1311, '2026-11-02', 'Academy : la formation ATHENA refaite, en français et en anglais', 'Une nouvelle formation intégrée de l’Academy, « ATHENA — Utiliser et administrer la plateforme », remplace l’ancienne présentation du site. En douze chapitres courts, elle couvre la prise en main du portail, puis explique vraiment le back-office : chaque section de la barre latérale, l’organisation et l’ORBAT, les effectifs et les emplois, les qualifications et l’avancement, la doctrine, l’Academy, les opérations, les droits d’accès. Deux chapitres suivent tout le circuit du recrutement, de la vitrine publique à l’intégration (grade d’entrée, matricule, parcours d’accueil, période d’essai), et le dernier explique la liaison du mod ATAK. Chaque écran est cité avec son chemin de menu et son adresse ; chaque chapitre se termine par un quiz commenté.', [
-                'Formation « ATHENA — Utiliser et administrer la plateforme » : douze chapitres, quiz commentés, fiches mémo, qualification Athena Academy délivrée à la fin',
-                'Textes entièrement rédigés en français et en anglais ; la formation suit la langue choisie par chaque membre',
+            $pr(1312, '2026-11-02', 'Academy : le catalogue des qualifications réelles et les émetteurs réels', 'Le catalogue de l’Academy, onglet Qualifications, présente maintenant le catalogue de référence : environ 500 brevets et qualifications réels des États-Unis, de la France, de l’Allemagne, de la Chine, de la Russie et de l’OTAN, à côté des qualifications de votre communauté. Chaque fiche dit qui la délivre, comment l’obtenir, quelles formations y mènent et quels emplois la demandent ; un responsable l’importe en un clic dans son référentiel. La page Émetteurs propose plus de 200 écoles, centres d’excellence et commandements réels à importer par pays. La formule de la communauté fixe le nombre d’imports et de créations ; le catalogue reste consultable en entier.', [
+                'Catalogue Academy : qualifications par origine (déjà dans mon référentiel, créations de la communauté, catalogue de référence), filtres par pays avec drapeau, catégorie (brevet, qualification, cursus, licence), domaine, niveau et émetteur, pages de résultats',
+                'Fiche d’une qualification de référence : intitulé officiel, émetteur réel (localisation, site officiel), conditions d’obtention, formations Academy, emplois, sources ; bouton « Importer dans mon référentiel »',
+                'Émetteurs : « Importer les émetteurs réels » par pays (OTAN, États-Unis, France, Allemagne, Chine, Russie), sans toucher aux émetteurs déjà présents',
+                'Formules : compteurs d’imports et de créations, import d’un pays entier en un clic avec la formule Pro',
             ], [
-                'Cours de l’Academy : si un texte manque dans la langue du membre, le français s’affiche au lieu d’un espace vide',
-                'Écran d’accueil et statuts de candidature : traductions anglaises complétées (« Utiliser Athena seul », « Annulée »)',
-            ], [
-                'Codes d’invitation prioritaires : la page s’ouvre de nouveau au lieu de renvoyer à la liste des candidatures',
-            ], ['personnel', 'platform'], [
-                'Pour l’imposer aux recrues : ajoutez une étape « Formation facultative » liée à ce cours dans le modèle de parcours d’accueil.',
+                'Importer une qualification du catalogue crée aussi son émetteur réel, retrouvé par son nom, un ancien nom ou son sigle s’il existe déjà',
+                'En-tête du catalogue Academy refait (photo pleine largeur, recherche, compteurs) et états vides plus utiles',
+            ], [], ['personnel', 'platform'], [
+                'Qualifications et émetteurs de jeu inspirés d’organismes réels, sans valeur réelle. Ce qui est déjà importé ou créé reste utilisable au-delà du plafond de la formule.',
             ], 'Portail'),
             $pr(1310, '2026-11-02', 'Écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5', 'Avec le pack 2.9.33, les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy : depuis la 2.9.29, le jeu refusait la taille de l’image posée sur l’écran et il restait noir. La radio ACRE2 ou TFAR reliée à la MPU5 fait passer la voix par le maillage jusqu’aux radios reliées des équipiers sur la même fréquence (réglage serveur, désactivé par défaut).', [
                 'Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu’aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).',

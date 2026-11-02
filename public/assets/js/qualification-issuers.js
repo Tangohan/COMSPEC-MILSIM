@@ -32,6 +32,15 @@
 
   if (location.hash) openFold(location.hash.slice(1));
 
+  // Émetteurs réels : « Tout cocher » d'un pays (les émetteurs déjà présents restent cochés et désactivés).
+  document.addEventListener('change', function (ev) {
+    var all = ev.target.closest('[data-qis-real-all]');
+    if (!all) return;
+    var group = all.closest('[data-qis-real-group]');
+    if (!group) return;
+    group.querySelectorAll('input[name="keys[]"]:not(:disabled)').forEach(function (cb) { cb.checked = all.checked; });
+  });
+
   var root = document.querySelector('[data-qis]');
   if (!root) return;
   var q = root.querySelector('[data-qis-q]');

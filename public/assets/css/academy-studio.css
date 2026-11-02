@@ -387,3 +387,10 @@
   .cred-metric { grid-template-columns: minmax(0, 1fr); }
   .sth-hero--slim .hin { padding: 20px; }
 }
+
+/* Plafond de la formule (qualifications et brevets créés) */
+.sth-quota { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 14px; padding: 8px 12px; border: 1px solid var(--w-border); border-radius: 10px; background: var(--w-surface); font-size: 13px; color: var(--w-muted); }
+.sth-quota b { color: var(--w-text); font-variant-numeric: tabular-nums; }
+.sth-quota.is-full { border-color: #f59e0b; }
+.sth-quota a { font-weight: 700; color: var(--w-primary); }
+.sth-plan b { padding: 1px 7px; border-radius: 999px; background: var(--w-primary-soft); color: var(--w-primary); }

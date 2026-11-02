@@ -17,7 +17,8 @@ namespace App\Support\QualificationCatalog;
  * official_name (intitulé officiel, langue du pays, facultatif), short_name, description{fr,en}, body{fr,en}
  * (organisme de référence), issuer{name, short_name} (école ou organisme émetteur réel, facultatif : sinon
  * l’émetteur du pack), reference{fr,en}, prerequisites{fr[],en[]}, validity{fr,en} (vide si aucune source ouverte
- * ne la précise), validity_months (entier ou null), sources[{url,title}].
+ * ne la précise), validity_months (entier ou null), sources[{url,title}], issuer_key (facultatif : émetteur réel du
+ * catalogue config/qualification_issuers, prioritaire sur issuer).
  * Les emplois du catalogue d’emplois désignent ces entrées par leur id (champ qualification_refs).
  */
 final class QualificationCatalog
@@ -175,10 +176,24 @@ final class QualificationCatalog
      * Émetteur d’une entrée : l’école ou l’organisme réel de l’entrée, sinon l’émetteur de référence du pack.
      *
      * @param array<string, mixed> $entry entrée brute (avec son pack)
-     * @return array{name: string, short_name: string, description: string, kind: string}
+     * Avec une clé issuer_key (catalogue des émetteurs réels, QualificationIssuerCatalog), c’est cet émetteur réel.
+     *
+     * @return array{name: string, short_name: string, description: string, kind: string, key?: string}
      */
     public static function issuerOf(array $entry, string $lang): array
     {
+        $real = is_string($entry['issuer_key'] ?? null) ? QualificationIssuerCatalog::find($entry['issuer_key']) : null;
+        if ($real !== null) {
+            $l = QualificationIssuerCatalog::localize($real, $lang);
+
+            return [
+                'name' => mb_substr($l['name'], 0, 200),
+                'short_name' => mb_substr($l['short_name'], 0, 80),
+                'description' => QualificationIssuerCatalog::description($real, $lang),
+                'kind' => $l['kind'],
+                'key' => $l['key'],
+            ];
+        }
         $pack = self::pack((string) ($entry['pack'] ?? '')) ?? [];
         $own = is_array($entry['issuer'] ?? null) ? $entry['issuer'] : [];
         $packIssuer = is_array($pack['issuer'] ?? null) ? $pack['issuer'] : [];
@@ -228,6 +243,7 @@ final class QualificationCatalog
             'code' => (string) ($entry['code'] ?? ''),
             'official_name' => trim((string) ($entry['official_name'] ?? '')),
             'issuer' => self::issuerOf($entry, $lang)['name'],
+            'issuer_key' => is_string($entry['issuer_key'] ?? null) && QualificationIssuerCatalog::find($entry['issuer_key']) !== null ? $entry['issuer_key'] : '',
             'category' => $category,
             'category_label' => self::categoryLabel($category, $lang),
             'name' => self::pick($entry['name'] ?? '', $lang),

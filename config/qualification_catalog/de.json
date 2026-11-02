@@ -46,6 +46,7 @@
         "name": "Ausbildungsstützpunkt Spezialkräfte Heer",
         "short_name": "AusbStpSpezKrH"
       },
+      "issuer_key": "de-ausbstpspezkrh",
       "reference": {
         "fr": "Conditions d’admission publiées par le KSK (page « KSK-Soldat werden ») et manuel d’entraînement du PFV",
         "en": "Admission requirements published by the KSK (“KSK-Soldat werden” page) and PFV training handbook"
@@ -106,6 +107,7 @@
         "name": "Ausbildungsstützpunkt Spezialkräfte Heer",
         "short_name": "AusbStpSpezKrH"
       },
+      "issuer_key": "de-ausbstpspezkrh",
       "reference": {
         "fr": "Mission du Ausbildungsstützpunkt Spezialkräfte Heer (bundeswehr.de) ; port de l’insigne réglé par l’Anzugordnung de la Bundeswehr",
         "en": "Mission of the Army Special Forces Training Base (bundeswehr.de); wearing of the badge governed by the Bundeswehr dress regulations"
@@ -164,6 +166,7 @@
         "name": "Ausbildungsstützpunkt Spezialkräfte Heer",
         "short_name": "AusbStpSpezKrH"
       },
+      "issuer_key": "de-ausbstpspezkrh",
       "reference": {
         "fr": "Page « KSK-Soldat werden » et mission du Ausbildungsstützpunkt Spezialkräfte Heer (bundeswehr.de)",
         "en": "“KSK-Soldat werden” page and mission of the Army Special Forces Training Base (bundeswehr.de)"
@@ -218,6 +221,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Reportage officiel sur les Kommandoscharfschützen du KSK (bundeswehr.de)",
         "en": "Official feature on KSK commando snipers (bundeswehr.de)"
@@ -264,6 +268,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Normes OTAN NSOMT citées par la Bundeswehr ; conditions publiées sur la page « KSK-Soldat werden »",
         "en": "NATO NSOMT standards cited by the Bundeswehr; requirements published on the “KSK-Soldat werden” page"
@@ -316,6 +321,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Reportages officiels sur la formation de base et l’exercice arctique du KSK (bundeswehr.de)",
         "en": "Official features on KSK basic training and arctic exercise (bundeswehr.de)"
@@ -362,6 +368,7 @@
         "name": "Ausbildungszentrum Spezielle Operationen",
         "short_name": "AusbZSpezlOp"
       },
+      "issuer_key": "de-ausbzspezlop",
       "reference": {
         "fr": "Pages officielles de l’Heer sur les forces spécialisées EGB et leur procédure de sélection (bundeswehr.de)",
         "en": "Official Army pages on EGB specialised forces and their selection procedure (bundeswehr.de)"
@@ -420,6 +427,7 @@
         "name": "Ausbildungszentrum Spezielle Operationen",
         "short_name": "AusbZSpezlOp"
       },
+      "issuer_key": "de-ausbzspezlop",
       "reference": {
         "fr": "Reportage officiel « Auf dem Weg zum EGB-Soldaten » (bundeswehr.de)",
         "en": "Official feature “Auf dem Weg zum EGB-Soldaten” (bundeswehr.de)"
@@ -466,6 +474,7 @@
         "name": "Kommando Spezialkräfte der Marine",
         "short_name": "KSM"
       },
+      "issuer_key": "de-ksm",
       "reference": {
         "fr": "Page officielle « Karriere Kampfschwimmer » (bundeswehr.de)",
         "en": "Official “Karriere Kampfschwimmer” page (bundeswehr.de)"
@@ -520,6 +529,7 @@
         "name": "Kommando Spezialkräfte der Marine",
         "short_name": "KSM"
       },
+      "issuer_key": "de-ksm",
       "reference": {
         "fr": "Page officielle « Karriere Kampfschwimmer » ; Tätigkeitsabzeichen Kampfschwimmer de la Marine (Anzugordnung, Zentralvorschrift A1-2630/0-9804)",
         "en": "Official “Karriere Kampfschwimmer” page; Navy Kampfschwimmer qualification badge (dress regulations, Zentralvorschrift A1-2630/0-9804)"
@@ -578,6 +588,7 @@
         "name": "Kommando Spezialkräfte der Marine",
         "short_name": "KSM"
       },
+      "issuer_key": "de-ksm",
       "reference": {
         "fr": "Portrait officiel d’une Bootfahrerin de la Bootskompanie (bundeswehr.de)",
         "en": "Official portrait of a boat operator of the boat company (bundeswehr.de)"
@@ -624,6 +635,7 @@
         "name": "Kommando Spezialkräfte der Marine",
         "short_name": "KSM"
       },
+      "issuer_key": "de-ksm",
       "reference": {
         "fr": "Reportage officiel sur le Special Operations Medical Support Team du KSM (bundeswehr.de)",
         "en": "Official feature on the KSM Special Operations Medical Support Team (bundeswehr.de)"
@@ -674,6 +686,7 @@
         "name": "Objektschutzregiment der Luftwaffe „Friesland“",
         "short_name": "ObjSRgtLw"
       },
+      "issuer_key": "de-objsrgtlw",
       "reference": {
         "fr": "Pages officielles de la Luftwaffe sur les Kampfretter (bundeswehr.de)",
         "en": "Official Luftwaffe pages on the Kampfretter (bundeswehr.de)"
@@ -730,6 +743,7 @@
         "name": "Luftlande-/Lufttransportschule",
         "short_name": "LL/LTrspS"
       },
+      "issuer_key": "de-llltrsps",
       "reference": {
         "fr": "Sonderabzeichen de la Bundeswehr ; port réglé par l’Anzugordnung (ZDv 37/10 et textes qui l’ont remplacée)",
         "en": "Bundeswehr special badge; wear governed by the dress regulations (ZDv 37/10 and its successors)"
@@ -788,6 +802,7 @@
         "name": "Luftlande-/Lufttransportschule",
         "short_name": "LL/LTrspS"
       },
+      "issuer_key": "de-llltrsps",
       "reference": {
         "fr": "Mission de la Luftlande-/Lufttransportschule (bundeswehr.de)",
         "en": "Mission of the Airborne/Air Transport School (bundeswehr.de)"
@@ -934,6 +949,7 @@
         "name": "Luftlande-/Lufttransportschule",
         "short_name": "LL/LTrspS"
       },
+      "issuer_key": "de-llltrsps",
       "reference": {
         "fr": "Mission de la Luftlande-/Lufttransportschule présentée par l’Infanterieschule (bundeswehr.de)",
         "en": "Mission of the Airborne/Air Transport School as presented by the Infantry School (bundeswehr.de)"
@@ -988,6 +1004,7 @@
         "name": "Luftlande-/Lufttransportschule",
         "short_name": "LL/LTrspS"
       },
+      "issuer_key": "de-llltrsps",
       "reference": {
         "fr": "Mission de la Luftlande-/Lufttransportschule (bundeswehr.de) ; reportage « Die Fallschirmprüfer des Heeres »",
         "en": "Mission of the Airborne/Air Transport School (bundeswehr.de); feature “Die Fallschirmprüfer des Heeres”"
@@ -1038,6 +1055,7 @@
         "name": "Luftlande-/Lufttransportschule",
         "short_name": "LL/LTrspS"
       },
+      "issuer_key": "de-llltrsps",
       "reference": {
         "fr": "Conditions d’admission du KSK (bundeswehr.de) ; mission de la Luftlande-/Lufttransportschule",
         "en": "KSK admission requirements (bundeswehr.de); mission of the Airborne/Air Transport School"
@@ -1088,6 +1106,7 @@
         "name": "Luftlande-/Lufttransportschule",
         "short_name": "LL/LTrspS"
       },
+      "issuer_key": "de-llltrsps",
       "reference": {
         "fr": "Mission de la Luftlande-/Lufttransportschule (bundeswehr.de) ; reportage sur le Fallschirmspezialzug",
         "en": "Mission of the Airborne/Air Transport School (bundeswehr.de); feature on the Fallschirmspezialzug"
@@ -1142,6 +1161,7 @@
         "name": "Infanterieschule",
         "short_name": "InfS"
       },
+      "issuer_key": "de-infs",
       "reference": {
         "fr": "Présentation officielle du Einzelkämpferlehrgang (bundeswehr.de)",
         "en": "Official presentation of the Einzelkämpferlehrgang (bundeswehr.de)"
@@ -1198,6 +1218,7 @@
         "name": "Infanterieschule",
         "short_name": "InfS"
       },
+      "issuer_key": "de-infs",
       "reference": {
         "fr": "Présentation de la Lehrgruppe B de l’Infanterieschule (bundeswehr.de)",
         "en": "Presentation of the Infantry School’s Training Group B (bundeswehr.de)"
@@ -1248,6 +1269,7 @@
         "name": "Gebirgs- und Winterkampfschule",
         "short_name": "GebWiKS"
       },
+      "issuer_key": "de-gebwiks",
       "reference": {
         "fr": "Mission de la Gebirgs- und Winterkampfschule (bundeswehr.de) ; insigne de Heeresbergführer créé par l’état-major de l’Heer (1958)",
         "en": "Mission of the Mountain and Winter Warfare School (bundeswehr.de); Heeresbergführer badge created by the Army staff (1958)"
@@ -1310,6 +1332,7 @@
         "name": "Gebirgs- und Winterkampfschule",
         "short_name": "GebWiKS"
       },
+      "issuer_key": "de-gebwiks",
       "reference": {
         "fr": "Mission de la Gebirgs- und Winterkampfschule (bundeswehr.de)",
         "en": "Mission of the Mountain and Winter Warfare School (bundeswehr.de)"
@@ -1364,6 +1387,7 @@
         "name": "Gebirgs- und Winterkampfschule",
         "short_name": "GebWiKS"
       },
+      "issuer_key": "de-gebwiks",
       "reference": {
         "fr": "Reportage officiel sur les Hochgebirgsjäger du Gebirgsjägerbataillon 231 (bundeswehr.de)",
         "en": "Official feature on the high-mountain infantry of Gebirgsjägerbataillon 231 (bundeswehr.de)"
@@ -1414,6 +1438,7 @@
         "name": "Gebirgsjägerbrigade 23",
         "short_name": "GebJgBrig 23"
       },
+      "issuer_key": "de-gebjgbrig23",
       "reference": {
         "fr": "Fiches métiers officielles de la Gebirgsjägertruppe (bundeswehrkarriere.de)",
         "en": "Official Gebirgsjägertruppe job profiles (bundeswehrkarriere.de)"
@@ -1468,6 +1493,7 @@
         "name": "Einsatz- und Ausbildungszentrum für Tragtierwesen 230",
         "short_name": "EAZ Tragtierwesen 230"
       },
+      "issuer_key": "de-eaz-tragtier-230",
       "reference": {
         "fr": "Portrait officiel « Muli, Maultier, Tragtier » (bundeswehr.de)",
         "en": "Official portrait “Muli, Maultier, Tragtier” (bundeswehr.de)"
@@ -1518,6 +1544,7 @@
         "name": "Ausbildungszentrum Spezielle Operationen",
         "short_name": "AusbZSpezlOp"
       },
+      "issuer_key": "de-ausbzspezlop",
       "reference": {
         "fr": "Organisation de l’Ausbildungszentrum Spezielle Operationen ; reportages officiels sur les stages SERE (bundeswehr.de)",
         "en": "Organisation of the Special Operations Training Centre; official features on SERE courses (bundeswehr.de)"
@@ -1576,6 +1603,7 @@
         "name": "Infanterieschule",
         "short_name": "InfS"
       },
+      "issuer_key": "de-infs",
       "reference": {
         "fr": "Podcast officiel « Scharfschütze werden » (bundeswehr.de) ; Tätigkeitsabzeichen Scharfschütze (Anzugordnung, Zentralvorschrift A1-2630/0-9804)",
         "en": "Official podcast “Scharfschütze werden” (bundeswehr.de); Scharfschütze qualification badge (dress regulations, Zentralvorschrift A1-2630/0-9804)"
@@ -1630,6 +1658,7 @@
         "name": "Gebirgs- und Winterkampfschule",
         "short_name": "GebWiKS"
       },
+      "issuer_key": "de-gebwiks",
       "reference": {
         "fr": "Mission de la Gebirgs- und Winterkampfschule (bundeswehr.de)",
         "en": "Mission of the Mountain and Winter Warfare School (bundeswehr.de)"
@@ -1680,6 +1709,7 @@
         "name": "Objektschutzregiment der Luftwaffe „Friesland“",
         "short_name": "ObjSRgtLw"
       },
+      "issuer_key": "de-objsrgtlw",
       "reference": {
         "fr": "Présentation officielle de la formation au sein de l’Objektschutzregiment der Luftwaffe (bundeswehr.de)",
         "en": "Official presentation of training in the Air Force Regiment (bundeswehr.de)"
@@ -1730,6 +1760,7 @@
         "name": "Objektschutzregiment der Luftwaffe „Friesland“",
         "short_name": "ObjSRgtLw"
       },
+      "issuer_key": "de-objsrgtlw",
       "reference": {
         "fr": "Présentation officielle de la Grundlagenausbildung de l’Objektschutzregiment der Luftwaffe (bundeswehr.de)",
         "en": "Official presentation of the Air Force Regiment basic training (bundeswehr.de)"
@@ -1868,6 +1899,7 @@
         "name": "Ausbildungszentrum Spezielle Operationen",
         "short_name": "AusbZSpezlOp"
       },
+      "issuer_key": "de-ausbzspezlop",
       "reference": {
         "fr": "Organisation de l’Ausbildungszentrum Spezielle Operationen ; reportages officiels sur les nageurs de combat (bundeswehr.de)",
         "en": "Organisation of the Special Operations Training Centre; official features on combat swimmers (bundeswehr.de)"
@@ -1968,6 +2000,7 @@
         "name": "Einsatzausbildungszentrum Schadensabwehr Marine",
         "short_name": "EAZS M"
       },
+      "issuer_key": "de-eazsm",
       "reference": {
         "fr": "Tätigkeitsabzeichen Schwimmtaucher de la Marine (Anzugordnung) ; reportage officiel sur les plongeurs de la Marine",
         "en": "Navy Schwimmtaucher qualification badge (dress regulations); official feature on Navy divers"
@@ -2022,6 +2055,7 @@
         "name": "Seebataillon",
         "short_name": "SeeBtl"
       },
+      "issuer_key": "de-seebtl",
       "reference": {
         "fr": "Tätigkeitsabzeichen Minentaucher de la Marine (Anzugordnung) ; reportage officiel sur les Schiffs- et Minentaucher",
         "en": "Navy Minentaucher qualification badge (dress regulations); official feature on ship and mine clearance divers"
@@ -2080,6 +2114,7 @@
         "name": "Einsatzausbildungszentrum Schadensabwehr Marine",
         "short_name": "EAZS M"
       },
+      "issuer_key": "de-eazsm",
       "reference": {
         "fr": "Tätigkeitsabzeichen Schiffstaucher de la Marine (Anzugordnung) ; reportage officiel sur les Schiffs- et Minentaucher",
         "en": "Navy Schiffstaucher qualification badge (dress regulations); official feature on ship and mine clearance divers"
@@ -2136,6 +2171,7 @@
         "name": "Einsatzausbildungszentrum Schadensabwehr Marine",
         "short_name": "EAZS M"
       },
+      "issuer_key": "de-eazsm",
       "reference": {
         "fr": "Reportages officiels sur les plongeurs de la Marine et la formation des Kampfschwimmer (bundeswehr.de)",
         "en": "Official features on Navy divers and combat swimmer training (bundeswehr.de)"
@@ -2190,6 +2226,7 @@
         "name": "Seebataillon",
         "short_name": "SeeBtl"
       },
+      "issuer_key": "de-seebtl",
       "reference": {
         "fr": "Portrait officiel « Marineinfanterist » (bundeswehr.de)",
         "en": "Official “Marineinfanterist” portrait (bundeswehr.de)"
@@ -2240,6 +2277,7 @@
         "name": "Internationales Hubschrauberausbildungszentrum",
         "short_name": "IntHubschrAusbZ"
       },
+      "issuer_key": "de-inthubschrausbz",
       "reference": {
         "fr": "Mission de l’Internationales Hubschrauberausbildungszentrum (bundeswehr.de)",
         "en": "Mission of the International Helicopter Training Centre (bundeswehr.de)"
@@ -2298,6 +2336,7 @@
         "name": "Internationales Hubschrauberausbildungszentrum",
         "short_name": "IntHubschrAusbZ"
       },
+      "issuer_key": "de-inthubschrausbz",
       "reference": {
         "fr": "Mission de l’Internationales Hubschrauberausbildungszentrum (bundeswehr.de)",
         "en": "Mission of the International Helicopter Training Centre (bundeswehr.de)"
@@ -2348,6 +2387,7 @@
         "name": "Deutsch-Französisches Heeresfliegerausbildungszentrum Tiger",
         "short_name": "DEU/FRA HFlgAusbZ Tiger"
       },
+      "issuer_key": "de-hflgausbz-tiger",
       "reference": {
         "fr": "Mission de l’Internationales Hubschrauberausbildungszentrum et page Tiger (bundeswehr.de)",
         "en": "Mission of the International Helicopter Training Centre and Tiger page (bundeswehr.de)"
@@ -2402,6 +2442,7 @@
         "name": "Internationales Hubschrauberausbildungszentrum",
         "short_name": "IntHubschrAusbZ"
       },
+      "issuer_key": "de-inthubschrausbz",
       "reference": {
         "fr": "Mission de l’Internationales Hubschrauberausbildungszentrum (bundeswehr.de)",
         "en": "Mission of the International Helicopter Training Centre (bundeswehr.de)"
@@ -2490,6 +2531,7 @@
         "name": "U.S. Army Aviation Center of Excellence",
         "short_name": "USAACE"
       },
+      "issuer_key": "us-usaace",
       "reference": {
         "fr": "Reportages officiels de la Luftwaffe sur la formation CH-47 (bundeswehr.de)",
         "en": "Official Luftwaffe features on CH-47 training (bundeswehr.de)"
@@ -2578,6 +2620,7 @@
         "name": "Lufttransportgeschwader 62",
         "short_name": "LTG 62"
       },
+      "issuer_key": "de-ltg62",
       "reference": {
         "fr": "Pages officielles du Lufttransportgeschwader 62 (bundeswehr.de)",
         "en": "Official pages of Air Transport Wing 62 (bundeswehr.de)"
@@ -2632,6 +2675,7 @@
         "name": "Lufttransportgeschwader 62",
         "short_name": "LTG 62"
       },
+      "issuer_key": "de-ltg62",
       "reference": {
         "fr": "Portrait officiel « Technischer Ladungsmeister auf dem A400M » (bundeswehr.de)",
         "en": "Official portrait “Technischer Ladungsmeister auf dem A400M” (bundeswehr.de)"
@@ -2682,6 +2726,7 @@
         "name": "Hubschraubergeschwader 64",
         "short_name": "HSG 64"
       },
+      "issuer_key": "de-hsg64",
       "reference": {
         "fr": "Reportage officiel « Doorgunner: ein Job in luftiger Höhe » (bundeswehr.de)",
         "en": "Official feature “Doorgunner: ein Job in luftiger Höhe” (bundeswehr.de)"
@@ -2732,6 +2777,7 @@
         "name": "Hubschraubergeschwader 64",
         "short_name": "HSG 64"
       },
+      "issuer_key": "de-hsg64",
       "reference": {
         "fr": "Reportages officiels sur la 4. Staffel du Hubschraubergeschwader 64 (bundeswehr.de)",
         "en": "Official features on the 4th squadron of Helicopter Wing 64 (bundeswehr.de)"
@@ -2788,6 +2834,7 @@
         "name": "Hubschraubergeschwader 64",
         "short_name": "HSG 64"
       },
+      "issuer_key": "de-hsg64",
       "reference": {
         "fr": "Reportages officiels sur la 4. Staffel du Hubschraubergeschwader 64 (bundeswehr.de)",
         "en": "Official features on the 4th squadron of Helicopter Wing 64 (bundeswehr.de)"
@@ -2938,6 +2985,7 @@
         "name": "Kampfmittelabwehrschule",
         "short_name": "KpfmAbwS"
       },
+      "issuer_key": "de-kpfmabws",
       "reference": {
         "fr": "Tätigkeitsabzeichen streitkräftegemeinsam « Kampfmittelbeseitigung (EOD) » (Anzugordnung, Zentralvorschrift A1-2630/0-9804)",
         "en": "Joint “Kampfmittelbeseitigung (EOD)” qualification badge (dress regulations, Zentralvorschrift A1-2630/0-9804)"
@@ -2988,6 +3036,7 @@
         "name": "Objektschutzregiment der Luftwaffe „Friesland“",
         "short_name": "ObjSRgtLw"
       },
+      "issuer_key": "de-objsrgtlw",
       "reference": {
         "fr": "Pages officielles de la Luftwaffe sur les Air Mobile Protection Teams (bundeswehr.de)",
         "en": "Official Luftwaffe pages on the Air Mobile Protection Teams (bundeswehr.de)"
@@ -3042,6 +3091,7 @@
         "name": "Kommando Feldjäger der Bundeswehr",
         "short_name": "KdoFJgBw"
       },
+      "issuer_key": "de-kdofjgbw",
       "reference": {
         "fr": "Pages officielles des Feldjäger sur le Personenschutz (bundeswehr.de)",
         "en": "Official Feldjäger pages on close protection (bundeswehr.de)"
@@ -3100,6 +3150,7 @@
         "name": "Schule für Diensthundewesen der Bundeswehr",
         "short_name": "SDstHundeBw"
       },
+      "issuer_key": "de-sdsthundebw",
       "reference": {
         "fr": "Présentation de la Schule für Diensthundewesen der Bundeswehr ; reportage sur le Spezialhundezug du KSK (bundeswehr.de)",
         "en": "Presentation of the Bundeswehr Military Working Dog School; feature on the KSK special dog platoon (bundeswehr.de)"
@@ -3150,6 +3201,7 @@
         "name": "Führungsakademie der Bundeswehr",
         "short_name": "FüAkBw"
       },
+      "issuer_key": "de-fueakbw",
       "reference": {
         "fr": "Présentation officielle de la Führungsakademie der Bundeswehr",
         "en": "Official presentation of the Führungsakademie der Bundeswehr"
@@ -3201,6 +3253,7 @@
         "name": "Führungsakademie der Bundeswehr",
         "short_name": "FüAkBw"
       },
+      "issuer_key": "de-fueakbw",
       "reference": {
         "fr": "Présentation officielle de la Führungsakademie der Bundeswehr",
         "en": "Official presentation of the Führungsakademie der Bundeswehr"
@@ -3301,6 +3354,7 @@
         "name": "Unteroffizierschule des Heeres",
         "short_name": "USH"
       },
+      "issuer_key": "de-ush",
       "reference": {
         "fr": "Page officielle de l’Unteroffizierschule des Heeres (bundeswehr.de)",
         "en": "Official Unteroffizierschule des Heeres page (bundeswehr.de)"
@@ -3403,6 +3457,7 @@
         "name": "Offizierschule des Heeres",
         "short_name": "OSH"
       },
+      "issuer_key": "de-osh",
       "reference": {
         "fr": "Pages officielles de l’Offizierschule des Heeres et de la carrière d’officier (bundeswehr.de)",
         "en": "Official Offizierschule des Heeres and officer-career pages (bundeswehr.de)"
@@ -3454,6 +3509,7 @@
         "name": "Marineschule Mürwik",
         "short_name": "MSM"
       },
+      "issuer_key": "de-msm",
       "reference": {
         "fr": "Page Wikipédia et pages officielles de la Marine",
         "en": "Wikipedia page and official Navy pages"
@@ -3501,6 +3557,7 @@
         "name": "Infanterieschule",
         "short_name": "InfS"
       },
+      "issuer_key": "de-infs",
       "reference": {
         "fr": "Témoignage officiel « Traumberuf Fallschirmjägeroffizier » (bundeswehr.de)",
         "en": "Official feature “Traumberuf Fallschirmjägeroffizier” (bundeswehr.de)"
@@ -3548,6 +3605,7 @@
         "name": "Infanterieschule",
         "short_name": "InfS"
       },
+      "issuer_key": "de-infs",
       "reference": {
         "fr": "Témoignage officiel « Traumberuf Fallschirmjägeroffizier » (bundeswehr.de)",
         "en": "Official feature “Traumberuf Fallschirmjägeroffizier” (bundeswehr.de)"
@@ -3646,6 +3704,7 @@
         "name": "Bundesamt für den Militärischen Abschirmdienst",
         "short_name": "BAMAD"
       },
+      "issuer_key": "de-bamad",
       "reference": {
         "fr": "Sicherheitsüberprüfungsgesetz (SÜG), gesetze-im-internet.de",
         "en": "Security Clearance Check Act (SÜG), gesetze-im-internet.de"
@@ -3693,6 +3752,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Présentations publiques de l’organisation du Kommandotrupp",
         "en": "Public descriptions of the Kommandotrupp organisation"
@@ -3744,6 +3804,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Reportage officiel « Datenübertragung unter allen Umständen » (bundeswehr.de)",
         "en": "Official feature “Datenübertragung unter allen Umständen” (bundeswehr.de)"
@@ -3795,6 +3856,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Présentations publiques de l’organisation du Kommandotrupp",
         "en": "Public descriptions of the Kommandotrupp organisation"
@@ -3846,6 +3908,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Reportage officiel « Bauen, bohren, sägen – Pioniere beim KSK » (bundeswehr.de)",
         "en": "Official feature “Bauen, bohren, sägen – Pioniere beim KSK” (bundeswehr.de)"
@@ -3897,6 +3960,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Page Wikipédia du Kommando Spezialkräfte (organisation des sections)",
         "en": "Kommando Spezialkräfte Wikipedia page (platoon organisation)"
@@ -3948,6 +4012,7 @@
         "name": "Kommando Spezialkräfte",
         "short_name": "KSK"
       },
+      "issuer_key": "de-ksk",
       "reference": {
         "fr": "Reportage officiel « Bauen, bohren, sägen – Pioniere beim KSK » (bundeswehr.de)",
         "en": "Official feature “Bauen, bohren, sägen – Pioniere beim KSK” (bundeswehr.de)"
@@ -3995,6 +4060,7 @@
         "name": "Schule ABC-Abwehr und Gesetzliche Schutzaufgaben",
         "short_name": "SABCAbw/GSchAufg"
       },
+      "issuer_key": "de-sabcabw-gschaufg",
       "reference": {
         "fr": "Page officielle de l’école et reportage « Die unsichtbare Gefahr bekämpfen » (bundeswehr.de)",
         "en": "Official school page and feature “Die unsichtbare Gefahr bekämpfen” (bundeswehr.de)"
@@ -4367,6 +4433,7 @@
         "name": "Ausbildungszentrum Munster",
         "short_name": "AusbZ Munster"
       },
+      "issuer_key": "de-pztrs",
       "reference": {
         "fr": "Pages officielles « Fernspäher – Augen des Heeres » et « Hartes Auswahlverfahren für Fernspäher »",
         "en": "Official pages “Fernspäher – Augen des Heeres” and “Hartes Auswahlverfahren für Fernspäher”"
@@ -4418,6 +4485,7 @@
         "name": "Gebirgsjägerbrigade 23",
         "short_name": "GebJgBrig 23"
       },
+      "issuer_key": "de-gebjgbrig23",
       "reference": {
         "fr": "Reportage officiel « Kampf auf 3.000 Metern – die Hochgebirgsjäger des Heeres »",
         "en": "Official feature “Kampf auf 3.000 Metern – die Hochgebirgsjäger des Heeres”"
@@ -4512,6 +4580,7 @@
         "name": "Zentrum für Luft- und Raumfahrtmedizin der Luftwaffe",
         "short_name": "ZentrLuRMedLw"
       },
+      "issuer_key": "de-zentrlurmedlw",
       "reference": {
         "fr": "Page de carrière officielle « Hubschrauberpilotin/Hubschrauberpilot »",
         "en": "Official career page “Hubschrauberpilotin/Hubschrauberpilot”"
@@ -4559,6 +4628,7 @@
         "name": "Internationales Hubschrauberausbildungszentrum",
         "short_name": "IntHubschrAusbZ"
       },
+      "issuer_key": "de-inthubschrausbz",
       "reference": {
         "fr": "Page de carrière officielle « Soldatin/Soldat in der Lfz-Instandhaltung »",
         "en": "Official career page “Soldatin/Soldat in der Lfz-Instandhaltung”"
@@ -4606,6 +4676,7 @@
         "name": "Luftlande-/Lufttransportschule",
         "short_name": "LL/LTS"
       },
+      "issuer_key": "de-llltrsps",
       "reference": {
         "fr": "Page officielle de la Luftlande-/Lufttransportschule (bundeswehr.de)",
         "en": "Official Luftlande-/Lufttransportschule page (bundeswehr.de)"
@@ -4657,6 +4728,7 @@
         "name": "Kommando Spezialkräfte der Marine",
         "short_name": "KSM"
       },
+      "issuer_key": "de-ksm",
       "reference": {
         "fr": "Page officielle « Karriere Kampfschwimmer » (bundeswehr.de)",
         "en": "Official page “Karriere Kampfschwimmer” (bundeswehr.de)"
@@ -4708,6 +4780,7 @@
         "name": "Kommando Spezialkräfte der Marine",
         "short_name": "KSM"
       },
+      "issuer_key": "de-ksm",
       "reference": {
         "fr": "Page officielle « Karriere Kampfschwimmer » (bundeswehr.de)",
         "en": "Official page “Karriere Kampfschwimmer” (bundeswehr.de)"
@@ -4759,6 +4832,7 @@
         "name": "Kommando Spezialkräfte der Marine",
         "short_name": "KSM"
       },
+      "issuer_key": "de-ksm",
       "reference": {
         "fr": "Page officielle « Karriere Kampfschwimmer » (bundeswehr.de)",
         "en": "Official page “Karriere Kampfschwimmer” (bundeswehr.de)"
@@ -4904,6 +4978,7 @@
         "name": "Hubschraubergeschwader 64",
         "short_name": "HSG 64"
       },
+      "issuer_key": "de-hsg64",
       "reference": {
         "fr": "Page officielle Sikorsky CH-53 (bundeswehr.de)",
         "en": "Official Sikorsky CH-53 page (bundeswehr.de)"
@@ -4955,6 +5030,7 @@
         "name": "Hubschraubergeschwader 64",
         "short_name": "HSG 64"
       },
+      "issuer_key": "de-hsg64",
       "reference": {
         "fr": "Reportage officiel « Ausbildung Fluglehrer CH-47F » (bundeswehr.de)",
         "en": "Official feature “Ausbildung Fluglehrer CH-47F” (bundeswehr.de)"
@@ -5002,6 +5078,7 @@
         "name": "Schule für Feldjäger und Stabsdienst der Bundeswehr",
         "short_name": "SFJg/StDstBw"
       },
+      "issuer_key": "de-sfjg-stdstbw",
       "reference": {
         "fr": "Page officielle « Feldjäger – Militärpolizei » (bundeswehr.de)",
         "en": "Official page “Feldjäger – Militärpolizei” (bundeswehr.de)"

@@ -25,6 +25,11 @@ $definitions = is_array($definitions ?? null) ? $definitions : [];
 $units = is_array($units ?? null) ? $units : [];
 $enriched = !empty($enriched);
 $linkReady = !empty($linkReady);
+$realIssuers = is_array($realIssuers ?? null) ? $realIssuers : [];
+$realMatched = is_array($realMatched ?? null) ? $realMatched : [];
+$realReady = !empty($realReady);
+$realQuota = is_array($realQuota ?? null) ? $realQuota : null;
+$realFull = $realQuota !== null && !$realQuota['can_add'];
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 $base = 'back-office/referentiels/qualifications/emetteurs';
@@ -73,8 +78,9 @@ $who = static function (array $a): string {
     return $cs !== '' ? $cs : ($dn !== '' ? $dn : '#' . (int) ($a['user_id'] ?? 0));
 };
 $headActions = '<a class="effk-btn" href="' . effk_e(url('back-office/referentiels/qualifications')) . '">' . effk_e('Qualifications') . '</a>'
+    . '<a class="effk-btn" href="#emetteurs-reels">' . effk_e('Importer les émetteurs réels') . '</a>'
     . '<a class="effk-btn is-dark" href="#nouvel-emetteur">' . effk_icon('plus') . '<span>' . effk_e('Nouvel émetteur') . '</span></a>';
-$emptyAction = '<p class="qis-empty-act"><a class="effk-btn is-dark" href="#nouvel-emetteur">' . effk_icon('plus') . '<span>' . effk_e('Créer le premier émetteur') . '</span></a></p>';
+$emptyAction = '<p class="qis-empty-act"><a class="effk-btn" href="#emetteurs-reels">' . effk_e('Importer les émetteurs réels') . '</a> <a class="effk-btn is-dark" href="#nouvel-emetteur">' . effk_icon('plus') . '<span>' . effk_e('Créer le premier émetteur') . '</span></a></p>';
 ?>
 <div class="bo-eff-workspace qis-page">
 <div class="effk" data-qis>
@@ -248,6 +254,75 @@ $emptyAction = '<p class="qis-empty-act"><a class="effk-btn is-dark" href="#nouv
             'Commencez par l’école ou le centre qui forme le plus, puis rattachez-lui ses qualifications.',
             $emptyAction
         ) ?>
+    <?php endif; ?>
+
+    <?php if ($realIssuers !== []):
+        $realTotal = 0;
+        $realPresent = 0;
+        foreach ($realIssuers as $rg) {
+            foreach ($rg['issuers'] as $ri) {
+                $realTotal++;
+                $realPresent += isset($realMatched[$ri['key']]) ? 1 : 0;
+            }
+        }
+        ?>
+    <details class="effk-panel effk-fold qis-real" id="emetteurs-reels"<?= $issuers === [] ? ' open' : '' ?>>
+        <summary>
+            <span><b>Importer les émetteurs réels</b><small><?= $realTotal ?> écoles, centres d’excellence et commandements réels (OTAN, États-Unis, France, Allemagne…) · <?= $realPresent ?> déjà dans votre référentiel.</small></span>
+            <?= effk_icon('down') ?>
+        </summary>
+        <form class="effk-fold__body" method="post" action="<?= effk_e(url($base . '/importer-reels')) ?>" data-qis-real>
+            <?= \App\Core\Csrf::field() ?>
+            <p class="effk-fold__lead">Cochez les organismes à ajouter : ceux qui manquent sont créés avec leur nom officiel, leur sigle, leur type et une présentation (localisation, site officiel, sources). Un émetteur déjà présent chez vous (même nom, ancien nom ou sigle) n’est jamais modifié. Ce sont des émetteurs de jeu inspirés d’organismes réels, sans valeur réelle. Importer une qualification du catalogue de référence ajoute aussi son émetteur réel.</p>
+            <?php if ($realQuota !== null && !$realQuota['unlimited']): ?>
+            <p class="effk-note <?= $realFull ? 'is-warn' : 'is-info' ?> qis-real__quota"><b><?= (int) $realQuota['used'] ?> / <?= (int) $realQuota['limit'] ?></b> émetteurs réels sur votre formule<?= $realFull ? ' : plafond atteint, les émetteurs déjà présents restent utilisables' : ' (' . (int) $realQuota['remaining'] . ' restant(s))' ?>.<?php if ($realQuota['offer'] !== null): ?> Formule <b translate="no"><?= effk_e((string) $realQuota['offer']['name']) ?></b> : <?= $realQuota['offer']['value'] === 0 ? 'illimité' : (int) $realQuota['offer']['value'] ?>. <a href="<?= effk_e((string) $realQuota['upgrade_url']) ?>">Voir les formules</a><?php endif; ?> L’émetteur d’une qualification importée du catalogue suit toujours sa qualification.</p>
+            <?php endif; ?>
+            <?php if (!$realReady): ?><p class="effk-note is-warn">Les émetteurs ne sont pas encore disponibles pour votre communauté : l’import sera possible après la prochaine mise à jour du site.</p><?php endif; ?>
+            <div class="qis-real__countries">
+            <?php foreach ($realIssuers as $rg):
+                $rgMissing = count(array_filter($rg['issuers'], static fn (array $ri): bool => !isset($realMatched[$ri['key']]))); ?>
+                <fieldset class="qis-real__country" data-qis-real-group>
+                    <legend>
+                        <?= \App\Support\QualificationCatalog\CatalogCountry::flag((string) $rg['country']) ?>
+                        <b><?= effk_e((string) $rg['label']) ?></b>
+                        <?php $native = \App\Support\QualificationCatalog\CatalogCountry::native((string) $rg['country']); if ($native !== '' && $native !== $rg['label']): ?><span class="effk-muted" translate="no"><?= effk_e($native) ?></span><?php endif; ?>
+                        <span class="effk-tag"><?= count($rg['issuers']) ?></span>
+                    </legend>
+                    <?php if ($rgMissing > 0 && !$realFull): ?>
+                    <label class="qis-real__all"><input type="checkbox" data-qis-real-all> <span>Tout cocher (<?= $rgMissing ?> à importer)</span></label>
+                    <?php else: ?>
+                    <p class="effk-muted qis-real__done">Tous déjà dans votre référentiel.</p>
+                    <?php endif; ?>
+                    <ul class="qis-real__list" role="list">
+                    <?php foreach ($rg['issuers'] as $ri):
+                        $present = isset($realMatched[$ri['key']]); ?>
+                        <li class="<?= $present ? 'is-present' : '' ?>">
+                            <label>
+                                <input type="checkbox" name="keys[]" value="<?= effk_e((string) $ri['key']) ?>"<?= $present ? ' checked disabled' : ($realFull ? ' disabled' : '') ?>>
+                                <span class="qis-real__id">
+                                    <b translate="no"><?= effk_e((string) $ri['short_name']) ?></b>
+                                    <span translate="no"><?= effk_e((string) $ri['name']) ?></span>
+                                    <?php if ($ri['transliteration'] !== ''): ?><small translate="no"><?= effk_e((string) $ri['transliteration']) ?></small><?php endif; ?>
+                                    <small><span><?= effk_e((string) $ri['type_label']) ?></span><?php if ($ri['location'] !== ''): ?> · <span translate="no"><?= effk_e((string) $ri['location']) ?></span><?php endif; ?></small>
+                                </span>
+                            </label>
+                            <?php if ($present): ?>
+                                <a class="effk-pill is-ok" href="<?= effk_e(url($base . '/' . (int) $realMatched[$ri['key']])) ?>">Déjà présent</a>
+                            <?php elseif ($ri['website'] !== ''): ?>
+                                <a class="qis-real__site" href="<?= effk_e((string) $ri['website']) ?>" target="_blank" rel="noopener noreferrer">Site officiel</a>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                    </ul>
+                </fieldset>
+            <?php endforeach; ?>
+            </div>
+            <div class="effk-fold__foot">
+                <span>Les émetteurs créés se modifient ensuite librement (logo, signataire, habilités).</span>
+                <button type="submit" class="effk-btn is-dark"<?= $realReady && !$realFull ? '' : ' disabled' ?>><?= effk_icon('check') ?><span>Importer les émetteurs cochés</span></button>
+            </div>
+        </form>
+    </details>
     <?php endif; ?>
 
     <details class="effk-panel effk-fold" id="nouvel-emetteur"<?= $issuers === [] ? ' open' : '' ?>>
