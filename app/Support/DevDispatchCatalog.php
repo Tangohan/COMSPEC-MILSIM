@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1330, '2026-11-02', 'Malaisie : grades, emplois, qualifications et modèles d’unités', 'La Malaisie rejoint les pays du site. Le référentiel des grades propose les grades de l’Angkatan Tentera Malaysia, système d’origine britannique, en malais avec leur équivalent anglais et leur code OTAN : armée de terre (Tentera Darat, de Prebet à Jeneral), marine (TLDM) et armée de l’air (TUDM). Le catalogue d’emplois ajoute 81 emplois malaisiens sourcés (Grup Gerak Khas, 10 Briged Para, Askar Melayu, Renjer, PASKAL, PASKAU, aviation de l’armée, et à part la police : VAT 69 et UTK), reliés à 31 qualifications et 19 écoles et unités réelles. Cinq modèles d’organisation inspirés d’unités réelles s’appliquent avec les grades malaisiens, dont un bataillon de l’Askar Melayu détaillé jusqu’au seksyen, et l’adéquation de l’organisation suit le modèle britannique (le chef de seksyen est un Koperal).', [
+                'Référentiel des grades : onglets Malaisie (armée de terre, marine, armée de l’air), intitulés malais, abrégés usuels, équivalent anglais et code OTAN ; bouton pour utiliser ces grades dans la communauté',
+                'Création de communauté : les grades malaisiens se choisissent à l’étape Grades, avec aperçu et grade du fondateur',
+                'Catalogue d’emplois : pays Malaisie (drapeau, nom « Malaysia »), 81 emplois avec intitulé officiel malais, traductions française et anglaise, brevets et formations reliés',
+                'Qualifications : catalogue malaisien (31 cursus réels : Kursus Asas Komando, PASKAL, PASKAU, parachutisme, tireur d’élite, cours de police…) et 19 émetteurs réels (PULPAK, PULADA, UPNM, Maktab Turus Angkatan Tentera…)',
+                'Modèles d’organisation : 21 Gerup Gerak Khas, 10 Briged Para, bataillon 9 RAMD (Para) avec kompeni, platun et seksyen, PASKAL et PASKAU',
+                'Adéquation de l’organisation : référentiel malaisien (modèle britannique), retenu d’office avec les grades malaisiens',
+            ], [
+                'Les listes de grades regroupent la Malaisie sous son nom ; le système de grades d’un modèle d’organisation malaisien est indiqué sur sa carte',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grade_systems_malaysia) pour installer les grades malaisiens ; les emplois, qualifications et modèles d’unités sont disponibles sans migration.',
+                'Essai : Référentiel des grades › Malaisie : armée de terre › « Utiliser les grades malaisiens… », puis Effectifs › attribuer « Kapten » à un membre.',
+            ], 'Portail Athena'),
             $pr(1329, '2026-11-02', 'Administration des formules : tableau comparatif et fiche par formule', 'Administration › Formules d’accès devient un tableau comparatif : une colonne par formule, une ligne par paramètre, rangés par groupe (membres et organisation, Academy et qualifications, recrutement, ATAK et jeu, documents, marque et intégrations) et repliables, avec une recherche et le nombre de communautés sur chaque formule. Chaque formule s’ouvre sur une fiche à onglets : interrupteurs pour les modules, nombre ou case « Illimité » pour les plafonds, aperçu de la page des formules telle que la voit le client, liste des communautés qui dépasseraient un plafond abaissé (rien ne leur est retiré) et historique des modifications. Une formule se duplique en un clic. La page publique des formules calcule désormais son comparatif depuis les vraies valeurs des formules.', [
                 'Tableau comparatif des formules : groupes repliables, recherche d’un paramètre, communautés par formule, boutons Modifier et Dupliquer',
                 'Fiche d’une formule : onglets par groupe, interrupteurs, quotas avec case « Illimité », contrôle des valeurs à l’enregistrement',
