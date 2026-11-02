@@ -177,7 +177,28 @@ Fond de carte : la photo de la carte si le mod @COMSPEC_ATAK_Photo est chargé, 
 if (isServer) then { ["add", [this, "TOC Bravo", "WEST", 0, "SPLIT", true]] call comspec_atak_native_fnc_tocScreen; };
 ["remove", objet] call comspec_atak_native_fnc_tocScreen;
 // Pose d'un écran du jeu : [position ATL, direction, classe, nom, camp, affichage, poste TOC]
-["spawn", [getPosATL player, getDir player, "Land_TripodScreen_01_large_F", "TOC", "WEST"]] call comspec_atak_native_fnc_tocScreen;
+["spawn", [getPosATL player, getDir player, "COMSPEC_ATAK_Screen_Tripod", "TOC", "WEST"]] call comspec_atak_native_fnc_tocScreen;
+```
+
+**Écrans COMSPEC dédiés.** Catégorie Eden / Zeus « COMSPEC › Écrans TOC et projection » : les vrais écrans du jeu
+(grand écran et double écran sur trépied, téléviseur, moniteur de bureau) réglés pour afficher une image : une seule
+dalle (les dalles superposées du grand écran, noires et opaques, sont vides dès la config), matières d'écran du mod
+(lisibles de jour comme de nuit), double écran : même image sur les deux dalles. Même menu ACE « Écran COMSPEC »
+(Diffusion, Affichage TOC, Carte).
+
+**Vidéoprojecteur et tableau (`fn_projector`).** Le vidéoprojecteur du jeu projette sur un tableau blanc du jeu (sur
+trépied ou mural) à moins de 15 m. ACE › Vidéoprojecteur › Projecteur COMSPEC : Allumer / Éteindre, Projeter sur…
+(tableaux en vue), puis Diffusion, Affichage TOC et Carte comme sur un écran, appliqués au tableau. Allumé sans tableau
+choisi, il prend le plus proche dans l'axe de son objectif. L'image (16:9, posée devant la face blanche du côté du
+projecteur, à sa taille et à son inclinaison, `tools/model_projsurface.py`) n'apparaît que si le projecteur est allumé,
+intact, tourné vers le tableau et que rien ne coupe la ligne objectif - tableau (personne, mur, véhicule) ; sinon
+tableau blanc. Attribut Eden « Allumé au lancement ».
+
+```sqf
+["power", [projo1, true]] call comspec_atak_native_fnc_projector;      // allume (tableau le plus proche dans l'axe de l'objectif)
+["link", [projo1, tableau1]] call comspec_atak_native_fnc_projector;   // associe un tableau précis
+["castOn", tableau1] call comspec_atak_native_fnc_screenCast;           // mes diapositives sur le tableau
+["ensure", [tableau1, "MAP"]] call comspec_atak_native_fnc_tocScreen;   // carte du TOC sur le tableau
 ```
 
 **English.** The "ATAK · TOC screen" Eden/Zeus module shows a side's live ATAK network, as computed by the mission
@@ -186,6 +207,9 @@ feed. ACE/scroll actions change the display (map and feed, map, feed, post PIP),
 "TOC post laptop" action opens the laptop's own screen (`fn_tocLaptop`), with no phone: the real Arma map, groups,
 feed, order composer and side messages. "Post PIP" mirrors the operator's laptop on any in-game screen. Screens
 persist across sessions (`fn_tocPersist`, setting "Keep TOC screens").
+COMSPEC screens are the game's own screens (tripod, dual, TV, desk monitor) set up to show one image day and night. The
+COMSPEC video projector (`fn_projector`, the game's projector) projects slides, TOC display, map or camera onto a game
+whiteboard within 15 m when switched on, intact, aimed and in line of sight; otherwise the board stays white.
 
 ## 8. IA équipées d'un ATAK
 

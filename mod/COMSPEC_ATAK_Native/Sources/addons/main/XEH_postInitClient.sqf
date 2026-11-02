@@ -573,6 +573,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_screenCast; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Écrans TOC proches : réseau ATAK du camp affiché sur l'objet (texture UI), actions ACE ou molette (fn_tocScreen).
 [{ ["tick"] call comspec_atak_native_fnc_tocScreen; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Vidéoprojecteurs et toiles proches (fn_projector) : toile éclairée ou non, lumières de l'objectif ; menus ACE.
+["aceInit"] call comspec_atak_native_fnc_projector;
+[{ ["tick"] call comspec_atak_native_fnc_projector; }, 2] call COMSPEC_ATAK_PfhSpread;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
 [{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call COMSPEC_ATAK_PfhSpread;

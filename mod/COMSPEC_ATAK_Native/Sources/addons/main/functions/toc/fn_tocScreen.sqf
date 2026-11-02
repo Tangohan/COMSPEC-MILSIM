@@ -31,6 +31,13 @@
       ["tick"]                             client, chaque seconde (XEH_postInitClient) : textures et rafraîchissement
       ["surface", [objet, dalle, active]]  client : prépare la dalle pour une image (matière d'écran, dalles superposées
                                            masquées) ou remet tout (aussi pour fn_screenCast et fn_tocCam)
+      ["orig", [objet, dalle]]             texture d'origine de la dalle (écrans COMSPEC : celle de la config)
+      ["paint", [objet, dalle, texture]]   pose l'image (fn_screenCast, fn_tocCam aussi) : dalles recopiées
+                                           (comspec_screenMirror), tableau-toile : sur sa surface de projection
+    Écrans COMSPEC (comspec_screen=1 : COMSPEC_ATAK_Screen_*, modèles du jeu) : dalle 0 seule (dalles superposées vides
+    dans la config), matières d'écran du mod (comspec_screenMat). Toiles (comspec_projBoard=1 : tableau blanc du jeu) :
+    image sur la surface posée devant le tableau (fn_projector, COMSPEC_ATAK_ProjPlane), seulement si un projecteur
+    allumé l'éclaire (COMSPEC_ATAK_ProjLit sur chaque poste).
       ["load", display]                    onLoad du display de la texture
       ["initServer"]                       serveur (XEH_postInitServer)
       ["aceInit"]                          ACE sur les classes d'écran du jeu (partout) : TOC, PIP, diapositives
@@ -66,6 +73,11 @@ private _casting = {
     params ["_o"];
     (count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) >= 5
 };
+// Toile de projection : image seulement quand un projecteur allumé l'éclaire (fn_projector, contrôle de ce poste).
+private _lit = {
+    params ["_o"];
+    (getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}
+};
 
 switch (_mode) do {
     case "initServer": {
@@ -77,7 +89,12 @@ switch (_mode) do {
         true
     };
     case "classes": {
+        // Écrans COMSPEC en tête (modèles du jeu réglés pour l'image, fiables jour et nuit), puis les écrans du jeu.
         ([
+            ["Grand écran TOC sur trépied (COMSPEC)", "COMSPEC_ATAK_Screen_Tripod"],
+            ["Double écran TOC sur trépied (COMSPEC)", "COMSPEC_ATAK_Screen_Dual"],
+            ["Téléviseur TOC (COMSPEC)", "COMSPEC_ATAK_Screen_Wall"],
+            ["Moniteur TOC de bureau (COMSPEC)", "COMSPEC_ATAK_Screen_Desk"],
             ["Grand écran sur trépied", "Land_TripodScreen_01_large_F"],
             ["Grand écran sur trépied (noir)", "Land_TripodScreen_01_large_black_F"],
             ["Grand écran sur trépied (sable)", "Land_TripodScreen_01_large_sand_F"],
@@ -168,16 +185,28 @@ switch (_mode) do {
         // matière d'écran du mod (celle de la tablette JPC, jour / nuit), comme le faisait l'ancien pack TOC (matière retirée).
         _a params [["_o", objNull], ["_sel", 0], ["_on", true]];
         if (isNull _o) exitWith { false };
+        // Tableau-toile : la surface de projection posée devant lui reçoit la matière.
+        if ((getNumber (configOf _o >> "comspec_projBoard")) > 0) then { _o = _o getVariable ["COMSPEC_ATAK_ProjPlane", objNull]; _sel = 0; };
+        if (isNull _o) exitWith { false };
         private _prep = _o getVariable ["COMSPEC_ATAK_SurfPrep", []];
         if (!_on) exitWith {
             if (_prep isEqualTo []) exitWith { false };
             _prep params ["_ps", "_mat", "_sibs"];
             _o setObjectMaterial [_ps, _mat];
             { _o setObjectTexture _x; } forEach _sibs;
+            // Dalles recopiées (double écran) : matière de la config remise.
+            private _mats = getArray (configOf _o >> "hiddenSelectionsMaterials");
+            { _o setObjectMaterial [_x, _mats param [_x, ""]]; } forEach (getArray (configOf _o >> "comspec_screenMirror"));
             _o setVariable ["COMSPEC_ATAK_SurfPrep", nil];
             true
         };
         if (_prep isNotEqualTo [] && {(_prep select 0) isNotEqualTo _sel}) then { ["surface", [_o, 0, false]] call _fn; _prep = []; };
+        // Écran ou toile COMSPEC : une seule dalle, rien à masquer ; matière d'origine et matières jour / nuit de la config.
+        private _own = getArray (configOf _o >> "comspec_screenMat");
+        if (_prep isEqualTo [] && {(count _own) >= 2}) then {
+            _prep = [_sel, (getArray (configOf _o >> "hiddenSelectionsMaterials")) param [_sel, ""], [], ""];
+            _o setVariable ["COMSPEC_ATAK_SurfPrep", _prep];
+        };
         if (_prep isEqualTo []) then {
             private _names = (getArray (configOf _o >> "hiddenSelections")) apply { toLower _x };
             private _texs = getObjectTextures _o;
@@ -193,9 +222,43 @@ switch (_mode) do {
             ["INFO", "TOC", format ["Écran %1 : image sur la dalle %2 (%3), matière d'origine %4, %5 dalle(s) masquée(s)",
                 typeOf _o, _sel, _names param [_sel, "?"], [_prep select 1, "aucune"] select ((_prep select 1) isEqualTo ""), count _sibs]] call comspec_atak_native_fnc_log;
         };
-        private _mat = "\z\comspec_atak_native\addons\main\data\" + (["jpc_screen_night.rvmat", "jpc_screen.rvmat"] select (sunOrMoon > 0.5));
-        if ((_prep select 3) isNotEqualTo _mat) then { _prep set [3, _mat]; _o setObjectMaterial [_sel, _mat]; };
+        private _mat = if ((count _own) >= 2) then { _own select (parseNumber (sunOrMoon <= 0.5)) } else {
+            "\z\comspec_atak_native\addons\main\data\" + (["jpc_screen_night.rvmat", "jpc_screen.rvmat"] select (sunOrMoon > 0.5))
+        };
+        if ((_prep select 3) isNotEqualTo _mat) then {
+            _prep set [3, _mat];
+            _o setObjectMaterial [_sel, _mat];
+            { _o setObjectMaterial [_x, _mat]; } forEach (getArray (configOf _o >> "comspec_screenMirror"));
+        };
         true
+    };
+    case "paint": {
+        // Image (ou texture d'origine) posée sur ce poste. Double écran : même image sur les dalles recopiées.
+        // Tableau-toile : sur la surface de projection de fn_projector (rien tant qu'elle n'est pas posée).
+        _a params [["_o", objNull], ["_sel", 0], ["_tex", ""]];
+        if (isNull _o) exitWith { false };
+        if ((getNumber (configOf _o >> "comspec_projBoard")) > 0) exitWith {
+            private _pl = _o getVariable ["COMSPEC_ATAK_ProjPlane", objNull];
+            if (!isNull _pl) then { _pl setObjectTexture [0, _tex]; };
+            true
+        };
+        _o setObjectTexture [_sel, _tex];
+        private _mir = getArray (configOf _o >> "comspec_screenMirror");
+        if (_mir isNotEqualTo []) then {
+            private _def = getArray (configOf _o >> "hiddenSelectionsTextures");
+            private _back = _tex isEqualTo (_def param [_sel, ""]);
+            { _o setObjectTexture [_x, [_tex, _def param [_x, ""]] select _back]; } forEach _mir;
+        };
+        true
+    };
+    case "orig": {
+        // Texture d'origine d'une dalle : écran ou toile COMSPEC, celle de la config (jamais l'image d'un autre affichage
+        // restée posée) ; toile : fn_projector tient aussi COMSPEC_ATAK_TocOrig / ScreenOrig (vide si enroulée).
+        _a params [["_o", objNull], ["_sel", 0]];
+        if (isNull _o) exitWith { "" };
+        if ((getNumber (configOf _o >> "comspec_projBoard")) > 0) exitWith { "" };
+        if ((getNumber (configOf _o >> "comspec_screen")) > 0) exitWith { (getArray (configOf _o >> "hiddenSelectionsTextures")) param [_sel, ""] };
+        (getObjectTextures _o) param [_sel, ""]
     };
     case "load": {
         // Le display de la texture arrive ici à sa création : il appartient à l'écran en attente (un seul à la fois).
@@ -235,7 +298,7 @@ switch (_mode) do {
         {
             private _o = _x;
             private _cfg = [_o] call _cfgOf;
-            private _want = (count _cfg) >= 8 && {_o in _reg} && {alive _o} && {(_cam distance _o) < 150} && {[_o] call _sideOk};
+            private _want = (count _cfg) >= 8 && {_o in _reg} && {alive _o} && {(_cam distance _o) < 150} && {[_o] call _sideOk} && {[_o] call _lit};
             private _tex = _o getVariable ["COMSPEC_ATAK_TocTex", ""];
             if (_want) then {
                 if !(_o getVariable ["COMSPEC_ATAK_TocAct", false]) then {
@@ -249,7 +312,7 @@ switch (_mode) do {
                         // Diapositive déjà posée par fn_screenCast sur ce poste (cas des autres joueurs que le diffuseur) :
                         // ne pas la recouvrir par la texture d'origine, ni défaire la préparation de la dalle.
                         if (!(_o in _live) && {(_o getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isEqualTo ""}) then {
-                            _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+                            ["paint", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]] call _fn;
                             ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], false]] call _fn;
                         };
                         _o setVariable ["COMSPEC_ATAK_TocTex", ""];
@@ -263,12 +326,12 @@ switch (_mode) do {
                     uiNamespace setVariable ["COMSPEC_ATAK_TocSeq", _n];
                     _tex = format ["comspec_atak_toc_%1", _n];
                     private _sel = [_o, _cfg select 2] call _face;
-                    if (isNil { _o getVariable "COMSPEC_ATAK_TocOrig" }) then { _o setVariable ["COMSPEC_ATAK_TocOrig", (getObjectTextures _o) param [_sel, ""]]; };
+                    if (isNil { _o getVariable "COMSPEC_ATAK_TocOrig" }) then { _o setVariable ["COMSPEC_ATAK_TocOrig", ["orig", [_o, _sel]] call _fn]; };
                     _o setVariable ["COMSPEC_ATAK_TocTex", _tex];
                     _o setVariable ["COMSPEC_ATAK_TocSel", _sel];
                     _pend = [_o, diag_tickTime, _tex];
                     uiNamespace setVariable ["COMSPEC_ATAK_TocPending", _pend];
-                    _o setObjectTexture [_sel, format ["#(rgb,%1,%2,1)ui(""COMSPEC_RscTocScreenTexture"",""%3"")", _texW, _texH, _tex]];
+                    ["paint", [_o, _sel, format ["#(rgb,%1,%2,1)ui(""COMSPEC_RscTocScreenTexture"",""%3"")", _texW, _texH, _tex]]] call _fn;
                     ["surface", [_o, _sel, true]] call _fn;
                     _local pushBackUnique _o;
                 };
@@ -291,7 +354,7 @@ switch (_mode) do {
             } else {
                 // Trop loin, retiré ou détruit : texture d'origine remise, display abandonné.
                 if (_tex isNotEqualTo "") then {
-                    _o setObjectTexture [_o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]];
+                    ["paint", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]] call _fn;
                     ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], false]] call _fn;
                     _o setVariable ["COMSPEC_ATAK_TocTex", ""];
                     _disps deleteAt _tex;
@@ -807,6 +870,8 @@ switch (_mode) do {
         if (isNull _o || {!hasInterface} || {isNil "ace_interact_menu_fnc_addActionToObject"}) exitWith { false };
         ["aceInit"] call _fn;
         if ((typeOf _o) in (missionNamespace getVariable ["COMSPEC_ATAK_WallClasses", []])) exitWith { false };
+        // Toile de projection : pilotée depuis son projecteur (fn_projector, même sous-menus), pas de second menu.
+        if ((getNumber (configOf _o >> "comspec_projBoard")) > 0) exitWith { false };
         if (_o getVariable ["COMSPEC_ATAK_WallObj", false]) exitWith { false };
         _o setVariable ["COMSPEC_ATAK_WallObj", true];
         [_o, 0, [], missionNamespace getVariable "COMSPEC_ATAK_WallRoot"] call ace_interact_menu_fnc_addActionToObject;
