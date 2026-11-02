@@ -81,7 +81,7 @@ require base_path('views/partials/alert_banners.php');
                 <span>Carte ATAK, Overwatch, équipes de feu, matériel et relais, avec une gestion allégée des membres. Effectifs, recrutement et formations restent hors périmètre.</span>
                 <a href="<?= htmlspecialchars(url('documentation/profils'), ENT_QUOTES, 'UTF-8') ?>">Comprendre les profils</a>
                 <?php if ($canAdjustTenantType): ?>
-                <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>">
+                <a href="<?= htmlspecialchars(url('back-office/community') . '?onglet=profil#profil', ENT_QUOTES, 'UTF-8') ?>">
                     Changer de profil
                 </a>
                 <?php endif; ?>

@@ -18,7 +18,7 @@ $axesReady = !empty($stats['axes_schema_ready']);
             <strong>qualification</strong> (validité admin ≠ currency) et <strong>capacité opérationnelle</strong>.
             Un Opérateur confirmé peut être ACTING Team Leader, Medic VALID mais NON CURRENT → readiness 82&nbsp;% et NON DEPLOYABLE.
         </p>
-        <a href="<?= $h(url('back-office/organisation-effectifs')) ?>" class="text-sm font-semibold text-emerald-800 hover:underline">← Centre effectifs</a>
+        <a href="<?= $h(orbat_page_url()) ?>" class="text-sm font-semibold text-emerald-800 hover:underline">← Centre effectifs</a>
     </header>
 
     <?php

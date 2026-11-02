@@ -19,8 +19,6 @@ return [
         ['path' => 'jnet/unite', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Fiche d’unité', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'jnet', 'group' => 'Unité', 'kicker' => 'UNITÉ · EXTRANET', 'title' => 'Tableau d’unité', 'subtitle' => 'Situation réelle de l’unité : personnel, opérations, renseignement et documents.', 'css' => ['jnet_portal.css', 'jnet_bo_embed.css']],
         ['path' => 'back-office', 'group' => 'Pilotage', 'kicker' => 'PILOTAGE', 'title' => 'Tableau de bord', 'subtitle' => 'Synthèse de la communauté, indicateurs et accès rapides.'],
-        ['path' => 'back-office/centre-operations', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations', 'subtitle' => 'Les demandes qui attendent une décision, les incidents en cours et l’historique des actions.'],
-        ['path' => 'back-office/operations-admin', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations', 'subtitle' => 'Les demandes qui attendent une décision, les incidents en cours et l’historique des actions.'],
         ['path' => 'back-office/tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Tableau opérationnel', 'subtitle' => 'Préparez et publiez les fiches que vos membres lisent sur leur mur : permanences, consignes, événements et messages urgents.', 'css' => ['operational-board.css', 'back-office-tableau-operationnel.css'], 'quick' => [
             ['label' => 'Événements', 'href' => 'back-office/events'],
             ['label' => 'Articles', 'href' => 'back-office/articles'],
@@ -33,13 +31,12 @@ return [
         ['path' => 'back-office/configuration-initiale', 'group' => 'Communauté', 'kicker' => 'PREMIERS PAS', 'title' => 'Configuration initiale', 'subtitle' => 'Votre communauté est en ligne. Il reste cinq réglages essentiels : identité, contact, mode d’inscription, modules visibles et rôle attribué aux nouveaux membres.', 'css' => ['back-office-initial-setup.css'], 'quick' => [
             ['label' => 'Enregistrer', 'href' => 'back-office/configuration-initiale#initial-setup-actions'],
             ['label' => 'Besoin d’aide ?', 'href' => 'back-office/onboarding-recovery'],
-            ['label' => 'Paramètres', 'href' => 'back-office/organisation/parametres'],
+            ['label' => 'Paramètres', 'href' => 'back-office/community'],
         ]],
         ['path' => 'back-office/community/presentation', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Page d’accueil publique', 'subtitle' => 'Ce que voient les visiteurs avant de rejoindre : votre page publique, votre carte dans le registre des unités, le contact et le formulaire de candidature.', 'css' => ['back-office-community-settings.css']],
         ['path' => 'back-office/community/discord', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annoncer sur Discord', 'subtitle' => 'Votre communauté dans le salon des communautés du Discord Athena : aperçu de votre post, demande de publication ou de mise à jour, validée par l’administration du site.', 'css' => ['discord-showcase.css']],
         ['path' => 'back-office/community/inscription', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
         ['path' => 'back-office/community', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
-        ['path' => 'back-office/organisation/parametres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Tout ce qui définit votre communauté : identité, page publique, inscription, écran de connexion et portail des membres.', 'css' => ['back-office-community-settings.css']],
         ['path' => 'back-office/media', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MÉDIAS', 'title' => 'Médias de la communauté', 'subtitle' => 'Les photos et vidéos affichées sur votre page publique.', 'css' => ['back-office-media.css'], 'quick' => [
             ['label' => 'Vitrine publique', 'href' => 'back-office/community/presentation'],
         ]],
@@ -114,10 +111,6 @@ return [
         ['path' => 'back-office/invitations', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · INVITATIONS', 'title' => 'Nouvelle invitation', 'subtitle' => 'Envoyez un lien par e-mail. Vous pouvez choisir dès maintenant son unité d’arrivée.', 'css' => ['invitations-sheet.css'], 'quick' => [
             ['label' => 'Envoyées', 'href' => 'back-office/invitations/envoyees'],
             ['label' => 'Membres', 'href' => 'back-office/users'],
-        ]],
-        ['path' => 'back-office/organisation-effectifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Organisation', 'subtitle' => 'Vue d’ensemble sans noms : organigramme, rôles, référentiels et indicateurs utiles aux fiches personnel.', 'css' => ['back-office-effectifs-hub.css'], 'quick' => [
-            ['label' => 'Tableur des membres', 'href' => 'back-office/ressources/effectifs'],
-            ['label' => 'Tableau de bord', 'href' => 'back-office'],
         ]],
         ['path' => 'back-office/personnel/corrections', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RH', 'title' => 'Corrections de fiches', 'subtitle' => 'Validez les corrections demandées par les membres, ou corrigez une fiche vous-même.', 'css' => ['back-office-corrections.css', 'personnel-dossier.css'], 'quick' => [
             ['label' => 'Effectifs', 'href' => 'back-office/ressources/effectifs'],

@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UserRepository;
+use App\Services\Media\MissingUserMediaScanner;
 use App\Services\Organization\OrbatBilletService;
 use App\Support\BilletOccupancyType;
 use App\Support\OrgDomainModel;
@@ -67,7 +68,25 @@ final class OrganizationDataQualityController
             'occupancyTypes' => BilletOccupancyType::options(),
             'schemaReady' => $this->billetService->schemaReady(),
             'csrfToken' => Csrf::token(),
+            'missingMediaUsers' => $this->missingMediaUsers($tenantId),
         ]);
+    }
+
+    /**
+     * Comptes dont la photo, le portrait ou la bannière pointe vers un fichier absent du disque
+     * (chemin resté en base après une migration). Liste reprise de l’ancien centre d’opérations.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function missingMediaUsers(int $tenantId): array
+    {
+        try {
+            $scan = (new MissingUserMediaScanner())->scanTenant($tenantId, 300);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return is_array($scan['users'] ?? null) ? array_values($scan['users']) : [];
     }
 
     /**

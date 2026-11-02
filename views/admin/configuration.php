@@ -123,7 +123,7 @@ $sections = [
             ['href' => url('back-office/invitations'), 'title' => 'Invitations', 'desc' => 'Inviter par e-mail avec rôle proposé.', 'keywords' => 'inviter email invitation'],
             ['href' => url('back-office/roles-permissions'), 'title' => 'Rôles & permissions', 'desc' => 'Matrice d’accès par module et titulaires.', 'keywords' => 'droits permission matrice acces'],
             ['href' => url('back-office/roles'), 'title' => 'Rôles communautaires', 'desc' => 'Liste des rôles et détail des droits.', 'keywords' => 'role liste droits'],
-            ['href' => url('back-office/roles-functions'), 'title' => 'Rôles & fonctions (toile)', 'desc' => 'Catalogue FR/US, graphe, unités, templates.', 'keywords' => 'toile graphe catalogue fonction'],
+            ['href' => effectifs_workspace_url('fonctions'), 'title' => 'Fonctions et emplois', 'desc' => 'Catalogue des emplois, attributions et kits.', 'keywords' => 'toile graphe catalogue fonction emploi'],
             ['href' => url('back-office/roles/presets'), 'title' => 'Profils de permissions', 'desc' => 'Appliquer un jeu complet de droits à un rôle en une fois (hors droits plateforme).', 'keywords' => 'profil preset modele droits'],
         ],
     ],

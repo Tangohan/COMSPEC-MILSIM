@@ -111,7 +111,7 @@ $boNavRoleplayDeadlines = $p === 'back-office/roleplay-followup/echeances'
 $boNavRoleplayFollowup = (str_starts_with($p, 'back-office/roleplay-followup') && !$boNavRoleplayDeadlines);
 $boNavRoleplayImmersion = str_starts_with($p, 'back-office/roleplay/immersion');
 $boNavRoleplaySection = $boNavRoleplayFollowup || $boNavRoleplayDeadlines || $boNavRoleplayImmersion || str_starts_with($p, 'back-office/roleplay/');
-$boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
+$boNavEff = $p === 'orbat';
 $boNavCatalog = $p === 'back-office/organisation/catalogue' || str_starts_with($p, 'back-office/organisation/catalogue/');
 $boNavStructure = $p === 'back-office/organisation/structure' || str_starts_with($p, 'back-office/organisation/structure/');
 $boNavEffWorkspace = $p === $ewPath || str_starts_with($p, $ewPath . '/');

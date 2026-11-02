@@ -155,6 +155,7 @@ $rhChildren = [
     [
         'label' => 'Suivi des dossiers',
         'children' => [
+            ['label' => 'À traiter', 'href' => effectifs_workspace_url('a-traiter'), 'active' => $navAt($effPath . '/a-traiter')],
             ['label' => 'Alertes RH', 'href' => effectifs_workspace_url('alertes'), 'active' => $navAt($effPath . '/alertes')],
             ['label' => 'Corrections de fiches', 'href' => url('back-office/personnel/corrections'), 'active' => $navAt('back-office/personnel/corrections')],
             ['label' => 'Demandes d’accès élevé', 'href' => effectifs_workspace_url('elevations'), 'active' => $navAt($effPath . '/elevations')],
@@ -179,11 +180,9 @@ $orbatChildren = [
     [
         'label' => 'Structure',
         'children' => [
-            ['label' => 'Organigramme', 'href' => url('back-office/organisation/structure'), 'active' => !empty($boNavStructure)],
-            ['label' => 'Unités', 'href' => url('back-office/units'), 'active' => $navAt('back-office/units')],
+            ['label' => 'Organigramme', 'href' => orbat_page_url(), 'active' => !empty($boNavStructure) || $p === 'orbat'],
             ['label' => 'Groupes', 'href' => url('back-office/groups'), 'active' => $navAt('back-office/groups')],
             ['label' => 'Équipes', 'href' => url('back-office/teams'), 'active' => $navAt('back-office/teams')],
-            ['label' => 'Postes', 'href' => url('back-office/positions'), 'active' => $navAt('back-office/positions')],
             ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
         ],
     ],
@@ -264,6 +263,14 @@ $eventsChildren = [
 $aarChildren = [
     ['label' => 'Comptes rendus post-op', 'href' => url('back-office/atak/comptes-rendus'), 'active' => $boNavAar],
     ['label' => 'CR des joueurs (fin d’op)', 'href' => url('back-office/atak/suivi-cr'), 'active' => !empty($boNavDebrief)],
+    ['label' => 'Remontées des joueurs', 'href' => url('back-office/remontees'), 'active' => $navAt('back-office/remontees')],
+];
+
+// Missions : le portail, le cycle (briefing → exécution → après-action) et les diapositives vues sur le téléphone en jeu.
+$missionsChildren = [
+    ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'active' => $boNavMissionsPortal],
+    ['label' => 'Cycle de mission', 'href' => url('back-office/atak/cycle-mission'), 'active' => $navAt('back-office/atak/cycle-mission')],
+    ['label' => 'Diapositives de briefing', 'href' => url('back-office/atak/briefing-slides'), 'active' => $navAt('back-office/atak/briefing-slides')],
 ];
 
 $cooperationChildren = [
@@ -547,7 +554,6 @@ if ($isOperatorBoNav) {
             'label' => 'PILOTAGE',
             'items' => array_values(array_filter([
                 ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
-                ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations'), 'icon' => 'ops', 'active' => $navAt('back-office/centre-operations', 'back-office/operations-admin')],
                 $canMurOperationnel
                     ? ['label' => 'Tableau opérationnel', 'href' => url('back-office/tableau-operationnel'), 'icon' => 'wall', 'active' => $boNavOpsBoard || $boNavPortalOpsBoard]
                     : null,
@@ -591,9 +597,8 @@ if ($isOperatorBoNav) {
             'items' => [
                 [
                     'label' => 'Organisation',
-                    'href' => url('back-office/organisation-effectifs'),
+                    'href' => orbat_page_url(),
                     'icon' => 'orbat',
-                    'active' => $p === 'back-office/organisation-effectifs',
                     'children' => $orbatChildren,
                 ],
                 [
@@ -629,7 +634,12 @@ if ($isOperatorBoNav) {
                     'children' => $eventsChildren,
                 ],
                 ['label' => 'Planification', 'href' => url('back-office/planification'), 'icon' => 'cal', 'active' => $boNavPlanning],
-                ['label' => 'Portail missions', 'href' => url('back-office/missions'), 'icon' => 'orbat', 'active' => $boNavMissionsPortal],
+                [
+                    'label' => 'Missions',
+                    'href' => url('back-office/missions'),
+                    'icon' => 'orbat',
+                    'children' => $missionsChildren,
+                ],
                 ['label' => 'Carte tactique', 'href' => url('back-office/operations/carte-tactique'), 'icon' => 'ops', 'active' => $navTacticalMapActive],
                 [
                     'label' => 'Comptes rendus',

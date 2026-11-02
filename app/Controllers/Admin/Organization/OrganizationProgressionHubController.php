@@ -33,7 +33,7 @@ final class OrganizationProgressionHubController
         if (!$this->canView()) {
             Session::flash('error', 'Vous n’avez pas l’habilitation pour la progression des personnels.');
 
-            return Response::redirect(url('back-office/organisation-effectifs'));
+            return Response::redirect(url('back-office'));
         }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {

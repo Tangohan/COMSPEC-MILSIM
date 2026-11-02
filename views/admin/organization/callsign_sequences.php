@@ -20,7 +20,7 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
         </p>
         <div class="flex flex-wrap gap-2 pt-1">
             <a href="<?= $h(url('back-office/organisation/progression')) ?>" class="text-sm font-semibold text-emerald-800 hover:underline">← Progression &amp; carrière</a>
-            <a href="<?= $h(url('back-office/organisation-effectifs')) ?>" class="text-sm font-semibold text-slate-600 hover:underline">Centre effectifs</a>
+            <a href="<?= $h(orbat_page_url()) ?>" class="text-sm font-semibold text-slate-600 hover:underline">Centre effectifs</a>
         </div>
     </header>
 

@@ -682,9 +682,6 @@ return function (Router $router) {
     $router->post('/admin/system/advanced-fiche-edit/grant', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'grant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/advanced-fiche-edit/{id}/revoke', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     /* Ancienne URL back-office → admin plateforme */
-    $router->get('/back-office/personnel/advanced-edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
-    $router->post('/back-office/personnel/advanced-edit/grant', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
-    $router->post('/back-office/personnel/advanced-edit/{id}/revoke', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/system/advanced-fiche-edit')), [AuthMiddleware::class]);
     $router->get('/personnel/tutorials', [PersonnelController::class, 'tutorials'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/actualiser', [RhWorkspaceController::class, 'refreshFromDossier'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/absences', [RhWorkspaceController::class, 'storeAbsence'], [AuthMiddleware::class]);
@@ -1376,9 +1373,6 @@ return function (Router $router) {
     $router->get('/back-office/ma-situation/carriere', [MemberSituationController::class, 'carriere'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/decorations', [MemberSituationController::class, 'decorations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/dotation', [MemberSituationController::class, 'dotation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/centre-operations', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/operations-admin', [OrganizationDashboardController::class, 'operationsCenter'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/organisation-effectifs', [OrganizationDashboardController::class, 'effectifsHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/anciennete', [OrganizationSeniorityAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete', [OrganizationSeniorityAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete/initialiser', [OrganizationSeniorityAdminController::class, 'seedDefaults'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1425,7 +1419,6 @@ return function (Router $router) {
     $router->post('/back-office/organisation/unites/{id}', [UnitSheetController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/unites/{id}/activites', [UnitSheetController::class, 'storeActivity'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/unites/{id}/postes', [UnitSheetController::class, 'savePosts'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres/accueil-connexion', [OrganizationSettingsController::class, 'storeLoginAccueilImage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/parametres/accueil-connexion/defilement', [OrganizationSettingsController::class, 'saveLoginAccueilSlideshow'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1462,7 +1455,6 @@ return function (Router $router) {
     $router->post('/back-office/media/collections/{id}', [CommunityMediaAdminController::class, 'updateCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/media/collections/{id}/delete', [CommunityMediaAdminController::class, 'deleteCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-recovery', [OrganizationCommunityController::class, 'onboardingRecovery'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/onboarding-members', [OrganizationCommunityController::class, 'onboardingMembers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $mwIntegration = [AuthMiddleware::class, OrganizationAdminMiddleware::class];
     $router->get('/back-office/integration-membres', [MemberIntegrationAdminController::class, 'index'], $mwIntegration);
     $router->get('/back-office/integration-membres/modeles', [MemberIntegrationAdminController::class, 'templates'], $mwIntegration);
@@ -1618,7 +1610,6 @@ return function (Router $router) {
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/referentiel', [RolesFunctionsAdminController::class, 'referentiel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/catalogue', [RolesFunctionsAdminController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/roles-functions/graph.json', [RolesFunctionsAdminController::class, 'graphJson'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/definitions/store', [RolesFunctionsAdminController::class, 'storeDefinition'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/relations/store', [RolesFunctionsAdminController::class, 'storeRoleRelation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/required/save', [RolesFunctionsAdminController::class, 'saveRequiredDefinitions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2542,6 +2533,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/signalements/{id}/liberer', [ReportsModerationController::class, 'unclaimReport'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
     $router->post('/back-office/signalements/{id}/commenter', [ReportsModerationController::class, 'addReportComment'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
     $router->post('/back-office/signalements/{id}/rouvrir', [ReportsModerationController::class, 'reopenReport'], [AuthMiddleware::class, ModerationConsoleMiddleware::class]);
+    // Pages retirées ou fusionnées en onglets : redirection permanente (voir App\Support\BackOfficeLegacyRedirects).
+    foreach (array_keys(\App\Support\BackOfficeLegacyRedirects::MAP) as $legacyBoPath) {
+        $router->get('/' . $legacyBoPath, static fn (\App\Core\Request $r, array $p): \App\Core\Response => \App\Support\BackOfficeLegacyRedirects::response($legacyBoPath, $r->queryParams()));
+    }
     foreach (['/back-office/forum-moderation', '/admin/forum-moderation'] as $legacyModerationPath) {
         $router->get($legacyModerationPath, fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/signalements')), [AuthMiddleware::class]);
     }
