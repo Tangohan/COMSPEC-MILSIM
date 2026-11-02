@@ -29,6 +29,7 @@ $profileLabels = [
     OrgAdequacySettings::PROFILE_AUTO => 'Selon la doctrine de la communauté',
     EchelonStandards::PROFILE_FR => 'Référentiel français',
     EchelonStandards::PROFILE_US => 'Référentiel américain',
+    EchelonStandards::PROFILE_GB => 'Référentiel britannique',
     EchelonStandards::PROFILE_MY => 'Référentiel malaisien (modèle britannique)',
     EchelonStandards::PROFILE_DE => 'Référentiel allemand (Bundeswehr)',
     EchelonStandards::PROFILE_RU => 'Référentiel russe',

@@ -1,0 +1,2786 @@
+{
+  "pack": "gb",
+  "country": "GB",
+  "official_lang": "en",
+  "label": {
+    "fr": "Brevets et qualifications militaires britanniques (British Armed Forces)",
+    "en": "British military badges and qualifications (British Armed Forces)"
+  },
+  "disclaimer": {
+    "fr": "Qualification de jeu inspirée d’un brevet ou d’une qualification militaire britannique réel(le), sans valeur réelle.",
+    "en": "In-game qualification inspired by a real British military badge or qualification, with no real-world value."
+  },
+  "issuer": {
+    "name": "British Armed Forces (référence)",
+    "short_name": "British Armed Forces",
+    "description": {
+      "fr": "Émetteur de référence des qualifications importées du catalogue britannique quand l’école n’est pas précisée : qualifications de jeu, sans valeur réelle.",
+      "en": "Reference issuer for qualifications imported from the British catalogue when no school is specified: in-game qualifications, with no real-world value."
+    }
+  },
+  "compiled_at": "2026-11-02",
+  "sources_note": {
+    "fr": "Compilé le 2 novembre 2026 à partir de sources publiques : pages officielles de la British Army (army.mod.uk, jobs.army.mod.uk, Soldier Magazine), de la Royal Navy (royalnavy.mod.uk, dont le catalogue Royal Navy Defence Training), de la Royal Air Force (raf.mod.uk), de la Defence Academy (da.mod.uk), GOV.UK et Hansard, catalogue International Defence Training (Army) 2026, prospectus de la Defence Medical Academy, et Wikipédia en complément ; textes reformulés, rien de classifié ; un champ vide signifie qu’aucune source ouverte ne le précise.",
+    "en": "Compiled on 2 November 2026 from public sources: official British Army (army.mod.uk, jobs.army.mod.uk, Soldier Magazine), Royal Navy (royalnavy.mod.uk, including the Royal Navy Defence Training catalogue), Royal Air Force (raf.mod.uk) and Defence Academy (da.mod.uk) pages, GOV.UK and Hansard, the 2026 International Defence Training (Army) catalogue, the Defence Medical Academy prospectus, and Wikipedia as a complement; texts are paraphrased, nothing classified; an empty field means no open source specifies it."
+  },
+  "entries": [
+    {
+      "id": "gb-uksf-selection",
+      "code": "GB-UKSF-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection des forces spéciales britanniques (UKSF)",
+        "en": "UK Special Forces Selection (UKSF)"
+      },
+      "official_name": "UK Special Forces Selection",
+      "short_name": "UKSF Selection",
+      "description": {
+        "fr": "Sélection commune d’accès au 22 SAS et au SBS (et, pour la réserve, aux 21 et 23 SAS et au SBS(R)). Elle s’ouvre par un Briefing Course éprouvant de six jours, se poursuit par la phase Aptitude (marches progressives chronométrées sur terrain difficile, conclues par une marche d’endurance), puis par une formation aux procédures et tactiques des forces spéciales (SOPTAC) et un module commun de cinq semaines (surveillance-reconnaissance, transmissions, SERE). La réussite donne le béret et le ceinturon du régiment.",
+        "en": "Joint selection for 22 SAS and the SBS (and, for reservists, 21 and 23 SAS and SBS(R)). It opens with a demanding six-day Briefing Course, continues with the Aptitude phase (progressive timed marches over arduous terrain, ending with an endurance march), then special forces procedures and tactics training (SOPTAC) and a common five-week module (surveillance and reconnaissance, signals, SERE). Success earns the regiment's beret and belt."
+      },
+      "body": {
+        "fr": "Groupe des forces spéciales britanniques (UKSF), sous l’autorité du Director Special Forces",
+        "en": "UK Special Forces group, under the Director Special Forces"
+      },
+      "issuer": {
+        "name": "United Kingdom Special Forces",
+        "short_name": "UKSF"
+      },
+      "issuer_key": "gb-uksf",
+      "reference": {
+        "fr": "Étapes de sélection publiées par l’Army (page 21 & 23 SAS) et la Royal Navy (page SBS Reserve)",
+        "en": "Selection stages published by the Army (21 & 23 SAS page) and the Royal Navy (SBS Reserve page)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire en service (régulier ou réserve) ; pour la réserve SAS, 48 ans et 364 jours au plus au début de l’Aptitude",
+          "Pour le SBS(R) : service militaire antérieur et 42 ans et 6 mois au plus au début de l’Aptitude",
+          "Disponibilité pour une formation longue et intense et pour les déploiements outre-mer"
+        ],
+        "en": [
+          "Serving military member (regular or reserve); for SAS reserve, aged 48 years 364 days or under at the start of Aptitude",
+          "For SBS(R): previous military service and aged 42 years 6 months or under at the start of Aptitude",
+          "Able to commit to long, intense training and to overseas deployments"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/uk-special-forces-reserve/21-23-special-air-service-sas/",
+          "title": "21 & 23 Special Air Service (SAS) (army.mod.uk)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/organisation/units-and-squadrons/special-boat-service/special-boat-service/special-boat-service-reserve",
+          "title": "Special Boat Service Reserve (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://soldier.army.mod.uk/issues/january-2025/soldier-life/the-pinnacle-of-soldiering-what-you-might-not-know-about-joining-uk-special-forces",
+          "title": "What you might not know about joining UK Special Forces (Soldier Magazine, Jan 2025)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_Kingdom_Special_Forces_Selection",
+          "title": "United Kingdom Special Forces Selection – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-srr-selection",
+      "code": "GB-SRR-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection du Special Reconnaissance Regiment",
+        "en": "Special Reconnaissance Regiment selection"
+      },
+      "official_name": "Special Reconnaissance Regiment Selection",
+      "short_name": "SRR Selection",
+      "description": {
+        "fr": "Sélection d’entrée du Special Reconnaissance Regiment, régiment du groupe UKSF créé en 2005 pour la reconnaissance et la surveillance. Elle est ouverte aux volontaires, hommes et femmes, des trois armées. Le déroulé et la durée de la sélection ne sont pas publiés officiellement : qualification de jeu à décrire de façon générique (aptitude physique, surveillance, discrétion, résistance psychologique).",
+        "en": "Entry selection for the Special Reconnaissance Regiment, the UKSF regiment formed in 2005 for reconnaissance and surveillance. It is open to male and female volunteers from all three services. The course outline and length are not officially published: an in-game qualification to be described generically (fitness, surveillance, discretion, psychological resilience)."
+      },
+      "body": {
+        "fr": "Special Reconnaissance Regiment (groupe UKSF)",
+        "en": "Special Reconnaissance Regiment (UKSF group)"
+      },
+      "issuer": {
+        "name": "Special Reconnaissance Regiment",
+        "short_name": "SRR"
+      },
+      "issuer_key": "gb-srr",
+      "reference": {
+        "fr": "Déclaration ministérielle écrite du 5 avril 2005 annonçant la création du régiment ; contenu de sélection non public",
+        "en": "Written ministerial statement of 5 April 2005 announcing the regiment; selection content not public"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire en service de l’une des trois armées (selon Wikipédia)"
+        ],
+        "en": [
+          "Serving member of one of the three services (according to Wikipedia)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://publications.parliament.uk/pa/cm200405/cmhansrd/vo050405/wmstext/50405m01.htm",
+          "title": "House of Commons written ministerial statements, 5 April 2005 (Special Reconnaissance Regiment)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Reconnaissance_Regiment",
+          "title": "Special Reconnaissance Regiment – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-sfsg-selection",
+      "code": "GB-SFSG-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection d’entrée du Special Forces Support Group",
+        "en": "Special Forces Support Group selection"
+      },
+      "official_name": "Special Forces Support Group Selection",
+      "short_name": "SFSG Selection",
+      "description": {
+        "fr": "Sélection et formation d’entrée du Special Forces Support Group, unité d’appui direct des forces spéciales créée en 2006 autour du 1st Battalion The Parachute Regiment, avec une compagnie de Royal Marines et un élément du RAF Regiment. Selon Wikipédia, les candidats ont déjà réussi la P Company, l’All Arms Commando Course ou la sélection pré-parachutiste du RAF Regiment ; le contenu détaillé n’est pas publié officiellement.",
+        "en": "Entry selection and training of the Special Forces Support Group, the direct support unit of special forces formed in 2006 around 1st Battalion The Parachute Regiment, with a Royal Marines company and an RAF Regiment element. According to Wikipedia, candidates have already passed P Company, the All Arms Commando Course or the RAF Regiment pre-parachute selection; detailed content is not officially published."
+      },
+      "body": {
+        "fr": "Special Forces Support Group (groupe UKSF)",
+        "en": "Special Forces Support Group (UKSF group)"
+      },
+      "issuer": {
+        "name": "Special Forces Support Group",
+        "short_name": "SFSG"
+      },
+      "issuer_key": "gb-sfsg",
+      "reference": {
+        "fr": "Réponse écrite parlementaire du 12 novembre 2007 sur la création du SFSG ; contenu de sélection non public",
+        "en": "Parliamentary written answer of 12 November 2007 on the formation of the SFSG; selection content not public"
+      },
+      "prerequisites": {
+        "fr": [
+          "Réussite de la P Company, de l’All Arms Commando Course ou de la sélection pré-parachutiste du RAF Regiment (selon Wikipédia)"
+        ],
+        "en": [
+          "Passed P Company, the All Arms Commando Course or the RAF Regiment pre-parachute selection (according to Wikipedia)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://publications.parliament.uk/pa/cm200708/cmhansrd/cm071112/text/71112w0013.htm",
+          "title": "House of Commons written answers, 12 November 2007 (Special Forces Support Group)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Forces_Support_Group",
+          "title": "Special Forces Support Group – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-sf-communicator",
+      "code": "GB-SFC",
+      "category": "communications",
+      "name": {
+        "fr": "Cours de Special Forces Communicator",
+        "en": "Special Forces Communicator course"
+      },
+      "official_name": "UK Special Forces Communicators Course (UKSFCC)",
+      "short_name": "UKSFCC",
+      "description": {
+        "fr": "Qualification des transmetteurs des forces spéciales du 18 (UKSF) Signal Regiment et de sa réserve, le 63 (UKSF) Signal Squadron. Le Special Forces Communicator apprend à mettre en œuvre de nombreux systèmes de transmission, armes et techniques d’insertion. Selon Wikipédia, le parcours comprend un Briefing Course de cinq jours puis un cours d’environ 25 semaines (évaluation technique, transmissions d’appui général et rapproché, aptitude physique, conduite après capture, formation militaire et parachutisme forces spéciales).",
+        "en": "Qualification of special forces communicators of 18 (UKSF) Signal Regiment and its reserve, 63 (UKSF) Signal Squadron. The Special Forces Communicator learns to use numerous communication systems, weapons and insertion techniques. According to Wikipedia, the pathway is a five-day Briefing Course then a course of about 25 weeks (technical trade assessment, general and close support communications, physical aptitude, conduct after capture, military training and special forces parachuting)."
+      },
+      "body": {
+        "fr": "18 (UKSF) Signal Regiment, avec le 63 (UKSF) Signal Squadron pour la réserve",
+        "en": "18 (UKSF) Signal Regiment, with 63 (UKSF) Signal Squadron for reservists"
+      },
+      "issuer": {
+        "name": "18 (UKSF) Signal Regiment",
+        "short_name": "18 (UKSF) Sig Regt"
+      },
+      "issuer_key": "gb-18-uksf-sig-regt",
+      "reference": {
+        "fr": "Page officielle du 63 (UKSF) Signal Squadron (qualification SFC)",
+        "en": "Official 63 (UKSF) Signal Squadron page (SFC qualification)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire en service (régulier ou réserve)",
+          "Réussite du Briefing Course (selon Wikipédia)"
+        ],
+        "en": [
+          "Serving military member (regular or reserve)",
+          "Passed the Briefing Course (according to Wikipedia)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/uk-special-forces-reserve/63-uksf-signal-squadron/",
+          "title": "63 (UKSF) Signal Squadron (army.mod.uk)"
+        },
+        {
+          "url": "https://soldier.army.mod.uk/issues/january-2025/soldier-life/the-pinnacle-of-soldiering-what-you-might-not-know-about-joining-uk-special-forces",
+          "title": "What you might not know about joining UK Special Forces (Soldier Magazine, Jan 2025)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/18_(UKSF)_Signal_Regiment",
+          "title": "18 (UKSF) Signal Regiment – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-ranger-selection",
+      "code": "GB-RQC",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection du Ranger Regiment (Ranger Qualification Course)",
+        "en": "Ranger Regiment selection (Ranger Qualification Course)"
+      },
+      "official_name": "Ranger Qualification Course (RQC)",
+      "short_name": "RQC",
+      "description": {
+        "fr": "Parcours d’accès au Ranger Regiment, régiment d’opérations spéciales terrestres de la British Army : Ranger Preparation Course facultatif, évaluation initiale (RQC(IA)) dès le premier jour (marche de 15 km avec 25 kg), puis Ranger Qualification Course avec épreuves notées : marches rapides de 3,2 km en 18 min et de 4,8 km en 33 min avec 15,5 kg, marche de 19,3 km avec 25 kg en 3 h, niveau 7 du Soldier Conditioning Assessment et test de suspension à la corde.",
+        "en": "Pathway into the Ranger Regiment, the British Army land special operations regiment: optional Ranger Preparation Course, initial assessment (RQC(IA)) from day one (15 km loaded march with 25 kg), then the Ranger Qualification Course with graded tests: speed marches of 3.2 km in 18 min and 4.8 km in 33 min with 15.5 kg, a 19.3 km march with 25 kg in 3 h, level 7 on the Soldier Conditioning Assessment and a rope hang test."
+      },
+      "body": {
+        "fr": "The Ranger Regiment (Land Special Operations Force)",
+        "en": "The Ranger Regiment (Land Special Operations Force)"
+      },
+      "issuer": {
+        "name": "The Ranger Regiment",
+        "short_name": "Ranger Regt"
+      },
+      "issuer_key": "gb-ranger-regiment",
+      "reference": {
+        "fr": "Normes physiques publiées sur la page officielle du Ranger Regiment",
+        "en": "Physical standards published on the official Ranger Regiment page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire en service de la British Army",
+          "Marche de 15 km avec 25 kg (hors eau) réussie le premier jour du RQC(IA)"
+        ],
+        "en": [
+          "Serving British Army soldier or officer",
+          "15 km march with 25 kg (excluding water) passed on day one of the RQC(IA)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/the-ranger-regiment/",
+          "title": "The Ranger Regiment (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/infantry/rifles/the-regular-rifles/",
+          "title": "The Regular Rifles (army.mod.uk)"
+        },
+        {
+          "url": "https://www.gov.uk/government/news/scottish-troops-to-pioneer-armys-new-ranger-regiment",
+          "title": "Scottish troops to pioneer Army's new Ranger Regiment (GOV.UK)"
+        }
+      ]
+    },
+    {
+      "id": "gb-swimmer-canoeist",
+      "code": "GB-SC",
+      "category": "maritime",
+      "name": {
+        "fr": "Swimmer Canoeist (opérateur du SBS)",
+        "en": "Swimmer Canoeist (SBS operator)"
+      },
+      "official_name": "Swimmer Canoeist",
+      "short_name": "SC",
+      "description": {
+        "fr": "Qualification traditionnelle des opérateurs du Special Boat Service, unité de forces spéciales de la Royal Navy spécialisée dans les opérations maritimes (nage de combat, embarcations, insertion depuis la mer). L’accès passe par la sélection commune UKSF ; le contenu de la formation maritime n’est pas publié officiellement. Qualification de jeu à décrire de façon générique.",
+        "en": "Traditional qualification of Special Boat Service operators, the Royal Navy special forces unit specialising in maritime operations (combat swimming, small boats, insertion from the sea). Access is through joint UKSF selection; the content of maritime training is not officially published. An in-game qualification to be described generically."
+      },
+      "body": {
+        "fr": "Special Boat Service (groupe UKSF)",
+        "en": "Special Boat Service (UKSF group)"
+      },
+      "issuer": {
+        "name": "Special Boat Service",
+        "short_name": "SBS"
+      },
+      "issuer_key": "gb-sbs",
+      "reference": {
+        "fr": "Pages officielles du SBS et du SBS(R) ; l’intitulé « Swimmer Canoeist » vient de sources secondaires",
+        "en": "Official SBS and SBS(R) pages; the 'Swimmer Canoeist' title comes from secondary sources"
+      },
+      "prerequisites": {
+        "fr": [
+          "Réussite de la sélection UKSF"
+        ],
+        "en": [
+          "Passed UKSF selection"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/organisation/units-and-squadrons/special-boat-service/special-boat-service",
+          "title": "Special Boat Service (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/organisation/units-and-squadrons/special-boat-service/special-boat-service/special-boat-service-reserve",
+          "title": "Special Boat Service Reserve (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Boat_Service",
+          "title": "Special Boat Service – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-pathfinder-selection",
+      "code": "GB-PF-SEL",
+      "category": "selection",
+      "name": {
+        "fr": "Sélection du Pathfinder Platoon (16 Air Assault Brigade)",
+        "en": "Pathfinder Platoon selection (16 Air Assault Brigade)"
+      },
+      "official_name": "Pathfinder Selection",
+      "short_name": "PF Selection",
+      "description": {
+        "fr": "Sélection d’entrée du Pathfinder Platoon, unité de reconnaissance de la 16 Air Assault Brigade, entraînée à la reconnaissance à longue distance et au parachutisme à haute altitude pour s’infiltrer discrètement et reconnaître et baliser les zones de mise à terre avant la force principale (devise « First in »). Elle est ouverte aux militaires de toute l’Army ; son contenu n’est pas publié officiellement.",
+        "en": "Entry selection for the Pathfinder Platoon, the reconnaissance unit of 16 Air Assault Brigade, trained in long-range reconnaissance and high-altitude parachuting to insert discreetly and find and mark drop and landing zones ahead of the main force (motto 'First in'). It is open to soldiers from across the Army; its content is not officially published."
+      },
+      "body": {
+        "fr": "16 Air Assault Brigade Combat Team (Pathfinder Platoon)",
+        "en": "16 Air Assault Brigade Combat Team (Pathfinder Platoon)"
+      },
+      "issuer": {
+        "name": "16 Air Assault Brigade Combat Team",
+        "short_name": "16 AA BCT"
+      },
+      "issuer_key": "gb-16-aa-bct",
+      "reference": {
+        "fr": "Communiqués de l’Army sur les Pathfinders ; contenu de la sélection non public",
+        "en": "Army news items on the Pathfinders; selection content not public"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire en service de la British Army",
+          "Aptitude au parachutisme (P Company recommandée selon Wikipédia)"
+        ],
+        "en": [
+          "Serving British Army soldier or officer",
+          "Fit for parachuting (P Company recommended according to Wikipedia)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/news/pathfinders-are-first-in-on-british-and-german-military-co-operation/",
+          "title": "Pathfinders are 'first in' on British and German military co-operation (army.mod.uk, Jan 2025)"
+        },
+        {
+          "url": "https://www.gov.uk/government/fatalities/corporal-bryan-james-budd-killed-in-afghanistan",
+          "title": "Corporal Bryan James Budd killed in Afghanistan – fatality notice (GOV.UK)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Pathfinder_Platoon",
+          "title": "Pathfinder Platoon – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-rm-commando-training",
+      "code": "GB-RM-CDO",
+      "category": "selection",
+      "name": {
+        "fr": "Formation commando des Royal Marines (béret vert)",
+        "en": "Royal Marines commando training (green beret)"
+      },
+      "official_name": "Royal Marines Commando Training",
+      "short_name": "RM Commando",
+      "description": {
+        "fr": "Formation initiale des recrues Royal Marines au CTCRM de Lympstone : 32 semaines en quatre phases, ouvertes par une phase d’orientation de deux semaines, puis compétences individuelles, tactique et phase commando. Elle s’achève par les Commando Tests, dont l’endurance course (73 minutes) et la marche de 30 miles à travers Dartmoor en huit heures ; la réussite donne le béret vert.",
+        "en": "Initial training of Royal Marines recruits at CTCRM Lympstone: 32 weeks in four phases, starting with a two-week orientation phase, then individual skills, tactics and the commando phase. It ends with the Commando Tests, including the endurance course (73 minutes) and the 30-mile march across Dartmoor in eight hours; success earns the green beret."
+      },
+      "body": {
+        "fr": "Commando Training Centre Royal Marines, Lympstone",
+        "en": "Commando Training Centre Royal Marines, Lympstone"
+      },
+      "issuer": {
+        "name": "Commando Training Centre Royal Marines",
+        "short_name": "CTCRM"
+      },
+      "issuer_key": "gb-ctcrm",
+      "reference": {
+        "fr": "Page officielle « Commando training » de la Royal Navy",
+        "en": "Official Royal Navy 'Commando training' page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Processus de recrutement des Royal Marines terminé (évaluations, Commando Preparation Course, contrôles de sécurité)"
+        ],
+        "en": [
+          "Royal Marines joining process completed (assessments, Commando Preparation Course, security checks)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/royal-marines/joining-process/commando-initial-training",
+          "title": "Royal Marines Commando initial training (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/locations-and-operations/bases-and-stations/ctcrm-lympstone",
+          "title": "CTCRM Lympstone (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Commando_Training_Centre_Royal_Marines",
+          "title": "Commando Training Centre Royal Marines – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-aacc",
+      "code": "GB-AACC",
+      "category": "selection",
+      "name": {
+        "fr": "All Arms Commando Course (béret vert hors Royal Marines)",
+        "en": "All Arms Commando Course (green beret for non-Royal Marines)"
+      },
+      "official_name": "All Arms Commando Course (AACC)",
+      "short_name": "AACC",
+      "description": {
+        "fr": "Cours de 13 semaines du CTCRM, trois fois par an, qui prépare les personnels des trois armées aux affectations au sein des forces commando (UK Commando Force, Commando Helicopter Force, 29 Commando RA…). Il évalue l’éthos commando et développe savoir-faire militaires, robustesse physique et résilience (combat, transmissions, navigation, entraînement amphibie, assaut vertical). La réussite donne le béret vert et l’insigne « Army Commando ».",
+        "en": "13-week CTCRM course, run three times a year, preparing personnel from all three services for posts within Commando Forces (UK Commando Force, Commando Helicopter Force, 29 Commando RA…). It assesses the commando ethos and develops military skills, physical robustness and resilience (tactics, signals, navigation, amphibious training, vertical assault). Success earns the green beret and the 'Army Commando' flash."
+      },
+      "body": {
+        "fr": "Commando Training Centre Royal Marines, Lympstone",
+        "en": "Commando Training Centre Royal Marines, Lympstone"
+      },
+      "issuer": {
+        "name": "Commando Training Centre Royal Marines",
+        "short_name": "CTCRM"
+      },
+      "issuer_key": "gb-ctcrm",
+      "reference": {
+        "fr": "Fiche du cours sur le site Royal Navy Defence Training ; page du 29th Commando Regiment RA",
+        "en": "Course page on the Royal Navy Defence Training site; 29th Commando Regiment RA page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Pleinement apte au déploiement (MFD, P2) et normes de poids/IMC de l’Institute of Naval Medicine",
+          "Test de natation RM : 40 m en tenue et 3 min de nage sur place après entrée depuis 3 m",
+          "Réussite de la Potential Commando Physical Assessment (PCPA) et tests individuels à jour"
+        ],
+        "en": [
+          "Medically fully deployable (MFD, P2) and Institute of Naval Medicine weight/BMI standards",
+          "RM Basic Swimming Test: 40 m in clothing and 3 min treading water after entry from 3 m",
+          "Passed the Potential Commando Physical Assessment (PCPA) and individual training requirements in date"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines/all-arms-commando",
+          "title": "All Arms Commando course (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/royal-artillery/29th-commando-regiment-royal-artillery/",
+          "title": "29th Commando Regiment Royal Artillery (army.mod.uk)"
+        },
+        {
+          "url": "https://soldier.army.mod.uk/issues/november-2025/update/commandos-on-up",
+          "title": "Commandos on up (Soldier Magazine, Nov 2025)"
+        }
+      ]
+    },
+    {
+      "id": "gb-p-company",
+      "code": "GB-PCOY",
+      "category": "airborne",
+      "name": {
+        "fr": "Pegasus Company (sélection pré-parachutiste)",
+        "en": "Pegasus Company (pre-parachute selection)"
+      },
+      "official_name": "Pegasus Company (P Company) – Pre-Parachute Selection",
+      "short_name": "P Coy",
+      "description": {
+        "fr": "Sélection obligatoire pour tout officier et soldat voulant servir dans les forces aéroportées. Les recrues du Parachute Regiment la passent pendant leur formation ; les autres suivent l’All Arms Pre-Parachute Selection (AAPPS), cours d’environ trois semaines et demie à Catterick qui culmine avec les huit épreuves de la Test Week : marches chargées, course au tronc, course au brancard et parcours d’aisance en hauteur. La réussite donne le béret marron et l’accès au Basic Parachute Course.",
+        "en": "Mandatory selection for every officer and soldier wishing to serve with Airborne Forces. Parachute Regiment recruits take it during training; others attend All Arms Pre-Parachute Selection (AAPPS), a course of about three and a half weeks at Catterick culminating in the eight events of Test Week: loaded marches, log and stretcher races and an aerial confidence course. Success earns the maroon beret and access to the Basic Parachute Course."
+      },
+      "body": {
+        "fr": "Pegasus Company, Infantry Training Centre Catterick",
+        "en": "Pegasus Company, Infantry Training Centre Catterick"
+      },
+      "issuer": {
+        "name": "Pegasus Company",
+        "short_name": "P Coy"
+      },
+      "issuer_key": "gb-pegasus-company",
+      "reference": {
+        "fr": "Communiqué de l’Army (octobre 2022) et page du Parachute Regiment",
+        "en": "Army news item (October 2022) and Parachute Regiment page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire en service affecté ou volontaire pour les forces aéroportées",
+          "Réservistes : candidature avant 38 ans et réussite avant 40 ans"
+        ],
+        "en": [
+          "Serving soldier posted or volunteering for Airborne Forces",
+          "Reservists: apply before 38 and pass before 40"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/news/first-female-soldier-passes-p-company/",
+          "title": "First female soldier passes P Company (army.mod.uk, Oct 2022)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/infantry/parachute-regiment/",
+          "title": "The Parachute Regiment (army.mod.uk)"
+        },
+        {
+          "url": "https://jobs.army.mod.uk/roles/infantry/paratrooper/",
+          "title": "Infantry Paratrooper (jobs.army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/P_Company",
+          "title": "P Company – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-basic-parachute-course",
+      "code": "GB-BPC",
+      "category": "airborne",
+      "name": {
+        "fr": "Brevet de parachutiste (Basic Parachute Course)",
+        "en": "Parachutist wings (Basic Parachute Course)"
+      },
+      "official_name": "Basic Parachute Course",
+      "short_name": "BPC",
+      "description": {
+        "fr": "Formation initiale au parachutisme à ouverture automatique, délivrée à tous les parachutistes des trois armées par la No 1 Parachute Training School de l’Airborne Delivery Wing à RAF Brize Norton. Elle comprend l’instruction au sol et une série de sauts depuis avion de transport ; sa réussite donne les ailes de parachutiste britanniques.",
+        "en": "Initial static-line parachute training delivered to all parachutists of the three services by No 1 Parachute Training School of the Airborne Delivery Wing at RAF Brize Norton. It includes ground training and a series of jumps from transport aircraft; passing it earns the British parachutist wings."
+      },
+      "body": {
+        "fr": "No 1 Parachute Training School, Airborne Delivery Wing, RAF Brize Norton",
+        "en": "No 1 Parachute Training School, Airborne Delivery Wing, RAF Brize Norton"
+      },
+      "issuer": {
+        "name": "No 1 Parachute Training School",
+        "short_name": "No 1 PTS"
+      },
+      "issuer_key": "gb-raf-pts",
+      "reference": {
+        "fr": "Historique officiel de la No 1 PTS (GOV.UK) et page de RAF Brize Norton",
+        "en": "Official history of No 1 PTS (GOV.UK) and RAF Brize Norton page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Réussite de la P Company ou de l’All Arms Commando Course selon l’affectation (selon Wikipédia)"
+        ],
+        "en": [
+          "Passed P Company or the All Arms Commando Course depending on posting (according to Wikipedia)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.gov.uk/government/news/raf-parachute-jumping-instructors-celebrate-70-years",
+          "title": "RAF Parachute Jumping Instructors celebrate 70 years (GOV.UK)"
+        },
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-brize-norton/",
+          "title": "RAF Brize Norton (raf.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Basic_Parachute_Course",
+          "title": "Basic Parachute Course – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-pji",
+      "code": "GB-PJI",
+      "category": "airborne",
+      "name": {
+        "fr": "Moniteur de parachutisme de la RAF (Parachute Jumping Instructor)",
+        "en": "RAF Parachute Jumping Instructor"
+      },
+      "official_name": "Parachute Jumping Instructor (PJI) Course",
+      "short_name": "PJI",
+      "description": {
+        "fr": "Cours d’environ neuf mois de l’Airborne Delivery Wing qui forme les moniteurs de parachutisme militaire des trois armées. Il est ouvert aux Physical Training Instructors et aux officiers de formation de la RAF ; il comporte une forte part pédagogique, plusieurs examens, de nombreux sauts sur plusieurs types de parachutes et un contrôle d’aptitude rigoureux. Les PJI reçoivent leur brevet à RAF Brize Norton.",
+        "en": "Airborne Delivery Wing course of about nine months training military parachute instructors for the three services. It is open to RAF Physical Training Instructors and training officers; it includes a strong instructional component, several tests, many jumps on several parachute types and rigorous vetting. PJIs receive their brevet at RAF Brize Norton."
+      },
+      "body": {
+        "fr": "Airborne Delivery Wing, RAF Brize Norton",
+        "en": "Airborne Delivery Wing, RAF Brize Norton"
+      },
+      "issuer": {
+        "name": "Airborne Delivery Wing",
+        "short_name": "ADW"
+      },
+      "issuer_key": "gb-raf-adw",
+      "reference": {
+        "fr": "Communiqué de RAF Brize Norton sur la promotion PJI 01-24 (mai 2025)",
+        "en": "RAF Brize Norton news on PJI Course 01-24 (May 2025)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Physical Training Instructor ou officier de formation (People Operations) de la RAF"
+        ],
+        "en": [
+          "RAF Physical Training Instructor or training (People Operations) officer"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-brize-norton/news/parachute-jumping-instructors-graduate/",
+          "title": "Parachute jumping instructors graduate (raf.mod.uk, May 2025)"
+        },
+        {
+          "url": "https://www.gov.uk/government/news/raf-parachute-jumping-instructors-celebrate-70-years",
+          "title": "RAF Parachute Jumping Instructors celebrate 70 years (GOV.UK)"
+        },
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-brize-norton/",
+          "title": "RAF Brize Norton (raf.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-scbc",
+      "code": "GB-SCBC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de chef de groupe (Section Commanders' Battle Course, « Junior Brecon »)",
+        "en": "Section Commanders' Battle Course ('Junior Brecon')"
+      },
+      "official_name": "Section Commanders' Battle Course (SCBC)",
+      "short_name": "SCBC",
+      "description": {
+        "fr": "Cours qualifiant pour la promotion au grade de caporal titulaire de tous les chefs de groupe des compagnies de fusiliers. Il comprend deux phases, Skill at Arms (tir et armes) et Tactics, et est conduit par la Junior Division de l’Infantry Battle School de Brecon.",
+        "en": "Promotion-qualifying course to substantive Corporal for all rifle company section commanders. It has two phases, Skill at Arms and Tactics, and is run by the Junior Division of the Infantry Battle School in Brecon."
+      },
+      "body": {
+        "fr": "Infantry Battle School, Brecon (Junior Division)",
+        "en": "Infantry Battle School, Brecon (Junior Division)"
+      },
+      "issuer": {
+        "name": "Infantry Battle School",
+        "short_name": "IBS"
+      },
+      "issuer_key": "gb-ibs-brecon",
+      "reference": {
+        "fr": "Page officielle de l’Infantry Battle School ; catalogue IDT (Army) 2026",
+        "en": "Official Infantry Battle School page; 2026 IDT (Army) catalogue"
+      },
+      "prerequisites": {
+        "fr": [
+          "Caporal suppléant ou caporal d’une compagnie de fusiliers"
+        ],
+        "en": [
+          "Lance Corporal or Corporal of a rifle company"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/infantry-battle-school/",
+          "title": "The Infantry Battle School (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Infantry_Battle_School",
+          "title": "Infantry Battle School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-psbc",
+      "code": "GB-PSBC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de sous-officier adjoint de section (Platoon Sergeants' Battle Course, « Senior Brecon »)",
+        "en": "Platoon Sergeants' Battle Course ('Senior Brecon')"
+      },
+      "official_name": "Platoon Sergeants' Battle Course (PSBC)",
+      "short_name": "PSBC",
+      "description": {
+        "fr": "Cours qualifiant pour la promotion au grade de sergent des sous-officiers adjoints de section des compagnies de fusiliers. Organisé en janvier, avril et août, il comprend deux phases indépendantes : Live Firing Tactical Training et Tactics (sept semaines, dispensées par la Senior Division).",
+        "en": "Promotion-qualifying course to Sergeant for rifle company platoon sergeants. Run in January, April and August, it has two independent phases: Live Firing Tactical Training and Tactics (seven weeks, delivered by Senior Division)."
+      },
+      "body": {
+        "fr": "Infantry Battle School, Brecon (Senior Division)",
+        "en": "Infantry Battle School, Brecon (Senior Division)"
+      },
+      "issuer": {
+        "name": "Infantry Battle School",
+        "short_name": "IBS"
+      },
+      "issuer_key": "gb-ibs-brecon",
+      "reference": {
+        "fr": "Page officielle de l’Infantry Battle School",
+        "en": "Official Infantry Battle School page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Caporal ou sergent d’une compagnie de fusiliers",
+          "Section Commanders' Battle Course"
+        ],
+        "en": [
+          "Corporal or Sergeant of a rifle company",
+          "Section Commanders' Battle Course"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/infantry-battle-school/",
+          "title": "The Infantry Battle School (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Infantry_Battle_School",
+          "title": "Infantry Battle School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-pcbc",
+      "code": "GB-PCBC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours de chef de section (Platoon Commanders' Battle Course)",
+        "en": "Platoon Commanders' Battle Course"
+      },
+      "official_name": "Platoon Commanders' Battle Course (PCBC)",
+      "short_name": "PCBC",
+      "description": {
+        "fr": "Cours qui forme des chefs de section d’infanterie tactiquement compétents et robustes physiquement et mentalement, suivi le plus souvent juste après l’obtention du brevet d’officier à Sandhurst. Il comprend une phase Tactics et une phase Live Fire Tactical Training (LFTT) et est conduit par la Platoon Commanders' Division.",
+        "en": "Course producing tactically capable infantry platoon commanders who are physically and mentally robust, usually completed immediately after commissioning from Sandhurst. It has a Tactics phase and a Live Fire Tactical Training (LFTT) phase and is run by the Platoon Commanders' Division."
+      },
+      "body": {
+        "fr": "Infantry Battle School, Brecon (Platoon Commanders' Division)",
+        "en": "Infantry Battle School, Brecon (Platoon Commanders' Division)"
+      },
+      "issuer": {
+        "name": "Infantry Battle School",
+        "short_name": "IBS"
+      },
+      "issuer_key": "gb-ibs-brecon",
+      "reference": {
+        "fr": "Page officielle de l’Infantry Battle School ; catalogue IDT (Army) 2026",
+        "en": "Official Infantry Battle School page; 2026 IDT (Army) catalogue"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier d’infanterie nouvellement breveté (Regular Commissioning Course)"
+        ],
+        "en": [
+          "Newly commissioned infantry officer (Regular Commissioning Course)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/infantry-battle-school/",
+          "title": "The Infantry Battle School (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-uoic",
+      "code": "GB-UOIC",
+      "category": "environment",
+      "name": {
+        "fr": "Instructeur combat en zone urbaine (Urban Operations Instructor Course)",
+        "en": "Urban Operations Instructor Course"
+      },
+      "official_name": "Urban Operations Instructor Course (UOIC)",
+      "short_name": "UOIC",
+      "description": {
+        "fr": "Qualification d’instructeur qui permet aux sous-officiers et officiers de toute l’Army de dispenser dans leur unité un entraînement tactique avancé au combat en zone urbaine. Le cours, de quatre semaines selon le catalogue international, exige d’avoir suivi auparavant la formation d’instructeur de la Défense (DTTT).",
+        "en": "Instructor qualification allowing NCOs and officers from across the Army to deliver advanced urban combat tactical training in their units. The course, four weeks long according to the international catalogue, requires prior completion of Defence instructor training (DTTT)."
+      },
+      "body": {
+        "fr": "Infantry Battle School, Brecon",
+        "en": "Infantry Battle School, Brecon"
+      },
+      "issuer": {
+        "name": "Infantry Battle School",
+        "short_name": "IBS"
+      },
+      "issuer_key": "gb-ibs-brecon",
+      "reference": {
+        "fr": "Page officielle de l’Infantry Battle School ; catalogue IDT (Army) 2026",
+        "en": "Official Infantry Battle School page; 2026 IDT (Army) catalogue"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation d’instructeur de la Défense (DTTT)"
+        ],
+        "en": [
+          "Defence instructor training (DTTT)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/infantry-battle-school/",
+          "title": "The Infantry Battle School (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-jwic",
+      "code": "GB-JWIC",
+      "category": "environment",
+      "name": {
+        "fr": "Instructeur combat en jungle (Jungle Warfare Instructors Course)",
+        "en": "Jungle Warfare Instructors Course"
+      },
+      "official_name": "Jungle Warfare Instructors Course (JWIC)",
+      "short_name": "JWIC",
+      "description": {
+        "fr": "Cours de neuf semaines de la division jungle de l’Infantry Battle School au Brunei, qui forme des officiers et sous-officiers sélectionnés à conseiller leur unité pour la planification, la conduite et l’entraînement des opérations en milieu tropical couvert : savoir-faire individuels et de groupe, puis opérations offensives et défensives en jungle.",
+        "en": "Nine-week course of the Infantry Battle School's jungle division in Brunei, training selected officers and NCOs to advise their sub-units on planning, conducting and training for operations in close tropical country: individual and section skills, then offensive and defensive jungle operations."
+      },
+      "body": {
+        "fr": "Infantry Battle School, Jungle Warfare Division (Brunei)",
+        "en": "Infantry Battle School, Jungle Warfare Division (Brunei)"
+      },
+      "issuer": {
+        "name": "Infantry Battle School",
+        "short_name": "IBS"
+      },
+      "issuer_key": "gb-ibs-brecon",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026, cours 492/001",
+        "en": "2026 IDT (Army) catalogue, course 492/001"
+      },
+      "prerequisites": {
+        "fr": [
+          "Caporal à capitaine",
+          "Vaccinations requises (encéphalite japonaise, rage, typhoïde…)"
+        ],
+        "en": [
+          "Corporal to Captain",
+          "Required vaccinations (Japanese encephalitis, rabies, typhoid…)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/infantry-battle-school/",
+          "title": "The Infantry Battle School (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-sniper",
+      "code": "GB-SNIPER",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Tireur d’élite de l’Army (Sniper Operator Course)",
+        "en": "Army sniper (Sniper Operator Course)"
+      },
+      "official_name": "Sniper Operator Course",
+      "short_name": "Sniper Op",
+      "description": {
+        "fr": "Cours qualifiant les tireurs d’élite de l’infanterie de la British Army (tir de précision, camouflage, observation, approche). D’une durée d’environ deux mois, il est dispensé depuis 2016 selon un modèle de formation décentralisée au lieu d’être enseigné uniquement à l’école d’infanterie. Il est le prérequis des cours de chef de section et de chef de groupe de tireurs d’élite de la Support Weapons School de Warminster.",
+        "en": "Course qualifying British Army infantry snipers (precision shooting, camouflage, observation, stalking). About two months long, it has been delivered since 2016 under a distributed training model rather than only centrally at the School of Infantry. It is the prerequisite for the sniper section and platoon commander courses of the Support Weapons School at Warminster."
+      },
+      "body": {
+        "fr": "Combined Arms Manoeuvre School (ex-Support Weapons School), Warminster, et unités d’infanterie",
+        "en": "Combined Arms Manoeuvre School (formerly Support Weapons School), Warminster, and infantry units"
+      },
+      "issuer": {
+        "name": "Combined Arms Manoeuvre School",
+        "short_name": "CAMS"
+      },
+      "issuer_key": "gb-cams",
+      "reference": {
+        "fr": "Rapport d’enquête judiciaire écossaise [2025] FAI 1 ; catalogue IDT (Army) 2026",
+        "en": "Scottish fatal accident inquiry report [2025] FAI 1; 2026 IDT (Army) catalogue"
+      },
+      "prerequisites": {
+        "fr": [
+          "Soldat d’infanterie affecté en unité, avec stage de présélection d’unité"
+        ],
+        "en": [
+          "Infantry soldier posted to a unit, with a unit pre-selection cadre"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.scotcourts.gov.uk/media/bksnbwpw/2025fai001-fai-joe-spencer.pdf",
+          "title": "Fatal accident inquiry into the death of LCpl Joe Spencer [2025] FAI 1 (Scottish Courts, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-sniper-section-commander",
+      "code": "GB-SSCC",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Chef de groupe de tireurs d’élite (Sniper Section Commander's Course)",
+        "en": "Sniper Section Commander's Course"
+      },
+      "official_name": "Sniper Section Commander's Course",
+      "short_name": "Sniper Sect Comd",
+      "description": {
+        "fr": "Cours de la Support Weapons School de Warminster qui forme les chefs de groupe et de section de tireurs d’élite à planifier et conduire l’instruction (tir de précision de base et avancé, fieldcraft) et à commander leur groupe en opération. La version internationale dure quatre semaines.",
+        "en": "Support Weapons School course at Warminster training sniper section and platoon commanders to plan and conduct training (basic and advanced marksmanship, fieldcraft) and to command their section on operations. The international version lasts four weeks."
+      },
+      "body": {
+        "fr": "Combined Arms Manoeuvre School (ex-Support Weapons School), Warminster",
+        "en": "Combined Arms Manoeuvre School (formerly Support Weapons School), Warminster"
+      },
+      "issuer": {
+        "name": "Combined Arms Manoeuvre School",
+        "short_name": "CAMS"
+      },
+      "issuer_key": "gb-cams",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026 (International Sniper Section Commander Course)",
+        "en": "2026 IDT (Army) catalogue (International Sniper Section Commander Course)"
+      },
+      "prerequisites": {
+        "fr": [
+          "British Army Sniper Operator Course",
+          "Caporal à sergent (OR4 à OR6)"
+        ],
+        "en": [
+          "British Army Sniper Operator Course",
+          "Corporal to Sergeant (OR4 to OR6)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-mortar-mfc",
+      "code": "GB-MFC",
+      "category": "fires",
+      "name": {
+        "fr": "Chef de section mortier de 81 mm et contrôleur des feux mortier (MFC)",
+        "en": "81mm Mortar Platoon Commander and Mortar Fire Controller (MFC)"
+      },
+      "official_name": "81mm Mortar Platoon Commander Course",
+      "short_name": "81mm Mor Pl Comd",
+      "description": {
+        "fr": "Cours de dix semaines (trois par an) de la Support Weapons School de Warminster qui forme les officiers et adjudants à commander une section de mortiers de 81 et 60 mm et à remplir le rôle de Mortar Fire Controller (MFC) dans toutes les phases du combat : mise en œuvre des mortiers, procédure de combat, offensive, défensive, progression et tirs réels de 81 mm.",
+        "en": "Ten-week course (three a year) of the Support Weapons School at Warminster training officers and warrant officers to command an 81mm and 60mm mortar platoon and act as Mortar Fire Controller (MFC) in all phases of war: operating the mortars, battle procedure, offence, defence, advance to contact and 81mm live firing."
+      },
+      "body": {
+        "fr": "Combined Arms Manoeuvre School (ex-Support Weapons School), Warminster",
+        "en": "Combined Arms Manoeuvre School (formerly Support Weapons School), Warminster"
+      },
+      "issuer": {
+        "name": "Combined Arms Manoeuvre School",
+        "short_name": "CAMS"
+      },
+      "issuer_key": "gb-cams",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026, cours 477/007",
+        "en": "2026 IDT (Army) catalogue, course 477/007"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier ou adjudant destiné au commandement d’une section mortier"
+        ],
+        "en": [
+          "Officer or warrant officer destined to command a mortar platoon"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/royal-marines/specialisations/warfare",
+          "title": "Royal Marines Commando Warfare specialisations (royalnavy.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-javelin-platoon-commander",
+      "code": "GB-JAV-PL",
+      "category": "fires",
+      "name": {
+        "fr": "Chef de section antichar Javelin",
+        "en": "Javelin anti-tank platoon commander"
+      },
+      "official_name": "JAVELIN Platoon Commander/2IC Course",
+      "short_name": "Javelin Pl Comd",
+      "description": {
+        "fr": "Cours de huit semaines (trois par an) de la Support Weapons School qui forme officiers et sous-officiers supérieurs à commander une section antichar Javelin dans toutes les opérations : mise en œuvre du système, planification antichar, engagement en combat de haute intensité au sein d’un groupement interarmes, préparation et direction des tirs réels.",
+        "en": "Eight-week course (three a year) of the Support Weapons School training officers and SNCOs to command a Javelin anti-tank platoon in all operations: operating the system, anti-armour planning, high-intensity combat within a combined arms battlegroup, planning and supervising live firing."
+      },
+      "body": {
+        "fr": "Combined Arms Manoeuvre School (ex-Support Weapons School), Warminster",
+        "en": "Combined Arms Manoeuvre School (formerly Support Weapons School), Warminster"
+      },
+      "issuer": {
+        "name": "Combined Arms Manoeuvre School",
+        "short_name": "CAMS"
+      },
+      "issuer_key": "gb-cams",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026, cours 477/027",
+        "en": "2026 IDT (Army) catalogue, course 477/027"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier ou sous-officier supérieur d’infanterie"
+        ],
+        "en": [
+          "Infantry officer or SNCO"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-rm-mountain-leader",
+      "code": "GB-RM-ML2",
+      "category": "environment",
+      "name": {
+        "fr": "Mountain Leader des Royal Marines (ML2)",
+        "en": "Royal Marines Mountain Leader (ML2)"
+      },
+      "official_name": "Mountain Leader 2 (ML2)",
+      "short_name": "ML2",
+      "description": {
+        "fr": "Spécialité des Royal Marines pour le combat en montagne et par grand froid : cours annuel de 34 semaines au CTCRM et sur le terrain. Les lauréats instruisent tous les grades au combat en montagne et grand froid (survie, ski, assaut vertical), conduisent des itinéraires hivernaux jusqu’au grade III, enseignent l’escalade militaire au niveau « Severe », maîtrisent le secours et deviennent chefs de patrouille de surveillance et reconnaissance.",
+        "en": "Royal Marines specialisation for mountain and cold weather warfare: an annual 34-week course at CTCRM and in the field. Graduates train all ranks in mountain and cold weather warfare (survival, skiing, vertical assault), lead winter routes up to grade III, instruct military rock climbing to 'Severe' standard, master rescue techniques and become surveillance and reconnaissance patrol leaders."
+      },
+      "body": {
+        "fr": "Mountain Leader Training Cadre, CTCRM Lympstone",
+        "en": "Mountain Leader Training Cadre, CTCRM Lympstone"
+      },
+      "issuer": {
+        "name": "Mountain Leader Training Cadre",
+        "short_name": "MLTC"
+      },
+      "issuer_key": "gb-mltc",
+      "reference": {
+        "fr": "Fiche du cours ML2 (Royal Navy Defence Training) ; page des spécialités Commando Warfare",
+        "en": "ML2 course page (Royal Navy Defence Training); Commando Warfare specialisations page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de commandement de premier niveau (Junior Command) réussi",
+          "Réussite de la sélection ML (épreuves physiques éprouvantes)"
+        ],
+        "en": [
+          "Passed a Junior Command course",
+          "Passed ML Selection (arduous physical tests)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines/mountain-leader-2",
+          "title": "Mountain Leader 2 (ML2) (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/royal-marines/specialisations/warfare",
+          "title": "Royal Marines Commando Warfare specialisations (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://www.gov.uk/government/news/mountain-leadership-opens-to-all-royal-marines",
+          "title": "Mountain leadership opens to all Royal Marines (GOV.UK)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Leader_Training_Cadre",
+          "title": "Mountain Leader Training Cadre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-rm-ml1",
+      "code": "GB-RM-ML1",
+      "category": "environment",
+      "name": {
+        "fr": "Mountain Leader 1 des Royal Marines (ML1)",
+        "en": "Royal Marines Mountain Leader 1 (ML1)"
+      },
+      "official_name": "Mountain Leader 1 (ML1)",
+      "short_name": "ML1",
+      "description": {
+        "fr": "Niveau supérieur de la spécialité Mountain Leader : cours annuel de 36 semaines. Le ML1 supervise et conduit l’instruction de tous les grades au combat en montagne et par grand froid, conduit des itinéraires hivernaux jusqu’au grade IV, enseigne l’escalade militaire au niveau « Very Severe » et devient gestionnaire de patrouilles de surveillance et reconnaissance ; il est moniteur de ski militaire avancé.",
+        "en": "Senior level of the Mountain Leader specialisation: an annual 36-week course. The ML1 supervises and conducts training of all ranks in mountain and cold weather warfare, leads winter routes up to grade IV, instructs military rock climbing to 'Very Severe' standard and becomes a surveillance and reconnaissance patrol manager; he is an advanced military ski instructor."
+      },
+      "body": {
+        "fr": "Mountain Leader Training Cadre, CTCRM Lympstone",
+        "en": "Mountain Leader Training Cadre, CTCRM Lympstone"
+      },
+      "issuer": {
+        "name": "Mountain Leader Training Cadre",
+        "short_name": "MLTC"
+      },
+      "issuer_key": "gb-mltc",
+      "reference": {
+        "fr": "Fiche du cours ML1 (Royal Navy Defence Training)",
+        "en": "ML1 course page (Royal Navy Defence Training)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Au moins deux ans d’expérience comme ML2",
+          "Sous-officier supérieur (SNCO)"
+        ],
+        "en": [
+          "At least two years' experience as an ML2",
+          "Senior NCO (SNCO)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines/mountain-leader-1",
+          "title": "Mountain Leader 1 (ML1) (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Leader_Training_Cadre",
+          "title": "Mountain Leader Training Cadre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-cold-weather",
+      "code": "GB-CWW",
+      "category": "environment",
+      "name": {
+        "fr": "Combat par grand froid (Cold Weather Warfare Course)",
+        "en": "Cold Weather Warfare Course"
+      },
+      "official_name": "Cold Weather Warfare Course",
+      "short_name": "CWWC",
+      "description": {
+        "fr": "Cours des Royal Marines dans le nord de la Norvège, conduit par le Mountain Leader Training Cadre, en trois phases : survie, mobilité et combat. Les stagiaires apprennent à s’orienter aux étoiles, construire des abris de bois et de neige, vivre sur le terrain, se déplacer à ski et en raquettes, et subissent l’exercice de la chute dans un trou de glace pour maîtriser le choc thermique. Il précède les exercices OTAN comme Cold Response.",
+        "en": "Royal Marines course in northern Norway run by the Mountain Leader Training Cadre, in three phases: survival, mobility and warfare. Trainees learn to navigate by the stars, build shelters from wood and snow, live off the land, move on skis and snowshoes, and go through the ice-breaking drill to learn to manage cold shock. It precedes NATO exercises such as Cold Response."
+      },
+      "body": {
+        "fr": "Mountain Leader Training Cadre (Royal Marines), Norvège",
+        "en": "Mountain Leader Training Cadre (Royal Marines), Norway"
+      },
+      "issuer": {
+        "name": "Mountain Leader Training Cadre",
+        "short_name": "MLTC"
+      },
+      "issuer_key": "gb-mltc",
+      "reference": {
+        "fr": "Communiqués de la Royal Navy sur l’entraînement arctique (2021, 2026)",
+        "en": "Royal Navy news on Arctic training (2021, 2026)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Affectation dans une unité commando déployée en Norvège"
+        ],
+        "en": [
+          "Posting to a commando unit deploying to Norway"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/news/2021/february/02/210202-arctic-commandos",
+          "title": "Royal Marines begin intensive Arctic training (royalnavy.mod.uk, Feb 2021)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/news/2026/february/03/20260203-royal-marines-ramp-up-commando-training-ahead-of-arctic-nato-mission",
+          "title": "Royal Marines ramp up Arctic operations ahead of NATO drills (royalnavy.mod.uk, Feb 2026)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Leader_Training_Cadre",
+          "title": "Mountain Leader Training Cadre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-rm-scout-sniper",
+      "code": "GB-RM-SS",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Scout Sniper des Royal Marines",
+        "en": "Royal Marines Scout Sniper"
+      },
+      "official_name": "Scout Sniper",
+      "short_name": "RM Scout Sniper",
+      "description": {
+        "fr": "Qualification de spécialité (PSQ) Commando Warfare des Royal Marines : tir de précision à longue distance, observation des cibles prioritaires et frappe de précision par tous temps. Accessible dès le grade de Marine ; la durée du cours n’est pas publiée sur la page officielle.",
+        "en": "Royal Marines Commando Warfare Primary Specialist Qualification (PSQ): long-range precision marksmanship, observation of priority targets and precision strikes in all conditions. Open from the rank of Marine; the course length is not published on the official page."
+      },
+      "body": {
+        "fr": "Commando Training Centre Royal Marines, Lympstone",
+        "en": "Commando Training Centre Royal Marines, Lympstone"
+      },
+      "issuer": {
+        "name": "Commando Training Centre Royal Marines",
+        "short_name": "CTCRM"
+      },
+      "issuer_key": "gb-ctcrm",
+      "reference": {
+        "fr": "Page des spécialités Commando Warfare (royalnavy.mod.uk)",
+        "en": "Commando Warfare specialisations page (royalnavy.mod.uk)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Royal Marine commando (béret vert), grade de Marine au moins"
+        ],
+        "en": [
+          "Royal Marines commando (green beret), rank of Marine or above"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/royal-marines/specialisations/warfare",
+          "title": "Royal Marines Commando Warfare specialisations (royalnavy.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-rm-heavy-weapons-atk",
+      "code": "GB-RM-HW3-ATK",
+      "category": "fires",
+      "name": {
+        "fr": "Armes lourdes antichar des Royal Marines (HW3 ATK)",
+        "en": "Royal Marines Heavy Weapons Anti-Tank (HW3 ATK)"
+      },
+      "official_name": "Heavy Weapons Anti-Tank (HW3 ATK)",
+      "short_name": "HW3 ATK",
+      "description": {
+        "fr": "Cours de six semaines (trois par an) au CTCRM qui forme des Marines sélectionnés à servir le missile antichar de moyenne portée Javelin, la mitrailleuse lourde (HMG) et la mitrailleuse lance-grenades (GMG) : reconnaissance des blindés, procédure de combat, surveillance, transmissions, contrôle des feux et tirs réels. Il délivre des certificats de niveau 2 sur ces systèmes d’armes.",
+        "en": "Six-week course (three a year) at CTCRM training selected Marines to operate the Javelin medium-range anti-tank missile, the Heavy Machine Gun (HMG) and the Grenade Machine Gun (GMG): vehicle recognition, battle procedure, surveillance, signals, fire control and live firing. It awards Level 2 certificates on these weapon systems."
+      },
+      "body": {
+        "fr": "Commando Training Centre Royal Marines, Lympstone",
+        "en": "Commando Training Centre Royal Marines, Lympstone"
+      },
+      "issuer": {
+        "name": "Commando Training Centre Royal Marines",
+        "short_name": "CTCRM"
+      },
+      "issuer_key": "gb-ctcrm",
+      "reference": {
+        "fr": "Fiche du cours HW3 ATK (Royal Navy Defence Training)",
+        "en": "HW3 ATK course page (Royal Navy Defence Training)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Royal Marine commando (béret vert)"
+        ],
+        "en": [
+          "Royal Marines commando (green beret)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines/heavy-weapons-anti-tank",
+          "title": "Heavy Weapons Anti-Tank (HW3 ATK) (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/royal-marines/specialisations/warfare",
+          "title": "Royal Marines Commando Warfare specialisations (royalnavy.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-rm-landing-craft",
+      "code": "GB-RM-LC2",
+      "category": "maritime",
+      "name": {
+        "fr": "Chalands de débarquement des Royal Marines (Landing Craft LC2)",
+        "en": "Royal Marines Landing Craft (LC2)"
+      },
+      "official_name": "Landing Craft 2 (LC2)",
+      "short_name": "LC2",
+      "description": {
+        "fr": "Spécialité Commando Warfare Support des Royal Marines pour la mise en œuvre des moyens amphibies. Après le cours d’introduction (équipage de tous les engins, commandement des embarcations de raid ORC et IRC), le LC2, cours de 14 semaines (trois par an), forme caporaux et Marines à commander un LCVP ou un groupe d’embarcations de raid, à être second patron d’un LCU, à conduire une reconnaissance de plage et la navigation d’assaut.",
+        "en": "Royal Marines Commando Warfare Support specialisation operating amphibious craft. After the introductory course (crew on all craft, command of ORC and IRC raiding craft), LC2, a 14-week course (three a year), trains Corporals and Marines to command an LCVP or a group of raiding craft, act as second coxswain of an LCU, conduct beach reconnaissance and assault navigation."
+      },
+      "body": {
+        "fr": "10 Training Squadron Royal Marines, RM Tamar, HMNB Devonport",
+        "en": "10 Training Squadron Royal Marines, RM Tamar, HMNB Devonport"
+      },
+      "issuer": {
+        "name": "10 Training Squadron Royal Marines",
+        "short_name": "10 Trg Sqn RM"
+      },
+      "issuer_key": "gb-10-trg-sqn-rm",
+      "reference": {
+        "fr": "Fiche du cours LC2 (Royal Navy Defence Training) ; page des spécialités Commando Warfare Support",
+        "en": "LC2 course page (Royal Navy Defence Training); Commando Warfare Support specialisations page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Caporal ou candidat à la promotion au grade de caporal, qualifié et expérimenté au niveau LC3",
+          "Test de natation de base, Royal Marines Fitness Test et examen d’entrée LC2"
+        ],
+        "en": [
+          "Corporal or candidate for promotion to Corporal, qualified and experienced at LC3 level",
+          "Basic Swim Test, Royal Marines Fitness Test and LC2 entrance exam"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines-amphibious-training/landing-craft-2",
+          "title": "Landing Craft 2 (LC2) (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/royal-marines/specialisations/warfare-support",
+          "title": "Royal Marines Commando Warfare Support specialisations (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/news/2025/august/05/20250805-raiding-and-landing-craft-operators-qualify-after-intensive-training",
+          "title": "Royal Marines small boat and landing craft operators qualify (royalnavy.mod.uk, Aug 2025)"
+        }
+      ]
+    },
+    {
+      "id": "gb-rm-lc1",
+      "code": "GB-RM-LC1",
+      "category": "maritime",
+      "name": {
+        "fr": "Patron de chaland de débarquement (Landing Craft LC1)",
+        "en": "Landing craft coxswain (Landing Craft LC1)"
+      },
+      "official_name": "Landing Craft 1 (LC1)",
+      "short_name": "LC1",
+      "description": {
+        "fr": "Niveau supérieur de la spécialité Landing Craft : cours de 14 semaines (deux par an) qui forme les LC2 à être patron et commandant d’un LCU, chef ou sous-officier de groupe d’embarcations (Boat Group), à produire un rapport de levé de plage de classe 2 et à diriger la réception et le retrait des engins au sein d’une Amphibious Beach Unit.",
+        "en": "Senior level of the Landing Craft specialisation: a 14-week course (two a year) training LC2s to coxswain and command an LCU, act as Boat Group Commander or Boat Group Sergeant, produce a Class 2 beach survey report and control the reception and withdrawal of craft within an Amphibious Beach Unit."
+      },
+      "body": {
+        "fr": "10 Training Squadron Royal Marines, RM Tamar, HMNB Devonport",
+        "en": "10 Training Squadron Royal Marines, RM Tamar, HMNB Devonport"
+      },
+      "issuer": {
+        "name": "10 Training Squadron Royal Marines",
+        "short_name": "10 Trg Sqn RM"
+      },
+      "issuer_key": "gb-10-trg-sqn-rm",
+      "reference": {
+        "fr": "Fiche du cours LC1 (Royal Navy Defence Training)",
+        "en": "LC1 course page (Royal Navy Defence Training)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sergent ou caporal confirmé titulaire du LC2",
+          "Examen d’entrée LC1 et connaissance du règlement international pour prévenir les abordages en mer"
+        ],
+        "en": [
+          "Sergeant or senior Corporal holding LC2",
+          "LC1 entrance exam and knowledge of the International Regulations for Preventing Collisions at Sea"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines-amphibious-training/landing-craft-1",
+          "title": "Landing Craft 1 (LC1) (Royal Navy Defence Training)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/royal-marines/specialisations/warfare-support",
+          "title": "Royal Marines Commando Warfare Support specialisations (royalnavy.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-rm-lcoqc",
+      "code": "GB-RM-LCOQC",
+      "category": "maritime",
+      "name": {
+        "fr": "Officier de chalands de débarquement (LCOQC)",
+        "en": "Landing Craft Officers' Qualifying Course (LCOQC)"
+      },
+      "official_name": "Landing Craft Officers' Qualifying Course (LCOQC)",
+      "short_name": "LCOQC",
+      "description": {
+        "fr": "Cours annuel de 14 semaines qui forme les capitaines des Royal Marines aux fonctions de Boat Group Commander, d’officier chalands d’escadron et d’officier d’état-major de guerre amphibie : matelotage, navigation et pilotage, manœuvre des engins, exercices de barre, levés et reconnaissances de plage, planification des opérations amphibies.",
+        "en": "Annual 14-week course training Royal Marines Captains as Boat Group Commander, Squadron Landing Craft Officer and Amphibious Warfare Staff Officer: seamanship, navigation and pilotage, craft handling, surf drills, beach survey and reconnaissance, amphibious operational planning."
+      },
+      "body": {
+        "fr": "10 Training Squadron Royal Marines, RM Tamar, HMNB Devonport",
+        "en": "10 Training Squadron Royal Marines, RM Tamar, HMNB Devonport"
+      },
+      "issuer": {
+        "name": "10 Training Squadron Royal Marines",
+        "short_name": "10 Trg Sqn RM"
+      },
+      "issuer_key": "gb-10-trg-sqn-rm",
+      "reference": {
+        "fr": "Fiche du cours LCOQC (Royal Navy Defence Training)",
+        "en": "LCOQC course page (Royal Navy Defence Training)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Jeune officier ayant terminé la formation Young Officer et commandé une troupe d’unité commando",
+          "Perception des couleurs CP2, test de natation de base et Royal Marines Fitness Test"
+        ],
+        "en": [
+          "Junior officer who completed Young Officer training and served as a Troop Commander in a Commando unit",
+          "CP2 colour perception, Basic Swim Test and Royal Marines Fitness Test"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/international-defence-training/onsite-courses/royal-marines-amphibious-training/landing-craft-officers-qualifying-course",
+          "title": "Landing Craft Officers' Qualifying Course (Royal Navy Defence Training)"
+        }
+      ]
+    },
+    {
+      "id": "gb-rmas-rcc",
+      "code": "GB-RMAS-RCC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation initiale d’officier de Sandhurst (Regular Commissioning Course)",
+        "en": "Sandhurst Regular Commissioning Course"
+      },
+      "official_name": "Regular Commissioning Course",
+      "short_name": "RMAS RCC",
+      "description": {
+        "fr": "Formation de 44 semaines de tous les futurs officiers d’active de la British Army à la Royal Military Academy Sandhurst, en trois trimestres de 14 semaines (Junior, Intermediate, Senior) séparés par de l’aventure et des permissions : savoir-faire militaires, condition physique et décision, puis exercices tactiques complexes au Royaume-Uni et à l’étranger. Elle s’achève par la Sovereign's Parade.",
+        "en": "44-week course for all future regular British Army officers at the Royal Military Academy Sandhurst, in three 14-week terms (Junior, Intermediate, Senior) separated by adventurous training and leave: military skills, fitness and decision-making, then complex tactical exercises in the UK and overseas. It ends with the Sovereign's Parade."
+      },
+      "body": {
+        "fr": "Royal Military Academy Sandhurst",
+        "en": "Royal Military Academy Sandhurst"
+      },
+      "issuer": {
+        "name": "Royal Military Academy Sandhurst",
+        "short_name": "RMAS"
+      },
+      "issuer_key": "gb-rmas",
+      "reference": {
+        "fr": "Page officielle « Officer training » de la RMA Sandhurst",
+        "en": "Official RMA Sandhurst 'Officer training' page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Réussite de l’Army Officer Selection Board (selon jobs.army.mod.uk)"
+        ],
+        "en": [
+          "Passed the Army Officer Selection Board (according to jobs.army.mod.uk)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/rma-sandhurst/officer-training",
+          "title": "RMA Sandhurst officer training (army.mod.uk)"
+        },
+        {
+          "url": "https://jobs.army.mod.uk/how-to-join/training/officer-training/",
+          "title": "Officer training at Sandhurst (jobs.army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/rma-sandhurst/",
+          "title": "Royal Military Academy Sandhurst (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-rmas-ccs",
+      "code": "GB-RMAS-CCS",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Formation d’officier de réserve de Sandhurst (Commissioning Course Short)",
+        "en": "Sandhurst Commissioning Course Short"
+      },
+      "official_name": "Commissioning Course Short",
+      "short_name": "RMAS CCS",
+      "description": {
+        "fr": "Cours de huit semaines fondé directement sur le Regular Commissioning Course, en quatre modules, qui forme notamment les officiers de l’Army Reserve. Les élèves officiers de réserve peuvent suivre les modules séparément, par exemple un par an, ou d’un seul bloc de huit semaines.",
+        "en": "Eight-week course based directly on the Regular Commissioning Course, in four modules, training in particular Army Reserve officers. Reserve officer cadets may take the modules separately, for example one a year, or as a single eight-week block."
+      },
+      "body": {
+        "fr": "Royal Military Academy Sandhurst",
+        "en": "Royal Military Academy Sandhurst"
+      },
+      "issuer": {
+        "name": "Royal Military Academy Sandhurst",
+        "short_name": "RMAS"
+      },
+      "issuer_key": "gb-rmas",
+      "reference": {
+        "fr": "Page officielle « Officer training » de la RMA Sandhurst",
+        "en": "Official RMA Sandhurst 'Officer training' page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Candidat officier de réserve ou entrée à statut particulier"
+        ],
+        "en": [
+          "Reserve officer candidate or special-entry candidate"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/rma-sandhurst/officer-training",
+          "title": "RMA Sandhurst officer training (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-acsc",
+      "code": "GB-ACSC",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours supérieur d’état-major (Advanced Command and Staff Course)",
+        "en": "Advanced Command and Staff Course"
+      },
+      "official_name": "Advanced Command and Staff Course (ACSC)",
+      "short_name": "ACSC",
+      "description": {
+        "fr": "Cours phare du Joint Services Command and Staff College à la Defence Academy de Shrivenham : 42 semaines plus 4 semaines de congés, de septembre à juillet, pour des officiers britanniques des trois armées, des fonctionnaires et des stagiaires de plus de 50 pays. Il offre un niveau d’études de master en lien avec le King's College London et est évalué par examens, essais, travaux et projet de recherche.",
+        "en": "Flagship course of the Joint Services Command and Staff College at the Defence Academy, Shrivenham: 42 weeks plus 4 weeks of leave, from September to July, for UK officers from all three services, civil servants and students from more than 50 countries. It offers postgraduate-level study linked to King's College London and is assessed through exams, essays, coursework and a research project."
+      },
+      "body": {
+        "fr": "Joint Services Command and Staff College, Defence Academy, Shrivenham",
+        "en": "Joint Services Command and Staff College, Defence Academy, Shrivenham"
+      },
+      "issuer": {
+        "name": "Joint Services Command and Staff College",
+        "short_name": "JSCSC"
+      },
+      "issuer_key": "gb-jscsc",
+      "reference": {
+        "fr": "Page officielle du cours (Defence Academy)",
+        "en": "Official course page (Defence Academy)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier sélectionné (niveau commandant / OF3-OF4)"
+        ],
+        "en": [
+          "Selected officer (Major / OF3-OF4 level)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.da.mod.uk/courses/advanced-command-and-staff-course/",
+          "title": "Advanced Command and Staff Course (Defence Academy)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Joint_Services_Command_and_Staff_College",
+          "title": "Joint Services Command and Staff College – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-icsc-land",
+      "code": "GB-ICSC-L",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours intermédiaire d’état-major terre (ICSC(L))",
+        "en": "Intermediate Command and Staff Course (Land)"
+      },
+      "official_name": "Intermediate Command and Staff Course (Land) (ICSC(L))",
+      "short_name": "ICSC(L)",
+      "description": {
+        "fr": "Cours d’état-major de niveau intermédiaire de l’Army à la Defence Academy de Shrivenham, destiné aux officiers jusqu’au grade de major (OF3). Il comprend deux trimestres, dont un trimestre de 13 semaines consacré aux opérations contemporaines, et prépare aux fonctions de commandement et d’état-major de niveau sous-groupement et groupement.",
+        "en": "Army intermediate-level staff course at the Defence Academy, Shrivenham, for officers up to the rank of Major (OF3). It has two terms, including a 13-week contemporary operations term, and prepares for command and staff roles at sub-unit and battlegroup level."
+      },
+      "body": {
+        "fr": "Defence Academy, Shrivenham",
+        "en": "Defence Academy, Shrivenham"
+      },
+      "issuer": {
+        "name": "Joint Services Command and Staff College",
+        "short_name": "JSCSC"
+      },
+      "issuer_key": "gb-jscsc",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026",
+        "en": "2026 IDT (Army) catalogue"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier jusqu’au grade de major (OF3)"
+        ],
+        "en": [
+          "Officer up to the rank of Major (OF3)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.da.mod.uk/courses/",
+          "title": "Defence Academy courses (da.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-jtac",
+      "code": "GB-JTAC",
+      "category": "air_support",
+      "name": {
+        "fr": "Contrôleur aérien avancé interarmées britannique (JTAC)",
+        "en": "UK Joint Terminal Attack Controller (JTAC)"
+      },
+      "official_name": "Joint Terminal Attack Controller (JTAC) Course",
+      "short_name": "UK JTAC",
+      "description": {
+        "fr": "Qualification de contrôleur d’appui aérien rapproché délivrée par la JFACTSU, seule école de la Défense britannique accréditée par l’OTAN et les forces américaines pour former les JTAC. L’unité, hébergée à RAF Leeming, reçoit son orientation de la Joint Air Land Organisation ; elle dispose de moyens de simulation, objet d’un contrat publié par le MoD.",
+        "en": "Close air support controller qualification delivered by JFACTSU, the only NATO and US Joint Services accredited schoolhouse in UK Defence to train JTACs. The unit, a lodger at RAF Leeming, is directed by the Joint Air Land Organisation; it operates simulation systems, the subject of a contract published by the MoD."
+      },
+      "body": {
+        "fr": "Joint Forward Air Control Training and Standardisation Unit (JFACTSU), RAF Leeming",
+        "en": "Joint Forward Air Control Training and Standardisation Unit (JFACTSU), RAF Leeming"
+      },
+      "issuer": {
+        "name": "Joint Forward Air Control Training and Standardisation Unit",
+        "short_name": "JFACTSU"
+      },
+      "issuer_key": "gb-jfactsu",
+      "reference": {
+        "fr": "Page officielle de RAF Leeming (accréditation OTAN et US Joint Services)",
+        "en": "Official RAF Leeming page (NATO and US Joint Services accreditation)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire désigné pour un emploi de contrôle des feux air-sol (FST, TACP)"
+        ],
+        "en": [
+          "Service member designated for an air-to-ground fires control role (FST, TACP)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-leeming/",
+          "title": "RAF Leeming (raf.mod.uk)"
+        },
+        {
+          "url": "https://www.contractsfinder.service.gov.uk/Notice/f0956905-c628-46c2-8509-1d0da13d11bc",
+          "title": "JFACTSU contract notice (Contracts Finder, GOV.UK)"
+        }
+      ]
+    },
+    {
+      "id": "gb-fst-commander",
+      "code": "GB-FST-CDR",
+      "category": "fires",
+      "name": {
+        "fr": "Commandant d’équipe d’appui-feux (FST Commander)",
+        "en": "Fire Support Team Commander (FST Commander)"
+      },
+      "official_name": "Fire Support Team Commander (Dismounted) Course",
+      "short_name": "FST Comd",
+      "description": {
+        "fr": "Cours de 11 semaines de la Royal School of Artillery : six semaines d’observation d’artillerie couvrant toutes les procédures de tir, quatre semaines centrées sur le rôle de commandant de FST (moyens d’appui-feux d’un groupement, plan de feux, intégration sûre des feux interarmées) et une semaine sur le poste de commandement de groupement et la cellule des feux interarmées.",
+        "en": "11-week Royal School of Artillery course: six weeks of artillery observation covering all mission practices, four weeks focused on the FST Commander role (battlegroup fire support assets, fire planning, safe integration of joint fires) and one week on the battlegroup command post and the joint fires cell."
+      },
+      "body": {
+        "fr": "The Royal School of Artillery, Larkhill",
+        "en": "The Royal School of Artillery, Larkhill"
+      },
+      "issuer": {
+        "name": "The Royal School of Artillery",
+        "short_name": "RSA"
+      },
+      "issuer_key": "gb-rsa",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026, cours TO2A ; offre de formation de la RSA (janvier 2024)",
+        "en": "2026 IDT (Army) catalogue, course TO2A; RSA training opportunities (January 2024)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier d’artillerie ayant suivi le Junior Officer Tactical Awareness Course (JOTAC)"
+        ],
+        "en": [
+          "Artillery officer who completed the Junior Officer Tactical Awareness Course (JOTAC)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/25309/rsa-trg-opportunities-january-24.pdf",
+          "title": "Royal School of Artillery training opportunities, January 2024 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/the-royal-school-of-artillery/",
+          "title": "The Royal School of Artillery (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-fst-assistant",
+      "code": "GB-FST-ACK",
+      "category": "fires",
+      "name": {
+        "fr": "Adjoint d’équipe d’appui-feux (FST Assistant)",
+        "en": "Fire Support Team Assistant (FST Ack)"
+      },
+      "official_name": "Fire Support Team DC Course",
+      "short_name": "FST DC",
+      "description": {
+        "fr": "Cours résidentiel de quatre semaines de la Royal School of Artillery, intégré en partie au cours de commandant de FST, qui forme les bombardiers à seconder leur commandant de FST : planification et intégration des feux au niveau sous-groupement, tirs réels, conduite de l’instruction de l’équipe.",
+        "en": "Four-week residential Royal School of Artillery course, partly integrated with the FST Commander course, training Bombardiers to assist their FST Commander: fire planning and integration at sub-unit level, live firing, delivering team training."
+      },
+      "body": {
+        "fr": "The Royal School of Artillery, Larkhill",
+        "en": "The Royal School of Artillery, Larkhill"
+      },
+      "issuer": {
+        "name": "The Royal School of Artillery",
+        "short_name": "RSA"
+      },
+      "issuer_key": "gb-rsa",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026, cours T09D",
+        "en": "2026 IDT (Army) catalogue, course T09D"
+      },
+      "prerequisites": {
+        "fr": [
+          "Bombardier de l’artillerie"
+        ],
+        "en": [
+          "Royal Artillery Bombardier"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/the-royal-school-of-artillery/",
+          "title": "The Royal School of Artillery (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-jttc",
+      "code": "GB-JTTC",
+      "category": "intelligence",
+      "name": {
+        "fr": "Ciblage tactique interarmées (Joint Tactical Targeting Course)",
+        "en": "Joint Tactical Targeting Course"
+      },
+      "official_name": "Joint Tactical Targeting Course (JTTC)",
+      "short_name": "JTTC",
+      "description": {
+        "fr": "Cours de la Royal School of Artillery sur le processus de ciblage tactique : développement des cibles, présentation à l’autorité d’engagement lors d’un comité de validation des cibles, exercice répété sur de nombreuses cibles jusqu’à l’évaluation finale. Réservé aux pays du « Five Eyes » dans sa version internationale.",
+        "en": "Royal School of Artillery course on the tactical targeting process: target development, presentation to the engagement authority at a target clearance board, repeated across many targets up to the final assessment. Restricted to Five Eyes nations in its international version."
+      },
+      "body": {
+        "fr": "The Royal School of Artillery, Larkhill",
+        "en": "The Royal School of Artillery, Larkhill"
+      },
+      "issuer": {
+        "name": "The Royal School of Artillery",
+        "short_name": "RSA"
+      },
+      "issuer_key": "gb-rsa",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026, cours T13F",
+        "en": "2026 IDT (Army) catalogue, course T13F"
+      },
+      "prerequisites": {
+        "fr": [
+          "Grade OR4 à OF4"
+        ],
+        "en": [
+          "Rank OR4 to OF4"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/the-royal-school-of-artillery/",
+          "title": "The Royal School of Artillery (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-cmt",
+      "code": "GB-CMT",
+      "category": "medical",
+      "name": {
+        "fr": "Technicien médical de combat (Combat Medical Technician)",
+        "en": "Combat Medical Technician"
+      },
+      "official_name": "Combat Medical Technician Class 2",
+      "short_name": "CMT2",
+      "description": {
+        "fr": "Emploi d’infirmier de combat de l’Army Medical Service : premiers secours sur le champ de bataille, soutien médical en opération et en exercice, évacuations sanitaires en milieu hostile, instruction sanitaire. Après la formation militaire de base, la formation de spécialité dure 22 semaines à la Defence School of Healthcare Training (Lichfield) et donne la qualification CMT Class 2, un diplôme de niveau 3 et le Care Certificate.",
+        "en": "Army Medical Service combat medic role: battlefield first aid, medical support on operations and exercises, casualty evacuation in hostile conditions, health education. After basic training, trade training lasts 22 weeks at the Defence School of Healthcare Training (Lichfield) and awards the Class 2 Combat Medical Technician qualification, a level 3 diploma and the Care Certificate."
+      },
+      "body": {
+        "fr": "Defence Medical Academy (Defence School of Healthcare Training), Lichfield",
+        "en": "Defence Medical Academy (Defence School of Healthcare Training), Lichfield"
+      },
+      "issuer": {
+        "name": "Defence Medical Academy",
+        "short_name": "DMA"
+      },
+      "issuer_key": "gb-dma",
+      "reference": {
+        "fr": "Fiche métier officielle Combat Medical Technician (jobs.army.mod.uk)",
+        "en": "Official Combat Medical Technician role page (jobs.army.mod.uk)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation militaire de base (13 semaines à Pirbright ou Winchester, 23 semaines à Harrogate pour les jeunes recrues)",
+          "Âge de 16 à 36 ans, GCSE d’anglais et de mathématiques"
+        ],
+        "en": [
+          "Basic military training (13 weeks at Pirbright or Winchester, 23 weeks at Harrogate for junior soldiers)",
+          "Aged 16 to 36, GCSE English and Maths"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://jobs.army.mod.uk/roles/army-medical-service/combat-medical-technician/",
+          "title": "Combat Medical Technician (jobs.army.mod.uk)"
+        },
+        {
+          "url": "https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1068451/DMA_Prospectus_April_2022_43_.pdf",
+          "title": "Defence Medical Academy course prospectus, April 2022 (GOV.UK, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-batls",
+      "code": "GB-BATLS",
+      "category": "medical",
+      "name": {
+        "fr": "Réanimation traumatologique avancée de l’avant (BATLS)",
+        "en": "Battlefield Advanced Trauma Life Support (BATLS)"
+      },
+      "official_name": "Battlefield Advanced Trauma Life Support (BATLS)",
+      "short_name": "BATLS",
+      "description": {
+        "fr": "Cours pluridisciplinaire du service de santé des armées qui forme et évalue les praticiens BATLS à la prise en charge d’un blessé traumatisé en préhospitalier selon des protocoles convenus, en préparation au déploiement (Role 1). Il comprend une lecture préparatoire évaluée, une partie en ligne de 4 à 6 heures (20 % du programme), puis une partie résidentielle de deux jours à DMS Whittington avec scénarios et test final.",
+        "en": "Multi-disciplinary Defence Medical Services course training and assessing BATLS practitioners to manage a trauma casualty in a pre-hospital setting using agreed protocols, in preparation for deployment (Role 1). It comprises assessed pre-course reading, a 4-6 hour online part (20% of the syllabus), then a two-day residential part at DMS Whittington with scenarios and a summative test."
+      },
+      "body": {
+        "fr": "Defence Medical Academy, DMS Whittington, Lichfield",
+        "en": "Defence Medical Academy, DMS Whittington, Lichfield"
+      },
+      "issuer": {
+        "name": "Defence Medical Academy",
+        "short_name": "DMA"
+      },
+      "issuer_key": "gb-dma",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026 ; prospectus de la Defence Medical Academy (2022), cours 1027",
+        "en": "2026 IDT (Army) catalogue; Defence Medical Academy prospectus (2022), course 1027"
+      },
+      "prerequisites": {
+        "fr": [
+          "Personnel médical ou paramédical du service de santé des armées",
+          "Évaluation préparatoire réussie (valable six mois)"
+        ],
+        "en": [
+          "Defence Medical Services clinical personnel",
+          "Passed pre-course assessment (valid for six months)"
+        ]
+      },
+      "validity": {
+        "fr": "L’évaluation préparatoire est valable six mois avant le cours ; durée de validité de la qualification non publiée.",
+        "en": "The pre-course assessment is valid for six months before the course; validity of the qualification itself not published."
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1068451/DMA_Prospectus_April_2022_43_.pdf",
+          "title": "Defence Medical Academy course prospectus, April 2022 (GOV.UK, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-team-medic",
+      "code": "GB-TM",
+      "category": "medical",
+      "name": {
+        "fr": "Secouriste d’équipe (Army Team Medic)",
+        "en": "Army Team Medic"
+      },
+      "official_name": "Army Team Medic Course",
+      "short_name": "Team Medic",
+      "description": {
+        "fr": "Cours de secourisme de combat renforcé dispensé au niveau des unités à des militaires non médicaux, pour assurer au sein de chaque équipe les premiers soins avancés en attendant un personnel médical. Les instructeurs sont formés et certifiés par la Defence Medical Academy (cours Army Team Medic Instructor) conformément au JSP 822.",
+        "en": "Enhanced combat first aid course delivered at unit level to non-medical personnel, so that each team has advanced first aid pending medical personnel. Instructors are trained and certified by the Defence Medical Academy (Army Team Medic Instructor course) in line with JSP 822."
+      },
+      "body": {
+        "fr": "Unités de l’Army, instructeurs formés par la Defence Medical Academy (DMS Whittington)",
+        "en": "Army units, with instructors trained by the Defence Medical Academy (DMS Whittington)"
+      },
+      "issuer": {
+        "name": "Defence Medical Academy",
+        "short_name": "DMA"
+      },
+      "issuer_key": "gb-dma",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026 (Army Team Medic Instructor)",
+        "en": "2026 IDT (Army) catalogue (Army Team Medic Instructor)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire non médical désigné par son unité"
+        ],
+        "en": [
+          "Non-medical service member nominated by their unit"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-mphec",
+      "code": "GB-MPHEC",
+      "category": "medical",
+      "name": {
+        "fr": "Soins préhospitaliers d’urgence militaires (MPHEC)",
+        "en": "Military Prehospital Emergency Care (MPHEC)"
+      },
+      "official_name": "Military Prehospital Emergency Care Course (MPHEC)",
+      "short_name": "MPHEC",
+      "description": {
+        "fr": "Cours de trois jours de la Defence Medical Academy, précédé d’un module en ligne, qui introduit médecins, infirmiers et paramédicaux du service de santé des armées aux soins préhospitaliers d’urgence au Royaume-Uni (sécurité, situations critiques, gardes avec les services d’ambulance ou d’hélicoptères médicaux) afin de préparer leur emploi en opération.",
+        "en": "Three-day Defence Medical Academy course, preceded by an online module, introducing Defence Medical Services doctors, nurses and paramedics to pre-hospital emergency care in the UK (safety, critical situations, shifts with ambulance or air ambulance services) to prepare for deployed roles."
+      },
+      "body": {
+        "fr": "Defence Medical Academy, DMS Whittington, Lichfield",
+        "en": "Defence Medical Academy, DMS Whittington, Lichfield"
+      },
+      "issuer": {
+        "name": "Defence Medical Academy",
+        "short_name": "DMA"
+      },
+      "issuer_key": "gb-dma",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026",
+        "en": "2026 IDT (Army) catalogue"
+      },
+      "prerequisites": {
+        "fr": [
+          "Médecin, infirmier ou paramédical du service de santé des armées"
+        ],
+        "en": [
+          "Defence Medical Services doctor, nurse or paramedic"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-military-driver",
+      "code": "GB-MIL-DRV",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Conducteur de véhicules militaires (Defence School of Transport)",
+        "en": "Military vehicle driver (Defence School of Transport)"
+      },
+      "official_name": "Military Driver Training",
+      "short_name": "Mil Driver",
+      "description": {
+        "fr": "Formation à la conduite des véhicules de service des trois armées à la Defence School of Transport : permis civils (voiture, poids lourd avec remorque, car, minibus) par le programme LATT, puis conduite des véhicules militaires à roues (Land Rover, camions MAN, PLS et EPLS) par les 111 et 112 Driver Training Squadrons, avec convois, conduite tout-terrain et de nuit et conduite tactique.",
+        "en": "Service vehicle driver training for the three services at the Defence School of Transport: civil licences (car, truck and trailer, coach, minibus) through LATT, then military wheeled vehicles (Land Rover, MAN trucks, PLS and EPLS) through 111 and 112 Driver Training Squadrons, with convoy, off-road, night and tactical driving."
+      },
+      "body": {
+        "fr": "Defence School of Transport, Leconfield",
+        "en": "Defence School of Transport, Leconfield"
+      },
+      "issuer": {
+        "name": "Defence School of Transport",
+        "short_name": "DST"
+      },
+      "issuer_key": "gb-dst",
+      "reference": {
+        "fr": "Page officielle de la Defence School of Transport",
+        "en": "Official Defence School of Transport page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation militaire de base terminée"
+        ],
+        "en": [
+          "Basic military training completed"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-school-of-transport/",
+          "title": "Defence School of Transport (army.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Defence_School_of_Transport",
+          "title": "Defence School of Transport – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-ammunition-technician",
+      "code": "GB-AT2",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Technicien munitions (Ammunition Technician Class 2)",
+        "en": "Ammunition Technician (Class 2)"
+      },
+      "official_name": "Ammunition Technician Class 2 Course",
+      "short_name": "AT2",
+      "description": {
+        "fr": "Emploi de spécialiste des explosifs du Royal Logistic Corps : inspection, essais, transport, stockage et destruction de tous les types de munitions et d’explosifs, enquête sur les incidents, accès ultérieur à la neutralisation des engins explosifs. Après la formation de base, le cours Class 2 dure 29 semaines entre la Defence Academy (Shrivenham) et le DEMS Training Regiment (Kineton) et inclut les permis B et C+E.",
+        "en": "Royal Logistic Corps explosives specialist role: inspecting, testing, moving, storing and destroying all types of ammunition and explosives, investigating incidents, with later access to bomb disposal. After basic training, the Class 2 course lasts 29 weeks between the Defence Academy (Shrivenham) and the DEMS Training Regiment (Kineton) and includes B and C+E licences."
+      },
+      "body": {
+        "fr": "Defence EOD, Munitions and Search Training Regiment (Munitions Squadron), Kineton",
+        "en": "Defence EOD, Munitions and Search Training Regiment (Munitions Squadron), Kineton"
+      },
+      "issuer": {
+        "name": "Defence Explosive Ordnance Disposal, Munitions and Search Training Regiment",
+        "short_name": "DEMS Trg Regt"
+      },
+      "issuer_key": "gb-dems",
+      "reference": {
+        "fr": "Fiche métier officielle Ammunition Technician (jobs.army.mod.uk) ; page du DEMS Training Regiment",
+        "en": "Official Ammunition Technician role page (jobs.army.mod.uk); DEMS Training Regiment page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation militaire de base ; comité de sélection Ammunition Technician à Kineton",
+          "Cinq GCSE dont anglais, mathématiques et une matière scientifique (selon jobs.army.mod.uk)"
+        ],
+        "en": [
+          "Basic military training; Ammunition Technician selection board at Kineton",
+          "Five GCSEs including English, Maths and a science (according to jobs.army.mod.uk)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://jobs.army.mod.uk/roles/royal-logistic-corps/ammunition-technician/",
+          "title": "Ammunition Technician, Royal Logistic Corps (jobs.army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/formations-divisions-and-brigades/field-army-troops/land-warfare-centre/royal-school-of-military-engineering-group/defence-explosive-ordnance-disposal-munitions-and-search/",
+          "title": "Defence Explosive Ordnance Disposal, Munitions and Search (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-iedd",
+      "code": "GB-HT-IEDD",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Opérateur de neutralisation d’engins explosifs improvisés à haut niveau de menace (High Threat IEDD)",
+        "en": "High Threat Improvised Explosive Device Disposal (IEDD) operator"
+      },
+      "official_name": "High Threat IEDD Operator Course",
+      "short_name": "HT IEDD",
+      "description": {
+        "fr": "Qualification d’opérateur de neutralisation des engins explosifs improvisés en environnement à haut niveau de menace, dispensée par l’IED Disposal Squadron du DEMS Training Regiment et exercée au sein du 11 EOD & Search Regiment RLC. Le programme public de la version internationale couvre la doctrine IEDD britannique, l’évaluation de la menace, les procédures de neutralisation, les robots, les techniques de crochet et câble, la fouille opérateur, les explosifs artisanaux et les drones.",
+        "en": "Operator qualification for disposing of improvised explosive devices in a high-threat environment, delivered by the IED Disposal Squadron of the DEMS Training Regiment and practised within 11 EOD & Search Regiment RLC. The public syllabus of the international version covers UK IEDD doctrine, threat assessment, render-safe procedures, remote vehicles, hook and line techniques, operator search, home-made explosives and drones."
+      },
+      "body": {
+        "fr": "Defence EOD, Munitions and Search Training Regiment (IED Disposal Squadron)",
+        "en": "Defence EOD, Munitions and Search Training Regiment (IED Disposal Squadron)"
+      },
+      "issuer": {
+        "name": "Defence Explosive Ordnance Disposal, Munitions and Search Training Regiment",
+        "short_name": "DEMS Trg Regt"
+      },
+      "issuer_key": "gb-dems",
+      "reference": {
+        "fr": "Pages officielles du DEMS Training Regiment et du 11 EOD & Search Regiment ; catalogue IDT (Army) 2026 (International IED Disposal Course)",
+        "en": "Official DEMS Training Regiment and 11 EOD & Search Regiment pages; 2026 IDT (Army) catalogue (International IED Disposal Course)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Ammunition Technician ou Ammunition Technical Officer qualifié"
+        ],
+        "en": [
+          "Qualified Ammunition Technician or Ammunition Technical Officer"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/formations-divisions-and-brigades/field-army-troops/land-warfare-centre/royal-school-of-military-engineering-group/defence-explosive-ordnance-disposal-munitions-and-search/",
+          "title": "Defence Explosive Ordnance Disposal, Munitions and Search (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/royal-logistic-corps/regular-units/11-explosive-ordnance-disposal-and-search-regiment/",
+          "title": "11 Explosive Ordnance Disposal and Search Regiment (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-search-advanced",
+      "code": "GB-ADV-SEARCH",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Fouille opérationnelle avancée (Advanced Search)",
+        "en": "Advanced Search"
+      },
+      "official_name": "Advanced Search",
+      "short_name": "Adv Search",
+      "description": {
+        "fr": "Qualification de fouille opérationnelle avancée enseignée par le Search Squadron du DEMS Training Regiment de Bicester, qui forme des personnels de toute l’Army à dégager des zones et localiser en sécurité les menaces explosives, des itinéraires et positions ennemies jusqu’aux bâtiments et réseaux d’égouts. La capacité de fouille du 11 EOD & Search Regiment est fournie par les Royal Engineers ; les conseillers fouille suivent un cours dédié (Search Adviser).",
+        "en": "Advanced operational search qualification taught by the Search Squadron of the DEMS Training Regiment at Bicester, training personnel from across the Army to clear areas and safely locate explosive threats, from routes and enemy positions to buildings and sewer networks. The search capability of 11 EOD & Search Regiment is provided by the Royal Engineers; search advisers attend a dedicated course (Search Adviser)."
+      },
+      "body": {
+        "fr": "Defence EOD, Munitions and Search Training Regiment (Search Squadron), Bicester",
+        "en": "Defence EOD, Munitions and Search Training Regiment (Search Squadron), Bicester"
+      },
+      "issuer": {
+        "name": "Defence Explosive Ordnance Disposal, Munitions and Search Training Regiment",
+        "short_name": "DEMS Trg Regt"
+      },
+      "issuer_key": "gb-dems",
+      "reference": {
+        "fr": "Page officielle du DEMS Training Regiment ; fiche métier EOD & Search des Royal Engineers",
+        "en": "Official DEMS Training Regiment page; Royal Engineers EOD & Search role page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification de fouille de base (Intermediate Search) en unité"
+        ],
+        "en": [
+          "Basic (intermediate) search qualification in unit"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/formations-divisions-and-brigades/field-army-troops/land-warfare-centre/royal-school-of-military-engineering-group/defence-explosive-ordnance-disposal-munitions-and-search/",
+          "title": "Defence Explosive Ordnance Disposal, Munitions and Search (army.mod.uk)"
+        },
+        {
+          "url": "https://jobs.army.mod.uk/roles/royal-engineers/eod-and-search/",
+          "title": "EOD & Search, Royal Engineers (jobs.army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/learn-and-explore/about-the-army/corps-regiments-and-units/royal-logistic-corps/regular-units/11-explosive-ordnance-disposal-and-search-regiment/",
+          "title": "11 Explosive Ordnance Disposal and Search Regiment (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-cbrn",
+      "code": "GB-C-CBRN-I",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Instructeur de défense NRBC (Counter CBRN Instructor)",
+        "en": "Counter CBRN Instructor"
+      },
+      "official_name": "Counter CBRN Instructor Course",
+      "short_name": "C-CBRN Instr",
+      "description": {
+        "fr": "Cours du Defence CBRN Centre, qui remplace les anciens cours CBRN Trainer et Operational Instructor, pour les militaires qui assistent le conseiller NRBC de leur unité : ajustement et entretien du masque GSR, mise en œuvre des détecteurs, reconnaissance et levés, alerte NRBC, gestion des risques sur un site d’incident et instruction des personnels non spécialistes.",
+        "en": "Defence CBRN Centre course, replacing the former CBRN Trainer and Operational Instructor courses, for personnel assisting their unit's CBRN defence adviser: fitting and maintaining the GSR respirator, operating detection equipment, reconnaissance and survey, CBRN warning, hazard management at an incident site and training non-specialists."
+      },
+      "body": {
+        "fr": "Defence CBRN Centre (Defence CBRN School), Winterbourne Gunner",
+        "en": "Defence CBRN Centre (Defence CBRN School), Winterbourne Gunner"
+      },
+      "issuer": {
+        "name": "Defence Chemical, Biological, Radiological and Nuclear Centre",
+        "short_name": "DCBRNC"
+      },
+      "issuer_key": "gb-dcbrnc",
+      "reference": {
+        "fr": "Page officielle du Defence CBRN Centre ; catalogue IDT (Army) 2026",
+        "en": "Official Defence CBRN Centre page; 2026 IDT (Army) catalogue"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire désigné par son unité pour la défense NRBC"
+        ],
+        "en": [
+          "Service member nominated by their unit for CBRN defence"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-cbrn-centre/",
+          "title": "Defence CBRN Centre (army.mod.uk)"
+        },
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        }
+      ]
+    },
+    {
+      "id": "gb-cbrn-cell-controller",
+      "code": "GB-CBRN-CC",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Contrôleur de cellule NRBC (CBRN Cell Controller)",
+        "en": "CBRN Cell Controller"
+      },
+      "official_name": "CBRN Cell Controller (BRACIS) Course",
+      "short_name": "CBRN Cell Ctrl",
+      "description": {
+        "fr": "Cours du Defence CBRN Centre pour les militaires qui assurent l’alerte et le compte rendu NRBC dans les centres de contrôle ou de collecte : recueil et interprétation des données NRBC, diffusion des comptes rendus sur l’extension de la menace et information du conseiller NRBC de la grande unité.",
+        "en": "Defence CBRN Centre course for personnel carrying out CBRN warning and reporting in control or collection centres: gathering and interpreting CBRN data, issuing reports on the spread of the threat and informing the formation's CBRN defence adviser."
+      },
+      "body": {
+        "fr": "Defence CBRN Centre, Winterbourne Gunner",
+        "en": "Defence CBRN Centre, Winterbourne Gunner"
+      },
+      "issuer": {
+        "name": "Defence Chemical, Biological, Radiological and Nuclear Centre",
+        "short_name": "DCBRNC"
+      },
+      "issuer_key": "gb-dcbrnc",
+      "reference": {
+        "fr": "Page officielle du Defence CBRN Centre",
+        "en": "Official Defence CBRN Centre page"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire affecté dans un centre d’alerte et de compte rendu NRBC"
+        ],
+        "en": [
+          "Service member posted to a CBRN warning and reporting centre"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-cbrn-centre/",
+          "title": "Defence CBRN Centre (army.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-clearance-diver",
+      "code": "GB-MCD",
+      "category": "maritime",
+      "name": {
+        "fr": "Plongeur démineur de la Royal Navy (Mine Clearance Diver)",
+        "en": "Royal Navy Mine Clearance Diver"
+      },
+      "official_name": "Mine Clearance Diver",
+      "short_name": "MCD",
+      "description": {
+        "fr": "Spécialité de la Royal Navy chargée de localiser et neutraliser mines et explosifs, en petits fonds comme en mer. Après le Potential Divers Assessment (nage de 1 000 m au lac et plongées d’essai) et dix semaines de formation initiale à HMS Raleigh, la formation de base se déroule à la Defence Diving School de Horsea Island ; les plongeurs servent ensuite dans les escadrons du Diving and Threat Exploitation Group.",
+        "en": "Royal Navy specialisation locating and disposing of mines and explosives in shallow water and at sea. After the Potential Divers Assessment (1,000 m lake swim and trial dives) and ten weeks of initial training at HMS Raleigh, basic diver training takes place at the Defence Diving School on Horsea Island; divers then serve in the Diving and Threat Exploitation Group squadrons."
+      },
+      "body": {
+        "fr": "Defence Diving School, Horsea Island (Portsmouth)",
+        "en": "Defence Diving School, Horsea Island (Portsmouth)"
+      },
+      "issuer": {
+        "name": "Defence Diving School",
+        "short_name": "DDS"
+      },
+      "issuer_key": "gb-dds",
+      "reference": {
+        "fr": "Fiche métier officielle Mine Clearance Diver (royalnavy.mod.uk)",
+        "en": "Official Mine Clearance Diver role page (royalnavy.mod.uk)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Âge de 17 à 37 ans, nationalité britannique ou double nationalité avec cinq ans de résidence",
+          "Réussite du Potential Divers Assessment"
+        ],
+        "en": [
+          "Aged 17 to 37, UK or dual national with five years' residence",
+          "Passed the Potential Divers Assessment"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/roles/mine-clearance-diver",
+          "title": "Mine Clearance Diver (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/careers/joining-process/potential-divers-assessment",
+          "title": "Potential Divers Assessment (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://www.royalnavy.mod.uk/locations-and-operations/bases-and-stations/hms-collingwood/defence-diving-school",
+          "title": "Defence Diving School (royalnavy.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-army-diver",
+      "code": "GB-ARMY-DIVER",
+      "category": "maritime",
+      "name": {
+        "fr": "Plongeur de l’Army (Royal Engineers)",
+        "en": "Army diver (Royal Engineers)"
+      },
+      "official_name": "Army Diver",
+      "short_name": "Army Diver",
+      "description": {
+        "fr": "Qualification de plongeur militaire de l’Army, notamment pour les Royal Engineers (reconnaissance et travaux subaquatiques, franchissements). Comme les plongeurs démineurs de la Royal Navy, les plongeurs de l’Army suivent leur formation de base à la Defence Diving School de Horsea Island ; la formation avancée a lieu à Weymouth, Falmouth, Plymouth et sur la côte ouest de l’Écosse.",
+        "en": "Army military diver qualification, in particular for the Royal Engineers (underwater reconnaissance and engineering, crossings). Like Royal Navy clearance divers, Army divers carry out basic training at the Defence Diving School on Horsea Island; advanced training takes place at Weymouth, Falmouth, Plymouth and the west coast of Scotland."
+      },
+      "body": {
+        "fr": "Defence Diving School, Horsea Island (Portsmouth)",
+        "en": "Defence Diving School, Horsea Island (Portsmouth)"
+      },
+      "issuer": {
+        "name": "Defence Diving School",
+        "short_name": "DDS"
+      },
+      "issuer_key": "gb-dds",
+      "reference": {
+        "fr": "Page officielle de la Defence Diving School (royalnavy.mod.uk)",
+        "en": "Official Defence Diving School page (royalnavy.mod.uk)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire de l’Army sélectionné pour la plongée"
+        ],
+        "en": [
+          "Army soldier selected for diving"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.royalnavy.mod.uk/locations-and-operations/bases-and-stations/hms-collingwood/defence-diving-school",
+          "title": "Defence Diving School (royalnavy.mod.uk)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Defence_Diving_School",
+          "title": "Defence Diving School – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-army-pilots-course",
+      "code": "GB-APC",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de pilote de l’Army (Army Air Corps)",
+        "en": "Army Pilots Course (Army Air Corps)"
+      },
+      "official_name": "Army Pilots Course",
+      "short_name": "APC",
+      "description": {
+        "fr": "Parcours de formation des pilotes de l’Army Air Corps, officiers et sous-officiers : sélection (tests d’aptitude et visite médicale aéronautique à RAF Cranwell, sélection en vol à Middle Wallop), formation au vol à RAF Shawbury, puis spécialisation le plus souvent sur Wildcat (RNAS Yeovilton) ou sur AH-64E Apache au 7 (Training) Regiment AAC de l’Army Aviation Centre. La réussite donne les ailes de pilote de l’Army.",
+        "en": "Training pathway for Army Air Corps pilots, officers and NCOs: selection (aptitude tests and aircrew medical at RAF Cranwell, flying grading at Middle Wallop), flying training at RAF Shawbury, then specialisation mostly on Wildcat (RNAS Yeovilton) or on AH-64E Apache with 7 (Training) Regiment AAC at the Army Aviation Centre. Success earns Army pilot's wings."
+      },
+      "body": {
+        "fr": "Army Aviation Centre, Middle Wallop",
+        "en": "Army Aviation Centre, Middle Wallop"
+      },
+      "issuer": {
+        "name": "Army Aviation Centre",
+        "short_name": "AACen"
+      },
+      "issuer_key": "gb-aacen",
+      "reference": {
+        "fr": "Page officielle de l’Army Aviation Centre ; Soldier Magazine (avril 2025)",
+        "en": "Official Army Aviation Centre page; Soldier Magazine (April 2025)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier ou sous-officier de l’Army (au moins caporal suppléant pour les sous-officiers, selon les réponses officielles « Ask a Soldier »)",
+          "Tests d’aptitude, visite médicale aéronautique et sélection en vol réussis"
+        ],
+        "en": [
+          "Army officer or NCO (at least Lance Corporal for NCOs, according to official 'Ask a Soldier' answers)",
+          "Passed aptitude tests, aircrew medical and flying grading"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/aviation/",
+          "title": "Army Aviation Centre (army.mod.uk)"
+        },
+        {
+          "url": "https://soldier.army.mod.uk/issues/april-2025/soldier-life/private-to-pilot",
+          "title": "Private to pilot (Soldier Magazine, Apr 2025)"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Army_Aviation_Centre",
+          "title": "Army Aviation Centre – Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "gb-sere",
+      "code": "GB-SERE-CAC",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Survie, évasion et conduite après capture (SERE / CAC)",
+        "en": "Survive, evade, resist, extract and conduct after capture (SERE / CAC)"
+      },
+      "official_name": "Conduct after Capture (CAC) / SERE Training",
+      "short_name": "SERE / CAC",
+      "description": {
+        "fr": "Formation interarmées SERE (survie, évasion, résistance, extraction) et conduite après capture dispensée par la Defence SERE Training Organisation à RAF St Mawgan, qui forme environ 5 000 personnels par an : techniques de survie en campagne, évasion et comportement en captivité, adaptés au niveau de risque d’isolement de l’emploi (équipages, forces spéciales, unités avancées).",
+        "en": "Joint SERE (survive, evade, resist, extract) and conduct-after-capture training delivered by the Defence SERE Training Organisation at RAF St Mawgan, which trains around 5,000 personnel a year: field survival techniques, evasion and conduct in captivity, matched to the isolation risk of the role (aircrew, special forces, forward units)."
+      },
+      "body": {
+        "fr": "Defence SERE Training Organisation, RAF St Mawgan",
+        "en": "Defence SERE Training Organisation, RAF St Mawgan"
+      },
+      "issuer": {
+        "name": "Defence SERE Training Organisation",
+        "short_name": "DSTO"
+      },
+      "issuer_key": "gb-dsto",
+      "reference": {
+        "fr": "Page officielle de RAF St Mawgan ; contenu détaillé non public",
+        "en": "Official RAF St Mawgan page; detailed content not public"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire exposé à un risque d’isolement ou de capture (équipages, forces spéciales…)"
+        ],
+        "en": [
+          "Service member at risk of isolation or capture (aircrew, special forces…)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-st-mawgan/",
+          "title": "RAF St Mawgan (raf.mod.uk)"
+        },
+        {
+          "url": "https://www.raf.mod.uk/our-organisation/stations/raf-st-mawgan/news/raf-st-mawgan-welcomes-nato-partners/",
+          "title": "RAF St Mawgan welcomes NATO partners (raf.mod.uk)"
+        }
+      ]
+    },
+    {
+      "id": "gb-signals-class-1",
+      "code": "GB-SIG-CL1",
+      "category": "communications",
+      "name": {
+        "fr": "Transmetteur de classe 1 (Royal Signals Class 1)",
+        "en": "Royal Signals Class 1 tradesman"
+      },
+      "official_name": "Class 1 (Upgrader) Course",
+      "short_name": "Sig Class 1",
+      "description": {
+        "fr": "Cours de perfectionnement de la Defence School of Communications and Information Systems qui fait passer les spécialistes des transmissions du niveau Class 2 (fin de formation initiale de spécialité) au niveau Class 1, avant les cours de superviseur. Le contenu varie selon la spécialité du Royal Corps of Signals.",
+        "en": "Upgrader course of the Defence School of Communications and Information Systems moving communications specialists from Class 2 (end of initial trade training) to Class 1, ahead of supervisor courses. Content varies with the Royal Corps of Signals trade."
+      },
+      "body": {
+        "fr": "Defence School of Communications and Information Systems, Blandford",
+        "en": "Defence School of Communications and Information Systems, Blandford"
+      },
+      "issuer": {
+        "name": "Defence School of Communications and Information Systems",
+        "short_name": "DSCIS"
+      },
+      "issuer_key": "gb-dscis",
+      "reference": {
+        "fr": "Catalogue IDT (Army) 2026 (Class 1 Upgrader Courses, DSCIS Blandford)",
+        "en": "2026 IDT (Army) catalogue (Class 1 Upgrader Courses, DSCIS Blandford)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification Class 2 dans une spécialité des transmissions"
+        ],
+        "en": [
+          "Class 2 qualification in a communications trade"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "sources": [
+        {
+          "url": "https://www.army.mod.uk/media/1rgo4flr/20260604_idta_a4_digital_idta-catalogue_v11-web.pdf",
+          "title": "International Defence Training (Army) catalogue, v11, June 2026 (army.mod.uk, PDF)"
+        },
+        {
+          "url": "https://www.army.mod.uk/support-and-training/our-schools-and-colleges/defence-school-of-communications-information-systems-dscis/",
+          "title": "Defence School of Communications Information Systems (army.mod.uk)"
+        }
+      ]
+    }
+  ]
+}

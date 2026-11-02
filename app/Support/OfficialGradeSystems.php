@@ -9,17 +9,21 @@ namespace App\Support;
  * onglet du référentiel des grades, pays, noms affichés et grade proposé par défaut au fondateur.
  *
  * Les grades français et américains sont posés par les étapes 1010 et 1050 ; les grades malaisiens (Angkatan
- * Tentera Malaysia, système d’origine britannique) par l’étape 3610 ; les grades allemands (Bundeswehr), russes,
- * chinois (Armée populaire de libération) et l’échelle OTAN générique par l’étape 3660, à partir de GRADES ci-dessous.
- * Les intitulés restent dans la langue d’origine (malais, allemand, russe en cyrillique, chinois en sinogrammes) ;
- * le référentiel affiche à côté la translittération (russe, pinyin) et l’équivalent anglais.
+ * Tentera Malaysia, système d’origine britannique) par l’étape 3610 à partir de GRADES ci-dessous. Les intitulés restent
+ * en malais (langue d’origine) ; l’équivalent anglais officiel est affiché à côté dans le référentiel.
+ * Grades britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force) : étape 3620, intitulés officiels anglais,
+ * codes OTAN de l’Armed Forces Act 2006 (Explanatory Notes, Annex B, legislation.gov.uk) et du STANAG 2116 ; les appellations
+ * d’arme du soldat (Trooper, Gunner, Sapper…) ont le code OTAN de Private : chaque communauté masque celles qu’elle n’emploie pas.
+ * Grades allemands (Bundeswehr : Heer, Marine, Luftwaffe), russes (armée de terre, marine, ВКС), chinois (Armée populaire de
+ * libération : 陆军, 海军, 空军) et échelle OTAN générique : étape 3660, intitulés dans la langue d’origine (allemand, russe en
+ * cyrillique, chinois en sinogrammes) ; le référentiel affiche à côté la translittération (russe, pinyin) et l’équivalent anglais.
  * Ajouter un système = une ligne dans SYSTEMS (+ ses grades et une étape de migration idempotente).
  */
 final class OfficialGradeSystems
 {
     /** Codes dans l’ordre des onglets. */
     public const CODES = [
-        'FR_CLASSIC', 'US_CLASSIC', 'MY_CLASSIC', 'MY_TLDM', 'MY_TUDM',
+        'FR_CLASSIC', 'US_CLASSIC', 'GB_ARMY', 'GB_RN', 'GB_RAF', 'MY_CLASSIC', 'MY_TLDM', 'MY_TUDM',
         'DE_HEER', 'DE_MARINE', 'DE_LW',
         'RU_SV', 'RU_VMF', 'RU_VKS',
         'CN_PLA', 'CN_PLAN', 'CN_PLAAF',
@@ -29,24 +33,28 @@ final class OfficialGradeSystems
     /**
      * code => onglet, pays, libellé du système en base, titre de l’onglet, nom au pluriel (« les grades … »),
      * grade proposé au fondateur, titre et texte de la carte de l’assistant de création, langue des intitulés
-     * (attribut lang), référentiel d’adéquation par échelon (EchelonStandards, vide = selon la doctrine) et famille.
+     * (attribut lang), référentiel d’adéquation par échelon (EchelonStandards, vide = selon la doctrine), famille
+     * (« Grades allemands ») et armée (army, navy, air, joint : catalogue des systèmes).
      */
     private const SYSTEMS = [
-        'FR_CLASSIC' => ['tab' => 'fr', 'country' => 'FR', 'label' => 'Grades français (classique)', 'tab_label' => 'Grades français', 'name' => 'grades français', 'founder' => 'CNE', 'card' => 'Français', 'card_text' => 'Grades classiques de l’armée de terre française.', 'lang' => '', 'profile' => '', 'family' => 'Grades français'],
-        'US_CLASSIC' => ['tab' => 'us', 'country' => 'US', 'label' => 'Grades américains (classique)', 'tab_label' => 'Grades américains', 'name' => 'grades américains', 'founder' => 'CPT', 'card' => 'United States', 'card_text' => 'Grades classiques des forces armées américaines.', 'lang' => '', 'profile' => '', 'family' => 'Grades américains'],
-        'MY_CLASSIC' => ['tab' => 'my', 'country' => 'MY', 'label' => 'Pangkat Tentera Darat Malaysia', 'tab_label' => 'Malaisie : armée de terre', 'name' => 'grades malaisiens de l’armée de terre (Tentera Darat)', 'founder' => 'KAPT', 'card' => 'Malaysia · Tentera Darat', 'card_text' => 'Grades de l’armée de terre malaisienne (système d’origine britannique), en malais.', 'lang' => 'ms', 'profile' => 'my', 'family' => 'Grades malaisiens'],
-        'MY_TLDM' => ['tab' => 'my_tldm', 'country' => 'MY', 'label' => 'Pangkat Tentera Laut Diraja Malaysia (TLDM)', 'tab_label' => 'Malaisie : marine', 'name' => 'grades malaisiens de la marine (TLDM)', 'founder' => 'LT', 'card' => 'Malaysia · TLDM', 'card_text' => 'Grades de la marine royale malaisienne, en malais.', 'lang' => 'ms', 'profile' => 'my', 'family' => 'Grades malaisiens'],
-        'MY_TUDM' => ['tab' => 'my_tudm', 'country' => 'MY', 'label' => 'Pangkat Tentera Udara Diraja Malaysia (TUDM)', 'tab_label' => 'Malaisie : armée de l’air', 'name' => 'grades malaisiens de l’armée de l’air (TUDM)', 'founder' => 'KAPT', 'card' => 'Malaysia · TUDM', 'card_text' => 'Grades de l’armée de l’air royale malaisienne, en malais.', 'lang' => 'ms', 'profile' => 'my', 'family' => 'Grades malaisiens'],
-        'DE_HEER' => ['tab' => 'de', 'country' => 'DE', 'label' => 'Dienstgrade des Heeres (Bundeswehr)', 'tab_label' => 'Allemagne : Heer', 'name' => 'grades allemands de l’armée de terre (Heer)', 'founder' => 'HPTM', 'card' => 'Deutschland · Heer', 'card_text' => 'Grades de l’armée de terre allemande (Bundeswehr), en allemand.', 'lang' => 'de', 'profile' => 'de', 'family' => 'Grades allemands'],
-        'DE_MARINE' => ['tab' => 'de_marine', 'country' => 'DE', 'label' => 'Dienstgrade der Marine (Bundeswehr)', 'tab_label' => 'Allemagne : Marine', 'name' => 'grades allemands de la marine (Deutsche Marine)', 'founder' => 'KPTLT', 'card' => 'Deutschland · Marine', 'card_text' => 'Grades de la marine allemande (Bundeswehr), en allemand.', 'lang' => 'de', 'profile' => 'de', 'family' => 'Grades allemands'],
-        'DE_LW' => ['tab' => 'de_lw', 'country' => 'DE', 'label' => 'Dienstgrade der Luftwaffe (Bundeswehr)', 'tab_label' => 'Allemagne : Luftwaffe', 'name' => 'grades allemands de l’armée de l’air (Luftwaffe)', 'founder' => 'HPTM', 'card' => 'Deutschland · Luftwaffe', 'card_text' => 'Grades de l’armée de l’air allemande (Bundeswehr), en allemand.', 'lang' => 'de', 'profile' => 'de', 'family' => 'Grades allemands'],
-        'RU_SV' => ['tab' => 'ru', 'country' => 'RU', 'label' => 'Воинские звания: Сухопутные войска', 'tab_label' => 'Russie : armée de terre', 'name' => 'grades russes de l’armée de terre (Сухопутные войска)', 'founder' => 'KPT', 'card' => 'Россия · Сухопутные войска', 'card_text' => 'Grades de l’armée de terre russe, en russe (cyrillique et translittération).', 'lang' => 'ru', 'profile' => 'ru', 'family' => 'Grades russes'],
-        'RU_VMF' => ['tab' => 'ru_vmf', 'country' => 'RU', 'label' => 'Корабельные воинские звания: ВМФ', 'tab_label' => 'Russie : marine', 'name' => 'grades russes de la marine (ВМФ)', 'founder' => 'KPTLT', 'card' => 'Россия · ВМФ', 'card_text' => 'Grades de la marine russe (grades « de bord »), en russe.', 'lang' => 'ru', 'profile' => 'ru', 'family' => 'Grades russes'],
-        'RU_VKS' => ['tab' => 'ru_vks', 'country' => 'RU', 'label' => 'Воинские звания: ВКС', 'tab_label' => 'Russie : forces aérospatiales', 'name' => 'grades russes des forces aérospatiales (ВКС)', 'founder' => 'KPT', 'card' => 'Россия · ВКС', 'card_text' => 'Grades des forces aérospatiales russes, en russe.', 'lang' => 'ru', 'profile' => 'ru', 'family' => 'Grades russes'],
-        'CN_PLA' => ['tab' => 'cn', 'country' => 'CN', 'label' => '中国人民解放军陆军军衔', 'tab_label' => 'Chine : armée de terre', 'name' => 'grades chinois de l’armée de terre (陆军)', 'founder' => 'SHANGWEI', 'card' => '中国 · 陆军', 'card_text' => 'Grades de l’armée de terre de l’Armée populaire de libération, en chinois (sinogrammes et pinyin).', 'lang' => 'zh', 'profile' => 'cn', 'family' => 'Grades chinois'],
-        'CN_PLAN' => ['tab' => 'cn_plan', 'country' => 'CN', 'label' => '中国人民解放军海军军衔', 'tab_label' => 'Chine : marine', 'name' => 'grades chinois de la marine (海军)', 'founder' => 'SHANGWEI', 'card' => '中国 · 海军', 'card_text' => 'Grades de la marine de l’Armée populaire de libération, en chinois.', 'lang' => 'zh', 'profile' => 'cn', 'family' => 'Grades chinois'],
-        'CN_PLAAF' => ['tab' => 'cn_plaaf', 'country' => 'CN', 'label' => '中国人民解放军空军军衔', 'tab_label' => 'Chine : armée de l’air', 'name' => 'grades chinois de l’armée de l’air (空军)', 'founder' => 'SHANGWEI', 'card' => '中国 · 空军', 'card_text' => 'Grades de l’armée de l’air de l’Armée populaire de libération, en chinois.', 'lang' => 'zh', 'profile' => 'cn', 'family' => 'Grades chinois'],
-        'NATO_GENERIC' => ['tab' => 'otan', 'country' => 'NATO', 'label' => 'Grades OTAN génériques (STANAG 2116)', 'tab_label' => 'Grades OTAN génériques', 'name' => 'grades OTAN génériques', 'founder' => 'OF2', 'card' => 'NATO · OTAN', 'card_text' => 'Échelle générique OR-1 à OR-9, WO et OF-1 à OF-10 pour les communautés multinationales.', 'lang' => '', 'profile' => 'nato', 'family' => 'Grades OTAN génériques'],
+        'FR_CLASSIC' => ['tab' => 'fr', 'country' => 'FR', 'label' => 'Grades français (classique)', 'tab_label' => 'Grades français', 'name' => 'grades français', 'founder' => 'CNE', 'card' => 'Français', 'card_text' => 'Grades classiques de l’armée de terre française.', 'lang' => '', 'profile' => '', 'family' => 'Grades français', 'branch' => 'army'],
+        'US_CLASSIC' => ['tab' => 'us', 'country' => 'US', 'label' => 'Grades américains (classique)', 'tab_label' => 'Grades américains', 'name' => 'grades américains', 'founder' => 'CPT', 'card' => 'United States', 'card_text' => 'Grades classiques des forces armées américaines.', 'lang' => '', 'profile' => '', 'family' => 'Grades américains', 'branch' => 'joint'],
+        'GB_ARMY' => ['tab' => 'gb', 'country' => 'GB', 'label' => 'Grades britanniques (British Army et Royal Marines)', 'tab_label' => 'Royaume-Uni : British Army et Royal Marines', 'name' => 'grades britanniques (British Army et Royal Marines)', 'founder' => 'CAPT', 'card' => 'United Kingdom · British Army', 'card_text' => 'Modèle britannique : grades de la British Army et des Royal Marines (Private, Trooper, Lance Corporal, Sergeant, Captain…).', 'lang' => 'en', 'profile' => 'gb', 'family' => 'Grades britanniques', 'branch' => 'army'],
+        'GB_RN' => ['tab' => 'gb_rn', 'country' => 'GB', 'label' => 'Grades britanniques (Royal Navy)', 'tab_label' => 'Royaume-Uni : Royal Navy', 'name' => 'grades de la Royal Navy', 'founder' => 'LT', 'card' => 'United Kingdom · Royal Navy', 'card_text' => 'Modèle britannique : grades de la Royal Navy (Able Rating, Petty Officer, Lieutenant Commander…).', 'lang' => 'en', 'profile' => 'gb', 'family' => 'Grades britanniques', 'branch' => 'navy'],
+        'GB_RAF' => ['tab' => 'gb_raf', 'country' => 'GB', 'label' => 'Grades britanniques (Royal Air Force)', 'tab_label' => 'Royaume-Uni : Royal Air Force', 'name' => 'grades de la Royal Air Force', 'founder' => 'FLTLT', 'card' => 'United Kingdom · Royal Air Force', 'card_text' => 'Modèle britannique : grades de la Royal Air Force (Aircraftman, Corporal, Flight Lieutenant…).', 'lang' => 'en', 'profile' => 'gb', 'family' => 'Grades britanniques', 'branch' => 'air'],
+        'MY_CLASSIC' => ['tab' => 'my', 'country' => 'MY', 'label' => 'Pangkat Tentera Darat Malaysia', 'tab_label' => 'Malaisie : armée de terre', 'name' => 'grades malaisiens de l’armée de terre (Tentera Darat)', 'founder' => 'KAPT', 'card' => 'Malaysia · Tentera Darat', 'card_text' => 'Grades de l’armée de terre malaisienne (système d’origine britannique), en malais.', 'lang' => 'ms', 'profile' => 'my', 'family' => 'Grades malaisiens', 'branch' => 'army'],
+        'MY_TLDM' => ['tab' => 'my_tldm', 'country' => 'MY', 'label' => 'Pangkat Tentera Laut Diraja Malaysia (TLDM)', 'tab_label' => 'Malaisie : marine', 'name' => 'grades malaisiens de la marine (TLDM)', 'founder' => 'LT', 'card' => 'Malaysia · TLDM', 'card_text' => 'Grades de la marine royale malaisienne, en malais.', 'lang' => 'ms', 'profile' => 'my', 'family' => 'Grades malaisiens', 'branch' => 'navy'],
+        'MY_TUDM' => ['tab' => 'my_tudm', 'country' => 'MY', 'label' => 'Pangkat Tentera Udara Diraja Malaysia (TUDM)', 'tab_label' => 'Malaisie : armée de l’air', 'name' => 'grades malaisiens de l’armée de l’air (TUDM)', 'founder' => 'KAPT', 'card' => 'Malaysia · TUDM', 'card_text' => 'Grades de l’armée de l’air royale malaisienne, en malais.', 'lang' => 'ms', 'profile' => 'my', 'family' => 'Grades malaisiens', 'branch' => 'air'],
+        'DE_HEER' => ['tab' => 'de', 'country' => 'DE', 'label' => 'Dienstgrade des Heeres (Bundeswehr)', 'tab_label' => 'Allemagne : Heer', 'name' => 'grades allemands de l’armée de terre (Heer)', 'founder' => 'HPTM', 'card' => 'Deutschland · Heer', 'card_text' => 'Grades de l’armée de terre allemande (Bundeswehr), en allemand.', 'lang' => 'de', 'profile' => 'de', 'family' => 'Grades allemands', 'branch' => 'army'],
+        'DE_MARINE' => ['tab' => 'de_marine', 'country' => 'DE', 'label' => 'Dienstgrade der Marine (Bundeswehr)', 'tab_label' => 'Allemagne : Marine', 'name' => 'grades allemands de la marine (Deutsche Marine)', 'founder' => 'KPTLT', 'card' => 'Deutschland · Marine', 'card_text' => 'Grades de la marine allemande (Bundeswehr), en allemand.', 'lang' => 'de', 'profile' => 'de', 'family' => 'Grades allemands', 'branch' => 'navy'],
+        'DE_LW' => ['tab' => 'de_lw', 'country' => 'DE', 'label' => 'Dienstgrade der Luftwaffe (Bundeswehr)', 'tab_label' => 'Allemagne : Luftwaffe', 'name' => 'grades allemands de l’armée de l’air (Luftwaffe)', 'founder' => 'HPTM', 'card' => 'Deutschland · Luftwaffe', 'card_text' => 'Grades de l’armée de l’air allemande (Bundeswehr), en allemand.', 'lang' => 'de', 'profile' => 'de', 'family' => 'Grades allemands', 'branch' => 'air'],
+        'RU_SV' => ['tab' => 'ru', 'country' => 'RU', 'label' => 'Воинские звания: Сухопутные войска', 'tab_label' => 'Russie : armée de terre', 'name' => 'grades russes de l’armée de terre (Сухопутные войска)', 'founder' => 'KPT', 'card' => 'Россия · Сухопутные войска', 'card_text' => 'Grades de l’armée de terre russe, en russe (cyrillique et translittération).', 'lang' => 'ru', 'profile' => 'ru', 'family' => 'Grades russes', 'branch' => 'army'],
+        'RU_VMF' => ['tab' => 'ru_vmf', 'country' => 'RU', 'label' => 'Корабельные воинские звания: ВМФ', 'tab_label' => 'Russie : marine', 'name' => 'grades russes de la marine (ВМФ)', 'founder' => 'KPTLT', 'card' => 'Россия · ВМФ', 'card_text' => 'Grades de la marine russe (grades « de bord »), en russe.', 'lang' => 'ru', 'profile' => 'ru', 'family' => 'Grades russes', 'branch' => 'navy'],
+        'RU_VKS' => ['tab' => 'ru_vks', 'country' => 'RU', 'label' => 'Воинские звания: ВКС', 'tab_label' => 'Russie : forces aérospatiales', 'name' => 'grades russes des forces aérospatiales (ВКС)', 'founder' => 'KPT', 'card' => 'Россия · ВКС', 'card_text' => 'Grades des forces aérospatiales russes, en russe.', 'lang' => 'ru', 'profile' => 'ru', 'family' => 'Grades russes', 'branch' => 'air'],
+        'CN_PLA' => ['tab' => 'cn', 'country' => 'CN', 'label' => '中国人民解放军陆军军衔', 'tab_label' => 'Chine : armée de terre', 'name' => 'grades chinois de l’armée de terre (陆军)', 'founder' => 'SHANGWEI', 'card' => '中国 · 陆军', 'card_text' => 'Grades de l’armée de terre de l’Armée populaire de libération, en chinois (sinogrammes et pinyin).', 'lang' => 'zh', 'profile' => 'cn', 'family' => 'Grades chinois', 'branch' => 'army'],
+        'CN_PLAN' => ['tab' => 'cn_plan', 'country' => 'CN', 'label' => '中国人民解放军海军军衔', 'tab_label' => 'Chine : marine', 'name' => 'grades chinois de la marine (海军)', 'founder' => 'SHANGWEI', 'card' => '中国 · 海军', 'card_text' => 'Grades de la marine de l’Armée populaire de libération, en chinois.', 'lang' => 'zh', 'profile' => 'cn', 'family' => 'Grades chinois', 'branch' => 'navy'],
+        'CN_PLAAF' => ['tab' => 'cn_plaaf', 'country' => 'CN', 'label' => '中国人民解放军空军军衔', 'tab_label' => 'Chine : armée de l’air', 'name' => 'grades chinois de l’armée de l’air (空军)', 'founder' => 'SHANGWEI', 'card' => '中国 · 空军', 'card_text' => 'Grades de l’armée de l’air de l’Armée populaire de libération, en chinois.', 'lang' => 'zh', 'profile' => 'cn', 'family' => 'Grades chinois', 'branch' => 'air'],
+        'NATO_GENERIC' => ['tab' => 'otan', 'country' => 'NATO', 'label' => 'Grades OTAN génériques (STANAG 2116)', 'tab_label' => 'Grades OTAN génériques', 'name' => 'grades OTAN génériques', 'founder' => 'OF2', 'card' => 'NATO · OTAN', 'card_text' => 'Échelle générique OR-1 à OR-9, WO et OF-1 à OF-10 pour les communautés multinationales.', 'lang' => '', 'profile' => 'nato', 'family' => 'Grades OTAN génériques', 'branch' => 'joint'],
     ];
 
     /**
@@ -60,6 +68,84 @@ final class OfficialGradeSystems
      * de l’État. Leftenan Muda n’a pas de code OTAN propre : rangé en OF-1, sous Leftenan.
      */
     public const GRADES = [
+        'GB_ARMY' => [
+            ['OCDT', 'OCdt', 'Officer Cadet', 'Officer Cadet', 'OF(D)', 'OFFICIER', 10, 1],
+            ['2LT', '2Lt', 'Second Lieutenant', 'Second Lieutenant', 'OF-1', 'OFFICIER', 11, 1],
+            ['LT', 'Lt', 'Lieutenant', 'Lieutenant', 'OF-1', 'OFFICIER', 12, 1],
+            ['CAPT', 'Capt', 'Captain', 'Captain', 'OF-2', 'OFFICIER', 13, 1],
+            ['MAJ', 'Maj', 'Major', 'Major', 'OF-3', 'OFFICIER', 14, 1],
+            ['LTCOL', 'Lt Col', 'Lieutenant Colonel', 'Lieutenant Colonel', 'OF-4', 'OFFICIER', 15, 1],
+            ['COL', 'Col', 'Colonel', 'Colonel', 'OF-5', 'OFFICIER', 16, 1],
+            ['BRIG', 'Brig', 'Brigadier', 'Brigadier', 'OF-6', 'OFFICIER', 17, 1],
+            ['MAJGEN', 'Maj Gen', 'Major General', 'Major General', 'OF-7', 'OFFICIER', 18, 1],
+            ['LTGEN', 'Lt Gen', 'Lieutenant General', 'Lieutenant General', 'OF-8', 'OFFICIER', 19, 1],
+            ['GEN', 'Gen', 'General', 'General', 'OF-9', 'OFFICIER', 20, 1],
+            ['FM', 'FM', 'Field Marshal', 'Field Marshal', 'OF-10', 'OFFICIER', 21, 1],
+            ['WO1', 'WO1', 'Warrant Officer Class 1', 'Warrant Officer Class 1', 'OR-9', 'SOUS_OFFICIER', 21, 0],
+            ['WO2', 'WO2', 'Warrant Officer Class 2', 'Warrant Officer Class 2', 'OR-8', 'SOUS_OFFICIER', 22, 0],
+            ['SSGT', 'SSgt', 'Staff Sergeant', 'Staff Sergeant', 'OR-7', 'SOUS_OFFICIER', 23, 0],
+            ['CSGT', 'CSgt', 'Colour Sergeant', 'Colour Sergeant', 'OR-7', 'SOUS_OFFICIER', 24, 0],
+            ['SGT', 'Sgt', 'Sergeant', 'Sergeant', 'OR-6', 'SOUS_OFFICIER', 25, 0],
+            ['CPL', 'Cpl', 'Corporal', 'Corporal', 'OR-4', 'SOUS_OFFICIER', 26, 0],
+            ['BDR', 'Bdr', 'Bombardier', 'Bombardier', 'OR-4', 'SOUS_OFFICIER', 27, 0],
+            ['LCPL', 'LCpl', 'Lance Corporal', 'Lance Corporal', 'OR-3', 'SOUS_OFFICIER', 28, 0],
+            ['LBDR', 'LBdr', 'Lance Bombardier', 'Lance Bombardier', 'OR-3', 'SOUS_OFFICIER', 29, 0],
+            ['PTE', 'Pte', 'Private', 'Private', 'OR-2', 'MDR', 31, 0],
+            ['MNE', 'Mne', 'Marine', 'Marine', 'OR-2', 'MDR', 32, 0],
+            ['TPR', 'Tpr', 'Trooper', 'Trooper', 'OR-2', 'MDR', 33, 0],
+            ['GNR', 'Gnr', 'Gunner', 'Gunner', 'OR-2', 'MDR', 34, 0],
+            ['SPR', 'Spr', 'Sapper', 'Sapper', 'OR-2', 'MDR', 35, 0],
+            ['SIG', 'Sig', 'Signaller', 'Signaller', 'OR-2', 'MDR', 36, 0],
+            ['GDSM', 'Gdsm', 'Guardsman', 'Guardsman', 'OR-2', 'MDR', 37, 0],
+            ['RFN', 'Rfn', 'Rifleman', 'Rifleman', 'OR-2', 'MDR', 38, 0],
+            ['CFN', 'Cfn', 'Craftsman', 'Craftsman', 'OR-2', 'MDR', 39, 0],
+            ['FUS', 'Fus', 'Fusilier', 'Fusilier', 'OR-2', 'MDR', 40, 0],
+            ['KGN', 'Kgn', 'Kingsman', 'Kingsman', 'OR-2', 'MDR', 41, 0],
+            ['RGR', 'Rgr', 'Ranger', 'Ranger', 'OR-2', 'MDR', 42, 0],
+        ],
+        'GB_RN' => [
+            ['MID', 'Mid', 'Midshipman', 'Midshipman', 'OF(D)', 'OFFICIER', 10, 1],
+            ['SLT', 'SLt', 'Sub-Lieutenant', 'Sub-Lieutenant', 'OF-1', 'OFFICIER', 11, 1],
+            ['LT', 'Lt', 'Lieutenant', 'Lieutenant', 'OF-2', 'OFFICIER', 12, 1],
+            ['LTCDR', 'Lt Cdr', 'Lieutenant Commander', 'Lieutenant Commander', 'OF-3', 'OFFICIER', 13, 1],
+            ['CDR', 'Cdr', 'Commander', 'Commander', 'OF-4', 'OFFICIER', 14, 1],
+            ['CAPT', 'Capt', 'Captain', 'Captain', 'OF-5', 'OFFICIER', 15, 1],
+            ['CDRE', 'Cdre', 'Commodore', 'Commodore', 'OF-6', 'OFFICIER', 16, 1],
+            ['RADM', 'RAdm', 'Rear Admiral', 'Rear Admiral', 'OF-7', 'OFFICIER', 17, 1],
+            ['VADM', 'VAdm', 'Vice Admiral', 'Vice Admiral', 'OF-8', 'OFFICIER', 18, 1],
+            ['ADM', 'Adm', 'Admiral', 'Admiral', 'OF-9', 'OFFICIER', 19, 1],
+            ['AF', 'AF', 'Admiral of the Fleet', 'Admiral of the Fleet', 'OF-10', 'OFFICIER', 20, 1],
+            ['WO1', 'WO1', 'Warrant Officer 1', 'Warrant Officer 1', 'OR-9', 'SOUS_OFFICIER', 21, 0],
+            ['WO2', 'WO2', 'Warrant Officer 2', 'Warrant Officer 2', 'OR-8', 'SOUS_OFFICIER', 22, 0],
+            ['CPO', 'CPO', 'Chief Petty Officer', 'Chief Petty Officer', 'OR-7', 'SOUS_OFFICIER', 23, 0],
+            ['PO', 'PO', 'Petty Officer', 'Petty Officer', 'OR-6', 'SOUS_OFFICIER', 24, 0],
+            ['LH', 'LH', 'Leading Rating', 'Leading Rating', 'OR-4', 'SOUS_OFFICIER', 25, 0],
+            ['AB', 'AB', 'Able Rating', 'Able Rating', 'OR-2', 'MDR', 31, 0],
+        ],
+        'GB_RAF' => [
+            ['OCDT', 'OCdt', 'Officer Cadet', 'Officer Cadet', 'OF(D)', 'OFFICIER', 10, 1],
+            ['PLTOFF', 'Plt Off', 'Pilot Officer', 'Pilot Officer', 'OF-1', 'OFFICIER', 11, 1],
+            ['FGOFF', 'Fg Off', 'Flying Officer', 'Flying Officer', 'OF-1', 'OFFICIER', 12, 1],
+            ['FLTLT', 'Flt Lt', 'Flight Lieutenant', 'Flight Lieutenant', 'OF-2', 'OFFICIER', 13, 1],
+            ['SQNLDR', 'Sqn Ldr', 'Squadron Leader', 'Squadron Leader', 'OF-3', 'OFFICIER', 14, 1],
+            ['WGCDR', 'Wg Cdr', 'Wing Commander', 'Wing Commander', 'OF-4', 'OFFICIER', 15, 1],
+            ['GPCAPT', 'Gp Capt', 'Group Captain', 'Group Captain', 'OF-5', 'OFFICIER', 16, 1],
+            ['AIRCDRE', 'Air Cdre', 'Air Commodore', 'Air Commodore', 'OF-6', 'OFFICIER', 17, 1],
+            ['AVM', 'AVM', 'Air Vice-Marshal', 'Air Vice-Marshal', 'OF-7', 'OFFICIER', 18, 1],
+            ['AIRMSHL', 'Air Mshl', 'Air Marshal', 'Air Marshal', 'OF-8', 'OFFICIER', 19, 1],
+            ['ACM', 'ACM', 'Air Chief Marshal', 'Air Chief Marshal', 'OF-9', 'OFFICIER', 20, 1],
+            ['MRAF', 'MRAF', 'Marshal of the Royal Air Force', 'Marshal of the Royal Air Force', 'OF-10', 'OFFICIER', 21, 1],
+            ['WO', 'WO', 'Warrant Officer', 'Warrant Officer', 'OR-9', 'SOUS_OFFICIER', 21, 0],
+            ['MACR', 'MAcr', 'Master Aircrew', 'Master Aircrew', 'OR-9', 'SOUS_OFFICIER', 22, 0],
+            ['FS', 'FS', 'Flight Sergeant', 'Flight Sergeant', 'OR-7', 'SOUS_OFFICIER', 23, 0],
+            ['CHFTECH', 'Chf Tech', 'Chief Technician', 'Chief Technician', 'OR-7', 'SOUS_OFFICIER', 24, 0],
+            ['SGT', 'Sgt', 'Sergeant', 'Sergeant', 'OR-6', 'SOUS_OFFICIER', 25, 0],
+            ['CPL', 'Cpl', 'Corporal', 'Corporal', 'OR-4', 'SOUS_OFFICIER', 26, 0],
+            ['LCPL', 'LCpl', 'Lance Corporal (RAF Regiment)', 'Lance Corporal (RAF Regiment)', 'OR-3', 'SOUS_OFFICIER', 27, 0],
+            ['SAC', 'SAC', 'Senior Aircraftman', 'Senior Aircraftman', 'OR-2', 'MDR', 31, 0],
+            ['LAC', 'LAC', 'Leading Aircraftman', 'Leading Aircraftman', 'OR-2', 'MDR', 32, 0],
+            ['AC', 'AC', 'Aircraftman', 'Aircraftman', 'OR-1', 'MDR', 33, 0],
+        ],
         'MY_CLASSIC' => [
             ['PK', 'PK', 'Pegawai Kadet', 'Officer Cadet', 'OF(D)', 'OFFICIER', 10, 0],
             ['LTM', 'Lt M', 'Leftenan Muda', 'Second Lieutenant', 'OF-1', 'OFFICIER', 11, 1],
@@ -485,6 +571,12 @@ final class OfficialGradeSystems
         return '';
     }
 
+    /** Armée du système (army, navy, air, joint) : regroupement du catalogue des systèmes par pays. */
+    public static function branch(string $code): string
+    {
+        return self::SYSTEMS[strtoupper(trim($code))]['branch'] ?? 'army';
+    }
+
     /** Système d’un code de grade inconnu ou vide : français par défaut. */
     public static function normalize(string $code): string
     {
@@ -498,7 +590,7 @@ final class OfficialGradeSystems
     {
         foreach (self::GRADES[strtoupper(trim($systemCode))] ?? [] as $g) {
             if ($g[0] === strtoupper(trim($gradeCode))) {
-                return $g[3];
+                return $g[3] !== $g[2] ? $g[3] : '';
             }
         }
 

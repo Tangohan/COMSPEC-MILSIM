@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1332, '2026-11-02', 'Royaume-Uni : grades britanniques, emplois, qualifications, doctrine et modèles d’unités', 'Une communauté peut choisir le modèle britannique à sa création (étape Grades) ou dans Back-office › Référentiel des grades : British Army et Royal Marines (Private, Trooper, Gunner, Sapper… jusqu’à Field Marshal), Royal Navy ou Royal Air Force, avec abréviations officielles et codes OTAN. Le Royaume-Uni rejoint aussi les catalogues : emplois des forces spéciales et unités spécialisées, brevets et cursus réels avec leurs écoles, publications doctrinales publiques et modèles d’organisation (UKSF, 16 Air Assault, UK Commando Force, Joint Aviation Command, bataillon d’infanterie type).', [
+                'Grades : trois systèmes britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force), proposés à la création de la communauté et dans le référentiel des grades',
+                'Catalogue d’emplois : 111 emplois britanniques sourcés (UKSF, 16 Air Assault, Ranger Regiment, Royal Marines, aviation, EOD, artillerie, RAF Regiment, Royal Navy)',
+                'Catalogue des qualifications : 52 brevets et cursus britanniques (UKSF Selection, All Arms Commando Course, P Company, Brecon, JTAC, CMT…) et 29 émetteurs réels (CTCRM Lympstone, Infantry Battle School, RMA Sandhurst…)',
+                'Référentiel doctrinal : 35 publications britanniques publiques (JDP 0-01, JDP 01, Land Operations, JSP 383…)',
+                'Modèles d’organisation : UKSF, 16 Air Assault Brigade Combat Team, UK Commando Force, Joint Aviation Command et bataillon d’infanterie britannique type jusqu’aux fire teams',
+            ], [
+                'Adéquation de l’organisation : référentiel britannique (section commandée par un Corporal, platoon par un Lieutenant et un Platoon Sergeant, compagnie par un Major), retenu d’office avec les grades britanniques',
+                'Catalogues : drapeau du Royaume-Uni et nom « United Kingdom »',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grades_royaume_uni) pour ajouter les grades britanniques.',
+                'Essai : Back-office › Référentiel des grades › onglet Royaume-Uni : British Army et Royal Marines › Utiliser pour la communauté ; puis Organisation › Modèles › Royaume-Uni.',
+            ]),
             $pr(1331, '2026-11-02', 'Liens d’invitation : suppression et page aux couleurs du site', 'Un lien d’invitation se supprime désormais depuis la liste ou sa fiche, après confirmation : il cesse de fonctionner, ses statistiques sont effacées et il libère la place dans la limite de liens actifs ; les candidatures et adhésions déjà faites restent intactes. La page ouverte par le lien (athena-comspec.eu/public/i/…) reprend la barre de navigation et le pied de page de l’accueil du site.', [
                 'Recrutement › Liens d’invitation : bouton Supprimer dans la liste et sur la fiche, avec une fenêtre de confirmation qui détaille ce qui est conservé et ce qui est effacé',
                 'Page d’un lien supprimé : le visiteur voit que la communauté l’a supprimé',
@@ -301,6 +314,19 @@ final class DevDispatchCatalog
                 'Page d’invitation /i/… : même barre de navigation (menu, langue, connexion) et même pied de page que l’accueil ; Connexion et Inscription gardent l’invitation',
             ], [], ['personnel'], [], 'Portail Athena'),
 
+            $pr(1330, '2026-11-02', 'Malaisie : grades, emplois, qualifications et modèles d’unités', 'La Malaisie rejoint les pays du site. Le référentiel des grades propose les grades de l’Angkatan Tentera Malaysia, système d’origine britannique, en malais avec leur équivalent anglais et leur code OTAN : armée de terre (Tentera Darat, de Prebet à Jeneral), marine (TLDM) et armée de l’air (TUDM). Le catalogue d’emplois ajoute 81 emplois malaisiens sourcés (Grup Gerak Khas, 10 Briged Para, Askar Melayu, Renjer, PASKAL, PASKAU, aviation de l’armée, et à part la police : VAT 69 et UTK), reliés à 31 qualifications et 19 écoles et unités réelles. Cinq modèles d’organisation inspirés d’unités réelles s’appliquent avec les grades malaisiens, dont un bataillon de l’Askar Melayu détaillé jusqu’au seksyen, et l’adéquation de l’organisation suit le modèle britannique (le chef de seksyen est un Koperal).', [
+                'Référentiel des grades : onglets Malaisie (armée de terre, marine, armée de l’air), intitulés malais, abrégés usuels, équivalent anglais et code OTAN ; bouton pour utiliser ces grades dans la communauté',
+                'Création de communauté : les grades malaisiens se choisissent à l’étape Grades, avec aperçu et grade du fondateur',
+                'Catalogue d’emplois : pays Malaisie (drapeau, nom « Malaysia »), 81 emplois avec intitulé officiel malais, traductions française et anglaise, brevets et formations reliés',
+                'Qualifications : catalogue malaisien (31 cursus réels : Kursus Asas Komando, PASKAL, PASKAU, parachutisme, tireur d’élite, cours de police…) et 19 émetteurs réels (PULPAK, PULADA, UPNM, Maktab Turus Angkatan Tentera…)',
+                'Modèles d’organisation : 21 Gerup Gerak Khas, 10 Briged Para, bataillon 9 RAMD (Para) avec kompeni, platun et seksyen, PASKAL et PASKAU',
+                'Adéquation de l’organisation : référentiel malaisien (modèle britannique), retenu d’office avec les grades malaisiens',
+            ], [
+                'Les listes de grades regroupent la Malaisie sous son nom ; le système de grades d’un modèle d’organisation malaisien est indiqué sur sa carte',
+            ], [], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape grade_systems_malaysia) pour installer les grades malaisiens ; les emplois, qualifications et modèles d’unités sont disponibles sans migration.',
+                'Essai : Référentiel des grades › Malaisie : armée de terre › « Utiliser les grades malaisiens… », puis Effectifs › attribuer « Kapten » à un membre.',
+            ], 'Portail Athena'),
             $pr(1329, '2026-11-02', 'Administration des formules : tableau comparatif et fiche par formule', 'Administration › Formules d’accès devient un tableau comparatif : une colonne par formule, une ligne par paramètre, rangés par groupe (membres et organisation, Academy et qualifications, recrutement, ATAK et jeu, documents, marque et intégrations) et repliables, avec une recherche et le nombre de communautés sur chaque formule. Chaque formule s’ouvre sur une fiche à onglets : interrupteurs pour les modules, nombre ou case « Illimité » pour les plafonds, aperçu de la page des formules telle que la voit le client, liste des communautés qui dépasseraient un plafond abaissé (rien ne leur est retiré) et historique des modifications. Une formule se duplique en un clic. La page publique des formules calcule désormais son comparatif depuis les vraies valeurs des formules.', [
                 'Tableau comparatif des formules : groupes repliables, recherche d’un paramètre, communautés par formule, boutons Modifier et Dupliquer',
                 'Fiche d’une formule : onglets par groupe, interrupteurs, quotas avec case « Illimité », contrôle des valeurs à l’enregistrement',
