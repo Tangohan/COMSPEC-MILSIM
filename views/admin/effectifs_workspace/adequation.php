@@ -30,6 +30,10 @@ $profileLabels = [
     EchelonStandards::PROFILE_FR => 'Référentiel français',
     EchelonStandards::PROFILE_US => 'Référentiel américain',
     EchelonStandards::PROFILE_MY => 'Référentiel malaisien (modèle britannique)',
+    EchelonStandards::PROFILE_DE => 'Référentiel allemand (Bundeswehr)',
+    EchelonStandards::PROFILE_RU => 'Référentiel russe',
+    EchelonStandards::PROFILE_CN => 'Référentiel chinois (Armée populaire de libération)',
+    EchelonStandards::PROFILE_NATO => 'Référentiel OTAN générique',
 ];
 $dis = $canEdit ? '' : ' disabled';
 

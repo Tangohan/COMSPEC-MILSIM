@@ -398,9 +398,10 @@ final class OrganizationCatalogServiceTest extends TestCase
         );
 
         $prefix = \App\Services\OrganizationCatalog\RealUnitKitDefinitions::PREFIX;
-        // Modèle allemand d’abord : aucun système de grades imposé.
+        // Modèle allemand d’abord : grades de la Luftwaffe retenus (la communauté n’en avait pas).
         self::assertTrue($svc->apply(5, $prefix . 'de_hsg64', [], 1)['ok']);
-        self::assertSame([], $settings);
+        self::assertSame('DE_LW', $settings['grade_system_code'] ?? null);
+        $settings = [];
         $store = [];
 
         $first = $svc->apply(5, $prefix . 'us_ussocom', [], 1);

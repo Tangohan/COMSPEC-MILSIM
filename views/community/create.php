@@ -520,12 +520,7 @@ $guideUrl = url('communities/create/guide');
                                     $kitIsJobCatalog = in_array($kitCode, $jobDoctrineKits, true);
                                     $kitIsReal = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::isRealUnits($kit);
                                     $kitGradeCode = (string) ($kit['grade_system_code'] ?? '');
-                                    $kitGrades = match ($kitGradeCode) {
-                                        'US_CLASSIC' => 'Grades américains',
-                                        'FR_CLASSIC' => 'Grades français',
-                                        'MY_CLASSIC', 'MY_TLDM', 'MY_TUDM' => 'Grades malaisiens',
-                                        default => 'Sans système de grades',
-                                    };
+                                    $kitGrades = \App\Support\OfficialGradeSystems::family($kitGradeCode) ?: 'Sans système de grades';
                                     $kitEyebrow = $kitIsReal ? 'Inspiré d’unités réelles' : ($kitIsJobCatalog ? 'Catalogue d’emplois' : 'Modèle officiel');
                                     $kitCommand = $kitIsReal ? (string) ($kit['origin']['command'] ?? '') : '';
                                     $kitJobs = $kitIsReal ? \App\Services\OrganizationCatalog\RealUnitKitDefinitions::jobCatalogCount($kit) : 0;
@@ -746,7 +741,7 @@ $guideUrl = url('communities/create/guide');
                                             <ul class="mt-1 space-y-0.5 pl-2 border-l-2 border-emerald-200">
                                                 <?php foreach ($block['grades'] as $g): ?>
                                                 <?php $gShort = trim((string) ($g['label_short'] ?? $g['code'] ?? '')); $gLong = trim((string) ($g['label_long'] ?? '')); ?>
-                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><span lang="ms" translate="no"><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></span></li>
+                                                <li><?php if ($gShort !== '' && mb_strtolower($gShort) !== mb_strtolower($gLong)): ?><span class="cc-grade-code"><?= htmlspecialchars($gShort, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><span<?= ($extraLang = \App\Support\OfficialGradeSystems::lang($extraCode)) !== '' ? ' lang="' . $extraLang . '"' : '' ?> translate="no"><?= htmlspecialchars($gLong !== '' ? $gLong : $gShort, ENT_QUOTES, 'UTF-8') ?></span></li>
                                                 <?php endforeach; ?>
                                             </ul>
                                         </div>

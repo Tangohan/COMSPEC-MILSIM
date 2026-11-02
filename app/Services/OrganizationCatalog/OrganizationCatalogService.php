@@ -155,6 +155,16 @@ final class OrganizationCatalogService
             'MY_CLASSIC' => 'Système de grades malaisien (Tentera Darat)',
             'MY_TLDM' => 'Système de grades malaisien (marine, TLDM)',
             'MY_TUDM' => 'Système de grades malaisien (armée de l’air, TUDM)',
+            'DE_HEER' => 'Système de grades allemand (Heer)',
+            'DE_MARINE' => 'Système de grades allemand (Marine)',
+            'DE_LW' => 'Système de grades allemand (Luftwaffe)',
+            'RU_SV' => 'Système de grades russe (armée de terre)',
+            'RU_VMF' => 'Système de grades russe (marine, ВМФ)',
+            'RU_VKS' => 'Système de grades russe (forces aérospatiales, ВКС)',
+            'CN_PLA' => 'Système de grades chinois (armée de terre, 陆军)',
+            'CN_PLAN' => 'Système de grades chinois (marine, 海军)',
+            'CN_PLAAF' => 'Système de grades chinois (armée de l’air, 空军)',
+            'NATO_GENERIC' => 'Système de grades OTAN générique',
             '' => 'Aucun système de grades choisi',
             default => 'Système de grades déjà en place',
         };
@@ -522,6 +532,10 @@ final class OrganizationCatalogService
                 $gradeNote = match ($wanted) {
                     'US_CLASSIC' => 'Système de grades américain retenu.',
                     'MY_CLASSIC', 'MY_TLDM', 'MY_TUDM' => 'Système de grades malaisien retenu.',
+                    'DE_HEER', 'DE_MARINE', 'DE_LW' => 'Système de grades allemand retenu.',
+                    'RU_SV', 'RU_VMF', 'RU_VKS' => 'Système de grades russe retenu.',
+                    'CN_PLA', 'CN_PLAN', 'CN_PLAAF' => 'Système de grades chinois retenu.',
+                    'NATO_GENERIC' => 'Système de grades OTAN générique retenu.',
                     default => 'Système de grades français retenu.',
                 };
             } else {

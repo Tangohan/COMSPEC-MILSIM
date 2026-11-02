@@ -54,4 +54,5 @@ return [
     ['id' => 'recruitment_invite_links', 'label' => 'Recrutement : liens d’invitation partageables (/i/code) pour candidater ou rejoindre la communauté, avec expiration, nombre d’utilisations et statistiques', 'group' => 'schema', 'file' => '3590_recruitment_invite_links.php', 'rerun' => true],
     ['id' => 'member_names_trigrams', 'label' => 'Noms des membres : trigrammes uniques par communauté (remplissage initial) et réglage d’affichage (Prénom N., Prénom NOM)', 'group' => 'schema', 'file' => '3600_member_names_trigrams.php', 'rerun' => true],
     ['id' => 'grade_systems_malaysia', 'label' => 'Grades : systèmes malaisiens (Tentera Darat, TLDM, TUDM) ajoutés au catalogue commun, intitulés en malais', 'group' => 'schema', 'file' => '3610_grade_systems_malaysia.php', 'rerun' => true],
+    ['id' => 'grade_systems_de_ru_cn_nato', 'label' => 'Grades : systèmes allemands (Heer, Marine, Luftwaffe), russes (armée de terre, marine, ВКС), chinois (陆军, 海军, 空军) et échelle OTAN générique ajoutés au catalogue commun, intitulés dans la langue d’origine', 'group' => 'schema', 'file' => '3660_grade_systems_de_ru_cn_nato.php', 'rerun' => true],
 ];

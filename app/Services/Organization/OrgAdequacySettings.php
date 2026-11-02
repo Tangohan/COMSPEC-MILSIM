@@ -147,9 +147,11 @@ final class OrgAdequacySettings
         if (in_array($profile, EchelonStandards::profiles(), true)) {
             return $profile;
         }
-        // Grades malaisiens : articulation d’origine britannique (le chef de seksyen est un Koperal).
-        if (str_starts_with(strtoupper(trim($gradeSystemCode)), 'MY_')) {
-            return EchelonStandards::PROFILE_MY;
+        // Grades d’un pays à l’articulation propre (Malaisie : modèle britannique ; Allemagne, Russie, Chine, OTAN) :
+        // le référentiel du système de grades l’emporte sur la doctrine.
+        $systemProfile = \App\Support\OfficialGradeSystems::adequacyProfile($gradeSystemCode);
+        if (in_array($systemProfile, EchelonStandards::profiles(), true)) {
+            return $systemProfile;
         }
         $ref = DoctrineReferential::sanitize($doctrineReferential);
         if ($ref === DoctrineReferential::US) {

@@ -70,7 +70,7 @@ final class CommunityOnboardingValidationService
             $wizard['grade_system_code'] = $code;
         }
         if (!in_array($code, self::GRADE_SYSTEMS, true)) {
-            $errors[] = 'Choisissez un référentiel de grades (modèle français, américain ou malaisien).';
+            $errors[] = 'Choisissez un référentiel de grades (modèle français, américain, malaisien, allemand, russe, chinois ou OTAN).';
             $step = $step ?? 'grades';
         }
 

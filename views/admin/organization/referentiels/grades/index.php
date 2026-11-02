@@ -2,7 +2,8 @@
 /**
  * Référentiel des grades de la communauté.
  *
- * Une liste par système officiel (France, États-Unis, Malaisie : armée de terre, marine, air), groupée par catégorie et classée du grade le plus élevé au plus bas.
+ * Une liste par système officiel (France, États-Unis, Malaisie, Allemagne, Russie, Chine : armée de terre, marine, air ;
+ * échelle OTAN générique), groupée par catégorie et classée du grade le plus élevé au plus bas.
  * Les grades du catalogue partagé se masquent / se réaffichent (rien n'est supprimé) ; les grades créés par la
  * communauté appartiennent au système d'avancement et ont leur propre onglet (?tab=perso).
  * Les systèmes entièrement sur mesure (SCP, Star Wars…) ont l’onglet ?tab=custom (partial _custom.php).
@@ -24,6 +25,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 $extrasActive = array_values(array_filter($tenantExtras, static fn (array $g): bool => empty($g['archived_at'])));
 $extrasArchived = array_values(array_filter($tenantExtras, static fn (array $g): bool => !empty($g['archived_at'])));
 $tabSystem = OfficialGradeSystems::codeForTab($tab) ?? 'FR_CLASSIC';
+$tabLang = OfficialGradeSystems::lang($tabSystem);
 $rows = is_array($gradesBySystem[$tabSystem] ?? null) ? $gradesBySystem[$tabSystem] : [];
 $visible = array_values(array_filter($rows, static fn (array $g): bool => !empty($g['is_enabled'])));
 $hidden = GradeSelectOptions::sorted(array_values(array_filter($rows, static fn (array $g): bool => empty($g['is_enabled']))));
@@ -193,7 +195,7 @@ $tabUrl = static fn (string $t): string => url('back-office/referentiels/grades'
                     <li class="grd-ref__row" data-grade-row>
                         <span class="grd-ref__short"><?= $h(trim((string) ($g['label_short'] ?? '')) ?: trim((string) ($g['code'] ?? ''))) ?></span>
                         <span class="grd-ref__name">
-                            <strong<?= OfficialGradeSystems::english($tabSystem, (string) ($g['code'] ?? '')) !== '' ? ' lang="ms"' : '' ?>><?= $h($g['label_long'] ?? '') ?></strong><?php if (($english = OfficialGradeSystems::english($tabSystem, (string) ($g['code'] ?? ''))) !== ''): ?><span class="grd-ref__muted" lang="en" translate="no"><?= $h($english) ?></span><?php endif; ?><code class="grd-ref__code">Code : <?= $h(trim((string) ($g['code'] ?? '')) ?: 'Non renseigné') ?></code>
+                            <strong<?= $tabLang !== '' && OfficialGradeSystems::english($tabSystem, (string) ($g['code'] ?? '')) !== '' ? ' lang="' . $h($tabLang) . '"' : '' ?>><?= $h($g['label_long'] ?? '') ?></strong><?php if (($romanized = OfficialGradeSystems::romanized($tabSystem, (string) ($g['code'] ?? ''))) !== ''): ?><span class="grd-ref__muted" lang="<?= $h($tabLang) ?>-Latn" translate="no"><?= $h($romanized) ?></span><?php endif; ?><?php if (($english = OfficialGradeSystems::english($tabSystem, (string) ($g['code'] ?? ''))) !== ''): ?><span class="grd-ref__muted" lang="en" translate="no"><?= $h($english) ?></span><?php endif; ?><code class="grd-ref__code">Code : <?= $h(trim((string) ($g['code'] ?? '')) ?: 'Non renseigné') ?></code>
                             <?php if ($renamed($g)): ?>
                                 <span class="grd-ref__badge" title="Nom du catalogue : <?= $h($g['catalog_label_long'] ?? '') ?>">Renommé</span>
                             <?php endif; ?>
