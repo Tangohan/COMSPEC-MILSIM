@@ -305,7 +305,7 @@ final class DevDispatchCatalog
                 'Catalogues : drapeau du Royaume-Uni et nom « United Kingdom »',
             ], [], ['personnel'], [
                 'L’administrateur lance run-migrations.php (étape grades_royaume_uni) pour ajouter les grades britanniques.',
-                'Essai : Back-office › Référentiel des grades › onglet British Army et Royal Marines › Utiliser pour la communauté ; puis Organisation › Modèles › Royaume-Uni.',
+                'Essai : Back-office › Référentiel des grades › onglet Royaume-Uni : British Army et Royal Marines › Utiliser pour la communauté ; puis Organisation › Modèles › Royaume-Uni.',
             ]),
             $pr(1331, '2026-11-02', 'Liens d’invitation : suppression et page aux couleurs du site', 'Un lien d’invitation se supprime désormais depuis la liste ou sa fiche, après confirmation : il cesse de fonctionner, ses statistiques sont effacées et il libère la place dans la limite de liens actifs ; les candidatures et adhésions déjà faites restent intactes. La page ouverte par le lien (athena-comspec.eu/public/i/…) reprend la barre de navigation et le pied de page de l’accueil du site.', [
                 'Recrutement › Liens d’invitation : bouton Supprimer dans la liste et sur la fiche, avec une fenêtre de confirmation qui détaille ce qui est conservé et ce qui est effacé',
