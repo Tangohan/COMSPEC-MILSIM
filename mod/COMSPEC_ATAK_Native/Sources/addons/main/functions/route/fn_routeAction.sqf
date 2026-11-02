@@ -245,7 +245,13 @@ switch (_act) do {
             if ((_r get "scope") > 0) then { ["unshare", _arg] call comspec_atak_native_fnc_routeAction; };
             _mine deleteAt _arg;
             call _save;
-        } else { _rx deleteAt _arg; };
+        } else {
+            // Route reçue retirée ici : plus jamais reprise (rejeu du serveur, mise à jour de l'auteur), pour la partie.
+            (missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap]) set [_arg, 1e9];
+            missionNamespace setVariable ["COMSPEC_ATAK_RteGone", missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap]];
+            _rx deleteAt _arg;
+            ["INFO", "ROUTE", format ["Route reçue %1 retirée par le joueur : ses mises à jour seront ignorées", _arg]] call comspec_atak_native_fnc_log;
+        };
         if (((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo _arg) then { ["unfollow", true] call comspec_atak_native_fnc_routeAction; };
         call _refresh;
         true
@@ -573,6 +579,10 @@ switch (_act) do {
         if (_op isEqualTo "del") exitWith {
             if !(_pk isEqualType "" && {_pk in _rx}) exitWith {};
             private _n = (_rx get _pk) get "name";
+            // Pierre tombale : une version plus ancienne (rejeu, file sans réseau) ne la fait pas revenir.
+            private _gone = missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap];
+            missionNamespace setVariable ["COMSPEC_ATAK_RteGone", _gone];
+            _gone set [_pk, (_rx get _pk) getOrDefault ["rev", 0]];
             _rx deleteAt _pk;
             if (((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo _pk) then { ["unfollow", true] call comspec_atak_native_fnc_routeAction; };
             if !(_quiet) then { ["INFO", format ["Route retirée par %1 : %2", _who, _n], 3, 20] call comspec_atak_native_fnc_notify; };
@@ -584,6 +594,11 @@ switch (_act) do {
         if ((_r get "uid") isEqualTo getPlayerUID player || {(_r get "id") in _mine}) exitWith {};
         private _id = _r get "id";
         private _old = _rx getOrDefault [_id, createHashMap];
+        // Version plus ancienne que celle déjà reçue, ou route retirée depuis (pierre tombale) : ignorée.
+        private _goneRev = (missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap]) getOrDefault [_id, -1];
+        if ((_r get "rev") <= _goneRev) exitWith { ["INFO", "ROUTE", format ["Route %1 (révision %2) ignorée : retirée depuis", _id, _r get "rev"]] call comspec_atak_native_fnc_log; };
+        if ((count _old) > 0 && {(_r get "rev") < (_old getOrDefault ["rev", 0])}) exitWith { ["INFO", "ROUTE", format ["Route %1 : révision %2 plus ancienne que %3, ignorée", _id, _r get "rev", _old get "rev"]] call comspec_atak_native_fnc_log; };
+        (missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap]) deleteAt _id;
         _r set ["from", [_who, _r get "owner"] select (_who isEqualTo "")];
         _r set ["scope", (_sc max 1) min 3];
         _r set ["arma", false];

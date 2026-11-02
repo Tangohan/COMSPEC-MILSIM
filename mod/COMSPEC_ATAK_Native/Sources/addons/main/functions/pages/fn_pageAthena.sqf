@@ -69,7 +69,9 @@ if (_logged) then {
             ["info", "Indicatif", ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v],
             ["info", "Nom", ["comspec_profile_name", name player] call _v],
             ["info", "Unité (ORBAT)", [[player, true] call comspec_atak_native_fnc_unitGroup, "—"] select ((["comspec_profile_unit", ""] call _v) in ["", "—"])],
-            ["info", "Fonction", [["comspec_profile_role", "—"] call _v, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev],
+            // Fonction actuelle (site : function) ; l'ancien rôle de communauté (role) seulement à défaut, sous son nom.
+            [["info", "Fonction", [["comspec_profile_function", "—"] call _v, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev],
+             ["info", "Rôle", [["comspec_profile_role", "—"] call _v, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev]] select (((missionNamespace getVariable ["comspec_profile_function", ""]) isEqualTo "") && {(missionNamespace getVariable ["comspec_profile_role", ""]) isNotEqualTo ""}),
             ["info", "Grade", ["comspec_profile_grade", "—"] call _v],
             ["info", "Communauté", ["comspec_tenant_name", "—"] call _v],
             ["info", "Identifiant ATAK", ["COMSPEC_AtakId", "—"] call _v],
