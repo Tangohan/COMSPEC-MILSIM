@@ -294,6 +294,10 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1325, '2026-11-02', 'Liens d’invitation : en anglais de bout en bout', 'Les pages des liens d’invitation (back-office et page publique) gardaient quelques phrases en français en anglais : elles sont désormais entièrement traduites.', [], [], [
+                'Liens d’invitation en anglais : la présentation de la liste, le quota, l’aide de l’adresse personnalisée, l’action « Rejoindre » et le bandeau de candidature restaient en français',
+            ], ['personnel'], [], 'Portail Athena'),
+
             $pr(1323, '2026-11-02', 'Liens d’invitation : la mise en page revient', 'Les pages Recrutement › Liens d’invitation s’affichaient sans mise en page : elles retrouvent le style du back-office, comme les codes prioritaires.', [], [], [
                 'Recrutement › Liens d’invitation : liste, création, fiche et modification s’affichaient sans mise en page ; elles retrouvent le style du back-office',
             ], ['personnel'], [], 'Portail Athena'),
