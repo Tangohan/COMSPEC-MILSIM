@@ -82,7 +82,8 @@ foreach ($inviteLinks as $link) {
     ];
     $athTableRowHrefs[] = $baseUrl . '/' . $id;
     $athTableRowActions[] = '<a href="' . $h($baseUrl . '/' . $id) . '" class="ath-row-action">Détails</a> '
-        . '<a href="' . $h($baseUrl . '/' . $id . '/modifier') . '" class="ath-row-action">Modifier</a>';
+        . '<a href="' . $h($baseUrl . '/' . $id . '/modifier') . '" class="ath-row-action">Modifier</a> '
+        . '<button type="button" class="ath-row-action ath-row-action--danger" data-invite-link-delete="' . $h($baseUrl . '/' . $id . '/supprimer') . '" data-invite-link-label="' . $h((string) ($link['label'] ?? '')) . '">Supprimer</button>';
 }
 $athTableActionsLabel = 'FICHE';
 $athTableFilters = [];
@@ -94,3 +95,4 @@ $athTableFoot = $inviteLinks === []
     ? 'Aucun lien d’invitation pour le moment : créez-en un pour l’envoyer à vos futurs membres.'
     : 'Cliquez une ligne pour copier le lien, afficher son QR code et voir ses statistiques.';
 require base_path('views/partials/ath_table.php');
+require __DIR__ . '/_delete_dialog.php';

@@ -140,6 +140,15 @@ require base_path('views/partials/ath_table.php');
 </div>
 <?php endif; ?>
 
+<div class="ath-warn" style="margin-top:16px;">
+    <p class="ath-warn__title">Supprimer le lien</p>
+    <p class="ath-warn__text">Le lien et ses statistiques disparaissent ; les candidatures et adhésions déjà faites sont conservées.</p>
+    <div style="margin-top:11px;">
+        <button type="button" class="ath-row-action ath-row-action--danger" data-invite-link-delete="<?= $h($baseUrl . '/' . $id . '/supprimer') ?>" data-invite-link-label="<?= $h((string) ($link['label'] ?? '')) ?>">Supprimer ce lien</button>
+    </div>
+</div>
+<?php require __DIR__ . '/_delete_dialog.php'; ?>
+
 <?php if ($status !== InviteLinkService::STATUS_REVOKED): ?>
 <div class="ath-warn" style="margin-top:16px;">
     <p class="ath-warn__title">Révoquer le lien</p>

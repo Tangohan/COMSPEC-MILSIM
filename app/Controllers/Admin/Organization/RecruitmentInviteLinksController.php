@@ -247,6 +247,31 @@ final class RecruitmentInviteLinksController
         return Response::redirect(url(self::BASE_PATH . '/' . $id));
     }
 
+    public function destroy(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $link = $this->findOrNull($tenantId, $params);
+        if ($link === null) {
+            return $this->missing();
+        }
+        $id = (int) $link['id'];
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url(self::BASE_PATH . '/' . $id));
+        }
+        $mode = $this->links->delete($tenantId, $id);
+        if ($mode === null) {
+            Session::flash('error', 'Le lien n’a pas pu être supprimé. Réessayez.');
+
+            return Response::redirect(url(self::BASE_PATH . '/' . $id));
+        }
+        $this->audit->log(AuditAction::INVITE_LINK_DELETED, $tenantId, (int) Session::get('user_id'), 'invite_link', $id, null, (string) $link['public_code'] . ' (' . $mode . ')');
+        Session::flash('success', 'Lien supprimé : il ne fonctionne plus et ses statistiques ont été effacées.');
+
+        return Response::redirect(url(self::BASE_PATH));
+    }
+
     public function reactivate(Request $request, array $params = []): Response
     {
         $tenantId = $this->tenantId();
