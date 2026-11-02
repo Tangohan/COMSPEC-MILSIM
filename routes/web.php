@@ -1554,6 +1554,10 @@ return function (Router $router) {
     $router->get('/back-office/doctrine', [DoctrineAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine', [DoctrineAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/doctrine/export-lectures', [DoctrineAdminController::class, 'exportCompliance'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/relances', [DoctrineAdminController::class, 'remindAll'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/documents/{id}/publier', [DoctrineAdminController::class, 'publishDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/documents/{id}/archiver', [DoctrineAdminController::class, 'archiveDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclature'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/documents/nomenclature', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'nomenclatureSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/documents/types', [\App\Controllers\Admin\Organization\AdminDoctrineController::class, 'types'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
