@@ -1182,6 +1182,8 @@ return function (Router $router) {
     $router->get('/admin/system/subscription-plans', [SystemSubscriptionPlansController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/subscription-plans/{id}/edit', [SystemSubscriptionPlansController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/subscription-plans/{id}/update', [SystemSubscriptionPlansController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/subscription-plans/{id}/apercu', [SystemSubscriptionPlansController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/subscription-plans/{id}/dupliquer', [SystemSubscriptionPlansController::class, 'duplicate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/deployment/campaigns/nouveau', [PlatformDeploymentAdminController::class, 'campaignsNew'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/campaigns', [PlatformDeploymentAdminController::class, 'campaignsStore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/deployment/campaigns/{id}/executer', [PlatformDeploymentAdminController::class, 'campaignsProcess'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

@@ -128,6 +128,7 @@ final class AuditActionLabel
         'platform.demo_access_updated' => 'Accès démo du site modifié',
         'platform.contributor_updated' => 'Contributeurs ou langues du site modifiés',
         'platform.subscription_plan_updated' => 'Formule d’accès (palier) modifiée',
+        'platform.subscription_plan_duplicated' => 'Formule d’accès (palier) dupliquée',
         'deployment.module_created' => 'Déploiement — fonctionnalité créée',
         'deployment.module_updated' => 'Déploiement — fonctionnalité modifiée',
         'deployment.version_created' => 'Déploiement — version créée',
