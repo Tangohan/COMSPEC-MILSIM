@@ -173,6 +173,7 @@ $faq = [
             <div class="amw-more">
                 <a class="amw-more__a" href="<?= $e(url('atak/premiere-liaison')) ?>"><?= $ico('link') ?><b>Première liaison</b><small>Relier le téléphone à votre compte</small></a>
                 <a class="amw-more__a" href="<?= $e(url('atak/tuto')) ?>"><?= $ico('phone') ?><b>Guide de connexion</b><small>Pas à pas, captures à l’appui</small></a>
+                <a class="amw-more__a" href="<?= $e(url('wiki/atak')) ?>"><?= $ico('book') ?><b>Wiki ATAK</b><small>Une page par app, réglages serveur et nouveautés</small></a>
                 <a class="amw-more__a" href="<?= $e(url('atak/mod/guide')) ?>"><?= $ico('book') ?><b>Guide complet du mod</b><small>Toutes les applications du téléphone</small></a>
                 <a class="amw-more__a" href="<?= $e(url('atak/mod/formation')) ?>"><?= $ico('mods') ?><b>Formation opérateur</b><small>7 modules pour prendre le mod en main</small></a>
             </div>

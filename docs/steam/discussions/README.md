@@ -35,3 +35,6 @@ l'épingler le garde en haut.
 
 Quand une app change, modifier son fichier ici puis éditer le sujet Steam correspondant. La version citée
 dans chaque sujet est 2.9.34.
+
+Ces fichiers alimentent aussi le wiki public du site (`/wiki/atak`, une page par fichier) : une modification
+apparaît sur le site sans autre étape. Contrôle : `php tools/wiki/atak_wiki.php`. Voir `docs/wiki-atak.md`.

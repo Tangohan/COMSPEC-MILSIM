@@ -40,6 +40,7 @@ $n = static function (string $fr): string {
                 <ul class="portal-footer__list">
                     <li><a href="<?= htmlspecialchars(url('home'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Accueil') ?></a></li>
                     <li><a href="<?= htmlspecialchars(url('documentation'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Wiki') ?></a></li>
+                    <li><a href="<?= htmlspecialchars(url('wiki/atak'), ENT_QUOTES, 'UTF-8') ?>">Wiki ATAK</a></li>
                     <li><a href="<?= htmlspecialchars(url('documents'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('Documents') ?></a></li>
                     <li><a href="<?= htmlspecialchars(url('academy'), ENT_QUOTES, 'UTF-8') ?>">Academy</a></li>
                     <li><a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>"><?= $n('ATAK & cartographie') ?></a></li>

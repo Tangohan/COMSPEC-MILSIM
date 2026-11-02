@@ -109,6 +109,9 @@ $tocGroups = [
             <p class="site-docs__ref-link">
                 <a href="<?= htmlspecialchars(url('documentation/references'), ENT_QUOTES, 'UTF-8') ?>">Documentation technique du mod</a>
             </p>
+            <p class="site-docs__ref-link">
+                <a href="<?= htmlspecialchars(url('wiki/atak'), ENT_QUOTES, 'UTF-8') ?>">Wiki ATAK : toutes les apps du téléphone</a>
+            </p>
         </aside>
 
         <div class="site-docs__main">
