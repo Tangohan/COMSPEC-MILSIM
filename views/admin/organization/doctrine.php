@@ -107,7 +107,7 @@ $fileIcon = static function (array $d): string {
                 <li>
                     <b>Classer</b>
                     <p>Choisissez son type (note de service, instruction…) et, si besoin, son domaine : Athena lui donne une référence unique, par exemple NS-2026-004.</p>
-                    <?php if (!empty($can['manage'])): ?><a href="<?= $h(url('back-office/documents/types')) ?>">Types</a> · <a href="<?= $h(url('back-office/documents/nomenclature')) ?>">Nomenclature</a><?php endif; ?>
+                    <?php if (!empty($can['manage'])): ?><a href="<?= $h(url('back-office/doctrine?onglet=types')) ?>">Types</a> · <a href="<?= $h(url('back-office/doctrine?onglet=nomenclature')) ?>">Nomenclature</a><?php endif; ?>
                 </li>
                 <li>
                     <b>Publier une version</b>
@@ -192,8 +192,8 @@ $fileIcon = static function (array $d): string {
             <?php endif; ?>
             <?php if (!empty($can['manage'])): ?>
                 <hr>
-                <a class="dct-rail__new" href="<?= $h(url('back-office/documents/types')) ?>"><?= dct_icon('tag') ?><span class="dct-rail__l">Gérer les types</span></a>
-                <a class="dct-rail__new" href="<?= $h(url('back-office/documents/nomenclature')) ?>"><?= dct_icon('layers') ?><span class="dct-rail__l">Gérer la nomenclature</span></a>
+                <a class="dct-rail__new" href="<?= $h(url('back-office/doctrine?onglet=types')) ?>"><?= dct_icon('tag') ?><span class="dct-rail__l">Gérer les types</span></a>
+                <a class="dct-rail__new" href="<?= $h(url('back-office/doctrine?onglet=nomenclature')) ?>"><?= dct_icon('layers') ?><span class="dct-rail__l">Gérer la nomenclature</span></a>
             <?php endif; ?>
         </aside>
 
@@ -456,7 +456,7 @@ $fileIcon = static function (array $d): string {
                     <?php if (!empty($can['create'])): ?>
                         <div class="dct-empty__acts">
                             <a class="dct-btn is-dark" href="<?= $h(url('back-office/documents/publier')) ?>"><?= dct_icon('plus') ?><span>Rédiger un premier document</span></a>
-                            <?php if (!empty($can['manage']) && $types === []): ?><a class="dct-btn" href="<?= $h(url('back-office/documents/types')) ?>">Créer les types</a><?php endif; ?>
+                            <?php if (!empty($can['manage']) && $types === []): ?><a class="dct-btn" href="<?= $h(url('back-office/doctrine?onglet=types')) ?>">Créer les types</a><?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>

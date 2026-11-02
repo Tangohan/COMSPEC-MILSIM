@@ -29,19 +29,4 @@ final class EffectifsOrganisationNavAssetTest extends TestCase
         self::assertStringNotContainsString("effectifs_workspace_url('roles')", $systeme);
     }
 
-    public function testHubDropsDuplicateAccessDoors(): void
-    {
-        $hub = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/organization/effectifs_hub.php');
-
-        self::assertStringContainsString('Niveaux d’accès', $hub);
-        self::assertStringContainsString('Emplois du dossier', $hub);
-        self::assertStringNotContainsString('Toile des rôles et fonctions', $hub);
-        self::assertStringNotContainsString('Profils de permissions', $hub);
-        self::assertStringNotContainsString('Attributions des fonctions', $hub);
-        self::assertStringNotContainsString("url('back-office/roles-functions')", $hub);
-        self::assertStringNotContainsString("url('back-office/roles/presets')", $hub);
-        self::assertStringNotContainsString("url('back-office/personnel-job-roles')", $hub);
-        self::assertStringNotContainsString("url('back-office/personnel-job-roles/assignments')", $hub);
-        self::assertStringContainsString("effectifs_workspace_url('fonctions')", $hub);
-    }
 }

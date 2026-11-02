@@ -53,7 +53,9 @@ final class BackOfficePageContext
             return $vars;
         }
 
-        $path = self::currentPath();
+        // Onglet repris d’une ancienne page (?onglet=…) : en-tête, styles et options de cette page.
+        $onglet = isset($_GET['onglet']) && is_scalar($_GET['onglet']) ? (string) $_GET['onglet'] : '';
+        $path = BackOfficeTabs::contentPath(self::currentPath(), $onglet);
         $match = self::matchPage($path);
         $title = trim((string) ($vars['title'] ?? ''));
 

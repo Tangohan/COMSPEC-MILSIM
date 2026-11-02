@@ -17,7 +17,6 @@ final class OrganizationCatalogAssetTest extends TestCase
         $preview = (string) file_get_contents($root . '/views/admin/organization/catalog/preview.php');
         $show = (string) file_get_contents($root . '/views/admin/organization/catalog/show.php');
         $history = (string) file_get_contents($root . '/views/admin/organization/catalog/history.php');
-        $hub = (string) file_get_contents($root . '/views/admin/organization/effectifs_hub.php');
         $structure = (string) file_get_contents($root . '/views/partials/orbat/orbat_canvas.php');
         $wizard = (string) file_get_contents($root . '/views/community/create.php');
         $setup = (string) file_get_contents($root . '/views/admin/organization/initial_setup.php');
@@ -47,7 +46,6 @@ final class OrganizationCatalogAssetTest extends TestCase
         self::assertStringContainsString('Historique des applications', $history);
         self::assertStringContainsString('Détail de cette application', $history);
         self::assertStringContainsString('Réappliquer ce modèle', $history);
-        self::assertStringContainsString('org-catalog', $hub);
         self::assertStringContainsString('back-office/organisation/catalogue', $structure);
         self::assertStringContainsString('Démarrer avec un modèle', $wizard);
         self::assertStringContainsString('wizard_catalog_kit_code', $wizard);

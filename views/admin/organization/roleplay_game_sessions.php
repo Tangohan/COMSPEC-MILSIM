@@ -364,7 +364,7 @@ $stateButton = static function (int $id, string $state, string $label, string $c
             </div>
             <div class="rps-panel__foot">
                 <button type="submit" class="ath-btn ath-btn--solid">Enregistrer les règles</button>
-                <span class="rps-panel__hint">Voir aussi : <a href="<?= $h(url('back-office/roleplay/regles-phases')) ?>">Parcours RH</a> (heures demandées pour passer une étape).</span>
+                <span class="rps-panel__hint">Voir aussi : <a href="<?= $h(url('back-office/roleplay-followup?onglet=phases')) ?>">Parcours RH</a> (heures demandées pour passer une étape).</span>
             </div>
         </form>
     </details>

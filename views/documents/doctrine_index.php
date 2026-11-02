@@ -36,8 +36,8 @@ foreach ($doctrineRows as $countRow) {
             <?php if ($canManage): ?>
             <div class="doctrine-ref__hero-actions">
                 <a href="<?= url('back-office/doctrine') ?>" class="doctrine-ref__btn doctrine-ref__btn--primary">Nouvelle doctrine</a>
-                <a href="<?= url('back-office/documents/nomenclature') ?>" class="doctrine-ref__btn">Nomenclature</a>
-                <a href="<?= url('back-office/documents/compliance') ?>" class="doctrine-ref__btn">Suivi des prises en compte</a>
+                <a href="<?= url('back-office/doctrine?onglet=nomenclature') ?>" class="doctrine-ref__btn">Nomenclature</a>
+                <a href="<?= url('back-office/doctrine?onglet=conformite') ?>" class="doctrine-ref__btn">Suivi des prises en compte</a>
             </div>
             <?php endif; ?>
         </section>

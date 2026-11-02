@@ -88,7 +88,7 @@ $navClass = static function (string $id) use ($active): string {
                 <b>11</b>
                 <span>Vivier<em>Succession chefs / instructeurs</em></span>
             </a>
-            <a href="<?= htmlspecialchars(effectifs_workspace_url('alertes'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_alerts'), ENT_QUOTES, 'UTF-8') ?>">
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter?onglet=alertes'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_alerts'), ENT_QUOTES, 'UTF-8') ?>">
                 <b>12</b>
                 <span>Alertes RH<?= $nRhAlerts > 0 ? ' <i class="eff-nav-badge">' . $nRhAlerts . '</i>' : '' ?><em>Qualifs, absences, inactivité</em></span>
             </a>
@@ -108,7 +108,7 @@ $navClass = static function (string $id) use ($active): string {
 
         <p class="eff-section-label">Raccourcis</p>
         <div class="eff-rail-tools">
-            <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="eff-link">
+            <a href="<?= htmlspecialchars(orbat_page_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-link">
                 <b>·</b><span>Hub organisation<em>Grades, structure, ancienneté</em></span>
             </a>
             <a href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>" class="eff-link">

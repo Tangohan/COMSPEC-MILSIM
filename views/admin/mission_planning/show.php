@@ -80,7 +80,7 @@ $e = \App\Core\Session::getFlash('error');
             <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/atak/comptes-rendus/' . (int) $aar['id'] . '/edit')) ?>">Ouvrir le compte rendu</a>
         <?php endif; ?>
         <a class="ath-btn" href="<?= $h($base . '/paquet.pdf') ?>">Télécharger le paquet</a>
-        <a class="ath-btn" href="<?= $h(url('back-office/planification')) ?>">Tous les plans</a>
+        <a class="ath-btn" href="<?= $h(url('back-office/missions?onglet=planification')) ?>">Tous les plans</a>
     </form>
 </div>
 

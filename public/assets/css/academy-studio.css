@@ -226,7 +226,10 @@
 .sh-regen { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
 
 /* ---------- Accueil du Studio ---------- */
-.academy-workspace--studio .sth { flex: 1; overflow: auto; }
+/* La zone qui défile occupe toute la largeur (barre de défilement au bord de la fenêtre, pas au milieu) ;
+   le contenu reste centré à 1320 px grâce aux marges internes. */
+.academy-workspace--studio .sth { flex: 1; overflow: auto; max-width: none; margin: 0;
+  padding-inline: max(clamp(16px, 3vw, 40px), calc((100% - 1320px) / 2 + clamp(16px, 3vw, 40px))); }
 .sth { max-width: 1320px; width: 100%; margin: 0 auto; padding: 24px clamp(16px,3vw,40px) 80px; }
 .sth > .ast-notice { margin-bottom: 16px; }
 .sth-hero { position: relative; border-radius: 18px; overflow: hidden; background: #050505; color: var(--w-ink); margin-bottom: 24px; }

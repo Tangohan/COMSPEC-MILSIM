@@ -63,7 +63,8 @@ final class CallsignSequenceServiceTest extends TestCase
 
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
         self::assertStringContainsString('organisation/indicatifs', $routes);
-        self::assertStringContainsString('organisation/progression', $routes);
+        // L’ancienne page de liens « Progression » redirige vers l’avancement.
+        self::assertStringContainsString("'back-office/organisation/progression' => 'back-office/rh/avancement'", (string) file_get_contents(dirname(__DIR__, 2) . '/app/Support/BackOfficeLegacyRedirects.php'));
 
         $catalog = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Authorization/TenantPermissionCatalog.php');
         self::assertStringContainsString('personnel.callsign.manage', $catalog);

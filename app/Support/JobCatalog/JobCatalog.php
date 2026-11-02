@@ -261,6 +261,8 @@ final class JobCatalog
             'code_system_label' => self::label('code_system', (string) ($entry['code_system'] ?? ''), $lang),
             'name' => self::pick($entry['name'] ?? '', $lang),
             'official_name' => self::pick($entry['name'] ?? '', (string) ($entry['official_lang'] ?? 'en')),
+            'official_lang' => (string) ($entry['official_lang'] ?? 'en'),
+            'names' => self::names($entry, $lang),
             // Recherche seulement (pas affiché) : nom, unité, brevets et étiquettes dans l’autre langue.
             'alt' => implode(' ', array_merge([self::pick($entry['name'] ?? '', $other), self::pick($entry['unit'] ?? '', $other)], self::pickList($entry['qualifications'] ?? [], $other), self::pickList($entry['tags'] ?? [], $other))),
             'abbreviation' => (string) ($entry['abbreviation'] ?? ''),
@@ -271,6 +273,28 @@ final class JobCatalog
             'tags' => array_slice(self::pickList($entry['tags'] ?? [], $lang), 0, JobRoleEnrichmentService::MAX_TAGS),
             'sources' => $sources,
         ];
+    }
+
+    /**
+     * Noms de l’emploi par langue, nom officiel (langue du pays) en premier, puis la langue du lecteur, puis
+     * l’anglais, puis les autres langues livrées ; un nom identique à un précédent n’est pas répété.
+     *
+     * @param array<string, mixed> $entry
+     * @return array<string, string> langue => nom
+     */
+    public static function names(array $entry, string $lang): array
+    {
+        $name = is_array($entry['name'] ?? null) ? $entry['name'] : [];
+        $order = array_unique(array_merge([(string) ($entry['official_lang'] ?? 'en'), self::lang($lang), 'en'], array_map('strval', array_keys($name))));
+        $out = [];
+        foreach ($order as $l) {
+            $value = trim((string) ($name[$l] ?? ''));
+            if ($value !== '' && !in_array($value, $out, true)) {
+                $out[$l] = $value;
+            }
+        }
+
+        return $out;
     }
 
     /** @return list<array<string, mixed>> */
