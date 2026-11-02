@@ -51986,4 +51986,5 @@ return [
     'Vous n’avez pas les droits pour modifier le référentiel doctrinal.' => 'You do not have the rights to change the doctrine library.',
     'Fichier introuvable.' => 'File not found.',
     'Édition publiée' => 'Published edition',
+    'Formations pour bien démarrer' => 'Courses to get started',
 ];
