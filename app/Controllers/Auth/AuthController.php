@@ -113,6 +113,11 @@ class AuthController
         if ($after !== null) {
             return $after;
         }
+        // Lien d'invitation ouvert avant l'inscription ou la connexion : retour sur son action.
+        $invite = \App\Support\PendingInviteLink::continueUrl();
+        if ($invite !== null) {
+            return $invite;
+        }
 
         if (PortalAccessChoice::isNoOrganizationContext()) {
             return url('dashboard');

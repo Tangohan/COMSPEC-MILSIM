@@ -294,6 +294,22 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1320, '2026-11-02', 'Liens d’invitation à partager, comme sur Discord', 'Recrutement › Liens d’invitation crée des liens à partager (athena-comspec.eu/public/i/…) : la personne qui l’ouvre découvre votre communauté (nom, emblème, bannière, jeu, membres) puis candidate ou rejoint la communauté. Sans compte, elle en crée un : l’invitation est gardée pendant l’inscription et la confirmation de l’adresse, puis la ramène sur le lien. Chaque lien a son nom interne, sa durée (30 minutes à 7 jours, une date ou jamais), son nombre d’utilisations, son action et ses statistiques ; il se copie, s’affiche en QR code, se révoque et se réactive.', [
+                'Recrutement › Liens d’invitation : création, fiche, modification, révocation, réactivation, copie du lien et QR code à télécharger',
+                'Action « Candidater » : formulaire de la communauté préparé (type de candidature, offre, unité visée, code prioritaire appliqué d’office)',
+                'Action « Rejoindre » : adhésion directe avec grade d’entrée et unité d’affectation, ou demande soumise à l’approbation de l’équipe dans la file du recrutement',
+                'Page d’invitation publique : vitrine de la communauté puis « Candidater », « Rejoindre », « Créer mon compte » ou « J’ai déjà un compte », message clair pour un lien expiré, épuisé ou désactivé',
+                'Statistiques par lien : clics, comptes créés, candidatures, adhésions et demandes, derniers usages reliés aux dossiers',
+                'Adresse personnalisée (ex. /i/tfj) sur les formules payantes ; formule gratuite : 2 liens actifs à la fois, les liens déjà actifs ne sont jamais coupés',
+            ], [
+                'Un lien d’invitation collé dans la page « Rejoindre avec un code » ouvre sa page d’invitation',
+                'Recherche du back-office : « liens d’invitation »',
+            ], [
+                'Codes prioritaires (Recrutement › Codes prioritaires) : la page tombait en erreur ; elle s’ouvre de nouveau',
+            ], ['personnel'], [
+                'L’administrateur lance run-migrations.php (étape recruitment_invite_links) pour activer les liens d’invitation.',
+                'Essai : Recrutement › Liens d’invitation › Créer un lien, ouvrez-le dans une fenêtre privée, créez un compte et confirmez l’adresse : vous revenez sur le lien.',
+            ], 'Portail Athena'),
             $pr(1315, '2026-11-02', 'App Routes, bandeau du curseur de la carte refait, app Réseau lisible', 'Avec le pack 2.9.34, le téléphone gagne l’app Routes : des routes nommées à pied, en véhicule (par les routes au choix), aériennes ou nautiques, avec leurs étapes typées (checkpoint, ligne de phase, ralliement, LZ…), leurs consignes, leurs heures H+ et l’action attendue à chaque étape. Distances, caps, durée et heure d’arrivée sont calculés ; « Suivre la route » guide d’étape en étape. Les routes se partagent à l’équipe, au groupe ou au camp par le réseau ATAK et peuvent s’afficher sur la carte d’Arma, sur Athena et en 3D. Le bandeau du curseur de la carte et l’app Réseau sont refaits pour être lisibles.', [
                 'App Routes (Navigation) : créer, dupliquer, supprimer des routes ; type de tracé à pied, véhicule (option « Suivre les routes »), aérien (couloir) ou nautique ; couleur, épaisseur, style plein, pointillé ou flèches de direction',
                 'Étapes posées d’un clic sur la carte de l’app (ajouter, insérer, déplacer), sur ma position, un marqueur existant ou une grille MGRS ; type, nom, consigne, heure prévue H+ et action attendue pour chacune',

@@ -32,6 +32,14 @@ final class VerifyEmailController
     public function verify(Request $request, array $params = []): Response
     {
         $token = trim((string) $request->query('token', ''));
+        // Inscription commencée depuis un lien d'invitation : la connexion qui suit y ramène.
+        $invite = strtolower(trim((string) $request->query('invite', '')));
+        if (!\App\Services\Recruitment\InviteLinkService::isWellFormedCode($invite)) {
+            $invite = '';
+        }
+        if ($invite !== '') {
+            \App\Support\PendingInviteLink::remember($invite);
+        }
         if ($token === '') {
             Session::flash('error', 'Lien invalide ou expiré.');
             return Response::redirect(url('login'));
@@ -102,6 +110,11 @@ final class VerifyEmailController
         }
 
         Session::forget('pending_verification_email');
+        if ($invite !== '') {
+            Session::flash('success', 'Adresse e-mail confirmée. Connectez-vous pour continuer avec votre invitation.');
+
+            return Response::redirect(url('login') . '?redirect=' . rawurlencode('i/' . $invite));
+        }
         Session::flash('success', 'Adresse e-mail confirmée. Vous pouvez vous connecter.');
         return Response::redirect(url('login'));
     }

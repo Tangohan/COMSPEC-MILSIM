@@ -77,6 +77,7 @@ document.addEventListener('alpine:init', function () {
 
     <form id="formulaire-inscription-simple" method="post" action="<?= htmlspecialchars($simpleEnlistmentUrl) ?>" class="space-y-5 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <?= \App\Core\Csrf::field() ?>
+        <?php require base_path('views/enlistment/_invite_link.php'); ?>
         <?php if ($selectedRecruitmentOpening !== null && !empty($selectedRecruitmentOpening['id'])): ?>
             <input type="hidden" name="enlistment_opening_id" value="<?= (int) $selectedRecruitmentOpening['id'] ?>">
             <div class="rounded-xl border border-sky-200 bg-sky-50 p-5">

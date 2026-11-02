@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\Request;
@@ -25,11 +26,42 @@ use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Rbac\RbacService;
 use App\Services\Steam\SteamWebApiService;
+use App\Repositories\InviteLinkRepository;
+use App\Services\Recruitment\InviteLinkService;
+use App\Support\PendingInviteLink;
 use App\Support\UserFacingExceptionMapper;
 use Throwable;
 
 final class RegisterController
 {
+    /**
+     * Lien d'invitation actif reçu dans l'adresse ou le formulaire, à défaut celui gardé en session.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function activeInviteLink(string $param): ?array
+    {
+        $code = PendingInviteLink::fromParamOrSession($param);
+        if ($code === null) {
+            return null;
+        }
+        $link = Container::get(InviteLinkRepository::class)->findByPublicCode($code);
+        if ($link === null || InviteLinkService::status($link) !== InviteLinkService::STATUS_ACTIVE) {
+            return null;
+        }
+
+        return $link;
+    }
+
+    /** @param array<string, mixed> $link */
+    private function inviteLinkCommunityName(array $link): string
+    {
+        $tenant = $this->tenantRepository->findById((int) $link['tenant_id']);
+        $name = is_array($tenant) ? trim((string) ($tenant['name'] ?? '')) : '';
+
+        return function_exists('name_mask_text') ? name_mask_text($name) : $name;
+    }
+
     public function __construct(
         private AuthService $authService,
         private TenantRepository $tenantRepository,
@@ -61,8 +93,14 @@ final class RegisterController
         // Discard legacy multi-step flash if still present from an older build.
         Session::getFlash('register_step');
         $queryCode = trim((string) $request->query('community_code'));
+        $inviteLink = $this->activeInviteLink((string) $request->query('invite', ''));
+        if ($inviteLink !== null) {
+            PendingInviteLink::remember((string) $inviteLink['public_code']);
+        }
 
         return Response::view('auth.register', [
+            'invite_link_code' => $inviteLink !== null ? (string) $inviteLink['public_code'] : '',
+            'invite_link_community' => $inviteLink !== null ? $this->inviteLinkCommunityName($inviteLink) : '',
             'title' => __('auth.title_register'),
             'prefill_community_code' => $queryCode !== ''
                 ? $queryCode
@@ -188,6 +226,8 @@ final class RegisterController
             return Response::redirect(url('register'));
         }
         $tenantId = (int) $tenant['id'];
+        // Lien d'invitation (/i/<code>) : le compte est créé normalement, l'action du lien suit la première connexion.
+        $inviteLink = $this->activeInviteLink((string) $request->input('invite', ''));
         if (strcasecmp($email, UserRepository::SYSTEM_MODERATOR_EMAIL) === 0) {
             $flashBack('Cette adresse e-mail ne peut pas être utilisée.', 'email');
 
@@ -299,6 +339,18 @@ final class RegisterController
         $tokenHash = hash('sha256', $rawToken);
         $expires = new \DateTimeImmutable('+' . EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES . ' minutes');
         $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
+        if ($inviteLink !== null) {
+            $verifyUrl .= '&invite=' . rawurlencode((string) $inviteLink['public_code']);
+            PendingInviteLink::remember((string) $inviteLink['public_code']);
+            Container::get(InviteLinkRepository::class)->recordEvent(
+                (int) $inviteLink['tenant_id'],
+                (int) $inviteLink['id'],
+                InviteLinkRepository::EVENT_SIGNUP,
+                $userId,
+                null,
+                $registerIp
+            );
+        }
         $tenantName = email_community_label($tenant, (string) ($tenant['name'] ?? ''));
         $emailNorm = strtolower(trim($email));
         Session::set('register_pending_email', $emailNorm);

@@ -15,7 +15,9 @@ use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentDiscordQuestionRepository;
+use App\Repositories\InviteLinkRepository;
 use App\Repositories\RecruitmentInviteCodeRepository;
+use App\Services\Recruitment\InviteLinkService;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
@@ -39,6 +41,9 @@ use App\Services\Recruitment\RecruitmentOpeningPresentation;
 
 class EnlistmentController
 {
+    /** Lien d'invitation /i/<code> (action candidature) valide pour la communauté de la requête en cours. */
+    private ?array $activeInviteLink = null;
+
     public function __construct(
         private EnlistmentRepository $enlistmentRepository,
         private EnlistmentTimelineRepository $enlistmentTimelineRepository,
@@ -83,6 +88,8 @@ class EnlistmentController
         }
 
         $communityConfig = $this->communityConfig($tenant);
+        $this->activeInviteLink = $this->resolveInviteLink((string) $request->query('lien', ''), $tenant);
+        $communityConfig = $this->applyInviteLinkMode($communityConfig);
         $discordOnly = $this->discordOnlyResponse($tenant, $communityConfig);
         if ($discordOnly !== null) {
             return $discordOnly;
@@ -107,6 +114,9 @@ class EnlistmentController
 
         $selectedRecruitmentOpening = null;
         $ouvertureId = (int) $request->query('ouverture', 0);
+        if ($ouvertureId < 1 && $this->activeInviteLink !== null) {
+            $ouvertureId = (int) ($this->activeInviteLink['assign_to_opening_id'] ?? 0);
+        }
         if ($ouvertureId > 0 && $this->recruitmentOpeningRepository->tablesExist()) {
             $ro = $this->recruitmentOpeningRepository->findByIdForTenant($ouvertureId, $targetTenantId);
             if ($ro && (string) ($ro['status'] ?? '') === 'published') {
@@ -165,6 +175,7 @@ class EnlistmentController
             'publishedOpenings' => $publishedOpenings,
             'analyticsBeacon' => $beacon,
             'existingCandidature' => $existingCandidature,
+            'inviteLinkBanner' => $this->inviteLinkBanner($targetTenantId),
         ];
 
         if ($mode === 'simple') {
@@ -213,6 +224,10 @@ class EnlistmentController
         $this->flashEnlistmentRetryUrl($tenant);
 
         $communityConfig = $this->communityConfig($tenant);
+        // Lien d'invitation expiré ou épuisé entre l'ouverture et l'envoi du formulaire : la candidature part quand même,
+        // sans être rattachée au lien.
+        $this->activeInviteLink = $this->resolveInviteLink((string) $request->input('invite_link', ''), $tenant);
+        $communityConfig = $this->applyInviteLinkMode($communityConfig);
         if (\App\Services\Community\TenantTypeConfig::recruitsOnDiscordOnly((string) ($tenant['tenant_type'] ?? 'full'))) {
             // Profils sans recrutement : aucune candidature déposée sur le site, même par un formulaire déjà ouvert.
             return Response::redirect($this->enlistmentFormUrl($tenant));
@@ -481,8 +496,10 @@ class EnlistmentController
             }
         }
 
+        $this->applyInviteLinkOpening($payload, $targetTenantId);
+
         // Gestion du code d'invitation prioritaire
-        $inviteCode = trim((string) $request->input('invite_code', ''));
+        $inviteCode = $this->priorityCodeInput($request, $targetTenantId);
         $inviteCodeData = null;
         if ($inviteCode !== '' && $this->inviteCodeRepository()->tablesExist()) {
             $inviteCodeData = $this->inviteCodeRepository()->findPriorityByCode($targetTenantId, $inviteCode);
@@ -592,6 +609,7 @@ class EnlistmentController
         }
 
         $subUid = isset($payload['submitter_user_id']) ? (int) $payload['submitter_user_id'] : 0;
+        $this->recordInviteLinkApplication((int) $tenant['id'], $enlistmentId, $subUid, $request->ip());
         $this->enlistmentTimelineRepository->logIntakeFromSubmission(
             (int) $tenant['id'],
             $enlistmentId,
@@ -704,8 +722,10 @@ class EnlistmentController
             'discord_answers' => $answers,
         ];
 
+        $this->applyInviteLinkOpening($payload, $targetTenantId);
+
         // Gestion du code d'invitation prioritaire
-        $inviteCode = trim((string) $request->input('invite_code', ''));
+        $inviteCode = $this->priorityCodeInput($request, $targetTenantId);
         $inviteCodeData = null;
         if ($inviteCode !== '' && $this->inviteCodeRepository()->tablesExist()) {
             $inviteCodeData = $this->inviteCodeRepository()->findPriorityByCode($targetTenantId, $inviteCode);
@@ -764,6 +784,7 @@ class EnlistmentController
             }
         }
 
+        $this->recordInviteLinkApplication($targetTenantId, $enlistmentId, 0, $request->ip());
         $this->enlistmentTimelineRepository->logIntakeFromSubmission($targetTenantId, $enlistmentId, null, 'guest');
         $this->flagAiLikelihoodIfNeeded($targetTenantId, $enlistmentId, $payload);
         $this->analyticsEventService->record(
@@ -883,6 +904,150 @@ class EnlistmentController
     {
         return $this->inviteCodeRepository
             ??= Container::get(RecruitmentInviteCodeRepository::class);
+    }
+
+    /**
+     * Lien d'invitation « candidature » actif et propre à cette communauté ; null sinon (code absent, inconnu, expiré,
+     * épuisé, révoqué, lien d'adhésion ou d'une autre communauté).
+     *
+     * @param array<string, mixed> $tenant
+     * @return array<string, mixed>|null
+     */
+    private function resolveInviteLink(string $code, array $tenant): ?array
+    {
+        $code = strtolower(trim($code));
+        if ($code === '' || !InviteLinkService::isWellFormedCode($code)) {
+            return null;
+        }
+        $link = Container::get(InviteLinkRepository::class)->findByPublicCode($code);
+        if ($link === null
+            || (int) $link['tenant_id'] !== (int) ($tenant['id'] ?? 0)
+            || (string) ($link['link_action'] ?? '') !== InviteLinkRepository::ACTION_APPLY
+            || InviteLinkService::status($link) !== InviteLinkService::STATUS_ACTIVE) {
+            return null;
+        }
+
+        return $link;
+    }
+
+    /**
+     * Type de candidature imposé par le lien (MilSim complet, simple, Discord), sinon celui de la communauté.
+     *
+     * @param array<string, mixed> $communityConfig
+     * @return array<string, mixed>
+     */
+    private function applyInviteLinkMode(array $communityConfig): array
+    {
+        $mode = (string) ($this->activeInviteLink['metadata']['registration_mode'] ?? '');
+        if (in_array($mode, [
+            TenantCommunityProfileService::REGISTRATION_MODE_MILSIM,
+            TenantCommunityProfileService::REGISTRATION_MODE_SIMPLE,
+            TenantCommunityProfileService::REGISTRATION_MODE_DISCORD,
+        ], true)) {
+            $communityConfig['registration_mode'] = $mode;
+        }
+
+        return $communityConfig;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function applyInviteLinkOpening(array &$payload, int $tenantId): void
+    {
+        $openingId = (int) ($this->activeInviteLink['assign_to_opening_id'] ?? 0);
+        if ($openingId < 1 || !empty($payload['recruitment_opening_id']) || !$this->recruitmentOpeningRepository->tablesExist()) {
+            return;
+        }
+        $ro = $this->recruitmentOpeningRepository->findByIdForTenant($openingId, $tenantId);
+        if ($ro && (string) ($ro['status'] ?? '') === 'published') {
+            $payload['recruitment_opening_id'] = $openingId;
+        }
+    }
+
+    /** Code prioritaire saisi, sinon celui que le lien d'invitation applique d'office. */
+    private function priorityCodeInput(Request $request, int $tenantId): string
+    {
+        $typed = trim((string) $request->input('invite_code', ''));
+        if ($typed !== '' || $this->activeInviteLink === null) {
+            return $typed;
+        }
+        $priorityId = (int) ($this->activeInviteLink['metadata']['priority_code_id'] ?? 0);
+        if ($priorityId < 1 || !$this->inviteCodeRepository()->tablesExist()) {
+            return '';
+        }
+        $row = $this->inviteCodeRepository()->findById($tenantId, $priorityId, RecruitmentInviteCodeRepository::KIND_PRIORITY);
+        if ($row === null || !$this->inviteCodeRepository()->isPriorityCodeValid($tenantId, (string) $row['code'])) {
+            return '';
+        }
+
+        return (string) $row['code'];
+    }
+
+    /** Candidature déposée depuis un lien d'invitation : utilisation décomptée, statistiques et fil du dossier. */
+    private function recordInviteLinkApplication(int $tenantId, int $enlistmentId, int $userId, string $ip): void
+    {
+        $link = $this->activeInviteLink;
+        if ($link === null || $enlistmentId < 1) {
+            return;
+        }
+        $links = Container::get(InviteLinkRepository::class);
+        if (!$links->consumeUse($tenantId, (int) $link['id'])) {
+            return;
+        }
+        $links->recordEvent($tenantId, (int) $link['id'], InviteLinkRepository::EVENT_APPLICATION, $userId > 0 ? $userId : null, $enlistmentId, $ip);
+        $label = trim((string) ($link['label'] ?? ''));
+        $detail = 'Lien : ' . ($label !== '' ? $label : (string) $link['public_code']);
+        $unitId = (int) ($link['metadata']['unit_id'] ?? 0);
+        if ($unitId > 0) {
+            $unit = $this->unitRepository->findById($unitId, $tenantId);
+            if ($unit !== null) {
+                $detail .= ' · Unité visée : ' . (string) ($unit['name'] ?? '');
+            }
+        }
+        if ($this->enlistmentTimelineRepository->tableExists()) {
+            $this->enlistmentTimelineRepository->append(
+                $tenantId,
+                $enlistmentId,
+                'system',
+                'reception',
+                'Candidature par lien d’invitation',
+                $detail,
+                null,
+                ['invite_code_id' => (int) $link['id']]
+            );
+        }
+        try {
+            Container::get(\App\Services\Audit\AuditService::class)->log(
+                \App\Services\Audit\AuditAction::INVITE_LINK_APPLIED,
+                $tenantId,
+                $userId > 0 ? $userId : null,
+                'invite_link',
+                (int) $link['id'],
+                null,
+                (string) $link['public_code']
+            );
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * Bandeau et champ caché du formulaire quand la candidature vient d'un lien d'invitation.
+     *
+     * @return array{code: string, label: string, unit: string}|null
+     */
+    private function inviteLinkBanner(int $tenantId): ?array
+    {
+        $link = $this->activeInviteLink;
+        if ($link === null) {
+            return null;
+        }
+        $unitName = '';
+        $unitId = (int) ($link['metadata']['unit_id'] ?? 0);
+        if ($unitId > 0) {
+            $unit = $this->unitRepository->findById($unitId, $tenantId);
+            $unitName = $unit !== null ? trim((string) ($unit['name'] ?? '')) : '';
+        }
+
+        return ['code' => (string) $link['public_code'], 'label' => (string) ($link['label'] ?? ''), 'unit' => $unitName];
     }
 
     /** @param array<string,mixed> $tenant */

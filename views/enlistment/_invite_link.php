@@ -1,0 +1,17 @@
+<?php
+/**
+ * Candidature ouverte depuis un lien d'invitation (/i/<code>) : champ caché qui rattache le dossier au lien et
+ * rappel discret pour le candidat.
+ *
+ * @var array{code: string, label: string, unit: string}|null $inviteLinkBanner
+ */
+$inviteLinkBanner = is_array($inviteLinkBanner ?? null) ? $inviteLinkBanner : null;
+if ($inviteLinkBanner === null) {
+    return;
+}
+?>
+<input type="hidden" name="invite_link" value="<?= htmlspecialchars($inviteLinkBanner['code'], ENT_QUOTES, 'UTF-8') ?>">
+<div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950" role="status">
+    <p class="font-bold">Vous avez été invité à candidater</p>
+    <p class="mt-1 text-emerald-900/90">Votre candidature sera transmise à l’équipe avec votre invitation<?php if ($inviteLinkBanner['unit'] !== ''): ?> (unité visée : <span translate="no"><?= htmlspecialchars($inviteLinkBanner['unit'], ENT_QUOTES, 'UTF-8') ?></span>)<?php endif; ?>.</p>
+</div>

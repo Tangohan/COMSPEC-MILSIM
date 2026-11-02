@@ -12,6 +12,9 @@ class RecruitmentInviteCodeRepository
     /** Accélération de candidature (formulaire d’enrôlement) — distinct des invitations e-mail et du code communauté. */
     public const KIND_PRIORITY = 'priority';
 
+    /** Lien d'invitation partageable /i/<code> (géré par InviteLinkRepository, jamais saisi comme code prioritaire). */
+    public const KIND_LINK = 'link';
+
     private PDO $pdo;
 
     private static ?bool $hasInviteCodesTables = null;
@@ -485,6 +488,6 @@ class RecruitmentInviteCodeRepository
     {
         $kind = strtolower(trim($kind));
 
-        return $kind === self::KIND_PRIORITY ? self::KIND_PRIORITY : self::KIND_PRIORITY;
+        return $kind === self::KIND_LINK ? self::KIND_LINK : self::KIND_PRIORITY;
     }
 }

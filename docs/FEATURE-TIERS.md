@@ -36,6 +36,8 @@ Les clés suivantes sont utilisées dans `features_json` et/ou dans le gating ap
 | `community_create` | Création communauté | Booléen. |
 | `max_members` | Plafond membres | Entier. |
 | `max_training_courses` | Plafond parcours catalogue | Entier ; `0` = illimité. |
+| `max_active_invite_links` | Liens d’invitation actifs à la fois | Entier ; gratuit `2`, payant `0` = illimité. Vérifié à la création et à la réactivation seulement : un lien déjà actif n’est jamais coupé. |
+| `invite_link_custom_slug` | Adresse personnalisée d’un lien d’invitation (`/i/tfj`) | Booléen ; **Standard+**. Sinon code généré. |
 
 ## Facturation
 
@@ -61,6 +63,7 @@ Les clés suivantes sont utilisées dans `features_json` et/ou dans le gating ap
 | Événements | Web + admin | `allows` / quota | `events` |
 | Intégrations | Back-office | `advanced_integrations` | `advanced_integrations` |
 | Membres | Invitations, enrôlement | `canAddMember` | `max_members` |
+| Liens d’invitation | Recrutement › Liens d’invitation | `InviteLinkService::canActivateAnother` / `customSlugAllowed` | `max_active_invite_links`, `invite_link_custom_slug` |
 
 ## Changelog pricing (interne)
 
