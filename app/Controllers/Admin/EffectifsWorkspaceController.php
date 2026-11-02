@@ -1411,6 +1411,7 @@ class EffectifsWorkspaceController
             'accessProfiles' => CommunityAccessProfiles::definitions(),
             'memberJobRoles' => $jobRoles,
             'memberJobDecorations' => (new JobRoleEnrichmentService())->decorations($tenantId),
+            'memberJobPrerequisites' => \App\Services\Personnel\JobPrerequisiteViewData::forMember($tenantId, (int) $row['id'], $jobRoles, $this->jobTenantSettings($tenantId)),
             'jobRoleOptions' => $jobRoleOptions,
             'jobRoleMax' => $jobRoleMax,
             'jobRolesAvailable' => $jobRolesAvailable,
@@ -1822,6 +1823,37 @@ class EffectifsWorkspaceController
             'is_primary' => $roleId === $primaryId,
         ], $ids);
 
+        // Prérequis des emplois ajoutés : avertissement, refus (communauté en mode bloquant) ou dérogation motivée.
+        $prereqWarning = '';
+        try {
+            $prereq = (new \App\Services\Personnel\JobPrerequisiteService())->gate(
+                $tenantId,
+                $id,
+                array_values(array_diff($ids, array_keys($details))),
+                (string) $request->input('prereq_waiver_reason', ''),
+                \App\Services\Personnel\JobPrerequisiteViewData::canWaive(Gate::getInstance()),
+                (bool) $settings['prerequisites_blocking'],
+                (int) Session::get('user_id')
+            );
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect($redirect);
+        } catch (\Throwable $e) {
+            error_log('Effectifs functions: prerequisites check failed: ' . $e->getMessage());
+            $prereq = ['allowed' => true, 'unmet' => [], 'waived' => [], 'warned' => []];
+        }
+        if (!$prereq['allowed']) {
+            Session::flash('error', 'Prérequis non remplis pour ' . $this->jobRoleNames($tenantId, array_keys($prereq['unmet'])) . '. Indiquez un motif de dérogation pour attribuer quand même.');
+
+            return Response::redirect($redirect);
+        }
+        if ($prereq['waived'] !== []) {
+            $prereqWarning = 'Dérogation enregistrée pour ' . $this->jobRoleNames($tenantId, $prereq['waived']) . '.';
+        } elseif ($prereq['warned'] !== []) {
+            $prereqWarning = 'Attention : prérequis non remplis pour ' . $this->jobRoleNames($tenantId, $prereq['warned']) . '.';
+        }
+
         // La persistance des fonctions est l'opération principale. Les synchronisations
         // de confort qui suivent ne doivent pas transformer une sauvegarde réussie en
         // faux message d'échec (la table pivot a déjà validé sa transaction).
@@ -1858,8 +1890,33 @@ class EffectifsWorkspaceController
         }
 
         Session::flash('success', 'Fonctions du membre mises à jour.');
+        if ($prereqWarning !== '') {
+            Session::flash('warning', $prereqWarning);
+        }
 
         return Response::redirect($redirect);
+    }
+
+    /** Réglages de la communauté pour les prérequis ; une lecture impossible laisse les prérequis indicatifs. */
+    private function jobTenantSettings(int $tenantId): array
+    {
+        try {
+            return $this->tenantRepository->getSettings($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** Noms d’emplois pour un message (« Médecin, JTAC »). */
+    private function jobRoleNames(int $tenantId, array $roleIds): string
+    {
+        $names = [];
+        foreach ($roleIds as $roleId) {
+            $role = $this->personnelJobRoleRepository->findRoleById((int) $roleId, $tenantId);
+            $names[] = '« ' . (string) ($role['name'] ?? ('#' . (int) $roleId)) . ' »';
+        }
+
+        return implode(', ', $names);
     }
 
     /** Rôle tenu dans l’unité principale (fenêtre « Rôle » du tableur). Même droit que les affectations. */
@@ -3143,6 +3200,8 @@ class EffectifsWorkspaceController
                 $tagService = new JobRoleEnrichmentService();
                 $data['jobTags'] = $tagService->tags($tenantId);
                 $data['jobEnrichmentReady'] = $tagService->schemaReady();
+                $data['jobPrereqBlocking'] = $data['jobSyncSettings']['prerequisites_blocking'];
+                $data['jobPrereqReady'] = (new \App\Services\Personnel\JobPrerequisiteService())->schemaReady();
             } else {
                 $data['jobRecoveryLabels'] = $this->jobRecoveryLabels($request);
                 try {
@@ -3209,7 +3268,10 @@ class EffectifsWorkspaceController
             'jobShowHidden'=>$showHidden,'jobTagFilter'=>$tagFilter,'jobHiddenCount'=>$hiddenCount,
             'jobIconLibrary'=>\App\Support\JobRoleIconLibrary::all(),
             'jobHolderCount'=>$selected ? count($holders[(int)$selected['id']] ?? []) : 0,
+            'jobCatalogAutoOpen'=>$creating && $request->queryString('catalogue', '0') === '1',
         ];
+        // Prérequis de l’emploi ouvert : critères, titulaires qui les remplissent, dérogations (JobPrerequisiteViewData).
+        $data += \App\Services\Personnel\JobPrerequisiteViewData::forJobSheet($tenantId, $selected, $holders, $canManage, $selected ? $this->jobTenantSettings($tenantId) : []);
         return $this->jobWorkspaceResponse($request, $data);
     }
 

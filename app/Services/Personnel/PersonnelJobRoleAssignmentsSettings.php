@@ -22,7 +22,8 @@ final class PersonnelJobRoleAssignmentsSettings
      *   show_english_labels: bool,
      *   append_secondaries_to_primary_display: bool,
      *   show_category_in_role_picklist: bool,
-     *   default_expand_role_rows: int
+     *   default_expand_role_rows: int,
+     *   prerequisites_blocking: bool
      * }
      */
     public static function resolve(array $tenantSettings): array
@@ -56,6 +57,8 @@ final class PersonnelJobRoleAssignmentsSettings
                 ? (bool) $raw['show_category_in_role_picklist']
                 : true,
             'default_expand_role_rows' => $expand,
+            // Prérequis des emplois : indicatifs par défaut (avertissement), bloquants si la communauté le choisit.
+            'prerequisites_blocking' => !empty($raw['prerequisites_blocking']),
         ];
     }
 
@@ -77,6 +80,7 @@ final class PersonnelJobRoleAssignmentsSettings
             'append_secondaries_to_primary_display',
             'show_category_in_role_picklist',
             'default_expand_role_rows',
+            'prerequisites_blocking',
         ];
         foreach ($patch as $k => $v) {
             if (!in_array($k, $allowed, true)) {

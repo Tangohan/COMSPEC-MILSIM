@@ -1915,6 +1915,10 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/fonctions/etiquettes', [EffectifsWorkspaceController::class, 'saveJobTags'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/attributions/lot', [\App\Controllers\Admin\JobAssignmentBoardController::class, 'bulk'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions/attributions/export', [\App\Controllers\Admin\JobAssignmentBoardController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/fonctions/catalogue', [\App\Controllers\Admin\JobCatalogController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/prerequis', [\App\Controllers\Admin\JobCatalogController::class, 'savePrerequisites'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/prerequis/reglage', [\App\Controllers\Admin\JobCatalogController::class, 'saveSettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/fonctions/derogations/revoquer', [\App\Controllers\Admin\JobCatalogController::class, 'revokeWaiver'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/affectations', [EffectifsWorkspaceController::class, 'affectations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/recherche', [EffectifsDirectoryController::class, 'search'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/codes/communaute', [EffectifsDirectoryController::class, 'saveCommunityCode'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

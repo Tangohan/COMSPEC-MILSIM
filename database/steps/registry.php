@@ -41,4 +41,5 @@ return [
     ['id' => 'advancement_proposal_decisions', 'label' => 'Avancement : suivi des propositions automatiques des campagnes (retenues, écartées avec motif)', 'group' => 'schema', 'file' => '3385_advancement_proposal_decisions.php', 'rerun' => true],
     ['id' => 'qualification_award_rules', 'label' => 'Qualifications : modes d’obtention (à la main, Academy, automatique sur heures de jeu, de vol, missions…), prérequis et visibilité', 'group' => 'schema', 'file' => '3430_qualification_award_rules.php', 'rerun' => true],
     ['id' => 'qualification_academy_reprise', 'label' => 'Qualifications : reprise des attestations Academy dans le référentiel (une qualification par formation, attestations rattachées)', 'group' => 'schema', 'file' => '3435_qualification_academy_reprise.php', 'rerun' => true],
+    ['id' => 'personnel_job_role_prerequisites', 'label' => 'Emplois : prérequis (doctrines, heures de jeu et de vol, qualifications, compétences) et dérogations motivées', 'group' => 'schema', 'file' => '3440_personnel_job_role_prerequisites.php', 'rerun' => true],
 ];

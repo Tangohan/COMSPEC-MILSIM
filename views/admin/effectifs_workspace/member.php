@@ -731,6 +731,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                     </li>
                 <?php endforeach; ?>
             </ul>
+            <?php require __DIR__ . '/partials/job_prerequisites_member.php'; ?>
         <?php else: ?>
             <p class="eff-fm-lead">Aucune fonction attribuée.</p>
         <?php endif; ?>
@@ -1482,6 +1483,7 @@ foreach ($jobRoles as $jr) {
             <?php endforeach; ?>
             <p class="eff-card__hint" data-filter-empty hidden>Aucune fonction ne correspond. <a href="<?= $h(effectifs_workspace_url('fonctions')) ?>">Créer une fonction pour la communauté</a></p>
         </div>
+        <?php require __DIR__ . '/partials/job_prerequisites_dialog.php'; ?>
         <footer class="eff-dialog__foot">
             <a class="eff-btn eff-btn--ghost" href="<?= $h(effectifs_workspace_url('fonctions')) ?>">Gérer le catalogue</a>
             <span class="eff-dialog__spacer"></span>
