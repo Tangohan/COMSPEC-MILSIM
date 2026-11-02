@@ -43,6 +43,7 @@ $hasMain = $bio !== null || $career !== [] || $trainings !== [] || $operations !
 $hasAside = $hasFiche || $qualifications !== [] || $decorations !== [] || $distanceModes !== [] || $gameRoles !== [];
 /* Pastille de fonction dans l’en-tête : l’emploi principal, sinon le poste tenu dans l’unité. */
 $jobChip = $job ?? $post;
+$jobBadgeHtml = $job !== null && is_array($cv['job_badge'] ?? null) ? \App\Support\JobRoleBadge::html($cv['job_badge'], false) : '';
 
 /* Teinte de l’étiquette d’une opération selon son type. */
 $typeTone = ['Opération' => 'op', 'Formation' => 'form'];
@@ -276,7 +277,7 @@ $seo_json_ld = [
                 <ul class="pcv-ident" aria-label="Identité">
                     <li class="pcv-chip pcv-chip--acc"><span class="pcv-dot" aria-hidden="true"></span>Membre actif</li>
                     <?php if ($grade !== null): ?><li class="pcv-chip"><?= $h($grade) ?></li><?php endif; ?>
-                    <?php if ($jobChip !== null): ?><li class="pcv-chip"><?= $h($jobChip) ?></li><?php endif; ?>
+                    <?php if ($jobChip !== null): ?><li class="pcv-chip"><?= $jobBadgeHtml ?><?= $h($jobChip) ?></li><?php endif; ?>
                     <?php if ($unit !== null): ?><li class="pcv-chip"><?= $h($unit) ?></li><?php endif; ?>
                 </ul>
             </div>
@@ -393,7 +394,7 @@ $seo_json_ld = [
                     <h2 class="pcv-k">Fiche</h2>
                     <dl class="pcv-dl">
                         <?php if ($grade !== null): ?><dt>Grade</dt><dd><?= $h($grade) ?></dd><?php endif; ?>
-                        <?php if ($job !== null): ?><dt>Fonction</dt><dd><?= $h($job) ?></dd><?php endif; ?>
+                        <?php if ($job !== null): ?><dt>Fonction</dt><dd><?= $jobBadgeHtml ?><?= $h($job) ?></dd><?php endif; ?>
                         <?php if ($otherJobs !== []): ?><dt>Autres fonctions</dt><dd><?= $h(implode(', ', $otherJobs)) ?></dd><?php endif; ?>
                         <?php if ($post !== null): ?><dt>Poste</dt><dd><?= $h($post) ?></dd><?php endif; ?>
                         <?php if ($community !== null): ?>

@@ -823,8 +823,15 @@ class PersonnelJobRoleRepository
         };
 
         $preferEn = $organizationRoleLabelMode === 'en';
+        $decorations = $this->jobRoleDecorations($tenantId);
+        $heldIds = $decorations !== [] ? $this->heldJobRoleIds($tenantId) : [];
         $out = [];
         foreach ($roles as $r) {
+            $decoration = $decorations[(int) $r['id']] ?? null;
+            // Fonction du site masquée par la communauté : plus proposée, sauf si un membre l’occupe encore.
+            if ($decoration !== null && !empty($decoration['hidden']) && !isset($heldIds[(int) $r['id']])) {
+                continue;
+            }
             $cid = (int) ($r['category_id'] ?? 0);
             $c = $catById[$cid] ?? null;
             $prefix = $c ? $path($c) : '';
@@ -857,6 +864,12 @@ class PersonnelJobRoleRepository
             if ($mosT !== '') {
                 $searchBits[] = $mosT;
             }
+            if (!empty($decoration['abbreviation'])) {
+                $searchBits[] = (string) $decoration['abbreviation'];
+            }
+            foreach ($decoration['tags'] ?? [] as $tag) {
+                $searchBits[] = (string) $tag['name'];
+            }
             $search = mb_strtolower(implode(' ', $searchBits), 'UTF-8');
             $row = [
                 'id' => (int) $r['id'],
@@ -865,6 +878,10 @@ class PersonnelJobRoleRepository
                 'name' => $name,
                 'segments' => $segments,
                 'search' => $search,
+                'abbreviation' => $decoration['abbreviation'] ?? null,
+                'icon' => $decoration['icon'] ?? null,
+                'origin' => $decoration['origin'] ?? null,
+                'hidden' => !empty($decoration['hidden']),
             ];
             if ($en !== '') {
                 $row['label_en'] = $en;
@@ -873,6 +890,36 @@ class PersonnelJobRoleRepository
         }
 
         return $this->applyFunctionKitFilter($tenantId, $out);
+    }
+
+    /**
+     * Habillage des fonctions (abrégé, icône, étiquettes, origine, masquage) ; vide si le module n’est pas disponible.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function jobRoleDecorations(int $tenantId): array
+    {
+        try {
+            return (new \App\Services\Personnel\JobRoleEnrichmentService($this->pdo))->decorations($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** @return array<int, true> fonctions occupées par au moins un membre */
+    private function heldJobRoleIds(int $tenantId): array
+    {
+        if (!$this->pivotTableExists()) {
+            return [];
+        }
+        try {
+            $st = $this->pdo->prepare('SELECT DISTINCT personnel_job_role_id FROM personnel_profile_job_roles WHERE tenant_id = ?');
+            $st->execute([$tenantId]);
+
+            return array_fill_keys(array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN)), true);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

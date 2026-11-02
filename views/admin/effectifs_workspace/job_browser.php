@@ -40,13 +40,19 @@ if(!isset($roleById[$newParent]))$newParent=0;
         <div class="eff-jobs-pane-head"><div><p class="eff-category-path"><?= $filterId>0?$h($categoryLabel($jobCatalogueCategory)):'Votre organisation' ?></p><h2><?= $filterId>0?$h($jobCatalogueCategory['name']):'Tous les emplois' ?> <span><?= count($roles) ?></span></h2></div>
         <?php if($canManage): ?><a class="eff-btn eff-btn--primary" data-jobs-nav href="<?= $h($jobUrl(['nouveau'=>1]+$inCategory)) ?>">+ Créer un emploi</a><?php endif ?></div>
         <?php if($filterId>0): ?><div class="eff-jobs-branch-actions"><span>Sous-catégories comprises</span><?php if($canManage): ?><a data-jobs-nav href="<?= $h($jobUrl(['nouvelle_categorie'=>1,'parent'=>$filterId]+$inCategory)) ?>">+ Sous-catégorie</a><a data-jobs-nav href="<?= $h($jobUrl(['modifier_categorie'=>1]+$inCategory)) ?>">Renommer / déplacer</a><?php endif ?></div><?php endif ?>
-        <input class="eff-jobs-search" type="search" data-jobs-search placeholder="Nom, code, catégorie…" aria-label="Rechercher un emploi">
+        <input class="eff-jobs-search" type="search" data-jobs-search placeholder="Nom, abrégé, étiquette, catégorie…" aria-label="Rechercher un emploi">
+        <?php $tagFilterId=(int)($jobTagFilter??0); $listQuery=$inCategory+(!empty($jobShowHidden)?['masquees'=>1]:[]); ?>
+        <div class="eff-jobs-filters">
+            <?php if(($jobTags??[])!==[]): ?><form method="get" action="<?= $h($base) ?>" class="eff-jobs-filters__tag" data-jobs-query><?php foreach($inCategory+(!empty($jobShowHidden)?['masquees'=>1]:[]) as $k=>$v): ?><input type="hidden" name="<?= $h($k) ?>" value="<?= $h($v) ?>"><?php endforeach ?><label>Étiquette<select name="etiquette" data-jobs-autosubmit><option value="0">Toutes</option><?php foreach($jobTags as $tag): ?><option value="<?= (int)$tag['id'] ?>" translate="no" <?= $tagFilterId===(int)$tag['id']?'selected':'' ?>><?= $h($tag['name']) ?> (<?= (int)$tag['usage'] ?>)</option><?php endforeach ?></select></label><noscript><button class="eff-btn">Filtrer</button></noscript></form><?php endif ?>
+            <?php if((int)($jobHiddenCount??0)>0): ?><a class="eff-jobs-text-action" data-jobs-nav href="<?= $h($jobUrl(empty($jobShowHidden)?$inCategory+['masquees'=>1]+($tagFilterId>0?['etiquette'=>$tagFilterId]:[]):$inCategory+($tagFilterId>0?['etiquette'=>$tagFilterId]:[]))) ?>"><?= empty($jobShowHidden)?'Afficher les masquées':'Cacher les masquées' ?> (<?= (int)$jobHiddenCount ?>)</a><?php endif ?>
+        </div>
         <ul class="eff-jobs-list" data-jobs-scroll="jobs">
-        <?php foreach($roles as $role):$rid=(int)$role['id'];$trail=$roleTrail($role);$roleMeta=$role['structure']??[]; ?>
-            <li data-jobs-row data-search="<?= $h($role['name'].' '.($roleMeta['code']??'').' '.($role['category_name']??'').' '.$trail) ?>">
-                <a class="eff-jobs-list__item<?= !$creating&&$id===$rid?' is-current':'' ?>" data-jobs-nav href="<?= $h($jobUrl(['emploi'=>$rid]+$inCategory)) ?>" <?= !$creating&&$id===$rid?'aria-current="true"':'' ?>>
-                    <?php if($trail!==''): ?><small class="eff-jobs-parent">↳ <?= $h($trail) ?></small><?php endif ?><strong><?= $h($role['name']) ?><?php if(!empty($roleMeta['code'])): ?><code><?= $h($roleMeta['code']) ?></code><?php endif ?></strong>
+        <?php foreach($roles as $role):$rid=(int)$role['id'];$trail=$roleTrail($role);$roleMeta=$role['structure']??[];$decor=$role['decoration']??[];$roleOrigin=(string)($decor['origin']??''); ?>
+            <li data-jobs-row data-search="<?= $h($role['name'].' '.($roleMeta['code']??'').' '.($decor['abbreviation']??'').' '.implode(' ',array_column($decor['tags']??[],'name')).' '.($role['category_name']??'').' '.$trail) ?>" class="<?= $roleOrigin==='community'?'is-community':'' ?><?= !empty($decor['hidden'])?' is-hidden-job':'' ?>">
+                <a class="eff-jobs-list__item<?= !$creating&&$id===$rid?' is-current':'' ?>" data-jobs-nav href="<?= $h($jobUrl(['emploi'=>$rid]+$listQuery)) ?>" <?= !$creating&&$id===$rid?'aria-current="true"':'' ?> <?= ($decor['description']??'')!==''?'title="'.$h($decor['description']).'"':'' ?>>
+                    <?php if($trail!==''): ?><small class="eff-jobs-parent">↳ <?= $h($trail) ?></small><?php endif ?><strong><?= \App\Support\JobRoleBadge::html($decor,false) ?><?= $h($role['name']) ?><?php if(!empty($roleMeta['code'])): ?><code><?= $h($roleMeta['code']) ?></code><?php endif ?> <?= \App\Support\JobRoleBadge::origin($roleOrigin) ?><?php if(!empty($decor['hidden'])): ?> <span class="job-hidden-flag">Masquée</span><?php endif ?></strong>
                     <span><?= $h($role['category_name']??'Organisation') ?> · <?= ($roleMeta['kind']??'employment')==='function'?'Fonction':'Emploi' ?></span>
+                    <?= \App\Support\JobRoleBadge::tags($decor['tags']??[]) ?>
                 </a>
             </li>
         <?php endforeach ?></ul>

@@ -36,6 +36,8 @@ $jobOptions = is_array($rosterJobRoleOptions ?? null) ? $rosterJobRoleOptions : 
 if ($jobFilter !== '' && !in_array($jobFilter, $jobOptions, true)) {
     array_unshift($jobOptions, $jobFilter);
 }
+$jobTagOptions = is_array($rosterJobTags ?? null) ? $rosterJobTags : [];
+$jobTagFilter = (int) ($filters['etiquette_fonction'] ?? 0);
 // Durée en heures, lisible dans une cellule : « 52 h 30 », « 45 min ».
 $hours = static function (int $seconds): string {
     if ($seconds < 3600) {
@@ -70,6 +72,7 @@ $filterQuery = static function (array $overrides = []) use ($filters, $page, $ro
         'categorie' => (string) ($rosterGradeCategory ?? '') !== '' ? (string) $rosterGradeCategory : null,
         'langue' => !empty($filters['langue']) ? $filters['langue'] : null,
         'fonction' => !empty($filters['fonction']) ? $filters['fonction'] : null,
+        'etiquette_fonction' => !empty($filters['etiquette_fonction']) ? (int) $filters['etiquette_fonction'] : null,
         'vue' => !empty($filters['vue']) && $filters['vue'] !== 'general' ? $filters['vue'] : null,
         'page' => $page > 1 ? $page : null,
     ];
@@ -156,6 +159,7 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
     || !empty($filters['sans_role'])
     || !empty($filters['langue'])
     || !empty($filters['fonction'])
+    || !empty($filters['etiquette_fonction'])
     || (($rosterGroup ?? 'unite') === 'liste' && ($filters['tri'] ?? 'nom') !== 'nom');
 
 $exportQuery = array_filter([
@@ -690,7 +694,8 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <td data-label="Emploi">
                             <div class="eff-sheets__assign">
                                 <?php if ($rowJobLabel !== ''): ?>
-                                    <span class="eff-sheets__fonction" title="<?= htmlspecialchars($rowJobTitle !== '' ? $rowJobTitle : $rowJobLabel, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($rowJobLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php $rowJobDecor = is_array($rowJobs[0]['decoration'] ?? null) ? $rowJobs[0]['decoration'] : null; $rowJobDesc = trim((string) ($rowJobDecor['description'] ?? '')); ?>
+                                    <span class="eff-sheets__fonction" title="<?= htmlspecialchars(($rowJobTitle !== '' ? $rowJobTitle : $rowJobLabel) . ($rowJobDesc !== '' ? ' — ' . $rowJobDesc : ''), ENT_QUOTES, 'UTF-8') ?>"><?= \App\Support\JobRoleBadge::html($rowJobDecor, false) ?><?= htmlspecialchars($rowJobLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php if (count($rowJobs) > 1): ?><span class="eff-sheets__badge eff-sheets__badge--info">+<?= count($rowJobs) - 1 ?></span><?php endif; ?>
                                 <?php else: ?>
                                     <span class="eff-sheets__badge eff-sheets__badge--watch">Sans emploi</span>
@@ -979,10 +984,10 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     <div class="eff-job-picker__items">
                         <?php foreach ($group['items'] as $item): ?>
                             <?php $val = (string) $item['value']; ?>
-                            <div class="eff-job-picker__item" data-filter-item data-filter-text="<?= htmlspecialchars(mb_strtolower($item['label'] . ' ' . $item['detail'] . ' ' . $group['label'], 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="eff-job-picker__item<?= ($item['origin'] ?? '') === 'community' ? ' is-community' : '' ?>" data-filter-item data-filter-text="<?= htmlspecialchars(mb_strtolower($item['label'] . ' ' . $item['detail'] . ' ' . $group['label'] . ' ' . ($item['abbreviation'] ?? '') . ' ' . implode(' ', array_column($item['tags'] ?? [], 'name')), 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>"<?= ($item['description'] ?? '') !== '' ? ' title="' . htmlspecialchars((string) $item['description'], ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
                                 <label class="eff-job-picker__check">
                                     <input type="checkbox" name="job_role_ids[]" value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>">
-                                    <span><strong><?= htmlspecialchars((string) $item['label'], ENT_QUOTES, 'UTF-8') ?></strong><?php if ($item['detail'] !== ''): ?><small><?= htmlspecialchars((string) $item['detail'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></span>
+                                    <span><strong><?= \App\Support\JobRoleBadge::html($item, false) ?><?= htmlspecialchars((string) $item['label'], ENT_QUOTES, 'UTF-8') ?> <?= \App\Support\JobRoleBadge::origin((string) ($item['origin'] ?? '')) ?><?php if (!empty($item['hidden'])): ?> <span class="job-hidden-flag">Masquée</span><?php endif; ?></strong><?php if ($item['detail'] !== ''): ?><small><?= htmlspecialchars((string) $item['detail'], ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></span>
                                 </label>
                                 <label class="eff-job-picker__primary" title="Emploi principal">
                                     <input type="radio" name="primary_job_role_id" value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>">
