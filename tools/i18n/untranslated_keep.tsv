@@ -1233,3 +1233,4 @@ Centre d’instruction CAS	nom propre d’exemple (émetteur fictif)	views/admin
 ?nouveau-cours=1	paramètre d'URL	views/academy/studio_kinds.php
 ?nouveau=brevet	paramètre d'URL	views/academy/studio_kinds.php
 ?nouveau=qualification	paramètre d'URL	views/academy/studio_kinds.php
+back-office/organisation/noms?filtre=sans	URL interne	views/admin/organization/member_names.php

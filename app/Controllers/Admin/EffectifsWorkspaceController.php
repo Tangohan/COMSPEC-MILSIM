@@ -346,6 +346,7 @@ class EffectifsWorkspaceController
             'title' => 'Tableur des effectifs',
             'effectifsNav' => 'roster',
             'rosterRows' => $rows,
+            'rosterIdentities' => $this->rosterIdentities($tenantId, $rowIds),
             'rosterTotal' => $total,
             'rosterPage' => $page,
             'rosterPerPage' => $perPage,
@@ -4886,5 +4887,22 @@ class EffectifsWorkspaceController
         }
 
         return $out;
+    }
+
+    /**
+     * Prénom, nom du personnage et trigramme des membres du tableur (affichage « Prénom N. »).
+     *
+     * @param list<int> $userIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function rosterIdentities(int $tenantId, array $userIds): array
+    {
+        try {
+            return (new \App\Services\Personnel\MemberNameService())->identitiesFor($tenantId, $userIds);
+        } catch (\Throwable $e) {
+            error_log('[noms] tableur des effectifs : ' . $e->getMessage());
+
+            return [];
+        }
     }
 }
