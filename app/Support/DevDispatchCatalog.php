@@ -294,6 +294,24 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1315, '2026-11-02', 'App Routes, bandeau du curseur de la carte refait, app Réseau lisible', 'Avec le pack 2.9.34, le téléphone gagne l’app Routes : des routes nommées à pied, en véhicule (par les routes au choix), aériennes ou nautiques, avec leurs étapes typées (checkpoint, ligne de phase, ralliement, LZ…), leurs consignes, leurs heures H+ et l’action attendue à chaque étape. Distances, caps, durée et heure d’arrivée sont calculés ; « Suivre la route » guide d’étape en étape. Les routes se partagent à l’équipe, au groupe ou au camp par le réseau ATAK et peuvent s’afficher sur la carte d’Arma, sur Athena et en 3D. Le bandeau du curseur de la carte et l’app Réseau sont refaits pour être lisibles.', [
+                'App Routes (Navigation) : créer, dupliquer, supprimer des routes ; type de tracé à pied, véhicule (option « Suivre les routes »), aérien (couloir) ou nautique ; couleur, épaisseur, style plein, pointillé ou flèches de direction',
+                'Étapes posées d’un clic sur la carte de l’app (ajouter, insérer, déplacer), sur ma position, un marqueur existant ou une grille MGRS ; type, nom, consigne, heure prévue H+ et action attendue pour chacune',
+                'Calculs : distance et cap de chaque tronçon, distance totale, durée selon la vitesse réglable, heure d’arrivée',
+                '« Suivre la route » : étape visée, distance, cap, arrivée, reste et progression ; vibreur à chaque étape, montre Garmin orientée vers l’étape',
+                'Partage à l’équipe, au groupe ou au camp par le réseau ATAK (sans réseau, envoi au retour du signal ; routes remises aux joueurs qui arrivent), affichage sur la carte d’Arma, sur Athena et en 3D',
+            ], [
+                'Bandeau du curseur de la carte : grille MGRS une seule fois, « ALT 17 m », distance et gisement avec une flèche, votre cap clairement étiqueté, points cardinaux sur 16 directions',
+                'App Réseau : texte nettement plus grand, une information par ligne, sections repliables qui gardent votre choix, boutons plus grands',
+                'Actions ACE « Ajouter un point d’itinéraire » et « Effacer l’itinéraire » (infos tactiques JVN) : elles remplissent la route « Itinéraire JVN » de l’app Routes',
+                'L’app Itinéraire copie ses étapes dans l’app Routes',
+                'Le nom du serveur accompagne les relevés de temps de jeu et de distances envoyés à Athena, pour reconnaître les parties',
+            ], [
+                'Carte : « 317° NON » et « MGRS ALT m17 » ne s’affichent plus dans le bandeau du curseur',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.34 (liaison 2.0.116 incluse), quittez Arma complètement et relancez.',
+                'Réglages serveur dans Options des addons › COMSPEC › ATAK · Routes : partage des routes, routes sur la carte d’Arma et Athena, nombre d’étapes, rayon d’arrivée, vue 3D.',
+            ], 'Pack téléphone 2.9.34'),
             $pr(1310, '2026-11-02', 'Écrans et vidéoprojecteur réparés, voix radio par le maillage MPU5', 'Avec le pack 2.9.33, les écrans du TOC, les écrans COMSPEC et le vidéoprojecteur affichent de nouveau la carte du TOC, les diapositives et les leçons Academy : depuis la 2.9.29, le jeu refusait la taille de l’image posée sur l’écran et il restait noir. La radio ACRE2 ou TFAR reliée à la MPU5 fait passer la voix par le maillage jusqu’aux radios reliées des équipiers sur la même fréquence (réglage serveur, désactivé par défaut).', [
                 'Radio de données : reliez votre radio ACRE2 ou TFAR à votre MPU5 (menu ACE ou app Réseau) et votre voix passe par le maillage (MPU5, relais, pylônes, véhicules) jusqu’aux radios reliées de vos équipiers sur la même fréquence, sans limite de distance ni de relief. Hors maillage, la radio retrouve sa portée normale (réglage serveur, désactivé par défaut).',
             ], [

@@ -145,6 +145,22 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["comspec_atak_native_map_show_sites", "Noms des sites militaires", "Affiche les aéroports et les sites militaires (bases, camps, casernes...) sur la carte du téléphone, en zoom rapproché. Aussi réglable dans CALQUES."]
 ];
 
+// App Routes (fn_routeAction) : partage, carte d'Arma et Athena, nombre d'étapes, rayon d'arrivée, vue 3D.
+["comspec_atak_native_route_share", "CHECKBOX",
+    ["Partage des routes", "Les joueurs peuvent envoyer leurs routes à leur équipe, leur groupe ou leur camp (app Routes), par le réseau du téléphone. Décoché : chaque route reste sur son téléphone."],
+    ["COMSPEC", "ATAK · Routes"], true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_route_arma", "CHECKBOX",
+    ["Routes sur la carte d'Arma et Athena", "Option « Carte d'Arma et Athena » d'une route : tracé et étapes posés en marqueurs sur le canal du groupe (du camp si la route est partagée au camp) et envoyés au site Athena comme les autres dessins. Décoché : les routes restent sur les téléphones."],
+    ["COMSPEC", "ATAK · Routes"], true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_route_max", "SLIDER",
+    ["Étapes par route au plus", "Nombre d'étapes d'une route (40 par défaut)."],
+    ["COMSPEC", "ATAK · Routes"], [5, 80, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_route_arrive", "SLIDER",
+    ["Rayon d'arrivée à une étape (à pied, m)", "Distance à laquelle « Suivre la route » annonce l'étape atteinte et passe à la suivante (25 m par défaut). Multiplié en véhicule (x2,4), sur l'eau (x3) et en vol (x8)."],
+    ["COMSPEC", "ATAK · Routes"], [5, 100, 25, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_route_3d", "CHECKBOX",
+    ["Vue 3D des routes", "Option « Vue 3D » d'une route : trait et étapes affichés dans le monde (à moins de 1,5 km). Décoché : jamais de 3D, même si une route la demande."],
+    ["COMSPEC", "ATAK · Routes"], true, 0] call comspec_atak_native_fnc_addSetting;
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
 // Tous les mods COMSPEC partagent une seule catégorie CBA « COMSPEC » ; sous-catégories « ATAK · … », « Overwatch · … », « SSE ».
 private _cat = ["COMSPEC", "ATAK · Accès au téléphone"];
