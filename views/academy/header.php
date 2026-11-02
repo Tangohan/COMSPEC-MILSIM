@@ -21,7 +21,7 @@ require base_path('views/training/partials/lms_head.php');
 <script>(function(){var p='auto';try{p=localStorage.getItem('athena.bo.theme')||'auto';}catch(e){}var d=p==='dark'||(p==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-bo-theme',d?'dark':'light');})();</script>
 <?php endif ?>
 </head>
-<body class="academy-app<?= $customTopbar ? ' academy-workspace academy-workspace--' . $h($space) : '' ?>" data-rt-close="<?= $h($t('rt_close')) ?>" data-rt-zoom="<?= $h($t('rt_zoom')) ?>">
+<body class="academy-app<?= $customTopbar ? ' academy-workspace academy-workspace--' . $h($space) : '' ?>" data-rt-close="<?= $h($t('rt_close')) ?>">
 <a class="skip" href="#main"><?= $h($t('skip_to_content')) ?></a>
 <?php if (!$customTopbar): ?>
 <?php /* En-tête unique des pages Academy : marque, mention de préversion (ouvre l’avertissement complet), organisation, langue, retour vers ATHENA. */ ?>

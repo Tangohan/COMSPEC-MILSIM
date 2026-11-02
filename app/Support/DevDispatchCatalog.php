@@ -294,6 +294,9 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1314, '2026-11-02', 'Academy : les cartes du tableau de bord ouvrent le catalogue', 'Sur le tableau de bord de l’Academy, un clic sur une carte « Explorer le catalogue » (Formations, Brevets et licences, Qualifications) ouvrait une fenêtre sombre vide avec une simple croix. Les cartes mènent de nouveau au catalogue sur le bon onglet, et seul un clic sur une image de cours l’agrandit.', [], [], [
+                'Academy : un clic n’importe où sur une page de l’Academy (cartes du tableau de bord, liens d’outils) ne déclenche plus l’agrandissement d’image, réservé aux images des cours',
+            ], ['personnel'], [], 'Portail'),
             $pr(1313, '2026-11-02', 'Cycle de mission expliqué et parties détectées en jeu gérées', 'La page Cycle de mission montre maintenant les sept étapes d’une opération, de la planification aux heures comptées : ce que fait chaque étape, comment elle se déclenche (site, serveur, Zeus) et combien des parties récentes l’ont passée. Chaque partie lancée sur le serveur est rapprochée automatiquement de l’opération planifiée, du cycle de mission ou de l’événement prévu au même créneau (carte et joueurs prévus présents compris) ; vous confirmez, corrigez ou indiquez « aucune ». Dans le suivi des CR, le bouton « Gérer » d’une partie permet de la renommer, de lui donner un type et une catégorie, de l’ignorer (une fois ou à l’avenir) ou de la supprimer, seule ou en groupe.', [
                 'Cycle de mission : étapes expliquées avec leurs liens (planification, briefing, suivi des CR, comptes rendus, heures, sessions de jeu, qualifications, avancement) et réglages de la détection',
                 'Parties détectées : état de chaque étape, opération prévue proposée ou choisie, parties sans opération signalées',

@@ -62,7 +62,7 @@
     if (typeof lightbox.showModal === 'function') lightbox.showModal(); else window.open(src, '_blank', 'noopener');
   };
   document.addEventListener('click', event => {
-    const link = event.target.closest?.('[data-rt-zoom]');
+    const link = event.target.closest?.('a[data-rt-zoom]');
     if (!link || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const img = link.querySelector('img');
     if (!img) return;
