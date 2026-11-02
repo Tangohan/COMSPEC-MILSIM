@@ -38,6 +38,9 @@ if (!_on) then {
 
 private _colH = missionNamespace getVariable ["COMSPEC_EcotiPpColor", -1];
 if (!(_colH isEqualType 0) || { _colH < 0 }) exitWith {};
+// Éblouissement (véhicules à 110 m) et réglage du tube : 2 fois / s au lieu de 8 (fondu allongé d'autant).
+if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_EcotiFxAt", -1])) exitWith {};
+missionNamespace setVariable ["COMSPEC_EcotiFxAt", diag_tickTime + 0.5, false];
 
 private _flare = 0;
 if (_gate) then {
@@ -82,4 +85,4 @@ _colH ppEffectAdjust [
     _mid,
     _desat
 ];
-_colH ppEffectCommit 0.1;
+_colH ppEffectCommit 0.5;

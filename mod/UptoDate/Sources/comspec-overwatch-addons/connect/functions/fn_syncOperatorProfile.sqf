@@ -2,8 +2,7 @@
     Envoie la fiche opérateur observée (register au premier passage, sync ensuite).
     Ne doit PAS être appelé à chaque tick de position.
     Rien ne part si l'empreinte (identité, équipement, versions) n'a pas changé, sauf à l'enregistrement, au
-    forçage manuel et au rappel « heartbeat » (toutes les 15 min, fn_operatorProfileTick) qui garde à jour la
-    comparaison faite par le site (écarts, mise à jour demandée). Catalogue d'objets et liste des mods : seulement
+    forçage manuel (plus de rappel toutes les 15 min : fiche complète une fois par session). Catalogue d'objets et liste des mods : seulement
     à l'enregistrement et quand ils changent (fn_buildOperatorProfile).
     Un refus durable du site (HTTP 4xx, compte bloqué…) attend 1 min puis de plus en plus longtemps (10 min au plus)
     avant de retenter : avant, la même fiche repartait à chaque contrôle (8 s).

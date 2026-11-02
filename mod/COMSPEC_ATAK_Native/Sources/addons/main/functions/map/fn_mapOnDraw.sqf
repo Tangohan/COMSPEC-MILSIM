@@ -323,7 +323,7 @@ if (_selfCfg select 4) then {
     };
     // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
     private _acc = _entity getOrDefault ["acc", 0];
-    if (!_self && {_acc >= 10} && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", true]}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
+    if (!_self && {_acc >= 10} && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", false]}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
     _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
     // Mon indicatif : AUTO comme les autres unités, ON toujours, OFF jamais (fn_mapPrefs « self »).
     if ((_self && {_selfLbl isEqualTo "ON"}) || {_lblOn && {!_boxOn} && {_scale < 0.25} && {_eniOn || {!_hostile}} && {!_self || {_selfLbl isNotEqualTo "OFF"}}}) then {
@@ -345,11 +345,24 @@ if (_selfCfg select 4) then {
             _lblCands pushBack [[[[3, 1] select _mine, 2] select _hostile, 0] select (_x isEqualTo _selected), _x, _pos, toUpper _cs, _hostile, ((_color select 3) max 0.45) min 1, _freshness];
         };
     };
-    // Unité sélectionnée : anneau blanc cerné de noir (lisible sur carte claire et sombre), à taille fixe à l'écran, plus
-    // large que celui de l'équipe de feu (avant : cercle de 22 m qui grossissait au zoom jusqu'à couvrir la moitié de la carte).
+    // Unité sélectionnée (2.9.38) : crochets d'angle fins à la couleur de la sélection (réglages carte) sur un halo très
+    // léger, proportionnels à l'icône, qui encadrent le symbole sans le masquer ni cacher l'étiquette ; pulsation discrète.
+    // (Avant : gros anneau blanc opaque par-dessus le symbole et l'étiquette.)
     if (_x isEqualTo _selected) then {
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _pal get "selHalo", _pos, _size * 2.3, _size * 2.3, 0, "", 0];
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _pal get "sel", _pos, _size * 2.1, _size * 2.1, 0, "", 0];
+        private _px = ((_map ctrlMapScreenToWorld [0.5, 0.5]) distance2D (_map ctrlMapScreenToWorld [0.5 + pixelW * 100, 0.5])) / 100;
+        private _h = _size * 0.62 * _px * (1 + 0.06 * (sin (diag_tickTime * 240)));
+        private _arm = _h * 0.45;
+        private _sc = _pal get "sel";
+        private _hc = +(_pal get "selHalo"); _hc set [3, 0.22];
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _hc, _pos, _size * 1.9, _size * 1.9, 0, "", 0];
+        {
+            _x params ["_sx", "_sy"];
+            private _c = [(_pos select 0) + _sx * _h, (_pos select 1) + _sy * _h, 0];
+            _map drawLine [_c, [(_c select 0) - _sx * _arm, _c select 1, 0], _sc];
+            _map drawLine [_c, [_c select 0, (_c select 1) - _sy * _arm, 0], _sc];
+            _map drawLine [[(_c select 0), (_c select 1) - _sy * _px, 0], [(_c select 0) - _sx * _arm, (_c select 1) - _sy * _px, 0], _sc];
+            _map drawLine [[(_c select 0) - _sx * _px, _c select 1, 0], [(_c select 0) - _sx * _px, (_c select 1) - _sy * _arm, 0], _sc];
+        } forEach [[1, 1], [-1, 1], [1, -1], [-1, -1]];
     };
     // Équipe de feu (mon groupe) : anneau à la couleur de l'équipe.
     private _o = _entity getOrDefault ["object", objNull];

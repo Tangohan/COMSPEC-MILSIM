@@ -1,5 +1,5 @@
 /*
-    Compare l’empreinte courante et déclenche un sync si un champ significatif a changé (ou le rappel 15 min).
+    Compare l’empreinte courante et déclenche un sync si un champ significatif a changé.
     Params: [_reason]
 */
 params [["_reason", "profile_sync", [""]]];
@@ -32,11 +32,8 @@ if (!_registered) exitWith {
 private _payload = [player, "sync", _reason, true] call comspec_overwatch_connect_fnc_buildOperatorProfile;
 private _fp = _payload getOrDefault ["fingerprint", ""];
 private _lastFp = missionNamespace getVariable ["COMSPEC_OperatorFingerprint", ""];
-if (_fp isEqualTo _lastFp) exitWith {
-    // Rien n'a changé : un rappel toutes les 15 min garde à jour la comparaison du site (grade, unité, versions
-    // exigées modifiés côté Athena entre-temps).
-    private _last = missionNamespace getVariable ["COMSPEC_OperatorLastSentAt", diag_tickTime];
-    if ((diag_tickTime - _last) < 900) then { false } else { ["sync", "heartbeat"] call comspec_overwatch_connect_fnc_syncOperatorProfile }
-};
+// Rien n'a changé : rien ne part. Fiche complète une fois par session (enregistrement), puis seulement les changements
+// réels (plus de rappel toutes les 15 min, demande de TTRD).
+if (_fp isEqualTo _lastFp) exitWith { false };
 
 ["sync", _reason] call comspec_overwatch_connect_fnc_syncOperatorProfile

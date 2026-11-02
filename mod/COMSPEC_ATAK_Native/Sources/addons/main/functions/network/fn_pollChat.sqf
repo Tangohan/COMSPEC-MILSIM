@@ -1,12 +1,15 @@
 // Avec COMSPEC Link, c'est lui qui interroge Athena (même session, pas de doublon).
 if ([] call comspec_atak_native_fnc_bridge) exitWith { false };
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap];
-private _messages = +(_data getOrDefault ["messages",[]]);
 private _seen = uiNamespace getVariable ["COMSPEC_ATAK_ChatSeen",createHashMap];
 private _after = uiNamespace getVariable ["COMSPEC_ATAK_ChatAfter","0"];
 private _mapId = str (missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]]);
 private _raw = ["GetChatMessages",[_mapId,"40",_after]] call comspec_atak_native_fnc_extensionCall;
 if ((_raw find "OK|") isNotEqualTo 0) exitWith { false };
+// Même réponse que la précédente (rien de nouveau, cas courant) : ni copie des 200 messages ni relecture.
+if ((uiNamespace getVariable ["COMSPEC_ATAK_ChatRaw",""]) isEqualTo _raw) exitWith { false };
+uiNamespace setVariable ["COMSPEC_ATAK_ChatRaw",_raw];
+private _messages = +(_data getOrDefault ["messages",[]]);
 
 private _tab = toString [9];
 private _changed = false;

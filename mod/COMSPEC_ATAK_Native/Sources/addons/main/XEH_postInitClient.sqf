@@ -56,6 +56,8 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 ["COMSPEC ATAK", "PhoneCarry", ["Porter l'ATAK en miniature (secondaire)", "Affiche ou range la miniature dans un coin de l'écran (on continue à jouer). En grand : réduit en miniature."], { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneJpc", ["Tablette sur le JPC (ouvrir / rabattre)", "Relève la tablette durcie du porte-plaques et affiche l'ATAK sur son écran 3D : on baisse les yeux pour lire, vue libre, déplacement et arme disponibles. Choisit aussi le style « porté » JPC."], { if (["wip"] call comspec_atak_native_fnc_jpcScreen) exitWith { false }; ["toggle"] call comspec_atak_native_fnc_jpcScreen; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneHold", ["Prendre en main / interagir (touche alternative)", "Même effet que la touche principale : miniature -> grand, grand -> miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
+// Interagir avec la miniature sans l'agrandir (2.9.38, fn_miniInteract) ; relue aussi par fn_open, téléphone en main.
+["COMSPEC ATAK", "PhoneMiniUse", ["Interagir avec la miniature (sans l'agrandir)", "La souris agit sur la miniature, à sa taille et à sa place ; le personnage ne bouge plus. Nouvel appui, Échap ou clic hors du téléphone : retour au jeu, la miniature reste affichée. Téléphone rangé : il s'affiche en miniature."], { [] call comspec_atak_native_fnc_miniInteract; true }, "", [0x16, [true, false, false]]] call CBA_fnc_addKeybind;
 // Zoom de la carte sans prendre le téléphone en main (aussi en marchant ou en conduisant).
 ["COMSPEC ATAK", "PhoneLase", ["Envoyer le point visé à l'ATAK", "Dans une optique ou des jumelles, ou avec un désignateur laser allumé : le point visé devient un marqueur sur la carte de l'ATAK (palette du mode MARQUEUR). Avec ACE, une mesure du Vector 21 (azimut + distance) l'envoie aussi toute seule."], { ["aim"] call comspec_atak_native_fnc_lasePoint; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneZoomIn", ["Zoomer (carte du téléphone)", "Zoom avant sur la carte, aussi téléphone porté en marchant ou en conduisant."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xC9, [false, true, false]]] call CBA_fnc_addKeybind;
@@ -103,7 +105,7 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call c
         private _h = missionNamespace getVariable [_x, createHashMap];
         if ((count _h) < 300) then { _h set [_m, true]; } else { _h set ["", true]; };
         missionNamespace setVariable [_x, _h];
-    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk"];
+    } forEach ["COMSPEC_ATAK_MkDirtyGm", "COMSPEC_ATAK_MkDirtyLd", "COMSPEC_ATAK_MkDirtySk", "COMSPEC_ATAK_MkDirtyWs"];
 }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
@@ -577,6 +579,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_tocScreen; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Vidéoprojecteurs et toiles proches (fn_projector) : toile éclairée ou non, lumières de l'objectif ; menus ACE.
 ["aceInit"] call comspec_atak_native_fnc_projector;
+// Aucun projecteur dans la mission (cas courant) : le passage de 2 s s'arrête net (deux nearestObjects à 160 m évités).
+["COMSPEC_ATAK_Projector", "init", { COMSPEC_ATAK_ProjAny = true; }, true, [], true] call CBA_fnc_addClassEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_projector; }, 2] call COMSPEC_ATAK_PfhSpread;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).

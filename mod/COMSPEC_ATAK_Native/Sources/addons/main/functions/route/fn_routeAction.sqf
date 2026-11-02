@@ -69,6 +69,35 @@ if (isNil "_mine") then {
     } forEach (profileNamespace getVariable [format ["COMSPEC_ATAK_Rte_%1", worldName], []]);
 };
 private _get = { params ["_id"]; _mine getOrDefault [_id, _rx getOrDefault [_id, createHashMap]] };
+// Édition en cours (une de mes routes à la fois, vue EDIT de l'app) : missionNamespace COMSPEC_ATAK_RteEdit, HashMap
+// id, orig (route empaquetée à l'ouverture), undo / redo (piles d'états empaquetés, 30 au plus), isNew, dirty.
+// Pendant l'édition, rien ne part au réseau ni sur la carte d'Arma : un seul envoi à la validation (editCommit).
+private _ed = missionNamespace getVariable ["COMSPEC_ATAK_RteEdit", createHashMap];
+private _editing = { params ["_id"]; (_ed getOrDefault ["id", ""]) isEqualTo _id };
+// État de la route gardé avant une modification (annuler) ; la pile « rétablir » repart de zéro.
+private _snap = {
+    params ["_r"];
+    if !([_r get "id"] call _editing) exitWith {};
+    private _u = _ed get "undo";
+    _u pushBack +(["pack", _r] call comspec_atak_native_fnc_routeAction);
+    if ((count _u) > 30) then { _u deleteAt 0; };
+    _ed set ["redo", []];
+    _ed set ["dirty", true];
+};
+// Route remise dans un état empaqueté (annuler, rétablir, annuler les modifications).
+private _restore = {
+    params ["_r", "_pk"];
+    private _rev = _r getOrDefault ["rev", 0];
+    // Affichage et partage (carte, 3D, Arma, portée) : réglés hors de l'édition, jamais repris d'un état gardé.
+    { if !((_x select 0) in ["mk", "id", "vis", "d3", "arma", "live", "scope", "from"]) then { _r set [_x select 0, +(_x select 1)]; }; } forEach _pk;
+    _r set ["rev", ((_r getOrDefault ["rev", 0]) max _rev) + 1];
+    _r set ["roadGen", (_r getOrDefault ["roadGen", 0]) + 1];
+    _r set ["busy", false];
+    _r deleteAt "legKeep"; _r deleteAt "legFrom";
+    if ((_r get "kind") isEqualTo "VEH" && {_r get "roads"} && {(count (_r get "steps")) >= 2} && {(count (_r get "legs")) isNotEqualTo ((count (_r get "steps")) - 1)}) then {
+        ["roads", _r get "id"] call comspec_atak_native_fnc_routeAction;
+    };
+};
 // Page redessinée (une fois par image au plus) : sur place pour la vue d'édition (carte gardée), sinon rendu complet.
 private _refresh = {
     if ((missionNamespace getVariable ["COMSPEC_ATAK_RteRefreshAt", -1]) isEqualTo diag_frameNo) exitWith {};
@@ -91,6 +120,8 @@ private _changed = {
     if (_geo) then { _r set ["rev", (_r getOrDefault ["rev", 0]) + 1]; };
     if ((_r get "id") in _mine) then {
         call _save;
+        // Route en cours d'édition : envoi et marqueurs d'Arma à la validation seulement.
+        if ([_r get "id"] call _editing) exitWith { _ed set ["dirty", true]; };
         private _id = _r get "id";
         private _tok = (_r getOrDefault ["syncTok", 0]) + 1;
         _r set ["syncTok", _tok];
@@ -178,11 +209,14 @@ switch (_act) do {
         private _n = 1;
         while { ((values _mine) findIf { (_x get "name") isEqualTo format [("Route %1") call _tr, _n] }) >= 0 } do { _n = _n + 1; };
         if (_name isEqualTo "") then { _name = format [("Route %1") call _tr, _n]; };
+        // 2.9.38 : partagée d'office (réglage serveur, le camp par défaut) et sur la carte d'Arma ; envoyée à la validation.
+        private _dsc = ((missionNamespace getVariable ["comspec_atak_native_plan_scope", 3]) max 0) min 3;
+        if !(missionNamespace getVariable ["comspec_atak_native_route_share", true]) then { _dsc = 0; };
         private _r = createHashMapFromArray [
             ["id", _id], ["name", [_name] call _clean], ["owner", [player] call comspec_atak_native_fnc_unitCallsign], ["uid", getPlayerUID player],
             ["kind", _k select 0], ["roads", (_k select 0) isEqualTo "VEH"], ["speed", _k select 3], ["corr", 500], ["color", _k select 5], ["width", 2],
-            ["style", _k select 6], ["vis", true], ["arma", false], ["d3", false], ["hh", ""], ["steps", []], ["legs", []], ["rev", 1], ["from", ""],
-            ["scope", 0], ["live", false], ["mk", []]
+            ["style", _k select 6], ["vis", true], ["arma", (missionNamespace getVariable ["comspec_atak_native_route_arma", true]) && {_dsc > 0}], ["d3", false], ["hh", ""], ["steps", []], ["legs", []], ["rev", 1], ["from", ""],
+            ["scope", _dsc], ["live", _dsc > 0], ["mk", []]
         ];
         _mine set [_id, _r];
         call _save;
@@ -204,14 +238,20 @@ switch (_act) do {
         private _r = [_arg] call _get;
         if ((count _r) isEqualTo 0) exitWith { false };
         // Marqueurs d'Arma posés : retirés partout (et sur Athena).
-        { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_r getOrDefault ["mk", []]);
+        { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_r getOrDefault ["mk", []]);
         _r set ["mk", []];
         if (_arg in _mine) then {
             // Route partagée : retirée chez ceux qui l'ont reçue.
             if ((_r get "scope") > 0) then { ["unshare", _arg] call comspec_atak_native_fnc_routeAction; };
             _mine deleteAt _arg;
             call _save;
-        } else { _rx deleteAt _arg; };
+        } else {
+            // Route reçue retirée ici : plus jamais reprise (rejeu du serveur, mise à jour de l'auteur), pour la partie.
+            (missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap]) set [_arg, 1e9];
+            missionNamespace setVariable ["COMSPEC_ATAK_RteGone", missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap]];
+            _rx deleteAt _arg;
+            ["INFO", "ROUTE", format ["Route reçue %1 retirée par le joueur : ses mises à jour seront ignorées", _arg]] call comspec_atak_native_fnc_log;
+        };
         if (((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo _arg) then { ["unfollow", true] call comspec_atak_native_fnc_routeAction; };
         call _refresh;
         true
@@ -242,6 +282,7 @@ switch (_act) do {
         };
         private _old = _r getOrDefault [_key, ""];
         if (_old isEqualTo _v) exitWith { false };
+        if !(_key in ["vis", "d3", "arma", "live"]) then { [_r] call _snap; };
         _r set [_key, _v];
         switch (_key) do {
             case "kind": {
@@ -275,6 +316,7 @@ switch (_act) do {
         if ((count _st) >= _maxSteps) exitWith { ["WARNING", format ["%1 étapes au plus", _maxSteps], 3, 20] call comspec_atak_native_fnc_notify; -1 };
         // Type par défaut : départ pour la première étape, puis point de passage.
         if (_type isEqualTo "") then { _type = ["WP", "SP"] select ((count _st) isEqualTo 0); };
+        [_r] call _snap;
         _name = [_name, 24] call _clean;
         if (_name isEqualTo "") then { _name = [_r, _type] call _autoName; };
         private _step = [[_pos select 0, _pos select 1, 0], _type, _name, "", -1, ""];
@@ -293,6 +335,7 @@ switch (_act) do {
         private _st = _r get "steps";
         if (_i < 0 || {_i >= count _st}) exitWith { false };
         _vals params [["_name", ""], ["_type", ""], ["_note", ""], ["_hp", -1], ["_act", ""]];
+        [_r] call _snap;
         private _s = _st select _i;
         if (_type isNotEqualTo "" && {(_types findIf { (_x select 0) isEqualTo _type }) >= 0}) then {
             // Nom automatique de l'ancien type (« WP 2 ») : remplacé par celui du nouveau ; un nom saisi est gardé.
@@ -317,6 +360,7 @@ switch (_act) do {
         if ((count _r) isEqualTo 0 || {(count _pos) < 2}) exitWith { false };
         private _st = _r get "steps";
         if (_i < 0 || {_i >= count _st}) exitWith { false };
+        [_r] call _snap;
         (_st select _i) set [0, [_pos select 0, _pos select 1, 0]];
         [_r] call _legsFix;
         [_r] call _changed;
@@ -330,6 +374,7 @@ switch (_act) do {
         private _st = _r get "steps";
         private _j = _i + ([-1, 1] select (_act isEqualTo "stepDown"));
         if (_i < 0 || {_i >= count _st} || {_j < 0} || {_j >= count _st}) exitWith { -1 };
+        [_r] call _snap;
         private _a = _st select _i;
         _st set [_i, _st select _j];
         _st set [_j, _a];
@@ -343,6 +388,7 @@ switch (_act) do {
         if ((count _r) isEqualTo 0) exitWith { false };
         private _st = _r get "steps";
         if (_i < 0 || {_i >= count _st}) exitWith { false };
+        [_r] call _snap;
         _st deleteAt _i;
         private _f = missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap];
         if ((_f getOrDefault ["id", ""]) isEqualTo _id) then {
@@ -358,6 +404,7 @@ switch (_act) do {
     case "reverse": {
         private _r = _mine getOrDefault [_arg, createHashMap];
         if ((count _r) isEqualTo 0 || {(count (_r get "steps")) < 2}) exitWith { false };
+        [_r] call _snap;
         reverse (_r get "steps");
         private _legs = _r get "legs";
         if ((count _legs) > 0) then { reverse _legs; { reverse _x; } forEach _legs; };
@@ -485,7 +532,7 @@ switch (_act) do {
         private _r = _mine getOrDefault [_id, createHashMap];
         if ((count _r) isEqualTo 0) exitWith { false };
         if !(missionNamespace getVariable ["comspec_atak_native_route_share", true]) exitWith { ["WARNING", "Partage des routes désactivé par le serveur", 3, 20] call comspec_atak_native_fnc_notify; false };
-        if ((count (_r get "steps")) < 1) exitWith { ["INFO", "Route sans étape : rien à envoyer", 3, 10] call comspec_atak_native_fnc_notify; false };
+        if ((count (_r get "steps")) < 1) exitWith { if !(_quiet) then { ["INFO", "Route sans étape : rien à envoyer", 3, 10] call comspec_atak_native_fnc_notify; }; false };
         // Portée réduite : retirée d'abord chez tous ceux de l'ancienne portée.
         if ((_r get "scope") > _sc) then { ["unshare", _id] call comspec_atak_native_fnc_routeAction; };
         _r set ["scope", _sc];
@@ -532,6 +579,10 @@ switch (_act) do {
         if (_op isEqualTo "del") exitWith {
             if !(_pk isEqualType "" && {_pk in _rx}) exitWith {};
             private _n = (_rx get _pk) get "name";
+            // Pierre tombale : une version plus ancienne (rejeu, file sans réseau) ne la fait pas revenir.
+            private _gone = missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap];
+            missionNamespace setVariable ["COMSPEC_ATAK_RteGone", _gone];
+            _gone set [_pk, (_rx get _pk) getOrDefault ["rev", 0]];
             _rx deleteAt _pk;
             if (((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo _pk) then { ["unfollow", true] call comspec_atak_native_fnc_routeAction; };
             if !(_quiet) then { ["INFO", format ["Route retirée par %1 : %2", _who, _n], 3, 20] call comspec_atak_native_fnc_notify; };
@@ -543,6 +594,11 @@ switch (_act) do {
         if ((_r get "uid") isEqualTo getPlayerUID player || {(_r get "id") in _mine}) exitWith {};
         private _id = _r get "id";
         private _old = _rx getOrDefault [_id, createHashMap];
+        // Version plus ancienne que celle déjà reçue, ou route retirée depuis (pierre tombale) : ignorée.
+        private _goneRev = (missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap]) getOrDefault [_id, -1];
+        if ((_r get "rev") <= _goneRev) exitWith { ["INFO", "ROUTE", format ["Route %1 (révision %2) ignorée : retirée depuis", _id, _r get "rev"]] call comspec_atak_native_fnc_log; };
+        if ((count _old) > 0 && {(_r get "rev") < (_old getOrDefault ["rev", 0])}) exitWith { ["INFO", "ROUTE", format ["Route %1 : révision %2 plus ancienne que %3, ignorée", _id, _r get "rev", _old get "rev"]] call comspec_atak_native_fnc_log; };
+        (missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap]) deleteAt _id;
         _r set ["from", [_who, _r get "owner"] select (_who isEqualTo "")];
         _r set ["scope", (_sc max 1) min 3];
         _r set ["arma", false];
@@ -565,7 +621,7 @@ switch (_act) do {
     case "armaNow": {
         private _r = _mine getOrDefault [_arg, createHashMap];
         if ((count _r) isEqualTo 0) exitWith {};
-        { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach (_r getOrDefault ["mk", []]);
+        { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_r getOrDefault ["mk", []]);
         _r set ["mk", []];
         if (!(_r get "arma") || {!(missionNamespace getVariable ["comspec_atak_native_route_arma", true])} || {(count (_r get "steps")) isEqualTo 0}) exitWith {};
         private _ch = [3, 1] select ((_r get "scope") >= 3);
@@ -610,6 +666,177 @@ switch (_act) do {
         _r set ["mk", _mk];
         { [_x] call comspec_atak_native_fnc_markerWeb; } forEach _mk;
     };
+    // Édition (vue EDIT de l'app) : [id, nouvelle route]. Une autre route en cours d'édition est d'abord validée.
+    case "editBegin": {
+        _arg params [["_id", ""], ["_isNew", false]];
+        if !(_id in _mine) exitWith { false };
+        if ([_id] call _editing) exitWith { if (_isNew) then { _ed set ["isNew", true]; }; true };
+        if ((count _ed) > 0) then { ["editCommit"] call comspec_atak_native_fnc_routeAction; };
+        _ed = createHashMapFromArray [["id", _id], ["orig", +(["pack", _mine get _id] call comspec_atak_native_fnc_routeAction)], ["undo", []], ["redo", []], ["isNew", _isNew], ["dirty", false]];
+        missionNamespace setVariable ["COMSPEC_ATAK_RteEdit", _ed];
+        true
+    };
+    case "editInfo": { _ed };
+    // Validation : fin de l'édition, puis un seul envoi (partage en direct, carte d'Arma et Athena) si la route a changé.
+    case "editCommit": {
+        if ((count _ed) isEqualTo 0) exitWith { false };
+        private _id = _ed get "id";
+        private _dirty = _ed get "dirty";
+        _ed = createHashMap;
+        missionNamespace setVariable ["COMSPEC_ATAK_RteEdit", _ed];
+        // Validation suivie d'un partage (argument true) : le partage envoie la route, seuls les marqueurs d'Arma suivent.
+        if (_arg isEqualTo true) exitWith {
+            if (_dirty && {_id in _mine} && {((_mine get _id) get "arma") || {(count ((_mine get _id) getOrDefault ["mk", []])) > 0}}) then { ["armaNow", _id] call comspec_atak_native_fnc_routeAction; };
+            _dirty
+        };
+        if (_dirty && {_id in _mine}) then { [_mine get _id, false] call _changed; } else { call _refresh; };
+        _dirty
+    };
+    // Annuler les modifications : route remise comme à l'ouverture (nouvelle route : brouillon abandonné). Rien n'était
+    // parti au réseau : rien à renvoyer.
+    case "editRevert": {
+        if ((count _ed) isEqualTo 0) exitWith { false };
+        private _id = _ed get "id";
+        private _orig = _ed get "orig";
+        private _isNew = _ed get "isNew";
+        _ed = createHashMap;
+        missionNamespace setVariable ["COMSPEC_ATAK_RteEdit", _ed];
+        private _r = _mine getOrDefault [_id, createHashMap];
+        if ((count _r) isEqualTo 0) exitWith { false };
+        if (_isNew && {(_r get "scope") isEqualTo 0}) exitWith {
+            { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_r getOrDefault ["mk", []]);
+            _mine deleteAt _id;
+            if (((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo _id) then { ["unfollow", true] call comspec_atak_native_fnc_routeAction; };
+            call _save; call _refresh;
+            true
+        };
+        [_r, _orig] call _restore;
+        // Marqueurs d'Arma reposés pendant l'édition (interrupteur) : refaits sur l'état d'origine.
+        if ((_r get "arma") || {(count (_r getOrDefault ["mk", []])) > 0}) then { ["armaNow", _id] call comspec_atak_native_fnc_routeAction; };
+        call _save; call _refresh;
+        true
+    };
+    // Annuler / rétablir pendant l'édition (Ctrl+Z / Ctrl+Y) : true si quelque chose a changé.
+    case "undo";
+    case "redo": {
+        if ((count _ed) isEqualTo 0) exitWith { false };
+        private _r = _mine getOrDefault [_ed get "id", createHashMap];
+        if ((count _r) isEqualTo 0) exitWith { false };
+        private _from = _ed get (["redo", "undo"] select (_act isEqualTo "undo"));
+        private _to = _ed get (["undo", "redo"] select (_act isEqualTo "undo"));
+        if ((count _from) isEqualTo 0) exitWith { false };
+        _to pushBack +(["pack", _r] call comspec_atak_native_fnc_routeAction);
+        [_r, _from deleteAt ((count _from) - 1)] call _restore;
+        _ed set ["dirty", true];
+        call _save; call _refresh;
+        true
+    };
+    // Route supprimée, gardée 8 s (bandeau « Supprimée · ANNULER ») avant d'être retirée partout.
+    case "trash": {
+        private _r = _mine getOrDefault [_arg, createHashMap];
+        if ((count _r) isEqualTo 0) exitWith { ["del", _arg] call comspec_atak_native_fnc_routeAction };
+        if ([_arg] call _editing) then { _ed = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_RteEdit", _ed]; };
+        private _bin = missionNamespace getVariable ["COMSPEC_ATAK_RteTrash", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_RteTrash", _bin];
+        private _tok = diag_tickTime;
+        _bin set [_arg, [_r, _tok]];
+        _mine deleteAt _arg;
+        call _save; call _refresh;
+        [{
+            params ["_id", "_tok"];
+            private _bin = missionNamespace getVariable ["COMSPEC_ATAK_RteTrash", createHashMap];
+            private _e = _bin getOrDefault [_id, []];
+            if ((_e param [1, -1]) isNotEqualTo _tok) exitWith {};
+            _bin deleteAt _id;
+            (missionNamespace getVariable ["COMSPEC_ATAK_RteMine", createHashMap]) set [_id, _e select 0];
+            ["del", _id] call comspec_atak_native_fnc_routeAction;
+        }, [_arg, _tok], 8] call CBA_fnc_waitAndExecute;
+        true
+    };
+    case "untrash": {
+        private _bin = missionNamespace getVariable ["COMSPEC_ATAK_RteTrash", createHashMap];
+        private _e = _bin getOrDefault [_arg, []];
+        if ((count _e) isEqualTo 0) exitWith { false };
+        _bin deleteAt _arg;
+        _mine set [_arg, _e select 0];
+        call _save; call _refresh;
+        true
+    };
+    // Route affichée sous un point de l'écran d'une carte (clic droit de l'app Carte) : [carte, point écran] -> id ou "".
+    case "at": {
+        _arg params ["_map", "_sp"];
+        private _best = ""; private _bd = pixelW * 10;
+        {
+            if (_x get "vis") then {
+                private _r = _x;
+                private _pts = (["geo", _r] call comspec_atak_native_fnc_routeAction) select 1;
+                private _scr = _pts apply { _map ctrlMapWorldToScreen [_x select 0, _x select 1] };
+                for "_i" from 1 to ((count _scr) - 1) do {
+                    private _a = _scr select (_i - 1); private _c = _scr select _i;
+                    private _ab = [(_c select 0) - (_a select 0), (_c select 1) - (_a select 1)];
+                    private _l2 = ((_ab select 0) ^ 2) + ((_ab select 1) ^ 2);
+                    private _t = if (_l2 > 0) then { ((((_sp select 0) - (_a select 0)) * (_ab select 0) + ((_sp select 1) - (_a select 1)) * (_ab select 1)) / _l2) max 0 min 1 } else { 0 };
+                    private _d = [(_a select 0) + (_ab select 0) * _t, (_a select 1) + (_ab select 1) * _t] distance2D _sp;
+                    if (_d < _bd) then { _bd = _d; _best = _r get "id"; };
+                };
+                { if ((_x distance2D _sp) < _bd) then { _bd = _x distance2D _sp; _best = _r get "id"; }; } forEach _scr;
+            };
+        } forEach ((values _mine) + (values _rx));
+        _best
+    };
+    // Itinéraires hors de l'app Routes, montrés dans son onglet ITINÉRAIRES : [[genre WP | GPS, nom, détail]...].
+    //   WP  : étapes de l'app Itinéraire (partagées au groupe ou au camp selon son réglage) ;
+    //   GPS : itinéraire du guidage GPS « Y aller » (ligne jaune de la carte).
+    case "itins": {
+        private _o = [];
+        private _wp = (missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []];
+        if ((count _wp) > 0) then { _o pushBack ["WP", ("Itinéraire (app Itinéraire)") call _tr, format [("%1 étape(s)") call _tr, count _wp]]; };
+        private _g = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
+        if ((count _g) > 0) then {
+            private _d = _g getOrDefault ["total", 0];
+            _o pushBack ["GPS", format [("Guidage GPS vers %1") call _tr, _g getOrDefault ["label", ""]], [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000)];
+        };
+        _o
+    };
+    // Itinéraire effacé [genre], gardé 8 s pour ANNULER (« itinUndo ») : l'app Itinéraire partagée renvoie son état.
+    case "itinDel": {
+        private _bin = missionNamespace getVariable ["COMSPEC_ATAK_ItinBin", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_ItinBin", _bin];
+        switch (_arg) do {
+            case "WP": {
+                private _w = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+                if ((count (_w getOrDefault ["pts", []])) isEqualTo 0) exitWith {};
+                _bin set ["WP", [+(_w get "pts"), _w getOrDefault ["idx", 0], diag_tickTime]];
+                ["clear"] call comspec_atak_native_fnc_wpAction;
+            };
+            case "GPS": {
+                private _g = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
+                if ((count _g) isEqualTo 0) exitWith {};
+                _bin set ["GPS", [_g, 0, diag_tickTime]];
+                missionNamespace setVariable ["COMSPEC_ATAK_RoutePending", nil];
+                missionNamespace setVariable ["COMSPEC_ATAK_RouteGen", (missionNamespace getVariable ["COMSPEC_ATAK_RouteGen", 0]) + 1];
+                missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap];
+            };
+        };
+        call _refresh;
+        true
+    };
+    case "itinUndo": {
+        private _bin = missionNamespace getVariable ["COMSPEC_ATAK_ItinBin", createHashMap];
+        private _e = _bin getOrDefault [_arg, []];
+        if ((count _e) isEqualTo 0 || {(diag_tickTime - (_e select 2)) > 30}) exitWith { false };
+        _bin deleteAt _arg;
+        if (_arg isEqualTo "WP") then {
+            private _w = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+            _w set ["pts", _e select 0]; _w set ["idx", _e select 1];
+            missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _w];
+            if ((profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1]) > 0) then { ["sync"] call comspec_atak_native_fnc_wpAction; };
+        } else {
+            missionNamespace setVariable ["COMSPEC_ATAK_Route", _e select 0];
+        };
+        call _refresh;
+        true
+    };
     // Guidage « Suivre la route » : [id, étape de départ (facultative)].
     case "follow": {
         _arg params [["_id", ""], ["_from", -1]];
@@ -640,6 +867,7 @@ switch (_act) do {
         private _f = missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap];
         if ((count _f) isEqualTo 0) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_RteFollow", createHashMap];
+        [] call comspec_atak_native_fnc_route3d;
         private _wm = missionNamespace getVariable ["COMSPEC_ATAK_WatchM", createHashMap];
         if ((count _wm) > 0) then { _wm set ["wpt", []]; };
         if !(_arg isEqualTo true) then { ["INFO", "Suivi de route arrêté", 2, 10] call comspec_atak_native_fnc_notify; };
@@ -685,6 +913,13 @@ switch (_act) do {
     // Une fois par seconde (XEH_postInitClient) : arrivée aux étapes, fin de route, vue 3D.
     case "tick": {
         [] call comspec_atak_native_fnc_route3d;
+        // Édition laissée ouverte (autre app, téléphone reposé) : validée, pour que la route parte quand même.
+        if ((count _ed) > 0) then {
+            private _sx = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+            if ((_sx getOrDefault ["activePage", ""]) isNotEqualTo "ROUTE" || {!(_sx getOrDefault ["interactive", false])}) then { ["editCommit"] call comspec_atak_native_fnc_routeAction; };
+        };
+        // Même règle pour le plan de l'app Zones en cours d'édition.
+        if ((count (missionNamespace getVariable ["COMSPEC_ATAK_ZnEdit", createHashMap])) > 0) then { ["editTick"] call comspec_atak_native_fnc_zoneAction; };
         private _f = missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap];
         if ((count _f) isEqualTo 0) exitWith {};
         private _r = [_f get "id"] call _get;
@@ -707,6 +942,7 @@ switch (_act) do {
             ["unfollow", true] call comspec_atak_native_fnc_routeAction;
         };
         _f set ["idx", _i + 1];
+        [] call comspec_atak_native_fnc_route3d;
         (_st select (_i + 1)) params ["_p2", "", "_n2"];
         ["WARNING", format ["%1 atteint%2 · cap sur %3", _n, ["", " · " + _det] select (_det isNotEqualTo ""), _n2], 6, 40] call comspec_atak_native_fnc_notify;
         private _wm = missionNamespace getVariable ["COMSPEC_ATAK_WatchM", createHashMap];
@@ -718,7 +954,8 @@ switch (_act) do {
         private _id = "JVN_" + getPlayerUID player;
         if !(_id in _mine) then {
             ["new", ["FOOT", ("Itinéraire JVN") call _tr, _id]] call comspec_atak_native_fnc_routeAction;
-            (_mine get _id) set ["d3", true];
+            // Itinéraire personnel (actions ACE) : pas de partage d'office.
+            { (_mine get _id) set _x; } forEach [["d3", true], ["scope", 0], ["live", false], ["arma", false]];
         };
         if !(_id in _mine) exitWith { false };
         private _i = ["stepAdd", [_id, _arg]] call comspec_atak_native_fnc_routeAction;

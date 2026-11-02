@@ -8,7 +8,10 @@
                        une trame de 8 m ou plus (14 000 cellules au plus) remplie par zones connexes, contour suivi puis
                        simplifié ; les îlots trop petits (entre deux routes) sont écartés ; numéros du nord-ouest au sud-est ;
                 RADIAL secteurs autour du centre (4, 8 ou 16, nommés N, NE… ou numérotés), 1 à 3 anneaux ;
-                SINGLE la zone de travail en une seule zone.
+                SINGLE la zone de travail en une seule zone ;
+                LINES  « découper par mes traits » : comme les îlots, mais les frontières sont les contours et traits
+                       tracés du plan (POLYGONE ouvert ou fermé) au lieu des routes.
+              Journal [ZONES] : méthode, nombre de zones, durée ; message clair si aucune zone ne sort.
               -> ["genDone", [id, jeton, zones, message]] de fn_zoneAction
       "AXES"  : grands axes routiers de la zone de travail : graphe des routes (nearRoads, roadsConnectedTo), plus long
                 chemin de chaque morceau (deux parcours de distance), morceaux retirés puis recommencés ; classés par
@@ -37,6 +40,7 @@ private _two = { params ["_n", ["_tot", 99]]; private _t = str _n; if (_tot > 9 
 // Zone : [id (« z<calcul>_<n> » : un nouveau découpage ne reprend pas la situation de l'ancien), nom, points, centre, type, rendu, état, horodatage, auteur, signalements, bâtiments, rectangle]
 private _mkZone = { params ["_i", "_name", "_pts", "_ctr", ["_rect", []]]; [format ["z%1_%2", _tok, _i], _name, _pts, _ctr, _bp getOrDefault ["aff", "GEN"], "", "UNREC", 0, "", [], [], _rect] };
 
+private _t0 = diag_tickTime;
 switch (_op) do {
     case "ZONES": {
         private _cut = _gp getOrDefault ["cut", "GRID"];
@@ -60,6 +64,10 @@ switch (_op) do {
                     };
                 };
                 if ((count _cells) > _cap) exitWith { _msg = format ["%1 cases : %2 au plus (réglage serveur). Prenez des cases plus grandes ou une zone plus petite", count _cells, _cap]; };
+                if ((count _cells) isEqualTo 0) exitWith {
+                    private _smaller = [50, 100, 200, 250, 500, 1000] select { _x < _S };
+                    _msg = format ["Zone de travail trop petite pour des cases de %1 m : choisissez %2 m", _S, _smaller param [((count _smaller) - 1) max 0, 50]];
+                };
                 // Colonnes en lettres (A… Z, AA…), rangées du nord au sud.
                 private _col = { params ["_i"]; private _t = ""; private _v = _i; while { true } do { _t = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ" select [_v mod 26, 1]) + _t; _v = floor (_v / 26) - 1; if (_v < 0) exitWith {}; }; _t };
                 private _num = (_gp getOrDefault ["fmt", "GRG"]) isEqualTo "NUM";
@@ -110,7 +118,8 @@ switch (_op) do {
             case "SINGLE": {
                 _zones pushBack ([1, [_pre, "1"] select (_pre isEqualTo ""), _apoly select [0, 120], ["label", [_apoly]] call _GEO] call _mkZone);
             };
-            case "BLOCK": {
+            case "BLOCK";
+            case "LINES": {
                 private _W = _bx1 - _bx0; private _H = _by1 - _by0;
                 private _s = ceil ((sqrt (_W * _H / 14000)) max 8);
                 private _nx = ceil (_W / _s) max 1; private _ny = ceil (_H / _s) max 1;
@@ -127,30 +136,43 @@ switch (_op) do {
                 if !(call _alive) exitWith {};
                 // Routes : frontières des îlots (cellule traversée = barrière ; pas d'un demi-côté : trait continu en 8-connexité,
                 // infranchissable pour le remplissage en 4-connexité).
-                private _types = ["MAIN ROAD", "ROAD"];
-                if (_gp getOrDefault ["tracks", false]) then { _types pushBack "TRACK"; };
-                private _ctr = [(_bx0 + _bx1) / 2, (_by0 + _by1) / 2, 0];
-                private _roads = _ctr nearRoads ((sqrt (_W * _W + _H * _H)) / 2 + 30);
-                if ((count _roads) > 12000) then { _roads resize 12000; };
+                // Segments frontières : routes de la carte (îlots) ou contours et traits du plan (découper par mes traits).
+                private _segs = [];
+                if (_cut isEqualTo "LINES") then {
+                    {
+                        _x params ["", "", "_lp", "_closed"];
+                        private _n = count _lp;
+                        for "_i" from 0 to (_n - ([2, 1] select _closed)) do { _segs pushBack [_lp select _i, _lp select ((_i + 1) mod _n)]; };
+                    } forEach (_bp getOrDefault ["lines", []]);
+                } else {
+                    private _types = ["MAIN ROAD", "ROAD"];
+                    if (_gp getOrDefault ["tracks", false]) then { _types pushBack "TRACK"; };
+                    private _ctr = [(_bx0 + _bx1) / 2, (_by0 + _by1) / 2, 0];
+                    private _roads = _ctr nearRoads ((sqrt (_W * _W + _H * _H)) / 2 + 30);
+                    if ((count _roads) > 12000) then { _roads resize 12000; };
+                    {
+                        private _inf = getRoadInfo _x;
+                        if ((toUpper (_inf param [0, ""])) in _types) then {
+                            private _b = _inf param [6, []]; private _e = _inf param [7, []];
+                            if ((count _b) >= 2 && {(count _e) >= 2}) then { _segs pushBack [_b, _e]; };
+                        };
+                    } forEach _roads;
+                };
                 private _nr = 0;
                 {
-                    private _inf = getRoadInfo _x;
-                    if ((toUpper (_inf param [0, ""])) in _types) then {
-                        private _b = _inf param [6, []]; private _e = _inf param [7, []];
-                        if ((count _b) >= 2 && {(count _e) >= 2}) then {
-                            _nr = _nr + 1;
-                            private _len = _b distance2D _e;
-                            private _st = (ceil (_len / (_s * 0.5))) max 1;
-                            for "_t" from 0 to _st do {
-                                private _px = (_b select 0) + ((_e select 0) - (_b select 0)) * _t / _st;
-                                private _py = (_b select 1) + ((_e select 1) - (_b select 1)) * _t / _st;
-                                private _i = floor ((_px - _bx0) / _s); private _j = floor ((_py - _by0) / _s);
-                                if (_i >= 0 && {_i < _nx} && {_j >= 0} && {_j < _ny}) then { _g set [_j * _nx + _i, -1]; };
-                            };
-                        };
+                    _x params ["_b", "_e"];
+                    _nr = _nr + 1;
+                    private _len = _b distance2D _e;
+                    private _st = (ceil (_len / (_s * 0.5))) max 1;
+                    for "_t" from 0 to _st do {
+                        private _px = (_b select 0) + ((_e select 0) - (_b select 0)) * _t / _st;
+                        private _py = (_b select 1) + ((_e select 1) - (_b select 1)) * _t / _st;
+                        private _i = floor ((_px - _bx0) / _s); private _j = floor ((_py - _by0) / _s);
+                        if (_i >= 0 && {_i < _nx} && {_j >= 0} && {_j < _ny}) then { _g set [_j * _nx + _i, -1]; };
                     };
-                } forEach _roads;
-                if (_nr isEqualTo 0) exitWith { _msg = "Aucune route dans la zone : choisissez la grille ou les secteurs"; };
+                    if ((_forEachIndex mod 400) isEqualTo 399) then { sleep 0.005; };
+                } forEach _segs;
+                if (_nr isEqualTo 0) exitWith { _msg = ["Aucune route dans la zone : choisissez la grille ou les secteurs", "Aucun trait dans le plan : tracez d'abord des traits (POLYGONE, Ouvert) à travers la zone de travail"] select (_cut isEqualTo "LINES"); };
                 if !(call _alive) exitWith {};
                 // Remplissage : numéro d'îlot de chaque cellule.
                 private _rid = [];
@@ -252,6 +274,8 @@ switch (_op) do {
             };
         };
         if !(call _alive) exitWith {};
+        if ((count _zones) isEqualTo 0 && {_msg isEqualTo ""}) then { _msg = "Aucune zone : zone de travail trop petite pour ce découpage"; };
+        ["INFO", "ZONES", format ["Découpage %1 du plan %2 : %3 zone(s) en %4 s%5", _cut, _id, count _zones, (diag_tickTime - _t0) toFixed 2, ["", " · " + _msg] select (_msg isNotEqualTo "")]] call comspec_atak_native_fnc_log;
         ["genDone", [_id, _tok, _zones, _msg]] call _ZA;
     };
     case "AXES": {

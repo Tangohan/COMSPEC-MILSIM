@@ -17,6 +17,9 @@ if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_enabled", false]
 
 private _zone = [] call comspec_overwatch_connect_fnc_getPlayerRoleplayZone;
 private _lastZone = missionNamespace getVariable ["COMSPEC_LastRoleplayZone", nil];
+// Hors zone, déjà hors zone au passage précédent, aucun effet en cours : rien à refaire (le passage de sortie et le
+// minuteur du brouillage Zeus remettent déjà liaison et calque à jour).
+if (isNil "_zone" && {isNil "_lastZone"} && {isNil { missionNamespace getVariable "COMSPEC_ZoneEffects" }}) exitWith {};
 
 // Entrée / sortie
 if (!isNil "_zone" && {isNil "_lastZone" || {(_zone get "id") isNotEqualTo (_lastZone get "id")}}) then {

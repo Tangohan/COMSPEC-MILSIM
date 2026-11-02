@@ -3,6 +3,8 @@ if ([] call comspec_atak_native_fnc_bridge) exitWith { false };
 private _mapId = str (missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]]);
 private _raw = ["GetOrders",[_mapId,"40",name player]] call comspec_atak_native_fnc_extensionCall;
 if ((_raw find "OK|") isNotEqualTo 0) exitWith { false };
+// Texte de la DLL identique au précédent : rien à relire (signature = texte brut, sans str de toute la table).
+if ((((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["signatures",createHashMap]) getOrDefault ["tasks",""]) isEqualTo _raw) exitWith { false };
 
 private _tasks = createHashMap;
 private _tab = toString [9];
@@ -20,4 +22,4 @@ private _tab = toString [9];
     ]];
 } forEach ((_raw select [3]) splitString (toString [10]));
 
-["tasks",_tasks] call comspec_atak_native_fnc_storeSet
+["tasks",_tasks,-1,_raw] call comspec_atak_native_fnc_storeSet

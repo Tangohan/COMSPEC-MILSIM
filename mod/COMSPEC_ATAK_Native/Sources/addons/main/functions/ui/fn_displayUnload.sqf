@@ -15,6 +15,11 @@ if (_state getOrDefault ["texture", false]) then { ["close"] call comspec_atak_n
 private _wasInteractive = _state getOrDefault ["interactive", false];
 // Alternat radio encore appuyé (fn_keyPass) : relâché, sinon la radio resterait en émission téléphone rangé.
 if (_wasInteractive) then { ["release"] call comspec_atak_native_fnc_keyPass; };
+// Interaction avec la miniature (fn_miniInteract) finie : le mode en main choisi par le joueur est remis.
+if (_wasInteractive && {(uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isNotEqualTo ""}) then {
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", "FULL"]];
+    uiNamespace setVariable ["COMSPEC_ATAK_MiniPrevMode", ""];
+};
 [] call comspec_atak_native_fnc_schedulerStop;
 // Menu d'actions (fn_open) : gestionnaires inGameUI retirés une fois le téléphone rangé, sauf s'il a été rouvert entre-temps
 // (bascule HUD / en main : fn_open les a déjà réinstallés).

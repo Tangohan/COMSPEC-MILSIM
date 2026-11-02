@@ -1,0 +1,38 @@
+/*
+ * Fenêtre « Systèmes de grades » (views/partials/grade_system_catalog.php) : complète job-catalog.css (même cadre,
+ * mêmes drapeaux) avec le tableau des grades, la sélection d’un système et le bandeau du référentiel des grades.
+ * Jetons --jc-* de job-catalog.css : clair et sombre suivent la page.
+ */
+.grd-cat .jobcat__body { grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); }
+.grd-cat__nav .jobcat__result.is-selected { background: var(--jc-head); box-shadow: inset 3px 0 0 var(--jc-accent); }
+.grd-cat__nav .jobcat__result.is-current strong::after { content: "●"; margin-left: 0.35rem; color: var(--jc-accent); font-size: 0.6rem; }
+.grd-cat__native { color: var(--jc-muted); font-weight: 600; }
+.grd-cat__mark { color: var(--jc-accent); font-weight: 700; }
+.grd-cat__mark.is-off { color: var(--jc-muted); }
+.grd-cat :lang(ru), .grd-cat :lang(de), .grd-cat :lang(ms) { font-family: inherit; }
+.grd-cat__compare { white-space: normal; }
+.grd-cat__table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.grd-cat__table th { position: sticky; top: 0; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--jc-line); background: var(--jc-surface); color: var(--jc-muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-align: left; text-transform: uppercase; }
+.grd-cat__table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--jc-line); vertical-align: top; overflow-wrap: anywhere; }
+.grd-cat__table td small { display: block; color: var(--jc-muted); font-size: 0.72rem; }
+.grd-cat__table code { padding: 0 0.3rem; border: 1px solid var(--jc-line); color: var(--jc-ink); font-size: 0.72rem; white-space: nowrap; }
+.grd-cat__table [data-grade-catalog-compare-col] { background: var(--jc-head); }
+.grd-cat__table tr[hidden] { display: none; }
+@media (max-width: 760px) {
+  .grd-cat .jobcat__body { grid-template-columns: minmax(0, 1fr); }
+  .grd-cat__table thead { display: none; }
+  .grd-cat__table tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 0.6rem; padding: 0.4rem 0; border-bottom: 1px solid var(--jc-line); }
+  .grd-cat__table td { padding: 0.1rem 0; border: 0; }
+  .grd-cat__table td:nth-child(4) { grid-column: 2 / -1; color: var(--jc-muted); font-size: 0.72rem; }
+  .grd-cat__table td[data-grade-catalog-compare-col] { grid-column: 1 / -1; padding: 0.2rem 0.4rem; }
+}
+/* Bandeau « Système de grades de la communauté » du référentiel. */
+.grd-ref__current { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; margin: 0 0 1rem; padding: 0.75rem 1rem; border: 1px solid var(--ath-line, #e3e8ea); border-left: 4px solid var(--ath-accent, #1f6f5c); background: var(--ath-surface, #fff); }
+.grd-ref__current-text { flex: 1 1 18rem; min-width: 0; margin: 0; font-size: 0.875rem; line-height: 1.5; }
+.grd-ref__current-text small { display: block; color: var(--ath-muted, #5b6670); font-size: 0.75rem; }
+.grd-ref__current .jobcat__flag { margin-right: 0.35rem; }
+.grd-ref__current-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.grd-ref__current-actions form { margin: 0; }
+/* Assistant de création : carte « Autres pays et armées » (bouton qui ouvre la fenêtre). */
+.community-create .cc-choice--catalog { font: inherit; color: inherit; text-align: left; border-style: dashed; }
+.community-create .cc-choice--catalog.is-picked { border-style: solid; border-color: #059669; background: linear-gradient(180deg, #ecfdf5 0%, #fff 70%); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12); }

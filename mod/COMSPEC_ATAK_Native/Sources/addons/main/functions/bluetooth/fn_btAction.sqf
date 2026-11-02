@@ -75,7 +75,7 @@ private _prune = {
 };
 private _play = ["snd", "mus"];
 private _files = createHashMapFromArray [["pho", "photo"], ["mp3", "music"]];
-private _kindName = { params ["_k"]; switch (_k) do { case "snd": { "son" }; case "mus": { "musique" }; case "mp3": { "morceau" }; case "pho": { "photo" }; case "pos": { "position" }; case "wp": { "itinéraire" }; case "plan": { "plan" }; case "seek": { "fiche SEEK" }; case "sse": { "fiche SSE" }; default { "élément" }; } };
+private _kindName = { params ["_k"]; switch (_k) do { case "snd": { "son" }; case "mus": { "musique" }; case "mp3": { "morceau" }; case "pho": { "photo" }; case "pos": { "position" }; case "wp": { "itinéraire" }; case "plan": { "plan" }; case "seek": { "fiche SEEK" }; case "sse": { "fiche SSE" }; case "note": { "note" }; default { "élément" }; } };
 private _sentSet = {
     params ["_id", "_state"];
     { if ((_x select 0) isEqualTo _id) then { _x set [3, _state]; }; } forEach (_bt get "sent");

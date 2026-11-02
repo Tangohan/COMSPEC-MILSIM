@@ -294,6 +294,45 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1336, '2026-11-02', 'Annuler partout, app Zones refaite, plans partagés au camp', 'Avec le pack 2.9.38, les apps Routes et Zones savent annuler : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER qui n’envoie qu’une fois, bandeau « Supprimé · ANNULER » après chaque suppression. L’app Zones est refaite : grande carte avec barre d’outils, panneau en onglets, polygone aimanté aux routes, bâtiments et rives, découpage par vos traits, aperçu avant de générer et couleurs au choix. Les plans et les routes partent maintenant à tout le camp et vont sur la carte d’Arma ; l’état des zones ne change toujours que par un joueur.', [
+                'Apps Routes et Zones : ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), VALIDER (un seul envoi), ANNULER LES MODIFICATIONS (route comme à l’ouverture, nouvelle route abandonnée)',
+                'App Routes : mode CHOISIR par défaut, barre TERMINER / ANNULER sur la carte pendant AJOUTER, INSÉRER ou DÉPLACER, Échap ou clic droit pour en sortir ; onglet ITINÉRAIRES pour effacer l’itinéraire de l’app Itinéraire ou le guidage GPS',
+                'Suppression d’étape, de route, de plan, de zone ou de trait : deux clics, puis ANNULER pendant 8 secondes ; un changement d’état de zone part au bout de 5 secondes, annulable d’ici là ; un découpage lancé s’annule',
+                'App Zones : carte agrandie et barre d’outils (sélection, rectangle, polygone, cercle, annuler, rétablir), onglets Tracer, Découper, Nommer, Style, Situation, fiche de zone dans le panneau avec un bouton SIGNALER toujours visible',
+                'Polygone aimanté (routes, coins et bords des bâtiments, rives ; rayon 15, 30 ou 60 m ; Alt pour s’en passer), fermé ou en trait ; plusieurs contours et traits par plan, sommets modifiables ; nouvelle méthode « Découper par mes traits »',
+                'Aperçu du découpage avant GÉNÉRER et message clair si rien ne tient ; couleurs : thèmes OTAN, contraste élevé, vision nocturne, couleurs par type et par état, opacité, épaisseur, tirets, étiquettes, style d’une zone ou de tout un type',
+                'Plans de zones et routes partagés au camp par défaut et affichés sur la carte d’Arma (réglage serveur « Portée par défaut des plans et routes »)',
+                'Clic droit sur la carte : supprimer la route, l’itinéraire, la zone ou le plan sous le curseur (ou le masquer chez soi), avec ANNULER ; unité sélectionnée : VIBRER, SMS, PING, CENTRER, ROUTE VERS',
+                'Nouveau raccourci Maj+U : utiliser la miniature du téléphone à la souris, sans l’agrandir (nouvel appui, Échap ou clic à côté pour revenir au jeu)',
+                'Bloc-notes : vue LECTURE qui défile, PARTAGER EN BLUETOOTH vers un téléphone appairé, ENVOYER EN MESSAGE',
+                'Calques › Forces : « Traits entre alliés » et « Trait vers mon relais », masqués par défaut comme les cercles de précision',
+            ], [
+                'Routes en 3D seulement avec la JVN allumée et pendant le suivi ; une étape atteinte disparaît aussitôt',
+                'Sélection d’une unité sur la carte : coins fins au lieu du gros cercle blanc qui cachait le symbole',
+                'Carte d’Arma : seuls les marqueurs de zone qui changent sont refaits, par petits lots (plus de saccade sur un gros découpage)',
+            ], [
+                'App Zones : fiche de zone affichée en double, découpage invisible sur la carte claire, petit carré sans légende devant « État de la zone »',
+                'App Routes : une route supprimée, ou une ancienne version, ne revient plus au rejeu du serveur ni au retour du réseau',
+                'Profil et app Athena : « Fonction » montre la fonction actuelle et non l’ancien rôle de communauté',
+                'Carte sombre : la couleur choisie d’un marqueur est respectée (un bleu ne passait plus qu’en gris)',
+                'Repères d’Athena : un repère supprimé en jeu, ou l’étape d’une route supprimée, n’est plus recréé au relevé suivant',
+            ], ['atak'], [
+                'Mettez à jour le pack 2.9.38, quittez Arma complètement et relancez.',
+                'Changement de défaut : plans et routes partent au camp et vont sur la carte d’Arma. Pour revenir au comportement de la 2.9.36 : Options des addons › COMSPEC › ATAK · Plan / Zones › « Portée par défaut des plans et routes » sur Privé, et « Zones sur la carte d’Arma et Athena » décoché.',
+            ], 'Pack téléphone 2.9.38'),
+            $pr(1334, '2026-11-02', 'Optimisation du téléphone : moins de saccades et d’écrans qui se redessinent', 'Le pack 2.9.37 est une vague d’optimisation, après des retours de baisses d’images et de saccades. Les tâches de fond du téléphone et de la liaison Athena font beaucoup moins de calculs en double : un seul joueur relaie balises, aéronefs et marqueurs web pour tout le monde, les envois inchangés ne repartent plus, les vérifications lourdes (bâtiment, vision nocturne, écrans TOC, projecteurs) sont espacées ou arrêtées quand rien ne les demande. Les pages ne se redessinent plus pour rien : le BFT se met à jour sur place, l’app Réseau seulement quand ses données changent, et plus rien ne bouge pendant une saisie ni ne remonte en haut de page. La fiche opérateur complète part une fois par session.', [
+                'Debug › PERFS : dernier bilan de 30 s (images par seconde, images lentes, fonctions les plus coûteuses, nombre de redessins par page) pour signaler un ralentissement',
+            ], [
+                'Moins de saccades : relais élu une fois pour les balises GPS, IA alliées, téléphones et aéronefs ; marqueurs web Athena tirés par un seul joueur (toujours visibles de tous) ; écrans TOC envoyés aux seuls joueurs qui les regardent',
+                'Moins de calculs : liste des unités et marqueurs du BFT gardée d’un passage à l’autre, synchro Athena ignorée quand la réponse n’a pas changé, toit / murs du GPS et de la liaison partagés, vision nocturne (ECOTI) espacée, aucun calcul de projecteur sans projecteur',
+                'Moins de redessins : BFT mis à jour sur place, app Réseau seulement si ses données changent, barre de la Liaison allié seule, page GPS par case de 25 m',
+                'Plus de remontée d’écran : défilement gardé quand la page se redessine (BFT compris), saisie jamais interrompue par un rafraîchissement',
+                'Fiche opérateur complète envoyée une fois par session (plus de rappel toutes les 15 min) ; les changements réels partent toujours',
+                'Transfert Bluetooth de photos et musiques plus fluide (fichier ouvert une seule fois)',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 2.9.37, quittez Arma complètement et relancez.',
+                'En cas de saccades : Debug › PERFS, puis capture de l’écran pour le signaler.',
+            ], 'Pack téléphone 2.9.37'),
             $pr(1332, '2026-11-02', 'Royaume-Uni : grades britanniques, emplois, qualifications, doctrine et modèles d’unités', 'Une communauté peut choisir le modèle britannique à sa création (étape Grades) ou dans Back-office › Référentiel des grades : British Army et Royal Marines (Private, Trooper, Gunner, Sapper… jusqu’à Field Marshal), Royal Navy ou Royal Air Force, avec abréviations officielles et codes OTAN. Le Royaume-Uni rejoint aussi les catalogues : emplois des forces spéciales et unités spécialisées, brevets et cursus réels avec leurs écoles, publications doctrinales publiques et modèles d’organisation (UKSF, 16 Air Assault, UK Commando Force, Joint Aviation Command, bataillon d’infanterie type).', [
                 'Grades : trois systèmes britanniques (British Army et Royal Marines, Royal Navy, Royal Air Force), proposés à la création de la communauté et dans le référentiel des grades',
                 'Catalogue d’emplois : 111 emplois britanniques sourcés (UKSF, 16 Air Assault, Ranger Regiment, Royal Marines, aviation, EOD, artillerie, RAF Regiment, Royal Navy)',
@@ -362,6 +401,17 @@ final class DevDispatchCatalog
                 'Liens d’invitation en anglais : la présentation de la liste, le quota, l’aide de l’adresse personnalisée, l’action « Rejoindre » et le bandeau de candidature restaient en français',
             ], ['personnel'], [], 'Portail Athena'),
 
+            $pr(1324, '2026-11-02', 'App Zones sans automatisme, menu Zones au clic droit, bandeau du curseur', 'Avec le pack 2.9.36, l’app Zones ne change plus rien toute seule. Un contact ennemi posé dans une zone ne la fait plus passer « ennemi signalé » : par défaut l’opérateur met l’état lui-même, et le serveur peut choisir de proposer le changement (question OUI / NON) ou de le faire automatiquement comme avant. Les zones ne vont plus sur la carte d’Arma par défaut, car tout le camp les y voyait sans appareil. Un menu Zones arrive au clic droit de la carte et le bandeau du curseur montre la direction de votre vue.', [
+                'Nouveau réglage serveur « Contact dans une zone » : Manuel (par défaut, rien ne se passe), Proposer (celui qui a posé le contact et l’auteur du plan reçoivent « Contact en B-04 : passer la zone en ennemi signalé ? », OUI / NON dans l’app Zones, sans effet sans réponse) ou Automatique (comportement de la 2.9.35)',
+                'Zones sur la carte d’Arma et Athena : désactivé par défaut (réaliste) ; quand le serveur l’autorise, un plan n’est envoyé au site Athena que s’il est partagé',
+                'Le nom de la zone sous le curseur reste affiché dans le bandeau : c’est l’affichage de vos plans sur votre propre téléphone',
+                'Clic droit sur la carte › Zones : découper ici (grille 100, 200 ou 500 m, îlots, secteurs, rayon au choix), nouveau plan à partir d’ici, nommer les axes autour ; sur une zone : fiche, état, signaler un ennemi, citer @zone, masquer, rendu',
+                'Bandeau du curseur (style Nouveau) : flèche et cap selon la direction de votre vue ; distance et gisement vers le curseur dans l’étiquette de survol, ou dans le bandeau sur option',
+                'Traductions anglaises corrigées (IN PROGRESS, CANCEL, ESTABLISHED, rubriques des réglages ATAK, retour de l’app Routes)',
+            ], [], [], ['atak'], [
+                'Mettez à jour le pack 2.9.36, quittez Arma complètement et relancez.',
+                'L’ancien réglage « Contacts ennemis dans les zones » (coché par défaut) est remplacé : tous les serveurs repartent sur Manuel, à remettre sur Proposer ou Automatique dans Options des addons › COMSPEC › ATAK · Plan / Zones si vous le souhaitez.',
+            ], 'Pack téléphone 2.9.36'),
             $pr(1323, '2026-11-02', 'Liens d’invitation : la mise en page revient', 'Les pages Recrutement › Liens d’invitation s’affichaient sans mise en page : elles retrouvent le style du back-office, comme les codes prioritaires.', [], [], [
                 'Recrutement › Liens d’invitation : liste, création, fiche et modification s’affichaient sans mise en page ; elles retrouvent le style du back-office',
             ], ['personnel'], [], 'Portail Athena'),

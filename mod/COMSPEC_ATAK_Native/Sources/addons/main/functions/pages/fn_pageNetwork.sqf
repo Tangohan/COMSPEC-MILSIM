@@ -851,14 +851,29 @@ if (["device", "État du téléphone", _devSum] call _fold) then {
 };
 _bgc ctrlSetPosition [0, 0, _bw, _bh max (_y + _pad)];
 _bgc ctrlCommit 0;
-// Rafraîchissement toutes les 5 s tant que la page est affichée (le défilement est gardé par fn_pageRender).
-private _tok = diag_tickTime;
-uiNamespace setVariable ["COMSPEC_ATAK_NetTok", _tok];
-[{
+// Contrôle toutes les 5 s tant que la page est affichée : redessinée seulement si ses données ont changé (empreinte
+// ci-dessous ; les âges « il y a … » avancent au moins toutes les 10 s) et jamais pendant une saisie.
+private _netSig = {
+    hashValue [missionNamespace getVariable ["COMSPEC_LinkState", ""], missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1],
+        str ([] call comspec_atak_native_fnc_linkQuality), str ([] call comspec_atak_native_fnc_deviceHealth), str ([] call comspec_atak_native_fnc_athenaPulse),
+        profileNamespace getVariable ["COMSPEC_ATAK_NetOpen", []], count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]), floor (diag_tickTime / 10)]
+};
+private _netTick = {
     params ["_tok"];
     if ((uiNamespace getVariable ["COMSPEC_ATAK_NetTok", -1]) isNotEqualTo _tok) exitWith {};
-    if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+    private _d = [] call comspec_atak_native_fnc_display;
+    if (isNull _d) exitWith {};
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""]) isNotEqualTo "NETWORK") exitWith {};
+    private _fc = focusedCtrl _d;
+    if ((!isNull _fc && {(ctrlType _fc) isEqualTo 2}) || {(call (uiNamespace getVariable ["COMSPEC_ATAK_NetSigFn", {0}])) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_NetSig", 0])}) exitWith {
+        [uiNamespace getVariable ["COMSPEC_ATAK_NetTick", {}], [_tok], 5] call CBA_fnc_waitAndExecute;
+    };
     ["NETWORK"] call comspec_atak_native_fnc_pageRender;
-}, [_tok], 5] call CBA_fnc_waitAndExecute;
+};
+private _tok = diag_tickTime;
+uiNamespace setVariable ["COMSPEC_ATAK_NetTok", _tok];
+uiNamespace setVariable ["COMSPEC_ATAK_NetSigFn", _netSig];
+uiNamespace setVariable ["COMSPEC_ATAK_NetTick", _netTick];
+uiNamespace setVariable ["COMSPEC_ATAK_NetSig", call _netSig];
+[_netTick, [_tok], 5] call CBA_fnc_waitAndExecute;
 true

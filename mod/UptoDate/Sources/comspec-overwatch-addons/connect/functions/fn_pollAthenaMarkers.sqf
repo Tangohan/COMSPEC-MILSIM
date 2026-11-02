@@ -18,6 +18,12 @@ if (
 private _raw = _this param [0, nil, [""]];
 if (isNil "_raw") exitWith {
     if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_WebMarkersBusyAt", -1e9])) < 60) exitWith { nil };
+    // Un seul poste tire les marqueurs : le joueur lié et équipé de plus petit UID. Les marqueurs restent globaux, donc
+    // visibles de tous (sans téléphone compris) ; avant, chaque poste équipé faisait la même requête et les mêmes écritures.
+    private _cands = (allPlayers select { alive _x && {_x isEqualTo player || {_x getVariable ["COMSPEC_AtakReporterLinked", false]}} }) apply { [getPlayerUID _x, _x] };
+    _cands sort true;
+    private _first = _cands findIf { [_x select 1] call comspec_overwatch_connect_fnc_hasTerminal };
+    if (_first >= 0 && {((_cands select _first) select 1) isNotEqualTo player}) exitWith { nil };
     missionNamespace setVariable ["COMSPEC_WebMarkersBusyAt", diag_tickTime, false];
     ["world:" + worldName] spawn {
         private _r = [["COMSPECExtension", "GetMarkers", _this] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
@@ -52,6 +58,14 @@ private _lines = _body splitString _nl;
 // Index des marqueurs existants (hashmap) : « in allMapMarkers » dans la boucle recopiait toute la liste à chaque ligne.
 private _mkIndex = createHashMapFromArray (allMapMarkers apply { [_x, true] });
 private _bootMk = missionNamespace getVariable ["COMSPEC_WebMarkersBootstrapped", false];
+// Pierres tombales (1.6.30) : un repère web que ce poste avait créé puis qui a été supprimé en jeu (Suppr, clic droit),
+// ou la copie web d'une forme retirée par l'ATAK natif (étapes de route, zones : COMSPEC_WebMkGoneSig, position et
+// texte), ne revient plus à chaque relevé tant que la partie dure.
+private _gone = missionNamespace getVariable ["COMSPEC_WebMkGone", createHashMap];
+missionNamespace setVariable ["COMSPEC_WebMkGone", _gone, false];
+private _made = missionNamespace getVariable ["COMSPEC_WebMkMade", createHashMap];
+missionNamespace setVariable ["COMSPEC_WebMkMade", _made, false];
+private _goneSig = missionNamespace getVariable ["COMSPEC_WebMkGoneSig", createHashMap];
 if (!_bootMk) then {
     missionNamespace setVariable ["COMSPEC_WebMarkersBootstrapped", true, false];
 };
@@ -77,6 +91,9 @@ if (!_bootMk) then {
 
     _seen pushBack _id;
     private _name = format ["comspec_webmk_%1", _id];
+    if (_id in _gone) then { continue };
+    if (_name in _made && {!(_name in _mkIndex)}) then { _gone set [_id, true]; diag_log format ["[COMSPEC Overwatch][INFO][MARKERS] Repère web %1 supprimé en jeu : plus recréé", _id]; continue };
+    if ((format ["%1|%2|%3", round _xPos, round _yPos, _text]) in _goneSig) then { _gone set [_id, true]; diag_log format ["[COMSPEC Overwatch][INFO][MARKERS] Repère web %1 (%2) retiré par l'ATAK : plus recréé", _id, _text]; continue };
     if (_typeL isEqualTo "manual" || {!(isClass (configFile >> "CfgMarkers" >> _type))}) then {
         _type = "mil_dot";
     };
@@ -109,6 +126,7 @@ if (!_bootMk) then {
         _mk setMarkerSizeLocal [0.85, 0.85];
         _mk setMarkerAlpha 1;
         _mkIndex set [_mk, true];
+        _made set [_mk, true];
         _created = _created + 1;
     };
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
@@ -124,8 +142,8 @@ if (_capped) then { missionNamespace setVariable ["COMSPEC_WebMarkersSig", "", f
     if (_bootMk) then { "" } else { " · première lecture" }
 ]] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 
-private _prev = missionNamespace getVariable ["COMSPEC_WebMarkerIds", []];
-if (!(_prev isEqualType [])) then { _prev = []; };
+// Marqueurs web présents sur la carte, quel que soit le poste qui les a créés (le relais peut changer en cours de partie).
+private _prev = (allMapMarkers select { (_x select [0, 14]) isEqualTo "comspec_webmk_" }) apply { _x select [14] };
 if ((count _raw) < 7990) then {
     {
         if (!(_x in _seen)) then {
@@ -140,5 +158,4 @@ if ((count _raw) < 7990) then {
             };
         };
     } forEach _prev;
-    missionNamespace setVariable ["COMSPEC_WebMarkerIds", _seen, false];
 };

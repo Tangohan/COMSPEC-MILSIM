@@ -1,6 +1,8 @@
 /* Unités suivies par Athena (BFT web). Avec COMSPEC Link, on reprend sa liste d'effectifs (même session). */
 private _units = createHashMap;
 private _now = diag_tickTime;
+private _sig = "";
+private _same = false;
 private _add = {
     params ["_callsign", "_wx", "_wy", ["_role", ""], ["_age", 0], ["_status", ""]];
     _callsign = trim _callsign;
@@ -21,6 +23,9 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 } else {
     private _raw = ["GetUnits", []] call comspec_atak_native_fnc_extensionCall;
     if ((_raw find "OK|") isNotEqualTo 0) exitWith {};
+    // Texte de la DLL identique au précédent : pas de relecture, seule l'heure de réception avance (comme une relecture).
+    if ((((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["signatures",createHashMap]) getOrDefault ["remoteUnits",""]) isEqualTo _raw) exitWith { _same = true; };
+    _sig = _raw;
     private _tab = toString [9];
     {
         private _cols = _x splitString _tab;
@@ -28,4 +33,11 @@ if ([] call comspec_atak_native_fnc_bridge) then {
         [_cols select 1, parseNumber (_cols param [5, _cols select 2]), parseNumber (_cols param [6, _cols select 3]), _cols param [4, ""], parseNumber (_cols param [7, "0"]), _cols param [8, ""]] call _add;
     } forEach ((_raw select [3]) splitString (toString [10]));
 };
-["remoteUnits", _units] call comspec_atak_native_fnc_storeSet
+if (_same) exitWith {
+    private _dt = _now - (uiNamespace getVariable ["COMSPEC_ATAK_UnitsPollAt", _now]);
+    uiNamespace setVariable ["COMSPEC_ATAK_UnitsPollAt", _now];
+    { _y set ["updated", (_y getOrDefault ["updated", _now]) + _dt]; } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["remoteUnits",createHashMap]);
+    true
+};
+uiNamespace setVariable ["COMSPEC_ATAK_UnitsPollAt", _now];
+["remoteUnits", _units, -1, _sig] call comspec_atak_native_fnc_storeSet

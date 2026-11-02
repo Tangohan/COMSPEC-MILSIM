@@ -592,7 +592,9 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _nb ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, [0.9, 0.25] select (_num isEqualTo "")];
             private _nt = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + (_hHead - _fs * 1.25) / 2, _nw, _fs * 1.25]] call _mk;
             _nt ctrlSetStructuredText parseText ((format ["<t align='center' font='%2' color='#08100c'>%1</t>", _num, COMSPEC_ATAK_FontSet select 1]) call comspec_atak_native_fnc_tr);
-            private _lx = _pad * 2.5 + _nw;
+            // Sans numéro : pas de pastille (elle restait en carré pâle sans légende, app Zones « État de la zone »).
+            if (_num isEqualTo "") then { _nb ctrlShow false; _nt ctrlShow false; _nw = 0; };
+            private _lx = [_pad * 2.5 + _nw, _pad * 1.5] select (_num isEqualTo "");
             private _lw = [(_w * 0.46) - _nw - _pad, _w - _nw - _pad * 2.5] select _wide;
             private _vx = _pad + _w * 0.46;
             private _vw = _w * 0.54 - _pad;
@@ -1019,13 +1021,15 @@ private _lineIdx = 0; // lignes "line" : fond alterné
 uiNamespace setVariable ["COMSPEC_ATAK_Form", _fields];
 uiNamespace setVariable ["COMSPEC_ATAK_FormH", _y + _pad];
 // Défilement gardé quand la même page se redessine (retour de jeu 2.9.27 : un clic sur un réglage ramenait la liste en
-// haut). Nom : page + types et titres des premières lignes (un autre onglet de la page ne reprend pas ce défilement).
+// haut). Nom : page + rang du formulaire dans la page + sous-écran déclaré + types des premières lignes (onglet choisi
+// d'une ligne « segment » compris).
+// Plus les titres : un titre qui change (compteur, état) faisait perdre le défilement à chaque rafraîchissement.
 // Messagerie exclue (elle tient son propre défilement, fil en bas).
 private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _pg = _st getOrDefault ["pageDrawn", ""];
 if (_pg isNotEqualTo "" && {_pg isNotEqualTo "CHAT"}) then {
-    private _nm = format ["form|%1|%2", _pg, str ((_rows select [0, 3]) apply { [_x param [0, ""], [_x param [1, ""], ""] select !((_x param [1, ""]) isEqualType "")] })];
     private _sg = uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []];
+    private _nm = format ["form|%1|%2|%3|%4", _pg, count _sg, _st getOrDefault ["backSub", ""], str ((_rows select [0, 3]) apply { [_x param [0, ""], if ((_x param [0, ""]) isEqualTo "segment" && {(_x param [2, ""]) isEqualType []}) then { (_x select 2) apply { _x param [2, false] } } else { [] }] })];
     _sg pushBack [_nm, _grp];
     uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", _sg];
     if ((_st getOrDefault ["pagePrev", ""]) isEqualTo _pg) then {

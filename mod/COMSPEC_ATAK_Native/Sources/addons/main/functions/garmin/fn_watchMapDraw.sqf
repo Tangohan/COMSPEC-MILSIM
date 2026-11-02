@@ -55,7 +55,7 @@ if (_wm isNotEqualTo []) then {
     private _c = +_ally;
     _c set [3, _a];
     private _acc = _e getOrDefault ["acc", 0];
-    if (_acc >= 15 && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", true]}) then { _mc drawEllipse [_p, _acc, _acc, 0, [_c select 0, _c select 1, _c select 2, _a * 0.4], ""]; };
+    if (_acc >= 15 && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", false]}) then { _mc drawEllipse [_p, _acc, _acc, 0, [_c select 0, _c select 1, _c select 2, _a * 0.4], ""]; };
     private _icon = "";
     private _dir = _e getOrDefault ["heading", 0];
     if (_nato) then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) param [0, ""]; _dir = 0; };

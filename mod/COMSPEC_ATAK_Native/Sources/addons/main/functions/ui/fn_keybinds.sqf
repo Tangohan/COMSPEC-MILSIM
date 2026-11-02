@@ -22,6 +22,7 @@ private _list = [
     ["PhoneMain", "PHONE", "Prendre en main / reposer", "Miniature ou rangé : le téléphone passe en grand, à la souris. En grand : il redevient la miniature.", "ui_hand"],
     ["PhoneCarry", "PHONE", "Sortir / ranger (porté)", "Affiche ou range la miniature dans un coin de l'écran : on continue à jouer.", "ui_collapse"],
     ["PhoneHold", "PHONE", "Prendre en main (touche alternative)", "Même effet que la touche principale.", "ui_hand"],
+    ["PhoneMiniUse", "PHONE", "Interagir avec la miniature", "La souris agit sur la miniature sans l'agrandir ; nouvel appui, Échap ou clic à côté : retour au jeu.", "ui_hand"],
     ["PhoneJpc", "PHONE", "Tablette sur le JPC", "Relève ou rabat la tablette du porte-plaques : vue libre, arme disponible.", "app_accessories", ["wip"] call comspec_atak_native_fnc_jpcScreen],
     ["PhoneOrient", "MINI", "Orientation", "Miniature verticale ou horizontale.", "ui_rotate"],
     ["PhonePosition", "MINI", "Position de la miniature", "Coin suivant : bas droit, bas gauche, haut gauche, haut droit, milieu.", "ui_expand"],

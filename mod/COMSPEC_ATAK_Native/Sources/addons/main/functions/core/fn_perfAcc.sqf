@@ -17,9 +17,16 @@ if (_key isEqualTo "report") exitWith {
     missionNamespace setVariable ["COMSPEC_ATAK_PerfAcc", createHashMap];
     (missionNamespace getVariable ["COMSPEC_ATAK_PerfSlow", [0, 0]]) params ["_slowN", "_slowMax"];
     missionNamespace setVariable ["COMSPEC_ATAK_PerfSlow", [0, 0]];
-    if ((count _acc) isEqualTo 0 && {_slowN isEqualTo 0}) exitWith {};
     private _rows = (keys _acc) apply { [(_acc get _x) select 1, _x] };
     _rows sort false;
+    // Dernier bilan gardé pour l'onglet PERFS du Debug : 12 plus coûteux [clé, appels, moy ms, max ms, total ms] et
+    // rendus complets de page par page sur la même fenêtre (fn_pageRender).
+    private _renders = uiNamespace getVariable ["COMSPEC_ATAK_RenderCount", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_RenderCount", createHashMap];
+    missionNamespace setVariable ["COMSPEC_ATAK_PerfLast", [diag_tickTime, round diag_fps, _slowN, round (_slowMax * 1000),
+        (_rows select [0, 12]) apply { private _c = _acc get (_x select 1); [_x select 1, _c select 0, (_c select 1) / ((_c select 0) max 1) * 1000, (_c select 2) * 1000, (_c select 1) * 1000] },
+        _renders toArray false]];
+    if ((count _acc) isEqualTo 0 && {_slowN isEqualTo 0}) exitWith {};
     private _parts = _rows apply {
         private _c = _acc get (_x select 1);
         format ["%1 %2× moy %3 ms max %4 ms", _x select 1, _c select 0, ((_c select 1) / ((_c select 0) max 1) * 1000) toFixed 2, ((_c select 2) * 1000) toFixed 1]

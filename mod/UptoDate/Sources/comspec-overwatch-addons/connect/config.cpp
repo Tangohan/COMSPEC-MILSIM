@@ -18,9 +18,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.629;
-        versionStr = "1.6.29";
-        versionAr[] = {1, 6, 29};
+        version = 1.631;
+        versionStr = "1.6.31";
+        versionAr[] = {1, 6, 31};
         // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
         // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
         // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
@@ -33,6 +33,8 @@ class CfgPatches {
         // 1.6.27 : ATAK natif 2.9.29 — code de connexion Athena autorisé sans téléphone en main (fn_uplinkHold), liaison « établie » avec une session de jeu sans clé de communauté (fn_connect) ; Tenues Athena : icônes du mod (img/arsenal), textes plus grands, clavier, fiche avec poids et remplissage (fn_arsenalLoadoutStats).
         // 1.6.28 : ATAK natif 2.9.30 — capture introuvable : message clair avec le dossier où la DLL a cherché (fn_extensionCallback, « in= » de COMSPEC Link 2.0.116) et renvoi vers le réglage Dossier des captures d'écran.
         // 1.6.29 : ATAK natif 2.9.34 — actions ACE « Ajouter un point d’itinéraire » / « Effacer l’itinéraire » (JVN) redirigées vers la route « Itinéraire JVN » de l’app Routes quand l’ATAK natif est chargé (fn_ecotiRouteEdit, fn_initACE).
+        // 1.6.30 : ATAK natif 2.9.37 — vague d'optimisation (moins de saccades) : relais élu une fois par passage (balises, aéronefs, marqueurs web), JSON sans boucle par caractère, ECOTI 1-2 Hz, position / fiche opérateur sans calcul inutile (fiche complète une fois par session), un seul PFH des zones Zeus.
+        // 1.6.31 : ATAK natif 2.9.38 — repères web supprimés en jeu ou retirés par l'ATAK (étapes de route, zones) plus recréés par le relevé Athena (pierres tombales, fn_pollAthenaMarkers).
     };
 };
 
