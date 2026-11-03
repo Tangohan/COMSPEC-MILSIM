@@ -92,7 +92,9 @@ switch (_act) do {
         private _font = _l get "font";
         private _fs = _l get "fontSmall";
         private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
-        private _acc = ([] call comspec_atak_native_fnc_accent) select 0;
+        // Jetons du thème (fn_theme) : fond, tuiles, textes ; accent assombri (tuile allumée) et éclairci (texte sur accent).
+        private _thm = [] call comspec_atak_native_fnc_theme;
+        private _acc = _thm get "accent";
         private _made = [];
         // Voile sur le reste de l'écran : un clic dessus referme le volet.
         private _dim = _d ctrlCreate ["COMSPEC_RscText", -1];
@@ -138,7 +140,9 @@ switch (_act) do {
             ["vibrate", "Vibration", (["DÉSACTIVÉE", "ACTIVÉE"] select (_vib select 0)) + (["", " · IMPOSÉ"] select (_vib select 1)), _vib select 0, "ui_vibrate"],
             ["bt", "Bluetooth", ["DÉSACTIVÉ", "ACTIVÉ"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false]), (missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false], "qs_bt"],
             ["net", "Réseau", if (_air) then { "MODE AVION" } else { format ["%1 · %2/4", toUpper (_lq getOrDefault ["label", "—"]), _lq getOrDefault ["bars", 0]] }, !_air && {(_lq getOrDefault ["bars", 0]) >= 1}, "app_network"],
-            ["battery", "Batterie", format ["%1 %%", _bat], _bat > 20, "qs_battery"]
+            ["battery", "Batterie", format ["%1 %%", _bat], _bat > 20, "qs_battery"],
+            // Thème (fn_theme, 3.1.0) : sombre, jour, nuit JVN en un appui.
+            ["theme", "Thème", (["list"] call comspec_atak_native_fnc_theme) select { (_x select 1) isEqualTo (_thm get "name") } param [0, ["SOMBRE"]] select 0, (_thm get "name") isNotEqualTo "DARK", "ui_theme"]
         ];
         private _rows = ceil ((count _tiles) / _cols);
         // Tout doit tenir sous la barre d'état : les tuiles rapetissent si l'écran est court.
@@ -150,11 +154,13 @@ switch (_act) do {
         private _H = (_fixed + _rows * _th) min (_dh - _sth);
         private _gy = _dy + _sth;
         // Teintes : fond, tuile éteinte, accent assombri (tuile allumée), accent éclairci (texte sur accent).
-        private _accDim = [(_acc select 0) * 0.30, (_acc select 1) * 0.30, (_acc select 2) * 0.30, 1];
-        private _accHi = [(_acc select 0) + (1 - (_acc select 0)) * 0.45, (_acc select 1) + (1 - (_acc select 1)) * 0.45, (_acc select 2) + (1 - (_acc select 2)) * 0.45, 1];
-        private _dimTxt = [0.55, 0.61, 0.58, 1];
+        // Thème jour : tuile allumée en accent plein, texte « sur accent » (l'accent assombri ne ressort pas sur fond clair).
+        private _day = (_thm get "name") isEqualTo "DAY";
+        private _accDim = [_thm get "accentDim", _thm get "accent"] select _day;
+        private _accHi = [_thm get "accentHi", _thm get "onAccent"] select _day;
+        private _dimTxt = _thm get "textDim";
         private _bg = ["COMSPEC_RscText", [0, 0, _w, _H]] call _mk;
-        _bg ctrlSetBackgroundColor [0.028, 0.036, 0.032, 0.985];
+        _bg ctrlSetBackgroundColor (((_thm get "bg1") select [0, 3]) + [0.985]);
         private _edge = ["COMSPEC_RscText", [0, 0, _w, pixelH * 2]] call _mk;
         _edge ctrlSetBackgroundColor [(_acc select 0), (_acc select 1), (_acc select 2), 0.55];
 
@@ -171,9 +177,9 @@ switch (_act) do {
         private _pw = _ph * _ratio;
         private _py = _pad;
         private _frame = ["COMSPEC_RscText", [_pad - pixelW * 2, _py - pixelH * 2, _pw + pixelW * 4, _ph + pixelH * 4]] call _mk;
-        _frame ctrlSetBackgroundColor ([[0.30, 0.34, 0.32, 1], _acc] select _online);
+        _frame ctrlSetBackgroundColor ([(_thm get "off"), _acc] select _online);
         private _pbg = ["COMSPEC_RscText", [_pad, _py, _pw, _ph]] call _mk;
-        _pbg ctrlSetBackgroundColor [0.07, 0.09, 0.08, 1];
+        _pbg ctrlSetBackgroundColor (_thm get "surface2");
         // Sans portrait (hors ligne, pas encore reçu, aucun sur le site) : initiales de l'indicatif.
         private _words = (_cs splitString " -_.") select { _x isNotEqualTo "" };
         private _ini = toUpper (if ((count _words) > 1) then { ((_words select 0) select [0, 1]) + ((_words select 1) select [0, 1]) } else { (_cs select [0, 2]) });
@@ -199,7 +205,7 @@ switch (_act) do {
         private _role = [[player] call comspec_atak_native_fnc_displayRole, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev;
         _l2 ctrlSetText ((([_grade, _name, _role] select { _x isNotEqualTo "" }) joinString " · ") call comspec_atak_native_fnc_tr);
         _l2 ctrlSetFontHeight _fs;
-        _l2 ctrlSetTextColor [0.88, 0.92, 0.90, 1];
+        _l2 ctrlSetTextColor (_thm get "text");
         private _l3 = ["COMSPEC_RscText", [_tx, _py + _font * 2.25, _txW, _font * 1.1]] call _mk;
         _l3 ctrlSetText (((([_unit, _tenant] select { _x isNotEqualTo "" }) joinString " · ")) call comspec_atak_native_fnc_tr);
         _l3 ctrlSetFontHeight (_fs * 0.88);
@@ -219,7 +225,7 @@ switch (_act) do {
         private _hr = ["COMSPEC_RscTextRight", [_w * 0.5, _py - _font * 0.25, _w * 0.5 - _pad, _font * 1.7], [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _mk;
         _hr ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _hr ctrlSetFontHeight (_font * 1.55);
-        _hr ctrlSetTextColor [0.95, 0.98, 0.96, 1];
+        _hr ctrlSetTextColor (_thm get "text");
         private _dt = ["COMSPEC_RscTextRight", [_w * 0.5, _py + _font * 1.4, _w * 0.5 - _pad, _font * 1.0],
             format ["%1 %2 %3", (["SAMEDI", "DIMANCHE", "LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI"] select _wd) call comspec_atak_native_fnc_tr, _dd,
                 (["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"] select ((_mm - 1) max 0 min 11)) call comspec_atak_native_fnc_tr]] call _mk;
@@ -275,17 +281,17 @@ switch (_act) do {
             private _x0 = _pad + _col * (_tw + _gap);
             private _y0 = _y + _row * (_th + _gap);
             private _tb = ["COMSPEC_RscText", [_x0, _y0, _tw, _th]] call _mk;
-            _tb ctrlSetBackgroundColor ([[0.075, 0.090, 0.083, 1], _accDim] select _on);
+            _tb ctrlSetBackgroundColor ([(_thm get "surface"), _accDim] select _on);
             private _tl = ["COMSPEC_RscText", [_x0, _y0, _tw, pixelH * ([1, 3] select _on)]] call _mk;
             _tl ctrlSetBackgroundColor ([[1, 1, 1, 0.07], _acc] select _on);
             private _ih = _th * 0.30;
             private _iw = _ih * _ratio;
             private _ic = ["COMSPEC_RscPicture", [_x0 + (_tw - _iw) / 2, _y0 + _th * 0.13, _iw, _ih], _icon call _ico] call _mk;
-            _ic ctrlSetTextColor ([[0.66, 0.72, 0.69, 1], _accHi] select _on);
+            _ic ctrlSetTextColor ([(_thm get "textDim"), _accHi] select _on);
             private _lb = ["COMSPEC_RscTextCenter", [_x0, _y0 + _th * 0.47, _tw, _th * 0.24], _label] call _mk;
             _lb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
             _lb ctrlSetFontHeight _fs;
-            _lb ctrlSetTextColor ([[0.84, 0.88, 0.86, 1], [1, 1, 1, 1]] select _on);
+            _lb ctrlSetTextColor ([(_thm get "text"), [1, 1, 1, 1]] select _on);
             private _fh = _fs;
             while { (ctrlTextWidth _lb) > _tw * 0.94 && {_fh > _fs * 0.7} } do { _fh = _fh * 0.92; _lb ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
             private _stt = ["COMSPEC_RscTextCenter", [_x0, _y0 + _th * 0.71, _tw, _th * 0.2], _state] call _mk;
@@ -320,12 +326,12 @@ switch (_act) do {
         private _b2 = ["COMSPEC_RscButton", _p2, "FERMER"] call _mk;
         _b2 ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _b2 ctrlSetFontHeight _fs;
-        _b2 ctrlSetBackgroundColor [0.075, 0.090, 0.083, 1];
-        _b2 ctrlSetTextColor [0.84, 0.88, 0.86, 1];
+        _b2 ctrlSetBackgroundColor (_thm get "surface");
+        _b2 ctrlSetTextColor (_thm get "text");
         _b2 ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; }] call CBA_fnc_execNextFrame; }];
         // Poignée en bas du volet.
         private _hp = ["COMSPEC_RscText", [_w * 0.46, _H - _pad * 0.45, _w * 0.08, pixelH * 3]] call _mk;
-        _hp ctrlSetBackgroundColor [0.62, 0.68, 0.65, 0.6];
+        _hp ctrlSetBackgroundColor (_thm get "rail");
         // Ouverture : le volet descend de la barre d'état (le groupe s'agrandit, son contenu reste en place).
         if (_anim) then {
             _grp ctrlSetPosition [_dx, _gy, _w, 0];
@@ -380,6 +386,13 @@ switch (_act) do {
             case "bt": { ["toggle"] call comspec_atak_native_fnc_btAction; };
             case "net": { ["close"] call comspec_atak_native_fnc_quickSettings; ["NETWORK"] call comspec_atak_native_fnc_navigate; };
             case "battery": { ["close"] call comspec_atak_native_fnc_quickSettings; ["STATUS"] call comspec_atak_native_fnc_navigate; };
+            case "theme": {
+                private _keys = (["list"] call comspec_atak_native_fnc_theme) apply { _x select 1 };
+                private _cur = ([] call comspec_atak_native_fnc_theme) get "name";
+                private _n = _keys select (((_keys find _cur) + 1) mod (count _keys));
+                ["set", _n] call comspec_atak_native_fnc_theme;
+                [format ["Thème : %1", ((["list"] call comspec_atak_native_fnc_theme) select (_keys find _n)) select 0], 2] call comspec_atak_native_fnc_toast;
+            };
         };
         if (uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false]) then {
             ["build"] call comspec_atak_native_fnc_quickSettings;

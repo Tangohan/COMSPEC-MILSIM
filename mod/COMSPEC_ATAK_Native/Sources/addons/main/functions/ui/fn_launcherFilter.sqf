@@ -47,7 +47,8 @@ private _total = 0;
     if (_vis) then {
         private _lbl = _gr get "lbl";
         if (!isNull _lbl) then {
-            _lbl ctrlSetStructuredText parseText ((format ["<t size='0.85' font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>  <t size='0.75' color='#b4c1bb'>%2</t>%3", toUpper (_gr get "sec"), [_gr get "cnt", count _hits] select _on, ["", _gr get "extra"] select (!_on && {_folded})]) call comspec_atak_native_fnc_tr);
+            private _thm = [] call comspec_atak_native_fnc_theme;
+            _lbl ctrlSetStructuredText parseText ((format ["<t size='0.85' font='COMSPEC_BarlowBold' color='%4'>%1</t>  <t size='0.75' color='%5'>%2</t>%3", toUpper (_gr get "sec"), [_gr get "cnt", count _hits] select _on, ["", _gr get "extra"] select (!_on && {_folded}), _thm get "hexText", _thm get "hexTextDim"]) call comspec_atak_native_fnc_tr);
         };
         _y = _y + _secH + _pad * 0.6;
     };

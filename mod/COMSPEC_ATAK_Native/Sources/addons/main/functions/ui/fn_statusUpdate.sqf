@@ -35,7 +35,7 @@ private _put = {
     params ["_c", "_k", "_v"];
     if ((_c getVariable [_k, 0]) isEqualTo _v) exitWith {};
     _c setVariable [_k, _v];
-    switch (_k) do { case "cs_t": { _c ctrlSetText _v; }; case "cs_tt": { _c ctrlSetTooltip _v; }; default { _c ctrlSetTextColor _v; }; };
+    switch (_k) do { case "cs_t": { _c ctrlSetText ((_v) call comspec_atak_native_fnc_tr); }; case "cs_tt": { _c ctrlSetTooltip ((_v) call comspec_atak_native_fnc_tr); }; default { _c ctrlSetTextColor _v; }; };
 };
 private _sigT = ((_dir + format ["sig_%1.paa", _bars])) call comspec_atak_native_fnc_tr;
 private _sigC = switch (true) do { case (_bars >= 3): { [0.36, 0.78, 0.42, 1] }; case (_bars >= 1): { [0.95, 0.67, 0.20, 1] }; default { [0.88, 0.25, 0.22, 1] }; };

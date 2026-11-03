@@ -197,33 +197,53 @@ switch (_act) do {
         private _cx0 = (_dw - _rowW) / 2;
         { _x params ["_c", "_w"]; _c ctrlSetPosition [_cx0, _y, _w, _chipH]; _c ctrlCommit 0; _cx0 = _cx0 + _w + _gap; } forEach _chips;
         _y = _y + _chipH + _pad * 1.6;
-        // Dernières notifications : 3 en paysage, 4 en portrait ; « + n autres » au-delà.
+        // Dernières notifications, groupées par app (3.1.0) : une carte par source (Messages, Athena, Alertes…), la plus
+        // récente en tête, avec le nombre de notifications du groupe, l'heure et le dernier texte ; point d'accent
+        // devant les groupes qui contiennent du non lu. 3 cartes en paysage, 4 en portrait ; « + n autres » au-delà.
         // Alertes « vibreur seul » (fn_notify mode vibrate) : jamais affichées sur l'écran verrouillé.
         private _hist = (_s getOrDefault ["notifHistory", []]) select { !(_x getOrDefault ["discreet", false]) };
         uiNamespace setVariable ["COMSPEC_ATAK_LockNotifN", call _notifSig];
         private _maxN = [4, 3] select _land;
-        private _last = [];
-        for "_i" from ((count _hist) - 1) to (((count _hist) - _maxN) max 0) step -1 do { _last pushBack (_hist select _i); };
+        private _unreadN = _s getOrDefault ["notifUnread", 0];
+        private _groups = [];
+        private _byTitle = createHashMap;
+        for "_i" from ((count _hist) - 1) to 0 step -1 do {
+            private _n = _hist select _i;
+            private _meta = [_n] call comspec_atak_native_fnc_notifMeta;
+            private _k = toLower (_meta get "title");
+            private _fresh = _i >= ((count _hist) - _unreadN);
+            if (_k in _byTitle) then {
+                private _g = _groups select (_byTitle get _k);
+                _g set [2, (_g select 2) + (_n getOrDefault ["count", 1])];
+                if (_fresh) then { _g set [3, true]; };
+            } else {
+                _byTitle set [_k, count _groups];
+                _groups pushBack [_n, _meta, _n getOrDefault ["count", 1], _fresh];
+            };
+        };
         private _cw = _dw * ([0.88, 0.62] select _land);
         private _cx = (_dw - _cw) / 2;
         private _ch = _font * 2.5;
         private _hintY = _dh - _font * 2.4;
+        // Actions rapides au-dessus de l'invite : CARTE et MESSAGES (déverrouillent puis ouvrent l'app).
+        private _qaH = _font * 1.5;
+        private _qaY = _hintY - _font * 0.9 - _qaH;
         private _lbl = ["COMSPEC_RscText", [_cx, _y, _cw, _font], ["AUCUNE NOTIFICATION", format ["NOTIFICATIONS · %1", count _hist]] select ((count _hist) > 0)] call _mk;
         _lbl ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _lbl ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
         _lbl ctrlSetTextColor [0.62, 0.69, 0.65, 1];
         _y = _y + _font * 1.05;
         private _shown = 0;
+        private _e = { params ["_v"]; (_v regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"] };
         {
-            if (_y + _ch > _hintY - _font * 0.8) exitWith {};
+            _x params ["_n", "_meta", "_times", "_fresh"];
+            if (_y + _ch > _qaY - _font * 0.5) exitWith {};
             // Icône, titre (« Source : texte » ou le type), texte et couleur : mêmes règles que le centre de notifications.
-            private _meta = [_x] call comspec_atak_native_fnc_notifMeta;
             private _rgb = _meta get "rgb";
             private _title = _meta get "title";
             private _plain = _meta get "body";
             if ((count _plain) > 96) then { _plain = (_plain select [0, 94]) + "…"; };
             private _icon = _meta get "icon";
-            private _e = { params ["_v"]; (_v regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"] };
             private _bgc = ["COMSPEC_RscText", [_cx, _y, _cw, _ch]] call _mk;
             _bgc ctrlSetBackgroundColor [0.06, 0.075, 0.068, 0.9];
             private _strip = ["COMSPEC_RscText", [_cx, _y, pixelW * 3, _ch]] call _mk;
@@ -238,13 +258,15 @@ switch (_act) do {
             _pic ctrlSetTextColor [0.95, 0.98, 0.96, 1];
             private _tx = _ix + _iw + _pad;
             private _body = ["COMSPEC_RscStructuredText", [_tx, _y + _ch * 0.1, _cx + _cw - _tx - _pad, _ch * 0.85]] call _mk;
-            _body ctrlSetStructuredText parseText ((format ["<t size='0.8' font='COMSPEC_BarlowBold' color='#eef3ef'>%1</t><t size='0.72' align='right' color='#8a9a93'>%2</t><br/><t size='0.8' color='#c4cfc9'>%3</t>",
-                [_title] call _e, _x getOrDefault ["time", ""], [_plain] call _e]) call comspec_atak_native_fnc_tr);
+            _body ctrlSetStructuredText parseText ((format ["%4<t size='0.8' font='COMSPEC_BarlowBold' color='#eef3ef'>%1</t>%5<t size='0.72' align='right' color='#a9b6b0'>%2</t><br/><t size='0.8' color='#c4cfc9'>%3</t>",
+                [_title] call _e, _n getOrDefault ["time", ""], [_plain] call _e,
+                ["", format ["<t color='%1'>● </t>", _accHex]] select _fresh,
+                ["", format [" <t size='0.72' color='#a9b6b0'>×%1</t>", _times]] select (_times > 1)]) call comspec_atak_native_fnc_tr);
             _y = _y + _ch + _pad * 0.5;
             _shown = _shown + 1;
-        } forEach _last;
-        private _more = (count _hist) - _shown;
-        if (_shown > 0 && {_more > 0} && {_y + _font < _hintY - _font * 0.5}) then {
+        } forEach _groups;
+        private _more = (count _groups) - _shown;
+        if (_shown > 0 && {_more > 0} && {_y + _font < _qaY - _font * 0.3}) then {
             private _m = ["COMSPEC_RscTextCenter", [_cx, _y, _cw, _font], format ["+ %1 autre(s) dans le centre de notifications", _more]] call _mk;
             _m ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
             _m ctrlSetTextColor [0.55, 0.62, 0.58, 1];
@@ -260,6 +282,29 @@ switch (_act) do {
         private _btn = ["COMSPEC_RscButtonInvisible", [0, 0, _dw, _dh]] call _mk;
         _btn ctrlSetTooltip (("Déverrouiller") call comspec_atak_native_fnc_tr);
         _btn ctrlAddEventHandler ["ButtonClick", { [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; }] call CBA_fnc_execNextFrame; }];
+        // Actions rapides (créées après le bouton plein écran : elles passent devant) : icône et libellé, fond relief.
+        private _qa = [["app_map", "CARTE", "MAP", "Déverrouiller et ouvrir la carte"], ["app_chat", "MESSAGES", "CHAT", "Déverrouiller et ouvrir la messagerie"]];
+        private _qaW = (_cw - _pad) / 2;
+        {
+            _x params ["_qi", "_ql", "_qp", "_qt"];
+            private _qx = _cx + _forEachIndex * (_qaW + _pad);
+            private _qb = ["COMSPEC_RscText", [_qx, _qaY, _qaW, _qaH]] call _mk;
+            _qb ctrlSetBackgroundColor [1, 1, 1, 0.09];
+            private _qis = _qaH * 0.6;
+            private _qic = ["COMSPEC_RscPicture", [_qx + _pad, _qaY + (_qaH - _qis) / 2, _qis / _ratio, _qis], format ["\z\comspec_atak_native\addons\main\data\%1.paa", _qi]] call _mk;
+            _qic ctrlSetTextColor [0.95, 0.98, 0.96, 1];
+            private _qlb = ["COMSPEC_RscText", [_qx + _pad * 2 + _qis / _ratio, _qaY, _qaW - _pad * 2 - _qis / _ratio, _qaH], _ql] call _mk;
+            _qlb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
+            _qlb ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+            _qlb ctrlSetTextColor [0.9, 0.94, 0.91, 1];
+            private _qbt = ["COMSPEC_RscButtonOverlay", [_qx, _qaY, _qaW, _qaH]] call _mk;
+            _qbt ctrlSetTooltip ((_qt) call comspec_atak_native_fnc_tr);
+            _qbt setVariable ["page", _qp];
+            _qbt ctrlAddEventHandler ["ButtonClick", {
+                params ["_c"];
+                [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; [_this] call comspec_atak_native_fnc_navigate; }, _c getVariable ["page", "LAUNCHER"]] call CBA_fnc_execNextFrame;
+            }];
+        } forEach _qa;
         uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", _made];
         // À l'ouverture : volet rapide refermé, effets d'écran (fêlures, filtre de nuit) remis devant.
         if (_act isEqualTo "show") then {

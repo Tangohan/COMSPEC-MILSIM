@@ -11,7 +11,7 @@ private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d && {!_build}) exitWith {};
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _e = _s getOrDefault ["selectedEntity", createHashMap];
-private _dim = { format ["<t color='#8a9a93'>%1</t>", _this] };
+private _dim = { format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _this] };
 private _fmt = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _text = "";
@@ -28,13 +28,13 @@ if ((count _e) isEqualTo 0) then {
     private _ho = { (_x getOrDefault ["affiliation", ""]) isEqualTo "hostile" } count _units;
     // Résumé : une ligne par mesure, libellé à gauche, valeur alignée à droite.
     private _net = _s getOrDefault ["networkState", "OFFLINE"];
-    private _netTxt = createHashMapFromArray [["CONNECTED", "<t color='#5cc76b'>connecté</t>"], ["DEGRADED", "<t color='#f2ab33'>dégradé</t>"]] getOrDefault [_net, "<t color='#e5483a'>hors ligne</t>"];
+    private _netTxt = createHashMapFromArray [["CONNECTED", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>connecté</t>"], ["DEGRADED", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>dégradé</t>"]] getOrDefault [_net, "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>hors ligne</t>"];
     private _w = wind;
     private _from = (((_w select 0) atan2 (_w select 1)) + 180) mod 360;
-    private _kv = { params ["_k", "_v"]; format ["<t align='left' color='#8a9a93'>%1</t><t align='right'>%2</t>", _k, _v] };
-    private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.6' font='COMSPEC_BarlowBold' color='%3'>%1</t><t size='0.8' color='#8a9a93'> %2</t>", _n, _lab, _col] };
-    _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7<br/>%8</t><br/><br/><t size='0.75' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
-        [_fr, "alliés", "#47b3ff"] call _tile, [_ho, "contacts", ["#8a9a93", "#e5483a"] select (_ho > 0)] call _tile,
+    private _kv = { params ["_k", "_v"]; format ["<t align='left' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t><t align='right'>%2</t>", _k, _v] };
+    private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.6' font='COMSPEC_BarlowBold' color='%3'>%1</t><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'> %2</t>", _n, _lab, _col] };
+    _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7<br/>%8</t><br/><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Cliquez sur une unité pour sa fiche.</t>",
+        [_fr, "alliés", "#47b3ff"] call _tile, [_ho, "contacts", [(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexAlert")] select (_ho > 0)] call _tile,
         ["Réseau", _netTxt] call _kv,
         ["Groupe", ([player, true] call comspec_atak_native_fnc_unitGroup) call _esc] call _kv,
         ["Terrain", worldName] call _kv,
@@ -45,9 +45,9 @@ if ((count _e) isEqualTo 0) then {
     private _p = _e getOrDefault ["position", [0, 0, 0]];
     private _o = _e getOrDefault ["object", objNull];
     private _aff = _e getOrDefault ["affiliation", "unknown"];
-    private _affTxt = createHashMapFromArray [["friend", "<t color='#47b3ff'>ami</t>"], ["hostile", "<t color='#e5483a'>ennemi</t>"], ["neutral", "<t color='#5cc76b'>neutre</t>"]] getOrDefault [_aff, "inconnu"];
-    private _fresh = createHashMapFromArray [["LIVE", "<t color='#5cc76b'>en direct</t>"], ["STALE", "<t color='#f2ab33'>retardée</t>"], ["LOST", "<t color='#e5483a'>perdue</t>"], ["OFFLINE", "<t color='#8a9a93'>hors ligne</t>"]] getOrDefault [_e getOrDefault ["freshness", "LIVE"], "?"];
-    private _lines = [format ["<t size='1.15' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  %2", (_e getOrDefault ["callsign", "CONTACT"]) call _esc, _affTxt]];
+    private _affTxt = createHashMapFromArray [["friend", "<t color='#47b3ff'>ami</t>"], ["hostile", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>ennemi</t>"], ["neutral", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>neutre</t>"]] getOrDefault [_aff, "inconnu"];
+    private _fresh = createHashMapFromArray [["LIVE", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>en direct</t>"], ["STALE", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>retardée</t>"], ["LOST", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>perdue</t>"], ["OFFLINE", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>hors ligne</t>"]] getOrDefault [_e getOrDefault ["freshness", "LIVE"], "?"];
+    private _lines = [format ["<t size='1.15' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1</t>  %2", (_e getOrDefault ["callsign", "CONTACT"]) call _esc, _affTxt]];
     if (!isNull _o) then {
         if (isPlayer _o && {_aff isEqualTo "friend"}) then { _lines pushBack format ["%1 %2", "Nom :" call _dim, (name _o) call _esc]; };
         // Joueur ami : rôle affiché (fn_displayRole, rien sans rôle) ; sinon description du slot ou type d'unité.
@@ -56,11 +56,11 @@ if ((count _e) isEqualTo 0) then {
         _lines pushBack ([format ["%1 %2 · %3", "Rang :" call _dim, _rk, _role call _esc], format ["%1 %2", "Rang :" call _dim, _rk]] select (_role isEqualTo ""));
         if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, ([_o, true] call comspec_atak_native_fnc_unitGroup) call _esc, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
         private _life = switch (true) do {
-            case (!alive _o): { "<t color='#e5483a'>mort</t>" };
-            case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='#8a9a93'>—</t>" };
-            case ((lifeState _o) isEqualTo "INCAPACITATED"): { "<t color='#e5483a'>inconscient</t>" };
-            case ((damage _o) > 0.4): { "<t color='#f2ab33'>blessé</t>" };
-            default { "<t color='#5cc76b'>valide</t>" };
+            case (!alive _o): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>mort</t>" };
+            case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>—</t>" };
+            case ((lifeState _o) isEqualTo "INCAPACITATED"): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>inconscient</t>" };
+            case ((damage _o) > 0.4): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>blessé</t>" };
+            default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>valide</t>" };
         };
         _lines pushBack format ["%1 %2", "État :" call _dim, _life];
     };
@@ -74,7 +74,7 @@ if ((count _e) isEqualTo 0) then {
     if (!isNull _o && {_aff isEqualTo "friend"} && {isPlayer _o}) then {
         (_o getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], ["_bars", -1], ["_st", ""]];
         private _on = _o getVariable ["COMSPEC_ATAK_Beacon", true];
-        _lines pushBack format ["%1 %2%3%4", "Téléphone :" call _dim, ["<t color='#e5483a'>hors ligne</t>", "<t color='#5cc76b'>en ligne</t>"] select _on,
+        _lines pushBack format ["%1 %2%3%4", "Téléphone :" call _dim, ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>hors ligne</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>en ligne</t>"] select _on,
             ["", format [" · batterie %1 %%", _bat]] select (_bat >= 0), ["", format [" · signal %1/4", _bars]] select (_bars >= 0)];
         if (_st in ["DAMAGED", "BROKEN"]) then { _lines pushBack format ["%1 %2", "Appareil :" call _dim, ["écran fêlé", "détruit"] select (_st isEqualTo "BROKEN")]; };
         private _orbat = _o getVariable ["COMSPEC_ATAK_Orbat", ""];

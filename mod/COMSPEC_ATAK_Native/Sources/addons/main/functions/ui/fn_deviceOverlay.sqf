@@ -108,12 +108,12 @@ uiNamespace setVariable ["COMSPEC_ATAK_DevLook", _look];
 private _showCrack = _lvl > 0 && {!_broken};
 _crack ctrlShow _showCrack;
 if (_showCrack) then {
-    _crack ctrlSetText (format ["crack_%1_%2", _lvl, _look get "crackVar"] call _tex);
+    _crack ctrlSetText (((format ["crack_%1_%2", _lvl, _look get "crackVar"] call _tex)) call comspec_atak_native_fnc_tr);
     _crack ctrlSetTextColor [1, 1, 1, [0.85, 0.9, 1] select (_lvl - 1)];
 };
 // Verre noir éclaté : appareil détruit.
 _shatter ctrlShow _broken;
-if (_broken) then { _shatter ctrlSetText (format ["shatter_%1", _look get "shatterVar"] call _tex); };
+if (_broken) then { _shatter ctrlSetText (((format ["shatter_%1", _look get "shatterVar"] call _tex)) call comspec_atak_native_fnc_tr); };
 // Lignes mortes : fixes et discrètes au niveau 2, scintillantes (changement de trame ~1 fois/s) quand c'est grave.
 private _showGlitch = (_lvl >= 2 || _broken) && {_state isNotEqualTo "OFF"};
 _glitch ctrlShow _showGlitch;
@@ -122,13 +122,13 @@ if (_showGlitch) then {
     if (_lvl >= 3 || {_dmg >= 0.85} || _broken) then {
         private _frame = ((_look getOrDefault ["frame", 0]) + 1 + floor random 2) mod 3;
         _look set ["frame", _frame];
-        _glitch ctrlSetText (format ["glitch_%1_%2", _gv, _frame] call _tex);
+        _glitch ctrlSetText (((format ["glitch_%1_%2", _gv, _frame] call _tex)) call comspec_atak_native_fnc_tr);
         _glitch ctrlSetTextColor [1, 1, 1, [0.9, 0.55] select _broken];
         // Battement : la trame apparaît d'un coup puis pâlit avant la suivante ; parfois l'écran « décroche ».
         _glitch ctrlSetFade ([0, 0.85] select (random 1 < 0.15)); _glitch ctrlCommit 0;
         _glitch ctrlSetFade (0.25 + random 0.45); _glitch ctrlCommit (0.5 + random 0.4);
     } else {
-        _glitch ctrlSetText (format ["glitch_%1_0", _gv] call _tex);
+        _glitch ctrlSetText (((format ["glitch_%1_0", _gv] call _tex)) call comspec_atak_native_fnc_tr);
         _glitch ctrlSetTextColor [1, 1, 1, 0.35];
         _glitch ctrlSetFade 0; _glitch ctrlCommit 0;
     };
@@ -148,7 +148,7 @@ if (_off) then {
     _black ctrlShow true; _black ctrlSetFade 0; _black ctrlCommit 0;
     if (_booting) then {
         private _p = (1 - _left / _bootLen) max 0 min 1;
-        _boot ctrlSetText ("boot" call _tex);
+        _boot ctrlSetText ((("boot" call _tex)) call comspec_atak_native_fnc_tr);
         // La barre rejoint la valeur de la seconde suivante en une seconde : progression continue.
         (ctrlPosition _barBg) params ["_bx", "_by", "_bw", "_bh"];
         _bar ctrlSetPosition [_bx, _by, _bw * _p, _bh]; _bar ctrlCommit 0;

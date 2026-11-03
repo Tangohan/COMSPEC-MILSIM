@@ -133,8 +133,8 @@ switch (_act) do {
         if (isNull _c || {(_q getOrDefault ["status", ""]) isNotEqualTo "ok"}) exitWith {};
         private _left = round ((_q getOrDefault ["until", 0]) - diag_tickTime);
         if (_left <= 0) exitWith { call _rerender; };
-        _c ctrlSetStructuredText parseText format ["<t align='center' size='0.95' color='%1'>%2</t>", ["#8a9a93", "#e8c547"] select (_left < 60),
-            format [("Valable encore %1 min %2 s · une seule utilisation") call comspec_atak_native_fnc_tr, floor (_left / 60), [str (_left mod 60), "0" + str (_left mod 60)] select ((_left mod 60) < 10)]];
+        _c ctrlSetStructuredText parseText ((format ["<t align='center' size='0.95' color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexTextMuted"), "#e8c547"] select (_left < 60),
+            format [("Valable encore %1 min %2 s · une seule utilisation") call comspec_atak_native_fnc_tr, floor (_left / 60), [str (_left mod 60), "0" + str (_left mod 60)] select ((_left mod 60) < 10)]]) call comspec_atak_native_fnc_tr);
     };
     case "page": {
         private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -144,7 +144,7 @@ switch (_act) do {
         private _icon = "\z\comspec_atak_native\addons\main\data\app_athena.paa";
         private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_mobileQr;", str _a, str _v] };
         private _back = { [{ [] call comspec_atak_native_fnc_back; }] call CBA_fnc_execNextFrame; };
-        private _rows = [["strip", format ["<t font='COMSPEC_BarlowBold' color='#35d6a1'>%1</t>  <t font='COMSPEC_BarlowBold' color='#e3ebe7'>%2</t>",
+        private _rows = [["strip", format ["<t font='COMSPEC_BarlowBold' color='#35d6a1'>%1</t>  <t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexText") + "'>%2</t>",
             "SUR MON TÉLÉPHONE" call comspec_atak_native_fnc_tr, toUpper (_name call comspec_atak_native_fnc_tr)]]];
         uiNamespace setVariable ["COMSPEC_ATAK_MobQrLeft", controlNull];
         switch (_q getOrDefault ["status", "wait"]) do {
@@ -159,15 +159,15 @@ switch (_act) do {
                 private _left = round ((_q getOrDefault ["until", 0]) - diag_tickTime);
                 if (_left <= 0) then {
                     _rows pushBack ["banner", "<t font='COMSPEC_BarlowBold' size='1.1' color='#140c02'>QR CODE EXPIRÉ</t>", [0.92, 0.6, 0.18, 1]];
-                    _rows pushBack ["text", "<t size='0.9' color='#c9d4cf'>Il n'était valable que 5 minutes. Régénérez-le, puis scannez le nouveau.</t>"];
+                    _rows pushBack ["text", "<t size='0.9' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Il n'était valable que 5 minutes. Régénérez-le, puis scannez le nouveau.</t>"];
                     _rows pushBack ["buttons", [["RÉGÉNÉRER", ["request"] call _act, true], ["RETOUR", _back, false]]];
                 } else {
-                    _rows pushBack ["text", format ["<t size='0.9' color='#c9d4cf'>%1</t>", format [("Scannez ce QR code avec l'appareil photo de votre vrai téléphone : l'app %1 s'ouvre sur Athena, liée à votre compte et à cette partie.") call comspec_atak_native_fnc_tr, _name call comspec_atak_native_fnc_tr]]];
+                    _rows pushBack ["text", format ["<t size='0.9' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", format [("Scannez ce QR code avec l'appareil photo de votre vrai téléphone : l'app %1 s'ouvre sur Athena, liée à votre compte et à cette partie.") call comspec_atak_native_fnc_tr, _name call comspec_atak_native_fnc_tr]]];
                     _rows pushBack ["qr", _q getOrDefault ["qr", []], [0.86, 0.62] select (_bw > _bh)];
-                    _rows pushBack ["text", format ["<t align='center' font='EtelkaMonospacePro' size='0.9' color='#e3ebe7'>%1</t>", _q getOrDefault ["short", ""]]];
+                    _rows pushBack ["text", format ["<t align='center' font='EtelkaMonospacePro' size='0.9' color='" + (COMSPEC_ATAK_Th get "hexText") + "'>%1</t>", _q getOrDefault ["short", ""]]];
                     _rows pushBack ["text", "", [], "COMSPEC_ATAK_MobQrLeft"];
                     _rows pushBack ["buttons", [["RÉGÉNÉRER", ["request"] call _act, true, true, "Nouveau QR code : l'ancien ne sert plus"], ["RETOUR", _back, false]]];
-                    _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Ce que vous faites sur le vrai téléphone arrive dans cet ATAK et part comme si vous l'aviez fait ici. Déconnexion du téléphone : profil Athena, Appareils ATAK.</t>"];
+                    _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Ce que vous faites sur le vrai téléphone arrive dans cet ATAK et part comme si vous l'aviez fait ici. Déconnexion du téléphone : profil Athena, Appareils ATAK.</t>"];
                 };
             };
             default {

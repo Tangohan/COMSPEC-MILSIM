@@ -7,6 +7,8 @@ COMSPEC_ATAK_FontMin = 0;
 COMSPEC_ATAK_FontBody = 0; // taille de base du texte structuré des pages (fn_layoutGet, fn_fontApply)
 // Police du téléphone (Réglages > Police) : familles courante, grasse et légère, avant tout dessin.
 [] call comspec_atak_native_fnc_fontSet;
+// Thème (fn_theme, 3.1.0) : jetons de couleurs COMSPEC_ATAK_Th posés avant tout dessin (pages et codes compilés).
+[] call comspec_atak_native_fnc_theme;
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
