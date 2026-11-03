@@ -24,7 +24,7 @@ final class SseIdentityRepository
         self::ensureSchema();
     }
 
-    /** Tables du registre créées au premier usage (mêmes migrations que database/steps/3730 et 3740). */
+    /** Tables du registre créées au premier usage (mêmes migrations que database/steps/3730, 3740, 3750 et 3815). */
     public static function ensureSchema(): void
     {
         static $done = false;
@@ -33,6 +33,7 @@ final class SseIdentityRepository
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_migration.php'));
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_member_papers_migration.php'));
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_lot2_migration.php'));
+            SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_lot6_migration.php'));
         }
     }
 
@@ -45,8 +46,10 @@ final class SseIdentityRepository
         $userId = (int) ($data['user_id'] ?? 0);
         $id = $this->db->insert(
             'INSERT INTO sse_identities (tenant_id, context_id, op_key, person_id, kind, last_name, first_name, sex, birth_date,
-                birth_place, nationality, arma_key, profession, seed, notes, created_by_user_id, created_at)
-             VALUES (:t, :ctx, :op, :person, :kind, :last, :first, :sex, :dob, :pob, :nat, :arma, :prof, :seed, :notes, :uid, :now)',
+                birth_place, nationality, arma_key, profession, seed, notes, batch_id, category, side, faction, language, zone, alias,
+                photo_path, created_by_user_id, created_at)
+             VALUES (:t, :ctx, :op, :person, :kind, :last, :first, :sex, :dob, :pob, :nat, :arma, :prof, :seed, :notes, :batch, :cat,
+                :side, :faction, :lang, :zone, :alias, :photo, :uid, :now)',
             [
                 't' => $tenantId,
                 'ctx' => $row['context_id'],
@@ -63,6 +66,14 @@ final class SseIdentityRepository
                 'prof' => $row['profession'],
                 'seed' => $row['seed'],
                 'notes' => $row['notes'],
+                'batch' => $row['batch_id'],
+                'cat' => $row['category'],
+                'side' => $row['side'],
+                'faction' => $row['faction'],
+                'lang' => $row['language'],
+                'zone' => $row['zone'],
+                'alias' => $row['alias'],
+                'photo' => $row['photo_path'],
                 'uid' => $createdBy,
                 'now' => gmdate('Y-m-d H:i:s'),
             ]
@@ -117,7 +128,8 @@ final class SseIdentityRepository
         return $this->db->execute(
             'UPDATE sse_identities SET context_id = :ctx, op_key = :op, person_id = :person, kind = :kind, last_name = :last,
                 first_name = :first, sex = :sex, birth_date = :dob, birth_place = :pob, nationality = :nat, arma_key = :arma,
-                profession = :prof, notes = :notes, updated_at = :now
+                profession = :prof, notes = :notes, category = :cat, side = :side, faction = :faction, language = :lang, zone = :zone,
+                alias = :alias, photo_path = :photo, updated_at = :now
              WHERE id = :id AND tenant_id = :t',
             [
                 'ctx' => $row['context_id'],
@@ -133,6 +145,13 @@ final class SseIdentityRepository
                 'arma' => $row['arma_key'],
                 'prof' => $row['profession'],
                 'notes' => $row['notes'],
+                'cat' => $row['category'],
+                'side' => $row['side'],
+                'faction' => $row['faction'],
+                'lang' => $row['language'],
+                'zone' => $row['zone'],
+                'alias' => $row['alias'],
+                'photo' => $row['photo_path'],
                 'now' => gmdate('Y-m-d H:i:s'),
                 'id' => $id,
                 't' => $tenantId,
@@ -256,6 +275,14 @@ final class SseIdentityRepository
             'profession' => $str($data['profession'] ?? null, 120),
             'seed' => is_numeric($seed) && (int) $seed >= 0 ? (int) $seed : null,
             'notes' => $str($data['notes'] ?? null, 4000),
+            'batch_id' => (int) ($data['batch_id'] ?? 0) > 0 ? (int) $data['batch_id'] : null,
+            'category' => ($c = (string) ($data['category'] ?? '')) !== '' && isset(\App\Support\SseIdWorkshopCatalog::POP_CATEGORIES[$c]) ? $c : null,
+            'side' => ($sd = (string) ($data['side'] ?? '')) !== '' && isset(\App\Support\SseIdWorkshopCatalog::SIDES[$sd]) ? $sd : null,
+            'faction' => $str($data['faction'] ?? null, 64),
+            'language' => ($l = strtolower((string) $str($data['language'] ?? null, 8))) !== '' ? $l : null,
+            'zone' => $str($data['zone'] ?? null, 64),
+            'alias' => $str($data['alias'] ?? null, 120),
+            'photo_path' => $str($data['photo_path'] ?? null, 255),
         ];
     }
 
@@ -289,6 +316,14 @@ final class SseIdentityRepository
             'seed' => ($row['seed'] ?? null) !== null ? (int) $row['seed'] : null,
             'notes' => ($row['notes'] ?? null) !== null ? (string) $row['notes'] : null,
             'documents_count' => (int) ($row['documents_count'] ?? 0),
+            'batch_id' => ($row['batch_id'] ?? null) !== null && (int) $row['batch_id'] > 0 ? (int) $row['batch_id'] : null,
+            'category' => ($row['category'] ?? null) !== null && $row['category'] !== '' ? (string) $row['category'] : null,
+            'side' => ($row['side'] ?? null) !== null && $row['side'] !== '' ? (string) $row['side'] : null,
+            'faction' => ($row['faction'] ?? null) !== null && $row['faction'] !== '' ? (string) $row['faction'] : null,
+            'language' => ($row['language'] ?? null) !== null && $row['language'] !== '' ? (string) $row['language'] : null,
+            'zone' => ($row['zone'] ?? null) !== null && $row['zone'] !== '' ? (string) $row['zone'] : null,
+            'alias' => ($row['alias'] ?? null) !== null && $row['alias'] !== '' ? (string) $row['alias'] : null,
+            'photo_path' => ($row['photo_path'] ?? null) !== null && $row['photo_path'] !== '' ? (string) $row['photo_path'] : null,
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => ($row['updated_at'] ?? null) !== null ? (string) $row['updated_at'] : null,
         ];

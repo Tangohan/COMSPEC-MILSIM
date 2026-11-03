@@ -294,11 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1359, '2026-11-03', 'Academy : ancienne version signalée, débriefing « Rien à améliorer »', 'Quand un parcours suit une ancienne version d’un cours, un badge l’indique partout où il apparaît (Mes formations, salle de cours, fiche du cours, tableau de bord, espace instructeur), avec ce qui a changé. Un bouton permet au stagiaire, ou à son instructeur, de passer à la nouvelle version en gardant la progression et ce qui est validé. Un parcours terminé garde sa licence : la nouvelle version s’ouvre en complément, les chapitres déjà couverts restent acquis. Le débriefing de chapitre peut aussi être envoyé sans texte en cochant « Rien à améliorer ».', [
-                'Badge « Ancienne version » sur les parcours d’un cours intégré ou du Studio remplacé par une version plus récente',
-                'Passage à la nouvelle version après confirmation, progression gardée, licence jamais retirée, action journalisée',
-                'Case « Rien à améliorer » dans le débriefing de chapitre, accessible au clavier',
-            ], [], [], ['personnel'], [], 'Portail'),
+            $pr(1360, '2026-11-03', 'Bureau SSE : atelier de documents, kits types et préparation de mission des identités', 'COMSPEC IDENTITY passe au lot 6 sur Athena. Le bureau SSE gagne un atelier de documents : on compose un papier d’identité fictif à gauche et son aperçu se met à jour en direct à droite, recto et verso d’une carte ou d’un permis, couverture et pages d’un passeport, aux couleurs du pays émetteur imaginaire, avec photo ou silhouette, tampon, signature, champs en plus et bande de lecture automatique recalculée à chaque frappe ; chaque face porte le filigrane SIMULATION et s’exporte en image pour le jeu de rôle. Le papier suit son cycle brouillon, validé, émis, révoqué, puis dupliqué pour le remplacer. Les kits types (civil, militaire, diplomate, journaliste, contractor, agent infiltré…) réunissent pays, papiers, champs pré-remplis, téléphone et adresse simulés et éléments de légende : affectés à des membres, ils créent leurs papiers, leur kit de mission et leur brief de couverture. La préparation de mission génère en un coup la population d’une opération, civils, militaires, suspects et cibles prioritaires, avec pays, faction, langue, âge, sexe, profession et part de faux, d’expirés et de volés, avec aperçu avant validation ; le serveur de jeu reçoit ces identités pour ses IA, ainsi que les recherchés et HVT de l’opération et les camps qui y ont accès. Le joueur lit son brief dans Ma situation › Mes papiers, le tableau de bord identité montre les contrôles sur une carte, et le registre s’importe et s’exporte en fichier tableur ou en fichier de données.', [
+                'Atelier de documents : aperçu en direct recto, verso et pages du passeport, MRZ recalculée, export image avec filigrane SIMULATION',
+                'Kits documentaires types affectés à des membres : papiers, kit de mission et brief de couverture',
+                'Préparation de mission : population de l’opération générée en un coup, avec aperçu, recherchés et HVT par camp',
+                'Briefs de couverture lus dans Ma situation › Mes papiers et envoyés au serveur de jeu',
+                'Import et export des identités et papiers (fichier tableur ou de données)',
+            ], [
+                'Tableau de bord identité : carte des contrôles selon leur position',
+                'Papier dupliqué relié à son original',
+            ], [], ['intel'], [
+                'Rien à installer côté jeu pour le site ; le mod SSE lira la population, les recherchés et les briefs dans une prochaine version.',
+                'Essai : composer un passeport dans l’atelier, l’exporter en image, affecter un kit type à deux membres, puis générer la population d’une opération et vérifier l’aperçu avant de valider.',
+            ]),
 
             $pr(1358, '2026-11-03', 'Academy : les six chapitres du JTAC pour tous les stagiaires', 'Les stagiaires inscrits à la toute première version du cours JTAC ne voyaient qu’un seul chapitre : leur copie du cours restait figée sur cette version. Tant que le parcours n’est pas terminé, la copie passe maintenant à la version courante avec ses six chapitres, sans rien perdre de la progression : chapitre en cours, tentatives, débriefings et validations. Les parcours terminés et les licences délivrées ne changent pas.', [], [
                 'JTAC : six chapitres visibles dans la salle de cours pour les stagiaires inscrits à l’ancienne version, progression conservée',
