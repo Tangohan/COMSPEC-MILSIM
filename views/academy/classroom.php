@@ -90,11 +90,12 @@ $letters = ['A', 'B', 'C'];
 <aside class="acr-out" id="academy-outline" aria-label="<?= $h($t('course_outline')) ?>">
 <div class="acr-oh">
 <div class="acr-crest"><span aria-hidden="true"><?= $h($initials($local($selected['title']))) ?></span><div><h2><?= $h($local($selected['title'])) ?></h2><p><?= $h(!empty($selected['license']) ? $local($selected['license']) : $t('not_official')) ?></p></div></div>
+<?php if ($state && ($vi = ($versionInfo ?? [])[$courseKey] ?? null) !== null): $vKey = $courseKey; $vLearner = null; require __DIR__ . '/version_badge.php'; endif ?>
 <?php if ($state): $nextLabel = $courseDone ? $t('course_finished') : $t('next_up') . ' : ' . $t($stages[$curS]); ?>
 <div class="acr-ring"><div class="acr-ring__r" style="--p:<?= $progress ?>"><b><?= $progress ?> %</b></div><div><b><?= $doneSteps ?> / <?= $totalSteps ?></b> <?= $h($t('steps_done')) ?><br><?= $h($nextLabel) ?></div></div>
 <?php endif ?>
 </div>
-<?php foreach ($chapters as $ci => $tocChapter): $chapterDone = $state && ($courseDone || $ci < $curC); $chapterSteps = $state ? ($courseDone || $ci < $curC ? $stageCount : ($ci === $curC ? $curS : 0)) : 0; ?>
+<?php foreach ($chapters as $ci => $tocChapter): $chapterDone = $state && ($courseDone || $ci < $curC || isset($state['validations'][$ci])); $chapterSteps = $state ? ($courseDone || $ci < $curC ? $stageCount : ($ci === $curC ? $curS : 0)) : 0; ?>
 <details class="acr-ch"<?= $ci === $viewC || !$state ? ' open' : '' ?>>
 <summary class="acr-chh<?= $chapterDone ? ' is-done' : '' ?>"><span class="n"><?php if ($chapterDone): ?><svg class="i sm"><use href="#ai-check"/></svg><?php else: ?><?= $ci + 1 ?><?php endif ?></span><span><b><?= $h($local($tocChapter['title'])) ?></b><small><?= $chapterSteps ?> / <?= $stageCount ?> · <?= $h(mb_strtolower($t('chapter'))) ?> <?= $ci + 1 ?></small></span><svg class="i car" aria-hidden="true"><use href="#ai-down"/></svg></summary>
 <ol class="acr-ls">
@@ -259,8 +260,8 @@ $examJust = in_array($feedbackFlag, ['passed', 'failed'], true) && $lastAttempt 
 <?php $reviewState = $state; $reviewChapter = $chapter; if ($isCurrent) { require __DIR__ . '/course_review.php'; } ?>
 <div class="lesson-text rt"><?= $rich($chapter['debrief']['prompt'] ?? $chapter['feedback']) ?></div>
 <?php if (!empty($chapter['debrief']['criteria'])): ?><ul class="academy-rubric"><?php foreach ($chapter['debrief']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
-<?php if ($isCurrent): $formStart('debrief', $courseKey); ?><label for="reflection"><?= $h($t('reflection_help')) ?></label><textarea id="reflection" name="reflection" minlength="20" maxlength="5000" rows="10" required></textarea><div class="act"><button class="btn dark"><?= $h($t('send_debrief')) ?></button></div></form>
-<?php else: ?><h3><?= $h($t('submitted_debrief')) ?></h3><p class="lesson-text"><?= nl2br($h($state['debriefs'][$viewC] ?? '')) ?></p><?php endif ?>
+<?php if ($isCurrent): $formStart('debrief', $courseKey); ?><label for="reflection"><?= $h($t('reflection_help')) ?></label><textarea id="reflection" name="reflection" minlength="20" maxlength="5000" rows="10" required></textarea><label class="academy-check"><input type="checkbox" name="nothing_to_improve" value="1" data-nothing-toggle aria-controls="reflection"> <?= $h($t('nothing_to_improve')) ?></label><p class="hint"><?= $h($t('nothing_to_improve_help')) ?></p><div class="act"><button class="btn dark"><?= $h($t('send_debrief')) ?></button></div></form>
+<?php else: ?><h3><?= $h($t('submitted_debrief')) ?></h3><p class="lesson-text"><?= nl2br($h($debriefText($state['debriefs'][$viewC] ?? ''))) ?></p><?php endif ?>
 </section>
 
 <?php else: /* Validation par un instructeur. */ $validationEntry = $state['validations'][$viewC] ?? null; ?>
@@ -271,7 +272,7 @@ $examJust = in_array($feedbackFlag, ['passed', 'failed'], true) && $lastAttempt 
 <div class="r1" style="--img:url('<?= $h($imageFor($viewC + 2)) ?>')"></div>
 </section>
 <?php if (!empty($chapter['validation']['brief'])): ?><div class="acr-box"><div class="lesson-text rt"><?= $rich($chapter['validation']['brief']) ?></div></div><?php endif ?>
-<?php if (!$validationEntry): ?><section class="acr-box"><h3><?= $h($t('submitted_debrief')) ?></h3><p class="lesson-text"><?= nl2br($h($state['debriefs'][$viewC] ?? '')) ?></p></section><?php endif ?>
+<?php if (!$validationEntry): ?><section class="acr-box"><h3><?= $h($t('submitted_debrief')) ?></h3><p class="lesson-text"><?= nl2br($h($debriefText($state['debriefs'][$viewC] ?? ''))) ?></p></section><?php endif ?>
 <?php endif ?>
 
 <?php if ($viewS <= 1 || $viewS >= 4): /* Sous le contenu : notes, ressources, critères (masqués pendant l'évaluation). */ ?>

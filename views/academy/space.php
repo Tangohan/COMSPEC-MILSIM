@@ -25,7 +25,7 @@ $formStart = static function (string $action, string $key) use ($h, $link, $stat
 <?php if ($classroomFocus): require __DIR__ . '/classroom.php'; else: ?>
 <div class="app-shell">
 <?php
-$academyIcons = ['dashboard'=>'overview','catalogue'=>'catalogue','courses'=>'mine','classroom'=>'docs','laboratory'=>'studio','simulators'=>'star','exams'=>'calendar','library'=>'docs','notebook'=>'feedback','record'=>'cert','instructor'=>'groups','studio'=>'studio'];
+$academyIcons = ['dashboard'=>'overview','catalogue'=>'catalogue','courses'=>'mine','classroom'=>'docs','laboratory'=>'studio','simulators'=>'star','exams'=>'calendar','library'=>'docs','notebook'=>'feedback','record'=>'cert','instructor'=>'groups','suivi'=>'reports','studio'=>'studio'];
 $academyNavItems = [];
 foreach ($allSpaces as $item) {
     if (in_array($item, ['instructor','studio'], true) && !$staff) continue;
@@ -36,7 +36,7 @@ $lmsNav = ['id'=>'academy','tone'=>'emerald','kicker'=>'Academy','title'=>$t('br
 (static function (array $lmsNav): void { require base_path('views/partials/lms_nav_aside.php'); })($lmsNav);
 ?>
 <main id="main" class="app-main"><div class="breadcrumb"><a href="<?= $h($link()) ?>">Academy</a><span>/</span><?= $h($t($space)) ?></div>
-<?php if ($notice): ?><div class="notice" role="status"><?= $h($t($notice)) ?></div><?php \App\Core\Session::set('academy_notice', ''); endif ?>
+<?php if ($notice): ?><div class="notice" role="status"><?= $h(str_starts_with((string) $notice, 'trk_') ? sprintf($t($notice), (int) ($noticeCount ?? 0)) : $t($notice)) ?></div><?php \App\Core\Session::set('academy_notice', ''); endif ?>
 <?php /* Réponse à une demande ou décision sur une proposition prise depuis la file : message de l'écran d'origine. */
 foreach (['success' => 'notice', 'error' => 'notice notice--error'] as $flashKey => $flashClass): $flashText = \App\Core\Session::getFlash($flashKey); if (is_string($flashText) && $flashText !== '' && empty($queueBulk)): ?><div class="<?= $flashClass ?>" role="status"><?= $h($flashText) ?></div><?php endif; endforeach ?>
 <?php if (!$academyStorageReady): ?><p class="notice"><?= $h($t('lms_storage_notice')) ?></p><?php endif ?>
@@ -72,6 +72,8 @@ foreach (['success' => 'notice', 'error' => 'notice notice--error'] as $flashKey
 <?php foreach ($learning as $key=>$item): ?><section class="lms-panel panel"><?php $licenseState=$item; require __DIR__.'/course_license.php'; ?><h2><?= $h($local($item['snapshot']['title'])) ?></h2><p><?= $h($t(!empty($item['completed'])?'completed':'in_progress')) ?> · <?= $percent($item) ?> %</p><?php foreach ($item['validations']??[] as $i=>$validation): ?><div class="validation"><b>✓ <?= $h($local($item['snapshot']['chapters'][$i]['title'])) ?></b><p><?= $h($t('feedback')) ?> : <?= nl2br($h($validation['comment'])) ?></p><small><?= $h((new DateTimeImmutable('@'.$validation['at']))->setTimezone(new DateTimeZone('Europe/Paris'))->format('d/m/Y H:i')) ?></small></div><?php endforeach ?><h3><?= $h($t('history')) ?></h3><?php if (empty($item['attempts'])): ?><p class="muted"><?= $h($t('no_attempt')) ?></p><?php else: ?><div class="table-scroll"><table><thead><tr><th><?= $h($t('chapter')) ?></th><th><?= $h($t('score')) ?></th><th><?= $h($t('date')) ?></th></tr></thead><tbody><?php foreach (array_reverse($item['attempts']) as $attempt): ?><tr><td><?= $attempt['chapter']+1 ?></td><td><?= $attempt['score'] ?> %</td><td><?= $h((new DateTimeImmutable('@'.$attempt['at']))->setTimezone(new DateTimeZone('Europe/Paris'))->format('d/m/Y H:i')) ?></td></tr><?php endforeach ?></tbody></table></div><?php endif ?></section><?php endforeach; if (!$learning): ?><div class="empty-state"><h2><?= $h($t('empty')) ?></h2><p><?= $h($t('empty_text')) ?></p></div><?php endif ?>
 <?php elseif ($space==='instructor'): ?>
 <?php require __DIR__.'/instructor.php'; ?>
+<?php elseif ($space==='suivi'): ?>
+<?php require __DIR__.'/tracker.php'; ?>
 <?php elseif ($space==='droits'): ?>
 <?php require __DIR__.'/rights.php'; ?>
 <?php endif ?>

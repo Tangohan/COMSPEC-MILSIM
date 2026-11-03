@@ -1,5 +1,66 @@
 # COMSPEC SSE — historique des versions
 
+## 1.3.0 — 03/11/2026 · Couvertures et infiltrés (Lot 4), HVT et BOLO (Lot 5)
+
+**Relancer Arma complètement.** Pack ATAK 3.0.2 conseillé (vibreur seul `"vibrate"` testé à l'exécution par
+`fn_idAtakAtLeast`, repli vibreur + notification avec le 3.0.1). Aucun changement du main.pbo de l'ATAK ni de la DLL.
+
+- **Légende** (`fn_idLegend`, serveur) : adresse, ville, employeur, profession, téléphone simulé
+  (`comspec_sse_fnc_generatePhone` : numéro à indicatif fictif, modèle, IMEI ; messages non repris), contacts,
+  documents complémentaires, historique, biographie, famille, langues, phrases types, sujets sensibles, secrets, motif
+  du déplacement ; cohérente avec la pièce principale (nom, naissance, adresse, profession imprimés) ; brief RP du paquet
+  (`briefs[]`, Steam ID) prioritaire ; mise en cache par clé biométrique, recalculée si les papiers changent.
+- **Infiltré** (`fn_idCover`) : `setCaptive` là où l'unité est locale (`comspec_sse_idLocalCaptive`, réglage) tant que
+  la couverture tient ; soupçons : arme à la main (brûlée), arme longue dans le dos, tenue militaire, gilet, casque,
+  JVN vus par un ennemi (ligne de vue, distance des témoins), zone interdite (Zeus ou marqueurs `comspec_id_interdit…`),
+  tir (`FiredMan` posé sur le poste de l'infiltré seulement, relayé `coverFired`), contrôle raté, mauvaises réponses,
+  retenue à un checkpoint ; menotté, alerte ou arme trouvée à la fouille = brûlée. Brûlée : groupes ennemis à 400 m
+  en combat (`comspec_sse_idAiDo` « alert »), alerte discrète au joueur, Zeus, AAR, évènement
+  `comspec_sse_idCoverBurnt`. **Boucle serveur de 2 s posée seulement tant qu'il y a des infiltrés, retirée ensuite.**
+  Score de cohérence (papiers 35, légende 25, équipement 25, comportement 15) : examen N0 d'un joueur (ligne « ne
+  collent pas aux papiers »), suspicion des checkpoints.
+- **Questions de légende** (`fn_idQuestion`) : checkpoints IA (étape « quiz » de `fn_idCheckpoint`, 2 ou 3 questions,
+  réglage et délai), réponses au choix (vraie légende + 2 leurres) dans l'app « Ma couverture » ou le menu ACE
+  personnel › Mes papiers › Répondre ; fausse = suspicion, silence = évasif ; évènement serveur
+  `comspec_sse_idAnswered`. Joueur → PNJ : menu ACE › Contrôle d'identité › Poser une question (1 s) ; réponse selon
+  la qualité de sa couverture (civil 98 %, couverture selon sa qualité, faux papiers mal appris), tension de l'IA
+  augmentée par une réponse qui ne colle pas ; réponses gardées sur la fiche du contrôle et dans la FRM.
+- **App ATAK « Ma couverture »** (`fn_idCoverPage`, page IDCOVER, `COMSPEC_ATAK_Apps` du SSE) : fiche RP du seul joueur
+  concerné, cohérence et motifs, question en attente ; onglet Zeus (curateur) : infiltrés, cohérence, fiche avec vrai
+  nom. Serveur : `coverSheet`, `coverList`.
+- **N4 · visage** (`fn_idBio`) : cliché (distance, lumière, visage couvert, compétence, difficulté), recherche
+  `comspec_sse_fnc_bioSearch` modalité visage (ABIS avec la liaison, sinon base locale), taux de confiance, dossier,
+  tier ; nom des papiers différent du dossier = fausse identité ; visage différent de la photo du document. Durée et
+  activation par réglage, matériel `face` (`comspec_sse_fnc_hasEquipment` : téléphone ATAK ou SEEK).
+- **HVT** (`fn_idHvt`) : Zeus « Désigner HVT » (watchlist 1 ou 2, alias, vrai nom serveur seulement, papiers connus,
+  couverture à un autre nom, `COMSPEC_ATAK_TinderKind` = HVT pour la chasse ATAK : FIND) ; identification N3 / N4 →
+  bouton « Confirmer le PID » → tuyaux confirmés (`fn_hvtIntel` « tip » + « review », sources PID, CTRL-ID, BIO-N4)
+  pour le groupe du contrôleur (FIX) ; menottes ACE ou mort → JACKPOT (données SSE générées, chaîne de possession
+  ouverte, AAR, Zeus, Athena). Le JACKPOT de l'app Tinder reste détecté par l'ATAK lui-même.
+- **BOLO** : Zeus « BOLO » (nom, prénom, alias, niveau, papiers connus, signalement ; posé sur une personne : visage
+  joint), « Lever un BOLO » ; avis local (N3, liste papier des checkpoints), numéro de document (N3 et checkpoints),
+  visage (checkpoints) ; liste diffusée `comspec_sse_idBolos`, onglet BOLO de Contrôle ID, notification (réglage), app
+  Recherchés : injection dans `uiNamespace COMSPEC_ATAK_Wanted` quand la liste est chargée et copie dans
+  `missionNamespace COMSPEC_ATAK_WantedLocal` (même format). **Remontée Athena** : `SubmitIdCheck` avec
+  `kind = bolo | hvt` et `watch{game_ref, last_name, first_name, alias, level, notes, bio_key, known_docs[], status}`
+  (DLL du serveur, sinon d'un Zeus, sinon file hors ligne) → liste de surveillance de la communauté, renvoyée dans
+  `watch[]` des paquets suivants (dédoublonnée ; visage et papiers connus redeviennent un BOLO).
+- **Paquet Athena, Lot 6** (rétrocompatible) : `briefs[]` (légende, infiltration ouverte si identité de couverture),
+  `population[]` (identités préparées remises aux IA à leur premier contrôle : camp, catégorie civil / militaire /
+  suspect / HVT, zone = marqueur ; une entrée par IA), `wanted[]` (avis locaux limités aux camps `sides`, papiers
+  connus en BOLO).
+- **Zeus** : Couverture (infiltrer / brûler / lever, captif, carte de couverture), Zone interdite (couvertures),
+  Désigner HVT, BOLO, Lever un BOLO ; « Voir les vrais papiers » affiche l'infiltration (cohérence, soupçons) et la HVT.
+- **Eden** : attribut « Infiltré (couverture) » (`COMSPEC_ID_Undercover`, serveur seulement).
+- **Réglages CBA** (Identité) : Infiltré captif tant que sa couverture tient · Soupçons avant que la couverture saute ·
+  Distance des témoins · Questions de légende · Délai pour répondre · Comparaison du visage (N4) · Durée de la
+  comparaison du visage · Notifier les BOLO.
+- Traductions EN : `tools/i18n_identity_en.tsv` (+227 lignes, à fusionner dans `i18n/en.txt` de l'ATAK à sa prochaine
+  version), stringtable (attribut Eden).
+- **Pour une prochaine version de l'ATAK (main.pbo)** : `fn_wantedAction` « load » devrait fusionner
+  `missionNamespace COMSPEC_ATAK_WantedLocal` à la liste d'Athena (aujourd'hui un « Actualiser » retire les BOLO locaux
+  jusqu'au prochain rendu de Contrôle ID ; ils reviennent par Athena une fois remontés) ; fusion du TSV dans `en.txt`.
+
 ## 1.2.0 — 03/11/2026 · Contrôle d'identité : photo, comptes rendus, IA réalistes, checkpoints IA
 
 **Relancer Arma complètement.** Fonctionne avec le pack ATAK 3.0.1 ; certaines fonctions demandent l'**ATAK 3.0.2 ou

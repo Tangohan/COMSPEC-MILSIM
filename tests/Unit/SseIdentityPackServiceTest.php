@@ -85,7 +85,7 @@ final class SseIdentityPackServiceTest extends TestCase
 
         $pack = $this->service()->build(1, 1);
 
-        self::assertSame(['version', 'generated_at', 'map', 'op', 'countries', 'identities', 'documents', 'watch', 'kits', 'paging'], array_keys($pack));
+        self::assertSame(['version', 'generated_at', 'map', 'op', 'countries', 'identities', 'documents', 'watch', 'kits', 'population', 'wanted', 'briefs', 'paging'], array_keys($pack));
         self::assertSame(1, $pack['version']);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $pack['generated_at']);
         self::assertSame(['ALT', 'LVN', 'MLD', 'TNA'], array_column($pack['countries'], 'code'));
@@ -109,7 +109,9 @@ final class SseIdentityPackServiceTest extends TestCase
             array_keys($pack['identities'][0])
         );
         self::assertCount(2, $pack['identities']);
-        self::assertSame(['ref', 'last_name', 'first_name', 'alias', 'level', 'person_id'], array_keys($pack['watch'][0]));
+        // Champs du contrat d'abord ; ensuite (lots 4 et 5) l'origine en jeu, ignorée par un ancien mod.
+        self::assertSame(['ref', 'last_name', 'first_name', 'alias', 'level', 'person_id', 'game_ref', 'bio_key', 'known_docs', 'status'], array_keys($pack['watch'][0]));
+        self::assertSame(array_keys($pack['watch'][0]), array_keys($pack['watch'][1]));
         self::assertSame(['prioritaire', 'hvt'], array_column($pack['watch'], 'level'));
         self::assertSame(['offset' => 0, 'limit' => 200, 'total' => 2, 'next_offset' => null], $pack['paging']);
     }

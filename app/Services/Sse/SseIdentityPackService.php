@@ -8,6 +8,7 @@ use App\Repositories\SseIdCountryRepository;
 use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SseIdKitRepository;
+use App\Repositories\SseIdOperationRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseWatchlistRepository;
 
@@ -20,6 +21,10 @@ use App\Repositories\SseWatchlistRepository;
  * Attribution d'un papier à un joueur : kits[] (première page seulement), un élément par joueur
  * {uid, user_id, scope, documents[]} ; uid = Steam ID du compte Athena, comparé par le serveur à getPlayerUID.
  * Les identifiants de documents[] renvoient à documents[].id (toutes pages confondues).
+ *
+ * Lot 6 (rétrocompatible, première page seulement) : population[] (identités générées pour la carte et l'opération,
+ * à donner aux IA par camp, catégorie et zone au lieu d'en générer), wanted[] (recherchés et HVT de l'opération, camps
+ * qui y ont accès) et briefs[] (fiche de couverture de chaque joueur, uid = Steam ID).
  */
 final class SseIdentityPackService
 {
@@ -34,6 +39,7 @@ final class SseIdentityPackService
         private ?SseWatchlistRepository $watchlist = null,
         private ?SsePersonRepository $persons = null,
         private ?SseIdKitRepository $kits = null,
+        private ?SseIdOperationRepository $operations = null,
     ) {
         $this->documents ??= new SseIdDocumentRepository();
         $this->identities ??= new SseIdentityRepository();
@@ -41,6 +47,7 @@ final class SseIdentityPackService
         $this->watchlist ??= new SseWatchlistRepository();
         $this->persons ??= new SsePersonRepository();
         $this->kits ??= new SseIdKitRepository();
+        $this->operations ??= new SseIdOperationRepository();
     }
 
     /**
@@ -126,6 +133,9 @@ final class SseIdentityPackService
             'documents' => $documents,
             'watch' => $offset === 0 ? $this->watch($tenantId, $mapId) : [],
             'kits' => $offset === 0 ? $this->kits->forPack($tenantId, $mapId, $opKey) : [],
+            'population' => $offset === 0 ? $this->operations->populationForPack($tenantId, $mapId, $opKey) : [],
+            'wanted' => $offset === 0 ? $this->wanted($tenantId, $mapId, $opKey) : [],
+            'briefs' => $offset === 0 ? $this->operations->briefsForPack($tenantId, $mapId, $opKey) : [],
             'paging' => [
                 'offset' => $offset,
                 'limit' => $limit,
@@ -150,13 +160,20 @@ final class SseIdentityPackService
     {
         $out = [];
         foreach ($this->watchlist->listActive($tenantId) as $e) {
+            $level = (string) ($e['threat_level'] ?? '');
+            // Champs du contrat, puis (lots 4 et 5, ignorés par un ancien mod) l'origine en jeu : référence, visage,
+            // papiers connus, étape de la chasse.
             $out[] = [
                 'ref' => 'WL-' . (int) $e['id'],
                 'last_name' => (string) $e['last_name'],
                 'first_name' => (string) $e['first_name'],
                 'alias' => (string) ($e['alias'] ?? ''),
-                'level' => $e['threat_level'] === 'prioritaire' ? 'prioritaire' : 'surveillance',
+                'level' => in_array($level, ['prioritaire', 'hvt'], true) ? $level : 'surveillance',
                 'person_id' => null,
+                'game_ref' => (string) ($e['game_ref'] ?? ''),
+                'bio_key' => (string) ($e['bio_key'] ?? ''),
+                'known_docs' => array_values($e['known_docs'] ?? []),
+                'status' => (string) ($e['game_status'] ?? ''),
             ];
             if (count($out) >= self::MAX_WATCH) {
                 return $out;
@@ -170,10 +187,41 @@ final class SseIdentityPackService
                 'alias' => (string) ($p['alias'] ?? ''),
                 'level' => 'hvt',
                 'person_id' => (int) $p['id'],
+                'game_ref' => '',
+                'bio_key' => '',
+                'known_docs' => [],
+                'status' => '',
             ];
             if (count($out) >= self::MAX_WATCH) {
                 break;
             }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Recherchés et HVT de l'opération : sides = camps qui y ont accès (vide = tous), documents = papiers émis connus.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function wanted(int $tenantId, int $mapId, ?string $opKey): array
+    {
+        $out = [];
+        foreach ($this->operations->wantedForPack($tenantId, $mapId, $opKey) as $w) {
+            $out[] = [
+                'ref' => $w['ref'],
+                'identity_id' => $w['identity_id'],
+                'person_id' => $w['person_id'],
+                'last_name' => $w['last_name'],
+                'first_name' => $w['first_name'],
+                'alias' => $w['alias'],
+                'level' => $w['level'],
+                'sides' => $w['sides'],
+                'zone' => $w['zone'],
+                'documents' => $w['documents'],
+                'has_photo' => $w['photo_path'] !== null,
+            ];
         }
 
         return $out;

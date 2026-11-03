@@ -2,6 +2,42 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.3.0 — couvertures, infiltrés, HVT et BOLO (03/11/2026)[/h1]
+[b]Relance Arma complètement.[/b] À utiliser avec le pack ATAK 3.0.2 (fonctionne avec le 3.0.1 ; l'alerte discrète en vibreur seul demande le 3.0.2).
+
+[list]
+[*] Infiltrés : un joueur (ou une IA) peut vivre sous une identité de couverture. Tant qu'elle tient, les ennemis le prennent pour un civil (réglage). Elle saute sur une arme visible, une tenue militaire, un tir, une zone interdite, un contrôle raté ou trop de soupçons : les ennemis proches sont alertés et le joueur est prévenu discrètement.
+[*] Légende complète de chaque identité : adresse, employeur, profession, téléphone, contacts, documents complémentaires, historique, famille, langues, phrases types, sujets sensibles, secrets. Le brief de couverture préparé sur Athena est repris.
+[*] Nouvelle app ATAK « Ma couverture » : votre fiche (visible de vous seul), la cohérence de votre couverture et ce qui la trahit, les questions des contrôleurs. Le Zeus voit tous les infiltrés.
+[*] Questions de légende aux checkpoints IA (« D'où venez-vous ? », « Pour qui travaillez-vous ? », « Raison du déplacement ? ») : réponse au choix dans l'app ou le menu ACE personnel. Une mauvaise réponse éveille les soupçons. Vous pouvez aussi interroger une IA (menu ACE › Contrôle d'identité › Poser une question) : elle répond selon la qualité de sa couverture.
+[*] Contrôle ID : comparaison du visage (N4) avec le téléphone ou un SEEK. Une HVT est reconnue même sous un faux nom, avec un taux de confiance.
+[*] HVT : « Confirmer le PID » après une identification ; le dossier de la chasse aux HVT de l'ATAK passe en FIX, la capture ou la neutralisation donne le JACKPOT et ouvre l'exploitation SSE.
+[*] Zeus : Couverture (infiltrer, brûler, lever), Zone interdite, Désigner HVT, BOLO, Lever un BOLO. Les BOLO sont diffusés aux checkpoints, à l'onglet BOLO de Contrôle ID et à l'app Recherchés, et remontés sur Athena.
+[*] Préparation de mission sur Athena : identités préparées pour les IA, recherchés de l'opération par camp, briefs de couverture des joueurs.
+[*] Eden : attribut « Infiltré (couverture) ». Nouveaux réglages (COMSPEC SSE › Identité) : captif tant que la couverture tient, soupçons, distance des témoins, questions de légende, délai pour répondre, comparaison du visage, durée, notification des BOLO.
+[/list]
+
+----------------------------------------
+
+[h1]COMSPEC SSE 1.3.0 — covers, undercover agents, HVT and BOLO (03/11/2026)[/h1]
+[b]Restart Arma completely.[/b] Use with ATAK pack 3.0.2 (works with 3.0.1; the vibrate-only discreet alert needs 3.0.2).
+
+[list]
+[*] Undercover: a player (or an AI) can live under a cover identity. While it holds, enemies take them for a civilian (setting). It is blown by a visible weapon, military clothing, shooting, a restricted zone, a failed check or too much suspicion: nearby enemies are alerted and the player gets a discreet warning.
+[*] Full legend for every identity: address, employer, occupation, phone, contacts, supporting documents, history, family, languages, stock phrases, sensitive topics, secrets. The cover brief prepared on Athena is used.
+[*] New ATAK app "My cover": your sheet (visible to you only), how consistent your cover is and what gives it away, controllers' questions. Zeus sees every undercover agent.
+[*] Legend questions at AI checkpoints ("Where are you coming from?", "Who do you work for?", "Reason for travel?"): multiple-choice answer in the app or the ACE self menu. A wrong answer raises suspicion. You can also question an AI (ACE menu › Identity check › Ask a question): it answers according to the quality of its cover.
+[*] ID Check: face comparison (N4) with the phone or a SEEK. An HVT is recognised even under a false name, with a confidence rate.
+[*] HVT: "Confirm PID" after an identification; the ATAK HVT hunt file moves to FIX, capture or kill gives the JACKPOT and opens SSE exploitation.
+[*] Zeus: Cover (put undercover, blow, lift), Restricted zone, Designate HVT, BOLO, Lift a BOLO. BOLOs are issued to checkpoints, the BOLO tab of ID Check and the Wanted app, and sent up to Athena.
+[*] Mission preparation on Athena: prepared identities for AI, operation wanted list per side, players' cover briefs.
+[*] Eden: "Undercover (cover identity)" attribute. New settings (COMSPEC SSE › Identity): captive while the cover holds, suspicion, witness distance, legend questions, time to answer, face comparison, duration, BOLO notification.
+[/list]
+
+----------------------------------------
+
+[i]Rappel / reminder — 1.2.0 :[/i]
+
 [h1]COMSPEC SSE 1.2.0 — contrôle d'identité : IA réalistes et checkpoints (03/11/2026)[/h1]
 [b]Relance Arma complètement.[/b] À utiliser avec le pack ATAK 3.0.1 ; partage de la fiche de contrôle (Bluetooth, NFC), « Sur mon téléphone » et alerte en vibreur seul avec le pack ATAK 3.0.2.
 
@@ -35,8 +71,6 @@ NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 [/list]
 
 ----------------------------------------
-
-[i]Rappel / reminder — 1.1.2 :[/i]
 
 [h1]COMSPEC SSE 1.1.2 — mesure des performances (03/11/2026)[/h1]
 [b]Relance Arma complètement.[/b] À utiliser avec le pack ATAK 3.0.1.

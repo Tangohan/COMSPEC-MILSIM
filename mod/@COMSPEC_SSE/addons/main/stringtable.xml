@@ -5102,5 +5102,15 @@
             <English>With the native ATAK: the DL-7 cable downloads a device (required only if the ATAK setting asks for it).</English>
             <French>Avec l'ATAK natif : le câble DL-7 sert à télécharger un support (obligatoire seulement si le réglage ATAK le demande).</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_Undercover">
+            <Original>Undercover (cover identity)</Original>
+            <English>Undercover (cover identity)</English>
+            <French>Infiltré (couverture)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_UndercoverTip">
+            <Original>Lives under a cover identity from the start: cover papers and legend, captive while the cover holds (setting), blown by a visible weapon, military clothing, shooting, a restricted zone or a failed check.</Original>
+            <English>Lives under a cover identity from the start: cover papers and legend, captive while the cover holds (setting), blown by a visible weapon, military clothing, shooting, a restricted zone or a failed check.</English>
+            <French>Vit sous une identité de couverture dès le début : papiers « couverture » et légende, captif tant que la couverture tient (réglage), brûlée par une arme visible, une tenue militaire, un tir, une zone interdite ou un contrôle raté.</French>
+        </Key>
     </Package>
 </Project>

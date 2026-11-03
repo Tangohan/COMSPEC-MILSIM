@@ -8,6 +8,9 @@
       athena   "PAYS|type|numéro" -> document Athena (paquet)    countries  pays du paquet
       tokens   "poste|docId" -> fin de validité     flood  poste -> dernière demande     begin  "poste|op|cible" -> début
       controlled  netId -> [heure, contrôleur, libellé] (personnes contrôlées : interpellation au compte rendu AAR)
+      Lot 4 et 5 : legends (clé -> légende, fn_idLegend) · covers (netId -> infiltration, fn_idCover) · forbidden (zones)
+        questions (fn_idQuestion) · hvts (clé -> HVT) · bolos (réf. -> BOLO) · pidSeen (fn_idHvt) · briefs (uid -> brief
+        RP du paquet) · population (identités préparées sur Athena, remises aux IA par « ensure »)
       aarSeen  constats déjà inscrits au compte rendu AAR (une ligne par document et par verdict)
     [_op, _args] call comspec_sse_fnc_idRegistry
       "init"                 crée le registre (XEH_postInit serveur)
@@ -76,6 +79,8 @@ switch (_op) do {
         _args params [["_u", objNull]];
         if (isNull _u || {!alive _u} || {!(missionNamespace getVariable ["comspec_sse_id_enabled", true])}) exitWith { false };
         if ((_u getVariable ["COMSPEC_ID_Carry", "auto"]) isNotEqualTo "auto") then { ["ensure", [_u]] call comspec_sse_fnc_idRegistry; };
+        // Attribut Eden « Infiltré (couverture) » : infiltration ouverte une fois les papiers posés.
+        if (_u getVariable ["COMSPEC_ID_Undercover", false]) then { [{ ["start", [_this, createHashMap]] call comspec_sse_fnc_idCover; }, _u, 2] call CBA_fnc_waitAndExecute; };
         private _types = createHashMapFromArray [["COMSPEC_ID_Card", "id_card"], ["COMSPEC_ID_Passport", "passport"], ["COMSPEC_ID_DrivingLicense", "driving_license"]];
         {
             private _cls = _x select 0;
@@ -112,6 +117,39 @@ switch (_op) do {
             } forEach _ath;
             true
         };
+        // Population préparée sur Athena (paquet, bloc « population ») : une identité du même camp et de la même catégorie
+        // (civil, militaire, suspect, HVT), avec ses papiers émis, remise une seule fois.
+        private _pop = _reg getOrDefault ["population", []];
+        private _given = 0;
+        if (_pop isNotEqualTo [] && {!isPlayer _u} && {(_u getVariable ["COMSPEC_ID_Carry", "auto"]) isEqualTo "auto"} && {missionNamespace getVariable ["comspec_sse_id_aiPapers", true]}) then {
+            private _sk = ["east", "west", "guer", "civ"] select (([east, west, independent, civilian] find (side group _u)) max 0);
+            private _bdb = toLower (_u getVariable ["COMSPEC_SSE_BioDb", "auto"]);
+            private _pc = call {
+                if (_bdb isEqualTo "bewl1") exitWith { "hvt" };
+                if (_bdb in ["bewl2", "bewl3"]) exitWith { "suspect" };
+                if (_sk isEqualTo "civ") exitWith { "civilian" };
+                "military"
+            };
+            // Zone du RENS (nom de marqueur) : d'abord une entrée de la zone où se trouve l'IA, sinon une entrée sans zone.
+            private _inZone = { private _z = _this getOrDefault ["zone", ""]; _z isEqualType "" && {_z in allMapMarkers} && {_u inArea _z} };
+            private _noZone = { private _z = _this getOrDefault ["zone", ""]; !(_z isEqualType "") || {_z isEqualTo ""} || {!(_z in allMapMarkers)} };
+            private _fits = { (_this getOrDefault ["side", "civ"]) isEqualTo _sk && {(_this getOrDefault ["category", "civilian"]) isEqualTo _pc} };
+            private _i = _pop findIf { (_x call _fits) && {_x call _inZone} };
+            if (_i < 0) then { _i = _pop findIf { (_x call _fits) && {_x call _noZone} }; };
+            if (_i < 0 && {_pc in ["suspect", "hvt"]}) then { _i = _pop findIf { (_x getOrDefault ["side", "civ"]) isEqualTo _sk && {(_x call _inZone) || {_x call _noZone}} }; };
+            if (_i >= 0) then {
+                private _p = _pop deleteAt _i;
+                private _byId = _reg getOrDefault ["athenaById", createHashMap];
+                {
+                    private _k = _byId getOrDefault [_x, ""];
+                    if (_k isNotEqualTo "") then {
+                        private _spec = ["athenaSpec", _k] call comspec_sse_fnc_idModuleGive;
+                        if ((count _spec) > 0) then { _spec set ["materialize", false]; [_u, _spec] call comspec_sse_fnc_idIssue; _given = _given + 1; };
+                    };
+                } forEach (_p getOrDefault ["documents", []]);
+            };
+        };
+        if (_given > 0) exitWith { true };
         private _carry = _u getVariable ["COMSPEC_ID_Carry", "auto"];
         private _kind = _u getVariable ["COMSPEC_ID_Kind", "civil"];
         private _quality = _u getVariable ["COMSPEC_ID_Quality", 60];

@@ -316,6 +316,13 @@ final class MemberIdentityPapersController
         } catch (\Throwable $e) {
             error_log('Mes papiers indisponibles : ' . $e->getMessage());
         }
+        $briefs = [];
+        try {
+            // Fiche de couverture remise au joueur (COMSPEC IDENTITY, lot 6) : la sienne seulement.
+            $briefs = (new \App\Repositories\SseIdOperationRepository())->briefsForUser($tenantId, $userId);
+        } catch (\Throwable $e) {
+            error_log('Mes papiers : briefs indisponibles : ' . $e->getMessage());
+        }
 
         return Response::view('layout.main', [
             'title' => 'Mes papiers',
@@ -328,6 +335,7 @@ final class MemberIdentityPapersController
             'boPageSubtitle' => 'Les papiers d’identité fictifs que votre personnage porte en mission. Ils sont gérés par les responsables de votre communauté.',
             'backOfficePageCss' => ['back-office-member-situation.css', 'sse-papers.css', 'back-office-member-papers.css'],
             'papers' => $data,
+            'briefs' => $briefs,
             'maps' => self::maps(),
         ]);
     }

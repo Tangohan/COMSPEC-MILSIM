@@ -6,6 +6,7 @@
       COMSPEC_ID_Carry    auto | none | card | passport | license | card_license | card_passport
       COMSPEC_ID_Country  auto | ALT | TNA | LVN | MLD          COMSPEC_ID_Kind  civil | cover | forged
       COMSPEC_ID_Quality  0-100 (faux)          COMSPEC_ID_Profile  auto | civil | insurge | hvt | agent | policier (IA réalistes)
+      COMSPEC_ID_Undercover  vrai : infiltré dès le début (couverture, fn_idCover)
     Automatique : les joueurs n'ont rien, les IA ont des papiers selon leur camp (réglages COMSPEC SSE › Identité).
 */
 class COMSPEC_SSE_Papiers {
@@ -91,6 +92,16 @@ class COMSPEC_SSE_Papiers {
             defaultValue = "60";
             validate = "number";
             typeName = "NUMBER";
+            condition = "objectBrain";
+        };
+        class COMSPEC_ID_Undercover {
+            displayName = "$STR_COMSPEC_SSE_ID_Undercover";
+            tooltip = "$STR_COMSPEC_SSE_ID_UndercoverTip";
+            property = "COMSPEC_ID_Undercover";
+            control = "Checkbox";
+            expression = "if (isServer && {_value}) then { _this setVariable ['COMSPEC_ID_Undercover', true]; };";
+            defaultValue = "false";
+            typeName = "BOOL";
             condition = "objectBrain";
         };
     };

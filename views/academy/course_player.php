@@ -22,6 +22,7 @@ $stepsHtml = '';
 <?php else: $chapter=$selected['chapters'][$state['chapter']]; ?>
 <div class="lesson-header">
 <span class="pill"><?= $h($local($selected['title'])) ?></span>
+<?php if (($vi = ($versionInfo ?? [])[(string) $selected['key']] ?? null) !== null): $vKey = (string) $selected['key']; $vLearner = null; require __DIR__ . '/version_badge.php'; endif ?>
 <h2><?= $h($t('chapter')) ?> <?= (int)$state['chapter']+1 ?> — <?= $h($local($chapter['title'])) ?></h2>
 <?php if (!empty($selected['license'])): ?><p class="academy-license-caption"><?= $h($local($selected['license'])) ?></p><?php endif ?>
 <div class="progress-label"><span><?= $h($t('progress')) ?></span><b><?= $percent($state) ?> %</b></div><progress max="100" value="<?= $percent($state) ?>"><?= $percent($state) ?>%</progress>
@@ -63,12 +64,12 @@ $stepsHtml = '';
 <?php $reviewState=$state; $reviewChapter=$chapter; require __DIR__.'/course_review.php'; ?>
 <div class="lesson-text rt"><?= $rich($chapter['debrief']['prompt']??$chapter['feedback']) ?></div>
 <?php if (!empty($chapter['debrief']['criteria'])): ?><ul class="academy-rubric"><?php foreach ($chapter['debrief']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
-<?php $formStart('debrief',$selected['key']); ?><label for="reflection"><?= $h($t('reflection_help')) ?></label><textarea id="reflection" name="reflection" minlength="20" maxlength="5000" rows="10" required></textarea><button class="button"><?= $h($t('send_debrief')) ?> →</button></form>
+<?php $formStart('debrief',$selected['key']); ?><label for="reflection"><?= $h($t('reflection_help')) ?></label><textarea id="reflection" name="reflection" minlength="20" maxlength="5000" rows="10" required></textarea><label class="academy-check"><input type="checkbox" name="nothing_to_improve" value="1" data-nothing-toggle aria-controls="reflection"> <?= $h($t('nothing_to_improve')) ?></label><p class="hint"><?= $h($t('nothing_to_improve_help')) ?></p><button class="button"><?= $h($t('send_debrief')) ?> →</button></form>
 <?php else: ?>
 <span class="completion-icon">◷</span><h2><?= $h($t('pending')) ?></h2><p><?= $h($t('pending_text')) ?></p>
 <?php if (!empty($chapter['validation']['brief'])): ?><div class="lesson-text rt"><?= $rich($chapter['validation']['brief']) ?></div><?php endif ?>
 <?php if (!empty($chapter['validation']['criteria'])): ?><h3><?= $h($t('validation_criteria')) ?></h3><ul class="academy-rubric"><?php foreach ($chapter['validation']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
-<h3><?= $h($t('submitted_debrief')) ?></h3><p class="lesson-text"><?= nl2br($h($state['debriefs'][$state['chapter']]??'')) ?></p>
+<h3><?= $h($t('submitted_debrief')) ?></h3><p class="lesson-text"><?= nl2br($h($debriefText($state['debriefs'][$state['chapter']]??''))) ?></p>
 <?php endif ?>
 </article>
 <?php if ($stage>=2 && empty($state['exam'])): ?>

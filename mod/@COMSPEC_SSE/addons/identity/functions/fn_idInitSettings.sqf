@@ -27,4 +27,14 @@ private _add = {
 ["comspec_sse_id_cpDelay", "SLIDER", ["Délai pour présenter ses papiers (s)", "Temps laissé à un joueur arrêté par un checkpoint IA pour présenter ses papiers (menu ACE personnel › Mes papiers)."], [15, 60, 45, 0]] call _add;
 ["comspec_sse_id_cpAmbient", "CHECKBOX", ["Les checkpoints contrôlent aussi les IA", "Ambiance : de temps en temps, les gardes arrêtent une IA qui passe, lisent ses papiers, puis la laissent partir ou la retiennent."], true] call _add;
 ["comspec_sse_id_curfew", "CHECKBOX", ["Couvre-feu", "Les civils dehors sont plus nerveux quand on les contrôle. Le Zeus peut aussi l'imposer ou le lever en cours de mission."], false] call _add;
+// Couvertures et infiltrés (Lot 4).
+["comspec_sse_id_coverCaptive", "CHECKBOX", ["Infiltré captif tant que sa couverture tient", "Les ennemis ne prennent pas pour cible un infiltré (setCaptive) tant que sa couverture n'est pas brûlée."], true] call _add;
+["comspec_sse_id_coverLimit", "SLIDER", ["Soupçons avant que la couverture saute", "Plus bas : une couverture se brûle plus vite (tenue, équipement, zone interdite, mauvaises réponses, contrôle raté)."], [30, 300, 100, 0]] call _add;
+["comspec_sse_id_coverWitness", "SLIDER", ["Distance des témoins (m)", "Distance à laquelle un ennemi remarque une arme à la main chez un infiltré ; tenue et équipement se voient de moins loin."], [10, 150, 50, 0]] call _add;
+["comspec_sse_id_questions", "CHECKBOX", ["Questions de légende", "Les checkpoints IA posent des questions (« D'où venez-vous ? »…) ; réponses au choix dans l'app Ma couverture ou le menu ACE personnel."], true] call _add;
+["comspec_sse_id_questionTime", "SLIDER", ["Délai pour répondre (s)", "Temps pour répondre à la première question d'un contrôleur (10 s de plus par question suivante)."], [10, 60, 20, 0]] call _add;
+// HVT et biométrie (Lot 5).
+["comspec_sse_id_bio", "CHECKBOX", ["Comparaison du visage (N4)", "App Contrôle ID : photo du visage comparée à la base biométrique et à la photo du document (téléphone ou SEEK)."], true] call _add;
+["comspec_sse_id_bioTime", "SLIDER", ["Durée de la comparaison du visage (s)", "Temps de la photo et de la recherche biométrique N4."], [4, 20, 8, 0]] call _add;
+["comspec_sse_id_boloNotify", "CHECKBOX", ["Notifier les BOLO", "Chaque BOLO ou HVT diffusé par le Zeus s'affiche sur l'ATAK de tous les joueurs (sinon seulement dans l'onglet BOLO)."], true] call _add;
 true

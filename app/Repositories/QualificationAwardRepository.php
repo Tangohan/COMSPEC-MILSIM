@@ -70,6 +70,33 @@ final class QualificationAwardRepository
         }
     }
 
+    /**
+     * Tableau de suivi de l'Academy : attributions de plusieurs fiches en une lecture (titulaire, fiche, échéance, statut).
+     *
+     * @param list<int> $definitionIds
+     * @return list<array{user_id: int|string, definition_id: int|string, expires_at: ?string, status: ?string}>
+     */
+    public function forDefinitions(int $tenantId, array $definitionIds): array
+    {
+        $definitionIds = array_values(array_unique(array_filter(array_map('intval', $definitionIds), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $definitionIds === []) {
+            return [];
+        }
+        try {
+            $status = $this->enrichedReady() ? 'COALESCE(pq.admin_status, pq.status)' : 'pq.status';
+            $st = $this->pdo->prepare(
+                'SELECT pq.user_id, pq.definition_id, pq.expires_at, ' . $status . ' AS status
+                 FROM personnel_qualifications pq
+                 WHERE (pq.tenant_id = ? OR pq.tenant_id IS NULL) AND pq.definition_id IN (' . implode(',', array_fill(0, count($definitionIds), '?')) . ')'
+            );
+            $st->execute(array_merge([$tenantId], $definitionIds));
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
     /** @return array<string, mixed>|null */
     public function find(int $id, ?int $tenantId = null): ?array
     {
