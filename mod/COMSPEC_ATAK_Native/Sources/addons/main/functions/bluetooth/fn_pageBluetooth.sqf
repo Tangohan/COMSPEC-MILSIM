@@ -2,7 +2,10 @@
     App Bluetooth : marche / arrêt (indépendant du mode avion), appairage par code avec un ATAK proche,
     appareils appairés (portée, oubli), demandes reçues (accepter / refuser), transferts en cours, éléments reçus,
     et envoi à un appareil appairé, par onglet : SONS et MUSIQUE (joués par son haut-parleur, ou mes morceaux copiés
-    dans son dossier), PHOTOS (copiées dans sa Galerie), DONNÉES (position, itinéraire, plans) et FICHES (SEEK, SSE).
+    dans son dossier), PHOTOS (copiées dans sa Galerie), DONNÉES (position, itinéraire, plans) et FICHES (SEEK, SSE,
+    CONTRÔLE ID). Vue dédiée d'une fiche CONTRÔLE ID (clé idcView de COMSPEC_ATAK_BtUi, fn_btAction « idcOpen ») :
+    verdict, document, photo, niveaux, contrôleur, heure, position, et partage (appareils appairés, NFC dos à dos),
+    carte et FRM ; affichée même Bluetooth éteint (le NFC n'en a pas besoin).
     Params (app déclarée avec function=) : [page, [x, y, largeur, hauteur]]. Actions : fn_btAction ; listes : fn_btSounds, fn_btItems.
 */
 params [["_page", "BLUETOOTH"], ["_rect", []]];
@@ -22,17 +25,64 @@ private _icon = "\a3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa";
 private _dataDir = "\z\comspec_atak_native\addons\main\data\";
 private _kindIcon = createHashMapFromArray [["snd", _dataDir + "app_music.paa"], ["mus", _dataDir + "app_music.paa"], ["mp3", _dataDir + "app_music.paa"],
     ["pho", _dataDir + "app_gallery.paa"], ["pos", _dataDir + "app_map.paa"], ["wp", _dataDir + "app_waypoints.paa"], ["plan", _dataDir + "app_plan.paa"],
-    ["seek", _dataDir + "app_sse.paa"], ["sse", _dataDir + "app_sse.paa"]];
+    ["seek", _dataDir + "app_sse.paa"], ["sse", _dataDir + "app_sse.paa"], ["idc", _dataDir + "app_sse.paa"]];
 private _kindName = createHashMapFromArray [["snd", "son"], ["mus", "musique"], ["mp3", "morceau (fichier)"], ["pho", "photo"], ["pos", "position"],
-    ["wp", "itinéraire"], ["plan", "plan"], ["seek", "fiche SEEK"], ["sse", "fiche SSE"]];
+    ["wp", "itinéraire"], ["plan", "plan"], ["seek", "fiche SEEK"], ["sse", "fiche SSE"], ["idc", "fiche contrôle ID"]];
 private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_btAction;", str _a, str _v] };
+// Vue dédiée d'une fiche CONTRÔLE ID (reçue ou à partager).
+private _idcKey = _ui getOrDefault ["idcView", ""];
+if (_idcKey isNotEqualTo "") exitWith {
+    private _rows = ["idcRows", _idcKey] call comspec_atak_native_fnc_btItems;
+    private _have = (count (["idcGet", _idcKey] call comspec_atak_native_fnc_btItems)) > 0;
+    _rows pushBack ["buttons", [["‹ RETOUR", ["idcClose"] call _act], ["CARTE", ["idcMap", _idcKey] call _act, false, _have], ["JOINDRE À UNE FRM", ["idcFrm", _idcKey] call _act, true, _have]]];
+    if (_have) then {
+        _rows pushBack ["section", "Partager la fiche", format ["Bluetooth : appareils appairés à moins de %1 m · NFC : téléphones dos à dos", round _range]];
+        if (_usable) then {
+            private _near = [];
+            {
+                private _uid = _x;
+                private _i = allPlayers findIf { getPlayerUID _x isEqualTo _uid };
+                private _u = if (_i < 0) then { objNull } else { allPlayers select _i };
+                if (!isNull _u && {_u getVariable ["COMSPEC_ATAK_BtOn", false]} && {(_u distance player) <= _range}) then { _near pushBack [_uid, _y, round (_u distance player)]; };
+            } forEach (_bt get "paired");
+            if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun appareil appairé à portée. Appairez-le dans l'app Bluetooth (code), ou passez par le NFC.</t>"]; };
+            {
+                _x params ["_uid", "_name", "_dist"];
+                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>ATAK de %1</t><br/><t size='0.8' color='%2'>connecté · %3 m</t>", [_name] call _esc, _accHex, _dist],
+                    [["ENVOYER", ["idcSend", [_idcKey, _uid]] call _act, true]], _acc];
+            } forEach _near;
+        } else {
+            _rows pushBack ["text", "<t color='#8a9a93'>Bluetooth éteint : allumez-le pour envoyer la fiche à un appareil appairé.</t>"];
+            _rows pushBack ["buttons", [["ALLUMER LE BLUETOOTH", ["toggle"] call _act, false]]];
+        };
+        _rows pushBack ["buttons", [["NFC · DOS À DOS", ["idcNfc", _idcKey] call _act, false, ([] call comspec_atak_native_fnc_canUse) isEqualTo "",
+            format ["Posez votre téléphone contre celui d'un équipier (moins de %1 m) : il accepte ou refuse la fiche", missionNamespace getVariable ["comspec_atak_native_bt_nfc_range", 2]]]]];
+    };
+    [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    true
+};
+// Demandes NFC (fiches CONTRÔLE ID) : acceptées même Bluetooth éteint.
+private _pendRows = {
+    params ["_list"];
+    {
+        _x params ["_id", "", "_name", "_kind", "", "_title", "_at", ["_nfc", false]];
+        _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · %3%4 · expire dans %5 s</t>",
+            [_title] call _esc, [_name] call _esc, _kindName getOrDefault [_kind, "élément"], ["", " · NFC"] select (_nfc isEqualTo true), round (60 - (_now - _at))],
+            [["ACCEPTER", ["accept", _id] call _act, true], ["REFUSER", ["refuse", _id] call _act]], _acc];
+    } forEach _list;
+};
 private _rows = [
     ["switch", "Bluetooth", _on, ["toggle"] call _act, format ["ATAK de %1 · visible des téléphones à moins de %2 m", [name player] call _esc, round _range]],
     ["switch", "Mode avion", _air, { ["toggle"] call comspec_atak_native_fnc_airplaneMode; }, "Coupe le réseau (synchro, SMS, BFT). Le Bluetooth reste disponible."]
 ];
 if (!_on) exitWith {
     _rows pushBack ["text", "<t color='#8a9a93'>Bluetooth désactivé. Activez-le pour appairer un ATAK proche et échanger photos, musiques, données et fiches.</t>"];
+    private _nfcPend = (_bt get "pending") select { (_now - (_x select 6)) <= 60 && {(_x param [7, false]) isEqualTo true} };
+    if (_nfcPend isNotEqualTo []) then {
+        _rows pushBack ["section", "Demandes NFC", "Fiches de contrôle d'identité tendues dos à dos"];
+        [_nfcPend] call _pendRows;
+    };
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
@@ -58,12 +108,7 @@ _rows append [
 private _pend = (_bt get "pending") select { (_now - (_x select 6)) <= 60 };
 if ((count _pend) > 0) then {
     _rows pushBack ["section", "Demandes reçues", "Un son sort du haut-parleur ; un fichier, une donnée ou une fiche est rangé sur le téléphone"];
-    {
-        _x params ["_id", "", "_name", "_kind", "", "_title", "_at"];
-        _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · %3 · expire dans %4 s</t>",
-            [_title] call _esc, [_name] call _esc, _kindName getOrDefault [_kind, "élément"], round (60 - (_now - _at))],
-            [["ACCEPTER", ["accept", _id] call _act, true], ["REFUSER", ["refuse", _id] call _act]], _acc];
-    } forEach _pend;
+    [_pend] call _pendRows;
 };
 
 // Transferts en cours (envoi et réception de fichiers).
@@ -123,7 +168,7 @@ if (_target isNotEqualTo "") then {
         case "mus": { "Mes fichiers : le morceau est copié dans son app Musique. Serveur : joué par son haut-parleur" };
         case "pho": { "La photo est copiée dans sa Galerie (quelques secondes, restez à portée)" };
         case "data": { "Position (repère 10 min), itinéraire (app Points de passage), plans (app Plan), notes (Bloc-notes)" };
-        default { "Fiches SEEK (journal du terminal) et fiches SSE (personnes enregistrées au SEEK)" };
+        default { "Fiches SEEK (journal du terminal), fiches SSE (personnes enregistrées au SEEK) et fiches CONTRÔLE ID" };
     };
     _rows append [
         ["section", format ["Envoyer à %1", [_paired getOrDefault [_target, ""]] call _esc], _hint],
@@ -138,7 +183,7 @@ if (_target isNotEqualTo "") then {
         _rows pushBack ["text", format ["<t color='#8a9a93'>%1</t>", switch (_tab) do {
             case "pho": { ["Aucune photo sur le téléphone. Prenez-en avec l'app Photo.", "Photos indisponibles : liaison Overwatch absente."] select !([] call comspec_atak_native_fnc_bridge) };
             case "mus": { "Aucun morceau. Déposez des MP3 dans Documents\Arma 3\COMSPEC_Music (app Musique, Mes fichiers)." };
-            case "sheet": { "Aucune fiche. Elles viennent du terminal SEEK : interrogations (fiches SEEK) et personnes enregistrées (fiches SSE)." };
+            case "sheet": { "Aucune fiche. Elles viennent du terminal SEEK : interrogations (fiches SEEK) et personnes enregistrées (fiches SSE), et de l'app Contrôle ID (fiches CONTRÔLE ID)." };
             default { "Rien trouvé." };
         }]];
     };
@@ -171,13 +216,19 @@ if ((count _inbox) > 0) then {
             case "plan": { "dans la bibliothèque de l'app Plan" };
             case "pos": { "repère sur la carte" };
             case "seek": { "aussi dans le journal du terminal SEEK" };
+            case "idc": { "vue dédiée" };
             default { "" };
         };
         private _canView = !(_kind in ["pho", "mp3"]);
+        // Fiche CONTRÔLE ID : VOIR ouvre sa vue dédiée.
+        private _open = if (_kind isEqualTo "idc") then {
+            private _k = (createHashMapFromArray ((_data select { _x isEqualType [] && {(count _x) isEqualTo 2} }))) getOrDefault ["key", ""];
+            ["idcOpen", _k] call _act
+        } else { ["view", _id] call _act };
         _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · de %3 · %4%5</t>",
             [_title] call _esc, _kindName getOrDefault [_kind, "élément"], [_from] call _esc, _hh, ["", format [" · %1", _where]] select (_where isNotEqualTo "")],
-            [[["VOIR", "FERMER"] select (_view isEqualTo _id), ["view", _id] call _act, false, _canView]], [[0.55, 0.6, 0.58, 1], _acc] select (_view isEqualTo _id)];
-        if (_view isEqualTo _id && {_canView}) then {
+            [[["VOIR", "FERMER"] select (_view isEqualTo _id), _open, false, _canView]], [[0.55, 0.6, 0.58, 1], _acc] select (_view isEqualTo _id)];
+        if (_view isEqualTo _id && {_canView} && {_kind isNotEqualTo "idc"}) then {
             private _lines = ["sheetLines", [_kind, _data]] call comspec_atak_native_fnc_btItems;
             _rows pushBack ["text", (_lines apply { format ["<t size='0.8' color='#8a9a93'>%1</t>  <t size='0.85'>%2</t>", [_x select 0] call _esc, [_x select 1] call _esc] }) joinString "<br/>"];
         };
