@@ -1,3 +1,29 @@
+[h1]COMSPEC ATAK — Mise à jour 3.1.0.AG - Austin[/h1]
+[b]Publication : 03/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 3.1.0, quittez Arma 3 complètement, puis relancez. Pour COMSPEC IDENTITY, gardez COMSPEC SSE à jour (1.3.0).
+[/quote]
+
+[h2]Interface du téléphone refaite[/h2]
+[list]
+[*] Toutes les apps partagent les mêmes couleurs, tailles de texte, boutons, onglets, listes et bandeaux : plus aucun texte minuscule (14 px au moins sur tout écran), les bandeaux de notification et les petits messages trop longs passent sur deux lignes au lieu d'être coupés.
+[*] Trois thèmes, Réglages › Personnalisation › Thème ou tuile Thème du volet rapide : SOMBRE, JOUR (surfaces claires pour le plein soleil) et NUIT JVN (vert phosphore à faible luminance, compatible jumelles de vision nocturne).
+[*] Écran de verrouillage : notifications groupées par app avec leur nombre, point sur le non lu, raccourcis CARTE et MESSAGES. Centre de notifications : onglets avec compteurs, groupes par app, bouton RÉGLER LES ALERTES.
+[*] Lanceur : vraie loupe de recherche, épingle sur les apps épinglées, en-têtes lisibles sur tout fond d'écran. Réglages : liste de catégories avec chevrons, en-tête avec retour, recherche par Entrée. Fiche de marqueur en sections, SUPPRIMER en rouge à part. Debug et Groupe : onglets soulignés.
+[/list]
+
+[h2]Rappel 3.0.4[/h2]
+[list]
+[*] Optimisation : moins de travail à chaque image (carte, synchronisation, liaison), téléphone plus fluide en mission longue.
+[/list]
+
+[h2]Composants[/h2]
+[list]
+[*] Téléphone ATAK 3.1.0.AG - Austin
+[*] COMSPEC Link 2.0.118
+[*] Overwatch connect 1.6.33 · Overwatch main 1.4.8
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 3.0.3.AG - Austin[/h1]
 [b]Publication : 03/11/2026[/b]
 [quote]
