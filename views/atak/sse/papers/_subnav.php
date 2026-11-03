@@ -7,6 +7,7 @@ $papersTabs = [
     'documents' => ['', 'Papiers'],
     'identites' => ['identites', 'Identités'],
     'controles' => ['controles', 'Contrôles reçus'],
+    'pays' => ['pays', 'Pays émetteurs'],
 ];
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '">';
 ?>

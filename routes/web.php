@@ -939,6 +939,12 @@ return function (Router $router) {
     $router->get('/atak/sse/papiers/documents/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents/{id}/statuts', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStatuses'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents/{id}/cycle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentWorkflow'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/pays', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countriesIndex'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/pays/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/pays', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryStore'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/pays/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/pays/{id}/archiver', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryArchive'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/pays/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryUpdate'], $mwSsePortal);
     $router->get('/atak/sse/papiers/controles', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checksIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/controles/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checkShow'], $mwSsePortal);
     $router->get('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectCreateForm'], $mwSsePortal);
@@ -1377,6 +1383,7 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/carnet-de-vol/ajouter', [PilotLogbookController::class, 'add'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/modifier', [PilotLogbookController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/supprimer', [PilotLogbookController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/mes-papiers', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'mine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/liaison-atak', [MemberSituationController::class, 'liaisonAtak'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/appareils', [MemberSituationController::class, 'appareils'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Musique (Mon espace) : bibliothèque musicale partagée avec l'app Musique de l'ATAK natif (MusicLibraryController).
@@ -1996,6 +2003,15 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'adequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/chaine/adequation', [EffectifsWorkspaceController::class, 'saveAdequacySettings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/qualifications', [EffectifsWorkspaceController::class, 'qualifications'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Fiche membre › Identité & papiers (COMSPEC IDENTITY) : identités, papiers, kit de mission.
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}/modifier', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/documents', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}/action', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/kit', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

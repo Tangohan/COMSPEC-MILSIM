@@ -2,6 +2,32 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.1.1 — papiers des joueurs depuis Athena (03/11/2026)[/h1]
+[b]Relance Arma complètement.[/b] Le kit de papiers demande la liaison Athena (COMSPEC Link 2.0.118, pack ATAK 3.0.0).
+
+[list]
+[*] Kit de mission : les papiers choisis sur Athena (fiche membre › Identité & papiers) sont remis automatiquement au joueur dont le compte est lié à Steam, à l'arrivée sur le serveur, en cours de partie et après chaque réapparition.
+[*] Les papiers ne sont plus perdus au respawn (réglage « Rendre les papiers du kit au respawn », activé par défaut).
+[*] Pays émetteurs de la communauté : nom anglais affiché sur le téléphone en anglais, autorité de délivrance reprise ; un pays archivé ne délivre plus de papiers mais ceux déjà émis restent lisibles.
+[*] Les contrôles d'un joueur remontent sur sa fiche Athena (« Contrôles subis »).
+[/list]
+
+----------------------------------------
+
+[h1]COMSPEC SSE 1.1.1 — players' papers from Athena (03/11/2026)[/h1]
+[b]Restart Arma completely.[/b] The papers kit needs the Athena link (COMSPEC Link 2.0.118, ATAK pack 3.0.0).
+
+[list]
+[*] Mission kit: papers chosen on Athena (member profile › Identity & papers) are handed automatically to the player whose account is linked to Steam, when joining the server, mid-game and after every respawn.
+[*] Papers are no longer lost on respawn ("Return kit papers on respawn" setting, on by default).
+[*] Community issuing countries: English name shown on a phone set to English, issuing authority used; an archived country no longer issues papers but those already issued stay readable.
+[*] Checks of a player now appear on their Athena profile ("Checks undergone").
+[/list]
+
+----------------------------------------
+
+Rappel de la version précédente / previous version:
+
 [h1]COMSPEC SSE 1.1.0 — contrôle d'identité (03/11/2026)[/h1]
 [b]Relance Arma complètement.[/b] Les contrôles en ligne (documents et base Athena) demandent COMSPEC Link 2.0.118 (pack ATAK 3.0.0) ; sans lui, tout fonctionne hors ligne.
 

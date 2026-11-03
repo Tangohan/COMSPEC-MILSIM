@@ -1,13 +1,16 @@
 /*
     Pays FICTIFS des documents (codes hors ISO, mention SIMULATION sur tous les gabarits).
     [] call comspec_sse_fnc_idCountries            -> HashMap code -> HashMap pays
-    ["default"] call comspec_sse_fnc_idCountries   -> code du pays de la mission (réglage, sinon selon la carte)
+    ["default"] call comspec_sse_fnc_idCountries   -> code du pays de la mission (réglage, sinon selon la carte ; pays
+                                                      archivé sur Athena : premier pays actif)
+    ["usable", [code, type]] call …                -> Boolean : le pays délivre encore ce type (actif, doc_types)
     Pays : code, name (FR), nameEn, mrz (code MRZ), number_format (# chiffre, @ lettre), authority, validity, chip,
-    first / firstF / last / cities (réservoirs de noms). Mêmes valeurs que le site (SseIdCountryRepository,
+    first / firstF / last / cities (réservoirs de noms) ; du paquet : theme, languages, docTypes, colors, active
+    (false : pays archivé, plus de papiers générés, ceux déjà émis restent lisibles). Mêmes valeurs que le site (SseIdCountryRepository,
     SseIdentityGeneratorService, régions ALTIS / TANOA / LIVONIA / MALDEN) : une graine donne la même identité et le
     même numéro en jeu et sur Athena. Le paquet Athena (fn_idAthenaPack) peut en ajouter ou en corriger.
 */
-params [["_mode", ""]];
+params [["_mode", ""], ["_args", []]];
 private _base = missionNamespace getVariable "comspec_sse_idCountryBase";
 if (isNil "_base") then {
     _base = createHashMap;
@@ -45,13 +48,27 @@ if (isNil "_base") then {
 
 if (_mode isEqualTo "default") exitWith {
     private _set = missionNamespace getVariable ["comspec_sse_id_country", "auto"];
-    if (_set isNotEqualTo "auto" && {_set in _base}) exitWith { _set };
-    switch (toLower worldName) do {
-        case "tanoa": { "TNA" };
-        case "enoch": { "LVN" };
-        case "malden": { "MLD" };
-        default { "ALT" };
-    }
+    private _code = if (_set isNotEqualTo "auto" && {_set in _base}) then { _set } else {
+        switch (toLower worldName) do {
+            case "tanoa": { "TNA" };
+            case "enoch": { "LVN" };
+            case "malden": { "MLD" };
+            default { "ALT" };
+        }
+    };
+    // Pays archivé sur Athena : premier pays encore actif (intégrés d'abord, puis ceux du paquet).
+    private _all = [] call comspec_sse_fnc_idCountries;
+    if ((_all getOrDefault [_code, createHashMap]) getOrDefault ["active", true]) exitWith { _code };
+    private _codes = ["ALT", "TNA", "LVN", "MLD"] + ((keys _all) - ["ALT", "TNA", "LVN", "MLD"]);
+    private _i = _codes findIf { (_all getOrDefault [_x, createHashMap]) getOrDefault ["active", true] };
+    [_code, _codes select _i] select (_i >= 0)
+};
+if (_mode isEqualTo "usable") exitWith {
+    _args params [["_code", ""], ["_type", ""]];
+    private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [_code, createHashMap];
+    if ((count _c) isEqualTo 0 || {!(_c getOrDefault ["active", true])}) exitWith { false };
+    private _t = _c getOrDefault ["docTypes", []];
+    _t isEqualTo [] || {_type isEqualTo ""} || {_type in _t}
 };
 
 // Pays du paquet Athena (serveur) par-dessus les pays intégrés (le nom d'affichage intégré est gardé s'il existe).

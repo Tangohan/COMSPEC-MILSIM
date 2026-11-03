@@ -24,6 +24,12 @@ private _country = _spec getOrDefault ["country", ""];
 if (_country isEqualTo "" || {_country isEqualTo "auto"}) then { _country = ["default"] call comspec_sse_fnc_idCountries; };
 private _countries = [] call comspec_sse_fnc_idCountries;
 if !(_country in _countries) then { _country = ["default"] call comspec_sse_fnc_idCountries; };
+// Papier généré en mission : seulement par un pays actif qui délivre ce type (pays archivé sur Athena : ses papiers
+// déjà émis, repris du paquet avec athenaId, restent valables et lisibles).
+if ((_spec getOrDefault ["athenaId", ""]) isEqualTo "" && {!(["usable", [_country, _type]] call comspec_sse_fnc_idCountries)}) then {
+    private _def = ["default"] call comspec_sse_fnc_idCountries;
+    if (_def in _countries) then { _country = _def; };
+};
 private _c = _countries get _country;
 private _kind = _spec getOrDefault ["kind", "civil"];
 if !(_kind in ["civil", "cover", "forged", "generated", "alias"]) then { _kind = "civil"; };

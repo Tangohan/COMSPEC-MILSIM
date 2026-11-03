@@ -19,7 +19,7 @@ final class SseIdDocumentRepository
     public const PACK_MAX_PER_MAP = 500;
 
     private const SELECT = 'SELECT d.*, i.last_name AS identity_last_name, i.first_name AS identity_first_name, i.kind AS identity_kind,
-            i.person_id AS identity_person_id, i.sex AS identity_sex, i.birth_date AS identity_birth_date, i.nationality AS identity_nationality
+            i.person_id AS identity_person_id, i.user_id AS identity_user_id, i.sex AS identity_sex, i.birth_date AS identity_birth_date, i.nationality AS identity_nationality
         FROM sse_id_documents d JOIN sse_identities i ON i.id = d.identity_id AND i.tenant_id = d.tenant_id';
 
     private Database $db;
@@ -74,12 +74,79 @@ final class SseIdDocumentRepository
         );
     }
 
-    public function numberExists(int $tenantId, string $country, string $type, string $number): bool
+    public function numberExists(int $tenantId, string $country, string $type, string $number, int $exceptId = 0): bool
     {
-        return $this->db->fetchOne(
+        $row = $this->db->fetchOne(
             'SELECT id FROM sse_id_documents WHERE tenant_id = :t AND country_code = :c AND doc_type = :type AND doc_number = :n',
             ['t' => $tenantId, 'c' => strtoupper($country), 'type' => $type, 'n' => self::normalizeNumber($number)]
-        ) !== null;
+        );
+
+        return $row !== null && (int) $row['id'] !== $exceptId;
+    }
+
+    /**
+     * Modifie le numéro, les dates, l'autorité, la carte, l'opération et les notes (papier non révoqué).
+     *
+     * @param array<string, mixed> $data
+     */
+    public function updateDetails(int $id, int $tenantId, array $data): bool
+    {
+        $ctx = (int) ($data['context_id'] ?? 0);
+        $op = trim((string) ($data['op_key'] ?? ''));
+
+        return $this->db->execute(
+            "UPDATE sse_id_documents SET doc_number = :number, issued_on = :issued, expires_on = :expires, authority = :authority,
+                context_id = :ctx, op_key = :op, notes = :notes, updated_at = :now
+             WHERE id = :id AND tenant_id = :t AND workflow <> 'revoked'",
+            [
+                'number' => self::normalizeNumber((string) ($data['doc_number'] ?? '')),
+                'issued' => self::date($data['issued_on'] ?? null),
+                'expires' => self::date($data['expires_on'] ?? null),
+                'authority' => ($a = trim((string) ($data['authority'] ?? ''))) !== '' ? mb_substr($a, 0, 160) : null,
+                'ctx' => $ctx > 0 ? $ctx : null,
+                'op' => $op !== '' ? mb_substr($op, 0, 64) : null,
+                'notes' => ($n = trim((string) ($data['notes'] ?? ''))) !== '' ? mb_substr($n, 0, 4000) : null,
+                'now' => gmdate('Y-m-d H:i:s'),
+                'id' => $id,
+                't' => $tenantId,
+            ]
+        ) > 0;
+    }
+
+    /** Signalement porté sur le papier (perdu, volé…), sans toucher aux autres statuts. */
+    public function setReport(int $id, int $tenantId, string $report): bool
+    {
+        if (!isset(SseIdentityCatalog::REPORTS[$report])) {
+            return false;
+        }
+
+        return $this->db->execute(
+            'UPDATE sse_id_documents SET st_report = :r, updated_at = :now WHERE id = :id AND tenant_id = :t',
+            ['r' => $report, 'now' => gmdate('Y-m-d H:i:s'), 'id' => $id, 't' => $tenantId]
+        ) > 0;
+    }
+
+    /** Supprime un brouillon (jamais un papier validé, émis ou révoqué) et le retire des kits. */
+    public function deleteDraft(int $id, int $tenantId): bool
+    {
+        $done = $this->db->execute(
+            "DELETE FROM sse_id_documents WHERE id = :id AND tenant_id = :t AND workflow = 'draft'",
+            ['id' => $id, 't' => $tenantId]
+        ) > 0;
+        if ($done) {
+            $this->db->execute('DELETE FROM sse_id_kits WHERE document_id = :id AND tenant_id = :t', ['id' => $id, 't' => $tenantId]);
+        }
+
+        return $done;
+    }
+
+    /** Nombre de papiers d'un pays (un pays utilisé ne se supprime pas : il s'archive). */
+    public function countForCountry(int $tenantId, string $country): int
+    {
+        return (int) ($this->db->fetchOne(
+            'SELECT COUNT(*) AS n FROM sse_id_documents WHERE tenant_id = :t AND country_code = :c',
+            ['t' => $tenantId, 'c' => strtoupper(trim($country))]
+        )['n'] ?? 0);
     }
 
     /** @return array<string, mixed>|null */
@@ -118,7 +185,7 @@ final class SseIdDocumentRepository
     }
 
     /**
-     * @param array{workflow?: string, doc_type?: string, country_code?: string, origin?: string, q?: string, identity_id?: int, holder_person_id?: int, limit?: int} $filters
+     * @param array{workflow?: string, doc_type?: string, country_code?: string, origin?: string, q?: string, identity_id?: int, user_id?: int, holder_person_id?: int, limit?: int} $filters
      * @return list<array<string, mixed>>
      */
     public function list(int $tenantId, array $filters = []): array
@@ -144,6 +211,10 @@ final class SseIdDocumentRepository
         if ((int) ($filters['identity_id'] ?? 0) > 0) {
             $where[] = 'd.identity_id = :identity';
             $params['identity'] = (int) $filters['identity_id'];
+        }
+        if ((int) ($filters['user_id'] ?? 0) > 0) {
+            $where[] = 'i.user_id = :user';
+            $params['user'] = (int) $filters['user_id'];
         }
         if ((int) ($filters['holder_person_id'] ?? 0) > 0) {
             $where[] = '(d.holder_person_id = :p1 OR i.person_id = :p2)';
@@ -383,6 +454,7 @@ final class SseIdDocumentRepository
                 'first_name' => (string) ($row['identity_first_name'] ?? ''),
                 'kind' => (string) ($row['identity_kind'] ?? ''),
                 'person_id' => ($row['identity_person_id'] ?? null) !== null ? (int) $row['identity_person_id'] : null,
+                'user_id' => ($row['identity_user_id'] ?? null) !== null ? (int) $row['identity_user_id'] : null,
                 'sex' => (string) ($row['identity_sex'] ?? 'X'),
                 'birth_date' => ($row['identity_birth_date'] ?? null) !== null ? substr((string) $row['identity_birth_date'], 0, 10) : null,
                 'nationality' => ($row['identity_nationality'] ?? null) !== null ? (string) $row['identity_nationality'] : null,

@@ -14,6 +14,7 @@
       seize    [moi, cible, _h]          saisie (dans mon inventaire, chaîne de possession)
       return   [moi, cible, classe]      je rends un document saisi
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
+      kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
       give / report / truth / pack       Zeus (curateur) : donner des papiers, signaler, vraie identité, paquet Athena
     Points d'entrée du Lot 3 (checkpoints IA), appel local au serveur seulement :
       ["aiAsk", [ia, joueur]] call comspec_sse_fnc_idServer   l'IA demande ses papiers à un joueur
@@ -75,6 +76,7 @@ private _pub = {
     private _p = createHashMap;
     { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["id", "type", "country", "number", "last", "first", "sex", "dob", "pob", "nat", "profession", "issued", "expires", "authority", "address"];
     _p set ["countryName", _c getOrDefault ["name", _d get "country"]];
+    _p set ["countryNameEn", _c getOrDefault ["nameEn", ""]];
     _p set ["chipLogo", _d getOrDefault ["chipExpected", false]];
     _p set ["mrz", [_d] call comspec_sse_fnc_idMrz];
     // Défauts physiques : visibles par qui regarde bien (le constat N0, lui, dépend du tirage).
@@ -335,6 +337,11 @@ switch (_op) do {
             };
         } forEach (crew _v);
         ["vehicle", [_v, _op, _out]] call _reply;
+    };
+
+    case "kit": {
+        _args params ["", ["_old", objNull, [objNull]]];
+        [_me, _old] call comspec_sse_fnc_idKit;
     };
 
     case "give";

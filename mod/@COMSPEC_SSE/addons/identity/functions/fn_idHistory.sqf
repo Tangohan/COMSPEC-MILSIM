@@ -40,7 +40,8 @@ switch (_op) do {
             private _case = if (isNil "comspec_sse_fnc_getCaseReference") then { "" } else { [] call comspec_sse_fnc_getCaseReference };
             _rec = createHashMapFromArray [
                 ["docId", _id], ["doc", _doc], ["subj", _subj], ["subjName", [name _subj, ""] select (isNull _subj)],
-                ["subjNetId", [netId _subj, ""] select (isNull _subj)], ["subjKey", _key], ["levels", createHashMap],
+                ["subjNetId", [netId _subj, ""] select (isNull _subj)], ["subjKey", _key],
+                ["subjUid", [getPlayerUID _subj, ""] select (isNull _subj || {!isPlayer _subj})], ["levels", createHashMap],
                 ["verdict", "ras"], ["clock", [dayTime, "HH:MM"] call BIS_fnc_timeToString], ["date", date], ["t", time],
                 ["grid", mapGridPosition player], ["pos", getPosASL player], ["case", _case], ["sent", false], ["ref", ""],
                 ["idem", format ["IDCHK-%1-%2-%3", getPlayerUID player, _id, round (serverTime max time)]], ["alerted", false]

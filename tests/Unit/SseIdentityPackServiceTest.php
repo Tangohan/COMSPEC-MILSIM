@@ -85,11 +85,11 @@ final class SseIdentityPackServiceTest extends TestCase
 
         $pack = $this->service()->build(1, 1);
 
-        self::assertSame(['version', 'generated_at', 'map', 'op', 'countries', 'identities', 'documents', 'watch', 'paging'], array_keys($pack));
+        self::assertSame(['version', 'generated_at', 'map', 'op', 'countries', 'identities', 'documents', 'watch', 'kits', 'paging'], array_keys($pack));
         self::assertSame(1, $pack['version']);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $pack['generated_at']);
         self::assertSame(['ALT', 'LVN', 'MLD', 'TNA'], array_column($pack['countries'], 'code'));
-        self::assertSame(['code', 'name', 'mrz_code', 'number_format', 'fictional'], array_keys($pack['countries'][0]));
+        self::assertSame(['code', 'name', 'mrz_code', 'number_format', 'fictional', 'name_en', 'authority', 'theme', 'languages', 'doc_types', 'colors', 'active'], array_keys($pack['countries'][0]));
         self::assertTrue($pack['countries'][0]['fictional']);
 
         self::assertSame([$issued, $forged], array_column($pack['documents'], 'id'));

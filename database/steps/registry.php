@@ -61,4 +61,5 @@ return [
     ['id' => 'atak_mobile_links', 'label' => 'Sur mon téléphone : liens QR à usage unique vers les apps mobiles (comptes rendus, CR fin d’op, carte, briefs air) et sessions mobiles révocables', 'group' => 'schema', 'file' => '3690_atak_mobile_links.php', 'rerun' => true],
     ['id' => 'atak_nine_line_recipients', 'label' => '9-LINE et 5-LINE : envoi au pilote (destinataires, accusés reçu, lu, WILCO, UNABLE) et indicatifs JTAC et appareils choisis sur le site', 'group' => 'schema', 'file' => '3720_atak_nine_line_recipients.php', 'rerun' => true],
     ['id' => 'atak_sse_identity', 'label' => 'Contrôle d’identité SSE : pays fictifs, identités, papiers (carte, passeport, permis), exemplaires en jeu et contrôles remontés du terrain', 'group' => 'schema', 'file' => '3730_atak_sse_identity.php', 'rerun' => true],
+    ['id' => 'atak_sse_identity_member_papers', 'label' => 'Contrôle d’identité SSE : papiers des joueurs gérés dans leur fiche membre, kit de papiers porté en mission, pays émetteurs créés par la communauté (thème, langues, drapeau, archivage)', 'group' => 'schema', 'file' => '3740_atak_sse_identity_member_papers.php', 'rerun' => true],
 ];

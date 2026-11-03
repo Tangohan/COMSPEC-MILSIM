@@ -20,6 +20,7 @@ final class SseIdentitySqlite
         $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, name TEXT, slug TEXT)');
         $pdo->exec("INSERT INTO tenants (id, name, slug) VALUES (1, 'Alpha', 'alpha'), (2, 'Bravo', 'bravo')");
+        $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, tenant_id INTEGER, steam_id TEXT, display_name TEXT)');
         self::migrate($pdo);
 
         $prop = new \ReflectionProperty(Database::class, 'pdo');
@@ -35,6 +36,10 @@ final class SseIdentitySqlite
         $migrate = require dirname(__DIR__, 2) . '/bootstrap/atak_sse_identity_migration.php';
         $out = '';
         $migrate($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
+        $papers = require dirname(__DIR__, 2) . '/bootstrap/atak_sse_identity_member_papers_migration.php';
+        $papers($pdo, static function (string $m) use (&$out): void {
             $out .= $m;
         });
 

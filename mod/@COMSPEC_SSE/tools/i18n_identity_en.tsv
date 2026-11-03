@@ -192,3 +192,6 @@ Papiers donnés à %1 : %2.	Papers given to %1: %2.
 Vrais papiers de %1 :	True papers of %1:
 aucun document.	no document.
 Fiches : COMSPEC Overwatch doit être chargé	Reports: COMSPEC Overwatch must be loaded
+Rendre les papiers du kit au respawn	Return kit papers on respawn
+Les joueurs qui ont un kit de papiers sur Athena (fiche membre) le retrouvent à chaque réapparition. Décoché : seulement à l'arrivée en mission.	Players with a papers kit on Athena (member profile) get it back at every respawn. Unticked: only when they join the mission.
+Vos papiers de mission vous ont été remis (%1).	Your mission papers have been handed to you (%1).

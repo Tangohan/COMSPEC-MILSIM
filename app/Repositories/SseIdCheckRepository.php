@@ -46,7 +46,7 @@ final class SseIdCheckRepository
         }
         $cols = [
             'context_id', 'op_key', 'idempotency_key', 'document_id', 'identity_id', 'person_id', 'doc_type', 'country_code',
-            'doc_number', 'presented_last', 'presented_first', 'presented_dob', 'subject_netid', 'subject_bio_key',
+            'doc_number', 'presented_last', 'presented_first', 'presented_dob', 'subject_netid', 'subject_bio_key', 'subject_steam_id',
             'controller_callsign', 'controller_steam_id', 'levels', 'results_json', 'verdict', 'grid', 'pos_x', 'pos_y', 'pos_z',
             'game_time', 'case_ref',
         ];
@@ -112,6 +112,45 @@ final class SseIdCheckRepository
     }
 
     /**
+     * Contrôles subis par un joueur : sur l'un de ses papiers, l'une de ses identités, ou lui-même (Steam ID).
+     *
+     * @param list<int> $identityIds
+     * @param list<int> $documentIds
+     * @return list<array<string, mixed>>
+     */
+    public function listForSubject(int $tenantId, array $identityIds, array $documentIds, string $steamId, int $limit = 50): array
+    {
+        $or = [];
+        $params = ['t' => $tenantId];
+        foreach (['identity_id' => $identityIds, 'document_id' => $documentIds] as $col => $ids) {
+            $ids = array_slice(array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $i): bool => $i > 0))), 0, 200);
+            if ($ids === []) {
+                continue;
+            }
+            $marks = [];
+            foreach ($ids as $i => $id) {
+                $marks[] = ':' . $col . $i;
+                $params[$col . $i] = $id;
+            }
+            $or[] = $col . ' IN (' . implode(', ', $marks) . ')';
+        }
+        $steamId = (string) preg_replace('/\D/', '', $steamId);
+        if ($steamId !== '') {
+            $or[] = 'subject_steam_id = :steam';
+            $params['steam'] = $steamId;
+        }
+        if ($or === []) {
+            return [];
+        }
+        $rows = $this->db->fetchAll(
+            'SELECT * FROM sse_id_checks WHERE tenant_id = :t AND (' . implode(' OR ', $or) . ') ORDER BY id DESC LIMIT ' . max(1, min(200, $limit)),
+            $params
+        );
+
+        return array_map([self::class, 'hydrate'], $rows);
+    }
+
+    /**
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */
@@ -140,6 +179,7 @@ final class SseIdCheckRepository
             'presented_dob' => $row['presented_dob'] ?? null,
             'subject_netid' => $row['subject_netid'] ?? null,
             'subject_bio_key' => $row['subject_bio_key'] ?? null,
+            'subject_steam_id' => $row['subject_steam_id'] ?? null,
             'controller_callsign' => $row['controller_callsign'] ?? null,
             'controller_steam_id' => $row['controller_steam_id'] ?? null,
             'levels' => $levels,

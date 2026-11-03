@@ -24,24 +24,25 @@ final class SseIdentityRepository
         self::ensureSchema();
     }
 
-    /** Tables du registre créées au premier usage (même migration que database/steps/3730). */
+    /** Tables du registre créées au premier usage (mêmes migrations que database/steps/3730 et 3740). */
     public static function ensureSchema(): void
     {
         static $done = false;
         if (!$done) {
             $done = true;
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_migration.php'));
+            SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_member_papers_migration.php'));
         }
     }
 
     /**
      * @param array<string, mixed> $data
      */
-    public function create(int $tenantId, array $data, ?int $userId = null): int
+    public function create(int $tenantId, array $data, ?int $createdBy = null): int
     {
         $row = self::normalize($data);
-
-        return $this->db->insert(
+        $userId = (int) ($data['user_id'] ?? 0);
+        $id = $this->db->insert(
             'INSERT INTO sse_identities (tenant_id, context_id, op_key, person_id, kind, last_name, first_name, sex, birth_date,
                 birth_place, nationality, arma_key, profession, seed, notes, created_by_user_id, created_at)
              VALUES (:t, :ctx, :op, :person, :kind, :last, :first, :sex, :dob, :pob, :nat, :arma, :prof, :seed, :notes, :uid, :now)',
@@ -61,10 +62,48 @@ final class SseIdentityRepository
                 'prof' => $row['profession'],
                 'seed' => $row['seed'],
                 'notes' => $row['notes'],
-                'uid' => $userId,
+                'uid' => $createdBy,
                 'now' => gmdate('Y-m-d H:i:s'),
             ]
         );
+        if ($userId > 0) {
+            $this->linkUser($id, $tenantId, $userId);
+        }
+
+        return $id;
+    }
+
+    /** Rattache l'identité au compte d'un membre (0 = détache). */
+    public function linkUser(int $id, int $tenantId, int $userId): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_identities SET user_id = :u, updated_at = :now WHERE id = :id AND tenant_id = :t',
+            ['u' => $userId > 0 ? $userId : null, 'now' => gmdate('Y-m-d H:i:s'), 'id' => $id, 't' => $tenantId]
+        ) > 0;
+    }
+
+    /**
+     * Identités rattachées au compte d'un membre (principale d'abord : civile la plus ancienne).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForUser(int $tenantId, int $userId): array
+    {
+        if ($userId < 1) {
+            return [];
+        }
+        $rows = $this->db->fetchAll(
+            "SELECT i.*, (SELECT COUNT(*) FROM sse_id_documents d WHERE d.identity_id = i.id AND d.tenant_id = i.tenant_id) AS documents_count
+             FROM sse_identities i WHERE i.tenant_id = :t AND i.user_id = :u
+             ORDER BY CASE WHEN i.kind = 'civil' THEN 0 ELSE 1 END, i.id ASC LIMIT 50",
+            ['t' => $tenantId, 'u' => $userId]
+        );
+        $out = array_map([self::class, 'hydrate'], $rows);
+        foreach ($out as $k => $i) {
+            $out[$k]['is_primary'] = $k === 0 && $i['kind'] === 'civil';
+        }
+
+        return $out;
     }
 
     /**
@@ -234,6 +273,7 @@ final class SseIdentityRepository
             'context_id' => ($row['context_id'] ?? null) !== null ? (int) $row['context_id'] : null,
             'op_key' => ($row['op_key'] ?? null) !== null ? (string) $row['op_key'] : null,
             'person_id' => ($row['person_id'] ?? null) !== null ? (int) $row['person_id'] : null,
+            'user_id' => ($row['user_id'] ?? null) !== null && (int) $row['user_id'] > 0 ? (int) $row['user_id'] : null,
             'kind' => $kind,
             'kind_label' => SseIdentityCatalog::label(SseIdentityCatalog::KINDS, $kind),
             'last_name' => (string) ($row['last_name'] ?? ''),
