@@ -206,7 +206,7 @@ $eventLabels = [
                             <?php foreach ($row['eval']['groups'] ?? [] as $g): foreach ($g['items'] as $ci): $criterion = $ci['criterion']; ?>
                             <li class="<?= $ci['met'] ? 'is-met' : '' ?>">
                                 <?php require base_path('views/partials/qualification_criterion.php'); ?>
-                                <span><?php if (($criterion['type'] ?? 'metric') === 'metric'): ?><?= $h(\App\Support\QualificationCriteriaCatalog::formatNumber((float) $ci['current'])) ?> / <?= $h(\App\Support\QualificationCriteriaCatalog::formatNumber((float) $ci['target'])) ?><?php else: ?><?= $ci['met'] ? 'Fait' : 'À faire' ?><?php endif; ?></span>
+                                <span><?php if (($criterion['type'] ?? 'metric') === 'metric' || (($criterion['type'] ?? '') === 'attestation' && (float) ($criterion['min'] ?? 0) > 0)): ?><?= $h(\App\Support\QualificationCriteriaCatalog::formatNumber((float) $ci['current'])) ?> / <?= $h(\App\Support\QualificationCriteriaCatalog::formatNumber((float) $ci['target'])) ?><?php else: ?><?= $ci['met'] ? 'Fait' : 'À faire' ?><?php endif; ?></span>
                             </li>
                             <?php endforeach; endforeach; ?>
                         </ul>
@@ -215,6 +215,53 @@ $eventLabels = [
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
+            </section>
+            <?php endif; ?>
+
+            <?php $attestList = is_array($attestations ?? null) ? $attestations : []; ?>
+            <?php if ($attestList !== [] && !$archived): ?>
+            <section class="qfs-card" id="attestations" aria-labelledby="qfs-attest">
+                <h3 id="qfs-attest">Conditions attestées par un instructeur <span class="qfs-n"><?= count($attestList) ?></span></h3>
+                <p class="qfs-lead">Le jeu ne mesure pas ces conditions : un instructeur les valide membre par membre. Un nombre de sauts ou d’heures attesté vaut pour toutes les qualifications qui le demandent.</p>
+                <?php if (empty($attestReady)): ?><p class="qfs-empty">Les attestations arrivent avec la prochaine mise à jour du site.</p><?php endif; ?>
+                <?php foreach ($attestList as $ai => $a): $criterion = $a['criterion']; ?>
+                    <div class="qfs-attest">
+                        <?php require base_path('views/partials/qualification_criterion.php'); ?>
+                        <?php if ($a['attested'] !== []): ?>
+                        <ul class="qfs-list">
+                            <?php foreach ($a['attested'] as $uid => $row): ?>
+                            <li>
+                                <div class="qfs-who"><b translate="no"><?= $h($who($row['member'])) ?></b><small><?php if ($a['counts']): ?><?= $h(\App\Support\QualificationCriteriaCatalog::formatNumber((float) $row['value'])) ?> <?= $h(\App\Support\QualificationCriteriaCatalog::attestationUnit((string) $criterion['key'])) ?> · <?php endif; ?><?= $h($fd((string) $row['attested_at'])) ?></small><?php if (trim((string) $row['note']) !== ''): ?><small translate="no"><?= $h($row['note']) ?></small><?php endif; ?></div>
+                                <form method="post" action="<?= $h(url($base . '/attestations')) ?>">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="user_id" value="<?= (int) $uid ?>">
+                                    <input type="hidden" name="store_key" value="<?= $h($a['store_key']) ?>">
+                                    <input type="hidden" name="remove" value="1">
+                                    <button type="submit" class="qmx-btn">Retirer</button>
+                                </form>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php endif; ?>
+                        <?php if (!empty($attestReady) && !empty($b['candidates'])): ?>
+                        <form class="qfs-deliver" method="post" action="<?= $h(url($base . '/attestations')) ?>">
+                            <?= \App\Core\Csrf::field() ?>
+                            <input type="hidden" name="store_key" value="<?= $h($a['store_key']) ?>">
+                            <div class="qmx-fl"><label for="qfs-att-u<?= (int) $ai ?>">Membre</label>
+                                <select id="qfs-att-u<?= (int) $ai ?>" name="user_id" class="qmx-fin" required>
+                                    <option value="">Choisir…</option>
+                                    <?php foreach ($b['candidates'] as $m): ?><option value="<?= (int) $m['user_id'] ?>"><?= $h($who($m)) ?></option><?php endforeach; ?>
+                                </select>
+                            </div>
+                            <?php if ($a['counts']): ?>
+                            <div class="qmx-fl"><label for="qfs-att-v<?= (int) $ai ?>">Nombre attesté</label><input id="qfs-att-v<?= (int) $ai ?>" class="qmx-fin" type="number" min="0" step="any" name="value" required value="<?= $h(\App\Support\QualificationCriteriaCatalog::formatNumber((float) ($criterion['min'] ?? 0))) ?>"></div>
+                            <?php endif; ?>
+                            <div class="qmx-fl"><label for="qfs-att-n<?= (int) $ai ?>">Commentaire ou preuve</label><input id="qfs-att-n<?= (int) $ai ?>" class="qmx-fin" name="note" maxlength="255" placeholder="Carnet de sauts, séance de tir du…"></div>
+                            <div><button type="submit" class="qmx-btn qmx-btn--dark">Attester</button></div>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
             </section>
             <?php endif; ?>
 

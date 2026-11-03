@@ -171,6 +171,7 @@ final class QualificationAwardRuleService
             'flight' => null,
             'flight_counts' => null,
             'best' => [],
+            'attest' => $this->repo->attestationsByUser($tenantId),
         ];
     }
 
@@ -483,6 +484,9 @@ final class QualificationAwardRuleService
                 fn (array $c): float => $this->measure($tenantId, $userId, $c),
                 fn (int $id): bool => $this->holdsActive($tenantId, $best[$id] ?? null, $id),
                 static fn (int|string $course): bool => !empty($ctx['academy'][$userId][$course]),
+                static fn (array $c): ?float => isset($ctx['attest'][$userId][Cat::attestationStoreKey($c, $definitionId)])
+                    ? (float) $ctx['attest'][$userId][Cat::attestationStoreKey($c, $definitionId)]['value']
+                    : null,
             );
         }
         $prereq = $this->prerequisites($tenantId, $userId, $definitionId, $settings);
@@ -588,6 +592,73 @@ final class QualificationAwardRuleService
         $head = $renewal ? 'Renouvelée automatiquement' : ($direct ? 'Délivrée automatiquement' : 'Proposée automatiquement, à valider par un responsable');
 
         return $head . ($parts !== [] ? ' : ' . implode(' ; ', $parts) : '') . '.';
+    }
+
+    /* ——————————————————— Conditions attestées par un instructeur ——————————————————— */
+
+    /**
+     * Conditions non mesurées de la règle d'une qualification et ce qui est déjà attesté, membre par membre.
+     *
+     * @return list<array{criterion: array<string, mixed>, store_key: string, counts: bool, attested: array<int, array{value: float, note: string, attested_by: int, attested_at: string, member: array<string, mixed>}>}>
+     */
+    public function attestationCriteria(int $tenantId, int $definitionId): array
+    {
+        $settings = $this->settings($tenantId, $definitionId);
+        $ctx = $this->context($tenantId);
+        $out = [];
+        foreach (QualificationCriteriaEngine::criteria($settings['rule']) as $c) {
+            if (($c['type'] ?? '') !== 'attestation') {
+                continue;
+            }
+            $key = Cat::attestationStoreKey($c, $definitionId);
+            $attested = [];
+            foreach ($ctx['attest'] as $uid => $rows) {
+                if (isset($rows[$key], $ctx['members'][$uid])) {
+                    $attested[(int) $uid] = $rows[$key] + ['member' => $ctx['members'][$uid]];
+                }
+            }
+            $out[] = ['criterion' => $c, 'store_key' => $key, 'counts' => Cat::attestationCounts((string) $c['key']), 'attested' => $attested];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Un instructeur atteste une condition non mesurée pour un membre (nombre de sauts en chute libre, épreuve de tir
+     * réussie…) ; « retirer » efface l'attestation. Le membre est ensuite réévalué tout de suite.
+     */
+    public function attest(int $tenantId, int $definitionId, int $userId, string $storeKey, ?float $value, string $note, int $actorId, bool $remove = false): string
+    {
+        if (!$this->repo->attestationsReady()) {
+            throw new RuntimeException('Les attestations arrivent avec la prochaine mise à jour du site (migration à lancer).');
+        }
+        $criterion = null;
+        foreach ($this->attestationCriteria($tenantId, $definitionId) as $a) {
+            if ($a['store_key'] === $storeKey) {
+                $criterion = $a;
+            }
+        }
+        if ($criterion === null) {
+            throw new RuntimeException('Cette condition ne fait plus partie de la qualification.');
+        }
+        if (!isset($this->context($tenantId)['members'][$userId])) {
+            throw new RuntimeException('Membre introuvable dans la communauté.');
+        }
+        if ($remove) {
+            $this->repo->deleteAttestation($tenantId, $userId, $storeKey);
+            unset($this->ctx[$tenantId]);
+
+            return 'Attestation retirée.';
+        }
+        $v = $criterion['counts'] ? max(0.0, (float) $value) : 1.0;
+        if ($criterion['counts'] && $v <= 0) {
+            throw new RuntimeException('Indiquez le nombre attesté.');
+        }
+        $this->repo->saveAttestation($tenantId, $userId, $storeKey, $v, $note, $actorId > 0 ? $actorId : null);
+        unset($this->ctx[$tenantId]);
+        $r = $this->runAuto($tenantId, $definitionId);
+
+        return 'Attestation enregistrée.' . ($r['awarded'] + $r['proposed'] > 0 ? ' Toutes les conditions sont remplies : qualification ' . ($r['awarded'] > 0 ? 'délivrée.' : 'proposée à la validation.') : '');
     }
 
     /* ——————————————————— Écrans ——————————————————— */

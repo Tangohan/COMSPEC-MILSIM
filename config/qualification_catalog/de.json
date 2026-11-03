@@ -65,6 +65,23 @@
           "Minimum standards: 5 × 1,000 m in 4:30 down to 3:50, 7 pull-ups, 20 sit-ups and 22 push-ups in 30 s, 200 m swim in uniform in 7:30, 20 km march with 20 kg in 3.5 h"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "metric",
+          "metric": "seniority_days",
+          "scope": "",
+          "min": 730,
+          "window_days": 0,
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "de-sicherheitsueberpruefung",
+          "confidence": 0.9,
+          "source_index": 2
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -183,6 +200,17 @@
           "Fitness for lone-combatant training, parachuting and fast roping; SÜ1 completed, SÜ2 initiated"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "metric",
+          "metric": "seniority_days",
+          "scope": "",
+          "min": 730,
+          "window_days": 0,
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -283,6 +311,14 @@
           "Fitness for parachuting, lone-combatant training and fast roping / speed rappelling"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-notfallsanitaeter",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -756,6 +792,17 @@
           "Parachute jump fitness (Fallschirmsprungtauglichkeit)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "metric",
+          "metric": "halo_jumps",
+          "scope": "",
+          "min": 5,
+          "window_days": 0,
+          "confidence": 0.8,
+          "source": "description"
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -865,6 +912,14 @@
           "Experienced military free-fall jumper"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-freifall",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -911,6 +966,15 @@
           "At least 150 free-fall jumps before the course (free-fall team leader)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "attestation",
+          "key": "freefall_jumps",
+          "min": 150,
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1119,6 +1183,14 @@
           "Military free-fall qualified (Freifalllehrgang)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-freifall",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1345,6 +1417,15 @@
           "At least the rank of Feldwebel (per the job pack)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-6",
+          "rank": "feldwebel",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1671,6 +1752,14 @@
           "Qualified sniper (Scharfschützenlehrgang)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-scharfschuetze",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2129,6 +2218,15 @@
           "Chainsaw and welding certificates"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "attestation",
+          "key": "dive_hours",
+          "min": 170,
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2349,6 +2447,14 @@
           "Basic helicopter pilot training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-hubschrauberfuehrer",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2400,6 +2506,14 @@
           "Basic helicopter pilot training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-hubschrauberfuehrer",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3104,6 +3218,14 @@
           "Full Feldjäger training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-feldjaeger",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3214,6 +3336,15 @@
           "Selected career officer (captain/major rank)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OF-2",
+          "rank": "capitaine",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3765,6 +3896,14 @@
           "KSK commando basic training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-ksk-basisausbildung",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3817,6 +3956,14 @@
           "KSK commando basic training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-ksk-basisausbildung",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3869,6 +4016,14 @@
           "KSK commando basic training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-ksk-basisausbildung",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3921,6 +4076,14 @@
           "KSK commando basic training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-ksk-basisausbildung",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3973,6 +4136,14 @@
           "KSK commando basic training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-ksk-basisausbildung",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -4498,6 +4669,14 @@
           "Mountain infantry training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-gebirgsjaeger-ausbildung",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -4741,6 +4920,14 @@
           "Combat swimmer training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-kampfschwimmer",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -4793,6 +4980,14 @@
           "Combat swimmer training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-kampfschwimmer",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -4845,6 +5040,14 @@
           "Combat swimmer training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-kampfschwimmer",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -4939,6 +5142,14 @@
           "General basic military training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-grundausbildung",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -4991,6 +5202,14 @@
           "Basic helicopter pilot training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "de-hubschrauberfuehrer",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""

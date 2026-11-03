@@ -18,7 +18,9 @@ namespace App\Support\QualificationCatalog;
  * (organisme de référence), issuer{name, short_name} (école ou organisme émetteur réel, facultatif : sinon
  * l’émetteur du pack), reference{fr,en}, prerequisites{fr[],en[]}, validity{fr,en} (vide si aucune source ouverte
  * ne la précise), validity_months (entier ou null), sources[{url,title}], issuer_key (facultatif : émetteur réel du
- * catalogue config/qualification_issuers, prioritaire sur issuer).
+ * catalogue config/qualification_issuers, prioritaire sur issuer), prerequisites_detected (facultatif : prérequis
+ * structurés de confiance haute pré-calculés depuis le texte, kind metric | attestation | grade | qualification ;
+ * proposés à l'import, jamais appliqués seuls).
  * Les emplois du catalogue d’emplois désignent ces entrées par leur id (champ qualification_refs).
  */
 final class QualificationCatalog
@@ -284,6 +286,22 @@ final class QualificationCatalog
         return array_map(static fn (array $e): array => self::localize($e, $lang), self::rawEntries($pack));
     }
 
+    /** Entrée brute d'après le code d'une fiche importée (les fiches gardent le code du catalogue). @return array<string, mixed>|null */
+    public static function findByCode(string $code): ?array
+    {
+        $code = strtoupper(trim($code));
+        if ($code === '') {
+            return null;
+        }
+        foreach (self::rawEntries() as $entry) {
+            if (strtoupper((string) ($entry['code'] ?? '')) === $code) {
+                return $entry;
+            }
+        }
+
+        return null;
+    }
+
     /** @return array<string, mixed>|null entrée brute */
     public static function findRaw(string $id): ?array
     {
@@ -375,6 +393,21 @@ final class QualificationCatalog
         $en = $entry['prerequisites']['en'] ?? null;
         if (!is_array($fr) || !is_array($en) || count($fr) !== count($en)) {
             $p[] = 'prérequis : listes fr/en de longueurs différentes';
+        }
+        // Prérequis structurés pré-calculés (tools/qualifications/detect-prerequisites.php), relus dans
+        // docs/qualifications/prerequis-detectes.md.
+        foreach (is_array($entry['prerequisites_detected'] ?? null) ? $entry['prerequisites_detected'] : (isset($entry['prerequisites_detected']) ? [null] : []) as $d) {
+            $kind = is_array($d) ? (string) ($d['kind'] ?? '') : '';
+            $ok = match ($kind) {
+                'metric' => \App\Support\QualificationCriteriaCatalog::isMetric((string) ($d['metric'] ?? '')) && (float) ($d['min'] ?? 0) > 0,
+                'attestation' => \App\Support\QualificationCriteriaCatalog::isAttestation((string) ($d['key'] ?? '')),
+                'grade' => preg_match('/^O[RF]-\d{1,2}$/', (string) ($d['nato'] ?? '')) === 1,
+                'qualification' => preg_match('/^[a-z]{2,4}-[a-z0-9-]{2,60}$/', (string) ($d['ref'] ?? '')) === 1 && ($d['ref'] ?? '') !== ($entry['id'] ?? ''),
+                default => false,
+            };
+            if (!$ok) {
+                $p[] = 'prérequis détecté invalide';
+            }
         }
         $months = $entry['validity_months'] ?? null;
         if ($months !== null && (!is_int($months) || $months < 1 || $months > 120)) {

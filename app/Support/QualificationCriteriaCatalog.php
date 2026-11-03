@@ -11,7 +11,8 @@ namespace App\Support;
  * heures de vol par appareil (atak_pilot_time + carnet de vol contresigné), relevés de mission du mod
  * (atak_distance_stats : missions, sauts, distances, temps en véhicule), pointages aux événements
  * (community_event_rsvps), sessions de jeu validées (roleplay_game_session_members), comptes rendus validés
- * (aar_reports) et équipement vu en jeu (game_item_usage).
+ * (aar_reports), équipement vu en jeu (game_item_usage) et ancienneté (date d’engagement du dossier, sinon arrivée
+ * dans la communauté). Ce que le jeu ne mesure pas se règle en attestation par un instructeur (ATTESTATIONS).
  */
 final class QualificationCriteriaCatalog
 {
@@ -101,12 +102,12 @@ final class QualificationCriteriaCatalog
             'help' => 'Pointages à l’arrivée sur les événements du calendrier (opérations, entraînements…).',
         ],
         'halo_jumps' => [
-            'label' => 'Sauts en chute libre',
+            'label' => 'Sauts en parachute',
             'unit' => 'sauts',
             'scope' => 'none',
             'window' => true,
             'step' => 1,
-            'help' => 'Sauts à ouverture commandée (HALO / HAHO) relevés par le mod.',
+            'help' => 'Sauts relevés par le mod (départ d’au moins 150 m), en chute libre ou sous voile : le mod ne distingue pas encore la chute libre de l’ouverture automatique.',
         ],
         'foot_km' => [
             'label' => 'Distance parcourue à pied',
@@ -148,6 +149,14 @@ final class QualificationCriteriaCatalog
             'step' => 1,
             'help' => 'Comptes rendus (AAR) rédigés par le membre et validés par un responsable.',
         ],
+        'seniority_days' => [
+            'label' => 'Ancienneté dans la communauté',
+            'unit' => 'jours',
+            'scope' => 'none',
+            'window' => false,
+            'step' => 1,
+            'help' => 'Jours depuis l’engagement inscrit au dossier du membre, sinon depuis son arrivée dans la communauté.',
+        ],
         'item_days' => [
             'label' => 'Jours de jeu avec un équipement',
             'unit' => 'jours',
@@ -155,6 +164,52 @@ final class QualificationCriteriaCatalog
             'window' => true,
             'step' => 1,
             'help' => 'Jours où le mod a vu l’objet (ou une famille d’objets) dans l’équipement du membre : arme, lanceur, radio, matériel médical…',
+        ],
+    ];
+
+    /**
+     * Conditions que le jeu ne mesure pas (encore) : un instructeur les atteste membre par membre. count : la condition
+     * porte un nombre (sauts, heures) attesté une fois pour le membre et valable pour toutes les qualifications ; sinon
+     * c’est une épreuve propre à la qualification, réussie ou non.
+     *
+     * @var array<string, array{label: string, unit: string, count: bool, help: string}>
+     */
+    public const ATTESTATIONS = [
+        'freefall_jumps' => [
+            'label' => 'Sauts en chute libre',
+            'unit' => 'sauts',
+            'count' => true,
+            'help' => 'Le mod compte les sauts sans distinguer la chute libre : un instructeur atteste le nombre de sauts du membre.',
+        ],
+        'static_line_jumps' => [
+            'label' => 'Sauts à ouverture automatique',
+            'unit' => 'sauts',
+            'count' => true,
+            'help' => 'Sauts à ouverture automatique attestés par un instructeur.',
+        ],
+        'dive_hours' => [
+            'label' => 'Heures de plongée',
+            'unit' => 'h',
+            'count' => true,
+            'help' => 'Le mod ne relève pas le temps sous l’eau : un instructeur atteste les heures de plongée du membre.',
+        ],
+        'marksmanship' => [
+            'label' => 'Qualification de tir',
+            'unit' => '',
+            'count' => false,
+            'help' => 'Épreuve de tir validée par un instructeur (le mod ne relève pas les résultats de tir).',
+        ],
+        'fitness_test' => [
+            'label' => 'Épreuves physiques',
+            'unit' => '',
+            'count' => false,
+            'help' => 'Tests physiques, marche ou natation validés par un instructeur.',
+        ],
+        'other' => [
+            'label' => 'Condition attestée par un instructeur',
+            'unit' => '',
+            'count' => false,
+            'help' => 'Condition sans donnée mesurée : un instructeur la valide pour chaque membre.',
         ],
     ];
 
@@ -219,6 +274,43 @@ final class QualificationCriteriaCatalog
         return self::METRICS[$key]['unit'] ?? '';
     }
 
+    public static function isAttestation(string $key): bool
+    {
+        return isset(self::ATTESTATIONS[$key]);
+    }
+
+    public static function attestationLabel(string $key): string
+    {
+        return self::ATTESTATIONS[$key]['label'] ?? self::ATTESTATIONS['other']['label'];
+    }
+
+    public static function attestationUnit(string $key): string
+    {
+        return self::ATTESTATIONS[$key]['unit'] ?? '';
+    }
+
+    /** L’attestation porte un nombre (sauts, heures) propre au membre, valable pour toutes les qualifications. */
+    public static function attestationCounts(string $key): bool
+    {
+        return !empty(self::ATTESTATIONS[$key]['count']);
+    }
+
+    /**
+     * Clé d’une attestation enregistrée : un nombre (sauts, heures) est propre au membre ; une épreuve est propre à la
+     * qualification et à son intitulé.
+     *
+     * @param array<string, mixed> $c critère normalisé de type attestation
+     */
+    public static function attestationStoreKey(array $c, int $definitionId): string
+    {
+        $key = (string) ($c['key'] ?? 'other');
+        if (self::attestationCounts($key)) {
+            return $key;
+        }
+
+        return 'q' . $definitionId . ':' . $key . ':' . substr(sha1(mb_strtolower(trim((string) ($c['label'] ?? '')))), 0, 12);
+    }
+
     public static function windowAllowed(string $key): bool
     {
         return !empty(self::METRICS[$key]['window']);
@@ -265,6 +357,14 @@ final class QualificationCriteriaCatalog
 
             return 'Détenir la qualification « ' . ($names['definitions'][$id] ?? ('#' . $id)) . ' »';
         }
+        if ($type === 'attestation') {
+            $key = (string) ($c['key'] ?? 'other');
+            $min = (float) ($c['min'] ?? 0);
+            $text = ($min > 0 ? self::formatNumber($min) . ' ' . self::attestationUnit($key) . ' — ' : '') . self::attestationLabel($key) . ' (attesté par un instructeur)';
+            $label = trim((string) ($c['label'] ?? ''));
+
+            return $label !== '' && $label !== self::attestationLabel($key) ? $text . ' : ' . $label : $text;
+        }
         $metric = (string) ($c['metric'] ?? '');
         $min = (float) ($c['min'] ?? 0);
         $text = self::formatNumber($min) . ' ' . self::unit($metric) . ' — ' . self::metricLabel($metric);
@@ -299,6 +399,19 @@ final class QualificationCriteriaCatalog
             $id = (int) ($c['definition_id'] ?? 0);
 
             return ['value' => '', 'unit' => '', 'label' => 'Qualification détenue', 'scope' => $names['definitions'][$id] ?? ('#' . $id), 'window' => 0];
+        }
+        if ($type === 'attestation') {
+            $key = (string) ($c['key'] ?? 'other');
+            $min = (float) ($c['min'] ?? 0);
+            $label = trim((string) ($c['label'] ?? ''));
+
+            return [
+                'value' => $min > 0 ? self::formatNumber($min) : '',
+                'unit' => $min > 0 ? self::attestationUnit($key) : '',
+                'label' => self::attestationLabel($key) . ' (attesté par un instructeur)',
+                'scope' => $label !== self::attestationLabel($key) ? $label : '',
+                'window' => 0,
+            ];
         }
         $metric = (string) ($c['metric'] ?? '');
         $scope = (string) ($c['scope'] ?? '');

@@ -394,3 +394,12 @@
 .sth-quota.is-full { border-color: #f59e0b; }
 .sth-quota a { font-weight: 700; color: var(--w-primary); }
 .sth-plan b { padding: 1px 7px; border-radius: 999px; background: var(--w-primary-soft); color: var(--w-primary); }
+
+/* Studio · fiche : « Prérequis détectés » (suggestions à cocher) */
+.cred-detect { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
+.cred-detect__i { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--w-border); border-radius: 10px; min-width: 0; overflow-wrap: anywhere; }
+.cred-detect__i--high { border-left: 3px solid var(--w-primary); }
+.cred-detect__i--medium { border-left: 3px solid #b7791f; }
+.cred-detect__i .in { max-width: 8rem; }
+.cred-detect__i em { font-style: normal; color: var(--w-muted); }
+.cred-detect__i .qfs-crit { display: inline-flex; flex-wrap: wrap; gap: 3px 5px; }

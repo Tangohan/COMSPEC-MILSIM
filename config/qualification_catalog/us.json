@@ -112,6 +112,15 @@
           "Airborne qualification or commitment to obtain it"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-3",
+          "rank": "E-3",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -169,6 +178,20 @@
           "Airborne qualified (Basic Airborne Course)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-sfas",
+          "confidence": 0.85,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -228,6 +251,14 @@
           "Special Operations Combat Medic (SOCM) course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-socm",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "Recyclage tous les quatre ans selon la presse et Wikipédia.",
         "en": "Refresher every four years according to the press and Wikipedia."
@@ -629,6 +660,14 @@
           "Combat diver qualification (CDQC)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-cdqc",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -777,6 +816,14 @@
           "Assignment to a military free-fall coded position"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -834,6 +881,33 @@
           "At least one year as a free-fall parachutist and 50 military free-fall jumps"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-jumpmaster",
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-mffpc",
+          "confidence": 0.85,
+          "source_index": 0
+        },
+        {
+          "kind": "attestation",
+          "key": "freefall_jumps",
+          "min": 50,
+          "confidence": 0.85,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1083,6 +1157,14 @@
           "Qualified instructor (CFDIC)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-cfdic",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1130,6 +1212,17 @@
           "Volunteer and medically qualified for parachute duty"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "metric",
+          "metric": "halo_jumps",
+          "scope": "",
+          "min": 5,
+          "window_days": 0,
+          "confidence": 0.8,
+          "source": "description"
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1185,6 +1278,14 @@
           "Military parachutist qualification"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1348,6 +1449,15 @@
           "Active-duty senior NCO (E-6 and above), officer or warrant officer"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-6",
+          "rank": "E-6",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1446,6 +1556,14 @@
           "Passed POAS"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-poas",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1548,6 +1666,14 @@
           "Passed CAAS"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-caas",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1803,6 +1929,14 @@
           "SOCM-qualified hospital corpsman"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-socm",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1944,6 +2078,14 @@
           "Advanced Leader Course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-alc",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2260,6 +2402,14 @@
           "Aviator qualified on the aircraft, preferably pilot in command (PIC)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-160-green-platoon",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2319,6 +2469,14 @@
           "Basic Mission Qualified (BMQ)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-160-bmq",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2372,6 +2530,14 @@
           "Aircraft maintainer course (MH-60 or MH-47)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-160-green-platoon",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2570,6 +2736,20 @@
           "Physically qualified for aircrew duty"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-bmt",
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-af-aircrew-fundamentals",
+          "confidence": 0.9,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2612,6 +2792,14 @@
           "Basic Military Training (7.5 weeks)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-bmt",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2755,6 +2943,14 @@
           "Special Warfare Preparatory Course (8 weeks, non-prior service)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-bmt",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2814,6 +3010,14 @@
           "Special Warfare Assessment and Selection"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-sw-as",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2907,6 +3111,14 @@
           "Special Warfare Pre-Dive Course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-predive",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3068,6 +3280,14 @@
           "Pararescue EMT-Paramedic Training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-pj-paramedic",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3227,6 +3447,14 @@
           "Air traffic control course (FAA certification)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-atc",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3373,6 +3601,14 @@
           "Airborne School and SERE"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-tacp-apprentice",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3568,6 +3804,14 @@
           "Passed MARSOC Assessment and Selection"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-marsoc-as",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3865,6 +4109,14 @@
           "Parachute training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-buds",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3971,6 +4223,14 @@
           "Basic Crewman Selection and Basic Crewman Training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-swcc-bcs",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -4017,6 +4277,14 @@
           "Basic SWCC insignia (CQT)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-swcc-cqt",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -4867,6 +5135,14 @@
           "Qualified 180A warrant officer (SFWOTTC)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-sfwottc",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -5583,6 +5859,14 @@
           "Fully Mission Qualified (FMQ) status"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-160-fmq",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -5827,6 +6111,14 @@
           "MOS 68W"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-68w-ait",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -5879,6 +6171,14 @@
           "MOS 15W"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-15w-ait",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -6298,6 +6598,14 @@
           "Aircraft commander qualification"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-afsoc-ac-upgrade",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -6446,6 +6754,14 @@
           "MARSOC Assessment and Selection (A&S)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-marsoc-as",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -6790,6 +7106,14 @@
           "NSW LPO Course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-nsw-lpo-course",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -6842,6 +7166,14 @@
           "NSW Platoon Leaders Course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-nsw-plc",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""

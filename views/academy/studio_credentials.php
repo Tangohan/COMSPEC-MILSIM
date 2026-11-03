@@ -190,6 +190,10 @@ $kindCounts = null;
 <input type="hidden" name="conditions[metrics][<?= $mi ?>][window_days]" value="<?= (int) ($m['window_days'] ?? 0) ?>">
 </div><?php endforeach ?>
 </fieldset>
+<?php if (!empty($cond['attestations'])): $criterionNames = is_array($criterionNames ?? null) ? $criterionNames : []; ?>
+<fieldset class="cred-group"><legend><?= $h($t('cred_cond_attest')) ?></legend><p class="h"><?= $h($t('cred_cond_attest_help')) ?></p>
+<div class="cred-picks"><?php foreach (array_values($cond['attestations']) as $ai => $criterion): ?><label><input type="checkbox" name="conditions[attestations][<?= (int) $ai ?>][keep]" value="1" checked><input type="hidden" name="conditions[attestations][<?= (int) $ai ?>][key]" value="<?= $h($criterion['key'] ?? 'other') ?>"><input type="hidden" name="conditions[attestations][<?= (int) $ai ?>][label]" value="<?= $h($criterion['label'] ?? '') ?>"><input type="hidden" name="conditions[attestations][<?= (int) $ai ?>][min]" value="<?= $h((string) ($criterion['min'] ?? 0)) ?>"><span><?php require base_path('views/partials/qualification_criterion.php'); ?></span></label><?php endforeach ?></div></fieldset>
+<?php endif ?>
 <?php endif ?>
 </section>
 </fieldset>
@@ -201,6 +205,19 @@ $kindCounts = null;
 <div class="cred-head cred-head--big"><?php if (!empty($e['badge'])): ?><img class="cred-badge" src="<?= $h($e['badge']) ?>" alt="<?= $h($t('cred_badge_current')) ?>"><?php else: ?><span class="cred-badge cred-badge--crest"><?= $h($crestOf((string) ($e['short'] ?? '') ?: $title)) ?></span><?php endif ?>
 <span><b><?= $h($title) ?></b><small><?= $h($t('kind_' . $kind)) ?><?php if (!$isNew): ?> · <?= $h($e['permanent'] ? $t('cred_permanent') : sprintf($t('cred_months'), $e['months'])) ?> · <?= $h(sprintf($t('cred_holders'), $e['holders'])) ?><?php endif ?></small></span></div>
 </section>
+<?php $detectedList = is_array($detected ?? null) ? $detected : []; if (!$isNew && !$readOnly && $rulesReady && isset($detected)): $criterionNames = is_array($criterionNames ?? null) ? $criterionNames : []; ?>
+<section class="fc cred-detected" id="prerequis-detectes"><h3><?= $h($t('cred_detected')) ?><?php if ($detectedList !== []): ?> <span class="pill"><i></i><?= count($detectedList) ?></span><?php endif ?></h3><p><?= $h($t('cred_detected_help')) ?></p>
+<?php if ($detectedList === []): ?><p class="h"><?= $h($t('cred_detected_none')) ?></p>
+<?php else: ?><form method="post" action="<?= $h($link('action/studio_cred_prereqs')) ?>"><?= $csrf ?><input type="hidden" name="course" value="academy"><input type="hidden" name="cred_kind" value="<?= $h($kind) ?>"><input type="hidden" name="cred_id" value="<?= (int) $e['id'] ?>">
+<ul class="cred-detect"><?php foreach ($detectedList as $s): $sid = (string) $s['id']; ?><li class="cred-detect__i cred-detect__i--<?= $h($s['level']) ?>">
+<label class="cred-check"><input type="checkbox" name="pick[]" value="<?= $h($sid) ?>"<?= !empty($s['checked']) ? ' checked' : '' ?><?= empty($s['available']) ? ' disabled' : '' ?>><span><?php if ($s['kind'] === 'criterion'): $criterion = $s['criterion']; require base_path('views/partials/qualification_criterion.php'); elseif ($s['kind'] === 'grade'): ?><b>Grade minimum</b> <em translate="no"><?= $h($s['target'] ?? '') ?></em><?php else: ?><b>Qualification à détenir</b> <em translate="no"><?= $h($s['target'] ?? '') ?></em><?php endif ?></span></label>
+<?php if ($s['value'] !== null): ?><input class="in" type="number" min="0" step="any" name="value[<?= $h($sid) ?>]" value="<?= $h(\App\Support\QualificationCriteriaCatalog::formatNumber((float) $s['value'])) ?>" aria-label="<?= $h($s['unit']) ?>"<?= empty($s['available']) ? ' disabled' : '' ?>><?php endif ?>
+<?php if (trim((string) $s['source']) !== ''): ?><small class="h">« <span translate="no"><?= $h(mb_strimwidth((string) $s['source'], 0, 220, '…')) ?></span> »</small><?php endif ?>
+<?php if (trim((string) ($s['note'] ?? '')) !== ''): ?><small class="h"><?= $h($s['note']) ?></small><?php endif ?>
+</li><?php endforeach ?></ul>
+<button class="btn dark"><?= $h($t('cred_detected_add')) ?></button></form><?php endif ?>
+</section>
+<?php endif ?>
 <section class="fc"><h3><?= $h($t('cred_courses_title')) ?></h3><p><?= $h($t('cred_courses_help')) ?></p>
 <?php if ($isNew): ?><p class="h"><?= $h($t('cred_save_first')) ?></p>
 <?php else: ?>

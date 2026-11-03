@@ -371,6 +371,21 @@ $examplePreview = \App\Support\QualificationExamples::numberPreview($v('certific
             </form>
         </section>
 
+        <?php $detected = is_array($detectedPrerequisites ?? null) ? $detectedPrerequisites : []; ?>
+        <section id="prerequis-detectes" class="rq-card" aria-labelledby="rq-det-t">
+            <h2 id="rq-det-t">Prérequis détectés <span class="rq-count"><?= count($detected) ?></span></h2>
+            <p class="rq-help">Conditions lues dans la description (ou la fiche du catalogue) : sauts, heures de vol, missions, ancienneté, grade, autre qualification. Rien n’est ajouté sans votre accord : cochez, corrigez la valeur, puis ajoutez.</p>
+            <?php if ($detected === []): ?>
+                <p class="rq-muted">Aucun prérequis détecté dans le texte de cette qualification.</p>
+            <?php else: ?>
+            <form method="post" action="<?= $e(url($base . '/prerequis-detectes')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <?php $detectedPick = 'pick'; $detectedValue = 'value'; $criterionNames = is_array($obtention['names'] ?? null) ? $obtention['names'] : []; require __DIR__ . '/_detected_prerequisites.php'; ?>
+                <button class="rq-btn rq-btn--primary" type="submit">Ajouter les prérequis cochés</button>
+            </form>
+            <?php endif; ?>
+        </section>
+
         <section id="prerequis" class="rq-card" aria-labelledby="rq-pre-t">
             <h2 id="rq-pre-t">Prérequis <span class="rq-count"><?= count($prerequisites) ?></span></h2>
             <p class="rq-help">Qualifications à détenir avant celle-ci. <span class="rq-ex">Ex. SC1 pour obtenir SC2</span> « Recyclage » : exigé seulement pour le renouvellement.</p>

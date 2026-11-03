@@ -338,6 +338,14 @@
           "Passed UKSF selection"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "gb-uksf-selection",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -792,6 +800,14 @@
           "Section Commanders' Battle Course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "gb-scbc",
+          "confidence": 0.9,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -847,6 +863,14 @@
           "Newly commissioned infantry officer (Regular Commissioning Course)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "gb-rmas-rcc",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -951,6 +975,15 @@
           "Required vaccinations (Japanese encephalitis, rabies, typhoid…)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-4",
+          "rank": "corporal",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1055,6 +1088,21 @@
           "Corporal to Sergeant (OR4 to OR6)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "gb-sniper",
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "grade",
+          "nato": "OR-4",
+          "rank": "OR4",
+          "confidence": 0.85,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1263,6 +1311,14 @@
           "Senior NCO (SNCO)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "gb-rm-mountain-leader",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1469,6 +1525,15 @@
           "Basic Swim Test, Royal Marines Fitness Test and LC2 entrance exam"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-4",
+          "rank": "caporal",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1728,6 +1793,15 @@
           "Selected officer (Major / OF3-OF4 level)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OF-3",
+          "rank": "OF3",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1779,6 +1853,15 @@
           "Officer up to the rank of Major (OF3)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OF-3",
+          "rank": "OF3",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1987,6 +2070,15 @@
           "Rank OR4 to OF4"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-4",
+          "rank": "OR4",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2660,6 +2752,15 @@
           "Passed aptitude tests, aircrew medical and flying grading"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-3",
+          "rank": "lance corporal",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""

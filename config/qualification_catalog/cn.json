@@ -221,6 +221,14 @@
           "Initial officer education"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "cn-officer-initial-education",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -277,6 +285,14 @@
           "Command and staff training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "cn-army-command-college-course",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1407,6 +1423,14 @@
           "Amphibious armoured vehicle driver"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "cn-amphibious-vehicle-driver",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1459,6 +1483,14 @@
           "Marine Corps amphibious training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "cn-amphibious-training",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""

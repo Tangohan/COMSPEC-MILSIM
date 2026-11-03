@@ -57,4 +57,7 @@ return [
 'cred_unavailable'=>'Le référentiel des qualifications n’est pas encore installé.', 'cred_rules_pending'=>'Les conditions d’obtention arrivent avec la prochaine mise à jour du site.',
 'cred_rule_error'=>'Les conditions n’ont pas pu être enregistrées. Vérifiez les seuils saisis.', 'cred_badge_failed'=>'Fiche enregistrée, mais l’insigne a été refusé (format ou taille).',
 'cred_quota_reached'=>'Plafond de créations de votre formule atteint : la fiche n’a pas été créée. Les qualifications et brevets existants restent modifiables.', 'cred_quota_line'=>'qualifications et brevets créés sur votre formule', 'cred_quota_unlock'=>'Plus de créations avec la formule', 'cred_quota_unlimited'=>'illimité', 'cred_quota_see'=>'Voir les formules',
+'cred_detected'=>'Prérequis détectés', 'cred_detected_help'=>'Conditions lues dans la description (ou la fiche du catalogue) : sauts, heures de vol, missions, ancienneté, grade, autre qualification. Rien n’est ajouté sans votre accord : cochez, corrigez la valeur, puis ajoutez.',
+'cred_detected_add'=>'Ajouter les prérequis cochés', 'cred_detected_none'=>'Aucun prérequis détecté dans le texte de cette fiche.', 'cred_prereqs_added'=>'Prérequis ajoutés à la fiche.', 'cred_prereqs_none'=>'Aucun prérequis ajouté : cochez ceux à garder.',
+'cred_cond_attest'=>'Attestées par un instructeur', 'cred_cond_attest_help'=>'Conditions que le jeu ne mesure pas (sauts en chute libre, plongée, tir, tests physiques) : un instructeur les valide pour chaque membre sur la fiche du référentiel. Décochez pour retirer.',
 ];
