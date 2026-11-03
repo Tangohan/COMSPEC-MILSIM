@@ -39,7 +39,7 @@ final class SseIdentityWiringAssetTest extends TestCase
     {
         $nav = SsePortalNav::sections(false, false);
         self::assertSame('papiers', SsePortalNav::activeId($nav, '/public/atak/sse/papiers/documents/12'));
-        self::assertSame('referentiel', SsePortalNav::sectionOf($nav, 'papiers'));
+        self::assertSame('identite', SsePortalNav::sectionOf($nav, 'papiers'));
         self::assertSame('identites', SsePortalNav::activeId($nav, '/public/atak/sse/identites/4'));
 
         self::assertStringContainsString("'idPapers' => SseIdentityRegistryController::personPapers(", self::read('app/Controllers/Web/SsePortalController.php'));
