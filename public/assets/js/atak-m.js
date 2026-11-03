@@ -770,4 +770,28 @@
     poll();
     setInterval(function () { if (!document.hidden) poll(); }, 5000);
   }
+
+  // ── Contrôle ID : « Joindre à une FRM » (brouillon de fiche à valider par le bureau SSE) ──
+  if (VIEW === 'controle') {
+    $all('[data-idc-frm]').forEach(function (form) {
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var id = form.getAttribute('data-idc-frm');
+        var btn = $('button[type="submit"]', form);
+        var state = $('[data-idc-state]', form);
+        btn.disabled = true;
+        post('/m/controle/' + encodeURIComponent(id) + '/frm', { remark: (form.elements.remark && form.elements.remark.value) || '' }).then(function (j) {
+          if (j && j.ok) {
+            state.textContent = 'Fiche ' + (j.ref || '') + ' : brouillon envoyé au bureau SSE, à valider.';
+            state.setAttribute('data-st', 'acked');
+            toast('Fiche ' + (j.ref || '') + ' créée');
+            if (form.elements.remark) form.elements.remark.disabled = true;
+          } else {
+            btn.disabled = false;
+            state.textContent = j && j.error === 'not_found' ? 'Ce contrôle n’est plus disponible.' : failText(j);
+          }
+        }, function () { btn.disabled = false; state.textContent = failText(null); });
+      });
+    });
+  }
 })();
