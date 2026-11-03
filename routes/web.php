@@ -277,6 +277,7 @@ return function (Router $router) {
     $router->get('/academy/partage/{token}/media/{file}', [\App\Controllers\Web\AcademyController::class, 'sharedMedia']);
     // Assistant d'importation du catalogue de référence (Academy › Catalogue) : données, aperçu, démarrage, lots.
     $router->get('/academy/catalogue/assistant', [\App\Controllers\Web\AcademyCatalogImportController::class, 'data'], $academyMw);
+    $router->get('/academy/catalogue/assistant/recommandations', [\App\Controllers\Web\AcademyCatalogImportController::class, 'recommendations'], $academyMw);
     $router->post('/academy/catalogue/assistant/apercu', [\App\Controllers\Web\AcademyCatalogImportController::class, 'preview'], $academyMw);
     $router->post('/academy/catalogue/assistant/demarrer', [\App\Controllers\Web\AcademyCatalogImportController::class, 'start'], $academyMw);
     $router->post('/academy/catalogue/assistant/lot', [\App\Controllers\Web\AcademyCatalogImportController::class, 'batch'], $academyMw);
