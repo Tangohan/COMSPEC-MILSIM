@@ -496,7 +496,7 @@ switch (_act) do {
     };
     case "cardText": {
         private _ok = (_hit getOrDefault ["status", ""]) in ["OK", "SOS"];
-        private _col = ["#9aa39e", ["#5cc76b", "#f2ab33"] select ((_hit getOrDefault ["status", ""]) isEqualTo "SOS")] select _ok;
+        private _col = ["#9aa39e", [(COMSPEC_ATAK_Th get "hexOk"), (COMSPEC_ATAK_Th get "hexWarn")] select ((_hit getOrDefault ["status", ""]) isEqualTo "SOS")] select _ok;
         private _age = if ((_hit getOrDefault ["t", -1]) < 0) then { "jamais" } else {
             private _a = round (time - (_hit get "t"));
             format ["%1 (il y a %2)", _hit get "hour", [format ["%1 s", _a], format ["%1 min", floor (_a / 60)]] select (_a >= 120)]
@@ -538,9 +538,9 @@ switch (_act) do {
             ["combo", "mapSearchList", "Choisir (autocomplétion)", [["Identifiants connus", ""]], ""],
             ["buttons", [["LOCALISER", { ["go"] call comspec_atak_native_fnc_mapSearch; }, true], ["FERMER", { ["close"] call comspec_atak_native_fnc_mapSearch; }]]]
         ];
-        if ((count _msg) > 0) then { _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", ["#e9a53a", "#5cc76b"] select (_msg param [1, false]), _msg select 0]]; };
-        _rows pushBack ["text", format ["<t size='0.75' color='#8a9a93'>%1</t>", _rule]];
-        [_rows, [_px, _py, _pw, _ph], false, [0.025, 0.030, 0.027, 0.97]] call comspec_atak_native_fnc_formRender;
+        if ((count _msg) > 0) then { _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", ["#e9a53a", (COMSPEC_ATAK_Th get "hexOk")] select (_msg param [1, false]), _msg select 0]]; };
+        _rows pushBack ["text", format ["<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _rule]];
+        [_rows, [_px, _py, _pw, _ph], false, ((COMSPEC_ATAK_Th get "bg1") select [0, 3]) + [0.97]] call comspec_atak_native_fnc_formRender;
         private _f = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
         private _e = _f getOrDefault ["mapSearchQ", controlNull];
         private _c = _f getOrDefault ["mapSearchList", controlNull];

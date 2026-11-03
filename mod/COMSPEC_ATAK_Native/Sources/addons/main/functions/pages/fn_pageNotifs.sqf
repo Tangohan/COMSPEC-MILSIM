@@ -76,14 +76,42 @@ private _shown = [];
 private _nAlert = _counts get "ALERT";
 _rows pushBack ["section", "Notifications", switch (true) do {
     case ((count _all) isEqualTo 0): { "Rien de nouveau" };
+    case (_fresh > 0): { format ["%1 notification(s), %2 nouvelle(s) depuis votre dernier passage", count _all, _fresh min (count _all)] };
     case (_nAlert > 0): { format ["%1 notification(s) dont %2 alerte(s)", count _all, _nAlert] };
     default { format ["%1 notification(s), la plus récente en haut", count _all] };
 }];
 if ((count _all) > 0) then {
-    private _fBtn = { params ["_label", "_k"]; [format ["%1 (%2)", _label, _counts get _k], compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['notifFilter', '%1']; [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _filter isEqualTo _k] };
+    // Filtres en onglets soulignés (composant « tabs », 3.1.0), avec le nombre de chaque sorte en pastille.
+    private _fBtn = { params ["_label", "_k"]; [_label, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['notifFilter', '%1']; [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _filter isEqualTo _k, _counts get _k] };
     private _opts = [["TOUTES", "ALL"] call _fBtn];
     { if ((_counts get (_x select 1)) > 0) then { _opts pushBack (_x call _fBtn); }; } forEach [["MESSAGES", "MSG"], ["MISSIONS", "MISSION"], ["RÉSEAU", "NET"], ["ALERTES", "ALERT"], ["INFOS", "INFO"]];
-    if ((count _opts) > 2) then { _rows pushBack ["segment", "", _opts]; };
+    if ((count _opts) > 2) then { _rows pushBack ["tabs", _opts]; };
+};
+// Groupées par app (3.1.0) : dans la vue TOUTES, les notifications d'une même source (Messages, Athena, Réseau…) se
+// suivent sous un en-tête (icône, nom, nombre, nouvelles) ; l'ordre des groupes suit leur notification la plus récente.
+// Un filtre choisi garde la liste à plat, déjà homogène.
+private _byApp = _filter isEqualTo "ALL" && {(count _shown) > 3};
+if (_byApp) then {
+    private _grouped = [];
+    private _idx = createHashMap;
+    {
+        _x params ["_n", "_m", "_i"];
+        private _k = toLower (_m get "title");
+        if (_k in _idx) then {
+            (_grouped select (_idx get _k)) pushBack _x;
+        } else {
+            _idx set [_k, count _grouped];
+            _grouped pushBack [_x];
+        };
+    } forEach _shown;
+    _shown = [];
+    {
+        private _g = _x;
+        private _m0 = (_g select 0) select 1;
+        private _newN = { (_x select 2) < _fresh } count _g;
+        _shown pushBack ["#", _m0, format ["%1 notification(s)%2", count _g, ["", format [" · <t color='%2'>%1 nouvelle(s)</t>", _newN, COMSPEC_ATAK_Th get "hexAccent"]] select (_newN > 0)]];
+        _shown append _g;
+    } forEach _grouped;
 };
 
 // Heure relative : « à l'instant », « il y a 12 min », sinon l'heure du jeu.
@@ -99,10 +127,16 @@ private _ago = {
     }
 };
 {
+    if ((_x select 0) isEqualTo "#") then {
+        // En-tête de groupe : ligne haute avec l'icône de l'app, son nom et le compte.
+        _x params ["", "_gm", "_gsub"];
+        _rows pushBack ["row", _gm get "icon", _gm get "title", _gsub, "", {}, _gm get "rgb"];
+        continue;
+    };
     _x params ["_n", "_m", "_idx"];
     private _times = _n getOrDefault ["count", 1];
     private _new = _idx < _fresh;
-    private _meta = format ["%1%2%3", ["", "<t color='#5cc76b'>●</t>  "] select _new, [_n] call _ago, ["", format ["  ·  ×%1", _times]] select (_times > 1)];
+    private _meta = format ["%1%2%3", ["", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>●</t>  "] select _new, [_n] call _ago, ["", format ["  ·  ×%1", _times]] select (_times > 1)];
     private _page = _m get "page";
     private _open = if (_page isEqualTo "") then { {} } else { compile format ["['%1'] call comspec_atak_native_fnc_navigate;", _page] };
     // Fermer : par identifiant (fn_notify), à défaut par texte et heure (entrées d'avant la mise à jour).
@@ -117,10 +151,10 @@ private _ago = {
 } forEach _shown;
 
 if ((count _all) isEqualTo 0) then {
-    _rows pushBack ["empty", _data + "ui_bell.paa", "Tout est calme", "Les alertes, messages et comptes rendus des apps apparaîtront ici."];
+    _rows pushBack ["empty", _data + "ui_bell.paa", "Tout est calme", "Les alertes, messages et comptes rendus des apps apparaîtront ici.", ["RÉGLER LES ALERTES", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["setCat", "ALERTS"]; [{ ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }]];
 } else {
     _rows pushBack ["gap"];
-    private _ids = _shown apply { (_x select 0) getOrDefault ["id", -1] };
+    private _ids = (_shown select { (_x select 0) isNotEqualTo "#" }) apply { (_x select 0) getOrDefault ["id", -1] };
     _rows pushBack ["buttons", [[["TOUT EFFACER", format ["EFFACER CES %1", count _shown]] select (_filter isNotEqualTo "ALL"), compile format ["
         private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap];
         private _f = '%1'; private _ids = %2;

@@ -14,31 +14,31 @@ if ((count _r) > 0) then {
     private _g = [] call comspec_atak_native_fnc_routeGuide;
     if ((count _g) > 0) then {
         _g params ["_txt", "_dn", "_icon", "_left", "_eta", "_label"];
-        _rows pushBack ["hero", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t size='1.4' font='COMSPEC_BarlowBold'>%1</t>  <t size='1.05'>%2</t><br/><t color='#5cc76b'>%3 min</t> · %4 · arrivée %5<br/><t size='0.85' color='#8a9a93'>vers %6</t>",
+        _rows pushBack ["hero", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t size='1.4' font='COMSPEC_BarlowBold'>%1</t>  <t size='1.05'>%2</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%3 min</t> · %4 · arrivée %5<br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>vers %6</t>",
             [_dn] call _fmt, _txt, ceil (_eta / 60), [_left] call _fmt, [(dayTime + _eta / 3600) mod 24, "HH:MM"] call BIS_fnc_timeToString, _label]];
         _rows pushBack ["buttons", [["VOIR SUR LA CARTE", { ['map'] call comspec_atak_native_fnc_gpsAction; }, true], ["ARRÊTER", { ['stop'] call comspec_atak_native_fnc_gpsAction; }]]];
     };
 } else {
-    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_gps.paa", "<t size='1.2' font='COMSPEC_BarlowBold'>Aucun guidage</t><br/><t color='#8a9a93'>Choisissez une destination : grille, carte, étape ou marqueur. L'itinéraire suit les routes et pistes.</t>"];
+    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_gps.paa", "<t size='1.2' font='COMSPEC_BarlowBold'>Aucun guidage</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Choisissez une destination : grille, carte, étape ou marqueur. L'itinéraire suit les routes et pistes.</t>"];
 };
-if (missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]) then { _rows pushBack ["text", "<t color='#f2ab33'>Calcul de l'itinéraire…</t>"]; };
+if (missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Calcul de l'itinéraire…</t>"]; };
 
 private _veh = vehicle player;
 // Position telle que le GPS la donne (brouillage, dégâts, ciel masqué, attente des satellites : fn_ewEffects, fn_gpsFix).
 ([] call comspec_atak_native_fnc_ewEffects) params ["", "", "", "", "_gErr", "_gOff", "_gSt"];
 ([] call comspec_atak_native_fnc_gpsFix) params ["", "", "_gSats", "_gWhy"];
 private _gTxt = switch (_gSt) do {
-    case "ACQ": { format ["<t color='#f2ab33'>%1</t>", "Recherche des satellites…" call comspec_atak_native_fnc_tr] };
-    case "NET": { format ["<t color='#f2ab33'>%1</t>", format ["Pas de fix · position réseau à %1 m près" call comspec_atak_native_fnc_tr, _gErr]] };
-    case "NOFIX": { format ["<t color='#e5483a'>%1</t>", ["Pas de fix · dernière position connue" call comspec_atak_native_fnc_tr, "Aucune position" call comspec_atak_native_fnc_tr] select (_gErr isEqualTo 0)] };
-    default { format ["%1 · <t color='%3'>±%2 m</t>", format ["%1 satellites" call comspec_atak_native_fnc_tr, _gSats], _gErr max 3, ["#5cc76b", "#f2ab33"] select (_gErr >= 15)] };
+    case "ACQ": { format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", "Recherche des satellites…" call comspec_atak_native_fnc_tr] };
+    case "NET": { format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", format ["Pas de fix · position réseau à %1 m près" call comspec_atak_native_fnc_tr, _gErr]] };
+    case "NOFIX": { format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", ["Pas de fix · dernière position connue" call comspec_atak_native_fnc_tr, "Aucune position" call comspec_atak_native_fnc_tr] select (_gErr isEqualTo 0)] };
+    default { format ["%1 · <t color='%3'>±%2 m</t>", format ["%1 satellites" call comspec_atak_native_fnc_tr, _gSats], _gErr max 3, [(COMSPEC_ATAK_Th get "hexOk"), (COMSPEC_ATAK_Th get "hexWarn")] select (_gErr >= 15)] };
 };
 private _gPos = (getPosASL player) vectorAdd _gOff;
 _rows append [
     ["section", "Ma position", ""],
     ["info", "Signal GPS", _gTxt]
 ];
-if (_gWhy isNotEqualTo [] && {_gSt isNotEqualTo "OFF"}) then { _rows pushBack ["text", format ["<t size='0.85' color='#8a9a93'>%1</t>", (_gWhy apply { _x call comspec_atak_native_fnc_tr }) joinString ", "]]; };
+if (_gWhy isNotEqualTo [] && {_gSt isNotEqualTo "OFF"}) then { _rows pushBack ["text", format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", (_gWhy apply { _x call comspec_atak_native_fnc_tr }) joinString ", "]]; };
 _rows append [
     ["info", "Grille", format ["<t font='EtelkaMonospacePro'>%1</t>", ["—", [_gPos, 8] call comspec_atak_native_fnc_gridRef] select (_gSt isNotEqualTo "NOFIX" || {_gErr > 0})]],
     ["info", "Altitude", format ["%1 m", round ((getPosASL player) select 2)]],

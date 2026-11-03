@@ -21,7 +21,7 @@ private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comsp
 private _tabBtn = { params ["_t", "_k"]; [_t, ["tab", _k] call _act, _tab isEqualTo _k] };
 private _rows = [["segment", "", [["LECTEUR", "PLAY"] call _tabBtn, ["ATHENA", "ATH"] call _tabBtn, ["FICHIERS", "LOCAL"] call _tabBtn, ["SERVEUR", "SRV"] call _tabBtn, ["LIEN", "URL"] call _tabBtn]]];
 if !(missionNamespace getVariable ["comspec_atak_native_music_enabled", true]) exitWith {
-    _rows pushBack ["text", "<t color='#f2ab33'>La musique est désactivée sur ce serveur.</t>"];
+    _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>La musique est désactivée sur ce serveur.</t>"];
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
@@ -41,7 +41,7 @@ private _trackRow = {
     private _items = _lists getOrDefault [_key, []];
     (_items select _i) params ["_k", "_r", "_t", ["_len", 0], ["_artist", ""], ["_id", ""]];
     private _isCur = (_m get "kind") isEqualTo _k && {(_m get "ref") isEqualTo _r || {_id isNotEqualTo "" && {((_m get "queue") param [_m get "qi", []]) param [5, ""] isEqualTo _id}}};
-    ["person", _icon, format ["<t %1>%2</t><br/><t size='0.75' color='#8a9a93'>%3%4</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur,
+    ["person", _icon, format ["<t %1>%2</t><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3%4</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur,
         [_t] call _esc, [_sub] call _esc, ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
         [["ÉCOUTER", compile format ["['playList', [%1, %2]] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], true],
          ["+ FILE", compile format ["['enqueue', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i]],
@@ -65,7 +65,7 @@ switch (_tab) do {
             ["MES ENVOIS", "mine", "Les morceaux que j'ai mis en ligne"] call _vBtn
         ]];
         if !(missionNamespace getVariable ["comspec_atak_native_music_athena", true]) exitWith {
-            _rows pushBack ["text", "<t color='#f2ab33'>Bibliothèque Athena désactivée sur ce serveur.</t>"];
+            _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Bibliothèque Athena désactivée sur ce serveur.</t>"];
         };
         (_ath getOrDefault [_view, [[], "", "", false]]) params ["_items", "_at", "_err", "_busy"];
         // Un chargement perdu (fin de mission, DLL muette) ne bloque plus l'onglet : voir fn_musicAthena.
@@ -73,13 +73,13 @@ switch (_tab) do {
         if (_view isEqualTo "playlists") then {
             _rows pushBack ["section", "Playlists", format ["%1 playlist(s)%2", count _items, ["", format [" · synchro %1", _at]] select (_at isNotEqualTo "")]];
             _rows pushBack ["buttons", [["ACTUALISER", ["athReload"] call _act, false, !_busy]]];
-            if (_busy) then { _rows pushBack ["text", "<t color='#8a9a93'>Chargement depuis Athena…</t>"]; };
-            if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", [_err] call _esc]]; };
-            if ((count _items) isEqualTo 0 && {!_busy} && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune playlist. Créez-en sur le site : Mon espace > Musique.</t>"]; };
+            if (_busy) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Chargement depuis Athena…</t>"]; };
+            if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", [_err] call _esc]]; };
+            if ((count _items) isEqualTo 0 && {!_busy} && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune playlist. Créez-en sur le site : Mon espace > Musique.</t>"]; };
             private _kinds = createHashMapFromArray [["global", "Globale"], ["public", "Publique"], ["org", "Organisation"], ["private", "Privée"]];
             {
                 _x params ["_id", "_name", "_owner", "_n", "_kind", ["_desc", ""]];
-                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.75' color='#8a9a93'>%2 · %3 · %4 morceau(x)</t>", [_name] call _esc,
+                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · %3 · %4 morceau(x)</t>", [_name] call _esc,
                     _kinds getOrDefault [_kind, _kind], [_owner] call _esc, _n],
                     [["OUVRIR", compile format ["['athOpen', [%1, %2]] call comspec_atak_native_fnc_musicAction;", str _id, str _name], true]], [[0.55, 0.6, 0.58, 1], _acc] select (_kind isEqualTo "global")];
             } forEach _items;
@@ -96,33 +96,33 @@ switch (_tab) do {
                 (if (_view isNotEqualTo "global" && {!_isPl}) then { ["RECHERCHER", ["athSearch"] call _act, false, !_busy] } else { ["ACTUALISER", ["athReload"] call _act, false, !_busy] }),
                 (if (_isPl) then { ["PLAYLISTS", ["ath", "playlists"] call _act] } else { ["EFFACER", { (uiNamespace getVariable ["COMSPEC_ATAK_MusicUi", createHashMap]) set ["athQ", ""]; ["athReload"] call comspec_atak_native_fnc_musicAction; }, false, (_ui getOrDefault ["athQ", ""]) isNotEqualTo ""] })
             ]];
-            if (_busy) then { _rows pushBack ["text", "<t color='#8a9a93'>Chargement depuis Athena…</t>"]; };
-            if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", [_err] call _esc]]; };
+            if (_busy) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Chargement depuis Athena…</t>"]; };
+            if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", [_err] call _esc]]; };
             if ((count _items) isEqualTo 0 && {!_busy} && {_err isEqualTo ""}) then {
-                _rows pushBack ["text", ["<t color='#8a9a93'>Aucun morceau ici pour l'instant. Ajoutez-en sur le site : Mon espace > Musique.</t>", "<t color='#8a9a93'>La playlist globale est vide : l'administrateur de la plateforme la remplit depuis le site.</t>"] select (_view isEqualTo "global")];
+                _rows pushBack ["text", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun morceau ici pour l'instant. Ajoutez-en sur le site : Mon espace > Musique.</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>La playlist globale est vide : l'administrateur de la plateforme la remplit depuis le site.</t>"] select (_view isEqualTo "global")];
             };
             for "_i" from 0 to (((count _items) min 80) - 1) do {
                 (_items select _i) params ["", "", "", "", ["_artist", ""], "", ["_by", ""]];
                 _rows pushBack (["ath", _i, [_artist, "Artiste inconnu"] select (_artist isEqualTo "")] call _trackRow);
             };
         };
-        _rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Morceaux mis en ligne par les joueurs sur le site Athena (Mon espace > Musique), téléchargés une fois puis gardés en cache. En haut-parleur, les joueurs proches entendent le même morceau.</t>"];
+        _rows pushBack ["text", "<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Morceaux mis en ligne par les joueurs sur le site Athena (Mon espace > Musique), téléchargés une fois puis gardés en cache. En haut-parleur, les joueurs proches entendent le même morceau.</t>"];
     };
     case "LOCAL": {
         private _files = _ui getOrDefault ["files", []];
         _rows append [
             ["section", "Mes fichiers", format ["%1 morceau(x)", count _files]],
-            ["text", format ["<t size='0.8' color='#8a9a93'>Déposez vos MP3, WAV, WMA, M4A ou AAC dans<br/></t><t size='0.8'>%1</t><t size='0.8' color='#8a9a93'><br/>puis ACTUALISER. Les sous-dossiers comptent.</t>", [_ui getOrDefault ["dir", "Documents\Arma 3\COMSPEC_Music"]] call _esc]],
+            ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Déposez vos MP3, WAV, WMA, M4A ou AAC dans<br/></t><t size='0.8'>%1</t><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'><br/>puis ACTUALISER. Les sous-dossiers comptent.</t>", [_ui getOrDefault ["dir", "Documents\Arma 3\COMSPEC_Music"]] call _esc]],
             ["buttons", [["ACTUALISER", ["files"] call _act], ["OUVRIR LE DOSSIER", ["openFolder"] call _act], ["TOUT LIRE", compile format ["['playList', [%1, 0]] call comspec_atak_native_fnc_musicAction;", ["local"] call _listRef], true, (count _files) > 0]]]
         ];
-        if ((_ui getOrDefault ["filesErr", ""]) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", [_ui get "filesErr"] call _esc]]; };
-        if ((count _files) isEqualTo 0 && {(_ui getOrDefault ["filesErr", ""]) isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun fichier audio dans le dossier.</t>"]; };
+        if ((_ui getOrDefault ["filesErr", ""]) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", [_ui get "filesErr"] call _esc]]; };
+        if ((count _files) isEqualTo 0 && {(_ui getOrDefault ["filesErr", ""]) isEqualTo ""}) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun fichier audio dans le dossier.</t>"]; };
         _lists set ["local", _files apply { private _p = _x splitString "\/"; ["file", _x, (_p select -1) regexReplace ["\.[^.]+$", ""], 0] }];
         for "_i" from 0 to (((count _files) min 120) - 1) do {
             private _p = (_files select _i) splitString "\/";
             _rows pushBack (["local", _i, [(_p select [0, (count _p) - 1]) joinString " / ", "Dossier principal"] select ((count _p) < 2)] call _trackRow);
         };
-        _rows pushBack ["text", format ["<t size='0.75' color='#8a9a93'>En haut-parleur, les autres joueurs n'entendent un fichier local que s'ils ont le même fichier dans leur dossier. Pour une écoute commune, préférez SERVEUR ou LIEN.</t>"]];
+        _rows pushBack ["text", format ["<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>En haut-parleur, les autres joueurs n'entendent un fichier local que s'ils ont le même fichier dans leur dossier. Pour une écoute commune, préférez SERVEUR ou LIEN.</t>"]];
     };
     case "SRV": {
         ([] call comspec_atak_native_fnc_musicServerList) params ["_tracks", "_radio"];
@@ -158,7 +158,7 @@ switch (_tab) do {
                 ["SUIVANTS", ["srvPage", _page + 1] call _act, false, ((_page + 1) * _per) < (count _list)]
             ]];
         };
-        _rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Ces pistes passent par le moteur d'Arma : le volume dépend aussi du réglage Musique d'Arma (Options > Audio).</t>"];
+        _rows pushBack ["text", "<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Ces pistes passent par le moteur d'Arma : le volume dépend aussi du réglage Musique d'Arma (Options > Audio).</t>"];
     };
     case "URL": {
         _rows append [
@@ -166,9 +166,9 @@ switch (_tab) do {
             ["edit", "musicUrl", "Adresse (https://…/morceau.mp3)", ""],
             ["edit", "musicUrlTitle", "Titre (facultatif)", ""],
             ["buttons", [["ÉCOUTER", ["url"] call _act, true]]],
-            ["text", "<t size='0.75' color='#8a9a93'>Lien direct vers un MP3, WAV, WMA, M4A ou AAC (80 Mo max, gardé en cache) ou flux de webradio MP3. Les pages YouTube, Spotify ou Deezer ne sont pas des fichiers audio et ne sont pas lisibles. Avec le haut-parleur, chaque joueur proche télécharge le même lien.</t>"]
+            ["text", "<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Lien direct vers un MP3, WAV, WMA, M4A ou AAC (80 Mo max, gardé en cache) ou flux de webradio MP3. Les pages YouTube, Spotify ou Deezer ne sont pas des fichiers audio et ne sont pas lisibles. Avec le haut-parleur, chaque joueur proche télécharge le même lien.</t>"]
         ];
-        if !(missionNamespace getVariable ["comspec_atak_native_music_urls", true]) then { _rows pushBack ["text", "<t color='#f2ab33'>Lecture de liens interdite sur ce serveur.</t>"]; };
+        if !(missionNamespace getVariable ["comspec_atak_native_music_urls", true]) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Lecture de liens interdite sur ce serveur.</t>"]; };
         private _rec = profileNamespace getVariable ["COMSPEC_ATAK_MusicUrls", []];
         if ((count _rec) > 0) then {
             _rows pushBack ["section", "Récents", ""];
@@ -206,18 +206,18 @@ switch (_tab) do {
         private _q = _m get "queue";
         private _src = createHashMapFromArray [["file", "Fichier local"], ["url", "Lien web"], ["srv", "Serveur"], ["lib", "Athena"]];
         if (["queue", "File d'attente", format ["%1 morceau(x)", count _q]] call _fold) then {
-            if ((count _q) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>"]; };
+            if ((count _q) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>"]; };
             if ((count _q) > 1) then { _rows pushBack ["buttons", [["VIDER LA FILE", ["qClear"] call _act, false, true, "Garde le morceau en cours"]]]; };
             for "_i" from 0 to (((count _q) min 40) - 1) do {
                 (_q select _i) params ["_k", "_r", "_t", ["_len", 0]];
                 private _isCur = _i isEqualTo (_m get "qi") && {_mine};
-                _rows pushBack ["person", _icon, format ["<t %1>%2. %3</t><br/><t size='0.75' color='#8a9a93'>%4%5</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
+                _rows pushBack ["person", _icon, format ["<t %1>%2. %3</t><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4%5</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
                     _src getOrDefault [_k, ""], ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
                     [[["JOUER", "EN COURS"] select _isCur, ["jump", _i] call _act, !_isCur, !_isCur], ["MONTER", ["qUp", _i] call _act, false, _i > 0], ["RETIRER", ["qDel", _i] call _act]], [[0.55, 0.6, 0.58, 1], _acc] select _isCur];
             };
         };
         if (["favs", "Favoris", format ["%1 morceau(x)", count _favs]] call _fold) then {
-            if ((count _favs) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Touchez FAV sur un morceau pour le retrouver ici.</t>"]; } else {
+            if ((count _favs) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Touchez FAV sur un morceau pour le retrouver ici.</t>"]; } else {
                 _lists set ["fav", +_favs];
                 _rows pushBack ["buttons", [["TOUT LIRE", compile format ["['playList', [%1, 0]] call comspec_atak_native_fnc_musicAction;", ["fav"] call _listRef], true]]];
                 for "_i" from 0 to (((count _favs) min 30) - 1) do {
@@ -234,12 +234,12 @@ switch (_tab) do {
         } forEach (allPlayers - [player]);
         _near sort true;
         if (["near", "Haut-parleurs autour de moi", format ["%1 audible(s) à moins de %2 m", { (_x select 0) < _range } count _near, _range]] call _fold) then {
-            if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun téléphone en haut-parleur à proximité.</t>"]; };
+            if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun téléphone en haut-parleur à proximité.</t>"]; };
             {
                 _x params ["_d", "_u", "_s"];
                 private _in = _d < _range;
-                _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#8a9a93'>%2 m</t>  <t color='%3'>%4</t><br/><t size='0.8'>%5</t>",
-                    [name _u] call _esc, round _d, ["#8a9a93", _accHex] select _in, ["hors de portée", "audible"] select _in, [_s select 2] call _esc]];
+                _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 m</t>  <t color='%3'>%4</t><br/><t size='0.8'>%5</t>",
+                    [name _u] call _esc, round _d, [(COMSPEC_ATAK_Th get "hexTextMuted"), _accHex] select _in, ["hors de portée", "audible"] select _in, [_s select 2] call _esc]];
             } forEach (_near select [0, 8]);
         };
         [_rows, [0, _vizH, _bw, _bh - _vizH]] call comspec_atak_native_fnc_formRender;

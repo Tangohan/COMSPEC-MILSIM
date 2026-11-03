@@ -29,13 +29,13 @@ private _scr = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) se
 if ((count _scr) > 0) then {
     private _srcs = ["sources"] call comspec_atak_native_fnc_tocCam;
     _rows pushBack ["section", "Caméra sur les écrans du poste", "Image en direct pour les joueurs devant l'écran"];
-    if ((count _srcs) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Aucune caméra du camp à afficher : drone du camp en vol, caméra fixe ou caméra de téléphone partagée avec vous.</t>"]; };
+    if ((count _srcs) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune caméra du camp à afficher : drone du camp en vol, caméra fixe ou caméra de téléphone partagée avec vous.</t>"]; };
     {
         private _o = _x;
         private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
         private _id = netId _o;
         private _onCam = (_c param [3, ""]) isEqualTo "CAM";
-        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#8a9a93'>%2 m · %3</t>", [_c param [0, "TOC"]] call _esc, round (player distance _o),
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 m · %3</t>", [_c param [0, "TOC"]] call _esc, round (player distance _o),
             [["affichage du poste", format ["caméra : %1", ["label", _o] call comspec_atak_native_fnc_tocCam]] select _onCam] call _esc]];
         if ((count _srcs) > 0) then {
             _rows pushBack ["combo", "tocCam" + _id, "Caméra", _srcs apply { [_x select 0, _x select 1] }, _o getVariable ["COMSPEC_ATAK_TocCam", ""],
@@ -55,7 +55,7 @@ _rows pushBack ["section", "Groupes du camp", format ["%1 groupe(s) avec des jou
     private _n = {isPlayer _x && {alive _x}} count (units _x);
     private _num = ([_ld] call comspec_atak_native_fnc_phoneIdent) select 0;
     private _key = [_ld] call comspec_atak_native_fnc_unitGroup;
-    _rows pushBack ["person", _d + "app_group.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 joueur(s)</t><br/><t size='0.8'>Chef %3 · %4 · grille %5</t>",
+    _rows pushBack ["person", _d + "app_group.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 joueur(s)</t><br/><t size='0.8'>Chef %3 · %4 · grille %5</t>",
         [groupId _x] call _esc, _n, [name _ld] call _esc, [_num] call _esc, [getPosATL _ld, 6] call comspec_atak_native_fnc_gridRef],
         [["SMS", ["sms", name _ld] call _act, false, isPlayer _ld && {_ld isNotEqualTo player}, "Message direct au chef"],
          ["ORDRE", ["order", _key] call _act, true, true, "Ordre à ce groupe"]]];
@@ -71,7 +71,7 @@ if (_mine isNotEqualTo []) then {
         private _lbl = _x getOrDefault ["typeLabel", ""];
         if (_lbl isEqualTo "") then { _lbl = _x getOrDefault ["type", "ORDRE"]; };
         private _p = _x getOrDefault ["payload", ""];
-        _rows pushBack ["person", _d + "app_tasks.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 · %3 · %4</t><br/><t size='0.8'>%5</t><br/><t size='0.75' color='#8a9a93'>Vu %6 · reçu %7 · en cours %8 · terminé %9</t>",
+        _rows pushBack ["person", _d + "app_tasks.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · %3 · %4</t><br/><t size='0.8'>%5</t><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vu %6 · reçu %7 · en cours %8 · terminé %9</t>",
             [_lbl] call _esc, _x getOrDefault ["time", ""], [["Tous", _x getOrDefault ["target", ""]] select ((_x getOrDefault ["target", ""]) isNotEqualTo "")] call _esc, _x getOrDefault ["priority", ""],
             [_p select [0, 140]] call _esc, _cnt getOrDefault ["SEEN", 0], _cnt getOrDefault ["ACK", 0], _cnt getOrDefault ["EXEC", 0], _cnt getOrDefault ["DONE", 0]], []];
     } forEach (_mine select [0 max ((count _mine) - 6)]);
@@ -83,7 +83,7 @@ reverse _recent;
 _rows pushBack ["section", "Derniers comptes rendus", ["Aucun pour l'instant", format ["%1 récent(s)", count _log]] select ((count _log) > 0)];
 {
     _x params [["_type", ""], ["_who", ""], "", ["_grid", ""], ["_text", ""], ["_time", ""]];
-    _rows pushBack ["person", _d + "app_alerts.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 · %3 · %4</t>%5",
+    _rows pushBack ["person", _d + "app_alerts.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · %3 · %4</t>%5",
         [_type] call _esc, _time, [_who] call _esc, _grid, ["", format ["<br/><t size='0.8'>%1</t>", [_text select [0, 140]] call _esc]] select (_text isNotEqualTo "")], []];
 } forEach _recent;
 _rows append [

@@ -15,7 +15,7 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 if !([] call comspec_atak_native_fnc_bridge) exitWith {
-    [[["title", "Reco"], ["text", "<t color='#8a9a93'>Les notes de reco partent vers Athena par COMSPEC Overwatch, qui n'est pas chargé sur ce serveur.</t>"]], [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    [[["title", "Reco"], ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Les notes de reco partent vers Athena par COMSPEC Overwatch, qui n'est pas chargé sur ce serveur.</t>"]], [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
 private _font = _l get "font";
@@ -31,15 +31,15 @@ uiNamespace setVariable ["COMSPEC_ATAK_RecoDraft", _draft];
 private _hint = uiNamespace getVariable ["COMSPEC_ATAK_RecoHint", ["", false]];
 
 // Teintes : fond nuit, ambre de la reco (distinct du rouge et du violet des FRS), texte.
-private _cBg = [0.026, 0.031, 0.028, 1];
-private _cHdr = [0.012, 0.015, 0.013, 1];
-private _cTile = [0.065, 0.078, 0.071, 1];
-private _cField = [0.014, 0.017, 0.015, 1];
-private _cLine = [0.16, 0.20, 0.17, 1];
-private _cAmber = [0.95, 0.66, 0.18, 1];
-private _cText = [0.92, 0.95, 0.93, 1];
-private _cDim = [0.55, 0.61, 0.58, 1];
-private _cInk = [0.04, 0.035, 0.02, 1];
+private _cBg = COMSPEC_ATAK_Th get "bg1";
+private _cHdr = COMSPEC_ATAK_Th get "bg0";
+private _cTile = COMSPEC_ATAK_Th get "surface";
+private _cField = COMSPEC_ATAK_Th get "field";
+private _cLine = COMSPEC_ATAK_Th get "border";
+private _cAmber = COMSPEC_ATAK_Th get "warn";
+private _cText = COMSPEC_ATAK_Th get "text";
+private _cDim = COMSPEC_ATAK_Th get "textDim";
+private _cInk = COMSPEC_ATAK_Th get "onState";
 
 // Types de note (clés attendues par Athena) : libellé, couleur, icône.
 private _types = [
@@ -160,8 +160,8 @@ private _bh2 = _font * 1.7;
     [[_bx, _y, _bww, _bh2], [_cTile, [0.30, 0.21, 0.06, 1]] select _on] call _box;
     [[_bx, _y + _bh2 - pixelH * 2, _bww, pixelH * 2], [[1, 1, 1, 0.05], _cAmber] select _on] call _box;
     private _c = ["COMSPEC_RscStructuredText", [_bx, _y + _bh2 * 0.1, _bww, _bh2 * 0.9]] call _mk;
-    _c ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='%1'>%2 %3</t><br/><t align='center' size='0.75' color='#8a9a93'>%4</t>",
-        ["#c9d2cd", "#f2a92e"] select _on, ["○", "●"] select _on, _t, _sub]) call comspec_atak_native_fnc_tr);
+    _c ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='%1'>%2 %3</t><br/><t align='center' size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4</t>",
+        [(COMSPEC_ATAK_Th get "hexText"), "#f2a92e"] select _on, ["○", "●"] select _on, _t, _sub]) call comspec_atak_native_fnc_tr);
     _c ctrlSetFontHeight _fs;
     [[_bx, _y, _bww, _bh2], compile format [_redo, format ["(uiNamespace getVariable ['COMSPEC_ATAK_RecoDraft', createHashMap]) set ['confidence', '%1'];", _k]], _t] call _hit;
 } forEach [["vu_direct", "VU DIRECTEMENT", "par moi ou mon équipe"], ["rapporte", "RAPPORTÉ", "par un tiers, à confirmer"]];
@@ -245,7 +245,7 @@ _si ctrlSetTextColor _cInk;
 _y = _y + _sh + _pad * 0.5;
 if ((_hint select 0) isNotEqualTo "") then {
     private _h = ["COMSPEC_RscStructuredText", [_xR, _y, _wR, _fs * 2.4]] call _mk;
-    _h ctrlSetStructuredText parseText ((format ["<t size='0.8' color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select (_hint select 1), [_hint select 0] call _esc]) call comspec_atak_native_fnc_tr);
+    _h ctrlSetStructuredText parseText ((format ["<t size='0.8' color='%1'>%2</t>", ["#7aa89a", (COMSPEC_ATAK_Th get "hexWarn")] select (_hint select 1), [_hint select 0] call _esc]) call comspec_atak_native_fnc_tr);
     _y = _y + ((ctrlTextHeight _h) max (_fs * 1.2)) + _pad * 0.3;
 };
 private _yR = _y;
@@ -269,7 +269,7 @@ if ((count _log) isEqualTo 0) then {
     private _ic = ["COMSPEC_RscPicture", [_pad * 1.6, _y + _ch * 0.22, _ch * 0.56 / _ratio, _ch * 0.56], _dir + (_ty select 3) + ".paa"] call _mk;
     _ic ctrlSetTextColor _col;
     private _c = ["COMSPEC_RscStructuredText", [_pad * 2.2 + _ch * 0.56 / _ratio, _y + _ch * 0.08, _bw - _pad * 4 - _ch * 0.56 / _ratio, _ch * 0.9]] call _mk;
-    _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%3</t><br/><t size='0.85'>%4</t>",
+    _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t font='EtelkaMonospacePro' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3</t><br/><t size='0.85'>%4</t>",
         (_col select [0, 3]) call BIS_fnc_colorRGBtoHTML, [toUpper _lab] call _esc, [_g] call _esc, [[_tx, "—"] select (_tx isEqualTo "")] call _esc]) call comspec_atak_native_fnc_tr);
     _c ctrlSetFontHeight _fs;
     _y = _y + _ch + _pad * 0.4;

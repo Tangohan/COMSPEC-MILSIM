@@ -10,8 +10,9 @@ private _tab = _s getOrDefault ["dbgTab", "LOG"];
 private _lvl = _s getOrDefault ["dbgLvl", "ALL"];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['dbgTab', '%1']; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
-private _rows = [["segment", "", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["PERFS", "PERF"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn]]];
-private _lvlColor = { params ["_v"]; switch (_v) do { case "ERROR": { "#e5483a" }; case "WARN"; case "WARNING": { "#f2ab33" }; case "DEBUG": { "#6c7671" }; default { "#8a9a93" }; } };
+// Onglets soulignés (composant « tabs » du système de design 3.1.0).
+private _rows = [["tabs", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["PERFS", "PERF"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn]]];
+private _lvlColor = { params ["_v"]; switch (_v) do { case "ERROR": { (COMSPEC_ATAK_Th get "hexAlert") }; case "WARN"; case "WARNING": { (COMSPEC_ATAK_Th get "hexWarn") }; case "DEBUG": { (COMSPEC_ATAK_Th get "hexTextMuted") }; default { (COMSPEC_ATAK_Th get "hexTextMuted") }; } };
 // Journal fusionné : natif [t, niveau, module, message] et Overwatch « t [COMSPEC Overwatch][NIV][Canal] message ».
 private _merged = {
     private _out = (missionNamespace getVariable ["COMSPEC_ATAK_Log", []]) apply { [_x select 0, _x select 1, "ATAK·" + (_x select 2), _x select 3] };
@@ -29,26 +30,26 @@ switch (_tab) do {
     case "PERF": {
         // Dernier bilan de 30 s (fn_perfAcc « report ») : fonctions les plus coûteuses et rendus complets par page.
         (missionNamespace getVariable ["COMSPEC_ATAK_PerfLast", []]) params [["_at", -1], ["_fps", 0], ["_slowN", 0], ["_slowMax", 0], ["_top", []], ["_rend", []], ["_watch", []]];
-        if (_at < 0) exitWith { _rows pushBack ["text", "<t color='#8a9a93'>Premier bilan dans 30 s au plus (profilage CBA actif : bilan dans le journal).</t>"]; };
+        if (_at < 0) exitWith { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Premier bilan dans 30 s au plus (profilage CBA actif : bilan dans le journal).</t>"]; };
         _rows append [
             ["info", "Dernier bilan", format ["il y a %1 s · fenêtre de 30 s", round (diag_tickTime - _at)]],
             ["info", "Images par seconde", str _fps],
             ["info", "Images lentes (plus de 50 ms)", format ["%1 (pire %2 ms)", _slowN, _slowMax]],
             ["section", "Les plus coûteuses", "temps total sur 30 s"]
         ];
-        _rows pushBack ["text", ["<t color='#8a9a93'>Rien mesuré.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_top apply {
+        _rows pushBack ["text", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Rien mesuré.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_top apply {
             _x params ["_k", "_n", "_avg", "_max", "_tot"];
             format ["%1 ms · %2× · moy %3 · max %4 · %5", _tot toFixed 1, _n, _avg toFixed 2, _max toFixed 1, [_k] call _esc]
         }) joinString "<br/>"]] select ((count _top) > 0)];
         _rows pushBack ["section", "Carte et papiers SSE", "temps total sur 30 s"];
-        _rows pushBack ["text", ["<t color='#8a9a93'>Rien mesuré.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_watch apply {
+        _rows pushBack ["text", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Rien mesuré.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_watch apply {
             _x params ["_k", "_n", "_avg", "_max", "_tot"];
             format ["%1 ms · %2× · moy %3 · max %4 · %5", _tot toFixed 1, _n, _avg toFixed 2, _max toFixed 1, [_k] call _esc]
         }) joinString "<br/>"]] select ((count _watch) > 0)];
         _rend = _rend apply { [_x select 1, _x select 0] };
         _rend sort false;
         _rows pushBack ["section", "Rendus complets de page", "sur 30 s"];
-        _rows pushBack ["text", ["<t color='#8a9a93'>Aucun rendu.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_rend apply { format ["%1× %2", _x select 0, [_x select 1] call _esc] }) joinString "<br/>"]] select ((count _rend) > 0)];
+        _rows pushBack ["text", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun rendu.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_rend apply { format ["%1× %2", _x select 0, [_x select 1] call _esc] }) joinString "<br/>"]] select ((count _rend) > 0)];
         _rows pushBack ["buttons", [["ACTUALISER", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
     };
     case "NET": {
@@ -65,9 +66,9 @@ switch (_tab) do {
         reverse _t;
         private _lines = (_t select [0, 60]) apply {
             _x params ["_h", "_lab", "_kb", "_st", "_det"];
-            format ["<t color='#8a9a93'>%1</t> <t color='%2'>%3</t> %4 <t color='#8a9a93'>(%5 Ko) %6</t>", _h, switch (_st) do { case "LIVRÉ"; case "IMMÉDIAT": { "#5cc76b" }; case "PERDU"; case "EN FILE": { "#e5483a" }; default { "#f2ab33" }; }, _st, [_lab] call _esc, _kb, [_det] call _esc]
+            format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t> <t color='%2'>%3</t> %4 <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>(%5 Ko) %6</t>", _h, switch (_st) do { case "LIVRÉ"; case "IMMÉDIAT": { (COMSPEC_ATAK_Th get "hexOk") }; case "PERDU"; case "EN FILE": { (COMSPEC_ATAK_Th get "hexAlert") }; default { (COMSPEC_ATAK_Th get "hexWarn") }; }, _st, [_lab] call _esc, _kb, [_det] call _esc]
         };
-        _rows pushBack ["text", ["<t color='#8a9a93'>Aucun transfert pour l'instant.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", _lines joinString "<br/>"]] select ((count _lines) > 0)];
+        _rows pushBack ["text", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun transfert pour l'instant.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", _lines joinString "<br/>"]] select ((count _lines) > 0)];
     };
     case "STATE": {
         private _q = { params ["_k", ["_d", "—"]]; private _v = missionNamespace getVariable [_k, _d]; [str _v, _v] select (_v isEqualType "") };
@@ -111,10 +112,10 @@ switch (_tab) do {
             ["MedicalRoster", "Fiches médicales (app Médical)"]
         ];
         private _missing = _want select { !((_x select 0) in _have) };
-        private _ok = { params ["_b"]; ["<t color='#e5483a'>MANQUANT</t>", "<t color='#5cc76b'>OK</t>"] select _b };
+        private _ok = { params ["_b"]; ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>MANQUANT</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>OK</t>"] select _b };
         _rows append [
             ["section", "Extension", ""],
-            ["info", "DLL chargée", ["<t color='#e5483a'>non (aucune réponse)</t>", [(_ver splitString "|") param [1, _ver]] call _esc] select (_ver isNotEqualTo "")],
+            ["info", "DLL chargée", ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>non (aucune réponse)</t>", [(_ver splitString "|") param [1, _ver]] call _esc] select (_ver isNotEqualTo "")],
             ["info", "COMSPEC ATAK", [missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]] call _esc],
             ["info", "COMSPEC Link", [[] call comspec_atak_native_fnc_bridge] call _ok],
             ["info", "Fonctions Overwatch récentes", [!isNil "comspec_overwatch_connect_fnc_splitKeepEmpty"] call _ok],
@@ -123,11 +124,11 @@ switch (_tab) do {
         ];
         {
             _x params ["_k", "_lab"];
-            _rows pushBack ["info", _lab, format ["%1 <t size='0.75' color='#6c7671'>%2</t>", [_k in _have] call _ok, _k]];
+            _rows pushBack ["info", _lab, format ["%1 <t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2</t>", [_k in _have] call _ok, _k]];
         } forEach _want;
         _rows pushBack ["text", [
-            "<t color='#5cc76b'>La DLL est à jour pour cette version de COMSPEC ATAK.</t>",
-            "<t color='#f2ab33'>Recompilez la DLL COMSPECExtension (version 2.0.58 ou plus) et relancez Arma : les écrans concernés affichent sinon « mettez la DLL à jour ».</t>"
+            "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>La DLL est à jour pour cette version de COMSPEC ATAK.</t>",
+            "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Recompilez la DLL COMSPECExtension (version 2.0.58 ou plus) et relancez Arma : les écrans concernés affichent sinon « mettez la DLL à jour ».</t>"
         ] select ((count _missing) > 0)];
         // Contrôle de l'installation (fn_integrityCheck) : PBO en double, versions incohérentes, mises à jour.
         private _issues = missionNamespace getVariable ["COMSPEC_ATAK_Integrity", []];
@@ -137,20 +138,20 @@ switch (_tab) do {
             ["info", "DLL attendue par ce main.pbo", [missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", "—"]] call _esc],
             ["info", "Dernières versions sur Athena", [format ["ATAK %1 · COMSPEC Link %2", _lAtak, _lLink], "pas encore vérifié"] select (_lAt < 0)]
         ];
-        { _integrity pushBack ["text", format ["<t color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select ((_x select 1) isEqualTo "ERROR"), [_x select 2] call _esc]]; } forEach _issues;
+        { _integrity pushBack ["text", format ["<t color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexAlert")] select ((_x select 1) isEqualTo "ERROR"), [_x select 2] call _esc]]; } forEach _issues;
         _rows append _integrity;
         // Check de démarrage (fn_startupCheck) : étapes envoyées au salon Discord de debug et réponse d'Athena.
         private _check = missionNamespace getVariable ["COMSPEC_ATAK_StartupCheck", []];
         _rows pushBack ["section", "Check de démarrage", [format ["%1 étape(s)", count _check], "pas encore fait"] select (_check isEqualTo [])];
         if (_check isNotEqualTo []) then {
             _rows pushBack ["info", "Envoi au Discord", [missionNamespace getVariable ["COMSPEC_ATAK_StartupCheckSent", "en cours"]] call _esc];
-            { if ((_x select 1) in ["warn", "fail"]) then { _rows pushBack ["text", format ["<t color='%1'>%2 : %3</t>", ["#f2ab33", "#e5483a"] select ((_x select 1) isEqualTo "fail"), _x select 0, [_x select 2] call _esc]]; }; } forEach _check;
+            { if ((_x select 1) in ["warn", "fail"]) then { _rows pushBack ["text", format ["<t color='%1'>%2 : %3</t>", [(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexAlert")] select ((_x select 1) isEqualTo "fail"), _x select 0, [_x select 2] call _esc]]; }; } forEach _check;
         };
         _rows pushBack ["buttons", [["RELANCER LE TEST", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
     };
     case "TOOLS": {
         _rows append [
-            ["text", "<t size='0.85' color='#8a9a93'>Le journal complet est aussi dans le fichier RPT d'Arma (et dans COMSPEC/logs avec Overwatch).</t>"],
+            ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Le journal complet est aussi dans le fichier RPT d'Arma (et dans COMSPEC/logs avec Overwatch).</t>"],
             ["buttons", [["COPIER LE JOURNAL", {
                 private _lines = ([] call (uiNamespace getVariable ["COMSPEC_ATAK_DbgMerged", { [] }])) apply { format ["%1 [%2][%3] %4", (_x select 0) toFixed 1, _x select 1, _x select 2, _x select 3] };
                 copyToClipboard (_lines joinString endl);
@@ -180,12 +181,12 @@ switch (_tab) do {
         };
         private _n = { (_x select 1) isEqualTo "ERROR" } count _all;
         private _w = { (_x select 1) in ["WARN", "WARNING"] } count _all;
-        _rows pushBack ["text", format ["<t size='0.85'>%1 ligne(s) · <t color='#e5483a'>%2 erreur(s)</t> · <t color='#f2ab33'>%3 alerte(s)</t></t>", count _all, _n, _w]];
+        _rows pushBack ["text", format ["<t size='0.85'>%1 ligne(s) · <t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%2 erreur(s)</t> · <t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%3 alerte(s)</t></t>", count _all, _n, _w]];
         private _lines = (_list select [0, 80]) apply {
             _x params ["_t", "_v", "_m", "_msg"];
-            format ["<t color='#6c7671'>%1</t> <t color='%2'>%3</t> <t color='#7fb6e6'>%4</t> %5", _t toFixed 0, [_v] call _lvlColor, _v select [0, 4], [_m] call _esc, [_msg] call _esc]
+            format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t> <t color='%2'>%3</t> <t color='" + (COMSPEC_ATAK_Th get "hexInfo") + "'>%4</t> %5", _t toFixed 0, [_v] call _lvlColor, _v select [0, 4], [_m] call _esc, [_msg] call _esc]
         };
-        _rows pushBack ["text", ["<t color='#8a9a93'>Journal vide.</t>", format ["<t size='0.78' font='EtelkaMonospacePro'>%1</t>", _lines joinString "<br/>"]] select ((count _lines) > 0)];
+        _rows pushBack ["text", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Journal vide.</t>", format ["<t size='0.78' font='EtelkaMonospacePro'>%1</t>", _lines joinString "<br/>"]] select ((count _lines) > 0)];
     };
 };
 uiNamespace setVariable ["COMSPEC_ATAK_DbgMerged", _merged];

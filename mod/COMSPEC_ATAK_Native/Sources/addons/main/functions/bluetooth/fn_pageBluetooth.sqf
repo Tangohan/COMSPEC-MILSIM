@@ -46,14 +46,14 @@ if (_idcKey isNotEqualTo "") exitWith {
                 private _u = if (_i < 0) then { objNull } else { allPlayers select _i };
                 if (!isNull _u && {_u getVariable ["COMSPEC_ATAK_BtOn", false]} && {(_u distance player) <= _range}) then { _near pushBack [_uid, _y, round (_u distance player)]; };
             } forEach (_bt get "paired");
-            if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun appareil appairé à portée. Appairez-le dans l'app Bluetooth (code), ou passez par le NFC.</t>"]; };
+            if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun appareil appairé à portée. Appairez-le dans l'app Bluetooth (code), ou passez par le NFC.</t>"]; };
             {
                 _x params ["_uid", "_name", "_dist"];
                 _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>ATAK de %1</t><br/><t size='0.8' color='%2'>connecté · %3 m</t>", [_name] call _esc, _accHex, _dist],
                     [["ENVOYER", ["idcSend", [_idcKey, _uid]] call _act, true]], _acc];
             } forEach _near;
         } else {
-            _rows pushBack ["text", "<t color='#8a9a93'>Bluetooth éteint : allumez-le pour envoyer la fiche à un appareil appairé.</t>"];
+            _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Bluetooth éteint : allumez-le pour envoyer la fiche à un appareil appairé.</t>"];
             _rows pushBack ["buttons", [["ALLUMER LE BLUETOOTH", ["toggle"] call _act, false]]];
         };
         _rows pushBack ["buttons", [["NFC · DOS À DOS", ["idcNfc", _idcKey] call _act, false, ([] call comspec_atak_native_fnc_canUse) isEqualTo "",
@@ -67,7 +67,7 @@ private _pendRows = {
     params ["_list"];
     {
         _x params ["_id", "", "_name", "_kind", "", "_title", "_at", ["_nfc", false]];
-        _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · %3%4 · expire dans %5 s</t>",
+        _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · %3%4 · expire dans %5 s</t>",
             [_title] call _esc, [_name] call _esc, _kindName getOrDefault [_kind, "élément"], ["", " · NFC"] select (_nfc isEqualTo true), round (60 - (_now - _at))],
             [["ACCEPTER", ["accept", _id] call _act, true], ["REFUSER", ["refuse", _id] call _act]], _acc];
     } forEach _list;
@@ -77,7 +77,7 @@ private _rows = [
     ["switch", "Mode avion", _air, { ["toggle"] call comspec_atak_native_fnc_airplaneMode; }, "Coupe le réseau (synchro, SMS, BFT). Le Bluetooth reste disponible."]
 ];
 if (!_on) exitWith {
-    _rows pushBack ["text", "<t color='#8a9a93'>Bluetooth désactivé. Activez-le pour appairer un ATAK proche et échanger photos, musiques, données et fiches.</t>"];
+    _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Bluetooth désactivé. Activez-le pour appairer un ATAK proche et échanger photos, musiques, données et fiches.</t>"];
     private _nfcPend = (_bt get "pending") select { (_now - (_x select 6)) <= 60 && {(_x param [7, false]) isEqualTo true} };
     if (_nfcPend isNotEqualTo []) then {
         _rows pushBack ["section", "Demandes NFC", "Fiches de contrôle d'identité tendues dos à dos"];
@@ -86,14 +86,14 @@ if (!_on) exitWith {
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
-if (!_usable) then { _rows pushBack ["text", "<t color='#f2ab33'>Téléphone indisponible : Bluetooth inactif.</t>"]; };
+if (!_usable) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Téléphone indisponible : Bluetooth inactif.</t>"]; };
 
 // Appairage par code
 private _code = _bt get "code";
 private _codeOn = _code isNotEqualTo "" && {_now < (_bt get "codeUntil")};
 _rows pushBack ["section", "Appairer un appareil", format ["Les deux téléphones à moins de %1 m", round _range]];
 if (_codeOn) then {
-    _rows pushBack ["text", format ["<t align='center' size='2' font='COMSPEC_BarlowBold' color='%1'>%2 %3</t><br/><t align='center' size='0.8' color='#8a9a93'>Code d'appairage · valable encore %4 s · à saisir sur l'autre téléphone</t>",
+    _rows pushBack ["text", format ["<t align='center' size='2' font='COMSPEC_BarlowBold' color='%1'>%2 %3</t><br/><t align='center' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Code d'appairage · valable encore %4 s · à saisir sur l'autre téléphone</t>",
         _accHex, _code select [0, 3], _code select [3, 3], round ((_bt get "codeUntil") - _now)]];
     _rows pushBack ["buttons", [["CACHER LE CODE", ["hideCode"] call _act]]];
 } else {
@@ -122,7 +122,7 @@ if ((count _xf) > 0) then {
         private _bar = "";
         for "_i" from 1 to 20 do { _bar = _bar + (["-", "|"] select (_i <= _full)); };
         _bar = format ["<t font='EtelkaMonospaceProBold' color='%1'>%2</t><t font='EtelkaMonospacePro' color='#3a4a44'>%3</t>", _accHex, _bar select [0, _full], _bar select [_full]];
-        _rows pushBack ["person", _kindIcon getOrDefault [_y get "kind", _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 %3 · %4 %5  </t><t size='0.7'>%6</t>",
+        _rows pushBack ["person", _kindIcon getOrDefault [_y get "kind", _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 %3 · %4 %5  </t><t size='0.7'>%6</t>",
             [_y get "title"] call _esc, ["De", "Vers"] select ((_y get "dir") isEqualTo "out"), [_y get "name"] call _esc, _pct, "%", _bar],
             [["ANNULER", ["cancel", _x] call _act]], _acc];
     } forEach _xf;
@@ -134,16 +134,16 @@ private _paired = _bt get "paired";
 private _target = _ui getOrDefault ["target", ""];
 if !(_target in _paired) then { _target = ""; _ui set ["target", ""]; };
 _rows pushBack ["section", "Appareils appairés", format ["%1 appareil(s) · gardés pour la mission", count _paired]];
-if ((count _paired) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun. Affichez votre code, ou saisissez celui d'un équipier proche.</t>"]; };
+if ((count _paired) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun. Affichez votre code, ou saisissez celui d'un équipier proche.</t>"]; };
 {
     private _uid = _x;
     private _name = _y;
     private _i = allPlayers findIf { getPlayerUID _x isEqualTo _uid };
     private _u = if (_i < 0) then { objNull } else { allPlayers select _i };
     private _st = switch (true) do {
-        case (isNull _u): { "<t color='#8a9a93'>déconnecté</t>" };
-        case !(_u getVariable ["COMSPEC_ATAK_BtOn", false]): { "<t color='#8a9a93'>Bluetooth éteint</t>" };
-        case ((_u distance player) > _range): { format ["<t color='#f2ab33'>hors de portée · %1 m</t>", round (_u distance player)] };
+        case (isNull _u): { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>déconnecté</t>" };
+        case !(_u getVariable ["COMSPEC_ATAK_BtOn", false]): { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Bluetooth éteint</t>" };
+        case ((_u distance player) > _range): { format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>hors de portée · %1 m</t>", round (_u distance player)] };
         default { format ["<t color='%1'>connecté · %2 m</t>", _accHex, round (_u distance player)] };
     };
     _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>ATAK de %1</t><br/><t size='0.8'>%2</t>", [_name] call _esc, _st],
@@ -180,7 +180,7 @@ if (_target isNotEqualTo "") then {
     private _per = 15;
     private _pg = (_ui getOrDefault ["page", 0]) min (floor (((count _all) - 1) / _per)) max 0;
     if ((count _all) isEqualTo 0) then {
-        _rows pushBack ["text", format ["<t color='#8a9a93'>%1</t>", switch (_tab) do {
+        _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", switch (_tab) do {
             case "pho": { ["Aucune photo sur le téléphone. Prenez-en avec l'app Photo.", "Photos indisponibles : liaison Overwatch absente."] select !([] call comspec_atak_native_fnc_bridge) };
             case "mus": { "Aucun morceau. Déposez des MP3 dans Documents\Arma 3\COMSPEC_Music (app Musique, Mes fichiers)." };
             case "sheet": { "Aucune fiche. Elles viennent du terminal SEEK : interrogations (fiches SEEK) et personnes enregistrées (fiches SSE), et de l'app Contrôle ID (fiches CONTRÔLE ID)." };
@@ -190,7 +190,7 @@ if (_target isNotEqualTo "") then {
     for "_i" from (_pg * _per) to (((_pg + 1) * _per min (count _all)) - 1) do {
         (_all select _i) params ["_kind", "_ref", "_title", "_cat", ["_len", 0]];
         _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon],
-            format ["%1<br/><t size='0.75' color='#8a9a93'>%2%3</t>", [_title] call _esc, [_cat] call _esc, ["", format [" · %1:%2", floor (_len / 60), [str (floor _len mod 60), "0" + str (floor _len mod 60)] select ((floor _len mod 60) < 10)]] select (_len > 0)],
+            format ["%1<br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2%3</t>", [_title] call _esc, [_cat] call _esc, ["", format [" · %1:%2", floor (_len / 60), [str (floor _len mod 60), "0" + str (floor _len mod 60)] select ((floor _len mod 60) < 10)]] select (_len > 0)],
             [[["ENVOYER", "FAIRE ÉCOUTER"] select (_kind in ["snd", "mus"]), ["send", _i] call _act, true, _usable]]];
     };
     if ((count _all) > _per) then {
@@ -225,12 +225,12 @@ if ((count _inbox) > 0) then {
             private _k = (createHashMapFromArray ((_data select { _x isEqualType [] && {(count _x) isEqualTo 2} }))) getOrDefault ["key", ""];
             ["idcOpen", _k] call _act
         } else { ["view", _id] call _act };
-        _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · de %3 · %4%5</t>",
+        _rows pushBack ["person", _kindIcon getOrDefault [_kind, _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · de %3 · %4%5</t>",
             [_title] call _esc, _kindName getOrDefault [_kind, "élément"], [_from] call _esc, _hh, ["", format [" · %1", _where]] select (_where isNotEqualTo "")],
             [[["VOIR", "FERMER"] select (_view isEqualTo _id), _open, false, _canView]], [[0.55, 0.6, 0.58, 1], _acc] select (_view isEqualTo _id)];
         if (_view isEqualTo _id && {_canView} && {_kind isNotEqualTo "idc"}) then {
             private _lines = ["sheetLines", [_kind, _data]] call comspec_atak_native_fnc_btItems;
-            _rows pushBack ["text", (_lines apply { format ["<t size='0.8' color='#8a9a93'>%1</t>  <t size='0.85'>%2</t>", [_x select 0] call _esc, [_x select 1] call _esc] }) joinString "<br/>"];
+            _rows pushBack ["text", (_lines apply { format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>  <t size='0.85'>%2</t>", [_x select 0] call _esc, [_x select 1] call _esc] }) joinString "<br/>"];
         };
     } forEach ((+_inbox) select [((count _inbox) - 8) max 0]);
 };
@@ -240,7 +240,7 @@ private _sent = _bt get "sent";
 if ((count _sent) > 0) then {
     _rows pushBack ["section", "Envois récents", ""];
     _rows pushBack ["text", ((+_sent) apply { format ["<t size='0.85'>%1 » %2 · <t color='%3'>%4</t></t>", [_x select 2] call _esc, [_x select 1] call _esc,
-        switch (_x select 3) do { case "ACCEPTÉ"; case "REÇU"; case "ENVOYÉ": { _accHex }; case "REFUSÉ"; case "ÉCHEC"; case "HORS PORTÉE": { "#e5483a" }; default { "#8a9a93" }; }, toLower (_x select 3)] }) joinString "<br/>"];
+        switch (_x select 3) do { case "ACCEPTÉ"; case "REÇU"; case "ENVOYÉ": { _accHex }; case "REFUSÉ"; case "ÉCHEC"; case "HORS PORTÉE": { (COMSPEC_ATAK_Th get "hexAlert") }; default { (COMSPEC_ATAK_Th get "hexTextMuted") }; }, toLower (_x select 3)] }) joinString "<br/>"];
 };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

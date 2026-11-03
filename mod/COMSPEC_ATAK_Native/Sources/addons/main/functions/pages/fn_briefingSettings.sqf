@@ -25,11 +25,11 @@ private _rows = [
         ["GOOGLE SLIDES", { ["source", "GOOGLE"] call comspec_atak_native_fnc_briefingCfg; }, _src isEqualTo "GOOGLE", "La présentation Google Slides enregistrée ci-dessous"]
     ]],
     ["edit", "briefUrl", "Lien Google Slides", _draft],
-    ["text", "<t size='0.8' color='#a9b8b1'>Collez le lien Partager (docs.google.com/presentation/d/…/edit) ou l'identifiant seul. La présentation doit être ouverte à « Tous les utilisateurs disposant du lien ». Un lien « Publier sur le Web » (…/d/e/…/pub) ne peut pas être lu, comme sur Athena.</t>"]
+    ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Collez le lien Partager (docs.google.com/presentation/d/…/edit) ou l'identifiant seul. La présentation doit être ouverte à « Tous les utilisateurs disposant du lien ». Un lien « Publier sur le Web » (…/d/e/…/pub) ne peut pas être lu, comme sur Athena.</t>"]
 ];
 if ((count _test) > 1) then {
     _test params ["_kind", "_msg"];
-    private _col = createHashMapFromArray [["ok", "#5cc76b"], ["err", "#e86a5a"], ["warn", "#e0a040"], ["wait", "#7fb6e6"]] getOrDefault [_kind, "#c9d4cf"];
+    private _col = createHashMapFromArray [["ok", (COMSPEC_ATAK_Th get "hexOk")], ["err", "#e86a5a"], ["warn", "#e0a040"], ["wait", (COMSPEC_ATAK_Th get "hexInfo")]] getOrDefault [_kind, (COMSPEC_ATAK_Th get "hexTextDim")];
     private _lines = ([[_msg], _msg] select (_msg isEqualType [])) apply { [_x] call _esc };
     _rows pushBack ["text", format ["<t color='%1'>%2</t>", _col, _lines joinString "<br/>"]];
 };

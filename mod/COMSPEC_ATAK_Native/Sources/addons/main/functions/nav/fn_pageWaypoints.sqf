@@ -26,7 +26,7 @@ if ((count _pts) > 0) then {
     (_pts select _idx) params ["_ap", "_an"];
     private _ac = (["type", (_pts select _idx) param [2, "WP"]] call comspec_atak_native_fnc_wpAction) select 3;
     _rows pushBack ["text", format ["<t size='1.25' font='COMSPEC_BarlowBold' color='%1'>%2</t> <t size='1.25' font='COMSPEC_BarlowBold' color='%3'>%4. %5</t><br/>%6 · %7° %8 · <t font='EtelkaMonospacePro'>%9</t>",
-        ["#8a9a93", "#5cc76b"] select _nav, ["EN PAUSE :", "CAP SUR"] select _nav, [_ac] call _hex, _idx + 1, _an regexReplace ["[<>&]", ""],
+        [(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexOk")] select _nav, ["EN PAUSE :", "CAP SUR"] select _nav, [_ac] call _hex, _idx + 1, _an regexReplace ["[<>&]", ""],
         [player distance2D _ap] call _fmt, round (player getDir _ap), [player getDir _ap] call _card, [_ap, 8] call comspec_atak_native_fnc_gridRef]];
     _rows pushBack ["buttons", [
         ["<", { ["prev"] call comspec_atak_native_fnc_wpAction; }, false, _idx > 0],
@@ -53,8 +53,8 @@ if ((count _pts) > 0) then {
         private _prevP = if (_forEachIndex isEqualTo 0) then { getPosATL player } else { (_pts select (_forEachIndex - 1)) select 0 };
         private _on = _forEachIndex isEqualTo _idx;
         private _done = _nav && {_forEachIndex < _idx};
-        _rows pushBack ["person", ["icon", _tRow select 0] call comspec_atak_native_fnc_wpAction, format ["<t font='COMSPEC_BarlowBold' color='%1'>%2. %3</t>  <t size='0.8' color='#8a9a93'>%4</t><br/><t size='0.8'>%5 %6 · %7°  <t font='EtelkaMonospacePro'>%8</t></t>",
-            [["#c9d4cf", "#5cc76b"] select _on, "#6f7b75"] select _done, _forEachIndex + 1, _n regexReplace ["[<>&]", ""], toLower (_tRow select 1),
+        _rows pushBack ["person", ["icon", _tRow select 0] call comspec_atak_native_fnc_wpAction, format ["<t font='COMSPEC_BarlowBold' color='%1'>%2. %3</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4</t><br/><t size='0.8'>%5 %6 · %7°  <t font='EtelkaMonospacePro'>%8</t></t>",
+            [[(COMSPEC_ATAK_Th get "hexTextDim"), (COMSPEC_ATAK_Th get "hexOk")] select _on, "#6f7b75"] select _done, _forEachIndex + 1, _n regexReplace ["[<>&]", ""], toLower (_tRow select 1),
             [_prevP distance2D _p] call _fmt, ["depuis l'étape précédente", "depuis moi"] select (_forEachIndex isEqualTo 0), round (_prevP getDir _p), [_p, 8] call comspec_atak_native_fnc_gridRef],
             [
                 ["ALLER", compile format ["['goto', %1] call comspec_atak_native_fnc_wpAction;", _forEachIndex], false, true, "Cap sur cette étape"],

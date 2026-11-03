@@ -69,7 +69,7 @@ if (_edit isNotEqualTo "") then {
     _notes = [_notes, [], { -(_x select 3) }, "ASC"] call BIS_fnc_sortBy;
     private _rows = [
         ["hero", "\z\comspec_atak_native\addons\main\data\app_notes.paa", format [
-            "<t size='1.35' font='COMSPEC_BarlowBold'>Bloc-notes</t><br/><t color='#8a9a93'>%1 note%2 · enregistrées sur ce poste</t>",
+            "<t size='1.35' font='COMSPEC_BarlowBold'>Bloc-notes</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1 note%2 · enregistrées sur ce poste</t>",
             count _notes,
             ["", "s"] select ((count _notes) isNotEqualTo 1)
         ]],
@@ -82,7 +82,7 @@ if (_edit isNotEqualTo "") then {
         ["section", "Mes notes", ""]
     ];
     if ((count _notes) isEqualTo 0) then {
-        _rows pushBack ["text", "<t color='#8a9a93'>Aucune note pour l'instant. Créez-en une pour garder un rappel, une grille ou un message hors liaison.</t>"];
+        _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune note pour l'instant. Créez-en une pour garder un rappel, une grille ou un message hors liaison.</t>"];
     } else {
         {
             _x params ["_id", "_title", "_body", "_upd", ["_from", ""]];
@@ -102,7 +102,7 @@ if (_edit isNotEqualTo "") then {
             };
             private _ttl = if (_title isEqualTo "") then { "Sans titre" } else { _title };
             _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_notes.paa", format [
-                "<t font='COMSPEC_BarlowBold'>%1</t><t size='0.75' color='#8a9a93'>  %2%4</t><br/><t size='0.85' color='#b4c1bb'>%3</t>",
+                "<t font='COMSPEC_BarlowBold'>%1</t><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>  %2%4</t><br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%3</t>",
                 ((_ttl regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]) regexReplace [">", "&gt;"], _stamp, (([_preview, "—"] select (_preview isEqualTo "")) regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"],
                 ["", format [" · %1", format [("reçue de %1") call comspec_atak_native_fnc_tr, _from]]] select (_from isNotEqualTo "")
             ], [

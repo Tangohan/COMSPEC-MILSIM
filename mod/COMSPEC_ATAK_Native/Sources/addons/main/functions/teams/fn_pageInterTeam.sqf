@@ -45,8 +45,8 @@ switch (_tab) do {
             if (isPlayer leader _g && {leader _g isNotEqualTo player}) then {
                 _btns pushBack ["SMS", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatPeer', %1]; (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['chatView', 'CONV']; ['CHAT'] call comspec_atak_native_fnc_navigate;", str (name leader _g)]];
             };
-            _rows pushBack ["person", _t select 2, format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t>%2  <t size='0.8' color='#7fb6e6'>%3</t><br/><t size='0.8' color='#8a9a93'>Chef %4 · %5 membre(s) · %6 BFT en ligne · %7</t>",
-                [groupId _g] call _esc, ["", " <t color='#e8b84a'>● mon groupe</t>"] select (_g isEqualTo _mine), _t select 1,
+            _rows pushBack ["person", _t select 2, format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t>%2  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexInfo") + "'>%3</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Chef %4 · %5 membre(s) · %6 BFT en ligne · %7</t>",
+                [groupId _g] call _esc, ["", " <t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● mon groupe</t>"] select (_g isEqualTo _mine), _t select 1,
                 [[leader _g] call comspec_atak_native_fnc_unitCallsign] call _esc, count _us, [_us] call _online, ["moi", [_d] call _dist] select (_g isNotEqualTo _mine || {leader _g isNotEqualTo player})], _btns, [0.28, 0.70, 1, 1]];
             private _all = [_g] call comspec_atak_native_fnc_ftTeams;
             private _free = (_all select ((count _all) - 1)) select 1;
@@ -57,19 +57,19 @@ switch (_tab) do {
                 private _c = [_m] call _center;
                 private _names = (_m apply {
                     private _r = [_x] call comspec_atak_native_fnc_ftInfo;
-                    format ["%1%2%3", ["", format ["<t color='#7fb6e6'>%1</t> ", _r get "roleShort"]] select ((_r get "roleShort") isNotEqualTo ""), [name _x] call _esc, ["", " <t color='#6c7671'>○</t>"] select !(_x getVariable ["COMSPEC_ATAK_Beacon", false])]
+                    format ["%1%2%3", ["", format ["<t color='" + (COMSPEC_ATAK_Th get "hexInfo") + "'>%1</t> ", _r get "roleShort"]] select ((_r get "roleShort") isNotEqualTo ""), [name _x] call _esc, ["", " <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>○</t>"] select !(_x getVariable ["COMSPEC_ATAK_Beacon", false])]
                 }) joinString " · ";
-                _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='COMSPEC_BarlowBold'>   ● %2</t>  <t size='0.8' color='#8a9a93'>%3 · chef %4%5</t>%6<br/><t size='0.8'>   %7</t>",
+                _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='COMSPEC_BarlowBold'>   ● %2</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3 · chef %4%5</t>%6<br/><t size='0.8'>   %7</t>",
                     _tm get "hex", [_tm get "name"] call _esc, count _m, [["—", name _lead] select !isNull _lead] call _esc,
                     if ((count _c) > 0) then { format [" · %1 %2°", [player distance2D _c] call _dist, round (player getDir _c)] } else { "" },
                     ["", format ["<br/><t size='0.8' color='#b8c4bd'>   %1</t>", [_tm get "desc"] call _esc]] select ((_tm get "desc") isNotEqualTo ""),
-                    [_names, "<t color='#8a9a93'>vide</t>"] select ((count _m) isEqualTo 0)],
+                    [_names, "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>vide</t>"] select ((count _m) isEqualTo 0)],
                     [[], [["CARTE", "mapTeam", [netId _g, _tm get "id"]] call _act]] select ((count _c) > 0), _tm get "rgba"];
             } forEach _all;
             if ((count _free) > 0 && {(count _all) > 0}) then {
-                _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>   Sans équipe : %1</t>", (_free apply { [name _x] call _esc }) joinString " · "]];
+                _rows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>   Sans équipe : %1</t>", (_free apply { [name _x] call _esc }) joinString " · "]];
             };
-            if ((count _all) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>   Pas d'équipe de feu.</t>"]; };
+            if ((count _all) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>   Pas d'équipe de feu.</t>"]; };
         } forEach _groups;
         _rows pushBack ["buttons", [["GÉRER MES ÉQUIPES", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["grpTab", "FT"]; ["GROUP"] call comspec_atak_native_fnc_navigate; }, true], ["OUVRIR LE BFT", { ["BFT"] call comspec_atak_native_fnc_navigate; }]]];
     };
@@ -93,13 +93,13 @@ switch (_tab) do {
                 _btns pushBack (["CARTE", "mapTeam", [netId _g, _tm get "id"]] call _act);
                 _btns pushBack (["Y ALLER", "routeTeam", [netId _g, _tm get "id"], true] call _act);
             };
-            _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='COMSPEC_BarlowBold'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8' color='#8a9a93'>%4 membre(s) · %5 en ligne%6 · %7</t>",
+            _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='COMSPEC_BarlowBold'>%2</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 membre(s) · %5 en ligne%6 · %7</t>",
                 _tm get "hex", [_tm get "name"] call _esc, [groupId _g] call _esc, count _m, [_m] call _online,
-                ["", format [" · <t color='#e5483a'>%1 hors de combat</t>", _dead]] select (_dead > 0),
+                ["", format [" · <t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1 hors de combat</t>", _dead]] select (_dead > 0),
                 if ((count _c) > 0) then { format ["%1 · %2 %3° · dispersion %4", mapGridPosition _c, [_d] call _dist, round (player getDir _c), [_spread] call _dist] } else { "position inconnue" }],
                 _btns, _tm get "rgba"];
         } forEach _list;
-        if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune équipe de feu dans le camp. Créez-en dans l'app Groupe, onglet ÉQUIPES.</t>"]; };
+        if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune équipe de feu dans le camp. Créez-en dans l'app Groupe, onglet ÉQUIPES.</t>"]; };
     };
     default {
         (missionNamespace getVariable ["COMSPEC_ATAK_SquadSyncLast", [-1, "jamais", 0]]) params ["_at", "_st", "_n"];

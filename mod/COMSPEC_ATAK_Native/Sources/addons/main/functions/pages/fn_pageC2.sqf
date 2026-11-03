@@ -7,7 +7,7 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
-private _grey = "#8a9a93";
+private _grey = (COMSPEC_ATAK_Th get "hexTextMuted");
 // Noms et indicatifs (joueurs, Athena) passent par parseText : « <CS> Bob » ne casse plus la mise en page.
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _units = values (_data getOrDefault ["units", createHashMap]);
@@ -20,7 +20,7 @@ private _open = [];
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _dist = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
 private _posOf = { private _o = _this getOrDefault ["object", objNull]; if (isNull _o) then { _this getOrDefault ["position", []] } else { getPosASL _o } };
-private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.5' font='COMSPEC_BarlowBold' color='%3'>%1</t><t size='0.8' color='#8a9a93'> %2</t>", _n, _lab, _col] };
+private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.5' font='COMSPEC_BarlowBold' color='%3'>%1</t><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'> %2</t>", _n, _lab, _col] };
 private _canOrder = ["can"] call comspec_atak_native_fnc_orderLocal;
 private _grp = group player;
 private _rows = [
@@ -28,9 +28,9 @@ private _rows = [
         [groupId _grp] call _esc, _grey, [name leader _grp] call _esc, [dayTime, "HH:MM"] call BIS_fnc_timeToString, worldName]],
     ["text", format ["%1     %2     %3     %4",
         [count _friends, "alliés", "#47b3ff"] call _tile,
-        [count _hostiles, "contacts", ["#8a9a93", "#e5483a"] select ((count _hostiles) > 0)] call _tile,
-        [count _open, "ordres à traiter", ["#8a9a93", "#f2ab33"] select ((count _open) > 0)] call _tile,
-        [_lost, "liaisons perdues", ["#8a9a93", "#e5483a"] select (_lost > 0)] call _tile]],
+        [count _hostiles, "contacts", [(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexAlert")] select ((count _hostiles) > 0)] call _tile,
+        [count _open, "ordres à traiter", [(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexWarn")] select ((count _open) > 0)] call _tile,
+        [_lost, "liaisons perdues", [(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexAlert")] select (_lost > 0)] call _tile]],
     ["buttons", [
         ["CARTE", { ["MAP"] call comspec_atak_native_fnc_navigate; }, true],
         ["BFT", { ["BFT"] call comspec_atak_native_fnc_navigate; }],
@@ -42,11 +42,11 @@ private _rows = [
 _rows pushBack ["section", "Mon groupe", format ["%1 membre(s)", count units _grp]];
 {
     private _life = switch (true) do {
-        case (!alive _x): { "<t color='#e5483a'>mort</t>" };
-        case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='#8a9a93'>—</t>" };
-        case ((lifeState _x) isEqualTo "INCAPACITATED"): { "<t color='#e5483a'>inconscient</t>" };
-        case ((damage _x) > 0.4): { "<t color='#f2ab33'>blessé</t>" };
-        default { "<t color='#5cc76b'>valide</t>" };
+        case (!alive _x): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>mort</t>" };
+        case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>—</t>" };
+        case ((lifeState _x) isEqualTo "INCAPACITATED"): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>inconscient</t>" };
+        case ((damage _x) > 0.4): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>blessé</t>" };
+        default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>valide</t>" };
     };
     private _where = if (_x isEqualTo player) then { "moi" } else { format ["%1 · %2", [player distance2D _x] call _dist, [player getDir _x] call _card] };
     _rows pushBack ["info", format ["%1%2", [name _x] call _esc, ["", " ★"] select (leader _grp isEqualTo _x)], format ["%1  <t color='%2'>%3</t>", _life, _grey, _where]];
@@ -62,8 +62,8 @@ _rows pushBack ["section", "Contacts", ["Aucun contact signalé", format ["%1 si
 {
     _x params ["_m", "_u"];
     private _p = _u call _posOf;
-    private _fr = createHashMapFromArray [["LIVE", "<t color='#5cc76b'>direct</t>"], ["STALE", "<t color='#f2ab33'>retardé</t>"], ["LOST", "<t color='#e5483a'>perdu</t>"]] getOrDefault [_u getOrDefault ["freshness", "LIVE"], ""];
-    _rows pushBack ["info", format ["<t color='#e5483a'>%1</t>", [_u getOrDefault ["callsign", "CONTACT"]] call _esc], format ["%1 · %2° %3  %4", [_m] call _dist, round (player getDir _p), [player getDir _p] call _card, _fr]];
+    private _fr = createHashMapFromArray [["LIVE", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>direct</t>"], ["STALE", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>retardé</t>"], ["LOST", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>perdu</t>"]] getOrDefault [_u getOrDefault ["freshness", "LIVE"], ""];
+    _rows pushBack ["info", format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", [_u getOrDefault ["callsign", "CONTACT"]] call _esc], format ["%1 · %2° %3  %4", [_m] call _dist, round (player getDir _p), [player getDir _p] call _card, _fr]];
 } forEach (_near select [0, 5]);
 
 // Ordres en cours.
@@ -72,7 +72,7 @@ _rows pushBack ["section", "Ordres en cours", ["Aucun ordre à traiter", format 
     private _label = _x getOrDefault ["typeLabel", ""];
     if (_label isEqualTo "") then { _label = _x getOrDefault ["type", "ORDRE"]; };
     private _prio = (toUpper (_x getOrDefault ["priority", "NORMAL"])) in ["HIGH", "URGENT", "FLASH", "PRIORITY"];
-    _rows pushBack ["info", format ["<t color='%1'>%2</t>", ["#c9d4cf", "#e04038"] select _prio, [_label] call _esc], format ["<t color='%1'>%2 · cible %3</t>", _grey, [_x getOrDefault ["issuer", "TOC"]] call _esc, [_x getOrDefault ["target", "-"]] call _esc]];
+    _rows pushBack ["info", format ["<t color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexTextDim"), "#e04038"] select _prio, [_label] call _esc], format ["<t color='%1'>%2 · cible %3</t>", _grey, [_x getOrDefault ["issuer", "TOC"]] call _esc, [_x getOrDefault ["target", "-"]] call _esc]];
 } forEach (_open select [0, 4]);
 if (_canOrder) then { _rows pushBack ["buttons", [["NOUVEL ORDRE", { ['open'] call comspec_atak_native_fnc_orderAction; ["TASK"] call comspec_atak_native_fnc_navigate; }, true]]]; };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;

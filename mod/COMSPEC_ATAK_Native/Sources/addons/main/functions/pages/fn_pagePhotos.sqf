@@ -46,9 +46,9 @@ if ((_l get "mode") isEqualTo "MINI") exitWith {
     _i ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], _acc] select _canShoot);
     private _t = ["COMSPEC_RscStructuredText", [_pad, _bh * 0.08 + _ic + _pad / 2, _bw - _pad * 2, _font * 3.2]] call _mk;
     _t ctrlSetStructuredText parseText ((switch (true) do {
-        case (!_bridge): { "<t align='center' color='#e5483a'>COMSPEC Overwatch absent</t><br/><t align='center' size='0.8' color='#b4c1bb'>Ni prise de vue ni envoi possibles</t>" };
-        case (!_ready): { "<t align='center' color='#f2ab33'>Athena non connecté</t><br/><t align='center' size='0.8' color='#b4c1bb'>Connectez-vous dans l'app Athena pour photographier</t>" };
-        default { "<t align='center' font='COMSPEC_BarlowBold'>Appareil photo</t><br/><t align='center' size='0.8' color='#b4c1bb'>La prise de vue passe en plein écran. Espace pour revenir.</t>" };
+        case (!_bridge): { "<t align='center' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>COMSPEC Overwatch absent</t><br/><t align='center' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Ni prise de vue ni envoi possibles</t>" };
+        case (!_ready): { "<t align='center' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Athena non connecté</t><br/><t align='center' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Connectez-vous dans l'app Athena pour photographier</t>" };
+        default { "<t align='center' font='COMSPEC_BarlowBold'>Appareil photo</t><br/><t align='center' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>La prise de vue passe en plein écran. Espace pour revenir.</t>" };
     }) call comspec_atak_native_fnc_tr);
     private _rows = [
         ["buttons", [["PHOTO", { [{ ["ENTER", (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["photoCaption", ""]] call comspec_atak_native_fnc_photoMode; }] call CBA_fnc_execNextFrame; }, true, _canShoot],
@@ -64,10 +64,10 @@ if ((_l get "mode") isEqualTo "MINI") exitWith {
 private _stH = _fs * 1.5;
 private _stat = ["COMSPEC_RscStructuredText", [_pad, _pad / 4, _bw - _pad * 2, _stH]] call _mk;
 _stat ctrlSetStructuredText parseText ((switch (true) do {
-    case (!_bridge): { "<t size='0.8' color='#e5483a'>● COMSPEC Overwatch absent : ni prise de vue ni envoi possibles</t>" };
-    case (!_ready): { "<t size='0.8' color='#f2ab33'>● Athena non connecté : connectez-vous dans l'app Athena pour photographier</t>" };
-    case (!_net): { "<t size='0.8' color='#f2ab33'>● Hors réseau : la photo reste sur le téléphone (app Galerie pour l'envoyer)</t>" };
-    default { "<t size='0.8' color='#5cc76b'>● Prêt : la photo part directement vers Athena</t>" };
+    case (!_bridge): { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>● COMSPEC Overwatch absent : ni prise de vue ni envoi possibles</t>" };
+    case (!_ready): { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Athena non connecté : connectez-vous dans l'app Athena pour photographier</t>" };
+    case (!_net): { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Hors réseau : la photo reste sur le téléphone (app Galerie pour l'envoyer)</t>" };
+    default { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● Prêt : la photo part directement vers Athena</t>" };
 }) call comspec_atak_native_fnc_tr);
 
 // Zones : viseur et commandes (sous le viseur en portrait, colonne à droite en paysage).
@@ -86,7 +86,7 @@ _bg ctrlSetBackgroundColor [0, 0, 0, 1];
 private _tex = ["bind", _vw / (_vh * _ratio)] call comspec_atak_native_fnc_photoCam;
 if (_tex isEqualTo "") then {
     private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.4, _vw - _pad * 2, _font * 3]] call _mk;
-    _t ctrlSetStructuredText parseText (("<t align='center' font='COMSPEC_BarlowBold' color='#f2ab33'>VISEUR INDISPONIBLE</t><br/><t align='center' size='0.8' color='#a9b8b1'>Activez « Image dans l'image » (PiP) dans Options > Vidéo d'Arma, ou passez en PLEIN ÉCRAN.</t>") call comspec_atak_native_fnc_tr);
+    _t ctrlSetStructuredText parseText (("<t align='center' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>VISEUR INDISPONIBLE</t><br/><t align='center' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Activez « Image dans l'image » (PiP) dans Options > Vidéo d'Arma, ou passez en PLEIN ÉCRAN.</t>") call comspec_atak_native_fnc_tr);
 } else {
     private _vf = ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], _tex] call _mk;
     // Journal RPT de l'ouverture du viseur (fn_pipCheck, une fois par caméra) et texture rebranchée après son premier rendu.
@@ -178,7 +178,7 @@ private _zx = _vx + _vw / 2;
 private _zl = ["COMSPEC_RscStructuredText", [_zx - _zw * 1.05, _zy, _zw * 2.1, _chipH]] call _mk;
 _zl ctrlSetBackgroundColor [0, 0, 0, 0.55];
 _zl ctrlEnable false;
-_zl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#5cc76b'>x%1</t>", [_zoom toFixed 1, str _zoom] select ((_zoom mod 1) isEqualTo 0)]) call comspec_atak_native_fnc_tr);
+_zl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>x%1</t>", [_zoom toFixed 1, str _zoom] select ((_zoom mod 1) isEqualTo 0)]) call comspec_atak_native_fnc_tr);
 ["+", [_zx + _zw * 1.1, _zy, _zw, _chipH], compile format ["%1 ['zoom', 1] call comspec_atak_native_fnc_photoCam;", _keep], "Zoomer (numérique, jusqu'à x8)"] call _chip;
 // Image noire ? TEST VIDÉO (fn_pipCheck) : la vidéo du téléphone montrée de plusieurs façons, lettres à relever.
 ["TEST VIDÉO", [_vx + _pad / 2, _zy, (_vw * 0.22) max (_font * 4), _chipH], { ["test"] call comspec_atak_native_fnc_pipCheck; },
@@ -187,7 +187,7 @@ if (!_canShoot) then {
     private _w = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.58, _vw - _pad * 2, _font * 1.6]] call _mk;
     _w ctrlSetBackgroundColor [0, 0, 0, 0.55];
     _w ctrlEnable false;
-    _w ctrlSetStructuredText parseText (("<t align='center' size='0.9' font='COMSPEC_BarlowBold' color='#f2ab33'>CONNECTEZ-VOUS À ATHENA POUR PHOTOGRAPHIER</t>") call comspec_atak_native_fnc_tr);
+    _w ctrlSetStructuredText parseText (("<t align='center' size='0.9' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>CONNECTEZ-VOUS À ATHENA POUR PHOTOGRAPHIER</t>") call comspec_atak_native_fnc_tr);
 };
 
 // Commandes : galerie, déclencheur, selfie.
@@ -226,7 +226,7 @@ _shoot ctrlEnable _canShoot;
     _i ctrlSetTextColor [0.92, 0.95, 0.93, 1];
     private _t = ["COMSPEC_RscStructuredText", [_cx - _sideW * 1.1, _cy + _side / 2 - _fs * 0.45, _sideW * 2.2, _fs * 1.4]] call _mk;
     _t ctrlEnable false;
-    _t ctrlSetStructuredText parseText ((format ["<t align='center' size='0.75' color='#a9b8b1'>%1</t>", _lbl]) call comspec_atak_native_fnc_tr);
+    _t ctrlSetStructuredText parseText ((format ["<t align='center' size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", _lbl]) call comspec_atak_native_fnc_tr);
     private _b = ["COMSPEC_RscButtonInvisible", [_cx - _sideW / 2, _cy - _side / 2 - _fs * 0.5, _sideW, _side + _fs * 1.2]] call _mk;
     _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
     // Clic différé d'une image (comme fn_formRender) : GALERIE change de page, ce qui supprimait le bouton pendant son propre gestionnaire.
@@ -245,7 +245,7 @@ private _ey = if (_land) then { _vy + _vh + _pad / 2 } else { _bh - _capH - _pad
 private _ew = if (_land) then { _vw } else { _bw - _pad * 2 };
 private _lab = ["COMSPEC_RscStructuredText", [_pad, _ey, _ew * 0.22, _capH]] call _mk;
 _lab ctrlEnable false;
-_lab ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>Légende</t>") call comspec_atak_native_fnc_tr);
+_lab ctrlSetStructuredText parseText (("<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Légende</t>") call comspec_atak_native_fnc_tr);
 private _ed = ["COMSPEC_RscEdit", [_pad + _ew * 0.22, _ey, _ew * 0.78, _capH], _s getOrDefault ["photoCaption", ""]] call _mk;
 _ed ctrlSetFontHeight _fs;
 _ed ctrlSetTooltip (("Facultatif : texte envoyé avec la photo (sinon indicatif, grille et cap)") call comspec_atak_native_fnc_tr);
