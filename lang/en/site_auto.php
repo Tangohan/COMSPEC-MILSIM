@@ -53953,4 +53953,14 @@ return [
     'Position : en attente du jeu' => 'Position: waiting for the game',
     'Déjà lus' => 'Already read',
     '✕ Quitter' => '✕ Exit',
+    // Carte Overwatch du téléphone (/m/carte, /m/briefs), Overwatch, page 9-LINE.
+    'Appuis 9-LINE / 5-LINE' => '9-LINE / 5-LINE support',
+    'Position en attente du jeu' => 'Position waiting for the game',
+    'Mon appareil' => 'My aircraft',
+    '+ Marqueur' => '+ Marker',
+    'Voir la cible sur la carte' => 'Show the target on the map',
+    'Hors réseau' => 'No network',
+    'Hors réseau, carte de' => 'No network, map from',
+    'À jour · %1' => 'Up to date · %1',
+    'Grille ou direction / distance depuis les amis.' => 'Grid, or direction / distance from friendlies.',
 ];

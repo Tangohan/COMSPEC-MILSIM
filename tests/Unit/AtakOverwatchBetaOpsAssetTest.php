@@ -113,7 +113,7 @@ final class AtakOverwatchBetaOpsAssetTest extends TestCase
         self::assertStringContainsString('ow-hatch-diag', $css);
         self::assertStringContainsString('ow-marker-list-row', $css);
         self::assertStringContainsString('ow-marker-age-chip', $css);
-        self::assertStringContainsString('.ow-marker.is-stale-pos', $css);
+        self::assertStringContainsString('.ow-marker.is-stale-pos', (string) file_get_contents($root . '/public/assets/css/atak-overwatch-mapkit.css'));
         self::assertStringContainsString('border-style:dashed', $css);
         self::assertStringContainsString('isHostileMarker', $ops);
         self::assertStringContainsString('Unités hostiles', $ops);

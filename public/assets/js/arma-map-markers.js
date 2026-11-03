@@ -1113,6 +1113,13 @@ window.ArmaMapMarkers = (function () {
   function parsePos(data) {
     if (!data || !data.pos) return null;
     var pos = data.pos;
+    // Position en texte ("[1234.5,6789,0]", "1234.5 6789") : lue nombre par nombre, pas caractère par caractère
+    // (sinon x = 1, y = 2 : marqueur dessiné dans le coin bas-gauche, hors du terrain).
+    if (typeof pos === 'string') {
+      var nums = pos.match(/-?\d+(?:\.\d+)?(?:e[-+]?\d+)?/gi);
+      pos = nums && nums.length >= 2 ? [Number(nums[0]), Number(nums[1])] : null;
+      if (!pos) return null;
+    }
     var x;
     var y;
     if (Array.isArray(pos[0])) {

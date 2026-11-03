@@ -102,6 +102,16 @@
             var inner = lookup(pm[2], 1);
             r = inner === null ? null : pm[1] + inner;
         }
+        // Texte en morceaux « A · B · C » (le dictionnaire est découpé ainsi par js-bundle) : chaque morceau traduit.
+        if (r === null && depth === 0 && /\s·\s/.test(s)) {
+            var parts = s.split(/\s+·\s+/);
+            var trParts = parts.map(function (part) { return lookup(part, 1); });
+            var anyTr = trParts.some(function (x) { return x !== null; });
+            var leftFr = parts.some(function (part, j) { return trParts[j] === null && sentenceLike(part); });
+            if (anyTr && !leftFr) {
+                r = parts.map(function (part, j) { return trParts[j] === null ? part : trParts[j]; }).join(' · ');
+            }
+        }
         if (r === null && depth <= 1 && s === s.toUpperCase() && /[A-ZÀ-Ý]{3}/.test(s)) {
             var low = s.toLowerCase();
             var en2 = lookup(low.charAt(0).toUpperCase() + low.slice(1), 2) || lookup(low, 2);
@@ -125,6 +135,9 @@
     }
 
     var SKIP = 'script,style,textarea,pre,code,[translate="no"],[contenteditable="true"]';
+    // Attributs (placeholder, title…) : un champ de saisie multiligne garde son texte tel quel, mais son indication
+    // (placeholder) se traduit, comme celle d'un champ d'une ligne.
+    var ATTR_SKIP = 'script,style,pre,code,[translate="no"],[contenteditable="true"]';
     var ATTRS = ['title', 'placeholder', 'aria-label', 'data-confirm'];
     var busy = false;
 
@@ -139,7 +152,7 @@
             }
             return;
         }
-        if (root.nodeType !== 1 || root.closest(SKIP)) {
+        if (root.nodeType !== 1 || (root.closest(SKIP) && !(root.tagName === 'TEXTAREA' && !root.closest(ATTR_SKIP)))) {
             return;
         }
         var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -151,7 +164,7 @@
         list.forEach(translateNode);
         var els = [root].concat(Array.prototype.slice.call(root.querySelectorAll('[title],[placeholder],[aria-label],[data-confirm],input[type=submit],input[type=button]')));
         els.forEach(function (el) {
-            if (el.closest(SKIP)) {
+            if (el.closest(ATTR_SKIP)) {
                 return;
             }
             ATTRS.forEach(function (a) {

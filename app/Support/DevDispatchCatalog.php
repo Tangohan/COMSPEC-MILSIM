@@ -294,6 +294,24 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1351, '2026-11-03', 'Sur mon téléphone : la carte de l’Overwatch, appareil et cible du pilote', 'La carte de Sur mon téléphone est désormais la carte de l’Overwatch : même fond du terrain, mêmes icônes et couleurs des marqueurs du jeu avec leur nom, mêmes symboles OTAN des appareils, mêmes tracés (axes, zones, objectifs) et mêmes cibles des 9-LINE et 5-LINE. Chaque marqueur tombe exactement au bon endroit, y compris ceux dont la position arrivait sous forme de texte, et la carte remplit toujours l’écran du téléphone, sans bande noire. Une barre basse et compacte regroupe Moi, Calques (amis, marqueurs, tracés, aéronefs, appuis), le zoom et le plein écran, sans masquer la carte ; on zoome aussi aux deux doigts. Dans Briefs air, la carte s’affiche en encart au-dessus des briefs : l’appareil du pilote est centré, la cible du dernier brief reçu est dans la vue avec son IP ou BP, le cap et la distance, et le bouton Voir la cible sur la carte l’ouvre en plein écran. Le téléphone voit exactement ce que le membre voit dans son Overwatch, sans rien de plus. Sur l’Overwatch, la fiche d’un marqueur se ferme maintenant aussi en touchant la carte à côté, Échap ferme aussi la fiche d’un 9-LINE, la fiche d’un 9-LINE ouverte n’est plus refermée à chaque rafraîchissement, et les blocs masqués (filtres de plan de bâtiment, barre d’écoute radio) ne restent plus affichés.', [
+                'Carte du téléphone : fond, icônes, couleurs, noms, tracés, appareils et cibles des appuis de l’Overwatch',
+                'Briefs air : carte en encart, appareil du pilote centré, cible du brief avec IP ou BP et cap, plein écran sur la cible',
+                'Barre d’outils basse : Moi, Calques, zoom, plein écran ; carte toujours pleine largeur',
+                'Signal Hors réseau et Session terminée sur la carte du téléphone',
+            ], [
+                'Carte du téléphone : marqueurs remplacés par des ronds jaunes identiques, sans icône ni nom',
+                'Carte du téléphone : bande noire sur le côté, carte décalée, marqueur dessiné hors du terrain',
+                'Marqueurs dont la position arrivait en texte : absents de l’Overwatch, mal placés sur le téléphone',
+                'Overwatch : la fiche d’un marqueur ne se fermait pas en touchant la carte à côté',
+                'Overwatch : filtres du plan de bâtiment et barre d’écoute radio affichés alors qu’ils devaient être masqués',
+                'Overwatch : la fiche d’un 9-LINE se refermait d’elle-même à chaque rafraîchissement, Échap ne la fermait pas',
+                'Overwatch : les 5-LINE de l’app JTAC n’avaient pas leur cible sur la carte',
+                'Page 9-LINE en anglais : titres, état du brouillon et exemples des champs multilignes restés en français',
+            ], [], ['atak'], [
+                'Rien à installer ni à lancer côté serveur.',
+                'Essai en jeu : ouvrir la carte et Briefs air par le QR code SUR MON TÉLÉPHONE, vérifier les marqueurs posés en jeu (icône, couleur, nom, position), recevoir un 9-LINE comme pilote et le voir sur la carte, puis ouvrir et fermer la fiche d’un marqueur sur l’Overwatch (croix, Échap, toucher la carte).',
+            ], 'Portail Athena'),
             $pr(1345, '2026-11-02', 'Sur mon téléphone : même présentation que la page 9-LINE, fenêtres de la carte qui se ferment', 'Les pages Sur mon téléphone (comptes rendus, CR fin d’op, carte et briefs air du pilote) reprennent la présentation noir et vert de la page 9-LINE : mêmes polices, grand titre sur photo, barre du haut réduite au logo, au titre, à la langue et au joueur. Dans Briefs air, les briefs non lus sont en tête, chaque brief porte le même badge d’état que l’historique de la page 9-LINE (ENVOYÉ, REÇU, LU, WILCO, UNABLE), et un brief s’ouvre en plein écran, lu ligne par ligne en gros caractères, avec de très grands boutons WILCO et UNABLE. Sur la carte, la fenêtre d’un marqueur se ferme enfin (bouton, Échap, toucher la carte ou glisser vers le bas), et un bouton Plein écran agrandit la carte, choix gardé pendant la session.', [
                 'Briefs air : non lus en tête, badges d’état identiques à la page 9-LINE, lecture plein écran',
                 'Carte : bouton Plein écran (repli pour iPhone), mémorisé pendant la session',

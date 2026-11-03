@@ -34,7 +34,8 @@ final class AtakOverwatchBetaAssetTest extends TestCase
 
         $atakController = file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/AtakController.php');
         $atakApiController = file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakApiController.php');
-        $overwatchJs = file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-beta.js');
+        // Carte Overwatch : atak-overwatch-beta.js et son module de carte partagé (atak-overwatch-mapkit.js).
+        $overwatchJs = file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-beta.js') . file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-mapkit.js');
         $gotakJs = file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-gotak.js');
         $realtimeJs = file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-realtime.js');
         $p2Js = file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-p2.js');
@@ -60,8 +61,9 @@ final class AtakOverwatchBetaAssetTest extends TestCase
         self::assertStringContainsString('source_arma', $overwatchJs);
         self::assertStringContainsString("statCell('Vitesse'", $overwatchJs);
         self::assertStringContainsString("statCell('Dernière position'", $overwatchJs);
-        self::assertStringContainsString('L.map(\'ow-map\'', $overwatchJs);
-        self::assertStringContainsString('window.MGRS_CRS', $overwatchJs);
+        // Carte et repère : module partagé avec la carte du téléphone (atak-overwatch-mapkit.js).
+        self::assertStringContainsString("window.OverwatchMapKit.create('ow-map'", $overwatchJs);
+        self::assertStringContainsString('window.MGRS_CRS', (string) file_get_contents(dirname(__DIR__, 2) . '/public/assets/js/atak-overwatch-mapkit.js'));
         self::assertStringContainsString('athena:atak-fond-look', $overwatchJs);
         self::assertStringContainsString('data-ow-look', $view);
         self::assertStringContainsString('id="ow-settings"', $view);

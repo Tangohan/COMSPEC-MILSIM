@@ -107,11 +107,21 @@ final class AtakWikiController
         ]);
     }
 
+    /** Gabarits du wiki (liste explicite : chaque vue est vérifiée par ViewTemplatesExistTest). */
+    private const VIEWS = [
+        'home' => 'site.wiki_atak.home',
+        'apps' => 'site.wiki_atak.apps',
+        'news' => 'site.wiki_atak.news',
+        'search' => 'site.wiki_atak.search',
+        'missing' => 'site.wiki_atak.missing',
+        'page' => 'site.wiki_atak.page',
+    ];
+
     /** @param array<string, mixed> $data */
     private function view(string $content, array $data): Response
     {
         return Response::view('layout.marketing', $data + [
-            'content' => 'site.wiki_atak.' . $content,
+            'content' => self::VIEWS[$content],
             'marketingActive' => 'wiki-atak',
             'marketingStyles' => [asset_url('assets/css/wiki-atak.css')],
             'wikiLang' => AtakWiki::lang(),

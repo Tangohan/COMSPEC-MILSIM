@@ -9,6 +9,14 @@ class Session
     private static bool $started = false;
 
     /**
+     * Identité prêtée pour la requête en cours seulement (jamais écrite dans la session) : lectures de la carte
+     * Overwatch depuis la carte du téléphone (AtakMobileOverwatchAccess).
+     *
+     * @var array<string, mixed>
+     */
+    private static array $actingAs = [];
+
+    /**
      * Routes GET en lecture seule, sondées en tâche de fond : la session y est lue puis
      * fermée tout de suite. Le gestionnaire « files » pose un verrou
      * exclusif sur le fichier de session jusqu'à la fin du script ; sans cela, chaque
@@ -207,7 +215,21 @@ class Session
 
     public static function get(string $key, mixed $default = null): mixed
     {
+        if (self::$actingAs !== [] && array_key_exists($key, self::$actingAs)) {
+            return self::$actingAs[$key];
+        }
+
         return $_SESSION[$key] ?? $default;
+    }
+
+    /**
+     * Prête des valeurs de session pour la requête en cours (rien n'est enregistré) ; [] les retire.
+     *
+     * @param array<string, mixed> $values
+     */
+    public static function actAs(array $values): void
+    {
+        self::$actingAs = $values;
     }
 
     public static function set(string $key, mixed $value): void

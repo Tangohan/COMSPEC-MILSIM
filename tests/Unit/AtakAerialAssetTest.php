@@ -22,7 +22,8 @@ final class AtakAerialAssetTest extends TestCase
         $atakView = (string) file_get_contents($this->root() . '/views/atak.php');
         $tacmap = (string) file_get_contents($this->root() . '/views/tacmap.php');
         $overwatch = (string) file_get_contents($this->root() . '/views/overwatch/index.php');
-        $controller = (string) file_get_contents($this->root() . '/app/Controllers/Web/AtakController.php');
+        // Fond de carte de l'Overwatch : construit par AtakOverwatchMapConfig (partagé avec la carte du téléphone).
+        $controller = (string) file_get_contents($this->root() . '/app/Controllers/Web/AtakController.php') . (string) file_get_contents($this->root() . '/app/Support/AtakOverwatchMapConfig.php');
         $home = (string) file_get_contents($this->root() . '/app/Controllers/Web/HomeController.php');
 
         self::assertStringContainsString('function atak_aerial_layer_config', $helpers);
