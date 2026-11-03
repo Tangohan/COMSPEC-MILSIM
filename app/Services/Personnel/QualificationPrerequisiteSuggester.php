@@ -77,6 +77,82 @@ final class QualificationPrerequisiteSuggester
         return $out;
     }
 
+    /**
+     * Aperçu avant import (assistant d'importation) : prérequis détectés d'entrées du catalogue pas encore dans le
+     * référentiel. Une qualification citée qui sera importée dans le même passage (planned) compte comme disponible.
+     * « Sûr » = confiance haute et disponible : c'est ce que l'option « prérequis sûrs » ajoutera.
+     *
+     * @param list<string> $catalogIds
+     * @param array<string, true> $planned ids du catalogue présents dans le référentiel après l'import
+     * @return array<string, array{sure: list<string>, other: int}>
+     */
+    public function forCatalogEntries(int $tenantId, array $catalogIds, array $planned, string $lang = 'fr'): array
+    {
+        $ctx = $this->context($tenantId, $lang);
+        $out = [];
+        foreach ($catalogIds as $id) {
+            $entry = QualificationCatalog::findRaw((string) $id);
+            if ($entry === null) {
+                continue;
+            }
+            $def = ['id' => 0, 'code' => (string) ($entry['code'] ?? ''), 'name' => QualificationCatalog::pick($entry['name'] ?? '', $lang), 'description' => ''];
+            $sure = [];
+            $other = 0;
+            foreach (self::suggest($def, [], [], $ctx) as $s) {
+                $available = $s['available'] || ($s['kind'] === 'qualification' && isset($planned[(string) ($s['catalog_id'] ?? '')]));
+                if ($available && $s['level'] === 'high') {
+                    $sure[] = (string) $s['label'];
+                } else {
+                    $other++;
+                }
+            }
+            if ($sure !== [] || $other > 0) {
+                $out[(string) $id] = ['sure' => $sure, 'other' => $other];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Après un import groupé : ajoute aux fiches données leurs prérequis sûrs (cochés d'office à l'écran « Prérequis
+     * détectés » : confiance haute, disponibles). Le reste se revoit ensuite sur cet écran.
+     *
+     * @param list<int> $definitionIds
+     * @return array{added: int, definitions: list<int>, errors: int}
+     */
+    public function applySure(int $tenantId, array $definitionIds, ?int $actorId, string $lang = 'fr'): array
+    {
+        $out = ['added' => 0, 'definitions' => [], 'errors' => 0];
+        $ids = array_values(array_unique(array_filter(array_map('intval', $definitionIds))));
+        if ($ids === []) {
+            return $out;
+        }
+        foreach ($this->forTenant($tenantId, $lang, $ids) as $row) {
+            $selected = [];
+            foreach ($row['suggestions'] as $s) {
+                if (!empty($s['checked'])) {
+                    $selected[(string) $s['id']] = null;
+                }
+            }
+            if ($selected === []) {
+                continue;
+            }
+            try {
+                $stats = $this->apply($tenantId, (int) $row['definition']['id'], $selected, $actorId, $lang);
+                if ($stats['added'] > 0) {
+                    $out['added'] += $stats['added'];
+                    $out['definitions'][] = (int) $row['definition']['id'];
+                }
+            } catch (Throwable $e) {
+                error_log('Prérequis sûrs (import groupé) : ' . $e->getMessage());
+                $out['errors']++;
+            }
+        }
+
+        return $out;
+    }
+
     /** @return array<string, mixed> données de la communauté nécessaires au calcul */
     private function context(int $tenantId, string $lang): array
     {
