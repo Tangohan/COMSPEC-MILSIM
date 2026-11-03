@@ -2267,6 +2267,11 @@
             <English>Access hint</English>
             <French>Indice d’accès</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_70E69E8648">
+            <Original>Return kit papers on respawn</Original>
+            <English>Return kit papers on respawn</English>
+            <French>Rendre les papiers du kit au respawn</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_71849A3505">
             <Original>Mission dataset</Original>
             <English>Mission dataset</English>
@@ -3037,6 +3042,11 @@
             <English>E.g. PC-KESTREL-04. Empty = automatic ID.</English>
             <French>Ex. PC-KESTREL-04. Vide = identifiant automatique.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_99ABD115DA">
+            <Original>Players with a papers kit on Athena (member profile) get it back at every respawn. Unticked: only when they join the mission.</Original>
+            <English>Players with a papers kit on Athena (member profile) get it back at every respawn. Unticked: only when they join the mission.</English>
+            <French>Les joueurs qui ont un kit de papiers sur Athena (fiche membre) le retrouvent à chaque réapparition. Décoché : seulement à l'arrivée en mission.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_99FA083267">
             <Original>What this subject is to the unit designated above.</Original>
             <English>What this subject is to the unit designated above.</English>
@@ -3496,6 +3506,11 @@
             <Original>Scenario director (dataset / level)</Original>
             <English>Scenario director (dataset / level)</English>
             <French>Directeur de scénario (dataset / niveau)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B55898163A">
+            <Original>Your mission papers have been handed to you (%1).</Original>
+            <English>Your mission papers have been handed to you (%1).</English>
+            <French>Vos papiers de mission vous ont été remis (%1).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_B59B00E2C9">
             <Original>&lt;t color='#7fd08a'&gt;Chain of custody&lt;/t&gt;&lt;br/&gt;Collecting an object opens an exhibit (number P-case-0001). Sealing it gives it a seal number (SC-...). Every action is entered in the exhibit's log: date, time, who, where.&lt;br/&gt;&lt;br/&gt;Exploiting a sealed exhibit first breaks the seal (logged); remember to reseal it: new number, the old one stays in the log.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Handing over exhibits&lt;/t&gt;&lt;br/&gt;ACE menu on a teammate: "Hand over my sealed exhibits". The handover is logged and the custodian changes.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;A tamper-proof log&lt;/t&gt;&lt;br/&gt;Each line carries the fingerprint of the previous one. A line modified after the fact appears in red in the register (personal menu, Seal register).</Original>

@@ -7,6 +7,7 @@ namespace App\Services\Sse;
 use App\Repositories\SseIdCountryRepository;
 use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
+use App\Repositories\SseIdKitRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseWatchlistRepository;
 
@@ -15,6 +16,10 @@ use App\Repositories\SseWatchlistRepository;
  *
  * Contient la vérité de jeu (nature des identités, faux, titulaires) : il ne sert qu'au serveur, qui la garde pour
  * lui. Seuls les papiers émis partent ; au plus 500 par carte, paginés (offset / limit).
+ *
+ * Attribution d'un papier à un joueur : kits[] (première page seulement), un élément par joueur
+ * {uid, user_id, scope, documents[]} ; uid = Steam ID du compte Athena, comparé par le serveur à getPlayerUID.
+ * Les identifiants de documents[] renvoient à documents[].id (toutes pages confondues).
  */
 final class SseIdentityPackService
 {
@@ -28,12 +33,14 @@ final class SseIdentityPackService
         private ?SseIdCountryRepository $countries = null,
         private ?SseWatchlistRepository $watchlist = null,
         private ?SsePersonRepository $persons = null,
+        private ?SseIdKitRepository $kits = null,
     ) {
         $this->documents ??= new SseIdDocumentRepository();
         $this->identities ??= new SseIdentityRepository();
         $this->countries ??= new SseIdCountryRepository();
         $this->watchlist ??= new SseWatchlistRepository();
         $this->persons ??= new SsePersonRepository();
+        $this->kits ??= new SseIdKitRepository();
     }
 
     /**
@@ -51,13 +58,21 @@ final class SseIdentityPackService
         $identityRows = $this->identities->findMany($tenantId, array_map(static fn (array $d): int => (int) $d['identity_id'], $docs));
 
         $countries = [];
-        foreach ($this->countries->listForTenant($tenantId) as $c) {
+        // Pays archivés compris : leurs papiers déjà émis restent en jeu.
+        foreach ($this->countries->listForTenant($tenantId, false) as $c) {
             $countries[] = [
                 'code' => $c['code'],
                 'name' => $c['name'],
                 'mrz_code' => $c['mrz_code'],
                 'number_format' => $c['number_format'],
                 'fictional' => $c['fictional'],
+                'name_en' => $c['name_en'],
+                'authority' => $c['authority'],
+                'theme' => $c['theme'],
+                'languages' => $c['languages'],
+                'doc_types' => $c['doc_types'],
+                'colors' => array_values(array_filter([$c['color_primary'], $c['color_secondary']])),
+                'active' => $c['active'],
             ];
         }
 
@@ -110,6 +125,7 @@ final class SseIdentityPackService
             'identities' => $identities,
             'documents' => $documents,
             'watch' => $offset === 0 ? $this->watch($tenantId, $mapId) : [],
+            'kits' => $offset === 0 ? $this->kits->forPack($tenantId, $mapId, $opKey) : [],
             'paging' => [
                 'offset' => $offset,
                 'limit' => $limit,

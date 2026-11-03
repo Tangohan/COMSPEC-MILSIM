@@ -26,7 +26,7 @@ private _payload = createHashMapFromArray [
     ["op", missionNamespace getVariable ["comspec_sse_id_opKey", ""]],
     ["document", createHashMapFromArray [["id", _athenaId], ["local_id", _d getOrDefault ["id", ""]], ["type", _d getOrDefault ["type", ""]], ["country", _d getOrDefault ["country", ""]], ["number", _d getOrDefault ["number", ""]]]],
     ["presented_name", createHashMapFromArray [["last", _d getOrDefault ["last", ""]], ["first", _d getOrDefault ["first", ""]], ["dob", _d getOrDefault ["dob", ""]]]],
-    ["subject", createHashMapFromArray [["person_id", ""], ["netid", _rec getOrDefault ["subjNetId", ""]], ["bio_key", _rec getOrDefault ["subjKey", ""]]]],
+    ["subject", createHashMapFromArray [["person_id", ""], ["netid", _rec getOrDefault ["subjNetId", ""]], ["bio_key", _rec getOrDefault ["subjKey", ""]], ["steam_id", _rec getOrDefault ["subjUid", ""]]]],
     ["controller", createHashMapFromArray [["callsign", name player], ["steam_id", getPlayerUID player]]],
     ["levels", (keys _lv) apply { _x }],
     ["results", _results],

@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakMapRepository;
+use App\Repositories\SseAuditLogRepository;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SseIdCheckRepository;
 use App\Repositories\SseIdCountryRepository;
@@ -19,6 +20,7 @@ use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Services\Sse\SseMrzService;
+use App\Support\SseIdCountryCatalog;
 use App\Support\SseIdentityCatalog;
 
 /**
@@ -96,7 +98,10 @@ final class SseIdentityRegistryController
         $country = $this->pickCountry($countries, $countryCode);
         $type = SseIdentityCatalog::pick(SseIdentityCatalog::DOC_TYPES, $request->queryString('doc_type'), 'id_card');
         $issued = gmdate('Y-m-d');
-        $expires = gmdate('Y-m-d', strtotime('+' . (int) ($country['validity_years'] ?? 10) . ' years'));
+        if ($country !== null && !in_array($type, $country['doc_types'], true)) {
+            $type = (string) ($country['doc_types'][0] ?? $type);
+        }
+        $expires = gmdate('Y-m-d', (int) strtotime('+' . ($country !== null ? SseIdCountryRepository::validityFor($country, $type) : 10) . ' years'));
         $number = $country !== null ? $this->freeNumber($tenantId, $country, $type, (int) ($identity['seed'] ?? 0) ?: SseIdentityGeneratorService::randomSeed()) : '';
         $preview = $country !== null ? SseMrzService::forDocument(
             ['doc_type' => $type, 'country_code' => $country['code'], 'doc_number' => $number, 'expires_on' => $expires],
@@ -125,7 +130,7 @@ final class SseIdentityRegistryController
         $tenantId = $this->tenantId();
         $identity = $this->identities->find((int) $request->input('identity_id', 0), $tenantId);
         $country = $this->countries->findByCode($tenantId, $request->inputString('country_code'));
-        if ($identity === null || $country === null) {
+        if ($identity === null || $country === null || !$country['active']) {
             Session::flash('error', 'Identité ou pays introuvable.');
 
             return Response::redirect(url(self::BASE . '/identites'));
@@ -272,6 +277,266 @@ final class SseIdentityRegistryController
         });
 
         return Response::redirect($back);
+    }
+
+    // ------------------------------------------------------- Pays émetteurs
+
+    public function countriesIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $q = $request->queryString('q');
+        $countries = $this->countries->search($tenantId, $q);
+        $used = [];
+        foreach ($countries as $c) {
+            $used[$c['code']] = $this->documents->countForCountry($tenantId, (string) $c['code']);
+        }
+
+        return $this->view('atak.sse.papers.countries', [
+            'title' => 'Pays émetteurs',
+            'countries' => $countries,
+            'used' => $used,
+            'q' => $q,
+            'papersTab' => 'pays',
+        ]);
+    }
+
+    public function countryForm(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage()) {
+            return $this->denied(url(self::BASE . '/pays'));
+        }
+        $tenantId = $this->tenantId();
+        $id = (int) ($params['id'] ?? 0);
+        $country = $id > 0 ? $this->countries->find($id, $tenantId) : null;
+        if ($id > 0 && $country === null) {
+            Session::flash('error', 'Pays introuvable.');
+
+            return Response::redirect(url(self::BASE . '/pays'));
+        }
+
+        return $this->view('atak.sse.papers.country_form', [
+            'title' => $country !== null ? 'Modifier le pays' : 'Nouveau pays émetteur',
+            'country' => $country,
+            'used' => $country !== null ? $this->documents->countForCountry($tenantId, (string) $country['code']) : 0,
+            'papersTab' => 'pays',
+        ]);
+    }
+
+    public function countryStore(Request $request, array $params = []): Response
+    {
+        return $this->saveCountry($request, 0);
+    }
+
+    public function countryUpdate(Request $request, array $params = []): Response
+    {
+        return $this->saveCountry($request, (int) ($params['id'] ?? 0));
+    }
+
+    public function countryArchive(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url(self::BASE . '/pays');
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied($back);
+        }
+        $tenantId = $this->tenantId();
+        $country = $this->countries->find($id, $tenantId);
+        if ($country === null) {
+            return $this->denied($back);
+        }
+        $archive = $request->inputString('restore') !== '1';
+        $this->countries->setArchived($id, $tenantId, $archive);
+        $this->audit($tenantId, $archive ? 'id_country.archive' : 'id_country.restore', $id, ['code' => $country['code']]);
+        Session::flash('success', $archive
+            ? 'Pays archivé : il n’est plus proposé pour de nouveaux papiers, les papiers déjà émis restent valables.'
+            : 'Pays rétabli : il est de nouveau proposé dans les formulaires.');
+
+        return Response::redirect($back);
+    }
+
+    /**
+     * Valide un pays saisi (création si $existing = null ; le code n'est jamais modifié après création).
+     *
+     * @param array<string, mixed> $input
+     * @param array<string, mixed>|null $existing
+     * @param callable(string): bool $codeTaken
+     * @return array{data: array<string, mixed>, errors: list<string>}
+     */
+    public static function validateCountry(array $input, ?array $existing, callable $codeTaken): array
+    {
+        $errors = [];
+        $theme = SseIdentityCatalog::pick(SseIdCountryCatalog::THEMES, $input['theme'] ?? null, 'contemporary');
+        $code = $existing !== null ? (string) $existing['code'] : strtoupper(trim((string) ($input['code'] ?? '')));
+        if ($existing === null) {
+            $p = SseIdCountryCatalog::codeProblem($code, $theme);
+            if ($p !== '') {
+                $errors[] = $p;
+            } elseif ($codeTaken($code)) {
+                $errors[] = 'Ce code est déjà utilisé par un autre pays de la communauté.';
+            }
+        }
+        $mrz = strtoupper(trim((string) ($input['mrz_code'] ?? '')));
+        $mrz = $mrz !== '' ? $mrz : $code;
+        // Code de bande identique au code du pays : déjà vérifié ci-dessus (pas de message en double).
+        if (($mrz !== $code || $existing !== null) && ($p = SseIdCountryCatalog::mrzProblem($mrz, $theme)) !== '') {
+            $errors[] = $p;
+        }
+        $format = strtoupper(trim((string) ($input['number_format'] ?? '')));
+        if (($p = SseIdCountryCatalog::formatProblem($format)) !== '') {
+            $errors[] = $p;
+        }
+        $name = trim((string) ($input['name'] ?? ''));
+        if ($name === '') {
+            $errors[] = 'Le nom du pays est obligatoire.';
+        }
+        if (empty($input['fictional'])) {
+            $errors[] = 'Cochez la case « pays fictif » : seuls des pays imaginaires peuvent émettre des papiers de jeu.';
+        }
+        $types = SseIdCountryCatalog::pickMany($input['doc_types'] ?? [], SseIdentityCatalog::DOC_TYPES);
+        if ($types === []) {
+            $errors[] = 'Choisissez au moins un type de papier délivré par ce pays.';
+        }
+        $validity = [];
+        foreach ($types as $t) {
+            $y = $input['validity'][$t] ?? 10;
+            $y = is_numeric($y) ? (int) $y : 0;
+            if ($y < SseIdCountryCatalog::VALIDITY_MIN || $y > SseIdCountryCatalog::VALIDITY_MAX) {
+                $errors[] = 'La durée de validité d’un papier va de 1 à 50 ans.';
+                break;
+            }
+            $validity[$t] = $y;
+        }
+        $languages = SseIdCountryCatalog::pickMany($input['languages'] ?? [], SseIdCountryCatalog::LANGUAGES);
+
+        return [
+            'data' => [
+                'code' => $code,
+                'name' => $name,
+                'name_en' => trim((string) ($input['name_en'] ?? '')),
+                'mrz_code' => $mrz,
+                'number_format' => $format,
+                'authority' => trim((string) ($input['authority'] ?? '')),
+                'region' => isset(SseIdCountryCatalog::REGIONS[(string) ($input['region'] ?? '')]) ? (string) $input['region'] : '',
+                'theme' => $theme,
+                'languages' => $languages !== [] ? $languages : ['fr', 'en'],
+                'doc_types' => $types,
+                'validity' => $validity,
+                'color_primary' => SseIdCountryCatalog::color($input['color_primary'] ?? null),
+                'color_secondary' => SseIdCountryCatalog::color($input['color_secondary'] ?? null),
+                'flag_path' => $existing['flag_path'] ?? null,
+            ],
+            'errors' => $errors,
+        ];
+    }
+
+    private function saveCountry(Request $request, int $id): Response
+    {
+        $list = url(self::BASE . '/pays');
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied($list);
+        }
+        $tenantId = $this->tenantId();
+        $existing = $id > 0 ? $this->countries->find($id, $tenantId) : null;
+        if ($id > 0 && $existing === null) {
+            return $this->denied($list);
+        }
+        $validity = $request->input('validity', []);
+        $input = [
+            'code' => $request->inputString('code'),
+            'name' => $request->inputString('name'),
+            'name_en' => $request->inputString('name_en'),
+            'mrz_code' => $request->inputString('mrz_code'),
+            'number_format' => $request->inputString('number_format'),
+            'authority' => $request->inputString('authority'),
+            'region' => $request->inputString('region'),
+            'theme' => $request->inputString('theme'),
+            'fictional' => $request->inputString('fictional') === '1',
+            'languages' => $request->input('languages', []),
+            'doc_types' => $request->input('doc_types', []),
+            'validity' => is_array($validity) ? $validity : [],
+            'color_primary' => $request->inputString('color_primary'),
+            'color_secondary' => $request->inputString('color_secondary'),
+        ];
+        $res = self::validateCountry($input, $existing, fn (string $code): bool => $this->countries->findByCode($tenantId, $code) !== null);
+        $form = $id > 0 ? url(self::BASE . '/pays/' . $id) : url(self::BASE . '/pays/nouveau');
+        if ($res['errors'] !== []) {
+            Session::flash('error', implode(' ', $res['errors']));
+
+            return Response::redirect($form);
+        }
+        $data = $res['data'];
+        if ($request->inputString('flag_remove') === '1') {
+            $data['flag_path'] = null;
+        }
+        $flag = $this->storeFlag($tenantId, (string) $data['code']);
+        if ($flag === false) {
+            Session::flash('error', 'Le drapeau doit être une image PNG, JPG ou WebP de 1 Mo maximum.');
+
+            return Response::redirect($form);
+        }
+        if (is_string($flag)) {
+            $data['flag_path'] = $flag;
+        }
+        if ($existing !== null) {
+            $this->countries->update($id, $tenantId, $data);
+            $this->audit($tenantId, 'id_country.update', $id, ['code' => $data['code']]);
+            Session::flash('success', 'Pays enregistré.');
+        } else {
+            $id = $this->countries->create($tenantId, $data, $this->userId());
+            $this->audit($tenantId, 'id_country.create', $id, ['code' => $data['code'], 'theme' => $data['theme']]);
+            Session::flash('success', 'Pays créé : il est proposé dans les formulaires de papiers et part au serveur de jeu.');
+        }
+
+        return Response::redirect($list);
+    }
+
+    /** Drapeau ou armoiries téléversés : chemin public, null si rien n'est envoyé, false si le fichier est refusé. */
+    private function storeFlag(int $tenantId, string $code): string|false|null
+    {
+        $file = $_FILES['flag'] ?? null;
+        if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+        if (($file['error'] ?? 1) !== UPLOAD_ERR_OK || (int) ($file['size'] ?? 0) > 1024 * 1024 || !is_uploaded_file((string) $file['tmp_name'])) {
+            return false;
+        }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = $finfo !== false ? finfo_file($finfo, (string) $file['tmp_name']) : false;
+        if ($finfo !== false) {
+            finfo_close($finfo);
+        }
+        $ext = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'][(string) $mime] ?? null;
+        if ($ext === null || @getimagesize((string) $file['tmp_name']) === false) {
+            return false;
+        }
+        $dir = base_path('public/uploads/sse-flags');
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return false;
+        }
+        $name = $tenantId . '_' . preg_replace('/[^A-Z]/', '', $code) . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        if (!move_uploaded_file((string) $file['tmp_name'], $dir . DIRECTORY_SEPARATOR . $name)) {
+            return false;
+        }
+
+        return 'uploads/sse-flags/' . $name;
+    }
+
+    /** @param array<string, mixed> $after */
+    private function audit(int $tenantId, string $action, int $objectId, array $after): void
+    {
+        try {
+            (new SseAuditLogRepository())->write([
+                'tenant_id' => $tenantId,
+                'actor_user_id' => $this->userId(),
+                'actor_label' => 'Registre des papiers',
+                'action' => $action,
+                'object_type' => 'sse_id_country',
+                'object_id' => $objectId,
+                'after' => $after,
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Registre des papiers : audit indisponible : ' . $e->getMessage());
+        }
     }
 
     // -------------------------------------------------------------- Identités

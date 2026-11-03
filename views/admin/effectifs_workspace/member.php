@@ -462,6 +462,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
     <a href="#poste">Poste</a>
     <a href="#carriere">Carrière</a>
     <a href="#suivi-rh">Suivi RH</a>
+    <?php if (is_array($memberPapers ?? null)): ?><a href="#papiers">Identité &amp; papiers</a><?php endif; ?>
     <a href="#historique-rh">Historique</a>
 </nav>
 
@@ -1241,6 +1242,10 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
     </article>
         </div>
     </section>
+
+    <?php if (is_array($memberPapers ?? null)): ?>
+        <?php require __DIR__ . '/partials/member_papers.php'; ?>
+    <?php endif; ?>
 
     <section class="eff-fm-sec" id="historique" aria-labelledby="historique-titre">
         <header class="eff-fm-sec__head">

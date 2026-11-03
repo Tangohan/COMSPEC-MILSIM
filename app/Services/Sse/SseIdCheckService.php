@@ -131,6 +131,7 @@ final class SseIdCheckService
             'presented_dob' => $str($presented['dob'] ?? null, 16),
             'subject_netid' => $netid,
             'subject_bio_key' => $str($subject['bio_key'] ?? null, 64),
+            'subject_steam_id' => ($s = preg_replace('/\D/', '', (string) ($subject['steam_id'] ?? ''))) !== '' ? substr((string) $s, 0, 32) : null,
             'controller_callsign' => $str($controller['callsign'] ?? null, 80),
             'controller_steam_id' => ($s = preg_replace('/\D/', '', (string) ($controller['steam_id'] ?? ''))) !== '' ? substr((string) $s, 0, 32) : null,
             'levels' => $levels !== [] ? implode(',', $levels) : null,

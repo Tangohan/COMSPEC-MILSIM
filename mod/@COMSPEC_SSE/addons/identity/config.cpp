@@ -65,6 +65,7 @@ class CfgFunctions {
             class idPresentPrompt {};
             class idTransfer {};
             class idVehicleOccupants {};
+            class idKit {};
         };
     };
 };

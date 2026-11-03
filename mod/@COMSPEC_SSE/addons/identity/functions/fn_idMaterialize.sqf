@@ -3,18 +3,22 @@
     [_docId, _where] call comspec_sse_fnc_idMaterialize -> classe ("" si stock épuisé)
       _where : personne (addItem là où elle est locale ; inventaire plein : au sol à ses pieds) ou conteneur
                (addItemCargoGlobal). objNull : classe réservée sans objet posé.
-    Déjà matérialisé : renvoie sa classe sans rien poser (l'objet existe quelque part).
+    Déjà matérialisé : renvoie sa classe sans rien poser (l'objet existe quelque part), sauf _move = true : l'objet est
+    posé chez _where (kit Athena au respawn : l'exemplaire a été retiré de l'ancien corps).
 */
-params [["_id", "", [""]], ["_where", objNull, [objNull]]];
+params [["_id", "", [""]], ["_where", objNull, [objNull]], ["_move", false, [false]]];
 if (!isServer) exitWith { "" };
 private _doc = ["doc", [_id]] call comspec_sse_fnc_idRegistry;
 if ((count _doc) isEqualTo 0) exitWith { "" };
 private _cls = _doc getOrDefault ["cls", ""];
-if (_cls isNotEqualTo "") exitWith { _cls };
-_cls = ["alloc", [_doc get "type"]] call comspec_sse_fnc_idRegistry;
+if (_cls isNotEqualTo "" && {!_move}) exitWith { _cls };
+if (_cls isEqualTo "") then {
+    _cls = ["alloc", [_doc get "type"]] call comspec_sse_fnc_idRegistry;
+    if (_cls isEqualTo "") exitWith {};
+    _doc set ["cls", _cls];
+    (comspec_sse_idReg get "byClass") set [_cls, _id];
+};
 if (_cls isEqualTo "") exitWith { "" };
-_doc set ["cls", _cls];
-(comspec_sse_idReg get "byClass") set [_cls, _id];
 if (isNull _where) exitWith { _cls };
 if (_where isKindOf "CAManBase") then {
     // Corps supprimé (nettoyage) : ses exemplaires reviennent au stock, les documents redeviennent virtuels.

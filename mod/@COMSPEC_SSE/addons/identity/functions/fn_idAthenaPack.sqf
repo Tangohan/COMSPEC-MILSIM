@@ -11,7 +11,11 @@
                               ajoutée au résultat local du niveau N3
     Paquet (COMSPEC Link 2.0.118, CONTRACT-CHANGES) : JSON converti pour parseSimpleArray, objet = paires
     [["clé", valeur]…], null = "" ; racine version, generated_at, map, op, (since), countries, identities, documents,
-    watch (1re page seulement), revoked (ids révoqués depuis « since »). Ordre fixe des champs aussi accepté.
+    watch et kits (1re page seulement), revoked (ids révoqués depuis « since »). Ordre fixe des champs aussi accepté.
+    Pays : code, name, mrz_code, number_format, fictional, puis name_en, authority, theme, languages, doc_types, colors,
+    active (pays archivés compris : plus de papiers générés, ceux déjà émis restent lisibles).
+    Kits : uid (Steam ID du compte Athena), user_id, scope, documents (ids des papiers du paquet) ; table remplacée à
+    chaque paquet, puis papiers remis aux joueurs déjà connectés (fn_idKit).
 */
 params [["_op", ""], ["_a", []]];
 switch (_op) do {
@@ -67,14 +71,25 @@ switch (_op) do {
             { _m set [_x, _r param [_forEachIndex, ""]]; } forEach _fields;
             _m
         };
-        private _top = [_root, ["version", "generated_at", "op", "countries", "identities", "documents", "watch"]] call _rec;
+        private _top = [_root, ["version", "generated_at", "map", "op", "countries", "identities", "documents", "watch", "kits"]] call _rec;
         private _reg = ["init"] call comspec_sse_fnc_idRegistry;
         private _nC = 0; private _nD = 0; private _nW = 0;
         {
-            private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional"]] call _rec;
+            private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional", "name_en", "authority", "theme", "languages", "doc_types", "colors", "active"]] call _rec;
             private _code = _c getOrDefault ["code", ""];
             if (_code isNotEqualTo "") then {
-                (_reg get "countries") set [_code, createHashMapFromArray [["code", _code], ["name", _c getOrDefault ["name", _code]], ["mrz", _c getOrDefault ["mrz_code", _code]], ["number_format", _c getOrDefault ["number_format", ""]], ["fictional", _c getOrDefault ["fictional", true]]]];
+                private _active = _c getOrDefault ["active", true];
+                if (_active isEqualType "") then { _active = (toLower _active) in ["", "1", "true"]; };
+                if (_active isEqualType 0) then { _active = _active > 0; };
+                private _arr = { if (_this isEqualType []) then { _this } else { [] } };
+                (_reg get "countries") set [_code, createHashMapFromArray [
+                    ["code", _code], ["name", _c getOrDefault ["name", _code]], ["nameEn", _c getOrDefault ["name_en", ""]],
+                    ["mrz", _c getOrDefault ["mrz_code", _code]], ["number_format", _c getOrDefault ["number_format", ""]],
+                    ["fictional", _c getOrDefault ["fictional", true]], ["authority", _c getOrDefault ["authority", ""]],
+                    ["theme", _c getOrDefault ["theme", ""]], ["languages", (_c getOrDefault ["languages", []]) call _arr],
+                    ["docTypes", (_c getOrDefault ["doc_types", []]) call _arr], ["colors", (_c getOrDefault ["colors", []]) call _arr],
+                    ["active", _active]
+                ]];
                 _nC = _nC + 1;
             };
         } forEach (_top getOrDefault ["countries", []]);
@@ -85,12 +100,15 @@ switch (_op) do {
         } forEach (_top getOrDefault ["identities", []]);
         private _byKey = _reg getOrDefault ["athenaByKey", createHashMap];
         _reg set ["athenaByKey", _byKey];
+        private _byId = _reg getOrDefault ["athenaById", createHashMap];
+        _reg set ["athenaById", _byId];
         {
             private _d = [_x, ["id", "identity_id", "holder_person_id", "type", "country", "number", "issued_on", "expires_on", "authority", "chip", "origin", "integrity", "validity", "report", "forgery_kind", "forgery_quality"]] call _rec;
             private _idn = _ids getOrDefault [str (_d getOrDefault ["identity_id", ""]), createHashMap];
             _d set ["identity", _idn];
             private _k = format ["%1|%2|%3", _d getOrDefault ["country", ""], _d getOrDefault ["type", ""], _d getOrDefault ["number", ""]];
             (_reg get "athena") set [_k, _d];
+            _byId set [str (_d getOrDefault ["id", ""]), _k];
             // Base locale (N3 hors ligne) : le document est connu, à ce nom, avec son signalement. Un faux
             // (origin forged) est inconnu des fichiers, comme sur le site ; une couverture est en règle.
             private _rep = ["stolen", "lost"] find (_d getOrDefault ["report", ""]);
@@ -120,7 +138,20 @@ switch (_op) do {
                 };
             } forEach (_reg get "athena");
         };
-        diag_log text format ["[COMSPEC SSE] Identité : paquet Athena chargé (%1 pays, %2 documents, %3 avis).", _nC, _nD, _nW];
+        // Kits des joueurs (Steam ID -> papiers) : table remplacée, puis remis aux joueurs déjà là.
+        private _kits = createHashMap;
+        {
+            private _kt = [_x, ["uid", "user_id", "scope", "documents"]] call _rec;
+            private _uid = _kt getOrDefault ["uid", ""];
+            if !(_uid isEqualType "") then { _uid = str _uid; };
+            private _list = _kt getOrDefault ["documents", []];
+            if (_uid isNotEqualTo "" && {_list isEqualType []} && {_list isNotEqualTo []}) then { _kits set [_uid, _list apply { [str _x, _x] select (_x isEqualType "") }]; };
+        } forEach (_top getOrDefault ["kits", []]);
+        if ("kits" in _top) then { _reg set ["kits", _kits]; };
+        diag_log text format ["[COMSPEC SSE] Identité : paquet Athena chargé (%1 pays, %2 documents, %3 avis, %4 kits).", _nC, _nD, _nW, count _kits];
+        if ((count _kits) > 0) then {
+            [{ { [_x] call comspec_sse_fnc_idKit; } forEach (allPlayers select { alive _x && {!(_x isKindOf "HeadlessClient_F")} }); }, [], 1] call CBA_fnc_waitAndExecute;
+        };
     };
     case "load": {
         if (!isServer || {!(missionNamespace getVariable ["comspec_sse_id_athenaPack", true])}) exitWith {};
