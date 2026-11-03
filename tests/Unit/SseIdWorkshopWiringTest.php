@@ -10,7 +10,7 @@ use Tests\Support\SseIdentitySqlite;
 
 /**
  * Câblage COMSPEC IDENTITY Lot 6 : routes de l'atelier, des kits types, de la préparation de mission, des briefs et
- * de l'import / export ; droits ; étape de migration 3790 rejouable ; garde-fous des vues (SIMULATION, CSRF, export
+ * de l'import / export ; droits ; étape de migration 3815 rejouable ; garde-fous des vues (SIMULATION, CSRF, export
  * image, briefs dans Mes papiers, carte des contrôles).
  */
 final class SseIdWorkshopWiringTest extends TestCase
@@ -66,10 +66,10 @@ final class SseIdWorkshopWiringTest extends TestCase
 
     public function testMigrationStepIsRegisteredAndReplayable(): void
     {
-        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/3790_atak_sse_identity_lot6.php');
+        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/3815_atak_sse_identity_lot6.php');
         $registry = self::read('database/steps/registry.php');
         self::assertStringContainsString("'id' => 'atak_sse_identity_lot6'", $registry);
-        self::assertStringContainsString("'file' => '3790_atak_sse_identity_lot6.php', 'rerun' => true", $registry);
+        self::assertStringContainsString("'file' => '3815_atak_sse_identity_lot6.php', 'rerun' => true", $registry);
         self::assertStringContainsString("bootstrap/atak_sse_identity_lot6_migration.php", self::read('app/Repositories/SseIdentityRepository.php'));
         if (!extension_loaded('pdo_sqlite')) {
             self::markTestSkipped('pdo_sqlite requis');

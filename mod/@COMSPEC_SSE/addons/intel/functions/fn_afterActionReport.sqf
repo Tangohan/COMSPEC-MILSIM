@@ -29,6 +29,8 @@ private _lines = [
     format ["Actions opérateurs : %1", _hist],
     format ["Découvertes indexées : %1", count (keys (missionNamespace getVariable ["comspec_sse_discoveryStates", createHashMap]))]
 ];
+// Contrôles d'identité notables (détection, saisie, interpellation, HVT, checkpoints) : une ligne par contrôle.
+if (!isNil "comspec_sse_fnc_idAar") then { _lines append (["lines"] call comspec_sse_fnc_idAar); };
 
 if (_notify) then { [_lines joinString endl, "INFO"] call comspec_sse_fnc_notify; };
 _lines

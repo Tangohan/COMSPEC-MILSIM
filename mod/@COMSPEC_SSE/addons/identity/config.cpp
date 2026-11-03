@@ -1,7 +1,9 @@
 #include "script_component.hpp"
 
 /*
-    COMSPEC IDENTITY (Lot 1) : documents d'identité fictifs, contrôle par ACE et par l'app « Contrôle ID » de l'ATAK.
+    COMSPEC IDENTITY : documents d'identité fictifs, contrôle par ACE et par l'app « Contrôle ID » de l'ATAK.
+    Lot 2 : photo du document jointe à la FRM, SALUTE / SPOTREP pré-remplis, contrôles notables au compte rendu AAR.
+    Lot 3 : IA réalistes (machine à états CBA, fn_idAiFsm), checkpoints IA (module Eden, Zeus), réglages CBA.
 
     Vérité (vraie identité, couverture, faux, qualité) : uniquement sur le serveur (fn_idRegistry, jamais diffusée).
     Chaque exemplaire matérialisé est un objet d'inventaire d'une classe libre (CfgWeapons_instances.hpp).
@@ -10,7 +12,7 @@
 class CfgPatches {
     class comspec_sse_identity {
         name = "COMSPEC SSE - Identity";
-        units[] = {};
+        units[] = {"COMSPEC_SSE_Module_IdCheckpoint"};
         weapons[] = {"COMSPEC_ID_Card", "COMSPEC_ID_Passport", "COMSPEC_ID_DrivingLicense"};
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {
@@ -20,8 +22,11 @@ class CfgPatches {
             "comspec_sse_interaction",
             "comspec_sse_ui",
             "comspec_sse_network",
+            "comspec_sse_main",
+            "comspec_sse_zeus",
             "cba_main",
             "cba_xeh",
+            "cba_statemachine",
             "ace_interact_menu",
             "comspec_atak_native_main"
         };
@@ -66,6 +71,17 @@ class CfgFunctions {
             class idTransfer {};
             class idVehicleOccupants {};
             class idKit {};
+            class idAar {};
+            class idAtakAtLeast {};
+            class idPhoto {};
+            class idReport {};
+            class idAiFsm {};
+            class idAiBrain {};
+            class idAiEnter {};
+            class idAiSay {};
+            class idAiReinforce {};
+            class idCheckpoint {};
+            class idCheckpointModule {};
         };
     };
 };
@@ -109,6 +125,10 @@ class Extended_InitPost_EventHandlers {
 
 class CfgWeapons {
     #include "CfgWeapons.hpp"
+};
+
+class CfgVehicles {
+    #include "modules_identity.hpp"
 };
 
 class RscText;

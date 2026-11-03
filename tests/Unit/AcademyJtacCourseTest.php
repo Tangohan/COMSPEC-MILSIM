@@ -253,4 +253,36 @@ final class AcademyJtacCourseTest extends TestCase
         self::assertStringContainsString('0 inscription(s)', $runStep($pdo));
         self::assertSame($before, $read(), 'Second passage sans modification');
     }
+
+    /** Copie figée sur le JTAC 1.0 (un seul chapitre) : les six chapitres reviennent, la progression reste. */
+    public function testStartedLearnerOnOldSingleChapterSnapshotGetsSixChaptersWithProgressKept(): void
+    {
+        $key = AcademyBuiltInCourses::JTAC_KEY;
+        $old = ['key' => $key, 'version' => '1.0', 'chapters' => [['title' => ['fr' => 'Ancien', 'en' => 'Old']]]];
+        $started = ['chapter' => 0, 'stage' => 6, 'learner_id' => 2, 'snapshot' => $old, 'attempts' => [['chapter' => 0, 'score' => 90, 'at' => 1]], 'debriefs' => [0 => 'Débriefing suffisamment long.']];
+        $fresh = AcademyBuiltInCourses::refreshSnapshot($started, $key);
+        self::assertCount(6, $fresh['snapshot']['chapters']);
+        foreach ($fresh['snapshot']['chapters'] as $chapter) {
+            self::assertNotSame('', $chapter['title']['fr']);
+            self::assertNotSame('', $chapter['title']['en']);
+        }
+        self::assertSame($started['attempts'], $fresh['attempts']);
+        self::assertSame(6, $fresh['stage']);
+        $done = $started + ['completed' => true, 'license' => ['number' => 'X']];
+        self::assertSame($done, AcademyBuiltInCourses::refreshSnapshot($done, $key), 'Licence conservée sur sa version');
+        self::assertSame($fresh, AcademyBuiltInCourses::refreshSnapshot($fresh, $key), 'Idempotent');
+        // Validation du chapitre 1 : passage au chapitre 2 (les suivants restent verrouillés), pas de licence.
+        $next = AcademyCurriculum::validateChapter($fresh, $fresh['snapshot'], 9, 'Validé en session radio.', 2);
+        self::assertSame(1, $next['chapter']);
+        self::assertEmpty($next['completed'] ?? false);
+
+        $pdo = new MysqlDdlSqlitePdo();
+        (new \App\Support\Migrations\SchemaInspector($pdo))->runSqlFile(dirname(__DIR__, 2) . '/migrations/20261029130000_athena_academy.sql');
+        $pdo->prepare('INSERT INTO academy_learners (tenant_id, user_id, course_key, state_json) VALUES (?, ?, ?, ?)')->execute([14, 2, $key, json_encode($started, JSON_UNESCAPED_UNICODE)]);
+        self::assertStringContainsString('1 copie(s)', self::runStep($pdo, 'academy_builtin_snapshot_refresh', '3790_academy_builtin_snapshot_refresh.php'));
+        self::assertStringContainsString('0 copie(s)', self::runStep($pdo, 'academy_builtin_snapshot_refresh', '3790_academy_builtin_snapshot_refresh.php'));
+        $state = json_decode((string) $pdo->query('SELECT state_json FROM academy_learners')->fetchColumn(), true);
+        self::assertCount(6, $state['snapshot']['chapters']);
+        self::assertSame($started['debriefs'], $state['debriefs']);
+    }
 }

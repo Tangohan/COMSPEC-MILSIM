@@ -24,7 +24,7 @@ final class SseIdentityRepository
         self::ensureSchema();
     }
 
-    /** Tables du registre créées au premier usage (mêmes migrations que database/steps/3730, 3740, 3750 et 3790). */
+    /** Tables du registre créées au premier usage (mêmes migrations que database/steps/3730, 3740, 3750 et 3815). */
     public static function ensureSchema(): void
     {
         static $done = false;
