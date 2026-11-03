@@ -19,7 +19,7 @@ require __DIR__ . '/_subnav.php';
     <div>
         <div class="page-heading-overline"><?= $h($identity['ref']) ?> // <?= $canSeeTruth ? $h($identity['kind_label']) : 'Nature réservée' ?></div>
         <h1><?= $h($identity['display_name']) ?></h1>
-        <p><?= $h(C::label(C::SEXES, $identity['sex'])) ?> · <?= $h($identity['birth_date'] ?? '—') ?> · <?= $h($identity['birth_place'] ?? '—') ?> · <?= $h($identity['nationality'] ?? '—') ?></p>
+        <p><?= $h(C::label(C::SEXES, $identity['sex'])) ?> · <?= $h(\App\Support\SseIdentityCatalog::birthDateLabel($identity['birth_date'] ?? null)) ?> · <?= $h($identity['birth_place'] ?? '—') ?> · <?= $h($identity['nationality'] ?? '—') ?></p>
     </div>
     <div class="page-reference">
         <strong><?= count($documents) ?> papier(s)</strong>

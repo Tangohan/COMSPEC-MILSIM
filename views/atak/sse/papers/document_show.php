@@ -56,7 +56,7 @@ require __DIR__ . '/_subnav.php';
             <div class="idp-card__name"><?= $h(mb_strtoupper((string) ($identity['last_name'] ?? ''))) ?> <?= $h($identity['first_name'] ?? '') ?></div>
             <div class="idp-grid" style="margin-top:8px">
                 <div><span class="muted">N°</span><br><strong translate="no"><?= $h($doc['doc_number']) ?></strong></div>
-                <div><span class="muted">Né(e) le</span><br><strong><?= $h($identity['birth_date'] ?? '—') ?></strong></div>
+                <div><span class="muted">Né(e) le</span><br><strong><?= $h(\App\Support\SseIdentityCatalog::birthDateLabel($identity['birth_date'] ?? null)) ?></strong></div>
                 <div><span class="muted">Lieu de naissance</span><br><strong><?= $h($identity['birth_place'] ?? '—') ?></strong></div>
                 <div><span class="muted">Sexe</span><br><strong><?= $h($identity['sex'] ?? 'X') ?></strong></div>
                 <div><span class="muted">Nationalité</span><br><strong><?= $h($identity['nationality'] ?? '—') ?></strong></div>

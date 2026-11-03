@@ -1407,7 +1407,16 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                     </select>
                 </label>
             <?php endforeach; ?>
-            <label>Nationalité<input type="text" name="nationality" maxlength="100" value="<?= $h($profile['nationality'] ?? '') ?>" placeholder="Ex. Française"></label>
+            <label>Nationalité
+                <select name="nationality">
+                    <option value="">Non précisée</option>
+                    <?php $nationalityValue = trim((string) ($profile['nationality'] ?? '')); ?>
+                    <?php if ($nationalityValue !== ''): ?><option value="<?= $h($nationalityValue) ?>" selected><?= $h($nationalityValue) ?></option><?php endif; ?>
+                    <?php foreach ((new \App\Repositories\SseIdCountryRepository())->listForTenant((int) \App\Core\Session::get('tenant_id')) as $nationalityCountry): ?>
+                        <?php if ($nationalityCountry['code'] !== $nationalityValue): ?><option value="<?= $h($nationalityCountry['code']) ?>"><?= $h($nationalityCountry['name'] . ' (' . $nationalityCountry['code'] . ')') ?></option><?php endif; ?>
+                    <?php endforeach; ?>
+                </select>
+            </label>
             <label>Poids (kg)<input type="number" name="weight_kg" min="20" max="300" step="1" value="<?= $h((int) ($profile['weight_kg'] ?? 0) > 0 ? (int) $profile['weight_kg'] : '') ?>"></label>
             <label>Taille (cm)<input type="number" name="height_cm" min="100" max="250" step="1" value="<?= $h((int) ($profile['height_cm'] ?? 0) > 0 ? (int) $profile['height_cm'] : '') ?>"></label>
             <label class="eff-dialog__wide">Intolérances médicamenteuses<input type="text" name="drug_intolerances" maxlength="500" value="<?= $h($profile['drug_intolerances'] ?? '') ?>" placeholder="Ex. Pénicilline, AINS"></label>
@@ -1578,3 +1587,5 @@ foreach ($jobRoles as $jr) {
 </dialog>
 <?php endif; ?>
 <script src="<?= $h(asset_url('assets/js/eff-member.js')) ?>" defer></script>
+
+<script defer src="<?= $h(asset_url('assets/js/identity-country-picker.js')) ?>"></script>

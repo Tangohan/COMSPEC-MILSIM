@@ -128,10 +128,12 @@ final class MemberIdentityPapersService
         if ($t === '') {
             return '';
         }
+        $aliases = ['us' => 'USA', 'usa' => 'USA', 'américaine' => 'USA', 'américain' => 'USA', 'uk' => 'GBR', 'gb' => 'GBR', 'britannique' => 'GBR', 'fr' => 'FRA', 'française' => 'FRA', 'français' => 'FRA', 'belgique' => 'BEL', 'belge' => 'BEL', 'ger' => 'DEU', 'de' => 'DEU', 'allemande' => 'DEU', 'allemand' => 'DEU', 'espagne' => 'ESP', 'espagnole' => 'ESP', 'colombie' => 'COL', 'colombienne' => 'COL', 'autriche' => 'AUT', 'autrichienne' => 'AUT'];
+        $t = mb_strtolower($aliases[$t] ?? trim($text));
         foreach ($countries as $c) {
             foreach ([(string) $c['code'], (string) $c['name'], (string) ($c['name_en'] ?? '')] as $candidate) {
                 $cand = mb_strtolower(trim($candidate));
-                if ($cand !== '' && ($cand === $t || str_contains($cand, $t) || str_contains($t, $cand))) {
+                if ($cand !== '' && $cand === $t) {
                     return (string) $c['code'];
                 }
             }
