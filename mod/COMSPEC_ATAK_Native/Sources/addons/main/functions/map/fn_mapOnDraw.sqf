@@ -164,7 +164,10 @@ if (_state getOrDefault ["interactive", false]) then {
 };
 
 // Marqueurs de la mission (symboles, zones, traits) : la carte Arma ne les dessine plus (showMarkers = 0).
+// Mesures de l'onglet PERFS du Debug (fn_perfAcc) : marqueurs de la mission, repères Athena (halo), zones et routes.
+private _perfM = diag_tickTime;
 [_map, _mk] call comspec_atak_native_fnc_mapGameMarkers;
+["carte marqueurs mission (image)", _perfM] call comspec_atak_native_fnc_perfAcc;
 
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
 private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
@@ -396,6 +399,7 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
     _mkLists = [_mkRev, diag_tickTime + 10, _rem, _tag];
     missionNamespace setVariable ["COMSPEC_ATAK_DrawMkLists", _mkLists];
 };
+_perfM = diag_tickTime;
 {
     private _marker = _x select 1;
     if (_marker getOrDefault ["local",false]) then { continue };
@@ -423,17 +427,26 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
             };
             // Couleur Arma exacte du repère, pleine (fn_mapColors « lift » : seules les couleurs trop sombres passent à
             // leur version vive sur carte sombre) ; halo dessous pour la lisibilité (2.9.40).
+            // Couleur et halo gardés par classe et par fond clair / sombre (avant : recalculés à chaque image et par repère).
             private _mcls = _marker getOrDefault ["color","ColorGreen"];
-            private _rgba = +([[_mcls, [0.36,0.78,0.42,1]] call _mkRgba, _mcls] call (_pal get "lift"));
+            private _hk = _mcls + (["|L", "|D"] select (_pal getOrDefault ["dark", false]));
+            private _mch = _mkColorCache getOrDefault [_hk, []];
+            if (_mch isEqualTo []) then {
+                private _rg = +([[_mcls, [0.36,0.78,0.42,1]] call _mkRgba, _mcls] call (_pal get "lift"));
+                _mch = [_rg, [_pal get "halo", _pal get "haloLight"] select (((_rg select 0) * 0.3 + (_rg select 1) * 0.59 + (_rg select 2) * 0.11) < 0.25)];
+                _mkColorCache set [_hk, _mch];
+            };
+            private _rgba = +(_mch select 0);
             _rgba set [3, [0, 1] select ((_marker getOrDefault ["alpha",1]) > 0.02)];
             private _isz = 16 * _k * _is;
             private _dirM = _marker getOrDefault ["dir",0];
-            _map drawIcon [_icon,[_pal get "halo", _pal get "haloLight"] select (((_rgba select 0) * 0.3 + (_rgba select 1) * 0.59 + (_rgba select 2) * 0.11) < 0.25),_pos,_isz * 1.3,_isz * 1.3,_dirM,"",0];
+            _map drawIcon [_icon,_mch select 1,_pos,_isz * 1.3,_isz * 1.3,_dirM,"",0];
             // Nom du repère : écrit par fn_mapMarkerText, comme ceux des marqueurs du jeu.
             _map drawIcon [_icon,_rgba,_pos,_isz,_isz,_dirM,"",0];
         };
     };
 } forEach (_mkLists select 2);
+["carte repères Athena (image)", _perfM] call comspec_atak_native_fnc_perfAcc;
 
 {
     if ((count _x) >= 2) then {
@@ -480,7 +493,9 @@ private _dashed = {
 
 // Zones tactiques Athena (LZ, objectif, zone dangereuse…) et zones roleplay (brouillage, sans couverture).
 if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
-    private _zc = createHashMapFromArray [["LZ",[0.36,0.85,0.42,1]],["DZ",[0.36,0.85,0.42,1]],["EXTRACT_POINT",[0.36,0.85,0.42,1]],["RALLY_POINT",[0.28,0.70,1,1]],["SAFE_ZONE",[0.28,0.70,1,1]],["OBJECTIVE",[0.95,0.67,0.20,1]],["DANGER_ZONE",[0.95,0.22,0.18,1]],["NO_GO_AREA",[0.95,0.22,0.18,1]],["RESTRICTED_AREA",[0.95,0.5,0.15,1]]];
+    // Table des couleurs par type, créée une fois (avant : recréée à chaque image).
+    if (isNil "COMSPEC_ATAK_DZColors") then { COMSPEC_ATAK_DZColors = createHashMapFromArray [["LZ",[0.36,0.85,0.42,1]],["DZ",[0.36,0.85,0.42,1]],["EXTRACT_POINT",[0.36,0.85,0.42,1]],["RALLY_POINT",[0.28,0.70,1,1]],["SAFE_ZONE",[0.28,0.70,1,1]],["OBJECTIVE",[0.95,0.67,0.20,1]],["DANGER_ZONE",[0.95,0.22,0.18,1]],["NO_GO_AREA",[0.95,0.22,0.18,1]],["RESTRICTED_AREA",[0.95,0.5,0.15,1]]]; };
+    private _zc = COMSPEC_ATAK_DZColors;
     {
         _x params [["_id",""],["_geom","CIRCLE"],["_geo",[]],["_r",0],["_type",""],["_threat",""],["_label",""]];
         private _c = +(_zc getOrDefault [toUpper _type,[0.95,0.67,0.20,1]]);
@@ -511,6 +526,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
 };
 
 // Mes charges (app Explosifs) : numéro de pose, mode de mise à feu, temps restant des minuteries, T- de la séquence.
+// File de séquence lue une fois par image (clé -> première échéance) : avant, refiltrée pour chaque charge.
+private _exQ = createHashMap;
+{ private _qk = (_x select 1) get "key"; if !(_qk in _exQ) then { _exQ set [_qk, _x select 0]; }; } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap]) getOrDefault ["queue", []]);
 {
     private _e = _x get "obj";
     // Charge détonée ou supprimée dans la fenêtre du cache de fn_exploList (0,5 s) : pas d'icône à l'origine de la carte.
@@ -518,9 +536,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     private _c = [[0.95,0.67,0.20,1], [0.90,0.78,0.29,1], [0.90,0.28,0.23,1], [0.79,0.83,0.81,1]] select ((["atak","command","timer","mine"] find (_x get "kind")) max 0);
     private _txt = format ["C%1", _forEachIndex + 1];
     if ((_x get "remaining") >= 0) then { _txt = format ["%1 · %2 s", _txt, ceil (_x get "remaining")]; };
-    private _key = _x get "key";
-    private _q = ((uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap]) getOrDefault ["queue", []]) select { ((_x select 1) get "key") isEqualTo _key };
-    if ((count _q) > 0) then { _txt = format ["%1 · T-%2", _txt, ((((_q select 0) select 0) - diag_tickTime) max 0) toFixed 1]; _c = [0.90,0.28,0.23,1]; };
+    private _qt = _exQ getOrDefault [_x get "key", -1];
+    if (_qt isNotEqualTo -1) then { _txt = format ["%1 · T-%2", _txt, ((_qt - diag_tickTime) max 0) toFixed 1]; _c = [0.90,0.28,0.23,1]; };
     _map drawIcon ["\z\comspec_atak_native\addons\main\data\app_explo.paa", _c, getPosASL _e, 18 * _k * _is, 18 * _k * _is, 0, _txt, 2, 0.03 * _kt * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 } forEach ([] call comspec_atak_native_fnc_exploList);
 
@@ -557,17 +574,22 @@ if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualT
     private _pulse = 0.55 + 0.45 * (abs sin (diag_tickTime * 180));
     private _ring = [0.36, 0.78, 0.42, _pulse];
     _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _ring, _ap, 34 * _is, 34 * _is, 0, "", 0];
-    private _ic = getText (configFile >> "CfgMarkers" >> (_state getOrDefault ["markerType", "mil_dot"]) >> "icon");
+    // Icône lue une fois par type (cache « ~ » des icônes : texte brut de CfgMarkers), pas à chaque image.
+    private _apT = "~" + (_state getOrDefault ["markerType", "mil_dot"]);
+    private _ic = _mkIconCache getOrDefault [_apT, "§"];
+    if (_ic isEqualTo "§") then { _ic = getText (configFile >> "CfgMarkers" >> (_apT select [1]) >> "icon"); _mkIconCache set [_apT, _ic]; };
     if (_ic isNotEqualTo "") then { _map drawIcon [_ic, [1, 1, 1, 0.75], _ap, 20 * _is, 20 * _is, 0, "", 0]; };
     _map drawIcon [_dot, [0.36, 0.78, 0.42, 1], _ap, 6, 6, 0, "  " + (("POINT DE POSE · VALIDER") call comspec_atak_native_fnc_tr), 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
 
 // App Zones : plans affichés (bascule « Zones sur la carte ATAK »), dans la vue seulement, sous les routes (fn_zoneDraw).
-if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesShow", true]) then { [_map, _k * _is, _ts] call comspec_atak_native_fnc_zoneDraw; };
+if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesShow", true]) then { _perfM = diag_tickTime; [_map, _k * _is, _ts] call comspec_atak_native_fnc_zoneDraw; ["carte zones (image)", _perfM] call comspec_atak_native_fnc_perfAcc; };
 // Points de passage : tronçons, étapes nommées et typées, point choisi en mode POINTS DE PASSAGE (fn_wpDraw).
 [_map, _k * _is, _ts, _cursor] call comspec_atak_native_fnc_wpDraw;
 // App Routes : routes affichées, dans la vue seulement, tracé gardé par révision (fn_routeDraw).
+_perfM = diag_tickTime;
 [_map, _k * _is, _ts] call comspec_atak_native_fnc_routeDraw;
+["carte routes (image)", _perfM] call comspec_atak_native_fnc_perfAcc;
 // Ordres aux groupes IA du camp en cours (et finis depuis moins d'une minute) : trait du chef à l'objectif (fn_aiOrder).
 ["draw", [_map, 0.026 * _ts, COMSPEC_ATAK_FontSet select 1]] call comspec_atak_native_fnc_aiOrder;
 // Appui feu typé (fn_fireSupport) : portées de la pièce choisie, distance de sécurité, missions de tir du camp.

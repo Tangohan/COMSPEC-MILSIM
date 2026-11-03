@@ -29,6 +29,100 @@
     Params : [action, argument] — voir les « case ».
 */
 params [["_act", ""], ["_arg", []]];
+// Lectures faites à chaque image (fn_zoneDraw : chaque plan ; bandeau du curseur : chaque mouvement de souris) servies
+// avant la préparation des tables ci-dessous (près de 250 lignes refaites à chaque appel) : caches par révision
+// « geo » et « pal », triangles, zone sous un point et texte du curseur déjà calculé.
+if (_act isEqualTo "geo" && {((_arg getOrDefault ["geo", []]) param [0, -1]) isEqualTo (_arg get "rev")}) exitWith { _arg get "geo" };
+if (_act isEqualTo "pal" && {((_arg getOrDefault ["palc", []]) param [0, -1]) isEqualTo (_arg get "rev")}) exitWith { (_arg get "palc") select 1 };
+if (_act isEqualTo "atText" && {missionNamespace getVariable ["comspec_atak_native_zones_cursor", true]} && {
+    private _p = _arg param [0, []];
+    (count _p) >= 2 && {((count (missionNamespace getVariable ["COMSPEC_ATAK_ZnMine", createHashMap])) + (count (missionNamespace getVariable ["COMSPEC_ATAK_ZnRx", createHashMap]))) > 0} && {
+        ((uiNamespace getVariable ["COMSPEC_ATAK_ZnCursor", []]) param [0, []]) isEqualTo [round ((_p select 0) / 3), round ((_p select 1) / 3), missionNamespace getVariable ["COMSPEC_ATAK_ZnRev", 0], (missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr"]
+    }
+}) exitWith { (uiNamespace getVariable "COMSPEC_ATAK_ZnCursor") select 1 };
+// Triangles de remplissage des zones qui ne sont pas des cases (calcul en arrière-plan, gardé par révision) :
+// HashMap id de zone -> triangles (vide tant que le calcul n'est pas fini).
+if (_act isEqualTo "tri") exitWith {
+    private _b = _arg;
+    private _cache = uiNamespace getVariable "COMSPEC_ATAK_ZnTri";
+    if (isNil "_cache") then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_ZnTri", _cache]; };
+    private _key = format ["%1|%2", _b get "id", _b get "rev"];
+    private _e = _cache getOrDefault [_b get "id", []];
+    if ((_e param [0, ""]) isEqualTo _key) exitWith { _e select 1 };
+    _cache set [_b get "id", [_key, createHashMap]];
+    [_b get "id", _key, ((_b get "zones") select { (count (_x select 11)) isNotEqualTo 4 }) apply { [_x select 0, _x select 2] }] spawn {
+        params ["_id", "_key", "_list"];
+        private _h = createHashMap;
+        { _h set [_x select 0, ["tri", [_x select 1]] call comspec_atak_native_fnc_zoneGeom]; if ((_forEachIndex mod 4) isEqualTo 3) then { sleep 0.01; }; } forEach _list;
+        private _cache = uiNamespace getVariable ["COMSPEC_ATAK_ZnTri", createHashMap];
+        if (((_cache getOrDefault [_id, []]) param [0, ""]) isEqualTo _key) then { _cache set [_id, [_key, _h]]; };
+    };
+    createHashMap
+};
+// Aperçu du découpage avant GÉNÉRER (grille, secteurs, une zone) : [contours [[x, y]...]...], gardé tant que la
+// zone de travail et les réglages ne changent pas. Îlots et traits : [] (calcul trop lourd pour un aperçu).
+if (_act isEqualTo "preview") exitWith {
+    private _b = _arg;
+    private _gp = _b getOrDefault ["gp", createHashMap];
+    private _cut = _gp getOrDefault ["cut", "GRID"];
+    private _key = str [_b getOrDefault ["area", []], _cut, _gp getOrDefault ["size", 200], _gp getOrDefault ["snap", true], _gp getOrDefault ["sec", 8], _gp getOrDefault ["rings", 1]];
+    private _c = uiNamespace getVariable ["COMSPEC_ATAK_ZnPrev", []];
+    if ((_c param [0, ""]) isEqualTo _key) exitWith { _c select 1 };
+    (["areaPoly", _b] call comspec_atak_native_fnc_zoneAction) params ["_ap", "_ak", "_ac", "_ar"];
+    private _out = [];
+    if ((count _ap) >= 3) then {
+        private _ap3 = _ap apply { [_x select 0, _x select 1, 0] };
+        (["bbox", [_ap]] call comspec_atak_native_fnc_zoneGeom) params ["_bx0", "_by0", "_bx1", "_by1"];
+        switch (_cut) do {
+            case "GRID": {
+                private _S = ((_gp getOrDefault ["size", 200]) max 50) min 2000;
+                private _x0 = _bx0; private _y0 = _by0;
+                if (_gp getOrDefault ["snap", true]) then { _x0 = (floor (_bx0 / _S)) * _S; _y0 = (floor (_by0 / _S)) * _S; };
+                private _nx = ceil ((_bx1 - _x0) / _S) max 1; private _ny = ceil ((_by1 - _y0) / _S) max 1;
+                if ((_nx * _ny) > 2400) exitWith {};
+                for "_j" from 0 to (_ny - 1) do {
+                    for "_i" from 0 to (_nx - 1) do {
+                        private _cx = _x0 + (_i + 0.5) * _S; private _cy = _y0 + (_j + 0.5) * _S;
+                        if ([_cx, _cy, 0] inPolygon _ap3) then { _out pushBack [[_cx, _cy, _S / 2]]; };
+                    };
+                };
+            };
+            case "RADIAL": {
+                private _k = _gp getOrDefault ["sec", 8]; if !(_k in [4, 8, 16]) then { _k = 8; };
+                private _m = ((_gp getOrDefault ["rings", 1]) max 1) min 3;
+                private _cc = _ac; private _r0 = _ar;
+                if (_ak isNotEqualTo "CIRCLE") then { _cc = ["centroid", [_ap]] call comspec_atak_native_fnc_zoneGeom; _r0 = (((_bx1 - _bx0) max (_by1 - _by0)) / 2) max 50; };
+                for "_r" from 1 to _m do { for "_i" from 0 to (_k - 1) do { private _a = _i * 360 / _k; _out pushBack (["ring", [_cc, _r0 * (_r - 1) / _m, _r0 * _r / _m, _a - 180 / _k, _a + 180 / _k]] call comspec_atak_native_fnc_zoneGeom); }; };
+            };
+            case "SINGLE": { _out pushBack _ap; };
+            default {};
+        };
+    };
+    uiNamespace setVariable ["COMSPEC_ATAK_ZnPrev", [_key, _out]];
+    _out
+};
+// Plan par son id (carte de l'app Zones : à chaque image), une fois les plans relus du profil.
+if (_act isEqualTo "get" && {!isNil {missionNamespace getVariable "COMSPEC_ATAK_ZnMine"}}) exitWith {
+    (missionNamespace getVariable "COMSPEC_ATAK_ZnMine") getOrDefault [_arg, (missionNamespace getVariable ["COMSPEC_ATAK_ZnRx", createHashMap]) getOrDefault [_arg, createHashMap]]
+};
+// Zone d'un plan qui contient la position (la plus petite) : [plan, position] -> zone ou [].
+if (_act isEqualTo "zoneIn") exitWith {
+    _arg params ["_b", "_p"];
+    private _g = ["geo", _b] call comspec_atak_native_fnc_zoneAction;
+    (_g select 1) params ["_X0", "_Y0", "_X1", "_Y1"];
+    _p params ["_px", "_py"];
+    if (_px < _X0 || {_px > _X1} || {_py < _Y0} || {_py > _Y1}) exitWith { [] };
+    private _best = []; private _ba = 1e12;
+    private _p3 = [_px, _py, 0];
+    {
+        (_g select 2 select _forEachIndex) params ["_x0", "_y0", "_x1", "_y1"];
+        if (_px >= _x0 && {_px <= _x1} && {_py >= _y0} && {_py <= _y1}) then {
+            private _a = (_g select 3) select _forEachIndex;
+            if (_a < _ba && {(count (_x select 11)) isEqualTo 4 || {_p3 inPolygon ((_g select 4) select _forEachIndex)}}) then { _ba = _a; _best = _x; };
+        };
+    } forEach (_b get "zones");
+    _best
+};
 private _tr = { _this call comspec_atak_native_fnc_tr };
 private _fr = (missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr";
 // États : clé, libellé, abrégé français, abrégé anglais (jamais repassés par la traduction), couleur, couleur d'Arma.
@@ -1206,48 +1300,6 @@ switch (_act) do {
         _p
     };
     case "themes3": { [["NATO", "OTAN standard"], ["HC", "Contraste élevé"], ["NV", "Vision nocturne"]] };
-    // Aperçu du découpage avant GÉNÉRER (grille, secteurs, une zone) : [contours [[x, y]...]...], gardé tant que la
-    // zone de travail et les réglages ne changent pas. Îlots et traits : [] (calcul trop lourd pour un aperçu).
-    case "preview": {
-        private _b = _arg;
-        private _gp = _b getOrDefault ["gp", createHashMap];
-        private _cut = _gp getOrDefault ["cut", "GRID"];
-        private _key = str [_b getOrDefault ["area", []], _cut, _gp getOrDefault ["size", 200], _gp getOrDefault ["snap", true], _gp getOrDefault ["sec", 8], _gp getOrDefault ["rings", 1]];
-        private _c = uiNamespace getVariable ["COMSPEC_ATAK_ZnPrev", []];
-        if ((_c param [0, ""]) isEqualTo _key) exitWith { _c select 1 };
-        (["areaPoly", _b] call comspec_atak_native_fnc_zoneAction) params ["_ap", "_ak", "_ac", "_ar"];
-        private _out = [];
-        if ((count _ap) >= 3) then {
-            private _ap3 = _ap apply { [_x select 0, _x select 1, 0] };
-            (["bbox", [_ap]] call comspec_atak_native_fnc_zoneGeom) params ["_bx0", "_by0", "_bx1", "_by1"];
-            switch (_cut) do {
-                case "GRID": {
-                    private _S = ((_gp getOrDefault ["size", 200]) max 50) min 2000;
-                    private _x0 = _bx0; private _y0 = _by0;
-                    if (_gp getOrDefault ["snap", true]) then { _x0 = (floor (_bx0 / _S)) * _S; _y0 = (floor (_by0 / _S)) * _S; };
-                    private _nx = ceil ((_bx1 - _x0) / _S) max 1; private _ny = ceil ((_by1 - _y0) / _S) max 1;
-                    if ((_nx * _ny) > 2400) exitWith {};
-                    for "_j" from 0 to (_ny - 1) do {
-                        for "_i" from 0 to (_nx - 1) do {
-                            private _cx = _x0 + (_i + 0.5) * _S; private _cy = _y0 + (_j + 0.5) * _S;
-                            if ([_cx, _cy, 0] inPolygon _ap3) then { _out pushBack [[_cx, _cy, _S / 2]]; };
-                        };
-                    };
-                };
-                case "RADIAL": {
-                    private _k = _gp getOrDefault ["sec", 8]; if !(_k in [4, 8, 16]) then { _k = 8; };
-                    private _m = ((_gp getOrDefault ["rings", 1]) max 1) min 3;
-                    private _cc = _ac; private _r0 = _ar;
-                    if (_ak isNotEqualTo "CIRCLE") then { _cc = ["centroid", [_ap]] call comspec_atak_native_fnc_zoneGeom; _r0 = (((_bx1 - _bx0) max (_by1 - _by0)) / 2) max 50; };
-                    for "_r" from 1 to _m do { for "_i" from 0 to (_k - 1) do { private _a = _i * 360 / _k; _out pushBack (["ring", [_cc, _r0 * (_r - 1) / _m, _r0 * _r / _m, _a - 180 / _k, _a + 180 / _k]] call comspec_atak_native_fnc_zoneGeom); }; };
-                };
-                case "SINGLE": { _out pushBack _ap; };
-                default {};
-            };
-        };
-        uiNamespace setVariable ["COMSPEC_ATAK_ZnPrev", [_key, _out]];
-        _out
-    };
     // Boîtes et surfaces des zones, gardées par révision : [révision, boîte du plan, boîtes des zones, surfaces, points 3D].
     case "geo": {
         private _b = _arg;
@@ -1274,43 +1326,6 @@ switch (_act) do {
         _g = [_b get "rev", [_X0, _Y0, _X1, _Y1], _zb, _za, _p3, _ap apply { [_x select 0, _x select 1, 0] }];
         _b set ["geo", _g];
         _g
-    };
-    // Triangles de remplissage des zones qui ne sont pas des cases (calcul en arrière-plan, gardé par révision) :
-    // HashMap id de zone -> triangles (vide tant que le calcul n'est pas fini).
-    case "tri": {
-        private _b = _arg;
-        private _cache = uiNamespace getVariable "COMSPEC_ATAK_ZnTri";
-        if (isNil "_cache") then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_ZnTri", _cache]; };
-        private _key = format ["%1|%2", _b get "id", _b get "rev"];
-        private _e = _cache getOrDefault [_b get "id", []];
-        if ((_e param [0, ""]) isEqualTo _key) exitWith { _e select 1 };
-        _cache set [_b get "id", [_key, createHashMap]];
-        [_b get "id", _key, ((_b get "zones") select { (count (_x select 11)) isNotEqualTo 4 }) apply { [_x select 0, _x select 2] }] spawn {
-            params ["_id", "_key", "_list"];
-            private _h = createHashMap;
-            { _h set [_x select 0, ["tri", [_x select 1]] call comspec_atak_native_fnc_zoneGeom]; if ((_forEachIndex mod 4) isEqualTo 3) then { sleep 0.01; }; } forEach _list;
-            private _cache = uiNamespace getVariable ["COMSPEC_ATAK_ZnTri", createHashMap];
-            if (((_cache getOrDefault [_id, []]) param [0, ""]) isEqualTo _key) then { _cache set [_id, [_key, _h]]; };
-        };
-        createHashMap
-    };
-    // Zone d'un plan qui contient la position (la plus petite) : [plan, position] -> zone ou [].
-    case "zoneIn": {
-        _arg params ["_b", "_p"];
-        private _g = ["geo", _b] call comspec_atak_native_fnc_zoneAction;
-        (_g select 1) params ["_X0", "_Y0", "_X1", "_Y1"];
-        _p params ["_px", "_py"];
-        if (_px < _X0 || {_px > _X1} || {_py < _Y0} || {_py > _Y1}) exitWith { [] };
-        private _best = []; private _ba = 1e12;
-        private _p3 = [_px, _py, 0];
-        {
-            (_g select 2 select _forEachIndex) params ["_x0", "_y0", "_x1", "_y1"];
-            if (_px >= _x0 && {_px <= _x1} && {_py >= _y0} && {_py <= _y1}) then {
-                private _a = (_g select 3) select _forEachIndex;
-                if (_a < _ba && {(count (_x select 11)) isEqualTo 4 || {_p3 inPolygon ((_g select 4) select _forEachIndex)}}) then { _ba = _a; _best = _x; };
-            };
-        } forEach (_b get "zones");
-        _best
     };
     // Zone sous une position parmi les plans affichés : [position] -> [plan, zone] ou [].
     case "at": {

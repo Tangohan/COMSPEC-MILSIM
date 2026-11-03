@@ -12,7 +12,7 @@ private _info = createHashMap;
 if (!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay") then {
     _info = [] call comspec_overwatch_connect_fnc_getNearestAtakRelay;
 };
-if (!(_info isEqualType createHashMap) || {(count (keys _info)) < 1}) exitWith {
+if (!(_info isEqualType createHashMap) || {(count _info) < 1}) exitWith {
     if ((getMarkerColor _mk) isNotEqualTo "") then { deleteMarkerLocal _mk; };
     if ((getMarkerColor _ring) isNotEqualTo "") then { deleteMarkerLocal _ring; };
     missionNamespace setVariable ["COMSPEC_RelayWasInRange", nil, false];

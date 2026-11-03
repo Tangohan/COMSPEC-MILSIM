@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class SseQueueOfflineIdemAssetTest extends TestCase
 {
@@ -17,9 +18,9 @@ final class SseQueueOfflineIdemAssetTest extends TestCase
         self::assertStringContainsString('} forEach comspec_sse_txQueue;', $sqf);
         self::assertStringNotContainsString('findIf', $sqf);
         self::assertStringContainsString('_idemKey', $sqf);
-        self::assertStringContainsString('1.0.0', (string) file_get_contents(
+        ModVersion::assertAtLeast('1.0.0', ModVersion::fromConfigCpp((string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/main/script_mod.hpp'
-        ));
+        )));
     }
 
     public function testVibrateClearsSimulatedDisconnect(): void

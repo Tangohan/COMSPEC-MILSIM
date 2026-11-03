@@ -24,7 +24,7 @@ private _due = diag_tickTime + _debounceSec;
 _queue set [_key, [_due, _code, _args]];
 missionNamespace setVariable ["COMSPEC_ServerQueue", _queue, false];
 
-private _n = count (keys _queue);
+private _n = count _queue;
 if (_n > 120) then {
     // Garde-fou : trop d’entrées → exécution immédiate des plus anciennes (échéance la plus proche) jusqu’à 120.
     // serverFlushQueue n’exécute que les entrées échues : juste après un ajout, rien ne l’est (débounce).

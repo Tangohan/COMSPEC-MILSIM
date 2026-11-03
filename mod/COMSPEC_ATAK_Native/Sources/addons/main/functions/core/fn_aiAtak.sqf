@@ -39,6 +39,7 @@ switch (_mode) do {
         if (isNull _u || {isPlayer _u} || {!alive _u} || {_u getVariable ["COMSPEC_ATAK_AiEquipped", false]}) exitWith { false };
         _u setVariable ["COMSPEC_ATAK_AiEquipped", true];
         missionNamespace setVariable ["COMSPEC_ATAK_AiAny", true];
+        if (!isNil "COMSPEC_ATAK_AiList" && {!(_u in COMSPEC_ATAK_AiList)}) then { COMSPEC_ATAK_AiList pushBack _u; };
         if (isNil { _u getVariable "COMSPEC_ATAK_AiAtak" }) then { _u setVariable ["COMSPEC_ATAK_AiAtak", true, true]; };
         private _item = missionNamespace getVariable ["comspec_atak_native_ai_atak_item", "COMSPEC_ATAK_Phone"];
         if (_item isEqualTo "" || {!isClass (configFile >> "CfgWeapons" >> _item)}) then { _item = "COMSPEC_ATAK_Phone"; };
@@ -58,8 +59,10 @@ switch (_mode) do {
         private _mode = missionNamespace getVariable ["comspec_atak_native_ai_atak", "off"];
         private _real = missionNamespace getVariable ["comspec_atak_native_ai_realism", true];
         // Équipement : IA voulues par le réglage ou la mission, vérifiées toutes les 10 s (IA créées en cours de partie).
+        // Liste des IA (allUnits) refaite à ce relevé, plus chaque seconde ; une IA équipée entre-temps y est ajoutée.
         if (diag_tickTime > (missionNamespace getVariable ["COMSPEC_ATAK_AiSweepAt", 0])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_AiSweepAt", diag_tickTime + 10];
+            COMSPEC_ATAK_AiList = allUnits select { !isPlayer _x };
             {
                 private _u = _x;
                 private _force = _u getVariable "COMSPEC_ATAK_AiAtak";
@@ -67,7 +70,7 @@ switch (_mode) do {
                     switch (_mode) do { case "all": { true }; case "leaders": { _u isEqualTo leader group _u }; default { false }; }
                 } else { _force };
                 if (_want && {!(_u getVariable ["COMSPEC_ATAK_AiEquipped", false])}) then { ["equip", _u] call _fn; };
-            } forEach (allUnits select { !isPlayer _x && {alive _x} && {_x isKindOf "CAManBase"} });
+            } forEach (COMSPEC_ATAK_AiList select { alive _x && {_x isKindOf "CAManBase"} });
         };
         if (_mode isEqualTo "off" && {!(missionNamespace getVariable ["COMSPEC_ATAK_AiAny", false])}) exitWith {};
         if (!_real || {!(["pli"] call comspec_atak_native_fnc_netCond)}) exitWith {};
@@ -81,7 +84,7 @@ switch (_mode) do {
         {
             private _u = _x;
             if (_n >= 250) exitWith {};
-            if (!alive _u) then { continue };
+            if (!alive _u || {isPlayer _u}) then { continue };
             private _k = netId _u;
             private _st = COMSPEC_ATAK_AiState getOrDefault [_k, [diag_tickTime + random _rate, [0, 0, 0], [0, 0, 0], 1]];
             _st params ["_at", "_lastPos", "_off", "_f"];
@@ -116,7 +119,7 @@ switch (_mode) do {
                 _u setVariable ["COMSPEC_ATAK_Pli", [_p vectorAdd _off, getDir vehicle _u, _now, round ((vectorMagnitude _off) max _err)], true];
             };
             COMSPEC_ATAK_AiState set [_k, [diag_tickTime + _rate * _f2, _p, _off, _f2]];
-        } forEach (allUnits select { !isPlayer _x });
+        } forEach COMSPEC_ATAK_AiList;
         if ((count COMSPEC_ATAK_AiState) > 800) then { { if (isNull (objectFromNetId _x)) then { COMSPEC_ATAK_AiState deleteAt _x; }; } forEach (keys COMSPEC_ATAK_AiState); };
     };
 };

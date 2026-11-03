@@ -28,7 +28,7 @@ private _merged = {
 switch (_tab) do {
     case "PERF": {
         // Dernier bilan de 30 s (fn_perfAcc « report ») : fonctions les plus coûteuses et rendus complets par page.
-        (missionNamespace getVariable ["COMSPEC_ATAK_PerfLast", []]) params [["_at", -1], ["_fps", 0], ["_slowN", 0], ["_slowMax", 0], ["_top", []], ["_rend", []]];
+        (missionNamespace getVariable ["COMSPEC_ATAK_PerfLast", []]) params [["_at", -1], ["_fps", 0], ["_slowN", 0], ["_slowMax", 0], ["_top", []], ["_rend", []], ["_watch", []]];
         if (_at < 0) exitWith { _rows pushBack ["text", "<t color='#8a9a93'>Premier bilan dans 30 s au plus (profilage CBA actif : bilan dans le journal).</t>"]; };
         _rows append [
             ["info", "Dernier bilan", format ["il y a %1 s · fenêtre de 30 s", round (diag_tickTime - _at)]],
@@ -40,6 +40,11 @@ switch (_tab) do {
             _x params ["_k", "_n", "_avg", "_max", "_tot"];
             format ["%1 ms · %2× · moy %3 · max %4 · %5", _tot toFixed 1, _n, _avg toFixed 2, _max toFixed 1, [_k] call _esc]
         }) joinString "<br/>"]] select ((count _top) > 0)];
+        _rows pushBack ["section", "Carte et papiers SSE", "temps total sur 30 s"];
+        _rows pushBack ["text", ["<t color='#8a9a93'>Rien mesuré.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_watch apply {
+            _x params ["_k", "_n", "_avg", "_max", "_tot"];
+            format ["%1 ms · %2× · moy %3 · max %4 · %5", _tot toFixed 1, _n, _avg toFixed 2, _max toFixed 1, [_k] call _esc]
+        }) joinString "<br/>"]] select ((count _watch) > 0)];
         _rend = _rend apply { [_x select 1, _x select 0] };
         _rend sort false;
         _rows pushBack ["section", "Rendus complets de page", "sur 30 s"];

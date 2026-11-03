@@ -6,6 +6,7 @@
 */
 params [["_u", objNull, [objNull]], ["_radius", 3, [0]]];
 if (isNull _u) exitWith { [] };
+private _pt = diag_tickTime;
 // Exemplaires délivrés (COMSPEC_ID_Card_001…) et documents vierges du catalogue (Arsenal, Zeus).
 private _isDoc = { (_this select [0, 11]) isEqualTo "COMSPEC_ID_" };
 private _out = [];
@@ -21,4 +22,6 @@ if (_radius > 0) then {
         } forEach (itemCargo _h);
     } forEach (nearestObjects [_u, ["WeaponHolder", "GroundWeaponHolder", "WeaponHolderSimulated", "ReammoBox_F"], _radius]);
 };
+// Mesure de l'onglet PERFS du Debug de l'ATAK natif (conditions des menus ACE « Mes papiers », fouilles).
+if (hasInterface && {!isNil "comspec_atak_native_fnc_perfAcc"}) then { ["SSE papiers (idDocsOf)", _pt] call comspec_atak_native_fnc_perfAcc; };
 _out

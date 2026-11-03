@@ -294,6 +294,18 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1354, '2026-11-03', 'ATAK 3.0.1 : carte, Zones et Routes plus légères', 'Le téléphone passe en version 3.0.1, centrée sur l’optimisation. La carte fait beaucoup moins de calculs à chaque image quand des plans de l’app Zones ou des routes sont affichés, ce qui réduit les saccades, surtout téléphone porté ; le dessin reste identique. Le bandeau du curseur ne recherche plus la zone sous le curseur à chaque mouvement de souris quand rien n’a changé, et la barre d’état du téléphone (réseau, batterie, heure, météo) n’est plus réécrite chaque seconde sans raison. L’onglet Debug › PERFS gagne une section « Carte et papiers SSE » qui montre le temps passé par la carte, les zones, les routes et les menus de papiers du mod SSE, pour signaler précisément un ralentissement.', [
+                'Onglet Debug › PERFS : section « Carte et papiers SSE »',
+            ], [
+                'Carte du téléphone allégée avec des plans Zones et des routes affichés',
+                'Bandeau du curseur : zone sous le curseur recherchée seulement quand elle peut avoir changé',
+                'Barre d’état réécrite seulement quand une valeur change',
+                'Serveur : points de position des IA équipées préparés sans relire toutes les unités chaque seconde',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 3.0.1 et le mod COMSPEC SSE 1.1.2, quittez Arma complètement et relancez.',
+                'Essai : afficher plusieurs plans Zones et routes sur la carte, téléphone porté puis en plein écran, et ouvrir Debug › PERFS après 30 s.',
+            ], 'Pack 3.0.1'),
+
             $pr(1353, '2026-11-03', 'Bureau SSE : les papiers des membres accessibles aux responsables RENS', 'Un responsable RENS n’a plus besoin d’un accès aux Effectifs pour gérer les papiers d’identité des joueurs. Sur le bureau SSE, Identités & documents gagne l’onglet Papiers des membres : la liste des membres de la communauté avec recherche, filtre par unité, compte Steam lié ou non, kit de mission défini ou non, nombre de papiers émis et date du dernier contrôle. Chaque membre s’ouvre sur exactement le même contenu que l’onglet Identité & papiers de sa fiche : identité principale, alias, papiers, kit de mission et contrôles subis, avec les mêmes actions. Rien d’autre de la fiche membre n’y apparaît. L’accès demande la gestion SSE ou l’habilitation Encadrement ; les identités de couverture restent réservées à l’habilitation Confidentiel. Un lien vers la fiche membre complète n’apparaît que pour ceux qui ont aussi le droit Effectifs.', [
                 'Identités & documents › Papiers des membres : liste des membres, recherche, filtres unité, Steam, kit',
                 'Page papiers d’un membre : mêmes identités, papiers, kit et contrôles que la fiche membre',

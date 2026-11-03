@@ -1,5 +1,10 @@
 # COMSPEC SSE — historique des versions
 
+## 1.1.2 — 03/11/2026 · Mesure des papiers dans l'onglet PERFS de l'ATAK
+
+- `fn_idDocsOf` (conditions des menus ACE « Mes papiers », fouilles) mesuré dans l'onglet Debug › PERFS de l'ATAK
+  natif 3.0.1 (« SSE papiers (idDocsOf) »), seulement quand l'ATAK natif est chargé. Aucun changement visible.
+
 ## 1.1.1 — 03/11/2026 · Papiers des joueurs depuis Athena
 
 **Relancer Arma complètement.** Kit et pays de la communauté : liaison Athena (COMSPEC Link 2.0.118).

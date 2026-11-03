@@ -1,3 +1,25 @@
+[h1]COMSPEC ATAK — Mise à jour 3.0.1.AG - Austin[/h1]
+[b]Publication : 03/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 3.0.1, quittez Arma 3 complètement, puis relancez. Pour COMSPEC IDENTITY, mettez aussi à jour COMSPEC SSE en 1.1.2.
+[/quote]
+
+[h2]Optimisation[/h2]
+[list]
+[*] La carte du téléphone fait beaucoup moins de calculs à chaque image quand des plans de l'app Zones ou des routes sont affichés : moins de saccades, surtout téléphone porté.
+[*] Le bandeau du curseur ne recalcule plus la zone sous le curseur à chaque mouvement de souris quand rien n'a changé.
+[*] La barre d'état (réseau, batterie, heure, météo) n'est plus réécrite chaque seconde quand rien ne change.
+[*] Onglet Debug › PERFS : nouvelle section « Carte et papiers SSE » pour signaler un ralentissement.
+[/list]
+
+[h2]Composants[/h2]
+[list]
+[*] Téléphone ATAK 3.0.1.AG - Austin
+[*] COMSPEC Link 2.0.118
+[*] Overwatch connect 1.6.33 · Overwatch main 1.4.8
+[*] Avec COMSPEC SSE 1.1.2 (mod séparé) pour COMSPEC IDENTITY
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 3.0.0.AG - Austin[/h1]
 [b]Publication : 03/11/2026[/b]
 [quote]
