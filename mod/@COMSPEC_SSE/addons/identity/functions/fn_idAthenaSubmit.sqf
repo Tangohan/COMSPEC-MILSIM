@@ -18,7 +18,7 @@ private _results = createHashMap;
     if ((count _r) > 0) then {
         _results set [format ["N%1", _x], createHashMapFromArray [["state", _r getOrDefault ["state", ""]], ["verdict", _r getOrDefault ["verdict", ""]], ["codes", _r getOrDefault ["codes", []]]]];
     };
-} forEach [0, 1, 2, 3];
+} forEach [0, 1, 2, 3, 4];
 private _athenaId = ((_lv getOrDefault [3, createHashMap]) getOrDefault ["athenaId", ""]);
 private _payload = createHashMapFromArray [
     ["idempotency_key", _rec get "idem"],
@@ -38,6 +38,9 @@ private _payload = createHashMapFromArray [
     ["game_time", format ["%1-%2-%3 %4", (_rec get "date") select 0, (_rec get "date") select 1, (_rec get "date") select 2, _rec get "clock"]],
     ["case", _rec getOrDefault ["case", ""]]
 ];
+// N4 (visage) : taux de confiance et dossier biométrique reconnu, gardés avec le résultat du niveau.
+private _n4 = _lv getOrDefault [4, createHashMap];
+if ((count _n4) > 0) then { (_results get "N4") set ["score", _n4 getOrDefault ["score", 0]]; (_results get "N4") set ["ref", _n4 getOrDefault ["ref", ""]]; };
 (_payload get "levels") sort true;
 _rec set ["sending", true];
 [_rec, _payload] spawn {

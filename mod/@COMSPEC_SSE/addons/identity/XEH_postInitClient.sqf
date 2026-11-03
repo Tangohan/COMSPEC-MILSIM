@@ -2,6 +2,13 @@
 if (!hasInterface) exitWith {};
 [] call comspec_sse_fnc_initAceIdentity;
 [] call comspec_sse_fnc_idZenRegister;
+// BOLO / HVT diffusé par le commandement (fn_idHvt) : notification ATAK, onglet BOLO de Contrôle ID, app Recherchés.
+["comspec_sse_idBoloNew", {
+    params [["_t", ""]];
+    [{ ["wantedSync"] call comspec_sse_fnc_idHvt; }, [], 1] call CBA_fnc_waitAndExecute;
+    if (_t isEqualTo "" || {!(missionNamespace getVariable ["comspec_sse_id_boloNotify", true])}) exitWith {};
+    [_t, "WARNING", "", "IDCHECK"] call comspec_sse_fnc_notify;
+}] call CBA_fnc_addEventHandler;
 // Kit Athena (papiers du compte, bloc « kits » du paquet) : demandé au serveur à l'arrivée (connexion, JIP) et après
 // chaque respawn ; le serveur lit lui-même le Steam ID et ne remet que les papiers manquants (fn_idKit).
 [{ !isNull player && {alive player} && {(getPlayerUID player) isNotEqualTo ""} }, {

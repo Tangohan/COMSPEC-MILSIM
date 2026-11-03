@@ -11,8 +11,13 @@
                 sur papier (nom imprimé) ; visage d'une personne fichée parfois reconnu
       suspicion papiers (verdicts), équipement visible (arme, tenue militaire, gilet, casque), comportement (course, arme
                 à la main ou pointée sur un garde, véhicule qui ne s'arrête pas, refus, fuite) ; × difficulté
+      questions (Lot 4, réglage) le garde pose 2 ou 3 questions de légende (« D'où venez-vous ? »…) : réponse au choix
+                dans l'app Ma couverture ou le menu ACE personnel ; mauvaise réponse ou silence = suspicion
       issue     selon la sévérité du poste : laisser passer · fouiller (8 s : armes, papiers à un autre nom) · retenir
                 (180 s, Zeus prévenu) · alerter (groupe en combat, postes voisins) · ouvrir le feu (menace armée)
+    Infiltré (fn_idCover) : contrôlé comme un civil même s'il est d'un camp ennemi du poste ; sa cohérence (papiers,
+    légende, tenue, comportement) pèse sur la suspicion ; retenu = soupçons, alerte ou arme trouvée = couverture brûlée.
+    BOLO (fn_idHvt) : liste papier (noms, alias, numéros) et visage joint, reconnus selon la sévérité du poste.
     IA qui traverse la zone (réglage) : contrôle « abstrait » d'ambiance, une toutes les 20 s par poste : elle s'arrête,
     l'automate des IA réalistes la fait réagir (fn_idAiFsm), le garde lit ses papiers avec son équipement, puis la
     laisse repartir, la fait se rendre ou donne l'alerte.
@@ -40,6 +45,7 @@ if (_op isEqualTo "init") exitWith {
     comspec_sse_idCpPfh = [{ ["tick"] call comspec_sse_fnc_idCheckpoint; }, 1] call CBA_fnc_addPerFrameHandler;
     ["comspec_sse_idPresented", { params ["_h", "_id", "_to"]; ["presented", [_h, _id, _to]] call comspec_sse_fnc_idCheckpoint; }] call CBA_fnc_addEventHandler;
     ["comspec_sse_idRefused", { params ["_h", "_to"]; ["refused", [_h, _to]] call comspec_sse_fnc_idCheckpoint; }] call CBA_fnc_addEventHandler;
+    ["comspec_sse_idAnswered", { ["answered", _this] call comspec_sse_fnc_idCheckpoint; }] call CBA_fnc_addEventHandler;
     true
 };
 
@@ -114,6 +120,11 @@ private _outcome = {
     private _cpn = _cp get "name";
     private _ai = !isPlayer _u;
     _s set ["outcome", _what];
+    // Infiltré : être retenu éveille les soupçons ; une alerte le démasque.
+    if (_u getVariable ["comspec_sse_idCoverOn", false]) then {
+        if (_what isEqualTo "hold") then { ["suspect", [_u, 60, format ["retenu au checkpoint %1", _cpn]]] call comspec_sse_fnc_idCover; };
+        if (_what in ["alert", "fire"]) then { ["burn", [_u, format ["alerte au checkpoint %1", _cpn]]] call comspec_sse_fnc_idCover; };
+    };
     private _giveBack = {
         // Document remis au garde (« remettre ») : rendu au passage.
         private _cls = (["doc", [_s getOrDefault ["doc", ""]]] call comspec_sse_fnc_idRegistry) getOrDefault ["cls", ""];
@@ -188,6 +199,11 @@ private _examine = {
     private _g = _s get "guard";
     private _d = ["doc", [_s getOrDefault ["doc", ""]]] call comspec_sse_fnc_idRegistry;
     if ((count _d) isEqualTo 0) exitWith { [_s, "document vierge", 40] call _bump; };
+    // Couverture (infiltré, papiers « couverture ») : ce qui ne colle pas aux papiers pèse sur la suspicion.
+    if ((_u getVariable ["comspec_sse_idCoverOn", false]) || {(_d getOrDefault ["kind", ""]) isEqualTo "cover"}) then {
+        (["score", [_u]] call comspec_sse_fnc_idCover) params [["_sc", 100]];
+        if (_sc < 70) then { [_s, "couverture peu crédible", round ((70 - _sc) * 0.6)] call _bump; };
+    };
     private _pts = createHashMapFromArray [["doute", 15], ["expire", 15], ["signale", 30], ["inconnu", 45], ["faux", 50], ["vole", 45], ["revoque", 45], ["recherche", 70], ["hvt", 90]];
     private _best = 0;
     private _worst = "ras";
@@ -202,12 +218,28 @@ private _examine = {
     // Sans liaison base : liste des recherchés imprimée au poste, comparée au nom du document.
     if !(3 in (_s get "levels")) then {
         private _L = toUpper (_d get "last");
-        private _i = ((missionNamespace getVariable ["comspec_sse_idReg", createHashMap]) getOrDefault ["watch", []]) findIf { (toUpper (_x param [0, ""])) isEqualTo _L };
+        private _i = ((missionNamespace getVariable ["comspec_sse_idReg", createHashMap]) getOrDefault ["watch", []]) findIf { (toUpper (_x param [0, ""])) isEqualTo _L && {((_x param [5, []]) isEqualTo []) || {(["east", "west", "guer", "civ"] select (([east, west, independent, civilian] find (_cp get "side")) max 0)) in (_x param [5, []])}} };
         if (_i >= 0 && {(random 1) < ([0.5, 0.75, 0.9] select _sev)}) then {
             private _lvl = (((missionNamespace getVariable ["comspec_sse_idReg", createHashMap]) get "watch") select _i) param [3, "surveillance"];
             [_s, "nom sur la liste des recherchés", [40, 80] select (_lvl isEqualTo "hvt")] call _bump;
             _worst = ["recherche", "hvt"] select (_lvl isEqualTo "hvt");
         };
+    };
+    // BOLO : numéro du document sur la liste diffusée, visage joint au BOLO (même sous un autre nom).
+    (["docFlag", [_d]] call comspec_sse_fnc_idHvt) params [["_bRef", ""], ["_bLvl", ""]];
+    if (_bRef isNotEqualTo "" && {(random 1) < ([0.6, 0.8, 0.95] select _sev)}) then {
+        [_s, format ["document sur le BOLO %1", _bRef], [30, 70] select (_bLvl isNotEqualTo "surveillance")] call _bump;
+        if (_worst in ["ras", "doute", "expire", "signale"]) then { _worst = ["signale", "recherche"] select (_bLvl isNotEqualTo "surveillance"); };
+    };
+    (["faceFlag", [_u]] call comspec_sse_fnc_idHvt) params [["_fRef", ""], ["_fLvl", ""]];
+    if (_fRef isNotEqualTo "" && {(random 1) < ([0.2, 0.35, 0.5] select _sev)}) then {
+        [_s, format ["visage du BOLO %1", _fRef], [40, 80] select (_fLvl isEqualTo "hvt")] call _bump;
+        _worst = ["recherche", "hvt"] select (_fLvl isEqualTo "hvt");
+    };
+    // IA contrôlée : quelques questions de légende, réponses plus ou moins cohérentes selon sa couverture.
+    if (!isPlayer _u && {missionNamespace getVariable ["comspec_sse_id_questions", true]}) then {
+        private _bad = { !((["aiAnswer", [_u, _x]] call comspec_sse_fnc_idLegend) select 1) } count ["origin", "employer", "travel"];
+        if (_bad > 0) then { [_s, "réponses incohérentes", 15 * _bad] call _bump; };
     };
     // Visage d'une personne fichée (avis affichés au poste), même sous une couverture parfaite.
     if ((toLower (_u getVariable ["COMSPEC_SSE_BioDb", "auto"])) in ["bewl1", "bewl2"] && {(random 1) < ([0.1, 0.2, 0.3] select _sev)}) then {
@@ -279,6 +311,19 @@ switch (_op) do {
             };
         } forEach comspec_sse_idCps;
     };
+    case "answered": {
+        _a params [["_h", objNull], ["_asker", objNull], ["_ok", false], ["_k", ""], ["_ctx", ""], ["_evasive", false]];
+        if (isNull _h) exitWith {};
+        {
+            private _cp = _x;
+            private _s = (_cp get "subj") getOrDefault [netId _h, createHashMap];
+            if ((count _s) > 0 && {(_s get "stage") isEqualTo "quiz"} && {_ctx isEqualTo format ["cp%1", _cp get "id"]}) exitWith {
+                _s set ["qPending", ((_s getOrDefault ["qPending", 1]) - 1) max 0];
+                if (_evasive) exitWith { [_s, "ne répond pas aux questions", 15, 45] call _bump; };
+                if (!_ok) then { [_s, "réponses qui ne collent pas aux papiers", 20, 60] call _bump; };
+            };
+        } forEach comspec_sse_idCps;
+    };
     case "refused": {
         _a params [["_h", objNull], ["_to", objNull]];
         if (isNull _h || {!isPlayer _h}) exitWith {};
@@ -316,7 +361,7 @@ switch (_op) do {
                         && {!(_u getVariable ["ace_captives_isHandcuffed", false])}) then {
                         private _forced = _u in _only;
                         if (isPlayer _u) then {
-                            if (_forced || {(side group _u) isNotEqualTo _cs && {!([side group _u, _cs] call BIS_fnc_sideIsEnemy)}}) then { [_cp, _u] call _startPlayer; };
+                            if (_forced || {_u getVariable ["comspec_sse_idCoverOn", false]} || {(side group _u) isNotEqualTo _cs && {!([side group _u, _cs] call BIS_fnc_sideIsEnemy)}}) then { [_cp, _u] call _startPlayer; };
                         } else {
                             if (_forced || {(missionNamespace getVariable ["comspec_sse_id_cpAmbient", true]) && {time >= (_cp getOrDefault ["amb", 0])}
                                 && {(side group _u) isNotEqualTo _cs} && {!([side group _u, _cs] call BIS_fnc_sideIsEnemy)}
@@ -351,7 +396,7 @@ switch (_op) do {
                             [_cp, _s] call _decide;
                         };
                         // Joueur : comportement observé par les gardes, chaque seconde.
-                        if (_stage in ["halt", "check", "search", "hold"]) then {
+                        if (_stage in ["halt", "check", "quiz", "search", "hold"]) then {
                             private _onFoot = (vehicle _u) isEqualTo _u;
                             if (_onFoot && {(speed _u) > 14}) then { [_s, "court", 5, 20] call _bump; };
                             private _w = currentWeapon _u;
@@ -377,14 +422,28 @@ switch (_op) do {
                         };
                         // Arme pointée sur un garde : réaction immédiate.
                         if (_s getOrDefault ["threat", false]) exitWith { [_cp, _s, ["alert", "fire"] select ((_cp get "severity") >= 1)] call _outcome; };
-                        if (time < (_s get "deadline")) exitWith {};
+                        if (time < (_s get "deadline") && {!(_stage isEqualTo "quiz" && {(_s getOrDefault ["qPending", 0]) <= 0})}) exitWith {};
                         switch (_stage) do {
                             case "halt": { [_s, "aucun papier présenté", 30] call _bump; [_cp, _s] call _decide; };
-                            case "check": { [_cp, _s] call _examine; [_cp, _s] call _decide; };
+                            case "check": {
+                                [_cp, _s] call _examine;
+                                // Questions de légende (réglage) : 2, 3 au poste strict ; réponses attendues avant la décision.
+                                private _n = ["ask", [_s get "guard", _u, [2, 2, 3] select (_cp get "severity"), format ["cp%1", _cp get "id"]]] call comspec_sse_fnc_idQuestion;
+                                if (_n isEqualType 0 && {_n > 0}) exitWith {
+                                    _s set ["stage", "quiz"]; _s set ["qPending", _n]; _s set ["t", time];
+                                    _s set ["deadline", time + (missionNamespace getVariable ["comspec_sse_id_questionTime", 20]) + 10 * (_n - 1) + 2];
+                                    [_u, format ["Checkpoint %1 : le garde vous pose quelques questions.", _cp get "name"], "WARNING"] call _tell;
+                                };
+                                [_cp, _s] call _decide;
+                            };
+                            case "quiz": { [_cp, _s] call _decide; };
                             case "search": {
                                 if ((_u distance _g) > 8) exitWith { [_s, "s'éloigne pendant la fouille", 40] call _bump; [_cp, _s] call _decide; };
                                 private _wpn = (weapons _u) select { _x isNotEqualTo (binocular _u) };
-                                if (_wpn isNotEqualTo []) then { [_s, "arme trouvée à la fouille", 25 * ((count _wpn) min 2)] call _bump; };
+                                if (_wpn isNotEqualTo []) then {
+                                    [_s, "arme trouvée à la fouille", 25 * ((count _wpn) min 2)] call _bump;
+                                    if (_u getVariable ["comspec_sse_idCoverOn", false]) then { ["burn", [_u, "arme trouvée à la fouille"]] call comspec_sse_fnc_idCover; };
+                                };
                                 // Papiers à des noms différents sur lui : identités multiples.
                                 private _names = [];
                                 {

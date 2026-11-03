@@ -35,7 +35,11 @@ private _lines = [
     if ((count _r) > 0) then { _lines pushBack format ["%1 : %2", _name, (_r getOrDefault ["lines", []]) joinString " "]; } else {
         if (_lvl in [1, 2]) then { _lines pushBack format ["%1 : non effectuée.", _name]; };
     };
-} forEach [[0, "N0 examen visuel"], [1, "N1 lecture MRZ"], [2, "N2 puce NFC"], [3, "N3 base"]];
+} forEach [[0, "N0 examen visuel"], [1, "N1 lecture MRZ"], [2, "N2 puce NFC"], [3, "N3 base"], [4, "N4 visage"]];
+// Réponses aux questions de légende (Lot 4) ; PID confirmé (Lot 5).
+private _talk = _rec getOrDefault ["talk", []];
+if (_talk isNotEqualTo []) then { _lines pushBack format ["Réponses : %1", (_talk apply { format ["« %1 »", _x select 1] }) joinString " "]; };
+if (_rec getOrDefault ["pid", false]) then { _lines pushBack "PID confirmé par le contrôleur."; };
 private _photo = _rec getOrDefault ["photo", ""];
 if (_photo isNotEqualTo "") then { _lines pushBack format ["Photo du document prise à %1 (pièce jointe).", _rec getOrDefault ["photoClock", ""]]; };
 private _block = _lines joinString toString [10];

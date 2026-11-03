@@ -345,3 +345,230 @@ Sur mon téléphone	On my phone
 Fiche du contrôle envoyée en Bluetooth à un équipier appairé.	Check report sent over Bluetooth to a paired teammate.
 Fiche du contrôle tendue au téléphone le plus proche (2 m), sans appairage.	Check report handed to the nearest phone (2 m), without pairing.
 QR code : vos contrôles de la partie sur votre vrai téléphone.	QR code: your checks of this game on your real phone.
+=== COUVERTURES ET INFILTRÉS (1.3.0) ===	=== COVERS AND UNDERCOVER AGENTS (1.3.0) ===
+Ma couverture	My cover
+Votre identité de couverture : légende, contacts, cohérence, questions des contrôleurs	Your cover identity: legend, contacts, consistency, controllers' questions
+MA FICHE	MY SHEET
+INFILTRÉ · COUVERTURE INTACTE	UNDERCOVER · COVER INTACT
+COUVERTURE BRÛLÉE	COVER BLOWN
+IDENTITÉ DE VOS PAPIERS	IDENTITY ON YOUR PAPERS
+Motif	Reason
+Cohérence	Consistency
+Vrai nom (Zeus)	True name (Zeus)
+Adresse	Address
+Employeur	Employer
+Téléphone	Phone
+Motif du déplacement	Reason for travel
+Documents complémentaires	Supporting documents
+Historique	History
+Biographie	Biography
+Famille	Family
+Langues	Languages
+Phrases types	Stock phrases
+Sujets sensibles	Sensitive topics
+Secrets	Secrets
+Consignes	Instructions
+Actualiser	Refresh
+Aucun infiltré	No undercover agent
+Module Zeus « Couverture » sur un joueur ou une IA pour l'infiltrer.	Zeus "Cover" module on a player or an AI to put them undercover.
+Fiche en chargement	Loading sheet
+Votre fiche est demandée au serveur.	Your sheet has been requested from the server.
+Fiche personnelle : visible de vous seul (et du Zeus). SIMULATION.	Personal sheet: visible to you only (and Zeus). SIMULATION.
+Levée	Lifted
+Couverture intacte	Cover intact
+Brûlée	Blown
+%1 vous interroge (%2 s)	%1 is questioning you (%2 s)
+Aussi : menu ACE personnel › Mes papiers › Répondre.	Also: ACE self menu › My papers › Answer.
+%1 vous pose des questions (%2 s). ATAK › Ma couverture, ou menu ACE personnel › Mes papiers › Répondre.	%1 is asking you questions (%2 s). ATAK › My cover, or ACE self menu › My papers › Answer.
+Vous êtes infiltré : votre couverture tient tant que rien ne vous trahit (ATAK › Ma couverture).	You are undercover: your cover holds as long as nothing gives you away (ATAK › My cover).
+Infiltration levée.	Undercover status lifted.
+Votre couverture est brûlée (%1) : les ennemis proches vous ont repéré.	Your cover is blown (%1): nearby enemies have spotted you.
+Vous attirez l'attention (%1).	You are drawing attention (%1).
+Poser une question	Ask a question
+Répondre	Answer
+Vous lui posez la question…	You ask the question…
+D'où venez-vous ?	Where are you coming from?
+Pour qui travaillez-vous ?	Who do you work for?
+Raison du déplacement ?	Reason for travel?
+Quel est votre métier ?	What is your job?
+Où êtes-vous né ?	Where were you born?
+Qui peut confirmer ce que vous dites ?	Who can confirm what you say?
+Je viens de %1, j'y habite.	I'm from %1, I live there.
+Je travaille pour %1.	I work for %1.
+Je suis %1.	I'm a %1.
+Je suis né à %1.	I was born in %1.
+Vous pouvez appeler %1.	You can call %1.
+Personne ne peut le confirmer, je viens d'arriver.	Nobody can confirm it, I just arrived.
+(Il ne vous répond pas.)	(He doesn't answer you.)
+Je n'ai rien à vous dire.	I have nothing to say to you.
+(Il hausse les épaules sans répondre.)	(He shrugs without answering.)
+il hésite	he hesitates
+Je rentre chez moi après le travail	I'm going home after work
+Une livraison pour mon employeur	A delivery for my employer
+Rendre visite à ma famille	Visiting my family
+Un rendez-vous médical	A medical appointment
+Chercher du travail	Looking for work
+Sans employeur (petits travaux à la journée)	No employer (odd jobs by the day)
+Personne	Nobody
+Mon cousin, mais il est parti	My cousin, but he's gone
+Je ne sais pas	I don't know
+Le chef du village	The village chief
+Je ne fais que passer, je rentre chez moi.	I'm just passing through, I'm going home.
+Mon patron m'attend, je suis déjà en retard.	My boss is waiting, I'm already late.
+Je n'ai rien à voir avec tout ça.	I have nothing to do with all this.
+Sa vraie identité et son unité	His true identity and his unit
+Sa mission en cours et son point de rendez-vous	His current mission and rendezvous point
+Ses papiers sont faux	His papers are forged
+Ses liens avec un groupe armé	His links to an armed group
+Un petit trafic de cigarettes	A small cigarette smuggling racket
+Rien de grave à cacher	Nothing serious to hide
+Son service militaire	His military service
+Ses voyages à l'étranger	His trips abroad
+L'origine de son argent	Where his money comes from
+Son ancien employeur	His former employer
+Ses opinions politiques	His political views
+Sa famille restée au pays	His family back home
+Ses absences au travail	His absences from work
+arme à la main	weapon in hand
+arme longue dans le dos	long weapon on his back
+tenue militaire	military clothing
+gilet pare-balles	body armour
+casque	helmet
+jumelles de vision nocturne	night vision goggles
+zone interdite	restricted zone
+en zone interdite	in a restricted zone
+sans papiers	no papers
+papiers à plusieurs noms	papers in several names
+coup de feu	gunshot
+coup de feu entendu au loin	gunshot heard in the distance
+contrôle raté	failed check
+menotté	handcuffed
+soupçons accumulés	accumulated suspicion
+réponse qui ne colle pas à sa légende	answer that doesn't match his legend
+arme trouvée à la fouille	weapon found during search
+décision du Zeus	Zeus decision
+Attitude, tenue ou équipement qui ne collent pas aux papiers.	Attitude, clothing or equipment that don't match the papers.
+Checkpoint %1 : le garde vous pose quelques questions.	Checkpoint %1: the guard asks you a few questions.
+couverture peu crédible	unconvincing cover
+réponses incohérentes	inconsistent answers
+ne répond pas aux questions	doesn't answer questions
+réponses qui ne collent pas aux papiers	answers that don't match the papers
+Infiltré captif tant que sa couverture tient	Undercover agent captive while cover holds
+Les ennemis ne prennent pas pour cible un infiltré (setCaptive) tant que sa couverture n'est pas brûlée.	Enemies do not target an undercover agent (setCaptive) until their cover is blown.
+Soupçons avant que la couverture saute	Suspicion before the cover is blown
+Plus bas : une couverture se brûle plus vite (tenue, équipement, zone interdite, mauvaises réponses, contrôle raté).	Lower: a cover is blown faster (clothing, equipment, restricted zone, wrong answers, failed check).
+Distance des témoins (m)	Witness distance (m)
+Distance à laquelle un ennemi remarque une arme à la main chez un infiltré ; tenue et équipement se voient de moins loin.	Distance at which an enemy notices a weapon in an undercover agent's hands; clothing and equipment are seen from closer.
+Les checkpoints IA posent des questions (« D'où venez-vous ? »…) ; réponses au choix dans l'app Ma couverture ou le menu ACE personnel.	AI checkpoints ask questions ("Where are you coming from?"…); multiple-choice answers in the My cover app or the ACE self menu.
+Délai pour répondre (s)	Time to answer (s)
+Temps pour répondre à la première question d'un contrôleur (10 s de plus par question suivante).	Time to answer a controller's first question (10 s more per following question).
+Couverture	Cover
+Couverture — %1	Cover — %1
+Infiltrer : la personne vit sous sa couverture (papiers « couverture » et légende). Brûler : la couverture saute, les ennemis proches sont alertés.	Put undercover: the person lives under their cover (cover papers and legend). Blow: the cover is blown, nearby enemies are alerted.
+Infiltrer	Put undercover
+Brûler la couverture	Blow the cover
+Lever l'infiltration	Lift undercover status
+Captif tant que la couverture tient	Captive while the cover holds
+Les ennemis ne la prennent pas pour cible (setCaptive) tant qu'elle n'est pas démasquée.	Enemies do not target them (setCaptive) until unmasked.
+Selon le réglage de mission	Mission setting
+Lui donner une carte de couverture	Give them a cover ID card
+Carte d'identité « couverture » (passe tous les contrôles sauf la biométrie), au nom ci-dessous ou généré.	"Cover" ID card (passes every check except biometrics), in the name below or generated.
+Nom de la couverture	Cover last name
+Prénom de la couverture	Cover first name
+Facultatif.	Optional.
+Zone interdite (couvertures)	Restricted zone (covers)
+Zone interdite	Restricted zone
+Un infiltré vu dans la zone par un ennemi éveille les soupçons. 0 : retire la zone la plus proche.	An undercover agent seen in the zone by an enemy raises suspicion. 0: removes the nearest zone.
+%1 est infiltré sous l'identité %2%3.	%1 is undercover as %2%3.
+Infiltration de %1 levée.	%1's undercover status lifted.
+Cette personne n'est pas infiltrée.	This person is not undercover.
+Cette personne n'est pas infiltrée (ou déjà brûlée).	This person is not undercover (or already blown).
+Couverture de %1 brûlée.	%1's cover blown.
+Couverture de %1 brûlée (%2) : %3 groupe(s) ennemi(s) alerté(s).	%1's cover blown (%2): %3 enemy group(s) alerted.
+Zone interdite aux couvertures : %1 m autour de %2.	Zone restricted to covers: %1 m around %2.
+Zone interdite retirée.	Restricted zone removed.
+Aucune zone interdite à moins de 500 m.	No restricted zone within 500 m.
+=== HVT ET BOLO (1.3.0) ===	=== HVT AND BOLO (1.3.0) ===
+BOLO (%1)	BOLO (%1)
+Aucun BOLO	No BOLO
+Les avis à surveiller diffusés par le commandement s'affichent ici.	Lookout notices issued by command are shown here.
+Un BOLO est reconnu à la base (N3 : nom, numéro) et au visage (N4).	A BOLO is recognised by the database (N3: name, number) and by face (N4).
+papiers	papers
+N4 VISAGE	N4 FACE
+N4 · Visage (biométrie)	N4 · Face (biometrics)
+Questions de légende	Legend questions
+Comparer le visage (N4)	Compare face (N4)
+Photo du visage comparée à la base biométrique et à la photo du document (téléphone ou SEEK).	Face photo compared with the biometric database and the document photo (phone or SEEK).
+Confirmer le PID	Confirm PID
+PID confirmé	PID confirmed
+Identification positive : tuyaux confirmés à votre groupe (chasse HVT), Zeus et Athena prévenus.	Positive identification: confirmed tips to your group (HVT hunt), Zeus and Athena notified.
+Photo et comparaison du visage…	Face photo and comparison…
+Comparaison biométrique désactivée sur cette mission.	Biometric comparison disabled on this mission.
+Comparaison du visage : téléphone ATAK ou terminal SEEK requis.	Face comparison: ATAK phone or SEEK terminal required.
+Comparaison du visage : la personne doit être devant vous (3 m).	Face comparison: the person must be in front of you (3 m).
+Comparaison du visage impossible : personne à photographier absente.	Face comparison impossible: no one to photograph.
+Visage en partie couvert : cliché dégradé (faites retirer cagoule ou foulard).	Face partly covered: degraded shot (have the balaclava or scarf removed).
+Éclairage faible : cliché dégradé (éclairez le visage).	Poor lighting: degraded shot (light the face).
+Cliché du visage inexploitable : rapprochez-vous, éclairez, recommencez.	Unusable face shot: get closer, add light, try again.
+Visage reconnu : %1%2, dossier %3 (confiance %4 %).	Face recognised: %1%2, file %3 (confidence %4 %).
+Le nom des papiers n'est pas celui du dossier biométrique : fausse identité probable.	The name on the papers is not the one on the biometric file: false identity likely.
+HVT : CIBLE PRIORITAIRE. Confirmez le PID avant toute action.	HVT: PRIORITY TARGET. Confirm PID before any action.
+Personne RECHERCHÉE (watchlist 2).	WANTED person (watchlist 2).
+Personne signalée (watchlist %1).	Flagged person (watchlist %1).
+Correspondance possible : %1 (confiance %2 %, sous le seuil). Confirmez par une autre modalité (empreintes, iris : SEEK).	Possible match: %1 (confidence %2 %, below threshold). Confirm with another modality (fingerprints, iris: SEEK).
+Aucune correspondance dans la base %1 (cliché %2/100).	No match in the %1 database (shot %2/100).
+biométrique (ABIS)	biometric (ABIS)
+Le visage ne correspond pas à la photo du document : le porteur n'est pas le titulaire.	The face does not match the document photo: the bearer is not the holder.
+Visage conforme à la photo du document (similarité %1).	Face matches the document photo (similarity %1).
+BOLO : document à surveiller (réf. %1).	BOLO: document on the lookout list (ref. %1).
+Désigner HVT	Designate HVT
+Désigner HVT — %1	Designate HVT — %1
+HVT : cible prioritaire (watchlist 1). Recherché : watchlist 2.	HVT: priority target (watchlist 1). Wanted: watchlist 2.
+HVT (cible prioritaire)	HVT (priority target)
+Surnom connu (« Le Renard »).	Known nickname ("The Fox").
+Vrai nom	True last name
+Vrai prénom	True first name
+Vide : celui de ses papiers.	Empty: the one on their papers.
+Papiers connus	Known papers
+Numéros de documents connus, séparés par des virgules.	Known document numbers, separated by commas.
+Signalement, éléments connus (diffusé avec l'avis).	Description, known details (issued with the notice).
+Lui donner une couverture	Give them a cover
+Carte « couverture » à un faux nom : seule la biométrie (N4, SEEK) le trahit.	"Cover" card in a false name: only biometrics (N4, SEEK) give them away.
+BOLO — %1 (visage joint)	BOLO — %1 (face attached)
+Nom à surveiller.	Name to look out for.
+Surveillance : signalé. Recherché : à interpeller. HVT : cible prioritaire.	Surveillance: flagged. Wanted: to be arrested. HVT: priority target.
+Sous surveillance	Under surveillance
+Numéros de documents, séparés par des virgules.	Document numbers, separated by commas.
+Signalement	Description
+Description, véhicule, consignes (diffusé avec l'avis).	Description, vehicle, instructions (issued with the notice).
+Lever un BOLO	Lift a BOLO
+Retiré de la liste diffusée (et levé sur Athena).	Removed from the issued list (and lifted on Athena).
+Aucun BOLO en cours.	No active BOLO.
+BOLO %1 : %2%3.	BOLO %1: %2%3.
+HVT %1 : %2 %3%4.	HVT %1: %2 %3%4.
+BOLO %1 diffusé aux checkpoints et aux contrôleurs%2.	BOLO %1 issued to checkpoints and controllers%2.
+%1 levé.	%1 lifted.
+BOLO inconnu.	Unknown BOLO.
+BOLO : saisissez au moins un nom ou un alias (ou posez le module sur la personne).	BOLO: enter at least a name or an alias (or place the module on the person).
+%1 désigné %2 (%3). Visage et clé biométrique au fichier, chasse ATAK ouverte (FIND).	%1 designated %2 (%3). Face and biometric key on file, ATAK hunt open (FIND).
+%1 est déjà une HVT (%2).	%1 is already an HVT (%2).
+PID : la personne n'est plus là.	PID: the person is no longer there.
+PID : contrôlez d'abord la personne (base N3 ou visage N4).	PID: check the person first (N3 database or N4 face).
+PID : la personne doit être sous vos yeux (30 m).	PID: the person must be in sight (30 m).
+PID confirmé : %1 (%2). Tuyaux transmis à votre groupe (chasse HVT : FIX).	PID confirmed: %1 (%2). Tips sent to your group (HVT hunt: FIX).
+HVT %1 : PID confirmé par %2 au %3 (FIX).	HVT %1: PID confirmed by %2 at %3 (FIX).
+HVT : %1 (chasse HVT de l'ATAK : FIX).	HVT: %1 (ATAK HVT hunt: FIX).
+PID confirmé par %1 au %2 : %3.	PID confirmed by %1 at %2: %3.
+identifié au contrôle	identified at the check
+visage reconnu (N4)	face recognised (N4)
+JACKPOT : HVT %1 %2%3. Exploitation SSE ouverte.	JACKPOT: HVT %1 %2%3. SSE exploitation opened.
+JACKPOT : %1 %2. Exploitez la personne (SSE), puis transmettez à Athena.	JACKPOT: %1 %2. Exploit the person (SSE), then send to Athena.
+Athena : %1 enregistré (%2).	Athena: %1 recorded (%2).
+document sur le BOLO %1	document on BOLO %1
+visage du BOLO %1	face of BOLO %1
+Comparaison du visage (N4)	Face comparison (N4)
+App Contrôle ID : photo du visage comparée à la base biométrique et à la photo du document (téléphone ou SEEK).	ID Check app: face photo compared with the biometric database and the document photo (phone or SEEK).
+Durée de la comparaison du visage (s)	Face comparison time (s)
+Temps de la photo et de la recherche biométrique N4.	Time for the N4 photo and biometric search.
+Notifier les BOLO	Notify BOLOs
+Chaque BOLO ou HVT diffusé par le Zeus s'affiche sur l'ATAK de tous les joueurs (sinon seulement dans l'onglet BOLO).	Every BOLO or HVT issued by Zeus appears on all players' ATAK (otherwise only in the BOLO tab).

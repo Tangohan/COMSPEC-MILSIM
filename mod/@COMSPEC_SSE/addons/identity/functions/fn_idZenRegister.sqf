@@ -5,6 +5,9 @@
     IA réalistes (Lot 3) : Checkpoint IA (zone, camp, équipement, sévérité), Retirer un checkpoint IA, Déclencher un
     contrôle (checkpoint qui couvre la personne, sinon l'IA la plus proche), Forcer un état IA, Couvre-feu
     (fn_idServer cpCreate / cpRemove / cpTrigger / fsmForce / curfew).
+    Couvertures et HVT (Lots 4 et 5) : Couverture (infiltrer, brûler, lever), Zone interdite (couvertures), Désigner HVT,
+    BOLO (liste à surveiller, visage joint si posé sur une personne), Lever un BOLO (fn_idServer cover / zone / hvt /
+    bolo / boloRemove).
 */
 if (!hasInterface) exitWith {};
 [{ !isNil "zen_custom_modules_fnc_register" }, {
@@ -123,6 +126,106 @@ if (!hasInterface) exitWith {};
             { params ["_v"]; ["send", ["curfew", [player, _v select 0]]] call comspec_sse_fnc_idClient; }, {}, []
         ] call comspec_sse_fnc_zenDialog;
     }, "\A3\ui_f\data\igui\cfg\simpletasks\types\wait_ca.paa"] call comspec_sse_fnc_zenModule;
+    // --- Couvertures et infiltrés (Lot 4) --------------------------------------------------------------------------
+    [_cat, "Couverture", {
+        params ["_pos", "_obj"];
+        private _u = [_obj] call (missionNamespace getVariable "comspec_sse_idZenUnitOf");
+        if (isNull _u) exitWith {};
+        [
+            format ["Couverture — %1", name _u],
+            [
+                ["LIST", ["Action", "Infiltrer : la personne vit sous sa couverture (papiers « couverture » et légende). Brûler : la couverture saute, les ennemis proches sont alertés."], [["start", "burn", "stop"], ["Infiltrer", "Brûler la couverture", "Lever l'infiltration"], 0]],
+                ["LIST", ["Captif tant que la couverture tient", "Les ennemis ne la prennent pas pour cible (setCaptive) tant qu'elle n'est pas démasquée."], [[-1, 1, 0], ["Selon le réglage de mission", "Oui", "Non"], 0]],
+                ["CHECKBOX", ["Lui donner une carte de couverture", "Carte d'identité « couverture » (passe tous les contrôles sauf la biométrie), au nom ci-dessous ou généré."], false],
+                ["EDIT", ["Nom de la couverture", "Facultatif."], ""],
+                ["EDIT", ["Prénom de la couverture", "Facultatif."], ""]
+            ],
+            {
+                params ["_v", "_args"];
+                _v params ["_act", "_cap", "_card", "_l", "_f"];
+                _args params ["_u"];
+                if (_card) then {
+                    ["send", ["give", [player, _u, createHashMapFromArray [["type", "id_card"], ["kind", "cover"], ["quality", 90], ["last", trim _l], ["first", trim _f]]]]] call comspec_sse_fnc_idClient;
+                };
+                private _spec = createHashMap;
+                if (_cap >= 0) then { _spec set ["captive", _cap isEqualTo 1]; };
+                // Carte remise d'abord : l'infiltration part un instant plus tard (légende tirée de la nouvelle carte).
+                [{ ["send", ["cover", [player, _this select 0, _this select 1, _this select 2]]] call comspec_sse_fnc_idClient; }, [_u, _act, _spec], [0, 1.5] select _card] call CBA_fnc_waitAndExecute;
+            }, {}, [_u]
+        ] call comspec_sse_fnc_zenDialog;
+    }, "\z\comspec_sse\addons\identity\data\icon_card_ca.paa"] call comspec_sse_fnc_zenModule;
+
+    [_cat, "Zone interdite (couvertures)", {
+        params ["_pos", "_obj"];
+        [
+            "Zone interdite",
+            [["SLIDER", ["Rayon (m)", "Un infiltré vu dans la zone par un ennemi éveille les soupçons. 0 : retire la zone la plus proche."], [0, 500, 100, 0]],
+             ["EDIT", ["Nom", "Facultatif."], ""]],
+            { params ["_v", "_args"]; ["send", ["zone", [player, _args select 0, round (_v select 0), trim (_v select 1)]]] call comspec_sse_fnc_idClient; }, {}, [ASLToATL _pos]
+        ] call comspec_sse_fnc_zenDialog;
+    }, "\A3\ui_f\data\igui\cfg\simpletasks\types\danger_ca.paa"] call comspec_sse_fnc_zenModule;
+
+    // --- HVT et BOLO (Lot 5) ----------------------------------------------------------------------------------------
+    [_cat, "Désigner HVT", {
+        params ["_pos", "_obj"];
+        private _u = [_obj] call (missionNamespace getVariable "comspec_sse_idZenUnitOf");
+        if (isNull _u) exitWith {};
+        [
+            format ["Désigner HVT — %1", name _u],
+            [
+                ["LIST", ["Niveau", "HVT : cible prioritaire (watchlist 1). Recherché : watchlist 2."], [["hvt", "recherche"], ["HVT (cible prioritaire)", "Recherché"], 0]],
+                ["EDIT", ["Alias", "Surnom connu (« Le Renard »)."], ""],
+                ["EDIT", ["Vrai nom", "Vide : celui de ses papiers."], ""],
+                ["EDIT", ["Vrai prénom", "Vide : celui de ses papiers."], ""],
+                ["EDIT", ["Papiers connus", "Numéros de documents connus, séparés par des virgules."], ""],
+                ["EDIT", ["Notes", "Signalement, éléments connus (diffusé avec l'avis)."], ""],
+                ["CHECKBOX", ["Lui donner une couverture", "Carte « couverture » à un faux nom : seule la biométrie (N4, SEEK) le trahit."], false],
+                ["EDIT", ["Nom de la couverture", "Facultatif."], ""],
+                ["EDIT", ["Prénom de la couverture", "Facultatif."], ""]
+            ],
+            {
+                params ["_v", "_args"];
+                _v params ["_lvl", "_al", "_l", "_f", "_docs", "_notes", "_cover", "_cl", "_cf"];
+                private _spec = createHashMapFromArray [["level", _lvl], ["alias", trim _al], ["last", trim _l], ["first", trim _f], ["docs", trim _docs],
+                    ["notes", trim _notes], ["cover", _cover], ["coverLast", trim _cl], ["coverFirst", trim _cf]];
+                ["send", ["hvt", [player, _args select 0, _spec]]] call comspec_sse_fnc_idClient;
+            }, {}, [_u]
+        ] call comspec_sse_fnc_zenDialog;
+    }, "\A3\ui_f\data\igui\cfg\simpletasks\types\target_ca.paa"] call comspec_sse_fnc_zenModule;
+
+    [_cat, "BOLO", {
+        params ["_pos", "_obj"];
+        private _u = [objNull, _obj] select (!isNull _obj && {_obj isKindOf "CAManBase"});
+        [
+            ["BOLO", format ["BOLO — %1 (visage joint)", name _u]] select (!isNull _u),
+            [
+                ["EDIT", ["Nom", "Nom à surveiller."], ""],
+                ["EDIT", ["Prénom", ""], ""],
+                ["EDIT", ["Alias", ""], ""],
+                ["LIST", ["Niveau", "Surveillance : signalé. Recherché : à interpeller. HVT : cible prioritaire."], [["surveillance", "recherche", "hvt"], ["Sous surveillance", "Recherché", "HVT"], 1]],
+                ["EDIT", ["Papiers connus", "Numéros de documents, séparés par des virgules."], ""],
+                ["EDIT", ["Signalement", "Description, véhicule, consignes (diffusé avec l'avis)."], ""]
+            ],
+            {
+                params ["_v", "_args"];
+                _v params ["_l", "_f", "_al", "_lvl", "_docs", "_notes"];
+                private _spec = createHashMapFromArray [["last", trim _l], ["first", trim _f], ["alias", trim _al], ["level", _lvl], ["docs", trim _docs], ["notes", trim _notes]];
+                ["send", ["bolo", [player, _args select 0, _spec]]] call comspec_sse_fnc_idClient;
+            }, {}, [_u]
+        ] call comspec_sse_fnc_zenDialog;
+    }, "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa"] call comspec_sse_fnc_zenModule;
+
+    [_cat, "Lever un BOLO", {
+        params ["_pos", "_obj"];
+        private _b = missionNamespace getVariable ["comspec_sse_idBolos", []];
+        if (_b isEqualTo []) exitWith { ["Aucun BOLO en cours.", "warn"] call comspec_sse_fnc_zeusNotify; };
+        [
+            "Lever un BOLO",
+            [["LIST", ["BOLO", "Retiré de la liste diffusée (et levé sur Athena)."], [_b apply { _x select 0 }, _b apply { format ["%1 · %2 %3", _x select 0, toUpper (_x select 1), _x select 2] }, 0]]],
+            { params ["_v"]; ["send", ["boloRemove", [player, objNull, _v select 0]]] call comspec_sse_fnc_idClient; }, {}, []
+        ] call comspec_sse_fnc_zenDialog;
+    }, "\A3\ui_f\data\igui\cfg\simpletasks\types\exit_ca.paa"] call comspec_sse_fnc_zenModule;
+
     missionNamespace setVariable ["comspec_sse_idZenCpRows", _cpRows];
     missionNamespace setVariable ["comspec_sse_idZenUnitOf", _unitOf];
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

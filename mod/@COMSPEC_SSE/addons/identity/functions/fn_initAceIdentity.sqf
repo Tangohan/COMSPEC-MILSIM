@@ -2,8 +2,9 @@
     Menus ACE du contrôle d'identité (XEH_postInitClient), posés une seule fois par classe (aucune action par objet) :
       personne (CAManBase, ACE_MainActions) › Contrôle d'identité :
         Demander les papiers (2 s) · Contrôler l'identité (documents présentés) · Fouiller les papiers (6 s vivant,
-        4 s corps) · Documents trouvés · Rendre un document
+        4 s corps) · Documents trouvés · Rendre un document · Poser une question (PNJ : questions de légende, 1 s)
       soi (ACE_SelfActions) › Mes papiers : Présenter mes papiers (présenter / remettre) · Refuser · Consulter
+        · Répondre (question d'un contrôleur en attente : réponses au choix)
       véhicule terrestre (LandVehicle) › Contrôle d'identité : Contrôler les occupants · Faire descendre
     ACE obligatoire (comme tout le SSE) : pas de repli sans ACE.
 */
@@ -59,13 +60,19 @@ private _path = ["ACE_MainActions", "COMSPEC_ID_Root"];
         params ["_t"];
         private _n = netId _t;
         ((values (missionNamespace getVariable ["comspec_sse_idSeized", createHashMap])) findIf { _x isEqualTo _n }) >= 0
-    }, { ["return", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }]
+    }, { ["return", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }],
+
+    ["COMSPEC_ID_Question", "Poser une question", "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa", {}, {
+        params ["_t", "_p"];
+        alive _t && {!isPlayer _t} && {(_p distance _t) <= 3} && {!(_t getVariable ["ACE_isUnconscious", false])}
+    }, { ["questions", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }]
 ];
 
 // --- Soi ---------------------------------------------------------------------------------------------------------
 private _self = ["COMSPEC_ID_Self", "Mes papiers", _icon, {}, {
     (missionNamespace getVariable ["comspec_sse_id_enabled", true])
-        && {((["pending"] call comspec_sse_fnc_idPresentPrompt) isNotEqualTo []) || {([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo []}}
+        && {((["pending"] call comspec_sse_fnc_idPresentPrompt) isNotEqualTo []) || {([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo []}
+            || {(missionNamespace getVariable ["comspec_sse_idQuestion", []]) isNotEqualTo []}}
 }] call _new;
 ["CAManBase", 1, ["ACE_SelfActions"], _self] call _addClass;
 {
@@ -74,6 +81,10 @@ private _self = ["COMSPEC_ID_Self", "Mes papiers", _icon, {}, {
     ["COMSPEC_ID_Present", "Présenter mes papiers", "", {}, { ([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo [] },
         { ["present", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }],
     ["COMSPEC_ID_Refuse", "Refuser", "", { ["refuse"] call comspec_sse_fnc_idPresentPrompt }, { (["pending"] call comspec_sse_fnc_idPresentPrompt) isNotEqualTo [] }],
+    ["COMSPEC_ID_Answer", "Répondre", "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa", {}, {
+        (missionNamespace getVariable ["comspec_sse_idQuestion", []]) params [["_w", ""], ["_l", []], ["_end", 0], ["_done", createHashMap]];
+        _end > time && {(_l findIf { !((_x select 0) in _done) }) >= 0}
+    }, { ["answers", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }],
     ["COMSPEC_ID_Consult", "Consulter mes papiers", "", {}, { ([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo [] },
         { ["consult", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }]
 ];

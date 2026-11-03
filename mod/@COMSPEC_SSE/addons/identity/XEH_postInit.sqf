@@ -105,6 +105,12 @@
     if (isNull _u || {!local _u}) exitWith {};
     _u addRating _v;
 }] call CBA_fnc_addEventHandler;
+// Infiltré (fn_idCover) : captif tant que sa couverture tient (setCaptive là où il est local).
+["comspec_sse_idLocalCaptive", {
+    params [["_u", objNull], ["_v", false]];
+    if (isNull _u || {!local _u}) exitWith {};
+    _u setCaptive _v;
+}] call CBA_fnc_addEventHandler;
 
 if (!isServer) exitWith {};
 ["init"] call comspec_sse_fnc_idRegistry;
@@ -121,12 +127,21 @@ if (!isServer) exitWith {};
     ["add", ["INTERPELLATION", format ["%1 menotté au %2%3 (contrôlé par %4)", [_lbl, "Personne contrôlée"] select (_lbl isEqualTo ""), mapGridPosition _u,
         ["", format [" par %1", name _by]] select (!isNull _by), _ctrlName], format ["cuff|%1", netId _u]]] call comspec_sse_fnc_idAar;
 }] call CBA_fnc_addEventHandler;
+// HVT (fn_idHvt) : capture (menottes ACE) = JACKPOT, exploitation SSE ouverte. Infiltré menotté : couverture brûlée.
+["ace_captiveStatusChanged", {
+    params [["_u", objNull], ["_state", false], ["_reason", ""], ["_by", objNull]];
+    if (!_state || {_reason isNotEqualTo "SetHandcuffed"} || {isNull _u}) exitWith {};
+    ["jackpot", [_u, "CAPTURÉ", _by]] call comspec_sse_fnc_idHvt;
+    if (_u getVariable ["comspec_sse_idCoverOn", false]) then { ["burn", [_u, "menotté"]] call comspec_sse_fnc_idCover; };
+}] call CBA_fnc_addEventHandler;
 // Paquet Athena (documents délivrés, avis de recherche) : une fois la liaison établie.
 [{ ["load"] call comspec_sse_fnc_idAthenaPack; }, [], 15] call CBA_fnc_waitAndExecute;
 // Mort : les papiers (encore virtuels) deviennent des objets sur le corps, trouvés par la fouille ou l'inventaire.
 addMissionEventHandler ["EntityKilled", {
     params ["_u"];
     if (!(_u isKindOf "CAManBase") || {!(missionNamespace getVariable ["comspec_sse_id_enabled", true])}) exitWith {};
+    // HVT neutralisée : JACKPOT (chasse HVT de l'ATAK, compte rendu, Athena).
+    ["jackpot", [_u, "EKIA", _this param [1, objNull]]] call comspec_sse_fnc_idHvt;
     // Joueur : ses papiers sont déjà des objets ; pas de papiers « d'IA » tirés sur son corps.
     if (isPlayer _u || {(getPlayerUID _u) isNotEqualTo ""}) exitWith {};
     [{

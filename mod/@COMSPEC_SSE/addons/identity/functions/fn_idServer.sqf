@@ -20,6 +20,14 @@
       cpCreate [moi, position, réglages] · cpTrigger [moi, personne, réglages] · cpRemove [moi, position]
                                          Zeus : checkpoint IA posé, contrôle déclenché, checkpoint retiré (fn_idCheckpoint)
       curfew   [moi, vrai | faux]        Zeus : couvre-feu (les civils dehors sont plus nerveux)
+    Lot 4 (couvertures) et Lot 5 (HVT) :
+      check    [moi, _h, 4]              N4 : comparaison du visage (fn_idBio ; durée réglable, matériel « face »)
+      coverSheet [moi, personne]         fiche RP (la sienne ; le Zeus : celle de tous) · coverList [moi]  infiltrés (Zeus)
+      coverFired [moi]                   tir d'un infiltré (FiredMan de son poste)
+      answer   [moi, qid, index]         réponse à une question de légende (fn_idQuestion)
+      aiQuestion [moi, cible, clé]       je pose une question de légende à un PNJ
+      pid      [moi, sujet]              confirmation PID d'une HVT identifiée (fn_idHvt)
+      cover / hvt / bolo / boloRemove / zone   Zeus : couverture, désigner HVT, BOLO, lever un BOLO, zone interdite
     Points d'entrée du Lot 3 (checkpoints IA), appel local au serveur seulement :
       ["aiAsk", [ia, joueur]] call comspec_sse_fnc_idServer   l'IA demande ses papiers à un joueur
     Évènements CBA serveur : comspec_sse_idAsked [cible, contrôleur], comspec_sse_idPresented [porteur, docId,
@@ -53,7 +61,8 @@ private _tell = {
     ["notify", [_text, _type], [owner _unit, clientOwner] select (local _unit && {hasInterface})] call _reply;
 };
 // Durée minimale réellement passée (barre de progression), 60 % de la durée affichée pour la latence.
-private _dur = createHashMapFromArray [["ask", 2], ["view", 2], ["docs", 4], ["docsAlive", 6], ["seize", 2], ["return", 1], ["vehicle", 2], ["dismount", 2], ["check1", 3], ["check2", 4], ["check3", 3], ["present", 1]];
+private _dur = createHashMapFromArray [["ask", 2], ["view", 2], ["docs", 4], ["docsAlive", 6], ["seize", 2], ["return", 1], ["vehicle", 2], ["dismount", 2], ["check1", 3], ["check2", 4], ["check3", 3], ["present", 1],
+    ["check4", missionNamespace getVariable ["comspec_sse_id_bioTime", 8]], ["question", 1]];
 private _took = {
     params ["_name", "_target"];
     private _k = format ["%1|%2|%3", _owner, _name, (if (_target isEqualType "") then { _target } else { netId _target })];
@@ -119,6 +128,13 @@ private _noteCheck = {
         _reg set ["controlled", _ctl];
         _ctl set [netId _subj, [time, name _me, [_d] call _label]];
         if (!isPlayer _subj && {(_res getOrDefault ["state", "ok"]) in ["fail", "alert"]}) then { ["bust", [_subj, _me]] call comspec_sse_fnc_idAiFsm; };
+        // HVT ou recherché identifié (base N3, visage N4) : le contrôleur peut confirmer le PID (fn_idHvt).
+        ["seen", [_subj, _me, _lvl, _res getOrDefault ["verdict", ""]]] call comspec_sse_fnc_idHvt;
+        // Infiltré contrôlé par un ennemi : un contrôle raté le trahit.
+        if ((_subj getVariable ["comspec_sse_idCoverOn", false]) && {(_res getOrDefault ["state", "ok"]) in ["fail", "alert"]}
+            && {[side group _me, (["state", [_subj]] call comspec_sse_fnc_idCover) getOrDefault ["side", side group _subj]] call BIS_fnc_sideIsEnemy}) then {
+            ["suspect", [_subj, 60, "contrôle raté"]] call comspec_sse_fnc_idCover;
+        };
     };
     private _v = _res getOrDefault ["verdict", "ras"];
     if !(_v in ["faux", "inconnu", "vole", "revoque", "signale", "recherche", "hvt"]) exitWith {};
@@ -267,7 +283,7 @@ switch (_op) do {
         private _res = createHashMap;
         if (!_own) then {
             if !(["view", _h] call _took) exitWith { _ok = false; };
-            _res = [_d, _me, 0] call comspec_sse_fnc_idEvaluate;
+            _res = [_d, _me, 0, _subj] call comspec_sse_fnc_idEvaluate;
             [_d, _res, 0, _subj] call _noteCheck;
             ["comspec_sse_idChecked", [_me, _d get "id", 0, _res]] call CBA_fnc_localEvent;
         };
@@ -277,7 +293,7 @@ switch (_op) do {
 
     case "check": {
         _args params ["", ["_h", ""], ["_lvl", 1, [0]]];
-        _lvl = (round _lvl max 1) min 3;
+        _lvl = (round _lvl max 1) min 4;
         ([_h] call _resolve) params ["_d", "_holder", "_ok", "_subj"];
         if (!_ok || {(count _d) isEqualTo 0}) exitWith { [_me, "Document introuvable ou plus présenté.", "WARNING"] call _tell; };
         if !([format ["check%1", _lvl], _h] call _took) exitWith {};
@@ -285,7 +301,10 @@ switch (_op) do {
         if (!(_holder isEqualTo _me) && {!isNull _holder} && {!([_me, _holder, [4, 2] select (_lvl isEqualTo 2)] call _near)}) exitWith {
             [_me, ["Approchez-vous du document.", "Lecteur NFC : approchez-vous à moins de 1,5 m du document."] select (_lvl isEqualTo 2), "WARNING"] call _tell;
         };
-        private _res = [_d, _me, _lvl] call comspec_sse_fnc_idEvaluate;
+        if (_lvl isEqualTo 4 && {!(missionNamespace getVariable ["comspec_sse_id_bio", true])}) exitWith { [_me, "Comparaison biométrique désactivée sur cette mission.", "WARNING"] call _tell; };
+        if (_lvl isEqualTo 4 && {!([_me, "face"] call comspec_sse_fnc_hasEquipment)}) exitWith { [_me, "Comparaison du visage : téléphone ATAK ou terminal SEEK requis.", "WARNING"] call _tell; };
+        if (_lvl isEqualTo 4 && {isNull _subj || {!([_me, _subj, 4] call _near)}}) exitWith { [_me, "Comparaison du visage : la personne doit être devant vous (3 m).", "WARNING"] call _tell; };
+        private _res = if (_lvl isEqualTo 4) then { [_d, _me, _subj] call comspec_sse_fnc_idBio } else { [_d, _me, _lvl, _subj] call comspec_sse_fnc_idEvaluate };
         if (_lvl isEqualTo 3) then {
             // Requête Athena faite par le joueur (DLL du poste) : champs imprimés seulement.
             _res set ["query", [_d get "country", _d get "type", _d get "number", _d get "last", _d get "first", _d get "dob"]];
@@ -377,6 +396,8 @@ switch (_op) do {
     case "kit": {
         _args params ["", ["_old", objNull, [objNull]]];
         [_me, _old] call comspec_sse_fnc_idKit;
+        // Kit d'infiltré (papier « couverture », brief de couverture d'Athena) : infiltration ouverte une fois les papiers remis.
+        [{ ["auto", [_this]] call comspec_sse_fnc_idCover; }, _me, 3] call CBA_fnc_waitAndExecute;
     };
 
     case "give";
@@ -416,6 +437,15 @@ switch (_op) do {
                         _d get "chip", [_d get "report", "aucun"] select ((_d get "report") isEqualTo ""), ["virtuel", "objet " + (_d get "cls")] select ((_d get "cls") isNotEqualTo "")];
                 } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
                 if ((count _lines) isEqualTo 1) then { _lines pushBack "aucun document."; };
+                private _cs = ["state", [_u]] call comspec_sse_fnc_idCover;
+                if ((count _cs) > 0) then {
+                    (["score", [_u]] call comspec_sse_fnc_idCover) params ["_sc", "_why"];
+                    private _stt = if (_cs get "burnt") then { format ["brûlée (%1)", _cs get "burnWhy"] } else { ["levée", "intacte"] select (_cs get "on") };
+                    _lines pushBack format ["Infiltré : couverture %1, cohérence %2/100%3, soupçons %4.", _stt, _sc,
+                        ["", format [" (%1)", _why joinString ", "]] select (_why isNotEqualTo []), round (_cs get "susp")];
+                };
+                private _hv = ["of", [_u]] call comspec_sse_fnc_idHvt;
+                if ((count _hv) > 0) then { _lines pushBack format ["HVT %1 : %2 %3, étape %4.", _hv get "ref", toUpper (_hv get "last"), _hv get "first", _hv get "stage"]; };
                 ["zeus", [_lines joinString endl, "info"]] call _reply;
             };
         };
@@ -444,6 +474,77 @@ switch (_op) do {
                 ["zeus", [["Couvre-feu levé.", "Couvre-feu en vigueur : les civils dehors sont plus nerveux."] select (_x1 isEqualTo true), "info"]] call _reply;
             };
         };
+    };
+
+    case "coverSheet": {
+        _args params ["", ["_t", objNull, [objNull]]];
+        if (isNull _t) then { _t = _me; };
+        private _auth = [_me] call comspec_sse_fnc_isAuthority;
+        if (_t isNotEqualTo _me && {!_auth}) exitWith {};
+        private _sheet = ["sheet", [_t, _auth && {_t isNotEqualTo _me}]] call comspec_sse_fnc_idLegend;
+        private _cs = ["state", [_t]] call comspec_sse_fnc_idCover;
+        _sheet set ["state", ["off", ["on", "burnt"] select (_cs getOrDefault ["burnt", false])] select ((count _cs) > 0)];
+        _sheet set ["burnWhy", _cs getOrDefault ["burnWhy", ""]];
+        (["score", [_t]] call comspec_sse_fnc_idCover) params ["_sc", "_why"];
+        _sheet set ["score", _sc];
+        _sheet set ["why", _why];
+        ["coverSheet", [netId _t, _sheet]] call _reply;
+    };
+    case "coverList": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
+        private _l = [];
+        {
+            private _u = _x get "unit";
+            if (!isNull _u) then {
+                _l pushBack [netId _u, name _u, (["get", [_u]] call comspec_sse_fnc_idLegend) get "name",
+                    ["off", ["on", "burnt"] select (_x get "burnt")] select ((_x get "on") || {_x get "burnt"}), (["score", [_u]] call comspec_sse_fnc_idCover) select 0];
+            };
+        } forEach (["list"] call comspec_sse_fnc_idCover);
+        ["coverList", [_l]] call _reply;
+    };
+    case "coverFired": { ["fired", [_me]] call comspec_sse_fnc_idCover; };
+    case "answer": {
+        _args params ["", ["_qid", ""], ["_i", -1, [0]]];
+        ["answer", [_me, _qid, _i]] call comspec_sse_fnc_idQuestion;
+    };
+    case "aiQuestion": {
+        _args params ["", ["_t", objNull, [objNull]], ["_k", "origin", [""]]];
+        if (isNull _t || {isPlayer _t} || {!alive _t} || {!([_me, _t, 4] call _near)}) exitWith {};
+        if !(["question", _t] call _took) exitWith {};
+        ["engage", [_t, _me]] call comspec_sse_fnc_idAiFsm;
+        (["aiAnswer", [_t, _me, _k]] call comspec_sse_fnc_idQuestion) params [["_txt", ""], ["_hint", ""]];
+        if (_txt isEqualTo "") exitWith {};
+        ["talk", [_t, _k, _txt, _hint]] call _reply;
+    };
+    case "pid": {
+        _args params ["", ["_t", objNull, [objNull]]];
+        (["pid", [_me, _t]] call comspec_sse_fnc_idHvt) params [["_txt", ""], ["_k", "info"]];
+        [_me, _txt, ["SUCCESS", "WARNING"] select (_k isEqualTo "warn")] call _tell;
+    };
+    case "cover";
+    case "hvt";
+    case "bolo";
+    case "boloRemove";
+    case "zone": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {
+            diag_log text format ["[COMSPEC SSE] Identité : « %1 » réservé au Zeus, refusé au poste %2.", _op, _owner];
+        };
+        _args params ["", ["_x1", objNull], ["_x2", ""], ["_x3", createHashMap]];
+        private _map = { [_this, createHashMap] select !(_this isEqualType createHashMap) };
+        private _r = switch (_op) do {
+            case "cover": {
+                switch (_x2) do {
+                    case "stop": { ["stop", [_x1]] call comspec_sse_fnc_idCover };
+                    case "burn": { [["Cette personne n'est pas infiltrée (ou déjà brûlée).", "warn"], [format ["Couverture de %1 brûlée.", name _x1], "info"]] select ((["burn", [_x1, "décision du Zeus"]] call comspec_sse_fnc_idCover) isEqualTo true) };
+                    default { ["start", [_x1, _x3 call _map]] call comspec_sse_fnc_idCover };
+                }
+            };
+            case "hvt": { ["designate", [_x1, _x2 call _map, _me]] call comspec_sse_fnc_idHvt };
+            case "bolo": { ["bolo", [_x2 call _map, _me, [_x1, objNull] select !(_x1 isEqualType objNull)]] call comspec_sse_fnc_idHvt };
+            case "boloRemove": { ["boloRemove", [_x2]] call comspec_sse_fnc_idHvt };
+            default { ["zone", [_x1, _x2, _x3]] call comspec_sse_fnc_idCover };
+        };
+        ["zeus", _r] call _reply;
     };
 
     case "pack": {

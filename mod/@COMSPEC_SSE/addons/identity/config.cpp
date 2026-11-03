@@ -4,6 +4,9 @@
     COMSPEC IDENTITY : documents d'identité fictifs, contrôle par ACE et par l'app « Contrôle ID » de l'ATAK.
     Lot 2 : photo du document jointe à la FRM, SALUTE / SPOTREP pré-remplis, contrôles notables au compte rendu AAR.
     Lot 3 : IA réalistes (machine à états CBA, fn_idAiFsm), checkpoints IA (module Eden, Zeus), réglages CBA.
+    Lot 4 : couvertures et infiltrés (légende fn_idLegend, cohérence et couverture brûlée fn_idCover, questions de légende
+            fn_idQuestion, app « Ma couverture » fn_idCoverPage).
+    Lot 5 : HVT (comparaison du visage N4 fn_idBio, PID, JACKPOT, BOLO fn_idHvt) branchées sur la chasse HVT de l'ATAK.
 
     Vérité (vraie identité, couverture, faux, qualité) : uniquement sur le serveur (fn_idRegistry, jamais diffusée).
     Chaque exemplaire matérialisé est un objet d'inventaire d'une classe libre (CfgWeapons_instances.hpp).
@@ -82,6 +85,12 @@ class CfgFunctions {
             class idAiReinforce {};
             class idCheckpoint {};
             class idCheckpointModule {};
+            class idLegend {};
+            class idCover {};
+            class idQuestion {};
+            class idCoverPage {};
+            class idBio {};
+            class idHvt {};
         };
     };
 };
@@ -97,6 +106,7 @@ class CfgRemoteExec {
 // App « Contrôle ID » du téléphone ATAK, déclarée depuis le SSE (le main.pbo de l'ATAK n'est pas touché).
 class COMSPEC_ATAK_Apps {
     class IdCheck { name="Contrôle ID"; page="IDCHECK"; function="comspec_sse_fnc_idPage"; section="Renseignement"; order=120; dock=0; new=1; icon="\z\comspec_sse\addons\identity\data\app_id.paa"; };
+    class IdCover { name="Ma couverture"; page="IDCOVER"; function="comspec_sse_fnc_idCoverPage"; section="Renseignement"; order=121; dock=0; new=1; icon="\z\comspec_sse\addons\identity\data\icon_card_ca.paa"; desc="Votre identité de couverture : légende, contacts, cohérence, questions des contrôleurs"; };
 };
 
 class Extended_PreInit_EventHandlers {

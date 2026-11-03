@@ -16,6 +16,17 @@
     active (pays archivés compris : plus de papiers générés, ceux déjà émis restent lisibles).
     Kits : uid (Steam ID du compte Athena), user_id, scope, documents (ids des papiers du paquet) ; table remplacée à
     chaque paquet, puis papiers remis aux joueurs déjà connectés (fn_idKit).
+    Avis (watch) : en plus du contrat, game_ref (BOLO / HVT nés en jeu), bio_key, known_docs, status : un avis déjà connu
+    (même réf., même BOLO) n'est pas doublé ; un avis avec visage ou papiers connus redevient un BOLO (checkpoints).
+    Lot 6 (atelier Athena, rétrocompatible : blocs absents = rien) :
+      briefs     uid, user_id, scope, identity_id, title, cover_name, biography, legend, contacts, instructions, phone,
+                 address : brief RP du joueur (légende fn_idLegend, app Ma couverture) ; identité de couverture =
+                 infiltration ouverte (fn_idCover « auto »)
+      population identity_id, side (civ | west | east | guer), category (civilian | military | suspect | hvt), faction,
+                 zone, language, documents : identités préparées remises aux IA à leur premier contrôle (fn_idRegistry)
+      wanted     ref (OPW-n), identity_id, person_id, last_name, first_name, alias, level (surveillance | recherche |
+                 hvt), sides (camps qui y ont accès, vide = tous), zone, documents (ids), has_photo : recherchés de
+                 l'opération, avis locaux (N3 hors ligne, checkpoints) limités à ces camps ; papiers connus = BOLO
 */
 params [["_op", ""], ["_a", []]];
 switch (_op) do {
@@ -122,11 +133,88 @@ switch (_op) do {
             if (_ak isEqualType "" && {_ak isNotEqualTo ""}) then { private _l = _byKey getOrDefault [_ak, []]; _l pushBack _k; _byKey set [_ak, _l]; };
             _nD = _nD + 1;
         } forEach (_top getOrDefault ["documents", []]);
+        private _bolos = _reg getOrDefault ["bolos", createHashMap];
+        _reg set ["bolos", _bolos];
+        private _localRefs = (values _bolos) apply { _x getOrDefault ["gameRef", ""] };
+        private _boloAdded = false;
         {
-            private _w = [_x, ["ref", "last_name", "first_name", "alias", "level", "person_id"]] call _rec;
-            (_reg get "watch") pushBack [_w getOrDefault ["last_name", ""], _w getOrDefault ["first_name", ""], _w getOrDefault ["alias", ""], _w getOrDefault ["level", "surveillance"], _w getOrDefault ["ref", ""]];
+            private _w = [_x, ["ref", "last_name", "first_name", "alias", "level", "person_id", "game_ref", "bio_key", "known_docs", "status"]] call _rec;
+            private _ref = _w getOrDefault ["ref", ""];
+            private _gr = _w getOrDefault ["game_ref", ""];
+            // Déjà connu (paquet rechargé, BOLO de cette partie remonté puis revenu) : pas de doublon.
+            if (((_reg get "watch") findIf { (_x param [4, ""]) isEqualTo _ref }) >= 0 || {_gr isNotEqualTo "" && {_gr in _localRefs}}) then { continue; };
+            (_reg get "watch") pushBack [_w getOrDefault ["last_name", ""], _w getOrDefault ["first_name", ""], _w getOrDefault ["alias", ""], _w getOrDefault ["level", "surveillance"], _ref];
             _nW = _nW + 1;
+            // Avis avec visage ou papiers connus (BOLO / HVT d'une partie précédente) : redevient un BOLO.
+            private _kd = _w getOrDefault ["known_docs", []];
+            if !(_kd isEqualType []) then { _kd = []; };
+            private _bk = _w getOrDefault ["bio_key", ""];
+            if !(_bk isEqualType "") then { _bk = ""; };
+            if (_kd isNotEqualTo [] || {_bk isNotEqualTo ""}) then {
+                private _lv = _w getOrDefault ["level", "surveillance"];
+                _bolos set [_ref, createHashMapFromArray [
+                    ["ref", _ref], ["last", _w getOrDefault ["last_name", ""]], ["first", _w getOrDefault ["first_name", ""]], ["alias", _w getOrDefault ["alias", ""]],
+                    ["level", ["surveillance", ["recherche", "hvt"] select (_lv isEqualTo "hvt")] select (_lv in ["prioritaire", "recherche", "hvt"])],
+                    ["docs", _kd apply { toUpper ([str _x, _x] select (_x isEqualType "")) }],
+                    ["notes", "Avis Athena"], ["kind", "BOLO"], ["key", _bk], ["clock", ""], ["gameRef", _gr]
+                ]];
+                _boloAdded = true;
+            };
         } forEach (_top getOrDefault ["watch", []]);
+        if (_boloAdded) then { ["boloList"] call comspec_sse_fnc_idHvt; };
+        // Lot 6 : briefs RP des joueurs (Steam ID), population des IA, recherchés de l'opération.
+        private _str = { if (_this isEqualType "") then { _this } else { str _this } };
+        private _briefs = createHashMap;
+        {
+            private _b = [_x, ["uid", "user_id", "scope", "identity_id", "title", "cover_name", "biography", "legend", "contacts", "instructions", "phone", "address"]] call _rec;
+            private _uid = (_b getOrDefault ["uid", ""]) call _str;
+            if (_uid isNotEqualTo "") then { _briefs set [_uid, _b]; };
+        } forEach (_top getOrDefault ["briefs", []]);
+        if ("briefs" in _top) then { _reg set ["briefs", _briefs]; _reg set ["legends", createHashMap]; };
+        private _pop = [];
+        {
+            private _p = [_x, ["identity_id", "side", "category", "faction", "zone", "language", "documents"]] call _rec;
+            private _pd = _p getOrDefault ["documents", []];
+            if (_pd isEqualType [] && {_pd isNotEqualTo []}) then { _p set ["documents", _pd apply { _x call _str }]; _pop pushBack _p; };
+        } forEach (_top getOrDefault ["population", []]);
+        if ("population" in _top) then { _reg set ["population", _pop]; };
+        // Recherchés de l'opération : table remplacée à chaque paquet (avis « OPW- » retirés puis remis).
+        if ("wanted" in _top) then {
+            _reg set ["watch", (_reg get "watch") select { ((_x param [4, ""]) select [0, 4]) isNotEqualTo "OPW-" }];
+            { if ((_x select [0, 4]) isEqualTo "OPW-") then { _bolos deleteAt _x; }; } forEach (keys _bolos);
+        };
+        private _byIdW = _reg getOrDefault ["athenaById", createHashMap];
+        {
+            private _w = [_x, ["ref", "identity_id", "person_id", "last_name", "first_name", "alias", "level", "sides", "zone", "documents", "has_photo"]] call _rec;
+            private _i = _ids getOrDefault [(_w getOrDefault ["identity_id", ""]) call _str, createHashMap];
+            private _l = _w getOrDefault ["last_name", ""];
+            private _f = _w getOrDefault ["first_name", ""];
+            if (_l isEqualTo "") then { _l = _i getOrDefault ["last_name", ""]; _f = _i getOrDefault ["first_name", ""]; };
+            private _al = _w getOrDefault ["alias", ""];
+            private _lv = _w getOrDefault ["level", "recherche"];
+            if !(_lv in ["surveillance", "recherche", "hvt"]) then { _lv = "recherche"; };
+            private _sides = _w getOrDefault ["sides", []];
+            if !(_sides isEqualType []) then { _sides = []; };
+            _sides = (_sides apply { toLower (_x call _str) }) select { _x in ["civ", "west", "east", "guer"] };
+            private _ref = (_w getOrDefault ["ref", ""]) call _str;
+            if (_ref isEqualTo "" || {_l isEqualTo "" && {_al isEqualTo ""}}) then { continue; };
+            // Avis local limité aux camps autorisés (6e champ : camps, vide = tous).
+            (_reg get "watch") pushBack [[_l, _al] select (_l isEqualTo ""), _f, _al, _lv, _ref, _sides];
+            _nW = _nW + 1;
+            // Papiers émis connus (ids du paquet ; absent = ignoré) : numéros à surveiller.
+            private _wd = _w getOrDefault ["documents", []];
+            if !(_wd isEqualType []) then { _wd = []; };
+            private _nums = [];
+            { private _k = _byIdW getOrDefault [_x call _str, ""]; if (_k isNotEqualTo "") then { _nums pushBackUnique toUpper ((_k splitString "|") param [2, ""]); }; } forEach _wd;
+            if (_nums isNotEqualTo []) then {
+                _bolos set [_ref, createHashMapFromArray [
+                    ["ref", _ref], ["last", _l], ["first", _f], ["alias", _al], ["level", _lv], ["docs", _nums - [""]],
+                    ["notes", "Recherché de l'opération (Athena)"], ["kind", "OPW"], ["key", ""], ["clock", ""], ["gameRef", ""], ["sides", _sides]
+                ]];
+                _boloAdded = true;
+            };
+        } forEach (_top getOrDefault ["wanted", []]);
+        if (_boloAdded) then { ["boloList"] call comspec_sse_fnc_idHvt; };
         // Papiers révoqués depuis le dernier paquet (paquet partiel, « since ») : signalés révoqués dans la base locale.
         private _revoked = (_top getOrDefault ["revoked", []]) apply { str _x };
         if (_revoked isNotEqualTo []) then {
@@ -148,7 +236,11 @@ switch (_op) do {
             if (_uid isNotEqualTo "" && {_list isEqualType []} && {_list isNotEqualTo []}) then { _kits set [_uid, _list apply { [str _x, _x] select (_x isEqualType "") }]; };
         } forEach (_top getOrDefault ["kits", []]);
         if ("kits" in _top) then { _reg set ["kits", _kits]; };
-        diag_log text format ["[COMSPEC SSE] Identité : paquet Athena chargé (%1 pays, %2 documents, %3 avis, %4 kits).", _nC, _nD, _nW, count _kits];
+        diag_log text format ["[COMSPEC SSE] Identité : paquet Athena chargé (%1 pays, %2 documents, %3 avis, %4 kits, %5 briefs, %6 identités de population).", _nC, _nD, _nW, count _kits, count _briefs, count _pop];
+        // Brief de couverture d'un joueur déjà là : son infiltration s'ouvre (après la remise du kit).
+        if ((count _briefs) > 0) then {
+            [{ { ["auto", [_x]] call comspec_sse_fnc_idCover; } forEach (allPlayers select { alive _x && {!(_x isKindOf "HeadlessClient_F")} }); }, [], 4] call CBA_fnc_waitAndExecute;
+        };
         if ((count _kits) > 0) then {
             [{ { [_x] call comspec_sse_fnc_idKit; } forEach (allPlayers select { alive _x && {!(_x isKindOf "HeadlessClient_F")} }); }, [], 1] call CBA_fnc_waitAndExecute;
         };
