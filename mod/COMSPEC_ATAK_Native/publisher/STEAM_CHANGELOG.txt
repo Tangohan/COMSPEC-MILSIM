@@ -1,3 +1,27 @@
+[h1]COMSPEC ATAK — Mise à jour 3.0.3.AG - Austin[/h1]
+[b]Publication : 03/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 3.0.3, quittez Arma 3 complètement, puis relancez. Pour COMSPEC IDENTITY, gardez COMSPEC SSE à jour (1.3.0).
+[/quote]
+
+[h2]COMSPEC IDENTITY[/h2]
+[list]
+[*] Les textes des nouvelles fonctions du mod SSE (Contrôle ID, Ma couverture, checkpoints, atelier de documents) s'affichent en anglais quand le téléphone est en anglais.
+[*] App Recherchés : « Actualiser » garde les BOLO et HVT posés par la mission ou le Zeus, avec les avis d'Athena, sans doublon, origine affichée, HVT en tête.
+[/list]
+
+[h2]Rappel 3.0.2[/h2]
+[list]
+[*] Fiches de contrôle d'identité partagées en Bluetooth ou en NFC, alerte « vibreur seul », SPOTREP pré-rempli, app Contrôle ID sur votre vrai téléphone.
+[/list]
+
+[h2]Composants[/h2]
+[list]
+[*] Téléphone ATAK 3.0.3.AG - Austin
+[*] COMSPEC Link 2.0.118
+[*] Overwatch connect 1.6.33 · Overwatch main 1.4.8
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 3.0.2.AG - Austin[/h1]
 [b]Publication : 03/11/2026[/b]
 [quote]
