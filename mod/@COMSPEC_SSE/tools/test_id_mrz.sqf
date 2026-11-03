@@ -34,6 +34,18 @@ _card set ["mrzFlaw", "check"];
 _p = ["parse", [_card] call comspec_sse_fnc_idMrz] call comspec_sse_fnc_idMrz;
 if !("number" in (_p get "errors")) then { _fails pushBack "Faux (chiffre décalé) non détecté"; };
 
+// Pays réel stylisé (univers réaliste-simulation) : Allemagne, code OACI « D<< » pour l'émetteur et la nationalité.
+private _deMrz = (([] call comspec_sse_fnc_idRealCountries) getOrDefault ["DEU", createHashMap]) getOrDefault ["mrz", ""];
+if (_deMrz isNotEqualTo "D") then { _fails pushBack format ["Code MRZ allemand : %1", _deMrz]; };
+private _de = createHashMapFromArray [
+    ["type", "passport"], ["country", "DEU"], ["mrzIssuer", _deMrz], ["nat", _deMrz], ["number", "DEK482913"], ["last", "Müller"],
+    ["first", "Jürgen"], ["sex", "M"], ["dob", "1985-03-02"], ["expires", "2034-03-01"]
+];
+_l = [_de] call comspec_sse_fnc_idMrz;
+if !(((_l select 0) select [0, 19]) isEqualTo "P<D<<MULLER<<JURGEN" && {((_l select 1) select [10, 3]) isEqualTo "D<<"}) then { _fails pushBack format ["Passeport allemand : %1", _l]; };
+_p = ["parse", _l] call comspec_sse_fnc_idMrz;
+if !(_p get "ok") then { _fails pushBack format ["Passeport allemand relu en erreur : %1", _p get "errors"]; };
+
 private _msg = if (_fails isEqualTo []) then { "MRZ : tous les tests passent." } else { "MRZ : ÉCHEC" + endl + (_fails joinString endl) };
 diag_log text _msg;
 hint _msg;

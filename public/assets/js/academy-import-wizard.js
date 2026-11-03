@@ -1,6 +1,7 @@
 /*
  * Assistant d'importation du catalogue de référence (views/academy/import_wizard.php).
- * 1. Portée : tout, pays, catégorie, domaine, niveau, émetteur, recherche, sélection à la main ; compteurs en direct.
+ * 1. Portée : « Recommandé pour votre communauté » (ORBAT, fonctions, prérequis ; cocher un groupe alimente la
+ *    sélection), puis tout, pays, catégorie, domaine, niveau, émetteur, recherche, sélection à la main ; compteurs en direct.
  * 2. Aperçu (serveur) : éléments, dépendances, émetteurs réels, prérequis détectés, cours Academy liés.
  * 3. Formule : places restantes, import partiel au-delà, « pays entier en un clic » selon la formule.
  * 4. Import par lots (un appel par lot, l'état est gardé par le serveur), puis rapport.
@@ -20,7 +21,7 @@
     ['niveau', 'Niveau'],
     ['emetteur', 'Émetteur']
   ];
-  var S = { step: 1, data: null, scope: {}, q: '', manual: {}, preview: null, job: null, busy: false, finished: false };
+  var S = { step: 1, data: null, rowsById: {}, reco: null, recoError: false, recoFoundOpen: false, scope: {}, q: '', manual: {}, preview: null, job: null, busy: false, finished: false };
   DIMS.forEach(function (d) { S.scope[d[0]] = {}; });
 
   function fmt(tpl) {
@@ -85,7 +86,8 @@
   }
   function chosen() {
     var rows = selected();
-    var manual = Object.keys(S.manual).length ? rows.filter(function (r) { return S.manual[r.id]; }) : rows;
+    // Éléments cochés (à la main ou depuis les recommandations) : retenus quels que soient les filtres.
+    var manual = Object.keys(S.manual).length ? S.data.rows.filter(function (r) { return S.manual[r.id]; }) : rows;
     return { rows: rows, picked: manual };
   }
   function anyScope() {
@@ -134,6 +136,7 @@
     var manualN = Object.keys(S.manual).length;
     $('[data-aiw-manual-count]').textContent = manualN ? fmt('%1 cochés', manualN) : '';
     renderList(c.rows);
+    renderReco();
     $('[data-aiw-next]').disabled = c.picked.length === 0 || c.picked.length === already;
   }
   function renderList(rows) {
@@ -145,6 +148,95 @@
         + '<span><b>' + esc(r.name) + '</b>' + (r.official ? ' <small translate="no">' + esc(r.official) + '</small>' : '')
         + '<small class="aiw-meta"><span translate="no">' + esc(r.code) + '</span> · <span translate="no">' + esc(r.emetteur) + '</span>' + (r.done ? ' · <span>déjà dans votre référentiel</span>' : '') + '</small></span></label></li>';
     }).join('') + (rows.length > shown.length ? '<li class="aiw-more">' + esc(fmt('%1 autres éléments : affinez la recherche pour les voir.', rows.length - shown.length)) + '</li>' : '');
+  }
+
+  /* ——— Recommandé pour votre communauté ——— */
+  var RECO_GROUPS = {
+    jobs: ['Pour vos emplois', 'Emplois du catalogue reconnus dans les fonctions de vos membres.'],
+    units: ['Pour vos unités', 'Courant dans les types d’unités reconnus dans votre ORBAT.'],
+    prereqs: ['Prérequis manquants', 'Qualifications préalables de fiches déjà dans votre référentiel.']
+  };
+  var COUNTRY_SOURCES = {
+    affiliation: 'unité réelle déclarée par la communauté',
+    real_units: 'unités réelles reconnues dans votre ORBAT',
+    nature: 'type d’unité propre à ce pays',
+    jobs: 'emplois reconnus dans vos fonctions'
+  };
+  function recoMembers(n) {
+    if (n == null) return '';
+    return ' <small>' + esc(n > 0 ? fmt(plural(n, '%1 membre', '%1 membres'), n) : 'fonction non attribuée') + '</small>';
+  }
+  function recoFound(d) {
+    var html = '<details class="aiw-reco__found"' + (S.recoFoundOpen ? ' open' : '') + '><summary>Ce qu’on a détecté</summary><div>';
+    html += '<h5>Types d’unités reconnus</h5>' + (d.natures.length ? '<ul>' + d.natures.map(function (n) {
+      var src = n.sources.map(function (u) { return u.confidential ? '<span>unité confidentielle</span>' : '<span translate="no">' + esc(u.name) + '</span>'; }).join(', ');
+      return '<li><b>' + esc(n.label) + '</b> <small>' + esc(fmt(plural(n.units, '%1 unité', '%1 unités'), n.units)) + '</small>' + recoMembers(n.members)
+        + (src ? ' <small>· <span>d’après</span> ' + src + '</small>' : '') + '</li>';
+    }).join('') + '</ul>' : '<p class="aiw-hint">Aucun type d’unité reconnu : précisez le nom, le type ou les étiquettes de vos unités dans l’ORBAT.</p>');
+    html += '<h5>Emplois reconnus</h5>' + (d.jobs.length ? '<ul>' + d.jobs.map(function (j) {
+      return '<li><span translate="no">' + esc(j.role) + '</span> → <b translate="no">' + esc(j.job) + '</b>' + (j.country ? ' <small translate="no">' + esc(j.country) + '</small>' : '') + recoMembers(j.members) + '</li>';
+    }).join('') + '</ul>' : '<p class="aiw-hint">Aucune fonction rapprochée d’un emploi du catalogue.</p>');
+    html += '<h5>Pays retenu</h5>' + (d.country
+      ? '<p>' + (d.country_flag || '') + ' <b>' + esc(d.country_label) + '</b> <small>' + esc(COUNTRY_SOURCES[d.country_source] || '') + '</small></p>'
+      : '<p class="aiw-hint">Aucun pays détecté : les standards OTAN passent en premier.</p>');
+    return html + '</div></details>';
+  }
+  function recoOpen(g) {
+    return g.items.filter(function (it) { return !it.done && S.rowsById[it.id]; });
+  }
+  function renderReco() {
+    var body = $('[data-aiw-reco-body]');
+    if (!body || !S.data) return;
+    if (S.recoError) {
+      body.innerHTML = '<p class="aiw-hint">Recommandations indisponibles pour le moment. La portée ci-dessous reste utilisable.</p>';
+      return;
+    }
+    var r = S.reco;
+    if (!r) return;
+    var html = recoFound(r.detected);
+    var groups = r.groups.filter(function (g) { return RECO_GROUPS[g.key]; });
+    if (!groups.length) {
+      body.innerHTML = html + '<p class="aiw-hint">Rien de particulier à recommander : décrivez vos unités dans l’ORBAT et attribuez des fonctions à vos membres.</p>';
+      return;
+    }
+    groups.forEach(function (g) {
+      var byId = {};
+      g.items.forEach(function (it) { byId[it.id] = it; });
+      var open = recoOpen(g);
+      var all = open.length > 0 && open.every(function (it) { return S.manual[it.id]; });
+      html += '<div class="aiw-reco__group"><div class="aiw-reco__head"><h5>' + esc(RECO_GROUPS[g.key][0]) + '</h5>'
+        + '<span class="aiw-n">' + esc(fmt('%1 à importer', g.to_import)) + '</span><p class="aiw-hint">' + esc(RECO_GROUPS[g.key][1]) + '</p>'
+        + (open.length ? '<label class="aiw-chip"><input type="checkbox" data-aiw-reco-all="' + esc(g.key) + '"' + (all ? ' checked' : '') + '><span>Tout cocher</span></label>' : '') + '</div>';
+      g.sources.forEach(function (src) {
+        var label;
+        if (g.key === 'prereqs') label = '<span>Prérequis de</span> <b>' + esc(src.label) + '</b>';
+        else if (g.key === 'jobs') label = '<b translate="no">' + esc(src.label) + '</b>' + (src.role && src.role !== src.label ? ' <small>(<span translate="no">' + esc(src.role) + '</span>)</small>' : '');
+        else label = '<b>' + esc(src.label) + '</b>';
+        html += '<div class="aiw-reco__src"><p>' + label + recoMembers(src.members) + ' →</p><div class="aiw-reco__items">' + src.ids.map(function (id) {
+          var it = byId[id];
+          if (!it) return '';
+          var can = !it.done && S.rowsById[id];
+          return '<label class="aiw-chip' + (it.done ? ' is-done' : '') + '"><input type="checkbox" value="' + esc(id) + '" data-aiw-reco-item' + (S.manual[id] || it.done ? ' checked' : '') + (can ? '' : ' disabled') + '>'
+            + '<span>' + esc(it.name) + ' <small translate="no">' + esc(it.code) + '</small>' + (it.done ? ' <small>déjà dans votre référentiel</small>' : '') + '</span></label>';
+        }).join('') + '</div></div>';
+      });
+      html += '</div>';
+    });
+    // Case cochée au clavier : le focus reste sur la même case après le nouveau rendu.
+    var a = document.activeElement;
+    var sel = a && body.contains(a) ? (a.hasAttribute('data-aiw-reco-all') ? '[data-aiw-reco-all="' + a.getAttribute('data-aiw-reco-all') + '"]' : '[data-aiw-reco-item][value="' + a.value + '"]') : '';
+    body.innerHTML = html;
+    var back = sel ? body.querySelector(sel) : null;
+    if (back) back.focus();
+  }
+  function loadReco() {
+    request('/recommandations').then(function (body) {
+      S.reco = body;
+      renderReco();
+    }).catch(function () {
+      S.recoError = true;
+      renderReco();
+    });
   }
 
   /* ——— Aperçu ——— */
@@ -357,6 +449,16 @@
       var k = t.getAttribute('data-aiw-dim');
       if (t.checked) S.scope[k][t.value] = true; else delete S.scope[k][t.value];
       refreshScope();
+    } else if (t.matches('[data-aiw-reco-item]')) {
+      if (t.checked) S.manual[t.value] = true; else delete S.manual[t.value];
+      refreshScope();
+    } else if (t.matches('[data-aiw-reco-all]')) {
+      var key = t.getAttribute('data-aiw-reco-all');
+      (S.reco ? S.reco.groups : []).forEach(function (g) {
+        if (g.key !== key) return;
+        recoOpen(g).forEach(function (it) { if (t.checked) S.manual[it.id] = true; else delete S.manual[it.id]; });
+      });
+      refreshScope();
     } else if (t.closest('[data-aiw-list]')) {
       if (t.checked) S.manual[t.value] = true; else delete S.manual[t.value];
       refreshScope();
@@ -376,6 +478,9 @@
       });
     }
   });
+  dlg.addEventListener('toggle', function (e) {
+    if (e.target.classList && e.target.classList.contains('aiw-reco__found')) S.recoFoundOpen = e.target.open;
+  }, true);
   $('[data-aiw-manual]').addEventListener('toggle', function () { if (S.data) refreshScope(); });
   $('[data-aiw-all]').addEventListener('click', function () {
     DIMS.forEach(function (d) { S.scope[d[0]] = {}; });
@@ -413,8 +518,10 @@
       if (S.data) { if (S.step === 4 && !S.busy) go(1); return; }
       request('').then(function (body) {
         S.data = body;
+        body.rows.forEach(function (r) { S.rowsById[r.id] = r; });
         renderDims();
         go(1);
+        loadReco();
       }).catch(function (e) {
         $('[data-aiw-count]').textContent = '';
         error(e.message);

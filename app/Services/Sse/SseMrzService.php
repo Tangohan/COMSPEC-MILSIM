@@ -151,12 +151,20 @@ final class SseMrzService
     public static function forDocument(array $doc, array $identity, string $mrzCountry = ''): array
     {
         $issuer = $mrzCountry !== '' ? $mrzCountry : (string) ($doc['country_code'] ?? '');
+        // Nationalité = code MRZ du pays : celui du papier s'il s'agit du même pays, sinon le code OACI du jeu stylisé
+        // (Allemagne : DEU → « D », imprimé « D<< »).
+        $nat = strtoupper(trim((string) ($identity['nationality'] ?? '')));
+        if ($nat === '' || $nat === strtoupper((string) ($doc['country_code'] ?? ''))) {
+            $nat = $issuer;
+        } else {
+            $nat = \App\Support\SseIdRealCountryCatalog::mrzFor($nat) ?? $nat;
+        }
         $data = [
             'issuer' => $issuer,
             'last_name' => (string) ($identity['last_name'] ?? ''),
             'first_name' => (string) ($identity['first_name'] ?? ''),
             'number' => (string) ($doc['doc_number'] ?? ''),
-            'nationality' => (string) (($identity['nationality'] ?? '') !== '' ? $identity['nationality'] : $issuer),
+            'nationality' => $nat,
             'birth_date' => $identity['birth_date'] ?? null,
             'sex' => $identity['sex'] ?? null,
             'expires_on' => $doc['expires_on'] ?? null,

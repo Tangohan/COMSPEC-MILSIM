@@ -80,6 +80,12 @@ final class SseIdentityPackService
                 'doc_types' => $c['doc_types'],
                 'colors' => array_values(array_filter([$c['color_primary'], $c['color_secondary']])),
                 'active' => $c['active'],
+                // Ajouts rétrocompatibles : pays réel stylisé (univers réaliste-simulation), zone de style du gabarit
+                // générique (europe|americas|other, vide pour un pays fictif), nom natif, années de validité par type.
+                'real_sim' => $c['real_sim'],
+                'zone' => $c['zone'],
+                'name_native' => $c['real_sim'] ? (string) (\App\Support\SseIdRealCountryCatalog::get($c['code'])['name_native'] ?? '') : '',
+                'validity' => $c['validity'],
             ];
         }
 

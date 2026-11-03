@@ -2,11 +2,15 @@
 """Visuels du contrôle d'identité (addon identity) : gabarits de documents FICTIFS, icônes, silhouette, app ATAK.
 
 Tous les documents portent la mention « SIMULATION » et des pays imaginaires (codes hors ISO : ALT, TNA, LVN, MLD).
+Pays réels stylisés (univers réaliste-simulation) : trois gabarits GÉNÉRIQUES par zone de style (EU bordeaux, AM bleu,
+OT vert), sans nom de pays (posé en jeu), sans armoiries ni motif officiel, emblème « SIM » inventé, mention
+« SIMULATION — DOCUMENT DE JEU » dans le bandeau et en pied de page.
 Les champs (nom, dates, MRZ…) ne sont PAS peints : ils sont posés en jeu par dialogs/idViewer.hpp
 (fn_idViewerOnLoad, mêmes coordonnées que LAYOUT ci-dessous, en fraction du document).
 
   python tools/gen_id_assets.py            # écrit addons/identity/data/*.paa (HEMTT, sinon paa_dxt.py de l'ATAK)
   python tools/gen_id_assets.py --png DIR  # garde aussi les PNG sources dans DIR
+  python tools/gen_id_assets.py --zones    # seulement les gabarits des zones de style (EU, AM, OT)
 
 Côtés en puissances de 2 : gabarits 1024 x 512 (étirés à l'affichage au format du document), icônes 256, app 128.
 Dépendances : Pillow (numpy pour le repli paa_dxt).
@@ -30,7 +34,14 @@ COUNTRIES = {
     "TNA": ("FÉDÉRATION DE TANOA", "FEDERATION OF TANOA", (36, 120, 80), (222, 242, 230)),
     "LVN": ("RÉPUBLIQUE DE LIVONIE", "REPUBLIC OF LIVONIA", (128, 40, 56), (245, 225, 228)),
     "MLD": ("RÉPUBLIQUE DE MALDEN", "REPUBLIC OF MALDEN", (176, 106, 28), (247, 236, 217)),
+    # Zones de style des pays réels stylisés : aucun nom peint, gabarit commun à tous les pays de la zone.
+    "EU": ("", "", (109, 26, 43), (240, 228, 230)),
+    "AM": ("", "", (27, 42, 92), (226, 231, 244)),
+    "OT": ("", "", (31, 77, 58), (224, 238, 230)),
 }
+ZONES = ("EU", "AM", "OT")
+GAME_MENTION = "SIMULATION — DOCUMENT DE JEU"
+GAME_FOOTER = "SIMULATION — DOCUMENT DE JEU — SANS VALEUR · GAME DOCUMENT — NO VALUE"
 
 # Libellés peints : (x, y) en fraction du document ; la valeur est posée en jeu juste dessous (y + 0.035).
 LAYOUT = {
@@ -133,13 +144,19 @@ def chip_logo(d, cx, cy, s, col):
     d.line((cx + s * 0.32, cy, cx + s, cy), fill=col, width=3)
 
 
+def foot(code):
+    return GAME_FOOTER if code in ZONES else "SIMULATION — DOCUMENT FICTIF SANS VALEUR — FICTITIOUS DOCUMENT, NO VALUE"
+
+
 def header(d, w, h, code, title_fr, title_en, hb=0.17):
     name_fr, name_en, col, _ = COUNTRIES[code]
+    if code in ZONES:
+        name_en = GAME_MENTION
     d.rectangle((0, 0, w, int(h * hb)), fill=col)
     d.text((int(w * 0.13), int(h * hb * 0.30)), name_fr, fill=(255, 255, 255), font=font("bahnschrift.ttf", int(h * hb * 0.30)), anchor="lm")
     d.text((int(w * 0.13), int(h * hb * 0.72)), f"{title_fr}  ·  {title_en}  ·  {name_en}", fill=(235, 240, 250),
            font=font("arial.ttf", int(h * hb * 0.20)), anchor="lm")
-    emblem(d, int(w * 0.065), int(h * hb * 0.5), int(h * hb * 0.40), (255, 255, 255), code)
+    emblem(d, int(w * 0.065), int(h * hb * 0.5), int(h * hb * 0.40), (255, 255, 255), "SIM" if code in ZONES else code)
 
 
 def base(kind, code, seed):
@@ -160,18 +177,18 @@ def card_recto(code):
     labels(d, w, h, "card_recto", col)
     chip_logo(d, int(w * 0.93), int(h * 0.27), int(h * 0.035), col)
     watermark(img)
-    footer(d, w, h)
+    footer(d, w, h, foot(code))
     return img
 
 
 def card_verso(code):
     img, d, w, h, col = base("card_verso", code, 2)
     labels(d, w, h, "card_verso", col)
-    emblem(d, int(w * 0.86), int(h * 0.24), int(h * 0.15), col, code)
+    emblem(d, int(w * 0.86), int(h * 0.24), int(h * 0.15), col, "SIM" if code in ZONES else code)
     # Zone MRZ (3 lignes posées en jeu).
     d.rectangle((0, int(h * 0.58), w, int(h * 0.94)), fill=(250, 250, 246, 255))
     watermark(img, alpha=26)
-    footer(d, w, h)
+    footer(d, w, h, foot(code))
     return img
 
 
@@ -183,7 +200,7 @@ def passport(code):
     chip_logo(d, int(w * 0.93), int(h * 0.055), int(h * 0.03), (255, 255, 255))
     d.rectangle((0, int(h * 0.78), w, int(h * 0.94)), fill=(250, 250, 246, 255))
     watermark(img)
-    footer(d, w, h)
+    footer(d, w, h, foot(code))
     return img
 
 
@@ -193,7 +210,7 @@ def license_recto(code):
     photo_frame(d, w, h, (0.04, 0.21, 0.27, 0.62), col)
     labels(d, w, h, "license_recto", col)
     watermark(img)
-    footer(d, w, h)
+    footer(d, w, h, foot(code))
     return img
 
 
@@ -310,18 +327,25 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     tmp = tempfile.mkdtemp(prefix="comspec_id_")
     jobs = {}
+    zones_only = "--zones" in sys.argv
     for code in COUNTRIES:
+        if zones_only and code not in ZONES:
+            continue
         lc = code.lower()
         jobs[f"tpl_card_{lc}_recto_co"] = (card_recto(code), (1024, 512))
         jobs[f"tpl_card_{lc}_verso_co"] = (card_verso(code), (1024, 512))
         jobs[f"tpl_passport_{lc}_co"] = (passport(code), (1024, 512))
         jobs[f"tpl_license_{lc}_recto_co"] = (license_recto(code), (1024, 512))
-    jobs["tpl_license_verso_co"] = (license_verso(), (1024, 512))
-    jobs["silhouette_co"] = (silhouette(), (256, 256))
-    jobs["hologram_ca"] = (hologram(), (256, 256))
-    for k in ("card", "passport", "license"):
-        jobs[f"icon_{k}_ca"] = (icon(k), (256, 256))
-    jobs["app_id"] = (app_icon(), (128, 128))
+    if zones_only:
+        jobs = {k: v for k, v in jobs.items()}
+    else:
+        jobs["tpl_license_verso_co"] = (license_verso(), (1024, 512))
+    if not zones_only:
+        jobs["silhouette_co"] = (silhouette(), (256, 256))
+        jobs["hologram_ca"] = (hologram(), (256, 256))
+        for k in ("card", "passport", "license"):
+            jobs[f"icon_{k}_ca"] = (icon(k), (256, 256))
+        jobs["app_id"] = (app_icon(), (128, 128))
     for name, (img, size) in jobs.items():
         img = img.resize(size, Image.LANCZOS)
         if name.endswith("_co"):

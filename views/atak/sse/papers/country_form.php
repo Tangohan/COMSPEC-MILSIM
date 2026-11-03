@@ -15,6 +15,8 @@ $used = (int) ($used ?? 0);
 $format = (string) ($c['number_format'] ?? '@@#######');
 $types = $c['doc_types'] ?? array_keys(C::DOC_TYPES);
 $langs = $c['languages'] ?? ['fr', 'en'];
+// Pays réel stylisé (univers réaliste-simulation) : univers, code MRZ, format et drapeau imposés par le jeu.
+$real = !empty($c['real_sim']);
 require __DIR__ . '/_subnav.php';
 $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/back-office-member-papers.css')) . '">';
 ?>
@@ -24,7 +26,11 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
     <div>
         <div class="page-heading-overline">Référentiel // Pays émetteur</div>
         <h1><?= $isEdit ? $h($c['name']) . ' (' . $h($c['code']) . ')' : 'Nouveau pays émetteur' ?></h1>
-        <p>Un pays de jeu est toujours imaginaire. Son code ne doit pas être celui d’un pays réel, sauf dans un univers de fiction (SCP, Star Wars…).</p>
+        <?php if ($real): ?>
+            <p>Pays réel stylisé, réservé à l’univers « Réaliste — simulation » de la communauté. Ses papiers restent des documents de jeu : gabarit générique, mention SIMULATION sur chaque face, aucune armoirie ni motif officiel, photos de personnages du jeu uniquement.</p>
+        <?php else: ?>
+            <p>Un pays de jeu est toujours imaginaire. Son code ne doit pas être celui d’un pays réel, sauf dans un univers de fiction (SCP, Star Wars…) ou depuis les pays réels stylisés (univers réaliste-simulation).</p>
+        <?php endif; ?>
     </div>
     <div class="page-reference"><strong>Formulaire</strong> Réf. ATH-SSE-IDENT-PAYS</div>
 </div>
@@ -54,12 +60,14 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
             </div>
             <div class="lab-form-field">
                 <label for="mrz_code">Code de la bande de lecture</label>
-                <input id="mrz_code" name="mrz_code" type="text" maxlength="3" value="<?= $h($c['mrz_code'] ?? '') ?>" autocomplete="off" translate="no" style="text-transform:uppercase" placeholder="Identique au code">
+                <input id="mrz_code" name="mrz_code" type="text" maxlength="3" value="<?= $h($c['mrz_code'] ?? '') ?>" autocomplete="off" translate="no" style="text-transform:uppercase" placeholder="Identique au code"<?= $real ? ' disabled' : '' ?>>
+                <?php if ($real): ?><small class="muted">Code de l’OACI, imprimé tel quel (Allemagne : « D<< »).</small><?php endif; ?>
             </div>
             <div class="lab-form-field">
                 <label for="theme">Univers</label>
-                <select id="theme" name="theme">
+                <select id="theme" name="theme"<?= $real ? ' disabled' : '' ?>>
                     <?php foreach (K::THEMES as $k => $label): ?>
+                        <?php if ($k === \App\Support\SseIdRealCountryCatalog::UNIVERSE && !$real) { continue; } ?>
                         <option value="<?= $h($k) ?>" <?= ($c['theme'] ?? 'contemporary') === $k ? 'selected' : '' ?>><?= $h($label) ?></option>
                     <?php endforeach; ?>
                 </select>
@@ -78,7 +86,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
             </div>
             <div class="lab-form-field">
                 <label for="number_format">Format du numéro</label>
-                <input id="number_format" name="number_format" type="text" maxlength="20" required value="<?= $h($format) ?>" autocomplete="off" translate="no" style="font-family:monospace;text-transform:uppercase" data-idm-format>
+                <input id="number_format" name="number_format" type="text" maxlength="20" required value="<?= $h($format) ?>" autocomplete="off" translate="no" style="font-family:monospace;text-transform:uppercase" data-idm-format<?= $real ? ' disabled' : '' ?>>
                 <small class="muted">« # » pour un chiffre, « @ » pour une lettre, le reste est recopié. Exemple : <strong translate="no" data-idm-format-preview><?= $h(G::documentNumber(strtoupper($format), 424242)) ?></strong></small>
             </div>
         </div>
@@ -101,6 +109,12 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
         </fieldset>
 
         <div class="lab-form-grid" style="margin-top:12px">
+            <?php if ($real): ?>
+                <div class="lab-form-field">
+                    <span>Drapeau</span>
+                    <span><img class="idm-flag" src="<?= $h((string) \App\Support\SseIdRealCountryCatalog::flagDataUri((string) $c['code'])) ?>" alt=""> <small class="muted">Drapeau simple du jeu (bandes de couleur). Aucune image téléversée : pas d’armoiries ni d’emblème officiel.</small></span>
+                </div>
+            <?php else: ?>
             <div class="lab-form-field">
                 <label for="flag">Drapeau ou armoiries (image PNG, JPG ou WebP, 1 Mo)</label>
                 <input id="flag" name="flag" type="file" accept="image/png,image/jpeg,image/webp">
@@ -108,6 +122,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
                     <span><img class="idm-flag" src="<?= $h(url($c['flag_path'])) ?>" alt=""> <label><input type="checkbox" name="flag_remove" value="1"> Retirer l’image</label></span>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
             <div class="lab-form-field">
                 <label for="color_primary">Couleur principale</label>
                 <input id="color_primary" name="color_primary" type="color" value="<?= $h($c['color_primary'] ?? '#1F4E79') ?>">
@@ -118,7 +133,11 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
             </div>
         </div>
 
-        <p style="margin-top:12px"><label><input type="checkbox" name="fictional" value="1" checked required> Pays fictif : ses papiers portent la mention SIMULATION et n’ont aucune valeur réelle.</label></p>
+        <?php if ($real): ?>
+            <p style="margin-top:12px"><label><input type="checkbox" name="fictional" value="1" checked required> Document de jeu : ses papiers portent la mention SIMULATION — DOCUMENT DE JEU et n’ont aucune valeur réelle.</label></p>
+        <?php else: ?>
+            <p style="margin-top:12px"><label><input type="checkbox" name="fictional" value="1" checked required> Pays fictif : ses papiers portent la mention SIMULATION et n’ont aucune valeur réelle.</label></p>
+        <?php endif; ?>
 
         <div class="idp-actions" style="margin-top:12px">
             <button class="btn" type="submit"><?= $isEdit ? 'Enregistrer' : 'Créer le pays' ?></button>

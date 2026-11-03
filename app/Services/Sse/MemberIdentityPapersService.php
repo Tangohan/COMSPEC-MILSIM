@@ -128,7 +128,7 @@ final class MemberIdentityPapersService
         if ($t === '') {
             return '';
         }
-        $aliases = ['us' => 'USA', 'usa' => 'USA', 'américaine' => 'USA', 'américain' => 'USA', 'uk' => 'GBR', 'gb' => 'GBR', 'britannique' => 'GBR', 'fr' => 'FRA', 'française' => 'FRA', 'français' => 'FRA', 'belgique' => 'BEL', 'belge' => 'BEL', 'ger' => 'DEU', 'de' => 'DEU', 'allemande' => 'DEU', 'allemand' => 'DEU', 'espagne' => 'ESP', 'espagnole' => 'ESP', 'colombie' => 'COL', 'colombienne' => 'COL', 'autriche' => 'AUT', 'autrichienne' => 'AUT'];
+        $aliases = ['us' => 'USA', 'usa' => 'USA', 'américaine' => 'USA', 'américain' => 'USA', 'uk' => 'GBR', 'gb' => 'GBR', 'britannique' => 'GBR', 'fr' => 'FRA', 'française' => 'FRA', 'français' => 'FRA', 'belgique' => 'BEL', 'belge' => 'BEL', 'ger' => 'DEU', 'de' => 'DEU', 'allemande' => 'DEU', 'allemand' => 'DEU', 'espagne' => 'ESP', 'espagnole' => 'ESP', 'colombie' => 'COL', 'colombienne' => 'COL', 'autriche' => 'AUT', 'autrichienne' => 'AUT', 'grèce' => 'GRC', 'grecque' => 'GRC', 'grec' => 'GRC', 'gr' => 'GRC', 'pologne' => 'POL', 'polonaise' => 'POL', 'polonais' => 'POL', 'ukraine' => 'UKR', 'ukrainienne' => 'UKR', 'ukrainien' => 'UKR', 'russie' => 'RUS', 'russe' => 'RUS', 'irak' => 'IRQ', 'irakienne' => 'IRQ', 'irakien' => 'IRQ', 'syrie' => 'SYR', 'syrienne' => 'SYR', 'syrien' => 'SYR', 'afghane' => 'AFG', 'afghan' => 'AFG'];
         $t = mb_strtolower($aliases[$t] ?? trim($text));
         foreach ($countries as $c) {
             foreach ([(string) $c['code'], (string) $c['name'], (string) ($c['name_en'] ?? '')] as $candidate) {
