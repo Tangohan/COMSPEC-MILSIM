@@ -1004,7 +1004,7 @@ switch (_view) do {
         private _formRect = if (_land) then { [_bw * 0.62, _topH, _bw * 0.38, _bh - _topH] } else { [0, _topH + (_bh - _topH) * 0.56, _bw, (_bh - _topH) * 0.44] };
         private _map = ["COMSPEC_RscMap", _mapRect, "", false] call comspec_atak_native_fnc_pageCtrl;
         uiNamespace setVariable ["COMSPEC_ATAK_ZnMapCtrl", _map];
-        _map ctrlAddEventHandler ["Draw", { ["draw", _this] call comspec_atak_native_fnc_zoneMap; }];
+        _map ctrlAddEventHandler ["Draw", { private _t = diag_tickTime; ["draw", _this] call comspec_atak_native_fnc_zoneMap; ["carte Zones (image)", _t] call comspec_atak_native_fnc_perfAcc; }];
         _map ctrlAddEventHandler ["MouseButtonDown", { ["down", _this] call comspec_atak_native_fnc_zoneMap; }];
         _map ctrlAddEventHandler ["MouseMoving", { ["move", _this] call comspec_atak_native_fnc_zoneMap; }];
         // Rectangle et cercle en clic-glisser : second point au relâchement (fn_zoneMap « up »).

@@ -25,7 +25,12 @@ if (_key isEqualTo "report") exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_RenderCount", createHashMap];
     missionNamespace setVariable ["COMSPEC_ATAK_PerfLast", [diag_tickTime, round diag_fps, _slowN, round (_slowMax * 1000),
         (_rows select [0, 12]) apply { private _c = _acc get (_x select 1); [_x select 1, _c select 0, (_c select 1) / ((_c select 0) max 1) * 1000, (_c select 2) * 1000, (_c select 1) * 1000] },
-        _renders toArray false]];
+        _renders toArray false,
+        // Suivis (3.0.1) : dessin de la carte (marqueurs, repères Athena et leur halo, zones, routes, cartes des apps
+        // Zones et Routes) et papiers du SSE (conditions des menus ACE), montrés même hors des 12 plus coûteux.
+        (["carte marqueurs mission (image)", "carte repères Athena (image)", "carte zones (image)", "carte routes (image)",
+            "carte Zones (image)", "carte Routes (image)", "SSE papiers (idDocsOf)"] select { _x in _acc }) apply {
+            private _c = _acc get _x; [_x, _c select 0, (_c select 1) / ((_c select 0) max 1) * 1000, (_c select 2) * 1000, (_c select 1) * 1000] }]];
     if ((count _acc) isEqualTo 0 && {_slowN isEqualTo 0}) exitWith {};
     private _parts = _rows apply {
         private _c = _acc get (_x select 1);

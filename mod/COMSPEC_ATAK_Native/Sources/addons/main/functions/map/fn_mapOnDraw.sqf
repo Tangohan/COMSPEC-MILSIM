@@ -164,7 +164,10 @@ if (_state getOrDefault ["interactive", false]) then {
 };
 
 // Marqueurs de la mission (symboles, zones, traits) : la carte Arma ne les dessine plus (showMarkers = 0).
+// Mesures de l'onglet PERFS du Debug (fn_perfAcc) : marqueurs de la mission, repères Athena (halo), zones et routes.
+private _perfM = diag_tickTime;
 [_map, _mk] call comspec_atak_native_fnc_mapGameMarkers;
+["carte marqueurs mission (image)", _perfM] call comspec_atak_native_fnc_perfAcc;
 
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
 private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
@@ -396,6 +399,7 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
     _mkLists = [_mkRev, diag_tickTime + 10, _rem, _tag];
     missionNamespace setVariable ["COMSPEC_ATAK_DrawMkLists", _mkLists];
 };
+_perfM = diag_tickTime;
 {
     private _marker = _x select 1;
     if (_marker getOrDefault ["local",false]) then { continue };
@@ -442,6 +446,7 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
         };
     };
 } forEach (_mkLists select 2);
+["carte repères Athena (image)", _perfM] call comspec_atak_native_fnc_perfAcc;
 
 {
     if ((count _x) >= 2) then {
@@ -578,11 +583,13 @@ if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualT
 };
 
 // App Zones : plans affichés (bascule « Zones sur la carte ATAK »), dans la vue seulement, sous les routes (fn_zoneDraw).
-if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesShow", true]) then { [_map, _k * _is, _ts] call comspec_atak_native_fnc_zoneDraw; };
+if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesShow", true]) then { _perfM = diag_tickTime; [_map, _k * _is, _ts] call comspec_atak_native_fnc_zoneDraw; ["carte zones (image)", _perfM] call comspec_atak_native_fnc_perfAcc; };
 // Points de passage : tronçons, étapes nommées et typées, point choisi en mode POINTS DE PASSAGE (fn_wpDraw).
 [_map, _k * _is, _ts, _cursor] call comspec_atak_native_fnc_wpDraw;
 // App Routes : routes affichées, dans la vue seulement, tracé gardé par révision (fn_routeDraw).
+_perfM = diag_tickTime;
 [_map, _k * _is, _ts] call comspec_atak_native_fnc_routeDraw;
+["carte routes (image)", _perfM] call comspec_atak_native_fnc_perfAcc;
 // Ordres aux groupes IA du camp en cours (et finis depuis moins d'une minute) : trait du chef à l'objectif (fn_aiOrder).
 ["draw", [_map, 0.026 * _ts, COMSPEC_ATAK_FontSet select 1]] call comspec_atak_native_fnc_aiOrder;
 // Appui feu typé (fn_fireSupport) : portées de la pièce choisie, distance de sécurité, missions de tir du camp.

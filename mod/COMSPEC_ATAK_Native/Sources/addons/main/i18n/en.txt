@@ -3684,6 +3684,7 @@
 ["CARTE ET FLUX", "MAP AND FEED"],
 ["Carte et flux du poste", "Post map and feed"],
 ["Carte et GPS", "Map and GPS"],
+["Carte et papiers SSE", "Map and SSE papers"],
 ["carte JTAC (image)", "JTAC map (frame)"],
 ["carte montre (image)", "watch map (frame)"],
 ["Carte mémoire (preuve)", "Memory card (evidence)"],
