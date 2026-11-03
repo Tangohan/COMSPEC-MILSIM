@@ -294,6 +294,21 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1355, '2026-11-03', 'ATAK 3.0.2 : fiches de contrôle d’identité partagées, vibreur seul, Contrôle ID sur le téléphone', 'COMSPEC IDENTITY passe au lot 2. Une fiche de contrôle d’identité, avec le papier lu, le verdict, chaque niveau de contrôle, la photo, le contrôleur, l’heure et la position, se partage depuis l’app Contrôle ID : en Bluetooth à un équipier appairé, ou en NFC en posant son téléphone contre le sien, sans appairage. La fiche reçue s’ouvre dans une vue dédiée de l’app Bluetooth, avec la carte sur le lieu du contrôle et « Joindre à une FRM » ; la fiche FRM envoyée, avec sa photo, est rattachée au contrôle sur Athena. Le téléphone gagne une alerte « vibreur seul », sans son ni bandeau, pour être prévenu discrètement, et un compte rendu SPOTREP peut s’ouvrir déjà rempli par une autre app. Sur le vrai téléphone, la nouvelle app Contrôle ID montre vos contrôles de la partie, le détail par niveau et les photos, et « Joindre à une FRM » prépare une fiche que le bureau SSE valide. Sur Athena, le dossier d’une personne regroupe ses contrôles par opération et par carte avec leurs photos et leurs verdicts, et le bureau SSE a un tableau de bord identité de l’opération : contrôles, détections, faux, personnes recherchées interpellées et fiches nées des contrôles à valider.', [
+                'Fiche de contrôle d’identité partagée en Bluetooth ou en NFC, vue dédiée dans l’app Bluetooth',
+                'Alerte « vibreur seul » : vibration sans son ni bandeau',
+                'Sur mon téléphone : app Contrôle ID (historique, détail par niveau, photos, Joindre à une FRM)',
+                'Bureau SSE : tableau de bord identité de l’opération et fiches FRM à valider',
+                'Dossier d’une personne : contrôles par opération avec photos et verdicts',
+            ], [
+                'SPOTREP pré-rempli par une autre app, comme le SALUTE',
+                'Fiche FRM rattachée au contrôle d’identité dont elle vient, avec ses photos',
+                'Niveaux de contrôle envoyés par le jeu en chiffres bien enregistrés',
+            ], [], ['atak', 'intel'], [
+                'Mettez à jour le pack 3.0.2, quittez Arma complètement et relancez ; gardez COMSPEC SSE à jour.',
+                'Essai : partager une fiche de contrôle en Bluetooth puis en NFC entre deux joueurs, l’ouvrir, joindre une FRM avec photo, puis la retrouver sur la fiche du contrôle et dans le dossier de la personne.',
+            ], 'Pack 3.0.2'),
+
             $pr(1354, '2026-11-03', 'ATAK 3.0.1 : carte, Zones et Routes plus légères', 'Le téléphone passe en version 3.0.1, centrée sur l’optimisation. La carte fait beaucoup moins de calculs à chaque image quand des plans de l’app Zones ou des routes sont affichés, ce qui réduit les saccades, surtout téléphone porté ; le dessin reste identique. Le bandeau du curseur ne recherche plus la zone sous le curseur à chaque mouvement de souris quand rien n’a changé, et la barre d’état du téléphone (réseau, batterie, heure, météo) n’est plus réécrite chaque seconde sans raison. L’onglet Debug › PERFS gagne une section « Carte et papiers SSE » qui montre le temps passé par la carte, les zones, les routes et les menus de papiers du mod SSE, pour signaler précisément un ralentissement.', [
                 'Onglet Debug › PERFS : section « Carte et papiers SSE »',
             ], [
