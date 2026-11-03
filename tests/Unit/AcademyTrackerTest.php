@@ -319,9 +319,7 @@ final class AcademyTrackerTest extends TestCase
     public function testControllerWiringRightsAndSafeReturn(): void
     {
         $root = dirname(__DIR__, 2);
-        $controller = str_replace("
-", "
-", (string) file_get_contents($root . '/app/Controllers/Web/AcademyController.php'));
+        $controller = str_replace("\r\n", "\n", (string) file_get_contents($root . '/app/Controllers/Web/AcademyController.php'));
         self::assertStringContainsString("'droits', 'suivi']", $controller);
         self::assertStringContainsString("if (\$space === 'suivi') {", $controller);
         self::assertStringContainsString("['tracker_enroll', 'tracker_remind', 'tracker_exempt', 'tracker_unexempt']", $controller);
