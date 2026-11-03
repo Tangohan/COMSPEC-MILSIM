@@ -1,5 +1,19 @@
 # COMSPEC SSE — historique des versions
 
+## 1.1.1 — 03/11/2026 · Papiers des joueurs depuis Athena
+
+**Relancer Arma complètement.** Kit et pays de la communauté : liaison Athena (COMSPEC Link 2.0.118).
+
+- **Kit de mission** (bloc `kits` du paquet d'identité) : le serveur compare le Steam ID du joueur (`getPlayerUID`)
+  à celui du compte Athena et lui remet les papiers listés qu'il ne porte pas déjà, à la connexion, au JIP, au
+  chargement du paquet et après chaque respawn. Sans kit : comportement inchangé (attribut Eden, module Zeus).
+- **Respawn** : les papiers du kit ne sont plus perdus ; l'exemplaire resté sur l'ancien corps passe sur le nouveau
+  (sinon nouvel exemplaire). Réglage CBA « Rendre les papiers du kit au respawn » (activé par défaut).
+- **Pays émetteurs** enrichis : nom anglais (téléphone en anglais), autorité par défaut, langues, papiers délivrés,
+  couleurs ; pays archivé : plus de papiers générés, ceux déjà émis restent lisibles.
+- **Contrôles** : le Steam ID du joueur contrôlé part avec le contrôle (`subject.steam_id`), pour l'historique
+  « Contrôles subis » de sa fiche Athena.
+
 ## 1.1.0 — 03/11/2026 · Contrôle d'identité
 
 **Relancer Arma complètement.** Niveaux en ligne (documents Athena, base Athena, transmission) : COMSPEC Link 2.0.118

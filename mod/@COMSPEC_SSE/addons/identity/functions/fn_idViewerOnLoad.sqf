@@ -171,7 +171,7 @@ uiNamespace setVariable ["comspec_sse_idViewerCtrls", _ctrls];
 // Bandeau, constat N0, boutons.
 private _title = format ["<t align='center' size='1.1' font='PuristaSemibold'>%1</t><br/><t align='center' size='0.85' color='#b8c2cc'>%2 · %3</t>",
     (["Carte d'identité", "Passeport", "Permis de conduire"] select ((["id_card", "passport", "driving_license"] find _type) max 0)) call comspec_sse_fnc_tr,
-    (_doc getOrDefault ["countryName", ""]) call _esc, (["SIMULATION · document fictif", "SIMULATION · votre document"] select (_st get "own")) call comspec_sse_fnc_tr];
+    ([_doc getOrDefault ["countryName", ""], _doc getOrDefault ["countryNameEn", ""]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr" && {(_doc getOrDefault ["countryNameEn", ""]) isNotEqualTo ""})) call _esc, (["SIMULATION · document fictif", "SIMULATION · votre document"] select (_st get "own")) call comspec_sse_fnc_tr];
 (_d displayCtrl 93704) ctrlSetStructuredText parseText _title;
 (_d displayCtrl 93704) ctrlSetPosition [_cx, _cy - safezoneH * 0.075, _cw, safezoneH * 0.07];
 (_d displayCtrl 93704) ctrlCommit 0;
