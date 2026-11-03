@@ -55,6 +55,17 @@
         "fr": [],
         "en": []
       },
+      "prerequisites_detected": [
+        {
+          "kind": "metric",
+          "metric": "halo_jumps",
+          "scope": "",
+          "min": 5,
+          "window_days": 0,
+          "confidence": 0.8,
+          "source": "description"
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -118,6 +129,14 @@
           "Application conditions and physical minima set by the training reference (RAF)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-brevet-parachutiste",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -234,6 +253,14 @@
           "Application conditions set by the training reference (RAF)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-brevet-parachutiste",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "Maintien soumis aux conditions d’entraînement fixées par la PIA-3.2.1.1(A), livret 1.",
         "en": "Currency subject to the training requirements of PIA-3.2.1.1(A), booklet 1."
@@ -495,6 +522,14 @@
           "At least one year of mountain experience"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-bam",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -888,6 +923,14 @@
           "Probation period in a stick"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-cursus-sas",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -941,6 +984,14 @@
           "Probation period in a stick"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-cursus-sas",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -994,6 +1045,14 @@
           "Probation period in a stick"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-cursus-sas",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1047,6 +1106,14 @@
           "Probation period in a stick"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-cursus-sas",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1152,6 +1219,14 @@
           "SAS basic course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-cursus-sas",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1293,6 +1368,14 @@
           "Regimental initial training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-brevet-parachutiste",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1391,6 +1474,14 @@
           "CTE RA"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-cte-ra",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1444,6 +1535,14 @@
           "Special forces screening tests"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-tests-agrement-fs",
+          "confidence": 0.9,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1495,6 +1594,14 @@
           "CFIM initial training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-cfim",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1542,6 +1649,14 @@
           "Military parachutist badge"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-brevet-parachutiste",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1823,6 +1938,14 @@
           "Technical aptitude badge (BAT)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-bat-fusilier",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1874,6 +1997,14 @@
           "Senior badge (BS)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-bs-fusilier",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1986,6 +2117,14 @@
           "Basic commando badge"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-brevet-commando-marine",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2036,6 +2175,14 @@
           "Basic commando badge"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-brevet-commando-marine",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2253,6 +2400,14 @@
           "Maquis course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-maquis",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2299,6 +2454,17 @@
           "Selection, medical and specialty physical tests"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "metric",
+          "metric": "halo_jumps",
+          "scope": "",
+          "min": 6,
+          "window_days": 365,
+          "confidence": 0.8,
+          "source": "description"
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2685,6 +2851,14 @@
           "Helicopter pilot wings"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-pilote-helicoptere-aae",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2960,6 +3134,14 @@
           "GIGN operator initial training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-gign-formation",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3011,6 +3193,14 @@
           "GIGN operator initial training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-gign-formation",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3058,6 +3248,14 @@
           "Enlisted initial training (CFIM)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-cfim",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3113,6 +3311,14 @@
           "Army Light Aviation helicopter pilot training (EALAT)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-pilote-ealat",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3165,6 +3371,14 @@
           "NCO initial training (ENSOA)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-ensoa",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3309,6 +3523,14 @@
           "GIGN operator initial training"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "fr-gign-formation",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""

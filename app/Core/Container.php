@@ -1251,6 +1251,17 @@ class Container
                 self::get(\App\Repositories\QualificationAwardRuleRepository::class),
                 self::get(\App\Services\Personnel\QualificationAwardRuleService::class)
             ),
+            \App\Services\Personnel\QualificationPrerequisiteSuggester::class => new \App\Services\Personnel\QualificationPrerequisiteSuggester(
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
+                self::get(\App\Repositories\QualificationAwardRuleRepository::class),
+                self::get(\App\Repositories\QualificationDefinitionRepository::class),
+                self::get(\App\Repositories\QualificationReferentielRepository::class),
+                self::get(\App\Repositories\GradeRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\QualificationPrerequisiteController::class => new \App\Controllers\Admin\Organization\QualificationPrerequisiteController(
+                self::get(\App\Services\Personnel\QualificationPrerequisiteSuggester::class),
+                self::get(\App\Services\Personnel\QualificationAwardRuleService::class)
+            ),
             \App\Controllers\Admin\Organization\QualificationRulesController::class => new \App\Controllers\Admin\Organization\QualificationRulesController(
                 self::get(\App\Services\Personnel\QualificationAwardRuleService::class),
                 self::get(\App\Repositories\QualificationDefinitionRepository::class),

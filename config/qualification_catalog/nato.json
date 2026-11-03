@@ -655,6 +655,14 @@
           "English SLP 2222 under STANAG 6001"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "nato-slp-2",
+          "confidence": 0.85,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -823,6 +831,15 @@
           "English SLP 3232 recommended under STANAG 6001"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-4",
+          "rank": "OR-4",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1359,6 +1376,15 @@
           "Background in intelligence, operations, planning, targeting, C-IED, CIMIC or information activities"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-8",
+          "rank": "OR-8",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1406,6 +1432,15 @@
           "Rank OR-3 to OR-9 or OF-1 to OF-4 (or equivalent)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-3",
+          "rank": "OR-3",
+          "confidence": 0.85,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1492,6 +1527,15 @@
           "English SLP 3332 (officers) or 2221 (NCOs) under STANAG 6001"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-5",
+          "rank": "OR-5",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1539,6 +1583,15 @@
           "Recommended: CIMIC Field Worker Course (NCFWC)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-5",
+          "rank": "OR-5",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2471,6 +2524,15 @@
           "Rank OR-4 to OR-8 or OF-1 to OF-3"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-4",
+          "rank": "OR-4",
+          "confidence": 0.85,
+          "source_index": 1
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2614,6 +2676,15 @@
           "Officer OF-3 to OF-5, NCO OR-7 to OR-9 or civilian equivalent"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-7",
+          "rank": "OR-7",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2662,6 +2733,15 @@
           "NCO OR-5 to OR-9, officer OF-1 to OF-3 or civilian equivalent"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-5",
+          "rank": "OR-5",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -2906,6 +2986,15 @@
           "NCSWC or ADL modules 037, 143 and 169"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OF-3",
+          "rank": "OF-3",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3295,6 +3384,15 @@
           "ADL modules 037 and 143"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-5",
+          "rank": "OR-5",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -3488,6 +3586,14 @@
           "ADL 362 Introduction to SFA course"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "nato-sfa-adl362",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""

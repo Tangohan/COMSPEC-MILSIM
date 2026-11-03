@@ -115,6 +115,14 @@
           "Basic Commando Course (Kursus Asas Komando)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-asas-komando",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -163,6 +171,14 @@
           "Qualified sniper (Kursus Ahli Sniper Gerak Khas)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-sniper-gerak-khas",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -264,6 +280,21 @@
           "Basic Parachute Course (Kursus Asas Payung Terjun)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-asas-payung-terjun",
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "attestation",
+          "key": "freefall_jumps",
+          "min": 21,
+          "confidence": 0.8,
+          "source": "description"
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -317,6 +348,23 @@
           "Basic Parachute Course (Kursus Asas Payung Terjun)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-asas-payung-terjun",
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "metric",
+          "metric": "halo_jumps",
+          "scope": "",
+          "min": 21,
+          "window_days": 0,
+          "confidence": 0.8,
+          "source": "description"
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -366,6 +414,14 @@
           "Basic Parachute Course (Kursus Asas Payung Terjun)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-asas-payung-terjun",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -419,6 +475,14 @@
           "Basic Commando Course (Kursus Asas Komando)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-asas-komando",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -468,6 +532,14 @@
           "Basic Commando Course (Kursus Asas Komando)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-asas-komando",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -517,6 +589,14 @@
           "Basic Demolition Course (Kursus Asas Letupan)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-asas-letupan",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -566,6 +646,14 @@
           "Basic Parachute Course (Kursus Asas Payung Terjun)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-asas-payung-terjun",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -890,6 +978,14 @@
           "Police Tactical Parachute Course (Kursus Taktikal Payung Terjun)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-taktikal-payung-terjun-pdrm",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -938,6 +1034,14 @@
           "Police Tactical Parachute Course (Kursus Taktikal Payung Terjun)"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "my-kursus-taktikal-payung-terjun-pdrm",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1466,6 +1570,15 @@
           "Rank of major or equivalent"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OF-3",
+          "rank": "major",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""
@@ -1518,6 +1631,15 @@
           "Rank of lieutenant colonel or equivalent"
         ]
       },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OF-4",
+          "rank": "lieutenant colonel",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
       "validity": {
         "fr": "",
         "en": ""

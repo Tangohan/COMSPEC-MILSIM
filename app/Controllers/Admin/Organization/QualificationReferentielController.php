@@ -208,7 +208,45 @@ final class QualificationReferentielController
             'allDefinitions' => $this->definitions->listForTenant($tenantId),
             'badgeUrl' => $this->badges->publicUrl($definition['badge_media_path'] ?? null),
             'temporal' => $this->temporal,
+            'detectedPrerequisites' => $this->detectedPrerequisites($tenantId, $id),
         ] + $this->obtentionViewData($tenantId, $id));
+    }
+
+    /** Prérequis lus dans le texte de la fiche (encart « Prérequis détectés »). @return list<array<string, mixed>> */
+    private function detectedPrerequisites(int $tenantId, int $id): array
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\Personnel\QualificationPrerequisiteSuggester::class)
+                ->forDefinition($tenantId, $id, function_exists('locale') ? (string) locale() : 'fr');
+        } catch (Throwable $e) {
+            error_log('Prérequis détectés : ' . $e->getMessage());
+
+            return [];
+        }
+    }
+
+    /**
+     * Fiches importées qui ont des prérequis détectés (pour l'encart après import).
+     *
+     * @param array<string, int> $definitions id du catalogue => fiche
+     * @return list<int>
+     */
+    private function importedWithPrerequisites(int $tenantId, array $definitions): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $definitions))));
+        if ($ids === []) {
+            return [];
+        }
+        try {
+            $rows = \App\Core\Container::get(\App\Services\Personnel\QualificationPrerequisiteSuggester::class)
+                ->forTenant($tenantId, function_exists('locale') ? (string) locale() : 'fr', $ids);
+        } catch (Throwable $e) {
+            error_log('Prérequis détectés (import) : ' . $e->getMessage());
+
+            return [];
+        }
+
+        return array_map(static fn (array $r): int => (int) $r['definition']['id'], $rows);
     }
 
     public function update(Request $request, array $params = []): Response
@@ -599,8 +637,12 @@ final class QualificationReferentielController
             if ($json) {
                 $definitions = array_filter(array_map('intval', $result['definitions']));
 
+                $withPrereqs = $this->importedWithPrerequisites($tenantId, $definitions);
+
                 return Response::json([
                     'ok' => $definitions !== [],
+                    'prerequisites' => count($withPrereqs),
+                    'prerequisites_url' => $withPrereqs !== [] ? url('back-office/referentiels/qualifications/prerequis-detectes') . '?ids=' . implode(',', $withPrereqs) : '',
                     'message' => $definitions === [] ? ($blocked > 0 ? self::quotaMessage($quota, QualificationCatalogQuota::IMPORTS, 'qualifications importées') : 'Aucune qualification importée.') : ($created > 0 ? 'Qualification importée dans votre référentiel. Qualification de jeu, sans valeur réelle : réglez ensuite son mode d’obtention.' : 'Cette qualification est déjà dans votre référentiel.'),
                     'created' => $created,
                     'definitions' => array_map(static fn (int $d): array => ['definition_id' => $d, 'url' => url('back-office/referentiels/qualifications/' . $d)], $definitions),
@@ -617,12 +659,19 @@ final class QualificationReferentielController
             Session::flash('success', $skipped > 0
                 ? $created . ' qualification(s) importée(s) du catalogue, ' . $skipped . ' déjà présente(s) ignorée(s). Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.'
                 : $created . ' qualification(s) importée(s) du catalogue. Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.');
-            if ($request->input('return_query', '') !== '') {
-                return Response::redirect($back);
-            }
             $issuers = $result['issuer_ids'];
+            $after = $request->input('return_query', '') !== ''
+                ? $back
+                : url('back-office/referentiels/qualifications') . (count($issuers) === 1 ? '?emetteur=' . (int) $issuers[0] : '');
+            // Des prérequis sont lus dans les qualifications importées : l'encart « Prérequis détectés » les propose.
+            $withPrereqs = $this->importedWithPrerequisites($tenantId, $result['definitions']);
+            if ($withPrereqs !== []) {
+                Session::set('qualif_prereq_back', $after);
 
-            return Response::redirect(url('back-office/referentiels/qualifications') . (count($issuers) === 1 ? '?emetteur=' . (int) $issuers[0] : ''));
+                return Response::redirect(url('back-office/referentiels/qualifications/prerequis-detectes') . '?apres_import=1&ids=' . implode(',', $withPrereqs));
+            }
+
+            return Response::redirect($after);
         });
     }
 
@@ -1409,6 +1458,7 @@ final class QualificationReferentielController
             'aircraft' => $this->rules->aircraftOptions($tenantId),
             'items' => $this->rules->itemOptions($tenantId),
             'sessionCategories' => $this->rules->sessionCategories($tenantId),
+            'names' => $names,
         ]];
     }
 

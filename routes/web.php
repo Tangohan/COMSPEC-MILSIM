@@ -1847,6 +1847,11 @@ return function (Router $router) {
     $router->post('/back-office/referentiels/qualifications/matrice/case', [QualificationRulesController::class, 'cell'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/academy/rattacher', [QualificationRulesController::class, 'importAcademy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/propositions/{awardId}', [QualificationRulesController::class, 'decide'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Prérequis détectés dans le texte des qualifications (aperçu de masse, ajout en un clic) et attestations.
+    $router->get('/back-office/referentiels/qualifications/prerequis-detectes', [\App\Controllers\Admin\Organization\QualificationPrerequisiteController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/prerequis-detectes', [\App\Controllers\Admin\Organization\QualificationPrerequisiteController::class, 'applyMany'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/{id}/prerequis-detectes', [\App\Controllers\Admin\Organization\QualificationPrerequisiteController::class, 'apply'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/qualifications/{id}/attestations', [\App\Controllers\Admin\Organization\QualificationPrerequisiteController::class, 'attest'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/{id}/evaluer', [QualificationRulesController::class, 'evaluate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/qualifications/{id}/restaurer', [QualificationRulesController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/qualifications/{id}', [QualificationRulesController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

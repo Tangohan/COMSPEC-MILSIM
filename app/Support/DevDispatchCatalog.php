@@ -294,6 +294,16 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1363, '2026-11-03', 'Qualifications : les prérequis lus dans le texte, ajoutés en un clic', 'Les qualifications citent souvent leurs conditions dans le texte : « 5 sauts », « au moins 150 sauts en chute libre », « grade de Feldwebel au minimum », « deux ans de service », « brevet militaire de parachutiste ». Le site les lit maintenant, en français, en anglais et en allemand, et les propose comme prérequis prêts à l’emploi, avec la phrase d’origine et un niveau de confiance. Rien n’est ajouté sans votre accord : l’encart « Prérequis détectés » de la fiche (back-office et Studio de l’Academy) coche d’office les conditions sûres, laisse corriger chaque valeur et les ajoute en un clic. Après un import depuis le catalogue, le même encart s’ouvre pour les qualifications importées, et le bouton « Détecter les prérequis » du référentiel passe toute la communauté en revue avec un aperçu. Ce que le jeu mesure devient une condition automatique : sauts en parachute relevés par le mod, heures de vol, missions jouées et, nouveau, ancienneté dans la communauté. Ce qu’il ne mesure pas encore (sauts en chute libre, heures de plongée, tir, tests physiques) devient une condition attestée par un instructeur, membre par membre, depuis la fiche de la qualification ; un nombre de sauts attesté vaut pour toutes les qualifications qui le demandent. Les catalogues de référence intègrent 141 prérequis relus.', [
+                'Prérequis détectés dans la description et la fiche du catalogue : sauts, heures de vol, missions, ancienneté, grade, autre qualification ou cours',
+                'Encart « Prérequis détectés » sur la fiche du back-office et du Studio de l’Academy, après un import du catalogue, et aperçu de masse « Détecter les prérequis »',
+                'Nouvelle condition mesurée : ancienneté dans la communauté (date d’engagement du dossier, sinon arrivée)',
+                'Nouvelle condition attestée par un instructeur : sauts en chute libre, sauts à ouverture automatique, heures de plongée, tir, tests physiques',
+                'Catalogues : 141 prérequis structurés pré-calculés et relus (qualifications préalables, grades, sauts, ancienneté)',
+            ], [
+                'La condition « Sauts en parachute » compte tous les sauts relevés par le mod, en chute libre ou sous voile',
+            ], [], ['personnel'], [], 'Portail'),
+
             $pr(1358, '2026-11-03', 'Academy : les six chapitres du JTAC pour tous les stagiaires', 'Les stagiaires inscrits à la toute première version du cours JTAC ne voyaient qu’un seul chapitre : leur copie du cours restait figée sur cette version. Tant que le parcours n’est pas terminé, la copie passe maintenant à la version courante avec ses six chapitres, sans rien perdre de la progression : chapitre en cours, tentatives, débriefings et validations. Les parcours terminés et les licences délivrées ne changent pas.', [], [
                 'JTAC : six chapitres visibles dans la salle de cours pour les stagiaires inscrits à l’ancienne version, progression conservée',
             ], [], ['personnel'], [], 'Portail'),

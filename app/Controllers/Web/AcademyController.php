@@ -1349,6 +1349,15 @@ final class AcademyController
                 'prefillCourse' => isset($courses[$prefill]) ? $prefill : '',
                 'backOfficeUrl' => $editing !== null && Gate::getInstance()->allows('admin.organization') ? url('back-office/referentiels/qualifications/' . (int) $editing['id'] . '/edit') : '',
             ];
+            // Prérequis lus dans le texte de la fiche : proposés dans l'encart « Prérequis détectés ».
+            if ($editing !== null && $canManage && $credentials->rulesReady()) {
+                try {
+                    $data['detected'] = Container::get(\App\Services\Personnel\QualificationPrerequisiteSuggester::class)->forDefinition($tenantId, (int) $editing['id'], $lang);
+                    $data['criterionNames'] = Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->names($tenantId);
+                } catch (\Throwable $e) {
+                    error_log('Prérequis détectés (Studio) : ' . $e->getMessage());
+                }
+            }
         }
         return Response::view('academy.studio_credentials', $data)->header('Cache-Control', 'private, no-store');
     }
@@ -1404,6 +1413,21 @@ final class AcademyController
                 }
                 $this->audit($id > 0 ? 'academy.credential.updated' : 'academy.credential.created', $tenantId, $key, ['definition' => $saved, 'kind' => $kind]);
                 return $this->credentialBack($this->credentialUrl('fiche=' . $saved), $notice);
+            }
+            if ($action === 'studio_cred_prereqs') {
+                // Encart « Prérequis détectés » : suggestions cochées, valeur éventuellement corrigée.
+                $values = $request->input('value');
+                $selected = [];
+                $picks = $request->input('pick');
+                foreach (is_array($picks) ? $picks : [] as $sid) {
+                    if (is_string($sid) && preg_match('/\A[a-z]{1,2}(?::[A-Za-z0-9_.\-]*){0,5}\z/', $sid) === 1) {
+                        $v = is_array($values) ? ($values[$sid] ?? null) : null;
+                        $selected[$sid] = is_scalar($v) ? (string) $v : null;
+                    }
+                }
+                $r = Container::get(\App\Services\Personnel\QualificationPrerequisiteSuggester::class)->apply($tenantId, $id, $selected, $userId, locale() === 'en' ? 'en' : 'fr');
+                $this->audit('academy.credential.prerequisites_added', $tenantId, $key, ['definition' => $id, 'added' => $r['added']]);
+                return $back($id, $r['added'] > 0 ? 'cred_prereqs_added' : 'cred_prereqs_none');
             }
             if ($action === 'studio_cred_archive') {
                 $credentials->archive($tenantId, $id, $userId);
