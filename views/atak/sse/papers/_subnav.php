@@ -9,6 +9,9 @@ $papersTabs = [
     'controles' => ['controles', 'Contrôles reçus'],
     'pays' => ['pays', 'Pays émetteurs'],
 ];
+if (!empty($canMemberPapers)) {
+    $papersTabs['membres'] = ['membres', 'Papiers des membres'];
+}
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '">';
 ?>
 <div class="idp-sim" role="note">

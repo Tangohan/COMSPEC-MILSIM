@@ -27,7 +27,7 @@ $origin = $isEdit ? (string) $doc['st_origin'] : match ($identity['kind']) {
 };
 ?>
 <div class="bo-member-situation">
-    <p class="bo-member-situation__lead"><a href="<?= $h($backUrl) ?>">← Fiche de <?= $h(\App\Support\MemberName::full($member)) ?></a></p>
+    <p class="bo-member-situation__lead"><a href="<?= $h($backUrl) ?>">← <?= $h($backLabel ?? 'Fiche de ') ?><?= $h(\App\Support\MemberName::full($member)) ?></a></p>
     <?php if (($flashError = \App\Core\Session::getFlash('error')) !== null): ?>
         <p class="bo-member-situation__flash bo-member-situation__flash--err"><?= $h($flashError) ?></p>
     <?php endif; ?>

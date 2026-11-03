@@ -30,6 +30,9 @@ use App\Support\SseIdentityCatalog;
  */
 final class MemberIdentityPapersController
 {
+    /** Requête servie par le bureau SSE (« Papiers des membres ») plutôt que par la fiche membre. */
+    private bool $sse = false;
+
     public function __construct(
         private ?MemberIdentityPapersService $papers = null,
         private ?UserRepository $users = null,
@@ -45,7 +48,7 @@ final class MemberIdentityPapersController
     /**
      * Droits de la session courante sur l'onglet.
      *
-     * @return array{view: bool, manage: bool, truth: bool, cover: bool}
+     * @return array{view: bool, manage: bool, truth: bool, cover: bool, sse: bool}
      */
     public static function currentRights(?SseClearanceService $clearance = null): array
     {
@@ -58,12 +61,25 @@ final class MemberIdentityPapersController
             $command = $confidential = false;
         }
 
-        return MemberIdentityPapersService::rights(
-            $gate->allows('atak.sse.case.manage') || $gate->allows('atak.sse.grant') || $gate->allows('admin.access'),
-            EffectifsLmsAccess::canEditProfiles($gate),
-            $command,
-            $confidential
-        );
+        $sseManage = $gate->allows('atak.sse.case.manage') || $gate->allows('atak.sse.grant') || $gate->allows('admin.access');
+        $rights = MemberIdentityPapersService::rights($sseManage, EffectifsLmsAccess::canEditProfiles($gate), $command, $confidential);
+
+        return $rights + ['sse' => self::sseSurfaceAllowed($sseManage, $command)];
+    }
+
+    /**
+     * Accès direct depuis le bureau SSE (sans passer par la fiche membre ni exiger un droit Effectifs) : gestion SSE
+     * ou habilitation Encadrement.
+     */
+    public static function sseSurfaceAllowed(bool $sseManage, bool $command): bool
+    {
+        return $sseManage || $command;
+    }
+
+    /** URL de base des actions « papiers » d'un membre, selon la surface (fiche membre ou bureau SSE). */
+    public static function baseUrl(int $userId, bool $sse): string
+    {
+        return $sse ? url('atak/sse/papiers/membres/' . $userId) : effectifs_workspace_url('membres/' . $userId . '/papiers');
     }
 
     /**
@@ -72,7 +88,7 @@ final class MemberIdentityPapersController
      * @param array<string, mixed> $member ligne users
      * @return array<string, mixed>|null
      */
-    public static function sectionFor(int $tenantId, array $member): ?array
+    public static function sectionFor(int $tenantId, array $member, bool $sse = false): ?array
     {
         try {
             $rights = self::currentRights();
@@ -89,7 +105,7 @@ final class MemberIdentityPapersController
                 $data['countries']
             );
             $data['maps'] = self::maps();
-            $data['base'] = effectifs_workspace_url('membres/' . $userId . '/papiers');
+            $data['base'] = self::baseUrl($userId, $sse);
 
             return $data;
         } catch (\Throwable $e) {
@@ -189,7 +205,7 @@ final class MemberIdentityPapersController
         }
         $name = MemberIdentityPapersService::displayName($identity);
 
-        return Response::view('layout.main', [
+        $data = [
             'title' => $doc !== null ? 'Modifier le papier' : 'Nouveau papier',
             'content' => 'admin.effectifs_workspace.member_paper_form',
             'isBackOfficeShell' => true,
@@ -211,15 +227,22 @@ final class MemberIdentityPapersController
             'mrzPreview' => $proposal['mrz'] ?? [],
             'maps' => self::maps(),
             'canSeeTruth' => $rights['truth'],
-            'base' => effectifs_workspace_url('membres/' . $userId . '/papiers'),
+            'base' => self::baseUrl($userId, $this->sse),
             'backUrl' => $this->back($userId),
             'regenUrl' => $doc !== null
-                ? effectifs_workspace_url('membres/' . $userId . '/papiers/documents/' . (int) $doc['id'] . '/modifier') . '?generer=1'
-                : effectifs_workspace_url('membres/' . $userId . '/papiers/documents/nouveau') . '?' . http_build_query([
+                ? self::baseUrl($userId, $this->sse) . '/documents/' . (int) $doc['id'] . '/modifier?generer=1'
+                : self::baseUrl($userId, $this->sse) . '/documents/nouveau?' . http_build_query([
                     'identity_id' => (int) $identity['id'], 'country' => (string) ($country['code'] ?? ''), 'doc_type' => $type, 'generer' => 1,
                 ]),
             'csrfToken' => Csrf::token(),
-        ]);
+        ];
+        if ($this->sse) {
+            $data['backLabel'] = 'Papiers de ';
+
+            return (new \App\Controllers\Web\SseIdentityRegistryController())->page('atak.sse.papers.member_paper_form', $data + ['papersTab' => 'membres']);
+        }
+
+        return Response::view('layout.main', $data);
     }
 
     public function documentStore(Request $request, array $params = []): Response
@@ -249,7 +272,7 @@ final class MemberIdentityPapersController
         $res = $this->papers->action($tenantId, $userId, $doc, $action, $request->inputString('reason'), $this->actorId());
         Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
         if ($res['ok'] && isset($res['id'])) {
-            return Response::redirect(effectifs_workspace_url('membres/' . $userId . '/papiers/documents/' . (int) $res['id'] . '/modifier'));
+            return Response::redirect(self::baseUrl($userId, $this->sse) . '/documents/' . (int) $res['id'] . '/modifier');
         }
 
         return Response::redirect($this->back($userId));
@@ -343,8 +366,8 @@ final class MemberIdentityPapersController
         if (!$res['ok']) {
             Session::flash('error', (string) $res['error']);
             $form = $doc !== null
-                ? effectifs_workspace_url('membres/' . $userId . '/papiers/documents/' . (int) $doc['id'] . '/modifier')
-                : effectifs_workspace_url('membres/' . $userId . '/papiers/documents/nouveau') . '?identity_id=' . (int) $identity['id']
+                ? self::baseUrl($userId, $this->sse) . '/documents/' . (int) $doc['id'] . '/modifier'
+                : self::baseUrl($userId, $this->sse) . '/documents/nouveau?identity_id=' . (int) $identity['id']
                     . '&country=' . urlencode($input['country_code']) . '&doc_type=' . urlencode($input['doc_type']);
 
             return Response::redirect($form);
@@ -365,17 +388,21 @@ final class MemberIdentityPapersController
         if ((int) Session::get('user_id') < 1 || $tenantId < 1) {
             return Response::redirect(url('login'));
         }
+        $this->sse = str_starts_with(ltrim($request->path(), '/'), 'atak/sse/');
+        $home = $this->sse ? url('atak/sse/papiers/membres') : effectifs_workspace_url();
         $userId = (int) ($params['id'] ?? 0);
         $rights = self::currentRights($this->clearance);
-        if (!$rights['manage']) {
+        // Accès invité au portail SSE (code d'accès) : jamais de gestion des papiers des membres.
+        $guest = $this->sse && (new \App\Services\Sse\SseAccessCodeService())->isGuest();
+        if (!$rights['manage'] || ($this->sse && (!$rights['sse'] || $guest))) {
             Session::flash('error', 'Vous n’êtes pas habilité à gérer les papiers d’identité des membres.');
 
-            return Response::redirect($userId > 0 ? $this->back($userId) : effectifs_workspace_url());
+            return Response::redirect($userId > 0 && (!$this->sse || $rights['sse']) ? $this->back($userId) : ($this->sse ? url('atak/sse') : $home));
         }
         if ($userId < 1 || $this->users->findById($userId, $tenantId) === null) {
             Session::flash('error', 'Membre introuvable.');
 
-            return Response::redirect(effectifs_workspace_url());
+            return Response::redirect($home);
         }
         if ($write && !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
@@ -402,7 +429,7 @@ final class MemberIdentityPapersController
 
     private function back(int $userId): string
     {
-        return effectifs_workspace_url('membres/' . $userId) . '#papiers';
+        return ($this->sse ? self::baseUrl($userId, true) : effectifs_workspace_url('membres/' . $userId)) . '#papiers';
     }
 
     private function actorId(): ?int

@@ -947,6 +947,17 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/pays/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryUpdate'], $mwSsePortal);
     $router->get('/atak/sse/papiers/controles', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checksIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/controles/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checkShow'], $mwSsePortal);
+    // Papiers des membres (accès direct RENS, sans droit Effectifs) : mêmes actions que l'onglet de la fiche membre.
+    $router->get('/atak/sse/papiers/membres', [\App\Controllers\Web\SseIdentityRegistryController::class, 'membersIndex'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/membres/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'memberShow'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/membres/{id}/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/membres/{id}/documents/{docId}/modifier', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/documents', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentStore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}/action', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentAction'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentUpdate'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/kit', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitSave'], $mwSsePortal);
     $router->get('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectStore'], $mwSsePortal);
     $router->post('/atak/sse/objets/creer', [SsePortalController::class, 'objectStore'], $mwSsePortal);
