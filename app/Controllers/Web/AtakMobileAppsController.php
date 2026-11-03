@@ -23,6 +23,8 @@ use App\Support\AtakMobileReportCatalog;
  *   /m/carte         carte Overwatch de la partie : amis, marqueurs, tracés, appareils, appuis ; poser / modifier /
  *                    retirer ses marqueurs (lectures aux adresses de l'Overwatch, AtakMobileOverwatchAccess)
  *   /m/briefs        briefs air (9-LINE reçus par l'appareil), seulement pour un pilote ou un membre d'équipage
+ *   /m/controle      Contrôle ID (COMSPEC IDENTITY) : contrôles d'identité faits par le joueur dans la partie, détail par
+ *                    niveau, photos ; « Joindre à une FRM » crée un brouillon de fiche à valider par le bureau SSE
  * Écritures en POST avec jeton CSRF (en-tête X-CSRF-Token), limitées en débit ; lectures GET sans corps.
  */
 final class AtakMobileAppsController
@@ -42,6 +44,7 @@ final class AtakMobileAppsController
         private ?AtakDataRepository $atak = null,
         private ?FileRateLimiter $limiter = null,
         private ?AirBriefService $air = null,
+        private ?\App\Services\Sse\SseIdCheckInsightService $idChecks = null,
     ) {
     }
 
@@ -308,6 +311,53 @@ final class AtakMobileAppsController
         return Response::json(['ok' => $ok], $ok ? 200 : 503);
     }
 
+    /** Contrôle ID : mes contrôles d'identité de la partie (le plus récent d'abord), détail par niveau et photos. */
+    public function controle(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+        try {
+            $checks = $this->idChecks()->forMobile($link);
+        } catch (\Throwable) {
+            $checks = [];
+        }
+
+        return $this->page('controle', $link, [
+            'checks' => $checks,
+            'noSteam' => trim((string) ($link['steam_uid'] ?? '')) === '',
+            'openId' => max(0, (int) $request->queryString('id')),
+        ]);
+    }
+
+    /**
+     * « Joindre à une FRM » : brouillon de fiche de renseignement né du contrôle (texte du contrôle, remarque du
+     * joueur), rattaché au contrôle et listé « à valider » dans le bureau SSE. Seulement sur un de mes contrôles.
+     */
+    public function controleFrm(Request $request, array $params = []): Response
+    {
+        $link = $this->guardPost($request);
+        if ($link instanceof Response) {
+            return $link;
+        }
+        $check = $this->idChecks()->mobileCheck($link, (int) ($params['id'] ?? 0));
+        if ($check === null) {
+            return Response::json(['ok' => false, 'error' => 'not_found'], 404);
+        }
+        $remark = mb_substr(trim((string) $request->input('remark', '')), 0, 400);
+        $res = $this->idChecks()->draftFromCheck((int) $link['tenant_id'], $check, [
+            'label' => trim((string) ($link['player_name'] ?? '')),
+            'user_id' => (int) $link['user_id'],
+            'steam_id' => (string) ($link['steam_uid'] ?? ''),
+        ], $remark);
+        if (!$res['ok']) {
+            return Response::json($res, 503);
+        }
+
+        return Response::json($res);
+    }
+
     public function logout(Request $request, array $params = []): Response
     {
         $link = $this->guardPost($request);
@@ -363,6 +413,11 @@ final class AtakMobileAppsController
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    private function idChecks(): \App\Services\Sse\SseIdCheckInsightService
+    {
+        return $this->idChecks ??= new \App\Services\Sse\SseIdCheckInsightService();
     }
 
     private function air(): \App\Services\Tactical\AirBriefService
@@ -532,6 +587,7 @@ final class AtakMobileAppsController
             'carte' => 'm.carte',
             'briefs' => 'm.briefs',
             'briefs_denied' => 'm.briefs_denied',
+            'controle' => 'm.controle',
             default => 'm.home',
         };
         $response = Response::view($template, $data + [

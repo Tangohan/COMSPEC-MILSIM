@@ -38,6 +38,37 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 3.0.2 : COMSPEC IDENTITY lot 2, fiches de contrôle partagées en Bluetooth et en NFC, alertes vibreur seul, Contrôle ID sur le vrai téléphone (ATAK natif 3.0.2.AG - Austin)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 3.0.2 : fiches de contrôle d'identité partagées, vibreur seul, Contrôle ID sur votre téléphone
+- Une fiche de contrôle d'identité (papier lu, verdict, niveaux de contrôle, photo, contrôleur, heure, position) se partage depuis l'app Contrôle ID : en Bluetooth à un équipier appairé, ou en NFC en posant son téléphone contre le sien, sans appairage.
+- La fiche reçue s'ouvre dans une vue dédiée de l'app Bluetooth : verdict en grand, détail de chaque niveau, carte sur le lieu du contrôle et « Joindre à une FRM ».
+- Nouvelle alerte « vibreur seul » : le téléphone vibre sans aucun son ni bandeau à l'écran, pour être prévenu discrètement ; le message reste dans le centre de notifications.
+- Un compte rendu SPOTREP peut maintenant s'ouvrir déjà rempli par une autre app (comme le SALUTE).
+- Sur mon téléphone : nouvelle app Contrôle ID, avec l'historique de vos contrôles de la partie, le détail par niveau, les photos et « Joindre à une FRM » pour le bureau SSE.
+- Sur Athena : le dossier d'une personne regroupe ses contrôles par opération avec leurs photos, et le bureau SSE a un tableau de bord identité de l'opération (contrôles, détections, faux, recherchés interpellés, fiches à valider).
+EN : ATAK 3.0.2: shared identity check sheets, vibrate-only alerts, ID Check on your phone
+- An identity check sheet (document read, verdict, check levels, photo, checker, time, location) can be shared from the ID Check app: over Bluetooth to a paired teammate, or over NFC by holding your phone against theirs, no pairing needed.
+- A received sheet opens in a dedicated view of the Bluetooth app: big verdict, every level in detail, map on the check location and "Attach to an FRM".
+- New "vibrate only" alert: the phone vibrates with no sound and no banner on screen, for a discreet heads-up; the message stays in the notification centre.
+- A SPOTREP report can now open already filled in by another app (like the SALUTE).
+- On my phone: new ID Check app, with the history of your checks in the game, each level in detail, photos and "Attach to an FRM" for the SSE office.
+- On Athena: a person's file groups their checks by operation with photos, and the SSE office has an operation identity dashboard (checks, detections, forgeries, wanted persons apprehended, reports to validate).
+
+### Détail technique
+- **Version 3.0.2** : `VERSION` / `VERSION_STR` « 3.0.2 », `VERSION_NAME` « 3.0.2.AG - Austin » ; COMSPEC Link inchangé (2.0.118) ; Overwatch connect inchangé (1.6.33).
+- **Fiche CONTRÔLE ID** (`fn_btItems` sorte `idc`, `missionNamespace COMSPEC_ATAK_IdChecks`, 30 dernières) : `idcStore` accepte le contrôle du SSE tel quel (HashMap `doc`, `levels` 0..3) ou des champs à plat ; transport en paires, recréée à la réception (`from`, `at`) ; liste de l'onglet FICHES, résumé « Reçus », `idcRows` pour la vue dédiée (bandeau de verdict, `hero` photo, lignes `check` par niveau, infos).
+- **Partage** (`fn_btAction`) : `shareIdCheck` (vue dédiée avec appareils appairés à portée et NFC), `shareIdCheckNfc` (proposée tout de suite à l'ATAK le plus proche), `idcOpen` / `idcClose` / `idcSend` / `idcNfc` / `idcFrm` / `idcMap`. NFC : `comspec_atak_native_bt_nfc_range` (2 m), sans appairage ni Bluetooth ; drapeau NFC porté par l'offre, la demande en attente et l'envoi (portée vérifiée à l'acceptation et à la livraison) ; demandes NFC affichées même Bluetooth éteint (`fn_pageBluetooth`).
+- **FRM depuis la fiche** : même brouillon que `fn_idFrm` du SSE, plus la clé `idCheck` ; `fn_frsSubmit` envoie `id_check_ref` : le site rattache la fiche et ses pièces jointes au contrôle.
+- **Vibreur seul** : `fn_notify` 6ᵉ paramètre `"vibrate"` (pas de toast, entrée `discreet` au centre de notifications, cloche non lue) ; `fn_vibrate [true]` sans son ; `fn_lockScreen` et la montre (`fn_watch`) ignorent les entrées discrètes.
+- **SPOTREP pré-rempli** : `uiNamespace COMSPEC_ATAK_SpotrepDraft` lu une fois à l'ouverture de l'app Comptes rendus (`fn_pageReports`), action `prefill` de `fn_reportAction` (propositions du jeu pour les champs vides). Le SALUTE l'était déjà (`COMSPEC_ATAK_SaluteDraft`).
+- **Sur mon téléphone** : app `controle` dans `fn_mobileQr` (page `/m/controle`).
+- **Site** : `/m/controle` (contrôles du joueur sur la carte de la partie, détail par niveau, photos, brouillon FRM « à valider »), dossier RENS de la personne (contrôles par opération et carte, photos des fiches liées, verdicts), tableau de bord identité du bureau SSE (`/atak/sse/papiers/tableau`), colonne `sse_id_checks.field_note_id` (migration 3750), niveaux numériques acceptés par `POST /api/sse/identity/checks`.
+- **i18n** : 55 phrases ATAK et 74 phrases du site traduites en anglais.
+- **À tester en jeu** : app Contrôle ID du SSE → partager une fiche en Bluetooth (deux joueurs appairés, 15 m) puis en NFC (moins de 2 m, Bluetooth éteint chez l'un), acceptation, vue dédiée (photo, niveaux, CARTE, JOINDRE À UNE FRM), FRM envoyée avec photo puis visible sur la fiche du contrôle sur Athena ; notification vibreur seul (aucun son, aucun bandeau, écran verrouillé et montre sans bandeau, entrée au centre de notifications) ; SPOTREP pré-rempli par le SSE ; QR code Sur mon téléphone de l'app Contrôle ID ; Bluetooth existant (photos, musique, données, fiches SEEK et SSE) inchangé.
+
 ## Pack 3.0.1 : optimisation, moins de travail à chaque image sur la carte, les zones et les routes (ATAK natif 3.0.1.AG - Austin)
 
 ### Résumé joueur

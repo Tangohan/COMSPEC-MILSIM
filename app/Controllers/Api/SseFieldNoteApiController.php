@@ -216,6 +216,17 @@ final class SseFieldNoteApiController
         $result = $this->noteService->create($tenant, $input);
         $note = $result['note'];
 
+        // Fiche née d'un contrôle d'identité (ATAK 3.0.2 : « Joindre à une FRM » de la fiche CONTRÔLE ID) : rattachée
+        // au contrôle, ses pièces jointes deviennent les photos du contrôle.
+        $idCheckRef = trim((string) ($body['id_check_ref'] ?? ''));
+        if ($idCheckRef !== '' && (int) ($note['id'] ?? 0) > 0) {
+            try {
+                (new \App\Services\Sse\SseIdCheckInsightService())->linkNote($tenant, $idCheckRef, (int) $note['id']);
+            } catch (\Throwable) {
+                // Le rattachement est un confort : la fiche est enregistrée quoi qu'il arrive.
+            }
+        }
+
         return Response::json([
             'ok' => true,
             'created' => $result['created'],

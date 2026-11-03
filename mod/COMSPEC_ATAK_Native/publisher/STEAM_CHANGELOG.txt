@@ -1,3 +1,35 @@
+[h1]COMSPEC ATAK — Mise à jour 3.0.2.AG - Austin[/h1]
+[b]Publication : 03/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 3.0.2, quittez Arma 3 complètement, puis relancez. Pour COMSPEC IDENTITY, gardez COMSPEC SSE à jour.
+[/quote]
+
+[h2]COMSPEC IDENTITY : fiches de contrôle partagées[/h2]
+[list]
+[*] Une fiche de contrôle d'identité (papier lu, verdict, niveaux de contrôle, photo, contrôleur, heure, position) se partage depuis l'app Contrôle ID : en Bluetooth à un équipier appairé, ou en NFC en posant son téléphone contre le sien, sans appairage.
+[*] La fiche reçue s'ouvre dans une vue dédiée de l'app Bluetooth : verdict en grand, détail de chaque niveau, carte sur le lieu du contrôle et « Joindre à une FRM ».
+[*] La fiche FRM jointe à un contrôle, avec sa photo, est rattachée au contrôle sur Athena.
+[/list]
+
+[h2]Notifications[/h2]
+[list]
+[*] Nouvelle alerte « vibreur seul » : le téléphone vibre sans aucun son ni bandeau, pour être prévenu discrètement ; le message reste dans le centre de notifications.
+[*] Un compte rendu SPOTREP peut s'ouvrir déjà rempli par une autre app.
+[/list]
+
+[h2]Sur mon téléphone et Athena[/h2]
+[list]
+[*] Nouvelle app Contrôle ID sur votre vrai téléphone : vos contrôles de la partie, le détail par niveau, les photos et « Joindre à une FRM ».
+[*] Le dossier d'une personne regroupe ses contrôles par opération avec leurs photos ; le bureau SSE a un tableau de bord identité de l'opération.
+[/list]
+
+[h2]Composants[/h2]
+[list]
+[*] Téléphone ATAK 3.0.2.AG - Austin
+[*] COMSPEC Link 2.0.118
+[*] Overwatch connect 1.6.33 · Overwatch main 1.4.8
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 3.0.1.AG - Austin[/h1]
 [b]Publication : 03/11/2026[/b]
 [quote]
