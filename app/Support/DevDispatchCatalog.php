@@ -294,6 +294,23 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1356, '2026-11-03', 'SSE 1.2.0 : des suspects qui réagissent, des checkpoints tenus par l’IA, la photo du document', 'Le contrôle d’identité du mod SSE passe à la version 1.2.0. Une personne contrôlée ne répond plus d’une seule phrase : selon qui elle est (civil, insurgé, cible prioritaire, agent sous couverture, policier), son état (menottée, blessée) et la situation (nombre de soldats autour, armes pointées sur elle, couvre-feu, checkpoint), elle coopère, ment en présentant les papiers de sa couverture avec une histoire qui colle, devient nerveuse, refuse, s’enfuit, menace, se rend ou appelle des renforts qui accourent. Les joueurs le voient : elle hésite avant de répondre, regarde autour d’elle, hoche ou secoue la tête, lève les mains, et ses phrases courtes arrivent sur le téléphone des joueurs proches. Mettre un suspect en joue l’empêche de fuir et le pousse à se rendre. Les missions peuvent maintenant poser des checkpoints tenus par l’IA, dans l’éditeur ou par le Zeus : les gardes arrêtent les joueurs qui passent, demandent leurs papiers, les lisent avec l’équipement du poste (à l’œil, scanner de bande, lecteur de puce ou liaison avec les fichiers), regardent l’arme, la tenue et le comportement, puis laissent passer, fouillent, retiennent, donnent l’alerte ou ouvrent le feu sur une menace armée ; ils contrôlent aussi les passants. Le Zeus peut déclencher un contrôle, imposer la réaction d’une IA et décréter un couvre-feu. Côté renseignement, le bouton Photographier joint la photo du document à la fiche FRM préparée depuis le contrôle, qui reprend aussi la lecture de la bande et de la puce, la position, l’heure et le contrôleur ; les comptes rendus SALUTE et SPOTREP s’ouvrent déjà remplis depuis l’app Contrôle ID ; le compte rendu de fin de mission liste chaque contrôle notable.', [
+                'IA réalistes au contrôle : coopère, ment, nerveuse, refuse, fuit, menace, se rend, appelle des renforts',
+                'Checkpoints IA dans l’éditeur et pour le Zeus : rayon, camp, équipement du poste, sévérité',
+                'Zeus : déclencher un contrôle, imposer la réaction d’une IA, couvre-feu',
+                'Photographier le document depuis la visionneuse ou l’app Contrôle ID, photo jointe à la fiche FRM',
+                'SALUTE et SPOTREP pré-remplis depuis un contrôle',
+                'Compte rendu de fin de mission : une ligne par contrôle notable',
+                'Avec le téléphone 3.0.2 : fiche du contrôle partagée en Bluetooth ou en NFC, Sur mon téléphone, alerte en vibreur seul, fiche FRM et photo rattachées au contrôle sur Athena',
+                'Réglages : IA réalistes, agressivité, distance des checkpoints, délai pour présenter ses papiers, contrôle des passants, couvre-feu',
+            ], [
+                'Fiche FRM d’un contrôle plus complète : contrôleur, date, heure, position, lecture de la bande et de la puce, photo',
+                'Réponses des personnes contrôlées traduites pour un téléphone en anglais',
+            ], [], ['atak', 'intel'], [
+                'Mettez à jour le mod COMSPEC SSE 1.2.0 (avec le pack ATAK 3.0.1 ou plus), quittez Arma complètement et relancez.',
+                'Essai : poser un checkpoint IA dans l’éditeur avec quelques soldats synchronisés, s’y présenter avec et sans papiers, arme à la main, en courant ; contrôler des civils et des insurgés, les mettre en joue, les laisser seuls ; photographier un document puis ouvrir la fiche FRM.',
+            ], 'SSE 1.2.0'),
+
             $pr(1354, '2026-11-03', 'ATAK 3.0.1 : carte, Zones et Routes plus légères', 'Le téléphone passe en version 3.0.1, centrée sur l’optimisation. La carte fait beaucoup moins de calculs à chaque image quand des plans de l’app Zones ou des routes sont affichés, ce qui réduit les saccades, surtout téléphone porté ; le dessin reste identique. Le bandeau du curseur ne recherche plus la zone sous le curseur à chaque mouvement de souris quand rien n’a changé, et la barre d’état du téléphone (réseau, batterie, heure, météo) n’est plus réécrite chaque seconde sans raison. L’onglet Debug › PERFS gagne une section « Carte et papiers SSE » qui montre le temps passé par la carte, les zones, les routes et les menus de papiers du mod SSE, pour signaler précisément un ralentissement.', [
                 'Onglet Debug › PERFS : section « Carte et papiers SSE »',
             ], [

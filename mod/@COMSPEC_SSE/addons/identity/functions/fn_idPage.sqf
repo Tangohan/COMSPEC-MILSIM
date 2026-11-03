@@ -1,7 +1,9 @@
 /*
     App « Contrôle ID » du téléphone ATAK (page IDCHECK, déclarée dans COMSPEC_ATAK_Apps du SSE).
       CONTRÔLE    document en cours : identité imprimée, étapes N0 visuel · N1 MRZ · N2 puce · N3 base, constats,
-                  bandeau de verdict ; boutons de lecture (barre de progression ACE), Transmettre, Joindre à une FRM
+                  bandeau de verdict ; boutons de lecture (barre de progression ACE), Transmettre, Joindre à une FRM,
+                  Photographier (photo du document jointe à la FRM), SALUTE et SPOTREP pré-remplis ;
+                  ATAK 3.0.2 et plus : Partager (Bluetooth), NFC (dos à dos), Sur mon téléphone (QR, page /m/controle)
       HISTORIQUE  50 derniers contrôles du joueur (local) ; un clic rouvre la fiche
     Params (fn_pageRender de l'ATAK) : [page, rectangle]. Actions : comspec_sse_fnc_idAction.
 */
@@ -74,6 +76,7 @@ if (_tab isEqualTo "history") then {
     _rows pushBack ["info", "Né(e) le" call _tr, format ["%1 · %2", _d getOrDefault ["dob", ""], [_d getOrDefault ["pob", ""]] call _esc]];
     _rows pushBack ["info", "Expire le" call _tr, _d getOrDefault ["expires", ""]];
     if ((_cur getOrDefault ["subjName", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Contrôlé" call _tr, [_cur get "subjName"] call _esc]; };
+    if ((_cur getOrDefault ["photo", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Photo du document" call _tr, format ["%1 · %2", _cur getOrDefault ["photoClock", ""], "jointe à la FRM" call _tr]]; };
     private _stateOf = {
         private _r = _lv getOrDefault [_this, createHashMap];
         if ((count _r) isEqualTo 0) exitWith { "todo" };
@@ -102,6 +105,18 @@ if (_tab isEqualTo "history") then {
             ["Envoi au portail Athena (file d'attente hors liaison).", "Sans liaison Athena : mis en file d'attente."] select !_dll],
         ["Joindre à une FRM" call _tr, ["frm"] call _act]
     ]];
+    _rows pushBack ["buttons", [
+        ["Photographier" call _tr, ["photo"] call _act, false, true, "Photo du document jointe à la fiche FRM (pièces jointes de l'app FRS)."],
+        ["SALUTE" call _tr, ["salute"] call _act, false, true, "Compte rendu SALUTE pré-rempli avec ce contrôle."],
+        ["SPOTREP" call _tr, ["spotrep"] call _act, false, true, "Compte rendu SPOTREP pré-rempli avec ce contrôle."]
+    ]];
+    if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then {
+        _rows pushBack ["buttons", [
+            ["Partager" call _tr, ["share"] call _act, false, true, "Fiche du contrôle envoyée en Bluetooth à un équipier appairé."],
+            ["NFC" call _tr, ["nfc"] call _act, false, true, "Fiche du contrôle tendue au téléphone le plus proche (2 m), sans appairage."],
+            ["Sur mon téléphone" call _tr, ["mobile"] call _act, false, true, "QR code : vos contrôles de la partie sur votre vrai téléphone."]
+        ]];
+    };
     _rows pushBack ["text", format ["<t size='0.8' color='#8b98a7'>%1</t>", ("SIMULATION : documents et pays fictifs." call _tr) call _esc]];
 };
 

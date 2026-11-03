@@ -1,16 +1,16 @@
 /*
-    Réaction d'une IA à « Papiers, s'il vous plaît » (SERVEUR). Lot 1 : règles simples, l'automate complet viendra au
-    Lot 3 (checkpoints, nervosité, mensonges).
+    Réaction d'une IA à « Papiers, s'il vous plaît » (SERVEUR).
     [_unit, _controller] call comspec_sse_fnc_idAiAnswer -> HashMap
       answer  present (docId) | refuse | flee | none | search (entravé, inconscient : à fouiller)
-      text    phrase pour le contrôleur
-    Civil : présente (réglage, 90 %) ; insiste une 2e fois : une chance sur deux de plus.
-    Insurgé : présente ses faux, sans broncher. HVT : présente sa couverture.
-    Recherché armé et libre de ses mouvements : refuse, ou s'enfuit (150 m, peut fuir).
-    Menotté, rendu : présente si on le lui demande (sinon fouille). Inconscient : à fouiller.
+      text    phrase pour le contrôleur          delay  hésitation avant la réponse (s)
+      state   état de l'automate (IA réalistes)
+    IA réalistes (réglage, défaut) : décision de l'automate CBA (fn_idAiFsm / fn_idAiBrain) selon le profil, l'état,
+    le contexte et la tension ; un menteur présente le document de sa couverture (ou ses faux).
+    Sans l'automate : règles du Lot 1 (civil présente à 90 %, insurgé ses faux, HVT sa couverture, recherché armé
+    refuse ou s'enfuit ; menotté, rendu : présente ; inconscient : à fouiller).
 */
 params [["_u", objNull, [objNull]], ["_ctrl", objNull, [objNull]]];
-private _res = createHashMapFromArray [["answer", "none"], ["docId", ""], ["text", ""]];
+private _res = createHashMapFromArray [["answer", "none"], ["docId", ""], ["text", ""], ["delay", 0], ["state", ""]];
 if (isNull _u || {!alive _u}) exitWith { _res set ["answer", "search"]; _res set ["text", "La personne ne répond pas : fouillez-la."]; _res };
 private _uncon = (_u getVariable ["ACE_isUnconscious", false]) || {(lifeState _u) isEqualTo "INCAPACITATED"};
 if (_uncon) exitWith { _res set ["answer", "search"]; _res set ["text", "La personne ne répond pas : fouillez-la."]; _res };
@@ -36,6 +36,8 @@ private _db = toLower (_u getVariable ["COMSPEC_SSE_BioDb", "auto"]);
 ["comspec_sse_bioAnimSubject", [_u, _ctrl, ""], _u] call CBA_fnc_targetEvent;
 
 if (_docs isEqualTo []) exitWith {
+    // Sans papiers : il reste interpellé (l'automate le fait réagir ensuite : nervosité, fuite…).
+    if (!_restrained) then { ["engage", [_u, _ctrl]] call comspec_sse_fnc_idAiFsm; };
     _res set ["answer", ["none", "search"] select _restrained];
     _res set ["text", "Il affirme ne pas avoir de papiers sur lui."];
     _res
@@ -43,6 +45,27 @@ if (_docs isEqualTo []) exitWith {
 if (_restrained) exitWith {
     _res set ["answer", "present"]; _res set ["docId", call _pickDoc];
     _res set ["text", "Il désigne sa poche : vous prenez ses papiers."];
+    _res
+};
+// IA réalistes : l'automate décide (et continue ensuite d'évoluer : nervosité, fuite, reddition…).
+if ((missionNamespace getVariable ["comspec_sse_id_aiFsm", true]) && {!isNil "CBA_statemachine_fnc_create"}) exitWith {
+    (["ask", [_u, _ctrl]] call comspec_sse_fnc_idAiFsm) params [["_st", "coopere"], ["_delay", 0]];
+    _res set ["state", _st];
+    _res set ["delay", _delay];
+    // Menteur : le document de sa couverture (ou ses faux) d'abord.
+    private _liarDoc = "";
+    { if (((["doc", [_x]] call comspec_sse_fnc_idRegistry) getOrDefault ["kind", ""]) in ["cover", "forged"]) exitWith { _liarDoc = _x; }; } forEach _docs;
+    private _give = { params ["_t"]; _res set ["answer", "present"]; _res set ["docId", [call _pickDoc, _liarDoc] select (_liarDoc isNotEqualTo "")]; _res set ["text", _t]; };
+    switch (_st) do {
+        case "ment": { [selectRandom ["Il vous tend ses papiers avec assurance.", "Il sourit et vous tend ses papiers sans hésiter."]] call _give; };
+        case "nerveux": { ["Il hésite, jette un regard autour de lui, puis vous tend ses papiers d'une main qui tremble."] call _give; };
+        case "rendu": { ["Il lève les mains : vous prenez ses papiers."] call _give; };
+        case "refuse": { _res set ["answer", "refuse"]; _res set ["text", selectRandom ["Il refuse de montrer ses papiers et croise les bras.", "Il secoue la tête : pas de papiers pour vous."]]; };
+        case "renforts": { _res set ["answer", "refuse"]; _res set ["text", "Il refuse et crie quelque chose vers les maisons voisines !"]; };
+        case "agressif": { _res set ["answer", "refuse"]; _res set ["text", "Il recule d'un pas, la main sur son arme !"]; };
+        case "fuit": { _res set ["answer", "flee"]; _res set ["text", "Il recule, puis s'enfuit en courant !"]; };
+        default { ["Il fouille ses poches et vous tend ses papiers."] call _give; };
+    };
     _res
 };
 // Recherché, armé, libre : refus ou fuite.

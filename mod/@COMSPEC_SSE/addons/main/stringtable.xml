@@ -52,6 +52,11 @@
             <English>SSE equipment</English>
             <French>Le matériel SSE</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_02B0B86BAB">
+            <Original>Checkpoint name</Original>
+            <English>Checkpoint name</English>
+            <French>Nom du poste</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_02E1A2A4CC">
             <Original>0 = never. No effect on a temporary drill.</Original>
             <English>0 = never. No effect on a temporary drill.</English>
@@ -102,6 +107,11 @@
             <English>Shows the FORCE ACCESS button: bypasses the password after the cracking time, without typing anything.</English>
             <French>Affiche le bouton FORCER L'ACCÈS : contourne le mot de passe au bout de la durée de forçage, sans rien saisir.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_03E9E5EBB4">
+            <Original>How the AI reacts when checked. Automatic: based on biometrics, papers and side. Insurgent: lies, gets nervous, flees. HVT: lies with aplomb, flees or threatens. Agent: solid cover. Police: always cooperates.</Original>
+            <English>How the AI reacts when checked. Automatic: based on biometrics, papers and side. Insurgent: lies, gets nervous, flees. HVT: lies with aplomb, flees or threatens. Agent: solid cover. Police: always cooperates.</English>
+            <French>Comment l'IA réagit quand on la contrôle. Automatique : selon la biométrie, ses papiers et son camp. Insurgé : ment, s'énerve, fuit. HVT : ment avec aplomb, fuit ou menace. Agent : couverture solide. Policier : coopère toujours.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_04014B10EE">
             <Original>Item 2 — grid</Original>
             <English>Item 2 — grid</English>
@@ -116,6 +126,11 @@
             <Original>Every hour</Original>
             <English>Every hour</English>
             <French>Toutes les heures</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_05D49BB51C">
+            <Original>Strict</Original>
+            <English>Strict</English>
+            <French>Stricte</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_05E0AFA220">
             <Original>Label of the button that sends the record to the command post. Empty = TRANSMIT.</Original>
@@ -201,6 +216,11 @@
             <Original>&lt;t color='#7fd08a'&gt;What is a dataset?&lt;/t&gt;&lt;br/&gt;A ready-to-play scenario: a list of named roles (leader, bomb maker, courier...), the links between them and a fixed seed. The same roles always give the same names, aliases, phone numbers, documents and fingerprints, from one session to the next and from one server to another.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Available datasets&lt;/t&gt;&lt;br/&gt;FALCON, Iraqi cell 2012 (seed FALCON-IQ-2012-A), six roles: sector leader ABU KARIM (HVT), IED technician « L'INGÉNIEUR », border courier « LE CHAUFFEUR », financial relay « LE CHANGEUR », safehouse keeper « LE LOCATAIRE », a civilian shopkeeper. The list can also be read in Zeus (Scenario director, List datasets) and on Athena (SSE Office, Mission models, Mission kits).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Reveal levels&lt;/t&gt;&lt;br/&gt;0 Surface: the leader under his alias and the civilian.&lt;br/&gt;1 Tactical: + IED technician and courier (recommended).&lt;br/&gt;2 Field: + financial relay and safehouse keeper.&lt;br/&gt;3 Full truth: everything, for a debrief or the Zeus.&lt;br/&gt;The level decides which roles are handed out: you need at least as many people in the radius (FALCON: 2, 4, then 6).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Step by step (Eden)&lt;/t&gt;&lt;br/&gt;1. Place the cell members, grouped, away from the players.&lt;br/&gt;2. Place the Scenario director module (category 3. Mission and scenario) in the middle.&lt;br/&gt;3. Action: Apply the dataset. Dataset: FALCON. Level: 1. Radius: big enough to cover the group.&lt;br/&gt;4. At start, the person closest to the module becomes the leader, then the next ones in role order.&lt;br/&gt;To force a role on a specific person: their attributes, COMSPEC SSE — Intelligence, Mission dataset and Role in the dataset.</Original>
             <English>&lt;t color='#7fd08a'&gt;What is a dataset?&lt;/t&gt;&lt;br/&gt;A ready-to-play scenario: a list of named roles (leader, bomb maker, courier...), the links between them and a fixed seed. The same roles always give the same names, aliases, phone numbers, documents and fingerprints, from one session to the next and from one server to another.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Available datasets&lt;/t&gt;&lt;br/&gt;FALCON, Iraqi cell 2012 (seed FALCON-IQ-2012-A), six roles: sector leader ABU KARIM (HVT), IED technician « L'INGÉNIEUR », border courier « LE CHAUFFEUR », financial relay « LE CHANGEUR », safehouse keeper « LE LOCATAIRE », a civilian shopkeeper. The list can also be read in Zeus (Scenario director, List datasets) and on Athena (SSE Office, Mission models, Mission kits).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Reveal levels&lt;/t&gt;&lt;br/&gt;0 Surface: the leader under his alias and the civilian.&lt;br/&gt;1 Tactical: + IED technician and courier (recommended).&lt;br/&gt;2 Field: + financial relay and safehouse keeper.&lt;br/&gt;3 Full truth: everything, for a debrief or the Zeus.&lt;br/&gt;The level decides which roles are handed out: you need at least as many people in the radius (FALCON: 2, 4, then 6).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Step by step (Eden)&lt;/t&gt;&lt;br/&gt;1. Place the cell members, grouped, away from the players.&lt;br/&gt;2. Place the Scenario director module (category 3. Mission and scenario) in the middle.&lt;br/&gt;3. Action: Apply the dataset. Dataset: FALCON. Level: 1. Radius: big enough to cover the group.&lt;br/&gt;4. At start, the person closest to the module becomes the leader, then the next ones in role order.&lt;br/&gt;To force a role on a specific person: their attributes, COMSPEC SSE — Intelligence, Mission dataset and Role in the dataset.</English>
             <French>&lt;t color='#7fd08a'&gt;Un dataset, c'est quoi ?&lt;/t&gt;&lt;br/&gt;Un scénario prêt à jouer : une liste de rôles nommés (chef, artificier, courrier...), les liens entre eux et une graine fixe. Les mêmes rôles donnent toujours les mêmes noms, alias, numéros de téléphone, documents et empreintes, d'une partie à l'autre et d'un serveur à l'autre.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Datasets disponibles&lt;/t&gt;&lt;br/&gt;FALCON, cellule irakienne de 2012 (graine FALCON-IQ-2012-A), six rôles : chef de secteur ABU KARIM (HVT), technicien IED « L'INGÉNIEUR », courrier frontière « LE CHAUFFEUR », relais financier « LE CHANGEUR », gardien de planque « LE LOCATAIRE », un civil commerçant. La liste se lit aussi au Zeus (Directeur de scénario, Lister les datasets) et sur Athena (Bureau SSE, Modèles de mission, Kits mission).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Les niveaux de révélation&lt;/t&gt;&lt;br/&gt;0 Surface : le chef sous son alias et le civil.&lt;br/&gt;1 Tactique : + technicien IED et courrier (conseillé).&lt;br/&gt;2 Terrain : + relais financier et gardien de planque.&lt;br/&gt;3 Vérité complète : tout, pour un débriefing ou le Zeus.&lt;br/&gt;Le niveau décide quels rôles sont distribués : il faut au moins autant de personnes dans le rayon (FALCON : 2, 4, puis 6).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Pas à pas (Eden)&lt;/t&gt;&lt;br/&gt;1. Posez les personnes de la cellule, groupées, loin des joueurs.&lt;br/&gt;2. Posez le module Directeur de scénario (catégorie 3. Mission et scénario) au milieu.&lt;br/&gt;3. Action : Appliquer le dataset. Dataset : FALCON. Niveau : 1. Rayon : assez grand pour couvrir le groupe.&lt;br/&gt;4. Au lancement, la personne la plus proche du module devient le chef, puis les suivantes dans l'ordre des rôles.&lt;br/&gt;Pour imposer un rôle à une personne précise : ses attributs, COMSPEC SSE — Renseignement, Dataset mission et Rôle dans le dataset.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_09E57A77DF">
+            <Original>Optional, shown to checked players (e.g. CP North).</Original>
+            <English>Optional, shown to checked players (e.g. CP North).</English>
+            <French>Facultatif, affiché aux joueurs contrôlés (ex. CP Nord).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_09EAEE23DA">
             <Original>Footer (optional)</Original>
@@ -326,6 +346,11 @@
             <Original>Makes the target exploitable by SSE; detailed content is generated on first examination (lightweight). Zeus: place the module on the object. Eden: sync the objects.</Original>
             <English>Makes the target exploitable by SSE; detailed content is generated on first examination (lightweight). Zeus: place the module on the object. Eden: sync the objects.</English>
             <French>Rend la cible exploitable SSE ; le contenu détaillé est généré au premier examen (léger). Zeus : posez le module sur l'objet. Eden : synchronisez les objets.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_103DEB4F89">
+            <Original>NFC reader</Original>
+            <English>NFC reader</English>
+            <French>Lecteur NFC</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_1052689464">
             <Original>Dataset</Original>
@@ -486,6 +511,11 @@
             <Original>Readable name shown in Zeus and on Athena, for example « Operation Sable, Takistan 2026 ». Empty: the identifier. Ignored if the campaign already exists, unless filled in (it renames it).</Original>
             <English>Readable name shown in Zeus and on Athena, for example « Operation Sable, Takistan 2026 ». Empty: the identifier. Ignored if the campaign already exists, unless filled in (it renames it).</English>
             <French>Nom lisible affiché au Zeus et sur Athena, par exemple « Opération Sable, Takistan 2026 ». Vide : l'identifiant. Ignoré si la campagne existe déjà, sauf s'il est rempli (il la renomme).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1743A99AA7">
+            <Original>HVT (high-value target)</Original>
+            <English>HVT (high-value target)</English>
+            <French>HVT (cible prioritaire)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_176F12A61A">
             <Original>Watchlist tier 1 · DETAIN</Original>
@@ -836,6 +866,11 @@
             <Original>Command</Original>
             <English>Command</English>
             <French>Commandement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2AC1771BAB">
+            <Original>Visual only: examined by eye (L0). Scanner: MRZ strip (L1). NFC reader: chip (L2). Database link: country and Athena files (L3).</Original>
+            <English>Visual only: examined by eye (L0). Scanner: MRZ strip (L1). NFC reader: chip (L2). Database link: country and Athena files (L3).</English>
+            <French>Visuel seul : examen à l'œil (N0). Scanner : bande MRZ (N1). Lecteur NFC : puce (N2). Liaison base : fichiers du pays et d'Athena (N3).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_2B264D3E23">
             <Original>Serial RS-232 (slow)</Original>
@@ -1217,6 +1252,11 @@
             <English>List SSE templates</English>
             <French>Lister les modèles SSE</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3D97A58A86">
+            <Original>Visual only</Original>
+            <English>Visual only</English>
+            <French>Visuel seul</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3DDBED6623">
             <Original>Fictional country that issued the papers (documents marked SIMULATION). Automatic: mission setting, otherwise based on the map.</Original>
             <English>Fictional country that issued the papers (documents marked SIMULATION). Automatic: mission setting, otherwise based on the map.</English>
@@ -1296,6 +1336,11 @@
             <Original>Item 3 — label</Original>
             <English>Item 3 — label</English>
             <French>Pièce 3 — intitulé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_40455C3377">
+            <Original>Database link</Original>
+            <English>Database link</English>
+            <French>Liaison base</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_4058BD6EBB">
             <Original>Title · evidence file</Original>
@@ -1987,6 +2032,11 @@
             <English>Generation timing</English>
             <French>Moment de la génération</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_62FD4AE52C">
+            <Original>Severity</Original>
+            <English>Severity</English>
+            <French>Sévérité</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_6323D66FED">
             <Original>Automatic: inferred from the object's class (phone, computer, document...).</Original>
             <English>Automatic: inferred from the object's class (phone, computer, document...).</English>
@@ -2091,6 +2141,11 @@
             <Original>Documents</Original>
             <English>Documents</English>
             <French>Documents</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_68BA79C70C">
+            <Original>Civilian (police)</Original>
+            <English>Civilian (police)</English>
+            <French>Civil (police)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_68BFBFB778">
             <Original>Nature of the second piece of intelligence contained.</Original>
@@ -2262,6 +2317,11 @@
             <English>Russia 2020-2024 — Radio / EW</English>
             <French>Russie 2020-2024 — Radio / EW</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6FE6600A2D">
+            <Original>Police, friendly soldier</Original>
+            <English>Police, friendly soldier</English>
+            <French>Policier, militaire ami</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_705F78D09E">
             <Original>Access hint</Original>
             <English>Access hint</English>
@@ -2276,6 +2336,11 @@
             <Original>Mission dataset</Original>
             <English>Mission dataset</English>
             <French>Dataset mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_71C9B6FF5B">
+            <Original>Controlled zone around the module. -1: "Checkpoint distance" setting (COMSPEC SSE › Identity).</Original>
+            <English>Controlled zone around the module. -1: "Checkpoint distance" setting (COMSPEC SSE › Identity).</English>
+            <French>Zone contrôlée autour du module. -1 : réglage « Distance des checkpoints » (COMSPEC SSE › Identité).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_71D3057E17">
             <Original>SSE fingerprint kit</Original>
@@ -2431,6 +2496,11 @@
             <Original>High value - rich file</Original>
             <English>High value - rich file</English>
             <French>Haute valeur — dossier riche</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_79DEB5E3E4">
+            <Original>Lax: lets almost everything through. Strict: searches and detains at the slightest doubt, opens fire on an armed threat.</Original>
+            <English>Lax: lets almost everything through. Strict: searches and detains at the slightest doubt, opens fire on an armed threat.</English>
+            <French>Laxiste : laisse passer presque tout. Stricte : fouille et retient au moindre doute, ouvre le feu sur une menace armée.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_79E31EE88D">
             <Original>Athena connection</Original>
@@ -2597,6 +2667,11 @@
             <English>Pack 1 — entities (one per line)</English>
             <French>Paquet 1 — entités (une par ligne)</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_80CFE2A6F4">
+            <Original>Checkpoint equipment</Original>
+            <English>Checkpoint equipment</English>
+            <French>Équipement du poste</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_8126E6E984">
             <Original>FALCON · Safehouse keeper « LE LOCATAIRE »</Original>
             <English>FALCON · Safehouse keeper « LE LOCATAIRE »</English>
@@ -2712,6 +2787,16 @@
             <English>Links the people on the site to each other.</English>
             <French>Relie les personnes du site entre elles.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_86DAFE2F48">
+            <Original>Undercover agent</Original>
+            <English>Undercover agent</English>
+            <French>Agent sous couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_874AEF3786">
+            <Original>AI checkpoint (identity check)</Original>
+            <English>AI checkpoint (identity check)</English>
+            <French>Checkpoint IA (contrôle d'identité)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_8767304505">
             <Original>&lt;t color='#7fd08a'&gt;SSE campaign (load or create)&lt;/t&gt;&lt;br/&gt;One per mission. Identifier: a short name you choose (OP-SABLE). Created at first start, reloaded afterwards. See the Campaigns chapter.&lt;br/&gt;&lt;t color='#7fd08a'&gt;SSE campaign: save&lt;/t&gt;&lt;br/&gt;Synced to a trigger: saves when it fires (or wipes a temporary drill at mission end).&lt;br/&gt;&lt;t color='#7fd08a'&gt;Scenario director&lt;/t&gt;&lt;br/&gt;Applies a dataset (FALCON) to the people in the radius and sets the reveal level. See Datasets and levels.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Issue SEEK terminal&lt;/t&gt;&lt;br/&gt;Gives the SEEK II to synced units, or to every player in the radius (25 m by default).&lt;br/&gt;&lt;t color='#7fd08a'&gt;Generate from a brief / scenario&lt;/t&gt;&lt;br/&gt;Generates a whole network around the module, from a free brief or a ready-made scenario pack.&lt;br/&gt;&lt;t color='#7fd08a'&gt;SSE document presentation&lt;/t&gt;&lt;br/&gt;Look of the in-game records: a template (Standard, Field, Draft, Archives, Office), then only the texts to change. See Record presentation.&lt;br/&gt;&lt;t color='#7fd08a'&gt;SSE case reference&lt;/t&gt;&lt;br/&gt;Athena case where transmitted records are filed. See Case reference.</Original>
             <English>&lt;t color='#7fd08a'&gt;SSE campaign (load or create)&lt;/t&gt;&lt;br/&gt;One per mission. Identifier: a short name you choose (OP-SABLE). Created at first start, reloaded afterwards. See the Campaigns chapter.&lt;br/&gt;&lt;t color='#7fd08a'&gt;SSE campaign: save&lt;/t&gt;&lt;br/&gt;Synced to a trigger: saves when it fires (or wipes a temporary drill at mission end).&lt;br/&gt;&lt;t color='#7fd08a'&gt;Scenario director&lt;/t&gt;&lt;br/&gt;Applies a dataset (FALCON) to the people in the radius and sets the reveal level. See Datasets and levels.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Issue SEEK terminal&lt;/t&gt;&lt;br/&gt;Gives the SEEK II to synced units, or to every player in the radius (25 m by default).&lt;br/&gt;&lt;t color='#7fd08a'&gt;Generate from a brief / scenario&lt;/t&gt;&lt;br/&gt;Generates a whole network around the module, from a free brief or a ready-made scenario pack.&lt;br/&gt;&lt;t color='#7fd08a'&gt;SSE document presentation&lt;/t&gt;&lt;br/&gt;Look of the in-game records: a template (Standard, Field, Draft, Archives, Office), then only the texts to change. See Record presentation.&lt;br/&gt;&lt;t color='#7fd08a'&gt;SSE case reference&lt;/t&gt;&lt;br/&gt;Athena case where transmitted records are filed. See Case reference.</English>
@@ -2737,10 +2822,20 @@
             <English>IED lab</English>
             <French>Labo d'IED</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_896A2FC8F5">
+            <Original>Side of the guards. Automatic: that of the synchronized units, otherwise of the nearest AI.</Original>
+            <English>Side of the guards. Automatic: that of the synchronized units, otherwise of the nearest AI.</English>
+            <French>Camp des gardes. Automatique : celui des unités synchronisées, sinon des IA les plus proches.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_898AB8D570">
             <Original>Front company</Original>
             <English>Front company</English>
             <French>Entreprise écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8A03A21CE4">
+            <Original>Lax</Original>
+            <English>Lax</English>
+            <French>Laxiste</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_8A3121EE17">
             <Original>3 - Full truth</Original>
@@ -2756,6 +2851,11 @@
             <Original>Name displayed on the machine (e.g. PC-OFFICE).</Original>
             <English>Name displayed on the machine (e.g. PC-OFFICE).</English>
             <French>Nom affiché sur la machine (ex. PC-BUREAU).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8B44D9DB67">
+            <Original>BLUFOR</Original>
+            <English>BLUFOR</English>
+            <French>BLUFOR</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_8B7C63FB42">
             <Original>Technical / IED workshop</Original>
@@ -3107,6 +3207,11 @@
             <English>SD / microSD card collected on site.</English>
             <French>Carte SD / microSD collectée sur site.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9E1A18D1AC">
+            <Original>Zone radius (m)</Original>
+            <English>Zone radius (m)</English>
+            <French>Rayon de la zone (m)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_9E7DD41778">
             <Original>Enforced confidence score (-1 = automatic)</Original>
             <English>Enforced confidence score (-1 = automatic)</English>
@@ -3441,6 +3546,11 @@
             <Original>Radio</Original>
             <English>Radio</English>
             <French>Radio</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B13B943E10">
+            <Original>Checkpoint side</Original>
+            <English>Checkpoint side</English>
+            <French>Camp du poste</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_B1BF2043C0">
             <Original>Places the digital intelligence contract on the object (computer, phone, radio…). Same schema as Eden attributes. No technical engine: the laboratory reads what you enter.</Original>
@@ -3932,6 +4042,11 @@
             <English>Object type</English>
             <French>Nature de l'objet</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C82C13B2DD">
+            <Original>Normal</Original>
+            <English>Normal</English>
+            <French>Normale</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_C83C4B7DD1">
             <Original>Every 15 minutes (recommended)</Original>
             <English>Every 15 minutes (recommended)</English>
@@ -4357,6 +4472,11 @@
             <English>Insurgent cell</English>
             <French>Cellule insurgée</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DE8D4F953A">
+            <Original>Independent</Original>
+            <English>Independent</English>
+            <French>Indépendant</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_DEABE47183">
             <Original>Transmit button label (optional)</Original>
             <English>Transmit button label (optional)</English>
@@ -4542,6 +4662,11 @@
             <English>Position of the person in the organisation chart (ORBAT) of the link chart, from leader to sympathiser.</English>
             <French>Place de la personne dans l'organigramme (ORBAT) du tableau des liens, du chef au sympathisant.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E80F2DBA19">
+            <Original>OPFOR</Original>
+            <English>OPFOR</English>
+            <French>OPFOR</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_E8F8827310">
             <Original>None</Original>
             <English>None</English>
@@ -4637,6 +4762,11 @@
             <English>Pack 2 — channel</English>
             <French>Paquet 2 — canal</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EDA7AF9B0E">
+            <Original>Profile when checked</Original>
+            <English>Profile when checked</English>
+            <French>Profil au contrôle</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_EEEF930C08">
             <Original>Free text written to the campaign log (visible in Zeus and on Athena), for example « objective reached » or « exfil ».</Original>
             <English>Free text written to the campaign log (visible in Zeus and on Athena), for example « objective reached » or « exfil ».</English>
@@ -4706,6 +4836,11 @@
             <Original>Attached to</Original>
             <English>Attached to</English>
             <French>Rattachée à</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F25CFF0659">
+            <Original>MRZ scanner</Original>
+            <English>MRZ scanner</English>
+            <French>Scanner MRZ</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F28E227441">
             <Original>FALCON · Sector leader ABU KARIM (HVT)</Original>
@@ -4946,6 +5081,11 @@
             <Original>Russia 2020-2024 — Reconnaissance</Original>
             <English>Russia 2020-2024 — Reconnaissance</English>
             <French>Russie 2020-2024 — Reconnaissance</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FE5A378E70">
+            <Original>Checkpoint manned by AI: they stop players, ask for their papers and check them with the checkpoint's equipment. Synchronize the guards (otherwise: AI of the side in the zone).</Original>
+            <English>Checkpoint manned by AI: they stop players, ask for their papers and check them with the checkpoint's equipment. Synchronize the guards (otherwise: AI of the side in the zone).</English>
+            <French>Checkpoint tenu par des IA : elles arrêtent les joueurs, demandent leurs papiers et les contrôlent avec l'équipement du poste. Synchronisez les gardes (sinon : IA du camp dans la zone).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_FE74F2DB26">
             <Original>Chooses the look of the SSE records players open in game (subject record, evidence file, report): paper, red banner, titles, footer and buttons. Pick a template; only fill the other fields to change a specific text. One module for the whole mission, placed anywhere. Without this module: Standard template.</Original>

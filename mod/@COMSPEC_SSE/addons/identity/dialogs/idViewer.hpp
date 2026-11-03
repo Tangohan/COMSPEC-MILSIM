@@ -54,6 +54,14 @@ class COMSPEC_SSE_IdViewer {
             action = "['scan'] call comspec_sse_fnc_idViewerOnLoad";
             colorBackground[] = {0.1, 0.3, 0.5, 1};
         };
+        class BtnPhoto: RscButton {
+            idc = 93714;
+            text = "PHOTOGRAPHIER";
+            tooltip = "Photo du document jointe à la fiche FRM (app FRS de l'ATAK)";
+            x = 0.6; y = 0.75; w = 0.12; h = 0.045;
+            action = "['shoot'] call comspec_sse_fnc_idPhoto";
+            colorBackground[] = {0.16, 0.28, 0.2, 1};
+        };
         class BtnClose: RscButton {
             idc = 93713;
             text = "FERMER";
