@@ -43,9 +43,9 @@ final class SseIdDocumentRepository
         return $this->db->insert(
             'INSERT INTO sse_id_documents (tenant_id, context_id, op_key, identity_id, holder_person_id, doc_type, country_code, doc_number,
                 issued_on, expires_on, authority, chip_status, st_origin, st_integrity, st_validity, st_report, st_attribution,
-                forgery_kind, forgery_quality, workflow, notes, created_by_user_id, created_at)
+                forgery_kind, forgery_quality, workflow, notes, layout, print_json, duplicated_from_id, batch_id, created_by_user_id, created_at)
              VALUES (:t, :ctx, :op, :identity, :holder, :type, :country, :number, :issued, :expires, :authority, :chip, :origin,
-                :integrity, :validity, :report, :attribution, :fkind, :fquality, :wf, :notes, :uid, :now)',
+                :integrity, :validity, :report, :attribution, :fkind, :fquality, :wf, :notes, :layout, :print, :dup, :batch, :uid, :now)',
             [
                 't' => $tenantId,
                 'ctx' => $ctx > 0 ? $ctx : null,
@@ -68,6 +68,10 @@ final class SseIdDocumentRepository
                 'fquality' => $s['forgery_quality'],
                 'wf' => 'draft',
                 'notes' => ($n = trim((string) ($data['notes'] ?? ''))) !== '' ? mb_substr($n, 0, 4000) : null,
+                'layout' => \App\Support\SseIdWorkshopCatalog::layout($data['layout'] ?? null),
+                'print' => \App\Support\SseIdWorkshopCatalog::printJson($data['print'] ?? null),
+                'dup' => (int) ($data['duplicated_from_id'] ?? 0) > 0 ? (int) $data['duplicated_from_id'] : null,
+                'batch' => (int) ($data['batch_id'] ?? 0) > 0 ? (int) $data['batch_id'] : null,
                 'uid' => $userId,
                 'now' => gmdate('Y-m-d H:i:s'),
             ]
@@ -111,6 +115,34 @@ final class SseIdDocumentRepository
                 't' => $tenantId,
             ]
         ) > 0;
+    }
+
+    /**
+     * Atelier (lot 6) : modèle d'impression et champs imprimés en plus (taille, yeux, adresse, signature, tampon…).
+     *
+     * @param array<string, mixed>|null $print
+     */
+    public function updatePrint(int $id, int $tenantId, ?string $layout, ?array $print): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_id_documents SET layout = :layout, print_json = :print, updated_at = :now WHERE id = :id AND tenant_id = :t',
+            [
+                'layout' => \App\Support\SseIdWorkshopCatalog::layout($layout),
+                'print' => \App\Support\SseIdWorkshopCatalog::printJson($print),
+                'now' => gmdate('Y-m-d H:i:s'),
+                'id' => $id,
+                't' => $tenantId,
+            ]
+        ) > 0;
+    }
+
+    /** Copies d'un papier (papier dupliqué : son remplaçant). @return list<int> */
+    public function duplicatesOf(int $id, int $tenantId): array
+    {
+        return array_map(static fn (array $r): int => (int) $r['id'], $this->db->fetchAll(
+            'SELECT id FROM sse_id_documents WHERE tenant_id = :t AND duplicated_from_id = :d ORDER BY id',
+            ['t' => $tenantId, 'd' => $id]
+        ));
     }
 
     /** Signalement porté sur le papier (perdu, volé…), sans toucher aux autres statuts. */
@@ -447,6 +479,10 @@ final class SseIdDocumentRepository
             'revoked_at' => $row['revoked_at'] ?? null,
             'revoked_reason' => $row['revoked_reason'] ?? null,
             'notes' => $row['notes'] ?? null,
+            'layout' => \App\Support\SseIdWorkshopCatalog::layout($row['layout'] ?? null),
+            'print' => \App\Support\SseIdWorkshopCatalog::printFields($row['print_json'] ?? null),
+            'duplicated_from_id' => ($row['duplicated_from_id'] ?? null) !== null && (int) $row['duplicated_from_id'] > 0 ? (int) $row['duplicated_from_id'] : null,
+            'batch_id' => ($row['batch_id'] ?? null) !== null && (int) $row['batch_id'] > 0 ? (int) $row['batch_id'] : null,
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => $row['updated_at'] ?? null,
             'identity' => [

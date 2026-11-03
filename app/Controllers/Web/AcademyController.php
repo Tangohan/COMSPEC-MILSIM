@@ -28,6 +28,7 @@ use App\Services\Academy\AcademyBuiltInCourses;
 use App\Services\Academy\AcademyRichText;
 use App\Services\Academy\AcademyOffer;
 use App\Services\Academy\AcademyTracker;
+use App\Services\Academy\AcademyVersionUpgrade;
 use App\Services\Academy\AcademyStudio;
 use App\Services\Academy\AcademyStudioCredentials;
 use App\Services\Training\TrainingCourseMediaUploadService;
@@ -203,7 +204,19 @@ final class AcademyController
                     $instructorBadge = $this->instructorBadge($repository, $rights, $tenantId);
                 }
             }
-            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail', 'offerCanImport', 'offerQuota', 'queue', 'instructorBadge') + $lmsData + [
+            // Parcours sur une ancienne version du cours : badge et passage à la version courante.
+            $currentVersions = $academyStorageReady ? $this->currentVersions($repository, $tenantId) : [];
+            $versionInfo = [];
+            foreach ($states as $stateKey => $item) {
+                if ($stateKey !== '__notes' && ($info = AcademyVersionUpgrade::outdated($item, (string) $stateKey, $currentVersions[$stateKey] ?? null)) !== null) {
+                    $versionInfo[$stateKey] = $info;
+                }
+            }
+            foreach ($instructorView['learners'] as &$followed) {
+                $followed['version'] = AcademyVersionUpgrade::outdated($followed['state'], (string) $followed['course_key'], $currentVersions[$followed['course_key']] ?? null);
+            }
+            unset($followed);
+            return Response::view('academy.space', compact('versionInfo', 'space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail', 'offerCanImport', 'offerQuota', 'queue', 'instructorBadge') + $lmsData + [
                 'academyStorageReady' => $academyStorageReady && !$preview,
                 'viewStep' => $request->queryString('step'),
                 'notice' => Session::get('academy_notice', ''),
@@ -241,6 +254,9 @@ final class AcademyController
             }
             if ($action === 'course_access_save') {
                 return $this->courseAccessAction($request, $repository, $rights, $key, $tenantId, $userId);
+            }
+            if ($action === 'version_upgrade') {
+                return $this->versionUpgradeAction($request, $repository, $rights, $key, $tenantId, $userId);
             }
             if ($action === 'assign') {
                 return $this->assignAction($request, $repository, $rights, $key, $tenantId, $userId);
@@ -297,7 +313,7 @@ final class AcademyController
                             throw new \DomainException('locked');
                         }
                         // La validation du dernier chapitre termine le cours et délivre l'attestation : droit « délivrer ».
-                        if (!$certify && (int) $state['chapter'] + 1 >= count($state['snapshot']['chapters'] ?? [])) {
+                        if (!$certify && AcademyCurriculum::nextUnvalidated($state['validations'] ?? [], count($state['snapshot']['chapters'] ?? []), (int) $state['chapter'] + 1) === null) {
                             throw new \DomainException('certify_required');
                         }
                         return AcademyCurriculum::validateChapter($state, $state['snapshot'], $userId, $comment, time());
@@ -319,7 +335,7 @@ final class AcademyController
                 }
                 $returnSpace = 'instructor';
             } else {
-                $input = ['answer' => $request->input('answer'), 'answers' => $request->input('answers'), 'token' => $request->input('token'), 'reflection' => $request->input('reflection'), 'expected_stage' => $request->input('expected_stage'), 'expected_chapter' => $request->input('expected_chapter')];
+                $input = ['answer' => $request->input('answer'), 'answers' => $request->input('answers'), 'token' => $request->input('token'), 'reflection' => $request->input('reflection'), 'nothing_to_improve' => $request->input('nothing_to_improve'), 'expected_stage' => $request->input('expected_stage'), 'expected_chapter' => $request->input('expected_chapter')];
                 $resultStep = '';
                 $repository->mutate($tenantId, $userId, $key, static function (array $state) use ($action, $input, &$resultStep): array {
                     $next = AcademyCurriculum::transition($state, $state['snapshot'], $action, $input, time());
@@ -339,10 +355,52 @@ final class AcademyController
             if ($e->getMessage() === 'certify_required') {
                 return $this->error('certify_required', 403);
             }
-            return $this->error(in_array($e->getMessage(), ['locked', 'reflection_required', 'not_enrolled'], true) ? $e->getMessage() : 'invalid_content', 422);
+            return $this->error(in_array($e->getMessage(), ['locked', 'reflection_required', 'not_enrolled', 'already_enrolled'], true) ? $e->getMessage() : 'invalid_content', 422);
         } catch (\PDOException) {
             return $this->error('unavailable', 503);
         }
+    }
+
+    /** @return array<string, array<string, mixed>> clé suivie => version courante du cours (intégré ou Studio) */
+    private function currentVersions(AcademyRepository $repository, int $tenantId): array
+    {
+        try {
+            return AcademyVersionUpgrade::currentMap($repository->courses($tenantId), \App\Services\Academy\AcademyBuiltInQualifications::forPdo(\App\Core\Database::getPdo())->lineage($tenantId));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * « Passer à la nouvelle version » : le stagiaire pour lui-même, ou l’encadrement (validation ou inscription) pour
+     * un stagiaire. Progression et validations gardées ; un parcours terminé garde sa licence (jamais révoquée).
+     */
+    private function versionUpgradeAction(Request $request, AcademyRepository $repository, AcademyRights $rights, string $key, int $tenantId, int $userId): Response
+    {
+        $learnerId = (int) $request->input('learner', $userId);
+        if ($learnerId < 1 || ($learnerId !== $userId && !$rights->canTeach($key) && !$rights->can('assign'))) {
+            return $this->error('forbidden', 403);
+        }
+        $current = $this->currentVersions($repository, $tenantId)[$key] ?? null;
+        if ($current === null || $request->inputString('confirm') !== '1') {
+            return $this->error('invalid_content', 422);
+        }
+        $newKey = (string) $current['key'];
+        $from = null;
+        $repository->moveEnrollment($tenantId, $learnerId, $key, $newKey, static function (array $state) use ($key, $current, $userId, &$from): array {
+            $info = AcademyVersionUpgrade::outdated($state, $key, $current);
+            if ($info === null) {
+                throw new \DomainException('locked');
+            }
+            $from = $info;
+            return AcademyVersionUpgrade::upgrade($state, $current, $userId, time());
+        });
+        $this->audit('academy.learner.version_upgraded', $tenantId, $newKey, ['learner' => $learnerId, 'from_course' => $key, 'from_version' => $from['from'] ?? null, 'to_version' => $from['to'] ?? null, 'completed' => $from['completed'] ?? false]);
+        Session::set('academy_notice', 'version_upgraded');
+        if ($learnerId !== $userId) {
+            return Response::redirect(url('academy/instructor') . '#eleve-' . $learnerId . '-' . rawurlencode($newKey), 303);
+        }
+        return Response::redirect($this->classroomUrl($newKey), 303);
     }
 
     /**

@@ -402,3 +402,9 @@ body:has(.academy-disclaimer[open]){overflow:hidden}
   .academy-topbar .academy-context-label{display:none}
 }
 @media(max-width:420px){.academy-topbar__back{margin-left:auto}}
+/* Parcours sur une ancienne version du cours : badge et passage à la version courante. */
+.academy-version { display:flex; flex-wrap:wrap; gap:.4rem .75rem; align-items:flex-start; margin:.4rem 0; }
+.academy-version__up summary { cursor:pointer; font-weight:600; text-decoration:underline; }
+.academy-version__up summary:focus-visible, .academy-check input:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
+.academy-version__up p { max-width:44rem; margin:.4rem 0; font-size:.85rem; }
+.academy-check { display:flex; gap:.5rem; align-items:center; margin-top:.5rem; }

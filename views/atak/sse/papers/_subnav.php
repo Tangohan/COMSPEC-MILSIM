@@ -13,6 +13,14 @@ $papersTabs = [
 if (!empty($canMemberPapers)) {
     $papersTabs['membres'] = ['membres', 'Papiers des membres'];
 }
+// Atelier (COMSPEC IDENTITY, lot 6) : réservé aux responsables RENS (gestion SSE ou habilitation Encadrement).
+$workshopTabs = !empty($canWorkshop) ? [
+    'atelier' => ['atelier', 'Atelier de documents'],
+    'kits' => ['kits-types', 'Kits types'],
+    'preparation' => ['preparation', 'Préparation de mission'],
+    'briefs' => ['briefs', 'Briefs de couverture'],
+    'echanges' => ['echanges', 'Import et export'],
+] : [];
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-papers.css')) . '">';
 ?>
 <div class="idp-sim" role="note">
@@ -31,4 +39,17 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
             <?php endforeach; ?>
         </div>
     </div>
+    <?php if ($workshopTabs !== []): ?>
+        <div class="lab-subnav__group">
+            <span class="lab-subnav__group-label">Atelier</span>
+            <div class="lab-subnav__links" role="list">
+                <?php foreach ($workshopTabs as $key => [$path, $label]): ?>
+                    <?php $active = $papersTab === $key; ?>
+                    <a role="listitem" class="lab-subnav__link<?= $active ? ' is-active' : '' ?>"
+                       href="<?= $h(url('atak/sse/papiers/' . $path)) ?>"
+                       <?= $active ? 'aria-current="page"' : '' ?>><?= $h($label) ?></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 </nav>

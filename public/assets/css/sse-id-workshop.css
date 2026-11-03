@@ -1,0 +1,214 @@
+/* RENS › Atelier de documents (COMSPEC IDENTITY, Lot 6) : aperçu des papiers fictifs, éditeur, préparation de mission. */
+.idw-layout {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: start;
+}
+@media (max-width: 1100px) { .idw-layout { grid-template-columns: minmax(0, 1fr); } }
+.idw-sticky { position: sticky; top: 12px; }
+@media (max-width: 1100px) { .idw-sticky { position: static; } }
+.idw-form fieldset {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-soft, rgba(127, 127, 127, 0.2));
+    border-radius: 6px;
+}
+.idw-form legend { padding: 0 6px; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, inherit); }
+.idw-form .idp-statuses { gap: 8px; }
+.idw-form textarea { width: 100%; min-height: 70px; }
+.idw-note { font-size: 0.82rem; color: var(--muted, inherit); margin: 4px 0 0; }
+.idw-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
+.idw-toolbar .is-active { outline: 2px solid var(--amber, #f59e0b); }
+
+/* Aperçu : faces d'un papier (dimensions proches du format ID-1 et d'une page de passeport). */
+.idw-preview {
+    --idw-c1: #1f4e79;
+    --idw-c2: #c9a227;
+    --idw-ink: #1d2733;
+    --idw-paper: #f4f1e8;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+}
+.idw-preview [hidden],
+.idw-preview:not(.idw-type--passport) [data-kind="passport"],
+.idw-type--passport [data-kind="card"],
+.idw-preview:not(.idw-type--driving_license) .idw-license-only { display: none; }
+.idw-preview[data-show="1"] .idw-face:not(.is-shown) { display: none; }
+.idw-face {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 85.6 / 54;
+    margin: 0;
+    padding: 0 12px 10px;
+    border-radius: 14px;
+    background:
+        repeating-linear-gradient(115deg, rgba(0, 0, 0, 0.025) 0 2px, transparent 2px 9px),
+        var(--idw-paper);
+    color: var(--idw-ink);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.18);
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    font-size: 11px;
+    line-height: 1.25;
+}
+.idw-type--passport .idw-face { max-width: 500px; aspect-ratio: 125 / 88; border-radius: 6px; }
+.idw-face > * { position: relative; z-index: 1; }
+.idw-face .idw-watermark { z-index: 3; }
+.idw-band {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 -12px 8px;
+    padding: 6px 12px;
+    background: linear-gradient(90deg, var(--idw-c1) 62%, var(--idw-c2));
+    color: #fff;
+}
+.idw-band__txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.idw-band__txt b { font-size: 12px; letter-spacing: 0.08em; }
+.idw-band__txt span { font-size: 9px; letter-spacing: 0.12em; opacity: 0.9; }
+.idw-band__sim { font-size: 9px; font-weight: 800; letter-spacing: 0.2em; padding: 2px 5px; border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 3px; }
+.idw-flag { width: 34px; height: 22px; flex: 0 0 auto; border-radius: 2px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6); background: #fff; }
+.idw-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.idw-flag__bands { display: flex; width: 100%; height: 100%; }
+.idw-flag__bands i { flex: 1; }
+.idw-flag__bands i:nth-child(1) { background: var(--idw-c1); }
+.idw-flag__bands i:nth-child(2) { background: #fff; }
+.idw-flag__bands i:nth-child(3) { background: var(--idw-c2); }
+.idw-body { display: flex; gap: 10px; align-items: flex-start; }
+.idw-photo { flex: 0 0 26%; aspect-ratio: 35 / 45; border: 1px solid rgba(0, 0, 0, 0.25); border-radius: 3px; overflow: hidden; background: #e3e0d8; color: var(--idw-c1); }
+.idw-photo img, .idw-photo svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.idw-fields { display: flex; flex-wrap: wrap; gap: 3px 10px; margin: 0; flex: 1; min-width: 0; }
+.idw-fields > div { flex: 1 1 100%; min-width: 0; }
+.idw-fields > .idw-half { flex: 1 1 calc(50% - 10px); }
+.idw-fields dt { font-size: 7.5px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(29, 39, 51, 0.62); }
+.idw-fields dd { margin: 0; font-weight: 700; font-size: 11px; overflow-wrap: anywhere; min-height: 1em; }
+.idw-fields--more { margin-top: 6px; }
+.idw-num { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; color: #b3261e; letter-spacing: 0.06em; }
+.idw-sign { display: flex; flex-direction: column; margin-top: 6px; font-size: 7.5px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(29, 39, 51, 0.62); }
+.idw-sign b { font-family: "Segoe Script", "Brush Script MT", "Lucida Handwriting", cursive; font-size: 15px; font-weight: 400; text-transform: none; letter-spacing: 0; color: #1b3a8a; }
+.idw-mrz {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 6px 12px 8px;
+    background: rgba(255, 255, 255, 0.72);
+    font-family: "OCR B", "OCR-B", "JetBrains Mono", ui-monospace, Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 1.35;
+    letter-spacing: 0.08em;
+    white-space: pre;
+    overflow: hidden;
+    color: #111;
+}
+.idw-type--passport .idw-mrz { font-size: 9.2px; }
+.idw-stamp {
+    position: absolute;
+    right: 18px;
+    top: 42%;
+    width: 86px;
+    height: 86px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 3px double var(--idw-c1);
+    border-radius: 50%;
+    transform: rotate(-12deg);
+    color: var(--idw-c1);
+    text-align: center;
+    font-size: 7px;
+    font-weight: 700;
+    text-transform: uppercase;
+    opacity: 0.75;
+    padding: 8px;
+}
+.idw-stamp b { font-size: 13px; letter-spacing: 0.12em; }
+.idw-state {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    padding: 3px 10px;
+    border: 3px solid #b3261e;
+    color: #b3261e;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    font-size: 15px;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.6);
+}
+.idw-watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    pointer-events: none;
+    transform: rotate(-18deg);
+}
+.idw-watermark span { font-size: 30px; font-weight: 900; letter-spacing: 0.35em; color: #b3261e; opacity: 0.12; white-space: nowrap; }
+.idw-cover {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 65%), var(--idw-c1);
+    color: var(--idw-c2);
+    text-align: center;
+}
+.idw-cover b { font-size: 15px; letter-spacing: 0.18em; }
+.idw-cover strong { font-size: 20px; letter-spacing: 0.3em; }
+.idw-cover em { font-size: 9px; letter-spacing: 0.16em; font-style: normal; opacity: 0.85; }
+.idw-cover__emblem .idw-flag { width: 72px; height: 46px; }
+/* Modèles d'impression */
+.idw-layout--classic .idw-face {
+    background:
+        repeating-radial-gradient(circle at 50% 50%, transparent 0 6px, rgba(0, 0, 0, 0.04) 6px 7px),
+        #f6f3ea;
+    border: 2px solid var(--idw-c1);
+}
+.idw-layout--classic .idw-band { background: transparent; color: var(--idw-c1); border-bottom: 2px solid var(--idw-c2); }
+.idw-layout--classic .idw-band__sim { border-color: var(--idw-c1); }
+.idw-layout--compact .idw-face { background: #fbfbfa; }
+.idw-layout--compact .idw-band { background: #fff; color: var(--idw-ink); border-bottom: 4px solid var(--idw-c1); }
+.idw-layout--compact .idw-band__sim { border-color: #b3261e; color: #b3261e; }
+@media (max-width: 520px) {
+    .idw-face { font-size: 9px; padding: 0 8px 8px; }
+    .idw-band { margin: 0 -8px 6px; padding: 5px 8px; }
+    .idw-fields dd { font-size: 9.5px; }
+    .idw-mrz { font-size: 7.4px; padding: 4px 8px 6px; }
+    .idw-type--passport .idw-mrz { font-size: 6.4px; }
+    .idw-stamp { width: 64px; height: 64px; }
+    .idw-watermark span { font-size: 20px; }
+}
+/* Listes de la préparation de mission */
+.idw-pop { width: 100%; border-collapse: collapse; }
+.idw-pop th, .idw-pop td { padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--border-soft, rgba(127, 127, 127, 0.15)); }
+.idw-pop input[type="number"] { width: 5.5em; }
+.idw-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.idw-chips label,
+label.idw-check {
+    display: inline-flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    margin: 0;
+    font-size: 0.85rem;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text, inherit);
+}
+.idw-chips input[type="checkbox"], label.idw-check input[type="checkbox"] { width: auto; margin: 0; }
+.idw-avatar { width: 38px; height: 48px; object-fit: cover; border-radius: 3px; border: 1px solid var(--border-soft, rgba(127, 127, 127, 0.25)); }
+.idw-map { height: 380px; border-radius: 6px; border: 1px solid var(--border-soft, rgba(127, 127, 127, 0.2)); background: #0f1720; }
+.idw-brief { white-space: pre-line; }
