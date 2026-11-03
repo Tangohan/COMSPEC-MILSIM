@@ -445,7 +445,7 @@ final class MemberSituationController
             'boPageTitle' => 'Mes qualifications',
             'boPageKicker' => 'OPÉRATEUR · MES QUALIFICATIONS',
             'boPageSubtitle' => 'Qualifications et brevets enregistrés sur votre dossier.',
-            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : [], $qualificationProgress !== [] || $qualificationSuggestions !== null ? ['qualifications-matrix.css'] : []),
+            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : [], $qualificationProgress !== [] || $qualificationSuggestions !== null ? ['qualifications-matrix.css', 'effectifs-kit.css'] : []),
             'user' => $user,
             'awards' => $enriched,
             'pilotProgress' => $pilotProgress,

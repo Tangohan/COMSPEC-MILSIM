@@ -294,6 +294,15 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1368, '2026-11-03', 'Fiche membre : qualifications suggérées en info-barre et en fenêtre, cartes plus lisibles', 'Les qualifications et brevets suggérés ne prennent plus toute la fiche : une info-barre compacte en haut des qualifications résume le nombre de suggestions, celles prêtes à obtenir et celles en formation, et ouvre une fenêtre avec la liste complète. Chaque suggestion y devient une carte avec une icône par domaine (parachutisme, aviation, tir, santé, génie, forces spéciales…), le drapeau du pays et l’émetteur réel, ses raisons en badges, ses prérequis cochés ou manquants avec la valeur du membre (3/5 sauts, grade OR-4 requis) et leur source, sa validité et le cours Academy qui y mène. Les actions rapides se font sans quitter la fenêtre.', [
+                'Fiche membre et Ma situation : info-barre des suggestions, masquable pour la session',
+                'Fenêtre des suggestions : filtres Toutes, Prêtes, À former, Non importées et explication du calcul',
+                'Cartes : icône du domaine, drapeau, émetteur, description, prérequis avec leur état et leur source, validité et renouvellement, lien vers la fiche complète',
+            ], [
+                'Actions rapides (importer, inscrire au cours, délivrer, mettre en formation, ignorer) envoyées sans quitter la fenêtre ; liste et compteurs mis à jour',
+                'Qualifications détenues de la fiche membre : icône du domaine, drapeau et émetteur',
+            ], [], ['personnel'], [], 'Portail'),
+
             $pr(1366, '2026-11-03', 'Fiche membre : qualifications et brevets suggérés d’après la fonction et l’unité', 'La fiche d’un membre propose maintenant les qualifications et brevets qui vont avec son poste. Athena croise la fonction attribuée (emploi reconnu dans le catalogue d’emplois, par exemple TACP dans « SOF TACP »), l’unité d’affectation et ses unités parentes dans l’ORBAT (un 24th STS est reconnu comme escadron Special Tactics de l’US Air Force), le grade et les qualifications déjà obtenues. Chaque suggestion est classée par pertinence avec sa raison (recommandée pour l’emploi TACP, courante dans les unités Special Tactics, prérequis de JTAC) et son état : prête à obtenir, conditions manquantes (il manque 5 sauts), en cours de formation Academy, ou pas encore dans le référentiel.', [
                 'Fiche membre › Qualifications : bloc « Qualifications et brevets suggérés », classé par pertinence, avec les raisons et l’état de chaque suggestion',
                 'Sources : prérequis de la fonction, emploi du catalogue d’emplois reconnu, nature de l’unité et de sa chaîne (forces spéciales, Special Tactics, aéroporté, aviation, génie, santé…), unité réelle du catalogue, pays de l’unité',
