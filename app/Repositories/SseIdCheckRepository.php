@@ -151,6 +151,100 @@ final class SseIdCheckRepository
     }
 
     /**
+     * Contrôle désigné par sa référence « CTRL-42 » ou par sa clé d'idempotence (fiche FRS de l'ATAK, id_check_ref).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByRef(int $tenantId, string $ref): ?array
+    {
+        $ref = trim($ref);
+        if (preg_match('/^CTRL-(\d{1,10})$/i', $ref, $m) === 1) {
+            return $this->find((int) $m[1], $tenantId);
+        }
+
+        return $ref !== '' && strlen($ref) <= 80 ? $this->findByKey($tenantId, $ref) : null;
+    }
+
+    /** Fiche FRM rattachée au contrôle (null : détachée). */
+    public function setFieldNote(int $id, int $tenantId, ?int $noteId): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_id_checks SET field_note_id = :n WHERE id = :id AND tenant_id = :t',
+            ['n' => $noteId !== null && $noteId > 0 ? $noteId : null, 'id' => $id, 't' => $tenantId]
+        ) > 0;
+    }
+
+    /**
+     * Contrôles faits par un joueur (son Steam ID) sur une carte, depuis une date UTC (page « Contrôle ID » du téléphone).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForController(int $tenantId, int $mapId, string $steamId, string $sinceUtc, int $limit = 60): array
+    {
+        $steamId = (string) preg_replace('/\D/', '', $steamId);
+        if ($steamId === '') {
+            return [];
+        }
+        $rows = $this->db->fetchAll(
+            'SELECT * FROM sse_id_checks WHERE tenant_id = :t AND controller_steam_id = :s AND context_id = :m AND created_at >= :since
+             ORDER BY id DESC LIMIT ' . max(1, min(200, $limit)),
+            ['t' => $tenantId, 's' => $steamId, 'm' => max(1, $mapId), 'since' => $sinceUtc]
+        );
+
+        return array_map([self::class, 'hydrate'], $rows);
+    }
+
+    /**
+     * Contrôles d'une carte et d'une opération (tableau de bord) ; null = toutes.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForScope(int $tenantId, ?int $mapId, ?string $opKey, int $limit = 2000): array
+    {
+        $where = ['tenant_id = :t'];
+        $params = ['t' => $tenantId];
+        if ($mapId !== null && $mapId > 0) {
+            $where[] = 'context_id = :m';
+            $params['m'] = $mapId;
+        }
+        if ($opKey !== null) {
+            if ($opKey === '') {
+                $where[] = "(op_key IS NULL OR op_key = '')";
+            } else {
+                $where[] = 'op_key = :op';
+                $params['op'] = $opKey;
+            }
+        }
+        $rows = $this->db->fetchAll(
+            'SELECT * FROM sse_id_checks WHERE ' . implode(' AND ', $where) . ' ORDER BY id DESC LIMIT ' . max(1, min(5000, $limit)),
+            $params
+        );
+
+        return array_map([self::class, 'hydrate'], $rows);
+    }
+
+    /**
+     * Opérations où des contrôles ont été faits : [carte, clé d'opération, nombre, dernier].
+     *
+     * @return list<array{context_id: int, op_key: string, total: int, last_at: string}>
+     */
+    public function operations(int $tenantId): array
+    {
+        $rows = $this->db->fetchAll(
+            "SELECT context_id, COALESCE(op_key, '') AS op, COUNT(*) AS total, MAX(created_at) AS last_at
+             FROM sse_id_checks WHERE tenant_id = :t GROUP BY context_id, COALESCE(op_key, '') ORDER BY last_at DESC LIMIT 100",
+            ['t' => $tenantId]
+        );
+
+        return array_map(static fn (array $r): array => [
+            'context_id' => (int) $r['context_id'],
+            'op_key' => (string) $r['op'],
+            'total' => (int) $r['total'],
+            'last_at' => (string) ($r['last_at'] ?? ''),
+        ], $rows);
+    }
+
+    /**
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */
@@ -190,6 +284,7 @@ final class SseIdCheckRepository
             'pos' => ($row['pos_x'] ?? null) !== null ? [(float) $row['pos_x'], (float) ($row['pos_y'] ?? 0), (float) ($row['pos_z'] ?? 0)] : null,
             'game_time' => $row['game_time'] ?? null,
             'case_ref' => $row['case_ref'] ?? null,
+            'field_note_id' => $int($row['field_note_id'] ?? null),
             'created_at' => (string) ($row['created_at'] ?? ''),
         ];
     }
