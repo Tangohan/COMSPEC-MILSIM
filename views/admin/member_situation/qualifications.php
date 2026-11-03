@@ -72,12 +72,17 @@ $summary = [
 
     <?php require __DIR__ . '/_pilot_progress.php'; ?>
 
+    <?php if (is_array($qualificationSuggestions ?? null)): ?>
+    <?php require base_path('views/partials/qualification_suggestions.php'); ?>
+    <?php endif; ?>
+
     <?php if (!empty($qualificationProgress)): ?>
     <section class="bo-ms-qprog" aria-labelledby="bo-ms-qprog-t">
         <h2 class="bo-ms-qprog__title" id="bo-ms-qprog-t">En route vers une qualification</h2>
         <?php require base_path('views/partials/qualification_progress.php'); ?>
     </section>
     <?php endif; ?>
+
 
     <?php if ($awards === []): ?>
         <section class="bo-doc-empty">

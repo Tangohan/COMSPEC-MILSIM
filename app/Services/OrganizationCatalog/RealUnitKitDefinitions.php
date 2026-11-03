@@ -609,6 +609,55 @@ final class RealUnitKitDefinitions
         return $node === null ? null : ($node[5] ?? $node[1]);
     }
 
+    /**
+     * Unité réelle de l’arbre correspondant à une unité de l’ORBAT : adresse courte reprise d’un modèle, sinon nom
+     * officiel ou code court identique (« 24th STS », « 24 STS », « 24th Special Tactics Squadron »). null : aucune.
+     */
+    public static function findNode(string $slug, string $name, string $code = ''): ?string
+    {
+        if (isset(self::NODES[$slug])) {
+            return $slug;
+        }
+        $norm = static fn (string $s): string => trim((string) preg_replace(['/(\d+)\s*(st|nd|rd|th|e|er|re|eme)\b/u', '/[^\p{L}\p{N}]+/u'], ['$1', ' '], mb_strtolower($s, 'UTF-8')));
+        $wanted = array_filter([$norm($name), $norm($code)], static fn (string $s): bool => mb_strlen($s) >= 4);
+        if ($wanted === []) {
+            return null;
+        }
+        foreach (self::NODES as $key => $node) {
+            if (in_array($norm($node[1]), $wanted, true) || in_array($norm($node[2]), $wanted, true)) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Noms officiels et codes de l’unité puis de ses unités parentes, de la plus proche à la plus haute
+     * (« 24th Special Tactics Squadron », « 724th Special Tactics Group », « 24th Special Operations Wing »…).
+     *
+     * @return list<string>
+     */
+    public static function lineage(string $slug): array
+    {
+        $out = [];
+        $seen = [];
+        while (isset(self::NODES[$slug]) && !isset($seen[$slug])) {
+            $seen[$slug] = true;
+            $node = self::NODES[$slug];
+            $out[] = $node[1] . ' (' . $node[2] . ')' . (is_string($node[4] ?? null) ? ' ' . $node[4] : '');
+            $slug = (string) ($node[0] ?? '');
+        }
+
+        return $out;
+    }
+
+    /** Pays d’une unité de l’arbre (préfixe de son adresse courte : « us-24sts » → US). */
+    public static function countryOf(string $slug): string
+    {
+        return isset(self::NODES[$slug]) && preg_match('/^([a-z]{2})-/', $slug, $m) === 1 ? strtoupper($m[1]) : '';
+    }
+
     public static function echelonLabel(string $echelon, string $lang): string
     {
         return self::ECHELONS[$echelon][$lang === 'en' ? 'en' : 'fr'] ?? '';

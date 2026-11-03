@@ -921,6 +921,9 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <h3>Qualifications</h3>
             <a class="eff-fm-btn is-sm" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . (int) $id, ENT_QUOTES, 'UTF-8') ?>">Ajouter</a>
         </div>
+        <?php if (is_array($qualificationSuggestions ?? null)): ?>
+            <?php require base_path('views/partials/qualification_suggestions.php'); ?>
+        <?php endif; ?>
         <?php
         $qualificationBadge = $qualificationBadge ?? null;
         if ($qualifications === []): ?>
@@ -941,13 +944,17 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                         ? $qualificationBadge->publicUrl(is_string($badgePath) ? $badgePath : null)
                         : '';
                     $isPrimary = !empty($q['is_primary']);
+                    $qCatalog = \App\Support\QualificationCatalog\QualificationCatalog::findByCode((string) ($q['definition_code'] ?? ''));
+                    $qCountry = $qCatalog !== null ? (string) (\App\Support\QualificationCatalog\QualificationCatalog::pack((string) ($qCatalog['pack'] ?? ''))['country'] ?? '') : '';
+                    $qDomain = \App\Support\QualificationCatalog\QualificationVisual::domain($qName . ' ' . (string) ($q['category_name'] ?? ''), $qCatalog !== null ? (string) ($qCatalog['category'] ?? '') : '');
+                    $qIssuer = trim((string) ($q['issuer_name'] ?? ''));
                     ?>
                 <li class="eff-fm-q <?= $qTone ?><?= $isPrimary ? ' is-primary' : '' ?>">
                     <span class="eff-fm-q__ic" aria-hidden="true">
                         <?php if ($hasBadge && $badgeUrl !== ''): ?>
                             <img src="<?= htmlspecialchars($badgeUrl, ENT_QUOTES, 'UTF-8') ?>" alt="">
                         <?php else: ?>
-                            <?= $h($monogram($qName)) ?>
+                            <?= \App\Support\QualificationCatalog\QualificationVisual::icon($qDomain, 'eff-fm-q__svg') ?>
                         <?php endif; ?>
                     </span>
                     <div class="eff-fm-q__body">
@@ -957,6 +964,13 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                             <?php if ($isPrimary): ?><span class="eff-fm-q__lvl">· Principale</span><?php endif; ?>
                         </b>
                         <small><?= htmlspecialchars(\App\Support\QualificationAdminStatus::label($adminSt), ENT_QUOTES, 'UTF-8') ?></small>
+                        <?php if ($qCountry !== '' || $qIssuer !== '' || trim((string) ($q['category_name'] ?? '')) !== ''): ?>
+                        <small class="eff-fm-q__meta">
+                            <?php if ($qCountry !== ''): ?><?= \App\Support\QualificationCatalog\CatalogCountry::flag($qCountry) ?> <span translate="no"><?= $h(\App\Support\QualificationCatalog\QualificationCatalog::countryLabel($qCountry, function_exists('locale') ? (string) locale() : 'fr')) ?></span><?php endif; ?>
+                            <?php if (trim((string) ($q['category_name'] ?? '')) !== ''): ?><span>· <?= $h($q['category_name']) ?></span><?php endif; ?>
+                            <?php if ($qIssuer !== ''): ?><span>· <span>émise par</span> <span translate="no"><?= $h($qIssuer) ?></span></span><?php endif; ?>
+                        </small>
+                        <?php endif; ?>
                         <div class="eff-fm-q__acts">
                             <a href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . (int) $id . '&renewal_of=' . (int) ($q['id'] ?? 0), ENT_QUOTES, 'UTF-8') ?>">Renouveler</a>
                             <?php if ($adminSt === \App\Support\QualificationAdminStatus::OBTAINED): ?>
