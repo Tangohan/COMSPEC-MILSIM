@@ -9,6 +9,7 @@ use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SsePersonRepository;
 use App\Support\SseIdentityCatalog;
+use App\Support\SseIdRealCountryCatalog;
 use App\Support\SseIdWorkshopCatalog;
 
 /**
@@ -60,7 +61,7 @@ final class SseIdWorkshopService
             return ['ok' => false, 'error' => 'Seul un brouillon se modifie. Repassez le papier en brouillon, ou dupliquez-le.'];
         }
         $country = $this->countries->findByCode($tenantId, (string) ($input['country_code'] ?? ''));
-        if ($country === null || !$country['active'] || !$country['fictional']) {
+        if ($country === null || !$country['active'] || (!$country['fictional'] && empty($country['real_sim']))) {
             return ['ok' => false, 'error' => 'Choisissez un pays émetteur fictif et actif.'];
         }
         $type = SseIdentityCatalog::pick(SseIdentityCatalog::DOC_TYPES, $input['doc_type'] ?? null, 'id_card');
@@ -323,6 +324,9 @@ final class SseIdWorkshopService
     {
         $colors = array_values(array_filter([$country['color_primary'] ?? null, $country['color_secondary'] ?? null]));
         $colors += [0 => '#1f4e79', 1 => '#c9a227'];
+        $real = !empty($country['real_sim']);
+        $flag = $real ? SseIdRealCountryCatalog::flagDataUri((string) $country['code'])
+            : (($country['flag_path'] ?? null) !== null ? (string) url((string) $country['flag_path']) : null);
 
         return [
             'doc_type' => (string) ($doc['doc_type'] ?? 'id_card'),
@@ -334,7 +338,10 @@ final class SseIdWorkshopService
                 'name' => (string) ($country['name'] ?? ($doc['country_code'] ?? '')),
                 'name_en' => (string) ($country['name_en'] ?? ''),
                 'colors' => $colors,
-                'flag_url' => ($country['flag_path'] ?? null) !== null ? (string) url((string) $country['flag_path']) : null,
+                'flag_url' => $flag,
+                // Pays réel stylisé : gabarit générique de sa zone (europe|americas|other), jamais un vrai modèle.
+                'real_sim' => $real,
+                'zone' => $real ? SseIdRealCountryCatalog::zone((string) $country['code']) : '',
             ],
             'identity' => [
                 'last_name' => (string) ($identity['last_name'] ?? ''),

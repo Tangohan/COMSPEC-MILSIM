@@ -193,7 +193,7 @@ final class SseIdImageServiceTest extends TestCase
             foreach ($faces[1] as $face) {
                 $face = trim($face);
                 self::assertStringStartsWith('<div class="idw-bg" data-f-bg', $face, 'fond en première couche');
-                self::assertStringEndsWith('<span>SIMULATION</span></div>', $face, 'filigrane en dernière couche');
+                self::assertStringEndsWith('SIMULATION</span></div>', $face, 'filigrane en dernière couche');
                 foreach (['data-f-photo', 'data-f-signature', 'data-f-bg'] as $img) {
                     if (str_contains($face, $img)) {
                         self::assertLessThan(strrpos($face, 'class="idw-watermark"'), strpos($face, $img), $img . ' sous le filigrane');

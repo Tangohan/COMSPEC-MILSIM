@@ -10,6 +10,8 @@ namespace App\Support;
  * Un pays de jeu est toujours fictif. Son code à trois lettres ne doit pas être celui d'un pays réel
  * (ISO 3166-1 alpha-3) ni un code réservé par l'OACI pour les documents de voyage, sauf dans un univers
  * imaginaire (SCP, Star Wars…) où le code ne prête pas à confusion avec un vrai papier.
+ * Exception : les pays réels STYLISÉS du jeu proposé à l'import (SseIdRealCountryCatalog), réservés à l'univers
+ * « Réaliste — simulation » choisi par la communauté ; ils ne se créent pas à la main.
  */
 final class SseIdCountryCatalog
 {
@@ -24,6 +26,7 @@ final class SseIdCountryCatalog
         'warhammer' => 'Warhammer 40K',
         'fantasy' => 'Fantastique',
         'other' => 'Autre univers',
+        'realistic_sim' => 'Réaliste — simulation (pays réels stylisés)',
     ];
 
     /** Thèmes où un code de pays réel est refusé (risque de confusion avec un vrai papier). */
@@ -43,6 +46,9 @@ final class SseIdCountryCatalog
         'ar' => 'Arabe',
         'fa' => 'Persan',
         'zh' => 'Chinois',
+        'nl' => 'Néerlandais',
+        'uk' => 'Ukrainien',
+        'ps' => 'Pachto',
         'other' => 'Langue imaginaire',
     ];
 
@@ -56,6 +62,21 @@ final class SseIdCountryCatalog
         'LEVANT' => 'Proche-Orient',
         'AFRICA_SAHEL' => 'Sahel',
         'RUSSIA' => 'Russie',
+        'UK' => 'Royaume-Uni (anglais)',
+        'USA' => 'États-Unis (anglais)',
+        'GREECE' => 'Grèce (grec)',
+        'GERMANY' => 'Allemagne (allemand)',
+        'AUSTRIA' => 'Autriche (allemand)',
+        'COLOMBIA' => 'Colombie (espagnol)',
+        'FRANCE' => 'France (français)',
+        'BELGIUM' => 'Belgique (français, néerlandais)',
+        'SPAIN' => 'Espagne (espagnol)',
+        'POLAND' => 'Pologne (polonais)',
+        'UKRAINE' => 'Ukraine (ukrainien)',
+        'RUSSIA_ID' => 'Russie (russe, noms au féminin)',
+        'IRAQ_ID' => 'Irak (arabe)',
+        'SYRIA_ID' => 'Syrie (arabe)',
+        'AFGHANISTAN' => 'Afghanistan (dari, pachto)',
     ];
 
     public const VALIDITY_MIN = 1;
@@ -91,7 +112,7 @@ final class SseIdCountryCatalog
     /**
      * Code refusé ? Renvoie le motif lisible, ou '' si le code est accepté.
      */
-    public static function codeProblem(string $code, string $theme): string
+    public static function codeProblem(string $code, string $theme, bool $fromRealSet = false): string
     {
         $code = strtoupper(trim($code));
         if (preg_match('/^[A-Z]{3}$/', $code) !== 1) {
@@ -100,19 +121,33 @@ final class SseIdCountryCatalog
         if (in_array($code, self::ICAO_RESERVED, true)) {
             return 'Ce code est réservé aux documents de voyage réels (apatrides, réfugiés, organisations) : choisissez-en un autre.';
         }
+        if ($theme === SseIdRealCountryCatalog::UNIVERSE) {
+            // Univers réaliste-simulation : seulement les pays du jeu stylisé, ajoutés par « Ajouter des pays réels ».
+            if ($fromRealSet && SseIdRealCountryCatalog::has($code)) {
+                return '';
+            }
+
+            return 'L’univers « Réaliste — simulation » est réservé aux pays réels stylisés : ajoutez-les avec le bouton « Ajouter des pays réels (simulation) ».';
+        }
         if (self::isRealCode($code) && in_array($theme, self::REALISTIC_THEMES, true)) {
-            return 'Ce code est celui d’un pays réel : choisissez un code inventé, ou placez le pays dans un univers imaginaire.';
+            return 'Ce code est celui d’un pays réel : choisissez un code inventé, placez le pays dans un univers imaginaire, ou ajoutez-le depuis les pays réels stylisés (univers réaliste-simulation).';
         }
 
         return '';
     }
 
     /** Code MRZ : une à trois lettres, mêmes réserves que le code du pays. */
-    public static function mrzProblem(string $mrz, string $theme): string
+    public static function mrzProblem(string $mrz, string $theme, bool $fromRealSet = false): string
     {
         $mrz = strtoupper(trim($mrz));
         if (preg_match('/^[A-Z]{1,3}$/', $mrz) !== 1) {
             return 'Le code de la bande de lecture s’écrit en une à trois lettres.';
+        }
+        if ($fromRealSet && in_array($mrz, array_column(SseIdRealCountryCatalog::COUNTRIES, 'mrz'), true)) {
+            return '';
+        }
+        if ($mrz === 'D' && !in_array($theme, ['scifi', 'scp', 'star_wars', 'warhammer', 'fantasy', 'other'], true)) {
+            return 'Bande de lecture : « D » est le code réel de l’Allemagne, choisissez-en un autre.';
         }
         if (strlen($mrz) === 3) {
             $p = self::codeProblem($mrz, $theme);

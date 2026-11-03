@@ -3,8 +3,10 @@ declare(strict_types=1);
 /**
  * Aperçu d'un papier fictif (atelier, COMSPEC IDENTITY Lot 6) : recto et verso d'une carte ou d'un permis, couverture,
  * page de données et page d'observations d'un passeport. Gabarit générique aux couleurs du pays émetteur imaginaire,
- * filigrane SIMULATION obligatoire sur chaque face, toujours la dernière couche (au-dessus de la photo, de la signature et
- * de l'image de fond). Les éléments data-f / data-p sont mis à jour en direct par
+ * filigrane SIMULATION en diagonale sur toute la surface et mention « SIMULATION — DOCUMENT DE JEU » obligatoires sur
+ * chaque face, toujours la dernière couche (au-dessus de la photo, de la signature et de l'image de fond). Pays réel
+ * stylisé (univers réaliste-simulation) : gabarit générique de sa zone (idw-zone--europe | americas | other), drapeau
+ * simple à bandes, jamais un vrai modèle, emblème ou motif de sécurité. Les éléments data-f / data-p sont mis à jour en direct par
  * sse-id-workshop.js (data-f : donnée du papier ; data-p : champ imprimé en plus, ligne masquée s'il est vide).
  *
  * @var array<string, mixed> $preview SseIdWorkshopService::previewModel()
@@ -39,7 +41,10 @@ $pvPhoto = static function () use ($pvIdentity, $h): string {
         . '<circle cx="30" cy="27" r="13" fill="currentColor" opacity=".35"/><path d="M6 75c2-17 12-25 24-25s22 8 24 25z" fill="currentColor" opacity=".35"/></svg>'
         . '</div>';
 };
-$pvWatermark = '<div class="idw-watermark" aria-hidden="true"><span>SIMULATION</span><span>SIMULATION</span><span>SIMULATION</span></div>';
+$pvWatermark = '<div class="idw-watermark" aria-hidden="true">' . str_repeat('<span>SIMULATION · SIMULATION</span>', 7) . '</div>';
+// Mention de la face avant le filigrane : le filigrane reste la dernière couche.
+$pvWatermark = '<div class="idw-mention" translate="no">' . $h(\App\Support\SseIdRealCountryCatalog::FACE_MENTION) . '</div>' . $pvWatermark;
+$pvZone = (string) ($pv['country']['zone'] ?? '');
 $pvBand = static function (string $sub, bool $pvTypeLine = false) use ($pvFlag, $pv, $h, $pvUp): string {
     return '<div class="idw-band">' . $pvFlag()
         . '<div class="idw-band__txt"><b data-f="country_name">' . $h($pvUp((string) $pv['country']['name'])) . '</b><span translate="no"' . ($pvTypeLine ? ' data-f="type_line"' : '') . '>' . $h($sub) . '</span></div>'
@@ -74,7 +79,7 @@ if (($pvDoc['st_validity'] ?? 'valid') !== 'valid' || ($pvDoc['st_report'] ?? 'n
     $pvState = '<div class="idw-state" translate="no">' . $h(($pvDoc['st_validity'] ?? 'valid') !== 'valid' ? 'ANNULÉ / INVALID' : 'SIGNALÉ / REPORTED') . '</div>';
 }
 ?>
-<div class="idw-preview idw-type--<?= $h($pvType) ?> idw-layout--<?= $h($pv['layout']) ?>" id="idw-preview"
+<div class="idw-preview idw-type--<?= $h($pvType) ?> idw-layout--<?= $h($pv['layout']) ?><?= $pvZone !== '' ? ' idw-zone--' . $h($pvZone) : '' ?>" id="idw-preview"
      style="--idw-c1: <?= $h($pvC1) ?>; --idw-c2: <?= $h($pvC2) ?>;" data-doc-type="<?= $h($pvType) ?>">
     <?php /* Toutes les faces sont rendues : le type affiché (classe idw-type--…) choisit celles qui se voient. */ ?>
         <figure class="idw-face idw-face--cover" data-kind="passport" data-face="couverture" aria-label="Couverture du passeport">

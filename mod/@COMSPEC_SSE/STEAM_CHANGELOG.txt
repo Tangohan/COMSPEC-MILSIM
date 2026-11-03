@@ -2,6 +2,16 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.3.1 — pays réels stylisés pour les univers réalistes (03/11/2026)[/h1]
+[b]Relance Arma complètement.[/b]
+
+[list]
+[*] Nouveau réglage « Univers réaliste-simulation (pays réels stylisés) », décoché par défaut : papiers du Royaume-Uni, de la Grèce, des États-Unis, de l'Allemagne, de l'Autriche, de la Colombie, de la France et de pays de théâtres fréquents (Irak, Syrie, Afghanistan, Russie, Ukraine, Pologne…). Les pays ajoutés par votre communauté sur Athena arrivent aussi en jeu.
+[*] Ce sont des documents de jeu : gabarit générique par zone (Europe bordeaux, Amériques bleu, autres vert), mention « SIMULATION — DOCUMENT DE JEU », aucune reproduction de vrai modèle, d'armoiries ou de motif officiel, numéros au format du jeu.
+[*] Bande de lecture avec le vrai code du pays (Allemagne « D<< »), noms et villes tirés dans la langue du pays, durées de validité propres à chaque type de papier.
+[*] Les pays fictifs (Altis, Tanoa, Livonie, Malden) ne changent pas.
+[/list]
+
 [h1]COMSPEC SSE 1.3.0 — couvertures, infiltrés, HVT et BOLO (03/11/2026)[/h1]
 [b]Relance Arma complètement.[/b] À utiliser avec le pack ATAK 3.0.2 (fonctionne avec le 3.0.1 ; l'alerte discrète en vibreur seul demande le 3.0.2).
 

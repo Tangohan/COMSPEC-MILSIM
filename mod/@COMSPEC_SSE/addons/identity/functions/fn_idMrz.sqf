@@ -5,7 +5,8 @@
     ["parse", _lines] call comspec_sse_fnc_idMrz -> HashMap : format (TD1 | TD3 | ""), ok, errors [codes], number, dob,
                                                   expires (AAMMJJ), sex, nat, issuer, last, first
     Codes d'erreur : format, number, dob, expiry, personal, composite.
-    Document (HashMap) : type, country, number, last, first, sex, dob / expires (AAAA-MM-JJ), nat (code MRZ).
+    Document (HashMap) : type, country, number, last, first, sex, dob / expires (AAAA-MM-JJ), nat (code MRZ),
+    mrzIssuer (code MRZ de l'émetteur ; à défaut celui du pays, fn_idCountries « mrz » : Allemagne DEU -> « D<< »).
     Faux : mrzFlaw "check" (chiffre de contrôle du numéro faux) ; mrzDob / mrzLast / mrzNumber (MRZ différente du
     recto, document modifié sans refaire la MRZ).
 */
@@ -126,8 +127,14 @@ private _ymd = {
     if ((count _p) < 3) exitWith { "<<<<<<" };
     ((_p select 0) select [2, 2]) + (_p select 1) + (_p select 2)
 };
-private _issuer = [(_doc getOrDefault ["country", "ALT"]) call _clean, 3] call _pad;
-private _nat = [(_doc getOrDefault ["nat", _doc getOrDefault ["country", "ALT"]]) call _clean, 3] call _pad;
+private _cc = _doc getOrDefault ["country", "ALT"];
+private _iss = _doc getOrDefault ["mrzIssuer", ""];
+if (_iss isEqualTo "") then { _iss = (([] call comspec_sse_fnc_idCountries) getOrDefault [_cc, createHashMap]) getOrDefault ["mrz", _cc]; };
+private _issuer = [_iss call _clean, 3] call _pad;
+// Nationalité : code MRZ ; même pays que l'émetteur (code du pays ou code MRZ) -> code MRZ de l'émetteur.
+private _natRaw = _doc getOrDefault ["nat", _iss];
+if (_natRaw isEqualTo _cc) then { _natRaw = _iss; };
+private _nat = [_natRaw call _clean, 3] call _pad;
 private _num = [(_doc getOrDefault ["mrzNumber", _doc getOrDefault ["number", ""]]) call _clean, 9] call _pad;
 private _numCk = _num call _ck;
 // Faux mal fait : chiffre de contrôle du numéro décalé.

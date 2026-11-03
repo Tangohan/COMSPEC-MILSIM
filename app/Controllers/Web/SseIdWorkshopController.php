@@ -154,7 +154,9 @@ final class SseIdWorkshopController
                 'name' => $c['name'], 'authority' => $c['authority'], 'mrz' => $c['mrz_code'], 'format' => $c['number_format'],
                 'types' => $c['doc_types'], 'validity' => $c['validity'],
                 'colors' => array_values(array_filter([$c['color_primary'], $c['color_secondary']])),
-                'flag' => $c['flag_path'] !== null ? (string) url($c['flag_path']) : null,
+                'flag' => !empty($c['real_sim']) ? \App\Support\SseIdRealCountryCatalog::flagDataUri((string) $c['code'])
+                    : ($c['flag_path'] !== null ? (string) url($c['flag_path']) : null),
+                'zone' => (string) ($c['zone'] ?? ''),
             ];
         }
         $editable = $r['manage'] && $doc['workflow'] === 'draft';

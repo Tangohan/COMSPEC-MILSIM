@@ -1,5 +1,7 @@
 /*
-    Pays FICTIFS des documents (codes hors ISO, mention SIMULATION sur tous les gabarits).
+    Pays FICTIFS des documents (codes hors ISO, mention SIMULATION sur tous les gabarits). Pays réels STYLISÉS
+    (fn_idRealCountries : Royaume-Uni, Grèce, États-Unis, Allemagne…) seulement dans un univers « réaliste —
+    simulation » : réglage comspec_sse_id_realSim, ou pays importé par la communauté sur Athena (paquet).
     [] call comspec_sse_fnc_idCountries            -> HashMap code -> HashMap pays
     ["default"] call comspec_sse_fnc_idCountries   -> code du pays de la mission (réglage, sinon selon la carte ; pays
                                                       archivé sur Athena : premier pays actif)
@@ -45,6 +47,12 @@ if (isNil "_base") then {
     ];
     missionNamespace setVariable ["comspec_sse_idCountryBase", _base];
 };
+// Univers réaliste-simulation (réglage de mission) : les pays réels stylisés s'ajoutent aux pays fictifs.
+private _real = [] call comspec_sse_fnc_idRealCountries;
+if (missionNamespace getVariable ["comspec_sse_id_realSim", false]) then {
+    _base = +_base;
+    { _base set [_x, +_y]; } forEach _real;
+};
 
 if (_mode isEqualTo "default") exitWith {
     private _set = missionNamespace getVariable ["comspec_sse_id_country", "auto"];
@@ -79,7 +87,8 @@ private _all = +_base;
 {
     private _code = _x;
     private _known = _code in _all;
-    private _c = _all getOrDefault [_code, createHashMapFromArray [["code", _code], ["mrz", _code], ["number_format", "@@#######"], ["cities", ["-"]], ["chip", true], ["nameEn", _code], ["validity", 10], ["authority", ""]]];
+    // Pays réel stylisé importé par la communauté : réservoirs de noms, villes, durées du jeu stylisé.
+    private _c = _all getOrDefault [_code, +(_real getOrDefault [_code, createHashMapFromArray [["code", _code], ["mrz", _code], ["number_format", "@@#######"], ["cities", ["-"]], ["chip", true], ["nameEn", _code], ["validity", 10], ["authority", ""]]])];
     {
         if !(_known && {_x isEqualTo "name"}) then { if (_y isNotEqualTo "") then { _c set [_x, _y]; }; };
     } forEach _y;

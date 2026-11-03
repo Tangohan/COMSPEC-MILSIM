@@ -64,7 +64,11 @@ if (_kind in ["cover", "forged", "alias"]) then {
 date params ["_yy", "_mm", "_dd"];
 private _two = { if (_this < 10) then { "0" + str _this } else { str _this } };
 private _ymd = { params ["_y", "_m", "_d"]; format ["%1-%2-%3", _y, _m call _two, _d call _two] };
-private _valid = [_c getOrDefault ["validity", 10], 15] select (_type isEqualTo "driving_license");
+private _valid = _c getOrDefault ["validity", 10];
+// Durées par type (pays du paquet Athena, pays réels stylisés) ; sinon 10 ans, permis 15 ans.
+_valid = if (_valid isEqualType createHashMap) then { _valid getOrDefault [_type, [10, 15] select (_type isEqualTo "driving_license")] } else { [_valid, 15] select (_type isEqualTo "driving_license") };
+if !(_valid isEqualType 0) then { _valid = 10; };
+_valid = _valid max 1;
 private _back = floor (("age" call _r) * (_valid - 1));
 private _im = 1 + ((floor (("im" call _r) * 12)) min 11);
 private _id_ = 1 + ((floor (("id" call _r) * 28)) min 27);
@@ -89,7 +93,7 @@ private _number = _spec getOrDefault ["number", ""];
 if (_number isEqualTo "") then { _number = [_country, _type, format ["%1|%2", _key, _kind]] call comspec_sse_fnc_idDocNumber; };
 
 private _doc = createHashMapFromArray [
-    ["id", _id], ["cls", ""], ["type", _type], ["country", _country], ["number", _number],
+    ["id", _id], ["cls", ""], ["type", _type], ["country", _country], ["mrzIssuer", _c getOrDefault ["mrz", _country]], ["number", _number],
     ["last", _printed get "last"], ["first", _printed get "first"], ["sex", _printed get "sex"], ["dob", _printed get "dob"],
     ["pob", _printed get "pob"], ["nat", _c getOrDefault ["mrz", _country]], ["profession", _printed getOrDefault ["profession", ""]],
     ["issued", _issued], ["expires", _expires], ["authority", [_c getOrDefault ["authority", ""], format ["Préfecture de %1", _city]] select ((_c getOrDefault ["authority", ""]) isEqualTo "")], ["address", _addr],

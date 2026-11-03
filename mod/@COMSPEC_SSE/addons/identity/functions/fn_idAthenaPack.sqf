@@ -86,20 +86,26 @@ switch (_op) do {
         private _reg = ["init"] call comspec_sse_fnc_idRegistry;
         private _nC = 0; private _nD = 0; private _nW = 0;
         {
-            private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional", "name_en", "authority", "theme", "languages", "doc_types", "colors", "active"]] call _rec;
+            private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional", "name_en", "authority", "theme", "languages", "doc_types", "colors", "active", "real_sim", "zone", "name_native", "validity"]] call _rec;
             private _code = _c getOrDefault ["code", ""];
             if (_code isNotEqualTo "") then {
                 private _active = _c getOrDefault ["active", true];
                 if (_active isEqualType "") then { _active = (toLower _active) in ["", "1", "true"]; };
                 if (_active isEqualType 0) then { _active = _active > 0; };
                 private _arr = { if (_this isEqualType []) then { _this } else { [] } };
+                private _bool = { if (_this isEqualType "") exitWith { (toLower _this) in ["1", "true"] }; if (_this isEqualType 0) exitWith { _this > 0 }; _this isEqualTo true };
+                // Pays réel stylisé (univers réaliste-simulation choisi sur Athena) : zone du gabarit générique, durées par type.
+                private _val = _c getOrDefault ["validity", ""];
+                if (_val isEqualType []) then { _val = createHashMapFromArray (_val select { _x isEqualType [] && {count _x == 2} }); };
+                if (_val isEqualType createHashMap && {(count _val) isEqualTo 0}) then { _val = ""; };
                 (_reg get "countries") set [_code, createHashMapFromArray [
                     ["code", _code], ["name", _c getOrDefault ["name", _code]], ["nameEn", _c getOrDefault ["name_en", ""]],
                     ["mrz", _c getOrDefault ["mrz_code", _code]], ["number_format", _c getOrDefault ["number_format", ""]],
                     ["fictional", _c getOrDefault ["fictional", true]], ["authority", _c getOrDefault ["authority", ""]],
                     ["theme", _c getOrDefault ["theme", ""]], ["languages", (_c getOrDefault ["languages", []]) call _arr],
                     ["docTypes", (_c getOrDefault ["doc_types", []]) call _arr], ["colors", (_c getOrDefault ["colors", []]) call _arr],
-                    ["active", _active]
+                    ["active", _active], ["realSim", (_c getOrDefault ["real_sim", false]) call _bool], ["zone", _c getOrDefault ["zone", ""]],
+                    ["nameNative", _c getOrDefault ["name_native", ""]], ["validity", _val]
                 ]];
                 _nC = _nC + 1;
             };

@@ -37,6 +37,8 @@ if (_region isNotEqualTo "" && {_region isNotEqualTo "RANDOM"} && {!isNil "comsp
 };
 private _fn = [_first, "fn"] call _pick;
 private _ln = [_last, "ln"] call _pick;
+// Nom au féminin (pays réel stylisé, ex. russe : Ivanov -> Ivanova), comme le site.
+if (_sex isEqualTo "F" && {_region isEqualTo "" || {_region isEqualTo "RANDOM"}}) then { _ln = _ln + (_c getOrDefault ["lastFSuffix", ""]); };
 if (_salt isEqualTo "" && {!isNull _unit}) then {
     // Nom déclaré par la mission (Eden, Zeus, générateur SSE) : c'est lui qui est imprimé.
     private _df = _unit getVariable ["COMSPEC_SSE_FirstName", ""];

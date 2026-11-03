@@ -11,7 +11,12 @@ private _add = {
 
 ["comspec_sse_id_enabled", "CHECKBOX", ["Contrôle d'identité", "Papiers d'identité fictifs, contrôle par le menu ACE et l'app Contrôle ID du téléphone."], true] call _add;
 ["comspec_sse_id_difficulty", "LIST", ["Difficulté des contrôles", "Arcade : les anomalies se voient facilement. Réaliste : un bon faux passe souvent l'examen visuel, la nuit tout est plus dur."], [[0, 1, 2], ["Arcade", "Standard", "Réaliste"], 1]] call _add;
-["comspec_sse_id_country", "LIST", ["Pays des papiers", "Pays fictif des papiers délivrés. Selon la carte : Altis et Stratis → Altis, Tanoa → Tanoa, Livonia → Livonie, Malden → Malden."], [["auto", "ALT", "TNA", "LVN", "MLD"], ["Selon la carte", "République d'Altis", "Fédération de Tanoa", "République de Livonie", "République de Malden"], 0]] call _add;
+["comspec_sse_id_realSim", "CHECKBOX", ["Univers réaliste-simulation (pays réels stylisés)", "Ajoute des pays réels STYLISÉS (Royaume-Uni, Grèce, États-Unis, Allemagne, Autriche, Colombie, France, Irak, Syrie, Afghanistan, Russie, Ukraine, Pologne…). Papiers de jeu : gabarit générique, mention SIMULATION — DOCUMENT DE JEU, aucun vrai modèle ni emblème. Décoché : pays fictifs seulement (sauf pays ajoutés par votre communauté sur Athena)."], false] call _add;
+// Pays réels stylisés de la liste : utilisés seulement si l'univers réaliste-simulation est coché (sinon selon la carte).
+private _realCodes = keys ([] call comspec_sse_fnc_idRealCountries);
+_realCodes sort true;
+private _realNames = _realCodes apply { format ["%1 (simulation)", (([] call comspec_sse_fnc_idRealCountries) get _x) get "name"] };
+["comspec_sse_id_country", "LIST", ["Pays des papiers", "Pays des papiers délivrés. Selon la carte : Altis et Stratis → Altis, Tanoa → Tanoa, Livonia → Livonie, Malden → Malden. Un pays réel (simulation) demande l'univers réaliste-simulation coché."], [["auto", "ALT", "TNA", "LVN", "MLD"] + _realCodes, ["Selon la carte", "République d'Altis", "Fédération de Tanoa", "République de Livonie", "République de Malden"] + _realNames, 0]] call _add;
 ["comspec_sse_id_aiPapers", "CHECKBOX", ["Papiers des IA", "Les IA ont des papiers selon leur camp (civils, insurgés, cibles). Les joueurs n'en ont que par l'attribut Eden, le kit ou le module Zeus."], true] call _add;
 ["comspec_sse_id_kitRespawn", "CHECKBOX", ["Rendre les papiers du kit au respawn", "Les joueurs qui ont un kit de papiers sur Athena (fiche membre) le retrouvent à chaque réapparition. Décoché : seulement à l'arrivée en mission."], true] call _add;
 ["comspec_sse_id_civComply", "SLIDER", ["Civils qui présentent leurs papiers (%)", "Part des civils qui tendent leurs papiers quand on les leur demande."], [0, 100, 90, 0]] call _add;

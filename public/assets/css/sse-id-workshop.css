@@ -146,17 +146,40 @@
     z-index: 2;
     background: rgba(255, 255, 255, 0.6);
 }
+/* Filigrane SIMULATION en diagonale sur toute la surface (débord de 40 % pour couvrir les coins après rotation). */
 .idw-watermark {
     position: absolute;
-    inset: 0;
+    inset: -40%;
     display: flex;
     flex-direction: column;
     justify-content: space-around;
     align-items: center;
     pointer-events: none;
-    transform: rotate(-18deg);
+    transform: rotate(-24deg);
 }
-.idw-watermark span { font-size: 30px; font-weight: 900; letter-spacing: 0.35em; color: #b3261e; opacity: 0.12; white-space: nowrap; }
+.idw-watermark span { font-size: 26px; font-weight: 900; letter-spacing: 0.3em; color: #b3261e; opacity: 0.12; white-space: nowrap; }
+/* Mention obligatoire de chaque face. */
+.idw-face .idw-mention {
+    position: absolute;
+    z-index: 4;
+    top: 0;
+    right: 0;
+    padding: 1px 6px;
+    border-bottom-left-radius: 4px;
+    background: #a8191e;
+    color: #fff;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    pointer-events: none;
+}
+/* Pays réels stylisés : gabarit générique par zone (aucun modèle réel). */
+.idw-zone--europe .idw-band { background: linear-gradient(90deg, var(--idw-c1) 70%, var(--idw-c2)); }
+.idw-zone--americas .idw-band { background: var(--idw-c1); border-bottom: 3px solid var(--idw-c2); }
+.idw-zone--other .idw-band { background: var(--idw-c1); border-bottom: 3px double var(--idw-c2); }
+.idw-zone--europe .idw-cover,
+.idw-zone--americas .idw-cover,
+.idw-zone--other .idw-cover { color: #e6c766; }
 .idw-cover {
     position: absolute;
     inset: 0;
@@ -196,7 +219,7 @@
     .idw-mrz { font-size: 7.4px; padding: 4px 8px 6px; }
     .idw-type--passport .idw-mrz { font-size: 6.4px; }
     .idw-stamp { width: 64px; height: 64px; }
-    .idw-watermark span { font-size: 20px; }
+    .idw-watermark span { font-size: 18px; }
 }
 /* Listes de la préparation de mission */
 .idw-pop { width: 100%; border-collapse: collapse; }

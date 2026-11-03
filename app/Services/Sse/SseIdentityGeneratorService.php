@@ -127,10 +127,11 @@ final class SseIdentityGeneratorService
         $code = strtoupper((string) ($country['code'] ?? ''));
         $sex = in_array($sex, ['M', 'F'], true) ? $sex : (self::hash($seed, 'sex') % 2 === 0 ? 'M' : 'F');
 
-        if (isset(self::COUNTRY_POOLS[$region])) {
-            $pool = self::COUNTRY_POOLS[$region];
+        $pool = self::COUNTRY_POOLS[$region] ?? \App\Support\SseIdRealCountryCatalog::POOLS[$region] ?? null;
+        if ($pool !== null) {
+            // Réservoirs des pays fictifs, puis ceux des pays réels stylisés (par langue / région, même tirage en jeu).
             $first = self::pick($seed, 'fn', $sex === 'F' ? $pool['f'] : $pool['m']);
-            $last = self::pick($seed, 'ln', $pool['last']);
+            $last = self::pick($seed, 'ln', $pool['last']) . ($sex === 'F' ? (string) ($pool['f_suffix'] ?? '') : '');
             $place = self::pick($seed, 'pob', $pool['places']);
         } else {
             $pool = self::SSE_POOLS[in_array($region, ['IRAQ', 'SYRIA'], true) ? 'LEVANT' : $region] ?? self::SSE_POOLS['GENERIC'];
