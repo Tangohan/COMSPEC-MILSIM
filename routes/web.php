@@ -275,6 +275,11 @@ return function (Router $router) {
     // Lien de partage d'une formation (Studio) : le contrôleur vérifie le jeton, puis la connexion et la communauté si le lien l'exige.
     $router->get('/academy/partage/{token}', [\App\Controllers\Web\AcademyController::class, 'shared']);
     $router->get('/academy/partage/{token}/media/{file}', [\App\Controllers\Web\AcademyController::class, 'sharedMedia']);
+    // Assistant d'importation du catalogue de référence (Academy › Catalogue) : données, aperçu, démarrage, lots.
+    $router->get('/academy/catalogue/assistant', [\App\Controllers\Web\AcademyCatalogImportController::class, 'data'], $academyMw);
+    $router->post('/academy/catalogue/assistant/apercu', [\App\Controllers\Web\AcademyCatalogImportController::class, 'preview'], $academyMw);
+    $router->post('/academy/catalogue/assistant/demarrer', [\App\Controllers\Web\AcademyCatalogImportController::class, 'start'], $academyMw);
+    $router->post('/academy/catalogue/assistant/lot', [\App\Controllers\Web\AcademyCatalogImportController::class, 'batch'], $academyMw);
     $router->get('/academy/{space}', [\App\Controllers\Web\AcademyController::class, 'space'], $academyMw);
     $router->post('/academy/action/{action}', [\App\Controllers\Web\AcademyController::class, 'action'], $academyMw);
 

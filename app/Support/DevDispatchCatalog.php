@@ -294,6 +294,15 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1366, '2026-11-03', 'Academy : assistant d’importation du catalogue de référence', 'Dans le catalogue de l’Academy, onglets Qualifications et Brevets, les responsables du référentiel disposent d’un assistant d’importation en quatre étapes. On choisit d’abord la portée : tout le catalogue, un ou plusieurs pays (drapeau et nom dans la langue du pays), une catégorie (brevet, qualification, cursus et sélection, licence), un type ou domaine, un niveau, un émetteur, ou une sélection à la main, le tout combinable, avec une recherche et des compteurs en direct (« 128 éléments, dont 34 déjà dans votre référentiel »). L’aperçu liste ce qui sera importé, ce qui est déjà présent et sera ignoré, les émetteurs réels importés avec, les qualifications préalables manquantes à importer aussi si on le souhaite, les prérequis sûrs qui seront ajoutés et les cours Academy liés. L’étape Formule montre les imports restants : au-delà du plafond, l’import s’arrête au plafond et le reste est signalé, avec le lien vers les formules ; importer un pays entier en un clic reste réservé aux formules qui l’incluent. L’import se fait ensuite par petits lots avec une barre de progression, sans doublon même relancé, chaque lot noté au journal, et se termine par un rapport : importés avec le lien vers leur fiche, ignorés, hors formule et erreurs.', [
+                'Academy › Catalogue (Qualifications, Brevets) : assistant d’importation pas à pas (portée, aperçu, formule, import)',
+                'Portée combinable : tout, pays, catégorie, type ou domaine, niveau, émetteur, sélection à la main ; recherche et compteurs en direct',
+                'Aperçu : déjà présents ignorés, émetteurs réels importés avec, qualifications préalables manquantes (option « importer les dépendances »), prérequis sûrs (option), cours Academy liés',
+                'Import par lots avec barre de progression, sans doublon, journal d’audit et rapport final avec liens',
+            ], [
+                'Plafond d’imports de la formule respecté à chaque lot (import partiel jusqu’au plafond) ; « pays entier en un clic » selon la formule',
+            ], [], ['personnel'], [], 'Portail'),
+
             $pr(1364, '2026-11-03', 'ATAK 3.0.3 : apps COMSPEC IDENTITY en anglais, Recherchés garde les BOLO de la mission', 'Petite version de suivi de COMSPEC IDENTITY. Le téléphone connaît maintenant les textes des nouvelles fonctions du mod SSE, Contrôle ID, Ma couverture, checkpoints et atelier de documents : ils s’affichent en anglais quand le téléphone est réglé en anglais. Dans l’app Recherchés, « Actualiser » ne fait plus disparaître les BOLO et les HVT posés par la mission ou le Zeus : ils restent dans la liste avec les avis d’Athena, sans doublon, avec leur origine affichée, Athena ou BOLO local, et les HVT en tête.', [
                 'Textes COMSPEC IDENTITY du SSE traduits en anglais sur le téléphone',
             ], [
