@@ -294,7 +294,7 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1363, '2026-11-03', 'ATAK 3.0.3 : apps COMSPEC IDENTITY en anglais, Recherchés garde les BOLO de la mission', 'Petite version de suivi de COMSPEC IDENTITY. Le téléphone connaît maintenant les textes des nouvelles fonctions du mod SSE, Contrôle ID, Ma couverture, checkpoints et atelier de documents : ils s’affichent en anglais quand le téléphone est réglé en anglais. Dans l’app Recherchés, « Actualiser » ne fait plus disparaître les BOLO et les HVT posés par la mission ou le Zeus : ils restent dans la liste avec les avis d’Athena, sans doublon, avec leur origine affichée, Athena ou BOLO local, et les HVT en tête.', [
+            $pr(1364, '2026-11-03', 'ATAK 3.0.3 : apps COMSPEC IDENTITY en anglais, Recherchés garde les BOLO de la mission', 'Petite version de suivi de COMSPEC IDENTITY. Le téléphone connaît maintenant les textes des nouvelles fonctions du mod SSE, Contrôle ID, Ma couverture, checkpoints et atelier de documents : ils s’affichent en anglais quand le téléphone est réglé en anglais. Dans l’app Recherchés, « Actualiser » ne fait plus disparaître les BOLO et les HVT posés par la mission ou le Zeus : ils restent dans la liste avec les avis d’Athena, sans doublon, avec leur origine affichée, Athena ou BOLO local, et les HVT en tête.', [
                 'Textes COMSPEC IDENTITY du SSE traduits en anglais sur le téléphone',
             ], [
                 'Recherchés : Actualiser garde les BOLO et HVT de la mission, sans doublon, origine affichée',
