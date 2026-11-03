@@ -1208,7 +1208,7 @@ switch (_act) do {
         if (_seq isNotEqualTo (_w get "seq")) then {
             _w set ["seq", _seq];
             private _h = _st getOrDefault ["notifHistory", []];
-            if (_link && {!(_w get "dnd")} && {_h isNotEqualTo []}) then {
+            if (_link && {!(_w get "dnd")} && {_h isNotEqualTo []} && {!((_h select ((count _h) - 1)) getOrDefault ["discreet", false])}) then {
                 private _last = _h select ((count _h) - 1);
                 private _msg = (_last getOrDefault ["message", ""]) call _tr;
                 if ((count _msg) > 90) then { _msg = (_msg select [0, 88]) + "…"; };
@@ -1431,7 +1431,7 @@ switch (_act) do {
                 };
                 ["sub", _sub] call _set;
                 ["head", "NOTIFICATIONS"] call _set;
-                private _h = (_st getOrDefault ["notifHistory", []]) select { _link };
+                private _h = (_st getOrDefault ["notifHistory", []]) select { _link && {!(_x getOrDefault ["discreet", false])} };
                 private _last = (_h select [((count _h) - 3) max 0]);
                 reverse _last;
                 for "_i" from 0 to 2 do {
