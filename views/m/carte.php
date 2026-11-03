@@ -1,22 +1,14 @@
 <?php
 /**
- * Carte tactique de la partie : ma position, amis, marqueurs ; poser, modifier, déplacer ou retirer mes marqueurs.
+ * Carte tactique de la partie (la carte Overwatch : mêmes fonds, calques et symboles) : ma position, amis, marqueurs,
+ * tracés, appareils, appuis ; poser, modifier, déplacer ou retirer mes marqueurs.
  *
  * @var array<string, array{0: string, 1: string, 2: string}> $markerKinds
  */
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/_head.php';
 ?>
-    <section class="mm-mapwrap">
-      <div class="mm-map" id="mm-map" aria-label="Carte"></div>
-      <button type="button" class="mm-fullbtn" data-map-full aria-pressed="false">Plein écran</button>
-      <div class="mm-mapchip" data-my-grid>Position : —</div>
-      <div class="mm-fabs">
-        <button type="button" class="mm-fab" data-map-me>MOI</button>
-        <button type="button" class="mm-fab mm-fab--add" data-map-add>+ MARQUEUR</button>
-      </div>
-      <div class="mm-mapbar" data-map-hint hidden>Touchez la carte pour placer le marqueur <button type="button" class="mm-btn" data-map-cancel>ANNULER</button></div>
-    </section>
+<?php $mapCanAdd = true; $mapMeLabel = 'Moi'; require __DIR__ . '/_map.php'; ?>
     <div class="mm-sheet mm-sheet--low" data-marker-sheet hidden>
       <div class="mm-sheet__bar"><strong data-marker-title>Nouveau marqueur</strong><button type="button" class="mm-btn" data-marker-close>FERMER</button></div>
       <div class="mm-choices mm-choices--seg" data-marker-kinds>

@@ -7,6 +7,8 @@ $assetVer = platform_app_version();
 $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-beta.css'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-beta.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-mapkit.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-mapkit.css'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-orbat.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-orbat.css'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
@@ -26,23 +28,9 @@ $owStamp = (string) max(
 );
 $owAsset = $assetVer . '.' . $owStamp;
 $map = $atakMapConfig ?? null;
-$config = is_array($map) ? ($map['config'] ?? []) : [];
 $slug = (string) ($map['slug'] ?? 'altis');
 $processed = is_array($atakMapsConfigs ?? null) ? ($atakMapsConfigs[$slug] ?? null) : null;
-$mapConfig = is_array($processed) ? $processed : atak_with_aerial_layer([
-    'slug' => $slug,
-    'tilePattern' => atak_resolve_tile_pattern((string) ($map['tile_pattern'] ?? ''), $slug),
-    'center' => $config['center'] ?? [15000, 15000],
-    'defaultZoom' => (int) ($config['defaultZoom'] ?? 3),
-    'minZoom' => (int) ($config['minZoom'] ?? 0),
-    'maxZoom' => (int) ($config['maxZoom'] ?? 6),
-    'tileSize' => (int) ($config['tileSize'] ?? 212),
-    'worldSize' => (int) ($config['worldSize'] ?? 30720),
-    'attribution' => $config['attribution'] ?? '&copy; Bohemia Interactive',
-    'crs' => $config['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
-    'offsetX' => (float) ($config['offset_x'] ?? 0),
-    'offsetY' => (float) ($config['offset_y'] ?? 0),
-], $slug);
+$mapConfig = is_array($processed) ? $processed : \App\Support\AtakOverwatchMapConfig::fromMap(is_array($map) ? $map : []);
 $operator = trim((string) ($atakUserForJs['callsign'] ?? $atakUserForJs['displayName'] ?? 'Opérateur'));
 $community = trim((string) ($atakTenantLabel ?? ''));
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -63,6 +51,7 @@ $icon = static function (string $path): string {
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.css">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-mapkit.css?v=<?= $h($owAsset) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($owAsset) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-orbat.css?v=<?= $h($owAsset) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-commands.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-commands.css')) ?>">
@@ -1201,6 +1190,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchTileCache.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-reach-overlay.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/recon-viewer.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/recon-viewer.js')) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-mapkit.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-intel.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-intel.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-orbat.js?v=<?= $h($owAsset) ?>"></script>

@@ -27,7 +27,9 @@
     toast._t = setTimeout(function () { t.hidden = true; }, 3200);
   }
   function getJSON(path) {
-    return fetch(BASE + path, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    if (ctrl) setTimeout(function () { ctrl.abort(); }, 10000);
+    return fetch(BASE + path, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: ctrl ? ctrl.signal : undefined })
       .then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); });
   }
   function post(path, params) {
@@ -95,43 +97,314 @@
     })();
   }
 
-  // Carte : même repère que la carte ATAK du site (latitude = y, longitude = x en mètres du monde).
+  // Carte : la carte Overwatch (atak-overwatch-mapkit.js), même fond, même repère et mêmes symboles.
   function makeMap(el) {
     var cfg = window.MM_MAP;
-    if (!el || typeof L === 'undefined' || !cfg) {
+    if (!el || typeof L === 'undefined' || !cfg || !window.OverwatchMapKit) {
       if (el) el.innerHTML = '<p class="mm-muted mm-pad">Carte indisponible pour cette partie.</p>';
       return null;
     }
-    var crs = cfg.crs || {};
-    var CRS = typeof window.MGRS_CRS === 'function'
-      ? window.MGRS_CRS(Number(crs.factorx) || 0.006839, Number(crs.factory) || 0.006836, Number(crs.tileWidth || cfg.tileSize) || 212)
-      : L.CRS.Simple;
-    var c = cfg.center || [15000, 15000];
-    var maxNative = Number(cfg.maxZoom) || 6;
-    var map = L.map(el, {
-      crs: CRS,
-      center: [Number(c[1]) || 15000, Number(c[0]) || 15000],
-      zoom: Number(cfg.defaultZoom) || 3,
-      minZoom: Number(cfg.minZoom) || 0,
-      maxZoom: maxNative + 2,
-      zoomControl: false,
-      attributionControl: false
-    });
-    if (cfg.tilePattern) {
-      var ws = Number(cfg.worldSize) || 30720;
-      L.tileLayer(cfg.tilePattern, {
-        tileSize: Number(cfg.tileSize) || 212,
-        maxZoom: maxNative + 2,
-        maxNativeZoom: maxNative,
-        noWrap: true,
-        crossOrigin: true,
-        bounds: L.latLngBounds([0, 0], [ws, ws])
-      }).addTo(map);
-    }
-    setTimeout(function () { map.invalidateSize(); }, 120);
-    return map;
+    var kit = window.OverwatchMapKit.create(el, cfg, { mobile: true, apiBase: BASE });
+    setTimeout(function () { kit.map.invalidateSize(); kit.fitMinZoom(); }, 120);
+    return kit;
   }
-  var COLORS = { ColorRed: '#e5483a', ColorOrange: '#f08a3c', ColorYellow: '#e8c547', ColorBlue: '#4aa3df', ColorGreen: '#5cc76b', ColorBlack: '#e3ebe7', ColorWhite: '#ffffff', ColorOPFOR: '#e5483a', ColorBLUFOR: '#4aa3df' };
+
+  /**
+   * Calques de l'Overwatch sur la carte du téléphone, lus aux mêmes adresses que l'Overwatch (session du téléphone) :
+   * amis, marqueurs du théâtre, tracés et zones, appareils, appuis 9-LINE / 5-LINE. Rafraîchis toutes les 5 s.
+   * opts : { markerBind(layer, row, data), aircraft: () => [indicatifs de mon appareil], highlight(row), onData(state) }
+   */
+  function mountMap(wrap, opts) {
+    opts = opts || {};
+    var kit = makeMap($('.mm-map', wrap));
+    var Kit = window.OverwatchMapKit;
+    var MAP_ID = Number(window.MM_MAP_ID || 1);
+    var q = '?mapId=' + encodeURIComponent(MAP_ID);
+    var chip = $('[data-my-grid]', wrap);
+    var net = $('[data-map-net]', wrap);
+    var panel = $('[data-layers-panel]', wrap);
+    var layersBtn = $('[data-map-layers]', wrap);
+    var fbtn = $('[data-map-full]', wrap);
+    var state = { me: null, units: [], markers: [], shapes: [], air: [], cas: [], nine: [], myAircraft: [] };
+    var stores = { units: {}, markers: {}, air: {} };
+    var shapeLayers = {};
+    var shapeSig = '';
+    var jtacLayer = null;
+    var jtacSig = '';
+    var centered = '';
+    var lastOk = 0;
+    var LAYER_KEY = 'mm-map-layers';
+    var shown = { units: true, markers: true, shapes: true, air: true, jtac: true };
+    try { var saved = JSON.parse(sessionStorage.getItem(LAYER_KEY) || 'null'); if (saved) Object.keys(shown).forEach(function (k) { if (typeof saved[k] === 'boolean') shown[k] = saved[k]; }); } catch (e) {}
+    $all('[data-layer]', wrap).forEach(function (box) {
+      var k = box.getAttribute('data-layer');
+      box.checked = shown[k] !== false;
+      box.addEventListener('change', function () {
+        shown[k] = box.checked;
+        try { sessionStorage.setItem(LAYER_KEY, JSON.stringify(shown)); } catch (e) {}
+        render();
+      });
+    });
+    if (!kit) return null;
+    var map = kit.map;
+
+    function list(payload, key) {
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload[key])) return payload[key];
+      if (payload && Array.isArray(payload.items)) return payload.items;
+      return null;
+    }
+    // Lecture d'une adresse de l'Overwatch : null si refusée ou injoignable (on garde la dernière image).
+    function read(path, key) {
+      // Réseau du téléphone qui ne répond plus : abandon au bout de 10 s, sinon le rafraîchissement restait bloqué.
+      var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 10000) : 0;
+      return fetch(BASE + path, { credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: ctrl ? ctrl.signal : undefined })
+        .then(function (r) { clearTimeout(timer); return r; }, function (e) { clearTimeout(timer); throw e; })
+        .then(function (r) {
+          if (!r.ok) return { status: r.status, rows: null };
+          return r.json().then(function (j) { return { status: r.status, rows: list(j, key) }; }, function () { return { status: r.status, rows: null }; });
+        }, function () { return { status: 0, rows: null }; });
+    }
+    function clock(ts) { var d = new Date(ts); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+    function setNet(text, since) {
+      net.hidden = !text;
+      net.innerHTML = text ? '<span>' + esc(text) + '</span>' + (since ? ' <b translate="no">' + esc(since) + '</b>' : '') : '';
+    }
+
+    function isMyAircraft(a) {
+      var cs = String(a.callsign || a.call_sign || '').trim().toLowerCase();
+      return cs !== '' && state.myAircraft.some(function (m) { return String(m).trim().toLowerCase() === cs; });
+    }
+    function myAircraftRow() {
+      return state.air.filter(isMyAircraft)[0] || null;
+    }
+    function myPoint() {
+      var a = myAircraftRow();
+      if (a && Number.isFinite(Number(a.pos_x)) && Number.isFinite(Number(a.pos_y))) return { x: Number(a.pos_x), y: Number(a.pos_y), grid: grid(Number(a.pos_x), Number(a.pos_y)), aircraft: a };
+      return state.me;
+    }
+    function mySide() {
+      var meId = state.me && state.me.id;
+      var mine = meId ? state.units.filter(function (u) { return Number(u.id) === Number(meId); })[0] : null;
+      return mine ? String(mine.side || '').toLowerCase() : '';
+    }
+
+    function renderUnits() {
+      var seen = {};
+      var side = mySide();
+      if (shown.units) {
+        state.units.forEach(function (u) {
+          if (!u || Kit.tooOldToShow(u)) return;
+          // Positions amies : mon camp (contacts hostiles ou d'un autre camp non tracés sur le téléphone).
+          if (Kit.side(u) !== 'friendly') return;
+          if (side && u.side && String(u.side).toLowerCase() !== side) return;
+          var x = Number(u.pos_x != null ? u.pos_x : u.x);
+          var y = Number(u.pos_y != null ? u.pos_y : u.y);
+          if (!Number.isFinite(x) || !Number.isFinite(y) || (Math.abs(x) < 0.5 && Math.abs(y) < 0.5)) return;
+          var id = String(u.id || Kit.unitCallsign(u));
+          var me = state.me && Number(state.me.id) > 0 && Number(u.id) === Number(state.me.id);
+          var disc = Kit.isDisconnected(u);
+          var color = disc ? '#8d9592' : (me ? '#f59e0b' : '#00d69a');
+          var icon = kit.unitIcon({
+            style: 'diamond',
+            extra: (me ? ' is-me is-selected' : '') + (disc ? ' is-offline' : ''),
+            stateColor: color,
+            hint: disc ? 'Dernière position connue' : '',
+            labelHtml: '<span class="ow-cs" translate="no">' + esc(Kit.unitCallsign(u)) + '</span>'
+          });
+          seen[id] = true;
+          var ll = kit.worldToLatLng(x, y);
+          if (stores.units[id]) {
+            stores.units[id].setLatLng(ll);
+            stores.units[id].setIcon(icon);
+          } else {
+            stores.units[id] = L.marker(ll, { icon: icon, keyboard: false, zIndexOffset: me ? 700 : 300 }).addTo(map);
+          }
+        });
+      }
+      Object.keys(stores.units).forEach(function (id) {
+        if (!seen[id]) { map.removeLayer(stores.units[id]); delete stores.units[id]; }
+      });
+    }
+    function renderMarkers() {
+      kit.syncArmaMarkers(stores.markers, state.markers, {
+        enabled: function () { return shown.markers; },
+        bind: function (layer, id, title, row) {
+          var data = Kit.parseMarkerData(row);
+          var mine = Number(data.mobile_user || 0) > 0 && Number(data.mobile_user) === Number(window.MM_USER_ID || -1);
+          if (layer._icon) layer._icon.classList.toggle('is-mine', mine);
+          if (opts.markerBind) opts.markerBind(layer, row, data, mine);
+        }
+      });
+    }
+    function renderShapes() {
+      var sig = shown.shapes ? JSON.stringify(state.shapes.map(function (s) { return [s.id, s.updated_at, s.geometry, s.meta, s.color, s.label]; })) : '';
+      if (sig === shapeSig) return;
+      shapeSig = sig;
+      Object.keys(shapeLayers).forEach(function (id) { map.removeLayer(shapeLayers[id]); delete shapeLayers[id]; });
+      if (!shown.shapes) return;
+      state.shapes.forEach(function (shape) {
+        var id = String(shape.id || shape.shape_uid || '');
+        if (!id) return;
+        var built = kit.shapeLayer(shape);
+        if (!built) return;
+        built.layer.addTo(map);
+        kit.labelShape(shape, built);
+        shapeLayers[id] = built.layer;
+      });
+    }
+    function renderAir() {
+      if (!shown.air) { kit.clearStore(stores.air); return; }
+      kit.syncAirAssets(stores.air, state.air, {
+        zIndexOffset: function (a) { return isMyAircraft(a) ? 800 : 500; },
+        onClick: function (a) {
+          var crew = [a.pilot, a.crew].filter(Boolean).join(' · ');
+          L.popup({ autoPanPadding: [16, 80] }).setLatLng(kit.worldToLatLng(Number(a.pos_x), Number(a.pos_y)))
+            .setContent('<strong translate="no">' + esc(a.callsign || a.call_sign || '') + '</strong><br><span translate="no">' + esc(a.model || a.aircraft_type || '') + '</span>' +
+              (crew ? '<br><span>Équipage</span> <b translate="no">' + esc(crew) + '</b>' : '') +
+              (a.alt != null ? '<br><span>Altitude</span> <b translate="no">' + esc(Math.round(Number(a.alt))) + ' m</b>' : '') +
+              (a.heading != null ? '<br><span>Cap</span> <b translate="no">' + esc(('00' + Math.round(Number(a.heading))).slice(-3)) + '°</b>' : ''))
+            .openOn(map);
+        }
+      });
+      Object.keys(stores.air).forEach(function (id) {
+        var row = state.air.filter(function (a) { return kit.airAssetId(a) === id; })[0];
+        var el = stores.air[id] && stores.air[id]._icon;
+        if (el) el.classList.toggle('mm-my-aircraft', !!(row && isMyAircraft(row)));
+      });
+    }
+    function jtacRows() {
+      var seen = {};
+      return state.cas.concat(state.nine).filter(function (row) {
+        var id = String((row && row.id) || '');
+        if (!row || (id && seen[id])) return false;
+        if (id) seen[id] = true;
+        return true;
+      });
+    }
+    function renderJtac() {
+      var rows = jtacRows();
+      var sig = shown.jtac ? Kit.jtacGeoSignature(rows) + '|' + (opts.highlightKey ? opts.highlightKey() : '') : '';
+      if (jtacLayer && sig === jtacSig) return;
+      if (jtacLayer) { map.removeLayer(jtacLayer); jtacLayer = null; }
+      jtacSig = sig;
+      if (!shown.jtac) return;
+      jtacLayer = kit.jtacGeoLayer(rows, { filter: opts.jtacFilter, highlight: opts.highlight }).addTo(map);
+    }
+    function renderMe() {
+      var p = myPoint();
+      // Libellés et valeurs séparés : la page anglaise traduit le libellé, la grille et l'indicatif restent tels quels.
+      chip.innerHTML = p
+        ? (p.aircraft ? '<b translate="no">' + esc(p.aircraft.callsign || '') + '</b>' : '<span>' + esc('Ma position') + '</span>') + ' <b translate="no">' + esc(p.grid) + '</b>'
+        : '<span>' + esc('Position en attente du jeu') + '</span>';
+      // Centrage une fois : sur mon appareil dès qu'il est connu (pilote), sinon sur moi.
+      var on = p ? (p.aircraft ? 'air' : 'me') : '';
+      if (p && centered !== on && centered !== 'air') {
+        map.setView(kit.worldToLatLng(p.x, p.y), Math.max(map.getZoom(), 4), { animate: false });
+        centered = on;
+      }
+    }
+    function render() {
+      renderShapes();
+      renderMarkers();
+      renderUnits();
+      renderAir();
+      renderJtac();
+      renderMe();
+      if (opts.onData) opts.onData(state);
+    }
+
+    var busy = false;
+    function refresh() {
+      if (busy) return Promise.resolve();
+      busy = true;
+      var me = getJSON('/m/api/carte').then(function (j) { return j; }, function () { return null; });
+      return Promise.all([
+        me,
+        read('/api/units' + q, 'units'),
+        read('/api/atak/markers' + q, 'markers'),
+        read('/api/map-shapes' + q, 'shapes'),
+        read('/api/atak/air-assets' + q, 'items'),
+        read('/api/cas' + q, 'items'),
+        read('/api/nine-line' + q, 'items'),
+        opts.aircraft ? opts.aircraft() : Promise.resolve(null)
+      ]).then(function (r) {
+        busy = false;
+        var j = r[0];
+        if (j && j._status === 401) { setNet('Session terminée : régénérez le QR code dans le jeu.'); return; }
+        var anyOk = !!(j && j.ok);
+        if (anyOk) state.me = j.me || null;
+        [['units', 1], ['markers', 2], ['shapes', 3], ['air', 4], ['cas', 5], ['nine', 6]].forEach(function (p) {
+          var res = r[p[1]];
+          if (res && res.rows) { state[p[0]] = res.rows; anyOk = true; }
+        });
+        if (Array.isArray(r[7])) state.myAircraft = r[7];
+        if (anyOk) lastOk = Date.now();
+        var offline = !anyOk || (typeof navigator !== 'undefined' && navigator.onLine === false);
+        setNet(offline ? (lastOk ? 'Hors réseau, carte de' : 'Hors réseau') : '', offline && lastOk ? clock(lastOk) : '');
+        render();
+      }, function () { busy = false; });
+    }
+
+    // Outils : recentrer, calques, zoom, plein écran (Fullscreen API, repli CSS pour iOS, choix gardé en session).
+    $('[data-map-me]', wrap).addEventListener('click', function () {
+      var p = myPoint();
+      if (p) map.setView(kit.worldToLatLng(p.x, p.y), Math.max(map.getZoom(), 5));
+      else toast('Position inconnue : votre ATAK n’a pas encore envoyé de position.');
+    });
+    layersBtn.addEventListener('click', function () {
+      panel.hidden = !panel.hidden;
+      layersBtn.setAttribute('aria-expanded', panel.hidden ? 'false' : 'true');
+    });
+    $all('[data-map-zoom]', wrap).forEach(function (b) {
+      b.addEventListener('click', function () { map.setZoom(map.getZoom() + Number(b.getAttribute('data-map-zoom'))); });
+    });
+    var setFull = function (on, then) {
+      wrap.classList.toggle('is-full', on);
+      fbtn.textContent = on ? '✕' : '⤢';
+      fbtn.setAttribute('aria-label', on ? 'Quitter le plein écran' : 'Plein écran');
+      fbtn.setAttribute('title', on ? 'Quitter le plein écran' : 'Plein écran');
+      fbtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      try { sessionStorage.setItem('mm-map-full-' + VIEW, on ? '1' : ''); } catch (e) {}
+      setTimeout(function () { map.invalidateSize(); kit.fitMinZoom(); if (then) then(); }, 60);
+    };
+    var full = function (on, then) {
+      if (on && wrap.requestFullscreen) wrap.requestFullscreen().catch(function () {});
+      if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+      setFull(on, then);
+    };
+    fbtn.addEventListener('click', function () { full(!wrap.classList.contains('is-full')); });
+    document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && wrap.classList.contains('is-full')) setFull(false); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (!panel.hidden) { panel.hidden = true; layersBtn.setAttribute('aria-expanded', 'false'); return; }
+      if (wrap.classList.contains('is-full') && !document.fullscreenElement) setFull(false);
+    });
+    map.on('click', function () { if (!panel.hidden) { panel.hidden = true; layersBtn.setAttribute('aria-expanded', 'false'); } });
+    window.addEventListener('resize', function () { map.invalidateSize(); });
+    window.addEventListener('online', function () { refresh(); });
+    window.addEventListener('offline', function () { setNet(lastOk ? 'Hors réseau, carte de' : 'Hors réseau', lastOk ? clock(lastOk) : ''); });
+    try { if (sessionStorage.getItem('mm-map-full-' + VIEW)) setFull(true); } catch (e) {}
+
+    refresh();
+    setInterval(function () { if (!document.hidden) refresh(); }, 5000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+
+    var ctl = {
+      kit: kit,
+      map: map,
+      state: state,
+      refresh: refresh,
+      render: render,
+      full: full,
+      jtacRows: jtacRows,
+      myPoint: myPoint,
+      focus: function (x, y, z) { map.setView(kit.worldToLatLng(x, y), Math.max(map.getZoom(), z || 5), { animate: false }); }
+    };
+    wrap._mm = ctl; // recette (contrôle de la projection, des calques et des fenêtres)
+    return ctl;
+  }
 
   // ── Comptes rendus ───────────────────────────────────────────────────────
   if (VIEW === 'cr') {
@@ -168,20 +441,22 @@
         if (!pickMap) {
           pickMap = makeMap(document.getElementById('mm-pick-map'));
           if (pickMap) {
-            pickMap.on('click', function (e) {
-              if (gridTarget) gridTarget.value = grid(e.latlng.lng, e.latlng.lat);
+            pickMap.map.on('click', function (e) {
+              var w = pickMap.latLngToWorld(e.latlng);
+              if (gridTarget) gridTarget.value = grid(w.x, w.y);
               sheet.hidden = true;
               toast('Grille ' + gridTarget.value);
             });
             getJSON('/m/api/carte').then(function (j) {
               if (j && j.me) {
-                pickMap.setView([j.me.y, j.me.x], Math.max(pickMap.getZoom(), 4));
-                L.circleMarker([j.me.y, j.me.x], { radius: 8, color: '#f08a3c', weight: 3 }).addTo(pickMap);
+                var ll = pickMap.worldToLatLng(j.me.x, j.me.y);
+                pickMap.map.setView(ll, Math.max(pickMap.map.getZoom(), 4));
+                L.circleMarker(ll, { radius: 8, color: '#f08a3c', weight: 3 }).addTo(pickMap.map);
               }
-            });
+            }).catch(function () {});
           }
         } else {
-          setTimeout(function () { pickMap.invalidateSize(); }, 80);
+          setTimeout(function () { pickMap.map.invalidateSize(); pickMap.fitMinZoom(); }, 80);
         }
       });
     });
@@ -238,21 +513,20 @@
 
   // ── Carte ────────────────────────────────────────────────────────────────
   if (VIEW === 'carte') {
-    var map = makeMap(document.getElementById('mm-map'));
-    var layer = map ? L.layerGroup().addTo(map) : null;
-    var me = null;
-    var centered = false;
+    var Kit = window.OverwatchMapKit;
     var mode = '';
     var editing = null;
     var pending = null;
     var msheet = $('[data-marker-sheet]');
     var hint = $('[data-map-hint]');
-    var chip = $('[data-my-grid]');
+    var TYPE_KIND = { hd_dot: 'point', hd_destroy: 'ennemi', hd_warning: 'danger', hd_objective: 'objectif', hd_flag: 'ami', hd_pickup: 'lz' };
+    var kindOfData = function (d) { return d.mobile_kind || TYPE_KIND[String(d.type || '').toLowerCase()] || 'point'; };
     var setKind = function (k) {
       $all('[data-marker-kinds] .mm-choice').forEach(function (b) { b.classList.toggle('is-on', b.getAttribute('data-choice') === k); });
     };
     var kindOf = function () { var on = $('[data-marker-kinds] .mm-choice.is-on'); return on ? on.getAttribute('data-choice') : 'point'; };
     var openSheet = function (m, x, y) {
+      if (mm) mm.map.closePopup();
       editing = m;
       pending = { x: x, y: y };
       $('[data-marker-title]').textContent = m ? 'Mon marqueur' : 'Nouveau marqueur';
@@ -265,86 +539,67 @@
       msheet.hidden = false;
     };
     var closeSheet = function () { msheet.hidden = true; editing = null; };
-    var refresh = function () {
-      if (!map) return;
-      getJSON('/m/api/carte').then(function (j) {
-        if (!j || !j.ok) { if (j && j._status === 401) toast(failText(j)); return; }
-        layer.clearLayers();
-        me = j.me;
-        chip.textContent = me ? ('Position : ' + me.grid) : 'Position : en attente du jeu';
-        (j.units || []).forEach(function (u) {
-          if (u.me) return;
-          L.circleMarker([u.y, u.x], { radius: 7, color: '#35d6a1', weight: 2, fillOpacity: 0.5 })
-            .bindTooltip(esc(u.callsign), { permanent: false, direction: 'top' }).addTo(layer);
-        });
-        (j.markers || []).forEach(function (m) {
-          var col = COLORS[m.color] || '#e8c547';
-          var mk = L.circleMarker([m.y, m.x], { radius: m.mine ? 9 : 7, color: col, weight: m.mine ? 4 : 2, fillOpacity: 0.35 })
-            .bindTooltip(esc(m.text || ''), { direction: 'top' }).addTo(layer);
-          if (m.mine) {
-            mk.on('click', function (e) {
-              L.DomEvent.stopPropagation(e);
-              openSheet({ id: m.id, text: m.text, kind: guessKind(m) }, m.x, m.y);
-            });
+    var mm = mountMap($('[data-mapwrap]'), {
+      // Mes marqueurs (posés depuis ce téléphone) : fiche de modification ; les autres : leur nom et leur grille.
+      markerBind: function (layer, row, data, mine) {
+        layer._mmRow = row;
+        layer._mmMine = mine;
+        if (layer._mmBound) return;
+        layer._mmBound = true;
+        layer.on('click', function (e) {
+          if (mode) return;
+          L.DomEvent.stopPropagation(e);
+          var d = Kit.parseMarkerData(layer._mmRow);
+          var w = Kit.markerWorld(d) || (window.ArmaMapMarkers && window.ArmaMapMarkers.parsePos(d));
+          if (!w) return;
+          if (layer._mmMine) {
+            openSheet({ id: Number(layer._mmRow.id), text: String(d.text || d.label || ''), kind: kindOfData(d) }, w.x, w.y);
+            return;
           }
+          var name = window.ArmaMapMarkers && window.ArmaMapMarkers.displayLabelOf ? window.ArmaMapMarkers.displayLabelOf(d) : (d.text || d.label || 'Repère');
+          var desc = String(d.description || '').trim();
+          L.popup({ autoPanPadding: [16, 80] }).setLatLng(mm.kit.worldToLatLng(w.x, w.y))
+            .setContent('<strong translate="no">' + esc(name || '') + '</strong>' + (desc ? '<br><span translate="no">' + esc(desc) + '</span>' : '') +
+              (d.author ? '<br><small translate="no">' + esc(d.author) + '</small>' : '') + '<br><span>Grille</span> <b class="mm-mono" translate="no">' + esc(grid(w.x, w.y)) + '</b>')
+            .openOn(mm.map);
         });
-        if (me) {
-          L.circleMarker([me.y, me.x], { radius: 10, color: '#f08a3c', weight: 4, fillOpacity: 0.6 }).bindTooltip('Moi').addTo(layer);
-          if (!centered) { map.setView([me.y, me.x], Math.max(map.getZoom(), 4)); centered = true; }
-        }
-      }).catch(function () {});
-    };
-    var TYPE_KIND = { hd_dot: 'point', hd_destroy: 'ennemi', hd_warning: 'danger', hd_objective: 'objectif', hd_flag: 'ami', hd_pickup: 'lz' };
-    var guessKind = function (m) { return TYPE_KIND[m.type] || 'point'; };
-    if (map) {
-      map.on('click', function (e) {
-        var x = e.latlng.lng;
-        var y = e.latlng.lat;
-        if (mode === 'add') { mode = ''; hint.hidden = true; openSheet(null, x, y); return; }
+      }
+    });
+    if (mm) {
+      mm.map.on('click', function (e) {
+        var w = mm.kit.latLngToWorld(e.latlng);
+        if (mode === 'add') { mode = ''; hint.hidden = true; openSheet(null, w.x, w.y); return; }
         if (!mode && !msheet.hidden) { closeSheet(); return; }
         if (mode === 'move' && editing) {
           mode = '';
           hint.hidden = true;
-          post('/m/api/marqueurs/' + editing.id, { kind: editing.kind || 'point', text: editing.text || '', x: x, y: y }).then(function (j) {
+          post('/m/api/marqueurs/' + editing.id, { kind: editing.kind || 'point', text: editing.text || '', x: w.x, y: w.y }).then(function (j) {
             toast(j.ok ? 'Marqueur déplacé.' : failText(j));
             closeSheet();
-            refresh();
-          });
+            mm.refresh();
+          }).catch(function () { toast(failText(null)); });
         }
       });
-      refresh();
-      setInterval(function () { if (!document.hidden) refresh(); }, 5000);
     }
-    $('[data-map-me]').addEventListener('click', function () {
-      if (me && map) map.setView([me.y, me.x], Math.max(map.getZoom(), 5)); else toast('Position inconnue : votre ATAK n’a pas encore envoyé de position.');
+    $('[data-map-add]').addEventListener('click', function () {
+      if (!mm) return;
+      mm.map.closePopup();
+      mode = 'add';
+      hint.hidden = false;
+      closeSheet();
     });
-    $('[data-map-add]').addEventListener('click', function () { mode = 'add'; hint.hidden = false; closeSheet(); });
     $('[data-map-cancel]').addEventListener('click', function () { mode = ''; hint.hidden = true; });
     $('[data-marker-close]').addEventListener('click', closeSheet);
-    // Fermer aussi par Échap et en glissant vers le bas.
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !msheet.hidden) closeSheet(); });
+    // Fermer aussi par Échap (fenêtre de marqueur, puis fenêtre de la carte) et en glissant vers le bas.
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (!msheet.hidden) { closeSheet(); return; }
+      if (mode) { mode = ''; hint.hidden = true; return; }
+      if (mm) mm.map.closePopup();
+    });
     var y0 = null;
     msheet.addEventListener('touchstart', function (e) { y0 = msheet.scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
     msheet.addEventListener('touchend', function (e) { if (y0 !== null && e.changedTouches[0].clientY - y0 > 80) closeSheet(); y0 = null; });
-    // Carte en grand : Fullscreen API, repli CSS (iOS), choix gardé pendant la session.
-    var wrap = $('.mm-mapwrap');
-    var fbtn = $('[data-map-full]');
-    var setFull = function (on) {
-      wrap.classList.toggle('is-full', on);
-      fbtn.textContent = on ? '✕ Quitter' : 'Plein écran';
-      fbtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      try { sessionStorage.setItem('mm-map-full', on ? '1' : ''); } catch (e) {}
-      if (map) setTimeout(function () { map.invalidateSize(); }, 60);
-    };
-    fbtn.addEventListener('click', function () {
-      var on = !wrap.classList.contains('is-full');
-      if (on && wrap.requestFullscreen) wrap.requestFullscreen().catch(function () {});
-      if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
-      setFull(on);
-    });
-    document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && wrap.classList.contains('is-full')) setFull(false); });
-    window.addEventListener('resize', function () { if (map) map.invalidateSize(); });
-    try { if (sessionStorage.getItem('mm-map-full')) setFull(true); } catch (e) {}
     $('[data-marker-move]').addEventListener('click', function () {
       if (!editing) return;
       editing.kind = kindOf();
@@ -357,9 +612,10 @@
       if (!pending) return;
       var params = { kind: kindOf(), text: $('[data-marker-text]').value, x: pending.x, y: pending.y };
       var path = editing ? ('/m/api/marqueurs/' + editing.id) : '/m/api/marqueurs';
+      var wasEditing = !!editing;
       post(path, params).then(function (j) {
-        toast(j.ok ? (editing ? 'Marqueur enregistré.' : 'Marqueur posé : il arrive dans les ATAK de la partie.') : failText(j));
-        if (j.ok) { closeSheet(); refresh(); }
+        toast(j.ok ? (wasEditing ? 'Marqueur enregistré.' : 'Marqueur posé : il arrive dans les ATAK de la partie.') : failText(j));
+        if (j.ok) { closeSheet(); if (mm) mm.refresh(); }
       }).catch(function () { toast(failText(null)); });
     });
     $('[data-marker-delete]').addEventListener('click', function () {
@@ -367,8 +623,8 @@
       post('/m/api/marqueurs/' + editing.id + '/supprimer').then(function (j) {
         toast(j.ok ? 'Marqueur retiré.' : failText(j));
         closeSheet();
-        refresh();
-      });
+        if (mm) mm.refresh();
+      }).catch(function () { toast(failText(null)); });
     });
   }
 
@@ -388,7 +644,37 @@
     var bsheet = $('[data-brief-sheet]');
     var banner = $('[data-brief-banner]');
     var baseTitle = document.title;
+    var aircraftList = Array.isArray(window.MM_AIRCRAFT) ? window.MM_AIRCRAFT : [];
+    var mapBtn = $('[data-brief-map]');
     var unread = function (b) { return b.status === 'sent' || b.status === 'received'; };
+    var briefIds = function () { var o = {}; briefs.forEach(function (b) { o[String(b.id)] = true; }); return o; };
+    // Carte Overwatch en encart : mon appareil centré, cibles de mes briefs (IP/BP, cap, distance de risque), amis.
+    var bmap = mountMap($('[data-mapwrap]'), {
+      aircraft: function () { return Promise.resolve(aircraftList); },
+      jtacFilter: function (row) { return !!briefIds()[String(row.id)]; },
+      highlight: function (row) { return String(row.id) === String(openId); },
+      highlightKey: function () { return Object.keys(briefIds()).join(',') + '#' + openId; },
+      // Première image : mon appareil et la cible du dernier brief reçu dans la même vue.
+      onData: function () {
+        if (fitted || !bmap || !briefs.length) return;
+        var p = bmap.myPoint();
+        var t = targetOf(briefs.slice().sort(function (a, b) { return b.id - a.id; })[0].id);
+        if (!p || !t) return;
+        var k = bmap.kit;
+        fitted = true;
+        // Marges : la puce de position en haut, la barre d'outils en bas ne doivent pas cacher l'appareil ni la cible.
+        bmap.map.fitBounds(L.latLngBounds([k.worldToLatLng(p.x, p.y), k.worldToLatLng(t.x, t.y)]), { animate: false, maxZoom: 5, paddingTopLeft: [40, 56], paddingBottomRight: [40, 84] });
+      }
+    });
+    var fitted = false;
+    // Le pilote a déjà déplacé la carte : plus de cadrage automatique.
+    if (bmap) bmap.map.on('dragstart', function () { fitted = true; });
+    var targetOf = function (id) {
+      if (!bmap) return null;
+      var row = bmap.jtacRows().filter(function (r) { return String(r.id) === String(id); })[0];
+      var g = row ? window.OverwatchMapKit.rowGeo(row) : null;
+      return g ? window.OverwatchMapKit.jtacGeoPoint(g.target) : null;
+    };
     var render = function () {
       if (!briefs.length) { list.innerHTML = '<p class="mm-muted">Aucun brief reçu pour l’instant.</p>'; return; }
       var sorted = briefs.slice().sort(function (a, b) { return (unread(a) ? 0 : 1) - (unread(b) ? 0 : 1) || b.id - a.id; });
@@ -417,11 +703,13 @@
       }).join('') + (b.remarks ? '<li class="mm-lines__rem"><span>Remarques</span><b translate="no">' + esc(b.remarks) + '</b></li>' : '');
       var bst = unread(b) ? 'read' : (STATES[b.status] ? b.status : 'sent');
       $('[data-brief-state]').innerHTML = '<b class="mm-ack ' + bst + '">' + esc(STATES[bst]) + '</b>';
+      mapBtn.hidden = !targetOf(id);
       bsheet.hidden = false;
+      if (bmap) bmap.render();
       // Ouvert sur le téléphone : « lu » pour le JTAC (une seule fois).
       if (unread(b)) {
         b.status = 'read';
-        post('/m/api/briefs/' + id + '/reponse', { answer: 'read' });
+        post('/m/api/briefs/' + id + '/reponse', { answer: 'read' }).catch(function () {});
       }
       render();
     };
@@ -429,15 +717,25 @@
       var b = ev.target.closest('[data-brief]');
       if (b) openBrief(Number(b.getAttribute('data-brief')));
     });
-    $('[data-brief-close]').addEventListener('click', function () { bsheet.hidden = true; openId = 0; });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !bsheet.hidden) { bsheet.hidden = true; openId = 0; } });
+    var closeBrief = function () { bsheet.hidden = true; openId = 0; if (bmap) bmap.render(); };
+    $('[data-brief-close]').addEventListener('click', closeBrief);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !bsheet.hidden) closeBrief(); });
+    mapBtn.addEventListener('click', function () {
+      var t = targetOf(openId);
+      fitted = true;
+      bsheet.hidden = true;
+      if (!bmap || !t) return;
+      bmap.full(true, function () { bmap.focus(t.x, t.y, 4); });
+    });
     var poll = function () {
       getJSON('/m/api/briefs').then(function (j) {
         if (!j || !j.ok) {
           if (j && j.error === 'not_aircrew') list.innerHTML = '<p class="mm-muted">Vous n’êtes plus à bord d’un appareil.</p>';
+          if (j && (j.error === 'session' || j._status === 401)) list.innerHTML = '<p class="mm-muted">' + esc(failText(j)) + '</p>';
           return;
         }
         briefs = j.briefs || [];
+        aircraftList = j.aircraft || [];
         var ids = briefs.map(function (b) { return b.id; });
         if (known !== null) {
           var fresh = ids.filter(function (id) { return known.indexOf(id) < 0; });
@@ -450,15 +748,21 @@
         }
         known = ids;
         render();
+        if (bmap) bmap.render();
       }).catch(function () {});
     };
     $all('[data-brief-answer]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         if (!openId) return;
         var answer = btn.getAttribute('data-brief-answer');
+        btn.disabled = true;
         post('/m/api/briefs/' + openId + '/reponse', { answer: answer.toLowerCase() }).then(function (j) {
+          btn.disabled = false;
           $('[data-brief-state]').textContent = j.ok ? (answer + ' envoyé au JTAC ✓') : failText(j);
           if (j.ok) poll();
+        }).catch(function () {
+          btn.disabled = false;
+          $('[data-brief-state]').textContent = failText(null);
         });
       });
     });

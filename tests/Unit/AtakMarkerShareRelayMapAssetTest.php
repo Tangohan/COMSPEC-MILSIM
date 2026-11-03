@@ -23,7 +23,8 @@ final class AtakMarkerShareRelayMapAssetTest extends TestCase
         $xeh = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/XEH_postInit.sqf');
         $athenaRelay = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateRelay.sqf');
         $js = (string) file_get_contents($root . '/public/assets/js/arma-map-markers.js');
-        $ow = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-beta.js');
+        // Carte Overwatch : atak-overwatch-beta.js et son module de carte partagé (atak-overwatch-mapkit.js).
+        $ow = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-beta.js') . (string) file_get_contents($root . '/public/assets/js/atak-overwatch-mapkit.js');
         $noteShare = (string) file_get_contents($root . '/docs/bugs/2026-09-20-reperes-poste-carte-arma.md');
         $noteRelay = (string) file_get_contents($root . '/docs/bugs/2026-09-20-relais-mat-carte.md');
 

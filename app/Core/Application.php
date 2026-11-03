@@ -33,6 +33,11 @@ class Application
         $gameKey = strtoupper($method) === 'GET' && str_starts_with($path, '/api/')
             && \App\Support\ComspecApiKeyAuth::extractPresentedKey() !== '';
         \App\Core\Session::start(\App\Core\Session::isReadOnlyRequest($method, $path, $gameKey));
+        // Carte du téléphone (/m/carte, /m/briefs) : lectures de la carte Overwatch avec l'identité du QR code scanné.
+        try {
+            \App\Services\Atak\AtakMobileOverwatchAccess::apply($method, $path);
+        } catch (\Throwable) {
+        }
         $runner = fn (\App\Core\Request $req): \App\Core\Response => $this->router->dispatch();
         $global = [
             new \App\Middleware\RequestIdMiddleware(),

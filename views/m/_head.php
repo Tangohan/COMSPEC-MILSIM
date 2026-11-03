@@ -12,7 +12,7 @@
  */
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $ver = rawurlencode(class_exists(\App\Support\BuildVersion::class) ? \App\Support\BuildVersion::id() : '1');
-$needsMap = in_array($mobileView ?? '', ['carte', 'cr'], true);
+$needsMap = in_array($mobileView ?? '', ['carte', 'cr', 'briefs'], true);
 $tabs = [
     'cr' => ['m/cr', 'CR'],
     'compte_rendu' => ['m/compte-rendu', 'CR fin d’op'],
@@ -44,14 +44,17 @@ if (!empty($expiresAt)) {
   <meta name="referrer" content="no-referrer">
   <?php if (!empty($csrf)): ?><meta name="csrf-token" content="<?= $h($csrf) ?>"><?php endif; ?>
   <title><?= $h($title ?? 'Sur mon téléphone — Athena') ?></title>
-  <?php if ($needsMap): ?><link rel="stylesheet" href="<?= $h(url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>"><?php endif; ?>
+  <?php if ($needsMap): ?>
+  <link rel="stylesheet" href="<?= $h(url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
+  <link rel="stylesheet" href="<?= $h(url('assets/css/atak-overwatch-mapkit.css')) ?>?v=<?= $h($ver) ?>">
+  <?php endif; ?>
   <link rel="stylesheet" href="<?= $h(url('assets/css/atak-m.css')) ?>?v=<?= $h($ver) ?>">
 </head>
 <body class="mm-body" data-view="<?= $h($mobileView ?? '') ?>" data-base="<?= $h(rtrim(url(''), '/')) ?>">
 <?php if (!empty($mobileLink)): ?>
   <header class="mm-top">
     <a class="mm-top__brand" href="<?= $h(url('m')) ?>"><img src="<?= $h(url('assets/brand/athena-embleme-blanc.svg')) ?>" alt="" width="26" height="22"><span class="mm-top__mark">ATHENA<em>.</em></span></a>
-    <span class="mm-top__app" translate="no"><?= $h(explode(' — ', (string) ($title ?? ''))[0]) ?></span>
+    <span class="mm-top__app"><?= $h(explode(' — ', (string) ($title ?? ''))[0]) ?></span>
     <nav class="mm-lang" aria-label="Langue">
       <?php foreach (['fr', 'en'] as $code): ?>
         <?php if ($curLang === $code): ?><span class="on" aria-current="true"><?= strtoupper($code) ?></span><?php else: ?><a href="<?= $h($langHref($code)) ?>" hreflang="<?= $code ?>"><?= strtoupper($code) ?></a><?php endif; ?>

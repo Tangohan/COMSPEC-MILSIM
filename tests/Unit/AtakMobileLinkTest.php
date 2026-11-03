@@ -12,11 +12,13 @@ use App\Core\Session;
 use App\Repositories\AtakAdminControlRepository;
 use App\Repositories\AtakMobileLinkRepository;
 use App\Services\Atak\AtakMobileLinkService;
+use App\Services\Atak\AtakMobileOverwatchAccess;
 use App\Services\Personnel\MemberNameService;
 use App\Services\Qr\QrPngGenerator;
 use App\Services\Tactical\AirBriefService;
 use App\Services\Tactical\NineLineBoardService;
 use App\Support\AtakMobileReportCatalog;
+use App\Support\ComspecApiKeyAuth;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -72,6 +74,8 @@ final class AtakMobileLinkTest extends TestCase
 
     protected function tearDown(): void
     {
+        Session::actAs([]);
+        ComspecApiKeyAuth::resetForTests();
         MemberNameService::forgetSchema();
         (new \ReflectionProperty(Database::class, 'pdo'))->setValue(null, $this->savedPdo);
         (new \ReflectionProperty(Session::class, 'started'))->setValue(null, $this->savedSessionStarted);
@@ -231,6 +235,108 @@ final class AtakMobileLinkTest extends TestCase
         self::assertStringContainsString('"/api/atak/mobile-link"', $dll);
     }
 
+    /**
+     * Carte du téléphone : les lectures de la carte Overwatch (mêmes adresses) passent avec la session du téléphone,
+     * comme le membre connecté à son Overwatch (sa communauté, son compte), et seulement elles ; refusées sans session.
+     */
+    public function testOverwatchReadsOpenWithThePhoneSessionOnlyAndNeverWidenRights(): void
+    {
+        $allowed = static fn (): bool => true;
+        $bypass = new \ReflectionMethod(ComspecApiKeyAuth::class, 'authenticatedBrowserSessionMayAccessTactical');
+
+        // Sans session du téléphone : rien n'est prêté, l'API tactique refuse (pas de communauté, pas de session).
+        self::assertFalse(AtakMobileOverwatchAccess::apply('GET', '/api/units', $this->svc, $allowed));
+        self::assertNull(Session::get('tenant_id'));
+        self::assertFalse($bypass->invoke(null), 'sans session : refusé');
+
+        $link = $this->openSession('carte');
+        foreach (AtakMobileOverwatchAccess::READ_PATHS as $path) {
+            Session::actAs([]);
+            self::assertTrue(AtakMobileOverwatchAccess::apply('GET', $path, $this->svc, $allowed), $path);
+            self::assertSame(self::OWN, Session::get('tenant_id'), 'communauté du lien, jamais celle demandée');
+            self::assertSame(self::PLAYER, Session::get('user_id'), 'compte du lien (mêmes filtres que son Overwatch)');
+            self::assertTrue($bypass->invoke(null), $path . ' : accepté avec la session du téléphone');
+        }
+        self::assertArrayNotHasKey('user_id', $_SESSION, 'rien n’est écrit dans la session du téléphone');
+        self::assertArrayNotHasKey('tenant_id', $_SESSION);
+
+        // Ni écriture, ni autre lecture que celles de la carte.
+        foreach ([['POST', '/api/units'], ['POST', '/api/atak/markers'], ['GET', '/api/chat'], ['GET', '/api/atak/orders'], ['GET', '/api/atak/personnel'], ['GET', '/api/units/5']] as [$m, $path]) {
+            Session::actAs([]);
+            self::assertFalse(AtakMobileOverwatchAccess::apply($m, $path, $this->svc, $allowed), $m . ' ' . $path);
+            self::assertNull(Session::get('user_id'), $m . ' ' . $path);
+        }
+        // Membre privé de la carte ATAK par la modération (comme à l'ouverture de l'Overwatch) : refusé.
+        Session::actAs([]);
+        self::assertFalse(AtakMobileOverwatchAccess::apply('GET', '/api/units', $this->svc, static fn (): bool => false));
+        self::assertFalse(AtakMobileOverwatchAccess::apply('GET', '/api/units', $this->svc, static function (): bool {
+            throw new \RuntimeException('base indisponible');
+        }), 'contrôle impossible : refusé');
+        // Navigateur déjà connecté au portail : sa propre session, rien de prêté.
+        $_SESSION['user_id'] = 99;
+        self::assertFalse(AtakMobileOverwatchAccess::apply('GET', '/api/units', $this->svc, $allowed));
+        self::assertSame(99, Session::get('user_id'));
+        unset($_SESSION['user_id']);
+        // Session coupée depuis le profil (ou expirée) : refusée à la requête suivante.
+        $this->svc->revoke(self::OWN, self::PLAYER, (int) $link['id']);
+        self::assertFalse(AtakMobileOverwatchAccess::apply('GET', '/api/units', $this->svc, $allowed));
+        self::assertNull(Session::get('tenant_id'));
+    }
+
+    /** Une seule carte : l'Overwatch et le téléphone chargent le même module, le même fond et les mêmes symboles. */
+    public function testMobileMapReusesTheOverwatchMapModule(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $kit = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-mapkit.js');
+        foreach (['window.OverwatchMapKit', 'function syncArmaMarkers', 'function shapeLayer', 'function syncAirAssets', 'function jtacGeoLayer', 'function unitIcon', "typeof pos === 'string'", 'row.geo_json'] as $needle) {
+            self::assertStringContainsString($needle, $kit);
+        }
+        $ow = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-beta.js');
+        self::assertStringContainsString("window.OverwatchMapKit.create('ow-map'", $ow);
+        self::assertStringContainsString('kit.syncArmaMarkers(armaMarkerLayers', $ow);
+        self::assertStringContainsString('kit.jtacGeoLayer(rows)', $ow);
+        self::assertStringNotContainsString("L.map('ow-map'", $ow, 'plus de seconde construction de la carte');
+        $owView = (string) file_get_contents($root . '/views/atak-overwatch-beta.php');
+        self::assertLessThan(strpos($owView, '/assets/js/atak-overwatch-beta.js?v='), strpos($owView, '/assets/js/atak-overwatch-mapkit.js?v='));
+        self::assertStringContainsString('AtakOverwatchMapConfig::fromMap', $owView);
+
+        $m = (string) file_get_contents($root . '/public/assets/js/atak-m.js');
+        self::assertStringContainsString('window.OverwatchMapKit.create(el, cfg, { mobile: true', $m);
+        foreach (['/api/units', '/api/atak/markers', '/api/map-shapes', '/api/atak/air-assets', '/api/cas', '/api/nine-line'] as $path) {
+            self::assertStringContainsString("read('" . $path . "'", $m);
+            self::assertContains($path, AtakMobileOverwatchAccess::READ_PATHS);
+        }
+        self::assertStringNotContainsString('L.circleMarker([m.y, m.x]', $m, 'plus de ronds à la place des marqueurs');
+        $foot = (string) file_get_contents($root . '/views/m/_foot.php');
+        foreach (['arma-map-markers.js', 'nato-sidc-icons.js', 'milsymbol.js', 'atak-overwatch-mapkit.js', 'ATAK_MARKER_ICONS_CDN'] as $needle) {
+            self::assertStringContainsString($needle, $foot);
+        }
+        self::assertStringContainsString("'briefs'", (string) file_get_contents($root . '/views/m/_head.php'));
+        foreach (['carte', 'briefs'] as $v) {
+            self::assertStringContainsString("require __DIR__ . '/_map.php'", (string) file_get_contents($root . '/views/m/' . $v . '.php'));
+        }
+        self::assertStringContainsString('AtakOverwatchMapConfig::fromMap', (string) file_get_contents($root . '/app/Controllers/Web/AtakMobileAppsController.php'));
+        self::assertStringContainsString('AtakOverwatchMapConfig::fromMap', (string) file_get_contents($root . '/app/Controllers/Web/AtakController.php'));
+        self::assertStringContainsString('AtakMobileOverwatchAccess::apply($method, $path)', (string) file_get_contents($root . '/app/Core/Application.php'));
+
+        $cfg = AtakMobileAppsController::mapConfig(['slug' => 'altis', 'tile_pattern' => '', 'config' => ['worldSize' => 30720, 'offset_x' => 12.5, 'offset_y' => -4]]);
+        self::assertSame(30720, $cfg['worldSize']);
+        self::assertSame(12.5, $cfg['offsetX'], 'décalage du terrain repris (comme l’Overwatch)');
+        self::assertSame(-4.0, $cfg['offsetY']);
+    }
+
+    /** Overwatch d'origine : fiches de marqueur et blocs masqués refermables (×, clic hors, Échap). */
+    public function testOverwatchMarkerSheetsAndHiddenBlocksClose(): void
+    {
+        $root = dirname(__DIR__, 2);
+        self::assertStringContainsString('.ow-root [hidden]{display:none!important}', (string) file_get_contents($root . '/public/assets/css/atak-overwatch-beta.css'));
+        $ow = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-beta.js');
+        self::assertStringContainsString('function closeArmaMarkerSheet()', $ow);
+        self::assertStringContainsString("(activeTool === 'cursor' || !activeTool) && closeArmaMarkerSheet()", $ow);
+        self::assertStringContainsString('map.closePopup();', $ow);
+        self::assertStringContainsString('jtacGeoSignature(rows)', $ow, 'la fiche 9-LINE ouverte n’est pas refermée à chaque rafraîchissement');
+    }
+
     /** @return array<string, mixed> */
     private function issue(string $app, ?int $now = null): array
     {
@@ -300,7 +406,7 @@ final class AtakMobileLinkTest extends TestCase
         $js = (string) file_get_contents($root . '/public/assets/js/atak-m.js');
         self::assertStringContainsString("e.key === 'Escape'", $js);
         self::assertStringContainsString('requestFullscreen', $js);
-        self::assertStringContainsString('data-map-full', (string) file_get_contents($root . '/views/m/carte.php'));
+        self::assertStringContainsString('data-map-full', (string) file_get_contents($root . '/views/m/_map.php'));
     }
 
     private function air(string $cs, string $crew): void

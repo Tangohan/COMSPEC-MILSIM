@@ -135,6 +135,10 @@ button{cursor:pointer}
 .ow-row input[type="color"]{width:36px;height:22px;padding:0;border:1px solid var(--athena-line-2);background:transparent}
 .ow-row input[type="range"]{width:110px}
 .ow-wx{background:#080b0acc;border:1px solid #27302d;padding:5px 8px;font-size:11px;font-weight:500;color:#dff9ef;max-width:min(360px,calc(100vw - 120px));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:4px}
+/* Une fenêtre ou un bloc masqué (attribut hidden) reste masqué même si sa classe le met en flex / grid / block
+   (fiches de bâtiment, barre d'écoute radio… restaient affichées et ne se fermaient pas). Exceptions voulues : règles
+   plus précises en !important (ex. #ow-gl-map[hidden] en vue partagée). */
+.ow-root [hidden]{display:none!important}
 .ow-wx[hidden]{display:none!important}
 .ow-scene-load{background:#101613ee;border:1px solid #3a4a40;color:#d7eadc;padding:6px 10px;font-size:12px;font-weight:600;border-radius:4px;max-width:min(360px,72%)}
 .ow-scene-load[hidden]{display:none!important}
@@ -563,20 +567,6 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-footer #ow-weather-chip{overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ow-footer-end{margin-left:auto}
 
-.ow-marker{background:transparent !important;border:0 !important;overflow:visible !important}
-.ow-marker div{display:flex;align-items:center;gap:5px;white-space:nowrap;pointer-events:auto}
-.ow-marker.is-label-left div{flex-direction:row-reverse}
-.ow-marker i{width:var(--ow-icon-size,7px);height:var(--ow-icon-size,7px);border:2px solid var(--ow-iff,var(--athena-green));transform:rotate(45deg);background:rgba(6,14,12,.88);pointer-events:auto;flex:0 0 auto}
-.ow-marker.is-hostile i{border-color:var(--ow-iff,var(--athena-red))}
-.ow-marker.is-unknown i{border-color:var(--ow-iff,var(--athena-amber));border-radius:50%;transform:none}
-.ow-marker.ow-mark-dot i{transform:none;border-radius:50%;width:8px;height:8px;background:var(--ow-iff,var(--athena-green))}
-.ow-marker.ow-mark-nato i{transform:none;border-radius:0;width:10px;height:10px}
-.ow-marker .ow-cs,.ow-marker span{padding:2px 6px;border:1px solid var(--ow-iff,#2a3a36);background:#0a0e0d;color:#e4e8e8;font:600 var(--ow-label-size,11px)/1.2 var(--ow-label-font,var(--ow-mono));letter-spacing:0;border-radius:3px;box-shadow:0 4px 12px rgba(0,0,0,.35)}
-.ow-marker.is-selected i{box-shadow:0 0 0 2px rgba(0,214,154,.4)}
-.ow-marker.is-selected .ow-cs,.ow-marker.is-selected span{color:#fff}
-.ow-marker.is-offline{opacity:.84}
-.ow-marker.is-offline i,.ow-marker.is-offline .ow-cs,.ow-marker.is-offline span{border-style:dashed;border-color:var(--ow-state,#8d9592)}
-.ow-marker.is-offline .ow-cs,.ow-marker.is-offline span{color:#a8b0ad}
 .ow-marker.is-squad-pulse i,.ow-marker.is-squad-pulse .ow-cs,.ow-marker.is-squad-pulse span,.cicon.is-squad-pulse{
   animation:owSquadState 2s steps(1,end) infinite
 }
@@ -655,15 +645,6 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 }
 .ow-medical-banner-msg,.atak-medical-banner-msg{
   min-width:0;font-weight:600;line-height:1.35
-}
-.ow-marker.is-delayed i,.ow-marker.is-delayed .ow-cs{
-  border-style:dashed;
-  border-color:#c9784a;
-  animation:none
-}
-.ow-marker.is-stale-pos i,.ow-marker.is-stale-pos .ow-cs{
-  border-style:dashed;
-  border-color:#c45a63
 }
 .ow-po-label{background:transparent;border:0}
 .ow-po-label span{display:grid;gap:2px;padding:3px 6px;background:#080b0acc;border:1px solid #27302d;color:#dff9ef;font:500 11px var(--ow-sans)}
@@ -838,8 +819,6 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-marker-age-chip.is-stale{background:#3a1418;border:1px solid #c45a63;color:#f3c4c7}
 .ow-sitrep-list{display:grid;gap:6px}
 .ow-sitrep-item{border:1px solid var(--athena-line);padding:8px;border-radius:6px;background:#0d1110;text-align:left;width:100%}
-.ow-geo-label{background:transparent!important;border:0!important}
-.ow-geo-label span{padding:1px 4px;background:#080b0acc;border:1px solid #27302d;color:#c7ceca;font:600 10px var(--ow-sans);white-space:nowrap}
 
 .ow-drawbar{
   position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:12;
@@ -938,7 +917,6 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 }
 .ow-otan-lib-empty{font-size:10.5px;color:var(--athena-muted);padding:8px 4px 2px;margin:0;line-height:1.35}
 .ow-otan-lib-empty[hidden]{display:none!important}
-.ow-map-stamp{display:block;border:1px solid rgba(255,255,255,.2);border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.35);background:rgba(0,0,0,.2)}
 .ow-export-btn{
   display:flex;align-items:center;gap:6px;background:var(--athena-green);color:#062017;font-weight:700;
   font-size:11.5px;padding:0 12px;height:30px;border:0;border-radius:6px;cursor:pointer;margin-left:4px;white-space:nowrap
@@ -972,8 +950,6 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-bplan-name select{display:block;width:100%;margin-top:4px;height:30px;background:#101413;border:1px solid var(--athena-line-2);border-radius:6px;color:var(--athena-text);padding:0 8px;font-size:12px}
 .ow-bplan-foot .ow-help{margin:0 0 8px;font-size:11px;line-height:1.4}
 .ow-bplan-foot .ow-primary,.ow-export-foot .ow-primary{width:100%;height:36px}
-.ow-bplan-pin{background:rgba(10,13,18,.92);border:1px solid var(--athena-green);border-radius:8px;padding:6px 8px;color:#c7ceca;font:600 10px var(--ow-sans);box-shadow:0 6px 18px rgba(0,0,0,.5);white-space:nowrap}
-.ow-bplan-pin small{display:block;color:var(--athena-green);margin-bottom:4px}
 .ow-export-modal{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:20;display:flex;align-items:center;justify-content:center}
 .ow-export-modal[hidden]{display:none!important}
 .ow-export-card{width:340px;background:#0d1010;border:1px solid var(--athena-line-2);border-radius:10px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5)}
@@ -986,7 +962,6 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-export-field{display:block;margin-top:10px;font-size:11px;color:var(--athena-muted)}
 .ow-export-field select{display:block;width:100%;margin-top:5px;background:#101413;border:1px solid var(--athena-line-2);border-radius:6px;color:var(--athena-text);font-size:12px;padding:7px 9px}
 .ow-export-foot{padding:12px 16px 16px}
-.ow-nato-label span{font-weight:700;letter-spacing:.02em}
 
 /* Parité poste : Wave, avatars, effectifs, aérien / véhicules, zone de déplacement */
 .ow-bft-avatar-img{width:100%;height:100%;object-fit:cover;border-radius:6px;display:block}
@@ -1035,10 +1010,7 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-log-radio{border-left:2px solid #00d69a;padding-left:8px}
 .ow-comms-history-block{margin-top:14px;padding-top:10px;border-top:1px solid #171c1a}
 .ow-nav button .ow-unread{margin-left:6px}
-.ow-gps-map-icon,.ow-air-map-icon{background:transparent;border:0}
 .ow-gps-pin{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid #f59e0b;filter:drop-shadow(0 0 1px #000);display:block}
-.ow-gps-label,.ow-air-label{display:block;margin-top:2px;font-size:9px;font-weight:700;color:#e2e8f0;text-shadow:0 1px 2px #000;white-space:nowrap}
-.ow-air-glyph{color:#3b82f6;font-size:12px;font-weight:700;filter:drop-shadow(0 0 1px #000)}
 /* Drones (UAV pilotés) : pictogramme quadrirotor + étiquette indicatif · mode · altitude */
 .ow-uav-map-icon{background:transparent;border:0;overflow:visible}
 .ow-uav-svg{display:block;filter:drop-shadow(0 0 1.5px #000);transform-origin:50% 50%;transition:transform .4s linear}
@@ -1469,13 +1441,4 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-task-dot.is-off{background:var(--athena-muted)}
 .ow-task-none{margin:8px 0 0;color:var(--athena-muted);font-size:11px}
 .ow-task-card footer{margin-top:8px;display:flex;justify-content:flex-end}
-/* Géométrie des appuis JTAC (cible, IP, FAH, distance de risque) */
-.ow-jtac-geo-label{background:transparent;border:0;pointer-events:none}
-.ow-jtac-geo-label span{display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;font:700 11px/1.2 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;padding:1px 4px;border-radius:3px;background:rgba(8,12,10,.72);color:#e6ece9}
-.ow-jtac-geo-label.is-amber span{color:#f2ab33}.ow-jtac-geo-label.is-red span{color:#ff6a5c}.ow-jtac-geo-label.is-green span{color:#5cc76b}
-.ow-jtac-geo-target{background:transparent;border:0}
-.ow-jtac-geo-target span{display:block;width:12px;height:12px;margin:3px;transform:rotate(45deg);border:2px solid #e5483a;background:rgba(229,72,58,.35);box-shadow:0 0 0 2px rgba(0,0,0,.45)}
-.ow-jtac-geo-target.is-dc span{background:#e5483a}
-.leaflet-tooltip.ow-jtac-geo-tip{background:rgba(8,12,10,.85);border:1px solid rgba(255,255,255,.12);color:#e6ece9;font:700 11px/1.2 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;padding:2px 5px;box-shadow:none}
-.leaflet-tooltip.ow-jtac-geo-tip::before{display:none}
-.leaflet-tooltip.ow-jtac-geo-tip.is-red{color:#ff6a5c}.leaflet-tooltip.ow-jtac-geo-tip.is-green{color:#5cc76b}.leaflet-tooltip.ow-jtac-geo-tip.is-cyan{color:#33e6f2}
+/* Géométrie des appuis JTAC, contacts BFT, tracés et appareils : atak-overwatch-mapkit.css (partagé avec le téléphone). */

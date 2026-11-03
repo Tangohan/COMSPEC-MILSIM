@@ -20,7 +20,8 @@ use App\Support\AtakMobileReportCatalog;
  * le téléphone du jeu. /m/{jeton} rachète le jeton (usage unique, 5 min) et ouvre une session limitée à ces pages :
  *   /m/cr            compte rendu rapide (CONTACT, SALUTE, SPOTREP, blessé, libre) → confié à l'ATAK du joueur
  *   /m/compte-rendu  CR de fin d'opération ouvert dans le téléphone en jeu → confié à l'ATAK du joueur
- *   /m/carte         carte tactique de la partie : amis, marqueurs, poser / modifier / retirer ses marqueurs
+ *   /m/carte         carte Overwatch de la partie : amis, marqueurs, tracés, appareils, appuis ; poser / modifier /
+ *                    retirer ses marqueurs (lectures aux adresses de l'Overwatch, AtakMobileOverwatchAccess)
  *   /m/briefs        briefs air (9-LINE reçus par l'appareil), seulement pour un pilote ou un membre d'équipage
  * Écritures en POST avec jeton CSRF (en-tête X-CSRF-Token), limitées en débit ; lectures GET sans corps.
  */
@@ -184,64 +185,22 @@ final class AtakMobileAppsController
         return $this->page('carte', $link, ['markerKinds' => self::MARKER_KINDS]);
     }
 
-    /** Carte de la partie : ma position, amis, marqueurs (les miens modifiables). */
+    /**
+     * Ma position (mon unité remontée par mon ATAK, sinon la position envoyée avec le QR code) : grille des comptes
+     * rendus, centrage et « Moi » sur la carte. Le reste de la carte (amis, marqueurs, tracés, appareils, appuis) est
+     * lu aux adresses de l'Overwatch avec la session du téléphone (AtakMobileOverwatchAccess).
+     */
     public function carteData(Request $request, array $params = []): Response
     {
         $link = $this->links()->current();
         if ($link === null) {
             return Response::json(['ok' => false, 'error' => 'session'], 401);
         }
-        $tenantId = (int) $link['tenant_id'];
-        $mapId = (int) $link['map_id'];
         $me = $this->me($link);
-        $mySide = strtolower((string) ($me['side'] ?? ''));
-        $units = [];
-        foreach ($this->atak()->getUnits($tenantId, $mapId) as $u) {
-            $side = strtolower((string) ($u['side'] ?? ''));
-            $hostile = str_contains($side, 'east') || str_contains($side, 'enemy') || str_contains($side, 'hostile') || $side === 'opfor';
-            if ($hostile || ($mySide !== '' && $side !== '' && $side !== $mySide) || !isset($u['pos_x'], $u['pos_y'])) {
-                continue;
-            }
-            $units[] = [
-                'callsign' => (string) ($u['call_sign'] ?? $u['display_call_sign'] ?? ''),
-                'x' => (float) $u['pos_x'],
-                'y' => (float) $u['pos_y'],
-                'status' => (string) ($u['status'] ?? ''),
-                'me' => $me !== null && (int) ($u['id'] ?? 0) === (int) ($me['id'] ?? -1),
-            ];
-        }
-        $markers = [];
-        try {
-            $rows = $this->atak()->getMarkers($tenantId, $mapId);
-        } catch (\Throwable) {
-            $rows = [];
-        }
-        foreach ($rows as $m) {
-            $d = json_decode((string) ($m['markerData'] ?? ''), true);
-            if (!is_array($d)) {
-                continue;
-            }
-            $x = $d['pos'][0] ?? $d['pos_x'] ?? $d['x'] ?? null;
-            $y = $d['pos'][1] ?? $d['pos_y'] ?? $d['y'] ?? null;
-            if (!is_numeric($x) || !is_numeric($y)) {
-                continue;
-            }
-            $markers[] = [
-                'id' => (int) $m['id'],
-                'x' => (float) $x,
-                'y' => (float) $y,
-                'text' => mb_substr((string) ($d['text'] ?? $d['label'] ?? ''), 0, 80),
-                'type' => (string) ($d['type'] ?? ''),
-                'color' => (string) ($d['color'] ?? ''),
-                'mine' => (int) ($d['mobile_user'] ?? 0) === (int) $link['user_id'],
-            ];
-        }
 
         return Response::json([
             'ok' => true,
-            'me' => $me !== null ? ['x' => (float) $me['pos_x'], 'y' => (float) $me['pos_y'], 'grid' => NineLineBoardService::grid((float) $me['pos_x'], (float) $me['pos_y'])] : $this->linkPos($link),
-            'units' => $units,
-            'markers' => $markers,
+            'me' => $me !== null ? ['id' => (int) ($me['id'] ?? 0), 'x' => (float) $me['pos_x'], 'y' => (float) $me['pos_y'], 'grid' => NineLineBoardService::grid((float) $me['pos_x'], (float) $me['pos_y'])] : $this->linkPos($link),
         ]);
     }
 
@@ -559,7 +518,7 @@ final class AtakMobileAppsController
     private function page(string $view, array $link, array $data = [], int $status = 200): Response
     {
         $map = null;
-        if ($view === 'carte' || $view === 'cr') {
+        if (in_array($view, ['carte', 'cr', 'briefs'], true)) {
             try {
                 $maps = new AtakMapRepository();
                 $map = $maps->getById((int) $link['map_id']) ?? $maps->getDefaultForTenant((int) $link['tenant_id']);
@@ -580,6 +539,8 @@ final class AtakMobileAppsController
             'mobileLink' => $link,
             'mobileView' => $view,
             'mapConfig' => $map !== null ? self::mapConfig($map) : null,
+            // Carte Overwatch du téléphone : carte de la partie (lectures /api/… avec la session du téléphone).
+            'mapId' => (int) $link['map_id'],
             'csrf' => Csrf::token(),
             // Entrée « Briefs air » du menu : seulement pour un pilote ou un membre d'équipage.
             'showBriefs' => ($data['aircraft'] ?? $data['aircrew'] ?? $this->links()->aircrew($link)) !== [],
@@ -593,28 +554,14 @@ final class AtakMobileAppsController
     }
 
     /**
-     * Fond de carte (tuiles et repère) de la carte de la communauté, comme la carte ATAK mobile.
+     * Fond de carte (tuiles, repère, décalage, couche aérienne) : exactement celui de la carte Overwatch.
      *
      * @param array<string, mixed> $map
      * @return array<string, mixed>
      */
     public static function mapConfig(array $map): array
     {
-        $c = is_array($map['config'] ?? null) ? $map['config'] : [];
-        $slug = (string) ($map['slug'] ?? 'altis');
-        $tp = (string) ($map['tile_pattern'] ?? '');
-
-        return [
-            'slug' => $slug,
-            'tilePattern' => function_exists('atak_resolve_tile_pattern') ? atak_resolve_tile_pattern($tp, $slug) : $tp,
-            'center' => $c['center'] ?? [15000, 15000],
-            'defaultZoom' => (int) ($c['defaultZoom'] ?? 3),
-            'minZoom' => (int) ($c['minZoom'] ?? 0),
-            'maxZoom' => (int) ($c['maxZoom'] ?? 6),
-            'tileSize' => (int) ($c['tileSize'] ?? 212),
-            'worldSize' => (int) ($c['worldSize'] ?? 30720),
-            'crs' => $c['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
-        ];
+        return \App\Support\AtakOverwatchMapConfig::fromMap($map);
     }
 
     private function expired(string $why = ''): Response

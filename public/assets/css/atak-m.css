@@ -121,16 +121,6 @@ body[data-view="carte"] .mm-foot { display: none; }
 .mm-mapwrap { position: relative; flex: 1; min-height: 70vh; }
 .mm-map { position: absolute; inset: 0; background: #0b0f0e; }
 .mm-map--pick { position: relative; height: 70vh; }
-.mm-mapchip {
-  position: absolute; top: 10px; left: 10px; z-index: 500; background: rgba(7, 10, 14, .85);
-  border: 1px solid var(--mm-line); border-radius: 3px; padding: 8px 12px; font: 700 14px var(--mm-mono);
-}
-.mm-fabs { position: absolute; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 500; display: flex; flex-direction: column; gap: 10px; }
-.mm-fab {
-  min-width: 64px; min-height: 64px; padding: 0 16px; border-radius: 32px; border: 1px solid var(--mm-line);
-  background: rgba(15, 21, 25, .95); color: var(--mm-text); font: 700 15px Inter, system-ui, sans-serif;
-}
-.mm-fab--add { background: var(--mm-green); color: var(--mm-ink); border-color: var(--mm-green); }
 .mm-mapbar {
   position: absolute; left: 10px; right: 10px; top: 58px; z-index: 500; display: flex; align-items: center; justify-content: space-between; gap: 10px;
   background: var(--mm-amber); color: #140c02; border-radius: 3px; padding: 8px 8px 8px 14px; font-weight: 700;
@@ -175,7 +165,7 @@ body[data-view="carte"] .mm-foot { display: none; }
 .mm-tab { padding: 12px 8px; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; border-radius: 2px; display: flex; align-items: center; justify-content: center; }
 .mm-tab.is-active { background: var(--mm-field); color: var(--mm-green); border-color: rgba(52,211,153,.5); }
 .mm-h1 { font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -.04em; line-height: .95; font-size: 34px; }
-.mm-btn, .mm-fab, .mm-choice { text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
+.mm-btn, .mm-tool, .mm-choice { text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
 .mm-btn--danger { color: #2a0a0a; }
 .mm-card--air { background: linear-gradient(90deg, rgba(5,5,5,.96) 35%, rgba(5,5,5,.6)), url("../images/night-team.jpg") center 40% / cover; border-color: var(--mm-line); }
 .mm-card--air::before { content: ""; display: block; width: 7px; height: 7px; margin: 2px 0 12px; border-radius: 50%; background: var(--mm-green); box-shadow: 0 0 0 4px rgba(52,211,153,.2); }
@@ -207,5 +197,51 @@ body[data-view="carte"] .mm-foot { display: none; }
 .mm-row--big .mm-btn { min-height: 84px; font-size: 22px; }
 /* Carte en grand : Fullscreen API ou repli CSS (iOS Safari) */
 .mm-mapwrap.is-full { position: fixed; inset: 0; z-index: 800; min-height: 0; background: var(--mm-bg); }
-.mm-fullbtn { position: absolute; top: 10px; right: 10px; z-index: 600; min-width: 52px; min-height: 52px; padding: 0 14px; border-radius: 3px; border: 1px solid rgba(52,211,153,.5); background: rgba(5,5,5,.9); color: var(--mm-green); font: 800 13px Inter, system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
-.mm-mapwrap.is-full .mm-fullbtn { top: calc(10px + env(safe-area-inset-top)); background: var(--mm-green); color: var(--mm-ink); }
+
+/* ---------- Carte Overwatch du téléphone (/m/carte, /m/briefs) ---------- */
+/* Couleurs et polices attendues par les symboles partagés avec l'Overwatch (atak-overwatch-mapkit.css). */
+.mm-body { --athena-green: #00d69a; --athena-red: #e05b63; --athena-amber: #e7b14d; --ow-mono: var(--mm-mono); --ow-sans: Inter, system-ui, sans-serif; --ow-label-size: 11px; }
+.mm-map { touch-action: none; }
+.mm-map .leaflet-control-attribution { font-size: 9px; background: rgba(5,5,5,.6); color: var(--mm-dim); }
+.mm-map .leaflet-control-attribution a { color: var(--mm-muted); }
+.mm-mapchips { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 500; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.mm-mapchip { background: rgba(5, 5, 5, .82); border: 1px solid var(--mm-line); border-radius: 3px; padding: 5px 9px; font: 700 12px var(--mm-mono); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-mapchip--warn { color: var(--mm-amber); border-color: rgba(251,191,36,.5); white-space: normal; }
+.mm-mapbar { top: 44px; }
+/* Barre d'outils flottante : une seule rangée basse, la carte reste visible au-dessus. */
+.mm-maptools {
+  position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 600;
+  display: flex; gap: 4px; align-items: stretch; overflow-x: auto; scrollbar-width: none;
+  padding: 4px; border-radius: 6px; background: rgba(5, 5, 5, .72); border: 1px solid var(--mm-line); backdrop-filter: blur(4px);
+}
+.mm-tool {
+  flex: 1 1 auto; min-height: 44px; min-width: 40px; padding: 0 6px; border-radius: 3px; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--mm-line); background: rgba(15, 20, 18, .95); color: var(--mm-text); font: 800 10.5px Inter, system-ui, sans-serif;
+}
+.mm-maptools .mm-tool { letter-spacing: .05em; }
+.mm-tool--full { flex: 0 0 44px; font-size: 20px; padding: 0; }
+.mm-tool[aria-expanded="true"], .mm-tool[aria-pressed="true"] { background: var(--mm-field); color: var(--mm-green); border-color: rgba(52,211,153,.5); }
+.mm-tool--add { background: var(--mm-green); color: var(--mm-ink); border-color: var(--mm-green); }
+.mm-tool__zoom { display: flex; gap: 4px; flex: 0 0 auto; }
+.mm-tool__zoom .mm-tool { flex: 0 0 40px; font-size: 20px; padding: 0; }
+.mm-layers {
+  position: absolute; right: 8px; bottom: calc(66px + env(safe-area-inset-bottom)); z-index: 650; min-width: 220px; max-width: calc(100% - 16px);
+  display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 6px; background: rgba(5,5,5,.94); border: 1px solid var(--mm-line);
+}
+.mm-layers strong { font: 800 10.5px Inter, system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--mm-dim); margin-bottom: 4px; }
+.mm-layer { display: flex; align-items: center; gap: 10px; min-height: 40px; font-size: 15px; }
+.mm-layer input { width: 20px; height: 20px; accent-color: var(--mm-green); }
+.mm-mapwrap--inset { flex: none; min-height: 0; height: 300px; border: 1px solid var(--mm-line); border-radius: 4px; overflow: hidden; }
+.mm-mapwrap.is-full { height: auto; border: 0; border-radius: 0; }
+.mm-mapwrap.is-full .mm-mapchips { top: calc(8px + env(safe-area-inset-top)); }
+/* Mon appareil, mon contact, cible de mon brief */
+.mm-map .ow-marker.is-me i { width: 12px; height: 12px; border-width: 3px; box-shadow: 0 0 0 3px rgba(245,158,11,.35); }
+.mm-map .ow-marker.is-me span { border-color: #f59e0b; color: #fff; }
+.mm-map .ow-jtac-geo-target.is-mine span { width: 16px; height: 16px; margin: 1px; background: #e5483a; box-shadow: 0 0 0 4px rgba(229,72,58,.35); }
+.mm-map .mm-my-aircraft { filter: drop-shadow(0 0 4px #f59e0b) drop-shadow(0 0 2px #f59e0b); }
+.mm-map .arma-map-marker-icon.is-mine { filter: drop-shadow(0 0 3px var(--mm-green)); }
+/* Fenêtres Leaflet au thème sombre, croix assez grande pour le pouce */
+.mm-map .leaflet-popup-content-wrapper, .mm-map .leaflet-popup-tip { background: #0b0f0e; color: var(--mm-text); border: 1px solid var(--mm-line); }
+.mm-map .leaflet-popup-content { font: 500 14px/1.45 var(--mm-mono); margin: 12px 34px 12px 12px; }
+.mm-map a.leaflet-popup-close-button { width: 36px; height: 36px; font: 400 26px/34px Inter, system-ui, sans-serif; color: var(--mm-muted); }
+.mm-map .leaflet-tooltip { background: rgba(5,5,5,.9); color: var(--mm-text); border: 1px solid var(--mm-line); font: 600 12px var(--mm-mono); }

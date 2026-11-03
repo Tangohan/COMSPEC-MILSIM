@@ -90,7 +90,7 @@ final class AtakPlanAccess
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
             return null;
         }
-        $uid = (int) (($_SESSION['user_id'] ?? 0));
+        $uid = (int) (\App\Core\Session::get('user_id') ?? 0);
 
         return $dir . DIRECTORY_SEPARATOR . 't' . $tenantId . '_u' . $uid . '.ok';
     }
