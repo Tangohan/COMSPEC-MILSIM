@@ -16,8 +16,16 @@ use App\Support\SseIdentityCatalog;
  */
 final class SseIdCountryRepository
 {
-    /** Pays fictifs proposés à chaque communauté (ajoutés s'ils manquent, jamais modifiés ensuite). */
+    /** Pays de simulation proposés à chaque communauté (ajoutés s'ils manquent, jamais modifiés ensuite). */
     public const DEFAULTS = [
+        ['code' => 'USA', 'name' => 'États-Unis', 'name_en' => 'United States', 'number_format' => 'US########', 'authority' => 'Bureau des documents de simulation', 'region' => 'NORTH_AMERICA', 'validity_years' => 10],
+        ['code' => 'GBR', 'name' => 'Royaume-Uni', 'name_en' => 'United Kingdom', 'number_format' => 'GB########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
+        ['code' => 'FRA', 'name' => 'France', 'name_en' => 'France', 'number_format' => 'FR########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
+        ['code' => 'BEL', 'name' => 'Belgique', 'name_en' => 'Belgium', 'number_format' => 'BE########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
+        ['code' => 'DEU', 'name' => 'Allemagne', 'name_en' => 'Germany', 'number_format' => 'DE########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
+        ['code' => 'ESP', 'name' => 'Espagne', 'name_en' => 'Spain', 'number_format' => 'ES########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
+        ['code' => 'COL', 'name' => 'Colombie', 'name_en' => 'Colombia', 'number_format' => 'CO########', 'authority' => 'Bureau des documents de simulation', 'region' => 'SOUTH_AMERICA', 'validity_years' => 10],
+        ['code' => 'AUT', 'name' => 'Autriche', 'name_en' => 'Austria', 'number_format' => 'AT########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
         ['code' => 'ALT', 'name' => 'République d’Altis', 'name_en' => 'Republic of Altis', 'number_format' => 'AL@######', 'authority' => 'Préfecture de Kavala', 'region' => 'ALTIS', 'validity_years' => 10],
         ['code' => 'TNA', 'name' => 'Tanoa', 'name_en' => 'Tanoa', 'number_format' => 'T########', 'authority' => 'Bureau de l’état civil de Georgetown', 'region' => 'TANOA', 'validity_years' => 10],
         ['code' => 'LVN', 'name' => 'Livonie', 'name_en' => 'Livonia', 'number_format' => 'LV#######', 'authority' => 'Mairie de Lubjansk', 'region' => 'LIVONIA', 'validity_years' => 10],
@@ -37,13 +45,11 @@ final class SseIdCountryRepository
      */
     public function listForTenant(int $tenantId, bool $activeOnly = true): array
     {
-        $rows = $this->fetch($tenantId, $activeOnly);
-        if ($rows === [] && $tenantId > 0) {
+        if ($tenantId > 0) {
             $this->ensureDefaults($tenantId);
-            $rows = $this->fetch($tenantId, $activeOnly);
         }
 
-        return $rows;
+        return $this->fetch($tenantId, $activeOnly);
     }
 
     /**
@@ -75,12 +81,11 @@ final class SseIdCountryRepository
     public function ensureDefaults(int $tenantId): int
     {
         $added = 0;
+        $existingCodes = array_column($this->db->fetchAll(
+            'SELECT code FROM sse_id_countries WHERE tenant_id = :t', ['t' => $tenantId]
+        ), 'code');
         foreach (self::DEFAULTS as $c) {
-            $exists = $this->db->fetchOne(
-                'SELECT id FROM sse_id_countries WHERE tenant_id = :t AND code = :c',
-                ['t' => $tenantId, 'c' => $c['code']]
-            );
-            if ($exists !== null) {
+            if (in_array($c['code'], $existingCodes, true)) {
                 continue;
             }
             $this->db->insert(

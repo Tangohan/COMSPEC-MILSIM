@@ -19,6 +19,8 @@ $truth = (bool) $rights['truth'];
 $base = (string) $pp['base'];
 $countries = $pp['countries'];
 $maps = $pp['maps'];
+$countryNames = array_column($countries, 'name', 'code');
+$countryLabel = static fn (?string $code): string => isset($countryNames[$code ?? '']) ? $countryNames[$code] . ' (' . $code . ')' : ($code ?: '—');
 $primary = $pp['primary'];
 $proposal = $pp['proposal'];
 $docs = $pp['documents'];
@@ -87,9 +89,9 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
         <?php if ($primary !== null): ?>
             <dl class="eff-fm-fields">
                 <div class="eff-fm-f"><dt>Nom</dt><dd><?= $ph(P::displayName($primary)) ?></dd></div>
-                <div class="eff-fm-f"><dt>Né(e) le</dt><dd><?= $ph($primary['birth_date'] ?? '—') ?></dd></div>
+                <div class="eff-fm-f"><dt>Né(e) le</dt><dd><?= $ph(\App\Support\SseIdentityCatalog::birthDateLabel($primary['birth_date'] ?? null)) ?></dd></div>
                 <div class="eff-fm-f"><dt>Lieu de naissance</dt><dd><?= $ph($primary['birth_place'] ?? '—') ?></dd></div>
-                <div class="eff-fm-f"><dt>Nationalité</dt><dd><?= $ph($primary['nationality'] ?? '—') ?></dd></div>
+                <div class="eff-fm-f"><dt>Nationalité</dt><dd><?= $ph($countryLabel($primary['nationality'] ?? null)) ?></dd></div>
             </dl>
         <?php else: ?>
             <p class="eff-fm-lead">Pas encore d’identité de jeu. Elle reprend la fiche du personnage (nom, prénom, naissance, nationalité).</p>
@@ -134,7 +136,7 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
                         <span class="eff-fm-list__dt"><?= $ph($a['ref']) ?></span>
                         <div><b><?= $ph(P::displayName($a)) ?></b>
                             <?php if ($truth): ?> <span class="eff-fm-chip<?= in_array($a['kind'], P::SECRET, true) ? ' is-warn' : '' ?>"><?= $ph($a['kind_label']) ?></span><?php endif; ?>
-                            <p><?= $ph(($a['birth_date'] ?? '—') . ' · ' . ($a['nationality'] ?? '—')) ?> · <?= (int) $a['documents_count'] ?> papier(s)</p>
+                            <p><?= $ph((\App\Support\SseIdentityCatalog::birthDateLabel($a['birth_date'] ?? null)) . ' · ' . $countryLabel($a['nationality'] ?? null)) ?> · <?= (int) $a['documents_count'] ?> papier(s)</p>
                         </div>
                     </li>
                 <?php endforeach; ?>
@@ -178,7 +180,7 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
                     </select>
                 </label>
                 <label>Pays
-                    <select name="country">
+                    <select name="country" data-country-picker>
                         <?php foreach ($countries as $c): ?>
                             <option value="<?= $ph($c['code']) ?>" <?= ($primary['nationality'] ?? '') === $c['code'] ? 'selected' : '' ?>><?= $ph($c['name']) ?></option>
                         <?php endforeach; ?>
@@ -212,7 +214,7 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
                                 <div class="idp-card__name"><?= $ph(mb_strtoupper((string) $d['identity']['last_name'])) ?> <?= $ph($d['identity']['first_name']) ?></div>
                                 <div class="idp-grid" style="margin-top:8px">
                                     <div><span class="muted">N°</span><br><strong translate="no"><?= $ph($d['doc_number']) ?></strong></div>
-                                    <div><span class="muted">Né(e) le</span><br><strong><?= $ph($d['identity']['birth_date'] ?? '—') ?></strong></div>
+                                    <div><span class="muted">Né(e) le</span><br><strong><?= $ph(C::birthDateLabel($d['identity']['birth_date'] ?? null)) ?></strong></div>
                                     <div><span class="muted">Sexe</span><br><strong><?= $ph($d['identity']['sex']) ?></strong></div>
                                     <div><span class="muted">Autorité</span><br><strong><?= $ph($d['authority'] ?? '—') ?></strong></div>
                                 </div>

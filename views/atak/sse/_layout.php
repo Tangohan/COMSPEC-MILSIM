@@ -293,5 +293,6 @@ window.SSE_CTX = {
 <?php if (!empty($sseExtraScripts)): ?>
 <?= $sseExtraScripts ?>
 <?php endif; ?>
+<script defer src="<?= $h(asset_url('assets/js/identity-country-picker.js')) ?>"></script>
 </body>
 </html>
