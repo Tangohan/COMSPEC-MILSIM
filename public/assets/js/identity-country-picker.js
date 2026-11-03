@@ -3,7 +3,24 @@
     'use strict';
     if (window.__identityCountryPicker) return;
     window.__identityCountryPicker = true;
-    var aliases = {USA: 'US américaine américain', GBR: 'UK GB britannique', FRA: 'FR française français', BEL: 'Belgique belge', DEU: 'GER DE allemande allemand', ESP: 'ES Espagne espagnole espagnol', COL: 'CO Colombie colombienne colombien', AUT: 'AT Autriche autrichienne autrichien'};
+    // Mots-clés de recherche (jamais affichés), français et anglais, des pays réels stylisés (univers réaliste-simulation).
+    var aliases = {
+        USA: 'US américaine américain American United States',
+        GBR: 'UK GB britannique British England Angleterre',
+        FRA: 'FR française français French',
+        BEL: 'BE Belgique belge Belgian België',
+        DEU: 'GER DE allemande allemand German Deutschland',
+        ESP: 'ES Espagne espagnole espagnol Spanish España',
+        COL: 'CO Colombie colombienne colombien Colombian',
+        AUT: 'AT Autriche autrichienne autrichien Austrian Österreich',
+        GRC: 'GR Grèce grecque grec Greek Hellas',
+        POL: 'PL Pologne polonaise polonais Polish Polska',
+        UKR: 'UA ukrainienne ukrainien Ukrainian',
+        RUS: 'RU Russie russe Russian',
+        IRQ: 'IQ Irak irakienne irakien Iraqi',
+        SYR: 'SY Syrie syrienne syrien Syrian',
+        AFG: 'AF afghane afghan Afghan'
+    };
     function normalize(value) { return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
     function init() {
         document.querySelectorAll('select[name="nationality"], select[data-country-picker]').forEach(function (select, index) {

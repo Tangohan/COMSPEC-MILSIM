@@ -35,7 +35,7 @@ require __DIR__ . '/_subnav.php';
     <div>
         <div class="page-heading-overline">Atelier de documents // <?= $h(C::label(C::WORKFLOWS, (string) $doc['workflow'])) ?></div>
         <h1><?= $h($isNew ? 'Nouveau papier' : $doc['ref'] . ' — ' . $doc['doc_number']) ?></h1>
-        <p>Modifiez le papier à gauche : l’aperçu à droite se met à jour en direct, bande de lecture automatique comprise. Tout papier reste un spécimen de jeu, émis par un pays imaginaire.</p>
+        <p>Modifiez le papier à gauche : l’aperçu à droite se met à jour en direct, bande de lecture automatique comprise. Tout papier reste un spécimen de jeu, émis par un pays imaginaire ou par un pays réel stylisé (univers réaliste-simulation, gabarit générique).</p>
     </div>
     <div class="page-reference">
         <strong><?= $h(C::label(C::WORKFLOWS, (string) $doc['workflow'])) ?></strong>
@@ -220,7 +220,7 @@ require __DIR__ . '/_subnav.php';
                     <button type="button" class="btn" id="idw-export" data-lib="<?= $h(asset_url('assets/vendor/html2canvas-1.4.1/html2canvas.min.js')) ?>" data-name="<?= $h(($doc['ref'] ?: 'papier') . '-simulation') ?>">Exporter en image (PNG)</button>
                 </div>
                 <?php require __DIR__ . '/_doc_preview.php'; ?>
-                <p class="idw-note">L’image exportée garde le filigrane SIMULATION : elle sert au jeu de rôle uniquement.</p>
+                <p class="idw-note">L’image exportée garde le filigrane SIMULATION en diagonale et le bandeau « DOCUMENT DE JEU – SANS VALEUR », incrustés dans l’image : elle sert au jeu de rôle uniquement. Photos : uniquement des personnages du jeu.</p>
             </div>
         </section>
 

@@ -294,6 +294,19 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1370, '2026-11-03', 'SSE 1.3.1 et Athena : pays réels stylisés pour les univers réalistes (Royaume-Uni, Grèce, États-Unis, Allemagne, Autriche, Colombie…)', 'Les papiers d’identité de COMSPEC IDENTITY restent émis par des pays imaginaires par défaut. Une communauté qui joue un univers réaliste peut maintenant ajouter, depuis l’écran Pays émetteurs, des pays réels stylisés : Royaume-Uni, Grèce, États-Unis, Allemagne, Autriche, Colombie, France, Belgique, Espagne, Pologne, Ukraine, Russie, Irak, Syrie et Afghanistan. Ils sont proposés, jamais imposés : il faut choisir l’univers « Réaliste — simulation » et cocher l’engagement. Chaque pays arrive avec ses noms en français, en anglais et dans sa langue, le vrai code de la bande de lecture (Allemagne « D<< »), un format de numéro propre au jeu, ses langues, une autorité générique, des durées de validité par papier et ses couleurs. Les papiers restent des documents de jeu : gabarit générique par zone (Europe bordeaux, Amériques bleu, autres vert ou noir), mention « SIMULATION — DOCUMENT DE JEU » sur chaque face, aucune armoirie ni motif officiel, photos de personnages du jeu seulement ; l’image exportée de l’atelier garde le filigrane SIMULATION en diagonale et le bandeau « DOCUMENT DE JEU – SANS VALEUR ». En jeu, le mod SSE 1.3.1 reconnaît ces pays (réglage « Univers réaliste-simulation » ou pays ajoutés sur Athena) et tire les noms dans la langue du pays.', [
+                'Pays émetteurs : bouton « Ajouter des pays réels (simulation) », choix multiple, aperçu du gabarit stylisé, univers réaliste-simulation obligatoire',
+                'Quinze pays réels stylisés avec code de bande de lecture de l’OACI, numéros génériques du jeu, langues, autorité, durées et couleurs',
+                'SSE 1.3.1 : gabarits génériques par zone, noms tirés dans la langue du pays, réglage « Univers réaliste-simulation »',
+            ], [
+                'Chaque face des papiers porte « SIMULATION — DOCUMENT DE JEU » ; l’export image incruste le filigrane et le bandeau « DOCUMENT DE JEU – SANS VALEUR »',
+                'Les pays réels ne sont plus ajoutés d’office : seuls les pays fictifs le sont ; ceux déjà présents passent en pays stylisés',
+            ], [], ['atak', 'intel'], [
+                'Mettez à jour COMSPEC SSE 1.3.1, quittez Arma complètement et relancez.',
+                'Essai : sur Athena, Pays émetteurs › Ajouter des pays réels (simulation), choisir l’univers réaliste-simulation, ajouter l’Allemagne, créer un passeport à l’atelier : la bande commence par « P<D<< ».',
+                'En jeu : cocher le réglage « Univers réaliste-simulation », choisir « Allemagne (simulation) » comme pays des papiers, contrôler une IA : nom allemand, gabarit bordeaux générique, bande « D<< ».',
+            ], 'SSE 1.3.1'),
+
             $pr(1364, '2026-11-03', 'ATAK 3.0.3 : apps COMSPEC IDENTITY en anglais, Recherchés garde les BOLO de la mission', 'Petite version de suivi de COMSPEC IDENTITY. Le téléphone connaît maintenant les textes des nouvelles fonctions du mod SSE, Contrôle ID, Ma couverture, checkpoints et atelier de documents : ils s’affichent en anglais quand le téléphone est réglé en anglais. Dans l’app Recherchés, « Actualiser » ne fait plus disparaître les BOLO et les HVT posés par la mission ou le Zeus : ils restent dans la liste avec les avis d’Athena, sans doublon, avec leur origine affichée, Athena ou BOLO local, et les HVT en tête.', [
                 'Textes COMSPEC IDENTITY du SSE traduits en anglais sur le téléphone',
             ], [

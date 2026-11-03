@@ -943,6 +943,8 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/documents/{id}/cycle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentWorkflow'], $mwSsePortal);
     $router->get('/atak/sse/papiers/pays', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countriesIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/pays/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryForm'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/pays/reels', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryRealForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/pays/reels', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryRealImport'], $mwSsePortal);
     $router->post('/atak/sse/papiers/pays', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/pays/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/pays/{id}/archiver', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryArchive'], $mwSsePortal);

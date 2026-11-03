@@ -34,6 +34,7 @@ final class SseIdentityRepository
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_member_papers_migration.php'));
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_lot2_migration.php'));
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_lot6_migration.php'));
+            SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_real_countries_migration.php'));
         }
     }
 

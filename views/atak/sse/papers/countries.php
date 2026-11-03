@@ -18,7 +18,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
     <div>
         <div class="page-heading-overline">Référentiel // Pays émetteurs</div>
         <h1>Pays émetteurs</h1>
-        <p>Les pays imaginaires qui délivrent les papiers de jeu : nom, code, format des numéros, langues, univers. Un pays qui a déjà émis des papiers s’archive au lieu d’être supprimé.</p>
+        <p>Les pays qui délivrent les papiers de jeu : nom, code, format des numéros, langues, univers. Par défaut, des pays imaginaires ; une communauté qui joue un univers réaliste peut ajouter des pays réels stylisés. Un pays qui a déjà émis des papiers s’archive au lieu d’être supprimé.</p>
     </div>
     <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-IDENT-PAYS</div>
 </div>
@@ -32,6 +32,7 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
         <button class="btn" type="submit">Appliquer</button>
         <?php if ($canManage): ?>
             <a class="btn" href="<?= $h(url('atak/sse/papiers/pays/nouveau')) ?>">Nouveau pays</a>
+            <a class="btn btn--ghost" href="<?= $h(url('atak/sse/papiers/pays/reels')) ?>">Ajouter des pays réels (simulation)</a>
         <?php endif; ?>
     </div>
 </form>
@@ -51,13 +52,15 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
                 <?php foreach ($countries as $c): ?>
                     <tr>
                         <td>
-                            <?php if ($c['flag_path'] !== null): ?>
+                            <?php if (!empty($c['real_sim'])): ?>
+                                <img class="idm-flag" src="<?= $h((string) \App\Support\SseIdRealCountryCatalog::flagDataUri((string) $c['code'])) ?>" alt="">
+                            <?php elseif ($c['flag_path'] !== null): ?>
                                 <img class="idm-flag" src="<?= $h(url($c['flag_path'])) ?>" alt="">
                             <?php elseif ($c['color_primary'] !== null): ?>
                                 <span class="idm-swatch" aria-hidden="true"><span style="background:<?= $h($c['color_primary']) ?>"></span><span style="background:<?= $h($c['color_secondary'] ?? $c['color_primary']) ?>"></span></span>
                             <?php endif; ?>
                             <strong><?= $h($c['name']) ?></strong>
-                            <?php if ($c['fictional']): ?> <span class="badge badge--amber">Fictif</span><?php endif; ?>
+                            <?php if (!empty($c['real_sim'])): ?> <span class="badge badge--red" title="Pays réel stylisé, univers réaliste-simulation : papiers de jeu marqués SIMULATION">Réel stylisé · simulation</span><?php elseif ($c['fictional']): ?> <span class="badge badge--amber">Fictif</span><?php endif; ?>
                         </td>
                         <td translate="no"><?= $h($c['code']) ?></td>
                         <td><?= $h(C::label(K::THEMES, $c['theme'])) ?></td>

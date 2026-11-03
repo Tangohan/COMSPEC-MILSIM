@@ -25,7 +25,7 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
 ?>
 <div class="idp-sim" role="note">
     <strong>SIMULATION</strong>
-    <span>Papiers fictifs pour le jeu, émis par des pays imaginaires. Aucune valeur réelle.</span>
+    <span>Papiers fictifs pour le jeu, émis par des pays imaginaires (ou des pays réels stylisés dans un univers réaliste-simulation). Aucune valeur réelle.</span>
 </div>
 <nav class="lab-subnav" aria-label="Identités et documents">
     <div class="lab-subnav__group">

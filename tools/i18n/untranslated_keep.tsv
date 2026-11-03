@@ -1244,3 +1244,10 @@ ce-notice--info is-ok	balisage HTML (classes ce-*)	public/assets/js/atak-nine-li
 ANNULÉ / INVALID	mention bilingue imprimée sur le papier fictif (translate=no)	views/atak/sse/papers/_doc_preview.php
 SIGNALÉ / REPORTED	mention bilingue imprimée sur le papier fictif (translate=no)	views/atak/sse/papers/_doc_preview.php
 Signature du titulaire	mention bilingue imprimée sur le papier fictif (translate=no)	views/atak/sse/papers/_doc_preview.php
+AT Autriche autrichienne autrichien Austrian Österreich	mots-clés de recherche FR/EN du sélecteur de pays, jamais affichés	public/assets/js/identity-country-picker.js
+BE Belgique belge Belgian België	mots-clés de recherche FR/EN du sélecteur de pays, jamais affichés	public/assets/js/identity-country-picker.js
+FR française français French	mots-clés de recherche FR/EN du sélecteur de pays, jamais affichés	public/assets/js/identity-country-picker.js
+GER DE allemande allemand German Deutschland	mots-clés de recherche FR/EN du sélecteur de pays, jamais affichés	public/assets/js/identity-country-picker.js
+GR Grèce grecque grec Greek Hellas	mots-clés de recherche FR/EN du sélecteur de pays, jamais affichés	public/assets/js/identity-country-picker.js
+US américaine américain American United States	mots-clés de recherche FR/EN du sélecteur de pays, jamais affichés	public/assets/js/identity-country-picker.js
+DOCUMENT DE JEU – SANS VALEUR	mention bilingue incrustée dans l’image exportée du papier de jeu	public/assets/js/sse-id-workshop.js
