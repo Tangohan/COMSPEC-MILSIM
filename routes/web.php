@@ -961,6 +961,34 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}/action', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentAction'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentUpdate'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/kit', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitSave'], $mwSsePortal);
+    // RENS › Identités & documents (COMSPEC IDENTITY, Lot 6) : atelier, kits types, préparation de mission, briefs, import/export.
+    // Chemins fixes (« nouveau », « mrz », sous-actions) avant /{id}.
+    $router->get('/atak/sse/papiers/atelier', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopIndex'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/atelier/nouveau', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopEditor'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/atelier/mrz', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopMrz'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/atelier/{id}', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopEditor'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/atelier', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopStore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/atelier/{id}/cycle', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopCycle'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/atelier/{id}/dupliquer', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopDuplicate'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/atelier/{id}', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopUpdate'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/kits-types', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplates'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/kits-types/nouveau', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateForm'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/kits-types/{id}', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/kits-types', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateStore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/kits-types/{id}/archiver', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateArchive'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/kits-types/{id}/affecter', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateAssign'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/kits-types/{id}', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateUpdate'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/preparation', [\App\Controllers\Web\SseIdWorkshopController::class, 'missionPrep'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/preparation', [\App\Controllers\Web\SseIdWorkshopController::class, 'missionPrepCommit'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/preparation/recherches', [\App\Controllers\Web\SseIdWorkshopController::class, 'wantedStore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/preparation/recherches/{id}/retirer', [\App\Controllers\Web\SseIdWorkshopController::class, 'wantedRemove'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/preparation/lots/{id}/retirer', [\App\Controllers\Web\SseIdWorkshopController::class, 'batchArchive'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/briefs', [\App\Controllers\Web\SseIdWorkshopController::class, 'briefsIndex'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/briefs', [\App\Controllers\Web\SseIdWorkshopController::class, 'briefStore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/briefs/{id}/supprimer', [\App\Controllers\Web\SseIdWorkshopController::class, 'briefDelete'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/echanges', [\App\Controllers\Web\SseIdWorkshopController::class, 'transferIndex'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/echanges/export', [\App\Controllers\Web\SseIdWorkshopController::class, 'transferExport'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/echanges/import', [\App\Controllers\Web\SseIdWorkshopController::class, 'transferImport'], $mwSsePortal);
     $router->get('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/objets/nouveau', [SsePortalController::class, 'objectStore'], $mwSsePortal);
     $router->post('/atak/sse/objets/creer', [SsePortalController::class, 'objectStore'], $mwSsePortal);
