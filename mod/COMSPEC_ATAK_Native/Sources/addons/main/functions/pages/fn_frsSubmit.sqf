@@ -78,6 +78,9 @@ private _parts = [
     format ['"submitter_callsign":"%1"', [_callsign] call _esc],
     format ['"case_code":"%1"', [_case] call _esc],
     format ['"idempotency_key":"%1"', [_idem] call _esc],
+    // Contrôle d'identité à l'origine de la fiche (3.0.2, clé idCheck du brouillon : « CTRL-42 » ou clé d'idempotence
+    // du contrôle) : le site rattache la fiche et ses photos au contrôle.
+    format ['"id_check_ref":"%1"', [trim (_d getOrDefault ["idCheck", ""])] call _esc],
     '"origin":"atak"', '"source_reliability":"C"', '"info_credibility":3',
     '"mod_name":"COMSPEC ATAK"', format ['"mod_version":"%1"', missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]], '"mod_cfg":"comspec_atak_native"'
 ];
