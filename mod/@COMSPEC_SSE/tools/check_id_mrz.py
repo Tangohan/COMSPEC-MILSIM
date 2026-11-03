@@ -60,12 +60,21 @@ def ymd(d):
     return "<<<<<<" if len(p) < 3 else p[0][2:4] + p[1] + p[2]
 
 
+# Codes MRZ OACI des pays réels stylisés (fn_idRealCountries / SseIdRealCountryCatalog) : seul DEU diffère du code.
+REAL_MRZ = {"DEU": "D"}
+
+
 def mrz(doc):
     t = doc.get("type", "id_card")
     if t not in ("id_card", "passport", "driving_license"):
         return []
-    issuer = pad(clean(doc.get("country", "ALT")), 3)
-    nat = pad(clean(doc.get("nat", doc.get("country", "ALT"))), 3)
+    cc = doc.get("country", "ALT")
+    iss = doc.get("mrzIssuer", "") or REAL_MRZ.get(cc, cc)
+    issuer = pad(clean(iss), 3)
+    nat_raw = doc.get("nat", iss)
+    if nat_raw == cc:
+        nat_raw = iss
+    nat = pad(clean(nat_raw), 3)
     num = pad(clean(doc.get("mrzNumber", doc.get("number", ""))), 9)
     num_ck = ck(num)
     if doc.get("mrzFlaw") == "check":
@@ -147,7 +156,20 @@ def main():
     empty = mrz({**spec, "personal": ""})
     if empty[1][42] != "<" or parse(empty):
         fails.append(f"TD3 sans numéro personnel : {empty}")
-    for x in mrz({**card, "mrzFlaw": ""}) + l:
+    # Pays réels stylisés : code OACI de l'émetteur et de la nationalité (Allemagne « D<< »).
+    de = {"type": "passport", "country": "DEU", "nat": "DEU", "number": "DEK482913", "last": "Müller", "first": "Jürgen",
+          "sex": "M", "dob": "1985-03-02", "expires": "2034-03-01"}
+    l_de = mrz(de)
+    if not l_de[0].startswith("P<D<<MULLER<<JURGEN") or l_de[1][10:13] != "D<<" or parse(l_de):
+        fails.append(f"passeport allemand : {l_de}")
+    de_card = mrz({**de, "type": "id_card"})
+    if not de_card[0].startswith("I<D<<DEK482913") or de_card[1][15:18] != "D<<" or parse(de_card):
+        fails.append(f"carte allemande : {de_card}")
+    for code in ("GBR", "GRC", "USA", "AUT", "COL", "FRA", "IRQ", "SYR", "AFG", "RUS", "UKR", "POL", "BEL", "ESP"):
+        x = mrz({**de, "country": code, "nat": code, "mrzIssuer": code, "number": code[:2] + "K482913"})
+        if x[0][2:5] != code or x[1][10:13] != code or parse(x):
+            fails.append(f"passeport {code} : {x}")
+    for x in mrz({**card, "mrzFlaw": ""}) + l + l_de:
         print("  " + x)
     if fails:
         print("ÉCHEC\n" + "\n".join(fails))

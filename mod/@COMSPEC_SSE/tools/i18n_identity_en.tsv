@@ -572,3 +572,21 @@ Durée de la comparaison du visage (s)	Face comparison time (s)
 Temps de la photo et de la recherche biométrique N4.	Time for the N4 photo and biometric search.
 Notifier les BOLO	Notify BOLOs
 Chaque BOLO ou HVT diffusé par le Zeus s'affiche sur l'ATAK de tous les joueurs (sinon seulement dans l'onglet BOLO).	Every BOLO or HVT issued by Zeus appears on all players' ATAK (otherwise only in the BOLO tab).
+Univers réaliste-simulation (pays réels stylisés)	Realistic-simulation setting (stylised real countries)
+Ajoute des pays réels STYLISÉS (Royaume-Uni, Grèce, États-Unis, Allemagne, Autriche, Colombie, France, Irak, Syrie, Afghanistan, Russie, Ukraine, Pologne…). Papiers de jeu : gabarit générique, mention SIMULATION — DOCUMENT DE JEU, aucun vrai modèle ni emblème. Décoché : pays fictifs seulement (sauf pays ajoutés par votre communauté sur Athena).	Adds STYLISED real countries (United Kingdom, Greece, United States, Germany, Austria, Colombia, France, Iraq, Syria, Afghanistan, Russia, Ukraine, Poland…). Game papers: generic template, SIMULATION — GAME DOCUMENT mention, no real design or emblem. Unticked: fictional countries only (except countries added by your community on Athena).
+Pays des papiers délivrés. Selon la carte : Altis et Stratis → Altis, Tanoa → Tanoa, Livonia → Livonie, Malden → Malden. Un pays réel (simulation) demande l'univers réaliste-simulation coché.	Country of issued papers. Based on the map: Altis and Stratis → Altis, Tanoa → Tanoa, Livonia → Livonia, Malden → Malden. A real country (simulation) requires the realistic-simulation setting ticked.
+Royaume-Uni (simulation)	United Kingdom (simulation)
+Grèce (simulation)	Greece (simulation)
+États-Unis (simulation)	United States (simulation)
+Allemagne (simulation)	Germany (simulation)
+Autriche (simulation)	Austria (simulation)
+Colombie (simulation)	Colombia (simulation)
+France (simulation)	France (simulation)
+Belgique (simulation)	Belgium (simulation)
+Espagne (simulation)	Spain (simulation)
+Pologne (simulation)	Poland (simulation)
+Ukraine (simulation)	Ukraine (simulation)
+Russie (simulation)	Russia (simulation)
+Irak (simulation)	Iraq (simulation)
+Syrie (simulation)	Syria (simulation)
+Afghanistan (simulation)	Afghanistan (simulation)

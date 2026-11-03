@@ -41,7 +41,11 @@ private _kind = switch (_type) do {
     default { ["card_recto", "card_verso"] select (_side isEqualTo "verso") };
 };
 private _lc = toLower (_doc getOrDefault ["country", "ALT"]);
-if !(_lc in ["alt", "tna", "lvn", "mld"]) then { _lc = "alt"; };
+// Pays réel stylisé : gabarit générique de sa zone de style (eu bordeaux, am bleu, ot vert/noir), nom posé en jeu.
+private _zone = _doc getOrDefault ["zone", ""];
+private _zoned = _zone in ["europe", "americas", "other"];
+if (_zoned) then { _lc = ["ot", "eu", "am"] select ((["other", "europe", "americas"] find _zone) max 0); };
+if !(_lc in ["alt", "tna", "lvn", "mld", "eu", "am", "ot"]) then { _lc = "alt"; };
 private _dir = "\z\comspec_sse\addons\identity\data\";
 private _tpl = _dir + (switch (_kind) do {
     case "passport": { format ["tpl_passport_%1_co.paa", _lc] };
@@ -167,6 +171,13 @@ switch (_kind) do {
         [0.42, 0.30, 0.18, _vh * 0.8, ("expires" call _g) call _dmy] call _put;
         [0.64, 0.105] call _mrzLines;
     };
+};
+// Gabarit de zone : nom du pays posé dans le bandeau (le gabarit ne peint que « SIMULATION — DOCUMENT DE JEU »).
+if (_zoned && {_kind isNotEqualTo "license_verso"} && {_kind isNotEqualTo "card_verso"}) then {
+    private _hb = [0.17, 0.11] select (_kind isEqualTo "passport");
+    private _cn = _doc getOrDefault ["countryNameEn", ""];
+    if (_cn isEqualTo "") then { _cn = _doc getOrDefault ["countryName", ""]; };
+    [0.13, _hb * 0.08, 0.8, _hb * 0.4, toUpper _cn, "RobotoCondensedBold", "#ffffff"] call _put;
 };
 uiNamespace setVariable ["comspec_sse_idViewerCtrls", _ctrls];
 

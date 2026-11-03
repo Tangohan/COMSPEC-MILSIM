@@ -91,6 +91,8 @@ private _pub = {
     { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["id", "type", "country", "number", "last", "first", "sex", "dob", "pob", "nat", "profession", "issued", "expires", "authority", "address"];
     _p set ["countryName", _c getOrDefault ["name", _d get "country"]];
     _p set ["countryNameEn", _c getOrDefault ["nameEn", ""]];
+    // Pays réel stylisé : gabarit générique de sa zone (europe | americas | other), jamais un vrai modèle.
+    _p set ["zone", [_c getOrDefault ["zone", ""], ""] select !(_c getOrDefault ["realSim", false])];
     _p set ["chipLogo", _d getOrDefault ["chipExpected", false]];
     _p set ["mrz", [_d] call comspec_sse_fnc_idMrz];
     // Défauts physiques : visibles par qui regarde bien (le constat N0, lui, dépend du tirage).
