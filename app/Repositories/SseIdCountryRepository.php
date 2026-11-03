@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SseIdRealCountryCatalog;
 use App\Support\SseIdentityCatalog;
 
 /**
@@ -13,19 +14,15 @@ use App\Support\SseIdentityCatalog;
  * Format du numéro (number_format) : « # » = chiffre, « @ » = lettre, tout autre caractère est recopié.
  * Pays créés par la communauté : thème d'univers, langues imprimées, types de papiers délivrés et durée de
  * validité par type, drapeau téléversé ou couleurs. Un pays n'est jamais supprimé : il s'archive (active = 0).
+ * Pays réels stylisés (real_sim = 1, fictional = 0) : importés du jeu SseIdRealCountryCatalog, univers réaliste-simulation.
  */
 final class SseIdCountryRepository
 {
-    /** Pays de simulation proposés à chaque communauté (ajoutés s'ils manquent, jamais modifiés ensuite). */
+    /**
+     * Pays fictifs proposés à chaque communauté (ajoutés s'ils manquent, jamais modifiés ensuite). Les pays réels
+     * stylisés ne sont jamais ajoutés d'office : la communauté les importe (importRealSet, univers réaliste-simulation).
+     */
     public const DEFAULTS = [
-        ['code' => 'USA', 'name' => 'États-Unis', 'name_en' => 'United States', 'number_format' => 'US########', 'authority' => 'Bureau des documents de simulation', 'region' => 'NORTH_AMERICA', 'validity_years' => 10],
-        ['code' => 'GBR', 'name' => 'Royaume-Uni', 'name_en' => 'United Kingdom', 'number_format' => 'GB########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
-        ['code' => 'FRA', 'name' => 'France', 'name_en' => 'France', 'number_format' => 'FR########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
-        ['code' => 'BEL', 'name' => 'Belgique', 'name_en' => 'Belgium', 'number_format' => 'BE########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
-        ['code' => 'DEU', 'name' => 'Allemagne', 'name_en' => 'Germany', 'number_format' => 'DE########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
-        ['code' => 'ESP', 'name' => 'Espagne', 'name_en' => 'Spain', 'number_format' => 'ES########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
-        ['code' => 'COL', 'name' => 'Colombie', 'name_en' => 'Colombia', 'number_format' => 'CO########', 'authority' => 'Bureau des documents de simulation', 'region' => 'SOUTH_AMERICA', 'validity_years' => 10],
-        ['code' => 'AUT', 'name' => 'Autriche', 'name_en' => 'Austria', 'number_format' => 'AT########', 'authority' => 'Bureau des documents de simulation', 'region' => 'EUROPE', 'validity_years' => 10],
         ['code' => 'ALT', 'name' => 'République d’Altis', 'name_en' => 'Republic of Altis', 'number_format' => 'AL@######', 'authority' => 'Préfecture de Kavala', 'region' => 'ALTIS', 'validity_years' => 10],
         ['code' => 'TNA', 'name' => 'Tanoa', 'name_en' => 'Tanoa', 'number_format' => 'T########', 'authority' => 'Bureau de l’état civil de Georgetown', 'region' => 'TANOA', 'validity_years' => 10],
         ['code' => 'LVN', 'name' => 'Livonie', 'name_en' => 'Livonia', 'number_format' => 'LV#######', 'authority' => 'Mairie de Lubjansk', 'region' => 'LIVONIA', 'validity_years' => 10],
@@ -142,14 +139,46 @@ final class SseIdCountryRepository
     public function create(int $tenantId, array $data, ?int $by = null): int
     {
         $row = self::row($data);
+        $real = !empty($data['real_sim']) ? 1 : 0;
 
         return $this->db->insert(
             'INSERT INTO sse_id_countries (tenant_id, code, name, name_en, mrz_code, number_format, authority, region, validity_years,
-                fictional, active, theme, languages, doc_types, validity_json, flag_path, color_primary, color_secondary, created_by_user_id, created_at)
-             VALUES (:t, :code, :name, :name_en, :mrz, :fmt, :auth, :region, :years, 1, 1, :theme, :langs, :types, :validity, :flag,
+                fictional, real_sim, active, theme, languages, doc_types, validity_json, flag_path, color_primary, color_secondary, created_by_user_id, created_at)
+             VALUES (:t, :code, :name, :name_en, :mrz, :fmt, :auth, :region, :years, :fict, :real, 1, :theme, :langs, :types, :validity, :flag,
                 :c1, :c2, :by, :now)',
-            ['t' => $tenantId, 'code' => strtoupper((string) $data['code']), 'by' => $by, 'now' => gmdate('Y-m-d H:i:s')] + $row
+            ['t' => $tenantId, 'code' => strtoupper((string) $data['code']), 'fict' => 1 - $real, 'real' => $real, 'by' => $by, 'now' => gmdate('Y-m-d H:i:s')] + $row
         );
+    }
+
+    /**
+     * Ajoute (ou rétablit) des pays réels stylisés du jeu proposé, pour l'univers réaliste-simulation. Un code déjà pris
+     * par un pays créé à la main est laissé tel quel (conflit renvoyé).
+     *
+     * @param list<string> $codes
+     * @return array{added: list<string>, restored: list<string>, kept: list<string>, conflicts: list<string>}
+     */
+    public function importRealSet(int $tenantId, array $codes, ?int $by = null): array
+    {
+        $out = ['added' => [], 'restored' => [], 'kept' => [], 'conflicts' => []];
+        foreach (array_unique(array_map(static fn ($c): string => strtoupper(trim((string) $c)), $codes)) as $code) {
+            if (!SseIdRealCountryCatalog::has($code)) {
+                continue;
+            }
+            $row = $this->db->fetchOne('SELECT id, active, real_sim FROM sse_id_countries WHERE tenant_id = :t AND code = :c', ['t' => $tenantId, 'c' => $code]);
+            if ($row === null) {
+                $this->create($tenantId, SseIdRealCountryCatalog::countryData($code) + ['real_sim' => true], $by);
+                $out['added'][] = $code;
+            } elseif ((int) ($row['real_sim'] ?? 0) !== 1) {
+                $out['conflicts'][] = $code;
+            } elseif ((int) $row['active'] !== 1) {
+                $this->setArchived((int) $row['id'], $tenantId, false);
+                $out['restored'][] = $code;
+            } else {
+                $out['kept'][] = $code;
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -163,7 +192,7 @@ final class SseIdCountryRepository
 
         return $this->db->execute(
             'UPDATE sse_id_countries SET name = :name, name_en = :name_en, mrz_code = :mrz, number_format = :fmt, authority = :auth,
-                region = :region, validity_years = :years, fictional = 1, theme = :theme, languages = :langs, doc_types = :types,
+                region = :region, validity_years = :years, fictional = 1 - real_sim, theme = :theme, languages = :langs, doc_types = :types,
                 validity_json = :validity, flag_path = :flag, color_primary = :c1, color_secondary = :c2, updated_at = :now
              WHERE id = :id AND tenant_id = :t',
             ['id' => $id, 't' => $tenantId, 'now' => gmdate('Y-m-d H:i:s')] + $row
@@ -254,6 +283,9 @@ final class SseIdCountryRepository
             'region' => (string) ($row['region'] ?? ''),
             'validity_years' => $years,
             'fictional' => (int) ($row['fictional'] ?? 1) === 1,
+            // Pays réel stylisé (univers réaliste-simulation) : code ISO réel accepté, gabarit générique par zone.
+            'real_sim' => (int) ($row['real_sim'] ?? 0) === 1,
+            'zone' => (int) ($row['real_sim'] ?? 0) === 1 ? SseIdRealCountryCatalog::zone((string) ($row['code'] ?? '')) : '',
             'active' => (int) ($row['active'] ?? 1) === 1,
             'theme' => (string) (($row['theme'] ?? '') !== '' ? $row['theme'] : 'contemporary'),
             'languages' => array_values(array_filter(explode(',', (string) ($row['languages'] ?? '')))),

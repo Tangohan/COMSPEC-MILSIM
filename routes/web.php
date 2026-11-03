@@ -277,6 +277,7 @@ return function (Router $router) {
     $router->get('/academy/partage/{token}/media/{file}', [\App\Controllers\Web\AcademyController::class, 'sharedMedia']);
     // Assistant d'importation du catalogue de référence (Academy › Catalogue) : données, aperçu, démarrage, lots.
     $router->get('/academy/catalogue/assistant', [\App\Controllers\Web\AcademyCatalogImportController::class, 'data'], $academyMw);
+    $router->get('/academy/catalogue/assistant/recommandations', [\App\Controllers\Web\AcademyCatalogImportController::class, 'recommendations'], $academyMw);
     $router->post('/academy/catalogue/assistant/apercu', [\App\Controllers\Web\AcademyCatalogImportController::class, 'preview'], $academyMw);
     $router->post('/academy/catalogue/assistant/demarrer', [\App\Controllers\Web\AcademyCatalogImportController::class, 'start'], $academyMw);
     $router->post('/academy/catalogue/assistant/lot', [\App\Controllers\Web\AcademyCatalogImportController::class, 'batch'], $academyMw);
@@ -941,6 +942,7 @@ return function (Router $router) {
     $router->get('/atak/sse/papiers/identites/nouvelle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/identites/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityShow'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/identites/{id}/images', [\App\Controllers\Web\SseIdWorkshopController::class, 'identityImages'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentShow'], $mwSsePortal);
@@ -948,6 +950,8 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/documents/{id}/cycle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentWorkflow'], $mwSsePortal);
     $router->get('/atak/sse/papiers/pays', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countriesIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/pays/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryForm'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/pays/reels', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryRealForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/pays/reels', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryRealImport'], $mwSsePortal);
     $router->post('/atak/sse/papiers/pays', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/pays/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/pays/{id}/archiver', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryArchive'], $mwSsePortal);

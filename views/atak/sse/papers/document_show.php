@@ -53,6 +53,7 @@ require __DIR__ . '/_subnav.php';
                 <span><?= $h($country['name'] ?? $doc['country_code']) ?> · <?= $h($doc['doc_type_label']) ?></span>
                 <span>SIMULATION</span>
             </div>
+            <?php if (!empty($identity['photo_path'])): ?><img class="idp-card__photo" src="<?= $h(url((string) $identity['photo_path'])) ?>" alt="Photo du titulaire"><?php endif; ?>
             <div class="idp-card__name"><?= $h(mb_strtoupper((string) ($identity['last_name'] ?? ''))) ?> <?= $h($identity['first_name'] ?? '') ?></div>
             <div class="idp-grid" style="margin-top:8px">
                 <div><span class="muted">N°</span><br><strong translate="no"><?= $h($doc['doc_number']) ?></strong></div>
@@ -68,6 +69,10 @@ require __DIR__ . '/_subnav.php';
         </div>
     </div>
 </section>
+
+<?php if (($identity['id'] ?? 0) > 0 && ($canSeeTruth || !$secret)): ?>
+    <?php $imagesDocId = $id; $personPhotos = $personPhotos ?? []; require __DIR__ . '/_holder_images.php'; ?>
+<?php endif; ?>
 
 <section class="panel" style="margin-top:10px">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">02</span> Statuts du papier</div></div>

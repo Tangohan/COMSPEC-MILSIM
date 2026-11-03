@@ -42,7 +42,9 @@
     color: var(--amber, #f59e0b);
     opacity: 0.13;
     pointer-events: none;
+    z-index: 5; /* filigrane au-dessus de la photo du titulaire */
 }
+.idp-card__photo { float: right; width: 84px; aspect-ratio: 35 / 45; object-fit: cover; margin: 0 0 0.5rem 0.75rem; border-radius: 4px; border: 1px solid var(--border, rgba(127, 127, 127, 0.3)); }
 .idp-card__head {
     display: flex;
     justify-content: space-between;

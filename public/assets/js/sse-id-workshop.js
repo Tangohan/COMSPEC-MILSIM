@@ -1,7 +1,10 @@
 /**
  * Atelier de documents (COMSPEC IDENTITY, Lot 6) : aperçu en direct du papier fictif, bande MRZ recalculée par le site
  * (SseMrzService, GET …/atelier/mrz), choix des faces affichées et export de l'aperçu en image PNG (html2canvas,
- * chargé seulement au premier export). Le filigrane SIMULATION fait partie de chaque face exportée.
+ * chargé seulement au premier export). Le filigrane SIMULATION fait partie de chaque face exportée, au-dessus de la
+ * photo, de la signature et de l'image de fond importées ; l'export le redessine en plus directement sur l'image
+ * (diagonale sur toute la surface) avec le bandeau « DOCUMENT DE JEU – SANS VALEUR » : ni le masquer dans la page ni
+ * retoucher le DOM ne permet d'obtenir une image sans eux.
  */
 (function () {
   var form = document.getElementById('idw-form');
@@ -44,6 +47,7 @@
       if (c.flag) { img.src = c.flag; img.hidden = false; } else { img.hidden = true; }
     });
     preview.querySelectorAll('[data-f-flag-bands]').forEach(function (el) { el.hidden = !!c.flag; });
+    ['europe', 'americas', 'other'].forEach(function (z) { preview.classList.toggle('idw-zone--' + z, c.zone === z); });
     var fmt = document.getElementById('idw-format');
     if (fmt) fmt.textContent = c.format || '';
     var auth = field('authority');
@@ -62,7 +66,7 @@
 
   function applyLayout() {
     var layout = val('layout') || 'modern';
-    ['modern', 'classic', 'compact'].forEach(function (l) { preview.classList.toggle('idw-layout--' + l, l === layout); });
+    ['modern', 'classic', 'compact', 'custom'].forEach(function (l) { preview.classList.toggle('idw-layout--' + l, l === layout); });
   }
 
   function applyFields() {
@@ -134,6 +138,22 @@
       reader.readAsDataURL(t.files[0]);
       return;
     }
+    // Signature et image de fond importées : aperçu immédiat (le filigrane reste par-dessus).
+    var imgKind = t && t.getAttribute ? t.getAttribute('data-bind-img') : null;
+    if (imgKind && t.files && t.files[0]) {
+      var r2 = new FileReader();
+      r2.onload = function () {
+        var src = String(r2.result);
+        if (imgKind === 'signature') {
+          preview.querySelectorAll('[data-f-signature]').forEach(function (img) { img.src = src; img.hidden = false; });
+          preview.querySelectorAll('[data-p-signature]').forEach(function (b) { b.hidden = true; });
+        } else if (imgKind === 'background') {
+          preview.querySelectorAll('[data-f-bg]').forEach(function (bg) { bg.style.backgroundImage = 'url("' + src + '")'; bg.hidden = false; });
+        }
+      };
+      r2.readAsDataURL(t.files[0]);
+      return;
+    }
     refreshAll();
   });
 
@@ -159,6 +179,33 @@
       document.head.appendChild(s);
     });
   }
+  // Marques incrustées dans l'image exportée (non retirables) : filigrane diagonal sur toute la surface et bandeau.
+  var BAND = 'DOCUMENT DE JEU – SANS VALEUR · GAME DOCUMENT – NO VALUE';
+  function stampGameMarks(canvas) {
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    var w = canvas.width, h = canvas.height, diag = Math.sqrt(w * w + h * h);
+    var size = Math.max(14, Math.round(h / 9));
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(-24 * Math.PI / 180);
+    ctx.font = '900 ' + size + 'px Arial';
+    ctx.fillStyle = 'rgba(179, 38, 30, 0.16)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (var y = -diag / 2; y <= diag / 2; y += size * 1.9) {
+      ctx.fillText('SIMULATION   SIMULATION   SIMULATION   SIMULATION', 0, y);
+    }
+    ctx.restore();
+    var bh = Math.max(16, Math.round(h * 0.075));
+    ctx.fillStyle = '#a8191e';
+    ctx.fillRect(0, h - bh, w, bh);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 ' + Math.round(bh * 0.55) + 'px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(BAND, w / 2, h - bh / 2);
+  }
   if (exportBtn) {
     exportBtn.addEventListener('click', function () {
       exportBtn.disabled = true;
@@ -168,6 +215,7 @@
         return faces.reduce(function (p, face) {
           return p.then(function () {
             return h2c(face, { backgroundColor: null, scale: 2, useCORS: true, logging: false }).then(function (canvas) {
+              stampGameMarks(canvas);
               var a = document.createElement('a');
               a.download = base + '-' + (face.getAttribute('data-face') || 'face') + '.png';
               a.href = canvas.toDataURL('image/png');

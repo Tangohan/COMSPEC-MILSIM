@@ -1,5 +1,30 @@
 # COMSPEC SSE — historique des versions
 
+## 1.3.1 — 03/11/2026 · Pays réels stylisés (univers réaliste-simulation)
+
+**Relancer Arma complètement.** Aucun changement du main.pbo de l'ATAK ni de la DLL (le paquet Athena porte les
+nouveaux champs, convertis de façon générique).
+
+- **Pays réels stylisés** (`fn_idRealCountries`, généré depuis le site par `tools/gen_id_real_countries.php`) :
+  Royaume-Uni (GBR), Grèce (GRC), États-Unis (USA), Allemagne (DEU, bande MRZ « D<< »), Autriche (AUT), Colombie (COL),
+  France, Belgique, Espagne, Pologne, Ukraine, Russie, Irak, Syrie, Afghanistan. Réservés à l'univers
+  réaliste-simulation : réglage CBA « Univers réaliste-simulation (pays réels stylisés) » (décoché par défaut) ou pays
+  importés par la communauté sur Athena (paquet, `real_sim`). Les pays fictifs ALT, TNA, LVN, MLD ne changent pas.
+- **Garde-fous** : gabarits **génériques par zone de style** (`tpl_*_eu|am|ot_*`, bordeaux, bleu, vert), sans nom
+  de pays peint (posé en jeu), emblème « SIM » inventé, aucune armoirie, emblème officiel, hologramme, motif de
+  sécurité, police ou mise en page officielle ; mention « SIMULATION — DOCUMENT DE JEU » dans le bandeau et en pied de
+  page ; numéros au format générique du jeu (code du pays + une lettre + six chiffres).
+- **MRZ** : code OACI de l'émetteur (`mrzIssuer`, sinon `mrz` du pays) et de la nationalité — Allemagne « D<< » ;
+  `tools/check_id_mrz.py` et `tools/test_id_mrz.sqf` vérifient les quinze pays.
+- **Noms** : réservoirs par langue (anglais, grec, allemand, espagnol de Colombie et d'Espagne, français, néerlandais,
+  polonais, ukrainien, russe — nom au féminin Ivanov → Ivanova —, arabe d'Irak et de Syrie, dari / pachto), mêmes
+  tirages que le site.
+- **Durées de validité par type** (carte, passeport, permis) lues dans le paquet Athena (`validity`) et le jeu stylisé.
+- **Paquet Athena** (rétrocompatible) : `countries[]` + `real_sim`, `zone`, `name_native`, `validity`.
+- Réglage « Pays des papiers » : pays réels proposés (« … (simulation) »), pris seulement si l'univers
+  réaliste-simulation est coché.
+- Traductions EN : `tools/i18n_identity_en.tsv` (+18 lignes).
+
 ## 1.3.0 — 03/11/2026 · Couvertures et infiltrés (Lot 4), HVT et BOLO (Lot 5)
 
 **Relancer Arma complètement.** Pack ATAK 3.0.2 conseillé (vibreur seul `"vibrate"` testé à l'exécution par

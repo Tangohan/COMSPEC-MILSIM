@@ -46,6 +46,7 @@ class CfgFunctions {
             class idInitSettings {};
             class idRegistry {};
             class idCountries {};
+            class idRealCountries {};
             class idGenerate {};
             class idDocNumber {};
             class idMrz {};

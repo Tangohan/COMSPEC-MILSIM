@@ -1,4 +1,4 @@
-# Contrôle d'identité (COMSPEC SSE 1.3.0)
+# Contrôle d'identité (COMSPEC SSE 1.3.1)
 
 Papiers d'identité **fictifs** (pays imaginaires, mention SIMULATION sur chaque document) et contrôle sur le terrain,
 par le menu ACE et l'app **Contrôle ID** du téléphone ATAK. Fonctionne entièrement hors ligne ; avec COMSPEC Link 2.0.118
@@ -14,6 +14,30 @@ ou plus (pack ATAK 3.0.0), les documents d'Athena sont chargés et la base en li
 
 Pays : **République d'Altis** (ALT, Altis et Stratis), **Fédération de Tanoa** (TNA), **République de Livonie** (LVN,
 Livonia), **République de Malden** (MLD). Réglage « Pays des papiers » pour l'imposer.
+
+### Pays réels stylisés — univers réaliste-simulation (1.3.1)
+
+Réservés à une communauté qui joue un univers **réaliste-simulation** et l'a choisi explicitement : réglage
+« Univers réaliste-simulation (pays réels stylisés) » (décoché par défaut), ou pays ajoutés sur Athena (Identités &
+documents › Pays émetteurs › « Ajouter des pays réels (simulation) », arrivés avec le paquet). Jamais imposés.
+
+| Pays | Code | Bande MRZ | Numéros | Zone du gabarit |
+|------|------|-----------|---------|-----------------|
+| Royaume-Uni | GBR | GBR | GB@###### | Europe (bordeaux) |
+| Grèce | GRC | GRC | GR@###### | Europe |
+| États-Unis | USA | USA | US@###### | Amériques (bleu) |
+| Allemagne | DEU | **D<<** (code OACI) | DE@###### | Europe |
+| Autriche | AUT | AUT | AT@###### | Europe |
+| Colombie | COL | COL | CO@###### | Amériques |
+| France, Belgique, Espagne, Pologne | FRA, BEL, ESP, POL | idem | FR…, BE…, ES…, PL… | Europe |
+| Ukraine, Russie, Irak, Syrie, Afghanistan | UKR, RUS, IRQ, SYR, AFG | idem | UA…, RU…, IQ…, SY…, AF… | Autres (vert / noir) |
+
+Garde-fous : **gabarit générique par zone** (aucune reproduction de vrai modèle, armoiries, emblème officiel,
+hologramme, motif de sécurité, police ou mise en page officielle ; emblème « SIM » inventé), mention **« SIMULATION —
+DOCUMENT DE JEU »** sur chaque face, numéros au **format générique du jeu** (code du pays + une lettre + six chiffres,
+jamais le format d'un vrai titre), photos de personnages du jeu uniquement. Noms tirés des réservoirs de la langue du
+pays (anglais, grec, allemand, espagnol de Colombie, polonais, ukrainien, russe avec noms au féminin, arabe, dari…),
+mêmes tirages que le site (`fn_idRealCountries`, généré par `tools/gen_id_real_countries.php`).
 
 Qui a des papiers :
 - **Joueurs** : rien par défaut. Trois moyens d'en donner : attribut Eden « COMSPEC SSE — Papiers », objet du kit
@@ -225,7 +249,8 @@ Catégorie « COMSPEC SSE · Identité » :
 
 ## Réglages (CBA › COMSPEC SSE › Identité)
 
-Contrôle d'identité · Difficulté (arcade / standard / réaliste) · Pays des papiers · Papiers des IA · Civils qui
+Contrôle d'identité · Difficulté (arcade / standard / réaliste) · **Univers réaliste-simulation (pays réels stylisés)**
+(non) · Pays des papiers · Papiers des IA · Civils qui
 présentent leurs papiers (90 %) · Insurgés porteurs de faux papiers (60 %) · Durée d'une présentation (120 s) ·
 Transmission automatique à Athena (non) · Documents et avis d'Athena · Opération Athena · **IA réalistes au contrôle**
 (oui) · **Agressivité des IA** (50 %) · **Distance des checkpoints** (25 m) · **Délai pour présenter ses papiers** (45 s) ·

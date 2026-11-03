@@ -22,6 +22,7 @@ use App\Services\Sse\SseIdCheckInsightService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Services\Sse\SseMrzService;
 use App\Support\SseIdCountryCatalog;
+use App\Support\SseIdRealCountryCatalog;
 use App\Support\SseIdentityCatalog;
 
 /**
@@ -210,6 +211,7 @@ final class SseIdentityRegistryController
             'instances' => $this->documents->instances((int) $doc['id'], $tenantId),
             'transitions' => SseIdentityCatalog::TRANSITIONS[$doc['workflow']] ?? [],
             'papersTab' => 'documents',
+            'personPhotos' => \App\Services\Sse\SseIdWorkshopService::personPhotos($tenantId, $identity['person_id'] ?? null),
         ]);
     }
 
@@ -333,6 +335,123 @@ final class SseIdentityRegistryController
         return $this->saveCountry($request, (int) ($params['id'] ?? 0));
     }
 
+    /** Jeu de pays réels stylisés proposé à l'import (univers réaliste-simulation), avec aperçu du gabarit. */
+    public function countryRealForm(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage()) {
+            return $this->denied(url(self::BASE . '/pays'));
+        }
+        $tenantId = $this->tenantId();
+        $present = [];
+        foreach ($this->countries->listForTenant($tenantId, false) as $c) {
+            $present[$c['code']] = $c;
+        }
+
+        return $this->view('atak.sse.papers.country_real_import', [
+            'title' => 'Ajouter des pays réels (simulation)',
+            'catalog' => self::realCatalogPreview(),
+            'present' => $present,
+            'papersTab' => 'pays',
+        ]);
+    }
+
+    public function countryRealImport(Request $request, array $params = []): Response
+    {
+        $form = url(self::BASE . '/pays/reels');
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied(url(self::BASE . '/pays'));
+        }
+        $res = self::validateRealImport([
+            'universe' => $request->inputString('universe'),
+            'guardrails' => $request->inputString('guardrails') === '1',
+            'codes' => $request->input('codes', []),
+        ]);
+        if ($res['errors'] !== []) {
+            Session::flash('error', implode(' ', $res['errors']));
+
+            return Response::redirect($form);
+        }
+        $tenantId = $this->tenantId();
+        $out = $this->countries->importRealSet($tenantId, $res['codes'], $this->userId());
+        $this->audit($tenantId, 'id_country.import_real_sim', 0, $out + ['universe' => SseIdRealCountryCatalog::UNIVERSE]);
+        $msg = [];
+        if ($out['added'] !== []) {
+            $msg[] = 'Ajoutés : ' . implode(', ', $out['added']) . '.';
+        }
+        if ($out['restored'] !== []) {
+            $msg[] = 'Rétablis : ' . implode(', ', $out['restored']) . '.';
+        }
+        if ($out['kept'] !== []) {
+            $msg[] = 'Déjà présents : ' . implode(', ', $out['kept']) . '.';
+        }
+        if ($out['conflicts'] !== []) {
+            $msg[] = 'Code déjà pris par un pays de la communauté, laissé tel quel : ' . implode(', ', $out['conflicts']) . '.';
+        }
+        Session::flash('success', 'Pays réels stylisés (univers réaliste-simulation). ' . implode(' ', $msg) . ' Leurs papiers restent des documents de jeu marqués SIMULATION.');
+
+        return Response::redirect(url(self::BASE . '/pays'));
+    }
+
+    /**
+     * Garde-fous de l'import : univers réaliste-simulation choisi, engagement coché, au moins un pays du jeu.
+     *
+     * @param array{universe?: mixed, guardrails?: mixed, codes?: mixed} $input
+     * @return array{codes: list<string>, errors: list<string>}
+     */
+    public static function validateRealImport(array $input): array
+    {
+        $errors = [];
+        if (($input['universe'] ?? '') !== SseIdRealCountryCatalog::UNIVERSE) {
+            $errors[] = 'Choisissez l’univers « Réaliste — simulation » : les pays réels stylisés lui sont réservés.';
+        }
+        if (empty($input['guardrails'])) {
+            $errors[] = 'Cochez l’engagement : papiers de jeu marqués SIMULATION, gabarits génériques, photos de personnages du jeu uniquement.';
+        }
+        $codes = [];
+        foreach (is_array($input['codes'] ?? null) ? $input['codes'] : [] as $c) {
+            $c = strtoupper(trim(is_scalar($c) ? (string) $c : ''));
+            if (SseIdRealCountryCatalog::has($c) && !in_array($c, $codes, true)) {
+                $codes[] = $c;
+            }
+        }
+        if ($codes === []) {
+            $errors[] = 'Choisissez au moins un pays.';
+        }
+
+        return ['codes' => $codes, 'errors' => $errors];
+    }
+
+    /**
+     * Fiches d'aperçu du jeu stylisé : données du pays, numéro et bande MRZ de spécimen (passeport TD3 s'il existe).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function realCatalogPreview(): array
+    {
+        $out = [];
+        foreach (array_keys(SseIdRealCountryCatalog::COUNTRIES) as $code) {
+            $d = SseIdRealCountryCatalog::countryData($code);
+            $c = (array) SseIdRealCountryCatalog::get($code);
+            $number = SseIdentityGeneratorService::documentNumber((string) $d['number_format'], 424242, 'specimen');
+            $type = in_array('passport', $d['doc_types'], true) ? 'passport' : (string) $d['doc_types'][0];
+            $out[] = $d + [
+                'name_native' => (string) $c['name_native'],
+                'zone' => (string) $c['zone'],
+                'zone_label' => SseIdRealCountryCatalog::ZONES[$c['zone']]['label'],
+                'flag' => SseIdRealCountryCatalog::flagDataUri($code),
+                'specimen_number' => $number,
+                'specimen_type' => $type,
+                'mrz' => SseMrzService::forDocument(
+                    ['doc_type' => $type, 'country_code' => $code, 'doc_number' => $number, 'expires_on' => '2035-12-31'],
+                    ['last_name' => 'SPECIMEN', 'first_name' => 'SIMULATION', 'nationality' => $code, 'birth_date' => '1990-01-01', 'sex' => 'M'],
+                    (string) $d['mrz_code']
+                ),
+            ];
+        }
+
+        return $out;
+    }
+
     public function countryArchive(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
@@ -366,8 +485,19 @@ final class SseIdentityRegistryController
     public static function validateCountry(array $input, ?array $existing, callable $codeTaken): array
     {
         $errors = [];
+        $real = $existing !== null && !empty($existing['real_sim']);
         $theme = SseIdentityCatalog::pick(SseIdCountryCatalog::THEMES, $input['theme'] ?? null, 'contemporary');
         $code = $existing !== null ? (string) $existing['code'] : strtoupper(trim((string) ($input['code'] ?? '')));
+        if ($real) {
+            // Pays réel stylisé : univers, code MRZ OACI et format générique du jeu imposés (garde-fous).
+            $theme = SseIdRealCountryCatalog::UNIVERSE;
+            $input['mrz_code'] = (string) $existing['mrz_code'];
+            $input['number_format'] = (string) $existing['number_format'];
+            $input['region'] = ($input['region'] ?? '') !== '' ? $input['region'] : (string) ($existing['region'] ?? '');
+        }
+        if (!$real && $theme === SseIdRealCountryCatalog::UNIVERSE && $existing !== null) {
+            $errors[] = 'L’univers « Réaliste — simulation » est réservé aux pays réels stylisés : ajoutez-les avec le bouton « Ajouter des pays réels (simulation) ».';
+        }
         if ($existing === null) {
             $p = SseIdCountryCatalog::codeProblem($code, $theme);
             if ($p !== '') {
@@ -379,7 +509,7 @@ final class SseIdentityRegistryController
         $mrz = strtoupper(trim((string) ($input['mrz_code'] ?? '')));
         $mrz = $mrz !== '' ? $mrz : $code;
         // Code de bande identique au code du pays : déjà vérifié ci-dessus (pas de message en double).
-        if (($mrz !== $code || $existing !== null) && ($p = SseIdCountryCatalog::mrzProblem($mrz, $theme)) !== '') {
+        if (($mrz !== $code || $existing !== null) && ($p = SseIdCountryCatalog::mrzProblem($mrz, $theme, $real)) !== '') {
             $errors[] = $p;
         }
         $format = strtoupper(trim((string) ($input['number_format'] ?? '')));
@@ -391,7 +521,9 @@ final class SseIdentityRegistryController
             $errors[] = 'Le nom du pays est obligatoire.';
         }
         if (empty($input['fictional'])) {
-            $errors[] = 'Cochez la case « pays fictif » : seuls des pays imaginaires peuvent émettre des papiers de jeu.';
+            $errors[] = $real
+                ? 'Cochez la case « document de jeu » : les papiers de ce pays restent des spécimens marqués SIMULATION, sans valeur.'
+                : 'Cochez la case « pays fictif » : seuls des pays imaginaires peuvent émettre des papiers de jeu.';
         }
         $types = SseIdCountryCatalog::pickMany($input['doc_types'] ?? [], SseIdentityCatalog::DOC_TYPES);
         if ($types === []) {
@@ -417,14 +549,14 @@ final class SseIdentityRegistryController
                 'mrz_code' => $mrz,
                 'number_format' => $format,
                 'authority' => trim((string) ($input['authority'] ?? '')),
-                'region' => isset(SseIdCountryCatalog::REGIONS[(string) ($input['region'] ?? '')]) ? (string) $input['region'] : '',
+                'region' => isset(SseIdCountryCatalog::REGIONS[(string) ($input['region'] ?? '')]) ? (string) ($input['region'] ?? '') : ($real ? (string) ($existing['region'] ?? '') : ''),
                 'theme' => $theme,
                 'languages' => $languages !== [] ? $languages : ['fr', 'en'],
                 'doc_types' => $types,
                 'validity' => $validity,
                 'color_primary' => SseIdCountryCatalog::color($input['color_primary'] ?? null),
                 'color_secondary' => SseIdCountryCatalog::color($input['color_secondary'] ?? null),
-                'flag_path' => $existing['flag_path'] ?? null,
+                'flag_path' => $real ? null : ($existing['flag_path'] ?? null),
             ],
             'errors' => $errors,
         ];
@@ -469,7 +601,8 @@ final class SseIdentityRegistryController
         if ($request->inputString('flag_remove') === '1') {
             $data['flag_path'] = null;
         }
-        $flag = $this->storeFlag($tenantId, (string) $data['code']);
+        // Pays réel stylisé : pas de drapeau ni d'armoiries téléversés (drapeau simple du jeu, aucun emblème officiel).
+        $flag = !empty($existing['real_sim']) ? null : $this->storeFlag($tenantId, (string) $data['code']);
         if ($flag === false) {
             Session::flash('error', 'Le drapeau doit être une image PNG, JPG ou WebP de 1 Mo maximum.');
 
@@ -491,35 +624,18 @@ final class SseIdentityRegistryController
         return Response::redirect($list);
     }
 
-    /** Drapeau ou armoiries téléversés : chemin public, null si rien n'est envoyé, false si le fichier est refusé. */
+    /**
+     * Drapeau ou armoiries téléversés : chemin public, null si rien n'est envoyé, false si le fichier est refusé.
+     * Vrai type contrôlé, image réencodée sans métadonnées (SseIdImageService).
+     */
     private function storeFlag(int $tenantId, string $code): string|false|null
     {
-        $file = $_FILES['flag'] ?? null;
-        if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        $res = (new \App\Services\Sse\SseIdImageService())->storeUpload($_FILES['flag'] ?? null, 'flag', $tenantId);
+        if (!empty($res['none'])) {
             return null;
         }
-        if (($file['error'] ?? 1) !== UPLOAD_ERR_OK || (int) ($file['size'] ?? 0) > 1024 * 1024 || !is_uploaded_file((string) $file['tmp_name'])) {
-            return false;
-        }
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = $finfo !== false ? finfo_file($finfo, (string) $file['tmp_name']) : false;
-        if ($finfo !== false) {
-            finfo_close($finfo);
-        }
-        $ext = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'][(string) $mime] ?? null;
-        if ($ext === null || @getimagesize((string) $file['tmp_name']) === false) {
-            return false;
-        }
-        $dir = base_path('public/uploads/sse-flags');
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
-            return false;
-        }
-        $name = $tenantId . '_' . preg_replace('/[^A-Z]/', '', $code) . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-        if (!move_uploaded_file((string) $file['tmp_name'], $dir . DIRECTORY_SEPARATOR . $name)) {
-            return false;
-        }
 
-        return 'uploads/sse-flags/' . $name;
+        return $res['ok'] ? (string) $res['path'] : false;
     }
 
     /** @param array<string, mixed> $after */
@@ -658,6 +774,7 @@ final class SseIdentityRegistryController
             'documents' => $this->documents->list($tenantId, ['identity_id' => (int) $identity['id']]),
             'countries' => $this->countries->listForTenant($tenantId),
             'papersTab' => 'identites',
+            'personPhotos' => \App\Services\Sse\SseIdWorkshopService::personPhotos($tenantId, $identity['person_id']),
         ]);
     }
 
@@ -944,9 +1061,13 @@ final class SseIdentityRegistryController
         }
         try {
             // Atelier, kits types, préparation de mission (lot 6) : gestion SSE ou habilitation Encadrement.
-            $data['canWorkshop'] ??= SseIdWorkshopController::rightsFor($this->access->isGuest() || $this->userId() === null, $this->canManage(), $this->clearance->allows(SseCaseRepository::CLASS_COMMAND), false)['view'];
+            $workshopRights = SseIdWorkshopController::rightsFor($this->access->isGuest() || $this->userId() === null, $this->canManage(), $this->clearance->allows(SseCaseRepository::CLASS_COMMAND), false);
+            $data['canWorkshop'] ??= $workshopRights['view'];
+            // Images du titulaire (photo, signature) : mêmes droits d'écriture que l'atelier.
+            $data['canEditImages'] ??= $workshopRights['manage'];
         } catch (\Throwable) {
             $data['canWorkshop'] = false;
+            $data['canEditImages'] = false;
         }
 
         return Response::view($view, $data);

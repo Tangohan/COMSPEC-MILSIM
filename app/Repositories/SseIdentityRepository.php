@@ -24,7 +24,7 @@ final class SseIdentityRepository
         self::ensureSchema();
     }
 
-    /** Tables du registre créées au premier usage (mêmes migrations que database/steps/3730, 3740, 3750 et 3815). */
+    /** Tables du registre créées au premier usage (mêmes migrations que database/steps/3730, 3740, 3750, 3815 et 3920). */
     public static function ensureSchema(): void
     {
         static $done = false;
@@ -34,6 +34,8 @@ final class SseIdentityRepository
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_member_papers_migration.php'));
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_lot2_migration.php'));
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_lot6_migration.php'));
+            SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_real_countries_migration.php'));
+            SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_images_migration.php'));
         }
     }
 
@@ -160,6 +162,28 @@ final class SseIdentityRepository
     }
 
     /** @return array<string, mixed>|null */
+    /**
+     * Photo et signature du titulaire (images des papiers) : seules les clés présentes changent, null retire l'image.
+     *
+     * @param array{photo_path?: ?string, signature_path?: ?string} $images
+     */
+    public function setImages(int $id, int $tenantId, array $images): bool
+    {
+        $set = [];
+        $params = ['id' => $id, 't' => $tenantId, 'now' => gmdate('Y-m-d H:i:s')];
+        foreach (['photo_path', 'signature_path'] as $col) {
+            if (array_key_exists($col, $images)) {
+                $set[] = $col . ' = :' . $col;
+                $params[$col] = $images[$col] !== null ? mb_substr((string) $images[$col], 0, 255) : null;
+            }
+        }
+        if ($set === []) {
+            return false;
+        }
+
+        return $this->db->execute('UPDATE sse_identities SET ' . implode(', ', $set) . ', updated_at = :now WHERE id = :id AND tenant_id = :t', $params) > 0;
+    }
+
     public function find(int $id, int $tenantId): ?array
     {
         $row = $this->db->fetchOne('SELECT * FROM sse_identities WHERE id = :id AND tenant_id = :t', ['id' => $id, 't' => $tenantId]);
@@ -324,6 +348,7 @@ final class SseIdentityRepository
             'zone' => ($row['zone'] ?? null) !== null && $row['zone'] !== '' ? (string) $row['zone'] : null,
             'alias' => ($row['alias'] ?? null) !== null && $row['alias'] !== '' ? (string) $row['alias'] : null,
             'photo_path' => ($row['photo_path'] ?? null) !== null && $row['photo_path'] !== '' ? (string) $row['photo_path'] : null,
+            'signature_path' => ($row['signature_path'] ?? null) !== null && $row['signature_path'] !== '' ? (string) $row['signature_path'] : null,
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => ($row['updated_at'] ?? null) !== null ? (string) $row['updated_at'] : null,
         ];
