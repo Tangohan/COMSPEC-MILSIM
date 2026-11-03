@@ -151,6 +151,40 @@ class EffectifsWorkspaceController
         }
     }
 
+    /** Qualifications et brevets suggérés d'après la fonction, l'unité, le grade et les qualifications détenues. @return array<string, mixed>|null */
+    private function memberQualificationSuggestions(int $tenantId, int $userId): ?array
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\Personnel\MemberQualificationSuggestionService::class)
+                ->forMember($tenantId, $userId, false, function_exists('locale') ? (string) locale() : 'fr');
+        } catch (\Throwable $e) {
+            error_log('Effectifs member: qualification suggestions failed: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /** Actions rapides des suggestions permises au lecteur (mêmes droits que les pages qu'elles appellent). @return array{import: bool, award: bool, enroll: bool, dismiss: bool} */
+    private function qualificationSuggestionRights(int $tenantId): array
+    {
+        $gate = Gate::getInstance();
+        $referential = \App\Controllers\Admin\MemberQualificationSuggestionsController::canManageReferential($gate);
+        $enroll = false;
+        try {
+            $enroll = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tenantId, 'training')
+                && \App\Services\Academy\AcademyRights::current($tenantId, (int) Session::get('user_id'))->can('assign');
+        } catch (\Throwable) {
+            $enroll = false;
+        }
+
+        return [
+            'import' => $referential,
+            'award' => $referential,
+            'enroll' => $enroll,
+            'dismiss' => \App\Controllers\Admin\MemberQualificationSuggestionsController::canDismiss($gate),
+        ];
+    }
+
     /** @return array<string, mixed> */
     private function qualificationNames(int $tenantId): array
     {
@@ -1451,6 +1485,9 @@ class EffectifsWorkspaceController
             'memberRoleIds' => $roleIds,
             'memberQualifications' => $qualifications,
             'qualificationProgress' => $this->memberQualificationProgress($tenantId, $id),
+            'qualificationSuggestions' => $this->memberQualificationSuggestions($tenantId, $id),
+            'qualificationSuggestionRights' => $this->qualificationSuggestionRights($tenantId),
+            'qualificationSuggestionUserId' => $id,
             'progressNames' => $this->qualificationNames($tenantId),
             'qualificationTemporal' => $qualificationTemporal,
             'qualificationBadge' => $qualificationBadge,

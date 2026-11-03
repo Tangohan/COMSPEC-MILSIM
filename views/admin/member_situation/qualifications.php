@@ -79,6 +79,14 @@ $summary = [
     </section>
     <?php endif; ?>
 
+    <?php if (is_array($qualificationSuggestions ?? null)): ?>
+    <section class="bo-ms-qprog" aria-labelledby="bo-ms-qsg-t" id="qualifs-suggerees">
+        <h2 class="bo-ms-qprog__title" id="bo-ms-qsg-t">Qualifications et brevets suggérés</h2>
+        <p class="bo-ms-qprog__lead">D’après votre fonction, votre unité et vos qualifications : parlez-en à votre encadrement.</p>
+        <?php require base_path('views/partials/qualification_suggestions.php'); ?>
+    </section>
+    <?php endif; ?>
+
     <?php if ($awards === []): ?>
         <section class="bo-doc-empty">
             <div class="bo-doc-sheet bo-doc-sheet--ghost" aria-hidden="true">

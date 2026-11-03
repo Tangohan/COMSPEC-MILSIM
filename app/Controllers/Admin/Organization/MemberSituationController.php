@@ -425,6 +425,19 @@ final class MemberSituationController
         } catch (\Throwable) {
             $qualificationProgress = [];
         }
+        // Suggestions en lecture : unités masquées de la chaîne ignorées, aucune action.
+        $qualificationSuggestions = null;
+        try {
+            $qualificationSuggestions = Container::get(\App\Services\Personnel\MemberQualificationSuggestionService::class)
+                ->forMember($tenantId, $userId, true, function_exists('locale') ? (string) locale() : 'fr');
+            if ($qualificationSuggestions['items'] === []) {
+                $qualificationSuggestions = null;
+            } elseif ($progressNames === []) {
+                $progressNames = Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->names($tenantId);
+            }
+        } catch (\Throwable) {
+            $qualificationSuggestions = null;
+        }
 
         return Response::view('layout.main', $this->boShell([
             'title' => 'Mes qualifications',
@@ -432,12 +445,15 @@ final class MemberSituationController
             'boPageTitle' => 'Mes qualifications',
             'boPageKicker' => 'OPÉRATEUR · MES QUALIFICATIONS',
             'boPageSubtitle' => 'Qualifications et brevets enregistrés sur votre dossier.',
-            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : [], $qualificationProgress !== [] ? ['qualifications-matrix.css'] : []),
+            'backOfficePageCss' => array_merge(['back-office-member-situation.css', 'back-office-member-dossier.css'], $pilotProgress !== [] ? ['referentiel-pilot-syllabus.css'] : [], $qualificationProgress !== [] || $qualificationSuggestions !== null ? ['qualifications-matrix.css'] : []),
             'user' => $user,
             'awards' => $enriched,
             'pilotProgress' => $pilotProgress,
             'qualificationProgress' => $qualificationProgress,
             'progressNames' => $progressNames,
+            'qualificationSuggestions' => $qualificationSuggestions,
+            'qualificationSuggestionRights' => [],
+            'qualificationSuggestionUserId' => $userId,
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]));

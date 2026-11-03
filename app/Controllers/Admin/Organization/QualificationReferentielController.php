@@ -549,6 +549,11 @@ final class QualificationReferentielController
     /** Retour après import : page du catalogue avec ses filtres (adresse interne seulement). */
     private static function catalogBack(Request $request, ?array $packData): string
     {
+        // Bouton « Importer » d’une qualification suggérée dans la fiche membre : retour à la fiche.
+        $member = (int) $request->input('return_member', 0);
+        if ($member > 0) {
+            return url('back-office/ressources/effectifs/membres/' . $member) . '#qualifs-suggerees';
+        }
         $base = url('back-office/referentiels/qualifications/catalogue');
         $query = (string) $request->input('return_query', '');
         if ($query !== '' && preg_match('/^[A-Za-z0-9_=&%+.\-]{1,600}$/', $query) === 1) {
@@ -660,7 +665,7 @@ final class QualificationReferentielController
                 ? $created . ' qualification(s) importée(s) du catalogue, ' . $skipped . ' déjà présente(s) ignorée(s). Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.'
                 : $created . ' qualification(s) importée(s) du catalogue. Qualifications de jeu, sans valeur réelle : réglez ensuite leur mode d’obtention.');
             $issuers = $result['issuer_ids'];
-            $after = $request->input('return_query', '') !== ''
+            $after = $request->input('return_query', '') !== '' || (int) $request->input('return_member', 0) > 0
                 ? $back
                 : url('back-office/referentiels/qualifications') . (count($issuers) === 1 ? '?emetteur=' . (int) $issuers[0] : '');
             // Des prérequis sont lus dans les qualifications importées : l'encart « Prérequis détectés » les propose.
