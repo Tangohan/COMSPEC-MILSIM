@@ -49,7 +49,9 @@ switch (_tab) do {
         _rend sort false;
         _rows pushBack ["section", "Rendus complets de page", "sur 30 s"];
         _rows pushBack ["text", ["<t color='#8a9a93'>Aucun rendu.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_rend apply { format ["%1× %2", _x select 0, [_x select 1] call _esc] }) joinString "<br/>"]] select ((count _rend) > 0)];
-        _rows pushBack ["buttons", [["ACTUALISER", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
+        // Temps passé dans les DLL par commande callExtension (Perf.Stats, COMSPEC Link 2.0.119) : fn_perfDll.
+        _rows append ([] call comspec_atak_native_fnc_perfDll);
+        _rows pushBack ["buttons", [["ACTUALISER", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true], ["RAZ DLL", { ["reset"] call comspec_atak_native_fnc_perfDll; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, false]]];
     };
     case "NET": {
         private _q = [] call comspec_atak_native_fnc_linkQuality;

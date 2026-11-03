@@ -18,9 +18,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.633;
-        versionStr = "1.6.33";
-        versionAr[] = {1, 6, 33};
+        version = 1.634;
+        versionStr = "1.6.34";
+        versionAr[] = {1, 6, 34};
         // 1.6.18 : écusson « Donateur Athena » (CfgUnitInsignia COMSPEC_Donor_*, fn_applyDonorPerk).
         // 1.6.19 : correctif de sécurité 2.4.1 (adresse d'Athena vérifiée avant la connexion, fn_connect).
         // 1.6.20 : revue du mod, tours 4 et 5 (regroupement ATAK natif 2.5.0).
@@ -37,6 +37,7 @@ class CfgPatches {
         // 1.6.31 : ATAK natif 2.9.38 — repères web supprimés en jeu ou retirés par l'ATAK (étapes de route, zones) plus recréés par le relevé Athena (pierres tombales, fn_pollAthenaMarkers).
         // 1.6.32 : ATAK natif 2.9.39 — rôle affiché unique (fn_getUnitRole, fn_setUnitRole, fn_getUnitsList, fn_fillZeusGroupId), indicatif d'appareil choisi par le pilote remonté à Athena (fn_reportCrewedAirAssets).
         // 1.6.33 : ATAK natif 3.0.1 — optimisation : relais élu par sort natif (fn_initProxyTrackServer), count direct des tables, une seule boucle de masquage du panneau Tenues (fn_arsenalOverlayAction).
+        // 1.6.34 : ATAK natif 3.0.4 — optimisation DLL : Perf.Stats (temps par commande callExtension) ajoutée aux commandes rapides (fn_extFast).
     };
 };
 
