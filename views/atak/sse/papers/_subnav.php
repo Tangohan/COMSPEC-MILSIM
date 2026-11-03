@@ -7,6 +7,7 @@ $papersTabs = [
     'documents' => ['', 'Papiers'],
     'identites' => ['identites', 'Identités'],
     'controles' => ['controles', 'Contrôles reçus'],
+    'tableau' => ['tableau', 'Tableau de bord'],
     'pays' => ['pays', 'Pays émetteurs'],
 ];
 if (!empty($canMemberPapers)) {

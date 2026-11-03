@@ -13,6 +13,15 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _ui = uiNamespace getVariable ["COMSPEC_ATAK_RepUi", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_RepUi", _ui];
+// Entrée publique (3.0.2) : SPOTREP pré-rempli par un autre mod (contrôle d'identité du SSE…), lu une seule fois.
+//   uiNamespace setVariable ["COMSPEC_ATAK_SpotrepDraft", createHashMapFromArray [["what", "Personnel"], ["count", "1"],
+//       ["grid", "0123 4567"], ["remarks", "…"]]]; ["REPORTS"] call comspec_atak_native_fnc_navigate;
+// Clés : what, count, grid, movement, time, action, remarks (catalogue fn_reportTypes, C.R. SPOTREP).
+private _spot = uiNamespace getVariable ["COMSPEC_ATAK_SpotrepDraft", createHashMap];
+if (_spot isEqualType createHashMap && {(count _spot) > 0}) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_SpotrepDraft", nil];
+    ["prefill", "SPOTREP", _spot] call comspec_atak_native_fnc_reportAction;
+};
 private _tab = _ui getOrDefault ["tab", "NEW"];
 private _types = [] call comspec_atak_native_fnc_reportTypes;
 private _byCode = createHashMap;

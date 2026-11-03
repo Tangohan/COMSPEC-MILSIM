@@ -7,7 +7,9 @@
     Ce qui est fait sur le vrai téléphone revient par les flux du jeu : marqueurs du site (sondés), comptes rendus et
     CR fin d'op par un avis Athena traité dans fn_adminNotices (« mobile_report », « mobile_debrief »).
     Params : [action, argument]
-      "open" app       ouvre la page MOBILEQR pour cette app (cr, compte-rendu, carte, briefs) et demande un lien
+      "open" app       ouvre la page MOBILEQR pour cette app (cr, compte-rendu, carte, briefs, controle) et demande un lien
+                       (controle, 3.0.2 : historique des contrôles d'identité du joueur, /m/controle ; ouvert par l'app
+                       Contrôle ID du SSE avec ["open", "controle"] call comspec_atak_native_fnc_mobileQr)
       "request"        demande (ou redemande : RÉGÉNÉRER) un lien à Athena
       "page"           dessine la page (fn_pageRender)
       "tick"           compte à rebours, chaque seconde tant que la page est ouverte
@@ -16,7 +18,7 @@
 params [["_act", ""], ["_arg", ""]];
 private _q = uiNamespace getVariable ["COMSPEC_ATAK_MobQr", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_MobQr", _q];
-private _labels = createHashMapFromArray [["cr", "Comptes rendus"], ["compte-rendu", "CR fin d'op"], ["carte", "Carte"], ["briefs", "Briefs air"]];
+private _labels = createHashMapFromArray [["cr", "Comptes rendus"], ["compte-rendu", "CR fin d'op"], ["carte", "Carte"], ["briefs", "Briefs air"], ["controle", "Contrôle ID"]];
 private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MOBILEQR") then { ["MOBILEQR"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _fail = {
     params ["_msg", ["_link", false]];

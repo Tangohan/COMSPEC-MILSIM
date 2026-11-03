@@ -45,6 +45,53 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
             <?php endif; ?>
         <?php endif; ?>
 
+        <?php $dossier = is_array($idPapers['dossier'] ?? null) ? $idPapers['dossier'] : ['total' => 0, 'photos' => 0, 'groups' => []]; ?>
+        <?php if ($dossier['groups'] !== []): ?>
+            <h3 style="margin:14px 0 6px;font-size:.9rem">Contrôles par opération</h3>
+            <p class="muted"><?= (int) $dossier['total'] ?> contrôle(s) · <?= (int) $dossier['photos'] ?> photo(s) jointe(s) aux fiches FRM des contrôles</p>
+            <?php foreach ($dossier['groups'] as $g): ?>
+                <details class="idp-op"<?= count($dossier['groups']) === 1 ? ' open' : '' ?>>
+                    <summary>
+                        <strong><?= $h($g['op_key'] !== '' ? $g['op_key'] : 'Hors opération') ?></strong>
+                        <span class="muted"> · <?= $h($g['map_label']) ?> · <?= (int) $g['total'] ?> contrôle(s), du <?= $h(substr((string) $g['first_at'], 0, 16)) ?> au <?= $h(substr((string) $g['last_at'], 0, 16)) ?></span>
+                        <span class="idp-op__verdicts">
+                            <?php foreach ($g['verdicts'] as $v => $n): ?>
+                                <span class="badge idp-verdict--<?= $h($v !== '' ? $v : 'none') ?>"><?= $h(\App\Support\SseIdentityCatalog::label(\App\Support\SseIdentityCatalog::VERDICTS, (string) $v, 'Sans verdict')) ?> × <?= (int) $n ?></span>
+                            <?php endforeach; ?>
+                            <?php if ($g['forgeries'] > 0): ?><span class="badge idp-verdict--hvt">Faux détecté × <?= (int) $g['forgeries'] ?></span><?php endif; ?>
+                        </span>
+                    </summary>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Contrôle</th><th>Reçu le</th><th>Papier présenté</th><th>Contrôleur</th><th>Niveaux</th><th>Verdict</th><th>Fiche FRM</th><th></th></tr></thead>
+                            <tbody>
+                            <?php foreach ($g['checks'] as $c): ?>
+                                <tr>
+                                    <td><?= $h($c['ref']) ?></td>
+                                    <td><?= $h($c['created_at']) ?></td>
+                                    <td><?= $h(trim(($c['country_code'] ?? '') . ' ' . ($c['doc_number'] ?? '')) ?: '—') ?></td>
+                                    <td><?= $h($c['controller_callsign'] ?? '—') ?></td>
+                                    <td><?= $h(implode(' ', array_map(static fn (array $l): string => $l['code'] . ($l['tone'] === 'bad' ? ' ✗' : ($l['tone'] === 'warn' ? ' ?' : '')), $c['level_rows']))) ?></td>
+                                    <td><span class="badge idp-verdict--<?= $h($c['verdict'] !== '' ? $c['verdict'] : 'none') ?>"><?= $h($c['verdict_label']) ?></span></td>
+                                    <td><?php if (is_array($c['note'] ?? null)): ?><a class="link" href="<?= $h(url('atak/sse/fiches/' . (int) $c['note']['id'])) ?>"><?= $h($c['note']['ref']) ?></a> · <?= $h($c['note']['status_label']) ?><?php else: ?>—<?php endif; ?></td>
+                                    <td><a class="btn-open" href="<?= $h(url('atak/sse/papiers/controles/' . (int) $c['id'])) ?>">Ouvrir</a></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php if ($g['photos'] !== []): ?>
+                        <div class="idp-photos">
+                            <?php foreach (array_slice($g['photos'], 0, 24) as $p): ?>
+                                <a href="<?= $h($p['url']) ?>" target="_blank" rel="noopener" title="<?= $h($p['check_ref']) ?>"><img src="<?= $h($p['url']) ?>" alt="<?= $h($p['caption'] !== '' ? $p['caption'] : 'Photo du contrôle ' . $p['check_ref']) ?>" loading="lazy"></a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </details>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
+        <?php if ($dossier['groups'] === []): ?>
         <h3 style="margin:14px 0 6px;font-size:.9rem">Contrôles d’identité reçus</h3>
         <?php if ($idPapers['checks'] === []): ?>
             <p class="muted">Aucun contrôle reçu du terrain pour cette personne.</p>
@@ -66,6 +113,7 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
                     </tbody>
                 </table>
             </div>
+        <?php endif; ?>
         <?php endif; ?>
         <?php if (!empty($canManage) && $papersPersonId > 0): ?>
             <div class="idp-actions" style="margin-top:10px">

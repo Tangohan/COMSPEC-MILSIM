@@ -5,7 +5,10 @@
       MUSIQUE (mes fichiers)    : le morceau lui-même est copié dans le dossier musique de l'autre (mp3) ;
       PHOTOS                    : la photo est copiée dans les captures de l'autre, visible dans sa Galerie (pho) ;
       DONNÉES                   : ma position, mon itinéraire, un plan de l'app Plan (pos, wp, plan) ;
-      FICHES                    : fiches SEEK (journal du terminal) et fiches SSE (personnes enregistrées) (seek, sse).
+      FICHES                    : fiches SEEK (journal du terminal), fiches SSE (personnes enregistrées) et fiches
+                                  CONTRÔLE ID (contrôles d'identité de l'app Contrôle ID du SSE) (seek, sse, idc).
+    NFC (3.0.2, fiches CONTRÔLE ID) : téléphones dos à dos (comspec_atak_native_bt_nfc_range, 2 m), sans appairage ni
+    Bluetooth allumé ; l'autre accepte ou refuse comme pour le Bluetooth.
     Tout passe par une demande que l'autre accepte ou refuse. Les fichiers partent ensuite par morceaux
     (DLL BtFileRead / BtRecvWrite, fn_btItems pour le reste), à la vitesse simulée du Bluetooth, tant que les
     deux téléphones restent à portée.
@@ -21,6 +24,13 @@
       "cancel" id             : interrompt un transfert en cours (envoi ou réception)
       "view" id / "unview"    : affiche ou referme une fiche reçue (app Bluetooth, section Reçus)
       "pump"                  : envoie les morceaux suivants des fichiers en cours (gestionnaire par image)
+    Fiches CONTRÔLE ID (3.0.2, fonctions publiques pour le SSE ; données : voir fn_btItems « idcStore ») :
+      "shareIdCheck" données    : range la fiche et ouvre sa vue dédiée (app Bluetooth) avec le partage : appareils
+                                  appairés à portée (ENVOYER) et NFC dos à dos ; renvoie la clé de la fiche ("" si vide)
+      "shareIdCheckNfc" données : range la fiche et la propose tout de suite à l'ATAK le plus proche, dos à dos (NFC) ;
+                                  renvoie la clé
+      "idcOpen" clé / "idcClose" : ouvre / referme la vue dédiée     "idcSend" [clé, uid] : propose la fiche en Bluetooth
+      "idcNfc" clé : la propose en NFC     "idcFrm" clé : fiche FRM pré-remplie (app FRS)     "idcMap" clé : carte sur le lieu
       "recv" [type, args]     : événement CBA comspec_atak_native_bt reçu d'un autre téléphone
                                 (paired, unpaired, offer, answer, data, fbeg, fchk, fend, fabort, done)
     Portées (variables de mission, modifiables par le créateur) : comspec_atak_native_bt_range (liaison, 15 m),
@@ -42,6 +52,7 @@ private _ui = uiNamespace getVariable ["COMSPEC_ATAK_BtUi", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_BtUi", _ui];
 private _now = [time, serverTime] select isMultiplayer;
 private _range = missionNamespace getVariable ["comspec_atak_native_bt_range", 15];
+private _nfcRange = missionNamespace getVariable ["comspec_atak_native_bt_nfc_range", 2];
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 30] call comspec_atak_native_fnc_notify; };
 private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { ["BLUETOOTH"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _usable = { (_bt get "on") && {([] call comspec_atak_native_fnc_canUse) isEqualTo ""} };
@@ -55,7 +66,24 @@ private _reach = {
     params ["_u"];
     !isNull _u && {alive _u} && {(_u distance player) <= _range} && {_u getVariable ["COMSPEC_ATAK_BtOn", false]} && {[_u] call comspec_atak_native_fnc_hasDevice}
 };
+// NFC (fiches CONTRÔLE ID) : téléphones dos à dos, sans appairage ni Bluetooth.
+private _nfcReach = {
+    params ["_u"];
+    !isNull _u && {alive _u} && {(_u distance player) <= _nfcRange} && {[_u] call comspec_atak_native_fnc_hasDevice}
+};
+private _reachVia = { params ["_u", ["_nfc", false]]; if (_nfc isEqualTo true) then { [_u] call _nfcReach } else { [_u] call _reach } };
 private _event = { params ["_to", "_type", "_args"]; ["comspec_atak_native_bt", [_type, _args], _to] call CBA_fnc_targetEvent; };
+// Propose un élément à un téléphone (Bluetooth, ou NFC pour une fiche CONTRÔLE ID).
+private _offer = {
+    params ["_u", "_kind", "_ref", "_title", ["_nfc", false]];
+    private _id = format ["%1-%2", getPlayerUID player, round (diag_tickTime * 1000)];
+    [_u, "offer", [_id, getPlayerUID player, name player, _kind, _ref, _title, _nfc]] call _event;
+    private _sent = _bt get "sent";
+    _sent pushBack [_id, name _u, _title, "EN ATTENTE", _kind, _ref, getPlayerUID _u, _nfc];
+    while { (count _sent) > 8 } do { _sent deleteAt 0; };
+    ["INFO", format ["%1 « %2 » proposé(e) à %3%4", [_kind] call _kindName, _title, name _u, ["", " (NFC)"] select _nfc]] call _say;
+    _id
+};
 private _publish = {
     private _on = call _usable;
     if ((player getVariable ["COMSPEC_ATAK_BtOn", false]) isNotEqualTo _on) then { player setVariable ["COMSPEC_ATAK_BtOn", _on, true]; };
@@ -75,7 +103,7 @@ private _prune = {
 };
 private _play = ["snd", "mus"];
 private _files = createHashMapFromArray [["pho", "photo"], ["mp3", "music"]];
-private _kindName = { params ["_k"]; switch (_k) do { case "snd": { "son" }; case "mus": { "musique" }; case "mp3": { "morceau" }; case "pho": { "photo" }; case "pos": { "position" }; case "wp": { "itinéraire" }; case "plan": { "plan" }; case "seek": { "fiche SEEK" }; case "sse": { "fiche SSE" }; case "note": { "note" }; default { "élément" }; } };
+private _kindName = { params ["_k"]; switch (_k) do { case "snd": { "son" }; case "mus": { "musique" }; case "mp3": { "morceau" }; case "pho": { "photo" }; case "pos": { "position" }; case "wp": { "itinéraire" }; case "plan": { "plan" }; case "seek": { "fiche SEEK" }; case "sse": { "fiche SSE" }; case "note": { "note" }; case "idc": { "fiche contrôle ID" }; default { "élément" }; } };
 private _sentSet = {
     params ["_id", "_state"];
     { if ((_x select 0) isEqualTo _id) then { _x set [3, _state]; }; } forEach (_bt get "sent");
@@ -183,13 +211,87 @@ switch (_act) do {
         ((uiNamespace getVariable ["COMSPEC_ATAK_BtList", []]) param [_arg, []]) params [["_kind", ""], ["_ref", ""], ["_title", ""]];
         if (_kind isEqualTo "") exitWith {};
         if (_ref isEqualTo "" && {!(_kind in ["pos", "wp"])}) exitWith {};
-        private _id = format ["%1-%2", getPlayerUID player, round (diag_tickTime * 1000)];
-        [_u, "offer", [_id, getPlayerUID player, name player, _kind, _ref, _title]] call _event;
-        private _sent = _bt get "sent";
-        _sent pushBack [_id, name _u, _title, "EN ATTENTE", _kind, _ref, _uid];
-        while { (count _sent) > 8 } do { _sent deleteAt 0; };
-        ["INFO", format ["%1 « %2 » proposé(e) à %3", [_kind] call _kindName, _title, name _u]] call _say;
+        [_u, _kind, _ref, _title] call _offer;
         call _rerender;
+    };
+    // Fiches CONTRÔLE ID (app Contrôle ID du SSE).
+    case "shareIdCheck";
+    case "shareIdCheckNfc": {
+        private _key = ["idcStore", _arg] call comspec_atak_native_fnc_btItems;
+        if (_key isEqualTo "") exitWith { "" };
+        if (_act isEqualTo "shareIdCheckNfc") exitWith { ["idcNfc", _key] call comspec_atak_native_fnc_btAction; _key };
+        ["idcOpen", _key] call comspec_atak_native_fnc_btAction;
+        _key
+    };
+    case "idcOpen": {
+        _ui set ["idcView", _arg];
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { call _rerender; } else {
+            [{ ["BLUETOOTH"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        };
+    };
+    case "idcClose": { _ui set ["idcView", ""]; call _rerender; };
+    case "idcSend": {
+        _arg params [["_key", ""], ["_uid", ""]];
+        private _c = ["idcGet", _key] call comspec_atak_native_fnc_btItems;
+        if ((count _c) isEqualTo 0) exitWith {};
+        if !(call _usable) exitWith { ["WARNING", "Activez d'abord le Bluetooth"] call _say; };
+        private _u = [_uid] call _byUid;
+        if !([_u] call _reach) exitWith { ["WARNING", format ["%1 hors de portée Bluetooth (%2 m) ou Bluetooth éteint", (_bt get "paired") getOrDefault [_uid, "L'appareil"], round _range]] call _say; };
+        [_u, "idc", _key, trim format ["%1 %2", toUpper (_c get "last"), _c get "first"]] call _offer;
+        call _rerender;
+    };
+    case "idcNfc": {
+        private _c = ["idcGet", _arg] call comspec_atak_native_fnc_btItems;
+        if ((count _c) isEqualTo 0) exitWith {};
+        if (([] call comspec_atak_native_fnc_canUse) isNotEqualTo "") exitWith { ["WARNING", "Téléphone indisponible : NFC inactif"] call _say; };
+        private _near = (allPlayers select { _x isNotEqualTo player && {[_x] call _nfcReach} }) apply { [_x distance player, _x] };
+        _near sort true;
+        if ((count _near) isEqualTo 0) exitWith { ["WARNING", format ["NFC : posez votre téléphone contre celui d'un équipier (moins de %1 m)", _nfcRange]] call _say; };
+        [(_near select 0) select 1, "idc", _arg, trim format ["%1 %2", toUpper (_c get "last"), _c get "first"], true] call _offer;
+        call _rerender;
+    };
+    case "idcFrm": {
+        private _c = ["idcGet", _arg] call comspec_atak_native_fnc_btItems;
+        if ((count _c) isEqualTo 0) exitWith {};
+        private _vl = createHashMapFromArray [["ras", "RAS"], ["signale", "signalé"], ["recherche", "recherché"], ["hvt", "cible prioritaire"], ["inconnu", "inconnu des fichiers"],
+            ["revoque", "papier annulé"], ["vole", "papier volé ou perdu"], ["expire", "papier expiré"], ["faux", "faux document"], ["doute", "doute"]];
+        private _type = createHashMapFromArray [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"]] getOrDefault [_c get "docType", "Document"];
+        private _lines = [
+            format ["Contrôle d'identité %1 au %2 : %3 %4%5.", _c get "time", _c get "grid", toUpper (_c get "last"), _c get "first", ["", format [", né(e) le %1", _c get "dob"]] select ((_c get "dob") isNotEqualTo "")],
+            format ["Document : %1 %2 n° %3%4.", _type, _c get "docCountry", _c get "docNumber", ["", format [", expire le %1", _c get "expires"]] select ((_c get "expires") isNotEqualTo "")],
+            format ["Verdict : %1.", toUpper (_vl getOrDefault [_c get "verdict", _c get "verdict"])]
+        ];
+        { _x params ["_n", "_st", "_v", "_tx"]; _lines pushBack format ["%1 : %2%3", _n, _vl getOrDefault [_v, _st], ["", format [" (%1)", _tx]] select (_tx isNotEqualTo "")]; } forEach (_c get "levels");
+        if ((_c get "from") isNotEqualTo "") then { _lines pushBack format ["Fiche reçue de %1 (contrôleur : %2).", _c get "from", _c get "controller"]; };
+        private _block = _lines joinString toString [10];
+        private _draft = uiNamespace getVariable ["COMSPEC_ATAK_FrsDraft", createHashMap];
+        private _body = trim (_draft getOrDefault ["body", ""]);
+        _body = if (_body isEqualTo "") then { _block } else { _body + toString [10, 10] + _block };
+        if ((count _body) > 1000) then { _body = (_body select [0, 997]) + "..."; };
+        _draft set ["body", _body];
+        _draft set ["kind", "FRM"];
+        private _themes = _draft getOrDefault ["themes", []];
+        if !(_themes isEqualType []) then { _themes = []; };
+        _themes pushBackUnique "PERSON";
+        if ((_c get "verdict") in ["recherche", "hvt"]) then { _themes pushBackUnique "TERROR"; _themes pushBackUnique "INSURG"; };
+        _draft set ["themes", _themes];
+        if ((_c get "case") isNotEqualTo "" && {(_draft getOrDefault ["case", ""]) isEqualTo ""}) then { _draft set ["case", _c get "case"]; };
+        if ((_draft getOrDefault ["grid", ""]) isEqualTo "") then { _draft set ["grid", _c get "grid"]; };
+        // Rattachement au contrôle sur Athena (fn_frsSubmit : id_check_ref) : référence CTRL-… sinon clé de la fiche.
+        _draft set ["idCheck", [_c get "ref", _c get "key"] select ((_c get "ref") isEqualTo "")];
+        uiNamespace setVariable ["COMSPEC_ATAK_FrsDraft", _draft];
+        ["INFO", "Fiche FRM pré-remplie avec le contrôle", 3, 20] call comspec_atak_native_fnc_notify;
+        [{ ["FRS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    };
+    case "idcMap": {
+        private _c = ["idcGet", _arg] call comspec_atak_native_fnc_btItems;
+        if ((count _c) isEqualTo 0) exitWith {};
+        (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["mapFollow", false];
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        [{
+            [_this, 0.05] call comspec_atak_native_fnc_mapCenter;
+            ["recv", [[_this select 0, _this select 1, 0], "CONTRÔLE ID", player]] call comspec_atak_native_fnc_mapPing;
+        }, [(_c get "pos") select 0, (_c get "pos") select 1], 0.15] call CBA_fnc_waitAndExecute;
     };
     case "accept";
     case "refuse": {
@@ -197,11 +299,11 @@ switch (_act) do {
         private _p = _bt get "pending";
         private _i = _p findIf { (_x select 0) isEqualTo _arg };
         if (_i < 0) exitWith { ["WARNING", "Demande expirée"] call _say; call _rerender; };
-        (_p deleteAt _i) params ["_id", "_uid", "_name", "_kind", "_ref", "_title"];
+        (_p deleteAt _i) params ["_id", "_uid", "_name", "_kind", "_ref", "_title", "", ["_nfc", false]];
         private _u = [_uid] call _byUid;
         private _ok = _act isEqualTo "accept";
-        if (_ok && {!([_u] call _reach)}) exitWith {
-            ["WARNING", format ["%1 n'est plus à portée Bluetooth", _name]] call _say;
+        if (_ok && {!([_u, _nfc] call _reachVia)}) exitWith {
+            ["WARNING", format [["%1 n'est plus à portée Bluetooth", "%1 n'est plus contre votre téléphone (NFC)"] select (_nfc isEqualTo true), _name]] call _say;
             call _rerender;
         };
         if (_ok && {_kind in _play}) then {
@@ -241,8 +343,8 @@ switch (_act) do {
     };
     // Envoi accepté par l'autre : données tout de suite, fichiers ouverts puis envoyés par morceaux (« pump »).
     case "deliver": {
-        _arg params ["_id", "_u", "_kind", "_ref", "_title"];
-        if !([_u] call _reach) exitWith { [_id, "HORS PORTÉE"] call _sentSet; [_u, "fabort", [_id, "hors de portée"]] call _event; };
+        _arg params ["_id", "_u", "_kind", "_ref", "_title", ["_nfc", false]];
+        if !([_u, _nfc] call _reachVia) exitWith { [_id, "HORS PORTÉE"] call _sentSet; [_u, "fabort", [_id, "hors de portée"]] call _event; };
         if (_kind in _files) then {
             private _r = ["BtFileOpen", [_files get _kind, _ref]] call _dll;
             if ((_r param [0, ""]) isNotEqualTo "OK") exitWith {
@@ -340,21 +442,25 @@ switch (_act) do {
                 call _rerender;
             };
             case "offer": {
-                _a params [["_id", ""], ["_uid", ""], ["_name", ""], ["_kind", ""], ["_ref", ""], ["_title", ""]];
+                _a params [["_id", ""], ["_uid", ""], ["_name", ""], ["_kind", ""], ["_ref", ""], ["_title", ""], ["_nfc", false]];
                 private _u = [_uid] call _byUid;
+                // NFC : seulement une fiche CONTRÔLE ID, téléphones dos à dos, sans appairage ni Bluetooth.
+                _nfc = _nfc isEqualTo true && {_kind isEqualTo "idc"};
                 private _why = switch (true) do {
-                    case !(call _usable): { "Bluetooth éteint" };
-                    case !(_uid in (_bt get "paired")): { "appareil non appairé" };
+                    case (_nfc && {([] call comspec_atak_native_fnc_canUse) isNotEqualTo ""}): { "téléphone indisponible" };
+                    case (_nfc && {!([_u] call _nfcReach)}): { "téléphones trop éloignés pour le NFC" };
+                    case (!_nfc && {!(call _usable)}): { "Bluetooth éteint" };
+                    case (!_nfc && {!(_uid in (_bt get "paired"))}): { "appareil non appairé" };
                     case ((count (_bt get "pending")) >= 5): { "trop de demandes en attente" };
                     default { "" };
                 };
                 if (_why isNotEqualTo "") exitWith { if (!isNull _u) then { [_u, "answer", [_id, false, _why, name player, _title]] call _event; }; };
                 call _prune;
-                (_bt get "pending") pushBack [_id, _uid, _name, _kind, _ref, _title, _now];
+                (_bt get "pending") pushBack [_id, _uid, _name, _kind, _ref, _title, _now, _nfc];
                 ["MESSAGE", if (_kind in _play) then {
                     format ["Bluetooth : %1 veut lire « %2 » sur votre téléphone (app Bluetooth : accepter ou refuser)", _name, _title]
                 } else {
-                    format ["Bluetooth : %1 veut vous envoyer %2 « %3 » (app Bluetooth : accepter ou refuser)", _name, [_kind] call _kindName, _title]
+                    format [["Bluetooth : %1 veut vous envoyer %2 « %3 » (app Bluetooth : accepter ou refuser)", "NFC : %1 veut vous envoyer %2 « %3 » (app Bluetooth : accepter ou refuser)"] select _nfc, _name, [_kind] call _kindName, _title]
                 }] call _say;
                 [] call comspec_atak_native_fnc_vibrate;
                 call _rerender;
@@ -366,7 +472,7 @@ switch (_act) do {
                 if (_ok) then { ["SUCCESS", format ["%1 a accepté « %2 »", _name, _title]] call _say; }
                 else { ["WARNING", format ["%1 a refusé « %2 »%3", _name, _title, ["", format [" (%1)", _why]] select (_why isNotEqualTo "")]] call _say; };
                 if (_ok && {(count _row) >= 7} && {!((_row select 4) in _play)}) then {
-                    ["deliver", [_id, [_row select 6] call _byUid, _row select 4, _row select 5, _row select 2]] call comspec_atak_native_fnc_btAction;
+                    ["deliver", [_id, [_row select 6] call _byUid, _row select 4, _row select 5, _row select 2, _row param [7, false]]] call comspec_atak_native_fnc_btAction;
                 };
                 call _rerender;
             };

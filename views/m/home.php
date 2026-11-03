@@ -11,6 +11,7 @@ require __DIR__ . '/_head.php';
       <a class="mm-tile" href="<?= $h(url('m/cr')) ?>"><strong>Comptes rendus</strong><span>Contact, SALUTE, SPOTREP, blessé…</span></a>
       <a class="mm-tile" href="<?= $h(url('m/compte-rendu')) ?>"><strong>CR fin d’op</strong><span>Le compte rendu de fin d’opération</span></a>
       <a class="mm-tile" href="<?= $h(url('m/carte')) ?>"><strong>Carte</strong><span>Amis, marqueurs, poser un marqueur</span></a>
+      <a class="mm-tile" href="<?= $h(url('m/controle')) ?>"><strong>Contrôle ID</strong><span>Mes contrôles d’identité de la partie</span></a>
       <?php if ($aircrew !== []): ?>
         <a class="mm-tile mm-tile--air" href="<?= $h(url('m/briefs')) ?>"><strong>Briefs air</strong><span>9-LINE reçus par <span translate="no"><?= $h(implode(', ', $aircrew)) ?></span></span></a>
       <?php endif; ?>

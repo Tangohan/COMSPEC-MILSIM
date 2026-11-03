@@ -1,12 +1,18 @@
 /*
     Notification du téléphone : toast quelques secondes, gardée dans le centre de notifications (60 dernières).
-    Params : [type (INFO, SUCCESS, WARNING, ERROR, MESSAGE, TACTICAL), texte, durée en s, priorité, page de l'app à ouvrir au clic]
+    Params : [type (INFO, SUCCESS, WARNING, ERROR, MESSAGE, TACTICAL), texte, durée en s, priorité, page de l'app à ouvrir au clic,
+              mode ("" normal | "vibrate" vibreur seul)]
+    Mode « vibrate » (3.0.2, alerte discrète : contrôle d'identité, approche furtive…) : la coque vibre sans aucun son
+    (fn_vibrate [true]), aucun toast, rien sur l'écran de verrouillage ni sur la montre ; la notification est seulement
+    rangée au centre de notifications (marquée « discreet ») et la cloche passe en non lue. Exemple :
+    ["MESSAGE", "Contrôle : papiers signalés", 0, 10, "IDCHECK", "vibrate"] call comspec_atak_native_fnc_notify
     Centre : un texte identique déjà présent remonte en tête avec un compteur (« ×3 ») au lieu d'être empilé ; chaque
     entrée garde un identifiant (fermeture une par une) et l'instant de réception (« il y a 3 min »).
     File des toasts (état « notifications ») : un seul affiché à la fois (fn_notificationsRender) ; la durée ne court
     qu'à partir de son affichage, et un toast qui attend depuis plus de 30 s est abandonné (il reste dans le centre).
 */
-params [["_type","INFO"],["_message",""],["_duration",5],["_priority",10],["_app",""]];
+params [["_type","INFO"],["_message",""],["_duration",5],["_priority",10],["_app",""],["_mode",""]];
+private _discreet = (toLower _mode) in ["vibrate", "vibreur", "silent"];
 if (_message isEqualTo "" || {missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]}) exitWith {false};
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _hist = _s getOrDefault ["notifHistory", []];
@@ -16,11 +22,13 @@ private _same = _hist findIf { (_x getOrDefault ["message", ""]) isEqualTo _mess
 private _times = 1;
 if (_same >= 0) then { _times = ((_hist select _same) getOrDefault ["count", 1]) + 1; _hist deleteAt _same; };
 _hist pushBack createHashMapFromArray [["id", _hid], ["type", toUpper _type], ["message", _message], ["app", toUpper _app], ["count", _times],
-    ["time", (["now"] call comspec_atak_native_fnc_clockFmt)], ["tick", diag_tickTime]];
+    ["time", (["now"] call comspec_atak_native_fnc_clockFmt)], ["tick", diag_tickTime], ["discreet", _discreet]];
 while {count _hist > 60} do { _hist deleteAt 0; };
 _s set ["notifHistory", _hist];
 _s set ["notifUnread", (_s getOrDefault ["notifUnread", 0]) + 1];
 if ((_s getOrDefault ["activePage", ""]) isEqualTo "NOTIFS") then { [{ ["NOTIFS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+// Vibreur seul : la coque tremble sans son, aucun bandeau (le centre de notifications garde le texte).
+if (_discreet) exitWith { [true] call comspec_atak_native_fnc_vibrate; true };
 if !(profileNamespace getVariable ["COMSPEC_ATAK_Notifications",true]) exitWith {false};
 // Préférences réglées depuis le web (Mon ATAK) : types muets (historique seulement), durée imposée des bandeaux.
 private _muted = profileNamespace getVariable ["COMSPEC_ATAK_NotifMuted", []];

@@ -98,6 +98,29 @@
 .idp-verdict--inconnu { border-color: var(--amber, #f59e0b); color: var(--amber, #f59e0b); }
 .idp-verdict--ras { border-color: var(--green, #059669); color: var(--green, #059669); }
 .idp-hidden { color: var(--muted, inherit); font-style: italic; }
+/* Dossier RENS : contrôles regroupés par opération, photos des fiches FRM liées (COMSPEC IDENTITY, Lot 2). */
+.idp-op {
+    border: 1px solid var(--border-soft, rgba(127, 127, 127, 0.2));
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    margin: 0 0 0.6rem;
+}
+.idp-op > summary { cursor: pointer; list-style: revert; }
+.idp-op__verdicts { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 6px; vertical-align: middle; }
+.idp-photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    margin-top: 0.6rem;
+}
+.idp-photos img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1px solid var(--border-soft, rgba(127, 127, 127, 0.2));
+    display: block;
+}
 @media (max-width: 640px) {
     .idp-card::after { font-size: 1.6rem; }
     .idp-mrz { font-size: 0.7rem; }

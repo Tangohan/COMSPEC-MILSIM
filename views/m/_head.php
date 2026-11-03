@@ -17,6 +17,7 @@ $tabs = [
     'cr' => ['m/cr', 'CR'],
     'compte_rendu' => ['m/compte-rendu', 'CR fin d’op'],
     'carte' => ['m/carte', 'Carte'],
+    'controle' => ['m/controle', 'Contrôle ID'],
 ];
 if (!empty($showBriefs)) {
     $tabs['briefs'] = ['m/briefs', 'Briefs air'];

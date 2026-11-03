@@ -745,6 +745,8 @@ return function (Router $router) {
     $router->post('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debriefSubmit']);
     $router->get('/m/carte', [\App\Controllers\Web\AtakMobileAppsController::class, 'carte']);
     $router->get('/m/briefs', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefs']);
+    $router->get('/m/controle', [\App\Controllers\Web\AtakMobileAppsController::class, 'controle']);
+    $router->post('/m/controle/{id}/frm', [\App\Controllers\Web\AtakMobileAppsController::class, 'controleFrm']);
     $router->get('/m/api/carte', [\App\Controllers\Web\AtakMobileAppsController::class, 'carteData']);
     $router->post('/m/api/marqueurs', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerStore']);
     $router->post('/m/api/marqueurs/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerUpdate']);
@@ -946,6 +948,7 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/pays/{id}/archiver', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryArchive'], $mwSsePortal);
     $router->post('/atak/sse/papiers/pays/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'countryUpdate'], $mwSsePortal);
     $router->get('/atak/sse/papiers/controles', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checksIndex'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/tableau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'dashboard'], $mwSsePortal);
     $router->get('/atak/sse/papiers/controles/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checkShow'], $mwSsePortal);
     // Papiers des membres (accès direct RENS, sans droit Effectifs) : mêmes actions que l'onglet de la fiche membre.
     $router->get('/atak/sse/papiers/membres', [\App\Controllers\Web\SseIdentityRegistryController::class, 'membersIndex'], $mwSsePortal);

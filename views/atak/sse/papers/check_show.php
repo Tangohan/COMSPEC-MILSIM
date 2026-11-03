@@ -80,6 +80,28 @@ require __DIR__ . '/_subnav.php';
         <?php endforeach; ?>
     </div>
 </section>
+
+<section class="panel" style="margin-top:10px">
+    <div class="panel-header">
+        <div class="panel-title"><span class="panel-index">03</span> Fiche FRM et photos</div>
+        <?php if (!empty($check['forgery'])): ?><div class="panel-meta"><span class="badge idp-verdict--hvt">Faux document détecté</span></div><?php endif; ?>
+    </div>
+    <div class="panel-body">
+        <?php $note = is_array($check['note'] ?? null) ? $check['note'] : null; ?>
+        <?php if ($note === null): ?>
+            <p class="muted">Aucune fiche de renseignement rattachée à ce contrôle. Le contrôleur peut en joindre une depuis l’ATAK (fiche CONTRÔLE ID) ou son vrai téléphone (Contrôle ID).</p>
+        <?php else: ?>
+            <p>Fiche <a class="link" href="<?= $h(url('atak/sse/fiches/' . (int) $note['id'])) ?>"><code><?= $h($note['ref']) ?></code></a> · <?= $h($note['status_label']) ?><?= $note['status'] === 'brouillon' ? ' (à valider)' : '' ?></p>
+        <?php endif; ?>
+        <?php if (!empty($check['photos'])): ?>
+            <div class="idp-photos">
+                <?php foreach ($check['photos'] as $p): ?>
+                    <a href="<?= $h($p['url']) ?>" target="_blank" rel="noopener"><img src="<?= $h($p['url']) ?>" alt="<?= $h($p['caption'] !== '' ? $p['caption'] : 'Photo du contrôle') ?>" loading="lazy"></a>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
 <?php
 $sseContent = ob_get_clean();
 require dirname(__DIR__) . '/_layout.php';

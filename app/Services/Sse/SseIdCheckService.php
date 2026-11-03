@@ -35,6 +35,20 @@ final class SseIdCheckService
         return preg_match('/^[A-Za-z0-9_.:\-]{4,80}$/', $key) === 1;
     }
 
+    /** Niveau « N0 » à « N3 » ; le mod envoie aussi le numéro seul (0 à 3). */
+    public static function levelCode(mixed $level): ?string
+    {
+        if (!is_scalar($level)) {
+            return null;
+        }
+        $l = strtoupper(trim((string) $level));
+        if (preg_match('/^[0-3]$/', $l) === 1) {
+            $l = 'N' . $l;
+        }
+
+        return isset(SseIdentityCatalog::LEVELS[$l]) ? $l : null;
+    }
+
     /**
      * @param array<string, mixed> $body
      * @return array{id: int, ref: string, duplicate: bool}|array{error: string}
@@ -94,19 +108,23 @@ final class SseIdCheckService
 
         $levels = [];
         foreach (is_array($body['levels'] ?? null) ? $body['levels'] : [] as $l) {
-            $l = strtoupper(trim((string) $l));
-            if (isset(SseIdentityCatalog::LEVELS[$l]) && !in_array($l, $levels, true)) {
+            $l = self::levelCode($l);
+            if ($l !== null && !in_array($l, $levels, true)) {
                 $levels[] = $l;
             }
         }
-        sort($levels);
         $results = [];
         foreach ($arr($body['results'] ?? null) as $lvl => $res) {
-            $lvl = strtoupper((string) $lvl);
-            if (isset(SseIdentityCatalog::LEVELS[$lvl])) {
+            $lvl = self::levelCode($lvl);
+            if ($lvl !== null) {
                 $results[$lvl] = $res;
+                // Niveau détaillé dans results sans figurer dans levels : passé quand même.
+                if (!in_array($lvl, $levels, true)) {
+                    $levels[] = $lvl;
+                }
             }
         }
+        sort($levels);
         $resultsJson = json_encode($results, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
         if (!is_string($resultsJson) || strlen($resultsJson) > self::MAX_RESULTS_BYTES) {
             $resultsJson = '{}';

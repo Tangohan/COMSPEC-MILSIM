@@ -18,6 +18,7 @@ use App\Repositories\SseIdentityRepository;
 use App\Repositories\SsePersonRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
+use App\Services\Sse\SseIdCheckInsightService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Services\Sse\SseMrzService;
 use App\Support\SseIdCountryCatalog;
@@ -786,6 +787,31 @@ final class SseIdentityRegistryController
         ]);
     }
 
+    /**
+     * Tableau de bord identité d'une opération (COMSPEC IDENTITY, Lot 2) : contrôles, détections, faux détectés (et
+     * faux réellement présentés, habilitation Confidentiel), recherchés interpellés, contrôleurs, dernières alertes et
+     * brouillons FRM nés des contrôles, à valider. Filtres : carte (map) et opération (op ; « - » = sans opération).
+     */
+    public function dashboard(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $insights = new SseIdCheckInsightService(null, $this->checks);
+        $mapId = max(0, (int) $request->queryString('map'));
+        $opRaw = trim($request->queryString('op'));
+        $opKey = $opRaw === '' ? null : ($opRaw === '-' ? '' : mb_substr($opRaw, 0, 64));
+        $truth = $this->canSeeTruth();
+
+        return $this->view('atak.sse.papers.dashboard', [
+            'title' => 'Tableau de bord identité',
+            'board' => $insights->dashboard($tenantId, $mapId > 0 ? $mapId : null, $opKey, $truth),
+            'operations' => $insights->operations($tenantId),
+            'filters' => ['map' => $mapId, 'op' => $opRaw],
+            'scopeLabel' => $opKey === null ? ($mapId > 0 ? $insights->mapLabel($mapId) : 'Toutes les opérations') : (($opKey === '' ? 'Hors opération' : $opKey) . ($mapId > 0 ? ' · ' . $insights->mapLabel($mapId) : '')),
+            'papersTab' => 'tableau',
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
     public function checkShow(Request $request, array $params = []): Response
     {
         $tenantId = $this->tenantId();
@@ -794,6 +820,12 @@ final class SseIdentityRegistryController
             Session::flash('error', 'Contrôle introuvable.');
 
             return Response::redirect(url(self::BASE . '/controles'));
+        }
+
+        try {
+            $check = (new SseIdCheckInsightService(null, $this->checks))->enrich($tenantId, [$check])[0];
+        } catch (\Throwable) {
+            // Fiche et photos indisponibles : le contrôle s'affiche seul.
         }
 
         return $this->view('atak.sse.papers.check_show', [
@@ -808,7 +840,7 @@ final class SseIdentityRegistryController
     /**
      * Bloc « Documents et contrôles » de la fiche personne SSE (identités rattachées, papiers, contrôles reçus).
      *
-     * @return array{identities: list<array<string, mixed>>, documents: list<array<string, mixed>>, checks: list<array<string, mixed>>, truth: bool}
+     * @return array{identities: list<array<string, mixed>>, documents: list<array<string, mixed>>, checks: list<array<string, mixed>>, dossier?: array{total: int, photos: int, groups: list<array<string, mixed>>}, truth: bool}
      */
     public static function personPapers(int $tenantId, int $personId): array
     {
@@ -829,10 +861,17 @@ final class SseIdentityRegistryController
                     && !in_array($d['st_origin'], ['cover', 'forged'], true)));
             }
 
+            try {
+                $dossier = (new SseIdCheckInsightService())->personDossier($tenantId, $personId, array_map(static fn (array $d): int => (int) $d['id'], $documents));
+            } catch (\Throwable) {
+                $dossier = ['total' => 0, 'photos' => 0, 'groups' => []];
+            }
+
             return [
                 'identities' => $identities,
                 'documents' => $documents,
                 'checks' => (new SseIdCheckRepository())->list($tenantId, ['person_id' => $personId, 'limit' => 30]),
+                'dossier' => $dossier,
                 'truth' => $truth,
             ];
         } catch (\Throwable) {

@@ -16,6 +16,9 @@
       "map" id : carte sur le C.R.   "del" id : le retire de ma liste   "web" id : le renvoie à Athena
       "dup" id : nouvelle fiche reprenant ce C.R.  "orderAck" id : accuse réception d'un ordre du commandement (app Tâches)
       "mobile" avis : fiche remplie sur le vrai téléphone (« Sur mon téléphone », avis mobile_report), envoyée comme ici
+      "prefill" code valeurs : ouvre la fiche de ce C.R. déjà remplie (HashMap clé du catalogue → valeur), les champs
+               laissés vides reçoivent les propositions du jeu ; appelé à l'ouverture de l'app quand un autre mod a posé
+               uiNamespace COMSPEC_ATAK_SpotrepDraft (fn_pageReports)
     État : uiNamespace COMSPEC_ATAK_RepUi (onglet, type, valeurs, propositions, lignes en défaut, C.R. déplié, photo)
            missionNamespace COMSPEC_ATAK_Reports (id → C.R., les miens et ceux reçus)
            missionNamespace COMSPEC_ATAK_RepDrafts (code → [valeurs, heure, propositions])
@@ -149,6 +152,17 @@ switch (_act) do {
         [_arg] call comspec_atak_native_fnc_navigate;
     };
     case "back": { call _save; call _keepDraft; _ui set ["type", ""]; call _rerender; };
+    case "prefill": {
+        if ((count ([_arg] call _def)) isEqualTo 0 || {!(_val isEqualType createHashMap)}) exitWith {};
+        call _save;
+        call _keepDraft;
+        // Valeurs en texte (les champs de la fiche sont des chaînes) ; un brouillon déjà commencé de ce C.R. est remplacé.
+        private _from = createHashMap;
+        { _from set [_x, [str _y, _y] select (_y isEqualType "")]; } forEach _val;
+        _drafts deleteAt _arg;
+        [_arg, _from] call _openType;
+        call _rerender;
+    };
     case "set": {
         call _save;
         _vals set [_arg, _val];

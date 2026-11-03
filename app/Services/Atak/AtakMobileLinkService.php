@@ -35,6 +35,7 @@ final class AtakMobileLinkService
         'compte-rendu' => ['m/compte-rendu', 'CR fin d’op'],
         'carte' => ['m/carte', 'Carte'],
         'briefs' => ['m/briefs', 'Briefs air'],
+        'controle' => ['m/controle', 'Contrôle ID'],
     ];
 
     public const TOKEN_TTL = 300;
