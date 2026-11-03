@@ -480,7 +480,9 @@ private _dashed = {
 
 // Zones tactiques Athena (LZ, objectif, zone dangereuse…) et zones roleplay (brouillage, sans couverture).
 if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
-    private _zc = createHashMapFromArray [["LZ",[0.36,0.85,0.42,1]],["DZ",[0.36,0.85,0.42,1]],["EXTRACT_POINT",[0.36,0.85,0.42,1]],["RALLY_POINT",[0.28,0.70,1,1]],["SAFE_ZONE",[0.28,0.70,1,1]],["OBJECTIVE",[0.95,0.67,0.20,1]],["DANGER_ZONE",[0.95,0.22,0.18,1]],["NO_GO_AREA",[0.95,0.22,0.18,1]],["RESTRICTED_AREA",[0.95,0.5,0.15,1]]];
+    // Table des couleurs par type, créée une fois (avant : recréée à chaque image).
+    if (isNil "COMSPEC_ATAK_DZColors") then { COMSPEC_ATAK_DZColors = createHashMapFromArray [["LZ",[0.36,0.85,0.42,1]],["DZ",[0.36,0.85,0.42,1]],["EXTRACT_POINT",[0.36,0.85,0.42,1]],["RALLY_POINT",[0.28,0.70,1,1]],["SAFE_ZONE",[0.28,0.70,1,1]],["OBJECTIVE",[0.95,0.67,0.20,1]],["DANGER_ZONE",[0.95,0.22,0.18,1]],["NO_GO_AREA",[0.95,0.22,0.18,1]],["RESTRICTED_AREA",[0.95,0.5,0.15,1]]]; };
+    private _zc = COMSPEC_ATAK_DZColors;
     {
         _x params [["_id",""],["_geom","CIRCLE"],["_geo",[]],["_r",0],["_type",""],["_threat",""],["_label",""]];
         private _c = +(_zc getOrDefault [toUpper _type,[0.95,0.67,0.20,1]]);
@@ -511,6 +513,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
 };
 
 // Mes charges (app Explosifs) : numéro de pose, mode de mise à feu, temps restant des minuteries, T- de la séquence.
+// File de séquence lue une fois par image (clé -> première échéance) : avant, refiltrée pour chaque charge.
+private _exQ = createHashMap;
+{ private _qk = (_x select 1) get "key"; if !(_qk in _exQ) then { _exQ set [_qk, _x select 0]; }; } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap]) getOrDefault ["queue", []]);
 {
     private _e = _x get "obj";
     // Charge détonée ou supprimée dans la fenêtre du cache de fn_exploList (0,5 s) : pas d'icône à l'origine de la carte.
@@ -518,9 +523,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     private _c = [[0.95,0.67,0.20,1], [0.90,0.78,0.29,1], [0.90,0.28,0.23,1], [0.79,0.83,0.81,1]] select ((["atak","command","timer","mine"] find (_x get "kind")) max 0);
     private _txt = format ["C%1", _forEachIndex + 1];
     if ((_x get "remaining") >= 0) then { _txt = format ["%1 · %2 s", _txt, ceil (_x get "remaining")]; };
-    private _key = _x get "key";
-    private _q = ((uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap]) getOrDefault ["queue", []]) select { ((_x select 1) get "key") isEqualTo _key };
-    if ((count _q) > 0) then { _txt = format ["%1 · T-%2", _txt, ((((_q select 0) select 0) - diag_tickTime) max 0) toFixed 1]; _c = [0.90,0.28,0.23,1]; };
+    private _qt = _exQ getOrDefault [_x get "key", -1];
+    if (_qt isNotEqualTo -1) then { _txt = format ["%1 · T-%2", _txt, ((_qt - diag_tickTime) max 0) toFixed 1]; _c = [0.90,0.28,0.23,1]; };
     _map drawIcon ["\z\comspec_atak_native\addons\main\data\app_explo.paa", _c, getPosASL _e, 18 * _k * _is, 18 * _k * _is, 0, _txt, 2, 0.03 * _kt * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 } forEach ([] call comspec_atak_native_fnc_exploList);
 
@@ -557,7 +561,10 @@ if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualT
     private _pulse = 0.55 + 0.45 * (abs sin (diag_tickTime * 180));
     private _ring = [0.36, 0.78, 0.42, _pulse];
     _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _ring, _ap, 34 * _is, 34 * _is, 0, "", 0];
-    private _ic = getText (configFile >> "CfgMarkers" >> (_state getOrDefault ["markerType", "mil_dot"]) >> "icon");
+    // Icône lue une fois par type (cache « ~ » des icônes : texte brut de CfgMarkers), pas à chaque image.
+    private _apT = "~" + (_state getOrDefault ["markerType", "mil_dot"]);
+    private _ic = _mkIconCache getOrDefault [_apT, "§"];
+    if (_ic isEqualTo "§") then { _ic = getText (configFile >> "CfgMarkers" >> (_apT select [1]) >> "icon"); _mkIconCache set [_apT, _ic]; };
     if (_ic isNotEqualTo "") then { _map drawIcon [_ic, [1, 1, 1, 0.75], _ap, 20 * _is, 20 * _is, 0, "", 0]; };
     _map drawIcon [_dot, [0.36, 0.78, 0.42, 1], _ap, 6, 6, 0, "  " + (("POINT DE POSE · VALIDER") call comspec_atak_native_fnc_tr), 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
