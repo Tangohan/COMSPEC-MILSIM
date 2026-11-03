@@ -21,7 +21,7 @@ $qReturn = 'dashboard';
 <header class="q-band__head">
 <div><p class="eyebrow"><?= $h($t('q_band_kicker')) ?></p>
 <h2 id="q-band-title"><?= $h($t('ins_todo')) ?> <b class="pill<?= (int) $queue['total'] > 0 ? ' accent' : '' ?>"><?= (int) $queue['total'] ?></b></h2></div>
-<a class="button small" href="<?= $h($link('instructor')) ?>#file"><?= $h($t('q_open_space')) ?></a>
+<span class="q-band__links"><a class="button small outline" href="<?= $h($link('suivi')) ?>" title="<?= $h($t('ins_tracker_help')) ?>"><?= $h($t('ins_tracker_link')) ?></a> <a class="button small" href="<?= $h($link('instructor')) ?>#file"><?= $h($t('q_open_space')) ?></a></span>
 </header>
 <ul class="q-tiles">
 <?php foreach ($qTiles as $type => $tile): if (array_key_exists('show', $tile) && !$tile['show'] && $tile['n'] === 0) continue; ?>

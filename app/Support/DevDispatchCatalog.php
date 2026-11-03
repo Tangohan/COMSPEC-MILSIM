@@ -294,6 +294,17 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1361, '2026-11-03', 'Academy : le tableau de suivi des formations', 'L’Academy reçoit un tableau de suivi, sur le modèle de celui présenté sur la page d’accueil pour la qualification CQB : chaque stagiaire sur une ligne, chaque formation (ou chaque chapitre d’une formation) en colonne, avec un état coloré et lisible d’un coup d’œil. Les instructeurs inscrivent, relancent, valident le chapitre en attente ou dispensent sans changer de page.', [
+                'Academy › Tableau de suivi : vue par cursus (stagiaires × formations) et vue par formation (stagiaires × chapitres, barre de progression)',
+                'États : non inscrit, inscrit, en cours, à valider, échoué, validé, à renouveler (qualification expirée ou proche de l’échéance), dispensé ; stagiaires en retard signalés',
+                'Indicateurs : taux de complétion, chapitres à valider, stagiaires en retard, qualifications à renouveler',
+                'Filtres par unité, fonction, grade, cohorte et état ; export CSV et impression',
+                'Actions en ligne : inscrire, relancer par message, valider le chapitre en attente, dispenser ; inscrire toute une unité, relancer tous les retardataires',
+                'Un stagiaire voit seulement sa propre ligne',
+            ], [
+                'Tableau de bord et espace instructeur : accès direct au tableau de suivi',
+            ], [], ['personnel'], [], 'Portail'),
+
             $pr(1360, '2026-11-03', 'Bureau SSE : atelier de documents, kits types et préparation de mission des identités', 'COMSPEC IDENTITY passe au lot 6 sur Athena. Le bureau SSE gagne un atelier de documents : on compose un papier d’identité fictif à gauche et son aperçu se met à jour en direct à droite, recto et verso d’une carte ou d’un permis, couverture et pages d’un passeport, aux couleurs du pays émetteur imaginaire, avec photo ou silhouette, tampon, signature, champs en plus et bande de lecture automatique recalculée à chaque frappe ; chaque face porte le filigrane SIMULATION et s’exporte en image pour le jeu de rôle. Le papier suit son cycle brouillon, validé, émis, révoqué, puis dupliqué pour le remplacer. Les kits types (civil, militaire, diplomate, journaliste, contractor, agent infiltré…) réunissent pays, papiers, champs pré-remplis, téléphone et adresse simulés et éléments de légende : affectés à des membres, ils créent leurs papiers, leur kit de mission et leur brief de couverture. La préparation de mission génère en un coup la population d’une opération, civils, militaires, suspects et cibles prioritaires, avec pays, faction, langue, âge, sexe, profession et part de faux, d’expirés et de volés, avec aperçu avant validation ; le serveur de jeu reçoit ces identités pour ses IA, ainsi que les recherchés et HVT de l’opération et les camps qui y ont accès. Le joueur lit son brief dans Ma situation › Mes papiers, le tableau de bord identité montre les contrôles sur une carte, et le registre s’importe et s’exporte en fichier tableur ou en fichier de données.', [
                 'Atelier de documents : aperçu en direct recto, verso et pages du passeport, MRZ recalculée, export image avec filigrane SIMULATION',
                 'Kits documentaires types affectés à des membres : papiers, kit de mission et brief de couverture',
