@@ -145,6 +145,18 @@ final class SseIdentityCatalog
         'suspended' => 'Papier suspendu',
     ];
 
+    /** Date civile et âge révolu ; les dates absentes ou invalides ne produisent pas d’âge. */
+    public static function birthDateLabel(?string $value, ?\DateTimeImmutable $today = null): string
+    {
+        $value = trim((string) $value);
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        if ($date === false || $date->format('Y-m-d') !== $value) {
+            return $value !== '' ? $value : '—';
+        }
+        $today ??= new \DateTimeImmutable('today', new \DateTimeZone('Europe/Paris'));
+        return $date->format('d/m/Y') . ($date <= $today ? ' · ' . $date->diff($today)->y . ' ans' : '');
+    }
+
     public static function label(array $map, ?string $key, string $fallback = '—'): string
     {
         $key = (string) $key;
