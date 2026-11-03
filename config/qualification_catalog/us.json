@@ -18,10 +18,10 @@
       "en": "Reference issuer for qualifications imported from the United States catalogue when no school is specified: in-game qualifications, with no real-world value."
     }
   },
-  "compiled_at": "2026-11-02",
+  "compiled_at": "2026-11-03",
   "sources_note": {
-    "fr": "Compilé le 2 novembre 2026 à partir de sources publiques : plans de carrière de l’Army (DA PAM 600-3, DA PAM 600-25, DA PAM 611-21 sur army.mil), goarmy.com, airforce.com, go160thsoar.com, articles army.mil et DVIDS, presse spécialisée (DefenseScoop, Soldier Systems, Sandboxx) et Wikipédia en complément ; textes reformulés, rien de classifié ; un champ vide signifie qu’aucune source ouverte ne le précise.",
-    "en": "Compiled on 2 November 2026 from public sources: Army career plans (DA PAM 600-3, DA PAM 600-25, DA PAM 611-21 on army.mil), goarmy.com, airforce.com, go160thsoar.com, army.mil and DVIDS articles, trade press (DefenseScoop, Soldier Systems, Sandboxx) and Wikipedia as a complement; texts are paraphrased, nothing classified; an empty field means no open source specifies it."
+    "fr": "Compilé le 2 novembre 2026 à partir de sources publiques : plans de carrière de l’Army (DA PAM 600-3, DA PAM 600-25, DA PAM 611-21 sur army.mil), goarmy.com, airforce.com, go160thsoar.com, articles army.mil et DVIDS, presse spécialisée (DefenseScoop, Soldier Systems, Sandboxx) et Wikipédia en complément ; textes reformulés, rien de classifié ; un champ vide signifie qu’aucune source ouverte ne le précise. Complété le 3 novembre 2026 (brevets d’école de l’Army, badges d’expert et de tir, milieux montagne, froid et jungle, aviation de l’Army, Marine Corps, Navy, Coast Guard, Air Force et interarmées) à partir de Wikipédia et des règlements cités (AR 600-8-22, AR 95-1, DA PAM 611-21, MCO 1500.59).",
+    "en": "Compiled on 2 November 2026 from public sources: Army career plans (DA PAM 600-3, DA PAM 600-25, DA PAM 611-21 on army.mil), goarmy.com, airforce.com, go160thsoar.com, army.mil and DVIDS articles, trade press (DefenseScoop, Soldier Systems, Sandboxx) and Wikipedia as a complement; texts are paraphrased, nothing classified; an empty field means no open source specifies it. Expanded on 3 November 2026 (Army school badges, expert and marksmanship badges, mountain, cold-weather and jungle environments, Army aviation, Marine Corps, Navy, Coast Guard, Air Force and joint entries) from Wikipedia and the regulations cited (AR 600-8-22, AR 95-1, DA PAM 611-21, MCO 1500.59)."
   },
   "entries": [
     {
@@ -7667,6 +7667,2808 @@
         {
           "url": "https://en.wikipedia.org/wiki/Capstone_Military_Leadership_Program",
           "title": "Capstone Military Leadership Program (Wikipedia)"
+        }
+      ]
+    },
+    {
+      "id": "us-air-assault",
+      "code": "US-AASLT",
+      "category": "airborne",
+      "name": {
+        "fr": "Brevet d’assaut aéromobile (Air Assault Badge)",
+        "en": "Air Assault Badge (Air Assault School)"
+      },
+      "official_name": "Air Assault Course (Air Assault Badge)",
+      "short_name": "Air Assault",
+      "description": {
+        "fr": "Stage d’une dizaine de jours (« les dix jours les plus durs de l’Army ») : journée zéro (parcours d’obstacles et course de deux miles), marche de six miles, phase assaut aéromobile (sécurité aéronef, évacuation sanitaire, guidage), phase élingage (préparation et contrôle de charges sous hélicoptère), phase rappel (tour, falaise, hélicoptère, corde lisse) et marche finale de douze miles en moins de trois heures.",
+        "en": "Course of about ten days (“the ten toughest days in the Army”): day zero (obstacle course and two-mile run), six-mile march, combat assault phase (aircraft safety, MEDEVAC, pathfinder operations), sling-load phase (rigging and inspecting helicopter loads), rappelling phase (tower, cliff, helicopter, fast rope) and a final 12-mile march in under three hours."
+      },
+      "body": {
+        "fr": "The Sabalauski Air Assault School (TSAAS), 101st Airborne Division, Fort Campbell, Kentucky ; aussi des écoles de la Garde nationale",
+        "en": "The Sabalauski Air Assault School (TSAAS), 101st Airborne Division, Fort Campbell, Kentucky; also Army National Guard schools"
+      },
+      "issuer": {
+        "name": "The Sabalauski Air Assault School",
+        "short_name": "TSAAS"
+      },
+      "issuer_key": "us-tsaas",
+      "reference": {
+        "fr": "Air Assault Badge approuvé le 18 janvier 1978 ; AR 600-8-22",
+        "en": "Air Assault Badge approved on 18 January 1978; AR 600-8-22"
+      },
+      "prerequisites": {
+        "fr": [
+          "Parcours d’obstacles et course de deux miles de la journée zéro réussis",
+          "Marche de 12 miles avec sac en moins de trois heures"
+        ],
+        "en": [
+          "Passed the day-zero obstacle course and two-mile run",
+          "12-mile ruck march in under three hours"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Air_Assault_Badge",
+          "title": "Air Assault Badge — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Air_Assault_School",
+          "title": "United States Army Air Assault School — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-pathfinder",
+      "code": "US-PATHF",
+      "category": "airborne",
+      "name": {
+        "fr": "Brevet de guide aéromobile et aéroporté (Pathfinder Badge)",
+        "en": "Pathfinder Badge (Pathfinder Course)"
+      },
+      "official_name": "Pathfinder Course (Pathfinder Badge)",
+      "short_name": "Pathfinder",
+      "description": {
+        "fr": "Cours de guidage : navigation terrestre avancée, reconnaissance, contrôle aérien tactique sur le terrain, mise en place de zones de poser hélicoptère et de zones de largage, élingage et livraison par air de personnels et de matériels ; le badge est remis après des examens en exercice sur le terrain. Le cours de Fort Benning a fermé en 2020 ; il reste celui de Fort Campbell.",
+        "en": "Pathfinder course: advanced land navigation, scouting, tactical air traffic control in the field, setting up helicopter landing zones and drop zones, sling loads and aerial delivery of troops and supplies; the badge is awarded after examinations under field-exercise conditions. The Fort Benning course closed in 2020; the Fort Campbell course remains."
+      },
+      "body": {
+        "fr": "The Sabalauski Air Assault School, Fort Campbell, et Warrior Training Center de la Garde nationale",
+        "en": "The Sabalauski Air Assault School, Fort Campbell, and the Army National Guard Warrior Training Center"
+      },
+      "issuer": {
+        "name": "The Sabalauski Air Assault School",
+        "short_name": "TSAAS"
+      },
+      "issuer_key": "us-tsaas",
+      "reference": {
+        "fr": "Pathfinder Badge (approuvé en 1964) ; AR 600-8-22",
+        "en": "Pathfinder Badge (approved in 1964); AR 600-8-22"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification Air Assault recommandée"
+        ],
+        "en": [
+          "Air Assault qualification recommended"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-air-assault",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Pathfinder_Badge_(United_States)",
+          "title": "Pathfinder Badge (United States) — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Air_Assault_School",
+          "title": "United States Army Air Assault School — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-sapper",
+      "code": "US-SAPPER",
+      "category": "selection",
+      "name": {
+        "fr": "Cours de chef sapeur (Sapper Tab)",
+        "en": "Sapper Leader Course (Sapper Tab)"
+      },
+      "official_name": "Sapper Leader Course (Sapper Tab)",
+      "short_name": "Sapper",
+      "description": {
+        "fr": "Cours de commandement de petite unité du génie de combat, dans l’esprit de la Ranger School : démolitions, franchissement et ouverture d’obstacles, techniques de patrouille, opérations en milieu urbain, aéromobiles et en montagne. Les diplômés portent le Sapper Tab, créé en 2004, que le commandant du génie de Fort Leonard Wood peut retirer pour faute.",
+        "en": "Combat engineer small-unit leadership course in the spirit of Ranger School: demolitions, obstacle breaching and crossing, patrolling techniques, urban, air assault and mountain operations. Graduates wear the Sapper Tab, created in 2004, which the Fort Leonard Wood engineer commander may revoke for misconduct."
+      },
+      "body": {
+        "fr": "U.S. Army Engineer School, Fort Leonard Wood, Missouri",
+        "en": "U.S. Army Engineer School, Fort Leonard Wood, Missouri"
+      },
+      "issuer": {
+        "name": "U.S. Army Engineer School",
+        "short_name": "USAES"
+      },
+      "issuer_key": "us-usaes",
+      "reference": {
+        "fr": "Sapper Tab approuvé par le chef d’état-major de l’Army le 28 juin 2004 ; AR 600-8-22",
+        "en": "Sapper Tab approved by the Army Chief of Staff on 28 June 2004; AR 600-8-22"
+      },
+      "prerequisites": {
+        "fr": [
+          "Militaire du génie de combat ou d’une unité d’appui au combat, apte physiquement"
+        ],
+        "en": [
+          "Combat engineer or combat support soldier, physically fit"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Tabs_of_the_United_States_Army",
+          "title": "Tabs of the United States Army — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-rslc",
+      "code": "US-RSLC",
+      "category": "intelligence",
+      "name": {
+        "fr": "Cours de chef de reconnaissance et de surveillance (RSLC)",
+        "en": "Reconnaissance and Surveillance Leaders Course (RSLC)"
+      },
+      "official_name": "Reconnaissance and Surveillance Leaders Course (RSLC)",
+      "short_name": "RSLC",
+      "description": {
+        "fr": "Cours de 29 jours, ex-cours des chefs de surveillance à longue distance (LRSLC), destiné aux officiers et sous-officiers des unités de reconnaissance : reconnaissance et surveillance, acquisition d’objectifs, évaluation des dommages, transmissions, planification, identification des véhicules étrangers. Ouvert aux soldats, Marines, marins et aviateurs.",
+        "en": "29-day course, formerly the Long Range Surveillance Leaders Course (LRSLC), for officers and NCOs of reconnaissance units: reconnaissance and surveillance, target acquisition, battle damage assessment, communications, planning and foreign vehicle identification. Open to Soldiers, Marines, Sailors and Airmen."
+      },
+      "body": {
+        "fr": "4th Ranger Training Battalion, Airborne and Ranger Training Brigade, Fort Benning, Géorgie",
+        "en": "4th Ranger Training Battalion, Airborne and Ranger Training Brigade, Fort Benning, Georgia"
+      },
+      "issuer": {
+        "name": "Airborne and Ranger Training Brigade",
+        "short_name": "ARTB"
+      },
+      "issuer_key": "us-artb",
+      "reference": {
+        "fr": "Cours de l’Airborne and Ranger Training Brigade",
+        "en": "Airborne and Ranger Training Brigade course"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier ou sous-officier affecté à une unité de reconnaissance et de surveillance"
+        ],
+        "en": [
+          "Officer or NCO assigned to a reconnaissance and surveillance unit"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Reconnaissance_and_Surveillance_Leaders_Course",
+          "title": "United States Army Reconnaissance and Surveillance Leaders Course — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-sf-tab",
+      "code": "US-SF-TAB",
+      "category": "selection",
+      "name": {
+        "fr": "Insigne des forces spéciales (Special Forces Tab)",
+        "en": "Special Forces Tab"
+      },
+      "official_name": "Special Forces Tab",
+      "short_name": "SF Tab",
+      "description": {
+        "fr": "Insigne de qualification remis à tout militaire qui termine le cours de qualification des forces spéciales (SFQC) à Fort Bragg ; il se porte toute la carrière, même hors des unités de forces spéciales (« long tab »). Il marque la fin du SFQC et l’entrée au régiment, avec le béret vert.",
+        "en": "Qualification tab awarded to any soldier completing the Special Forces Qualification Course (SFQC) at Fort Bragg; it is worn for the rest of the soldier’s career, even outside Special Forces units (the “long tab”). It marks the end of the SFQC and entry into the regiment, together with the green beret."
+      },
+      "body": {
+        "fr": "John F. Kennedy Special Warfare Center and School (SWCS), Fort Bragg, Caroline du Nord",
+        "en": "John F. Kennedy Special Warfare Center and School (SWCS), Fort Bragg, North Carolina"
+      },
+      "issuer": {
+        "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "short_name": "USAJFKSWCS"
+      },
+      "issuer_key": "us-usajfkswcs",
+      "reference": {
+        "fr": "AR 600-8-22 (Military Awards) pour les badges et insignes de l’Army",
+        "en": "AR 600-8-22 (Military Awards) for Army badges and tabs"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de qualification des forces spéciales (SFQC) terminé"
+        ],
+        "en": [
+          "Completed the Special Forces Qualification Course (SFQC)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-sfqc",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Forces_Tab",
+          "title": "Special Forces Tab — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Special_Forces_selection_and_training",
+          "title": "United States Army Special Forces selection and training — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-sf-18a",
+      "code": "US-SF-18A",
+      "category": "c2_staff",
+      "name": {
+        "fr": "Cours d’officier de détachement des forces spéciales (18A)",
+        "en": "Special Forces Detachment Officer Qualification Course (18A)"
+      },
+      "official_name": "Special Forces Detachment Officer Qualification Course (18A)",
+      "short_name": "18A",
+      "description": {
+        "fr": "Phase MOS du SFQC pour les officiers : analyse de mission et planification (MDMP), reconnaissance spéciale et action directe, défense intérieure étrangère et contre-insurrection, guerre non conventionnelle, techniques d’opérations spéciales avancées et initiation aux spécialités de l’équipe (transmissions, génie, santé, armement, renseignement), avec trois exercices sur le terrain.",
+        "en": "SFQC MOS phase for officers: mission analysis and planning (MDMP), special reconnaissance and direct action, foreign internal defense and counterinsurgency, unconventional warfare, advanced special operations and cross-training in the team specialties (communications, engineer, medical, weapons, intelligence), with three field exercises."
+      },
+      "body": {
+        "fr": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, Caroline du Nord",
+        "en": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, North Carolina"
+      },
+      "issuer": {
+        "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "short_name": "USAJFKSWCS"
+      },
+      "issuer_key": "us-usajfkswcs",
+      "reference": {
+        "fr": "DA PAM 600-25 (CMF 18) et DA PAM 611-21 (MOS 18A)",
+        "en": "DA PAM 600-25 (CMF 18) and DA PAM 611-21 (MOS 18A)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection SFAS réussie",
+          "Phases précédentes : orientation, langue, tactique de petite unité et SERE",
+          "Qualification parachutiste (Basic Airborne Course)",
+          "Cours de capitaine (Captains Career Course) terminé"
+        ],
+        "en": [
+          "Passed SFAS",
+          "Earlier phases: orientation, language, small unit tactics and SERE",
+          "Airborne qualified (Basic Airborne Course)",
+          "Completed a Captains Career Course"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-sfas",
+          "confidence": 0.85,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 2
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Special_Forces_selection_and_training",
+          "title": "United States Army Special Forces selection and training — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Forces_Tab",
+          "title": "Special Forces Tab — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-sf-18b",
+      "code": "US-SF-18B",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Cours de sergent armement des forces spéciales (18B)",
+        "en": "Special Forces Weapons Sergeant Course (18B)"
+      },
+      "official_name": "Special Forces Weapons Sergeant Course (18B)",
+      "short_name": "18B",
+      "description": {
+        "fr": "Phase MOS du SFQC du sergent armement : emploi et entretien des armes légères américaines et étrangères, armes collectives et antichars, mortiers et appui feu, tactique et instruction de forces partenaires au tir.",
+        "en": "SFQC MOS phase for the weapons sergeant: employment and maintenance of U.S. and foreign small arms, crew-served and anti-armour weapons, mortars and fire support, tactics and training partner forces in marksmanship."
+      },
+      "body": {
+        "fr": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, Caroline du Nord",
+        "en": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, North Carolina"
+      },
+      "issuer": {
+        "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "short_name": "USAJFKSWCS"
+      },
+      "issuer_key": "us-usajfkswcs",
+      "reference": {
+        "fr": "DA PAM 600-25 (CMF 18) et DA PAM 611-21 (MOS 18B)",
+        "en": "DA PAM 600-25 (CMF 18) and DA PAM 611-21 (MOS 18B)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection SFAS réussie",
+          "Phases précédentes : orientation, langue, tactique de petite unité et SERE",
+          "Qualification parachutiste (Basic Airborne Course)"
+        ],
+        "en": [
+          "Passed SFAS",
+          "Earlier phases: orientation, language, small unit tactics and SERE",
+          "Airborne qualified (Basic Airborne Course)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-sfas",
+          "confidence": 0.85,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 2
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Special_Forces_selection_and_training",
+          "title": "United States Army Special Forces selection and training — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Forces_Tab",
+          "title": "Special Forces Tab — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-sf-18c",
+      "code": "US-SF-18C",
+      "category": "cbrn_eod",
+      "name": {
+        "fr": "Cours de sergent génie des forces spéciales (18C)",
+        "en": "Special Forces Engineer Sergeant Course (18C)"
+      },
+      "official_name": "Special Forces Engineer Sergeant Course (18C)",
+      "short_name": "18C",
+      "description": {
+        "fr": "Phase MOS du SFQC du sergent génie : explosifs et démolitions, destruction d’objectifs, construction et fortification de campagne, analyse d’objectifs et reconnaissance du génie.",
+        "en": "SFQC MOS phase for the engineer sergeant: explosives and demolitions, target destruction, field construction and fortification, target analysis and engineer reconnaissance."
+      },
+      "body": {
+        "fr": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, Caroline du Nord",
+        "en": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, North Carolina"
+      },
+      "issuer": {
+        "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "short_name": "USAJFKSWCS"
+      },
+      "issuer_key": "us-usajfkswcs",
+      "reference": {
+        "fr": "DA PAM 600-25 (CMF 18) et DA PAM 611-21 (MOS 18C)",
+        "en": "DA PAM 600-25 (CMF 18) and DA PAM 611-21 (MOS 18C)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection SFAS réussie",
+          "Phases précédentes : orientation, langue, tactique de petite unité et SERE",
+          "Qualification parachutiste (Basic Airborne Course)"
+        ],
+        "en": [
+          "Passed SFAS",
+          "Earlier phases: orientation, language, small unit tactics and SERE",
+          "Airborne qualified (Basic Airborne Course)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-sfas",
+          "confidence": 0.85,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 2
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Special_Forces_selection_and_training",
+          "title": "United States Army Special Forces selection and training — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Forces_Tab",
+          "title": "Special Forces Tab — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-sf-18e",
+      "code": "US-SF-18E",
+      "category": "communications",
+      "name": {
+        "fr": "Cours de sergent transmissions des forces spéciales (18E)",
+        "en": "Special Forces Communications Sergeant Course (18E)"
+      },
+      "official_name": "Special Forces Communications Sergeant Course (18E)",
+      "short_name": "18E",
+      "description": {
+        "fr": "Phase MOS du SFQC du sergent transmissions : radios HF, VHF, UHF et satellite, antennes, réseaux et transmissions de données, procédures, chiffrement et instruction de forces partenaires aux transmissions.",
+        "en": "SFQC MOS phase for the communications sergeant: HF, VHF, UHF and satellite radios, antennas, networks and data communications, procedures, encryption and training partner forces in communications."
+      },
+      "body": {
+        "fr": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, Caroline du Nord",
+        "en": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, North Carolina"
+      },
+      "issuer": {
+        "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "short_name": "USAJFKSWCS"
+      },
+      "issuer_key": "us-usajfkswcs",
+      "reference": {
+        "fr": "DA PAM 600-25 (CMF 18) et DA PAM 611-21 (MOS 18E)",
+        "en": "DA PAM 600-25 (CMF 18) and DA PAM 611-21 (MOS 18E)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection SFAS réussie",
+          "Phases précédentes : orientation, langue, tactique de petite unité et SERE",
+          "Qualification parachutiste (Basic Airborne Course)"
+        ],
+        "en": [
+          "Passed SFAS",
+          "Earlier phases: orientation, language, small unit tactics and SERE",
+          "Airborne qualified (Basic Airborne Course)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-sfas",
+          "confidence": 0.85,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 2
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Special_Forces_selection_and_training",
+          "title": "United States Army Special Forces selection and training — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Forces_Tab",
+          "title": "Special Forces Tab — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-sf-sniper",
+      "code": "US-SFSC",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Cours de tireur d’élite des forces spéciales (SFSC)",
+        "en": "Special Forces Sniper Course (SFSC)"
+      },
+      "official_name": "Special Forces Sniper Course (SFSC)",
+      "short_name": "SFSC",
+      "description": {
+        "fr": "Cours de tireur d’élite des opérations spéciales de l’Army (ex-SOTIC) : tir de précision à longue distance de jour et de nuit, tir en milieu urbain, observation, estimation des distances, camouflage et approche, rédaction de comptes rendus. Il fait partie des cours de compétences avancées des forces spéciales.",
+        "en": "Army special operations sniper course (formerly SOTIC): long-range precision fire by day and night, urban shooting, observation, range estimation, camouflage and stalking, reporting. It is one of the Special Forces advanced skills courses."
+      },
+      "body": {
+        "fr": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, Caroline du Nord",
+        "en": "John F. Kennedy Special Warfare Center and School (SWCS), 1st Special Warfare Training Group (Airborne), Fort Bragg, North Carolina"
+      },
+      "issuer": {
+        "name": "U.S. Army John F. Kennedy Special Warfare Center and School",
+        "short_name": "USAJFKSWCS"
+      },
+      "issuer_key": "us-usajfkswcs",
+      "reference": {
+        "fr": "Cours de compétences avancées ARSOF (SWCS)",
+        "en": "ARSOF advanced skills course (SWCS)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Membre d’une unité ARSOF (forces spéciales, Rangers)",
+          "Qualification de tir à jour"
+        ],
+        "en": [
+          "Member of an ARSOF unit (Special Forces, Rangers)",
+          "Current weapons qualification"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Special_Forces_selection_and_training",
+          "title": "United States Army Special Forces selection and training — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Sniper_School",
+          "title": "United States Army Sniper School — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-eib",
+      "code": "US-EIB",
+      "category": "selection",
+      "name": {
+        "fr": "Badge de fantassin expert (EIB)",
+        "en": "Expert Infantryman Badge (EIB)"
+      },
+      "official_name": "Expert Infantryman Badge (EIB)",
+      "short_name": "EIB",
+      "description": {
+        "fr": "Badge de compétences réservé aux fantassins et aux forces spéciales (sauf le 18D) : test physique, qualification « expert » au fusil, marche de 12 miles avec environ 30 kg en moins de trois heures, navigation de jour et de nuit, puis une trentaine d’ateliers notés « GO / NO GO » (armes, médical, patrouille). À ne pas confondre avec le CIB, remis pour le combat réel.",
+        "en": "Skills badge for infantry and Special Forces soldiers (except 18D): fitness test, expert rifle qualification, 12-mile march with about 70 lb in under three hours, day and night land navigation, then about thirty “GO / NO GO” testing stations (weapons, medical, patrolling). Not to be confused with the CIB, awarded for actual combat."
+      },
+      "body": {
+        "fr": "Épreuves organisées par les unités selon le règlement d’épreuve du Maneuver Center of Excellence, Fort Benning",
+        "en": "Tests run by units under the Maneuver Center of Excellence test standards, Fort Benning"
+      },
+      "issuer": {
+        "name": "U.S. Army Maneuver Center of Excellence",
+        "short_name": "MCoE"
+      },
+      "issuer_key": "us-mcoe",
+      "reference": {
+        "fr": "AR 600-8-22 ; règlement d’épreuve EIB (TRADOC / MCoE)",
+        "en": "AR 600-8-22; EIB test standards (TRADOC / MCoE)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Spécialité infanterie (CMF 11) ou forces spéciales (CMF 18), hors 18D",
+          "Qualification de tir « expert » de l’Army au fusil",
+          "Marche de 12 miles avec charge en moins de trois heures"
+        ],
+        "en": [
+          "Infantry (CMF 11) or Special Forces (CMF 18) MOS, except 18D",
+          "Army Marksmanship Qualification Badge (Expert) on the rifle",
+          "12-mile loaded march in under three hours"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-marksman-expert",
+          "confidence": 0.9,
+          "source_index": 1
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Expert_Infantryman_Badge",
+          "title": "Expert Infantryman Badge — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-esb",
+      "code": "US-ESB",
+      "category": "selection",
+      "name": {
+        "fr": "Badge de soldat expert (ESB)",
+        "en": "Expert Soldier Badge (ESB)"
+      },
+      "official_name": "Expert Soldier Badge (ESB)",
+      "short_name": "ESB",
+      "description": {
+        "fr": "Badge de compétences créé en 2019 pour les militaires qui ne peuvent prétendre ni à l’EIB ni à l’EFMB : tâches de combat et de spécialité choisies par le commandant, marche de 12 miles, navigation terrestre et test de condition physique de l’Army (ACFT), épreuves organisées au niveau de la brigade.",
+        "en": "Skills badge created in 2019 for soldiers eligible for neither the EIB nor the EFMB: warrior and mission-essential tasks chosen by the commander, 12-mile march, land navigation and the Army Combat Fitness Test (ACFT), with testing run at brigade level."
+      },
+      "body": {
+        "fr": "Épreuves organisées par les brigades selon le règlement ESB du Maneuver Center of Excellence",
+        "en": "Brigade-run testing under the Maneuver Center of Excellence ESB standards"
+      },
+      "issuer": {
+        "name": "U.S. Army Maneuver Center of Excellence",
+        "short_name": "MCoE"
+      },
+      "issuer_key": "us-mcoe",
+      "reference": {
+        "fr": "AR 600-8-22 ; badge approuvé le 14 juin 2019",
+        "en": "AR 600-8-22; badge approved on 14 June 2019"
+      },
+      "prerequisites": {
+        "fr": [
+          "Spécialité autre que l’infanterie, les forces spéciales et la santé",
+          "Marche de 12 miles et test ACFT réussis"
+        ],
+        "en": [
+          "MOS other than infantry, Special Forces and medical",
+          "Passed the 12-mile march and the ACFT"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Expert_Soldier_Badge",
+          "title": "Expert Soldier Badge — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-efmb",
+      "code": "US-EFMB",
+      "category": "medical",
+      "name": {
+        "fr": "Badge d’expert en médecine de terrain (EFMB)",
+        "en": "Expert Field Medical Badge (EFMB)"
+      },
+      "official_name": "Expert Field Medical Badge (EFMB)",
+      "short_name": "EFMB",
+      "description": {
+        "fr": "Badge de compétences médicales parmi les plus sélectifs (7 % de réussite en 2017) : épreuve écrite, ateliers de combat notés (soins TCCC, évacuation, demande MEDEVAC par radio, navigation de jour et de nuit) et marche de 12 miles en moins de trois heures. Ouvert aux militaires américains et de l’OTAN ; le port est réservé aux spécialités de santé.",
+        "en": "One of the most selective medical skills badges (7% pass rate in 2017): written test, graded combat lanes (TCCC care, evacuation, radio MEDEVAC request, day and night land navigation) and a 12-mile march in under three hours. Open to U.S. and NATO personnel; wear is limited to medical specialties."
+      },
+      "body": {
+        "fr": "U.S. Army Medical Center of Excellence (épreuves organisées par les unités)",
+        "en": "U.S. Army Medical Center of Excellence (unit-run testing)"
+      },
+      "issuer": {
+        "name": "U.S. Army Medical Center of Excellence",
+        "short_name": "MEDCoE"
+      },
+      "issuer_key": "us-medcoe",
+      "reference": {
+        "fr": "AR 600-8-22 ; badge créé le 18 juin 1965",
+        "en": "AR 600-8-22; badge created on 18 June 1965"
+      },
+      "prerequisites": {
+        "fr": [
+          "Qualification de tir « expert » de l’Army au fusil M4, dans les 12 derniers mois",
+          "Certification de réanimation (CPR) à jour",
+          "Marche de 12 miles avec équipement en moins de trois heures"
+        ],
+        "en": [
+          "Army Marksmanship Qualification Badge (Expert) on the M4, within the last 12 months",
+          "Current CPR certification",
+          "12-mile march with equipment in under three hours"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-marksman-expert",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Expert_Field_Medical_Badge",
+          "title": "Expert Field Medical Badge — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-army-marksman-expert",
+      "code": "US-ARMY-EXPERT",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Qualification de tir « expert » de l’Army (badge de tir)",
+        "en": "Army Marksmanship Qualification Badge (Expert)"
+      },
+      "official_name": "Marksmanship Qualification Badge — Expert",
+      "short_name": "Expert",
+      "description": {
+        "fr": "Plus haut des trois niveaux du badge de qualification au tir de l’Army (expert, sharpshooter, marksman), obtenu au tir de qualification de l’arme individuelle (fusil, pistolet…) ; la barrette indique l’arme. La note doit être renouvelée à chaque séance de qualification.",
+        "en": "Highest of the three grades of the Army marksmanship qualification badge (expert, sharpshooter, marksman), earned at the individual weapon qualification (rifle, pistol…); the clasp names the weapon. The score must be renewed at each qualification event."
+      },
+      "body": {
+        "fr": "Tir de qualification de l’arme individuelle organisé par les unités (doctrine du Maneuver Center of Excellence)",
+        "en": "Unit-run individual weapon qualification (Maneuver Center of Excellence doctrine)"
+      },
+      "issuer": {
+        "name": "U.S. Army Maneuver Center of Excellence",
+        "short_name": "MCoE"
+      },
+      "issuer_key": "us-mcoe",
+      "reference": {
+        "fr": "AR 600-8-22 et AR 350-1 ; TC 3-20.40 (qualification aux armes individuelles)",
+        "en": "AR 600-8-22 and AR 350-1; TC 3-20.40 (individual weapons qualification)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Score expert au tir de qualification de l’arme individuelle"
+        ],
+        "en": [
+          "Expert score at the individual weapon qualification"
+        ]
+      },
+      "validity": {
+        "fr": "Qualification à refaire au moins chaque année (plus souvent dans certaines unités).",
+        "en": "Qualification to be repeated at least annually (more often in some units)."
+      },
+      "validity_months": 12,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marksmanship_badges_(United_States)",
+          "title": "Marksmanship badges (United States) — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-army-sniper",
+      "code": "US-ARMY-SNIPER",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Cours de tireur d’élite de l’Army (Army Sniper Course)",
+        "en": "U.S. Army Sniper Course"
+      },
+      "official_name": "U.S. Army Sniper Course",
+      "short_name": "Sniper",
+      "description": {
+        "fr": "Cours d’environ sept semaines créé en 1987 à Fort Benning : tir de précision à longue distance, estimation des distances, détection d’objectifs, camouflage et déplacement discret, utilisation du terrain, préparation du renseignement et comptes rendus, tactique des tireurs d’élite.",
+        "en": "Roughly seven-week course created in 1987 at Fort Benning: long-range precision fire, range estimation, target detection, advanced camouflage and concealed movement, terrain use, intelligence preparation of the battlefield and reporting, sniper tactics."
+      },
+      "body": {
+        "fr": "U.S. Army Sniper School, Maneuver Center of Excellence, Fort Benning, Géorgie",
+        "en": "U.S. Army Sniper School, Maneuver Center of Excellence, Fort Benning, Georgia"
+      },
+      "issuer": {
+        "name": "U.S. Army Maneuver Center of Excellence",
+        "short_name": "MCoE"
+      },
+      "issuer_key": "us-mcoe",
+      "reference": {
+        "fr": "Cours du Maneuver Center of Excellence",
+        "en": "Maneuver Center of Excellence course"
+      },
+      "prerequisites": {
+        "fr": [
+          "Désigné par son unité pour un poste de tireur d’élite",
+          "Qualification de tir « expert » de l’Army au fusil"
+        ],
+        "en": [
+          "Selected by the unit for a sniper position",
+          "Army Marksmanship Qualification Badge (Expert) on the rifle"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-marksman-expert",
+          "confidence": 0.9,
+          "source_index": 1
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Sniper_School",
+          "title": "United States Army Sniper School — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-bmmc",
+      "code": "US-BMMC",
+      "category": "environment",
+      "name": {
+        "fr": "Cours de montagnard militaire de base (BMMC)",
+        "en": "Basic Military Mountaineer Course (BMMC)"
+      },
+      "official_name": "Basic Military Mountaineer Course (BMMC)",
+      "short_name": "BMMC",
+      "description": {
+        "fr": "Cours de base du combat en montagne, en session d’été (escalade, combat en terrain vertical) ou d’hiver (déplacement, bivouac et survie en neige) : tâches de montagne de niveau 1. Les diplômés reçoivent l’identifiant de qualification « E », Military Mountaineer.",
+        "en": "Basic mountain warfare course, in a summer session (climbing, high-angle tactical combat) or a winter session (movement, camping and survival on snow): level 1 mountaineering tasks. Graduates receive the special qualification identifier “E”, Military Mountaineer."
+      },
+      "body": {
+        "fr": "Army Mountain Warfare School, Jericho, Vermont ; aussi Northern Warfare Training Center, Alaska (15 jours)",
+        "en": "Army Mountain Warfare School, Jericho, Vermont; also the Northern Warfare Training Center, Alaska (15 days)"
+      },
+      "issuer": {
+        "name": "Army Mountain Warfare School",
+        "short_name": "AMWS"
+      },
+      "issuer_key": "us-amws",
+      "reference": {
+        "fr": "DA PAM 611-21 (SQI « E ») ; TC 3-97.61 Military Mountaineering",
+        "en": "DA PAM 611-21 (SQI “E”); TC 3-97.61 Military Mountaineering"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Army_Mountain_Warfare_School",
+          "title": "Army Mountain Warfare School — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Northern_Warfare_Training_Center",
+          "title": "Northern Warfare Training Center — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-ammc",
+      "code": "US-AMMC",
+      "category": "environment",
+      "name": {
+        "fr": "Cours de montagnard militaire avancé (AMMC)",
+        "en": "Advanced Military Mountaineer Course (AMMC)"
+      },
+      "official_name": "Advanced Military Mountaineer Course (AMMC)",
+      "short_name": "AMMC",
+      "description": {
+        "fr": "Cours avancé qui forme des chefs capables d’emmener une petite unité en terrain montagneux technique : équipement de voies, sauvetage, franchissements et planification d’opérations en montagne.",
+        "en": "Advanced course training leaders able to take a small unit over technical mountain terrain: rigging routes, rescue, crossings and mountain operations planning."
+      },
+      "body": {
+        "fr": "Army Mountain Warfare School, Jericho, Vermont",
+        "en": "Army Mountain Warfare School, Jericho, Vermont"
+      },
+      "issuer": {
+        "name": "Army Mountain Warfare School",
+        "short_name": "AMWS"
+      },
+      "issuer_key": "us-amws",
+      "reference": {
+        "fr": "TC 3-97.61 Military Mountaineering",
+        "en": "TC 3-97.61 Military Mountaineering"
+      },
+      "prerequisites": {
+        "fr": [
+          "Cours de montagnard militaire de base (BMMC) réussi"
+        ],
+        "en": [
+          "Passed the Basic Military Mountaineer Course (BMMC)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-bmmc",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Army_Mountain_Warfare_School",
+          "title": "Army Mountain Warfare School — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-cwoc",
+      "code": "US-CWOC",
+      "category": "environment",
+      "name": {
+        "fr": "Cours d’orientation au combat par grand froid (CWOC)",
+        "en": "Cold Weather Orientation Course (CWOC)"
+      },
+      "official_name": "Cold Weather Orientation Course (CWOC)",
+      "short_name": "CWOC",
+      "description": {
+        "fr": "Cours pour commandants et officiers d’état-major : effets du froid sur les hommes et le matériel, effets de l’environnement hivernal sur les opérations, planification propre aux régions froides et gestion des risques liés au froid.",
+        "en": "Course for commanders and staff officers: effects of cold on personnel and materiel, effects of the winter environment on operations, planning considerations unique to cold regions and cold-weather risk management."
+      },
+      "body": {
+        "fr": "Northern Warfare Training Center, Black Rapids, Alaska",
+        "en": "Northern Warfare Training Center, Black Rapids, Alaska"
+      },
+      "issuer": {
+        "name": "Northern Warfare Training Center",
+        "short_name": "NWTC"
+      },
+      "issuer_key": "us-nwtc",
+      "reference": {
+        "fr": "Cours du Northern Warfare Training Center (US Army Alaska)",
+        "en": "Northern Warfare Training Center course (U.S. Army Alaska)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Northern_Warfare_Training_Center",
+          "title": "Northern Warfare Training Center — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-cwlc",
+      "code": "US-CWLC",
+      "category": "environment",
+      "name": {
+        "fr": "Cours de chef au combat par grand froid (CWLC)",
+        "en": "Cold Weather Leaders Course (CWLC)"
+      },
+      "official_name": "Cold Weather Leaders Course (CWLC)",
+      "short_name": "CWLC",
+      "description": {
+        "fr": "Cours pour chefs de groupe et de section : petites unités en milieu froid et enneigé, vêtements et équipement grand froid, vie en campagne l’hiver, raquettes et ski, navigation et choix d’itinéraire en région froide ; les stagiaires repartent avec de quoi monter l’entraînement grand froid de leur unité.",
+        "en": "Course for squad and platoon leaders: small-unit operations in cold, snow-covered terrain, cold-weather clothing and equipment, winter field craft, snowshoe and ski techniques, cold-region navigation and route planning; students leave equipped to run cold-weather training in their own units."
+      },
+      "body": {
+        "fr": "Northern Warfare Training Center, Black Rapids, Alaska",
+        "en": "Northern Warfare Training Center, Black Rapids, Alaska"
+      },
+      "issuer": {
+        "name": "Northern Warfare Training Center",
+        "short_name": "NWTC"
+      },
+      "issuer_key": "us-nwtc",
+      "reference": {
+        "fr": "Cours du Northern Warfare Training Center (US Army Alaska)",
+        "en": "Northern Warfare Training Center course (U.S. Army Alaska)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Chef de groupe ou de section"
+        ],
+        "en": [
+          "Squad or platoon leader"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Northern_Warfare_Training_Center",
+          "title": "Northern Warfare Training Center — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-jotc",
+      "code": "US-JOTC",
+      "category": "environment",
+      "name": {
+        "fr": "Cours d’opérations en jungle (JOTC)",
+        "en": "Jungle Operations Training Course (JOTC)"
+      },
+      "official_name": "Jungle Operations Training Course (JOTC)",
+      "short_name": "JOTC",
+      "description": {
+        "fr": "Cours de combat en jungle de la 25th Infantry Division à Schofield Barracks (Hawaï) : déplacement et navigation sous couvert dense, franchissement de cours d’eau, survie, soins et évacuation en jungle, tactique de petite unité. Les diplômés portent localement l’insigne « Jungle Expert ».",
+        "en": "25th Infantry Division jungle warfare course at Schofield Barracks (Hawaii): movement and navigation under dense canopy, river crossings, survival, jungle casualty care and evacuation, small-unit tactics. Graduates wear the locally authorised “Jungle Expert” tab."
+      },
+      "body": {
+        "fr": "Jungle Operations Training Center (Lightning Academy), 25th Infantry Division, Schofield Barracks, Hawaï",
+        "en": "Jungle Operations Training Center (Lightning Academy), 25th Infantry Division, Schofield Barracks, Hawaii"
+      },
+      "issuer": {
+        "name": "Jungle Operations Training Center",
+        "short_name": "JOTC"
+      },
+      "issuer_key": "us-25id-jotc",
+      "reference": {
+        "fr": "Cours de la 25th Infantry Division",
+        "en": "25th Infantry Division course"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Jungle_warfare",
+          "title": "Jungle warfare — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-mg-bradley",
+      "code": "US-MG-BFV",
+      "category": "fires",
+      "name": {
+        "fr": "Cours de maître de tir Bradley (Master Gunner)",
+        "en": "Bradley Master Gunner Course"
+      },
+      "official_name": "Bradley Master Gunner Course",
+      "short_name": "Bradley MG",
+      "description": {
+        "fr": "Qualification de spécialiste du tir sur Bradley (« Mike Golf ») : le master gunner conseille le commandant sur le véhicule et son armement, prépare les tirs et les séances de qualification des équipages, forme et certifie les évaluateurs, tient les registres de tir et dirige la sécurité des champs de tir.",
+        "en": "Bradley gunnery expert qualification (“Mike Golf”): the master gunner advises the commander on the vehicle and its weapons, plans gunnery and crew qualification, trains and certifies crew evaluators, keeps gunnery records and runs live-fire range safety."
+      },
+      "body": {
+        "fr": "Maneuver Center of Excellence, Fort Benning, Géorgie",
+        "en": "Maneuver Center of Excellence, Fort Benning, Georgia"
+      },
+      "issuer": {
+        "name": "U.S. Army Maneuver Center of Excellence",
+        "short_name": "MCoE"
+      },
+      "issuer_key": "us-mcoe",
+      "reference": {
+        "fr": "Manuels de tir des véhicules de combat de l’Army (série TC 3-20)",
+        "en": "Army combat vehicle gunnery manuals (TC 3-20 series)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Chef d’équipage ou tireur qualifié sur Bradley"
+        ],
+        "en": [
+          "Qualified Bradley vehicle commander or gunner"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Master_Gunner",
+          "title": "Master gunner — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-mg-stryker",
+      "code": "US-MG-STRYKER",
+      "category": "fires",
+      "name": {
+        "fr": "Cours de maître de tir Stryker (Master Gunner)",
+        "en": "Stryker Master Gunner Course"
+      },
+      "official_name": "Stryker Master Gunner Course",
+      "short_name": "Stryker MG",
+      "description": {
+        "fr": "Qualification de spécialiste du tir sur Stryker (« Mike Golf ») : le master gunner conseille le commandant sur le véhicule et son armement, prépare les tirs et les séances de qualification des équipages, forme et certifie les évaluateurs, tient les registres de tir et dirige la sécurité des champs de tir.",
+        "en": "Stryker gunnery expert qualification (“Mike Golf”): the master gunner advises the commander on the vehicle and its weapons, plans gunnery and crew qualification, trains and certifies crew evaluators, keeps gunnery records and runs live-fire range safety."
+      },
+      "body": {
+        "fr": "Maneuver Center of Excellence, Fort Benning, Géorgie",
+        "en": "Maneuver Center of Excellence, Fort Benning, Georgia"
+      },
+      "issuer": {
+        "name": "U.S. Army Maneuver Center of Excellence",
+        "short_name": "MCoE"
+      },
+      "issuer_key": "us-mcoe",
+      "reference": {
+        "fr": "Manuels de tir des véhicules de combat de l’Army (série TC 3-20)",
+        "en": "Army combat vehicle gunnery manuals (TC 3-20 series)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Chef d’équipage ou tireur qualifié sur Stryker"
+        ],
+        "en": [
+          "Qualified Stryker vehicle commander or gunner"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Master_Gunner",
+          "title": "Master gunner — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-army-ierw",
+      "code": "US-AVN-IERW",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation initiale au pilotage d’hélicoptère (IERW)",
+        "en": "Initial Entry Rotary Wing (IERW) flight training"
+      },
+      "official_name": "Initial Entry Rotary Wing (IERW) course",
+      "short_name": "IERW",
+      "description": {
+        "fr": "Formation de base de tous les pilotes d’hélicoptère de l’Army à Fort Rucker (« flight school ») : vol de base, vol aux instruments, navigation et vol tactique de base, puis qualification sur l’appareil d’arme (AQC) qui délivre les ailes d’aviateur.",
+        "en": "Basic training of every Army helicopter pilot at Fort Rucker (“flight school”): primary flight, instrument flight, basic navigation and tactics, then the aircraft qualification course (AQC) on the operational type that awards the aviator wings."
+      },
+      "body": {
+        "fr": "U.S. Army Aviation Center of Excellence, Fort Rucker (ex-Fort Novosel), Alabama",
+        "en": "U.S. Army Aviation Center of Excellence, Fort Rucker (formerly Fort Novosel), Alabama"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "issuer_key": "us-usaace",
+      "reference": {
+        "fr": "AR 95-1 (Flight Regulations)",
+        "en": "AR 95-1 (Flight Regulations)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Sélection comme élève pilote (officier ou warrant officer)"
+        ],
+        "en": [
+          "Selected as a student aviator (officer or warrant officer)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Rucker",
+          "title": "Fort Rucker — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Aviation_Branch",
+          "title": "United States Army Aviation Branch — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-army-aqc-ah64",
+      "code": "US-AVN-AH64",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de qualification sur appareil AH-64E Apache (AQC)",
+        "en": "AH-64E Apache Aircraft Qualification Course (AQC)"
+      },
+      "official_name": "AH-64E Apache Aircraft Qualification Course",
+      "short_name": "AH-64E AQC",
+      "description": {
+        "fr": "Qualification de type sur AH-64E Apache, hélicoptère d’attaque biplace : pilotage, systèmes de visée et de vision nocturne, armement (canon, roquettes, missiles Hellfire) et emploi tactique en équipage. Suivie à la fin de la formation initiale (IERW) ou lors d’une transition d’appareil ; le pilote progresse ensuite dans son unité selon le programme d’entraînement des équipages (niveaux de préparation, puis commandant de bord).",
+        "en": "Type qualification on the AH-64E Apache, two-seat attack helicopter: flying, targeting and night-vision systems, weapons (gun, rockets, Hellfire missiles) and crew tactical employment. Taken at the end of initial flight training (IERW) or for an aircraft transition; the pilot then progresses in the unit under the Aircrew Training Program (readiness levels, then pilot in command)."
+      },
+      "body": {
+        "fr": "U.S. Army Aviation Center of Excellence, Fort Rucker, Alabama",
+        "en": "U.S. Army Aviation Center of Excellence, Fort Rucker, Alabama"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "issuer_key": "us-usaace",
+      "reference": {
+        "fr": "AR 95-1 et programme d’entraînement des équipages (TC 3-04.11)",
+        "en": "AR 95-1 and the Aircrew Training Program (TC 3-04.11)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale au pilotage d’hélicoptère (IERW)"
+        ],
+        "en": [
+          "Initial Entry Rotary Wing (IERW) flight training"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-ierw",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Rucker",
+          "title": "Fort Rucker — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Aviation_Branch",
+          "title": "United States Army Aviation Branch — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Boeing_AH-64_Apache",
+          "title": "Boeing AH-64 Apache — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-army-aqc-uh60",
+      "code": "US-AVN-UH60",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de qualification sur appareil UH-60M Black Hawk (AQC)",
+        "en": "UH-60M Black Hawk Aircraft Qualification Course (AQC)"
+      },
+      "official_name": "UH-60M Black Hawk Aircraft Qualification Course",
+      "short_name": "UH-60M AQC",
+      "description": {
+        "fr": "Qualification de type sur UH-60M Black Hawk, hélicoptère de manœuvre : pilotage, vol aux jumelles de vision nocturne, transport de troupes, élingage, évacuation sanitaire et assaut aéromobile. Suivie à la fin de la formation initiale (IERW) ou lors d’une transition d’appareil ; le pilote progresse ensuite dans son unité selon le programme d’entraînement des équipages (niveaux de préparation, puis commandant de bord).",
+        "en": "Type qualification on the UH-60M Black Hawk, utility helicopter: flying, night-vision goggle flight, troop transport, sling loads, MEDEVAC and air assault. Taken at the end of initial flight training (IERW) or for an aircraft transition; the pilot then progresses in the unit under the Aircrew Training Program (readiness levels, then pilot in command)."
+      },
+      "body": {
+        "fr": "U.S. Army Aviation Center of Excellence, Fort Rucker, Alabama",
+        "en": "U.S. Army Aviation Center of Excellence, Fort Rucker, Alabama"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "issuer_key": "us-usaace",
+      "reference": {
+        "fr": "AR 95-1 et programme d’entraînement des équipages (TC 3-04.11)",
+        "en": "AR 95-1 and the Aircrew Training Program (TC 3-04.11)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale au pilotage d’hélicoptère (IERW)"
+        ],
+        "en": [
+          "Initial Entry Rotary Wing (IERW) flight training"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-ierw",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Rucker",
+          "title": "Fort Rucker — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Aviation_Branch",
+          "title": "United States Army Aviation Branch — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Sikorsky_UH-60_Black_Hawk",
+          "title": "Sikorsky UH-60 Black Hawk — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-army-aqc-ch47",
+      "code": "US-AVN-CH47",
+      "category": "aviation",
+      "name": {
+        "fr": "Cours de qualification sur appareil CH-47F Chinook (AQC)",
+        "en": "CH-47F Chinook Aircraft Qualification Course (AQC)"
+      },
+      "official_name": "CH-47F Chinook Aircraft Qualification Course",
+      "short_name": "CH-47F AQC",
+      "description": {
+        "fr": "Qualification de type sur CH-47F Chinook, hélicoptère de transport lourd : pilotage, chargement et élingage de charges lourdes, transport de troupes et d’artillerie, vol en montagne. Suivie à la fin de la formation initiale (IERW) ou lors d’une transition d’appareil ; le pilote progresse ensuite dans son unité selon le programme d’entraînement des équipages (niveaux de préparation, puis commandant de bord).",
+        "en": "Type qualification on the CH-47F Chinook, heavy-lift helicopter: flying, loading and heavy sling loads, troop and artillery transport, mountain flying. Taken at the end of initial flight training (IERW) or for an aircraft transition; the pilot then progresses in the unit under the Aircrew Training Program (readiness levels, then pilot in command)."
+      },
+      "body": {
+        "fr": "U.S. Army Aviation Center of Excellence, Fort Rucker, Alabama",
+        "en": "U.S. Army Aviation Center of Excellence, Fort Rucker, Alabama"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "issuer_key": "us-usaace",
+      "reference": {
+        "fr": "AR 95-1 et programme d’entraînement des équipages (TC 3-04.11)",
+        "en": "AR 95-1 and the Aircrew Training Program (TC 3-04.11)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation initiale au pilotage d’hélicoptère (IERW)"
+        ],
+        "en": [
+          "Initial Entry Rotary Wing (IERW) flight training"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-ierw",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Rucker",
+          "title": "Fort Rucker — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Aviation_Branch",
+          "title": "United States Army Aviation Branch — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook",
+          "title": "Boeing CH-47 Chinook — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-army-amc",
+      "code": "US-AVN-AMC",
+      "category": "aviation",
+      "name": {
+        "fr": "Désignation de chef de mission aérienne (Air Mission Commander)",
+        "en": "Air Mission Commander (AMC) designation"
+      },
+      "official_name": "Air Mission Commander (AMC)",
+      "short_name": "AMC",
+      "description": {
+        "fr": "Aviateur désigné par le commandant pour diriger une mission à plusieurs appareils (assaut aéromobile, escorte, évacuation) : il coordonne avec l’unité appuyée, commande la formation en vol et prend les décisions de mission ; choisi parmi les commandants de bord expérimentés.",
+        "en": "Aviator designated by the commander to lead a multi-aircraft mission (air assault, escort, MEDEVAC): coordinates with the supported unit, commands the flight in the air and makes mission decisions; chosen among experienced pilots in command."
+      },
+      "body": {
+        "fr": "Unités d’aviation de l’Army (désignation par le commandant)",
+        "en": "Army aviation units (commander’s designation)"
+      },
+      "issuer": {
+        "name": "U.S. Army Aviation Center of Excellence",
+        "short_name": "USAACE"
+      },
+      "issuer_key": "us-usaace",
+      "reference": {
+        "fr": "AR 95-1 et programme d’entraînement des équipages (TC 3-04.11)",
+        "en": "AR 95-1 and the Aircrew Training Program (TC 3-04.11)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Pilot in Command (PIC) expérimenté"
+        ],
+        "en": [
+          "Experienced Pilot in Command (PIC)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-army-pic",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Fort_Rucker",
+          "title": "Fort Rucker — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Aviation_Branch",
+          "title": "United States Army Aviation Branch — Wikipedia"
+        },
+        {
+          "url": "https://armypubs.army.mil/",
+          "title": "Army Publishing Directorate (AR 95-1, TC 3-04.11) — armypubs.army.mil"
+        }
+      ]
+    },
+    {
+      "id": "us-mcmap-tan",
+      "code": "US-MCMAP-TAN",
+      "category": "selection",
+      "name": {
+        "fr": "Programme d’arts martiaux du Marine Corps : ceinture tan (MCMAP)",
+        "en": "Marine Corps Martial Arts Program Tan Belt (MCMAP)"
+      },
+      "official_name": "MCMAP Tan Belt",
+      "short_name": "MCMAP Tan",
+      "description": {
+        "fr": "Première ceinture, obtenue en formation initiale par tous les Marines (environ 27,5 heures d’instruction, sans prérequis) : bases des disciplines mentale, physique et de caractère, techniques de combat rapproché et d’arme blanche de base.",
+        "en": "First belt, earned during entry-level training by every Marine (about 27.5 hours of training, no prerequisite): basics of the mental, physical and character disciplines, basic close-combat and edged-weapon techniques."
+      },
+      "body": {
+        "fr": "Marine Corps Martial Arts Center of Excellence, Quantico (ceintures délivrées par des instructeurs MCMAP)",
+        "en": "Marine Corps Martial Arts Center of Excellence, Quantico (belts awarded by MCMAP instructors)"
+      },
+      "issuer": {
+        "name": "Marine Corps Martial Arts Center of Excellence",
+        "short_name": "MACE"
+      },
+      "issuer_key": "us-mace",
+      "reference": {
+        "fr": "MCO 1500.59 (Marine Corps Martial Arts Program)",
+        "en": "MCO 1500.59 (Marine Corps Martial Arts Program)"
+      },
+      "prerequisites": {
+        "fr": [],
+        "en": []
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Martial_Arts_Program",
+          "title": "Marine Corps Martial Arts Program — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-mcmap-gray",
+      "code": "US-MCMAP-GRAY",
+      "category": "selection",
+      "name": {
+        "fr": "Programme d’arts martiaux du Marine Corps : ceinture grise (MCMAP)",
+        "en": "Marine Corps Martial Arts Program Gray Belt (MCMAP)"
+      },
+      "official_name": "MCMAP Gray Belt",
+      "short_name": "MCMAP Gray",
+      "description": {
+        "fr": "Deuxième ceinture (environ 25 heures d’instruction) : compréhension intermédiaire des disciplines de base, clés, projections et combat à la baïonnette.",
+        "en": "Second belt (about 25 hours of training): intermediate understanding of the basic disciplines, joint locks, throws and bayonet fighting."
+      },
+      "body": {
+        "fr": "Marine Corps Martial Arts Center of Excellence, Quantico (ceintures délivrées par des instructeurs MCMAP)",
+        "en": "Marine Corps Martial Arts Center of Excellence, Quantico (belts awarded by MCMAP instructors)"
+      },
+      "issuer": {
+        "name": "Marine Corps Martial Arts Center of Excellence",
+        "short_name": "MACE"
+      },
+      "issuer_key": "us-mace",
+      "reference": {
+        "fr": "MCO 1500.59 (Marine Corps Martial Arts Program)",
+        "en": "MCO 1500.59 (Marine Corps Martial Arts Program)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Ceinture tan MCMAP"
+        ],
+        "en": [
+          "MCMAP Tan Belt"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-mcmap-tan",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Martial_Arts_Program",
+          "title": "Marine Corps Martial Arts Program — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-mcmap-green",
+      "code": "US-MCMAP-GREEN",
+      "category": "selection",
+      "name": {
+        "fr": "Programme d’arts martiaux du Marine Corps : ceinture verte (MCMAP)",
+        "en": "Marine Corps Martial Arts Program Green Belt (MCMAP)"
+      },
+      "official_name": "MCMAP Green Belt",
+      "short_name": "MCMAP Green",
+      "description": {
+        "fr": "Troisième ceinture (environ 25 heures) : fondamentaux intermédiaires ; premier niveau où l’on peut devenir instructeur.",
+        "en": "Third belt (about 25 hours): intermediate fundamentals; the first level at which a Marine may become an instructor."
+      },
+      "body": {
+        "fr": "Marine Corps Martial Arts Center of Excellence, Quantico (ceintures délivrées par des instructeurs MCMAP)",
+        "en": "Marine Corps Martial Arts Center of Excellence, Quantico (belts awarded by MCMAP instructors)"
+      },
+      "issuer": {
+        "name": "Marine Corps Martial Arts Center of Excellence",
+        "short_name": "MACE"
+      },
+      "issuer_key": "us-mace",
+      "reference": {
+        "fr": "MCO 1500.59 (Marine Corps Martial Arts Program)",
+        "en": "MCO 1500.59 (Marine Corps Martial Arts Program)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Ceinture grise MCMAP",
+          "Recommandation du chef direct"
+        ],
+        "en": [
+          "MCMAP Gray Belt",
+          "Recommendation from the reporting senior"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-mcmap-gray",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Martial_Arts_Program",
+          "title": "Marine Corps Martial Arts Program — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-mcmap-brown",
+      "code": "US-MCMAP-BROWN",
+      "category": "selection",
+      "name": {
+        "fr": "Programme d’arts martiaux du Marine Corps : ceinture marron (MCMAP)",
+        "en": "Marine Corps Martial Arts Program Brown Belt (MCMAP)"
+      },
+      "official_name": "MCMAP Brown Belt",
+      "short_name": "MCMAP Brown",
+      "description": {
+        "fr": "Quatrième ceinture (environ 33 heures) : fondamentaux avancés de chaque discipline ; un instructeur ceinture marron enseigne de tan à marron.",
+        "en": "Fourth belt (about 33 hours): advanced fundamentals of each discipline; a brown-belt instructor teaches tan through brown."
+      },
+      "body": {
+        "fr": "Marine Corps Martial Arts Center of Excellence, Quantico (ceintures délivrées par des instructeurs MCMAP)",
+        "en": "Marine Corps Martial Arts Center of Excellence, Quantico (belts awarded by MCMAP instructors)"
+      },
+      "issuer": {
+        "name": "Marine Corps Martial Arts Center of Excellence",
+        "short_name": "MACE"
+      },
+      "issuer_key": "us-mace",
+      "reference": {
+        "fr": "MCO 1500.59 (Marine Corps Martial Arts Program)",
+        "en": "MCO 1500.59 (Marine Corps Martial Arts Program)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Ceinture verte MCMAP",
+          "Recommandation du chef direct"
+        ],
+        "en": [
+          "MCMAP Green Belt",
+          "Recommendation from the reporting senior"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-mcmap-green",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Martial_Arts_Program",
+          "title": "Marine Corps Martial Arts Program — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-mcmap-black",
+      "code": "US-MCMAP-BLACK",
+      "category": "selection",
+      "name": {
+        "fr": "Programme d’arts martiaux du Marine Corps : ceinture noire (1er degré) (MCMAP)",
+        "en": "Marine Corps Martial Arts Program Black Belt (1st degree) (MCMAP)"
+      },
+      "official_name": "MCMAP Black Belt (1st degree)",
+      "short_name": "MCMAP Black",
+      "description": {
+        "fr": "Ceinture noire, du 1er au 6e degré : maîtrise des techniques avancées et du combat à mains nues et armé ; les degrés suivants sont surtout réservés aux instructeurs-formateurs.",
+        "en": "Black belt, first to sixth degree: mastery of advanced armed and unarmed techniques; higher degrees are mostly for instructor trainers."
+      },
+      "body": {
+        "fr": "Marine Corps Martial Arts Center of Excellence, Quantico (ceintures délivrées par des instructeurs MCMAP)",
+        "en": "Marine Corps Martial Arts Center of Excellence, Quantico (belts awarded by MCMAP instructors)"
+      },
+      "issuer": {
+        "name": "Marine Corps Martial Arts Center of Excellence",
+        "short_name": "MACE"
+      },
+      "issuer_key": "us-mace",
+      "reference": {
+        "fr": "MCO 1500.59 (Marine Corps Martial Arts Program)",
+        "en": "MCO 1500.59 (Marine Corps Martial Arts Program)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Ceinture marron MCMAP",
+          "Recommandation du chef direct"
+        ],
+        "en": [
+          "MCMAP Brown Belt",
+          "Recommendation from the reporting senior"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-mcmap-brown",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Martial_Arts_Program",
+          "title": "Marine Corps Martial Arts Program — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-mcmap-mai",
+      "code": "US-MCMAP-MAI",
+      "category": "selection",
+      "name": {
+        "fr": "Instructeur d’arts martiaux du Marine Corps (MAI)",
+        "en": "MCMAP Martial Arts Instructor (MAI)"
+      },
+      "official_name": "Martial Arts Instructor (MAI) Course",
+      "short_name": "MAI",
+      "description": {
+        "fr": "Cours d’instructeur MCMAP : l’instructeur enseigne et délivre les ceintures jusqu’à son propre niveau (tan à verte pour un instructeur ceinture verte, jusqu’à marron pour un ceinture marron) ; les instructeurs-formateurs (MAIT) forment les instructeurs.",
+        "en": "MCMAP instructor course: the instructor teaches and awards belts up to their own level (tan to green for a green-belt instructor, up to brown for a brown-belt instructor); instructor trainers (MAIT) train the instructors."
+      },
+      "body": {
+        "fr": "Marine Corps Martial Arts Center of Excellence, Quantico",
+        "en": "Marine Corps Martial Arts Center of Excellence, Quantico"
+      },
+      "issuer": {
+        "name": "Marine Corps Martial Arts Center of Excellence",
+        "short_name": "MACE"
+      },
+      "issuer_key": "us-mace",
+      "reference": {
+        "fr": "MCO 1500.59 (Marine Corps Martial Arts Program)",
+        "en": "MCO 1500.59 (Marine Corps Martial Arts Program)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Ceinture verte MCMAP au moins",
+          "Recommandation du chef direct"
+        ],
+        "en": [
+          "At least MCMAP Green Belt",
+          "Recommendation from the reporting senior"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-mcmap-green",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "instructor",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Martial_Arts_Program",
+          "title": "Marine Corps Martial Arts Program — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-usmc-brc",
+      "code": "US-USMC-BRC",
+      "category": "selection",
+      "name": {
+        "fr": "Cours de reconnaissance de base des Marines (BRC)",
+        "en": "Basic Reconnaissance Course (BRC)"
+      },
+      "official_name": "Basic Reconnaissance Course (BRC)",
+      "short_name": "BRC",
+      "description": {
+        "fr": "Cours qui forme le Marine de reconnaissance (MOS 0321), après le programme d’évaluation RTAP : reconnaissance amphibie et terrestre, nage et palmage, navigation, patrouille, transmissions, appui feu et insertion par hélicoptère ou embarcation. Il ouvre ensuite les cours parachutiste et plongeur de combat.",
+        "en": "Course that trains the reconnaissance Marine (MOS 0321), after the RTAP assessment programme: amphibious and ground reconnaissance, swimming and finning, navigation, patrolling, communications, fire support and helicopter or small-boat insertion. It then leads to the parachute and combatant diver courses."
+      },
+      "body": {
+        "fr": "Reconnaissance Training Company, Advanced Infantry Training Battalion, School of Infantry (West), Camp Pendleton, Californie",
+        "en": "Reconnaissance Training Company, Advanced Infantry Training Battalion, School of Infantry (West), Camp Pendleton, California"
+      },
+      "issuer": {
+        "name": "School of Infantry (West)",
+        "short_name": "SOI-West"
+      },
+      "issuer_key": "us-soi-west",
+      "reference": {
+        "fr": "MOS 0321 (Reconnaissance Marine)",
+        "en": "MOS 0321 (Reconnaissance Marine)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Test d’aptitude au premier jour : 8 tractions au moins, course de 3 miles en 22 min 30 et 500 m de nage en 20 min en treillis",
+          "Programme d’évaluation RTAP réussi"
+        ],
+        "en": [
+          "Day-one aptitude test: at least 8 pull-ups, 3-mile run in 22:30 and 500 m swim in 20 minutes in utilities",
+          "Passed the RTAP assessment programme"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Marine_Corps_Reconnaissance_Training_Company",
+          "title": "United States Marine Corps Reconnaissance Training Company — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Amphibious_Reconnaissance_Corpsman",
+          "title": "Special Amphibious Reconnaissance Corpsman — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-usmc-scout-sniper",
+      "code": "US-USMC-SNIPER",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Cours de tireur d’élite éclaireur des Marines (Scout Sniper)",
+        "en": "Marine Corps Scout Sniper Course"
+      },
+      "official_name": "Scout Sniper Course",
+      "short_name": "Scout Sniper",
+      "description": {
+        "fr": "Cours de tireur d’élite éclaireur (MOS 0317) : tir de précision à longue distance, approche et camouflage, observation et comptes rendus. Depuis décembre 2023, les scout snipers sont réorganisés en tireurs d’élite de reconnaissance (MOS 0322) au sein de sections d’éclairage de 26 Marines.",
+        "en": "Scout sniper course (MOS 0317): long-range precision fire, stalking and camouflage, observation and reporting. Since December 2023 scout snipers have been reorganised as Reconnaissance Sniper Marines (MOS 0322) in 26-Marine scout platoons."
+      },
+      "body": {
+        "fr": "Écoles de tireurs d’élite des divisions et Scout Sniper Instructor School, Quantico (Training and Education Command)",
+        "en": "Division sniper schools and the Scout Sniper Instructor School, Quantico (Training and Education Command)"
+      },
+      "issuer": {
+        "name": "Marine Corps Training and Education Command",
+        "short_name": "TECOM"
+      },
+      "issuer_key": "us-tecom",
+      "reference": {
+        "fr": "MOS 0317 (Scout Sniper), puis 0322 (Reconnaissance Sniper)",
+        "en": "MOS 0317 (Scout Sniper), then 0322 (Reconnaissance Sniper)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Grade de Lance Corporal au moins",
+          "Sélectionné par son bataillon"
+        ],
+        "en": [
+          "Lance Corporal or above",
+          "Selected by the battalion"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "grade",
+          "nato": "OR-3",
+          "rank": "lance corporal",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Marine_Corps_Scout_Sniper",
+          "title": "United States Marine Corps Scout Sniper — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-usmc-rifle-expert",
+      "code": "US-USMC-EXPERT",
+      "category": "marksmanship",
+      "name": {
+        "fr": "Badge de tir « expert » au fusil du Marine Corps",
+        "en": "Marine Corps Rifle Expert Badge"
+      },
+      "official_name": "Rifle Qualification Badge — Expert",
+      "short_name": "Rifle Expert",
+      "description": {
+        "fr": "Plus haut niveau de la qualification annuelle au fusil des Marines, obtenu après les tables de tir successives (tir fondamental, tir de combat de base, intermédiaire et avancé) ; le badge de tir suit le résultat de la dernière qualification.",
+        "en": "Highest grade of the Marines’ annual rifle qualification, earned after the successive tables of fire (fundamental, basic, intermediate and advanced combat marksmanship); the badge follows the result of the latest qualification."
+      },
+      "body": {
+        "fr": "Qualification annuelle au fusil du Marine Corps (Training and Education Command)",
+        "en": "Marine Corps annual rifle qualification (Training and Education Command)"
+      },
+      "issuer": {
+        "name": "Marine Corps Training and Education Command",
+        "short_name": "TECOM"
+      },
+      "issuer_key": "us-tecom",
+      "reference": {
+        "fr": "Programme de tir du Marine Corps (MCO 3574.2)",
+        "en": "Marine Corps marksmanship programme (MCO 3574.2)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Score expert à la qualification annuelle au fusil"
+        ],
+        "en": [
+          "Expert score at the annual rifle qualification"
+        ]
+      },
+      "validity": {
+        "fr": "Qualification annuelle : le badge suit le dernier résultat.",
+        "en": "Annual qualification: the badge follows the latest result."
+      },
+      "validity_months": 12,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marksmanship_badges_(United_States)",
+          "title": "Marksmanship badges (United States) — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-usmc-smlc",
+      "code": "US-USMC-SMLC",
+      "category": "environment",
+      "name": {
+        "fr": "Cours de chef de montagne d’été (Summer MLC)",
+        "en": "Summer Mountain Leader Course"
+      },
+      "official_name": "Summer Mountain Leader Course",
+      "short_name": "Summer MLC",
+      "description": {
+        "fr": "Cours de chef de détachement en montagne en été : escalade, équipement de voies et de cordes fixes, franchissements, évacuation en terrain vertical et conduite d’une unité en terrain compartimenté.",
+        "en": "Summer mountain leader course: climbing, rigging routes and fixed ropes, crossings, high-angle evacuation and leading a unit over complex compartmented terrain."
+      },
+      "body": {
+        "fr": "Marine Corps Mountain Warfare Training Center, Bridgeport, Californie",
+        "en": "Marine Corps Mountain Warfare Training Center, Bridgeport, California"
+      },
+      "issuer": {
+        "name": "Marine Corps Mountain Warfare Training Center",
+        "short_name": "MCMWTC"
+      },
+      "issuer_key": "us-mcmwtc",
+      "reference": {
+        "fr": "Cours de la School of Mountain Warfare (MAGTF Training Command)",
+        "en": "School of Mountain Warfare course (MAGTF Training Command)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Test de condition physique de 1re classe (PFT)"
+        ],
+        "en": [
+          "First-class Physical Fitness Test (PFT)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Warfare_Training_Center",
+          "title": "Mountain Warfare Training Center — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-usmc-wmlc",
+      "code": "US-USMC-WMLC",
+      "category": "environment",
+      "name": {
+        "fr": "Cours de chef de montagne d’hiver (Winter MLC)",
+        "en": "Winter Mountain Leader Course"
+      },
+      "official_name": "Winter Mountain Leader Course",
+      "short_name": "Winter MLC",
+      "description": {
+        "fr": "Cours de chef de détachement en montagne en hiver : ski et raquettes, vie et survie par grand froid, risque d’avalanche, conduite et logistique d’une unité en terrain enneigé.",
+        "en": "Winter mountain leader course: skiing and snowshoeing, cold-weather living and survival, avalanche risk, leading and sustaining a unit on snow-covered terrain."
+      },
+      "body": {
+        "fr": "Marine Corps Mountain Warfare Training Center, Bridgeport, Californie",
+        "en": "Marine Corps Mountain Warfare Training Center, Bridgeport, California"
+      },
+      "issuer": {
+        "name": "Marine Corps Mountain Warfare Training Center",
+        "short_name": "MCMWTC"
+      },
+      "issuer_key": "us-mcmwtc",
+      "reference": {
+        "fr": "Cours de la School of Mountain Warfare (MAGTF Training Command)",
+        "en": "School of Mountain Warfare course (MAGTF Training Command)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Test de condition physique de 1re classe (PFT)"
+        ],
+        "en": [
+          "First-class Physical Fitness Test (PFT)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Warfare_Training_Center",
+          "title": "Mountain Warfare Training Center — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-usmc-assault-climber",
+      "code": "US-USMC-ACC",
+      "category": "environment",
+      "name": {
+        "fr": "Cours de grimpeur d’assaut (Assault Climber)",
+        "en": "Assault Climber Course"
+      },
+      "official_name": "Assault Climber Course",
+      "short_name": "Assault Climber",
+      "description": {
+        "fr": "Cours de grimpeur d’assaut : escalade en tête, mise en place d’itinéraires et d’installations pour faire passer une unité en terrain vertical.",
+        "en": "Assault climber course: lead climbing, setting routes and installations to move a unit over vertical terrain."
+      },
+      "body": {
+        "fr": "Marine Corps Mountain Warfare Training Center, Bridgeport, Californie",
+        "en": "Marine Corps Mountain Warfare Training Center, Bridgeport, California"
+      },
+      "issuer": {
+        "name": "Marine Corps Mountain Warfare Training Center",
+        "short_name": "MCMWTC"
+      },
+      "issuer_key": "us-mcmwtc",
+      "reference": {
+        "fr": "Cours de la School of Mountain Warfare (MAGTF Training Command)",
+        "en": "School of Mountain Warfare course (MAGTF Training Command)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Test de condition physique de 1re classe (PFT)"
+        ],
+        "en": [
+          "First-class Physical Fitness Test (PFT)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Warfare_Training_Center",
+          "title": "Mountain Warfare Training Center — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-usmc-parachutist",
+      "code": "US-NMC-PARA",
+      "category": "airborne",
+      "name": {
+        "fr": "Insigne de parachutiste de la Navy et du Marine Corps (ailes dorées)",
+        "en": "Navy and Marine Corps Parachutist Insignia (gold wings)"
+      },
+      "official_name": "Navy and Marine Corps Parachutist Insignia",
+      "short_name": "Gold Wings",
+      "description": {
+        "fr": "Insigne doré remis aux marins et aux Marines déjà titulaires du badge de parachutiste qui ont effectué, sur ordre, cinq sauts supplémentaires à ouverture automatique : un saut de jour avec équipement de combat, deux sauts de nuit avec équipement de combat, depuis au moins deux types d’avions militaires.",
+        "en": "Gold insignia awarded to sailors and Marines already holding the parachutist badge who have made, under competent orders, five additional static-line jumps: a combat-equipment day jump, two combat-equipment night jumps, from at least two types of military aircraft."
+      },
+      "body": {
+        "fr": "U.S. Navy et U.S. Marine Corps (unités parachutistes)",
+        "en": "U.S. Navy and U.S. Marine Corps (parachute units)"
+      },
+      "reference": {
+        "fr": "Insigne de parachutiste de la Navy et du Marine Corps (instructions de la Navy et du Marine Corps)",
+        "en": "Navy and Marine Corps Parachutist Insignia (Navy and Marine Corps instructions)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Badge de parachutiste (Basic Airborne Course)",
+          "Cinq sauts supplémentaires à ouverture automatique",
+          "Sauts de jour et de nuit avec équipement de combat, depuis au moins deux types d’avions militaires"
+        ],
+        "en": [
+          "Parachutist badge (Basic Airborne Course)",
+          "Five additional static-line jumps",
+          "Day and night combat-equipment jumps from at least two types of military aircraft"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "metric",
+          "metric": "halo_jumps",
+          "scope": "",
+          "min": 5,
+          "window_days": 0,
+          "confidence": 0.85,
+          "source_index": 1
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Parachutist_Badge_(United_States)",
+          "title": "Parachutist Badge (United States) — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-efmws",
+      "code": "US-NAVY-EFMWS",
+      "category": "medical",
+      "name": {
+        "fr": "Spécialiste de guerre de la Fleet Marine Force (EFMWS, « FMF »)",
+        "en": "Enlisted Fleet Marine Force Warfare Specialist (EFMWS)"
+      },
+      "official_name": "Enlisted Fleet Marine Force Warfare Specialist (EFMWS)",
+      "short_name": "FMF",
+      "description": {
+        "fr": "Qualification des marins servant avec les Marines, surtout les infirmiers (hospital corpsmen) : un an dans une unité du Marine Corps, test de combat du Marine Corps (CFT), examen écrit, démonstration des savoir-faire (démontage d’armes, navigation, transmissions) et oral devant des sous-officiers supérieurs. Le titulaire ajoute « (FMF) » à sa spécialité.",
+        "en": "Qualification of sailors serving with Marines, mostly hospital corpsmen: one year in a Marine Corps unit, Marine Combat Fitness Test (CFT), written test, practical skills (weapons breakdown, land navigation, communications) and an oral board of senior enlisted. Holders add “(FMF)” to their rating."
+      },
+      "body": {
+        "fr": "U.S. Navy (unités de la Fleet Marine Force)",
+        "en": "U.S. Navy (Fleet Marine Force units)"
+      },
+      "reference": {
+        "fr": "OPNAVINST 1414.4B (programme EFMFWS)",
+        "en": "OPNAVINST 1414.4B (EFMFWS programme)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Un an de service dans une unité du Marine Corps",
+          "Test de combat du Marine Corps (CFT) réussi"
+        ],
+        "en": [
+          "One year of service with a Marine Corps unit",
+          "Passed the Marine Combat Fitness Test (CFT)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "metric",
+          "metric": "seniority_days",
+          "scope": "",
+          "min": 365,
+          "window_days": 0,
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Fleet_Marine_Force_insignia",
+          "title": "Fleet Marine Force insignia — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-sarc",
+      "code": "US-NAVY-SARC",
+      "category": "medical",
+      "name": {
+        "fr": "Infirmier de reconnaissance amphibie spéciale (SARC, NEC L11A)",
+        "en": "Special Amphibious Reconnaissance Corpsman (SARC, NEC L11A)"
+      },
+      "official_name": "Special Amphibious Reconnaissance Corpsman (NEC L11A)",
+      "short_name": "SARC",
+      "description": {
+        "fr": "Infirmier de la Navy affecté aux unités de reconnaissance et aux Raiders des Marines : après l’école d’infirmier et la Field Medical Training Battalion, il suit le cursus des Marines de reconnaissance (RTAP, Basic Reconnaissance Course, SERE, parachutisme, plongée de combat, reconnaissance amphibie) puis le cours SOCM, et reçoit le NEC L11A.",
+        "en": "Navy corpsman assigned to Marine reconnaissance and Raider units: after corpsman school and the Field Medical Training Battalion, he follows the reconnaissance Marine pipeline (RTAP, Basic Reconnaissance Course, SERE, Airborne, combatant diver, amphibious reconnaissance) then the SOCM course, and receives NEC L11A."
+      },
+      "body": {
+        "fr": "U.S. Navy, écoles des Marines et JSOMTC (Fort Bragg)",
+        "en": "U.S. Navy, Marine Corps schools and JSOMTC (Fort Bragg)"
+      },
+      "reference": {
+        "fr": "NEC L11A (Special Amphibious Reconnaissance Corpsman)",
+        "en": "NEC L11A (Special Amphibious Reconnaissance Corpsman)"
+      },
+      "prerequisites": {
+        "fr": [
+          "École d’infirmier de la Navy (HM « A » School)",
+          "Field Medical Service Technician (FMST)",
+          "Basic Reconnaissance Course (BRC)",
+          "Basic Airborne Course",
+          "Marine Corps Combatant Diver Course",
+          "Cours SOCM (Special Operations Combat Medic)",
+          "Score ASVAB GT de 100 au moins"
+        ],
+        "en": [
+          "Navy Hospital Corpsman “A” School",
+          "Field Medical Service Technician (FMST)",
+          "Basic Reconnaissance Course (BRC)",
+          "Basic Airborne Course",
+          "Marine Corps Combatant Diver Course",
+          "Special Operations Combat Medic (SOCM) course",
+          "ASVAB GT score of 100 or higher"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-navy-hm-a",
+          "confidence": 0.9,
+          "source_index": 0
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-fmst",
+          "confidence": 0.9,
+          "source_index": 1
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-usmc-brc",
+          "confidence": 0.9,
+          "source_index": 2
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-basic-airborne",
+          "confidence": 0.9,
+          "source_index": 3
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-usmc-combatant-diver",
+          "confidence": 0.9,
+          "source_index": 4
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-socm",
+          "confidence": 0.9,
+          "source_index": 5
+        },
+        {
+          "kind": "qualification",
+          "ref": "us-asvab",
+          "confidence": 0.85,
+          "source_index": 6
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Special_Amphibious_Reconnaissance_Corpsman",
+          "title": "Special Amphibious Reconnaissance Corpsman — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-navy-rescue-swimmer",
+      "code": "US-NAVY-RSS",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Nageur sauveteur d’hélicoptère de la Navy (Aviation Rescue Swimmer)",
+        "en": "Navy Aviation Rescue Swimmer (Rescue Swimmer School)"
+      },
+      "official_name": "Aviation Rescue Swimmer School",
+      "short_name": "Rescue Swimmer",
+      "description": {
+        "fr": "École de six semaines à Pensacola qui forme les nageurs sauveteurs d’hélicoptère de la Navy (sauvetage en mer de pilotes et de naufragés), avant leur école de spécialité d’équipage d’hélicoptère (AWS ou AWR).",
+        "en": "Six-week school at Pensacola training Navy helicopter rescue swimmers (rescuing downed aircrew and people at sea), before their helicopter aircrew rating school (AWS or AWR)."
+      },
+      "body": {
+        "fr": "Naval Aviation Schools Command, Pensacola, Floride",
+        "en": "Naval Aviation Schools Command, Pensacola, Florida"
+      },
+      "issuer": {
+        "name": "Naval Aviation Schools Command",
+        "short_name": "NASC"
+      },
+      "issuer_key": "us-nasc",
+      "reference": {
+        "fr": "Programme des nageurs sauveteurs de l’aéronavale",
+        "en": "Naval aviation rescue swimmer programme"
+      },
+      "prerequisites": {
+        "fr": [
+          "Aptitude médicale et natation de 1re classe"
+        ],
+        "en": [
+          "Medically qualified and first-class swimmer"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Rescue_swimmer",
+          "title": "Rescue swimmer — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-uscg-ast",
+      "code": "US-USCG-AST",
+      "category": "personnel_recovery",
+      "name": {
+        "fr": "Nageur sauveteur d’hélicoptère des garde-côtes (Aviation Survival Technician)",
+        "en": "Coast Guard Aviation Survival Technician (helicopter rescue swimmer)"
+      },
+      "official_name": "Aviation Survival Technician (AST) “A” School",
+      "short_name": "AST",
+      "description": {
+        "fr": "École « A » de 24 semaines des garde-côtes : condition physique intense, piscine et exercices d’aisance aquatique extrêmes, techniques de sauvetage et de déploiement depuis l’hélicoptère, entretien des équipements de survie et des parachutes. Environ 350 AST en service actif.",
+        "en": "24-week Coast Guard “A” school: intense physical training, pool work and extreme water-confidence drills, rescue and helicopter deployment techniques, maintenance of survival equipment and parachutes. About 350 active-duty ASTs."
+      },
+      "body": {
+        "fr": "Coast Guard Aviation Technical Training Center, Elizabeth City, Caroline du Nord",
+        "en": "Coast Guard Aviation Technical Training Center, Elizabeth City, North Carolina"
+      },
+      "issuer": {
+        "name": "Coast Guard Aviation Technical Training Center",
+        "short_name": "ATTC"
+      },
+      "issuer_key": "us-uscg-attc",
+      "reference": {
+        "fr": "Spécialité AST de l’US Coast Guard",
+        "en": "U.S. Coast Guard AST rating"
+      },
+      "prerequisites": {
+        "fr": [
+          "Test physique d’entrée réussi (nage, tractions, pompes)"
+        ],
+        "en": [
+          "Passed the entry physical test (swim, pull-ups, push-ups)"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Aviation_Survival_Technician",
+          "title": "Aviation Survival Technician — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Rescue_swimmer",
+          "title": "Rescue swimmer — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-af-ift",
+      "code": "US-AF-IFT",
+      "category": "aviation",
+      "name": {
+        "fr": "Formation initiale au vol de l’Air Force (IFT)",
+        "en": "USAF Initial Flight Training (IFT)"
+      },
+      "official_name": "Initial Flight Training (IFT)",
+      "short_name": "IFT",
+      "description": {
+        "fr": "Premier vol des futurs pilotes et officiers systèmes de combat de l’Air Force, à l’aéroport de Pueblo (Colorado) : jusqu’à 25 heures de vol sur avion léger avec des instructeurs civils sous contrat, avant la formation de pilote (UPT) proprement dite.",
+        "en": "First flying phase for future Air Force pilots and combat systems officers at Pueblo Memorial Airport (Colorado): up to 25 hours of light-aircraft instruction by contracted civilian instructors, before undergraduate pilot training (UPT) itself."
+      },
+      "body": {
+        "fr": "Air Education and Training Command (306th Flying Training Group), Pueblo, Colorado",
+        "en": "Air Education and Training Command (306th Flying Training Group), Pueblo, Colorado"
+      },
+      "issuer": {
+        "name": "Air Education and Training Command",
+        "short_name": "AETC"
+      },
+      "issuer_key": "us-aetc",
+      "reference": {
+        "fr": "Programme de formation des pilotes de l’AETC",
+        "en": "AETC pilot training programme"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier de l’Air Force sélectionné pour le pilotage"
+        ],
+        "en": [
+          "Air Force officer selected for pilot training"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "initial",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Initial_Flight_Training",
+          "title": "Initial Flight Training — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Air_Education_and_Training_Command",
+          "title": "Air Education and Training Command — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-af-ftu",
+      "code": "US-AF-FTU",
+      "category": "aviation",
+      "name": {
+        "fr": "Qualification initiale sur avion d’arme (FTU / IQT)",
+        "en": "Formal Training Unit initial qualification (FTU / IQT)"
+      },
+      "official_name": "Formal Training Unit (FTU) Initial Qualification Training",
+      "short_name": "FTU",
+      "description": {
+        "fr": "Après les ailes de pilote (UPT), stage dans une unité de formation (Formal Training Unit) sur l’appareil d’affectation (A-10C, F-16, HH-60W, C-130J…) : qualification initiale (IQT), puis qualification de mission (MQT) dans l’escadron opérationnel.",
+        "en": "After pilot wings (UPT), training in a Formal Training Unit on the assigned aircraft (A-10C, F-16, HH-60W, C-130J…): initial qualification (IQT), then mission qualification (MQT) in the operational squadron."
+      },
+      "body": {
+        "fr": "Unités de formation de l’Air Education and Training Command et des grands commandements",
+        "en": "Formal training units of Air Education and Training Command and the major commands"
+      },
+      "issuer": {
+        "name": "Air Education and Training Command",
+        "short_name": "AETC"
+      },
+      "issuer_key": "us-aetc",
+      "reference": {
+        "fr": "Série AFI 11-2 (règlement de chaque appareil)",
+        "en": "AFI 11-2 series (per-aircraft instructions)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Formation de pilote de l’Air Force (UPT) terminée"
+        ],
+        "en": [
+          "Completed USAF Undergraduate Pilot Training (UPT)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-af-upt",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Air_Education_and_Training_Command",
+          "title": "Air Education and Training Command — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-af-weapons-school",
+      "code": "US-AF-USAFWS",
+      "category": "aviation",
+      "name": {
+        "fr": "École des armes de l’Air Force (Weapons Instructor Course)",
+        "en": "USAF Weapons School (Weapons Instructor Course)"
+      },
+      "official_name": "USAF Weapons School — Weapons Instructor Course",
+      "short_name": "Weapons School",
+      "description": {
+        "fr": "Cours d’instructeur tactique de niveau supérieur (environ six mois) pour officiers des forces aériennes de combat, par système d’armes (A-10, AC-130, F-15E, F-16, F-35, MQ-9, HH-60, contrôleurs JTAC…) : les diplômés (« patch wearers ») deviennent les experts tactiques et instructeurs de leur escadre.",
+        "en": "Graduate-level tactical instructor course (about six months) for combat air forces officers, by weapon system (A-10, AC-130, F-15E, F-16, F-35, MQ-9, HH-60, JTAC…): graduates (“patch wearers”) become the tactical experts and instructors of their wings."
+      },
+      "body": {
+        "fr": "U.S. Air Force Weapons School, Nellis AFB, Nevada, et détachements",
+        "en": "U.S. Air Force Weapons School, Nellis AFB, Nevada, and detachments"
+      },
+      "issuer": {
+        "name": "U.S. Air Force Weapons School",
+        "short_name": "USAFWS"
+      },
+      "issuer_key": "us-usafws",
+      "reference": {
+        "fr": "Cours de l’U.S. Air Force Warfare Center",
+        "en": "U.S. Air Force Warfare Center course"
+      },
+      "prerequisites": {
+        "fr": [
+          "Instructeur qualifié sur son système d’armes",
+          "Sélection par un comité de son grand commandement"
+        ],
+        "en": [
+          "Qualified instructor on the weapon system",
+          "Selected by a major command board"
+        ]
+      },
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/USAF_Weapons_School",
+          "title": "USAF Weapons School — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-jfo",
+      "code": "US-JFO",
+      "category": "fires",
+      "name": {
+        "fr": "Observateur des feux interarmées (JFO)",
+        "en": "Joint Fires Observer (JFO)"
+      },
+      "official_name": "Joint Fires Observer (JFO) course",
+      "short_name": "JFO",
+      "description": {
+        "fr": "Cours d’environ deux semaines, ouvert à toutes les armées : demander, régler et contrôler les tirs de mortier, d’artillerie et de l’artillerie navale, donner les informations d’objectif aux avions et hélicoptères et aider le JTAC dans les frappes aériennes (sans contrôle terminal). Sept simulations notées.",
+        "en": "Roughly two-week course open to all services: request, adjust and control mortar, field artillery and naval gunfire, provide targeting information to aircraft and helicopters and assist the JTAC in air strikes (without terminal control). Seven graded simulations."
+      },
+      "body": {
+        "fr": "U.S. Army Field Artillery School, Fort Sill (aussi Einsiedlerhof en Allemagne et Quantico pour les Marines)",
+        "en": "U.S. Army Field Artillery School, Fort Sill (also Einsiedlerhof, Germany, and Quantico for the Marines)"
+      },
+      "issuer": {
+        "name": "U.S. Army Field Artillery School",
+        "short_name": "USAFAS"
+      },
+      "issuer_key": "us-usafas",
+      "reference": {
+        "fr": "JFO MOA (mémorandum d’accord interarmées sur les JFO)",
+        "en": "JFO MOA (joint memorandum of agreement on JFOs)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Observateur avancé ou membre d’une équipe d’appui feu"
+        ],
+        "en": [
+          "Forward observer or fire support team member"
+        ]
+      },
+      "validity": {
+        "fr": "Qualification à entretenir (currency) selon le JFO MOA.",
+        "en": "Currency must be maintained under the JFO MOA."
+      },
+      "validity_months": null,
+      "level": "qualified",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Forward_observers_in_the_U.S._military",
+          "title": "Forward observers in the U.S. military — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-jtac-evaluator",
+      "code": "US-JTAC-EVAL",
+      "category": "air_support",
+      "name": {
+        "fr": "Évaluateur JTAC",
+        "en": "JTAC Evaluator"
+      },
+      "official_name": "Joint Terminal Attack Controller Evaluator",
+      "short_name": "JTAC-E",
+      "description": {
+        "fr": "JTAC expérimenté habilité par son armée à évaluer et certifier les JTAC et à faire passer les évaluations de currency, selon le mémorandum d’accord JTAC ; dans la Navy, il porte le NEC 836A.",
+        "en": "Experienced JTAC authorised by their service to evaluate and certify JTACs and run currency evaluations under the JTAC memorandum of agreement; in the Navy this is NEC 836A."
+      },
+      "body": {
+        "fr": "Armées américaines, selon le JTAC MOA du Joint Fire Support Executive Steering Committee",
+        "en": "U.S. services, under the Joint Fire Support Executive Steering Committee JTAC MOA"
+      },
+      "issuer": {
+        "name": "Joint Fire Support Executive Steering Committee",
+        "short_name": "JFS ESC"
+      },
+      "issuer_key": "us-jfs-esc",
+      "reference": {
+        "fr": "JTAC MOA (Joint Fire Support Executive Steering Committee)",
+        "en": "JTAC MOA (Joint Fire Support Executive Steering Committee)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Joint Terminal Attack Controller (JTAC) qualifié et à jour",
+          "JTAC Instructor recommandé"
+        ],
+        "en": [
+          "Qualified and current Joint Terminal Attack Controller (JTAC)",
+          "JTAC Instructor recommended"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-jtac",
+          "confidence": 0.9,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "expert",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Joint_terminal_attack_controller",
+          "title": "Joint terminal attack controller — Wikipedia"
+        }
+      ]
+    },
+    {
+      "id": "us-jcws",
+      "code": "US-JCWS",
+      "category": "c2_staff",
+      "name": {
+        "fr": "École de planification interarmées et multinationale (JCWS, JPME II)",
+        "en": "Joint and Combined Warfighting School (JCWS, JPME Phase II)"
+      },
+      "official_name": "Joint and Combined Warfighting School (JCWS)",
+      "short_name": "JCWS",
+      "description": {
+        "fr": "Cours de l’école d’état-major interarmées (Joint Forces Staff College) qui forme les planificateurs interarmées : planification opérationnelle interarmées et multinationale, en résidence, à distance ou hybride ; il valide la phase II de l’enseignement militaire interarmées (JPME II), nécessaire pour devenir officier qualifié interarmées.",
+        "en": "Joint Forces Staff College course that trains joint planners: joint and multinational operational planning, resident, satellite or hybrid; it awards Joint Professional Military Education Phase II (JPME II), needed to become a Joint Qualified Officer."
+      },
+      "body": {
+        "fr": "Joint Forces Staff College, National Defense University, Norfolk, Virginie",
+        "en": "Joint Forces Staff College, National Defense University, Norfolk, Virginia"
+      },
+      "issuer": {
+        "name": "National Defense University",
+        "short_name": "NDU"
+      },
+      "issuer_key": "us-ndu",
+      "reference": {
+        "fr": "JPME Phase II (CJCSI 1800.01)",
+        "en": "JPME Phase II (CJCSI 1800.01)"
+      },
+      "prerequisites": {
+        "fr": [
+          "Officier ayant suivi la phase I de l’enseignement militaire interarmées (JPME I, par ex. CGSOC / ILE)"
+        ],
+        "en": [
+          "Officer with JPME Phase I (e.g. CGSOC / ILE)"
+        ]
+      },
+      "prerequisites_detected": [
+        {
+          "kind": "qualification",
+          "ref": "us-cgsoc",
+          "confidence": 0.85,
+          "source_index": 0
+        }
+      ],
+      "validity": {
+        "fr": "",
+        "en": ""
+      },
+      "validity_months": null,
+      "level": "confirmed",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Joint_Forces_Staff_College",
+          "title": "Joint Forces Staff College — Wikipedia"
         }
       ]
     }

@@ -1388,6 +1388,257 @@
           "title": "Air Force ROTC – Wikipedia"
         }
       ]
+    },
+    {
+      "key": "us-tsaas",
+      "name": "The Sabalauski Air Assault School",
+      "short_name": "TSAAS",
+      "type": "school",
+      "location": "Fort Campbell, Kentucky",
+      "location_en": "Fort Campbell, Kentucky",
+      "website": "",
+      "description": {
+        "fr": "École de la 101st Airborne Division (Air Assault) à Fort Campbell : cours Air Assault, Pathfinder (seul cours d’active depuis la fermeture de celui de Fort Benning en 2020), Rappel Master et maîtres FRIES/SPIES.",
+        "en": "101st Airborne Division (Air Assault) school at Fort Campbell: Air Assault, Pathfinder (the only active-duty course since the Fort Benning course closed in 2020), Rappel Master and FRIES/SPIES Master courses."
+      },
+      "aliases": [
+        "U.S. Army Air Assault School",
+        "Sabalauski Air Assault School"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Army_Air_Assault_School",
+          "title": "United States Army Air Assault School — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Pathfinder_Badge_(United_States)",
+          "title": "Pathfinder Badge (United States) — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-usaes",
+      "name": "U.S. Army Engineer School",
+      "short_name": "USAES",
+      "type": "school",
+      "location": "Fort Leonard Wood, Missouri",
+      "location_en": "Fort Leonard Wood, Missouri",
+      "website": "",
+      "description": {
+        "fr": "École du génie de l’US Army à Fort Leonard Wood : formation des sapeurs et des cadres du génie, dont le Sapper Leader Course qui donne le Sapper Tab.",
+        "en": "U.S. Army engineer school at Fort Leonard Wood: trains engineer soldiers and leaders, including the Sapper Leader Course that awards the Sapper Tab."
+      },
+      "aliases": [
+        "United States Army Engineer School"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Tabs_of_the_United_States_Army",
+          "title": "Tabs of the United States Army — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-amws",
+      "name": "Army Mountain Warfare School",
+      "short_name": "AMWS",
+      "type": "school",
+      "location": "Ethan Allen Firing Range, Jericho, Vermont",
+      "location_en": "Ethan Allen Firing Range, Jericho, Vermont",
+      "website": "",
+      "description": {
+        "fr": "École de combat en montagne de l’Army (Garde nationale du Vermont) : cours de montagnard militaire de base et avancé, en sessions d’été et d’hiver, ouverts à l’active, à la réserve, à la Garde nationale et aux élèves officiers.",
+        "en": "Army mountain warfare school (Vermont Army National Guard): Basic and Advanced Military Mountaineer Courses in summer and winter sessions, open to active duty, Reserve, National Guard and ROTC cadets."
+      },
+      "aliases": [
+        "U.S. Army Mountain Warfare School"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Army_Mountain_Warfare_School",
+          "title": "Army Mountain Warfare School — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-nwtc",
+      "name": "Northern Warfare Training Center",
+      "short_name": "NWTC",
+      "type": "training_center",
+      "location": "Black Rapids, Alaska (Fort Wainwright)",
+      "location_en": "Black Rapids, Alaska (Fort Wainwright)",
+      "website": "",
+      "description": {
+        "fr": "Centre d’entraînement au grand froid et à la montagne de l’US Army Alaska, seul organisme de l’active pour les régions froides : cours d’orientation et de chef en climat froid, montagnard militaire de base, grimpeur d’assaut.",
+        "en": "U.S. Army Alaska cold-weather and mountain training centre, the active Army’s only cold-region proponent: Cold Weather Orientation and Leaders Courses, Basic Military Mountaineering, Assault Military Climbers."
+      },
+      "aliases": [
+        "U.S. Army Northern Warfare Training Center"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Northern_Warfare_Training_Center",
+          "title": "Northern Warfare Training Center — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-25id-jotc",
+      "name": "Jungle Operations Training Center",
+      "short_name": "JOTC",
+      "type": "training_center",
+      "location": "Schofield Barracks, Oahu, Hawaï",
+      "location_en": "Schofield Barracks, Oahu, Hawaii",
+      "website": "",
+      "description": {
+        "fr": "Centre d’entraînement au combat en jungle de la 25th Infantry Division, rouvert en 2013 à Schofield Barracks : cours Jungle Operations Training Course (Lightning Academy) pour la division, les forces spéciales et les partenaires étrangers.",
+        "en": "25th Infantry Division jungle warfare training centre, reopened in 2013 at Schofield Barracks: Jungle Operations Training Course (Lightning Academy) for the division, special forces and foreign partners."
+      },
+      "aliases": [
+        "25th Infantry Division Lightning Academy"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Jungle_warfare",
+          "title": "Jungle warfare — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-tecom",
+      "name": "Marine Corps Training and Education Command",
+      "short_name": "TECOM",
+      "type": "command",
+      "location": "Marine Corps Base Quantico, Virginie",
+      "location_en": "Marine Corps Base Quantico, Virginia",
+      "website": "",
+      "description": {
+        "fr": "Commandement de la formation de l’US Marine Corps : écoles d’infanterie, tir (qualification annuelle au fusil), tireurs d’élite, arts martiaux (MCMAP) et entraînement interarmes (MAGTF Training Command, dont le centre de montagne de Bridgeport).",
+        "en": "U.S. Marine Corps training command: infantry schools, marksmanship (annual rifle qualification), snipers, martial arts (MCMAP) and combined-arms training (MAGTF Training Command, including the Bridgeport mountain centre)."
+      },
+      "aliases": [
+        "Training and Education Command (USMC)"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marksmanship_badges_(United_States)",
+          "title": "Marksmanship badges (United States) — Wikipedia"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Martial_Arts_Program",
+          "title": "Marine Corps Martial Arts Program — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-mace",
+      "name": "Marine Corps Martial Arts Center of Excellence",
+      "short_name": "MACE",
+      "type": "coe",
+      "location": "Marine Corps Base Quantico, Virginie",
+      "location_en": "Marine Corps Base Quantico, Virginia",
+      "website": "",
+      "description": {
+        "fr": "Centre d’excellence des arts martiaux du Marine Corps : définit le programme MCMAP (ceintures tan à noire) et forme les instructeurs et instructeurs-formateurs.",
+        "en": "Marine Corps martial arts centre of excellence: owns the MCMAP syllabus (tan to black belts) and trains instructors and instructor trainers."
+      },
+      "aliases": [
+        "Martial Arts Center of Excellence"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Marine_Corps_Martial_Arts_Program",
+          "title": "Marine Corps Martial Arts Program — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-soi-west",
+      "name": "School of Infantry (West)",
+      "short_name": "SOI-West",
+      "type": "school",
+      "location": "Marine Corps Base Camp Pendleton, Californie",
+      "location_en": "Marine Corps Base Camp Pendleton, California",
+      "website": "",
+      "description": {
+        "fr": "École d’infanterie du Marine Corps à Camp Pendleton ; son Advanced Infantry Training Battalion comprend la Reconnaissance Training Company, qui conduit le Basic Reconnaissance Course (MOS 0321).",
+        "en": "Marine Corps infantry school at Camp Pendleton; its Advanced Infantry Training Battalion includes the Reconnaissance Training Company that runs the Basic Reconnaissance Course (MOS 0321)."
+      },
+      "aliases": [
+        "Reconnaissance Training Company"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/United_States_Marine_Corps_Reconnaissance_Training_Company",
+          "title": "United States Marine Corps Reconnaissance Training Company — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-mcmwtc",
+      "name": "Marine Corps Mountain Warfare Training Center",
+      "short_name": "MCMWTC",
+      "type": "training_center",
+      "location": "Pickel Meadow, près de Bridgeport, Californie",
+      "location_en": "Pickel Meadow, near Bridgeport, California",
+      "website": "",
+      "description": {
+        "fr": "Centre d’entraînement au combat en montagne du Marine Corps (MAGTF Training Command) : chefs de montagne d’été et d’hiver, grimpeurs d’assaut, éclaireurs skieurs, survie et médecine en montagne et grand froid.",
+        "en": "Marine Corps mountain warfare training centre (MAGTF Training Command): summer and winter mountain leaders, assault climbers, scout skiers, mountain and cold-weather survival and medicine."
+      },
+      "aliases": [
+        "Mountain Warfare Training Center"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Mountain_Warfare_Training_Center",
+          "title": "Mountain Warfare Training Center — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-nasc",
+      "name": "Naval Aviation Schools Command",
+      "short_name": "NASC",
+      "type": "school",
+      "location": "Naval Air Station Pensacola, Floride",
+      "location_en": "Naval Air Station Pensacola, Florida",
+      "website": "",
+      "description": {
+        "fr": "Commandement des écoles de l’aéronavale à Pensacola, dont l’Aviation Rescue Swimmer School (six semaines) des nageurs sauveteurs d’hélicoptère de l’US Navy.",
+        "en": "Naval aviation schools command at Pensacola, including the six-week Aviation Rescue Swimmer School for U.S. Navy helicopter rescue swimmers."
+      },
+      "aliases": [
+        "Aviation Rescue Swimmer School"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Rescue_swimmer",
+          "title": "Rescue swimmer — Wikipedia"
+        }
+      ]
+    },
+    {
+      "key": "us-uscg-attc",
+      "name": "Coast Guard Aviation Technical Training Center",
+      "short_name": "ATTC",
+      "type": "school",
+      "location": "Coast Guard Air Station Elizabeth City, Caroline du Nord",
+      "location_en": "Coast Guard Air Station Elizabeth City, North Carolina",
+      "website": "",
+      "description": {
+        "fr": "Centre de formation technique aéronautique de l’US Coast Guard : école « A » de 24 semaines des Aviation Survival Technicians, les nageurs sauveteurs d’hélicoptère des garde-côtes.",
+        "en": "U.S. Coast Guard aviation technical training centre: 24-week “A” school of the Aviation Survival Technicians, the Coast Guard helicopter rescue swimmers."
+      },
+      "aliases": [
+        "Aviation Technical Training Center"
+      ],
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Aviation_Survival_Technician",
+          "title": "Aviation Survival Technician — Wikipedia"
+        }
+      ]
     }
   ]
 }

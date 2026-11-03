@@ -10,7 +10,7 @@ Chaque ajout ci-dessous est écrit dans le champ `prerequisites_detected` de l�
 
 | Pack | Qualifications | Mesurés (jeu, site) | Attestés | Grade | Total |
 |---|---|---|---|---|---|
-| us | 38 | 1 | 1 | 2 | 42 |
+| us | 72 | 3 | 1 | 3 | 79 |
 | fr | 25 | 2 | 0 | 0 | 27 |
 | de | 19 | 3 | 2 | 2 | 26 |
 | cn | 4 | 0 | 0 | 0 | 4 |
@@ -18,7 +18,7 @@ Chaque ajout ci-dessous est écrit dans le champ `prerequisites_detected` de l�
 | gb | 5 | 0 | 0 | 7 | 12 |
 | my | 11 | 1 | 1 | 2 | 15 |
 | nato | 2 | 0 | 0 | 10 | 12 |
-| **Total** | | | | | **141** |
+| **Total** | | | | | **178** |
 
 ## US
 
@@ -257,6 +257,195 @@ Chaque ajout ci-dessous est écrit dans le champ `prerequisites_detected` de l�
 - **qualification « Cours NSW des chefs de peloton » (`us-nsw-plc`)** — confiance 0.90, prérequis n° 1
   - FR : « Cours NSW des chefs de peloton »
   - EN : “NSW Platoon Leaders Course”
+
+### `us-pathfinder` — Brevet de guide aéromobile et aéroporté (Pathfinder Badge)
+
+- **qualification « Brevet d’assaut aéromobile (Air Assault Badge) » (`us-air-assault`)** — confiance 0.85, prérequis n° 1
+  - FR : « Qualification Air Assault recommandée »
+  - EN : “Air Assault qualification recommended”
+
+### `us-sf-tab` — Insigne des forces spéciales (Special Forces Tab)
+
+- **qualification « Cours de qualification des forces spéciales (SFQC, « Q Course ») » (`us-sfqc`)** — confiance 0.90, prérequis n° 1
+  - FR : « Cours de qualification des forces spéciales (SFQC) terminé »
+  - EN : “Completed the Special Forces Qualification Course (SFQC)”
+
+### `us-sf-18a` — Cours d’officier de détachement des forces spéciales (18A)
+
+- **qualification « Évaluation et sélection des forces spéciales (SFAS) » (`us-sfas`)** — confiance 0.85, prérequis n° 1
+  - FR : « Sélection SFAS réussie »
+  - EN : “Passed SFAS”
+- **qualification « Brevet de parachutiste militaire (Basic Airborne Course) » (`us-basic-airborne`)** — confiance 0.90, prérequis n° 3
+  - FR : « Qualification parachutiste (Basic Airborne Course) »
+  - EN : “Airborne qualified (Basic Airborne Course)”
+
+### `us-sf-18b` — Cours de sergent armement des forces spéciales (18B)
+
+- **qualification « Évaluation et sélection des forces spéciales (SFAS) » (`us-sfas`)** — confiance 0.85, prérequis n° 1
+  - FR : « Sélection SFAS réussie »
+  - EN : “Passed SFAS”
+- **qualification « Brevet de parachutiste militaire (Basic Airborne Course) » (`us-basic-airborne`)** — confiance 0.90, prérequis n° 3
+  - FR : « Qualification parachutiste (Basic Airborne Course) »
+  - EN : “Airborne qualified (Basic Airborne Course)”
+
+### `us-sf-18c` — Cours de sergent génie des forces spéciales (18C)
+
+- **qualification « Évaluation et sélection des forces spéciales (SFAS) » (`us-sfas`)** — confiance 0.85, prérequis n° 1
+  - FR : « Sélection SFAS réussie »
+  - EN : “Passed SFAS”
+- **qualification « Brevet de parachutiste militaire (Basic Airborne Course) » (`us-basic-airborne`)** — confiance 0.90, prérequis n° 3
+  - FR : « Qualification parachutiste (Basic Airborne Course) »
+  - EN : “Airborne qualified (Basic Airborne Course)”
+
+### `us-sf-18e` — Cours de sergent transmissions des forces spéciales (18E)
+
+- **qualification « Évaluation et sélection des forces spéciales (SFAS) » (`us-sfas`)** — confiance 0.85, prérequis n° 1
+  - FR : « Sélection SFAS réussie »
+  - EN : “Passed SFAS”
+- **qualification « Brevet de parachutiste militaire (Basic Airborne Course) » (`us-basic-airborne`)** — confiance 0.90, prérequis n° 3
+  - FR : « Qualification parachutiste (Basic Airborne Course) »
+  - EN : “Airborne qualified (Basic Airborne Course)”
+
+### `us-eib` — Badge de fantassin expert (EIB)
+
+- **qualification « Qualification de tir « expert » de l’Army (badge de tir) » (`us-army-marksman-expert`)** — confiance 0.90, prérequis n° 2
+  - FR : « Qualification de tir « expert » de l’Army au fusil »
+  - EN : “Army Marksmanship Qualification Badge (Expert) on the rifle”
+
+### `us-efmb` — Badge d’expert en médecine de terrain (EFMB)
+
+- **qualification « Qualification de tir « expert » de l’Army (badge de tir) » (`us-army-marksman-expert`)** — confiance 0.90, prérequis n° 1
+  - FR : « Qualification de tir « expert » de l’Army au fusil M4, dans les 12 derniers mois »
+  - EN : “Army Marksmanship Qualification Badge (Expert) on the M4, within the last 12 months”
+
+### `us-army-sniper` — Cours de tireur d’élite de l’Army (Army Sniper Course)
+
+- **qualification « Qualification de tir « expert » de l’Army (badge de tir) » (`us-army-marksman-expert`)** — confiance 0.90, prérequis n° 2
+  - FR : « Qualification de tir « expert » de l’Army au fusil »
+  - EN : “Army Marksmanship Qualification Badge (Expert) on the rifle”
+
+### `us-ammc` — Cours de montagnard militaire avancé (AMMC)
+
+- **qualification « Cours de montagnard militaire de base (BMMC) » (`us-bmmc`)** — confiance 0.90, prérequis n° 1
+  - FR : « Cours de montagnard militaire de base (BMMC) réussi »
+  - EN : “Passed the Basic Military Mountaineer Course (BMMC)”
+
+### `us-army-aqc-ah64` — Cours de qualification sur appareil AH-64E Apache (AQC)
+
+- **qualification « Formation initiale au pilotage d’hélicoptère (IERW) » (`us-army-ierw`)** — confiance 0.90, prérequis n° 1
+  - FR : « Formation initiale au pilotage d’hélicoptère (IERW) »
+  - EN : “Initial Entry Rotary Wing (IERW) flight training”
+
+### `us-army-aqc-uh60` — Cours de qualification sur appareil UH-60M Black Hawk (AQC)
+
+- **qualification « Formation initiale au pilotage d’hélicoptère (IERW) » (`us-army-ierw`)** — confiance 0.90, prérequis n° 1
+  - FR : « Formation initiale au pilotage d’hélicoptère (IERW) »
+  - EN : “Initial Entry Rotary Wing (IERW) flight training”
+
+### `us-army-aqc-ch47` — Cours de qualification sur appareil CH-47F Chinook (AQC)
+
+- **qualification « Formation initiale au pilotage d’hélicoptère (IERW) » (`us-army-ierw`)** — confiance 0.90, prérequis n° 1
+  - FR : « Formation initiale au pilotage d’hélicoptère (IERW) »
+  - EN : “Initial Entry Rotary Wing (IERW) flight training”
+
+### `us-army-amc` — Désignation de chef de mission aérienne (Air Mission Commander)
+
+- **qualification « Désignation de commandant de bord (Pilot in Command) » (`us-army-pic`)** — confiance 0.90, prérequis n° 1
+  - FR : « Pilot in Command (PIC) expérimenté »
+  - EN : “Experienced Pilot in Command (PIC)”
+
+### `us-mcmap-gray` — Programme d’arts martiaux du Marine Corps : ceinture grise (MCMAP)
+
+- **qualification « Programme d’arts martiaux du Marine Corps : ceinture tan (MCMAP) » (`us-mcmap-tan`)** — confiance 0.90, prérequis n° 1
+  - FR : « Ceinture tan MCMAP »
+  - EN : “MCMAP Tan Belt”
+
+### `us-mcmap-green` — Programme d’arts martiaux du Marine Corps : ceinture verte (MCMAP)
+
+- **qualification « Programme d’arts martiaux du Marine Corps : ceinture grise (MCMAP) » (`us-mcmap-gray`)** — confiance 0.90, prérequis n° 1
+  - FR : « Ceinture grise MCMAP »
+  - EN : “MCMAP Gray Belt”
+
+### `us-mcmap-brown` — Programme d’arts martiaux du Marine Corps : ceinture marron (MCMAP)
+
+- **qualification « Programme d’arts martiaux du Marine Corps : ceinture verte (MCMAP) » (`us-mcmap-green`)** — confiance 0.90, prérequis n° 1
+  - FR : « Ceinture verte MCMAP »
+  - EN : “MCMAP Green Belt”
+
+### `us-mcmap-black` — Programme d’arts martiaux du Marine Corps : ceinture noire (1er degré) (MCMAP)
+
+- **qualification « Programme d’arts martiaux du Marine Corps : ceinture marron (MCMAP) » (`us-mcmap-brown`)** — confiance 0.90, prérequis n° 1
+  - FR : « Ceinture marron MCMAP »
+  - EN : “MCMAP Brown Belt”
+
+### `us-mcmap-mai` — Instructeur d’arts martiaux du Marine Corps (MAI)
+
+- **qualification « Programme d’arts martiaux du Marine Corps : ceinture verte (MCMAP) » (`us-mcmap-green`)** — confiance 0.90, prérequis n° 1
+  - FR : « Ceinture verte MCMAP au moins »
+  - EN : “At least MCMAP Green Belt”
+
+### `us-usmc-scout-sniper` — Cours de tireur d’élite éclaireur des Marines (Scout Sniper)
+
+- **grade minimum OR-3 (lance corporal)** — confiance 0.85, prérequis n° 1
+  - FR : « Grade de Lance Corporal au moins »
+  - EN : “Lance Corporal or above”
+
+### `us-navy-usmc-parachutist` — Insigne de parachutiste de la Navy et du Marine Corps (ailes dorées)
+
+- **qualification « Brevet de parachutiste militaire (Basic Airborne Course) » (`us-basic-airborne`)** — confiance 0.90, prérequis n° 1
+  - FR : « Badge de parachutiste (Basic Airborne Course) »
+  - EN : “Parachutist badge (Basic Airborne Course)”
+- **5 saut(s) en parachute, mesurés par le mod** — confiance 0.85, prérequis n° 2
+  - FR : « Cinq sauts supplémentaires à ouverture automatique »
+  - EN : “Five additional static-line jumps”
+
+### `us-navy-efmws` — Spécialiste de guerre de la Fleet Marine Force (EFMWS, « FMF »)
+
+- **ancienneté 365 jours, mesurée (dossier / arrivée)** — confiance 0.85, prérequis n° 1
+  - FR : « Un an de service dans une unité du Marine Corps »
+  - EN : “One year of service with a Marine Corps unit”
+
+### `us-navy-sarc` — Infirmier de reconnaissance amphibie spéciale (SARC, NEC L11A)
+
+- **qualification « École « A » d’infirmier de la Navy (Hospital Corps School) » (`us-navy-hm-a`)** — confiance 0.90, prérequis n° 1
+  - FR : « École d’infirmier de la Navy (HM « A » School) »
+  - EN : “Navy Hospital Corpsman “A” School”
+- **qualification « Technicien du service médical de campagne (FMST) » (`us-fmst`)** — confiance 0.90, prérequis n° 2
+  - FR : « Field Medical Service Technician (FMST) »
+  - EN : “Field Medical Service Technician (FMST)”
+- **qualification « Cours de reconnaissance de base des Marines (BRC) » (`us-usmc-brc`)** — confiance 0.90, prérequis n° 3
+  - FR : « Basic Reconnaissance Course (BRC) »
+  - EN : “Basic Reconnaissance Course (BRC)”
+- **qualification « Brevet de parachutiste militaire (Basic Airborne Course) » (`us-basic-airborne`)** — confiance 0.90, prérequis n° 4
+  - FR : « Basic Airborne Course »
+  - EN : “Basic Airborne Course”
+- **qualification « Cours de plongeur de combat du Marine Corps (MCD) » (`us-usmc-combatant-diver`)** — confiance 0.90, prérequis n° 5
+  - FR : « Marine Corps Combatant Diver Course »
+  - EN : “Marine Corps Combatant Diver Course”
+- **qualification « Infirmier de combat des opérations spéciales (SOCM) » (`us-socm`)** — confiance 0.90, prérequis n° 6
+  - FR : « Cours SOCM (Special Operations Combat Medic) »
+  - EN : “Special Operations Combat Medic (SOCM) course”
+- **qualification « Batterie de tests d’aptitude ASVAB (score GT) » (`us-asvab`)** — confiance 0.85, prérequis n° 7
+  - FR : « Score ASVAB GT de 100 au moins »
+  - EN : “ASVAB GT score of 100 or higher”
+
+### `us-af-ftu` — Qualification initiale sur avion d’arme (FTU / IQT)
+
+- **qualification « Formation initiale des pilotes de l’US Air Force (UPT) » (`us-af-upt`)** — confiance 0.90, prérequis n° 1
+  - FR : « Formation de pilote de l’Air Force (UPT) terminée »
+  - EN : “Completed USAF Undergraduate Pilot Training (UPT)”
+
+### `us-jtac-evaluator` — Évaluateur JTAC
+
+- **qualification « Contrôleur d’attaque terminale interarmées (JTAC) » (`us-jtac`)** — confiance 0.90, prérequis n° 1
+  - FR : « Joint Terminal Attack Controller (JTAC) qualifié et à jour »
+  - EN : “Qualified and current Joint Terminal Attack Controller (JTAC)”
+
+### `us-jcws` — École de planification interarmées et multinationale (JCWS, JPME II)
+
+- **qualification « Cours d’officier d’état-major (CGSOC / ILE) » (`us-cgsoc`)** — confiance 0.85, prérequis n° 1
+  - FR : « Officier ayant suivi la phase I de l’enseignement militaire interarmées (JPME I, par ex. CGSOC / ILE) »
+  - EN : “Officer with JPME Phase I (e.g. CGSOC / ILE)”
 
 ## FR
 
@@ -849,13 +1038,14 @@ Chaque ajout ci-dessous est écrit dans le champ `prerequisites_detected` de l�
   - FR : « Cours ADL 362 Introduction to SFA »
   - EN : “ADL 362 Introduction to SFA course”
 
-## Restent en suggestion (152)
+## Restent en suggestion (200)
 
 Non écrits dans les catalogues : proposés non cochés dans l’encart « Prérequis détectés ».
 
 | Entrée | Détection | Confiance | Phrase |
 |---|---|---|---|
 | `us-sfwottc` | grade OR-5 (nco) | 0.45 | NCO holding a CMF 18 MOS |
+| `us-sfisc` | qualification `us-sf-18b` | 0.55 | Primary CMF 18 MOS (18B, C, D or E) |
 | `us-sfisc` | seniority_days ≥ 730 | 0.60 | Two years on an SFOD-A or SFOD-B |
 | `us-mffpc` | attestation freefall_jumps ≥ 30 | 0.50 | Four-week course at the Yuma school: one week of wind-tunnel and packing training, then about thirty HALO and HAHO jumps from 10,000 to 25,… |
 | `us-mffpc` | qualification `cn-parachute-training` | 0.70 | Brevet de parachutiste (Basic Airborne Course) |
@@ -889,6 +1079,53 @@ Non écrits dans les catalogues : proposés non cochés dans l’encart « Prér
 | `us-af-ip-ep` | qualification `fr-chef-de-bord-alat` | 0.70 | Aircraft commander qualification |
 | `us-af-swo-as` | grade OF-1 (officier) | 0.45 | Nomination officier |
 | `us-af-swo-as` | attestation fitness_test | 0.45 | Processus de sélection des candidats officiers Special Tactics, Combat Rescue et TACP de l’Air Force : épreuves physiques et mentales, éval… |
+| `us-air-assault` | attestation fitness_test | 0.70 | Marche de 12 miles avec sac en moins de trois heures |
+| `us-rslc` | grade OR-5 (nco) | 0.45 | Officer or NCO assigned to a reconnaissance and surveillance unit |
+| `us-sf-18a` | qualification `us-sere-c` | 0.55 | Earlier phases: orientation, language, small unit tactics and SERE |
+| `us-sf-18a` | grade OF-2 (capitaine) | 0.70 | Cours de capitaine (Captains Career Course) terminé |
+| `us-sf-18b` | qualification `us-sere-c` | 0.55 | Earlier phases: orientation, language, small unit tactics and SERE |
+| `us-sf-18c` | qualification `us-sere-c` | 0.55 | Earlier phases: orientation, language, small unit tactics and SERE |
+| `us-sf-18e` | qualification `us-sere-c` | 0.55 | Earlier phases: orientation, language, small unit tactics and SERE |
+| `us-sf-sniper` | attestation marksmanship | 0.75 | Current weapons qualification |
+| `us-sf-sniper` | attestation marksmanship | 0.75 | Qualification de tir à jour |
+| `us-eib` | qualification `us-sf-medical-sergeant` | 0.55 | Infantry (CMF 11) or Special Forces (CMF 18) MOS, except 18D |
+| `us-eib` | attestation marksmanship | 0.75 | Army Marksmanship Qualification Badge (Expert) on the rifle |
+| `us-eib` | attestation fitness_test | 0.45 | Skills badge for infantry and Special Forces soldiers (except 18D): fitness test, expert rifle qualification, 12-mile march with about 70 l… |
+| `us-eib` | attestation marksmanship | 0.75 | Qualification de tir « expert » de l’Army au fusil |
+| `us-eib` | attestation fitness_test | 0.70 | Marche de 12 miles avec charge en moins de trois heures |
+| `us-eib` | attestation fitness_test | 0.45 | Badge de compétences réservé aux fantassins et aux forces spéciales (sauf le 18D) : test physique, qualification « expert » au fusil, march… |
+| `us-esb` | attestation fitness_test | 0.45 | Skills badge created in 2019 for soldiers eligible for neither the EIB nor the EFMB: warrior and mission-essential tasks chosen by the comm… |
+| `us-esb` | attestation fitness_test | 0.70 | Marche de 12 miles et test ACFT réussis |
+| `us-esb` | attestation fitness_test | 0.45 | Badge de compétences créé en 2019 pour les militaires qui ne peuvent prétendre ni à l’EIB ni à l’EFMB : tâches de combat et de spécialité c… |
+| `us-efmb` | attestation marksmanship | 0.75 | Army Marksmanship Qualification Badge (Expert) on the M4, within the last 12 months |
+| `us-efmb` | attestation marksmanship | 0.75 | Qualification de tir « expert » de l’Army au fusil M4, dans les 12 derniers mois |
+| `us-efmb` | attestation fitness_test | 0.70 | Marche de 12 miles avec équipement en moins de trois heures |
+| `us-efmb` | attestation fitness_test | 0.45 | Badge de compétences médicales parmi les plus sélectifs (7 % de réussite en 2017) : épreuve écrite, ateliers de combat notés (soins TCCC, é… |
+| `us-army-marksman-expert` | attestation marksmanship | 0.75 | Expert score at the individual weapon qualification |
+| `us-army-sniper` | attestation marksmanship | 0.75 | Army Marksmanship Qualification Badge (Expert) on the rifle |
+| `us-army-sniper` | qualification `fr-tireur-elite` | 0.70 | Désigné par son unité pour un poste de tireur d’élite |
+| `us-army-sniper` | attestation marksmanship | 0.75 | Qualification de tir « expert » de l’Army au fusil |
+| `us-mg-bradley` | attestation marksmanship | 0.75 | Chef d’équipage ou tireur qualifié sur Bradley |
+| `us-mg-stryker` | attestation marksmanship | 0.75 | Chef d’équipage ou tireur qualifié sur Stryker |
+| `us-army-ierw` | grade OF-1 (officer) | 0.45 | Selected as a student aviator (officer or warrant officer) |
+| `us-mcmap-green` | qualification `us-mcmap-tan` | 0.55 | Ceinture grise MCMAP |
+| `us-mcmap-brown` | qualification `us-mcmap-tan` | 0.55 | Ceinture verte MCMAP |
+| `us-mcmap-black` | qualification `us-mcmap-tan` | 0.55 | Ceinture marron MCMAP |
+| `us-mcmap-mai` | qualification `us-mcmap-tan` | 0.55 | Ceinture verte MCMAP au moins |
+| `us-usmc-brc` | attestation fitness_test | 0.70 | Test d’aptitude au premier jour : 8 tractions au moins, course de 3 miles en 22 min 30 et 500 m de nage en 20 min en treillis |
+| `us-usmc-rifle-expert` | attestation marksmanship | 0.75 | Expert score at the annual rifle qualification |
+| `us-usmc-smlc` | attestation fitness_test | 0.70 | First-class Physical Fitness Test (PFT) |
+| `us-usmc-wmlc` | attestation fitness_test | 0.70 | First-class Physical Fitness Test (PFT) |
+| `us-usmc-assault-climber` | attestation fitness_test | 0.70 | First-class Physical Fitness Test (PFT) |
+| `us-navy-efmws` | attestation fitness_test | 0.70 | Passed the Marine Combat Fitness Test (CFT) |
+| `us-navy-efmws` | attestation fitness_test | 0.45 | Qualification of sailors serving with Marines, mostly hospital corpsmen: one year in a Marine Corps unit, Marine Combat Fitness Test (CFT),… |
+| `us-uscg-ast` | attestation fitness_test | 0.70 | Passed the entry physical test (swim, pull-ups, push-ups) |
+| `us-uscg-ast` | attestation fitness_test | 0.70 | Test physique d’entrée réussi (nage, tractions, pompes) |
+| `us-af-ift` | grade OF-1 (officier) | 0.45 | Officier de l’Air Force sélectionné pour le pilotage |
+| `us-af-ift` | flight_hours ≥ 25 | 0.60 | Premier vol des futurs pilotes et officiers systèmes de combat de l’Air Force, à l’aéroport de Pueblo (Colorado) : jusqu’à 25 heures de vol… |
+| `us-af-weapons-school` | grade OF-3 (major) | 0.70 | Selected by a major command board |
+| `us-jtac-evaluator` | qualification `us-jtac-instructor` | 0.50 | JTAC Instructor recommended |
+| `us-jcws` | grade OF-1 (officer) | 0.45 | Officer with JPME Phase I (e.g. CGSOC / ILE) |
 | `fr-chuteur-operationnel` | attestation freefall_jumps ≥ 80 | 0.50 | It is awarded after the 13-week high-altitude operational jump course (A TAP 3 400 CHUTEUR OPS) at ETAP: about 80 jumps, delayed-opening ju… |
 | `fr-sotgh` | qualification `fr-chuteur-operationnel` | 0.55 | Brevet de chuteur opérationnel ou qualification de parachutiste spécialisé |
 | `fr-paraspe-marine` | qualification `my-kursus-terjun-bebas` | 0.50 | Same application conditions as the ETAP free-fall course |
