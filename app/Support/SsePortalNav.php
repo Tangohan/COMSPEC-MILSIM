@@ -17,7 +17,7 @@ final class SsePortalNav
     /**
      * @return list<array{id: string, label: string, items: list<array{id: string, label: string, hint: string, path: string, icon: string, external?: bool, aliases?: list<string>, keywords?: string}>}>
      */
-    public static function sections(bool $canManage, bool $canGrant, bool $isGuest = false): array
+    public static function sections(bool $canManage, bool $canGrant, bool $isGuest = false, bool $canMemberPapers = false): array
     {
         $sections = [
             ['id' => 'pilotage', 'label' => 'Pilotage', 'items' => [
@@ -37,13 +37,21 @@ final class SsePortalNav
             ]],
             ['id' => 'referentiel', 'label' => 'Référentiel', 'items' => [
                 ['id' => 'identites', 'label' => 'Identités', 'hint' => 'Fiches personnes et indices biométriques.', 'path' => 'atak/sse/identites', 'icon' => 'id', 'aliases' => ['atak/sse/personnes'], 'keywords' => 'personnes biometrie'],
-                ['id' => 'papiers', 'label' => 'Identités & documents', 'hint' => 'Papiers d’identité fictifs émis pour le jeu et contrôles reçus du terrain.', 'path' => 'atak/sse/papiers', 'icon' => 'doc', 'keywords' => 'papiers passeport carte permis controle identite mrz'],
                 ['id' => 'organisations', 'label' => 'Organisations', 'hint' => 'Groupes, cellules et structures affiliées.', 'path' => 'atak/sse/objets/organisations', 'icon' => 'org'],
                 ['id' => 'sites', 'label' => 'Sites', 'hint' => 'Lieux d’intérêt et d’exploitation.', 'path' => 'atak/sse/sites', 'icon' => 'site', 'keywords' => 'lieux'],
                 ['id' => 'vehicules', 'label' => 'Véhicules', 'hint' => 'Moyens mobiles rattachés aux dossiers.', 'path' => 'atak/sse/objets/vehicules', 'icon' => 'vehicle'],
                 ['id' => 'materiels', 'label' => 'Matériels', 'hint' => 'Équipements et objets saisis.', 'path' => 'atak/sse/objets/materiels', 'icon' => 'gear', 'keywords' => 'armes saisies'],
                 ['id' => 'pieces', 'label' => 'Pièces documentaires', 'hint' => 'Documents physiques ou numérisés versés au dossier.', 'path' => 'atak/sse/objets/documents', 'icon' => 'doc'],
             ]],
+            ['id' => 'identite', 'label' => 'Contrôle d’identité', 'items' => array_values(array_filter([
+                ['id' => 'papiers-tableau', 'label' => 'Tableau de bord', 'hint' => 'Contrôles, faux détectés et recherchés interpellés par opération.', 'path' => 'atak/sse/papiers/tableau', 'icon' => 'ops', 'keywords' => 'identite controle tableau bord operation faux recherches'],
+                ['id' => 'papiers', 'label' => 'Papiers', 'hint' => 'Registre des papiers d’identité fictifs émis pour le jeu.', 'path' => 'atak/sse/papiers', 'icon' => 'doc', 'aliases' => ['atak/sse/papiers/documents'], 'keywords' => 'papiers passeport carte permis registre mrz documents identite'],
+                ['id' => 'papiers-identites', 'label' => 'Identités', 'hint' => 'Identités fictives (réelles, de couverture, falsifiées) portées par les papiers.', 'path' => 'atak/sse/papiers/identites', 'icon' => 'id', 'keywords' => 'identites fictives couverture alias faux'],
+                ['id' => 'papiers-controles', 'label' => 'Contrôles reçus', 'hint' => 'Contrôles d’identité transmis depuis le terrain.', 'path' => 'atak/sse/papiers/controles', 'icon' => 'queue', 'keywords' => 'controles identite verdict terrain checkpoint'],
+                $canMemberPapers ? ['id' => 'papiers-membres', 'label' => 'Papiers des membres', 'hint' => 'Identité principale, alias et kit de papiers des membres.', 'path' => 'atak/sse/papiers/membres', 'icon' => 'org', 'keywords' => 'membres papiers kit alias identite principale'] : null,
+                ['id' => 'papiers-pays', 'label' => 'Pays émetteurs', 'hint' => 'Pays imaginaires qui émettent les papiers.', 'path' => 'atak/sse/papiers/pays', 'icon' => 'flag', 'keywords' => 'pays emetteurs drapeaux nationalite'],
+                ['id' => 'papiers-frm', 'label' => 'FRM à valider', 'hint' => 'Brouillons de fiches FRM nés des contrôles, à valider.', 'path' => 'atak/sse/papiers/tableau#frm', 'icon' => 'note', 'keywords' => 'frm brouillons valider fiches controles'],
+            ]))],
             ['id' => 'analyse', 'label' => 'Analyse', 'items' => [
                 ['id' => 'chronologie', 'label' => 'Chronologie', 'hint' => 'Faits et événements dans l’ordre.', 'path' => 'atak/sse/chronologie', 'icon' => 'time', 'keywords' => 'timeline'],
                 ['id' => 'croisements', 'label' => 'Croisements', 'hint' => 'Rapprochements proposés entre dossiers, à valider.', 'path' => 'atak/sse/croisements', 'icon' => 'cross'],
@@ -64,7 +72,7 @@ final class SsePortalNav
             ]],
         ];
         if ($canManage) {
-            $sections[6]['items'][] = ['id' => 'maitre-jeu', 'label' => 'Maître du jeu', 'hint' => 'Identités, listes et histoires lues par le terminal SEEK.', 'path' => 'atak/sse/maitre-jeu', 'icon' => 'dice', 'keywords' => 'zeus seek'];
+            $sections[(int) array_search('preparation', array_column($sections, 'id'), true)]['items'][] = ['id' => 'maitre-jeu', 'label' => 'Maître du jeu', 'hint' => 'Identités, listes et histoires lues par le terminal SEEK.', 'path' => 'atak/sse/maitre-jeu', 'icon' => 'dice', 'keywords' => 'zeus seek'];
         }
         if ($canGrant && !$isGuest) {
             $sections[] = ['id' => 'administration', 'label' => 'Administration', 'items' => [
@@ -82,6 +90,8 @@ final class SsePortalNav
      * Identifiant de l'élément actif pour un chemin demandé (« /public/atak/sse/dossiers/12?x=1 »).
      * Correspondance la plus longue sur le chemin de l'élément ou ses alias ; à défaut, $activeNav.
      *
+     * Une ancre (« …/tableau#frm ») ne compte pas : le fragment n'arrive jamais au serveur.
+     *
      * @param list<array<string, mixed>> $sections
      */
     public static function activeId(array $sections, string $requestPath, string $activeNav = ''): string
@@ -91,7 +101,7 @@ final class SsePortalNav
         $bestLen = 0;
         foreach ($sections as $section) {
             foreach ($section['items'] as $item) {
-                if (!empty($item['external'])) {
+                if (!empty($item['external']) || str_contains((string) $item['path'], '#')) {
                     continue;
                 }
                 foreach (array_merge([(string) $item['path']], $item['aliases'] ?? []) as $p) {

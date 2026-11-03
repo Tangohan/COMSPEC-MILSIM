@@ -82,7 +82,7 @@ require __DIR__ . '/_subnav.php';
 <?php else: ?>
     <?php if (!empty($board['truncated'])): ?><p class="muted">Seuls les 2 000 contrôles les plus récents sont comptés : choisissez une opération.</p><?php endif; ?>
 
-    <section class="panel" style="margin-top:10px">
+    <section class="panel" id="frm" style="margin-top:10px">
         <div class="panel-header">
             <div class="panel-title"><span class="panel-index">01</span> Fiches FRM à valider</div>
             <div class="panel-meta"><?= count($board['drafts']) ?> brouillon(s) né(s) des contrôles</div>

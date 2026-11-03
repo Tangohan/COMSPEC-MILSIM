@@ -32,7 +32,7 @@ final class SsePortalNavTest extends TestCase
 
     public function testEveryPageAppearsOnceAndIdsAreUnique(): void
     {
-        $items = self::items(SsePortalNav::sections(true, true));
+        $items = self::items(SsePortalNav::sections(true, true, false, true));
         $paths = array_column($items, 'path');
         $ids = array_column($items, 'id');
         self::assertSame(count($paths), count(array_unique($paths)), 'Une page apparaît deux fois dans la navigation');
@@ -49,7 +49,7 @@ final class SsePortalNavTest extends TestCase
             if (!empty($item['external'])) {
                 continue;
             }
-            $route = '/' . $item['path'];
+            $route = '/' . strtok((string) $item['path'], '#');
             // Registres d'objets : route générique /atak/sse/objets/{type}.
             if (str_starts_with($route, '/atak/sse/objets/')) {
                 $route = '/atak/sse/objets/{type}';
@@ -68,6 +68,41 @@ final class SsePortalNavTest extends TestCase
         $staff = array_column(self::items(SsePortalNav::sections(true, true)), 'id');
         self::assertContains('acces', $staff);
         self::assertContains('maitre-jeu', $staff);
+    }
+
+    public function testIdentityControlSectionListsItsPagesByRight(): void
+    {
+        $find = static function (array $sections): array {
+            foreach ($sections as $s) {
+                if ($s['id'] === 'identite') {
+                    return array_column($s['items'], 'path', 'id');
+                }
+            }
+
+            return [];
+        };
+        $withMembers = $find(SsePortalNav::sections(true, false, false, true));
+        self::assertSame(['papiers-tableau', 'papiers', 'papiers-identites', 'papiers-controles', 'papiers-membres', 'papiers-pays', 'papiers-frm'], array_keys($withMembers));
+        self::assertSame('atak/sse/papiers/tableau#frm', $withMembers['papiers-frm']);
+        self::assertArrayNotHasKey('papiers-membres', $find(SsePortalNav::sections(false, false, true)), 'Papiers des membres : droit dédié');
+        self::assertArrayNotHasKey('papiers-membres', $find(SsePortalNav::sections(true, true)));
+
+        $s = SsePortalNav::sections(true, true, false, true);
+        foreach ([
+            '/public/atak/sse/papiers' => 'papiers',
+            '/public/atak/sse/papiers/documents/7' => 'papiers',
+            '/public/atak/sse/papiers/tableau?op=x' => 'papiers-tableau',
+            '/public/atak/sse/papiers/identites/3' => 'papiers-identites',
+            '/public/atak/sse/papiers/controles/9' => 'papiers-controles',
+            '/public/atak/sse/papiers/membres/2/documents/nouveau' => 'papiers-membres',
+            '/public/atak/sse/papiers/pays/nouveau' => 'papiers-pays',
+            '/public/atak/sse/identites/4' => 'identites',
+        ] as $path => $id) {
+            self::assertSame($id, SsePortalNav::activeId($s, $path), $path);
+        }
+        $palette = SsePortalNav::paletteEntries($s, static fn (string $p): string => '/' . $p, true, false);
+        self::assertContains('/atak/sse/papiers/controles', array_column($palette, 'href'));
+        self::assertStringContainsString('id="frm"', (string) file_get_contents(self::root() . '/views/atak/sse/papers/dashboard.php'));
     }
 
     public function testActiveItemComesFromTheUrl(): void
