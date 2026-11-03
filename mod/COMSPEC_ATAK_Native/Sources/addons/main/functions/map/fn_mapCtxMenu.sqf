@@ -194,14 +194,20 @@ switch (_mode) do {
                 };
             };
         };
-        // Sous-menu Zones (ZN), ses états (ZNST) et le rayon du découpage (ZN_RAD, menu gardé ouvert).
-        if (_arg in ["ZN", "ZNST", "ZN_RAD"]) exitWith {
+        // Sous-menu Zones (ZN), ses états (ZNST), le rayon du découpage (ZN_RAD, menu gardé ouvert) et le thème des
+        // noms des axes (ZNAX ; ZNAX_SUB : sous-thème MIL-STD suivant, menu gardé ouvert).
+        if (_arg in ["ZN", "ZNST", "ZN_RAD", "ZNAX", "ZNAX_SUB"]) exitWith {
             if (_arg isEqualTo "ZN_RAD") then {
                 private _rs = [150, 300, 600, 1000];
                 private _r = profileNamespace getVariable ["COMSPEC_ATAK_ZnCtxRad", 300];
                 profileNamespace setVariable ["COMSPEC_ATAK_ZnCtxRad", _rs select (((_rs find _r) + 1) mod (count _rs))];
             };
-            _c set ["sub", ["ZN", "ZNST"] select (_arg isEqualTo "ZNST")];
+            if (_arg isEqualTo "ZNAX_SUB") then {
+                private _subs = ((["themeRows"] call comspec_atak_native_fnc_zoneAction) apply { _x select 0 }) - ["MIL"];
+                private _cur = profileNamespace getVariable ["COMSPEC_ATAK_ZnNameSub", "CITY"];
+                profileNamespace setVariable ["COMSPEC_ATAK_ZnNameSub", _subs select (((_subs find _cur) + 1) mod (count _subs))];
+            };
+            _c set ["sub", switch (_arg) do { case "ZNST": { "ZNST" }; case "ZNAX"; case "ZNAX_SUB": { "ZNAX" }; default { "ZN" }; }];
             _c set ["at", diag_tickTime];
             playSound "ClickSoft";
             [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
@@ -232,6 +238,11 @@ switch (_mode) do {
             private _g = _c getOrDefault ["aiG", grpNull];
             uiNamespace setVariable ["COMSPEC_ATAK_AiPick", _g];
             ["send", [_g, _arg select [3], [_pos select 0, _pos select 1]]] call comspec_atak_native_fnc_aiOrder;
+        };
+        // Nommer les axes autour avec un thème (préférence du joueur gardée, aussi dans le nouveau plan).
+        if ((_arg select [0, 3]) isEqualTo "ZX_") exitWith {
+            ["nameTheme", ["", _arg select [3]]] call comspec_atak_native_fnc_zoneAction;
+            ["ctxGen", ["AXES", _pos, ""]] call comspec_atak_native_fnc_zoneAction;
         };
         // Sous-menu Zones : découpage autour du point (nouveau plan, calcul en arrière-plan), zone sous le clic.
         if ((_arg select [0, 3]) isEqualTo "ZG_") exitWith { ["ctxGen", [_arg select [3], _pos, (_c getOrDefault ["zone", []]) param [0, ""]]] call comspec_atak_native_fnc_zoneAction; };
@@ -559,6 +570,17 @@ switch (_mode) do {
         if (_znSub isEqualTo "" && {!_card}) then {
             _rows pushBack ["ZN", "Zones", "découper, plan, état", _dir + "app_zones.paa", _znCol];
         };
+        if (_znSub isEqualTo "ZNAX") then {
+            // Thèmes des noms des axes : MSR / ASR + nom du thème ; MIL-STD : nom de son sous-thème (ligne suivante).
+            private _cur = profileNamespace getVariable ["COMSPEC_ATAK_ZnNameTheme", "CITY"];
+            private _sub = profileNamespace getVariable ["COMSPEC_ATAK_ZnNameSub", "CITY"];
+            _rows = ((["themeRows"] call comspec_atak_native_fnc_zoneAction) apply {
+                ["ZX_" + (_x select 0), _x select 1, [((_x select 2) splitString ",") select [0, 2] joinString ",", "actuel"] select ((_x select 0) isEqualTo _cur), _dir + "map_route.paa", [_znCol, [1, 0.85, 0.2, 1]] select ((_x select 0) isEqualTo "MIL")]
+            }) + [
+                ["ZNAX_SUB", "Sous-thème MIL-STD (changer)", ["themeLabel", _sub] call comspec_atak_native_fnc_zoneAction, _dir + "map_route.paa", [1, 0.85, 0.2, 1]],
+                ["ZN", "Retour", "zones", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
+            ];
+        };
         if (_znSub in ["ZN", "ZNST"]) then {
             private _zr = profileNamespace getVariable ["COMSPEC_ATAK_ZnCtxRad", 300];
             (_c getOrDefault ["zone", []]) params [["_zbid", ""], ["_zzid", ""]];
@@ -579,7 +601,7 @@ switch (_mode) do {
                     ["ZG_NEW", "Nouveau plan à partir d'ici", "ouvre l'app Zones", _dir + "app_zones.paa", _znCol],
                     ["ZG_MAGC", "Contour aimanté à partir d'ici", "polygone, app Zones", _dir + "app_zones.paa", [1, 0.85, 0.2, 1]],
                     ["ZG_MAGO", "Trait aimanté à partir d'ici", "pour découper, app Zones", _dir + "app_zones.paa", [1, 0.85, 0.2, 1]],
-                    ["ZG_AXES", "Nommer les axes autour", "MSR, ASR, CP", _dir + "map_route.paa", _znCol]
+                    ["ZNAX", "Nommer les axes autour", "thème des noms ›", _dir + "map_route.paa", _znCol]
                 ];
                 if ((count _zz) > 0) then {
                     private _mineZ = ["isMine", _zbid] call comspec_atak_native_fnc_zoneAction;

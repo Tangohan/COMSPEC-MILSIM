@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.117";
+    private const string ExtensionVersion = "2.0.118";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3782,6 +3782,9 @@ public static partial class Extension
         // Volume échangé avec Athena par canal (app Réseau du téléphone, bandeau de dépannage) : en mémoire, sans réseau.
         if (function == "SyncStats")
             return SyncStatsForSqf();
+        // COMSPEC IDENTITY (2.0.118) : morceau du pack d'identité gardé en mémoire par GetIdentityPack, sans réseau.
+        if (function == "GetIdentityPackChunk")
+            return IdentityPackChunk(args);
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
@@ -4257,7 +4260,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,MobileLink";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
         }
 
         if (function == "GetCapabilities")
@@ -6070,6 +6073,10 @@ public static partial class Extension
                 var simplifiedId = SimplifyIdentityQueryJson(respBody);
                 return "OK|" + Utf8ClipLines(simplifiedId, MaxOutputBytes - 4);
             }
+            // COMSPEC IDENTITY (2.0.118) : pack d'identité du serveur de jeu, contrôle N3 d'un papier, contrôles remontés
+            // (Extension_Identity.cs).
+            if (function is "GetIdentityPack" or "QueryIdDocument" or "SubmitIdCheck")
+                return IdentityCommand(function, args, token);
             if (function == "JoinFireTeam" && args.Length >= 1)
             {
                 var teamId = (args[0] ?? "").Trim();

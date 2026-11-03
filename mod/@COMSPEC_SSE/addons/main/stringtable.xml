@@ -217,6 +217,11 @@
             <English>Digital modules</English>
             <French>Modules numérique</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0B5D97E4D8">
+            <Original>COMSPEC SSE — Papers</Original>
+            <English>COMSPEC SSE — Papers</English>
+            <French>COMSPEC SSE — Papiers</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_0BC4F565FF">
             <Original>Document bag</Original>
             <English>Document bag</English>
@@ -256,6 +261,11 @@
             <Original>SSE campaign: save (trigger)</Original>
             <English>SSE campaign: save (trigger)</English>
             <French>Campagne SSE : sauvegarder (déclencheur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0D7912ADCF">
+            <Original>Passport</Original>
+            <English>Passport</English>
+            <French>Passeport</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_0D9D231C7A">
             <Original>Starting state. The mission lead can change it during play.</Original>
@@ -762,6 +772,11 @@
             <English>Complete</English>
             <French>Complet</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_26DEC05427">
+            <Original>Genuine papers; prepared cover (borrowed identity that passes every check except biometrics); forged papers (flaws depending on quality). Kept on the server only.</Original>
+            <English>Genuine papers; prepared cover (borrowed identity that passes every check except biometrics); forged papers (flaws depending on quality). Kept on the server only.</English>
+            <French>Vrais papiers ; couverture préparée (identité d'emprunt qui passe tous les contrôles sauf la biométrie) ; faux papiers (défauts selon la qualité). Gardé sur le serveur seulement.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_276E969B91">
             <Original>Drone / ISR cell</Original>
             <English>Drone / ISR cell</English>
@@ -912,6 +927,11 @@
             <English>FALCON — Iraq cell 2012 (6 roles)</English>
             <French>FALCON — cellule Irak 2012 (6 rôles)</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_300D164467">
+            <Original>Republic of Livonia</Original>
+            <English>Republic of Livonia</English>
+            <French>République de Livonie</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_306540C0B4">
             <Original>Other media</Original>
             <English>Other media</English>
@@ -1016,6 +1036,11 @@
             <Original>Unidentified</Original>
             <English>Unidentified</English>
             <French>Non identifié</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3507EC6D79">
+            <Original>From 0 (crude, spotted at first glance) to 100 (excellent: only the database or biometrics give it away). No effect on genuine papers.</Original>
+            <English>From 0 (crude, spotted at first glance) to 100 (excellent: only the database or biometrics give it away). No effect on genuine papers.</English>
+            <French>De 0 (grossier, vu au premier coup d'œil) à 100 (excellent : seule la base ou la biométrie le trahit). Sans effet sur de vrais papiers.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_352194D9FC">
             <Original>Case opened on the portal side, for example SSE-2026-0007.</Original>
@@ -1191,6 +1216,11 @@
             <Original>List SSE templates</Original>
             <English>List SSE templates</English>
             <French>Lister les modèles SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3DDBED6623">
+            <Original>Fictional country that issued the papers (documents marked SIMULATION). Automatic: mission setting, otherwise based on the map.</Original>
+            <English>Fictional country that issued the papers (documents marked SIMULATION). Automatic: mission setting, otherwise based on the map.</English>
+            <French>Pays fictif qui a délivré les papiers (documents marqués SIMULATION). Automatique : réglage de la mission, sinon selon la carte.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_3DE621C50D">
             <Original>Object</Original>
@@ -1407,6 +1437,11 @@
             <English>Access duration (s)</English>
             <French>Durée d'accès (s)</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_45FF8F0E18">
+            <Original>Genuine papers</Original>
+            <English>Genuine papers</English>
+            <French>Vrais papiers</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_4605EE7759">
             <Original>10 min</Original>
             <English>10 min</English>
@@ -1586,6 +1621,11 @@
             <Original>Account ledger (evidence)</Original>
             <English>Account ledger (evidence)</English>
             <French>Registre de comptes (preuve)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4FFC3A9C10">
+            <Original>Republic of Altis</Original>
+            <English>Republic of Altis</English>
+            <French>République d'Altis</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_50149D262E">
             <Original>Notebook / handwritten notes collected.</Original>
@@ -1811,6 +1851,11 @@
             <Original>Fragment (to cross-check)</Original>
             <English>Fragment (to cross-check)</English>
             <French>Fragment (à croiser)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5D056C9123">
+            <Original>Driving licence (simulation)</Original>
+            <English>Driving licence (simulation)</English>
+            <French>Permis de conduire (simulation)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5D66D947AD">
             <Original>Customize the computer below</Original>
@@ -2102,6 +2147,11 @@
             <English>Seized USB drive</English>
             <French>Clé USB saisie</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6A56979958">
+            <Original>Country of the papers</Original>
+            <English>Country of the papers</English>
+            <French>Pays des papiers</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_6A673B4425">
             <Original>USB digital media collected on site.</Original>
             <English>USB digital media collected on site.</English>
@@ -2231,6 +2281,16 @@
             <Original>COMSPEC SSE · 4. Digital (DOMEX, DL-7)</Original>
             <English>COMSPEC SSE · 4. Digital (DOMEX, DL-7)</English>
             <French>COMSPEC SSE · 4. Numérique (DOMEX, DL-7)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7336D48B54">
+            <Original>Federation of Tanoa</Original>
+            <English>Federation of Tanoa</English>
+            <French>Fédération de Tanoa</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_73B65B11ED">
+            <Original>Republic of Malden</Original>
+            <English>Republic of Malden</English>
+            <French>République de Malden</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_73BF33117C">
             <Original>E.g. HVT-ABU-HAMZA. With the same campaign seed, this character keeps the same fingerprints, irises and DNA from one mission to the next.</Original>
@@ -2767,6 +2827,11 @@
             <English>Zeus tools</English>
             <French>Outils Zeus</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8E5DEC6D7C">
+            <Original>Papers carried</Original>
+            <English>Papers carried</English>
+            <French>Papiers portés</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_8E786C76A8">
             <Original>COMSPEC SSE — Phone</Original>
             <English>COMSPEC SSE — Phone</English>
@@ -2896,6 +2961,11 @@
             <Original>Satellite phone (evidence)</Original>
             <English>Satellite phone (evidence)</English>
             <French>Téléphone satellite (preuve)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_95F9CC59DC">
+            <Original>Prepared cover</Original>
+            <English>Prepared cover</English>
+            <French>Couverture préparée</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_96BDE4A5DE">
             <Original>Furniture, evidence and storyline specific to each site.</Original>
@@ -3497,6 +3567,11 @@
             <English>Cell</English>
             <French>Cellule</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B8E7E90D9A">
+            <Original>Identity card (simulation)</Original>
+            <English>Identity card (simulation)</English>
+            <French>Carte d'identité (simulation)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_B8FDDCC5A5">
             <Original>Seized laptop</Original>
             <English>Seized laptop</English>
@@ -3592,6 +3667,11 @@
             <English>Mobile phone collected.</English>
             <French>Téléphone mobile collecté.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BBFD0B835C">
+            <Original>Passport (simulation)</Original>
+            <English>Passport (simulation)</English>
+            <French>Passeport (simulation)</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BC22D6CE0D">
             <Original>Established (0.9)</Original>
             <English>Established (0.9)</English>
@@ -3606,6 +3686,11 @@
             <Original>Recurring (bootcamp: same characters, everything becomes unknown)</Original>
             <English>Recurring (bootcamp: same characters, everything becomes unknown)</English>
             <French>Récurrente (bootcamp : mêmes personnages, tout redevient inconnu)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BD419A13FB">
+            <Original>Type of papers</Original>
+            <English>Type of papers</English>
+            <French>Nature des papiers</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BDD948572F">
             <Original>Good (0.7)</Original>
@@ -3646,6 +3731,11 @@
             <Original>At the "access established" tier</Original>
             <English>At the "access established" tier</English>
             <French>Au palier « accès établi »</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BEF57EAA88">
+            <Original>Identity card and passport</Original>
+            <English>Identity card and passport</English>
+            <French>Carte d'identité et passeport</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BF2E09C2F4">
             <Original>Mission end (save, or wipe a temporary drill)</Original>
@@ -3957,6 +4047,11 @@
             <English>Armed group</English>
             <French>Groupe armé</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D1155ABCAA">
+            <Original>Identity card</Original>
+            <English>Identity card</English>
+            <French>Carte d'identité</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_D191D931CF">
             <Original>SSE · Sites and kits</Original>
             <English>SSE · Sites and kits</English>
@@ -3966,6 +4061,11 @@
             <Original>Bundle of banknotes (evidence)</Original>
             <English>Bundle of banknotes (evidence)</English>
             <French>Liasse de billets (preuve)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D1E45DF088">
+            <Original>Driving licence</Original>
+            <English>Driving licence</English>
+            <French>Permis de conduire</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_D249EAD79B">
             <Original>Footer</Original>
@@ -4031,6 +4131,11 @@
             <Original>Smartphone collected for digital extraction.</Original>
             <English>Smartphone collected for digital extraction.</English>
             <French>Smartphone collecté pour extraction numérique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D430406714">
+            <Original>Identity card and driving licence</Original>
+            <English>Identity card and driving licence</English>
+            <French>Carte d'identité et permis</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_D4601A84BA">
             <Original>Cell leader</Original>
@@ -4126,6 +4231,11 @@
             <Original>Weapon</Original>
             <English>Weapon</English>
             <French>Arme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D8B59B204A">
+            <Original>No papers</Original>
+            <English>No papers</English>
+            <French>Aucun papier</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_D8FBCFE837">
             <Original>Pack 2 — text</Original>
@@ -4617,6 +4727,11 @@
             <English>Scripted remote access</English>
             <French>Accès distant scénarisé</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F3E840A9AB">
+            <Original>Fictional document (SIMULATION). Check: ACE interaction on the person, or the ATAK ID Check app.</Original>
+            <English>Fictional document (SIMULATION). Check: ACE interaction on the person, or the ATAK ID Check app.</English>
+            <French>Document fictif (SIMULATION). Contrôle : interaction ACE sur la personne, ou app Contrôle ID de l'ATAK.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F3FEFB2906">
             <Original>Attempts allowed (0 = unlimited)</Original>
             <English>Attempts allowed (0 = unlimited)</English>
@@ -4712,6 +4827,11 @@
             <English>Optional, takes priority over the list: identifier of a model saved in Zeus (Save as SSE model) or of a mission model. Identifiers are shown in Zeus with the List SSE models module.</English>
             <French>Facultatif, prioritaire sur la liste : identifiant d'un modèle enregistré au Zeus (Enregistrer comme modèle SSE) ou d'un modèle de mission. Les identifiants s'affichent au Zeus avec le module Lister les modèles SSE.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F85EC29CD3">
+            <Original>Documents in the person's inventory. Automatic: nothing for a player; for an AI, depending on its side (civilian: identity card, sometimes a driving licence; enemy: forged papers depending on the setting).</Original>
+            <English>Documents in the person's inventory. Automatic: nothing for a player; for an AI, depending on its side (civilian: identity card, sometimes a driving licence; enemy: forged papers depending on the setting).</English>
+            <French>Documents dans l'inventaire de la personne. Automatique : rien pour un joueur ; pour une IA, selon son camp (civil : carte d'identité, parfois un permis ; ennemi : faux papiers selon le réglage).</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F88CAF65E9">
             <Original>0 % — none</Original>
             <English>0 % — none</English>
@@ -4741,6 +4861,11 @@
             <Original>Automatic: SEEK uses the name from the Eden Identity panel (or COMSPEC Last/First name if filled in). Invent: ignores the Eden identity. Force: same effect as automatic, Eden name enforced.</Original>
             <English>Automatic: SEEK uses the name from the Eden Identity panel (or COMSPEC Last/First name if filled in). Invent: ignores the Eden identity. Force: same effect as automatic, Eden name enforced.</English>
             <French>Automatique : SEEK reprend le nom du panneau Identité Eden (ou Nom/Prénom COMSPEC s’ils sont remplis). Inventer : ignore l’identité Eden. Forcer : même effet que automatique, nom Eden imposé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FA56F3752E">
+            <Original>Quality of forged papers</Original>
+            <English>Quality of forged papers</English>
+            <French>Qualité des faux papiers</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_FA79BDC9FF">
             <Original>Insurgents (OPFOR)</Original>

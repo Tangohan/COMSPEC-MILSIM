@@ -82,8 +82,10 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         private _dbCodes = ["auto", "absent", "enrole", "bewl1", "bewl2", "bewl3", "bewl4"];
         private _dbLabels = ["Automatique (selon le camp)", "Inconnu de toute base", "Enrôlé, non signalé", "Watchlist tier 1 · DETAIN", "Watchlist tier 2 · QUESTION / DETAIN", "Watchlist tier 3 · QUESTION / DENY ACCESS", "Watchlist tier 4 · pour info"];
         private _dbIdx = (_dbCodes find (toLower (["COMSPEC_SSE_BioDb"] call _str))) max 0;
-        private _fpCodes = ["auto", "oui", "non"];
-        private _fpIdx = (_fpCodes find (toLower (["COMSPEC_SSE_BioFalsePapers"] call _str))) max 0;
+        // Faux papiers et vraie identité : gardés sur le serveur (jamais diffusés). Zeus sur un poste client : champs
+        // « inchangé » (rien n'est envoyé) ; Zeus hôte ou solo : valeurs actuelles.
+        private _fpCodes = ["keep", "auto", "oui", "non"];
+        private _fpIdx = if (isServer) then { ((_fpCodes find (toLower (["COMSPEC_SSE_BioFalsePapers"] call _str))) max 1) } else { 0 };
         private _relCodes = ["frere", "parent", "enfant"];
         private _relIdx = (_relCodes find (toLower (["COMSPEC_SSE_BioRelation"] call _str))) max 0;
         private _irisCodes = ["auto", "cataracte", "prothese_od", "prothese_og", "lesion_od", "lesion_og"];
@@ -94,8 +96,8 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             [
                 ["LIST", ["Fichier biométrique", "Présence dans la base et niveau de watchlist (BEWL)."], [_dbCodes, _dbLabels, _dbIdx]],
                 ["EDIT", ["Motif de signalement", "Affiché par le SEEK en cas de correspondance. Vide = motif généré."], ["COMSPEC_SSE_BioReason"] call _str],
-                ["LIST", ["Faux papiers", "Automatique : selon le taux du camp."], [_fpCodes, ["Automatique", "Oui", "Non"], _fpIdx]],
-                ["EDIT", ["Vraie identité (si faux papiers)", "Prénom Nom réels : seule une correspondance biométrique les révèle."], ["COMSPEC_SSE_BioTrueName"] call _str],
+                ["LIST", ["Faux papiers", "Automatique : selon le taux du camp. Inchangé : réglage actuel gardé."], [_fpCodes, ["Inchangé", "Automatique", "Oui", "Non"], _fpIdx]],
+                ["EDIT", ["Vraie identité (si faux papiers)", "Prénom Nom réels : seule une correspondance biométrique les révèle. Vide : inchangée ; « - » : effacée."], ["", ["COMSPEC_SSE_BioTrueName"] call _str] select isServer],
                 ["EDIT", ["Identifiant biométrique (campagne)", "Fixe les empreintes d'un personnage récurrent d'une mission à l'autre. Vide = automatique."], ["COMSPEC_SSE_BioId"] call _str],
                 ["EDIT", ["Parent de (variable ou identifiant)", "Nom de variable d'une autre unité : l'ADN révélera la parenté."], ["COMSPEC_SSE_BioRelativeOf"] call _str],
                 ["LIST", ["Lien de parenté", ""], [_relCodes, ["Frère / sœur", "Parent", "Enfant"], _relIdx]],
@@ -108,11 +110,15 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
                 _args params ["_obj"];
                 private _pairs = [
                     ["db", _db], ["reason", [_reason, "auto"] select ((trim _reason) isEqualTo "")],
-                    ["falsePapers", _fp], ["trueName", [_true, "auto"] select ((trim _true) isEqualTo "")],
                     ["bioId", [_bioId, "auto"] select ((trim _bioId) isEqualTo "")],
                     ["relativeOf", [_relOf, "auto"] select ((trim _relOf) isEqualTo "")], ["relation", _rel],
                     ["missingFingers", [_missing, "auto"] select ((trim _missing) isEqualTo "")], ["irisState", _iris]
                 ];
+                if (_fp isNotEqualTo "keep") then { _pairs pushBack ["falsePapers", _fp]; };
+                // Vide : vraie identité inchangée (le Zeus client ne la voit pas) ; « - » : effacée.
+                if ((trim _true) isEqualTo "-") then { _pairs pushBack ["trueName", "auto"]; } else {
+                    if ((trim _true) isNotEqualTo "") then { _pairs pushBack ["trueName", _true]; };
+                };
                 [_obj, _pairs] remoteExecCall ["comspec_sse_fnc_bioSetProfile", 2];
                 [format ["Biométrie réglée pour %1.", name _obj], "info"] call comspec_sse_fnc_zeusNotify;
             },

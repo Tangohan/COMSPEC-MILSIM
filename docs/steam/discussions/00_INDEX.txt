@@ -2,7 +2,7 @@
 
 [i]Message 1/2[/i]
 [h1]Toutes les apps ATAK — index[/h1]
-[i]COMSPEC ATAK 2.9.34 · 63 apps · un sujet par app[/i]
+[i]COMSPEC ATAK 3.0.0 · 63 apps · un sujet par app[/i]
 
 [h2]FRANÇAIS[/h2]
 Chaque app a son sujet dédié : à quoi elle sert, comment l'ouvrir, ses fonctions, un pas-à-pas, ses réglages CBA, ses liens avec les autres apps, Athena, ACE/ACRE/TFAR et Zeus. [b]Ctrl+U[/b] porte le téléphone dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main. Entre parenthèses : le nom de classe à saisir dans les réglages serveur Apps retirées / obligatoires / interdites.

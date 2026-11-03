@@ -93,19 +93,15 @@ if (_interactive) then {
     if (!isNull _d46 && {(_d46 getVariable ["COMSPEC_KeyBlockEh", -1]) < 0}) then {
         _d46 setVariable ["COMSPEC_KeyBlockEh", _d46 displayAddEventHandler ["KeyDown", { _this call comspec_atak_native_fnc_keyBlock }]];
     };
-    // Interaction avec la miniature (fn_miniInteract) : bordure à l'accent autour de l'écran, clic hors du téléphone =
-    // retour au jeu (la miniature reste affichée).
+    // Interaction avec la miniature (fn_miniInteract) : bordure à l'accent autour du téléphone (posée et déplacée avec le
+    // cadre par fn_layoutApply, détruite avec le display), clic hors du téléphone = retour au jeu (la miniature reste).
+    // Interaction notée alors que le téléphone s'ouvre en grand (état resté d'une ouverture ratée) : terminée ici, sinon
+    // la bordure entourait tout l'écran et un clic à côté refermait le grand (2.9.41).
+    if ((uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isNotEqualTo "" && {!(([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["mini", true])}) then {
+        ["WARNING", "ATAK", "Interaction miniature restée notée à l'ouverture en grand : terminée (pas de bordure)"] call comspec_atak_native_fnc_log;
+        uiNamespace setVariable ["COMSPEC_ATAK_MiniPrevMode", ""];
+    };
     if ((uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isNotEqualTo "") then {
-        private _vis = ([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["visible", []];
-        if ((count _vis) isEqualTo 4) then {
-            _vis params ["_vx", "_vy", "_vw", "_vh"];
-            ([] call comspec_atak_native_fnc_accent) params ["_acc"];
-            private _t = pixelH * 2; private _tw = pixelW * 2;
-            {
-                private _c = _display ctrlCreate ["COMSPEC_RscText", -1];
-                _c ctrlSetPosition _x; _c ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.85]; _c ctrlEnable false; _c ctrlCommit 0;
-            } forEach [[_vx - _tw, _vy - _t, _vw + _tw * 2, _t], [_vx - _tw, _vy + _vh, _vw + _tw * 2, _t], [_vx - _tw, _vy, _tw, _vh], [_vx + _vw, _vy, _tw, _vh]];
-        };
         _display displayAddEventHandler ["MouseButtonDown", {
             params ["", "_button", "_mx", "_my"];
             if ((uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isEqualTo "") exitWith { false };

@@ -1,0 +1,176 @@
+/*
+    Registre des documents (SERVEUR SEULEMENT, jamais diffusé) : missionNamespace comspec_sse_idReg.
+      docs     docId -> document (données imprimées + vérité : trueLast/trueFirst, kind, quality, flaws, holderKey…)
+      byClass  classe d'exemplaire -> docId          free   classe du catalogue -> numéros libres
+      units    clé biométrique -> [docId…]           decided clé -> true (papiers automatiques déjà décidés)
+      issued   "PAYS|type|numéro" -> [docId, nom, prénom, signalement] (base locale du pays, contrôle N3 hors ligne)
+      watch    [[nom, prénom, alias, niveau, réf]…]  (avis locaux + paquet Athena)
+      athena   "PAYS|type|numéro" -> document Athena (paquet)    countries  pays du paquet
+      tokens   "poste|docId" -> fin de validité     flood  poste -> dernière demande     begin  "poste|op|cible" -> début
+    [_op, _args] call comspec_sse_fnc_idRegistry
+      "init"                 crée le registre (XEH_postInit serveur)
+      "alloc"   [catalogue]  -> classe d'exemplaire libre ("" si le stock est épuisé)
+      "release" [classe]     rend la classe au stock (le document redevient virtuel)
+      "doc"     [docId]      -> document (HashMap vide si inconnu)
+      "ofClass" [classe]     -> document de l'exemplaire (HashMap vide : objet vierge pris à l'Arsenal)
+      "unitDocs"[unité]      -> [docId…] (papiers automatiques décidés au premier appel : matérialisation paresseuse)
+      "ensure"  [unité]      décide une fois des papiers de l'unité (attribut Eden, sinon règles des IA)
+      "key"     [unité]      -> clé de la personne (clé biométrique)
+*/
+params [["_op", "", [""]], ["_args", []]];
+if (!isServer) exitWith { nil };
+if (_op isEqualTo "init") exitWith {
+    if (!isNil "comspec_sse_idReg") exitWith { comspec_sse_idReg };
+    private _free = createHashMap;
+    // Stock : même nombre que tools/gen_id_instances.py (512 cartes, 256 passeports, 256 permis).
+    { _x params ["_cls", "_n"]; private _a = []; for "_i" from 1 to _n do { _a pushBack _i; }; _free set [_cls, _a]; }
+        forEach [["COMSPEC_ID_Card", 512], ["COMSPEC_ID_Passport", 256], ["COMSPEC_ID_DrivingLicense", 256]];
+    comspec_sse_idReg = createHashMapFromArray [
+        ["docs", createHashMap], ["byClass", createHashMap], ["free", _free], ["units", createHashMap],
+        ["decided", createHashMap], ["issued", createHashMap], ["watch", []], ["athena", createHashMap],
+        ["countries", createHashMap], ["tokens", createHashMap], ["flood", createHashMap], ["begin", createHashMap],
+        ["requests", createHashMap], ["seq", 0]
+    ];
+    missionNamespace setVariable ["comspec_sse_idReg", comspec_sse_idReg];
+    comspec_sse_idReg
+};
+private _reg = missionNamespace getVariable ["comspec_sse_idReg", createHashMap];
+if ((count _reg) isEqualTo 0) then { _reg = ["init"] call comspec_sse_fnc_idRegistry; };
+private _catOf = { switch (_this) do { case "passport": { "COMSPEC_ID_Passport" }; case "driving_license": { "COMSPEC_ID_DrivingLicense" }; default { "COMSPEC_ID_Card" }; } };
+
+switch (_op) do {
+    case "key": {
+        _args params [["_u", objNull]];
+        if (isNull _u) exitWith { "" };
+        [_u] call comspec_sse_fnc_bioPersonKey
+    };
+    case "alloc": {
+        _args params [["_type", "id_card"]];
+        private _cat = _type call _catOf;
+        private _list = (_reg get "free") getOrDefault [_cat, []];
+        if (_list isEqualTo []) exitWith {
+            diag_log text format ["[COMSPEC SSE] Identité : stock de %1 épuisé, document laissé virtuel.", _cat];
+            ""
+        };
+        private _s = str (_list deleteAt 0);
+        while { count _s < 3 } do { _s = "0" + _s; };
+        format ["%1_%2", _cat, _s]
+    };
+    case "release": {
+        _args params [["_cls", ""]];
+        private _id = (_reg get "byClass") getOrDefault [_cls, ""];
+        if (_id isEqualTo "") exitWith { false };
+        (_reg get "byClass") deleteAt _cls;
+        private _d = (_reg get "docs") getOrDefault [_id, createHashMap];
+        _d set ["cls", ""];
+        private _p = _cls splitString "_";
+        private _n = parseNumber (_p select -1);
+        private _cat = (_p select [0, (count _p) - 1]) joinString "_";
+        ((_reg get "free") getOrDefault [_cat, []]) pushBack _n;
+        true
+    };
+    case "kit": {
+        // Apparition (InitPost) : attribut Eden imposé, ou documents vierges du kit délivrés au nom de la personne.
+        _args params [["_u", objNull]];
+        if (isNull _u || {!alive _u} || {!(missionNamespace getVariable ["comspec_sse_id_enabled", true])}) exitWith { false };
+        if ((_u getVariable ["COMSPEC_ID_Carry", "auto"]) isNotEqualTo "auto") then { ["ensure", [_u]] call comspec_sse_fnc_idRegistry; };
+        private _types = createHashMapFromArray [["COMSPEC_ID_Card", "id_card"], ["COMSPEC_ID_Passport", "passport"], ["COMSPEC_ID_DrivingLicense", "driving_license"]];
+        {
+            private _cls = _x select 0;
+            if (_cls in _types) then {
+                ["comspec_sse_idLocalRemove", [_u, _cls], _u] call CBA_fnc_targetEvent;
+                [_u, createHashMapFromArray [["type", _types get _cls], ["kind", "civil"], ["materialize", true]]] call comspec_sse_fnc_idIssue;
+            };
+        } forEach ([_u, 0] call comspec_sse_fnc_idDocsOf);
+        true
+    };
+    case "doc": { (_reg get "docs") getOrDefault [_args param [0, ""], createHashMap] };
+    case "ofClass": {
+        private _id = (_reg get "byClass") getOrDefault [_args param [0, ""], ""];
+        (_reg get "docs") getOrDefault [_id, createHashMap]
+    };
+    case "unitDocs": {
+        _args params [["_u", objNull]];
+        if (isNull _u) exitWith { [] };
+        ["ensure", [_u]] call comspec_sse_fnc_idRegistry;
+        +((_reg get "units") getOrDefault [[_u] call comspec_sse_fnc_bioPersonKey, []])
+    };
+    case "ensure": {
+        _args params [["_u", objNull]];
+        if (isNull _u || {!(_u isKindOf "CAManBase")}) exitWith { false };
+        private _key = [_u] call comspec_sse_fnc_bioPersonKey;
+        if (_key isEqualTo "" || {(_reg get "decided") getOrDefault [_key, false]}) exitWith { false };
+        (_reg get "decided") set [_key, true];
+        // Papiers délivrés sur Athena à cette personne (clé biométrique du paquet) : ce sont les siens.
+        private _ath = (_reg getOrDefault ["athenaByKey", createHashMap]) getOrDefault [_key, []];
+        if (_ath isNotEqualTo []) exitWith {
+            {
+                private _spec = ["athenaSpec", _x] call comspec_sse_fnc_idModuleGive;
+                if ((count _spec) > 0) then { _spec set ["materialize", isPlayer _u]; [_u, _spec] call comspec_sse_fnc_idIssue; };
+            } forEach _ath;
+            true
+        };
+        private _carry = _u getVariable ["COMSPEC_ID_Carry", "auto"];
+        private _kind = _u getVariable ["COMSPEC_ID_Kind", "civil"];
+        private _quality = _u getVariable ["COMSPEC_ID_Quality", 60];
+        private _country = _u getVariable ["COMSPEC_ID_Country", "auto"];
+        if (_country isEqualTo "auto") then { _country = ""; };
+        private _db = toLower (_u getVariable ["COMSPEC_SSE_BioDb", "auto"]);
+        private _types = [];
+        private _r = { [_key, "idcarry|" + _this] call comspec_sse_fnc_bioRand };
+        private _wanted = "";
+        if (_carry isEqualTo "auto") then {
+            // Joueurs (et unités jouables) : aucun papier par défaut.
+            if (isPlayer _u || {_u in playableUnits} || {_u in switchableUnits}) exitWith {};
+            if !(missionNamespace getVariable ["comspec_sse_id_aiPapers", true]) exitWith {};
+            private _civ = (side group _u) isEqualTo civilian;
+            // Personnes fichées (biométrie) : HVT = couverture préparée, recherché = vrais papiers à son nom.
+            if (_db isEqualTo "bewl1") exitWith { _types = ["id_card"]; _kind = "cover"; _quality = 90; _wanted = "hvt"; };
+            if (_db isEqualTo "bewl2") exitWith { _types = ["id_card"]; _kind = "civil"; _wanted = "recherche"; };
+            if (_db in ["bewl3", "bewl4"]) then { _wanted = "surveillance"; };
+            if (_civ) exitWith {
+                if (("has" call _r) < 0.95) then { _types pushBack "id_card"; };
+                if (("lic" call _r) < 0.3) then { _types pushBack "driving_license"; };
+                _kind = "civil";
+            };
+            // Combattant ennemi d'un joueur : faux papiers (réglage), sinon rien.
+            private _enemy = (allPlayers findIf { [side group _x, side group _u] call BIS_fnc_sideIsEnemy }) >= 0;
+            if (_enemy && {("forged" call _r) * 100 < (missionNamespace getVariable ["comspec_sse_id_forgedRate", 60])}) then {
+                _types = ["id_card"]; _kind = "forged"; _quality = 25 + floor (("q" call _r) * 60);
+            };
+        } else {
+            _types = switch (_carry) do {
+                case "card": { ["id_card"] };
+                case "passport": { ["passport"] };
+                case "license": { ["driving_license"] };
+                case "card_license": { ["id_card", "driving_license"] };
+                case "card_passport": { ["id_card", "passport"] };
+                default { [] };
+            };
+        };
+        // Faux papiers décidés par la biométrie (fn_bioProfile, faux papiers « oui » ou tirés) : les papiers sont faux.
+        if (_types isNotEqualTo [] && {_kind isEqualTo "civil"} && {_carry isEqualTo "auto"} && {(_u getVariable ["COMSPEC_SSE_BioFalsePapers", "auto"]) isNotEqualTo "non"}) then {
+            private _prof = [_u, _key] call comspec_sse_fnc_bioProfile;
+            if (_prof getOrDefault ["falsePapers", false]) then { _kind = "forged"; _quality = 70; };
+        };
+        {
+            private _spec = createHashMapFromArray [["type", _x], ["kind", _kind], ["quality", _quality], ["country", _country]];
+            // Le permis suit la carte : vrais papiers (le faux ne porte que sur la pièce d'identité).
+            if (_x isEqualTo "driving_license" && {_forEachIndex > 0}) then { _spec set ["kind", "civil"]; };
+            // Matérialisation tout de suite pour les joueurs (objet dans l'inventaire), paresseuse pour les IA.
+            _spec set ["materialize", isPlayer _u || {_u in playableUnits}];
+            [_u, _spec] call comspec_sse_fnc_idIssue;
+        } forEach _types;
+        // Avis local : la personne recherchée est fichée sous son vrai nom (base N3 hors ligne).
+        if (_wanted isNotEqualTo "") then {
+            private _own = [_u, _key] call comspec_sse_fnc_idGenerate;
+            private _true = trim (_u getVariable ["COMSPEC_SSE_BioTrueName", ""]);
+            private _tl = _own get "last";
+            private _tf = _own get "first";
+            if (_true isNotEqualTo "") then { private _p = _true splitString " "; _tf = _p param [0, _tf]; _tl = (_p select [1, 9]) joinString " "; };
+            (_reg get "watch") pushBack [_tl, _tf, _u getVariable ["COMSPEC_SSE_Alias", ""], _wanted, format ["LOC-%1", _key]];
+        };
+        true
+    };
+    default { nil };
+}

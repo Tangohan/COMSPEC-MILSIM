@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Support;
+
+use App\Core\Database;
+use PDO;
+
+/**
+ * Base sqlite en mémoire pour COMSPEC IDENTITY : communautés 1 et 2, tables créées par la vraie migration
+ * (bootstrap/atak_sse_identity_migration.php, rendu sqlite), branchée sur Database le temps d'un test.
+ */
+final class SseIdentitySqlite
+{
+    private static ?PDO $saved = null;
+
+    public static function open(): PDO
+    {
+        $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo->exec('CREATE TABLE tenants (id INTEGER PRIMARY KEY, name TEXT, slug TEXT)');
+        $pdo->exec("INSERT INTO tenants (id, name, slug) VALUES (1, 'Alpha', 'alpha'), (2, 'Bravo', 'bravo')");
+        self::migrate($pdo);
+
+        $prop = new \ReflectionProperty(Database::class, 'pdo');
+        $current = $prop->getValue();
+        self::$saved = $current instanceof PDO ? $current : null;
+        $prop->setValue(null, $pdo);
+
+        return $pdo;
+    }
+
+    public static function migrate(PDO $pdo): string
+    {
+        $migrate = require dirname(__DIR__, 2) . '/bootstrap/atak_sse_identity_migration.php';
+        $out = '';
+        $migrate($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
+
+        return $out;
+    }
+
+    public static function close(): void
+    {
+        (new \ReflectionProperty(Database::class, 'pdo'))->setValue(null, self::$saved);
+        self::$saved = null;
+    }
+}

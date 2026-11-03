@@ -69,12 +69,103 @@ private _natures = [
     ["HQ", "Poste de commandement"], ["CIV", "Civils"]
 ];
 private _renders = [["FILL", "Surligné"], ["LINE", "Contour"], ["POINT", "Point centré"]];
-// Noms de code (noms propres, jamais traduits).
+// Noms de code (noms propres, jamais traduits ; majuscules courtes, sans accents ni umlauts ; planètes et lunes dans
+// la langue du téléphone). CITY : villes américaines (clé gardée pour les plans enregistrés avant la 2.9.41).
 private _themes = createHashMapFromArray [
     ["NATO", ["ALPHA", "BRAVO", "CHARLIE", "DELTA", "ECHO", "FOXTROT", "GOLF", "HOTEL", "INDIA", "JULIETT", "KILO", "LIMA", "MIKE", "NOVEMBER", "OSCAR", "PAPA", "QUEBEC", "ROMEO", "SIERRA", "TANGO", "UNIFORM", "VICTOR", "WHISKEY", "XRAY", "YANKEE", "ZULU"]],
-    ["CITY", ["TAMPA", "DALLAS", "BOSTON", "DENVER", "ATLANTA", "PHOENIX", "DETROIT", "MEMPHIS", "RALEIGH", "TUCSON", "SEATTLE", "OMAHA", "RENO", "TULSA", "AUSTIN", "DOVER", "MIAMI", "ORLANDO", "SALEM", "TOPEKA"]],
+    ["CITY", ["TAMPA", "DALLAS", "BOSTON", "DENVER", "ATLANTA", "PHOENIX", "DETROIT", "MEMPHIS", "RALEIGH", "TUCSON", "SEATTLE", "OMAHA", "RENO", "TULSA", "AUSTIN", "DOVER", "MIAMI", "ORLANDO", "SALEM", "TOPEKA",
+        "HOUSTON", "CHICAGO", "BUFFALO", "MOBILE", "FRESNO", "BOISE", "DAYTON", "LAREDO"]],
+    ["FRCITY", ["PARIS", "LYON", "NANTES", "BREST", "LILLE", "NICE", "TOULON", "REIMS", "METZ", "NANCY", "DIJON", "ROUEN", "CAEN", "TOURS", "BORDEAUX", "LIMOGES",
+        "GRENOBLE", "ANGERS", "AMIENS", "PAU", "BAYONNE", "CALAIS", "VANNES", "BLOIS", "COLMAR", "ARRAS", "CHARTRES", "VERDUN"]],
+    ["UKCITY", ["LONDON", "LEEDS", "YORK", "BATH", "BRISTOL", "CARDIFF", "OXFORD", "DERBY", "CHESTER", "DURHAM", "EXETER", "LINCOLN", "NEWPORT", "PERTH", "STIRLING", "BANGOR",
+        "WELLS", "HULL", "GLASGOW", "DUNDEE", "SWANSEA", "PLYMOUTH", "NORWICH", "IPSWICH", "CARLISLE", "SALISBURY", "WINDSOR", "ABERDEEN"]],
+    ["DECITY", ["BERLIN", "HAMBURG", "BREMEN", "KIEL", "DRESDEN", "LEIPZIG", "MAINZ", "BONN", "ESSEN", "ULM", "TRIER", "KASSEL", "ERFURT", "JENA", "AACHEN", "FULDA",
+        "PASSAU", "HALLE", "ROSTOCK", "HANNOVER", "AUGSBURG", "BAYREUTH", "KOBLENZ", "LANDAU", "WEIMAR", "GOTHA", "STUTTGART", "SCHWERIN"]],
+    ["PLANET", [
+        ["MERCURY", "VENUS", "MARS", "JUPITER", "SATURN", "URANUS", "NEPTUNE", "PLUTO", "PHOBOS", "DEIMOS", "IO", "EUROPA", "GANYMEDE", "CALLISTO", "TITAN", "RHEA",
+            "DIONE", "TETHYS", "MIMAS", "ENCELADUS", "IAPETUS", "TRITON", "OBERON", "TITANIA", "ARIEL", "MIRANDA", "CHARON", "CERES"],
+        ["MERCURE", "VENUS", "MARS", "JUPITER", "SATURNE", "URANUS", "NEPTUNE", "PLUTON", "PHOBOS", "DEIMOS", "IO", "EUROPE", "GANYMEDE", "CALLISTO", "TITAN", "RHEA",
+            "DIONE", "TETHYS", "MIMAS", "ENCELADE", "JAPET", "TRITON", "OBERON", "TITANIA", "ARIEL", "MIRANDA", "CHARON", "CERES"]
+    ] select _fr],
     ["ANIMAL", ["COBRA", "VIPER", "FALCON", "BISON", "JAGUAR", "MAMBA", "PYTHON", "RAVEN", "WOLF", "BADGER", "HAWK", "LYNX", "PUMA", "RHINO", "TIGER", "WOLVERINE"]]
 ];
+// Thèmes de nommage proposés (app Zones onglet NOMMER, clic droit › Nommer les axes) : clé, libellé, exemples (noms
+// propres). MIL : graphiques de contrôle APP-6 / MIL-STD-2525, abréviation choisie selon le genre d'élément (jamais
+// traduite, modifiable par élément), suivie d'un nom du sous-thème choisi (« MSR TAMPA », « PL MARS »).
+private _themeRows = [
+    ["MIL", "MIL-STD / OTAN (doctrine)", "MSR TAMPA, PL MARS, OBJ LYON"],
+    ["NATO", "Alphabet OTAN", "ALPHA, BRAVO, CHARLIE"],
+    ["CITY", "Villes américaines", "TAMPA, DALLAS, BOSTON"],
+    ["FRCITY", "Villes françaises", "PARIS, LYON, BREST"],
+    ["UKCITY", "Villes britanniques", "LONDON, LEEDS, YORK"],
+    ["DECITY", "Villes allemandes", "BERLIN, BREMEN, KIEL"],
+    ["PLANET", "Planètes et lunes", ["MARS, JUPITER, SATURN", "MARS, JUPITER, SATURNE"] select _fr],
+    ["ANIMAL", "Animaux", "COBRA, VIPER, FALCON"]
+];
+// Abréviations doctrinales par genre d'élément (la première est celle par défaut) : axe principal / secondaire, trait
+// ouvert (lignes), contour fermé et zone (surfaces), point de contrôle (numéroté).
+private _abbrs = createHashMapFromArray [
+    ["axisMain", ["MSR", "ASR", "ROUTE", "PL", "LD", "LOA", "FSCL", "CFL"]],
+    ["axis", ["ASR", "MSR", "ROUTE", "PL", "LD", "LOA", "FSCL", "CFL"]],
+    ["line", ["PL", "LD", "LOA", "ROUTE", "FSCL", "CFL", "MSR", "ASR"]],
+    ["area", ["AA", "OBJ", "NAI", "TAI", "EA", "BP", "LZ", "PZ", "DZ", "ACA", "ROZ"]],
+    ["cp", ["CP", "PP", "RP", "ORP", "SP"]]
+];
+// Zone d'un type donné : abréviation par défaut (objectif, ennemi ou inconnu : zone d'intérêt, ami : position de combat…).
+private _abbrType = createHashMapFromArray [["OBJ", "OBJ"], ["HOS", "NAI"], ["UNK", "NAI"], ["FRD", "BP"], ["NEU", "AA"], ["RES", "ROZ"], ["LZ", "LZ"], ["GEN", "AA"]];
+private _abbrAll = ["MSR", "ASR", "ROUTE", "PL", "LD", "LOA", "FSCL", "CFL", "AA", "OBJ", "NAI", "TAI", "EA", "BP", "LZ", "PZ", "DZ", "ACA", "ROZ", "CP", "PP", "RP", "ORP", "SP"];
+// Nom -> [abréviation doctrinale ou "", reste du nom].
+private _split = {
+    params ["_n"];
+    private _w = _n splitString " ";
+    if ((count _w) > 1 && {(_w select 0) in _abbrAll}) exitWith { [_w select 0, (_w select [1]) joinString " "] };
+    ["", _n]
+};
+// Noms d'un thème (MIL : ceux de son sous-thème).
+private _themeList = {
+    params ["_k", ["_sub", "CITY"]];
+    if (_k isEqualTo "MIL") then { _k = [_sub, "CITY"] select (_sub isEqualTo "MIL"); };
+    _themes getOrDefault [_k, _themes get "CITY"]
+};
+// Noms complets des éléments d'un plan (zones, axes, traits, points de contrôle), sauf l'élément [genre, id].
+private _planNames = {
+    params ["_b", ["_skip", ["", ""]]];
+    private _out = [];
+    { if (["zone", _x select 0] isNotEqualTo _skip) then { _out pushBack (_x select 1); }; } forEach (_b getOrDefault ["zones", []]);
+    { if (["axis", _x select 0] isNotEqualTo _skip) then { _out pushBack (_x select 1); }; } forEach (_b getOrDefault ["axes", []]);
+    { if (["line", _x select 0] isNotEqualTo _skip) then { _out pushBack (_x select 1); }; } forEach (_b getOrDefault ["lines", []]);
+    { if (["cp", str (_x select 0)] isNotEqualTo _skip) then { _out pushBack (_x select 1); }; } forEach (_b getOrDefault ["cps", []]);
+    _out
+};
+// Nom sans doublon dans le plan : « 2 », « 3 »… ajouté (longueur bornée).
+private _uniq = {
+    params ["_b", "_n", "_max", ["_skip", ["", ""]]];
+    private _have = [_b, _skip] call _planNames;
+    if !(_n in _have) exitWith { _n };
+    private _k = 2;
+    private _out = _n;
+    while { _out in _have && {_k < 100} } do {
+        private _sfx = format [" %1", _k];
+        _out = (_n select [0, _max - (count _sfx)]) + _sfx;
+        _k = _k + 1;
+    };
+    _out
+};
+// Prochains noms libres d'une liste (jamais un nom déjà pris) ; liste épuisée : « ALPHA 2 », « ALPHA 3 »…
+private _nextNames = {
+    params ["_list", "_used", "_n"];
+    private _out = [];
+    private _cycle = 1;
+    while { (count _out) < _n && {_cycle < 20} } do {
+        {
+            private _c = [_x, format ["%1 %2", _x, _cycle]] select (_cycle > 1);
+            if !(_c in _used) then { _out pushBack _c; _used pushBack _c; };
+            if ((count _out) >= _n) exitWith {};
+        } forEach _list;
+        _cycle = _cycle + 1;
+    };
+    _out
+};
 private _stateRow = { params ["_k"]; _states select ((_states findIf { (_x select 0) isEqualTo _k }) max 0) };
 private _typeRow = { params ["_k"]; _types select ((_types findIf { (_x select 0) isEqualTo _k }) max 0) };
 private _clean = { params ["_t", ["_n", 32]]; if !(_t isEqualType "") exitWith { "" }; ((trim _t) regexReplace ["[<>""\\]", ""]) select [0, _n] };
@@ -170,9 +261,15 @@ private _aud = {
         }
     }
 };
+// Noms de code déjà pris : axes, traits et zones typées de tous les plans (sans leur abréviation), nom des plans.
 private _usedNames = {
     private _u = [];
-    { { _u pushBack ((_x select 1) select [4]); } forEach (_x getOrDefault ["axes", []]); _u pushBack (((_x get "name") splitString " ") param [1, ""]); } forEach ((values _mine) + (values _rx));
+    {
+        private _bb = _x;
+        { _u pushBack (([_x select 1] call _split) select 1); } forEach ((_bb getOrDefault ["axes", []]) + (_bb getOrDefault ["lines", []]));
+        { if ((_x select 4) isNotEqualTo "GEN") then { _u pushBack (([_x select 1] call _split) select 1); }; } forEach (_bb getOrDefault ["zones", []]);
+        _u pushBack (((_bb get "name") splitString " ") param [1, ""]);
+    } forEach ((values _mine) + (values _rx));
     _u
 };
 // Situation appliquée à une zone : état plus récent seulement ; signalements ajoutés sans doublon (12 au plus).
@@ -231,7 +328,8 @@ switch (_act) do {
         if (_name isEqualTo "") then { _name = "OBJ " + _code; };
         private _gp = createHashMapFromArray [
             ["cut", "GRID"], ["size", 200], ["fmt", "GRG"], ["snap", true], ["sec", 8], ["rings", 1], ["secFmt", "CARD"], ["minA", 2500],
-            ["tracks", false], ["prefix", _code select [0, 1]], ["theme", "CITY"], ["asr", 3], ["axMin", 300], ["setPre", "OBJ"], ["setTheme", "NATO"], ["radius", 300]
+            ["tracks", false], ["prefix", _code select [0, 1]], ["theme", profileNamespace getVariable ["COMSPEC_ATAK_ZnNameTheme", "CITY"]],
+            ["milSub", profileNamespace getVariable ["COMSPEC_ATAK_ZnNameSub", "CITY"]], ["asr", 3], ["axMin", 300], ["setPre", "OBJ"], ["setTheme", "NATO"], ["radius", 300]
         ];
         // 2.9.38 : plan partagé d'office (réglage serveur, le camp par défaut) et sur la carte d'Arma, renvoyé à chaque
         // modification validée ; l'état des zones, lui, ne change toujours que par un joueur.
@@ -252,7 +350,7 @@ switch (_act) do {
         if ((count _b) isEqualTo 0) exitWith { "" };
         private _gp = _b get "gp";
         private _used = call _usedNames;
-        private _list = _themes getOrDefault [_gp getOrDefault ["setTheme", "NATO"], _themes get "NATO"];
+        private _list = [_gp getOrDefault ["setTheme", "NATO"], _gp getOrDefault ["milSub", "CITY"]] call _themeList;
         private _cur = ((_b get "name") splitString " ") param [1, ""];
         private _i = ((_list find _cur) + 1) max 0;
         [_b] call _snap;
@@ -270,13 +368,121 @@ switch (_act) do {
     case "axisNames": {
         _arg params ["_id", "_n"];
         private _b = [_id] call _get;
-        private _list = _themes getOrDefault [(_b getOrDefault ["gp", createHashMap]) getOrDefault ["theme", "CITY"], _themes get "CITY"];
+        private _gp = _b getOrDefault ["gp", createHashMap];
+        private _list = [_gp getOrDefault ["theme", "CITY"], _gp getOrDefault ["milSub", "CITY"]] call _themeList;
         private _used = call _usedNames;
         // Axes déjà nommés de ce plan : leurs noms resservent (nouveau calcul).
-        { _used = _used - [(_x select 1) select [4]]; } forEach (_b getOrDefault ["axes", []]);
-        private _out = _list select { !(_x in _used) };
-        while { (count _out) < _n } do { _out pushBack format ["%1 %2", _list select ((count _out) mod (count _list)), (count _out) + 1]; };
-        _out select [0, _n]
+        { _used = _used - [([_x select 1] call _split) select 1]; } forEach (_b getOrDefault ["axes", []]);
+        [_list, _used, _n] call _nextNames
+    };
+    case "themeRows": { _themeRows };
+    case "themeLabel": { (((_themeRows select { (_x select 0) isEqualTo _arg }) param [0, ["", _arg]]) select 1) call _tr };
+    case "abbrs": { _abbrs };
+    case "split": { [_arg] call _split };
+    // Thème de nommage d'un plan, et préférence du joueur pour ses prochains plans : [id, thème, sous-thème MIL].
+    case "nameTheme": {
+        _arg params ["_id", "_k", ["_sub", ""]];
+        if ((_themeRows findIf { (_x select 0) isEqualTo _k }) < 0) exitWith { false };
+        if (_sub isEqualTo "MIL" || {_sub isNotEqualTo "" && {(_themeRows findIf { (_x select 0) isEqualTo _sub }) < 0}}) then { _sub = ""; };
+        profileNamespace setVariable ["COMSPEC_ATAK_ZnNameTheme", _k];
+        if (_sub isNotEqualTo "") then { profileNamespace setVariable ["COMSPEC_ATAK_ZnNameSub", _sub]; };
+        [] call comspec_atak_native_fnc_saveProfile;
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) > 0) then {
+            (_b get "gp") set ["theme", _k];
+            if (_sub isNotEqualTo "") then { (_b get "gp") set ["milSub", _sub]; };
+            call _save; call _refresh;
+        };
+        true
+    };
+    // Noms du thème du plan appliqués : [id, AXES | LINES | ZONES | CPS | ALL]. Axes : MSR / ASR (MIL : abréviation de
+    // chacun gardée) ; traits et zones typées (les cases de grille gardent leur nom) : nom seul ; MIL : abréviation selon
+    // le genre (trait PL, contour AA, zone selon son type) ; MIL, points de contrôle : CP1, RP2… Jamais deux fois le
+    // même nom dans le plan ni un nom pris par un autre plan. Renvoie le nombre d'éléments renommés.
+    case "nameApply": {
+        _arg params ["_id", ["_what", "ALL"]];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0) exitWith { 0 };
+        private _gp = _b get "gp";
+        private _th = _gp getOrDefault ["theme", "CITY"];
+        private _mil = _th isEqualTo "MIL";
+        private _list = [_th, _gp getOrDefault ["milSub", "CITY"]] call _themeList;
+        [_b] call _snap;
+        private _ren = [];
+        if (_what in ["AXES", "ALL"]) then { { _ren pushBack ["axis", _x]; } forEach (_b get "axes"); };
+        if (_what in ["LINES", "ALL"]) then { { _ren pushBack ["line", _x]; } forEach (_b getOrDefault ["lines", []]); };
+        if (_what in ["ZONES", "ALL"]) then { { if ((_x select 4) isNotEqualTo "GEN") then { _ren pushBack ["zone", _x]; }; } forEach (_b get "zones"); };
+        private _used = call _usedNames;
+        private _olds = _ren apply { (_x select 1) select 1 };
+        { _used = _used - [([_x] call _split) select 1]; } forEach _olds;
+        // Anciens noms retirés d'abord : un élément ne prend pas « 2 » à cause de l'ancien nom d'un autre renommé ici.
+        { (_x select 1) set [1, ""]; } forEach _ren;
+        private _names = [_list, _used, count _ren] call _nextNames;
+        {
+            _x params ["_k", "_e"];
+            private _old = _olds select _forEachIndex;
+            private _ab = ([_old] call _split) select 0;
+            private _nm = _names param [_forEachIndex, str (_forEachIndex + 1)];
+            private _full = switch (_k) do {
+                case "axis": { format ["%1 %2", [_e select 2, _ab] select (_mil && {_ab isNotEqualTo ""}), _nm] };
+                case "line": { [_nm, format ["%1 %2", [["PL", "AA"] select (_e select 3), _ab] select (_ab isNotEqualTo ""), _nm]] select _mil };
+                default { [_nm, format ["%1 %2", [_abbrType getOrDefault [_e select 4, "AA"], _ab] select (_ab isNotEqualTo ""), _nm]] select _mil };
+            };
+            private _max = [16, 24] select (_k isEqualTo "axis");
+            _full = [_b, (toUpper _full) select [0, _max], _max, [_k, _e select 0]] call _uniq;
+            _e set [1, _full];
+            if (_k isEqualTo "axis") then { { if ((_x select 3) isEqualTo _old) then { _x set [3, _full]; }; } forEach (_b get "cps"); };
+        } forEach _ren;
+        private _nCp = 0;
+        if (_mil && {_what in ["CPS", "ALL"]}) then {
+            {
+                private _ab = (_x select 1) regexReplace ["[0-9]+$", ""];
+                if !(_ab in (_abbrs get "cp")) then { _ab = "CP"; };
+                _x set [1, format ["%1%2", _ab, _x select 0]];
+                _nCp = _nCp + 1;
+            } forEach (_b get "cps");
+        };
+        [_b, false] call _changed;
+        ["INFO", "ZONES", format ["Nommage %1 (%2) du plan %3 : %4 élément(s)", _th, _what, _b get "name", (count _ren) + _nCp]] call comspec_atak_native_fnc_log;
+        (count _ren) + _nCp
+    };
+    // Abréviation suivante d'un élément (modifiable par élément) : [id, axis | line | zone | cp, id de l'élément (texte)].
+    // Après la dernière : sans abréviation (sauf axes et points de contrôle). Renvoie le nouveau nom.
+    case "abbrNext": {
+        _arg params ["_id", "_k", "_eid"];
+        private _b = _mine getOrDefault [_id, createHashMap];
+        if ((count _b) isEqualTo 0) exitWith { "" };
+        private _arr = switch (_k) do { case "axis": { _b get "axes" }; case "line": { _b getOrDefault ["lines", []] }; case "cp": { _b get "cps" }; default { _b get "zones" }; };
+        private _i = _arr findIf { ([_x select 0, str (_x select 0)] select ((_x select 0) isEqualType 0)) isEqualTo _eid };
+        if (_i < 0) exitWith { "" };
+        private _e = _arr select _i;
+        private _old = _e select 1;
+        [_b] call _snap;
+        if (_k isEqualTo "cp") then {
+            private _list = _abbrs get "cp";
+            private _ab = _old regexReplace ["[0-9]+$", ""];
+            _e set [1, format ["%1%2", _list select (((_list find _ab) + 1) mod (count _list)), _e select 0]];
+        } else {
+            ([_old] call _split) params ["_ab", "_rest"];
+            private _list = switch (_k) do {
+                case "axis": { _abbrs get (["axis", "axisMain"] select ((_e select 2) isEqualTo "MSR")) };
+                case "line": { _abbrs get (["line", "area"] select (_e select 3)) };
+                default { _abbrs get "area" };
+            };
+            private _j = _list find _ab;
+            private _nx = switch (true) do {
+                case (_ab isEqualTo ""): { _list select 0 };
+                case ((_j + 1) >= (count _list)): { ["", _list select 0] select (_k isEqualTo "axis") };
+                default { _list select (_j + 1) };
+            };
+            private _max = [16, 24] select (_k isEqualTo "axis");
+            private _full = (toUpper ([_rest, format ["%1 %2", _nx, _rest]] select (_nx isNotEqualTo ""))) select [0, _max];
+            _full = [_b, _full, _max, [_k, _eid]] call _uniq;
+            _e set [1, _full];
+            if (_k isEqualTo "axis") then { { if ((_x select 3) isEqualTo _old) then { _x set [3, _full]; }; } forEach (_b get "cps"); };
+        };
+        [_b, false] call _changed;
+        _e select 1
     };
     case "del": {
         private _b = [_arg] call _get;
@@ -401,7 +607,12 @@ switch (_act) do {
             default { ["gen", [_id]] call comspec_atak_native_fnc_zoneAction; };
         };
         ["INFO", format [("Plan %1 : zone de travail de %2 m autour du point%3") call _tr, (_mine get _id) get "name", _r, ["", (" · calcul en cours") call _tr] select (_kind isNotEqualTo "NEW")], 4, 20] call comspec_atak_native_fnc_notify;
-        if (_kind isEqualTo "NEW") then { ["#ui", ["open", _id]] call comspec_atak_native_fnc_pageZones; ["ZONES"] call comspec_atak_native_fnc_navigate; };
+        // Nouveau plan à partir d'ici : l'app Zones propose tout de suite DÉCOUPER ou TRACER (consigne de la carte, 2.9.41).
+        if (_kind isEqualTo "NEW") then {
+            ["#ui", ["open", _id]] call comspec_atak_native_fnc_pageZones;
+            (uiNamespace getVariable ["COMSPEC_ATAK_ZnUi", createHashMap]) set ["next", "AREA"];
+            ["ZONES"] call comspec_atak_native_fnc_navigate;
+        };
         _id
     };
     // Calculs en arrière-plan (fn_zoneGen) : découpage, axes, bâtiments.
@@ -488,7 +699,7 @@ switch (_act) do {
         if ((count _z) isEqualTo 0) exitWith { false };
         [_b] call _snap;
         switch (_key) do {
-            case "label": { _v = [_v, 16] call _clean; if (_v isNotEqualTo "") then { _z set [1, _v]; }; };
+            case "label": { _v = [_v, 16] call _clean; if (_v isNotEqualTo "") then { _z set [1, [_b, _v, 16, ["zone", _zid]] call _uniq]; }; };
             case "type": { if ((_types findIf { (_x select 0) isEqualTo _v }) >= 0) then { _z set [4, _v]; }; };
             case "rm": { _z set [5, [_v, ""] select !(_v in ["FILL", "LINE", "POINT"])]; };
             case "bldClear": { _z set [10, []]; };
@@ -527,7 +738,7 @@ switch (_act) do {
         if (_i < 0) exitWith { false };
         [_b] call _snap;
         switch (_key) do {
-            case "name": { _v = toUpper ([_v, 24] call _clean); if (_v isNotEqualTo "") then { private _old = (_ax select _i) select 1; (_ax select _i) set [1, _v]; { if ((_x select 3) isEqualTo _old) then { _x set [3, _v]; }; } forEach (_b get "cps"); }; };
+            case "name": { _v = toUpper ([_v, 24] call _clean); if (_v isNotEqualTo "") then { _v = [_b, _v, 24, ["axis", _aid]] call _uniq; private _old = (_ax select _i) select 1; (_ax select _i) set [1, _v]; { if ((_x select 3) isEqualTo _old) then { _x set [3, _v]; }; } forEach (_b get "cps"); }; };
             case "rm": { (_ax select _i) set [5, [_v, ""] select !(_v in ["FILL", "LINE", "POINT"])]; };
             case "del": { private _n = (_ax select _i) select 1; _ax deleteAt _i; _b set ["cps", (_b get "cps") select { (_x select 3) isNotEqualTo _n }]; };
         };
@@ -895,7 +1106,7 @@ switch (_act) do {
         if (_key isEqualTo "vdel" && {(count _pts) <= ([2, 3] select (_l select 3))}) exitWith { ["INFO", "Pas moins de sommets : supprimez plutôt le trait", 2, 10] call comspec_atak_native_fnc_notify; false };
         [_b] call _snap;
         switch (_key) do {
-            case "name": { _v = [_v, 16] call _clean; if (_v isNotEqualTo "") then { _l set [1, _v]; }; };
+            case "name": { _v = [_v, 16] call _clean; if (_v isNotEqualTo "") then { _l set [1, [_b, _v, 16, ["line", _lid]] call _uniq]; }; };
             case "style": { _l set [4, _v]; };
             case "closed": { if (_v && {(count _pts) < 3}) exitWith {}; _l set [3, _v]; };
             case "del": { _ls deleteAt _k; };

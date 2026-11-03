@@ -37,6 +37,7 @@ final class SsePortalNav
             ]],
             ['id' => 'referentiel', 'label' => 'Référentiel', 'items' => [
                 ['id' => 'identites', 'label' => 'Identités', 'hint' => 'Fiches personnes et indices biométriques.', 'path' => 'atak/sse/identites', 'icon' => 'id', 'aliases' => ['atak/sse/personnes'], 'keywords' => 'personnes biometrie'],
+                ['id' => 'papiers', 'label' => 'Identités & documents', 'hint' => 'Papiers d’identité fictifs émis pour le jeu et contrôles reçus du terrain.', 'path' => 'atak/sse/papiers', 'icon' => 'doc', 'keywords' => 'papiers passeport carte permis controle identite mrz'],
                 ['id' => 'organisations', 'label' => 'Organisations', 'hint' => 'Groupes, cellules et structures affiliées.', 'path' => 'atak/sse/objets/organisations', 'icon' => 'org'],
                 ['id' => 'sites', 'label' => 'Sites', 'hint' => 'Lieux d’intérêt et d’exploitation.', 'path' => 'atak/sse/sites', 'icon' => 'site', 'keywords' => 'lieux'],
                 ['id' => 'vehicules', 'label' => 'Véhicules', 'hint' => 'Moyens mobiles rattachés aux dossiers.', 'path' => 'atak/sse/objets/vehicules', 'icon' => 'vehicle'],

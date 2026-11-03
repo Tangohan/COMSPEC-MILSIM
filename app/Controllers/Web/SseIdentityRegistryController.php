@@ -1,0 +1,565 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers\Web;
+
+use App\Core\Csrf;
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\Session;
+use App\Repositories\AtakMapRepository;
+use App\Repositories\SseCaseRepository;
+use App\Repositories\SseIdCheckRepository;
+use App\Repositories\SseIdCountryRepository;
+use App\Repositories\SseIdDocumentRepository;
+use App\Repositories\SseIdentityRepository;
+use App\Repositories\SsePersonRepository;
+use App\Services\Sse\SseAccessCodeService;
+use App\Services\Sse\SseClearanceService;
+use App\Services\Sse\SseIdentityGeneratorService;
+use App\Services\Sse\SseMrzService;
+use App\Support\SseIdentityCatalog;
+
+/**
+ * Portail SSE — RENS › Identités & documents (COMSPEC IDENTITY, Lot 1).
+ *
+ * Registre des identités fictives et des papiers (carte, passeport, permis) des pays fictifs, cycle
+ * brouillon → validé → émis → révoqué, statuts du papier, contrôles reçus du terrain.
+ *
+ * Lecture : accès au portail SSE. Création, statuts et cycle : gestion des dossiers SSE (atak.sse.case.manage,
+ * atak.sse.grant ou admin.access), jamais en invité. Vérité de jeu (nature de l'identité, faux, couverture) :
+ * habilitation Confidentiel ou plus ; en dessous elle est masquée.
+ */
+final class SseIdentityRegistryController
+{
+    private const BASE = 'atak/sse/papiers';
+
+    public function __construct(
+        private ?SseAccessCodeService $access = null,
+        private ?SseClearanceService $clearance = null,
+        private ?SseIdentityRepository $identities = null,
+        private ?SseIdDocumentRepository $documents = null,
+        private ?SseIdCheckRepository $checks = null,
+        private ?SseIdCountryRepository $countries = null,
+        private ?SsePersonRepository $persons = null,
+        private ?SseIdentityGeneratorService $generator = null,
+    ) {
+        $this->access ??= new SseAccessCodeService();
+        $this->clearance ??= new SseClearanceService($this->access);
+        $this->identities ??= new SseIdentityRepository();
+        $this->documents ??= new SseIdDocumentRepository();
+        $this->checks ??= new SseIdCheckRepository();
+        $this->countries ??= new SseIdCountryRepository();
+        $this->persons ??= new SsePersonRepository();
+        $this->generator ??= new SseIdentityGeneratorService();
+    }
+
+    // ---------------------------------------------------------------- Papiers
+
+    public function documentsIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $truth = $this->canSeeTruth();
+        $filters = [
+            'workflow' => $request->queryString('workflow'),
+            'doc_type' => $request->queryString('doc_type'),
+            'country_code' => $request->queryString('country'),
+            'origin' => $truth ? $request->queryString('origin') : '',
+            'q' => $request->queryString('q'),
+        ];
+
+        return $this->view('atak.sse.papers.documents', [
+            'title' => 'Identités & documents',
+            'documents' => $this->documents->list($tenantId, $filters),
+            'filters' => $filters,
+            'counts' => $this->documents->counts($tenantId),
+            'countries' => $this->countries->listForTenant($tenantId),
+            'papersTab' => 'documents',
+        ]);
+    }
+
+    public function documentCreateForm(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage()) {
+            return $this->denied();
+        }
+        $tenantId = $this->tenantId();
+        $identity = $this->identities->find((int) $request->query('identity_id', 0), $tenantId);
+        if ($identity === null) {
+            Session::flash('error', 'Choisissez d’abord l’identité qui portera ce papier.');
+
+            return Response::redirect(url(self::BASE . '/identites'));
+        }
+        $countries = $this->countries->listForTenant($tenantId);
+        $countryCode = strtoupper($request->queryString('country', (string) ($identity['nationality'] ?? '')));
+        $country = $this->pickCountry($countries, $countryCode);
+        $type = SseIdentityCatalog::pick(SseIdentityCatalog::DOC_TYPES, $request->queryString('doc_type'), 'id_card');
+        $issued = gmdate('Y-m-d');
+        $expires = gmdate('Y-m-d', strtotime('+' . (int) ($country['validity_years'] ?? 10) . ' years'));
+        $number = $country !== null ? $this->freeNumber($tenantId, $country, $type, (int) ($identity['seed'] ?? 0) ?: SseIdentityGeneratorService::randomSeed()) : '';
+        $preview = $country !== null ? SseMrzService::forDocument(
+            ['doc_type' => $type, 'country_code' => $country['code'], 'doc_number' => $number, 'expires_on' => $expires],
+            $identity,
+            (string) $country['mrz_code']
+        ) : [];
+
+        return $this->view('atak.sse.papers.document_form', [
+            'title' => 'Nouveau papier',
+            'identity' => $identity,
+            'countries' => $countries,
+            'country' => $country,
+            'docType' => $type,
+            'proposal' => ['doc_number' => $number, 'issued_on' => $issued, 'expires_on' => $expires, 'authority' => (string) ($country['authority'] ?? '')],
+            'mrzPreview' => $preview,
+            'maps' => $this->maps(),
+            'papersTab' => 'documents',
+        ]);
+    }
+
+    public function documentStore(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied();
+        }
+        $tenantId = $this->tenantId();
+        $identity = $this->identities->find((int) $request->input('identity_id', 0), $tenantId);
+        $country = $this->countries->findByCode($tenantId, $request->inputString('country_code'));
+        if ($identity === null || $country === null) {
+            Session::flash('error', 'Identité ou pays introuvable.');
+
+            return Response::redirect(url(self::BASE . '/identites'));
+        }
+        $type = SseIdentityCatalog::pick(SseIdentityCatalog::DOC_TYPES, $request->inputString('doc_type'), 'id_card');
+        $back = url(self::BASE . '/documents/nouveau') . '?identity_id=' . (int) $identity['id'] . '&country=' . urlencode((string) $country['code']) . '&doc_type=' . $type;
+        $number = SseIdDocumentRepository::normalizeNumber($request->inputString('doc_number'));
+        if ($number === '') {
+            $number = $this->freeNumber($tenantId, $country, $type, SseIdentityGeneratorService::randomSeed());
+        }
+        if (!SseIdentityGeneratorService::matchesFormat($number, (string) $country['number_format'])) {
+            Session::flash('error', 'Ce numéro ne suit pas le format des papiers de ce pays.');
+
+            return Response::redirect($back);
+        }
+        if ($this->documents->numberExists($tenantId, (string) $country['code'], $type, $number)) {
+            Session::flash('error', 'Ce numéro est déjà attribué à un autre papier de ce pays.');
+
+            return Response::redirect($back);
+        }
+        $data = [
+            'identity_id' => (int) $identity['id'],
+            'doc_type' => $type,
+            'country_code' => $country['code'],
+            'doc_number' => $number,
+            'issued_on' => $request->inputString('issued_on'),
+            'expires_on' => $request->inputString('expires_on'),
+            'authority' => $request->inputString('authority'),
+            'context_id' => (int) $request->input('context_id', 0),
+            'op_key' => $request->inputString('op_key'),
+            'holder_person_id' => $identity['person_id'],
+            'notes' => $request->inputString('notes'),
+        ];
+        // Origine par défaut selon la nature de l'identité ; un faux reste un faux.
+        $data['st_origin'] = match ($identity['kind']) {
+            'cover' => 'cover',
+            'forged' => 'forged',
+            'generated' => 'generated',
+            default => 'official',
+        };
+        if ($this->canSeeTruth()) {
+            foreach (['st_origin', 'forgery_kind', 'forgery_quality'] as $k) {
+                $v = $request->inputString($k);
+                if ($v !== '') {
+                    $data[$k] = $v;
+                }
+            }
+        }
+        $id = $this->documents->create($tenantId, $data, $this->userId());
+        Session::flash('success', 'Papier enregistré en brouillon. Validez-le, puis émettez-le pour qu’il parte en jeu.');
+
+        return Response::redirect(url(self::BASE . '/documents/' . $id));
+    }
+
+    public function documentShow(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $doc = $this->documents->find((int) ($params['id'] ?? 0), $tenantId);
+        if ($doc === null) {
+            Session::flash('error', 'Papier introuvable.');
+
+            return Response::redirect(url(self::BASE));
+        }
+        $identity = $this->identities->find((int) $doc['identity_id'], $tenantId) ?? [];
+        $country = $this->countries->findByCode($tenantId, (string) $doc['country_code']);
+        $holder = ($pid = (int) ($doc['holder_person_id'] ?? 0)) > 0 ? $this->persons->findById($pid, $tenantId) : null;
+
+        return $this->view('atak.sse.papers.document_show', [
+            'title' => $doc['ref'] . ' — ' . $doc['doc_type_label'],
+            'doc' => $doc,
+            'identity' => $identity,
+            'country' => $country,
+            'holder' => $holder,
+            'mrz' => SseMrzService::forDocument($doc, $identity, (string) ($country['mrz_code'] ?? '')),
+            'checks' => $this->checks->list($tenantId, ['document_id' => (int) $doc['id'], 'limit' => 50]),
+            'instances' => $this->documents->instances((int) $doc['id'], $tenantId),
+            'transitions' => SseIdentityCatalog::TRANSITIONS[$doc['workflow']] ?? [],
+            'papersTab' => 'documents',
+        ]);
+    }
+
+    public function documentStatuses(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url(self::BASE . '/documents/' . $id);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied($back);
+        }
+        $tenantId = $this->tenantId();
+        $doc = $this->documents->find($id, $tenantId);
+        if ($doc === null) {
+            return $this->denied(url(self::BASE));
+        }
+        $data = [
+            'chip_status' => $request->inputString('chip_status'),
+            'st_integrity' => $request->inputString('st_integrity'),
+            'st_validity' => $request->inputString('st_validity'),
+            'st_report' => $request->inputString('st_report'),
+            'st_attribution' => $request->inputString('st_attribution'),
+            'holder_person_id' => (int) $request->input('holder_person_id', 0) ?: ($doc['holder_person_id'] ?? 0),
+            // Sans habilitation, la vérité de jeu déjà posée est conservée telle quelle.
+            'st_origin' => $doc['st_origin'],
+            'forgery_kind' => $doc['forgery_kind'],
+            'forgery_quality' => $doc['forgery_quality'],
+        ];
+        if ($this->canSeeTruth()) {
+            $data['st_origin'] = $request->inputString('st_origin');
+            $data['forgery_kind'] = $request->inputString('forgery_kind');
+            $data['forgery_quality'] = $request->inputString('forgery_quality');
+        }
+        if ($data['holder_person_id'] > 0 && $this->persons->findById((int) $data['holder_person_id'], $tenantId) === null) {
+            Session::flash('error', 'Fiche personne introuvable : titulaire inchangé.');
+            $data['holder_person_id'] = $doc['holder_person_id'] ?? 0;
+        }
+        $this->documents->updateStatuses($id, $tenantId, $data);
+        Session::flash('success', 'Statuts du papier enregistrés.');
+
+        return Response::redirect($back);
+    }
+
+    public function documentWorkflow(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url(self::BASE . '/documents/' . $id);
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied($back);
+        }
+        $to = SseIdentityCatalog::pick(SseIdentityCatalog::WORKFLOWS, $request->inputString('to'), '');
+        if ($to === 'revoked' && trim($request->inputString('reason')) === '') {
+            Session::flash('error', 'Indiquez le motif de la révocation.');
+
+            return Response::redirect($back);
+        }
+        if ($to === '' || !$this->documents->transition($id, $this->tenantId(), $to, $this->userId(), $request->inputString('reason'))) {
+            Session::flash('error', 'Cette étape n’est pas possible depuis l’état actuel du papier.');
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', match ($to) {
+            'validated' => 'Papier validé. Il partira en jeu une fois émis.',
+            'issued' => 'Papier émis : il sera chargé par le serveur de jeu à la prochaine mise à jour.',
+            'revoked' => 'Papier révoqué : les contrôles en ligne le signalent désormais comme annulé.',
+            default => 'Papier repassé en brouillon.',
+        });
+
+        return Response::redirect($back);
+    }
+
+    // -------------------------------------------------------------- Identités
+
+    public function identitiesIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $truth = $this->canSeeTruth();
+        $filters = [
+            'kind' => $truth ? $request->queryString('kind') : '',
+            'nationality' => $request->queryString('country'),
+            'q' => $request->queryString('q'),
+        ];
+
+        return $this->view('atak.sse.papers.identities', [
+            'title' => 'Identités',
+            'identities' => $this->identities->list($tenantId, $filters),
+            'filters' => $filters,
+            'countries' => $this->countries->listForTenant($tenantId),
+            'papersTab' => 'identites',
+        ]);
+    }
+
+    public function identityCreateForm(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage()) {
+            return $this->denied();
+        }
+        $tenantId = $this->tenantId();
+        $countries = $this->countries->listForTenant($tenantId);
+        $country = $this->pickCountry($countries, strtoupper($request->queryString('country')));
+        $draft = [
+            'kind' => SseIdentityCatalog::pick(SseIdentityCatalog::KINDS, $request->queryString('kind'), 'civil'),
+            'person_id' => (int) $request->query('person_id', 0) ?: null,
+            'nationality' => $country['code'] ?? '',
+        ];
+        $generated = false;
+        if ($request->queryString('generer') !== '' && $country !== null) {
+            $seedRaw = $request->queryString('seed');
+            $seed = ctype_digit($seedRaw) ? (int) $seedRaw : null;
+            $sex = $request->queryString('sex');
+            $draft = array_merge($draft, $this->generator->generate($country, $seed, in_array($sex, ['M', 'F'], true) ? $sex : null));
+            if ($request->queryString('kind') !== '') {
+                $draft['kind'] = SseIdentityCatalog::pick(SseIdentityCatalog::KINDS, $request->queryString('kind'), 'generated');
+            }
+            $generated = true;
+        }
+        $person = ($draft['person_id'] ?? 0) > 0 ? $this->persons->findById((int) $draft['person_id'], $tenantId) : null;
+
+        return $this->view('atak.sse.papers.identity_form', [
+            'title' => 'Nouvelle identité',
+            'draft' => $draft,
+            'generated' => $generated,
+            'countries' => $countries,
+            'person' => $person,
+            'maps' => $this->maps(),
+            'papersTab' => 'identites',
+        ]);
+    }
+
+    public function identityStore(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied();
+        }
+        $tenantId = $this->tenantId();
+        $last = trim($request->inputString('last_name'));
+        $first = trim($request->inputString('first_name'));
+        if ($last === '' || $first === '') {
+            Session::flash('error', 'Le nom et le prénom sont obligatoires.');
+
+            return Response::redirect(url(self::BASE . '/identites/nouvelle'));
+        }
+        $personId = (int) $request->input('person_id', 0);
+        if ($personId > 0 && $this->persons->findById($personId, $tenantId) === null) {
+            $personId = 0;
+        }
+        $kind = $request->inputString('kind');
+        if (!$this->canSeeTruth() && in_array($kind, ['cover', 'forged'], true)) {
+            $kind = 'civil';
+        }
+        $id = $this->identities->create($tenantId, [
+            'kind' => $kind,
+            'last_name' => $last,
+            'first_name' => $first,
+            'sex' => $request->inputString('sex'),
+            'birth_date' => $request->inputString('birth_date'),
+            'birth_place' => $request->inputString('birth_place'),
+            'nationality' => $request->inputString('nationality'),
+            'profession' => $request->inputString('profession'),
+            'arma_key' => $request->inputString('arma_key'),
+            'person_id' => $personId,
+            'context_id' => (int) $request->input('context_id', 0),
+            'op_key' => $request->inputString('op_key'),
+            'seed' => $request->inputString('seed'),
+            'notes' => $request->inputString('notes'),
+        ], $this->userId());
+        Session::flash('success', 'Identité enregistrée. Ajoutez-lui un papier.');
+
+        return Response::redirect(url(self::BASE . '/identites/' . $id));
+    }
+
+    public function identityShow(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $identity = $this->identities->find((int) ($params['id'] ?? 0), $tenantId);
+        if ($identity === null) {
+            Session::flash('error', 'Identité introuvable.');
+
+            return Response::redirect(url(self::BASE . '/identites'));
+        }
+        $person = ($identity['person_id'] ?? 0) > 0 ? $this->persons->findById((int) $identity['person_id'], $tenantId) : null;
+
+        return $this->view('atak.sse.papers.identity_show', [
+            'title' => $identity['ref'] . ' — ' . $identity['display_name'],
+            'identity' => $identity,
+            'person' => $person,
+            'documents' => $this->documents->list($tenantId, ['identity_id' => (int) $identity['id']]),
+            'countries' => $this->countries->listForTenant($tenantId),
+            'papersTab' => 'identites',
+        ]);
+    }
+
+    // --------------------------------------------------------------- Contrôles
+
+    public function checksIndex(Request $request, array $params = []): Response
+    {
+        $filters = [
+            'verdict' => $request->queryString('verdict'),
+            'q' => $request->queryString('q'),
+        ];
+
+        return $this->view('atak.sse.papers.checks', [
+            'title' => 'Contrôles d’identité',
+            'checks' => $this->checks->list($this->tenantId(), $filters),
+            'filters' => $filters,
+            'papersTab' => 'controles',
+        ]);
+    }
+
+    public function checkShow(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $check = $this->checks->find((int) ($params['id'] ?? 0), $tenantId);
+        if ($check === null) {
+            Session::flash('error', 'Contrôle introuvable.');
+
+            return Response::redirect(url(self::BASE . '/controles'));
+        }
+
+        return $this->view('atak.sse.papers.check_show', [
+            'title' => $check['ref'],
+            'check' => $check,
+            'doc' => $check['document_id'] !== null ? $this->documents->find((int) $check['document_id'], $tenantId) : null,
+            'person' => $check['person_id'] !== null ? $this->persons->findById((int) $check['person_id'], $tenantId) : null,
+            'papersTab' => 'controles',
+        ]);
+    }
+
+    /**
+     * Bloc « Documents et contrôles » de la fiche personne SSE (identités rattachées, papiers, contrôles reçus).
+     *
+     * @return array{identities: list<array<string, mixed>>, documents: list<array<string, mixed>>, checks: list<array<string, mixed>>, truth: bool}
+     */
+    public static function personPapers(int $tenantId, int $personId): array
+    {
+        $empty = ['identities' => [], 'documents' => [], 'checks' => [], 'truth' => false];
+        if ($tenantId < 1 || $personId < 1) {
+            return $empty;
+        }
+        try {
+            $truth = (new SseClearanceService())->allows(SseCaseRepository::CLASS_CONFIDENTIAL);
+            $identities = (new SseIdentityRepository())->listForPerson($tenantId, $personId);
+            if (!$truth) {
+                // Couvertures et faux rattachés à la personne : vérité de jeu, réservée à l'habilitation Confidentiel.
+                $identities = array_values(array_filter($identities, static fn (array $i): bool => !in_array($i['kind'], ['cover', 'forged'], true)));
+            }
+            $documents = (new SseIdDocumentRepository())->list($tenantId, ['holder_person_id' => $personId, 'limit' => 50]);
+            if (!$truth) {
+                $documents = array_values(array_filter($documents, static fn (array $d): bool => !in_array($d['identity']['kind'], ['cover', 'forged'], true)
+                    && !in_array($d['st_origin'], ['cover', 'forged'], true)));
+            }
+
+            return [
+                'identities' => $identities,
+                'documents' => $documents,
+                'checks' => (new SseIdCheckRepository())->list($tenantId, ['person_id' => $personId, 'limit' => 30]),
+                'truth' => $truth,
+            ];
+        } catch (\Throwable) {
+            return $empty;
+        }
+    }
+
+    // ----------------------------------------------------------------- Outils
+
+    /**
+     * @param list<array<string, mixed>> $countries
+     * @return array<string, mixed>|null
+     */
+    private function pickCountry(array $countries, string $code): ?array
+    {
+        foreach ($countries as $c) {
+            if ($c['code'] === $code) {
+                return $c;
+            }
+        }
+
+        return $countries[0] ?? null;
+    }
+
+    /** @param array<string, mixed> $country */
+    private function freeNumber(int $tenantId, array $country, string $type, int $seed): string
+    {
+        $format = (string) $country['number_format'];
+        for ($i = 0; $i < 20; $i++) {
+            $n = SseIdentityGeneratorService::documentNumber($format, $seed, $type . $i);
+            if (!$this->documents->numberExists($tenantId, (string) $country['code'], $type, $n)) {
+                return $n;
+            }
+        }
+
+        return SseIdentityGeneratorService::documentNumber($format, SseIdentityGeneratorService::randomSeed(), $type);
+    }
+
+    /** @return list<array{id: int, label: string}> */
+    private function maps(): array
+    {
+        try {
+            $out = [];
+            foreach ((new AtakMapRepository())->getAll() as $m) {
+                $out[] = ['id' => (int) $m['id'], 'label' => (string) ($m['name'] ?? $m['display_name'] ?? $m['slug'] ?? ('#' . $m['id']))];
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** @param array<string, mixed> $data */
+    private function view(string $view, array $data): Response
+    {
+        $data['isGuest'] = $this->access->isGuest();
+        $data['clearanceUntil'] = (int) Session::get(SseAccessCodeService::SESSION_UNTIL, 0);
+        $data['guestLabel'] = (string) Session::get('sse_guest_label', '');
+        $data['sseTheme'] = sse_ui_theme();
+        $data['sseThemeOptions'] = sse_ui_theme_options();
+        $data['canManage'] = $this->canManage();
+        $data['canGrant'] = !$this->access->isGuest() && function_exists('can') && (can('atak.sse.grant') || can('admin.access'));
+        $data['canSeeTruth'] = $this->canSeeTruth();
+        $data['activeNav'] = 'papiers';
+
+        return Response::view($view, $data);
+    }
+
+    private function denied(?string $back = null): Response
+    {
+        Session::flash('error', 'Action non autorisée.');
+
+        return Response::redirect($back ?? url(self::BASE));
+    }
+
+    private function tenantId(): int
+    {
+        $tid = $this->access->tenantId();
+
+        return $tid > 0 ? $tid : (int) Session::get('tenant_id');
+    }
+
+    private function userId(): ?int
+    {
+        $id = (int) Session::get('user_id');
+
+        return $id > 0 ? $id : null;
+    }
+
+    private function canManage(): bool
+    {
+        if ($this->access->isGuest()) {
+            return false;
+        }
+
+        return function_exists('can') && (can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access'));
+    }
+
+    private function canSeeTruth(): bool
+    {
+        return $this->clearance->allows(SseCaseRepository::CLASS_CONFIDENTIAL);
+    }
+}
