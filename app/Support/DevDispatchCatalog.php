@@ -294,6 +294,12 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1359, '2026-11-03', 'Academy : ancienne version signalée, débriefing « Rien à améliorer »', 'Quand un parcours suit une ancienne version d’un cours, un badge l’indique partout où il apparaît (Mes formations, salle de cours, fiche du cours, tableau de bord, espace instructeur), avec ce qui a changé. Un bouton permet au stagiaire, ou à son instructeur, de passer à la nouvelle version en gardant la progression et ce qui est validé. Un parcours terminé garde sa licence : la nouvelle version s’ouvre en complément, les chapitres déjà couverts restent acquis. Le débriefing de chapitre peut aussi être envoyé sans texte en cochant « Rien à améliorer ».', [
+                'Badge « Ancienne version » sur les parcours d’un cours intégré ou du Studio remplacé par une version plus récente',
+                'Passage à la nouvelle version après confirmation, progression gardée, licence jamais retirée, action journalisée',
+                'Case « Rien à améliorer » dans le débriefing de chapitre, accessible au clavier',
+            ], [], [], ['personnel'], [], 'Portail'),
+
             $pr(1358, '2026-11-03', 'Academy : les six chapitres du JTAC pour tous les stagiaires', 'Les stagiaires inscrits à la toute première version du cours JTAC ne voyaient qu’un seul chapitre : leur copie du cours restait figée sur cette version. Tant que le parcours n’est pas terminé, la copie passe maintenant à la version courante avec ses six chapitres, sans rien perdre de la progression : chapitre en cours, tentatives, débriefings et validations. Les parcours terminés et les licences délivrées ne changent pas.', [], [
                 'JTAC : six chapitres visibles dans la salle de cours pour les stagiaires inscrits à l’ancienne version, progression conservée',
             ], [], ['personnel'], [], 'Portail'),
