@@ -660,6 +660,115 @@ final class SseIdentityRegistryController
         ]);
     }
 
+    // ------------------------------------------------------- Papiers des membres
+
+    /**
+     * Liste des membres de la communauté et de leurs papiers, accès direct des responsables RENS (gestion SSE ou
+     * habilitation Encadrement) sans droit Effectifs. Aucune donnée RH : nom affiché, indicatif, unité.
+     */
+    public function membersIndex(Request $request, array $params = []): Response
+    {
+        $rights = $this->memberPapersRights();
+        if ($rights === null) {
+            return $this->denied(url('atak/sse'));
+        }
+        $tenantId = $this->tenantId();
+        $filters = [
+            'q' => mb_substr(trim($request->queryString('q')), 0, 80),
+            'unit' => (int) $request->query('unit', 0),
+            'steam' => in_array($request->queryString('steam'), ['oui', 'non'], true) ? $request->queryString('steam') : '',
+            'kit' => in_array($request->queryString('kit'), ['oui', 'non'], true) ? $request->queryString('kit') : '',
+        ];
+        $rows = [];
+        $units = [];
+        try {
+            $directory = (new \App\Repositories\UserRepository())->listPersonnelDirectoryRich($tenantId, $filters['q'], 300);
+            $stats = (new \App\Services\Sse\MemberIdentityPapersService())->roster($tenantId, array_map(static fn (array $r): int => (int) $r['id'], $directory), $rights['truth']);
+            foreach ($directory as $r) {
+                $uid = (int) $r['id'];
+                $unitId = (int) ($r['primary_unit_id'] ?? 0);
+                if ($unitId > 0) {
+                    $units[$unitId] = (string) ($r['unit_name'] ?? ('#' . $unitId));
+                }
+                $st = $stats[$uid] ?? ['steam_linked' => false, 'issued' => 0, 'kit' => false, 'last_check' => null];
+                if (($filters['unit'] > 0 && $unitId !== $filters['unit'])
+                    || ($filters['steam'] !== '' && $st['steam_linked'] !== ($filters['steam'] === 'oui'))
+                    || ($filters['kit'] !== '' && $st['kit'] !== ($filters['kit'] === 'oui'))) {
+                    continue;
+                }
+                $rows[] = [
+                    'id' => $uid,
+                    'name' => (string) ($r['display_name'] ?? ''),
+                    'callsign' => (string) ($r['callsign'] ?? ''),
+                    'unit' => (string) ($r['unit_name'] ?? ''),
+                ] + $st;
+            }
+        } catch (\Throwable $e) {
+            error_log('SSE › papiers des membres indisponibles : ' . $e->getMessage());
+        }
+        asort($units);
+
+        return $this->view('atak.sse.papers.members', [
+            'title' => 'Papiers des membres',
+            'members' => $rows,
+            'units' => $units,
+            'filters' => $filters,
+            'papersTab' => 'membres',
+        ]);
+    }
+
+    /**
+     * Papiers d'un membre : exactement l'onglet « Identité & papiers » de la fiche membre (même vue partielle, même
+     * service), sans le reste de la fiche (ni état civil RH, ni documents RH, ni autres onglets).
+     */
+    public function memberShow(Request $request, array $params = []): Response
+    {
+        $rights = $this->memberPapersRights();
+        if ($rights === null) {
+            return $this->denied(url('atak/sse'));
+        }
+        $tenantId = $this->tenantId();
+        $member = (new \App\Repositories\UserRepository())->findById((int) ($params['id'] ?? 0), $tenantId);
+        $section = $member !== null ? \App\Controllers\Admin\MemberIdentityPapersController::sectionFor($tenantId, $member, true) : null;
+        if ($member === null || $section === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(url(self::BASE . '/membres'));
+        }
+
+        return $this->view('atak.sse.papers.member', [
+            'title' => 'Papiers — ' . (string) ($member['display_name'] ?? ''),
+            'memberName' => (string) ($member['display_name'] ?? ''),
+            'memberId' => (int) $member['id'],
+            'memberPapers' => $section,
+            // Lien vers la fiche membre complète seulement avec un droit Effectifs.
+            'memberFileUrl' => \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance()) ? effectifs_workspace_url('membres/' . (int) $member['id']) : null,
+            'csrfToken' => Csrf::token(),
+            'papersTab' => 'membres',
+        ]);
+    }
+
+    /**
+     * Rendu d'une page du portail SSE pour un autre contrôleur (formulaire de papier d'un membre).
+     *
+     * @param array<string, mixed> $data
+     */
+    public function page(string $view, array $data): Response
+    {
+        return $this->view($view, $data);
+    }
+
+    /** @return array{view: bool, manage: bool, truth: bool, cover: bool, sse: bool}|null null = accès refusé */
+    private function memberPapersRights(): ?array
+    {
+        if ($this->access->isGuest() || $this->userId() === null) {
+            return null;
+        }
+        $rights = \App\Controllers\Admin\MemberIdentityPapersController::currentRights($this->clearance);
+
+        return $rights['sse'] ? $rights : null;
+    }
+
     // --------------------------------------------------------------- Contrôles
 
     public function checksIndex(Request $request, array $params = []): Response
@@ -789,6 +898,11 @@ final class SseIdentityRegistryController
         $data['canGrant'] = !$this->access->isGuest() && function_exists('can') && (can('atak.sse.grant') || can('admin.access'));
         $data['canSeeTruth'] = $this->canSeeTruth();
         $data['activeNav'] = 'papiers';
+        try {
+            $data['canMemberPapers'] = $this->memberPapersRights() !== null;
+        } catch (\Throwable) {
+            $data['canMemberPapers'] = false;
+        }
 
         return Response::view($view, $data);
     }
