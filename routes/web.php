@@ -941,6 +941,7 @@ return function (Router $router) {
     $router->get('/atak/sse/papiers/identites/nouvelle', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/identites', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/identites/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'identityShow'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/identites/{id}/images', [\App\Controllers\Web\SseIdWorkshopController::class, 'identityImages'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/nouveau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentCreateForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/documents', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentStore'], $mwSsePortal);
     $router->get('/atak/sse/papiers/documents/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'documentShow'], $mwSsePortal);

@@ -61,7 +61,7 @@ final class SseIdWorkshopWiringTest extends TestCase
         self::assertSame(['view' => false, 'manage' => false, 'truth' => true], SseIdWorkshopController::rightsFor(false, false, false, true));
         $ctrl = self::read('app/Controllers/Web/SseIdWorkshopController.php');
         // Chaque écriture vérifie le droit de gestion et le jeton CSRF.
-        self::assertSame(substr_count($ctrl, "if (!\$r['manage'] || !Csrf::validate("), 13);
+        self::assertSame(substr_count($ctrl, "if (!\$r['manage'] || !Csrf::validate("), 14);
     }
 
     public function testMigrationStepIsRegisteredAndReplayable(): void

@@ -136,6 +136,15 @@ final class SseIdDocumentRepository
         ) > 0;
     }
 
+    /** Image de fond du gabarit personnalisé (null : retirée). */
+    public function setBackground(int $id, int $tenantId, ?string $path): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_id_documents SET background_path = :bg, updated_at = :now WHERE id = :id AND tenant_id = :t',
+            ['bg' => $path !== null ? mb_substr($path, 0, 255) : null, 'now' => gmdate('Y-m-d H:i:s'), 'id' => $id, 't' => $tenantId]
+        ) > 0;
+    }
+
     /** Copies d'un papier (papier dupliqué : son remplaçant). @return list<int> */
     public function duplicatesOf(int $id, int $tenantId): array
     {
@@ -481,6 +490,7 @@ final class SseIdDocumentRepository
             'notes' => $row['notes'] ?? null,
             'layout' => \App\Support\SseIdWorkshopCatalog::layout($row['layout'] ?? null),
             'print' => \App\Support\SseIdWorkshopCatalog::printFields($row['print_json'] ?? null),
+            'background_path' => ($row['background_path'] ?? null) !== null && $row['background_path'] !== '' ? (string) $row['background_path'] : null,
             'duplicated_from_id' => ($row['duplicated_from_id'] ?? null) !== null && (int) $row['duplicated_from_id'] > 0 ? (int) $row['duplicated_from_id'] : null,
             'batch_id' => ($row['batch_id'] ?? null) !== null && (int) $row['batch_id'] > 0 ? (int) $row['batch_id'] : null,
             'created_at' => (string) ($row['created_at'] ?? ''),
