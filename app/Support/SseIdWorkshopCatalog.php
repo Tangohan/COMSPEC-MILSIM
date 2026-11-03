@@ -18,6 +18,7 @@ final class SseIdWorkshopCatalog
         'modern' => 'Moderne (bandeau aux couleurs du pays)',
         'classic' => 'Classique (cadre guilloché)',
         'compact' => 'Sobre (fond clair)',
+        'custom' => 'Personnalisé (image de fond importée)',
     ];
 
     /** Camps du jeu (side Arma) : clés envoyées au serveur. */

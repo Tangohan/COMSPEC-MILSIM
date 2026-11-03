@@ -7,6 +7,7 @@ namespace App\Services\Sse;
 use App\Repositories\SseIdCountryRepository;
 use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
+use App\Repositories\SsePersonRepository;
 use App\Support\SseIdentityCatalog;
 use App\Support\SseIdRealCountryCatalog;
 use App\Support\SseIdWorkshopCatalog;
@@ -203,9 +204,67 @@ final class SseIdWorkshopService
             'layout' => $doc['layout'] ?? null, 'print' => $doc['print'] ?? [], 'duplicated_from_id' => (int) $doc['id'],
             'batch_id' => $doc['batch_id'] ?? null,
         ], $actorId);
+        if (($doc['background_path'] ?? null) !== null) {
+            $this->documents->setBackground($id, $tenantId, (string) $doc['background_path']);
+        }
         SseIdMassGeneratorService::audit($tenantId, $actorId, 'id_workshop.duplicate', 'sse_id_document', $id, ['from' => (int) $doc['id']]);
 
         return $id;
+    }
+
+    /**
+     * Photos déjà prises de la personne SSE reliée à l'identité (fiche personne, contrôles), réutilisables comme photo
+     * du titulaire. Seulement les images rangées sur le site (uploads/…).
+     *
+     * @return list<array{id: int, url: string, label: string}>
+     */
+    public static function personPhotos(int $tenantId, ?int $personId, ?SsePersonRepository $persons = null): array
+    {
+        if ($personId === null || $personId <= 0) {
+            return [];
+        }
+        $out = [];
+        try {
+            foreach (($persons ?? new SsePersonRepository())->listPhotos($personId, $tenantId) as $p) {
+                if (self::localUpload((string) $p['image_path']) !== null) {
+                    $out[] = ['id' => (int) $p['id'], 'url' => (string) $p['url'], 'label' => trim($p['angle_label'] . ' · ' . substr((string) ($p['created_at'] ?? ''), 0, 10), ' ·')];
+                }
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return array_slice($out, -24);
+    }
+
+    /**
+     * Copie une photo de la personne SSE comme photo du titulaire (réencodée, recadrée, sans métadonnées).
+     *
+     * @return array{ok: bool, path?: string, error?: string}
+     */
+    public static function copyPersonPhoto(int $tenantId, ?int $personId, int $photoId, SseIdImageService $images, ?SsePersonRepository $persons = null): array
+    {
+        if ($personId !== null && $personId > 0) {
+            foreach (($persons ?? new SsePersonRepository())->listPhotos($personId, $tenantId) as $p) {
+                if ((int) $p['id'] === $photoId && ($file = self::localUpload((string) $p['image_path'])) !== null) {
+                    return $images->storeFile($file, 'photo', $tenantId);
+                }
+            }
+        }
+
+        return ['ok' => false, 'error' => 'Cette photo n’appartient pas à la personne reliée à l’identité.'];
+    }
+
+    /** Chemin disque d'une image rangée sous public/uploads (null sinon). */
+    private static function localUpload(string $path): ?string
+    {
+        $path = str_replace('\\', '/', trim($path));
+        if (preg_match('#(?:^|/)(uploads/[A-Za-z0-9_\-./]+\.(?:png|jpe?g|webp))$#i', $path, $m) !== 1 || str_contains($m[1], '..')) {
+            return null;
+        }
+        $file = base_path('public/' . $m[1]);
+
+        return is_file($file) ? $file : null;
     }
 
     /** @param array<string, mixed> $country */
@@ -273,6 +332,7 @@ final class SseIdWorkshopService
             'doc_type' => (string) ($doc['doc_type'] ?? 'id_card'),
             'doc_type_label' => SseIdentityCatalog::label(SseIdentityCatalog::DOC_TYPES, (string) ($doc['doc_type'] ?? 'id_card')),
             'layout' => SseIdWorkshopCatalog::layout($doc['layout'] ?? null),
+            'background_url' => ($doc['background_path'] ?? null) !== null ? (string) url((string) $doc['background_path']) : null,
             'country' => [
                 'code' => (string) ($country['code'] ?? ($doc['country_code'] ?? '')),
                 'name' => (string) ($country['name'] ?? ($doc['country_code'] ?? '')),
@@ -292,6 +352,7 @@ final class SseIdWorkshopService
                 'nationality' => (string) ($identity['nationality'] ?? ''),
                 'profession' => (string) ($identity['profession'] ?? ''),
                 'photo_url' => ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null,
+                'signature_url' => ($identity['signature_path'] ?? null) !== null ? (string) url((string) $identity['signature_path']) : null,
             ],
             'doc' => [
                 'ref' => (string) ($doc['ref'] ?? ''),

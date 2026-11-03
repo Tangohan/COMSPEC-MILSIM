@@ -211,6 +211,7 @@ final class SseIdentityRegistryController
             'instances' => $this->documents->instances((int) $doc['id'], $tenantId),
             'transitions' => SseIdentityCatalog::TRANSITIONS[$doc['workflow']] ?? [],
             'papersTab' => 'documents',
+            'personPhotos' => \App\Services\Sse\SseIdWorkshopService::personPhotos($tenantId, $identity['person_id'] ?? null),
         ]);
     }
 
@@ -623,35 +624,18 @@ final class SseIdentityRegistryController
         return Response::redirect($list);
     }
 
-    /** Drapeau ou armoiries téléversés : chemin public, null si rien n'est envoyé, false si le fichier est refusé. */
+    /**
+     * Drapeau ou armoiries téléversés : chemin public, null si rien n'est envoyé, false si le fichier est refusé.
+     * Vrai type contrôlé, image réencodée sans métadonnées (SseIdImageService).
+     */
     private function storeFlag(int $tenantId, string $code): string|false|null
     {
-        $file = $_FILES['flag'] ?? null;
-        if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        $res = (new \App\Services\Sse\SseIdImageService())->storeUpload($_FILES['flag'] ?? null, 'flag', $tenantId);
+        if (!empty($res['none'])) {
             return null;
         }
-        if (($file['error'] ?? 1) !== UPLOAD_ERR_OK || (int) ($file['size'] ?? 0) > 1024 * 1024 || !is_uploaded_file((string) $file['tmp_name'])) {
-            return false;
-        }
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = $finfo !== false ? finfo_file($finfo, (string) $file['tmp_name']) : false;
-        if ($finfo !== false) {
-            finfo_close($finfo);
-        }
-        $ext = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'][(string) $mime] ?? null;
-        if ($ext === null || @getimagesize((string) $file['tmp_name']) === false) {
-            return false;
-        }
-        $dir = base_path('public/uploads/sse-flags');
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
-            return false;
-        }
-        $name = $tenantId . '_' . preg_replace('/[^A-Z]/', '', $code) . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-        if (!move_uploaded_file((string) $file['tmp_name'], $dir . DIRECTORY_SEPARATOR . $name)) {
-            return false;
-        }
 
-        return 'uploads/sse-flags/' . $name;
+        return $res['ok'] ? (string) $res['path'] : false;
     }
 
     /** @param array<string, mixed> $after */
@@ -790,6 +774,7 @@ final class SseIdentityRegistryController
             'documents' => $this->documents->list($tenantId, ['identity_id' => (int) $identity['id']]),
             'countries' => $this->countries->listForTenant($tenantId),
             'papersTab' => 'identites',
+            'personPhotos' => \App\Services\Sse\SseIdWorkshopService::personPhotos($tenantId, $identity['person_id']),
         ]);
     }
 
@@ -1076,9 +1061,13 @@ final class SseIdentityRegistryController
         }
         try {
             // Atelier, kits types, préparation de mission (lot 6) : gestion SSE ou habilitation Encadrement.
-            $data['canWorkshop'] ??= SseIdWorkshopController::rightsFor($this->access->isGuest() || $this->userId() === null, $this->canManage(), $this->clearance->allows(SseCaseRepository::CLASS_COMMAND), false)['view'];
+            $workshopRights = SseIdWorkshopController::rightsFor($this->access->isGuest() || $this->userId() === null, $this->canManage(), $this->clearance->allows(SseCaseRepository::CLASS_COMMAND), false);
+            $data['canWorkshop'] ??= $workshopRights['view'];
+            // Images du titulaire (photo, signature) : mêmes droits d'écriture que l'atelier.
+            $data['canEditImages'] ??= $workshopRights['manage'];
         } catch (\Throwable) {
             $data['canWorkshop'] = false;
+            $data['canEditImages'] = false;
         }
 
         return Response::view($view, $data);

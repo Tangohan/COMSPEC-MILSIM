@@ -1,9 +1,10 @@
 /**
  * Atelier de documents (COMSPEC IDENTITY, Lot 6) : aperçu en direct du papier fictif, bande MRZ recalculée par le site
  * (SseMrzService, GET …/atelier/mrz), choix des faces affichées et export de l'aperçu en image PNG (html2canvas,
- * chargé seulement au premier export). Le filigrane SIMULATION fait partie de chaque face exportée ; l'export le
- * redessine en plus directement sur l'image (diagonale sur toute la surface) avec le bandeau « DOCUMENT DE JEU – SANS
- * VALEUR » : ni le masquer dans la page ni retoucher le DOM ne permet d'obtenir une image sans eux.
+ * chargé seulement au premier export). Le filigrane SIMULATION fait partie de chaque face exportée, au-dessus de la
+ * photo, de la signature et de l'image de fond importées ; l'export le redessine en plus directement sur l'image
+ * (diagonale sur toute la surface) avec le bandeau « DOCUMENT DE JEU – SANS VALEUR » : ni le masquer dans la page ni
+ * retoucher le DOM ne permet d'obtenir une image sans eux.
  */
 (function () {
   var form = document.getElementById('idw-form');
@@ -65,7 +66,7 @@
 
   function applyLayout() {
     var layout = val('layout') || 'modern';
-    ['modern', 'classic', 'compact'].forEach(function (l) { preview.classList.toggle('idw-layout--' + l, l === layout); });
+    ['modern', 'classic', 'compact', 'custom'].forEach(function (l) { preview.classList.toggle('idw-layout--' + l, l === layout); });
   }
 
   function applyFields() {
@@ -135,6 +136,22 @@
         preview.querySelectorAll('[data-f-silhouette]').forEach(function (s) { s.hidden = true; });
       };
       reader.readAsDataURL(t.files[0]);
+      return;
+    }
+    // Signature et image de fond importées : aperçu immédiat (le filigrane reste par-dessus).
+    var imgKind = t && t.getAttribute ? t.getAttribute('data-bind-img') : null;
+    if (imgKind && t.files && t.files[0]) {
+      var r2 = new FileReader();
+      r2.onload = function () {
+        var src = String(r2.result);
+        if (imgKind === 'signature') {
+          preview.querySelectorAll('[data-f-signature]').forEach(function (img) { img.src = src; img.hidden = false; });
+          preview.querySelectorAll('[data-p-signature]').forEach(function (b) { b.hidden = true; });
+        } else if (imgKind === 'background') {
+          preview.querySelectorAll('[data-f-bg]').forEach(function (bg) { bg.style.backgroundImage = 'url("' + src + '")'; bg.hidden = false; });
+        }
+      };
+      r2.readAsDataURL(t.files[0]);
       return;
     }
     refreshAll();
