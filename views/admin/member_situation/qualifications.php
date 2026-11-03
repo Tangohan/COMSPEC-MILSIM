@@ -72,6 +72,10 @@ $summary = [
 
     <?php require __DIR__ . '/_pilot_progress.php'; ?>
 
+    <?php if (is_array($qualificationSuggestions ?? null)): ?>
+    <?php require base_path('views/partials/qualification_suggestions.php'); ?>
+    <?php endif; ?>
+
     <?php if (!empty($qualificationProgress)): ?>
     <section class="bo-ms-qprog" aria-labelledby="bo-ms-qprog-t">
         <h2 class="bo-ms-qprog__title" id="bo-ms-qprog-t">En route vers une qualification</h2>
@@ -79,13 +83,6 @@ $summary = [
     </section>
     <?php endif; ?>
 
-    <?php if (is_array($qualificationSuggestions ?? null)): ?>
-    <section class="bo-ms-qprog" aria-labelledby="bo-ms-qsg-t" id="qualifs-suggerees">
-        <h2 class="bo-ms-qprog__title" id="bo-ms-qsg-t">Qualifications et brevets suggérés</h2>
-        <p class="bo-ms-qprog__lead">D’après votre fonction, votre unité et vos qualifications : parlez-en à votre encadrement.</p>
-        <?php require base_path('views/partials/qualification_suggestions.php'); ?>
-    </section>
-    <?php endif; ?>
 
     <?php if ($awards === []): ?>
         <section class="bo-doc-empty">

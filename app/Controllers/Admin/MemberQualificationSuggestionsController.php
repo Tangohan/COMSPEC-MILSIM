@@ -36,33 +36,32 @@ final class MemberQualificationSuggestionsController
     {
         $userId = (int) ($params['id'] ?? 0);
         $back = url('back-office/ressources/effectifs/membres/' . $userId) . '#qualifs-suggerees';
+        // Envoi depuis la fenêtre des suggestions (fetch) : réponse JSON, la fenêtre reste ouverte.
+        $json = str_contains(strtolower((string) $request->header('Accept')), 'application/json');
+        $reply = static function (bool $ok, string $message, string $to) use ($json): Response {
+            if ($json) {
+                return Response::json(['ok' => $ok, 'message' => $message], $ok ? 200 : 422);
+            }
+            Session::flash($ok ? 'success' : 'error', $message);
+
+            return Response::redirect($to);
+        };
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
-            return Response::redirect(url('login'));
+            return $json ? Response::json(['ok' => false, 'message' => 'Session expirée. Reconnectez-vous.'], 401) : Response::redirect(url('login'));
         }
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-
-            return Response::redirect($back);
+            return $reply(false, 'Session expirée. Réessayez.', $back);
         }
         if (!self::canDismiss(Gate::getInstance())) {
-            Session::flash('error', 'Vous n’avez pas le droit de modifier les suggestions de ce membre.');
-
-            return Response::redirect($back);
+            return $reply(false, 'Vous n’avez pas le droit de modifier les suggestions de ce membre.', $back);
         }
         if ($userId < 1 || !Container::get(UserRepository::class)->isMemberOfTenant($userId, $tenantId)) {
-            Session::flash('error', 'Membre introuvable.');
-
-            return Response::redirect(effectifs_workspace_url());
+            return $reply(false, 'Membre introuvable.', effectifs_workspace_url());
         }
         $restore = (string) $request->input('restore', '') === '1';
         $ok = Container::get(MemberQualificationSuggestionService::class)->dismiss($tenantId, $userId, (string) $request->input('key', ''), (int) Session::get('user_id'), $restore);
-        if ($ok) {
-            Session::flash('success', $restore ? 'Suggestion reprise.' : 'Suggestion ignorée pour ce membre.');
-        } else {
-            Session::flash('error', 'Suggestion non enregistrée : la mise à jour du site n’est peut-être pas encore faite.');
-        }
 
-        return Response::redirect($back);
+        return $reply($ok, $ok ? ($restore ? 'Suggestion reprise.' : 'Suggestion ignorée pour ce membre.') : 'Suggestion non enregistrée : la mise à jour du site n’est peut-être pas encore faite.', $back);
     }
 }

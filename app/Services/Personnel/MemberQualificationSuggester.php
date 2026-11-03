@@ -301,6 +301,14 @@ final class MemberQualificationSuggester
                 'notes' => $notes,
                 'course' => $course,
                 'allow_manual' => $allowManual,
+                'category_key' => $entry !== null ? (string) ($entry['category'] ?? '') : '',
+                'domain' => \App\Support\QualificationCatalog\QualificationVisual::domain($name . ' ' . ($entry !== null ? (string) ($entry['official_name'] ?? '') . ' ' . (string) ($entry['code'] ?? '') : '') . ' ' . (string) ($defs[$defId]['category_name'] ?? ''), $entry !== null ? (string) ($entry['category'] ?? '') : ''),
+                'issuer' => $entry !== null ? QualificationCatalog::issuerOf($entry, $lang)['name'] : '',
+                'description' => $entry !== null ? (QualificationCatalog::pick($entry['description'] ?? '', $lang) ?: trim((string) ($defs[$defId]['description'] ?? ''))) : trim((string) ($defs[$defId]['description'] ?? '')),
+                'validity' => $entry !== null ? QualificationCatalog::pick($entry['validity'] ?? '', $lang) : '',
+                'validity_months' => $entry !== null && is_int($entry['validity_months'] ?? null) && $entry['validity_months'] > 0 ? $entry['validity_months'] : ((int) ($defs[$defId]['validity_months'] ?? 0) ?: null),
+                'checks' => $entry !== null ? self::catalogChecks($entry, $catalog, $holdsCatalog, $measure, $gradeNato, $lang) : [],
+                'prerequisite_texts' => $entry !== null ? array_map(static fn (array $p): string => $p['text'], QualificationCatalogExplorer::prerequisites($entry, $lang)) : [],
             ];
             if (isset($dismissed[$key])) {
                 $dismissedItems[] = $item;
@@ -448,6 +456,27 @@ final class MemberQualificationSuggester
     private static function catalogMissing(array $entry, array $catalog, callable $holds, callable $measure, string $gradeNato, string $lang): array
     {
         $out = [];
+        foreach (self::catalogChecks($entry, $catalog, $holds, $measure, $gradeNato, $lang) as $c) {
+            if (!$c['ok']) {
+                $out[] = $c['missing'];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Tous les prérequis structurés d’une entrée avec leur état pour ce membre : rempli ou non, valeur du membre et
+     * valeur demandée, source (mesuré par le jeu, attesté par un instructeur, qualification préalable, grade).
+     *
+     * @param array<string, array<string, mixed>> $catalog
+     * @param callable(string): bool $holds
+     * @param callable(array<string, mixed>): ?float $measure
+     * @return list<array{ok: bool, source: string, subject: string, criterion: array<string, mixed>|null, have: float|null, need: float|null, missing: array{text: string, subject: string, criterion: array<string, mixed>|null}}>
+     */
+    public static function catalogChecks(array $entry, array $catalog, callable $holds, callable $measure, string $gradeNato, string $lang): array
+    {
+        $out = [];
         foreach (is_array($entry['prerequisites_detected'] ?? null) ? $entry['prerequisites_detected'] : [] as $p) {
             if (!is_array($p)) {
                 continue;
@@ -455,24 +484,32 @@ final class MemberQualificationSuggester
             $kind = (string) ($p['kind'] ?? '');
             if ($kind === 'qualification') {
                 $ref = (string) ($p['ref'] ?? '');
-                if (isset($catalog[$ref]) && !$holds($ref)) {
-                    $out[] = ['text' => 'Qualification', 'subject' => QualificationCatalog::pick($catalog[$ref]['name'] ?? '', $lang), 'criterion' => null];
+                if (isset($catalog[$ref])) {
+                    $name = QualificationCatalog::pick($catalog[$ref]['name'] ?? '', $lang);
+                    $out[] = ['ok' => $holds($ref), 'source' => 'qualification', 'subject' => $name, 'criterion' => null, 'have' => null, 'need' => null,
+                        'missing' => ['text' => 'Qualification', 'subject' => $name, 'criterion' => null]];
                 }
             } elseif ($kind === 'metric' || $kind === 'attestation') {
                 $c = $kind === 'metric'
                     ? ['type' => 'metric', 'metric' => (string) ($p['metric'] ?? ''), 'scope' => (string) ($p['scope'] ?? ''), 'min' => (float) ($p['min'] ?? 0), 'window_days' => (int) ($p['window_days'] ?? 0)]
                     : ['type' => 'attestation', 'key' => (string) ($p['key'] ?? 'other'), 'label' => (string) ($p['label'] ?? ''), 'min' => (float) ($p['min'] ?? 0)];
                 $target = (float) $c['min'];
-                $current = (float) ($measure($c) ?? 0.0);
-                if ($target > 0 && $current < $target) {
-                    $out[] = ['text' => 'Il manque', 'subject' => '', 'criterion' => ['min' => round($target - $current, 2)] + $c];
-                } elseif ($target <= 0 && $measure($c) === null) {
-                    $out[] = ['text' => 'À attester', 'subject' => '', 'criterion' => $c];
+                $value = $measure($c);
+                $current = (float) ($value ?? 0.0);
+                $source = $kind === 'metric' ? 'game' : 'instructor';
+                if ($target > 0) {
+                    $ok = $current >= $target;
+                    $out[] = ['ok' => $ok, 'source' => $source, 'subject' => '', 'criterion' => $c, 'have' => $current, 'need' => $target,
+                        'missing' => ['text' => 'Il manque', 'subject' => '', 'criterion' => ['min' => round($target - $current, 2)] + $c]];
+                } else {
+                    $out[] = ['ok' => $value !== null, 'source' => $source, 'subject' => '', 'criterion' => $c, 'have' => null, 'need' => null,
+                        'missing' => ['text' => 'À attester', 'subject' => '', 'criterion' => $c]];
                 }
             } elseif ($kind === 'grade') {
                 $nato = strtoupper((string) ($p['nato'] ?? ''));
-                if ($nato !== '' && self::natoRank($gradeNato) < self::natoRank($nato)) {
-                    $out[] = ['text' => 'Grade minimum', 'subject' => $nato, 'criterion' => null];
+                if ($nato !== '') {
+                    $out[] = ['ok' => self::natoRank($gradeNato) >= self::natoRank($nato), 'source' => 'grade', 'subject' => $nato, 'criterion' => null, 'have' => null, 'need' => null,
+                        'missing' => ['text' => 'Grade minimum', 'subject' => $nato, 'criterion' => null]];
                 }
             }
         }
