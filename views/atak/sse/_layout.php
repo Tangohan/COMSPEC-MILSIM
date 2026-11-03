@@ -44,7 +44,15 @@ $classifBanner = function_exists('sse_ui_classification_label')
     : 'Confidentiel';
 
 // Navigation unique (barre latérale + palette Ctrl+K), rangée selon le cycle du renseignement.
-$sseNav = \App\Support\SsePortalNav::sections($canManage, $canGrant, $isGuest);
+if (!isset($canMemberPapers)) {
+    // Même règle que la page « Papiers des membres » (gestion SSE ou habilitation Encadrement).
+    try {
+        $canMemberPapers = !$isGuest && (int) \App\Core\Session::get('user_id') > 0 && \App\Controllers\Admin\MemberIdentityPapersController::currentRights()['sse'];
+    } catch (\Throwable) {
+        $canMemberPapers = false;
+    }
+}
+$sseNav = \App\Support\SsePortalNav::sections($canManage, $canGrant, $isGuest, (bool) $canMemberPapers);
 $sseNavActive = \App\Support\SsePortalNav::activeId($sseNav, $currentPath, $activeNav);
 $sseNavOpenSection = \App\Support\SsePortalNav::sectionOf($sseNav, $sseNavActive);
 $ssePalette = \App\Support\SsePortalNav::paletteEntries($sseNav, static fn (string $p): string => (string) url($p), $canManage, $isGuest);
