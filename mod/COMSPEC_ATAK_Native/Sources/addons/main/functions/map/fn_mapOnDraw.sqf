@@ -423,12 +423,20 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
             };
             // Couleur Arma exacte du repère, pleine (fn_mapColors « lift » : seules les couleurs trop sombres passent à
             // leur version vive sur carte sombre) ; halo dessous pour la lisibilité (2.9.40).
+            // Couleur et halo gardés par classe et par fond clair / sombre (avant : recalculés à chaque image et par repère).
             private _mcls = _marker getOrDefault ["color","ColorGreen"];
-            private _rgba = +([[_mcls, [0.36,0.78,0.42,1]] call _mkRgba, _mcls] call (_pal get "lift"));
+            private _hk = _mcls + (["|L", "|D"] select (_pal getOrDefault ["dark", false]));
+            private _mch = _mkColorCache getOrDefault [_hk, []];
+            if (_mch isEqualTo []) then {
+                private _rg = +([[_mcls, [0.36,0.78,0.42,1]] call _mkRgba, _mcls] call (_pal get "lift"));
+                _mch = [_rg, [_pal get "halo", _pal get "haloLight"] select (((_rg select 0) * 0.3 + (_rg select 1) * 0.59 + (_rg select 2) * 0.11) < 0.25)];
+                _mkColorCache set [_hk, _mch];
+            };
+            private _rgba = +(_mch select 0);
             _rgba set [3, [0, 1] select ((_marker getOrDefault ["alpha",1]) > 0.02)];
             private _isz = 16 * _k * _is;
             private _dirM = _marker getOrDefault ["dir",0];
-            _map drawIcon [_icon,[_pal get "halo", _pal get "haloLight"] select (((_rgba select 0) * 0.3 + (_rgba select 1) * 0.59 + (_rgba select 2) * 0.11) < 0.25),_pos,_isz * 1.3,_isz * 1.3,_dirM,"",0];
+            _map drawIcon [_icon,_mch select 1,_pos,_isz * 1.3,_isz * 1.3,_dirM,"",0];
             // Nom du repère : écrit par fn_mapMarkerText, comme ceux des marqueurs du jeu.
             _map drawIcon [_icon,_rgba,_pos,_isz,_isz,_dirM,"",0];
         };
