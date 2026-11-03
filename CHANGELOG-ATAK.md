@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 3.0.3 : suivi de COMSPEC IDENTITY, téléphone traduit pour les apps du SSE, Recherchés garde les BOLO locaux (ATAK natif 3.0.3.AG - Austin)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 3.0.3 : apps COMSPEC IDENTITY en anglais, Recherchés garde les BOLO de la mission
+- Les textes des nouvelles fonctions COMSPEC IDENTITY du mod SSE (Contrôle ID, Ma couverture, checkpoints, atelier de documents) s'affichent en anglais quand le téléphone est réglé en anglais.
+- App Recherchés : « Actualiser » ne fait plus disparaître les BOLO et HVT posés par la mission ou le Zeus ; ils s'affichent avec les avis d'Athena, sans doublon, avec leur origine (Athena ou BOLO local), les HVT en tête.
+EN : ATAK 3.0.3: COMSPEC IDENTITY apps in English, Wanted keeps the mission BOLOs
+- The texts of the new COMSPEC IDENTITY features of the SSE mod (ID Check, My cover, checkpoints, document workshop) are shown in English when the phone is set to English.
+- Wanted app: "Refresh" no longer removes the BOLOs and HVTs set by the mission or the Zeus; they are listed with the Athena notices, without duplicates, with their source (Athena or local BOLO), HVTs first.
+
+### Détail technique
+- **Version 3.0.3** : `VERSION` / `VERSION_STR` « 3.0.3 », `VERSION_NAME` « 3.0.3.AG - Austin » ; COMSPEC Link et Overwatch connect inchangés.
+- **i18n** : 359 phrases de `mod/@COMSPEC_SSE/tools/i18n_identity_en.tsv` (SSE 1.2.0 et 1.3.0, lots 2 à 5) ajoutées à `i18n/en.txt`, sans remplacer les traductions déjà présentes (5 phrases en conflit gardées telles quelles : « fermé », « Personne », « zone interdite », « Zone interdite », « Signalement »).
+- **Recherchés** (`fn_wantedAction` « load ») : la liste d'Athena est fusionnée avec `missionNamespace COMSPEC_ATAK_WantedLocal` (rempli par `comspec_sse_fnc_idHvt` « wantedSync ») ; doublon = même référence ou même nom (sans casse), l'avis d'Athena est gardé et marqué « Athena · BOLO local » ; 10ᵉ champ `origine` affiché dans la liste et la fiche (`fn_pageWanted`) ; tri stable, niveau contenant « HVT » en tête.
+- **Apps du SSE** : Contrôle ID et Ma couverture (`COMSPEC_ATAK_Apps` du SSE) vérifiées dans `fn_appList`, le lanceur (section Renseignement) et la recherche d'apps (nom français, nom traduit, nom de classe).
+- **À tester en jeu** : BOLO posé au Zeus ou par le module SSE → app Recherchés → ACTUALISER : le BOLO reste, marqué BOLO local ; recherché aussi connu d'Athena affiché une fois ; téléphone en anglais : Contrôle ID et Ma couverture traduits, recherche « cover » / « couverture ».
+
 ## Pack 3.0.2 : COMSPEC IDENTITY lot 2, fiches de contrôle partagées en Bluetooth et en NFC, alertes vibreur seul, Contrôle ID sur le vrai téléphone (ATAK natif 3.0.2.AG - Austin)
 
 ### Résumé joueur
