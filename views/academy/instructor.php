@@ -70,6 +70,7 @@ $audienceOf = static function (array $course) use ($courseSettings): string {
 </div>
 <nav class="ins-hero__actions" aria-label="<?= $h($t('ins_shortcuts')) ?>">
 <?php if ($instructor['entersStudio'] ?? $staff): ?><a class="button" href="<?= $h($link('studio')) ?>"><?= $h($t('open_studio')) ?> ↗</a><?php endif ?>
+<a class="button outline" href="<?= $h($link('suivi')) ?>" title="<?= $h($t('ins_tracker_help')) ?>"><?= $h($t('ins_tracker_link')) ?></a>
 <a class="button outline" href="<?= $h($link('classroom')) ?>"><?= $h($t('classroom')) ?></a>
 <?php if (!empty($instructor['manageRights'])): ?><a class="button outline" href="<?= $h($link('droits')) ?>"><?= $h($t('rights_open')) ?></a><?php endif ?>
 </nav>

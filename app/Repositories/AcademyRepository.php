@@ -289,6 +289,59 @@ final class AcademyRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Tableau de suivi : une seule lecture pour toutes les inscriptions des formations affichées. La base n'extrait que
+     * l'avancement (chapitre, étape, fin, dispense, évaluation échouée, relance) ; le contenu des cours n'est jamais
+     * transféré, et le débriefing seulement pour un chapitre qui attend la validation d'un instructeur.
+     *
+     * @param list<string> $courseKeys
+     * @param int|null $userId une seule personne (le stagiaire voit sa ligne)
+     * @return list<array<string, mixed>> lignes brutes, à passer à AcademyTracker::normalizeRow()
+     */
+    public function trackerRows(int $tenantId, array $courseKeys, ?int $userId = null): array
+    {
+        $courseKeys = array_values(array_unique(array_filter($courseKeys, static fn (mixed $key): bool => is_string($key) && preg_match('/\A[a-z0-9-]{1,64}\z/', $key) === 1)));
+        if ($tenantId < 1 || $courseKeys === []) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($courseKeys), '?'));
+        $stmt = $this->pdo->prepare("SELECT user_id, course_key, updated_at,
+                JSON_EXTRACT(state_json, '$.chapter') AS chapter, JSON_EXTRACT(state_json, '$.stage') AS stage,
+                JSON_EXTRACT(state_json, '$.completed') AS completed, JSON_EXTRACT(state_json, '$.exempt.at') AS exempt_at,
+                JSON_EXTRACT(state_json, '$.feedback') AS feedback, JSON_EXTRACT(state_json, '$.exam.started') AS exam_started,
+                JSON_EXTRACT(state_json, '$.reminded') AS reminded, JSON_EXTRACT(state_json, '$.updated') AS updated,
+                CASE WHEN JSON_EXTRACT(state_json, '$.stage') = 6 THEN JSON_EXTRACT(state_json, '$.debriefs') END AS debriefs
+            FROM academy_learners WHERE tenant_id = ? AND course_key IN ($in)" . ($userId !== null ? ' AND user_id = ?' : '') . ' LIMIT 20000');
+        $stmt->execute(array_merge([$tenantId], $courseKeys, $userId !== null ? [$userId] : []));
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Relance envoyée depuis le tableau de suivi : notée dans l'inscription sans compter comme une activité du
+     * stagiaire (la date de dernière activité, qui signale les retards, reste celle du stagiaire).
+     */
+    public function markReminded(int $tenantId, int $userId, string $key, int $at): void
+    {
+        $stmt = $this->pdo->prepare("UPDATE academy_learners SET state_json = JSON_SET(state_json, '$.reminded', ?), updated_at = updated_at WHERE tenant_id = ? AND user_id = ? AND course_key = ?");
+        foreach ([$at, $tenantId, $userId] as $i => $value) {
+            $stmt->bindValue($i + 1, $value, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(4, $key);
+        $stmt->execute();
+    }
+
+    /** Nombre d'inscrits par formation (choix des colonnes du tableau de suivi). @return array<string,int> */
+    public function enrollmentCounts(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare("SELECT course_key, COUNT(*) AS n FROM academy_learners WHERE tenant_id = ? AND course_key <> '__notes' GROUP BY course_key");
+        $stmt->execute([$tenantId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[(string) $row['course_key']] = (int) $row['n'];
+        }
+        return $out;
+    }
+
     /** Staff see educational submissions in their own community, never personal notebooks. */
     public function learners(int $tenantId): array
     {

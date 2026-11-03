@@ -1,0 +1,184 @@
+/* Academy — tableau de suivi des formations (views/academy/tracker.php).
+   Reprend le langage visuel du tableau de suivi CQB de l'aperçu public (home-impact.css, bloc « .hd » :
+   en-tête de formation, indicateurs à filet coloré, bandes de chapitres, barre de progression, pastilles d'état,
+   avatars à initiales). Mêmes jetons, mêmes proportions ; le bloc public n'est pas modifié. */
+.academy-app .trk {
+  --trk-ink: #0f172a;
+  --trk-ink-2: #334155;
+  --trk-muted: #64748b;
+  --trk-line: #e2e8f0;
+  --trk-wash: #f6f7f4;
+  --trk-ok: #059669;
+  --trk-warn: #d97706;
+  --trk-late: #e11d48;
+  --trk-info: #1d4ed8;
+  --trk-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  display: grid; gap: 0.9rem; padding: 1rem; background: var(--trk-wash); border: 1px solid var(--trk-line); color: var(--trk-ink); font-size: 0.8125rem; line-height: 1.45;
+}
+.academy-app .trk { min-width: 0; max-width: 100%; }
+.academy-app .trk > *, .academy-app .trk-trainees li > * { min-width: 0; }
+.academy-app .trk p { margin: 0; }
+.academy-app .trk-mono { font-family: var(--trk-mono); font-size: 0.75rem; color: var(--trk-ink-2); }
+.academy-app .trk-ico { width: 0.9rem; height: 0.9rem; flex: none; }
+.academy-app .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Barre : vues, export, impression */
+.academy-app .trk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.academy-app .trk-bar__end { display: flex; gap: 0.4rem; margin-left: auto; }
+.academy-app .trk-views { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.academy-app .trk-chip { display: inline-block; padding: 0.3rem 0.7rem; border: 1px solid var(--trk-line); background: #fff; font-size: 0.75rem; font-weight: 700; color: var(--trk-ink-2); }
+.academy-app .trk-chip.is-on { background: var(--trk-ink); border-color: var(--trk-ink); color: #fff; }
+
+/* En-tête de formation (vue « par formation ») : badge, titre, chiffres */
+.academy-app .trk-course { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1rem; padding: 0.85rem 1rem; border: 1px solid var(--trk-line); background: #fff; }
+.academy-app .trk-course__badge, .academy-app .trk-badge { display: inline-grid; place-items: center; flex: none; background: #0f1f18; color: #6ee7b7; font-family: var(--trk-mono); font-weight: 800; letter-spacing: 0.02em; }
+.academy-app .trk-course__badge { min-width: 2.6rem; height: 2.6rem; padding: 0 0.35rem; font-size: 0.75rem; }
+.academy-app .trk-course__t { min-width: 0; flex: 1 1 16rem; }
+.academy-app .trk-course__t b { display: block; font-size: 0.95rem; font-weight: 900; }
+.academy-app .trk-course__t small { color: var(--trk-muted); font-size: 0.75rem; }
+.academy-app .trk-course__stats { display: flex; gap: 1.25rem; margin-left: auto; }
+.academy-app .trk-course__stats span { display: flex; flex-direction: column; font-size: 0.6875rem; color: var(--trk-muted); }
+.academy-app .trk-course__stats b { font-size: 1.1rem; font-weight: 900; color: var(--trk-ink); }
+
+/* Indicateurs */
+.academy-app .trk-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+@media (min-width: 768px) { .academy-app .trk-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.academy-app .trk-kpi { display: block; padding: 0.75rem 0.85rem; border: 1px solid var(--trk-line); border-top: 3px solid var(--trk-ok); background: #fff; color: var(--trk-ink); }
+.academy-app a.trk-kpi:hover { border-color: #cbd5e1; }
+.academy-app .trk-kpi.is-warn { border-top-color: var(--trk-warn); }
+.academy-app .trk-kpi.is-late { border-top-color: var(--trk-late); }
+.academy-app .trk-kpi small { display: block; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--trk-muted); }
+.academy-app .trk-kpi b { display: block; margin-top: 0.2rem; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.03em; line-height: 1.1; }
+.academy-app .trk-kpi b em { font-style: normal; font-size: 0.9rem; color: var(--trk-muted); }
+.academy-app .trk-delta { display: block; margin-top: 0.15rem; font-size: 0.6875rem; color: var(--trk-muted); }
+
+/* Filtres, colonnes, actions groupées */
+.academy-app .trk-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.7rem; padding: 0.7rem 0.8rem; border: 1px solid var(--trk-line); background: #fff; }
+.academy-app .trk-filters label { display: grid; gap: 0.15rem; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--trk-muted); }
+.academy-app .trk-filters select, .academy-app .trk-filters input[type="search"], .academy-app .trk-bulk select { min-width: 8rem; max-width: 16rem; padding: 0.3rem 0.5rem; border: 1px solid var(--trk-line); background: #fff; color: var(--trk-ink); font-size: 0.75rem; letter-spacing: 0; text-transform: none; font-weight: 500; }
+.academy-app .trk-filters__q input { min-width: 11rem; }
+.academy-app .trk-filters .trk-check { display: flex; align-items: center; gap: 0.35rem; padding-bottom: 0.35rem; letter-spacing: 0; text-transform: none; font-weight: 600; font-size: 0.75rem; color: var(--trk-ink-2); }
+.academy-app .trk-cols { border: 1px solid var(--trk-line); background: #fff; padding: 0.5rem 0.8rem; }
+.academy-app .trk-cols summary { cursor: pointer; font-size: 0.75rem; font-weight: 800; color: var(--trk-ink-2); }
+.academy-app .trk-cols ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.25rem 1rem; margin: 0.6rem 0; padding: 0; list-style: none; font-size: 0.75rem; }
+.academy-app .trk-cols small { color: var(--trk-muted); }
+.academy-app .trk-bulk { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; align-items: center; }
+.academy-app .trk-bulk form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.academy-app .trk-bulk__sel span { font-size: 0.75rem; color: var(--trk-muted); }
+.academy-app .trk-bulk__sel b { font-family: var(--trk-mono); color: var(--trk-ink); }
+.academy-app .trk .button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+
+/* Stagiaire : avatar à initiales */
+.academy-app .trk-op { display: inline-flex; align-items: center; gap: 0.55rem; min-width: 0; text-align: left; }
+.academy-app .trk-op > i { display: inline-grid; place-items: center; flex: none; width: 1.85rem; height: 1.85rem; background: #0f1f18; color: #6ee7b7; font-style: normal; font-size: 0.6875rem; font-weight: 800; font-family: var(--trk-mono); }
+.academy-app .trk-op b { display: block; font-weight: 800; letter-spacing: 0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 13rem; }
+.academy-app .trk-op small { display: block; color: var(--trk-muted); font-size: 0.6875rem; white-space: nowrap; }
+
+/* Pastilles d'état (même gamme que .hd-st) */
+.academy-app .trk-st { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.12rem 0.45rem; font-size: 0.6875rem; font-weight: 800; white-space: nowrap; background: #f1f5f9; color: var(--trk-ink-2); }
+.academy-app .trk-st--none { background: transparent; color: #94a3b8; box-shadow: inset 0 0 0 1px #e2e8f0; }
+.academy-app .trk-st--enrolled { background: #f1f5f9; color: var(--trk-ink-2); }
+.academy-app .trk-st--progress { background: #eff6ff; color: var(--trk-info); }
+.academy-app .trk-st--review { background: #fff7ed; color: #c2410c; }
+.academy-app .trk-st--failed { background: #fff1f2; color: #be123c; }
+.academy-app .trk-st--validated { background: #ecfdf5; color: #047857; }
+.academy-app .trk-st--expired { background: #fffbeb; color: #92400e; }
+.academy-app .trk-st--exempt { background: #f5f3ff; color: #6d28d9; }
+.academy-app .trk-st--late { background: var(--trk-late); color: #fff; }
+
+/* Barre de progression */
+.academy-app .trk-meter { display: inline-block; width: 100%; height: 0.35rem; background: var(--trk-line); overflow: hidden; vertical-align: middle; }
+.academy-app .trk-meter i { display: block; height: 100%; background: var(--trk-ok); }
+.academy-app .trk-meter.is-low i { background: var(--trk-warn); }
+
+/* Vue « par formation » : une ligne par stagiaire, une bande par chapitre (modèle .hd-trainees) */
+.academy-app .trk-mods, .academy-app .trk-trainees li { display: grid; grid-template-columns: minmax(10rem, 13rem) minmax(8rem, 1.5fr) 7.5rem 8.5rem minmax(14rem, auto); gap: 0.8rem; }
+.academy-app .trk-mods { padding: 0 0.8rem; margin-bottom: -0.5rem; }
+.academy-app .trk-mods > span { font-size: 0.625rem; font-weight: 700; color: var(--trk-muted); }
+.academy-app .trk-mods__list, .academy-app .trk-steps { display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); gap: 0.3rem; }
+.academy-app .trk-mods__list span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.625rem; font-weight: 700; color: var(--trk-muted); }
+.academy-app .trk-trainees { margin: 0; padding: 0; list-style: none; border: 1px solid var(--trk-line); background: #fff; }
+.academy-app .trk-trainees li { align-items: center; padding: 0.6rem 0.8rem; border-top: 1px solid #f1f5f9; }
+.academy-app .trk-trainees li:first-child { border-top: 0; }
+.academy-app .trk-trainees li[data-state="none"] { background: #fbfbfa; }
+.academy-app .trk-op input { margin: 0; }
+.academy-app .trk-steps i { height: 0.55rem; background: var(--trk-line); }
+.academy-app .trk-steps i.is-done { background: var(--trk-ok); }
+.academy-app .trk-steps i.is-current { background: repeating-linear-gradient(45deg, #34d399 0 3px, #a7f3d0 3px 6px); }
+.academy-app .trk-steps i.is-review { background: repeating-linear-gradient(45deg, #f59e0b 0 3px, #fde68a 3px 6px); }
+.academy-app .trk-steps i.is-failed { background: var(--trk-late); }
+.academy-app .trk-steps i.is-exempt { background: repeating-linear-gradient(-45deg, #c4b5fd 0 3px, #ede9fe 3px 6px); }
+.academy-app .trk-steps i.is-none { background: transparent; box-shadow: inset 0 0 0 1px #e2e8f0; }
+.academy-app .trk-prog { display: flex; align-items: center; gap: 0.45rem; }
+.academy-app .trk-prog .trk-mono, .academy-app .trk-pop .trk-mono { white-space: nowrap; }
+.academy-app .trk-state { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.academy-app .trk-end { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.35rem; }
+.academy-app .trk-acts { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+.academy-app .trk-acts .button.small { min-height: 1.7rem; padding: 0.3rem 0.7rem; font-size: 0.6875rem; gap: 0.3rem; }
+.academy-app .trk-acts .text-link { font-size: 0.6875rem; font-weight: 700; color: var(--trk-ok); }
+
+/* Vue « par cursus » : matrice stagiaires × formations (modèle .hd-table) */
+.academy-app .trk-tablewrap { overflow-x: auto; border: 1px solid var(--trk-line); background: #fff; }
+.academy-app .trk-table { width: 100%; border-collapse: collapse; }
+.academy-app .trk-table thead th { position: sticky; top: 0; z-index: 1; padding: 0.5rem 0.55rem; background: #f1f5f9; border-bottom: 1px solid #cbd5e1; text-align: center; vertical-align: bottom; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--trk-muted); }
+.academy-app .trk-table thead th a { display: grid; justify-items: center; gap: 0.3rem; color: inherit; }
+.academy-app .trk-table thead .trk-table__who { text-align: left; min-width: 13rem; }
+.academy-app .trk-badge { min-width: 2.1rem; height: 1.7rem; padding: 0 0.3rem; font-size: 0.625rem; }
+.academy-app .trk-th__t { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 7.5rem; letter-spacing: 0.02em; text-transform: none; font-weight: 700; line-height: 1.25; }
+.academy-app .trk-table tbody th { position: sticky; left: 0; z-index: 0; background: #fff; padding: 0.5rem 0.7rem; border-top: 1px solid #f1f5f9; font-weight: 400; text-align: left; }
+.academy-app .trk-table td { padding: 0.3rem 0.35rem; border-top: 1px solid #f1f5f9; border-left: 1px solid #f8fafc; text-align: center; }
+.academy-app .trk-pop { position: relative; display: inline-block; }
+.academy-app .trk-pop > summary { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.45rem; list-style: none; cursor: pointer; font-size: 0.6875rem; font-weight: 800; white-space: nowrap; }
+.academy-app .trk-pop > summary::-webkit-details-marker { display: none; }
+.academy-app .trk-pop > summary .trk-mono { font-size: 0.625rem; color: inherit; opacity: 0.8; }
+.academy-app .trk-cell--enrolled .trk-pop > summary { background: #f1f5f9; color: var(--trk-ink-2); }
+.academy-app .trk-cell--progress .trk-pop > summary { background: #eff6ff; color: var(--trk-info); }
+.academy-app .trk-cell--review .trk-pop > summary { background: #fff7ed; color: #c2410c; box-shadow: inset 0 -2px 0 #f59e0b; }
+.academy-app .trk-cell--failed .trk-pop > summary { background: #fff1f2; color: #be123c; }
+.academy-app .trk-cell--validated .trk-pop > summary { background: #ecfdf5; color: #047857; }
+.academy-app .trk-cell--expired .trk-pop > summary { background: #fffbeb; color: #92400e; }
+.academy-app .trk-cell--exempt .trk-pop > summary { background: #f5f3ff; color: #6d28d9; }
+.academy-app .trk-cell--none .trk-pop > summary { color: #94a3b8; box-shadow: inset 0 0 0 1px #e2e8f0; }
+.academy-app .trk-cell.is-late .trk-pop > summary { box-shadow: inset 3px 0 0 var(--trk-late); }
+.academy-app .trk-dash { display: inline-flex; color: #cbd5e1; }
+.academy-app .trk-pop__body { position: absolute; z-index: 5; top: calc(100% + 0.3rem); left: 50%; transform: translateX(-50%); display: grid; gap: 0.5rem; width: 16rem; padding: 0.75rem 0.8rem; border: 1px solid #cbd5e1; background: #fff; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16); text-align: left; font-size: 0.75rem; white-space: normal; }
+.academy-app .trk-detail { display: grid; gap: 0.2rem; margin: 0; padding: 0; list-style: none; color: var(--trk-ink-2); }
+.academy-app .trk-detail li { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+
+/* Pied : pagination, légende, vide */
+.academy-app .trk-pages { display: flex; align-items: center; justify-content: center; gap: 0.8rem; font-size: 0.75rem; color: var(--trk-muted); }
+.academy-app .trk-foot { font-size: 0.75rem; color: var(--trk-muted); }
+.academy-app .trk-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin: 0; padding: 0.6rem 0.2rem 0; list-style: none; border-top: 1px solid var(--trk-line); }
+.academy-app .trk-legend li { display: flex; align-items: center; gap: 0.35rem; }
+.academy-app .trk-legend small { color: var(--trk-muted); font-size: 0.6875rem; }
+.academy-app .trk-empty { padding: 1rem; border: 1px dashed #cbd5e1; background: #fff; color: var(--trk-muted); }
+.academy-app .trk-empty b { color: var(--trk-ink); }
+
+@media (max-width: 767px) {
+  .academy-app .trk { padding: 0.6rem; }
+  .academy-app .trk-mods { display: none; }
+  .academy-app .trk-trainees li { grid-template-columns: minmax(0, 1fr) auto; }
+  .academy-app .trk-filters label, .academy-app .trk-filters select, .academy-app .trk-filters input[type="search"], .academy-app .trk-bulk select { min-width: 0; max-width: 100%; }
+  .academy-app .trk-filters label { flex: 1 1 9rem; }
+  .academy-app .trk-course__stats { margin-left: 0; }
+  .academy-app .trk-trainees .trk-steps { grid-column: 1 / -1; order: 3; }
+  .academy-app .trk-trainees .trk-prog { display: none; }
+  .academy-app .trk-trainees .trk-end { grid-column: 1 / -1; justify-content: flex-start; order: 4; }
+  .academy-app .trk-trainees .trk-state { justify-content: flex-end; }
+  .academy-app .trk-bar__end { margin-left: 0; }
+  .academy-app .trk-op b { max-width: 9rem; }
+}
+
+@media print {
+  .academy-app .lms-nav, .academy-app .academy-topbar, .academy-app .breadcrumb, .academy-app .notice, .academy-app .trk-noprint, .academy-app .skip { display: none !important; }
+  .academy-app .app-shell { display: block; }
+  .academy-app .trk { border: 0; padding: 0; background: #fff; }
+  .academy-app .trk-tablewrap { overflow: visible; }
+  .academy-app .trk-table thead th, .academy-app .trk-table tbody th { position: static; }
+  .academy-app .trk-pop__body { display: none; }
+  .academy-app .trk * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+/* Non inscrit : l'icône seule, pour que la matrice fasse ressortir ce qui avance. */
+.academy-app .trk-cell--none .trk-cell__l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.academy-app .trk-cell--none .trk-pop > summary { box-shadow: none; color: #cbd5e1; }
+.academy-app .trk-cell--none .trk-pop > summary:hover { color: var(--trk-ok); }

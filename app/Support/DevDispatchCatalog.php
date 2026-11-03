@@ -294,7 +294,18 @@ final class DevDispatchCatalog
 
         return array_merge([
 
-            $pr(1358, '2026-11-03', 'Academy : les six chapitres du JTAC pour tous les stagiaires', 'Les stagiaires inscrits à la toute première version du cours JTAC ne voyaient qu’un seul chapitre : leur copie du cours restait figée sur cette version. Tant que le parcours n’est pas terminé, la copie passe maintenant à la version courante avec ses six chapitres, sans rien perdre de la progression : chapitre en cours, tentatives, débriefings et validations. Les parcours terminés et les licences délivrées ne changent pas.', [], [
+            $pr(1361, '2026-11-03', 'Academy : le tableau de suivi des formations', 'L’Academy reçoit un tableau de suivi, sur le modèle de celui présenté sur la page d’accueil pour la qualification CQB : chaque stagiaire sur une ligne, chaque formation (ou chaque chapitre d’une formation) en colonne, avec un état coloré et lisible d’un coup d’œil. Les instructeurs inscrivent, relancent, valident le chapitre en attente ou dispensent sans changer de page.', [
+                'Academy › Tableau de suivi : vue par cursus (stagiaires × formations) et vue par formation (stagiaires × chapitres, barre de progression)',
+                'États : non inscrit, inscrit, en cours, à valider, échoué, validé, à renouveler (qualification expirée ou proche de l’échéance), dispensé ; stagiaires en retard signalés',
+                'Indicateurs : taux de complétion, chapitres à valider, stagiaires en retard, qualifications à renouveler',
+                'Filtres par unité, fonction, grade, cohorte et état ; export CSV et impression',
+                'Actions en ligne : inscrire, relancer par message, valider le chapitre en attente, dispenser ; inscrire toute une unité, relancer tous les retardataires',
+                'Un stagiaire voit seulement sa propre ligne',
+            ], [
+                'Tableau de bord et espace instructeur : accès direct au tableau de suivi',
+            ], [], ['personnel'], [], 'Portail'),
+
+            $pr(1358,'2026-11-03', 'Academy : les six chapitres du JTAC pour tous les stagiaires', 'Les stagiaires inscrits à la toute première version du cours JTAC ne voyaient qu’un seul chapitre : leur copie du cours restait figée sur cette version. Tant que le parcours n’est pas terminé, la copie passe maintenant à la version courante avec ses six chapitres, sans rien perdre de la progression : chapitre en cours, tentatives, débriefings et validations. Les parcours terminés et les licences délivrées ne changent pas.', [], [
                 'JTAC : six chapitres visibles dans la salle de cours pour les stagiaires inscrits à l’ancienne version, progression conservée',
             ], [], ['personnel'], [], 'Portail'),
 

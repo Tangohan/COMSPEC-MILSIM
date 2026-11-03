@@ -33,7 +33,8 @@ final class AcademyInstructorQueue
             $state = is_array($row['state'] ?? null) ? $row['state'] : [];
             $key = (string) ($row['course_key'] ?? '');
             $uid = (int) ($row['user_id'] ?? 0);
-            if ($key === '' || $uid < 1 || !empty($state['completed'])) {
+            // Formation terminée ou stagiaire dispensé (tableau de suivi) : plus rien à suivre.
+            if ($key === '' || $uid < 1 || !empty($state['completed']) || !empty($state['exempt'])) {
                 continue;
             }
             $chapter = (int) ($state['chapter'] ?? 0);
