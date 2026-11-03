@@ -2,6 +2,24 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.1.2 — mesure des performances (03/11/2026)[/h1]
+[b]Relance Arma complètement.[/b] À utiliser avec le pack ATAK 3.0.1.
+
+[list]
+[*] Le temps passé par les menus « Mes papiers » et la fouille des papiers apparaît dans l'onglet Debug › PERFS du téléphone ATAK (section « Carte et papiers SSE »), pour signaler un ralentissement. Aucun autre changement.
+[/list]
+
+----------------------------------------
+
+[h1]COMSPEC SSE 1.1.2 — performance measurement (03/11/2026)[/h1]
+[b]Restart Arma completely.[/b] Use with ATAK pack 3.0.1.
+
+[list]
+[*] Time spent by the "My papers" menus and the papers search now shows in the ATAK phone's Debug › PERFS tab ("Map and SSE papers" section), to report a slowdown. No other change.
+[/list]
+
+----------------------------------------
+
 [h1]COMSPEC SSE 1.1.1 — papiers des joueurs depuis Athena (03/11/2026)[/h1]
 [b]Relance Arma complètement.[/b] Le kit de papiers demande la liaison Athena (COMSPEC Link 2.0.118, pack ATAK 3.0.0).
 

@@ -294,6 +294,18 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1354, '2026-11-03', 'ATAK 3.0.1 : carte, Zones et Routes plus légères', 'Le téléphone passe en version 3.0.1, centrée sur l’optimisation. La carte fait beaucoup moins de calculs à chaque image quand des plans de l’app Zones ou des routes sont affichés, ce qui réduit les saccades, surtout téléphone porté ; le dessin reste identique. Le bandeau du curseur ne recherche plus la zone sous le curseur à chaque mouvement de souris quand rien n’a changé, et la barre d’état du téléphone (réseau, batterie, heure, météo) n’est plus réécrite chaque seconde sans raison. L’onglet Debug › PERFS gagne une section « Carte et papiers SSE » qui montre le temps passé par la carte, les zones, les routes et les menus de papiers du mod SSE, pour signaler précisément un ralentissement.', [
+                'Onglet Debug › PERFS : section « Carte et papiers SSE »',
+            ], [
+                'Carte du téléphone allégée avec des plans Zones et des routes affichés',
+                'Bandeau du curseur : zone sous le curseur recherchée seulement quand elle peut avoir changé',
+                'Barre d’état réécrite seulement quand une valeur change',
+                'Serveur : points de position des IA équipées préparés sans relire toutes les unités chaque seconde',
+            ], [], ['atak'], [
+                'Mettez à jour le pack 3.0.1 et le mod COMSPEC SSE 1.1.2, quittez Arma complètement et relancez.',
+                'Essai : afficher plusieurs plans Zones et routes sur la carte, téléphone porté puis en plein écran, et ouvrir Debug › PERFS après 30 s.',
+            ], 'Pack 3.0.1'),
+
             $pr(1351, '2026-11-03', 'Sur mon téléphone : la carte de l’Overwatch, appareil et cible du pilote', 'La carte de Sur mon téléphone est désormais la carte de l’Overwatch : même fond du terrain, mêmes icônes et couleurs des marqueurs du jeu avec leur nom, mêmes symboles OTAN des appareils, mêmes tracés (axes, zones, objectifs) et mêmes cibles des 9-LINE et 5-LINE. Chaque marqueur tombe exactement au bon endroit, y compris ceux dont la position arrivait sous forme de texte, et la carte remplit toujours l’écran du téléphone, sans bande noire. Une barre basse et compacte regroupe Moi, Calques (amis, marqueurs, tracés, aéronefs, appuis), le zoom et le plein écran, sans masquer la carte ; on zoome aussi aux deux doigts. Dans Briefs air, la carte s’affiche en encart au-dessus des briefs : l’appareil du pilote est centré, la cible du dernier brief reçu est dans la vue avec son IP ou BP, le cap et la distance, et le bouton Voir la cible sur la carte l’ouvre en plein écran. Le téléphone voit exactement ce que le membre voit dans son Overwatch, sans rien de plus. Sur l’Overwatch, la fiche d’un marqueur se ferme maintenant aussi en touchant la carte à côté, Échap ferme aussi la fiche d’un 9-LINE, la fiche d’un 9-LINE ouverte n’est plus refermée à chaque rafraîchissement, et les blocs masqués (filtres de plan de bâtiment, barre d’écoute radio) ne restent plus affichés.', [
                 'Carte du téléphone : fond, icônes, couleurs, noms, tracés, appareils et cibles des appuis de l’Overwatch',
                 'Briefs air : carte en encart, appareil du pilote centré, cible du brief avec IP ou BP et cap, plein écran sur la cible',

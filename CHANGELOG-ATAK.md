@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 3.0.1 : optimisation, moins de travail à chaque image sur la carte, les zones et les routes (ATAK natif 3.0.1.AG - Austin)
+
+### Résumé joueur
+Type : performance
+FR : ATAK 3.0.1 : carte, Zones et Routes plus légères
+- La carte du téléphone fait beaucoup moins de calculs à chaque image quand des plans de l'app Zones ou des routes sont affichés : moins de saccades, surtout téléphone porté.
+- Le bandeau du curseur ne recalcule plus la zone sous le curseur à chaque mouvement de souris quand rien n'a changé.
+- La barre d'état du téléphone (réseau, batterie, heure, météo) n'est plus réécrite chaque seconde quand rien ne change.
+- Onglet Debug › PERFS : nouvelle section « Carte et papiers SSE » pour signaler un ralentissement de la carte, des zones, des routes ou des menus de papiers.
+EN : ATAK 3.0.1: lighter map, Zones and Routes
+- The phone map does far less work every frame when Zones plans or routes are shown: fewer stutters, especially with the phone worn.
+- The cursor bar no longer works out the zone under the cursor on every mouse move when nothing has changed.
+- The phone status bar (network, battery, clock, weather) is no longer rewritten every second when nothing changes.
+- Debug › PERFS tab: new "Map and SSE papers" section to report a slowdown of the map, zones, routes or papers menus.
+
+### Détail technique
+- **Version 3.0.1** : `VERSION` / `VERSION_STR` « 3.0.1 », `VERSION_NAME` « 3.0.1.AG - Austin » ; COMSPEC Link inchangé (2.0.118) ; Overwatch connect 1.6.33 ; COMSPEC SSE 1.1.2 (mesure de `fn_idDocsOf`).
+- **Fin de l'audit perf 2.9.37 (P3)** : `fn_mapOnDraw` (table des couleurs des zones Athena créée une fois, icône CfgMarkers de l'aperçu du mode MARQUEUR en cache, file de séquence des explosifs indexée une fois par image) ; `fn_strokeDraw` (nom de la variable de style gardé par trait, plus de `format` + `regexReplace` toutes les 2 s) ; `fn_route3d` déjà conforme depuis la 2.9.38 (Draw3D seulement JVN + suivi + 3D, liste préparée) ; `fn_statusUpdate` (ctrlSetText / ctrlSetTextColor / ctrlSetTooltip seulement au changement, `tasksAll` une fois) ; `fn_extensionCall` (journal Debug limité à 1 ligne / s / commande) ; `fn_aiAtak` (serveur : liste `allUnits` refaite toutes les 10 s, IA équipée ajoutée tout de suite) ; connect : `BIS_fnc_sortBy` -> `sort` natif (`fn_initProxyTrackServer`), `count (keys …)` -> `count …`, boucle de masquage du panneau Tenues unique (`fn_arsenalOverlayAction`).
+- **Non fait, volontairement** : `fn_pli` publie toujours son point à l'intervalle, même immobile (c'est le battement qui donne « en direct / ancien / perdu » aux récepteurs) ; veille du terminal (2 s) et contrôle du service Athéna (5 s) d'Overwatch gardés (relance du canal, réglage CBA rallumé).
+- **Audit des ajouts depuis 2.9.37** : `fn_zoneAction` et `fn_routeAction` refaisaient leurs tables (près de 250 et 150 lignes) à chaque appel avant de lire leur cache ; `fn_zoneDraw` / `fn_routeDraw` les appellent pour chaque plan / route à chaque image, le bandeau du curseur (`atText`) à chaque mouvement de souris. Sorties immédiates : `geo`, `pal`, `tri`, `preview`, `get`, `zoneIn`, `atText` (cache) côté Zones ; `geo`, `get` côté Routes. Halo des repères Athena (2.9.40) : couleur et teinte du halo gardées par classe et fond clair / sombre (les marqueurs de la mission gardaient déjà le leur). Vérifiés sans changement : `fn_zoneSnap` (cache par case, ~10 / s), `fn_zoneGen` (planifié), `fn_mapPrefs` / `fn_mapOverlayUpdate` (préparés au changement), `fn_vehicleKeys` (1 s, à bord seulement, aucun PFH), Maj+U (événements), briefs air (12 s, en aéronef, asynchrone), `fn_adminNotices` (asynchrone), `fn_mpuVoice` (2 s, cache par paire), `fn_displayRole` (léger), SSE identity (aucune boucle, conditions ACE légères, `EntityKilled` différé).
+- **Mesure** : `fn_perfAcc` « carte marqueurs mission / repères Athena / zones / routes (image) », « carte Zones / Routes (image) », « SSE papiers (idDocsOf) » ; onglet Debug › PERFS, section « Carte et papiers SSE ».
+- **Tests** : 5 tests d'assets SSE lisent la version de `script_mod.hpp` (au moins 1.0.0) au lieu de chercher « 1.0.0 ».
+- **À tester en jeu** : carte plein écran et téléphone porté avec plusieurs plans Zones et routes affichés (fluidité, dessin identique), bandeau du curseur sur une zone, app Zones (aperçu du découpage, aimant), app Routes et suivi de route, barre d'état (réseau, batterie, heure, RAM, logo Link, cloche), mode MARQUEUR (aperçu au point de pose), explosifs en séquence (T-), traits épais / fléchés, Debug › PERFS (section « Carte et papiers SSE » après 30 s), menu ACE « Mes papiers » du SSE ; clics de la carte (2.9.40), pages superposées et cockpit (2.9.41) inchangés.
+
 ## Pack 3.0.0 : COMSPEC IDENTITY, le contrôle d'identité sur le terrain, et tout ce que la génération 2.9 a apporté (ATAK natif 3.0.0.AG - Austin, COMSPEC Link 2.0.118)
 
 ### Résumé joueur
