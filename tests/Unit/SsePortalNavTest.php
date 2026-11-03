@@ -82,7 +82,7 @@ final class SsePortalNavTest extends TestCase
             return [];
         };
         $withMembers = $find(SsePortalNav::sections(true, false, false, true));
-        self::assertSame(['papiers-tableau', 'papiers', 'papiers-identites', 'papiers-controles', 'papiers-membres', 'papiers-pays', 'papiers-frm'], array_keys($withMembers));
+        self::assertSame(['papiers-tableau', 'papiers', 'papiers-identites', 'papiers-controles', 'papiers-membres', 'papiers-pays', 'papiers-atelier', 'papiers-kits', 'papiers-preparation', 'papiers-briefs', 'papiers-echanges', 'papiers-frm'], array_keys($withMembers));
         self::assertSame('atak/sse/papiers/tableau#frm', $withMembers['papiers-frm']);
         self::assertArrayNotHasKey('papiers-membres', $find(SsePortalNav::sections(false, false, true)), 'Papiers des membres : droit dédié');
         self::assertArrayNotHasKey('papiers-membres', $find(SsePortalNav::sections(true, true)));

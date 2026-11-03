@@ -54623,4 +54623,9 @@ return [
     'Ma situation : identité et papiers fictifs pour le jeu' => 'My situation: identity and fictional papers for the game',
     'Bureau SSE : tableau de bord des contrôles et FRM à valider' => 'SSE office: checks dashboard and FRM to validate',
     'Bureau SSE : identité principale, alias et kit de papiers' => 'SSE office: primary identity, aliases and paper kit',
+    'Composer un papier avec aperçu recto, verso et pages de passeport.' => 'Compose a document with front, back and passport page previews.',
+    'Modèles de kits (civil, militaire, journaliste, agent infiltré…) à affecter aux membres.' => 'Kit templates (civilian, military, journalist, undercover agent…) to assign to members.',
+    'Générer la population, les recherchés et les HVT d’une opération.' => 'Generate an operation’s population, wanted persons and HVTs.',
+    'Biographie, légende et consignes remises aux joueurs couverts.' => 'Biography, legend and instructions given to players under cover.',
+    'Importer ou exporter identités et papiers (CSV, JSON).' => 'Import or export identities and documents (CSV, JSON).',
 ];
