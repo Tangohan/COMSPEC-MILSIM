@@ -37,14 +37,18 @@
      "SFQC (60 à 64 semaines pour les officiers)",
      "SOF Captain's Career Course (cours des capitaines)",
      "Brevet parachutiste",
-     "Chef largueur ouverture automatique"
+     "Chef largueur ouverture automatique",
+     "Cours d’officier de détachement FS (phase MOS 18A du SFQC)",
+     "Special Forces Tab"
     ],
     "en": [
      "SFAS",
      "SFQC (60-64 weeks for officers)",
      "SOF Captain's Career Course",
      "Basic Airborne Course",
-     "Static-line jumpmaster"
+     "Static-line jumpmaster",
+     "Special Forces Detachment Officer course (SFQC 18A MOS phase)",
+     "Special Forces Tab"
     ]
    },
    "reference_keys": [
@@ -52,14 +56,18 @@
     "qualification:us-sfqc",
     "qualification:us-sof-ccc",
     "qualification:us-basic-airborne",
-    "qualification:us-jumpmaster"
+    "qualification:us-jumpmaster",
+    "qualification:us-sf-18a",
+    "qualification:us-sf-tab"
    ],
    "qualification_refs": [
     "us-sfas",
     "us-sfqc",
     "us-sof-ccc",
     "us-basic-airborne",
-    "us-jumpmaster"
+    "us-jumpmaster",
+    "us-sf-18a",
+    "us-sf-tab"
    ],
    "billets": {
     "fr": [
@@ -367,24 +375,28 @@
     "fr": [
      "SFQC (dont SUT, SERE, Robin Sage)",
      "Brevet parachutiste",
-     "Formation linguistique SOLT (OPI 1+)"
+     "Formation linguistique SOLT (OPI 1+)",
+     "Cours de sergent armement FS (phase MOS 18B)"
     ],
     "en": [
      "SFQC (incl. SUT, SERE, Robin Sage)",
      "Basic Airborne Course",
-     "Special Operations Language Training (OPI 1+)"
+     "Special Operations Language Training (OPI 1+)",
+     "Special Forces Weapons Sergeant Course (18B MOS phase)"
     ]
    },
    "reference_keys": [
     "qualification:us-sfqc",
     "qualification:us-basic-airborne",
-    "qualification:us-solt"
+    "qualification:us-solt",
+    "qualification:us-sf-18b"
    ],
    "qualification_refs": [
     "us-sfqc",
     "us-sere-c",
     "us-basic-airborne",
-    "us-solt"
+    "us-solt",
+    "us-sf-18b"
    ],
    "billets": {
     "fr": [
@@ -446,24 +458,28 @@
     "fr": [
      "SFQC (dont SUT, SERE, Robin Sage)",
      "Brevet parachutiste",
-     "Formation linguistique SOLT (OPI 1+)"
+     "Formation linguistique SOLT (OPI 1+)",
+     "Cours de sergent génie FS (phase MOS 18C)"
     ],
     "en": [
      "SFQC (incl. SUT, SERE, Robin Sage)",
      "Basic Airborne Course",
-     "Special Operations Language Training (OPI 1+)"
+     "Special Operations Language Training (OPI 1+)",
+     "Special Forces Engineer Sergeant Course (18C MOS phase)"
     ]
    },
    "reference_keys": [
     "qualification:us-sfqc",
     "qualification:us-basic-airborne",
-    "qualification:us-solt"
+    "qualification:us-solt",
+    "qualification:us-sf-18c"
    ],
    "qualification_refs": [
     "us-sfqc",
     "us-sere-c",
     "us-basic-airborne",
-    "us-solt"
+    "us-solt",
+    "us-sf-18c"
    ],
    "billets": {
     "fr": [
@@ -608,24 +624,28 @@
     "fr": [
      "SFQC (dont SUT, SERE, Robin Sage)",
      "Brevet parachutiste",
-     "Formation linguistique SOLT (OPI 1+)"
+     "Formation linguistique SOLT (OPI 1+)",
+     "Cours de sergent transmissions FS (phase MOS 18E)"
     ],
     "en": [
      "SFQC (incl. SUT, SERE, Robin Sage)",
      "Basic Airborne Course",
-     "Special Operations Language Training (OPI 1+)"
+     "Special Operations Language Training (OPI 1+)",
+     "Special Forces Communications Sergeant Course (18E MOS phase)"
     ]
    },
    "reference_keys": [
     "qualification:us-sfqc",
     "qualification:us-basic-airborne",
-    "qualification:us-solt"
+    "qualification:us-solt",
+    "qualification:us-sf-18e"
    ],
    "qualification_refs": [
     "us-sfqc",
     "us-sere-c",
     "us-basic-airborne",
-    "us-solt"
+    "us-solt",
+    "us-sf-18e"
    ],
    "billets": {
     "fr": [
@@ -688,26 +708,30 @@
      "Cours préparatoire forces spéciales",
      "SFAS (évaluation et sélection FS)",
      "SFQC (cours de qualification FS)",
-     "Brevet parachutiste"
+     "Brevet parachutiste",
+     "Special Forces Tab (fin du SFQC)"
     ],
     "en": [
      "Special Forces Preparation Course",
      "SFAS",
      "SFQC",
-     "Basic Airborne Course"
+     "Basic Airborne Course",
+     "Special Forces Tab (end of SFQC)"
     ]
    },
    "reference_keys": [
     "qualification:us-sf-prep",
     "qualification:us-sfas",
     "qualification:us-sfqc",
-    "qualification:us-basic-airborne"
+    "qualification:us-basic-airborne",
+    "qualification:us-sf-tab"
    ],
    "qualification_refs": [
     "us-sf-prep",
     "us-sfas",
     "us-sfqc",
-    "us-basic-airborne"
+    "us-basic-airborne",
+    "us-sf-tab"
    ],
    "billets": {
     "fr": [],
@@ -2272,22 +2296,26 @@
     "fr": [
      "AIT 13F",
      "RASP",
-     "Qualification JTAC (sous-officiers)"
+     "Qualification JTAC (sous-officiers)",
+     "Observateur des feux interarmées (JFO)"
     ],
     "en": [
      "13F AIT",
      "RASP",
-     "JTAC qualification (NCOs)"
+     "JTAC qualification (NCOs)",
+     "Joint Fires Observer (JFO)"
     ]
    },
    "reference_keys": [
     "qualification:us-army-13f-ait",
     "qualification:us-rasp-1",
-    "qualification:us-jtac"
+    "qualification:us-jtac",
+    "qualification:us-jfo"
    ],
    "qualification_refs": [
     "us-rasp-1",
-    "us-jtac"
+    "us-jtac",
+    "us-jfo"
    ],
    "billets": {
     "fr": [
@@ -2344,20 +2372,24 @@
    "qualifications": {
     "fr": [
      "RASP",
-     "Brevet parachutiste"
+     "Brevet parachutiste",
+     "Cours de chef de reconnaissance et de surveillance (RSLC, pour les chefs)"
     ],
     "en": [
      "RASP",
-     "Basic Airborne Course"
+     "Basic Airborne Course",
+     "Reconnaissance and Surveillance Leaders Course (RSLC, for leaders)"
     ]
    },
    "reference_keys": [
     "qualification:us-rasp-1",
-    "qualification:us-basic-airborne"
+    "qualification:us-basic-airborne",
+    "qualification:us-rslc"
    ],
    "qualification_refs": [
     "us-rasp-1",
-    "us-basic-airborne"
+    "us-basic-airborne",
+    "us-rslc"
    ],
    "billets": {
     "fr": [],
@@ -9240,11 +9272,12 @@
    "reference_keys": [
     "qualification:us-jtac",
     "qualification:us-jtac-instructor",
-    "qualification:us-jtac"
+    "qualification:us-jtac-evaluator"
    ],
    "qualification_refs": [
     "us-jtac",
-    "us-jtac-instructor"
+    "us-jtac-instructor",
+    "us-jtac-evaluator"
    ],
    "billets": {
     "fr": [
@@ -10265,25 +10298,33 @@
      "École « A » HM",
      "Field Medical Service Technician (L03A)",
      "Cours SOCM, JSOMTC Fort Bragg",
-     "Infirmier autonome de reconnaissance (L02A, facultatif)"
+     "Infirmier autonome de reconnaissance (L02A, facultatif)",
+     "Basic Reconnaissance Course (BRC)",
+     "Qualification SARC (NEC L11A)"
     ],
     "en": [
      "HM 'A' School",
      "Field Medical Service Technician (L03A)",
      "SOCM course, JSOMTC Fort Bragg",
-     "Reconnaissance Independent Duty Corpsman (L02A, optional)"
+     "Reconnaissance Independent Duty Corpsman (L02A, optional)",
+     "Basic Reconnaissance Course (BRC)",
+     "SARC qualification (NEC L11A)"
     ]
    },
    "reference_keys": [
     "qualification:us-navy-hm-a",
     "qualification:us-fmst",
     "qualification:us-socm",
-    "qualification:us-soidc"
+    "qualification:us-soidc",
+    "qualification:us-usmc-brc",
+    "qualification:us-navy-sarc"
    ],
    "qualification_refs": [
     "us-fmst",
     "us-socm",
-    "us-soidc"
+    "us-soidc",
+    "us-usmc-brc",
+    "us-navy-sarc"
    ],
    "billets": {
     "fr": [

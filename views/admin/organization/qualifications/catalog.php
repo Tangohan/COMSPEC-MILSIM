@@ -53,6 +53,7 @@ foreach ($countries as $c) {
                 <p class="rq-kicker">PERSONNEL · QUALIFICATIONS · CATALOGUE DE RÉFÉRENCE</p>
                 <h1>Catalogue de référence</h1>
                 <p class="rq-lead">Brevets et qualifications réels par pays et de l’OTAN, avec leur intitulé officiel, l’école ou l’organisme qui les délivre, leurs prérequis, les emplois du catalogue d’emplois qui les exigent et les formations Academy qui y préparent. Importez ceux qui servent à votre communauté : chacun devient une fiche de votre référentiel, rattachée à son émetteur, que vous réglez ensuite. Une qualification déjà présente n’est jamais importée deux fois.</p>
+                <p class="rq-lead"><a href="<?= $h(url('documentation/qualifications')) ?>" data-qualification-guides>? Comment ça marche</a> · <a href="<?= $h(url('documentation/qualifications/prerequis-automatiques')) ?>">Prérequis automatiques possibles</a> · <a href="<?= $h(url('documentation/qualifications/prerequis-attestes')) ?>">Prérequis manuels (attestation)</a></p>
             </div>
         </div>
     </div>

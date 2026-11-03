@@ -43,6 +43,7 @@ final class QualificationCatalogExplorer
         'de-jtac' => AcademyBuiltInCourses::JTAC_KEY,
         'nato-acp125' => 'otan-procedures-radio-acp125',
         'nato-jfo' => 'otan-appel-de-feu-jfo',
+        'us-jfo' => 'otan-appel-de-feu-jfo',
     ];
 
     public const SORTS = ['nom', 'pays', 'categorie', 'niveau', 'emplois'];

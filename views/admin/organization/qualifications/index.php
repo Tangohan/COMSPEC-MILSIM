@@ -47,6 +47,7 @@ $athKpis = [
         <a href="<?= $h(url('back-office/referentiels/qualifications/prerequis-detectes')) ?>" class="ath-btn" title="Lire les conditions écrites dans les qualifications (sauts, heures de vol, grade…) et les ajouter après aperçu">Détecter les prérequis</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>" class="ath-btn">Émetteurs</a>
         <a href="<?= $h(url('back-office/referentiels/qualifications/cursus-pilote')) ?>" class="ath-btn">Cursus pilote</a>
+        <a href="<?= $h(url('documentation/qualifications')) ?>" class="ath-btn" data-qualification-guides title="Exploiter les qualifications en jeu, prérequis automatiques et prérequis attestés">? Comment ça marche</a>
     </div>
 
     <?php if (is_array($issuerFilter ?? null)): ?>

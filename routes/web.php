@@ -543,6 +543,8 @@ return function (Router $router) {
     $router->get('/documentation/marqueurs', [DocumentationController::class, 'markersLibrary'], [AuthMiddleware::class]);
     $router->get('/documentation/profils', [DocumentationController::class, 'profiles'], [AuthMiddleware::class]);
     $router->get('/documentation/references', [DocumentationController::class, 'references'], [AuthMiddleware::class]);
+    $router->get('/documentation/qualifications', [DocumentationController::class, 'qualificationGuides'], [AuthMiddleware::class]);
+    $router->get('/documentation/qualifications/{slug}', [DocumentationController::class, 'qualificationGuide'], [AuthMiddleware::class]);
     $router->get('/documentation/fichier/{key}', [DocumentationController::class, 'file'], [AuthMiddleware::class]);
     $router->get('/api/operations/doctrine/documents', [DoctrineApiController::class, 'list'], [AuthMiddleware::class]);
     $router->post('/api/operations/doctrine/documents', [DoctrineApiController::class, 'store'], [AuthMiddleware::class]);
