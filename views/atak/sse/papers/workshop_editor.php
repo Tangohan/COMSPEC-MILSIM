@@ -12,6 +12,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,mixed> $countryJs */
 /** @var array<string,mixed> $preview */
 /** @var bool $editable */
+/** @var list<array{id:int,url:string,label:string}> $personPhotos */
 /** @var bool $identityLocked */
 /** @var list<string> $transitions */
 /** @var list<int> $duplicates */
@@ -26,7 +27,8 @@ $transitionLabels = ['validated' => 'Valider', 'issued' => 'Émettre', 'draft' =
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 $sseExtraScripts = ($sseExtraScripts ?? '')
     . '<script type="application/json" id="idw-countries">' . json_encode($countryJs, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>'
-    . '<script src="' . $h(asset_url('assets/js/sse-id-workshop.js')) . '"></script>';
+    . '<script src="' . $h(asset_url('assets/js/sse-id-workshop.js')) . '"></script>'
+    . '<script src="' . $h(asset_url('assets/js/sse-id-images.js')) . '"></script>';
 require __DIR__ . '/_subnav.php';
 ?>
 <div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <a class="link" href="<?= $h(url('atak/sse/papiers/atelier')) ?>">Atelier</a> / <strong><?= $h($isNew ? 'Nouveau papier' : $doc['ref']) ?></strong></div>
@@ -138,12 +140,29 @@ require __DIR__ . '/_subnav.php';
                             </select>
                         </div>
                     <?php endif; ?>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Images du papier</legend>
+                <p class="idw-note">Photo, signature et fond s’affichent dans l’aperçu et l’image exportée, toujours sous le filigrane SIMULATION.</p>
+                <div class="idp-statuses">
+                    <div style="grid-column: 1 / -1">
+                        <?php $photoDis = $dis; $hasPhoto = !empty($identity['photo_path']) && !$identityLocked; require __DIR__ . '/_photo_input.php'; ?>
+                    </div>
                     <div>
-                        <label for="idw-photo">Photo (PNG, JPG ou WebP, 1 Mo)</label>
-                        <input id="idw-photo" type="file" name="photo" accept="image/png,image/jpeg,image/webp" data-bind-photo<?= $idDis ?>>
-                        <?php if (!empty($identity['photo_path'])): ?><label class="idw-check"><input type="checkbox" name="photo_remove" value="1"<?= $idDis ?>> Retirer la photo (silhouette)</label><?php endif; ?>
+                        <label for="idw-signature">Signature (image, fond transparent conseillé, <?= (int) \App\Services\Sse\SseIdImageService::maxMb('signature') ?> Mo maximum)</label>
+                        <input id="idw-signature" type="file" name="signature" accept="image/png,image/jpeg,image/webp" data-bind-img="signature"<?= $dis ?>>
+                        <?php if (!empty($identity['signature_path'])): ?><label class="idw-check"><input type="checkbox" name="signature_remove" value="1"<?= $dis ?>> Retirer la signature importée</label><?php endif; ?>
+                    </div>
+                    <div>
+                        <label for="idw-background">Image de fond du gabarit personnalisé (<?= (int) \App\Services\Sse\SseIdImageService::maxMb('background') ?> Mo maximum)</label>
+                        <input id="idw-background" type="file" name="background" accept="image/png,image/jpeg,image/webp" data-bind-img="background"<?= $dis ?>>
+                        <p class="idw-note">Texture ou décor de votre univers de fiction : visible avec le modèle « Personnalisé ».</p>
+                        <?php if (!empty($doc['background_path'])): ?><label class="idw-check"><input type="checkbox" name="background_remove" value="1"<?= $dis ?>> Retirer l’image de fond</label><?php endif; ?>
                     </div>
                 </div>
+                <?php if ($editable): ?><?php require __DIR__ . '/_photo_guide.php'; ?><?php endif; ?>
             </fieldset>
 
             <fieldset>

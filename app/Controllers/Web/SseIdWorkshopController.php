@@ -18,6 +18,7 @@ use App\Repositories\SseIdOperationRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
+use App\Services\Sse\SseIdImageService;
 use App\Services\Sse\SseIdKitAssignmentService;
 use App\Services\Sse\SseIdMassGeneratorService;
 use App\Services\Sse\SseIdTransferService;
@@ -171,6 +172,7 @@ final class SseIdWorkshopController
             'transitions' => $doc['id'] > 0 && $r['manage'] ? (SseIdentityCatalog::TRANSITIONS[$doc['workflow']] ?? []) : [],
             'duplicates' => $doc['id'] > 0 ? $this->documents->duplicatesOf((int) $doc['id'], $tenantId) : [],
             'maps' => $this->maps(),
+            'personPhotos' => SseIdWorkshopService::personPhotos($tenantId, $identity['person_id'] ?? null),
             'rights' => $r,
             'papersTab' => 'atelier',
         ]);
@@ -217,11 +219,29 @@ final class SseIdWorkshopController
         if ($identity !== null && !$r['truth'] && in_array($identity['kind'], \App\Services\Sse\MemberIdentityPapersService::SECRET, true)) {
             return $this->denied(url(self::BASE . '/atelier'));
         }
-        $photo = $this->storeImage('photo', 'sse-id-photos', $tenantId);
-        if ($photo === false) {
-            Session::flash('error', 'La photo doit être une image PNG, JPG ou WebP de 1 Mo maximum.');
+        $images = new SseIdImageService();
+        $photo = $images->storeUpload($_FILES['photo'] ?? null, 'photo', $tenantId);
+        if (!$photo['ok'] && empty($photo['none'])) {
+            Session::flash('error', 'Photo : ' . ($photo['error'] ?? 'image refusée.'));
 
             return Response::redirect($back);
+        }
+        if (!$photo['ok'] && ($pickId = (int) $request->input('photo_existing', 0)) > 0) {
+            $photo = SseIdWorkshopService::copyPersonPhoto($tenantId, $identity['person_id'] ?? null, $pickId, $images);
+            if (!$photo['ok']) {
+                Session::flash('error', 'Photo : ' . ($photo['error'] ?? 'image refusée.'));
+
+                return Response::redirect($back);
+            }
+        }
+        $signature = $images->storeUpload($_FILES['signature'] ?? null, 'signature', $tenantId);
+        $background = $images->storeUpload($_FILES['background'] ?? null, 'background', $tenantId);
+        foreach (['Signature' => $signature, 'Image de fond' => $background] as $label => $res) {
+            if (!$res['ok'] && empty($res['none'])) {
+                Session::flash('error', $label . ' : ' . ($res['error'] ?? 'image refusée.'));
+
+                return Response::redirect($back);
+            }
         }
         $input = [];
         foreach ([
@@ -240,11 +260,29 @@ final class SseIdWorkshopController
         $print = $request->input('print', []);
         $input['print'] = is_array($print) ? $print : [];
         $res = (new SseIdWorkshopService($this->identities, $this->documents, $this->countries))
-            ->save($tenantId, $input, $identity, $doc, $r['truth'], $this->userId(), is_string($photo) ? $photo : null);
+            ->save($tenantId, $input, $identity, $doc, $r['truth'], $this->userId(), $photo['path'] ?? null);
         if (!$res['ok']) {
             Session::flash('error', (string) ($res['error'] ?? 'Enregistrement impossible.'));
 
             return Response::redirect($back);
+        }
+        $saved = $this->documents->find((int) $res['id'], $tenantId);
+        if ($saved !== null) {
+            $changed = [];
+            if (isset($signature['path']) || $request->inputString('signature_remove') === '1') {
+                $this->identities->setImages((int) $saved['identity_id'], $tenantId, ['signature_path' => $signature['path'] ?? null]);
+                $changed[] = 'signature';
+            }
+            if (isset($background['path']) || $request->inputString('background_remove') === '1') {
+                $this->documents->setBackground((int) $saved['id'], $tenantId, $background['path'] ?? null);
+                $changed[] = 'background';
+            }
+            if (isset($photo['path'])) {
+                $changed[] = 'photo';
+            }
+            if ($changed !== []) {
+                SseIdMassGeneratorService::audit($tenantId, $this->userId(), 'id_images.update', 'sse_id_document', (int) $saved['id'], ['images' => $changed]);
+            }
         }
         Session::flash('success', $doc === null ? 'Papier créé en brouillon. Validez-le, puis émettez-le pour qu’il parte en jeu.' : 'Papier enregistré.');
 
@@ -309,6 +347,66 @@ final class SseIdWorkshopController
         Session::flash('success', 'Copie créée en brouillon avec un nouveau numéro et de nouvelles dates.');
 
         return Response::redirect(url(self::BASE . '/atelier/' . $newId));
+    }
+
+    /**
+     * POST …/identites/{id}/images : photo du titulaire (téléversée, ou reprise d'une photo de la personne SSE) et
+     * signature, depuis la fiche de l'identité ou le spécimen d'un papier. Mêmes droits que l'atelier (gestion SSE et
+     * habilitation Encadrement), jamais en invité ; images réencodées sans métadonnées ; journalisé.
+     */
+    public function identityImages(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $tenantId = $this->tenantId();
+        $docId = (int) $request->input('document_id', 0);
+        $doc = $docId > 0 ? $this->documents->find($docId, $tenantId) : null;
+        $back = $doc !== null && (int) $doc['identity_id'] === $id ? url(self::BASE . '/documents/' . $docId) : url(self::BASE . '/identites/' . $id);
+        $r = $this->rights();
+        if (!$r['manage'] || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied($back);
+        }
+        $identity = $this->identities->find($id, $tenantId);
+        if ($identity === null || (!$r['truth'] && in_array($identity['kind'], \App\Services\Sse\MemberIdentityPapersService::SECRET, true))) {
+            return $this->denied(url(self::BASE . '/identites'));
+        }
+        $images = new SseIdImageService();
+        $set = [];
+        $photo = $images->storeUpload($_FILES['photo'] ?? null, 'photo', $tenantId);
+        if (!$photo['ok'] && empty($photo['none'])) {
+            Session::flash('error', 'Photo : ' . ($photo['error'] ?? 'image refusée.'));
+
+            return Response::redirect($back);
+        }
+        if (!$photo['ok'] && ($pickId = (int) $request->input('photo_existing', 0)) > 0) {
+            $photo = SseIdWorkshopService::copyPersonPhoto($tenantId, $identity['person_id'], $pickId, $images);
+            if (!$photo['ok']) {
+                Session::flash('error', 'Photo : ' . ($photo['error'] ?? 'image refusée.'));
+
+                return Response::redirect($back);
+            }
+        }
+        if (isset($photo['path']) || $request->inputString('photo_remove') === '1') {
+            $set['photo_path'] = $photo['path'] ?? null;
+        }
+        $signature = $images->storeUpload($_FILES['signature'] ?? null, 'signature', $tenantId);
+        if (!$signature['ok'] && empty($signature['none'])) {
+            Session::flash('error', 'Signature : ' . ($signature['error'] ?? 'image refusée.'));
+
+            return Response::redirect($back);
+        }
+        if (isset($signature['path']) || $request->inputString('signature_remove') === '1') {
+            $set['signature_path'] = $signature['path'] ?? null;
+        }
+        if ($set === []) {
+            Session::flash('error', 'Choisissez une image à envoyer ou à retirer.');
+
+            return Response::redirect($back);
+        }
+        $this->identities->setImages($id, $tenantId, $set);
+        SseIdMassGeneratorService::audit($tenantId, $this->userId(), 'id_images.update', 'sse_identity', $id, ['images' => array_keys($set)]);
+        Session::flash('success', 'Images du titulaire enregistrées. Elles apparaissent sur l’aperçu de chaque papier, sous le filigrane SIMULATION.');
+
+        return Response::redirect($back);
     }
 
     // -------------------------------------------------------------- Kits types
@@ -815,37 +913,6 @@ final class SseIdWorkshopController
     private function page(string $view, array $data): Response
     {
         return (new SseIdentityRegistryController($this->access, $this->clearance))->page($view, $data + ['csrfToken' => Csrf::token()]);
-    }
-
-    /** Image téléversée : chemin public, null si rien n'est envoyé, false si le fichier est refusé. */
-    private function storeImage(string $field, string $folder, int $tenantId): string|false|null
-    {
-        $file = $_FILES[$field] ?? null;
-        if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-            return null;
-        }
-        if (($file['error'] ?? 1) !== UPLOAD_ERR_OK || (int) ($file['size'] ?? 0) > 1024 * 1024 || !is_uploaded_file((string) $file['tmp_name'])) {
-            return false;
-        }
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = $finfo !== false ? finfo_file($finfo, (string) $file['tmp_name']) : false;
-        if ($finfo !== false) {
-            finfo_close($finfo);
-        }
-        $ext = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'][(string) $mime] ?? null;
-        if ($ext === null || @getimagesize((string) $file['tmp_name']) === false) {
-            return false;
-        }
-        $dir = base_path('public/uploads/' . $folder);
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
-            return false;
-        }
-        $name = $tenantId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-        if (!move_uploaded_file((string) $file['tmp_name'], $dir . DIRECTORY_SEPARATOR . $name)) {
-            return false;
-        }
-
-        return 'uploads/' . $folder . '/' . $name;
     }
 
     /** @return list<array{id: int, label: string}> */

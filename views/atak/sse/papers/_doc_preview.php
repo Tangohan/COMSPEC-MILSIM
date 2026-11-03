@@ -3,7 +3,8 @@ declare(strict_types=1);
 /**
  * Aperçu d'un papier fictif (atelier, COMSPEC IDENTITY Lot 6) : recto et verso d'une carte ou d'un permis, couverture,
  * page de données et page d'observations d'un passeport. Gabarit générique aux couleurs du pays émetteur imaginaire,
- * filigrane SIMULATION obligatoire sur chaque face. Les éléments data-f / data-p sont mis à jour en direct par
+ * filigrane SIMULATION obligatoire sur chaque face, toujours la dernière couche (au-dessus de la photo, de la signature et
+ * de l'image de fond). Les éléments data-f / data-p sont mis à jour en direct par
  * sse-id-workshop.js (data-f : donnée du papier ; data-p : champ imprimé en plus, ligne masquée s'il est vide).
  *
  * @var array<string, mixed> $preview SseIdWorkshopService::previewModel()
@@ -61,7 +62,13 @@ $pvFields = '<dl class="idw-fields">'
     . '<div class="idw-half"><dt translate="no">N° · Number</dt><dd data-f="number" class="idw-num">' . $h($pvDoc['number']) . '</dd></div>'
     . '<div class="idw-half"><dt translate="no">Expire le · Expiry</dt><dd data-f="expires_on">' . $h($pvDoc['expires_on']) . '</dd></div>'
     . '</dl>';
-$pvSignature = '<div class="idw-sign"><span translate="no">Signature du titulaire · Holder’s signature</span><b data-p-signature>' . $h((string) (($pvPrint['signature'] ?? '') !== '' ? $pvPrint['signature'] : $pvIdentity['first_name'] . ' ' . $pvIdentity['last_name'])) . '</b></div>';
+$pvSignUrl = $pvIdentity['signature_url'] ?? null;
+$pvSignature = '<div class="idw-sign"><span translate="no">Signature du titulaire · Holder’s signature</span>'
+    . '<img class="idw-sign__img" data-f-signature src="' . $h((string) $pvSignUrl) . '" alt=""' . ($pvSignUrl === null ? ' hidden' : '') . '>'
+    . '<b data-p-signature' . ($pvSignUrl !== null ? ' hidden' : '') . '>' . $h((string) (($pvPrint['signature'] ?? '') !== '' ? $pvPrint['signature'] : $pvIdentity['first_name'] . ' ' . $pvIdentity['last_name'])) . '</b></div>';
+// Image de fond du gabarit personnalisé : première couche de chaque face (sous tout le reste, filigrane compris).
+$pvBgUrl = $pv['background_url'] ?? null;
+$pvBg = '<div class="idw-bg" data-f-bg aria-hidden="true"' . ($pvBgUrl !== null ? ' style="background-image: url(&quot;' . $h((string) $pvBgUrl) . '&quot;)"' : ' hidden') . '></div>';
 $pvState = '';
 if (($pvDoc['st_validity'] ?? 'valid') !== 'valid' || ($pvDoc['st_report'] ?? 'none') !== 'none') {
     $pvState = '<div class="idw-state" translate="no">' . $h(($pvDoc['st_validity'] ?? 'valid') !== 'valid' ? 'ANNULÉ / INVALID' : 'SIGNALÉ / REPORTED') . '</div>';
@@ -71,6 +78,7 @@ if (($pvDoc['st_validity'] ?? 'valid') !== 'valid' || ($pvDoc['st_report'] ?? 'n
      style="--idw-c1: <?= $h($pvC1) ?>; --idw-c2: <?= $h($pvC2) ?>;" data-doc-type="<?= $h($pvType) ?>">
     <?php /* Toutes les faces sont rendues : le type affiché (classe idw-type--…) choisit celles qui se voient. */ ?>
         <figure class="idw-face idw-face--cover" data-kind="passport" data-face="couverture" aria-label="Couverture du passeport">
+            <?= $pvBg ?>
             <div class="idw-cover">
                 <b data-f="country_name"><?= $h($pvUp((string) $pv['country']['name'])) ?></b>
                 <span class="idw-cover__emblem" aria-hidden="true"><?= $pvFlag() ?></span>
@@ -81,6 +89,7 @@ if (($pvDoc['st_validity'] ?? 'valid') !== 'valid' || ($pvDoc['st_report'] ?? 'n
             <?= $pvWatermark ?>
         </figure>
         <figure class="idw-face idw-face--data" data-kind="passport" data-face="donnees" aria-label="Page de données">
+            <?= $pvBg ?>
             <?= $pvBand('PASSEPORT · PASSPORT') ?>
             <div class="idw-body"><?= $pvPhoto() ?><?= $pvFields ?></div>
             <dl class="idw-fields idw-fields--more">
@@ -94,6 +103,7 @@ if (($pvDoc['st_validity'] ?? 'valid') !== 'valid' || ($pvDoc['st_report'] ?? 'n
             <?= $pvWatermark ?>
         </figure>
         <figure class="idw-face idw-face--notes" data-kind="passport" data-face="observations" aria-label="Page d’observations">
+            <?= $pvBg ?>
             <?= $pvBand('OBSERVATIONS · REMARKS') ?>
             <dl class="idw-fields">
                 <?= $pvRow('place_of_issue', 'Lieu de délivrance · Place of issue') ?>
@@ -109,6 +119,7 @@ if (($pvDoc['st_validity'] ?? 'valid') !== 'valid' || ($pvDoc['st_report'] ?? 'n
             <?= $pvWatermark ?>
         </figure>
         <figure class="idw-face idw-face--front" data-kind="card" data-face="recto" aria-label="Recto">
+            <?= $pvBg ?>
             <?= $pvBand($pvTypeLine, true) ?>
             <div class="idw-body"><?= $pvPhoto() ?><?= $pvFields ?></div>
             <?= $pvSignature ?>
@@ -116,6 +127,7 @@ if (($pvDoc['st_validity'] ?? 'valid') !== 'valid' || ($pvDoc['st_report'] ?? 'n
             <?= $pvWatermark ?>
         </figure>
         <figure class="idw-face idw-face--back" data-kind="card" data-face="verso" aria-label="Verso">
+            <?= $pvBg ?>
             <?= $pvBand('MENTIONS · DETAILS') ?>
             <dl class="idw-fields">
                 <div class="idw-half"><dt translate="no">Délivré le · Date of issue</dt><dd data-f="issued_on"><?= $h($pvDoc['issued_on']) ?></dd></div>

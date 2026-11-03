@@ -47,6 +47,10 @@ require __DIR__ . '/_subnav.php';
     <?php endif; ?>
 </section>
 
+<?php if ($canSeeTruth || !$secret): ?>
+    <?php $imagesDocId = 0; $personPhotos = $showPerson ? ($personPhotos ?? []) : []; require __DIR__ . '/_holder_images.php'; ?>
+<?php endif; ?>
+
 <section class="panel" style="margin-top:10px">
     <div class="panel-header">
         <div class="panel-title"><span class="panel-index">02</span> Papiers</div>
