@@ -144,7 +144,7 @@ return [
 'step_navigation'=>'Navigation entre les étapes', 'previous'=>'Précédent', 'next_step'=>'Suivant', 'up_next'=>'À suivre', 'end_of_course'=>'Fin du parcours', 'finish_step_first'=>'Terminez cette étape pour continuer.',
 'sub_theory'=>'Lecture', 'sub_demonstration'=>'Exemple commenté', 'sub_guided'=>'Exercice avec aide', 'sub_simulation'=>'Exercice sans aide', 'sub_assessment'=>'Évaluation', 'sub_debrief'=>'Retour écrit', 'sub_validation'=>'Instructeur',
 // Academy Studio (maquette Studio)
-'studio_heading'=>'Academy Studio', 'studio_intro'=>'Créez et mettez à jour les cours de votre communauté. Un cours se prépare en brouillon et n’est visible des stagiaires qu’après publication.',
+'studio_how'=>'? Comment ça marche : qualifications en jeu et prérequis', 'studio_heading'=>'Academy Studio', 'studio_intro'=>'Créez et mettez à jour les cours de votre communauté. Un cours se prépare en brouillon et n’est visible des stagiaires qu’après publication.',
 'studio_new_course'=>'Nouveau cours', 'untitled_course'=>'Cours sans titre', 'untitled_chapter'=>'Chapitre sans titre', 'built_in_module'=>'Module intégré', 'studio_new_version'=>'Nouvelle version', 'steps_word'=>'étapes',
 'studio_open'=>'Consulter', 'studio_edit'=>'Modifier', 'studio_copy_builtin'=>'Créer une copie modifiable', 'studio_revise'=>'Créer une nouvelle version', 'studio_all_courses'=>'Tous les cours',
 'studio_saved'=>'Enregistré', 'studio_unsaved'=>'Modifications non enregistrées', 'studio_save'=>'Enregistrer', 'studio_publish'=>'Publier', 'studio_preview'=>'Aperçu',

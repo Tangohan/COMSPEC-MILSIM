@@ -330,19 +330,19 @@ Chaque ajout ci-dessous est écrit dans le champ `prerequisites_detected` de l�
   - FR : « Cours de montagnard militaire de base (BMMC) réussi »
   - EN : “Passed the Basic Military Mountaineer Course (BMMC)”
 
-### `us-army-aqc-ah64` — Cours de qualification sur appareil AH-64E Apache (AQC)
+### `us-army-aqc-ah64` — Qualification de type AH-64E Apache (AQC)
 
 - **qualification « Formation initiale au pilotage d’hélicoptère (IERW) » (`us-army-ierw`)** — confiance 0.90, prérequis n° 1
   - FR : « Formation initiale au pilotage d’hélicoptère (IERW) »
   - EN : “Initial Entry Rotary Wing (IERW) flight training”
 
-### `us-army-aqc-uh60` — Cours de qualification sur appareil UH-60M Black Hawk (AQC)
+### `us-army-aqc-uh60` — Qualification de type UH-60M Black Hawk (AQC)
 
 - **qualification « Formation initiale au pilotage d’hélicoptère (IERW) » (`us-army-ierw`)** — confiance 0.90, prérequis n° 1
   - FR : « Formation initiale au pilotage d’hélicoptère (IERW) »
   - EN : “Initial Entry Rotary Wing (IERW) flight training”
 
-### `us-army-aqc-ch47` — Cours de qualification sur appareil CH-47F Chinook (AQC)
+### `us-army-aqc-ch47` — Qualification de type CH-47F Chinook (AQC)
 
 - **qualification « Formation initiale au pilotage d’hélicoptère (IERW) » (`us-army-ierw`)** — confiance 0.90, prérequis n° 1
   - FR : « Formation initiale au pilotage d’hélicoptère (IERW) »

@@ -144,7 +144,7 @@ return [
 'step_navigation'=>'Step navigation', 'previous'=>'Previous', 'next_step'=>'Next', 'up_next'=>'Up next', 'end_of_course'=>'End of course', 'finish_step_first'=>'Complete this step to continue.',
 'sub_theory'=>'Reading', 'sub_demonstration'=>'Worked example', 'sub_guided'=>'Exercise with help', 'sub_simulation'=>'Exercise without help', 'sub_assessment'=>'Assessment', 'sub_debrief'=>'Written debrief', 'sub_validation'=>'Instructor',
 // Academy Studio
-'studio_heading'=>'Academy Studio', 'studio_intro'=>'Create and update your community’s courses. A course is prepared as a draft and learners only see it once it is published.',
+'studio_how'=>'? How it works: in-game qualifications and prerequisites', 'studio_heading'=>'Academy Studio', 'studio_intro'=>'Create and update your community’s courses. A course is prepared as a draft and learners only see it once it is published.',
 'studio_new_course'=>'New course', 'untitled_course'=>'Untitled course', 'untitled_chapter'=>'Untitled chapter', 'built_in_module'=>'Built-in module', 'studio_new_version'=>'New version', 'steps_word'=>'steps',
 'studio_open'=>'View', 'studio_edit'=>'Edit', 'studio_copy_builtin'=>'Create an editable copy', 'studio_revise'=>'Create a new version', 'studio_all_courses'=>'All courses',
 'studio_saved'=>'Saved', 'studio_unsaved'=>'Unsaved changes', 'studio_save'=>'Save', 'studio_publish'=>'Publish', 'studio_preview'=>'Preview',

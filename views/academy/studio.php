@@ -110,7 +110,7 @@ $card = static function (array $c, string $mode) use ($h, $t, $local, $link, $cs
 <main id="main" class="sth">
 <?php if ($notice): ?><p class="ast-notice ast-notice--<?= $noticeClass($notice) ?>" role="status"><?= $h($t($notice)) ?></p><?php endif ?>
 <section class="sth-hero" style="--img:url('<?= $h($coverUrl('fog')) ?>')">
-<div class="hin"><div><p class="kk"><i></i>Academy<?= !empty($tenant['name']) ? ' · ' . $h($tenant['name']) : '' ?></p><h1>Studio</h1><p><?= $h($t('studio_intro')) ?></p></div>
+<div class="hin"><div><p class="kk"><i></i>Academy<?= !empty($tenant['name']) ? ' · ' . $h($tenant['name']) : '' ?></p><h1>Studio</h1><p><?= $h($t('studio_intro')) ?></p><p><a href="<?= $h(url('documentation/qualifications')) ?>" data-qualification-guides><?= $h($t('studio_how')) ?></a></p></div>
 <?php if ($canCreate): ?><button class="hb1" type="button" data-open-dialog="sth-pick">+ <?= $h($t('studio_new')) ?></button><?php endif ?></div>
 <dl class="hst"><div><dt><?= $h($t('stat_courses')) ?></dt><dd><?= count($active) ?></dd></div><div><dt><?= $h($t('stat_published')) ?></dt><dd class="ok"><?= $published ?></dd></div><div><dt><?= $h($t('stat_drafts')) ?></dt><dd class="dr"><?= count($active) - $published ?></dd></div><div><dt><?= $h($t('stat_chapters')) ?></dt><dd><?= $chapterTotal ?></dd></div></dl>
 </section>

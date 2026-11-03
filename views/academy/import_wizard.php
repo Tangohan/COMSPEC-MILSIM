@@ -13,6 +13,7 @@ $aiwSteps = [['label' => 'Portée', 'active' => true], ['label' => 'Aperçu'], [
     <div>
         <h2 id="aiw-launch-title">Assistant d’importation</h2>
         <p>Importez dans votre référentiel tout le catalogue, un pays, une catégorie, un domaine, un niveau ou un émetteur, avec un aperçu avant de valider.</p>
+        <p><a href="<?= $h(url('documentation/qualifications')) ?>" data-qualification-guides>? Comment ça marche : exploiter en jeu les qualifications importées</a></p>
     </div>
     <button type="button" class="button small" data-aiw-open><span>Ouvrir l’assistant</span></button>
 </section>

@@ -8945,8 +8945,8 @@
       "code": "US-AVN-AH64",
       "category": "aviation",
       "name": {
-        "fr": "Cours de qualification sur appareil AH-64E Apache (AQC)",
-        "en": "AH-64E Apache Aircraft Qualification Course (AQC)"
+        "fr": "Qualification de type AH-64E Apache (AQC)",
+        "en": "AH-64E Apache aircraft qualification (AQC, type rating)"
       },
       "official_name": "AH-64E Apache Aircraft Qualification Course",
       "short_name": "AH-64E AQC",
@@ -9009,8 +9009,8 @@
       "code": "US-AVN-UH60",
       "category": "aviation",
       "name": {
-        "fr": "Cours de qualification sur appareil UH-60M Black Hawk (AQC)",
-        "en": "UH-60M Black Hawk Aircraft Qualification Course (AQC)"
+        "fr": "Qualification de type UH-60M Black Hawk (AQC)",
+        "en": "UH-60M Black Hawk aircraft qualification (AQC, type rating)"
       },
       "official_name": "UH-60M Black Hawk Aircraft Qualification Course",
       "short_name": "UH-60M AQC",
@@ -9073,8 +9073,8 @@
       "code": "US-AVN-CH47",
       "category": "aviation",
       "name": {
-        "fr": "Cours de qualification sur appareil CH-47F Chinook (AQC)",
-        "en": "CH-47F Chinook Aircraft Qualification Course (AQC)"
+        "fr": "Qualification de type CH-47F Chinook (AQC)",
+        "en": "CH-47F Chinook aircraft qualification (AQC, type rating)"
       },
       "official_name": "CH-47F Chinook Aircraft Qualification Course",
       "short_name": "CH-47F AQC",
@@ -9199,7 +9199,7 @@
     {
       "id": "us-mcmap-tan",
       "code": "US-MCMAP-TAN",
-      "category": "selection",
+      "category": "close_combat",
       "name": {
         "fr": "Programme d’arts martiaux du Marine Corps : ceinture tan (MCMAP)",
         "en": "Marine Corps Martial Arts Program Tan Belt (MCMAP)"
@@ -9243,7 +9243,7 @@
     {
       "id": "us-mcmap-gray",
       "code": "US-MCMAP-GRAY",
-      "category": "selection",
+      "category": "close_combat",
       "name": {
         "fr": "Programme d’arts martiaux du Marine Corps : ceinture grise (MCMAP)",
         "en": "Marine Corps Martial Arts Program Gray Belt (MCMAP)"
@@ -9299,7 +9299,7 @@
     {
       "id": "us-mcmap-green",
       "code": "US-MCMAP-GREEN",
-      "category": "selection",
+      "category": "close_combat",
       "name": {
         "fr": "Programme d’arts martiaux du Marine Corps : ceinture verte (MCMAP)",
         "en": "Marine Corps Martial Arts Program Green Belt (MCMAP)"
@@ -9357,7 +9357,7 @@
     {
       "id": "us-mcmap-brown",
       "code": "US-MCMAP-BROWN",
-      "category": "selection",
+      "category": "close_combat",
       "name": {
         "fr": "Programme d’arts martiaux du Marine Corps : ceinture marron (MCMAP)",
         "en": "Marine Corps Martial Arts Program Brown Belt (MCMAP)"
@@ -9415,7 +9415,7 @@
     {
       "id": "us-mcmap-black",
       "code": "US-MCMAP-BLACK",
-      "category": "selection",
+      "category": "close_combat",
       "name": {
         "fr": "Programme d’arts martiaux du Marine Corps : ceinture noire (1er degré) (MCMAP)",
         "en": "Marine Corps Martial Arts Program Black Belt (1st degree) (MCMAP)"
@@ -9473,7 +9473,7 @@
     {
       "id": "us-mcmap-mai",
       "code": "US-MCMAP-MAI",
-      "category": "selection",
+      "category": "close_combat",
       "name": {
         "fr": "Instructeur d’arts martiaux du Marine Corps (MAI)",
         "en": "MCMAP Martial Arts Instructor (MAI)"

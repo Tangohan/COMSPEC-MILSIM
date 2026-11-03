@@ -44,6 +44,29 @@ final class DocumentationController
         ],
     ];
 
+    /**
+     * Guides des qualifications (docs/guides/<fichier>.md en français, <fichier>.en.md en anglais).
+     *
+     * @var array<string, array{file: string, title: string, hint: string}>
+     */
+    public const QUALIFICATION_GUIDES = [
+        'en-jeu' => [
+            'file' => 'guides/qualifications-en-jeu',
+            'title' => 'Exploiter les qualifications en jeu (Arma 3)',
+            'hint' => 'Cours Academy, séances en jeu, données du mod, validation par l’instructeur et renouvellement, avec des exemples.',
+        ],
+        'prerequis-automatiques' => [
+            'file' => 'guides/qualifications-prerequis-automatiques',
+            'title' => 'Prérequis automatiques possibles',
+            'hint' => 'Tout ce que le site mesure seul : source, calcul, limites et exemples de règles.',
+        ],
+        'prerequis-attestes' => [
+            'file' => 'guides/qualifications-prerequis-attestes',
+            'title' => 'Prérequis manuels (attestation)',
+            'hint' => 'Ce qu’un instructeur atteste, comment le faire, quelles preuves garder et ce que le mod pourrait mesurer demain.',
+        ],
+    ];
+
     public function index(Request $request, array $params = []): Response
     {
         if (!Session::get('user_id')) {
@@ -166,6 +189,75 @@ final class DocumentationController
             'docBodyHtml' => $html,
             'siteDocsRefsPage' => true,
         ]);
+    }
+
+    /** Sommaire des guides des qualifications. */
+    public function qualificationGuides(Request $request, array $params = []): Response
+    {
+        if (!Session::get('user_id')) {
+            Session::flash('error', 'Connectez-vous pour continuer.');
+
+            return Response::redirect(url('login'));
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'documentation.qualifications.index',
+            'title' => 'Guides des qualifications',
+            'qualificationGuides' => self::QUALIFICATION_GUIDES,
+            'siteDocsRefsPage' => true,
+        ]);
+    }
+
+    /** Un guide des qualifications, dans la langue du lecteur (repli sur le français). */
+    public function qualificationGuide(Request $request, array $params = []): Response
+    {
+        if (!Session::get('user_id')) {
+            Session::flash('error', 'Connectez-vous pour continuer.');
+
+            return Response::redirect(url('login'));
+        }
+        $slug = (string) ($params['slug'] ?? '');
+        if (!isset(self::QUALIFICATION_GUIDES[$slug])) {
+            return Response::redirect(url('documentation/qualifications'));
+        }
+        $meta = self::QUALIFICATION_GUIDES[$slug];
+        $body = self::qualificationGuideMarkdown($slug, locale());
+        if ($body === null) {
+            return Response::view('layout.main', [
+                'content' => 'documentation.missing',
+                'title' => 'Document introuvable',
+                'docTitle' => $meta['title'],
+                'siteDocsRefsPage' => true,
+            ]);
+        }
+        // Le titre est celui de la page : on retire le « # » du fichier.
+        $body = (string) preg_replace('/\A\s*# [^\n]*\n/u', '', $body);
+
+        return Response::view('layout.main', [
+            'content' => 'documentation.qualifications.guide',
+            'title' => $meta['title'],
+            'qualificationGuides' => self::QUALIFICATION_GUIDES,
+            'guideSlug' => $slug,
+            'docBodyHtml' => function_exists('markdown_to_html') ? markdown_to_html($body) : '<pre>' . htmlspecialchars($body, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</pre>',
+            'siteDocsRefsPage' => true,
+        ]);
+    }
+
+    /** Texte Markdown d’un guide des qualifications : version anglaise si demandée et présente, sinon française. */
+    public static function qualificationGuideMarkdown(string $slug, string $lang): ?string
+    {
+        $file = self::QUALIFICATION_GUIDES[$slug]['file'] ?? null;
+        if ($file === null) {
+            return null;
+        }
+        foreach ($lang === 'en' ? [$file . '.en.md', $file . '.md'] : [$file . '.md'] as $rel) {
+            $full = base_path('docs/' . $rel);
+            if (is_file($full)) {
+                return (string) file_get_contents($full);
+            }
+        }
+
+        return null;
     }
 
     private function loadMarkdownHtml(string $rel): string

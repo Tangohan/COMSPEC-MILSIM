@@ -107,6 +107,9 @@ $tocGroups = [
                 <a href="<?= htmlspecialchars(url('documentation/marqueurs'), ENT_QUOTES, 'UTF-8') ?>">Bibliothèque de marqueurs</a>
             </p>
             <p class="site-docs__ref-link">
+                <a href="<?= htmlspecialchars(url('documentation/qualifications'), ENT_QUOTES, 'UTF-8') ?>" data-qualification-guides>Guides des qualifications</a>
+            </p>
+            <p class="site-docs__ref-link">
                 <a href="<?= htmlspecialchars(url('documentation/references'), ENT_QUOTES, 'UTF-8') ?>">Documentation technique du mod</a>
             </p>
             <p class="site-docs__ref-link">

@@ -58,6 +58,7 @@ final class QualificationCatalog
         'aviation' => ['fr' => 'Aviation', 'en' => 'Aviation'],
         'marksmanship' => ['fr' => 'Tir et tireur d’élite', 'en' => 'Marksmanship and sniping'],
         'environment' => ['fr' => 'Montagne, grand froid et milieux spécifiques', 'en' => 'Mountain, arctic and specialised environments'],
+        'close_combat' => ['fr' => 'Combat rapproché et corps à corps', 'en' => 'Close combat and combatives'],
     ];
 
     public const DISCLAIMER = [
