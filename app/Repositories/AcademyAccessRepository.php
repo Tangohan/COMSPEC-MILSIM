@@ -240,6 +240,34 @@ final class AcademyAccessRepository
     }
 
     /**
+     * Filtres du tableau de suivi pour toute la communauté en trois lectures : unités (affectations actives), fonctions
+     * et cohortes (groupes de formation) de chaque membre, et la liste des cohortes.
+     *
+     * @return array{units: array<int, list<int>>, jobs: array<int, list<int>>, groups: array<int, list<int>>, groupOptions: array<int, string>}
+     */
+    public function trackerFacets(int $tenantId): array
+    {
+        $now = date('Y-m-d H:i:s');
+        $out = ['units' => [], 'jobs' => [], 'groups' => [], 'groupOptions' => []];
+        $collect = function (string $bucket, string $sql, array $params) use (&$out): void {
+            foreach ($this->rows($sql, $params) as $row) {
+                $out[$bucket][(int) $row['user_id']][] = (int) $row['ref_id'];
+            }
+        };
+        $collect('units', 'SELECT uu.user_id, uu.unit_id AS ref_id FROM user_units uu INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ? WHERE uu.ended_at IS NULL OR uu.ended_at > ?', [$tenantId, $now]);
+        $collect('units', "SELECT pa.user_id, pa.unit_id AS ref_id FROM personnel_assignments pa INNER JOIN units un ON un.id = pa.unit_id AND un.tenant_id = ? WHERE pa.status = 'active' AND (pa.ended_at IS NULL OR pa.ended_at > ?)", [$tenantId, substr($now, 0, 10)]);
+        $collect('jobs', 'SELECT user_id, personnel_job_role_id AS ref_id FROM personnel_profile_job_roles WHERE tenant_id = ?', [$tenantId]);
+        $collect('groups', 'SELECT m.user_id, m.group_id AS ref_id FROM training_group_members m INNER JOIN training_groups g ON g.id = m.group_id AND g.tenant_id = ?', [$tenantId]);
+        foreach ($this->rows('SELECT id, name FROM training_groups WHERE tenant_id = ? ORDER BY name', [$tenantId]) as $row) {
+            $out['groupOptions'][(int) $row['id']] = (string) $row['name'];
+        }
+        foreach (['units', 'jobs', 'groups'] as $bucket) {
+            $out[$bucket] = array_map(static fn (array $ids): array => array_values(array_unique($ids)), $out[$bucket]);
+        }
+        return $out;
+    }
+
+    /**
      * Séances du LMS à venir où le membre est désigné encadrant.
      *
      * @return list<array{course_id:int, title:string, slug:string, starts_at:string, label:string, location:string}>

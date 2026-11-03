@@ -6,6 +6,7 @@ declare(strict_types=1);
  *
  * @var array{identities: list<array<string, mixed>>, documents: list<array<string, mixed>>, kits: list<array<string, mixed>>, checks: list<array<string, mixed>>, steam_linked: bool} $papers
  * @var list<array{id: int, label: string}> $maps
+ * @var list<array<string, mixed>> $briefs fiches de couverture (SseIdOperationRepository::briefsForUser)
  */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $docById = [];
@@ -57,6 +58,26 @@ $scopeLabels = ['default' => 'Par défaut', 'map' => 'Pour une carte', 'operatio
                 </div>
             <?php endforeach; ?>
         </div>
+    <?php endif; ?>
+
+    <?php if (!empty($briefs)): ?>
+        <h2>Mes briefs de couverture</h2>
+        <?php foreach ($briefs as $b): ?>
+            <div class="idm-doc">
+                <div class="idm-doc__head">
+                    <b><?= $h($b['title'] !== '' ? $b['title'] : 'Fiche de couverture') ?></b>
+                    <span><?= $h($scopeLabels[$b['scope']] ?? '') ?> — <?= $h($b['op_key'] !== null ? 'opération ' . $b['op_key'] : $mapLabel($b['context_id'])) ?></span>
+                </div>
+                <dl class="idm-brief">
+                    <?php foreach (['biography' => 'Biographie', 'legend' => 'Légende', 'contacts' => 'Contacts', 'instructions' => 'Consignes', 'phone' => 'Téléphone (simulé)', 'address' => 'Adresse'] as $k => $label): ?>
+                        <?php if (($b[$k] ?? null) !== null && $b[$k] !== ''): ?>
+                            <dt><?= $h($label) ?></dt>
+                            <dd style="white-space:pre-line;margin:0 0 6px"><?= $h($b[$k]) ?></dd>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </dl>
+            </div>
+        <?php endforeach; ?>
     <?php endif; ?>
 
     <h2>Mon kit de mission</h2>

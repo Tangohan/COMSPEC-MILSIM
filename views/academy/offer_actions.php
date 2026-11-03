@@ -18,6 +18,7 @@ foreach ($it['how'] ?? [] as $line) {
 }
 $showFiche = !$actionsInDetail;
 ?>
+<?php if (($vi = ($versionInfo ?? [])[(string) ($it['course_key'] ?? '')] ?? null) !== null): $vKey = (string) $it['course_key']; $vLearner = null; require __DIR__ . '/version_badge.php'; endif ?>
 <div class="acx-actions">
 <?php if ($it['kind'] === 'course' && isset($it['course_key'])): ?>
     <?php if (!empty($it['enrolled'])): ?>

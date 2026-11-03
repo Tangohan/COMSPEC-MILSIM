@@ -289,3 +289,12 @@ document.querySelectorAll('form[data-autosubmit]').forEach(form => {
     }
   });
 });
+
+// Débriefing : la case « Rien à améliorer » permet d'envoyer sans texte (le serveur garde le maximum de 5 000 caractères).
+document.querySelectorAll('[data-nothing-toggle]').forEach(box => {
+  const area = document.getElementById(box.getAttribute('aria-controls') || '');
+  if (!area) return;
+  const sync = () => { area.required = !box.checked; area.minLength = box.checked ? 0 : 20; };
+  box.addEventListener('change', sync);
+  sync();
+});

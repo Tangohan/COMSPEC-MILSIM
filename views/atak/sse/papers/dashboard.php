@@ -129,6 +129,25 @@ require __DIR__ . '/_subnav.php';
         </div>
     </section>
 
+    <?php if (!empty($board['points'])): ?>
+        <?php
+        $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
+        $sseExtraScripts = ($sseExtraScripts ?? '') . '<script src="' . $h(asset_url('assets/js/sse-id-checks-map.js')) . '"></script>';
+        ?>
+        <section class="panel" style="margin-top:10px">
+            <div class="panel-header">
+                <div class="panel-title"><span class="panel-index">01b</span> Carte des contrôles</div>
+                <div class="panel-meta"><?= count($board['points']) ?> contrôle(s) positionné(s), coordonnées du terrain</div>
+            </div>
+            <div class="panel-body">
+                <div id="idw-checks-map" class="idw-map" role="img" aria-label="Carte des contrôles d’identité par position"
+                     data-points="<?= $h(json_encode($board['points'], JSON_UNESCAPED_UNICODE)) ?>"
+                     data-check-url="<?= $h(url('atak/sse/papiers/controles')) ?>"></div>
+                <p class="muted" style="margin-top:6px">Vert : RAS · orange : signalé ou expiré · rouge : recherché, cible prioritaire, volé, faux ou inconnu. Touchez un point pour ouvrir le contrôle.</p>
+            </div>
+        </section>
+    <?php endif; ?>
+
     <div class="idp-grid" style="margin-top:10px">
         <section class="panel">
             <div class="panel-header">

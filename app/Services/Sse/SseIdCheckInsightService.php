@@ -520,8 +520,17 @@ final class SseIdCheckInsightService
         $controllers = [];
         $alerts = [];
         $docIds = [];
+        $points = [];
         foreach ($checks as $c) {
             $v = (string) $c['verdict'];
+            // Carte des contrôles (lot 6) : seulement ceux qui ont une position.
+            if (is_array($c['pos'] ?? null) && count($points) < 1000) {
+                $points[] = [
+                    'id' => (int) $c['id'], 'ref' => (string) $c['ref'], 'x' => round((float) $c['pos'][0], 1), 'y' => round((float) $c['pos'][1], 1),
+                    'verdict' => $v, 'label' => (string) $c['verdict_label'], 'tone' => self::verdictTone($v), 'grid' => (string) ($c['grid'] ?? ''),
+                    'at' => (string) $c['created_at'], 'forgery' => self::isForgery($c),
+                ];
+            }
             $byVerdict[$v] = ($byVerdict[$v] ?? 0) + 1;
             $isDetection = self::isDetection($c);
             $detections += $isDetection ? 1 : 0;
@@ -566,6 +575,7 @@ final class SseIdCheckInsightService
             'alerts' => $this->enrich($tenantId, $alerts),
             'drafts' => $this->pendingDrafts($tenantId, $mapId, $opKey),
             'truncated' => count($checks) >= 2000,
+            'points' => $points,
         ];
     }
 

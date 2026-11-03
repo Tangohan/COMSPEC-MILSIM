@@ -27,6 +27,8 @@ use App\Services\Academy\AcademyCurriculum;
 use App\Services\Academy\AcademyBuiltInCourses;
 use App\Services\Academy\AcademyRichText;
 use App\Services\Academy\AcademyOffer;
+use App\Services\Academy\AcademyTracker;
+use App\Services\Academy\AcademyVersionUpgrade;
 use App\Services\Academy\AcademyStudio;
 use App\Services\Academy\AcademyStudioCredentials;
 use App\Services\Training\TrainingCourseMediaUploadService;
@@ -119,7 +121,7 @@ final class AcademyController
     public function space(Request $request, array $params = []): Response
     {
         $space = (string) ($params['space'] ?? 'dashboard');
-        $spaces = ['dashboard', 'catalogue', 'courses', 'classroom', 'laboratory', 'simulators', 'exams', 'library', 'notebook', 'record', 'instructor', 'studio', 'droits'];
+        $spaces = ['dashboard', 'catalogue', 'courses', 'classroom', 'laboratory', 'simulators', 'exams', 'library', 'notebook', 'record', 'instructor', 'studio', 'droits', 'suivi'];
         if (!in_array($space, $spaces, true)) {
             return (new Response())->setStatusCode(404);
         }
@@ -140,6 +142,9 @@ final class AcademyController
             $repository = new AcademyRepository();
             if (!Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tenantId, 'training')) {
                 return $this->error('module_unavailable', 403);
+            }
+            if ($space === 'suivi') {
+                return $this->tracker($request, $repository, $rights, $tenantId, $userId, $staff);
             }
             // Aperçu d'une formation (brouillon compris), sans inscription possible : encadrement, auteur ou personne invitée.
             $preview = false;
@@ -199,7 +204,19 @@ final class AcademyController
                     $instructorBadge = $this->instructorBadge($repository, $rights, $tenantId);
                 }
             }
-            return Response::view('academy.space', compact('space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail', 'offerCanImport', 'offerQuota', 'queue', 'instructorBadge') + $lmsData + [
+            // Parcours sur une ancienne version du cours : badge et passage à la version courante.
+            $currentVersions = $academyStorageReady ? $this->currentVersions($repository, $tenantId) : [];
+            $versionInfo = [];
+            foreach ($states as $stateKey => $item) {
+                if ($stateKey !== '__notes' && ($info = AcademyVersionUpgrade::outdated($item, (string) $stateKey, $currentVersions[$stateKey] ?? null)) !== null) {
+                    $versionInfo[$stateKey] = $info;
+                }
+            }
+            foreach ($instructorView['learners'] as &$followed) {
+                $followed['version'] = AcademyVersionUpgrade::outdated($followed['state'], (string) $followed['course_key'], $currentVersions[$followed['course_key']] ?? null);
+            }
+            unset($followed);
+            return Response::view('academy.space', compact('versionInfo', 'space', 'staff', 'states', 'courses', 'selected', 'state', 'account', 'tenant', 'preview', 'offer', 'offerFilters', 'offerDetail', 'offerCanImport', 'offerQuota', 'queue', 'instructorBadge') + $lmsData + [
                 'academyStorageReady' => $academyStorageReady && !$preview,
                 'viewStep' => $request->queryString('step'),
                 'notice' => Session::get('academy_notice', ''),
@@ -238,8 +255,14 @@ final class AcademyController
             if ($action === 'course_access_save') {
                 return $this->courseAccessAction($request, $repository, $rights, $key, $tenantId, $userId);
             }
+            if ($action === 'version_upgrade') {
+                return $this->versionUpgradeAction($request, $repository, $rights, $key, $tenantId, $userId);
+            }
             if ($action === 'assign') {
                 return $this->assignAction($request, $repository, $rights, $key, $tenantId, $userId);
+            }
+            if (in_array($action, ['tracker_enroll', 'tracker_remind', 'tracker_exempt', 'tracker_unexempt'], true)) {
+                return $this->trackerAction($request, $repository, $rights, $action, $key, $tenantId, $userId);
             }
             if ($action === 'enroll') {
                 $course = $repository->course($tenantId, $key);
@@ -290,7 +313,7 @@ final class AcademyController
                             throw new \DomainException('locked');
                         }
                         // La validation du dernier chapitre termine le cours et délivre l'attestation : droit « délivrer ».
-                        if (!$certify && (int) $state['chapter'] + 1 >= count($state['snapshot']['chapters'] ?? [])) {
+                        if (!$certify && AcademyCurriculum::nextUnvalidated($state['validations'] ?? [], count($state['snapshot']['chapters'] ?? []), (int) $state['chapter'] + 1) === null) {
                             throw new \DomainException('certify_required');
                         }
                         return AcademyCurriculum::validateChapter($state, $state['snapshot'], $userId, $comment, time());
@@ -301,6 +324,10 @@ final class AcademyController
                         Session::set('academy_notice', 'ins_validated');
                         return Response::redirect(url('academy/dashboard') . '#a-traiter', 303);
                     }
+                    if ($request->inputString('return') === 'tracker') {
+                        Session::set('academy_notice', 'ins_validated');
+                        return Response::redirect($this->trackerUrl($request->inputString('back')), 303);
+                    }
                     if ($request->inputString('return') === 'queue') {
                         Session::set('academy_notice', 'ins_validated');
                         return Response::redirect(url('academy/instructor') . '#file', 303);
@@ -308,7 +335,7 @@ final class AcademyController
                 }
                 $returnSpace = 'instructor';
             } else {
-                $input = ['answer' => $request->input('answer'), 'answers' => $request->input('answers'), 'token' => $request->input('token'), 'reflection' => $request->input('reflection'), 'expected_stage' => $request->input('expected_stage'), 'expected_chapter' => $request->input('expected_chapter')];
+                $input = ['answer' => $request->input('answer'), 'answers' => $request->input('answers'), 'token' => $request->input('token'), 'reflection' => $request->input('reflection'), 'nothing_to_improve' => $request->input('nothing_to_improve'), 'expected_stage' => $request->input('expected_stage'), 'expected_chapter' => $request->input('expected_chapter')];
                 $resultStep = '';
                 $repository->mutate($tenantId, $userId, $key, static function (array $state) use ($action, $input, &$resultStep): array {
                     $next = AcademyCurriculum::transition($state, $state['snapshot'], $action, $input, time());
@@ -328,10 +355,52 @@ final class AcademyController
             if ($e->getMessage() === 'certify_required') {
                 return $this->error('certify_required', 403);
             }
-            return $this->error(in_array($e->getMessage(), ['locked', 'reflection_required', 'not_enrolled'], true) ? $e->getMessage() : 'invalid_content', 422);
+            return $this->error(in_array($e->getMessage(), ['locked', 'reflection_required', 'not_enrolled', 'already_enrolled'], true) ? $e->getMessage() : 'invalid_content', 422);
         } catch (\PDOException) {
             return $this->error('unavailable', 503);
         }
+    }
+
+    /** @return array<string, array<string, mixed>> clé suivie => version courante du cours (intégré ou Studio) */
+    private function currentVersions(AcademyRepository $repository, int $tenantId): array
+    {
+        try {
+            return AcademyVersionUpgrade::currentMap($repository->courses($tenantId), \App\Services\Academy\AcademyBuiltInQualifications::forPdo(\App\Core\Database::getPdo())->lineage($tenantId));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * « Passer à la nouvelle version » : le stagiaire pour lui-même, ou l’encadrement (validation ou inscription) pour
+     * un stagiaire. Progression et validations gardées ; un parcours terminé garde sa licence (jamais révoquée).
+     */
+    private function versionUpgradeAction(Request $request, AcademyRepository $repository, AcademyRights $rights, string $key, int $tenantId, int $userId): Response
+    {
+        $learnerId = (int) $request->input('learner', $userId);
+        if ($learnerId < 1 || ($learnerId !== $userId && !$rights->canTeach($key) && !$rights->can('assign'))) {
+            return $this->error('forbidden', 403);
+        }
+        $current = $this->currentVersions($repository, $tenantId)[$key] ?? null;
+        if ($current === null || $request->inputString('confirm') !== '1') {
+            return $this->error('invalid_content', 422);
+        }
+        $newKey = (string) $current['key'];
+        $from = null;
+        $repository->moveEnrollment($tenantId, $learnerId, $key, $newKey, static function (array $state) use ($key, $current, $userId, &$from): array {
+            $info = AcademyVersionUpgrade::outdated($state, $key, $current);
+            if ($info === null) {
+                throw new \DomainException('locked');
+            }
+            $from = $info;
+            return AcademyVersionUpgrade::upgrade($state, $current, $userId, time());
+        });
+        $this->audit('academy.learner.version_upgraded', $tenantId, $newKey, ['learner' => $learnerId, 'from_course' => $key, 'from_version' => $from['from'] ?? null, 'to_version' => $from['to'] ?? null, 'completed' => $from['completed'] ?? false]);
+        Session::set('academy_notice', 'version_upgraded');
+        if ($learnerId !== $userId) {
+            return Response::redirect(url('academy/instructor') . '#eleve-' . $learnerId . '-' . rawurlencode($newKey), 303);
+        }
+        return Response::redirect($this->classroomUrl($newKey), 303);
     }
 
     /**
@@ -410,9 +479,9 @@ final class AcademyController
     }
 
     /** @return array<int,string> membres actifs de la communauté : identifiant => « Prénom N. » (indicatif ensuite, s’il existe) */
-    private function memberNames(int $tenantId): array
+    private function memberNames(int $tenantId, ?int $limit = 500): array
     {
-        $rows = Container::get(UserRepository::class)->listForTenant($tenantId, null, 'active', null, 500);
+        $rows = Container::get(UserRepository::class)->listForTenant($tenantId, null, 'active', null, $limit);
         $ids = array_map(static fn (array $m): int => (int) $m['id'], $rows);
         try {
             $identities = (new \App\Services\Personnel\MemberNameService())->identitiesFor($tenantId, $ids);
@@ -966,6 +1035,297 @@ final class AcademyController
      * Espace instructeur : à traiter (débriefings à valider, examens à reprendre, demandes d'inscription), cours encadrés,
      * séances, élèves et leur progression. Chacun ne voit que les élèves des cours qu'il encadre, sauf droit « statistiques ».
      */
+    /**
+     * Academy › Tableau de suivi : matrice stagiaires × formations (vue « cursus ») ou × chapitres (vue « formation »).
+     * Encadrement : tous les membres avec le droit « statistiques » ou « valider », sinon les cours que l'on encadre ;
+     * stagiaire : sa seule ligne. Export CSV : ?export=csv (mêmes filtres, toutes les pages).
+     */
+    private function tracker(Request $request, AcademyRepository $repository, AcademyRights $rights, int $tenantId, int $userId, bool $staff): Response
+    {
+        $data = $this->trackerData($request, $repository, $rights, $tenantId, $userId, $staff, $request->queryString('export') === 'csv');
+        if ($request->queryString('export') === 'csv') {
+            return (new Response())->setStatusCode(200)
+                ->header('Content-Type', 'text/csv; charset=utf-8')
+                ->header('Content-Disposition', 'attachment; filename="academy-suivi-' . date('Ymd-Hi') . '.csv"')
+                ->header('Cache-Control', 'private, no-store')
+                ->setBody($this->trackerCsv($data));
+        }
+        $notice = (string) Session::get('academy_notice', '');
+        $noticeCount = (int) Session::get('academy_notice_n', 0);
+        Session::set('academy_notice_n', 0);
+        return Response::view('academy.space', [
+            'space' => 'suivi', 'staff' => $staff, 'states' => [], 'courses' => [], 'selected' => null, 'state' => null, 'learners' => [], 'preview' => false,
+            'tenant' => Container::get(TenantRepository::class)->findById($tenantId),
+            'account' => ['display_name' => (string) Session::get('display_name', ''), 'callsign' => (string) Session::get('callsign', '')],
+            'notice' => $notice, 'noticeCount' => $noticeCount, 'tracker' => $data,
+            'instructorBadge' => $staff ? $this->instructorBadge($repository, $rights, $tenantId) : 0,
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
+    /** @return array<string, mixed> */
+    private function trackerData(Request $request, AcademyRepository $repository, AcademyRights $rights, int $tenantId, int $userId, bool $staff, bool $everything): array
+    {
+        $now = time();
+        $all = $rights->can('stats') || $rights->can('validate');
+        $courses = [];
+        foreach ($repository->courses($tenantId) as $course) {
+            $key = (string) $course['key'];
+            if ($staff ? ($all || $rights->canTeach($key)) : true) {
+                $courses[$key] = $course;
+            }
+        }
+        $counts = $repository->enrollmentCounts($tenantId);
+        if (!$staff) {
+            // Stagiaire : ses seules formations.
+            $mine = array_keys(array_filter($repository->states($tenantId, $userId), static fn ($key): bool => $key !== '__notes', ARRAY_FILTER_USE_KEY));
+            $courses = array_intersect_key($courses, array_flip($mine));
+        }
+        uksort($courses, static fn ($a, $b): int => [($counts[$b] ?? 0), (string) $a] <=> [($counts[$a] ?? 0), (string) $b]);
+        $view = $request->queryString('vue') === 'formation' ? 'course' : 'path';
+        $focus = $request->queryString('course');
+        if (!isset($courses[$focus])) {
+            $focus = (string) (array_key_first($courses) ?? '');
+        }
+        if ($view === 'course') {
+            $keys = $focus !== '' ? [$focus] : [];
+        } else {
+            $picked = array_values(array_unique(array_filter(explode(',', $request->queryString('cols')), static fn (string $key): bool => isset($courses[$key]))));
+            $keys = $picked !== [] ? array_slice($picked, 0, 30) : array_slice(array_map('strval', array_keys(array_filter($courses, static fn (array $c): bool => ($counts[(string) $c['key']] ?? 0) > 0))), 0, AcademyTracker::MAX_COLUMNS);
+            if ($keys === []) {
+                $keys = array_slice(array_map('strval', array_keys($courses)), 0, 6);
+            }
+        }
+        $columns = array_map(static fn ($key): array => ['key' => (string) $key, 'chapters' => max(1, count($courses[$key]['chapters'] ?? [])), 'course' => $courses[$key]], $keys);
+
+        // Une lecture pour toutes les cellules, puis les attributions des qualifications délivrées par ces cours.
+        $rows = [];
+        foreach ($repository->trackerRows($tenantId, $keys, $staff ? null : $userId) as $raw) {
+            $row = AcademyTracker::normalizeRow($raw);
+            if ($staff || $row['user_id'] === $userId) {
+                $rows[$row['user_id']][$row['course_key']] = $row;
+            }
+        }
+        $awards = [];
+        try {
+            $credentials = array_values(array_filter($this->credentials()->list($tenantId), static fn (array $c): bool => empty($c['archived']) && array_intersect($keys, $c['courses']) !== []));
+            if ($credentials !== []) {
+                $awards = AcademyTracker::awardsByCourse($credentials, Container::get(\App\Repositories\QualificationAwardRepository::class)->forDefinitions($tenantId, array_column($credentials, 'id')));
+            }
+        } catch (\Throwable) {
+            $awards = [];
+        }
+
+        // Membres : toute la communauté pour l'encadrement (unité, grade, fonction, cohorte), soi-même sinon.
+        $access = $this->accessRepository();
+        $names = $staff ? $this->memberNames($tenantId, null) : [$userId => trim((string) Session::get('display_name', '')) ?: sprintf('#%d', $userId)];
+        $contexts = Container::get(UserRepository::class)->memberNumberContextsForTenant($tenantId, array_keys($names));
+        $facets = $staff ? $access->trackerFacets($tenantId) : ['units' => [], 'jobs' => [], 'groups' => [], 'groupOptions' => []];
+        $members = [];
+        foreach ($names as $id => $name) {
+            $members[] = ['id' => (int) $id, 'name' => $name, 'grade' => $contexts[$id]['grade'] ?? '', 'unit' => $contexts[$id]['unit'] ?? '',
+                'units' => $facets['units'][$id] ?? [], 'jobs' => $facets['jobs'][$id] ?? [], 'groups' => $facets['groups'][$id] ?? []];
+        }
+        $filters = ['unit' => (int) $request->queryString('unite'), 'job' => (int) $request->queryString('fonction'), 'grade' => $request->queryString('grade'),
+            'group' => (int) $request->queryString('cohorte'), 'q' => $request->queryString('q')];
+        $state = $request->queryString('etat');
+        $state = in_array($state, array_merge(AcademyTracker::STATES, ['late']), true) ? $state : '';
+        // Vue « formation » : par défaut, seulement les inscrits.
+        $onlyEnrolled = $view === 'course' && $request->queryString('tous') !== '1';
+        $filtered = AcademyTracker::filterMembers($members, $filters);
+        if ($onlyEnrolled) {
+            $filtered = array_values(array_filter($filtered, static fn (array $m): bool => isset($rows[$m['id']][$focus]) || isset($awards[$m['id']][$focus])));
+        }
+        $matrix = AcademyTracker::matrix($filtered, $columns, $rows, $awards, $now, max(1, (int) $request->queryString('page', '1')), $state, $everything ? PHP_INT_MAX : AcademyTracker::PER_PAGE);
+        $grades = array_values(array_unique(array_filter(array_column($members, 'grade'), static fn (string $g): bool => $g !== '')));
+        sort($grades, SORT_NATURAL);
+        $teach = [];
+        foreach ($keys as $key) {
+            $teach[$key] = $rights->canTeach($key);
+        }
+
+        return [
+            'view' => $view, 'focus' => $focus, 'columns' => $columns, 'courses' => $courses, 'counts' => $counts, 'matrix' => $matrix,
+            'rows' => $rows, 'filters' => $filters, 'state' => $state, 'onlyEnrolled' => $onlyEnrolled, 'now' => $now,
+            'options' => $staff ? ['unit' => $access->unitOptions($tenantId), 'job' => $access->jobOptions($tenantId), 'group' => $facets['groupOptions'], 'grade' => $grades] : [],
+            'can' => ['assign' => $staff && $rights->can('assign'), 'certify' => $rights->can('certify'), 'me' => $userId, 'teach' => $teach, 'detail' => $staff],
+            'query' => array_filter(['vue' => $view === 'course' ? 'formation' : '', 'course' => $view === 'course' ? $focus : '', 'cols' => $request->queryString('cols'),
+                'unite' => $filters['unit'] ?: '', 'fonction' => $filters['job'] ?: '', 'grade' => $filters['grade'], 'cohorte' => $filters['group'] ?: '',
+                'q' => $filters['q'], 'etat' => $state, 'tous' => $request->queryString('tous') === '1' ? '1' : ''], static fn ($v): bool => $v !== '' && $v !== 0),
+        ];
+    }
+
+    /** @param array<string, mixed> $data */
+    private function trackerCsv(array $data): string
+    {
+        $copy = $this->copy();
+        $t = static fn (string $key): string => $copy[$key] ?? $key;
+        $lang = locale() === 'en' ? 'en' : 'fr';
+        $title = static fn (array $value): string => trim((string) ($value[$lang] ?? '')) !== '' ? (string) $value[$lang] : (string) ($value['fr'] ?? '');
+        $headers = [$t('trk_learner'), $t('trk_grade'), $t('trk_unit')];
+        $course = $data['view'] === 'course' ? ($data['columns'][0] ?? null) : null;
+        if ($course !== null) {
+            foreach ($course['course']['chapters'] ?? [] as $i => $chapter) {
+                $headers[] = ($i + 1) . '. ' . $title($chapter['title'] ?? []);
+            }
+            $headers[] = $t('trk_progress');
+            $headers[] = $t('trk_status');
+        } else {
+            foreach ($data['columns'] as $column) {
+                $headers[] = $title($column['course']['title'] ?? []);
+            }
+        }
+        $lines = [];
+        foreach ($data['matrix']['rows'] as $row) {
+            $line = [(string) $row['member']['name'], (string) $row['member']['grade'], (string) $row['member']['unit']];
+            if ($course !== null) {
+                $cell = $row['cells'][$course['key']];
+                foreach (AcademyTracker::steps($cell, (int) $course['chapters']) as $step) {
+                    $line[] = $t('trk_step_' . $step);
+                }
+                $line[] = $cell['pct'] . ' %';
+                $line[] = $t('trk_state_' . $cell['state']) . ($cell['late'] ? ' · ' . $t('trk_late') : '');
+            } else {
+                foreach ($row['cells'] as $cell) {
+                    $line[] = $t('trk_state_' . $cell['state']) . (in_array($cell['state'], ['progress', 'review', 'failed'], true) ? ' (' . $cell['pct'] . ' %)' : '') . ($cell['late'] ? ' · ' . $t('trk_late') : '');
+                }
+            }
+            $lines[] = $line;
+        }
+        return AcademyTracker::csv($headers, $lines);
+    }
+
+    /**
+     * Actions du tableau de suivi. Chaque droit est revérifié ici : inscrire (droit « inscrire », public du cours),
+     * relancer (encadrer le cours ou inscrire), dispenser ou lever la dispense (encadrer le cours et « délivrer »).
+     */
+    private function trackerAction(Request $request, AcademyRepository $repository, AcademyRights $rights, string $action, string $key, int $tenantId, int $userId): Response
+    {
+        $back = $this->trackerUrl($request->inputString('back'));
+        $posted = $request->input('members', []);
+        // Bouton d'une cellule de la matrice : « membre|cours » (un seul formulaire partagé par toute la page).
+        if (preg_match('/\A(\d{1,10})\|([a-z0-9-]{1,64})\z/', $request->inputString('cell'), $m) === 1) {
+            $posted = [(int) $m[1]];
+            $key = $m[2];
+        }
+        $course = $repository->course($tenantId, $key);
+        if ($course === null) {
+            Session::set('academy_notice', 'assign_invalid');
+            return Response::redirect($back, 303);
+        }
+        $known = $this->memberNames($tenantId, null);
+        $targets = array_values(array_unique(array_filter(array_map('intval', is_array($posted) ? $posted : [$posted]), static fn (int $id): bool => isset($known[$id]))));
+        $done = 0;
+        if ($action === 'tracker_enroll') {
+            if (!$rights->can('assign')) {
+                return $this->error('forbidden', 403);
+            }
+            // Inscrire toute une unité (sous-unités comprises par les affectations).
+            $unit = (int) $request->inputString('unit');
+            if ($unit > 0) {
+                foreach ($this->accessRepository()->trackerFacets($tenantId)['units'] as $member => $units) {
+                    if (isset($known[$member]) && in_array($unit, $units, true)) {
+                        $targets[] = (int) $member;
+                    }
+                }
+                $targets = array_values(array_unique($targets));
+            }
+            $restricted = $rights->settings($key)['audience'] === 'restricted';
+            foreach ($targets as $member) {
+                if ($restricted && !$this->rightsForMember($tenantId, $member)->canSee($course)) {
+                    continue;
+                }
+                $repository->enroll($tenantId, $member, $course);
+                $done++;
+            }
+            $this->audit('academy.tracker.enrolled', $tenantId, $key, ['users' => $targets, 'unit' => $unit ?: null, 'done' => $done]);
+            return $this->trackerBack($back, 'trk_enrolled', $done);
+        }
+        if ($action === 'tracker_remind') {
+            if (!$rights->canTeach($key) && !$rights->can('assign')) {
+                return $this->error('forbidden', 403);
+            }
+            $now = time();
+            $late = $request->inputString('scope') === 'late';
+            $chapters = count($course['chapters'] ?? []);
+            $wanted = array_flip($targets);
+            $messages = new \App\Repositories\TenantMessageRepository();
+            $copy = $this->copy();
+            $lang = locale() === 'en' ? 'en' : 'fr';
+            $title = trim((string) ($course['title'][$lang] ?? '')) ?: (string) ($course['title']['fr'] ?? $key);
+            foreach ($repository->trackerRows($tenantId, [$key]) as $raw) {
+                $row = AcademyTracker::normalizeRow($raw);
+                $cell = AcademyTracker::cell($row, $chapters, null, $now);
+                $member = $row['user_id'];
+                if ($member === $userId || !isset($known[$member]) || ($late ? !$cell['late'] : !isset($wanted[$member])) || !AcademyTracker::canRemindNow($cell, $now)) {
+                    continue;
+                }
+                try {
+                    $thread = $messages->createThread($tenantId, $userId, sprintf($copy['trk_remind_subject'] ?? '%s', $title), [$member]);
+                    $messages->addMessage($thread, $userId, sprintf($copy['trk_remind_body'] ?? '%s %d %s', $title, $cell['chapter'] + 1, $this->classroomUrl($key)));
+                } catch (\Throwable) {
+                    continue;
+                }
+                $repository->markReminded($tenantId, $member, $key, $now);
+                $done++;
+            }
+            $this->audit('academy.tracker.reminded', $tenantId, $key, ['scope' => $late ? 'late' : 'selection', 'done' => $done]);
+            return $this->trackerBack($back, 'trk_reminded', $done);
+        }
+        // Dispense : un seul stagiaire, jamais soi-même.
+        if (!$rights->canTeach($key) || !$rights->can('certify')) {
+            return $this->error('forbidden', 403);
+        }
+        $member = $targets[0] ?? 0;
+        if ($member < 1 || $member === $userId) {
+            return $this->error($member === $userId ? 'self_validation' : 'invalid_content', $member === $userId ? 403 : 422);
+        }
+        $comment = trim($request->inputString('comment'));
+        if (mb_strlen($comment) > 1000) {
+            return $this->error('invalid_content', 422);
+        }
+        if ($action === 'tracker_exempt') {
+            $repository->enroll($tenantId, $member, $course);
+        }
+        try {
+            $repository->mutate($tenantId, $member, $key, static function (array $state) use ($action, $userId, $comment): array {
+                if ($action === 'tracker_exempt') {
+                    if (!empty($state['completed'])) {
+                        throw new \DomainException('locked');
+                    }
+                    $state['exempt'] = ['by' => $userId, 'at' => time(), 'comment' => $comment];
+                } else {
+                    unset($state['exempt']);
+                }
+                return $state;
+            });
+        } catch (\DomainException) {
+            Session::set('academy_notice', 'trk_exempt_locked');
+            return Response::redirect($back, 303);
+        }
+        $this->audit($action === 'tracker_exempt' ? 'academy.tracker.exempted' : 'academy.tracker.exemption_lifted', $tenantId, $key, ['user' => $member, 'comment' => $comment]);
+        return $this->trackerBack($back, $action === 'tracker_exempt' ? 'trk_exempted' : 'trk_unexempted', 1);
+    }
+
+    /** Retour au tableau de suivi avec ses filtres : seulement une chaîne de requête simple. */
+    private function trackerUrl(string $back): string
+    {
+        return url('academy/suivi') . (preg_match('/\A\?[A-Za-z0-9_=&%,.+\-]{0,600}\z/', $back) === 1 ? $back : '');
+    }
+
+    private function trackerBack(string $url, string $notice, int $count): Response
+    {
+        Session::set('academy_notice', $notice);
+        Session::set('academy_notice_n', $count);
+        return Response::redirect($url, 303);
+    }
+
+    /** Dictionnaire de l'Academy (export, messages envoyés aux stagiaires). @return array<string, string> */
+    private function copy(): array
+    {
+        $lang = locale() === 'en' ? 'en' : 'fr';
+        return (require base_path('lang/' . $lang . '/academy.php')) + (require base_path('lang/' . $lang . '/academy_access.php'));
+    }
+
     private function instructorData(AcademyRepository $repository, AcademyRights $rights, int $tenantId, bool $storageReady): array
     {
         $userId = (int) Session::get('user_id');

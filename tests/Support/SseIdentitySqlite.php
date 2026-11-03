@@ -46,6 +46,10 @@ final class SseIdentitySqlite
         $lot2($pdo, static function (string $m) use (&$out): void {
             $out .= $m;
         });
+        $lot6 = require dirname(__DIR__, 2) . '/bootstrap/atak_sse_identity_lot6_migration.php';
+        $lot6($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
 
         return $out;
     }

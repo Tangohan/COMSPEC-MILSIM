@@ -312,6 +312,30 @@ final class DevDispatchCatalog
                 'Mettez à jour le mod COMSPEC SSE 1.3.0 (pack ATAK 3.0.2 conseillé), quittez Arma complètement et relancez.',
                 'Essai : infiltrer un joueur (module Zeus Couverture), passer un checkpoint IA en civil puis arme à la main, répondre juste puis faux aux questions ; désigner une HVT sous couverture, la contrôler, comparer son visage, confirmer l’identification puis la menotter ; diffuser un BOLO et le retrouver dans l’onglet BOLO de Contrôle ID et sur Athena.',
             ], 'SSE 1.3.0'),
+            $pr(1361, '2026-11-03', 'Academy : le tableau de suivi des formations', 'L’Academy reçoit un tableau de suivi, sur le modèle de celui présenté sur la page d’accueil pour la qualification CQB : chaque stagiaire sur une ligne, chaque formation (ou chaque chapitre d’une formation) en colonne, avec un état coloré et lisible d’un coup d’œil. Les instructeurs inscrivent, relancent, valident le chapitre en attente ou dispensent sans changer de page.', [
+                'Academy › Tableau de suivi : vue par cursus (stagiaires × formations) et vue par formation (stagiaires × chapitres, barre de progression)',
+                'États : non inscrit, inscrit, en cours, à valider, échoué, validé, à renouveler (qualification expirée ou proche de l’échéance), dispensé ; stagiaires en retard signalés',
+                'Indicateurs : taux de complétion, chapitres à valider, stagiaires en retard, qualifications à renouveler',
+                'Filtres par unité, fonction, grade, cohorte et état ; export CSV et impression',
+                'Actions en ligne : inscrire, relancer par message, valider le chapitre en attente, dispenser ; inscrire toute une unité, relancer tous les retardataires',
+                'Un stagiaire voit seulement sa propre ligne',
+            ], [
+                'Tableau de bord et espace instructeur : accès direct au tableau de suivi',
+            ], [], ['personnel'], [], 'Portail'),
+
+            $pr(1360, '2026-11-03', 'Bureau SSE : atelier de documents, kits types et préparation de mission des identités', 'COMSPEC IDENTITY passe au lot 6 sur Athena. Le bureau SSE gagne un atelier de documents : on compose un papier d’identité fictif à gauche et son aperçu se met à jour en direct à droite, recto et verso d’une carte ou d’un permis, couverture et pages d’un passeport, aux couleurs du pays émetteur imaginaire, avec photo ou silhouette, tampon, signature, champs en plus et bande de lecture automatique recalculée à chaque frappe ; chaque face porte le filigrane SIMULATION et s’exporte en image pour le jeu de rôle. Le papier suit son cycle brouillon, validé, émis, révoqué, puis dupliqué pour le remplacer. Les kits types (civil, militaire, diplomate, journaliste, contractor, agent infiltré…) réunissent pays, papiers, champs pré-remplis, téléphone et adresse simulés et éléments de légende : affectés à des membres, ils créent leurs papiers, leur kit de mission et leur brief de couverture. La préparation de mission génère en un coup la population d’une opération, civils, militaires, suspects et cibles prioritaires, avec pays, faction, langue, âge, sexe, profession et part de faux, d’expirés et de volés, avec aperçu avant validation ; le serveur de jeu reçoit ces identités pour ses IA, ainsi que les recherchés et HVT de l’opération et les camps qui y ont accès. Le joueur lit son brief dans Ma situation › Mes papiers, le tableau de bord identité montre les contrôles sur une carte, et le registre s’importe et s’exporte en fichier tableur ou en fichier de données.', [
+                'Atelier de documents : aperçu en direct recto, verso et pages du passeport, MRZ recalculée, export image avec filigrane SIMULATION',
+                'Kits documentaires types affectés à des membres : papiers, kit de mission et brief de couverture',
+                'Préparation de mission : population de l’opération générée en un coup, avec aperçu, recherchés et HVT par camp',
+                'Briefs de couverture lus dans Ma situation › Mes papiers et envoyés au serveur de jeu',
+                'Import et export des identités et papiers (fichier tableur ou de données)',
+            ], [
+                'Tableau de bord identité : carte des contrôles selon leur position',
+                'Papier dupliqué relié à son original',
+            ], [], ['intel'], [
+                'Rien à installer côté jeu pour le site ; le mod SSE lira la population, les recherchés et les briefs dans une prochaine version.',
+                'Essai : composer un passeport dans l’atelier, l’exporter en image, affecter un kit type à deux membres, puis générer la population d’une opération et vérifier l’aperçu avant de valider.',
+            ]),
 
             $pr(1358, '2026-11-03', 'Academy : les six chapitres du JTAC pour tous les stagiaires', 'Les stagiaires inscrits à la toute première version du cours JTAC ne voyaient qu’un seul chapitre : leur copie du cours restait figée sur cette version. Tant que le parcours n’est pas terminé, la copie passe maintenant à la version courante avec ses six chapitres, sans rien perdre de la progression : chapitre en cours, tentatives, débriefings et validations. Les parcours terminés et les licences délivrées ne changent pas.', [], [
                 'JTAC : six chapitres visibles dans la salle de cours pour les stagiaires inscrits à l’ancienne version, progression conservée',

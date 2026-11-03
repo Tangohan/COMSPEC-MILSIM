@@ -288,16 +288,32 @@ final class AcademyCurriculum
             }
         } elseif ($action === 'debrief' && $stage === 5) {
             $reflection = $input['reflection'] ?? '';
-            if (!is_string($reflection) || mb_strlen(trim($reflection)) < 20 || mb_strlen($reflection) > 5000) {
+            // Case « Rien à améliorer » : validation sans texte, débriefing enregistré tel quel (FR/EN pour l'instructeur).
+            $nothing = in_array($input['nothing_to_improve'] ?? null, ['1', 1, true], true);
+            if (!is_string($reflection) || mb_strlen($reflection) > 5000 || (!$nothing && mb_strlen(trim($reflection)) < 20)) {
                 throw new \DomainException('reflection_required');
             }
-            $state['debriefs'][$chapterIndex] = trim($reflection);
+            $state['debriefs'][$chapterIndex] = $nothing && mb_strlen(trim($reflection)) < 20 ? self::NOTHING_TO_IMPROVE : trim($reflection);
             $state['stage'] = 6;
         } else {
             throw new \DomainException('locked');
         }
         $state['updated'] = $now;
         return $state;
+    }
+
+    /** Débriefing « Rien à améliorer » (case cochée, sans texte) : affiché traduit à l'instructeur. */
+    public const NOTHING_TO_IMPROVE = 'Rien à améliorer / Nothing to improve';
+
+    /** @param array<int|string, mixed> $validations */
+    public static function nextUnvalidated(array $validations, int $count, int $from = 0): ?int
+    {
+        for ($index = $from; $index < $count; $index++) {
+            if (!isset($validations[$index])) {
+                return $index;
+            }
+        }
+        return null;
     }
 
     public static function validateChapter(array $state, array $course, int $instructorId, string $comment, int $now): array
@@ -319,15 +335,21 @@ final class AcademyCurriculum
                 && (int) ($attempt['score'] ?? 0) >= self::examPassPercent($course['chapters'][$index])
             );
             $debrief = $state['debriefs'][$index] ?? '';
-            if ($passingAttempts === [] || !is_string($debrief) || mb_strlen(trim($debrief)) < 20) {
+            if ($passingAttempts === [] || !is_string($debrief) || ($debrief !== self::NOTHING_TO_IMPROVE && mb_strlen(trim($debrief)) < 20)) {
                 throw new \DomainException('locked');
             }
         }
         unset($state['feedback']);
         $state['validations'][$index] = ['by' => $instructorId, 'comment' => trim($comment), 'at' => $now];
-        if ($index + 1 === count($course['chapters'])) {
+        // Après un passage à une nouvelle version, des chapitres plus loin peuvent être déjà acquis : on saute au
+        // chapitre suivant non acquis ; le cours se termine quand il n’en reste plus après celui-ci.
+        $next = self::nextUnvalidated($state['validations'], count($course['chapters']), $index + 1);
+        if ($next === null) {
             $state['completed'] = true;
             if ($internalLicense) {
+                if (!empty($state['license'])) {
+                    $state['license_history'][] = $state['license'];
+                }
                 $state['license'] = [
                     'number' => 'ATH-ACADEMY-' . $licenseCode . '-' . strtoupper(bin2hex(random_bytes(6))),
                     'issued_at' => $now,
@@ -337,7 +359,7 @@ final class AcademyCurriculum
                 ];
             }
         } else {
-            $state['chapter']++;
+            $state['chapter'] = $next;
             $state['stage'] = 0;
             unset($state['last_practice_feedback']);
         }

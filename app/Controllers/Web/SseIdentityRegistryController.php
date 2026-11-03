@@ -942,6 +942,12 @@ final class SseIdentityRegistryController
         } catch (\Throwable) {
             $data['canMemberPapers'] = false;
         }
+        try {
+            // Atelier, kits types, préparation de mission (lot 6) : gestion SSE ou habilitation Encadrement.
+            $data['canWorkshop'] ??= SseIdWorkshopController::rightsFor($this->access->isGuest() || $this->userId() === null, $this->canManage(), $this->clearance->allows(SseCaseRepository::CLASS_COMMAND), false)['view'];
+        } catch (\Throwable) {
+            $data['canWorkshop'] = false;
+        }
 
         return Response::view($view, $data);
     }

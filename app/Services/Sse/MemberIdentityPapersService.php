@@ -399,6 +399,10 @@ final class MemberIdentityPapersService
             $this->identities->update((int) $existing['id'], $tenantId, $row + [
                 'context_id' => $existing['context_id'], 'op_key' => $existing['op_key'], 'person_id' => $existing['person_id'],
                 'arma_key' => $existing['arma_key'], 'notes' => $existing['notes'],
+                // Atelier (lot 6) : photo, alias et rattachement de population conservés.
+                'photo_path' => $existing['photo_path'] ?? null, 'alias' => $existing['alias'] ?? null,
+                'category' => $existing['category'] ?? null, 'side' => $existing['side'] ?? null, 'faction' => $existing['faction'] ?? null,
+                'language' => $existing['language'] ?? null, 'zone' => $existing['zone'] ?? null,
             ]);
             $this->log($tenantId, $actorId, 'id_member.primary_update', 'sse_identity', (int) $existing['id'], $userId);
 
