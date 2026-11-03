@@ -18,6 +18,15 @@
     Params : [action, argument] — voir les « case ».
 */
 params [["_act", ""], ["_arg", []]];
+// Lectures faites à chaque image (fn_routeDraw : chaque route) ou chaque seconde (suivi, vue 3D) servies avant la
+// préparation des tables ci-dessous : tracé gardé par révision et route par son id, une fois les routes relues du profil.
+if (_act isEqualTo "geo" && {
+    private _g = (uiNamespace getVariable ["COMSPEC_ATAK_RteGeo", createHashMap]) getOrDefault [_arg get "id", []];
+    (_g param [0, ""]) isEqualTo format ["%1|%2", _arg get "id", _arg get "rev"]
+}) exitWith { (uiNamespace getVariable "COMSPEC_ATAK_RteGeo") get (_arg get "id") };
+if (_act isEqualTo "get" && {!isNil {missionNamespace getVariable "COMSPEC_ATAK_RteMine"}}) exitWith {
+    (missionNamespace getVariable "COMSPEC_ATAK_RteMine") getOrDefault [_arg, (missionNamespace getVariable ["COMSPEC_ATAK_RteRx", createHashMap]) getOrDefault [_arg, createHashMap]]
+};
 private _tr = { _this call comspec_atak_native_fnc_tr };
 private _maxSteps = (missionNamespace getVariable ["comspec_atak_native_route_max", 40]) max 5 min 80;
 // Types de tracé : clé, libellé, icône, vitesse par défaut (km/h), facteur du rayon d'arrivée, couleur, style.
