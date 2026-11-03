@@ -881,6 +881,92 @@ final class QualificationAwardRuleService
     }
 
     /**
+     * Membre vu par les qualifications suggérées : unité principale, grade et état de ses qualifications par fiche
+     * (held : détenue et valide, pending : candidat, en formation ou en évaluation, blocked : retirée, échouée,
+     * suspendue ; expirée sans grâce : absente).
+     *
+     * @return array{unit_id: int, grade_id: int, held: array<int, string>}
+     */
+    public function memberSnapshot(int $tenantId, int $userId): array
+    {
+        $ctx = $this->context($tenantId);
+        $m = $ctx['members'][$userId] ?? [];
+        $held = [];
+        foreach ($this->best($tenantId, $userId) as $defId => $award) {
+            $status = self::adminStatus($award);
+            if ($this->holdsActive($tenantId, $award, (int) $defId)) {
+                $held[(int) $defId] = 'held';
+            } elseif (in_array($status, [QualificationAdminStatus::CANDIDATE, QualificationAdminStatus::IN_TRAINING, QualificationAdminStatus::IN_EVALUATION], true)) {
+                $held[(int) $defId] = 'pending';
+            } elseif (in_array($status, [QualificationAdminStatus::FAILED, QualificationAdminStatus::SUSPENDED, QualificationAdminStatus::REVOKED], true)) {
+                $held[(int) $defId] = 'blocked';
+            }
+        }
+
+        return ['unit_id' => (int) ($m['unit_id'] ?? 0), 'grade_id' => (int) ($m['grade_id'] ?? 0), 'held' => $held];
+    }
+
+    /**
+     * Valeur d'un membre pour une condition chiffrée (mesurée par le jeu ou attestée par un instructeur) ; null pour
+     * une attestation pas encore saisie.
+     *
+     * @param array<string, mixed> $c
+     */
+    public function measureFor(int $tenantId, int $userId, array $c): ?float
+    {
+        $ctx = $this->context($tenantId);
+        if (($c['type'] ?? 'metric') === 'attestation') {
+            $key = Cat::attestationStoreKey($c, 0);
+
+            return isset($ctx['attest'][$userId][$key]) ? (float) $ctx['attest'][$userId][$key]['value'] : null;
+        }
+
+        return Cat::isMetric((string) ($c['metric'] ?? '')) ? $this->measure($tenantId, $userId, $c) : null;
+    }
+
+    /**
+     * Où en est un membre pour une fiche du référentiel (qualifications suggérées) : prérequis et conditions
+     * manquantes (« il manque » la différence pour une condition chiffrée), délivrance à la main permise, cours
+     * Academy cités par la règle.
+     *
+     * @return array{state: string, missing: list<array{text: string, subject: string, criterion: array<string, mixed>|null}>, allow_manual: bool, course_keys: list<string>}
+     */
+    public function suggestionState(int $tenantId, int $userId, int $definitionId): array
+    {
+        $settings = $this->settings($tenantId, $definitionId);
+        $ev = $this->evaluateMember($tenantId, $definitionId, $settings, $userId);
+        $missing = [];
+        foreach ($ev['prereq']['missing'] as $text) {
+            $missing[] = ['text' => (string) $text, 'subject' => '', 'criterion' => null];
+        }
+        $courseKeys = [];
+        foreach (QualificationCriteriaEngine::criteria($settings['rule'] ?? []) as $c) {
+            if (($c['type'] ?? '') === 'academy' && isset($c['course_key'])) {
+                $courseKeys[] = (string) $c['course_key'];
+            }
+        }
+        if ($ev['eval'] !== null && !$ev['eval']['met']) {
+            foreach ($ev['eval']['groups'] as $g) {
+                foreach ($g['items'] as $it) {
+                    if ($it['met']) {
+                        continue;
+                    }
+                    $c = $it['criterion'];
+                    $numeric = in_array((string) ($c['type'] ?? 'metric'), ['metric', 'attestation'], true) && (float) $it['target'] > 1;
+                    $missing[] = ['text' => 'Il manque', 'subject' => '', 'criterion' => $numeric ? ['min' => round((float) $it['target'] - (float) $it['current'], 2)] + $c : $c];
+                }
+            }
+        }
+
+        return [
+            'state' => $ev['state'] === QualificationCriteriaEngine::PENDING ? 'pending' : ($missing === [] ? 'ready' : 'missing'),
+            'missing' => $missing,
+            'allow_manual' => !empty($settings['allow_manual']),
+            'course_keys' => $courseKeys,
+        ];
+    }
+
+    /**
      * Libellés des formations, qualifications et périmètres (appareils, objets vus en jeu) pour décrire les critères.
      *
      * @return array{courses: array<int, string>, definitions: array<int, string>, scopes: array<string, string>}

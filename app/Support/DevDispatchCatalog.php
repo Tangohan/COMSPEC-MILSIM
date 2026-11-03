@@ -302,6 +302,16 @@ final class DevDispatchCatalog
             ], [
                 'Plafond d’imports de la formule respecté à chaque lot (import partiel jusqu’au plafond) ; « pays entier en un clic » selon la formule',
             ], [], ['personnel'], [], 'Portail'),
+            $pr(1366, '2026-11-03', 'Fiche membre : qualifications et brevets suggérés d’après la fonction et l’unité', 'La fiche d’un membre propose maintenant les qualifications et brevets qui vont avec son poste. Athena croise la fonction attribuée (emploi reconnu dans le catalogue d’emplois, par exemple TACP dans « SOF TACP »), l’unité d’affectation et ses unités parentes dans l’ORBAT (un 24th STS est reconnu comme escadron Special Tactics de l’US Air Force), le grade et les qualifications déjà obtenues. Chaque suggestion est classée par pertinence avec sa raison (recommandée pour l’emploi TACP, courante dans les unités Special Tactics, prérequis de JTAC) et son état : prête à obtenir, conditions manquantes (il manque 5 sauts), en cours de formation Academy, ou pas encore dans le référentiel.', [
+                'Fiche membre › Qualifications : bloc « Qualifications et brevets suggérés », classé par pertinence, avec les raisons et l’état de chaque suggestion',
+                'Sources : prérequis de la fonction, emploi du catalogue d’emplois reconnu, nature de l’unité et de sa chaîne (forces spéciales, Special Tactics, aéroporté, aviation, génie, santé…), unité réelle du catalogue, pays de l’unité',
+                'Actions rapides pour un responsable : importer dans le référentiel, inscrire au cours Academy qui y mène, délivrer ou mettre en formation, ignorer la suggestion pour ce membre',
+                'Mes qualifications : les mêmes suggestions en lecture pour le membre',
+            ], [
+                'Qualifications déjà détenues jamais reproposées ; prérequis manquants affichés (qualification, sauts, heures, grade)',
+            ], [], ['personnel'], [
+                'Mise à jour du site à lancer pour pouvoir ignorer une suggestion (étape 3895).',
+            ], 'Portail'),
 
             $pr(1364, '2026-11-03', 'ATAK 3.0.3 : apps COMSPEC IDENTITY en anglais, Recherchés garde les BOLO de la mission', 'Petite version de suivi de COMSPEC IDENTITY. Le téléphone connaît maintenant les textes des nouvelles fonctions du mod SSE, Contrôle ID, Ma couverture, checkpoints et atelier de documents : ils s’affichent en anglais quand le téléphone est réglé en anglais. Dans l’app Recherchés, « Actualiser » ne fait plus disparaître les BOLO et les HVT posés par la mission ou le Zeus : ils restent dans la liste avec les avis d’Athena, sans doublon, avec leur origine affichée, Athena ou BOLO local, et les HVT en tête.', [
                 'Textes COMSPEC IDENTITY du SSE traduits en anglais sur le téléphone',

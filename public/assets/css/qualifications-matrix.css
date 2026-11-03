@@ -283,3 +283,30 @@ textarea.qmx-fin { height: auto; min-height: 60px; padding: 8px 12px; resize: ve
 /* La matrice est large : la colonne du bureau des effectifs ne doit pas s’élargir à sa mesure (défilement interne). */
 .bo-eff-workspace:has(.qmx) { grid-template-columns: minmax(0, 1fr); }
 .bo-eff-workspace:has(.qmx) .bo-eff-content, .bo-eff-workspace:has(.qmx) .bo-eff-page { min-width: 0; max-width: 100%; }
+
+/* ——— Qualifications et brevets suggérés (fiche membre, « Mes qualifications ») ——— */
+.qsg { display: grid; gap: 10px; }
+.qsg-detected { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--qx-muted); }
+.qsg-chip { padding: 2px 9px; border-radius: 999px; background: var(--qx-soft); color: var(--qx-ink); }
+.qsg-chip small { color: var(--qx-muted); }
+.qsg-empty, .qsg-held { margin: 0; font-size: 12.5px; color: var(--qx-muted); }
+.qsg-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.qsg-item { border: 1px solid var(--qx-line); border-left: 3px solid var(--qx-line-strong); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; background: var(--qx-surface); min-width: 0; }
+.qsg-item.is-ok { border-left-color: var(--qx-ok); }
+.qsg-item.is-warn { border-left-color: var(--qx-warn); }
+.qsg-item.is-info { border-left-color: var(--qx-info); }
+.qsg-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.qsg-head b { font-size: 13.5px; color: var(--qx-ink); overflow-wrap: anywhere; }
+.qsg-head small { color: var(--qx-muted); font-size: 12px; }
+.qsg-head .qfs-tag { margin-left: auto; }
+.qsg-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--qx-muted); }
+.qsg-score { font-variant-numeric: tabular-nums; }
+.qsg-reasons, .qsg-missing { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 12.5px; color: var(--qx-ink); }
+.qsg-reasons li::before { content: "› "; color: var(--qx-muted); }
+.qsg-missing li { color: var(--qx-warn-ink); }
+.qsg-note, .qsg-course { margin: 0; font-size: 12px; color: var(--qx-muted); }
+.qsg-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.qsg-acts form, .qsg-dismissed form { margin: 0; }
+.qsg-dismissed summary { cursor: pointer; font-size: 12.5px; color: var(--qx-muted); }
+.qsg-dismissed ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.qsg-dismissed li { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 12.5px; }
