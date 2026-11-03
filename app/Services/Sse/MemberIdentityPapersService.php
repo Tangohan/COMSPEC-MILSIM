@@ -205,6 +205,91 @@ final class MemberIdentityPapersService
     }
 
     /**
+     * Synthèse par membre pour la liste « Papiers des membres » du bureau SSE : compte Steam lié, papiers émis,
+     * kit défini, dernier contrôle. Sans la vérité de jeu, les couvertures et faux ne sont ni comptés ni trahis
+     * (un kit fait seulement de papiers de couverture apparaît « non défini », leurs contrôles sont ignorés).
+     *
+     * @param list<int> $userIds membres de la communauté (déjà filtrés sur le tenant)
+     * @return array<int, array{steam_linked: bool, issued: int, kit: bool, last_check: ?string}>
+     */
+    public function roster(int $tenantId, array $userIds, bool $truth): array
+    {
+        $ids = array_slice(array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $i): bool => $i > 0))), 0, 500);
+        if ($tenantId < 1 || $ids === []) {
+            return [];
+        }
+        $db = \App\Core\Database::getInstance();
+        $in = implode(', ', $ids);
+        $mask = $truth ? '' : " AND i.kind NOT IN ('cover', 'forged') AND d.st_origin NOT IN ('cover', 'forged')";
+        $docJoin = 'sse_id_documents d JOIN sse_identities i ON i.id = d.identity_id AND i.tenant_id = d.tenant_id';
+        $out = [];
+        foreach ($ids as $id) {
+            $out[$id] = ['steam_linked' => false, 'issued' => 0, 'kit' => false, 'last_check' => null];
+        }
+        $steamByUser = [];
+        foreach ($db->fetchAll('SELECT id, steam_id FROM users WHERE id IN (' . $in . ')') as $r) {
+            $steam = (string) preg_replace('/\D/', '', (string) ($r['steam_id'] ?? ''));
+            $out[(int) $r['id']]['steam_linked'] = $steam !== '';
+            if ($steam !== '') {
+                $steamByUser[$steam] = (int) $r['id'];
+            }
+        }
+        foreach ($db->fetchAll(
+            'SELECT i.user_id AS uid, COUNT(*) AS n FROM ' . $docJoin . " WHERE d.tenant_id = :t AND d.workflow = 'issued' AND i.user_id IN (" . $in . ')' . $mask . ' GROUP BY i.user_id',
+            ['t' => $tenantId]
+        ) as $r) {
+            $out[(int) $r['uid']]['issued'] = (int) $r['n'];
+        }
+        foreach ($db->fetchAll(
+            'SELECT DISTINCT k.user_id AS uid FROM sse_id_kits k JOIN sse_id_documents d ON d.id = k.document_id AND d.tenant_id = k.tenant_id
+             JOIN sse_identities i ON i.id = d.identity_id AND i.tenant_id = d.tenant_id
+             WHERE k.tenant_id = :t AND k.user_id IN (' . $in . ')' . $mask,
+            ['t' => $tenantId]
+        ) as $r) {
+            $out[(int) $r['uid']]['kit'] = true;
+        }
+        $last = static function (array &$out, int $uid, ?string $at): void {
+            if ($at !== null && $at !== '' && isset($out[$uid]) && ($out[$uid]['last_check'] === null || $at > $out[$uid]['last_check'])) {
+                $out[$uid]['last_check'] = $at;
+            }
+        };
+        $identityMask = $truth ? '' : " AND i.kind NOT IN ('cover', 'forged')";
+        foreach ($db->fetchAll(
+            'SELECT i.user_id AS uid, MAX(c.created_at) AS at FROM sse_id_checks c JOIN sse_identities i ON i.id = c.identity_id AND i.tenant_id = c.tenant_id
+             WHERE c.tenant_id = :t AND i.user_id IN (' . $in . ')' . $identityMask . ' GROUP BY i.user_id',
+            ['t' => $tenantId]
+        ) as $r) {
+            $last($out, (int) $r['uid'], $r['at'] !== null ? (string) $r['at'] : null);
+        }
+        foreach ($db->fetchAll(
+            'SELECT i.user_id AS uid, MAX(c.created_at) AS at FROM sse_id_checks c JOIN sse_id_documents d ON d.id = c.document_id AND d.tenant_id = c.tenant_id
+             JOIN sse_identities i ON i.id = d.identity_id AND i.tenant_id = d.tenant_id
+             WHERE c.tenant_id = :t AND i.user_id IN (' . $in . ')' . $mask . ' GROUP BY i.user_id',
+            ['t' => $tenantId]
+        ) as $r) {
+            $last($out, (int) $r['uid'], $r['at'] !== null ? (string) $r['at'] : null);
+        }
+        if ($truth && $steamByUser !== []) {
+            // Contrôles du joueur lui-même (Steam ID) : comme l'onglet, seulement avec la vérité de jeu.
+            $marks = [];
+            $params = ['t' => $tenantId];
+            foreach (array_keys($steamByUser) as $k => $steam) {
+                $marks[] = ':s' . $k;
+                $params['s' . $k] = (string) $steam;
+            }
+            foreach ($db->fetchAll(
+                'SELECT subject_steam_id AS steam, MAX(created_at) AS at FROM sse_id_checks WHERE tenant_id = :t AND subject_steam_id IN (' . implode(', ', $marks) . ') GROUP BY subject_steam_id',
+                $params
+            ) as $r) {
+                $uid = $steamByUser[(string) $r['steam']] ?? 0;
+                $last($out, $uid, $r['at'] !== null ? (string) $r['at'] : null);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * « Mes papiers » : lecture seule par le joueur, sans brouillon ni vérité de jeu (ni nature d'identité, ni
      * origine, ni falsification).
      *
