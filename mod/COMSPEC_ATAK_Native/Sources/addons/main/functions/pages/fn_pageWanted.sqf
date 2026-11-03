@@ -37,7 +37,7 @@ private _rows = [];
 
 private _sel = _list param [(_list findIf { format ["%1:%2", _x select 0, _x select 1] isEqualTo _open }), []];
 if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
-    _sel params ["_kind", "_id", "_ref", "_name", "_alias", "_level", "_details", ["_url", ""], ["_upd", ""]];
+    _sel params ["_kind", "_id", "_ref", "_name", "_alias", "_level", "_details", ["_url", ""], ["_upd", ""], ["_orig", ""]];
     private _img = _imgs getOrDefault [_open, ""];
     if !(_img isEqualType "") then { _img = ""; };
     _rows append [
@@ -46,6 +46,7 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
             [_name] call _esc, ["", format ["<br/><t color='#c9d4cf'>dit « %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""),
             _kindColor getOrDefault [_kind, "#c9d4cf"], [toUpper _level] call _esc, [_ref] call _esc]]
     ];
+    if (_orig isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>Origine : %1</t>", [_orig] call _esc]]; };
     if (_img isNotEqualTo "") then { _rows pushBack ["image", _img]; } else {
         if (_url isNotEqualTo "") then { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Photo en chargement, ou au format PNG (visible sur Athena seulement).</t>"]; } else { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Aucune photo sur Athena.</t>"]; };
     };
@@ -71,13 +72,13 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     private _shown = _list select { _filter isEqualTo "ALL" || {(_x select 0) isEqualTo _filter} };
     if (_at isNotEqualTo "" && {(count _shown) isEqualTo 0} && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun avis de recherche en cours.</t>"]; };
     {
-        _x params ["_kind", "_id", "_ref", "_name", "_alias", "_level"];
+        _x params ["_kind", "_id", "_ref", "_name", "_alias", "_level", "", "", "", ["_orig", ""]];
         private _key = format ["%1:%2", _kind, _id];
         private _img = _imgs getOrDefault [_key, ""];
         if !(_img isEqualType "") then { _img = ""; };
         _rows pushBack ["person", [_dir + (_kindIcon getOrDefault [_kind, "app_intel.paa"]), _img] select (_img isNotEqualTo ""),
             format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.8' color='%3'>%4</t>  <t size='0.75' color='#8a9a93'>%5</t>",
-                [_name] call _esc, ["", format ["  <t color='#c9d4cf' size='0.85'>« %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""), _kindColor getOrDefault [_kind, "#c9d4cf"], [_level] call _esc, [_ref] call _esc],
+                [_name] call _esc, ["", format ["  <t color='#c9d4cf' size='0.85'>« %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""), _kindColor getOrDefault [_kind, "#c9d4cf"], [_level] call _esc, [[_ref, format ["%1 · %2", _ref, _orig]] select (_orig isNotEqualTo "")] call _esc],
             [["FICHE", compile format ["['open', %1] call comspec_atak_native_fnc_wantedAction;", str _key], true]],
             [[0.9, 0.9, 0.9, 1], [1, 1, 1, 1]] select (_img isNotEqualTo "")];
     } forEach _shown;

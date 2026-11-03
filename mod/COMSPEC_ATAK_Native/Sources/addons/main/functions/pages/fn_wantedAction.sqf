@@ -3,7 +3,7 @@
       ["load"]          relit les avis d'Athena (DLL GetWantedNotices) puis télécharge les photos ;
       ["filter", f]     ALL | person | watchlist | interest ;
       ["open", clé]     ouvre un avis (clé = "type:id"), "" pour revenir à la liste.
-    État : uiNamespace COMSPEC_ATAK_Wanted = [avis, heure, erreur] ; avis = [type, id, réf, nom, alias, niveau, détails, url photo, maj]
+    État : uiNamespace COMSPEC_ATAK_Wanted = [avis, heure, erreur] ; avis = [type, id, réf, nom, alias, niveau, détails, url photo, maj, origine]
            uiNamespace COMSPEC_ATAK_WantedImg = HashMap clé → chemin local de la photo ("" : PNG ; nombre : heure d'un échec, nouvel essai après 60 s).
 */
 params [["_act", "load"], ["_arg", ""]];
@@ -40,6 +40,28 @@ switch (_act) do {
             private _c = [_x, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty;
             if ((count _c) >= 8) then { _list pushBack (_c select [0, 9]); };
         } forEach ((_raw select [3]) splitString toString [10]);
+        // BOLO locaux (SSE, Zeus : missionNamespace COMSPEC_ATAK_WantedLocal) gardés à côté des avis d'Athena : même
+        // référence ou même nom = un seul avis (celui d'Athena, marqué des deux origines). Prioritaires (HVT) en tête,
+        // ordre d'origine conservé sinon.
+        { _x set [9, "Athena"]; } forEach _list;
+        {
+            private _e = +_x;
+            private _ref = toLower (_e param [2, ""]);
+            private _nm = toLower (_e param [3, ""]);
+            private _i = _list findIf { (_ref isNotEqualTo "" && {toLower (_x select 2) isEqualTo _ref}) || {_nm isNotEqualTo "" && {toLower (_x select 3) isEqualTo _nm}} };
+            if (_i >= 0) then {
+                if (((_list select _i) select 9) isEqualTo "Athena") then { (_list select _i) set [9, "Athena · BOLO local"]; };
+            } else {
+                _e resize 9;
+                { if (isNil "_x") then { _e set [_forEachIndex, ""]; }; } forEach _e;
+                _e set [9, "BOLO local"];
+                _list pushBack _e;
+            };
+        } forEach (missionNamespace getVariable ["COMSPEC_ATAK_WantedLocal", []]);
+        private _n = -1;
+        _list = _list apply { _n = _n + 1; [[1, 0] select ((toLower (_x select 5) find "hvt") >= 0), _n, _x] };
+        _list sort true;
+        _list = _list apply { _x select 2 };
         uiNamespace setVariable ["COMSPEC_ATAK_Wanted", [_list, _now, ""]];
         call _render;
         // Photos : une par avis, en cache local de la DLL ; Arma n'affiche que JPG et PAA.
