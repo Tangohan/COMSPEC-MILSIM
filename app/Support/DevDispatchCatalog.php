@@ -294,6 +294,10 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1358, '2026-11-03', 'Academy : les six chapitres du JTAC pour tous les stagiaires', 'Les stagiaires inscrits à la toute première version du cours JTAC ne voyaient qu’un seul chapitre : leur copie du cours restait figée sur cette version. Tant que le parcours n’est pas terminé, la copie passe maintenant à la version courante avec ses six chapitres, sans rien perdre de la progression : chapitre en cours, tentatives, débriefings et validations. Les parcours terminés et les licences délivrées ne changent pas.', [], [
+                'JTAC : six chapitres visibles dans la salle de cours pour les stagiaires inscrits à l’ancienne version, progression conservée',
+            ], [], ['personnel'], [], 'Portail'),
+
             $pr(1356, '2026-11-03', 'Bureau SSE : rubrique « Contrôle d’identité » dans la navigation', 'La barre latérale du bureau SSE gagne une rubrique « Contrôle d’identité » qui donne accès directement à chaque page : tableau de bord, papiers, identités, contrôles reçus, papiers des membres, pays émetteurs et fiches FRM à valider. Chaque entrée n’apparaît que si vous avez le droit d’ouvrir la page, et la bonne entrée reste allumée sur les pages de détail. Ces pages se trouvent aussi avec Ctrl+K, et la recherche du back-office propose Mes papiers, le tableau de bord identité et les papiers des membres.', [
                 'Bureau SSE : rubrique « Contrôle d’identité » avec ses sept pages',
                 'Ctrl+K et recherche du back-office : pages d’identité',

@@ -9,8 +9,8 @@ namespace App\Services\Academy;
  *
  * JTAC 2.0 follows the community's in-game CAS procedure in five phases (initial contact, situation update,
  * game plan, 9-line CAS brief, terminal attack and BDA) plus a brevity chapter. Learners keep the snapshot
- * they enrolled with; database/steps/3280_academy_jtac_v2_refresh.php and 3480_academy_jtac_rich_text_refresh.php
- * (2.1.0 : text formatted with AcademyRichText, same content) only refresh untouched enrolments.
+ * they enrolled with; database/steps/3280_academy_jtac_v2_refresh.php and 3540_academy_jtac_rich_text_refresh.php
+ * (2.1.0 : text formatted with AcademyRichText, same content) only refresh untouched enrolments; refreshSnapshot() (and step 3790) upgrades unfinished ones, progress kept.
  */
 final class AcademyBuiltInCourses
 {
@@ -56,6 +56,29 @@ final class AcademyBuiltInCourses
         }
 
         return self::$all = $out;
+    }
+
+    /**
+     * Copie privée d’un inscrit figée sur une ancienne version d’un cours intégré (ex. JTAC 1.0 à un seul chapitre) :
+     * remplacée par la version courante tant que le parcours n’est pas terminé. La progression (chapitre, étape,
+     * exercices, tentatives, débriefings, validations) est conservée telle quelle ; les parcours terminés et les
+     * licences délivrées gardent leur version. Sans effet si la copie est à jour ou si le cours n’est pas intégré.
+     *
+     * @param array<string, mixed> $state
+     * @return array<string, mixed>
+     */
+    public static function refreshSnapshot(array $state, string $key): array
+    {
+        $course = self::find($key);
+        $snapshot = $state['snapshot'] ?? null;
+        if ($course === null || !is_array($snapshot) || ($snapshot['version'] ?? null) === ($course['version'] ?? null)
+            || !empty($state['completed']) || !empty($state['license'])
+            || count($course['chapters']) < count($snapshot['chapters'] ?? [])
+            || (int) ($state['chapter'] ?? 0) >= count($course['chapters'])) {
+            return $state;
+        }
+        $state['snapshot'] = $course;
+        return $state;
     }
 
     public static function find(string $key): ?array

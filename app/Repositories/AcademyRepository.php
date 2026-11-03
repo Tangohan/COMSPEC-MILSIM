@@ -244,7 +244,7 @@ final class AcademyRepository
         $stmt->execute([$tenantId, $userId]);
         $states = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-            $states[$row['course_key']] = json_decode($row['state_json'], true, 64, JSON_THROW_ON_ERROR);
+            $states[$row['course_key']] = AcademyBuiltInCourses::refreshSnapshot(json_decode($row['state_json'], true, 64, JSON_THROW_ON_ERROR), (string) $row['course_key']);
         }
         return $states;
     }
@@ -260,7 +260,7 @@ final class AcademyRepository
             if ($json === false) {
                 throw new \DomainException('not_enrolled');
             }
-            $state = $change(json_decode($json, true, 64, JSON_THROW_ON_ERROR));
+            $state = $change(AcademyBuiltInCourses::refreshSnapshot(json_decode($json, true, 64, JSON_THROW_ON_ERROR), $key));
             $stmt = $this->pdo->prepare('UPDATE academy_learners SET state_json = ?, updated_at = CURRENT_TIMESTAMP WHERE tenant_id = ? AND user_id = ? AND course_key = ?');
             $stmt->execute([json_encode($state, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $tenantId, $userId, $key]);
             $this->pdo->commit();
@@ -296,7 +296,7 @@ final class AcademyRepository
         $stmt->execute([$tenantId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
-            $row['state'] = json_decode($row['state_json'], true, 64, JSON_THROW_ON_ERROR);
+            $row['state'] = AcademyBuiltInCourses::refreshSnapshot(json_decode($row['state_json'], true, 64, JSON_THROW_ON_ERROR), (string) $row['course_key']);
             unset($row['state_json']);
         }
         return $rows;
