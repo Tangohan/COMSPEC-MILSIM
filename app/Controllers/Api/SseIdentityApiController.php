@@ -14,6 +14,7 @@ use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdCheckService;
 use App\Services\Sse\SseIdDocumentLookupService;
 use App\Services\Sse\SseIdentityPackService;
+use App\Services\Sse\SseIdWatchFromGameService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\HttpJsonBody;
 
@@ -22,7 +23,8 @@ use App\Support\HttpJsonBody;
  *
  * - GET  /api/sse/identity/pack               → pack du serveur de jeu (vérité de jeu comprise)
  * - GET  /api/sse/identity/documents/lookup   → contrôle N3 en ligne d'un papier présenté
- * - POST /api/sse/identity/checks             → contrôle remonté du terrain (idempotent)
+ * - POST /api/sse/identity/checks             → contrôle remonté du terrain (idempotent) ; avec kind = bolo | hvt :
+ *                                                 avis né en jeu (BOLO, HVT désignée), créé ou mis à jour (lots 4 et 5)
  *
  * Accès : clé de jeu valable (communauté ou plateforme) — le serveur de jeu garde la vérité pour lui —, ou session du
  * portail avec l'habilitation SSE voulue (Confidentiel pour le pack, Encadrement pour le reste). Sans clé ni session :
@@ -43,7 +45,9 @@ final class SseIdentityApiController
         private ?TenantAtakConfigRepository $tenantAtakConfig = null,
         private ?TenantRepository $tenants = null,
         private ?\Closure $bodyReader = null,
+        private ?SseIdWatchFromGameService $gameWatch = null,
     ) {
+        $this->gameWatch ??= new SseIdWatchFromGameService();
         $this->pack ??= new SseIdentityPackService();
         $this->lookup ??= new SseIdDocumentLookupService();
         $this->checks ??= new SseIdCheckService();
@@ -103,6 +107,16 @@ final class SseIdentityApiController
         }
         $map = $body['map'] ?? $body['mapId'] ?? $request->query('map') ?? $request->query('mapId');
         $mapId = is_numeric($map) && (int) $map > 0 ? (int) $map : self::DEFAULT_MAP_ID;
+
+        // BOLO / HVT nés en jeu (même canal COMSPEC Link SubmitIdCheck, réponse id + ref « WL-… »).
+        if (in_array($body['kind'] ?? null, SseIdWatchFromGameService::KINDS, true)) {
+            $watch = $this->gameWatch->store($tenantId, $mapId, $body);
+            if (isset($watch['error'])) {
+                return Response::json(['error' => $watch['error'], 'message' => 'Avis du jeu incomplet : rien n’a été enregistré.'], 422);
+            }
+
+            return Response::json(['id' => $watch['id'], 'ref' => $watch['ref'], 'duplicate' => $watch['duplicate']], $watch['duplicate'] ? 200 : 201);
+        }
 
         $result = $this->checks->store($tenantId, $mapId, $body);
         if (isset($result['error'])) {

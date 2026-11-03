@@ -109,7 +109,9 @@ final class SseIdentityPackServiceTest extends TestCase
             array_keys($pack['identities'][0])
         );
         self::assertCount(2, $pack['identities']);
-        self::assertSame(['ref', 'last_name', 'first_name', 'alias', 'level', 'person_id'], array_keys($pack['watch'][0]));
+        // Champs du contrat d'abord ; ensuite (lots 4 et 5) l'origine en jeu, ignorée par un ancien mod.
+        self::assertSame(['ref', 'last_name', 'first_name', 'alias', 'level', 'person_id', 'game_ref', 'bio_key', 'known_docs', 'status'], array_keys($pack['watch'][0]));
+        self::assertSame(array_keys($pack['watch'][0]), array_keys($pack['watch'][1]));
         self::assertSame(['prioritaire', 'hvt'], array_column($pack['watch'], 'level'));
         self::assertSame(['offset' => 0, 'limit' => 200, 'total' => 2, 'next_offset' => null], $pack['paging']);
     }

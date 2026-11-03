@@ -54399,4 +54399,8 @@ return [
     'Ma situation : identité et papiers fictifs pour le jeu' => 'My situation: identity and fictional papers for the game',
     'Bureau SSE : tableau de bord des contrôles et FRM à valider' => 'SSE office: checks dashboard and FRM to validate',
     'Bureau SSE : identité principale, alias et kit de papiers' => 'SSE office: primary identity, aliases and paper kit',
+    'N4 — comparaison du visage (biométrie)' => 'N4 — face comparison (biometrics)',
+    'Cible prioritaire (HVT)' => 'Priority target (HVT)',
+    'Avis du jeu incomplet : rien n’a été enregistré.' => 'Incomplete in-game notice: nothing was recorded.',
+    'Contrôle d’identité SSE : BOLO et cibles prioritaires (HVT) nés en jeu remontés sur Athena (référence du jeu, visage, papiers connus, étape de la chasse)' => 'SSE identity check: BOLOs and priority targets (HVT) created in game and sent to Athena (game reference, face, known papers, hunt stage)',
 ];
