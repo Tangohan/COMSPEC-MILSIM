@@ -38,6 +38,49 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 3.0.5 : optimisation de COMSPEC Link, temps des DLL mesurés dans Debug › PERFS (ATAK natif 3.0.5.AG - Austin, COMSPEC Link 2.0.119)
+
+### Résumé joueur
+Type : performance
+FR : ATAK 3.0.5 : la liaison Athena travaille moins et se mesure
+- La liaison COMSPEC Link (2.0.119) fait moins de travail à chaque échange avec le téléphone et écrit son journal par paquets : quittez Arma 3 complètement après la mise à jour.
+- L'app Recherchés et les apps du SSE qui lisent les avis d'Athena ne font plus attendre le jeu : la liste est gardée 5 minutes et rafraîchie en arrière-plan.
+- Onglet Debug › PERFS : nouvelle section avec le temps passé dans la liaison pour chaque commande (appels, moyenne, p95, pire) et un bouton RAZ DLL, pour signaler précisément un ralentissement.
+- Les notifications ne recalculent plus l'état du téléphone chaque seconde quand il n'y a rien à afficher.
+EN : ATAK 3.0.5: the Athena link does less work and can be measured
+- The COMSPEC Link (2.0.119) does less work on every exchange with the phone and writes its log in batches: fully quit Arma 3 after updating.
+- The Wanted app and the SSE apps reading Athena's notices no longer make the game wait: the list is kept for 5 minutes and refreshed in the background.
+- Debug › PERFS tab: new section with the time spent in the link for each command (calls, average, p95, worst) and a RESET DLL button, to report a slowdown precisely.
+- Notifications no longer recompute the phone state every second when there is nothing to show.
+
+### Détail technique
+- **Version 3.0.5** : `VERSION` / `VERSION_STR` « 3.0.5 », `VERSION_NAME` « 3.0.5.AG - Austin » ; COMSPEC Link 2.0.119 (DLL native 2.0.119-native : son csproj annonçait encore 2.0.102) ; Overwatch connect 1.6.34.
+- **Audit de la DLL (première vague sur `Extension.cs`)**, vérifié conforme sans changement : un `HttpClient` par usage (`SocketsHttpHandler`, 8 connexions par hôte, pool 5 min, keep-alive, `Warmup` TLS en tâche de fond), gzip demandé et décompressé avec empreintes ETag / 304 (`SendTimed`), HTTP/1.1 volontaire (multipart PHP sans Content-Length), aucun travail au chargement de la DLL, aucun verrou autour des requêtes (porte `AsyncGate` à 6, un seul drain), lots de télémétrie et positions coalescées, paliers de repli 45 / 75 / 90 s et `Retry-After`, sondages servis en mémoire (`ServePollGet`).
+- **Perf.Stats** (`Extension.cs`) : chronomètre aux deux points d'entrée (`RVExtension`, `RVExtensionArgs`) ; par commande (« Async <commande> » pour les appels portés) : appels, total, pire et répartition par paliers de 20 µs à 500 ms pour un p95 sans garder chaque mesure ; réponse `OK|secondes|appels|moy|p95|pire` puis 24 lignes `commande\tappels\tmoy\tp95\tpire\ttotal` (ms) ; `["reset"]` ; commande locale (`NonUplinkCommands`, `fn_extFast`).
+- **Journal fichier** : `DrainLogLines` écrit les lignes en attente d'un bloc (`AppendLogText`) : une ouverture de fichier par passage au lieu d'une par ligne.
+- **GetWantedNotices** : appelée directement hors `Async` (`fn_bioWantedCache` du SSE : jusqu'à 8 s sur le fil du jeu), elle passe par `ServePollGet` avec un rafraîchissement de 5 min (nouveau paramètre `minRefreshMs`) ; dans `Async` (app Recherchés « Actualiser »), lecture fraîche comme avant ; octets comptés au fil de l'eau (plus de `lines.ToString()` par avis), idem `BriefingComments`.
+- **LatestVersions** : réponse gardée 5 min par adresse (`LatestVersionsEntry`).
+- **GetWardrobeChunk** : `Utf8ChunkStarts` calculé une fois par tenue (`WardrobeDetailSlot.Starts`) au lieu d'un parcours du corps à chaque morceau.
+- **Allocations** : `Output` écrit dans un tampon loué (`ArrayPool<byte>`) au lieu d'un `byte[]` par réponse ; `EnrichAtakPayload` et les six autres réécritures JSON lisent le `MemoryStream` sans copie (`GetBuffer`).
+- **SQF** : `fn_perfDll` (nouveau, core) lit `Perf.Stats` des deux DLL ; `fn_pageDebug` onglet PERFS : sections « DLL native » / « COMSPEC Link » et bouton RAZ DLL (seule retouche d'un fichier de page) ; `fn_notificationsRender` : sortie avant `fn_deviceHealth`, `fn_zeusFx` et `fn_layoutGet` quand la file et les contrôles du toast sont vides.
+- **Revus sans changement** : `fn_schedulerTick`, `fn_localDataRefresh` (alliés relevés toutes les 2 s), `fn_statusUpdate` (écritures au changement), `fn_remoteSync` (4 sondages servis en mémoire toutes les 3 s, sortie avant relecture), `fn_athenaPulse`, `fn_pli`, `fn_tocFeed`, `fn_mapOnDraw` (`allMapMarkers` seulement au changement de révision), boucles de 0,5 à 2 s (`fn_lockAction`, `fn_musicTick`, `fn_projector`, `fn_mpuVoice`, `fn_jtacAction`, `fn_screenGlow`, `fn_tocPost` : balayages conditionnés à l'état de la fonction), connect `fn_updatePosition` (sorties avant calcul, envoi par `extAwait`), `fn_pollAthenaMarkers` (un seul relais), `fn_sseIdentityQuery` / `fn_collectOperatorIdentity` (à la demande), aucun `saveProfileNamespace` direct hors menu principal.
+- **Mesure (client, téléphone porté, lié) : 3.0.3 → 3.0.5 attendu** :
+
+| Mesure | 3.0.3 | 3.0.5 (attendu) |
+|---|---|---|
+| Boucles périodiques (PFH) | ≈ 72 (62 ATAK + 10 connect), + planificateur 0,2 s téléphone affiché | identique |
+| Réveils de boucles par seconde | ≈ 32 (+ 5 téléphone affiché) | identique ; rendu des toasts : 3 appels de fonction par seconde de moins |
+| callExtension par seconde (carte ouverte) | ≈ 3 à 5 (jusqu'à 15 avec le journal Debug) | identique ; aucune allocation de tampon par réponse |
+| Temps DLL par appel (p95) | non mesuré | mesuré par Perf.Stats ; attendu < 0,1 ms (commandes mémoire, Async, LogWrite) |
+| GetWantedNotices hors Async (SSE) | jusqu'à 8 s sur le fil du jeu | < 0,1 ms (copie 5 min, rafraîchie en fond) |
+| LatestVersions | 1 requête par contrôle d'intégrité | 1 par 5 min |
+| Journal fichier (fil de fond) | 1 ouverture de fichier par ligne | 1 par passage |
+| GetWardrobeChunk | corps reparcouru à chaque morceau | découpage calculé une fois |
+
+- **Non fait, volontairement** : regroupement des boucles de 1 et 2 s (≈ 30 réveils/s, chacune sort tôt) ; `fn_tocPost` (`nearestObjects` à 4,5 m chaque seconde : requête spatiale bon marché) ; HTTP/2 (multipart PHP) ; `AutomaticDecompression` (gzip déjà géré par `SendTimed` avec comptage des octets) ; `LocalGet` / `ClipGet` / `BtFileRead` restent synchrones (lectures locales de quelques Ko, à la demande du joueur).
+- **Tests** : `ComspecLinkWorkflowOptTest` et `AtakReleaseInfoTest` (ExtensionVersion = csproj = `LINK_VERSION_STR` = 2.0.119, `VERSION_NAME` 3.0.5.) ; `hemtt check` : 2 erreurs connues, inchangées.
+- **À tester en jeu** : Debug › PERFS après quelques instants (sections DLL native et COMSPEC Link, appels / moy / p95 / pire, bouton RAZ DLL ; téléphone en anglais : RESET DLL) ; app Recherchés « Actualiser » (liste fraîche) et terminal SEEK / biométrie du SSE (liste servie sans attente, à jour en 5 min) ; journal COMSPEC_*.log toujours écrit (lignes horodatées) ; tenue Athena volumineuse (morceaux) ; notification reçue puis expirée (toast affiché puis retiré) ; Réglages › contrôle d'intégrité (versions, « DLL d'une autre version » absent).
+
 ## Pack 3.0.3 : suivi de COMSPEC IDENTITY, téléphone traduit pour les apps du SSE, Recherchés garde les BOLO locaux (ATAK natif 3.0.3.AG - Austin)
 
 ### Résumé joueur
