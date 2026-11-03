@@ -1,4 +1,4 @@
-# Contrôle d'identité (COMSPEC SSE 1.2.0)
+# Contrôle d'identité (COMSPEC SSE 1.3.0)
 
 Papiers d'identité **fictifs** (pays imaginaires, mention SIMULATION sur chaque document) et contrôle sur le terrain,
 par le menu ACE et l'app **Contrôle ID** du téléphone ATAK. Fonctionne entièrement hors ligne ; avec COMSPEC Link 2.0.118
@@ -129,6 +129,86 @@ IA réalistes), le garde lit ses papiers, puis la laisse partir, la fait se rend
 
 Une seule boucle serveur d'une seconde pour tous les checkpoints ; rien chez les clients.
 
+## Couvertures et infiltrés (1.3.0)
+
+Un joueur (ou une IA) **infiltré** vit sous une identité de couverture : papiers « couverture » et **légende**.
+Comment l'infiltrer :
+- module Zeus **Couverture** › Infiltrer (avec, au choix, une carte de couverture à un nom saisi ou tiré) ;
+- attribut Eden **Infiltré (couverture)** ;
+- sur Athena, un **brief de couverture** (Préparation de mission › briefs) ou un papier « couverture » dans son kit :
+  l'infiltration s'ouvre à son arrivée.
+
+Tant que la couverture tient, il est **captif** (les ennemis ne le prennent pas pour cible ; réglage) et les
+checkpoints IA le contrôlent comme un civil, même d'un camp ennemi. La couverture **saute** (« brûlée ») sur :
+- une arme à la main vue par un ennemi (distance des témoins : réglage, 50 m) ;
+- des soupçons accumulés : arme longue dans le dos, tenue militaire, gilet, casque, JVN vus de près ; zone interdite
+  (module Zeus **Zone interdite (couvertures)** ou marqueurs de mission nommés `comspec_id_interdit…`) ; coup de feu
+  entendu ; contrôle raté ; mauvaises réponses aux questions ; être retenu à un checkpoint ;
+- immédiatement : coup de feu près d'un ennemi, menottes, alerte d'un checkpoint, arme trouvée à la fouille.
+
+Brûlée : les groupes ennemis à 400 m passent en combat et connaissent sa position ; le joueur est prévenu
+discrètement (vibreur seul avec l'ATAK 3.0.2) ; le Zeus et le compte rendu AAR aussi. Le module Zeus Couverture
+permet aussi de **brûler** ou de **lever** une couverture.
+
+**Cohérence** de la couverture (0 à 100) : papiers (une pièce de couverture, un seul nom, sa préparation), légende
+(réponses justes), équipement (rien de militaire en vue), comportement (soupçons). Elle pèse sur l'examen visuel d'un
+contrôleur et sur la suspicion des checkpoints.
+
+### App « Ma couverture »
+
+Téléphone ATAK › Renseignement › **Ma couverture** : votre fiche, visible de vous seul (et du Zeus) : état, cohérence et
+ce qui vous trahit, identité, adresse, employeur, profession, téléphone, contacts, documents complémentaires, historique,
+biographie, famille, langues, phrases types, sujets sensibles, secrets, brief et consignes d'Athena. Le Zeus a un onglet
+**ZEUS** : tous les infiltrés, leur cohérence, leur fiche avec le vrai nom.
+
+### Questions de légende
+
+- **Checkpoints IA** : après la lecture des papiers, le garde pose 2 questions (3 au poste strict) : « D'où venez-vous ? »,
+  « Pour qui travaillez-vous ? », « Raison du déplacement ? », « Quel est votre métier ? », « Où êtes-vous né ? »,
+  « Qui peut confirmer ce que vous dites ? ». Réponse au choix (votre vraie légende et deux leurres) dans l'app Ma
+  couverture ou par le menu ACE personnel › **Mes papiers › Répondre**. Délai : réglage (20 s, 10 s de plus par
+  question). Une mauvaise réponse ou un silence éveille les soupçons. Tout joueur a une légende tirée de ses papiers.
+- **Interroger une IA** : menu ACE sur la personne › Contrôle d'identité › **Poser une question**. Un civil répond
+  juste ; un porteur de couverture selon sa préparation ; un porteur de faux papiers se trompe plus souvent (comparez
+  avec ses papiers). Les réponses s'affichent dans l'app Contrôle ID et partent dans la FRM.
+
+## HVT et BOLO (1.3.0)
+
+### N4 · comparaison du visage
+
+App Contrôle ID › **Comparer le visage (N4)** (8 s, téléphone ATAK ou SEEK, la personne à 3 m) : le visage est comparé à
+la base biométrique (complète avec la liaison Athena, sinon base locale) et à la photo du document. Résultat avec un
+**taux de confiance** : visage reconnu (dossier, alias, watchlist), correspondance possible (à confirmer par empreintes
+ou iris au SEEK), aucune. Une **HVT est reconnue même sous un faux nom** ; un porteur qui n'est pas le titulaire du
+document est signalé. Cagoule, foulard, nuit et distance dégradent le cliché.
+
+### Chaîne HVT
+
+1. **Désigner HVT** (Zeus) : niveau (HVT ou recherché), alias, vrai nom, papiers connus, notes, couverture à un faux
+   nom. La personne est au fichier (visage, empreintes), sur les avis (N3) et sur le BOLO ; la chasse aux HVT de
+   l'app Tinder de l'ATAK commence (FIND).
+2. **Contrôle → identification** : base N3 (nom, numéro connu) ou visage N4.
+3. **Confirmer le PID** (bouton de l'app Contrôle ID quand le verdict est HVT ou recherché) : tuyaux confirmés pour
+   votre groupe dans la chasse HVT (le dossier passe en **FIX**), Zeus, compte rendu, Athena.
+4. **Capture** (menottes ACE) ou **neutralisation** : **JACKPOT** ; données SSE de la personne générées et chaîne de
+   possession ouverte (exploitation SSE), puis transmission à Athena comme d'habitude.
+
+### BOLO
+
+Module Zeus **BOLO** : nom, prénom, alias, niveau (surveillance, recherché, HVT), papiers connus, signalement ; posé sur
+une personne, son visage est joint. Le BOLO est diffusé :
+- aux **checkpoints IA** (liste papier : noms, alias, numéros ; visage reconnu de temps en temps) ;
+- aux **contrôleurs** : onglet **BOLO** de l'app Contrôle ID, contrôle N3 (« BOLO : document à surveiller »), visage N4 ;
+- à l'app **Recherchés** (liste déjà chargée) et sur **Athena** (liste de surveillance de la communauté, renvoyée aux
+  parties suivantes).
+**Lever un BOLO** le retire (et le lève sur Athena).
+
+### Préparation de mission sur Athena (Lot 6)
+
+Avec la liaison, le paquet de la mission apporte aussi : des **identités préparées pour les IA** (camp, catégorie,
+zone = nom de marqueur) remises à leur premier contrôle, les **recherchés de l'opération** (visibles seulement des
+camps choisis sur Athena) et les **briefs de couverture** des joueurs (app Ma couverture).
+
 ## Zeus
 
 Catégorie « COMSPEC SSE · Identité » :
@@ -140,6 +220,8 @@ Catégorie « COMSPEC SSE · Identité » :
   (80 m, poste provisoire, équipement et sévérité au choix).
 - **Forcer un état IA** : impose un état (ordres réels) ; l'IA réagit de nouveau d'elle-même 30 s plus tard.
 - **Couvre-feu** : en vigueur ou levé (les civils dehors sont plus nerveux).
+- **Couverture** (infiltrer, brûler, lever) · **Zone interdite (couvertures)** · **Désigner HVT** · **BOLO** ·
+  **Lever un BOLO** (1.3.0, voir plus haut). « Voir les vrais papiers » montre aussi l'infiltration et la HVT.
 
 ## Réglages (CBA › COMSPEC SSE › Identité)
 
@@ -147,7 +229,10 @@ Contrôle d'identité · Difficulté (arcade / standard / réaliste) · Pays des
 présentent leurs papiers (90 %) · Insurgés porteurs de faux papiers (60 %) · Durée d'une présentation (120 s) ·
 Transmission automatique à Athena (non) · Documents et avis d'Athena · Opération Athena · **IA réalistes au contrôle**
 (oui) · **Agressivité des IA** (50 %) · **Distance des checkpoints** (25 m) · **Délai pour présenter ses papiers** (45 s) ·
-**Les checkpoints contrôlent aussi les IA** (oui) · **Couvre-feu** (non).
+**Les checkpoints contrôlent aussi les IA** (oui) · **Couvre-feu** (non) · **Infiltré captif tant que sa couverture
+tient** (oui) · **Soupçons avant que la couverture saute** (100) · **Distance des témoins** (50 m) · **Questions de
+légende** (oui) · **Délai pour répondre** (20 s) · **Comparaison du visage (N4)** (oui) · **Durée de la comparaison du
+visage** (8 s) · **Notifier les BOLO** (oui).
 
 Joueur formé au contrôle (meilleur examen visuel) : `_unit setVariable ["COMSPEC_ID_Expert", true, true]`.
 
@@ -164,6 +249,14 @@ Joueur formé au contrôle (meilleur examen visuel) : `_unit setVariable ["COMSP
 - Évènements CBA serveur : `comspec_sse_idAsked`, `comspec_sse_idPresented` [porteur, docId, contrôleur],
   `comspec_sse_idRefused`, `comspec_sse_idChecked` [contrôleur, docId, niveau, résultat].
 - `[_doc, _ia, niveau] call comspec_sse_fnc_idEvaluate` (serveur) : contrôle par une IA.
+- `["start", [unité, createHashMap]] call comspec_sse_fnc_idCover` (serveur) : infiltrer ; `["burn", [unité, motif]]`,
+  `["stop", [unité]]`, `["score", [unité]]` -> [cohérence, motifs] ; `_unit setVariable ["COMSPEC_ID_Undercover", true]`
+  avant l'apparition (serveur) : infiltré dès le début.
+- `["ask", [ia, joueur, 2, ""]] call comspec_sse_fnc_idQuestion` (serveur) : l'IA pose des questions de légende.
+- `["designate", [unité, réglages, objNull]] call comspec_sse_fnc_idHvt` (serveur) : désigner une HVT (réglages :
+  `alias`, `last`, `first`, `docs`, `level`, `cover`) ; `["bolo", [réglages, objNull, unité | objNull]]` : BOLO.
+- Évènements CBA serveur : `comspec_sse_idAnswered` [joueur, demandeur, juste, clé, contexte, évasif],
+  `comspec_sse_idCoverBurnt` [unité, motif] ; client : `comspec_sse_idBoloNew` [texte].
 
 ## Vérifier la MRZ
 

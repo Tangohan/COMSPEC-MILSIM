@@ -6,6 +6,7 @@
       doc      [poignée] : examiner (2 s, N0) et saisir (2 s)
       return   documents que je lui ai saisis : rendre (1 s)
       present  mes documents : présenter / remettre (1 s)       consult  mes documents : lire
+      questions  questions de légende à poser à un PNJ (1 s)    answers  réponses au choix à la question en attente
     Libellés en français, traduits par comspec_sse_fnc_aceAction. Durées : comspec_sse_fnc_progressAction.
 */
 params [["_mode", ""], ["_target", objNull], ["_player", objNull], ["_arg", ""]];
@@ -76,6 +77,31 @@ switch (_mode) do {
                 ]
             }, "\z\comspec_sse\addons\identity\data\icon_card_ca.paa"] call _add;
         } forEach _mine;
+    };
+    case "questions": {
+        {
+            _x params ["_k", "_q"];
+            [format ["COMSPEC_ID_Q_%1", _k], _q, {
+                params ["_t", "_p", "_args"];
+                ["send", ["begin", [_p, "question", _t]]] call comspec_sse_fnc_idClient;
+                [1, "Vous lui posez la question…", { params ["_t", "_k"]; ["send", ["aiQuestion", [player, _t, _k]]] call comspec_sse_fnc_idClient; }, [_t, _args select 0], _t] call comspec_sse_fnc_progressAction;
+            }, [_k]] call _add;
+        } forEach [
+            ["origin", "D'où venez-vous ?"], ["employer", "Pour qui travaillez-vous ?"], ["travel", "Raison du déplacement ?"],
+            ["job", "Quel est votre métier ?"], ["pob", "Où êtes-vous né ?"], ["contact", "Qui peut confirmer ce que vous dites ?"]
+        ];
+    };
+    case "answers": {
+        (missionNamespace getVariable ["comspec_sse_idQuestion", []]) params [["_w", ""], ["_l", []], ["_end", 0], ["_done", createHashMap]];
+        private _open = _l select { !((_x select 0) in _done) };
+        if (_open isEqualTo [] || {_end <= time}) exitWith {};
+        (_open select 0) params ["_qid", "_text", "_opts"];
+        {
+            [format ["COMSPEC_ID_A_%1", _forEachIndex], format ["%1 → %2", _text call comspec_sse_fnc_tr, _x call comspec_sse_fnc_tr], {
+                params ["_t", "_p", "_args"];
+                ["act", "answer", _args] call comspec_sse_fnc_idCoverPage;
+            }, [_qid, _forEachIndex]] call _add;
+        } forEach _opts;
     };
     case "consult": {
         {

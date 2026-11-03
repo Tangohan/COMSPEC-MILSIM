@@ -1,6 +1,8 @@
 /*
     Évaluation d'un document à un niveau de contrôle (SERVEUR : seul à connaître les défauts).
-    [_doc, _controller, _level] call comspec_sse_fnc_idEvaluate -> HashMap
+    [_doc, _controller, _level, _subject] call comspec_sse_fnc_idEvaluate -> HashMap
+      _subject (facultatif) : personne qui présente le document ; couverture peu crédible (fn_idCover « score » : tenue,
+              équipement, comportement) remarquée à l'examen visuel N0 selon la compétence du contrôleur
       level   0 visuel (N0) | 1 MRZ (N1) | 2 puce NFC (N2) | 3 base (N3, locale ; Athena en complément chez le joueur)
       state   ok | doubt | fail | alert | na        verdict  ras | doute | faux | expire | inconnu | vole | revoque
                                                              | signale | recherche | hvt
@@ -9,8 +11,9 @@
     de la lumière et du réglage de difficulté. Joueur formé au contrôle : _unit setVariable ["COMSPEC_ID_Expert", true, true]. Tirage reproductible : refaire le même contrôle donne le même résultat.
     N1 et N2 sont des lectures machine : un défaut présent est toujours trouvé. N3 hors ligne : base locale du pays
     (numéros délivrés, signalements) et avis de recherche ; jamais la vraie identité.
+    BOLO (fn_idHvt) : numéro du document sur un BOLO ou parmi les papiers connus d'une HVT, signalé au N3.
 */
-params [["_doc", createHashMap, [createHashMap]], ["_ctrl", objNull, [objNull]], ["_level", 0, [0]]];
+params [["_doc", createHashMap, [createHashMap]], ["_ctrl", objNull, [objNull]], ["_level", 0, [0]], ["_subj", objNull, [objNull]]];
 private _res = createHashMapFromArray [["level", _level], ["state", "ok"], ["lines", []], ["codes", []], ["verdict", "ras"]];
 private _lines = _res get "lines";
 private _codes = _res get "codes";
@@ -55,6 +58,15 @@ switch (_level) do {
         ];
         if (_expired) then {
             _lines pushBack format ["Document expiré depuis le %1.", _doc get "expires"]; _codes pushBack "expired"; ["doubt", "expire"] call _worse;
+        };
+        // Couverture (papiers « couverture » ou infiltré) : une tenue ou un équipement qui ne collent pas aux papiers se
+        // remarquent, plus ou moins selon le contrôleur. Les civils ordinaires ne coûtent rien ici.
+        if (!isNull _subj && {(_subj getVariable ["comspec_sse_idCoverOn", false]) || {(_doc getOrDefault ["kind", ""]) isEqualTo "cover"}}) then {
+            (["score", [_subj]] call comspec_sse_fnc_idCover) params [["_sc", 100], ["_why", []]];
+            private _roll = ([format ["%1|%2|N0|cover", _doc get "id", _ctrlKey]] call comspec_sse_fnc_bioHash) / 16777216;
+            if (_sc < 60 && {_roll < ((((60 - _sc) / 60) * (0.6 + _skill * 0.4) * _diff) min 0.95)}) then {
+                _lines pushBack "Attitude, tenue ou équipement qui ne collent pas aux papiers."; _codes pushBack "cover_incoherent"; ["doubt", "doute"] call _worse;
+            };
         };
         if (_lines isEqualTo [] || {_lines isEqualTo ["Trop sombre pour bien examiner le document : éclairez-le."]}) then {
             _lines pushBack "Examen visuel : rien d'anormal.";
@@ -123,12 +135,20 @@ switch (_level) do {
             };
         };
         if (_expired) then { _lines pushBack "Document expiré."; _codes pushBack "expired"; ["doubt", "expire"] call _worse; };
+        // BOLO : numéro du document à surveiller (diffusé par le commandement).
+        (["docFlag", [_doc]] call comspec_sse_fnc_idHvt) params [["_bRef", ""], ["_bLvl", ""]];
+        if (_bRef isNotEqualTo "") then {
+            _lines pushBack format ["BOLO : document à surveiller (réf. %1).", _bRef]; _codes pushBack "bolo_doc";
+            [["doubt", "alert"] select (_bLvl isNotEqualTo "surveillance"), ["signale", ["recherche", "hvt"] select (_bLvl isEqualTo "hvt")] select (_bLvl isNotEqualTo "surveillance")] call _worse;
+        };
         // Avis de recherche (base locale + paquet Athena) : sur le nom imprimé.
         private _L = toUpper (_doc get "last");
         private _F = toUpper (_doc get "first");
         {
-            _x params [["_wl", ""], ["_wf", ""], ["_wa", ""], ["_lvl", "surveillance"], ["_ref", ""]];
-            if ((toUpper _wl) isEqualTo _L && {_wf isEqualTo "" || {(toUpper _wf) isEqualTo _F}}) exitWith {
+            _x params [["_wl", ""], ["_wf", ""], ["_wa", ""], ["_lvl", "surveillance"], ["_ref", ""], ["_wSides", []]];
+            // Recherché de l'opération réservé à certains camps (paquet Athena, wanted[].sides) : invisible des autres.
+            private _cSide = ["east", "west", "guer", "civ"] select (([east, west, independent, civilian] find (side group _ctrl)) max 0);
+            if ((toUpper _wl) isEqualTo _L && {_wf isEqualTo "" || {(toUpper _wf) isEqualTo _F}} && {_wSides isEqualTo [] || {isNull _ctrl} || {_cSide in _wSides}}) exitWith {
                 private _v = switch (_lvl) do { case "hvt": { "hvt" }; case "prioritaire"; case "recherche": { "recherche" }; default { "signale" }; };
                 _lines pushBack format ["AVIS : personne %1 (réf. %2).", ["sous surveillance", "RECHERCHÉE", "HVT"] select (["signale", "recherche", "hvt"] find _v), _ref];
                 _codes pushBack ("watch_" + _v);

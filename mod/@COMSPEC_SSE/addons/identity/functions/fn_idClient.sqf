@@ -6,6 +6,10 @@
       result [docId, niveau, résultat] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
       notify [texte, type] · zeus [texte, genre] · packFetch []
       say [nom, phrase, type, indice]   phrase courte d'une IA contrôlée (IA réalistes), traduite ici
+    Lot 4 et 5 : question [demandeur, [[qid, question, réponses]…], délai] · questionEnd [qid, juste, évasif]
+      coverSheet [netId, fiche] · coverList [infiltrés] · coverState [on | off | burnt | warn, motif]
+      talk [ia, clé, réponse, indice] (réponse d'un PNJ à ma question) · hvtTip [netId, sources, position, texte, par]
+      athenaWatch [charge]   envoi d'un BOLO / d'une HVT à Athena par la DLL de ce poste (serveur dédié compris)
     État local (jamais diffusé) : comspec_sse_idTokens (documents présentés), comspec_sse_idSearch (dernière fouille),
     comspec_sse_idSeized (pièces saisies, pour « Rendre »), comspec_sse_idPending (demandes reçues).
 */
@@ -13,6 +17,28 @@ params [["_op", "", [""]], ["_a", []]];
 if (_op isEqualTo "send") exitWith {
     _a params [["_sop", ""], ["_sargs", []]];
     if (isServer) then { [_sop, _sargs] call comspec_sse_fnc_idServer; } else { [_sop, _sargs] remoteExecCall ["comspec_sse_fnc_idServer", 2]; };
+    true
+};
+// BOLO / HVT vers Athena (POST /api/sse/identity/checks, genre bolo | hvt) : aussi sur un serveur dédié sans interface.
+if (_op isEqualTo "athenaWatch") exitWith {
+    _a params [["_payload", createHashMap]];
+    [_payload] spawn {
+        params ["_payload"];
+        private _ok = false;
+        if (["has"] call comspec_sse_fnc_idAthenaPack) then {
+            private _json = [_payload] call comspec_sse_fnc_toJsonApprox;
+            private _parts = [];
+            for "_i" from 0 to ((count _json) - 1) step 4000 do { _parts pushBack (_json select [_i, 4000]); };
+            private _raw = ["SubmitIdCheck", _parts] call comspec_sse_fnc_extensionCall;
+            _ok = (_raw select [0, 3]) isEqualTo "OK|";
+            if (_ok && {hasInterface}) then { [format ["Athena : %1 enregistré (%2).", toUpper (_payload getOrDefault ["kind", ""]), (_raw splitString "|") param [2, ""]], "info"] call comspec_sse_fnc_zeusNotify; };
+        };
+        if (_ok) exitWith {};
+        [createHashMapFromArray [
+            ["kind", "IDWATCH"], ["command", "SubmitIdCheck"], ["payload", _payload],
+            ["idempotency_key", _payload get "idempotency_key"], ["record_id", _payload get "idempotency_key"], ["txStatus", "PENDING"]
+        ]] call comspec_sse_fnc_queueOffline;
+    };
     true
 };
 if (!hasInterface) exitWith {};
@@ -88,6 +114,86 @@ switch (_op) do {
         _a params [["_v", objNull], ["_vop", "vehicle"], ["_out", []]];
         if (_out isEqualTo []) exitWith { ["Aucun occupant à contrôler."] call _say; };
         { _x params ["", "_n", "_ans", "_text"]; [format ["%1 : %2", _n, _text], ["INFO", "WARNING"] select (_ans in ["refuse", "flee", "none"])] call _say; } forEach _out;
+    };
+    case "question": {
+        _a params [["_who", ""], ["_list", []], ["_delay", 20]];
+        if (_list isEqualTo []) exitWith {};
+        missionNamespace setVariable ["comspec_sse_idQuestion", [_who, _list, time + _delay, createHashMap]];
+        [format ["%1 vous pose des questions (%2 s). ATAK › Ma couverture, ou menu ACE personnel › Mes papiers › Répondre.", _who, round _delay], "WARNING", "", "IDCOVER"] call comspec_sse_fnc_notify;
+        if (!isNil "comspec_atak_native_fnc_vibrate") then { [] call comspec_atak_native_fnc_vibrate; };
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCOVER") then { ["IDCOVER"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+    };
+    case "questionEnd": {
+        _a params [["_qid", ""]];
+        private _q = missionNamespace getVariable ["comspec_sse_idQuestion", []];
+        if (_q isEqualTo []) exitWith {};
+        if !(_qid in (_q select 3)) then { (_q select 3) set [_qid, -1]; };
+        // Plus aucune question ouverte : la fenêtre se ferme.
+        if (((_q select 1) findIf { !((_x select 0) in (_q select 3)) }) < 0) then { missionNamespace setVariable ["comspec_sse_idQuestion", []]; };
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCOVER") then { ["IDCOVER"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+    };
+    case "coverSheet": {
+        _a params [["_net", ""], ["_sheet", createHashMap]];
+        (missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap]) set [_net, _sheet];
+        missionNamespace setVariable ["comspec_sse_idCoverSheets", missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap]];
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCOVER") then { ["IDCOVER"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+    };
+    case "coverList": {
+        _a params [["_l", []]];
+        missionNamespace setVariable ["comspec_sse_idCoverList", _l];
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCOVER") then { ["IDCOVER"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+    };
+    case "coverState": {
+        _a params [["_state", ""], ["_why", ""]];
+        // Tir de l'infiltré : relevé sur son poste seulement, le temps de l'infiltration (aucun coût sinon).
+        private _eh = player getVariable ["comspec_sse_idFiredEh", -1];
+        if (_state isEqualTo "on" && {_eh < 0}) then {
+            player setVariable ["comspec_sse_idFiredEh", player addEventHandler ["FiredMan", {
+                if ((time - (missionNamespace getVariable ["comspec_sse_idFiredAt", -10])) < 1) exitWith {};
+                missionNamespace setVariable ["comspec_sse_idFiredAt", time];
+                ["send", ["coverFired", [player]]] call comspec_sse_fnc_idClient;
+            }]];
+        };
+        if (_state in ["off", "burnt"] && {_eh >= 0}) then { player removeEventHandler ["FiredMan", _eh]; player setVariable ["comspec_sse_idFiredEh", -1]; };
+        (missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap]) deleteAt (netId player);
+        private _msg = switch (_state) do {
+            case "on": { "Vous êtes infiltré : votre couverture tient tant que rien ne vous trahit (ATAK › Ma couverture)." };
+            case "off": { "Infiltration levée." };
+            case "burnt": { format ["Votre couverture est brûlée (%1) : les ennemis proches vous ont repéré.", _why call comspec_sse_fnc_tr] };
+            default { format ["Vous attirez l'attention (%1).", _why call comspec_sse_fnc_tr] };
+        };
+        // Alerte discrète : vibreur seul avec l'ATAK 3.0.2, sinon vibreur et notification.
+        if (_state in ["burnt", "warn"] && {[3, 0, 2] call comspec_sse_fnc_idAtakAtLeast}) exitWith {
+            ["MESSAGE", _msg call comspec_sse_fnc_tr, 0, 10, "IDCOVER", "vibrate"] call comspec_atak_native_fnc_notify;
+        };
+        if (_state in ["burnt", "warn"] && {!isNil "comspec_atak_native_fnc_vibrate"}) then { [] call comspec_atak_native_fnc_vibrate; };
+        [_msg, ["INFO", "WARNING"] select (_state in ["burnt", "warn"]), "", "IDCOVER"] call _say;
+    };
+    case "talk": {
+        _a params [["_t", objNull], ["_k", ""], ["_txt", ""], ["_hint", ""]];
+        private _line = format ["%1 : « %2 »", [name _t, "?"] select (isNull _t), _txt call comspec_sse_fnc_tr];
+        if (_hint isNotEqualTo "") then { _line = _line + format [" [%1]", _hint call comspec_sse_fnc_tr]; };
+        [_line] call _say;
+        // Réponse gardée sur la fiche du contrôle en cours (même personne) : reprise par la FRM.
+        private _cur = ["current"] call comspec_sse_fnc_idHistory;
+        if ((count _cur) > 0 && {(_cur getOrDefault ["subj", objNull]) isEqualTo _t}) then {
+            private _talk = _cur getOrDefault ["talk", []];
+            _talk pushBack [_k, _txt, _hint];
+            _cur set ["talk", _talk];
+        };
+    };
+    case "hvtTip": {
+        _a params [["_net", ""], ["_srcs", []], ["_pos", []], ["_text", ""], ["_from", ""]];
+        if (isNil "comspec_atak_native_fnc_hvtIntel" || {isNil "comspec_atak_native_fnc_datingSpecials"}) exitWith {};
+        private _u = objectFromNetId _net;
+        if (isNull _u) exitWith {};
+        // Chasse aux HVT de l'ATAK : un tuyau confirmé par modalité (contrôle, visage, PID) ; deux sources = FIX.
+        private _key = ["key", _u] call comspec_atak_native_fnc_datingSpecials;
+        {
+            private _id = ["tip", [_key, _x, 1, 30, _from, _pos, _text]] call comspec_atak_native_fnc_hvtIntel;
+            if (_id isEqualType "" && {_id isNotEqualTo ""}) then { ["review", [_id, "OK"]] call comspec_atak_native_fnc_hvtIntel; };
+        } forEach _srcs;
+        [format ["HVT : %1 (chasse HVT de l'ATAK : FIX).", _text], "SUCCESS", "", "DATING"] call comspec_sse_fnc_notify;
     };
     case "packFetch": {
         [] spawn {

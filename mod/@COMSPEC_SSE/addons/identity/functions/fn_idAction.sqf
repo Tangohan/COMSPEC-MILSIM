@@ -5,6 +5,8 @@
       "view"            revoir le document (visionneuse)  "transmit"   envoi à Athena    "frm"  fiche FRM pré-remplie
       "photo"           photo du document (jointe à la FRM)    "salute" / "spotrep"   compte rendu pré-rempli
       "share" / "nfc"   fiche du contrôle partagée (Bluetooth, NFC)   "mobile"  QR « Sur mon téléphone »  (ATAK 3.0.2)
+      "level" 4         N4 : comparaison du visage (durée : réglage « Durée de la comparaison du visage »)
+      "pid"             confirmation PID de la personne contrôlée (HVT ou recherchée identifiée)
 */
 params [["_act", ""], ["_arg", ""]];
 private _st = uiNamespace getVariable ["comspec_sse_idApp", createHashMap];
@@ -20,17 +22,24 @@ if ((count _rec) isEqualTo 0) exitWith { ["WARNING", "Aucun contrôle en cours"]
 
 switch (_act) do {
     case "level": {
-        private _lvl = (_arg max 1) min 3;
+        private _lvl = (_arg max 1) min 4;
         private _h = _rec get "docId";
         private _subj = _rec getOrDefault ["subj", objNull];
         if (!(_subj isEqualType objNull) || {_subj isEqualTo player}) then { _subj = objNull; };
         ["send", ["begin", [player, format ["check%1", _lvl], _h]]] call comspec_sse_fnc_idClient;
-        [[3, 4, 3] select (_lvl - 1), ["Lecture de la bande MRZ…", "Lecture de la puce NFC…", "Interrogation de la base…"] select (_lvl - 1), {
+        [[3, 4, 3, missionNamespace getVariable ["comspec_sse_id_bioTime", 8]] select (_lvl - 1), ["Lecture de la bande MRZ…", "Lecture de la puce NFC…", "Interrogation de la base…", "Photo et comparaison du visage…"] select (_lvl - 1), {
             params ["_h", "_lvl"];
             ["send", ["check", [player, _h, _lvl]]] call comspec_sse_fnc_idClient;
         }, [_h, _lvl], _subj] call comspec_sse_fnc_progressAction;
     };
     case "view": { [_rec get "doc", false] call comspec_sse_fnc_idViewerOpen; };
+    case "pid": {
+        private _subj = _rec getOrDefault ["subj", objNull];
+        if (!(_subj isEqualType objNull) || {isNull _subj}) exitWith { ["WARNING", "Personne contrôlée introuvable"] call _say; };
+        _rec set ["pid", true];
+        ["send", ["pid", [player, _subj]]] call comspec_sse_fnc_idClient;
+        call _render;
+    };
     case "transmit": { [_rec] call comspec_sse_fnc_idAthenaSubmit; call _render; };
     case "frm": { [_rec] call comspec_sse_fnc_idFrm; };
     case "photo": { ["app"] call comspec_sse_fnc_idPhoto; };

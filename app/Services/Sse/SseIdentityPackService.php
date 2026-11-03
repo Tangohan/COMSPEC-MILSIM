@@ -160,13 +160,20 @@ final class SseIdentityPackService
     {
         $out = [];
         foreach ($this->watchlist->listActive($tenantId) as $e) {
+            $level = (string) ($e['threat_level'] ?? '');
+            // Champs du contrat, puis (lots 4 et 5, ignorés par un ancien mod) l'origine en jeu : référence, visage,
+            // papiers connus, étape de la chasse.
             $out[] = [
                 'ref' => 'WL-' . (int) $e['id'],
                 'last_name' => (string) $e['last_name'],
                 'first_name' => (string) $e['first_name'],
                 'alias' => (string) ($e['alias'] ?? ''),
-                'level' => $e['threat_level'] === 'prioritaire' ? 'prioritaire' : 'surveillance',
+                'level' => in_array($level, ['prioritaire', 'hvt'], true) ? $level : 'surveillance',
                 'person_id' => null,
+                'game_ref' => (string) ($e['game_ref'] ?? ''),
+                'bio_key' => (string) ($e['bio_key'] ?? ''),
+                'known_docs' => array_values($e['known_docs'] ?? []),
+                'status' => (string) ($e['game_status'] ?? ''),
             ];
             if (count($out) >= self::MAX_WATCH) {
                 return $out;
@@ -180,6 +187,10 @@ final class SseIdentityPackService
                 'alias' => (string) ($p['alias'] ?? ''),
                 'level' => 'hvt',
                 'person_id' => (int) $p['id'],
+                'game_ref' => '',
+                'bio_key' => '',
+                'known_docs' => [],
+                'status' => '',
             ];
             if (count($out) >= self::MAX_WATCH) {
                 break;

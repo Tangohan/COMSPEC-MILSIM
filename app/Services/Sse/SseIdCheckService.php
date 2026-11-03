@@ -35,14 +35,14 @@ final class SseIdCheckService
         return preg_match('/^[A-Za-z0-9_.:\-]{4,80}$/', $key) === 1;
     }
 
-    /** Niveau « N0 » à « N3 » ; le mod envoie aussi le numéro seul (0 à 3). */
+    /** Niveau « N0 » à « N4 » ; le mod envoie aussi le numéro seul (0 à 4). */
     public static function levelCode(mixed $level): ?string
     {
         if (!is_scalar($level)) {
             return null;
         }
         $l = strtoupper(trim((string) $level));
-        if (preg_match('/^[0-3]$/', $l) === 1) {
+        if (preg_match('/^[0-4]$/', $l) === 1) {
             $l = 'N' . $l;
         }
 

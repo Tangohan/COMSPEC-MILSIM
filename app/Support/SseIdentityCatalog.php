@@ -123,6 +123,7 @@ final class SseIdentityCatalog
         'N1' => 'N1 — lecture de la bande MRZ',
         'N2' => 'N2 — lecture de la puce',
         'N3' => 'N3 — interrogation des fichiers',
+        'N4' => 'N4 — comparaison du visage (biométrie)',
     ];
 
     /** Niveau d'une liste de surveillance (pack watch[].level, lookup level). */
