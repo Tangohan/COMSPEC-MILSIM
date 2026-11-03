@@ -294,6 +294,15 @@ final class DevDispatchCatalog
 
         return array_merge([
 
+            $pr(1356, '2026-11-03', 'Bureau SSE : rubrique « Contrôle d’identité » dans la navigation', 'La barre latérale du bureau SSE gagne une rubrique « Contrôle d’identité » qui donne accès directement à chaque page : tableau de bord, papiers, identités, contrôles reçus, papiers des membres, pays émetteurs et fiches FRM à valider. Chaque entrée n’apparaît que si vous avez le droit d’ouvrir la page, et la bonne entrée reste allumée sur les pages de détail. Ces pages se trouvent aussi avec Ctrl+K, et la recherche du back-office propose Mes papiers, le tableau de bord identité et les papiers des membres.', [
+                'Bureau SSE : rubrique « Contrôle d’identité » avec ses sept pages',
+                'Ctrl+K et recherche du back-office : pages d’identité',
+            ], [
+                'Lien direct vers les fiches FRM à valider du tableau de bord identité',
+            ], [], ['intel'], [
+                'Essai : ouvrir le bureau SSE, déplier « Contrôle d’identité », parcourir chaque page et vérifier que l’entrée reste allumée sur une fiche de contrôle.',
+            ]),
+
             $pr(1355, '2026-11-03', 'ATAK 3.0.2 : fiches de contrôle d’identité partagées, vibreur seul, Contrôle ID sur le téléphone', 'COMSPEC IDENTITY passe au lot 2. Une fiche de contrôle d’identité, avec le papier lu, le verdict, chaque niveau de contrôle, la photo, le contrôleur, l’heure et la position, se partage depuis l’app Contrôle ID : en Bluetooth à un équipier appairé, ou en NFC en posant son téléphone contre le sien, sans appairage. La fiche reçue s’ouvre dans une vue dédiée de l’app Bluetooth, avec la carte sur le lieu du contrôle et « Joindre à une FRM » ; la fiche FRM envoyée, avec sa photo, est rattachée au contrôle sur Athena. Le téléphone gagne une alerte « vibreur seul », sans son ni bandeau, pour être prévenu discrètement, et un compte rendu SPOTREP peut s’ouvrir déjà rempli par une autre app. Sur le vrai téléphone, la nouvelle app Contrôle ID montre vos contrôles de la partie, le détail par niveau et les photos, et « Joindre à une FRM » prépare une fiche que le bureau SSE valide. Sur Athena, le dossier d’une personne regroupe ses contrôles par opération et par carte avec leurs photos et leurs verdicts, et le bureau SSE a un tableau de bord identité de l’opération : contrôles, détections, faux, personnes recherchées interpellées et fiches nées des contrôles à valider.', [
                 'Fiche de contrôle d’identité partagée en Bluetooth ou en NFC, vue dédiée dans l’app Bluetooth',
                 'Alerte « vibreur seul » : vibration sans son ni bandeau',
