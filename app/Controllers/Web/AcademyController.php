@@ -918,6 +918,9 @@ final class AcademyController
             return $this->error('forbidden', 403);
         }
         $member = (int) $request->inputString('member');
+        // Depuis les qualifications suggérées de la fiche membre : retour à la fiche, avec un message du back-office.
+        $fromMember = $request->inputString('return') === 'membre' && $member > 0;
+        $memberBack = url('back-office/ressources/effectifs/membres/' . $member) . '#qualifs-suggerees';
         $course = $repository->course($tenantId, $key);
         if ($course === null || $member < 1 || !Container::get(UserRepository::class)->isMemberOfTenant($member, $tenantId)) {
             Session::set('academy_notice', 'assign_invalid');
@@ -925,11 +928,19 @@ final class AcademyController
         }
         $target = $this->rightsForMember($tenantId, $member);
         if (!$target->canSee($course)) {
+            if ($fromMember) {
+                Session::flash('error', 'Ce membre ne fait pas partie du public de ce cours : ouvrez-lui le cours dans l’Academy.');
+                return Response::redirect($memberBack, 303);
+            }
             Session::set('academy_notice', 'assign_outside_audience');
             return Response::redirect(url('academy/instructor'), 303);
         }
         $repository->enroll($tenantId, $member, $course);
         $this->audit('academy.course.assigned', $tenantId, $key, ['user' => $member]);
+        if ($fromMember) {
+            Session::flash('success', 'Membre inscrit au cours Academy.');
+            return Response::redirect($memberBack, 303);
+        }
         Session::set('academy_notice', 'assign_done');
         return Response::redirect(url('academy/instructor') . '#eleves', 303);
     }
