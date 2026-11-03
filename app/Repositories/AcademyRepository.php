@@ -270,6 +270,38 @@ final class AcademyRepository
         }
     }
 
+    /**
+     * Passage d’un parcours à la version courante du cours (AcademyVersionUpgrade). Une nouvelle version du Studio a
+     * une autre clé : l’inscription la rejoint, sauf si le stagiaire y est déjà inscrit (« already_enrolled »).
+     *
+     * @param callable(array<string, mixed>): array<string, mixed> $change
+     */
+    public function moveEnrollment(int $tenantId, int $userId, string $key, string $newKey, callable $change): void
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare('SELECT state_json FROM academy_learners WHERE tenant_id = ? AND user_id = ? AND course_key = ? FOR UPDATE');
+            $stmt->execute([$tenantId, $userId, $key]);
+            $json = $stmt->fetchColumn();
+            if ($json === false) {
+                throw new \DomainException('not_enrolled');
+            }
+            if ($newKey !== $key) {
+                $stmt->execute([$tenantId, $userId, $newKey]);
+                if ($stmt->fetchColumn() !== false) {
+                    throw new \DomainException('already_enrolled');
+                }
+            }
+            $state = $change(json_decode($json, true, 64, JSON_THROW_ON_ERROR));
+            $stmt = $this->pdo->prepare('UPDATE academy_learners SET course_key = ?, state_json = ?, updated_at = CURRENT_TIMESTAMP WHERE tenant_id = ? AND user_id = ? AND course_key = ?');
+            $stmt->execute([$newKey, json_encode($state, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $tenantId, $userId, $key]);
+            $this->pdo->commit();
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public function saveNotes(int $tenantId, int $userId, string $text): void
     {
         $stmt = $this->pdo->prepare('INSERT INTO academy_learners (tenant_id, user_id, course_key, state_json) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE state_json = VALUES(state_json), updated_at = CURRENT_TIMESTAMP');

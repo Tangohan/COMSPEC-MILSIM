@@ -20,7 +20,7 @@ $qDialogId = 'dlg-' . $qi['id'];
 <button type="button" class="q-dialog__close" data-q-close aria-label="<?= $h($t('q_close')) ?>">×</button></div>
 <div class="q-dialog__body ins-review">
 <?php require __DIR__ . '/course_review.php'; ?>
-<h4><?= $h($t('submitted_debrief')) ?></h4><p class="lesson-text"><?= nl2br($h($reviewState['debriefs'][$qi['chapter']] ?? '')) ?></p>
+<h4><?= $h($t('submitted_debrief')) ?></h4><p class="lesson-text"><?= nl2br($h($debriefText($reviewState['debriefs'][$qi['chapter']] ?? ''))) ?></p>
 <?php if (!empty($reviewChapter['validation']['brief'])): ?><div class="rt"><?= $rich($reviewChapter['validation']['brief']) ?></div><?php endif ?>
 <?php if (!empty($reviewChapter['validation']['criteria'])): ?><h4><?= $h($t('validation_criteria')) ?></h4><ul class="academy-rubric"><?php foreach ($reviewChapter['validation']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
 <?php if ($qCan === 'own'): ?><p class="hint"><?= $h($t('self_validation')) ?></p>

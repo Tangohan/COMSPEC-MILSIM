@@ -118,7 +118,7 @@ $audienceOf = static function (array $course) use ($courseSettings): string {
     $state = !empty($item['license']) ? 'license' : (!empty($item['completed']) ? 'completed' : ((int) ($item['stage'] ?? 0) === 6 ? 'pending' : 'in_progress')); ?>
 <tr id="eleve-<?= (int) $learner['user_id'] ?>-<?= $h($learner['course_key']) ?>"><td data-label="<?= $h($t('learner')) ?>"><b><?= $h($memberName((int) $learner['user_id'])) ?></b></td><td data-label="<?= $h($t('ins_course')) ?>"><?= $h($titles[$learner['course_key']] ?? '') ?></td>
 <td data-label="<?= $h($t('progress')) ?>"><span class="ins-bar" role="img" aria-label="<?= $value ?> %"><i style="width:<?= $value ?>%"></i></span><small><?= $value ?> %</small></td>
-<td data-label="<?= $h($t('ins_state')) ?>"><span class="tag s-<?= $state ?>"><?= $h($t($state === 'license' ? 'ins_state_license' : $state)) ?></span></td>
+<td data-label="<?= $h($t('ins_state')) ?>"><span class="tag s-<?= $state ?>"><?= $h($t($state === 'license' ? 'ins_state_license' : $state)) ?></span><?php if (($vi = $learner['version'] ?? null) !== null): $vKey = (string) $learner['course_key']; $vLearner = (int) $learner['user_id']; require __DIR__ . '/version_badge.php'; endif ?></td>
 <td data-label="<?= $h($t('ins_last_activity')) ?>"><?= $h($when($learner['updated_at'] ?? ($item['updated'] ?? null))) ?></td></tr>
 <?php endforeach ?></tbody></table></div><?php endif ?>
 </section>
