@@ -66,8 +66,8 @@ final class SseBiiKitCollectAssetTest extends TestCase
         self::assertStringNotContainsString('find "fingerprint"', $has);
         self::assertStringContainsString('[_player, "iris"]', $iris);
         self::assertStringContainsString('EyeScannerKit', $reg);
-        self::assertStringContainsString('1.0.0', (string) file_get_contents(
+        ModVersion::assertAtLeast('1.0.0', ModVersion::fromConfigCpp((string) file_get_contents(
             dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/main/script_mod.hpp'
-        ));
+        )));
     }
 }

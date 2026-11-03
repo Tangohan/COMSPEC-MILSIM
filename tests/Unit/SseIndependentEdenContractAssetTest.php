@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\ModVersion;
 
 final class SseIndependentEdenContractAssetTest extends TestCase
 {
@@ -42,6 +43,6 @@ final class SseIndependentEdenContractAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_SSE_FirstName', $content);
 
         self::assertStringContainsString('comspec_sse_fnc_edenWriteField', $owHelper);
-        self::assertStringContainsString('1.0.0', $ver);
+        ModVersion::assertAtLeast('1.0.0', ModVersion::fromConfigCpp($ver));
     }
 }
