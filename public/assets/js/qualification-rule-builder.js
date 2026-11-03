@@ -1,6 +1,7 @@
 /*
  * Règle d'obtention automatique d'une qualification : blocs (ET / OU) de conditions (seuil mesuré, formation
- * Academy, autre qualification). Les libellés viennent des gabarits de la page (traduits côté serveur) ; ce script ne
+ * Academy, autre qualification, condition attestée par un instructeur). Les libellés viennent des gabarits de la page
+ * (traduits côté serveur) ; ce script ne
  * fait que cloner, lire et écrire la règle dans le champ caché rule_json (format QualificationCriteriaEngine).
  */
 (function () {
@@ -43,6 +44,15 @@
     });
     var help = item.querySelector('[data-qr-help]');
     help.textContent = '';
+    if (type === 'attestation') {
+      var key = item.querySelector('[data-qr-attest-key]');
+      var aopt = key.options[key.selectedIndex];
+      if (!aopt) return;
+      item.querySelector('[data-qr-attest-min-wrap]').hidden = aopt.getAttribute('data-count') !== '1';
+      item.querySelector('[data-qr-attest-unit]').textContent = unitLabel(aopt.getAttribute('data-unit'));
+      help.textContent = aopt.getAttribute('data-label') || '';
+      return;
+    }
     if (type !== 'metric') return;
     var metric = item.querySelector('[data-qr-metric]');
     var opt = metric.options[metric.selectedIndex];
@@ -65,6 +75,12 @@
     if (c.course_id) node.querySelector('[data-qr-course]').value = String(c.course_id);
     if (c.course_key) node.querySelector('[data-qr-course]').value = 'key:' + c.course_key;
     if (c.definition_id) node.querySelector('[data-qr-def]').value = String(c.definition_id);
+    if (c.type === 'attestation') {
+      node.querySelector('[data-qr-attest-key]').value = c.key || 'other';
+      node.querySelector('[data-qr-attest-min]').value = c.min > 0 ? c.min : '';
+      node.querySelector('[data-qr-attest-label]').value = c.label || '';
+    }
+    node.querySelector('[data-qr-attest-key]').addEventListener('change', function () { syncItem(node, null); write(); });
     syncItem(node, c.scope != null ? c.scope : null);
     node.querySelector('[data-qr-type]').addEventListener('change', function () { syncItem(node, null); write(); });
     node.querySelector('[data-qr-metric]').addEventListener('change', function () { syncItem(node, null); write(); });
@@ -104,6 +120,15 @@
         if (type === 'qualification') {
           var did = parseInt(it.querySelector('[data-qr-def]').value, 10);
           if (did > 0) items.push({ type: 'qualification', definition_id: did });
+          return;
+        }
+        if (type === 'attestation') {
+          // Condition non mesurée par le jeu, validée membre par membre par un instructeur.
+          var akey = it.querySelector('[data-qr-attest-key]');
+          var counts = akey.options[akey.selectedIndex] && akey.options[akey.selectedIndex].getAttribute('data-count') === '1';
+          var amin = parseFloat(String(it.querySelector('[data-qr-attest-min]').value).replace(',', '.'));
+          if (counts && !(amin > 0)) return;
+          items.push({ type: 'attestation', key: akey.value, label: it.querySelector('[data-qr-attest-label]').value, min: counts ? amin : 0 });
           return;
         }
         var min = parseFloat(String(it.querySelector('[data-qr-min]').value).replace(',', '.'));

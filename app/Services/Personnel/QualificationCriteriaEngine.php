@@ -9,7 +9,8 @@ use App\Support\QualificationCriteriaCatalog as Cat;
 
 /**
  * Règle d'obtention automatique d'une qualification : un arbre « toutes / au moins une » de blocs, chaque bloc
- * « toutes / au moins une » de critères (seuil mesuré, formation Academy réussie, autre qualification détenue).
+ * « toutes / au moins une » de critères (seuil mesuré, formation Academy réussie, autre qualification détenue,
+ * condition non mesurée attestée par un instructeur).
  *
  * Généralise PilotQualificationEngine (un palier = des seuils d'heures + un palier précédent) à toutes les données
  * mesurées par le site. Pur : ni base, ni session ; les mesures sont fournies par des fonctions, testable seul.
@@ -89,6 +90,21 @@ final class QualificationCriteriaEngine
 
             return $id > 0 ? ['type' => 'qualification', 'definition_id' => $id] : null;
         }
+        if ($type === 'attestation') {
+            // Condition non mesurée par le jeu : un instructeur l'atteste (nombre de sauts, épreuve réussie…).
+            $key = (string) ($c['key'] ?? 'other');
+            if (!Cat::isAttestation($key)) {
+                $key = 'other';
+            }
+            $label = trim(preg_replace('/\s+/u', ' ', (string) ($c['label'] ?? '')) ?? '');
+            $label = mb_substr($label !== '' ? $label : Cat::attestationLabel($key), 0, 160);
+            $min = Cat::attestationCounts($key) ? round(max(0.0, min(100000.0, (float) str_replace(',', '.', (string) ($c['min'] ?? 0)))), 2) : 0.0;
+            if (Cat::attestationCounts($key) && $min <= 0) {
+                return null;
+            }
+
+            return ['type' => 'attestation', 'key' => $key, 'label' => $label, 'min' => $min];
+        }
         $metric = (string) ($c['metric'] ?? '');
         if (!Cat::isMetric($metric)) {
             return null;
@@ -124,9 +140,11 @@ final class QualificationCriteriaEngine
      * @param callable(int): bool $holdsQualification le membre détient-il cette qualification (valide)
      * @param callable(int|string): bool $passedCourse le membre a-t-il une attestation valide de cette formation (id) ou
      *                                                 terminé ce cours intégré (clé)
+     * @param (callable(array<string, mixed>): ?float)|null $attested valeur attestée par un instructeur pour une
+     *                                                 condition non mesurée (null : pas encore attestée)
      * @return array{met: bool, pct: int, op: string, groups: list<array{op: string, met: bool, pct: int, items: list<array{criterion: array<string, mixed>, met: bool, current: float, target: float, pct: int}>}>}
      */
-    public static function evaluate(array $rule, callable $measure, callable $holdsQualification, callable $passedCourse): array
+    public static function evaluate(array $rule, callable $measure, callable $holdsQualification, callable $passedCourse, ?callable $attested = null): array
     {
         $groups = [];
         foreach ($rule['groups'] ?? [] as $g) {
@@ -138,6 +156,18 @@ final class QualificationCriteriaEngine
                         ? $passedCourse(isset($c['course_key']) ? (string) $c['course_key'] : (int) $c['course_id'])
                         : $holdsQualification((int) $c['definition_id']);
                     $items[] = ['criterion' => $c, 'met' => $ok, 'current' => $ok ? 1.0 : 0.0, 'target' => 1.0, 'pct' => $ok ? 100 : 0];
+                    continue;
+                }
+                if ($type === 'attestation') {
+                    $value = $attested !== null ? $attested($c) : null;
+                    $target = (float) ($c['min'] ?? 0);
+                    if ($target <= 0) {
+                        $ok = $value !== null;
+                        $items[] = ['criterion' => $c, 'met' => $ok, 'current' => $ok ? 1.0 : 0.0, 'target' => 1.0, 'pct' => $ok ? 100 : 0];
+                        continue;
+                    }
+                    $current = round(max(0.0, (float) ($value ?? 0.0)), 2);
+                    $items[] = ['criterion' => $c, 'met' => $current >= $target, 'current' => $current, 'target' => $target, 'pct' => (int) floor(min(1.0, $current / $target) * 100)];
                     continue;
                 }
                 $target = (float) ($c['min'] ?? 0);
@@ -260,7 +290,7 @@ final class QualificationCriteriaEngine
         if (in_array('academy', $types, true)) {
             $modes[] = Cat::MODE_ACADEMY;
         }
-        if (in_array('metric', $types, true) || in_array('qualification', $types, true)) {
+        if (in_array('metric', $types, true) || in_array('qualification', $types, true) || in_array('attestation', $types, true)) {
             $modes[] = Cat::MODE_AUTO;
         }
         if ($hasPilotRule) {

@@ -388,6 +388,8 @@ final class QualificationAwardRuleRepository
                 }
                 $sql .= ' GROUP BY author_user_id';
                 break;
+            case 'seniority_days':
+                return $this->seniorityDays($tenantId);
             case 'item_days':
                 if ($scope === '') {
                     return [];
@@ -424,6 +426,115 @@ final class QualificationAwardRuleRepository
         }
 
         return $out;
+    }
+
+    /**
+     * Ancienneté de chaque membre en jours : depuis la date d’engagement de son dossier, sinon depuis son arrivée dans
+     * la communauté (adhésion d’un membre venu d’une autre communauté, sinon création du compte).
+     *
+     * @return array<int, float>
+     */
+    public function seniorityDays(int $tenantId, ?int $now = null): array
+    {
+        $now ??= time();
+        $queries = [
+            ['SELECT u.id, pp.enlistment_date, m.joined_at, u.created_at FROM users u
+             LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+             LEFT JOIN user_community_memberships m ON m.user_id = u.id AND m.tenant_id = ?
+             WHERE u.tenant_id = ? OR m.tenant_id IS NOT NULL', [$tenantId, $tenantId]],
+            ['SELECT u.id, pp.enlistment_date, NULL, u.created_at FROM users u
+             LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+             WHERE u.tenant_id = ?', [$tenantId]],
+        ];
+        $rows = null;
+        foreach ($queries as [$sql, $params]) {
+            try {
+                $st = $this->pdo()->prepare($sql);
+                $st->execute($params);
+                $rows = $st->fetchAll(PDO::FETCH_NUM) ?: [];
+                break;
+            } catch (Throwable) {
+            }
+        }
+        $out = [];
+        foreach ($rows ?? [] as $r) {
+            $days = self::daysSince([$r[1] ?? null, $r[2] ?? null, $r[3] ?? null], $now);
+            if ($days !== null) {
+                $out[(int) $r[0]] = (float) $days;
+            }
+        }
+
+        return $out;
+    }
+
+    /** Jours écoulés depuis la première date valide de la liste (null : aucune). @param list<mixed> $dates */
+    public static function daysSince(array $dates, int $now): ?int
+    {
+        foreach ($dates as $d) {
+            $d = trim((string) $d);
+            if ($d === '' || str_starts_with($d, '0000')) {
+                continue;
+            }
+            $ts = strtotime(substr($d, 0, 10));
+            if ($ts !== false && $ts <= $now) {
+                return (int) floor(($now - $ts) / 86400);
+            }
+        }
+
+        return null;
+    }
+
+    /* ——————————————————— Conditions attestées par un instructeur ——————————————————— */
+
+    public function attestationsReady(): bool
+    {
+        try {
+            $this->pdo()->query('SELECT 1 FROM qualification_attestations LIMIT 1');
+
+            return true;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Attestations de la communauté : membre => clé (QualificationCriteriaCatalog::attestationStoreKey) => attestation.
+     *
+     * @return array<int, array<string, array{value: float, note: string, attested_by: int, attested_at: string}>>
+     */
+    public function attestationsByUser(int $tenantId): array
+    {
+        try {
+            $st = $this->pdo()->prepare('SELECT user_id, attestation_key, value, note, attested_by, attested_at FROM qualification_attestations WHERE tenant_id = ?');
+            $st->execute([$tenantId]);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $out[(int) $r['user_id']][(string) $r['attestation_key']] = [
+                'value' => (float) $r['value'],
+                'note' => (string) ($r['note'] ?? ''),
+                'attested_by' => (int) ($r['attested_by'] ?? 0),
+                'attested_at' => (string) ($r['attested_at'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
+    /** Enregistre (ou remplace) l’attestation d’un membre. */
+    public function saveAttestation(int $tenantId, int $userId, string $key, float $value, string $note, ?int $actorId): void
+    {
+        $params = [$tenantId, $userId, mb_substr($key, 0, 120), round(max(0.0, $value), 2), mb_substr(trim($note), 0, 255), $actorId, date('Y-m-d H:i:s')];
+        $this->pdo()->prepare('DELETE FROM qualification_attestations WHERE tenant_id = ? AND user_id = ? AND attestation_key = ?')->execute(array_slice($params, 0, 3));
+        $this->pdo()->prepare('INSERT INTO qualification_attestations (tenant_id, user_id, attestation_key, value, note, attested_by, attested_at) VALUES (?, ?, ?, ?, ?, ?, ?)')->execute($params);
+    }
+
+    public function deleteAttestation(int $tenantId, int $userId, string $key): void
+    {
+        $this->pdo()->prepare('DELETE FROM qualification_attestations WHERE tenant_id = ? AND user_id = ? AND attestation_key = ?')->execute([$tenantId, $userId, $key]);
     }
 
     /** Formations de la communauté (pour le choix et les libellés). @return array<int, string> */

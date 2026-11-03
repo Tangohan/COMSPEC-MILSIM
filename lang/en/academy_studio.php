@@ -57,4 +57,7 @@ return [
 'cred_unavailable'=>'The qualifications register is not installed yet.', 'cred_rules_pending'=>'Requirements arrive with the next site update.',
 'cred_rule_error'=>'The requirements could not be saved. Check the thresholds entered.', 'cred_badge_failed'=>'Record saved, but the badge was refused (format or size).',
 'cred_quota_reached'=>'Your plan’s creation limit is reached: the record was not created. Existing qualifications and badges remain editable.', 'cred_quota_line'=>'qualifications and badges created on your plan', 'cred_quota_unlock'=>'More creations with the plan', 'cred_quota_unlimited'=>'unlimited', 'cred_quota_see'=>'See plans',
+'cred_detected'=>'Detected prerequisites', 'cred_detected_help'=>'Requirements read in the description (or the catalogue entry): jumps, flight hours, missions, seniority, rank, another qualification. Nothing is added without your consent: tick, correct the value, then add.',
+'cred_detected_add'=>'Add the ticked prerequisites', 'cred_detected_none'=>'No prerequisite detected in this record’s text.', 'cred_prereqs_added'=>'Prerequisites added to the record.', 'cred_prereqs_none'=>'No prerequisite added: tick the ones to keep.',
+'cred_cond_attest'=>'Attested by an instructor', 'cred_cond_attest_help'=>'Requirements the game does not measure (free-fall jumps, diving, shooting, fitness tests): an instructor validates them for each member on the register record. Untick to remove.',
 ];

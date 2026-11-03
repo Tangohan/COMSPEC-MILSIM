@@ -204,9 +204,9 @@ final class AcademyStudioCredentials
 
     /**
      * Conditions du formulaire du Studio : un seul bloc (toutes / au moins une) de cours réussis, qualifications
-     * détenues et seuils mesurés (heures de jeu, heures de vol par appareil…).
+     * détenues, seuils mesurés (heures de jeu, heures de vol par appareil…) et conditions attestées par un instructeur.
      *
-     * @param array<string, mixed> $in op, courses[], qualifications[], metrics[{metric, scope, min, window_days}]
+     * @param array<string, mixed> $in op, courses[], qualifications[], metrics[{metric, scope, min, window_days}], attestations[{keep, key, label, min}]
      * @return array<string, mixed> règle normalisée (vide : aucune condition)
      */
     public static function ruleFromForm(array $in): array
@@ -228,6 +228,13 @@ final class AcademyStudioCredentials
                     'min' => (string) $row['min'], 'window_days' => (int) ($row['window_days'] ?? 0)];
             }
         }
+        // Conditions attestées par un instructeur (ajoutées depuis « Prérequis détectés » ou le référentiel) : gardées
+        // si leur case reste cochée.
+        foreach (is_array($in['attestations'] ?? null) ? $in['attestations'] : [] as $row) {
+            if (is_array($row) && !empty($row['keep']) && Cat::isAttestation((string) ($row['key'] ?? ''))) {
+                $items[] = ['type' => 'attestation', 'key' => (string) $row['key'], 'label' => (string) ($row['label'] ?? ''), 'min' => (string) ($row['min'] ?? 0)];
+            }
+        }
         // Doublons (même cours coché deux fois…) : une seule fois chacun.
         $items = array_values(array_unique(array_map(static fn (array $i): string => (string) json_encode($i), $items)));
         $items = array_map(static fn (string $j): array => (array) json_decode($j, true), $items);
@@ -237,11 +244,11 @@ final class AcademyStudioCredentials
 
     /**
      * @param array<string, mixed> $rule
-     * @return array{op: string, courses: list<string>, qualifications: list<int>, metrics: list<array<string, mixed>>}
+     * @return array{op: string, courses: list<string>, qualifications: list<int>, metrics: list<array<string, mixed>>, attestations: list<array<string, mixed>>}
      */
     public static function formFromRule(array $rule): array
     {
-        $out = ['op' => (string) ($rule['groups'][0]['op'] ?? 'all'), 'courses' => [], 'qualifications' => [], 'metrics' => []];
+        $out = ['op' => (string) ($rule['groups'][0]['op'] ?? 'all'), 'courses' => [], 'qualifications' => [], 'metrics' => [], 'attestations' => []];
         foreach (QualificationCriteriaEngine::criteria($rule) as $c) {
             $type = (string) ($c['type'] ?? 'metric');
             if ($type === 'academy' && isset($c['course_key'])) {
@@ -250,6 +257,8 @@ final class AcademyStudioCredentials
                 $out['qualifications'][] = (int) $c['definition_id'];
             } elseif ($type === 'metric') {
                 $out['metrics'][] = $c;
+            } elseif ($type === 'attestation') {
+                $out['attestations'][] = $c;
             }
         }
 

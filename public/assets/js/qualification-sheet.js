@@ -145,6 +145,8 @@
                     if (!answer?.ok) throw new Error(answer?.message || '');
                     q.imported = answer.definitions[q.id] || Object.values(answer.definitions)[0];
                     done(q.imported);
+                    // Conditions lues dans la qualification importée : l'encart « Prérequis détectés » les propose.
+                    if (answer.prerequisites_url) actions.append(link('eff-btn eff-btn--primary', 'Voir les prérequis détectés', answer.prerequisites_url));
                     status.textContent = answer.message;
                     options.announce?.(answer.message);
                     options.onImported?.(q);

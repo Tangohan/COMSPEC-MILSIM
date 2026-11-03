@@ -64,6 +64,8 @@ final class QualificationRulesController
             'schemaReady' => $this->service->schemaReady(),
             'defaultIssuer' => $defaultIssuer,
             'issuerLinkReady' => $issuerRepo->linkReady(),
+            'attestations' => $this->service->attestationCriteria($tenantId, $id),
+            'attestReady' => $this->rules->attestationsReady(),
         ]);
     }
 

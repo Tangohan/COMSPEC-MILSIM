@@ -115,8 +115,20 @@ $sessionCats = is_array($ob['sessionCategories'] ?? null) ? $ob['sessionCategori
                             <option value="metric">Seuil mesuré en jeu</option>
                             <option value="academy">Formation Academy réussie</option>
                             <option value="qualification">Autre qualification détenue</option>
+                            <option value="attestation">Attestée par un instructeur</option>
                         </select>
                     </label>
+                    <span class="rq-rule__metric" data-qr-when="attestation">
+                        <label><span class="sr-only">Condition à attester</span>
+                            <select data-qr-attest-key>
+                                <?php foreach ($cat::ATTESTATIONS as $key => $a): ?>
+                                    <option value="<?= $e($key) ?>" data-label="<?= $e($a['help']) ?>" data-count="<?= $a['count'] ? '1' : '0' ?>" data-unit="<?= $e($a['unit']) ?>"><?= $e($a['label']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="rq-rule__min" data-qr-attest-min-wrap>au moins <input type="number" min="0" step="1" inputmode="decimal" data-qr-attest-min aria-label="Nombre attesté"> <span data-qr-attest-unit></span></label>
+                        <label><span class="sr-only">Intitulé de l’épreuve</span><input type="text" maxlength="160" data-qr-attest-label placeholder="Intitulé (ex. tir de qualification à 300 m)"></label>
+                    </span>
                     <span class="rq-rule__metric" data-qr-when="metric">
                         <label><span class="sr-only">Donnée mesurée</span>
                             <select data-qr-metric>
