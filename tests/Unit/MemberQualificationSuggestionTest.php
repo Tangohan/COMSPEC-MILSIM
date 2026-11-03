@@ -135,6 +135,13 @@ final class MemberQualificationSuggestionTest extends TestCase
         self::assertSame(Sug::STATE_NOT_IMPORTED, $airborne['state']);
         self::assertSame('Il manque', $airborne['missing'][0]['text']);
         self::assertSame(3.0, $airborne['missing'][0]['criterion']['min']);
+        // Carte : prérequis avec leur état, valeur du membre et source ; domaine, émetteur, drapeau.
+        $jumps = array_values(array_filter($airborne['checks'], static fn (array $c): bool => $c['source'] === 'game'))[0];
+        self::assertFalse($jumps['ok']);
+        self::assertSame([2.0, 5.0], [$jumps['have'], $jumps['need']]);
+        self::assertSame('airborne', $airborne['domain']);
+        self::assertSame('US', $airborne['country']);
+        self::assertNotSame('', $airborne['issuer']);
         // Qualification exigée non détenue citée comme manquante.
         $icc = Sug::catalogPrerequisiteRefs(\App\Support\QualificationCatalog\QualificationCatalog::findRaw('us-af-tacp-icc') ?? []);
         self::assertContains('us-af-tacp-apprentice', $icc);
@@ -202,7 +209,15 @@ final class MemberQualificationSuggestionTest extends TestCase
     {
         $member = (string) file_get_contents(self::ROOT . '/views/admin/effectifs_workspace/member.php');
         self::assertStringContainsString("views/partials/qualification_suggestions.php", $member);
-        self::assertStringContainsString('id="qualifs-suggerees"', $member);
+        $partial = (string) file_get_contents(self::ROOT . '/views/partials/qualification_suggestions.php');
+        foreach (['id="qualifs-suggerees"', 'data-qsg-bar', '<dialog class="effk-md qsg-md" id="qsg-md"', 'href="#qsg-md" data-qsg-open', 'data-qsg-hide', 'data-qsg-filter="ready"', 'data-qsg-filter="notimp"', 'Comment sont calculées ces suggestions ?', 'data-qsg-action', 'qualification-suggestions.js', 'CatalogCountry::flag(', 'Visual::icon('] as $needle) {
+            self::assertStringContainsString($needle, $partial, $needle);
+        }
+        self::assertStringNotContainsString('<h4 class="eff-fm-sub" id="qualifs-suggerees">', $member, 'plus de gros bloc : info-barre');
+        $js = (string) file_get_contents(self::ROOT . '/public/assets/js/qualification-suggestions.js');
+        foreach (['showModal()', 'sessionStorage', "Accept: 'application/json", 'new DOMParser()', 'data-qsg-body'] as $needle) {
+            self::assertStringContainsString($needle, $js, $needle);
+        }
         $ctrl = (string) file_get_contents(self::ROOT . '/app/Controllers/Admin/EffectifsWorkspaceController.php');
         self::assertStringContainsString("'qualificationSuggestions' => \$this->memberQualificationSuggestions(\$tenantId, \$id)", $ctrl);
         self::assertStringContainsString("->forMember(\$tenantId, \$userId, false,", $ctrl);
@@ -228,5 +243,26 @@ final class MemberQualificationSuggestionTest extends TestCase
         foreach (['Qualifications et brevets suggérés', 'Recommandée pour l’emploi', 'Courante dans les', 'Prérequis de', 'Pas encore dans le référentiel', 'Ignorer pour ce membre', 'unités Special Tactics', 'unités du génie'] as $fr) {
             self::assertStringContainsString("'" . $fr . "' =>", $en, $fr);
         }
+    }
+
+    public function testDismissAnswersJsonToTheModalAndKeepsItsChecks(): void
+    {
+        $controller = (string) file_get_contents(self::ROOT . '/app/Controllers/Admin/MemberQualificationSuggestionsController.php');
+        self::assertStringContainsString("str_contains(strtolower((string) \$request->header('Accept')), 'application/json')", $controller);
+        self::assertStringContainsString("Response::json(['ok' => \$ok, 'message' => \$message], \$ok ? 200 : 422)", $controller);
+        $csrf = strpos($controller, 'Csrf::validate');
+        $rights = strpos($controller, 'self::canDismiss(');
+        $member = strpos($controller, 'isMemberOfTenant(');
+        $write = strpos($controller, '->dismiss($tenantId');
+        self::assertTrue($csrf < $rights && $rights < $member && $member < $write, 'CSRF, droits et membre vérifiés avant l’écriture');
+    }
+
+    public function testVisualDomainAndIcon(): void
+    {
+        $V = \App\Support\QualificationCatalog\QualificationVisual::class;
+        self::assertSame('airborne', $V::domain('Brevet de parachutiste'));
+        self::assertSame('medical', $V::domain('x', 'medical'));
+        self::assertSame('brevet', $V::kind('Brevet de parachutiste'));
+        self::assertStringContainsString('aria-hidden="true"', $V::icon('aviation'));
     }
 }
