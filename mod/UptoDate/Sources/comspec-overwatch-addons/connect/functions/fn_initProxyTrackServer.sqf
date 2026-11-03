@@ -35,7 +35,10 @@ missionNamespace setVariable ["COMSPEC_ProxyTrackServerHooked", true, false];
     // diffuser vite, et petits écarts (au mètre) seulement toutes les 20 s, pour ne pas inonder le réseau.
     // Élection avant les sorties : un nouveau relais (mort, déconnexion, UID plus petit) reçoit le tableau même sans mouvement.
     private _linked = allPlayers select { alive _x && {_x getVariable ["COMSPEC_AtakReporterLinked", false]} && {(getPlayerUID _x) isNotEqualTo ""} };
-    private _b = if (_linked isEqualTo []) then {objNull} else {([_linked, [], { getPlayerUID _x }, "ASCEND"] call BIS_fnc_sortBy) select 0};
+    // Plus petit UID : sort natif (BIS_fnc_sortBy toutes les 4 s avant).
+    private _uids = _linked apply { getPlayerUID _x };
+    private _min = +_uids; _min sort true;
+    private _b = if (_linked isEqualTo []) then {objNull} else {_linked select (_uids find (_min select 0))};
     private _to = if (isNull _b) then {""} else {getPlayerUID _b};
     private _sameTo = _to isEqualTo (missionNamespace getVariable ["COMSPEC_AllyTrackSnapTo", ""]);
     if (_sameTo && {_sig isEqualTo (missionNamespace getVariable ["COMSPEC_AllyTrackSnapSig", []])}) exitWith {};

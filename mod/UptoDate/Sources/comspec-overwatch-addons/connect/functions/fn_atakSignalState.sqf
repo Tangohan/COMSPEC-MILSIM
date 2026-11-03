@@ -32,7 +32,7 @@ private _info = createHashMap;
 if (!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay") then {
     _info = [] call comspec_overwatch_connect_fnc_getNearestAtakRelay;
 };
-if (!(_info isEqualType createHashMap) || {(count (keys _info)) < 1}) exitWith {
+if (!(_info isEqualType createHashMap) || {(count _info) < 1}) exitWith {
     if (_jammed) then {
         _out set ["bars", 0];
         _out set ["jammed", true];

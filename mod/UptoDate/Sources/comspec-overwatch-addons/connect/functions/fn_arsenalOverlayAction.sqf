@@ -156,11 +156,12 @@ switch (_act) do {
                      (_cw * _ch) < (_screen * 0.5) && {_cx < (_gx + _gw)} && {(_cx + _cw) > _gx} && {_cy < (_gy + _gh)} && {(_cy + _ch) > _gy} }
             };
             _d setVariable ["COMSPEC_ArsenalHidden", _under];
-            [{
+            // Une seule boucle par panneau : rouvert en moins de 0,25 s, l'ancienne boucle se retire (avant : deux en parallèle).
+            _d setVariable ["COMSPEC_ArsenalHidePfh", [{
                 params ["_d", "_pfh"];
-                if (isNull _d || {!(_d getVariable ["COMSPEC_ArsenalOverlayOpen", false])}) exitWith { [_pfh] call CBA_fnc_removePerFrameHandler; };
+                if (isNull _d || {!(_d getVariable ["COMSPEC_ArsenalOverlayOpen", false])} || {(_d getVariable ["COMSPEC_ArsenalHidePfh", -1]) isNotEqualTo _pfh}) exitWith { [_pfh] call CBA_fnc_removePerFrameHandler; };
                 { if (!isNull _x && {ctrlShown _x}) then { _x ctrlShow false; }; } forEach (_d getVariable ["COMSPEC_ArsenalHidden", []]);
-            }, 0.25, _d] call CBA_fnc_addPerFrameHandler;
+            }, 0.25, _d] call CBA_fnc_addPerFrameHandler];
             { _x ctrlShow false; } forEach _under;
         };
     };
