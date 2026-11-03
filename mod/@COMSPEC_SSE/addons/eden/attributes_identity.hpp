@@ -5,7 +5,7 @@
     qualité font partie de la vérité, que les joueurs ne doivent pas pouvoir lire sur l'unité.
       COMSPEC_ID_Carry    auto | none | card | passport | license | card_license | card_passport
       COMSPEC_ID_Country  auto | ALT | TNA | LVN | MLD          COMSPEC_ID_Kind  civil | cover | forged
-      COMSPEC_ID_Quality  0-100 (faux)
+      COMSPEC_ID_Quality  0-100 (faux)          COMSPEC_ID_Profile  auto | civil | insurge | hvt | agent | policier (IA réalistes)
     Automatique : les joueurs n'ont rien, les IA ont des papiers selon leur camp (réglages COMSPEC SSE › Identité).
 */
 class COMSPEC_SSE_Papiers {
@@ -61,6 +61,25 @@ class COMSPEC_SSE_Papiers {
                 class Civil { name = "$STR_COMSPEC_SSE_CFG_45FF8F0E18"; value = "civil"; default = 1; };
                 class Cover { name = "$STR_COMSPEC_SSE_CFG_95F9CC59DC"; value = "cover"; };
                 class Forged { name = "$STR_COMSPEC_SSE_CFG_9A36AFA781"; value = "forged"; };
+            };
+        };
+        // IA réalistes (Lot 3) : profil au contrôle, vérité serveur (jamais diffusée).
+        class COMSPEC_ID_Profile {
+            displayName = "$STR_COMSPEC_SSE_CFG_EDA7AF9B0E";
+            tooltip = "$STR_COMSPEC_SSE_CFG_03E9E5EBB4";
+            property = "COMSPEC_ID_Profile";
+            control = "Combo";
+            expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_Profile', _value]; };";
+            defaultValue = "'auto'";
+            typeName = "STRING";
+            condition = "objectBrain";
+            class values {
+                class Auto { name = "$STR_COMSPEC_SSE_CFG_F8A3C37BEB"; value = "auto"; default = 1; };
+                class Civil { name = "$STR_COMSPEC_SSE_CFG_496B2073F0"; value = "civil"; };
+                class Insurge { name = "$STR_COMSPEC_SSE_CFG_DA14187553"; value = "insurge"; };
+                class Hvt { name = "$STR_COMSPEC_SSE_CFG_1743A99AA7"; value = "hvt"; };
+                class Agent { name = "$STR_COMSPEC_SSE_CFG_86DAFE2F48"; value = "agent"; };
+                class Policier { name = "$STR_COMSPEC_SSE_CFG_6FE6600A2D"; value = "policier"; };
             };
         };
         class COMSPEC_ID_Quality {

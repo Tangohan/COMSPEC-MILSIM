@@ -68,6 +68,10 @@ switch (_op) do {
         // Personne signalée, recherchée, HVT, document volé ou révoqué : le téléphone vibre (sans son en discrétion).
         if ((_rec get "verdict") in ["signale", "recherche", "hvt", "vole", "revoque"] && {!(_rec get "alerted")}) then {
             _rec set ["alerted", true];
+            // ATAK 3.0.2 et plus : vibreur seul (aucun son, aucun bandeau ; rangée au centre de notifications).
+            if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) exitWith {
+                ["MESSAGE", format [("Contrôle ID : %1 — %2" call comspec_sse_fnc_tr), toUpper (_rec get "verdict"), _rec get "subjName"], 0, 10, "IDCHECK", "vibrate"] call comspec_atak_native_fnc_notify;
+            };
             if (!isNil "comspec_atak_native_fnc_vibrate") then { [] call comspec_atak_native_fnc_vibrate; };
             [format ["Contrôle ID : %1 — %2", toUpper (_rec get "verdict"), _rec get "subjName"], "WARNING", "", "IDCHECK"] call comspec_sse_fnc_notify;
         };

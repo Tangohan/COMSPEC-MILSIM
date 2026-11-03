@@ -2,6 +2,8 @@
     Visionneuse de document (dialogs/idViewer.hpp) : gabarit PAA étiré au format réel, champs en texte structuré
     superposés aux coordonnées du gabarit (tools/gen_id_assets.py, LAYOUT), MRZ en police à chasse fixe.
     ["load", display] · ["side"] recto / verso · ["zoom"] · ["scan"] app Contrôle ID de l'ATAK · ["render"]
+    Bouton « Photographier » : cliché du document joint à la fiche FRM (fn_idPhoto) ; ouvert depuis l'app pour une photo,
+    le cliché part tout seul une demi-seconde après l'affichage.
     Défauts physiques d'un faux rendus tels quels (hologramme absent, police différente, photo rapportée) : un
     contrôleur attentif les voit ; le constat écrit (N0) dépend de sa compétence et de la lumière.
 */
@@ -184,11 +186,15 @@ private _rem = if ((count _n0) > 0) then {
 (_d displayCtrl 93705) ctrlShow (_rem isNotEqualTo "");
 (_d displayCtrl 93705) ctrlCommit 0;
 private _by = _cy + _ch + safezoneH * 0.07;
-private _bw = (_cw - 0.03) / 4;
+private _bw = (_cw - 0.04) / 5;
 {
     _x params ["_idc", "_show"];
     private _b = _d displayCtrl _idc;
     _b ctrlSetPosition [_cx + _forEachIndex * (_bw + 0.01), _by, _bw, safezoneH * 0.045];
     _b ctrlShow _show;
     _b ctrlCommit 0;
-} forEach [[93710, _type isNotEqualTo "passport"], [93711, true], [93712, !(_st get "own")], [93713, true]];
+} forEach [[93710, _type isNotEqualTo "passport"], [93711, true], [93712, !(_st get "own")], [93714, !(_st get "own")], [93713, true]];
+if ((_st getOrDefault ["auto", false]) && {!(_st getOrDefault ["shot", false])}) then {
+    _st set ["shot", true];
+    [{ ["shoot"] call comspec_sse_fnc_idPhoto; }, [], 0.5] call CBA_fnc_waitAndExecute;
+};
