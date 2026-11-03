@@ -140,6 +140,7 @@ $chipNames = ['categorie' => 'Domaine', 'emetteur' => 'Émetteur', 'niveau' => '
     <?php endforeach ?>
 </nav>
 <?php endif ?>
+<?php if ($oxCanImport) { require __DIR__ . '/import_wizard.php'; } /* Assistant d'importation du catalogue de référence. */ ?>
 <?php endif ?>
 
 <?php if ($tab !== 'tout'): ?>
