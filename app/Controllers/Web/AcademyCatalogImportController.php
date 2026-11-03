@@ -13,11 +13,14 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Services\Audit\AuditService;
 use App\Services\Billing\QualificationCatalogQuota;
+use App\Services\Personnel\CommunityQualificationRecommender;
 use App\Services\Personnel\QualificationCatalogImportWizard;
 use App\Services\Personnel\QualificationPrerequisiteSuggester;
 use App\Services\Personnel\QualificationReferenceWriter;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Tenant\TenantContext;
+use App\Support\OrgVisibilityCapabilities;
+use App\Support\QualificationCatalog\CatalogCountry;
 use App\Support\QualificationCatalog\QualificationCatalog;
 use Throwable;
 
@@ -33,6 +36,10 @@ use Throwable;
 final class AcademyCatalogImportController
 {
     private const JOBS = 'academy_catalog_import_jobs';
+
+    /** Recommandations gardées par communauté le temps de l'assistant (session). */
+    private const RECO = 'academy_catalog_import_reco';
+    private const RECO_TTL = 900;
 
     /** Données de l'assistant : lignes du catalogue (déjà dans le référentiel ou non), choix de portée, formule. */
     public function data(Request $request, array $params = []): Response
@@ -56,6 +63,47 @@ final class AcademyCatalogImportController
             'bulk_offer' => QualificationCatalogQuota::upgradeOffer(QualificationCatalogQuota::BULK),
             'batch' => QualificationCatalogImportWizard::BATCH,
         ]);
+    }
+
+    /**
+     * « Recommandé pour votre communauté » : qualifications et brevets du catalogue pertinents au vu de l'ORBAT
+     * (nature des unités, unités réelles, pays) et des fonctions (emplois du catalogue reconnus), groupés par raison,
+     * avec ce qui a été détecté. Calcul agrégé gardé en session par communauté (RECO_TTL) ; l'état « déjà dans le
+     * référentiel » est relu à chaque appel. Unités confidentielles non nommées à qui n'est pas habilité.
+     */
+    public function recommendations(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->guard();
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $lang = self::lang();
+        $caps = OrgVisibilityCapabilities::fromGate(Gate::getInstance());
+        $staff = $caps->bypassAll || $caps->viewHiddenUnits || $caps->viewRestrictedUnits;
+        $importer = $this->wizard()->importer();
+        $imported = $importer->importedCodes($tenantId);
+        $cache = Session::get(self::RECO, []);
+        $cache = is_array($cache) ? $cache : [];
+        $key = $tenantId . '|' . $lang . '|' . ($staff ? 's' : 'm');
+        $hit = $cache[$key] ?? null;
+        if (is_array($hit) && (int) ($hit['at'] ?? 0) > time() - self::RECO_TTL && is_array($hit['data'] ?? null)) {
+            $reco = CommunityQualificationRecommender::markImported($hit['data'], $imported);
+        } else {
+            try {
+                $reco = (new CommunityQualificationRecommender(Database::getPdo()))->forTenant($tenantId, $staff, $imported, $importer->importedDefinitions($tenantId), $lang);
+            } catch (Throwable $e) {
+                error_log('Assistant d’importation (recommandations) : ' . $e->getMessage());
+                $reco = ['detected' => ['natures' => [], 'jobs' => [], 'country' => '', 'country_label' => '', 'country_source' => '', 'units' => 0, 'roles' => 0], 'groups' => []];
+            }
+            $cache = array_filter($cache, static fn (mixed $c): bool => is_array($c) && (int) ($c['at'] ?? 0) > time() - self::RECO_TTL);
+            $cache[$key] = ['at' => time(), 'data' => $reco];
+            Session::set(self::RECO, $cache);
+        }
+        if ($reco['detected']['country'] !== '') {
+            $reco['detected']['country_flag'] = CatalogCountry::flag((string) $reco['detected']['country']);
+        }
+
+        return self::json(['ok' => true] + $reco);
     }
 
     /** Aperçu : éléments, préalables manquants, émetteurs, prérequis détectés, cours liés, places de la formule. */

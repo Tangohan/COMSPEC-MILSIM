@@ -12,7 +12,7 @@ $aiwSteps = [['label' => 'Portée', 'active' => true], ['label' => 'Aperçu'], [
     <span class="aiw-launch__flags" aria-hidden="true"><?php foreach (array_keys(\App\Support\QualificationCatalog\QualificationCatalog::COUNTRIES) as $cc) { echo \App\Support\QualificationCatalog\CatalogCountry::flag($cc); } ?></span>
     <div>
         <h2 id="aiw-launch-title">Assistant d’importation</h2>
-        <p>Importez dans votre référentiel tout le catalogue, un pays, une catégorie, un domaine, un niveau ou un émetteur, avec un aperçu avant de valider.</p>
+        <p>Importez dans votre référentiel ce qui est recommandé pour votre communauté, tout le catalogue, un pays, une catégorie, un domaine, un niveau ou un émetteur, avec un aperçu avant de valider.</p>
     </div>
     <button type="button" class="button small" data-aiw-open><span>Ouvrir l’assistant</span></button>
 </section>
@@ -35,6 +35,11 @@ $aiwSteps = [['label' => 'Portée', 'active' => true], ['label' => 'Aperçu'], [
 
         <section data-aiw-step="1" aria-labelledby="aiw-s1">
             <h3 id="aiw-s1" class="aiw-sr">Portée</h3>
+            <section class="aiw-reco" aria-labelledby="aiw-reco-title" data-aiw-reco>
+                <h4 id="aiw-reco-title" class="aiw-reco__title">Recommandé pour votre communauté</h4>
+                <p class="aiw-hint">D’après vos unités dans l’ORBAT et les fonctions de vos membres. Cochez un groupe pour l’ajouter à la sélection.</p>
+                <div data-aiw-reco-body><p class="aiw-hint" role="status">Analyse de votre communauté…</p></div>
+            </section>
             <div class="aiw-live" role="status" aria-live="polite" data-aiw-count>Chargement du catalogue…</div>
             <div class="aiw-scope">
                 <button type="button" class="aiw-all" data-aiw-all aria-pressed="true"><b>Tout le catalogue</b> <span data-aiw-all-count></span></button>
