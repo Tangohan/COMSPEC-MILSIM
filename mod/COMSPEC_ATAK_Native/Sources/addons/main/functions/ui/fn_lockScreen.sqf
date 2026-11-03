@@ -198,7 +198,8 @@ switch (_act) do {
         { _x params ["_c", "_w"]; _c ctrlSetPosition [_cx0, _y, _w, _chipH]; _c ctrlCommit 0; _cx0 = _cx0 + _w + _gap; } forEach _chips;
         _y = _y + _chipH + _pad * 1.6;
         // Dernières notifications : 3 en paysage, 4 en portrait ; « + n autres » au-delà.
-        private _hist = _s getOrDefault ["notifHistory", []];
+        // Alertes « vibreur seul » (fn_notify mode vibrate) : jamais affichées sur l'écran verrouillé.
+        private _hist = (_s getOrDefault ["notifHistory", []]) select { !(_x getOrDefault ["discreet", false]) };
         uiNamespace setVariable ["COMSPEC_ATAK_LockNotifN", call _notifSig];
         private _maxN = [4, 3] select _land;
         private _last = [];
