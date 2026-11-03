@@ -5,6 +5,7 @@
       docs [cible, [[poignée, classe, libellé]…]] · doc [document imprimé, N0, sujet, mien, clé] · blank [poignée]
       result [docId, niveau, résultat] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
       notify [texte, type] · zeus [texte, genre] · packFetch []
+      say [nom, phrase, type, indice]   phrase courte d'une IA contrôlée (IA réalistes), traduite ici
     État local (jamais diffusé) : comspec_sse_idTokens (documents présentés), comspec_sse_idSearch (dernière fouille),
     comspec_sse_idSeized (pièces saisies, pour « Rendre »), comspec_sse_idPending (demandes reçues).
 */
@@ -29,9 +30,18 @@ switch (_op) do {
         _tokens set [_id, [_holder, _label, time + ((missionNamespace getVariable ["comspec_sse_id_tokenTime", 120]) - 1)]];
         [format ["%1 vous présente : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité.", [name _holder, "On"] select (isNull _holder), _label]] call _say;
     };
+    case "say": {
+        _a params [["_n", ""], ["_t", ""], ["_type", "INFO"], ["_hint", ""]];
+        private _p = _t call comspec_sse_fnc_tr;
+        private _line = if ((_t select [0, 1]) isEqualTo "(") then { format ["%1 %2", _n, _p] } else { format ["%1 : « %2 »", _n, _p] };
+        if (_hint isNotEqualTo "") then { _line = _line + format [" [%1]", _hint call comspec_sse_fnc_tr]; };
+        [_line, _type] call _say;
+    };
     case "answer": {
         _a params [["_t", objNull], ["_ans", ""], ["_text", ""]];
-        [format ["%1 : %2", [name _t, "?"] select (isNull _t), _text], ["INFO", "WARNING"] select (_ans in ["refuse", "flee", "none"])] call _say;
+        // Dernière réponse d'une personne contrôlée : reprise par les comptes rendus SALUTE / SPOTREP (fn_idReport).
+        missionNamespace setVariable ["comspec_sse_idLastAnswer", [_t, _ans, _text, time]];
+        [format ["%1 : %2", [name _t, "?"] select (isNull _t), _text call comspec_sse_fnc_tr], ["INFO", "WARNING"] select (_ans in ["refuse", "flee", "none"])] call _say;
     };
     case "docs": {
         _a params [["_t", objNull], ["_list", []]];

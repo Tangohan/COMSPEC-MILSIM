@@ -7,6 +7,8 @@
       watch    [[nom, prénom, alias, niveau, réf]…]  (avis locaux + paquet Athena)
       athena   "PAYS|type|numéro" -> document Athena (paquet)    countries  pays du paquet
       tokens   "poste|docId" -> fin de validité     flood  poste -> dernière demande     begin  "poste|op|cible" -> début
+      controlled  netId -> [heure, contrôleur, libellé] (personnes contrôlées : interpellation au compte rendu AAR)
+      aarSeen  constats déjà inscrits au compte rendu AAR (une ligne par document et par verdict)
     [_op, _args] call comspec_sse_fnc_idRegistry
       "init"                 crée le registre (XEH_postInit serveur)
       "alloc"   [catalogue]  -> classe d'exemplaire libre ("" si le stock est épuisé)
@@ -29,7 +31,7 @@ if (_op isEqualTo "init") exitWith {
         ["docs", createHashMap], ["byClass", createHashMap], ["free", _free], ["units", createHashMap],
         ["decided", createHashMap], ["issued", createHashMap], ["watch", []], ["athena", createHashMap],
         ["countries", createHashMap], ["tokens", createHashMap], ["flood", createHashMap], ["begin", createHashMap],
-        ["requests", createHashMap], ["seq", 0]
+        ["requests", createHashMap], ["seq", 0], ["controlled", createHashMap], ["aarSeen", createHashMap]
     ];
     missionNamespace setVariable ["comspec_sse_idReg", comspec_sse_idReg];
     comspec_sse_idReg

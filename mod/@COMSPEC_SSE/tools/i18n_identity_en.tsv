@@ -195,3 +195,153 @@ Fiches : COMSPEC Overwatch doit être chargé	Reports: COMSPEC Overwatch must be
 Rendre les papiers du kit au respawn	Return kit papers on respawn
 Les joueurs qui ont un kit de papiers sur Athena (fiche membre) le retrouvent à chaque réapparition. Décoché : seulement à l'arrivée en mission.	Players with a papers kit on Athena (member profile) get it back at every respawn. Unticked: only when they join the mission.
 Vos papiers de mission vous ont été remis (%1).	Your mission papers have been handed to you (%1).
+Aucun contrôle en cours : rien à photographier.	No check in progress: nothing to photograph.
+Cliché impossible (dossier des captures plein ?).	Photo impossible (screenshots folder full?).
+Photo du document jointe à la fiche FRM (%1/4).	Document photo attached to the FRM report (%1/4).
+Photo prise, mais la fiche FRM a déjà 4 pièces jointes : retirez-en une dans l'app FRS.	Photo taken, but the FRM report already has 4 attachments: remove one in the FRS app.
+Photo du document	Document photo
+jointe à la FRM	attached to the FRM
+Photographier	Photograph
+PHOTOGRAPHIER	PHOTOGRAPH
+Photo du document jointe à la fiche FRM (app FRS de l'ATAK)	Document photo attached to the FRM report (ATAK FRS app)
+Photo du document jointe à la fiche FRM (pièces jointes de l'app FRS).	Document photo attached to the FRM report (FRS app attachments).
+Compte rendu SALUTE pré-rempli avec ce contrôle.	SALUTE report pre-filled with this check.
+Compte rendu SPOTREP pré-rempli avec ce contrôle.	SPOTREP report pre-filled with this check.
+Aucun contrôle en cours.	No check in progress.
+SALUTE pré-rempli avec le contrôle : relisez puis envoyez	SALUTE pre-filled with the check: review, then send
+SPOTREP pré-rempli avec le contrôle : relisez puis envoyez	SPOTREP pre-filled with the check: review, then send
+Contrôle d'identité, verdict %1	Identity check, verdict %1
+tenue civile	civilian clothes
+aucune arme visible	no visible weapon
+%1 · papiers : %2	%1 · papers: %2
+Oui ?	Yes?
+Bonjour… il y a un problème ?	Hello… is there a problem?
+Qu'est-ce qu'il y a ?	What is it?
+D'accord, voilà.	Alright, here.
+Pas de problème.	No problem.
+Tenez, monsieur.	Here you go, sir.
+Tout est en règle, vous verrez.	Everything is in order, you'll see.
+Je m'appelle %1 %2, je suis en règle.	My name is %1 %2, my papers are in order.
+Je suis %1, je vais au travail.	I'm a %1, I'm going to work.
+Je rentre chez moi, à %1.	I'm going home, to %1.
+Euh… oui, une seconde.	Uh… yes, one second.
+Pourquoi moi ?	Why me?
+Je… je suis un peu pressé.	I… I'm in a bit of a hurry.
+Je n'ai rien à vous montrer.	I have nothing to show you.
+Laissez-moi tranquille.	Leave me alone.
+Vous n'avez pas le droit.	You have no right.
+(il s'enfuit en courant)	(runs away)
+(il détale sans un mot)	(bolts without a word)
+Reculez !	Back off!
+N'approchez pas !	Stay away!
+Ne tirez pas !	Don't shoot!
+D'accord, d'accord… je me rends.	Okay, okay… I give up.
+(il crie quelque chose vers les maisons voisines)	(shouts something towards the nearby houses)
+(il passe un appel rapide au téléphone)	(makes a quick phone call)
+attentif	attentive
+coopère	cooperating
+trop sûr de lui	too sure of himself
+nerveux	nervous
+fermé	closed off
+en fuite	fleeing
+menaçant	threatening
+se rend	surrendering
+appelle à l'aide	calling for help
+Il sourit et vous tend ses papiers sans hésiter.	He smiles and hands you his papers without hesitation.
+Il hésite, jette un regard autour de lui, puis vous tend ses papiers d'une main qui tremble.	He hesitates, glances around, then hands you his papers with a shaking hand.
+Il lève les mains : vous prenez ses papiers.	He raises his hands: you take his papers.
+Il refuse de montrer ses papiers et croise les bras.	He refuses to show his papers and crosses his arms.
+Il secoue la tête : pas de papiers pour vous.	He shakes his head: no papers for you.
+Il refuse et crie quelque chose vers les maisons voisines !	He refuses and shouts something towards the nearby houses!
+Il recule d'un pas, la main sur son arme !	He steps back, hand on his weapon!
+Checkpoint %1 : halte ! Papiers, s'il vous plaît. Approchez-vous du garde et présentez-les (menu ACE personnel › Mes papiers), vous avez %2 s.	Checkpoint %1: halt! Papers, please. Walk up to the guard and present them (ACE self menu › My papers), you have %2 s.
+Checkpoint %1 : le garde examine votre document à l'œil.	Checkpoint %1: the guard examines your document by eye.
+Checkpoint %1 : le garde examine votre document et lit sa bande MRZ.	Checkpoint %1: the guard examines your document and reads its MRZ strip.
+Checkpoint %1 : le garde examine votre document, lit sa bande MRZ et sa puce.	Checkpoint %1: the guard examines your document, reads its MRZ strip and its chip.
+Checkpoint %1 : le garde examine votre document et interroge la base.	Checkpoint %1: the guard examines your document and queries the database.
+Checkpoint %1 : c'est bon, circulez.	Checkpoint %1: all good, move along.
+Checkpoint %1 : fouille. Restez immobile près du garde (8 s).	Checkpoint %1: search. Stay still next to the guard (8 s).
+Checkpoint %1 : fouille terminée.	Checkpoint %1: search complete.
+Checkpoint %1 : vous êtes retenu. Ne bougez pas, mains sur la tête (ACE › Se rendre).	Checkpoint %1: you are detained. Don't move, hands on your head (ACE › Surrender).
+Checkpoint %1 : ALERTE ! Les gardes vous mettent en joue.	Checkpoint %1: ALERT! The guards take aim at you.
+Checkpoint %1 : LES GARDES OUVRENT LE FEU !	Checkpoint %1: THE GUARDS OPEN FIRE!
+Checkpoint %1 : %2 retenu (%3).	Checkpoint %1: %2 detained (%3).
+Checkpoint %1 : alerte sur %2 (%3).	Checkpoint %1: alert on %2 (%3).
+Checkpoint %1 : ouverture du feu sur %2 (%3).	Checkpoint %1: opening fire on %2 (%3).
+Checkpoint %1 : %2 relâché après 3 minutes.	Checkpoint %1: %2 released after 3 minutes.
+Checkpoint %1 : %2 est passé sans s'arrêter.	Checkpoint %1: %2 went through without stopping.
+Checkpoint IA « %1 » : %2 garde(s), %3 m, équipement : %4, sévérité %5.	AI checkpoint "%1": %2 guard(s), %3 m, equipment: %4, severity %5.
+Checkpoint IA : aucune IA du camp choisi pour tenir le poste dans la zone. Placez des soldats, puis reposez le module.	AI checkpoint: no AI of the chosen side to man the post in the zone. Place soldiers, then place the module again.
+Placez le module sur une personne vivante.	Place the module on a living person.
+Contrôle de %1 déclenché au checkpoint %2.	Check of %1 started at checkpoint %2.
+Aucune IA (hors civils) à moins de 80 m pour faire le contrôle.	No AI (other than civilians) within 80 m to carry out the check.
+%1 contrôle %2. %3	%1 checks %2. %3
+Aucun checkpoint IA à moins de 200 m.	No AI checkpoint within 200 m.
+Checkpoint IA « %1 » retiré.	AI checkpoint "%1" removed.
+Placez le module sur une IA (pas un joueur).	Place the module on an AI (not a player).
+%1 : état « %2 » imposé.	%1: state "%2" forced.
+IA réalistes désactivées ou état inconnu.	Realistic AI disabled or unknown state.
+Couvre-feu levé.	Curfew lifted.
+Couvre-feu en vigueur : les civils dehors sont plus nerveux.	Curfew in force: civilians outside are more nervous.
+Checkpoint IA	AI checkpoint
+Retirer un checkpoint IA	Remove an AI checkpoint
+Déclencher un contrôle	Start a check
+Forcer un état IA	Force an AI state
+Couvre-feu	Curfew
+Rayon (m)	Radius (m)
+Zone contrôlée autour du module. 0 : réglage « Distance des checkpoints ».	Controlled zone around the module. 0: "Checkpoint distance" setting.
+Camp du poste	Checkpoint side
+Camp des gardes. Automatique : celui des IA les plus proches du module.	Side of the guards. Automatic: that of the AI nearest to the module.
+Automatique	Automatic
+Indépendant	Independent
+Civil (police)	Civilian (police)
+Équipement du poste	Checkpoint equipment
+Visuel seul : examen à l'œil (N0). Scanner : bande MRZ (N1). Lecteur NFC : puce (N2). Liaison base : fichiers (N3).	Visual only: examined by eye (L0). Scanner: MRZ strip (L1). NFC reader: chip (L2). Database link: files (L3).
+Visuel seul	Visual only
+Scanner MRZ	MRZ scanner
+Lecteur NFC	NFC reader
+Liaison base	Database link
+Sévérité	Severity
+Laxiste : laisse passer presque tout. Stricte : fouille et retient au moindre doute, ouvre le feu sur une menace armée.	Lax: lets almost everything through. Strict: searches and detains at the slightest doubt, opens fire on an armed threat.
+Laxiste	Lax
+Normale	Normal
+Stricte	Strict
+Nom du poste	Checkpoint name
+Facultatif, affiché aux joueurs contrôlés.	Optional, shown to checked players.
+Contrôle — %1	Check — %1
+Équipement	Equipment
+Sans checkpoint autour : celui de l'IA la plus proche qui fait le contrôle.	Without a checkpoint around: that of the nearest AI carrying out the check.
+Sans checkpoint autour : sévérité de ce contrôle.	Without a checkpoint around: severity of this check.
+État — %1	State — %1
+État	State
+Ordres réels donnés à l'IA (arrêt, fuite, reddition ACE, hostilité, renforts…). Elle réagit de nouveau d'elle-même 30 s plus tard.	Real orders given to the AI (stop, flight, ACE surrender, hostility, reinforcements…). It reacts on its own again 30 s later.
+Interpellé	Stopped
+Coopère	Cooperates
+Ment (présente sa couverture)	Lies (shows his cover)
+Nerveux	Nervous
+Refuse	Refuses
+Fuit	Flees
+Agressif	Aggressive
+Se rend	Surrenders
+Appelle des renforts	Calls reinforcements
+Calme (laisser partir)	Calm (let go)
+En vigueur : les civils contrôlés dehors sont plus nerveux.	In force: civilians checked outside are more nervous.
+En vigueur	In force
+Levé	Lifted
+IA réalistes au contrôle	Realistic AI when checked
+Une IA contrôlée réagit selon son profil, son état et la situation : elle coopère, ment, devient nerveuse, refuse, s'enfuit, se rend, menace ou appelle des renforts. Décoché : réponses simples.	A checked AI reacts according to its profile, its condition and the situation: it cooperates, lies, gets nervous, refuses, flees, surrenders, threatens or calls reinforcements. Unchecked: simple answers.
+Agressivité des IA (%)	AI aggressiveness (%)
+Plus haut : les suspects contrôlés sont plus tendus, fuient, menacent et appellent des renforts plus souvent. 50 : réaliste.	Higher: checked suspects are tenser, flee, threaten and call reinforcements more often. 50: realistic.
+Distance des checkpoints (m)	Checkpoint distance (m)
+Rayon de la zone contrôlée par un checkpoint IA quand le module n'en impose pas.	Radius of the zone controlled by an AI checkpoint when the module does not set one.
+Délai pour présenter ses papiers (s)	Time to present papers (s)
+Temps laissé à un joueur arrêté par un checkpoint IA pour présenter ses papiers (menu ACE personnel › Mes papiers).	Time given to a player stopped by an AI checkpoint to present their papers (ACE self menu › My papers).
+Les checkpoints contrôlent aussi les IA	Checkpoints also check AI
+Ambiance : de temps en temps, les gardes arrêtent une IA qui passe, lisent ses papiers, puis la laissent partir ou la retiennent.	Ambience: now and then the guards stop a passing AI, read its papers, then let it go or detain it.
+Les civils dehors sont plus nerveux quand on les contrôle. Le Zeus peut aussi l'imposer ou le lever en cours de mission.	Civilians outside are more nervous when checked. Zeus can also impose or lift it during the mission.
+=== CONTRÔLES D'IDENTITÉ ===	=== IDENTITY CHECKS ===
+Partager	Share
+Sur mon téléphone	On my phone
+Fiche du contrôle envoyée en Bluetooth à un équipier appairé.	Check report sent over Bluetooth to a paired teammate.
+Fiche du contrôle tendue au téléphone le plus proche (2 m), sans appairage.	Check report handed to the nearest phone (2 m), without pairing.
+QR code : vos contrôles de la partie sur votre vrai téléphone.	QR code: your checks of this game on your real phone.

@@ -16,6 +16,10 @@
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
       kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
       give / report / truth / pack       Zeus (curateur) : donner des papiers, signaler, vraie identité, paquet Athena
+      fsmForce [moi, ia, état]           Zeus : impose un état à une IA (automate des IA réalistes, fn_idAiFsm)
+      cpCreate [moi, position, réglages] · cpTrigger [moi, personne, réglages] · cpRemove [moi, position]
+                                         Zeus : checkpoint IA posé, contrôle déclenché, checkpoint retiré (fn_idCheckpoint)
+      curfew   [moi, vrai | faux]        Zeus : couvre-feu (les civils dehors sont plus nerveux)
     Points d'entrée du Lot 3 (checkpoints IA), appel local au serveur seulement :
       ["aiAsk", [ia, joueur]] call comspec_sse_fnc_idServer   l'IA demande ses papiers à un joueur
     Évènements CBA serveur : comspec_sse_idAsked [cible, contrôleur], comspec_sse_idPresented [porteur, docId,
@@ -34,7 +38,8 @@ if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) ex
     diag_log text format ["[COMSPEC SSE] Identité : « %1 » refusé au poste %2 (unité d'un autre poste).", _op, _owner];
 };
 private _floodKey = format ["%1|%2", _owner, _op];
-if (_op isNotEqualTo "begin" && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
+// Anti-flood des postes distants seulement : les appels internes du serveur (checkpoints IA) passent tous.
+if (isRemoteExecuted && {_op isNotEqualTo "begin"} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
 (_reg get "flood") set [_floodKey, time];
 
 private _reply = {
@@ -105,6 +110,22 @@ private _resolve = {
     };
     [_d, _holder, _ok, _subj]
 };
+// Compte rendu AAR : personne contrôlée (pour l'interpellation qui suivrait) et constat notable, une ligne par document
+// et par verdict. IA dont le faux vient d'être découvert : la tension monte (automate des IA réalistes).
+private _noteCheck = {
+    params ["_d", "_res", "_lvl", "_subj"];
+    if (!isNull _subj) then {
+        private _ctl = _reg getOrDefault ["controlled", createHashMap];
+        _reg set ["controlled", _ctl];
+        _ctl set [netId _subj, [time, name _me, [_d] call _label]];
+        if (!isPlayer _subj && {(_res getOrDefault ["state", "ok"]) in ["fail", "alert"]}) then { ["bust", [_subj, _me]] call comspec_sse_fnc_idAiFsm; };
+    };
+    private _v = _res getOrDefault ["verdict", "ras"];
+    if !(_v in ["faux", "inconnu", "vole", "revoque", "signale", "recherche", "hvt"]) exitWith {};
+    ["add", [["DÉTECTION", "HVT"] select (_v isEqualTo "hvt"),
+        format ["%1 : %2 (N%3), contrôle de %4 au %5", [_d] call _label, toUpper _v, _lvl, name _me, mapGridPosition _me],
+        format ["det|%1|%2", _d getOrDefault ["id", ""], _v]]] call comspec_sse_fnc_idAar;
+};
 
 switch (_op) do {
     case "begin": {
@@ -127,15 +148,25 @@ switch (_op) do {
             ["answer", [_t, "wait", format ["Demande faite à %1 : il doit présenter ses papiers (Mes papiers).", name _t]]] call _reply;
         };
         private _ans = [_t, _me] call comspec_sse_fnc_idAiAnswer;
-        private _docId = _ans getOrDefault ["docId", ""];
-        if ((_ans get "answer") isEqualTo "present" && {_docId isNotEqualTo ""}) then {
-            [_docId, _t] call _grant;
-            private _d = ["doc", [_docId]] call comspec_sse_fnc_idRegistry;
-            ["token", [_t, _docId, [_d] call _label, time + _tokenTime]] call _reply;
-            ["comspec_sse_idPresented", [_t, _docId, _me]] call CBA_fnc_localEvent;
+        private _ctl = _reg getOrDefault ["controlled", createHashMap];
+        _reg set ["controlled", _ctl];
+        _ctl set [netId _t, [time, name _me, ""]];
+        // Réponse après l'hésitation de la personne (IA réalistes : nervosité, mensonge), sinon tout de suite.
+        private _fin = {
+            params ["_t", "_me", "_ans", "_owner", "_reply", "_grant", "_label", "_tokenTime"];
+            private _reg = missionNamespace getVariable ["comspec_sse_idReg", createHashMap];
+            private _docId = _ans getOrDefault ["docId", ""];
+            if ((_ans get "answer") isEqualTo "present" && {_docId isNotEqualTo ""}) then {
+                [_docId, _t, _owner] call _grant;
+                private _d = ["doc", [_docId]] call comspec_sse_fnc_idRegistry;
+                ["token", [_t, _docId, [_d] call _label, time + _tokenTime], _owner] call _reply;
+                ["comspec_sse_idPresented", [_t, _docId, _me]] call CBA_fnc_localEvent;
+            };
+            if ((_ans get "answer") in ["refuse", "flee"]) then { ["comspec_sse_idRefused", [_t, _me]] call CBA_fnc_localEvent; };
+            ["answer", [_t, _ans get "answer", _ans get "text"], _owner] call _reply;
         };
-        if ((_ans get "answer") in ["refuse", "flee"]) then { ["comspec_sse_idRefused", [_t, _me]] call CBA_fnc_localEvent; };
-        ["answer", [_t, _ans get "answer", _ans get "text"]] call _reply;
+        private _fa = [_t, _me, _ans, _owner, _reply, _grant, _label, _tokenTime];
+        if ((_ans getOrDefault ["delay", 0]) > 0.2) then { [_fin, _fa, _ans get "delay"] call CBA_fnc_waitAndExecute; } else { _fa call _fin; };
     };
 
     case "aiAsk": {
@@ -237,6 +268,7 @@ switch (_op) do {
         if (!_own) then {
             if !(["view", _h] call _took) exitWith { _ok = false; };
             _res = [_d, _me, 0] call comspec_sse_fnc_idEvaluate;
+            [_d, _res, 0, _subj] call _noteCheck;
             ["comspec_sse_idChecked", [_me, _d get "id", 0, _res]] call CBA_fnc_localEvent;
         };
         if (!_ok) exitWith {};
@@ -246,7 +278,7 @@ switch (_op) do {
     case "check": {
         _args params ["", ["_h", ""], ["_lvl", 1, [0]]];
         _lvl = (round _lvl max 1) min 3;
-        ([_h] call _resolve) params ["_d", "_holder", "_ok"];
+        ([_h] call _resolve) params ["_d", "_holder", "_ok", "_subj"];
         if (!_ok || {(count _d) isEqualTo 0}) exitWith { [_me, "Document introuvable ou plus présenté.", "WARNING"] call _tell; };
         if !([format ["check%1", _lvl], _h] call _took) exitWith {};
         // Lecteur NFC : 1,5 m du document (sauf s'il est dans mes mains). MRZ et base : 3 m.
@@ -259,6 +291,7 @@ switch (_op) do {
             _res set ["query", [_d get "country", _d get "type", _d get "number", _d get "last", _d get "first", _d get "dob"]];
             _res set ["athenaId", _d getOrDefault ["athenaId", ""]];
         };
+        [_d, _res, _lvl, _subj] call _noteCheck;
         ["comspec_sse_idChecked", [_me, _d get "id", _lvl, _res]] call CBA_fnc_localEvent;
         ["result", [_d get "id", _lvl, _res]] call _reply;
     };
@@ -275,7 +308,7 @@ switch (_op) do {
         private _cls = if ((_h select [0, 11]) isEqualTo "COMSPEC_ID_") then { _h } else { [_d get "id", _t] call comspec_sse_fnc_idMaterialize };
         if (_cls isEqualTo "") exitWith { [_me, "Saisie impossible : plus d'exemplaire disponible.", "WARNING"] call _tell; };
         [{
-            params ["_cls", "_t", "_me", "_d", "_tell", "_reply", "_owner"];
+            params ["_cls", "_t", "_me", "_d", "_tell", "_reply", "_owner", "_label"];
             private _from = (([_t, 3] call comspec_sse_fnc_idDocsOf) select { (_x select 0) isEqualTo _cls }) param [0, []];
             if (_from isEqualTo []) exitWith { [_me, "Le document n'est plus là.", "WARNING"] call _tell; };
             [_cls, _from select 1, _me] call comspec_sse_fnc_idTransfer;
@@ -284,8 +317,10 @@ switch (_op) do {
                 if (((["piece", [_t]] call comspec_sse_fnc_custody)) isEqualTo "") then { ["open", [_t, _me, _remark]] call comspec_sse_fnc_custody; } else { ["event", [_t, "SAISIE", _me, _remark]] call comspec_sse_fnc_custody; };
             };
             ["seized", [_t, _cls, _d getOrDefault ["id", ""]]] call _reply;
+            ["add", ["SAISIE", format ["%1 n° %2 saisi par %3 au %4", [_d] call _label, _d getOrDefault ["number", "?"], name _me, mapGridPosition _me],
+                format ["seize|%1", _d getOrDefault ["id", _cls]]]] call comspec_sse_fnc_idAar;
             if (isPlayer _t) then { [_t, format ["%1 a saisi un de vos documents.", name _me], "WARNING"] call _tell; };
-        }, [_cls, _t, _me, _d, _tell, _reply, _owner], 0.6] call CBA_fnc_waitAndExecute;
+        }, [_cls, _t, _me, _d, _tell, _reply, _owner, _label], 0.6] call CBA_fnc_waitAndExecute;
     };
 
     case "return": {
@@ -382,6 +417,31 @@ switch (_op) do {
                 } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
                 if ((count _lines) isEqualTo 1) then { _lines pushBack "aucun document."; };
                 ["zeus", [_lines joinString endl, "info"]] call _reply;
+            };
+        };
+    };
+
+    case "fsmForce";
+    case "cpCreate";
+    case "cpTrigger";
+    case "cpRemove";
+    case "curfew": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {
+            diag_log text format ["[COMSPEC SSE] Identité : « %1 » réservé au Zeus, refusé au poste %2.", _op, _owner];
+        };
+        _args params ["", ["_x1", objNull], ["_x2", ""]];
+        switch (_op) do {
+            case "fsmForce": {
+                if (!(_x1 isEqualType objNull) || {isNull _x1} || {isPlayer _x1}) exitWith { ["zeus", ["Placez le module sur une IA (pas un joueur).", "warn"]] call _reply; };
+                private _ok = ["force", [_x1, _x2]] call comspec_sse_fnc_idAiFsm;
+                ["zeus", [[format ["%1 : état « %2 » imposé.", name _x1, _x2], "IA réalistes désactivées ou état inconnu."] select !(_ok isEqualTo true), ["info", "warn"] select !(_ok isEqualTo true)]] call _reply;
+            };
+            case "cpCreate": { ["zeus", ["create", [_x1, _x2, _me]] call comspec_sse_fnc_idCheckpoint] call _reply; };
+            case "cpTrigger": { ["zeus", ["trigger", [_x1, _x2, _me]] call comspec_sse_fnc_idCheckpoint] call _reply; };
+            case "cpRemove": { ["zeus", ["remove", [_x1]] call comspec_sse_fnc_idCheckpoint] call _reply; };
+            default {
+                missionNamespace setVariable ["comspec_sse_idCurfewZeus", _x1 isEqualTo true, true];
+                ["zeus", [["Couvre-feu levé.", "Couvre-feu en vigueur : les civils dehors sont plus nerveux."] select (_x1 isEqualTo true), "info"]] call _reply;
             };
         };
     };

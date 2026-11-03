@@ -3,6 +3,8 @@
       "tab" nom         onglet (check | history)          "select" i   rouvre la fiche i de l'historique
       "level" n         lecture N1 MRZ (3 s), N2 puce (4 s, 1,5 m), N3 base (3 s) : barre de progression ACE
       "view"            revoir le document (visionneuse)  "transmit"   envoi à Athena    "frm"  fiche FRM pré-remplie
+      "photo"           photo du document (jointe à la FRM)    "salute" / "spotrep"   compte rendu pré-rempli
+      "share" / "nfc"   fiche du contrôle partagée (Bluetooth, NFC)   "mobile"  QR « Sur mon téléphone »  (ATAK 3.0.2)
 */
 params [["_act", ""], ["_arg", ""]];
 private _st = uiNamespace getVariable ["comspec_sse_idApp", createHashMap];
@@ -31,5 +33,12 @@ switch (_act) do {
     case "view": { [_rec get "doc", false] call comspec_sse_fnc_idViewerOpen; };
     case "transmit": { [_rec] call comspec_sse_fnc_idAthenaSubmit; call _render; };
     case "frm": { [_rec] call comspec_sse_fnc_idFrm; };
+    case "photo": { ["app"] call comspec_sse_fnc_idPhoto; };
+    case "salute": { ["SALUTE"] call comspec_sse_fnc_idReport; };
+    case "spotrep": { ["SPOTREP"] call comspec_sse_fnc_idReport; };
+    // ATAK 3.0.2 et plus : la fiche (_rec de fn_idHistory) est acceptée telle quelle par l'app Bluetooth.
+    case "share": { if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then { ["shareIdCheck", _rec] call comspec_atak_native_fnc_btAction; }; };
+    case "nfc": { if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then { ["shareIdCheckNfc", _rec] call comspec_atak_native_fnc_btAction; }; };
+    case "mobile": { if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then { ["open", "controle"] call comspec_atak_native_fnc_mobileQr; }; };
 };
 true

@@ -2,6 +2,42 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.2.0 — contrôle d'identité : IA réalistes et checkpoints (03/11/2026)[/h1]
+[b]Relance Arma complètement.[/b] À utiliser avec le pack ATAK 3.0.1 ; partage de la fiche de contrôle (Bluetooth, NFC), « Sur mon téléphone » et alerte en vibreur seul avec le pack ATAK 3.0.2.
+
+[list]
+[*] Avec l'ATAK 3.0.2 : boutons Partager, NFC et Sur mon téléphone dans l'app Contrôle ID ; la fiche FRM et sa photo sont rattachées au contrôle sur Athena.
+[*] Photo du document : bouton « Photographier » dans la visionneuse et dans l'app Contrôle ID ; la photo est jointe à la fiche FRM et au dossier SSE de la personne.
+[*] Fiche FRM pré-remplie plus complète : contrôleur, date, heure, position, lecture MRZ et puce, photo.
+[*] SALUTE et SPOTREP pré-remplis depuis un contrôle (app Contrôle ID), à relire puis envoyer.
+[*] Compte rendu AAR : une ligne par contrôle notable (faux détecté, HVT, saisie, interpellation, fuite, checkpoint).
+[*] IA réalistes : une personne contrôlée coopère, ment avec sa couverture, devient nerveuse, refuse, s'enfuit, menace, se rend ou appelle des renforts selon son profil, son état et la situation (armes pointées sur elle, nombre de soldats, couvre-feu). Gestes, regards, hésitation et phrases courtes sur l'ATAK.
+[*] Checkpoints IA (module Eden et Zeus) : les gardes arrêtent les joueurs, demandent leurs papiers, les lisent avec l'équipement du poste (visuel, scanner, lecteur NFC, liaison base), puis laissent passer, fouillent, retiennent, donnent l'alerte ou ouvrent le feu. Ils contrôlent aussi les IA qui passent.
+[*] Zeus : déclencher un contrôle, forcer l'état d'une IA, couvre-feu.
+[*] Nouveaux réglages (COMSPEC SSE › Identité) : IA réalistes, agressivité, distance des checkpoints, délai pour présenter ses papiers, contrôle des IA par les checkpoints, couvre-feu.
+[/list]
+
+----------------------------------------
+
+[h1]COMSPEC SSE 1.2.0 — identity check: realistic AI and checkpoints (03/11/2026)[/h1]
+[b]Restart Arma completely.[/b] Use with ATAK pack 3.0.1; check report sharing (Bluetooth, NFC), "On my phone" and vibrate-only alert with ATAK pack 3.0.2.
+
+[list]
+[*] With ATAK 3.0.2: Share, NFC and On my phone buttons in the ID Check app; the FRM report and its photo are linked to the check on Athena.
+[*] Document photo: "Photograph" button in the viewer and in the ID Check app; the photo is attached to the FRM report and to the person's SSE file.
+[*] More complete pre-filled FRM report: controller, date, time, position, MRZ and chip reading, photo.
+[*] SALUTE and SPOTREP pre-filled from a check (ID Check app), to review then send.
+[*] AAR report: one line per notable check (forgery detected, HVT, seizure, arrest, flight, checkpoint).
+[*] Realistic AI: a checked person cooperates, lies with their cover, gets nervous, refuses, flees, threatens, surrenders or calls reinforcements depending on profile, condition and situation (weapons aimed at them, number of soldiers, curfew). Gestures, glances, hesitation and short lines on the ATAK.
+[*] AI checkpoints (Eden and Zeus module): guards stop players, ask for their papers, read them with the checkpoint's equipment (visual, scanner, NFC reader, database link), then let them through, search, detain, raise the alarm or open fire. They also check passing AI.
+[*] Zeus: start a check, force an AI state, curfew.
+[*] New settings (COMSPEC SSE › Identity): realistic AI, aggressiveness, checkpoint distance, time to present papers, AI checked by checkpoints, curfew.
+[/list]
+
+----------------------------------------
+
+[i]Rappel / reminder — 1.1.2 :[/i]
+
 [h1]COMSPEC SSE 1.1.2 — mesure des performances (03/11/2026)[/h1]
 [b]Relance Arma complètement.[/b] À utiliser avec le pack ATAK 3.0.1.
 
