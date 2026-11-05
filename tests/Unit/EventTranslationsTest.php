@@ -10,8 +10,8 @@ final class EventTranslationsTest extends TestCase
 {
     public function testEnglishCatalogCoversAllFrenchKeysAndPlaceholders(): void
     {
-        $fr = require dirname(__DIR__, 2) . '/lang/fr/events.php';
-        $en = require dirname(__DIR__, 2) . '/lang/en/events.php';
+        $fr = array_merge(require dirname(__DIR__, 2) . '/lang/fr/events.php', require dirname(__DIR__, 2) . '/lang/fr/companion.php');
+        $en = array_merge(require dirname(__DIR__, 2) . '/lang/en/events.php', require dirname(__DIR__, 2) . '/lang/en/companion.php');
         self::assertSame(array_keys($fr), array_keys($en));
         foreach ($fr as $key => $text) {
             self::assertNotSame('', trim($en[$key]));

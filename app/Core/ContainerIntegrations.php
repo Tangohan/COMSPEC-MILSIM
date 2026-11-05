@@ -12,6 +12,7 @@ final class ContainerIntegrations
     public static function tryResolve(string $id): ?object
     {
         return match ($id) {
+            \App\Controllers\Api\DiscordCompanionController::class => new \App\Controllers\Api\DiscordCompanionController(),
             Gate::class => Gate::getInstance(),
             \App\Services\Community\CommunityPageEditorAccess::class => new \App\Services\Community\CommunityPageEditorAccess(
                 Container::get(\App\Repositories\UserRepository::class),

@@ -374,6 +374,14 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                     <p class="bo-int-wh__test is-<?= $discordOrg['last_test_ok'] ? 'ok' : 'bad' ?>">Dernier essai le <?= $h($fmtDt($discordOrg['last_test_at'])) ?> : <?= $h($discordOrg['last_test_ok'] ? 'message reçu par Discord' : $discordOrg['last_test_message']) ?></p>
                 <?php endif; ?>
             <?php endif; ?>
+            <?php if ($discordOrg['configured']): ?>
+            <form method="post" action="<?= $h(url('back-office/integrations/discord/nom-salon')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <input type="hidden" name="webhook_id" value="organisation">
+                <button type="submit" class="bo-int-btn bo-int-btn--sm"><?= $h(__('events.channel_refresh')) ?></button>
+            </form>
+            <?php endif; ?>
+            <p class="bo-int-wh__sub"><?= $h(__('events.channel_help')) ?></p>
             <form method="post" action="<?= $h(url('back-office/integrations/discord/organisation')) ?>" class="bo-int-wh__form" data-wh-form>
                 <?= \App\Core\Csrf::field() ?>
                 <label class="bo-int-field bo-int-wh__url">
@@ -473,7 +481,7 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                                 <label class="bo-int-event__dest">
                                     <span class="bo-int-sr">Salon pour « <?= $h((string) ($ev['label'] ?? '')) ?> »</span>
                                     <select name="discord_event[<?= $h($ek) ?>][dest]" class="bo-int-select">
-                                        <option value="organisation"<?= $dest === 'organisation' ? ' selected' : '' ?>>Salon de l’organisation</option>
+                                        <option value="organisation"<?= $dest === 'organisation' ? ' selected' : '' ?>><?= $h(__('events.organisation') . ($discordOrg['channel'] !== '' ? ' (' . $discordOrg['channel'] . ')' : '')) ?></option>
                                         <?php foreach ($discordWebhooks as $wh): ?>
                                             <option value="<?= $h($wh['id']) ?>"<?= $dest === $wh['id'] ? ' selected' : '' ?>><?= $h($wh['name'] . ($wh['channel'] !== '' ? ' (' . $wh['channel'] . ')' : '')) ?></option>
                                         <?php endforeach; ?>
@@ -512,6 +520,11 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                         </div>
                         <div class="bo-int-wh__acts">
                             <button type="button" class="bo-int-btn bo-int-btn--sm" data-wh-test="<?= $h($wh['id']) ?>"><?= $icon('send') ?><span>Tester</span></button>
+                            <form method="post" action="<?= $h(url('back-office/integrations/discord/nom-salon')) ?>">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="webhook_id" value="<?= $h($wh['id']) ?>">
+                                <button type="submit" class="bo-int-btn bo-int-btn--sm"><?= $h(__('events.channel_refresh')) ?></button>
+                            </form>
                             <form method="post" action="<?= $h(url('back-office/integrations/discord/salons/' . $wh['id'] . '/supprimer')) ?>" onsubmit="return confirm('Retirer ce salon ? Ses usages passeront sur le salon de l’organisation.')">
                                 <?= \App\Core\Csrf::field() ?>
                                 <button type="submit" class="bo-int-link-btn bo-int-link-btn--danger">Retirer</button>

@@ -79,15 +79,33 @@ final class CommunityEventsAdminController
             return null;
         }
         $destination = trim((string) $request->input('discord_destination', 'organisation'));
-        if (!(new DiscordWebhookDirectory())->exists($tenantId, $destination)) {
+        $companion = $destination === 'companion' && (new \App\Repositories\DiscordCompanionRepository())->forTenant($tenantId) !== null;
+        if (!$companion && !(new DiscordWebhookDirectory())->exists($tenantId, $destination)) {
             return __('events.discord_missing_webhook');
         }
         $rsvp = (string) $request->input('discord_rsvp', '') === '1';
-        if ($rsvp && (new DiscordEventAttendanceService())->botToken($tenantId) === '') {
+        if ($rsvp && !$companion && (new DiscordEventAttendanceService())->botToken($tenantId) === '') {
             return __('events.discord_missing_bot');
         }
 
         return ['destination' => $destination, 'rsvp' => $rsvp, 'locale' => locale() === 'fr' ? 'fr' : 'en'];
+    }
+
+    public function companionPair(Request $request, array $params = []): Response
+    {
+        $tenant = (int) Session::get('tenant_id');
+        if (Csrf::validate($request->input('_csrf_token')) && $this->featureGate->allowsLimitedFeatureModule($tenant, 'events')) {
+            $repo = new \App\Repositories\DiscordCompanionRepository();
+            if ((string) $request->input('unlink', '') === '1') {
+                $repo->unlink($tenant);
+                Session::flash('success', __('companion.unlinked'));
+            } elseif ((new \App\Services\Integrations\DiscordCompanionSettings())->key() !== '') {
+                Session::flash('success', __('companion.pair_code', ['code' => $repo->pairingCode($tenant)]));
+            } else {
+                Session::flash('error', __('companion.not_configured'));
+            }
+        }
+        return Response::redirect(url('back-office/events') . '#event-discord-settings');
     }
 
     public function saveDiscordBot(Request $request, array $params = []): Response
@@ -135,7 +153,7 @@ final class CommunityEventsAdminController
             Session::flash('error', __('events.discord_locked'));
         } else {
             $repo->configureDiscord($tenantId, $id, $input['destination'], $input['rsvp'], $input['locale']);
-            (new DiscordEventAttendanceService())->sync(['tenant_id' => $tenantId, 'event_id' => $id]);
+            if ($input['destination'] !== 'companion') (new DiscordEventAttendanceService())->sync(['tenant_id' => $tenantId, 'event_id' => $id]);
             Session::flash('success', __('events.discord_processed'));
         }
 

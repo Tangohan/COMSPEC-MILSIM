@@ -104,4 +104,9 @@ return [
     'cancel_one' => 'This event only',
     'part_of_series' => 'This event is part of a series',
     'cancel_following' => 'This event and the following :count events in the series',
+    'channel_refresh' => 'Refresh channel name',
+    'channel_refreshed' => 'Discord channel identified: :channel.',
+    'channel_needs_bot' => 'Configure the event Discord bot to retrieve the exact channel name. The manually entered name remains available.',
+    'channel_unavailable' => 'Channel name unavailable. Check that the bot can view this channel. The saved name is preserved.',
+    'channel_help' => 'The channel name is fetched when saving if the bot is configured. Refresh it after renaming the channel in Discord.',
 ];

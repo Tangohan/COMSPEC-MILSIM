@@ -104,4 +104,9 @@ return [
     'cancel_one' => 'Ce créneau seulement',
     'part_of_series' => 'Ce créneau fait partie d’une série',
     'cancel_following' => 'Ce créneau et les :count suivants de la série',
+    'channel_refresh' => 'Actualiser le nom du salon',
+    'channel_refreshed' => 'Salon Discord identifié : :channel.',
+    'channel_needs_bot' => 'Configurez le bot Discord des événements pour récupérer le nom exact du salon. Le nom saisi manuellement reste utilisable.',
+    'channel_unavailable' => 'Le nom du salon est indisponible. Vérifiez que le bot peut voir ce salon. Le nom enregistré est conservé.',
+    'channel_help' => 'Le nom du salon est récupéré à l’enregistrement si le bot est configuré. Actualisez-le si le salon a été renommé dans Discord.',
 ];

@@ -41,11 +41,27 @@ final class SystemPlatformIntegrationsController
             'mail_providers' => TenantMailSender::PROVIDERS,
             'platform_env_mailer' => strtolower(trim((string) \env('MAIL_MAILER', 'file'))),
             'platform_discord' => (new PlatformIntegrationSettings())->state(),
+            'companionConfigured' => (new \App\Services\Integrations\DiscordCompanionSettings())->key() !== '',
             'platform_linked_roles' => (new DiscordLinkedRoles())->adminState(),
             'admin_email' => (string) ($user['email'] ?? ''),
             'isPlatformAdminShell' => true,
             'backOfficePageCss' => ['platform-admin.css', 'back-office-integrations.css'],
         ]);
+    }
+
+    public function saveCompanion(Request $request, array $params = []): Response
+    {
+        if (($denied = $this->guard($request)) !== null) return $denied;
+        $key = trim($request->inputString('companion_api_key'));
+        if ($key !== '' && preg_match('/^[A-Za-z0-9_-]{32,128}$/D', $key) !== 1) {
+            Session::flash('error', __('companion.invalid_key'));
+        } else {
+            if ($key !== '') (new \App\Repositories\PlatformSettingsRepository())->setMany([
+                \App\Services\Integrations\DiscordCompanionSettings::API_KEY => \App\Support\SecretCipher::encrypt($key),
+            ]);
+            Session::flash('success', __('companion.saved'));
+        }
+        return Response::redirect(url(self::BASE) . '#companion');
     }
 
     public function saveDiscord(Request $request, array $params = []): Response

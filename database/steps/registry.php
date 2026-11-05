@@ -71,4 +71,5 @@ return [
     ['id' => 'atak_sse_identity_real_countries', 'label' => 'Contrôle d’identité SSE : pays réels stylisés (Royaume-Uni, Grèce, États-Unis, Allemagne, Autriche, Colombie, France…) proposés à l’import pour un univers réaliste-simulation, gabarits génériques marqués SIMULATION', 'group' => 'schema', 'file' => '3910_atak_sse_identity_real_countries.php', 'rerun' => true],
     ['id' => 'atak_sse_identity_images', 'label' => 'Contrôle d’identité SSE : images des papiers (signature du titulaire, image de fond d’un gabarit personnalisé)', 'group' => 'schema', 'file' => '3920_atak_sse_identity_images.php', 'rerun' => true],
     ['id' => 'event_automation', 'label' => 'Séries sans fin et réponses Discord aux événements', 'group' => 'schema', 'file' => '3930_event_automation.php', 'rerun' => true],
+    ['id' => 'discord_companion', 'label' => 'ATHENA Companion : serveurs Discord et codes de liaison', 'group' => 'schema', 'file' => '3940_discord_companion.php', 'rerun' => true],
 ];

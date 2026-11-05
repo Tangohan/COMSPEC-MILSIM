@@ -1,0 +1,24 @@
+[Unit]
+Description=ATHENA Companion Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=athena-companion
+WorkingDirectory=/opt/athena-companion
+EnvironmentFile=/etc/athena-companion.env
+Environment=ATHENA_COMPANION_STATE=/var/lib/athena-companion/state.sqlite3
+ExecStart=/opt/athena-companion/.venv/bin/python main.py
+Restart=on-failure
+RestartSec=15
+StateDirectory=athena-companion
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/athena-companion
+
+[Install]
+WantedBy=multi-user.target
