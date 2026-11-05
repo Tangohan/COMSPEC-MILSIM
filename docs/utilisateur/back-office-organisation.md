@@ -66,3 +66,20 @@ Selon les droits : **modules** techniques (forum, formations, documents), **épi
 - [Communautés](communautes.md).
 - [Mur & tableau opérationnel](tableau-operationnel.md).
 - [Forum](forum.md), [Documents](documents.md), [Formations](formations.md) — côté usage membre.
+
+
+### Préfixes de l’organigramme
+
+Dans **Organisation → Matricules**, la section **Préfixes de l’organigramme**
+permet aux administrateurs de modifier le préfixe de communauté (2 à 10 lettres
+ou chiffres) et le code de chaque unité (1 à 8 lettres ou chiffres). Un code
+d’unité vide est calculé automatiquement depuis son nom. Deux unités de même
+parent ne peuvent pas recevoir le même code saisi.
+
+Le code complet de chaque unité est affiché à côté de son nom. Changer le
+préfixe ou un code recalcule les chemins hiérarchiques, en conservant les
+identifiants administratifs permanents. Les matricules des membres déjà
+attribués restent gérés séparément par le registre et la renumérotation.
+
+Le catalogue de l’organisation propose un accès direct à ces réglages depuis
+la carte **Préfixes** et depuis le détail d’un modèle.

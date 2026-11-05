@@ -33,14 +33,12 @@ $gradeLabel = trim((string) ($inv['grade_label'] ?? 'Système de grades'));
 $catalogLang = function_exists('site_lang') && site_lang() === 'en' ? 'en' : 'fr';
 $groups = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::displayGroups($items, $catalogLang);
 ?>
-<div class="bo-catalog">
+<div class="bo-catalog bo-catalog--workspace">
     <header class="bo-catalog__hero">
         <p class="bo-catalog__kicker">Organisation</p>
         <h1 class="bo-catalog__title">Catalogue de l’organisation</h1>
         <p class="bo-catalog__lead">
-            Administrez toute la structure de cette communauté, copiez un modèle officiel Athena,
-            ou enregistrez l’état actuel. Rien n’est partagé avec une autre communauté,
-            et rien de déjà en place n’est écrasé.
+            Retrouvez la structure de votre communauté, personnalisez ses codes et préparez sa prochaine évolution.
         </p>
         <div class="bo-catalog__hero-actions">
             <a class="ath-btn ath-btn--solid" href="#bo-catalog-snapshot">Enregistrer un modèle</a>
@@ -56,9 +54,14 @@ $groups = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::displayG
         <p class="ath-flash ath-flash--err" role="alert"><?= $h($flashErr) ?></p>
     <?php endif; ?>
 
+    <nav class="bo-catalog__tabs" aria-label="Sections du catalogue">
+        <a href="#bo-catalog-admin-title">Mon organisation</a>
+        <a href="#bo-catalog-models-title">Modèles à copier <span><?= count($items) ?></span></a>
+        <a href="#bo-catalog-snapshot">Mes sauvegardes</a>
+    </nav>
     <section class="bo-catalog__section" aria-labelledby="bo-catalog-admin-title">
         <h2 id="bo-catalog-admin-title" class="bo-catalog__section-title">Administrer cette organisation</h2>
-        <p class="bo-catalog__section-lead">Chaque écran d’édition s’ouvre avec le volume actuel. Les modèles ci-dessous copient ce qui manque ; ces raccourcis servent à tenir le réel.</p>
+        <p class="bo-catalog__section-lead">Votre organisation en place. Ouvrez une rubrique pour modifier sa structure ou ses paramètres.</p>
         <div class="bo-catalog__admin" aria-label="Administration">
             <a class="bo-catalog__admin-card" href="<?= $h(url('back-office/groups')) ?>">
                 <span class="bo-catalog__tile-kicker">Organigramme</span>
@@ -101,6 +104,12 @@ $groups = \App\Services\OrganizationCatalog\OrganizationKitDefinitions::displayG
                 <strong class="bo-catalog__tile-value"><?= $installCount ?></strong>
                 <span class="bo-catalog__tile-label"><?= $installCount > 1 ? 'applications enregistrées' : 'application enregistrée' ?></span>
                 <span class="bo-catalog__admin-go">Ouvrir le journal complet</span>
+            </a>
+            <a class="bo-catalog__admin-card bo-catalog__admin-card--prefix" href="<?= $h(url('back-office/organisation/matricules') . '#mn-organigramme') ?>">
+                <span class="bo-catalog__tile-kicker">Identification</span>
+                <strong class="bo-catalog__tile-value">Préfixes</strong>
+                <span class="bo-catalog__tile-label">Codes de communauté, d’unités et matricules</span>
+                <span class="bo-catalog__admin-go">Gérer les préfixes et matricules →</span>
             </a>
         </div>
         <nav class="bo-catalog__hubs" aria-label="Autres écrans d’administration">

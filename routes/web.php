@@ -1518,6 +1518,7 @@ return function (Router $router) {
     $router->post('/back-office/organisation/noms/trigramme', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'updateMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/prefixes', [OrganizationMemberNumberController::class, 'saveOrganigramPrefix'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/import', [OrganizationMemberNumberController::class, 'importCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/matricules/export', [OrganizationMemberNumberController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/attribuer', [OrganizationMemberNumberController::class, 'assignNext'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

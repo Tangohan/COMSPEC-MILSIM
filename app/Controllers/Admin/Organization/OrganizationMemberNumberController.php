@@ -12,6 +12,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantMemberNumberConfigRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\UnitRepository;
+use App\Services\Effectifs\UnitCodeService;
 use App\Services\Auth\AuthService;
 use App\Services\Personnel\TenantMemberNumberService;
 
@@ -99,6 +101,9 @@ final class OrganizationMemberNumberController
             'boPageTitle' => 'Matricules d’organisation',
             'boPageKicker' => 'PERSONNEL · CONFIGURATION',
             'boPageSubtitle' => 'Identifiant métier propre à la communauté — distinct de l’identifiant plateforme permanent.',
+            'memberNumberUnitCodes' => (new UnitCodeService())->sync($tenantId),
+            'memberNumberUnits' => (new UnitRepository())->allForTenant($tenantId),
+            'memberNumberCanManageCodes' => $this->gate->allows('admin.organization') || $this->gate->allows('admin.access'),
             'memberNumberSchemaReady' => $schemaReady,
             'memberNumberConfig' => $config,
             'memberNumberPreview' => $preview,
@@ -113,6 +118,47 @@ final class OrganizationMemberNumberController
             'memberNumberContextSample' => $contextSample,
             'showPortalFooter' => false,
         ]);
+    }
+
+    /** Préfixe de communauté et segments des unités de l’organigramme. */
+    public function saveOrganigramPrefix(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        if (!$this->canManage() || (!$this->gate->allows('admin.organization') && !$this->gate->allows('admin.access'))) {
+            Session::flash('error', 'Seuls les administrateurs de la communauté peuvent modifier les préfixes de l’organigramme.');
+            return $this->back();
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1 || !Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+            return $this->back();
+        }
+        $codes = new UnitCodeService();
+        $unitId = (int) $request->input('unit_id', 0);
+        if ($unitId > 0) {
+            $units = new UnitRepository();
+            $unit = $units->findById($unitId, $tenantId);
+            if ($unit === null) {
+                Session::flash('error', 'Unité introuvable.');
+                return $this->back();
+            }
+            $normalized = null;
+            $error = UnitCodeService::validateSegment($units->allForTenant($tenantId), $unitId, (string) $request->input('segment', ''), $normalized);
+            if ($error === null && (string) ($unit['code'] ?? '') !== (string) $normalized) {
+                if (!$units->update($unitId, $tenantId, ['code' => $normalized !== '' ? $normalized : null])) {
+                    $error = 'Enregistrement du code impossible.';
+                } else {
+                    UnitCodeService::forget($tenantId);
+                    $codes->sync($tenantId);
+                }
+            }
+        } else {
+            $error = $codes->changeCommunityCode($tenantId, (string) $request->input('community_code', ''));
+        }
+        Session::flash($error === null ? 'success' : 'error', $error ?? 'Préfixe enregistré. Les codes de l’organigramme ont été recalculés.');
+        return Response::redirect(url('back-office/organisation/matricules') . '#mn-organigramme');
     }
 
     public function save(Request $request, array $params = []): Response
