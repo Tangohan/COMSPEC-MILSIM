@@ -693,7 +693,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertSame(['doctrines' => [], 'qualifications' => [], 'competencies' => [], 'aircraft' => [['id' => 'vclass:RHS_UH60M', 'label' => 'UH-60M'], ['id' => 'vclass:RHS_C130J', 'label' => 'C-130J']]], $service->options(14));
     }
 
-    public function testAssignmentGateWarnsBlocksAndRecordsARevocableAuditedWaiver(): void
+    public function testAssignmentGateAlwaysWarnsAndRecordsAnOptionalRevocableAuditedWaiver(): void
     {
         $service = new JobPrerequisiteService($this->pdo);
         $service->saveRequirements(14, 1, JobPrerequisiteService::normalize([
@@ -710,9 +710,9 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertTrue($warn['allowed']);
         self::assertSame([1], $warn['warned']);
         self::assertCount(1, $warn['unmet'][1]);
-        // Bloquant sans motif, ou motif sans droit de déroger : refus.
-        self::assertFalse($service->gate(14, 5, [1], '', true, true, 7)['allowed']);
-        self::assertFalse($service->gate(14, 5, [1], 'Ancien pilote confirmé', false, true, 7)['allowed']);
+        // Même un ancien réglage bloquant ne refuse jamais une affectation.
+        self::assertTrue($service->gate(14, 5, [1], '', true, true, 7)['allowed']);
+        self::assertTrue($service->gate(14, 5, [1], 'Ancien pilote confirmé', false, true, 7)['allowed']);
         try {
             $service->gate(14, 5, [1], 'abc', true, true, 7);
             self::fail('Motif trop court accepté.');
@@ -734,7 +734,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
         self::assertNull($service->revokeWaiver(14, (int) $active[1]['id'], 7, ''), 'Déjà révoquée.');
         self::assertNull($service->revokeWaiver(15, (int) $active[1]['id'], 7, ''), 'Autre communauté.');
         self::assertSame([], $service->activeWaiversForUser(14, 5));
-        self::assertFalse($service->gate(14, 5, [1], '', true, true, 7)['allowed']);
+        self::assertTrue($service->gate(14, 5, [1], '', true, true, 7)['allowed']);
         self::assertSame('Heures non confirmées', $service->waiversForRole(14, 1)[0]['revoke_reason']);
 
         $actions = $this->pdo->query("SELECT action FROM audit_logs WHERE entity_type = 'personnel_job_role' ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
@@ -743,7 +743,7 @@ final class JobCatalogPrerequisitesTest extends TestCase
 
         $settings = PersonnelJobRoleAssignmentsSettings::resolve([]);
         self::assertFalse($settings['prerequisites_blocking'], 'Indicatifs par défaut.');
-        self::assertTrue(PersonnelJobRoleAssignmentsSettings::resolve(PersonnelJobRoleAssignmentsSettings::mergePatch([], ['prerequisites_blocking' => true]))['prerequisites_blocking']);
+        self::assertFalse(PersonnelJobRoleAssignmentsSettings::resolve(PersonnelJobRoleAssignmentsSettings::mergePatch([], ['prerequisites_blocking' => true]))['prerequisites_blocking']);
     }
 
     public function testWithoutTablesNothingIsCheckedAndAssignmentsStayAsBefore(): void

@@ -734,6 +734,15 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                     </li>
                 <?php endforeach; ?>
             </ul>
+            <?php if (!empty($memberCareerDiscrepancies)): ?>
+            <section class="eff-fm-card" aria-label="Écarts de carrière">
+                <h3>Écarts de carrière</h3>
+                <p>Suivi indicatif : les affectations et promotions restent possibles.</p>
+                <ul><?php foreach ($memberCareerDiscrepancies as $gap): ?>
+                    <li><?= $h($gap['source'] . ' — ' . $gap['detail']) ?></li>
+                <?php endforeach; ?></ul>
+            </section>
+            <?php endif; ?>
             <?php require __DIR__ . '/partials/job_prerequisites_member.php'; ?>
         <?php else: ?>
             <p class="eff-fm-lead">Aucune fonction attribuée.</p>

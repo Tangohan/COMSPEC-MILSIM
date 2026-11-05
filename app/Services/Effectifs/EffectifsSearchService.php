@@ -88,6 +88,10 @@ final class EffectifsSearchService
             $repo = $this->codes->repository();
             if ($repo->tablesExist()) {
                 foreach ($prefixes as $i => $p) {
+                    $visible = (string) ($community['code'] ?? '');
+                    if ($visible !== '' && ($p === $visible || str_starts_with($p, $visible . '-'))) {
+                        $p = ($community['administrative_code'] ?? $visible) . substr($p, strlen($visible));
+                    }
                     foreach ($repo->searchUnitIds($tenantId, $p, $i === 0 ? $number : null, $limit) as $id) {
                         $ids[$id] = true;
                     }

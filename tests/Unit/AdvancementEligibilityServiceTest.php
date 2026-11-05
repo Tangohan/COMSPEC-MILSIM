@@ -52,8 +52,11 @@ final class AdvancementEligibilityServiceTest extends TestCase
             'qualification_award' => null,
         ], new DateTimeImmutable('2026-09-30'));
 
-        self::assertFalse($result['is_eligible']);
-        self::assertSame('Qualification CEFEO manquante', $result['eligibility_reason']);
+        self::assertTrue($result['is_eligible']);
+        self::assertNull($result['eligibility_reason']);
+        $qualification = array_values(array_filter($result['conditions'], static fn (array $c): bool => $c['key'] === 'qualification'))[0];
+        self::assertFalse($qualification['met']);
+        self::assertStringContainsString('CEFEO manquante', $qualification['detail']);
     }
 
     public function testJourExactDEcheanceEstEligibleEtLaVeilleNeLEstPas(): void

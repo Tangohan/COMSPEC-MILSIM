@@ -43,6 +43,26 @@ class UnitCodeRepository
         self::$ready = [];
     }
 
+    public function displayPrefix(int $tenantId): string
+    {
+        try {
+            $st = $this->pdo()->prepare('SELECT settings FROM tenants WHERE id = ?');
+            $st->execute([$tenantId]);
+            $settings = json_decode((string) $st->fetchColumn(), true);
+            $raw = $settings['unit_codes']['display_prefix'] ?? '';
+            return UnitCodeBuilder::normalizeInput((string) $raw, 2, 10) ?? '';
+        } catch (Throwable) {
+            return '';
+        }
+    }
+
+    public function saveDisplayPrefix(int $tenantId, string $prefix): void
+    {
+        // JSON_SET preserves unrelated settings, including concurrent edits.
+        $st = $this->pdo()->prepare("UPDATE tenants SET settings = JSON_SET(COALESCE(NULLIF(settings, ''), '{}'), '$.unit_codes', JSON_SET(COALESCE(JSON_EXTRACT(NULLIF(settings, ''), '$.unit_codes'), JSON_OBJECT()), '$.display_prefix', ?)) WHERE id = ?");
+        $st->execute([$prefix, $tenantId]);
+    }
+
     public function tablesExist(): bool
     {
         $key = $this->cacheKey();

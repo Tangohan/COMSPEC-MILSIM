@@ -1458,6 +1458,7 @@ class EffectifsWorkspaceController
             'currentAccessRoleId' => $currentAccessRoleId,
             'accessProfiles' => CommunityAccessProfiles::definitions(),
             'memberJobRoles' => $jobRoles,
+            'memberCareerDiscrepancies' => (new \App\Services\Personnel\CareerConsistencyService(\App\Core\Database::getPdo()))->listForTenant($tenantId, (int) $row['id']),
             'memberJobDecorations' => (new JobRoleEnrichmentService())->decorations($tenantId),
             'memberJobPrerequisites' => \App\Services\Personnel\JobPrerequisiteViewData::forMember($tenantId, (int) $row['id'], $jobRoles, $this->jobTenantSettings($tenantId)),
             'jobRoleOptions' => $jobRoleOptions,
