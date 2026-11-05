@@ -21,6 +21,34 @@ final class EventRecurrence
 
     public const FREQUENCIES = ['weekly', 'biweekly', 'monthly'];
 
+    /** Vérifie la borne explicite d’une série avant de générer ses occurrences. */
+    public static function validationError(string $starts, string $frequency, string $endMode, int $count, string $until): ?string
+    {
+        if ($frequency === '') {
+            return null;
+        }
+        if (!in_array($frequency, self::FREQUENCIES, true)) {
+            return 'La fréquence de répétition est invalide.';
+        }
+        if ($endMode === 'count') {
+            return $count >= 2 && $count <= self::MAX_OCCURRENCES
+                ? null
+                : 'Choisissez entre 2 et ' . self::MAX_OCCURRENCES . ' occurrences.';
+        }
+        if ($endMode !== 'until') {
+            return 'Choisissez une fin de série.';
+        }
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $until);
+        if ($date === false || $date->format('Y-m-d') !== $until) {
+            return 'Choisissez une date de fin de série valide.';
+        }
+        if ($until < substr($starts, 0, 10)) {
+            return 'La fin de série doit être à partir du premier créneau.';
+        }
+
+        return null;
+    }
+
     /**
      * @param list<int> $weekdays Jours ISO (1–7) pour weekly/biweekly ; vide = jour du créneau saisi
      * @return list<array{starts: string, ends: ?string}>

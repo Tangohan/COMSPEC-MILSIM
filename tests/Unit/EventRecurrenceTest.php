@@ -9,6 +9,22 @@ use PHPUnit\Framework\TestCase;
 
 final class EventRecurrenceTest extends TestCase
 {
+    public function testSeriesBoundsAreValidatedBeforeCreation(): void
+    {
+        $start = '2026-11-06 21:00:00';
+        self::assertNull(EventRecurrence::validationError($start, '', 'count', 0, ''));
+        self::assertNull(EventRecurrence::validationError($start, 'weekly', 'count', 8, ''));
+        self::assertNull(EventRecurrence::validationError($start, 'weekly', 'until', 0, '2026-11-06'));
+        foreach (['', '2026-11-05', '2026-02-30', '2026-13-01'] as $until) {
+            self::assertNotNull(EventRecurrence::validationError($start, 'weekly', 'until', 0, $until));
+        }
+        foreach ([0, 1, 53] as $count) {
+            self::assertNotNull(EventRecurrence::validationError($start, 'weekly', 'count', $count, ''));
+        }
+        self::assertNotNull(EventRecurrence::validationError($start, 'daily', 'count', 8, ''));
+        self::assertNotNull(EventRecurrence::validationError($start, 'weekly', 'invalid', 8, ''));
+    }
+
     public function testWeeklyOnSeveralDaysWithCount(): void
     {
         // Mardi 6 octobre 2026, 21:00 → 23:00 ; mardi + jeudi, 4 occurrences.

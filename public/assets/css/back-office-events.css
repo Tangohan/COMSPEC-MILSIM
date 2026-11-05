@@ -1684,3 +1684,14 @@ html[data-bo-theme="dark"] .ev-create__seg-opt input:checked + span { background
 .ath-event-show__series input { accent-color: #b42318; }
 html[data-bo-theme="dark"] .ath-event-show__series { background: #2a1513; border-color: #4d2420; }
 html[data-bo-theme="dark"] .ath-event-show__series legend { color: #f08585; }
+
+/* Création depuis le calendrier, avec dialogue natif et navigation clavier. */
+.ev-create-launch { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.ev-create-launch > span { font-size: 12px; color: var(--ath-muted, #5b6762); }
+.ev-create-dialog { width: min(960px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); padding: 16px; border: 1px solid var(--ath-border, #d4ddd7); border-radius: 16px; background: var(--ath-paper, #fff); color: var(--ath-ink, #0c1116); overflow: auto; }
+.ev-create-dialog::backdrop { background: rgb(0 0 0 / 55%); }
+.ev-create-dialog .ev-create { margin: 8px 0 0; }
+.ev-create-close { display: block; margin-left: auto; }
+.ath-cal__add { float: right; border: 0; border-radius: 4px; padding: 0 6px; background: transparent; color: var(--ath-accent, #0b8a5c); cursor: pointer; font-size: 18px; }
+.ath-cal__add:hover, .ath-cal__add:focus-visible { background: #d8f3e5; }
+html[data-bo-theme="dark"] .ev-create-dialog { background: #151e28; color: #e5edf5; }
