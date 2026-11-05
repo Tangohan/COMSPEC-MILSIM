@@ -25,6 +25,28 @@ final class EventRecurrenceTest extends TestCase
         self::assertNotNull(EventRecurrence::validationError($start, 'weekly', 'invalid', 8, ''));
     }
 
+    public function testEndlessSeriesHasNoGlobalOccurrenceCap(): void
+    {
+        self::assertNull(EventRecurrence::validationError('2026-11-06 21:00:00', 'weekly', 'forever', 0, ''));
+        $anchor = '2026-11-06 21:00:00';
+        $cursor = $anchor;
+        for ($i = 0; $i < 100; $i++) {
+            $cursor = EventRecurrence::nextOccurrence($anchor, $cursor, 'weekly', [5]);
+            self::assertNotNull($cursor);
+            self::assertSame('5', date('N', (int) strtotime($cursor)));
+            self::assertSame('21:00:00', substr($cursor, 11));
+        }
+        self::assertGreaterThan('2028-01-01', $cursor);
+    }
+
+    public function testEndlessMonthlyKeepsOriginalDayAndBiweeklyKeepsItsAnchor(): void
+    {
+        self::assertSame('2027-03-31 21:00:00', EventRecurrence::nextOccurrence('2027-01-31 21:00:00', '2027-01-31 21:00:00', 'monthly'));
+        self::assertSame('2027-05-31 21:00:00', EventRecurrence::nextOccurrence('2027-01-31 21:00:00', '2027-03-31 21:00:00', 'monthly'));
+        self::assertSame('2026-11-20 21:00:00', EventRecurrence::nextOccurrence('2026-11-06 21:00:00', '2026-11-13 23:00:00', 'biweekly', [5]));
+        self::assertSame('2026-11-10 21:00:00', EventRecurrence::nextOccurrence('2026-11-06 21:00:00', '2026-11-06 21:00:00', 'weekly', [2, 5]));
+    }
+
     public function testWeeklyOnSeveralDaysWithCount(): void
     {
         // Mardi 6 octobre 2026, 21:00 → 23:00 ; mardi + jeudi, 4 occurrences.

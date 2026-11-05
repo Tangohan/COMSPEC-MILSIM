@@ -1693,6 +1693,9 @@ return function (Router $router) {
     $router->get('/api/events/{id}/reponses-nominatives', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/api/events/{id}/reponses-nominatives/export', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/api/events/{id}/reponses-nominatives/{userId}', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'updateMeta'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/discord/bot', [CommunityEventsAdminController::class, 'saveDiscordBot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/discord', [CommunityEventsAdminController::class, 'saveEventDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/series/stop', [CommunityEventsAdminController::class, 'stopSeries'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}', [CommunityEventsAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/details', [CommunityEventsAdminController::class, 'updateDetails'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/rsvp', [CommunityEventsAdminController::class, 'updateParticipantRsvp'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
