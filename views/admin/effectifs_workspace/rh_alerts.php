@@ -24,6 +24,7 @@ $toneLabel = [
     'ok' => 'Rien à signaler',
 ];
 $tipById = [
+    'missing_command' => 'Unités réelles dont la chaîne de rattachement ne contient pas le commandement prévu par le référentiel. La présence de sous-unités ne suffit pas.',
     'qualif_expiring' => 'Qualifications dont l’échéance tombe dans les soixante prochains jours. Le renouvellement passe par une formation certifiante.',
     'prolonged_absence' => 'Absences encore ouvertes depuis au moins ' . $absenceDays . ' jours. Vérifiez si un retour ou une décision est attendue.',
     'inactive_members' => 'Comptes actifs sans connexion depuis ' . $inactivityDays . ' jours. Ce n’est pas un départ : c’est un signal de suivi.',
@@ -40,7 +41,7 @@ $tipById = [
     <h2 class="eff-page-title">Alertes RH</h2>
     <p class="eff-page-lead">
         Vue consolidée de ce qui demande un suivi : qualifications à renouveler, absences prolongées,
-        inactivité, mobilité en attente et postes non pourvus.
+        inactivité, mobilité en attente, postes non pourvus et rattachements au commandement manquants.
     </p>
     <div class="eff-rh-tiles" aria-label="Synthèse des alertes">
         <article class="eff-rh-tile <?= $total > 0 ? 'eff-rh-tile--warn' : 'eff-rh-tile--ok' ?>">
@@ -71,6 +72,21 @@ $tipById = [
             </article>
         <?php endforeach; ?>
     </div>
+</section>
+
+<section class="eff-rh-list-card" id="rh-missing-command">
+    <h2 class="eff-rh-list-card__title">Rattachements au commandement</h2>
+    <p class="eff-rh-list-card__lead">La chaîne des unités réelles doit remonter à leur commandement de référence, par exemple l’USSOCOM. Un chef désigné ou des sous-unités ne remplacent pas ce rattachement.</p>
+    <?php if (empty($rhMissingCommand)): ?>
+        <p class="eff-rh-list-card__empty">Aucun rattachement manquant détecté dans le référentiel des unités réelles.</p>
+    <?php else: ?>
+        <ul class="eff-rh-people">
+            <?php foreach ($rhMissingCommand as $missing): ?>
+                <li><strong><?= $h($missing['name']) ?></strong><span>Rattachement manquant : <?= $h($missing['expected']) ?></span></li>
+            <?php endforeach; ?>
+        </ul>
+        <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('affectations') . '?vue=unites') ?>">Corriger les rattachements des unités</a>
+    <?php endif; ?>
 </section>
 
 <div class="eff-rh-split">

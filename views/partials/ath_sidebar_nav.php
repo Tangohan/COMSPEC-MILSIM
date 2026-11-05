@@ -415,7 +415,7 @@ if ($isOperatorBoNav) {
     $athNavGroups = [
         [
             'key' => 'pilotage',
-            'label' => 'PILOTAGE',
+            'label' => 'TABLEAU DE BORD ET SUIVI',
             'items' => [
                 ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
             ],
@@ -500,7 +500,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'organisation',
-            'label' => 'ORGANISATION',
+            'label' => 'UNITÉS ET RÉFÉRENTIELS',
             'items' => array_values(array_filter([
                 [
                     'label' => 'Coopérations inter-unités',
@@ -513,7 +513,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'systeme',
-            'label' => 'SYSTÈME',
+            'label' => 'RÉGLAGES ET INTÉGRATIONS',
             'items' => [
                 ['label' => 'Paramètres', 'href' => url('account/preferences'), 'icon' => 'gear', 'active' => $opAccountSystemActive],
             ],
@@ -536,7 +536,7 @@ if ($isOperatorBoNav) {
     $athNavGroups = [
         [
             'key' => 'pilotage',
-            'label' => 'PILOTAGE',
+            'label' => 'TABLEAU DE BORD ET SUIVI',
             'items' => array_values(array_filter([
                 ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
                 $canMurOperationnel
@@ -552,7 +552,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'effectifs',
-            'label' => 'EFFECTIFS',
+            'label' => 'MEMBRES ET SUIVI RH',
             'items' => [
                 [
                     'label' => 'Effectifs',
@@ -578,7 +578,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'organisation',
-            'label' => 'ORGANISATION',
+            'label' => 'UNITÉS ET RÉFÉRENTIELS',
             'items' => [
                 [
                     'label' => 'Organisation',
@@ -596,7 +596,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'acces',
-            'label' => 'ACCÈS',
+            'label' => 'DROITS ET PERMISSIONS',
             'items' => [
                 [
                     'label' => 'Rôles et droits',
@@ -657,7 +657,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'atak',
-            'label' => 'ATAK',
+            'label' => 'ATAK · CARTE ET TERMINAUX',
             'items' => [
                 ['label' => 'Overwatch', 'href' => url('atak'), 'icon' => 'radio', 'active' => false],
                 ['label' => 'Poste de situation', 'href' => url('back-office/atak'), 'icon' => 'ops', 'active' => $navAtakHubActive],
@@ -690,7 +690,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'academy',
-            'label' => 'ACADEMY',
+            'label' => 'FORMATIONS ET DOCUMENTS',
             'items' => array_values(array_filter([
                 $canTraining
                     ? ['label' => 'Formations', 'href' => url($lmsResPath), 'icon' => 'book', 'active' => $navFormationsActive]
@@ -733,7 +733,7 @@ if ($isOperatorBoNav) {
         ],
         [
             'key' => 'systeme',
-            'label' => 'SYSTÈME',
+            'label' => 'RÉGLAGES ET INTÉGRATIONS',
             'items' => array_values(array_filter([
                 ['label' => 'Configuration', 'href' => url('back-office/configuration'), 'icon' => 'gear', 'active' => $boNavConfig],
                 $canIntegrationsBo
