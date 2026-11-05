@@ -21,7 +21,7 @@ $jobCount = (int) ($item['job_catalog_count'] ?? 0);
 $hasGrades = trim((string) ($item['grade_system_code'] ?? '')) !== '';
 $lang = function_exists('site_lang') && site_lang() === 'en' ? 'en' : 'fr';
 ?>
-<div class="bo-catalog">
+<div class="bo-catalog bo-catalog--detail">
     <header class="bo-catalog__hero">
         <p class="bo-catalog__kicker"><?= $real ? 'Inspiré d’unités réelles' : ($official ? 'Modèle officiel Athena' : ($archived ? 'Modèle retiré' : 'Modèle de cette organisation')) ?></p>
         <h1 class="bo-catalog__title"><?= $h((string) ($item['title'] ?? 'Modèle')) ?></h1>
@@ -69,7 +69,7 @@ $lang = function_exists('site_lang') && site_lang() === 'en' ? 'en' : 'fr';
     </div>
 
     <div class="bo-catalog__outline-grid">
-        <section class="bo-catalog__outline" aria-labelledby="bo-cat-units">
+        <section class="bo-catalog__outline bo-catalog__outline--structure" aria-labelledby="bo-cat-units">
             <h2 id="bo-cat-units" class="bo-catalog__section-title">Organigramme</h2>
             <?php if ($unitOutline === []): ?>
                 <p class="bo-catalog__empty">Aucune unité dans ce modèle.</p>
@@ -100,7 +100,10 @@ $lang = function_exists('site_lang') && site_lang() === 'en' ? 'en' : 'fr';
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
-            <a class="ath-btn" href="<?= $h(url('back-office/groups')) ?>">Administrer les unités</a>
+            <div class="bo-catalog__hubs">
+                <a class="ath-btn" href="<?= $h(url('back-office/groups')) ?>">Administrer les unités</a>
+                <a class="ath-btn" href="<?= $h(url('back-office/organisation/matricules') . '#mn-organigramme') ?>">Gérer les préfixes de mon organisation</a>
+            </div>
         </section>
         <section class="bo-catalog__outline" aria-labelledby="bo-cat-fn">
             <h2 id="bo-cat-fn" class="bo-catalog__section-title">Fonctions</h2>

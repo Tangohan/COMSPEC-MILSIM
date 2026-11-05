@@ -119,6 +119,40 @@ $sourceLabels = [
 <p class="ath-flash ath-flash--err" role="alert"><?= $h((string) $flashErr) ?></p>
 <?php endif; ?>
 
+<?php
+$orgCodes = is_array($memberNumberUnitCodes ?? null) ? $memberNumberUnitCodes : [];
+$orgCommunity = $orgCodes['community'] ?? null;
+$orgUnits = is_array($memberNumberUnits ?? null) ? $memberNumberUnits : [];
+$canManageCodes = !empty($memberNumberCanManageCodes);
+?>
+<section class="bo-mn-panel" id="mn-organigramme" aria-labelledby="mn-organigramme-title">
+    <header class="bo-mn-panel__head"><h2 class="bo-mn-panel__title" id="mn-organigramme-title">Préfixes de l’organigramme</h2></header>
+    <div class="bo-mn-panel__body">
+        <p class="bo-mn-text">Le préfixe de communauté ouvre chaque code hiérarchique, par exemple SOAR-B-A-1. Chaque unité ajoute son code à celui de son parent. Les identifiants administratifs restent permanents.</p>
+        <?php if ($orgCommunity === null): ?>
+            <p class="bo-mn-text" role="status">Les codes de l’organigramme sont temporairement indisponibles.</p>
+        <?php else: ?>
+            <form method="post" action="<?= $h(url('back-office/organisation/matricules/prefixes')) ?>" class="bo-mn-prefix-form">
+                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                <div class="ath-field"><label class="ath-field__label" for="mn-community-code">Préfixe de communauté</label>
+                <input class="ath-field__input bo-mn-mono" id="mn-community-code" name="community_code" value="<?= $h((string) $orgCommunity['code']) ?>" required minlength="2" maxlength="10" pattern="[A-Za-z0-9]{2,10}" aria-describedby="mn-community-help" <?= $canManageCodes ? '' : 'disabled' ?>></div>
+                <?php if ($canManageCodes): ?><button class="ath-btn ath-btn--solid" type="submit">Enregistrer le préfixe</button><?php endif; ?>
+            </form>
+            <p class="bo-mn-text bo-mn-muted" id="mn-community-help">2 à 10 lettres ou chiffres. Modifier ce préfixe recalcule les codes de toutes les unités.</p>
+            <?php foreach ($orgUnits as $orgUnit): $orgId = (int) $orgUnit['id']; $computed = $orgCodes['units'][$orgId] ?? []; ?>
+                <form method="post" action="<?= $h(url('back-office/organisation/matricules/prefixes')) ?>" class="bo-mn-prefix-row">
+                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="unit_id" value="<?= $orgId ?>">
+                    <div><strong><?= $h((string) $orgUnit['name']) ?></strong><br><code><?= $h((string) ($computed['code'] ?? '—')) ?></code></div>
+                    <div class="ath-field"><label class="ath-field__label" for="mn-segment-<?= $orgId ?>">Code de l’unité</label><input class="ath-field__input bo-mn-mono" id="mn-segment-<?= $orgId ?>" name="segment" value="<?= $h((string) ($orgUnit['code'] ?? '')) ?>" maxlength="8" pattern="[A-Za-z0-9]{0,8}" placeholder="Automatique" <?= $canManageCodes ? '' : 'disabled' ?>></div>
+                    <?php if ($canManageCodes): ?><button class="ath-btn" type="submit">Enregistrer</button><?php endif; ?>
+                </form>
+            <?php endforeach; ?>
+            <p class="bo-mn-text bo-mn-muted">Code d’unité : 1 à 8 lettres ou chiffres ; laissez vide pour le calculer depuis le nom. Les matricules des membres déjà attribués se gèrent séparément dans le registre ci-dessous.</p>
+        <?php endif; ?>
+    </div>
+</section>
+
 <?php if (!$schemaReady): ?>
 <div class="ath-note">
     <div class="ath-note__title">Module en préparation</div>
