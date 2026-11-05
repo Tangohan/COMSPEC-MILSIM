@@ -28,22 +28,70 @@ final class EventRecurrence
             return null;
         }
         if (!in_array($frequency, self::FREQUENCIES, true)) {
-            return 'La fréquence de répétition est invalide.';
+            return __('events.invalid_frequency');
+        }
+        if ($endMode === 'forever') {
+            return null;
         }
         if ($endMode === 'count') {
             return $count >= 2 && $count <= self::MAX_OCCURRENCES
                 ? null
-                : 'Choisissez entre 2 et ' . self::MAX_OCCURRENCES . ' occurrences.';
+                : __('events.invalid_count', ['max' => self::MAX_OCCURRENCES]);
         }
         if ($endMode !== 'until') {
-            return 'Choisissez une fin de série.';
+            return __('events.choose_end');
         }
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $until);
         if ($date === false || $date->format('Y-m-d') !== $until) {
-            return 'Choisissez une date de fin de série valide.';
+            return __('events.invalid_date');
         }
         if ($until < substr($starts, 0, 10)) {
-            return 'La fin de série doit être à partir du premier créneau.';
+            return __('events.invalid_until');
+        }
+
+        return null;
+    }
+
+    /**
+     * Prochaine occurrence d’une série sans fin, toujours ancrée sur sa date initiale.
+     * @param list<int> $weekdays
+     */
+    public static function nextOccurrence(string $anchor, string $after, string $frequency, array $weekdays = []): ?string
+    {
+        if (!in_array($frequency, self::FREQUENCIES, true)) {
+            return null;
+        }
+        $first = new \DateTimeImmutable($anchor);
+        $cursor = new \DateTimeImmutable($after);
+        $time = $first->format('H:i:s');
+        if ($frequency === 'monthly') {
+            $month = $cursor->modify('first day of this month')->setTime(12, 0);
+            for ($i = 0; $i < 24; $i++, $month = $month->modify('+1 month')) {
+                $day = (int) $first->format('j');
+                if ($day > (int) $month->format('t')) {
+                    continue;
+                }
+                $candidate = new \DateTimeImmutable($month->format('Y-m-') . sprintf('%02d', $day) . ' ' . $time);
+                if ($candidate > $cursor && $candidate >= $first) {
+                    return $candidate->format('Y-m-d H:i:s');
+                }
+            }
+
+            return null;
+        }
+        $days = array_values(array_intersect(array_map('intval', $weekdays), range(1, 7)));
+        $days = $days !== [] ? $days : [(int) $first->format('N')];
+        $monday = $first->modify('-' . ((int) $first->format('N') - 1) . ' days')->setTime(12, 0);
+        $day = $cursor->setTime(12, 0);
+        for ($i = 0; $i < 22; $i++, $day = $day->modify('+1 day')) {
+            $weeks = (int) floor((int) $monday->diff($day)->format('%r%a') / 7);
+            if (!in_array((int) $day->format('N'), $days, true) || ($frequency === 'biweekly' && $weeks % 2 !== 0)) {
+                continue;
+            }
+            $candidate = new \DateTimeImmutable($day->format('Y-m-d') . ' ' . $time);
+            if ($candidate > $cursor && $candidate >= $first) {
+                return $candidate->format('Y-m-d H:i:s');
+            }
         }
 
         return null;

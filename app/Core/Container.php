@@ -707,6 +707,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\RoleplayBilanDueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelPhaseAutoCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AttendanceRemindersCronJob::class),
+                    new \App\Services\Cron\Jobs\EventAutomationCronJob(self::get(\App\Services\Platform\FeatureGateService::class)),
                     self::get(\App\Services\Cron\Jobs\CooperationRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlayerDataRetentionCronJob::class),

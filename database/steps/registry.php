@@ -70,4 +70,5 @@ return [
     ['id' => 'member_qualification_suggestion_dismissals', 'label' => 'Qualifications suggérées dans la fiche membre : suggestions ignorées par membre', 'group' => 'schema', 'file' => '3895_member_qualification_suggestion_dismissals.php', 'rerun' => true],
     ['id' => 'atak_sse_identity_real_countries', 'label' => 'Contrôle d’identité SSE : pays réels stylisés (Royaume-Uni, Grèce, États-Unis, Allemagne, Autriche, Colombie, France…) proposés à l’import pour un univers réaliste-simulation, gabarits génériques marqués SIMULATION', 'group' => 'schema', 'file' => '3910_atak_sse_identity_real_countries.php', 'rerun' => true],
     ['id' => 'atak_sse_identity_images', 'label' => 'Contrôle d’identité SSE : images des papiers (signature du titulaire, image de fond d’un gabarit personnalisé)', 'group' => 'schema', 'file' => '3920_atak_sse_identity_images.php', 'rerun' => true],
+    ['id' => 'event_automation', 'label' => 'Séries sans fin et réponses Discord aux événements', 'group' => 'schema', 'file' => '3930_event_automation.php', 'rerun' => true],
 ];

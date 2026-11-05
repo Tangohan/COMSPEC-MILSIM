@@ -100,6 +100,7 @@ $athKpis = [
 ?>
 
 <div class="ath-event-show ath-rise" x-data="{ addOpen: <?= $addOpen ? 'true' : 'false' ?>, deleteOpen: false, cancelOpen: false }">
+    <?php require base_path('views/partials/ath_event_automation_show.php'); ?>
     <div class="ath-event-show__meta ath-card ath-rise" style="padding:14px 18px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;">
         <span class="ath-cell ath-cell--mono" style="font-size:10px;font-weight:800;letter-spacing:0.12em;color:#8c979b;"><?= $h($ref) ?></span>
         <span class="ath-cell ath-cell--badge" style="color:<?= $h($type['tone']) ?>;background:<?= $h($type['bg']) ?>;border-color:transparent;"><?= $h($type['label']) ?></span>
@@ -514,11 +515,11 @@ $athKpis = [
         <form method="post" action="<?= $h(url('back-office/events/' . $eid . '/cancel')) ?>" class="ath-event-show__section-body ath-event-show__form" x-show="cancelOpen" x-cloak onsubmit="return confirm('Annuler ce créneau et prévenir les membres inscrits ?');">
             <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
             <?php $seriesNext = is_array($eventSeriesUpcoming ?? null) ? count($eventSeriesUpcoming) : 0; ?>
-            <?php if ($seriesNext > 1): ?>
+            <?php if ($seriesNext > 1 || !empty($eventEndless)): ?>
             <fieldset class="ath-event-show__series">
-                <legend>Ce créneau fait partie d’une série</legend>
-                <label><input type="radio" name="cancel_scope" value="one" checked> Ce créneau seulement</label>
-                <label><input type="radio" name="cancel_scope" value="series"> Ce créneau et les <?= $seriesNext - 1 ?> suivant<?= $seriesNext - 1 > 1 ? 's' : '' ?> de la série</label>
+                <legend><?= $h(__('events.part_of_series')) ?></legend>
+                <label><input type="radio" name="cancel_scope" value="one" checked> <?= $h(__('events.cancel_one')) ?></label>
+                <label><input type="radio" name="cancel_scope" value="series"> <?= $h(!empty($eventEndless) ? __('events.cancel_series') : __('events.cancel_following', ['count' => max(0, $seriesNext - 1)])) ?></label>
             </fieldset>
             <?php endif; ?>
             <label class="ath-users-filters__label" for="cancel-reason">Motif affiché aux membres <span class="ath-event-show__opt">(optionnel)</span></label>
