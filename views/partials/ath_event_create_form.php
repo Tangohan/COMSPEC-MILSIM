@@ -14,14 +14,20 @@ $vue = (string) ($evFormVue ?? 'calendrier');
 $id = static fn (string $name): string => 'ev-' . $name . '-' . $sfx;
 $weekdays = [1 => ['L', 'Lundi'], 2 => ['M', 'Mardi'], 3 => ['M', 'Mercredi'], 4 => ['J', 'Jeudi'], 5 => ['V', 'Vendredi'], 6 => ['S', 'Samedi'], 7 => ['D', 'Dimanche']];
 ?>
-<form method="post" action="<?= $h(url('back-office/events')) ?>" enctype="multipart/form-data" class="ath-card ath-rise ev-create" id="nouveau" data-ev-create>
+<div id="nouveau" class="ev-create-launch">
+    <button type="button" class="ath-btn ath-btn--solid" data-ev-open>Planifier un événement</button>
+    <span>Clic droit sur une case du calendrier pour choisir sa date.</span>
+</div>
+<dialog class="ev-create-dialog" aria-labelledby="<?= $h($id('heading')) ?>" data-ev-dialog>
+<button type="button" class="ath-btn ev-create-close" data-ev-close aria-label="Fermer">Fermer ×</button>
+<form method="post" action="<?= $h(url('back-office/events')) ?>" enctype="multipart/form-data" class="ath-card ath-rise ev-create" data-ev-create>
     <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
     <input type="hidden" name="return_vue" value="<?= $h($vue) ?>">
 
     <header class="ev-create__head">
         <div>
             <p class="ev-create__kicker">Nouveau créneau</p>
-            <h2 class="ev-create__title">Planifier un événement</h2>
+            <h2 id="<?= $h($id('heading')) ?>" class="ev-create__title">Planifier un événement</h2>
         </div>
         <p class="ev-create__lead">Les membres sont prévenus et peuvent répondre dès la publication. Postes, conditions et visuel s’ajoutent ensuite depuis la fiche.</p>
     </header>
@@ -108,6 +114,7 @@ $weekdays = [1 => ['L', 'Lundi'], 2 => ['M', 'Mardi'], 3 => ['M', 'Mercredi'], 4
         <button type="submit" class="ath-btn ath-btn--solid" data-ev-submit>Publier le créneau</button>
     </div>
 </form>
+</dialog>
 <?php if (empty($GLOBALS['__evCreateScript'])): $GLOBALS['__evCreateScript'] = true; ?>
 <script>
 /* Répétition : aperçu des dates générées (même logique que App\Support\EventRecurrence). */
@@ -159,6 +166,69 @@ $weekdays = [1 => ['L', 'Lundi'], 2 => ['M', 'Mardi'], 3 => ['M', 'Mercredi'], 4
     var countEl = form.querySelector('[data-ev-count]');
     var untilEl = form.querySelector('[data-ev-until]');
     var touchedDays = false;
+    var endEl = form.querySelector('[name="ends_at"]');
+    var previousStart = startEl.value;
+    function syncSchedule() {
+      endEl.setCustomValidity('');
+      if (startEl.value) {
+        var next = new Date(startEl.value);
+        var previous = new Date(previousStart);
+        var end = new Date(endEl.value);
+        var duration = end - previous;
+        if (!endEl.value || (previousStart && duration > 0)) {
+          endEl.value = localValue(new Date(next.getTime() + (duration > 0 ? duration : 7200000)));
+        }
+        endEl.min = startEl.value;
+        untilEl.min = startEl.value.slice(0, 10);
+      }
+      previousStart = startEl.value;
+      if (endEl.value && startEl.value && endEl.value <= startEl.value) {
+        endEl.setCustomValidity('La fin doit être après le début du créneau.');
+      }
+    }
+    startEl.addEventListener('change', syncSchedule);
+    endEl.addEventListener('input', function () {
+      endEl.setCustomValidity(endEl.value && endEl.value <= startEl.value ? 'La fin doit être après le début du créneau.' : '');
+    });
+    var dialog = form.closest('[data-ev-dialog]');
+    var opener = dialog.previousElementSibling.querySelector('[data-ev-open]');
+    function localValue(d) {
+      function pad(n) { return String(n).padStart(2, '0'); }
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    function openForm(day) {
+      if (day || !startEl.value) {
+        var date = day ? new Date(day + 'T21:00:00') : new Date();
+        if (!day) { date.setHours(21, 0, 0, 0); }
+        previousStart = '';
+        startEl.value = localValue(date);
+        date.setHours(date.getHours() + 2);
+        form.querySelector('[name="ends_at"]').value = localValue(date);
+        startEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      dialog.showModal();
+      form.querySelector('[name="title"]').focus();
+    }
+    opener.addEventListener('click', function () { openForm(); });
+    dialog.querySelector('[data-ev-close]').addEventListener('click', function () { dialog.close(); });
+    document.querySelectorAll('.ath-cal__day[data-ymd]').forEach(function (cell) {
+      cell.addEventListener('contextmenu', function (event) {
+        if (event.target.closest('a')) return;
+        event.preventDefault();
+        openForm(cell.dataset.ymd);
+      });
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ath-cal__add';
+      button.textContent = '+';
+      button.setAttribute('aria-label', 'Planifier un événement le ' + cell.dataset.ymd);
+      button.addEventListener('click', function () { openForm(cell.dataset.ymd); });
+      cell.querySelector('.ath-cal__daynum').appendChild(button);
+    });
+    function openFromHash() { if (window.location.hash === '#nouveau' && !dialog.open) openForm(); }
+    window.addEventListener('hashchange', openFromHash);
+    openFromHash();
+
 
     function freq() { var r = form.querySelector('[data-ev-freq]:checked'); return r ? r.value : ''; }
     function endMode() { var r = form.querySelector('[data-ev-endmode]:checked'); return r ? r.value : 'count'; }
@@ -166,6 +236,12 @@ $weekdays = [1 => ['L', 'Lundi'], 2 => ['M', 'Mardi'], 3 => ['M', 'Mercredi'], 4
     function update() {
       var f = freq();
       body.hidden = f === '';
+      var mode = endMode();
+      countEl.disabled = f === '' || mode !== 'count';
+      countEl.required = f !== '' && mode === 'count';
+      untilEl.disabled = f === '' || mode !== 'until';
+      untilEl.required = f !== '' && mode === 'until';
+      untilEl.setCustomValidity(untilEl.value && startEl.value && untilEl.value < startEl.value.slice(0, 10) && f !== '' && mode === 'until' ? 'La fin de série doit être à partir du premier créneau.' : '');
       daysWrap.hidden = f === 'monthly';
       var start = startEl.value ? new Date(startEl.value) : null;
       if (start && !touchedDays && f !== '' && f !== 'monthly') {
@@ -182,6 +258,7 @@ $weekdays = [1 => ['L', 'Lundi'], 2 => ['M', 'Mardi'], 3 => ['M', 'Mercredi'], 4
       var until = mode === 'until' && untilEl.value ? new Date(untilEl.value + 'T23:59:59') : null;
       var list = expand(start, f, days, count, until);
       var shown = list.slice(0, 6).map(fmt).join(' · ');
+      shown += ' à ' + startEl.value.slice(11, 16).replace(':', ' h ');
       preview.innerHTML = '';
       var strong = document.createElement('strong');
       strong.textContent = list.length + (list.length > 1 ? ' créneaux' : ' créneau');
@@ -201,6 +278,12 @@ $weekdays = [1 => ['L', 'Lundi'], 2 => ['M', 'Mardi'], 3 => ['M', 'Mercredi'], 4
       if (e.target === countEl) { var r = form.querySelector('[data-ev-endmode][value="count"]'); if (r) r.checked = true; }
       if (e.target === countEl || e.target === startEl) update();
     });
+    form.addEventListener('submit', function () {
+      submit.disabled = true;
+      submit.textContent = 'Publication en cours…';
+    });
+    window.addEventListener('pageshow', function () { submit.disabled = false; update(); });
+    syncSchedule();
     update();
   });
 })();

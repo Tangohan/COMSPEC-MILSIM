@@ -454,6 +454,12 @@ final class CommunityEventsAdminController
         $repeatEnd = trim((string) $request->input('repeat_end', 'count'));
         $repeatCount = (int) $request->input('repeat_count', 0);
         $repeatUntil = trim((string) $request->input('repeat_until', ''));
+        $repeatError = EventRecurrence::validationError($starts, $repeat, $repeatEnd, $repeatCount, $repeatUntil);
+        if ($repeatError !== null) {
+            Session::flash('error', $repeatError);
+
+            return $this->redirectEventsIndex($listVue);
+        }
         $occurrences = in_array($repeat, EventRecurrence::FREQUENCIES, true)
             ? EventRecurrence::expand(
                 $starts,
