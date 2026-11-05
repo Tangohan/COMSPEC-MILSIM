@@ -21,9 +21,6 @@ declare(strict_types=1);
  * @var list<array{id:string,label:string,masked:string}> $discord_relays
  * @var bool $use_community_relay
  * @var bool $community_relay_ready
- * @var array<string, mixed> $mail_sender
- * @var array<string, array{label:string, host:string, port:int, encryption:string, username:string}> $mail_providers
- * @var string $admin_email
  */
 
 $keys = is_array($integration_keys ?? null) ? $integration_keys : [];
@@ -35,9 +32,6 @@ $discordState = is_array($discord_state ?? null) ? $discord_state : ['default_ur
 $sseRelays = is_array($discord_relays ?? null) ? $discord_relays : [];
 $useCommunityRelay = !empty($use_community_relay);
 $communityRelayReady = !empty($community_relay_ready);
-$mailSender = is_array($mail_sender ?? null) ? $mail_sender : [];
-$mailProviders = is_array($mail_providers ?? null) ? $mail_providers : [];
-$adminEmail = (string) ($admin_email ?? '');
 $discordEventState = is_array($discordState['events'] ?? null) ? $discordState['events'] : [];
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -165,7 +159,6 @@ foreach ($keys as $k) {
 $usageRatio = $quotaTotal > 0 ? (int) round($todayTotal / $quotaTotal * 100) : 0;
 
 // Vue d'ensemble : un état par connexion.
-$mailState = !empty($mailSender['ready']) ? 'ok' : (!empty($mailSender['enabled']) ? 'warn' : 'off');
 $tiles = [
     [
         'href' => '#relais-discord',
@@ -174,14 +167,6 @@ $tiles = [
         'state' => $discordLinked ? ($publishedCount > 0 ? 'ok' : 'warn') : 'off',
         'value' => $discordLinked ? $publishedCount . ' / ' . count($discordEvents) : 'Non relié',
         'note' => $discordLinked ? 'usages publiés' : 'aucun salon relié',
-    ],
-    [
-        'href' => '#emails-communaute',
-        'icon' => 'mail',
-        'title' => 'E-mails',
-        'state' => $mailState,
-        'value' => match ($mailState) { 'ok' => 'Votre compte', 'warn' => 'Incomplet', default => 'Envoi commun' },
-        'note' => $mailState === 'ok' ? (string) ($mailSender['from_address'] ?? '') : ($mailState === 'warn' ? 'expéditeur ou serveur manquant' : 'partent avec Athena'),
     ],
     [
         'href' => '#relais-transmissions',
@@ -205,7 +190,6 @@ $stateLabel = ['ok' => 'Actif', 'warn' => 'À vérifier', 'off' => 'Coupé', 'lo
 $nav = [
     ['href' => '#vue-ensemble', 'icon' => 'overview', 'label' => 'Vue d’ensemble'],
     ['href' => '#relais-discord', 'icon' => 'discord', 'label' => 'Discord', 'count' => $publishedCount],
-    ['href' => '#emails-communaute', 'icon' => 'mail', 'label' => 'E-mails'],
     ['href' => '#relais-transmissions', 'icon' => 'radio', 'label' => 'Transmissions terrain', 'count' => count($sseRelays)],
     ['href' => '#jetons', 'icon' => 'key', 'label' => 'Jetons d’accès', 'count' => $apiKeysAllowed ? $activeCount : null],
 ];
@@ -246,6 +230,50 @@ $flashSuccess = \App\Core\Session::getFlash('success');
 
     <div class="bo-int__main">
 
+    <div class="bo-int-actions">
+        <button type="button" class="bo-int-btn bo-int-btn--solid" data-mail-open aria-haspopup="dialog" aria-controls="community-mail-dialog"><?= $icon('mail') ?> Écrire à ma communauté</button>
+    </div>
+    <dialog id="community-mail-dialog" class="bo-int-mail-dialog" aria-labelledby="community-mail-title" data-mail-dialog>
+        <div class="bo-int-section__head">
+            <div>
+                <h2 id="community-mail-title" class="bo-int-section__title">Écrire à ma communauté</h2>
+                <p class="bo-int-section__desc">Le message sera envoyé aux membres actifs ayant une adresse valide, selon leurs préférences de réception.</p>
+            </div>
+            <button type="button" class="bo-int-btn" data-mail-close aria-label="Fermer la fenêtre">Fermer</button>
+        </div>
+        <?php if (empty($mail_kinds)): ?>
+            <p class="bo-int-tip">Votre compte ne dispose pas des droits nécessaires pour envoyer un e-mail aux membres.</p>
+        <?php else: ?>
+        <form method="post" action="<?= $h(url('back-office/communications/send')) ?>" data-community-mail-form>
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="source" value="integrations">
+            <input type="hidden" name="all_members" value="1">
+            <label class="bo-int-field">
+                <span class="bo-int-field__label">Type de message</span>
+                <select name="kind" class="bo-int-input" required>
+                    <?php foreach ($mail_kinds as $kind): ?>
+                        <option value="<?= $h($kind) ?>"><?= $h(\App\Support\TenantEmailKind::label($kind)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="bo-int-field">
+                <span class="bo-int-field__label">Objet</span>
+                <input type="text" name="subject" class="bo-int-input" maxlength="500" required>
+            </label>
+            <label class="bo-int-field">
+                <span class="bo-int-field__label">Message</span>
+                <textarea name="body_text" class="bo-int-input" rows="10" required></textarea>
+            </label>
+            <p data-mail-result role="status" aria-live="polite"></p>
+            <div class="bo-int-actions">
+                <button type="submit" class="bo-int-btn bo-int-btn--solid">Envoyer à ma communauté</button>
+                <button type="button" class="bo-int-btn" data-mail-close>Annuler</button>
+            </div>
+        </form>
+        <?php endif; ?>
+    </dialog>
+
+
     <!-- ── Vue d'ensemble ─────────────────────────────────────────── -->
     <section id="vue-ensemble" class="bo-int-section" data-int-section>
         <header class="bo-int-section__head">
@@ -277,10 +305,7 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                 <p class="bo-int-concept__title"><?= $icon('send') ?> Un salon pour tout, ou un salon par usage</p>
                 <p class="bo-int-concept__text">Le salon de l’organisation reçoit tout ce que vous activez. Pour envoyer un usage ailleurs (photos dans #renseignement, candidatures dans #recrutement), ajoutez ce salon dans le mode avancé et choisissez-le en face de l’usage.</p>
             </div>
-            <div class="bo-int-concept">
-                <p class="bo-int-concept__title"><?= $icon('mail') ?> Votre propre adresse d’envoi</p>
-                <p class="bo-int-concept__text">Les e-mails de la communauté (invitations, candidatures, codes de connexion…) peuvent partir de votre domaine, à votre nom et sur votre quota, au lieu de l’envoi commun d’Athena.</p>
-            </div>
+
         </div>
     </section>
 
@@ -599,58 +624,6 @@ $flashSuccess = \App\Core\Session::getFlash('success');
         <form method="post" action="<?= $h(url('back-office/integrations/discord/tester')) ?>" id="form-wh-test" hidden data-wh-test-form>
             <?= \App\Core\Csrf::field() ?>
         </form>
-    </section>
-
-    <!-- ── E-mails ─────────────────────────────────────────────────── -->
-    <section id="emails-communaute" class="bo-int-section" data-int-section>
-        <header class="bo-int-section__head">
-            <span class="bo-int-section__icon"><?= $icon('mail') ?></span>
-            <div>
-                <h2 class="bo-int-section__title">E-mails de la communauté</h2>
-                <p class="bo-int-section__desc">Invitations, candidatures, effectifs, codes de connexion, mots de passe… partent de <strong>votre</strong> compte d’envoi : à votre nom, depuis votre adresse, sur votre quota.</p>
-            </div>
-        </header>
-
-        <div class="bo-int-route">
-            <div class="bo-int-route__step<?= $mailState === 'ok' ? ' is-active' : '' ?>">
-                <span class="bo-int-route__num">1</span>
-                <span class="bo-int-route__text"><strong>Votre compte d’envoi</strong><small><?= $mailState === 'ok' ? $h((string) ($mailSender['from_address'] ?? '')) : 'utilisé dès qu’il est actif' ?></small></span>
-            </div>
-            <span class="bo-int-route__arrow" aria-hidden="true"><?= $icon('chevron') ?></span>
-            <div class="bo-int-route__step<?= $mailState !== 'ok' ? ' is-active' : '' ?>">
-                <span class="bo-int-route__num">2</span>
-                <span class="bo-int-route__text"><strong>Envoi commun d’Athena</strong><small>sinon, s’il est réglé</small></span>
-            </div>
-            <span class="bo-int-route__arrow" aria-hidden="true"><?= $icon('chevron') ?></span>
-            <div class="bo-int-route__step">
-                <span class="bo-int-route__num">3</span>
-                <span class="bo-int-route__text"><strong>Rien ne part</strong><small>si aucun des deux n’existe</small></span>
-            </div>
-        </div>
-
-        <div class="bo-int-status bo-int-status--<?= $h($mailState) ?>">
-            <?php if ($mailState === 'ok'): ?>
-                <?= $icon('check') ?><span><strong>Actif</strong> : les e-mails partent de <?= $h((string) ($mailSender['from_address'] ?? '')) ?>.</span>
-            <?php elseif ($mailState === 'warn'): ?>
-                <?= $icon('warn') ?><span><strong>Incomplet</strong> : renseignez l’expéditeur et le serveur, puis enregistrez.</span>
-            <?php else: ?>
-                <?= $icon('info') ?><span><strong>Coupé</strong> : aucun compte d’envoi propre à la communauté, l’envoi commun d’Athena s’applique.</span>
-            <?php endif; ?>
-        </div>
-
-        <?php
-        $mailFormState = $mailSender;
-        $mailFormProviders = $mailProviders;
-        $mailFormAction = url('back-office/integrations/emails');
-        $mailFormTestAction = url('back-office/integrations/emails/essai');
-        $mailFormId = 'mail-community';
-        $mailFormWho = 'la communauté';
-        $mailFormFromPlaceholder = 'no-reply@votre-communaute.fr';
-        $mailFormNamePlaceholder = 'Votre communauté';
-        $mailFormTestTo = $adminEmail;
-        require base_path('views/admin/organization/partials/integrations_mail_form.php');
-        ?>
-        <p class="bo-int-guide__note"><?= $icon('info') ?> Pour ne pas finir en indésirables, déclarez le service d’envoi dans le DNS de votre domaine (enregistrements SPF et DKIM indiqués par le service).</p>
     </section>
 
     <!-- ── Transmissions terrain ──────────────────────────────────── -->

@@ -2081,3 +2081,25 @@ html[data-bo-theme="dark"] .bo-int-savebar {
     transition: none;
   }
 }
+
+
+.bo-int-mail-dialog {
+  width: min(640px, calc(100% - 32px));
+  max-height: calc(100dvh - 48px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  border: 1px solid var(--bo-border, #cbd5e1);
+  border-radius: 16px;
+  padding: 24px;
+  color: #0f172a;
+  background: #fff;
+  box-shadow: 0 24px 80px #0004;
+}
+
+.bo-int-mail-dialog::backdrop {
+  background: #0f172a99;
+}
+
+.bo-int-mail-dialog .bo-int-field {
+  margin-bottom: 16px;
+}
