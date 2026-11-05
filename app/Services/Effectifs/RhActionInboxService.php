@@ -221,6 +221,17 @@ final class RhActionInboxService
             $incompleteCount = 0;
         }
 
+        $careerCount = 0;
+        foreach ($this->alerts->listCareerDiscrepancies($tenantId) as $i => $gap) {
+            ++$careerCount;
+            $actions[] = [
+                'id' => 'career-' . $gap['user_id'] . '-' . $i, 'bucket' => 'alerts', 'priority' => 45,
+                'member_id' => $gap['user_id'], 'member_label' => $gap['member_label'],
+                'title' => $gap['source'], 'detail' => $gap['detail'] . ' (suivi indicatif)',
+                'cta_label' => 'Ouvrir le dossier', 'href' => effectifs_workspace_url('membres/' . $gap['user_id']),
+            ];
+        }
+
         // Alertes agrégées (complément sans dupliquer chaque ligne)
         try {
             $summary = $this->alerts->summarize($tenantId, $inactivityDays, $absenceDays);
@@ -229,7 +240,7 @@ final class RhActionInboxService
                     continue;
                 }
                 $id = (string) ($item['id'] ?? '');
-                if (in_array($id, ['qualif_expiring', 'mobility_pending'], true)) {
+                if (in_array($id, ['qualif_expiring', 'mobility_pending', 'career_discrepancies'], true)) {
                     continue; // déjà couverts
                 }
                 $count = (int) ($item['count'] ?? 0);
@@ -261,6 +272,11 @@ final class RhActionInboxService
         });
 
         $buckets = [
+            [
+                'id' => 'alerts', 'label' => 'Écarts de carrière', 'count' => $careerCount,
+                'href' => effectifs_workspace_url('a-traiter?onglet=alertes') . '#career-consistency',
+                'tone' => $careerCount > 0 ? 'warn' : 'ok',
+            ],
             [
                 'id' => 'corrections',
                 'label' => 'Corrections à traiter',

@@ -105,6 +105,14 @@ final class RhAlertAggregatorService
             'tone' => $vacantBillets > 0 ? 'warn' : 'ok',
         ];
 
+        $careerCount = count($this->listCareerDiscrepancies($tenantId));
+        $items[] = [
+            'id' => 'career_discrepancies', 'severity' => 'Parcours de carrière',
+            'label' => 'Écart entre grade, emploi et qualifications', 'count' => $careerCount,
+            'href' => effectifs_workspace_url('a-traiter?onglet=alertes') . '#career-consistency',
+            'tone' => $careerCount > 0 ? 'warn' : 'ok',
+        ];
+
         $total = 0;
         foreach ($items as $item) {
             if (($item['tone'] ?? '') !== 'ok') {
@@ -113,6 +121,14 @@ final class RhAlertAggregatorService
         }
 
         return ['items' => $items, 'total' => $total];
+    }
+
+    /** @var array<int, list<array<string, mixed>>> */
+    private array $careerMemo = [];
+
+    public function listCareerDiscrepancies(int $tenantId): array
+    {
+        return $this->careerMemo[$tenantId] ??= (new \App\Services\Personnel\CareerConsistencyService($this->pdo))->listForTenant($tenantId);
     }
 
     public function countProlongedAbsences(int $tenantId, ?int $days = null): int

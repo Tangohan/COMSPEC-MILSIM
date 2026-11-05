@@ -153,10 +153,10 @@ foreach ($members as $m) {
                 <?php if ($community !== null && $canEditCommunityCode): ?>
                 <form method="post" action="<?= $h(effectifs_workspace_url('codes/communaute')) ?>" class="effk-codes__form">
                     <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                    <label for="eff-aff-community-code">Code de la communauté
-                        <input id="eff-aff-community-code" name="community_code" value="<?= $h((string) $community['code']) ?>" required minlength="2" maxlength="10" pattern="[A-Za-z0-9]{2,10}" title="De 2 à 10 lettres ou chiffres" autocomplete="off" spellcheck="false">
+                    <label for="eff-aff-community-code">Préfixe visuel des codes unité
+                        <input id="eff-aff-community-code" name="community_code" value="<?= $h((string) $community['code']) ?>" minlength="2" maxlength="10" pattern="[A-Za-z0-9]{2,10}" title="De 2 à 10 lettres ou chiffres" autocomplete="off" spellcheck="false">
                     </label>
-                    <button type="submit" class="effk-btn is-dark">Enregistrer</button>
+                    <p>Ce préfixe remplace le premier segment à l’affichage. Le tenant et les identifiants administratifs restent inchangés. Laissez vide pour rétablir le préfixe par défaut.</p><button type="submit" class="effk-btn is-dark">Enregistrer</button>
                 </form>
                 <?php endif; ?>
             </div>

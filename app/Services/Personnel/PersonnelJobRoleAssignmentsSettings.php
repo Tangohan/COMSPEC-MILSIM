@@ -57,8 +57,8 @@ final class PersonnelJobRoleAssignmentsSettings
                 ? (bool) $raw['show_category_in_role_picklist']
                 : true,
             'default_expand_role_rows' => $expand,
-            // Prérequis des emplois : indicatifs par défaut (avertissement), bloquants si la communauté le choisit.
-            'prerequisites_blocking' => !empty($raw['prerequisites_blocking']),
+            // Les écarts de carrière sont toujours indicatifs, y compris pour les anciens réglages.
+            'prerequisites_blocking' => false,
         ];
     }
 

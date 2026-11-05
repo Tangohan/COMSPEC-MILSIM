@@ -73,6 +73,21 @@ $tipById = [
     </div>
 </section>
 
+<section class="eff-rh-list-card" id="career-consistency">
+    <h2 class="eff-rh-list-card__title">Cohérence du parcours de carrière</h2>
+    <p class="eff-rh-list-card__lead">Écarts recalculés automatiquement depuis les emplois et grades actuels. Ces alertes ne bloquent jamais une affectation ou une promotion.</p>
+    <?php if (empty($rhCareerDiscrepancies)): ?>
+        <p class="eff-rh-list-card__empty">Aucun écart détecté dans les prérequis configurés.</p>
+    <?php else: ?>
+        <ul class="eff-rh-people">
+        <?php foreach ($rhCareerDiscrepancies as $gap): ?>
+            <li><a href="<?= $h(effectifs_workspace_url('membres/' . (int) $gap['user_id'])) ?>"><?= $h($gap['member_label']) ?></a>
+                <span><?= $h($gap['source'] . ' — ' . $gap['detail']) ?></span></li>
+        <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+</section>
+
 <div class="eff-rh-split">
     <section class="eff-rh-list-card">
         <div class="eff-rh-list-card__head">

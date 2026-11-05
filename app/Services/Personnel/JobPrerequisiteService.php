@@ -622,11 +622,7 @@ final class JobPrerequisiteService
 
             return $result;
         }
-        if ($blocking) {
-            $result['allowed'] = false;
-        } else {
-            $result['warned'] = array_keys($result['unmet']);
-        }
+        $result['warned'] = array_keys($result['unmet']);
 
         return $result;
     }
