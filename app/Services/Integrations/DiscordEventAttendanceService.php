@@ -110,6 +110,12 @@ final class DiscordEventAttendanceService
         }
     }
 
+    /** @param array<string, list<string>> $reactions */
+    public function importReactions(int $tenant, int $eventId, array $reactions): void
+    {
+        $this->applyVotes($tenant, $eventId, DiscordEventVotes::resolve($reactions));
+    }
+
     /** @param array<string, string> $votes */
     private function applyVotes(int $tenant, int $eventId, array $votes): void
     {

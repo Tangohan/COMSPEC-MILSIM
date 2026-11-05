@@ -35,3 +35,17 @@ jobs:
         run: npm ci
       - name: Build Tailwind
         run: npm run build:tailwind
+
+  companion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: bots/athena-companion/requirements.txt
+      - name: Install Companion dependencies
+        run: python -m pip install -r bots/athena-companion/requirements.txt
+      - name: Test Companion without Discord connection
+        run: python -m unittest discover -s bots/athena-companion -p 'test_*.py'

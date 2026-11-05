@@ -67,7 +67,7 @@ final class EventAutomationRepository
     {
         return $this->pdo->query("SELECT d.*, e.title, e.description, e.location, e.starts_at, e.ends_at, e.cancelled_at
             FROM community_event_discord d JOIN community_events e ON e.id = d.event_id AND e.tenant_id = d.tenant_id
-            WHERE d.enabled = 1 AND e.cancelled_at IS NULL AND COALESCE(e.ends_at, e.starts_at) >= NOW()
+            WHERE d.destination <> 'companion' AND d.enabled = 1 AND e.cancelled_at IS NULL AND COALESCE(e.ends_at, e.starts_at) >= NOW()
               AND e.starts_at <= DATE_ADD(NOW(), INTERVAL 30 DAY)
             ORDER BY d.synced_at IS NOT NULL, d.synced_at ASC, e.starts_at ASC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
     }

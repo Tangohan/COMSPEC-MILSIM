@@ -13,11 +13,22 @@ class DiscordEventClient
     /** @param array<string, mixed> $payload @return array<string, mixed> */
     public function webhook(string $url, array $payload): array
     {
+        return $this->request('POST', $this->webhookPath($url) . '?wait=true', '', $payload);
+    }
+
+    /** Métadonnées du webhook ; ne publie aucun message. @return array<string, mixed> */
+    public function webhookInfo(string $url): array
+    {
+        return $this->request('GET', $this->webhookPath($url), '');
+    }
+
+    private function webhookPath(string $url): string
+    {
         if (preg_match('#^https://(?:discord(?:app)?\.com|ptb\.discord\.com|canary\.discord\.com)/api(?:/v\d+)?/webhooks/(\d+)/([A-Za-z0-9_-]+)(?:\?.*)?$#D', $url, $m) !== 1) {
             throw new \RuntimeException('events.discord_invalid_webhook');
         }
 
-        return $this->request('POST', '/webhooks/' . $m[1] . '/' . $m[2] . '?wait=true', '', $payload);
+        return '/webhooks/' . $m[1] . '/' . $m[2];
     }
 
     /** @return array<string, mixed> */

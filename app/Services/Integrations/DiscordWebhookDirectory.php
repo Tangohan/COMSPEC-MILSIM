@@ -299,6 +299,62 @@ final class DiscordWebhookDirectory
         return $id;
     }
 
+    /** @return array{ok:bool, message:string} */
+    public function refreshChannel(int $tenantId, string $id): array
+    {
+        $url = $this->urlFor($tenantId, $id);
+        if ($url === null) {
+            return ['ok' => false, 'message' => __('events.discord_missing_webhook')];
+        }
+        try {
+            $token = (new DiscordEventAttendanceService())->botToken($tenantId);
+            $companion = new \App\Repositories\DiscordCompanionRepository();
+            if ($token !== '') {
+                $target = (new DiscordWebhookChannelService())->resolve($url, $token);
+            } elseif ($companion->forTenant($tenantId) !== null) {
+                $info = (new DiscordEventClient())->webhookInfo($url);
+                $name = $companion->knownChannel($tenantId, (string) ($info['channel_id'] ?? ''));
+                if ($name === null) throw new \RuntimeException('events.channel_unavailable');
+                $target = ['channel' => $name];
+            } else {
+                throw new \RuntimeException('events.channel_needs_bot');
+            }
+            // Relire après le réseau, pour conserver les autres réglages enregistrés entre-temps.
+            $integrations = $this->integrations($tenantId);
+            if ($id === self::ORGANISATION) {
+                if (!hash_equals($url, self::reveal($integrations[self::KEY_URL] ?? ''))) {
+                    throw new \RuntimeException('events.channel_unavailable');
+                }
+                $meta = is_array($integrations[self::KEY_META] ?? null) ? $integrations[self::KEY_META] : [];
+                $meta['channel'] = $target['channel'];
+                $integrations[self::KEY_META] = $meta;
+            } else {
+                $list = $this->rawList($integrations);
+                $found = false;
+                foreach ($list as &$row) {
+                    if ($row['id'] === $id && hash_equals($url, self::reveal($row['url']))) {
+                        $row['channel'] = $target['channel'];
+                        $found = true;
+                        break;
+                    }
+                }
+                unset($row);
+                if (!$found) {
+                    throw new \RuntimeException('events.channel_unavailable');
+                }
+                $integrations[self::KEY_LIST] = $list;
+            }
+            $this->persist($tenantId, $integrations);
+
+            return ['ok' => true, 'message' => __('events.channel_refreshed', ['channel' => $target['channel']])];
+        } catch (\Throwable $e) {
+            $key = in_array($e->getMessage(), ['events.channel_needs_bot', 'events.channel_unavailable', 'events.discord_rate_limited', 'events.discord_failed', 'events.discord_invalid_webhook'], true)
+                ? $e->getMessage() : 'events.channel_unavailable';
+
+            return ['ok' => false, 'message' => __($key)];
+        }
+    }
+
     public function recordTest(int $tenantId, string $id, bool $ok, string $message): void
     {
         $integrations = $this->integrations($tenantId);
