@@ -3,7 +3,7 @@
  * Sommaire actif au défilement, usages Discord (activé / coupé, salon à part en mode avancé), bouton « Tester »,
  * aperçu du message des liens d’invitation,
  * recherche et filtres d'événements, réglage groupé, barre d'enregistrement, vérification des liens webhook,
- * préréglages des fournisseurs d'envoi d'e-mails.
+ * rédaction d’un e-mail à la communauté.
  */
 (function () {
   'use strict';
@@ -244,43 +244,48 @@
     render();
   }
 
-  /* ── Comptes d'envoi d'e-mails ────────────────────────────────── */
+  /* ── Rédaction d’un e-mail à la communauté ──────────────────── */
 
-  root.querySelectorAll('[data-mail-form]').forEach(function (mailForm) {
-    var presets = {};
-    var tips = {};
-    try { presets = JSON.parse(mailForm.getAttribute('data-presets') || '{}'); } catch (e) { presets = {}; }
-    try { tips = JSON.parse(mailForm.getAttribute('data-tips') || '{}'); } catch (e) { tips = {}; }
-    var provider = mailForm.querySelector('[data-mail-provider]');
-    var host = mailForm.querySelector('[data-mail-host]');
-    var port = mailForm.querySelector('[data-mail-port]');
-    var enc = mailForm.querySelector('[data-mail-encryption]');
-    var tip = mailForm.querySelector('[data-mail-tip]');
-    if (!provider) {
-      return;
-    }
-    function apply(changed) {
-      var p = presets[provider.value] || {};
-      if (host) {
-        host.placeholder = p.host ? p.host + ' (automatique)' : 'smtp.votre-hebergeur.fr';
-      }
-      if (changed) {
-        if (port && p.port) { port.value = String(p.port); }
-        if (enc && p.encryption) { enc.value = p.encryption; }
-        if (host && p.host) { host.value = ''; }
-      }
-      if (tip && tips[provider.value]) {
-        tip.textContent = tips[provider.value];
-      }
-    }
-    provider.addEventListener('change', function () { apply(true); });
-    if (port && enc) {
-      port.addEventListener('change', function () {
-        if (port.value === '465') { enc.value = 'ssl'; } else if (enc.value === 'ssl') { enc.value = 'tls'; }
+  var mailDialog = root.querySelector('[data-mail-dialog]');
+  var mailOpen = root.querySelector('[data-mail-open]');
+  var mailForm = root.querySelector('[data-community-mail-form]');
+  var sending = false;
+  if (mailDialog && mailOpen) {
+    mailOpen.addEventListener('click', function () { mailDialog.showModal(); });
+    root.querySelectorAll('[data-mail-close]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!sending) { mailDialog.close(); }
       });
-    }
-    apply(false);
-  });
+    });
+    mailDialog.addEventListener('cancel', function (event) {
+      if (sending) { event.preventDefault(); }
+    });
+  }
+  if (mailForm) {
+    mailForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (sending) { return; }
+      var result = mailForm.querySelector('[data-mail-result]');
+      var submit = mailForm.querySelector('[type="submit"]');
+      var data = new FormData(mailForm);
+      sending = true;
+      submit.disabled = true;
+      result.textContent = 'Envoi en cours…';
+      fetch(mailForm.action, {
+        method: 'POST', body: data, credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' }
+      })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+          result.textContent = data.message || 'Réponse inattendue.';
+          if (data.ok) { mailForm.reset(); }
+        })
+        .catch(function () {
+          result.textContent = 'Impossible de confirmer l’envoi. Consultez l’historique des communications avant de réessayer.';
+        })
+        .then(function () { sending = false; submit.disabled = false; });
+    });
+  }
 
   /* ── Sommaire actif ───────────────────────────────────────────── */
 

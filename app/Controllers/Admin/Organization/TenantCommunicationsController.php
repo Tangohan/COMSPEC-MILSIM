@@ -71,25 +71,33 @@ final class TenantCommunicationsController
         if (!$tenantId || !$userId) {
             return Response::redirect(url('login'));
         }
+        $fromIntegrations = $request->input('source') === 'integrations';
+        $respond = static function (bool $ok, string $message) use ($fromIntegrations, $request): Response {
+            if ($fromIntegrations && $request->header('Accept') === 'application/json') {
+                return Response::json(['ok' => $ok, 'message' => $message], $ok ? 200 : 422);
+            }
+            Session::flash($ok ? 'success' : 'error', $message);
+            return Response::redirect(url($fromIntegrations ? 'back-office/integrations' : 'back-office/communications'));
+        };
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
-            return Response::redirect(url('back-office/communications'));
+            return $respond(false, 'Session expirée. Réessayez.');
         }
         $kind = trim((string) $request->input('kind'));
         $subject = trim((string) $request->input('subject'));
         $html = (string) $request->input('body_html');
         $text = trim((string) $request->input('body_text'));
+        if ($fromIntegrations) {
+            $html = nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
+        }
         $templateId = (int) $request->input('template_id');
         $groupId = (int) $request->input('group_id');
 
         $definition = $this->buildDefinitionFromRequest($request, $tenantId, $groupId);
         if ($definition === null) {
-            Session::flash('error', 'Choisissez un groupe enregistré ou au moins un critère de destinataires.');
-            return Response::redirect(url('back-office/communications'));
+            return $respond(false, 'Choisissez un groupe enregistré ou au moins un critère de destinataires.');
         }
         if ($subject === '' || trim(strip_tags($html)) === '') {
-            Session::flash('error', 'Le sujet et le message sont requis.');
-            return Response::redirect(url('back-office/communications'));
+            return $respond(false, 'Le sujet et le message sont requis.');
         }
 
         $result = $this->dispatchService->dispatch(
@@ -102,9 +110,7 @@ final class TenantCommunicationsController
             $definition,
             $templateId > 0 ? $templateId : null
         );
-        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
-
-        return Response::redirect(url('back-office/communications'));
+        return $respond($result['ok'], $result['message']);
     }
 
     public function preview(Request $request, array $params = []): Response

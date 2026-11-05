@@ -52,7 +52,6 @@ final class OrganizationIntegrationsController
         $discord = new DiscordEventRelayService();
         $directory = new DiscordWebhookDirectory();
         $sse = new SseTransmissionDiscordService();
-        $mailer = new TenantMailSender();
 
         return Response::view('layout.main', [
             'title' => 'Intégrations',
@@ -66,9 +65,7 @@ final class OrganizationIntegrationsController
             'discord_relays' => $sse->publicRelays($tenantId),
             'use_community_relay' => $sse->usesCommunityRelay($tenantId),
             'community_relay_ready' => $sse->communityRelayReady($tenantId),
-            'mail_sender' => $mailer->state($tenantId),
-            'mail_providers' => TenantMailSender::PROVIDERS,
-            'admin_email' => (string) ($user['email'] ?? ''),
+            'mail_kinds' => array_values(array_filter(\App\Support\TenantEmailKind::all(), static fn (string $kind): bool => $gate->allows(\App\Support\TenantEmailKind::permissionForKind($kind)))),
             'discord_org' => $directory->organisation($tenantId),
             'discord_webhooks' => $directory->list($tenantId),
             'invite_template' => $directory->inviteTemplate($tenantId),
