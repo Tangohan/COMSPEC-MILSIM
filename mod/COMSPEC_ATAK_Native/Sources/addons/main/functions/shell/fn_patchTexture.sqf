@@ -15,6 +15,7 @@ private _ins = {
     [getText (_cfg >> "texture"), true]
 };
 switch (true) do {
+    case ((_p select [0,7]) isEqualTo "athena:"): { ["texture", _p] call comspec_atak_native_fnc_patchAthena };
     case (_p in ["", "none"]): { ["", false] };
     case (_p isEqualTo "uniform"): {
         private _c = [_unit] call BIS_fnc_getUnitInsignia;

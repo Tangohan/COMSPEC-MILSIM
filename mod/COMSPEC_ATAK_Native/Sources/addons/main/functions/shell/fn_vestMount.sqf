@@ -25,6 +25,17 @@ if (_act isEqualTo "sweep") exitWith {
     true
 };
 if (!hasInterface) exitWith { false };
+// Repli local pour les autres clients et JIP qui n'ont pas le même addon de patch.
+// La référence réseau reste un chemin monté ; aucun transfert d'octets par setObjectTextureGlobal.
+{
+    private _info = _x getVariable ["COMSPEC_ATAK_AthenaPatchRef", []];
+    if (count _info >= 2) then {
+        _info params ["_path", "_shown"];
+        private _usable = _shown && {((getTextureInfo _path) param [0, -1]) > 0};
+        _x setObjectTexture [1, if (!_shown) then { "" } else { ["\z\comspec_atak_native\addons\main\data\patch_comspec.paa", _path] select _usable }];
+    };
+} forEach (allSimpleObjects ["COMSPEC_ATAK_VestPhone"]);
+
 private _mount = profileNamespace getVariable ["COMSPEC_ATAK_VestMount", "off"];
 private _depth = profileNamespace getVariable ["COMSPEC_ATAK_VestDepth", 0.19];
 private _cur = missionNamespace getVariable ["COMSPEC_ATAK_VestObj", objNull];
@@ -51,6 +62,9 @@ if (isNull _cur || {(missionNamespace getVariable ["COMSPEC_ATAK_VestKey", []]) 
     _cur setObjectTextureGlobal [0, format ["%1vest_phone%2_co.paa", _d, ["", "_" + _tint] select (_tint in ["od", "black"])]];
     // Patch du dos : invisible sans patch ou écran vers l'extérieur (le dos est alors contre le gilet).
     _cur setObjectTextureGlobal [1, ["", ([player, _patch] call comspec_atak_native_fnc_patchTexture) select 0] select (_face isEqualTo "back")];
+    if ((_patch select [0,7]) isEqualTo "athena:") then {
+        _cur setVariable ["COMSPEC_ATAK_AthenaPatchRef", [([player, _patch] call comspec_atak_native_fnc_patchTexture) select 0, _face isEqualTo "back"], true];
+    };
     // Décalage depuis spine3 (repère du corps : x à droite, y devant, z en haut).
     // Modèle : l'avant (+Z du P3D, vectorDir) est le dos du téléphone, l'écran regarde vers l'arrière.
     private _x = switch (_mount) do { case "left": { -0.12 }; case "right": { 0.12 }; default { 0 }; };

@@ -4260,7 +4260,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
         }
 
         if (function == "GetCapabilities")
@@ -5187,6 +5187,7 @@ public static partial class Extension
         var token = cts.Token;
         try
         {
+            if (function == "AthenaPatches") return HandleAthenaPatches(args, token);
             if (function == "GetMarkers")
             {
                 var since = args.Length > 0 ? (args[0] ?? "") : "";
