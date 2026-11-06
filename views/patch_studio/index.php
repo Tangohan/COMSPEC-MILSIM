@@ -7,21 +7,23 @@ $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ATHENA — Patch Studio</title>
 <meta name="csrf-token" content="<?= $e($csrf) ?>">
-<link rel="stylesheet" href="<?= $e(asset_url('assets/css/patch-studio.css')) ?>">
-<script type="module" src="<?= $e(asset_url('assets/js/patch-studio.mjs')) ?>"></script>
+<?php require base_path('views/patch_studio/_head.php'); ?>
+<script type="module" data-patch-studio-module src="<?= $e($studioAsset('js/patch-studio.js')) ?>"></script>
 </head>
-<body>
+<body class="nl-page ps-page">
 <div id="patch-studio" data-api="<?= $e($api) ?>" data-recovery="<?= $e($recoveryKey) ?>">
+<?php require base_path('views/patch_studio/_header.php'); ?>
+<?php require base_path('views/patch_studio/_disclaimer.php'); ?>
 <header class="ps-header">
-<a class="ps-brand" href="<?= $e(url('')) ?>" title="Retour à ATHENA"><span class="ps-mark">A</span><span>ATHENA<small>PATCH STUDIO</small></span></a>
+<label class="ps-project-label" for="project-name">PROJET OUVERT</label>
 <div class="ps-title"><input id="project-name" aria-label="Nom du projet" value="Sans titre" maxlength="120"><span id="save-state" role="status">Nouveau projet</span></div>
-<button data-action="library">Bibliothèque</button><button data-action="save" class="ps-primary" title="Ctrl+S">Enregistrer</button><button data-action="export">Exporter ↗</button>
+<button data-action="library">Bibliothèque</button><button data-action="save" class="ps-primary" title="Ctrl+S">Enregistrer</button><button data-action="export"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-8 4-4 4 4M5 14v6h14v-6"/></svg>Exporter</button>
 </header>
 <nav class="ps-toolbar" aria-label="Outils de création">
 <button data-action="new">＋ Nouveau</button><button data-action="undo" title="Ctrl+Z">↶ Annuler</button><button data-action="redo" title="Ctrl+Y">↷ Rétablir</button><i></i>
 <button data-action="duplicate" title="Ctrl+D">Dupliquer</button><button data-action="group">Grouper</button><button data-action="ungroup">Dégrouper</button><button data-action="delete">Supprimer</button><i></i>
 <label>Composition <select id="variant"><option value="standard">Standard</option><option value="night">Nocturne · simulation</option></select></label><button data-action="night">Copier standard → nuit</button>
-<button data-action="preview">Aperçu</button><button data-action="fullscreen" title="Plein écran">⛶</button>
+<button data-action="preview">Aperçu</button><button data-action="fullscreen" title="Plein écran" aria-label="Plein écran"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5"/></svg></button>
 </nav>
 <div class="ps-workspace">
 <aside class="ps-resources" aria-label="Ressources">
@@ -37,7 +39,7 @@ $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
 <input id="asset-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.ttf,.otf" hidden>
 <input id="project-file" type="file" accept="application/json,.json" hidden>
 </aside>
-<main class="ps-center">
+<main class="ps-center" aria-label="Éditeur du patch">
 <div class="ps-canvas-tools"><span id="canvas-size">512 × 256 px</span><label><input id="grid" type="checkbox"> Grille</label><label><input id="snap" type="checkbox" checked> Magnétisme</label><select id="canvas-backdrop" aria-label="Fond de travail"><option value="transparent">Damier</option><option value="light">Clair</option><option value="dark">Sombre</option></select><button data-action="fit">Adapter</button><button data-action="actual">1:1</button></div>
 <div id="viewport" tabindex="0" aria-label="Canevas de création. Flèches pour déplacer, Suppr pour supprimer.">
 <canvas id="ruler-x" class="ps-ruler-x"></canvas><canvas id="ruler-y" class="ps-ruler-y"></canvas>
