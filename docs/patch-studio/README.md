@@ -1,15 +1,16 @@
 # ATHENA Patch Studio
 
-Cette branche apporte un éditeur SVG multicouche intégré à ATHENA. Elle doit rester en revue tant que les essais navigateur, la compilation COMSPEC Link et la recette Arma décrits ci-dessous n'ont pas été exécutés. Ce document ne certifie pas une mise en production.
+Cette branche apporte un éditeur SVG multicouche intégré à ATHENA. La compilation COMSPEC Link et la recette Arma décrites ci-dessous restent à effectuer ; les essais navigateur et les contrôles de formule Pro+ ont été exécutés. Ce document ne certifie pas une mise en production.
 
 ## Installation et déploiement
 
 1. Sauvegarder la base et le stockage. Appliquer `migrations/2026_11_06_patch_studio.sql` avec le mécanisme habituel (`run-migrations.php`). Migration additive et idempotente ; six tables, aucune table existante modifiée.
-2. Déployer les contrôleurs, services, routes, navigation, vue et assets. PHP 8.4, GD, DOM, mbstring, PDO MySQL et zlib requis. Aucun service Node en production. Apache sert déjà `.mjs` avec le type JavaScript.
+2. Déployer les contrôleurs, services, routes, navigation, vue et assets. PHP 8.4, GD, DOM, mbstring, PDO MySQL et zlib requis. Aucun service Node en production. Les modules du Studio utilisent désormais des fichiers `.js`, comme la page 9-line, pour éviter le MIME `application/octet-stream` des `.mjs` sur certains serveurs. Le point d’entrée et son module importé partagent une version d’URL pour renouveler le cache.
 3. Donner au compte PHP l'accès en écriture à `storage/patch-studio` et `storage/cache`. Le stockage doit rester hors de la racine HTTP. Ne jamais créer d'alias public vers ces dossiers. Limites HTTP/PHP : upload 8 Mio, POST au moins 12 Mio pour un PNG base64. Les limites applicatives restent actives.
 4. Recompiler COMSPEC Link (`mod/UptoDate/COMSPECExtension`, .NET 8), puis reconstruire le PBO natif avec le mécanisme habituel. Ne pas déployer un stub managé comme DLL NativeAOT ; conserver la procédure de preuve de client officiel du dépôt.
 5. Recetter en staging. Distribuer les addons de patch et leurs signatures à tous les participants AVANT de démarrer Arma. Les PBO exportés sont non signés : la signature relève du déploiement serveur.
-6. Accès : menu « Ma situation → Patch Studio », route `/patch-studio`. Pas de seconde connexion.
+6. Accès : menu « Ma situation → Patch Studio », route `/patch-studio`. Formule effective **Pro+ minimum**, y compris une offre Pro+ valide. Page, API web, ressources privées et catalogue/fichiers ATAK sont contrôlés côté serveur par `PatchStudio\PlanAccess`. Un administrateur d’organisation ne contourne pas ce contrôle. La clé `patch_studio` figure dans le catalogue des formules : absente d’un ancien `features_json`, elle reprend le défaut du catalogue ; aucune nouvelle migration SQL n’est nécessaire. Une désactivation explicite de la fonctionnalité reste respectée.
+7. L’interface reprend le thème de `/9-line` : feuille de style partagée, emblème ATHENA, Inter/JetBrains Mono, noir et vert émeraude. Un avertissement MILSIM/préversion/droits/limites Arma reste visible. Pas de seconde connexion.
 
 ## Utilisation
 

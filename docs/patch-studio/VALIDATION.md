@@ -10,7 +10,7 @@
 
 Ces tests utilisent le SQL de migration adapté à SQLite dans le harness, sans identifiants ni base de production. Ils ne remplacent pas une application MySQL/MariaDB en staging.
 
-## Préparé, NON exécuté jusqu'au succès
+## Essai navigateur exécuté
 
 `tests/patch-studio/router.php` est un routeur de test localhost avec session fixture et SQLite isolée. Ne jamais le déployer.
 
@@ -19,12 +19,16 @@ PATCH_STUDIO_TEST=1 PATCH_TEST_ROOT=/tmp/athena-patch-browser php -S 127.0.0.1:8
 PATCH_TEST_URL=http://127.0.0.1:8765 node tests/patch-studio/browser.cjs
 ```
 
-Le script utilise Playwright et Chromium (`CHROMIUM_PATH` optionnel). Il couvre les vrais contrôleurs HTTP, le texte/police/espacement/motif/rotation, annuler/rétablir, import sécurisé, sauvegarde/rechargement, CSRF, conflit et les cinq modes d'export. Le premier lancement Chromium dans le sandbox a échoué (`setsockopt: Operation not permitted`). La demande d'autorisation pour lancer le serveur et Chromium n'a pas abouti ; l'appel a été annulé. **Ne pas compter ces essais comme passés.** La suite PHPUnit existante n'a pas été lancée : le dossier vendor fourni ne contient pas l'autoloader ni les exécutables installés. L'installation des dépendances et du SDK .NET n'a pas abouti dans cet environnement.
+Le script utilise Playwright et Chromium (`CHROMIUM_PATH` optionnel). Il couvre les vrais contrôleurs HTTP, le texte/police/espacement/motif/rotation, annuler/rétablir, import sécurisé, sauvegarde/rechargement, CSRF, conflit et les cinq modes d'export. Les essais navigateur ont désormais réussi sous Chromium avec le serveur PHP de test isolé. Ils vérifient les deux réponses de modules `.js` (type MIME JavaScript et version d’URL identique), le parcours d’édition/import/sauvegarde/rechargement, le CSRF, les conflits et les cinq modes d’export. Le refus HTTP 403 des formules Free/Standard/Pro est vérifié côté page et API.
+
+`php tests/patch-studio/access-ui.php` : **58 contrôles réussis**, couvrant le seuil Pro+, les offres actives/expirées, l’essai fondateur Pro, les impayés, les paiements manuels expirés, les anciens plans sans clé de fonctionnalité, sa désactivation explicite, les appels directs aux API et les vues éditeur/refus.
+
+La suite PHPUnit existante reste non exécutée (vendor sans autoloader/exécutables), ainsi que la compilation DLL .NET. Ces validations ne sont pas assimilées aux tests navigateur.
 
 ## Obligatoire avant production
 
 - Installer les dépendances habituelles, lancer PHPUnit et les contrats de routage/injection ; compiler COMSPEC Link .NET 8 (puis NativeAOT Windows suivant la procédure du dépôt).
-- Exécuter les essais navigateur ci-dessus et une recette visuelle desktop/mobile ; vérifier les dimensions et alpha sur les exports.
+- Compléter la recette visuelle sur les navigateurs et appareils cibles ; le parcours Chromium desktop ci-dessus est passé. Vérifier aussi les dimensions et alpha dans Arma.
 - Appliquer la migration sur une copie MySQL/MariaDB ; vérifier multi-tenant et permissions réelles ATHENA avec lecteur, éditeur, propriétaire et admin. Tester les RH masquées/anonymisées et les identités multi-communauté.
 - Importer SVG malveillants/volumineux, polices valides/invalides et images défectueuses ; vérifier quotas et refus d'accès sans session. Tester interruption autosave et conflit entre deux onglets.
 - Inspecter PAA avec HEMTT/TexView et charger le PBO exporté dans Arma ; vérifier alpha, orientation et formats 256×128, 512×256, 512×512, 1024×512 et 1024×1024.

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Core\{Request,Response};
-use App\Services\PatchStudio\{Assets,Export,Projects};
+use App\Services\PatchStudio\{Assets,Export,Projects,PlanAccess};
 use App\Support\ComspecApiKeyAuth;
 use PDO;
 
@@ -46,6 +46,7 @@ final class AtakPatchesApiController
         if (!ComspecApiKeyAuth::armaInlineAuthOk()) return Response::json(['error'=>'unauthorized'],401);
         $t=(int)ComspecApiKeyAuth::matchedTenantId(); $u=(int)ComspecApiKeyAuth::matchedUserId();
         if ($t<1 || $u<1) return Response::json(['error'=>'linked_account_required'],403);
+        if (!PlanAccess::allows($t)) return PlanAccess::deniedJson();
         try { return $fn(new Projects(),$t,$u)->header('Cache-Control','private, no-store'); }
         catch (\OutOfBoundsException) { return Response::json(['error'=>'not_found'],404); }
         catch (\Throwable $e) { error_log('ATAK patches: '.$e->getMessage()); return Response::json(['error'=>'unavailable'],503); }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Core\{Csrf,Gate,Request,Response,Session};
-use App\Services\PatchStudio\{Assets,Document,Export,Projects,Variables};
+use App\Services\PatchStudio\{Assets,Document,Export,Projects,Variables,PlanAccess};
 use App\Services\Security\FileRateLimiter;
 use App\Services\Tenant\TenantContext;
 use PDO;
@@ -17,6 +17,7 @@ final class PatchStudioApiController
         try {
             [$t,$u]=$this->context();
             if ($t<1 || $u<1) return Response::json(['error'=>'Session requise.'],401);
+            if (!PlanAccess::allows($t)) return PlanAccess::deniedJson();
             if ($r->method()!=='GET' && !Csrf::verify($r)) return Response::json(['error'=>'Jeton CSRF invalide.'],403);
             $limiter=new FileRateLimiter();
             if ($limiter->tooManyAttempts('patch-studio:'.$t.':'.$u,180,60)) return Response::json(['error'=>'Trop de requêtes.'],429)->header('Retry-After','60');

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {writeFileSync} from 'node:fs';
-import {template,layer,History,group,ungroup,duplicate,compose,resolve,patterns,shapes} from '../../public/assets/js/patch-studio-core.mjs';
+import {writeFileSync,readFileSync} from 'node:fs';
+const {template,layer,History,group,ungroup,duplicate,compose,resolve,patterns,shapes} = await import('data:text/javascript;base64,'+readFileSync(new URL('../../public/assets/js/patch-studio-core.js',import.meta.url)).toString('base64'));
 test('all templates remain editable, with independent objects',()=>{for(const kind of ['name','callsign','unit','circle','ir','pvc','embroidered','blank']){const d=template(kind);assert.equal(d.version,1);assert.equal(d.canvas.width,512);if(kind!=='blank'){assert.ok(d.variants.standard.length>=2);assert.equal(d.variants.standard[1].type,'text');}writeFileSync('/tmp/patch-'+kind+'.svg',compose(d));}});
 test('typography, patterns, background, borders and transforms survive JSON',()=>{const d=template();const t=d.variants.standard[1];Object.assign(t,{fontFamily:'Oswald',fontSize:64,letterSpacing:7,wordSpacing:4,rotation:22,scaleX:1.2,italic:true});t.fill={type:'pattern',pattern:'multicam',scale:.5,rotation:20,opacity:.8};t.stroke={color:'#000000',width:3,opacity:1,position:'center',style:'solid'};const svg=compose(JSON.parse(JSON.stringify(d)));assert.match(svg,/Oswald/);assert.match(svg,/letter-spacing="7"/);assert.match(svg,/word-spacing="4"/);assert.match(svg,/<pattern /);assert.match(svg,/rotate\(22/);assert.match(svg,/stroke="#000000"/);assert.equal(svg,compose(d));});
 test('undo redo branching and bounded memory',()=>{const d=template(),h=new History(d,3);for(let i=1;i<=4;i++){d.canvas.width=512+i;h.push(d);}assert.equal(h.items.length,3);assert.equal(h.undo().canvas.width,515);assert.equal(h.redo().canvas.width,516);h.undo();d.canvas.width=600;h.push(d);assert.equal(h.redo(),undefined);});

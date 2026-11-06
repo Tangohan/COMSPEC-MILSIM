@@ -5,6 +5,7 @@ spl_autoload_register(static function(string $class) use ($repoRoot): void {
     if (str_starts_with($class,'App\\')) { $f=$repoRoot.'/app/'.str_replace('\\','/',substr($class,4)).'.php'; if(is_file($f)) require_once $f; }
 });
 if (!function_exists('base_path')) { function base_path(string $p=''): string { return (str_starts_with($p,'storage')?($GLOBALS['patch_test_root']??dirname(__DIR__,2)):dirname(__DIR__,2)).($p!==''?'/'.$p:''); } }
+if (!function_exists('config')) { function config(string $key,mixed $default=null): mixed { return $default; } }
 if (!function_exists('env')) { function env(string $k,mixed $v=null): mixed { return getenv($k)?:$v; } }
 if (!function_exists('url')) { function url(string $p=''): string { return '/'.ltrim($p,'/'); } }
 if (!function_exists('asset_url')) { function asset_url(string $p): string { return url($p); } }

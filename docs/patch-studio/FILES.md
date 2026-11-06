@@ -34,8 +34,8 @@
 - `public/assets/fonts/patch-studio/oswald-OFL.txt`
 - `public/assets/fonts/patch-studio/robotocondensed-OFL.txt`
 - `public/assets/fonts/patch-studio/sairastencilone-OFL.txt`
-- `public/assets/js/patch-studio-core.mjs`
-- `public/assets/js/patch-studio.mjs`
+- `public/assets/js/patch-studio-core.js`
+- `public/assets/js/patch-studio.js`
 - `routes/web.php`
 - `tests/patch-studio/backend.php`
 - `tests/patch-studio/bootstrap.php`
@@ -44,5 +44,16 @@
 - `tests/patch-studio/project.json`
 - `tests/patch-studio/router.php`
 - `views/patch_studio/index.php`
+
+Ajouts de la correction MIME/UI/Pro+ :
+
+- `app/Services/PatchStudio/PlanAccess.php`
+- `app/Services/Billing/SubscriptionPlanFeaturesCatalog.php`
+- `tests/patch-studio/access-ui.php`
+- `tests/patch-studio/plan-fixtures.php`
+- `views/patch_studio/_head.php`
+- `views/patch_studio/_header.php`
+- `views/patch_studio/_disclaimer.php`
+- `views/patch_studio/upgrade.php`
 
 Aucun fichier de configuration secret ni artefact du stockage privé n’est inclus.
