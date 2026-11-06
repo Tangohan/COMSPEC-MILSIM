@@ -2785,6 +2785,23 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/athena/inspector/metrics', [\App\Controllers\Api\AthenaInspectorMetricsController::class, 'metrics'], $athenaInspectorMw);
     $router->post('/api/athena/v2/dev/seed', [AthenaDataApiController::class, 'devSeed'], $athenaInspectorMw);
 
+    // ATHENA Patch Studio : même session web, même CSRF, ressources privées.
+    $patchStudio = \App\Controllers\Api\PatchStudioApiController::class;
+    $router->get('/patch-studio', [\App\Controllers\Web\PatchStudioController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/projects', [$patchStudio, 'index'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/projects', [$patchStudio, 'create'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/projects/{id}', [$patchStudio, 'show'], [AuthMiddleware::class]);
+    $router->put('/api/patch-studio/projects/{id}', [$patchStudio, 'update'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/projects/{id}/history', [$patchStudio, 'history'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/projects/{id}/share', [$patchStudio, 'share'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/projects/{id}/export', [$patchStudio, 'export'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/variables', [$patchStudio, 'variables'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/assets', [$patchStudio, 'assets'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/assets', [$patchStudio, 'upload'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/assets/{id}', [$patchStudio, 'asset'], [AuthMiddleware::class]);
+    $router->get('/api/atak/patches', [\App\Controllers\Api\AtakPatchesApiController::class, 'index']);
+    $router->get('/api/atak/patches/{id}/{revision}/{variant}/{format}', [\App\Controllers\Api\AtakPatchesApiController::class, 'file']);
+
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
     // Dernières versions de l'ATAK natif et de COMSPEC Link (contrôle de mise à jour du mod, public).

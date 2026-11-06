@@ -19,6 +19,10 @@ private _isOpen = {
 switch (_act) do {
     case "pick": {
         if !(_arg isEqualType "") exitWith { false };
+        if ((_arg select [0,7]) isEqualTo "athena:") then {
+            profileNamespace setVariable ["COMSPEC_ATAK_AthenaSelected", ["row", _arg] call comspec_atak_native_fnc_patchAthena];
+            ["download", _arg] call comspec_atak_native_fnc_patchAthena;
+        };
         profileNamespace setVariable ["COMSPEC_ATAK_Patch", _arg];
         [] call comspec_atak_native_fnc_saveProfile;
         private _msg = format ["Patch au dos : %1", ["name", _arg] call comspec_atak_native_fnc_patchCatalog];
@@ -33,6 +37,7 @@ switch (_act) do {
         true
     };
     case "src": {
+        if (_arg isEqualTo "athena") then { ["ensure"] call comspec_atak_native_fnc_patchAthena; };
         uiNamespace setVariable ["COMSPEC_ATAK_PatchSrc", _arg];
         uiNamespace setVariable ["COMSPEC_ATAK_PatchPg", 0];
         [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call CBA_fnc_execNextFrame;
@@ -67,6 +72,7 @@ switch (_act) do {
         { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_PatchGrid", []]);
         uiNamespace setVariable ["COMSPEC_ATAK_PageControls", (uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []]) select { !isNull _x }];
         private _made = [];
+        private _previews = [];
         private _mk = {
             params ["_class", "_pos", ["_text", ""]];
             private _c = [_class, _pos, _text] call comspec_atak_native_fnc_pageCtrl;
@@ -87,8 +93,8 @@ switch (_act) do {
         private _cur = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
 
         // Sources : nombre de résultats de la recherche dans chacune.
-        private _srcs = [["all", "TOUS"], ["ours", "NOS PATCHS"], ["mods", "MODS"], ["mission", "MISSION"]];
-        private _sw = _w / 4;
+        private _srcs = [["all", "TOUS"], ["ours", "NOS PATCHS"], ["mods", "MODS"], ["mission", "MISSION"], ["athena", "ATHENA"]];
+        private _sw = _w / 5;
         {
             _x params ["_k", "_t"];
             private _n = if (_k isEqualTo "all") then { count _match } else { { (_x select 3) isEqualTo _k } count _match };
@@ -132,18 +138,22 @@ switch (_act) do {
                 _bar ctrlSetBackgroundColor _acc;
             };
             private _ph = _th - _lblH - _pad / 2;
-            if (_tex isNotEqualTo "") then {
+            if (_from isEqualTo "athena") then {
+                private _browser = ["COMSPEC_RscWebBrowser", [_tx + _pad / 4, _ty + _pad / 4, _tw - _pad / 2, _ph]] call _mk;
+                _previews pushBack [["row", _v] call comspec_atak_native_fnc_patchAthena, _browser];
+            };
+            if (_tex isNotEqualTo "" && {_from isNotEqualTo "athena"}) then {
                 private _p = ["COMSPEC_RscPicture", [_tx + _pad / 4, _ty + _pad / 4, _tw - _pad / 2, _ph], _tex] call _mk;
                 _p ctrlSetTextColor [1, 1, 1, 1];
-            } else {
+            } else { if (_from isNotEqualTo "athena") then {
                 private _e = ["COMSPEC_RscTextCenter", [_tx, _ty + _pad / 4, _tw, _ph], ["AUCUN", "SANS INSIGNE"] select (_v isEqualTo "uniform")] call _mk;
                 _e ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
                 _e ctrlSetTextColor [0.55, 0.6, 0.58, 1];
-            };
+            }; };
             private _lb = ["COMSPEC_RscStructuredText", [_tx, _ty + _th - _lblH - _pad / 3, _tw, _lblH]] call _mk;
             _lb ctrlSetStructuredText parseText ((format ["<t align='center' size='0.72' color='%1'>%2</t>", ["#dfe8e3", _accHex] select _on, [_name] call _esc]) call comspec_atak_native_fnc_tr);
             private _b = ["COMSPEC_RscButtonOverlay", [_tx, _ty, _tw, _th]] call _mk;
-            _b ctrlSetTooltip ((format ["%1 — %2 · %3", _name, [_v select [4], _v] select (_from isEqualTo "ours"), ["nos patchs", "mods", "mission"] select (["ours", "mods", "mission"] find _from)]) call comspec_atak_native_fnc_tr);
+            _b ctrlSetTooltip ((format ["%1 — %2 · %3", _name, [_v select [4], _v] select (_from isEqualTo "ours"), ["nos patchs", "mods", "mission", "ATHENA · addon/mission requis pour la 3D"] select (["ours", "mods", "mission", "athena"] find _from)]) call comspec_atak_native_fnc_tr);
             _b ctrlAddEventHandler ["ButtonClick", compile format ["['pick', %1] call comspec_atak_native_fnc_pagePatches;", str _v]];
         } forEach (_match select [_pg * _per, _per]);
 
@@ -169,6 +179,7 @@ switch (_act) do {
             format ["<t align='center' size='0.85' color='#8a9a93'>Porté : </t><t align='center' size='0.85'>%1</t>", [["name", _cur] call comspec_atak_native_fnc_patchCatalog] call _esc]
         })) call comspec_atak_native_fnc_tr);
         uiNamespace setVariable ["COMSPEC_ATAK_PatchGrid", _made];
+        ["previews", _previews] call comspec_atak_native_fnc_patchAthena;
         true
     };
     default {
@@ -192,6 +203,7 @@ switch (_act) do {
             if ((count _h) > 1 && {(_h select ((count _h) - 2)) isEqualTo "SETTINGS"}) then { [] call comspec_atak_native_fnc_back; } else { ["SETTINGS"] call comspec_atak_native_fnc_navigate; };
         }] call CBA_fnc_execNextFrame; }];
         private _hd = ["COMSPEC_RscStructuredText", [_pad + _w * 0.32, _y + (_rowH - _fs * 1.4) / 2, _w * 0.68, _fs * 1.4]] call comspec_atak_native_fnc_pageCtrl;
+        ["ensure"] call comspec_atak_native_fnc_patchAthena;
         _hd ctrlSetStructuredText parseText ((format ["<t align='right' font='COMSPEC_BarlowBold'>Patch au dos</t><t align='right' size='0.8' color='#8a9a93'>  %1 insignes d'unité</t>", ["count"] call comspec_atak_native_fnc_patchCatalog]) call comspec_atak_native_fnc_tr);
         _y = _y + _rowH + _pad / 2;
         private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], "RECHERCHER (NOM OU CLASSE)"] call comspec_atak_native_fnc_pageCtrl;

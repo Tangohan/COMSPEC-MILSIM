@@ -1,0 +1,48 @@
+# Fichiers de la livraison
+
+- `.htaccess`
+- `app/Controllers/Api/AtakPatchesApiController.php`
+- `app/Controllers/Api/PatchStudioApiController.php`
+- `app/Controllers/Web/PatchStudioController.php`
+- `app/Services/PatchStudio/Access.php`
+- `app/Services/PatchStudio/Assets.php`
+- `app/Services/PatchStudio/Document.php`
+- `app/Services/PatchStudio/Export.php`
+- `app/Services/PatchStudio/Projects.php`
+- `app/Services/PatchStudio/Variables.php`
+- `config/navigation.php`
+- `docs/patch-studio/ARCHITECTURE.md`
+- `docs/patch-studio/README.md`
+- `docs/patch-studio/VALIDATION.md`
+- `migrations/2026_11_06_patch_studio.sql`
+- `migrations/rollback/2026_11_06_patch_studio.sql`
+- `mod/COMSPEC_ATAK_Native/Sources/addons/main/config.cpp`
+- `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/shell/fn_pagePatches.sqf`
+- `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/shell/fn_patchAthena.sqf`
+- `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/shell/fn_patchCatalog.sqf`
+- `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/shell/fn_patchTexture.sqf`
+- `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/shell/fn_vestMount.sqf`
+- `mod/UptoDate/COMSPECExtension/Extension.cs`
+- `mod/UptoDate/COMSPECExtension/Extension_Patches.cs`
+- `public/assets/css/patch-studio.css`
+- `public/assets/fonts/patch-studio/BarlowCondensed-Bold.ttf`
+- `public/assets/fonts/patch-studio/BarlowCondensed-Regular.ttf`
+- `public/assets/fonts/patch-studio/Oswald.ttf`
+- `public/assets/fonts/patch-studio/RobotoCondensed.ttf`
+- `public/assets/fonts/patch-studio/SairaStencilOne-Regular.ttf`
+- `public/assets/fonts/patch-studio/barlowcondensed-OFL.txt`
+- `public/assets/fonts/patch-studio/oswald-OFL.txt`
+- `public/assets/fonts/patch-studio/robotocondensed-OFL.txt`
+- `public/assets/fonts/patch-studio/sairastencilone-OFL.txt`
+- `public/assets/js/patch-studio-core.mjs`
+- `public/assets/js/patch-studio.mjs`
+- `routes/web.php`
+- `tests/patch-studio/backend.php`
+- `tests/patch-studio/bootstrap.php`
+- `tests/patch-studio/browser.cjs`
+- `tests/patch-studio/core.test.mjs`
+- `tests/patch-studio/project.json`
+- `tests/patch-studio/router.php`
+- `views/patch_studio/index.php`
+
+Aucun fichier de configuration secret ni artefact du stockage privé n’est inclus.
