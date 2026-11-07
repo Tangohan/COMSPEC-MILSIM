@@ -84,7 +84,7 @@ export function patternSvg(name,color='#414c38'){
  if(name==='embroidery')for(let i=-96;i<192;i+=6)s+=`<path d="M${i} 0l96 96" stroke="#ffffff" stroke-opacity=".12"/>`;
  return s;
 }
-export function compose(doc,{variant='standard',values={},resources={},fontCss='',selection=null}={}){
+export function compose(doc,{variant='standard',values={},resources={},textures={},fontCss='',selection=null}={}){
  let defs=[],seq=0;const next=()=>`ps${++seq}`;
  const fill=(f,l)=>{
   if(!f||f.type==='none')return 'none';if(f.type==='solid')return esc(f.color);
@@ -93,8 +93,11 @@ export function compose(doc,{variant='standard',values={},resources={},fontCss='
    const a=(f.angle||0)*Math.PI/180,x=Math.cos(a)*.5,y=Math.sin(a)*.5;
    defs.push(`<linearGradient id="${id}" x1="${.5-x}" y1="${.5-y}" x2="${.5+x}" y2="${.5+y}"><stop stop-color="${esc(f.color)}"/><stop offset="1" stop-color="${esc(f.color2)}"/></linearGradient>`);
   }else{
-   const sc=f.scale||1,repeat=f.repeat!==false,pw=repeat?96:l.width/sc,ph=repeat?96:l.height/sc;
-   let body=f.type==='asset'?`<image href="${esc(resources[f.assetId]||'')}" width="${pw}" height="${ph}" preserveAspectRatio="xMidYMid slice"/>`:patternSvg(f.pattern,f.color);
+   const sc=f.scale||1,repeat=f.repeat!==false,texture=f.type==='texture'?textures[f.textureId]:null;
+   if(f.type==='texture'&&(!texture||!texture.src))throw new Error('Texture indisponible : '+f.textureId);
+   const tileW=texture?.tileWidth||96,tileH=texture?tileW*texture.height/texture.width:96;
+   const pw=repeat?tileW:l.width/sc,ph=repeat?tileH:l.height/sc;
+   let body=f.type==='asset'||texture?`<image href="${esc(texture?texture.src:resources[f.assetId]||'')}" width="${pw}" height="${ph}" preserveAspectRatio="xMidYMid slice"/>`:patternSvg(f.pattern,f.color);
    if((f.brightness??1)!==1||(f.contrast??1)!==1){const fid=next(),c=f.contrast??1,b=f.brightness??1;defs.push(`<filter id="${fid}" color-interpolation-filters="sRGB"><feComponentTransfer>${['R','G','B'].map(ch=>`<feFunc${ch} type="linear" slope="${c*b}" intercept="${(.5-.5*c)*b}"/>`).join('')}</feComponentTransfer></filter>`);body=`<g filter="url(#${fid})">${body}</g>`;}
    defs.push(`<pattern id="${id}" patternUnits="userSpaceOnUse" width="${pw}" height="${ph}" patternTransform="translate(${f.offsetX||0} ${f.offsetY||0}) rotate(${f.rotation||0}) scale(${sc})">${body}</pattern>`);
   }return `url(#${id})`;

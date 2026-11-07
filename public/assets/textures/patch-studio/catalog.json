@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "textures": [
+    {
+      "id": "multicam-original",
+      "name": "MultiCam®",
+      "category": "camouflage",
+      "file": "multicam-original-9db13b11a2d9.jpg",
+      "width": 1920,
+      "height": 1080,
+      "tileWidth": 512,
+      "sha256": "9db13b11a2d96c25a0e0193a20219ebfc826cc0c7733cc8f10d0324c8c0e0339",
+      "source": "https://multicampattern.com/static/marketing/images/patterns/multicam-hero-1920.8d7bad67ea4e.jpg",
+      "rights": "MultiCam® / Crye Precision. Ressource tierce, tous droits réservés. Aucune licence libre ni homologation IR accordée par ATHENA."
+    },
+    {
+      "id": "multicam-arid",
+      "name": "MultiCam® Arid",
+      "category": "camouflage",
+      "file": "multicam-arid-a825aca116ca.jpg",
+      "width": 1920,
+      "height": 1080,
+      "tileWidth": 512,
+      "sha256": "a825aca116cad60ba22e447e5b8cb6d6b4ba22b359527d73df39280f01784451",
+      "source": "https://multicampattern.com/static/marketing/images/patterns/multicam-arid-hero-1920.41a591ff71b1.jpg",
+      "rights": "MultiCam® / Crye Precision. Ressource tierce, tous droits réservés. Aucune licence libre ni homologation IR accordée par ATHENA."
+    },
+    {
+      "id": "multicam-tropic",
+      "name": "MultiCam® Tropic",
+      "category": "camouflage",
+      "file": "multicam-tropic-725ac907deb5.jpg",
+      "width": 1920,
+      "height": 1080,
+      "tileWidth": 512,
+      "sha256": "725ac907deb5fd1662dc6b2c86131279585f6eadfc58e07cb4587c9c48761fcb",
+      "source": "https://multicampattern.com/static/marketing/images/patterns/multicam-tropic-hero-1920.b0bb0369d606.jpg",
+      "rights": "MultiCam® / Crye Precision. Ressource tierce, tous droits réservés. Aucune licence libre ni homologation IR accordée par ATHENA."
+    },
+    {
+      "id": "multicam-alpine",
+      "name": "MultiCam® Alpine",
+      "category": "camouflage",
+      "file": "multicam-alpine-5129bc92b72d.jpg",
+      "width": 1920,
+      "height": 1080,
+      "tileWidth": 512,
+      "sha256": "5129bc92b72dc6bf07c3a82be03a5cf09b93b6c978ea3d6559830156c0ac313b",
+      "source": "https://multicampattern.com/static/marketing/images/patterns/multicam-alpine-hero-1920.9ca4d16df972.jpg",
+      "rights": "MultiCam® / Crye Precision. Ressource tierce, tous droits réservés. Aucune licence libre ni homologation IR accordée par ATHENA."
+    },
+    {
+      "id": "multicam-black",
+      "name": "MultiCam® Black",
+      "category": "camouflage",
+      "file": "multicam-black-ce1fcfce10c7.jpg",
+      "width": 1920,
+      "height": 1080,
+      "tileWidth": 512,
+      "sha256": "ce1fcfce10c7c9d6730ba1c6323d55f390410d0bed10160f39c87aa3c586325f",
+      "source": "https://multicampattern.com/static/marketing/images/patterns/multicam-black-hero-1920.9da87265bf4e.jpg",
+      "rights": "MultiCam® / Crye Precision. Ressource tierce, tous droits réservés. Aucune licence libre ni homologation IR accordée par ATHENA."
+    }
+  ]
+}
