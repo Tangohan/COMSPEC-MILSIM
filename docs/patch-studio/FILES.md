@@ -77,3 +77,12 @@ Aucun fichier de configuration secret ni artefact du stockage privé n’est inc
 - `.github/workflows/patch-studio.yml` : validation PHP/Node/Chromium isolée.
 
 Aucune migration supplémentaire et aucun changement DLL/SQF pour cette évolution.
+
+Accueil et correction du stockage :
+
+- `app/Services/PatchStudio/Schema.php`, `database/steps/3950_patch_studio_workspace.php` et inscription dans `database/steps/registry.php`.
+- `app/Core/Container.php` : déclaration du service RH existant.
+- `app/Services/PatchStudio/{Projects,Variables}.php`, contrôleur API et `routes/web.php` : setups, vignettes, catalogue RH filtré et diagnostic de schéma.
+- `public/assets/js/patch-studio-workspace.js`, module principal, CSS et `views/patch_studio/index.php` : accueil et dialogues raccordés.
+- `tests/patch-studio/{workspace.php,workspace-browser.cjs}` et adaptation des suites au nouvel accueil.
+- `docs/patch-studio/WORKSPACE.md`, README et validation ; workflow Studio complété.

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Core\{Csrf,Gate,Request,Response,Session};
-use App\Services\PatchStudio\{Assets,Document,Export,Projects,Variables,PlanAccess};
+use App\Services\PatchStudio\{Assets,Document,Export,Projects,Variables,PlanAccess,Schema};
 use App\Services\Security\FileRateLimiter;
 use App\Services\Tenant\TenantContext;
 use PDO;
@@ -25,7 +25,11 @@ final class PatchStudioApiController
         } catch (\OutOfBoundsException $e) { return Response::json(['error'=>$e->getMessage()],404); }
         catch (\DomainException $e) { return Response::json(['error'=>$e->getMessage()],409); }
         catch (\InvalidArgumentException|\JsonException $e) { return Response::json(['error'=>$e->getMessage()],422); }
-        catch (\Throwable $e) { error_log('Patch Studio: '.$e->getMessage()); return Response::json(['error'=>'Service indisponible. Vérifiez les migrations, GD et le stockage privé.'],503); }
+        catch (\Throwable $e) {
+            $incident=bin2hex(random_bytes(6));error_log('Patch Studio ['.$incident.']: '.$e->getMessage());
+            if (Schema::missing($e)) return Response::json(['error'=>'Le stockage du Patch Studio doit être initialisé par un administrateur.','code'=>'patch_studio_migration_required','migration'=>'patch_studio_workspace','incident'=>$incident],503);
+            return Response::json(['error'=>'Le service de stockage est indisponible. Réessayez ou transmettez la référence à votre administrateur.','code'=>'patch_studio_unavailable','incident'=>$incident],503);
+        }
     }
     private function body(int $maxBytes = 12582912): array
     {
@@ -42,7 +46,7 @@ final class PatchStudioApiController
         return $this->run($r,function($db,$t,$u) {
             $b=$this->body();
             if ((int)$db->query('SELECT COUNT(*) FROM patch_studio_projects WHERE tenant_id=? AND owner_id=?',[$t,$u])->fetchColumn()>=250) throw new \InvalidArgumentException('Limite de 250 projets atteinte.');
-            return Response::json(['project'=>$db->create($t,$u,(string)($b['name']??''),(array)($b['document']??[]))],201);
+            return Response::json(['project'=>$db->create($t,$u,(string)($b['name']??''),(array)($b['document']??[]),(string)($b['kind']??'patch'))],201);
         });
     }
     public function update(Request $r,array $params=[]): Response
@@ -79,8 +83,8 @@ final class PatchStudioApiController
     public function variables(Request $r,array $params=[]): Response
     {
         return $this->run($r,function($db,$t,$u) use($r) {
-            $ids=explode(',',substr($r->queryString('users',(string)$u),0,2000));
-            return Response::json(['members'=>Variables::resolve($t,$u,$ids)]);
+            $ids=$r->queryString('users','');
+            return Response::json(['members'=>$ids!==''?Variables::resolve($t,$u,explode(',',substr($ids,0,2000))):Variables::catalog($t,$u,$r->queryString('q','')),'limit'=>100]);
         });
     }
     public function assets(Request $r,array $params=[]): Response
@@ -110,6 +114,25 @@ final class PatchStudioApiController
             $row=$db->asset((string)$params['id'],$t,$u,$a);
             if (!$row) throw new \OutOfBoundsException('Ressource introuvable.');
             return (new Response())->header('Content-Type',$row['mime'])->header('X-Content-Type-Options','nosniff')->header('Content-Security-Policy',"default-src 'none'; sandbox")->setBody((new Assets())->read($row['hash']));
+        });
+    }
+    public function preview(Request $r,array $params=[]): Response
+    {
+        return $this->run($r,function($db,$t,$u,$a) use($r,$params) {
+            $write=$r->method()==='POST';$p=$db->find((string)$params['id'],$t,$u,$a,$write);
+            if (!$write) {
+                if (empty($p['preview_hash'])) throw new \OutOfBoundsException('Vignette non disponible.');
+                return (new Response())->header('Content-Type','image/png')->header('X-Content-Type-Options','nosniff')->setBody((new Assets())->read($p['preview_hash']));
+            }
+            $b=$this->body(393216);$revision=(int)($b['revision']??0);
+            if ($revision!==(int)$p['revision']) throw new \DomainException('Vignette d’une ancienne révision.');
+            $bytes=base64_decode((string)($b['png']??''),true);
+            if ($bytes===false || strlen($bytes)>196608 || substr($bytes,0,8)!=="\x89PNG\r\n\x1a\n") throw new \InvalidArgumentException('Vignette PNG invalide.');
+            $size=@getimagesizefromstring($bytes);
+            if (!$size || $size[0]<32 || $size[1]<32 || $size[0]>320 || $size[1]>320) throw new \InvalidArgumentException('Vignette limitée à 320 pixels.');
+            $clean=Assets::validate($bytes)['bytes'];$hash=(new Assets())->put($clean);
+            $db->query('UPDATE patch_studio_projects SET preview_hash=?,preview_revision=? WHERE id=? AND tenant_id=? AND revision=?',[$hash,$revision,$p['id'],$t,$revision]);
+            return Response::json(['ok'=>true,'revision'=>$revision]);
         });
     }
     public function export(Request $r,array $params=[]): Response

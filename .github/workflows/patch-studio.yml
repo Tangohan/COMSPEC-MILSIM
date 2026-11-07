@@ -11,6 +11,7 @@ on:
       - 'public/assets/css/patch-studio.css'
       - 'public/assets/textures/patch-studio/**'
       - 'views/patch_studio/**'
+      - 'database/steps/3950_patch_studio_workspace.php'
       - 'tests/patch-studio/**'
   workflow_dispatch:
 
@@ -37,6 +38,7 @@ jobs:
           php tests/patch-studio/access-ui.php
           php tests/patch-studio/textures.php
           php tests/patch-studio/fabrication.php
+          php tests/patch-studio/workspace.php
           node --test tests/patch-studio/core.test.mjs tests/patch-studio/fabrication.test.mjs
       - name: Install browser test tools only
         run: |
@@ -55,6 +57,7 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8766/assets/js/patch-studio.js >/dev/null
           node tests/patch-studio/textures-browser.cjs
           node tests/patch-studio/browser.cjs
+          node tests/patch-studio/workspace-browser.cjs
           PATCH_TEST_URL=http://127.0.0.1:8766 node tests/patch-studio/fabrication-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()

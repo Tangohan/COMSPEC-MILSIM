@@ -2790,6 +2790,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/patch-studio', [\App\Controllers\Web\PatchStudioController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/api/patch-studio/projects', [$patchStudio, 'index'], [AuthMiddleware::class]);
     $router->post('/api/patch-studio/projects', [$patchStudio, 'create'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/projects/{id}/preview', [$patchStudio, 'preview'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/projects/{id}/preview', [$patchStudio, 'preview'], [AuthMiddleware::class]);
     $router->get('/api/patch-studio/projects/{id}', [$patchStudio, 'show'], [AuthMiddleware::class]);
     $router->put('/api/patch-studio/projects/{id}', [$patchStudio, 'update'], [AuthMiddleware::class]);
     $router->get('/api/patch-studio/projects/{id}/history', [$patchStudio, 'history'], [AuthMiddleware::class]);

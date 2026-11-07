@@ -23,14 +23,15 @@ final class Projects
     }
     public function listing(int $tenant,int $user,bool $admin): array
     {
-        return $this->query('SELECT p.id,p.name,p.owner_id,p.visibility,p.status,p.revision,p.updated_at,s.role AS share_role FROM patch_studio_projects p LEFT JOIN patch_studio_shares s ON s.project_id=p.id AND s.user_id=? WHERE p.tenant_id=? AND (p.owner_id=? OR p.visibility=\'organization\' OR s.role IS NOT NULL OR ?=1) ORDER BY p.updated_at DESC LIMIT 250',[$user,$tenant,$user,(int)$admin])->fetchAll(PDO::FETCH_ASSOC);
+        return $this->query('SELECT p.id,p.name,p.owner_id,p.visibility,p.status,p.revision,p.updated_at,p.kind,p.preview_revision,CASE WHEN p.preview_hash IS NULL THEN 0 ELSE 1 END AS has_preview,s.role AS share_role FROM patch_studio_projects p LEFT JOIN patch_studio_shares s ON s.project_id=p.id AND s.user_id=? WHERE p.tenant_id=? AND (p.owner_id=? OR p.visibility=\'organization\' OR s.role IS NOT NULL OR ?=1) ORDER BY p.updated_at DESC LIMIT 250',[$user,$tenant,$user,(int)$admin])->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function create(int $tenant,int $user,string $name,array $doc): array
+    public function create(int $tenant,int $user,string $name,array $doc,string $kind='patch'): array
     {
+        if (!in_array($kind,['patch','setup'],true)) throw new \InvalidArgumentException('Type de projet invalide.');
         $id=bin2hex(random_bytes(16)); $json=json_encode(Document::validate($doc),JSON_THROW_ON_ERROR);
         $this->pdo->beginTransaction();
         try {
-            $this->query('INSERT INTO patch_studio_projects (id,tenant_id,owner_id,name,document,created_at,updated_at) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)',[$id,$tenant,$user,self::name($name),$json]);
+            $this->query('INSERT INTO patch_studio_projects (id,tenant_id,owner_id,name,document,kind,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)',[$id,$tenant,$user,self::name($name),$json,$kind]);
             $this->record($id,1,$user,$json,$doc,$tenant);
             $this->pdo->commit();
         } catch (\Throwable $e) { $this->pdo->rollBack(); throw $e; }

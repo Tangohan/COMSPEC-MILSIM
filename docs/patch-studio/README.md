@@ -4,7 +4,7 @@ Cette branche apporte un éditeur SVG multicouche intégré à ATHENA. La compil
 
 ## Installation et déploiement
 
-1. Sauvegarder la base et le stockage. Appliquer `migrations/2026_11_06_patch_studio.sql` avec le mécanisme habituel (`run-migrations.php`). Migration additive et idempotente ; six tables, aucune table existante modifiée.
+1. Sauvegarder la base et le stockage. Appliquer l’étape active `php8.4 run-migrations.php --step=patch_studio_workspace`. Elle réutilise le SQL initial pour les six tables et ajoute la classification des setups et les vignettes. La présence du fichier SQL seul ne suffit pas : le lanceur exécute uniquement sa file active. Voir `WORKSPACE.md` pour le diagnostic des 503 et la migration idempotente.
 2. Déployer les contrôleurs, services, routes, navigation, vue et assets. PHP 8.4, GD, DOM, mbstring, PDO MySQL et zlib requis. Aucun service Node en production. Les modules du Studio utilisent désormais des fichiers `.js`, comme la page 9-line, pour éviter le MIME `application/octet-stream` des `.mjs` sur certains serveurs. Le point d’entrée et ses deux modules importés partagent une version d’URL pour renouveler le cache.
 3. Donner au compte PHP l'accès en écriture à `storage/patch-studio` et `storage/cache`. Le stockage doit rester hors de la racine HTTP. Ne jamais créer d'alias public vers ces dossiers. Limites HTTP/PHP : upload 8 Mio, POST 48 Mio pour les exports PNG 4K en base64 ; memory_limit=512M recommandé pour ces rendus. Les limites applicatives restent actives.
 4. Recompiler COMSPEC Link (`mod/UptoDate/COMSPECExtension`, .NET 8), puis reconstruire le PBO natif avec le mécanisme habituel. Ne pas déployer un stub managé comme DLL NativeAOT ; conserver la procédure de preuve de client officiel du dépôt.
@@ -14,7 +14,7 @@ Cette branche apporte un éditeur SVG multicouche intégré à ATHENA. La compil
 
 ## Utilisation
 
-Depuis la bibliothèque, fermer le dialogue et choisir un modèle ou « Nouveau ». Ajouter des formes, textes, images et motifs à gauche. Un motif s'applique à la forme ou au texte sélectionné ; sans sélection, il crée un fond indépendant. « Remplir » applique une image importée dans les caractères ou la forme. Le contour reste séparé. La bibliothèque propose les textures JPEG MultiCam®, Arid, Tropic, Alpine et Black, stockées localement avec source et SHA256. Les motifs vectoriels précédents restent disponibles pour préserver les anciens projets.
+Depuis l’accueil, retrouver les créations récentes, utiliser un setup ou choisir un modèle / « Nouveau patch ». Ajouter des formes, textes, images et motifs à gauche. Un motif s'applique à la forme ou au texte sélectionné ; sans sélection, il crée un fond indépendant. « Remplir » applique une image importée dans les caractères ou la forme. Le contour reste séparé. La bibliothèque propose les textures JPEG MultiCam®, Arid, Tropic, Alpine et Black, stockées localement avec source et SHA256. Les motifs vectoriels précédents restent disponibles pour préserver les anciens projets.
 
 Sélectionner/glisser sur le canevas ; poignée inférieure droite pour redimensionner, poignée supérieure pour tourner. Maj conserve le rapport lors du redimensionnement et permet la sélection multiple. Espace + glisser déplace la vue. Molette règle le zoom. Grille et aimantation sont facultatives. Les positions, dimensions, proportions et typographies sont aussi réglables dans les propriétés. Les groupes se modifient via « Éditer les objets » ; « Sortir du groupe » remonte d'un niveau. Les calques se réordonnent par glisser-déposer, se verrouillent et se masquent. Le nom et l'opacité se règlent dans les propriétés.
 
@@ -22,11 +22,13 @@ Ctrl+S, Ctrl+Z, Ctrl+Y/Ctrl+Maj+Z, Ctrl+C/V/D, Suppr, Échap et flèches sont ra
 
 Bibliothèque : projets privés, organisation, partages, archives/supprimés. Gérer le projet ouvert permet de changer l'état, de restaurer une archive et d'accorder les rôles lecteur/éditeur à un ID de membre actif du même tenant. L'historique restaure une version sans effacer les suivantes. « Supprimé » est une suppression logique, restaurable.
 
-Les variables sont `{callsign}`, `{unit}`, `{group}`, `{rank}`, `{firstname}`, `{lastname}`, `{country}`, `{organization}`. Les données réelles sont chargées à la demande et ne sont pas stockées dans le modèle. Les services RH existants filtrent les identités et affectations ; sans droit de pilotage des effectifs, seul le compte courant est résolu. `group` et `country` ne sont pas exposés par le contrat RH retenu : utiliser les substitutions. La série prend une liste d'IDs autorisés (100 maximum), produit un PNG par membre, et peut nécessiter d'autoriser les téléchargements multiples du navigateur. Il n'y a pas de sélection automatique de groupe ni de tâche de régénération en arrière-plan après changement d'indicatif : actualiser les membres, générer et publier une nouvelle révision.
+Les variables sont `{callsign}`, `{unit}`, `{group}`, `{rank}`, `{firstname}`, `{lastname}`, `{country}`, `{organization}`. Les données réelles sont chargées à la demande et ne sont pas stockées dans le modèle. Les services RH existants filtrent les identités et affectations ; sans droit de pilotage des effectifs, seul le compte courant est résolu. `group` et `country` ne sont pas exposés par le contrat RH retenu : utiliser les substitutions. La fenêtre Membres ATHENA charge la liste autorisée depuis l’API, avec recherche et filtre d’unité visible ; une série prend cent membres maximum, revérifie leurs droits et produit un PNG par membre. Les téléchargements multiples peuvent nécessiter une autorisation du navigateur. Il n’y a pas de sélection automatique de groupe ni de tâche de régénération en arrière-plan après changement d'indicatif : actualiser les membres, générer et publier une nouvelle révision.
 
 Les polices libres sont embarquées avec leurs licences OFL. DIN n'est pas distribué sans licence ; son import TTF/OTF est possible avec attestation de droits d'incorporation. Une police importée reçoit un nom interne stable, ne modifie pas les polices système et n'est servie qu'aux comptes autorisés. Les polices à glyphes SVG actifs sont refusées.
 
 Les réglages sont organisés en Support, Texture, Bordure, Texte et Rendu. Le modèle **Laser Cut · MultiCam** utilise deux textiles indépendants, des découpes masquées, une couture suivant le contour et un camouflage continu entre fond et bordure. Voir [FABRICATION.md](FABRICATION.md) pour les matières, la construction, les limites précises du rendu et le PNG haute résolution.
+
+L’accueil, les setups enregistrables, la sélection dynamique des membres et la nouvelle fenêtre d’export sont décrits dans [WORKSPACE.md](WORKSPACE.md).
 
 ## Modèle et persistance
 
@@ -36,7 +38,7 @@ Chaque objet porte identité, nom, transformation, dimensions, opacité, visibil
 
 Tables :
 
-- `patch_studio_projects` : tenant, propriétaire, visibilité, état, révision et document courant.
+- `patch_studio_projects` : tenant, propriétaire, visibilité, état, révision, document courant, `kind` (patch/setup), hash et révision de vignette privée.
 - `patch_studio_versions` : document immuable par numéro de révision et auteur.
 - `patch_studio_shares` : lecteur/éditeur par projet et membre.
 - `patch_studio_assets` : identité stable, propriétaire, type validé, SHA256, licence et taille ; dédoublonnage par propriétaire.

@@ -72,4 +72,5 @@ return [
     ['id' => 'atak_sse_identity_images', 'label' => 'Contrôle d’identité SSE : images des papiers (signature du titulaire, image de fond d’un gabarit personnalisé)', 'group' => 'schema', 'file' => '3920_atak_sse_identity_images.php', 'rerun' => true],
     ['id' => 'event_automation', 'label' => 'Séries sans fin et réponses Discord aux événements', 'group' => 'schema', 'file' => '3930_event_automation.php', 'rerun' => true],
     ['id' => 'discord_companion', 'label' => 'ATHENA Companion : serveurs Discord et codes de liaison', 'group' => 'schema', 'file' => '3940_discord_companion.php', 'rerun' => true],
+    ['id' => 'patch_studio_workspace', 'label' => 'Patch Studio : projets, ressources privées, versions, setups et vignettes', 'group' => 'schema', 'file' => '3950_patch_studio_workspace.php', 'rerun' => true],
 ];
