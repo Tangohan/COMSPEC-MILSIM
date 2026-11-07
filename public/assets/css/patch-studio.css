@@ -149,3 +149,5 @@
   .ps-page .ps-workspace { min-height:640px; }
 }
 @media(prefers-reduced-motion:reduce) { .ps-page * { transition:none !important; } }
+
+.ps-page .ps-texture-title { margin:12px 0; color:var(--accent); font:700 10px var(--mono); text-transform:uppercase; letter-spacing:.08em; }

@@ -3,7 +3,7 @@
 ## Exécuté avec succès
 
 - PHP portable 8.4.23, GD/DOM/mbstring/PDO SQLite/zlib/ZIP : `php tests/patch-studio/backend.php`, **40 contrôles réussis**.
-- `node tests/patch-studio/core.test.mjs`, **8 tests réussis** : modèles éditables, typographie/motifs/transformations, historique borné, groupement, duplication, variables/échappement, géométries/bordures, composition nocturne/sélection.
+- `node tests/patch-studio/core.test.mjs`, **9 tests réussis** : modèles éditables, typographie/motifs/transformations, historique borné, groupement, duplication, variables/échappement, géométries/bordures, composition nocturne/sélection.
 - Les SVG générés pour chaque géométrie et chaque position de bordure sont relus par DOMDocument : XML valide après correction des attributs dupliqués sur les bordures extérieures.
 - Tests backend : validation JSON et limites, SVG actif/entités, signatures, permissions tenant/partage/édition, conflits de sauvegarde, historique et rollback transactionnel, accès aux assets, stockage/intégrité, PNG non carré, DXT1/DXT5 alpha et relecture par PaaDecoder, miniature, checksum PBO, contenu ZIP.
 - Vérification syntaxique PHP des fichiers modifiés et `node --check` des modules ; `git diff --check`.
@@ -52,3 +52,11 @@ La suite PHPUnit existante reste non exécutée (vendor sans autoloader/exécuta
 - Support 3D seulement celui déjà démontré par les configs ; pas de généralisation à tous les uniformes ou tablettes.
 
 Ces écarts et les recettes non exécutées empêchent d'annoncer la couverture intégrale du cahier des charges ou l'aptitude à la production.
+
+
+## Textures image MultiCam
+
+- `php tests/patch-studio/textures.php` : **44 contrôles réussis** (cinq JPEG, dimensions/proportions, SHA256, source/droits, validation JSON, références malveillantes refusées et contenu exact des ZIP).
+- Le neuvième test du moteur vérifie le remplissage image des caractères, les transformations et la fidélité après sérialisation, sans URL externe dans le rendu SVG. Une texture absente entraîne une erreur explicite.
+- `node tests/patch-studio/textures-browser.cjs` : **réussi** sur serveur PHP isolé : les cinq variantes donnent des rendus distincts dans le texte ; fond, réglages de texture, exports PNG/PAA/ZIP/PBO, sauvegarde, réouverture à froid, pixels identiques et absence de requêtes vers le site source. La suite navigateur générale est également passée.
+- Aucun nouveau test Arma/DLL ; aucune nouvelle migration SQL. Les exports graphiques sont validés ici, pas l'apparition automatique d'un fichier téléchargé sur un support 3D.

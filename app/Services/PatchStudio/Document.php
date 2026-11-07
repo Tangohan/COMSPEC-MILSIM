@@ -111,12 +111,13 @@ final class Document
     private static function fill(mixed $f): void
     {
         if (!is_array($f)) self::fail('Remplissage invalide.');
-        self::keys($f,['type','color','color2','angle','pattern','assetId','scale','rotation','offsetX','offsetY','repeat','opacity','contrast','brightness']);
-        self::enum($f['type'] ?? '', ['solid','gradient','pattern','asset','none']);
+        self::keys($f,['type','color','color2','angle','pattern','assetId','textureId','scale','rotation','offsetX','offsetY','repeat','opacity','contrast','brightness']);
+        self::enum($f['type'] ?? '', ['solid','gradient','pattern','asset','texture','none']);
         foreach (['color','color2'] as $k) if (isset($f[$k])) self::color($f[$k]);
         if ($f['type'] === 'solid' || $f['type'] === 'gradient') self::color($f['color'] ?? '');
         if ($f['type'] === 'gradient') self::color($f['color2'] ?? '');
         if ($f['type'] === 'pattern') self::enum($f['pattern'] ?? '', self::PATTERNS);
+        if ($f['type'] === 'texture' && TextureCatalog::find($f['textureId'] ?? null) === null) self::fail('Texture inconnue.');
         if ($f['type'] === 'asset' && !self::assetId($f['assetId'] ?? '')) self::fail('Ressource de motif invalide.');
         foreach (['angle','rotation'] as $k) if (isset($f[$k])) self::number($f,$k,-3600,3600);
         if (isset($f['scale'])) self::number($f,'scale',0.05,20);

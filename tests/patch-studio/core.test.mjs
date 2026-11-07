@@ -10,3 +10,14 @@ test('duplicates recursively acquire new identities',()=>{const a=layer('group',
 test('variables, substitutions and XML escaping',()=>{assert.equal(resolve('{callsign} {unit}',{callsign:'SABER 1-3'},{unit:'TIGER'}),'SABER 1-3 TIGER');const d=template();d.variants.standard[1].content='<script>&"';const s=compose(d);assert.ok(!s.includes('<script>'));assert.match(s,/&lt;script&gt;/);});
 test('all fill/geometry/border variants serialize',()=>{for(const shape of shapes)for(const position of ['center','inside','outside']){const d=template();d.variants.standard[0].shape=shape;d.variants.standard[0].stroke.position=position;writeFileSync(`/tmp/patch-shape-${shape}-${position}.svg`,compose(d));}for(const pattern of patterns){const d=template();d.variants.standard[1].fill={type:'pattern',pattern,brightness:.7,contrast:1.3};assert.match(compose(d),/<pattern /);}});
 test('night variants are independent and selection export isolated',()=>{const d=template();d.variants.night=JSON.parse(JSON.stringify(d.variants.standard));d.variants.night[1].content='NIGHT';assert.notEqual(compose(d),compose(d,{variant:'night'}));const s=compose(d,{selection:[d.variants.standard[1].id]});assert.ok(!s.includes('data-layer="'+d.variants.standard[0].id+'"'));});
+test('real image texture fills preserve proportions and settings without external rendering resources',()=>{
+ const catalog=JSON.parse(readFileSync(new URL('../../public/assets/textures/patch-studio/catalog.json',import.meta.url),'utf8'));
+ for(const t of catalog.textures){
+  const d=template(),src='data:image/jpeg;base64,'+readFileSync(new URL('../../public/assets/textures/patch-studio/'+t.file,import.meta.url)).toString('base64');
+  d.variants.standard[1].fill={type:'texture',textureId:t.id,scale:.5,rotation:30,offsetX:12,offsetY:24,repeat:true,opacity:.8,brightness:1.1,contrast:1.2};
+  const options={textures:{[t.id]:{...t,src}}};const svg=compose(d,options);
+  assert.match(svg,/<image href="data:image\/jpeg;base64,/);assert.ok(!svg.includes('https://'));
+  assert.match(svg,new RegExp('width="512" height="'+(512*t.height/t.width)+'"'));assert.match(svg,/rotate\(30\) scale\(0.5\)/);assert.match(svg,/<feComponentTransfer>/);
+  assert.equal(compose(JSON.parse(JSON.stringify(d)),options),svg);assert.throws(()=>compose(d),/Texture indisponible/);
+ }
+});

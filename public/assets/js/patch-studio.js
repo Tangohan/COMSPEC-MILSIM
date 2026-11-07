@@ -1,8 +1,8 @@
 const {shapes,patterns,fonts,variables,clone,uid,esc,solid,layer,template,History,walk,find,duplicate,group,ungroup,geometry,patternSvg,compose} = await import(new URL('./patch-studio-core.js' + new URL(import.meta.url).search, import.meta.url));
 const $=s=>document.querySelector(s),root=$('#patch-studio'),api=root.dataset.api,csrf=$('meta[name=csrf-token]').content;
-const labels={rectangle:'Rectangle',rounded_rectangle:'Rectangle arrondi',ellipse:'Cercle / ovale',triangle:'Triangle',hexagon:'Hexagone',octagon:'Octogone',shield:'Écusson',chevron:'Chevron',banner:'Bannière',diamond:'Losange',star:'Étoile',polygon:'Polygone',multicam:'Multicam · interprétation',woodland:'Woodland',desert:'Desert',fabric:'Tissu',velcro:'Velcro',pvc:'PVC',rubber:'Caoutchouc',embroidery:'Broderie',stripes:'Rayures',dots:'Points'};
-const state={doc:template(),project:null,variant:'standard',selected:[],scope:[],tab:'templates',dirty:false,zoom:1,pan:{x:60,y:80},clipboard:[],assets:[],resourceUrls:{},members:[],values:{},saving:null,conflict:false};
-const history=new History(state.doc),resourceCache=new Map(),fontCache=new Map();let saveTimer,toastTimer,space=false,drag=null,raf;
+const labels={texture:'Texture image',asset:'Image importée',solid:'Couleur unie',gradient:'Dégradé',pattern:'Motif vectoriel',none:'Sans remplissage',rectangle:'Rectangle',rounded_rectangle:'Rectangle arrondi',ellipse:'Cercle / ovale',triangle:'Triangle',hexagon:'Hexagone',octagon:'Octogone',shield:'Écusson',chevron:'Chevron',banner:'Bannière',diamond:'Losange',star:'Étoile',polygon:'Polygone',multicam:'Camouflage simplifié (ancien)',woodland:'Woodland',desert:'Desert',fabric:'Tissu',velcro:'Velcro',pvc:'PVC',rubber:'Caoutchouc',embroidery:'Broderie',stripes:'Rayures',dots:'Points'};
+const state={doc:template(),project:null,variant:'standard',selected:[],scope:[],tab:'templates',dirty:false,zoom:1,pan:{x:60,y:80},clipboard:[],assets:[],resourceUrls:{},textureCatalog:[],textureResources:{},members:[],values:{},saving:null,conflict:false};
+const history=new History(state.doc),resourceCache=new Map(),fontCache=new Map();let saveTimer,toastTimer,textureCatalogPromise,space=false,drag=null,raf;
 const layers=()=>{let a=state.doc.variants[state.variant]||[];for(const id of state.scope)a=find(a,id)?.children||[];return a;};
 const selected=()=>layers().filter(l=>state.selected.includes(l.id));
 function notify(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,6000);}
@@ -48,12 +48,33 @@ const fontFiles={
  'Saira Stencil One':[['SairaStencilOne-Regular.ttf',400]],Inter:[['../nine-line/inter-latin.woff2','100 900']],
  'JetBrains Mono':[['../nine-line/jetbrains-mono-latin.woff2',400]]};
 const fontBase=new URL('../fonts/patch-studio/',import.meta.url);
+const textureBase=new URL('../textures/patch-studio/',import.meta.url);
 async function dataUrl(url){
  if(!resourceCache.has(url))resourceCache.set(url,(async()=>{const r=await fetch(url,{credentials:'same-origin'});if(!r.ok)throw new Error('Ressource inaccessible.');const b=await r.blob();return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(b);});})().catch(e=>{resourceCache.delete(url);throw e;}));return resourceCache.get(url);
+}
+async function ensureTextureCatalog(){
+ if(!textureCatalogPromise)textureCatalogPromise=(async()=>{
+  const r=await fetch(new URL('catalog.json',textureBase),{credentials:'same-origin'});
+  if(!r.ok)throw new Error('Catalogue des textures indisponible.');const catalog=await r.json();
+  if(catalog.version!==1||!Array.isArray(catalog.textures)||catalog.textures.length>100)throw new Error('Catalogue des textures invalide.');
+  for(const t of catalog.textures){if(!/^[a-z0-9-]{1,64}$/.test(t.id)||!/^[a-z0-9-]+\.jpg$/.test(t.file)||!/^[a-f0-9]{64}$/.test(t.sha256)||!(t.width>0&&t.width<=4096&&t.height>0&&t.height<=4096))throw new Error('Texture de bibliothèque invalide.');labels[t.id]=t.name;}
+  state.textureCatalog=catalog.textures;return catalog.textures;
+ })().catch(e=>{textureCatalogPromise=null;throw e;});return textureCatalogPromise;
+}
+async function loadTexture(id){
+ if(state.textureResources[id])return state.textureResources[id];
+ const catalog=await ensureTextureCatalog(),t=catalog.find(t=>t.id===id);
+ if(!t)throw new Error('Texture inconnue : '+id);
+ const src=await dataUrl(new URL(t.file+'?v='+t.sha256.slice(0,16),textureBase).href);
+ const bytes=Uint8Array.from(atob(src.split(',')[1]),c=>c.charCodeAt(0));
+ const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
+ if(digest!==t.sha256)throw new Error('Texture corrompue : '+t.name);
+ return state.textureResources[id]={...t,src};
 }
 async function loadResources(){
  const ids=new Set();walk(Object.values(state.doc.variants).flat(),l=>{if(l.assetId)ids.add(l.assetId);if(l.fontAsset)ids.add(l.fontAsset);if(l.fill?.assetId)ids.add(l.fill.assetId);});
  await Promise.all([...ids].map(async id=>{const data=await dataUrl(api+'/assets/'+id);state.resourceUrls[id]=data;}));
+ const textures=new Set();walk(Object.values(state.doc.variants).flat(),l=>{if(l.fill?.type==='texture')textures.add(l.fill.textureId);});await Promise.all([...textures].map(loadTexture));
  const jobs=[];walk(Object.values(state.doc.variants).flat(),l=>{if(l.fontAsset&&!fontCache.has(l.fontAsset)){const family='asset_'+l.fontAsset;const p=(async()=>{const f=new FontFace(family,`url("${state.resourceUrls[l.fontAsset]}")`);await f.load();document.fonts.add(f);return f;})();fontCache.set(l.fontAsset,p);jobs.push(p);}});await Promise.all(jobs);await document.fonts.ready;
 }
 async function exportFontCss(){
@@ -64,7 +85,7 @@ async function exportFontCss(){
  return out.join('');
 }
 function updateArt(){
- $('#artwork').innerHTML=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls});
+ $('#artwork').innerHTML=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls,textures:state.textureResources});
  const c=state.doc.canvas;$('#artboard').style.width=c.width+'px';$('#artboard').style.height=c.height+'px';$('#selection').setAttribute('viewBox',`0 0 ${c.width} ${c.height}`);
  $('#canvas-size').textContent=`${c.width} × ${c.height} px`;
  let inner=layers().map(l=>{
@@ -116,8 +137,8 @@ function renderProperties(){
   if(l.type==='group')html+=section('Masque de groupe',input('Découper dans','mask',null,'select',options(['none',...shapes],l.mask||'none'))+'<button data-action="enter-group">Éditer les objets</button>');
   if(l.type==='image'){l.crop??={x:0,y:0,width:1,height:1};html+=section('Recadrage (fractions)',['x','y','width','height'].map(k=>input(k,'crop.'+k,l.crop[k],'number','min="0" max="1" step="0.01"')).join(''));}
   if(['text','shape'].includes(l.type)){
-   const f=l.fill;html+=section('Remplissage',input('Type','fill.type',null,'select',options(['solid','gradient','pattern','asset','none'],f.type))+input('Couleur','fill.color',f.color||'#414c38','color')+(f.type==='gradient'?input('Seconde couleur','fill.color2',f.color2||'#b3bc91','color')+input('Angle °','fill.angle',f.angle||0):'')+(f.type==='pattern'?input('Motif','fill.pattern',null,'select',options(patterns,f.pattern||'multicam')):'')+(f.type==='asset'?'<span class="ps-help">Choisissez une image dans Ressources → Images, puis « Remplir ».</span>':''));
-   if(['pattern','asset'].includes(f.type))html+=section('Réglages du motif',input('Échelle','fill.scale',f.scale||1,'number','min="0.05" max="20" step="0.05"')+input('Rotation','fill.rotation',f.rotation||0)+input('Décalage X','fill.offsetX',f.offsetX||0)+input('Décalage Y','fill.offsetY',f.offsetY||0)+input('Répétition','fill.repeat',f.repeat!==false,'checkbox')+input('Opacité','fill.opacity',f.opacity??1,'number','min="0" max="1" step="0.05"')+input('Contraste','fill.contrast',f.contrast??1,'number','min="0" max="3" step="0.1"')+input('Luminosité','fill.brightness',f.brightness??1,'number','min="0" max="3" step="0.1"'));
+   const f=l.fill;html+=section('Remplissage',input('Type','fill.type',null,'select',options(['solid','gradient','pattern','texture','asset','none'],f.type))+input('Couleur','fill.color',f.color||'#414c38','color')+(f.type==='gradient'?input('Seconde couleur','fill.color2',f.color2||'#b3bc91','color')+input('Angle °','fill.angle',f.angle||0):'')+(f.type==='pattern'?input('Motif','fill.pattern',null,'select',options(patterns,f.pattern||'multicam')):'')+(f.type==='texture'?input('Texture','fill.textureId',null,'select',options(state.textureCatalog.map(t=>t.id),f.textureId)):'')+(f.type==='asset'?'<span class="ps-help">Choisissez une image dans Ressources → Images, puis « Remplir ».</span>':''));
+   if(['pattern','asset','texture'].includes(f.type))html+=section('Réglages du motif',input('Échelle','fill.scale',f.scale||1,'number','min="0.05" max="20" step="0.05"')+input('Rotation','fill.rotation',f.rotation||0)+input('Décalage X','fill.offsetX',f.offsetX||0)+input('Décalage Y','fill.offsetY',f.offsetY||0)+input('Répétition','fill.repeat',f.repeat!==false,'checkbox')+input('Opacité','fill.opacity',f.opacity??1,'number','min="0" max="1" step="0.05"')+input('Contraste','fill.contrast',f.contrast??1,'number','min="0" max="3" step="0.1"')+input('Luminosité','fill.brightness',f.brightness??1,'number','min="0" max="3" step="0.1"'));
    html+=section(l.type==='text'?'Contour des caractères':'Bordure et couture',input('Couleur','stroke.color',l.stroke.color,'color')+input('Épaisseur','stroke.width',l.stroke.width)+input('Opacité','stroke.opacity',l.stroke.opacity,'number','min="0" max="1" step="0.05"')+input('Style','stroke.style',null,'select',options(['solid','double','dashed','stitch'],l.stroke.style))+input('Position','stroke.position',null,'select',options(l.type==='text'?['center']:['center','inside','outside'],l.stroke.position)));
   }
   html+=`<section class="ps-section"><h3>Ombre</h3><button data-action="shadow">${l.shadow?'Retirer':'Ajouter'} une ombre</button></section>`;
@@ -132,13 +153,15 @@ function add(l){editable();layers().push(l);state.selected=[l.id];changed();}
 function editable(){if(state.project&&!state.project.canEdit)throw new Error('Projet en lecture seule. Utilisez Enregistrer sous.');}
 async function refreshAssets(){state.assets=(await json('/assets')).assets;}
 async function renderResources(){
+ $('.ps-tabs').querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===state.tab)));
  const q=$('#resource-search').value.toLocaleLowerCase('fr'),tab=state.tab;let html='';
  const card=(name,body,attrs)=>name.toLocaleLowerCase('fr').includes(q)?`<button class="ps-resource-card" ${attrs}>${body}${esc(name)}</button>`:'';
  if(tab==='templates')html='<div class="ps-resource-grid">'+[['name','Name tape'],['callsign','Callsign ATHENA'],['unit','Écusson d’unité'],['circle','Patch circulaire'],['ir','IR visuel'],['pvc','Patch PVC'],['embroidered','Patch brodé'],['blank','Canevas vierge']].map(([k,n])=>card(n,compose(template(k)),`data-template="${k}"`)).join('')+'</div>';
  if(tab==='shapes'||tab==='symbols')html='<div class="ps-resource-grid">'+(tab==='symbols'?['star','chevron','shield','diamond','triangle']:shapes).map(s=>card(labels[s],`<svg viewBox="-4 -4 108 88"><g fill="#b3bc91">${geometry({shape:s,width:100,height:80,radius:15,sides:7})}</g></svg>`,`data-shape="${s}"`)).join('')+'</div>';
  if(tab==='text')html=`<button data-action="add-text" class="ps-primary">＋ Ajouter un bloc de texte</button><p class="ps-help">Chaque texte possède sa police, son contour et son remplissage. Utilisez {callsign} ou {unit} pour un modèle dynamique.</p><div class="ps-resource-grid">${fonts.map(f=>card(f,`<span class="ps-swatch" style="font-family:'${f}';font-size:27px">ATHENA</span>`,`data-font="${f}"`)).join('')}</div><button data-action="upload">Importer une police TTF / OTF</button>`;
  if(tab==='patterns'||tab==='textures'){
-  html='<div class="ps-resource-grid">'+patterns.filter(p=>tab==='patterns'||['fabric','velcro','pvc','rubber','embroidery','multicam','woodland','desert'].includes(p)).map(p=>card(labels[p],`<svg viewBox="0 0 96 96">${patternSvg(p)}</svg>`,`data-pattern="${p}"`)).join('')+'</div><p class="ps-help">Appliquer à l’objet sélectionné. Sans sélection, ajoute un fond indépendant.</p>';
+  const textures=await ensureTextureCatalog();
+  html='<h3 class="ps-texture-title">Textures MultiCam®</h3><div class="ps-resource-grid">'+textures.map(t=>card(t.name,`<img loading="lazy" src="${esc(new URL(t.file,textureBase).href)}" alt="${esc(t.name)}">`,`data-texture="${t.id}"`)).join('')+'</div><p class="ps-help">Textures image locales. Sélectionnez un texte ou une forme pour les y appliquer ; sans sélection, un fond est ajouté.</p><h3 class="ps-texture-title">Motifs et matières</h3><div class="ps-resource-grid">'+patterns.filter(p=>tab==='patterns'||['fabric','velcro','pvc','rubber','embroidery','multicam','woodland','desert'].includes(p)).map(p=>card(labels[p],`<svg viewBox="0 0 96 96">${patternSvg(p)}</svg>`,`data-pattern="${p}"`)).join('')+'</div><p class="ps-help">Appliquer à l’objet sélectionné. Sans sélection, ajoute un fond indépendant.</p>';
   html+='<div class="ps-resource-grid">'+[['#414c38','Ranger Green'],['#4b5320','Olive Drab'],['#8b7355','Coyote Brown'],['#171b17','Noir'],['#626b65','Gris']].map(([c,n])=>card(n,`<span class="ps-swatch" style="background:${c}"></span>`,`data-color="${c}"`)).join('')+'</div>';
  }
  if(tab==='images'){
@@ -180,7 +203,7 @@ async function historyModal(){
 }
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 async function raster({width,height,selection=false}={}){
- await loadResources();const css=await exportFontCss(),svg=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls,fontCss:css,selection:selection?state.selected:null});
+ await loadResources();const css=await exportFontCss(),svg=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls,textures:state.textureResources,fontCss:css,selection:selection?state.selected:null});
  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
  try{const im=new Image();im.src=url;await im.decode();const c=document.createElement('canvas');c.width=width||state.doc.canvas.width;c.height=height||state.doc.canvas.height;const ctx=c.getContext('2d');const k=Math.min(c.width/im.width,c.height/im.height),w=im.width*k,h=im.height*k;ctx.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h);return c.toDataURL('image/png').split(',')[1];}finally{URL.revokeObjectURL(url);}
 }
@@ -237,6 +260,7 @@ root.addEventListener('click',async e=>{
   if(b.dataset.tab){state.tab=b.dataset.tab;$('.ps-tabs').querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b?'true':'false'));await renderResources();}
   if(b.dataset.template)newProject(b.dataset.template);
   if(b.dataset.shape)add(layer('shape',{shape:b.dataset.shape,name:labels[b.dataset.shape]}));
+  if(b.dataset.texture){await loadTexture(b.dataset.texture);applyFill({type:'texture',textureId:b.dataset.texture,scale:1,repeat:true});}
   if(b.dataset.pattern)applyFill({type:'pattern',pattern:b.dataset.pattern,color:'#414c38',scale:1,repeat:true});
   if(b.dataset.color)applyFill(solid(b.dataset.color));
   if(b.dataset.font){const l=selected()[0];if(l?.type==='text'){editable();l.fontFamily=b.dataset.font;delete l.fontAsset;changed();}else add(layer('text',{fontFamily:b.dataset.font}));}
@@ -248,11 +272,12 @@ root.addEventListener('click',async e=>{
   if(b.dataset.layerLock){editable();const l=find(layers(),b.dataset.layerLock);l.locked=!l.locked;changed();}
  }catch(ex){error(ex);}
 });
-$('#properties').addEventListener('change',e=>{
+$('#properties').addEventListener('change',async e=>{
  const input=e.target,path=input.dataset.prop;if(!path){if(input.id==='member-select'){state.memberId=Number(input.value);state.values=state.members.find(m=>m.userId===state.memberId)?.values||{};updateArt();}return;}
  try{editable();let v=input.type==='checkbox'?input.checked:input.type==='number'||path==='fontWeight'?Number(input.value):input.value;if(typeof v==='number'&&!Number.isFinite(v))return;
+  if(path==='fill.textureId')await loadTexture(v);if(path==='fill.type'&&v==='texture'){const catalog=await ensureTextureCatalog();await loadTexture(catalog[0].id);}
   const targets=path.startsWith('canvas.')||path.startsWith('fallbacks.')?[state.doc]:selected();
-  for(const l of targets){if(l.locked)continue;set(l,path,v);if(path==='fill.type'){l.fill.color??='#414c38';if(v==='gradient')l.fill.color2??='#b3bc91';if(v==='pattern')l.fill.pattern??='multicam';if(v==='asset'&&!l.fill.assetId){notify('Choisissez une image puis « Remplir ».');l.fill.type='solid';}}if(path==='fontFamily')delete l.fontAsset;}
+  for(const l of targets){if(l.locked)continue;set(l,path,v);if(path==='fill.type'){l.fill.color??='#414c38';if(v==='gradient')l.fill.color2??='#b3bc91';if(v==='pattern')l.fill.pattern??='multicam';if(v==='texture')l.fill.textureId??=state.textureCatalog[0].id;if(v==='asset'&&!l.fill.assetId){notify('Choisissez une image puis « Remplir ».');l.fill.type='solid';}}if(path==='fontFamily')delete l.fontAsset;}
   changed();
  }catch(ex){error(ex);}
 });

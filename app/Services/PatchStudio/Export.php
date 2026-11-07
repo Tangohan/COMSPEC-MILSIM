@@ -71,6 +71,16 @@ final class Export
             $files[]=['name'=>$name,'data'=>$asset['data']];
             $manifest[$asset['id']]=['file'=>$name,'mime'=>$asset['mime'],'sha256'=>$asset['hash'],'license'=>$asset['license_note']];
         }
+        $textures=[];
+        foreach (TextureCatalog::used($p['document']) as $id) {
+            $texture=TextureCatalog::read($id);
+            $name='textures/'.$texture['file'];
+            $files[]=['name'=>$name,'data'=>$texture['data']];
+            unset($texture['data']);
+            $manifest['texture:'.$id]=['file'=>$name,'mime'=>'image/jpeg','sha256'=>$texture['sha256'],'license'=>$texture['rights'],'source'=>$texture['source']];
+            $textures[]=$texture;
+        }
+        $files[]=['name'=>'textures/catalog.json','data'=>json_encode(['version'=>1,'textures'=>$textures],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)];
         $files[]=['name'=>'resources.json','data'=>json_encode($manifest,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR)];
         return AtakTranslationModBuilder::buildZip($files,315532800);
     }

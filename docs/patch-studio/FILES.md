@@ -56,4 +56,13 @@ Ajouts de la correction MIME/UI/Pro+ :
 - `views/patch_studio/_disclaimer.php`
 - `views/patch_studio/upgrade.php`
 
+Ajouts des textures image :
+
+- `app/Services/PatchStudio/TextureCatalog.php`
+- `public/assets/textures/patch-studio/catalog.json`
+- `public/assets/textures/patch-studio/SOURCES.md`
+- Les cinq JPEG immuables référencés dans ce catalogue.
+- `tests/patch-studio/textures.php`
+- `tests/patch-studio/textures-browser.cjs`
+
 Aucun fichier de configuration secret ni artefact du stockage privé n’est inclus.
