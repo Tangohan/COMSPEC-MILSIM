@@ -151,3 +151,16 @@
 @media(prefers-reduced-motion:reduce) { .ps-page * { transition:none !important; } }
 
 .ps-page .ps-texture-title { margin:12px 0; color:var(--accent); font:700 10px var(--mono); text-transform:uppercase; letter-spacing:.08em; }
+/* Fabrication inspector: five sections and permanently reachable layer stack. */
+.ps-page .ps-inspector { display:flex; flex-direction:column; overflow:hidden; }
+.ps-page .ps-inspector>.ps-aside-title { flex:none; }
+.ps-page #properties { flex:1; min-height:120px; overflow:auto; scroll-padding-top:43px; }
+.ps-page .ps-property-nav { position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; gap:2px; padding:8px 6px; background:var(--s1); border-bottom:1px solid var(--ps-border); }
+.ps-page .ps-property-nav button { padding:6px 4px; background:transparent; font-size:9px; color:var(--ink-muted); }
+.ps-page .ps-property-nav button:hover { color:var(--accent); }
+.ps-page .ps-fields>.ps-wide { grid-column:1/-1; }
+.ps-page .ps-fields h4 { margin:8px 0 2px; font:500 10px var(--mono); color:var(--ink); }
+.ps-page .ps-fields .ps-help { margin:0; font-size:10px; }
+.ps-page .ps-layers { max-height:230px; overflow:auto; min-height:120px; border-top:1px solid var(--ps-border); flex:none; }
+.ps-page .ps-layers>.ps-aside-title { position:sticky; top:0; z-index:4; background:var(--s2); }
+@media(min-width:1151px) { .ps-page .ps-workspace { grid-template-columns:250px minmax(200px,1fr) 320px; } }

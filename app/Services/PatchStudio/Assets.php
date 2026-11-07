@@ -38,9 +38,9 @@ final class Assets
     }
 
     /** @return array{bytes:string,mime:string} */
-    public static function validate(string $bytes, bool $fontLicense = false): array
+    public static function validate(string $bytes, bool $fontLicense = false, int $maxPixels = 8388608, int $maxBytes = self::MAX_BYTES): array
     {
-        if ($bytes === '' || strlen($bytes) > self::MAX_BYTES) throw new \InvalidArgumentException('Fichier vide ou supérieur à 8 Mio.');
+        if ($bytes === '' || strlen($bytes) > $maxBytes) throw new \InvalidArgumentException('Fichier vide ou trop volumineux.');
         $magic = substr($bytes, 0, 4);
         if ($magic === "\x00\x01\x00\x00" || $magic === 'OTTO') {
             if (!$fontLicense) throw new \InvalidArgumentException('Confirmez votre droit d’utiliser et incorporer cette police.');
@@ -50,7 +50,7 @@ final class Assets
         if (preg_match('/^\s*(?:<\?xml[^>]*>\s*)?<svg\b/i', $bytes)) return ['bytes'=>self::svg($bytes),'mime'=>'image/svg+xml'];
         $info = @getimagesizefromstring($bytes);
         if (!$info || !in_array($info['mime'], ['image/png','image/jpeg','image/webp'], true)) throw new \InvalidArgumentException('PNG, JPEG, WebP, SVG ou TTF/OTF attendus.');
-        if ($info[0] > 4096 || $info[1] > 4096 || $info[0] * $info[1] > 8388608) throw new \InvalidArgumentException('Image limitée à 4096 px et 8 mégapixels.');
+        if ($info[0] > 4096 || $info[1] > 4096 || $info[0] * $info[1] > $maxPixels) throw new \InvalidArgumentException('Image trop grande pour ce traitement.');
         if (!extension_loaded('gd')) throw new \RuntimeException('Extension PHP GD requise.');
         $im = @imagecreatefromstring($bytes);
         if (!$im) throw new \InvalidArgumentException('Image illisible.');

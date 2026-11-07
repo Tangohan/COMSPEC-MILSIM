@@ -1,0 +1,65 @@
+name: Patch Studio
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/patch-studio.yml'
+      - 'app/Services/PatchStudio/**'
+      - 'app/Controllers/Api/PatchStudioApiController.php'
+      - 'app/Controllers/Web/PatchStudioController.php'
+      - 'public/assets/js/patch-studio*.js'
+      - 'public/assets/css/patch-studio.css'
+      - 'public/assets/textures/patch-studio/**'
+      - 'views/patch_studio/**'
+      - 'tests/patch-studio/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  editor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: gd, dom, mbstring, pdo_sqlite, zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate schema, access, files and exports
+        run: |
+          php tests/patch-studio/backend.php
+          php tests/patch-studio/access-ui.php
+          php tests/patch-studio/textures.php
+          php tests/patch-studio/fabrication.php
+          node --test tests/patch-studio/core.test.mjs tests/patch-studio/fabrication.test.mjs
+      - name: Install browser test tools only
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Run isolated desktop browser and fabrication tests
+        shell: bash
+        run: |
+          export CHROMIUM_PATH="$(node -e "process.stdout.write(require('playwright').chromium.executablePath())")"
+          PATCH_STUDIO_TEST=1 PATCH_TEST_ROOT=/tmp/athena-patch-base php -d memory_limit=512M -d post_max_size=48M -S 127.0.0.1:8765 -t public tests/patch-studio/router.php >/tmp/patch-base-server.log 2>&1 &
+          patch_base_pid=$!
+          PATCH_STUDIO_TEST=1 PATCH_TEST_ROOT=/tmp/athena-patch-fabrication php -d memory_limit=512M -d post_max_size=48M -S 127.0.0.1:8766 -t public tests/patch-studio/router.php >/tmp/patch-fabrication-server.log 2>&1 &
+          patch_fabrication_pid=$!
+          trap 'kill "$patch_base_pid" "$patch_fabrication_pid"' EXIT
+          curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8765/assets/js/patch-studio.js >/dev/null
+          curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8766/assets/js/patch-studio.js >/dev/null
+          node tests/patch-studio/textures-browser.cjs
+          node tests/patch-studio/browser.cjs
+          PATCH_TEST_URL=http://127.0.0.1:8766 node tests/patch-studio/fabrication-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patch-studio-browser-renders
+          path: /tmp/athena-*.png
+          if-no-files-found: ignore
+          retention-days: 7
