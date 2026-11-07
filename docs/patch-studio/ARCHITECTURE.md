@@ -21,3 +21,7 @@
 Projets et versions en SQL ; ressources et rendus en stockage privé sous `storage/patch-studio`. Les rendus publiés sont immuables et adressés par hash. ACL propriétaire, partage explicite lecteur/éditeur dans le tenant, lecture organisation, administrateur `admin.organization`. Aucun accès inter-tenant même pour une clé de communauté jeu. Contrôle optimiste de révision pour éviter les écrasements autosave.
 
 Les patchs distants enrichissent le catalogue existant. Leur application 3D exige une classe de version exacte chargée par addon/mission. Les téléchargements servent à l'aperçu et au cache d'intégrité ; ils ne sont jamais appliqués globalement comme chemins disque. Les exports addon déclarent `CfgAthenaPatches` avec identité/version, plus `CfgUnitInsignia` ; cette config fournit la résolution sûre.
+
+## Construction textile
+
+L’évolution graphique utilise le même compositeur SVG pour les calques, les masques de découpe, les fils et le rendu haute résolution ; aucun moteur concurrent. `patch-studio-surface.js` fournit profils de matière, normale/tangente des contours, points brodés et ombres. Le schéma v1 accepte des propriétés de fabrication facultatives ; les tables, sessions et services d’export restent réutilisés. Voir [FABRICATION.md](FABRICATION.md) pour les champs, les bornes, les repères de texture et les budgets.

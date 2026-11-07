@@ -27,10 +27,10 @@ final class PatchStudioApiController
         catch (\InvalidArgumentException|\JsonException $e) { return Response::json(['error'=>$e->getMessage()],422); }
         catch (\Throwable $e) { error_log('Patch Studio: '.$e->getMessage()); return Response::json(['error'=>'Service indisponible. Vérifiez les migrations, GD et le stockage privé.'],503); }
     }
-    private function body(): array
+    private function body(int $maxBytes = 12582912): array
     {
-        $raw=file_get_contents('php://input',false,null,0,12582913);
-        if ($raw===false || strlen($raw)>12582912) throw new \InvalidArgumentException('Requête trop volumineuse.');
+        $raw=file_get_contents('php://input',false,null,0,$maxBytes+1);
+        if ($raw===false || strlen($raw)>$maxBytes) throw new \InvalidArgumentException('Requête trop volumineuse.');
         $b=json_decode($raw,true,64,JSON_THROW_ON_ERROR);
         if (!is_array($b) || array_is_list($b)) throw new \InvalidArgumentException('Objet JSON attendu.');
         return $b;
@@ -121,7 +121,7 @@ final class PatchStudioApiController
             if (!$lock) throw new \RuntimeException('Verrou de rendu indisponible.');
             if (!flock($lock,LOCK_EX|LOCK_NB)) { fclose($lock); return Response::json(['error'=>'Un rendu est déjà en cours.'],429)->header('Retry-After','3'); }
             try {
-            $p=$db->find((string)$params['id'],$t,$u,$a); $b=$this->body();
+            $p=$db->find((string)$params['id'],$t,$u,$a); $b=$this->body(50331648);
             if ((int)($b['revision']??0)!==(int)$p['revision']) throw new \DomainException('Enregistrez la révision actuelle avant le rendu.');
             if ((new FileRateLimiter())->tooManyAttempts('patch-render:'.$t.':'.$u,12,60)) return Response::json(['error'=>'12 rendus maximum par minute.'],429)->header('Retry-After','60');
             $variant=(string)($b['variant']??'standard');
@@ -130,6 +130,8 @@ final class PatchStudioApiController
             if (!in_array($format,['png','paa','zip','pbo','publish'],true)) throw new \InvalidArgumentException('Format inconnu.');
             $bytes=base64_decode((string)($b['png']??''),true);
             if ($bytes===false) throw new \InvalidArgumentException('PNG invalide.');
+            $size=@getimagesizefromstring($bytes);
+            if ($format!=='png' && $size && ($size[0]>2048 || $size[1]>2048)) throw new \InvalidArgumentException('Les exports Arma 3 sont limités à 2048 pixels par côté.');
             [$png,$w,$h]=Export::raster($bytes);
             if (abs($w/$h - $p['document']['canvas']['width']/$p['document']['canvas']['height'])>0.01 && empty($b['letterbox']) && empty($b['selection'])) throw new \InvalidArgumentException('Proportions altérées. Utilisez le cadrage proportionnel.');
             if ($format==='publish') {

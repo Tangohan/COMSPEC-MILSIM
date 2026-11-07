@@ -9,12 +9,20 @@ use App\Support\PaaEncoder;
 
 final class Export
 {
+    public const MAX_PNG_BYTES = 33554432;
     public static function raster(string $png): array
     {
-        if (strlen($png)>Assets::MAX_BYTES || substr($png,0,8)!=="\x89PNG\r\n\x1a\n") throw new \InvalidArgumentException('Rendu PNG requis (8 Mio maximum).');
+        if (strlen($png)>self::MAX_PNG_BYTES || substr($png,0,8)!=="\x89PNG\r\n\x1a\n") throw new \InvalidArgumentException('Rendu PNG requis (32 Mio maximum).');
         $info=@getimagesizefromstring($png);
-        if (!$info || $info[0]>2048 || $info[1]>2048) throw new \InvalidArgumentException('Rendu limité à 2048 × 2048.');
-        $clean=Assets::validate($png)['bytes'];
+        if (!$info || $info[0]<32 || $info[1]<32 || $info[0]>4096 || $info[1]>4096) throw new \InvalidArgumentException('Rendu : 32 à 4096 pixels par côté.');
+        // Refuse before decompression if the worker cannot hold the pixel buffers and PNG copies.
+        $limit=trim((string)ini_get('memory_limit'));
+        if ($limit!=='' && $limit!=='-1') {
+            $multiplier=match(strtolower(substr($limit,-1))) {'g'=>1073741824,'m'=>1048576,'k'=>1024,default=>1};
+            $available=(int)$limit*$multiplier-memory_get_usage(true);
+            if ($info[0]*$info[1]*8+strlen($png)*2+16777216>$available) throw new \InvalidArgumentException('Mémoire insuffisante pour cette résolution. Réduisez la taille ou configurez PHP memory_limit à 256M minimum (512M conseillé) pour le PNG 4K.');
+        }
+        $clean=Assets::validate($png,false,16777216,self::MAX_PNG_BYTES)['bytes'];
         return [$clean,$info[0],$info[1]];
     }
     public static function thumbnail(string $png): string
@@ -30,6 +38,8 @@ final class Export
     }
     public static function paa(string $png): string
     {
+        $info=@getimagesizefromstring($png);
+        if ($info && ($info[0]>2048 || $info[1]>2048)) throw new \InvalidArgumentException('Les exports Arma 3 sont limités à 2048 pixels par côté.');
         [, $w, $h]=self::raster($png);
         if (!PaaEncoder::isPowerOfTwo($w) || !PaaEncoder::isPowerOfTwo($h)) throw new \InvalidArgumentException('PAA : côtés en puissances de deux requis. Choisissez un format adapté, sans déformer le patch.');
         $im=imagecreatefromstring($png);

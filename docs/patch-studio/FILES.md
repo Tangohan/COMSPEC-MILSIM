@@ -66,3 +66,14 @@ Ajouts des textures image :
 - `tests/patch-studio/textures-browser.cjs`
 
 Aucun fichier de configuration secret ni artefact du stockage privé n’est inclus.
+
+Évolution fabrication textile :
+
+- `public/assets/js/patch-studio-surface.js` : matières, contours, fils, ombres et tranches laser.
+- `public/assets/js/patch-studio-core.js`, `patch-studio.js` et CSS : composition, références de supports, cinq sections, saisie immédiate et export haute résolution.
+- `app/Services/PatchStudio/{Document,Assets,Export}.php`, contrôleur API : schéma, ressources imbriquées, limites PNG et garde mémoire.
+- `tests/patch-studio/{fabrication.test.mjs,fabrication.php,fabrication-browser.cjs,load-core.mjs}` et adaptation des suites existantes.
+- `docs/patch-studio/FABRICATION.md` et mise à jour des documents existants.
+- `.github/workflows/patch-studio.yml` : validation PHP/Node/Chromium isolée.
+
+Aucune migration supplémentaire et aucun changement DLL/SQF pour cette évolution.

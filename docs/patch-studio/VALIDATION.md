@@ -19,7 +19,7 @@ PATCH_STUDIO_TEST=1 PATCH_TEST_ROOT=/tmp/athena-patch-browser php -S 127.0.0.1:8
 PATCH_TEST_URL=http://127.0.0.1:8765 node tests/patch-studio/browser.cjs
 ```
 
-Le script utilise Playwright et Chromium (`CHROMIUM_PATH` optionnel). Il couvre les vrais contrôleurs HTTP, le texte/police/espacement/motif/rotation, annuler/rétablir, import sécurisé, sauvegarde/rechargement, CSRF, conflit et les cinq modes d'export. Les essais navigateur ont désormais réussi sous Chromium avec le serveur PHP de test isolé. Ils vérifient les deux réponses de modules `.js` (type MIME JavaScript et version d’URL identique), le parcours d’édition/import/sauvegarde/rechargement, le CSRF, les conflits et les cinq modes d’export. Le refus HTTP 403 des formules Free/Standard/Pro est vérifié côté page et API.
+Le script utilise Playwright et Chromium (`CHROMIUM_PATH` optionnel). Il couvre les vrais contrôleurs HTTP, le texte/police/espacement/motif/rotation, annuler/rétablir, import sécurisé, sauvegarde/rechargement, CSRF, conflit et les cinq modes d'export. Les essais navigateur ont désormais réussi sous Chromium avec le serveur PHP de test isolé. Ils vérifient les trois réponses de modules `.js` (type MIME JavaScript et version d’URL identique), le parcours d’édition/import/sauvegarde/rechargement, le CSRF, les conflits et les cinq modes d’export. Le refus HTTP 403 des formules Free/Standard/Pro est vérifié côté page et API.
 
 `php tests/patch-studio/access-ui.php` : **58 contrôles réussis**, couvrant le seuil Pro+, les offres actives/expirées, l’essai fondateur Pro, les impayés, les paiements manuels expirés, les anciens plans sans clé de fonctionnalité, sa désactivation explicite, les appels directs aux API et les vues éditeur/refus.
 
@@ -60,3 +60,18 @@ Ces écarts et les recettes non exécutées empêchent d'annoncer la couverture 
 - Le neuvième test du moteur vérifie le remplissage image des caractères, les transformations et la fidélité après sérialisation, sans URL externe dans le rendu SVG. Une texture absente entraîne une erreur explicite.
 - `node tests/patch-studio/textures-browser.cjs` : **réussi** sur serveur PHP isolé : les cinq variantes donnent des rendus distincts dans le texte ; fond, réglages de texture, exports PNG/PAA/ZIP/PBO, sauvegarde, réouverture à froid, pixels identiques et absence de requêtes vers le site source. La suite navigateur générale est également passée.
 - Aucun nouveau test Arma/DLL ; aucune nouvelle migration SQL. Les exports graphiques sont validés ici, pas l'apparition automatique d'un fichier téléchargé sur un support 3D.
+
+## Fabrication textile et Laser Cut
+
+- `node tests/patch-studio/fabrication.test.mjs` : **7 tests réussis**, couvrant masque/couche inférieure, serveur de remplissage commun au fond et à la bordure, échantillonnage des douze formes, densité, matrices relatives, duplication/groupe/suppression, matières/finitions, export d’une sélection imbriquée avec conservation des transformations et dépendances laser, résolution native du SVG et préfixes distincts des miniatures.
+- `php tests/patch-studio/fabrication.php` : **50 contrôles réussis** : compatibilité v1, sept textiles et rendu plat, finitions/modes, clés/valeurs malveillantes refusées, référence de support, texture de contour indépendante, persistance/historique, accès privé des ressources imbriquées, ZIP, PNG non carré 4096 × 1024, limite PAA et garde mémoire avant décompression.
+- `node tests/patch-studio/fabrication-browser.cjs` : **réussi sous Chromium** avec serveur PHP isolé à `memory_limit=512M`. Prévisualisation dès la saisie, cinq sections, points de couture, masque laser, vraie transparence des glyphes, égalité exacte des pixels à la jonction du camouflage, PNG 4096 × 2048 et 4096 × 4096 acceptés par le contrôleur, export depuis le bouton et choix du fond, sept textiles visuellement distincts à texte identique, sauvegarde/réouverture et PNG identique. Captures d’écran inspectées pour le canevas, le rendu produit et la planche des matières.
+
+Commande navigateur de fabrication (Playwright et Chromium nécessaires) :
+
+```sh
+PATCH_STUDIO_TEST=1 PATCH_TEST_ROOT=/tmp/athena-patch-fabrication php -d memory_limit=512M -S 127.0.0.1:8765 -t public tests/patch-studio/router.php
+PATCH_TEST_URL=http://127.0.0.1:8765 node tests/patch-studio/fabrication-browser.cjs
+```
+
+La simulation de matière n’est pas un solveur physique 3D ni une certification textile. Aucun nouveau test moteur Arma, .NET, MySQL/MariaDB ou inter-navigateurs acquis par cette évolution. Aucune nouvelle migration. Les commandes et profils de déploiement sont détaillés dans [FABRICATION.md](FABRICATION.md).

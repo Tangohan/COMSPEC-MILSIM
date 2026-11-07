@@ -1,8 +1,9 @@
-const {shapes,patterns,fonts,variables,clone,uid,esc,solid,layer,template,History,walk,find,duplicate,group,ungroup,geometry,patternSvg,compose} = await import(new URL('./patch-studio-core.js' + new URL(import.meta.url).search, import.meta.url));
+const {shapes,patterns,fonts,materials,renderDefaults,variables,clone,uid,esc,solid,layer,template,History,walk,find,duplicate,duplicateMany,repairConstructions,group,ungroup,geometry,patternSvg,compose} = await import(new URL('./patch-studio-core.js' + new URL(import.meta.url).search, import.meta.url));
 const $=s=>document.querySelector(s),root=$('#patch-studio'),api=root.dataset.api,csrf=$('meta[name=csrf-token]').content;
 const labels={texture:'Texture image',asset:'Image importée',solid:'Couleur unie',gradient:'Dégradé',pattern:'Motif vectoriel',none:'Sans remplissage',rectangle:'Rectangle',rounded_rectangle:'Rectangle arrondi',ellipse:'Cercle / ovale',triangle:'Triangle',hexagon:'Hexagone',octagon:'Octogone',shield:'Écusson',chevron:'Chevron',banner:'Bannière',diamond:'Losange',star:'Étoile',polygon:'Polygone',multicam:'Camouflage simplifié (ancien)',woodland:'Woodland',desert:'Desert',fabric:'Tissu',velcro:'Velcro',pvc:'PVC',rubber:'Caoutchouc',embroidery:'Broderie',stripes:'Rayures',dots:'Points'};
+Object.assign(labels,Object.fromEntries(Object.entries(materials).map(([k,m])=>[k,m.name])),{embroidered:'Brodée',overlock:'Surjetée',heatcut:'Découpée à chaud',legacy:'Classique',color:'Fil de couleur unie',same:'Camouflage identique au fond',custom:'Texture indépendante',print:'Impression',laser:'Laser Cut',high:'Fin · export',draft:'Rapide',inside:'Intérieure',center:'Centre',outside:'Extérieure',left:'Gauche',right:'Droite',top:'Haut',middle:'Milieu',bottom:'Bas',upper:'Majuscules',lower:'Minuscules'});
 const state={doc:template(),project:null,variant:'standard',selected:[],scope:[],tab:'templates',dirty:false,zoom:1,pan:{x:60,y:80},clipboard:[],assets:[],resourceUrls:{},textureCatalog:[],textureResources:{},members:[],values:{},saving:null,conflict:false};
-const history=new History(state.doc),resourceCache=new Map(),fontCache=new Map();let saveTimer,toastTimer,textureCatalogPromise,space=false,drag=null,raf;
+const history=new History(state.doc),resourceCache=new Map(),fontCache=new Map();let saveTimer,liveCommitTimer,toastTimer,textureCatalogPromise,space=false,drag=null,raf;
 const layers=()=>{let a=state.doc.variants[state.variant]||[];for(const id of state.scope)a=find(a,id)?.children||[];return a;};
 const selected=()=>layers().filter(l=>state.selected.includes(l.id));
 function notify(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,6000);}
@@ -12,12 +13,17 @@ async function request(path,options={}){
 }
 const json=async(path,options={})=>(await request(path,options)).json();
 function recovery(){try{localStorage.setItem('athena.patch.recovery.'+root.dataset.recovery,JSON.stringify({document:state.doc,project:state.project,variant:state.variant,at:Date.now()}));}catch{notify('Récupération locale indisponible : enregistrez sur ATHENA.');}}
-function changed(){state.dirty=true;history.push(state.doc);recovery();$('#save-state').textContent='Modifications non enregistrées';clearTimeout(saveTimer);if(state.project&&!state.conflict)saveTimer=setTimeout(()=>save().catch(error),3500);render();}
+function changed(){clearTimeout(liveCommitTimer);state.dirty=true;history.push(state.doc);recovery();$('#save-state').textContent='Modifications non enregistrées';clearTimeout(saveTimer);if(state.project&&!state.conflict)saveTimer=setTimeout(()=>save().catch(error),3500);render();}
+function previewChanged(){
+ state.dirty=true;$('#save-state').textContent='Modifications non enregistrées';clearTimeout(saveTimer);if(state.project&&!state.conflict)saveTimer=setTimeout(()=>save().catch(error),3500);
+ clearTimeout(liveCommitTimer);const doc=state.doc;liveCommitTimer=setTimeout(()=>{if(state.doc===doc){history.push(doc);recovery();}},500);
+ cancelAnimationFrame(raf);raf=requestAnimationFrame(updateArt);
+}
 function error(e){notify(e.message||String(e));}
 async function save(copy=false){
  if(state.saving){await state.saving;if(!copy&&state.dirty)return save();return;}
  if(state.project&&!state.project.canEdit&&!copy)throw new Error('Projet en lecture seule. Enregistrez une copie.');
- const snapshot=clone(state.doc),name=$('#project-name').value.trim()||'Sans titre',before=JSON.stringify(snapshot);
+ history.push(state.doc);const snapshot=clone(state.doc),name=$('#project-name').value.trim()||'Sans titre',before=JSON.stringify(snapshot);
  $('#save-state').textContent='Enregistrement…';
  state.saving=(async()=>{
   try{
@@ -37,10 +43,10 @@ async function openProject(id){
  if(state.dirty&&!confirm('Ouvrir ce projet et remplacer les modifications non enregistrées ?'))return;
  const {project}=await json('/projects/'+id);state.project=project;state.doc=project.document;state.variant='standard';state.scope=[];state.selected=[];state.dirty=false;state.conflict=false;history.reset(state.doc);$('#project-name').value=project.name;$('#save-state').textContent=`${project.canEdit?'Enregistré':'Lecture seule'} · v${project.revision}`;$('#modal').close();await loadResources();render();fit();
 }
-function newProject(kind='blank'){
+async function newProject(kind='blank'){
  if(state.saving){notify('Enregistrement en cours. Réessayez dans un instant.');return;}
  if(state.dirty&&!confirm('Remplacer les modifications non enregistrées par un nouveau projet ?'))return;
- state.doc=template(kind);state.project=null;state.scope=[];state.selected=[];state.variant='standard';state.conflict=false;$('#project-name').value='Nouveau patch';history.reset(state.doc);changed();fit();
+ state.doc=template(kind);state.project=null;state.scope=[];state.selected=[];state.variant='standard';state.conflict=false;$('#project-name').value='Nouveau patch';await loadResources();history.reset(state.doc);changed();fit();
 }
 const fontFiles={
  'Barlow Condensed':[['BarlowCondensed-Regular.ttf',400],['BarlowCondensed-Bold.ttf',700]],
@@ -72,9 +78,9 @@ async function loadTexture(id){
  return state.textureResources[id]={...t,src};
 }
 async function loadResources(){
- const ids=new Set();walk(Object.values(state.doc.variants).flat(),l=>{if(l.assetId)ids.add(l.assetId);if(l.fontAsset)ids.add(l.fontAsset);if(l.fill?.assetId)ids.add(l.fill.assetId);});
+ const ids=new Set();walk(Object.values(state.doc.variants).flat(),l=>{if(l.assetId)ids.add(l.assetId);if(l.fontAsset)ids.add(l.fontAsset);if(l.fill?.assetId)ids.add(l.fill.assetId);if(l.stroke?.fill?.assetId)ids.add(l.stroke.fill.assetId);});
  await Promise.all([...ids].map(async id=>{const data=await dataUrl(api+'/assets/'+id);state.resourceUrls[id]=data;}));
- const textures=new Set();walk(Object.values(state.doc.variants).flat(),l=>{if(l.fill?.type==='texture')textures.add(l.fill.textureId);});await Promise.all([...textures].map(loadTexture));
+ const textures=new Set();walk(Object.values(state.doc.variants).flat(),l=>{if(l.fill?.type==='texture')textures.add(l.fill.textureId);if(l.stroke?.fill?.type==='texture')textures.add(l.stroke.fill.textureId);});await Promise.all([...textures].map(loadTexture));
  const jobs=[];walk(Object.values(state.doc.variants).flat(),l=>{if(l.fontAsset&&!fontCache.has(l.fontAsset)){const family='asset_'+l.fontAsset;const p=(async()=>{const f=new FontFace(family,`url("${state.resourceUrls[l.fontAsset]}")`);await f.load();document.fonts.add(f);return f;})();fontCache.set(l.fontAsset,p);jobs.push(p);}});await Promise.all(jobs);await document.fonts.ready;
 }
 async function exportFontCss(){
@@ -85,7 +91,7 @@ async function exportFontCss(){
  return out.join('');
 }
 function updateArt(){
- $('#artwork').innerHTML=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls,textures:state.textureResources});
+ $('#artwork').innerHTML=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls,textures:state.textureResources,idPrefix:'canvas-'});
  const c=state.doc.canvas;$('#artboard').style.width=c.width+'px';$('#artboard').style.height=c.height+'px';$('#selection').setAttribute('viewBox',`0 0 ${c.width} ${c.height}`);
  $('#canvas-size').textContent=`${c.width} × ${c.height} px`;
  let inner=layers().map(l=>{
@@ -117,34 +123,68 @@ function input(label,path,value,type='number',extra=''){
  if(type==='textarea')return `<label class="ps-field ps-wide">${label}<textarea data-prop="${path}">${esc(value)}</textarea></label>`;
  return `<label class="ps-field${type==='text'?' ps-wide':''}">${label}<input data-prop="${path}" type="${type}" ${type==='checkbox'?(value?'checked':''):`value="${esc(value)}"`} ${extra}></label>`;
 }
+const defaultStroke=()=>({color:'#b3bc91',width:0,opacity:1,style:'solid',position:'center'});
 const options=(arr,current)=>arr.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(labels[v]||v)}</option>`).join('');
-const section=(name,body)=>`<section class="ps-section"><h3>${name}</h3><div class="ps-fields">${body}</div></section>`;
+const section=(name,body,id)=>`<section class="ps-section" data-fabrication-section="${id}"><h3>${name}</h3><div class="ps-fields">${body}</div></section>`;
+const materialControls=(l,prefix='material')=>{
+ const m=l.material||{type:'flat'};
+ return input('Matière',prefix+'.type',null,'select',options(Object.keys(materials),m.type))+input('Grain / tissage',prefix+'.scale',m.scale??1,'number','min="0.25" max="4" step="0.05"')+input('Orientation du fil °',prefix+'.angle',m.angle??0,'number','min="-360" max="360"')+input('Rugosité',prefix+'.roughness',m.roughness??.8,'number','min="0" max="1" step="0.05"')+input('Épaisseur / relief',prefix+'.relief',m.relief??.8,'number','min="0" max="2" step="0.05"');
+};
+function paintControls(f,prefix='fill',title='Texture / couleur'){
+ f??={type:'none'};
+ let out=`<h4 class="ps-wide">${title}</h4>`+input('Remplissage',prefix+'.type',null,'select',options(['solid','gradient','pattern','texture','asset','none'],f.type))+input('Couleur',prefix+'.color',(f.color||'#414c38').slice(0,7),'color');
+ if(f.type==='gradient')out+=input('Seconde couleur',prefix+'.color2',f.color2||'#b3bc91','color')+input('Angle °',prefix+'.angle',f.angle||0);
+ if(f.type==='pattern')out+=input('Motif',prefix+'.pattern',null,'select',options(patterns,f.pattern||'multicam'));
+ if(f.type==='texture')out+=input('Camouflage',prefix+'.textureId',null,'select',options(state.textureCatalog.map(t=>t.id),f.textureId));
+ if(f.type==='asset')out+=input('Image / texture importée',prefix+'.assetId',null,'select','<option value="">Choisir une image…</option>'+state.assets.filter(a=>a.mime.startsWith('image/')).map(a=>`<option value="${a.id}" ${f.assetId===a.id?'selected':''}>${esc(a.label)}</option>`).join(''));
+ if(['texture','asset','pattern'].includes(f.type))out+=input('Échelle',prefix+'.scale',f.scale||1,'number','min="0.05" max="20" step="0.05"')+input('Orientation °',prefix+'.rotation',f.rotation||0)+input('Position X',prefix+'.offsetX',f.offsetX||0)+input('Position Y',prefix+'.offsetY',f.offsetY||0)+input('Répéter',prefix+'.repeat',f.repeat!==false,'checkbox')+input('Opacité du motif',prefix+'.opacity',f.opacity??1,'number','min="0" max="1" step="0.05"')+input('Contraste',prefix+'.contrast',f.contrast??1,'number','min="0" max="3" step="0.1"')+input('Luminosité',prefix+'.brightness',f.brightness??1,'number','min="0" max="3" step="0.1"');
+ return out;
+}
+function borderControls(l,prefix='stroke'){
+ const s=l.stroke||defaultStroke();
+ let out=input('Finition',prefix+'.finish',null,'select',options(['embroidered','overlock','heatcut','none','legacy'],s.finish||'legacy'))+input('Bordure',prefix+'.mode',null,'select',options(['color','same','custom'],s.mode||'color'))+((!s.mode||s.mode==='color')?input('Couleur du fil',prefix+'.color',s.color.slice(0,7),'color'):'')+input('Épaisseur (px)',prefix+'.width',s.width,'number','min="0" max="80" step="0.5"')+input('Position',prefix+'.position',null,'select',options(['inside','center','outside'],s.position))+input('Opacité',prefix+'.opacity',s.opacity,'number','min="0" max="1" step="0.05"');
+ if(s.mode==='same')out+='<p class="ps-help ps-wide">Camouflage continu : fond et bordure utilisent la même image, à la même échelle et à la même position.</p>';
+ if(s.mode==='custom')out+=paintControls(s.fill,prefix+'.fill','Texture indépendante de la bordure');
+ if(['embroidered','overlock'].includes(s.finish))out+=input('Épaisseur du fil',prefix+'.threadWidth',s.threadWidth??.6,'number','min="0.1" max="3" step="0.05"')+input('Densité des points',prefix+'.density',s.density??1.2,'number','min="0.15" max="3" step="0.05"')+input('Orientation des points °',prefix+'.threadAngle',s.threadAngle??12,'number','min="-70" max="70"')+input('Relief de la couture',prefix+'.relief',s.relief??.8,'number','min="0" max="2" step="0.05"');
+ if(!s.finish||s.finish==='legacy')out+=input('Style classique',prefix+'.style',null,'select',options(['solid','double','dashed','stitch'],s.style));
+ return out;
+}
 function renderProperties(){
- const ls=selected(),l=ls[0],c=state.doc.canvas;$('#object-kind').textContent=l?({shape:'Forme',text:'Texte',image:'Image',group:'Groupe'}[l.type]):'Canevas';
- let html=state.scope.length?'<section class="ps-section"><button data-action="leave-group">← Sortir du groupe</button></section>':'';
+ const l=selected()[0],st=l?.stroke||defaultStroke(),c=state.doc.canvas,laser=l?.type==='text'&&l.construction?.mode==='laser',support=laser?layers().find(s=>s.id===l.construction.supportId):null;
+ $('#object-kind').textContent=l?({shape:'Forme',text:'Texte',image:'Image',group:'Groupe'}[l.type]):'Canevas';
+ let html=state.scope.length?'<div class="ps-section"><button data-action="leave-group">← Sortir du groupe</button></div>':'';
+ html+='<nav class="ps-property-nav" aria-label="Réglages de fabrication">'+['Support','Texture','Bordure','Texte','Rendu'].map((n,i)=>`<button data-property-section="${i}">${n}</button>`).join('')+'</nav>';
+ let body='';
  if(!l){
-  html+=section('Format du patch',input('Largeur','canvas.width',c.width,'number','min="32" max="2048" step="1"')+input('Hauteur','canvas.height',c.height,'number','min="32" max="2048" step="1"')+input('Transparent','canvas.transparent',c.transparent,'checkbox')+input('Fond','canvas.background',c.background,'color'));
-  html+=`<section class="ps-section"><h3>Variables ATHENA</h3><p class="ps-help">Les champs non disponibles utilisent les substitutions. Les données réelles ne sont pas enregistrées dans le modèle.</p><select id="member-select" aria-label="Membre pour la prévisualisation"><option value="">Substitutions du modèle</option>${state.members.map(m=>`<option value="${m.userId}" ${state.memberId===m.userId?'selected':''}>${esc(m.label)}</option>`).join('')}</select><button data-action="members">Actualiser / sélectionner des membres</button></section>`;
-  html+=section('Substitutions',variables.map(v=>input('{'+v+'}','fallbacks.'+v,state.doc.fallbacks[v]||'','text')).join(''));
+  body+=input('Largeur du canevas','canvas.width',c.width,'number','min="32" max="2048" step="1"')+input('Hauteur du canevas','canvas.height',c.height,'number','min="32" max="2048" step="1"')+input('Fond transparent','canvas.transparent',c.transparent,'checkbox')+input('Couleur du fond','canvas.background',c.background.slice(0,7),'color');
+  body+='<p class="ps-help ps-wide">Sélectionnez le support dans les calques pour régler sa forme, sa matière et sa bordure.</p>';
  }else{
-  html+=section('Objet',input('Nom','name',l.name,'text')+input('X','x',l.x)+input('Y','y',l.y)+input('Largeur','width',l.width)+input('Hauteur','height',l.height)+input('Rotation °','rotation',l.rotation)+input('Opacité','opacity',l.opacity,'number','min="0" max="1" step="0.05"')+input('Échelle X','scaleX',l.scaleX,'number','step="0.05" min="0.05"')+input('Échelle Y','scaleY',l.scaleY,'number','step="0.05" min="0.05"'));
-  html+=`<section class="ps-section"><div class="ps-inline">${[['align-left','← Bord'],['align-center','↔ Centre'],['align-right','Bord →'],['align-top','↑ Haut'],['align-middle','↕ Milieu'],['align-bottom','Bas ↓'],['distribute-x','Distribuer X'],['distribute-y','Distribuer Y']].map(([a,t])=>`<button data-action="${a}">${t}</button>`).join('')}</div></section>`;
-  if(l.type==='text'){
-   html+=section('Typographie',input('Texte / variables','content',l.content,'textarea')+input('Police','fontFamily',null,'select',options(fonts,l.fontFamily))+input('Taille','fontSize',l.fontSize)+input('Graisse','fontWeight',null,'select',options([400,500,600,700,800,900],l.fontWeight))+input('Italique','italic',l.italic,'checkbox')+input('Casse','textCase',null,'select',options(['none','upper','lower'],l.textCase))+input('Lettres','letterSpacing',l.letterSpacing)+input('Mots','wordSpacing',l.wordSpacing)+input('Interligne','lineHeight',l.lineHeight,'number','step="0.1"')+input('Alignement','align',null,'select',options(['left','center','right'],l.align))+input('Vertical','verticalAlign',null,'select',options(['top','middle','bottom'],l.verticalAlign))+input('Courbure °','curve',l.curve));
-   if(l.fontAsset)html+='<section class="ps-section ps-help">Police importée active. Choisir une police de la liste retire cette substitution.</section>';
-  }
-  if(l.type==='shape')html+=section('Géométrie',input('Forme','shape',null,'select',options(shapes,l.shape))+input('Rayon','radius',l.radius)+input('Côtés','sides',l.sides,'number','min="3" max="24" step="1"'));
-  if(l.type==='group')html+=section('Masque de groupe',input('Découper dans','mask',null,'select',options(['none',...shapes],l.mask||'none'))+'<button data-action="enter-group">Éditer les objets</button>');
-  if(l.type==='image'){l.crop??={x:0,y:0,width:1,height:1};html+=section('Recadrage (fractions)',['x','y','width','height'].map(k=>input(k,'crop.'+k,l.crop[k],'number','min="0" max="1" step="0.01"')).join(''));}
-  if(['text','shape'].includes(l.type)){
-   const f=l.fill;html+=section('Remplissage',input('Type','fill.type',null,'select',options(['solid','gradient','pattern','texture','asset','none'],f.type))+input('Couleur','fill.color',f.color||'#414c38','color')+(f.type==='gradient'?input('Seconde couleur','fill.color2',f.color2||'#b3bc91','color')+input('Angle °','fill.angle',f.angle||0):'')+(f.type==='pattern'?input('Motif','fill.pattern',null,'select',options(patterns,f.pattern||'multicam')):'')+(f.type==='texture'?input('Texture','fill.textureId',null,'select',options(state.textureCatalog.map(t=>t.id),f.textureId)):'')+(f.type==='asset'?'<span class="ps-help">Choisissez une image dans Ressources → Images, puis « Remplir ».</span>':''));
-   if(['pattern','asset','texture'].includes(f.type))html+=section('Réglages du motif',input('Échelle','fill.scale',f.scale||1,'number','min="0.05" max="20" step="0.05"')+input('Rotation','fill.rotation',f.rotation||0)+input('Décalage X','fill.offsetX',f.offsetX||0)+input('Décalage Y','fill.offsetY',f.offsetY||0)+input('Répétition','fill.repeat',f.repeat!==false,'checkbox')+input('Opacité','fill.opacity',f.opacity??1,'number','min="0" max="1" step="0.05"')+input('Contraste','fill.contrast',f.contrast??1,'number','min="0" max="3" step="0.1"')+input('Luminosité','fill.brightness',f.brightness??1,'number','min="0" max="3" step="0.1"'));
-   html+=section(l.type==='text'?'Contour des caractères':'Bordure et couture',input('Couleur','stroke.color',l.stroke.color,'color')+input('Épaisseur','stroke.width',l.stroke.width)+input('Opacité','stroke.opacity',l.stroke.opacity,'number','min="0" max="1" step="0.05"')+input('Style','stroke.style',null,'select',options(['solid','double','dashed','stitch'],l.stroke.style))+input('Position','stroke.position',null,'select',options(l.type==='text'?['center']:['center','inside','outside'],l.stroke.position)));
-  }
-  html+=`<section class="ps-section"><h3>Ombre</h3><button data-action="shadow">${l.shadow?'Retirer':'Ajouter'} une ombre</button></section>`;
-  if(l.shadow)html+=section('Réglages de l’ombre',input('Couleur','shadow.color',l.shadow.color.substring(0,7),'color')+input('Flou','shadow.blur',l.shadow.blur)+input('X','shadow.x',l.shadow.x)+input('Y','shadow.y',l.shadow.y));
+  body+=input('Nom du calque','name',l.name,'text')+input('X','x',l.x)+input('Y','y',l.y)+input('Largeur','width',l.width,'number','min="1" max="4096"')+input('Hauteur','height',l.height,'number','min="1" max="4096"')+input('Rotation °','rotation',l.rotation)+input('Opacité','opacity',l.opacity,'number','min="0" max="1" step="0.05"')+input('Échelle X','scaleX',l.scaleX,'number','step="0.05" min="0.05" max="20"')+input('Échelle Y','scaleY',l.scaleY,'number','step="0.05" min="0.05" max="20"');
+  if(l.type==='shape')body+=input('Forme','shape',null,'select',options(shapes,l.shape))+input('Rayon','radius',l.radius,'number','min="0" max="1024"')+input('Côtés','sides',l.sides,'number','min="3" max="24" step="1"')+materialControls(l);
+  if(l.type==='group')body+=input('Masque','mask',null,'select',options(['none',...shapes],l.mask||'none'))+'<button data-action="enter-group">Éditer les objets</button>';
+  if(l.type==='image'){const crop=l.crop||{x:0,y:0,width:1,height:1};body+='<h4 class="ps-wide">Recadrage (fractions)</h4>'+['x','y','width','height'].map(k=>input(k,'crop.'+k,crop[k],'number','min="0" max="1" step="0.01"')).join('');}
+  if(laser){body+=input('Tissu supérieur','construction.supportId',null,'select',layers().filter(s=>s.type==='shape').map(s=>`<option value="${s.id}" ${s.id===l.construction.supportId?'selected':''}>${esc(s.name)}</option>`).join(''))+'<button data-action="select-support">Sélectionner le support</button>';if(support)body+=materialControls(support,'support.material');}
+  body+=`<div class="ps-inline ps-wide">${[['align-left','← Bord'],['align-center','↔ Centre'],['align-right','Bord →'],['align-top','↑ Haut'],['align-middle','↕ Milieu'],['align-bottom','Bas ↓'],['distribute-x','Distribuer X'],['distribute-y','Distribuer Y']].map(([a,t])=>`<button data-action="${a}">${t}</button>`).join('')}</div>`;
  }
- $('#properties').innerHTML=html;
+ html+=section('01 · Support',body,'0');
+ body=l&&['text','shape'].includes(l.type)?paintControls(l.fill,'fill',laser?'Couche inférieure · visible dans la découpe':'Texture du calque'):'<p class="ps-help ps-wide">Les textures se règlent sur les formes et les textes. Choisissez une ressource à gauche ou importez votre textile.</p>';
+ if(support)body+=paintControls(support.fill,'support.fill','Couche supérieure · tissu découpé');
+ html+=section('02 · Texture',body,'1');
+ body=l?.type==='shape'?borderControls(l):support?borderControls(support,'support.stroke'):l?.type==='text'?input('Couleur du contour','stroke.color',st.color.slice(0,7),'color')+input('Épaisseur','stroke.width',st.width,'number','min="0" max="80"')+input('Opacité','stroke.opacity',st.opacity,'number','min="0" max="1" step="0.05"')+input('Style','stroke.style',null,'select',options(['solid','double','dashed','stitch'],st.style)):'<p class="ps-help ps-wide">Sélectionnez une forme pour personnaliser sa finition.</p>';
+ html+=section('03 · Bordure',body,'2');
+ if(l?.type==='text'){
+  const con=l.construction||{mode:'print'};
+  body=input('Fabrication','construction.mode',null,'select',options(['print','embroidery','laser'],con.mode))+input('Texte / variables','content',l.content,'textarea')+input('Police','fontFamily',null,'select',options(fonts,l.fontFamily))+input('Taille','fontSize',l.fontSize,'number','min="4" max="512"')+input('Graisse','fontWeight',null,'select',options([400,500,600,700,800,900],l.fontWeight))+input('Italique','italic',l.italic,'checkbox')+input('Casse','textCase',null,'select',['none','upper','lower'].map(k=>`<option value="${k}" ${k===l.textCase?'selected':''}>${{none:'Conserver',upper:'Majuscules',lower:'Minuscules'}[k]}</option>`).join(''))+input('Espacement des lettres','letterSpacing',l.letterSpacing)+input('Espacement des mots','wordSpacing',l.wordSpacing)+input('Interligne','lineHeight',l.lineHeight,'number','step="0.1" min="0.5" max="4"')+input('Alignement','align',null,'select',options(['left','center','right'],l.align))+input('Vertical','verticalAlign',null,'select',options(['top','middle','bottom'],l.verticalAlign))+input('Courbure °','curve',l.curve,'number','min="-360" max="360"');
+  if(l.fontAsset)body+='<p class="ps-help ps-wide">Police importée active. Choisir une police de la liste retire cette substitution.</p>';
+  if(con.mode==='laser')body+='<h4 class="ps-wide">Découpe thermoscellée</h4>'+input('Profondeur','construction.depth',con.depth??1.35,'number','min="0" max="4" step="0.05"')+input('Largeur thermoscellée','construction.sealWidth',con.sealWidth??.45,'number','min="0" max="2" step="0.05"')+input('Couleur de la tranche','construction.sealColor',con.sealColor||'#312d21','color')+materialControls(l)+'<p class="ps-help ps-wide">Le texte découpe le support associé. La couche inférieure se règle dans Texture ; « sans remplissage » laisse la découpe transparente.</p>';
+  if(con.mode==='embroidery')body+=input('Épaisseur du fil','construction.threadWidth',con.threadWidth??.55,'number','min="0.1" max="3" step="0.05"')+input('Densité des points','construction.density',con.density??1.25,'number','min="0.15" max="3" step="0.05"')+input('Orientation des fils °','construction.threadAngle',con.threadAngle??20,'number','min="-90" max="90"')+input('Épaisseur de broderie','construction.depth',con.depth??.8,'number','min="0" max="4" step="0.05"');
+ }else body='<button data-action="add-text">＋ Ajouter un texte indépendant</button><p class="ps-help ps-wide">Impression, broderie ou découpe laser. Chaque texte conserve ses propres réglages.</p>';
+ html+=section('04 · Texte',body,'3');
+ const r={...renderDefaults,...state.doc.render};
+ body=input('Direction de la lumière °','render.lightAngle',r.lightAngle,'number','min="-360" max="360"')+input('Élévation °','render.lightElevation',r.lightElevation,'number','min="10" max="90"')+input('Éclairage diffus','render.lightIntensity',r.lightIntensity,'range','min="0" max="1" step="0.05"')+input('Relief des matières','render.relief',r.relief,'range','min="0" max="2" step="0.05"')+input('Ombres de contact','render.contactShadow',r.contactShadow,'range','min="0" max="1" step="0.05"')+input('Détail de fabrication','render.quality',null,'select',options(['high','draft'],r.quality))+'<button data-action="preview">Prévisualiser</button><button data-action="export">Exporter en haute résolution</button>';
+ if(l){body+=`<button data-action="shadow">${l.shadow?'Retirer':'Ajouter'} l’ombre du calque</button>`;if(l.shadow)body+=input('Couleur','shadow.color',l.shadow.color.slice(0,7),'color')+input('Flou','shadow.blur',l.shadow.blur,'number','min="0" max="30"')+input('X','shadow.x',l.shadow.x)+input('Y','shadow.y',l.shadow.y);}
+ if(!l){body+=`<h4 class="ps-wide">Variables ATHENA</h4><select id="member-select" aria-label="Membre pour la prévisualisation"><option value="">Substitutions du modèle</option>${state.members.map(m=>`<option value="${m.userId}" ${state.memberId===m.userId?'selected':''}>${esc(m.label)}</option>`).join('')}</select><button data-action="members">Actualiser les membres</button>`+variables.map(v=>input('{'+v+'}','fallbacks.'+v,state.doc.fallbacks[v]||'','text')).join('');}
+ html+=section('05 · Rendu',body,'4');$('#properties').innerHTML=html;
 }
 function renderLayers(){
  const a=layers();$('#layer-count').textContent=a.length;$('#layers').innerHTML=[...a].reverse().map(l=>`<div class="ps-layer${state.selected.includes(l.id)?' selected':''}" draggable="true" data-layer-row="${l.id}"><button data-layer-visible="${l.id}" aria-label="${l.visible?'Masquer':'Afficher'}">${l.visible?'◉':'○'}</button><span class="ps-layer-label">${esc(l.name)}</span><button data-layer-lock="${l.id}" aria-label="${l.locked?'Déverrouiller':'Verrouiller'}">${l.locked?'▣':'□'}</button>${l.type==='group'?'<span>▤</span>':''}</div>`).join('');
@@ -156,7 +196,7 @@ async function renderResources(){
  $('.ps-tabs').querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===state.tab)));
  const q=$('#resource-search').value.toLocaleLowerCase('fr'),tab=state.tab;let html='';
  const card=(name,body,attrs)=>name.toLocaleLowerCase('fr').includes(q)?`<button class="ps-resource-card" ${attrs}>${body}${esc(name)}</button>`:'';
- if(tab==='templates')html='<div class="ps-resource-grid">'+[['name','Name tape'],['callsign','Callsign ATHENA'],['unit','Écusson d’unité'],['circle','Patch circulaire'],['ir','IR visuel'],['pvc','Patch PVC'],['embroidered','Patch brodé'],['blank','Canevas vierge']].map(([k,n])=>card(n,compose(template(k)),`data-template="${k}"`)).join('')+'</div>';
+ if(tab==='templates'){await loadTexture('multicam-original');html='<div class="ps-resource-grid">'+[['name','Name tape'],['laser','Laser Cut · MultiCam'],['callsign','Callsign ATHENA'],['unit','Écusson d’unité'],['circle','Patch circulaire'],['ir','IR visuel'],['pvc','Patch PVC'],['embroidered','Patch brodé'],['blank','Canevas vierge']].map(([k,n])=>card(n,compose(template(k),{textures:state.textureResources,idPrefix:'tpl-'+k+'-'}),`data-template="${k}"`)).join('')+'</div>';}
  if(tab==='shapes'||tab==='symbols')html='<div class="ps-resource-grid">'+(tab==='symbols'?['star','chevron','shield','diamond','triangle']:shapes).map(s=>card(labels[s],`<svg viewBox="-4 -4 108 88"><g fill="#b3bc91">${geometry({shape:s,width:100,height:80,radius:15,sides:7})}</g></svg>`,`data-shape="${s}"`)).join('')+'</div>';
  if(tab==='text')html=`<button data-action="add-text" class="ps-primary">＋ Ajouter un bloc de texte</button><p class="ps-help">Chaque texte possède sa police, son contour et son remplissage. Utilisez {callsign} ou {unit} pour un modèle dynamique.</p><div class="ps-resource-grid">${fonts.map(f=>card(f,`<span class="ps-swatch" style="font-family:'${f}';font-size:27px">ATHENA</span>`,`data-font="${f}"`)).join('')}</div><button data-action="upload">Importer une police TTF / OTF</button>`;
  if(tab==='patterns'||tab==='textures'){
@@ -170,7 +210,7 @@ async function renderResources(){
   html+='</div>';
  }
  if(tab==='organization')html='<p class="ps-help">Retrouvez les projets partagés de votre organisation, ouvrez-les ou créez une copie éditable.</p><button data-action="organization-library">Ouvrir la bibliothèque</button>';
- $('#resources').innerHTML=html;
+ if(state.tab===tab)$('#resources').innerHTML=html;
 }
 function applyFill(fill){editable();let ls=selected().filter(l=>['shape','text'].includes(l.type));if(!ls.length){const c=state.doc.canvas,l=layer('shape',{name:'Fond',x:0,y:0,width:c.width,height:c.height,shape:'rectangle',fill});layers().unshift(l);state.selected=[l.id];}else ls.forEach(l=>l.fill=clone(fill));changed();}
 async function uploadFile(file){
@@ -202,20 +242,22 @@ async function historyModal(){
  if(!state.project)throw new Error('Enregistrez le projet pour créer un historique.');const {versions}=await json('/projects/'+state.project.id+'/history');modal('Historique des versions',`<p class="ps-help">Restaurer crée une nouvelle révision au prochain enregistrement. Les versions antérieures sont conservées.</p><div class="ps-projects">${versions.map(v=>`<article class="ps-project-card"><h3>Version ${v.revision}</h3><p>${esc(v.created_at)} UTC</p><button data-restore="${v.revision}">Restaurer</button></article>`).join('')}</div>`);
 }
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-async function raster({width,height,selection=false}={}){
- await loadResources();const css=await exportFontCss(),svg=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls,textures:state.textureResources,fontCss:css,selection:selection?state.selected:null});
+async function raster({width=state.doc.canvas.width,height=state.doc.canvas.height,selection=false,background='project'}={}){
+ if(!Number.isInteger(width)||!Number.isInteger(height)||width<32||height<32||width>4096||height>4096)throw new Error('Résolution de rendu : 32 à 4096 pixels par côté.');
+ await loadResources();const css=await exportFontCss(),svg=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls,textures:state.textureResources,fontCss:css,selection:selection?state.selected:null,pixelWidth:width,pixelHeight:height,background});
  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
  try{const im=new Image();im.src=url;await im.decode();const c=document.createElement('canvas');c.width=width||state.doc.canvas.width;c.height=height||state.doc.canvas.height;const ctx=c.getContext('2d');const k=Math.min(c.width/im.width,c.height/im.height),w=im.width*k,h=im.height*k;ctx.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h);return c.toDataURL('image/png').split(',')[1];}finally{URL.revokeObjectURL(url);}
 }
 function exportModal(){
- modal('Exporter le patch',`<div class="ps-export-form"><label>Format<select id="export-format">${options(['png','paa','zip','pbo','publish'],'png')}</select></label><label>Résolution<select id="export-size"><option value="native">Canevas natif</option>${['256x128','512x256','512x512','1024x512','1024x1024'].map(s=>`<option value="${s}">${s.replace('x',' × ')}</option>`).join('')}</select></label><label><span>Objets sélectionnés seulement (PNG)</span><input type="checkbox" id="export-selection" ${state.selected.length?'':'disabled'}></label><p class="ps-help">Les proportions sont conservées ; le surplus reste transparent. ZIP contient PNG, PAA, projet, ressources, licences et addon. Publier rend cette révision disponible aux comptes autorisés dans ATAK. L’application 3D exige de distribuer et charger l’addon avant la partie.</p><p class="ps-help">Composition : ${state.variant==='night'?'nocturne · simulation visuelle':'standard'}. Le rendu utilise les données de prévisualisation actuelles.</p><button class="ps-primary" data-action="run-export">Générer</button><button data-action="batch">Série PNG des membres sélectionnés</button><button data-action="download-json">Projet JSON éditable</button></div>`);
+ modal('Exporter le patch',`<div class="ps-export-form"><label>Format<select id="export-format">${options(['png','paa','zip','pbo','publish'],'png')}</select></label><label>Résolution<select id="export-size"><option value="native">Canevas natif</option>${['256x128','512x256','512x512','1024x512','1024x1024','2048x1024','2048x2048','4096x2048','4096x4096'].map(s=>`<option value="${s}">${s.replace('x',' × ')}</option>`).join('')}</select></label><label>Fond de l’image<select id="export-background"><option value="project">Fond du projet</option><option value="transparent">Transparent · sans fond</option><option value="light">Clair · photo produit</option><option value="dark">Sombre · photo produit</option></select></label><label><span>Objets sélectionnés seulement (PNG)</span><input type="checkbox" id="export-selection" ${state.selected.length?'':'disabled'}></label><p class="ps-help">PNG jusqu’à 4096 px ; PAA, ZIP, PBO et publication jusqu’à 2048 px. Les proportions sont conservées ; le surplus reste transparent. ZIP contient PNG, PAA, projet, ressources, licences et addon. Publier rend cette révision disponible aux comptes autorisés dans ATAK. L’application 3D exige de distribuer et charger l’addon avant la partie.</p><p class="ps-help">Composition : ${state.variant==='night'?'nocturne · simulation visuelle':'standard'}. Le rendu utilise les données de prévisualisation actuelles.</p><button class="ps-primary" data-action="run-export">Générer</button><button data-action="batch">Série PNG des membres sélectionnés</button><button data-action="download-json">Projet JSON éditable</button></div>`);
 }
 async function runExport(){
  const button=$('[data-action="run-export"]');button.disabled=true;
  try{if(state.dirty||!state.project)await save();const format=$('#export-format').value,size=$('#export-size').value,selection=$('#export-selection').checked;
   if(selection&&format!=='png')throw new Error('L’export de sélection est disponible en PNG.');
   const [width,height]=size==='native'?[state.doc.canvas.width,state.doc.canvas.height]:size.split('x').map(Number);
-  const png=await raster({width,height,selection});
+  if(format!=='png'&&Math.max(width,height)>2048)throw new Error('Choisissez au plus 2048 px pour les formats Arma 3.');
+  const png=await raster({width,height,selection,background:$('#export-background').value});
   const res=await request('/projects/'+state.project.id+'/export',{method:'POST',body:JSON.stringify({revision:Number(state.project.revision),format,variant:state.variant,png,selection,letterbox:true})});
   if(format==='publish'){const result=await res.json();notify('Révision publiée dans le catalogue ATAK : '+result.class);}else{download(await res.blob(),`ATHENA_${state.project.id}_${state.variant}.${format}`);notify('Export généré.');}
  }finally{button.disabled=false;}
@@ -234,13 +276,14 @@ const actions={
  'save':()=>save(),'save-copy':async()=>{await save(true);$('#modal').close();notify('Copie enregistrée.');},'new':()=>newProject(),
  'undo':()=>{editable();const d=history.undo();if(d){state.doc=d;if(!d.variants[state.variant])state.variant='standard';state.selected=[];state.scope=[];state.dirty=true;recovery();clearTimeout(saveTimer);if(state.project&&!state.conflict)saveTimer=setTimeout(()=>save().catch(error),3500);render();$('#save-state').textContent='Modifications non enregistrées';}},
  'redo':()=>{editable();const d=history.redo();if(d){state.doc=d;if(!d.variants[state.variant])state.variant='standard';state.selected=[];state.scope=[];state.dirty=true;recovery();clearTimeout(saveTimer);if(state.project&&!state.conflict)saveTimer=setTimeout(()=>save().catch(error),3500);render();$('#save-state').textContent='Modifications non enregistrées';}},
- 'duplicate':()=>{editable();const ls=selected().filter(l=>!l.locked).map(duplicate);layers().push(...ls);state.selected=ls.map(l=>l.id);changed();},
- 'delete':()=>{editable();const a=layers();for(let i=a.length-1;i>=0;i--)if(state.selected.includes(a[i].id)&&!a[i].locked)a.splice(i,1);state.selected=[];changed();},
+ 'duplicate':()=>{editable();const ls=duplicateMany(selected().filter(l=>!l.locked));layers().push(...ls);repairConstructions(layers());state.selected=ls.map(l=>l.id);changed();},
+ 'delete':()=>{editable();const a=layers();for(let i=a.length-1;i>=0;i--)if(state.selected.includes(a[i].id)&&!a[i].locked)a.splice(i,1);repairConstructions(a);state.selected=[];changed();},
  'group':()=>{editable();const g=group(layers(),state.selected);if(g){state.selected=[g.id];changed();}},
  'ungroup':()=>{editable();for(const l of selected())if(!ungroup(layers(),l.id))throw new Error('Pour dégrouper, remettez la rotation à 0 et les échelles à 1.');state.selected=[];changed();},
  'enter-group':()=>{const l=selected()[0];if(l?.type==='group'){state.scope.push(l.id);state.selected=[];render();}},'leave-group':()=>{state.scope.pop();state.selected=[];render();},
  'night':()=>{editable();if(state.doc.variants.night&&!confirm('Remplacer la composition nocturne actuelle ?'))return;state.doc.variants.night=clone(state.doc.variants.standard);state.variant='night';state.scope=[];state.selected=[];changed();},
  'shadow':()=>{editable();for(const l of selected())if(l.shadow)delete l.shadow;else l.shadow={color:'#000000',blur:5,x:3,y:3};changed();},
+ 'select-support':()=>{const l=selected()[0],support=layers().find(s=>s.id===l?.construction?.supportId);if(support){state.selected=[support.id];render();}},
  'add-text':()=>add(layer('text')),'upload':()=>$('#asset-file').click(),
  'library':()=>library(),'organization-library':()=>library('organization'),'project-settings':projectSettings,'history':historyModal,
  'apply-settings':async()=>{editable();const p=state.project;const result=await json('/projects/'+p.id,{method:'PUT',body:JSON.stringify({revision:Number(p.revision),name:$('#project-name').value,document:state.doc,visibility:$('#project-visibility').value,status:$('#project-status').value})});state.project=result.project;state.dirty=false;$('#save-state').textContent=`Enregistré · v${state.project.revision}`;$('#modal').close();notify('Projet mis à jour.');},
@@ -256,11 +299,12 @@ const actions={
 root.addEventListener('click',async e=>{
  try{
   const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.propertySection)$('#properties').querySelector(`[data-fabrication-section="${b.dataset.propertySection}"]`).scrollIntoView({block:'start',behavior:'instant'});
   if(b.dataset.action){if(b.dataset.action.startsWith('align-')||b.dataset.action.startsWith('distribute-'))align(b.dataset.action);else await actions[b.dataset.action]?.();}
   if(b.dataset.tab){state.tab=b.dataset.tab;$('.ps-tabs').querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b?'true':'false'));await renderResources();}
-  if(b.dataset.template)newProject(b.dataset.template);
+  if(b.dataset.template)await newProject(b.dataset.template);
   if(b.dataset.shape)add(layer('shape',{shape:b.dataset.shape,name:labels[b.dataset.shape]}));
-  if(b.dataset.texture){await loadTexture(b.dataset.texture);applyFill({type:'texture',textureId:b.dataset.texture,scale:1,repeat:true});}
+  if(b.dataset.texture){await loadTexture(b.dataset.texture);applyFill({type:'texture',textureId:b.dataset.texture,scale:1,repeat:false});}
   if(b.dataset.pattern)applyFill({type:'pattern',pattern:b.dataset.pattern,color:'#414c38',scale:1,repeat:true});
   if(b.dataset.color)applyFill(solid(b.dataset.color));
   if(b.dataset.font){const l=selected()[0];if(l?.type==='text'){editable();l.fontFamily=b.dataset.font;delete l.fontAsset;changed();}else add(layer('text',{fontFamily:b.dataset.font}));}
@@ -272,14 +316,40 @@ root.addEventListener('click',async e=>{
   if(b.dataset.layerLock){editable();const l=find(layers(),b.dataset.layerLock);l.locked=!l.locked;changed();}
  }catch(ex){error(ex);}
 });
+async function applyProperty(field,preview=false){
+ const path=field.dataset.prop;if(!path)return;editable();
+ const v=field.type==='checkbox'?field.checked:['number','range'].includes(field.type)||path==='fontWeight'?Number(field.value):field.value;
+ if((field.type==='number'&&field.value==='')||(typeof v==='number'&&(!Number.isFinite(v)||!field.validity.valid)))return;
+ const actual=path.replace(/^support\./,''),fillMatch=actual.match(/^(fill|stroke\.fill)\.(type|textureId|assetId)$/);
+ if(fillMatch){if(fillMatch[2]==='textureId')await loadTexture(v);if(fillMatch[2]==='type'&&v==='texture'){const catalog=await ensureTextureCatalog();await loadTexture(catalog[0].id);}if(fillMatch[2]==='assetId'&&v){state.resourceUrls[v]=await dataUrl(api+'/assets/'+v);}}
+ const targets=path.startsWith('canvas.')||path.startsWith('fallbacks.')||path.startsWith('render.')?[state.doc]:selected().map(l=>path.startsWith('support.')?layers().find(s=>s.id===l.construction?.supportId):l).filter(Boolean);
+ for(const l of targets){
+  if(l.locked)continue;
+  if(actual.startsWith('stroke.'))l.stroke??=defaultStroke();
+  if(actual.startsWith('fill.'))l.fill??={type:'none'};
+  if(actual.startsWith('material.'))l.material??={type:'flat'};
+  if(actual==='construction.mode'&&v==='laser'){
+   const support=layers().find(s=>s.id===l.construction?.supportId)||layers().find(s=>s.type==='shape');
+   if(!support)throw new Error('Ajoutez une forme comme tissu supérieur avant de choisir Laser Cut.');
+   l.construction={...l.construction,mode:'laser',supportId:support.id,depth:l.construction?.depth??1.35,sealWidth:l.construction?.sealWidth??.45,sealColor:l.construction?.sealColor??'#312d21'};
+   l.material??={type:'velcro',scale:.8,roughness:.9,relief:.5,angle:0};
+  }else set(l,actual,v);
+  if(actual==='construction.mode'&&v!=='laser')delete l.construction.supportId;
+  if(actual==='stroke.mode'&&v==='custom')l.stroke.fill??=clone(l.fill||solid('#414c38'));
+  if(fillMatch&&fillMatch[2]==='type'){
+   const prefix=fillMatch[1],f=get(l,prefix);f.color??='#414c38';
+   if(v==='gradient')f.color2??='#b3bc91';if(v==='pattern')f.pattern??='multicam';
+   if(v==='texture'){f.textureId??=state.textureCatalog[0].id;f.repeat??=false;await loadTexture(f.textureId);}
+   if(v==='asset'&&!f.assetId){const first=state.assets.find(a=>a.mime.startsWith('image/'));if(!first){f.type='solid';notify('Importez d’abord une image dans vos ressources.');}else{f.assetId=first.id;state.resourceUrls[first.id]=await dataUrl(api+'/assets/'+first.id);}}
+  }
+  if(actual==='fontFamily')delete l.fontAsset;
+ }
+ if(preview)previewChanged();else changed();
+}
+$('#properties').addEventListener('input',async e=>{if(!e.target.dataset.prop||!['text','textarea','number','range','color'].includes(e.target.type))return;try{await applyProperty(e.target,true);}catch(ex){error(ex);}});
 $('#properties').addEventListener('change',async e=>{
- const input=e.target,path=input.dataset.prop;if(!path){if(input.id==='member-select'){state.memberId=Number(input.value);state.values=state.members.find(m=>m.userId===state.memberId)?.values||{};updateArt();}return;}
- try{editable();let v=input.type==='checkbox'?input.checked:input.type==='number'||path==='fontWeight'?Number(input.value):input.value;if(typeof v==='number'&&!Number.isFinite(v))return;
-  if(path==='fill.textureId')await loadTexture(v);if(path==='fill.type'&&v==='texture'){const catalog=await ensureTextureCatalog();await loadTexture(catalog[0].id);}
-  const targets=path.startsWith('canvas.')||path.startsWith('fallbacks.')?[state.doc]:selected();
-  for(const l of targets){if(l.locked)continue;set(l,path,v);if(path==='fill.type'){l.fill.color??='#414c38';if(v==='gradient')l.fill.color2??='#b3bc91';if(v==='pattern')l.fill.pattern??='multicam';if(v==='texture')l.fill.textureId??=state.textureCatalog[0].id;if(v==='asset'&&!l.fill.assetId){notify('Choisissez une image puis « Remplir ».');l.fill.type='solid';}}if(path==='fontFamily')delete l.fontAsset;}
-  changed();
- }catch(ex){error(ex);}
+ if(!e.target.dataset.prop){if(e.target.id==='member-select'){state.memberId=Number(e.target.value);state.values=state.members.find(m=>m.userId===state.memberId)?.values||{};updateArt();}return;}
+ try{await applyProperty(e.target);}catch(ex){error(ex);renderProperties();}
 });
 $('#project-name').addEventListener('change',()=>{try{editable();changed();}catch(e){error(e);}});
 $('#variant').onchange=()=>{const v=$('#variant').value;if(!state.doc.variants[v]){state.variant='standard';$('#variant').value='standard';notify('Créez d’abord la composition nocturne avec « Copier standard → nuit ».');return;}state.variant=v;state.scope=[];state.selected=[];render();};
@@ -329,7 +399,7 @@ window.addEventListener('keydown',async e=>{
  const mod=e.ctrlKey||e.metaKey,key=e.key.toLowerCase();
  try{
   if(e.code==='Space'){space=true;e.preventDefault();}
-  if(mod&&['s','z','y','d','c','v'].includes(key)){e.preventDefault();if(key==='s')await save();if(key==='z')actions[e.shiftKey?'redo':'undo']();if(key==='y')actions.redo();if(key==='d')actions.duplicate();if(key==='c')state.clipboard=selected().map(clone);if(key==='v'){editable();const ls=state.clipboard.map(duplicate);layers().push(...ls);state.selected=ls.map(l=>l.id);changed();}}
+  if(mod&&['s','z','y','d','c','v'].includes(key)){e.preventDefault();if(key==='s')await save();if(key==='z')actions[e.shiftKey?'redo':'undo']();if(key==='y')actions.redo();if(key==='d')actions.duplicate();if(key==='c')state.clipboard=selected().map(clone);if(key==='v'){editable();const ls=duplicateMany(state.clipboard);layers().push(...ls);repairConstructions(layers());state.selected=ls.map(l=>l.id);changed();}}
   if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();actions.delete();}if(e.key==='Escape'){state.selected=[];render();}
   if(e.key.startsWith('Arrow')){editable();e.preventDefault();const n=e.shiftKey?10:1;for(const l of selected().filter(l=>!l.locked)){if(e.key==='ArrowLeft')l.x-=n;if(e.key==='ArrowRight')l.x+=n;if(e.key==='ArrowUp')l.y-=n;if(e.key==='ArrowDown')l.y+=n;}changed();}
  }catch(ex){error(ex);}

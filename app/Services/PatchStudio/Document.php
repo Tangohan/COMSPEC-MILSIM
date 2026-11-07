@@ -12,10 +12,11 @@ final class Document
     public const PATTERNS = ['multicam', 'woodland', 'desert', 'fabric', 'velcro', 'pvc', 'rubber', 'embroidery', 'stripes', 'dots'];
     public const FONTS = ['Barlow Condensed', 'Roboto Condensed', 'Oswald', 'Saira Stencil One', 'Inter', 'JetBrains Mono'];
     public const VARIABLES = ['callsign', 'unit', 'group', 'rank', 'firstname', 'lastname', 'country', 'organization'];
+    public const MATERIALS = ['flat','cordura500','cordura1000','multicam','nylon','polyester','velcro','embroidery'];
 
     public static function validate(array $doc): array
     {
-        self::keys($doc, ['version', 'canvas', 'variants', 'fallbacks']);
+        self::keys($doc, ['version', 'canvas', 'variants', 'fallbacks', 'render']);
         if (($doc['version'] ?? null) !== 1) self::fail('Version de projet non prise en charge.');
         $canvas = $doc['canvas'] ?? null;
         if (!is_array($canvas)) self::fail('Canevas requis.');
@@ -24,6 +25,13 @@ final class Document
         self::number($canvas, 'height', 32, 2048, true);
         self::boolean($canvas, 'transparent');
         self::color($canvas['background'] ?? '#000000');
+        if (isset($doc['render'])) {
+            $r = $doc['render'];
+            if (!is_array($r)) self::fail('Réglages de rendu invalides.');
+            self::keys($r, ['lightAngle','lightElevation','lightIntensity','relief','contactShadow','quality']);
+            self::optionalNumbers($r, ['lightAngle'=>[-360,360], 'lightElevation'=>[10,90], 'lightIntensity'=>[0,1], 'relief'=>[0,2], 'contactShadow'=>[0,1]]);
+            if (isset($r['quality'])) self::enum($r['quality'], ['draft','high']);
+        }
         if (!is_array($doc['variants'] ?? null) || !isset($doc['variants']['standard'])) self::fail('Composition standard requise.');
         self::keys($doc['variants'], ['standard', 'night']);
         $count = 0;
@@ -43,7 +51,7 @@ final class Document
         if (!is_array($layers) || !array_is_list($layers) || $depth > 5) self::fail('Arbre de calques invalide.');
         foreach ($layers as $l) {
             if (++$count > 160 || !is_array($l)) self::fail('160 objets maximum, variantes comprises.');
-            self::keys($l, ['id','type','name','x','y','width','height','rotation','scaleX','scaleY','opacity','visible','locked','fill','stroke','shadow','shape','radius','sides','content','fontFamily','fontAsset','fontSize','fontWeight','italic','textCase','letterSpacing','wordSpacing','lineHeight','align','verticalAlign','curve','assetId','crop','children','mask']);
+            self::keys($l, ['id','type','name','x','y','width','height','rotation','scaleX','scaleY','opacity','visible','locked','fill','stroke','shadow','shape','radius','sides','content','fontFamily','fontAsset','fontSize','fontWeight','italic','textCase','letterSpacing','wordSpacing','lineHeight','align','verticalAlign','curve','assetId','crop','children','mask','material','construction']);
             if (!self::id($l['id'] ?? '') || isset($ids[$l['id']])) self::fail('Identifiant de calque invalide ou dupliqué.');
             $ids[$l['id']] = true;
             self::enum($l['type'] ?? '', ['text', 'shape', 'image', 'group']);
@@ -58,12 +66,37 @@ final class Document
             if (isset($l['stroke'])) {
                 $s = $l['stroke'];
                 if (!is_array($s)) self::fail('Contour invalide.');
-                self::keys($s, ['color','width','opacity','style','position']);
+                self::keys($s, ['color','width','opacity','style','position','mode','fill','finish','threadWidth','density','threadAngle','relief']);
                 self::color($s['color'] ?? '');
                 self::number($s, 'width', 0, 80);
                 self::number($s, 'opacity', 0, 1);
                 self::enum($s['style'] ?? '', ['solid','double','dashed','stitch']);
                 self::enum($s['position'] ?? '', ['center','inside','outside']);
+                if (isset($s['mode'])) self::enum($s['mode'], ['color','same','custom']);
+                if (isset($s['finish'])) self::enum($s['finish'], ['legacy','embroidered','overlock','heatcut','none']);
+                if (isset($s['fill'])) self::fill($s['fill']);
+                if (($s['mode'] ?? '') === 'custom' && !isset($s['fill'])) self::fail('Texture de bordure requise.');
+                self::optionalNumbers($s, ['threadWidth'=>[0.1,3], 'density'=>[0.15,3], 'threadAngle'=>[-70,70], 'relief'=>[0,2]]);
+            }
+            if (isset($l['material'])) {
+                $m = $l['material'];
+                if (!in_array($l['type'], ['shape','text'], true) || !is_array($m)) self::fail('Matière réservée aux formes et textes.');
+                self::keys($m, ['type','scale','angle','roughness','relief']);
+                self::enum($m['type'] ?? '', self::MATERIALS);
+                self::optionalNumbers($m, ['scale'=>[0.25,4], 'angle'=>[-360,360], 'roughness'=>[0,1], 'relief'=>[0,2]]);
+            }
+            if (isset($l['construction'])) {
+                $c = $l['construction'];
+                if ($l['type'] !== 'text' || !is_array($c)) self::fail('Fabrication réservée au texte.');
+                self::keys($c, ['mode','supportId','depth','sealColor','sealWidth','threadWidth','density','threadAngle']);
+                self::enum($c['mode'] ?? '', ['print','embroidery','laser']);
+                if (isset($c['supportId']) && !self::id($c['supportId'])) self::fail('Support invalide.');
+                if (isset($c['sealColor'])) self::color($c['sealColor']);
+                self::optionalNumbers($c, ['depth'=>[0,4], 'sealWidth'=>[0,2], 'threadWidth'=>[0.1,3], 'density'=>[0.15,3], 'threadAngle'=>[-90,90]]);
+                if ($c['mode'] === 'laser') {
+                    $support = array_filter($layers, static fn ($other) => is_array($other) && ($other['id'] ?? null) === ($c['supportId'] ?? null) && ($other['type'] ?? '') === 'shape');
+                    if (count($support) !== 1) self::fail('La découpe laser et son support doivent être dans le même groupe.');
+                }
             }
             if (isset($l['shadow'])) {
                 $s = $l['shadow'];
@@ -142,6 +175,10 @@ final class Document
 
     public static function assetId(mixed $id): bool { return is_string($id) && preg_match('/^[a-f0-9]{32}$/D', $id) === 1; }
     public static function id(mixed $id): bool { return is_string($id) && preg_match('/^[a-zA-Z0-9_-]{1,64}$/D', $id) === 1; }
+    private static function optionalNumbers(array $a, array $ranges): void
+    {
+        foreach ($ranges as $key => [$min, $max]) if (array_key_exists($key, $a)) self::number($a, $key, $min, $max);
+    }
     private static function keys(array $a, array $allowed): void { if (array_diff(array_keys($a), $allowed)) self::fail('Propriété inconnue.'); }
     private static function enum(mixed $v, array $values): void { if (!in_array($v, $values, true)) self::fail('Valeur non autorisée.'); }
     private static function color(mixed $c): void { if (!is_string($c) || !preg_match('/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/D', $c)) self::fail('Couleur HEX invalide.'); }
