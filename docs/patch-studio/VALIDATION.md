@@ -19,7 +19,7 @@ PATCH_STUDIO_TEST=1 PATCH_TEST_ROOT=/tmp/athena-patch-browser php -S 127.0.0.1:8
 PATCH_TEST_URL=http://127.0.0.1:8765 node tests/patch-studio/browser.cjs
 ```
 
-Le script utilise Playwright et Chromium (`CHROMIUM_PATH` optionnel). Il couvre les vrais contrôleurs HTTP, le texte/police/espacement/motif/rotation, annuler/rétablir, import sécurisé, sauvegarde/rechargement, CSRF, conflit et les cinq modes d'export. Les essais navigateur ont désormais réussi sous Chromium avec le serveur PHP de test isolé. Ils vérifient les trois réponses de modules `.js` (type MIME JavaScript et version d’URL identique), le parcours d’édition/import/sauvegarde/rechargement, le CSRF, les conflits et les cinq modes d’export. Le refus HTTP 403 des formules Free/Standard/Pro est vérifié côté page et API.
+Le script utilise Playwright et Chromium (`CHROMIUM_PATH` optionnel). Il couvre les vrais contrôleurs HTTP, le texte/police/espacement/motif/rotation, annuler/rétablir, import sécurisé, sauvegarde/rechargement, CSRF, conflit et les cinq modes d'export. Les essais navigateur ont désormais réussi sous Chromium avec le serveur PHP de test isolé. Ils vérifient les quatre réponses de modules `.js` (type MIME JavaScript et version d’URL identique), le parcours d’édition/import/sauvegarde/rechargement, le CSRF, les conflits et les cinq modes d’export. Le refus HTTP 403 des formules Free/Standard/Pro est vérifié côté page et API.
 
 `php tests/patch-studio/access-ui.php` : **58 contrôles réussis**, couvrant le seuil Pro+, les offres actives/expirées, l’essai fondateur Pro, les impayés, les paiements manuels expirés, les anciens plans sans clé de fonctionnalité, sa désactivation explicite, les appels directs aux API et les vues éditeur/refus.
 
@@ -44,7 +44,7 @@ La suite PHPUnit existante reste non exécutée (vendor sans autoloader/exécuta
 
 ## Écarts fonctionnels encore ouverts
 
-- Sélection RH par IDs autorisés ; pas de sélecteur automatique d'unité/groupe ni de régénération serveur lors d'un changement d'indicatif.
+- La sélection RH est désormais dynamique avec recherche et filtre sur les unités visibles. Pas de sélection de groupe ni de régénération serveur lors d’un changement d’indicatif.
 - Pas de garantie pixel-identique entre moteurs de navigateur ; pas de rendu serveur autonome du JSON.
 - Bordures couleur/styles/couture ; pas de motif image indépendant sur le contour, pas d'opérations booléennes vectorielles union/soustraction.
 - Aimantation sur grille et bords/centre du canevas ; pas de guides arbitraires déplaçables, de distribution entre objets tournés ni de sélection rectangulaire.
@@ -75,3 +75,10 @@ PATCH_TEST_URL=http://127.0.0.1:8765 node tests/patch-studio/fabrication-browser
 ```
 
 La simulation de matière n’est pas un solveur physique 3D ni une certification textile. Aucun nouveau test moteur Arma, .NET, MySQL/MariaDB ou inter-navigateurs acquis par cette évolution. Aucune nouvelle migration. Les commandes et profils de déploiement sont détaillés dans [FABRICATION.md](FABRICATION.md).
+
+## Accueil, stockage et setups
+
+- `php tests/patch-studio/workspace.php` : **18 contrôles réussis**, dont migration active idempotente sur une base vierge/partielle, absence de perte des données, droits des setups et déclaration réelle du service RH dans le conteneur.
+- `node tests/patch-studio/workspace-browser.cjs` : **réussi**, parcours complet accueil → création → vignette → setup → réutilisation → membres recherchés/sélectionnés → export PNG, avec vérification Pro+/CSRF et diagnostic des deux endpoints sur un schéma absent.
+- Suites éditeur et textures : **réussies avec le nouvel accueil**. Captures inspectées pour la page d’accueil et le dialogue d’export.
+- Appliquer impérativement `php8.4 run-migrations.php --step=patch_studio_workspace` après déploiement : les tests ne modifient pas la base du site. Voir [WORKSPACE.md](WORKSPACE.md).

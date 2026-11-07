@@ -14,6 +14,13 @@ use App\Support\OrgVisibilityCapabilities;
 
 final class Variables
 {
+    /** Bounded search of actual active tenant members; visibility is enforced before returning identities. */
+    public static function catalog(int $tenant,int $viewer,string $query=''): array
+    {
+        if (!EffectifsLmsAccess::allows(Gate::getInstance())) return self::resolve($tenant,$viewer,[$viewer]);
+        $rows=Container::get(UserRepository::class)->listPersonnelDirectoryRich($tenant,mb_substr(trim($query),0,80),100);
+        return self::resolve($tenant,$viewer,array_map(static fn(array $r): int => (int)$r['id'],$rows));
+    }
     public static function resolve(int $tenant,int $viewer,array $ids): array
     {
         $ids=array_values(array_unique(array_map('intval',$ids)));

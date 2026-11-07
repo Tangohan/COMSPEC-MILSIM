@@ -7,7 +7,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
  const waitTexture=id=>page.waitForFunction(id=>globalThis.__patchStudioTest.state.doc.variants.standard.at(-1)?.fill.textureId===id,id);
  const evaluate=fn=>page.evaluate(fn=>Function('studio','return ('+fn+')(studio)')(globalThis.__patchStudioTest),fn.toString());
  try{
-  await page.goto(url+'/patch-studio');await page.waitForSelector('#modal[open]');await bind();await page.click('[data-action="close-modal"]');await page.click('[data-action="new"]');
+  await page.goto(url+'/patch-studio');await page.waitForSelector('#studio-home #home-status[hidden]',{state:'attached'});await bind();await page.click('#home-templates [data-template="name"]');await page.click('#studio-editor [data-action="new"]');
   await page.click('[data-tab="textures"]');await page.waitForSelector('[data-texture="multicam-original"]');assert.equal(await page.locator('[data-texture]').count(),5);
   await page.click('[data-texture="multicam-original"]');await waitTexture('multicam-original');assert.equal(await evaluate(s=>s.state.doc.variants.standard[0].fill.textureId),'multicam-original');
   await page.click('[data-tab="text"]');await page.click('[data-action="add-text"]');await page.fill('[data-prop="content"]','ATHENA');await page.locator('[data-prop="content"]').blur();
@@ -25,7 +25,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   for(const format of ['png','paa','zip','pbo']){
    const result=await page.evaluate(async({id,revision,png,format})=>{const r=await fetch('/api/patch-studio/projects/'+id+'/export',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':'test-token'},body:JSON.stringify({revision,variant:'standard',format,png,letterbox:true})});return {status:r.status,bytes:(await r.arrayBuffer()).byteLength};},{id:project.id,revision:Number(project.revision),png,format});assert.equal(result.status,200,format);assert.ok(result.bytes>1000);
   }
-  await page.reload();await page.waitForSelector('#modal[open]');await bind();await page.click('[data-open="'+project.id+'"]');await page.waitForFunction(id=>globalThis.__patchStudioTest.state.project?.id===id&&!document.querySelector('#modal').open&&Object.keys(globalThis.__patchStudioTest.state.textureResources).length===2,project.id);assert.equal(await evaluate(s=>JSON.stringify(s.state.doc)),saved);
+  await page.reload();await page.waitForSelector('#studio-home #home-status[hidden]',{state:'attached'});await bind();await page.locator('[data-open="'+project.id+'"]').first().click();await page.waitForFunction(id=>globalThis.__patchStudioTest.state.project?.id===id&&!document.querySelector('#modal').open&&Object.keys(globalThis.__patchStudioTest.state.textureResources).length===2,project.id);assert.equal(await evaluate(s=>JSON.stringify(s.state.doc)),saved);
   assert.equal(await evaluate(s=>Object.keys(s.state.textureResources).length),2,'only project textures loaded on cold reopen');
   const reopened=await evaluate(s=>s.raster());assert.equal(reopened,png,'reopened render is identical');
   await page.click('[data-tab="textures"]');await page.waitForFunction(()=>document.querySelector('[data-tab="textures"]').getAttribute('aria-selected')==='true'&&[...document.querySelectorAll('[data-texture] img')].length===5&&[...document.querySelectorAll('[data-texture] img')].every(im=>im.complete&&im.naturalWidth>0));await page.screenshot({path:'/tmp/athena-real-textures-ui.png',fullPage:true});assert.deepEqual(errors,[]);assert.deepEqual(external,[]);

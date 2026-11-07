@@ -14,10 +14,12 @@ $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
 <div id="patch-studio" data-api="<?= $e($api) ?>" data-recovery="<?= $e($recoveryKey) ?>">
 <?php require base_path('views/patch_studio/_header.php'); ?>
 <?php require base_path('views/patch_studio/_disclaimer.php'); ?>
+<section id="studio-home" class="ps-home" aria-label="Accueil du Patch Studio"></section>
+<div id="studio-editor" hidden>
 <header class="ps-header">
 <label class="ps-project-label" for="project-name">PROJET OUVERT</label>
 <div class="ps-title"><input id="project-name" aria-label="Nom du projet" value="Sans titre" maxlength="120"><span id="save-state" role="status">Nouveau projet</span></div>
-<button data-action="library">Bibliothèque</button><button data-action="save" class="ps-primary" title="Ctrl+S">Enregistrer</button><button data-action="export"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-8 4-4 4 4M5 14v6h14v-6"/></svg>Exporter</button>
+<button data-action="library">← Accueil</button><button data-action="save-setup">Enregistrer un setup</button><button data-action="save" class="ps-primary" title="Ctrl+S">Enregistrer</button><button data-action="export"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-8 4-4 4 4M5 14v6h14v-6"/></svg>Exporter</button>
 </header>
 <nav class="ps-toolbar" aria-label="Outils de création">
 <button data-action="new">＋ Nouveau</button><button data-action="undo" title="Ctrl+Z">↶ Annuler</button><button data-action="redo" title="Ctrl+Y">↷ Rétablir</button><i></i>
@@ -53,6 +55,7 @@ $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
 <div id="properties"></div>
 <section class="ps-layers"><div class="ps-aside-title">CALQUES <span id="layer-count">0</span></div><div id="layers"></div></section>
 </aside>
+</div>
 </div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <dialog id="modal"><div class="ps-modal-head"><h2 id="modal-title"></h2><button data-action="close-modal" aria-label="Fermer">✕</button></div><div id="modal-content"></div></dialog>

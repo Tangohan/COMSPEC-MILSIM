@@ -2,10 +2,10 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[],modules=[];page.on('response',r=>{if(/patch-studio(?:-core|-surface)?\.m?js(?:\?|$)/.test(r.url()))modules.push({url:r.url(),mime:r.headers()['content-type']});});page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[],modules=[];page.on('response',r=>{if(/patch-studio(?:-core|-surface|-workspace)?\.m?js(?:\?|$)/.test(r.url()))modules.push({url:r.url(),mime:r.headers()['content-type']});});page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
  const url=process.env.PATCH_TEST_URL||'http://127.0.0.1:8765';
  try{
-  await page.goto(url+'/patch-studio');await page.waitForSelector('#modal[open]');assert.equal(modules.length,3);for(const m of modules){assert.ok(/\.js\?v=/.test(m.url),m.url);assert.match(m.mime,/javascript/);}assert.equal(new URL(modules[0].url).search,new URL(modules[1].url).search);await page.click('[data-action="close-modal"]');
+  await page.goto(url+'/patch-studio');await page.waitForSelector('#studio-home #home-status[hidden]',{state:'attached'});assert.equal(modules.length,4);for(const m of modules){assert.ok(/\.js\?v=/.test(m.url),m.url);assert.match(m.mime,/javascript/);}assert.equal(new URL(modules[0].url).search,new URL(modules[1].url).search);await page.click('#home-templates [data-template="name"]');
   const studio=()=>page.evaluate(()=>import(document.querySelector('[data-patch-studio-module]').src).then(m=>({doc:m.studio.state.doc,project:m.studio.state.project,selected:m.studio.state.selected})));
   await page.click('[data-tab="text"]');await page.click('[data-action="add-text"]');
   await page.fill('[data-prop="content"]','SABER {callsign}');await page.locator('[data-prop="content"]').blur();
@@ -32,7 +32,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   for(const format of ['png','paa','pbo','zip','publish']){
    const result=await page.evaluate(async({id,png,format})=>{const p=(await(await fetch('/api/patch-studio/projects/'+id)).json()).project;const r=await fetch('/api/patch-studio/projects/'+id+'/export',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':'test-token'},body:JSON.stringify({revision:Number(p.revision),variant:'standard',format,png,letterbox:true})});const bytes=await r.arrayBuffer();return {status:r.status,body:r.status===200?null:new TextDecoder().decode(bytes),bytes:bytes.byteLength};},{id,png:render.data,format});assert.equal(result.status,200,format+JSON.stringify(result));assert.ok(result.bytes>0);
   }
-  await page.click('[data-action="library"]');await page.waitForSelector('[data-open="'+id+'"]');await page.click('[data-open="'+id+'"]');
+  await page.click('[data-action="library"]');await page.waitForSelector('[data-open="'+id+'"]');await page.locator('[data-open="'+id+'"]').first().click();
   assert.equal(JSON.stringify((await studio()).doc),saved);
   await page.screenshot({path:'/tmp/athena-patch-studio-ui.png',fullPage:true});
   for(const plan of ['free','standard','pro']){

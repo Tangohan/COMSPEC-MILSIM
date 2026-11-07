@@ -16,10 +16,19 @@ Session::start();Session::set('user_id',1);Session::set('tenant_id',7);Gate::get
 $_SESSION['_csrf_token']='test-token';
 $r=new Request(); // capture via the existing factory/constructor below
 if($path==='/patch-studio'){$response=(new App\Controllers\Web\PatchStudioController())->index($r);$response->send();return;}
-if($path==='/api/patch-studio/variables'){if(!\App\Services\PatchStudio\PlanAccess::allows(7)){\App\Services\PatchStudio\PlanAccess::deniedJson()->send();return;}Response::json(['members'=>[['userId'=>1,'label'=>'SABER','unitId'=>4,'values'=>['callsign'=>'SABER 1-2','unit'=>'ALPHA','organization'=>'ATHENA']]]])->send();return;}
+if($path==='/api/patch-studio/variables'){
+ if(!\App\Services\PatchStudio\PlanAccess::allows(7)){\App\Services\PatchStudio\PlanAccess::deniedJson()->send();return;}
+ $members=[['userId'=>1,'label'=>'SABER','unitId'=>4,'values'=>['callsign'=>'SABER 1-2','unit'=>'ALPHA','organization'=>'ATHENA']],['userId'=>2,'label'=>'TIGER','unitId'=>8,'values'=>['callsign'=>'TIGER 6','unit'=>'BRAVO','organization'=>'ATHENA']]];
+ if(($_SERVER['HTTP_X_TEST_RH']??'')==='no')$members=array_slice($members,0,1);
+ if(isset($_GET['users']))$members=array_values(array_filter($members,static fn($m)=>in_array((string)$m['userId'],explode(',',(string)$_GET['users']),true)));
+ if(!empty($_GET['q']))$members=array_values(array_filter($members,static fn($m)=>mb_stripos($m['label'].' '.$m['values']['callsign'],(string)$_GET['q'])!==false));
+ Response::json(['members'=>$members,'limit'=>100])->send();return;
+}
+if(($_SERVER['HTTP_X_TEST_SCHEMA']??'')==='missing')foreach(['patch_studio_projects','patch_studio_assets'] as $table)$pdo->exec('DROP TABLE '.$table);
+
 $method=$_SERVER['REQUEST_METHOD'];$controller=new PatchStudioApiController();$route=null;$params=[];
 if($path==='/api/patch-studio/projects')$route=$method==='POST'?'create':'index';
 elseif($path==='/api/patch-studio/assets')$route=$method==='POST'?'upload':'assets';
 elseif(preg_match('#^/api/patch-studio/assets/([a-f0-9]{32})$#',$path,$m)){$route='asset';$params=['id'=>$m[1]];}
-elseif(preg_match('#^/api/patch-studio/projects/([a-f0-9]{32})(?:/(history|export|share))?$#',$path,$m)){$params=['id'=>$m[1]];$route=$m[2]??($method==='PUT'?'update':'show');}
+elseif(preg_match('#^/api/patch-studio/projects/([a-f0-9]{32})(?:/(history|export|share|preview))?$#',$path,$m)){$params=['id'=>$m[1]];$route=$m[2]??($method==='PUT'?'update':'show');}
 if(!$route){http_response_code(404);return;}$controller->$route($r,$params)->send();

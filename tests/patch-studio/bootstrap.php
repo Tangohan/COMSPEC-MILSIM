@@ -15,6 +15,7 @@ function patchTestDb(string $dsn='sqlite::memory:'): PDO {
     $sql=preg_replace('/,?\s*(?:INDEX|UNIQUE KEY) [^\n]+/','',$sql);
     $sql=preg_replace('/\) ENGINE=InnoDB[^;]+;/i',');',$sql);
     $pdo->exec($sql);
+    \App\Services\PatchStudio\Schema::migrate($pdo,dirname(__DIR__,2));
     $pdo->exec("CREATE TABLE IF NOT EXISTS users (id INT PRIMARY KEY,tenant_id INT,status TEXT)");
     $pdo->exec("INSERT OR IGNORE INTO users VALUES (1,7,'active'),(2,7,'active'),(3,8,'active')");
     return $pdo;

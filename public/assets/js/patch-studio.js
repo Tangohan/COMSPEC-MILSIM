@@ -1,15 +1,16 @@
 const {shapes,patterns,fonts,materials,renderDefaults,variables,clone,uid,esc,solid,layer,template,History,walk,find,duplicate,duplicateMany,repairConstructions,group,ungroup,geometry,patternSvg,compose} = await import(new URL('./patch-studio-core.js' + new URL(import.meta.url).search, import.meta.url));
+const {createWorkspace}=await import(new URL('./patch-studio-workspace.js'+new URL(import.meta.url).search,import.meta.url));
 const $=s=>document.querySelector(s),root=$('#patch-studio'),api=root.dataset.api,csrf=$('meta[name=csrf-token]').content;
 const labels={texture:'Texture image',asset:'Image importée',solid:'Couleur unie',gradient:'Dégradé',pattern:'Motif vectoriel',none:'Sans remplissage',rectangle:'Rectangle',rounded_rectangle:'Rectangle arrondi',ellipse:'Cercle / ovale',triangle:'Triangle',hexagon:'Hexagone',octagon:'Octogone',shield:'Écusson',chevron:'Chevron',banner:'Bannière',diamond:'Losange',star:'Étoile',polygon:'Polygone',multicam:'Camouflage simplifié (ancien)',woodland:'Woodland',desert:'Desert',fabric:'Tissu',velcro:'Velcro',pvc:'PVC',rubber:'Caoutchouc',embroidery:'Broderie',stripes:'Rayures',dots:'Points'};
 Object.assign(labels,Object.fromEntries(Object.entries(materials).map(([k,m])=>[k,m.name])),{embroidered:'Brodée',overlock:'Surjetée',heatcut:'Découpée à chaud',legacy:'Classique',color:'Fil de couleur unie',same:'Camouflage identique au fond',custom:'Texture indépendante',print:'Impression',laser:'Laser Cut',high:'Fin · export',draft:'Rapide',inside:'Intérieure',center:'Centre',outside:'Extérieure',left:'Gauche',right:'Droite',top:'Haut',middle:'Milieu',bottom:'Bas',upper:'Majuscules',lower:'Minuscules'});
-const state={doc:template(),project:null,variant:'standard',selected:[],scope:[],tab:'templates',dirty:false,zoom:1,pan:{x:60,y:80},clipboard:[],assets:[],resourceUrls:{},textureCatalog:[],textureResources:{},members:[],values:{},saving:null,conflict:false};
+const state={view:'home',hasEditor:false,homeProjects:[],homeFilter:'recent',selectedMembers:new Set(),doc:template(),project:null,variant:'standard',selected:[],scope:[],tab:'templates',dirty:false,zoom:1,pan:{x:60,y:80},clipboard:[],assets:[],resourceUrls:{},textureCatalog:[],textureResources:{},members:[],values:{},saving:null,conflict:false};
 const history=new History(state.doc),resourceCache=new Map(),fontCache=new Map();let saveTimer,liveCommitTimer,toastTimer,textureCatalogPromise,space=false,drag=null,raf;
 const layers=()=>{let a=state.doc.variants[state.variant]||[];for(const id of state.scope)a=find(a,id)?.children||[];return a;};
 const selected=()=>layers().filter(l=>state.selected.includes(l.id));
 function notify(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,6000);}
 async function request(path,options={}){
  const res=await fetch(api+path,{credentials:'same-origin',...options,headers:{'X-CSRF-Token':csrf,...(options.body instanceof FormData?{}:{'Content-Type':'application/json'}),...options.headers}});
- if(!res.ok){let msg;try{msg=(await res.json()).error;}catch{msg=`Erreur HTTP ${res.status}`;}const e=new Error(msg||'Requête impossible');e.status=res.status;throw e;}return res;
+ if(!res.ok){let data={};try{data=await res.json();}catch{}const e=new Error(data.error||`Erreur HTTP ${res.status}`);Object.assign(e,{status:res.status,code:data.code,incident:data.incident});throw e;}return res;
 }
 const json=async(path,options={})=>(await request(path,options)).json();
 function recovery(){try{localStorage.setItem('athena.patch.recovery.'+root.dataset.recovery,JSON.stringify({document:state.doc,project:state.project,variant:state.variant,at:Date.now()}));}catch{notify('Récupération locale indisponible : enregistrez sur ATHENA.');}}
@@ -21,16 +22,17 @@ function previewChanged(){
 }
 function error(e){notify(e.message||String(e));}
 async function save(copy=false){
- if(state.saving){await state.saving;if(!copy&&state.dirty)return save();return;}
+ clearTimeout(saveTimer);if(state.saving){await state.saving;if(copy)return save(true);if(state.dirty)return save();return;}
  if(state.project&&!state.project.canEdit&&!copy)throw new Error('Projet en lecture seule. Enregistrez une copie.');
+ if(!copy&&state.project&&!state.dirty&&$('#project-name').value.trim()===state.project.name){if(!state.project.preview_hash&&!state.project.has_preview)await savePreview(state.project,clone(state.doc)).catch(()=>{});return;}
  history.push(state.doc);const snapshot=clone(state.doc),name=$('#project-name').value.trim()||'Sans titre',before=JSON.stringify(snapshot);
  $('#save-state').textContent='Enregistrement…';
  state.saving=(async()=>{
   try{
    const id=!copy&&state.project?.id;
-   const payload={document:snapshot,name,...(id?{revision:Number(state.project.revision),visibility:state.project.visibility,status:state.project.status}:{})};
+   const payload={document:snapshot,name,kind:state.project?.kind||'patch',...(id?{revision:Number(state.project.revision),visibility:state.project.visibility,status:state.project.status}:{})};
    const result=await json('/projects'+(id?'/'+id:''),{method:id?'PUT':'POST',body:JSON.stringify(payload)});
-   state.project=result.project;state.conflict=false;state.dirty=JSON.stringify(state.doc)!==before||$('#project-name').value.trim()!==name;
+   state.project=result.project;await savePreview(result.project,snapshot).catch(()=>{});state.conflict=false;state.dirty=JSON.stringify(state.doc)!==before||$('#project-name').value.trim()!==name;
    $('#save-state').textContent=state.dirty?'Modifications non enregistrées':`Enregistré · v${state.project.revision}`;
    if(!state.dirty){try{localStorage.removeItem('athena.patch.recovery.'+root.dataset.recovery);}catch{}}
    else recovery();
@@ -41,12 +43,12 @@ async function save(copy=false){
 async function openProject(id){
  if(state.saving)await state.saving;
  if(state.dirty&&!confirm('Ouvrir ce projet et remplacer les modifications non enregistrées ?'))return;
- const {project}=await json('/projects/'+id);state.project=project;state.doc=project.document;state.variant='standard';state.scope=[];state.selected=[];state.dirty=false;state.conflict=false;history.reset(state.doc);$('#project-name').value=project.name;$('#save-state').textContent=`${project.canEdit?'Enregistré':'Lecture seule'} · v${project.revision}`;$('#modal').close();await loadResources();render();fit();
+ const {project}=await json('/projects/'+id);state.project=project;state.doc=project.document;state.variant='standard';state.scope=[];state.selected=[];state.dirty=false;state.conflict=false;history.reset(state.doc);$('#project-name').value=project.name;$('#save-state').textContent=`${project.canEdit?'Enregistré':'Lecture seule'} · v${project.revision}`;$('#modal').close();await loadResources();workspace.enterEditor();render();fit();if(project.canEdit&&!project.preview_hash)await savePreview(project,clone(project.document)).catch(()=>{});return true;
 }
 async function newProject(kind='blank'){
  if(state.saving){notify('Enregistrement en cours. Réessayez dans un instant.');return;}
  if(state.dirty&&!confirm('Remplacer les modifications non enregistrées par un nouveau projet ?'))return;
- state.doc=template(kind);state.project=null;state.scope=[];state.selected=[];state.variant='standard';state.conflict=false;$('#project-name').value='Nouveau patch';await loadResources();history.reset(state.doc);changed();fit();
+ state.doc=template(kind);state.project=null;state.scope=[];state.selected=[];state.variant='standard';state.conflict=false;$('#project-name').value='Nouveau patch';await loadResources();workspace.enterEditor();history.reset(state.doc);changed();fit();
 }
 const fontFiles={
  'Barlow Condensed':[['BarlowCondensed-Regular.ttf',400],['BarlowCondensed-Bold.ttf',700]],
@@ -77,14 +79,14 @@ async function loadTexture(id){
  if(digest!==t.sha256)throw new Error('Texture corrompue : '+t.name);
  return state.textureResources[id]={...t,src};
 }
-async function loadResources(){
- const ids=new Set();walk(Object.values(state.doc.variants).flat(),l=>{if(l.assetId)ids.add(l.assetId);if(l.fontAsset)ids.add(l.fontAsset);if(l.fill?.assetId)ids.add(l.fill.assetId);if(l.stroke?.fill?.assetId)ids.add(l.stroke.fill.assetId);});
+async function loadResources(doc=state.doc){
+ const ids=new Set();walk(Object.values(doc.variants).flat(),l=>{if(l.assetId)ids.add(l.assetId);if(l.fontAsset)ids.add(l.fontAsset);if(l.fill?.assetId)ids.add(l.fill.assetId);if(l.stroke?.fill?.assetId)ids.add(l.stroke.fill.assetId);});
  await Promise.all([...ids].map(async id=>{const data=await dataUrl(api+'/assets/'+id);state.resourceUrls[id]=data;}));
- const textures=new Set();walk(Object.values(state.doc.variants).flat(),l=>{if(l.fill?.type==='texture')textures.add(l.fill.textureId);if(l.stroke?.fill?.type==='texture')textures.add(l.stroke.fill.textureId);});await Promise.all([...textures].map(loadTexture));
- const jobs=[];walk(Object.values(state.doc.variants).flat(),l=>{if(l.fontAsset&&!fontCache.has(l.fontAsset)){const family='asset_'+l.fontAsset;const p=(async()=>{const f=new FontFace(family,`url("${state.resourceUrls[l.fontAsset]}")`);await f.load();document.fonts.add(f);return f;})();fontCache.set(l.fontAsset,p);jobs.push(p);}});await Promise.all(jobs);await document.fonts.ready;
+ const textures=new Set();walk(Object.values(doc.variants).flat(),l=>{if(l.fill?.type==='texture')textures.add(l.fill.textureId);if(l.stroke?.fill?.type==='texture')textures.add(l.stroke.fill.textureId);});await Promise.all([...textures].map(loadTexture));
+ const jobs=[];walk(Object.values(doc.variants).flat(),l=>{if(l.fontAsset&&!fontCache.has(l.fontAsset)){const family='asset_'+l.fontAsset;const p=(async()=>{const f=new FontFace(family,`url("${state.resourceUrls[l.fontAsset]}")`);await f.load();document.fonts.add(f);return f;})();fontCache.set(l.fontAsset,p);jobs.push(p);}});await Promise.all(jobs);await document.fonts.ready;
 }
-async function exportFontCss(){
- const builtins=new Set(),assets=new Set();walk(state.doc.variants[state.variant],l=>{if(l.type==='text'){if(l.fontAsset)assets.add(l.fontAsset);else builtins.add(l.fontFamily);}});
+async function exportFontCss(doc=state.doc,variant=state.variant){
+ const builtins=new Set(),assets=new Set();walk(doc.variants[variant],l=>{if(l.type==='text'){if(l.fontAsset)assets.add(l.fontAsset);else builtins.add(l.fontFamily);}});
  const out=[];
  for(const f of builtins)for(const [file,weight]of fontFiles[f])out.push(`@font-face{font-family:'${f}';font-weight:${weight};src:url('${await dataUrl(new URL(file,fontBase).href)}')}`);
  for(const id of assets)out.push(`@font-face{font-family:'asset_${id}';src:url('${state.resourceUrls[id]}')}`);
@@ -112,8 +114,9 @@ function render(){
 function updateView(){
  $('#artboard').style.transform=`translate(${state.pan.x}px,${state.pan.y}px) scale(${state.zoom})`;$('#zoom').value=state.zoom*100;$('#zoom-value').value=Math.round(state.zoom*100)+' %';drawRulers();
 }
-function fit(){const v=$('#viewport').getBoundingClientRect(),c=state.doc.canvas;state.zoom=Math.max(.15,Math.min(2,(v.width-100)/c.width,(v.height-130)/c.height));state.pan={x:(v.width-c.width*state.zoom)/2,y:(v.height-c.height*state.zoom)/2};render();}
+function fit(){if($('#studio-editor').hidden)return;const v=$('#viewport').getBoundingClientRect(),c=state.doc.canvas;state.zoom=Math.max(.15,Math.min(2,(v.width-100)/c.width,(v.height-130)/c.height));state.pan={x:(v.width-c.width*state.zoom)/2,y:(v.height-c.height*state.zoom)/2};render();}
 function drawRulers(){
+ if(!$('#viewport').clientWidth||!$('#viewport').clientHeight)return;
  for(const axis of ['x','y']){const el=$('#ruler-'+axis),len=axis==='x'?$('#viewport').clientWidth-22:$('#viewport').clientHeight-22;el.width=axis==='x'?len:22;el.height=axis==='x'?22:len;const ctx=el.getContext('2d');ctx.fillStyle='#8f9d85';ctx.strokeStyle='#56634f';ctx.font='9px monospace';const pan=state.pan[axis]-22,step=state.zoom<.4?128:state.zoom<1?64:32;for(let n=Math.floor(-pan/state.zoom/step)*step;n<(len-pan)/state.zoom;n+=step){const p=pan+n*state.zoom;ctx.beginPath();if(axis==='x'){ctx.moveTo(p,15);ctx.lineTo(p,22);ctx.fillText(n,p+3,11);}else{ctx.moveTo(15,p);ctx.lineTo(22,p);ctx.save();ctx.translate(10,p+3);ctx.rotate(-Math.PI/2);ctx.fillText(n,0,0);ctx.restore();}ctx.stroke();}}
 }
 const get=(o,path)=>path.split('.').reduce((v,k)=>v?.[k],o);
@@ -224,15 +227,18 @@ async function useAsset(id,fill){
  else if(fill)applyFill({type:'asset',assetId:id,scale:1,repeat:true});
  else{const im=new Image();im.src=data;await im.decode();const w=Math.min(280,im.width||200),h=w*(im.height||200)/(im.width||200);add(layer('image',{assetId:id,name:a?.label||'Image',width:w,height:h}));}
 }
-function modal(title,content){$('#modal-title').textContent=title;$('#modal-content').innerHTML=content;if(!$('#modal').open)$('#modal').showModal();}
-async function library(filter='mine'){
- const projects=(await json('/projects')).projects;
- const show=()=>{
-  const f=$('#library-filter')?.value||filter,q=$('#library-search')?.value.toLowerCase()||'';
-  $('#project-list').innerHTML=projects.filter(p=>p.name.toLowerCase().includes(q)&&(f==='all'||f==='archives'?f==='all'||p.status!=='active':p.status==='active'&&(f==='organization'?p.visibility==='organization':f==='shared'?!!p.share_role:!p.share_role&&p.visibility==='private'))).map(p=>`<article class="ps-project-card"><h3>${esc(p.name)}</h3><p>v${p.revision} · ${esc(p.status)} · ${esc(p.visibility)}</p><button data-open="${p.id}">Ouvrir</button></article>`).join('')||'<p class="ps-help">Aucun projet dans cette vue.</p>';
- };
- modal('Bibliothèque ATHENA',`<div class="ps-inline"><select id="library-filter" aria-label="Collection">${[['mine','Mes patchs privés'],['organization','Organisation'],['shared','Partagés avec moi'],['archives','Archives / supprimés'],['all','Tous mes accès']].map(([k,n])=>`<option value="${k}" ${filter===k?'selected':''}>${n}</option>`).join('')}</select><input id="library-search" type="search" placeholder="Rechercher…" aria-label="Rechercher un projet"><button data-action="save-copy">Enregistrer sous</button><button data-action="import-project">Importer un projet JSON</button><button data-action="history">Historique</button><button data-action="project-settings">Gérer le projet ouvert</button></div><div id="project-list" class="ps-projects"></div>`);
- $('#library-filter').onchange=show;$('#library-search').oninput=show;show();
+function modal(title,content,style=''){
+ $('#modal').className=style;$('#modal-title').textContent=title;$('#modal-content').innerHTML=content;if(!$('#modal').open)$('#modal').showModal();}
+async function library(filter='recent'){await workspace.showHome(filter);}
+async function createFromSetup(p){
+ if(state.dirty&&!confirm('Remplacer les modifications non enregistrées par ce setup ?'))return;
+ state.doc=clone(p.document);state.project=null;state.variant='standard';state.scope=[];state.selected=[];state.conflict=false;$('#project-name').value=[...p.name+' · nouveau patch'].slice(0,120).join('');await loadResources();workspace.enterEditor();history.reset(state.doc);changed();fit();
+}
+async function savePreview(p,doc){
+ const k=320/Math.max(doc.canvas.width,doc.canvas.height),width=Math.max(32,Math.round(doc.canvas.width*k)),height=Math.max(32,Math.round(doc.canvas.height*k));
+ const png=await raster({doc,variant:'standard',values:{},width,height});
+ await json('/projects/'+p.id+'/preview',{method:'POST',body:JSON.stringify({revision:Number(p.revision),png})});
+ if(state.project?.id===p.id&&Number(state.project.revision)===Number(p.revision)){state.project.has_preview=true;state.project.preview_revision=Number(p.revision);}
 }
 async function projectSettings(){
  if(!state.project)throw new Error('Enregistrez le projet avant de le gérer.');const p=state.project;
@@ -242,29 +248,41 @@ async function historyModal(){
  if(!state.project)throw new Error('Enregistrez le projet pour créer un historique.');const {versions}=await json('/projects/'+state.project.id+'/history');modal('Historique des versions',`<p class="ps-help">Restaurer crée une nouvelle révision au prochain enregistrement. Les versions antérieures sont conservées.</p><div class="ps-projects">${versions.map(v=>`<article class="ps-project-card"><h3>Version ${v.revision}</h3><p>${esc(v.created_at)} UTC</p><button data-restore="${v.revision}">Restaurer</button></article>`).join('')}</div>`);
 }
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-async function raster({width=state.doc.canvas.width,height=state.doc.canvas.height,selection=false,background='project'}={}){
+async function raster({doc=state.doc,variant=state.variant,values=state.values,width=doc.canvas.width,height=doc.canvas.height,selection=false,background='project'}={}){
  if(!Number.isInteger(width)||!Number.isInteger(height)||width<32||height<32||width>4096||height>4096)throw new Error('Résolution de rendu : 32 à 4096 pixels par côté.');
- await loadResources();const css=await exportFontCss(),svg=compose(state.doc,{variant:state.variant,values:state.values,resources:state.resourceUrls,textures:state.textureResources,fontCss:css,selection:selection?state.selected:null,pixelWidth:width,pixelHeight:height,background});
+ await loadResources(doc);const css=await exportFontCss(doc,variant),svg=compose(doc,{variant,values,resources:state.resourceUrls,textures:state.textureResources,fontCss:css,selection:selection?state.selected:null,pixelWidth:width,pixelHeight:height,background});
  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
  try{const im=new Image();im.src=url;await im.decode();const c=document.createElement('canvas');c.width=width||state.doc.canvas.width;c.height=height||state.doc.canvas.height;const ctx=c.getContext('2d');const k=Math.min(c.width/im.width,c.height/im.height),w=im.width*k,h=im.height*k;ctx.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h);return c.toDataURL('image/png').split(',')[1];}finally{URL.revokeObjectURL(url);}
 }
-function exportModal(){
- modal('Exporter le patch',`<div class="ps-export-form"><label>Format<select id="export-format">${options(['png','paa','zip','pbo','publish'],'png')}</select></label><label>Résolution<select id="export-size"><option value="native">Canevas natif</option>${['256x128','512x256','512x512','1024x512','1024x1024','2048x1024','2048x2048','4096x2048','4096x4096'].map(s=>`<option value="${s}">${s.replace('x',' × ')}</option>`).join('')}</select></label><label>Fond de l’image<select id="export-background"><option value="project">Fond du projet</option><option value="transparent">Transparent · sans fond</option><option value="light">Clair · photo produit</option><option value="dark">Sombre · photo produit</option></select></label><label><span>Objets sélectionnés seulement (PNG)</span><input type="checkbox" id="export-selection" ${state.selected.length?'':'disabled'}></label><p class="ps-help">PNG jusqu’à 4096 px ; PAA, ZIP, PBO et publication jusqu’à 2048 px. Les proportions sont conservées ; le surplus reste transparent. ZIP contient PNG, PAA, projet, ressources, licences et addon. Publier rend cette révision disponible aux comptes autorisés dans ATAK. L’application 3D exige de distribuer et charger l’addon avant la partie.</p><p class="ps-help">Composition : ${state.variant==='night'?'nocturne · simulation visuelle':'standard'}. Le rendu utilise les données de prévisualisation actuelles.</p><button class="ps-primary" data-action="run-export">Générer</button><button data-action="batch">Série PNG des membres sélectionnés</button><button data-action="download-json">Projet JSON éditable</button></div>`);
+async function exportModal(settings={}){
+ const d=state.doc,c=d.canvas;
+ modal('Exporter votre patch',`<div class="ps-export-layout"><aside class="ps-export-preview"><span class="ps-dialog-kicker">APERÇU DU RENDU</span><div class="ps-export-art" data-backdrop="transparent"><img id="export-preview-image" alt="Prévisualisation de l’export"></div><h3>${esc($('#project-name').value)}</h3><p>${c.width} × ${c.height} px <span>· ${state.variant==='night'?'Version nocturne':'Version standard'}</span></p><div class="ps-export-note">Les proportions du patch sont conservées à chaque résolution.</div></aside><section class="ps-export-settings"><div class="ps-export-heading"><span class="ps-dialog-kicker">FICHIER DE SORTIE</span><h3>Préparez votre création.</h3></div><label class="ps-export-label">Format<select id="export-format"><option value="png">PNG · image transparente</option><option value="paa">PAA · texture Arma 3</option><option value="zip">ZIP · pack complet et projet</option><option value="pbo">PBO · addon Arma 3</option><option value="publish">ATHENA · publier dans ATAK</option></select></label><div class="ps-export-fields"><label>Résolution<select id="export-size"><option value="native">Format natif · ${c.width} × ${c.height}</option>${['256x128','512x256','512x512','1024x512','1024x1024','2048x1024','2048x2048','4096x2048','4096x4096'].map(s=>`<option value="${s}">${s.replace('x',' × ')} px</option>`).join('')}</select></label><label>Fond<select id="export-background"><option value="project">Fond du projet</option><option value="transparent">Transparent · sans fond</option><option value="light">Clair · photo produit</option><option value="dark">Sombre · photo produit</option></select></label></div><label class="ps-export-check"><input type="checkbox" id="export-selection" ${state.selected.length?'':'disabled'}><span>Exporter la sélection uniquement <small>PNG · calque ou groupe sélectionné</small></span></label><div class="ps-export-member"><div><strong>Variables ATHENA</strong><p id="export-member-caption">${esc(state.members.find(m=>m.userId===state.memberId)?.label||'Substitutions du modèle')}</p></div><button data-action="members">Choisir les membres <span id="export-member-count">${state.selectedMembers.size}</span></button></div><div id="export-format-info" class="ps-export-info"></div><p id="export-error" class="ps-form-error" role="alert" hidden></p><footer class="ps-export-actions"><button data-action="download-json">Projet JSON</button><button data-action="batch">Série PNG</button><button class="ps-primary" data-action="run-export">Télécharger le PNG</button></footer><p class="ps-export-help">Les textures et ressources privées restent soumises aux droits de votre organisation.</p></section></div>`,'ps-export-dialog');
+ const describe=()=>{
+  const format=$('#export-format').value,labels={png:'Télécharger le PNG',paa:'Générer le PAA',zip:'Télécharger le pack',pbo:'Générer l’addon',publish:'Publier dans ATAK'};
+  $('[data-action="run-export"]').textContent=labels[format];$('#export-selection').disabled=format!=='png'||!state.selected.length;if(format!=='png')$('#export-selection').checked=false;
+  $('#export-format-info').textContent={png:'PNG haute résolution avec alpha, jusqu’à 4096 pixels. Le fichier est généré à sa taille finale.',paa:'Texture DXT avec mipmaps et alpha. Choisissez des côtés en puissances de deux, jusqu’à 2048 pixels.',zip:'Pack comprenant PNG, PAA, projet éditable, ressources, métadonnées, addon et documentation. Jusqu’à 2048 pixels.',pbo:'Addon prêt à distribuer et à charger avant le lancement d’Arma 3. Jusqu’à 2048 pixels.',publish:'Publie la révision enregistrée pour les utilisateurs autorisés dans ATAK. L’application 3D nécessite l’addon distribué avant la partie.'}[format];
+ };
+ for(const [id,value] of Object.entries(settings)){const field=$('#'+id);if(field)field.value=value;}
+ const preview=async()=>{try{const k=768/Math.max(c.width,c.height),png=await raster({width:Math.max(32,Math.round(c.width*k)),height:Math.max(32,Math.round(c.height*k)),background:$('#export-background')?.value||'project'});if($('#export-preview-image'))$('#export-preview-image').src='data:image/png;base64,'+png;}catch(e){if($('#export-error')){$('#export-error').hidden=false;$('#export-error').textContent=e.message;}}};
+ $('#export-format').onchange=describe;$('#export-background').onchange=preview;describe();await preview();
 }
 async function runExport(){
- const button=$('[data-action="run-export"]');button.disabled=true;
- try{if(state.dirty||!state.project)await save();const format=$('#export-format').value,size=$('#export-size').value,selection=$('#export-selection').checked;
+ const button=$('[data-action="run-export"]'),label=button.textContent;button.disabled=true;button.textContent='Génération en cours…';$('#export-error').hidden=true;
+ try{
+  if(state.dirty||!state.project)await save();const format=$('#export-format').value,size=$('#export-size').value,selection=$('#export-selection').checked;
   if(selection&&format!=='png')throw new Error('L’export de sélection est disponible en PNG.');
   const [width,height]=size==='native'?[state.doc.canvas.width,state.doc.canvas.height]:size.split('x').map(Number);
   if(format!=='png'&&Math.max(width,height)>2048)throw new Error('Choisissez au plus 2048 px pour les formats Arma 3.');
   const png=await raster({width,height,selection,background:$('#export-background').value});
   const res=await request('/projects/'+state.project.id+'/export',{method:'POST',body:JSON.stringify({revision:Number(state.project.revision),format,variant:state.variant,png,selection,letterbox:true})});
   if(format==='publish'){const result=await res.json();notify('Révision publiée dans le catalogue ATAK : '+result.class);}else{download(await res.blob(),`ATHENA_${state.project.id}_${state.variant}.${format}`);notify('Export généré.');}
- }finally{button.disabled=false;}
+ }catch(e){$('#export-error').hidden=false;$('#export-error').textContent=e.message+(e.incident?' · Référence '+e.incident:'');}
+ finally{button.disabled=false;button.textContent=label;}
 }
 async function batch(){
- if(!state.members.length)throw new Error('Chargez d’abord les membres depuis les propriétés du canevas.');
- const old=state.values;let count=0;try{for(const m of state.members){state.values=m.values;const png=await raster();download(new Blob([Uint8Array.from(atob(png),c=>c.charCodeAt(0))],{type:'image/png'}),`ATHENA_${m.userId}_${state.variant}.png`);count++;}}finally{state.values=old;render();}notify(`${count} PNG générés. Autorisez les téléchargements multiples dans le navigateur si nécessaire.`);
+ const ids=[...state.selectedMembers];if(!ids.length)throw new Error('Choisissez les membres à exporter.');
+ const {members}=await json('/variables?users='+ids.join(','));if(!members.length)throw new Error('Aucun membre autorisé dans cette sélection.');
+ const old=state.values;let count=0;try{for(const m of members){state.values=m.values;const png=await raster();download(new Blob([Uint8Array.from(atob(png),c=>c.charCodeAt(0))],{type:'image/png'}),`ATHENA_${m.userId}_${state.variant}.png`);count++;}}finally{state.values=old;render();}notify(`${count} PNG générés. Autorisez les téléchargements multiples dans le navigateur si nécessaire.`);
 }
 function align(action){
  editable();const ls=selected(),c=state.doc.canvas;if(!ls.length)return;
@@ -288,7 +306,7 @@ const actions={
  'library':()=>library(),'organization-library':()=>library('organization'),'project-settings':projectSettings,'history':historyModal,
  'apply-settings':async()=>{editable();const p=state.project;const result=await json('/projects/'+p.id,{method:'PUT',body:JSON.stringify({revision:Number(p.revision),name:$('#project-name').value,document:state.doc,visibility:$('#project-visibility').value,status:$('#project-status').value})});state.project=result.project;state.dirty=false;$('#save-state').textContent=`Enregistré · v${state.project.revision}`;$('#modal').close();notify('Projet mis à jour.');},
  'share':async()=>{await json('/projects/'+state.project.id+'/share',{method:'POST',body:JSON.stringify({userId:Number($('#share-user').value),role:$('#share-role').value})});notify('Droits mis à jour.');},
- 'members':async()=>{const ids=prompt('IDs ATHENA des membres à prévisualiser (séparés par une virgule). Sans droits RH, seul votre compte est retourné.','');if(ids===null)return;state.members=(await json('/variables'+(ids?'?users='+encodeURIComponent(ids):''))).members;render();notify(`${state.members.length} membre(s) autorisé(s) chargé(s).`);},
+ 'members':()=>workspace.memberDialog(),'save-setup':()=>workspace.setupDialog(),
  'export':exportModal,'run-export':runExport,'batch':batch,
  'preview':async()=>{const png=await raster();modal('Aperçu · '+(state.variant==='night'?'simulation nocturne':'standard'),`<img class="ps-preview" src="data:image/png;base64,${png}" alt="Rendu du patch">`);},
  'download-json':()=>download(new Blob([JSON.stringify(state.doc,null,2)],{type:'application/json'}),'ATHENA_project.json'),
@@ -394,7 +412,7 @@ $('#viewport').addEventListener('pointerup',endDrag);$('#viewport').addEventList
 $('#viewport').addEventListener('wheel',e=>{e.preventDefault();const b=$('#viewport').getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top,old=state.zoom;state.zoom=Math.max(.15,Math.min(4,old*Math.exp(-e.deltaY*.0015)));state.pan={x:x-(x-state.pan.x)*state.zoom/old,y:y-(y-state.pan.y)*state.zoom/old};render();},{passive:false});
 for(const target of [$('#viewport'),$('.ps-resources')]){target.addEventListener('dragover',e=>{if(e.dataTransfer.types.includes('Files'))e.preventDefault();});target.addEventListener('drop',async e=>{if(!e.dataTransfer.files.length)return;e.preventDefault();for(const f of [...e.dataTransfer.files].slice(0,10))try{await uploadFile(f);}catch(ex){error(ex);}});}
 window.addEventListener('keydown',async e=>{
- if($('#modal').open)return;
+ if($('#modal').open||state.view==='home')return;
  if(e.target.closest('input,textarea,select,[contenteditable=true]')){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();try{await save();}catch(ex){error(ex);}}return;}
  const mod=e.ctrlKey||e.metaKey,key=e.key.toLowerCase();
  try{
@@ -406,13 +424,16 @@ window.addEventListener('keydown',async e=>{
 });
 window.addEventListener('keyup',e=>{if(e.code==='Space')space=false;});window.addEventListener('blur',()=>{space=false;endDrag();});
 window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
+const workspace=createWorkspace({root,state,esc,json,notify,modal,api,error,raster,clone,render,fit,openProject,projectSettings,createFromSetup,savePreview,exportModal,
+ templateCards:async()=>{await loadTexture('multicam-original');return [['laser','Laser Cut · MultiCam'],['name','Name tape'],['unit','Écusson d’unité'],['embroidered','Patch brodé']].map(([kind,name])=>`<button class="ps-home-template" data-template="${kind}">${compose(template(kind),{textures:state.textureResources,idPrefix:'home-'+kind+'-'})}<span>${name}<small>Entièrement modifiable</small></span></button>`).join('');}
+});
 new ResizeObserver(()=>drawRulers()).observe($('#viewport'));
 (async()=>{
- render();renderResources();fit();
- try{await refreshAssets();state.members=(await json('/variables')).members;}catch(e){error(e);}
+ render();renderResources();
+ await Promise.allSettled([refreshAssets(),workspace.refreshMembers()]);
  let draft;try{draft=JSON.parse(localStorage.getItem('athena.patch.recovery.'+root.dataset.recovery)||'null');}catch{}
  if(draft&&confirm('Récupérer le projet interrompu le '+new Date(draft.at).toLocaleString('fr')+' ?')){
-  try{state.doc=draft.document;state.project=draft.project;state.variant=draft.variant;await loadResources();history.reset(state.doc);state.dirty=true;$('#project-name').value=state.project?.name||'Projet récupéré';render();fit();notify('Brouillon récupéré. Enregistrez pour vérifier les éventuels conflits.');}catch(e){error(e);}
+  try{state.doc=draft.document;state.project=draft.project;state.variant=draft.variant;await loadResources();history.reset(state.doc);state.dirty=true;$('#project-name').value=state.project?.name||'Projet récupéré';workspace.enterEditor();render();fit();notify('Brouillon récupéré. Enregistrez pour vérifier les éventuels conflits.');}catch(e){error(e);}
  }else await library();
 })().catch(error);
 // Exposed only as an immutable test/inspection facade; no authentication state.

@@ -7,8 +7,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
  const bind=()=>page.evaluate(async()=>{const src=document.querySelector('[data-patch-studio-module]').src;globalThis.studio=(await import(src)).studio;globalThis.core=await import(new URL('./patch-studio-core.js'+new URL(src).search,src));});
  const evaluate=fn=>page.evaluate(fn=>Function('studio','core','return ('+fn+')(studio,core)')(globalThis.studio,globalThis.core),fn.toString());
  try{
-  await page.goto(url+'/patch-studio');await page.waitForSelector('#modal[open]');await bind();await page.click('[data-action="close-modal"]');
-  await page.click('[data-template="laser"]');await page.waitForFunction(()=>studio.state.doc.variants.standard[1]?.construction?.mode==='laser'&&document.querySelector('[data-construction="laser"]'));
+  await page.goto(url+'/patch-studio');await page.waitForSelector('#studio-home #home-status[hidden]',{state:'attached'});await bind();await page.click('#home-templates [data-template="laser"]');await page.waitForFunction(()=>studio.state.doc.variants.standard[1]?.construction?.mode==='laser'&&document.querySelector('[data-construction="laser"]'));
   assert.equal(await page.locator('[data-fabrication-section]').count(),5);
   await page.click('#layers [data-layer-row]:last-child');
   assert.equal(await page.locator('[data-prop="stroke.mode"]').inputValue(),'same');
@@ -28,7 +27,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   await page.click('[data-action="export"]');await page.selectOption('#export-size','2048x1024');await page.selectOption('#export-background','light');
   const [download]=await Promise.all([page.waitForEvent('download'),page.click('[data-action="run-export"]')]);await download.saveAs('/tmp/athena-fabrication-export-ui.png');assert.ok(fs.statSync('/tmp/athena-fabrication-export-ui.png').size>10000);await page.click('[data-action="close-modal"]');
   await page.screenshot({path:'/tmp/athena-fabrication-ui.png',fullPage:true});
-  await page.reload();await page.waitForSelector('#modal[open]');await bind();await page.click('[data-open="'+saved.id+'"]');await page.waitForFunction(id=>studio.state.project?.id===id&&!document.querySelector('#modal').open,saved.id);
+  await page.reload();await page.waitForSelector('#studio-home #home-status[hidden]',{state:'attached'});await bind();await page.locator('[data-open="'+saved.id+'"]').first().click();await page.waitForFunction(id=>studio.state.project?.id===id&&!document.querySelector('#modal').open,saved.id);
   assert.equal(await evaluate(s=>JSON.stringify(s.state.doc)),saved.document);assert.equal(await evaluate(s=>s.raster()),native,'save/reopen has identical manufactured pixels');
   // Full square 4K textile render goes through the bounded backend PNG path, not only a client download.
   const square=await evaluate(async(s,c)=>{const old=s.state.doc,d=c.clone(old);s.state.doc=d;d.canvas.height=512;d.variants.standard[0].height=492;d.variants.standard[1].y=185;try{return {document:d,png:await s.raster({width:4096,height:4096})};}finally{s.state.doc=old;}});
