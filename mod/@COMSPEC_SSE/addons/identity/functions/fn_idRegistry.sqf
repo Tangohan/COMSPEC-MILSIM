@@ -27,9 +27,9 @@ if (!isServer) exitWith { nil };
 if (_op isEqualTo "init") exitWith {
     if (!isNil "comspec_sse_idReg") exitWith { comspec_sse_idReg };
     private _free = createHashMap;
-    // Stock : même nombre que tools/gen_id_instances.py (512 cartes, 256 passeports, 256 permis).
+    // Stock : même nombre que tools/gen_id_instances.py (512 cartes, 256 passeports, 256 permis, 256 cartes militaires).
     { _x params ["_cls", "_n"]; private _a = []; for "_i" from 1 to _n do { _a pushBack _i; }; _free set [_cls, _a]; }
-        forEach [["COMSPEC_ID_Card", 512], ["COMSPEC_ID_Passport", 256], ["COMSPEC_ID_DrivingLicense", 256]];
+        forEach [["COMSPEC_ID_Card", 512], ["COMSPEC_ID_Passport", 256], ["COMSPEC_ID_DrivingLicense", 256], ["COMSPEC_ID_MilitaryCard", 256]];
     comspec_sse_idReg = createHashMapFromArray [
         ["docs", createHashMap], ["byClass", createHashMap], ["free", _free], ["units", createHashMap],
         ["decided", createHashMap], ["issued", createHashMap], ["watch", []], ["athena", createHashMap],
@@ -41,7 +41,7 @@ if (_op isEqualTo "init") exitWith {
 };
 private _reg = missionNamespace getVariable ["comspec_sse_idReg", createHashMap];
 if ((count _reg) isEqualTo 0) then { _reg = ["init"] call comspec_sse_fnc_idRegistry; };
-private _catOf = { switch (_this) do { case "passport": { "COMSPEC_ID_Passport" }; case "driving_license": { "COMSPEC_ID_DrivingLicense" }; default { "COMSPEC_ID_Card" }; } };
+private _catOf = { switch (_this) do { case "passport": { "COMSPEC_ID_Passport" }; case "driving_license": { "COMSPEC_ID_DrivingLicense" }; case "military_id": { "COMSPEC_ID_MilitaryCard" }; default { "COMSPEC_ID_Card" }; } };
 
 switch (_op) do {
     case "key": {
@@ -81,7 +81,7 @@ switch (_op) do {
         if ((_u getVariable ["COMSPEC_ID_Carry", "auto"]) isNotEqualTo "auto") then { ["ensure", [_u]] call comspec_sse_fnc_idRegistry; };
         // Attribut Eden « Infiltré (couverture) » : infiltration ouverte une fois les papiers posés.
         if (_u getVariable ["COMSPEC_ID_Undercover", false]) then { [{ ["start", [_this, createHashMap]] call comspec_sse_fnc_idCover; }, _u, 2] call CBA_fnc_waitAndExecute; };
-        private _types = createHashMapFromArray [["COMSPEC_ID_Card", "id_card"], ["COMSPEC_ID_Passport", "passport"], ["COMSPEC_ID_DrivingLicense", "driving_license"]];
+        private _types = createHashMapFromArray [["COMSPEC_ID_Card", "id_card"], ["COMSPEC_ID_Passport", "passport"], ["COMSPEC_ID_MilitaryCard", "military_id"], ["COMSPEC_ID_DrivingLicense", "driving_license"]];
         {
             private _cls = _x select 0;
             if (_cls in _types) then {
@@ -178,6 +178,11 @@ switch (_op) do {
             if (_enemy && {("forged" call _r) * 100 < (missionNamespace getVariable ["comspec_sse_id_forgedRate", 60])}) then {
                 _types = ["id_card"]; _kind = "forged"; _quality = 25 + floor (("q" call _r) * 60);
             };
+            // Militaire régulier sans faux papiers : sa carte militaire, vraie (sans uniforme, aucune).
+            if (_types isEqualTo [] && {("mil" call _r) < 0.7} && {(uniform _u) isNotEqualTo ""}) then {
+                private _uc = getText (configFile >> "CfgWeapons" >> uniform _u >> "ItemInfo" >> "uniformClass");
+                if (_uc isNotEqualTo "" && {(getNumber (configFile >> "CfgVehicles" >> _uc >> "side")) in [0, 1, 2]}) then { _types = ["military_id"]; _kind = "civil"; };
+            };
         } else {
             _types = switch (_carry) do {
                 case "card": { ["id_card"] };
@@ -185,6 +190,7 @@ switch (_op) do {
                 case "license": { ["driving_license"] };
                 case "card_license": { ["id_card", "driving_license"] };
                 case "card_passport": { ["id_card", "passport"] };
+                case "military": { ["military_id"] };
                 default { [] };
             };
         };

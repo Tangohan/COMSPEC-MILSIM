@@ -6,6 +6,7 @@
     le cliché part tout seul une demi-seconde après l'affichage.
     Défauts physiques d'un faux rendus tels quels (hologramme absent, police différente, photo rapportée) : un
     contrôleur attentif les voit ; le constat écrit (N0) dépend de sa compétence et de la lumière.
+    Photo : rendu en direct (fn_idFace), silhouette en dessous si le PiP est désactivé ou le temps de la première image.
 */
 params [["_op", "render"], ["_disp", displayNull]];
 disableSerialization;
@@ -38,6 +39,7 @@ private _side = _st get "side";
 private _kind = switch (_type) do {
     case "passport": { "passport" };
     case "driving_license": { ["license_recto", "license_verso"] select (_side isEqualTo "verso") };
+    case "military_id": { ["military_recto", "card_verso"] select (_side isEqualTo "verso") };
     default { ["card_recto", "card_verso"] select (_side isEqualTo "verso") };
 };
 private _lc = toLower (_doc getOrDefault ["country", "ALT"]);
@@ -50,6 +52,7 @@ private _dir = "\z\comspec_sse\addons\identity\data\";
 private _tpl = _dir + (switch (_kind) do {
     case "passport": { format ["tpl_passport_%1_co.paa", _lc] };
     case "license_recto": { format ["tpl_license_%1_recto_co.paa", _lc] };
+    case "military_recto": { format ["tpl_military_%1_recto_co.paa", _lc] };
     case "license_verso": { "tpl_license_verso_co.paa" };
     case "card_verso": { format ["tpl_card_%1_verso_co.paa", _lc] };
     default { format ["tpl_card_%1_recto_co.paa", _lc] };
@@ -97,14 +100,15 @@ private _pic = {
 private _nameFont = ["RobotoCondensedBold", "TahomaB"] select (_doc getOrDefault ["font", false]);
 private _g = { _doc getOrDefault [_this, ""] };
 private _vh = 0.055;
+private _face = ["start", _doc] call comspec_sse_fnc_idFace;
 private _photo = {
     params ["_fx", "_fy", "_fw", "_fh"];
-    // Photo rapportée : décalée et de travers sur le fond imprimé.
-    if (_doc getOrDefault ["photo", false]) then {
-        [_fx + 0.008, _fy + 0.012, _fw * 0.97, _fh * 0.97, _dir + "silhouette_co.paa", 2.5] call _pic;
-    } else {
-        [_fx, _fy, _fw, _fh, _dir + "silhouette_co.paa"] call _pic;
-    };
+    // Photo rapportée ou substituée : décalée et de travers sur le fond imprimé.
+    private _swap = (_doc getOrDefault ["photo", false]) || {_doc getOrDefault ["photoSwap", false]};
+    private _spot = if (_swap) then { [_fx + 0.008, _fy + 0.012, _fw * 0.97, _fh * 0.97, 2.5] } else { [_fx, _fy, _fw, _fh, 0] };
+    _spot params ["_px", "_py", "_pw", "_ph", "_angle"];
+    [_px, _py, _pw, _ph, _dir + "silhouette_co.paa", _angle] call _pic;
+    if (_face isNotEqualTo "") then { [_px, _py, _pw, _ph, _face, _angle] call _pic; };
 };
 private _holo = { params ["_fx", "_fy", "_fw"]; if (_doc getOrDefault ["holo", true]) then { [_fx, _fy, _fw, _fw * _ratio, _dir + "hologram_ca.paa"] call _pic; }; };
 private _mrzLines = {
@@ -127,6 +131,17 @@ switch (_kind) do {
         [0.47, 0.475, 0.22, _vh, "nat" call _g] call _put;
         [0.72, 0.475, 0.26, _vh, ("dob" call _g) call _dmy] call _put;
         [0.35, 0.595, 0.6, _vh, "pob" call _g] call _put;
+        [0.35, 0.715, 0.34, _vh, "number" call _g, "EtelkaMonospaceProBold", "#7a1010"] call _put;
+        [0.72, 0.715, 0.26, _vh, ("expires" call _g) call _dmy] call _put;
+    };
+    case "military_recto": {
+        [0.04, 0.21, 0.27, 0.62] call _photo;
+        [0.22, 0.58, 0.15] call _holo;
+        [0.35, 0.235, 0.6, _vh, toUpper ("last" call _g), _nameFont] call _put;
+        [0.35, 0.355, 0.6, _vh, "first" call _g, _nameFont] call _put;
+        [0.35, 0.475, 0.28, _vh, "rank" call _g] call _put;
+        [0.65, 0.475, 0.32, _vh, ("dob" call _g) call _dmy] call _put;
+        [0.35, 0.595, 0.6, _vh, "force" call _g] call _put;
         [0.35, 0.715, 0.34, _vh, "number" call _g, "EtelkaMonospaceProBold", "#7a1010"] call _put;
         [0.72, 0.715, 0.26, _vh, ("expires" call _g) call _dmy] call _put;
     };
@@ -183,7 +198,7 @@ uiNamespace setVariable ["comspec_sse_idViewerCtrls", _ctrls];
 
 // Bandeau, constat N0, boutons.
 private _title = format ["<t align='center' size='1.1' font='PuristaSemibold'>%1</t><br/><t align='center' size='0.85' color='#b8c2cc'>%2 · %3</t>",
-    (["Carte d'identité", "Passeport", "Permis de conduire"] select ((["id_card", "passport", "driving_license"] find _type) max 0)) call comspec_sse_fnc_tr,
+    (["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find _type) max 0)) call comspec_sse_fnc_tr,
     ([_doc getOrDefault ["countryName", ""], _doc getOrDefault ["countryNameEn", ""]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr" && {(_doc getOrDefault ["countryNameEn", ""]) isNotEqualTo ""})) call _esc, (["SIMULATION · document fictif", "SIMULATION · votre document"] select (_st get "own")) call comspec_sse_fnc_tr];
 (_d displayCtrl 93704) ctrlSetStructuredText parseText _title;
 (_d displayCtrl 93704) ctrlSetPosition [_cx, _cy - safezoneH * 0.075, _cw, safezoneH * 0.07];

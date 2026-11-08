@@ -1,5 +1,29 @@
 # COMSPEC SSE — historique des versions
 
+## 1.4.0 — 08/11/2026 · Identité : photo en direct, carte militaire, preuves, éditeur SSE
+
+**Relancer Arma complètement.** Nouveau PBO `comspec_sse_editor`. Aucun changement du main.pbo de l'ATAK ni de la DLL
+(paquet Athena : champ `settings` ajouté, ignoré par un ancien mod).
+
+- **Transmission automatique à Athena activée par défaut** (`comspec_sse_id_autoTransmit`) ; le réglage de la communauté
+  (Bureau SSE, Contrôles) reçu dans le paquet l'emporte. `person_id` renseigné quand une fiche correspond (unité, ou papier
+  présenté par son vrai titulaire).
+- **Carte militaire** (`military_id`) : émission, 256 exemplaires, gabarits `tpl_military_*`, MRZ « A< », Eden, Zeus. Rôle :
+  en civil elle reste à vérifier (N0), le fichier donne force et grade, une force ennemie est signalée (N3). Militaires
+  réguliers IA : carte militaire le plus souvent.
+- **N3** : un avis sans prénom ou un alias égal au seul nom ne sonne plus l'alerte chez tout porteur de ce nom (« homonyme
+  possible », à recouper). Un alias n'est plus recopié dans le champ nom.
+- **Photo du document en direct** (PiP, `fn_idFace`) : caméra sur le visage du vrai titulaire, joueur ou IA, seulement
+  pendant l'ouverture ; silhouette si le PiP est désactivé. Faux papier : un autre visage du jeu, stable pour cette identité.
+  Photo substituée : autre visage, photo de travers. La photo du site ne s'affiche pas en jeu (Arma ne lit pas d'image
+  téléchargée sans `-filePatching`).
+- **Papier saisi** : pièce du module evidence, avec chaîne de possession (`fn_custody`), rattachée au dossier en cours ;
+  restitution inscrite au journal (`fn_idEvidence`).
+- **Éditeur SSE** (module Zeus « COMSPEC SSE · Éditeur », addon `editor`) : choix du type en cartes, modèles, aperçu en direct,
+  mode de remise, bibliothèque (recherche, duplication, historique), placement dans le monde, guidage au premier lancement.
+  Bibliothèque enregistrée sur le poste, pas encore sur Athena. Icônes et logo : `tools/gen_editor_assets.py`.
+- Traductions EN : `tools/i18n_identity_en.tsv` (+34 lignes), à reporter dans le dictionnaire de l'ATAK.
+
 ## 1.3.1 — 03/11/2026 · Pays réels stylisés (univers réaliste-simulation)
 
 **Relancer Arma complètement.** Aucun changement du main.pbo de l'ATAK ni de la DLL (le paquet Athena porte les

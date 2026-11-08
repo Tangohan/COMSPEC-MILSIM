@@ -66,7 +66,7 @@ REAL_MRZ = {"DEU": "D"}
 
 def mrz(doc):
     t = doc.get("type", "id_card")
-    if t not in ("id_card", "passport", "driving_license"):
+    if t not in ("id_card", "passport", "driving_license", "military_id"):
         return []
     cc = doc.get("country", "ALT")
     iss = doc.get("mrzIssuer", "") or REAL_MRZ.get(cc, cc)
@@ -83,8 +83,8 @@ def mrz(doc):
     exp = ymd(doc.get("expires", ""))
     sex = doc.get("sex", "<") if doc.get("sex") in ("M", "F") else "<"
     name = name_field(doc.get("mrzLast", doc.get("last", "")), doc.get("first", ""))
-    if t in ("id_card", "driving_license"):
-        l1 = pad(("D<" if t == "driving_license" else "I<") + issuer + num + num_ck, 30)
+    if t in ("id_card", "driving_license", "military_id"):
+        l1 = pad({"driving_license": "D<", "military_id": "A<"}.get(t, "I<") + issuer + num + num_ck, 30)
         l2 = pad(dob + ck(dob) + sex + exp + ck(exp) + nat, 29)
         comp = l1[5:30] + l2[0:7] + l2[8:15] + l2[18:29]
         return [l1, l2 + ck(comp), pad(name, 30)]
