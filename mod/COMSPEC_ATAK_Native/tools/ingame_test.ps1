@@ -38,6 +38,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2
+# -File ne sait pas passer un tableau : -Groupes antennes,sse arrive en une seule chaîne.
+$Groupes = @($Groupes | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 
 $Profil = 'COMSPECTest'
 $NomMission = 'COMSPEC_Autotest.Stratis'

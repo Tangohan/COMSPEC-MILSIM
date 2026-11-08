@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : traduction anglaise et textures des objets (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Traduction anglaise complète et objets d'inventaire mieux rendus
+- En anglais, les textes ajoutés depuis la 4.0.0 s'affichent à nouveau traduits, en particulier ceux des dernières apps et des antennes.
+- Une erreur dans un fichier de langue ne fait plus perdre le reste de la traduction.
+- Les objets d'inventaire en 3D retrouvent leur relief et leurs reflets.
+EN : Complete English translation and better-looking inventory items
+- In English, texts added since 4.0.0 are translated again, in particular those of the latest apps and of the antennas.
+- An error in a language file no longer loses the rest of the translation.
+- 3D inventory items get their relief and reflections back.
+
+### Détail technique
+- `en.txt` : 7 virgules manquantes et 1 doublée, nées de fusions après la 4.0.0 (publiée valide) : parseSimpleArray s'arrêtait à la première faute (ligne 19 521 sur main, 492 phrases perdues). `fn_langApply` lit désormais ligne à ligne ; `AtakI18nFormatTest` valide le format strict.
+- `items_nohq.paa` et `items_smdi.paa` refaits avec ImageToPAA depuis `tools/render` : présents dans le PBO, le moteur refusait de les charger (`Cannot load texture`). À confirmer en jeu.
+- Autotest : captures de la fenêtre réelle, `-SansProxy` pour la licence, vrais appels pour les antennes et les papiers (`tools/INGAME_TEST.md`).
+
+---
+
 ## À venir : mode pilote, FIRES court, apps regroupées et profils de rôle (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
