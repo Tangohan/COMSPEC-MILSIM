@@ -1,0 +1,12 @@
+author = "COMSPEC";
+onLoadName = "COMSPEC Autotest";
+onLoadMission = "Test automatique du mod ATAK et du SSE : tools/INGAME_TEST.md. Ne pas publier.";
+briefing = 0;
+debriefing = 0;
+saving = 0;
+enableDebugConsole = 1;
+class Header {
+    gameType = "SP";
+    minPlayers = 1;
+    maxPlayers = 1;
+};
