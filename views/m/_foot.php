@@ -39,6 +39,10 @@ $needsMap = in_array($mobileView ?? '', ['carte', 'cr', 'briefs'], true);
   <script src="<?= $h(url('assets/js/arma-map-markers.js')) ?>?v=<?= $h($ver) ?>"></script>
   <script src="<?= $h(url('assets/js/overwatch-gl/OverwatchTileCache.js')) ?>?v=<?= $h($ver) ?>"></script>
   <script src="<?= $h(url('assets/js/atak-overwatch-mapkit.js')) ?>?v=<?= $h($ver) ?>"></script>
+  <?php if (($mobileView ?? '') === 'carte'): ?>
+  <script src="<?= $h(url('assets/js/atak-aerial.js')) ?>?v=<?= $h($ver) ?>"></script>
+  <script src="<?= $h(url('assets/js/atak-m-tactique.js')) ?>?v=<?= $h($ver) ?>"></script>
+  <?php endif; ?>
 <?php endif; ?>
   <script src="<?= $h(url('assets/js/atak-m.js')) ?>?v=<?= $h($ver) ?>"></script>
 </body>

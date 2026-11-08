@@ -1153,6 +1153,7 @@ window.ArmaMapMarkers = (function () {
     markerTooltipOf: markerTooltipOf,
     isLiveUnitDuplicate: isLiveUnitDuplicate,
     typeLabelFr: typeLabelFr,
+    resolveColor: resolveColor,
     readDir: readDir,
     readShape: readShape,
     readBrush: readBrush,

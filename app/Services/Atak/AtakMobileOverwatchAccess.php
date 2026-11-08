@@ -33,6 +33,7 @@ final class AtakMobileOverwatchAccess
         '/api/atak/air-assets',
         '/api/cas',
         '/api/nine-line',
+        '/api/pings',
     ];
 
     public static function covers(string $method, string $path): bool
