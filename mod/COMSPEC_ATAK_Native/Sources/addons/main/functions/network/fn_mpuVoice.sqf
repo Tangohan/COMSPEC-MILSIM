@@ -13,6 +13,15 @@
       - Gravité de coupure (lot 3, réglage comspec_atak_native_mesh_gravity, coché par défaut) : le signal par le maillage suit le
         pire lien du chemin (fn_meshGraph "gravity") : niveau 0 fort, 1 et 2 réduit par paliers, 3 aucune rallonge. Passage net
         (décision 6), pas d'à-coups. Valeurs de jeu, à recalibrer. Décoché : signal fixe de l'ancien modèle.
+      - TFAR, lot 4 (réglage comspec_atak_native_mesh_tfar_ptt, coché par défaut ; décoché : multiplicateur de réception permanent de
+        l'ancien modèle). D'après le code source de TFAR (michail-nikolaev/task-force-arma-3-radio, fce977f), TFAR n'étant pas
+        installé sur la machine d'étude ; À CONFIRMER EN JEU, avec le plugin et la version du Workshop :
+        OnBeforeTangent (fnc_doSRTransmit, fnc_doLRTransmit) part avant le calcul de la portée, TFAR lit alors
+        tf_sendingDistanceMultiplicator : posé à l'appui si la radio utilisée est celle du pont et qu'un correspondant ponté joignable est sur
+        sa fréquence, rendu à la relâche (OnTangent faux : l'envoi TANGENT RELEASED le relit aussi). Le récepteur n'allonge sa portée
+        que pendant l'émission d'un correspondant ponté (événement ciblé comspec_atak_native_meshTfTx), avec le retard d'envoi de
+        TFAR_fnc_sendFrequencyInfo (environ 2 s). Limites : la portée d'émission vaut pour tous les auditeurs ; une radio non pontée
+        du récepteur, sur la même fréquence, en profite pendant ce temps.
       - ACRE2 : fonction de signal personnalisée (acre_api_fnc_setCustomSignalFunc) enchaînée à celle déjà installée, ou au
         calcul normal d'ACRE2 (acre_sys_signal_fnc_getSignalCore, toujours appelé : modèle de signal intact). Entre deux
         radios pontées dans le même maillage, le signal renvoyé est le meilleur des deux : direct ou par le maillage
@@ -36,6 +45,7 @@
       "bridge" [clé] ; "unbridge"
       "view"     -> HashMap pour l'app Réseau
       "tick" ; "signal" (fonction de signal ACRE2) ; "pair" [ID récepteur, ID émetteur] -> [sauts, niveau] (sauts -1 : aucun lien)
+      "tfBefore", "tfAfter" [unité, radio, type, additionnel, appui] : événements TFAR ; "tfRx" [émetteur, appui] : émission d'un correspondant
       "sigMap" [Px d'ACRE2, dBm d'ACRE2, sauts, niveau, gravité active] -> [Px, dBm] (sans effet, testé par fn_devMeshTest)
 */
 params [["_act", ""], ["_arg", []]];
@@ -122,6 +132,9 @@ private _tfInfo = {
     private _u = missionNamespace getVariable ["TFAR_currentUnit", player];
     if (isNil "_u" || {!(_u isEqualType objNull)} || {isNull _u}) then { _u = player; };
     private _m = _u getVariable ["tf_sendingDistanceMultiplicator", 1];
+    // Pendant une émission par le pont : valeur d'avant, pas celle posée pour cette émission.
+    (missionNamespace getVariable ["COMSPEC_ATAK_VoiceTx", []]) params [["_txU", objNull], ["_txBase", 1]];
+    if (!isNull _txU) then { _m = _txBase; };
     if (!(_m isEqualType 0) || {_m <= 0}) then { _m = 1; };
     [[str _f, ""] select (isNil "_f"), round (_r * _m)]
 };
@@ -139,6 +152,42 @@ private _linked = {
     _reach getOrDefault [netId _u, -1]
 };
 switch (_act) do {
+    case "tfBefore": {
+        _arg params ["_u", "_radio", ["_type", 0], "", ["_down", false]];
+        if (!_down || {_u isNotEqualTo (missionNamespace getVariable ["TFAR_currentUnit", player])}) exitWith {};
+        (missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) params [["_me", []], "", "", "", "", ["_targets", []], ["_far", 0]];
+        if (_me isEqualTo [] || {_far <= 0} || {_targets isEqualTo []}) exitWith {};
+        // Radio utilisée = radio du pont : portative par sa classe, longue portée par son type.
+        private _isBridge = [(_me select 0) isEqualTo "sw" && {_radio isEqualTo (_me select 1)}, (_me select 0) isEqualTo "lr"] select (_type isEqualTo 1);
+        if (!_isBridge) exitWith {};
+        private _base = _u getVariable ["tf_sendingDistanceMultiplicator", 1];
+        if (!(_base isEqualType 0) || {_base <= 0}) then { _base = 1; };
+        private _range = (_me select 3) max 1;
+        // Juste assez pour le plus lointain, marge pour le relief, 100 fois au plus, jamais moins que la portée d'origine.
+        private _v = _base * ((((_far * 1.5) / _range) max 1) min 100);
+        _u setVariable ["tf_sendingDistanceMultiplicator", _v];
+        missionNamespace setVariable ["COMSPEC_ATAK_VoiceTx", [_u, _base, _v, _targets]];
+        { ["comspec_atak_native_meshTfTx", [_u, true], _x] call CBA_fnc_targetEvent; } forEach _targets;
+    };
+    case "tfAfter": {
+        _arg params ["_u", "", "", "", ["_down", false]];
+        if (_down) exitWith {};
+        (missionNamespace getVariable ["COMSPEC_ATAK_VoiceTx", []]) params [["_txU", objNull], ["_base", 1], ["_v", 1], ["_targets", []]];
+        if (isNull _txU || {_txU isNotEqualTo _u}) exitWith {};
+        // Valeur changée pendant l'émission par un autre script : on la lui laisse.
+        if (abs ((_u getVariable ["tf_sendingDistanceMultiplicator", 1]) - _v) < 0.0001) then { _u setVariable ["tf_sendingDistanceMultiplicator", _base]; };
+        missionNamespace setVariable ["COMSPEC_ATAK_VoiceTx", []];
+        { ["comspec_atak_native_meshTfTx", [_u, false], _x] call CBA_fnc_targetEvent; } forEach _targets;
+    };
+    case "tfRx": {
+        _arg params [["_from", objNull], ["_down", false]];
+        if (isNull _from) exitWith {};
+        private _act2 = missionNamespace getVariable ["COMSPEC_ATAK_TfRxActive", createHashMap];
+        // Fin d'émission perdue (déconnexion) : oubliée après 60 s par "tick".
+        if (_down) then { _act2 set [netId _from, diag_tickTime]; } else { _act2 deleteAt (netId _from); };
+        missionNamespace setVariable ["COMSPEC_ATAK_TfRxActive", _act2];
+        ["tick"] call comspec_atak_native_fnc_mpuVoice;
+    };
     case "enabled": { call _enabled };
     case "radios": { call _radios };
     case "preferred": {
@@ -236,6 +285,11 @@ switch (_act) do {
         private _peers = [];
         private _dmax = 0;
         private _rr = _pub param [3, 0];
+        private _ptt = _tfar && {(missionNamespace getVariable ["comspec_atak_native_mesh_tfar_ptt", true]) isEqualTo true} && {!isNil "TFAR_fnc_addEventHandler"};
+        private _rxOn = missionNamespace getVariable ["COMSPEC_ATAK_TfRxActive", createHashMap];
+        { if (diag_tickTime - _y > 60) then { _rxOn deleteAt _x; }; } forEach (+_rxOn);
+        private _targets = [];
+        private _far = 0;
         if (_pub isNotEqualTo []) then {
             private _api = _pub select 0;
             {
@@ -250,11 +304,27 @@ switch (_act) do {
                 if (!_same && {_api isEqualTo "acre"}) then { continue };
                 private _d = player distance _x;
                 _peers pushBack [[_x, true] call comspec_atak_native_fnc_unitCallsign, _h, round _d, _same];
-                if (_same && {_api in ["sw", "lr"]}) then { _dmax = _dmax max _d; _rr = _rr min (_pp select 3); };
+                if (_same && {_api in ["sw", "lr"]}) then {
+                    _targets pushBack _x;
+                    _far = _far max _d;
+                    // Mode alternat : la réception ne s'allonge que pendant que ce correspondant émet.
+                    if (!_ptt || {(netId _x) in _rxOn}) then { _dmax = _dmax max _d; _rr = _rr min (_pp select 3); };
+                };
             } forEach (allPlayers select { _x isNotEqualTo player && {alive _x} });
             _peers = [_peers, [], { _x select 1 }] call BIS_fnc_sortBy;
         };
-        missionNamespace setVariable ["COMSPEC_ATAK_VoiceMe", [_pub, _reach, _why, _peers, _mode]];
+        missionNamespace setVariable ["COMSPEC_ATAK_VoiceMe", [_pub, _reach, _why, _peers, _mode, _targets, _far]];
+        // TFAR : événements d'émission, enregistrés une fois. Émission en cours mais pont retiré : valeur d'origine rendue.
+        if (_ptt && {!(missionNamespace getVariable ["COMSPEC_ATAK_TfEhSet", false])}) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_TfEhSet", true];
+            ["COMSPEC_ATAK_MeshBefore", "OnBeforeTangent", { ["tfBefore", _this] call comspec_atak_native_fnc_mpuVoice; }] call TFAR_fnc_addEventHandler;
+            ["COMSPEC_ATAK_MeshAfter", "OnTangent", { ["tfAfter", _this] call comspec_atak_native_fnc_mpuVoice; }] call TFAR_fnc_addEventHandler;
+            ["comspec_atak_native_meshTfTx", { ["tfRx", _this] call comspec_atak_native_fnc_mpuVoice; }] call CBA_fnc_addEventHandler;
+        };
+        if (_pub isEqualTo []) then {
+            (missionNamespace getVariable ["COMSPEC_ATAK_VoiceTx", []]) params [["_txU", objNull]];
+            if (!isNull _txU) then { ["tfAfter", [_txU, "", 0, false, false]] call comspec_atak_native_fnc_mpuVoice; };
+        };
         // État pris ou perdu : notification, page Réseau redessinée.
         private _ok = _pub isNotEqualTo [];
         private _was = missionNamespace getVariable "COMSPEC_ATAK_VoiceOk";

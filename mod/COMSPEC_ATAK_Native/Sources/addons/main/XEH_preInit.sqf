@@ -636,6 +636,9 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_gravity", "CHECKBOX",
     ["Gravité de coupure du maillage", "Le signal et les pertes suivent le pire lien du chemin : nominal, dégradé, limite, puis coupure nette vers la portée normale de la radio. Décoché : signal fixe quel que soit le lien."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_tfar_ptt", "CHECKBOX",
+    ["TFAR : rallonge pendant l'émission seulement", "Portée d'émission allongée à l'appui sur l'alternat de la radio pontée, portée de réception allongée pendant l'émission d'un correspondant ponté. Décoché : réception allongée en permanence, comme avant. Sans TFAR : sans effet."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
 ["comspec_atak_native_mesh_dev", "CHECKBOX",
     ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],
