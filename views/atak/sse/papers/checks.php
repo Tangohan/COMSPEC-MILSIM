@@ -19,6 +19,14 @@ require __DIR__ . '/_subnav.php';
     <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-IDENT-CTRL</div>
 </div>
 
+<?php if (!empty($canManageSettings)): ?>
+    <form class="toolbar" method="post" action="<?= $h(url('atak/sse/papiers/controles/reglages')) ?>">
+        <input type="hidden" name="_csrf_token" value="<?= $h((string) ($csrfToken ?? '')) ?>">
+        <label><input type="checkbox" name="auto_transmit" value="1" <?= !empty($autoTransmit) ? 'checked' : '' ?>> Envoyer automatiquement les contrôles depuis le jeu</label>
+        <button type="submit" class="btn btn--ghost">Enregistrer</button>
+    </form>
+<?php endif; ?>
+
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/papiers/controles')) ?>">
     <div class="toolbar-field">
         <label for="verdict">Verdict</label>

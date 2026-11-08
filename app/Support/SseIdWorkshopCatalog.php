@@ -87,7 +87,7 @@ final class SseIdWorkshopCatalog
             'print' => ['categories' => 'B'],
         ],
         'military' => [
-            'name' => 'Militaire — carte de service', 'doc_types' => ['id_card'], 'identity_mode' => 'primary',
+            'name' => 'Militaire — carte de service', 'doc_types' => ['military_id'], 'identity_mode' => 'primary',
             'profession' => 'Militaire', 'legend' => 'Membre des forces armées en mission.',
             'instructions' => 'Carte de service à présenter aux points de contrôle amis uniquement.',
             'print' => ['service' => 'Forces armées', 'rank' => 'Sergent'],

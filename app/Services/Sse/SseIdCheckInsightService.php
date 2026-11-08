@@ -442,7 +442,7 @@ final class SseIdCheckInsightService
      * @param list<int> $documentIds papiers dont la personne est titulaire
      * @return array{total: int, photos: int, groups: list<array<string, mixed>>}
      */
-    public function personDossier(int $tenantId, int $personId, array $documentIds = [], int $limit = 200): array
+    public function personDossier(int $tenantId, int $personId, array $documentIds = [], int $limit = 200, ?callable $keep = null): array
     {
         $empty = ['total' => 0, 'photos' => 0, 'groups' => []];
         if ($tenantId < 1 || $personId < 1) {
@@ -460,7 +460,8 @@ final class SseIdCheckInsightService
             'SELECT * FROM sse_id_checks WHERE tenant_id = :t AND (' . implode(' OR ', $or) . ') ORDER BY id DESC LIMIT ' . max(1, min(500, $limit)),
             $params
         );
-        $checks = $this->enrich($tenantId, array_map([SseIdCheckRepository::class, 'hydrate'], $rows));
+        $hydrated = array_map([SseIdCheckRepository::class, 'hydrate'], $rows);
+        $checks = $this->enrich($tenantId, $keep !== null ? $keep($hydrated) : $hydrated);
         $groups = [];
         $photos = 0;
         foreach ($checks as $c) {

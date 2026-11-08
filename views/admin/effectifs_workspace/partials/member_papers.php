@@ -128,7 +128,7 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
             <span class="eff-fm-count"><?= count($pp['aliases']) ?></span>
         </div>
         <?php if ($pp['aliases'] === []): ?>
-            <p class="eff-fm-lead"><?= $truth ? 'Aucun alias ni identité de couverture.' : 'Aucun alias.' ?></p>
+            <p class="eff-fm-lead"><?= $truth ? 'Aucun alias ni identité de couverture.' : 'Aucune identité d’emprunt visible.' ?></p>
         <?php else: ?>
             <ul class="eff-fm-list">
                 <?php foreach ($pp['aliases'] as $a): ?>
@@ -143,9 +143,9 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
             </ul>
         <?php endif; ?>
         <?php if (!$truth): ?>
-            <p class="eff-card__hint">Les identités de couverture ne sont visibles qu’avec l’habilitation Confidentiel.</p>
+            <p class="eff-card__hint">Les alias et identités de couverture ne sont visibles qu’avec l’habilitation Confidentiel.</p>
         <?php endif; ?>
-        <?php if ($manage): ?>
+        <?php if ($manage && $truth): ?>
             <details class="eff-card__edit">
                 <summary>Nouvelle identité d’emprunt</summary>
                 <form method="post" action="<?= $ph($base . '/identites') ?>" class="eff-card__form">
