@@ -24,14 +24,20 @@
     availIn: false,
     sort: 'name',
     openTenueId: null,
-    tab: 'tenues',
+    tab: 'fiches',
   };
 
-  var grid = root.querySelector('[data-eq-grid]');
-  var cards = grid ? Array.prototype.slice.call(grid.querySelectorAll('[data-eq-card]')) : [];
-  var noResults = root.querySelector('[data-eq-no-results]');
+  // Plusieurs listes de tenues (mes tenues, communauté, favoris) : filtres, recherche et tri s'appliquent à chacune.
+  var grids = Array.prototype.slice.call(root.querySelectorAll('[data-eq-grid]'));
+  var cards = [];
+  grids.forEach(function (g) {
+    Array.prototype.forEach.call(g.querySelectorAll('[data-eq-card]'), function (c) {
+      cards.push(c);
+    });
+  });
   var countEl = root.querySelector('[data-eq-count]');
   var searchInput = root.querySelector('[data-eq-search]');
+  var kindSelect = root.querySelector('[data-eq-kind-select]');
   var sortSelect = root.querySelector('[data-eq-sort]');
   var clearBtn = root.querySelector('[data-eq-clear-filters]');
   var activeFilters = root.querySelector('[data-eq-active-filters]');
@@ -86,7 +92,7 @@
     else params.delete('tenue');
     if (state.q) params.set('q', state.q);
     else params.delete('q');
-    if (state.tab && state.tab !== 'tenues') params.set('tab', state.tab);
+    if (state.tab === 'dotation') params.set('tab', state.tab);
     else params.delete('tab');
     params.delete('edit_collection');
     var qs = params.toString();
@@ -95,7 +101,7 @@
   }
 
   function setTab(tab) {
-    state.tab = tab === 'fiches' || tab === 'dotation' ? tab : 'tenues';
+    state.tab = tab === 'dotation' ? 'dotation' : 'fiches';
     root.querySelectorAll('[data-eq-tab]').forEach(function (btn) {
       var on = btn.getAttribute('data-eq-tab') === state.tab;
       btn.classList.toggle('is-active', on);
@@ -275,19 +281,25 @@
   }
 
   function applyFilters() {
-    if (!grid) return;
-    var matched = [];
-    cards.forEach(function (card) {
-      if (cardMatches(card)) matched.push(card);
-      else card.hidden = true;
+    var total = 0;
+    grids.forEach(function (grid) {
+      var matched = [];
+      var all = Array.prototype.slice.call(grid.querySelectorAll('[data-eq-card]'));
+      all.forEach(function (card) {
+        if (cardMatches(card)) matched.push(card);
+        else card.hidden = true;
+      });
+      sortCards(matched);
+      matched.forEach(function (card) {
+        card.hidden = false;
+        grid.appendChild(card);
+      });
+      var section = grid.closest('section');
+      var noResults = section ? section.querySelector('[data-eq-no-results]') : null;
+      if (noResults) noResults.hidden = matched.length > 0 || all.length === 0;
+      total += matched.length;
     });
-    sortCards(matched);
-    matched.forEach(function (card) {
-      card.hidden = false;
-      grid.appendChild(card);
-    });
-    if (noResults) noResults.hidden = matched.length > 0 || cards.length === 0;
-    updateCount(matched.length);
+    updateCount(total);
     renderActiveFilters();
     syncCollectionPressed();
     syncUrl();
@@ -865,6 +877,13 @@
       }, 120)
     );
   }
+  if (kindSelect) {
+    kindSelect.addEventListener('change', function () {
+      state.kinds = {};
+      if (kindSelect.value) state.kinds[kindSelect.value] = true;
+      applyFilters();
+    });
+  }
   if (sortSelect) {
     sortSelect.addEventListener('change', function () {
       state.sort = sortSelect.value || 'name';
@@ -879,6 +898,7 @@
       state.availNone = false;
       state.availIn = false;
       if (searchInput) searchInput.value = '';
+      if (kindSelect) kindSelect.value = '';
       root.querySelectorAll('[data-eq-collection-cb], [data-eq-kind-cb], [data-eq-avail]').forEach(function (cb) {
         cb.checked = false;
       });
@@ -1174,7 +1194,12 @@
   (function initFromUrl() {
     var params = new URLSearchParams(window.location.search);
     var tab = params.get('tab');
-    setTab(tab || 'tenues');
+    setTab(tab || 'fiches');
+    // Ancienne adresse ?tab=fiches / ?tab=dotation : on amène la personne à la section du matériel.
+    if (tab === 'fiches' || tab === 'dotation') {
+      var materiel = document.getElementById('materiel');
+      if (materiel && materiel.scrollIntoView) materiel.scrollIntoView();
+    }
     var col = params.get('collection');
     if (col) state.collections[String(col)] = true;
     var q = params.get('q');

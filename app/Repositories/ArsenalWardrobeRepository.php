@@ -21,6 +21,8 @@ final class ArsenalWardrobeRepository
 
     private ?bool $visibilityReady = null;
 
+    private ?bool $favoritesReady = null;
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo ?? Database::getPdo();
@@ -773,6 +775,80 @@ final class ArsenalWardrobeRepository
         $st->execute([$visibility, $id, $tenantId, $userId]);
 
         return $st->rowCount() > 0;
+    }
+
+    /** Table des favoris par membre présente (étape equipment_starter_kits) ; sinon seuls ses propres favoris existent. */
+    public function favoritesReady(): bool
+    {
+        if ($this->favoritesReady !== null) {
+            return $this->favoritesReady;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'arsenal_wardrobe_favorites' LIMIT 1"
+            );
+            $this->favoritesReady = (bool) ($st && $st->fetchColumn());
+        } catch (\Throwable) {
+            $this->favoritesReady = false;
+        }
+
+        return $this->favoritesReady;
+    }
+
+    /**
+     * Tenues d'autres membres mises en favori par ce membre (ses propres favoris restent sur arsenal_wardrobes.is_favorite,
+     * que le jeu lit aussi).
+     *
+     * @return list<int>
+     */
+    public function favoriteIds(int $tenantId, int $userId): array
+    {
+        if ($userId < 1 || !$this->favoritesReady()) {
+            return [];
+        }
+        $st = $this->pdo->prepare('SELECT wardrobe_id FROM arsenal_wardrobe_favorites WHERE tenant_id = ? AND user_id = ?');
+        $st->execute([$tenantId, $userId]);
+
+        return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    }
+
+    /**
+     * Met une tenue visible par ce membre en favori, ou l'en retire. Une tenue de ce membre passe par is_favorite,
+     * celle d'un autre par la table des favoris.
+     */
+    public function setFavorite(int $tenantId, int $userId, int $wardrobeId, bool $on): bool
+    {
+        $row = $this->findWardrobe($tenantId, $wardrobeId);
+        if ($row === null || !self::canView($row, $userId)) {
+            return false;
+        }
+        if ((int) ($row['user_id'] ?? 0) === $userId) {
+            $st = $this->pdo->prepare('UPDATE arsenal_wardrobes SET is_favorite = ? WHERE id = ? AND tenant_id = ? AND user_id = ?');
+            $st->execute([$on ? 1 : 0, $wardrobeId, $tenantId, $userId]);
+
+            return true;
+        }
+        if (!$this->favoritesReady()) {
+            return false;
+        }
+        if ($on) {
+            $exists = $this->pdo->prepare('SELECT 1 FROM arsenal_wardrobe_favorites WHERE tenant_id = ? AND user_id = ? AND wardrobe_id = ? LIMIT 1');
+            $exists->execute([$tenantId, $userId, $wardrobeId]);
+            if ($exists->fetchColumn() === false) {
+                try {
+                    $this->pdo->prepare(
+                        'INSERT INTO arsenal_wardrobe_favorites (tenant_id, user_id, wardrobe_id, created_at) VALUES (?, ?, ?, NOW())'
+                    )->execute([$tenantId, $userId, $wardrobeId]);
+                } catch (\PDOException) {
+                    // Deux clics simultanés : la clé unique garde une seule ligne, le favori existe déjà.
+                }
+            }
+        } else {
+            $this->pdo->prepare('DELETE FROM arsenal_wardrobe_favorites WHERE tenant_id = ? AND user_id = ? AND wardrobe_id = ?')
+                ->execute([$tenantId, $userId, $wardrobeId]);
+        }
+
+        return true;
     }
 
     /**

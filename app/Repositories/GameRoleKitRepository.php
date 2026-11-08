@@ -8,13 +8,19 @@ use App\Support\LazyDatabaseConnection;
 use PDO;
 
 /**
- * Kits proposés par rôle (fonction / emploi de la communauté). Chaque kit est publié comme tenue d’arsenal.
+ * Kits proposés par rôle (fonction / emploi de la communauté) ou par unité : les kits de départ. Chaque kit est
+ * publié comme tenue d’arsenal (sauf ceux réservés à une unité, que les membres copient dans leurs tenues).
  */
 final class GameRoleKitRepository
 {
     use LazyDatabaseConnection;
 
+    /** Origines d'un kit : de zéro, tenue remontée du jeu, assistant de création. */
+    public const SOURCES = ['scratch', 'game_loadout', 'assistant'];
+
     private static ?bool $ready = null;
+
+    private static ?bool $audienceReady = null;
 
     public function __construct(?PDO $pdo = null)
     {
@@ -41,6 +47,30 @@ final class GameRoleKitRepository
         return $ok;
     }
 
+    /**
+     * Colonnes unit_id et source présentes (étape equipment_starter_kits de run-migrations) : sans elles les kits
+     * restent proposés par rôle ou à tous, comme avant.
+     */
+    public function audienceReady(): bool
+    {
+        if (self::$audienceReady === true) {
+            return true;
+        }
+        try {
+            $st = $this->pdo()->query(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'game_role_kits' AND COLUMN_NAME IN ('unit_id', 'source')"
+            );
+            $ok = $st && (int) $st->fetchColumn() === 2;
+        } catch (\Throwable) {
+            $ok = false;
+        }
+        if ($ok) {
+            self::$audienceReady = true;
+        }
+
+        return $ok;
+    }
+
     /** @return list<array<string, mixed>> */
     public function listForTenant(int $tenantId): array
     {
@@ -56,24 +86,33 @@ final class GameRoleKitRepository
     }
 
     /**
-     * Kits pour ces rôles, plus les kits « tous les rôles ».
+     * Kits proposés à un membre : ceux de ses rôles, ceux de ses unités (et des unités qui les contiennent), plus les
+     * kits « tous les rôles » sans unité.
      *
      * @param list<int> $roleIds
+     * @param list<int> $unitIds unités du membre et de leurs parents
      * @return list<array<string, mixed>>
      */
-    public function listForRoles(int $tenantId, array $roleIds): array
+    public function listForRoles(int $tenantId, array $roleIds, array $unitIds = []): array
     {
         if (!$this->tableReady()) {
             return [];
         }
         $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $id): bool => $id > 0)));
-        $sql = 'SELECT * FROM game_role_kits WHERE tenant_id = ? AND (job_role_id IS NULL';
+        $unitIds = array_values(array_unique(array_filter(array_map('intval', $unitIds), static fn (int $id): bool => $id > 0)));
+        $audience = $this->audienceReady();
+        $everyone = $audience ? '(job_role_id IS NULL AND unit_id IS NULL)' : 'job_role_id IS NULL';
+        $sql = 'SELECT * FROM game_role_kits WHERE tenant_id = ? AND (' . $everyone;
         $params = [$tenantId];
         if ($roleIds !== []) {
             $sql .= ' OR job_role_id IN (' . implode(', ', array_fill(0, count($roleIds), '?')) . ')';
             $params = array_merge($params, $roleIds);
         }
-        $sql .= ') ORDER BY job_role_id IS NULL, name ASC, id ASC';
+        if ($audience && $unitIds !== []) {
+            $sql .= ' OR unit_id IN (' . implode(', ', array_fill(0, count($unitIds), '?')) . ')';
+            $params = array_merge($params, $unitIds);
+        }
+        $sql .= ') ORDER BY ' . $everyone . ', name ASC, id ASC';
         $st = $this->pdo()->prepare($sql);
         $st->execute($params);
 
@@ -94,18 +133,23 @@ final class GameRoleKitRepository
     }
 
     /**
-     * @param array{job_role_id: int|null, name: string, description: string|null, slots: array<string, mixed>, payload_text: string, required_mods: list<string>} $data
+     * @param array{job_role_id: int|null, name: string, description: string|null, slots: array<string, mixed>, payload_text: string, required_mods: list<string>, unit_id?: int|null, source?: string} $data
      */
     public function create(int $tenantId, int $userId, array $data): int
     {
+        $audience = $this->audienceReady();
         $st = $this->pdo()->prepare(
             'INSERT INTO game_role_kits
-                (tenant_id, job_role_id, name, description, slots_json, payload_text, required_mods_json, created_by, updated_by, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+                (tenant_id, job_role_id, ' . ($audience ? 'unit_id, source, ' : '') . 'name, description, slots_json, payload_text, required_mods_json, created_by, updated_by, created_at, updated_at)
+             VALUES (?, ?, ' . ($audience ? '?, ?, ' : '') . '?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
         );
-        $st->execute([
-            $tenantId,
-            $data['job_role_id'],
+        $values = [$tenantId, $data['job_role_id']];
+        if ($audience) {
+            $values[] = $data['unit_id'] ?? null;
+            $values[] = self::source($data['source'] ?? 'scratch');
+        }
+        array_push(
+            $values,
             $data['name'],
             $data['description'],
             self::json($data['slots']),
@@ -113,23 +157,29 @@ final class GameRoleKitRepository
             self::json($data['required_mods']),
             $userId > 0 ? $userId : null,
             $userId > 0 ? $userId : null,
-        ]);
+        );
+        $st->execute($values);
 
         return (int) $this->pdo()->lastInsertId();
     }
 
     /**
-     * @param array{job_role_id: int|null, name: string, description: string|null, slots: array<string, mixed>, payload_text: string, required_mods: list<string>} $data
+     * @param array{job_role_id: int|null, name: string, description: string|null, slots: array<string, mixed>, payload_text: string, required_mods: list<string>, unit_id?: int|null} $data
      */
     public function update(int $tenantId, int $id, int $userId, array $data): bool
     {
+        $unit = $this->audienceReady() && array_key_exists('unit_id', $data);
         $st = $this->pdo()->prepare(
-            'UPDATE game_role_kits SET job_role_id = ?, name = ?, description = ?, slots_json = ?, payload_text = ?,
+            'UPDATE game_role_kits SET job_role_id = ?, ' . ($unit ? 'unit_id = ?, ' : '') . 'name = ?, description = ?, slots_json = ?, payload_text = ?,
                     required_mods_json = ?, updated_by = ?, updated_at = NOW()
              WHERE tenant_id = ? AND id = ?'
         );
-        $st->execute([
-            $data['job_role_id'],
+        $values = [$data['job_role_id']];
+        if ($unit) {
+            $values[] = $data['unit_id'];
+        }
+        array_push(
+            $values,
             $data['name'],
             $data['description'],
             self::json($data['slots']),
@@ -138,7 +188,22 @@ final class GameRoleKitRepository
             $userId > 0 ? $userId : null,
             $tenantId,
             $id,
-        ]);
+        );
+        $st->execute($values);
+
+        return $st->rowCount() > 0;
+    }
+
+    /** Change à qui le kit est proposé : une unité, un rôle, ou tous (les deux à null). */
+    public function setAudience(int $tenantId, int $id, ?int $unitId, ?int $jobRoleId, int $userId): bool
+    {
+        if (!$this->audienceReady()) {
+            return false;
+        }
+        $st = $this->pdo()->prepare(
+            'UPDATE game_role_kits SET unit_id = ?, job_role_id = ?, updated_by = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?'
+        );
+        $st->execute([$unitId, $jobRoleId, $userId > 0 ? $userId : null, $tenantId, $id]);
 
         return $st->rowCount() > 0;
     }
@@ -162,6 +227,13 @@ final class GameRoleKitRepository
         return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
     }
 
+    private static function source(mixed $source): string
+    {
+        $source = is_string($source) ? $source : '';
+
+        return in_array($source, self::SOURCES, true) ? $source : 'scratch';
+    }
+
     /**
      * @param array<string, mixed> $row
      * @return array<string, mixed>
@@ -175,6 +247,8 @@ final class GameRoleKitRepository
             'id' => (int) ($row['id'] ?? 0),
             'tenant_id' => (int) ($row['tenant_id'] ?? 0),
             'job_role_id' => isset($row['job_role_id']) && (int) $row['job_role_id'] > 0 ? (int) $row['job_role_id'] : null,
+            'unit_id' => isset($row['unit_id']) && (int) $row['unit_id'] > 0 ? (int) $row['unit_id'] : null,
+            'source' => self::source($row['source'] ?? 'scratch'),
             'name' => (string) ($row['name'] ?? ''),
             'description' => (string) ($row['description'] ?? ''),
             'slots' => is_array($slots) ? $slots : [],

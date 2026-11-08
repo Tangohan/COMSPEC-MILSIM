@@ -13,6 +13,7 @@ use App\Repositories\GameEquipmentRepository;
 use App\Repositories\GameItemIconRepository;
 use App\Repositories\GameRoleKitRepository;
 use App\Services\GameEquipment\GameItemKinds;
+use App\Services\GameEquipment\KitsAccess;
 use App\Services\GameEquipment\PlayerKitService;
 use App\Services\GameEquipment\RoleKitLoadout;
 use App\Services\GameEquipment\RoleKitService;
@@ -166,6 +167,8 @@ final class GameEquipmentAdminController
             'title' => 'Kits par rôle',
             'content' => 'admin.organization.game_role_kits',
             'kitsReady' => $this->kitService->ready(),
+            'kitsLocked' => !KitsAccess::allows($tenantId),
+            'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',
             'kits' => $this->kitService->listForTenant($tenantId),
             'roleOptions' => $this->kitService->roleOptions($tenantId),
             'catalogueSize' => $this->equipment->catalogueCount($tenantId),
@@ -239,7 +242,12 @@ final class GameEquipmentAdminController
 
             return Response::redirect(url('back-office/kits-roles'));
         }
-        $ok = $this->kitService->publish((int) Session::get('tenant_id'), (int) Session::get('user_id'), (int) ($params['id'] ?? 0));
+        if (!KitsAccess::allows((int) Session::get('tenant_id'))) {
+            Session::flash('error', 'Les kits de départ sont réservés aux formules Pro et plus.');
+
+            return Response::redirect(url('back-office/kits-roles'));
+        }
+        $ok = $this->kitService->syncPublication((int) Session::get('tenant_id'), (int) Session::get('user_id'), (int) ($params['id'] ?? 0));
         Session::flash($ok ? 'success' : 'error', $ok ? 'Tenue d’arsenal republiée.' : 'Publication impossible : vérifiez que les tenues d’arsenal sont activées.');
 
         return Response::redirect(url('back-office/kits-roles'));
@@ -264,6 +272,11 @@ final class GameEquipmentAdminController
         }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
+        if (!KitsAccess::allows($tenantId)) {
+            Session::flash('error', 'Créer ou modifier un kit de départ est réservé aux formules Pro et plus. Les kits existants restent consultables et supprimables.');
+
+            return Response::redirect(url('back-office/kits-roles'));
+        }
         $slotIn = $request->input('slot', []);
         $slotIn = is_array($slotIn) ? $slotIn : [];
         $cargoIn = $request->input('cargo', []);
@@ -274,7 +287,7 @@ final class GameEquipmentAdminController
             'job_role_id' => $request->input('job_role_id'),
             'slot' => $slotIn,
             'cargo' => $cargoIn,
-        ]);
+        ] + ($request->input('unit_id') !== null ? ['unit_id' => $request->input('unit_id')] : []));
         if (!$result['ok']) {
             Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
             Session::flash('kit_form_old', [
@@ -310,6 +323,7 @@ final class GameEquipmentAdminController
             'name' => (string) ($kit['name'] ?? ''),
             'description' => (string) ($kit['description'] ?? ''),
             'job_role_id' => (int) ($kit['job_role_id'] ?? 0),
+            'unit_id' => (int) ($kit['unit_id'] ?? 0),
             'slots' => RoleKitLoadout::normalize(is_array($kit['slots'] ?? null) ? $kit['slots'] : []),
         ];
         if (is_array($old)) {
@@ -328,6 +342,9 @@ final class GameEquipmentAdminController
             'kit' => $kit,
             'values' => $values,
             'roleOptions' => $this->kitService->roleOptions($tenantId),
+            'unitOptions' => $this->kitService->unitsReady() ? $this->kitService->unitOptions($tenantId) : [],
+            'kitsLocked' => !KitsAccess::allows($tenantId),
+            'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',
             'catalogue' => $catalogue,
             'kindLabels' => $kinds,
             'kitsReady' => $this->kitService->ready(),

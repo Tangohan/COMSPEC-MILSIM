@@ -19,7 +19,9 @@ $csrf = (string) ($csrf ?? '');
 
 $groups = [];
 foreach ($kits as $k) {
-    $key = $k['job_role_id'] !== null ? (string) ($k['role_name'] ?? 'Rôle supprimé') : 'Tous les rôles';
+    $key = $k['unit_id'] !== null
+        ? 'Unité : ' . (string) ($k['unit_name'] ?? 'Unité supprimée')
+        : ($k['job_role_id'] !== null ? (string) ($k['role_name'] ?? 'Rôle supprimé') : 'Tous les rôles');
     $groups[$key][] = $k;
 }
 $fmtDate = static function (string $raw): string {
@@ -35,6 +37,15 @@ $fmtDate = static function (string $raw): string {
         <span class="bo-ge__spacer"></span>
         <span class="bo-ge__window"><?= (int) $catalogueSize ?> objet(s) observés en jeu disponibles pour composer les kits</span>
     </div>
+
+    <?php if (!empty($kitsLocked)): ?>
+    <section class="bo-ge-note bo-ge-note--warn" role="status">
+        <div>
+            <p class="bo-ge-note__title">Kits de départ : formule Pro et plus</p>
+            <p class="bo-ge-note__text">Créer ou modifier un kit demande une formule Pro ou supérieure. Vos kits existants restent consultables et supprimables. <a href="<?= $h((string) ($upgradeUrl ?? url('platform/upgrade'))) ?>">Voir les formules</a></p>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <?php if (empty($kitsReady)): ?>
     <section class="bo-ge-note bo-ge-note--warn" role="status">

@@ -30,6 +30,8 @@ $catalogue = is_array($catalogue ?? null) ? $catalogue : [];
 $kindLabels = is_array($kindLabels ?? null) ? $kindLabels : [];
 $csrf = (string) ($csrf ?? '');
 $roleId = (int) ($values['job_role_id'] ?? 0);
+$unitOptions = is_array($unitOptions ?? null) ? $unitOptions : [];
+$unitId = (int) ($values['unit_id'] ?? 0);
 
 $byClass = [];
 foreach ($catalogue as $c) {
@@ -96,6 +98,14 @@ $cargoRow = static function (string $container, int $i, string $class, int $coun
 };
 ?>
 <div class="bo-ge" data-ge data-ge-form>
+    <?php if (!empty($kitsLocked)): ?>
+    <section class="bo-ge-note bo-ge-note--warn" role="status">
+        <div>
+            <p class="bo-ge-note__title">Kits de départ : formule Pro et plus</p>
+            <p class="bo-ge-note__text">Enregistrer un kit demande une formule Pro ou supérieure. <a href="<?= $h((string) ($upgradeUrl ?? url('platform/upgrade'))) ?>">Voir les formules</a></p>
+        </div>
+    </section>
+    <?php endif; ?>
     <?php if (empty($kitsReady)): ?>
     <section class="bo-ge-note bo-ge-note--warn" role="status">
         <div>
@@ -138,6 +148,17 @@ $cargoRow = static function (string $container, int $i, string $class, int $coun
                                 <?php endforeach; ?>
                             </select>
                         </label>
+                        <?php if ($unitOptions !== []): ?>
+                        <label class="bo-ge-field">
+                            <span class="bo-ge-field__label">Ou réservé à l’unité <small>(sans rôle choisi)</small></span>
+                            <select class="bo-ge-input" name="unit_id">
+                                <option value="0">Aucune unité</option>
+                                <?php foreach ($unitOptions as $id => $name): ?>
+                                <option value="<?= (int) $id ?>"<?= (int) $id === $unitId ? ' selected' : '' ?> translate="no"><?= $h($name) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <?php endif; ?>
                         <label class="bo-ge-field bo-ge-field--wide">
                             <span class="bo-ge-field__label">Description <small>(facultatif)</small></span>
                             <textarea class="bo-ge-input" name="description" rows="3" maxlength="1000" placeholder="Usage, consignes, variantes…"><?= $h((string) ($values['description'] ?? '')) ?></textarea>

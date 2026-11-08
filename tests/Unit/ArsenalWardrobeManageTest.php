@@ -217,16 +217,18 @@ final class ArsenalWardrobeManageTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $hub = (string) file_get_contents($root . '/views/equipment/hub.php');
+        $card = (string) file_get_contents($root . '/views/equipment/_wardrobe_card.php');
+        $dialogs = (string) file_get_contents($root . '/views/equipment/_dialogs.php');
         $js = (string) file_get_contents($root . '/public/assets/js/equipment-catalog.js');
 
-        self::assertStringContainsString('data-eq-ace-copy-card="<?= (int) $w[\'id\'] ?>">Copier pour ACE</button>', $hub);
+        self::assertStringContainsString('data-eq-ace-copy-card="<?= $wid ?>">Copier pour ACE</button>', $card);
         self::assertStringContainsString('L’import de l’arsenal ACE ne prend qu’une tenue à la fois', $hub);
         // Modifier / Supprimer : sur ses propres tenues seulement.
-        $mineBlock = substr($hub, (int) strpos($hub, '<?php if (!empty($w[\'mine\'])): ?>', (int) strpos($hub, 'data-eq-ace-copy-card')), 900);
+        $mineBlock = substr($card, (int) strpos($card, '<?php if ($isMine): ?>', (int) strpos($card, 'data-eq-ace-copy-card')), 900);
         self::assertStringContainsString('data-eq-edit-card=', $mineBlock);
-        self::assertStringContainsString("url('equipment/tenues/' . (int) \$w['id'] . '/delete')", $mineBlock);
-        self::assertStringContainsString('name="name" required maxlength="120" data-eq-qv-name', $hub);
-        self::assertStringContainsString('<option value="personal">Moi seul</option>', $hub);
+        self::assertStringContainsString("url('equipment/tenues/' . \$wid . '/delete')", $mineBlock);
+        self::assertStringContainsString('name="name" required maxlength="120" data-eq-qv-name', $dialogs);
+        self::assertStringContainsString('<option value="personal">Moi seul</option>', $dialogs);
         self::assertStringContainsString("'?tenue=' + encodeURIComponent(id)", $js);
         self::assertStringContainsString('qvOpenInEdit', $js);
     }
