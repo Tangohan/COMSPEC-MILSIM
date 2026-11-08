@@ -118,6 +118,59 @@ final class PlatformStorageCatalog
         ];
     }
 
+    /**
+     * Données d’une seule communauté que son gestionnaire peut télécharger puis supprimer (page Qualité des données).
+     * Chaque source est filtrée par tenant_id ; une source sans tenant_id propre passe par sa table parente.
+     * `file_columns` : colonnes contenant un chemin relatif ; `roots` : seuls dossiers où un fichier peut être lu ou effacé.
+     *
+     * @return list<array{
+     *   key: string, title: string, blurb: string,
+     *   sources: list<array{table: string, id: string, tenant_sql: string, file_columns: list<string>, roots: list<string>}>
+     * }>
+     */
+    public static function communityDataSets(): array
+    {
+        return [
+            [
+                'key' => 'game_photos',
+                'title' => 'Photos remontées du jeu',
+                'blurb' => 'Clichés pris en jeu : reconnaissance, poste de situation et points d’intérêt.',
+                'sources' => [
+                    ['table' => 'recon_images', 'id' => 'id', 'tenant_sql' => 't.tenant_id = :t', 'file_columns' => ['image_path', 'thumb_path'], 'roots' => ['public/uploads', 'storage/uploads', 'storage/private']],
+                    ['table' => 'atak_intel_photos', 'id' => 'id', 'tenant_sql' => 't.tenant_id = :t', 'file_columns' => ['path'], 'roots' => ['public/uploads']],
+                    ['table' => 'atak_poi_photos', 'id' => 'id', 'tenant_sql' => 't.poi_id IN (SELECT p.id FROM atak_poi p WHERE p.tenant_id = :t)', 'file_columns' => ['file_path'], 'roots' => ['public/uploads', 'storage/uploads']],
+                ],
+            ],
+            [
+                'key' => 'sse_photos',
+                'title' => 'Photos du renseignement (SSE)',
+                'blurb' => 'Portraits et clichés des personnes repérées en jeu.',
+                'sources' => [
+                    ['table' => 'sse_person_photos', 'id' => 'id', 'tenant_sql' => 't.tenant_id = :t', 'file_columns' => ['image_path'], 'roots' => ['public/uploads/sse']],
+                ],
+            ],
+            [
+                'key' => 'sse_checks',
+                'title' => 'Contrôles d’identité (SSE)',
+                'blurb' => 'Journal des contrôles d’identité faits en jeu. Les papiers émis ne sont pas touchés.',
+                'sources' => [
+                    ['table' => 'sse_id_checks', 'id' => 'id', 'tenant_sql' => 't.tenant_id = :t', 'file_columns' => [], 'roots' => []],
+                ],
+            ],
+        ];
+    }
+
+    public static function communitySetByKey(string $key): ?array
+    {
+        foreach (self::communityDataSets() as $set) {
+            if ($set['key'] === $key) {
+                return $set;
+            }
+        }
+
+        return null;
+    }
+
     public static function groupByKey(string $key): ?array
     {
         foreach (self::purgeGroups() as $group) {

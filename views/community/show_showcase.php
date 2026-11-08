@@ -1631,7 +1631,7 @@ unset($pbCssFile, $pbCssName);
             <?php foreach ($publicRosterRows as $rr): ?>
               <?php $st = (string) ($rr['status'] ?? 'active'); ?>
             <tr class="roster-row" data-roster-search="<?= htmlspecialchars(strtolower($rosterIndicatif($rr) . ' ' . ($rr['grade_short'] ?? '') . ' ' . ($rr['role_name'] ?? '') . ' ' . ($rr['unit_name'] ?? '')), ENT_QUOTES, 'UTF-8') ?>">
-              <td class="cl-table__strong"><?= !empty($rr['anonymized']) ? \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, $rosterIndicatif($rr), true) : htmlspecialchars($rosterIndicatif($rr)) ?></td>
+              <td class="cl-table__strong"><?= !empty($rr['anonymized']) ? \App\Support\ConfidentialDisplay::badge(\App\Support\ConfidentialDisplay::PERSON_ANONYMIZED, $rosterIndicatif($rr), true) : htmlspecialchars($rosterIndicatif($rr)) . \App\Services\Billing\DonorService::publicMark((int) ($rr['id'] ?? 0)) ?></td>
               <td class="cl-mono"><?= htmlspecialchars((string) ($rr['grade_short'] ?? '—')) ?></td>
               <td><?= htmlspecialchars((string) ($rr['role_name'] ?? '—')) ?></td>
               <td><?= \App\Support\ConfidentialDisplay::text((string) ($rr['unit_name'] ?? '')) ?></td>
