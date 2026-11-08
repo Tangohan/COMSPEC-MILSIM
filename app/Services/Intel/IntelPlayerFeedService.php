@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Intel;
 
 use App\Support\LazyDatabaseConnection;
+use App\Support\ReconImageStorage;
 use App\Support\TacticalAlertParser;
 use PDO;
 
