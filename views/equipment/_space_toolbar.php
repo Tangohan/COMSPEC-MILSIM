@@ -20,18 +20,17 @@ $pagedNow = is_array($eqNav['paged'] ?? null) ? $eqNav['paged'] : null;
     <?php if ($collectionNow > 0): ?><input type="hidden" name="collection" value="<?= $collectionNow ?>"><?php endif; ?>
     <label class="eqx-toolbar__search">
         <span class="visually-hidden">Rechercher</span>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
         <input type="search" name="q" value="<?= $h($q) ?>" placeholder="<?= $h((string) ($toolbarPlaceholder ?? 'Rechercher…')) ?>" autocomplete="off">
     </label>
     <?php if ($toolbarKinds): ?>
-    <label>
-        <span class="visually-hidden">Type d’équipement</span>
-        <select name="type" class="bo-select">
-            <option value="">Tous les types</option>
-            <?php foreach ($equipmentKindLabels as $kind => $label): ?>
-            <option value="<?= $h($kind) ?>"<?= $type === (string) $kind ? ' selected' : '' ?>><?= $h($label) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </label>
+    <fieldset class="eqx-chips">
+        <legend class="visually-hidden">Type d’équipement</legend>
+        <label class="eqx-chip"><input type="radio" name="type" value=""<?= $type === '' ? ' checked' : '' ?>><span>Tous les types</span></label>
+        <?php foreach ($equipmentKindLabels as $kind => $label): ?>
+        <label class="eqx-chip"><input type="radio" name="type" value="<?= $h($kind) ?>"<?= $type === (string) $kind ? ' checked' : '' ?>><span><?= $h($label) ?></span></label>
+        <?php endforeach; ?>
+    </fieldset>
     <?php endif; ?>
     <?php if ($toolbarSort): ?>
     <label>

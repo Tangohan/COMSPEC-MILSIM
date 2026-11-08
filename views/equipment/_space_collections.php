@@ -13,7 +13,10 @@ $paged = is_array($eqNav['paged'] ?? null) ? $eqNav['paged'] : ['items' => [], '
 $filtersActive = (string) ($eqNav['q'] ?? '') !== '';
 ?>
 <div class="eqx-spacehead">
-    <p class="eqx-intro">Rangez vos tenues en collections pour les retrouver et les partager par thème.</p>
+    <div>
+        <h2><?= $h($tabLabels[$space] ?? '') ?></h2>
+        <p class="eqx-intro">Rangez vos tenues en collections pour les retrouver et les partager par thème.</p>
+    </div>
     <a class="eq-hub__btn" href="<?= $h(url('equipment') . '?espace=collections&creer=collection') ?>" data-eq-open="collection-new">Nouvelle collection</a>
 </div>
 <?php
@@ -23,7 +26,7 @@ $toolbarPlaceholder = 'Rechercher une collection…';
 require __DIR__ . '/_space_toolbar.php';
 ?>
 <?php if ($paged['items'] === []): ?>
-<div class="eqx-empty">
+<div class="eqx-empty<?= $filtersActive ? '' : ' eqx-empty--hero' ?>">
     <?php if ($filtersActive): ?>
     <p><strong>Aucune collection ne correspond à cette recherche.</strong></p>
     <?php else: ?>
@@ -59,7 +62,7 @@ require __DIR__ . '/_space_toolbar.php';
             </span>
             <span class="eqx-collcard__body">
                 <strong translate="no"><?= $h((string) ($c['name'] ?? '')) ?></strong>
-                <span><?= $h($visibilityLabel((string) ($c['visibility'] ?? 'personal'))) ?> · <?= $count ?> tenue<?= $count > 1 ? 's' : '' ?></span>
+                <span class="eqx-collcard__meta"><?= $count ?> tenue<?= $count > 1 ? 's' : '' ?> <em class="eqx-vis<?= (string) ($c['visibility'] ?? 'personal') !== 'personal' ? ' eqx-vis--shared' : '' ?>"><?= $h($visibilityLabel((string) ($c['visibility'] ?? 'personal'))) ?></em></span>
             </span>
         </a>
         <?php if (!empty($c['mine'])): ?>
@@ -67,6 +70,11 @@ require __DIR__ . '/_space_toolbar.php';
         <?php endif; ?>
     </li>
     <?php endforeach; ?>
+    <?php if (!$filtersActive): ?>
+    <li class="eqx-collcard eqx-collcard--new">
+        <a href="<?= $h(url('equipment') . '?espace=collections&creer=collection') ?>" data-eq-open="collection-new"><span aria-hidden="true">+</span>Nouvelle collection</a>
+    </li>
+    <?php endif; ?>
 </ul>
 <?php require __DIR__ . '/_pagination.php'; ?>
 <?php endif; ?>

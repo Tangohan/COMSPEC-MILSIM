@@ -7,7 +7,10 @@ declare(strict_types=1);
 $tabNow = (string) ($eqNav['tab'] ?? 'fiches') === 'dotation' ? 'dotation' : 'fiches';
 ?>
 <div class="eqx-spacehead">
-    <p class="eqx-intro">Les fiches matériel et la dotation de la communauté.</p>
+    <div>
+        <h2><?= $h($tabLabels[$space] ?? '') ?></h2>
+        <p class="eqx-intro">Les fiches matériel et la dotation de la communauté.</p>
+    </div>
     <div class="eqx-collhead__actions">
         <?php if ($canManageCatalog): ?>
         <a class="eq-hub__btn eq-hub__btn--outline" href="<?= $h(url('equipment') . '?espace=materiel') ?>" data-eq-open="fiche-new">Nouvelle fiche</a>
