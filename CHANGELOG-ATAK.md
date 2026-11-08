@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : importer sa couverture générée sur Athena (SSE et COMSPEC Link, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Importez votre couverture générée sur Athena, sans connexion
+- Sur Athena, Ma couverture (Mes papiers), cliquez Générer puis Télécharger : vous obtenez un fichier de couverture complet (nom, famille, métier, employeur, motif du déplacement, adresse, téléphone, personnes qui peuvent confirmer, papier).
+- Déposez-le dans Documents\Arma 3 - COMSPEC, ouvrez Ma couverture sur le téléphone et cliquez IMPORTER MA COUVERTURE. Le jeu n'a pas besoin d'être connecté à Athena : le fichier est lu sur votre PC.
+- Votre fiche, « À retenir » et les questions des contrôleurs suivent cette couverture. « Oublier l'import » revient à la légende d'avant. Vos papiers ne changent pas.
+- Demande une mise à jour de COMSPEC Link (nouvelle commande de lecture du fichier).
+EN : Import the cover you generated on Athena, offline
+- On Athena, My cover (My papers), click Generate then Download: you get a complete cover file (name, family, job, employer, reason for travel, address, phone, people who can vouch, paper).
+- Drop it in Documents\Arma 3 - COMSPEC, open My cover on the phone and click IMPORT MY COVER. The game does not need to be connected to Athena: the file is read on your PC.
+- Your sheet, "To remember" and the controllers' questions follow this cover. "Forget the import" goes back to the previous legend. Your papers do not change.
+- Needs an update of COMSPEC Link (new command that reads the file).
+
+### Détail technique
+- Site : PR feat/identite-couverture-export (fichier `comspec-couverture-CVR-XXXXXXXX.json`, format `comspec-cover` v1, migration 4220). Contrat de lecture : `docs/ATAK_COUVERTURE_IMPORT.md`.
+- DLL (`Extension_CoverImport.cs`, aussi compilée par la DLL ATAK native) : `ReadCoverFile` / `ReadCoverFileChunk`, lecture locale seulement, aucune requête réseau ni autorisation d'Athena. Fichier de forme `comspec-couverture-CVR-XXXXXXXX.json` dans `Documents\Arma 3 - COMSPEC`, 256 Kio au plus, JSON UTF-8 de profondeur 6, clés connues et uniques, aucun caractère de contrôle, SHA-256 du texte de `cover`, date de fin, photo JPEG vérifiée mais non affichée. Annoncée dans `GetAtakFeatures`.
+- SSE : `fn_idCoverImport` (lecture, nettoyage une seconde fois, profil du joueur, envoi au serveur `coverImport` / `coverForget`), `fn_idLegend` (la couverture importée l'emporte champ par champ sur la légende, après le brief Athena et le texte de l'éditeur), `fn_idCoverSync` (une couverture importée ne repart pas vers Athena), `fn_idCoverPage` (zone Importer ma couverture, ligne Couverture de la liaison Athena). Ni `fn_radioGuard`, ni les profils d'identité du registre SSE, ni les papiers ne sont touchés ; la couverture importée n'ouvre pas l'infiltration.
+- Limite connue : la photo du fichier n'est pas affichée en jeu (Arma ne lit pas une image hors de ses dossiers) ; elle reste dans le fichier.
+- `i18n/en.txt` et `tools/i18n_identity_en.tsv` : 27 textes.
+
 ## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

@@ -25,6 +25,7 @@
       check    [moi, _h, 4]              N4 : comparaison du visage (fn_idBio ; durée réglable, matériel « face »)
       coverSheet [moi, personne]         fiche RP (la sienne ; le Zeus : celle de tous) · coverList [moi]  infiltrés (Zeus)
       coverFired [moi]                   tir d'un infiltré (FiredMan de son poste)
+      coverImport [moi, couverture] · coverForget [moi]   couverture importée d'un fichier Athena, ou oubliée (fn_idCoverImport)
       coverPull [moi]                    recharge le paquet Athena (app Ma couverture, au plus une fois par 2 min, tous postes)
       answer   [moi, qid, index]         réponse à une question de légende (fn_idQuestion)
       aiQuestion [moi, cible, clé]       je pose une question de légende à un PNJ
@@ -535,6 +536,12 @@ switch (_op) do {
         ["coverList", [_l]] call _reply;
     };
     case "coverFired": { ["fired", [_me]] call comspec_sse_fnc_idCover; };
+    // Couverture importée d'un fichier Athena : ce joueur seulement (_me est vérifié plus haut), contenu revalidé ici.
+    case "coverImport": {
+        _args params ["", ["_c", createHashMap, [createHashMap]]];
+        ["serverSet", [_me, _c]] call comspec_sse_fnc_idCoverImport;
+    };
+    case "coverForget": { ["serverForget", [_me]] call comspec_sse_fnc_idCoverImport; };
     case "coverPull": {
         if ((time - (_reg getOrDefault ["packPullAt", -1000])) < 120) exitWith {};
         _reg set ["packPullAt", time];

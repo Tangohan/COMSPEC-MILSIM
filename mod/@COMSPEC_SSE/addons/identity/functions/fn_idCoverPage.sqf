@@ -54,6 +54,8 @@ if (_page isEqualTo "act") exitWith {
             _f set [_arg select 0, !(_f getOrDefault [_arg select 0, _arg select 1])];
             call _render;
         };
+        case "import": { ["run"] call comspec_sse_fnc_idCoverImport; };
+        case "forget": { ["forget"] call comspec_sse_fnc_idCoverImport; };
         case "pull": {
             ["send", ["coverPull", [player]]] call comspec_sse_fnc_idClient;
             _st set ["pulled", time];
@@ -236,6 +238,11 @@ private _sheetRows = {
                 _lines pushBack ["ok", "Couverture" call _tr, "Reçue d'Athena" call _tr, ["", format ["%1 %2 UTC", "Mise à jour le" call _tr, _at]] select (_at isNotEqualTo "")];
                 _summary = format ["%1 · %2", _summary, "Reçue d'Athena" call _tr];
             };
+            case (_source isEqualTo "import"): {
+                private _at = [_s getOrDefault ["importedAt", ""]] call _when;
+                _lines pushBack ["ok", "Couverture" call _tr, "Importée depuis un fichier" call _tr, ["", format ["%1 %2 UTC", "Générée le" call _tr, _at]] select (_at isNotEqualTo "")];
+                _summary = format ["%1 · %2", _summary, "Importée" call _tr];
+            };
             case (_prepared): {
                 private _syncState = _sync getOrDefault ["state", ""];
                 private _at = [_sync getOrDefault ["at", ""]] call _when;
@@ -263,6 +270,26 @@ private _sheetRows = {
                 private _wait = (time - (_st getOrDefault ["pulled", -1000])) < 120;
                 _rows pushBack ["buttons", [["Demander la mise à jour" call _tr, ["pull"] call _act, false, !_wait, "Recharge le paquet d'identité du serveur (au plus une fois toutes les 2 minutes)." call _tr]]];
             };
+        };
+
+        // Importer ma couverture : fichier généré sur Athena, lu sur ce poste. Aucune connexion à Athena, aucune requête réseau.
+        private _imp = missionNamespace getVariable ["comspec_sse_idCoverImportSt", createHashMap];
+        private _isImported = _s getOrDefault ["imported", false];
+        private _impOpen = (_st getOrDefault ["folds", createHashMap]) getOrDefault ["import", !_isImported];
+        _rows pushBack ["fold", "Importer ma couverture" call _tr, (["Aucun fichier importé", "Couverture importée"] select _isImported) call _tr, _impOpen, ["fold", ["import", !_isImported]] call _act];
+        if (_impOpen) then {
+            private _steps = [
+                "1. Sur Athena > Ma couverture, cliquez Générer puis Télécharger.",
+                "2. Déposez le fichier dans Documents\Arma 3 - COMSPEC.",
+                "3. Ici, cliquez Importer."
+            ] apply { [_x call _tr] call _esc };
+            _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", _steps joinString "<br/>", _hText]];
+            if ((_imp getOrDefault ["text", ""]) isNotEqualTo "") then {
+                _rows pushBack ["text", format ["<t color='%1'>%2</t>", [_hAlert, _hOk] select ((_imp getOrDefault ["kind", ""]) isEqualTo "ok"), [(_imp get "text") call _tr] call _esc]];
+            };
+            private _b = [["IMPORTER MA COUVERTURE" call _tr, ["import"] call _act, false, true, "Lit le fichier déposé dans Documents\Arma 3 - COMSPEC. Rien n'est envoyé à Athena." call _tr]];
+            if (_isImported) then { _b pushBack ["Oublier l'import" call _tr, ["forget"] call _act, false, true, "Revient à la légende d'avant, sans toucher à vos papiers." call _tr]; };
+            _rows pushBack ["buttons", _b];
         };
     };
 

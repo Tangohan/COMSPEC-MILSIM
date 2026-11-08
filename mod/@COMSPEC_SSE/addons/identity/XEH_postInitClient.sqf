@@ -13,12 +13,14 @@ if (!hasInterface) exitWith {};
 // chaque respawn ; le serveur lit lui-même le Steam ID et ne remet que les papiers manquants (fn_idKit).
 [{ !isNull player && {alive player} && {(getPlayerUID player) isNotEqualTo ""} }, {
     ["send", ["kit", [player, objNull]]] call comspec_sse_fnc_idClient;
+    // Couverture importée d'un fichier (app Ma couverture) : le registre du serveur ne garde rien d'une mission à l'autre.
+    ["resend"] call comspec_sse_fnc_idCoverImport;
 }, [], 300] call CBA_fnc_waitUntilAndExecute;
 ["CAManBase", "Respawn", {
     params ["_new", "_old"];
     if (!local _new) exitWith {};
     [{
         params ["_new", "_old"];
-        if (_new isEqualTo player && {alive _new}) then { ["send", ["kit", [_new, _old]]] call comspec_sse_fnc_idClient; };
+        if (_new isEqualTo player && {alive _new}) then { ["send", ["kit", [_new, _old]]] call comspec_sse_fnc_idClient; missionNamespace setVariable ["comspec_sse_idCoverImportSent", false]; ["resend"] call comspec_sse_fnc_idCoverImport; };
     }, [_new, _old], 2] call CBA_fnc_waitAndExecute;
 }] call CBA_fnc_addClassEventHandler;

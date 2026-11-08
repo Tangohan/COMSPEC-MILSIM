@@ -35,6 +35,7 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_WardrobeCache.cs" Link="Extension_WardrobeCache.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MedicalRoster.cs" Link="Extension_MedicalRoster.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_Identity.cs" Link="Extension_Identity.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_CoverImport.cs" Link="Extension_CoverImport.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_CommunityOrbat.cs" Link="Extension_CommunityOrbat.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_ItemIcons.cs" Link="Extension_ItemIcons.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapCapture.cs" Link="Extension_MapCapture.cs" />
