@@ -5,7 +5,7 @@
     Condition : l'émetteur et le récepteur portent chacun une MPU5 allumée (batterie) à laquelle ils ont relié leur radio
     (« pont radio » : action ACE Téléphone ATAK > Radio de données, ou app Réseau), et leurs MPU5 sont dans le même
     maillage (fn_mpuLink "mesh") :
-      - même cœur de réseau : les deux joignent un relais de la mission (pylône, module « ATAK · Relais », passerelle de
+      - même cœur de réseau : les deux joignent un relais de la mission (pylône, module « Poser un relais », passerelle de
         véhicule, poste de commandement) du même camp, ou la MPU5 du même chef de groupe (maillage d'équipe sans relais) ;
       - ou l'un voit l'autre dans son propre maillage (MPU5 du même canal, multi-sauts).
     La fréquence (ou le canal) reste celle de la radio, comme d'habitude : ACRE2 / TFAR choisissent qui s'entend.

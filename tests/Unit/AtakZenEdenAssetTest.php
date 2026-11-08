@@ -29,14 +29,14 @@ final class AtakZenEdenAssetTest extends TestCase
             self::assertStringContainsString($cls, $cfg);
         }
 
-        self::assertStringContainsString('class COMSPEC_Roleplay', $cfg);
+        self::assertStringContainsString('class COMSPEC_Cat_Atak', $cfg);
         // La catégorie Eden/Zeus COMSPEC_SSE vit désormais dans le mod SSE (addon main).
-        self::assertStringNotContainsString('class COMSPEC_SSE', $cfg);
+        self::assertStringNotContainsString('class COMSPEC_Cat_Sse', $cfg);
         self::assertStringContainsString(
-            'class COMSPEC_SSE: NO_CATEGORY',
+            'class COMSPEC_Cat_Sse: NO_CATEGORY',
             (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/main/config.cpp')
         );
-        self::assertStringContainsString('class COMSPEC_Outils', $cfg);
+        self::assertStringNotContainsString('class COMSPEC_Outils', $cfg);
         self::assertStringContainsString('module_roleplay_zone.hpp', $cfg);
         // Les modules SSE (dossier, profil, équipement) et leur enregistrement Zeus
         // ont été déplacés dans le mod SSE (addon zeus).
@@ -94,11 +94,11 @@ final class AtakZenEdenAssetTest extends TestCase
 
         $role = (string) file_get_contents($this->connectRoot() . '/functions/fn_registerZenRoleplayModules.sqf');
         self::assertStringContainsString('isNil "zen_custom_modules_fnc_register"', $role);
-        self::assertStringContainsString('Brouilleur ATAK actif', $role);
+        self::assertStringContainsString('Poser une zone sans couverture', $role);
 
         $sse = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/zeus/functions/fn_registerZenSseModules.sqf');
         self::assertStringContainsString('Dossier SSE actif', $sse);
-        self::assertStringContainsString('Profil d\'identité SSE', $sse);
+        self::assertStringContainsString('Définir l\'identité', $sse);
     }
 
     public function testTheaterSurveyKeepsZeusCursorAndAcceptsEdenCombo(): void

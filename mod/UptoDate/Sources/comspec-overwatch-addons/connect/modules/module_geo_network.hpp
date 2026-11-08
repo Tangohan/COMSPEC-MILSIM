@@ -9,7 +9,7 @@
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 0;
-        category = "COMSPEC_Outils";
+        category = "COMSPEC_Cat_Atak";
         displayName = "$STR_COMSPEC_OW_CFG_DEEF9340A8";
         function = "comspec_overwatch_connect_fnc_moduleGeoNetwork";
         functionPriority = 1;
@@ -21,8 +21,8 @@
         canSetArea = 0;
         canSetAreaHeight = 0;
         canSetAreaShape = 0;
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_map.paa";
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_map.paa";
 
         class Attributes
         {

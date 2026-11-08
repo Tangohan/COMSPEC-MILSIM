@@ -1,5 +1,5 @@
 /*
-    Module « ATAK · Écran TOC » (Eden et Zeus) : un grand écran qui affiche le réseau ATAK d'un camp (fn_tocScreen).
+    Module « Poser un écran TOC » (Eden et Zeus) : un grand écran qui affiche le réseau ATAK d'un camp (fn_tocScreen).
     Eden : les objets synchronisés (TV, écran sur trépied, écran de projection, poste informatique) deviennent des écrans
     TOC ; sans objet synchronisé, le module pose lui-même l'écran du jeu choisi (attribut Écran) à sa place, tourné
     comme lui.

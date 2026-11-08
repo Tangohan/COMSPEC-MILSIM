@@ -1,5 +1,5 @@
 /*
-    Module Zeus « ATAK · Contrôle Zeus » (sans ZEN). Posé sur un joueur ou au sol : formulaire (cible, rayon, action,
+    Module Zeus « Contrôler un téléphone » (sans ZEN). Posé sur un joueur ou au sol : formulaire (cible, rayon, action,
     intensité, durée, message), puis fn_zeusMenu "apply". Cibles : joueur sous le module, joueurs dans le rayon,
     tous les joueurs, ou tout un camp.
 */

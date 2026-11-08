@@ -6,20 +6,23 @@ class COMSPEC_ATAK_Module_DataBase: Module_F {
     author = "COMSPEC";
     scope = 1;
     scopeCurator = 1;
-    category = "COMSPEC_ATAK_Data";
+    category = "COMSPEC_Cat_Atak";
     functionPriority = 1;
     isGlobal = 1;
     isTriggerActivated = 0;
     isDisposable = 1;
     is3DEN = 0;
     curatorCanAttach = 1;
-    icon = "\z\comspec_atak_native\addons\main\data\app_datalink.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_datalink.paa";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_data.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_data.paa";
 };
 class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_data.paa";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_data.paa";
+    category = "COMSPEC_Cat_Atak";
     scope = 2;
     scopeCurator = 2;
-    displayName = "$STR_COMSPEC_ATAK_CFG_38684AA97D";
+    displayName = "$STR_COMSPEC_ATAK_CFG_271C15D369";
     function = "comspec_atak_native_fnc_moduleDataNode";
     class Attributes {
             class Name {
@@ -225,9 +228,12 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
     };
 };
 class COMSPEC_ATAK_Module_DataFile: COMSPEC_ATAK_Module_DataBase {
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_data.paa";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_data.paa";
+    category = "COMSPEC_Cat_Atak";
     scope = 2;
     scopeCurator = 2;
-    displayName = "$STR_COMSPEC_ATAK_CFG_60D4B6A0C2";
+    displayName = "$STR_COMSPEC_ATAK_CFG_58CA32DD5B";
     function = "comspec_atak_native_fnc_moduleDataFile";
     class Attributes {
             class FileName {
@@ -271,9 +277,12 @@ class COMSPEC_ATAK_Module_DataFile: COMSPEC_ATAK_Module_DataBase {
     };
 };
 class COMSPEC_ATAK_Module_DataReset: COMSPEC_ATAK_Module_DataBase {
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_trash.paa";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_trash.paa";
+    category = "COMSPEC_Cat_Atak";
     scope = 1;
     scopeCurator = 2;
-    displayName = "$STR_COMSPEC_ATAK_CFG_CF51DCF204";
+    displayName = "$STR_COMSPEC_ATAK_CFG_42055C212F";
     function = "comspec_atak_native_fnc_moduleDataReset";
 };
 // Tinder : une IA devient un profil HVT ou SSE qu'on croise dans l'app, et une cible de la chasse aux HVT
@@ -281,10 +290,10 @@ class COMSPEC_ATAK_Module_DataReset: COMSPEC_ATAK_Module_DataBase {
 class COMSPEC_ATAK_Module_DatingProfile: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 2;
-    category = "COMSPEC_ATAK_Civil";
-    displayName = "$STR_COMSPEC_ATAK_CFG_FA0AF6576A";
-    icon = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_290D25EB85";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_person.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_person.paa";
     function = "comspec_atak_native_fnc_moduleDating";
     class Attributes {
         class Kind {
@@ -380,10 +389,10 @@ class COMSPEC_ATAK_Module_DatingProfile: COMSPEC_ATAK_Module_DataBase {
 class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 2;
-    category = "COMSPEC_ATAK_Network";
-    displayName = "$STR_COMSPEC_ATAK_CFG_FF947AEE42";
-    icon = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_F5DA918AFE";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
     function = "comspec_atak_native_fnc_moduleRelay";
     canSetArea = 1;
     canSetAreaShape = 0;
@@ -584,10 +593,10 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
 class COMSPEC_ATAK_Module_Mesh: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 1;
-    category = "COMSPEC_ATAK_Network";
-    displayName = "ATAK · Maillage (clés, groupes, fréquences)";
-    icon = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_82FD73321A";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_net.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_net.paa";
     function = "comspec_atak_native_fnc_moduleMesh";
     class Attributes {
         class Keys {
@@ -640,10 +649,10 @@ class COMSPEC_ATAK_Module_Mesh: COMSPEC_ATAK_Module_DataBase {
 class COMSPEC_ATAK_Module_Screen: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 2;
-    category = "COMSPEC_ATAK_Network";
-    displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_NAME";
-    icon = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_52480F19F2";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
     function = "comspec_atak_native_fnc_moduleScreen";
     class Attributes {
         class Name {
@@ -707,10 +716,10 @@ class COMSPEC_ATAK_Module_Screen: COMSPEC_ATAK_Module_DataBase {
 class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 2;
-    category = "COMSPEC_ATAK_Network";
-    displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_NAME";
-    icon = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_toc.paa";
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_C90663322F";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
     function = "comspec_atak_native_fnc_moduleTocScreen";
     class Attributes {
         class Name {
@@ -800,10 +809,10 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
 class COMSPEC_ATAK_Module_AiAtak: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 2;
-    category = "COMSPEC_ATAK_Network";
-    displayName = "$STR_COMSPEC_ATAK_CFG_AIATAK_NAME";
-    icon = "\z\comspec_atak_native\addons\main\data\app_bft.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_bft.paa";
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_D7DEF53FF6";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_phone.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_phone.paa";
     function = "comspec_atak_native_fnc_moduleAiAtak";
     class Attributes {
         class Who {
@@ -844,18 +853,18 @@ class COMSPEC_ATAK_Module_AiAtak: COMSPEC_ATAK_Module_DataBase {
 class COMSPEC_ATAK_Module_ZeusControl: COMSPEC_ATAK_Module_DataBase {
     scope = 1;
     scopeCurator = 2;
-    category = "COMSPEC_ATAK_Zeus";
-    displayName = "$STR_COMSPEC_ATAK_CFG_511DBA2C67";
-    icon = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_0CDE42EDFD";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_phone.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_phone.paa";
     function = "comspec_atak_native_fnc_moduleZeusControl";
 };
 class COMSPEC_ATAK_Module_ZeusJammer: COMSPEC_ATAK_Module_DataBase {
     scope = 1;
     scopeCurator = 2;
-    category = "COMSPEC_ATAK_Zeus";
-    displayName = "$STR_COMSPEC_ATAK_CFG_EC6B15B9EF";
-    icon = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
-    portrait = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_66CE91022B";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
     function = "comspec_atak_native_fnc_moduleZeusJammer";
 };

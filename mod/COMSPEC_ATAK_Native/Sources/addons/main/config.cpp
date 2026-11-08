@@ -123,7 +123,7 @@ class CfgFunctions {
             class adminAllowed {}; class adminServer {}; class adminClient {}; class pageAdmin {};
         };
         class zeus { file="z\comspec_atak_native\addons\main\functions\zeus";
-            class zeusFx {}; class zeusJam {}; class zeusServer {}; class zeusClient {}; class zeusOverlay {}; class zeusMenu {}; class moduleZeusControl {}; class moduleZeusJammer {};
+            class zeusState {}; class zeusCentre {}; class zeusObject {}; class zeusFx {}; class zeusJam {}; class zeusServer {}; class zeusClient {}; class zeusOverlay {}; class zeusMenu {}; class moduleZeusControl {}; class moduleZeusJammer {};
         };
         class dock { file="z\comspec_atak_native\addons\main\functions\dock";
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
@@ -738,6 +738,17 @@ class CfgVehicles {
             };
         };
     };
+// Eden : attributs des écrans. Les réglages sont lus 3 s après le lancement par fn_screenCast ou fn_tocScreen, comme ceux des modules.
+#define COMSPEC_SCREEN_ATTRIBUTES class Attributes { \
+    class COMSPEC_ATAK_EdScreenMode { displayName="$STR_COMSPEC_ATAK_CFG_1224A25545"; tooltip="$STR_COMSPEC_ATAK_CFG_4B5864205B"; property="COMSPEC_ATAK_EdScreenMode"; control="Combo"; typeName="STRING"; defaultValue="''"; \
+        expression="if (isServer && {_value isNotEqualTo ''}) then { [{ params ['_o', '_v']; private _n = _o getVariable ['COMSPEC_ATAK_EdScreenName', '']; private _s = _o getVariable ['COMSPEC_ATAK_EdScreenSide', '']; if (_v isEqualTo 'toc') then { ['add', [_o, _n, _s, 0, _o getVariable ['COMSPEC_ATAK_EdScreenView', 'SPLIT'], true, false]] call comspec_atak_native_fnc_tocScreen; } else { ['add', [_o, _n, 25, _s, 0, true]] call comspec_atak_native_fnc_screenCast; }; }, [_this, _value], 3] call comspec_atak_native_fnc_waitAndExec; };"; \
+        class Values { class None { name="$STR_COMSPEC_ATAK_CFG_B2ED82F1BF"; value=""; }; class Cast { name="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; value="cast"; }; class Toc { name="$STR_COMSPEC_ATAK_CFG_B5CDDC62D2"; value="toc"; }; }; }; \
+    class COMSPEC_ATAK_EdScreenName { displayName="$STR_COMSPEC_ATAK_CFG_C0CD82FB3D"; tooltip="$STR_COMSPEC_ATAK_CFG_49AE0FA484"; property="COMSPEC_ATAK_EdScreenName"; control="Edit"; typeName="STRING"; defaultValue="''"; expression="_this setVariable ['COMSPEC_ATAK_EdScreenName', _value];"; }; \
+    class COMSPEC_ATAK_EdScreenSide { displayName="$STR_COMSPEC_ATAK_CFG_05AE3C3891"; tooltip="$STR_COMSPEC_ATAK_CFG_27C3139B5E"; property="COMSPEC_ATAK_EdScreenSide"; control="Combo"; typeName="STRING"; defaultValue="''"; expression="_this setVariable ['COMSPEC_ATAK_EdScreenSide', _value];"; \
+        class Values { class All { name="$STR_COMSPEC_ATAK_CFG_B97AE3B4F9"; value=""; }; class West { name="BLUFOR"; value="WEST"; }; class East { name="OPFOR"; value="EAST"; }; class Guer { name="$STR_COMSPEC_ATAK_CFG_DE8D4F953A"; value="GUER"; }; class Civ { name="$STR_COMSPEC_ATAK_CFG_496B2073F0"; value="CIV"; }; }; }; \
+    class COMSPEC_ATAK_EdScreenView { displayName="$STR_COMSPEC_ATAK_CFG_F498CD766E"; tooltip="$STR_COMSPEC_ATAK_CFG_92A2324457"; property="COMSPEC_ATAK_EdScreenView"; control="Combo"; typeName="STRING"; defaultValue="'SPLIT'"; expression="_this setVariable ['COMSPEC_ATAK_EdScreenView', _value];"; \
+        class Values { class Split { name="$STR_COMSPEC_ATAK_CFG_4593B0D445"; value="SPLIT"; }; class Map { name="$STR_COMSPEC_ATAK_CFG_B90B587171"; value="MAP"; }; class Feed { name="$STR_COMSPEC_ATAK_CFG_7B35D19C6C"; value="FEED"; }; class Toc { name="$STR_COMSPEC_ATAK_CFG_5ADFA17BF2"; value="TOC"; }; }; }; \
+}
     // Écrans TOC, vidéoprojecteur et toiles COMSPEC : vrais modèles du jeu (objets Apex, Helicopters, Laws of War, que
     // chaque joueur possède), aperçus Eden du jeu. Écrans (comspec_screen=1) : image sur la dalle 0, dalles superposées
     // vides dès la config (grand écran : Screen_1 à Screen_9 noires et opaques couvraient l'image), matières d'écran du
@@ -753,6 +764,7 @@ class CfgVehicles {
     class Land_MapBoard_01_Wall_F;
     class COMSPEC_ATAK_Screen_Tripod: Land_TripodScreen_01_large_F {
         scope=2; scopeCurator=2; author="COMSPEC";
+        COMSPEC_SCREEN_ATTRIBUTES;
         displayName="$STR_COMSPEC_ATAK_CFG_8C3886D686";
         editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
         comspec_screen=1;
@@ -764,6 +776,7 @@ class CfgVehicles {
     };
     class COMSPEC_ATAK_Screen_Dual: Land_TripodScreen_01_dual_v1_F {
         scope=2; scopeCurator=2; author="COMSPEC";
+        COMSPEC_SCREEN_ATTRIBUTES;
         displayName="$STR_COMSPEC_ATAK_CFG_477D05DF6A";
         editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
         comspec_screen=1; comspec_screenMirror[]={1};
@@ -775,6 +788,7 @@ class CfgVehicles {
     };
     class COMSPEC_ATAK_Screen_Desk: Land_PCSet_01_screen_F {
         scope=2; scopeCurator=2; author="COMSPEC";
+        COMSPEC_SCREEN_ATTRIBUTES;
         displayName="$STR_COMSPEC_ATAK_CFG_D875FDECAE";
         editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
         comspec_screen=1;
@@ -786,6 +800,7 @@ class CfgVehicles {
     };
     class COMSPEC_ATAK_Screen_Wall: Land_FlatTV_01_F {
         scope=2; scopeCurator=2; author="COMSPEC";
+        COMSPEC_SCREEN_ATTRIBUTES;
         displayName="$STR_COMSPEC_ATAK_CFG_BFF6157B7C";
         editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
         comspec_screen=1;
@@ -798,6 +813,7 @@ class CfgVehicles {
     // Toiles : tableau blanc sur trépied et tableau mural du jeu (blancs tant que rien n'est projeté).
     class COMSPEC_ATAK_ProjScreen: Land_MapBoard_F {
         scope=2; scopeCurator=2; author="COMSPEC";
+        COMSPEC_SCREEN_ATTRIBUTES;
         displayName="$STR_COMSPEC_ATAK_CFG_43A7D9BDFC";
         editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
         comspec_projBoard=1;
@@ -806,6 +822,7 @@ class CfgVehicles {
     };
     class COMSPEC_ATAK_ProjScreen_Wall: Land_MapBoard_01_Wall_F {
         scope=2; scopeCurator=2; author="COMSPEC";
+        COMSPEC_SCREEN_ATTRIBUTES;
         displayName="$STR_COMSPEC_ATAK_CFG_C3303CA58C";
         editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
         comspec_projBoard=1;
@@ -977,10 +994,7 @@ class CfgEditorSubcategories {
 };
 class CfgFactionClasses {
     class NO_CATEGORY;
-    class COMSPEC_ATAK_Data: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_BC3E09CB53"; priority=2; side=7; };
-    class COMSPEC_ATAK_Civil: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_1B554EECB0"; priority=2; side=7; };
-    class COMSPEC_ATAK_Zeus: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_C3B58F43CF"; priority=2; side=7; };
-    class COMSPEC_ATAK_Network: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_0913AEF2ED"; priority=2; side=7; };
+    class COMSPEC_Cat_Atak: NO_CATEGORY { displayName = "$STR_COMSPEC_ATAK_CFG_8A1AE40616"; priority = 2; side = 7; };
 };
 
 // Manuel de terrain (Eden et jeu, Aide > Manuel de terrain) : tutoriel des relais ATAK.

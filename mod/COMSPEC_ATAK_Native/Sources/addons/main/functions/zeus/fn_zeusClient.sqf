@@ -118,6 +118,8 @@ switch (_act) do {
         };
     };
     case "tick": {
+        // Écran Zeus ouvert : bouton et infobulles du Centre Zeus (fn_zeusCentre) ; rien d'autre ici, écran Zeus ou non.
+        if (!isNull (findDisplay 312)) then { ["hook"] call comspec_atak_native_fnc_zeusCentre; };
         // Alarme de punition : bip strident toutes les 2 s, entendu autour du joueur (jusqu'à 60 m).
         if ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoise", 0]) > diag_tickTime && {alive player}) then {
             if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoiseAt", -10]) >= 1.9) then {

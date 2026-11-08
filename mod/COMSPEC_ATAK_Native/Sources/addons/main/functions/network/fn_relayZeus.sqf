@@ -1,13 +1,13 @@
 /*
-    Relais ATAK en Zeus : modifier un relais déjà posé (pylône COMSPEC, module « ATAK · Relais », relais Overwatch).
+    Relais ATAK en Zeus : modifier un relais déjà posé (pylône COMSPEC, module « Poser un relais », relais Overwatch).
       ["register"]                 : avec ZEN (XEH_postInitClient), ajoute les attributs du relais à la fenêtre
                                      « Éditer » de l'objet (double clic) : nom, fréquence, portée, débit, hauteur d'antenne,
                                      places, réseau du camp, liaison, alimentation, batterie, en service ; et, au clic droit
-                                     sur un relais, « ATAK · Relais » : fiche, allumer / couper, recharger la batterie,
+                                     sur un relais, « Poser un relais » : fiche, allumer / couper, recharger la batterie,
                                      réseau exclusivement par relais (toute la mission).
       ["set", [relais, clé, valeur]] : écrit une variable du relais pour tous (COMSPEC_AtakRelay<clé>) et recalcule la liste.
       ["only", vrai | faux]       : réseau exclusivement par relais dans toute la mission (COMSPEC_ATAK_RelayOnly).
-    Sans ZEN : le module « ATAK · Relais » lâché sur un relais existant ouvre le même formulaire prérempli (fn_moduleRelay).
+    Sans ZEN : le module « Poser un relais » lâché sur un relais existant ouvre le même formulaire prérempli (fn_moduleRelay).
 */
 params [["_act", ""], ["_arg", []]];
 switch (_act) do {

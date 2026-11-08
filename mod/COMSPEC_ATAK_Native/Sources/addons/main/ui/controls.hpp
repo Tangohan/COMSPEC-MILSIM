@@ -58,6 +58,7 @@ class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBac
 class COMSPEC_RscEditMulti: COMSPEC_RscEdit { style=16; lineSpacing=1; };
 class COMSPEC_RscCombo: RscCombo { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelect[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
 class COMSPEC_RscListBox: RscListBox { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorSelect[]=ATAK_TEXT; colorSelect2[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; colorSelectBackground2[]=ATAK_GREEN_DIM; colorBackground[]={0,0,0,0}; sizeEx="0.024 * safeZoneH"; rowHeight="0.040 * safeZoneH"; };
+class COMSPEC_RscListBoxDense: COMSPEC_RscListBox { sizeEx="0.021 * safeZoneH"; rowHeight="0.027 * safeZoneH"; };
 class COMSPEC_RscCheckbox: RscCheckBox {};
 class COMSPEC_RscProgress: RscProgress { colorBar[]=ATAK_GREEN; colorFrame[]=ATAK_BORDER; };
 class COMSPEC_RscControlsGroup: RscControlsGroup {

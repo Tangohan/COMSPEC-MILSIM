@@ -1,5 +1,5 @@
 /*
-    Module « ATAK · IA équipées » (Eden et Zeus, fn_aiAtak) : oblige des IA à porter un ATAK (ou le leur interdit).
+    Module « Équiper des IA d'un ATAK » (Eden et Zeus, fn_aiAtak) : oblige des IA à porter un ATAK (ou le leur interdit).
     Eden : unités synchronisées et leurs groupes ; sans rien de synchronisé, toutes les IA du camp choisi.
     Zeus : lâché sur une unité, formulaire (son groupe, elle seule, ou retirer l'ATAK au groupe).
     Attributs : Qui (tout le groupe, chefs de groupe seulement, aucun = interdire), Camp (sans synchronisation).

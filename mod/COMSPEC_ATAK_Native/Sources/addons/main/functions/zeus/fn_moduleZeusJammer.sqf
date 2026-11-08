@@ -1,5 +1,5 @@
 /*
-    Module Zeus « ATAK · Brouilleur de zone » : brouilleur invisible à l'emplacement du module (rayon, force, durée,
+    Module Zeus « Poser un brouilleur de zone » : brouilleur invisible à l'emplacement du module (rayon, force, durée,
     camp épargné), ou retrait des brouilleurs Zeus posés (dans le rayon ou tous). fn_zeusServer "jamArea" / "jamClear".
     Le brouilleur agit comme ceux de l'app Guerre électronique : débit, GPS, BFT, drones et relais.
 */

@@ -2,18 +2,18 @@
     Module Eden « Checkpoint IA » (Lot 3) : les gardes (unités synchronisées, sinon IA du camp dans la zone) arrêtent
     les joueurs qui passent, demandent leurs papiers, les lisent avec l'équipement du poste et décident (laisser passer,
     fouiller, retenir, alerter, ouvrir le feu). Exécuté sur le serveur (fn_idCheckpointModule). En Zeus : module ZEN
-    « COMSPEC SSE · Identité › Checkpoint IA ».
+    « COMSPEC · Identité › Poser un checkpoint IA ».
 */
 class COMSPEC_SSE_Module_Base;
 class COMSPEC_SSE_Module_IdCheckpoint: COMSPEC_SSE_Module_Base {
     scope = 2;
     scopeCurator = 1;
-    displayName = "$STR_COMSPEC_SSE_CFG_874AEF3786";
-    category = "COMSPEC_SSE_People";
+    displayName = "$STR_COMSPEC_SSE_CFG_73AFB9F42D";
+    category = "COMSPEC_Cat_Identite";
     function = "comspec_sse_fnc_idCheckpointModule";
     isGlobal = 0;
-    icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
-    portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
+    icon = "\z\comspec_sse\addons\zeus\data\mod_check.paa";
+    portrait = "\z\comspec_sse\addons\zeus\data\mod_check.paa";
 
     class Attributes {
         class Radius {

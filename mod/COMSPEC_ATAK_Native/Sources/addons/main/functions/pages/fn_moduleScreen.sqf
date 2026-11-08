@@ -1,5 +1,5 @@
 /*
-    Module « ATAK · Écran COMSPEC » (Eden et Zeus) : les objets synchronisés (Eden) ou l'objet sous le module (Zeus)
+    Module « Poser un écran COMSPEC » (Eden et Zeus) : les objets synchronisés (Eden) ou l'objet sous le module (Zeus)
     deviennent des écrans où l'app Briefing diffuse ses diapositives (fn_screenCast).
     Attributs : Nom, Portée (m) à laquelle le téléphone détecte l'écran, Camp qui peut le piloter, Texture (index de la
     sélection qui reçoit l'image, 0 sur la plupart des TV, écrans et projecteurs), contrôle par ACE ou la molette.
