@@ -20,14 +20,15 @@ use App\Support\SseIdentityCatalog;
  * rattachées au compte (sse_identities.user_id) ; papiers de ces identités ; kit porté en mission
  * (sse_id_kits, envoyé au serveur de jeu avec le Steam ID) ; contrôles subis.
  *
- * Vérité de jeu (couverture, faux, qualité du faux) : seulement avec l'habilitation Confidentiel. Sans elle, les
- * identités de couverture ou falsifiées et leurs papiers n'apparaissent pas du tout. Le joueur voit ses propres
+ * Vérité de jeu (alias, couverture, faux, qualité du faux) : seulement avec l'habilitation Confidentiel. Sans elle, les
+ * identités d'emprunt ou falsifiées et leurs papiers n'apparaissent pas du tout : consulter une fiche ne démasque pas un
+ * infiltré (ni identité, ni papier, ni kit, ni contrôle présenté sous un autre nom). Le joueur voit ses propres
  * papiers, couverture comprise (il la porte), mais jamais la nature de l'identité ni l'origine du papier.
  */
 final class MemberIdentityPapersService
 {
     /** Natures et origines qui relèvent de la vérité de jeu. */
-    public const SECRET = ['cover', 'forged'];
+    public const SECRET = ['alias', 'cover', 'forged'];
 
     /** Actions de la fiche (bouton → effet). */
     public const ACTIONS = ['issue', 'validate', 'draft', 'revoke', 'stolen', 'lost', 'clear_report', 'duplicate', 'delete'];
@@ -62,7 +63,7 @@ final class MemberIdentityPapersService
      *
      * - voir : gestion SSE, modification des dossiers RH, ou habilitation Encadrement ;
      * - gérer (créer, émettre, révoquer, kit) : gestion SSE, ou modification des dossiers + habilitation Encadrement ;
-     * - vérité de jeu et couvertures : habilitation Confidentiel.
+     * - vérité de jeu, alias et couvertures : habilitation Confidentiel.
      *
      * @return array{view: bool, manage: bool, truth: bool, cover: bool}
      */
@@ -177,15 +178,20 @@ final class MemberIdentityPapersService
         $visibleDocIds = array_map(static fn (array $d): int => (int) $d['id'], $documents);
         $kits = [];
         foreach ($this->kits->listForUser($tenantId, $userId) as $kit) {
+            $hadDocuments = $kit['document_ids'] !== [];
             $kit['document_ids'] = array_values(array_intersect($kit['document_ids'], $visibleDocIds));
-            $kits[] = $kit;
+            // Un kit fait seulement de papiers masqués trahirait une couverture : il n'existe pas pour ce responsable.
+            if ($truth || !$hadDocuments || $kit['document_ids'] !== []) {
+                $kits[] = $kit;
+            }
         }
         $checks = $this->checks->listForSubject($tenantId, array_keys($identityById), $visibleDocIds, $truth ? $steamId : '', 50);
         if (!$truth) {
-            // Un contrôle d'un papier de couverture ne doit pas trahir la couverture.
+            // Un contrôle d'un papier d'emprunt ne doit pas trahir la couverture, ni un nom présenté différent.
             $allDocIds = array_map(static fn (array $d): int => (int) $d['id'], $this->documents->list($tenantId, ['user_id' => $userId, 'limit' => 200]));
             $hidden = array_diff($allDocIds, $visibleDocIds);
             $checks = array_values(array_filter($checks, static fn (array $c): bool => !in_array((int) ($c['document_id'] ?? 0), $hidden, true)));
+            $checks = self::withoutForeignNames($checks, $identities);
         }
         $primary = null;
         foreach ($identities as $i) {
@@ -207,8 +213,27 @@ final class MemberIdentityPapersService
     }
 
     /**
+     * Sans habilitation : retire les contrôles présentés sous un nom qui n'est celui d'aucune identité visible (recoupés
+     * par la clé biométrique, ils démasqueraient l'infiltré qui présentait un autre nom).
+     *
+     * @param list<array<string, mixed>> $checks
+     * @param list<array<string, mixed>> $identities identités visibles par ce responsable
+     * @return list<array<string, mixed>>
+     */
+    public static function withoutForeignNames(array $checks, array $identities): array
+    {
+        $names = array_map(static fn (array $i): string => mb_strtoupper(trim((string) ($i['last_name'] ?? ''))), $identities);
+
+        return array_values(array_filter($checks, static function (array $c) use ($names): bool {
+            $last = mb_strtoupper(trim((string) ($c['presented_last'] ?? '')));
+
+            return $last === '' || in_array($last, $names, true);
+        }));
+    }
+
+    /**
      * Synthèse par membre pour la liste « Papiers des membres » du bureau SSE : compte Steam lié, papiers émis,
-     * kit défini, dernier contrôle. Sans la vérité de jeu, les couvertures et faux ne sont ni comptés ni trahis
+     * kit défini, dernier contrôle. Sans la vérité de jeu, les alias, couvertures et faux ne sont ni comptés ni trahis
      * (un kit fait seulement de papiers de couverture apparaît « non défini », leurs contrôles sont ignorés).
      *
      * @param list<int> $userIds membres de la communauté (déjà filtrés sur le tenant)
@@ -222,7 +247,7 @@ final class MemberIdentityPapersService
         }
         $db = \App\Core\Database::getInstance();
         $in = implode(', ', $ids);
-        $mask = $truth ? '' : " AND i.kind NOT IN ('cover', 'forged') AND d.st_origin NOT IN ('cover', 'forged')";
+        $mask = $truth ? '' : " AND i.kind NOT IN ('alias', 'cover', 'forged') AND d.st_origin NOT IN ('cover', 'forged')";
         $docJoin = 'sse_id_documents d JOIN sse_identities i ON i.id = d.identity_id AND i.tenant_id = d.tenant_id';
         $out = [];
         foreach ($ids as $id) {
@@ -255,7 +280,7 @@ final class MemberIdentityPapersService
                 $out[$uid]['last_check'] = $at;
             }
         };
-        $identityMask = $truth ? '' : " AND i.kind NOT IN ('cover', 'forged')";
+        $identityMask = $truth ? '' : " AND i.kind NOT IN ('alias', 'cover', 'forged')";
         foreach ($db->fetchAll(
             'SELECT i.user_id AS uid, MAX(c.created_at) AS at FROM sse_id_checks c JOIN sse_identities i ON i.id = c.identity_id AND i.tenant_id = c.tenant_id
              WHERE c.tenant_id = :t AND i.user_id IN (' . $in . ')' . $identityMask . ' GROUP BY i.user_id',
@@ -417,7 +442,7 @@ final class MemberIdentityPapersService
     }
 
     /**
-     * Identité d'emprunt (alias, ou couverture avec l'habilitation Confidentiel).
+     * Identité d'emprunt (alias ou couverture) : habilitation Confidentiel, sans laquelle elle serait aussitôt masquée.
      *
      * @param array<string, mixed> $data
      * @return array{ok: bool, id?: int, error?: string}
@@ -428,14 +453,14 @@ final class MemberIdentityPapersService
         if (!in_array($kind, ['alias', 'cover'], true)) {
             $kind = 'alias';
         }
-        if ($kind === 'cover' && !$truth) {
-            return ['ok' => false, 'error' => 'Une identité de couverture demande l’habilitation Confidentiel.'];
+        if (!$truth) {
+            return ['ok' => false, 'error' => 'Une identité d’emprunt demande l’habilitation Confidentiel.'];
         }
         if (trim((string) ($data['last_name'] ?? '')) === '' || trim((string) ($data['first_name'] ?? '')) === '') {
             return ['ok' => false, 'error' => 'Le nom et le prénom sont obligatoires.'];
         }
         $id = $this->identities->create($tenantId, ['kind' => $kind, 'user_id' => $userId] + $data, $actorId);
-        $this->log($tenantId, $actorId, 'id_member.alias_create', 'sse_identity', $id, $userId, ['kind' => $truth ? $kind : 'alias']);
+        $this->log($tenantId, $actorId, 'id_member.alias_create', 'sse_identity', $id, $userId, ['kind' => $kind]);
 
         return ['ok' => true, 'id' => $id];
     }

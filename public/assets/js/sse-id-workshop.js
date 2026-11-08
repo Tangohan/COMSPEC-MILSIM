@@ -20,7 +20,8 @@
   var TYPE_LINES = {
     id_card: 'CARTE D’IDENTITÉ · IDENTITY CARD',
     passport: 'PASSEPORT · PASSPORT',
-    driving_license: 'PERMIS DE CONDUIRE · DRIVING LICENCE'
+    driving_license: 'PERMIS DE CONDUIRE · DRIVING LICENCE',
+    military_id: 'CARTE MILITAIRE · MILITARY ID'
   };
 
   function field(name) {
@@ -56,7 +57,7 @@
 
   function applyType() {
     var type = val('doc_type') || preview.getAttribute('data-doc-type') || 'id_card';
-    ['id_card', 'passport', 'driving_license'].forEach(function (t) { preview.classList.toggle('idw-type--' + t, t === type); });
+    ['id_card', 'passport', 'driving_license', 'military_id'].forEach(function (t) { preview.classList.toggle('idw-type--' + t, t === type); });
     preview.setAttribute('data-doc-type', type);
     setText('type_line', TYPE_LINES[type] || '');
     document.querySelectorAll('[data-face-show][data-kind]').forEach(function (b) {
