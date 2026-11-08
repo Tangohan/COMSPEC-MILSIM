@@ -144,7 +144,7 @@ final class OrbatApiController
             'maskModes' => $this->visibilityLevelOptionsAsMaskModes(),
             'visibilityLevels' => $this->visibilityLevelOptions(),
             'adminStatuses' => UnitAdminStatus::options(),
-            'structTypes' => $this->structTypeOptions(),
+            'structTypes' => $this->structTypeOptions($tenantId),
             'chartDisplayTypes' => $this->mergedChartDisplayTypes($tenantId),
             'symbols' => UnitMilitarySymbol::options(locale()),
             'capabilities' => [
@@ -466,7 +466,7 @@ final class OrbatApiController
 
         $defaultType = (string) config('units.default_type', 'unit');
         $structType = strtolower(trim($request->inputString('struct_type', $defaultType)));
-        $allowedTypes = array_keys(config('units.types', []));
+        $allowedTypes = \App\Support\UnitStructTypes::allowedIds($tenantId);
         if ($allowedTypes !== [] && !in_array($structType, $allowedTypes, true)) {
             return Response::json(['success' => false, 'message' => 'Type d’unité non reconnu.'], 400);
         }
@@ -1096,18 +1096,11 @@ final class OrbatApiController
     }
 
     /** @return list<array{id: string, label: string}> */
-    private function structTypeOptions(): array
+    private function structTypeOptions(int $tenantId): array
     {
-        $types = config('units.types', []);
         $out = [];
-        foreach ($types as $id => $meta) {
-            if (!is_array($meta)) {
-                continue;
-            }
-            $out[] = [
-                'id' => (string) $id,
-                'label' => (string) ($meta['label'] ?? $id),
-            ];
+        foreach (\App\Support\UnitStructTypes::forTenant($tenantId) as $row) {
+            $out[] = ['id' => $row['id'], 'label' => $row['label']];
         }
 
         return $out;
@@ -1204,7 +1197,7 @@ final class OrbatApiController
         // Type structurel (groupe, équipe, squad…) — modifiable après création
         if ($request->input('struct_type') !== null) {
             $structType = strtolower(trim($request->inputString('struct_type', '')));
-            $allowedTypes = array_keys(config('units.types', []));
+            $allowedTypes = \App\Support\UnitStructTypes::allowedIds($tenantId);
             if ($allowedTypes !== [] && !in_array($structType, $allowedTypes, true)) {
                 return Response::json(['success' => false, 'message' => 'Type d’unité non reconnu.'], 400);
             }

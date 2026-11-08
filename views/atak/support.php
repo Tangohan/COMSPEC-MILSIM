@@ -206,6 +206,22 @@ $tierIcons = [
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+        <?php $communities = is_array($supporterCommunities ?? null) ? $supporterCommunities : []; $planLabels = is_array($planNames ?? null) ? $planNames : []; ?>
+        <?php if ($communities !== []): ?>
+        <div class="don-wall don-reveal" id="communautes">
+            <div class="don-wall__tier">
+                <h3 class="don-wall__title">Communautés <span><?= count($communities) ?></span></h3>
+                <ul class="don-wall__list">
+                    <?php foreach ($communities as $c): $kindLabel = ['plan' => 'Formule payante', 'heart' => 'Soutien du cœur', 'donation' => 'Communauté donatrice'][$c['kind']] ?? 'Soutien'; ?>
+                    <li class="don-wall__item">
+                        <span class="don-wall__avatar" aria-hidden="true"><?= $e(mb_strtoupper(mb_substr((string) $c['name'], 0, 1))) ?></span>
+                        <span class="don-wall__who"><b><?= $e($c['name']) ?></b><small><?= $e($kindLabel) ?><?= ($c['plan'] ?? '') !== '' ? ' · Formule ' . $e($planLabels[$c['plan']] ?? $c['plan']) : '' ?></small></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+        <?php endif; ?>
         <?php if (!empty($myDonorTier)): ?>
         <form method="post" action="<?= $e(url('soutenir-atak/mur')) ?>" class="don-wall__me don-reveal">
             <?= \App\Core\Csrf::field() ?>

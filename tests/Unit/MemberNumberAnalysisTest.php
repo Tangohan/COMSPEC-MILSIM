@@ -175,14 +175,14 @@ final class MemberNumberAnalysisTest extends TestCase
     public function testExportIsReimportableAndNeutralisesFormulas(): void
     {
         $csv = OrganizationMemberNumberController::registryCsv([
-            ['display_name' => 'Alpha', 'callsign' => '=CMD()', 'email' => 'a@x.fr', 'tenant_member_number' => 'G-0001', 'athena_identifier' => 'ATH1'],
-            ['display_name' => 'Bravo; "B"', 'callsign' => '', 'email' => 'b@x.fr', 'tenant_member_number' => '', 'athena_identifier' => ''],
+            ['id' => 12, 'display_name' => 'Alpha', 'callsign' => '=CMD()', 'email' => 'a@x.fr', 'tenant_member_number' => 'G-0001', 'athena_identifier' => 'ATH1'],
+            ['id' => 13, 'display_name' => 'Bravo; "B"', 'callsign' => '', 'email' => 'b@x.fr', 'tenant_member_number' => '', 'athena_identifier' => ''],
         ]);
 
         self::assertStringStartsWith("\xEF\xBB\xBF", $csv);
         $lines = preg_split('/\R/', trim(substr($csv, 3)));
-        self::assertSame('nom;indicatif;email;tenant_member_number;matricule_plateforme', $lines[0]);
-        self::assertSame(['Alpha', "'=CMD()", 'a@x.fr', 'G-0001', 'ATH1'], str_getcsv($lines[1], ';', '"', '\\'));
-        self::assertSame(['Bravo; "B"', '', 'b@x.fr', '', ''], str_getcsv($lines[2], ';', '"', '\\'));
+        self::assertSame('nom;indicatif;id_membre;tenant_member_number;matricule_plateforme', $lines[0]);
+        self::assertSame(['Alpha', "'=CMD()", '12', 'G-0001', 'ATH1'], str_getcsv($lines[1], ';', '"', '\\'));
+        self::assertSame(['Bravo; "B"', '', '13', '', ''], str_getcsv($lines[2], ';', '"', '\\'));
     }
 }

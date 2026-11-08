@@ -126,7 +126,8 @@ function run_community_platform_migration(PDO $pdo): void
             echo "Plan {$slug} : clés de fonctionnalités complétées.\n";
         }
     };
-    foreach ($planFeatureDefaults as $slug => $defaults) {
+    // Plafonds laissés à la décision du propriétaire : jamais imposés à une formule déjà enregistrée.
+    foreach (\App\Services\Billing\SubscriptionPlanFeaturesCatalog::defaultsToMergeIntoExisting() as $slug => $defaults) {
         $mergeMissingPlanFeatures($pdo, $slug, $defaults);
     }
 

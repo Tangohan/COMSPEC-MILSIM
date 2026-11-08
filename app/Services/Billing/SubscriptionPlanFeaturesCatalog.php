@@ -53,6 +53,21 @@ final class SubscriptionPlanFeaturesCatalog
         'max_real_issuer_imports',
         'max_custom_qualifications',
         'max_active_invite_links',
+        'max_recruitment_offers',
+        'max_mini_articles',
+        'max_email_templates',
+    ];
+
+    /**
+     * Plafonds de création ajoutés après coup (formule Gratuit). Tant qu'une formule déjà enregistrée n'a pas la clé,
+     * le plafond vaut « illimité » : ni la migration de démarrage ni le catalogue ne leur imposent de valeur, c'est
+     * le propriétaire de la plateforme qui la saisit dans l'administration des formules. Les valeurs du catalogue
+     * ne servent qu'à la création initiale des formules (nouvelle installation).
+     */
+    public const OWNER_DECIDES = [
+        'max_recruitment_offers',
+        'max_mini_articles',
+        'max_email_templates',
     ];
 
     /** Plafond le plus haut accepté pour un quota (au-delà : « Illimité »). */
@@ -167,6 +182,11 @@ final class SubscriptionPlanFeaturesCatalog
                 'Invite links usable at the same time. Links already active are never cut.',
                 'liens actifs', 'active links'),
 
+            'max_recruitment_offers' => $quota('recruitment', 'Offres de recrutement en cours', 'Open recruitment offers',
+                'Offres en brouillon ou publiées (les offres clôturées ne comptent pas). Celles déjà créées restent visibles et modifiables.',
+                'Draft or published offers (closed offers do not count). Offers already created stay visible and editable.',
+                'offres', 'offers'),
+
             // ATAK et jeu
             'atak' => $bool('game', 'Carte tactique ATAK', 'ATAK tactical map',
                 'Carte, unités terrain et outils ATAK.',
@@ -186,6 +206,14 @@ final class SubscriptionPlanFeaturesCatalog
             'courrier' => $bool('documents', 'Courrier officiel', 'Official mail',
                 'Bureau courrier, modèles, validation et archivage.',
                 'Mail office, templates, approval and archiving.'),
+            'max_mini_articles' => $quota('documents', 'Mini-articles de la communauté', 'Community mini-articles',
+                'Mini-articles du back-office (brouillons compris). Ceux déjà écrits restent lisibles et peuvent être supprimés.',
+                'Back-office mini-articles (drafts included). Those already written stay readable and can be deleted.',
+                'mini-articles', 'mini-articles'),
+            'max_email_templates' => $quota('documents', 'Modèles de message personnalisés', 'Custom message templates',
+                'Modèles de message créés par la communauté (les modèles fournis d’office ne comptent pas). Ceux déjà créés restent utilisables.',
+                'Message templates created by the community (the ready-made ones do not count). Those already created stay usable.',
+                'modèles', 'templates'),
             'equipment' => $bool('documents', 'Équipement', 'Equipment',
                 'Manuels et fiches matériel.',
                 'Manuals and equipment sheets.'),
@@ -272,6 +300,9 @@ final class SubscriptionPlanFeaturesCatalog
                 'max_real_issuer_imports' => 5,
                 'max_custom_qualifications' => 5,
                 'max_active_invite_links' => 2,
+                'max_recruitment_offers' => 3,
+                'max_mini_articles' => 5,
+                'max_email_templates' => 3,
             ],
             'standard' => [
                 'documents' => true,
@@ -306,6 +337,9 @@ final class SubscriptionPlanFeaturesCatalog
                 'max_real_issuer_imports' => 25,
                 'max_custom_qualifications' => 30,
                 'max_active_invite_links' => 0,
+                'max_recruitment_offers' => 10,
+                'max_mini_articles' => 30,
+                'max_email_templates' => 10,
             ],
             'pro' => [
                 'documents' => true,
@@ -340,6 +374,9 @@ final class SubscriptionPlanFeaturesCatalog
                 'max_real_issuer_imports' => 0,
                 'max_custom_qualifications' => 0,
                 'max_active_invite_links' => 0,
+                'max_recruitment_offers' => 0,
+                'max_mini_articles' => 0,
+                'max_email_templates' => 0,
             ],
             'pro_plus' => [
                 'documents' => true,
@@ -374,8 +411,25 @@ final class SubscriptionPlanFeaturesCatalog
                 'max_real_issuer_imports' => 0,
                 'max_custom_qualifications' => 0,
                 'max_active_invite_links' => 0,
+                'max_recruitment_offers' => 0,
+                'max_mini_articles' => 0,
+                'max_email_templates' => 0,
             ],
         ];
+    }
+
+    /**
+     * Défauts à compléter dans les formules DÉJÀ enregistrées (migration de démarrage) : sans les plafonds laissés à
+     * la décision du propriétaire, pour ne jamais imposer une valeur à une formule existante.
+     *
+     * @return array<string, array<string, bool|int>>
+     */
+    public static function defaultsToMergeIntoExisting(): array
+    {
+        return array_map(
+            static fn (array $d): array => array_diff_key($d, array_flip(self::OWNER_DECIDES)),
+            self::defaultsByPlanSlug()
+        );
     }
 
     /**
@@ -430,7 +484,9 @@ final class SubscriptionPlanFeaturesCatalog
         $defaulted = [];
         foreach (self::definitions() as $key => $def) {
             $has = array_key_exists($key, $stored);
-            $raw = $has ? $stored[$key] : ($defaults[$key] ?? ($def['type'] === 'bool' ? false : 0));
+            // Plafond laissé au propriétaire et pas encore enregistré : illimité (0), jamais le défaut du catalogue.
+            $undecided = !$has && in_array($key, self::OWNER_DECIDES, true);
+            $raw = $has ? $stored[$key] : ($undecided ? 0 : ($defaults[$key] ?? ($def['type'] === 'bool' ? false : 0)));
             if (!$has) {
                 $defaulted[] = $key;
             }
@@ -518,7 +574,7 @@ final class SubscriptionPlanFeaturesCatalog
             $raw = $input['feature_' . $key] ?? null;
             if (!is_numeric(is_string($raw) ? trim($raw) : $raw)) {
                 // Champ vidé ou absent : on garde le plafond actuel (sinon celui du catalogue), jamais « illimité » par accident.
-                $raw = $existing[$key] ?? ($catalog[$key] ?? 0);
+                $raw = $existing[$key] ?? (in_array($key, self::OWNER_DECIDES, true) ? 0 : ($catalog[$key] ?? 0));
             }
             $out[$key] = max(0, min(self::QUOTA_MAX, (int) $raw));
         }
