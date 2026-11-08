@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Espace Matériel : fiches matériel et dotation de la communauté (onglets internes, recherche instantanée).
  * Anciennes adresses ?tab=fiches|dotation, ?fiche=ID, ?dotation=ID conservées (fenêtres ouvertes par le script).
  */
-$tabNow = (string) ($nav['tab'] ?? 'fiches') === 'dotation' ? 'dotation' : 'fiches';
+$tabNow = (string) ($eqNav['tab'] ?? 'fiches') === 'dotation' ? 'dotation' : 'fiches';
 ?>
 <div class="eqx-spacehead">
     <p class="eqx-intro">Les fiches matériel et la dotation de la communauté.</p>

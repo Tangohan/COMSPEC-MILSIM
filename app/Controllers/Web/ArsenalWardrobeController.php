@@ -265,6 +265,7 @@ class ArsenalWardrobeController
             $payload = (string) ($row['payload_text'] ?? '');
             $row['sections'] = ArsenalLoadoutItems::grouped($payload, $catalog);
             $row['preview'] = ArsenalLoadoutItems::previewItems(ArsenalLoadoutItems::previewClasses($payload), $catalog);
+            $row['inventory'] = ArsenalLoadoutItems::inventoryNames(ArsenalLoadoutItems::inventory($payload), $catalog);
             $row['copy_wardrobe_id'] = $copies[RoleKitService::COPY_SLUG_PREFIX . (int) $row['id']] ?? 0;
         }
         unset($row);
@@ -1555,7 +1556,7 @@ class ArsenalWardrobeController
             'catalogCount' => $catalogCount,
             'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',
             'myGameKit' => $myGameKit,
-            'nav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'fiches', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
+            'eqNav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'fiches', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
             'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),
@@ -1589,10 +1590,16 @@ class ArsenalWardrobeController
             foreach ($w['preview_classes'] ?? [] as $c) {
                 $all[strtolower((string) $c)] = (string) $c;
             }
+            foreach ($w['inventory'] ?? [] as $box) {
+                foreach ($box['items'] as $it) {
+                    $all[strtolower($it['class'])] = $it['class'];
+                }
+            }
         }
         $catalog = $all === [] ? [] : ($this->playerKits()?->catalogFor($tenantId, array_values($all)) ?? []);
         foreach ($wardrobes as &$w) {
             $w['preview'] = ArsenalLoadoutItems::previewItems(array_values($w['preview_classes'] ?? []), $catalog);
+            $w['inventory'] = ArsenalLoadoutItems::inventoryNames($w['inventory'] ?? [], $catalog);
             unset($w['preview_classes']);
         }
         unset($w);

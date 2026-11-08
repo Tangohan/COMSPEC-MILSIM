@@ -5,8 +5,8 @@ declare(strict_types=1);
  * communauté pour un responsable). Création dans une fenêtre ; détails et gestion d'un kit : <details> ouverts en
  * fenêtre par le script. Noms de kits, d'unités et d'objets échappés et marqués translate="no".
  */
-$paged = is_array($nav['paged'] ?? null) ? $nav['paged'] : ['items' => [], 'page' => 1, 'pages' => 1, 'total' => 0];
-$creating = $canManageKits && !empty($nav['creer']);
+$paged = is_array($eqNav['paged'] ?? null) ? $eqNav['paged'] : ['items' => [], 'page' => 1, 'pages' => 1, 'total' => 0];
+$creating = $canManageKits && !empty($eqNav['creer']);
 ?>
 <?php if (!$kitsAllowed): ?>
 <div class="eqx-offer">
@@ -47,7 +47,7 @@ require __DIR__ . '/_space_toolbar.php';
 ?>
 <?php if ($paged['items'] === []): ?>
 <div class="eqx-empty">
-    <?php if ((string) ($nav['q'] ?? '') !== ''): ?>
+    <?php if ((string) ($eqNav['q'] ?? '') !== ''): ?>
     <p><strong>Aucun kit ne correspond à cette recherche.</strong></p>
     <?php else: ?>
     <p><strong><?= $canManageKits ? 'Aucun kit de départ pour le moment.' : 'Aucun kit ne vous est proposé pour le moment.' ?></strong></p>
