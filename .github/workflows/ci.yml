@@ -24,6 +24,39 @@ jobs:
       - name: PHPStan
         run: vendor/bin/phpstan analyse --memory-limit=1G
 
+  # L’annuaire des comptes sur un vrai serveur : SQLite accepte des requêtes que MySQL ou MariaDB refusent.
+  mysql-directory:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["mysql:8.0", "mariadb:10.11"]
+    services:
+      db:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: comspec_test
+        ports:
+          - 3306:3306
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_mysql
+          coverage: none
+      - name: Composer install
+        run: composer install --no-interaction --prefer-dist
+      - name: Attendre la base
+        run: timeout 150 bash -c 'until mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; do sleep 2; done'
+      - name: PHPUnit (annuaire des comptes)
+        env:
+          COMSPEC_TEST_MYSQL_DSN: "mysql:host=127.0.0.1;port=3306;dbname=comspec_test;charset=utf8mb4"
+          COMSPEC_TEST_MYSQL_USER: root
+          COMSPEC_TEST_MYSQL_PASS: root
+        run: vendor/bin/phpunit --filter PlatformUsersDirectoryMysqlTest
+
   assets:
     runs-on: ubuntu-latest
     steps:
