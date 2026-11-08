@@ -5,17 +5,23 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Csrf;
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AarAnnexRepository;
 use App\Repositories\AarReportRepository;
 use App\Repositories\AarReportTemplateRepository;
+use App\Repositories\AarSynthesisRepository;
+use App\Services\Aar\AarConclusionAccess;
+use App\Services\Aar\AarSynthesisService;
 use App\Repositories\TheatreMissionCycleRepository;
 use App\Services\Aar\AarReportAdminService;
 use App\Services\Aar\AarReportPdfService;
 use App\Services\Rbac\RolePermissionMatrixCatalog;
 use App\Support\AarCustomForm;
 use App\Support\ModuleFeatureAccess;
+use App\Support\NonDefaultTenantContextGuard;
 
 final class AdminAarReportsController
 {
@@ -48,7 +54,7 @@ final class AdminAarReportsController
         $missing = AarReportAdminService::missionsWithoutReport($missions, $all);
 
         $tab = (string) $request->query('vue', 'rapports');
-        if (!in_array($tab, ['rapports', 'actions', 'missions'], true)) {
+        if (!in_array($tab, ['rapports', 'actions', 'missions', 'terrain'], true)) {
             $tab = 'rapports';
         }
         $status = trim((string) $request->query('status', ''));
@@ -95,6 +101,9 @@ final class AdminAarReportsController
             'aarActionState' => $actionState,
             'aarMissing' => $missing,
             'aarTab' => $tab,
+            'aarFieldReports' => $tab === 'terrain'
+                ? (new \App\Services\Intel\IntelIntakeService())->listItems($tenantId, ['source' => 'cr', 'state' => 'all'], (int) Session::get('user_id'), 300)
+                : [],
             'aarCanManage' => $canManage,
             'aarTemplateCount' => count($this->templates->listForTenant($tenantId, true)),
             'csrfToken' => Csrf::token(),
@@ -143,6 +152,8 @@ final class AdminAarReportsController
             'aarMissions' => $missions,
             'aarMissing' => $missing,
             'aarTemplates' => $this->templates->listForTenant($tenantId, true),
+            'aarAnnexSources' => (new AarAnnexRepository())->attachableSources($tenantId),
+            'aarAnnexes' => [],
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -190,6 +201,7 @@ final class AdminAarReportsController
             'aarTemplate' => $template,
             'aarCanManage' => ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'),
             'aarMissionPdfUrl' => self::missionAarPdfUrl($mission),
+            'aarAnnexes' => (new AarAnnexRepository())->listForReport($tenantId, $id),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -228,6 +240,8 @@ final class AdminAarReportsController
             'backOfficePageCss' => ['back-office-aar.css'],
             'aarReport' => $report,
             'aarMissions' => $this->missionsForEdit($tenantId, $report),
+            'aarAnnexSources' => (new AarAnnexRepository())->attachableSources($tenantId),
+            'aarAnnexes' => (new AarAnnexRepository())->listForReport($tenantId, $id),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -292,6 +306,7 @@ final class AdminAarReportsController
         }
         [$tenantId, , $report] = $ctx;
         $this->reports->delete($tenantId, (int) $report['id']);
+        (new AarAnnexRepository())->deleteForReport($tenantId, (int) $report['id']);
         Session::flash('success', 'Compte rendu ' . (string) ($report['reference_code'] ?? '') . ' supprimé.');
 
         return Response::redirect(url(self::BASE));
@@ -374,6 +389,7 @@ final class AdminAarReportsController
         }
         Session::flash('success', 'Compte rendu enregistré.');
         $id = (int) ($saved['id'] ?? 0);
+        $this->saveAnnexes($request, $tenantId, $id);
 
         return Response::redirect(url('back-office/atak/comptes-rendus' . ($id > 0 ? '/' . $id : '')));
     }
@@ -421,6 +437,7 @@ final class AdminAarReportsController
             Session::flash('error', $e->getMessage());
             return Response::redirect(url('back-office/atak/comptes-rendus/' . $id . '/edit'));
         }
+        $this->saveAnnexes($request, $tenantId, $id);
         Session::flash('success', 'Compte rendu mis à jour.');
 
         return Response::redirect(url('back-office/atak/comptes-rendus/' . $id));
@@ -673,6 +690,226 @@ final class AdminAarReportsController
      *
      * @return array{0:int,1:int,2:array<string, mixed>}|Response
      */
+    /**
+     * Annexes saisies dans le formulaire : sources du terrain cochées ("bda:12", "cr:34") et annexes rédigées.
+     * Sans le marqueur du formulaire, les annexes en place sont gardées.
+     */
+    private function saveAnnexes(Request $request, int $tenantId, int $reportId): void
+    {
+        if ($reportId < 1 || (string) $request->input('annex_form', '') !== '1') {
+            return;
+        }
+        $items = [];
+        $links = $request->input('annex_links', []);
+        foreach (is_array($links) ? $links : [] as $link) {
+            if (is_string($link) && preg_match('/^(bda|cr):(\d+)$/', $link, $m) === 1) {
+                $items[] = ['kind' => $m[1], 'source_id' => (int) $m[2]];
+            }
+        }
+        $titles = $request->input('annex_note_title', []);
+        $bodies = $request->input('annex_note_body', []);
+        $titles = is_array($titles) ? $titles : [];
+        $bodies = is_array($bodies) ? $bodies : [];
+        foreach ($titles as $i => $title) {
+            $items[] = ['kind' => 'note', 'title' => (string) $title, 'body' => (string) ($bodies[$i] ?? '')];
+        }
+        (new AarAnnexRepository())->replaceForReport($tenantId, $reportId, $items);
+    }
+
+    /**
+     * Écriture : AarConclusionAccess (droit atak.aar.conclude, Gestionnaire, adjoint). Lecture : en plus, ceux qui ont
+     * déjà accès aux comptes rendus (administration et module ATAK).
+     *
+     * @return int|Response communauté, ou la réponse de refus
+     */
+    private function synthesisGuard(bool $write): int|Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        $blocked = NonDefaultTenantContextGuard::redirectIfInvalid();
+        if ($blocked !== null) {
+            return $blocked;
+        }
+        if (AarConclusionAccess::allowsCurrentUser()) {
+            return $tenantId;
+        }
+        if ($write) {
+            Session::flash('error', 'Seuls les gestionnaires et les adjoints rédigent une synthèse.');
+
+            return Response::redirect(url(self::BASE . '/syntheses'));
+        }
+        if (!self::canOpenReports()) {
+            Session::flash('error', 'Accès réservé aux gestionnaires et aux adjoints.');
+
+            return Response::redirect(url('dashboard'));
+        }
+
+        return $tenantId;
+    }
+
+    /** Mêmes conditions que les routes des comptes rendus (TenantResourceAdminMiddleware, puis module ATAK). */
+    private static function canOpenReports(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return ($gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access'))
+            && ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'view');
+    }
+
+    public function synthesisIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->synthesisGuard(false);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $canConclude = AarConclusionAccess::allowsCurrentUser();
+
+        return Response::view('layout.main', [
+            'content' => 'admin.aar_reports.synthesis_index',
+            'title' => 'Synthèses de comptes rendus',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Opérations',
+            'boPageTitle' => 'Synthèses',
+            'boPageKicker' => 'OPÉRATIONS · RETOURS',
+            'boPageSubtitle' => 'Plusieurs comptes rendus condensés en un seul texte : améliorations, enseignements, conclusion.',
+            'boPageQuick' => self::canOpenReports() ? [['label' => '← Comptes rendus', 'href' => url(self::BASE)]] : [],
+            'backOfficePageCss' => ['back-office-aar.css'],
+            'aarSyntheses' => (new AarSynthesisRepository())->listForTenant($tenantId),
+            'aarAll' => $canConclude ? $this->reports->listForTenant($tenantId, []) : [],
+            'aarCanConclude' => $canConclude,
+        ]);
+    }
+
+    public function synthesisNew(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->synthesisGuard(true);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $ids = $request->query('ids', []);
+        $reports = [];
+        foreach (array_slice(array_unique(array_map('intval', is_array($ids) ? $ids : [])), 0, 40) as $id) {
+            $r = $id > 0 ? $this->reports->findForTenant($tenantId, $id) : null;
+            if ($r !== null) {
+                $reports[] = $r;
+            }
+        }
+        if (count($reports) < 2) {
+            Session::flash('error', 'Choisissez au moins deux comptes rendus à condenser.');
+
+            return Response::redirect(url(self::BASE . '/syntheses'));
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.aar_reports.synthesis_form',
+            'title' => 'Synthèse de comptes rendus',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Opérations',
+            'boPageTitle' => 'Synthèse de comptes rendus',
+            'boPageKicker' => 'OPÉRATIONS · RETOURS',
+            'boPageSubtitle' => 'Les textes ci-dessous reprennent ceux des comptes rendus choisis : relisez, corrigez, puis enregistrez.',
+            'boPageQuick' => [['label' => '← Synthèses', 'href' => url(self::BASE . '/syntheses')]],
+            'backOfficePageCss' => ['back-office-aar.css'],
+            'aarSynthReports' => $reports,
+            'aarSynthDraft' => AarSynthesisService::condense($reports),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    public function synthesisStore(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->synthesisGuard(true);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url(self::BASE . '/syntheses'));
+        }
+        $ids = [];
+        $posted = $request->input('report_ids', []);
+        foreach (array_slice(array_unique(array_map('intval', is_array($posted) ? $posted : [])), 0, 40) as $id) {
+            if ($id > 0 && $this->reports->findForTenant($tenantId, $id) !== null) {
+                $ids[] = $id;
+            }
+        }
+        $title = trim((string) $request->input('title', ''));
+        if (count($ids) < 2 || $title === '') {
+            Session::flash('error', 'Donnez un titre et gardez au moins deux comptes rendus.');
+
+            return Response::redirect(url(self::BASE . '/syntheses'));
+        }
+        (new AarSynthesisRepository())->create(
+            $tenantId,
+            (int) Session::get('user_id'),
+            $title,
+            $ids,
+            (string) $request->input('improvements', ''),
+            (string) $request->input('lessons', ''),
+            (string) $request->input('conclusion', '')
+        );
+        Session::flash('success', 'Synthèse enregistrée.');
+
+        return Response::redirect(url(self::BASE . '/syntheses'));
+    }
+
+    public function synthesisShow(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->synthesisGuard(false);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $synth = (new AarSynthesisRepository())->findForTenant($tenantId, (int) ($params['id'] ?? 0));
+        if ($synth === null) {
+            Session::flash('error', 'Cette synthèse est introuvable.');
+
+            return Response::redirect(url(self::BASE . '/syntheses'));
+        }
+        $reports = [];
+        foreach ($synth['report_ids'] as $id) {
+            $r = $this->reports->findForTenant($tenantId, (int) $id);
+            if ($r !== null) {
+                $reports[] = $r;
+            }
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.aar_reports.synthesis_show',
+            'title' => 'Synthèse — ' . (string) $synth['title'],
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Opérations',
+            'boPageTitle' => (string) $synth['title'],
+            'boPageKicker' => 'OPÉRATIONS · SYNTHÈSE',
+            'boPageQuick' => [['label' => '← Synthèses', 'href' => url(self::BASE . '/syntheses')]],
+            'backOfficePageCss' => ['back-office-aar.css'],
+            'aarSynth' => $synth,
+            'aarSynthReports' => $reports,
+            'aarCanOpenReports' => self::canOpenReports(),
+            'aarCanConclude' => AarConclusionAccess::allowsCurrentUser(),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    public function synthesisDelete(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->synthesisGuard(true);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url(self::BASE . '/syntheses'));
+        }
+        (new AarSynthesisRepository())->delete($tenantId, (int) ($params['id'] ?? 0));
+        Session::flash('success', 'Synthèse supprimée.');
+
+        return Response::redirect(url(self::BASE . '/syntheses'));
+    }
+
     private function reportContext(Request $request, array $params): array|Response
     {
         $tenantId = (int) Session::get('tenant_id');

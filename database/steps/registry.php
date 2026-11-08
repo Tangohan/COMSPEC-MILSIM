@@ -80,4 +80,5 @@ return [
     ['id' => 'unit_struct_types', 'label' => 'Types d’entité : types personnalisés créés par chaque communauté pour ses unités', 'group' => 'schema', 'file' => '4010_unit_struct_types.php', 'rerun' => true],
     ['id' => 'atak_sse_identity_suite', 'label' => 'COMSPEC IDENTITY : clé biométrique des fiches et identités (recoupement des contrôles), réglage d’envoi automatique par communauté, carte militaire pour les pays existants', 'group' => 'schema', 'file' => '4050_atak_sse_identity_suite.php', 'rerun' => true],
     ['id' => 'organization_data_purge_permission', 'label' => 'Droit de supprimer les photos du jeu et les données de renseignement de la communauté (propriétaire et administrateur)', 'group' => 'schema', 'file' => '4030_organization_data_purge_permission.php', 'rerun' => true],
+    ['id' => 'atak_aar_annexes_syntheses', 'label' => 'Comptes rendus : annexes (BDA, CR du terrain, textes rédigés), synthèses de plusieurs comptes rendus, et tables des terminaux ATAK pour le Data Inspector', 'group' => 'schema', 'file' => '4040_atak_aar_annexes_syntheses.php', 'rerun' => true],
 ];
