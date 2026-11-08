@@ -20,6 +20,18 @@ params [["_act", "scan"], ["_k", ""], ["_v", 0]];
 private _render = { if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }; };
 switch (_act) do {
     case "scan": {
+        // Liaison réaliste : aucun calcul propre, l'écran lit le graphe des données et de la voix (fn_meshGraph, fn_mpuLink "mesh").
+        if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith {
+            uiNamespace setVariable ["COMSPEC_ATAK_MeshScanAt", diag_tickTime];
+            if (_k isEqualTo "force") then { uiNamespace setVariable ["COMSPEC_ATAK_MpuMeshAt", -100]; };
+            private _m = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
+            private _scr = _m getOrDefault ["screen", createHashMap];
+            if ((count _scr) > 0 && {diag_tickTime - (_m getOrDefault ["at", -100]) < 20}) exitWith { _scr };
+            createHashMapFromArray [
+                ["nodes", [[player, (eyePos player) vectorAdd [0, 0, 0.5], [player, true] call comspec_atak_native_fnc_unitCallsign, "me", ["range", [player]] call comspec_atak_native_fnc_mpu5]]],
+                ["links", []], ["hops", [-1]], ["me", 0], ["gw", -1], ["gwLabel", ""], ["range", missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000]]
+            ]
+        };
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Mesh", []];
         if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 3} && {_k isNotEqualTo "force"}) exitWith { _cache select 1 };
         // Hors contexte suspendable (Draw de la carte, rendu de page) : O(n²) appels à fn_radioLink figeaient l'image.
@@ -48,8 +60,6 @@ switch (_act) do {
         private _range = missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000];
         private _side = side group player;
         private _units = (allPlayers select { alive _x && {side group _x isEqualTo _side} && {_x isNotEqualTo player} && {[_x] call comspec_atak_native_fnc_hasDevice} }) select [0, 63];
-        // Liaison réaliste (fn_mpuLink) : seuls les joueurs dont la radio de données est en service sont des nœuds.
-        if (["active"] call comspec_atak_native_fnc_mpuLink) then { _units = _units select { (["node", _x] call comspec_atak_native_fnc_meshRead) isNotEqualTo [] }; };
         private _ant = { params ["_u"]; (eyePos _u) vectorAdd [0, 0, 0.5] };
         // Radio maillée MPU5 portée (fn_mpu5) : portée du nœud relevée (réglage comspec_atak_native_mpu5_range).
         private _nodes = [[player, [player] call _ant, [player, true] call comspec_atak_native_fnc_unitCallsign, "me", ["range", [player]] call comspec_atak_native_fnc_mpu5]];

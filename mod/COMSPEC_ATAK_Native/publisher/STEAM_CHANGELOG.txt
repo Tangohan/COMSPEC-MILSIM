@@ -20,6 +20,7 @@
 
 [h2]Optimisation[/h2]
 [list]
+[*] Réseau maillé MPU5 (avec la liaison réaliste, désactivée par défaut) : un seul graphe pour l'écran, les données et la voix, calculé sur le serveur, avec un plafond de sauts réglable.
 [*] La liaison COMSPEC Link fait moins de travail à chaque échange avec le téléphone et écrit son journal par paquets.
 [*] L'app Recherchés et les apps du SSE qui lisent les avis d'Athena ne font plus attendre le jeu : liste gardée 5 minutes et rafraîchie en arrière-plan.
 [*] Onglet Debug › PERFS : temps passé dans la liaison pour chaque commande (appels, moyenne, p95, pire) et bouton RAZ DLL.

@@ -12,6 +12,7 @@
       "spawn"    [disposition ("chain" | "grid" | "random"), nombre, écart m, portée m, avec relais au bout]
       "scenario" ["chain" | "grid30" | "grid60" | "partition" | "jammer" | "move"]
       "kill"     [index] : le nœud s'éteint (enregistrement vide) ; "clear" : tout retirer
+      "stats"    : renvoie à l'appelant les compteurs du constructeur et le journal de l'hystérésis
       "moveTick" : déplacement scripté, toutes les 2 s tant que le mouvement est actif
 */
 params [["_act", ""], ["_arg", []], ["_caller", objNull]];
@@ -102,7 +103,7 @@ switch (_act) do {
             if !([_who] call comspec_atak_native_fnc_adminAllowed) exitWith {
                 diag_log format ["[COMSPEC ATAK NATIVE][WARN][MESH] Demande d'outil de développement refusée : %1 %2", name _who, _a];
             };
-            if !(_a in ["spawn", "scenario", "kill", "clear"]) exitWith {};
+            if !(_a in ["spawn", "scenario", "kill", "clear", "stats"]) exitWith {};
             [_a, _xa, _who] call comspec_atak_native_fnc_devMeshSim;
         }] call CBA_fnc_addEventHandler;
     };
@@ -136,6 +137,9 @@ switch (_act) do {
         if (!isNull _o) then { _o setVariable ["COMSPEC_ATAK_MpuNode", [], true]; };
     };
     case "clear": { call _clear; };
+    case "stats": {
+        ["comspec_atak_native_devMeshStats", [(missionNamespace getVariable ["COMSPEC_ATAK_MeshStats", createHashMap]) toArray false, missionNamespace getVariable ["COMSPEC_ATAK_MeshLinkLog", []]], _caller] call CBA_fnc_targetEvent;
+    };
     case "moveTick": {
         if !(missionNamespace getVariable ["COMSPEC_ATAK_MeshSimMove", false]) exitWith {};
         {

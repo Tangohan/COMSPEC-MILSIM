@@ -54,7 +54,8 @@ switch (_act) do {
     };
     case "list": {
         if (!_on) exitWith { [] };
-        private _side = str side group player;
+        // Camp donné par le constructeur du graphe (fn_meshGraph), sur le serveur où player n'existe pas.
+        private _side = if (_v isEqualType "") then { _v } else { str side group player };
         ((missionNamespace getVariable ["COMSPEC_ATAK_Gateways", []]) select { [_x] call _ok && {((_x getVariable ["COMSPEC_ATAK_Gateway", []]) param [1, ""]) isEqualTo _side} }) apply {
             (_x getVariable ["COMSPEC_ATAK_Gateway", []]) params [["_m", "relay"], "", ["_n", ""]];
             ([_m] call _spec) params ["_r", "_mb"];

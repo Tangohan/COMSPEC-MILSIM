@@ -16,8 +16,8 @@
     telle liaison restée en mémoire est remise à « aucune radio reliée » au tick suivant, avec une notification.
     Passerelle du maillage : relais de la mission en service ; sans relais, la MPU5 du chef de groupe (sur le même canal) ;
     sinon la radio du joueur elle-même (maillage autonome de l'équipe, solo).
-    Calculs : "tick" toutes les 2 s (aucun calcul par image), maillage recalculé au plus toutes les 4 s dans un script
-    planifié (un seul à la fois), lignes de vue gardées 30 s ; fn_linkQuality ne lit que le dernier état ("status").
+    Calculs : "tick" toutes les 2 s (aucun calcul par image). Graphe unique de fn_meshGraph (sur le serveur par défaut), relu
+    dans un script planifié au plus toutes les 4 s, ou dès qu'il change ; fn_linkQuality ne lit que le dernier état ("status").
     Variable publique : COMSPEC_ATAK_MpuNode = [réseau ("C<canal>"), portée m, objet antenne (joueur ou radio posée)]
     ou [] ; publiée seulement quand elle change.
     Voix ACRE2 / TFAR relayée par le maillage (fn_mpuVoice, réglage comspec_atak_native_mpu_voice) : une radio pontée sur
@@ -54,7 +54,6 @@ private _findPosed = {
     { if ([_x] call _holderHas) exitWith { _h = _x; }; } forEach (nearestObjects [player, ["WeaponHolder", "GroundWeaponHolder", "WeaponHolderSimulated"], _rad]);
     _h
 };
-private _antOf = { params ["_o"]; if (_o isKindOf "CAManBase") then { (eyePos _o) vectorAdd [0, 0, 0.4] } else { (getPosASL _o) vectorAdd [0, 0, 0.8] } };
 private _say = {
     params ["_type", "_msg"];
     if !([_msg, 4] call comspec_atak_native_fnc_toast) then { [_type, _msg, 4, 30] call comspec_atak_native_fnc_notify; };
@@ -304,6 +303,8 @@ switch (_act) do {
         if (!_need && {_on} && {_carried} && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isNotEqualTo []} && {missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]}) then { _need = true; };
         // Outils de développement (fn_devMesh) : graphe calculé même téléphone débranché.
         if (!_need && {_on} && {["on"] call comspec_atak_native_fnc_devMesh}) then { _need = true; };
+        // App Wave Relay ou carte ouverte (fn_waveRelayAction "scan") : graphe relu même téléphone débranché.
+        if (!_need && {_on} && {_now - (uiNamespace getVariable ["COMSPEC_ATAK_MeshScanAt", -100]) < 10}) then { _need = true; };
         // Réseau perdu ou retrouvé par la radio : notification (pas en double avec celle de la coupure du lien).
         private _wasOk = _old getOrDefault ["ok", false];
         if ((_s get "ok") isNotEqualTo _wasOk || {(_s get "kind") isNotEqualTo (_old getOrDefault ["kind", ""])}) then {
@@ -319,8 +320,8 @@ switch (_act) do {
             };
             call _rerender;
         };
-        // Maillage : recalculé au plus toutes les 4 s, dans un script planifié (un seul à la fois, abandonné après 20 s).
-        if (_need && {_now - (uiNamespace getVariable ["COMSPEC_ATAK_MpuMeshAt", -100]) >= 4} && {_now - (uiNamespace getVariable ["COMSPEC_ATAK_MpuMeshBusy", -100]) > 20}) then {
+        // Maillage : relu au plus toutes les 4 s (8 s au-delà de 40 nœuds), ou dès qu'il change, dans un script planifié (un seul à la fois, abandonné après 20 s).
+        if (_need && {_now - (uiNamespace getVariable ["COMSPEC_ATAK_MpuMeshAt", -100]) >= (["every"] call comspec_atak_native_fnc_meshGraph)} && {_now - (uiNamespace getVariable ["COMSPEC_ATAK_MpuMeshBusy", -100]) > 20}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_MpuMeshBusy", _now];
             uiNamespace setVariable ["COMSPEC_ATAK_MpuMeshAt", _now];
             private _max = (missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20]) * 1000;
@@ -333,160 +334,10 @@ switch (_act) do {
         ["radio de données", _t0] call comspec_atak_native_fnc_perfAcc;
     };
     case "mesh": {
-        // Chemin au plus large débit (goulot maximal) de ma radio vers une passerelle, liens évalués à la demande.
-        _arg params ["_key", "_range", "_ant", "_maxK"];
-        private _now = diag_tickTime;
-        private _side = side group player;
-        private _tNow = [time, serverTime] select isMultiplayer;
-        private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _tNow) && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo str _side})} };
-        private _jamAt = {
-            params ["_p"];
-            private _m = 1;
-            {
-                _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
-                if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
-                private _d = _p distance2D _jp;
-                private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
-                if (_d < _jr) then { _m = _m * (1 - _js * (1 - (_d / _jr) ^ 2)); };
-            } forEach _jam;
-            _m
-        };
-        // Nœuds : [objet antenne, position ASL, nom, type ("me" | "node" | "posed" | "gw"), portée m, porteur, débit max kbit/s]
-        private _nodes = [[_ant, [_ant] call _antOf, "Ma radio", "me", _range, player, _maxK]];
-        {
-            (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_k", ""], ["_r", 0], ["_o", objNull]];
-            if (_k isNotEqualTo _key) then { continue };
-            private _cs = [_x, true] call comspec_atak_native_fnc_unitCallsign;
-            private _man = _o isKindOf "CAManBase";
-            _nodes pushBack [_o, [_o] call _antOf, [format ["MPU5 posée (%1)", _cs], _cs] select _man, ["posed", "node"] select _man, _r, _x, _maxK];
-        } forEach ((allPlayers select { alive _x && {_x isNotEqualTo player} && {side group _x isEqualTo _side} }) + (["units", [str _side]] call comspec_atak_native_fnc_devMeshSim));
-        {
-            _x params ["_o", "_ap", "_n", "_k", "_r", "_mb", "_ok"];
-            if (!_ok || {_k isEqualTo "mpu5"}) then { continue };
-            _nodes pushBack [_o, _ap, _n, "gw", _r, objNull, (_mb * 1000) min _maxK];
-        } forEach (["list"] call comspec_atak_native_fnc_relayNet);
-        private _n = count _nodes;
-        private _gws = [];
-        { if ((_x select 3) isEqualTo "gw") then { _gws pushBack _forEachIndex; }; } forEach _nodes;
-        private _mode = "relay";
-        if (_gws isEqualTo []) then {
-            private _lead = leader group player;
-            private _li = _nodes findIf { (_x select 5) isEqualTo _lead };
-            if (_lead isNotEqualTo player && {_li > 0}) then { _gws = [_li]; _mode = "lead"; } else { _gws = [0]; _mode = "self"; };
-        };
-        // Lignes de vue (bilan radio, relief) en cache 30 s par paire de positions arrondies (15 m).
-        private _devOn = ["on"] call comspec_atak_native_fnc_devMesh;
-        private _losN = [0, 0];
-        private _devLinks = [];
-        private _cache = uiNamespace getVariable ["COMSPEC_ATAK_MpuLos", createHashMap];
-        if ((count _cache) > 600) then { _cache = createHashMap; };
-        uiNamespace setVariable ["COMSPEC_ATAK_MpuLos", _cache];
-        private _los = {
-            params ["_pa", "_pb", "_r"];
-            private _ka = [round ((_pa select 0) / 15), round ((_pa select 1) / 15), round ((_pa select 2) / 5)];
-            private _kb = [round ((_pb select 0) / 15), round ((_pb select 1) / 15), round ((_pb select 2) / 5)];
-            private _k = str ([[_kb, _ka, round _r], [_ka, _kb, round _r]] select ((_ka select 0) < (_kb select 0) || {(_ka select 0) isEqualTo (_kb select 0) && {(_ka select 1) <= (_kb select 1)}}));
-            private _hit = _cache getOrDefault [_k, []];
-            if ((count _hit) isEqualTo 2 && {_now - (_hit select 0) < 30}) exitWith { _losN set [1, (_losN select 1) + 1]; _hit select 1 };
-            _losN set [0, (_losN select 0) + 1];
-            private _m = ([_pa, _pb, _r, "coarse"] call comspec_atak_native_fnc_radioLink) select 0;
-            _cache set [_k, [_now, _m]];
-            _m
-        };
-        private _jf = _nodes apply { [_x select 1] call _jamAt };
-        private _bw = _nodes apply { -1 };
-        _bw set [0, _maxK];
-        private _hop = _nodes apply { -1 };
-        _hop set [0, 0];
-        private _prev = _nodes apply { -1 };
-        private _mg = _nodes apply { 40 };
-        private _done = _nodes apply { false };
-        private _goal = -1;
-        while { true } do {
-            private _i = -1;
-            private _bb = 0;
-            { if (!(_done select _forEachIndex) && {_x > _bb}) then { _bb = _x; _i = _forEachIndex; }; } forEach _bw;
-            if (_i < 0) exitWith {};
-            _done set [_i, true];
-            if (_goal < 0 && {_i in _gws}) then { _goal = _i; };
-            // Grand maillage : on s'arrête à la passerelle (le reste n'est que de l'affichage).
-            if (_goal >= 0 && {_n > 30}) exitWith {};
-            private _a = _nodes select _i;
-            {
-                if (_done select _forEachIndex) then { continue };
-                private _b = _x;
-                // Deux relais : déjà reliés par le cœur de réseau (fn_relayNet).
-                if ((_a select 3) isEqualTo "gw" && {(_b select 3) isEqualTo "gw"}) then { continue };
-                private _r = (_a select 4) min (_b select 4);
-                if (((_a select 1) distance (_b select 1)) > _r) then { continue };
-                private _m = [_a select 1, _b select 1, _r] call _los;
-                if (_m < 0) then { continue };
-                private _j = (_jf select _i) min (_jf select _forEachIndex);
-                if (_j < 0.1) then { continue };
-                // Modulation adaptative (comme fn_relayNet "link") ; chaque bond relayé coûte 20 % (radio à une antenne).
-                private _f = [0.06, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1] select (((({ _m >= _x } count [0, 2, 4, 6, 9, 12, 16, 20]) - 1) max 0) min 7);
-                if (_devOn) then { _devLinks pushBack [_i, _forEachIndex, _m, ((_a select 6) min (_b select 6)) * _f * _j]; };
-                private _c = ((_bw select _i) min (((_a select 6) min (_b select 6)) * _f * _j)) * ([1, 0.8] select (_i > 0));
-                if (_c > (_bw select _forEachIndex)) then {
-                    _bw set [_forEachIndex, _c];
-                    _hop set [_forEachIndex, (_hop select _i) + 1];
-                    _prev set [_forEachIndex, _i];
-                    _mg set [_forEachIndex, (_mg select _i) min _m];
-                };
-            } forEach _nodes;
-        };
-        private _res = createHashMapFromArray [["key", _key], ["at", diag_tickTime], ["mode", _mode], ["ok", _goal >= 0]];
-        // Voix par le maillage (fn_mpuVoice) : porteurs joints (netId -> sauts) et cœur de réseau commun.
-        private _reach = createHashMap;
-        { if (_forEachIndex > 0 && {!isNull (_x select 5)} && {(_hop select _forEachIndex) >= 0}) then { _reach set [netId (_x select 5), _hop select _forEachIndex]; }; } forEach _nodes;
-        _res set ["reach", _reach];
-        _res set ["vkey", [switch (_mode) do {
-            case "relay": { "R" + str _side };
-            case "lead": { "L" + netId (leader group player) };
-            default { ["", "L" + netId player] select ((leader group player) isEqualTo player) };
-        }, ""] select (_goal < 0)];
-        if (_goal >= 0) then {
-            private _h = _hop select _goal;
-            private _via = _goal;
-            while { (_prev select _via) > 0 } do { _via = _prev select _via; };
-            private _mgMin = (_mg select _goal) max 0;
-            _res set ["kbps", round (_bw select _goal)];
-            _res set ["hops", _h];
-            _res set ["gw", [(_nodes select _goal) select 2, "maillage autonome"] select (_goal isEqualTo 0)];
-            _res set ["via", [(_nodes select _via) select 2, ""] select (_goal isEqualTo 0)];
-            _res set ["lat", round ((missionNamespace getVariable ["comspec_atak_native_mpu_hop_ms", 15]) * (_h max 1)
-                + 5 + 60 * (1 - ((_mgMin / 20) min 1)))];
-            _res set ["loss", [round ((40 * exp (-_mgMin / 5)) min 60), 0] select (_h isEqualTo 0)];
-            _res set ["why", ""];
-        } else {
-            _res set ["kbps", 0];
-            _res set ["hops", -1];
-            _res set ["gw", ""];
-            _res set ["via", ""];
-            _res set ["lat", 0];
-            _res set ["loss", 100];
-            _res set ["why", [format ["hors du maillage de l'équipe (%1 injoignable)", (_nodes select (_gws select 0)) select 2],
-                "aucune passerelle du maillage à portée (relais, pylônes, MPU5 du canal)"] select (_mode isEqualTo "relay")];
-        };
-        private _list = [];
-        for "_i" from 1 to (_n - 1) do {
-            (_nodes select _i) params ["", "_p", "_nm", "_k"];
-            _list pushBack [[_hop select _i, 99] select ((_hop select _i) < 0), round (player distance _p), _nm, _k, _hop select _i, round (_bw select _i)];
-        };
-        _list sort true;
-        // Affichage (app Réseau) : [nom, type, sauts (-1 hors maillage), distance m, débit kbit/s]
-        _res set ["nodes", (_list select [0, 12]) apply { [_x select 2, _x select 3, _x select 4, _x select 1, _x select 5] }];
-        _res set ["count", _n];
-        // Compteurs du tableau de performance (fn_devMesh) ; graphe complet pour les outils, en mode développeur seulement.
-        missionNamespace setVariable ["COMSPEC_ATAK_MeshStats", createHashMapFromArray [["at", diag_tickTime], ["ms", (diag_tickTime - _now) * 1000], ["nodes", _n], ["links", count _devLinks], ["tests", _losN select 0], ["hits", _losN select 1]]];
-        if (_devOn) then {
-            private _devNodes = [];
-            {
-                _x params ["_o", "_p", "_nm", "_k", "_r"];
-                _devNodes pushBack [_o, _p, _nm, _k, _key, _r, _hop select _forEachIndex, _bw select _forEachIndex];
-            } forEach _nodes;
-            _res set ["dev", [_devNodes, _devLinks]];
-        };
+        // Graphe unique (fn_meshGraph) : calculé ici seulement sans serveur de référence, puis lu comme partout ailleurs.
+        _arg params ["_key", "", "_ant", "_maxK"];
+        if !(["serverBuilt"] call comspec_atak_native_fnc_meshGraph) then { ["pass", [[str side group player]]] call comspec_atak_native_fnc_meshGraph; };
+        private _res = ["view", [_key, _ant, _maxK]] call comspec_atak_native_fnc_meshGraph;
         uiNamespace setVariable ["COMSPEC_ATAK_MpuMesh", _res];
         _res
     };
