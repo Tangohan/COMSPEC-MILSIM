@@ -28,6 +28,8 @@ if !(missionNamespace getVariable ["comspec_atak_native_music_enabled", true]) e
 // Listes affichées, rangées par clé : les boutons y renvoient sans recopier la liste dans leur code.
 private _lists = createHashMap;
 uiNamespace setVariable ["COMSPEC_ATAK_MusicLists", _lists];
+// Lignes de piste affichées [identifiant, liste, index, sous-titre] : la piste en cours y est mise à jour sur place (fn_musicAction).
+uiNamespace setVariable ["COMSPEC_ATAK_MusicRows", []];
 private _listRef = { params ["_key"]; format ["((uiNamespace getVariable ['COMSPEC_ATAK_MusicLists', createHashMap]) getOrDefault [%1, []])", str _key] };
 // Favoris (profil) : une piste Athena est reconnue par son identifiant, son URL signée changeant.
 private _favs = profileNamespace getVariable ["COMSPEC_ATAK_MusicFavs", []];
@@ -40,13 +42,16 @@ private _trackRow = {
     params ["_key", "_i", ["_sub", ""]];
     private _items = _lists getOrDefault [_key, []];
     (_items select _i) params ["_k", "_r", "_t", ["_len", 0], ["_artist", ""], ["_id", ""]];
-    private _isCur = (_m get "kind") isEqualTo _k && {(_m get "ref") isEqualTo _r || {_id isNotEqualTo "" && {((_m get "queue") param [_m get "qi", []]) param [5, ""] isEqualTo _id}}};
-    ["person", _icon, format ["<t %1>%2</t><br/><t size='0.75' color='#8a9a93'>%3%4</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur,
-        [_t] call _esc, [_sub] call _esc, ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
+    // Texte et teinte : fn_musicAction "rowText" (aussi utilisé pour changer la piste en cours sur place). La ligne
+    // porte un identifiant (7e élément, fn_formSet "person") et est notée pour cette mise à jour.
+    private _rid = format ["musicRow%1_%2", _key, _i];
+    (uiNamespace getVariable ["COMSPEC_ATAK_MusicRows", []]) pushBack [_rid, _key, _i, _sub];
+    (["rowText", [_key, _i, _sub]] call comspec_atak_native_fnc_musicAction) params ["_rowText", "_rowTint"];
+    ["person", _icon, _rowText,
         [["ÉCOUTER", compile format ["['playList', [%1, %2]] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], true],
          ["+ FILE", compile format ["['enqueue', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i]],
          ["FAV", compile format ["['fav', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], [_k, _r, _id] call _isFav, true, "Ajouter / retirer des favoris"]],
-        [[0.55, 0.6, 0.58, 1], _acc] select _isCur]
+        _rowTint, "", _rid]
 };
 
 switch (_tab) do {

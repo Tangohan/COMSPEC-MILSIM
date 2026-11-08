@@ -13,14 +13,22 @@ uiNamespace setVariable ["COMSPEC_ATAK_SettingsRerender", _rerender];
 // Réglage profil (bascule) : [variable, défaut, clé communauté, libellé, aide]
 uiNamespace setVariable ["COMSPEC_ATAK_ProfToggle", {
     params ["_var", "_def"];
-    profileNamespace setVariable [_var, !(profileNamespace getVariable [_var, _def])];
+    private _new = !(profileNamespace getVariable [_var, _def]);
+    profileNamespace setVariable [_var, _new];
     [] call comspec_atak_native_fnc_saveProfile;
+    // Réglages sans effet sur la mise en page ni sur les calques de la carte (lus à l'usage : effets, bandeaux, vibration,
+    // écran de verrouillage, saleté) : l'interrupteur change sur place (fn_formSet), la page n'est pas redessinée.
+    // Les autres (mise en page, étiquettes de la carte, fond) gardent le redessin.
+    if (_var in ["COMSPEC_ATAK_Animations", "COMSPEC_ATAK_PageFx", "COMSPEC_ATAK_OpenSplash", "COMSPEC_ATAK_TitleSlide", "COMSPEC_ATAK_PressFx",
+        "COMSPEC_ATAK_TapFeedback", "COMSPEC_ATAK_Notifications", "COMSPEC_ATAK_Toasts", "COMSPEC_ATAK_Vibrate", "COMSPEC_ATAK_BftAlerts",
+        "COMSPEC_ATAK_Silent", "COMSPEC_ATAK_LauncherSearch", "COMSPEC_ATAK_LockScreen", "COMSPEC_ATAK_DirtFx"]
+        && {["set_" + _var, _new] call comspec_atak_native_fnc_formSet}) exitWith {};
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 private _profSwitch = {
     params ["_var", "_def", "_tenantKey", "_label", ["_help", ""]];
     ([_var, _def, _tenantKey] call comspec_atak_native_fnc_pref) params ["_on", "_locked"];
-    ["switch", _label, _on, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_ProfToggle');", _var, _def], _help, _locked]
+    ["switch", _label, _on, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_ProfToggle');", _var, _def], _help, _locked, "set_" + _var]
 };
 // Choix exclusif enregistré dans le profil : [variable, valeur actuelle, [[texte, valeur]...]]
 uiNamespace setVariable ["COMSPEC_ATAK_ProfSet", {
@@ -42,7 +50,10 @@ private _profSegment = {
 // Réglage roleplay Overwatch (CBA côté joueur) : verrouillé si la communauté ou le serveur l'impose.
 uiNamespace setVariable ["COMSPEC_ATAK_CbaToggle", {
     params ["_k"];
-    [_k, !(missionNamespace getVariable [_k, false]), false, "client"] call CBA_settings_fnc_set;
+    private _new = !(missionNamespace getVariable [_k, false]);
+    [_k, _new, false, "client"] call CBA_settings_fnc_set;
+    // Étiquettes de la carte (lues au dessin de la carte) : l'interrupteur change sur place, la page n'est pas redessinée.
+    if ((_k select [0, 29]) isEqualTo "comspec_atak_native_map_show_" && {["cba_" + _k, _new] call comspec_atak_native_fnc_formSet}) exitWith {};
     [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
 private _cbaSwitch = {
@@ -52,7 +63,7 @@ private _cbaSwitch = {
     private _rule = [_tenantKey] call comspec_atak_native_fnc_tenantRule;
     private _locked = _rule in ["on", "off"];
     if (_locked) then { _v = _rule isEqualTo "on"; };
-    ["switch", _label, _v, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaToggle');", _k], _help, _locked]
+    ["switch", _label, _v, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaToggle');", _k], _help, _locked, "cba_" + _k]
 };
 // Choix exclusif enregistré en réglage CBA côté joueur (étiquettes de la carte) : le même que dans le menu CBA.
 uiNamespace setVariable ["COMSPEC_ATAK_CbaSet", {

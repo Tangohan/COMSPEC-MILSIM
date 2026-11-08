@@ -5,6 +5,8 @@
       switch : valeur = actif (booléen)
       slider : valeur = [valeur, actif, icône (data\nom, "" : inchangée)]
       fold   : valeur = résumé (texte)
+      person : valeur = [texte structuré, teinte de l'image [r, v, b, a]] (ligne « person » déclarée avec un 7e paramètre)
+      btn    : valeur = [libellé ("" : inchangé), état ("" | "on" | "red")] (bouton de la barre de l'app Drone, 6e élément)
     Retour : true si la ligne est affichée et a été mise à jour.
 */
 params [["_id", ""], ["_v", false]];
@@ -54,6 +56,28 @@ switch (_e get "kind") do {
         if (isNull _t) exitWith { false };
         _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>%2", toUpper (_e get "title"),
             ["", format ["<t align='right' size='0.85' color='#c9d4ce'>%1</t>", _v]] select (_v isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+        true
+    };
+    case "person": {
+        private _t = _e get "text";
+        if (isNull _t) exitWith { false };
+        _v params ["_txt", ["_col", [1, 1, 1, 1]]];
+        _t ctrlSetStructuredText parseText ((_txt) call comspec_atak_native_fnc_tr);
+        private _p = _e get "pic";
+        if (!isNull _p) then { _p ctrlSetTextColor _col; };
+        true
+    };
+    case "btn": {
+        private _b = _e get "btn";
+        if (isNull _b) exitWith { false };
+        _v params [["_lbl", ""], ["_state", ""]];
+        if (_lbl isNotEqualTo "") then { _b ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr); };
+        private _en = _e get "en";
+        switch (_state) do {
+            case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
+            case "red": { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };
+            default { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _en); };
+        };
         true
     };
     default { false };

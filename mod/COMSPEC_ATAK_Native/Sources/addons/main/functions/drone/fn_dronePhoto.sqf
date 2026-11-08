@@ -208,6 +208,14 @@ switch (_act) do {
             _shot camSetFov (0.7 / _zoom);
             _shot camCommit 0;
             private _vision = missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0];
+            // Le cliché est une capture de l'écran : la vision nocturne (intensification de lumière) en plein jour le
+            // blanchit (blanc presque total, sources brûlées ; retour d'un serveur partenaire, photos « CAMÉRA AÉRIENNE »,
+            // 06:13-06:15). Même seuil de lumière que le gain du flux (_expose de fn_droneAction) : en plein jour, le
+            // cliché est pris en vision jour. THERMIQUE et nuit réelle ne changent pas. Valeurs relevées dans le journal.
+            private _lux = (getLightingAt _d) param [1, 0];
+            private _asked = _vision;
+            if (_vision isEqualTo 1 && {sunOrMoon >= 0.5} && {_lux >= 40}) then { _vision = 0; };
+            ["INFO", "DRONE", format ["Cliché : vision demandée %1, utilisée %2, lumière %3, soleil/lune %4, distance de vue %5 m, PiP %6 m", _asked, _vision, round _lux, (sunOrMoon toFixed 2), round viewDistance, round getPiPViewDistance]] call comspec_atak_native_fnc_log;
             if (_vision isEqualTo 1) then { camUseNVG true; };
             if (_vision isEqualTo 2) then { true setCamUseTI 0; };
             showHUD false;
