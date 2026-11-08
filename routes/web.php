@@ -2464,6 +2464,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/admin/parc-atak/retirer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'retire'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/deconnecter', [\App\Controllers\Admin\AdminAtakFleetController::class, 'disconnect'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/message', [\App\Controllers\Admin\AdminAtakFleetController::class, 'message'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/message/tous', [\App\Controllers\Admin\AdminAtakFleetController::class, 'messageAll'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/message/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'cancelMessage'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/compromission', [\App\Controllers\Admin\AdminAtakFleetController::class, 'compromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/compromission/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'undoCompromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -2478,6 +2479,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/parc-atak/debloquer', [$boFleet, 'unblock'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/deconnecter', [$boFleet, 'disconnect'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/message', [$boFleet, 'message'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/message/tous', [$boFleet, 'messageAll'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/message/annuler', [$boFleet, 'cancelMessage'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/compromission', [$boFleet, 'compromise'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/compromission/annuler', [$boFleet, 'undoCompromise'], $boFleetMw);
