@@ -5,6 +5,10 @@
 **Relancer Arma complètement.** Nouveau PBO `comspec_sse_editor`. Aucun changement du main.pbo de l'ATAK ni de la DLL
 (paquet Athena : champ `settings` ajouté, ignoré par un ancien mod).
 
+- **Éditeur SSE, suite** : bibliothèque de la communauté sur Athena (compte relié et habilitation Confidentiel), celle du poste
+  en repli et en cache ; ouverture depuis le menu COMSPEC SSE d'Eden ; ligne « Trouvé par un joueur » dans l'historique ; le texte
+  d'une identité ou d'un kit devient la légende du papier (`fn_idLegend`). Site : étape de migration 4070 à passer.
+
 - **Transmission automatique à Athena activée par défaut** (`comspec_sse_id_autoTransmit`) ; le réglage de la communauté
   (Bureau SSE, Contrôles) reçu dans le paquet l'emporte. `person_id` renseigné quand une fiche correspond (unité, ou papier
   présenté par son vrai titulaire).

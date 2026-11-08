@@ -28,7 +28,13 @@ if ((toLower _op) isEqualTo "generate" && {!isNull _unit} && {!_isZeus}) exitWit
 
 private _result = true;
 
+// Contenu de l'éditeur SSE : le premier joueur qui l'examine l'a trouvé (Zeus exclu : il l'a posé).
+if (!_isZeus && {(toLower _op) in ["setstate", "collect", "markexploited", "documentsread"]} && {!isNil "comspec_sse_fnc_editorFound"}) then {
+    [_unit, _target] call comspec_sse_fnc_editorFound;
+};
+
 switch (toLower _op) do {
+    case "documentsread": {};
     case "setstate": {
         _args params [["_state", "DISCOVERED"]];
         [_target, _state, true] call comspec_sse_fnc_setState;

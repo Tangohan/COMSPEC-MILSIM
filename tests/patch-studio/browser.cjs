@@ -2,7 +2,7 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[],modules=[];page.on('response',r=>{if(/patch-studio(?:-core|-surface|-workspace)?\.m?js(?:\?|$)/.test(r.url()))modules.push({url:r.url(),mime:r.headers()['content-type']});});page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+ const page=require('./reveal.cjs')(await browser.newPage({viewport:{width:1440,height:1000}}));const errors=[],modules=[];page.on('response',r=>{if(/patch-studio(?:-core|-surface|-workspace)?\.m?js(?:\?|$)/.test(r.url()))modules.push({url:r.url(),mime:r.headers()['content-type']});});page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
  const url=process.env.PATCH_TEST_URL||'http://127.0.0.1:8765';
  try{
   await page.goto(url+'/patch-studio');await page.waitForSelector('#studio-home #home-status[hidden]',{state:'attached'});assert.equal(modules.length,4);for(const m of modules){assert.ok(/\.js\?v=/.test(m.url),m.url);assert.match(m.mime,/javascript/);}assert.equal(new URL(modules[0].url).search,new URL(modules[1].url).search);await page.click('#home-templates [data-template="name"]');

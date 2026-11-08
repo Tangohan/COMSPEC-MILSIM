@@ -1,7 +1,7 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- const page=await browser.newPage({viewport:{width:1500,height:1050}}),url=process.env.PATCH_TEST_URL||'http://127.0.0.1:8765',errors=[],external=[];
+ const page=require('./reveal.cjs')(await browser.newPage({viewport:{width:1500,height:1050}})),url=process.env.PATCH_TEST_URL||'http://127.0.0.1:8765',errors=[],external=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());page.on('request',r=>{if(r.url().startsWith('http')&&new URL(r.url()).origin!==new URL(url).origin)external.push(r.url());});
  const bind=()=>page.evaluate(async()=>{const {studio}=await import(document.querySelector('[data-patch-studio-module]').src);globalThis.__patchStudioTest=studio;});
  const waitTexture=id=>page.waitForFunction(id=>globalThis.__patchStudioTest.state.doc.variants.standard.at(-1)?.fill.textureId===id,id);

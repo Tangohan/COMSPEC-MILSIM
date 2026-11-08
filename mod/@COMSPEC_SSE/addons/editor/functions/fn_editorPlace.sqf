@@ -2,9 +2,39 @@
     Placement d'un contenu de l'éditeur (client). [_item, [_pos, _obj]] call comspec_sse_fnc_editorPlace
     Position connue (module Zeus), dossier ou envoi au téléphone : part tout de suite. Sinon un clic dans le monde (Zeus :
     sous la souris ; à pied : au centre de l'écran) ; Échap annule. Gestionnaires retirés dès le clic : aucun coût ensuite.
+    Eden (aucune mission en cours) : un renseignement se pose dans la mission préparée (pièce au centre de la vue, ou objet
+    sélectionné pour la fouille), par le champ d'initialisation de l'objet ; le reste attend le module Zeus, en mission.
 */
 params [["_item", createHashMap, [createHashMap]], ["_ctx", [], [[]]]];
 if (!hasInterface || {(count _item) isEqualTo 0}) exitWith { false };
+if (is3DEN) exitWith {
+    private _notify = { [_this call comspec_sse_fnc_tr, 0] call BIS_fnc_3DENNotification; };
+    private _delivery = _item get "delivery";
+    if ((_item get "type") isNotEqualTo "intel" || {_delivery isEqualTo 2}) exitWith {
+        "Gardé dans la bibliothèque : à placer en mission, depuis le module Zeus." call _notify;
+        false
+    };
+    private _target = if (_delivery isEqualTo 1) then {
+        (get3DENSelected "object") param [0, objNull]
+    } else {
+        create3DENEntity ["Object", "COMSPEC_SSE_Obj_Documents", screenToWorld [0.5, 0.5]]
+    };
+    if (isNull _target) exitWith { "Fouille : sélectionnez d'abord une personne ou un véhicule." call _notify; false };
+    private _marking = ["NON PROTÉGÉ", "DIFFUSION RESTREINTE", "CONFIDENTIEL"] param [_item getOrDefault ["marking", 0], "NON PROTÉGÉ"];
+    private _oneLine = [[_item get "body", toString [13], ""] call CBA_fnc_replace, toString [10], " "] call CBA_fnc_replace;
+    private _vars = [
+        ["comspec_sse_documentsMode", "CUSTOM"],
+        ["comspec_sse_doc1_title", trim (_item get "title")],
+        ["comspec_sse_doc1_summary", "[" + _marking + "] " + _oneLine],
+        ["comspec_sse_editorItem", _item get "id"]
+    ];
+    if (_delivery isEqualTo 1) then { _vars pushBack ["comspec_sse_enabled", true]; };
+    private _code = (_vars apply { "this setVariable [" + str (_x select 0) + ", " + str (_x select 1) + ", true];" }) joinString " "; // format coupe les longs textes
+    private _init = trim (((_target get3DENAttribute "Init") param [0, ""]));
+    _target set3DENAttribute ["Init", trim (_init + " if (isServer) then { " + _code + " };")];
+    ["placed", [_item get "id", "Placé dans la mission préparée."]] call comspec_sse_fnc_editor;
+    true
+};
 _ctx params [["_pos", [], [[]]], ["_obj", objNull, [objNull]]];
 
 private _send = {

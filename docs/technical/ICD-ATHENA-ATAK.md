@@ -540,6 +540,22 @@ DLL command `Ping` is extension liveness, not this HTTP route (both exist).
 
 ---
 
+## ICD-SSE-EDITOR-001 — Bibliothèque de l'éditeur SSE
+
+Canal : `SubmitIdCheck` de COMSPEC Link (2.0.118 et plus, aucune nouvelle DLL) → `POST /api/sse/identity/checks`, champ `kind`. Réponse HTTP `{"id": nombre, "ref": texte}`, rendue au jeu sous la forme `OK|id|ref` (8 000 octets au plus ; la DLL remplace `|`, CR, LF et tabulation dans `ref`).
+
+| `kind` | Accès | Corps | Réponse |
+|---|---|---|---|
+| `editor_list` | compte identifié, habilitation Confidentiel | `offset` | `id` : position de la page suivante (0 : fin) ; `ref` : tableau `parseSimpleArray` |
+| `editor_save` | compte identifié, habilitation Confidentiel | `item` : `id`, `type`, `title`, `body`, `marking`, `paper`, `nature`, `delivery`, `state`, `op`, `link`, `version`, `history`, `found` | `id` : identifiant ; `ref` : `saved`, ou `conflict` si une version plus récente est enregistrée |
+| `editor_found` | clé de communauté suffisante | `uid`, `player`, `when` | `id` : identifiant (0 si inconnu) ; `ref` : `found`, `known` (premier joueur déjà inscrit) ou `unknown` |
+
+Compte identifié : jeton de jeu (Bearer) ou session du portail. Une clé de communauté seule reçoit 403 `clearance_required` sur la lecture et l'écriture. Communauté : toujours celle du jeton, de la clé ou de la session.
+
+Ligne de `editor_list` : `[id, type, titre, texte, classification, papier, nature, remise, état, opération, lié à, version, [[quoi, qui, quand]…], [trouvé par, quand]]`. Dans les textes : `""` pour un guillemet, `\n` pour un retour à la ligne, `\p` pour `|`.
+
+Erreurs : 403 `clearance_required`, 422 `invalid_item` ou `too_large` (plus de 7 000 octets une fois encodé), 503 `unavailable`. Dans tous les cas le mod garde le contenu dans sa bibliothèque locale. Un mod plus ancien n'envoie jamais ces `kind`.
+
 ## Web Tacmap poll frequencies (implementation)
 
 | Client | Interval | Target |

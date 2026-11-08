@@ -89,3 +89,21 @@ Arma ne reçoit jamais des octets via `setObjectTextureGlobal`. Les tests client
 Voir `VALIDATION.md` pour les résultats et la recette. Pour revenir en arrière : retirer les routes/navigation Studio et les builds SQF/DLL de cette branche, redéployer les versions précédentes. Conserver les tables et blobs permet une réinstallation sans perte. Le SQL destructif de rollback est dans `migrations/rollback/2026_11_06_patch_studio.sql`, à utiliser seulement après sauvegarde/export. Aucun lancement automatique de rollback ni modification de la production n'a été effectué.
 
 Les sources et conditions des textures tierces sont décrites dans `public/assets/textures/patch-studio/SOURCES.md`. Ces images proviennent du site officiel MultiCam et correspondent aux variantes demandées ; les filigranes sont conservés. Aucune licence libre ni performance IR/NIR n’est revendiquée. Aucun accès au site source n’est nécessaire en utilisation.
+
+## Vision nocturne (JVN)
+
+Réel (change le fichier exporté) :
+- la version « Nuit » est une composition à part (calques propres) ;
+- `render.nvGain` (0,5 à 3) et `render.nvContrast` (0,5 à 2) sont appliqués aux pixels RGB du PNG avant la conversion en PAA, PBO et ZIP ; l'alpha est conservé ; le serveur ne retouche rien et consigne les valeurs dans `metadata.json` (`night.baked_adjustment`) ;
+- le modèle « IR visuel » fournit une version nuit lisible (fond très sombre, motif très clair).
+
+Aperçu seulement (jamais exporté) : vert monochrome, grain, bord sombre, lumière ambiante (nuit noire, étoilée, clair de lune) et verdict de lisibilité (`patch-studio-night.js`).
+
+Non produit par le Studio : matériau `.rvmat`, carte `_smdi`, réflexion infrarouge propre, fil réfléchissant. Le pack ne livre que la texture `patch.paa` déclarée dans `CfgUnitInsignia`.
+
+À tester en jeu (Arma 3, de nuit, avec JVN) :
+1. un patch jour exporté, porté en JVN par une nuit noire, étoilée puis au clair de lune : lisible ou non ;
+2. le même emplacement avec la version nuit (gain et contraste par défaut, puis réglés) ;
+3. l'IR visuel face à un IR réel (stroboscope, lampe IR) : le patch n'a aucune réponse IR propre, la différence attendue vient de sa seule luminosité ;
+4. l'écusson vu à 5, 15 et 50 m en JVN ;
+5. selon le résultat, décider si un `.rvmat` ou une carte `_smdi` est nécessaire (non implémenté).
