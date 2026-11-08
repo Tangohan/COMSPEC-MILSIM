@@ -452,6 +452,7 @@ final class OrbatApiController
             'structure_sheet' => $this->structureSheet($request, $tenantId),
             'data_quality' => $this->dataQuality($request, $tenantId),
             'orbat_snapshot' => $this->orbatSnapshot($request, $tenantId),
+            'unit_history' => $this->unitHistory($request, $tenantId),
             default => Response::json(['success' => false, 'message' => 'Action non reconnue'], 400),
         };
     }
@@ -598,6 +599,7 @@ final class OrbatApiController
             $newParent = null;
         }
 
+        $p = null;
         if ($newParent !== null) {
             $p = $this->unitRepository->findById($newParent, $tenantId);
             if (!$p) {
@@ -608,7 +610,12 @@ final class OrbatApiController
             }
         }
 
+        $oldParentId = (int) ($unit['parent_id'] ?? 0);
         $this->unitRepository->update($unitId, $tenantId, ['parent_id' => $newParent]);
+        if ($oldParentId !== (int) $newParent) {
+            $oldParent = $oldParentId > 0 ? $this->unitRepository->findById($oldParentId, $tenantId) : null;
+            $this->logUnitChange($tenantId, $unitId, 'parent', (string) ($oldParent['name'] ?? ''), (string) ($p['name'] ?? ''));
+        }
 
         return $this->rosterSuccess($tenantId, (int) Session::get('user_id'));
     }
@@ -1285,6 +1292,7 @@ final class OrbatApiController
 
         $this->unitRepository->update($unitId, $tenantId, $data);
         $this->recordUnitRenameHistory($tenantId, $unit, $data);
+        $this->recordUnitFieldChanges($tenantId, $unitId, $unit, $data);
 
         // Historiser statut / visibilité si changés via updateUnit
         $actorId = (int) Session::get('user_id');
@@ -1321,6 +1329,110 @@ final class OrbatApiController
             'success' => true,
             'roster' => OrbatRosterPayload::buildForTenant($this->unitRepository, $tenantId, $userId, $canBypass, $caps),
         ]);
+    }
+
+    /** Champs d’unité suivis dans l’historique : clé en base => (nom court enregistré, texte long). */
+    private const TRACKED_UNIT_FIELDS = [
+        'name' => ['name', false],
+        'code' => ['code', false],
+        'type' => ['type', false],
+        'orbat_display_type' => ['chart_type', false],
+        'commander_user_id' => ['commander', false],
+        'sidc' => ['symbol', false],
+        'echelon' => ['echelon', false],
+        'motto' => ['motto', false],
+        'show_on_public_page' => ['public_page', false],
+        'strength_display_mode' => ['strength_display', false],
+        'orbat_details' => ['details', true],
+        'public_blurb' => ['public_text', true],
+        'description_long' => ['description', true],
+    ];
+
+    /**
+     * @param array<string, mixed> $before
+     * @param array<string, mixed> $data
+     */
+    private function recordUnitFieldChanges(int $tenantId, int $unitId, array $before, array $data): void
+    {
+        foreach (self::TRACKED_UNIT_FIELDS as $column => [$label, $long]) {
+            if (!array_key_exists($column, $data)) {
+                continue;
+            }
+            $old = trim((string) ($before[$column] ?? ''));
+            $new = trim((string) ($data[$column] ?? ''));
+            if ($old === $new) {
+                continue;
+            }
+            if ($column === 'commander_user_id') {
+                $old = $this->memberLabel($tenantId, (int) $old);
+                $new = $this->memberLabel($tenantId, (int) $new);
+            }
+            $this->logUnitChange($tenantId, $unitId, $label, $long ? '' : $old, $long ? '(texte modifié)' : $new);
+        }
+    }
+
+    private function memberLabel(int $tenantId, int $userId): string
+    {
+        return $userId > 0 ? $this->actorDisplayName($tenantId, $userId) : '';
+    }
+
+    private function logUnitChange(int $tenantId, int $unitId, string $field, string $old, string $new): void
+    {
+        try {
+            $this->visibilityHistoryRepository->record(
+                $tenantId,
+                'unit',
+                $unitId,
+                $field,
+                $old,
+                $new,
+                (int) Session::get('user_id')
+            );
+        } catch (\Throwable) {
+            // L’historique ne doit jamais bloquer une modification.
+        }
+    }
+
+    /**
+     * Historique d’une unité (champs, rattachement, statut), du plus récent au plus ancien, sans adresse e-mail.
+     */
+    private function unitHistory(Request $request, int $tenantId): Response
+    {
+        $unitId = (int) $request->input('unit_id', 0);
+        if ($unitId < 1 || !$this->unitRepository->findById($unitId, $tenantId)) {
+            return Response::json(['success' => false, 'message' => 'Unité introuvable.'], 404);
+        }
+        $rows = [];
+        $names = [];
+        $who = function (mixed $actorId) use ($tenantId, &$names): string {
+            $id = (int) $actorId;
+            if ($id < 1) {
+                return '';
+            }
+
+            return $names[$id] ??= $this->actorDisplayName($tenantId, $id);
+        };
+        foreach ($this->visibilityHistoryRepository->listForSubject($tenantId, 'unit', $unitId, 100) as $r) {
+            $rows[] = [
+                'at' => (string) ($r['created_at'] ?? ''),
+                'field' => (string) ($r['field_name'] ?? ''),
+                'old' => (string) ($r['old_value'] ?? ''),
+                'new' => (string) ($r['new_value'] ?? ''),
+                'by' => $who($r['actor_user_id'] ?? 0),
+            ];
+        }
+        foreach ($this->visibilityHistoryRepository->listUnitStatusHistory($tenantId, $unitId, 100) as $r) {
+            $rows[] = [
+                'at' => (string) ($r['created_at'] ?? ''),
+                'field' => 'status',
+                'old' => (string) ($r['old_status'] ?? ''),
+                'new' => (string) ($r['new_status'] ?? ''),
+                'by' => $who($r['actor_user_id'] ?? 0),
+            ];
+        }
+        usort($rows, static fn (array $a, array $b): int => strcmp($b['at'], $a['at']));
+
+        return Response::json(['success' => true, 'history' => array_slice($rows, 0, 100)]);
     }
 
     /**
@@ -1436,8 +1548,7 @@ final class OrbatApiController
         if ($callsign !== '') {
             return $callsign;
         }
-        $email = trim((string) ($actor['email'] ?? ''));
 
-        return $email !== '' ? $email : 'Encadrement';
+        return 'Encadrement';
     }
 }

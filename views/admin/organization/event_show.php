@@ -569,7 +569,6 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                                             <?php if (trim((string) ($r['callsign'] ?? '')) !== ''): ?>
                                                 <span class="bo-events__member-call">Indicatif <?= htmlspecialchars(trim((string) $r['callsign'])) ?></span>
                                             <?php endif; ?>
-                                            <span class="bo-events__member-mail"><?= htmlspecialchars((string) ($r['email'] ?? '')) ?></span>
                                         </div>
                                     </td>
                                     <td data-label="Participation">
