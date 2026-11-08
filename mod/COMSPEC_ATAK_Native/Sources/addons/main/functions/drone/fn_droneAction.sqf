@@ -1100,6 +1100,21 @@ switch (_act) do {
     // Distance de vue PiP réglée seulement tant que la valeur du joueur est gardée (caméra ouverte, voir _camClose).
     case "expose": { call _expose; if (!isNil { missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep" }) then { call _pipVd; }; };
     // Source du flux de la vue caméra : drone, caméra du téléphone, caméra casque (la sienne ou celle d'un équipier).
+    // Bouton de la vue caméra de la carte : source suivante. La caméra suit la source à chaque image (fn_droneAction,
+    // mise à jour de la caméra) : seul le bouton change, sauf autour du casque (bouton CASQUE DE… affiché ou retiré).
+    case "feedNext": {
+        private _cur = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"];
+        private _i = (["DRONE", "PHONE", "HELMET"] find _cur) max 0;
+        private _next = ["PHONE", "HELMET", "DRONE"] select _i;
+        private _btn = uiNamespace getVariable ["COMSPEC_ATAK_DroneFeedBtn", controlNull];
+        if (isNull _btn || {"HELMET" in [_cur, _next]}) exitWith { ["feedSrc", _next] call comspec_atak_native_fnc_droneAction; };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedSrc", _next];
+        _btn ctrlSetText ((["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE"] select (_next isEqualTo "PHONE")) call comspec_atak_native_fnc_tr);
+        _btn ctrlSetBackgroundColor ([[0.08, 0.1, 0.09, 0.9], ((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]] select (_next isEqualTo "DRONE"));
+        private _bw = (ctrlPosition _btn) select 2;
+        private _tw = ctrlTextWidth _btn;
+        if (_tw > _bw * 0.96) then { _btn ctrlSetFontHeight (((ctrlFontHeight _btn) * _bw * 0.96 / _tw) max COMSPEC_ATAK_FontMin); };
+    };
     case "feedSrc": {
         if !(_arg in ["DRONE", "PHONE", "HELMET"]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedSrc", _arg];

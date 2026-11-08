@@ -712,7 +712,10 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         };
         case "segment": {
             // Choix exclusif en une ligne : libellé au-dessus, boutons accolés, celui choisi en vert.
-            _row params ["", "_label", "_opts", ["_help", ""]];
+            // id (facultatif) : choix changé sur place par fn_formSet ; 5e élément d'une option : sa valeur. Plusieurs lignes
+            // peuvent partager un id (même réglage sur deux rangées).
+            _row params ["", "_label", "_opts", ["_help", ""], ["_segId", ""]];
+            private _segBtns = [];
             if (_label isNotEqualTo "") then {
                 private _lb = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.3]] call _mk;
                 _lb ctrlSetStructuredText parseText ((format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='" + _hTD + "'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
@@ -733,7 +736,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             while { _per > 1 && {_needW > ((_w / _per) - _pad / 6) * 0.9} } do { _per = _per - 1; };
             private _sw = _w / _per;
             {
-                _x params ["_text", "_code", ["_active", false], ["_tip", ""]];
+                _x params ["_text", "_code", ["_active", false], ["_tip", ""], ["_segV", ""]];
                 private _b = ["COMSPEC_RscButton", [_pad + (_forEachIndex mod _per) * _sw, _y + (floor (_forEachIndex / _per)) * (_rowH * 0.9 + _pad / 4), _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.9);
@@ -741,7 +744,13 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 // Option non choisie mais disponible : fond clair-sombre et texte blanc (ne doit pas sembler désactivée).
                 if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor (_th get "onAccent"); } else { _b ctrlSetBackgroundColor (_th get "surface2"); _b ctrlSetTextColor (_th get "text"); };
                 [_b, _code] call _click;
+                _segBtns pushBack [_b, _segV];
             } forEach _opts;
+            if (_segId isNotEqualTo "") then {
+                private _segE = _ids getOrDefault [_segId, createHashMapFromArray [["kind", "segment"], ["btns", []]]];
+                (_segE get "btns") append _segBtns;
+                _ids set [_segId, _segE];
+            };
             private _segRows = ceil (_n / _per) max 1;
             _y = _y + _segRows * _rowH * 0.9 + (_segRows - 1) * _pad / 4 + _pad / 2;
         };
@@ -1145,7 +1154,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _t ctrlSetPosition [_pad * 2 + _iw, _y + _pad / 4, _tw, _rowIh]; _t ctrlCommit 0;
                 _bg ctrlSetPosition [_pad, _y, _w, _rowIh + _pad / 2]; _bg ctrlCommit 0;
             };
-            if (_pid isNotEqualTo "") then { _ids set [_pid, createHashMapFromArray [["kind", "person"], ["text", _t], ["pic", _picCtl]]]; };
+            if (_pid isNotEqualTo "") then { _ids set [_pid, createHashMapFromArray [["kind", "person"], ["text", _t], ["pic", _picCtl], ["btns", []]]]; };
             {
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true], ["_tip", ""]];
                 // « red » à la place de principal : bouton de confirmation (second appui pour supprimer).
@@ -1158,6 +1167,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 if !(_primary) then { _b ctrlSetBackgroundColor (_th get "surface2"); _b ctrlSetTextColor ([(_th get "off"), (_th get "text")] select _enabled); };
                 if (_red) then { _b ctrlSetBackgroundColor (_th get "alert"); _b ctrlSetTextColor [1, 1, 1, 1]; };
                 _b ctrlEnable _enabled;
+                if (_pid isNotEqualTo "") then { ((_ids get _pid) get "btns") pushBack _b; };
                 [_b, _code] call _click;
             } forEach _btns;
             _y = _y + _rowIh + _pad * 0.75;

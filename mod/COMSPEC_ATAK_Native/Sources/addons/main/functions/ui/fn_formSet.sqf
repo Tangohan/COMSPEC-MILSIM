@@ -7,6 +7,7 @@
       fold   : valeur = résumé (texte)
       person : valeur = [texte structuré, teinte de l'image [r, v, b, a]] (ligne « person » déclarée avec un 7e paramètre)
       btn    : valeur = [libellé ("" : inchangé), état ("" | "on" | "red")] (bouton de la barre de l'app Drone, 6e élément)
+      segment : valeur = l'option choisie (ligne « segment » déclarée avec un id, 5e élément des options)
     Retour : true si la ligne est affichée et a été mise à jour.
 */
 params [["_id", ""], ["_v", false]];
@@ -52,6 +53,19 @@ switch (_e get "kind") do {
             if (_icon isNotEqualTo "") then { _ic ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]) call comspec_atak_native_fnc_tr); };
         };
         true
+    };
+    case "segment": {
+        private _shown = false;
+        {
+            _x params ["_b", "_val"];
+            if (!isNull _b) then {
+                _shown = true;
+                private _on = _val isEqualTo _v;
+                _b ctrlSetBackgroundColor ([(_th get "surface2"), _acc] select _on);
+                _b ctrlSetTextColor ([(_th get "text"), (_th get "onAccent")] select _on);
+            };
+        } forEach (_e get "btns");
+        _shown
     };
     case "fold": {
         private _t = _e get "text";
