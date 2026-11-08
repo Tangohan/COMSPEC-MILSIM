@@ -55852,4 +55852,7 @@ return [
     'Uniquement un numéro sur 5 chiffres.' => 'Only a 5-digit number.',
     'Unité, grade et numéro' => 'Unit, grade and number',
     'Échec de l’enregistrement du modèle de l’unité.' => 'Failed to save the unit template.',
+    'Proposer les bilans individuels' => 'Offer individual reviews',
+    'Si décoché, l’onglet « Bilans » disparaît des fiches des membres et plus aucun bilan ne peut être saisi. Les bilans déjà enregistrés sont conservés.' => 'If unchecked, the "Reviews" tab disappears from member files and no new review can be entered. Reviews already saved are kept.',
+    'Les bilans individuels sont désactivés pour cette communauté.' => 'Individual reviews are turned off for this community.',
 ];
