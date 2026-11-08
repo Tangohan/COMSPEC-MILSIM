@@ -7,6 +7,8 @@
       RECTANGLE  zone à la brosse du marqueur (Solid, Border, hachures...) ;
       ELLIPSE    idem ;
       POLYLINE   trait d'un pixel (les traits épais ou fléchés sont repassés par fn_strokeDraw).
+    Style tactique (fn_mapColors « tac ») : cercle fin autour des symboles nommés (points clés, couleur gardée avec l'entrée) ;
+    zones pleines hachurées (brosse du moteur), contour doublé d'un pixel ; les brosses choisies par la mission restent.
     Propriétés relues pour le seul marqueur créé, modifié ou supprimé (relecture complète toutes les 5 min) ; position des symboles lue
     à chaque image (une cible suivie bouge). Les noms sont écrits par fn_mapMarkerText.
     Params : [carte, facteur des symboles (écran x réglage)]
@@ -26,6 +28,7 @@ private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyGm", createH
 // relecture complète.
 private _pal = [] call comspec_atak_native_fnc_mapColors;
 private _lift = _pal get "lift";
+private _tac = _pal get "tac";
 // Traits en attente : un trait tracé sur la carte du jeu est créé vide puis rempli (markerPolyline), sans nouvel événement
 // de marqueur : son entrée restait vide jusqu'à la relecture complète de 5 min. Les traits créés sans points sont revus
 // toutes les 0,5 s pendant 20 s (rien à faire quand la liste est vide).
@@ -48,11 +51,8 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
         private _key = "c:" + _cls + "|" + _type;
         private _c = _cfg getOrDefault [_key, []];
         if (_c isEqualTo []) then {
-            private _num = { _this apply { if (_x isEqualType "") then { call compile _x } else { _x } } };
-            _c = (getArray (configFile >> "CfgMarkerColors" >> _cls >> "color")) call _num;
-            // « Default » : couleur propre au type de marqueur (CfgMarkers).
-            if ((count _c) < 4) then { _c = (getArray (configFile >> "CfgMarkers" >> _type >> "color")) call _num; };
-            if ((count _c) < 4) then { _c = [0, 0, 0, 1]; };
+            // « Default » : couleur propre au type de marqueur (fn_markerColor).
+            _c = [_cls, _type] call comspec_atak_native_fnc_markerColor;
             _cfg set [_key, _c];
         };
         [+_c, _cls] call _lift
@@ -84,7 +84,8 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
                     if (((_c select 0) + (_c select 1) + (_c select 2)) < 0.45) then { _c = [0.96, 0.84, 0.25, _c select 3]; };
                 };
                 private _halo = [_pal get "halo", _pal get "haloLight"] select (((_c select 0) * 0.3 + (_c select 1) * 0.59 + (_c select 2) * 0.11) < 0.25);
-                [0, _x, _ic select 0, _c, (_ic select 1) * (abs _sw), (_ic select 1) * (abs _sh), markerDir _x, [0, 1] select ((_ic select 2) > 0), _halo]
+                private _keyC = if ((markerText _x) isNotEqualTo "") then { [_c select 0, _c select 1, _c select 2, 0.75] } else { [] };
+                [0, _x, _ic select 0, _c, (_ic select 1) * (abs _sw), (_ic select 1) * (abs _sh), markerDir _x, [0, 1] select ((_ic select 2) > 0), _halo, _keyC]
             };
             case "POLYLINE": {
                 private _flat = markerPolyline _x;
@@ -114,7 +115,13 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
                 private _mp = getMarkerPos _x;
                 private _rr = sqrt (_sw * _sw + _sh * _sh);
                 [[2, 3] select (_shape isEqualTo "ELLIPSE"), _x, _mp, _c, _sw, _sh, markerDir _x, _br select 0, _br select 1,
-                    [(_mp select 0) - _rr, (_mp select 1) - _rr, (_mp select 0) + _rr, (_mp select 1) + _rr]]
+                    [(_mp select 0) - _rr, (_mp select 1) - _rr, (_mp select 0) + _rr, (_mp select 1) + _rr],
+                    // Style tactique : zone pleine hachurée ; brosse de la mission gardée, « Border » reste sans remplissage.
+                    switch (true) do {
+                        case ((_br select 0) in ["", "#(argb,8,8,3)color(1,1,1,1)"]): { _pal get "hatch" };
+                        case ((_br select 0) isEqualTo "#(argb,8,8,3)color(0,0,0,0)"): { "" };
+                        default { _br select 0 };
+                    }]
             };
             default { [] };
         }
@@ -159,11 +166,14 @@ private _off = {
 private _clustOn = (ctrlMapScale _map) >= 0.12;
 private _cw = (((_view select 2) - (_view select 0)) / 16) max 1;
 private _clu = createHashMap;
+private _keyRing = "\z\comspec_atak_native\addons\main\data\map_keyring.paa";
+// Un pixel en mètres, une fois par image et seulement en style tactique (contour doublé des zones).
+private _wpx = if (_tac) then { (((_view select 2) - (_view select 0)) / (_mw + 2 * _mg)) * pixelW } else { 0 };
 {
     if ((count _x) isEqualTo 0) then { continue };
     switch (_x select 0) do {
         case 0: {
-            _x params ["", "_m", "_icon", "_c", "_w", "_h", "_dir", "_shadow", ["_halo", []]];
+            _x params ["", "_m", "_icon", "_c", "_w", "_h", "_dir", "_shadow", ["_halo", []], ["_keyC", []]];
             private _pos = getMarkerPos _m;
             if ((_pos select 0) < (_view select 0) || {(_pos select 0) > (_view select 2)} || {(_pos select 1) < (_view select 1)} || {(_pos select 1) > (_view select 3)}) then { continue };
             if (_clustOn) then {
@@ -175,6 +185,7 @@ private _clu = createHashMap;
             private _iw = (_w * _mk) max 7; private _ih = (_h * _mk) max 7;
             if ((count _halo) > 0) then { _map drawIcon [_icon, _halo, _pos, _iw * 1.3, _ih * 1.3, _dir, "", 0]; };
             _map drawIcon [_icon, _c, _pos, _iw, _ih, _dir, "", _shadow];
+            if (_tac && {!_clustOn} && {(count _keyC) > 0}) then { private _kr = (_iw max _ih) * 2; _map drawIcon [_keyRing, _keyC, _pos, _kr, _kr, 0, "", 0]; };
         };
         case 1: {
             _x params ["", "", "_pts", "_c", ["_bb", []]];
@@ -182,8 +193,20 @@ private _clu = createHashMap;
             for "_i" from 0 to ((count _pts) - 2) do { _map drawLine [_pts select _i, _pts select (_i + 1), _c]; };
         };
         default {
-            _x params ["_kind", "", "_pos", "_c", "_w", "_h", "_dir", "_tex", "_border", ["_bb", []]];
+            _x params ["_kind", "", "_pos", "_c", "_w", "_h", "_dir", "_tex", "_border", ["_bb", []], ["_tacTex", ""]];
             if ([_bb] call _off) then { continue };
+            if (_tac) then {
+                if (_kind isEqualTo 2) then {
+                    if (_tacTex isNotEqualTo "") then { _map drawRectangle [_pos, _w, _h, _dir, _c, _tacTex]; };
+                    _map drawRectangle [_pos, _w, _h, _dir, _c, ""];
+                    _map drawRectangle [_pos, _w + _wpx, _h + _wpx, _dir, _c, ""];
+                } else {
+                    if (_tacTex isNotEqualTo "") then { _map drawEllipse [_pos, _w, _h, _dir, _c, _tacTex]; };
+                    _map drawEllipse [_pos, _w, _h, _dir, _c, ""];
+                    _map drawEllipse [_pos, _w + _wpx, _h + _wpx, _dir, _c, ""];
+                };
+                continue
+            };
             if (_kind isEqualTo 2) then {
                 _map drawRectangle [_pos, _w, _h, _dir, _c, _tex];
                 if (_border && {_tex isNotEqualTo ""}) then { _map drawRectangle [_pos, _w, _h, _dir, _c, ""]; };
@@ -207,6 +230,6 @@ if (_clustOn) then {
     private _clr = "#(argb,8,8,3)color(0,0,0,0)";
     private _cs = 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1.25]);
     {
-        if ((_y select 0) > 1) then { _map drawIcon [_clr, [1, 1, 1, 1], _y select 1, 8, 8, 0, format ["+%1", (_y select 0) - 1], 2, _cs, COMSPEC_ATAK_FontSet select 1, "right"]; };
+        if ((_y select 0) > 1) then { _map drawIcon [_clr, [1, 1, 1, 1], _y select 1, 8, 8, 0, format ["+%1", (_y select 0) - 1], 2, _cs, [COMSPEC_ATAK_FontSet select 1, "EtelkaMonospaceProBold"] select _tac, "right"]; };
     } forEach _clu;
 };

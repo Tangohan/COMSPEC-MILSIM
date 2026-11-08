@@ -601,7 +601,7 @@ Aliases: `/api/markers`, `/api/units`, `/api/nine-line`, `/api/cas`, `/api/fire-
 
 ## App Communauté : `GET /api/atak/community-brief`
 
-Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le contenu se saisit dans Ressources › Configuration ATAK, section Expérience (`community_notes`, `community_kit` dans la configuration d'expérience, sans migration), et se lit par `App\Support\AtakCommunityBrief`. Sans saisie, l'API renvoie des listes vides.
+Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le contenu se saisit dans Ressources › Consignes et kit ATAK (`/back-office/ressources/atak-consignes`), reste rangé dans la configuration d'expérience (`community_notes`, `community_kit`, sans migration) et se lit par `App\Support\AtakCommunityBrief`. La DLL coupe sa réponse à 7 996 octets, notes d'abord puis kit : le back-office affiche ce volume et refuse de le dépasser. Sans saisie, l'API renvoie des listes vides.
 
 ```json
 {
