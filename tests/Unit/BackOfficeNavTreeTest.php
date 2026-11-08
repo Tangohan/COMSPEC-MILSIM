@@ -150,9 +150,10 @@ final class BackOfficeNavTreeTest extends TestCase
         $js = (string) file_get_contents($root . '/public/assets/js/back-office-sidebar.js');
         $css = (string) file_get_contents($root . '/public/assets/css/back-office-refresh.css');
 
-        $order = ["'label' => 'PILOTAGE'", "'label' => 'EFFECTIFS'", "'label' => 'ORGANISATION'", "'label' => 'ACCÈS'",
-            "'label' => 'OPÉRATIONS'", "'label' => 'ROLEPLAY'", "'label' => 'ATAK'", "'label' => 'ACADEMY'",
-            "'label' => 'COMMUNAUTÉ'", "'label' => 'SYSTÈME'"];
+        // Intitulés des groupes depuis « Clarify back-office navigation » (375b52b87) : plus explicites que les anciens mots seuls.
+        $order = ["'label' => 'TABLEAU DE BORD ET SUIVI'", "'label' => 'MEMBRES ET SUIVI RH'", "'label' => 'UNITÉS ET RÉFÉRENTIELS'", "'label' => 'DROITS ET PERMISSIONS'",
+            "'label' => 'OPÉRATIONS'", "'label' => 'ROLEPLAY'", "'label' => 'ATAK · CARTE ET TERMINAUX'", "'label' => 'FORMATIONS ET DOCUMENTS'",
+            "'label' => 'COMMUNAUTÉ'", "'label' => 'RÉGLAGES ET INTÉGRATIONS'"];
         $elsePos = (int) strpos($nav, '} else {');
         $last = $elsePos;
         foreach ($order as $needle) {

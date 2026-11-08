@@ -28,16 +28,17 @@ final class PlatformHealthDigest
     public function __construct(private ?PDO $pdo = null) {}
 
     /**
+     * @param list<string>|null $only clés à calculer (toutes si null) : les autres ne coûtent aucune requête
      * @return list<array{key: string, label: string, value: string, tone: string, hint: string, href: string}>
      */
-    public function rows(): array
+    public function rows(?array $only = null): array
     {
         $rows = [];
         foreach ([
             'communities' => ['Communautés', 'admin/tenants', fn () => $this->communities()],
             'accounts' => ['Comptes', 'admin/users', fn () => $this->accounts()],
             'send_queue' => ['Files d’envoi du mod', 'admin/parc-atak', fn () => $this->sendQueue()],
-            'mod_version' => ['Version du mod en jeu', 'admin/parc-atak', fn () => $this->modVersion()],
+            'mod_version' => ['Liaison du mod en jeu (Overwatch connect)', 'admin/parc-atak', fn () => $this->modVersion()],
             'mod_reports' => ['Rapports d’erreurs du mod', 'admin/atak-mod-reports?status=new', fn () => $this->modReports()],
             'site_errors' => ['Pages en erreur (24 h)', 'admin?onglet=etat', fn () => $this->siteErrors()],
             'cron' => ['Tâches automatiques', 'admin/system/cron', fn () => $this->cron()],
@@ -45,6 +46,9 @@ final class PlatformHealthDigest
             'disk' => ['Espace disque', 'admin/system/storage', fn () => $this->disk()],
             'backup' => ['Dernière sauvegarde', 'admin?onglet=sauvegardes', fn () => $this->backup()],
         ] as $key => [$label, $href, $fn]) {
+            if ($only !== null && !in_array($key, $only, true)) {
+                continue;
+            }
             try {
                 [$value, $tone, $hint] = $fn() + [2 => ''];
             } catch (\Throwable) {
@@ -172,7 +176,8 @@ final class PlatformHealthDigest
     /** @return array{0: string, 1: string, 2: string} */
     private function modVersion(): array
     {
-        $published = (string) (AtakReleaseInfo::latest()['atak_native'] ?? '');
+        // Le mod remonte la version d'Overwatch connect (1.6.x), pas celle du téléphone ATAK (3.x) : on compare des versions de même nature.
+        $published = (string) (AtakReleaseInfo::connectVersion() ?? '');
         $online = [];
         if ((new AtakSendQueueRepository($this->pdo()))->schemaReady()) {
             $st = $this->pdo()->query(
@@ -185,7 +190,13 @@ final class PlatformHealthDigest
             }
         }
 
-        return self::modVersionSignal($published, $online);
+        [$value, $tone, $hint] = self::modVersionSignal($published, $online);
+        $atak = (string) (AtakReleaseInfo::latest()['atak_native'] ?? '');
+        if ($atak !== '') {
+            $hint = trim($hint . ' Téléphone ATAK publié : ' . $atak . ' (sa version n’est pas remontée ici).');
+        }
+
+        return [$value, $tone, $hint];
     }
 
     /** @return array{0: string, 1: string} */
@@ -225,8 +236,12 @@ final class PlatformHealthDigest
         return [$value, $failed > 0 ? 'warn' : 'ok', ''];
     }
 
-    /** @return array{0: string, 1: string} */
-    private function migrations(): array
+    /**
+     * Étapes de migration pas encore passées avec succès.
+     *
+     * @return array{pending: int, failed: int}
+     */
+    public function migrationCounts(): array
     {
         $steps = MigrationRegistry::load(base_path());
         $results = MigrationRunLog::latestByStep($this->pdo());
@@ -237,6 +252,14 @@ final class PlatformHealthDigest
             $pending += $status !== 'ok' ? 1 : 0;
             $failed += $status === 'error' ? 1 : 0;
         }
+
+        return ['pending' => $pending, 'failed' => $failed];
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function migrations(): array
+    {
+        ['pending' => $pending, 'failed' => $failed] = $this->migrationCounts();
         if ($pending === 0) {
             return ['aucune', 'ok'];
         }

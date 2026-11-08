@@ -51,6 +51,8 @@ class Application
             new \App\Middleware\RequestTelemetryMiddleware(),
             new \App\Middleware\ComspecTacticalApiMiddleware(),
             new \App\Middleware\SecurityHeadersMiddleware(),
+            // Priorité sous charge (désactivée par défaut) : après la clé du mod, avant les limiteurs.
+            new \App\Middleware\LoadShedMiddleware(),
             new \App\Middleware\RateLimitMiddleware(),
             new \App\Middleware\CsrfPostMiddleware(),
             // Accès refusé : retour à la page précédente avec un toast, plutôt que vers le tableau de bord.
@@ -99,6 +101,8 @@ class Application
             $response = $runner($this->request);
         } catch (\Throwable $e) {
             if (!\App\Support\TacticalApiErrorRenderer::isTacticalPath($this->request->path())) {
+                // L'erreur part vers index.php (page 500) : elle compte dans le taux d'erreurs de la mesure de charge.
+                \App\Services\Watch\WatchRecorder::failed($this->request);
                 throw $e;
             }
             $response = \App\Support\TacticalApiErrorRenderer::toResponse($e);
@@ -136,6 +140,8 @@ class Application
         } catch (\Throwable) {
         }
         $response->send();
+        // Mesure de charge et détecteurs : une ligne de tampon par requête, regroupement après la réponse.
+        \App\Services\Watch\WatchRecorder::finish($this->request, $response);
         try {
             \App\Services\Cron\CronWatchdog::maybeKick($this->request->path());
         } catch (\Throwable) {

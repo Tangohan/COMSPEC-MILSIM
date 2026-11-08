@@ -69,6 +69,7 @@ foreach ($stageBilanTypes as $row) {
 if ($stageBilanLabels === []) {
     $stageBilanLabels = ['Suivi périodique', 'Fin de période d’essai', 'Bilan annuel', 'Autre'];
 }
+$individualBilansOn = !array_key_exists('individual_bilans', $cfg) || !empty($cfg['individual_bilans']);
 $bilansEnabled = array_key_exists('enabled', $bilans) ? !empty($bilans['enabled']) : true;
 $interviewVisible = array_key_exists('visible', $interview) ? !empty($interview['visible']) : true;
 $medicalVisible = array_key_exists('visible', $medical) ? !empty($medical['visible']) : true;
@@ -298,6 +299,13 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
                 Ils ne changent pas le parcours de grades.
             </p>
             <div class="bo-setting-group__rows" style="margin-top:13px;">
+                <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
+                    <input type="checkbox" name="rp_individual_bilans" value="1" style="margin-top:3px;min-height:auto;" <?= $individualBilansOn ? 'checked' : '' ?>>
+                    <span class="bo-setting-row__copy">
+                        <span class="bo-setting-row__label">Proposer les bilans individuels</span>
+                        <span class="bo-setting-row__help">Si décoché, l’onglet « Bilans » disparaît des fiches des membres et plus aucun bilan ne peut être saisi. Les bilans déjà enregistrés sont conservés.</span>
+                    </span>
+                </label>
                 <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
                     <input type="checkbox" name="rp_bilans_enabled" value="1" style="margin-top:3px;min-height:auto;" <?= $bilansEnabled ? 'checked' : '' ?>>
                     <span class="bo-setting-row__copy">

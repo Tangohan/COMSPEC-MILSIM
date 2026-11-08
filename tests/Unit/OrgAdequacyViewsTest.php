@@ -187,8 +187,9 @@ final class OrgAdequacyViewsTest extends TestCase
         self::assertStringContainsString('S.previewAs', $js, 'jamais en aperçu « vu par un membre »');
         $api = (string) file_get_contents($root . '/app/Controllers/Api/OrbatApiController.php');
         self::assertStringContainsString("organization.orbat.manage')) {\n            return Response::json(['success' => false, 'message' => 'Droits insuffisants'], 403);", str_replace("\r\n", "\n", $api));
-        $rh = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_alerts.php');
-        self::assertStringContainsString('id="rh-adequacy"', $rh);
+        $rh = (string) file_get_contents($root . '/app/Services/Effectifs/RhActionInboxService.php');
+        self::assertStringContainsString("'adequacy' => [", $rh, 'les écarts d’organisation sont une carte de « À traiter »');
+        self::assertStringContainsString('#eff-adequacy', $rh);
         $repo = (string) file_get_contents($root . '/app/Repositories/TenantAdminSettingsRepository.php');
         self::assertStringContainsString("'org_adequacy' => \\App\\Services\\Organization\\OrgAdequacySettings::sanitize(", $repo);
     }

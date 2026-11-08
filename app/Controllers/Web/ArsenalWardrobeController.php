@@ -12,9 +12,16 @@ use App\Core\Session;
 use App\Repositories\ArsenalWardrobeRepository;
 use App\Repositories\EquipmentClassRepository;
 use App\Repositories\EquipmentItemDefinitionRepository;
+use App\Repositories\GameEquipmentRepository;
+use App\Repositories\PersonnelJobRoleRepository;
+use App\Services\GameEquipment\KitsAccess;
+use App\Services\GameEquipment\ObservedLoadouts;
+use App\Services\GameEquipment\OutfitAssistant;
+use App\Services\GameEquipment\RoleKitService;
 use App\Services\Platform\FeatureGateService;
 use App\Support\ArsenalLoadoutItems;
 use App\Support\EquipmentCoverStorage;
+use App\Support\EquipmentSpaces;
 use App\Support\PlanFeatureDenial;
 
 class ArsenalWardrobeController
@@ -39,9 +46,16 @@ class ArsenalWardrobeController
         }
         [$tenantId, $userId] = $gate;
         if (!$this->repo->tablesReady()) {
-            return $this->hubView(true, [], [], [], []);
+            return $this->hubView(true, [], [], [], [], [], null, false, []);
         }
+        $nav = EquipmentSpaces::resolve($request->queryParams());
         $wardrobes = $this->attachPreviews($tenantId, $this->repo->listAccessibleWardrobes($tenantId, $userId));
+        $favoriteIds = array_flip($this->repo->favoriteIds($tenantId, $userId));
+        foreach ($wardrobes as &$w) {
+            // Favori du membre : ses propres tenues par leur marque, celles des autres par sa liste de favoris.
+            $w['is_favorite_me'] = !empty($w['mine']) ? !empty($w['is_favorite']) : isset($favoriteIds[(int) ($w['id'] ?? 0)]);
+        }
+        unset($w);
         $collections = $this->repo->listCollections($tenantId, $userId);
         $collections = $this->attachCollectionMosaics($collections, $wardrobes);
         $classes = [];
@@ -57,15 +71,683 @@ class ArsenalWardrobeController
             $dotation = [];
         }
 
+        $kitsAllowed = KitsAccess::allows($tenantId);
+        $space = $nav['espace'];
+        $kits = $kitsAllowed && $space === 'kits' ? $this->kitsForPage($tenantId, $userId, $wardrobes) : [];
+        // Compteur de l'onglet Kits : sans charger le contenu des kits (seul l'espace Kits en a besoin).
+        $kitCount = 0;
+        if ($kitsAllowed) {
+            try {
+                $service = $this->kitService();
+                $kitCount = count($this->canManageKits() ? $service->listForTenant($tenantId) : $service->listForMember($tenantId, $userId));
+            } catch (\Throwable) {
+                $kitCount = 0;
+            }
+        }
+        $mine = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['mine'])));
+        $community = array_values(array_filter(
+            $wardrobes,
+            static fn (array $w): bool => empty($w['mine']) && !($kitsAllowed && (string) ($w['source'] ?? '') === 'role_kit')
+        ));
+        $favorites = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['is_favorite_me'])));
+
+        $q = trim((string) $request->query('q', ''));
+        $type = trim((string) $request->query('type', ''));
+        $sort = trim((string) $request->query('tri', 'name'));
+        $page = (int) $request->query('page', 1);
+        $collectionId = $nav['collection'];
+        $collection = null;
+        foreach ($collections as $c) {
+            if ((int) ($c['id'] ?? 0) === $collectionId) {
+                $collection = $c;
+                break;
+            }
+        }
+        $list = [];
+        if ($space === 'mes-tenues' || $space === 'favoris' || $space === 'communaute') {
+            $list = $space === 'mes-tenues' ? $mine : ($space === 'favoris' ? $favorites : $community);
+        } elseif ($space === 'collections' && $collection !== null) {
+            $list = array_values(array_filter($wardrobes, static fn (array $w): bool => (int) ($w['collection_id'] ?? 0) === $collectionId));
+        }
+        $paged = null;
+        if ($space === 'collections' && $collection === null) {
+            $needle = EquipmentSpaces::fold($q);
+            $found = array_values(array_filter($collections, static fn (array $c): bool => $needle === ''
+                || str_contains(EquipmentSpaces::fold((string) ($c['name'] ?? '') . ' ' . (string) ($c['description'] ?? '')), $needle)));
+            $paged = EquipmentSpaces::paginate($found, $page);
+        } elseif ($space === 'kits') {
+            $needle = EquipmentSpaces::fold($q);
+            $found = array_values(array_filter($kits, static fn (array $k): bool => $needle === ''
+                || str_contains(EquipmentSpaces::fold(implode(' ', [(string) ($k['name'] ?? ''), (string) ($k['description'] ?? ''), (string) ($k['unit_name'] ?? ''), (string) ($k['role_name'] ?? '')])), $needle)));
+            $paged = EquipmentSpaces::paginate($found, $page, EquipmentSpaces::PER_PAGE_KITS);
+        } elseif ($space !== 'materiel') {
+            $paged = EquipmentSpaces::paginate(
+                EquipmentSpaces::sortWardrobes(EquipmentSpaces::filterWardrobes($list, $q, $type), $sort),
+                $page
+            );
+        }
+
+        $nav += [
+            'q' => $q,
+            'type' => $type,
+            'sort' => in_array($sort, EquipmentSpaces::SORTS, true) ? $sort : 'name',
+            'paged' => $paged,
+            'collection_row' => $collection,
+            'counts' => [
+                'mes-tenues' => count($mine),
+                'favoris' => count($favorites),
+                'collections' => count($collections),
+                'communaute' => count($community),
+                'kits' => $kitsAllowed ? $kitCount : null,
+                'materiel' => count($classes) + count($dotation),
+            ],
+            'detail' => $this->detailFor($request, $tenantId, $userId),
+            'creer' => (string) $request->query('creer', '') === 'kit',
+        ];
+
         return $this->hubView(
             false,
             $wardrobes,
             $collections,
             $classes,
             $dotation,
-            $this->roleKitsForMember($tenantId, $userId),
+            $kits,
             $this->playerKits()?->forUser($tenantId, $userId),
+            $kitsAllowed,
+            $nav,
         );
+    }
+
+    /**
+     * Repli sans JavaScript de la fenêtre d'une tenue : ?tenue=ID affiche la tenue en tête de page.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function detailFor(Request $request, int $tenantId, int $userId): ?array
+    {
+        $id = (int) $request->query('tenue', 0);
+        if ($id < 1) {
+            return null;
+        }
+        $row = $this->repo->findWardrobe($tenantId, $id);
+        if ($row === null || !ArsenalWardrobeRepository::canView($row, $userId)) {
+            return null;
+        }
+        $payload = (string) ($row['payload_text'] ?? '');
+        $sections = ArsenalLoadoutItems::grouped(
+            $payload,
+            $this->playerKits()?->catalogFor($tenantId, ArsenalLoadoutItems::classes($payload)) ?? [],
+        );
+
+        return [
+            'id' => (int) $row['id'],
+            'name' => (string) ($row['display_name'] ?? $row['name'] ?? ''),
+            'description' => (string) ($row['description'] ?? ''),
+            'owner' => (string) ($row['owner_label'] ?? ''),
+            'mine' => (int) ($row['user_id'] ?? 0) === $userId,
+            'sections' => $sections,
+            'ace' => ArsenalLoadoutItems::aceExport($payload) !== null,
+        ];
+    }
+
+    /**
+     * Ancienne adresse des kits : la section « Kits de départ » de la page Équipement.
+     */
+    public function redirectKits(Request $request, array $params = []): Response
+    {
+        return Response::redirect(url('equipment') . '?espace=kits');
+    }
+
+    /**
+     * Met une tenue en favori (ou l'en retire). Ouvert à toutes les formules : c'est une aide à la consultation.
+     */
+    public function toggleFavorite(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        // Retour à l'espace d'où l'on vient (adresse interne à /equipment seulement), sinon aux favoris.
+        $return = (string) $request->input('_return', '');
+        $back = preg_match('#^/equipment(\?[A-Za-z0-9_=&%.\-]*)?$#', $return) === 1 ? url(ltrim($return, '/')) : url('equipment') . '?espace=favoris';
+        $json = $this->wantsJson($request);
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            if ($json) {
+                return Response::json(['ok' => false, 'error' => 'csrf'], 419);
+            }
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $on = (string) $request->input('on', '1') === '1';
+        $ok = $id > 0 && $this->repo->setFavorite($tenantId, $userId, $id, $on);
+        if ($json) {
+            return Response::json(['ok' => $ok, 'favorite' => $ok ? $on : null], $ok ? 200 : 422);
+        }
+        if (!$ok) {
+            Session::flash('error', 'Cette tenue ne peut pas être mise en favori.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    /**
+     * Kits à montrer sur la page : tous ceux de la communauté pour un responsable des kits, sinon ceux proposés au
+     * membre (ses fonctions, ses unités, tous). Chacun avec son aperçu et son contenu, noms vus en jeu.
+     *
+     * @param list<array<string, mixed>> $wardrobes
+     * @return list<array<string, mixed>>
+     */
+    private function kitsForPage(int $tenantId, int $userId, array $wardrobes): array
+    {
+        try {
+            $service = $this->kitService();
+            $rows = $this->canManageKits() ? $service->listForTenant($tenantId) : $service->listForMember($tenantId, $userId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $classes = [];
+        foreach ($rows as $row) {
+            foreach (ArsenalLoadoutItems::classes((string) ($row['payload_text'] ?? '')) as $c) {
+                $classes[strtolower($c)] = $c;
+            }
+        }
+        $catalog = $classes === [] ? [] : ($this->playerKits()?->catalogFor($tenantId, array_values($classes)) ?? []);
+        $copies = [];
+        foreach ($wardrobes as $w) {
+            if (!empty($w['mine']) && str_starts_with((string) ($w['slug'] ?? ''), RoleKitService::COPY_SLUG_PREFIX)) {
+                $copies[(string) $w['slug']] = (int) $w['id'];
+            }
+        }
+        foreach ($rows as &$row) {
+            $payload = (string) ($row['payload_text'] ?? '');
+            $row['sections'] = ArsenalLoadoutItems::grouped($payload, $catalog);
+            $row['preview'] = ArsenalLoadoutItems::previewItems(ArsenalLoadoutItems::previewClasses($payload), $catalog);
+            $row['copy_wardrobe_id'] = $copies[RoleKitService::COPY_SLUG_PREFIX . (int) $row['id']] ?? 0;
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    private function kitService(): RoleKitService
+    {
+        return \App\Core\Container::get(RoleKitService::class);
+    }
+
+    /** Message commun quand la formule ne comprend pas les kits de départ et l'assistant. */
+    private function kitsLockedRedirect(string $to): Response
+    {
+        Session::flash('error', 'Les kits de départ et l’assistant de création sont réservés aux formules Pro et plus. Consulter et créer vos propres tenues reste ouvert à tous.');
+
+        return Response::redirect($to);
+    }
+
+    /**
+     * Transforme une tenue remontée du jeu en kit de départ et le propose à une unité, à un rôle ou à tous.
+     */
+    public function storeKitFromWardrobe(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        $back = url('equipment') . '?espace=kits';
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        if (!KitsAccess::allows($tenantId)) {
+            return $this->kitsLockedRedirect($back);
+        }
+        if (!$this->canManageKits()) {
+            Session::flash('error', 'Droits insuffisants pour créer un kit de départ.');
+
+            return Response::redirect($back);
+        }
+        $result = $this->kitService()->saveFromWardrobe(
+            $tenantId,
+            $userId,
+            (int) $request->input('wardrobe_id', 0),
+            trim((string) $request->input('name', '')),
+            trim((string) $request->input('description', '')),
+            $request->input('audience', 'all'),
+        );
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', 'Kit de départ créé : les membres concernés le voient dans leur section et peuvent le copier.');
+        if (!empty($result['warnings'])) {
+            Session::flash('error', implode(' ', $result['warnings']));
+        }
+
+        return Response::redirect($back);
+    }
+
+    /**
+     * Copie un kit de départ proposé au membre dans ses propres tenues.
+     */
+    public function copyKit(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        $back = url('equipment') . '?espace=kits';
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        if (!KitsAccess::allows($tenantId)) {
+            return $this->kitsLockedRedirect($back);
+        }
+        $result = $this->kitService()->copyToMember($tenantId, $userId, (int) ($params['id'] ?? 0), $this->canManageKits());
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Copie impossible.'));
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', !empty($result['created'])
+            ? 'Kit copié dans vos tenues. Il est personnel : vous seul le voyez, et vous pouvez le modifier.'
+            : 'Votre copie de ce kit est à jour.');
+
+        return Response::redirect(url('equipment') . '?tenue=' . (int) $result['id']);
+    }
+
+    /**
+     * Change l'unité ou le rôle à qui un kit est proposé.
+     */
+    public function updateKitAudience(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        $back = url('equipment') . '?espace=kits';
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        if (!KitsAccess::allows($tenantId)) {
+            return $this->kitsLockedRedirect($back);
+        }
+        if (!$this->canManageKits()) {
+            Session::flash('error', 'Droits insuffisants pour modifier un kit de départ.');
+
+            return Response::redirect($back);
+        }
+        $result = $this->kitService()->updateAudience($tenantId, $userId, (int) ($params['id'] ?? 0), $request->input('audience', 'all'));
+        Session::flash($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Destinataire du kit mis à jour.' : (string) ($result['error'] ?? 'Mise à jour impossible.'));
+
+        return Response::redirect($back);
+    }
+
+    /**
+     * Supprime un kit de départ. Les copies déjà faites par les membres restent dans leurs tenues.
+     */
+    public function destroyKit(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId] = $gate;
+        $back = url('equipment') . '?espace=kits';
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        if (!$this->canManageKits()) {
+            Session::flash('error', 'Droits insuffisants pour supprimer un kit de départ.');
+
+            return Response::redirect($back);
+        }
+        // Suppression permise même si la formule a baissé : on ne garde pas un kit que l'on ne peut plus gérer.
+        $ok = $this->kitService()->delete($tenantId, (int) ($params['id'] ?? 0));
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Kit supprimé. Les copies des membres restent dans leurs tenues.' : 'Ce kit n’existe plus.');
+
+        return Response::redirect($back);
+    }
+
+    /**
+     * Assistant de création de tenue : part d'un emploi, propose des objets que la communauté a réellement remontés du
+     * jeu, signale ce qui manque. Réservé aux formules avec `equipment_kits` ; sinon présentation de l'offre.
+     */
+    public function assistant(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId] = $gate;
+        $view = [
+            'title' => 'Assistant de création de tenue',
+            'content' => 'equipment.assistant',
+            'equipmentHubPage' => true,
+            'csrfToken' => Csrf::token(),
+            'flash_success' => Session::getFlash('success'),
+            'flash_error' => Session::getFlash('error'),
+            'assistantLocked' => !KitsAccess::allows($tenantId),
+            'canManageKits' => $this->canManageKits(),
+            'wantsKit' => $this->canManageKits() && (string) $request->query('cible', '') === 'kit',
+            'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',
+            'catalogCount' => 0,
+            'roleChoices' => [],
+            'profileOptions' => OutfitAssistant::profileOptions(),
+            'selectedRole' => 0,
+            'profile' => '',
+            'proposal' => null,
+            'preview' => [],
+            'unitOptions' => [],
+            'roleOptions' => [],
+        ];
+        if ($view['assistantLocked']) {
+            return Response::view('layout.main', $view);
+        }
+
+        try {
+            /** @var GameEquipmentRepository $equipment */
+            $equipment = \App\Core\Container::get(GameEquipmentRepository::class);
+            $catalogue = $equipment->catalogue($tenantId, 6000);
+        } catch (\Throwable) {
+            $catalogue = [];
+        }
+        $view['catalogCount'] = count($catalogue);
+        $roleChoices = [];
+        try {
+            /** @var PersonnelJobRoleRepository $jobs */
+            $jobs = \App\Core\Container::get(PersonnelJobRoleRepository::class);
+            foreach ($jobs->listRolesWithCategory($tenantId) as $r) {
+                $name = trim((string) ($r['name'] ?? ''));
+                if ((int) ($r['id'] ?? 0) > 0 && $name !== '') {
+                    $roleChoices[] = [
+                        'id' => (int) $r['id'],
+                        'name' => $name,
+                        'abbreviation' => trim((string) ($r['abbreviation'] ?? '')),
+                        'category' => trim((string) ($r['category_name'] ?? '')),
+                    ];
+                }
+            }
+        } catch (\Throwable) {
+            $roleChoices = [];
+        }
+        $view['roleChoices'] = $roleChoices;
+        $roleId = (int) $request->query('role', 0);
+        $role = null;
+        foreach ($roleChoices as $rc) {
+            if ($rc['id'] === $roleId) {
+                $role = $rc;
+                break;
+            }
+        }
+        $profile = trim((string) $request->query('profil', ''));
+        if ($profile === '' && $role !== null) {
+            $profile = OutfitAssistant::profileForRole($role['name'], $role['abbreviation'], $role['category']);
+        }
+        $view['selectedRole'] = $role['id'] ?? 0;
+        $view['profile'] = isset(OutfitAssistant::PROFILES[$profile]) ? $profile : '';
+        $view['detectedFromRole'] = $role !== null && trim((string) $request->query('profil', '')) === '';
+        $view['unitOptions'] = $view['canManageKits'] ? $this->kitService()->unitOptions($tenantId) : [];
+        $view['roleOptions'] = $view['canManageKits'] ? $this->kitService()->roleOptions($tenantId) : [];
+        $view['unitsReady'] = $this->kitService()->unitsReady();
+        if ($view['profile'] !== '' && $catalogue !== []) {
+            $proposal = (new OutfitAssistant())->propose(
+                $view['profile'],
+                $catalogue,
+                (new ObservedLoadouts())->weaponSetups($tenantId),
+                $this->assistantChoices($request->query('slot'), $request->query('extra')),
+            );
+            $view['proposal'] = $this->withIcons($tenantId, $proposal);
+            $picks = $this->assistantPicks($request->query('slot'));
+            $expanded = $picks === [] ? ['combos' => [[]], 'truncated' => false] : OutfitAssistant::expandVariants($picks);
+            $view['variantCount'] = count($expanded['combos']);
+            $view['variantsTruncated'] = $expanded['truncated'];
+            $view['preview'] = $proposal['payload'] !== '' ? ArsenalLoadoutItems::grouped($proposal['payload'], $proposal['names']) : [];
+            $view['suggestedName'] = trim((string) $request->query('nom', '')) !== ''
+                ? trim((string) $request->query('nom', ''))
+                : ($role !== null ? $role['name'] . ' · ' : '') . $proposal['profile_label'];
+        }
+
+        return Response::view('layout.main', $view);
+    }
+
+    /**
+     * Enregistre la proposition de l'assistant : en tenue personnelle (tout membre) ou en kit de départ (responsable).
+     * Le contenu est recalculé ici d'après le catalogue de la communauté : rien du formulaire n'est pris tel quel.
+     */
+    public function assistantSave(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        $profile = OutfitAssistant::normalizeProfile($request->input('profil', ''));
+        $roleId = (int) $request->input('role', 0);
+        $back = url('equipment/assistant') . '?profil=' . rawurlencode($profile) . ($roleId > 0 ? '&role=' . $roleId : '');
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        if (!KitsAccess::allows($tenantId)) {
+            return $this->kitsLockedRedirect(url('equipment'));
+        }
+        $name = trim(preg_replace('/\s+/u', ' ', (string) $request->input('nom', '')) ?? '');
+        if ($name === '') {
+            Session::flash('error', 'Donnez un nom à la tenue.');
+
+            return Response::redirect($back);
+        }
+        try {
+            /** @var GameEquipmentRepository $equipment */
+            $equipment = \App\Core\Container::get(GameEquipmentRepository::class);
+            $catalogue = $equipment->catalogue($tenantId, 6000);
+        } catch (\Throwable) {
+            $catalogue = [];
+        }
+        if ($catalogue === []) {
+            Session::flash('error', 'Aucun objet n’a encore été remonté du jeu : l’assistant n’a rien à proposer.');
+
+            return Response::redirect($back);
+        }
+        $assistant = new OutfitAssistant();
+        $setups = (new ObservedLoadouts())->weaponSetups($tenantId);
+        $choices = $this->assistantChoices($request->input('slot'), $request->input('extra'));
+        // Plusieurs objets choisis pour un emplacement : une tenue par combinaison (au plus OutfitAssistant::MAX_VARIANTS).
+        $picks = $this->assistantPicks($request->input('slot'));
+        $expanded = $picks === [] ? ['combos' => [[]], 'truncated' => false] : OutfitAssistant::expandVariants($picks);
+        $names = [];
+        foreach ($catalogue as $it) {
+            $names[strtolower((string) ($it['class'] ?? ''))] = trim((string) ($it['name'] ?? ''));
+        }
+        $variants = [];
+        foreach ($expanded['combos'] as $combo) {
+            $proposal = $assistant->propose($profile, $catalogue, $setups, $combo === [] ? $choices : ['slot' => $combo] + $choices);
+            if ($proposal['payload'] === '' || !$proposal['ace_ok']) {
+                Session::flash('error', 'Choisissez au moins un objet : la tenue est vide ou illisible par l’arsenal ACE.');
+
+                return Response::redirect($back);
+            }
+            $parts = [];
+            if (count($expanded['combos']) > 1) {
+                foreach ($picks as $slotKey => $list) {
+                    $class = (string) ($combo[$slotKey] ?? '');
+                    if (count($list) > 1 && $class !== '') {
+                        $parts[] = ($names[strtolower($class)] ?? '') !== '' ? $names[strtolower($class)] : $class;
+                    }
+                }
+            }
+            $variants[] = ['proposal' => $proposal, 'suffix' => implode(' + ', $parts)];
+        }
+        $fullName = static fn (string $suffix, int $max): string => mb_substr($suffix === '' ? $name : $name . ' — ' . $suffix, 0, $max);
+        $cut = $expanded['truncated'] ? ' Seules les ' . count($variants) . ' premières tenues ont été créées.' : '';
+
+        if ((string) $request->input('cible', 'tenue') === 'kit') {
+            if (!$this->canManageKits()) {
+                Session::flash('error', 'Droits insuffisants pour créer un kit de départ.');
+
+                return Response::redirect($back);
+            }
+            $made = 0;
+            foreach ($variants as $variant) {
+                $result = $this->kitService()->save($tenantId, $userId, null, [
+                    'name' => $fullName($variant['suffix'], 90),
+                    'description' => trim((string) $request->input('description', '')),
+                    'audience' => $request->input('audience', 'all'),
+                    'kit' => $variant['proposal']['kit'],
+                    'payload' => $variant['proposal']['payload'],
+                    'source' => 'assistant',
+                ]);
+                if (!$result['ok']) {
+                    Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.') . ($made > 0 ? ' ' . $made . ' kit' . ($made > 1 ? 's' : '') . ' déjà créé' . ($made > 1 ? 's' : '') . '.' : ''));
+
+                    return Response::redirect($back);
+                }
+                ++$made;
+            }
+            Session::flash('success', ($made > 1 ? $made . ' kits de départ créés' : 'Kit de départ créé') . ' : les membres concernés le voient dans leur section et peuvent le copier.' . $cut);
+
+            return Response::redirect(url('equipment') . '?espace=kits');
+        }
+
+        $taken = [];
+        foreach ($this->repo->listWardrobesForUser($tenantId, $userId) as $w) {
+            if ((string) ($w['source'] ?? '') !== 'assistant') {
+                $taken[(string) ($w['slug'] ?? '')] = true;
+            }
+        }
+        $ids = [];
+        foreach ($variants as $variant) {
+            $title = $fullName($variant['suffix'], 120);
+            $slug = 'assistant-' . ArsenalWardrobeRepository::slugify($title);
+            $base = $slug;
+            for ($n = 2; isset($taken[$slug]); $n++) {
+                $slug = $base . '-' . $n;
+            }
+            $taken[$slug] = true;
+            try {
+                $wardrobe = $this->repo->upsertWardrobe($tenantId, $userId, [
+                    'name' => $title,
+                    'slug' => $slug,
+                    'payload_text' => $variant['proposal']['payload'],
+                    'payload_format' => 'arma_loadout_str',
+                    'source' => 'assistant',
+                    'notes' => mb_substr('Créée avec l’assistant · ' . $variant['proposal']['profile_label'], 0, 255),
+                ]);
+            } catch (\Throwable $e) {
+                error_log('[equipment-assistant] save failed: ' . $e->getMessage());
+                Session::flash('error', 'Enregistrement impossible.');
+
+                return Response::redirect($back);
+            }
+            $id = (int) ($wardrobe['id'] ?? 0);
+            if ($id < 1) {
+                Session::flash('error', 'Enregistrement impossible.');
+
+                return Response::redirect($back);
+            }
+            $ids[] = $id;
+        }
+        if (count($ids) > 1) {
+            Session::flash('success', count($ids) . ' tenues enregistrées dans vos tenues, une par choix. Elles sont personnelles tant que vous ne les partagez pas.' . $cut);
+
+            return Response::redirect(url('equipment'));
+        }
+        Session::flash('success', 'Tenue enregistrée dans vos tenues. Elle est personnelle tant que vous ne la partagez pas.');
+
+        return Response::redirect(url('equipment') . '?tenue=' . $ids[0]);
+    }
+
+    /**
+     * Choix de l'utilisateur envoyés par le formulaire de l'assistant ; vide = proposition par défaut.
+     *
+     * @return array{slot?: array<string, string>, extra?: array<string, bool>}
+     */
+    private function assistantChoices(mixed $slot, mixed $extra): array
+    {
+        if (!is_array($slot)) {
+            return [];
+        }
+        $slots = [];
+        foreach ($slot as $key => $value) {
+            if (!is_string($key) || !isset(OutfitAssistant::SLOTS[$key])) {
+                continue;
+            }
+            // slot[emplacement] = un objet (ancienne adresse) ou slot[emplacement][] = plusieurs objets (variantes).
+            if (is_string($value)) {
+                $slots[$key] = trim($value);
+            } elseif (is_array($value)) {
+                $slots[$key] = array_values(array_filter(array_map(static fn (mixed $v): string => is_string($v) ? mb_substr(trim($v), 0, 160) : '', $value), static fn (string $v): bool => $v !== ''));
+            }
+        }
+        $extras = [];
+        if (is_array($extra)) {
+            foreach ($extra as $key => $value) {
+                if (is_string($key) && preg_match('/^[a-z_]{1,32}$/', $key) === 1 && !empty($value)) {
+                    $extras[$key] = true;
+                }
+            }
+        }
+
+        return ['slot' => $slots, 'extra' => $extras];
+    }
+
+    /**
+     * Objets choisis par emplacement quand il y en a plusieurs (chaque objet de plus donne une variante de la tenue).
+     *
+     * @return array<string, list<string>>
+     */
+    private function assistantPicks(mixed $slot): array
+    {
+        if (!is_array($slot)) {
+            return [];
+        }
+        $out = [];
+        foreach ($this->assistantChoices($slot, [])['slot'] ?? [] as $key => $value) {
+            $out[$key] = is_array($value) ? $value : ($value === '' ? [] : [$value]);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Ajoute à chaque objet proposé son icône (vignette) quand la communauté en a une.
+     *
+     * @param array<string, mixed> $proposal
+     * @return array<string, mixed>
+     */
+    private function withIcons(int $tenantId, array $proposal): array
+    {
+        $classes = [];
+        foreach ((array) ($proposal['slots'] ?? []) as $slot) {
+            foreach ((array) ($slot['candidates'] ?? []) as $c) {
+                $classes[] = (string) ($c['class'] ?? '');
+            }
+        }
+        try {
+            $icons = (new \App\Repositories\GameItemIconRepository())->iconUrls($tenantId, $classes);
+        } catch (\Throwable) {
+            $icons = [];
+        }
+        foreach ($proposal['slots'] as $key => $slot) {
+            foreach ($slot['candidates'] as $i => $c) {
+                $proposal['slots'][$key]['candidates'][$i]['icon'] = $icons[(string) $c['class']] ?? '';
+            }
+        }
+
+        return $proposal;
     }
 
     /**
@@ -101,23 +783,6 @@ class ArsenalWardrobeController
             return \App\Core\Container::get(\App\Services\GameEquipment\PlayerKitService::class);
         } catch (\Throwable) {
             return null;
-        }
-    }
-
-    /**
-     * Kits proposés pour les fonctions du membre (back-office › Kits par rôle). Jamais bloquant.
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function roleKitsForMember(int $tenantId, int $userId): array
-    {
-        try {
-            /** @var \App\Services\GameEquipment\RoleKitService $service */
-            $service = \App\Core\Container::get(\App\Services\GameEquipment\RoleKitService::class);
-
-            return $service->listForMember($tenantId, $userId);
-        } catch (\Throwable) {
-            return [];
         }
     }
 
@@ -831,7 +1496,7 @@ class ArsenalWardrobeController
      * @param list<array<string, mixed>> $collections
      * @param list<array<string, mixed>> $classes
      * @param list<array<string, mixed>> $dotation
-     * @param list<array<string, mixed>> $roleKits
+     * @param list<array<string, mixed>> $kits kits de départ visibles (vide si la formule ne les comprend pas)
      * @param array<string, mixed>|null $myGameKit dernier kit porté en jeu (PlayerKitService::forUser)
      */
     private function hubView(
@@ -840,10 +1505,35 @@ class ArsenalWardrobeController
         array $collections,
         array $classes,
         array $dotation = [],
-        array $roleKits = [],
+        array $kits = [],
         ?array $myGameKit = null,
+        bool $kitsAllowed = false,
+        array $nav = [],
     ): Response {
         $mine = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['mine'])));
+        // Tenues remontées du jeu qu'un responsable peut transformer en kit (les copies de kits n'en font pas partie).
+        $gameWardrobes = array_values(array_filter(
+            $wardrobes,
+            static fn (array $w): bool => in_array((string) ($w['source'] ?? ''), ['ace_arsenal', 'game_loadout'], true)
+        ));
+        $canManageKits = $kitsAllowed && $this->canManageKits();
+        $catalogCount = 0;
+        $kitUnits = [];
+        $kitRoles = [];
+        $unitsReady = false;
+        if (!$migrationMissing) {
+            try {
+                $catalogCount = \App\Core\Container::get(GameEquipmentRepository::class)->catalogueCount((int) Session::get('tenant_id'));
+            } catch (\Throwable) {
+                $catalogCount = 0;
+            }
+            if ($canManageKits) {
+                $service = $this->kitService();
+                $kitUnits = $service->unitOptions((int) Session::get('tenant_id'));
+                $kitRoles = $service->roleOptions((int) Session::get('tenant_id'));
+                $unitsReady = $service->unitsReady();
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'equipment.hub',
@@ -852,11 +1542,20 @@ class ArsenalWardrobeController
             'migrationMissing' => $migrationMissing,
             'wardrobes' => $wardrobes,
             'mineWardrobes' => $mine,
+            'gameWardrobes' => $gameWardrobes,
             'collections' => $collections,
             'equipmentClasses' => $classes,
             'dotationItems' => $dotation,
-            'roleKits' => $roleKits,
+            'kits' => $kits,
+            'kitsAllowed' => $kitsAllowed,
+            'canManageKits' => $canManageKits,
+            'kitUnitOptions' => $kitUnits,
+            'kitRoleOptions' => $kitRoles,
+            'kitUnitsReady' => $unitsReady,
+            'catalogCount' => $catalogCount,
+            'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',
             'myGameKit' => $myGameKit,
+            'nav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'fiches', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
             'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),
@@ -865,6 +1564,16 @@ class ArsenalWardrobeController
             'flash_error' => Session::getFlash('error'),
             'coverHint' => EquipmentCoverStorage::hintText(),
         ]);
+    }
+
+    /** Responsables des kits de départ : organisation, accès, ou gestion de l'équipement (droit déjà utilisé par les fiches). */
+    private function canManageKits(): bool
+    {
+        $gate = Gate::getInstance();
+
+        return $gate->allows('admin.organization')
+            || $gate->allows('admin.access')
+            || $gate->allows('personnel.equipment.manage');
     }
 
     /**

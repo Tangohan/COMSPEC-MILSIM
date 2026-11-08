@@ -46,7 +46,7 @@ final class EnlistmentAvancementRailAssetTest extends TestCase
         self::assertStringContainsString('rail_meta_rows', $view);
         self::assertStringContainsString('ce-rail__stamp', $view);
         self::assertStringContainsString('Parcours dossier', $view);
-        self::assertStringContainsString('01 — Mode de candidature', $view);
+        self::assertStringContainsString('01 — Votre compte', $view);
     }
 
     public function testCommunityCssStylesRailAtmosphere(): void

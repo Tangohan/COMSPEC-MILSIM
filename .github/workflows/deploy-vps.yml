@@ -128,3 +128,21 @@ jobs:
                 echo "NOTE: ajouter le bloc location = /atak depuis docs/nginx.example.conf puis nginx -t && systemctl reload nginx"
               fi
             fi
+
+  # Nouvelle tentative unique après échec d'un déploiement lancé par un push
+  # (ex. curl: (22) 504 au téléchargement de drone-ssh). Le déploiement relancé est
+  # un workflow_dispatch : il ne se relance pas lui-même, donc au plus une reprise.
+  retry:
+    needs: deploy
+    if: ${{ failure() && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Attendre avant la nouvelle tentative
+        run: sleep 120
+      - name: Relancer le déploiement une fois
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-vps.yml --repo "${{ github.repository }}" --ref main

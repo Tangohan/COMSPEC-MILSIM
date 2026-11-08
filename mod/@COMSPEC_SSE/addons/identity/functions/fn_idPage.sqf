@@ -89,7 +89,7 @@ if (_tab isEqualTo "history") then {
     };
     private _d = _cur get "doc";
     private _lv = _cur get "levels";
-    private _typeTxt = (["Carte d'identité", "Passeport", "Permis de conduire"] select ((["id_card", "passport", "driving_license"] find (_d getOrDefault ["type", ""])) max 0)) call _tr;
+    private _typeTxt = (["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d getOrDefault ["type", ""])) max 0)) call _tr;
     ((_cur get "verdict") call _verdictInfo) params ["_vt", "_vc", "_vbg"];
     _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",
         format ["<t size='1.1' font='COMSPEC_BarlowBold'>%1 %2</t><br/><t size='0.8' color='#8b98a7'>%3 · %4 · %5</t>",

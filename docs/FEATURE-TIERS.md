@@ -48,15 +48,30 @@ Défauts : gratuit / standard / pro / pro+. « Lue » = non : clé enregistrée 
 | `recruitment` | Recrutement | Recrutement et enrôlement | booléen | oui / oui / oui / oui | **non** |
 | `invite_link_custom_slug` | Recrutement | Liens d’invitation à adresse personnalisée | booléen | — / oui / oui / oui | oui |
 | `max_active_invite_links` | Recrutement | Liens d’invitation actifs | quota (liens actifs, 0 = illimité) | 2 / illimité / illimité / illimité | oui |
+| `max_recruitment_offers` | Recrutement | Offres de recrutement en cours | quota (offres, 0 = illimité) | 3 / 10 / illimité / illimité | oui |
 | `atak` | ATAK et jeu | Carte tactique ATAK | booléen | — / oui / oui / oui | oui |
 | `atak_link_basic` | ATAK et jeu | Liaison jeu de base | booléen | oui / oui / oui / oui | oui |
 | `equipment_game_sync` | ATAK et jeu | Synchronisation de l’équipement avec le jeu | booléen | — / — / oui / oui | oui |
+| `equipment_kits` | ATAK et jeu | Kits de départ et assistant de tenue | booléen | — / — / oui / oui | oui |
 | `documents` | Documents et doctrine | Documents | booléen | oui / oui / oui / oui | **non** |
 | `courrier` | Documents et doctrine | Courrier officiel | booléen | — / oui / oui / oui | oui |
+| `max_mini_articles` | Documents et doctrine | Mini-articles de la communauté | quota (mini-articles, 0 = illimité) | 5 / 30 / illimité / illimité | oui |
+| `max_email_templates` | Documents et doctrine | Modèles de message personnalisés | quota (modèles, 0 = illimité) | 3 / 10 / illimité / illimité | oui |
 | `equipment` | Documents et doctrine | Équipement | booléen | oui / oui / oui / oui | oui |
 | `registry_featured` | Marque, visibilité et intégrations | Mise en avant dans le registre | booléen | — / — / oui / oui | oui |
 | `cooperation` | Marque, visibilité et intégrations | Coopération inter-unités | booléen | — / — / oui / oui | oui |
 | `advanced_integrations` | Marque, visibilité et intégrations | Intégrations avancées | booléen | — / — / — / oui | oui |
+
+Page Équipement (`/equipment`) : consulter les tenues, créer et modifier les siennes, les favoris et l’export ACE restent ouverts à toutes les
+formules (clé `equipment`). Les **kits de départ** de la communauté (création, proposition à une unité ou à un rôle, copie par les membres)
+et l’**assistant de création de tenue** demandent `equipment_kits` (Pro et plus par défaut, contrôlé par
+`FeatureGateService::allowsWithCatalogDefault`) : une communauté sans accès voit la présentation de l’offre, jamais une erreur. La synchro
+des tenues avec le jeu reste gouvernée par `equipment_game_sync`.
+
+Plafonds `max_recruitment_offers`, `max_mini_articles`, `max_email_templates` (`PlanCreationQuota`) : ils ne bloquent que la **création**
+d'un nouvel élément (jamais la lecture, la modification ni la suppression). Les valeurs ci-dessus ne servent qu'à la création initiale
+des formules : une formule déjà enregistrée sans la clé reste **illimitée** (`FeatureGateService::intWhenDefined`, aucun UPDATE en
+migration, `SubscriptionPlanFeaturesCatalog::OWNER_DECIDES`) jusqu'à ce que le propriétaire saisisse la valeur dans l'administration.
 
 Clé historique `forum` : ni au catalogue ni lue par le code (orpheline si encore présente en base ; conservée à l’enregistrement).
 

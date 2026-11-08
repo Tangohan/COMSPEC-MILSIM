@@ -96,6 +96,7 @@ final class AdvancementProposalEngineTest extends TestCase
         $qualification = array_values(array_filter($eligibility['conditions'], static fn (array $c): bool => $c['key'] === 'qualification'))[0];
         self::assertFalse($qualification['met']);
         self::assertStringContainsString('Chef d’équipe manquante', $qualification['detail']);
+        self::assertSame(['Manque la qualification Chef d’équipe (pour information, n’empêche pas la proposition)'], $out['missing']);
         self::assertSame(Engine::STATUS_PROPOSE, $out['status']);
         self::assertFalse($out['near']);
     }

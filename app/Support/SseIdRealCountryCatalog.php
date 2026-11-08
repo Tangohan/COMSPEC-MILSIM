@@ -245,7 +245,7 @@ final class SseIdRealCountryCatalog
             'region' => $c['region'],
             'theme' => self::UNIVERSE,
             'languages' => $c['languages'],
-            'doc_types' => array_keys($c['validity']),
+            'doc_types' => array_merge(array_keys($c['validity']), ['military_id']),
             'validity' => $c['validity'],
             'color_primary' => strtoupper($c['colors'][0]),
             'color_secondary' => strtoupper($c['colors'][1]),

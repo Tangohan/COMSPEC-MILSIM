@@ -85,7 +85,7 @@ final class SseIdentityPackServiceTest extends TestCase
 
         $pack = $this->service()->build(1, 1);
 
-        self::assertSame(['version', 'generated_at', 'map', 'op', 'countries', 'identities', 'documents', 'watch', 'kits', 'population', 'wanted', 'briefs', 'paging'], array_keys($pack));
+        self::assertSame(['version', 'generated_at', 'map', 'op', 'countries', 'identities', 'documents', 'watch', 'kits', 'population', 'wanted', 'briefs', 'settings', 'paging'], array_keys($pack));
         self::assertSame(1, $pack['version']);
         self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $pack['generated_at']);
         self::assertSame(['ALT', 'LVN', 'MLD', 'TNA'], array_column($pack['countries'], 'code'));

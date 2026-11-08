@@ -8,6 +8,8 @@ namespace App\Support;
  * Score de complétion du dossier personnel, partagé entre le tableur RH admin
  * (EffectifsWorkspaceController) et l’espace RH du membre lui-même — même heuristique,
  * une seule source de vérité pour éviter la dérive entre les deux affichages.
+ *
+ * Disponibilité et absences sont déclaratives : aucune des deux n'entre jamais dans la complétion d'un dossier.
  */
 final class PersonnelDossierCompleteness
 {
@@ -27,7 +29,6 @@ final class PersonnelDossierCompleteness
             'Affectation' => $hasAssignment,
             'Fonction' => trim((string) ($rich['job_role_display'] ?? '')) !== '',
             'Date d’engagement' => trim((string) ($rich['enlistment_date_resolved'] ?? '')) !== '',
-            'Score de disponibilité renseigné' => (int) ($rich['readiness_score'] ?? 0) > 0,
             'Adresse e-mail' => trim((string) ($user['email'] ?? '')) !== '',
         ];
 

@@ -8,7 +8,7 @@ $counts = is_array($rosterCounts ?? null) ? $rosterCounts : [];
 $total = (int) ($counts['total'] ?? 0);
 $activeCount = (int) ($counts['active'] ?? 0);
 $inactiveCount = (int) ($counts['inactive'] ?? 0);
-$attentionCount = (int) ($counts['no_unit'] ?? 0) + (int) ($counts['no_role'] ?? 0) + (int) ($rhInboxActionCount ?? $rhAlertTotalCount ?? 0) + (int) ($phaseAutoErrorCount ?? 0);
+$attentionCount = (int) ($counts['no_unit'] ?? 0) + (int) ($counts['no_role'] ?? 0) + (int) ($rhInboxActionCount ?? 0);
 $innerContent = (string) ($effectifsContent ?? 'admin.effectifs_workspace.roster');
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
@@ -22,8 +22,6 @@ $tabs = [
     ['elevations', 'Élévations', 'elevations', (int) ($elevationOpenCount ?? 0), ''],
     ['roles', 'Accès', 'roles', 0, 'Organisation'],
     ['fonctions', 'Emplois', 'fonctions', 0, 'Organisation'],
-    // Alertes : onglet de « À traiter » (même service, mêmes seuils).
-    ['rh_alerts', 'Alertes', 'a-traiter?onglet=alertes', (int) ($rhAlertTotalCount ?? 0), 'Suivi des dossiers'],
     ['invitations', 'Invitations', 'invitations', 0, 'Suivi des dossiers'],
     ['rh_mobility', 'Mobilité', 'mobilite', (int) ($mobilityPendingCount ?? 0), 'Suivi des dossiers'],
     ['rh_succession', 'Vivier', 'vivier', 0, 'Suivi des dossiers'],
@@ -54,7 +52,7 @@ foreach ($tabs as $tab) {
 $isMember = $innerContent === 'admin.effectifs_workspace.member';
 $lead = match ($active) {
     'roster' => 'Cliquez sur un nom pour ouvrir sa fiche, sur un crayon pour corriger sur place.',
-    'rh_inbox' => 'Corrections, élévations, échéances et dossiers incomplets : le système propose, vous décidez.',
+    'rh_inbox' => 'Toutes les alertes RH rangées par urgence : le système propose, vous décidez.',
     'fonctions' => 'Organisez les emplois, les catégories et les responsabilités de votre communauté.',
     'affectations' => 'Qui tient quoi, dans quelle unité et avec quel rôle, avec le code de chaque unité.',
     'nouveau' => 'Créez la fiche, puis envoyez à la personne son lien pour compléter son profil.',
@@ -157,7 +155,7 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
                     <span class="bo-eff-sv__v"><?= (int) ($integrationOpenCount ?? 0) ?></span>
                     <span class="bo-eff-sv__h">parcours d’intégration ouverts</span>
                 </a>
-                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('a-traiter?onglet=alertes')) ?>">
+                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('a-traiter?onglet=surveiller')) ?>">
                     <span class="bo-eff-sv__t">Absences<i style="background:#d97706"></i></span>
                     <span class="bo-eff-sv__v"><?= (int) ($hero['absent_today'] ?? 0) ?></span>
                     <span class="bo-eff-sv__h">absents aujourd’hui</span>
@@ -235,7 +233,7 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
 
     <?php
     // Sous-pages refondues le 2026-10-26 : mise en page commune (effectifs-pages.css).
-    $effRedesignedPages = ['rh_integration', 'rh_alerts', 'elevations', 'qualifications', 'chaine', 'affectations', 'fonctions', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
+    $effRedesignedPages = ['rh_integration', 'elevations', 'qualifications', 'chaine', 'affectations', 'fonctions', 'rh_mobility', 'rh_succession', 'rh_roleplay', 'duplicates', 'departures', 'rh_settings'];
     $effPageClass = !$isMember && in_array($active, $effRedesignedPages, true) ? ' bo-eff-page' : '';
     ?>
     <section class="bo-eff-content<?= $isMember ? ' bo-eff-content--member' : '' ?><?= $effPageClass ?>">

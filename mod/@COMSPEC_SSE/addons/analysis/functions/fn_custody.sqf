@@ -104,7 +104,7 @@ private _create = {
     private _label = "";
     if (!isNil "comspec_sse_fnc_makeEvidenceLabel") then { _label = [_e] call comspec_sse_fnc_makeEvidenceLabel; };
     private _data = [_e] call comspec_sse_fnc_getData;
-    private _desc = getText (configOf _e >> "displayName");
+    private _desc = _e getVariable ["COMSPEC_SSE_PieceDesc", getText (configOf _e >> "displayName")];
     if (_e isKindOf "CAManBase") then { _desc = format ["Effets personnels de %1", ([_e] call comspec_sse_fnc_anaLabel) select 0]; };
     private _p = createHashMapFromArray [
         ["id", _id], ["seal", ""], ["seals", []], ["label", _label], ["netId", netId _e],

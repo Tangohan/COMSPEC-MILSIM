@@ -36,6 +36,7 @@ final class SseIdentityRepository
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_lot6_migration.php'));
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_real_countries_migration.php'));
             SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_images_migration.php'));
+            SilentSchemaMigration::run(base_path('bootstrap/atak_sse_identity_suite_migration.php'));
         }
     }
 
@@ -349,6 +350,7 @@ final class SseIdentityRepository
             'alias' => ($row['alias'] ?? null) !== null && $row['alias'] !== '' ? (string) $row['alias'] : null,
             'photo_path' => ($row['photo_path'] ?? null) !== null && $row['photo_path'] !== '' ? (string) $row['photo_path'] : null,
             'signature_path' => ($row['signature_path'] ?? null) !== null && $row['signature_path'] !== '' ? (string) $row['signature_path'] : null,
+            'bio_key' => ($row['bio_key'] ?? null) !== null && $row['bio_key'] !== '' ? (string) $row['bio_key'] : null,
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => ($row['updated_at'] ?? null) !== null ? (string) $row['updated_at'] : null,
         ];

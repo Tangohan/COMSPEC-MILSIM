@@ -62,6 +62,12 @@ LAYOUT = {
         ("SEXE / SEX", 0.36, 0.57), ("LIEU DE NAISSANCE / PLACE OF BIRTH", 0.48, 0.57),
         ("DÉLIVRÉ / ISSUE", 0.36, 0.68), ("EXPIRE / EXPIRY", 0.53, 0.68), ("AUTORITÉ / AUTHORITY", 0.70, 0.68),
     ],
+    "military_recto": [
+        ("NOM / SURNAME", 0.35, 0.20), ("PRÉNOMS / GIVEN NAMES", 0.35, 0.32),
+        ("GRADE / RANK", 0.35, 0.44), ("NÉ(E) LE / BIRTH", 0.65, 0.44),
+        ("FORCE / SERVICE", 0.35, 0.56),
+        ("N° DE CARTE / CARD No", 0.35, 0.68), ("EXPIRE LE / EXPIRY", 0.72, 0.68),
+    ],
     "license_recto": [
         ("1. NOM / SURNAME", 0.35, 0.20), ("2. PRÉNOMS / GIVEN NAMES", 0.35, 0.31),
         ("3. DATE ET LIEU DE NAISSANCE / DATE AND PLACE OF BIRTH", 0.35, 0.42),
@@ -70,7 +76,7 @@ LAYOUT = {
     ],
 }
 # Proportions réelles (largeur / hauteur) : carte ID-1, page de données TD3.
-RATIO = {"card_recto": 1.585, "card_verso": 1.585, "passport": 1.42, "license_recto": 1.585, "license_verso": 1.585}
+RATIO = {"card_recto": 1.585, "card_verso": 1.585, "passport": 1.42, "license_recto": 1.585, "license_verso": 1.585, "military_recto": 1.585}
 
 
 def font(name, size):
@@ -204,6 +210,17 @@ def passport(code):
     return img
 
 
+def military_recto(code):
+    img, d, w, h, col = base("military_recto", code, 6)
+    header(d, w, h, code, "CARTE MILITAIRE", "MILITARY ID")
+    photo_frame(d, w, h, (0.04, 0.21, 0.27, 0.62), col)
+    labels(d, w, h, "military_recto", col)
+    chip_logo(d, int(w * 0.93), int(h * 0.27), int(h * 0.035), col)
+    watermark(img)
+    footer(d, w, h, foot(code))
+    return img
+
+
 def license_recto(code):
     img, d, w, h, col = base("license_recto", code, 4)
     header(d, w, h, code, "PERMIS DE CONDUIRE", "DRIVING LICENCE")
@@ -272,7 +289,18 @@ def icon(kind):
     s = 256
     img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    if kind == "passport":
+    if kind == "military":
+        col = (64, 82, 48, 255)
+        d.rounded_rectangle((14, 58, 242, 202), 14, fill=(226, 230, 212, 255), outline=col, width=5)
+        d.rectangle((14, 58, 242, 86), fill=col)
+        d.rectangle((30, 98, 92, 182), fill=(200, 208, 190, 255), outline=col, width=3)
+        d.ellipse((46, 108, 76, 140), fill=(96, 106, 84, 255))
+        d.ellipse((36, 138, 86, 196), fill=(96, 106, 84, 255))
+        d.rectangle((30, 182, 92, 186), fill=col)
+        for i in range(3):
+            d.line((116, 150 + i * 14, 150, 128 + i * 14, 184, 150 + i * 14), fill=col, width=6)
+        d.rectangle((106, 104, 226, 112), fill=col)
+    elif kind == "passport":
         d.rounded_rectangle((52, 20, 204, 236), 14, fill=(40, 52, 96, 255), outline=(20, 26, 50, 255), width=4)
         emblem(d, 128, 112, 46, (214, 180, 90), "ALT")
         d.text((128, 196), "PASSEPORT", fill=(214, 180, 90), font=font("bahnschrift.ttf", 20), anchor="mm")
@@ -328,6 +356,7 @@ def main():
     tmp = tempfile.mkdtemp(prefix="comspec_id_")
     jobs = {}
     zones_only = "--zones" in sys.argv
+    military_only = "--military" in sys.argv
     for code in COUNTRIES:
         if zones_only and code not in ZONES:
             continue
@@ -336,11 +365,15 @@ def main():
         jobs[f"tpl_card_{lc}_verso_co"] = (card_verso(code), (1024, 512))
         jobs[f"tpl_passport_{lc}_co"] = (passport(code), (1024, 512))
         jobs[f"tpl_license_{lc}_recto_co"] = (license_recto(code), (1024, 512))
-    if zones_only:
+        jobs[f"tpl_military_{lc}_recto_co"] = (military_recto(code), (1024, 512))
+    jobs["icon_military_ca"] = (icon("military"), (256, 256))
+    if military_only:
+        jobs = {k: v for k, v in jobs.items() if "military" in k}
+    elif zones_only:
         jobs = {k: v for k, v in jobs.items()}
     else:
         jobs["tpl_license_verso_co"] = (license_verso(), (1024, 512))
-    if not zones_only:
+    if not zones_only and not military_only:
         jobs["silhouette_co"] = (silhouette(), (256, 256))
         jobs["hologram_ca"] = (hologram(), (256, 256))
         for k in ("card", "passport", "license"):

@@ -108,6 +108,68 @@ final class RoleKitLoadout
     }
 
     /**
+     * Emplacements d'une tenue existante (tenue remontée du jeu) : l'inverse de build(). Lit n'importe quel emballage
+     * accepté par ACE (ArsenalLoadoutItems::aceLoadout) ; null si la tenue est illisible. Les armes rangées dans un
+     * conteneur et les infos étendues d'ACE ne sont pas reprises dans les emplacements.
+     *
+     * @return array{weapons: array<string, array<string, string>>, simple: array<string, string>, cargo: array<string, list<array{class: string, count: int}>>}|null
+     */
+    public static function fromPayload(string $payload): ?array
+    {
+        $parsed = \App\Support\ArsenalLoadoutItems::aceLoadout($payload);
+        if ($parsed === null) {
+            return null;
+        }
+        $lo = $parsed[0];
+        $text = static fn (mixed $v): string => GameItemUsageExtractor::cleanClass(is_string($v) ? $v : '');
+        $weapons = [];
+        foreach (self::WEAPONS as $i => $w) {
+            $row = is_array($lo[$i] ?? null) ? $lo[$i] : [];
+            $mag = is_array($row[4] ?? null) ? ($row[4][0] ?? '') : '';
+            $weapons[$w] = [
+                'class' => $text($row[0] ?? ''),
+                'muzzle' => $text($row[1] ?? ''),
+                'pointer' => $text($row[2] ?? ''),
+                'optic' => $text($row[3] ?? ''),
+                'bipod' => $text($row[6] ?? ''),
+                'magazine' => $text($mag),
+            ];
+        }
+        $assigned = is_array($lo[9] ?? null) ? $lo[9] : [];
+        $simple = [
+            'uniform' => $text(is_array($lo[3] ?? null) ? ($lo[3][0] ?? '') : ''),
+            'vest' => $text(is_array($lo[4] ?? null) ? ($lo[4][0] ?? '') : ''),
+            'backpack' => $text(is_array($lo[5] ?? null) ? ($lo[5][0] ?? '') : ''),
+            'headgear' => $text($lo[6] ?? ''),
+            'goggles' => $text($lo[7] ?? ''),
+            'nvg' => $text($assigned[5] ?? ''),
+            'binocular' => $text(is_array($lo[8] ?? null) ? ($lo[8][0] ?? '') : ''),
+            'radio' => $text($assigned[2] ?? ''),
+            'map' => $text($assigned[0] ?? ''),
+            'gps' => $text($assigned[1] ?? ''),
+            'compass' => $text($assigned[3] ?? ''),
+            'watch' => $text($assigned[4] ?? ''),
+        ];
+        $cargo = [];
+        foreach ([3 => 'uniform', 4 => 'vest', 5 => 'backpack'] as $i => $c) {
+            $lines = [];
+            $list = is_array($lo[$i] ?? null) && is_array($lo[$i][1] ?? null) ? $lo[$i][1] : [];
+            foreach ($list as $entry) {
+                if (!is_array($entry) || !is_string($entry[0] ?? null)) {
+                    continue;
+                }
+                $class = $text($entry[0]);
+                if ($class !== '') {
+                    $lines[] = ['class' => $class, 'count' => (int) ($entry[1] ?? 1)];
+                }
+            }
+            $cargo[$c] = $lines;
+        }
+
+        return self::normalize(['weapons' => $weapons, 'simple' => $simple, 'cargo' => $cargo]);
+    }
+
+    /**
      * @param array{weapons: array<string, array<string, string>>, simple: array<string, string>, cargo: array<string, list<array{class: string, count: int}>>} $kit
      */
     public static function isEmpty(array $kit): bool

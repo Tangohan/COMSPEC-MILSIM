@@ -76,7 +76,7 @@ final class PlayerKitSyncTest extends TestCase
         self::assertStringContainsString('PlayerKitService::class => new', $this->read('app/Core/Container.php'));
         self::assertStringContainsString("include __DIR__ . '/partials/game_player_kits.php'", $this->read('views/admin/organization/game_equipment.php'));
         self::assertStringContainsString('id="kits-portes"', $this->read('views/admin/organization/partials/game_player_kits.php'));
-        self::assertStringContainsString('Mon kit en jeu', $this->read('views/equipment/hub.php'));
+        self::assertStringContainsString('Mon kit en jeu', $this->read('views/equipment/_space_wardrobes.php'));
         self::assertStringContainsString('catalogFor($tenantId, ArsenalLoadoutItems::classes($payloadText))', $this->read('app/Controllers/Web/ArsenalWardrobeController.php'));
         self::assertStringContainsString('eq-hub__item-seen', $this->read('public/assets/js/equipment-catalog.js'));
     }

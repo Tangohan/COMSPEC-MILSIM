@@ -25,6 +25,7 @@ final class SseIdentityCatalog
         'id_card' => 'Carte d’identité',
         'passport' => 'Passeport',
         'driving_license' => 'Permis de conduire',
+        'military_id' => 'Carte militaire',
     ];
 
     public const SEXES = [

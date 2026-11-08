@@ -1,6 +1,6 @@
 /*
     Zone de lecture automatique (MRZ, ICAO 9303).
-    [_doc] call comspec_sse_fnc_idMrz            -> lignes imprimées : TD1 (carte « I< », permis « D< », 3 x 30),
+    [_doc] call comspec_sse_fnc_idMrz            -> lignes imprimées : TD1 (carte « I< », permis « D< », carte militaire « A< », 3 x 30),
                                                   TD3 (passeport, 2 x 44) ; même écriture que SseMrzService du site
     ["parse", _lines] call comspec_sse_fnc_idMrz -> HashMap : format (TD1 | TD3 | ""), ok, errors [codes], number, dob,
                                                   expires (AAMMJJ), sex, nat, issuer, last, first
@@ -81,7 +81,7 @@ if (_a isEqualType "" && {_a isEqualTo "parse"}) exitWith {
 // --- Écriture -------------------------------------------------------------------------------------------------
 private _doc = _a;
 private _type = _doc getOrDefault ["type", "id_card"];
-if !(_type in ["id_card", "passport", "driving_license"]) exitWith { [] };
+if !(_type in ["id_card", "passport", "driving_license", "military_id"]) exitWith { [] };
 // Texte MRZ (même table que SseMrzService du site) : capitales sans accents, ß -> SS, Æ -> AE, Œ -> OE, tout autre
 // caractère -> « < ». Par points de code (toArray) : les expressions régulières d'Arma travaillent sur les octets
 // UTF-8 et cassaient les lettres accentuées.
@@ -145,8 +145,8 @@ private _sex = [_doc getOrDefault ["sex", "<"], "<"] select !((_doc getOrDefault
 private _name = [_doc getOrDefault ["mrzLast", _doc getOrDefault ["last", ""]], _doc getOrDefault ["first", ""]] call _nameField;
 
 // Carte : TD1 « I< » ; permis (hors ICAO) : même gabarit, code « D< » (comme le site, pour le lecteur N1).
-if (_type in ["id_card", "driving_license"]) exitWith {
-    private _l1 = [(["I<", "D<"] select (_type isEqualTo "driving_license")) + _issuer + _num + _numCk, 30] call _pad;
+if (_type in ["id_card", "driving_license", "military_id"]) exitWith {
+    private _l1 = [(["I<", "D<", "A<"] select ((["id_card", "driving_license", "military_id"] find _type) max 0)) + _issuer + _num + _numCk, 30] call _pad;
     private _l2 = _dob + (_dob call _ck) + _sex + _exp + (_exp call _ck) + _nat;
     _l2 = [_l2, 29] call _pad;
     private _comp = (_l1 select [5, 25]) + (_l2 select [0, 7]) + (_l2 select [8, 7]) + (_l2 select [18, 11]);

@@ -240,7 +240,6 @@ class OrganizationDashboardController
                 'rank' => 0,
                 'role' => 0,
                 'operator_image' => 0,
-                'absence' => 0,
             ],
             'error' => null,
         ];

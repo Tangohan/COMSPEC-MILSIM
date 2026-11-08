@@ -220,6 +220,9 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (!empty($equipmentHubPage) && is_file(base_path('public/assets/css/equipment-hub.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/equipment-hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (!empty($equipmentHubPage) && is_file(base_path('public/assets/css/equipment-refonte.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/equipment-refonte.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (!empty($equipmentHubPage) && is_file(base_path('public/assets/js/equipment-catalog.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/equipment-catalog.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>

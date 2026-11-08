@@ -115,6 +115,16 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
             </div>
         <?php endif; ?>
         <?php endif; ?>
+        <?php $suggestions = is_array($idPapers['suggestions'] ?? null) ? $idPapers['suggestions'] : []; ?>
+        <?php if ($suggestions !== []): ?>
+            <h3 style="margin:14px 0 6px;font-size:.9rem">Possiblement la même personne</h3>
+            <p class="muted">Même clé biométrique relevée lors de contrôles. À vérifier : rien n’est fusionné automatiquement.</p>
+            <ul>
+                <?php foreach ($suggestions as $s): ?>
+                    <li><a class="link" href="<?= $h(url($s['type'] === 'person' ? 'atak/sse/identites/' . (int) $s['id'] : 'atak/sse/papiers/identites/' . (int) $s['id'])) ?>"><?= $h($s['ref']) ?> · <?= $h($s['name']) ?></a></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
         <?php if (!empty($canManage) && $papersPersonId > 0): ?>
             <div class="idp-actions" style="margin-top:10px">
                 <a class="btn btn--ghost" href="<?= $h(url('atak/sse/papiers/identites/nouvelle') . '?person_id=' . $papersPersonId) ?>">Créer une identité pour cette personne</a>
