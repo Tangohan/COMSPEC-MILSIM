@@ -338,6 +338,37 @@ private _camFov = {
     };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_DroneFovFn", _camFov];
+// Vision JOUR / NUIT / THERMIQUE : boutons de l'app Drone mis à jour sur place (fn_formSet, "btn"), sans redessiner la
+// page, donc sans refaire l'image du flux. Page redessinée si aucun de ces boutons n'est affiché.
+private _visNow = {
+    private _v = missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0];
+    private _any = ["droneVis", [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _v, ["", "on"] select (_v > 0)]] call comspec_atak_native_fnc_formSet;
+    {
+        private _ok = ["droneVis" + (str _x), ["", ["", "on"] select (_v isEqualTo _x)]] call comspec_atak_native_fnc_formSet;
+        _any = _any || _ok;
+    } forEach [0, 1, 2];
+    if (!_any) then { call _render; };
+};
+// Distance de vue PiP du flux. Elle était plafonnée à 1500 m (COMSPEC_ATAK_DronePipVD) pour la RAM (retour de TTRD,
+// 19/10 : « ça fait vite RAM ») : un drone à 2 km de la zone ne montrait alors plus rien. Désormais : au moins la
+// distance de la nacelle à ce qu'elle regarde (rayon sur le terrain, ou point visé) plus 300 m, au moins la base
+// COMSPEC_ATAK_DronePipVD (1500 m), au plus la borne COMSPEC_ATAK_DronePipVDMax (3000 m, celle de fn_pipCheck) ;
+// arrondie à 250 m, appliquée seulement si elle change. Sans caméra : la base. Rendue au joueur par _camClose.
+private _pipVd = {
+    private _base = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePipVD", 1500]) max 500);
+    private _max = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePipVDMax", 3000]) max _base);
+    private _need = 0;
+    private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+    if (!isNull _cam && {!isNull _d}) then {
+        private _p = getPosASLVisual _cam;
+        private _hit = lineIntersectsSurfaces [_p, _p vectorAdd ((vectorDirVisual _cam) vectorMultiply _max), _d, objNull, true, 1, "VIEW", "NONE"];
+        if ((count _hit) > 0) then { _need = _p distance ((_hit select 0) select 0); };
+        private _aim = missionNamespace getVariable ["COMSPEC_ATAK_DroneAimP", []];
+        if ((count _aim) isEqualTo 3) then { _need = _need max (_p distance _aim); };
+    };
+    private _vd = ((round ((_need + 300) / 250)) * 250) max _base min _max;
+    if ((round getPiPViewDistance) isNotEqualTo _vd) then { setPiPViewDistance _vd; };
+};
 private _camOpen = {
     if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull]) || {isNull _d}) exitWith {};
     // Nacelle posée hors du modèle, du côté où elle regarde (voir la boucle ci-dessous) : sur un Mavic, la caméra
@@ -354,14 +385,10 @@ private _camOpen = {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamT0", time];
     };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", false];
-    // Distance de vue PiP plafonnée tant que la caméra du drone existe (réglage de mission COMSPEC_ATAK_DronePipVD,
-    // 1500 m par défaut) : la caméra rendue dans le téléphone fait charger par le jeu le terrain, les objets et leurs
-    // textures autour du drone, en plus de ceux autour du joueur. fn_pipCheck la remontait jusqu'à 3000 m et elle y
-    // restait ; à 1500 m, quatre fois moins de surface chargée (retour de TTRD, 19/10 : « ça fait vite RAM », celle
-    // du PC). Les capteurs voient à 700 m au plus. Valeur du joueur rendue à la fermeture de la caméra (_camClose).
-    private _pipCap = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePipVD", 1500]) max 500);
+    // Distance de vue PiP réglée tant que la caméra du drone existe (voir _pipVd) ; valeur du joueur rendue à la
+    // fermeture de la caméra (_camClose).
     if (isNil { missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep" }) then { missionNamespace setVariable ["COMSPEC_ATAK_DronePipKeep", getPiPViewDistance]; };
-    if (getPiPViewDistance > _pipCap) then { setPiPViewDistance _pipCap; };
+    call _pipVd;
     call _camMake;
     // Nacelle : chaque image, la caméra vise la cible choisie ou le point observé, sinon regarde devant et en bas.
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", [{ private _perfT = diag_tickTime; call {
@@ -463,6 +490,7 @@ private _camOpen = {
             private _h = (getDirVisual _d) + _cp;
             _dir = [(sin _h) * (cos _ct), (cos _h) * (cos _ct), sin _ct];
             missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", _dir];
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneAimP", []];
         } else {
             private _p = [];
             // Nadir : nacelle à la verticale, sous le drone.
@@ -497,9 +525,12 @@ private _camOpen = {
                 private _h = getDirVisual _d;
                 _dir = [(sin _h) * 0.7986, (cos _h) * 0.7986, -0.6018];
                 missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", []];
+                missionNamespace setVariable ["COMSPEC_ATAK_DroneAimP", []];
             } else {
                 _dir = vectorNormalized (_p vectorDiff _ctr);
                 missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", _dir];
+                // Point visé, lu une fois par seconde par _pipVd (distance de vue PiP).
+                missionNamespace setVariable ["COMSPEC_ATAK_DroneAimP", _p];
             };
         };
         // Repère de l'image : droite horizontale ; à la verticale, le haut de l'image est l'avant du drone.
@@ -542,7 +573,8 @@ private _camClose = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", -1];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", []];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", false];
-    // Distance de vue PiP du joueur rendue (plafonnée pendant le flux, voir _camOpen).
+    // Distance de vue PiP du joueur rendue (réglée pendant le flux, voir _pipVd).
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneAimP", []];
     private _keep = missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep";
     if (!isNil "_keep") then { setPiPViewDistance _keep; missionNamespace setVariable ["COMSPEC_ATAK_DronePipKeep", nil]; };
 };
@@ -1055,17 +1087,18 @@ switch (_act) do {
         private _v = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]) + 1) mod 3;
         missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", _v];
         call _expose;
-        call _render;
+        call _visNow;
     };
     // Mode de vision choisi directement (rangée JOUR / VISION NOCTURNE / THERMIQUE, comme l'app Vidéo Live).
     case "visionSet": {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", ((_arg max 0) min 2)];
         call _expose;
-        call _render;
+        call _visNow;
     };
     case "camBind": { call _camBind };
     // Gain du flux selon la lumière (boucle de la nacelle, une fois par seconde).
-    case "expose": { call _expose };
+    // Distance de vue PiP réglée seulement tant que la valeur du joueur est gardée (caméra ouverte, voir _camClose).
+    case "expose": { call _expose; if (!isNil { missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep" }) then { call _pipVd; }; };
     // Source du flux de la vue caméra : drone, caméra du téléphone, caméra casque (la sienne ou celle d'un équipier).
     case "feedSrc": {
         if !(_arg in ["DRONE", "PHONE", "HELMET"]) exitWith {};

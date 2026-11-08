@@ -204,9 +204,9 @@ if (_view isNotEqualTo "") then {
     private _bShot = ["PHOTO", { ["view"] call comspec_atak_native_fnc_dronePhoto; }, "", "Ouvre le viseur photo : cadrer (glisser sur l'image), zoomer (molette, + / -), marquer une cible, surligner un cadre ou un cercle, puis PRENDRE LA PHOTO"];
     private _bZoomOut = ["ZOOM -", [1 / 1.5] call _zoomBy, "", "Dézoomer (molette vers vous, touche -) ; zoom actuel affiché sur l'image", _zoom > 1];
     private _bZoomIn = ["ZOOM +", [1.5] call _zoomBy, "", "Zoomer jusqu'à x8 (molette vers l'avant, touche +)", _zoom < 8];
-    private _bVis = [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _vis, ["vision"] call _act, ["", "on"] select (_vis > 0), "Change le mode de la caméra : jour » nuit (intensification de lumière) » thermique"];
+    private _bVis = [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _vis, ["vision"] call _act, ["", "on"] select (_vis > 0), "Change le mode de la caméra : jour » nuit (intensification de lumière) » thermique", true, "droneVis"];
     // Rangée des modes de vision, comme l'app Vidéo Live : JOUR, VISION NOCTURNE, THERMIQUE (le mode actif en vert).
-    private _visRow = [["JOUR", 0], ["VISION NOCTURNE", 1], ["THERMIQUE", 2]] apply { [_x select 0, ["visionSet", _x select 1] call _act, ["", "on"] select (_vis isEqualTo (_x select 1)), "Mode de la caméra du drone"] };
+    private _visRow = [["JOUR", 0], ["VISION NOCTURNE", 1], ["THERMIQUE", 2]] apply { [_x select 0, ["visionSet", _x select 1] call _act, ["", "on"] select (_vis isEqualTo (_x select 1)), "Mode de la caméra du drone", true, format ["droneVis%1", _x select 1]] };
     private _bNadir = [["CAMÉRA VERS LE SOL", "CAMÉRA DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, "", ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select (_aim isEqualTo "NADIR"), _src isEqualTo "DRONE"];
     private _bCenter = ["RECENTRER", { ["recenter"] call comspec_atak_native_fnc_droneAction; ["gimbalHud"] call comspec_atak_native_fnc_droneAction; }, "", "Remet la caméra droit devant le drone, 37° vers le bas", _src isEqualTo "DRONE"];
     private _bMark = [["MARQUER", "CLIQUEZ LA CIBLE"] select _markMode, ["markMode"] call _act, ["", "red"] select _markMode, "Appuyez, puis cliquez sur une personne ou un véhicule dans l'image : il est marqué (LOCK) et suivi sur la carte. Rappuyez pour arrêter de marquer"];
@@ -572,7 +572,7 @@ if (_view isNotEqualTo "") then {
             };
             private _bx = _x0;
             {
-                _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true]];
+                _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true], ["_bid", ""]];
                 private _bwid = _unit * ([_lbl] call _weight);
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_state isEqualTo "main"), [_bx, _y + ([_lh, 0] select _big), _bwid - _pad / 3, [_btnH, _btnH * 1.45] select _big], _lbl] call comspec_atak_native_fnc_pageCtrl;
                 private _f = (_bfs * ([1, 1.25] select _big)) max COMSPEC_ATAK_FontMin;
@@ -587,6 +587,12 @@ if (_view isNotEqualTo "") then {
                 };
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlEnable _en;
+                // Bouton à mettre à jour sur place (fn_formSet, "btn") : VISION JOUR / NUIT / THERMIQUE.
+                if (_bid isNotEqualTo "") then {
+                    private _fids = uiNamespace getVariable ["COMSPEC_ATAK_FormIds", createHashMap];
+                    uiNamespace setVariable ["COMSPEC_ATAK_FormIds", _fids];
+                    _fids set [_bid, createHashMapFromArray [["kind", "btn"], ["btn", _b], ["en", _en]]];
+                };
                 // Clic différé (fn_clickNext) : la plupart de ces actions redessinent la page.
                 [_b, _code] call comspec_atak_native_fnc_clickNext;
                 _bx = _bx + _bwid;

@@ -85,9 +85,18 @@ private _click = {
     params ["_b", "_code"];
     if (_code isEqualType "") then { _code = compile _code; };
     _b setVariable ["comspec_click", _code];
+    // Le rappel ne s'exécute qu'une fois. CBA_fnc_onFrame (cba_common, init_perFrameHandler.sqf) rejoue tout le tampon
+    // « image suivante » tant qu'il n'a pas été vidé : une erreur de script dans le code du clic interrompt le
+    // gestionnaire avant le vidage, et le même clic serait rejoué à chaque image (et les rappels d'ACE derrière lui
+    // n'iraient jamais au bout). Marqué avant l'appel, le rejeu ne fait plus rien et la file se vide à l'image suivante.
     _b ctrlAddEventHandler ["ButtonClick", {
         params ["_c"];
-        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+        [{
+            params ["_c", "_code", "_done"];
+            if (_done select 0) exitWith {};
+            _done set [0, true];
+            [_c] call _code;
+        }, [_c, _c getVariable ["comspec_click", {}], [false]]] call CBA_fnc_execNextFrame;
     }];
 };
 private _mk = {
@@ -845,7 +854,9 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         case "person": {
             // 6e paramètre : lettre montrée dans une pastille teintée (_picColor) quand il n'y a pas d'image (_pic "") :
             // joueur sans photo lisible par Arma.
-            _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]], ["_ini", ""]];
+            // 7e paramètre : identifiant, pour changer texte et teinte de l'image sur place (fn_formSet, lignes de piste de l'app Musique).
+            _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]], ["_ini", ""], ["_pid", ""]];
+            private _picCtl = controlNull;
             private _ih = _font * 2.2;
             private _iw = _ih * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _bg = ["COMSPEC_RscText", [_pad, _y, _w, _ih + _pad / 2]] call _mk;
@@ -859,6 +870,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             } else {
                 private _p = ["COMSPEC_RscPicture", [_pad * 1.3, _y + _pad / 4, _iw, _ih], _pic] call _mk;
                 _p ctrlSetTextColor _picColor;
+                _picCtl = _p;
             };
             private _nb = count _btns;
             // Trois boutons ou plus (DÉTAILS, ENVOYER, SUPPRIMER) : plus étroits pour laisser de la place au texte.
@@ -873,6 +885,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _t ctrlSetPosition [_pad * 2 + _iw, _y + _pad / 4, _tw, _rowIh]; _t ctrlCommit 0;
                 _bg ctrlSetPosition [_pad, _y, _w, _rowIh + _pad / 2]; _bg ctrlCommit 0;
             };
+            if (_pid isNotEqualTo "") then { _ids set [_pid, createHashMapFromArray [["kind", "person"], ["text", _t], ["pic", _picCtl]]]; };
             {
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true], ["_tip", ""]];
                 // « red » à la place de principal : bouton de confirmation (second appui pour supprimer).
@@ -1046,7 +1059,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                         _ln ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.45];
                     };
                     {
-                        _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true]];
+                        // 6e élément : identifiant, pour changer libellé et état sur place (fn_formSet, VISION de l'app Drone).
+                        _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true], ["_bid", ""]];
                         private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_state isEqualTo "main"), [_x0 + _forEachIndex * _bwid, _y + ([0, _lh] select _titled), _bwid - _pad / 3, _bh], _lbl] call _mk;
                         _b ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
                         switch (_state) do {
@@ -1057,6 +1071,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                         };
                         if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                         _b ctrlEnable _en;
+                        if (_bid isNotEqualTo "") then { _ids set [_bid, createHashMapFromArray [["kind", "btn"], ["btn", _b], ["en", _en]]]; };
                         [_b, _code] call _click;
                     } forEach _btns;
                     _x0 = _x0 + _span + _gw;

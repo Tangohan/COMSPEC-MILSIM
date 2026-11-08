@@ -45,14 +45,22 @@ Type : correctif
 FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 disparaît
 - Activer le haut-parleur dans l'app Musique ne provoque plus d'erreur de script ni d'alternance oui/non.
 - L'app C2 est retirée : retrouvez le groupe, l'indicatif et les unités dans les apps Groupe et BFT, et les ordres dans Tâches.
+- App Drone : une photo prise en vision nocturne en plein jour est prise en vision jour (elle sortait presque blanche), et le flux reste visible jusqu'à la zone observée, au plus loin que la borne de distance de vue le permet.
+- Musique, Réglages et Drone : lancer ou changer de morceau, régler un interrupteur ou changer de vision ne redessine plus toute la page. Une erreur dans un bouton du téléphone ne se répète plus à chaque image.
 EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
 - The C2 app is removed: find the group, callsign and units in the Group and BFT apps, and orders in Tasks.
+- Drone app: a photo taken in night vision in full daylight is now taken in day vision (it came out almost white), and the feed stays visible out to the observed area, as far as the view distance limit allows.
+- Music, Settings and Drone: starting or changing a track, flipping a switch or changing vision no longer redraws the whole page. A script error in a phone button no longer repeats on every frame.
 
 ### Détail technique
 - **Version 3.1.0** : `VERSION` / `VERSION_STR` « 3.1.0 », `VERSION_NAME` « 3.1.0.AG - Austin » ; COMSPEC Link inchangé.
 - **Haut-parleur** (`fn_musicAction`) : appel `[true] call _sonNow`. Un `call` nu transmettait `_this` et `_sliders` valait `"speaker"`. `fn_formSet` note la valeur du curseur avant de le déplacer.
 - **App C2** : `fn_pageC2` et sa déclaration retirées, `fn_navigate` renvoie au lanceur pour un ancien raccourci. Retirée aussi de la liste de `AtakExperienceService`.
+- **Photos blanches du drone** (`fn_dronePhoto` « take ») : le cliché est une capture de l'écran, prise sur une caméra plein écran avec `camUseNVG true` en vision 1. En plein jour (`sunOrMoon >= 0.5` et lumière du drone `>= 40`, seuil de `_expose`), la vision 1 est ramenée à la vision jour pour la prise (la vision gardée dans la fiche suit). Cause côté mod **supposée**, non vue en jeu : côté site, `PhotoAutoLevel::skipsProfile` ignore déjà l'appareil `UAV` (titre « CAMÉRA AÉRIENNE » = `device_type` UAV) et `ReconPhotoHudService` ne touche pas aux niveaux. Une ligne `[DRONE] Cliché : vision demandée…, lumière…, soleil/lune…, distance de vue…` est écrite dans le RPT pour confirmer.
+- **Distance de vue PiP** (`fn_droneAction` `_pipVd`) : le plafond fixe de 1500 m (`COMSPEC_ATAK_DronePipVD`) rendait invisible une zone à 2 km. La distance est maintenant la distance de la nacelle à ce qu'elle regarde (rayon sur le terrain, ou point visé) plus 300 m, arrondie à 250 m, entre la base `COMSPEC_ATAK_DronePipVD` (1500 m) et la borne `COMSPEC_ATAK_DronePipVDMax` (3000 m), recalculée chaque seconde ; valeur du joueur rendue à la fermeture (`_camClose`). Le cliché lui-même utilise la distance de vue du joueur, pas celle de la PiP.
+- **Mises à jour sur place** : `fn_formSet` gère aussi `person` (texte et teinte d'une ligne de piste) et `btn` (bouton de la barre de l'app Drone) ; `fn_formRender` donne un identifiant aux lignes `person` (7ᵉ élément) et aux boutons `bar` (6ᵉ élément). Musique : lancer, sauter, passer, arrêter, avancer et fin de piste (`_stateNow`) ne redessinent plus la page ; dans les listes ATHENA / FICHIERS / SERVEUR / LIEN, la piste en cours change de teinte sur place (`rowText`) ; la page LECTEUR n'est redessinée que si la file ou les favoris sont dépliés. Réglages : 14 interrupteurs du profil sans effet sur la mise en page et les étiquettes `map_show_*` changent sur place. Drone : VISION JOUR / NUIT / THERMIQUE (`_visNow`).
+- **File d'image de CBA** : `CBA_fnc_onFrame` rejoue tout le tampon `execNextFrame` tant qu'il n'est pas vidé ; une erreur de script dans un rappel interrompt le gestionnaire avant le vidage et le rappel est rejoué à chaque image. `fn_formRender` (`_click`) et `fn_clickNext` n'exécutent plus leur rappel qu'une fois.
 
 ## Pack 3.0.3 : suivi de COMSPEC IDENTITY, téléphone traduit pour les apps du SSE, Recherchés garde les BOLO locaux (ATAK natif 3.0.3.AG - Austin)
 
