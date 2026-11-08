@@ -55791,7 +55791,7 @@ return [
     'Sujet' => 'Subject',
     'Synthèses de plusieurs comptes rendus' => 'Summaries of several reports',
     'Aucune synthèse pour l’instant.' => 'No summary yet.',
-    ' Choisissez des comptes rendus ci-dessous pour en condenser plusieurs en un seul texte.' => ' Pick reports below to condense several of them into one text.',
+    'Choisissez des comptes rendus ci-dessous pour en condenser plusieurs en un seul texte.' => 'Pick reports below to condense several of them into one text.',
     'Comptes rendus' => 'Reports',
     'Nouvelle synthèse : cochez au moins deux comptes rendus' => 'New summary: tick at least two reports',
     'Aucun compte rendu à condenser.' => 'No report to condense.',

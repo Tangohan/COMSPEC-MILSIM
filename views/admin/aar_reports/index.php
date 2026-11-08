@@ -95,7 +95,8 @@ $filtersOn = ($f['q'] ?? '') !== '' || ($f['status'] ?? '') !== '' || ($f['autho
   <section class="ath-table-panel">
     <div class="ath-table-toolbar"><span class="ath-table-toolbar__title">Synthèses de plusieurs comptes rendus</span><span class="ath-table-toolbar__count"><?= count($syntheses) ?></span></div>
     <?php if ($syntheses === []): ?>
-      <div class="bo-aar-empty"><p class="ath-panel__lead">Aucune synthèse pour l’instant.<?= $canConclude ? ' Choisissez des comptes rendus ci-dessous pour en condenser plusieurs en un seul texte.' : '' ?></p></div>
+      <div class="bo-aar-empty"><p class="ath-panel__lead">Aucune synthèse pour l’instant.</p>
+        <?php if ($canConclude): ?><p class="bo-aar-muted">Choisissez des comptes rendus ci-dessous pour en condenser plusieurs en un seul texte.</p><?php endif; ?></div>
     <?php else: ?>
       <table class="ath-table">
         <thead><tr><th>Titre</th><th>Comptes rendus</th><th>Auteur</th><th>Date</th></tr></thead>
