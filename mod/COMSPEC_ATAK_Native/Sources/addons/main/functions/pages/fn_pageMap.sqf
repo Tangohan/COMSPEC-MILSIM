@@ -513,7 +513,7 @@ if (_interactive) then {
             };
             // Fond de carte : boutons sur deux rangées au-delà de trois (TOPO CLAIR SOMBRE / NUIT SATELLITE HYBRIDE, PHOTO en plus).
             private _style = [] call comspec_atak_native_fnc_mapStyle;
-            private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"], ["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]];
+            private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"], ["ARDOISE", "SLATE"], ["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]];
             if ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo []) then { _styles pushBack ["SATELLITE", "PHOTO"]; };
             private _bgOpen = !("bg" in _folds);
             _rows pushBack ["fold", "Fond de carte", (_styles select ((_styles findIf { (_x select 1) isEqualTo _style }) max 0)) select 0, _bgOpen, "bg" call _foldCode];
