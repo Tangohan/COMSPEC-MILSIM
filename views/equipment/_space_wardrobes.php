@@ -2,17 +2,17 @@
 declare(strict_types=1);
 /**
  * Espaces de tenues : Mes tenues, Favoris, Tenues de la communauté, et le contenu d'une collection.
- * Variables de hub.php : $space, $nav, $h, $csrfToken, $returnUrl, $spaceQuery, $myGameKit, $collections…
+ * Variables de hub.php : $space, $eqNav, $h, $csrfToken, $returnUrl, $spaceQuery, $myGameKit, $collections…
  */
-$paged = is_array($nav['paged'] ?? null) ? $nav['paged'] : ['items' => [], 'page' => 1, 'pages' => 1, 'total' => 0];
-$collectionRow = is_array($nav['collection_row'] ?? null) ? $nav['collection_row'] : null;
+$paged = is_array($eqNav['paged'] ?? null) ? $eqNav['paged'] : ['items' => [], 'page' => 1, 'pages' => 1, 'total' => 0];
+$collectionRow = is_array($eqNav['collection_row'] ?? null) ? $eqNav['collection_row'] : null;
 $inCollection = $space === 'collections' && $collectionRow !== null;
 $intro = match ($space) {
     'favoris' => 'Les tenues que vous avez marquées d’une étoile, les vôtres comme celles des autres.',
     'communaute' => 'Les tenues partagées par les autres membres. Mettez en favori celles que vous voulez garder sous la main.',
     default => 'Les tenues que vous avez envoyées depuis l’arsenal, enregistrées depuis votre kit en jeu ou créées avec l’assistant.',
 };
-$filtersActive = (string) ($nav['q'] ?? '') !== '' || (string) ($nav['type'] ?? '') !== '';
+$filtersActive = (string) ($eqNav['q'] ?? '') !== '' || (string) ($eqNav['type'] ?? '') !== '';
 ?>
 <?php if ($inCollection): ?>
 <header class="eqx-collhead">
@@ -70,7 +70,7 @@ require __DIR__ . '/_space_toolbar.php';
 <div class="eqx-empty">
     <?php if ($filtersActive): ?>
     <p><strong>Aucune tenue ne correspond à ces filtres.</strong></p>
-    <p><a href="<?= $h(\App\Support\EquipmentSpaces::url(['espace' => $space, 'collection' => (int) ($nav['collection'] ?? 0)])) ?>">Effacer les filtres</a></p>
+    <p><a href="<?= $h(\App\Support\EquipmentSpaces::url(['espace' => $space, 'collection' => (int) ($eqNav['collection'] ?? 0)])) ?>">Effacer les filtres</a></p>
     <?php elseif ($space === 'favoris'): ?>
     <p><strong>Aucun favori pour le moment.</strong></p>
     <p>Cliquez sur l’étoile d’une tenue pour la retrouver ici en un clic.</p>

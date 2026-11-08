@@ -2,18 +2,18 @@
 declare(strict_types=1);
 /**
  * Recherche, filtre par type et tri en haut d'un espace (formulaire GET : l'adresse reflète les filtres, le bouton
- * retour du navigateur les retrouve). Variables : $space, $nav, $toolbarKinds (bool), $toolbarSort (bool),
+ * retour du navigateur les retrouve). Variables : $space, $eqNav, $toolbarKinds (bool), $toolbarSort (bool),
  * $toolbarPlaceholder, $equipmentKindLabels, $h.
  */
 $toolbarKinds = !empty($toolbarKinds);
 $toolbarSort = !empty($toolbarSort);
-$q = (string) ($nav['q'] ?? '');
-$type = (string) ($nav['type'] ?? '');
-$sortNow = (string) ($nav['sort'] ?? 'name');
-$collectionNow = (int) ($nav['collection'] ?? 0);
+$q = (string) ($eqNav['q'] ?? '');
+$type = (string) ($eqNav['type'] ?? '');
+$sortNow = (string) ($eqNav['sort'] ?? 'name');
+$collectionNow = (int) ($eqNav['collection'] ?? 0);
 $filtering = $q !== '' || $type !== '' || ($toolbarSort && $sortNow !== 'name');
 $resetUrl = \App\Support\EquipmentSpaces::url(['espace' => $space, 'collection' => $collectionNow]);
-$pagedNow = is_array($nav['paged'] ?? null) ? $nav['paged'] : null;
+$pagedNow = is_array($eqNav['paged'] ?? null) ? $eqNav['paged'] : null;
 ?>
 <form method="get" action="<?= $h(url('equipment')) ?>" class="eqx-toolbar" role="search" data-eq-autosubmit>
     <input type="hidden" name="espace" value="<?= $h($space) ?>">

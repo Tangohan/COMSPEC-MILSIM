@@ -2,14 +2,16 @@
     Éditeur SSE (client) : formulaire, aperçu, bibliothèque, guidage. Aucun script par image : tout part d'un clic ou d'une
     frappe dans un champ (dialogs/editor.hpp). Placement : fn_editorPlace, puis fn_editorServer.
     [_op, _arg] call comspec_sse_fnc_editor
-      open [pos, objet]   ouvre l'éditeur (module Zeus)        load display / unload
+      open [pos, objet]   ouvre l'éditeur (module Zeus, menu Eden)        load display / unload / close
       type i · delivery i · model i · preview · save · publish
       toggleLibrary · filter i · libFill · libSelect · libEdit · libDuplicate · libPlace · libArchive · libLink
-      guideNext · placed [id, résumé] · receive [titre, texte]
-    Bibliothèque : profileNamespace « comspec_sse_editorLib » (liste de HashMap), sur ce poste seulement.
+      guideNext · placed [id, résumé] · receive [titre, texte] · found [id, joueur, quand] · status [texte, en ligne] · libRefresh
+    Bibliothèque : profileNamespace « comspec_sse_editorLib » (liste de HashMap), suivie sur Athena par fn_editorLibrary.
 */
 params [["_op", "", [""]], ["_arg", 0]];
 if (!hasInterface) exitWith { false };
+// Appel distant : du serveur seulement (receive, placed, found). Un autre poste n'écrit rien dans cette bibliothèque.
+if (isRemoteExecuted && {!isServer} && {remoteExecutedOwner isNotEqualTo 2}) exitWith { false };
 disableSerialization;
 
 private _types = ["intel", "identity", "paper", "case", "kit"];
@@ -45,7 +47,7 @@ private _library = {
         // Premier lancement : modèles réutilisables.
         {
             _x params ["_type", "_title", "_body"];
-            _lib pushBack createHashMapFromArray [["id", format ["M%1", _forEachIndex]], ["type", _type], ["title", _title], ["body", [_body] call _newlines], ["marking", 0], ["paper", 0], ["nature", 0], ["delivery", 0], ["state", "Modèle"], ["op", "Réutilisable"], ["when", ""], ["version", 1], ["history", []], ["link", ""]];
+            _lib pushBack createHashMapFromArray [["id", format ["M%1", _forEachIndex]], ["type", _type], ["title", _title], ["body", [_body] call _newlines], ["marking", 0], ["paper", 0], ["nature", 0], ["delivery", 0], ["state", "Modèle"], ["op", "Réutilisable"], ["when", ""], ["version", 1], ["history", []], ["link", ""], ["found", []], ["dirty", false]];
         } forEach [["kit", "Kit infiltration, papiers et légende", "Identité de couverture et papiers."], ["intel", "Rapport de source", "Source :\nFiabilité :\n\nCe qui a été observé :\n\nÀ vérifier :"], ["case", "Dossier cible", "Personne suivie :\nObjectif :"]];
         profileNamespace setVariable ["comspec_sse_editorLib", _lib];
     };
@@ -55,7 +57,9 @@ private _stamp = {
     systemTime params ["_y", "_m", "_dd", "_h", "_mi"];
     format ["%1%2/%3%4/%5 %6%7:%8%9", ["", "0"] select (_dd < 10), _dd, ["", "0"] select (_m < 10), _m, _y, ["", "0"] select (_h < 10), _h, ["", "0"] select (_mi < 10), _mi]
 };
-private _blank = { createHashMapFromArray [["id", ""], ["type", "intel"], ["title", ""], ["body", ""], ["marking", 0], ["paper", 0], ["nature", 0], ["delivery", 0], ["state", "Brouillon"], ["op", missionName], ["when", ""], ["version", 0], ["history", []], ["link", ""]] };
+private _blank = { createHashMapFromArray [["id", ""], ["type", "intel"], ["title", ""], ["body", ""], ["marking", 0], ["paper", 0], ["nature", 0], ["delivery", 0], ["state", "Brouillon"], ["op", missionName], ["when", ""], ["version", 0], ["history", []], ["link", ""], ["found", []], ["dirty", true]] };
+// Eden : pas d'unité jouée.
+private _who = { if (isNull player) then { profileName } else { name player } };
 
 private _editorIdcs = [94063, 94010, 94011, 94020, 94021, 94022, 94030, 94031, 94032, 94040, 94041, 94042, 94043, 94046, 94047, 94048, 94050, 94051, 94052, 94053, 94054, 94055, 94060, 94061, 94062];
 { private _b = _x; for "_i" from 0 to 4 do { _editorIdcs pushBack (_b + _i); }; } forEach [94100, 94110, 94120, 94130, 94140, 94200, 94210, 94220];
@@ -159,20 +163,22 @@ private _selected = {
 private _store = {
     params ["_it", "_label"];
     private _lib = call _library;
-    if ((_it get "id") isEqualTo "") then { _it set ["id", format ["%1%2", floor (diag_tickTime % 10000), floor random 1000]]; };
+    if ((_it get "id") isEqualTo "") then { _it set ["id", ["newId"] call comspec_sse_fnc_editorLibrary]; };
     _it set ["version", (_it get "version") + 1];
     _it set ["when", call _stamp];
-    (_it get "history") pushBack [_label, name player, call _stamp];
+    (_it get "history") pushBack [_label, call _who, call _stamp];
+    _it set ["dirty", true];
     private _i = _lib findIf { (_x get "id") isEqualTo (_it get "id") };
     if (_i < 0) then { _lib pushBack _it; } else { _lib set [_i, _it]; };
     saveProfileNamespace;
+    ["push", [_it]] call comspec_sse_fnc_editorLibrary;
 };
 
 switch (_op) do {
     case "open": {
         _arg params [["_pos", []], ["_obj", objNull]];
         uiNamespace setVariable ["comspec_sse_editorState", createHashMapFromArray [["item", call _blank], ["page", "editor"], ["filter", 0], ["ctx", [_pos, _obj]], ["guide", 0]]];
-        createDialog "COMSPEC_SSE_Editor";
+        if (is3DEN) then { (findDisplay 313) createDisplay "COMSPEC_SSE_Editor"; } else { createDialog "COMSPEC_SSE_Editor"; };
     };
     case "load": {
         uiNamespace setVariable ["comspec_sse_editorDisplay", _arg];
@@ -196,7 +202,11 @@ switch (_op) do {
         { (_d displayCtrl _x) ctrlShow !_seen; } forEach [94400, 94401, 94402, 94403];
         if (!_seen) then { _st set ["guide", -1]; ["guideNext"] call comspec_sse_fnc_editor; };
     };
-    case "unload": { uiNamespace setVariable ["comspec_sse_editorDisplay", displayNull]; };
+    case "unload": {
+        uiNamespace setVariable ["comspec_sse_editorDisplay", displayNull];
+        ["flush"] call comspec_sse_fnc_editorLibrary;
+    };
+    case "close": { _d closeDisplay 2; };
     case "guideNext": {
         private _steps = [
             ["Bienvenue dans l'éditeur SSE", "Choisissez à gauche ce que vous créez. Un modèle remplit le formulaire en un clic."],
@@ -245,7 +255,7 @@ switch (_op) do {
         ["save"] call comspec_sse_fnc_editor;
         private _it = _st get "item";
         if ((_it get "id") isEqualTo "") exitWith {};
-        closeDialog 2;
+        _d closeDisplay 2;
         [_it, _st get "ctx"] call comspec_sse_fnc_editorPlace;
     };
     case "toggleLibrary": {
@@ -255,7 +265,14 @@ switch (_op) do {
         } else {
             call _read;
             [true] call _page;
+            ["pull"] call comspec_sse_fnc_editorLibrary;
         };
+    };
+    case "libRefresh": { if ((_st getOrDefault ["page", ""]) isEqualTo "library") then { ["libFill"] call comspec_sse_fnc_editor; }; };
+    case "status": {
+        _arg params [["_text", ""], ["_online", false]];
+        (_d displayCtrl 94003) ctrlSetText _text;
+        (_d displayCtrl 94060) ctrlSetText ((["Rien n'est envoyé aux joueurs avant « Placer et publier ». Le contenu reste enregistré sur ce poste.", "Rien n'est envoyé aux joueurs avant « Placer et publier ». Le contenu est aussi enregistré sur Athena."] select _online) call comspec_sse_fnc_tr);
     };
     case "filter": {
         _st set ["filter", _arg];
@@ -296,7 +313,11 @@ switch (_op) do {
         (_d displayCtrl 94332) ctrlSetStructuredText parseText (if (_has) then { format ["<t font='PuristaBold'>%1</t>", [_it get "title"] call _esc] } else { "" });
         private _hist = if (_has) then { +(_it get "history") } else { [] };
         reverse _hist;
-        private _rows = if (_has) then { _hist apply { _x params ["_what", "_who", "_when"]; format ["%1<br/><t color='#a9b8b1' size='0.85'>%2 · %3</t>", [_what] call _esc, [_who] call _esc, _when] } } else { [] };
+        private _row = { params ["_what", "_author", "_when"]; format ["%1<br/><t color='#a9b8b1' size='0.85'>%2 · %3</t>", [_what] call _esc, [_author] call _esc, [_when] call _esc] };
+        private _rows = _hist apply { _x call _row };
+        // Découverte : en tête de l'historique (maquette).
+        private _found = if (_has) then { _it getOrDefault ["found", []] } else { [] };
+        if (_found isNotEqualTo []) then { _rows insert [0, [["Trouvé par un joueur" call comspec_sse_fnc_tr, _found param [0, ""], _found param [1, ""]] call _row]]; };
         (_d displayCtrl 94338) ctrlSetStructuredText parseText (_rows joinString "<br/><br/>");
         (_d displayCtrl 94340) ctrlSetText (if (_has) then { _it get "link" } else { "" });
     };
@@ -304,6 +325,7 @@ switch (_op) do {
         private _it = call _selected;
         if ((count _it) isEqualTo 0) exitWith {};
         _it set ["link", ctrlText (_d displayCtrl 94340)];
+        _it set ["dirty", true];
         saveProfileNamespace;
     };
     case "libEdit": {
@@ -322,6 +344,7 @@ switch (_op) do {
         _copy set ["state", "Brouillon"];
         _copy set ["version", 0];
         _copy set ["history", []];
+        _copy set ["found", []];
         _copy set ["op", missionName];
         [_copy, format ["Copie de %1", _it get "title"]] call _store;
         _st set ["item", _copy];
@@ -331,14 +354,16 @@ switch (_op) do {
         private _it = call _selected;
         if ((count _it) isEqualTo 0) exitWith {};
         _it set ["state", "Archivé"];
-        (_it get "history") pushBack ["Archivé", name player, call _stamp];
+        (_it get "history") pushBack ["Archivé", call _who, call _stamp];
+        _it set ["dirty", true];
         saveProfileNamespace;
+        ["push", [_it]] call comspec_sse_fnc_editorLibrary;
         ["libFill"] call comspec_sse_fnc_editor;
     };
     case "libPlace": {
         private _it = call _selected;
         if ((count _it) isEqualTo 0) exitWith {};
-        closeDialog 2;
+        _d closeDisplay 2;
         [_it, [[], objNull]] call comspec_sse_fnc_editorPlace;
     };
     case "placed": {
@@ -348,10 +373,26 @@ switch (_op) do {
             private _it = (call _library) select _i;
             _it set ["state", "Placé en mission"];
             _it set ["op", missionName];
-            (_it get "history") pushBack ["Placé en mission", name player, call _stamp];
+            (_it get "history") pushBack ["Placé en mission", call _who, call _stamp];
+            _it set ["dirty", true];
+            saveProfileNamespace;
+            ["push", [_it]] call comspec_sse_fnc_editorLibrary;
+        };
+        if (is3DEN) then { [_summary call comspec_sse_fnc_tr, 0] call BIS_fnc_3DENNotification; } else { [_summary, "SUCCESS"] call comspec_sse_fnc_notify; };
+    };
+    case "found": {
+        _arg params [["_id", ""], ["_player", ""], ["_when", ""]];
+        private _i = (call _library) findIf { (_x get "id") isEqualTo _id };
+        // Seul le poste qui connaît ce contenu l'inscrit et prévient (le site le reçoit du serveur).
+        if (_i < 0) exitWith {};
+        private _it = (call _library) select _i;
+        if ((_it getOrDefault ["found", []]) isEqualTo []) then {
+            _it set ["found", [_player, _when]];
+            _it set ["dirty", true];
             saveProfileNamespace;
         };
-        [_summary, "SUCCESS"] call comspec_sse_fnc_notify;
+        [format ["%1 : %2 (%3).", _it get "title", "trouvé par un joueur" call comspec_sse_fnc_tr, _player], "INFO"] call comspec_sse_fnc_notify;
+        if ((_st getOrDefault ["page", ""]) isEqualTo "library" && {!isNull _d}) then { ["libSelect"] call comspec_sse_fnc_editor; };
     };
     case "receive": {
         _arg params [["_title", ""], ["_body", ""]];

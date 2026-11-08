@@ -170,6 +170,7 @@ final class ArsenalWardrobeRepository
             $payload = (string) ($row['payload_text'] ?? '');
             $row['kinds'] = ArsenalLoadoutItems::presentKinds($payload);
             $row['preview_classes'] = ArsenalLoadoutItems::previewClasses($payload);
+            $row['inventory'] = ArsenalLoadoutItems::inventory($payload);
             $row['display_name'] = ArsenalLoadoutItems::formatWardrobeTitle((string) ($row['name'] ?? ''));
             $featured = !empty($row['is_featured']);
             $badge = trim((string) ($row['pin_badge_label'] ?? ''));

@@ -237,9 +237,10 @@ class Display3DEN {
                 items[] += {"COMSPEC_SSE_Menu"};
                 class COMSPEC_SSE_Menu {
                     text = "COMSPEC SSE";
-                    items[] = {"COMSPEC_SSE_MenuAthena", "COMSPEC_SSE_MenuDashboard", "COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuDocuments", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
+                    items[] = {"COMSPEC_SSE_MenuAthena", "COMSPEC_SSE_MenuEditor", "COMSPEC_SSE_MenuDashboard", "COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuDocuments", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
                 };
                 class COMSPEC_SSE_MenuAthena { text = "$STR_COMSPEC_SSE_CFG_79E31EE88D"; action = "['open'] call comspec_sse_fnc_athenaEden"; };
+                class COMSPEC_SSE_MenuEditor { text = "$STR_COMSPEC_SSE_CFG_EDITOR_OPEN"; action = "['open', [[], objNull]] call comspec_sse_fnc_editor"; };
                 class COMSPEC_SSE_MenuDashboard { text = "$STR_COMSPEC_SSE_CFG_519542D0B0"; action = "[] call comspec_sse_fnc_openDashboard"; };
                 class COMSPEC_SSE_MenuEden { text = "$STR_COMSPEC_SSE_CFG_D2BC59B49C"; action = "['Eden'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuStart { text = "$STR_COMSPEC_SSE_CFG_20FDBBF21A"; action = "['Start'] call comspec_sse_fnc_openGuide"; };

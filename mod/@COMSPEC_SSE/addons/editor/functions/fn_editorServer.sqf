@@ -1,5 +1,7 @@
 /*
     Pose d'un contenu de l'éditeur (SERVEUR). ["place", [moi, contenu, position, cible]] call comspec_sse_fnc_editorServer
+    Renseignement posé : identifiant du contenu gardé sur l'objet (découverte : fn_editorFound). Identité et kit : le texte
+    du contenu devient la légende du papier (fn_idLegend, « legendText »).
     Réservé au Zeus ou à l'administrateur (fn_isAuthority) ; le poste doit être celui de l'unité qu'il dit être.
       renseignement  à ramasser : pièce posée (COMSPEC_SSE_Obj_Documents) · en fouille : sur la personne ou le véhicule
                      visé · envoi : téléphones du groupe visé, sinon du camp du Zeus
@@ -34,6 +36,8 @@ private _authored = {
     _entity setVariable ["comspec_sse_documentsMode", "CUSTOM", true];
     _entity setVariable ["comspec_sse_doc1_title", _title, true];
     _entity setVariable ["comspec_sse_doc1_summary", format ["[%1] %2", _marking, _body], true];
+    _entity setVariable ["comspec_sse_editorItem", _item getOrDefault ["id", ""], true];
+    _entity setVariable ["comspec_sse_editorFoundDone", false];
 };
 private _toPhones = {
     params ["_text"];
@@ -61,7 +65,12 @@ private _papers = {
             [objNull, _spec] call comspec_sse_fnc_idIssue
         };
         if (!_isMan && {_id isNotEqualTo ""}) then { [_id, _holder] call comspec_sse_fnc_idMaterialize; };
+        // La légende suit le papier : au sol ou dans un véhicule, elle attend celui qui le présentera.
+        if (_id isNotEqualTo "" && {_type in ["identity", "kit"]} && {(trim _body) isNotEqualTo ""}) then {
+            (["doc", [_id]] call comspec_sse_fnc_idRegistry) set ["legendText", _body];
+        };
     } forEach _specs;
+    if (_isMan) then { ["reset", [_target]] call comspec_sse_fnc_idLegend; };
 };
 
 switch (_type) do {

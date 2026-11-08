@@ -2,7 +2,9 @@
     Légende d'une identité (SERVEUR SEULEMENT) : l'histoire qui accompagne les papiers d'une personne, couverture
     préparée d'un infiltré comme simple vie d'un civil. Tirage reproductible (clé biométrique), cohérent avec la pièce
     principale (nom, date et lieu de naissance, adresse, profession imprimés), complété par le brief RP d'Athena (paquet,
-    bloc « briefs », Steam ID du joueur) qui l'emporte champ par champ. Calculée une fois, gardée au registre.
+    bloc « briefs », Steam ID du joueur) qui l'emporte champ par champ, puis par le texte écrit dans l'éditeur SSE
+    (« legendText » du papier : « Adresse : … », « Employeur : … », reste en tête de l'histoire), le choix le plus récent.
+    Calculée une fois, gardée au registre.
     ["get", [unité]] -> légende (HashMap) :
       last, first, name, dob, pob, sex, country, address, city, years (ans à l'adresse), employer, profession, jobYears,
       phone HashMap (number, model, imei, sim : téléphone simulé, comspec_sse_fnc_generatePhone), contacts [[nom, lien,
@@ -28,7 +30,9 @@ if (_op isEqualTo "reset") exitWith { _legends deleteAt _key; true };
 private _build = {
     private _docs = (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry };
     private _main = createHashMap;
-    { if ((_x getOrDefault ["kind", ""]) isEqualTo "cover") exitWith { _main = _x; }; } forEach _docs;
+    // Papier remis depuis l'éditeur avec son texte (le plus récent) : c'est lui, la légende voulue.
+    { if ((_x getOrDefault ["legendText", ""]) isNotEqualTo "") then { _main = _x; }; } forEach _docs;
+    if ((count _main) isEqualTo 0) then { { if ((_x getOrDefault ["kind", ""]) isEqualTo "cover") exitWith { _main = _x; }; } forEach _docs; };
     if ((count _main) isEqualTo 0) then { { if ((_x getOrDefault ["type", ""]) in ["id_card", "passport"]) exitWith { _main = _x; }; } forEach _docs; };
     if ((count _main) isEqualTo 0 && {_docs isNotEqualTo []}) then { _main = _docs select 0; };
     private _country = _main getOrDefault ["country", ["default"] call comspec_sse_fnc_idCountries];
@@ -162,6 +166,27 @@ private _build = {
         _L set ["title", "title" call _s];
         // Brief avec identité de couverture : légende préparée par le commandement.
         if ((_brief getOrDefault ["identity_id", ""]) isNotEqualTo "" || {("cover_name" call _s) isNotEqualTo ""}) then { _L set ["quality", (_L get "quality") max 95]; };
+    };
+    // Texte de l'éditeur SSE. Rubrique sans valeur (modèle pas rempli) : ignorée.
+    private _written = _main getOrDefault ["legendText", ""];
+    if (_written isNotEqualTo "") then {
+        private _keys = createHashMapFromArray [["adresse", "address"], ["ville", "city"], ["employeur", "employer"], ["profession", "profession"], ["famille", "family"], ["raison du déplacement", "travel"]];
+        private _free = [];
+        {
+            private _line = trim _x;
+            private _sep = _line find ":";
+            private _label = if (_sep > 0) then { toLower (trim (_line select [0, _sep])) } else { "" };
+            private _value = if (_sep > 0) then { trim (_line select [_sep + 1]) } else { _line };
+            if (_value isNotEqualTo "") then {
+                switch (true) do {
+                    case (_label in _keys): { _L set [_keys get _label, _value]; };
+                    case (_label isEqualTo "téléphone"): { _phone set ["number", _value]; };
+                    default { _free pushBack _line; };
+                };
+            };
+        } forEach (_written splitString (toString [13, 10]));
+        if (_free isNotEqualTo []) then { (_L get "history") insert [0, [_free joinString " "]]; };
+        if (_kind isEqualTo "cover") then { _L set ["quality", (_L get "quality") max 95]; };
     };
     _L
 };

@@ -11,7 +11,7 @@ NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 [*] Contrôles envoyés automatiquement à Athena, réglable par communauté.
 [*] Moins de fausses alertes : un avis sans prénom ne désigne plus tout porteur de ce nom.
 [*] Papier saisi : pièce à conviction avec chaîne de possession, rattachée au dossier.
-[*] Nouvel éditeur SSE pour Zeus : modèles, aperçu en direct, bibliothèque avec recherche et historique, placement dans le monde.
+[*] Nouvel éditeur SSE pour Zeus et Eden : modèles, aperçu en direct, bibliothèque de la communauté sur Athena avec recherche et historique, placement dans le monde. Le texte d'une identité devient sa légende.
 [/list]
 
 ----------------------------------------
@@ -25,7 +25,7 @@ NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 [*] Checks are sent to Athena automatically, configurable per community.
 [*] Fewer false alerts: a wanted notice without a first name no longer matches everyone with that surname.
 [*] Seized paper: evidence item with chain of custody, attached to the case.
-[*] New SSE editor for Zeus: templates, live preview, library with search and history, placement in the world.
+[*] New SSE editor for Zeus and Eden: templates, live preview, community library on Athena with search and history, placement in the world. The text of an identity becomes its legend.
 [/list]
 
 ----------------------------------------

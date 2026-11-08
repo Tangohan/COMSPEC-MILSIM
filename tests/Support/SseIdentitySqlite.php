@@ -63,6 +63,11 @@ final class SseIdentitySqlite
             $out .= $m;
         });
 
+        $editor = require dirname(__DIR__, 2) . '/bootstrap/atak_sse_editor_library_migration.php';
+        $editor($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
+
         return $out;
     }
 

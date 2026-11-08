@@ -56342,4 +56342,7 @@ return [
     'Vous écrivez les quatre chiffres.' => 'You write the four figures.',
     'Effectif et unités viennent de votre organisation.' => 'Headcount and units come from your organisation.',
     'Ardoise' => 'Slate',
+    'Compte relié et habilitation Confidentiel requis pour la bibliothèque de l’éditeur.' => 'A linked account and Confidential clearance are required for the editor library.',
+    'Bibliothèque indisponible pour le moment.' => 'Library unavailable for the moment.',
+    'Contenu refusé : rien n’a été enregistré.' => 'Content refused: nothing was saved.',
 ];
