@@ -28,7 +28,7 @@ final class AtakNativeReportsAppTest extends TestCase
         $main = dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main';
         $config = (string) file_get_contents($main . '/config.cpp');
 
-        self::assertStringContainsString('name="Comptes rendus"; page="REPORTS"', $config);
+        self::assertStringContainsString('name="Comptes rendus"; short="CR"; page="REPORTS"', $config);
         self::assertStringContainsString('class reportTypes {}; class reportAction {}; class pageReports {};', $config);
         self::assertFileExists($main . '/data/app_reports.paa');
         self::assertStringContainsString('case "REPORTS"', (string) file_get_contents($main . '/functions/ui/fn_pageRender.sqf'));

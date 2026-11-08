@@ -76,6 +76,40 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
 
+// Écran de verrouillage (4.1.1) : bouton tonal à l'accent, dans les trois thèmes, en portrait (mini) et en paysage (plein écran).
+["tel_verrouillage_themes", {
+    if (["comspec_atak_native_fnc_lockScreen", "comspec_atak_native_fnc_theme", "comspec_atak_native_fnc_titleFit"] call AT_fnc_nil) exitWith {};
+    private _mode0 = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    {
+        _x params ["_mode", "_orient", "_nom"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        [true] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, format ["téléphone non ouvert (%1)", _nom]] call AT_fnc_check;
+        uiSleep 1.5;
+        {
+            ["set", _x] call comspec_atak_native_fnc_theme;
+            uiSleep 1;
+            ["show"] call comspec_atak_native_fnc_lockScreen;
+            uiSleep 0.8;
+            [uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false], format ["écran de verrouillage absent (%1, %2)", _x, _nom]] call AT_fnc_check;
+            [uiNamespace getVariable ["COMSPEC_ATAK_LockBtn", controlNull], format ["bouton de déverrouillage (%1, %2)", _x, _nom]] call AT_fnc_tient;
+            [format ["verrouillage_%1_%2", toLower _x, _nom]] call AT_fnc_shot;
+            ["unlock"] call comspec_atak_native_fnc_lockScreen;
+            uiSleep 0.6;
+            [!(uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]), format ["toujours verrouillé (%1, %2)", _x, _nom]] call AT_fnc_check;
+        } forEach ["DARK", "DAY", "NVG"];
+    } forEach [["MINI", "PORTRAIT", "portrait"], ["FULL", "LANDSCAPE", "paysage"]];
+    "bouton de déverrouillage : rectangle tonal à l'accent, centré, aligné avec CARTE et MESSAGES" call AT_fnc_visuel;
+    ["set", "DARK"] call comspec_atak_native_fnc_theme;
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode0];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient0];
+    [true] call comspec_atak_native_fnc_open;
+    uiSleep 1;
+    call AT_fnc_done;
+}, 150] call AT_fnc_run;
+
 // Garde-fou du téléphone (fn_deviceGuard) : données reprises vérifiées, page caméra jamais rouverte seule, mode sans échec.
 ["tel_garde_fou", {
     if (["comspec_atak_native_fnc_deviceGuard"] call AT_fnc_nil) exitWith {};

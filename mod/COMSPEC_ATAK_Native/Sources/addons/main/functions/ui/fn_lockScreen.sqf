@@ -97,6 +97,12 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_LockPending", false];
         if !(uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) exitWith { false };
         uiNamespace setVariable ["COMSPEC_ATAK_LockUp", false];
+        // Rappel « sans code » vu une fois : plus affiché aux ouvertures suivantes.
+        if (uiNamespace getVariable ["COMSPEC_ATAK_LockTipShown", false]) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_LockTipShown", false];
+            profileNamespace setVariable ["COMSPEC_ATAK_LockPinTip", true];
+            [] call comspec_atak_native_fnc_saveProfile;
+        };
         private _ctrls = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrls", []];
         uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", []];
         uiNamespace setVariable ["COMSPEC_ATAK_LockClock", []];
@@ -200,27 +206,53 @@ switch (_act) do {
         private _margin = _pad * 1.5;
         private _hintH = _font * 1.15;
         private _hintY = _dh - _hintH - _pad * 0.5;
-        private _btnH = _font * 2;
+        // 4.1.1 : boutons rectangulaires aux proportions fixes, comme le reste du téléphone. Avant, la texture « pill »
+        // étirée sur 46 % de la largeur (paysage) déformait ses bouts arrondis en une ellipse aplatie.
+        private _btnH = _font * 2.1;
         private _gap = _pad * 0.8;
         private _rowW = _dw - _margin * 2;
         private _needPin = ["needPin"] call comspec_atak_native_fnc_phoneOwn;
         private _bottom = _hintY - _pad * 0.5;
         private _unlockRect = [];
         private _qaRects = [];
+        // Largeurs plafonnées (en hauteurs de police, converties en largeur d'écran) : jamais une barre d'un bord à l'autre.
+        private _uCap = _font * 12 / _ratio;
+        private _qCap = _font * 8 / _ratio;
         if (_land) then {
-            private _qaW = _rowW * 0.26;
-            private _uw = _rowW - (_qaW + _gap) * 2;
+            // Une rangée centrée : CARTE | DÉVERROUILLER | MESSAGES, même hauteur, même ligne.
+            private _qaW = (_rowW * 0.24) min _qCap;
+            private _uw = (_rowW - (_qaW + _gap) * 2) min _uCap;
+            private _x0 = _margin + (_rowW - _uw - (_qaW + _gap) * 2) / 2;
             private _by = _bottom - _btnH;
-            _qaRects = [[_margin, _by, _qaW, _btnH], [_margin + _rowW - _qaW, _by, _qaW, _btnH]];
-            _unlockRect = [_margin + _qaW + _gap, _by, _uw, _btnH];
+            _qaRects = [[_x0, _by, _qaW, _btnH], [_x0 + _qaW + _gap * 2 + _uw, _by, _qaW, _btnH]];
+            _unlockRect = [_x0 + _qaW + _gap, _by, _uw, _btnH];
             _bottom = _by;
         } else {
+            // Deux rangées de même largeur, centrées : raccourcis au-dessus, déverrouillage dessous.
+            private _w = _rowW min _uCap;
+            private _x0 = _margin + (_rowW - _w) / 2;
             private _uy = _bottom - _btnH;
             private _qy = _uy - _gap - _btnH;
-            private _qaW = (_rowW - _gap) / 2;
-            _qaRects = [[_margin, _qy, _qaW, _btnH], [_margin + _qaW + _gap, _qy, _qaW, _btnH]];
-            _unlockRect = [_margin, _uy, _rowW, _btnH];
+            private _qaW = (_w - _gap) / 2;
+            _qaRects = [[_x0, _qy, _qaW, _btnH], [_x0 + _qaW + _gap, _qy, _qaW, _btnH]];
+            _unlockRect = [_x0, _uy, _w, _btnH];
             _bottom = _qy;
+        };
+        // Fond plein et filet d'un pixel ; renvoie [fond, [filets]].
+        private _box = {
+            params ["_pos", "_fill", "_edge"];
+            _pos params ["_bx", "_by", "_bw", "_bh"];
+            private _f = ["COMSPEC_RscText", _pos] call _mk;
+            _f ctrlSetBackgroundColor _fill;
+            _f ctrlEnable false;
+            private _px = pixelW; private _py = pixelH;
+            private _edges = [[_bx, _by, _bw, _py], [_bx, _by + _bh - _py, _bw, _py], [_bx, _by, _px, _bh], [_bx + _bw - _px, _by, _px, _bh]] apply {
+                private _e = ["COMSPEC_RscText", _x] call _mk;
+                _e ctrlSetBackgroundColor _edge;
+                _e ctrlEnable false;
+                _e
+            };
+            [_f, _edges]
         };
         private _goTo = {
             params ["_c", "_page"];
@@ -231,11 +263,33 @@ switch (_act) do {
                 [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; }] call comspec_atak_native_fnc_nextFrame;
             }];
         };
-        // Raccourcis : pastille pleine, icône et libellé au contraste du texte courant.
+        // État d'un bouton (survol, focus clavier, pressé) : fond et filets recolorés. Données rangées sur le bouton.
+        private _wire = {
+            params ["_b", "_fill", "_edges", "_cols"];
+            _b setVariable ["cs_lk", [_fill, _edges, _cols]];
+            private _paint = {
+                params ["_b", "_st"];
+                (_b getVariable ["cs_lk", []]) params [["_f", controlNull], ["_es", []], ["_c", []]];
+                if (isNull _f) exitWith {};
+                // _c : [fond, fond survolé, fond pressé, filet, filet focus]
+                private _i = switch (_st) do { case "down": { 2 }; case "hover"; case "focus": { 1 }; default { 0 }; };
+                _f ctrlSetBackgroundColor (_c select _i);
+                { _x ctrlSetBackgroundColor (_c select ([3, 4] select (_i > 0))); } forEach _es;
+            };
+            _b setVariable ["cs_paint", _paint];
+            _b ctrlAddEventHandler ["MouseEnter", { params ["_b"]; [_b, "hover"] call (_b getVariable "cs_paint"); }];
+            _b ctrlAddEventHandler ["MouseExit", { params ["_b"]; [_b, ["idle", "focus"] select (_b getVariable ["cs_focus", false])] call (_b getVariable "cs_paint"); }];
+            _b ctrlAddEventHandler ["SetFocus", { params ["_b"]; _b setVariable ["cs_focus", true]; [_b, "focus"] call (_b getVariable "cs_paint"); }];
+            _b ctrlAddEventHandler ["KillFocus", { params ["_b"]; _b setVariable ["cs_focus", false]; [_b, "idle"] call (_b getVariable "cs_paint"); }];
+            _b ctrlAddEventHandler ["ButtonDown", { params ["_b"]; [_b, "down"] call (_b getVariable "cs_paint"); }];
+            _b ctrlAddEventHandler ["ButtonUp", { params ["_b"]; [_b, "hover"] call (_b getVariable "cs_paint"); }];
+        };
+        // Raccourcis : rectangle neutre (pastille du thème), icône et libellé au contraste du texte courant.
+        private _chipHi = ((_th get "surfaceHi") select [0, 3]) + [[0.80, 0.96] select _day];
         {
             _x params ["_qi", "_ql", "_qp"];
             (_qaRects select _forEachIndex) params ["_qx", "_qy", "_qw", "_qh"];
-            ["pill", [_qx, _qy, _qw, _qh], _chipCol] call _tex;
+            ([[_qx, _qy, _qw, _qh], _chipCol, _th get "border"] call _box) params ["_qf", "_qe"];
             private _qis = _qh * 0.56;
             private _qiw = _qis / _ratio;
             private _ql2 = ["COMSPEC_RscTextCenter", [_qx + _qiw * 0.6, _qy, _qw - _qiw * 0.6, _qh], _ql] call _mk;
@@ -246,28 +300,38 @@ switch (_act) do {
             private _qic = ["COMSPEC_RscPhone", [_qx + _qw / 2 + _qiw * 0.3 - _qt / 2 - _qiw * 1.2, _qy + (_qh - _qis) / 2, _qiw, _qis], format ["%1%2.paa", _dir, _qi]] call _mk;
             _qic ctrlSetTextColor _chipInk;
             _qic ctrlEnable false;
-            [["COMSPEC_RscButtonInvisible", [_qx, _qy, _qw, _qh]] call _mk, _qp] call _goTo;
+            private _qb = ["COMSPEC_RscButtonInvisible", [_qx, _qy, _qw, _qh]] call _mk;
+            [_qb, _qp] call _goTo;
+            [_qb, _qf, _qe, [_chipCol, _chipHi, _chipHi, _th get "border", _th get "textDim"]] call _wire;
         } forEach [["app_map", "CARTE", "MAP"], ["app_chat", "MESSAGES", "CHAT"]];
-        // Déverrouiller : pastille d'accent, cadenas fermé quand un code sera demandé.
+        // Déverrouiller : bouton tonal à l'accent du joueur (fond teinté, encre d'accent, filet d'accent), sobre et lisible
+        // dans les trois thèmes ; cadenas fermé quand un code sera demandé. Survolé, focus ou pressé : fond plus teinté, filet d'accent plein.
         _unlockRect params ["_ux", "_uy", "_uw", "_uh"];
-        ["pill", _unlockRect, _th get "accent"] call _tex;
-        private _uis = _uh * 0.56;
+        private _acc = _th get "accent";
+        ([_unlockRect, _th get "accentSoft", (_acc select [0, 3]) + [0.55]] call _box) params ["_uf", "_ue"];
+        private _uis = _uh * 0.5;
         private _uiw = _uis / _ratio;
         private _ul = ["COMSPEC_RscTextCenter", [_ux + _uiw * 0.6, _uy, _uw - _uiw * 0.6, _uh], ["DÉVERROUILLER", "SAISIR LE CODE"] select _needPin] call _mk;
         _ul ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _ul ctrlSetFontHeight _font;
-        _ul ctrlSetTextColor (_th get "onAccent");
+        _ul ctrlSetTextColor (_th get "onAccentSoft");
+        _ul ctrlEnable false;
         private _uic = ["COMSPEC_RscPhone", [_ux + _uw / 2 + _uiw * 0.3 - (ctrlTextWidth _ul) / 2 - _uiw * 1.2, _uy + (_uh - _uis) / 2, _uiw, _uis], format ["%1%2.paa", _lockDir, ["lock_open", "lock_closed"] select _needPin]] call _mk;
-        _uic ctrlSetTextColor (_th get "onAccent");
+        _uic ctrlSetTextColor (_th get "onAccentSoft");
         _uic ctrlEnable false;
+        uiNamespace setVariable ["COMSPEC_ATAK_LockBtn", _ul];
         private _ub = ["COMSPEC_RscButtonInvisible", _unlockRect] call _mk;
         _ub ctrlAddEventHandler ["ButtonClick", {
             uiNamespace setVariable ["COMSPEC_ATAK_LockAfter", ""];
             [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; }] call comspec_atak_native_fnc_nextFrame;
         }];
-        // Invite, et rappel qu'un code peut être réglé tant qu'il n'y en a pas (aucun code n'est imposé).
+        [_ub, _uf, _ue, [_th get "accentSoft", _th get "accentSoftHi", _th get "accentSoftHi", (_acc select [0, 3]) + [0.55], _acc]] call _wire;
+        // Invite. Le rappel « sans code » n'apparaît qu'une fois (profil COMSPEC_ATAK_LockPinTip, marqué au déverrouillage) :
+        // il restait affiché à chaque ouverture ; le réglage du code reste dans Réglages > Personnalisation.
         private _hasPin = ["hasPin"] call comspec_atak_native_fnc_phoneOwn;
-        private _hint = ["COMSPEC_RscTextCenter", [0, _hintY, _dw, _hintH], ["Sans code : réglez-en un dans Réglages > Personnalisation", "Touchez ou glissez vers le haut pour déverrouiller"] select _hasPin] call _mk;
+        private _tip = !_hasPin && {!(profileNamespace getVariable ["COMSPEC_ATAK_LockPinTip", false])};
+        uiNamespace setVariable ["COMSPEC_ATAK_LockTipShown", _tip];
+        private _hint = ["COMSPEC_RscTextCenter", [0, _hintY, _dw, _hintH], ["Touchez ou glissez vers le haut pour déverrouiller", "Sans code : réglez-en un dans Réglages > Personnalisation"] select _tip] call _mk;
         _hint ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
         _hint ctrlSetTextColor _inkDim;
         _hint ctrlEnable false;

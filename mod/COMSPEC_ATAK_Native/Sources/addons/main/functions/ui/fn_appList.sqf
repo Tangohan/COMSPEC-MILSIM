@@ -22,6 +22,8 @@ private _apps = _sorted apply {
     createHashMapFromArray [
         ["id", _x select 1],
         ["name", getText (_cfg >> "name")],
+        // Abréviation du titre (4.1.1), quand le nom ne tient pas dans la barre d'app à 14 px (fn_titleFit).
+        ["short", getText (_cfg >> "short")],
         ["desc", getText (_cfg >> "desc")],
         ["page", toUpper getText (_cfg >> "page")],
         ["section", getText (_cfg >> "section")],
