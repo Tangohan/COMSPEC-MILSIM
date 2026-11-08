@@ -2,7 +2,8 @@
     Nom automatique d'un marqueur (ou d'une étape) dans la langue du mod, à l'affichage : les marqueurs gardent le texte
     posé par leur auteur (diffusé à tous, envoyé à Athena), le téléphone le relit dans la langue choisie.
     Reconnaît seulement les noms que le mod pose lui-même, dans une langue ou l'autre :
-      palette        « ENI INFANTERIE 3 » <-> « ENY INFANTRY 3 », « OBJECTIF 2 » <-> « OBJECTIVE 2 » (fn_markerDrop)
+      repère         « REP 3 » <-> « MK 3 » (nom par défaut, fn_markerDrop)
+      palette        « ENI INFANTERIE 3 » <-> « ENY INFANTRY 3 », « OBJECTIF 2 » <-> « OBJECTIVE 2 » (noms déjà posés, modèle du réglage)
       détection      « INC BTR-80 (drone 14:02) » (camp seul)
       cible LOCK     « LOCK 098 · BTR-80 (téléphone) » / « … neutralisé » / « … perdu 14:02 » (fn_lockAction)
       étape          « FIN », « FIN 2 » <-> « END » (fn_wpAction)
@@ -54,6 +55,10 @@ switch (true) do {
         if (_i > 0 && {(count _out) - _i - (count (_lost select 0)) isEqualTo 5}) then { _out = (_out select [0, _i]) + (_lost select 1) + (_out select [_i + count (_lost select 0)]); };
     };
     case ((count _w) isEqualTo 0): {};
+    case ((_w select 0) in ["REP", "MK"] && {(count _w) isEqualTo 2} && {(_w select 1) regexMatch "[0-9]+"}): {
+        _w set [0, ["MK", "REP"] select _fr];
+        _out = _w joinString " ";
+    };
     case ((_w select 0) in ["FIN", "END"] && {(count _w) isEqualTo 1 || {(count _w) isEqualTo 2 && {((_w select 1) regexMatch "[0-9]+")}}}): {
         _w set [0, ["END", "FIN"] select _fr];
         _out = _w joinString " ";

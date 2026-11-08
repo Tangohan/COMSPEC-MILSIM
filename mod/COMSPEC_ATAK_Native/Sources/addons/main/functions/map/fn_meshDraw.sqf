@@ -19,6 +19,9 @@ private _none = "#(argb,8,8,3)color(0,0,0,0)";
 private _fill = "#(rgb,8,8,3)color(1,1,1,1)";
 // Cercles de taille constante à l'écran, quel que soit le zoom.
 private _r = (_map ctrlMapScreenToWorld [0, 0]) distance2D (_map ctrlMapScreenToWorld [0.008, 0]);
+// Ma position affichée (GPS simulé) : mes cercles et mes traits restent centrés sur mon point (fn_gpsPos).
+private _selfP = [] call comspec_atak_native_fnc_gpsPos;
+private _selfObjs = [player, vehicle player];
 if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
     private _cv = missionNamespace getVariable ["COMSPEC_ATAK_Coverage", []];
     if ((count _cv) >= 8) then {
@@ -51,8 +54,18 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
     private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
     private _nodes = _mesh getOrDefault ["nodes", []];
     private _hops = _mesh getOrDefault ["hops", []];
-    // Positions relues à chaque image : les traits suivent les joueurs entre deux calculs.
-    private _pos = _nodes apply { [_x select 1, getPosWorld (_x select 0)] select (alive (_x select 0)) };
+    // Positions relues à chaque image : les traits suivent les joueurs entre deux calculs. Même point que leur symbole :
+    // moi à ma position affichée, un allié joueur à son dernier point reçu (avant : vraie position, cercles décalés du symbole).
+    private _pliOn = ["pli"] call comspec_atak_native_fnc_netCond;
+    private _pos = _nodes apply {
+        private _u = _x select 0;
+        if (!alive _u) then { _x select 1 } else {
+            if (_u in _selfObjs) then { _selfP } else {
+                private _pl = [[], _u getVariable ["COMSPEC_ATAK_Pli", []]] select _pliOn;
+                if (_pl isEqualType [] && {(count _pl) >= 3}) then { _pl select 0 } else { getPosWorld _u }
+            }
+        }
+    };
     // Moins de traits : un seul chemin (les meilleurs liens) dans chaque groupe, puis un seul entre groupes, au lieu d'un
     // trait par paire à portée. Ossature entre groupes doublée ; traits internes, plus discrets, seulement pour mon
     // groupe et en zoom rapproché. Tri refait quand les liens changent (au plus toutes les 3 s, action « scan »).
@@ -125,7 +138,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up", "_fq", "", "_loss", "", "_hl", "", "_co"];
         // Relais effacé pendant les 2 s de cache de la liste (Zeus, nettoyage) : position [0,0,0], dessiné à l'origine.
         if (isNull _o) then { continue };
-        private _p = getPosASLVisual _o;
+        private _p = [getPosASLVisual _o, _selfP] select (_o in _selfObjs);
         private _use = _ok && {_o isEqualTo _mine};
         private _sat = _sl > 0 && {_u > _sl};
         private _col = switch (true) do {
@@ -159,7 +172,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         // Relais utilisé : pointillé de mon téléphone à son antenne (trait plein en mode léger), bascule « Trait vers mon
         // relais » (masqué par défaut, 2.9.38).
         if (_use && {profileNamespace getVariable ["COMSPEC_ATAK_RelayLine", false]}) then {
-            private _me = getPosASLVisual (vehicle player);
+            private _me = _selfP;
             if (_hudLite) then {
                 _map drawLine [_me, _p, [0.36, 0.85, 0.42, 0.65]];
             } else {
