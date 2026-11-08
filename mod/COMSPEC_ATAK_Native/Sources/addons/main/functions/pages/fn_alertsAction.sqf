@@ -22,6 +22,8 @@ switch (_action) do {
             [{ call (uiNamespace getVariable ["COMSPEC_ATAK_AlertsRerender", {}]); }, [], 5.1] call comspec_atak_native_fnc_waitAndExec;
         };
         _s set ["panicArmedUntil", -1];
+        // Lue par le relevé du Centre Zeus (fn_zeusState) : rien de public, ne quitte le téléphone que vers le serveur.
+        missionNamespace setVariable ["COMSPEC_ATAK_PanicAt", diag_tickTime];
         // Téléphones alliés du camp : alerte immédiate, même sans Athena.
         ["comspec_atak_native_panic", [_me, getPosASL player, _grid], allPlayers select { side group _x isEqualTo side group player && {_x isNotEqualTo player} }] call CBA_fnc_targetEvent;
         if (_bridge) then { ["PANIC", format ["PANIQUE — %1 en détresse", _me], getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert; };

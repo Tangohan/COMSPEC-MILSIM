@@ -95,16 +95,16 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 0;
-        category = "COMSPEC_SSE_People";
-        displayName = "$STR_COMSPEC_SSE_CFG_B0F0414D47";
+        category = "COMSPEC_Cat_Sse";
+        displayName = "$STR_COMSPEC_SSE_CFG_1B575B0C65";
         function = "comspec_sse_fnc_moduleOrganisation";
         functionPriority = 3;
         isGlobal = 0;
         isTriggerActivated = 0;
         isDisposable = 1;
         is3DEN = 0;
-        icon = "\A3\ui_f\data\map\markers\nato\o_hq.paa";
-        portrait = "\A3\ui_f\data\map\markers\nato\o_hq.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_net.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_net.paa";
 
         class Attributes {
             class Name {

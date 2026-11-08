@@ -1,13 +1,13 @@
 /*
     Antennes du jeu converties en relais du réseau ATAK (réglage serveur comspec_atak_native_relay_convert) :
-      0 : rien, par défaut (TTRD 2026-10-26 : une antenne n'est relais que désignée, module « ATAK · Relais » en Eden ou Zeus) ;
+      0 : rien, par défaut (TTRD 2026-10-26 : une antenne n'est relais que désignée, module « Poser un relais » en Eden ou Zeus) ;
       1 : objets posés dans la mission (Eden, Zeus, script) ;
       2 : objets de la mission et antennes du décor de la carte (type de carte « TRANSMITTER » : pylônes et tours de
           transmission, antennes de toit), 60 au plus, les plus hautes d'abord.
     Objets reconnus : pylônes et mâts de télécommunication (Land_TTowerBig_*, Land_TTowerSmall_*, Land_Communication_*,
     tours Vysilac / Telek de Chernarus), antennes omnidirectionnelles (OmniDirectionalAntenna_*), antennes et paraboles
     (…Antenna…, …SatelliteAntenna…), et tout objet dont la classe contient l'un de ces mots. Pas nos pylônes COMSPEC
-    (déjà relais, fn_relayTower), ni ce qui est déjà relais (module « ATAK · Relais »), ni les véhicules.
+    (déjà relais, fn_relayTower), ni ce qui est déjà relais (module « Poser un relais »), ni les véhicules.
     Réglages du relais selon la hauteur de l'objet (antenne à 90 % de la hauteur) :
       30 m et plus : tour fixe, 6 km, 20 Mbit/s, 64 places ; 12 à 30 m : mât, 3 à 5 km, 8 Mbit/s, 24 places ;
       moins de 12 m : antenne, 1,5 km, 4 Mbit/s, 8 places ; parabole : terminal satellite, 1 km, 10 Mbit/s, 16 places.

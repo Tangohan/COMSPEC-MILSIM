@@ -647,5 +647,60 @@
             <English>Range (m)</English>
             <French>Portée (m)</French>
         </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_0A1C8C304A">
+            <Original>Scan relays</Original>
+            <English>Scan relays</English>
+            <French>Scanner les relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_25ED3F441E">
+            <Original>Place an interference zone</Original>
+            <English>Place an interference zone</English>
+            <French>Poser une zone d'interférence</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_4BF4C40D6E">
+            <Original>Place a degraded zone</Original>
+            <English>Place a degraded zone</English>
+            <French>Poser une zone dégradée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_5967D8EA2F">
+            <Original>Place an RF emitter</Original>
+            <English>Place an RF emitter</English>
+            <French>Poser un émetteur RF</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_5FA03B3DF8">
+            <Original>Show enemy AI</Original>
+            <English>Show enemy AI</English>
+            <French>Afficher les IA ennemies</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_7109CD09B4">
+            <Original>Place a no-coverage zone</Original>
+            <English>Place a no-coverage zone</English>
+            <French>Poser une zone sans couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_7B3F12C07F">
+            <Original>Resync a relay</Original>
+            <English>Resync a relay</English>
+            <French>Resynchroniser un relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_8A1AE40616">
+            <Original>COMSPEC · ATAK</Original>
+            <English>COMSPEC · ATAK</English>
+            <French>COMSPEC · ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_AFB0D2C1B8">
+            <Original>Open the relay board</Original>
+            <English>Open the relay board</English>
+            <French>Ouvrir le tableau des relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_C953D2CCC2">
+            <Original>Place a mast relay (legacy)</Original>
+            <English>Place a mast relay (legacy)</English>
+            <French>Poser un relais à mât (ancien)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_OW_CFG_E262E1C6B1">
+            <Original>Place a fixed jammer</Original>
+            <English>Place a fixed jammer</English>
+            <French>Poser un brouilleur fixe</French>
+        </Key>
     </Package>
 </Project>

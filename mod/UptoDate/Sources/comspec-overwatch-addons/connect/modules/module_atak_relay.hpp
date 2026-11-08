@@ -1,10 +1,10 @@
     class COMSPEC_Module_AtakRelay: Module_F
     {
         author = "COMSPEC";
-        scope = 2;
+        scope = 1;
         scopeCurator = 0;
-        displayName = "$STR_COMSPEC_OW_CFG_F8B88550A1";
-        category = "COMSPEC_Roleplay";
+        displayName = "$STR_COMSPEC_OW_CFG_C953D2CCC2";
+        category = "COMSPEC_Cat_Atak";
         function = "comspec_overwatch_connect_fnc_moduleAtakRelay";
         functionPriority = 1;
         isGlobal = 1;
@@ -15,8 +15,8 @@
         canSetArea = 0;
         canSetAreaHeight = 0;
         canSetAreaShape = 0;
-        icon = "\A3\ui_f\data\map\markers\military\flag_CA.paa";
-        portrait = "\A3\ui_f\data\map\markers\military\flag_CA.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
 
         class Attributes
         {

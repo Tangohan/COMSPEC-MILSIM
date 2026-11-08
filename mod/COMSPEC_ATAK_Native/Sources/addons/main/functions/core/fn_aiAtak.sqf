@@ -1,7 +1,7 @@
 /*
     IA et ATAK (demande de TTRD, 26/10 : « corriger le réalisme des IA, pouvoir obliger qu'ils aient un ATAK »).
     1. Obliger les IA à porter un ATAK : réglage serveur « IA équipées d'un ATAK » (aucune, chefs de groupe, toutes),
-       module « ATAK · IA équipées » (Eden : unités ou groupes synchronisés ; Zeus : le groupe de l'unité visée), ou
+       module « Équiper des IA d'un ATAK » (Eden : unités ou groupes synchronisés ; Zeus : le groupe de l'unité visée), ou
        par script : _unit setVariable ["COMSPEC_ATAK_AiAtak", true, true] (false : jamais d'ATAK pour cette IA).
        Le serveur leur donne un vrai téléphone (objet COMSPEC_ATAK_Phone dans l'inventaire, réglage « Objet donné ») ;
        sans place dans l'inventaire, l'IA compte quand même comme équipée (COMSPEC_ATAK_AiAtak). Elle reçoit aussi un

@@ -6,7 +6,7 @@
                  : envoie l'action au serveur (fn_zeusServer) ; les actions à message ouvrent un formulaire s'il manque
       "feedback" [texte] : message dans l'interface Zeus (ZEN, sinon message de curateur vanilla)
       "register" : menu clic droit ZEN « ATAK · Contrôle Zeus » sur un ou plusieurs joueurs (XEH_postInitClient)
-    Sans ZEN : modules Zeus « ATAK · Contrôle Zeus » et « ATAK · Brouilleur de zone » (fn_moduleZeusControl,
+    Sans ZEN : modules Zeus « Contrôler un téléphone » et « Poser un brouilleur de zone » (fn_moduleZeusControl,
     fn_moduleZeusJammer), qui marchent aussi sur un rayon ou sur tous les joueurs.
 */
 params [["_act", ""], ["_args", []]];
@@ -160,6 +160,25 @@ switch (_act) do {
         private _icon = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
         private _root = ["comspec_atak_zeus", "ATAK · Contrôle Zeus", _icon, {}, { (_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusTargets")) isNotEqualTo [] }] call comspec_atak_native_fnc_zenAction;
         [_root, [], 7] call zen_context_menu_fnc_addAction;
+        // Entrée unique : le Centre Zeus (fn_zeusCentre), avec la fiche du joueur sous la souris ou sélectionné.
+        private _centre = ["comspec_atak_zeus_centre", "Ouvrir le Centre Zeus", _icon, {
+            private _u = (_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusTargets")) param [0, objNull];
+            if (!isNull _u) then { missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreSel", getPlayerUID _u]; };
+            if ((count (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMap])) isEqualTo 0) then { ["toggle"] call comspec_atak_native_fnc_zeusCentre; } else { ["card"] call comspec_atak_native_fnc_zeusCentre; };
+        }, { true }] call comspec_atak_native_fnc_zenAction;
+        [_centre, [], 7] call zen_context_menu_fnc_addAction;
+        // Écran, preuve ou caisse : fenêtre de configuration (fn_zeusObject).
+        private _objOf = {
+            params ["", ["_objs", []], "", "", "", ["_hover", objNull]];
+            private _o = (_objs select { (["kind", [_x]] call comspec_atak_native_fnc_zeusObject) isNotEqualTo "" }) param [0, objNull];
+            if (isNull _o && {_hover isEqualType objNull} && {(["kind", [_hover]] call comspec_atak_native_fnc_zeusObject) isNotEqualTo ""}) then { _o = _hover; };
+            _o
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_ZeusObjOf", _objOf];
+        private _objCfg = ["comspec_atak_zeus_object", "Configurer l'objet", "\z\comspec_atak_native\addons\main\data\mod_tool.paa", {
+            ["request", [_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusObjOf")]] call comspec_atak_native_fnc_zeusObject;
+        }, { !isNull (_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusObjOf")) }] call comspec_atak_native_fnc_zenAction;
+        [_objCfg, [], 8] call zen_context_menu_fnc_addAction;
         private _groups = [];
         {
             _x params ["_id", "_grp", "_label", "", ["_modOnly", false]];

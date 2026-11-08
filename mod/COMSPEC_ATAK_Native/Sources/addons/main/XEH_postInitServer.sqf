@@ -30,6 +30,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_phoneServer;
 // App Admin du téléphone : relevé de la partie et debug de l'IA à la demande d'un Zeus ou d'un gestionnaire (fn_adminServer).
 ["init"] call comspec_atak_native_fnc_adminServer;
+// Centre Zeus : relevé à la demande d'un Zeus (fn_zeusState). Rien ne tourne sans demande.
+["init"] call comspec_atak_native_fnc_zeusState;
+["initServer"] call comspec_atak_native_fnc_zeusObject;
 // API brouilleurs pour les missions et les autres mods, objets brouilleurs d'autres mods (fn_jammer).
 ["init"] call comspec_atak_native_fnc_jammer;
 // Écrans COMSPEC : registre des écrans où l'app Briefing diffuse ses diapositives (fn_screenCast).
@@ -70,7 +73,7 @@ if (!hasInterface) then { [{ ["report"] call comspec_atak_native_fnc_perfAcc; },
 ["init"] call comspec_atak_native_fnc_antennaKit;
 // Déclencheur réseau des explosifs (fn_exploNet) : suivi des poses, liste publique des charges liées.
 ["init"] call comspec_atak_native_fnc_exploNet;
-// Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
+// Relais de mission sur batterie (module « Poser un relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
 [{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Conditions d'activation en code des relais et passerelles : évaluées ici seulement, résultat publié (fn_relayCond "srv").
 [{ ["srv"] call comspec_atak_native_fnc_relayCond; }, 2] call COMSPEC_ATAK_PfhSpread;
