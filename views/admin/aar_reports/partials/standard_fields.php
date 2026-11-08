@@ -62,7 +62,7 @@ $frame = "Prévu : \nRéalisé : \nÉcarts et causes : \nRésultat : ";
 
 <section class="ath-panel bo-aar-step" id="etape-enseignements">
   <?= $stepHead('lessons', 'Enseignements et conclusion', 'Ce que l’unité doit retenir pour la suite, et l’avis du commandement sur l’opération.') ?>
-  <?php $canWriteConclusion = \App\Support\ModuleFeatureAccess::allows(\App\Services\Rbac\RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'); ?>
+  <?php $canWriteConclusion = \App\Services\Aar\AarConclusionAccess::allowsCurrentUser(); ?>
   <div class="bo-aar-grid <?= $canWriteConclusion ? 'bo-aar-grid--2' : '' ?>">
     <label class="bo-aar-field">
       <span>Enseignements</span>
