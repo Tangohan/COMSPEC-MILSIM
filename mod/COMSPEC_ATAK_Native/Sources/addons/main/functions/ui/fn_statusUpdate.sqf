@@ -140,6 +140,7 @@ if (_page isNotEqualTo "ATHENA" && {diag_tickTime >= (missionNamespace getVariab
     };
 };
 if (_page isEqualTo "MAP") then {
+    ["tick"] call comspec_atak_native_fnc_pageQuickMap;
     [] call comspec_atak_native_fnc_mapOverlayUpdate;
     [] call comspec_atak_native_fnc_routeBanner;
     if (missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]) then { [] call comspec_atak_native_fnc_inspectorUpdate; };

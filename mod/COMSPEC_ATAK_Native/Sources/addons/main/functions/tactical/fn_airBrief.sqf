@@ -26,7 +26,7 @@ params [["_act", ""], ["_arg", []]];
 private _inboxKey = "COMSPEC_ATAK_AirInbox";
 private _sentKey = "COMSPEC_ATAK_AirSent";
 private _hhmm = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
-private _rank = { params ["_st"]; (createHashMapFromArray [["SENT", 0], ["RECEIVED", 1], ["READ", 2], ["WILCO", 3], ["UNABLE", 3]]) getOrDefault [toUpper _st, 0] };
+private _rank = { params ["_st"]; (createHashMapFromArray [["SENT", 0], ["RECEIVED", 1], ["READ", 2], ["WILCO", 3], ["UNABLE", 3], ["DONE", 4]]) getOrDefault [toUpper _st, 0] };
 // Texte sans « | » (séparateur des appels DLL) ni retour à la ligne.
 private _clean = { params ["_t", ["_max", 60]]; if !(_t isEqualType "") then { _t = str _t; }; private _o = ((trim ((_t splitString "|") joinString "/")) splitString (toString [10, 13])) joinString " "; _o select [0, _max] };
 private _airCs = {
@@ -105,7 +105,7 @@ switch (_act) do {
         _l apply { _x params ["_d", "_v"]; [_v, [_v] call _airCs, ((crew _v) select { isPlayer _x }) apply { name _x }, _d] }
     };
     case "unread": { { !(_x getOrDefault ["read", false]) } count (missionNamespace getVariable [_inboxKey, []]) };
-    case "label": { (createHashMapFromArray [["SENT", "ENVOYÉ"], ["RECEIVED", "REÇU"], ["READ", "LU"], ["WILCO", "WILCO"], ["UNABLE", "UNABLE"]]) getOrDefault [toUpper _arg, toUpper _arg] };
+    case "label": { (createHashMapFromArray [["SENT", "ENVOYÉ"], ["RECEIVED", "REÇU"], ["READ", "LU"], ["WILCO", "WILCO"], ["UNABLE", "UNABLE"], ["DONE", "CLÔTURÉ"]]) getOrDefault [toUpper _arg, toUpper _arg] };
 
     case "track": {
         _arg params [["_ref", ""], ["_fmt", "9"], ["_sum", ""], ["_labels", []]];
@@ -175,7 +175,9 @@ switch (_act) do {
                 private _d = _e get "dest";
                 if (([_st] call _rank) < ([_d getOrDefault [_to, "SENT"]] call _rank)) exitWith {};
                 _d set [_to, toUpper _st];
-                if ((toUpper _st) in ["WILCO", "UNABLE"]) then {
+                // Mission clôturée par le pilote : demande FIRES court terminée, son marqueur est retiré (fn_firesQuick).
+                if ((toUpper _st) isEqualTo "DONE") then { ["closed", _ref] call comspec_atak_native_fnc_firesQuick; };
+                if ((toUpper _st) in ["WILCO", "UNABLE", "DONE"]) then {
                     [["TACTICAL", "WARNING"] select ((toUpper _st) isEqualTo "UNABLE"), format ["%1 : %2 (%3 de %4)", _to, toUpper _st, [_e get "fmt"] call _fmtName, _e get "at"], 6, 85, "JTAC"] call comspec_atak_native_fnc_notify;
                     [] call comspec_atak_native_fnc_vibrate;
                 };
@@ -183,6 +185,15 @@ switch (_act) do {
                 if ([] call comspec_atak_native_fnc_bridge && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}) then {
                     (["COMSPECExtension", "SendCASState", [_ref, format ["%1:%2", toUpper _st, _to]]] call comspec_overwatch_connect_fnc_extDirect);
                 };
+                call _render;
+            };
+            // Demande FIRES court close par son auteur : plus rien à faire pour le pilote.
+            case "close": {
+                private _b = (missionNamespace getVariable [_inboxKey, []]) select { (_x get "ref") isEqualTo _ref } param [0, createHashMap];
+                if ((count _b) isEqualTo 0) exitWith {};
+                _b set ["ack", "DONE"];
+                _b set ["read", true];
+                ["INFO", format ["Demande de %1 close", _from], 4, 40] call comspec_atak_native_fnc_notify;
                 call _render;
             };
         };
@@ -213,7 +224,7 @@ switch (_act) do {
         };
         private _st = toUpper _status;
         private _b = createHashMapFromArray [["ref", _ref], ["aid", _aid], ["fmt", _fmt], ["from", _from], ["unit", _unit], ["at", _at],
-            ["lines", _lines], ["rem", _rem], ["to", _to], ["src", _src], ["read", ([_st] call _rank) >= 2], ["ack", ["", _st] select (_st in ["WILCO", "UNABLE"])]];
+            ["lines", _lines], ["rem", _rem], ["to", _to], ["src", _src], ["read", ([_st] call _rank) >= 2], ["ack", ["", _st] select (_st in ["WILCO", "UNABLE", "DONE"])]];
         _in = [_b] + _in;
         missionNamespace setVariable [_inboxKey, _in select [0, 20]];
         // Déjà lu ailleurs (reconnexion) : pas de nouvelle alerte.
@@ -223,7 +234,8 @@ switch (_act) do {
         uiNamespace setVariable ["COMSPEC_ATAK_Jtac", _s];
         private _onJtac = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "JTAC";
         if (!_onJtac || {(_s getOrDefault ["view", ""]) isEqualTo "AIR"}) then { _s set ["view", "AIR"]; _s set ["airOpen", _ref]; };
-        ["WARNING", format ["%1 reçu de %2", [_fmt] call _fmtName, _from], 10, 85, "JTAC"] call comspec_atak_native_fnc_notify;
+        // Mode pilote actif à bord : l'alerte ouvre l'écran pilote, où la mission s'accepte sans menu.
+        ["WARNING", format ["%1 reçu de %2", [_fmt] call _fmtName, _from], 10, 85, ["JTAC", "PILOT"] select ((["on"] call comspec_atak_native_fnc_pilotMode) && {["crew"] call comspec_atak_native_fnc_pilotMode})] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_vibrate;
         // Téléphone rangé (en vol) : le vibreur ne joue pas, on entend quand même l'arrivée.
         if (isNull ([] call comspec_atak_native_fnc_display) && {!(profileNamespace getVariable ["COMSPEC_ATAK_Silent", false])}) then {

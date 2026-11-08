@@ -60,6 +60,29 @@ EN : Phone crashing in a loop, and back on the network after a compromise
 - **App Admin** : plus de relevé ni de redessin sur les onglets ATHENA et APPS, un redessin par seconde au plus ailleurs, une action à la fois, `&` échappé, fiches illisibles écartées, actions REMPLACER L'APPAREIL et RÉPARER SES DONNÉES ; son propre ATAK ne se déclare plus compromis depuis le jeu. Avis de compromission sans terminal : ne verrouille plus le téléphone qui le reçoit.
 - **Pas de migration** : `atak_admin_messages.kind` est un `varchar(24)`. Pas de changement de version.
 - **Non testé en jeu** : rien ne peut l'être ici. Étapes `tel_garde_fou` et `tel_nouvel_appareil` dans l'autotest. Notes : `docs/bugs/2026-11-08-atak-plantage-camera-ip-boucle.md`, `docs/bugs/2026-11-08-atak-compromission-nouvel-appareil.md`.
+## À venir : mode pilote, FIRES court, apps regroupées et profils de rôle (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Mode pilote, FIRES court et apps regroupées
+- FIRES court : touchez la cible sur la carte, choisissez la munition, envoyez. Ping et marqueur partent tout seuls, les pilotes et JTAC du camp reçoivent la demande et répondent sans menu. Le 9-LINE complet ne change pas.
+- Mode pilote, à activer : grande carte, appareils alliés avec altitude et cap, missions à accepter et clôturer d'un geste, HUD discret, même téléphone rangé.
+- Apps regroupées, à activer par l'admin ou le joueur : 5 grandes apps avec des sous-groupes, plus un profil de rôle (pilote, JTAC, médecin, fantassin). « Toutes les apps » montre toujours tout.
+- Une app retirée par le serveur disparaît tout de suite, et le site permet d'interdire toutes les apps du téléphone.
+EN : Pilot mode, short FIRES and grouped apps
+- Short FIRES: touch the target on the map, pick the munition, send. Ping and marker go out on their own; your side's pilots and JTACs get the request and answer without menus. The full 9-LINE does not change.
+- Pilot mode, to enable: large map, friendly aircraft with altitude and heading, missions accepted and closed in one gesture, discreet HUD, even with the phone stowed.
+- Grouped apps, to enable by the admin or the player: 5 large apps with subgroups, plus a role profile (pilot, JTAC, medic, infantry). "All apps" always shows everything.
+- An app removed by the server disappears right away, and the site can now forbid every phone app.
+
+### Détail technique
+- Réglages CBA serveur : `comspec_atak_native_launcher_spaces` et `comspec_atak_native_pilot_mode` (0 au choix du joueur, coupé par défaut ; proposés par l'assistant de configuration et le panneau Réalisme et réseau).
+- Nouvelles fonctions : `fn_appSpaces`, `fn_pageSpace`, `fn_firesQuick`, `fn_pageQuickMap`, `fn_pilotMode`. Nouvelles apps : `FiresQuick` et `Pilot` (tuile seulement si le mode est actif).
+- FIRES court passe par les briefs air (`fn_airBrief`, 5-LINE en saisie libre) ; statut `DONE` ajouté (mod et `AirBriefService`).
+- Désactivation par communauté : cache de `fn_appList` lié à « Apps retirées », règle Athena appliquée sans attendre, 9 apps ajoutées à Contrôle serveur, Réglages et App Store protégés (voir docs/bugs).
+- À tester en jeu : voir le corps de la PR. Rien n'a pu être testé en jeu.
+
+---
 ## À venir : profils d'IA, éditeur SSE en Zeus, réponses des IA au-dessus de la tête (SSE, ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

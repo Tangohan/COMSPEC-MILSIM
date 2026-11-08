@@ -80,7 +80,7 @@
     heading: 'Cap inhabituel (au-delà de 360).',
     grid: 'Grille peu lisible : vérifiez-la.'
   };
-  var ACK = { sent: 'ENVOYÉ', received: 'REÇU', read: 'LU', wilco: 'WILCO', unable: 'UNABLE' };
+  var ACK = { sent: 'ENVOYÉ', received: 'REÇU', read: 'LU', wilco: 'WILCO', unable: 'UNABLE', done: 'CLÔTURÉ' };
   var SEATS = { driver: 'Pilote', gunner: 'Tireur', commander: 'Chef de bord', cargo: 'Passager' };
   var TYPES = { helicopter: 'Hélicoptère', plane: 'Avion', uav: 'Drone' };
   var RENAME_TIP = 'Changer l’indicatif affiché de cet appareil';
@@ -575,9 +575,10 @@
   }
   function ackShort(list) {
     if (!list || !list.length) return '';
-    var n = { wilco: 0, unable: 0, read: 0, received: 0, sent: 0 };
+    var n = { done: 0, wilco: 0, unable: 0, read: 0, received: 0, sent: 0 };
     list.forEach(function (r) { n[r.status] = (n[r.status] || 0) + 1; });
     var parts = [];
+    if (n.done) parts.push(fmt('%1 clôturé(s)', n.done));
     if (n.wilco) parts.push(n.wilco + ' WILCO');
     if (n.unable) parts.push(n.unable + ' UNABLE');
     if (n.read) parts.push(fmt('%1 lu(s)', n.read));

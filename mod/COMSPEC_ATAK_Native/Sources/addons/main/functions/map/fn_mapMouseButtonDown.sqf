@@ -9,7 +9,7 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _world = _map ctrlMapScreenToWorld [_mx,_my];
 if (_button isEqualTo 0 && {!_click}) exitWith {
     private _picking = ((["medevacPick", "reportPick", "dronePick", "logiPick", "jtacPick", "firePick"] findIf { (_s getOrDefault [_x, ""]) isNotEqualTo "" }) >= 0)
-        || {_s getOrDefault ["recoPick", false]} || {(_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "DRONE"};
+        || {_s getOrDefault ["recoPick", false]} || {(_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "DRONE"} || {(_s getOrDefault ["quickView", ""]) isNotEqualTo ""};
     _s set ["mapLc", []];
     if (!_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {["DOWN", [_world select 0, _world select 1, 0], _ctrl] call comspec_atak_native_fnc_markerStroke}) exitWith { true };
     _s set ["mapLc", [_mx, _my, _shift, _ctrl, _alt]];
@@ -26,6 +26,8 @@ private _ctxOpen = (count (_s getOrDefault ["mapCtx", createHashMap])) > 0;
 if (_ctxOpen) then { ["close"] call comspec_atak_native_fnc_mapCtxMenu; };
 if (_ctxOpen && {_button isEqualTo 0}) exitWith { true };
 if (_button isEqualTo 0) exitWith {
+    // FIRES court : le point touché devient la cible, le panneau reste ouvert (munition, envoi).
+    if ((_s getOrDefault ["quickView", ""]) isNotEqualTo "" && {["armed"] call comspec_atak_native_fnc_firesQuick}) exitWith { ["target", _world] call comspec_atak_native_fnc_firesQuick; true };
     // App Feux : la cible est pointée sur la carte.
     private _mp = _s getOrDefault ["medevacPick", ""];
     if (_mp isNotEqualTo "") exitWith { _s set ["medevacPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_medicalAction; true };

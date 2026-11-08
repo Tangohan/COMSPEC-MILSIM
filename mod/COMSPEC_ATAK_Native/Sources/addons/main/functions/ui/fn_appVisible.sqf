@@ -8,6 +8,8 @@
 params [["_app", createHashMap]];
 private _id = _app getOrDefault ["id", ""];
 if (_id in ["Settings", "Store"]) exitWith { true };
+// Mode pilote : tuile seulement s'il est activé (réglage du serveur ou du joueur).
+if (_id isEqualTo "Pilot" && {!(["on"] call comspec_atak_native_fnc_pilotMode)}) exitWith { false };
 // App Admin : Zeus, admin du serveur, gestionnaire désigné ou gestion de la communauté sur Athena (fn_adminClient).
 if (_id isEqualTo "Admin") exitWith { ["visible"] call comspec_atak_native_fnc_adminClient };
 private _inst = ["state", _id] call comspec_atak_native_fnc_appInstall;

@@ -40,7 +40,9 @@ switch (_act) do {
             ["Batterie", "La batterie du téléphone se vide à l'usage et se recharge dans un véhicule moteur allumé. À 0 %, le téléphone s'éteint. Les radios ACRE2 et TFAR n'ont pas de batterie chez nous.",
                 [[_p + "battery_sim", "Batterie réaliste", _yn select 0, _yn select 1], [_p + "battery_hours", "Autonomie en main", [1, 3, 6, 12, 24], ["1 h", "3 h", "6 h", "12 h", "24 h"]], [_p + "battery_cold", "Froid : batterie moins efficace", _yn select 0, _yn select 1]]],
             ["Dégâts", "Le téléphone peut être abîmé par les balles, les éclats, les chutes et l'eau, selon l'endroit où il est porté. Réparation par action ACE. Saleté et sang se nettoient gratuitement.",
-                [[_p + "damage_sim", "Dégâts du téléphone", _yn select 0, _yn select 1], [_p + "dirt_sim", "Saleté et sang sur l'écran", _yn select 0, _yn select 1]]]
+                [[_p + "damage_sim", "Dégâts du téléphone", _yn select 0, _yn select 1], [_p + "dirt_sim", "Saleté et sang sur l'écran", _yn select 0, _yn select 1]]],
+            ["Apps regroupées et mode pilote", "Trop d'apps pour vos joueurs ? Le lanceur peut les présenter en 5 grandes apps, avec des sous-groupes. Aucune app n'est retirée, et une app interdite n'y apparaît pas. Le mode pilote propose un écran simplifié en montant dans un aéronef : grande carte, autres appareils, FIRES en un geste. Au choix du joueur : rien ne change tant qu'il ne l'active pas.",
+                [[_p + "launcher_spaces", "Lanceur : apps regroupées", [0, 1, 2], ["Au choix du joueur", "Activé pour tous", "Désactivé pour tous"]], [_p + "pilot_mode", "Mode pilote", [0, 1, 2], ["Au choix du joueur", "Proposé à tous", "Coupé pour tous"]]]]
         ]
     };
     case "open": {

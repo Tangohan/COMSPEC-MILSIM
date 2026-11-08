@@ -27,6 +27,8 @@ if !(_tab in ["nine", "five"]) exitWith {
     private _topLine = ["COMSPEC_RscText", [0, _hh - pixelH, _bw, pixelH]] call comspec_atak_native_fnc_pageCtrl;
     _topLine ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.45];
     private _tw = (_bw * 0.13) max (_fs * 5 * pixelH / pixelW);
+    private _topTabs = [["9-LINE", "nine"], ["5-LINE", "five"], ["APPEL DE FEU", "cff"]];
+    if (["can"] call comspec_atak_native_fnc_firesQuick) then { _topTabs pushBack ["COURT", "quick"]; };
     {
         _x params ["_t", "_k"];
         private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_tw + _pad / 2), _hh * 0.12, _tw, _hh * 0.76], _t] call comspec_atak_native_fnc_pageCtrl;
@@ -35,9 +37,10 @@ if !(_tab in ["nine", "five"]) exitWith {
         _b ctrlSetBackgroundColor ([[0.11, 0.135, 0.12, 1], [_acc select 0, _acc select 1, _acc select 2, 1]] select _on);
         _b ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select _on);
         _b ctrlAddEventHandler ["ButtonClick", compile format ["['tab', '%1'] call comspec_atak_native_fnc_firesAction;", _k]];
-    } forEach [["9-LINE", "nine"], ["5-LINE", "five"], ["APPEL DE FEU", "cff"]];
+    } forEach _topTabs;
     // À droite : ma grille, mon altitude, le vent.
-    private _info = ["COMSPEC_RscTextRight", [_pad + 3 * (_tw + _pad / 2), 0, _bw - _pad * 2 - 3 * (_tw + _pad / 2), _hh]] call comspec_atak_native_fnc_pageCtrl;
+    private _nT = count _topTabs;
+    private _info = ["COMSPEC_RscTextRight", [_pad + _nT * (_tw + _pad / 2), 0, _bw - _pad * 2 - _nT * (_tw + _pad / 2), _hh]] call comspec_atak_native_fnc_pageCtrl;
     _info ctrlSetFontHeight (_fs * 0.95);
     _info ctrlSetTextColor [0.78, 0.86, 0.82, 1];
     _info ctrlSetText ((format ["%1   %2   %3", [player, 10] call comspec_atak_native_fnc_gridRef,
@@ -45,7 +48,7 @@ if !(_tab in ["nine", "five"]) exitWith {
     [[0, _hh, _bw, _bh - _hh]] call comspec_atak_native_fnc_firesCff;
     true
 };
-private _rows = [["buttons", [["9-LINE", "nine"] call _tabBtn, ["5-LINE", "five"] call _tabBtn, ["APPEL DE FEU", "cff"] call _tabBtn]]];
+private _rows = [["buttons", [["9-LINE", "nine"] call _tabBtn, ["5-LINE", "five"] call _tabBtn, ["APPEL DE FEU", "cff"] call _tabBtn] + ([[], [["COURT", "quick"] call _tabBtn]] select (["can"] call comspec_atak_native_fnc_firesQuick))]];
 private _hint = _f getOrDefault ["hint", ["", false]];
 if ((_hint select 0) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", (COMSPEC_ATAK_Th get "hexWarn")] select (_hint select 1), _hint select 0]]; };
 private _v = { params ["_k", ["_d", ""]]; _f getOrDefault [_k, _d] };

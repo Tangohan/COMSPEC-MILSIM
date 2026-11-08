@@ -166,6 +166,8 @@ if (_interactive) then {
 ["start"] call comspec_atak_native_fnc_foreignHud;
 // Dernière page relue par le garde-fou (fn_deviceGuard) : jamais une page caméra ni une page en quarantaine.
 private _page = ["restorePage"] call comspec_atak_native_fnc_deviceGuard;
+// Mode pilote choisi « à l'ouverture » : à bord, le téléphone s'ouvre sur l'écran pilote (fn_pilotMode).
+if (["wantView"] call comspec_atak_native_fnc_pilotMode) then { _page = "PILOT"; };
 // Première sortie en main de la mission, jeu pas encore relié à un compte Athena (service Athena « Oui ») :
 // le téléphone s'ouvre sur l'app Athena, onglet COMPTE, avec un code déjà demandé, à saisir sur le site (/lier).
 // Réglage CBA « Proposer la liaison Athena à la sortie du téléphone » (comspec_atak_native_link_offer) pour s'en passer.
