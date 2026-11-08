@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : Centre Zeus, liste des modules rangée, fenêtre de configuration des objets
+## Centre Zeus, liste des modules rangée, fenêtre de configuration des objets (ATAK natif, version à attribuer)
 
 ### Résumé joueur
 Type : nouveauté
