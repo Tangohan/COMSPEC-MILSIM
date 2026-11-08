@@ -62,7 +62,7 @@ private _stamp = {
     systemTime params ["_y", "_m", "_dd", "_h", "_mi"];
     format ["%1%2/%3%4/%5 %6%7:%8%9", ["", "0"] select (_dd < 10), _dd, ["", "0"] select (_m < 10), _m, _y, ["", "0"] select (_h < 10), _h, ["", "0"] select (_mi < 10), _mi]
 };
-private _blank = { createHashMapFromArray [["id", ""], ["type", "intel"], ["title", ""], ["body", ""], ["marking", 0], ["paper", 0], ["nature", 0], ["delivery", 0], ["state", "Brouillon"], ["op", missionName], ["when", ""], ["version", 0], ["history", []], ["link", ""], ["found", []], ["dirty", true]] };
+private _blank = { createHashMapFromArray [["id", ""], ["type", "intel"], ["title", ""], ["body", ""], ["marking", 0], ["paper", 0], ["skin", "auto"], ["nature", 0], ["delivery", 0], ["state", "Brouillon"], ["op", missionName], ["when", ""], ["version", 0], ["history", []], ["link", ""], ["found", []], ["dirty", true]] };
 // Eden : pas d'unité jouée.
 private _who = { if (isNull player) then { profileName } else { name player } };
 

@@ -21,6 +21,7 @@ class CfgFunctions {
             class fillResultDialog {};
             class getDocumentChrome {};
             class applyPaperStyle {};
+            class paperSkin {};
             class resultConsult {};
             class resultTransmit {};
             class uiSetRecord {};
@@ -65,6 +66,7 @@ class RscCombo;
 class RscCheckBox;
 class RscXSliderH;
 class RscControlsGroup;
+class RscPicture;
 
 #include "ui_macros.hpp"
 #include "dialogs\base.hpp"

@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : papiers variés pour les documents SSE (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Les documents trouvés ont enfin l'air de vrais papiers
+- Quinze papiers : petits et grands carreaux, ligné, carnet à spirale, post-it, ticket de caisse, papier à en-tête, formulaire militaire, carbone, et des feuilles sales, jaunies, froissées, déchirées et recollées ou brûlées aux bords.
+- Le papier suit la pièce : une note est sur un carnet, un ordre sur un papier officiel, un ticket sur un ticket. Un document pris sur un corps est sale, celui d'une épave est brûlé. La même pièce garde toujours le même papier.
+- Les notes manuscrites s'écrivent à la main. La nuit, la feuille est plus sombre et le texte reste net ; un long document défile au lieu d'être coupé.
+- Éditeur SSE : choisissez le papier d'un renseignement dans une liste avec aperçu, ou laissez « Automatique ».
+EN : Found documents finally look like real paper
+- Fifteen papers: small and large squares, ruled, spiral notebook, sticky note, till receipt, letterhead, military form, carbon copy, and dirty, yellowed, crumpled, torn-and-taped or burnt-edged sheets.
+- The paper matches the item: a note is on a notebook, an order on official paper, a receipt on a receipt. A document taken from a body is dirty, one from a wreck is burnt. The same item always keeps the same paper.
+- Handwritten notes look handwritten. At night the sheet is darker and the text stays sharp; a long document scrolls instead of being cut off.
+- SSE editor: pick the paper of an intel item from a list with previews, or leave it on "Automatic".
+
+### Détail technique
+- `tools/gen_paper_textures.py` dessine les 15 papiers (Pillow, bruit et défauts générés, aucune image tierce), jour et nuit, 512 x 512 DXT1 via ImageToPAA : `addons/ui/data/paper`, 2,4 Mo. `comspec_sse_ui.pbo` passe d'environ 0,1 Mo à 2,5 Mo.
+- `comspec_sse_fnc_paperSkin` : choix (papier de l'éditeur, contexte : corps, épave, document « bruit » ou usé, puis nature d'après le titre et tirage stable, graine = identifiant de la pièce) et pose (contrôle image 93027, bandeaux teintés à la couleur de la feuille). Pièces de l'éditeur enregistrées avant : `legacy`, feuille unie ; style imposé par le module Zeus de chrome : ancien rendu.
+- Visionneuse : corps dans un groupe à défilement (93028) à la hauteur du texte. Écriture manuscrite : police Caveat du jeu si elle existe (`CfgFontFamilies`), sinon police actuelle.
+- Autotest : étape `sse_papiers`, une capture par papier.
+
 ## À venir : thème jour lisible, écran numérique des preuves, éditeur SSE en anglais (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

@@ -26,6 +26,16 @@ class COMSPEC_SSE_ResultDialog {
             colorBackground[] = {0.94, 0.91, 0.84, 0.98};
             SSE_RPOS(10.5,1.5,19,20);
         };
+        // Papier dessiné (comspec_sse_fnc_paperSkin) : masqué tant que la pièce n'en a pas ; texture chargée à l'ouverture.
+        class PaperTex: RscPicture {
+            idc = 93027;
+            text = "";
+            show = 0;
+            style = 48;
+            colorText[] = {1, 1, 1, 1};
+            colorBackground[] = {0, 0, 0, 0};
+            SSE_RPOS(10.5,1.5,19,20);
+        };
         // Taches / plis (masqués par défaut — activés selon paper_style)
         class StainA: COMSPEC_SSE_RscText {
             idc = 93024;
@@ -91,6 +101,12 @@ class COMSPEC_SSE_ResultDialog {
     };
 
     class controls {
+        // Corps dans un groupe à défilement : un long document se lit jusqu'au bout au lieu d'être coupé
+        // (hauteur ajustée au texte par comspec_sse_fnc_fillResultDialog).
+        class BodyGroup: COMSPEC_SSE_RscControlsGroup {
+            idc = 93028;
+            SSE_RPOS(11.1,5.25,17.8,13.5);
+            class controls {
         class Body: COMSPEC_SSE_RscStructuredText {
             idc = 93012;
             colorBackground[] = {0, 0, 0, 0};
@@ -103,7 +119,12 @@ class COMSPEC_SSE_ResultDialog {
                 align = "left";
                 shadow = 0;
             };
-            SSE_RPOS(11.1,5.25,17.8,13.5);
+            x = 0;
+            y = 0;
+            w = SSE_Q(SSE_W(17.2));
+            h = SSE_Q(SSE_H(13.5));
+        };
+            };
         };
         class Meta: COMSPEC_SSE_RscStructuredText {
             idc = 93018;
