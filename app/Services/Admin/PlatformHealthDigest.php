@@ -37,7 +37,7 @@ final class PlatformHealthDigest
             'communities' => ['Communautés', 'admin/tenants', fn () => $this->communities()],
             'accounts' => ['Comptes', 'admin/users', fn () => $this->accounts()],
             'send_queue' => ['Files d’envoi du mod', 'admin/parc-atak', fn () => $this->sendQueue()],
-            'mod_version' => ['Version du mod en jeu', 'admin/parc-atak', fn () => $this->modVersion()],
+            'mod_version' => ['Liaison du mod en jeu (Overwatch connect)', 'admin/parc-atak', fn () => $this->modVersion()],
             'mod_reports' => ['Rapports d’erreurs du mod', 'admin/atak-mod-reports?status=new', fn () => $this->modReports()],
             'site_errors' => ['Pages en erreur (24 h)', 'admin?onglet=etat', fn () => $this->siteErrors()],
             'cron' => ['Tâches automatiques', 'admin/system/cron', fn () => $this->cron()],
@@ -172,7 +172,8 @@ final class PlatformHealthDigest
     /** @return array{0: string, 1: string, 2: string} */
     private function modVersion(): array
     {
-        $published = (string) (AtakReleaseInfo::latest()['atak_native'] ?? '');
+        // Le mod remonte la version d'Overwatch connect (1.6.x), pas celle du téléphone ATAK (3.x) : on compare des versions de même nature.
+        $published = (string) (AtakReleaseInfo::connectVersion() ?? '');
         $online = [];
         if ((new AtakSendQueueRepository($this->pdo()))->schemaReady()) {
             $st = $this->pdo()->query(
@@ -185,7 +186,13 @@ final class PlatformHealthDigest
             }
         }
 
-        return self::modVersionSignal($published, $online);
+        [$value, $tone, $hint] = self::modVersionSignal($published, $online);
+        $atak = (string) (AtakReleaseInfo::latest()['atak_native'] ?? '');
+        if ($atak !== '') {
+            $hint = trim($hint . ' Téléphone ATAK publié : ' . $atak . ' (sa version n’est pas remontée ici).');
+        }
+
+        return [$value, $tone, $hint];
     }
 
     /** @return array{0: string, 1: string} */
