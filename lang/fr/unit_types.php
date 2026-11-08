@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Types d’entité',
+    'subtitle' => 'Créez les types propres à votre communauté (par exemple « Forces spéciales » ou « Peloton ») et choisissez-les à la création d’une unité.',
+    'tab_own' => 'Vos types',
+    'tab_base' => 'Types de base',
+    'add' => 'Ajouter un type',
+    'rename' => 'Renommer',
+    'delete' => 'Supprimer',
+    'save' => 'Enregistrer',
+    'cancel' => 'Annuler',
+    'name' => 'Nom du type',
+    'name_help' => 'Ce nom apparaît dans la liste « Type de structure » d’une unité.',
+    'modal_add' => 'Nouveau type d’entité',
+    'modal_rename' => 'Renommer le type',
+    'confirm_delete' => 'Supprimer ce type ?',
+    'empty_own' => 'Vous n’avez pas encore créé de type. Les types de base restent disponibles.',
+    'base_help' => 'Ces types sont fournis avec Athena. Ils sont disponibles pour toutes les communautés et ne peuvent pas être modifiés.',
+    'used_one' => '1 unité',
+    'used_many' => ':n unités',
+    'unused' => 'Aucune unité',
+    'in_use_hint' => 'Utilisé : changez d’abord le type de ces unités pour pouvoir le supprimer.',
+    'open_orbat' => 'Ouvrir l’ORBAT',
+    'back' => 'Retour au catalogue',
+    'not_ready' => 'Les types personnalisés seront disponibles après la prochaine mise à jour de la base.',
+    'expired' => 'La page a expiré : rechargez-la puis recommencez.',
+    'need_name' => 'Indiquez un nom (120 caractères au plus).',
+    'duplicate' => 'Un type portant ce nom existe déjà.',
+    'created' => 'Type « :name » créé.',
+    'renamed' => 'Type renommé en « :name ».',
+    'deleted' => 'Type supprimé.',
+    'in_use' => 'Des unités utilisent encore ce type : changez leur type avant de le supprimer.',
+    'not_found' => 'Ce type est introuvable ou ne peut pas être modifié.',
+    'denied' => 'Vous n’avez pas l’habilitation pour gérer les types d’entité.',
+];

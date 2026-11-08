@@ -25,10 +25,8 @@ if ($orbatLocale === 'en' && is_file(base_path('lang/en/orbat.php'))) {
     $T = array_replace($T, require base_path('lang/en/orbat.php'));
 }
 $structTypes = [];
-foreach ((array) config('units.types', []) as $id => $meta) {
-    if (is_array($meta)) {
-        $structTypes[] = ['id' => (string) $id, 'label' => (string) ($meta['label'] ?? $id)];
-    }
+foreach (\App\Support\UnitStructTypes::forTenant((int) \App\Core\Session::get('tenant_id')) as $row) {
+    $structTypes[] = ['id' => $row['id'], 'label' => $row['label']];
 }
 $boot = [
     'base' => rtrim(url(''), '/'),

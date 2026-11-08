@@ -77,7 +77,7 @@ $presets = [
 ];
 
 $nameOf = static function (array $m): string {
-    foreach (['display_name', 'callsign', 'email'] as $k) {
+    foreach (['display_name', 'callsign'] as $k) {
         $v = trim((string) ($m[$k] ?? ''));
         if ($v !== '') {
             return $v;
@@ -337,7 +337,7 @@ if ($missing > 0 && $required) {
     <div class="bo-mn-bar">
         <label class="ath-table-toolbar__search bo-mn-search">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
-            <input type="search" placeholder="Nom, indicatif, e-mail ou matricule…" autocomplete="off" spellcheck="false" aria-label="Rechercher un membre" data-mn-q>
+            <input type="search" placeholder="Nom, indicatif ou matricule…" autocomplete="off" spellcheck="false" aria-label="Rechercher un membre" data-mn-q>
         </label>
         <div class="bo-mn-filters" role="group" aria-label="Filtrer le registre">
             <button type="button" class="bo-mn-chip" aria-pressed="true" data-mn-filter="all">Tous <span><?= $total ?></span></button>
@@ -354,7 +354,7 @@ if ($missing > 0 && $required) {
     <div class="ath-table-wrap">
         <table class="ath-table bo-mn-table">
             <thead>
-                <tr><th>MEMBRE</th><th>E-MAIL</th><th>IDENTIFIANT PLATEFORME</th><th><?= $h(mb_strtoupper($label)) ?></th><th>ÉTAT</th><th>ACTION</th></tr>
+                <tr><th>MEMBRE</th><th>IDENTIFIANT PLATEFORME</th><th><?= $h(mb_strtoupper($label)) ?></th><th>ÉTAT</th><th>ACTION</th></tr>
             </thead>
             <tbody>
             <?php foreach ($members as $m):
@@ -363,14 +363,13 @@ if ($missing > 0 && $required) {
                 $state = $num === '' ? 'sans' : (isset($dupIds[$id]) ? 'dup' : (isset($offIds[$id]) ? 'off' : 'ok'));
                 [$tagTone, $tagLabel] = ['ok' => ['ok', 'À jour'], 'sans' => ['warn', 'Sans matricule'], 'dup' => ['bad', 'Doublon'], 'off' => ['neut', 'Hors modèle']][$state];
                 $name = $nameOf($m);
-                $search = mb_strtolower($name . ' ' . $m['callsign'] . ' ' . $m['email'] . ' ' . $num . ' ' . $m['athena_identifier']);
+                $search = mb_strtolower($name . ' ' . $m['callsign'] . ' ' . $num . ' ' . $m['athena_identifier']);
             ?>
                 <tr class="ath-row" data-mn-row data-state="<?= $state ?>" data-search="<?= $h($search) ?>">
                     <td>
                         <a class="bo-mn-name" href="<?= $h(url('back-office/users/' . $id)) ?>"><?= $h($name) ?></a>
                         <?php if ($m['callsign'] !== '' && $m['callsign'] !== $name): ?><span class="bo-mn-callsign"><?= $h($m['callsign']) ?></span><?php endif; ?>
                     </td>
-                    <td class="bo-mn-muted"><?= $h($m['email'] !== '' ? $m['email'] : '—') ?></td>
                     <td class="bo-mn-mono bo-mn-muted"><?= $h($m['athena_identifier'] !== '' ? $m['athena_identifier'] : '—') ?></td>
                     <td class="bo-mn-mono"><b><?= $h($num !== '' ? $num : '—') ?></b></td>
                     <td><span class="ath-tag ath-tag--<?= $tagTone ?>"><?= $h($tagLabel) ?></span></td>
@@ -472,7 +471,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
             <h2 class="bo-mn-panel__title" id="mn-import-title">Importer depuis un tableur</h2>
         </header>
         <div class="bo-mn-panel__body">
-            <p class="bo-mn-text">Le plus simple : exportez le registre, complétez la colonne des matricules dans votre tableur, puis réimportez le fichier. Les membres sont reconnus par leur adresse e-mail ; doublons, caractères non autorisés et adresses inconnues sont signalés.</p>
+            <p class="bo-mn-text">Le plus simple : exportez le registre, complétez la colonne des matricules dans votre tableur, puis réimportez le fichier. Les membres sont reconnus par leur identifiant (colonne « id_membre ») ; les anciens fichiers avec adresse e-mail restent acceptés. Doublons, caractères non autorisés et membres inconnus sont signalés.</p>
             <?php if ($importPreview !== null):
                 $impRows = (array) ($importPreview['rows'] ?? []);
                 $impCount = ['ok' => 0, 'same' => 0, 'error' => 0];
@@ -493,7 +492,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
                         ?>
                             <tr>
                                 <td class="bo-mn-mono"><?= (int) ($ir['line'] ?? 0) ?></td>
-                                <td><?= $h((string) (($ir['name'] ?? '') !== '' ? $ir['name'] : ($ir['email'] ?? ''))) ?><?php if (($ir['name'] ?? '') !== ''): ?><span class="bo-mn-callsign"><?= $h((string) $ir['email']) ?></span><?php endif; ?></td>
+                                <td><?= $h((string) (($ir['name'] ?? '') !== '' ? $ir['name'] : '—')) ?></td>
                                 <td class="bo-mn-mono"><?= $h((string) (($ir['current'] ?? '') !== '' ? $ir['current'] : '—')) ?></td>
                                 <td class="bo-mn-mono"><b><?= $h((string) (($ir['number'] ?? '') !== '' ? $ir['number'] : '—')) ?></b></td>
                                 <td><span class="ath-tag ath-tag--<?= $it ?>"><?= $h($il) ?></span><?php if ($st === 'error' && (string) ($ir['message'] ?? '') !== ''): ?> <span class="bo-mn-muted"><?= $h((string) $ir['message']) ?></span><?php endif; ?></td>
@@ -523,7 +522,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
                 <button type="submit" class="ath-btn<?= $importPreview === null ? ' ath-btn--solid' : '' ?>">Vérifier le fichier</button>
             </form>
             <p class="bo-mn-text bo-mn-muted">Le fichier est d’abord vérifié ligne par ligne : vous voyez ce qui sera modifié avant de l’appliquer.</p>
-            <p class="bo-mn-text bo-mn-muted">Séparateur point-virgule ou virgule. Les colonnes « email » et « tenant_member_number » du fichier exporté sont celles qui comptent ; les autres sont ignorées.</p>
+            <p class="bo-mn-text bo-mn-muted">Séparateur point-virgule ou virgule. Les colonnes « id_membre » et « tenant_member_number » du fichier exporté sont celles qui comptent ; les autres sont ignorées.</p>
             <a class="ath-btn" href="<?= $h(url('back-office/organisation/matricules/export?filtre=sans')) ?>">Télécharger les membres sans matricule</a>
         </div>
     </section>

@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class PlanFeaturesCatalogCoverageTest extends TestCase
 {
-    private const GATE_METHODS = 'planIntCap|allows|allowsLimitedFeatureModule|allowsWithCatalogDefault|intWithCatalogDefault|quotaStatusForFeature|recordQuotaUse|maybeRecordQuotaSoftBlock';
+    private const GATE_METHODS = 'planIntCap|allows|allowsLimitedFeatureModule|allowsWithCatalogDefault|intWithCatalogDefault|intWhenDefined|quotaStatusForFeature|recordQuotaUse|maybeRecordQuotaSoftBlock';
 
     private static function root(): string
     {
@@ -92,6 +92,14 @@ final class PlanFeaturesCatalogCoverageTest extends TestCase
                 preg_match_all('/foreach \(\[([^\]]+)\] as \$key\)/', $src, $mm);
                 foreach ($mm[1] as $list) {
                     $tokens = array_merge($tokens, explode(',', $list));
+                }
+            }
+            if (preg_match('/->intWhenDefined\([^,]+,\s*\$key\)/', $src)) {
+                // Plafond choisi par variable : toutes les constantes de la classe valent des clés de formule.
+                foreach ($consts as $name => $val) {
+                    if (str_starts_with($name, $cls . '::')) {
+                        $tokens[] = "'" . $val . "'";
+                    }
                 }
             }
             if (str_contains($src, 'features_json') && !preg_match('/TenantAlert|AlertPresentation|tenant_alerts/', $src)) {
