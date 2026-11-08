@@ -207,6 +207,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["init"] call comspec_atak_native_fnc_mpu5;
 // Messages des groupes de conversation (fn_meshGroups).
 ["init"] call comspec_atak_native_fnc_meshGroups;
+// Mode de discrétion imposé par le chef (fn_meshEW).
+["init"] call comspec_atak_native_fnc_meshEW;
 // Liaison réaliste téléphone <-> radio de données (fn_mpuLink, réglage comspec_atak_native_mpu_real) : toutes les 2 s,
 // sans rien faire tant que le réglage est décoché.
 [{ ["tick"] call comspec_atak_native_fnc_mpuLink; }, 2] call COMSPEC_ATAK_PfhSpread;

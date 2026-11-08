@@ -294,7 +294,12 @@ switch (_act) do {
         private _on = _present && {_st get "on"} && {(_st get "batt") > 0};
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
         private _wid = _st getOrDefault ["width", 1];
-        private _node = [[], [format ["C%1", _st get "chan"], (round (_mR * (_pwrK select (_st get "pwr")) * (_widK select _wid))) min 20000, [player, _h] select (!isNull _h), _wid, ["nodeKey"] call comspec_atak_native_fnc_meshKeys]] select _on;
+        // Discrétion (lot 11, fn_meshEW) : 0 normal, 1 puissance réduite, 2 écoute seule. Activité arrondie : puissance et trafic relayé.
+        private _mode = _st getOrDefault ["mode", 0];
+        if (_mode isEqualTo 1) then { _st set ["pwr", 0]; };
+        private _activity = if (_mode isEqualTo 2) then { 0 } else { ((1 + (_st get "pwr") * 2 + floor (((uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["relayed", 0]) / 2)) min 9) };
+        private _node = [[], [format ["C%1", _st get "chan"], (round (_mR * (_pwrK select (_st get "pwr")) * (_widK select _wid))) min 20000, [player, _h] select (!isNull _h), _wid, ["nodeKey"] call comspec_atak_native_fnc_meshKeys, _activity]] select _on;
+        ["tick"] call comspec_atak_native_fnc_meshEW;
         ["tick"] call comspec_atak_native_fnc_meshKeys;
         if (_node isNotEqualTo (player getVariable ["COMSPEC_ATAK_MpuNode", []])) then { player setVariable ["COMSPEC_ATAK_MpuNode", _node, true]; };
         // État vu par le téléphone.

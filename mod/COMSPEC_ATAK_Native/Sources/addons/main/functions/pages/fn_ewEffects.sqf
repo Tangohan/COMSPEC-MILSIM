@@ -18,7 +18,7 @@ private _k = 0;
     if (_pos isEqualType objNull) then { if (isNull _pos) then { continue; }; _pos = getPosATL _pos; };
     private _d = player distance2D _pos;
     if (_d < _rad) then { _k = _k max ((1 - _d / (_rad max 1)) * ((_str max 0) min 1)); };
-} forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
+} forEach ((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { (_x param [7, 0]) isEqualTo 0 });
 // Brouillage Zeus ciblé et brouilleurs Crows Electronic Warfare (fn_zeusJam).
 _k = _k max ([] call comspec_atak_native_fnc_zeusJam);
 private _err = [0, round (25 + 175 * _k)] select (_k > 0);

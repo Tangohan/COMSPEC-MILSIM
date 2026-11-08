@@ -14,7 +14,7 @@ private _read = {
 };
 private _nan = sqrt -1;
 // Lecture sûre : valeurs correctes rendues, valeurs absurdes refusées.
-[_results, "nœud correct", ["node", ["C3", 6000, player], player] call _read, ["C3", 6000, player, 1, -2]] call _expect;
+[_results, "nœud correct", ["node", ["C3", 6000, player], player] call _read, ["C3", 6000, player, 1, -2, 5]] call _expect;
 [_results, "nœud : largeur 5", ["node", ["C3", 6000, player, 5], player] call _read, []] call _expect;
 [_results, "courbe milsim : moitié puis tiers", round (100 * ((["solve", [[[[1, 10, 1000]], [[0, 10, 1000], [2, 10, 1000]], [[1, 10, 1000]]], [2], [true, true, true], 6, 20000, [1, 1, 0.5, 0.33]]] call comspec_atak_native_fnc_meshGraph) select 0 select 0)), 50000] call _expect;
 [_results, "nœud : canal 17", ["node", ["C17", 6000, player], player] call _read, []] call _expect;
@@ -84,6 +84,11 @@ private _sig = { params ["_in"]; ["sigMap", _in] call comspec_atak_native_fnc_mp
 [_results, "signal : sans lien, origine", [[0.1, -110, -1, 0, true]] call _sig, [0.1, -110]] call _expect;
 [_results, "signal : niveau 2", [[0.1, -110, 2, 2, true]] call _sig, [0.45, -95]] call _expect;
 [_results, "signal : direct meilleur gardé", [[0.9, -50, 2, 2, true]] call _sig, [0.9, -50]] call _expect;
+// Goniométrie : deux relevés croisés.
+private _crossed = ["cross", [[0, 0, 0], 45, [1000, 0, 0], 315]] call comspec_atak_native_fnc_meshEW;
+[_results, "croisement de deux relevés", _crossed apply { round _x }, [500, 500]] call _expect;
+[_results, "relevés parallèles : aucun point", ["cross", [[0, 0, 0], 45, [1000, 0, 0], 45]] call comspec_atak_native_fnc_meshEW, []] call _expect;
+[_results, "écoute seule : ne relaie pas", (((["solve", [_chain, [3], _all, 6, 20000, [1, 1, 0.8, 0.64], [false, true, false, false]]] call comspec_atak_native_fnc_meshGraph) select 1) select 0), -1] call _expect;
 private _ok = { _x select 1 } count _results;
 { diag_log format ["[COMSPEC ATAK NATIVE][MESH] Test %1 : %2", _x select 0, ["échoué", "réussi"] select (_x select 1)]; } forEach _results;
 diag_log format ["[COMSPEC ATAK NATIVE][MESH] Tests : %1 réussis sur %2", _ok, count _results];

@@ -15,7 +15,7 @@
     40 nœuds, 2 s quand un nœud change. Hystérésis : un lien ne tombe qu'au deuxième constat et revient tout de suite ; un nœud
     disparu retire ses liens sans attendre.
     Format diffusé : [numéro, [[camp, nœuds, liens, total des nœuds trouvés]...]] ; nœuds à plat par 5 : antenne, porteur, type x 100 +
-    canal (type : 0 joueur, 1 radio posée, 2 passerelle ; canal 0 pour une passerelle), portée (10 m), débit max (100 kbit/s) ;
+    canal, + 1000 en écoute seule (type : 0 joueur, 1 radio posée, 2 passerelle ; canal 0 pour une passerelle), portée (10 m), débit max (100 kbit/s) ;
     liens à plat par 3 : A + 64 x B, marge (2 dB, -1 si gardé par l'hystérésis), débit (100 kbit/s).
 
     Lecture ("view", client) : aucun bilan radio. Plus large chemin sous plafond de sauts (comspec_atak_native_mesh_hops, 6 par défaut,
@@ -27,7 +27,7 @@
       "graph" [camp] -> [nœuds, voisins, liens, total] ou []
       "peer" [unité] -> [sauts, marge, niveau] si mon graphe récent la joint (messages A vers B, lot 10), sinon []
       Sans effet, testés par fn_devMeshTest :
-      "solve" [voisins, sources, autorisés, plafond, débit max, courbe] -> [débits, sauts, vers, marges, sources]
+      "solve" [voisins, sources, autorisés, plafond, débit max, courbe, ne relaie pas] -> [débits, sauts, vers, marges, sources]
       "curve" -> part du débit gardée selon les sauts (décision 12)
       "gravity" [marge, sauts, plafond] -> niveau 0 à 3            "hyst" [lien bon, marge, débit, état précédent] -> [garder, état, marge, débit]
 */
@@ -81,7 +81,7 @@ switch (_act) do {
     case "solve": {
         // Plus large chemin à sauts bornés, couche par couche : débit du chemin = plus petit lien x part gardée selon les sauts. On garde par
         // couche le meilleur plus petit lien ; un état ni plus court ni plus large qu'un état déjà vu ne peut plus rien améliorer.
-        _arg params ["_adj", "_sources", "_allowed", "_maxH", "_maxK", ["_curve", [1, 1, 0.8, 0.64, 0.512, 0.41, 0.328, 0.262, 0.21, 0.168, 0.134, 0.107, 0.086, 0.069, 0.055, 0.044, 0.035]]];
+        _arg params ["_adj", "_sources", "_allowed", "_maxH", "_maxK", ["_curve", [1, 1, 0.8, 0.64, 0.512, 0.41, 0.328, 0.262, 0.21, 0.168, 0.134, 0.107, 0.086, 0.069, 0.055, 0.044, 0.035]], ["_noRelay", []]];
         private _n = count _adj;
         private _bw = [];
         _bw resize _n;
@@ -122,7 +122,8 @@ switch (_act) do {
                 _x params ["_v", "_c", "_m", "_s", "_u"];
                 if (_c <= (_seen select _v)) then { continue };
                 _seen set [_v, _c];
-                _front pushBack [_v, _c, _m, _s];
+                // Écoute seule (lot 11) : joignable, mais ne relaie pas.
+                if !(_noRelay param [_v, false]) then { _front pushBack [_v, _c, _m, _s]; };
                 if ((_c * _k) > (_bw select _v)) then {
                     _bw set [_v, _c * _k];
                     _hop set [_v, _h];
@@ -155,10 +156,10 @@ switch (_act) do {
             for "_j" from 0 to ((count _nf) - 5) step 5 do {
                 if (!((_nf select _j) isEqualType objNull) || {!((_nf select (_j + 1)) isEqualType objNull)} || {!((_nf select [_j + 2, 3]) isEqualTypeAll 0)}) then { _nf = []; _lf = []; _nodes = []; break };
                 private _tc = _nf select (_j + 2);
-                private _type = floor (_tc / 100);
+                private _type = (floor (_tc / 100)) mod 10;
                 if !(_type in [0, 1, 2]) then { _nf = []; _lf = []; _nodes = []; break };
-                // [antenne, porteur, type, canal, portée m, débit max kbit/s]
-                _nodes pushBack [_nf select _j, _nf select (_j + 1), _type, _tc mod 100, (_nf select (_j + 3)) * 10, (_nf select (_j + 4)) * 100];
+                // [antenne, porteur, type, canal, portée m, débit max kbit/s, ne relaie pas]
+                _nodes pushBack [_nf select _j, _nf select (_j + 1), _type, _tc mod 100, (_nf select (_j + 3)) * 10, (_nf select (_j + 4)) * 100, _tc >= 1000];
             };
             private _adj = _nodes apply { [] };
             private _links = [];
@@ -283,10 +284,13 @@ switch (_act) do {
             _l
         };
         private _jamAt = {
-            params ["_p", "_jams"];
+            params ["_p", "_jams", "_chan"];
             private _f = 1;
             {
                 _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
+                // Brouillage GPS seul, ou d'un autre canal (lot 11) : sans effet sur ce nœud.
+                private _jc = _x param [7, 0];
+                if ((_x param [8, ""]) isEqualTo "gps" || {_jc > 0 && {_jc isNotEqualTo _chan}}) then { continue };
                 if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
                 private _d = _p distance2D _jp;
                 private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
@@ -328,19 +332,19 @@ switch (_act) do {
                 if (_ok && {_k isNotEqualTo "mpu5"}) then { _found pushBack [_o, objNull, 2, 0, _r, (_mb * 1000) min _maxK, _ap]; };
             } forEach (["list", [_side]] call comspec_atak_native_fnc_relayNet);
             {
-                (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_key", ""], ["_r", 0], ["_o", objNull], ["_wid", 1], ["_nk", -2]];
+                (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_key", ""], ["_r", 0], ["_o", objNull], ["_wid", 1], ["_nk", -2], ["_activity", 5]];
                 if (_key isEqualTo "") then { continue };
                 // Clé de réseau absente ou périmée : hors du graphe (lot 6, sans effet réglage décoché).
                 if !(["authorized", [_side, _nk]] call comspec_atak_native_fnc_meshKeys) then { continue };
                 private _wf = [0.5, 1, 1.5] select _wid;
-                _found pushBack [_o, _x, [1, 0] select (_o isKindOf "CAManBase"), parseNumber (_key select [1]), _r, _maxK * _wf, [_o, _milsim] call _antOf];
+                _found pushBack [_o, _x, [1, 0] select (_o isKindOf "CAManBase"), parseNumber (_key select [1]), _r, _maxK * _wf, [_o, _milsim] call _antOf, _activity <= 0];
             } forEach ((allPlayers select { alive _x && {str side group _x isEqualTo _side || {_compNk >= 0 && {((["node", _x] call comspec_atak_native_fnc_meshRead) param [4, -2]) isEqualTo _compNk}}} }) + (["units", [_side]] call comspec_atak_native_fnc_devMeshSim));
             private _total = count _found;
             private _nodes = _found select [0, _maxNodes];
             private _n = count _nodes;
             _nodeN = _nodeN + _n;
             private _jams = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _tNow) && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} };
-            private _jf = _nodes apply { [_x select 6, _jams] call _jamAt };
+            private _jf = _nodes apply { [_x select 6, _jams, _x select 3] call _jamAt };
             // Hystérésis : état de la passe précédente, retrouvé par objet (les index changent d'une passe à l'autre).
             (_hystAll getOrDefault [_side, [[], createHashMap]]) params ["_oldObjs", "_oldState"];
             private _oldIdx = _nodes apply { _oldObjs find (_x select 0) };
@@ -412,7 +416,7 @@ switch (_act) do {
             };
             _linkN = _linkN + (count _lf) / 3;
             private _nf = [];
-            { _nf append [_x select 0, _x select 1, 100 * (_x select 2) + (_x select 3), round ((_x select 4) / 10), round ((_x select 5) / 100)]; } forEach _nodes;
+            { _nf append [_x select 0, _x select 1, ([0, 1000] select (_x param [7, false])) + 100 * (_x select 2) + (_x select 3), round ((_x select 4) / 10), round ((_x select 5) / 100)]; } forEach _nodes;
             _ref pushBack [_side, _nf, _lf, _total];
         } forEach _sides;
         if (_aborted) exitWith { false };
@@ -481,8 +485,8 @@ switch (_act) do {
         private _allowedG = if (_mode isEqualTo "relay") then { _nodes apply { !isNull (_x select 0) } } else { _allowed };
         private _curve = ["curve"] call comspec_atak_native_fnc_meshGraph;
         // Canal large : une radio peut dépasser le débit de base (lot 9), borné par la capacité de chaque nœud.
-        (["solve", [_adj, _gws, _allowedG, _maxH, _maxK * 1.5, _curve]] call comspec_atak_native_fnc_meshGraph) params ["_bwG", "_hopG", "_viaG", "_mgG", "_srcG"];
-        (["solve", [_adj, [_me], _allowed, _maxH, _maxK * 1.5, _curve]] call comspec_atak_native_fnc_meshGraph) params ["_bwM", "_hopM", "", "_mgM"];
+        (["solve", [_adj, _gws, _allowedG, _maxH, _maxK * 1.5, _curve, _nodes apply { _x select 6 }]] call comspec_atak_native_fnc_meshGraph) params ["_bwG", "_hopG", "_viaG", "_mgG", "_srcG"];
+        (["solve", [_adj, [_me], _allowed, _maxH, _maxK * 1.5, _curve, _nodes apply { _x select 6 }]] call comspec_atak_native_fnc_meshGraph) params ["_bwM", "_hopM", "", "_mgM"];
         // Noms et position réelle des passerelles : liste locale des relais, déjà en cache.
         private _relays = ["list"] call comspec_atak_native_fnc_relayNet;
         private _nameOf = {

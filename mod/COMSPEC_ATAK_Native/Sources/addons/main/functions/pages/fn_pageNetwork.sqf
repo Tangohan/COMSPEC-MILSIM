@@ -458,6 +458,10 @@ if (_mpuOn) then {
             [[
                 [["ALLUMER", "ÉTEINDRE"] select (_v get "on"), { ["power"] call comspec_atak_native_fnc_mpuLink; }, !(_v get "on")],
                 ["PUISSANCE", { ["txpower"] call comspec_atak_native_fnc_mpuLink; }],
+                [["ÉMISSION NORMALE", "PUISSANCE RÉDUITE", "ÉCOUTE SEULE"] select ((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["mode", 0]), {
+                    ["mode", [(((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["mode", 0]) + 1) mod 3]] call comspec_atak_native_fnc_meshEW;
+                    [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+                }],
                 [format ["CANAL %1", toUpper (_v getOrDefault ["width", "Normal"])], { ["width"] call comspec_atak_native_fnc_mpuLink; }],
                 ["CANAL −", { ["chan", [-1]] call comspec_atak_native_fnc_mpuLink; }],
                 ["CANAL +", { ["chan", [1]] call comspec_atak_native_fnc_mpuLink; }]
@@ -467,6 +471,7 @@ if (_mpuOn) then {
         if (_lk isNotEqualTo "cable" && {_v get "carried"}) then { _btn pushBack ["CÂBLE EUD", { ["link", ["cable"]] call comspec_atak_native_fnc_mpuLink; }, _lk isEqualTo ""]; };
         if (_lk isNotEqualTo "wifi" && {_v get "wifi"}) then { _btn pushBack ["WI-FI", { ["link", ["wifi"]] call comspec_atak_native_fnc_mpuLink; }]; };
         if (_lk isNotEqualTo "") then { _btn pushBack ["DÉBRANCHER", { ["unlink"] call comspec_atak_native_fnc_mpuLink; }]; };
+        if ((leader group player) isEqualTo player && {(count units group player) > 1}) then { _btn pushBack ["IMPOSER LE MODE AU GROUPE", { ["impose"] call comspec_atak_native_fnc_meshEW; }]; };
         if ((_v get "posed") && {missionNamespace getVariable ["comspec_atak_native_mesh_mast", true]}) then { _btn pushBack ["MÂT", { ["mast"] call comspec_atak_native_fnc_mpuLink; }]; };
         if ((_v get "spare") && {(_v get "batt") < 95}) then { _btn pushBack ["BATTERIE", { ["battery"] call comspec_atak_native_fnc_mpuLink; }]; };
         if (_btn isNotEqualTo []) then { [_btn] call _buttons; };

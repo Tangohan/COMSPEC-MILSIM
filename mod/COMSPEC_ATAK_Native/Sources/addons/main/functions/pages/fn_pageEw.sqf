@@ -137,6 +137,7 @@ if (_tab isEqualTo "DF" && {_allowed}) then {
     [[0, 0, _bw, _vh]] call comspec_atak_native_fnc_vizSpectrum;
     [_rows, [0, _vh, _bw, _bh - _vh]] call comspec_atak_native_fnc_formRender;
 } else {
+    if (_tab isEqualTo "DF") then { _rows append (["rows"] call comspec_atak_native_fnc_meshEW); };
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 };
 true

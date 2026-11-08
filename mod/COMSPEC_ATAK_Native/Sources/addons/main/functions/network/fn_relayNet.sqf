@@ -60,7 +60,7 @@ switch (_act) do {
         private _side = if (_forSide isEqualTo "") then { str side group player } else { _forSide };
         private _num = { params ["_v", "_d"]; [_d, _v] select (_v isEqualType 0) };
         // Brouilleurs actifs (mêmes règles que fn_linkQuality) : facteur de débit à une position.
-        private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _now) && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} };
+        private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _now) && {(_x param [7, 0]) isEqualTo 0} && {(_x param [8, ""]) isNotEqualTo "gps"} && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} };
         private _jamAt = {
             params ["_p"];
             private _m = 1;

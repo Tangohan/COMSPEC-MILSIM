@@ -687,6 +687,18 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_tfar_code", "CHECKBOX",
     ["TFAR : clé de groupe en code de radio", "Radio pontée réglée sur le code de la clé de son groupe : sans la clé, rien ne s'entend, même en direct. Peut gêner une mission qui gère déjà ses codes. À confirmer en jeu."],
     _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_ew", "CHECKBOX",
+    ["Goniomètre et analyseur de spectre", "Outils de guerre électronique du maillage dans l'app Guerre électronique, onglet GONIO."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_ew_role", "CHECKBOX",
+    ["Goniomètre réservé au spécialiste", "Coché : rôle de mission de guerre électronique, ou variable d'unité COMSPEC_ATAK_EwOperator. Décoché : ouvert à tous."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_backup_channel", "SLIDER",
+    ["Canal de secours (0 : aucun)", "Sous brouillage de son canal, la MPU5 bascule toute seule sur ce canal."],
+    _mpuCat, [0, 16, 0, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_backup_delay", "SLIDER",
+    ["Délai avant le canal de secours (s)", "Temps de brouillage subi avant la bascule."],
+    _mpuCat, [2, 60, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
 // Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
 ["comspec_atak_native_mesh_dev", "CHECKBOX",
     ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],

@@ -195,7 +195,7 @@ private _jamM = 1;
         };
         _jamM = _jamM min _m;
     };
-} forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
+} forEach ((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { (_x param [7, 0]) isEqualTo 0 && {(_x param [8, ""]) isNotEqualTo "gps"} });
 if (_jamM < 1) then {
     _mul = _mul * _jamM; _loss = _loss max (round ((1 - _jamM) * 80)); _f pushBack ["Brouillage", format ["-%1 %%", round ((1 - _jamM) * 100)]];
 };
