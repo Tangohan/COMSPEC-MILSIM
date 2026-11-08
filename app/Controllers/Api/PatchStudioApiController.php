@@ -151,6 +151,7 @@ final class PatchStudioApiController
             if (!isset($p['document']['variants'][$variant])) throw new \InvalidArgumentException('Variante inconnue.');
             $format=$b['format']??'png';
             if (!in_array($format,['png','paa','zip','pbo','publish'],true)) throw new \InvalidArgumentException('Format inconnu.');
+            $nv=Export::nightAdjustment($b['nv']??null);
             $bytes=base64_decode((string)($b['png']??''),true);
             if ($bytes===false) throw new \InvalidArgumentException('PNG invalide.');
             $size=@getimagesizefromstring($bytes);
@@ -177,7 +178,7 @@ final class PatchStudioApiController
                     $size+=(int)$asset['bytes']; if ($size>33554432) throw new \InvalidArgumentException('Archive limitée à 32 Mio de ressources.');
                     $asset['data']=(new Assets())->read($asset['hash']);$assets[]=$asset;
                 }
-                $data=Export::bundle($p,$variant,$png,$assets);$mime='application/zip';
+                $data=Export::bundle($p,$variant,$png,$assets,$nv);$mime='application/zip';
             }
             return (new Response())->header('Content-Type',$mime)->header('Content-Disposition','attachment; filename="athena_'.$p['id'].'_'.$variant.'.'.$format.'"')->setBody($data);
             } finally { flock($lock,LOCK_UN); fclose($lock); }

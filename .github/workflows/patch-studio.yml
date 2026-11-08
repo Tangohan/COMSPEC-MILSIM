@@ -39,7 +39,7 @@ jobs:
           php tests/patch-studio/textures.php
           php tests/patch-studio/fabrication.php
           php tests/patch-studio/workspace.php
-          node --test tests/patch-studio/core.test.mjs tests/patch-studio/fabrication.test.mjs
+          node --test tests/patch-studio/core.test.mjs tests/patch-studio/fabrication.test.mjs tests/patch-studio/night.test.mjs
       - name: Install browser test tools only
         run: |
           npm install --no-save --package-lock=false playwright
