@@ -41,10 +41,12 @@ return [
             ['label' => 'Vitrine publique', 'href' => 'back-office/community/presentation'],
         ]],
         ['path' => 'back-office/alerts/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ANNONCES', 'title' => 'Nouvelle annonce', 'subtitle' => 'Rédigez le message, choisissez son importance et ses dates d’affichage.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
-            ['label' => 'Liste des annonces', 'href' => 'back-office/alerts'],
+            ['label' => 'Centre de diffusion', 'href' => 'back-office/alerts'],
         ]],
-        ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Annonces', 'subtitle' => 'Les bandeaux affichés en haut du portail pour tous les membres connectés.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
-            ['label' => 'Nouvelle annonce', 'href' => 'back-office/alerts/create'],
+        ['path' => 'back-office/alerts', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · DIFFUSION', 'title' => 'Centre de diffusion', 'subtitle' => 'Annonces du site, consignes, ordres, tips, messages en jeu et alertes : écrire une fois, choisir qui reçoit et par où, puis suivre la lecture.', 'css' => ['back-office-alerts.css', 'announce-tiles.css'], 'quick' => [
+            ['label' => 'Nouveau message', 'href' => 'back-office/alerts#nouveau'],
+            ['label' => 'Bandeau avec image', 'href' => 'back-office/alerts/create'],
+            ['label' => 'Consignes et kit ATAK', 'href' => 'back-office/ressources/atak-consignes'],
         ]],
         ['path' => 'back-office/articles/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ARTICLES', 'title' => 'Nouveau mini-article', 'subtitle' => 'Un titre, quelques mots-clés, une image et votre texte. Il reste en ligne jusqu’à ce que vous le retiriez.', 'css' => ['back-office-articles.css'], 'quick' => [
             ['label' => 'Liste', 'href' => 'back-office/articles'],

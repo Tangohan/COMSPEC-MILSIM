@@ -87,4 +87,5 @@ return [
     ['id' => 'configuration_release_steps', 'label' => 'Mise à niveau : étapes déclarées par version (config/configuration_release_steps.php)', 'group' => 'schema', 'file' => '4130_configuration_release_steps.php', 'rerun' => true],
     ['id' => 'atak_sse_id_cover_link', 'label' => 'Couvertures reliées à Athena : couverture née en jeu remontée au compte du joueur, contenus de la bibliothèque de l’éditeur attribués à un joueur', 'group' => 'schema', 'file' => '4110_atak_sse_id_cover_link.php', 'rerun' => true],
     ['id' => 'atak_sse_ai_profiles', 'label' => 'Profils d’IA du Bureau SSE (identité, camp, papiers, comportement) reliés aux IA en jeu, et éléments gardés d’une partie à l’autre', 'group' => 'schema', 'file' => '4120_atak_sse_ai_profiles.php', 'rerun' => true],
+    ['id' => 'broadcast_center', 'label' => 'Centre de diffusion : lien entre le bandeau du site et les messages aux joueurs d’une même diffusion (colonne broadcast_key)', 'group' => 'schema', 'file' => '4190_broadcast_center.php', 'rerun' => true],
 ];

@@ -71,4 +71,31 @@ class UserAlertDismissalRepository
 
         return $out;
     }
+
+    /**
+     * Nombre de membres qui ont fermé chaque annonce de communauté (centre de diffusion : « fermée par N »).
+     *
+     * @param list<int> $alertIds
+     * @return array<int, int>
+     */
+    public function countsForTenantAlerts(array $alertIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $alertIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        try {
+            $ph = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->pdo->prepare("SELECT alert_id, COUNT(*) AS n FROM user_alert_dismissals WHERE scope = 'tenant' AND alert_id IN ($ph) GROUP BY alert_id");
+            $stmt->execute($ids);
+            $out = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $out[(int) $row['alert_id']] = (int) $row['n'];
+            }
+
+            return $out;
+        } catch (\PDOException) {
+            return [];
+        }
+    }
 }

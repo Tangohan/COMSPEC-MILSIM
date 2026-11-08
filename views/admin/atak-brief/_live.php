@@ -174,7 +174,9 @@ $removeForm = static function (string $action, string $rev, int $index, string $
 <nav class="bo-brief-parts" aria-label="Parties de la page">
   <a href="#consignes">Consignes <b><?= count($notes) ?> / <?= Brief::MAX_NOTES ?></b></a>
   <a href="#kit">Kit obligatoire <b><?= count($kit) ?> / <?= Brief::MAX_KIT ?></b></a>
+  <a href="<?= $h(url('back-office/alerts')) ?>">Centre de diffusion</a>
 </nav>
+<p class="bo-brief-hint">Ces consignes, ordres et tips apparaissent aussi dans le centre de diffusion, avec les annonces du site et les messages en jeu : ce sont les mêmes notes, à modifier ici ou là-bas.</p>
 
 <?php if ($unread['notes_over'] > 0 || $unread['notes_cut'] > 0 || $unread['kit'] !== []): ?>
   <div class="bo-brief-note-box is-warn">

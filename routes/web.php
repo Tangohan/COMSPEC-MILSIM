@@ -2065,7 +2065,13 @@ return function (Router $router) {
     $router->post('/back-office/alerts/{id}/update', [TenantAlertsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts/{id}/delete', [TenantAlertsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts/affichage-a-venir', [TenantAlertsController::class, 'updateUpcomingVisibility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/alerts', [TenantAlertsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Centre de diffusion : liste unique et « Nouveau message » (annonces, consignes, ordres, tips, messages en jeu, alertes).
+    // Droits canal par canal dans BroadcastCenterController ; les routes ci-dessus (formulaire complet du bandeau) restent.
+    $router->get('/back-office/alerts', [\App\Controllers\Admin\Organization\BroadcastCenterController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/alerts/apercu', [\App\Controllers\Admin\Organization\BroadcastCenterController::class, 'preview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/alerts/diffuser', [\App\Controllers\Admin\Organization\BroadcastCenterController::class, 'send'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/alerts/centre/modifier', [\App\Controllers\Admin\Organization\BroadcastCenterController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/alerts/centre/retirer', [\App\Controllers\Admin\Organization\BroadcastCenterController::class, 'withdraw'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/back-office/articles/create', [TenantMiniArticlesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/articles', [TenantMiniArticlesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
