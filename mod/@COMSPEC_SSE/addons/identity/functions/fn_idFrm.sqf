@@ -16,7 +16,7 @@ if (!isNil "comspec_atak_native_fnc_bridge" && {!([] call comspec_atak_native_fn
 };
 private _d = _rec get "doc";
 private _v = _rec getOrDefault ["verdict", "ras"];
-private _type = ["Carte d'identité", "Passeport", "Permis de conduire"] select ((["id_card", "passport", "driving_license"] find (_d getOrDefault ["type", ""])) max 0);
+private _type = ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d getOrDefault ["type", ""])) max 0);
 private _pos = _rec getOrDefault ["pos", getPosASL player];
 private _callsign = if (isNil "comspec_overwatch_connect_fnc_getCallsign") then { "" } else { [] call comspec_overwatch_connect_fnc_getCallsign };
 if (_callsign isEqualTo "") then { _callsign = groupId group player; };
