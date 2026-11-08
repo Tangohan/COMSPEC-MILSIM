@@ -14,6 +14,7 @@ use App\Repositories\SseCaseRepository;
 use App\Repositories\SseIdCheckRepository;
 use App\Repositories\SseIdCountryRepository;
 use App\Repositories\SseIdDocumentRepository;
+use App\Repositories\SseIdSettingsRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SsePersonRepository;
 use App\Services\Sse\SseAccessCodeService;
@@ -903,7 +904,25 @@ final class SseIdentityRegistryController
             'checks' => $this->checks->list($this->tenantId(), $filters),
             'filters' => $filters,
             'papersTab' => 'controles',
+            'autoTransmit' => (new SseIdSettingsRepository())->autoTransmit($this->tenantId()),
+            'canManageSettings' => $this->canManage(),
+            'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    /** Envoi automatique des contrôles vers Athena, pour toute la communauté (reçu en jeu avec le paquet). */
+    public function checksSettings(Request $request, array $params = []): Response
+    {
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied(url(self::BASE . '/controles'));
+        }
+        $tenantId = $this->tenantId();
+        $enabled = $request->inputString('auto_transmit') === '1';
+        (new SseIdSettingsRepository())->setAutoTransmit($tenantId, $enabled);
+        $this->audit($tenantId, 'id_settings.auto_transmit', $tenantId, ['auto_transmit' => $enabled]);
+        Session::flash('success', 'Réglage enregistré. Il s’applique en jeu au prochain chargement du paquet.');
+
+        return Response::redirect(url(self::BASE . '/controles'));
     }
 
     /**

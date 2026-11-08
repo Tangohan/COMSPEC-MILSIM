@@ -131,6 +131,18 @@ final class SseIdSubjectMatchServiceTest extends TestCase
         self::assertSame('OWNER', (new SseIdentityRepository())->find($identity, 1)['bio_key']);
     }
 
+    public function testAutoTransmitIsOnByDefaultAndSetPerCommunity(): void
+    {
+        $settings = new \App\Repositories\SseIdSettingsRepository();
+        self::assertTrue($settings->autoTransmit(1));
+        $settings->setAutoTransmit(1, false);
+        $settings->setAutoTransmit(1, false);
+        self::assertFalse($settings->autoTransmit(1));
+        self::assertTrue($settings->autoTransmit(2), 'autre communauté : inchangée');
+        $settings->setAutoTransmit(1, true);
+        self::assertTrue($settings->autoTransmit(1));
+    }
+
     public function testExactNumberIsFoundAmongPartialMatches(): void
     {
         $identity = $this->identity(1, 'Dupont');

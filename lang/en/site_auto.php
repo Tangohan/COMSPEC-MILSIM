@@ -55789,4 +55789,6 @@ return [
     'Les alias et identités de couverture ne sont visibles qu’avec l’habilitation Confidentiel.' => 'Aliases and cover identities are only visible with Confidential clearance.',
     'Possiblement la même personne' => 'Possibly the same person',
     'Même clé biométrique relevée lors de contrôles. À vérifier : rien n’est fusionné automatiquement.' => 'Same biometric key recorded during checks. To be verified: nothing is merged automatically.',
+    'Envoyer automatiquement les contrôles depuis le jeu' => 'Automatically send checks from the game',
+    'Réglage enregistré. Il s’applique en jeu au prochain chargement du paquet.' => 'Setting saved. It applies in game the next time the pack is loaded.',
 ];

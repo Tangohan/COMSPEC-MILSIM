@@ -7,6 +7,7 @@ use App\Support\Migrations\SchemaInspector;
 /**
  * COMSPEC IDENTITY — recoupement par clé biométrique et carte militaire :
  *   - sse_persons.bio_key et sse_identities.bio_key, index de recherche, et sse_id_checks (tenant_id, subject_bio_key) ;
+ *   - sse_id_settings : réglages par communauté (envoi automatique des contrôles, activé sans ligne) ;
  *   - la carte militaire est proposée aux pays existants, une seule fois (au premier passage, repéré par l'ajout de la
  *     colonne) : un pays dont le responsable la retire ensuite ne la retrouve pas à la migration suivante.
  *
@@ -21,6 +22,10 @@ return static function (PDO $pdo, ?callable $log = null): void {
         $log("  [ATTENTION] registre d'identité SSE absent — recoupement reporté\n");
 
         return;
+    }
+    if (!$schema->tableExists('sse_id_settings')) {
+        $pdo->exec('CREATE TABLE sse_id_settings (tenant_id INT NOT NULL PRIMARY KEY, auto_transmit TINYINT NOT NULL DEFAULT 1, updated_at DATETIME DEFAULT NULL)');
+        $log("  [OK] sse_id_settings\n");
     }
     $firstPass = $schema->addColumnIfMissing('sse_identities', 'bio_key', 'VARCHAR(64) DEFAULT NULL');
     if ($firstPass) {
