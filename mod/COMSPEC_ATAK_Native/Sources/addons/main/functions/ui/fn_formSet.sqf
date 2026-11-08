@@ -9,7 +9,8 @@
                (ligne « person » déclarée avec un 7e paramètre) ; valeur [] : ligne masquée
       btn    : valeur = [libellé ("" : inchangé), état ("" | "on" | "red"), actif (sans valeur : inchangé), infobulle ("" : inchangée)]
                (bouton de la barre de l'app Drone, 6e élément)
-      btnrow : valeur = visible (booléen) (ligne « buttons » déclarée avec un id, 3e élément)
+      btnrow : valeur = visible (booléen), ou [[libellé ("" : inchangé), actif, style ("" | "main" | "red"), infobulle]...] un par bouton
+               (ligne « buttons » déclarée avec un id, 3e élément)
       segment : valeur = l'option choisie (ligne « segment » déclarée avec un id, 5e élément des options)
     Retour : true si la ligne est affichée et a été mise à jour.
 */
@@ -124,7 +125,21 @@ switch (_e get "kind") do {
     };
     case "btnrow": {
         private _shown = false;
-        { if (!isNull _x) then { _x ctrlShow _v; (_x getVariable ["face", controlNull]) ctrlShow _v; _shown = true; }; } forEach (_e get "btns");
+        private _each = _v isEqualType [];
+        {
+            if (isNull _x) then { continue };
+            _shown = true;
+            if (!_each) then { _x ctrlShow _v; (_x getVariable ["face", controlNull]) ctrlShow _v; continue };
+            (_v param [_forEachIndex, []]) params [["_lbl", ""], ["_en", true], ["_style", ""], ["_tip", ""]];
+            if (_lbl isNotEqualTo "") then { _x ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr); };
+            if (_tip isNotEqualTo "") then { _x ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
+            _x ctrlEnable _en;
+            switch (_style) do {
+                case "red": { [_x, _th get "alert"] call _bg; _x ctrlSetTextColor [1, 1, 1, 1]; };
+                case "main": { [_x, _acc] call _bg; _x ctrlSetTextColor (_th get "onAccent"); };
+                default { [_x, _th get "surface2"] call _bg; _x ctrlSetTextColor ([(_th get "off"), (_th get "text")] select _en); };
+            };
+        } forEach (_e get "btns");
         _shown
     };
     default { false };

@@ -176,9 +176,9 @@ _hKey ctrlSetPosition [_hX + _pad * 2 + _hIcH / _ratio, _hY + _hh * 0.14, _hKw, 
 (_l get "body") params ["_bx", "_byy", "_bww", "_bhh"];
 private _isMap = _page isEqualTo "MAP";
 private _inspW = [0, _l get "inspW"] select _isMap;
-// Les trois cartes (topo, satellite, hybride : fn_mapCtrl) à la même place ; seule celle du fond choisi est montrée.
+// Les quatre cartes (topo, satellite, hybride, ardoise : fn_mapCtrl) à la même place ; seule celle du fond choisi est montrée.
 private _mapC = [_d] call comspec_atak_native_fnc_mapCtrl;
-{ [_x, [_bx, _byy, _bww - _inspW, _bhh]] call _set; } forEach [88530, 88532, 88533];
+{ [_x, [_bx, _byy, _bww - _inspW, _bhh]] call _set; } forEach [88530, 88532, 88533, 88534];
 // Zone de contenu : la repositionner remet son défilement en haut. On ne la déplace que si sa place change
 // (chaque bascule des Réglages appelait layoutApply avant le redessin : la page remontait en haut à chaque clic),
 // et le défilement est rendu après un vrai déplacement.

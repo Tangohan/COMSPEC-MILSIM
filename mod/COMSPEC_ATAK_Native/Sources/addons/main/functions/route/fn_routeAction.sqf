@@ -548,6 +548,8 @@ switch (_act) do {
         if ((count _r) isEqualTo 0) exitWith { false };
         if !(missionNamespace getVariable ["comspec_atak_native_route_share", true]) exitWith { ["WARNING", "Partage des routes désactivé par le serveur", 3, 20] call comspec_atak_native_fnc_notify; false };
         if ((count (_r get "steps")) < 1) exitWith { if !(_quiet) then { ["INFO", "Route sans étape : rien à envoyer", 3, 10] call comspec_atak_native_fnc_notify; }; false };
+        // Route repartagée après un retrait : nouvelle révision, sinon la pierre tombale des destinataires l'ignorerait.
+        if ((_r get "scope") isEqualTo 0) then { _r set ["rev", (_r getOrDefault ["rev", 0]) + 1]; };
         // Portée réduite : retirée d'abord chez tous ceux de l'ancienne portée.
         if ((_r get "scope") > _sc) then { ["unshare", _id] call comspec_atak_native_fnc_routeAction; };
         _r set ["scope", _sc];
@@ -576,11 +578,12 @@ switch (_act) do {
         private _r = _mine getOrDefault [_arg, createHashMap];
         if ((count _r) isEqualTo 0) exitWith { false };
         private _to = [_r get "scope"] call _targets;
+        // La révision part avec le retrait : pierre tombale posée même chez qui n'a pas encore reçu la route (file hors réseau).
         [{
-            params ["_id", "_to"];
-            if ((count _to) > 0) then { ["comspec_atak_native_route", ["del", _id, [player] call comspec_atak_native_fnc_unitCallsign, 0], _to] call CBA_fnc_targetEvent; };
+            params ["_id", "_to", "_rev"];
+            if ((count _to) > 0) then { ["comspec_atak_native_route", ["del", _id, [player] call comspec_atak_native_fnc_unitCallsign, _rev], _to] call CBA_fnc_targetEvent; };
             ["comspec_atak_native_routeSrv", ["del", _id]] call CBA_fnc_serverEvent;
-        }, [_arg, _to], "Route", 1, 1, "rte:" + _arg] call comspec_atak_native_fnc_netSend;
+        }, [_arg, _to, _r getOrDefault ["rev", 0]], "Route", 1, 1, "rte:" + _arg] call comspec_atak_native_fnc_netSend;
         _r set ["scope", 0];
         _r set ["live", false];
         call _save;
@@ -592,12 +595,13 @@ switch (_act) do {
         _arg params [["_op", ""], ["_pk", []], ["_who", ""], ["_sc", 2]];
         private _quiet = missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false];
         if (_op isEqualTo "del") exitWith {
-            if !(_pk isEqualType "" && {_pk in _rx}) exitWith {};
-            private _n = (_rx get _pk) get "name";
-            // Pierre tombale : une version plus ancienne (rejeu, file sans réseau) ne la fait pas revenir.
+            if !(_pk isEqualType "") exitWith {};
+            // Pierre tombale : une version plus ancienne (rejeu, file sans réseau) ne la fait pas revenir, même arrivée après.
             private _gone = missionNamespace getVariable ["COMSPEC_ATAK_RteGone", createHashMap];
             missionNamespace setVariable ["COMSPEC_ATAK_RteGone", _gone];
-            _gone set [_pk, (_rx get _pk) getOrDefault ["rev", 0]];
+            _gone set [_pk, ((_rx getOrDefault [_pk, createHashMap]) getOrDefault ["rev", 0]) max ([0, _sc] select (_sc isEqualType 0)) max (_gone getOrDefault [_pk, -1])];
+            if !(_pk in _rx) exitWith {};
+            private _n = (_rx get _pk) get "name";
             _rx deleteAt _pk;
             if (((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo _pk) then { ["unfollow", true] call comspec_atak_native_fnc_routeAction; };
             if !(_quiet) then { ["INFO", format ["Route retirée par %1 : %2", _who, _n], 3, 20] call comspec_atak_native_fnc_notify; };
@@ -754,7 +758,13 @@ switch (_act) do {
         private _bin = missionNamespace getVariable ["COMSPEC_ATAK_RteTrash", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_RteTrash", _bin];
         private _tok = diag_tickTime;
-        _bin set [_arg, [_r, _tok]];
+        // Retirée tout de suite partout (destinataires, serveur, carte d'Arma, Athena) : quitter le jeu pendant le délai
+        // d'annulation ne la laisse pas revivre ailleurs. Annuler la repartage à la même portée.
+        private _sc0 = _r get "scope";
+        { [_x, true] call comspec_atak_native_fnc_markerWeb; deleteMarker _x; } forEach (_r getOrDefault ["mk", []]);
+        _r set ["mk", []];
+        if (_sc0 > 0) then { ["unshare", _arg] call comspec_atak_native_fnc_routeAction; };
+        _bin set [_arg, [_r, _tok, _sc0]];
         _mine deleteAt _arg;
         call _save; call _refresh;
         [{
@@ -774,6 +784,8 @@ switch (_act) do {
         if ((count _e) isEqualTo 0) exitWith { false };
         _bin deleteAt _arg;
         _mine set [_arg, _e select 0];
+        if ((_e param [2, 0]) > 0) then { ["share", [_arg, _e select 2, true]] call comspec_atak_native_fnc_routeAction; };
+        if ((_e select 0) get "arma") then { ["armaNow", _arg] call comspec_atak_native_fnc_routeAction; };
         call _save; call _refresh;
         true
     };
