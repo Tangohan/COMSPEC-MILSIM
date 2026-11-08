@@ -202,13 +202,17 @@ final class PersonnelCommandChainService
     }
 
     /**
+     * Tout est vérifié avant la première écriture : un refus ne laisse jamais une partie des chefs enregistrée.
+     *
      * @param array<int|string, mixed> $commanderByUnit unit_id => user_id (0 = aucun)
-     * @return array{ok:bool,updated:int,message:string}
+     * @param array<int|string, mixed> $expectedByUnit unit_id => chef vu par l’auteur à l’ouverture (facultatif) :
+     *   si le chef a changé entre-temps, rien n’est écrit et le résultat porte conflict = true
+     * @return array{ok:bool,updated:int,message:string,conflict:bool}
      */
-    public function saveCommanders(int $tenantId, array $commanderByUnit, array $allowedUserIds): array
+    public function saveCommanders(int $tenantId, array $commanderByUnit, array $allowedUserIds, array $expectedByUnit = []): array
     {
         if ($tenantId < 1) {
-            return ['ok' => false, 'updated' => 0, 'message' => 'Communauté introuvable.'];
+            return ['ok' => false, 'updated' => 0, 'message' => 'Communauté introuvable.', 'conflict' => false];
         }
         $allowed = [];
         foreach ($allowedUserIds as $id) {
@@ -219,16 +223,18 @@ final class PersonnelCommandChainService
         }
         $units = $this->units->allForTenant($tenantId);
         $known = [];
+        $names = [];
         foreach ($units as $u) {
             $id = (int) ($u['id'] ?? 0);
             if ($id > 0) {
                 $known[$id] = (int) ($u['commander_user_id'] ?? 0);
+                $names[$id] = trim((string) ($u['name'] ?? ''));
             }
         }
-        $updated = 0;
+        $changes = [];
         foreach ($commanderByUnit as $unitKey => $userKey) {
             $unitId = (int) $unitKey;
-            if ($unitId < 1 || !array_key_exists($unitId, $known)) {
+            if ($unitId < 1 || !array_key_exists($unitId, $known) || !is_scalar($userKey)) {
                 continue;
             }
             $commanderId = (int) $userKey;
@@ -237,16 +243,29 @@ final class PersonnelCommandChainService
             if ($next === $current) {
                 continue;
             }
+            $expected = $expectedByUnit[$unitKey] ?? null;
+            if (is_scalar($expected) && (int) $expected !== $known[$unitId]) {
+                return [
+                    'ok' => false,
+                    'updated' => 0,
+                    'message' => str_replace('%1', $names[$unitId], 'Le chef de %1 a changé entre-temps. Vérifiez le nouvel état, puis recommencez.'),
+                    'conflict' => true,
+                ];
+            }
             if ($commanderId > 0 && !isset($allowed[$commanderId])) {
                 return [
                     'ok' => false,
                     'updated' => 0,
-                    'message' => 'Un chef choisi n’appartient pas à cette communauté.',
+                    'message' => 'Un chef choisi n’est pas un membre actif de cette communauté.',
+                    'conflict' => false,
                 ];
             }
-            $this->units->update($unitId, $tenantId, ['commander_user_id' => $next]);
-            $updated++;
+            $changes[$unitId] = $next;
         }
+        foreach ($changes as $unitId => $next) {
+            $this->units->update($unitId, $tenantId, ['commander_user_id' => $next]);
+        }
+        $updated = count($changes);
 
         return [
             'ok' => true,
@@ -256,6 +275,7 @@ final class PersonnelCommandChainService
                     ? 'Le chef d’une unité a été enregistré.'
                     : 'Les chefs de ' . $updated . ' unités ont été enregistrés.')
                 : 'Aucun changement à enregistrer.',
+            'conflict' => false,
         ];
     }
 
@@ -436,9 +456,7 @@ final class PersonnelCommandChainService
                 $missing[] = $uid;
             }
         }
-        if ($missing === []) {
-            return $labels;
-        }
+        // Tous les membres actifs, avec ou sans affectation : sinon un membre sans unité n’est ni comptable ni nommable.
         try {
             $users = $this->users->listForTenant($tenantId, null, 'active', null, null, null, true);
         } catch (\Throwable) {

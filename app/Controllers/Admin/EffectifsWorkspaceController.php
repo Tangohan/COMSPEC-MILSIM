@@ -2728,17 +2728,24 @@ class EffectifsWorkspaceController
 
     public function quickAssignment(Request $request, array $params = []): Response
     {
+        $json = self::chainWantsJson($request);
         $denied = $this->denyUnlessAccess();
         if ($denied !== null) {
-            return $denied;
+            return $json ? Response::json(['ok' => false, 'message' => 'Accès réservé au pilotage des effectifs.'], 403) : $denied;
         }
         $gate = Gate::getInstance();
         if (!EffectifsLmsAccess::canManageAssignments($gate)) {
+            if ($json) {
+                return Response::json(['ok' => false, 'message' => 'Vous n’êtes pas habilité à modifier les affectations.'], 403);
+            }
             Session::flash('error', 'Vous n’êtes pas habilité à modifier les affectations.');
 
             return Response::redirect(effectifs_workspace_url());
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            if ($json) {
+                return Response::json(['ok' => false, 'message' => 'Session expirée. Rechargez la page, puis réessayez.', 'reload' => true], 419);
+            }
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect($this->redirectBackToRoster($request));
@@ -2748,12 +2755,18 @@ class EffectifsWorkspaceController
         $unitId = (int) $request->input('unit_id', 0);
         $assignmentReason = trim((string) $request->input('reason', ''));
         if ($id < 1) {
+            if ($json) {
+                return Response::json(['ok' => false, 'message' => 'Membre introuvable.'], 404);
+            }
             Session::flash('error', 'Membre introuvable.');
 
             return Response::redirect(effectifs_workspace_url());
         }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
+            if ($json) {
+                return Response::json(['ok' => false, 'message' => 'Membre introuvable.'], 404);
+            }
             Session::flash('error', 'Membre introuvable.');
 
             return Response::redirect(effectifs_workspace_url());
@@ -2763,6 +2776,9 @@ class EffectifsWorkspaceController
         if ($unitId > 0) {
             $unit = $this->unitRepository->findById($unitId, $tenantId);
             if (!$unit) {
+                if ($json) {
+                    return Response::json(['ok' => false, 'message' => 'Unité introuvable dans cette communauté.'], 404);
+                }
                 Session::flash('error', 'Unité introuvable dans cette communauté.');
 
                 return Response::redirect($this->redirectBackToRoster($request));
@@ -2803,17 +2819,21 @@ class EffectifsWorkspaceController
             } catch (\Throwable) {
             }
         } catch (\Throwable) {
+            if ($json) {
+                return Response::json(['ok' => false, 'message' => 'Impossible d’enregistrer l’affectation. Réessayez ou ouvrez le dossier personnel.'], 500);
+            }
             Session::flash('error', 'Impossible d’enregistrer l’affectation. Réessayez ou ouvrez le dossier personnel.');
 
             return Response::redirect($this->redirectBackToRoster($request));
         }
 
-        Session::flash(
-            'success',
-            $unitId > 0
-                ? ('Affectation enregistrée' . ($unitName !== '' ? ' : ' . $unitName : '') . '.')
-                : 'Affectation retirée.'
-        );
+        $doneMessage = $unitId > 0
+            ? ('Affectation enregistrée' . ($unitName !== '' ? ' : ' . $unitName : '') . '.')
+            : 'Affectation retirée.';
+        if ($json) {
+            return Response::json(['ok' => true, 'message' => $doneMessage]);
+        }
+        Session::flash('success', $doneMessage);
 
         $returnMember = $request->input('return_to') === 'member';
 
@@ -3783,11 +3803,35 @@ class EffectifsWorkspaceController
 
     public function commandChain(Request $request, array $params = []): Response
     {
+        $json = self::chainWantsJson($request);
         $denied = $this->denyUnlessAccess();
         if ($denied !== null) {
-            return $denied;
+            return $json ? Response::json(['ok' => false, 'message' => 'Accès réservé au pilotage des effectifs.'], 403) : $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
+        $vars = $this->commandChainViewData($request, $tenantId);
+
+        // Rafraîchissement de la page sans rechargement : uniquement la zone vivante, mêmes droits que la page.
+        if ($json && $request->queryString('fragment') === '1') {
+            $html = Response::view('admin.effectifs_workspace.chaine', $vars + ['chainFragment' => true])->body();
+            if (function_exists('locale') && locale() === 'en') {
+                $html = \App\Support\HtmlTranslator::translate($html);
+            }
+
+            return Response::json(['ok' => true, 'html' => $html, 'missing' => (int) $vars['chainMissingCommanders']]);
+        }
+
+        return $this->shell('admin.effectifs_workspace.chaine', $vars + [
+            'title' => 'Chaîne de commandement',
+            'effectifsNav' => 'chaine',
+            'commandChainMissingCount' => $vars['chainMissingCommanders'],
+            'rosterCounts' => $this->rosterCounts($tenantId),
+        ]);
+    }
+
+    /** @return array<string, mixed> variables de la vue, pour la communauté de la session uniquement */
+    private function commandChainViewData(Request $request, int $tenantId): array
+    {
         $gate = Gate::getInstance();
         $data = (new PersonnelCommandChainService(
             $this->unitRepository,
@@ -3804,10 +3848,13 @@ class EffectifsWorkspaceController
         } catch (\Throwable) {
             $adequacy = null;
         }
+        try {
+            $activeIds = $this->userRepository->listActiveUserIdsForTenant($tenantId);
+        } catch (\Throwable) {
+            $activeIds = [];
+        }
 
-        return $this->shell('admin.effectifs_workspace.chaine', [
-            'title' => 'Chaîne de commandement',
-            'effectifsNav' => 'chaine',
+        return [
             'chainAdequacy' => $adequacy,
             'adequacyOnlyGaps' => $request->query('ecarts') === '1',
             'chainUnits' => $data['units'],
@@ -3816,39 +3863,49 @@ class EffectifsWorkspaceController
             'chainMissingCommanders' => $data['missing_commanders'],
             'chainMissingSuperiors' => $data['missing_superiors'],
             'chainWithoutUnit' => $data['without_unit'],
-            'commandChainMissingCount' => $data['missing_commanders'],
+            'chainActiveIds' => array_values(array_map('intval', $activeIds)),
+            'chainAdvice' => \App\Services\Effectifs\CommandChainAdvisor::analyze($data['units'], $data['members'], $adequacy, $activeIds),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
             'csrfToken' => Csrf::token(),
-            'rosterCounts' => $this->rosterCounts($tenantId),
-        ]);
+        ];
     }
 
     public function saveCommandChain(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
         if ($denied !== null) {
-            return $denied;
+            return self::chainWantsJson($request) ? Response::json(['ok' => false, 'message' => 'Accès réservé au pilotage des effectifs.'], 403) : $denied;
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Rechargez la page, puis enregistrez de nouveau.');
-
-            return Response::redirect(effectifs_workspace_url('chaine'));
+            return $this->commandChainReply($request, false, 'Session expirée. Rechargez la page, puis enregistrez de nouveau.', 419, ['reload' => true]);
         }
         $gate = Gate::getInstance();
         if (!EffectifsLmsAccess::canManageAssignments($gate)) {
-            Session::flash('error', 'Vous n’êtes pas habilité à désigner les chefs d’unité.');
-
-            return Response::redirect(effectifs_workspace_url('chaine'));
+            return $this->commandChainReply($request, false, 'Vous n’êtes pas habilité à désigner les chefs d’unité.', 403);
         }
         $tenantId = (int) Session::get('tenant_id');
         $raw = $request->input('commanders', []);
         $commanders = is_array($raw) ? $raw : [];
-        $allowed = $this->userRepository->listActiveUserIdsForTenant($tenantId);
-        $result = (new PersonnelCommandChainService(
-            $this->unitRepository,
-            $this->userRepository,
-            $this->personnelAssignmentRepository
-        ))->saveCommanders($tenantId, $commanders, $allowed);
+        $rawExpected = $request->input('expected_commanders', []);
+        $expected = is_array($rawExpected) ? $rawExpected : [];
+        $pdo = Database::getPdo();
+        try {
+            $allowed = $this->userRepository->listActiveUserIdsForTenant($tenantId);
+            // Plusieurs chefs d’un coup : tout ou rien, pour ne jamais annoncer un échec après une écriture partielle.
+            $pdo->beginTransaction();
+            $result = (new PersonnelCommandChainService(
+                $this->unitRepository,
+                $this->userRepository,
+                $this->personnelAssignmentRepository
+            ))->saveCommanders($tenantId, $commanders, $allowed, $expected);
+            $pdo->commit();
+        } catch (\Throwable) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            return $this->commandChainReply($request, false, 'L’enregistrement des chefs a échoué : rien n’a été modifié. Réessayez dans un instant.', 500);
+        }
         if ($result['ok']) {
             try {
                 $this->tenantRepository->updateSettings($tenantId, [
@@ -3859,9 +3916,33 @@ class EffectifsWorkspaceController
             } catch (\Throwable) {
             }
         }
-        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return $this->commandChainReply($request, $result['ok'], $result['message'], $result['ok'] ? 200 : ($result['conflict'] ? 409 : 422), [
+            'updated' => $result['updated'],
+            'conflict' => $result['conflict'],
+        ]);
+    }
+
+    /**
+     * Réponse d’une écriture de la chaîne : JSON pour un envoi en arrière-plan, sinon message et retour à la page
+     * (repli sans JavaScript).
+     *
+     * @param array<string, mixed> $extra
+     */
+    private function commandChainReply(Request $request, bool $ok, string $message, int $status, array $extra = []): Response
+    {
+        if (self::chainWantsJson($request)) {
+            return Response::json(['ok' => $ok, 'message' => $message] + $extra, $status);
+        }
+        Session::flash($ok ? 'success' : 'error', $message);
 
         return Response::redirect(effectifs_workspace_url('chaine'));
+    }
+
+    private static function chainWantsJson(Request $request): bool
+    {
+        return str_contains(strtolower((string) $request->header('Accept')), 'application/json')
+            || strtolower((string) $request->header('X-Requested-With')) === 'xmlhttprequest';
     }
 
     /**
