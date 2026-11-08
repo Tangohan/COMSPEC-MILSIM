@@ -231,7 +231,11 @@
     var auth = n.strengthTheoretical || n.billetAuthorized || 0;
     var filled = n.strengthFilled != null ? n.strengthFilled : (n.billetFilled || 0);
     if (r === null && auth > 0) r = Math.round(filled / auth * 100);
-    return { pax: n.strength || 0, auth: auth, filled: filled, r: r };
+    /* Effectif de l'unité et de tout ce qui lui est rattaché : la disponibilité est calculée sur cet ensemble,
+       l'afficher à côté d'un effectif « direct » donnait « 0 pax » avec un pourcentage. */
+    var pax = n.strength || 0;
+    if (n.unitId > 0) descendants(n).forEach(function (c) { if (c.unitId > 0 && shown(c)) pax += c.strength || 0; });
+    return { pax: pax, auth: auth, filled: filled, r: r };
   }
   function cardInner(n, opt) {
     opt = opt || {};
@@ -545,7 +549,7 @@
     var n = S.sel ? node(S.sel) : null;
     dr.classList.toggle('on', !!n);
     dr.setAttribute('aria-hidden', n ? 'false' : 'true');
-    if (!n) { dr.innerHTML = ''; return; }
+    if (!n) { dr.innerHTML = ''; dr._sig = null; return; }
     var sig = sigOf(n) + S.ms + S.ver;
     if (dr._sig === sig) return;
     dr._sig = sig;
@@ -1108,7 +1112,7 @@
   function adminStatuses() { return (S.opts && S.opts.adminStatuses) || STATUS_IDS.map(function (id) { return { id: id, label: statusLabel(id) }; }); }
 
   /* ---- édition d’une unité (onglets) ---- */
-  var TABS = ['identity', 'symbol', 'status', 'posts', 'public', 'media'];
+  var TABS = ['identity', 'symbol', 'status', 'posts', 'public', 'media', 'history'];
   var EDIT_FIELDS = ['name', 'code', 'struct_type', 'orbat_type', 'accent_color', 'motto', 'orbat_details', 'admin_status', 'admin_status_note',
     'visibility_level', 'commander_user_id', 'show_on_public_page', 'public_blurb', 'public_founded_on', 'public_custom_date', 'public_custom_date_label'];
 
@@ -1245,6 +1249,10 @@
         fl(esc(t('f_custom_date')), '<input class="orb-in" type="date" data-f="public_custom_date" value="' + esc(d.public_custom_date) + '">') +
         fl(esc(t('f_custom_date_label')), '<input class="orb-in" data-f="public_custom_date_label" maxlength="80" value="' + esc(d.public_custom_date_label) + '" placeholder="' + esc(t('f_custom_date_ph')) + '">', '', true) + '</div>';
     }
+    if (E.tab === 'history') {
+      if (!E.hist) loadHistory(E);
+      return '<div class="orb-fs"><h3>' + esc(t('tab_history')) + '</h3><p>' + esc(t('history_d')) + '</p></div>' + historyHtml(E);
+    }
     return '<div class="orb-fs"><h3>' + esc(t('f_media')) + '</h3><p>' + esc(t('f_media_d')) + '</p></div><div class="orb-fg">' +
       ['icon', 'image'].map(function (slot) {
         var url = slot === 'icon' ? n.chartIconUrl : n.chartImageUrl;
@@ -1252,6 +1260,26 @@
           '<label class="orb-btn"><input type="file" hidden data-upload="' + slot + '" accept="' + (slot === 'icon' ? '.png,.ico,.jpg,.jpeg,image/png,image/x-icon,image/jpeg' : '.png,.jpg,.jpeg,image/png,image/jpeg') + '">' + esc(t('f_choose_file')) + '</label>' +
           (url ? '<button type="button" class="orb-btn orb-btn--dng" data-clear="' + slot + '">' + esc(t('f_remove')) + '</button>' : '') + '</div>');
       }).join('') + '</div>';
+  }
+  function historyHtml(E) {
+    if (E.hist === 'error') return '<p class="orb-muted">' + esc(t('history_error')) + '</p>';
+    if (!E.hist) return '<p class="orb-muted">' + esc(t('history_loading')) + '</p>';
+    if (!E.hist.length) return '<p class="orb-muted">' + esc(t('history_empty')) + '</p>';
+    return '<ul class="orb-hist">' + E.hist.map(function (r) {
+      var label = L['hf_' + r.field] != null ? t('hf_' + r.field) : r.field;
+      var shown = function (v) { return r.field === 'status' ? statusLabel(v) : v; };
+      var line = r.old ? t('history_line', { field: label, old: shown(r.old), new: shown(r.new) }) : t('history_line_new', { field: label, new: shown(r.new) });
+      return '<li><span>' + esc(line) + '</span><small>' + esc(r.at) + (r.by ? ' · ' + esc(t('history_by', { name: r.by })) : '') + '</small></li>';
+    }).join('') + '</ul>';
+  }
+  function loadHistory(E) {
+    E.hist = null;
+    post(api('/api/orbat/structure'), { action: 'unit_history', unit_id: E.unitId }).then(function (j) {
+      E.hist = j.history || [];
+    }, function () { E.hist = 'error'; }).then(function () {
+      var body = $('#orb-mbd');
+      if (body && E.tab === 'history') body.innerHTML = editBody(E);
+    });
   }
   function editSymbolSidc(E) {
     var n = nodeOfUnit(E.unitId);
@@ -1302,10 +1330,11 @@
     delete diff.parent;
     if (diff.name !== undefined) diff.name = diff.name.trim();
     closeModal(true);
-    var jobs = [];
-    if (Object.keys(diff).length) jobs.push(patchUnit(E.unitId, diff).catch(function () {}));
-    if (parent !== undefined) jobs.push(moveUnit(E.unitId, parseInt(parent, 10) || 0).catch(function () {}));
-    if (!jobs.length) toast(t('no_change'));
+    var hasPatch = Object.keys(diff).length > 0;
+    if (!hasPatch && parent === undefined) { toast(t('no_change')); return; }
+    /* En série : deux réponses parallèles portent chacune l'organigramme complet, la plus lente écraserait l'autre. */
+    var chain = hasPatch ? patchUnit(E.unitId, diff).then(function () { return true; }, function () { return false; }) : Promise.resolve(true);
+    if (parent !== undefined) chain.then(function (ok) { if (ok) moveUnit(E.unitId, parseInt(parent, 10) || 0).catch(function () {}); });
   }
   function editClick(E, e) {
     var tg = e.target;
