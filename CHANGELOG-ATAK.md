@@ -40,7 +40,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ## Écran de verrouillage et code, fonds d'écran du site, Bloc-notes, Bluetooth, onglets lisibles, dégâts variés (version attribuée à la publication)
 
-### Texte prévu pour le résumé joueur (titre à rétablir en « Résumé joueur » avec le numéro de version)
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : Nouvel écran de verrouillage, code du téléphone et fonds d'écran du site
 - L'écran de verrouillage est refait : fond d'écran visible, notifications lisibles en entier et défilantes, grand bouton DÉVERROUILLER, raccourcis CARTE et MESSAGES.
@@ -64,7 +64,7 @@ EN : New lock screen, phone code and wallpapers from the website
 - Test : `tests/Unit/AtakLockscreenUiAssetTest.php`, contrastes calculés depuis `fn_theme`.
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
-### Résumé joueur
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : App Explosifs refaite et nouveau déclencheur réseau
 - Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.
