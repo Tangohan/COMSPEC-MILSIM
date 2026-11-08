@@ -21,6 +21,12 @@ if ((count _e) isEqualTo 0) exitWith { false };
 // Couleurs du thème (fn_theme) : mêmes jetons que fn_formRender.
 private _th = [] call comspec_atak_native_fnc_theme;
 private _acc = _th get "accent";
+// Fond d'un bouton : sa face s'il en a une (COMSPEC_RscButtonFlat), lui-même sinon (Rsc d'autres pages).
+private _bg = {
+    params ["_b", "_col"];
+    private _f = _b getVariable ["face", controlNull];
+    if (isNull _f) then { _b ctrlSetBackgroundColor _col; } else { _f ctrlSetBackgroundColor _col; };
+};
 switch (_e get "kind") do {
     case "switch": {
         private _pill = _e get "pill";
@@ -65,7 +71,7 @@ switch (_e get "kind") do {
             if (!isNull _b) then {
                 _shown = true;
                 private _on = _val isEqualTo _v;
-                _b ctrlSetBackgroundColor ([(_th get "surface2"), _acc] select _on);
+                [_b, [(_th get "surface2"), _acc] select _on] call _bg;
                 _b ctrlSetTextColor ([(_th get "text"), (_th get "onAccent")] select _on);
             };
         } forEach (_e get "btns");
@@ -82,7 +88,7 @@ switch (_e get "kind") do {
         private _t = _e get "text";
         if (isNull _t) exitWith { false };
         if (_v isEqualTo []) exitWith {
-            { if (!isNull _x) then { _x ctrlShow false; }; } forEach ([_t, _e get "pic", _e getOrDefault ["bg", controlNull]] + (_e get "btns"));
+            { if (!isNull _x) then { _x ctrlShow false; (_x getVariable ["face", controlNull]) ctrlShow false; }; } forEach ([_t, _e get "pic", _e getOrDefault ["bg", controlNull]] + (_e get "btns"));
             true
         };
         _v params ["_txt", ["_col", [1, 1, 1, 1]], ["_set", []]];
@@ -91,9 +97,10 @@ switch (_e get "kind") do {
             private _b = (_e get "btns") param [_forEachIndex, controlNull];
             if (isNull _b) then { continue };
             _b ctrlShow _vis;
+            (_b getVariable ["face", controlNull]) ctrlShow _vis;
             if (_lbl isNotEqualTo "") then { _b ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr); };
             _b ctrlEnable _en;
-            _b ctrlSetBackgroundColor ([(_th get "surface2"), _acc] select _pri);
+            [_b, [(_th get "surface2"), _acc] select _pri] call _bg;
             _b ctrlSetTextColor ([[(_th get "off"), (_th get "text")] select _en, (_th get "onAccent")] select _pri);
         } forEach _set;
         _t ctrlSetStructuredText parseText ((_txt) call comspec_atak_native_fnc_tr);
@@ -110,9 +117,9 @@ switch (_e get "kind") do {
         if (_enable isEqualType true) then { _e set ["en", _enable]; _b ctrlEnable _enable; };
         private _en = _e get "en";
         switch (_state) do {
-            case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-            case "red": { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };
-            default { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _en); };
+            case "on": { [_b, _th get "ok"] call _bg; _b ctrlSetTextColor (_th get "onAccent"); };
+            case "red": { [_b, _th get "alert"] call _bg; _b ctrlSetTextColor [1, 1, 1, 1]; };
+            default { [_b, _th get "surface2"] call _bg; _b ctrlSetTextColor ([_th get "off", _th get "text"] select _en); };
         };
         true
     };
@@ -122,15 +129,15 @@ switch (_e get "kind") do {
         {
             if (isNull _x) then { continue };
             _shown = true;
-            if (!_each) then { _x ctrlShow _v; continue };
+            if (!_each) then { _x ctrlShow _v; (_x getVariable ["face", controlNull]) ctrlShow _v; continue };
             (_v param [_forEachIndex, []]) params [["_lbl", ""], ["_en", true], ["_style", ""], ["_tip", ""]];
             if (_lbl isNotEqualTo "") then { _x ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr); };
             if (_tip isNotEqualTo "") then { _x ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
             _x ctrlEnable _en;
             switch (_style) do {
-                case "red": { _x ctrlSetBackgroundColor (_th get "alert"); _x ctrlSetTextColor [1, 1, 1, 1]; };
-                case "main": { _x ctrlSetBackgroundColor _acc; _x ctrlSetTextColor (_th get "onAccent"); };
-                default { _x ctrlSetBackgroundColor (_th get "surface2"); _x ctrlSetTextColor ([(_th get "off"), (_th get "text")] select _en); };
+                case "red": { [_x, _th get "alert"] call _bg; _x ctrlSetTextColor [1, 1, 1, 1]; };
+                case "main": { [_x, _acc] call _bg; _x ctrlSetTextColor (_th get "onAccent"); };
+                default { [_x, _th get "surface2"] call _bg; _x ctrlSetTextColor ([(_th get "off"), (_th get "text")] select _en); };
             };
         } forEach (_e get "btns");
         _shown

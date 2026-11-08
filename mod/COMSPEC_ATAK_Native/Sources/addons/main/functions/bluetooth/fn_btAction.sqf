@@ -54,6 +54,12 @@ private _now = [time, serverTime] select isMultiplayer;
 private _range = missionNamespace getVariable ["comspec_atak_native_bt_range", 15];
 private _nfcRange = missionNamespace getVariable ["comspec_atak_native_bt_nfc_range", 2];
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 30] call comspec_atak_native_fnc_notify; };
+// Progression d'un transfert : la ligne change sur place (fn_formSet) ; sinon (ligne absente), la page est redessinée.
+private _xferShow = {
+    params ["_id", "_t"];
+    private _done = ["btx_" + _id, [[_t] call (uiNamespace getVariable ["COMSPEC_ATAK_BtXferTxt", { "" }]), [1, 1, 1, 1], []]] call comspec_atak_native_fnc_formSet;
+    !_done
+};
 private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { ["BLUETOOTH"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _usable = { (_bt get "on") && {([] call comspec_atak_native_fnc_canUse) isEqualTo ""} };
 private _byUid = {
@@ -125,6 +131,33 @@ private _drop = {
 
 switch (_act) do {
     case "state": { _bt };
+    // Téléphones allumés à portée, appairés ou non : [uid, nom, distance arrondie, type, appairé].
+    case "near": {
+        private _me = player;
+        private _pairs = _bt get "paired";
+        ((allPlayers select { _x isNotEqualTo _me && {_x getVariable ["COMSPEC_ATAK_BtOn", false]} && {(_x distance _me) <= _range} }) apply {
+            private _uid = getPlayerUID _x;
+            [_uid, name _x, round (_x distance _me), ([_x] call comspec_atak_native_fnc_phoneCarried) param [2, ""], _uid in _pairs]
+        })
+    };
+    // Toutes les 3 s, app ouverte (fn_statusUpdate) : distances changées sur place ; page redessinée seulement si un
+    // appareil apparaît ou disparaît, et jamais pendant la saisie d'un code.
+    case "scan": {
+        if (diag_tickTime < (_ui getOrDefault ["scanAt", 0])) exitWith {};
+        _ui set ["scanAt", diag_tickTime + 3];
+        if !(call _usable) exitWith {};
+        private _near = ["near"] call comspec_atak_native_fnc_btAction;
+        private _sig = (_near apply { _x select 0 }) + ((keys (_bt get "paired")));
+        _sig sort true;
+        if (_sig isNotEqualTo (_ui getOrDefault ["scanSig", []])) exitWith {
+            _ui set ["scanSig", _sig];
+            private _typing = (["btCode", ""] call comspec_atak_native_fnc_formValue) isNotEqualTo "" || {(["btSearch", ""] call comspec_atak_native_fnc_formValue) isNotEqualTo ""};
+            if (!_typing) then { call _rerender; };
+        };
+        { _x params ["_uid", "_name", "_dist", "_type", "_paired"];
+            if (!_paired) then { ["btn_" + _uid, [[_name, _dist, _type] call (uiNamespace getVariable ["COMSPEC_ATAK_BtNearTxt", { "" }]), [1, 1, 1, 1], []]] call comspec_atak_native_fnc_formSet; };
+        } forEach _near;
+    };
     case "on": { call _usable };
     case "publish": {
         call _publish;
@@ -408,7 +441,7 @@ switch (_act) do {
             _n = _n + (count _batch);
             _t set ["done", _n];
             private _pct = floor (100 * _n / (_total max 1));
-            if (_pct >= ((_t getOrDefault ["shown", 0]) + 10) || {_n >= _total}) then { _t set ["shown", _pct]; [_id, format ["%1 %2", _pct, "%"]] call _sentSet; _redraw = true; };
+            if (_pct >= ((_t getOrDefault ["shown", 0]) + 10) || {_n >= _total}) then { _t set ["shown", _pct]; [_id, format ["%1 %2", _pct, "%"]] call _sentSet; if ([_id, _t] call _xferShow) then { _redraw = true; }; };
             if (_n >= _total) then {
                 [_u, "fend", [_id]] call _event;
                 [_id, "VÉRIFICATION"] call _sentSet;
@@ -525,7 +558,7 @@ switch (_act) do {
                 private _n = _first + (count _parts);
                 _t set ["done", _n]; _t set ["last", _now];
                 private _pct = floor (100 * _n / ((_t get "total") max 1));
-                if (_pct >= ((_t getOrDefault ["shown", 0]) + 10)) then { _t set ["shown", _pct]; call _rerender; };
+                if (_pct >= ((_t getOrDefault ["shown", 0]) + 10)) then { _t set ["shown", _pct]; if ([_id, _t] call _xferShow) then { call _rerender; }; };
             };
             case "fend": {
                 _a params [["_id", ""]];

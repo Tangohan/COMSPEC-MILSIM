@@ -1022,8 +1022,7 @@ def repair_kit_item(size=256):
 
 def power_assets(tmp):
     """Démarrage (boot_<port|land>), batterie vide (power_bat_empty) et item batterie (item_battery)."""
-    convert(boot_screen(512, 1024).convert("RGB"), "boot_port", tmp)
-    convert(boot_screen(1024, 512).convert("RGB"), "boot_land", tmp)
+    # boot_port et boot_land : tools/gen_lock_assets.py (logo du site).
     convert(battery_empty_icon(), "power_bat_empty", tmp)
     convert(battery_item(), "item_battery", tmp)
     convert(repair_kit_item(), "item_repairkit", tmp)

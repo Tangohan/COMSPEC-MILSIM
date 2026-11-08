@@ -21,7 +21,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ProfToggle", {
     // Les autres (mise en page, étiquettes de la carte, fond) gardent le redessin.
     if (_var in ["COMSPEC_ATAK_Animations", "COMSPEC_ATAK_PageFx", "COMSPEC_ATAK_OpenSplash", "COMSPEC_ATAK_TitleSlide", "COMSPEC_ATAK_PressFx",
         "COMSPEC_ATAK_TapFeedback", "COMSPEC_ATAK_Notifications", "COMSPEC_ATAK_Toasts", "COMSPEC_ATAK_Vibrate", "COMSPEC_ATAK_BftAlerts",
-        "COMSPEC_ATAK_Silent", "COMSPEC_ATAK_LauncherSearch", "COMSPEC_ATAK_LockScreen", "COMSPEC_ATAK_DirtFx"]
+        "COMSPEC_ATAK_Silent", "COMSPEC_ATAK_LauncherSearch", "COMSPEC_ATAK_LockScreen", "COMSPEC_ATAK_PinAsk", "COMSPEC_ATAK_DirtFx"]
         && {["set_" + _var, _new] call comspec_atak_native_fnc_formSet}) exitWith {};
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
@@ -161,6 +161,8 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ]],
     ["COMSPEC_ATAK_Wallpaper", "topo", "Fond d'écran de l'accueil", [["TOPO", "topo"], ["NUIT", "night"], ["DÉSERT", "desert"], ["OLIVE", "olive"], ["SOMBRE", "dark"]]] call _profSegment,
     ["COMSPEC_ATAK_Wallpaper", "topo", "", [["SOAR", "soar"], ["ATHENA", "athena"], ["OPS", "ops"], ["AUCUN", "none"]]] call _profSegment,
+    // Images du site (logo Athena, bannières), embarquées dans items.pbo (fn_wallPath, tools/gen_lock_assets.py).
+    ["COMSPEC_ATAK_Wallpaper", "topo", "", [["AIGLE", "eagle"], ["LOGO", "logo"], ["ATAK", "atak"], ["SSE", "sse"], ["BASE SOF", "sof"]], "Aussi sur l'écran de verrouillage"] call _profSegment,
     ["COMSPEC_ATAK_WallBlur", false, "", "Flou du fond", "Fond d'écran flou et assombri, pour mieux lire les icônes"] call _profSwitch,
     ["COMSPEC_ATAK_TextScale", 1, "Taille du texte", [["PETIT", 0.9], ["NORMAL", 1], ["GRAND", 1.15], ["TRÈS GRAND", 1.3]]] call _profSegment,
     // Police : réglage CBA comspec_atak_native_font (aussi dans Options des addons > COMSPEC).
@@ -175,13 +177,19 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["section", "Verrouillage et sécurité", "Si vous êtes capturé, l'ennemi peut brancher un câble DL-7 sur votre téléphone. Le code le protège : 3 essais, puis tout est effacé (un code peut être cassé en 2 min). Ce code est une mécanique de jeu : n'y mettez jamais un vrai code. Il protège aussi la lecture de votre téléphone par celui qui le ramasse."],
     ["COMSPEC_ATAK_LockScreen", true, "", "Écran de verrouillage", "Heure, date et dernières notifications, quand vous sortez le téléphone la première fois, après une minute rangé ou après un redémarrage"] call _profSwitch,
     ["COMSPEC_ATAK_LockClockStyle", "light", "Heure de l'écran de verrouillage", [["FINE", "light"], ["GRASSE", "bold"], ["MILITAIRE", "mil"]], "MILITAIRE : chiffres façon afficheur, dans la couleur d'accent"] call _profSegment,
-    ["edit", "lockCode", "Code de verrouillage : 4 à 8 chiffres (vide = aucun)", profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]],
-    ["edit", "lockHint", "Indice du code (facultatif, 40 caractères)", profileNamespace getVariable ["COMSPEC_ATAK_LockHint", ""]],
-    ["COMSPEC_ATAK_PinAsk", false, "", "Demander le code au déverrouillage", "Sur l'écran de verrouillage, en main. Code oublié : CODE OUBLIÉ le retire après 5 min, un admin ou un Zeus le retire tout de suite"] call _profSwitch,
-    ["buttons", [["ENREGISTRER LE CODE", {
-        ["setPin", [["lockCode"] call comspec_atak_native_fnc_formValue, ["lockHint"] call comspec_atak_native_fnc_formValue]] call comspec_atak_native_fnc_phoneOwn;
-        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
-    }], [["EFFACEMENT D'URGENCE", "CONFIRMER L'EFFACEMENT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5), {
+    // Le code se choisit au clavier du téléphone, jamais affiché (fn_phoneOwn « pinSetup »). Aucun code par défaut.
+    ["info", "Code du téléphone", [["Aucun", "Ancien code en lettres : remplacez-le"] select (((profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]) isEqualType "") && {(profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]) isNotEqualTo ""}), "Réglé"] select (["hasPin"] call comspec_atak_native_fnc_phoneOwn)],
+    ["buttons", [
+        [["DÉFINIR LE CODE", "CHANGER LE CODE"] select (["hasPin"] call comspec_atak_native_fnc_phoneOwn), { ["pinSetup", "set"] call comspec_atak_native_fnc_phoneOwn; }, !(["hasPin"] call comspec_atak_native_fnc_phoneOwn), true, "4 à 8 chiffres, demandés sur l'écran de verrouillage"],
+        ["RETIRER LE CODE", { ["pinSetup", "remove"] call comspec_atak_native_fnc_phoneOwn; }, false, ["hasPin"] call comspec_atak_native_fnc_phoneOwn, "Le code actuel est demandé d'abord"]
+    ]],
+    ["field", "lockHint", "Indice du code (facultatif, 40 caractères)", profileNamespace getVariable ["COMSPEC_ATAK_LockHint", ""], "ENREGISTRER", { ["setHint", ["lockHint"] call comspec_atak_native_fnc_formValue] call comspec_atak_native_fnc_phoneOwn; }],
+    ["switch", "Demander le code au déverrouillage", (profileNamespace getVariable ["COMSPEC_ATAK_PinAsk", false]) isEqualTo true, {
+        // Sans code : le réglage ne ferait rien en silence ; on le fait choisir tout de suite.
+        if !(["hasPin"] call comspec_atak_native_fnc_phoneOwn) exitWith { ["pinSetup", "set"] call comspec_atak_native_fnc_phoneOwn; };
+        ["COMSPEC_ATAK_PinAsk", false] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle");
+    }, "Sur l'écran de verrouillage, en main. Code oublié : CODE OUBLIÉ le retire après 5 min, un admin ou un Zeus le retire tout de suite", false, "set_COMSPEC_ATAK_PinAsk"],
+    ["buttons", [[["EFFACEMENT D'URGENCE", "CONFIRMER L'EFFACEMENT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5), {
         // Deux appuis en moins de 5 s : rien ne s'efface par erreur.
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5) then {
             uiNamespace setVariable ["COMSPEC_ATAK_WipeArm", -10];
@@ -197,7 +205,7 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages", "Les pages arrivent en fondu (sans flash sombre). Désactivé : changement de page immédiat, et les deux réglages suivants sont sans effet"] call _profSwitch,
     ["COMSPEC_ATAK_OpenSplash", true, "", "Ouverture depuis l'icône", "L'icône de l'app grandit vers le centre de l'écran à l'ouverture (icônes réalistes)"] call _profSwitch,
     ["COMSPEC_ATAK_TitleSlide", true, "", "Titre qui glisse", "Le titre de l'app arrive de la droite à l'ouverture et de la gauche au retour"] call _profSwitch,
-    ["COMSPEC_ATAK_CrackFx", true, "", "Fêlures détaillées", "Écran abîmé : motifs de fêlures et de bris, différents à chaque choc (coin écrasé, balle, toile, éclats…). Désactivé : seules les textures simples restent"] call _profSwitch,
+    ["COMSPEC_ATAK_CrackFx", true, "", "Fêlures détaillées", "Écran abîmé : motifs de fêlures, de bris et de dalle (lignes, encre, pixels morts), selon la cause, différents à chaque choc. Désactivé : seules les textures simples restent"] call _profSwitch,
     ["COMSPEC_ATAK_PressFx", true, "", "Icône qui s'enfonce à l'appui", "L'icône d'une app s'enfonce légèrement sous le doigt"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Petit clic et légère vibration à chaque appui (sans son en mode discrétion)"] call _profSwitch,
     ["COMSPEC_ATAK_HandHint", true, "", "Rappel « prendre en main » quand le téléphone est porté", "Petite icône de main et Ctrl+Maj+U dans la barre du téléphone porté. Désactivé : écran sans indication, plus immersif"] call _profSwitch,

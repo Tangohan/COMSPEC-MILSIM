@@ -38,7 +38,13 @@ private _mura = _hasLook && {_lvl >= 1} && {(_seed mod 2) isEqualTo 0};
 private _back = _hasLook && {_dmg >= 0.5} && {(floor (_seed / 2) mod 2) isEqualTo 0};
 private _bands = [0, [1, 2] select (_pix >= 0.85)] select (_pix >= 0.6 && {!_dead});
 private _jamOn = _jam > 0.05;
-private _sig = str [_bleed, _lvl, _mura, _back, _bands, _jamOn, _seed, _rect, _ori];
+// Calques de dégâts (tirés par fn_deviceDamage selon la cause) ; Réglages > « Fêlures détaillées » les coupe. App Debug,
+// onglet DÉGÂTS : aperçu sans abîmer le téléphone (COMSPEC_ATAK_DmgPreview), seulement tant que Debug est ouverte.
+private _preview = if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DEBUG") then { uiNamespace getVariable ["COMSPEC_ATAK_DmgPreview", []] } else { [] };
+private _layers = if (_preview isNotEqualTo []) then { _preview } else {
+    if (_dead || {!(profileNamespace getVariable ["COMSPEC_ATAK_CrackFx", true])}) then { [] } else { (missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["fx", []] }
+};
+private _sig = str [_bleed, _lvl, _mura, _back, _bands, _jamOn, _seed, _rect, _ori, _layers];
 (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) params ["_oldSig", "_ctrls"];
 if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}) then {
     { ctrlDelete (_x select 1); } forEach _ctrls;
@@ -84,6 +90,35 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
             ["band", format ["fx_band_%1", _i mod 2] call _tex, _rx + (_rw - _bh / _ratio) / 2, _cy - _rw * _ratio / 2, _bh / _ratio, _rw * _ratio, 90] call _pic;
         };
     };
+    {
+        _x params ["_nm", "_v"];
+        private _dmgTex = format ["\z\comspec_atak_native\addons\items\data\dmg\%1_%2_%3.paa", _nm, _v, _ori];
+        switch (_nm) do {
+            // Teinte de dalle : voile de couleur très léger.
+            case "tint": {
+                private _c = ["COMSPEC_RscText", _rect, "", false] call comspec_atak_native_fnc_pageCtrl;
+                _c ctrlEnable false;
+                _c ctrlSetBackgroundColor ([[0.1, 0.8, 0.9, 0.07], [0.9, 0.1, 0.7, 0.07], [0.95, 0.75, 0.2, 0.08]] select (_v min 2));
+                _ctrls pushBack ["dtint", _c];
+            };
+            // Scintillement discret : voile sombre, moins de 12 %, une variation lente par seconde (rien de photosensible).
+            case "flicker": {
+                private _c = ["COMSPEC_RscText", _rect, "", false] call comspec_atak_native_fnc_pageCtrl;
+                _c ctrlEnable false;
+                _c ctrlSetBackgroundColor [0, 0, 0, 0.12];
+                _ctrls pushBack ["dflick", _c];
+            };
+            // Tremblement : lignes de couleur qui glissent d'un ou deux pixels, à la seconde.
+            case "shake": { ["dshake", format ["\z\comspec_atak_native\addons\items\data\dmg\l_hlines_%1_%2.paa", _v, _ori], _rx, _ry, _rw, _rh] call _pic; };
+            default { [["dmgL", "dmgG"] select ((_nm select [0, 1]) isEqualTo "g"), _dmgTex, _rx, _ry, _rw, _rh] call _pic; };
+        };
+        // Encre : la zone noircie ne réagit plus (fêlé 2 et plus ; même rectangle que tools/gen_damage_fx.py).
+        if (_nm isEqualTo "l_ink" && {_preview isEqualTo []} && {_lvl >= 2}) then {
+            ([[0.62, 0.06, 0.38, 0.2], [0, 0.62, 0.36, 0.2], [0.28, 0.82, 0.44, 0.18]] select (_v min 2)) params ["_fx", "_fy", "_fw", "_fh"];
+            if (_ori isEqualTo "land") then { private _t = _fx; _fx = 1 - _fy - _fh; _fy = _t; _t = _fw; _fw = _fh; _fh = _t; };
+            _ctrls pushBack ["dzone", ["COMSPEC_RscButtonInvisible", [_rx + _rw * _fx, _ry + _rh * _fy, _rw * _fw, _rh * _fh], "", false] call comspec_atak_native_fnc_pageCtrl];
+        };
+    } forEach _layers;
     if (_jamOn) then {
         ["emi", "fx_emi_0" call _tex, _rx, _ry, _rw, _rh] call _pic;
         // Barre de ronflement : bande claire qui descend lentement (fréquence du brouilleur battant avec l'écran).
@@ -101,6 +136,14 @@ _rect params ["_rx", "_ry", "_rw", "_rh"];
         case "mura": { _c ctrlSetTextColor [1, 1, 1, [0.35, 0.55, 0.75] select ((_lvl - 1) max 0 min 2)]; };
         case "bleed": { _c ctrlSetTextColor [1, 1, 1, [0.85, 0.97] select (_lvl >= 3)]; };
         case "band": { _c ctrlSetTextColor [1, 1, 1, 0.6 + 0.35 * random 1]; };
+        case "dmgG": { _c ctrlSetTextColor [1, 1, 1, 0.8]; };
+        case "dmgL": { _c ctrlSetTextColor [1, 1, 1, 0.85]; };
+        case "dflick": { _c ctrlSetFade (random 1); _c ctrlCommit 1; };
+        case "dshake": {
+            _c ctrlSetTextColor [1, 1, 1, 0.7];
+            _c ctrlSetPosition [_rx, _ry + pixelH * (floor random 3), _rw, _rh];
+            _c ctrlCommit 0.9;
+        };
         case "emi": {
             // Parasites intermittents : plus le brouillage est fort, plus souvent et plus opaques.
             private _show = random 1 < (0.35 + 0.65 * _jam);

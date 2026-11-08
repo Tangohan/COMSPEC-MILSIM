@@ -15,7 +15,7 @@ if (!isNull _c && {_class in ["COMSPEC_RscStructuredText", "COMSPEC_RscMapPanel"
 };
 if (!(_force || {missionNamespace getVariable ["COMSPEC_ATAK_FontAlt", false]}) || {isNull _c}) exitWith {};
 private _w = switch (true) do {
-    case (_class in ["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary", "COMSPEC_RscBadge", "COMSPEC_RscLabel", "COMSPEC_RscChip", "Title"]): { 1 };
+    case (_class in ["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary", "COMSPEC_RscButtonFlat", "COMSPEC_RscBadge", "COMSPEC_RscLabel", "COMSPEC_RscChip", "Title"]): { 1 };
     case (_class in ["COMSPEC_RscText", "COMSPEC_RscTextRight", "COMSPEC_RscTextCenter", "COMSPEC_RscTextCenterMulti",
         "COMSPEC_RscEdit", "COMSPEC_RscEditMulti", "COMSPEC_RscCombo", "COMSPEC_RscListBox", "Clock", "WeatherText"]): { 0 };
     default { -1 };
