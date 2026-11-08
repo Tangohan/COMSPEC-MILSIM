@@ -109,7 +109,7 @@ private _preview = {
         if ((_it get "state") isEqualTo "Placé en mission") exitWith { "Publié dans cette partie" };
         ["Enregistré sur Athena", "Brouillon sur ce poste"] select (_it getOrDefault ["dirty", true])
     };
-    if !(_st getOrDefault ["statusHold", false]) then { (_d displayCtrl 94003) ctrlSetText (_stateTxt call comspec_sse_fnc_tr); };
+    if !(_st getOrDefault ["statusHold", false]) then { (_d displayCtrl 94003) ctrlSetText (_stateTxt call comspec_sse_fnc_tr); [_d displayCtrl 94003] call _fit; };
     (_d displayCtrl 94062) ctrlSetText (((["PLACER ET PUBLIER", "DEVENIR LE DOSSIER ACTIF"] select (_type isEqualTo "case")) call comspec_sse_fnc_tr));
 };
 private _highlight = {
@@ -128,6 +128,24 @@ private _highlight = {
     } forEach _deliveries;
 };
 // Formulaire selon le type : seulement les réglages utiles.
+// Libellé plus long que sa case (traduction, modèle au nom long) : police réduite par paliers jusqu'à ce qu'il tienne,
+// 60 % au plus bas, au lieu d'être coupé (« Sur quelqu… », « Papier de couvertur… »).
+private _fit = {
+    params ["_c"];
+    if (isNull _c || {!ctrlShown _c}) exitWith {};
+    private _base = _c getVariable ["comspec_sse_fh0", -1];
+    if (_base < 0) then { _base = ctrlFontHeight _c; _c setVariable ["comspec_sse_fh0", _base]; };
+    _c ctrlSetFontHeight _base;
+    private _w = ((ctrlPosition _c) select 2) * 0.94;
+    private _n = 0;
+    while { (ctrlTextWidth _c) > _w && {_n < 5} } do {
+        _c ctrlSetFontHeight ((ctrlFontHeight _c) * 0.9);
+        _n = _n + 1;
+    };
+};
+private _fitAll = {
+    { [_d displayCtrl _x] call _fit; } forEach [94030, 94031, 94032, 94040, 94042, 94044, 94046, 94102, 94112, 94122, 94132, 94142, 94202, 94212, 94222, 94003];
+};
 private _form = {
     private _it = _st get "item";
     private _type = _it get "type";
@@ -136,9 +154,9 @@ private _form = {
     (_d displayCtrl 94041) ctrlSetText (_it get "title");
     (_d displayCtrl 94047) ctrlSetText (_it get "body");
     private _i = _types find _type;
-    (_d displayCtrl 94020) ctrlSetText ((_headings select _i) select 0);
-    (_d displayCtrl 94021) ctrlSetText ((_headings select _i) select 1);
-    { (_d displayCtrl (94030 + _forEachIndex)) ctrlSetText (_x select 0); } forEach (_models get _type);
+    (_d displayCtrl 94020) ctrlSetText (((_headings select _i) select 0) call comspec_sse_fnc_tr);
+    (_d displayCtrl 94021) ctrlSetText (((_headings select _i) select 1) call comspec_sse_fnc_tr);
+    { (_d displayCtrl (94030 + _forEachIndex)) ctrlSetText ((_x select 0) call comspec_sse_fnc_tr); } forEach (_models get _type);
     (_d displayCtrl 94040) ctrlSetText (if (_type in ["identity", "paper", "kit"]) then { "Prénom et nom" } else { ["Titre", "Référence du dossier"] select (_type isEqualTo "case") });
     private _main = _d displayCtrl 94043;
     lbClear _main;
@@ -155,7 +173,7 @@ private _form = {
         };
         default {
             (_d displayCtrl 94042) ctrlSetText ("Classification" call comspec_sse_fnc_tr);
-            { _main lbAdd _x; } forEach _markings;
+            { _main lbAdd (_x call comspec_sse_fnc_tr); } forEach _markings;
             _main lbSetCurSel (_it get "marking");
         };
     };
@@ -182,7 +200,7 @@ private _form = {
     { private _b = 94200 + _forEachIndex * 10; (_d displayCtrl (_b + 2)) ctrlSetText ((_x select 0) call comspec_sse_fnc_tr); (_d displayCtrl (_b + 3)) ctrlSetText ((_x select 1) call comspec_sse_fnc_tr); } forEach ([_deliveryLabels, _deliveryPapers] select (_type isNotEqualTo "intel"));
     private _second = _d displayCtrl 94045;
     lbClear _second;
-    { _second lbAdd (_x select 1); } forEach _natures;
+    { _second lbAdd ((_x select 1) call comspec_sse_fnc_tr); } forEach _natures;
     _second lbSetCurSel (_it get "nature");
     private _needNature = _type in ["identity", "paper", "kit"];
     (_d displayCtrl 94044) ctrlShow _needNature;
@@ -194,6 +212,7 @@ private _form = {
     _st set ["busy", false];
     call _highlight;
     call _preview;
+    call _fitAll;
 };
 // Contrôle d'une page cachée : masqué, désactivé et sorti de l'écran (plusieurs pages se superposent : aucun clic ne doit
 // pouvoir atterrir sur un contrôle masqué).
@@ -259,14 +278,14 @@ switch (_op) do {
         {
             private _b = 94100 + _forEachIndex * 10;
             (_d displayCtrl (_b + 1)) ctrlSetText format ["%1type_%2_ca.paa", _dir, _x];
-            (_d displayCtrl (_b + 2)) ctrlSetText (_typeLabels select _forEachIndex);
-            (_d displayCtrl (_b + 3)) ctrlSetText (_typeHints select _forEachIndex);
+            (_d displayCtrl (_b + 2)) ctrlSetText ((_typeLabels select _forEachIndex) call comspec_sse_fnc_tr);
+            (_d displayCtrl (_b + 3)) ctrlSetText ((_typeHints select _forEachIndex) call comspec_sse_fnc_tr);
         } forEach _types;
         {
             private _b = 94200 + _forEachIndex * 10;
             (_d displayCtrl (_b + 1)) ctrlSetText format ["%1delivery_%2_ca.paa", _dir, _x];
-            (_d displayCtrl (_b + 2)) ctrlSetText ((_deliveryLabels select _forEachIndex) select 0);
-            (_d displayCtrl (_b + 3)) ctrlSetText ((_deliveryLabels select _forEachIndex) select 1);
+            (_d displayCtrl (_b + 2)) ctrlSetText (((_deliveryLabels select _forEachIndex) select 0) call comspec_sse_fnc_tr);
+            (_d displayCtrl (_b + 3)) ctrlSetText (((_deliveryLabels select _forEachIndex) select 1) call comspec_sse_fnc_tr);
         } forEach _deliveries;
         (_d displayCtrl 94322) lnbSetColumnsPos [0, 0.05, 0.5, 0.66, 0.84];
         if ((_st getOrDefault ["startPage", ""]) isEqualTo "ai") then { [false, true] call _page; } else { [false] call _page; };
@@ -381,7 +400,7 @@ switch (_op) do {
                 default { _state isNotEqualTo "Archivé" && {(_it get "type") isEqualTo (_types select (_filter - 1))} };
             };
             if (_keep && {_query isEqualTo "" || {(toLower format ["%1 %2 %3 %4", _it get "title", _it get "op", _it get "body", _it get "link"]) find _query >= 0}}) then {
-                private _row = _list lnbAddRow ["", _it get "title", _typeLabels select (_types find (_it get "type")), _it get "op", _state];
+                private _row = _list lnbAddRow ["", _it get "title", (_typeLabels select (_types find (_it get "type"))) call comspec_sse_fnc_tr, _it get "op", _state];
                 _list lnbSetData [[_row, 0], _it get "id"];
                 private _icon = switch (_state) do { case "Placé en mission": { "placed" }; case "Modèle": { "template" }; case "Archivé": { "archived" }; default { "draft" }; };
                 _list lnbSetPicture [[_row, 0], format ["%1state_%2_ca.paa", _dir, _icon]];

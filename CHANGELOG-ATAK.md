@@ -57,6 +57,25 @@ EN : Full texts on the phone in portrait, document record at ID checks
 - `fn_notificationsRender` (bandeau sous la barre), `fn_pageRender` (`fn_textFit` sur le titre), `fn_formRender` (ligne de texte réécrite en direct : deux lignes réservées), `fn_pageQuickMap` (boutons ajustés, en-tête et missions mesurés). `AtakUiTruncationTest` ; autotest : `AT_fnc_tient` sur le titre de chaque app et sur le décompte de la confirmation.
 - `screenshot` n'enregistre jamais l'interface : `fn_idPhoto` fait un relevé (champs imprimés et MRZ, sans les défauts physiques, qui restent à voir) ajouté au texte de la FRM par `fn_idFrm`. Les autres appels (`fn_frsAction`, `fn_photoMode`, `fn_photoCam`, `fn_dronePhoto`, Overwatch connect) photographient la scène, ce qu'ils doivent faire. Exception à vérifier : `fn_mapCapture` en mode « plan » prend une carte d'interface avec `screenshot`.
 - Autotest, étape pilote : appareil sur une aire dégagée, intact et plein, vérifié.
+## À venir : thème jour lisible, écran numérique des preuves, éditeur SSE en anglais (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Thème jour lisible, preuves numériques sur leur propre écran, plus de boîte d'erreur de texture
+- Thème JOUR : les textes gris clair et les pictogrammes blancs sur fond blanc sont redevenus lisibles, sur toutes les pages.
+- Téléphone tenu en portrait : les écrans vides (GPS sans guidage, Explosifs, Brouilleur) ne coupent plus les mots au milieu.
+- Une clé USB, un disque, une carte mémoire, un téléphone, un ordinateur ou une tablette s'exploitent sur l'écran numérique, plus sur la feuille de papier.
+- Éditeur SSE : libellés traduits en anglais et ajustés à leur case. Fini la boîte « Cannot load texture » des objets d'inventaire et des pylônes.
+EN : Readable day theme, digital evidence on its own screen, no more texture error box
+- DAY theme: light grey texts and white icons on a white background are readable again, on every page.
+- Phone held in portrait: empty screens (GPS without guidance, Explosives, Jammer) no longer cut words in half.
+- A USB drive, disk, memory card, phone, computer or tablet is exploited on the digital screen, no longer on the paper sheet.
+- SSE editor: labels translated into English and fitted to their box. No more "Cannot load texture" box for inventory items and relay towers.
+
+### Détail technique
+- Cause de « Cannot load texture …items_nohq.paa » : chemin des textures des rvmat écrit avec un « \ » de tête (`texture="\z\…"`), alors que le fichier était bien dans le PBO, identique octet pour octet et lisible par Pal2PacE. Les rvmat d'ACE et les chemins des p3d, sans « \ », se chargent. Corrigé dans `items.rvmat` et les 7 rvmat des pylônes ; `AtakRvmatTexturesTest`. Le passage par ImageToPAA de #1471 n'était pas la cause. À confirmer en jeu.
+- `fn_theme` : jetons du thème jour (textMuted, ok, warn, neutral, unknown, off) et de la nuit JVN (textMuted, off) relevés au contraste WCAG ; `fn_formRender` : pictogrammes et titres d'état suivent le thème ; ligne « hero » empilée quand la colonne de texte est étroite. `AtakThemeContrastTest`.
+- SSE : `fn_openDigitalPanel` marque l'écran numérique ; `fn_fillResultDialog` reconnaît aussi SMARTPHONE, HARDDRIVE, DEVICE (types réels du générateur, qui ouvraient la feuille beige). Éditeur : `call comspec_sse_fnc_tr` sur les libellés oubliés, police réduite quand le texte dépasse, 150 traductions.
 
 ---
 
@@ -75,7 +94,7 @@ EN : Complete English translation and better-looking inventory items
 
 ### Détail technique
 - `en.txt` : 7 virgules manquantes et 1 doublée, nées de fusions après la 4.0.0 (publiée valide) : parseSimpleArray s'arrêtait à la première faute (ligne 19 521 sur main, 492 phrases perdues). `fn_langApply` lit désormais ligne à ligne ; `AtakI18nFormatTest` valide le format strict.
-- `items_nohq.paa` et `items_smdi.paa` refaits avec ImageToPAA depuis `tools/render` : présents dans le PBO, le moteur refusait de les charger (`Cannot load texture`). À confirmer en jeu.
+- `items_nohq.paa` et `items_smdi.paa` refaits avec ImageToPAA depuis `tools/render` (la cause du refus était ailleurs : voir l'entrée du thème jour).
 - Autotest : captures de la fenêtre réelle, `-SansProxy` pour la licence, vrais appels pour les antennes et les papiers (`tools/INGAME_TEST.md`).
 
 ---
