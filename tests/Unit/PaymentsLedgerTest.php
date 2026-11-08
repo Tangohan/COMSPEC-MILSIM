@@ -135,4 +135,16 @@ final class PaymentsLedgerTest extends TestCase
         $board = DonorService::boardFromDonors($donors, [], $profiles);
         self::assertSame(['Ghost', 'Bravo Six'], array_column($board, 'name'), 'trié par palier');
     }
+
+    public function testPublicBadgeOnlyForVisibleDonors(): void
+    {
+        $ledger = $this->ledger();
+        $ledger[] = ['source' => 'donation', 'status' => 'activated', 'amount_cents' => 5000, 'tenant_id' => 0, 'user_id' => 77, 'payer_email' => 'prive@x.fr', 'payer_name' => 'Discret', 'is_public' => false, 'reference' => 'DON-9', 'created_at' => '2025-01-01 10:00:00', 'paid_at' => '2025-01-01 10:00:00'];
+        $donors = DonorService::donorsFromLedger($ledger);
+        $tiers = DonorService::publicUserTiers($donors, ['b@x.fr']);
+        self::assertArrayHasKey(30, $tiers);
+        self::assertArrayNotHasKey(20, $tiers, 'donateur masqué');
+        self::assertArrayNotHasKey(77, $tiers, 'don saisi sans accord de publication');
+        self::assertSame('pilier', $tiers[30]);
+    }
 }
