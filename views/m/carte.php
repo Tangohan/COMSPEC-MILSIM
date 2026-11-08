@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Carte tactique de la partie (la carte Overwatch : mêmes fonds, calques et symboles) : ma position, amis, marqueurs,
  * tracés, appareils, appuis ; poser, modifier, déplacer ou retirer mes marqueurs.
