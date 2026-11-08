@@ -147,4 +147,18 @@ final class PaymentsLedgerTest extends TestCase
         self::assertArrayNotHasKey(77, $tiers, 'don saisi sans accord de publication');
         self::assertSame('pilier', $tiers[30]);
     }
+
+    public function testCommunitiesFromLedgerListsNameKindAndPlanWithoutAmounts(): void
+    {
+        $ledger = [
+            ['tenant_id' => 3, 'tenant_name' => 'Alpha', 'source' => 'plan', 'status' => 'activated', 'plan_slug' => 'pro', 'amount_cents' => 900],
+            ['tenant_id' => 9, 'tenant_name' => 'Zeta', 'source' => 'heart', 'status' => 'activated', 'plan_slug' => ''],
+            ['tenant_id' => 5, 'tenant_name' => 'Hors liste', 'source' => 'plan', 'status' => 'activated', 'plan_slug' => 'pro'],
+        ];
+        $out = \App\Services\Billing\DonorService::communitiesFromLedger($ledger, [3 => 'plan', 9 => 'heart']);
+        self::assertSame([
+            ['name' => 'Alpha', 'kind' => 'plan', 'plan' => 'pro'],
+            ['name' => 'Zeta', 'kind' => 'heart', 'plan' => ''],
+        ], $out);
+    }
 }

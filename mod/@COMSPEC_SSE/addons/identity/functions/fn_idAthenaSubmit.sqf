@@ -20,13 +20,19 @@ private _results = createHashMap;
     };
 } forEach [0, 1, 2, 3, 4];
 private _athenaId = ((_lv getOrDefault [3, createHashMap]) getOrDefault ["athenaId", ""]);
+// Fiche Athena de la personne contrôlée : celle de l'unité, sinon celle trouvée par le serveur (fn_idServer « check »).
+private _subjUnit = _rec getOrDefault ["subj", objNull];
+private _personId = if (_subjUnit isEqualType objNull && {!isNull _subjUnit}) then { _subjUnit getVariable ["comspec_sse_athenaPersonId", ""] } else { "" };
+if (_personId isEqualTo "") then {
+    { _personId = (_lv getOrDefault [_x, createHashMap]) getOrDefault ["personId", ""]; if (_personId isNotEqualTo "") then { break; }; } forEach [3, 4, 2, 1, 0];
+};
 private _payload = createHashMapFromArray [
     ["idempotency_key", _rec get "idem"],
     ["map", str (missionNamespace getVariable ["COMSPEC_MapId", 1])],
     ["op", missionNamespace getVariable ["comspec_sse_id_opKey", ""]],
     ["document", createHashMapFromArray [["id", _athenaId], ["local_id", _d getOrDefault ["id", ""]], ["type", _d getOrDefault ["type", ""]], ["country", _d getOrDefault ["country", ""]], ["number", _d getOrDefault ["number", ""]]]],
     ["presented_name", createHashMapFromArray [["last", _d getOrDefault ["last", ""]], ["first", _d getOrDefault ["first", ""]], ["dob", _d getOrDefault ["dob", ""]]]],
-    ["subject", createHashMapFromArray [["person_id", ""], ["netid", _rec getOrDefault ["subjNetId", ""]], ["bio_key", _rec getOrDefault ["subjKey", ""]], ["steam_id", _rec getOrDefault ["subjUid", ""]]]],
+    ["subject", createHashMapFromArray [["person_id", _personId], ["netid", _rec getOrDefault ["subjNetId", ""]], ["bio_key", _rec getOrDefault ["subjKey", ""]], ["steam_id", _rec getOrDefault ["subjUid", ""]]]],
     ["controller", createHashMapFromArray [["callsign", name player], ["steam_id", getPlayerUID player]]],
     ["levels", (keys _lv) apply { _x }],
     ["results", _results],

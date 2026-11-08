@@ -121,8 +121,13 @@ return [
             ['label' => 'Structure', 'href' => 'back-office/organisation/structure'],
             ['label' => 'Journal', 'href' => 'back-office/organisation/catalogue/historique'],
             ['label' => 'Libellés', 'href' => 'back-office/organisation/catalogue/libelles'],
+            ['label' => 'Types d’entité', 'href' => 'back-office/organisation/types-entite'],
             ['label' => 'Accès', 'href' => 'back-office/ressources/effectifs/roles'],
             ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
+        ]],
+        ['path' => 'back-office/organisation/types-entite', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Types d’entité', 'subtitle' => 'Créez les types propres à votre communauté et choisissez-les à la création d’une unité.', 'css' => ['back-office-catalog.css'], 'quick' => [
+            ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],
+            ['label' => 'ORBAT', 'href' => 'orbat'],
         ]],
         ['path' => 'back-office/organisation/catalogue/historique', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Journal du catalogue', 'subtitle' => 'Toutes les applications de modèles dans cette communauté.', 'css' => ['back-office-catalog.css'], 'quick' => [
             ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],

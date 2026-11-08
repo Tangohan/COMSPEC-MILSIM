@@ -7,7 +7,7 @@ class COMSPEC_SSE_IdViewer {
     movingEnable = 0;
     enableSimulation = 1;
     onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['load', _this select 0] call comspec_sse_fnc_idViewerOnLoad";
-    onUnload = "uiNamespace setVariable ['comspec_sse_idViewerDisplay', displayNull]";
+    onUnload = "['stop'] call comspec_sse_fnc_idFace; uiNamespace setVariable ['comspec_sse_idViewerDisplay', displayNull]";
 
     class controlsBackground {
         class Dim: RscText {

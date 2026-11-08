@@ -15,6 +15,7 @@ use App\Repositories\TenantEmailRecipientGroupRepository;
 use App\Repositories\TenantEmailTemplateRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Services\Billing\PlanCreationQuota;
 use App\Services\Communications\TenantEmailDispatchService;
 use App\Services\Communications\TenantEmailRenderService;
 use App\Support\TenantEmailKind;
@@ -178,6 +179,11 @@ final class TenantCommunicationsController
             Session::flash('error', 'Accès réservé.');
             return Response::redirect(url('back-office/communications'));
         }
+        $planBlock = PlanCreationQuota::blockMessage((int) Session::get('tenant_id'), PlanCreationQuota::TEMPLATES);
+        if ($planBlock !== null) {
+            Session::flash('error', $planBlock);
+            return Response::redirect(url('back-office/communications/templates'));
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.communications.template_form',
@@ -209,6 +215,11 @@ final class TenantCommunicationsController
         if ($name === '' || $subject === '' || trim(strip_tags($html)) === '') {
             Session::flash('error', 'Nom, sujet et message sont requis.');
             return Response::redirect(url('back-office/communications/templates/create'));
+        }
+        $planBlock = PlanCreationQuota::blockMessage($tenantId, PlanCreationQuota::TEMPLATES);
+        if ($planBlock !== null) {
+            Session::flash('error', $planBlock);
+            return Response::redirect(url('back-office/communications/templates'));
         }
         $this->templateRepository->create($tenantId, $userId, [
             'kind' => $kind,

@@ -316,11 +316,11 @@ return function (Router $router) {
     $router->get('/wiki/atak/nouveautes', [\App\Controllers\Web\AtakWikiController::class, 'news']);
     $router->get('/wiki/atak/recherche', [\App\Controllers\Web\AtakWikiController::class, 'search']);
     $router->get('/wiki/atak/{slug}', [\App\Controllers\Web\AtakWikiController::class, 'show']);
-    $router->get('/traduire-atak', [SitePagesController::class, 'translateAtak']);
+    $router->get('/traduire-atak', [SitePagesController::class, 'translateAtak'], [AuthMiddleware::class]);
     $router->get('/traduire-atak/modele.json', [SitePagesController::class, 'translateAtakTemplate']);
     // Packs de langue partagés : la page s'ouvre par le lien (jeton dans le fragment #), l'API lit X-Pack-Token.
-    $router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak']);
-    $router->post('/api/traduire-atak/packs', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'create']);
+    $router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak'], [AuthMiddleware::class]);
+    $router->post('/api/traduire-atak/packs', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'create'], [AuthMiddleware::class]);
     $router->get('/api/traduire-atak/compte', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'mine']);
     $router->post('/api/traduire-atak/compte', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'saveMine']);
     $router->post('/api/traduire-atak/packs/{id}/liens', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'links']);
@@ -745,6 +745,7 @@ return function (Router $router) {
     $router->post('/enlistment', [EnlistmentController::class, 'store']);
     $router->get('/c/{slug}/enlistment', [EnlistmentController::class, 'show']);
     $router->post('/c/{slug}/enlistment', [EnlistmentController::class, 'store']);
+    $router->get('/c/{slug}/enlistment/connexion', [EnlistmentController::class, 'accountStep']);
     $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
     $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
     $router->get('/enlistment/suivi/{token}', [EnlistmentCandidatePortalController::class, 'show']);
@@ -766,6 +767,14 @@ return function (Router $router) {
     $router->post('/m/api/briefs/{id}/reponse', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefRespond']);
     $router->get('/m/api/suivi/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'noticeStatus']);
     $router->post('/m/quitter', [\App\Controllers\Web\AtakMobileAppsController::class, 'logout']);
+    // Espace d'administration ouvert par QR code depuis l'app Admin du téléphone en jeu (gestion de la communauté).
+    $router->get('/m/admin', [\App\Controllers\Web\AtakMobileAdminController::class, 'home']);
+    $router->get('/m/admin/joueurs', [\App\Controllers\Web\AtakMobileAdminController::class, 'players']);
+    $router->get('/m/admin/joueurs/{id}', [\App\Controllers\Web\AtakMobileAdminController::class, 'player']);
+    $router->get('/m/admin/sessions', [\App\Controllers\Web\AtakMobileAdminController::class, 'sessions']);
+    $router->get('/m/admin/cr', [\App\Controllers\Web\AtakMobileAdminController::class, 'report']);
+    $router->post('/m/admin/action', [\App\Controllers\Web\AtakMobileAdminController::class, 'act']);
+    $router->post('/m/admin/quitter', [\App\Controllers\Web\AtakMobileAdminController::class, 'logout']);
     $router->get('/m/{token}', [\App\Controllers\Web\AtakMobileAppsController::class, 'open']);
     // Connexion téléphone ATAK — URL courte (/connect) + alias historique (/atak/connect)
     $router->get('/connect', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeForm']);
@@ -1521,6 +1530,8 @@ return function (Router $router) {
     $router->post('/back-office/organisation/catalogue/actualiser', [OrganizationCatalogController::class, 'refresh'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/catalogue/retirer', [OrganizationCatalogController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/catalogue/restaurer', [OrganizationCatalogController::class, 'restore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/types-entite', [\App\Controllers\Admin\Organization\UnitStructTypeController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/types-entite/enregistrer', [\App\Controllers\Admin\Organization\UnitStructTypeController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/catalogue/libelles', [\App\Controllers\Admin\Organization\OrganizationGeneratedLabelsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/catalogue/libelles/enregistrer', [\App\Controllers\Admin\Organization\OrganizationGeneratedLabelsController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/passes', [PersonnelPassAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

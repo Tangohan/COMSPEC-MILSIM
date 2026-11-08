@@ -2,6 +2,34 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.4.0 — photo en direct, carte militaire, preuves, éditeur (08/11/2026)[/h1]
+[b]Relance Arma complètement.[/b]
+
+[list]
+[*] Photo du document : le vrai visage du titulaire, joueur ou IA, en direct tant que le document est ouvert. Un faux papier montre un autre visage ; une photo substituée se voit.
+[*] Carte militaire : nouveau document, avec grade et force. En civil, elle reste à vérifier ; une force ennemie est signalée.
+[*] Contrôles envoyés automatiquement à Athena, réglable par communauté.
+[*] Moins de fausses alertes : un avis sans prénom ne désigne plus tout porteur de ce nom.
+[*] Papier saisi : pièce à conviction avec chaîne de possession, rattachée au dossier.
+[*] Nouvel éditeur SSE pour Zeus : modèles, aperçu en direct, bibliothèque avec recherche et historique, placement dans le monde.
+[/list]
+
+----------------------------------------
+
+[h1]COMSPEC SSE 1.4.0 — live photo, military ID, evidence, editor (08/11/2026)[/h1]
+[b]Restart Arma completely.[/b]
+
+[list]
+[*] Document photo: the holder's real face, player or AI, live while the document is open. A forged paper shows another face; a swapped photo can be seen.
+[*] Military ID: new document with rank and force. In civilian clothes it needs checking; an enemy force is flagged.
+[*] Checks are sent to Athena automatically, configurable per community.
+[*] Fewer false alerts: a wanted notice without a first name no longer matches everyone with that surname.
+[*] Seized paper: evidence item with chain of custody, attached to the case.
+[*] New SSE editor for Zeus: templates, live preview, library with search and history, placement in the world.
+[/list]
+
+----------------------------------------
+
 [h1]COMSPEC SSE 1.3.1 — pays réels stylisés pour les univers réalistes (03/11/2026)[/h1]
 [b]Relance Arma complètement.[/b]
 

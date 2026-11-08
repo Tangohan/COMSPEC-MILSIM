@@ -16,7 +16,7 @@ class CfgPatches {
     class comspec_sse_identity {
         name = "COMSPEC SSE - Identity";
         units[] = {"COMSPEC_SSE_Module_IdCheckpoint"};
-        weapons[] = {"COMSPEC_ID_Card", "COMSPEC_ID_Passport", "COMSPEC_ID_DrivingLicense"};
+        weapons[] = {"COMSPEC_ID_Card", "COMSPEC_ID_Passport", "COMSPEC_ID_DrivingLicense", "COMSPEC_ID_MilitaryCard"};
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {
             "comspec_sse_core",
@@ -60,6 +60,8 @@ class CfgFunctions {
             class idAiAnswer {};
             class idViewerOpen {};
             class idViewerOnLoad {};
+            class idFace {};
+            class idEvidence {};
             class idPage {};
             class idAction {};
             class idHistory {};

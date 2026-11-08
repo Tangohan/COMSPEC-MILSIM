@@ -2,7 +2,8 @@
     Délivre un document (SERVEUR) : il entre au registre, virtuel tant qu'il n'est pas matérialisé (fn_idMaterialize).
     [_unit, _spec] call comspec_sse_fnc_idIssue -> docId ("" si refusé)
     _spec (HashMap, tout facultatif) :
-      type          id_card (défaut) | passport | driving_license
+      type          id_card (défaut) | passport | driving_license | military_id
+      rank, force   carte militaire : grade et force imprimés (défaut : ceux de l'unité)
       country       code du pays (défaut : pays de la mission)
       kind          civil (défaut) | cover (couverture préparée, passe tous les contrôles sauf la biométrie)
                     | forged (faux) | generated | alias
@@ -19,7 +20,7 @@ private _reg = ["init"] call comspec_sse_fnc_idRegistry;
 private _key = if (isNull _u) then { _spec getOrDefault ["holderKey", ""] } else { [_u] call comspec_sse_fnc_bioPersonKey };
 if (_key isEqualTo "") then { _key = format ["X%1", floor random 999999]; };
 private _type = _spec getOrDefault ["type", "id_card"];
-if !(_type in ["id_card", "passport", "driving_license"]) then { _type = "id_card"; };
+if !(_type in ["id_card", "passport", "driving_license", "military_id"]) then { _type = "id_card"; };
 private _country = _spec getOrDefault ["country", ""];
 if (_country isEqualTo "" || {_country isEqualTo "auto"}) then { _country = ["default"] call comspec_sse_fnc_idCountries; };
 private _countries = [] call comspec_sse_fnc_idCountries;
@@ -97,11 +98,25 @@ private _doc = createHashMapFromArray [
     ["last", _printed get "last"], ["first", _printed get "first"], ["sex", _printed get "sex"], ["dob", _printed get "dob"],
     ["pob", _printed get "pob"], ["nat", _c getOrDefault ["mrz", _country]], ["profession", _printed getOrDefault ["profession", ""]],
     ["issued", _issued], ["expires", _expires], ["authority", [_c getOrDefault ["authority", ""], format ["Préfecture de %1", _city]] select ((_c getOrDefault ["authority", ""]) isEqualTo "")], ["address", _addr],
-    ["chip", ["absent", "ok"] select (_type in ["id_card", "passport"])], ["chipExpected", _type in ["id_card", "passport"]],
+    ["chip", ["absent", "ok"] select (_type in ["id_card", "passport", "military_id"])], ["chipExpected", _type in ["id_card", "passport", "military_id"]],
     ["kind", _kind], ["quality", _q], ["forgeryKind", ""], ["flaws", []], ["report", _spec getOrDefault ["report", ""]],
     ["holderKey", _key], ["trueLast", _trueLast], ["trueFirst", _trueFirst], ["athenaId", _spec getOrDefault ["athenaId", ""]],
     ["chipNote", ""], ["issuedAt", time]
 ];
+
+// Carte militaire : grade, force et camp de la force, lus par fn_idEvaluate (N3).
+if (_type isEqualTo "military_id") then {
+    private _rankTxt = _spec getOrDefault ["rank", ""];
+    if (_rankTxt isEqualTo "" && {!isNull _u}) then {
+        _rankTxt = (["Soldat", "Caporal", "Sergent", "Lieutenant", "Capitaine", "Commandant", "Colonel"] select ((["PRIVATE", "CORPORAL", "SERGEANT", "LIEUTENANT", "CAPTAIN", "MAJOR", "COLONEL"] find (rank _u)) max 0));
+    };
+    private _force = _spec getOrDefault ["force", ""];
+    if (_force isEqualTo "" && {!isNull _u}) then { _force = getText (configFile >> "CfgFactionClasses" >> faction _u >> "displayName"); };
+    _doc set ["rank", [_rankTxt, "Soldat"] select (_rankTxt isEqualTo "")];
+    _doc set ["force", [_force, "Forces armées"] select (_force isEqualTo "")];
+    _doc set ["cardSide", if (isNull _u) then { "" } else { ["east", "west", "guer", "civ"] select (([east, west, independent, civilian] find (side group _u)) max 0) }];
+    if ((_doc get "profession") isEqualTo "") then { _doc set ["profession", "Militaire"]; };
+};
 
 // --- Faux : défauts selon le procédé et la qualité ------------------------------------------------------------
 private _flaws = _doc get "flaws";
