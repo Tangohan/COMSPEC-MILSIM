@@ -148,6 +148,8 @@ return [
     'confidentialite' => 'Privacy',
     'configuration_atak' => 'ATAK configuration',
     'configuration_generale' => 'General configuration',
+    'consignes_et_kit_atak' => 'ATAK instructions and kit',
+    'consignes_ordres_tips_et_kit_obligatoire_de_l_app_communaute_du_telephone' => 'Instructions, orders, tips and mandatory kit for the phone Community app',
     'configuration_initiale' => 'Initial setup',
     'configurations_complementaires_apres_les_evolutions_de_la_plateforme' => 'Follow-up configuration after platform updates',
     'confirmations_aux_creneaux' => 'Slot confirmations',

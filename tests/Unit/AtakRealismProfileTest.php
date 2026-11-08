@@ -54,7 +54,7 @@ final class AtakRealismProfileTest extends TestCase
         $disp = $this->read(self::MAIN . '/ui/displays.hpp');
         self::assertStringContainsString('class MapSat: COMSPEC_RscMapAtakSat { idc=COMSPEC_ATAK_IDC_MAP_SAT;', $disp);
         self::assertStringContainsString('class MapHyb: COMSPEC_RscMapAtakHyb { idc=COMSPEC_ATAK_IDC_MAP_HYB;', $disp);
-        self::assertSame(3, substr_count($disp, 'onDraw="private _perfT = diag_tickTime; _this call comspec_atak_native_fnc_mapOnDraw;'));
+        self::assertSame(4, substr_count($disp, 'onDraw="private _perfT = diag_tickTime; _this call comspec_atak_native_fnc_mapOnDraw;'));
         self::assertStringContainsString('maxSatelliteAlpha=1;', $this->read(self::MAIN . '/ui/controls.hpp'));
         // Le téléphone ne prend plus la carte par son numéro : fn_mapCtrl donne celle du fond choisi.
         foreach (glob(self::MAIN . '/functions/*/*.sqf') ?: [] as $f) {
