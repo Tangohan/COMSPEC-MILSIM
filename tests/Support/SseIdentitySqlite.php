@@ -68,6 +68,11 @@ final class SseIdentitySqlite
             $out .= $m;
         });
 
+        $coverLink = require dirname(__DIR__, 2) . '/bootstrap/atak_sse_id_cover_link_migration.php';
+        $coverLink($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
+
         return $out;
     }
 

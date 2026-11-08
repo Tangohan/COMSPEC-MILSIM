@@ -340,7 +340,7 @@ final class SseIdOperationRepository
     {
         [$where, $params] = self::exactScope($contextId, $opKey, $contextId !== null || $opKey !== null, 'b');
         $rows = $this->db->fetchAll(
-            'SELECT b.*, u.display_name AS user_name FROM sse_id_briefs b LEFT JOIN users u ON u.id = b.user_id
+            'SELECT b.*, u.display_name AS user_name, u.steam_id FROM sse_id_briefs b LEFT JOIN users u ON u.id = b.user_id
              WHERE b.tenant_id = :t' . $where . ' ORDER BY b.id DESC LIMIT 300',
             ['t' => $tenantId] + $params
         );
@@ -378,6 +378,7 @@ final class SseIdOperationRepository
                 continue;
             }
             $b = self::hydrateBrief($r);
+            $fields = self::legendFields((string) ($b['legend'] ?? ''));
             $best[$userId] = ['tier' => $tier, 'row' => [
                 'uid' => $uid,
                 'user_id' => $userId,
@@ -389,8 +390,17 @@ final class SseIdOperationRepository
                 'legend' => self::packText($b['legend'], 1000),
                 'contacts' => self::packText($b['contacts'], 600),
                 'instructions' => self::packText($b['instructions'], 1000),
-                'phone' => (string) ($b['phone'] ?? ''),
-                'address' => (string) ($b['address'] ?? ''),
+                'phone' => (string) (($b['phone'] ?? '') !== '' ? $b['phone'] : ($fields['phone'] ?? '')),
+                'address' => (string) (($b['address'] ?? '') !== '' ? $b['address'] : ($fields['address'] ?? '')),
+                // Ajouts rétrocompatibles, après les champs du contrat (ignorés par un ancien mod) : rubriques lues dans le texte de la légende, le
+                // reste à part, et la date montrée au joueur dans l'app Ma couverture.
+                'legend_free' => self::packText(self::legendFree((string) ($b['legend'] ?? '')), 1000),
+                'employer' => $fields['employer'] ?? '',
+                'travel' => $fields['travel'] ?? '',
+                'family' => $fields['family'] ?? '',
+                'city' => $fields['city'] ?? '',
+                'profession' => $fields['profession'] ?? '',
+                'updated_at' => (string) ($b['updated_at'] ?? $b['created_at']),
             ]];
         }
 
@@ -475,6 +485,59 @@ final class SseIdOperationRepository
         return [$sql, $params];
     }
 
+    /**
+     * Rubriques d'un texte de légende (« Employeur : … », une par ligne) : mêmes libellés que le mod (fn_idLegend).
+     * Une rubrique sans valeur (modèle pas rempli) est ignorée.
+     *
+     * @return array<string, string>
+     */
+    public static function legendFields(string $text): array
+    {
+        $out = [];
+        foreach (self::legendLines($text) as [$key, $value]) {
+            if ($key !== null) {
+                $out[$key] = $value;
+            }
+        }
+
+        return $out;
+    }
+
+    /** Ce qui reste du texte de légende une fois les rubriques retirées. */
+    public static function legendFree(string $text): string
+    {
+        $free = [];
+        foreach (self::legendLines($text) as [$key, $value]) {
+            if ($key === null) {
+                $free[] = $value;
+            }
+        }
+
+        return implode(' ', $free);
+    }
+
+    /** @return list<array{0: ?string, 1: string}> [rubrique ou null, valeur ou ligne entière] */
+    private static function legendLines(string $text): array
+    {
+        $labels = ['adresse' => 'address', 'ville' => 'city', 'employeur' => 'employer', 'profession' => 'profession', 'famille' => 'family', 'raison du déplacement' => 'travel', 'téléphone' => 'phone'];
+        $out = [];
+        foreach (preg_split('/\R/u', $text) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+            $sep = mb_strpos($line, ':');
+            $label = $sep !== false && $sep > 0 ? mb_strtolower(trim(mb_substr($line, 0, $sep))) : '';
+            $value = $sep !== false && $sep > 0 ? trim(mb_substr($line, $sep + 1)) : $line;
+            if ($value === '') {
+                continue;
+            }
+            $out[] = isset($labels[$label]) ? [$labels[$label], $value] : [null, $line];
+        }
+
+        return $out;
+    }
+
     private static function packText(?string $s, int $max): string
     {
         return mb_substr(trim((string) preg_replace('/\s+/u', ' ', (string) $s)), 0, $max);
@@ -514,6 +577,7 @@ final class SseIdOperationRepository
             'id' => (int) ($row['id'] ?? 0),
             'user_id' => (int) ($row['user_id'] ?? 0),
             'user_name' => (string) ($row['user_name'] ?? ''),
+            'steam_linked' => preg_replace('/\D/', '', (string) ($row['steam_id'] ?? '')) !== '',
             'identity_id' => ($row['identity_id'] ?? null) !== null ? (int) $row['identity_id'] : null,
             'kit_template_id' => ($row['kit_template_id'] ?? null) !== null ? (int) $row['kit_template_id'] : null,
             'context_id' => ($row['context_id'] ?? null) !== null ? (int) $row['context_id'] : null,

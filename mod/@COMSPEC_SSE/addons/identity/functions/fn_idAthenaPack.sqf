@@ -21,7 +21,8 @@
     Lot 6 (atelier Athena, rétrocompatible : blocs absents = rien) :
       briefs     uid, user_id, scope, identity_id, title, cover_name, biography, legend, contacts, instructions, phone,
                  address : brief RP du joueur (légende fn_idLegend, app Ma couverture) ; identité de couverture =
-                 infiltration ouverte (fn_idCover « auto »)
+                 infiltration ouverte (fn_idCover « auto »). Ajouts facultatifs : legend_free, employer, travel, family,
+                 city, profession (rubriques du texte de légende), updated_at (date montrée au joueur)
       population identity_id, side (civ | west | east | guer), category (civilian | military | suspect | hvt), faction,
                  zone, language, documents : identités préparées remises aux IA à leur premier contrôle (fn_idRegistry)
       wanted     ref (OPW-n), identity_id, person_id, last_name, first_name, alias, level (surveillance | recherche |
@@ -84,6 +85,8 @@ switch (_op) do {
         };
         private _top = [_root, ["version", "generated_at", "map", "op", "countries", "identities", "documents", "watch", "kits"]] call _rec;
         private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        // Date du paquet, montrée au joueur dont le kit n'a pas de brief daté (app Ma couverture).
+        _reg set ["packAt", _top getOrDefault ["generated_at", ""]];
         // Réglage de la communauté (Bureau SSE d'Athena) : l'emporte sur le réglage CBA, diffusé aux postes des contrôleurs.
         private _settings = [_top getOrDefault ["settings", []], ["auto_transmit"]] call _rec;
         if ("auto_transmit" in _settings) then {
