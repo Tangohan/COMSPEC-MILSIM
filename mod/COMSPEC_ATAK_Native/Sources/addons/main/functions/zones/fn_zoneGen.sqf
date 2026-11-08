@@ -31,7 +31,8 @@ if ((count _bp) isEqualTo 0) exitWith {};
 private _alive = { (((["get", _id] call comspec_atak_native_fnc_zoneAction) getOrDefault ["genTok", -1]) isEqualTo _tok) };
 private _gp = _bp getOrDefault ["gp", createHashMap];
 (["areaPoly", _bp] call _ZA) params [["_apoly", []], ["_aKind", "POLY"], ["_aC", [0, 0]], ["_aR", 0]];
-if ((count _apoly) < 3) exitWith { [["genDone", "axesDone"] select (_op isEqualTo "AXES"), [_id, _tok, [], "Zone de travail à tracer d'abord"]] call _ZA; };
+// axesDone : [id, jeton, axes, points de contrôle, message] (avant : message passé à la place des points de contrôle, jamais affiché).
+if ((count _apoly) < 3) exitWith { if (_op isEqualTo "AXES") then { ["axesDone", [_id, _tok, [], [], "Zone de travail à tracer d'abord"]] call _ZA; } else { ["genDone", [_id, _tok, [], "Zone de travail à tracer d'abord"]] call _ZA; }; };
 private _ap3 = _apoly apply { [_x select 0, _x select 1, 0] };
 (["bbox", [_apoly]] call _GEO) params ["_bx0", "_by0", "_bx1", "_by1"];
 private _pre = _gp getOrDefault ["prefix", ""];
@@ -116,7 +117,13 @@ switch (_op) do {
                 };
             };
             case "SINGLE": {
-                _zones pushBack ([1, [_pre, "1"] select (_pre isEqualTo ""), _apoly select [0, 120], ["label", [_apoly]] call _GEO] call _mkZone);
+                // MIL-STD : abréviation du type et nom de code du plan (« OBJ DELTA », « AA TAMPA ») ; sinon le préfixe.
+                private _sName = [_pre, "1"] select (_pre isEqualTo "");
+                if ((_gp getOrDefault ["theme", "CITY"]) isEqualTo "MIL") then {
+                    private _sCode = ((_bp get "name") splitString " ") param [1, ""];
+                    if (_sCode isNotEqualTo "") then { _sName = (format ["%1 %2", ["abbrOf", _bp getOrDefault ["aff", "GEN"]] call _ZA, _sCode]) select [0, 16]; };
+                };
+                _zones pushBack ([1, _sName, _apoly select [0, 120], ["label", [_apoly]] call _GEO] call _mkZone);
             };
             case "BLOCK";
             case "LINES": {
@@ -304,7 +311,12 @@ switch (_op) do {
             {
                 private _v = _ix getOrDefault [str _x, -1];
                 if (_v >= 0 && {_v isNotEqualTo _u}) then { (_adj select _u) pushBackUnique _v; (_adj select _v) pushBackUnique _u; };
-            } forEach (roadsConnectedTo [_x select 0, true]);
+            } forEach ((roadsConnectedTo [_x select 0, false]) call {
+                // Raccord « proche » seulement pour un bout de route sans suite : pris partout, il faisait sauter l'axe sur une
+                // route parallèle (angle sec, trait qui quitte la route).
+                if ((count _this) >= 2) exitWith { _this };
+                roadsConnectedTo [_x select 0, true]
+            });
         } forEach _nodes;
         private _deg = _adj apply { count _x };
         if !(call _alive) exitWith {};
@@ -362,6 +374,26 @@ switch (_op) do {
         };
         if !(call _alive) exitWith {};
         if ((count _cand) isEqualTo 0) exitWith { ["axesDone", [_id, _tok, [], [], format ["Aucun axe de plus de %1 m dans la zone", _minLen]]] call _ZA; };
+        // Axe déjà tracé par un autre plan (mêmes routes à 20 m près, sur 12 points) : écarté, pas de trait en double.
+        private _others = [];
+        { if ((_x get "id") isNotEqualTo _id) then { { _others pushBack (_x select 3); } forEach (_x getOrDefault ["axes", []]); }; } forEach ((values (["mine"] call _ZA)) + (values (["rx"] call _ZA)));
+        private _dup = 0;
+        if ((count _others) > 0) then {
+            _cand = _cand select {
+                private _path = _x select 2;
+                private _stp = ceil ((count _path) / 12) max 1;
+                private _near = 0; private _tot = 0;
+                for "_i" from 0 to ((count _path) - 1) step _stp do {
+                    private _p = (_nodes select (_path select _i)) select 1;
+                    _tot = _tot + 1;
+                    if ((_others findIf { (_x findIf { (_x distance2D _p) < 20 }) >= 0 }) >= 0) then { _near = _near + 1; };
+                };
+                private _keep = (_near / (_tot max 1)) < 0.7;
+                if (!_keep) then { _dup = _dup + 1; };
+                _keep
+            };
+        };
+        if ((count _cand) isEqualTo 0) exitWith { ["axesDone", [_id, _tok, [], [], "Ces axes sont déjà tracés : rien de plus à nommer ici"]] call _ZA; };
         _cand sort false;
         private _nAsr = ((_gp getOrDefault ["asr", 3]) max 0) min 6;
         _cand resize ((count _cand) min (1 + _nAsr));
@@ -374,7 +406,7 @@ switch (_op) do {
             private _cls = ["ASR", "MSR"] select (_forEachIndex isEqualTo 0);
             private _name = format ["%1 %2", _cls, _names param [_forEachIndex, str (_forEachIndex + 1)]];
             private _pts = _path apply { private _p = (_nodes select _x) select 1; [_p select 0, _p select 1, 0] };
-            private _sim = [_pts, 12, false, false, 150] call comspec_atak_native_fnc_strokeSimplify;
+            private _sim = [_pts, 4, false, false, 150] call comspec_atak_native_fnc_strokeSimplify;
             _axes pushBack [format ["a%1", _forEachIndex + 1], _name, _cls, _sim apply { [_x select 0, _x select 1] }, round _L, ""];
             {
                 if ((_deg select _x) >= 3 && {(count _cps) < 16}) then {

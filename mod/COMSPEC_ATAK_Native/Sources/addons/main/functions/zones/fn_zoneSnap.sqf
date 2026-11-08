@@ -11,24 +11,26 @@
 params [["_op", "at"], ["_a", []]];
 if (_op isEqualTo "clear") exitWith { uiNamespace setVariable ["COMSPEC_ATAK_ZnSnapC", createHashMap]; true };
 _a params [["_p", []], ["_R", 30]];
-if ((count _p) < 2) exitWith { [] };
-private _C = 64;
+// Données anciennes ou mal formées : pas d'accroche plutôt qu'une erreur par image.
+if !(_p isEqualType [] && {(count _p) >= 2} && {(_p select 0) isEqualType 0} && {(_p select 1) isEqualType 0} && {_R isEqualType 0}) exitWith { [] };
+private _cellM = 64;
 private _cache = uiNamespace getVariable "COMSPEC_ATAK_ZnSnapC";
 if (isNil "_cache" || {(count _cache) > 300}) then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_ZnSnapC", _cache]; };
 // Case de 64 m : [segments [[a, b, genre]...], coins [[p, genre]...]].
 private _cell = {
     params ["_i", "_j"];
     private _k = format ["%1|%2", _i, _j];
+    // Attention : SQF ne distingue pas la casse, _c ici et _C auraient été la même variable (d'où _cellM).
     private _c = _cache getOrDefault [_k, []];
-    if ((count _c) > 0) exitWith { _c };
-    private _ctr = [(_i + 0.5) * _C, (_j + 0.5) * _C, 0];
+    if ((count _c) isEqualTo 2) exitWith { _c };
+    private _ctr = [(_i + 0.5) * _cellM, (_j + 0.5) * _cellM, 0];
     private _segs = [];
     private _cor = [];
     {
         private _inf = getRoadInfo _x;
         private _b = _inf param [6, []]; private _e = _inf param [7, []];
         if ((count _b) >= 2 && {(count _e) >= 2}) then { _segs pushBack [[_b select 0, _b select 1], [_e select 0, _e select 1], "ROAD"]; };
-    } forEach (_ctr nearRoads (_C * 0.75));
+    } forEach (_ctr nearRoads (_cellM * 0.75));
     {
         if (!isObjectHidden _x) then {
             (boundingBoxReal _x) params ["_p1", "_p2"];
@@ -43,7 +45,7 @@ private _cell = {
                 for "_n" from 0 to 3 do { _segs pushBack [_q select _n, _q select ((_n + 1) mod 4), "EDGE"]; };
             };
         };
-    } forEach (nearestObjects [_ctr, ["House", "Building"], _C * 0.75, true]);
+    } forEach (nearestObjects [_ctr, ["House", "Building"], _cellM * 0.75, true]);
     _c = [_segs, _cor];
     _cache set [_k, _c];
     _c
@@ -53,8 +55,8 @@ private _best = []; private _bd = _R;
 // Coins d'abord (prioritaires dans 60 % du rayon), puis bords et routes.
 private _cr = _R * 0.6;
 private _bestC = []; private _bdc = _cr;
-for "_i" from (floor ((_px - _R) / _C)) to (floor ((_px + _R) / _C)) do {
-    for "_j" from (floor ((_py - _R) / _C)) to (floor ((_py + _R) / _C)) do {
+for "_i" from (floor ((_px - _R) / _cellM)) to (floor ((_px + _R) / _cellM)) do {
+    for "_j" from (floor ((_py - _R) / _cellM)) to (floor ((_py + _R) / _cellM)) do {
         ([_i, _j] call _cell) params ["_segs", "_cor"];
         {
             private _d = (_x select 0) distance2D _p;

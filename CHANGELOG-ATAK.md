@@ -63,6 +63,34 @@ EN : Realistic network by default, on your real radios
 - Rien de tout cela n'a tourné en jeu.
 
 ---
+## À venir : tracé de routes et de zones, suppression, formes de la carte (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Routes et zones : tracé réparé, plus de plans OBJ surprises
+- Le clic droit ne crée plus un plan OBJ à chaque tracé. Un calcul sans résultat le dit et ne laisse rien sur la carte. App Zones, MES PLANS : des boutons nettoient d'un coup les anciens plans vides.
+- Le tracé aimanté fonctionne, et les plans de zones sont enfin sauvegardés et reçus par les autres joueurs.
+- Les noms MSR, ASR et PL ne s'écrivent plus deux fois. Le nommage MIL-STD s'applique dès le tracé.
+- Tout se supprime depuis la carte et les listes, avec ANNULER, et ne revient pas. Une suppression sur Athena ou sur la carte d'Arma s'applique aussi en jeu.
+- Réglages de la carte : nouvelles formes pour toi et tes alliés (pion, triangle ou losange cerclés, carré, croix), avec aperçu.
+EN : Routes and zones: drawing fixed, no more surprise OBJ plans
+- Right-clicking no longer creates an OBJ plan for every drawing. A calculation with no result says so and leaves nothing on the map. Zones app, MY PLANS: buttons clear old empty plans in one go.
+- Magnetic drawing works, and zone plans are now saved and received by other players.
+- MSR, ASR and PL names are no longer written twice. MIL-STD naming applies as soon as you draw.
+- Everything can be deleted from the map and the lists, with UNDO, and stays gone. Deleting on Athena or on the Arma map also applies in game.
+- Map settings: new shapes for you and your allies (pawn, ringed triangle or diamond, square, cross), with a preview.
+
+### Détail
+- Causes relevées dans le RPT : `_C` / `_c` dans `fn_zoneSnap`, `keys` évalué sur une valeur simple dans `pack`. Aussi `_fA` / `_fa` (remplissage invisible). Notes dans `docs/bugs/`.
+- `fn_markerOwned` : un seul chemin pour les marqueurs natifs des tracés, noms réservés sautés par le téléphone, privé en local. Tableau de couverture : `docs/ATAK_TRACES_COUVERTURE.md`.
+- Site : `/api/atak/markers` avec `world_name` signale au jeu les marqueurs retirés sur le web (`game_del`). Pas de migration.
+- Itinéraire et plan de briefing ajoutés à la carte d'Arma. Plans et routes relus du profil : privés jusqu'au prochain envoi.
+- Non testé en jeu.
+
+---
+
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+
 ## À venir : antennes réparées, tours relais épurées, mini-antenne de bâtiment (ATAK natif, version à attribuer)
 
 ### À annoncer

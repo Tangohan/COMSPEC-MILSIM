@@ -15,6 +15,7 @@ if (_op isEqualTo "state") exitWith {
     format [("Site Athena : %1 (%2 élément(s), %3)") call comspec_atak_native_fnc_tr, (_st) call comspec_atak_native_fnc_tr, _n, [_t, "HH:MM"] call BIS_fnc_timeToString]
 };
 if (!hasInterface || {isNull player}) exitWith { false };
+if (_op isEqualTo "tick") then { [] call comspec_atak_native_fnc_planNative; };
 private _side = side group player;
 private _force = _op isEqualTo "force";
 private _webVar = "";

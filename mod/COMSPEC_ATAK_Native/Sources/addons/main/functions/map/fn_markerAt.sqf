@@ -10,6 +10,8 @@ private _bestD = pixelW * 18;
 private _cfg = uiNamespace getVariable "COMSPEC_ATAK_GmCfg";
 if (isNil "_cfg") then { _cfg = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_GmCfg", _cfg]; };
 {
+    // Marqueurs natifs des routes et plans : invisibles ici, la route ou la zone répond au clic (fn_markerOwned).
+    if ((_x find "/77000") > 0 || {(_x find "comspec_shape_prv_") isEqualTo 0}) then { continue };
     private _sp = _map ctrlMapWorldToScreen (getMarkerPos _x);
     private _d = _sp distance2D _screen;
     if ((markerShape _x) isEqualTo "POLYLINE") then {
