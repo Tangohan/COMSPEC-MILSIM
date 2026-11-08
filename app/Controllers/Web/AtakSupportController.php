@@ -45,6 +45,21 @@ final class AtakSupportController
         private UserRepository $users
     ) {}
 
+    /** @return array<string, string> slug de formule => nom affiché */
+    private function planNames(): array
+    {
+        try {
+            $names = [];
+            foreach (\App\Core\Container::get(\App\Services\Billing\PlanPaymentService::class)->offers() as $o) {
+                $names[(string) $o['slug']] = (string) $o['name'];
+            }
+
+            return $names;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     public function index(Request $request, array $params = []): Response
     {
         $userId = (int) (Session::get('user_id') ?? 0);
@@ -77,6 +92,8 @@ final class AtakSupportController
             'isLoggedIn' => $userId > 0,
             'donorBoard' => DonorService::board(),
             'supporterCount' => count(DonorService::cached()['tenants']),
+            'supporterCommunities' => DonorService::communities(),
+            'planNames' => $this->planNames(),
             'myDonorTier' => $userId > 0 ? DonorService::userTier($userId) : null,
             'myDonorHidden' => $userId > 0 && DonorService::userTier($userId) !== null && $this->donorHidden($userId),
         ]);

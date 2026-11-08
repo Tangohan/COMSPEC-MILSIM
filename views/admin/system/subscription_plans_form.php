@@ -176,7 +176,9 @@ $err = \App\Core\Session::getFlash('error');
                                                 <?php if (!$def['read']): ?>
                                                     <span class="pa-pill pa-pill--amber">Non contrôlé par le site : sans effet aujourd’hui</span>
                                                 <?php endif; ?>
-                                                <?php if (in_array($key, $defaulted, true)): ?>
+                                                <?php if (in_array($key, $defaulted, true) && in_array($key, \App\Services\Billing\SubscriptionPlanFeaturesCatalog::OWNER_DECIDES, true)): ?>
+                                                    <span class="pa-pill pa-pill--amber">Pas encore défini : illimité tant que vous ne l’enregistrez pas</span>
+                                                <?php elseif (in_array($key, $defaulted, true)): ?>
                                                     <span class="pa-pill pa-pill--slate">Valeur par défaut du palier</span>
                                                 <?php endif; ?>
                                             </p>

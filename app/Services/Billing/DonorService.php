@@ -204,6 +204,47 @@ final class DonorService
         return $out;
     }
 
+    /**
+     * Communautés qui soutiennent le projet, avec leur formule : nom, type de soutien, formule payée.
+     * Aucun montant. Public (page de dons).
+     *
+     * @param list<array<string, mixed>> $ledger
+     * @param array<int, string> $kinds id de communauté => type de soutien
+     * @return list<array{name: string, kind: string, plan: string}>
+     */
+    public static function communitiesFromLedger(array $ledger, array $kinds): array
+    {
+        $names = [];
+        $plans = [];
+        foreach ($ledger as $e) {
+            $tid = (int) ($e['tenant_id'] ?? 0);
+            if ($tid < 1 || !isset($kinds[$tid])) {
+                continue;
+            }
+            if (!isset($names[$tid]) && trim((string) ($e['tenant_name'] ?? '')) !== '') {
+                $names[$tid] = mb_substr(trim((string) $e['tenant_name']), 0, 80);
+            }
+            if (!isset($plans[$tid]) && ($e['source'] ?? '') === 'plan' && ($e['status'] ?? '') === 'activated' && ($e['plan_slug'] ?? '') !== '') {
+                $plans[$tid] = (string) $e['plan_slug'];
+            }
+        }
+        $out = [];
+        foreach ($kinds as $tid => $kind) {
+            if (isset($names[(int) $tid])) {
+                $out[] = ['name' => $names[(int) $tid], 'kind' => (string) $kind, 'plan' => $plans[(int) $tid] ?? ''];
+            }
+        }
+        usort($out, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+
+        return $out;
+    }
+
+    /** Communautés soutien et leur formule (calculées au dernier recalcul). */
+    public static function communities(): array
+    {
+        return self::cached()['communities'];
+    }
+
     // ------------------------------------------------------------------ état enregistré
 
     private static function cachePath(): string
@@ -229,6 +270,7 @@ final class DonorService
             'tenants' => array_map('strval', is_array($data['tenants'] ?? null) ? $data['tenants'] : []),
             'slugs' => is_array($data['slugs'] ?? null) ? $data['slugs'] : [],
             'tenant_slugs' => array_map('strval', is_array($data['tenant_slugs'] ?? null) ? $data['tenant_slugs'] : []),
+            'communities' => array_values(array_filter(is_array($data['communities'] ?? null) ? $data['communities'] : [], 'is_array')),
             'board' => is_array($data['board'] ?? null) ? $data['board'] : [],
             'updated_at' => (string) ($data['updated_at'] ?? ''),
         ];
@@ -397,6 +439,7 @@ final class DonorService
             'tenants' => $tenants,
             'slugs' => $slugs,
             'tenant_slugs' => $tenantSlugs,
+            'communities' => self::communitiesFromLedger($ledger, $tenants),
             'board' => self::boardFromDonors($donors, $o['hidden'], $profiles),
             'updated_at' => gmdate('c'),
         ];

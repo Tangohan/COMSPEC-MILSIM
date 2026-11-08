@@ -48,6 +48,18 @@ final class TenantEmailTemplateRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /** Modèles créés par la communauté, comptés dans le plafond de la formule (les modèles fournis d'office sont exclus). */
+    public function countCustomForPlanQuota(int $tenantId): int
+    {
+        if (!$this->tableExists()) {
+            return 0;
+        }
+        $st = $this->pdo->prepare('SELECT COUNT(*) FROM tenant_email_templates WHERE tenant_id = ? AND is_prefab = 0');
+        $st->execute([$tenantId]);
+
+        return (int) $st->fetchColumn();
+    }
+
     public function findById(int $id, int $tenantId): ?array
     {
         if (!$this->tableExists()) {
