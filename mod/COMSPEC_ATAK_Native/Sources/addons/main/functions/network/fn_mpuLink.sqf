@@ -83,7 +83,7 @@ switch (_act) do {
             _off
         };
         private _s = uiNamespace getVariable "COMSPEC_ATAK_MpuStatus";
-        if (isNil "_s") then { _s = createHashMapFromArray [["active", true], ["kind", ""], ["link", ""], ["ok", false], ["why", "sans MPU5 : pas de réseau de données"], ["kbps", 0], ["lat", 0], ["loss", 0], ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", -1], ["wifiQ", 0]]; };
+        if (isNil "_s") then { _s = createHashMapFromArray [["active", true], ["kind", ""], ["link", ""], ["ok", false], ["why", "sans MPU5 : pas de réseau de données"], ["kbps", 0], ["lat", 0], ["loss", 0], ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", -1], ["wifiQ", 0], ["level", 3]]; };
         _s
     };
     case "noDirect": {
@@ -265,7 +265,7 @@ switch (_act) do {
         };
         private _old = uiNamespace getVariable ["COMSPEC_ATAK_MpuStatus", createHashMap];
         private _s = createHashMapFromArray [["active", true], ["kind", _kind], ["link", _link], ["ok", false], ["why", ""], ["kbps", 0], ["lat", 0], ["loss", 0],
-            ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", _wd], ["wifiQ", _wq]];
+            ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", _wd], ["wifiQ", _wq], ["level", 3]];
         private _need = false;
         switch (_kind) do {
             case "": { _s set ["why", "sans MPU5 : pas de réseau de données"]; };
@@ -281,7 +281,7 @@ switch (_act) do {
                 _need = true;
                 private _m = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
                 if ((_m getOrDefault ["key", ""]) isNotEqualTo (_node param [0, "?"]) || {_now - (_m getOrDefault ["at", -100]) > 20}) exitWith { _s set ["why", "connexion au maillage en cours"]; };
-                { _s set [_x, _m getOrDefault [_x, _s get _x]]; } forEach ["hops", "gw", "via", "mode", "nodes", "why"];
+                { _s set [_x, _m getOrDefault [_x, _s get _x]]; } forEach ["hops", "gw", "via", "mode", "nodes", "why", "level"];
                 if !(_m getOrDefault ["ok", false]) exitWith {};
                 private _kb = _m get "kbps";
                 private _lat = _m get "lat";
