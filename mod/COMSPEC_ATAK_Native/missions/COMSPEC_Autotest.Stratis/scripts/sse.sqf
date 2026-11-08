@@ -1,9 +1,15 @@
 // SSE : contrôle d'identité d'une IA de jour et de nuit, bulle, document et photo ; éditeur ; écran numérique d'une preuve.
 if !("sse" call AT_fnc_groupe) exitWith {};
+// Comme l'action ACE du joueur (fn_initAceIdentity) : « begin » au serveur, barre de 2 s, puis la demande.
+AT_fnc_demande = {
+    params ["_u"];
+    missionNamespace setVariable ["comspec_sse_idLastAnswer", nil];
+    ["send", ["begin", [player, "ask", _u]]] call comspec_sse_fnc_idClient;
+    [2, "Papiers, s'il vous plaît…", { params ["_t"]; ["send", ["ask", [player, _t]]] call comspec_sse_fnc_idClient; }, [_u], _u] call comspec_sse_fnc_progressAction;
+};
 AT_fnc_controle = {
     params ["_u", "_doc", "_tag"];
-    missionNamespace setVariable ["comspec_sse_idLastAnswer", nil];
-    ["send", ["ask", [player, _u]]] call comspec_sse_fnc_idClient;
+    [_u] call AT_fnc_demande;
     private _rep = { ((missionNamespace getVariable ["comspec_sse_idLastAnswer", [objNull]]) select 0) isEqualTo _u };
     [[_rep, 15] call AT_fnc_wait, "pas de réponse à « Papiers s'il vous plaît »"] call AT_fnc_check;
     (format ["réponse : %1", (missionNamespace getVariable ["comspec_sse_idLastAnswer", []]) select [1, 2]]) call AT_fnc_info;
@@ -12,8 +18,7 @@ AT_fnc_controle = {
     if (((missionNamespace getVariable ["comspec_sse_idLastAnswer", []]) param [1, ""]) isNotEqualTo "present") then {
         _u setVariable ["ace_captives_isSurrendering", true, true];
         uiSleep 1;
-        missionNamespace setVariable ["comspec_sse_idLastAnswer", nil];
-        ["send", ["ask", [player, _u]]] call comspec_sse_fnc_idClient;
+        [_u] call AT_fnc_demande;
         [_rep, 15] call AT_fnc_wait;
     };
     uiSleep 1;
@@ -21,7 +26,8 @@ AT_fnc_controle = {
     private _jetons = missionNamespace getVariable ["comspec_sse_idTokens", createHashMap];
     private _tendus = (keys _jetons) select { ((_jetons get _x) select 0) isEqualTo _u };
     private _h = _tendus param [0, _doc];
-    ["send", ["view", [player, _h]]] call comspec_sse_fnc_idClient;
+    ["send", ["begin", [player, "view", _h]]] call comspec_sse_fnc_idClient;
+    [2, "Examen du document…", { params ["_h"]; ["send", ["view", [player, _h]]] call comspec_sse_fnc_idClient; }, [_h], _u] call comspec_sse_fnc_progressAction;
     private _v = { !isNull (uiNamespace getVariable ["comspec_sse_idViewerDisplay", displayNull]) };
     [[_v, 8] call AT_fnc_wait, format ["visionneuse du document %1 non ouverte", _h]] call AT_fnc_check;
     uiSleep 2; // photo en direct (PiP)

@@ -1,9 +1,9 @@
 // Antennes (appel direct des fonctions, sans la barre ACE), GPS de poignet, déclencheur réseau et charge ACE.
 if ("antennes" call AT_fnc_groupe) then {
     {
-        _x params ["_nom", "_kit", "_mur"];
+        _x params ["_nom", "_kit", "_mur", "_ace"];
         [_nom, {
-            params ["_kit", "_mur"];
+            params ["_kit", "_mur", "_ace"];
             if (["comspec_atak_native_fnc_antennaKit", "comspec_atak_native_fnc_relayNet"] call AT_fnc_nil) exitWith {};
             if !(isClass (configFile >> "CfgWeapons" >> _kit)) exitWith { (format ["kit %1 absent de ce build", _kit]) call AT_fnc_skip; };
             player addItem _kit;
@@ -23,29 +23,37 @@ if ("antennes" call AT_fnc_groupe) then {
                 };
             };
             if (_arg isEqualTo []) exitWith { player removeItem _kit; player setPosATL AT_Base; "pas de bâtiment à portée pour la mini-antenne" call AT_fnc_skip; };
-            ["deployNow", _arg] call comspec_atak_native_fnc_antennaKit;
+            // _ace : comme l'action ACE du joueur, barre de progression comprise ; sinon appel direct.
+            if (_ace) then {
+                ["deploy", [_kit]] call comspec_atak_native_fnc_antennaKit;
+                uiSleep 2;
+                [format ["%1_barre", _kit]] call AT_fnc_shot;
+                uiSleep ((missionNamespace getVariable ["comspec_atak_native_antkit_sat_time", 20]) - 3);
+            } else {
+                ["deployNow", _arg] call comspec_atak_native_fnc_antennaKit;
+            };
             private _trouve = { ((missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x && {(_x getVariable ["COMSPEC_AtakRelayKit", ""]) isEqualTo _kit} }) param [0, objNull] };
             [[{ !isNull (call _trouve) }, 8] call AT_fnc_wait, "aucun relais créé par le déploiement"] call AT_fnc_check;
             private _o = call _trouve;
             [!(_kit in (items player)), "le kit reste dans l'inventaire après déploiement"] call AT_fnc_check;
             if (!isNull _o) then {
                 uiSleep 3; // liste des relais en cache 2 s
-                private _e = ["entry", [_o]] call comspec_atak_native_fnc_relayNet;
+                private _e = ["entry", _o] call comspec_atak_native_fnc_relayNet;
                 [_e isNotEqualTo [], "absent de la liste du réseau (fn_relayNet)"] call AT_fnc_check;
                 (format ["%1 : relais %2, portée %3 m, état « %4 »", typeOf _o, _e param [2, "?"], _e param [4, "?"], _e param [7, "?"]]) call AT_fnc_info;
                 player setDir (player getDir _o);
                 [format ["%1_pose", _kit]] call AT_fnc_shot;
-                ["srvFold", [player, _o]] call comspec_atak_native_fnc_antennaKit;
-                [[{ isNull _o && {_kit in (items player)} }, 8] call AT_fnc_wait, "repli : objet resté ou kit non rendu"] call AT_fnc_check;
+                if (_ace) then { ["fold", [_o]] call comspec_atak_native_fnc_antennaKit; } else { ["srvFold", [player, _o]] call comspec_atak_native_fnc_antennaKit; };
+                [[{ isNull _o && {_kit in (items player)} }, [8, 25] select _ace] call AT_fnc_wait, "repli : objet resté ou kit non rendu"] call AT_fnc_check;
             };
             player removeItem _kit;
             player setPosATL AT_Base;
             call AT_fnc_done;
-        }, 45, [_kit, _mur]] call AT_fnc_run;
+        }, 90, [_kit, _mur, _ace]] call AT_fnc_run;
     } forEach [
-        ["antenne_satellite", "COMSPEC_ATAK_SatAntennaKit", false],
-        ["antenne_mat", "COMSPEC_ATAK_MastAntennaKit", false],
-        ["antenne_mini", "COMSPEC_ATAK_BuildingAntennaKit", true]
+        ["antenne_satellite", "COMSPEC_ATAK_SatAntennaKit", false, true],
+        ["antenne_mat", "COMSPEC_ATAK_MastAntennaKit", false, false],
+        ["antenne_mini", "COMSPEC_ATAK_BuildingAntennaKit", true, false]
     ];
 };
 
@@ -82,11 +90,22 @@ if ("explo" call AT_fnc_groupe) then {
         private _mag = "DemoCharge_Remote_Mag";
         private _trig = ["triggerOf", _mag] call comspec_atak_native_fnc_exploNet;
         if !([_trig isNotEqualTo "", "aucun déclencheur télécommandé pour DemoCharge_Remote_Mag"] call AT_fnc_check) exitWith { call AT_fnc_done; };
-        // Zone vide : champ dégagé loin des bâtiments ; le joueur est invulnérable pendant toute la mission.
-        private _champ = [AT_Base, 150, 600, 30, 0, 0.3, 0] call BIS_fnc_findSafePos;
+        // Zone vide : premier point d'une grille autour de la base sans construction à 80 m, carte et mission comprises.
+        // Le joueur est invulnérable pendant toute la mission.
+        private _constr = ["BUILDING", "HOUSE", "CHURCH", "CHAPEL", "FUEL STATION", "HOSPITAL", "RUIN", "TOURISM", "TRANSMITTER", "LIGHTHOUSE", "POWERSOLAR", "POWERWIND", "WATERTOWER", "BUNKER", "FORTRESS", "VIEW-TOWER", "SHIPWRECK"];
+        private _champ = [];
+        {
+            private _d = _x;
+            {
+                private _p = AT_Base getPos [_d, _x];
+                if (_champ isEqualTo [] && {!surfaceIsWater _p} && {(nearestTerrainObjects [_p, _constr, 80, false]) isEqualTo []}
+                    && {(nearestObjects [_p, ["House", "Building", "LandVehicle", "Strategic"], 80]) isEqualTo []}) then { _champ = _p; };
+            } forEach [0, 45, 90, 135, 180, 225, 270, 315];
+        } forEach [300, 500, 800, 1100, 1500];
+        if !([_champ isNotEqualTo [], "aucun champ vide trouvé autour de la base"] call AT_fnc_check) exitWith { call AT_fnc_done; };
         player setPosATL [_champ select 0, _champ select 1, 0];
         uiSleep 1;
-        private _vide = (nearestObjects [player, ["House", "LandVehicle", "Man"], 60]) - [player];
+        private _vide = (nearestObjects [player, ["House", "Building", "LandVehicle", "Man"], 60]) - [player];
         [_vide isEqualTo [], format ["zone non vide : %1", _vide apply { typeOf _x }]] call AT_fnc_check;
         player addItem "COMSPEC_ATAK_NetDetonator";
         player addMagazine _mag;

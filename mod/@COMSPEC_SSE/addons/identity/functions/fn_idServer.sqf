@@ -171,7 +171,10 @@ switch (_op) do {
     case "ask": {
         _args params ["", ["_t", objNull, [objNull]]];
         if (isNull _t || {_t isEqualTo _me} || {!alive _t} || {!([_me, _t, 4] call _near)}) exitWith {};
-        if !(["ask", _t] call _took) exitWith {};
+        if !(["ask", _t] call _took) exitWith {
+            diag_log text format ["[COMSPEC SSE] Identité : « ask » refusé pour %1 : barre de progression non terminée (begin absent ou trop récent).", name _me];
+            [_me, "Demande interrompue : recommencez sans bouger."] call _tell;
+        };
         ["comspec_sse_idAsked", [_t, _me]] call CBA_fnc_localEvent;
         if (isPlayer _t) exitWith {
             private _req = _reg get "requests";
