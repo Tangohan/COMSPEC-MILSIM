@@ -105,6 +105,15 @@ final class RhAlertAggregatorService
             'tone' => $vacantBillets > 0 ? 'warn' : 'ok',
         ];
 
+        $missingCommand = count($this->listMissingCommand($tenantId));
+        $items[] = [
+            'id' => 'missing_command',
+            'severity' => 'Organigramme',
+            'label' => 'Rattachement au commandement manquant',
+            'count' => $missingCommand,
+            'href' => effectifs_workspace_url('a-traiter?onglet=alertes') . '#rh-missing-command',
+            'tone' => $missingCommand > 0 ? 'warn' : 'ok',
+        ];
         $careerCount = count($this->listCareerDiscrepancies($tenantId));
         $items[] = [
             'id' => 'career_discrepancies', 'severity' => 'Parcours de carrière',
@@ -121,6 +130,17 @@ final class RhAlertAggregatorService
         }
 
         return ['items' => $items, 'total' => $total];
+    }
+
+    /** @return list<array{name:string, expected:string}> */
+    public function listMissingCommand(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT id, parent_id, slug, name, code FROM units WHERE tenant_id = ? ORDER BY name, id');
+        $stmt->execute([$tenantId]);
+        return MissingCommandDetector::detect($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /** @var array<int, list<array<string, mixed>>> */

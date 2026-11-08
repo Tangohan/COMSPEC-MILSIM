@@ -178,6 +178,8 @@ final class AdminPlatformToolsTest extends TestCase
 
         self::assertSame('ok', PlatformHealthDigest::modVersionSignal('3.4.1', ['3.4.1' => 4, '3.5.0' => 1])[1]);
         self::assertSame('info', PlatformHealthDigest::modVersionSignal('3.4.1', ['' => 3])[1]);
+        // Comparaison à la version d'Overwatch connect, de même nature que ce que le mod remonte.
+        self::assertMatchesRegularExpression('/^[0-9]+\.[0-9]+\.[0-9]+$/', (string) \App\Support\AtakReleaseInfo::connectVersion(dirname(__DIR__, 2)));
         self::assertSame('bad', PlatformHealthDigest::queueTone('overloaded'));
         self::assertSame('info', PlatformHealthDigest::queueTone('none'));
     }

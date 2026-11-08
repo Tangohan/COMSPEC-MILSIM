@@ -330,7 +330,7 @@ final class EquipmentRefonteTest extends TestCase
         $ids = array_column($registry, 'id');
         self::assertContains('equipment_starter_kits', $ids);
         $entry = $registry[array_search('equipment_starter_kits', $ids, true)];
-        self::assertSame('3970_equipment_starter_kits.php', $entry['file']);
+        self::assertSame('3990_equipment_starter_kits.php', $entry['file']);
         self::assertTrue($entry['rerun']);
         self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/' . $entry['file']);
 

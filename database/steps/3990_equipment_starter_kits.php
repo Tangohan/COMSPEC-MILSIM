@@ -13,21 +13,21 @@ declare(strict_types=1);
  * Rien d'existant n'est modifié ni supprimé. Sans la table game_role_kits, ses colonnes sont laissées de côté.
  */
 
-$schema3970 = new \App\Support\Migrations\SchemaInspector($pdo);
+$schema3990 = new \App\Support\Migrations\SchemaInspector($pdo);
 
-if (!$schema3970->tableExists('game_role_kits')) {
+if (!$schema3990->tableExists('game_role_kits')) {
     echo "  [OK] Table game_role_kits absente : kits de départ en attente de la table des kits par rôle.\n";
 } else {
     $added = false;
-    $added = $schema3970->addColumnIfMissing('game_role_kits', 'unit_id', 'INT UNSIGNED DEFAULT NULL') || $added;
-    $added = $schema3970->addColumnIfMissing('game_role_kits', 'source', "VARCHAR(24) NOT NULL DEFAULT 'scratch'") || $added;
-    $added = $schema3970->addIndexIfMissing('game_role_kits', 'idx_game_role_kits_unit', ['tenant_id', 'unit_id']) || $added;
+    $added = $schema3990->addColumnIfMissing('game_role_kits', 'unit_id', 'INT UNSIGNED DEFAULT NULL') || $added;
+    $added = $schema3990->addColumnIfMissing('game_role_kits', 'source', "VARCHAR(24) NOT NULL DEFAULT 'scratch'") || $added;
+    $added = $schema3990->addIndexIfMissing('game_role_kits', 'idx_game_role_kits_unit', ['tenant_id', 'unit_id']) || $added;
     echo $added
         ? "  [OK] Kits : colonnes unit_id et source ajoutées.\n"
         : "  [OK] Kits : colonnes unit_id et source déjà présentes.\n";
 }
 
-if ($schema3970->tableExists('arsenal_wardrobe_favorites')) {
+if ($schema3990->tableExists('arsenal_wardrobe_favorites')) {
     echo "  [OK] Table arsenal_wardrobe_favorites déjà présente.\n";
 } else {
     $pdo->exec(

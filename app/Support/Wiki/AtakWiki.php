@@ -70,7 +70,6 @@ final class AtakWiki
     public static function catalog(): array
     {
         if (self::$memo !== null) {
-            /** @phpstan-ignore-next-line */
             return self::$memo;
         }
         $sources = self::sources();

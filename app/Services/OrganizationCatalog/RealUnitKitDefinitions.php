@@ -583,6 +583,12 @@ final class RealUnitKitDefinitions
         return array_keys(self::NODES);
     }
 
+    /** Adresse courte du rattachement de référence, null pour un sommet. */
+    public static function parentSlug(string $slug): ?string
+    {
+        return self::NODES[$slug][0] ?? null;
+    }
+
     /** Nom officiel d’une unité de l’arbre. */
     public static function officialName(string $slug): ?string
     {

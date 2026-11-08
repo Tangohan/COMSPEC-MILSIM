@@ -74,5 +74,7 @@ return [
     ['id' => 'discord_companion', 'label' => 'ATHENA Companion : serveurs Discord et codes de liaison', 'group' => 'schema', 'file' => '3940_discord_companion.php', 'rerun' => true],
     ['id' => 'patch_studio_workspace', 'label' => 'Patch Studio : projets, ressources privées, versions, setups et vignettes', 'group' => 'schema', 'file' => '3950_patch_studio_workspace.php', 'rerun' => true],
     ['id' => 'atak_aar_conclude_permission', 'label' => 'Droit de conclusion des comptes rendus pour les gestionnaires et adjoints', 'group' => 'schema', 'file' => '3960_atak_aar_conclude_permission.php', 'rerun' => true],
-    ['id' => 'equipment_starter_kits', 'label' => 'Page Équipement : kits de départ proposés à une unité ou à un rôle (unité et origine du kit) et tenues mises en favori par chaque membre', 'group' => 'schema', 'file' => '3970_equipment_starter_kits.php', 'rerun' => true],
+    ['id' => 'platform_account_bans_sanctions', 'label' => 'Sanctions du site : bannissements avec date de fin (sanction temporaire), note de levée et historique par personne', 'group' => 'schema', 'file' => '3970_platform_account_bans_sanctions.php', 'rerun' => true],
+    ['id' => 'platform_watch', 'label' => 'Surveillance de la plateforme : charge par route et par communauté (conservation courte) et alertes d’activité anormale du mod, à décider par un humain', 'group' => 'schema', 'file' => '3980_platform_watch.php', 'rerun' => true],
+    ['id' => 'equipment_starter_kits', 'label' => 'Page Équipement : kits de départ proposés à une unité ou à un rôle (unité et origine du kit) et tenues mises en favori par chaque membre', 'group' => 'schema', 'file' => '3990_equipment_starter_kits.php', 'rerun' => true],
 ];

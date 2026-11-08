@@ -160,6 +160,11 @@ final class AdvancementProposalEngine
             $near = $gradeMissing['near_months'] !== null && $gradeMissing['near_months'] <= $settings['near_months'] && $gradeMissing['only_time'];
         }
 
+        // Candidat éligible : une qualification manquante reste affichée au staff, sans changer le statut.
+        if ($eligible) {
+            $missing = array_merge($missing, $this->qualificationNotices($eligibility));
+        }
+
         // 1. Temps dans le grade.
         $months = isset($eligibility['months_in_grade']) ? (int) $eligibility['months_in_grade'] : null;
         $required = isset($eligibility['months_required']) && $eligibility['months_required'] !== null ? max(0, (int) $eligibility['months_required']) : 0;
@@ -482,6 +487,28 @@ final class AdvancementProposalEngine
     }
 
     /** @param list<string> $strengths */
+    /**
+     * Qualifications non remplies d'un candidat éligible (suivi indicatif, ne bloque rien).
+     *
+     * @param array<string, mixed> $eligibility
+     * @return list<string>
+     */
+    private function qualificationNotices(array $eligibility): array
+    {
+        $notices = [];
+        foreach (is_array($eligibility['conditions'] ?? null) ? $eligibility['conditions'] : [] as $condition) {
+            if (!is_array($condition) || !empty($condition['met']) || (string) ($condition['key'] ?? '') !== 'qualification') {
+                continue;
+            }
+            $label = trim((string) preg_replace('/^Qualification\s+/u', '', (string) ($condition['label'] ?? '')));
+            $notices[] = (str_contains((string) ($condition['detail'] ?? ''), 'Niveau')
+                ? 'Niveau requis non atteint pour la qualification ' . $label
+                : 'Manque la qualification ' . $label) . ' (pour information, n’empêche pas la proposition)';
+        }
+
+        return $notices;
+    }
+
     private function justification(int $score, array $strengths): string
     {
         $text = 'Proposition de la détection automatique (score ' . $score . ' sur 100)';
