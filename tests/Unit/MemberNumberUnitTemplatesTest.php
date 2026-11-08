@@ -56,11 +56,11 @@ final class MemberNumberUnitTemplatesTest extends TestCase
     public function testSchemaStepIsRegisteredAndCreatesTheTenantScopedTable(): void
     {
         $registry = self::read('database/steps/registry.php');
-        self::assertStringContainsString("'file' => '4000_member_number_unit_templates.php'", $registry);
-        $step = self::read('database/steps/4000_member_number_unit_templates.php');
+        self::assertStringContainsString("'file' => '4020_member_number_unit_templates.php'", $registry);
+        $step = self::read('database/steps/4020_member_number_unit_templates.php');
         self::assertStringContainsString('CREATE TABLE IF NOT EXISTS tenant_member_number_unit_templates', $step);
         self::assertStringContainsString('PRIMARY KEY (tenant_id, unit_id)', $step);
-        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4000_member_number_unit_templates.php');
+        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4020_member_number_unit_templates.php');
     }
 
     public function testRouteAndControllerCheckTheUnitBelongsToTheCommunity(): void

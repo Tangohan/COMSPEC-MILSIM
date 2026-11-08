@@ -11,9 +11,9 @@ declare(strict_types=1);
  * n'est modifié ni supprimé.
  */
 
-$schema4000 = new \App\Support\Migrations\SchemaInspector($pdo);
+$schema4020 = new \App\Support\Migrations\SchemaInspector($pdo);
 
-if ($schema4000->tableExists('tenant_member_number_unit_templates')) {
+if ($schema4020->tableExists('tenant_member_number_unit_templates')) {
     echo "  [OK] Table tenant_member_number_unit_templates déjà présente.\n";
 } else {
     $pdo->exec(
