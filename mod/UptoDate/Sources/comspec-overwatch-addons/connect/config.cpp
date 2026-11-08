@@ -341,6 +341,7 @@ class CfgFunctions {
             class ndaTexts {};
             class licenceStatus {};
             class athenaMode {};
+            class uplinkOff {};
             class athenaApply {};
             class athenaChoiceShow {};
             class athenaChoiceOnLoad {};
@@ -350,6 +351,7 @@ class CfgFunctions {
             class athenaOfferLink {};
             class ndaOnLoad {};
             class ndaSetLanguage {};
+            class ndaWatch {};
             class ndaAccept {};
             class ndaDecline {};
             class resetBetaNdaAck {};

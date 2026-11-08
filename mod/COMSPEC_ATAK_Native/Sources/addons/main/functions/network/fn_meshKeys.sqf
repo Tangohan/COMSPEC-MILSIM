@@ -14,6 +14,7 @@
       "define" [nom, camp, réseau] (serveur) -> id ; "request" [auto] ; "zeroize" ; "rekey" [id] ; "compromise" [id] ; "taken" [objet d'où vient l'appareil]
       "nodeKey" -> entier à publier ; "authorized" [camp, entier] -> vrai si ce nœud est admis ; "compromisedNk" [camp] -> entier ou -9
       "state" [id] -> "valide" | "à renouveler" | "absente" | "compromise" ; "rows" -> lignes de l'app Wave Relay ; "unknown" -> appareils non autorisés à portée
+      "link" -> état réel du chiffrement de ma liaison, pour la barre d'état et l'app Wave Relay : [code (enc, stale, comp, clear), libellé court, libellé, détail, image, couleur, jeton de couleur du thème]
       "stamp" [groupe] -> [id, époque] ou [] ; "open" [étiquette, texte] -> texte ou [CHIFFRÉ · nom] ; "voiceOk" -> vrai si ma clé couvre le groupe de ma radio
 */
 params [["_act", ""], ["_arg", []], ["_caller", objNull]];
@@ -78,6 +79,24 @@ switch (_act) do {
         if (_row select 3) exitWith { "compromise" };
         ["à renouveler", "valide"] select ((_mine get (_row select 0)) isEqualTo (_row select 2))
     };
+    case "link": {
+        private _dir = "\z\comspec_atak_native\addons\main\data\";
+        private _clear = {
+            params ["_why"];
+            ["clear", "EN CLAIR", "NON CHIFFRÉ", _why, _dir + "net_lock_open_ca.paa", [0.62, 0.70, 0.66, 1], "hexTextMuted"]
+        };
+        if (!_on) exitWith { ["Clés du maillage désactivées sur ce serveur"] call _clear };
+        if !(["active"] call comspec_atak_native_fnc_mpuLink) exitWith { ["Liaison réaliste désactivée sur ce serveur"] call _clear };
+        private _row = [str side group player] call _netRow;
+        if (_row isEqualTo []) exitWith { ["Clé de réseau pas encore créée"] call _clear };
+        _row params ["_id", "_name", "_ep"];
+        private _st = ["state", [_id]] call comspec_atak_native_fnc_meshKeys;
+        if (_st isEqualTo "absente") exitWith { [format ["Clé %1 non chargée", _name]] call _clear };
+        if (_st isEqualTo "compromise") exitWith { ["comp", "COMPROMISE", "CLÉ COMPROMISE", format ["Clé %1 compromise : changez-la", _name], _dir + "net_lock_closed_ca.paa", [0.88, 0.25, 0.22, 1], "hexAlert"] };
+        if (_st isEqualTo "à renouveler") exitWith { ["stale", "PÉRIMÉE", "CLÉ À RENOUVELER", format ["Clé %1 périmée : le réseau est à l'époque %2", _name, _ep], _dir + "net_lock_closed_ca.paa", [0.95, 0.67, 0.20, 1], "hexWarn"] };
+        if !((uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["ok", false]) exitWith { ["Clé valide, mais hors du maillage"] call _clear };
+        ["enc", "ENCRYPTED", "ENCRYPTED", format ["Clé %1, époque %2. Mécanique de jeu, aucune sécurité réelle", _name, _ep], _dir + "net_lock_closed_ca.paa", [0.36, 0.78, 0.42, 1], "hexOk"]
+    };
     case "stamp": {
         if (!_on) exitWith { [] };
         private _kn = ["keyOf", [_arg param [0, 0]]] call comspec_atak_native_fnc_meshGroups;
@@ -112,6 +131,7 @@ switch (_act) do {
             ["comspec_atak_native_meshKeyGive", {
                 params [["_id", -1], ["_epoch", 0]];
                 private _mine = missionNamespace getVariable ["COMSPEC_ATAK_MeshKeysMine", createHashMap];
+                if ((_mine getOrDefault [_id, -1]) isNotEqualTo _epoch) then { ["INFO", format ["Clé du maillage chargée, époque %1", _epoch], 5, 30] call comspec_atak_native_fnc_notify; };
                 _mine set [_id, _epoch];
                 missionNamespace setVariable ["COMSPEC_ATAK_MeshKeysMine", _mine];
                 uiNamespace setVariable ["COMSPEC_ATAK_MpuMeshAt", -100];

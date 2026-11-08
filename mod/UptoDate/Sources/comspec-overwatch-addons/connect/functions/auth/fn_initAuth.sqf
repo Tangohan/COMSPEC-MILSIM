@@ -13,10 +13,11 @@ missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
 private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 missionNamespace setVariable ["comspec_overwatch_api_url", _url];
 
-"COMSPECExtension" callExtension "Warmup";
 // extAwait (dans un spawn) : Init, reprise de session, Connect et IP ne figent plus le jeu pendant leurs requêtes HTTP.
 private _init = [["COMSPECExtension", "Init", [_url]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 ["INFO", "Athena", format ["Init extension %1", _init]] call comspec_overwatch_connect_fnc_log;
+// Adresse du portail posée par Init : préchauffage de la connexion (fn_uplinkHold passé).
+"COMSPECExtension" callExtension "Warmup";
 
 if ([] call comspec_overwatch_connect_fnc_restoreSession) exitWith { true };
 // Menu principal : pas encore de joueur. La mission relancera Steam (display 46).

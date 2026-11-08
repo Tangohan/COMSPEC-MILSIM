@@ -56021,7 +56021,7 @@ return [
     'Remplacer la version nuit actuelle ?' => 'Replace the current night version?',
     'Rend la version enregistrée disponible dans ATAK pour les membres autorisés. L’écusson en 3D demande l’addon chargé avant la partie.' => 'Makes the saved version available in ATAK to authorized members. The 3D patch needs the addon loaded before the game.',
     'Rien à afficher dans cette version.' => 'Nothing to show in this version.',
-    'Réel : la luminosité et le contraste ci-dessous sont appliqués aux pixels du fichier exporté. Aperçu seulement : le vert, le grain et la lumière ambiante. Non fournis : matériau infrarouge (.rvmat), carte _smdi, fil réfléchissant.' => 'Real: the brightness and contrast below are applied to the pixels of the exported file. Preview only: the green tint, grain and ambient light. Not provided: infrared material (.rvmat), _smdi map, reflective thread.',
+    'Réel : la luminosité et le contraste ci-dessous sont appliqués aux pixels du fichier exporté. Aperçu seulement : le vert, le grain et la lumière ambiante. Fournis : matériau (.rvmat) et carte _smdi de tissu mat. Non fourni : réponse infrarouge propre, fil réfléchissant.' => 'Real: the brightness and contrast below are applied to the pixels of the exported file. Preview only: the green tint, grain and ambient light. Provided: matte fabric material (.rvmat) and _smdi map. Not provided: own infrared response, reflective thread.',
     'Réel.' => 'Real.',
     'Réglages de vision nocturne enregistrés avec le projet.' => 'Night vision settings saved with the project.',
     'Réglages exportés pour la version nuit' => 'Settings exported for the night version',
