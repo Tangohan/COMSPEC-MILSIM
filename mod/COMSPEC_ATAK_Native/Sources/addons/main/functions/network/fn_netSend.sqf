@@ -67,6 +67,8 @@ if ((["realism"] call comspec_atak_native_fnc_netCond) isNotEqualTo 0) then {
     missionNamespace setVariable ["COMSPEC_ATAK_NetBusyUntil", time + _wait + _air];
 };
 private _delay = _wait + (((_q get "latency") + random (_q getOrDefault ["jitter", 0])) / 1000) + _air;
+// Icône « transmet » de la barre d'état (fn_mpuLink "badge") : seulement si le téléphone passe réellement par la radio.
+["txMark", [_delay]] call comspec_atak_native_fnc_mpuLink;
 ["ENVOI", format ["essai %1 · %2 s · %3 kbit/s · perte %4 %%", _try, _delay toFixed 1, _q get "kbps", _q get "loss"]] call _trace;
 if (_delay > 3) then { ["INFO", format ["%1 : envoi en cours, environ %2 s (%3 kbit/s)", _label, ceil _delay, _q get "kbps"], (_delay min 8), 15] call comspec_atak_native_fnc_notify; };
 [{

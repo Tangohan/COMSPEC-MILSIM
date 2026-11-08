@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : icône de la radio MPU dans la barre d'état (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Une icône pour la radio MPU dans la barre du téléphone
+- Quand une radio MPU-5 est reliée au téléphone, une petite icône de radio apparaît en haut, à côté du cadenas : radio vide (allumée, pas reliée), radio + câble (câble EUD), radio + ondes (Wi-Fi), radio barrée (liaison coupée).
+- Pendant que le téléphone envoie vraiment quelque chose par la radio (position, message, photo, voix relayée), l'icône devient une radio avec une flèche montante.
+- Survolez l'icône pour lire ce qu'elle veut dire, avec un exemple. Le logo hexagonal vert à maillon reste celui de COMSPEC Link (compte Athena), il n'a rien à voir avec la radio.
+- Quand la barre est trop étroite, l'icône passe avant le libellé du cadenas et la mémoire vive.
+EN : An icon for the MPU radio in the phone status bar
+- When an MPU-5 radio is linked to the phone, a small radio icon shows at the top next to the padlock: empty radio (on, not linked), radio + cable (EUD cable), radio + waves (Wi-Fi), crossed-out radio (link lost).
+- While the phone is really sending something through the radio (position, message, photo, relayed voice), the icon becomes a radio with an up arrow.
+- Hover the icon to read what it means, with an example. The green hexagon logo with a link is still COMSPEC Link (Athena account); it has nothing to do with the radio.
+- When the bar is too narrow, the icon is kept before the padlock label and the RAM.
+
+### Détail technique
+- `fn_mpuLink` : actions `badge` (code `off`/`idle`/`cable`/`wifi`/`tx`/`cut`, texture, couleur du thème pour `idle`, infobulle ; ne lit que `status` en cache et `COMSPEC_ATAK_MpuNode`) et `txMark` (pose `COMSPEC_ATAK_MpuTxUntil`, 1,5 à 6 s, seulement si le téléphone est relié et le réseau en service). Appelée par `fn_netSend` (envois réellement partis) et `fn_relayTxBadge` (voix relayée, événements ACRE2 déjà écoutés ; aucun appel ACRE2 / TFAR de plus).
+- `fn_layoutApply` : nouveau contrôle `COMSPEC_ATAK_MpuCtrl` après le cadenas ; priorité d'affichage cadenas > icône MPU > libellé du cadenas > RAM, chacun seulement s'il tient en entier. `fn_statusUpdate` : écritures seulement si la valeur change.
+- `tools/gen_mpu_status_icons.py` : 5 PAA 64 px (`mpu_idle`, `mpu_cable`, `mpu_wifi`, `mpu_tx`, `mpu_cut`) dans `main/data`, blancs sur transparent, ancien fichier supprimé avant conversion. Formes distinctes : la couleur n'est jamais seule.
+- Autotest : étape `tel_icone_mpu`. Chaînes anglaises dans `i18n/en.txt`.
+
 ## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
