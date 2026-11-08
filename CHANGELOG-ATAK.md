@@ -38,9 +38,9 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## BFT : l'ORBAT du site et les joueurs hors ligne ; écran et PC du poste TOC (version à attribuer)
+## BFT : l'ORBAT du site et les joueurs hors ligne ; écran et PC du poste TOC (ATAK natif, version à attribuer)
 
-### Résumé pour les joueurs (devient « Résumé joueur » quand le numéro est fixé)
+### Résumé joueur
 Type : nouveauté
 FR : Le BFT affiche l'ORBAT de votre communauté, hors ligne compris
 - Onglet ORBAT du BFT : l'arbre de votre ORBAT Athena, avec chaque membre et son état : en jeu avec distance et gisement, en jeu sans piste, hors ligne, poste vacant.
