@@ -56502,4 +56502,6 @@ return [
     'Écouter la bibliothèque d’Athena' => 'Listen to the Athena library',
     'Ce morceau ne peut pas être lu pour le moment.' => 'This track cannot be played right now.',
     'Retardée' => 'Delayed',
+    'Session' => 'Session',
+    'Calendrier des opérations, créneaux et sessions de jeu — cliquez un événement pour ouvrir sa fiche.' => 'Calendar of operations, slots and game sessions: click an event to open its page.',
 ];
