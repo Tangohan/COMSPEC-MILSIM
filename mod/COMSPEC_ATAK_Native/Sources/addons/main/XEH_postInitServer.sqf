@@ -24,6 +24,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_zeusServer;
 // CR de fin d'opération imposé en jeu : droits, envoi aux joueurs visés, suivi (fn_debriefServer).
 ["init"] call comspec_atak_native_fnc_debriefServer;
+// Traces civiles des HVT : un contrôle par minute, désactivées par défaut (fn_hvtTrace).
+["initSrv"] call comspec_atak_native_fnc_hvtTrace;
 // Téléphones personnels : codes, essais et données, côté serveur (fn_phoneServer).
 ["init"] call comspec_atak_native_fnc_phoneServer;
 // App Admin du téléphone : relevé de la partie et debug de l'IA à la demande d'un Zeus ou d'un gestionnaire (fn_adminServer).

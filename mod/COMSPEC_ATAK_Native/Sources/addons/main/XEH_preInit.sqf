@@ -797,6 +797,19 @@ private _phones = ["COMSPEC", "ATAK · Téléphones personnels"];
     _phones, [10, 1800, 120, 0], 1] call comspec_atak_native_fnc_addSetting;
 // Tinder : chasse aux HVT (fn_hvtIntel). Chaque cible peut aussi être réglée à part (module Eden / Zeus « Tinder : profil HVT / SSE »).
 private _hvt = ["COMSPEC", "ATAK · Tinder : chasse aux HVT"];
+// Traces civiles (fn_hvtTrace) : décochées par défaut, jamais de position exacte ni de suivi en direct.
+["comspec_atak_native_hvt_trace", "CHECKBOX",
+    ["Traces civiles des HVT", "Les apps civiles (Tinder, UberEats) révèlent quand et dans quelle zone d'1 km une HVT était active, avec du retard. Jamais sa position du moment. La mission ou le Zeus peut aussi les activer."],
+    _hvt, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_hvt_trace_role", "CHECKBOX",
+    ["Traces civiles : renseignement seul", "Coché : réservé aux rôles de renseignement (renseign, intel, s2, g2 dans le rôle), à COMSPEC_ATAK_IntelOperator, au Zeus et à l'admin."],
+    _hvt, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_hvt_trace_every", "SLIDER",
+    ["Traces civiles : intervalle (min)", "Temps moyen entre deux relevés d'une cible. Tous ne donnent pas une trace."],
+    _hvt, [1, 60, 5, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_hvt_trace_delay", "SLIDER",
+    ["Traces civiles : retard (min)", "Âge minimal d'une trace à sa publication. Jamais moins de 2 min."],
+    _hvt, [2, 60, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_hvt_tips", "LIST",
     ["Tinder : tuyaux sur les HVT", "Chasse aux HVT dans Tinder : à quelle fréquence les informateurs likent (envoient un tuyau, vrai ou faux) sur les HVT de la carte. Plus de civils autour du joueur, plus de tuyaux. Jamais = pas de tuyaux ni de dossiers."],
     _hvt, [[0, 1, 2, 3], ["Jamais", "Rarement", "Normal", "Souvent"], 2], 1] call comspec_atak_native_fnc_addSetting;

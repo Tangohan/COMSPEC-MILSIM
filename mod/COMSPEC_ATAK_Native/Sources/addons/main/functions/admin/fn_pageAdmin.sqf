@@ -300,6 +300,8 @@ switch (_tab) do {
             ["coupé", "actif"] select _capOn, _radius, ["coupée", "active"] select _hunt, _huntR, _crack, [[diag_tickTime - _dbgAt] call _ago, "en attente"] select (_dbgAt < 0)]];
         _rows pushBack ["buttons", [
             ["ACTUALISER", { ["scan"] call comspec_atak_native_fnc_adminClient; }, true, true],
+            [["TRACES CIVILES HVT : ACTIVER", "TRACES CIVILES HVT : COUPER"] select (["on"] call comspec_atak_native_fnc_hvtTrace), compile format ["['server', ['hvtTrace', [%1]]] call comspec_atak_native_fnc_adminClient;", !(["on"] call comspec_atak_native_fnc_hvtTrace)], false, true,
+                "Tinder : heure et zone d'1 km des HVT, publiées avec du retard, pour toute la partie"],
             [["RÉTABLIR LA TRAQUE", "COUPER LA TRAQUE"] select _hunt, compile format ["['server', ['hunt', [%1]]] call comspec_atak_native_fnc_adminClient;", !_hunt], false, true,
                 "Traque des joueurs par l'IA qui a un téléphone, pour toute la partie"]
         ]];

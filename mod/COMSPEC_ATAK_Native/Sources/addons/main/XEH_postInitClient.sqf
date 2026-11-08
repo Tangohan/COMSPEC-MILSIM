@@ -508,6 +508,8 @@ player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_l
 // Téléphone visible sur le gilet (fn_vestMount), téléphone extractible en cas de capture (fn_phoneSecurity).
 // App Communauté : kit obligatoire comparé toutes les 30 s, sans coût par image (fn_tenantAction).
 [{ ["tick"] call comspec_atak_native_fnc_tenantAction; }, 30] call COMSPEC_ATAK_PfhSpread;
+// Traces civiles des HVT : alerte à la publication d'une trace (fn_hvtTrace).
+["init"] call comspec_atak_native_fnc_hvtTrace;
 // Téléphones personnels : fiches à jour, relevé sans coût par image (fn_phoneOwn).
 ["init"] call comspec_atak_native_fnc_phoneOwn;
 [{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_phoneSecurity; ["tick"] call comspec_atak_native_fnc_phoneOwn; }, 2] call COMSPEC_ATAK_PfhSpread;
