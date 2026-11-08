@@ -74,6 +74,19 @@ class UnitRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /** Unités comptées dans le plafond de la formule : tout sauf les unités archivées. */
+    public function countForPlanQuota(int $tenantId): int
+    {
+        $sql = 'SELECT COUNT(*) FROM units WHERE tenant_id = ?';
+        if ($this->columnExists('units', 'admin_status')) {
+            $sql .= " AND (admin_status IS NULL OR admin_status <> 'archived')";
+        }
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public function countPublicForTenant(int $tenantId): int
     {
         if (!$this->columnExists('units', 'show_on_public_page')) {
