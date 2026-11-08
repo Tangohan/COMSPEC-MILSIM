@@ -234,6 +234,68 @@ final class TenantMemberNumberConfigRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    public function unitTemplatesReady(): bool
+    {
+        $st = $this->pdo->query(
+            "SELECT 1 FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_member_number_unit_templates' LIMIT 1"
+        );
+
+        return $st && (bool) $st->fetchColumn();
+    }
+
+    /**
+     * Modèle de matricule choisi pour chaque unité de la communauté (les autres unités suivent le modèle général).
+     *
+     * @return array<int, string> identifiant d’unité => modèle
+     */
+    public function listUnitTemplates(int $tenantId): array
+    {
+        if ($tenantId < 1 || !$this->unitTemplatesReady()) {
+            return [];
+        }
+        $stmt = $this->pdo->prepare('SELECT unit_id, pattern FROM tenant_member_number_unit_templates WHERE tenant_id = ? ORDER BY unit_id');
+        $stmt->execute([$tenantId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $pattern = trim((string) ($row['pattern'] ?? ''));
+            if ($pattern !== '') {
+                $out[(int) $row['unit_id']] = $pattern;
+            }
+        }
+
+        return $out;
+    }
+
+    /** Enregistre le modèle d’une unité ; un modèle vide la remet sur le modèle général. */
+    public function saveUnitTemplate(int $tenantId, int $unitId, ?string $pattern): bool
+    {
+        if ($tenantId < 1 || $unitId < 1 || !$this->unitTemplatesReady()) {
+            return false;
+        }
+        $pattern = $pattern !== null ? trim($pattern) : '';
+        if ($pattern === '') {
+            $stmt = $this->pdo->prepare('DELETE FROM tenant_member_number_unit_templates WHERE tenant_id = ? AND unit_id = ?');
+
+            return $stmt->execute([$tenantId, $unitId]);
+        }
+        $stmt = $this->pdo->prepare('UPDATE tenant_member_number_unit_templates SET pattern = ?, updated_at = NOW() WHERE tenant_id = ? AND unit_id = ?');
+        $stmt->execute([$pattern, $tenantId, $unitId]);
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+        $exists = $this->pdo->prepare('SELECT 1 FROM tenant_member_number_unit_templates WHERE tenant_id = ? AND unit_id = ? LIMIT 1');
+        $exists->execute([$tenantId, $unitId]);
+        if ($exists->fetchColumn()) {
+            return true;
+        }
+        $ins = $this->pdo->prepare(
+            'INSERT INTO tenant_member_number_unit_templates (tenant_id, unit_id, pattern, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())'
+        );
+
+        return $ins->execute([$tenantId, $unitId, $pattern]);
+    }
+
     /** @return array<string, mixed>|null Ligne d’historique de CETTE communauté. */
     public function findAudit(int $tenantId, int $auditId): ?array
     {

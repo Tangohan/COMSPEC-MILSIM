@@ -110,6 +110,7 @@ final class MemberNumberAnalysis
 
     /**
      * @param list<array{id: int, tenant_member_number?: string|null}> $members
+     * @param list<string> $extraPatterns formats choisis pour certaines unités (reconnus eux aussi)
      * @return array{
      *   total: int,
      *   assigned: int,
@@ -125,9 +126,13 @@ final class MemberNumberAnalysis
      *   suggested_next: int
      * }
      */
-    public static function analyze(array $members, string $pattern, string $prefix, ?string $tenantSlug, int $nextSequence): array
+    public static function analyze(array $members, string $pattern, string $prefix, ?string $tenantSlug, int $nextSequence, array $extraPatterns = []): array
     {
         $regexes = self::patternRegexes($pattern, $prefix, $tenantSlug);
+        foreach ($extraPatterns as $extra) {
+            $regexes = array_merge($regexes, self::patternRegexes((string) $extra, $prefix, $tenantSlug));
+        }
+        $regexes = array_values(array_unique($regexes));
         $hasNumber = preg_match('/\{NUMBER(:\d+)?\}/i', $pattern) === 1;
 
         $byValue = [];

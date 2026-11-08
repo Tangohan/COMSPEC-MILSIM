@@ -1914,7 +1914,7 @@ class UserRepository
      * du modèle de matricule. Unité : affectation principale du dossier, sinon première affectation active.
      *
      * @param list<int> $userIds
-     * @return array<int, array{unit: string, grade: string}>
+     * @return array<int, array{unit: string, grade: string, unit_id: int}> unit_id : unité retenue (0 si aucune)
      */
     public function memberNumberContextsForTenant(int $tenantId, array $userIds): array
     {
@@ -1924,7 +1924,7 @@ class UserRepository
         }
         $out = [];
         foreach ($userIds as $id) {
-            $out[$id] = ['unit' => '', 'grade' => ''];
+            $out[$id] = ['unit' => '', 'grade' => '', 'unit_id' => 0];
         }
         $tenantLit = (int) $tenantId;
         foreach (array_chunk($userIds, 500) as $chunk) {
@@ -1932,7 +1932,7 @@ class UserRepository
             // Unité principale (dossier personnel), puis première affectation active.
             if ($this->tableExists('personnel_profiles') && $this->personnelProfilesHasColumn('primary_unit_id')) {
                 $st = $this->pdo()->prepare(
-                    'SELECT pp.user_id, un.code FROM personnel_profiles pp
+                    'SELECT pp.user_id, un.id AS unit_id, un.code FROM personnel_profiles pp
                      INNER JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = ' . $tenantLit . '
                      WHERE pp.user_id IN (' . $in . ')'
                     . ($this->personnelProfilesHasColumn('tenant_id') ? ' AND pp.tenant_id = ' . $tenantLit : '')
@@ -1942,12 +1942,16 @@ class UserRepository
                     $uid = (int) $row['user_id'];
                     if (isset($out[$uid]) && $out[$uid]['unit'] === '') {
                         $out[$uid]['unit'] = trim((string) ($row['code'] ?? ''));
+                        // L'unité retenue est celle dont le code est utilisé ; à défaut, la première rencontrée.
+                        if ($out[$uid]['unit'] !== '' || $out[$uid]['unit_id'] === 0) {
+                            $out[$uid]['unit_id'] = (int) $row['unit_id'];
+                        }
                     }
                 }
             }
             if ($this->tableExists('user_units')) {
                 $st = $this->pdo()->prepare(
-                    'SELECT uu.user_id, un.code FROM user_units uu
+                    'SELECT uu.user_id, un.id AS unit_id, un.code FROM user_units uu
                      INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = ' . $tenantLit . '
                      WHERE uu.user_id IN (' . $in . ')'
                     . ($this->columnExists('user_units', 'ended_at') ? ' AND uu.ended_at IS NULL' : '')
@@ -1959,6 +1963,9 @@ class UserRepository
                     $code = trim((string) ($row['code'] ?? ''));
                     if (isset($out[$uid]) && $out[$uid]['unit'] === '' && $code !== '') {
                         $out[$uid]['unit'] = $code;
+                        $out[$uid]['unit_id'] = (int) $row['unit_id'];
+                    } elseif (isset($out[$uid]) && $out[$uid]['unit_id'] === 0) {
+                        $out[$uid]['unit_id'] = (int) $row['unit_id'];
                     }
                 }
             }
