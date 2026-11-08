@@ -156,6 +156,12 @@ final class AuditAction
     /** Plancher de version des DLL du jeu (réglage game_min_link_version : administration du site ou tools/game-client-gate.php). */
     public const PLATFORM_GAME_CLIENT_FLOOR_UPDATED = 'platform.game_client_floor_updated';
 
+    /** Réglages de surveillance : seuils d'alerte de charge, ralentissement sous charge, seuils des détecteurs du mod. */
+    public const PLATFORM_LOAD_SETTINGS_UPDATED = 'platform.load_settings_updated';
+
+    /** Décision humaine sur une alerte d'activité anormale du mod ou de charge (prise en compte, ignorée, rouverte). */
+    public const PLATFORM_ABUSE_ALERT_HANDLED = 'platform.abuse_alert_handled';
+
     /** Vidage d’un lot d’historiques volumineux (administration du site). */
     public const PLATFORM_STORAGE_PURGED = 'platform.storage_purged';
 

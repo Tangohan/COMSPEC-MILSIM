@@ -49,6 +49,19 @@ final class AtakReleaseInfo
     }
 
     /**
+     * Version de la liaison Overwatch connect dans les sources : c'est la version que le mod remonte comme mod_version.
+     */
+    public static function connectVersion(?string $root = null): ?string
+    {
+        $base = rtrim($root ?? base_path(), '/');
+
+        return self::match(
+            '/versionStr\s*=\s*"([0-9]+(?:\.[0-9]+){1,3})"/',
+            self::read($base . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/config.cpp')
+        );
+    }
+
+    /**
      * « Résumé joueur » de l'entrée du changelog dont le titre porte « ATAK natif <version> » : titre puis puces,
      * en une ligne par langue (notification « mise à jour disponible » du téléphone). Vide si l'entrée n'en a pas.
      *

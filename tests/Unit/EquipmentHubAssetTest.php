@@ -14,7 +14,10 @@ final class EquipmentHubAssetTest extends TestCase
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/ArsenalWardrobeController.php');
-        $hub = (string) file_get_contents($root . '/views/equipment/hub.php');
+        // La page est découpée : hub.php (sections), _dialogs.php (fenêtres), _wardrobe_card.php (carte d'une tenue).
+        $hub = (string) file_get_contents($root . '/views/equipment/hub.php')
+            . (string) file_get_contents($root . '/views/equipment/_dialogs.php')
+            . (string) file_get_contents($root . '/views/equipment/_wardrobe_card.php');
         $collection = (string) file_get_contents($root . '/views/equipment/collection.php');
         $tenue = (string) file_get_contents($root . '/views/equipment/tenue.php');
         $layout = (string) file_get_contents($root . '/views/layout/main.php');

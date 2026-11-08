@@ -11,6 +11,7 @@ use App\Repositories\UserRepository;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Security\FileRateLimiter;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Services\Watch\ModSignals;
 
 /**
  * Contrôles serveur pour écritures issues du client Arma (hostile).
@@ -21,6 +22,9 @@ final class AtakArmaWriteGuard
     /** Bornes carte Arma v1.94+ (BI : X/Y/Z clampés ≈ -50 km … +500 km). */
     public const POS_MIN = -50000.0;
     public const POS_MAX = 500000.0;
+
+    /** Steam du joueur de la requête en cours, pour rattacher un refus à son auteur (détecteurs du mod). */
+    private ?string $signalSteam = null;
 
     public function __construct(
         private UserRepository $users = new UserRepository(),
@@ -56,6 +60,8 @@ final class AtakArmaWriteGuard
                 'message' => 'Identifiant Steam non reconnu. Relancez la liaison depuis Athena.',
             ], 400);
         }
+        $claimedSteam = $steam;
+        $this->signalSteam = $steam;
         // Session jeu déjà validée (Bearer) : reprendre le Steam stocké si le corps n’en a pas.
         if ($steam === null) {
             $fromSession = ComspecApiKeyAuth::matchedSteamId();
@@ -176,6 +182,8 @@ final class AtakArmaWriteGuard
         if ($rate instanceof Response) {
             return $rate;
         }
+
+        $this->signalActor($tenantId, $claimedSteam ?? $steam, $session, $sessionToken, $apiKey, $body, $channel);
 
         return [
             'steam_uid' => $steam,
@@ -386,10 +394,13 @@ final class AtakArmaWriteGuard
     }
 
     /** @param array<string, mixed> $meta */
-    private function log(int $tenantId, bool $ok, string $label, array $meta): void
+    private function log(int $tenantId, bool $ok, string $label, array $meta, bool $signal = true): void
     {
         if ($tenantId < 1) {
             return;
+        }
+        if (!$ok && $signal) {
+            $this->signalRefusal($tenantId, $meta);
         }
         try {
             $this->activityLog?->recordAuthAttempt($tenantId, $ok, $label, $meta);
@@ -414,6 +425,10 @@ final class AtakArmaWriteGuard
         if ($tenantId < 1 || $reasonKey === '' || $windowSeconds < 1) {
             return;
         }
+        // Chaque refus compte pour le détecteur, même quand le journal Liaison n'en garde qu'un par fenêtre.
+        if (!$ok) {
+            $this->signalRefusal($tenantId, $meta);
+        }
         $key = 'atak:guard-log:' . $tenantId . ':' . $reasonKey;
         try {
             // Première frappe de la fenêtre uniquement.
@@ -423,6 +438,63 @@ final class AtakArmaWriteGuard
         } catch (\Throwable) {
             return;
         }
-        $this->log($tenantId, $ok, $label, $meta);
+        $this->log($tenantId, $ok, $label, $meta, false);
+    }
+
+    /**
+     * Détecteurs du mod : un refus d'écriture (une ligne de tampon, aucune base). La session ignorée n'est pas un
+     * refus : la requête continue avec la clé.
+     *
+     * @param array<string, mixed> $meta
+     */
+    private function signalRefusal(int $tenantId, array $meta): void
+    {
+        $reason = (string) ($meta['reason'] ?? 'refused');
+        if ($reason === 'invalid_session_ignored') {
+            return;
+        }
+        try {
+            ModSignals::refusal($tenantId, $this->signalSteam, $reason, (string) ($meta['channel'] ?? ''));
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
+     * Détecteurs du mod : un envoi accepté, avec l'identifiant présenté (genre et empreinte, jamais la clé), le Steam
+     * lié à cet identifiant et les versions annoncées. Une ligne de tampon, aucune base.
+     *
+     * @param array{tenant_id: int, steam_uid: string, key_fp: string, expires_at: int}|null $session
+     * @param array<string, mixed> $body
+     */
+    private function signalActor(int $tenantId, ?string $steam, ?array $session, string $sessionToken, string $apiKey, array $body, string $channel): void
+    {
+        try {
+            if ($session !== null) {
+                $kind = ModSignals::CRED_GAME_SESSION;
+                $secret = $sessionToken;
+                $bound = $session['steam_uid'];
+            } elseif (ComspecApiKeyAuth::matchedUserId() !== null) {
+                $kind = ModSignals::CRED_ACCOUNT_TOKEN;
+                $secret = $apiKey;
+                $bound = ComspecApiKeyAuth::matchedSteamId();
+            } else {
+                $kind = ModSignals::CRED_COMMUNITY_KEY;
+                $secret = '';
+                $bound = null;
+            }
+            $client = GameClientVersionGate::parseUserAgent((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+            $declared = $body['extension_version'] ?? $body['dll_version'] ?? '';
+            ModSignals::actor(
+                $tenantId,
+                $steam,
+                $kind,
+                $secret,
+                $bound,
+                (string) ($client['version'] ?? ''),
+                is_scalar($declared) ? (string) $declared : '',
+                $channel
+            );
+        } catch (\Throwable) {
+        }
     }
 }
