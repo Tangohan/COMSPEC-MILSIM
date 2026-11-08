@@ -17,7 +17,7 @@
                   COMSPEC_AtakRelayCondOk quand il change ("srv" : boucle de XEH_postInitServer, toutes les 2 s).
                   Les clients ne lisent que ce résultat.
     Raison affichée : COMSPEC_AtakRelayCondText de l'objet, sinon celle du préréglage (« mât replié », « en mouvement »...).
-    Depuis une mission ou un script (variable publique, réglée sur le serveur ou par le module « ATAK · Relais ») :
+    Depuis une mission ou un script (variable publique, réglée sur le serveur ou par le module « Poser un relais ») :
       _veh setVariable ["COMSPEC_AtakRelayCond", "mast", true];
     Condition en code (sur le serveur seulement) :
       _veh setVariable ["COMSPEC_AtakRelayCondSrv", "_this animationSourcePhase ""mast_src"" > 0.9"];

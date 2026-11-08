@@ -59,17 +59,17 @@ if (!hasInterface) exitWith {};
 [{ !isNil "zen_custom_modules_fnc_register" }, {
     {
         _x params ["_name", "_mode", "_icon"];
-        ["COMSPEC SSE · Mission", _name, compile format ["['%1'] call comspec_sse_fnc_campaignZeus", _mode], _icon] call comspec_sse_fnc_zenModule;
+        ["COMSPEC_Cat_Mission", _name, compile format ["['%1'] call comspec_sse_fnc_campaignZeus", _mode], _icon] call comspec_sse_fnc_zenModule;
     } forEach [
-        ["Campagne : charger ou créer", "load", "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa"],
-        ["Campagne : sauvegarder maintenant", "save", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa"],
-        ["Campagne : état et journal", "info", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"],
-        ["Campagne : remettre à zéro (drill)", "reset", "\a3\ui_f\data\igui\cfg\simpleTasks\types\refuel_ca.paa"],
-        ["Campagne : fin de mission (sauver ou vider)", "end", "\a3\ui_f\data\igui\cfg\simpleTasks\types\exit_ca.paa"],
-        ["Campagne : exporter", "export", "\a3\ui_f\data\igui\cfg\simpleTasks\types\upload_ca.paa"],
-        ["Campagne : importer", "import", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa"],
-        ["Campagne : supprimer une sauvegarde", "delete", "\a3\ui_f\data\igui\cfg\simpleTasks\types\danger_ca.paa"],
-        ["Campagne : envoyer à Athena", "athenaPush", "\a3\ui_f\data\igui\cfg\simpleTasks\types\upload_ca.paa"],
-        ["Campagne : récupérer depuis Athena", "athenaPull", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa"]
+        ["Charger une campagne", "load", "\z\comspec_sse\addons\zeus\data\mod_map.paa"],
+        ["Sauvegarder la campagne", "save", "\z\comspec_sse\addons\zeus\data\mod_save.paa"],
+        ["Voir l'état de la campagne", "info", "\z\comspec_sse\addons\zeus\data\mod_doc.paa"],
+        ["Remettre la campagne à zéro", "reset", "\z\comspec_sse\addons\zeus\data\mod_trash.paa"],
+        ["Clore la mission", "end", "\z\comspec_sse\addons\zeus\data\mod_trash.paa"],
+        ["Exporter la campagne", "export", "\z\comspec_sse\addons\zeus\data\mod_save.paa"],
+        ["Importer une campagne", "import", "\z\comspec_sse\addons\zeus\data\mod_save.paa"],
+        ["Supprimer une sauvegarde", "delete", "\z\comspec_sse\addons\zeus\data\mod_trash.paa"],
+        ["Envoyer la campagne à Athena", "athenaPush", "\z\comspec_sse\addons\zeus\data\mod_save.paa"],
+        ["Campagne : récupérer depuis Athena", "athenaPull", "\z\comspec_sse\addons\zeus\data\mod_save.paa"]
     ];
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

@@ -4,7 +4,7 @@
     Passerelle SSE ↔ ATAK natif : le câble DL-7 se configure dans le SSE.
 
     Toujours chargée (l'ATAK natif est une dépendance obligatoire du SSE) :
-      - les modules d'extraction de l'ATAK passent dans « COMSPEC SSE · 4. Numérique » ;
+      - les modules d'extraction de l'ATAK passent dans « COMSPEC · Renseignement (SSE) » ;
       - catégorie Eden « COMSPEC SSE — Extraction DL-7 » sur n'importe quel objet ;
       - le contenu numérique généré par le SSE (fichiers, courriels, messages,
         identifiants, lieux) devient extractible au câble sans rien saisir ;
@@ -77,16 +77,22 @@ class CfgVehicles {
     class Module_F;
     class COMSPEC_ATAK_Module_DataBase: Module_F {};
     class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
-        category = "COMSPEC_SSE_Domex";
-        displayName = "$STR_COMSPEC_SSE_CFG_B019C6DD4A";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_data.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_data.paa";
+        category = "COMSPEC_Cat_Sse";
+        displayName = "$STR_COMSPEC_SSE_CFG_271C15D369";
     };
     class COMSPEC_ATAK_Module_DataFile: COMSPEC_ATAK_Module_DataBase {
-        category = "COMSPEC_SSE_Domex";
-        displayName = "$STR_COMSPEC_SSE_CFG_30F2887289";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_data.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_data.paa";
+        category = "COMSPEC_Cat_Sse";
+        displayName = "$STR_COMSPEC_SSE_CFG_58CA32DD5B";
     };
     class COMSPEC_ATAK_Module_DataReset: COMSPEC_ATAK_Module_DataBase {
-        category = "COMSPEC_SSE_Domex";
-        displayName = "$STR_COMSPEC_SSE_CFG_AA363E785D";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_trash.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_trash.paa";
+        category = "COMSPEC_Cat_Sse";
+        displayName = "$STR_COMSPEC_SSE_CFG_42055C212F";
     };
 };
 

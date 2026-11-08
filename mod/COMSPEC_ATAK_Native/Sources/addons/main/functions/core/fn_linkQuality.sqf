@@ -69,10 +69,10 @@ private _mul = 1;
 private _lat = 60;
 private _loss = 0;
 private _kbps = 4000;
-// Meilleur relais reçu (fn_relayNet "best") : relais de la mission (module « ATAK · Relais » ou Overwatch), passerelle
+// Meilleur relais reçu (fn_relayNet "best") : relais de la mission (module « Poser un relais » ou Overwatch), passerelle
 // de véhicule ou PC mobile ; relief, batterie, brouillage, chaîne des répéteurs et saturation déjà comptés.
 private _best = ["best"] call comspec_atak_native_fnc_relayNet;
-// Relais obligatoires : case « Relais obligatoires » d'un module « ATAK · Relais » (presque plus de réseau sans relais).
+// Relais obligatoires : case « Relais obligatoires » d'un module « Poser un relais » (presque plus de réseau sans relais).
 // Réseau exclusivement par relais : réglage serveur, case du module ou mode réaliste d'Athena (aucun réseau sans relais).
 private _only = ["only"] call comspec_atak_native_fnc_relayNet;
 private _req = _only || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]};

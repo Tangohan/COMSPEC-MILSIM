@@ -8,7 +8,7 @@
     reliée par le câble EUD (USB-C) ou par le Wi-Fi local de la radio, à quelques mètres.
       - MPU5 (Wave Relay, objet COMSPEC_ATAK_MPU5 ou toute classe « MPU5 », fn_mpu5 "has") : nœud d'un réseau maillé
         (MANET) avec les autres MPU5 allumées sur le même canal et les relais de la mission (pylônes, module
-        « ATAK · Relais », passerelles : passerelles du maillage, sur tous les canaux). Multi-sauts : chaque MPU5 allumée
+        « Poser un relais », passerelles : passerelles du maillage, sur tous les canaux). Multi-sauts : chaque MPU5 allumée
         relaie les autres, même si son porteur n'y relie pas son téléphone. Portée selon la puissance (1, 3 ou 6 W ;
         réglage comspec_atak_native_mpu5_range à 6 W), relief (fn_radioLink "coarse", en cache 30 s), brouilleurs.
         Batterie propre (autonomie comspec_atak_native_mpu_hours à 6 W, moins à basse puissance), objet

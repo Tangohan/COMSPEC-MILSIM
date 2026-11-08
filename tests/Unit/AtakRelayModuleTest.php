@@ -40,7 +40,7 @@ final class AtakRelayModuleTest extends TestCase
         }
         $cfg = $this->read(self::MAIN . '/config.cpp');
         self::assertStringContainsString('class moduleRelay {};', $cfg);
-        self::assertStringContainsString('class COMSPEC_ATAK_Network: NO_CATEGORY', $cfg);
+        self::assertStringContainsString('class COMSPEC_Cat_Atak: NO_CATEGORY', $cfg);
         self::assertStringContainsString('class CfgHints {', $cfg);
         $fn = $this->read(self::MAIN . '/functions/network/fn_moduleRelay.sqf');
         self::assertStringContainsString('_logic getVariable ["objectArea", []]', $fn);
