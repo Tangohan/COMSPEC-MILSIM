@@ -1,3 +1,11 @@
+[h1]COMSPEC ATAK — Mise à jour 4.1.0.AG - Washington[/h1]
+[b]Publication : 08/11/2026[/b]
+[quote]
+[b]Important :[/b] ce pack contient COMSPEC Link 2.0.121 et demande COMSPEC SSE 1.5.0. Mettez à jour, quittez Arma 3 complètement, puis relancez. La note de service et la licence sont à relire et à accepter une fois.
+[/quote]
+
+Voir le détail sur la page du mod.
+
 [h1]COMSPEC ATAK — Mise à jour 4.0.0.AG - Washington[/h1]
 [b]Publication : 08/11/2026[/b]
 [quote]

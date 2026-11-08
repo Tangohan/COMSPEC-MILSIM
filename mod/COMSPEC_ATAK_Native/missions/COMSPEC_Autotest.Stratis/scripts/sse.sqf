@@ -120,3 +120,29 @@ AT_fnc_ia = {
     deleteVehicle _o;
     call AT_fnc_done;
 }, 45] call AT_fnc_run;
+
+// Papiers de la visionneuse : une pièce par papier (jour), capture de chacune ; textures de nuit présentes ; long texte non coupé.
+["sse_papiers", {
+    if (["comspec_sse_fnc_paperSkin", "comspec_sse_fnc_showResult"] call AT_fnc_nil) exitWith {};
+    private _long = ((["Ligne de contrôle du défilement, texte long."] call { private _l = []; for "_i" from 1 to 40 do { _l pushBack (_this select 0); }; _l }) joinString " ");
+    {
+        _x params ["_code", "_lib"];
+        [fileExists (["texture", [_code, true]] call comspec_sse_fnc_paperSkin), format ["texture de nuit absente : %1", _code]] call AT_fnc_check;
+        private _doc = createHashMapFromArray [["uid", "AUTOTEST-" + _code], ["title", _lib], ["summary", ["Note : rendez-vous au pont à 22 h.", _long] select (_forEachIndex isEqualTo 0)], ["paper", _code]];
+        private _fog = createHashMapFromArray [["title", "Dossier documentaire"], ["kind", "documents"], ["level", "documents"], ["docs", [_doc]], ["lines", []], ["quality", 90], ["uid", "AUTOTEST"], ["type", "DOCUMENTS"]];
+        [_fog, objNull] call comspec_sse_fnc_showResult;
+        if !([[{ !isNull findDisplay 93010 }, 6] call AT_fnc_wait, format ["visionneuse non ouverte : %1", _code]] call AT_fnc_check) exitWith {};
+        uiSleep 0.6;
+        private _d = findDisplay 93010;
+        private _tex = _d displayCtrl 93027;
+        [ctrlShown _tex && {((toLower ctrlText _tex) find ("paper_" + _code)) >= 0}, format ["papier non posé : %1 (%2)", _code, ctrlText _tex]] call AT_fnc_check;
+        if (_forEachIndex isEqualTo 0) then {
+            private _b = _d displayCtrl 93012;
+            [((ctrlPosition _b) select 3) >= (ctrlTextHeight _b) - 0.001, "texte long coupé dans la visionneuse"] call AT_fnc_check;
+        };
+        [format ["papier_%1", _code]] call AT_fnc_shot;
+        closeDialog 0;
+        uiSleep 0.3;
+    } forEach (["list"] call comspec_sse_fnc_paperSkin);
+    call AT_fnc_done;
+}, 120] call AT_fnc_run;

@@ -61,6 +61,64 @@ EN : Phone photos send every time again
 - `Shots.Check` ajoute la taille du dossier et le dossier Captures ; `Shots.OpenCaptures` (explorateur) ; `fn_shotDir` « open », avertissement à 200 Mo (vérification 20 s après le chargement) ; boutons dans `fn_pageGallery` (ENVOIS) et `fn_pageSettings`.
 - Ticket Athena #938 (Z01, connect 1.6.34, Link 2.0.120). Notes `docs/bugs/2026-11-08-photos-telephone-bloquees-feed-backoff.md`, `2026-11-08-photos-screenshots-limite-250-mo.md`, `2026-11-08-photo-library-ancienne-photo-bloque-file.md`.
 
+---
+
+## À venir : papiers variés pour les documents SSE (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Les documents trouvés ont enfin l'air de vrais papiers
+- Quinze papiers : petits et grands carreaux, ligné, carnet à spirale, post-it, ticket de caisse, papier à en-tête, formulaire militaire, carbone, et des feuilles sales, jaunies, froissées, déchirées et recollées ou brûlées aux bords.
+- Le papier suit la pièce : une note est sur un carnet, un ordre sur un papier officiel, un ticket sur un ticket. Un document pris sur un corps est sale, celui d'une épave est brûlé. La même pièce garde toujours le même papier.
+- Les notes manuscrites s'écrivent à la main. La nuit, la feuille est plus sombre et le texte reste net ; un long document défile au lieu d'être coupé.
+- Éditeur SSE : choisissez le papier d'un renseignement dans une liste avec aperçu, ou laissez « Automatique ».
+EN : Found documents finally look like real paper
+- Fifteen papers: small and large squares, ruled, spiral notebook, sticky note, till receipt, letterhead, military form, carbon copy, and dirty, yellowed, crumpled, torn-and-taped or burnt-edged sheets.
+- The paper matches the item: a note is on a notebook, an order on official paper, a receipt on a receipt. A document taken from a body is dirty, one from a wreck is burnt. The same item always keeps the same paper.
+- Handwritten notes look handwritten. At night the sheet is darker and the text stays sharp; a long document scrolls instead of being cut off.
+- SSE editor: pick the paper of an intel item from a list with previews, or leave it on "Automatic".
+
+### Détail technique
+- `tools/gen_paper_textures.py` dessine les 15 papiers (Pillow, bruit et défauts générés, aucune image tierce), jour et nuit, 512 x 512 DXT1 via ImageToPAA : `addons/ui/data/paper`, 2,4 Mo. `comspec_sse_ui.pbo` passe d'environ 0,1 Mo à 2,5 Mo.
+- `comspec_sse_fnc_paperSkin` : choix (papier de l'éditeur, contexte : corps, épave, document « bruit » ou usé, puis nature d'après le titre et tirage stable, graine = identifiant de la pièce) et pose (contrôle image 93027, bandeaux teintés à la couleur de la feuille). Pièces de l'éditeur enregistrées avant : `legacy`, feuille unie ; style imposé par le module Zeus de chrome : ancien rendu.
+- Visionneuse : corps dans un groupe à défilement (93028) à la hauteur du texte. Écriture manuscrite : police Caveat du jeu si elle existe (`CfgFontFamilies`), sinon police actuelle.
+- Autotest : étape `sse_papiers`, une capture par papier.
+
+---
+## Pack 4.1.0 Washington : verrouillage et code, carte tactique, mode pilote, réseau réaliste, profils IA, licence (ATAK natif 4.1.0.AG - Washington, COMSPEC Link 2.0.121, SSE 1.5.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.1.0 Washington : écran de verrouillage, carte tactique, mode pilote, réseau réaliste et profils d'IA
+- **Écran de verrouillage et code** : écran refait, code à 4 à 8 chiffres avec indice, fonds d'écran, Bloc-notes (ouvrir, éditer, partager, supprimer), Bluetooth refait et dégâts d'écran variés.
+- **Carte** : fond ARDOISE, style tactique, point GPS aligné avec ses cercles, pointage par appui long, icônes lisibles, suppression et partage des routes.
+- **Tracés** : routes et zones réparées, plus d'objectif créé à chaque tracé, noms au format militaire, formes et suppression partout, sur le web et la carte du jeu.
+- **Mode pilote, FIRES court et apps regroupées** : réglages d'addon, désactivés par défaut.
+- **BFT** : l'ORBAT du site et les joueurs hors ligne. **Écran et poste TOC** refaits, diapositives corrigées.
+- **Explosifs** : app refaite et déclencheur réseau, avec confirmation avant le tir.
+- **Réseau** : réalisme activé par défaut, vraies radios ACRE et TFAR en priorité, objet obligatoire réglable, tutoriel, assistant de configuration, garde-fous pour ne jamais gêner ACRE et TFAR. La voix relayée reste à activer par l'admin.
+- **Antennes et tours** : déploiement réparé, tours relais épurées, mini-antennes de bâtiment.
+- **Zeus** : Centre Zeus, modules rangés en 4 catégories, fenêtre de configuration des objets.
+- **SSE 1.5.0** : profils d'IA reliés à Athena, papiers aux IA, réponses au-dessus de la tête, couverture reliée à Athena, éditeur utilisable pour les 5 types.
+- **Licence** : nouvelle note de service, à relire et accepter une fois.
+- **Corrections** : traductions anglaises, plantage en boucle après une caméra IP, appareil compromis, texte coupé en petit format.
+EN : ATAK 4.1.0 Washington: lock screen, tactical map, pilot mode, realistic network and AI profiles
+- **Lock screen and code**: redesigned lock screen, 4 to 8 digit code with hint, wallpapers, Notepad (open, edit, share, delete), redesigned Bluetooth and varied screen damage.
+- **Map**: SLATE background, tactical style, GPS dot aligned with its circles, press-and-hold pointer, readable icons, delete and share for routes.
+- **Drawing**: routes and zones repaired, no more objective created at every stroke, military-style names, shapes and deletion everywhere, on the web and the in-game map.
+- **Pilot mode, short FIRES and grouped apps**: addon settings, off by default.
+- **BFT**: the site ORBAT and offline players. **TOC screen and post** redesigned, slides fixed.
+- **Explosives**: redesigned app and network detonator, with confirmation before firing.
+- **Network**: realism on by default, real ACRE and TFAR radios first, configurable required item, tutorial, setup assistant, safeguards so the mod never gets in the way of ACRE or TFAR. Relayed voice stays opt-in for the admin.
+- **Antennas and towers**: deployment fixed, cleaner relay towers, building mini antennas.
+- **Zeus**: Zeus Centre, modules sorted into 4 categories, object configuration window.
+- **SSE 1.5.0**: AI profiles linked to Athena, papers for AIs, replies above heads, cover linked to Athena, editor usable for all 5 types.
+- **Licence**: new service note, to read and accept once.
+- **Fixes**: English translations, looping crash after an IP camera, compromised device, text cut off at small sizes.
+
+### Détail technique
+Les entrées « À venir » qui suivent détaillent chaque lot de cette version ; leur numéro est celui de ce pack. COMSPEC Link 2.0.121 : `GetCommunityOrbat`, `RepairLocalData`, plus aucune requête vers Athena tant que la liaison n'est pas autorisée.
+
 ## À venir : textes entiers en portrait, relevé du document au contrôle d'identité (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -106,6 +164,9 @@ EN : Licence to read again, network padlock, clearer ping, patches with a materi
 - Patch Studio : `patch.rvmat`, `patch_smdi.paa`, `material` dans `CfgUnitInsignia` (lu par `BIS_fnc_setUnitInsignia`). Aucune réponse IR propre : le moteur n'a pas ce canal.
 - Service Athéna sur « Non » : plus aucune requête vers Athena. `KickBackgroundWarmup` envoyait un HEAD à chaque chargement du mod ; commande `UplinkOff` et garde des requêtes dans la DLL à la coupure en cours de session ; appels directs du SSE soumis à `fn_uplinkOff`. Fenêtre Windows de repli alignée sur la note.
 - Rien n'a été testé en jeu.
+
+---
+
 ## À venir : thème jour lisible, écran numérique des preuves, éditeur SSE en anglais (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
