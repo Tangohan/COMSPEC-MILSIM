@@ -298,6 +298,7 @@ switch (_act) do {
             if ((missionNamespace getVariable ["COMSPEC_ATAK_VoiceLive", false]) || {(missionNamespace getVariable ["COMSPEC_ATAK_AcreSigOrig", []]) isNotEqualTo []} || {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceTf", []]) isNotEqualTo []} || {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isNotEqualTo []}) then {
                 ["release", ["voix relayée désactivée"]] call comspec_atak_native_fnc_mpuVoice;
             };
+            ["tick"] call comspec_atak_native_fnc_meshGroups;
         };
         missionNamespace setVariable ["COMSPEC_ATAK_GuardIn", (missionNamespace getVariable ["COMSPEC_ATAK_GuardIn", 0]) + 1];
         private _b = missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []];

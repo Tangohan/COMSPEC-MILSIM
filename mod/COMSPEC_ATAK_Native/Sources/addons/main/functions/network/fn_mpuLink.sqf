@@ -259,8 +259,9 @@ switch (_act) do {
         private _gr = call _gear;
         private _radioMod = (_gr param [7, ""]) isNotEqualTo "";
         // Radio ACRE2 ou TFAR sur le joueur : reliée toute seule, sans objet à nous. Un débranchement à la main reste jusqu'à ce qu'il range la radio.
+        // La radio personnelle (343) ne remplace pas le réseau du téléphone toute seule : 300 m et 100 kbit/s seraient une perte pour un fantassin. Reliée à la main seulement.
         if (!_radioMod) then { _st set ["autoOff", false]; };
-        if (_radioMod && {(_st get "link") isEqualTo ""} && {!(_st getOrDefault ["autoOff", false])}) then {
+        if (_radioMod && {(_gr select 2) isNotEqualTo "PERSO"} && {(_st get "link") isEqualTo ""} && {!(_st getOrDefault ["autoOff", false])}) then {
             _st set ["link", "cable"];
             _st set ["holder", objNull];
             ["SUCCESS", format ["Réseau par votre radio %1", _gr select 3]] call _say;

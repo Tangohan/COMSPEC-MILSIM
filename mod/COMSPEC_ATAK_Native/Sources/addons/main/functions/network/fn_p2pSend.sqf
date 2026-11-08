@@ -40,7 +40,7 @@ _p2p pushBack _m;
 while {(count _p2p) > 200} do { _p2p deleteAt 0; };
 _data set ["p2p", _p2p];
 // Archive sur le site (fn_p2pArchive) : le champ « à » porte l'indicatif et le nom du destinataire. Jamais depuis le téléphone d'un autre.
-_m set ["noSite", ["active"] call comspec_atak_native_fnc_phoneOwn];
+_m set ["noSite", (["active"] call comspec_atak_native_fnc_phoneOwn) isEqualTo true];
 if (!isNull _target) then {
     private _toNames = [name _target];
     private _toCs = [_target, true] call comspec_atak_native_fnc_unitCallsign;

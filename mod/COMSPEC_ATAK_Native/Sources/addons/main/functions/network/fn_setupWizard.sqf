@@ -176,9 +176,9 @@ switch (_act) do {
             _c ctrlAddEventHandler ["ButtonClick", _code];
         };
         ["Annuler", _x0 + _pad, { (ctrlParent (_this select 0)) closeDisplay 2; }] call _bt;
-        ["Précédent", _x0 + _w - _pad - 2 * _bw - _pad, { ["go", -1] call comspec_atak_native_fnc_setupWizard; }, _step > 0] call _bt;
+        ["Précédent", _x0 + _w - _pad - 2 * _bw - _pad, { [{ ["go", -1] call comspec_atak_native_fnc_setupWizard; }] call comspec_atak_native_fnc_nextFrame; }, _step > 0] call _bt;
         if (_step < _last) then {
-            ["Suivant", _x0 + _w - _pad - _bw, { ["go", 1] call comspec_atak_native_fnc_setupWizard; }, true, [0.10, 0.40, 0.20, 1]] call _bt;
+            ["Suivant", _x0 + _w - _pad - _bw, { [{ ["go", 1] call comspec_atak_native_fnc_setupWizard; }] call comspec_atak_native_fnc_nextFrame; }, true, [0.10, 0.40, 0.20, 1]] call _bt;
         } else {
             ["Confirmer", _x0 + _w - _pad - _bw, { ["apply"] call comspec_atak_native_fnc_setupWizard; (ctrlParent (_this select 0)) closeDisplay 1; }, true, [0.10, 0.40, 0.20, 1]] call _bt;
         };
