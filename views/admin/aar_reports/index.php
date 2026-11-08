@@ -80,9 +80,10 @@ $filtersOn = ($f['q'] ?? '') !== '' || ($f['status'] ?? '') !== '' || ($f['autho
   </div>
 
   <nav class="bo-aar-tabs" aria-label="Vues">
-    <?php foreach (['rapports' => ['Comptes rendus', count($all)], 'actions' => ['Suivi des actions', (int) ($k['actions_open'] ?? 0)], 'missions' => ['Missions sans retour', count($missing)]] as $key => [$label, $n]): ?>
-      <a href="<?= $h($base . ($key === 'rapports' ? '' : '?vue=' . $key)) ?>" class="bo-aar-tabs__tab<?= $tab === $key ? ' is-active' : '' ?>"<?= $tab === $key ? ' aria-current="page"' : '' ?>><?= $h($label) ?> <span class="bo-aar-tabs__n"><?= (int) $n ?></span></a>
+    <?php foreach (['rapports' => ['Comptes rendus', count($all)], 'actions' => ['Suivi des actions', (int) ($k['actions_open'] ?? 0)], 'missions' => ['Missions sans retour', count($missing)], 'terrain' => ['Remontées du terrain', null]] as $key => [$label, $n]): ?>
+      <a href="<?= $h($base . ($key === 'rapports' ? '' : '?vue=' . $key)) ?>" class="bo-aar-tabs__tab<?= $tab === $key ? ' is-active' : '' ?>"<?= $tab === $key ? ' aria-current="page"' : '' ?>><?= $h($label) ?><?= $n !== null ? ' <span class="bo-aar-tabs__n">' . (int) $n . '</span>' : '' ?></a>
     <?php endforeach; ?>
+    <a href="<?= $h($base . '/syntheses') ?>" class="bo-aar-tabs__tab">Synthèses</a>
     <span class="bo-aar-tabs__spacer"></span>
     <a class="ath-btn" href="<?= $h(url('back-office/atak/comptes-rendus?onglet=suivi')) ?>">CR des joueurs (fin d’op)</a>
     <?php if ($canManage): ?>
@@ -90,6 +91,30 @@ $filtersOn = ($f['q'] ?? '') !== '' || ($f['status'] ?? '') !== '' || ($f['autho
       <a class="ath-btn ath-btn--solid" href="<?= $h($base . '/nouveau') ?>">+ Nouveau compte rendu</a>
     <?php endif; ?>
   </nav>
+
+<?php if ($tab === 'terrain'): ?>
+  <section class="ath-table-panel">
+    <div class="ath-table-toolbar"><span class="ath-table-toolbar__title">Tous les comptes rendus envoyés depuis le terrain</span><span class="ath-table-toolbar__count"><?= count($aarFieldReports ?? []) ?></span></div>
+    <?php if (($aarFieldReports ?? []) === []): ?>
+      <div class="bo-aar-empty"><p class="ath-panel__lead">Aucun compte rendu envoyé depuis le terrain pour l’instant.</p></div>
+    <?php else: ?>
+      <table class="ath-table">
+        <thead><tr><th>Référence</th><th>Sujet</th><th>Auteur</th><th>Date</th><th>État</th></tr></thead>
+        <tbody>
+        <?php foreach ($aarFieldReports as $fr): ?>
+          <tr>
+            <td><a href="<?= $h(url('back-office/remontees/cr/' . (int) $fr['id'])) ?>"><?= $h((string) ($fr['ref'] ?? '')) ?></a></td>
+            <td><?= $h((string) ($fr['title'] ?? '')) ?></td>
+            <td><?= $h((string) ($fr['author'] ?? '')) ?></td>
+            <td><?= $h($fmt($fr['at'] ?? null, 'd/m/Y H:i')) ?></td>
+            <td><?= $h((string) ($fr['state_label'] ?? $fr['state'] ?? '')) ?></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+  </section>
+<?php endif; ?>
 
 <?php if ($tab === 'rapports'): ?>
   <div class="bo-aar-seg" role="group" aria-label="Statut">
