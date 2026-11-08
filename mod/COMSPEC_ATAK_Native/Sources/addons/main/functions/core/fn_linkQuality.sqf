@@ -109,7 +109,9 @@ if (_mesh) then {
     };
     private _ms = uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap];
     private _lk = _mpu get "link";
-    _f pushBack [format ["MPU5 canal %1 (%2)", _ms getOrDefault ["chan", 1], ["câble EUD", "Wi-Fi"] select (_lk isEqualTo "wifi")],
+    // Nom de la radio réellement détectée (fn_mpu5 "detected", même source que la ligne « Radio » de l'app Wave Relay).
+    private _rn = (["detected"] call comspec_atak_native_fnc_mpu5) param [0, "MPU5"];
+    _f pushBack [format ["%1 · canal %2 (%3)", _rn, _ms getOrDefault ["chan", 1], ["câble EUD", "Wi-Fi"] select (_lk isEqualTo "wifi")],
         format ["%1 saut(s) · %2", (_mpu get "hops") max 0, [format ["%1 kbit/s", _mpu get "kbps"], format ["%1 Mbit/s", ((_mpu get "kbps") / 1000) toFixed 1]] select ((_mpu get "kbps") >= 1000)]];
     if (_lk isEqualTo "wifi") then { _f pushBack [format ["Wi-Fi de la MPU5 (%1 m)", round (_mpu get "wifiD")], format ["%1 %%", round (100 * (_mpu get "wifiQ"))]]; };
 };

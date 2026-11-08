@@ -59,27 +59,26 @@ EN : Real military symbols on the phone map
 ---
 
 ## À venir : photos du téléphone bloquées, dossier des captures plein (ATAK natif, Overwatch connect et COMSPEC Link, version à attribuer)
+## À venir : radio ACRE2 reconnue dans l'app Wave Relay (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : correctif
-FR : Les photos du téléphone partent de nouveau à chaque fois
-- Une ancienne photo de la Photo Library effacée du disque bloquait l'envoi de toutes les photos du téléphone pendant cinq minutes, sans message. Elle est maintenant ignorée et vos photos partent.
-- L'ancienne photo absente n'est plus signalée comme une erreur ni sur le téléphone : un simple avertissement dans le journal.
-- Si Arma refuse d'écrire la photo parce que le dossier des captures dépasse 250 Mo, le téléphone le dit et indique le dossier à vider.
-- Les photos envoyées sont gardées dans Documents\Arma 3 - COMSPEC\Captures et quittent le dossier Screenshots du jeu, qui ne se remplit plus. Galerie › ENVOIS et Réglages › À propos montrent la taille du dossier et un bouton OUVRIR LE DOSSIER CAPTURES.
-EN : Phone photos send every time again
-- An old Photo Library picture deleted from disk blocked every phone photo for five minutes, with no message. It is now skipped and your photos go through.
-- The missing old picture is no longer reported as an error or on the phone: just a warning in the log.
-- If Arma refuses to write the photo because the screenshots folder is over 250 MB, the phone says so and names the folder to clean.
-- Sent photos are now kept in Documents\Arma 3 - COMSPEC\Captures and leave the game's Screenshots folder, which no longer fills up. Gallery › SENT and Settings › About show the folder size and have an OPEN CAPTURES FOLDER button.
+FR : L'app Wave Relay reconnaît votre radio ACRE2
+- La ligne « Radio » de MON NŒUD donne la radio réellement détectée (par exemple la MPU-5 d'ACRE), sa portée et sa liaison (câble EUD ou Wi-Fi) ; elle ne dit plus « sans MPU5 » quand une MPU5 est reliée.
+- Avec ACRE2, une nouvelle section dit la radio ACRE reconnue et l'état de la voix par le réseau, même désactivée, avec la façon de l'activer. L'onglet VOIX le redit et propose de relier votre radio quand le serveur l'autorise.
+- Le cadenas « EN CLAIR » explique pourquoi la liaison n'est pas chiffrée : chiffrement inactif par défaut, ou clé non chargée.
+EN : The Wave Relay app recognises your ACRE2 radio
+- The "Radio" line in MY NODE shows the radio actually detected (for example the ACRE MPU-5), its range and its link (EUD cable or Wi-Fi); it no longer says "no MPU5" while an MPU5 is linked.
+- With ACRE2, a new section shows the ACRE radio recognised and the state of voice over the network, even when it is off, with how to turn it on. The VOICE tab repeats it and offers to link your radio when the server allows it.
+- The "CLEAR" padlock explains why the link is not encrypted: encryption off by default, or key not loaded.
 
 ### Détail technique
-- `fn_captureReconImage` : la pause `COMSPEC_FeedSnapFailUntil` (5 min après un `file_not_found`, `ERR|feed_backoff`) ne vaut plus que pour les aperçus automatiques des flux (flux donné, pas de fiche). `fn_photoMode` / `fn_photoCam` (flux vide, fiche) n'y passent plus.
-- `fn_extensionCallback` (`PhotoUpload`) : `file_not_found` sur un nom qui n'est pas `COMSPEC_…` (Photo Library, BCE) → phase `warn`, pas de notification, dernier retour de la Galerie inchangé, pas de pause des flux ; liste `COMSPEC_Athena_PhotoDead` portée de 200 à 600 entrées (au-delà de ~70 photos disparues, les plus anciennes revenaient toutes les 30 s). `_fnc_shotMissing` lit `size=` : dossier ≥ 240 Mo → message « dossier des captures plein ».
-- COMSPEC Link : `IsStaleTimestampedShot` (nom `AAAA_MM_JJ_HH_MM_SS…` de plus d'une heure) → un seul essai, sans les 20 s d'attente ni les relances de 150 s qui occupaient le fil des photos ; `DescribeImageLookupFailure` ajoute `size=<Mo>` du dossier en service.
-- Dossier Captures : après envoi réussi, `FinishUploadedShot` garde la copie de `Documents\Arma 3 - COMSPEC\Captures` (200 fichiers, 1 Go au plus) et retire l'original `COMSPEC_*` de Screenshots si la copie est complète (jamais une image du joueur ni le dossier du réglage). Avant (depuis e22416deb, 3 octobre), la copie était effacée et l'original restait : ~20 Mo par photo jusqu'aux 250 Mo d'Arma. `EnsureScreenshotQuota` toutes les 5 min (seuil 150 Mo) et après un `file_not_found`, au lieu d'une fois par partie.
-- `Shots.Check` ajoute la taille du dossier et le dossier Captures ; `Shots.OpenCaptures` (explorateur) ; `fn_shotDir` « open », avertissement à 200 Mo (vérification 20 s après le chargement) ; boutons dans `fn_pageGallery` (ENVOIS) et `fn_pageSettings`.
-- Ticket Athena #938 (Z01, connect 1.6.34, Link 2.0.120). Notes `docs/bugs/2026-11-08-photos-telephone-bloquees-feed-backoff.md`, `2026-11-08-photos-screenshots-limite-250-mo.md`, `2026-11-08-photo-library-ancienne-photo-bloque-file.md`.
+- Cause (4.1.0) : avec la liaison réaliste (`comspec_atak_native_mpu_real`, cochée par défaut), `fn_mpu5 "source"` renvoie toujours `[]` ; la ligne « Radio » de `fn_pageWaveRelay` le lisait et affichait « téléphone seul · portée 3.0 km (sans MPU5) » (portée de repli `COMSPEC_ATAK_MeshRange`), alors que le facteur de débit de `fn_linkQuality` lisait `fn_mpuLink "status"` (MPU5 reliée par câble). L'`ACRE_MPU5_ID_n` était bien détectée.
+- `fn_mpu5 "isMpu"` : seule règle de reconnaissance (nom « MPU5 », `acre_baseClass`, `Iceman_WR_isMPU5`, réglage `mpu5_items`), utilisée par "has", "gear" et `fn_mpuLink`. `fn_mpu5 "detected"` : seule source de la ligne « Radio », de l'objet détecté et du nom du facteur de débit.
+- `fn_mpuVoice "summary"` : état de la voix par le réseau en clair (réglage admin, coupe-circuit, liaison réaliste, pont, maillage). Section ACRE2 sur MON NŒUD, en tête de l'onglet VOIX, bouton de pont (même geste que l'action ACE).
+- `fn_meshKeys "link"` : détails du cadenas réécrits (cause et remède) ; ligne d'explication « EN CLAIR » dans l'app.
+- Autotest : étape `acre_radio_detectee` (groupe `acre`) avec `ACRE_MPU5`, 152 et 343, captures MON NŒUD et VOIX ; `ingame_test.ps1` charge `ACRE_MPU5.pbo` seul (`-SansAcreMpu5` pour l'éviter).
+- Note : `docs/bugs/2026-11-08-atak-wave-relay-radio-acre-mpu5.md`.
 
 ---
 
