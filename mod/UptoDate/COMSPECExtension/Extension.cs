@@ -379,7 +379,8 @@ public static partial class Extension
     private static string _lastPhotoHeading = "";
     private static string _lastPhotoGrid = "";
     private static long _screenshotWatchersStartedTicks;
-    private static bool _screenshotQuotaEnsured;
+    // Dernier ménage des dossiers de captures (ticks UTC). 0 : jamais fait dans cette partie.
+    private static long _screenshotQuotaAtTicks;
 
     private static void NotePostError(int code, string url, HttpResponseMessage? response = null, string? sentBody = null)
     {
@@ -10461,6 +10462,35 @@ public static partial class Extension
         }
     }
 
+    /// <summary>
+    /// Photo du mod envoyée depuis sa copie dans Captures : retire l'original du dossier Screenshots du profil si la
+    /// copie est complète. Jamais une image du joueur (nom autre que COMSPEC_…), jamais le dossier choisi par le
+    /// joueur dans le réglage. Faux : pas de copie distincte (envoi depuis l'original).
+    /// </summary>
+    internal static bool FinishUploadedShot(string? original, string? sent)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(original) || string.IsNullOrWhiteSpace(sent)) return false;
+            if (string.Equals(Path.GetFullPath(original), Path.GetFullPath(sent), StringComparison.OrdinalIgnoreCase))
+                return false;
+            var name = Path.GetFileName(original) ?? "";
+            if (!name.StartsWith("COMSPEC_", StringComparison.OrdinalIgnoreCase)) return true;
+            var ext = Path.GetExtension(name).ToLowerInvariant();
+            if (ext != ".png" && ext != ".jpg" && ext != ".jpeg") return true;
+            if (IsUserShotDir(Path.GetDirectoryName(original) ?? "")) return true;
+            var src = new FileInfo(original);
+            var copy = new FileInfo(sent);
+            if (src.Exists && copy.Exists && copy.Length == src.Length) src.Delete();
+            return true;
+        }
+        catch
+        {
+            // Fichier encore ouvert : il reste dans Screenshots, le ménage de 5 min s'en chargera.
+            return true;
+        }
+    }
+
     /// Alias callExtension : NotifyNewPhoto, EnqueueReconImage, UploadReconImage.
     /// Arguments : 0 chemin, 1 auteur, 2-4 pos, 5 grille, 6 cap, 7 altitude, 8 légende, 9 unité, 10 camp, 11 mission,
     /// 12 appareil, 13 heure Unix, 14 flux, 15-16 effet ; facultatifs (2.0.66) : 17 titre, 18 description, 19 SSE (0/1),
@@ -10740,6 +10770,8 @@ public static partial class Extension
         TimeSpan? newestFallback = job.NewestFallback ? TimeSpan.FromSeconds(180) : null;
         string? resolved = null;
         string? identityKey = null;
+        // Capture d'origine (Screenshots du profil) avant sa copie dans Documents\Arma 3 - COMSPEC\Captures.
+        string? originalShot = null;
 
         EnsureScreenshotQuota();
 
@@ -10749,6 +10781,9 @@ public static partial class Extension
         var maxAttempts = specificName ? 50 : 25;
         // Relance différée : courte attente, la file des autres photos ne reste pas bloquée.
         if (job.LateRetries > 0) maxAttempts = 5;
+        // Ancienne photo horodatée (> 1 h) : un seul essai, pas de relance (voir IsStaleTimestampedShot).
+        var staleShot = specificName && IsStaleTimestampedShot(job.RawPath, DateTime.Now);
+        if (staleShot) maxAttempts = 1;
         for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             var fb = newestFallback;
@@ -10792,10 +10827,11 @@ public static partial class Extension
                 }
             }
             catch { /* ignore */ }
+            if (attempt + 1 >= maxAttempts) break;
             await Task.Delay(400).ConfigureAwait(false);
         }
 
-        if (resolved == null && specificName && job.LateRetries < PhotoLateRetryMax
+        if (resolved == null && specificName && !staleShot && job.LateRetries < PhotoLateRetryMax
             && (DateTime.UtcNow - job.EnqueuedUtc).TotalSeconds < 150)
         {
             // Arma n'écrit la capture qu'à l'image suivante : jeu en pause, fenêtre réduite ou disque lent, le PNG
@@ -10820,6 +10856,9 @@ public static partial class Extension
                 : Path.GetFileName(job.RawPath.Replace('/', '\\'));
             if (specificName || isSseFace || isSseNote)
                 ReleasePhotoDedup(job.DedupKey);
+            // Capture du mod jamais écrite : souvent le dossier plein (250 Mo). Ménage tout de suite, pas dans 5 min.
+            if (!staleShot)
+                EnsureScreenshotQuota(force: true);
             PhotoJournal(job, "failed", "file not found");
             InvokeCallback(cbName,
                 $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(job.RawPath)}");
@@ -10858,6 +10897,7 @@ public static partial class Extension
                 InvokeCallback(cbName, "OK|duplicate|" + Path.GetFileName(resolved));
                 return;
             }
+            originalShot = resolved;
             var mirrored = MirrorCapture(resolved);
             if (!string.IsNullOrWhiteSpace(mirrored))
                 resolved = mirrored;
@@ -10968,8 +11008,12 @@ public static partial class Extension
                 NoteEndpointOk(uri.AbsoluteUri);
                 NoteRateLimitCleared();
                 PhotoJournal(job, "done", code.ToString(System.Globalization.CultureInfo.InvariantCulture), code);
-                // Photo prise par le téléphone (COMSPEC_*) bien reçue par Athena : on l'efface du poste du joueur.
-                TryDeleteUploadedPhoto(resolved);
+                // Photo du mod (COMSPEC_*) reçue par Athena. Copie dans Captures : elle y reste (app Galerie, 200 fichiers
+                // et 1 Go au plus) et l'original est retiré de Screenshots, sous la limite de 250 Mo d'Arma. Avant, la
+                // copie était effacée et l'original restait : ~20 Mo par photo jusqu'à ce qu'Arma n'écrive plus rien.
+                // Sans copie (Documents non inscriptibles) : effacée après envoi, comme avant.
+                if (!FinishUploadedShot(originalShot, resolved))
+                    TryDeleteUploadedPhoto(resolved);
                 InvokeCallback("PhotoUpload", "OK|uploaded|" + fileName);
                 return;
             }
@@ -11862,11 +11906,62 @@ public static partial class Extension
             ScreenshotDirs();
             string active;
             lock (ShotDirsLock) { active = _shotDirActive; }
-            return $"{srcDir}|dirs={dirCount}|{newestHint}|{string.Join(" ; ", dirs)}|in={active.Replace('|', '/')}";
+            // « size= » : taille du dossier en service, en Mo. Arma n'écrit plus aucune capture au-delà de 250 Mo par
+            // dossier (« exceeded size limit (250MB) ») : le message au joueur le dit au lieu d'un « introuvable ».
+            var sizeMb = DirectorySizeMb(active);
+            var sizePart = sizeMb >= 0 ? "|size=" + sizeMb.ToString(System.Globalization.CultureInfo.InvariantCulture) : "";
+            return $"{srcDir}|dirs={dirCount}|{newestHint}|{string.Join(" ; ", dirs)}|in={active.Replace('|', '/')}{sizePart}";
         }
         catch
         {
             return "diag_failed";
+        }
+    }
+
+    /// <summary>Taille des fichiers du dossier (sans sous-dossiers), en Mo ; -1 si absent ou illisible.</summary>
+    internal static long DirectorySizeMb(string? dir)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir)) return -1;
+            long total = 0;
+            foreach (var f in new DirectoryInfo(dir).EnumerateFiles("*", SearchOption.TopDirectoryOnly))
+            {
+                try { total += f.Length; } catch { /* fichier disparu */ }
+            }
+            return total / (1024 * 1024);
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    private static readonly Regex TimestampedShotName = new(
+        @"^(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Ancienne photo horodatée (Photo Library / Quick Picture IceMan : « 2025_10_27_11_59_52.png », heure du PC à la
+    /// prise) datant de plus d'une heure : si elle n'est pas sur le disque, elle a été effacée ou déplacée et ne sera
+    /// jamais écrite. Inutile d'attendre 20 s puis de relancer pendant 150 s : le fil des photos resterait occupé et
+    /// les nouvelles photos attendraient derrière. Les photos du mod (COMSPEC_…) ne sont jamais concernées.
+    /// </summary>
+    internal static bool IsStaleTimestampedShot(string? rawPath, DateTime nowLocal)
+    {
+        try
+        {
+            var name = Path.GetFileName((rawPath ?? "").Trim().Trim('"').Trim('\'').Replace('/', '\\'));
+            if (string.IsNullOrWhiteSpace(name)) return false;
+            var m = TimestampedShotName.Match(name);
+            if (!m.Success) return false;
+            int G(int i) => int.Parse(m.Groups[i].Value, System.Globalization.CultureInfo.InvariantCulture);
+            var taken = new DateTime(G(1), G(2), G(3), G(4), G(5), G(6), DateTimeKind.Local);
+            return nowLocal - taken > TimeSpan.FromHours(1);
+        }
+        catch
+        {
+            // Date impossible (mois 13…) : pas un horodatage, traitement normal.
+            return false;
         }
     }
 
@@ -12146,6 +12241,7 @@ public static partial class Extension
     }
 
     private static string? _comspecCaptureDir;
+    private const long CapturesMaxBytes = 1024L * 1024 * 1024;
 
     /// <summary>
     /// Recopie best-effort d’une capture résolue dans le dossier COMSPEC (jamais bloquant).
@@ -12170,14 +12266,17 @@ public static partial class Extension
             if (!File.Exists(dest))
                 File.Copy(resolved, dest, false);
 
+            // 200 fichiers et 1 Go au plus (les photos envoyées y restent, ~20 Mo chacune), les plus récents gardés.
             var files = new DirectoryInfo(dir).GetFiles();
-            if (files.Length > 200)
+            Array.Sort(files, (a, b) => b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc));
+            long kept = 0;
+            for (var i = 0; i < files.Length; i++)
             {
-                Array.Sort(files, (a, b) => b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc));
-                for (var i = 200; i < files.Length; i++)
-                {
-                    try { files[i].Delete(); } catch { /* ignore */ }
-                }
+                long len = 0;
+                try { len = files[i].Length; } catch { /* ignore */ }
+                kept += len;
+                if (i < 200 && kept <= CapturesMaxBytes) continue;
+                try { files[i].Delete(); } catch { /* ignore */ }
             }
 
             return File.Exists(dest) ? dest : resolved;
@@ -12665,7 +12764,23 @@ public static partial class Extension
                     + (exists ? "1" : "0") + "|" + (readable ? "1" : "0") + "|"
                     + count.ToString(CultureInfo.InvariantCulture) + "|" + Clean(newest?.Name ?? "-") + "|"
                     + age.ToString(CultureInfo.InvariantCulture) + "|" + (userErr.Length > 0 ? userErr : "-") + "|"
-                    + Clean(userRaw.Length > 0 ? userRaw : "-") + "|" + Clean(dirs.Length > 0 ? string.Join(" ; ", dirs) : "-");
+                    + Clean(userRaw.Length > 0 ? userRaw : "-") + "|" + Clean(dirs.Length > 0 ? string.Join(" ; ", dirs) : "-")
+                    // Taille du dossier en service (Mo, limite d'Arma 250) et dossier Captures du mod (« - » : impossible
+                    // à créer, Documents non inscriptibles ; l'envoi part alors de Screenshots).
+                    + "|" + DirectorySizeMb(exists ? active : null).ToString(CultureInfo.InvariantCulture)
+                    + "|" + Clean(ComspecCaptureDir() ?? "-");
+            }
+            case "Shots.OpenCaptures":
+            {
+                // Ouvre Documents\Arma 3 - COMSPEC\Captures dans l'explorateur (créé au besoin), hors du fil du jeu.
+                var dir = ComspecCaptureDir();
+                if (dir == null) return "ERR|captures_unavailable";
+                _ = Task.Run(() =>
+                {
+                    try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "\"" + dir + "\"") { UseShellExecute = false })?.Dispose(); }
+                    catch { /* explorateur indisponible */ }
+                });
+                return "OK|" + dir;
             }
         }
         return "ERR|unknown";
@@ -12728,19 +12843,30 @@ public static partial class Extension
     /// Dossier Screenshots saturé (plafond Arma 250 Mo) → <c>screenshot</c> échoue
     /// sans écrire. On libère nos PNG COMSPEC et on relève le plafond du profil.
     /// </summary>
-    private static void EnsureScreenshotQuota()
+    private static void EnsureScreenshotQuota(bool force = false)
     {
-        if (_screenshotQuotaEnsured) return;
-        _screenshotQuotaEnsured = true;
+        // Toutes les 5 min au plus, plus seulement à la première photo de la partie : une photo du téléphone pèse
+        // ~20 Mo et son original reste dans Screenshots (app Galerie). Fait une seule fois, le dossier repassait les
+        // 250 Mo d'Arma après une dizaine de photos et plus aucune capture n'était écrite (file_not_found).
+        var now = DateTime.UtcNow.Ticks;
+        var last = Interlocked.Read(ref _screenshotQuotaAtTicks);
+        if (!force && !IsScreenshotQuotaDue(last, now)) return;
+        if (Interlocked.CompareExchange(ref _screenshotQuotaAtTicks, now, last) != last) return;
+        // Plafond du profil relevé une fois par partie : le fichier .Arma3Profile n'est pas réécrit toutes les 5 min.
+        var patchProfiles = last == 0;
         // Parcours de tous les dossiers de captures (milliers de fichiers possibles) : hors du fil du jeu.
-        _ = Task.Run(EnsureScreenshotQuotaCore);
+        _ = Task.Run(() => EnsureScreenshotQuotaCore(patchProfiles));
     }
 
-    private static void EnsureScreenshotQuotaCore()
+    internal static bool IsScreenshotQuotaDue(long lastTicks, long nowTicks)
+        => lastTicks == 0 || nowTicks - lastTicks >= TimeSpan.FromMinutes(5).Ticks;
+
+    private static void EnsureScreenshotQuotaCore(bool patchProfiles)
     {
         try
         {
-            const long softLimit = 180L * 1024 * 1024;
+            // 150 Mo : 100 Mo de marge sous les 250 Mo d'Arma, soit ~5 photos du téléphone entre deux ménages.
+            const long softLimit = 150L * 1024 * 1024;
             foreach (var dir in EnumerateScreenshotDirs())
             {
                 // Dossier choisi par le joueur : lecture seule, jamais de ménage.
@@ -12772,7 +12898,8 @@ public static partial class Extension
                     catch { /* ignore */ }
                 }
             }
-            PatchArma3ProfilesScreenshotLimit();
+            if (patchProfiles)
+                PatchArma3ProfilesScreenshotLimit();
         }
         catch
         {
