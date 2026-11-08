@@ -2596,11 +2596,14 @@ class AtakDataRepository
             2,
             function () use ($tenantId, $mapId, $limit): array {
                 $stmt = $this->pdo()->prepare(
-                    'SELECT * FROM atak_pings WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
+                    'SELECT *, TIMESTAMPDIFF(SECOND, created_at, NOW()) AS age_s FROM atak_pings'
+                    . ' WHERE tenant_id = ? AND map_id = ? ORDER BY created_at DESC LIMIT ' . $limit
                 );
                 $stmt->execute([$tenantId, $mapId]);
+                $split = \App\Support\AtakSuperPing::partition($stmt->fetchAll(PDO::FETCH_ASSOC));
+                $this->purgePings($tenantId, $split['expired']);
 
-                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+                return $split['rows'];
             }
         );
     }
@@ -2613,6 +2616,26 @@ class AtakDataRepository
         $stmt = $this->pdo()->prepare('SELECT * FROM atak_pings WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Super pings arrivés au terme : leur retrait ne doit jamais casser la lecture de la carte
+     * (ils restent masqués et seront repris au sondage suivant).
+     *
+     * @param list<int> $ids
+     */
+    private function purgePings(int $tenantId, array $ids): void
+    {
+        $ids = array_values(array_filter($ids, static fn (int $id): bool => $id > 0));
+        if ($ids === []) {
+            return;
+        }
+        try {
+            $marks = implode(',', array_fill(0, count($ids), '?'));
+            $this->pdo()->prepare('DELETE FROM atak_pings WHERE tenant_id = ? AND id IN (' . $marks . ')')
+                ->execute([$tenantId, ...$ids]);
+        } catch (\Throwable) {
+        }
     }
 
     public function deletePing(int $tenantId, int $id): bool
