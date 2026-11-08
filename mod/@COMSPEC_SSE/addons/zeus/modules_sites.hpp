@@ -9,11 +9,11 @@
     class COMSPEC_SSE_Module_PlaceSite: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_21CF681B20";
-        category = "COMSPEC_SSE_Sites";
+        displayName = "$STR_COMSPEC_SSE_CFG_11D3D530AA";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_modulePlaceSite";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
 
         class Attributes {
             class SiteType {
@@ -113,10 +113,10 @@
         scope = 2;
         scopeCurator = 2;
         displayName = "$STR_COMSPEC_SSE_CFG_744489D776";
-        category = "COMSPEC_SSE_Sites";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_modulePopulateBuilding";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\house_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\house_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
 
         class Attributes {
             class SiteType {
@@ -205,10 +205,10 @@
         scope = 2;
         scopeCurator = 2;
         displayName = "$STR_COMSPEC_SSE_CFG_3AF582D7C9";
-        category = "COMSPEC_SSE_Sites";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleSeedEvidence";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
 
         class Attributes {
             class Radius {
@@ -276,11 +276,11 @@
     class COMSPEC_SSE_Module_SiteNetwork: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_769D705C52";
-        category = "COMSPEC_SSE_Sites";
+        displayName = "$STR_COMSPEC_SSE_CFG_9DA2B9007F";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleSiteNetwork";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_net.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_net.paa";
 
         class Attributes {
             class Count {
@@ -370,10 +370,10 @@
         scope = 2;
         scopeCurator = 2;
         displayName = "$STR_COMSPEC_SSE_CFG_46397059AC";
-        category = "COMSPEC_SSE_Sites";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_modulePlaceKit";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\box_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\box_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
 
         class Attributes {
             class Kit {

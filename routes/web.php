@@ -1023,6 +1023,13 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/kits-types/{id}/archiver', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateArchive'], $mwSsePortal);
     $router->post('/atak/sse/papiers/kits-types/{id}/affecter', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateAssign'], $mwSsePortal);
     $router->post('/atak/sse/papiers/kits-types/{id}', [\App\Controllers\Web\SseIdWorkshopController::class, 'kitTemplateUpdate'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/profils-ia', [\App\Controllers\Web\SseIdWorkshopController::class, 'aiProfiles'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/profils-ia/nouveau', [\App\Controllers\Web\SseIdWorkshopController::class, 'aiProfileForm'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/profils-ia/{id}', [\App\Controllers\Web\SseIdWorkshopController::class, 'aiProfileForm'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/profils-ia', [\App\Controllers\Web\SseIdWorkshopController::class, 'aiProfileStore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/profils-ia/{id}/dupliquer', [\App\Controllers\Web\SseIdWorkshopController::class, 'aiProfileDuplicate'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/profils-ia/{id}/supprimer', [\App\Controllers\Web\SseIdWorkshopController::class, 'aiProfileDelete'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/profils-ia/{id}', [\App\Controllers\Web\SseIdWorkshopController::class, 'aiProfileUpdate'], $mwSsePortal);
     $router->get('/atak/sse/papiers/preparation', [\App\Controllers\Web\SseIdWorkshopController::class, 'missionPrep'], $mwSsePortal);
     $router->post('/atak/sse/papiers/preparation', [\App\Controllers\Web\SseIdWorkshopController::class, 'missionPrepCommit'], $mwSsePortal);
     $router->post('/atak/sse/papiers/preparation/recherches', [\App\Controllers\Web\SseIdWorkshopController::class, 'wantedStore'], $mwSsePortal);

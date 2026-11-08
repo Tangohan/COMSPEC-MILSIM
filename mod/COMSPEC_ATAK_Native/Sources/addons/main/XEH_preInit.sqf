@@ -115,7 +115,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 
 // Réponses des IA : bulle de texte au-dessus de la tête de l'IA qui parle (par joueur, fn_aiBubble). Décoché : toast d'Arma.
 ["comspec_atak_native_ai_bubble", "CHECKBOX",
-    ["Bulles de réponse des IA", "Coché par défaut. La réponse d'un groupe IA à un ordre s'affiche en texte au-dessus de la tête de son chef, si vous êtes à portée et si vous le voyez. Hors de vue, ou décoché : le donneur d'ordre la reçoit en notification du jeu."],
+    ["Bulles de réponse des IA", "Coché par défaut. Ce que disent les IA (réponse à un ordre, parole radio, contrôle d'identité) s'affiche en texte au-dessus de leur tête, si vous êtes à portée et si vous les voyez. Hors de vue, ou décoché : vous la recevez en notification du jeu."],
     ["COMSPEC", "ATAK · Affichage"], true, 0,
     { if !(_this) then { ["clear"] call comspec_atak_native_fnc_aiBubble; }; }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ai_bubble_range", "SLIDER",
@@ -410,11 +410,14 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
     ["Déclinaison magnétique (°)", "Écart entre le nord vrai de la carte et le nord magnétique, en degrés (positif : déclinaison est). Les cartes Arma n'en ont pas : 0 par défaut. Sert au cap magnétique du 9-LINE de l'app JTAC et de l'outil carte « JTAC : IP » cible »."],
     _sim, [-30, 30, 0, 1], 1] call comspec_atak_native_fnc_addSetting;
 // Contrôle Zeus des ATAK : le menu clic droit ZEN d'Overwatch (« ATAK — Infos / dégâts / brouillage », état du téléphone
-// d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.
+// d'Overwatch) est remplacé par « Contrôler un téléphone » (fn_zeusMenu), qui agit sur l'ATAK natif.
 missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];
 missionNamespace setVariable ["COMSPEC_AceAtakZeusInteractRegistered", true];
 // Ctrl + double-clic sur un joueur en Zeus : plus l'ancien panneau ATAK d'Overwatch (fn_zeusShowPlayerAtak).
 missionNamespace setVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", true];
+// Modules Zeus d'Overwatch remplacés : « ATAK — Éditer joueur » et « Doter du terminal SEEK » (« Contrôler un téléphone », Centre Zeus, SSE).
+// ace_zeus_fnc_addModule : ancienne voie qui recréait les catégories « COMSPEC ATAK » et « COMSPEC Outils ».
+{ missionNamespace setVariable [_x, true]; } forEach ["COMSPEC_ZenAtakPlayerModulesRegistered", "COMSPEC_AceAtakPlayerModulesRegistered", "COMSPEC_AceTrackActionsRegistered", "COMSPEC_AceTheaterSurveyRegistered"];
 private _geo = ["COMSPEC", "ATAK · Géolocalisation"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
     ["Géolocalisation des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone avec son numéro, son IMEI ou son adresse MAC (roleplay)."],
@@ -479,6 +482,16 @@ private _cap = ["COMSPEC", "ATAK · Capture par l'ennemi"];
 ["comspec_atak_native_admin_uids", "EDITBOX",
     ["Gestionnaires en jeu (UID Steam)", "UID Steam (64 bits) séparés par des virgules : ces joueurs ont l'app Admin du téléphone (ATAK des joueurs, effets Zeus, debug de l'IA) sans être Zeus. Le parc Athena de l'app suit les droits du compte sur le site."],
     ["COMSPEC", "ATAK · Admin"], "", 1] call comspec_atak_native_fnc_addSetting;
+// Centre Zeus (fn_zeusCentre) : préférences de chaque Zeus.
+["comspec_atak_native_zeus_centre_btn", "CHECKBOX",
+    ["Centre Zeus : bouton", "Bouton CENTRE ZEUS en haut de l'écran Zeus. Décoché : seule la touche l'ouvre (Contrôles > Configurer les addons)."],
+    ["COMSPEC", "ATAK · Admin"], true, 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zeus_centre_3d", "CHECKBOX",
+    ["Centre Zeus : étiquettes 3D", "Étiquettes au-dessus des joueurs à l'ouverture du Centre Zeus, panneau ouvert seulement. Un bouton du Centre les coupe aussi."],
+    ["COMSPEC", "ATAK · Admin"], true, 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zeus_centre_dbl", "CHECKBOX",
+    ["Double-clic : configurer l'objet", "Écran Zeus : un double-clic sur un écran, une preuve ou une caisse ouvre sa fenêtre de configuration à la place de la fenêtre d'attributs."],
+    ["COMSPEC", "ATAK · Admin"], true, 0] call comspec_atak_native_fnc_addSetting;
 // CR de fin d'opération imposé en jeu (fn_debriefServer) : hôte, admin, gestionnaires ci-dessus et Athena toujours ; Zeus selon ce réglage.
 ["comspec_atak_native_debrief_zeus", "CHECKBOX",
     ["Zeus peut imposer le CR de fin d'opération", "Un Zeus peut ouvrir le compte rendu de fin d'opération (à remplir ou à lire) dans le téléphone des joueurs, depuis l'app CR fin d'op ou le menu Zeus. L'hôte, l'admin connecté, les gestionnaires en jeu et les gestionnaires désignés sur Athena le peuvent toujours."],
@@ -555,10 +568,10 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     ["Garder les données après une déconnexion", "SMS, messages, ordres et alertes sont sauvegardés dans le profil du joueur pour la mission en cours : après un crash ou une reconnexion, on les retrouve, même sans réseau."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_vehicle_gateways", "CHECKBOX",
-    ["Véhicules relais et PC mobile", "Décoché par défaut (peu réaliste). Coché : l'équipage peut transformer n'importe quel véhicule en relais ATAK (4 km) ou en poste de commandement avec mât (10 km). Décoché : seuls les relais posés par la mission (module Eden ou Zeus « ATAK · Relais ») font passer le réseau."],
+    ["Véhicules relais et PC mobile", "Décoché par défaut (peu réaliste). Coché : l'équipage peut transformer n'importe quel véhicule en relais ATAK (4 km) ou en poste de commandement avec mât (10 km). Décoché : seuls les relais posés par la mission (module Eden ou Zeus « Poser un relais ») font passer le réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_only", "CHECKBOX",
-    ["Réseau uniquement par les relais", "Coché : le réseau ATAK passe uniquement par les relais de la mission (pylônes, module « ATAK · Relais »). Loin de tout relais, ou si la mission n'en a pas, plus de réseau du tout : messages, photos et positions attendent d'être à portée. Décoché : sans relais, le téléphone garde quand même du réseau."],
+    ["Réseau uniquement par les relais", "Coché : le réseau ATAK passe uniquement par les relais de la mission (pylônes, module « Poser un relais »). Loin de tout relais, ou si la mission n'en a pas, plus de réseau du tout : messages, photos et positions attendent d'être à portée. Décoché : sans relais, le téléphone garde quand même du réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 // Antennes du jeu converties en relais (fn_relayConvert).
 ["comspec_atak_native_relay_convert", "LIST",
@@ -589,37 +602,37 @@ private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
         _antCat, [300, 20000, _r, 0], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_gain", _id], "SLIDER", [format ["%1 : gain (dB)", _label], "Multiplie la portée de base : 6 dB la doublent à peu près."],
         _antCat, [0, 20, _g, 1], 1] call comspec_atak_native_fnc_addSetting;
-    [format ["comspec_atak_native_antkit_%1_height", _id], "SLIDER", [format ["%1 : hauteur d'antenne (m)", _label], "Hauteur utilisée par le bilan radio : plus haut, le relief gêne moins. Le modèle affiché ne change pas."],
-        _antCat, [1, 30, _h, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_height", _id], "SLIDER", [format ["%1 : hauteur d'antenne (m)", _label], "Hauteur au-dessus de l'objet posé, utilisée par le bilan radio : plus haut, le relief gêne moins. Le modèle affiché ne change pas."],
+        _antCat, [0.1, 30, _h, 1], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_mbps", _id], "SLIDER", [format ["%1 : débit (Mbit/s)", _label], "Débit maximal du relais."],
         _antCat, [0.5, 100, _m, 1], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_time", _id], "SLIDER", [format ["%1 : temps de déploiement (s)", _label], "Durée de la barre de progression. Replier prend moitié moins de temps."],
         _antCat, [3, 180, _t, 0], 1] call comspec_atak_native_fnc_addSetting;
-} forEach [["sat", "Antenne satellite", 1000, 3, 1.8, 10, 20], ["mast", "Antenne omnidirectionnelle", 1500, 6, 4, 8, 45]];
+} forEach [["sat", "Antenne satellite", 1000, 3, 1.8, 10, 20], ["mast", "Antenne omnidirectionnelle", 1500, 6, 4, 8, 45], ["mini", "Mini-antenne de bâtiment", 500, 3, 0.3, 4, 8]];
 ["comspec_atak_native_antkit_mast_root", "CHECKBOX",
     ["Antenne omnidirectionnelle raccordée", "Décoché : elle répète seulement, il lui faut un relais raccordé à portée, par exemple une antenne satellite. Coché : elle porte le réseau seule."],
     _antCat, false, 1] call comspec_atak_native_fnc_addSetting;
-// Relais par type (module « ATAK · Relais », fn_moduleRelay) : portée et débit quand le module garde la valeur du type.
+// Relais par type (module « Poser un relais », fn_moduleRelay) : portée et débit quand le module garde la valeur du type.
 ["comspec_atak_native_relay_portable_range", "SLIDER",
-    ["Relais radio portable : portée (m)", "Portée d'un relais « radio portable » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
+    ["Relais radio portable : portée (m)", "Portée d'un relais « radio portable » posé avec la portée du type (module Eden ou Zeus « Poser un relais »)."],
     _sim, [300, 20000, 1500, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_portable_mbps", "SLIDER",
     ["Relais radio portable : débit (Mbit/s)", "Débit maximal d'un relais « radio portable » posé avec le débit du type."],
     _sim, [0.5, 100, 4, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_mat_range", "SLIDER",
-    ["Relais mât tactique : portée (m)", "Portée d'un relais « mât tactique » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
+    ["Relais mât tactique : portée (m)", "Portée d'un relais « mât tactique » posé avec la portée du type (module Eden ou Zeus « Poser un relais »)."],
     _sim, [300, 20000, 3000, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_mat_mbps", "SLIDER",
     ["Relais mât tactique : débit (Mbit/s)", "Débit maximal d'un relais « mât tactique » posé avec le débit du type."],
     _sim, [0.5, 100, 8, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_tour_range", "SLIDER",
-    ["Relais tour fixe : portée (m)", "Portée d'un relais « tour fixe » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
+    ["Relais tour fixe : portée (m)", "Portée d'un relais « tour fixe » posé avec la portée du type (module Eden ou Zeus « Poser un relais »)."],
     _sim, [300, 20000, 6000, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_tour_mbps", "SLIDER",
     ["Relais tour fixe : débit (Mbit/s)", "Débit maximal d'un relais « tour fixe » posé avec le débit du type."],
     _sim, [0.5, 100, 20, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_satellite_range", "SLIDER",
-    ["Relais terminal satellite : portée (m)", "Portée d'un relais « terminal satellite » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
+    ["Relais terminal satellite : portée (m)", "Portée d'un relais « terminal satellite » posé avec la portée du type (module Eden ou Zeus « Poser un relais »)."],
     _sim, [300, 20000, 1000, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_relay_satellite_mbps", "SLIDER",
     ["Relais terminal satellite : débit (Mbit/s)", "Débit maximal d'un relais « terminal satellite » posé avec le débit du type."],
@@ -643,16 +656,15 @@ private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
     _sim, [0, 15, 4, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_radio_sw_mbps", "SLIDER", ["Radio portative : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio ACRE2 / TFAR transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
     _sim, [0.1, 20, 0.5, 1], 1] call comspec_atak_native_fnc_addSetting;
-// Liaison réaliste téléphone <-> radio de données (fn_mpuLink) : désactivée par défaut (comportement d'avant). Réglages
-// serveur, une mission peut les imposer (cba_settings.sqf de la mission). Seule une MPU5 relie le téléphone : les réglages
-// du repli ACRE2 / TFAR de la 2.9.31 (comspec_atak_native_mpu_tac_*) sont retirés.
+// Liaison réaliste téléphone <-> radio de données (fn_mpuLink) : activée par défaut, le profil Arcade la coupe. Réglages
+// serveur, une mission peut les imposer (cba_settings.sqf de la mission). Les vraies radios ACRE2 et TFAR d'abord (fn_mpu5 "gear").
 private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_real", "CHECKBOX",
-    ["Liaison téléphone-radio réaliste", "Comme sur le terrain, le téléphone n'a pas de réseau tactique à lui : il passe par une MPU5 reliée par câble EUD ou par son Wi-Fi (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Les MPU5 allumées sur le même canal forment un maillage avec les relais de la mission. Sans MPU5 : pas de réseau de données (une radio ACRE2 / TFAR ne relie pas le téléphone). Décoché : comportement d'avant."],
-    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_mpu_require", "CHECKBOX",
-    ["Radio de données obligatoire", "Sans MPU5 : pas de réseau de données (une MPU5 reliée et en service est nécessaire ; le Bluetooth entre téléphones et les données déjà reçues restent). Décoché : sans MPU5, le téléphone garde son réseau d'avant ; la MPU5 ne fait que l'améliorer."],
+    ["Liaison téléphone-radio réaliste", "Le téléphone passe par la radio du joueur : ACRE2 ou TFAR d'abord, reliée toute seule avec sa portée réelle, ou une MPU5. Les radios sur le même canal forment un maillage avec les relais de la mission. Sans radio, le téléphone garde son réseau, sauf si « Radio de données obligatoire » est coché. Ne touche jamais à la voix. Décoché, ou profil Arcade : comportement d'avant."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_require", "CHECKBOX",
+    ["Radio de données obligatoire", "Coché : sans radio de données, pas de réseau de données (le Bluetooth entre téléphones et les données déjà reçues restent). À réserver aux missions préparées. Décoché : sans radio, le téléphone garde son réseau d'avant ; la radio ne fait que l'améliorer."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
 // Objet obligatoire pour participer au réseau (fn_netRequire), quel que soit le modèle de réseau. « Radio de données obligatoire » ci-dessus ne vise que la
 // MPU5 en liaison réaliste, « Kit obligatoire » (app Communauté) ne coupe rien : ni l'un ni l'autre ne pouvait porter cette règle.
 ["comspec_atak_native_net_required_items", "EDITBOX",
@@ -684,7 +696,18 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_hop_ms", "SLIDER",
     ["Latence par saut du maillage (ms)", "Délai ajouté par chaque radio traversée jusqu'à la passerelle. La portée (6 W) et le débit d'une MPU5 sont les réglages « Portée de la MPU5 » et « Débit relayé par une MPU5 » (section Simulation)."],
     _mpuCat, [0, 300, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
-// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP, désactivée par défaut.
+// Radio du joueur : source et coupure (fn_radioGuard). Coupure : effet immédiat, sans redémarrage.
+["comspec_atak_native_radio_source", "LIST",
+    ["Radio utilisée", "Détectée automatiquement : ACRE2 ou TFAR s'ils sont chargés. Aucune : le mod ne s'appuie sur aucune radio d'un mod, seulement sur notre MPU5."],
+    _mpuCat, [[0, 1, 2, 3], ["Détectée automatiquement", "ACRE2", "TFAR", "Aucune"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_radio_cut", "CHECKBOX",
+    ["Couper tout lien avec la radio", "Coché : le mod ne lit plus aucune radio et rend tout de suite la fonction de signal d'ACRE2 et les multiplicateurs de TFAR. La voix reste celle d'ACRE2 ou de TFAR, sans le mod. Sans redémarrage."],
+    _mpuCat, false, 1, { if (_this && {hasInterface}) then { [{ ["applyCut"] call comspec_atak_native_fnc_radioGuard; }] call comspec_atak_native_fnc_nextFrame; }; }] call comspec_atak_native_fnc_addSetting;
+// Assistant de configuration (fn_setupWizard) : proposé une fois à l'admin.
+["comspec_atak_native_wizard_offer", "CHECKBOX",
+    ["Proposer l'assistant de configuration", "Une seule fois, à un admin ou un Zeus. L'assistant reste dans le menu Échap, Réalisme et réseau."],
+    _mpuCat, true, 0] call comspec_atak_native_fnc_addSetting;
+// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP. Reste décochée par défaut : jamais jouée, et la voix des joueurs passe avant (voir fn_radioGuard).
 ["comspec_atak_native_mpu_voice", "CHECKBOX",
     ["Voix ACRE/TFAR relayée par le maillage MPU5", "Comme une passerelle radio sur IP : un joueur relie sa radio ACRE2 ou TFAR à sa MPU5 par câble audio (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Entre deux radios ainsi reliées, réglées sur la même fréquence, la voix passe par le maillage (MPU5, relais, pylônes, véhicules) : la distance et le relief ne la coupent plus. Hors maillage : portée radio normale. Nécessite la liaison téléphone-radio réaliste. TFAR : la portée de réception de la radio reliée s'allonge jusqu'au correspondant relié le plus lointain."],
     _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
@@ -712,7 +735,7 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_body_mask", "CHECKBOX",
     ["Masque du corps (Milsim)", "Profil Milsim : perte de 3 dB quand le porteur tourne le dos à son correspondant."],
-    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_mast", "CHECKBOX",
     ["Mât d'antenne de la MPU5", "Une MPU5 posée reliée en Wi-Fi peut déployer un mât (30 s, 8 m), visible de loin."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -961,6 +984,13 @@ if (isServer) then {
 ["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
 if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "giveFail", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };
 if (hasInterface) then { ["comspec_atak_native_compromise", { params [["_k", ""], ["_v", []]]; if (_k in ["revoke", "ownerReset"]) then { [_k, _v] call comspec_atak_native_fnc_compromise; } else { ["event", [_k, _v]] call comspec_atak_native_fnc_compromise; }; }] call CBA_fnc_addEventHandler; };
+// Centre Zeus : relevé à la demande, chaque joueur ne répond qu'au serveur (fn_zeusState).
+if (hasInterface) then {
+    ["comspec_atak_native_zeusStatePoll", { ["poll"] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_zeusStateData", { ["data", _this select 0] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_zeusObjectOpen", { ["open", _this] call comspec_atak_native_fnc_zeusObject; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_zeusStateDenied", { ["denied"] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
+};
 // App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).
 if (hasInterface) then {
     ["comspec_atak_native_adminReport", { ["report", _this] call comspec_atak_native_fnc_adminClient; }] call CBA_fnc_addEventHandler;

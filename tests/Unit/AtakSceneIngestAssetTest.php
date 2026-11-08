@@ -147,10 +147,10 @@ final class AtakSceneIngestAssetTest extends TestCase
         $mod = (string) file_get_contents($root . '/modules/module_theater_survey.hpp')
             . (string) file_get_contents($root . '/stringtable.xml');
         self::assertStringContainsString('Relever la carte du théâtre', $mod);
-        self::assertStringContainsString('COMSPEC_Outils', $mod);
+        self::assertStringContainsString('COMSPEC_Cat_Atak', $mod);
 
         $zen = (string) file_get_contents($root . '/functions/fn_registerZenTheaterSurvey.sqf');
-        self::assertStringContainsString('COMSPEC Outils', $zen);
+        self::assertStringContainsString('COMSPEC_Cat_Atak', $zen);
         self::assertStringContainsString('Relever la carte du théâtre', $zen);
         self::assertStringContainsString('ace_zeus_fnc_addModule', $zen);
         self::assertStringContainsString('COMSPEC_ZenTheaterSurveyRegistered', $zen);
@@ -168,7 +168,7 @@ final class AtakSceneIngestAssetTest extends TestCase
         $cfg = (string) file_get_contents($root . '/config.cpp');
         self::assertStringContainsString('COMSPEC_Module_TheaterSurvey', $cfg);
         self::assertStringContainsString('display_theater_survey.hpp', $cfg);
-        self::assertStringContainsString('class COMSPEC_Outils', $cfg);
+        self::assertStringContainsString('class COMSPEC_Cat_Atak', $cfg);
     }
 
     public function testBootHandlersRunOnceWhenCbaSettingsRetrigger(): void

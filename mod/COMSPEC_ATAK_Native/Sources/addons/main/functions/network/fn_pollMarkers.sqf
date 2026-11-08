@@ -10,6 +10,8 @@ private _tab = toString [9];
 {
     private _cols = _x splitString _tab;
     if ((count _cols) < 6 || {(_cols select 0) isNotEqualTo "M"}) then { continue };
+    // Marqueur du jeu retiré sur le site (fn_markerWebSweep) : pas un repère à dessiner.
+    if ((_cols param [8, ""]) isEqualTo "game_del") then { continue };
     private _id = _cols select 1;
     private _pos = [parseNumber (_cols select 3),parseNumber (_cols select 4),0];
     if (_id isEqualTo "" || {_pos isEqualTo [0,0,0]}) then { continue };

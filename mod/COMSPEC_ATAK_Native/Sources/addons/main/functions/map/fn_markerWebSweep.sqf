@@ -23,6 +23,30 @@ _sorted sort true;
 private _relay = if ((count _sorted) isEqualTo 0) then { player } else { _cands select (_uids find (_sorted select 0)) };
 if (_relay isNotEqualTo player) exitWith {};
 if ((missionNamespace getVariable [_key, objNull]) isNotEqualTo player) then { missionNamespace setVariable [_key, player, true]; };
+// Marqueurs du jeu retirés sur Athena (Tacmap, /m/carte) : lignes « game_del » du relevé GetMarkers (AtakApiController), en tête
+// de liste ; retirés ici (carte d'Arma, téléphones), et leur route ou leur plan suit (fn_markerOwned « gone »).
+[] spawn {
+    private _raw = ["GetMarkers", ["world:" + worldName]] call comspec_atak_native_fnc_extensionCall;
+    if !(_raw isEqualType "") exitWith {};
+    if ((_raw find "OK|") isNotEqualTo 0 || {(_raw find "game_del") < 0}) exitWith {};
+    private _tab = toString [9];
+    private _done = missionNamespace getVariable ["COMSPEC_ATAK_WebDelDone", createHashMap];
+    missionNamespace setVariable ["COMSPEC_ATAK_WebDelDone", _done];
+    {
+        private _c = _x splitString _tab;
+        if ((_c param [8, ""]) isEqualTo "game_del") then {
+            // Nom filaire : « # » remplacé à l'envoi (COMSPEC Link).
+            private _n = (_c param [6, ""]) regexReplace ["__H__", "#"];
+            if (_n isNotEqualTo "" && {!(_n in _done)}) then {
+                _done set [_n, true];
+                if ((markerShape _n) isNotEqualTo "") then {
+                    ["INFO", "MARKERS", format ["Marqueur %1 retiré sur Athena : retiré en jeu", _n]] call comspec_atak_native_fnc_log;
+                    deleteMarker _n;
+                };
+            };
+        };
+    } forEach ((_raw select [3]) splitString (toString [10]));
+};
 // Aucun marqueur créé, modifié ou supprimé depuis le dernier passage complet (compteur COMSPEC_ATAK_MkRev) : rien à
 // comparer (avant, chaque marqueur de la carte était relu et sérialisé toutes les 15 s).
 // Passage mémorisé dans missionNamespace comme MkRev (uiNamespace survivait à la mission : après un redémarrage, MkRev

@@ -3,9 +3,9 @@
 */
 if (!hasInterface) exitWith {};
 
-private _iconGps = "\A3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa";
-private _iconPhone = "\A3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa";
-private _iconAlly = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
+private _iconGps = "\z\comspec_atak_native\addons\main\data\mod_map.paa";
+private _iconPhone = "\z\comspec_atak_native\addons\main\data\mod_phone.paa";
+private _iconAlly = "\z\comspec_atak_native\addons\main\data\mod_check.paa";
 private _iconEnemy = "\A3\ui_f\data\igui\cfg\simpletasks\types\attack_ca.paa";
 
 private _collectAi = {
@@ -127,8 +127,8 @@ if (
     && {!isNil "zen_custom_modules_fnc_register"}
 ) then {
     [
-        "COMSPEC Roleplay",
-        "Balise GPS véhicule",
+        "COMSPEC_Cat_Atak",
+        "Poser une balise GPS",
         {
             params ["_pos", "_obj"];
             if (isNull _obj) then {
@@ -140,8 +140,8 @@ if (
     ] call comspec_overwatch_connect_fnc_zenModule;
 
     [
-        "COMSPEC Roleplay",
-        "Géolocalisation téléphone",
+        "COMSPEC_Cat_Atak",
+        "Localiser un téléphone",
         {
             params ["_pos", "_obj"];
             if (isNull _obj || {!(_obj isKindOf "CAManBase")}) then {
@@ -153,8 +153,8 @@ if (
     ] call comspec_overwatch_connect_fnc_zenModule;
 
     [
-        "COMSPEC Roleplay",
-        "IA alliée sur l’ATAK",
+        "COMSPEC_Cat_Atak",
+        "Ajouter une IA alliée à l'ATAK",
         {
             params ["_pos", "_obj"];
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
@@ -167,8 +167,8 @@ if (
     ] call comspec_overwatch_connect_fnc_zenModule;
 
     [
-        "COMSPEC Roleplay",
-        "Afficher les IA ennemies sur la carte",
+        "COMSPEC_Cat_Atak",
+        "Afficher les IA ennemies",
         {
             [] call (missionNamespace getVariable ["COMSPEC_ZeusToggleEnemyAi", {}]);
         },

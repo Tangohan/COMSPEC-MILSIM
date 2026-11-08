@@ -15,7 +15,7 @@
         scope = 1;
         // Zeus : uniquement via Zeus Enhanced (évite un menu vide si l’icône config échoue).
         scopeCurator = 0;
-        category = "COMSPEC_Roleplay";
+        category = "COMSPEC_Cat_Atak";
         functionPriority = 1;
         isGlobal = 1;
         isTriggerActivated = 0;
@@ -25,8 +25,8 @@
         canSetArea = 1;
         canSetAreaHeight = 0;
         canSetAreaShape = 0;
-        icon = "\A3\ui_f\data\map\markers\military\warning_CA.paa";
-        portrait = "\A3\ui_f\data\map\markers\military\warning_CA.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
 
         class AttributeValues
         {
@@ -73,12 +73,13 @@
 
     class COMSPEC_Module_NoCoverage: COMSPEC_Module_RoleplayZone_Base
     {
+        category = "COMSPEC_Cat_Atak";
         scope = 2;
         scopeCurator = 0;
-        displayName = "$STR_COMSPEC_OW_CFG_8493539798";
+        displayName = "$STR_COMSPEC_OW_CFG_7109CD09B4";
         function = "comspec_overwatch_connect_fnc_moduleNoCoverage";
-        icon = "\A3\ui_f\data\map\markers\military\objective_CA.paa";
-        portrait = "\A3\ui_f\data\map\markers\military\objective_CA.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
 
         class AttributeValues
         {
@@ -125,9 +126,12 @@
 
     class COMSPEC_Module_Interference: COMSPEC_Module_RoleplayZone_Base
     {
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
+        category = "COMSPEC_Cat_Atak";
         scope = 2;
         scopeCurator = 0;
-        displayName = "$STR_COMSPEC_OW_CFG_EB163E4266";
+        displayName = "$STR_COMSPEC_OW_CFG_25ED3F441E";
         function = "comspec_overwatch_connect_fnc_moduleInterference";
 
         class AttributeValues
@@ -175,9 +179,12 @@
 
     class COMSPEC_Module_Degraded: COMSPEC_Module_RoleplayZone_Base
     {
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
+        category = "COMSPEC_Cat_Atak";
         scope = 2;
         scopeCurator = 0;
-        displayName = "$STR_COMSPEC_OW_CFG_F0E580EDB4";
+        displayName = "$STR_COMSPEC_OW_CFG_4BF4C40D6E";
         function = "comspec_overwatch_connect_fnc_moduleDegraded";
 
         class AttributeValues
@@ -225,12 +232,13 @@
 
     class COMSPEC_Module_Jammer: COMSPEC_Module_RoleplayZone_Base
     {
+        category = "COMSPEC_Cat_Atak";
         scope = 2;
         scopeCurator = 0;
-        displayName = "$STR_COMSPEC_OW_CFG_269ED66ECF";
+        displayName = "$STR_COMSPEC_OW_CFG_E262E1C6B1";
         function = "comspec_overwatch_connect_fnc_moduleJammer";
-        icon = "\A3\ui_f\data\map\markers\military\destroy_CA.paa";
-        portrait = "\A3\ui_f\data\map\markers\military\destroy_CA.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_jam.paa";
 
         class AttributeValues
         {

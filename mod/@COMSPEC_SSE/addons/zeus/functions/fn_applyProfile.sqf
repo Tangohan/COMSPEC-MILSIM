@@ -110,6 +110,8 @@ if (_seed isEqualType 0 && { _seed > 0 }) then {
     _unit setVariable ["COMSPEC_SSE_SeedAuthored", true, true];
 };
 
+// Les papiers suivent le profil d'identité : une seule source (un faux ou une couverture garde son nom imprimé).
+if (isServer && {!isNil "comspec_sse_fnc_idAiConfig"}) then { ["sync", [_unit]] call comspec_sse_fnc_idAiConfig; };
 if (!isNil "comspec_sse_fnc_bioSetProfile") then {
     private _bio = [];
     {

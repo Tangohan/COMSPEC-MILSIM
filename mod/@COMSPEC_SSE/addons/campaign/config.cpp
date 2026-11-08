@@ -72,16 +72,16 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 0;
-        category = "COMSPEC_SSE_Mission";
-        displayName = "$STR_COMSPEC_SSE_CFG_BAE804BBA0";
+        category = "COMSPEC_Cat_Mission";
+        displayName = "$STR_COMSPEC_SSE_CFG_49726C8B32";
         function = "comspec_sse_fnc_moduleCampaign";
         functionPriority = 1;
         isGlobal = 0;
         isTriggerActivated = 0;
         isDisposable = 1;
         is3DEN = 0;
-        icon = "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa";
-        portrait = "\a3\ui_f\data\igui\cfg\simpleTasks\types\map_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_flag.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_flag.paa";
 
         class Attributes {
             class Id {
@@ -161,16 +161,16 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 0;
-        category = "COMSPEC_SSE_Mission";
-        displayName = "$STR_COMSPEC_SSE_CFG_0D432BE534";
+        category = "COMSPEC_Cat_Mission";
+        displayName = "$STR_COMSPEC_SSE_CFG_2DF5FE9362";
         function = "comspec_sse_fnc_moduleCampaignSave";
         functionPriority = 5;
         isGlobal = 0;
         isTriggerActivated = 1;
         isDisposable = 0;
         is3DEN = 0;
-        icon = "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa";
-        portrait = "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_save.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_save.paa";
 
         class Attributes {
             class Action {

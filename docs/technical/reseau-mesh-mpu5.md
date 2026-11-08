@@ -407,3 +407,29 @@ Portée du relais = portée de base × 10^(gain / 20) : `fn_radioLink` donne 0 d
 Valeurs de jeu plausibles, calées sur les types du module « ATAK · Relais », pas une étude réaliste. Toutes réglables : `comspec_atak_native_antkit_<sat | mast>_<range | gain | height | mbps | time>`, `comspec_atak_native_antkit_max` (12 par camp), `comspec_atak_native_antkit_mast_root`. Hauteurs par défaut : celles des modèles, lues dans `verticalOffset` de leur classe d'Arma.
 
 Antennes MRH Satellite (mod facultatif) : `MRH_SatCom_Antenna_Base` et `MRH_MT_SatCom_Antenna_Base` dépliées deviennent des relais de type terminal satellite (`fn_relayConvert` « check », toutes les 15 s), retirées une fois repliées ou détruites. Réglage `comspec_atak_native_relay_mrh`, coché par défaut, indépendant de « Antennes du jeu = relais ATAK ». Sans MRH : rien n'est cherché, aucune dépendance.
+
+Mini-antenne de bâtiment (`COMSPEC_ATAK_BuildingAntennaKit`, objet posé `COMSPEC_ATAK_DeployedAntenna_Mini`, modèle `PortableLongRangeRadio_F.p3d`, au sol `SurvivalRadio_F.p3d`) : répéteur de 500 m + 3 dB, soit 706 m ; 0,3 m au-dessus de sa position réelle ; 4 Mbit/s ; 6 places ; pose en 8 s. Mode de visée sur un mur ou un toit à moins de 4 m (`Building`), aperçu vert ou rouge, Espace pour poser, Échap pour annuler, 45 s au plus. Bâtiment détruit, remplacé ou supprimé : retirée sous 15 s (`fn_antennaKit` « hosts », appelé par `fn_relayConvert` « check »). Réglages `comspec_atak_native_antkit_mini_<range | gain | height | mbps | time>`.
+
+Déploiement : ACE (Équipement) ou clic droit sur l'objet dans l'inventaire (menu d'objet de CBA). Chaque étape écrit une ligne `[COMSPEC ATAK NATIVE][INFO][ANTENNE]` au RPT, chaque refus s'affiche à l'écran.
+## 12. Réalisme par défaut et garde-fous radio
+
+Le propriétaire revient sur la décision 5 pour `mpu_real` : coché par défaut. `mpu_voice` reste décoché, ainsi que la décision 17 : la voix n'a jamais été jouée en jeu, et rien ne garantit sans test que l'isolation tienne.
+
+| Point de contact | Garde-fou |
+|---|---|
+| Tout appel ACRE ou TFAR | `fn_radioGuard` "api" : fonction testée, valeur de repli ; aucun appel direct ailleurs (test `AtakRealismeDefautTest`) |
+| `acre_api_fnc_setCustomSignalFunc` | Installée pendant un pont radio seulement, chaînée à la précédente, rendue au retrait si la nôtre est encore la dernière |
+| Fonction de signal (`fn_mpuVoiceSig`) | Résultat d'origine d'abord, puis une lecture de table remplie par le tick. Aucun calcul ni appel réseau, plus de `acre_sys_radio_fnc_getRadioObject` |
+| `mesh_gravity`, niveau de chemin | Maximum du signal d'origine et du maillage : ne retire jamais rien |
+| `tf_sendingDistanceMultiplicator`, `tf_receivingDistanceMultiplicator` | Valeur d'avant gardée, ou son absence ; rendue seulement si personne d'autre ne l'a changée |
+| Événements TFAR | Entrée unique "tfGuard", rien si la couche est coupée |
+| `acre_startedSpeaking` et suivants | Nos seules variables, rien si tout lien est coupé |
+| `acre_api_fnc_setRadioChannel` | Geste explicite dans l'app Wave Relay, seul réglage de radio changé par le mod |
+| `mesh_tfar_code`, `TFAR_fnc_setSwRadioCode` | Retire la voix directe : décoché, valeur d'origine rendue par "tfRestore" |
+| `mesh_keys`, `fn_meshGroups` | Retirent la rallonge seulement, la portée normale reste |
+
+Coupe-circuit : SQF n'a pas de `try` pour une erreur de script. Chaque chemin radio compte ses entrées et ses sorties ; trois écarts ou trois valeurs invalides coupent la couche pour la session, avec une ligne `[WARN][RADIO]` et une alerte aux admins. Restauration à la mort, au changement d'unité, à la fin de mission et à la déconnexion. Coupure : réglage `comspec_atak_native_radio_cut`, ou bouton admin et Zeus.
+
+Versions connues : ACRE2 2.14 (code lu), TFAR 1.x (dépôt lu, jamais joué). TFAR 0.9 est traité comme inconnu : couche voix coupée.
+
+Portée de données : ACRE2 n'a pas de portée fixe. Longue portée `radio_lr_range` x racine (puissance / 20 W), portative `radio_sw_range` x racine (puissance / 5 W), 300 m au moins. TFAR : `tf_range` de la config, 20 km au plus.

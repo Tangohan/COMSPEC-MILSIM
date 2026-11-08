@@ -37,7 +37,7 @@ private _carryOf = {
     }
 };
 if (_kind isEqualTo "carry") exitWith { call _carryOf };
-if !(missionNamespace getVariable ["comspec_atak_native_damage_sim", true]) exitWith { "" };
+if !((missionNamespace getVariable ["comspec_atak_native_damage_sim", true]) && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1}) exitWith { "" };
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { "" };
 if (((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) >= 1) exitWith { "" };
 private _carry = call _carryOf;

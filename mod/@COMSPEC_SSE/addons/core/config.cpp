@@ -26,6 +26,7 @@ class CfgFunctions {
             class zenModule {};
             class zenDialog {};
             class notify {};
+            class toast {};
             class trTooltips {};
             class isAuthority {};
             class addSetting {};

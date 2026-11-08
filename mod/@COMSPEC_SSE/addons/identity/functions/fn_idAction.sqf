@@ -1,5 +1,6 @@
 /*
     Actions de l'app « Contrôle ID » (fn_idPage).
+      "fold" clé        ouvre ou replie un bloc de la fiche (Contrôle, Signaler, Partager, détail)
       "tab" nom         onglet (check | history)          "select" i   rouvre la fiche i de l'historique
       "level" n         lecture N1 MRZ (3 s), N2 puce (4 s, 1,5 m), N3 base (3 s) : barre de progression ACE
       "view"            revoir le document (visionneuse)  "transmit"   envoi à Athena    "frm"  fiche FRM pré-remplie
@@ -15,6 +16,7 @@ private _render = {
     [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCHECK") then { ["IDCHECK"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
 };
 private _say = { params ["_type", "_msg"]; [_type, _msg call comspec_sse_fnc_tr, 4, 30, "IDCHECK"] call comspec_atak_native_fnc_notify; };
+if (_act isEqualTo "fold") exitWith { private _k = "open_" + _arg; _st set [_k, !(_st getOrDefault [_k, false])]; call _render; true };
 if (_act isEqualTo "tab") exitWith { _st set ["tab", _arg]; call _render; true };
 if (_act isEqualTo "select") exitWith { ["select", [_arg]] call comspec_sse_fnc_idHistory; _st set ["tab", "check"]; call _render; true };
 private _rec = ["current"] call comspec_sse_fnc_idHistory;

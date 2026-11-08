@@ -240,16 +240,16 @@ private _activeObj = _best param [0, objNull];
 // Liaison réaliste téléphone <-> radio de données (fn_mpuLink) : le porteur est la radio reliée au téléphone.
 private _mpuS = ["status"] call comspec_atak_native_fnc_mpuLink;
 private _mpuOn = (_mpuS get "active") && {(_mpuS get "kind") isNotEqualTo "veh"};
-private _mpuReq = missionNamespace getVariable ["comspec_atak_native_mpu_require", true];
+private _mpuReq = missionNamespace getVariable ["comspec_atak_native_mpu_require", false];
 private _kbTxt = { params ["_kb"]; if (_kb >= 1000) then { format ["%1 Mbit/s", (_kb / 1000) toFixed 1] } else { format ["%1 kbit/s", round _kb] } };
 private _bearer = switch (true) do {
     case (_mpuOn && {(_mpuS get "ok") || {_mpuReq} || {(_mpuS get "kind") isNotEqualTo ""}}): {
         private _kd = _mpuS get "kind";
         private _lk = _mpuS get "link";
         private _ms = uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap];
-        [["Radio de données", "MPU5 · Wave Relay"] select (_kd isEqualTo "mpu"),
+        [[("Radio de données"), ((["gear"] call comspec_atak_native_fnc_mpu5) param [3, "MPU5"]) + " · Wave Relay"] select (_kd isEqualTo "mpu"),
             switch (_lk) do {
-                case "cable": { format ["Câble EUD · canal %1", _ms getOrDefault ["chan", 1]] };
+                case "cable": { format ["Radio reliée · canal %1", _ms getOrDefault ["chan", 1]] };
                 case "wifi": { format ["Wi-Fi · canal %1", _ms getOrDefault ["chan", 1]] };
                 default { "Non reliée" };
             },

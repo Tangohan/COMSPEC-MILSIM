@@ -114,6 +114,9 @@ switch (_op) do {
         private _want = ["decide", [_u, _st, true]] call comspec_sse_fnc_idAiBrain;
         if (_want isEqualTo "" || {_want isEqualTo "calme"}) then { _want = _st; };
         if (_want isEqualTo "interpelle") then { _want = "coopere"; };
+        // Comportement choisi (profil Athena, Zeus, Eden) : il décide à la place du contexte.
+        private _imposed = _u getVariable ["COMSPEC_ID_Behaviour", "auto"];
+        if (_imposed in ["coopere", "nerveux", "ment", "refuse", "fuit", "agressif", "rendu"]) then { _want = _imposed; };
         _want call _go;
         // Hésitation avant de répondre : elle se voit (nervosité, mensonge préparé ou non).
         private _real = (missionNamespace getVariable ["comspec_sse_id_difficulty", 1]) >= 2;

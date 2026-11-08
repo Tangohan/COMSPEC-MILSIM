@@ -531,6 +531,30 @@ class AtakDataRepository
     }
 
     /**
+     * Marqueurs du jeu retirés sur le site depuis peu : le relais en jeu les retire aussi (fn_markerWebSweep).
+     *
+     * @return list<array{id:int, arma_name:string, pos:array{0:float,1:float}}>
+     */
+    public function recentlySuppressedGameMarkers(int $tenantId, int $mapId, int $minutes = 15, int $limit = 20): array
+    {
+        $stmt = $this->pdo()->prepare(
+            "SELECT id, arma_name, marker_data FROM atak_markers
+             WHERE tenant_id = ? AND map_id = ? AND arma_name IS NOT NULL AND arma_name <> ''
+               AND marker_data LIKE '%\"suppressed\":true%' AND updated_at >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
+             ORDER BY updated_at DESC LIMIT " . max(1, min(50, $limit))
+        );
+        $stmt->execute([$tenantId, $mapId, max(1, $minutes)]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $decoded = json_decode((string) ($row['marker_data'] ?? ''), true);
+            $pos = is_array($decoded) ? $this->markerPosPair($decoded) : null;
+            $out[] = ['id' => (int) $row['id'], 'arma_name' => (string) $row['arma_name'], 'pos' => $pos ?? [1.0, 1.0]];
+        }
+
+        return $out;
+    }
+
+    /**
      * @param array<string, mixed> $decoded
      */
     private function suppressMarkerRow(int $tenantId, int $id, array $decoded): bool

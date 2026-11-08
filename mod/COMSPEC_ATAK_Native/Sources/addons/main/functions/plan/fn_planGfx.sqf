@@ -7,7 +7,7 @@
       "line"  [points 3D, couleur, épaisseur px, tirets, flèche, pointe pleine, m/px, jointures (true)]   la pointe suit le dernier segment
       "poly"  [points 3D, couleur, épaisseur px, tirets, alpha du remplissage, m/px]    polygone fermé (rempli s'il est convexe)
       "head"  [pointe, cap, couleur, longueur px, pleine, épaisseur px, m/px]           pointe de flèche
-      "label" [position, texte, couleur, taille du texte, m/px, [décalage px x, y], encadré]
+      "label" [position, texte, couleur, taille du texte, m/px, [décalage px x, y], encadré, couleur du liseré (celle du texte)]
 */
 params ["_op", "_map", ["_a", []]];
 private _tex = "#(rgb,8,8,3)color(1,1,1,1)";
@@ -155,7 +155,7 @@ switch (_op) do {
     };
     case "head": { _a call _head; };
     case "label": {
-        _a params ["_pos", "_text", "_c", "_tsz", "_mpx", ["_off", [0, 0]], ["_boxed", true]];
+        _a params ["_pos", "_text", "_c", "_tsz", "_mpx", ["_off", [0, 0]], ["_boxed", true], ["_edge", []]];
         if (_text isEqualTo "") exitWith {};
         private _p = [(_pos select 0) + (_off select 0) * _mpx, (_pos select 1) - (_off select 1) * _mpx, 0];
         if (_boxed) then {
@@ -163,7 +163,7 @@ switch (_op) do {
             private _hPx = _tsz / pixelH;
             private _wPx = (count _text) * 0.52 * _hPx;
             _map drawRectangle [_p, (_wPx / 2 + 5) * _mpx, (_hPx / 2 + 1.5) * _mpx, 0, [0.03, 0.04, 0.035, 0.80], _tex];
-            private _bc = +_c; _bc set [3, (_c select 3) * 0.85];
+            private _bc = +([_edge, _c] select ((count _edge) < 4)); _bc set [3, (_c select 3) * 0.85];
             _map drawRectangle [_p, (_wPx / 2 + 5) * _mpx, (_hPx / 2 + 1.5) * _mpx, 0, _bc, ""];
         };
         _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", _c, _p, 0, 0, 0, _text, [0, 2] select !_boxed, _tsz, (COMSPEC_ATAK_FontSet select 1), "center"];

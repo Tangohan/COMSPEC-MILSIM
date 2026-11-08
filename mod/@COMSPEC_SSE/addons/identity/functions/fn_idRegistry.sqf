@@ -79,6 +79,8 @@ switch (_op) do {
         _args params [["_u", objNull]];
         if (isNull _u || {!alive _u} || {!(missionNamespace getVariable ["comspec_sse_id_enabled", true])}) exitWith { false };
         if ((_u getVariable ["COMSPEC_ID_Carry", "auto"]) isNotEqualTo "auto") then { ["ensure", [_u]] call comspec_sse_fnc_idRegistry; };
+        // Attribut Eden de groupe : le groupe porte le réglage, chaque unité le reprend à son apparition.
+        { _x params ["_gv", "_uv"]; private _gval = (group _u) getVariable [_gv, ""]; if (_gval isNotEqualTo "" && {(_u getVariable [_uv, ""]) in ["", "auto"]}) then { _u setVariable [_uv, _gval]; }; } forEach [["COMSPEC_ID_GroupProfile", "COMSPEC_ID_AiProfile"], ["COMSPEC_ID_GroupBehaviour", "COMSPEC_ID_Behaviour"], ["COMSPEC_ID_GroupCarry", "COMSPEC_ID_Carry"]];
         // Attribut Eden « Infiltré (couverture) » : infiltration ouverte une fois les papiers posés.
         if (_u getVariable ["COMSPEC_ID_Undercover", false]) then { [{ ["start", [_this, createHashMap]] call comspec_sse_fnc_idCover; }, _u, 2] call CBA_fnc_waitAndExecute; };
         private _types = createHashMapFromArray [["COMSPEC_ID_Card", "id_card"], ["COMSPEC_ID_Passport", "passport"], ["COMSPEC_ID_MilitaryCard", "military_id"], ["COMSPEC_ID_DrivingLicense", "driving_license"]];
@@ -117,6 +119,13 @@ switch (_op) do {
             } forEach _ath;
             true
         };
+        // Profil Athena relié à cette IA (Zeus, Eden, élément gardé) : ses papiers. Absent du paquet : suite normale, générée.
+        private _aiPid = _u getVariable ["COMSPEC_ID_AiProfile", ""];
+        if (_aiPid isEqualType "" && {_aiPid isNotEqualTo ""}) then {
+            private _aiN = ["issue", [_u, _aiPid]] call comspec_sse_fnc_idAiConfig;
+            if (_aiN isNotEqualTo 0) exitWith { _aiPid = "done"; };
+        };
+        if (_aiPid isEqualTo "done") exitWith { true };
         // Population préparée sur Athena (paquet, bloc « population ») : une identité du même camp et de la même catégorie
         // (civil, militaire, suspect, HVT), avec ses papiers émis, remise une seule fois.
         private _pop = _reg getOrDefault ["population", []];
@@ -193,6 +202,15 @@ switch (_op) do {
                 case "military": { ["military_id"] };
                 default { [] };
             };
+        };
+        // IA sans papiers à l'issue des règles (uniforme civil d'un militaire, tirage) : une identité générée par défaut,
+        // pour que « Papiers, s'il vous plaît » réponde. Seuls le réglage « IA sans papiers (%) » et l'attribut Eden « Aucun »
+        // laissent quelqu'un sans papiers.
+        if (_types isEqualTo [] && {_carry isEqualTo "auto"} && {!isPlayer _u} && {!(_u in playableUnits)} && {!(_u in switchableUnits)}
+            && {missionNamespace getVariable ["comspec_sse_id_aiPapers", true]}
+            && {("nopapers" call _r) * 100 >= (missionNamespace getVariable ["comspec_sse_id_noPapers", 0])}) then {
+            _types = ["id_card"];
+            _kind = "generated";
         };
         // Faux papiers décidés par la biométrie (fn_bioProfile, faux papiers « oui » ou tirés) : les papiers sont faux.
         if (_types isNotEqualTo [] && {_kind isEqualTo "civil"} && {_carry isEqualTo "auto"} && {(_u getVariable ["COMSPEC_SSE_BioFalsePapers", "auto"]) isNotEqualTo "non"}) then {

@@ -10,7 +10,7 @@
 private _out = createHashMapFromArray [["state", "OK"], ["damage", 0], ["crack", 0], ["offLeft", 0], ["reason", ""], ["offUntil", -1], ["offFrom", -1]];
 // Composants abîmés (fn_deviceDamage) : rayures, pixels, batterie, haut-parleur / micro, GPS, antenne (0-1).
 private _dev = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
-_out set ["parts", createHashMapFromArray (["scratch", "pixels", "battery", "audio", "gps", "antenna"] apply { [_x, [0, _dev getOrDefault [_x, 0]] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])] })];
+_out set ["parts", createHashMapFromArray (["scratch", "pixels", "battery", "audio", "gps", "antenna"] apply { [_x, [0, _dev getOrDefault [_x, 0]] select ((missionNamespace getVariable ["comspec_atak_native_damage_sim", true]) && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1})] })];
 // Équipage d'aéronef : l'ATAK tourne sur la tablette de bord, l'état du téléphone porté ne compte pas.
 if ([player] call comspec_atak_native_fnc_aircrewTerminal) exitWith { _out };
 private _ow = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
@@ -30,7 +30,7 @@ private _batteryEmpty = {
     };
     _out
 };
-if ((_out get "state") isNotEqualTo "OK" || {!(missionNamespace getVariable ["comspec_atak_native_damage_sim", true])}) exitWith { call _batteryEmpty };
+if ((_out get "state") isNotEqualTo "OK" || {!((missionNamespace getVariable ["comspec_atak_native_damage_sim", true]) && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1})}) exitWith { call _batteryEmpty };
 private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
 private _dmg = _n getOrDefault ["damage", 0];
 _out set ["damage", _dmg];
