@@ -93,6 +93,27 @@ final class OrganizationMemberNumberController
             ];
         }
 
+        $unitCodes = (new UnitCodeService())->sync($tenantId);
+        $unitList = (new UnitRepository())->allForTenant($tenantId);
+        $unitTemplates = $schemaReady ? $this->memberNumbers->unitTemplates($tenantId) : [];
+        $defaultPattern = (string) ($config['pattern'] ?? '{PREFIX}-{NUMBER:4}');
+        $unitRows = [];
+        foreach ($unitList as $u) {
+            $uid = (int) ($u['id'] ?? 0);
+            $segment = trim((string) ($u['code'] ?? ''));
+            $custom = $unitTemplates[$uid] ?? null;
+            $effective = $custom ?? $defaultPattern;
+            $unitRows[] = [
+                'id' => $uid,
+                'name' => (string) ($u['name'] ?? ''),
+                'segment' => $segment,
+                'full_code' => (string) ($unitCodes['units'][$uid]['code'] ?? ''),
+                'pattern' => $custom,
+                'template_key' => $custom !== null ? TenantMemberNumberService::templateKeyFor($custom) : null,
+                'example' => $schemaReady ? $this->memberNumbers->example($tenantId, $effective, $segment, $contextSample['grade']) : '',
+            ];
+        }
+
         return Response::view('layout.main', [
             'title' => 'Configuration des matricules',
             'content' => 'admin.organization.member_numbers',
@@ -101,8 +122,11 @@ final class OrganizationMemberNumberController
             'boPageTitle' => 'Matricules d’organisation',
             'boPageKicker' => 'PERSONNEL · CONFIGURATION',
             'boPageSubtitle' => 'Identifiant métier propre à la communauté — distinct de l’identifiant plateforme permanent.',
-            'memberNumberUnitCodes' => (new UnitCodeService())->sync($tenantId),
-            'memberNumberUnits' => (new UnitRepository())->allForTenant($tenantId),
+            'memberNumberUnitCodes' => $unitCodes,
+            'memberNumberUnits' => $unitList,
+            'memberNumberTemplates' => TenantMemberNumberService::templates(),
+            'memberNumberUnitRows' => $unitRows,
+            'memberNumberUnitTemplatesReady' => $schemaReady && $this->memberNumbers->unitTemplatesReady(),
             'memberNumberCanManageCodes' => $this->gate->allows('admin.organization') || $this->gate->allows('admin.access'),
             'memberNumberSchemaReady' => $schemaReady,
             'memberNumberConfig' => $config,
@@ -157,8 +181,58 @@ final class OrganizationMemberNumberController
         } else {
             $error = $codes->changeCommunityCode($tenantId, (string) $request->input('community_code', ''));
         }
-        Session::flash($error === null ? 'success' : 'error', $error ?? 'Préfixe enregistré. Les codes de l’organigramme ont été recalculés.');
+        if ($error === null) {
+            if ($unitId > 0) {
+                $full = (string) ($codes->forUnit($tenantId, $unitId)['code'] ?? '');
+                $message = 'Code de l’unité enregistré' . ($full !== '' ? ' : son code complet est maintenant ' . $full : '') . '. Les unités rattachées prennent ce code comme début. Les matricules déjà attribués ne changent pas ; pour les mettre à jour, utilisez « Renuméroter ».';
+            } else {
+                $message = 'Préfixe de la communauté enregistré : les codes de toutes les unités ont été recalculés. Les matricules déjà attribués ne changent pas.';
+            }
+            Session::flash('success', $message);
+        } else {
+            Session::flash('error', $error);
+        }
+
         return Response::redirect(url('back-office/organisation/matricules') . '#mn-organigramme');
+    }
+
+    /** Choisit le modèle de matricule d’une unité (ou la remet sur le modèle de la communauté). */
+    public function saveUnitTemplate(Request $request, array $params = []): Response
+    {
+        $guard = $this->guardManage(true, $request);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $unitId = (int) $request->input('unit_id', 0);
+        $unit = $unitId > 0 ? (new UnitRepository())->findById($unitId, $tenantId) : null;
+        if ($unit === null) {
+            Session::flash('error', 'Unité introuvable dans cette communauté.');
+
+            return Response::redirect(url('back-office/organisation/matricules') . '#mn-modeles');
+        }
+        $choice = (string) $request->input('template', '');
+        $pattern = '';
+        if ($choice === 'custom') {
+            $pattern = trim((string) $request->input('pattern', ''));
+        } elseif ($choice !== '' && $choice !== 'default') {
+            $pattern = (string) (TenantMemberNumberService::templates()[$choice]['pattern'] ?? '');
+            if ($pattern === '') {
+                Session::flash('error', 'Modèle inconnu : choisissez-en un dans la liste.');
+
+                return Response::redirect(url('back-office/organisation/matricules') . '#mn-modeles');
+            }
+        }
+        $result = $this->memberNumbers->saveUnitTemplate($tenantId, $unitId, $pattern);
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Échec.'));
+        } elseif ($pattern === '') {
+            Session::flash('success', 'L’unité « ' . (string) ($unit['name'] ?? '') . ' » suit maintenant le modèle de la communauté.');
+        } else {
+            Session::flash('success', 'Modèle enregistré pour l’unité « ' . (string) ($unit['name'] ?? '') . ' » : il s’applique aux prochains matricules générés. Les matricules déjà attribués ne changent pas ; pour les mettre à jour, utilisez « Renuméroter ».');
+        }
+
+        return Response::redirect(url('back-office/organisation/matricules') . '#mn-modeles');
     }
 
     public function save(Request $request, array $params = []): Response
@@ -251,7 +325,7 @@ final class OrganizationMemberNumberController
             if (!empty($r['ok'])) {
                 ++$ok;
             } else {
-                $errors[] = (string) $row['email'] . ' : ' . (string) ($r['error'] ?? 'échec');
+                $errors[] = (string) (($row['name'] ?? '') !== '' ? $row['name'] : 'ligne ' . (int) ($row['line'] ?? 0)) . ' : ' . (string) ($r['error'] ?? 'échec');
             }
         }
         $msg = $ok . ' matricule(s) importé(s).';

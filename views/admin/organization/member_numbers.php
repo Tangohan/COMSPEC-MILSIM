@@ -20,6 +20,9 @@ declare(strict_types=1);
  * @var array<string, mixed>|null $memberNumberRenumber Aperçu de renumérotation (?renumeroter=1)
  * @var array<string, mixed>|null $memberNumberImportPreview Aperçu d’import en attente
  * @var array{unit: string, grade: string} $memberNumberContextSample Exemple d’unité / grade pour l’aperçu
+ * @var array<string, array{label: string, help: string, pattern: string}> $memberNumberTemplates Modèles prêts à choisir
+ * @var list<array{id: int, name: string, segment: string, full_code: string, pattern: ?string, template_key: ?string, example: string}> $memberNumberUnitRows
+ * @var bool $memberNumberUnitTemplatesReady La table des modèles par unité existe
  */
 
 use App\Support\MemberNumberAnalysis;
@@ -68,16 +71,15 @@ $tokens = [
     ['{UNIT}', 'Code de l’unité du membre'],
     ['{GRADE}', 'Grade du membre'],
 ];
-$presets = [
-    '{PREFIX}-{NUMBER:4}' => 'Préfixe et numéro',
-    '{PREFIX}-{YEAR}-{NUMBER:3}' => 'Préfixe, année et numéro',
-    '{YEAR:2}-{NUMBER:4}' => 'Année courte et numéro',
-    '{TENANT}/{NUMBER:4}' => 'Communauté et numéro',
-    '{NUMBER:5}' => 'Numéro seul',
-];
+$templates = is_array($memberNumberTemplates ?? null) ? $memberNumberTemplates : \App\Services\Personnel\TenantMemberNumberService::templates();
+$unitRows = is_array($memberNumberUnitRows ?? null) ? $memberNumberUnitRows : [];
+$unitTplReady = !empty($memberNumberUnitTemplatesReady);
+$tplExample = static fn (string $pattern, string $unit = ''): string => \App\Services\Personnel\TenantMemberNumberService::formatPattern(
+    $pattern, $prefix, $nextSeq, $tenantToken, \App\Services\Personnel\TenantMemberNumberService::contextToken($unit), \App\Services\Personnel\TenantMemberNumberService::contextToken((string) $ctxSample['grade'])
+);
 
 $nameOf = static function (array $m): string {
-    foreach (['display_name', 'callsign', 'email'] as $k) {
+    foreach (['display_name', 'callsign'] as $k) {
         $v = trim((string) ($m[$k] ?? ''));
         if ($v !== '') {
             return $v;
@@ -124,43 +126,77 @@ $orgCodes = is_array($memberNumberUnitCodes ?? null) ? $memberNumberUnitCodes : 
 $orgCommunity = $orgCodes['community'] ?? null;
 $orgUnits = is_array($memberNumberUnits ?? null) ? $memberNumberUnits : [];
 $canManageCodes = !empty($memberNumberCanManageCodes);
+ob_start();
 ?>
-<section class="bo-mn-panel" id="mn-organigramme" aria-labelledby="mn-organigramme-title">
-    <header class="bo-mn-panel__head"><h2 class="bo-mn-panel__title" id="mn-organigramme-title">Préfixes de l’organigramme</h2></header>
+<section class="bo-mn-panel ath-rise" id="mn-organigramme" aria-labelledby="mn-organigramme-title">
+    <header class="bo-mn-panel__head">
+        <h2 class="bo-mn-panel__title" id="mn-organigramme-title">Préfixes d’unité</h2>
+        <span class="bo-mn-panel__hint">Le code court de la communauté et de chaque unité</span>
+    </header>
     <div class="bo-mn-panel__body">
-        <p class="bo-mn-text">Le préfixe de communauté ouvre chaque code hiérarchique, par exemple SOAR-B-A-1. Chaque unité ajoute son code à celui de son parent. Les identifiants administratifs restent permanents.</p>
+        <p class="bo-mn-text">Chaque unité a un code court. Le code complet se lit de gauche à droite : par exemple <code>SOAR-B-A-1</code> est la communauté SOAR, puis l’unité B, sa sous-unité A, puis la sous-unité 1. Ce code sert à repérer l’unité et, si le modèle de matricule contient « Code de l’unité », il ouvre les matricules de ses membres.</p>
         <?php if ($orgCommunity === null): ?>
             <p class="bo-mn-text" role="status">Les codes de l’organigramme sont temporairement indisponibles.</p>
         <?php else: ?>
-            <form method="post" action="<?= $h(url('back-office/organisation/matricules/prefixes')) ?>" class="bo-mn-prefix-form">
-                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                <div class="ath-field"><label class="ath-field__label" for="mn-community-code">Préfixe de communauté</label>
-                <input class="ath-field__input bo-mn-mono" id="mn-community-code" name="community_code" value="<?= $h((string) $orgCommunity['code']) ?>" required minlength="2" maxlength="10" pattern="[A-Za-z0-9]{2,10}" aria-describedby="mn-community-help" <?= $canManageCodes ? '' : 'disabled' ?>></div>
-                <?php if ($canManageCodes): ?><button class="ath-btn ath-btn--solid" type="submit">Enregistrer le préfixe</button><?php endif; ?>
-            </form>
-            <p class="bo-mn-text bo-mn-muted" id="mn-community-help">2 à 10 lettres ou chiffres. Modifier ce préfixe recalcule les codes de toutes les unités.</p>
-            <?php foreach ($orgUnits as $orgUnit): $orgId = (int) $orgUnit['id']; $computed = $orgCodes['units'][$orgId] ?? []; ?>
-                <form method="post" action="<?= $h(url('back-office/organisation/matricules/prefixes')) ?>" class="bo-mn-prefix-row">
-                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                    <input type="hidden" name="unit_id" value="<?= $orgId ?>">
-                    <div><strong><?= $h((string) $orgUnit['name']) ?></strong><br><code><?= $h((string) ($computed['code'] ?? '—')) ?></code></div>
-                    <div class="ath-field"><label class="ath-field__label" for="mn-segment-<?= $orgId ?>">Code de l’unité</label><input class="ath-field__input bo-mn-mono" id="mn-segment-<?= $orgId ?>" name="segment" value="<?= $h((string) ($orgUnit['code'] ?? '')) ?>" maxlength="8" pattern="[A-Za-z0-9]{0,8}" placeholder="Automatique" <?= $canManageCodes ? '' : 'disabled' ?>></div>
-                    <?php if ($canManageCodes): ?><button class="ath-btn" type="submit">Enregistrer</button><?php endif; ?>
-                </form>
-            <?php endforeach; ?>
-            <p class="bo-mn-text bo-mn-muted">Code d’unité : 1 à 8 lettres ou chiffres ; laissez vide pour le calculer depuis le nom. Les matricules des membres déjà attribués se gèrent séparément dans le registre ci-dessous.</p>
+            <div class="bo-mn-community">
+                <div>
+                    <span class="bo-mn-sub bo-mn-sub--tight">Préfixe de la communauté</span>
+                    <code class="bo-mn-community__code"><?= $h((string) $orgCommunity['code']) ?></code>
+                </div>
+                <?php if ($canManageCodes): ?>
+                <button type="button" class="ath-btn" data-mn-open="community">Modifier le préfixe</button>
+                <?php endif; ?>
+            </div>
+            <?php if ($orgUnits === []): ?>
+            <p class="bo-mn-empty">Aucune unité dans l’organigramme pour l’instant. Créez-en dans l’organigramme : elles apparaîtront ici.</p>
+            <?php else: ?>
+            <div class="ath-table-wrap">
+                <table class="ath-table bo-mn-table">
+                    <thead><tr><th>UNITÉ</th><th>CODE DE L’UNITÉ</th><th>CODE COMPLET</th><th><span class="sr-only">Action</span></th></tr></thead>
+                    <tbody>
+                    <?php foreach ($orgUnits as $orgUnit):
+                        $orgId = (int) $orgUnit['id'];
+                        $computed = $orgCodes['units'][$orgId] ?? [];
+                        $parentId = (int) ($orgUnit['parent_id'] ?? 0);
+                        $parentCode = $parentId > 0 ? (string) ($orgCodes['units'][$parentId]['code'] ?? '') : '';
+                        if ($parentCode === '') {
+                            $parentCode = (string) $orgCommunity['code'];
+                        }
+                        $segment = trim((string) ($orgUnit['code'] ?? ''));
+                    ?>
+                        <tr class="ath-row">
+                            <td><strong><?= $h((string) $orgUnit['name']) ?></strong></td>
+                            <td class="bo-mn-mono"><?= $segment !== '' ? $h($segment) : '<span class="bo-mn-muted">Automatique</span>' ?></td>
+                            <td class="bo-mn-mono"><?= $h((string) ($computed['code'] ?? '—')) ?></td>
+                            <td class="bo-mn-actions">
+                                <?php if ($canManageCodes): ?>
+                                <button type="button" class="ath-row-action" data-mn-open="segment" data-mn-unit="<?= $orgId ?>" data-mn-name="<?= $h((string) $orgUnit['name']) ?>" data-mn-segment="<?= $h($segment) ?>" data-mn-parent="<?= $h($parentCode) ?>" data-mn-auto="<?= $h((string) ($computed['code'] ?? '')) ?>">Modifier</button>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif; ?>
+            <p class="bo-mn-text bo-mn-muted">Code d’unité : 1 à 8 lettres ou chiffres, sans espace ni accent. Laissez-le vide pour qu’il soit calculé à partir du nom de l’unité. Deux unités du même niveau ne peuvent pas porter le même code. Changer un code ne modifie pas les matricules déjà attribués : utilisez « Renuméroter » dans l’onglet Membres pour les mettre à jour.</p>
         <?php endif; ?>
     </div>
 </section>
+<?php $prefixPanelHtml = (string) ob_get_clean(); ?>
 
+<?php
+$initialTab = $renumber !== null ? 'membres' : ($importPreview !== null ? 'import' : 'apercu');
+?>
 <?php if (!$schemaReady): ?>
+<?= $prefixPanelHtml ?>
 <div class="ath-note">
     <div class="ath-note__title">Module en préparation</div>
     <div class="ath-note__text">Les matricules d’organisation seront disponibles après la prochaine mise à jour de la plateforme.</div>
 </div>
 <?php return; endif; ?>
 
-<div class="bo-mn" data-bo-mn>
+<div class="bo-mn" data-bo-mn data-mn-initial="<?= $h($initialTab ?? 'apercu') ?>">
 <?php
 $athKpis = [
     ['label' => 'MEMBRES ACTIFS', 'value' => (string) $total, 'tone' => '#1e4f80', 'pct' => $total > 0 ? '100%' : '0%', 'note' => 'dans la communauté'],
@@ -196,6 +232,16 @@ if ($missing > 0 && $required) {
     $issues[] = ['warn', $missing . ' membre(s) sans matricule alors qu’il est obligatoire', $h($canGenerate ? 'Utilisez « Attribuer à tous » dans le registre ci-dessous.' : 'Saisissez-les dans le registre ci-dessous.'), 'sans', null];
 }
 ?>
+<div class="bo-mn-tabs" role="tablist" aria-label="Sections des matricules">
+    <button type="button" class="bo-mn-tab" role="tab" id="mn-tabbtn-apercu" aria-controls="mn-tab-apercu" aria-selected="true" data-mn-tab="apercu">Vue d’ensemble</button>
+    <button type="button" class="bo-mn-tab" role="tab" id="mn-tabbtn-regles" aria-controls="mn-tab-regles" aria-selected="false" data-mn-tab="regles">Règles</button>
+    <button type="button" class="bo-mn-tab" role="tab" id="mn-tabbtn-modeles" aria-controls="mn-tab-modeles" aria-selected="false" data-mn-tab="modeles">Modèles par unité</button>
+    <button type="button" class="bo-mn-tab" role="tab" id="mn-tabbtn-prefixes" aria-controls="mn-tab-prefixes" aria-selected="false" data-mn-tab="prefixes">Préfixes d’unité</button>
+    <button type="button" class="bo-mn-tab" role="tab" id="mn-tabbtn-membres" aria-controls="mn-tab-membres" aria-selected="false" data-mn-tab="membres">Membres</button>
+    <button type="button" class="bo-mn-tab" role="tab" id="mn-tabbtn-import" aria-controls="mn-tab-import" aria-selected="false" data-mn-tab="import">Import et historique</button>
+</div>
+
+<div class="bo-mn-tabpanel" role="tabpanel" id="mn-tab-apercu" aria-labelledby="mn-tabbtn-apercu" data-mn-panel="apercu">
 <section class="bo-mn-panel ath-rise" aria-labelledby="mn-check-title">
     <header class="bo-mn-panel__head">
         <h2 class="bo-mn-panel__title" id="mn-check-title">Contrôle du registre</h2>
@@ -228,6 +274,10 @@ if ($missing > 0 && $required) {
     <?php endif; ?>
 </section>
 
+
+</div>
+
+<div class="bo-mn-tabpanel" role="tabpanel" id="mn-tab-regles" aria-labelledby="mn-tabbtn-regles" data-mn-panel="regles">
 <form method="post" action="<?= $h(url('back-office/organisation/matricules')) ?>" class="bo-mn-rules ath-rise" data-mn-form
       data-tenant="<?= $h($tenantToken) ?>" data-unit="<?= $h((string) $ctxSample['unit']) ?>" data-grade="<?= $h((string) $ctxSample['grade']) ?>" data-year="<?= $h(date('Y')) ?>" data-month="<?= $h(date('m')) ?>">
     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
@@ -270,20 +320,23 @@ if ($missing > 0 && $required) {
                 <?php endforeach; ?>
             </div>
 
-            <p class="bo-mn-sub">Modèle du matricule</p>
+            <p class="bo-mn-sub">Modèles prêts à choisir</p>
+            <p class="bo-mn-text bo-mn-muted">Cliquez sur un modèle : il remplit le champ « Modèle » ci-dessous, que vous pouvez ensuite ajuster. L’exemple utilise votre préfixe et la prochaine séquence. Vous pourrez aussi choisir un autre modèle pour chaque unité (onglet « Modèles par unité »).</p>
+            <div class="bo-mn-tpls">
+                <?php foreach ($templates as $tplKey => $tpl): ?>
+                <button type="button" class="bo-mn-tpl" data-mn-tpl="<?= $h($tpl['pattern']) ?>" aria-pressed="<?= $tpl['pattern'] === $pattern ? 'true' : 'false' ?>">
+                    <span class="bo-mn-tpl__name"><?= $h($tpl['label']) ?></span>
+                    <span class="bo-mn-tpl__help"><?= $h($tpl['help']) ?></span>
+                    <code class="bo-mn-tpl__ex" data-mn-tpl-ex><?= $h($tplExample($tpl['pattern'], (string) $ctxSample['unit'])) ?></code>
+                </button>
+                <?php endforeach; ?>
+            </div>
+
+            <p class="bo-mn-sub">Modèle personnalisé</p>
             <div class="bo-mn-pattern">
                 <div class="ath-field">
                     <label class="ath-field__label" for="mn-pattern">Modèle</label>
                     <input class="ath-field__input bo-mn-mono" id="mn-pattern" name="pattern" value="<?= $h($pattern) ?>" maxlength="120" placeholder="{PREFIX}-{NUMBER:4}" data-mn-in="pattern" spellcheck="false" autocomplete="off">
-                </div>
-                <div class="ath-field">
-                    <label class="ath-field__label" for="mn-preset">Modèles courants</label>
-                    <select class="ath-field__select" id="mn-preset" data-mn-preset>
-                        <option value="">Choisir…</option>
-                        <?php foreach ($presets as $pv => $pl): ?>
-                        <option value="<?= $h($pv) ?>"<?= $pv === $pattern ? ' selected' : '' ?>><?= $h($pl) ?></option>
-                        <?php endforeach; ?>
-                    </select>
                 </div>
             </div>
             <div class="bo-mn-tokens" role="group" aria-label="Ajouter un élément au modèle">
@@ -321,6 +374,64 @@ if ($missing > 0 && $required) {
     </aside>
 </form>
 
+
+</div>
+
+<div class="bo-mn-tabpanel" role="tabpanel" id="mn-tab-modeles" aria-labelledby="mn-tabbtn-modeles" data-mn-panel="modeles">
+<section class="bo-mn-panel ath-rise" id="mn-modeles" aria-labelledby="mn-modeles-title">
+    <header class="bo-mn-panel__head">
+        <h2 class="bo-mn-panel__title" id="mn-modeles-title">Modèle de matricule par unité</h2>
+        <span class="bo-mn-panel__hint"><?= count($unitRows) ?> unité<?= count($unitRows) > 1 ? 's' : '' ?></span>
+    </header>
+    <div class="bo-mn-panel__body">
+        <p class="bo-mn-text">Par défaut, tous les membres suivent le modèle de la communauté (onglet « Règles »). Ici, vous pouvez donner un autre modèle à une unité : ses prochains matricules l’utiliseront. Le modèle d’une unité s’applique aux membres dont c’est l’unité principale. Le numéro de séquence reste commun à toute la communauté : deux membres n’auront jamais le même numéro.</p>
+        <?php if (!$unitTplReady): ?>
+        <p class="ath-note__text" role="status">Cette fonction sera disponible après la prochaine mise à jour de la plateforme.</p>
+        <?php endif; ?>
+        <?php if ($unitRows === []): ?>
+        <p class="bo-mn-empty">Aucune unité dans l’organigramme pour l’instant.</p>
+        <?php else: ?>
+        <div class="ath-table-wrap">
+            <table class="ath-table bo-mn-table">
+                <thead><tr><th>UNITÉ</th><th>MODÈLE</th><th>EXEMPLE</th><th><span class="sr-only">Action</span></th></tr></thead>
+                <tbody>
+                <?php foreach ($unitRows as $ur):
+                    $urPattern = $ur['pattern'];
+                    $urKey = $urPattern === null ? 'default' : ($ur['template_key'] ?? 'custom');
+                    $urLabel = $urPattern === null ? 'Modèle de la communauté' : ($ur['template_key'] !== null ? (string) ($templates[$ur['template_key']]['label'] ?? 'Personnalisé') : 'Personnalisé');
+                ?>
+                    <tr class="ath-row">
+                        <td>
+                            <strong><?= $h((string) $ur['name']) ?></strong>
+                            <?php if ((string) $ur['full_code'] !== ''): ?><span class="bo-mn-callsign"><?= $h((string) $ur['full_code']) ?></span><?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="ath-tag ath-tag--<?= $urPattern === null ? 'neut' : 'ok' ?>"><?= $h($urLabel) ?></span>
+                            <code class="bo-mn-muted"><?= $h($urPattern ?? $pattern) ?></code>
+                        </td>
+                        <td class="bo-mn-mono"><b><?= $h((string) $ur['example']) ?></b></td>
+                        <td class="bo-mn-actions">
+                            <?php if ($unitTplReady): ?>
+                            <button type="button" class="ath-row-action" data-mn-open="unit-template" data-mn-unit="<?= (int) $ur['id'] ?>" data-mn-name="<?= $h((string) $ur['name']) ?>" data-mn-segment="<?= $h((string) $ur['segment']) ?>" data-mn-choice="<?= $h((string) $urKey) ?>" data-mn-pattern="<?= $h((string) ($urPattern ?? '')) ?>">Choisir le modèle</button>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+        <p class="bo-mn-text bo-mn-muted">Un modèle avec « Code de l’unité » utilise le code court de l’unité (onglet « Préfixes d’unité »). Les matricules déjà attribués ne changent pas : utilisez « Renuméroter » dans l’onglet Membres pour les mettre à jour.</p>
+    </div>
+</section>
+
+</div>
+
+<div class="bo-mn-tabpanel" role="tabpanel" id="mn-tab-prefixes" aria-labelledby="mn-tabbtn-prefixes" data-mn-panel="prefixes">
+<?= $prefixPanelHtml ?>
+</div>
+
+<div class="bo-mn-tabpanel" role="tabpanel" id="mn-tab-membres" aria-labelledby="mn-tabbtn-membres" data-mn-panel="membres">
 <section class="bo-mn-panel ath-rise" aria-labelledby="mn-reg-title">
     <header class="bo-mn-panel__head">
         <h2 class="bo-mn-panel__title" id="mn-reg-title">Registre des membres</h2>
@@ -337,7 +448,7 @@ if ($missing > 0 && $required) {
     <div class="bo-mn-bar">
         <label class="ath-table-toolbar__search bo-mn-search">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
-            <input type="search" placeholder="Nom, indicatif, e-mail ou matricule…" autocomplete="off" spellcheck="false" aria-label="Rechercher un membre" data-mn-q>
+            <input type="search" placeholder="Nom, indicatif ou matricule…" autocomplete="off" spellcheck="false" aria-label="Rechercher un membre" data-mn-q>
         </label>
         <div class="bo-mn-filters" role="group" aria-label="Filtrer le registre">
             <button type="button" class="bo-mn-chip" aria-pressed="true" data-mn-filter="all">Tous <span><?= $total ?></span></button>
@@ -354,7 +465,7 @@ if ($missing > 0 && $required) {
     <div class="ath-table-wrap">
         <table class="ath-table bo-mn-table">
             <thead>
-                <tr><th>MEMBRE</th><th>E-MAIL</th><th>IDENTIFIANT PLATEFORME</th><th><?= $h(mb_strtoupper($label)) ?></th><th>ÉTAT</th><th>ACTION</th></tr>
+                <tr><th>MEMBRE</th><th>IDENTIFIANT PLATEFORME</th><th><?= $h(mb_strtoupper($label)) ?></th><th>ÉTAT</th><th>ACTION</th></tr>
             </thead>
             <tbody>
             <?php foreach ($members as $m):
@@ -363,14 +474,13 @@ if ($missing > 0 && $required) {
                 $state = $num === '' ? 'sans' : (isset($dupIds[$id]) ? 'dup' : (isset($offIds[$id]) ? 'off' : 'ok'));
                 [$tagTone, $tagLabel] = ['ok' => ['ok', 'À jour'], 'sans' => ['warn', 'Sans matricule'], 'dup' => ['bad', 'Doublon'], 'off' => ['neut', 'Hors modèle']][$state];
                 $name = $nameOf($m);
-                $search = mb_strtolower($name . ' ' . $m['callsign'] . ' ' . $m['email'] . ' ' . $num . ' ' . $m['athena_identifier']);
+                $search = mb_strtolower($name . ' ' . $m['callsign'] . ' ' . $num . ' ' . $m['athena_identifier']);
             ?>
                 <tr class="ath-row" data-mn-row data-state="<?= $state ?>" data-search="<?= $h($search) ?>">
                     <td>
                         <a class="bo-mn-name" href="<?= $h(url('back-office/users/' . $id)) ?>"><?= $h($name) ?></a>
                         <?php if ($m['callsign'] !== '' && $m['callsign'] !== $name): ?><span class="bo-mn-callsign"><?= $h($m['callsign']) ?></span><?php endif; ?>
                     </td>
-                    <td class="bo-mn-muted"><?= $h($m['email'] !== '' ? $m['email'] : '—') ?></td>
                     <td class="bo-mn-mono bo-mn-muted"><?= $h($m['athena_identifier'] !== '' ? $m['athena_identifier'] : '—') ?></td>
                     <td class="bo-mn-mono"><b><?= $h($num !== '' ? $num : '—') ?></b></td>
                     <td><span class="ath-tag ath-tag--<?= $tagTone ?>"><?= $h($tagLabel) ?></span></td>
@@ -466,13 +576,17 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
     </div>
 </section>
 
+
+</div>
+
+<div class="bo-mn-tabpanel" role="tabpanel" id="mn-tab-import" aria-labelledby="mn-tabbtn-import" data-mn-panel="import">
 <div class="bo-mn-split">
     <section class="bo-mn-panel ath-rise" aria-labelledby="mn-import-title">
         <header class="bo-mn-panel__head">
             <h2 class="bo-mn-panel__title" id="mn-import-title">Importer depuis un tableur</h2>
         </header>
         <div class="bo-mn-panel__body">
-            <p class="bo-mn-text">Le plus simple : exportez le registre, complétez la colonne des matricules dans votre tableur, puis réimportez le fichier. Les membres sont reconnus par leur adresse e-mail ; doublons, caractères non autorisés et adresses inconnues sont signalés.</p>
+            <p class="bo-mn-text">Le plus simple : exportez le registre, complétez la colonne des matricules dans votre tableur, puis réimportez le fichier. Les membres sont reconnus grâce à une colonne du fichier exporté ; doublons, caractères non autorisés et membres inconnus sont signalés.</p>
             <?php if ($importPreview !== null):
                 $impRows = (array) ($importPreview['rows'] ?? []);
                 $impCount = ['ok' => 0, 'same' => 0, 'error' => 0];
@@ -493,7 +607,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
                         ?>
                             <tr>
                                 <td class="bo-mn-mono"><?= (int) ($ir['line'] ?? 0) ?></td>
-                                <td><?= $h((string) (($ir['name'] ?? '') !== '' ? $ir['name'] : ($ir['email'] ?? ''))) ?><?php if (($ir['name'] ?? '') !== ''): ?><span class="bo-mn-callsign"><?= $h((string) $ir['email']) ?></span><?php endif; ?></td>
+                                <td><?= $h((string) (($ir['name'] ?? '') !== '' ? $ir['name'] : 'Membre non reconnu')) ?></td>
                                 <td class="bo-mn-mono"><?= $h((string) (($ir['current'] ?? '') !== '' ? $ir['current'] : '—')) ?></td>
                                 <td class="bo-mn-mono"><b><?= $h((string) (($ir['number'] ?? '') !== '' ? $ir['number'] : '—')) ?></b></td>
                                 <td><span class="ath-tag ath-tag--<?= $it ?>"><?= $h($il) ?></span><?php if ($st === 'error' && (string) ($ir['message'] ?? '') !== ''): ?> <span class="bo-mn-muted"><?= $h((string) $ir['message']) ?></span><?php endif; ?></td>
@@ -523,7 +637,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
                 <button type="submit" class="ath-btn<?= $importPreview === null ? ' ath-btn--solid' : '' ?>">Vérifier le fichier</button>
             </form>
             <p class="bo-mn-text bo-mn-muted">Le fichier est d’abord vérifié ligne par ligne : vous voyez ce qui sera modifié avant de l’appliquer.</p>
-            <p class="bo-mn-text bo-mn-muted">Séparateur point-virgule ou virgule. Les colonnes « email » et « tenant_member_number » du fichier exporté sont celles qui comptent ; les autres sont ignorées.</p>
+            <p class="bo-mn-text bo-mn-muted">Séparateur point-virgule ou virgule. Seules les colonnes « email » et « tenant_member_number » du fichier exporté comptent ; les autres sont ignorées.</p>
             <a class="ath-btn" href="<?= $h(url('back-office/organisation/matricules/export?filtre=sans')) ?>">Télécharger les membres sans matricule</a>
         </div>
     </section>
@@ -571,6 +685,82 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
         <?php endif; ?>
     </section>
 </div>
+
+
+</div>
+
+<dialog class="bo-mn-dialog" data-mn-dlg="community" aria-labelledby="mn-dlg-community-title">
+    <form method="post" action="<?= $h(url('back-office/organisation/matricules/prefixes')) ?>">
+        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+        <h2 class="bo-mn-panel__title" id="mn-dlg-community-title">Préfixe de la communauté</h2>
+        <div class="ath-field">
+            <label class="ath-field__label" for="mn-community-code">Préfixe</label>
+            <input class="ath-field__input bo-mn-mono" id="mn-community-code" name="community_code" value="<?= $h((string) ($orgCommunity['code'] ?? '')) ?>" required minlength="2" maxlength="10" pattern="[A-Za-z0-9]{2,10}" autocomplete="off" spellcheck="false" data-mn-dlg-first>
+            <span class="ath-field__help">2 à 10 lettres ou chiffres, sans espace ni accent. Il doit être unique sur la plateforme.</span>
+        </div>
+        <p class="bo-mn-warn">Ce préfixe ouvre le code de toutes les unités : elles seront toutes recalculées. Les matricules déjà attribués ne changent pas.</p>
+        <div class="ath-form__actions">
+            <button type="button" class="ath-btn" data-mn-dlg-close>Annuler</button>
+            <button type="submit" class="ath-btn ath-btn--solid">Enregistrer le préfixe</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog class="bo-mn-dialog" data-mn-dlg="segment" aria-labelledby="mn-dlg-segment-title">
+    <form method="post" action="<?= $h(url('back-office/organisation/matricules/prefixes')) ?>">
+        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+        <input type="hidden" name="unit_id" value="" data-mn-f="unit">
+        <h2 class="bo-mn-panel__title" id="mn-dlg-segment-title">Code de l’unité <span data-mn-f="name"></span></h2>
+        <div class="ath-field">
+            <label class="ath-field__label" for="mn-dlg-segment">Code de l’unité</label>
+            <input class="ath-field__input bo-mn-mono" id="mn-dlg-segment" name="segment" maxlength="8" pattern="[A-Za-z0-9]{0,8}" placeholder="Automatique" autocomplete="off" spellcheck="false" data-mn-f="segment" data-mn-dlg-first>
+            <span class="ath-field__help">1 à 8 lettres ou chiffres, sans espace ni accent. Vide : calculé à partir du nom de l’unité.</span>
+        </div>
+        <p class="bo-mn-text">Code complet : <code class="bo-mn-mono" data-mn-f="full"></code></p>
+        <p class="bo-mn-warn" data-mn-f="bad" hidden>Utilisez seulement des lettres et des chiffres, sans espace ni accent (8 au plus).</p>
+        <p class="bo-mn-text bo-mn-muted">Les unités rattachées prendront ce code comme début. Les matricules déjà attribués ne changent pas.</p>
+        <div class="ath-form__actions">
+            <button type="button" class="ath-btn" data-mn-dlg-close>Annuler</button>
+            <button type="submit" class="ath-btn ath-btn--solid">Enregistrer le code</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog class="bo-mn-dialog bo-mn-dialog--wide" data-mn-dlg="unit-template" aria-labelledby="mn-dlg-tpl-title"
+        data-tenant="<?= $h($tenantToken) ?>" data-prefix="<?= $h($prefix) ?>" data-next="<?= $nextSeq ?>" data-grade="<?= $h((string) $ctxSample['grade']) ?>" data-year="<?= $h(date('Y')) ?>" data-month="<?= $h(date('m')) ?>">
+    <form method="post" action="<?= $h(url('back-office/organisation/matricules/modeles-unite')) ?>">
+        <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+        <input type="hidden" name="unit_id" value="" data-mn-f="unit">
+        <h2 class="bo-mn-panel__title" id="mn-dlg-tpl-title">Modèle de matricule : <span data-mn-f="name"></span></h2>
+        <div class="bo-mn-choices" role="radiogroup" aria-label="Modèle de l’unité">
+            <label class="bo-mn-choice">
+                <input type="radio" name="template" value="default" data-mn-pat="<?= $h($pattern) ?>">
+                <span><strong>Comme la communauté</strong><small>Modèle actuel : <code><?= $h($pattern) ?></code></small></span>
+            </label>
+            <?php foreach ($templates as $tplKey => $tpl): ?>
+            <label class="bo-mn-choice">
+                <input type="radio" name="template" value="<?= $h((string) $tplKey) ?>" data-mn-pat="<?= $h($tpl['pattern']) ?>">
+                <span><strong><?= $h($tpl['label']) ?></strong><small><?= $h($tpl['help']) ?></small></span>
+            </label>
+            <?php endforeach; ?>
+            <label class="bo-mn-choice">
+                <input type="radio" name="template" value="custom" data-mn-pat="">
+                <span><strong>Modèle personnalisé</strong><small>Écrivez votre format, par exemple <code>{UNIT}-{NUMBER:3}</code>.</small></span>
+            </label>
+        </div>
+        <div class="ath-field" data-mn-f="custombox" hidden>
+            <label class="ath-field__label" for="mn-dlg-pattern">Format personnalisé</label>
+            <input class="ath-field__input bo-mn-mono" id="mn-dlg-pattern" name="pattern" maxlength="120" autocomplete="off" spellcheck="false" placeholder="{UNIT}-{NUMBER:3}" data-mn-f="pattern">
+            <span class="ath-field__help">Éléments possibles : {PREFIX}, {NUMBER:4}, {NUMBER}, {YEAR}, {YEAR:2}, {MONTH}, {TENANT}, {UNIT}, {GRADE}. Le numéro est obligatoire.</span>
+        </div>
+        <p class="bo-mn-text">Exemple pour cette unité : <code class="bo-mn-mono" data-mn-f="example">—</code></p>
+        <p class="bo-mn-warn" data-mn-f="nonumber" hidden>Le format doit contenir un numéro ({NUMBER} ou {NUMBER:4}), sinon tous les matricules de l’unité seraient identiques.</p>
+        <div class="ath-form__actions">
+            <button type="button" class="ath-btn" data-mn-dlg-close>Annuler</button>
+            <button type="submit" class="ath-btn ath-btn--solid">Enregistrer le modèle</button>
+        </div>
+    </form>
+</dialog>
 
 <dialog class="bo-mn-dialog" data-mn-dialog aria-labelledby="mn-dialog-title">
     <form method="post" action="<?= $h(url('back-office/organisation/matricules/membre')) ?>">
@@ -641,6 +831,14 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
             form.querySelector('[data-mn-pv-mode]').textContent = (modeNames[mode] || mode) + (toggle.checked ? '' : ' · désactivé');
             form.querySelector('[data-mn-nonumber]').hidden = mode === 'free' || /\{NUMBER(:\d+)?\}/i.test(patternIn.value);
             toggle.closest('.ath-toggle').className = 'ath-toggle ' + (toggle.checked ? 'is-on' : 'is-off');
+            form.querySelectorAll('[data-mn-tpl]').forEach(function (b) {
+                var pat = b.getAttribute('data-mn-tpl');
+                var targs = args.slice();
+                targs[0] = pat;
+                targs[2] = next;
+                b.querySelector('[data-mn-tpl-ex]').textContent = fmt.apply(null, targs) || '—';
+                b.setAttribute('aria-pressed', pat === patternIn.value.trim() ? 'true' : 'false');
+            });
         };
         form.querySelectorAll('[data-mn-token]').forEach(function (b) {
             b.addEventListener('click', function () {
@@ -654,11 +852,107 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
                 render();
             });
         });
-        var preset = form.querySelector('[data-mn-preset]');
-        if (preset) { preset.addEventListener('change', function () { if (preset.value) { patternIn.value = preset.value; render(); } }); }
+        form.querySelectorAll('[data-mn-tpl]').forEach(function (b) {
+            b.addEventListener('click', function () { patternIn.value = b.getAttribute('data-mn-tpl'); render(); });
+        });
         form.addEventListener('input', render);
         form.addEventListener('change', render);
         render();
+    }
+
+    /* Onglets : le lien (#mn-...) ou l'etat de la page choisit l'onglet ouvert ; sans script, tout reste visible. */
+    var tabBtns = Array.prototype.slice.call(root.querySelectorAll('[data-mn-tab]'));
+    var tabPanels = Array.prototype.slice.call(root.querySelectorAll('[data-mn-panel]'));
+    var hashTab = { 'mn-organigramme': 'prefixes', 'mn-modeles': 'modeles', 'mn-import-title': 'import', 'mn-reg-title': 'membres', 'mn-renum-title': 'membres' };
+    function showTab(key, focus) {
+        tabBtns.forEach(function (b) {
+            var on = b.getAttribute('data-mn-tab') === key;
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+            b.tabIndex = on ? 0 : -1;
+            if (on && focus) { b.focus(); }
+        });
+        tabPanels.forEach(function (p) { p.hidden = p.getAttribute('data-mn-panel') !== key; });
+    }
+    tabBtns.forEach(function (b, i) {
+        b.addEventListener('click', function () { showTab(b.getAttribute('data-mn-tab')); });
+        b.addEventListener('keydown', function (e) {
+            var n = e.key === 'ArrowRight' ? i + 1 : (e.key === 'ArrowLeft' ? i - 1 : null);
+            if (n === null) { return; }
+            e.preventDefault();
+            showTab(tabBtns[(n + tabBtns.length) % tabBtns.length].getAttribute('data-mn-tab'), true);
+        });
+    });
+    var fromHash = hashTab[(location.hash || '').replace('#', '')];
+    showTab(fromHash || root.getAttribute('data-mn-initial') || 'apercu');
+
+    /* Fenetres : prefixe de la communaute, code d'une unite, modele d'une unite. */
+    function closeBtn(d) { var c = d.querySelector('[data-mn-dlg-close]'); if (c) { c.addEventListener('click', function () { d.close(); }); } }
+    function openDlg(d) {
+        if (typeof d.showModal !== 'function') { return; }
+        d.showModal();
+        var first = d.querySelector('[data-mn-dlg-first]');
+        if (first) { first.focus(); first.select(); }
+    }
+    var dlgCommunity = root.querySelector('[data-mn-dlg="community"]');
+    var dlgSegment = root.querySelector('[data-mn-dlg="segment"]');
+    var dlgTpl = root.querySelector('[data-mn-dlg="unit-template"]');
+    [dlgCommunity, dlgSegment, dlgTpl].forEach(function (d) { if (d) { closeBtn(d); } });
+    var field = function (d, k) { return d.querySelector('[data-mn-f="' + k + '"]'); };
+
+    if (dlgSegment) {
+        var segIn = field(dlgSegment, 'segment');
+        var segParent = '';
+        var segRender = function () {
+            var v = segIn.value.trim().toUpperCase();
+            var ok = /^[A-Z0-9]{0,8}$/.test(v);
+            field(dlgSegment, 'bad').hidden = ok;
+            field(dlgSegment, 'full').textContent = v === '' ? 'calculé à partir du nom de l’unité' : segParent + '-' + v;
+        };
+        segIn.addEventListener('input', segRender);
+        root.querySelectorAll('[data-mn-open="segment"]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                field(dlgSegment, 'unit').value = b.getAttribute('data-mn-unit');
+                field(dlgSegment, 'name').textContent = '« ' + b.getAttribute('data-mn-name') + ' »';
+                segIn.value = b.getAttribute('data-mn-segment') || '';
+                segParent = b.getAttribute('data-mn-parent') || '';
+                segRender();
+                openDlg(dlgSegment);
+            });
+        });
+    }
+    root.querySelectorAll('[data-mn-open="community"]').forEach(function (b) {
+        b.addEventListener('click', function () { if (dlgCommunity) { openDlg(dlgCommunity); } });
+    });
+
+    if (dlgTpl) {
+        var tplRadios = Array.prototype.slice.call(dlgTpl.querySelectorAll('input[name="template"]'));
+        var tplPattern = field(dlgTpl, 'pattern');
+        var tplUnit = '';
+        var tplRender = function () {
+            var checked = tplRadios.filter(function (r) { return r.checked; })[0];
+            var custom = checked && checked.value === 'custom';
+            field(dlgTpl, 'custombox').hidden = !custom;
+            var pat = checked ? (custom ? tplPattern.value : checked.getAttribute('data-mn-pat')) : '';
+            field(dlgTpl, 'nonumber').hidden = !(custom && !/\{NUMBER(:\d+)?\}/i.test(pat));
+            var d = dlgTpl.dataset;
+            field(dlgTpl, 'example').textContent = pat ? (fmt(pat, d.prefix || '', parseInt(d.next, 10) || 1, d.tenant || '', d.year, d.month, tplUnit, d.grade || '') || '—') : '—';
+        };
+        tplRadios.forEach(function (r) { r.addEventListener('change', tplRender); });
+        tplPattern.addEventListener('input', tplRender);
+        root.querySelectorAll('[data-mn-open="unit-template"]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                field(dlgTpl, 'unit').value = b.getAttribute('data-mn-unit');
+                field(dlgTpl, 'name').textContent = b.getAttribute('data-mn-name');
+                tplUnit = (b.getAttribute('data-mn-segment') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                var choice = b.getAttribute('data-mn-choice') || 'default';
+                tplPattern.value = b.getAttribute('data-mn-pattern') || '';
+                var found = false;
+                tplRadios.forEach(function (r) { r.checked = r.value === choice; found = found || r.checked; });
+                if (!found) { tplRadios[0].checked = true; }
+                tplRender();
+                openDlg(dlgTpl);
+            });
+        });
     }
 
     /* Registre : recherche (sans accents) et filtres. */
@@ -691,6 +985,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
     root.querySelectorAll('[data-mn-show]').forEach(function (b) {
         b.addEventListener('click', function () {
             setFilter(b.getAttribute('data-mn-show'));
+            showTab('membres');
             var reg = document.getElementById('mn-reg-title');
             if (reg) { reg.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         });
