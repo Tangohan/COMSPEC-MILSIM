@@ -21,6 +21,7 @@ use App\Services\GameEquipment\RoleKitService;
 use App\Services\Platform\FeatureGateService;
 use App\Support\ArsenalLoadoutItems;
 use App\Support\EquipmentCoverStorage;
+use App\Support\EquipmentSpaces;
 use App\Support\PlanFeatureDenial;
 
 class ArsenalWardrobeController
@@ -45,8 +46,9 @@ class ArsenalWardrobeController
         }
         [$tenantId, $userId] = $gate;
         if (!$this->repo->tablesReady()) {
-            return $this->hubView(true, [], [], [], []);
+            return $this->hubView(true, [], [], [], [], [], null, false, []);
         }
+        $nav = EquipmentSpaces::resolve($request->queryParams());
         $wardrobes = $this->attachPreviews($tenantId, $this->repo->listAccessibleWardrobes($tenantId, $userId));
         $favoriteIds = array_flip($this->repo->favoriteIds($tenantId, $userId));
         foreach ($wardrobes as &$w) {
@@ -70,6 +72,78 @@ class ArsenalWardrobeController
         }
 
         $kitsAllowed = KitsAccess::allows($tenantId);
+        $space = $nav['espace'];
+        $kits = $kitsAllowed && $space === 'kits' ? $this->kitsForPage($tenantId, $userId, $wardrobes) : [];
+        // Compteur de l'onglet Kits : sans charger le contenu des kits (seul l'espace Kits en a besoin).
+        $kitCount = 0;
+        if ($kitsAllowed) {
+            try {
+                $service = $this->kitService();
+                $kitCount = count($this->canManageKits() ? $service->listForTenant($tenantId) : $service->listForMember($tenantId, $userId));
+            } catch (\Throwable) {
+                $kitCount = 0;
+            }
+        }
+        $mine = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['mine'])));
+        $community = array_values(array_filter(
+            $wardrobes,
+            static fn (array $w): bool => empty($w['mine']) && !($kitsAllowed && (string) ($w['source'] ?? '') === 'role_kit')
+        ));
+        $favorites = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['is_favorite_me'])));
+
+        $q = trim((string) $request->query('q', ''));
+        $type = trim((string) $request->query('type', ''));
+        $sort = trim((string) $request->query('tri', 'name'));
+        $page = (int) $request->query('page', 1);
+        $collectionId = $nav['collection'];
+        $collection = null;
+        foreach ($collections as $c) {
+            if ((int) ($c['id'] ?? 0) === $collectionId) {
+                $collection = $c;
+                break;
+            }
+        }
+        $list = [];
+        if ($space === 'mes-tenues' || $space === 'favoris' || $space === 'communaute') {
+            $list = $space === 'mes-tenues' ? $mine : ($space === 'favoris' ? $favorites : $community);
+        } elseif ($space === 'collections' && $collection !== null) {
+            $list = array_values(array_filter($wardrobes, static fn (array $w): bool => (int) ($w['collection_id'] ?? 0) === $collectionId));
+        }
+        $paged = null;
+        if ($space === 'collections' && $collection === null) {
+            $needle = EquipmentSpaces::fold($q);
+            $found = array_values(array_filter($collections, static fn (array $c): bool => $needle === ''
+                || str_contains(EquipmentSpaces::fold((string) ($c['name'] ?? '') . ' ' . (string) ($c['description'] ?? '')), $needle)));
+            $paged = EquipmentSpaces::paginate($found, $page);
+        } elseif ($space === 'kits') {
+            $needle = EquipmentSpaces::fold($q);
+            $found = array_values(array_filter($kits, static fn (array $k): bool => $needle === ''
+                || str_contains(EquipmentSpaces::fold(implode(' ', [(string) ($k['name'] ?? ''), (string) ($k['description'] ?? ''), (string) ($k['unit_name'] ?? ''), (string) ($k['role_name'] ?? '')])), $needle)));
+            $paged = EquipmentSpaces::paginate($found, $page, EquipmentSpaces::PER_PAGE_KITS);
+        } elseif ($space !== 'materiel') {
+            $paged = EquipmentSpaces::paginate(
+                EquipmentSpaces::sortWardrobes(EquipmentSpaces::filterWardrobes($list, $q, $type), $sort),
+                $page
+            );
+        }
+
+        $nav += [
+            'q' => $q,
+            'type' => $type,
+            'sort' => in_array($sort, EquipmentSpaces::SORTS, true) ? $sort : 'name',
+            'paged' => $paged,
+            'collection_row' => $collection,
+            'counts' => [
+                'mes-tenues' => count($mine),
+                'favoris' => count($favorites),
+                'collections' => count($collections),
+                'communaute' => count($community),
+                'kits' => $kitsAllowed ? $kitCount : null,
+                'materiel' => count($classes) + count($dotation),
+            ],
+            'detail' => $this->detailFor($request, $tenantId, $userId),
+            'creer' => (string) $request->query('creer', '') === 'kit',
+        ];
 
         return $this->hubView(
             false,
@@ -77,10 +151,43 @@ class ArsenalWardrobeController
             $collections,
             $classes,
             $dotation,
-            $kitsAllowed ? $this->kitsForPage($tenantId, $userId, $wardrobes) : [],
+            $kits,
             $this->playerKits()?->forUser($tenantId, $userId),
             $kitsAllowed,
+            $nav,
         );
+    }
+
+    /**
+     * Repli sans JavaScript de la fenêtre d'une tenue : ?tenue=ID affiche la tenue en tête de page.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function detailFor(Request $request, int $tenantId, int $userId): ?array
+    {
+        $id = (int) $request->query('tenue', 0);
+        if ($id < 1) {
+            return null;
+        }
+        $row = $this->repo->findWardrobe($tenantId, $id);
+        if ($row === null || !ArsenalWardrobeRepository::canView($row, $userId)) {
+            return null;
+        }
+        $payload = (string) ($row['payload_text'] ?? '');
+        $sections = ArsenalLoadoutItems::grouped(
+            $payload,
+            $this->playerKits()?->catalogFor($tenantId, ArsenalLoadoutItems::classes($payload)) ?? [],
+        );
+
+        return [
+            'id' => (int) $row['id'],
+            'name' => (string) ($row['display_name'] ?? $row['name'] ?? ''),
+            'description' => (string) ($row['description'] ?? ''),
+            'owner' => (string) ($row['owner_label'] ?? ''),
+            'mine' => (int) ($row['user_id'] ?? 0) === $userId,
+            'sections' => $sections,
+            'ace' => ArsenalLoadoutItems::aceExport($payload) !== null,
+        ];
     }
 
     /**
@@ -88,7 +195,7 @@ class ArsenalWardrobeController
      */
     public function redirectKits(Request $request, array $params = []): Response
     {
-        return Response::redirect(url('equipment') . '#kits');
+        return Response::redirect(url('equipment') . '?espace=kits');
     }
 
     /**
@@ -101,16 +208,25 @@ class ArsenalWardrobeController
             return $gate;
         }
         [$tenantId, $userId] = $gate;
-        $anchor = (string) $request->input('_anchor', '');
-        $back = url('equipment') . (preg_match('/^[a-z]+-tenue-\d{1,10}$/', $anchor) === 1 ? '#' . $anchor : '#favoris');
+        // Retour à l'espace d'où l'on vient (adresse interne à /equipment seulement), sinon aux favoris.
+        $return = (string) $request->input('_return', '');
+        $back = preg_match('#^/equipment(\?[A-Za-z0-9_=&%.\-]*)?$#', $return) === 1 ? url(ltrim($return, '/')) : url('equipment') . '?espace=favoris';
+        $json = $this->wantsJson($request);
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            if ($json) {
+                return Response::json(['ok' => false, 'error' => 'csrf'], 419);
+            }
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect($back);
         }
         $id = (int) ($params['id'] ?? 0);
         $on = (string) $request->input('on', '1') === '1';
-        if ($id < 1 || !$this->repo->setFavorite($tenantId, $userId, $id, $on)) {
+        $ok = $id > 0 && $this->repo->setFavorite($tenantId, $userId, $id, $on);
+        if ($json) {
+            return Response::json(['ok' => $ok, 'favorite' => $ok ? $on : null], $ok ? 200 : 422);
+        }
+        if (!$ok) {
             Session::flash('error', 'Cette tenue ne peut pas être mise en favori.');
         }
 
@@ -179,7 +295,7 @@ class ArsenalWardrobeController
             return $gate;
         }
         [$tenantId, $userId] = $gate;
-        $back = url('equipment') . '#kits';
+        $back = url('equipment') . '?espace=kits';
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
@@ -224,7 +340,7 @@ class ArsenalWardrobeController
             return $gate;
         }
         [$tenantId, $userId] = $gate;
-        $back = url('equipment') . '#kits';
+        $back = url('equipment') . '?espace=kits';
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
@@ -256,7 +372,7 @@ class ArsenalWardrobeController
             return $gate;
         }
         [$tenantId, $userId] = $gate;
-        $back = url('equipment') . '#kits';
+        $back = url('equipment') . '?espace=kits';
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
@@ -286,7 +402,7 @@ class ArsenalWardrobeController
             return $gate;
         }
         [$tenantId] = $gate;
-        $back = url('equipment') . '#kits';
+        $back = url('equipment') . '?espace=kits';
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
@@ -392,7 +508,11 @@ class ArsenalWardrobeController
                 (new ObservedLoadouts())->weaponSetups($tenantId),
                 $this->assistantChoices($request->query('slot'), $request->query('extra')),
             );
-            $view['proposal'] = $proposal;
+            $view['proposal'] = $this->withIcons($tenantId, $proposal);
+            $picks = $this->assistantPicks($request->query('slot'));
+            $expanded = $picks === [] ? ['combos' => [[]], 'truncated' => false] : OutfitAssistant::expandVariants($picks);
+            $view['variantCount'] = count($expanded['combos']);
+            $view['variantsTruncated'] = $expanded['truncated'];
             $view['preview'] = $proposal['payload'] !== '' ? ArsenalLoadoutItems::grouped($proposal['payload'], $proposal['names']) : [];
             $view['suggestedName'] = trim((string) $request->query('nom', '')) !== ''
                 ? trim((string) $request->query('nom', ''))
@@ -442,17 +562,37 @@ class ArsenalWardrobeController
 
             return Response::redirect($back);
         }
-        $proposal = (new OutfitAssistant())->propose(
-            $profile,
-            $catalogue,
-            (new ObservedLoadouts())->weaponSetups($tenantId),
-            $this->assistantChoices($request->input('slot'), $request->input('extra')),
-        );
-        if ($proposal['payload'] === '' || !$proposal['ace_ok']) {
-            Session::flash('error', 'Choisissez au moins un objet : la tenue est vide ou illisible par l’arsenal ACE.');
-
-            return Response::redirect($back);
+        $assistant = new OutfitAssistant();
+        $setups = (new ObservedLoadouts())->weaponSetups($tenantId);
+        $choices = $this->assistantChoices($request->input('slot'), $request->input('extra'));
+        // Plusieurs objets choisis pour un emplacement : une tenue par combinaison (au plus OutfitAssistant::MAX_VARIANTS).
+        $picks = $this->assistantPicks($request->input('slot'));
+        $expanded = $picks === [] ? ['combos' => [[]], 'truncated' => false] : OutfitAssistant::expandVariants($picks);
+        $names = [];
+        foreach ($catalogue as $it) {
+            $names[strtolower((string) ($it['class'] ?? ''))] = trim((string) ($it['name'] ?? ''));
         }
+        $variants = [];
+        foreach ($expanded['combos'] as $combo) {
+            $proposal = $assistant->propose($profile, $catalogue, $setups, $combo === [] ? $choices : ['slot' => $combo] + $choices);
+            if ($proposal['payload'] === '' || !$proposal['ace_ok']) {
+                Session::flash('error', 'Choisissez au moins un objet : la tenue est vide ou illisible par l’arsenal ACE.');
+
+                return Response::redirect($back);
+            }
+            $parts = [];
+            if (count($expanded['combos']) > 1) {
+                foreach ($picks as $slotKey => $list) {
+                    $class = (string) ($combo[$slotKey] ?? '');
+                    if (count($list) > 1 && $class !== '') {
+                        $parts[] = ($names[strtolower($class)] ?? '') !== '' ? $names[strtolower($class)] : $class;
+                    }
+                }
+            }
+            $variants[] = ['proposal' => $proposal, 'suffix' => implode(' + ', $parts)];
+        }
+        $fullName = static fn (string $suffix, int $max): string => mb_substr($suffix === '' ? $name : $name . ' — ' . $suffix, 0, $max);
+        $cut = $expanded['truncated'] ? ' Seules les ' . count($variants) . ' premières tenues ont été créées.' : '';
 
         if ((string) $request->input('cible', 'tenue') === 'kit') {
             if (!$this->canManageKits()) {
@@ -460,59 +600,74 @@ class ArsenalWardrobeController
 
                 return Response::redirect($back);
             }
-            $result = $this->kitService()->save($tenantId, $userId, null, [
-                'name' => mb_substr($name, 0, 90),
-                'description' => trim((string) $request->input('description', '')),
-                'audience' => $request->input('audience', 'all'),
-                'kit' => $proposal['kit'],
-                'payload' => $proposal['payload'],
-                'source' => 'assistant',
-            ]);
-            if (!$result['ok']) {
-                Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
+            $made = 0;
+            foreach ($variants as $variant) {
+                $result = $this->kitService()->save($tenantId, $userId, null, [
+                    'name' => $fullName($variant['suffix'], 90),
+                    'description' => trim((string) $request->input('description', '')),
+                    'audience' => $request->input('audience', 'all'),
+                    'kit' => $variant['proposal']['kit'],
+                    'payload' => $variant['proposal']['payload'],
+                    'source' => 'assistant',
+                ]);
+                if (!$result['ok']) {
+                    Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.') . ($made > 0 ? ' ' . $made . ' kit' . ($made > 1 ? 's' : '') . ' déjà créé' . ($made > 1 ? 's' : '') . '.' : ''));
 
-                return Response::redirect($back);
+                    return Response::redirect($back);
+                }
+                ++$made;
             }
-            Session::flash('success', 'Kit de départ créé : les membres concernés le voient dans leur section et peuvent le copier.');
+            Session::flash('success', ($made > 1 ? $made . ' kits de départ créés' : 'Kit de départ créé') . ' : les membres concernés le voient dans leur section et peuvent le copier.' . $cut);
 
-            return Response::redirect(url('equipment') . '#kits');
+            return Response::redirect(url('equipment') . '?espace=kits');
         }
 
-        $slug = 'assistant-' . ArsenalWardrobeRepository::slugify($name);
         $taken = [];
         foreach ($this->repo->listWardrobesForUser($tenantId, $userId) as $w) {
             if ((string) ($w['source'] ?? '') !== 'assistant') {
                 $taken[(string) ($w['slug'] ?? '')] = true;
             }
         }
-        $base = $slug;
-        for ($n = 2; isset($taken[$slug]); $n++) {
-            $slug = $base . '-' . $n;
-        }
-        try {
-            $wardrobe = $this->repo->upsertWardrobe($tenantId, $userId, [
-                'name' => mb_substr($name, 0, 120),
-                'slug' => $slug,
-                'payload_text' => $proposal['payload'],
-                'payload_format' => 'arma_loadout_str',
-                'source' => 'assistant',
-                'notes' => mb_substr('Créée avec l’assistant · ' . $proposal['profile_label'], 0, 255),
-            ]);
-        } catch (\Throwable $e) {
-            error_log('[equipment-assistant] save failed: ' . $e->getMessage());
-            Session::flash('error', 'Enregistrement impossible.');
+        $ids = [];
+        foreach ($variants as $variant) {
+            $title = $fullName($variant['suffix'], 120);
+            $slug = 'assistant-' . ArsenalWardrobeRepository::slugify($title);
+            $base = $slug;
+            for ($n = 2; isset($taken[$slug]); $n++) {
+                $slug = $base . '-' . $n;
+            }
+            $taken[$slug] = true;
+            try {
+                $wardrobe = $this->repo->upsertWardrobe($tenantId, $userId, [
+                    'name' => $title,
+                    'slug' => $slug,
+                    'payload_text' => $variant['proposal']['payload'],
+                    'payload_format' => 'arma_loadout_str',
+                    'source' => 'assistant',
+                    'notes' => mb_substr('Créée avec l’assistant · ' . $variant['proposal']['profile_label'], 0, 255),
+                ]);
+            } catch (\Throwable $e) {
+                error_log('[equipment-assistant] save failed: ' . $e->getMessage());
+                Session::flash('error', 'Enregistrement impossible.');
 
-            return Response::redirect($back);
-        }
-        $id = (int) ($wardrobe['id'] ?? 0);
-        if ($id < 1) {
-            Session::flash('error', 'Enregistrement impossible.');
+                return Response::redirect($back);
+            }
+            $id = (int) ($wardrobe['id'] ?? 0);
+            if ($id < 1) {
+                Session::flash('error', 'Enregistrement impossible.');
 
-            return Response::redirect($back);
+                return Response::redirect($back);
+            }
+            $ids[] = $id;
+        }
+        if (count($ids) > 1) {
+            Session::flash('success', count($ids) . ' tenues enregistrées dans vos tenues, une par choix. Elles sont personnelles tant que vous ne les partagez pas.' . $cut);
+
+            return Response::redirect(url('equipment'));
         }
         Session::flash('success', 'Tenue enregistrée dans vos tenues. Elle est personnelle tant que vous ne la partagez pas.');
 
-        return Response::redirect(url('equipment') . '?tenue=' . $id);
+        return Response::redirect(url('equipment') . '?tenue=' . $ids[0]);
     }
 
     /**
@@ -527,8 +682,14 @@ class ArsenalWardrobeController
         }
         $slots = [];
         foreach ($slot as $key => $value) {
-            if (is_string($key) && isset(OutfitAssistant::SLOTS[$key]) && is_string($value)) {
+            if (!is_string($key) || !isset(OutfitAssistant::SLOTS[$key])) {
+                continue;
+            }
+            // slot[emplacement] = un objet (ancienne adresse) ou slot[emplacement][] = plusieurs objets (variantes).
+            if (is_string($value)) {
                 $slots[$key] = trim($value);
+            } elseif (is_array($value)) {
+                $slots[$key] = array_values(array_filter(array_map(static fn (mixed $v): string => is_string($v) ? mb_substr(trim($v), 0, 160) : '', $value), static fn (string $v): bool => $v !== ''));
             }
         }
         $extras = [];
@@ -541,6 +702,52 @@ class ArsenalWardrobeController
         }
 
         return ['slot' => $slots, 'extra' => $extras];
+    }
+
+    /**
+     * Objets choisis par emplacement quand il y en a plusieurs (chaque objet de plus donne une variante de la tenue).
+     *
+     * @return array<string, list<string>>
+     */
+    private function assistantPicks(mixed $slot): array
+    {
+        if (!is_array($slot)) {
+            return [];
+        }
+        $out = [];
+        foreach ($this->assistantChoices($slot, [])['slot'] ?? [] as $key => $value) {
+            $out[$key] = is_array($value) ? $value : ($value === '' ? [] : [$value]);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Ajoute à chaque objet proposé son icône (vignette) quand la communauté en a une.
+     *
+     * @param array<string, mixed> $proposal
+     * @return array<string, mixed>
+     */
+    private function withIcons(int $tenantId, array $proposal): array
+    {
+        $classes = [];
+        foreach ((array) ($proposal['slots'] ?? []) as $slot) {
+            foreach ((array) ($slot['candidates'] ?? []) as $c) {
+                $classes[] = (string) ($c['class'] ?? '');
+            }
+        }
+        try {
+            $icons = (new \App\Repositories\GameItemIconRepository())->iconUrls($tenantId, $classes);
+        } catch (\Throwable) {
+            $icons = [];
+        }
+        foreach ($proposal['slots'] as $key => $slot) {
+            foreach ($slot['candidates'] as $i => $c) {
+                $proposal['slots'][$key]['candidates'][$i]['icon'] = $icons[(string) $c['class']] ?? '';
+            }
+        }
+
+        return $proposal;
     }
 
     /**
@@ -1301,6 +1508,7 @@ class ArsenalWardrobeController
         array $kits = [],
         ?array $myGameKit = null,
         bool $kitsAllowed = false,
+        array $nav = [],
     ): Response {
         $mine = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['mine'])));
         // Tenues remontées du jeu qu'un responsable peut transformer en kit (les copies de kits n'en font pas partie).
@@ -1347,6 +1555,7 @@ class ArsenalWardrobeController
             'catalogCount' => $catalogCount,
             'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',
             'myGameKit' => $myGameKit,
+            'nav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'fiches', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
             'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),

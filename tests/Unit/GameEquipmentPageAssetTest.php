@@ -110,8 +110,9 @@ final class GameEquipmentPageAssetTest extends TestCase
 
     public function testMemberHubShowsStarterKitsOfMyRoleAndUnit(): void
     {
-        $hub = $this->read('views/equipment/hub.php');
-        self::assertStringContainsString('Kits de départ', $hub);
+        // L'espace « Kits de départ » a son propre fichier ; le nom de l'onglet vient de la liste des espaces.
+        $hub = $this->read('views/equipment/_space_kits.php');
+        self::assertStringContainsString('Kits de départ', $this->read('app/Support/EquipmentSpaces.php'));
         self::assertStringContainsString('_kit_card.php', $hub);
         self::assertStringContainsString("'kits' => \$kits", $this->read('app/Controllers/Web/ArsenalWardrobeController.php'));
         self::assertStringContainsString('listForMember', $this->read('app/Controllers/Web/ArsenalWardrobeController.php'));

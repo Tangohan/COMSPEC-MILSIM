@@ -14,10 +14,11 @@ final class EquipmentHubAssetTest extends TestCase
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Web/ArsenalWardrobeController.php');
-        // La page est découpée : hub.php (sections), _dialogs.php (fenêtres), _wardrobe_card.php (carte d'une tenue).
-        $hub = (string) file_get_contents($root . '/views/equipment/hub.php')
-            . (string) file_get_contents($root . '/views/equipment/_dialogs.php')
-            . (string) file_get_contents($root . '/views/equipment/_wardrobe_card.php');
+        // La page est découpée : hub.php (bandeau, onglets), _space_*.php (un fichier par espace), _dialogs.php (fenêtres), _wardrobe_card.php.
+        $hub = '';
+        foreach (['hub', '_dialogs', '_wardrobe_card', '_space_wardrobes', '_space_collections', '_space_kits', '_space_materiel', '_space_toolbar'] as $part) {
+            $hub .= (string) file_get_contents($root . '/views/equipment/' . $part . '.php');
+        }
         $collection = (string) file_get_contents($root . '/views/equipment/collection.php');
         $tenue = (string) file_get_contents($root . '/views/equipment/tenue.php');
         $layout = (string) file_get_contents($root . '/views/layout/main.php');
@@ -50,8 +51,10 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertStringContainsString('Qui peut s’en servir', $hub);
         self::assertStringContainsString('data-eq-catalog', $hub);
         self::assertStringContainsString('data-eq-quickview', $hub);
-        self::assertStringContainsString('data-eq-search', $hub);
-        self::assertStringContainsString('data-eq-sort', $hub);
+        // Recherche, type et tri : formulaire GET en haut de chaque espace (l'adresse reflète les filtres).
+        self::assertStringContainsString('name="q"', $hub);
+        self::assertStringContainsString('name="tri"', $hub);
+        self::assertStringContainsString('name="type"', $hub);
         self::assertStringContainsString('eq-hub__picker-grid', $hub);
         self::assertStringContainsString('Aperçu rapide', $hub);
         self::assertStringContainsString('data-eq-tab="fiches"', $hub);
@@ -66,7 +69,7 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertLessThan($slugPos, (int) strpos($routes, '/equipment/ace-export'));
         self::assertStringContainsString('data-eq-ace-export', $hub);
         self::assertStringContainsString('data-eq-qv-ace-copy', $hub);
-        self::assertStringContainsString('data-eq-coll-head', $hub);
+        self::assertStringContainsString('eqx-collhead', $hub);
         self::assertStringContainsString('eq-hub__kit', $hub);
         self::assertStringContainsString('renderCollectionHead', $js);
         self::assertStringContainsString('eq-hub__item-ico--ph', $js);

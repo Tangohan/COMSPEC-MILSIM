@@ -221,12 +221,12 @@ final class ArsenalWardrobeManageTest extends TestCase
         $dialogs = (string) file_get_contents($root . '/views/equipment/_dialogs.php');
         $js = (string) file_get_contents($root . '/public/assets/js/equipment-catalog.js');
 
-        self::assertStringContainsString('data-eq-ace-copy-card="<?= $wid ?>">Copier pour ACE</button>', $card);
+        self::assertStringContainsString('data-eq-ace-copy-card="<?= $wid ?>" aria-label="Copier pour ACE"', $card);
         self::assertStringContainsString('L’import de l’arsenal ACE ne prend qu’une tenue à la fois', $hub);
         // Modifier / Supprimer : sur ses propres tenues seulement.
         $mineBlock = substr($card, (int) strpos($card, '<?php if ($isMine): ?>', (int) strpos($card, 'data-eq-ace-copy-card')), 900);
         self::assertStringContainsString('data-eq-edit-card=', $mineBlock);
-        self::assertStringContainsString("url('equipment/tenues/' . \$wid . '/delete')", $mineBlock);
+        self::assertStringContainsString('data-eq-qv-delete', $dialogs, 'la suppression est dans la fenêtre de la tenue');
         self::assertStringContainsString('name="name" required maxlength="120" data-eq-qv-name', $dialogs);
         self::assertStringContainsString('<option value="personal">Moi seul</option>', $dialogs);
         self::assertStringContainsString("'?tenue=' + encodeURIComponent(id)", $js);
