@@ -40,7 +40,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ## Ma couverture reliée à Athena (version à attribuer)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Ma couverture est plus claire et reliée à Athena
 - L'app Ma couverture montre d'abord ce qu'il faut corriger, avec la liste des actions : trouver des papiers, changer de tenue, ranger l'arme.
@@ -1484,7 +1484,7 @@ EN : Slides on screens, clearer text and 131 fixes
 
 ## Diapositives visibles sur les écrans COMSPEC et diapositives Google dans le téléphone (partie du regroupement 2.6.0)
 
-### Résumé joueur
+### À annoncer
 Type : correctif
 FR : Les diapositives s'affichent enfin sur les écrans du jeu
 - Les écrans COMSPEC (TV, écran de projection, ordinateur) montrent maintenant la diapositive diffusée depuis le téléphone, au lieu de rester noirs.
@@ -1507,7 +1507,7 @@ EN : Slides finally show on in-game screens
 
 ## Compatibilité avec le mod Live Presentation de FENRIR dans l'app Briefing (partie du regroupement 2.6.0)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : L'app Briefing sait lire les présentations du mod Live Presentation (FENRIR)
 - Si la mission utilise le mod Live Presentation de FENRIR, ses présentations proches apparaissent dans l'onglet ÉCRANS de l'app Briefing.
@@ -1530,7 +1530,7 @@ EN : The Briefing app can read presentations from FENRIR's Live Presentation mod
 
 ## Textes du téléphone : plus de texte coupé, sous-menus et boutons lisibles (partie du regroupement 2.6.0)
 
-### Résumé joueur
+### À annoncer
 Type : correctif
 FR : Textes du téléphone plus lisibles
 - Le texte des apps suit enfin la taille du téléphone (petit, plein écran) et le réglage Taille du texte : il ne déborde plus de ses cadres.
@@ -1553,7 +1553,7 @@ EN : Clearer phone text
 
 ## Infos tactiques dans les JVN : marchent sans Athena et se règlent dans le téléphone (partie du regroupement 2.6.0)
 
-### Résumé joueur
+### À annoncer
 Type : correctif
 FR : Les infos tactiques dans les JVN s'affichent enfin
 - Cocher « Infos tactiques dans les JVN » dans les options du mod suffit : alliés, repères et véhicules apparaissent dans ta vue dès que tes JVN sont allumées.
@@ -1573,7 +1573,7 @@ EN : NVG situation display now actually shows up
 
 ## Floutage des visages : les photos du téléphone partent enfin floutées (partie du regroupement 2.6.0)
 
-### Résumé joueur
+### À annoncer
 Type : correctif
 FR : Les visages sont enfin floutés sur les photos du téléphone
 - En selfie, ton visage est toujours flouté sur la photo envoyée à Athena, comme prévu par le réglage « Floutage automatique des visages ».
@@ -1618,7 +1618,7 @@ Un seul numéro pour tout le lot : ATAK natif 2.5.0 (après 2.4.1 sur main ; le 
 
 ## GPS en bâtiment moins imprécis (partie du regroupement 2.5.0)
 
-### Résumé joueur
+### À annoncer
 Type : correctif
 FR : Le GPS reste précis à l'intérieur des bâtiments
 - Dans un bâtiment, ton point sur la carte reste à quelques mètres de ta vraie position (avant : jusqu'à 40 m et plus).
@@ -1636,7 +1636,7 @@ EN : GPS stays accurate inside buildings
 - `fn_ewDraw` : le cercle de précision est centré sur la position de mon icône de la même image (`COMSPEC_ATAK_SelfGpsPos`).
 ## Nouveau téléphone : iPhone 17 Pro en coque durcie olive (partie du regroupement 2.5.0)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Un iPhone 17 Pro rejoint les téléphones ATAK
 - Nouveau modèle dans Réglages > Personnaliser : iPhone 17 Pro en coque durcie olive, sur support de gilet.
@@ -1662,7 +1662,7 @@ Version provisoire : le lot natif suivant la renumérote (STOP MERGE, regroupée
 
 ## App Médical : dossiers médicaux de l'unité dans le téléphone (partie du regroupement 2.5.0)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Les dossiers médicaux de l'unité dans l'app Médical
 - Nouvel onglet DOSSIERS : groupe sanguin, poids, taille, allergies et intolérances de chaque membre, tels que saisis sur Athena.
@@ -1682,7 +1682,7 @@ EN : The unit's medical records in the Medical app
 - Numéro ATAK natif attribué par le regroupement (docs/VERSIONING.md).
 ## CR de fin d'opération imposé dans le téléphone, à remplir ou à lire (partie du regroupement 2.5.0)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Le compte rendu de fin d'opération s'ouvre dans ton téléphone
 - Nouvelle app CR fin d'op : quand le commandement le demande, la fiche s'ouvre d'elle-même dans le téléphone, à remplir ou simplement à lire.
@@ -1706,7 +1706,7 @@ EN : The end-of-operation report opens on your phone
 
 ## Écrans TOC persistants, PC du poste de commandement et IA équipées d'un ATAK (partie du regroupement 2.5.0)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Des écrans TOC en jeu et des IA vraiment reliées au réseau ATAK
 - Nouveau module Écran TOC (Eden et Zeus) : une TV ou un grand écran du jeu affiche en direct le réseau ATAK de ton camp, avec la carte, les positions des équipiers, les marqueurs et les derniers comptes rendus et messages.
@@ -1793,7 +1793,7 @@ Un seul numéro pour tout le lot : ATAK natif 2.4.0 (après 2.3.10 sur main ; le
 
 ## Moins de freezes, plus d'erreur BIS_fnc_crewCount en véhicule, fonctions connect réparées (ATAK natif : numéro donné au regroupement)
 
-### Résumé joueur
+### À annoncer
 Type : performance
 FR : Moins de freezes et plus d'erreur en véhicule
 - Le jeu ne se fige plus près d'une seconde à intervalles réguliers quand le mod enregistre tes réglages : l'enregistrement est regroupé (une fois par minute au plus, et à la fin de la mission).
@@ -1813,7 +1813,7 @@ EN : Fewer freezes and no more error in vehicles
 - Vérifié avec HEMTT 1.17.2 (`hemtt check` natif : 0 erreur ; connect : les 6 erreurs de syntaxe ont disparu, restent les faux positifs `ctrlWebBrowserAction` inconnus de HEMTT). main.pbo et `comspec_overwatch_connect.pbo` à reconstruire au regroupement.
 ## Marqueurs par le seul réseau ATAK, heure de pose sur chaque marqueur, relais actif seulement mât déployé (ATAK natif : numéro donné au regroupement)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Marqueurs ATAK confidentiels et relais radio conditionnels
 - Nouveau réglage serveur « Diffusion des marqueurs ATAK » : en « Réseau ATAK uniquement », un marqueur posé sur le téléphone n'apparaît plus sur la carte d'Arma des autres joueurs. Il n'arrive que sur les téléphones des joueurs du canal qui ont du réseau ; sans signal, il arrive quand le réseau revient.
@@ -1833,7 +1833,7 @@ EN : Confidential ATAK markers and conditional radio relays
 - Réglage `comspec_atak_native_marker_channel` inchangé (Global par défaut) : en mode carte d'Arma, Global reste visible par tous les camps.
 ## Refus d'Athena : plus de demandes en boucle, Dépannage liaison qui donne la bonne correction (Overwatch connect 1.6.17)
 
-### Résumé joueur
+### À annoncer
 Type : correctif
 FR : Quand Athena te refuse, le jeu arrête d'insister et te dit quoi faire
 - Si Athena refuse la clé enregistrée dans ton profil (clé changée ou retirée), le Dépannage liaison le dit et propose Lier mon compte au lieu de Reconnecter, qui échouait à chaque fois.
@@ -1857,7 +1857,7 @@ EN : When Athena refuses you, the game stops insisting and tells you what to do
 - Non testé en jeu. À tester : profil avec une clé invalide → Échap › Dépannage liaison affiche « clé d'accès refusée » et le bouton ouvre Lier mon compte ; après liaison, Revérifier → Liaison OK.
 ## Retours des contributeurs : téléphone en anglais, SEEK II, accueil qui garde sa place (ATAK natif : numéro donné au regroupement)
 
-### Résumé joueur
+### À annoncer
 Type : correctif
 FR : Le téléphone parle mieux anglais et l'accueil ne remonte plus en haut
 - Les noms des apps et des sections de l'accueil, la flèche Retour, l'écran de verrouillage (date, batterie) et de nombreux boutons des apps (Météo, Sniper, Explosifs, Anti-drone, Logistique, Profil, Briefing…) sont traduits en anglais.
@@ -1951,7 +1951,7 @@ EN : New ATHENA identity: the eagle
 - Mod : `gen_assets.py <hemtt> athenalogo` régénère `app_athena.paa` (emblème) et le nouveau `logo_athena.paa` (logo complet) ; `fn_pageAthena` et le repli de la ligne « status » de `fn_formRender` l'utilisent. Version 2.3.11, main.pbo reconstruit (HEMTT), verify_build OK. Link inchangé (2.0.93).
 ## Indicatif perso, marqueurs nommés et modifiables, recherche par grille, outils JTAC (cap magnétique, 9-LINE sur un autre écran), jumelles sans marquage ENI par défaut (ATAK natif, version fixée au regroupement)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Ton propre indicatif, des marqueurs à ton nom et les outils du JTAC
 - C2 et Groupe : « Mon indicatif » te laisse choisir ton indicatif ; il est gardé hors ligne et repris sur Athena (et l'inverse).
@@ -1974,7 +1974,7 @@ EN : Your own callsign, named markers and JTAC tools
 - JTAC : `fn_magBearing` (réglage serveur `comspec_atak_native_mag_decl`), outil carte IPTGT `fn_jtacTool` (VERS LE 9-LINE remplit l'app JTAC), ligne 2 du 9-LINE en cap magnétique ; page site `/9-line` (flux des 9-LINE de la communauté toutes les 5 s, calculateur IP → cible), QR `data\nineline_qr_ca.paa`.
 ## Mode full local : PC portable de TOC, app Numéros, configuration locale config.json (ATAK natif, version attribuée au regroupement ; COMSPEC Link : DLL native modifiée)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Jouer sans Athena, avec un vrai PC de TOC en jeu
 - Mode full local : un serveur peut jouer sans Athena ni site web (réglage serveur). Ordres, messages du poste, comptes rendus, numéros de téléphone et carnet passent en jeu.
