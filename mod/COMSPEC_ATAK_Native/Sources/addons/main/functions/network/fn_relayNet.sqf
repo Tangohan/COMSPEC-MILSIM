@@ -1,6 +1,6 @@
 /*
     Relais du réseau ATAK : liste, carte de couverture (débit, perte) et triangulation d'un appareil par les relais qui l'entendent.
-      "list"     : relais (COMSPEC_AtakRelays : module « ATAK · Relais » ou Overwatch, du camp ou sans camp) puis
+      "list"     : relais (COMSPEC_AtakRelays : module « Poser un relais » ou Overwatch, du camp ou sans camp) puis
                    passerelles de véhicule et PC mobiles du camp (si le réglage serveur les autorise), puis radios MPU5
                    des équipiers qui reçoivent un relais (fn_mpu5). Caché 2 s ("force" : non).
                    [[objet, position antenne ASL, nom, type ("relay" | "gw" | "cp" | "mpu5"), portée m, Mbit/s reçus du réseau,
@@ -24,7 +24,7 @@
       "power"    : [relais, "on" | "off" | "battery"] ; "info" : [relais] fiche en notification ; "sweep" : batteries (serveur).
       "entry"    : [relais] -> son entrée de "list" ou [].
       "only"     : vrai si le réseau passe exclusivement par les relais (réglage serveur comspec_atak_native_relay_only,
-                   case « Réseau exclusivement par relais » d'un module « ATAK · Relais », ou mode réaliste d'Athena).
+                   case « Réseau exclusivement par relais » d'un module « Poser un relais », ou mode réaliste d'Athena).
       "required" : vrai si les relais sont obligatoires (mode « only » ou case « Relais obligatoires »).
       "pin"      : [relais ou objNull] préfère ce relais (objNull : retour au choix automatique).
       "link"     : [position antenne ASL, portée, Mbit/s, position ASL visée, mode, objets ignorés, gain dB]
@@ -77,7 +77,7 @@ switch (_act) do {
         private _jf = [];
         {
             if (isNull _x || {!(_x getVariable ["COMSPEC_AtakRelay", false])}) then { continue };
-            // Relais réservé à un camp (module « ATAK · Relais ») : invisible pour les autres.
+            // Relais réservé à un camp (module « Poser un relais ») : invisible pour les autres.
             private _rs = _x getVariable ["COMSPEC_AtakRelaySide", ""];
             if (_rs isEqualType "" && {_rs isNotEqualTo ""} && {_rs isNotEqualTo _side}) then { continue };
             // Dégâts : débit puis portée baissent petit à petit (réglage comspec_atak_native_relay_damage, perte à 100 % de dégâts).
@@ -177,7 +177,7 @@ switch (_act) do {
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
         {
             (["mpu5", _x] call comspec_atak_native_fnc_meshRead) params [["_up", 0], ["_hp", 0], ["_rg", _mR], ["_rn", "MPU5"]];
-            if (_up <= 0 || {_hp >= 3}) then { continue };
+            if (_up <= 0 || {_hp >= 3} || {["blocked", [_x]] call comspec_atak_native_fnc_netRequire}) then { continue };
             private _ant = (eyePos _x) vectorAdd [0, 0, 0.4];
             private _j = [_ant] call _jamAt;
             private _m = _up * _j;

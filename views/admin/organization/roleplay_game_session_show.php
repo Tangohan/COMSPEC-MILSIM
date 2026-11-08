@@ -160,7 +160,7 @@ $stateButton = static function (string $state, string $label, string $class = 'a
         </div>
     </div>
 
-    <section class="rps-panel" id="participants">
+    <section class="rps-panel" id="participants" data-ath-quiet-scope="session-participants-<?= (int) $id ?>">
         <div class="rps-panel__head">
             <h2 class="rps-panel__title">Participants</h2>
             <span class="rps-panel__hint">Une présence compte si le joueur a joué au moins <?= (int) ($s['min_minutes'] ?? 45) ?> min ou <?= (int) ($s['min_percent'] ?? 50) ?> % de la session. Vous pouvez retenir ou écarter une présence à la main.</span>
@@ -212,7 +212,7 @@ $stateButton = static function (string $state, string $label, string $class = 'a
                     <td data-label="Pour le suivi"><span class="rps-pill <?= $h($cTone) ?>"><?= $h($cLabel) ?></span></td>
                     <td class="rps-acts">
                         <?php if ((int) ($m['user_id'] ?? 0) > 0): ?>
-                        <form method="post" action="<?= $h($base . '/' . $id . '/membres/' . (int) $m['id']) ?>">
+                        <form method="post" data-ath-quiet action="<?= $h($base . '/' . $id . '/membres/' . (int) $m['id']) ?>">
                             <?= \App\Core\Csrf::field() ?>
                             <?php if (!$isCounted): ?>
                             <button type="submit" name="member_action" value="validate" class="ath-btn">Retenir</button>
@@ -229,7 +229,7 @@ $stateButton = static function (string $state, string $label, string $class = 'a
         </table>
         <?php endif; ?>
         <?php if (!$cancelled): ?>
-        <form method="post" action="<?= $h($base . '/' . $id . '/membres/0') ?>">
+        <form method="post" data-ath-quiet action="<?= $h($base . '/' . $id . '/membres/0') ?>">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="member_action" value="add">
             <div class="rps-panel__foot rps-form rps-form--3" style="align-items:end;">

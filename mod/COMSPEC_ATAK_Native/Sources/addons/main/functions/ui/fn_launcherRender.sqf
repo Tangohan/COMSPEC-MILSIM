@@ -150,11 +150,12 @@ if (_chipsOn) then {
         private _cx = _pad + (_forEachIndex mod _cols) * (_cw + _gap);
         private _cy = _y + (floor (_forEachIndex / _cols)) * (_ch + _gap);
         private _on = _key isEqualTo _secSel;
-        private _c = ["COMSPEC_RscButton", [_cx, _cy, _cw, _ch]] call comspec_atak_native_fnc_pageCtrl;
+        private _cf0 = ["COMSPEC_RscText", [_cx, _cy, _cw, _ch]] call comspec_atak_native_fnc_pageCtrl;
+        private _c = ["COMSPEC_RscButtonFlat", [_cx, _cy, _cw, _ch]] call comspec_atak_native_fnc_pageCtrl;
         _c ctrlSetText _txt; // i18n:brut (déjà traduit)
         // Libellé encore trop long pour sa case (deux colonnes en portrait) : réduit, jamais sous le plancher.
         _c ctrlSetFontHeight ((_cf * ((_cw / _maxW) min 1)) max COMSPEC_ATAK_FontMin);
-        _c ctrlSetBackgroundColor ([(_thm get "surface2"), _acc] select _on);
+        _cf0 ctrlSetBackgroundColor ([(_thm get "surface2"), _acc] select _on);
         _c ctrlSetTextColor ([(_thm get "text"), (_thm get "onAccent")] select _on);
         _c setVariable ["key", _key];
         _c ctrlAddEventHandler ["ButtonClick", {

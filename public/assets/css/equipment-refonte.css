@@ -951,6 +951,9 @@ html.ath-in-modal .eqx { --athena-header-h: 0px; min-height: 0; }
 .eqx-card-inv__box b { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--eq-ink); font-size: 0.78rem; font-weight: 700; }
 .eqx-card-inv__box b::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--eqx-box); }
 .eqx-tenues .eqx-card-inv__box small { font-size: 0.75rem; color: var(--eq-muted); opacity: 1; }
+.eqx-card-inv__box small.eqx-inv-items { display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; margin-top: 0.15rem; overflow: visible; }
+.eqx-inv-item { display: inline-flex; align-items: center; gap: 0.25rem; min-width: 0; }
+.eqx-inv-item img { width: 20px; height: 20px; flex: none; object-fit: contain; }
 
 /* Collections */
 .eqx-collgrid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: 1.1rem; }

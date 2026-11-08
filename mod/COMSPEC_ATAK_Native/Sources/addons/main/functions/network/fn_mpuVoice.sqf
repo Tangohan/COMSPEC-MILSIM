@@ -5,7 +5,7 @@
     Condition : l'émetteur et le récepteur portent chacun une MPU5 allumée (batterie) à laquelle ils ont relié leur radio
     (« pont radio » : action ACE Téléphone ATAK > Radio de données, ou app Réseau), et leurs MPU5 sont dans le même
     maillage (fn_mpuLink "mesh") :
-      - même cœur de réseau : les deux joignent un relais de la mission (pylône, module « ATAK · Relais », passerelle de
+      - même cœur de réseau : les deux joignent un relais de la mission (pylône, module « Poser un relais », passerelle de
         véhicule, poste de commandement) du même camp, ou la MPU5 du même chef de groupe (maillage d'équipe sans relais) ;
       - ou l'un voit l'autre dans son propre maillage (MPU5 du même canal, multi-sauts).
     La fréquence (ou le canal) reste celle de la radio, comme d'habitude : ACRE2 / TFAR choisissent qui s'entend.
@@ -75,7 +75,15 @@ if (_act isEqualTo "signal") exitWith {
         _c set [_k, _e];
     };
     (_e select 1) params ["_h", "_lvl"];
-    ["sigMap", [_r select 0, _r select 1, _h, _lvl, (missionNamespace getVariable ["comspec_atak_native_mesh_gravity", true]) isEqualTo true]] call comspec_atak_native_fnc_mpuVoice
+    private _out = ["sigMap", [_r select 0, _r select 1, _h, _lvl, (missionNamespace getVariable ["comspec_atak_native_mesh_gravity", true]) isEqualTo true]] call comspec_atak_native_fnc_mpuVoice;
+    // Le maillage bat le signal direct : la voix passe vraiment par lui. L'émetteur en est prévenu (case RELAIS ATAK, fn_relayTxBadge), au plus toutes les 2 s par paire.
+    // -992 : ACRE2 n'a pas encore de résultat pour cette radio, le direct n'est pas connu.
+    if (!(_e param [2, false]) && {_h >= 0} && {(_r select 1) > -992} && {(_out select 0) > (_r select 0) || {(_out select 1) > (_r select 1)}}) then {
+        _e set [2, true];
+        private _o = [_tx] call acre_sys_radio_fnc_getRadioObject;
+        if (!isNil "_o" && {_o isEqualType objNull} && {isPlayer _o}) then { ["comspec_atak_native_meshVoiceAck", [_tx, _h], _o] call CBA_fnc_targetEvent; };
+    };
+    _out
 };
 private _enabled = { (missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) && {["active"] call comspec_atak_native_fnc_mpuLink} };
 private _acre = !isNil "acre_api_fnc_getCurrentRadioList";
@@ -172,6 +180,12 @@ switch (_act) do {
         _u setVariable ["tf_sendingDistanceMultiplicator", _v];
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceTx", [_u, _base, _v, _targets]];
         { ["comspec_atak_native_meshTfTx", [_u, true], _x] call CBA_fnc_targetEvent; } forEach _targets;
+        // Portée vraiment allongée pour joindre un correspondant ponté : case RELAIS ATAK (fn_relayTxBadge). Sauts : le plus court des correspondants sur cette fréquence.
+        if (_v > _base) then {
+            private _hs = (((missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) param [3, []]) select { _x select 3 }) apply { _x select 1 };
+            _hs sort true;
+            ["show", [_hs param [0, 0]]] call comspec_atak_native_fnc_relayTxBadge;
+        };
     };
     case "tfAfter": {
         _arg params ["_u", "", "", "", ["_down", false]];
@@ -182,6 +196,7 @@ switch (_act) do {
         if (abs ((_u getVariable ["tf_sendingDistanceMultiplicator", 1]) - _v) < 0.0001) then { _u setVariable ["tf_sendingDistanceMultiplicator", _base]; };
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceTx", []];
         { ["comspec_atak_native_meshTfTx", [_u, false], _x] call CBA_fnc_targetEvent; } forEach _targets;
+        ["stop"] call comspec_atak_native_fnc_relayTxBadge;
     };
     case "tfRx": {
         _arg params [["_from", objNull], ["_down", false]];
@@ -272,6 +287,7 @@ switch (_act) do {
             _b params ["_key", "_api", "_name"];
             if (((call _radios) findIf { (_x select 0) isEqualTo _key }) < 0) exitWith { _drop = format ["Radio %1 plus sur vous : pont radio retiré", _name]; };
             if !(["has", [player]] call comspec_atak_native_fnc_mpu5) exitWith { _drop = "MPU5 plus sur vous : pont radio retiré"; };
+            if ((["denied"] call comspec_atak_native_fnc_netRequire) isNotEqualTo []) exitWith { _why = "objet requis manquant"; };
             private _node = player getVariable ["COMSPEC_ATAK_MpuNode", []];
             if (_node isEqualTo [] || {(_node param [2, objNull]) isNotEqualTo player}) exitWith { _why = "MPU5 éteinte ou batterie vide"; };
             private _m = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];

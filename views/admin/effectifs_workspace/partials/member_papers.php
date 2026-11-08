@@ -275,6 +275,27 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
         <?php endif; ?>
     </article>
 
+    <?php if ($truth && ($pp['game_covers'] ?? []) !== []): ?>
+        <article class="eff-fm-card eff-fm-card--wide" id="papiers-couverture-jeu">
+            <div class="eff-fm-card__head">
+                <h3>Couverture née en jeu</h3>
+                <span class="eff-fm-chip is-warn">Confidentiel</span>
+            </div>
+            <p class="eff-fm-lead">Remontée par le téléphone du joueur. Elle n’est pas une identité du registre et ne part pas dans le paquet.</p>
+            <ul class="eff-fm-list">
+                <?php foreach ($pp['game_covers'] as $gc): ?>
+                    <li>
+                        <span class="eff-fm-list__dt"><?= $ph(substr((string) $gc['updated_at'], 0, 16)) ?></span>
+                        <div>
+                            <b translate="no"><?= $ph($gc['name']) ?></b>
+                            <p translate="no"><?= $ph(implode(' · ', array_filter([$gc['dob'] ?? '', $gc['pob'] ?? '', $gc['profession'] ?? '', $gc['employer'] ?? '', $gc['address'] ?? '']))) ?></p>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </article>
+    <?php endif; ?>
+
     <article class="eff-fm-card eff-fm-card--wide" id="papiers-kit">
         <div class="eff-fm-card__head">
             <h3>Kit de mission</h3>

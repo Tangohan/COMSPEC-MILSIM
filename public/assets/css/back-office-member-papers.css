@@ -129,3 +129,45 @@
         align-items: stretch;
     }
 }
+.idm-cover {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 16px;
+}
+.idm-cover h2 {
+    margin: 0;
+}
+.idm-cover__state {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.idm-cover__state li {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--fm-border, var(--ath-border, rgba(127, 127, 127, 0.3)));
+    border-left-width: 4px;
+    border-radius: 10px;
+    background: var(--fm-surface, var(--ath-surface, transparent));
+}
+.idm-cover__state li.is-ok {
+    border-left-color: var(--green, #22c55e);
+}
+.idm-cover__state li.is-warn {
+    border-left-color: var(--amber, #f59e0b);
+}
+.idm-cover__state span {
+    font-size: 0.82rem;
+    color: var(--fm-muted, var(--ath-muted, #64748b));
+}
+.idm-cover__state b {
+    overflow-wrap: anywhere;
+}
+.idm-cover__todo {
+    margin: 0;
+}

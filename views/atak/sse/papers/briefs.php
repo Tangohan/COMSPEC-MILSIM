@@ -79,7 +79,7 @@ require __DIR__ . '/_subnav.php';
                     <tbody>
                     <?php foreach ($briefs as $b): ?>
                         <tr>
-                            <td><?= $h($b['user_name'] !== '' ? $b['user_name'] : '#' . $b['user_id']) ?></td>
+                            <td><?= $h($b['user_name'] !== '' ? $b['user_name'] : '#' . $b['user_id']) ?><?php if (!$b['steam_linked']): ?> <span class="badge" title="Le serveur de jeu ne peut pas lui remettre ce brief tant que son compte n’est pas lié à Steam.">Steam non lié</span><?php endif; ?></td>
                             <td><?= $h($b['title']) ?></td>
                             <td><?= $h($b['op_key'] !== null ? 'Opération ' . $b['op_key'] : $mapLabel($b['context_id'])) ?></td>
                             <td><?= $h(substr((string) ($b['updated_at'] ?? $b['created_at']), 0, 16)) ?></td>

@@ -40,7 +40,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ## À venir : antennes réparées, tours relais épurées, mini-antenne de bâtiment (ATAK natif, version à attribuer)
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : Antennes déployables plus fiables, tours relais épurées, nouvelle mini-antenne
 - Les antennes transportables se déploient aussi par clic droit dans l'inventaire, et chaque refus s'affiche à l'écran.
@@ -59,9 +59,184 @@ EN : More reliable deployable antennas, cleaner relay towers, new mini antenna
 - **Mini-antenne :** `COMSPEC_ATAK_BuildingAntennaKit`, `COMSPEC_ATAK_DeployedAntenna_Mini`, `fn_antennaKit` « aim », réglages `comspec_atak_native_antkit_mini_*`. Bâtiment perdu : retirée sous 15 s.
 - **Fiche du relais :** « État du relais » à l'écran, en lignes (`fn_relayNet` « info »).
 
+## Centre Zeus, liste des modules rangée, fenêtre de configuration des objets (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le Zeus a un Centre Zeus et une liste de modules enfin lisible
+- Un bouton CENTRE ZEUS montre l'état des téléphones de tous les joueurs : batterie, liaison Athena, réseau, haut-parleur, drones et alertes, avec des filtres et des étiquettes au-dessus des joueurs.
+- Les modules COMSPEC sont rangés dans quatre dossiers (ATAK, Renseignement, Identité, Mission), avec des noms courts, une infobulle et des icônes propres. Les missions déjà enregistrées continuent de marcher.
+- Un écran, une preuve ou une caisse se règle dans une seule fenêtre : double-clic en Zeus, attributs d'objet en Eden pour les écrans.
+EN : Zeus gets a Zeus Centre and a readable module list
+- A ZEUS CENTRE button shows every player's phone status: battery, Athena link, network, speaker, drones and alerts, with filters and labels above the players.
+- COMSPEC modules now sit in four folders (ATAK, Intelligence, Identity, Mission), with short names, a tooltip and clean icons. Saved missions keep working.
+- A screen, evidence or crate is set up in a single window: double-click in Zeus, object attributes in Eden for screens.
+
+### Détail technique
+- Centre : fn_zeusCentre (vue), fn_zeusState (relevé à la demande, serveur seul destinataire et seul expéditeur), fn_zeusObject (fenêtre d'objet qui rappelle les formulaires des modules). Aucune nouvelle variable publique.
+- Modules : classes inchangées ; catégories COMSPEC_Cat_Atak, COMSPEC_Cat_Sse, COMSPEC_Cat_Identite, COMSPEC_Cat_Mission. COMSPEC_Module_AtakRelay masqué dans Eden (scope 1). Icônes : tools/gen_module_icons.py.
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
-### Résumé joueur
+## À venir : fiche joueur unique, carte, Groupe et BFT plus directs (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Une seule fiche joueur partout, et la carte ne saute plus quand on touche un équipier
+- Les actions sur un joueur (carte, y aller, SMS, vibrer, ping, caméra, suivre) ont le même nom et le même ordre sur la carte, dans le BFT et dans Groupe.
+- Le bouton CARTE du BFT et de Groupe sélectionne maintenant le joueur à l'arrivée, et le BFT rejoint le dock.
+- Groupe gagne RALLIEMENT SUR MOI, SMS AU GROUPE et CADRER LE GROUPE ; passer le commandement demande une confirmation.
+- Carte : toucher un joueur ouvre une fiche flottante avec ses actions, ◀ ▶ passe d'un équipier à l'autre et SUIVRE garde la carte sur lui. Barre d'outils réordonnée, PING visible, touches 1 à 9 pour les outils.
+- Une réglette montre l'état du groupe d'un coup d'œil dans Groupe, dans l'ORBAT du BFT et sous la boussole. Le BFT devient un tableau à colonnes, avec des chevrons dans l'ORBAT.
+EN : One player card everywhere, and the map no longer jumps when you touch a teammate
+- Actions on a player (map, go there, SMS, vibrate, ping, camera, follow) have the same name and order on the map, in BFT and in Group.
+- The MAP button in BFT and Group now selects the player on arrival, and BFT joins the dock.
+- Group gains RALLY ON ME, SMS TO GROUP and FRAME THE GROUP; handing over command asks for confirmation.
+- Map: touching a player opens a floating card with their actions, ◀ ▶ moves between teammates and FOLLOW keeps the map on them. Toolbar reordered, PING visible, keys 1 to 9 for the tools.
+- A roster bar shows your squad at a glance in Group, in the BFT ORBAT and under the compass. BFT is now a column table with chevrons in the ORBAT.
+
+### Détail technique
+- `fn_unitCard` : catalogue unique des actions (ordre, libellés, règles d'activation), rangées `fn_formRender` et barre en contrôles libres, surplus derrière ⋯ sans redessin ; état médical commun (Groupe, BFT, panneau SITUATION).
+- `fn_bftAction` : CARTE pose `selectedEntity` ; `fn_pageRender` : titre « ‹ BFT · CARTE » ; `config.cpp` : `Bft` au dock.
+- `fn_groupAction` : `rally` (un seul `netSend` vers tous les téléphones), `smsGroup`, `frameGroup` ; CHEF retiré des lignes, passage du commandement en deux temps dans la fiche.
+- `fn_mapSelect` n'ouvre plus le panneau SITUATION (plus de `layoutApply` + `pageRender` au clic) ; fiche flottante `mapCard`, texte réécrit à 1 Hz (`tick`, `fn_statusUpdate`), `mapFollowId` dans le glissement existant de `fn_mapOnDraw`.
+- `fn_pageMap` : barre CENTRER/SUIVRE, ZOOM, MARQUEUR, PING, CALQUES, OUTILS ; indicatifs et « Sur mon téléphone » dans OUTILS > AFFICHAGE ; touches 1 à 9 (`fn_displayLoad`, `fn_mapToolMenu`).
+- `fn_squadBar` : réglette d'effectif (primitives communes, cases en contrôles), signature à 1 Hz sur la carte, rendu texte dans l'ORBAT.
+- `fn_pageBft` : `COMSPEC_RscListNBox` (lignes réécrites par signature, sans vider le tableau), état en image, en-tête compact ; messages d'ORBAT importants au-dessus du tableau.
+- Coût par image : une lecture de table seulement pendant le suivi d'une unité ; aucun autre ajout.
+## À venir : fond de carte ARDOISE et style tactique des marqueurs et traits (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Carte : nouveau fond ARDOISE et style tactique des marqueurs
+- Réglages › Carte : le fond ARDOISE donne une carte bleu-gris sombre, avec une mer très sombre, des routes turquoise fines, des courbes de niveau discrètes et les noms de villes en petites capitales avec un point turquoise.
+- Marqueurs et traits, avec trois choix (AUTO, TACTIQUE, STANDARD) : pions ronds avec lettre d'équipe et triangle de direction, petites plaques de nom, routes orange épaisses, zones hachurées, mesure en tirets verts avec sa distance et cercle fin autour des marqueurs nommés.
+- AUTO allume ce style sur le fond ARDOISE. Les autres fonds de carte et les thèmes SOMBRE, JOUR et NUIT JVN ne changent pas.
+- Les marqueurs à couleur « par défaut » ne sont plus noirs sur la carte : ils reprennent la couleur de leur symbole, sur tous les fonds.
+- Ton point, son cercle de précision et tes cercles du maillage sont dessinés au même endroit, à pied comme en véhicule. La perte de signal et la météo agissent toujours sur le GPS.
+- Carte : maintiens le clic gauche pour pointer. Ton camp voit ton pointeur et ton nom, qui disparaissent quand tu relâches.
+- Carte : le relèvement du curseur donne aussi la direction (« 254 m · 129° SE »). Un marqueur posé sans nom s'appelle maintenant « REP 3 », modifiable à la pose et après, et ne dit plus le type d'unité.
+- App Routes : chaque route de la liste a maintenant PARTAGER et SUPPRIMER. Une route supprimée ne revient plus chez ceux qui l'ont reçue.
+EN : Map: new SLATE background and tactical marker style
+- Settings › Map: the SLATE background gives a dark blue-grey map, with a very dark sea, thin turquoise roads, discreet contour lines and town names in small capitals with a turquoise dot.
+- Markers and lines, with three choices (AUTO, TACTICAL, STANDARD): round pawns with a team letter and direction triangle, small name plates, thick orange routes, hatched zones, a green dashed measuring line with its distance and a thin circle around named markers.
+- AUTO turns this style on with the SLATE background. The other map backgrounds and the DARK, DAY and NIGHT NVG themes do not change.
+- Markers with the “default” colour are no longer black on the map: they take the colour of their symbol, on every background.
+- Your point, its accuracy circle and your mesh circles are drawn at the same place, on foot as in a vehicle. Signal loss and weather still affect the GPS.
+- Map: hold the left mouse button to point. Your side sees your pointer and name, which disappear when you release.
+- Map: the cursor bearing also gives the direction (“254 m · 129° SE”). A marker placed without a name is now called “MK 3”, editable when placing and afterwards, and no longer states the unit type.
+- Routes app: every route in the list now has SHARE and DELETE. A deleted route no longer comes back for those who received it.
+
+### Détail technique
+- Quatrième contrôle carte `COMSPEC_RscMapAtakSlate` (IDC 88534) : les couleurs d'une carte Arma ne se règlent que dans la classe. Écran sans ce contrôle (tablette JPC) : carte topo sous un voile bleu-gris.
+- Moteur : aucune couleur de contrôle pour les bâtiments ni le relief ombré ; noms marins et symboles de sommets colorés par `CfgLocationTypes`, donc inchangés.
+- Style : `COMSPEC_ATAK_MapDrawStyle` lu une fois dans la palette (`fn_mapColors`, clé « tac »). Hachures par la brosse `BDiagonal` du moteur dans `drawRectangle` / `drawEllipse` ; triangle de direction par rotation de texture ; largeur de la plaque de mesure sans nouvelle mesure de texte ; lettre du pion dans le cache d'une seconde de l'unité.
+- Icônes noires : `CfgMarkerColors >> Default` vaut `{0,0,0,1}`, couleur lue telle quelle ; `fn_markerColor` prend alors la couleur du type (CfgMarkers). Présent depuis 2.9.40.
+- Position affichée unique : `fn_gpsPos` (position visuelle), posée en tête de `fn_mapOnDraw` ; cercles de nœud et de passerelle (`fn_meshDraw`) sur le point affiché au lieu de `getPosWorld`.
+- Pointage : appui comparé en écran à `getMousePosition` (la position vue par `MouseMoving` était périmée dès que la carte bougeait sans la souris) ; pointeur à 4 envois par seconde au plus au lieu d'un ping de 10 s.
+- Routes : retrait immédiat au moment de la suppression, révision envoyée avec le retrait, révision relevée au repartage.
+- « armée » en double : texte natif du contrôle carte (`CfgLocationTypes`), non modifié.
+- Polygones des plans de zones sans hachure, polylignes de mission à un pixel : inchangés, pour le coût de dessin et faute de test en jeu de `drawTriangle` texturé.
+
+---
+## BFT : l'ORBAT du site et les joueurs hors ligne ; écran et PC du poste TOC (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### À annoncer
+Type : nouveauté
+FR : Le BFT affiche l'ORBAT de votre communauté, hors ligne compris
+- Onglet ORBAT du BFT : l'arbre de votre ORBAT Athena, avec chaque membre et son état : en jeu avec distance et gisement, en jeu sans piste, hors ligne, poste vacant.
+- Les joueurs absents de cet ORBAT restent visibles dans une section à part, et le bandeau compte aussi les membres hors ligne.
+- Un message clair remplace l'écran vide quand la communauté n'a pas d'ORBAT, quand le compte n'est pas lié ou quand Athena ne répond pas : le dernier ORBAT reçu reste alors affiché, marqué « pas à jour ».
+- Les boutons du bas ne sont plus coupés, et ils ne proposent que ce qui a un sens pour la personne choisie.
+- Écran TOC : les diapositives se diffusent du premier coup, et l'écran écrit la raison s'il ne peut pas les montrer. En-tête propre, symboles regroupés, noms qui ne se chevauchent plus, groupes en colonnes. L'app Poste TOC choisit le contenu : carte, ORBAT, réseau ou diapositive.
+- PC du poste TOC : onglets ORBAT et Réseau, recherche, mesure, pose de marqueur, calques, fiche d'une unité au clic et tri du flux.
+EN : The BFT shows your community ORBAT, offline members included
+- BFT ORBAT tab: your Athena ORBAT as a tree, with each member and their status: in game with distance and bearing, in game without a track, offline, vacant post.
+- Players who are not in this ORBAT stay visible in a separate section, and the header also counts offline members.
+- A clear message replaces the empty screen when the community has no ORBAT, when the account is not linked or when Athena does not answer: the last ORBAT received then stays on screen, marked as out of date.
+- The bottom buttons are no longer cut off, and they only offer what makes sense for the selected person.
+- TOC screen: slides now cast on the first try, and the screen writes the reason when it cannot show them. Clean header, grouped symbols, names that no longer overlap, groups in columns. The Post TOC app picks the content: map, ORBAT, network or slide.
+- TOC post computer: ORBAT and Network tabs, search, measuring, marker placement, layers, unit card on click and feed filtering.
+
+### Détail technique
+- Site : `GET /api/atak/community-orbat` (`AtakCommunityOrbatService`) : vue d'un simple membre, session de jeu exigée, cache de 120 s, taille bornée, ni e-mail ni Steam ID. Contrat dans `docs/technical/ICD-ATHENA-ATAK.md`.
+- DLL : `GetCommunityOrbat` (Async seulement, une requête à la fois) et `GetCommunityOrbatChunk`.
+- Écran TOC : `fn_screenCast` attend la désignation de l'écran (`castWait`) au lieu de refuser, message sur l'écran (`COMSPEC_ATAK_ScreenMsg`), recopie aussi après le repli `data:` ; `fn_tocScreen` : regroupement et placement des plaques, table par pages, affichages `NET` et `ORBAT`, mode `show`. PC du poste : `fn_tocLaptop` (outils, onglets, `fn_markerDrop` et `fn_bftOrbat` réutilisés).
+- Mod : `fn_bftOrbat` (lecture toutes les 5 min au plus, dernier ORBAT gardé en mémoire), `fn_pageBft` (arbre, états, filtres, compteurs, boutons sur deux rangées, lignes réécrites seulement si elles changent), `fn_bftAction` (SMS et vibreur pour un joueur en jeu sans piste). Rapprochement par empreinte du Steam ID, jamais par le nom ; camp adverse jamais rapproché.
+## App Réseau : état d'un coup d'œil, tutoriel, objet obligatoire, case RELAIS ATAK (version attribuée à la publication)
+
+À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
+
+Type : nouveauté
+FR : L'app Wave Relay dit ce qui ne va pas et quoi faire
+- MON NŒUD affiche l'état du réseau (bon, dégradé, coupé), la cause principale et l'action à faire, puis tout ce qui change votre débit, du plus gênant au moins gênant.
+- Un tutoriel en cinq écrans est proposé à la première ouverture et reste accessible par le bouton « ? ».
+- Les serveurs peuvent exiger un objet pour rejoindre le réseau : l'app dit lequel, et le réseau repart dès qu'il est équipé. Le téléphone reste utilisable.
+- Quand votre voix passe vraiment par le réseau, une case RELAIS ATAK s'affiche près du cadre d'émission d'ACRE.
+- Réglages > Réalisme dit qui impose chaque valeur, et les lignes libres ne paraissent plus grisées.
+EN : The Wave Relay app says what is wrong and what to do
+- MY NODE shows the network status (good, degraded, down), the main cause and what to do, then everything that changes your speed, worst first.
+- A five-screen tutorial is offered the first time you open the app and stays available from the « ? » button.
+- Servers can require an item to join the network: the app says which one, and the network comes back as soon as it is equipped. The phone stays usable.
+- When your voice really goes through the network, an ATAK RELAY box appears next to the ACRE transmission frame.
+- Settings > Realism says who enforces each value, and free rows no longer look greyed out.
+
+### Détail technique
+- `fn_netRequire`, réglage serveur `comspec_atak_native_net_required_items` (vide par défaut) ; `fn_waveRelayStatus`, `fn_waveRelayTuto`, `fn_relayTxBadge` et réglages joueur `comspec_atak_native_relay_tx_badge`, `_badge_pos`, `comspec_atak_native_wr_tuto_offer`.
+- Bandeau de notification : le titre de l'app est masqué le temps de son affichage. Interrupteurs des formulaires : la pastille est le bouton, plus de bouton transparent sur la ligne.
+- Rien n'a été testé en jeu.
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+
+À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
+
+## Ma couverture reliée à Athena (version à attribuer)
+
+### À annoncer
+Type : nouveauté
+FR : Ma couverture est plus claire et reliée à Athena
+- L'app Ma couverture montre d'abord ce qu'il faut corriger, avec la liste des actions : trouver des papiers, changer de tenue, ranger l'arme.
+- Vous voyez ce que disent vraiment vos papiers, et la légende à retenir pour un contrôle. Contacts, documents et histoire se replient.
+- Une couverture préparée sur Athena arrive dans votre fiche avec ses papiers. Celle créée en jeu remonte dans Mes papiers si votre téléphone est connecté à Athena.
+- Personne d'autre ne voit votre couverture, sauf le Zeus et les habilités Confidentiel.
+EN : My cover is clearer and linked to Athena
+- The My cover app now starts with what needs fixing, with a list of actions: find papers, change clothes, put your weapon away.
+- You see what your papers really say and the legend to remember for a check. Contacts, documents and story can be collapsed.
+- A cover prepared on Athena reaches your sheet with its papers. One created in game appears under My papers if your phone is connected to Athena.
+- Nobody else sees your cover, except the Zeus and Confidential-cleared staff.
+
+### Détail technique
+- App Ma couverture (`fn_idCoverPage`, SSE) : barre d'onglets du système de design (l'onglet choisi d'un « segment » devenait illisible au focus), couleurs tirées de `fn_theme`, sections repliables, note posée sur place et page non redessinée si la fiche n'a pas changé.
+- Cohérence : `fn_idCover « score »` rend aussi la liste de ce qu'il faut corriger et les points repris.
+- Fiche (`fn_idLegend « sheet »`) : papiers imprimés et portés, source (`athena` ou `local`), date ; le brief brut, la nature et la qualité ne partent plus chez le joueur.
+- Remontée (`fn_idCoverSync`, `kind = cover_report`, ICD-SSE-COVER-001) sur le compte du jeton de jeu, sans nouvelle DLL. Bureau SSE : attribution d'un contenu de la bibliothèque de l'éditeur à un joueur (identité masquée, papiers émis, kit et brief). Mes papiers : état de la couverture. Migration 4110.
+- Sans habilitation Confidentiel, les briefs reliés à une identité n'apparaissent plus dans le Bureau SSE.
+## Écran de verrouillage et code, fonds d'écran du site, Bloc-notes, Bluetooth, onglets lisibles, dégâts variés (version attribuée à la publication)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Nouvel écran de verrouillage, code du téléphone et fonds d'écran du site
+- L'écran de verrouillage est refait : fond d'écran visible, notifications lisibles en entier et défilantes, grand bouton DÉVERROUILLER, raccourcis CARTE et MESSAGES.
+- Le code du téléphone se règle au clavier dans Réglages > Personnalisation (aucun code par défaut) et se tape sur un pavé numérique, avec indice et décompte après trop d'essais.
+- Cinq fonds d'écran du site (aigle et logo Athena, bannières ATAK, SSE et Base SOF), un écran de démarrage au logo du site.
+- Bloc-notes : OUVRIR, ÉDITER, PARTAGER et SUPPRIMER sur chaque note. App Bluetooth refaite. L'onglet choisi reste lisible dans toutes les apps. Beaucoup plus d'effets de dégâts, selon la cause.
+EN : New lock screen, phone code and wallpapers from the website
+- The lock screen is rebuilt: visible wallpaper, full and scrolling notifications, a big UNLOCK button, MAP and MESSAGES shortcuts.
+- The phone code is set on the keypad in Settings > Personalization (no default code) and typed on a number pad, with a hint and a countdown after too many tries.
+- Five wallpapers from the website (Athena eagle and logo, ATAK, SSE and SOF Base banners), a boot screen with the website logo.
+- Notepad: OPEN, EDIT, SHARE and DELETE on each note. Bluetooth app rebuilt. The selected tab stays readable in every app. Many more damage effects, depending on the cause.
+
+### Détail technique
+- `fn_lockScreen` refait (deux colonnes en paysage, liste défilante, cartes mesurées, sans info-bulle). Cause de l'étiquette « Déverrouiller » qui flottait : info-bulle du bouton plein écran. Cause du titre décalé : glyphe « ● » absent de la police.
+- `fn_phonePad` refait ; `fn_phoneOwn` : `pinSetup`, `pinStep`, `fail`, `hasPin`, `setHint`. Les clics ne traversent plus le clavier. Raccourci pris avant le code : l'app s'ouvre après (`COMSPEC_ATAK_LockAfter`). Saisie au clavier physique (`fn_keyBlock`). Comportement d'un téléphone ramassé inchangé.
+- `tools/gen_lock_assets.py` et `tools/gen_damage_fx.py` : PAA dans `items.pbo` (`data/walls`, `data/lock`, `data/dmg`), main.pbo restant près de la limite de GitHub. `fn_wallPath` centralise les chemins. Boot et icônes `app_tenant`, `item_keyloader`, `item_goniometer` dans main.
+- Texte illisible sur un onglet choisi : le moteur fait clignoter un bouton qui a le focus vers `colorBackground2`, constante sombre que `ctrlSetBackgroundColor` ne change pas. Nouvelle classe `COMSPEC_RscButtonFlat` sur une face `RscText` (`fn_formRender` segment, lineseg, person, buttons, bar ; `fn_formSet` ; lanceur ; BFT).
+- Bloc-notes : lecture seule (`COMSPEC_ATAK_NoteRead`), confirmation et partage sur place, format de stockage inchangé.
+- Bluetooth : téléphones détectés (`near`, `scan` toutes les 3 s, redessin seulement si la liste change), progression sur place (`btx_`).
+- Dégâts : 23 calques tirés par `fn_deviceDamage` selon la cause, gardés dans l'état de l'appareil, oubliés à la réparation, dessinés par `fn_screenFx` ; aperçu dans Debug > DÉGÂTS.
+- Test : `tests/Unit/AtakLockscreenUiAssetTest.php`, contrastes calculés depuis `fn_theme`.
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : App Explosifs refaite et nouveau déclencheur réseau
 - Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.

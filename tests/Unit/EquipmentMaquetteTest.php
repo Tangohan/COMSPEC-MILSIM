@@ -120,7 +120,8 @@ final class EquipmentMaquetteTest extends TestCase
         foreach (['Tenue (2)', 'JPC (1)', 'Sac (3)'] as $box) {
             self::assertStringContainsString($box, $html);
         }
-        self::assertStringContainsString('<small translate="no">Garrot &lt;script&gt;', $html);
+        self::assertStringContainsString('class="eqx-inv-items" translate="no"', $html);
+        self::assertStringContainsString('Garrot &lt;script&gt;', $html);
         self::assertStringContainsString('flex-grow:3', $html);
         self::assertStringContainsString('data-eq-ace-copy-card="4"', $html);
         self::assertSame(1, substr_count($html, 'eqx-tcard__worn'), 'seule la tenue de mon kit en jeu porte le badge');

@@ -1,5 +1,5 @@
 /*
-    Module « ATAK · Écran COMSPEC » (Eden et Zeus) : les objets synchronisés (Eden) ou l'objet sous le module (Zeus)
+    Module « Poser un écran COMSPEC » (Eden et Zeus) : les objets synchronisés (Eden) ou l'objet sous le module (Zeus)
     deviennent des écrans où l'app Briefing diffuse ses diapositives (fn_screenCast).
     Attributs : Nom, Portée (m) à laquelle le téléphone détecte l'écran, Camp qui peut le piloter, Texture (index de la
     sélection qui reçoit l'image, 0 sur la plupart des TV, écrans et projecteurs), contrôle par ACE ou la molette.
@@ -29,7 +29,7 @@ private _obj = _targets param [0, objNull];
 if (isNull _obj) exitWith { ["feedback", ["ATAK : lâchez le module sur une TV, un écran ou un projecteur"]] call comspec_atak_native_fnc_zeusMenu; true };
 private _cur = _obj getVariable ["COMSPEC_ATAK_Screen", []];
 if ((count _cur) >= 5) then { _vals = +_cur; };
-["ATAK · Écran COMSPEC", [
+["Poser un écran COMSPEC", [
     ["COMBO", "Action", [["Désigner comme écran", "add"], ["Retirer l'écran", "remove"]], "add"],
     ["EDIT", "Nom", _vals select 0],
     ["SLIDER", "Portée de détection (m)", [3, 200, _vals select 1]],

@@ -2,7 +2,10 @@
     Groupe : onglet MON GROUPE (fiche du groupe, bilan, membres, réglages du chef repliables, quitter),
     onglet ÉQUIPES (équipes de feu du groupe : créer, rejoindre, quitter, couleurs, icônes, descriptions, rôles ; fn_ftRows)
     et onglet GROUPES (autres groupes de mon camp avec joueurs, rejoindre).
-    Membres : liste du groupe.
+    Membres : triés chef, moi, puis hors de combat, blessés, aptes ; l'état en liseré à gauche et en toutes lettres.
+    Sur chaque ligne : SMS, CARTE (centre et sélectionne) et FICHE (fiche unique dépliée sous la ligne, fn_unitCard :
+    toutes les actions, dont le passage du commandement en deux temps).
+    Actions de groupe (fn_groupAction) : RALLIEMENT SUR MOI (chef), SMS AU GROUPE, CADRER LE GROUPE.
     Sections repliables : état dans COMSPEC_ATAK_State, clés « grpFold_<nom> » (fn_groupAction "fold").
 */
 disableSerialization;
@@ -21,7 +24,7 @@ private _where = { params ["_u"]; format ["%1 %2", [_u distance2D player] call _
 private _ini = { params ["_n"]; toUpper ((((_n splitString " -_.:[]()|") select { _x isNotEqualTo "" }) param [0, "#"]) select [0, 1]) };
 // Ouvre la conversation SMS / centre la carte sur un joueur (boutons des membres).
 private _smsCode = { params ["_u"]; compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', %1]; _s set ['chatView', 'CONV']; _s set ['chatPick', false]; ['CHAT'] call comspec_atak_native_fnc_navigate;", str (name _u)] };
-private _mapCode = { params ["_u"]; compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [{ private _u = objectFromNetId _this; if (!isNull _u) then { [_u] call comspec_atak_native_fnc_mapCenter; }; }, '%1', 0.25] call comspec_atak_native_fnc_waitAndExec;", netId _u] };
+private _mapCode = { params ["_u"]; compile format ["['do', ['center', %1]] call comspec_atak_native_fnc_unitCard;", str ("o:" + netId _u)] };
 private _isOpen = { params ["_k", ["_def", false]]; _s getOrDefault [format ["grpFold_%1", _k], _def] };
 private _fold = { params ["_k", "_t", "_sub", ["_def", false]]; ["fold", _t, _sub, [_k, _def] call _isOpen, compile format ["['fold', ['%1', %2]] call comspec_atak_native_fnc_groupAction;", _k, _def]] };
 private _grp = group player;
@@ -31,17 +34,11 @@ private _nTeams = count (_grp getVariable ["COMSPEC_FireTeams", []]);
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['grpTab', '%1']; [{ ['GROUP'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 // Onglets soulignés (composant « tabs », 3.1.0) : compteurs en pastille à côté du libellé.
 private _rows = [["tabs", [(["MON GROUPE", "MINE"] call _tabBtn) + [count units _grp], (["ÉQUIPES", "FT"] call _tabBtn) + [_nTeams], (["GROUPES", "ALL"] call _tabBtn) + [count _others]]]];
-private _showMed = ["state", "allies"] call comspec_atak_native_fnc_medShow;
 // État d'un membre : [code, texte coloré]. Code : 0 apte, 1 blessé, 2 hors de combat (inconscient ou mort), -1 inconnu.
 private _state = {
     params ["_u"];
-    switch (true) do {
-        case (!alive _u): { [2, "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Mort</t>"] };
-        case !_showMed: { [-1, "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>—</t>"] };
-        case (lifeState _u isEqualTo "INCAPACITATED" || {_u getVariable ["ACE_isUnconscious", false]}): { [2, "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Inconscient</t>"] };
-        case ((damage _u) > 0.25): { [1, "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Blessé</t>"] };
-        default { [0, "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Apte</t>"] };
-    }
+    (["state", _u] call comspec_atak_native_fnc_unitCard) params ["_c", "_lbl", "_hex", "_rgba"];
+    [_c min 2, format ["<t color='%1'>%2</t>", _hex, _lbl], _rgba]
 };
 
 if (_tab isEqualTo "FT") then { _rows append ([] call comspec_atak_native_fnc_ftRows); };
@@ -56,24 +53,36 @@ if (_tab isEqualTo "MINE") then {
         [[name leader _grp] call _esc, format ["%1 (moi)", [name leader _grp] call _esc]] select ((leader _grp) isEqualTo player),
         ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● Ouvert</t>", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Fermé</t>"] select _locked]];
 
-    // Bilan en un bandeau : aptes, blessés, hors de combat (si l'état médical des alliés est visible) et distance du plus loin.
+    // Bilan : la réglette d'effectif (fn_squadBar), le même dessin que sur la carte et dans l'ORBAT, et la distance du plus loin.
+    // Un clic sur une case déplie la fiche de ce membre.
     private _far = 0;
     { _far = _far max (_x distance2D player); } forEach _units;
-    private _left = if (_showMed) then {
-        private _c = [0, 0, 0];
-        { private _k = ([_x] call _state) select 0; if (_k >= 0) then { _c set [_k, (_c select _k) + 1]; }; } forEach _units;
-        format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>APTES %1</t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>  ·  </t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>BLESSÉS %2</t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>  ·  </t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>HORS DE COMBAT %3</t>", _c select 0, _c select 1, _c select 2]
-    } else {
-        format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1 MEMBRE(S)</t>", count _units]
-    };
-    _rows pushBack ["strip", _left, ["", format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Le plus loin : %1</t>", [_far] call _dist]] select ((count _units) > 1)];
+    _rows pushBack ["squad", ["cells", _grp] call comspec_atak_native_fnc_squadBar, format ["<t font='COMSPEC_BarlowBold'>%1</t>", [groupId _grp] call _esc],
+        ["", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Le plus loin : %1</t>", [_far] call _dist]] select ((count _units) > 1),
+        "['card', %1] call comspec_atak_native_fnc_groupAction;"];
 
-    // Membres : chef d'abord, puis moi, puis du plus proche au plus loin.
-    _rows pushBack ["section", format ["Membres (%1)", count _units], ["", "Touchez CHEF pour passer le commandement"] select (_isLead && {(count _units) > 1})];
-    private _sorted = _units apply { [switch (true) do { case (_x isEqualTo leader _grp): { 0 }; case (_x isEqualTo player): { 1 }; default { 2 }; }, _x distance2D player, _x] };
+    // Actions de groupe : un geste au lieu de huit. Ralliement réservé au chef ; il part en un seul envoi.
+    private _many = (count _units) > 1;
+    _rows pushBack ["big", [
+        ["RALLIEMENT SUR MOI", { ["rally"] call comspec_atak_native_fnc_groupAction; }, "amber", _isLead && {_many}, ["Réservé au chef du groupe", "Fait vibrer les téléphones du groupe (« RALLIEMENT ») et pose un ping sur vous"] select _isLead],
+        ["SMS AU GROUPE", { ["smsGroup"] call comspec_atak_native_fnc_groupAction; }, "", _many, "Ouvre le canal du groupe, sinon un SMS à tous ses joueurs"],
+        ["CADRER LE GROUPE", { ["frameGroup"] call comspec_atak_native_fnc_groupAction; }, "", true, "Ouvre la carte à l'échelle qui contient tous les membres vivants"]
+    ]];
+    // Sans canal de groupe : SMS préparé ici, envoyé à chaque joueur du groupe.
+    if (_s getOrDefault ["grpSms", false]) then {
+        _rows pushBack ["field", "grpSmsText", "SMS à tous les joueurs du groupe", "", "ENVOYER", { ["smsGroupSend"] call comspec_atak_native_fnc_groupAction; }];
+    };
+
+    // Membres : chef, moi, puis hors de combat, blessés, aptes ; à gravité égale, du plus proche au plus loin.
+    _rows pushBack ["section", format ["Membres (%1)", count _units], ["", "FICHE : toutes les actions, dont le passage du commandement"] select (_isLead && {_many})];
+    private _sorted = _units apply {
+        private _k = ([_x] call _state) select 0;
+        [switch (true) do { case (_x isEqualTo leader _grp): { 0 }; case (_x isEqualTo player): { 1 }; default { 2 }; }, [2, [1, 0] select (_k isEqualTo 2)] select (_k >= 1), _x distance2D player, _x]
+    };
     _sorted sort true;
+    private _cardOf = _s getOrDefault ["grpCard", ""];
     {
-        private _u = _x select 2;
+        private _u = _x select 3;
         private _me = _u isEqualTo player;
         // Photo Athena seulement si Arma sait la lire (fn_avatarPath passe par fn_texUsable), sinon l'initiale dans
         // une pastille aux couleurs de l'équipe de feu (le cadre restait noir).
@@ -85,7 +94,7 @@ if (_tab isEqualTo "MINE") then {
         private _btns = [];
         if (!_me && {isPlayer _u}) then { _btns pushBack ["SMS", [_u] call _smsCode, false, alive _u, "Écrire un SMS à ce joueur"]; };
         if (!_me) then { _btns pushBack ["CARTE", [_u] call _mapCode, false, true, "Voir ce joueur sur la carte"]; };
-        if (_isLead && {!_me} && {isPlayer _u}) then { _btns pushBack ["CHEF", compile format ["['lead', '%1'] call comspec_atak_native_fnc_groupAction;", netId _u], false, true, "Passer le commandement du groupe"]; };
+        if (!_me) then { _btns pushBack ["FICHE", compile format ["['card', '%1'] call comspec_atak_native_fnc_groupAction;", netId _u], (netId _u) isEqualTo _cardOf, true, "Toutes les actions sur ce joueur"]; };
         private _st = [_u] call _state;
         _rows pushBack ["person", _avatar, format ["<t font='COMSPEC_BarlowBold'>%1</t>%2%3%4<br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%5</t><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'> · </t><t size='0.8'>%6</t><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'> · %7</t>",
             [name _u] call _esc,
@@ -93,7 +102,12 @@ if (_tab isEqualTo "MINE") then {
             ["", "  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexInfo") + "'>MOI</t>"] select _me,
             ["", format ["  <t size='0.8' color='%1'>%2</t>", _ft get "hex", [_ft get "name"] call _esc]] select ((_ft get "id") isNotEqualTo ""),
             [_role] call _esc, _st select 1,
-            [[_u] call _where, "ici"] select _me], _btns, _tint, [name _u] call _ini];
+            [[_u] call _where, "ici"] select _me], _btns, _tint, [name _u] call _ini, "", _st select 2];
+        // Fiche dépliée sous la ligne : la fiche longue et la barre d'actions, les mêmes que sur la carte et dans le BFT.
+        if (!_me && {(netId _u) isEqualTo _cardOf}) then {
+            _rows pushBack ["text", [true, ["resolve", _u] call comspec_atak_native_fnc_unitCard] call comspec_atak_native_fnc_inspectorUpdate, COMSPEC_ATAK_Th get "surface"];
+            _rows append (["rows", [_u, "group"]] call comspec_atak_native_fnc_unitCard);
+        };
     } forEach _sorted;
 
     // Réglages du chef, repliés par défaut pour laisser la liste des membres visible.

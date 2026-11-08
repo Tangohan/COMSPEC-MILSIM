@@ -23,14 +23,14 @@ if (!hasInterface) exitWith {};
 [] call comspec_sse_fnc_photoWatch;
 [{ !isNil "zen_custom_modules_fnc_register" }, {
     [
-        "COMSPEC SSE · Numérique",
-        "Rendre extractible au DL-7",
+        "COMSPEC_Cat_Sse",
+        "Rendre extractible au câble",
         {
             params ["_pos", "_obj"];
             private _sel = [] call comspec_sse_fnc_curatorSelectedObjects;
             if (!isNull _obj) then { _sel pushBackUnique _obj; };
             [_sel] call comspec_sse_fnc_dl7ZeusForm;
         },
-        "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa"
+        "\z\comspec_sse\addons\zeus\data\mod_save.paa"
     ] call comspec_sse_fnc_zenModule;
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

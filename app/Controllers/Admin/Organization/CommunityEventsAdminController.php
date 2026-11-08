@@ -210,11 +210,15 @@ final class CommunityEventsAdminController
             return $this->exportRegistry($tenantId, $registryFilters);
         }
         $rowLimit = $vue === 'calendrier' ? 400 : 150;
-        $rows = $this->events->registryForTenant($tenantId, $registryFilters, $rowLimit);
+        $rows = $registryFilters['type'] === \App\Support\RoleplaySessionCalendar::TYPE && $vue === 'calendrier'
+            ? []
+            : $this->events->registryForTenant($tenantId, $registryFilters, $rowLimit);
         $insights = $this->buildAttendanceInsights($tenantId);
         $quota = $this->featureGate->quotaStatusForFeature($tenantId, 'events');
         $aarCrIndex = $this->aarReports->operationStatusIndexForTenant($tenantId);
-        $calendarMonth = $vue === 'calendrier' ? $this->buildCalendarMonth($mois, $rows) : null;
+        $calendarMonth = $vue === 'calendrier'
+            ? $this->buildCalendarMonth($mois, \App\Support\RoleplaySessionCalendar::merge($rows, $this->calendarSessions($tenantId, $mois), $registryFilters))
+            : null;
 
         return Response::view('layout.main', [
             'title' => 'Agenda',
@@ -224,7 +228,7 @@ final class CommunityEventsAdminController
             'boPageTitle' => 'Agenda',
             'boPageKicker' => 'OPÉRATIONS · AGENDA',
             'boPageSubtitle' => $vue === 'calendrier'
-                ? 'Calendrier des opérations et créneaux — cliquez un jour ou un événement pour ouvrir la fiche.'
+                ? 'Calendrier des opérations, créneaux et sessions de jeu — cliquez un événement pour ouvrir sa fiche.'
                 : 'Registre des opérations passées et à venir : effectifs engagés, durée et état des comptes rendus.',
             'boPageAction' => 'Planifier une opération',
             'boPageActionUrl' => url('back-office/events') . '?vue=calendrier#nouveau',
@@ -249,6 +253,20 @@ final class CommunityEventsAdminController
             'eventsRegularityScores' => $insights['regularityScores'],
             'eventsNewMemberParticipationDelta' => $insights['newMemberParticipationDelta'],
         ]);
+    }
+
+    /**
+     * Sessions de jeu du mois pour le calendrier unique : leur absence (base pas à jour) ne doit pas casser l'agenda.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function calendarSessions(int $tenantId, string $mois): array
+    {
+        try {
+            return (new \App\Repositories\RoleplayGameSessionRepository())->forCalendarMonth($tenantId, $mois);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
