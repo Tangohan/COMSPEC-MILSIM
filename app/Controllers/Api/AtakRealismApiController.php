@@ -200,7 +200,8 @@ final class AtakRealismApiController
             // le mod en prend un autre (l'ancienne formule donnait le même à deux joueurs).
             $refusal = AtakCompromisePolicy::registrationRefusal(
                 $this->realismRepository->findTerminalByUid($tenantId, trim((string) ($body['terminal_uid'] ?? ''))),
-                (int) ($body['user_id'] ?? 0)
+                (int) ($body['user_id'] ?? 0),
+                in_array('uid_retry', explode(',', (string) ($body['caps'] ?? '')), true)
             );
             if ($refusal !== null) {
                 return Response::json(['ok' => false, 'error' => $refusal], 409);

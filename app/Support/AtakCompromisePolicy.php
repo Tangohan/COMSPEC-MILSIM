@@ -38,8 +38,11 @@ final class AtakCompromisePolicy
             && self::gameMayChange($terminal);
     }
 
-    /** Refus d'enregistrer ce terminal depuis le jeu : code d'erreur renvoyé au mod, null si rien ne s'y oppose. */
-    public static function registrationRefusal(?array $terminal, int $userId): ?string
+    /**
+     * Refus d'enregistrer ce terminal depuis le jeu : code d'erreur renvoyé au mod, null si rien ne s'y oppose.
+     * Identifiant d'un autre compte : refusé seulement au client qui sait en prendre un autre (les anciens se retrouveraient sans fiche).
+     */
+    public static function registrationRefusal(?array $terminal, int $userId, bool $canRetry = true): ?string
     {
         if ($terminal === null) {
             return null;
@@ -49,6 +52,6 @@ final class AtakCompromisePolicy
         }
         $owner = (int) ($terminal['user_id'] ?? 0);
 
-        return $owner > 0 && $userId > 0 && $owner !== $userId ? 'terminal_uid_taken' : null;
+        return $canRetry && $owner > 0 && $userId > 0 && $owner !== $userId ? 'terminal_uid_taken' : null;
     }
 }

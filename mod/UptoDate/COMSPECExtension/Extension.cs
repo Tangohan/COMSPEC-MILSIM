@@ -6770,6 +6770,8 @@ public static partial class Extension
                     $"\"operator_callsign\":\"{EscapeJson(operatorCallsign)}\"," +
                     $"\"platform_label\":\"{EscapeJson(platformLabel)}\"," +
                     $"\"pairing_token\":\"{EscapeJson(pairingToken)}\"," +
+                    // uid_retry : ce client sait prendre un autre identifiant si Athena répond terminal_uid_taken.
+                    $"\"caps\":\"uid_retry\"," +
                     $"\"status\":\"{EscapeJson(status)}\"{ModVersionJsonFragment()}}}";
                 using var resp = SendJsonPost(termUri.AbsoluteUri, EnrichAtakPayload(payload), token);
                 var respBody = ReadContentUtf8(resp, token);

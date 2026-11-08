@@ -55,6 +55,9 @@ final class AtakCompromisePolicyTest extends TestCase
         self::assertSame('terminal_uid_taken', Policy::registrationRefusal(['compromise_state' => 'none', 'user_id' => 7], 8));
         self::assertNull(Policy::registrationRefusal(['compromise_state' => 'none', 'user_id' => 0], 8));
         self::assertNull(Policy::registrationRefusal(['compromise_state' => 'none', 'user_id' => 7], 0));
+        // Client plus ancien : il ne saurait pas changer d'identifiant.
+        self::assertNull(Policy::registrationRefusal(['compromise_state' => 'none', 'user_id' => 7], 8, false));
+        self::assertSame('terminal_compromised', Policy::registrationRefusal(self::FIELD, 7, false));
     }
 
     public function testControllersApplyThePolicyToEveryGamePath(): void
