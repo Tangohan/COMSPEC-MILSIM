@@ -720,6 +720,10 @@ final class AdminAarReportsController
                 'conclusion_text' => $request->input('conclusion_text'),
             ],
         ];
+        // Conclusion du commandement : seuls les gestionnaires l'écrivent ; pour les autres, la valeur en place est gardée.
+        if (!ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage')) {
+            $payload['metrics']['conclusion_text'] = (string) ($existing['conclusion_text'] ?? '');
+        }
         $rows = $request->input('actions', null);
         if (is_array($rows)) {
             $split = AarReportAdminService::actionsFromRows($rows);

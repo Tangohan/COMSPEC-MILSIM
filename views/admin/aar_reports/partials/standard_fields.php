@@ -62,15 +62,18 @@ $frame = "Prévu : \nRéalisé : \nÉcarts et causes : \nRésultat : ";
 
 <section class="ath-panel bo-aar-step" id="etape-enseignements">
   <?= $stepHead('lessons', 'Enseignements et conclusion', 'Ce que l’unité doit retenir pour la suite, et l’avis du commandement sur l’opération.') ?>
-  <div class="bo-aar-grid bo-aar-grid--2">
+  <?php $canWriteConclusion = \App\Support\ModuleFeatureAccess::allows(\App\Services\Rbac\RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'); ?>
+  <div class="bo-aar-grid <?= $canWriteConclusion ? 'bo-aar-grid--2' : '' ?>">
     <label class="bo-aar-field">
       <span>Enseignements</span>
       <textarea name="lessons_learned" rows="4" placeholder="Ex. Reconnaître les itinéraires de repli avant H, pas pendant l’action." data-aar-check-src="lessons"><?= $h($val('lessons_learned')) ?></textarea>
     </label>
+    <?php if ($canWriteConclusion): ?>
     <label class="bo-aar-field">
       <span>Conclusion du commandement</span>
       <textarea name="conclusion_text" rows="4" placeholder="Ex. Mission remplie. Bonne cohésion des groupes, effort à porter sur la préparation."><?= $h($val('conclusion_text')) ?></textarea>
     </label>
+    <?php endif; ?>
   </div>
   <label class="bo-aar-field">
     <span>À retenir pour…</span>
