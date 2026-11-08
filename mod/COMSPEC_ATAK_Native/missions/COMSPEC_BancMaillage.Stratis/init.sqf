@@ -30,6 +30,7 @@ if (!hasInterface) exitWith {};
         ["tout effacer", { ["request", ["clear", []]] call comspec_atak_native_fnc_devMeshSim; }],
         ["superposition 3D", { ["toggle"] call comspec_atak_native_fnc_devMeshOverlay; }],
         ["inspecter le nœud visé", { ["pick"] call comspec_atak_native_fnc_devLinkInspect; }],
-        ["export du graphe dans le RPT", { ["export"] call comspec_atak_native_fnc_devMesh; }]
+        ["export du graphe dans le RPT", { ["export"] call comspec_atak_native_fnc_devMesh; }],
+        ["tests réussi / échoué", { [] call comspec_atak_native_fnc_devMeshTest; }]
     ];
 };

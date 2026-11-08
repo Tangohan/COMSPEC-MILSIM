@@ -36,12 +36,12 @@ class CfgFunctions {
             class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {}; class planUi {}; class planHelp {};
         };
         class devmesh { file="z\comspec_atak_native\addons\main\functions\devmesh";
-            class devMesh {}; class devMeshSim {}; class devMeshOverlay {}; class devLinkInspect {};
+            class devMesh {}; class devMeshSim {}; class devMeshOverlay {}; class devLinkInspect {}; class devMeshTest {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayConvert {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class netCond {}; class netWeather {}; class netLoad {}; class netConfig {}; class offline {}; class relayNet {}; class relayCond {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaShortUrl {}; class athenaStatus {}; class feedLink {}; class extVersion {}; class mpu5 {}; class mpuLink {}; class mpuVoice {}; class jammer {};
+            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class netCond {}; class netWeather {}; class netLoad {}; class netConfig {}; class offline {}; class relayNet {}; class relayCond {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaShortUrl {}; class athenaStatus {}; class feedLink {}; class extVersion {}; class mpu5 {}; class mpuLink {}; class mpuVoice {}; class meshRead {}; class jammer {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};

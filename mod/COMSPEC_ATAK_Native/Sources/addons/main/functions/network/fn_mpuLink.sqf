@@ -354,8 +354,8 @@ switch (_act) do {
         // Nœuds : [objet antenne, position ASL, nom, type ("me" | "node" | "posed" | "gw"), portée m, porteur, débit max kbit/s]
         private _nodes = [[_ant, [_ant] call _antOf, "Ma radio", "me", _range, player, _maxK]];
         {
-            (_x getVariable ["COMSPEC_ATAK_MpuNode", []]) params [["_k", ""], ["_r", 0], ["_o", objNull]];
-            if (_k isNotEqualTo _key || {!(_o isEqualType objNull)} || {isNull _o} || {!(_r isEqualType 0)} || {_r <= 0}) then { continue };
+            (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_k", ""], ["_r", 0], ["_o", objNull]];
+            if (_k isNotEqualTo _key) then { continue };
             private _cs = [_x, true] call comspec_atak_native_fnc_unitCallsign;
             private _man = _o isKindOf "CAManBase";
             _nodes pushBack [_o, [_o] call _antOf, [format ["MPU5 posée (%1)", _cs], _cs] select _man, ["posed", "node"] select _man, _r, _x, _maxK];

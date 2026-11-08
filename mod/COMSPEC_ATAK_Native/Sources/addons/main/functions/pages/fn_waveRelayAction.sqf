@@ -49,7 +49,7 @@ switch (_act) do {
         private _side = side group player;
         private _units = (allPlayers select { alive _x && {side group _x isEqualTo _side} && {_x isNotEqualTo player} && {[_x] call comspec_atak_native_fnc_hasDevice} }) select [0, 63];
         // Liaison réaliste (fn_mpuLink) : seuls les joueurs dont la radio de données est en service sont des nœuds.
-        if (["active"] call comspec_atak_native_fnc_mpuLink) then { _units = _units select { (_x getVariable ["COMSPEC_ATAK_MpuNode", []]) isNotEqualTo [] }; };
+        if (["active"] call comspec_atak_native_fnc_mpuLink) then { _units = _units select { (["node", _x] call comspec_atak_native_fnc_meshRead) isNotEqualTo [] }; };
         private _ant = { params ["_u"]; (eyePos _u) vectorAdd [0, 0, 0.5] };
         // Radio maillée MPU5 portée (fn_mpu5) : portée du nœud relevée (réglage comspec_atak_native_mpu5_range).
         private _nodes = [[player, [player] call _ant, [player, true] call comspec_atak_native_fnc_unitCallsign, "me", ["range", [player]] call comspec_atak_native_fnc_mpu5]];

@@ -95,7 +95,8 @@ switch (_act) do {
             ["ACTUALISER", _refresh, true]
         ]];
         _rows pushBack ["buttons", [
-            ["ACTIONS DE VISÉE", { ["actions"] call comspec_atak_native_fnc_devLinkInspect; }]
+            ["ACTIONS DE VISÉE", { ["actions"] call comspec_atak_native_fnc_devLinkInspect; }],
+            ["TESTS", { [] call comspec_atak_native_fnc_devMeshTest; }]
         ]];
         _rows pushBack ["section", "Nœuds simulés", "Sur le serveur, canal du joueur"];
         _rows pushBack ["buttons", [

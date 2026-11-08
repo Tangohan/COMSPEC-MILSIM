@@ -49,8 +49,7 @@ private _spawn = {
     params ["_who", "_layout", "_count", "_gap", "_range", "_withRelay", "_groundFn"];
     private _n = ((round _count) max 1) min 60;
     private _side = str side group _who;
-    (_who getVariable ["COMSPEC_ATAK_MpuNode", []]) params [["_key", "C1"]];
-    if !(_key isEqualType "") then { _key = "C1"; };
+    (["node", _who] call comspec_atak_native_fnc_meshRead) params [["_key", "C1"]];
     private _org = getPosASL _who;
     private _dir = getDir _who;
     private _side2 = ceil sqrt _n;

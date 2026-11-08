@@ -164,7 +164,7 @@ switch (_tab) do {
             _rows pushBack ["section", "Talkgroups data", ["Aucun talkgroup choisi : vous recevez tout le maillage", format ["Vous êtes sur %1", _mine]] select (_mine isNotEqualTo "")];
             {
                 _x params ["_k", "_label"];
-                private _cnt = { (_x getVariable ["COMSPEC_ATAK_Talkgroup", ""]) isEqualTo _k } count _peers;
+                private _cnt = { (["talkgroup", _x] call comspec_atak_native_fnc_meshRead) isEqualTo _k } count _peers;
                 private _on = _k isEqualTo _mine;
                 _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3</t><br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 membre(s)</t>",
                     ["#e6ece8", (COMSPEC_ATAK_Th get "hexOk")] select _on, _k, _label, _cnt],
