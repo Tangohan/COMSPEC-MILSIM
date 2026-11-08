@@ -13,6 +13,8 @@ params [
     {
         params ["_target", "_player"];
         [_target] call comspec_sse_fnc_ensureGenerated;
+        // Pièce posée par l'éditeur SSE : le serveur note qui l'a trouvée (lire n'est pas fouiller : aucun état ne change).
+        if ((_target getVariable ["comspec_sse_editorItem", ""]) isNotEqualTo "") then { ["documentsread", _target, []] call comspec_sse_fnc_requestServerOp; };
         private _quality = [65, true, 1, 1, 1, _player, _target, "documents"] call comspec_sse_fnc_calcQuality;
         private _docs = [_target, "documents"] call comspec_sse_fnc_getSection;
         if (isNil "_docs" || {!(_docs isEqualType [])} || {count _docs == 0}) exitWith {

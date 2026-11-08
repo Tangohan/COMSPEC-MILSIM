@@ -56221,4 +56221,7 @@ return [
     'Discord : photos regroupées en un seul message' => 'Discord: photos grouped into a single message',
     'Envoie sur Discord les photos prises par un même joueur dans une même mission en un seul message (10 photos au plus). Une photo qui n’a pas pu partir est retentée ; elle reste toujours disponible sur Athena.' => 'Sends the photos taken by the same player in the same mission to Discord as a single message (10 photos at most). A photo that could not be sent is retried; it always stays available on Athena.',
     'Le plus simple : exportez le registre, complétez la colonne des matricules dans votre tableur, puis réimportez le fichier. Les membres sont reconnus par leur identifiant (colonne « id_membre ») ; les anciens fichiers avec adresse e-mail restent acceptés. Doublons, caractères non autorisés et membres inconnus sont signalés.' => 'The simplest way: export the register, fill in the service number column in your spreadsheet, then import the file again. Members are recognised by their identifier ("id_membre" column); older files with an email address are still accepted. Duplicates, invalid characters and unknown members are reported.',
+    'Compte relié et habilitation Confidentiel requis pour la bibliothèque de l’éditeur.' => 'A linked account and Confidential clearance are required for the editor library.',
+    'Bibliothèque indisponible pour le moment.' => 'Library unavailable for the moment.',
+    'Contenu refusé : rien n’a été enregistré.' => 'Content refused: nothing was saved.',
 ];
