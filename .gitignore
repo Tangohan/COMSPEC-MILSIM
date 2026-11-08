@@ -104,3 +104,7 @@ __pycache__/
 
 # Sauvegardes Workshop (publisher, steam_set_description.py)
 mod/COMSPEC_ATAK_Native/publisher/_backup_ws_*
+
+# Claude Code : fichiers locaux
+.claude/worktrees/
+.claude/settings.local.json

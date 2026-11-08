@@ -1,7 +1,11 @@
 ---
 description: Toute mise à jour SQL passe par une étape de la file active lancée par run-migrations.php.
-globs: database/steps/**,migrations/**,bootstrap/*migration*.php,app/Repositories/**,scripts/sql/**
-alwaysApply: false
+paths:
+  - "database/steps/**"
+  - "migrations/**"
+  - "bootstrap/*migration*.php"
+  - "app/Repositories/**"
+  - "scripts/sql/**"
 ---
 
 # Mises à jour SQL : file active uniquement
