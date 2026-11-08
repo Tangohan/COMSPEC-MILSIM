@@ -41,7 +41,15 @@ export function template(kind='name') {
   }
   if(kind==='circle'){text.curve=130;text.y=40;text.height=180;}
   if(kind==='pvc') bg.shadow={color:'#000000aa',blur:3,x:2,y:4};
-  doc.variants.standard=layers;return doc;
+  doc.variants.standard=layers;
+  // Patch IR : une version nuit a part, fond tres sombre et motif tres clair, pour rester lisible dans des JVN.
+  if(kind==='ir'){
+    const night=clone(layers);
+    night[0].fill=solid('#0b0d0b');night[0].stroke={...night[0].stroke,color:'#f2f4e8',width:10};night[0].name='Fond sombre · nuit';
+    night[1].fill=solid('#f7f9ee');night[1].name='Texte clair · nuit';
+    doc.variants.night=night;
+  }
+  return doc;
 }
 export class History {
   constructor(doc,limit=80){this.limit=limit;this.reset(doc);}

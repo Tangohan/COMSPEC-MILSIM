@@ -2,7 +2,7 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- const page=await browser.newPage({viewport:{width:1600,height:1120}}),url=process.env.PATCH_TEST_URL||'http://127.0.0.1:8765',errors=[];
+ const page=require('./reveal.cjs')(await browser.newPage({viewport:{width:1600,height:1120}})),url=process.env.PATCH_TEST_URL||'http://127.0.0.1:8765',errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
  const bind=()=>page.evaluate(async()=>{const src=document.querySelector('[data-patch-studio-module]').src;globalThis.studio=(await import(src)).studio;globalThis.core=await import(new URL('./patch-studio-core.js'+new URL(src).search,src));});
  const evaluate=fn=>page.evaluate(fn=>Function('studio','core','return ('+fn+')(studio,core)')(globalThis.studio,globalThis.core),fn.toString());
@@ -63,7 +63,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   });assert.equal(new Set(materials.map(m=>m.png)).size,7);for(const m of materials)fs.writeFileSync('/tmp/athena-material-'+m.type+'.png',Buffer.from(m.png,'base64'));
   // Compare every weave using the same text as well (labels cannot create false positives).
   const hashes=await evaluate(async(s,c)=>{const previous=s.state.doc,out=[];for(const type of Object.keys(c.materials)){s.state.doc=c.template();s.state.doc.variants.standard[0].material.type=type;s.state.doc.variants.standard[1].visible=false;out.push(await s.raster());}s.state.doc=previous;return out;});assert.equal(new Set(hashes).size,8);
-  const sheet=await browser.newPage({viewport:{width:1600,height:1120}});await sheet.setContent('<html><body style="margin:0;background:#e8e6df;display:grid;grid-template-columns:repeat(2,1fr)"></body></html>');
+  const sheet=require('./reveal.cjs')(await browser.newPage({viewport:{width:1600,height:1120}}));await sheet.setContent('<html><body style="margin:0;background:#e8e6df;display:grid;grid-template-columns:repeat(2,1fr)"></body></html>');
   await sheet.evaluate(images=>{for(const x of images){const im=new Image();im.src='data:image/png;base64,'+x.png;im.style.width='100%';document.body.append(im);}},[{type:'laser',png:light},...materials]);await sheet.waitForFunction(()=>[...document.images].every(i=>i.complete));await sheet.screenshot({path:'/tmp/athena-material-contact-sheet.png',fullPage:true});
   assert.deepEqual(errors,[]);console.log('PASS fabrication browser: live five-section UI/contour stitches/laser mask and alpha/texture continuity/4K PNG endpoint/material fibres/deterministic cold reopen');
  }finally{await browser.close();}

@@ -1,9 +1,10 @@
 const {shapes,patterns,fonts,materials,renderDefaults,variables,clone,uid,esc,solid,layer,template,History,walk,find,duplicate,duplicateMany,repairConstructions,group,ungroup,geometry,patternSvg,compose} = await import(new URL('./patch-studio-core.js' + new URL(import.meta.url).search, import.meta.url));
 const {createWorkspace}=await import(new URL('./patch-studio-workspace.js'+new URL(import.meta.url).search,import.meta.url));
+const {adjustLevels,nightVision,legibility,nvSettings,clampNv,NV_RANGE,NV_LEVELS}=await import(new URL('./patch-studio-night.js'+new URL(import.meta.url).search,import.meta.url));
 const $=s=>document.querySelector(s),root=$('#patch-studio'),api=root.dataset.api,csrf=$('meta[name=csrf-token]').content;
 const labels={texture:'Texture image',asset:'Image importée',solid:'Couleur unie',gradient:'Dégradé',pattern:'Motif vectoriel',none:'Sans remplissage',rectangle:'Rectangle',rounded_rectangle:'Rectangle arrondi',ellipse:'Cercle / ovale',triangle:'Triangle',hexagon:'Hexagone',octagon:'Octogone',shield:'Écusson',chevron:'Chevron',banner:'Bannière',diamond:'Losange',star:'Étoile',polygon:'Polygone',multicam:'Camouflage simplifié (ancien)',woodland:'Woodland',desert:'Desert',fabric:'Tissu',velcro:'Velcro',pvc:'PVC',rubber:'Caoutchouc',embroidery:'Broderie',stripes:'Rayures',dots:'Points'};
-Object.assign(labels,Object.fromEntries(Object.entries(materials).map(([k,m])=>[k,m.name])),{embroidered:'Brodée',overlock:'Surjetée',heatcut:'Découpée à chaud',legacy:'Classique',color:'Fil de couleur unie',same:'Camouflage identique au fond',custom:'Texture indépendante',print:'Impression',laser:'Laser Cut',high:'Fin · export',draft:'Rapide',inside:'Intérieure',center:'Centre',outside:'Extérieure',left:'Gauche',right:'Droite',top:'Haut',middle:'Milieu',bottom:'Bas',upper:'Majuscules',lower:'Minuscules'});
-const state={view:'home',hasEditor:false,homeProjects:[],homeFilter:'recent',selectedMembers:new Set(),doc:template(),project:null,variant:'standard',selected:[],scope:[],tab:'templates',dirty:false,zoom:1,pan:{x:60,y:80},clipboard:[],assets:[],resourceUrls:{},textureCatalog:[],textureResources:{},members:[],values:{},saving:null,conflict:false};
+Object.assign(labels,Object.fromEntries(Object.entries(materials).map(([k,m])=>[k,m.name])),{embroidered:'Brodée',overlock:'Surjetée',heatcut:'Découpée à chaud',legacy:'Classique',color:'Fil de couleur unie',same:'Camouflage identique au fond',custom:'Texture indépendante',print:'Impression',laser:'Laser Cut',high:'Fin · export',draft:'Rapide',moonless:'Nuit noire',inside:'Intérieure',center:'Centre',outside:'Extérieure',left:'Gauche',right:'Droite',top:'Haut',middle:'Milieu',bottom:'Bas',upper:'Majuscules',lower:'Minuscules'});
+const state={view:'home',hasEditor:false,homeProjects:[],homeFilter:'recent',selectedMembers:new Set(),doc:template(),project:null,variant:'standard',selected:[],scope:[],tab:'templates',dirty:false,zoom:1,pan:{x:60,y:80},clipboard:[],assets:[],resourceUrls:{},textureCatalog:[],textureResources:{},members:[],values:{},saving:null,conflict:false,propTab:0};
 const history=new History(state.doc),resourceCache=new Map(),fontCache=new Map();let saveTimer,liveCommitTimer,toastTimer,textureCatalogPromise,space=false,drag=null,raf;
 const layers=()=>{let a=state.doc.variants[state.variant]||[];for(const id of state.scope)a=find(a,id)?.children||[];return a;};
 const selected=()=>layers().filter(l=>state.selected.includes(l.id));
@@ -48,7 +49,7 @@ async function openProject(id){
 async function newProject(kind='blank'){
  if(state.saving){notify('Enregistrement en cours. Réessayez dans un instant.');return;}
  if(state.dirty&&!confirm('Remplacer les modifications non enregistrées par un nouveau projet ?'))return;
- state.doc=template(kind);state.project=null;state.scope=[];state.selected=[];state.variant='standard';state.conflict=false;$('#project-name').value='Nouveau patch';await loadResources();workspace.enterEditor();history.reset(state.doc);changed();fit();
+ state.doc=template(kind);state.project=null;state.scope=[];state.selected=[];state.variant='standard';state.conflict=false;$('#project-name').value='Nouveau patch';await loadResources();workspace.enterEditor();history.reset(state.doc);changed();showPanel('canvas');fit();
 }
 const fontFiles={
  'Barlow Condensed':[['BarlowCondensed-Regular.ttf',400],['BarlowCondensed-Bold.ttf',700]],
@@ -98,7 +99,7 @@ function updateArt(){
  $('#canvas-size').textContent=`${c.width} × ${c.height} px`;
  let inner=layers().map(l=>{
   if(!l.visible)return '';
-  const w=l.width*l.scaleX,h=l.height*l.scaleY,sel=state.selected.includes(l.id),r=4/state.zoom;
+  const w=l.width*l.scaleX,h=l.height*l.scaleY,sel=state.selected.includes(l.id),r=(matchMedia('(pointer:coarse)').matches?11:4)/state.zoom;
   return `<g data-wrap="${l.id}" transform="translate(${l.x} ${l.y}) rotate(${l.rotation} ${w/2} ${h/2})">${l.locked?'':`<rect class="ps-hit" data-hit="${l.id}" width="${w}" height="${h}"/>`}${sel?`<rect class="ps-box" width="${w}" height="${h}"/><path class="ps-box" d="M${w/2} 0v-${22/state.zoom}"/><circle class="ps-handle ps-rotate" data-rotate="${l.id}" cx="${w/2}" cy="${-22/state.zoom}" r="${r}"/><rect class="ps-handle" data-resize="${l.id}" x="${w-r}" y="${h-r}" width="${r*2}" height="${r*2}"/>`:''}</g>`;
  }).join('');
  let a=state.doc.variants[state.variant];const wrappers=[];
@@ -114,7 +115,7 @@ function render(){
 function updateView(){
  $('#artboard').style.transform=`translate(${state.pan.x}px,${state.pan.y}px) scale(${state.zoom})`;$('#zoom').value=state.zoom*100;$('#zoom-value').value=Math.round(state.zoom*100)+' %';drawRulers();
 }
-function fit(){if($('#studio-editor').hidden)return;const v=$('#viewport').getBoundingClientRect(),c=state.doc.canvas;state.zoom=Math.max(.15,Math.min(2,(v.width-100)/c.width,(v.height-130)/c.height));state.pan={x:(v.width-c.width*state.zoom)/2,y:(v.height-c.height*state.zoom)/2};render();}
+function fit(){if($('#studio-editor').hidden)return;const v=$('#viewport').getBoundingClientRect(),c=state.doc.canvas;if(!v.width||!v.height){state.fitPending=true;return;}state.zoom=Math.max(.15,Math.min(2,(v.width-100)/c.width,(v.height-130)/c.height));state.pan={x:(v.width-c.width*state.zoom)/2,y:(v.height-c.height*state.zoom)/2};render();}
 function drawRulers(){
  if(!$('#viewport').clientWidth||!$('#viewport').clientHeight)return;
  for(const axis of ['x','y']){const el=$('#ruler-'+axis),len=axis==='x'?$('#viewport').clientWidth-22:$('#viewport').clientHeight-22;el.width=axis==='x'?len:22;el.height=axis==='x'?22:len;const ctx=el.getContext('2d');ctx.fillStyle='#8f9d85';ctx.strokeStyle='#56634f';ctx.font='9px monospace';const pan=state.pan[axis]-22,step=state.zoom<.4?128:state.zoom<1?64:32;for(let n=Math.floor(-pan/state.zoom/step)*step;n<(len-pan)/state.zoom;n+=step){const p=pan+n*state.zoom;ctx.beginPath();if(axis==='x'){ctx.moveTo(p,15);ctx.lineTo(p,22);ctx.fillText(n,p+3,11);}else{ctx.moveTo(15,p);ctx.lineTo(22,p);ctx.save();ctx.translate(10,p+3);ctx.rotate(-Math.PI/2);ctx.fillText(n,0,0);ctx.restore();}ctx.stroke();}}
@@ -128,7 +129,8 @@ function input(label,path,value,type='number',extra=''){
 }
 const defaultStroke=()=>({color:'#b3bc91',width:0,opacity:1,style:'solid',position:'center'});
 const options=(arr,current)=>arr.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(labels[v]||v)}</option>`).join('');
-const section=(name,body,id)=>`<section class="ps-section" data-fabrication-section="${id}"><h3>${name}</h3><div class="ps-fields">${body}</div></section>`;
+const PROP_TABS=['Forme','Texture','Bordure','Texte','Rendu'];
+const section=(name,body,id)=>`<section class="ps-section" role="tabpanel" data-fabrication-section="${id}"${Number(id)===state.propTab?'':' hidden'}><h3>${name}</h3><div class="ps-fields">${body}</div></section>`;
 const materialControls=(l,prefix='material')=>{
  const m=l.material||{type:'flat'};
  return input('Matière',prefix+'.type',null,'select',options(Object.keys(materials),m.type))+input('Grain / tissage',prefix+'.scale',m.scale??1,'number','min="0.25" max="4" step="0.05"')+input('Orientation du fil °',prefix+'.angle',m.angle??0,'number','min="-360" max="360"')+input('Rugosité',prefix+'.roughness',m.roughness??.8,'number','min="0" max="1" step="0.05"')+input('Épaisseur / relief',prefix+'.relief',m.relief??.8,'number','min="0" max="2" step="0.05"');
@@ -152,11 +154,24 @@ function borderControls(l,prefix='stroke'){
  if(!s.finish||s.finish==='legacy')out+=input('Style classique',prefix+'.style',null,'select',options(['solid','double','dashed','stitch'],s.style));
  return out;
 }
+function setPropTab(n,focus=false){
+ state.propTab=n;const box=$('#properties');
+ box.querySelectorAll('[data-fabrication-section]').forEach(el=>{el.hidden=Number(el.dataset.fabricationSection)!==n;});
+ box.querySelectorAll('[data-property-section]').forEach(el=>{const on=Number(el.dataset.propertySection)===n;el.setAttribute('aria-selected',String(on));el.tabIndex=on?0:-1;if(on&&focus)el.focus();});
+ box.scrollTop=0;
+}
+const isPhone=()=>matchMedia('(max-width:800px)').matches;
+function showPanel(name){
+ const w=$('.ps-workspace');w.dataset.panel=name;
+ document.querySelectorAll('[data-panel]').forEach(b=>{if(b.tagName==='BUTTON')b.setAttribute('aria-pressed',String(b.dataset.panel===name));});
+ if(name==='canvas')requestAnimationFrame(()=>{if(state.fitPending){state.fitPending=false;fit();}else drawRulers();});
+}
+const backToCanvas=()=>{if(isPhone())showPanel('canvas');};
 function renderProperties(){
  const l=selected()[0],st=l?.stroke||defaultStroke(),c=state.doc.canvas,laser=l?.type==='text'&&l.construction?.mode==='laser',support=laser?layers().find(s=>s.id===l.construction.supportId):null;
  $('#object-kind').textContent=l?({shape:'Forme',text:'Texte',image:'Image',group:'Groupe'}[l.type]):'Canevas';
  let html=state.scope.length?'<div class="ps-section"><button data-action="leave-group">← Sortir du groupe</button></div>':'';
- html+='<nav class="ps-property-nav" aria-label="Réglages de fabrication">'+['Support','Texture','Bordure','Texte','Rendu'].map((n,i)=>`<button data-property-section="${i}">${n}</button>`).join('')+'</nav>';
+ html+='<nav class="ps-property-nav" role="tablist" aria-label="Réglages de fabrication">'+PROP_TABS.map((n,i)=>`<button role="tab" data-read="1" data-property-section="${i}" aria-selected="${i===state.propTab}" tabindex="${i===state.propTab?0:-1}">${n}</button>`).join('')+'</nav>';
  let body='';
  if(!l){
   body+=input('Largeur du canevas','canvas.width',c.width,'number','min="32" max="2048" step="1"')+input('Hauteur du canevas','canvas.height',c.height,'number','min="32" max="2048" step="1"')+input('Fond transparent','canvas.transparent',c.transparent,'checkbox')+input('Couleur du fond','canvas.background',c.background.slice(0,7),'color');
@@ -169,7 +184,7 @@ function renderProperties(){
   if(laser){body+=input('Tissu supérieur','construction.supportId',null,'select',layers().filter(s=>s.type==='shape').map(s=>`<option value="${s.id}" ${s.id===l.construction.supportId?'selected':''}>${esc(s.name)}</option>`).join(''))+'<button data-action="select-support">Sélectionner le support</button>';if(support)body+=materialControls(support,'support.material');}
   body+=`<div class="ps-inline ps-wide">${[['align-left','← Bord'],['align-center','↔ Centre'],['align-right','Bord →'],['align-top','↑ Haut'],['align-middle','↕ Milieu'],['align-bottom','Bas ↓'],['distribute-x','Distribuer X'],['distribute-y','Distribuer Y']].map(([a,t])=>`<button data-action="${a}">${t}</button>`).join('')}</div>`;
  }
- html+=section('01 · Support',body,'0');
+ html+=section('01 · Forme',body,'0');
  body=l&&['text','shape'].includes(l.type)?paintControls(l.fill,'fill',laser?'Couche inférieure · visible dans la découpe':'Texture du calque'):'<p class="ps-help ps-wide">Les textures se règlent sur les formes et les textes. Choisissez une ressource à gauche ou importez votre textile.</p>';
  if(support)body+=paintControls(support.fill,'support.fill','Couche supérieure · tissu découpé');
  html+=section('02 · Texture',body,'1');
@@ -190,9 +205,9 @@ function renderProperties(){
  html+=section('05 · Rendu',body,'4');$('#properties').innerHTML=html;
 }
 function renderLayers(){
- const a=layers();$('#layer-count').textContent=a.length;$('#layers').innerHTML=[...a].reverse().map(l=>`<div class="ps-layer${state.selected.includes(l.id)?' selected':''}" draggable="true" data-layer-row="${l.id}"><button data-layer-visible="${l.id}" aria-label="${l.visible?'Masquer':'Afficher'}">${l.visible?'◉':'○'}</button><span class="ps-layer-label">${esc(l.name)}</span><button data-layer-lock="${l.id}" aria-label="${l.locked?'Déverrouiller':'Verrouiller'}">${l.locked?'▣':'□'}</button>${l.type==='group'?'<span>▤</span>':''}</div>`).join('');
+ const a=layers();$('#layer-count').textContent=a.length;$('#layers').innerHTML=[...a].reverse().map(l=>`<div class="ps-layer${state.selected.includes(l.id)?' selected':''}" draggable="true" role="listitem" tabindex="0" aria-current="${state.selected.includes(l.id)}" aria-label="${esc(l.name)}${l.visible?'':' (masqué)'}${l.locked?' (verrouillé)':''}" data-layer-row="${l.id}"><button data-layer-visible="${l.id}" aria-label="${l.visible?'Masquer':'Afficher'} ${esc(l.name)}">${l.visible?'◉':'○'}</button><span class="ps-layer-label">${esc(l.name)}</span><button data-layer-lock="${l.id}" aria-label="${l.locked?'Déverrouiller':'Verrouiller'} ${esc(l.name)}">${l.locked?'▣':'□'}</button>${l.type==='group'?'<span>▤</span>':''}</div>`).join('');
 }
-function add(l){editable();layers().push(l);state.selected=[l.id];changed();}
+function add(l){editable();layers().push(l);state.selected=[l.id];changed();backToCanvas();}
 function editable(){if(state.project&&!state.project.canEdit)throw new Error('Projet en lecture seule. Utilisez Enregistrer sous.');}
 async function refreshAssets(){state.assets=(await json('/assets')).assets;}
 async function renderResources(){
@@ -215,7 +230,7 @@ async function renderResources(){
  if(tab==='organization')html='<p class="ps-help">Retrouvez les projets partagés de votre organisation, ouvrez-les ou créez une copie éditable.</p><button data-action="organization-library">Ouvrir la bibliothèque</button>';
  if(state.tab===tab)$('#resources').innerHTML=html;
 }
-function applyFill(fill){editable();let ls=selected().filter(l=>['shape','text'].includes(l.type));if(!ls.length){const c=state.doc.canvas,l=layer('shape',{name:'Fond',x:0,y:0,width:c.width,height:c.height,shape:'rectangle',fill});layers().unshift(l);state.selected=[l.id];}else ls.forEach(l=>l.fill=clone(fill));changed();}
+function applyFill(fill){editable();let ls=selected().filter(l=>['shape','text'].includes(l.type));if(!ls.length){const c=state.doc.canvas,l=layer('shape',{name:'Fond',x:0,y:0,width:c.width,height:c.height,shape:'rectangle',fill});layers().unshift(l);state.selected=[l.id];}else ls.forEach(l=>l.fill=clone(fill));changed();backToCanvas();}
 async function uploadFile(file){
  editable();if(file.size>8388608)throw new Error('8 Mio maximum.');const font=/\.(ttf|otf)$/i.test(file.name),form=new FormData();form.append('file',file);
  if(font){if(!confirm('Confirmez-vous disposer des droits d’utilisation, de partage et d’incorporation de cette police ?'))return;form.append('fontLicense','yes');form.append('license',prompt('Licence / référence des conditions d’utilisation :')||'Droits confirmés par l’importateur');}
@@ -227,8 +242,13 @@ async function useAsset(id,fill){
  else if(fill)applyFill({type:'asset',assetId:id,scale:1,repeat:true});
  else{const im=new Image();im.src=data;await im.decode();const w=Math.min(280,im.width||200),h=w*(im.height||200)/(im.width||200);add(layer('image',{assetId:id,name:a?.label||'Image',width:w,height:h}));}
 }
+let lastFocus=null;
 function modal(title,content,style=''){
+ if(!$('#modal').open)lastFocus=document.activeElement;
  $('#modal').className=style;$('#modal-title').textContent=title;$('#modal-content').innerHTML=content;if(!$('#modal').open)$('#modal').showModal();}
+$('#modal').addEventListener('close',()=>{const el=lastFocus;lastFocus=null;if(el&&el.isConnected&&el.offsetParent!==null)el.focus();});
+const SHORTCUTS=[['Ctrl + S','Enregistrer'],['Ctrl + Z / Ctrl + Y','Annuler / rétablir'],['Ctrl + C / V / D','Copier / coller / dupliquer'],['Flèches','Déplacer l’objet (Maj : 10 px)'],['Alt + flèches','Agrandir ou réduire l’objet (Maj : 10 px)'],['[ et ]','Tourner de 1° (Maj : 15°)'],['Page précédente / suivante','Choisir l’objet du dessus / du dessous'],['Suppr','Supprimer la sélection'],['Échap','Désélectionner'],['+ / − / 0','Zoomer / dézoomer / ajuster à l’écran'],['Espace + glisser','Déplacer la vue'],['Dans les calques : ↑ ↓','Parcourir les calques'],['Dans les calques : Alt + ↑ ↓','Changer l’ordre d’un calque'],['Dans les onglets : ← →','Changer d’onglet'],['?','Afficher cette aide']];
+function shortcutsModal(){modal('Raccourcis clavier',`<dl class="ps-shortcuts">${SHORTCUTS.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><p class="ps-help">Sur téléphone : touchez un objet pour le choisir, glissez le fond pour déplacer la vue, pincez pour zoomer.</p>`,'ps-shortcuts-dialog');}
 async function library(filter='recent'){await workspace.showHome(filter);}
 async function createFromSetup(p){
  if(state.dirty&&!confirm('Remplacer les modifications non enregistrées par ce setup ?'))return;
@@ -248,41 +268,80 @@ async function historyModal(){
  if(!state.project)throw new Error('Enregistrez le projet pour créer un historique.');const {versions}=await json('/projects/'+state.project.id+'/history');modal('Historique des versions',`<p class="ps-help">Restaurer crée une nouvelle révision au prochain enregistrement. Les versions antérieures sont conservées.</p><div class="ps-projects">${versions.map(v=>`<article class="ps-project-card"><h3>Version ${v.revision}</h3><p>${esc(v.created_at)} UTC</p><button data-restore="${v.revision}">Restaurer</button></article>`).join('')}</div>`);
 }
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-async function raster({doc=state.doc,variant=state.variant,values=state.values,width=doc.canvas.width,height=doc.canvas.height,selection=false,background='project'}={}){
+async function rasterCanvas({doc=state.doc,variant=state.variant,values=state.values,width=doc.canvas.width,height=doc.canvas.height,selection=false,background='project',nv=null}={}){
  if(!Number.isInteger(width)||!Number.isInteger(height)||width<32||height<32||width>4096||height>4096)throw new Error('Résolution de rendu : 32 à 4096 pixels par côté.');
  await loadResources(doc);const css=await exportFontCss(doc,variant),svg=compose(doc,{variant,values,resources:state.resourceUrls,textures:state.textureResources,fontCss:css,selection:selection?state.selected:null,pixelWidth:width,pixelHeight:height,background});
  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
- try{const im=new Image();im.src=url;await im.decode();const c=document.createElement('canvas');c.width=width||state.doc.canvas.width;c.height=height||state.doc.canvas.height;const ctx=c.getContext('2d');const k=Math.min(c.width/im.width,c.height/im.height),w=im.width*k,h=im.height*k;ctx.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h);return c.toDataURL('image/png').split(',')[1];}finally{URL.revokeObjectURL(url);}
+ try{const im=new Image();im.src=url;await im.decode();const c=document.createElement('canvas');c.width=width||state.doc.canvas.width;c.height=height||state.doc.canvas.height;const ctx=c.getContext('2d',{willReadFrequently:true});const k=Math.min(c.width/im.width,c.height/im.height),w=im.width*k,h=im.height*k;ctx.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h);
+  // REEL : le gain et le contraste de la version nuit modifient les pixels du fichier exporte.
+  if(nv){const img=ctx.getImageData(0,0,c.width,c.height);adjustLevels(img.data,nv);ctx.putImageData(img,0,0);}
+  return c;}finally{URL.revokeObjectURL(url);}
 }
+async function raster(options={}){return (await rasterCanvas(options)).toDataURL('image/png').split(',')[1];}
+const nightFor=(variant,doc=state.doc)=>variant==='night'?nvSettings(doc.render):null;
+const nvHelp='Réel : la luminosité et le contraste ci-dessous sont appliqués aux pixels du fichier exporté. Aperçu seulement : le vert, le grain et la lumière ambiante. Non fournis : matériau infrarouge (.rvmat), carte _smdi, fil réfléchissant.';
 async function exportModal(settings={}){
- const d=state.doc,c=d.canvas;
- modal('Exporter votre patch',`<div class="ps-export-layout"><aside class="ps-export-preview"><span class="ps-dialog-kicker">APERÇU DU RENDU</span><div class="ps-export-art" data-backdrop="transparent"><img id="export-preview-image" alt="Prévisualisation de l’export"></div><h3>${esc($('#project-name').value)}</h3><p>${c.width} × ${c.height} px <span>· ${state.variant==='night'?'Version nocturne':'Version standard'}</span></p><div class="ps-export-note">Les proportions du patch sont conservées à chaque résolution.</div></aside><section class="ps-export-settings"><div class="ps-export-heading"><span class="ps-dialog-kicker">FICHIER DE SORTIE</span><h3>Préparez votre création.</h3></div><label class="ps-export-label">Format<select id="export-format"><option value="png">PNG · image transparente</option><option value="paa">PAA · texture Arma 3</option><option value="zip">ZIP · pack complet et projet</option><option value="pbo">PBO · addon Arma 3</option><option value="publish">ATHENA · publier dans ATAK</option></select></label><div class="ps-export-fields"><label>Résolution<select id="export-size"><option value="native">Format natif · ${c.width} × ${c.height}</option>${['256x128','512x256','512x512','1024x512','1024x1024','2048x1024','2048x2048','4096x2048','4096x4096'].map(s=>`<option value="${s}">${s.replace('x',' × ')} px</option>`).join('')}</select></label><label>Fond<select id="export-background"><option value="project">Fond du projet</option><option value="transparent">Transparent · sans fond</option><option value="light">Clair · photo produit</option><option value="dark">Sombre · photo produit</option></select></label></div><label class="ps-export-check"><input type="checkbox" id="export-selection" ${state.selected.length?'':'disabled'}><span>Exporter la sélection uniquement <small>PNG · calque ou groupe sélectionné</small></span></label><div class="ps-export-member"><div><strong>Variables ATHENA</strong><p id="export-member-caption">${esc(state.members.find(m=>m.userId===state.memberId)?.label||'Substitutions du modèle')}</p></div><button data-action="members">Choisir les membres <span id="export-member-count">${state.selectedMembers.size}</span></button></div><div id="export-format-info" class="ps-export-info"></div><p id="export-error" class="ps-form-error" role="alert" hidden></p><footer class="ps-export-actions"><button data-action="download-json">Projet JSON</button><button data-action="batch">Série PNG</button><button class="ps-primary" data-action="run-export">Télécharger le PNG</button></footer><p class="ps-export-help">Les textures et ressources privées restent soumises aux droits de votre organisation.</p></section></div>`,'ps-export-dialog');
+ const d=state.doc,c=d.canvas,nv=nvSettings(d.render),hasNight=!!d.variants.night;
+ modal('Exporter votre patch',`<div class="ps-export-layout"><aside class="ps-export-preview"><span class="ps-dialog-kicker">APERÇU DU RENDU</span><div class="ps-export-art" data-backdrop="transparent"><img id="export-preview-image" alt="Prévisualisation de l’export"></div><h3>${esc($('#project-name').value)}</h3><p>${c.width} × ${c.height} px</p><label class="ps-export-check ps-export-nvview"><input type="checkbox" id="export-nv-preview"><span>Voir en vision nocturne <small>Simulation d’écran, sans effet sur le fichier</small></span></label><div class="ps-export-note">Les proportions du patch sont conservées à chaque résolution.</div></aside><section class="ps-export-settings"><div class="ps-export-body"><div class="ps-export-heading"><span class="ps-dialog-kicker">FICHIER DE SORTIE</span><h3>Préparez votre création.</h3></div><label class="ps-export-label">Format<select id="export-format"><option value="png">Image PNG (transparente)</option><option value="paa">Image Arma 3 (.paa)</option><option value="pbo">Addon Arma 3 (.pbo) à charger au lancement</option><option value="zip">Dossier complet (.zip) : addon, image et projet</option><option value="publish">Publier dans ATAK pour votre communauté</option></select></label><div class="ps-export-fields"><label>Version<select id="export-variant"><option value="standard" ${state.variant==='standard'?'selected':''}>Jour</option>${hasNight?`<option value="night" ${state.variant==='night'?'selected':''}>Nuit (JVN)</option>`:''}</select></label><label>Taille<select id="export-size"><option value="native">Taille du patch · ${c.width} × ${c.height}</option>${['256x128','512x256','512x512','1024x512','1024x1024','2048x1024','2048x2048','4096x2048','4096x4096'].map(s=>`<option value="${s}">${s.replace('x',' × ')} px</option>`).join('')}</select></label><label>Fond<select id="export-background"><option value="project">Fond du projet</option><option value="transparent">Transparent · sans fond</option><option value="light">Clair · photo produit</option><option value="dark">Sombre · photo produit</option></select></label></div><fieldset id="export-nv-fields" class="ps-export-nv" hidden><legend>Vision nocturne (JVN)</legend><label>Luminosité <output id="export-nv-gain-out">${nv.gain.toFixed(2)}</output><input type="range" id="export-nv-gain" min="${NV_RANGE.gain[0]}" max="${NV_RANGE.gain[1]}" step="0.05" value="${nv.gain}"></label><label>Contraste <output id="export-nv-contrast-out">${nv.contrast.toFixed(2)}</output><input type="range" id="export-nv-contrast" min="${NV_RANGE.contrast[0]}" max="${NV_RANGE.contrast[1]}" step="0.05" value="${nv.contrast}"></label><p class="ps-help">${nvHelp}</p></fieldset><label class="ps-export-check"><input type="checkbox" id="export-selection" ${state.selected.length?'':'disabled'}><span>Exporter la sélection uniquement <small>PNG · calque ou groupe sélectionné</small></span></label><div class="ps-export-member"><div><strong>Variables ATHENA</strong><p id="export-member-caption">${esc(state.members.find(m=>m.userId===state.memberId)?.label||'Substitutions du modèle')}</p></div><button data-action="members">Choisir les membres <span id="export-member-count">${state.selectedMembers.size}</span></button></div><div id="export-format-info" class="ps-export-info"></div><details class="ps-export-guide"><summary>Comment l’utiliser dans Arma 3</summary><ol><li>Exportez l’addon (.pbo) ou le dossier complet (.zip).</li><li>Copiez le dossier @ATHENA dans Arma 3 ou sur le serveur.</li><li>Chargez-le dans le Launcher avant de lancer le jeu, sur chaque machine.</li><li>En jeu, choisissez l’écusson dans l’arsenal (insigne d’unité) ou en commande de script.</li></ol><p class="ps-help">Un fichier ajouté pendant la partie n’est pas chargé. Pour les JVN, vérifiez le rendu en jeu de nuit.</p></details><p id="export-error" class="ps-form-error" role="alert" hidden></p></div><footer class="ps-export-actions"><button data-action="download-json">Projet JSON</button><button data-action="batch">Série PNG</button><button class="ps-primary" data-action="run-export">Télécharger le PNG</button></footer></section></div>`,'ps-export-dialog');
+ const variant=()=>$('#export-variant').value,nvNow=()=>variant()==='night'?{gain:clampNv($('#export-nv-gain').value,NV_RANGE.gain),contrast:clampNv($('#export-nv-contrast').value,NV_RANGE.contrast)}:null;
  const describe=()=>{
-  const format=$('#export-format').value,labels={png:'Télécharger le PNG',paa:'Générer le PAA',zip:'Télécharger le pack',pbo:'Générer l’addon',publish:'Publier dans ATAK'};
-  $('[data-action="run-export"]').textContent=labels[format];$('#export-selection').disabled=format!=='png'||!state.selected.length;if(format!=='png')$('#export-selection').checked=false;
-  $('#export-format-info').textContent={png:'PNG haute résolution avec alpha, jusqu’à 4096 pixels. Le fichier est généré à sa taille finale.',paa:'Texture DXT avec mipmaps et alpha. Choisissez des côtés en puissances de deux, jusqu’à 2048 pixels.',zip:'Pack comprenant PNG, PAA, projet éditable, ressources, métadonnées, addon et documentation. Jusqu’à 2048 pixels.',pbo:'Addon prêt à distribuer et à charger avant le lancement d’Arma 3. Jusqu’à 2048 pixels.',publish:'Publie la révision enregistrée pour les utilisateurs autorisés dans ATAK. L’application 3D nécessite l’addon distribué avant la partie.'}[format];
+  const format=$('#export-format').value,labels={png:'Télécharger le PNG',paa:'Générer l’image .paa',zip:'Télécharger le dossier',pbo:'Générer l’addon',publish:'Publier dans ATAK'};
+  $('[data-action="run-export"]').textContent=labels[format];$('#export-selection').disabled=format!=='png'||!state.selected.length||variant()!==state.variant;if($('#export-selection').disabled)$('#export-selection').checked=false;
+  $('#export-nv-fields').hidden=variant()!=='night';
+  $('#export-format-info').textContent={png:'Image PNG avec transparence, jusqu’à 4096 pixels. Idéale pour partager ou imprimer.',paa:'Image au format d’Arma 3, avec transparence. Côtés en puissances de deux (256, 512, 1024, 2048), jusqu’à 2048 pixels.',zip:'Tout en un : PNG, image .paa, projet modifiable, ressources, addon et notice. Jusqu’à 2048 pixels.',pbo:'Addon prêt à distribuer. Il doit être chargé avant le lancement d’Arma 3. Jusqu’à 2048 pixels.',publish:'Rend la version enregistrée disponible dans ATAK pour les membres autorisés. L’écusson en 3D demande l’addon chargé avant la partie.'}[format];
  };
- for(const [id,value] of Object.entries(settings)){const field=$('#'+id);if(field)field.value=value;}
- const preview=async()=>{try{const k=768/Math.max(c.width,c.height),png=await raster({width:Math.max(32,Math.round(c.width*k)),height:Math.max(32,Math.round(c.height*k)),background:$('#export-background')?.value||'project'});if($('#export-preview-image'))$('#export-preview-image').src='data:image/png;base64,'+png;}catch(e){if($('#export-error')){$('#export-error').hidden=false;$('#export-error').textContent=e.message;}}};
- $('#export-format').onchange=describe;$('#export-background').onchange=preview;describe();await preview();
+ for(const [id,value] of Object.entries(settings)){const field=$('#'+id);if(field&&(id!=='export-variant'||[...field.options].some(o=>o.value===value)))field.value=value;}
+ for(const id of ['gain','contrast'])$('#export-nv-'+id+'-out').textContent=Number($('#export-nv-'+id).value).toFixed(2);
+ let timer;
+ const preview=async()=>{try{
+  const k=768/Math.max(c.width,c.height),width=Math.max(32,Math.round(c.width*k)),height=Math.max(32,Math.round(c.height*k)),cv=await rasterCanvas({variant:variant(),width,height,background:$('#export-background')?.value||'project',nv:nvNow()});
+  if($('#export-nv-preview')?.checked){const ctx=cv.getContext('2d'),img=ctx.getImageData(0,0,cv.width,cv.height);nightVision(img.data,cv.width,cv.height,{level:NV_LEVELS.starlight.level});ctx.putImageData(img,0,0);}
+  if($('#export-preview-image'))$('#export-preview-image').src=cv.toDataURL('image/png');
+ }catch(e){if($('#export-error')){$('#export-error').hidden=false;$('#export-error').textContent=e.message;}}};
+ const later=()=>{clearTimeout(timer);timer=setTimeout(preview,150);};
+ $('#export-format').onchange=describe;$('#export-background').onchange=preview;$('#export-nv-preview').onchange=preview;
+ $('#export-variant').onchange=()=>{describe();preview();};
+ for(const id of ['gain','contrast'])$('#export-nv-'+id).oninput=()=>{$('#export-nv-'+id+'-out').textContent=Number($('#export-nv-'+id).value).toFixed(2);later();};
+ describe();await preview();
+}
+async function nvPreview(){
+ const d=state.doc,c=d.canvas,s0=nvSettings(d.render),names={standard:'Jour',night:'Nuit (JVN)'};
+ modal('Vision nocturne · aperçu',`<div class="ps-nv-layout"><div class="ps-nv-screen"><canvas id="nv-canvas" role="img" aria-label="Simulation du patch dans des jumelles de vision nocturne"></canvas><p id="nv-verdict" class="ps-nv-verdict" role="status"></p></div><form class="ps-nv-settings" id="nv-form"><span class="ps-dialog-kicker">SIMULATION D’ÉCRAN</span><label>Version affichée<select id="nv-variant">${Object.keys(d.variants).map(v=>`<option value="${v}" ${v===state.variant?'selected':''}>${names[v]||v}</option>`).join('')}</select></label><label>Lumière ambiante<select id="nv-level">${Object.entries(NV_LEVELS).map(([k,v])=>`<option value="${k}" ${k==='starlight'?'selected':''}>${v.label}</option>`).join('')}</select></label><fieldset><legend>Réglages exportés pour la version nuit</legend><label>Luminosité <output id="nv-gain-out">${s0.gain.toFixed(2)}</output><input type="range" id="nv-gain" min="${NV_RANGE.gain[0]}" max="${NV_RANGE.gain[1]}" step="0.05" value="${s0.gain}"></label><label>Contraste <output id="nv-contrast-out">${s0.contrast.toFixed(2)}</output><input type="range" id="nv-contrast" min="${NV_RANGE.contrast[0]}" max="${NV_RANGE.contrast[1]}" step="0.05" value="${s0.contrast}"></label><button type="button" class="ps-primary" data-action="nv-save">Enregistrer ces réglages</button></fieldset><details class="ps-nv-truth" open><summary>Ce qui est réel, ce qui est simulé</summary><p><strong>Réel.</strong> Le fichier exporté contient votre texture avec la luminosité et le contraste choisis. Arma 3 applique ensuite son propre rendu de JVN à cette texture.</p><p><strong>Simulé.</strong> Le vert, le grain, le bord sombre et la lumière ambiante de cet aperçu ne sont pas dans le fichier. Ils ne sont pas non plus identiques au rendu du jeu.</p><p><strong>Non fourni.</strong> Matériau infrarouge (.rvmat), carte _smdi, fil réfléchissant : le Studio ne les produit pas. Faites un essai en jeu de nuit.</p></details></form></div>`,'ps-nv-dialog');
+ const k=520/Math.max(c.width,c.height),w=Math.max(32,Math.round(c.width*k)),h=Math.max(32,Math.round(c.height*k));let cache=null;
+ const messages={good:'Lisible : le motif garde un bon écart entre clair et sombre.',flat:'Peu lisible : le motif manque de contraste. Éclaircissez le texte ou assombrissez le fond de la version nuit.',dark:'Trop sombre : le patch disparaît dans le noir. Augmentez la luminosité ou éclaircissez les couleurs.',bright:'Trop clair : risque d’éblouissement. Baissez la luminosité.',empty:'Rien à afficher dans cette version.'};
+ const draw=async()=>{
+  try{
+   const v=$('#nv-variant').value;if(!cache||cache.v!==v)cache={v,canvas:await rasterCanvas({variant:v,width:w,height:h,background:'project'})};
+   if(!$('#nv-canvas'))return;
+   const level=NV_LEVELS[$('#nv-level').value].level,src=cache.canvas,img=src.getContext('2d').getImageData(0,0,w,h);
+   if(v==='night')adjustLevels(img.data,{gain:clampNv($('#nv-gain').value,NV_RANGE.gain),contrast:clampNv($('#nv-contrast').value,NV_RANGE.contrast)});
+   const verdict=legibility(img.data,{level});$('#nv-verdict').textContent=messages[verdict.verdict];$('#nv-verdict').dataset.verdict=verdict.verdict;
+   nightVision(img.data,w,h,{level});const out=$('#nv-canvas');out.width=w;out.height=h;out.getContext('2d').putImageData(img,0,0);
+  }catch(e){error(e);}
+ };
+ for(const id of ['nv-variant','nv-level'])$('#'+id).onchange=draw;
+ for(const id of ['gain','contrast'])$('#nv-'+id).oninput=()=>{$('#nv-'+id+'-out').textContent=Number($('#nv-'+id).value).toFixed(2);cancelAnimationFrame(raf);raf=requestAnimationFrame(draw);};
+ $('#nv-form').onsubmit=e=>e.preventDefault();
+ await draw();
 }
 async function runExport(){
  const button=$('[data-action="run-export"]'),label=button.textContent;button.disabled=true;button.textContent='Génération en cours…';$('#export-error').hidden=true;
  try{
-  if(state.dirty||!state.project)await save();const format=$('#export-format').value,size=$('#export-size').value,selection=$('#export-selection').checked;
+  if(state.dirty||!state.project)await save();const format=$('#export-format').value,size=$('#export-size').value,selection=$('#export-selection').checked,variant=$('#export-variant').value;
   if(selection&&format!=='png')throw new Error('L’export de sélection est disponible en PNG.');
+  const nv=variant==='night'?{gain:clampNv($('#export-nv-gain').value,NV_RANGE.gain),contrast:clampNv($('#export-nv-contrast').value,NV_RANGE.contrast)}:null;
   const [width,height]=size==='native'?[state.doc.canvas.width,state.doc.canvas.height]:size.split('x').map(Number);
   if(format!=='png'&&Math.max(width,height)>2048)throw new Error('Choisissez au plus 2048 px pour les formats Arma 3.');
-  const png=await raster({width,height,selection,background:$('#export-background').value});
-  const res=await request('/projects/'+state.project.id+'/export',{method:'POST',body:JSON.stringify({revision:Number(state.project.revision),format,variant:state.variant,png,selection,letterbox:true})});
-  if(format==='publish'){const result=await res.json();notify('Révision publiée dans le catalogue ATAK : '+result.class);}else{download(await res.blob(),`ATHENA_${state.project.id}_${state.variant}.${format}`);notify('Export généré.');}
+  const png=await raster({width,height,selection,background:$('#export-background').value,variant,nv});
+  const res=await request('/projects/'+state.project.id+'/export',{method:'POST',body:JSON.stringify({revision:Number(state.project.revision),format,variant,png,selection,letterbox:true,...(nv?{nv}:{})})});
+  if(format==='publish'){const result=await res.json();notify('Révision publiée dans le catalogue ATAK : '+result.class);}else{download(await res.blob(),`ATHENA_${state.project.id}_${variant}.${format}`);notify('Export généré.');}
  }catch(e){$('#export-error').hidden=false;$('#export-error').textContent=e.message+(e.incident?' · Référence '+e.incident:'');}
  finally{button.disabled=false;button.textContent=label;}
 }
 async function batch(){
  const ids=[...state.selectedMembers];if(!ids.length)throw new Error('Choisissez les membres à exporter.');
  const {members}=await json('/variables?users='+ids.join(','));if(!members.length)throw new Error('Aucun membre autorisé dans cette sélection.');
- const old=state.values;let count=0;try{for(const m of members){state.values=m.values;const png=await raster();download(new Blob([Uint8Array.from(atob(png),c=>c.charCodeAt(0))],{type:'image/png'}),`ATHENA_${m.userId}_${state.variant}.png`);count++;}}finally{state.values=old;render();}notify(`${count} PNG générés. Autorisez les téléchargements multiples dans le navigateur si nécessaire.`);
+ const old=state.values;let count=0;try{for(const m of members){state.values=m.values;const png=await raster({nv:nightFor(state.variant)});download(new Blob([Uint8Array.from(atob(png),c=>c.charCodeAt(0))],{type:'image/png'}),`ATHENA_${m.userId}_${state.variant}.png`);count++;}}finally{state.values=old;render();}notify(`${count} PNG générés. Autorisez les téléchargements multiples dans le navigateur si nécessaire.`);
 }
 function align(action){
  editable();const ls=selected(),c=state.doc.canvas;if(!ls.length)return;
@@ -299,7 +358,7 @@ const actions={
  'group':()=>{editable();const g=group(layers(),state.selected);if(g){state.selected=[g.id];changed();}},
  'ungroup':()=>{editable();for(const l of selected())if(!ungroup(layers(),l.id))throw new Error('Pour dégrouper, remettez la rotation à 0 et les échelles à 1.');state.selected=[];changed();},
  'enter-group':()=>{const l=selected()[0];if(l?.type==='group'){state.scope.push(l.id);state.selected=[];render();}},'leave-group':()=>{state.scope.pop();state.selected=[];render();},
- 'night':()=>{editable();if(state.doc.variants.night&&!confirm('Remplacer la composition nocturne actuelle ?'))return;state.doc.variants.night=clone(state.doc.variants.standard);state.variant='night';state.scope=[];state.selected=[];changed();},
+ 'night':()=>{editable();if(state.doc.variants.night&&!confirm('Remplacer la version nuit actuelle ?'))return;state.doc.variants.night=clone(state.doc.variants.standard);state.variant='night';state.scope=[];state.selected=[];changed();},
  'shadow':()=>{editable();for(const l of selected())if(l.shadow)delete l.shadow;else l.shadow={color:'#000000',blur:5,x:3,y:3};changed();},
  'select-support':()=>{const l=selected()[0],support=layers().find(s=>s.id===l?.construction?.supportId);if(support){state.selected=[support.id];render();}},
  'add-text':()=>add(layer('text')),'upload':()=>$('#asset-file').click(),
@@ -307,8 +366,10 @@ const actions={
  'apply-settings':async()=>{editable();const p=state.project;const result=await json('/projects/'+p.id,{method:'PUT',body:JSON.stringify({revision:Number(p.revision),name:$('#project-name').value,document:state.doc,visibility:$('#project-visibility').value,status:$('#project-status').value})});state.project=result.project;state.dirty=false;$('#save-state').textContent=`Enregistré · v${state.project.revision}`;$('#modal').close();notify('Projet mis à jour.');},
  'share':async()=>{await json('/projects/'+state.project.id+'/share',{method:'POST',body:JSON.stringify({userId:Number($('#share-user').value),role:$('#share-role').value})});notify('Droits mis à jour.');},
  'members':()=>workspace.memberDialog(),'save-setup':()=>workspace.setupDialog(),
- 'export':exportModal,'run-export':runExport,'batch':batch,
- 'preview':async()=>{const png=await raster();modal('Aperçu · '+(state.variant==='night'?'simulation nocturne':'standard'),`<img class="ps-preview" src="data:image/png;base64,${png}" alt="Rendu du patch">`);},
+ 'export':exportModal,'run-export':runExport,'batch':batch,'nvpreview':nvPreview,
+ 'nv-save':()=>{editable();state.doc.render={...state.doc.render,nvGain:clampNv($('#nv-gain').value,NV_RANGE.gain),nvContrast:clampNv($('#nv-contrast').value,NV_RANGE.contrast)};changed();notify('Réglages de vision nocturne enregistrés avec le projet.');},
+ 'shortcuts':shortcutsModal,
+ 'preview':async()=>{const png=await raster({nv:nightFor(state.variant)});modal('Aperçu · '+(state.variant==='night'?'version nuit (texture exportée)':'version jour'),`<img class="ps-preview" src="data:image/png;base64,${png}" alt="Rendu du patch">`);},
  'download-json':()=>download(new Blob([JSON.stringify(state.doc,null,2)],{type:'application/json'}),'ATHENA_project.json'),
  'import-project':()=>$('#project-file').click(),'close-modal':()=>$('#modal').close(),
  'fit':fit,'actual':()=>{state.zoom=1;render();},'zoom-in':()=>{state.zoom=Math.min(4,state.zoom*1.15);render();},'zoom-out':()=>{state.zoom=Math.max(.15,state.zoom/1.15);render();},
@@ -317,7 +378,8 @@ const actions={
 root.addEventListener('click',async e=>{
  try{
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.propertySection)$('#properties').querySelector(`[data-fabrication-section="${b.dataset.propertySection}"]`).scrollIntoView({block:'start',behavior:'instant'});
+  if(b.dataset.propertySection)setPropTab(Number(b.dataset.propertySection));
+  if(b.dataset.panel)showPanel(b.dataset.panel);
   if(b.dataset.action){if(b.dataset.action.startsWith('align-')||b.dataset.action.startsWith('distribute-'))align(b.dataset.action);else await actions[b.dataset.action]?.();}
   if(b.dataset.tab){state.tab=b.dataset.tab;$('.ps-tabs').querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b?'true':'false'));await renderResources();}
   if(b.dataset.template)await newProject(b.dataset.template);
@@ -370,14 +432,30 @@ $('#properties').addEventListener('change',async e=>{
  try{await applyProperty(e.target);}catch(ex){error(ex);renderProperties();}
 });
 $('#project-name').addEventListener('change',()=>{try{editable();changed();}catch(e){error(e);}});
-$('#variant').onchange=()=>{const v=$('#variant').value;if(!state.doc.variants[v]){state.variant='standard';$('#variant').value='standard';notify('Créez d’abord la composition nocturne avec « Copier standard → nuit ».');return;}state.variant=v;state.scope=[];state.selected=[];render();};
+$('#variant').onchange=()=>{const v=$('#variant').value;if(!state.doc.variants[v]){state.variant='standard';$('#variant').value='standard';notify('Créez d’abord la version nuit avec « Copier jour → nuit ».');return;}state.variant=v;state.scope=[];state.selected=[];render();};
 $('#resource-search').oninput=()=>renderResources();$('#zoom').oninput=()=>{state.zoom=Number($('#zoom').value)/100;render();};$('#grid').onchange=()=>$('#canvas-grid').style.display=$('#grid').checked?'block':'none';$('#canvas-backdrop').onchange=()=>$('#artboard').dataset.backdrop=$('#canvas-backdrop').value;
 $('#asset-file').onchange=async()=>{try{if($('#asset-file').files[0])await uploadFile($('#asset-file').files[0]);}catch(e){error(e);}finally{$('#asset-file').value='';}};
 $('#project-file').onchange=async()=>{try{const f=$('#project-file').files[0];if(!f)return;if(f.size>1048576)throw new Error('Projet limité à 1 Mio.');const d=JSON.parse(await f.text());if(d.version!==1||!d.canvas||!d.variants?.standard)throw new Error('Projet v1 invalide.');
  // Server validation precedes rendering untrusted JSON.
  const result=await json('/projects',{method:'POST',body:JSON.stringify({name:f.name.replace(/\.json$/i,''),document:d})});await openProject(result.project.id);
  }catch(e){error(e);}finally{$('#project-file').value='';}};
-$('#layers').addEventListener('click',e=>{if(e.target.closest('button'))return;const row=e.target.closest('[data-layer-row]');if(!row)return;if(e.shiftKey||e.ctrlKey)state.selected=state.selected.includes(row.dataset.layerRow)?state.selected.filter(id=>id!==row.dataset.layerRow):[...state.selected,row.dataset.layerRow];else state.selected=[row.dataset.layerRow];render();});
+function selectLayer(id,multi=false){
+ if(multi)state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];else state.selected=[id];
+ render();$(`#layers [data-layer-row="${id}"]`)?.focus();
+}
+function moveLayer(id,delta){
+ editable();const a=layers(),from=a.findIndex(l=>l.id===id),to=from+delta;if(from<0||to<0||to>=a.length)return;
+ const [l]=a.splice(from,1);a.splice(to,0,l);changed();$(`#layers [data-layer-row="${id}"]`)?.focus();
+}
+$('#layers').addEventListener('click',e=>{if(e.target.closest('button'))return;const row=e.target.closest('[data-layer-row]');if(!row)return;selectLayer(row.dataset.layerRow,e.shiftKey||e.ctrlKey);});
+$('#layers').addEventListener('keydown',e=>{
+ const row=e.target.closest('[data-layer-row]');if(!row||e.target!==row)return;
+ if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();selectLayer(row.dataset.layerRow,e.shiftKey||e.ctrlKey);}
+ else if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+  e.preventDefault();e.stopPropagation();
+  try{if(e.altKey)moveLayer(row.dataset.layerRow,e.key==='ArrowUp'?1:-1);else (e.key==='ArrowUp'?row.previousElementSibling:row.nextElementSibling)?.focus();}catch(ex){error(ex);}
+ }
+});
 let reorderId;
 $('#layers').addEventListener('dragstart',e=>{reorderId=e.target.closest('[data-layer-row]')?.dataset.layerRow;e.dataTransfer.setData('text/plain',reorderId||'');});
 $('#layers').addEventListener('dragover',e=>e.preventDefault());
@@ -388,7 +466,7 @@ $('#viewport').addEventListener('pointerdown',e=>{
  if(e.button!==0&&e.button!==1)return;
  if(space||e.button===1){drag={kind:'pan',start:{x:e.clientX,y:e.clientY},pan:{...state.pan}};e.currentTarget.setPointerCapture(e.pointerId);e.preventDefault();return;}
  const hit=e.target.closest('[data-hit],[data-resize],[data-rotate]');
- if(!hit){state.selected=[];render();return;}
+ if(!hit){state.selected=[];render();drag={kind:'pan',start:{x:e.clientX,y:e.clientY},pan:{...state.pan}};e.currentTarget.setPointerCapture(e.pointerId);return;}
  const id=hit.dataset.hit||hit.dataset.resize||hit.dataset.rotate,l=find(layers(),id);if(!l||l.locked)return;
  if(e.shiftKey&&hit.dataset.hit){state.selected=state.selected.includes(id)?state.selected.filter(x=>x!==id):[...state.selected,id];render();return;}
  if(!state.selected.includes(id))state.selected=[id];render();
@@ -416,12 +494,48 @@ window.addEventListener('keydown',async e=>{
  if(e.target.closest('input,textarea,select,[contenteditable=true]')){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();try{await save();}catch(ex){error(ex);}}return;}
  const mod=e.ctrlKey||e.metaKey,key=e.key.toLowerCase();
  try{
-  if(e.code==='Space'){space=true;e.preventDefault();}
-  if(mod&&['s','z','y','d','c','v'].includes(key)){e.preventDefault();if(key==='s')await save();if(key==='z')actions[e.shiftKey?'redo':'undo']();if(key==='y')actions.redo();if(key==='d')actions.duplicate();if(key==='c')state.clipboard=selected().map(clone);if(key==='v'){editable();const ls=duplicateMany(state.clipboard);layers().push(...ls);repairConstructions(layers());state.selected=ls.map(l=>l.id);changed();}}
-  if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();actions.delete();}if(e.key==='Escape'){state.selected=[];render();}
-  if(e.key.startsWith('Arrow')){editable();e.preventDefault();const n=e.shiftKey?10:1;for(const l of selected().filter(l=>!l.locked)){if(e.key==='ArrowLeft')l.x-=n;if(e.key==='ArrowRight')l.x+=n;if(e.key==='ArrowUp')l.y-=n;if(e.key==='ArrowDown')l.y+=n;}changed();}
+  if(mod&&['s','z','y','d','c','v'].includes(key)){e.preventDefault();if(key==='s')await save();if(key==='z')actions[e.shiftKey?'redo':'undo']();if(key==='y')actions.redo();if(key==='d')actions.duplicate();if(key==='c')state.clipboard=selected().map(clone);if(key==='v'){editable();const ls=duplicateMany(state.clipboard);layers().push(...ls);repairConstructions(layers());state.selected=ls.map(l=>l.id);changed();}return;}
+  if(e.key==='?'){e.preventDefault();shortcutsModal();return;}
+  // Les raccourcis du canevas ne s'appliquent que sur le canevas, les calques ou la page : jamais sur un bouton ou un onglet.
+  if(!(e.target===document.body||e.target.closest('#viewport,#layers')))return;
+  if(e.code==='Space'){space=true;e.preventDefault();return;}
+  if(mod)return;
+  if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();actions.delete();return;}
+  if(e.key==='Escape'){state.selected=[];render();return;}
+  if(e.key==='+'||e.key==='='){actions['zoom-in']();return;}
+  if(e.key==='-'){actions['zoom-out']();return;}
+  if(e.key==='0'){fit();return;}
+  if(e.key==='PageUp'||e.key==='PageDown'){
+   e.preventDefault();const a=layers();if(!a.length)return;const i=a.findIndex(l=>l.id===state.selected[0]);
+   const n=e.key==='PageUp'?(i<0?a.length-1:Math.min(a.length-1,i+1)):(i<0?0:Math.max(0,i-1));state.selected=[a[n].id];render();return;
+  }
+  if(e.key==='['||e.key===']'){editable();e.preventDefault();const n=(e.shiftKey?15:1)*(e.key===']'?1:-1);for(const l of selected().filter(l=>!l.locked))l.rotation=Math.round(l.rotation+n);changed();return;}
+  if(e.key.startsWith('Arrow')){
+   editable();e.preventDefault();const n=e.shiftKey?10:1;
+   for(const l of selected().filter(l=>!l.locked)){
+    if(e.altKey){if(e.key==='ArrowLeft')l.width=Math.max(1,l.width-n);if(e.key==='ArrowRight')l.width=Math.min(4096,l.width+n);if(e.key==='ArrowUp')l.height=Math.max(1,l.height-n);if(e.key==='ArrowDown')l.height=Math.min(4096,l.height+n);}
+    else{if(e.key==='ArrowLeft')l.x-=n;if(e.key==='ArrowRight')l.x+=n;if(e.key==='ArrowUp')l.y-=n;if(e.key==='ArrowDown')l.y+=n;}
+   }
+   changed();
+  }
  }catch(ex){error(ex);}
 });
+// Onglets (ressources et reglages) : fleches, Debut et Fin comme dans un composant standard.
+root.addEventListener('keydown',e=>{
+ const list=e.target.closest('.ps-tabs,.ps-property-nav');if(!list||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key))return;
+ const tabs=[...list.querySelectorAll('[role=tab]')],i=tabs.indexOf(e.target);if(i<0)return;e.preventDefault();
+ const n=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(['ArrowRight','ArrowDown'].includes(e.key)?1:-1)+tabs.length)%tabs.length;tabs[n].focus();tabs[n].click();
+});
+$('.ps-skip').addEventListener('click',e=>{e.preventDefault();const t=state.view==='home'?$('#studio-home'):$('#viewport');t.tabIndex=-1;t.focus();});
+// Telephone : un doigt deplace la vue sur le fond, deux doigts zooment.
+const touches=new Map();let pinch=null;
+const pinchDistance=()=>{const [a,b]=[...touches.values()];return Math.hypot(a.x-b.x,a.y-b.y)||1;};
+$('#viewport').addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;touches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(touches.size===2){drag=null;pinch={d:pinchDistance(),zoom:state.zoom};}});
+$('#viewport').addEventListener('pointermove',e=>{
+ if(!touches.has(e.pointerId))return;touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pinch&&touches.size===2){const b=$('#viewport').getBoundingClientRect(),[p,q]=[...touches.values()],x=(p.x+q.x)/2-b.left,y=(p.y+q.y)/2-b.top,old=state.zoom;state.zoom=Math.max(.15,Math.min(4,pinch.zoom*pinchDistance()/pinch.d));state.pan={x:x-(x-state.pan.x)*state.zoom/old,y:y-(y-state.pan.y)*state.zoom/old};updateView();}
+});
+for(const type of ['pointerup','pointercancel'])$('#viewport').addEventListener(type,e=>{touches.delete(e.pointerId);if(touches.size<2)pinch=null;});
 window.addEventListener('keyup',e=>{if(e.code==='Space')space=false;});window.addEventListener('blur',()=>{space=false;endDrag();});
 window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
 const workspace=createWorkspace({root,state,esc,json,notify,modal,api,error,raster,clone,render,fit,openProject,projectSettings,createFromSetup,savePreview,exportModal,

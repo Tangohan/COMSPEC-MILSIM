@@ -42,6 +42,12 @@ try{
  $addon=Export::addon($p,'standard',$clean);check(str_contains($addon['config'],'CfgUnitInsignia')&&str_contains($addon['config'],'CfgAthenaPatches'),'addon configs');
  check(hash_equals(substr($addon['pbo'],-20),sha1(substr($addon['pbo'],0,-21),true)),'PBO checksum');
  $zip=Export::bundle($p,'standard',$clean,[]);$zipfile=$root.'/test.zip';file_put_contents($zipfile,$zip);$z=new ZipArchive();check($z->open($zipfile)===true,'ZIP opens');check($z->getFromName('patch.paa')===$paa,'ZIP PAA exact');check(json_decode($z->getFromName('project.json'),true)===$p['document'],'ZIP editable project');$z->close();
+ check(Export::nightAdjustment(null)===null&&Export::nightAdjustment(['gain'=>1,'contrast'=>1])===null,'neutral night adjustment is dropped');
+ check(Export::nightAdjustment(['gain'=>99,'contrast'=>0])===['gain'=>3.0,'contrast'=>0.5],'night adjustment is bounded');
+ rejects(fn()=>Export::nightAdjustment(['gain'=>'x']),'night adjustment must be numeric');
+ $nightZip=Export::bundle($p,'night',$clean,[],['gain'=>1.4,'contrast'=>1.1]);$nightFile=$root.'/night.zip';file_put_contents($nightFile,$nightZip);$nz=new ZipArchive();check($nz->open($nightFile)===true,'night ZIP opens');
+ $nightMeta=json_decode($nz->getFromName('metadata.json'),true);check($nightMeta['night_mode']==='texture_adjustment'&&$nightMeta['night']['baked_adjustment']['gain']===1.4&&$nightMeta['night']['rvmat']===false,'night metadata states what is delivered');
+ check(str_contains((string)$nz->getFromName('README.txt'),'JUMELLES DE VISION NOCTURNE'),'night README explains the limits');$nz->close();
  $repo->query('INSERT INTO patch_studio_assets (id,tenant_id,owner_id,hash,mime,bytes,label,created_at) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)',[str_repeat('a',32),7,1,$hash,'image/png',3,'test']);
  check($repo->asset(str_repeat('a',32),7,2,false)===null,'private asset denied');check($repo->asset(str_repeat('a',32),8,3,true)===null,'cross tenant asset denied');
  $pdo->exec("INSERT INTO patch_studio_asset_refs VALUES ('{$p['id']}','".str_repeat('a',32)."')");check($repo->asset(str_repeat('a',32),7,2,false)!==null,'project shared asset');

@@ -43,7 +43,7 @@ verify(str_contains($src,'/assets/js/patch-studio.js?v=')&&!str_contains($src,'.
 verify($xpath->query('//link[contains(@href,"atak-nine-line.css")]')->length===1,'shared 9-line stylesheet');
 verify($xpath->query('//img[contains(@src,"athena-embleme-blanc.svg")]')->length===1,'shared Athena emblem');
 verify($xpath->query('//aside[@aria-labelledby="ps-disclaimer-title"]')->length===1,'persistent disclaimer');
-verify(str_contains($page->body(),'sans certification IR'),'visual IR qualification visible');
+verify(str_contains($page->body(),'jumelles de vision nocturne') && str_contains($page->body(),'pas encore été validée en jeu'),'night vision limits visible');
 verify($xpath->query('//body[contains(@class,"nl-page")]')->length===1,'shared 9-line theme');
 verify(is_file(dirname(__DIR__,2).'/public/assets/js/patch-studio.js'),'renamed module exists');
 verify(is_file(dirname(__DIR__,2).'/public/assets/js/patch-studio-core.js'),'renamed core exists');
