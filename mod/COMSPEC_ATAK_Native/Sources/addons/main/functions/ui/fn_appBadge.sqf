@@ -5,6 +5,8 @@ private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 switch (_page) do {
     // Canaux et SMS non lus (fn_chatUnread : mêmes chiffres que les pastilles de la liste des conversations).
     case "CHAT": { (["counts"] call comspec_atak_native_fnc_chatUnread) getOrDefault ["_total", 0] };
+    // App SMS : seulement les SMS directs non lus.
+    case "SMS": { { (_x getOrDefault ["dir", ""]) isEqualTo "in" && {!(_x getOrDefault ["read", false])} } count (_data getOrDefault ["p2p", []]) };
     case "TASK": {
         // DELIVERED = transmis (« vu » par Athena), pas encore traité par le joueur.
         private _done = ["ACK", "EXEC", "FAILED", "DONE", "COMPLETED", "CANCELLED", "CANCELED"];

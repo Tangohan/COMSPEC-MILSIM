@@ -480,6 +480,7 @@ final class AtakExperienceService
             ['id' => 'Distance', 'name' => 'Distances', 'description' => 'Distances parcourues à pied et en véhicule', 'section' => 'Navigation'],
             ['id' => 'Garmin', 'name' => 'Garmin', 'description' => 'Montre Garmin : pas, cardio, stress, sommeil', 'section' => 'Navigation'],
             ['id' => 'Chat', 'name' => 'Messages', 'description' => 'Canaux de l\'unité et SMS entre joueurs', 'section' => 'Communication'],
+            ['id' => 'Sms', 'name' => 'SMS', 'description' => 'SMS entre joueurs, de téléphone à téléphone', 'section' => 'Communication'],
             ['id' => 'Group', 'name' => 'Groupe', 'description' => 'Composition du groupe, rôles et indicatifs', 'section' => 'Communication'],
             ['id' => 'Bft', 'name' => 'BFT', 'description' => 'Suivi des forces amies (Blue Force Tracking)', 'section' => 'Communication'],
             ['id' => 'InterTeam', 'name' => 'Inter-team', 'description' => 'Liaison entre équipes et fire teams', 'section' => 'Communication'],

@@ -8343,6 +8343,8 @@
 ["Hors réseau des relais", "Outside the relay network"],
 ["Hors réseau · fil du %1 · envoi différé", "No network · feed from %1 · deferred sending"],
 ["Hors réseau · SMS en attente du signal", "No signal · SMS waiting for signal"],
+["Réseau mobile · SMS directs", "Mobile network · direct SMS"],
+["SMS entre joueurs, de téléphone à téléphone", "Player-to-player SMS, phone to phone"],
 ["hors service", "out of service"],
 ["hors zone", "outside any zone"],
 ["hostiles proches", "hostiles nearby"],

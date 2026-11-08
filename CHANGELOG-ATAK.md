@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : app SMS dédiée (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Une app SMS à part, avec l'interface de Messages
+- Nouvelle app « SMS » (catégorie Communication) : uniquement les conversations directes avec les joueurs de ton camp, sans les canaux du TOC.
+- Même présentation que Messages : liste avec dernier message et non-lus, bulles, saisie, accusés Envoi / Distribué / Lu, et choix du destinataire avec son numéro.
+- Les SMS suivent le réseau du téléphone : sans signal ils restent en attente et partent au retour du réseau. Une notification de SMS reçu ouvre l'app.
+- Un expéditeur qui spamme (plus de 8 SMS en 10 s) est ignoré, et un SMS ne dépasse jamais 400 caractères.
+EN : A separate SMS app, with the Messages interface
+- New "SMS" app (Communication category): direct conversations with players of your side only, without the TOC channels.
+- Same look as Messages: list with last message and unread badges, bubbles, input, Sending / Delivered / Read receipts, and a recipient picker showing their number.
+- SMS follow the phone network: with no signal they wait and leave when the network is back. A received-SMS notification opens the app.
+- A sender who spams (more than 8 SMS in 10 s) is ignored, and an SMS never exceeds 400 characters.
+
+### Détail technique
+- `fn_pageSms` (page `SMS`, classe `Sms`, ordre 31, `short="SMS"`, icône `app_chat.paa` réutilisée, aucun binaire) : repart de la liste à l'entrée, puis appelle `fn_pageChat`, qui reconnaît la page active `SMS` (`_smsApp`) : pas de canaux ni de `+ CANAL`, pas de relevé des canaux Athena, bandeau d'état limité au réseau du téléphone. Les rendus différés, la molette et `fn_formRender` acceptent `CHAT` ou `SMS`.
+- Envoi, file d'attente sans réseau, maillage MPU5 et accusés : inchangés (`fn_p2pSend`, `fn_p2pAck`, `fn_netSend`, `fn_meshGraph`). Aucune requête vers Athena. ACRE et TFAR non touchés (`fn_radioGuard` inchangé).
+- `fn_p2pReceive` : contrôles à l'arrivée pour Messages et SMS (expéditeur joueur et nom concordant, 8 SMS par 10 s par expéditeur, 400 caractères), notification vers la page `SMS` si l'app est visible. Le circuit reste CBA de téléphone à téléphone, sans relais serveur.
+- `fn_appBadge` (`SMS` : non-lus directs), `fn_statusUpdate`, `fn_iconTint`, `fn_offline`, `fn_avatarPath`, `fn_ramUsage`, `fn_appSpaces` (espace Messages). Retrait côté serveur par les réglages d'apps existants (classe `Sms`). Site : `AtakExperienceService::phoneApps` (règle des apps Athena).
+- i18n : 2 lignes `en.txt`. Wiki : `docs/steam/discussions/64_sms.txt` + index. Autotest : étape `sms` (`missions/COMSPEC_Autotest.Stratis/scripts/sms.sqf`), non exécutée.
+
 ## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

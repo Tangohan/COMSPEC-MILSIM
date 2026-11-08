@@ -169,7 +169,7 @@ switch (_act) do {
                 ["Liaison", ["LinkAlly"]]
             ]],
             ["MSG", "Messages", "app_chat", [
-                ["Messages", ["Chat", "Alerts", "Numbers", "Discord"]],
+                ["Messages", ["Chat", "Sms", "Alerts", "Numbers", "Discord"]],
                 ["Groupes et réseau", ["Group", "InterTeam", "WaveRelay"]]
             ]],
             ["OPS", "Mission et téléphone", "app_tasks", [
