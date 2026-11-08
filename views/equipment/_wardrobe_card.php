@@ -37,7 +37,7 @@ $sourceLabel = match ((string) ($w['source'] ?? '')) {
     data-owner="<?= $h($lower($ownerLabel)) ?>"
     data-items="<?= $h($lower($previewNames)) ?>"
 >
-    <button type="button" class="eq-hub__card" data-eq-quickview="<?= $wid ?>">
+    <a class="eq-hub__card" href="<?= $h(url('equipment/tenues/' . $wid)) ?>" data-eq-quickview="<?= $wid ?>">
         <span class="eq-hub__media eq-hub__media--portrait">
             <?php if (!empty($w['cover_url'])): ?>
             <img class="eq-hub__img" src="<?= $h((string) $w['cover_url']) ?>" alt="" loading="lazy" decoding="async">
@@ -78,24 +78,20 @@ $sourceLabel = match ((string) ($w['source'] ?? '')) {
             <small class="eq-hub__card-private">Visible par vous seul</small>
             <?php endif; ?>
         </span>
-    </button>
-    <div class="eq-hub__card-actions">
-        <form method="post" action="<?= $h(url('equipment/tenues/' . $wid . '/favori')) ?>" class="eqx-fav-form">
+    </a>
+    <div class="eq-hub__card-actions eqx-card-actions">
+        <form method="post" action="<?= $h(url('equipment/tenues/' . $wid . '/favori')) ?>" class="eqx-fav-form" data-eq-fav-form>
             <input type="hidden" name="_csrf_token" value="<?= $h((string) $csrfToken) ?>">
             <input type="hidden" name="on" value="<?= $isFav ? '0' : '1' ?>">
-            <input type="hidden" name="_anchor" value="<?= $h($cardKey) ?>">
-            <button type="submit" class="eqx-fav<?= $isFav ? ' is-on' : '' ?>" aria-pressed="<?= $isFav ? 'true' : 'false' ?>" title="<?= $isFav ? 'Retirer des favoris' : 'Mettre en favori' ?>">
-                <span aria-hidden="true"><?= $isFav ? '★' : '☆' ?></span>
-                <span class="visually-hidden"><?= $isFav ? 'Retirer des favoris' : 'Mettre en favori' ?> : <span translate="no"><?= $h($display) ?></span></span>
+            <input type="hidden" name="_return" value="<?= $h((string) ($returnUrl ?? '/equipment')) ?>">
+            <button type="submit" class="eqx-fav<?= $isFav ? ' is-on' : '' ?>" aria-pressed="<?= $isFav ? 'true' : 'false' ?>" data-label-on="Retirer des favoris" data-label-off="Mettre en favori" title="<?= $isFav ? 'Retirer des favoris' : 'Mettre en favori' ?>">
+                <span aria-hidden="true" data-eq-fav-star><?= $isFav ? '★' : '☆' ?></span>
+                <span class="visually-hidden"><span data-eq-fav-label><?= $isFav ? 'Retirer des favoris' : 'Mettre en favori' ?></span> : <span translate="no"><?= $h($display) ?></span></span>
             </button>
         </form>
-        <button type="button" class="eq-hub__btn eq-hub__btn--sm" data-eq-ace-copy-card="<?= $wid ?>">Copier pour ACE</button>
+        <a class="eq-hub__btn eq-hub__btn--sm" href="<?= $h(url('equipment/ace-export') . '?tenue=' . $wid) ?>" download data-eq-ace-copy-card="<?= $wid ?>" aria-label="Copier pour ACE" title="Copier pour ACE">ACE</a>
         <?php if ($isMine): ?>
-        <button type="button" class="eq-hub__btn eq-hub__btn--sm eq-hub__btn--outline" data-eq-edit-card="<?= $wid ?>">Modifier</button>
-        <form method="post" action="<?= $h(url('equipment/tenues/' . $wid . '/delete')) ?>" data-ui-confirm="1" data-ui-confirm-title="Supprimer la tenue" data-ui-confirm-body="Supprimer « <?= $h($display) ?> » d’Athena ? Elle reste dans votre arsenal ACE si elle y est enregistrée.">
-            <input type="hidden" name="_csrf_token" value="<?= $h((string) $csrfToken) ?>">
-            <button type="submit" class="eq-hub__btn eq-hub__btn--sm eq-hub__btn--ghost">Supprimer</button>
-        </form>
+        <a class="eq-hub__btn eq-hub__btn--sm eq-hub__btn--outline" href="<?= $h(url('equipment/tenues/' . $wid)) ?>" data-eq-edit-card="<?= $wid ?>">Modifier</a>
         <?php endif; ?>
     </div>
 </li>

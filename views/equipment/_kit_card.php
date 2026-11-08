@@ -69,7 +69,7 @@ $desc = trim((string) ($kit['description'] ?? ''));
     </div>
 
     <?php if ($sections !== []): ?>
-    <details class="eqx-kit__details">
+    <details class="eqx-kit__details" data-eq-details-modal>
         <summary>Voir le contenu du kit</summary>
         <div class="eqx-kit__sections">
             <?php foreach ($sections as $sec): ?>
@@ -97,7 +97,7 @@ $desc = trim((string) ($kit['description'] ?? ''));
     </div>
 
     <?php if (!empty($canManageKits)): ?>
-    <details class="eqx-kit__manage">
+    <details class="eqx-kit__manage" data-eq-details-modal>
         <summary>Gérer ce kit</summary>
         <form method="post" action="<?= $h(url('equipment/kits/' . $kid . '/destinataire')) ?>" class="eqx-form">
             <input type="hidden" name="_csrf_token" value="<?= $h((string) $csrfToken) ?>">

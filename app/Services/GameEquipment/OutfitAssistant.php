@@ -27,6 +27,13 @@ final class OutfitAssistant
 {
     public const CUSTOM = 'custom';
 
+    /** Objets proposés par emplacement dans la fenêtre de choix (les plus portés d'abord). */
+    public const MAX_CANDIDATES = 200;
+
+    /** Objets retenus au plus par emplacement, et tenues créées au plus d'un coup (variantes). */
+    public const MAX_PER_SLOT = 6;
+    public const MAX_VARIANTS = 6;
+
     /** Emplacement => [libellé, famille du catalogue, groupe d'affichage]. */
     public const SLOTS = [
         'primary' => ['Arme principale', 'primary', 'weapons'],
@@ -309,9 +316,18 @@ final class OutfitAssistant
                 $default = (string) $ranked[0]['class'];
             }
             $chosen = $default;
+            $chosenAll = $default !== '' ? [$default] : [];
             if ($hasChoices && array_key_exists($slot, $picked)) {
-                $want = is_string($picked[$slot]) ? trim($picked[$slot]) : '';
-                $chosen = $want === '' ? '' : $this->classIn($pool, $want);
+                // Un emplacement n'accepte qu'un objet par tenue : plusieurs choix donnent des variantes (voir expandVariants).
+                $wants = is_array($picked[$slot]) ? array_values($picked[$slot]) : [$picked[$slot]];
+                $chosenAll = [];
+                foreach ($wants as $want) {
+                    $class = is_string($want) && trim($want) !== '' ? $this->classIn($pool, trim($want)) : '';
+                    if ($class !== '' && !in_array(strtolower($class), array_map('strtolower', $chosenAll), true) && count($chosenAll) < self::MAX_PER_SLOT) {
+                        $chosenAll[] = $class;
+                    }
+                }
+                $chosen = $chosenAll[0] ?? '';
             }
 
             $problem = '';
@@ -333,13 +349,14 @@ final class OutfitAssistant
                 'group' => $group,
                 'need' => $need,
                 'chosen' => $chosen,
+                'chosen_all' => $chosenAll,
                 'candidates' => array_map(static fn (array $it): array => [
                     'class' => (string) $it['class'],
                     'name' => (string) $it['name'],
                     'players' => (int) ($it['players'] ?? 0),
                     'mod' => (string) ($it['mod'] ?? ''),
                     'preferred' => (bool) $it['_pref'],
-                ], array_slice($ranked, 0, 60)),
+                ], array_slice($ranked, 0, self::MAX_CANDIDATES)),
                 'problem' => $problem,
                 'observed' => $observed,
             ];
@@ -475,6 +492,45 @@ final class OutfitAssistant
             'ace_ok' => $payload !== '' && ArsenalLoadoutItems::aceExport($payload) !== null,
             'names' => $names,
         ];
+    }
+
+    /**
+     * Tenues à créer quand plusieurs objets sont choisis pour un même emplacement : une tenue par combinaison, la
+     * première étant celle des premiers choix. Au plus $max tenues (les suivantes sont écartées et signalées).
+     *
+     * @param array<string, list<string>> $picks emplacement => objets choisis (liste vide = aucun)
+     * @return array{combos: list<array<string, string>>, truncated: bool}
+     */
+    public static function expandVariants(array $picks, int $max = self::MAX_VARIANTS): array
+    {
+        $max = max(1, $max);
+        $combos = [[]];
+        $truncated = false;
+        foreach ($picks as $slot => $list) {
+            $seen = [];
+            foreach ($list as $class) {
+                if (is_string($class) && trim($class) !== '' && !isset($seen[strtolower(trim($class))])) {
+                    $seen[strtolower(trim($class))] = trim($class);
+                }
+            }
+            $classes = array_slice(array_values($seen), 0, self::MAX_PER_SLOT);
+            if ($classes === []) {
+                $classes = [''];
+            }
+            $next = [];
+            foreach ($combos as $combo) {
+                foreach ($classes as $class) {
+                    $next[] = $combo + [(string) $slot => $class];
+                }
+            }
+            if (count($next) > $max) {
+                $next = array_slice($next, 0, $max);
+                $truncated = true;
+            }
+            $combos = $next;
+        }
+
+        return ['combos' => $combos, 'truncated' => $truncated];
     }
 
     /** @param array<string, mixed> $def */

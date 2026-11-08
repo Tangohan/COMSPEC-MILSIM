@@ -83,7 +83,7 @@ declare(strict_types=1);
     </dialog>
 
     <!-- Nouvelle collection -->
-    <dialog class="eq-hub__dialog" id="eq-collection-new" aria-labelledby="eq-col-new-title">
+    <dialog class="eq-hub__dialog" id="eq-collection-new" aria-labelledby="eq-col-new-title"<?= (string) ($_GET['creer'] ?? '') === 'collection' ? ' open' : '' ?>>
         <div class="eq-hub__dialog-shell eq-hub__dialog-shell--wide">
             <button type="button" class="eq-hub__dialog-close" data-eq-close aria-label="Fermer">×</button>
             <h2 id="eq-col-new-title">Nouvelle collection</h2>
@@ -354,3 +354,22 @@ declare(strict_types=1);
         </div>
     </dialog>
 
+    <?php if (!empty($canManageKits) && !empty($kitsAllowed)): ?>
+    <!-- Création d'un kit de départ -->
+    <dialog class="eq-hub__dialog" id="eq-kit-new" aria-labelledby="eq-kit-new-title">
+        <div class="eq-hub__dialog-shell eq-hub__dialog-shell--wide">
+            <button type="button" class="eq-hub__dialog-close" data-eq-close aria-label="Fermer">×</button>
+            <h2 id="eq-kit-new-title">Créer un kit de départ</h2>
+            <?php require __DIR__ . '/_kit_create.php'; ?>
+        </div>
+    </dialog>
+    <?php endif; ?>
+
+    <!-- Fenêtre commune : contenu d'un kit, gestion d'un kit, mon kit en jeu (repris des blocs repliables de la page) -->
+    <dialog class="eq-hub__dialog" id="eq-generic" aria-labelledby="eq-generic-title">
+        <div class="eq-hub__dialog-shell eq-hub__dialog-shell--wide">
+            <button type="button" class="eq-hub__dialog-close" data-eq-close aria-label="Fermer">×</button>
+            <h2 id="eq-generic-title" data-eq-generic-title></h2>
+            <div data-eq-generic-body></div>
+        </div>
+    </dialog>
