@@ -113,6 +113,14 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Affichage"], true, 0,
     { missionNamespace setVariable ["COMSPEC_ATAK_ForeignNext", 0]; }] call comspec_atak_native_fnc_addSetting;
 
+// Réponses des IA : bulle de texte au-dessus de la tête de l'IA qui parle (par joueur, fn_aiBubble). Décoché : toast d'Arma.
+["comspec_atak_native_ai_bubble", "CHECKBOX",
+    ["Bulles de réponse des IA", "Coché par défaut. La réponse d'un groupe IA à un ordre s'affiche en texte au-dessus de la tête de son chef, si vous êtes à portée et si vous le voyez. Hors de vue, ou décoché : le donneur d'ordre la reçoit en notification du jeu."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0,
+    { if !(_this) then { ["clear"] call comspec_atak_native_fnc_aiBubble; }; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ai_bubble_range", "SLIDER",
+    ["Portée des bulles de réponse", "Distance maximale, en mètres, à laquelle vous voyez la réponse au-dessus de la tête d'une IA."],
+    ["COMSPEC", "ATAK · Affichage"], [10, 150, 50, 0], 0] call comspec_atak_native_fnc_addSetting;
 // Étiquettes de la carte du téléphone (par joueur, enregistrées dans le profil par CBA), aussi dans Réglages > Carte
 // et CALQUES : style des noms de repères (fn_mapMarkerText) et des lieux (fn_mapPlaceText), catégories masquables.
 ["comspec_atak_native_map_marker_style", "LIST",
