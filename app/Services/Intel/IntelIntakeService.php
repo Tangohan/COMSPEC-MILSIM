@@ -413,6 +413,67 @@ class IntelIntakeService
     }
 
     /**
+     * Photos de reconnaissance prises avec un compte rendu : celle nommée dans le champ « photo » du CR (numéro de
+     * cliché), puis celles du même auteur sur la même session jouée, prises de 2 h avant à 15 min après l'envoi.
+     * Toujours dans la communauté du CR. Une photo confidentielle passe par sa route authentifiée, jamais par un
+     * chemin public (ReconImageStorage::urlForRow).
+     *
+     * @param array<string, mixed> $report ligne atak_tactical_reports
+     * @return list<array<string, mixed>>
+     */
+    private function reconImagesOfReport(int $tenantId, array $report): array
+    {
+        $ids = [];
+        $structured = json_decode((string) ($report['structured_data'] ?? ''), true);
+        $named = is_array($structured) ? ($structured['photo'] ?? null) : null;
+        if (is_scalar($named) && preg_match('/^\d+$/', trim((string) $named)) === 1) {
+            $ids[] = (int) $named;
+        }
+        $rows = [];
+        try {
+            $mission = trim((string) ($report['mission_key'] ?? ''));
+            $author = trim((string) ($report['submitter_callsign'] ?? ''));
+            $sent = (string) ($report['created_at'] ?? '');
+            $sql = 'SELECT id, image_path, caption, captured_at, created_at, is_confidential FROM recon_images WHERE tenant_id = ? AND deleted_at IS NULL AND (';
+            $args = [$tenantId];
+            $or = [];
+            if ($ids !== []) {
+                $or[] = 'id = ?';
+                $args[] = $ids[0];
+            }
+            if ($mission !== '' && $author !== '' && $sent !== '') {
+                $or[] = '(mission_id = ? AND LOWER(author_callsign) = LOWER(?) AND created_at BETWEEN DATE_SUB(?, INTERVAL 120 MINUTE) AND DATE_ADD(?, INTERVAL 15 MINUTE))';
+                array_push($args, $mission, $author, $sent, $sent);
+            }
+            if ($or === []) {
+                return [];
+            }
+            $st = $this->pdo()->prepare($sql . implode(' OR ', $or) . ') ORDER BY created_at, id LIMIT 24');
+            $st->execute($args);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $url = \App\Support\ReconImageStorage::urlForRow($r);
+            $out[] = [
+                'id' => (int) $r['id'],
+                'caption' => (string) ($r['caption'] ?? ''),
+                'original_name' => '',
+                'kind_label' => !empty($r['is_confidential']) ? 'Photo de reconnaissance (confidentielle)' : 'Photo de reconnaissance',
+                'url' => $url,
+                'is_image' => $url !== null,
+                'blurred' => false,
+                'taken_at' => (string) ($r['captured_at'] ?? $r['created_at'] ?? ''),
+                'readonly' => true,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Une remontée complète : données d'origine, suivi, fil, caviardages, lectures, pièces jointes.
      *
      * @return array<string, mixed>|null
@@ -477,6 +538,7 @@ class IntelIntakeService
                 }
             } catch (\Throwable) {
             }
+            array_push($attachments, ...$this->reconImagesOfReport($tenantId, $row));
         }
         $structured = [];
         if ($source === 'cr' && !empty($row['structured_data'])) {

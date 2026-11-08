@@ -56,6 +56,11 @@ if ($conclusion !== '') {
     $sections['conclusion'] = 'Conclusion';
 }
 $sections['actions'] = 'Actions';
+$annexes = is_array($aarAnnexes ?? null) ? $aarAnnexes : [];
+$annexKinds = \App\Repositories\AarAnnexRepository::KINDS;
+if ($annexes !== []) {
+    $sections['annexes'] = 'Annexes';
+}
 $num = 0;
 
 // Étapes du circuit de relecture.
@@ -186,6 +191,27 @@ $rank = ['pending' => 0, 'missing' => 0, 'in_review' => 1, 'validated' => 2][$st
         </ul>
         <?php endif; ?>
       </section>
+
+      <?php if ($annexes !== []): ?>
+      <section class="bo-aar-sec" id="annexes">
+        <p class="bo-aar-sec__k"><?= ++$num ?> · Annexes</p>
+        <h2 class="bo-aar-sec__t">Pièces jointes au compte rendu <small class="bo-aar-muted"><?= count($annexes) ?></small></h2>
+        <?php foreach ($annexes as $ax):
+            $isNote = ($ax['kind'] ?? '') === 'note';
+            $axTitle = $isNote
+                ? (trim((string) ($ax['title'] ?? '')) !== '' ? (string) $ax['title'] : 'Annexe')
+                : (trim((string) ($ax['src_number'] ?? '')) !== '' ? (string) $ax['src_number'] : 'CR-' . (int) $ax['source_id']);
+            $axText = $isNote ? (string) ($ax['body'] ?? '') : trim((string) ($ax['src_summary'] ?? '') . "\n" . (string) ($ax['src_details'] ?? ''));
+        ?>
+          <details class="bo-aar-annex">
+            <summary><span class="ath-tag"><?= $h($annexKinds[$ax['kind']] ?? 'Annexe') ?></span> <b><?= $h($axTitle) ?></b>
+              <?php if (!$isNote && !empty($ax['src_at'])): ?><small class="bo-aar-muted"><?= $h($fmt($ax['src_at'], 'd/m/Y H:i')) ?></small><?php endif; ?></summary>
+            <p class="bo-aar-text"><?= $axText !== '' ? nl2br($h($axText)) : '<span class="bo-aar-muted">Contenu indisponible (rapport supprimé).</span>' ?></p>
+            <?php if (!$isNote && (int) $ax['source_id'] > 0): ?><p><a href="<?= $h(url('back-office/remontees/cr/' . (int) $ax['source_id'])) ?>">Ouvrir le rapport du terrain</a></p><?php endif; ?>
+          </details>
+        <?php endforeach; ?>
+      </section>
+      <?php endif; ?>
 
       <?php if (count($sections) === 1 && $customRows === []): ?>
         <p class="bo-aar-muted bo-aar-sec">Ce compte rendu n’a pas encore de contenu.<?= $canManage ? ' <a href="' . $h($base . '/' . $id . '/edit') . '">Le compléter</a>' : '' ?></p>
