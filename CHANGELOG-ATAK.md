@@ -61,6 +61,7 @@ FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 d
 - App Routes : avec le mod F-PANO ECOTI, les prochaines étapes de la route suivie s'affichent sous JVN dans sa vue, avec leur nom et leur distance.
 - Bloc-notes refait, réponses des IA en texte au-dessus de leur tête (désactivable), nouveaux motifs de fêlures désactivables, menu ORBAT dans le BFT, et plus rien dans OneDrive.
 - Téléphones personnels : chaque téléphone a un propriétaire. Si vous ramassez celui d'un autre, vous choisissez à l'ouverture lequel lire, et vous ne voyez que ce qu'il contient. Code de 4 à 8 chiffres et indice dans Réglages, essais limités ; un code oublié se retire (CODE OUBLIÉ, admin ou Zeus).
+- Nouvelle app Communauté : les consignes reçues d'Athena, les ordres, des tips, et le kit obligatoire : le téléphone vous dit ce qui manque dans votre équipement. Un admin ou un Zeus peut noter pour la partie.
 EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
 - The C2 app is removed: find the group, callsign and units in the Group and BFT apps, and orders in Tasks.
@@ -82,7 +83,10 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 
 - Personal phones: each phone has an owner. If you pick up someone else's, you choose which one to read when you open it, and you only see what it holds. Code of 4 to 8 digits and a hint in Settings, limited attempts; a forgotten code can be removed (FORGOT CODE, admin or Zeus).
 
+- New Community app: instructions received from Athena, orders, tips, and the mandatory kit: the phone tells you what is missing from your gear. An admin or Zeus can post notes for the game.
+
 ### Détail technique
+- **App Communauté (PR #1395, lot 2) :** `fn_pageTenant`, `fn_tenantAction`. Consignes : champ `guide` déjà reçu par `GetExperience`. Notes de partie : `COMSPEC_ATAK_TenantNotes`, écrites par la mission ou par admin et Zeus (`fn_adminServer` « tenantNote »). Kit : `COMSPEC_ATAK_RequiredKit` ou réglage `comspec_atak_native_kit_required`, comparé toutes les 30 s. Besoin côté site : `docs/technical/ICD-ATHENA-ATAK.md`, section « Besoin : app Communauté ».
 - **Téléphones personnels (PR #1395, lot 1) :** `fn_phoneOwn` (fiche `COMSPEC_ATAK_Phones` sur le contenant, déplacée par Take et Put, type et bornes vérifiés), `fn_phoneServer` (code, essais, données sur le serveur), `fn_phonePad`, `fn_pagePhones` (seule page permise avec un téléphone d'autrui à l'écran, aucun appel à Athena). `fn_hasDevice` ne compte plus le téléphone d'un autre. Réglages `comspec_atak_native_phone_owner`, `pin_attempts`, `pin_block`. Mécanique de jeu, pas une sécurité. Rien n'a tourné en jeu.
 - **Retours du propriétaire (lot final, à vérifier en jeu)** :
   - Carte sur fond sombre, nuit, satellite, classique ou hybride : `lift` lisait une variable locale de `fn_mapColors` absente à l'appel, erreur de script à chaque image et dessin arrêté (`docs/bugs/2026-11-08-atak-carte-marqueurs-images-zones-absentes.md`).
