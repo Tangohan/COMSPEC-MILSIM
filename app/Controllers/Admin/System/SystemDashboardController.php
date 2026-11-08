@@ -15,10 +15,18 @@ use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
 use App\Services\Admin\PlatformAccountsOverviewService;
 use App\Services\Admin\PlatformHealthDigest;
+use App\Services\Admin\PlatformHomeService;
 use App\Services\Audit\AuditAction;
 
+/**
+ * Accueil de l'administration du site. La vue d'ensemble ne charge que quatre blocs courts (à traiter, santé,
+ * chiffres clés, accès rapides) ; le détail est réparti en onglets à adresse propre, calculés seulement à l'ouverture.
+ */
 class SystemDashboardController
 {
+    /** Onglets de détail (sans double vérification) : adresse propre ?onglet=… */
+    public const DETAIL_TABS = ['sante', 'chiffres', 'activite'];
+
     public function __construct(
         private ?AdminDashboardMetricsService $metrics = null,
         private ?AuditLogRepository $auditLogs = null,
@@ -43,80 +51,51 @@ class SystemDashboardController
         if (in_array((string) $request->query('onglet', ''), SystemOpsConsoleController::TABS, true)) {
             return (new SystemOpsConsoleController())->index($request, $params);
         }
-
-        $metrics = $this->metrics->getSystemMetrics();
-        $recent = [];
-        $recentError = null;
-        try {
-            $recent = $this->auditLogs->recentSystem(8);
-        } catch (\Throwable) {
-            $recentError = 'Activité récente indisponible.';
-        }
-
-        $reportsPendingTotal = 0;
-        $reportsPendingByTenant = [];
-        $reportsSnapshotError = null;
-        try {
-            $reportsPendingTotal = $this->contentReports->countPendingAllTenants();
-            $reportsPendingByTenant = $this->contentReports->pendingCountTopTenants(6);
-        } catch (\Throwable) {
-            $reportsSnapshotError = 'Les totaux de signalements ne sont pas disponibles pour le moment.';
-        }
-
-        $contentQueueTotal = 0;
-        $contentQueueByTenant = [];
-        $contentQueueSnapshotError = null;
-        try {
-            if ($this->moderationArtifacts->tableExists()) {
-                $contentQueueTotal = $this->moderationArtifacts->countPendingQueueAllTenants();
-                $contentQueueByTenant = $this->moderationArtifacts->pendingQueueTopTenants(6);
-            }
-        } catch (\Throwable) {
-            $contentQueueSnapshotError = 'La file de validation des fichiers ne peut pas être lue pour le moment.';
-        }
-
-        $auditContentActions = [
-            AuditAction::REPORT_MODERATION,
-            AuditAction::MODERATION_ACTION,
-            AuditAction::MODERATION_REVOKED,
-        ];
-        $auditTenantActions = [
-            AuditAction::TENANT_CREATED,
-            AuditAction::TENANT_SETUP_COMPLETED,
-        ];
-        $adminAuditRecentContent = [];
-        $adminAuditRecentTenant = [];
-        $adminAuditModerationError = null;
-        try {
-            $adminAuditRecentContent = $this->auditLogs->recentSystemByActions($auditContentActions, 8);
-            $adminAuditRecentTenant = $this->auditLogs->recentSystemByActions($auditTenantActions, 8);
-        } catch (\Throwable) {
-            $adminAuditModerationError = 'Extrait du journal indisponible pour le moment.';
+        $tab = (string) $request->query('onglet', '');
+        if (!in_array($tab, self::DETAIL_TABS, true)) {
+            $tab = 'vue';
         }
 
         $appEnv = function_exists('env') ? (string) env('APP_ENV', 'local') : 'local';
-        $adminPlatformEnvLabel = app_environment_label_fr($appEnv);
-
-        $adminPlatformUsagePreview = [
-            'error' => null,
-            'snapshot' => ['tenants_with_events' => 0, 'events_24h' => 0, 'top_tenants' => []],
-            'categories' => [],
-            'kpis' => [],
+        $data = [
+            'content' => 'admin.system.dashboard',
+            'title' => 'Pilotage du site',
+            'homeTab' => $tab,
+            'adminPlatformEnvRaw' => $appEnv,
+            'adminPlatformEnvLabel' => app_environment_label_fr($appEnv),
+            'adminHealthCheckUrl' => url('api/health'),
+            'backOfficePageCss' => ['platform-admin.css', 'ops-console.css', 'platform-admin-users.css'],
         ];
-        try {
-            $adminPlatformUsagePreview['snapshot'] = $this->tenantAnalytics->getPlatformUsageSnapshot(7);
-            $adminPlatformUsagePreview['categories'] = array_slice($this->tenantAnalytics->getPlatformCategoryBreakdown(7), 0, 3);
-            $adminPlatformUsagePreview['kpis'] = $this->tenantAnalytics->getPlatformOperationalKpis(7);
-        } catch (\Throwable) {
-            $adminPlatformUsagePreview['error'] = 'L’aperçu d’usage sur 7 jours est momentanément indisponible.';
-        }
+        $data += match ($tab) {
+            'sante' => $this->santeData(),
+            'chiffres' => $this->chiffresData(),
+            'activite' => $this->activiteData(),
+            default => $this->vueData(),
+        };
 
-        // Alertes et maintenances en cours (repris de l'ancienne synthèse opérationnelle).
+        return Response::view('layout.main', $data);
+    }
+
+    /** @return array<string, mixed> */
+    private function vueData(): array
+    {
+        $home = new PlatformHomeService();
+
+        return [
+            'homeActions' => $home->actions(),
+            'homeHealth' => $home->health(),
+            'homeFigures' => $home->figures(),
+            'homeQuickLinks' => PlatformHomeService::quickLinks(),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function santeData(): array
+    {
         $activeAlerts = [];
         try {
             $activeAlerts = (new PlatformAlertRepository())->listActiveForDisplay();
         } catch (\Throwable) {
-            $activeAlerts = [];
         }
         $maintenanceCounts = ['active' => 0, 'planned' => 0];
         try {
@@ -129,7 +108,33 @@ class SystemDashboardController
             }
         } catch (\Throwable) {
         }
+        $healthRows = $this->health->rows();
 
+        return [
+            'adminHealthRows' => $healthRows,
+            'adminHealthSummary' => PlatformHealthDigest::summarize($healthRows),
+            'adminActiveAlerts' => $activeAlerts,
+            'adminMaintenanceCounts' => $maintenanceCounts,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function chiffresData(): array
+    {
+        $metrics = $this->metrics->getSystemMetrics();
+        $usage = [
+            'error' => null,
+            'snapshot' => ['tenants_with_events' => 0, 'events_24h' => 0, 'top_tenants' => []],
+            'categories' => [],
+            'kpis' => [],
+        ];
+        try {
+            $usage['snapshot'] = $this->tenantAnalytics->getPlatformUsageSnapshot(7);
+            $usage['categories'] = array_slice($this->tenantAnalytics->getPlatformCategoryBreakdown(7), 0, 3);
+            $usage['kpis'] = $this->tenantAnalytics->getPlatformOperationalKpis(7);
+        } catch (\Throwable) {
+            $usage['error'] = 'L’aperçu d’usage sur 7 jours est momentanément indisponible.';
+        }
         $accountsOverview = [
             'communities' => [],
             'accounts' => [],
@@ -142,35 +147,79 @@ class SystemDashboardController
             $accountsOverview['error'] = 'Les aperçus des comptes et communautés sont momentanément indisponibles.';
         }
 
-        $healthRows = $this->health->rows();
-
-        return Response::view('layout.main', [
-            'content' => 'admin.system.dashboard',
-            'adminHealthRows' => $healthRows,
-            'adminHealthSummary' => PlatformHealthDigest::summarize($healthRows),
-            'adminActiveAlerts' => $activeAlerts,
-            'adminMaintenanceCounts' => $maintenanceCounts,
-            'title' => 'Pilotage du site',
+        return [
             'adminKpis' => $metrics['kpis'],
             'adminKpiBlockError' => $metrics['blockError'],
+            'adminPlatformUsagePreview' => $usage,
+            'adminAccountsOverview' => $accountsOverview,
+        ] + $this->moderationCounts();
+    }
+
+    /** @return array<string, mixed> */
+    private function activiteData(): array
+    {
+        $recent = [];
+        $recentError = null;
+        try {
+            $recent = $this->auditLogs->recentSystem(8);
+        } catch (\Throwable) {
+            $recentError = 'Activité récente indisponible.';
+        }
+        $content = [];
+        $tenant = [];
+        $auditError = null;
+        try {
+            $content = $this->auditLogs->recentSystemByActions([
+                AuditAction::REPORT_MODERATION,
+                AuditAction::MODERATION_ACTION,
+                AuditAction::MODERATION_REVOKED,
+            ], 8);
+            $tenant = $this->auditLogs->recentSystemByActions([AuditAction::TENANT_CREATED, AuditAction::TENANT_SETUP_COMPLETED], 8);
+        } catch (\Throwable) {
+            $auditError = 'Extrait du journal indisponible pour le moment.';
+        }
+
+        return [
             'adminRecentActivity' => $recent,
             'adminRecentActivityError' => $recentError,
             'adminRecentActivityMoreUrl' => url('admin/audit'),
-            'adminPlatformEnvRaw' => $appEnv,
-            'adminPlatformEnvLabel' => $adminPlatformEnvLabel,
-            'adminHealthCheckUrl' => url('api/health'),
-            'adminReportsPendingTotal' => $reportsPendingTotal,
-            'adminReportsPendingByTenant' => $reportsPendingByTenant,
-            'adminReportsSnapshotError' => $reportsSnapshotError,
-            'adminContentQueueTotal' => $contentQueueTotal,
-            'adminContentQueueByTenant' => $contentQueueByTenant,
-            'adminContentQueueSnapshotError' => $contentQueueSnapshotError,
-            'adminAuditRecentContent' => $adminAuditRecentContent,
-            'adminAuditRecentTenant' => $adminAuditRecentTenant,
-            'adminAuditModerationError' => $adminAuditModerationError,
-            'adminPlatformUsagePreview' => $adminPlatformUsagePreview,
-            'adminAccountsOverview' => $accountsOverview,
-            'backOfficePageCss' => ['platform-admin.css', 'ops-console.css'],
-        ]);
+            'adminAuditRecentContent' => $content,
+            'adminAuditRecentTenant' => $tenant,
+            'adminAuditModerationError' => $auditError,
+        ] + $this->moderationCounts();
+    }
+
+    /** @return array<string, mixed> */
+    private function moderationCounts(): array
+    {
+        $reportsTotal = 0;
+        $reportsByTenant = [];
+        $reportsError = null;
+        try {
+            $reportsTotal = $this->contentReports->countPendingAllTenants();
+            $reportsByTenant = $this->contentReports->pendingCountTopTenants(6);
+        } catch (\Throwable) {
+            $reportsError = 'Les totaux de signalements ne sont pas disponibles pour le moment.';
+        }
+        $queueTotal = 0;
+        $queueByTenant = [];
+        $queueError = null;
+        try {
+            if ($this->moderationArtifacts->tableExists()) {
+                $queueTotal = $this->moderationArtifacts->countPendingQueueAllTenants();
+                $queueByTenant = $this->moderationArtifacts->pendingQueueTopTenants(6);
+            }
+        } catch (\Throwable) {
+            $queueError = 'La file de validation des fichiers ne peut pas être lue pour le moment.';
+        }
+
+        return [
+            'adminReportsPendingTotal' => $reportsTotal,
+            'adminReportsPendingByTenant' => $reportsByTenant,
+            'adminReportsSnapshotError' => $reportsError,
+            'adminContentQueueTotal' => $queueTotal,
+            'adminContentQueueByTenant' => $queueByTenant,
+            'adminContentQueueSnapshotError' => $queueError,
+        ];
     }
 }

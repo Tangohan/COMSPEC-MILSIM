@@ -205,7 +205,7 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
         <?php endif; ?>
 
         <?php if ($pendingPurgeRequests !== []): ?>
-            <section class="pa-card pu-requests" aria-labelledby="purge-requests-title">
+            <section id="demandes-purge" class="pa-card pu-requests" aria-labelledby="purge-requests-title">
                 <p class="pa-card__kicker">À traiter</p>
                 <h2 id="purge-requests-title" class="pa-card__title">
                     Demandes de suppression de compte
