@@ -7478,6 +7478,19 @@ class AtakApiController
                 'meta' => $meta,
             ];
         }
+        // Réponse bornée : COMSPEC Link ne relit qu'une réponse courte (environ 10 Ko). Les avis sont déjà triés (comptes
+        // rendus du téléphone d'abord) : on s'arrête avant de couper un avis en deux, ce qui le rendait illisible.
+        $budget = 0;
+        $kept = [];
+        foreach ($messages as $m) {
+            $size = strlen((string) $m['title']) + strlen((string) $m['body']) + strlen((string) $m['meta']) + 60;
+            if ($kept !== [] && $budget + $size > self::ADMIN_POLL_BUDGET) {
+                continue;
+            }
+            $budget += $size;
+            $kept[] = $m;
+        }
+        $messages = $kept;
         // CR de fin d'opération : fiche dans le texte de l'avis et réglages de la communauté, pour un ATAK qui sait les lire.
         $caps = (string) ($this->jsonBody($request)['caps'] ?? '');
         try {
@@ -7832,6 +7845,9 @@ class AtakApiController
     }
 
     /** Fenêtre lue en base par relève de tchat avec curseur (le dépôt borne de son côté à 200). */
+    /** Octets d'avis (titre, texte, méta) renvoyés à une relève de l'ATAK ; un seul avis plus gros passe seul. */
+    private const ADMIN_POLL_BUDGET = 6000;
+
     private const CHAT_FETCH_MAX = 200;
 
     /**
@@ -13363,6 +13379,13 @@ class AtakApiController
             ];
             // Cliché confidentiel : message, lien de lecture et note seulement, jamais l'image (salon ouvert à
             // toute la communauté) ; cliché SSE : image floutée. Voir DiscordEventRelayService::notifyQuickPicture.
+            // Photos d'un même joueur dans une même mission : un seul message Discord (file + tâche planifiée).
+            // Si la mise en file échoue (base pas encore migrée…), envoi immédiat de cette photo, comme avant.
+            $discordMeta['author_user_id'] = $gameUserId ?? 0;
+            $discordMeta['batch_id'] = mb_substr(trim((string) ($_POST['batch_id'] ?? $_POST['batchId'] ?? '')), 0, 64);
+            if ((new \App\Services\Integrations\DiscordPhotoQueueService())->enqueue($tenantId, $path, $discordMeta)) {
+                return Response::json($row, 201);
+            }
             register_shutdown_function(static function () use ($tenantId, $path, $discordMeta): void {
                 try {
                     // Réponse rendue au jeu d'abord : l'envoi Discord (photo) ne retarde pas l'accusé d'upload.

@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\AtakDataRepository;
 use App\Repositories\AtakMapRepository;
+use App\Services\Atak\AtakMobileHistoryService;
 use App\Services\Atak\AtakMobileLinkService;
 use App\Services\Security\FileRateLimiter;
 use App\Services\Tactical\AirBriefService;
@@ -19,6 +20,8 @@ use App\Support\AtakMobileReportCatalog;
  * « Sur mon téléphone » : versions mobiles des apps de l'ATAK en jeu, ouvertes en scannant le QR code affiché dans
  * le téléphone du jeu. /m/{jeton} rachète le jeton (usage unique, 5 min) et ouvre une session limitée à ces pages :
  *   /m/cr            compte rendu rapide (CONTACT, SALUTE, SPOTREP, blessé, libre) → confié à l'ATAK du joueur
+ *   /m/cr/envoyes    historique des comptes rendus envoyés ; /m/cr/recus ceux qui me sont adressés ; /m/cr/lire/{id} lecture
+ *   /m/radio         Radio et messages : canaux de tchat, messages privés, et ce que le jeu ne remonte pas (SMS, MPU, musique)
  *   /m/compte-rendu  CR de fin d'opération ouvert dans le téléphone en jeu → confié à l'ATAK du joueur
  *   /m/carte         carte Overwatch de la partie : amis, marqueurs, tracés, appareils, appuis ; poser / modifier /
  *                    retirer ses marqueurs (lectures aux adresses de l'Overwatch, AtakMobileOverwatchAccess)
@@ -39,12 +42,22 @@ final class AtakMobileAppsController
         'lz' => ['hd_pickup', 'ColorGreen', 'Zone de poser'],
     ];
 
+    /** Intitulé des pages qui ne sont pas une app du QR code. */
+    private const VIEW_TITLES = [
+        'cr_list' => 'Historique des comptes rendus',
+        'cr_read' => 'Compte rendu',
+        'radio' => 'Radio et messages',
+        'radio_thread' => 'Radio et messages',
+        'radio_absent' => 'Non transmis par le jeu',
+    ];
+
     public function __construct(
         private ?AtakMobileLinkService $links = null,
         private ?AtakDataRepository $atak = null,
         private ?FileRateLimiter $limiter = null,
         private ?AirBriefService $air = null,
         private ?\App\Services\Sse\SseIdCheckInsightService $idChecks = null,
+        private ?AtakMobileHistoryService $history = null,
     ) {
     }
 
@@ -74,7 +87,10 @@ final class AtakMobileAppsController
             return $this->expired();
         }
 
-        return $this->page('home', $link, ['aircrew' => $this->links()->aircrew($link)]);
+        return $this->page('home', $link, [
+            'aircrew' => $this->links()->aircrew($link),
+            'unread' => $this->history()->unreadCount($link),
+        ]);
     }
 
     public function cr(Request $request, array $params = []): Response
@@ -111,6 +127,117 @@ final class AtakMobileAppsController
         }
 
         return Response::json(['ok' => true, 'notice' => $id]);
+    }
+
+    // ── Historique et lecture des comptes rendus ─────────────────────────────
+
+    public function crSent(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+
+        return $this->page('cr_list', $link, ['mode' => 'sent', 'rows' => $this->history()->sent($link)]);
+    }
+
+    public function crReceived(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+
+        return $this->page('cr_list', $link, ['mode' => 'received', 'rows' => $this->history()->received($link)]);
+    }
+
+    /** Lecture d'un compte rendu : le mien, ou un compte rendu qui m'est adressé. */
+    public function crRead(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+        $report = $this->history()->report($link, (int) ($params['id'] ?? 0));
+        if ($report === null) {
+            return $this->page('cr_read', $link, ['report' => null], 404);
+        }
+
+        return $this->page('cr_read', $link, ['report' => $report]);
+    }
+
+    /** « J'ai lu » : accusé de lecture d'un compte rendu reçu (même effet que dans l'ATAK en jeu). */
+    public function crMarkRead(Request $request, array $params = []): Response
+    {
+        $link = $this->guardPost($request);
+        if ($link instanceof Response) {
+            return $link;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $report = $this->history()->report($link, $id);
+        if ($report === null || $report['mine'] || $report['routing_id'] < 1) {
+            return Response::json(['ok' => false, 'error' => 'not_found'], 404);
+        }
+        $ok = $report['read'] || $this->history()->markRead($link, $id, (int) $report['routing_id']);
+
+        return Response::json(['ok' => $ok], $ok ? 200 : 503);
+    }
+
+    // ── Radio et messages ────────────────────────────────────────────────────
+
+    public function radio(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+
+        return $this->page('radio', $link, ['channels' => $this->history()->channels($link)]);
+    }
+
+    public function radioChannel(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+        $key = \App\Support\AtakChatChannel::normalizeKey((string) ($params['key'] ?? ''));
+        $label = $key;
+        foreach ($this->history()->channels($link) as $c) {
+            if ($c['key'] === $key) {
+                $label = $c['label'];
+            }
+        }
+
+        return $this->page('radio_thread', $link, [
+            'threadTitle' => $label,
+            'messages' => $this->history()->channelMessages($link, $key),
+            'private' => false,
+        ]);
+    }
+
+    public function radioPrivate(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+
+        return $this->page('radio_thread', $link, [
+            'threadTitle' => 'Messages privés',
+            'messages' => $this->history()->privateMessages($link),
+            'private' => true,
+        ]);
+    }
+
+    public function radioAbsent(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+
+        return $this->page('radio_absent', $link, ['absent' => AtakMobileHistoryService::unavailable()]);
     }
 
     public function debrief(Request $request, array $params = []): Response
@@ -588,10 +715,15 @@ final class AtakMobileAppsController
             'briefs' => 'm.briefs',
             'briefs_denied' => 'm.briefs_denied',
             'controle' => 'm.controle',
+            'cr_list' => 'm.cr_list',
+            'cr_read' => 'm.cr_read',
+            'radio' => 'm.radio',
+            'radio_thread' => 'm.radio_thread',
+            'radio_absent' => 'm.radio_absent',
             default => 'm.home',
         };
         $response = Response::view($template, $data + [
-            'title' => ($app[$view === 'compte_rendu' ? 'compte-rendu' : $view][1] ?? 'Sur mon téléphone') . ' — Athena',
+            'title' => (self::VIEW_TITLES[$view] ?? $app[$view === 'compte_rendu' ? 'compte-rendu' : $view][1] ?? 'Sur mon téléphone') . ' — Athena',
             'mobileLink' => $link,
             'mobileView' => $view,
             'mapConfig' => $map !== null ? self::mapConfig($map) : null,
@@ -631,6 +763,11 @@ final class AtakMobileAppsController
     private function links(): AtakMobileLinkService
     {
         return $this->links ??= new AtakMobileLinkService();
+    }
+
+    private function history(): AtakMobileHistoryService
+    {
+        return $this->history ??= new AtakMobileHistoryService();
     }
 
     private function atak(): AtakDataRepository
