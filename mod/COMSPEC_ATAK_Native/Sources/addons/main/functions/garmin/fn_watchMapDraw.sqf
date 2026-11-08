@@ -24,7 +24,7 @@ private _clear = "#(argb,8,8,3)color(0,0,0,0)";
 private _font = "PuristaMedium";
 if (!isNil "COMSPEC_ATAK_FontSet" && {COMSPEC_ATAK_FontSet isEqualType []}) then { _font = COMSPEC_ATAK_FontSet param [1, _font]; };
 private _lbl = ((uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap]) getOrDefault ["zoom", 0]) <= 1;
-private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
+private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) in ["NATO", "MILSTD"];
 
 private _me = [[] call comspec_atak_native_fnc_gpsPos] call _flat;
 if (_me isNotEqualTo []) then {

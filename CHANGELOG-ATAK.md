@@ -38,6 +38,23 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : De vrais symboles militaires sur la carte du téléphone
+- Réglages > Carte, « Icônes des unités » : nouveau choix 2525D. Chaque unité a son vrai symbole OTAN : cadre selon le camp, type (infanterie, mécanisée, blindé, reco, artillerie, santé, génie, drone, hélico...), niveau (équipe, groupe, section, compagnie), poste de commandement et état.
+- Le symbole se déduit de ce que fait vraiment l'unité : son rôle, son véhicule et sa place dans l'ORBAT du site. Sans information, le cadre reste vide plutôt que de deviner.
+- « Mon point GPS » et « Forme des alliés » proposent aussi ces symboles : votre symbole automatique ou celui que vous choisissez.
+EN : Real military symbols on the phone map
+- Settings > Map, "Unit icons": new 2525D choice. Every unit gets its real NATO symbol: frame by side, type (infantry, mechanized, armor, recon, artillery, medical, engineer, drone, helicopter...), echelon (team, squad, platoon, company), command post and status.
+- The symbol comes from what the unit really is: its role, its vehicle and its place in the site ORBAT. With no information, the frame stays empty instead of guessing.
+- "My GPS point" and "Ally shape" offer these symbols too: your automatic symbol or the one you pick.
+
+### Détail technique
+- `tools/gen_milstd.py` : 189 textures 128 px DXT5 (ImageToPAA, ancien PAA supprimé avant conversion, en-tête DXT5 vérifié) dans `items/data/milstd` (+4,5 Mo dans items.pbo, main.pbo inchangé). Couches blanches colorées par `drawIcon` (thèmes clair, sombre, nuit sans texture en plus).
+- `fn_milSym` (association, règle dans `docs/ATAK_SYMBOLES_MILSTD.md`, code 2525D pour le site), `fn_milDraw` (3 à 7 `drawIcon` par symbole, couches gardées par descripteur et thème). `fn_mapOnDraw` : mode `MILSTD`, formes `MS` / `MS:<pictogramme>` (moi) et `MILSTD` (alliés).
+- ORBAT du site (`/api/atak/community-orbat`) : `function` et `hq` par unité ; `fn_bftOrbat` garde échelon, fonction, QG, parent et le type de poste des titulaires.
 ## À venir : bouton de déverrouillage et titres des apps (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

@@ -253,6 +253,9 @@ final class AtakCommunityOrbatService
             'name' => self::text($node['label'] ?? ''),
             'code' => $anonymizedUnit ? '' : self::text($node['unitCode'] ?? ''),
             'echelon' => $anonymizedUnit ? '' : self::text($node['echelon'] ?? ''),
+            // Symbole MIL-STD de l'unité (fonction du site, hampe de QG) : repris par le téléphone pour ses titulaires.
+            'function' => $anonymizedUnit ? '' : self::text($node['symbolFunction'] ?? ''),
+            'hq' => !$anonymizedUnit && strlen((string) ($node['sidc'] ?? '')) === 15 && ((string) $node['sidc'])[10] === 'A',
             'restricted' => $redacted,
             'posts' => $posts,
             'members' => $members,

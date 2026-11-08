@@ -439,7 +439,7 @@ private _addMember = {
     private _f = _e getOrDefault ["freshness", "LIVE"];
     private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
     ([_e] call comspec_atak_native_fnc_symbology) params ["_icon", "_color"];
-    if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO") then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
+    if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) in ["NATO", "MILSTD"]) then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
     // État médical masqué (Réglages > Réalisme, fn_medShow) : seul le décès compte.
     (["state", _e] call comspec_atak_native_fnc_unitCard) params ["_sc", "_sLbl", "", "_sRgba"];
     private _dead = _sc >= 2;
