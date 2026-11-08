@@ -43,6 +43,63 @@ class SseEditorItemRepository
     }
 
     /**
+     * Liste de l'écran du Bureau SSE, les plus récents d'abord, avec le nom de l'auteur.
+     *
+     * @param array{type?: string, state?: string, q?: string} $filters
+     * @return list<array<string, mixed>>
+     */
+    public function search(int $tenantId, array $filters, int $offset, int $limit): array
+    {
+        [$where, $params] = self::searchWhere($tenantId, $filters);
+
+        return array_values($this->db->fetchAll(
+            'SELECT i.*, u.display_name AS author_name FROM sse_editor_items i
+             LEFT JOIN users u ON u.id = i.author_user_id
+             WHERE ' . $where . ' ORDER BY i.updated_at DESC, i.id DESC LIMIT ' . max(1, $limit) . ' OFFSET ' . max(0, $offset),
+            $params
+        ));
+    }
+
+    /** @param array{type?: string, state?: string, q?: string} $filters */
+    public function searchCount(int $tenantId, array $filters): int
+    {
+        [$where, $params] = self::searchWhere($tenantId, $filters);
+        $row = $this->db->fetchOne('SELECT COUNT(*) AS n FROM sse_editor_items i WHERE ' . $where, $params);
+
+        return (int) ($row['n'] ?? 0);
+    }
+
+    /**
+     * @param array{type?: string, state?: string, q?: string} $filters
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private static function searchWhere(int $tenantId, array $filters): array
+    {
+        $where = ['i.tenant_id = :t'];
+        $params = ['t' => $tenantId];
+        if (($filters['type'] ?? '') !== '') {
+            $where[] = 'i.item_type = :type';
+            $params['type'] = $filters['type'];
+        }
+        if (($filters['state'] ?? '') !== '') {
+            $where[] = 'i.state = :state';
+            $params['state'] = $filters['state'];
+        }
+        if (($filters['q'] ?? '') !== '') {
+            // « ! » : même sens en MySQL, MariaDB et sqlite, contrairement à la barre oblique inverse.
+            $like = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], (string) $filters['q']) . '%';
+            $parts = [];
+            foreach (['title', 'body', 'op_label', 'link_label', 'found_by'] as $n => $column) {
+                $parts[] = 'i.' . $column . ' LIKE :q' . $n . " ESCAPE '!'";
+                $params['q' . $n] = $like;
+            }
+            $where[] = '(' . implode(' OR ', $parts) . ')';
+        }
+
+        return [implode(' AND ', $where), $params];
+    }
+
+    /**
      * @param array<string, mixed> $values colonnes modifiables
      */
     public function save(int $tenantId, string $uid, array $values): int

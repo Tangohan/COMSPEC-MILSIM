@@ -32,7 +32,14 @@ final class SseEditorLibraryService
     private const HISTORY_ROWS = 15;
 
     private const TYPES = ['intel', 'identity', 'paper', 'case', 'kit'];
-    private const STATES = ['Brouillon', 'Modèle', 'Placé en mission', 'Archivé'];
+    public const STATES = ['Brouillon', 'Modèle', 'Placé en mission', 'Archivé'];
+
+    /** Libellés de l'écran du Bureau SSE : mêmes valeurs et même ordre que les listes du mod (fn_editor.sqf). */
+    public const TYPE_LABELS = ['intel' => 'Renseignement', 'identity' => 'Identité', 'paper' => 'Papier', 'kit' => 'Kit', 'case' => 'Dossier'];
+    private const MARKINGS = ['NON PROTÉGÉ', 'DIFFUSION RESTREINTE', 'CONFIDENTIEL'];
+    private const PAPERS = ['Carte d’identité', 'Passeport', 'Permis de conduire', 'Carte militaire'];
+    private const NATURES = ['Vraie', 'De couverture', 'Faux'];
+    private const DELIVERIES = ['À ramasser', 'À trouver en fouille', 'Envoyé au téléphone'];
 
     /** Droits d'un compte précis, du plus haut au plus bas : mêmes règles que SseClearanceService::maxLevel. */
     private const PERMS_EXPLICIT_OK = ['atak.sse.clearance.tres_restreint', 'atak.sse.clearance.confidentiel'];
@@ -197,6 +204,56 @@ final class SseEditorLibraryService
         }
 
         return ['id' => (int) $existing['id'], 'ref' => $this->items->markFound($tenantId, $uid, $by, $when) ? 'found' : 'known'];
+    }
+
+    /**
+     * Ligne de la base mise en forme pour l'écran du Bureau SSE. Un papier n'a pas de classification : le mod lui donne un
+     * type de papier à la place. La nature ne concerne que identité, papier et kit ; un dossier n'est pas remis aux joueurs.
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    public static function forScreen(array $row): array
+    {
+        $type = (string) ($row['item_type'] ?? '');
+        $history = json_decode((string) ($row['history_json'] ?? ''), true);
+        $lines = [];
+        foreach (is_array($history) ? $history : [] as $h) {
+            if (is_array($h)) {
+                $lines[] = ['what' => self::text($h[0] ?? '', 120), 'who' => self::text($h[1] ?? '', 80), 'when' => self::text($h[2] ?? '', 32)];
+            }
+        }
+
+        return [
+            'id' => (int) ($row['id'] ?? 0),
+            'uid' => (string) ($row['item_uid'] ?? ''),
+            'type_label' => self::TYPE_LABELS[$type] ?? $type,
+            'title' => (string) ($row['title'] ?? ''),
+            'body' => (string) ($row['body'] ?? ''),
+            'marking_title' => $type === 'paper' ? 'Type de papier' : 'Marquage',
+            'marking' => $type === 'paper'
+                ? (self::PAPERS[(int) ($row['paper'] ?? 0)] ?? self::PAPERS[0])
+                : (self::MARKINGS[(int) ($row['marking'] ?? 0)] ?? self::MARKINGS[0]),
+            'nature' => in_array($type, ['identity', 'paper', 'kit'], true) ? (self::NATURES[(int) ($row['nature'] ?? 0)] ?? self::NATURES[0]) : '',
+            'delivery' => $type !== 'case' ? (self::DELIVERIES[(int) ($row['delivery'] ?? 0)] ?? self::DELIVERIES[0]) : '',
+            'state' => (string) ($row['state'] ?? ''),
+            'op' => (string) ($row['op_label'] ?? ''),
+            'link' => (string) ($row['link_label'] ?? ''),
+            'version' => (int) ($row['version'] ?? 1),
+            'updated' => self::utc($row['updated_at'] ?? null),
+            'author' => trim((string) ($row['author_name'] ?? '')),
+            'found_by' => (string) ($row['found_by'] ?? ''),
+            'found_when' => (string) ($row['found_when'] ?? ''),
+            // Le mod ajoute en fin de liste et affiche le plus récent d'abord.
+            'history' => array_reverse($lines),
+        ];
+    }
+
+    private static function utc(mixed $value): string
+    {
+        $time = is_string($value) && $value !== '' ? strtotime($value . ' UTC') : false;
+
+        return $time === false ? '' : gmdate('d/m/Y H:i', $time) . 'Z';
     }
 
     /**

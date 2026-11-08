@@ -17,7 +17,7 @@ final class SsePortalNav
     /**
      * @return list<array{id: string, label: string, items: list<array{id: string, label: string, hint: string, path: string, icon: string, external?: bool, aliases?: list<string>, keywords?: string}>}>
      */
-    public static function sections(bool $canManage, bool $canGrant, bool $isGuest = false, bool $canMemberPapers = false): array
+    public static function sections(bool $canManage, bool $canGrant, bool $isGuest = false, bool $canMemberPapers = false, bool $canEditorLibrary = false): array
     {
         $sections = [
             ['id' => 'pilotage', 'label' => 'Pilotage', 'items' => [
@@ -76,6 +76,9 @@ final class SsePortalNav
                 ['id' => 'dev', 'label' => 'Modèles de mission', 'hint' => 'Créer et emporter des modèles pour Arma.', 'path' => 'atak/sse/dev', 'icon' => 'prepare'],
             ]],
         ];
+        if ($canEditorLibrary) {
+            $sections[(int) array_search('preparation', array_column($sections, 'id'), true)]['items'][] = ['id' => 'editeur', 'label' => 'Bibliothèque de l’éditeur', 'hint' => 'Contenus de l’éditeur SSE du jeu, en lecture seule.', 'path' => 'atak/sse/editeur', 'icon' => 'library', 'keywords' => 'editeur mod renseignements identites papiers kits dossiers contenus'];
+        }
         if ($canManage) {
             $sections[(int) array_search('preparation', array_column($sections, 'id'), true)]['items'][] = ['id' => 'maitre-jeu', 'label' => 'Maître du jeu', 'hint' => 'Identités, listes et histoires lues par le terminal SEEK.', 'path' => 'atak/sse/maitre-jeu', 'icon' => 'dice', 'keywords' => 'zeus seek'];
         }
