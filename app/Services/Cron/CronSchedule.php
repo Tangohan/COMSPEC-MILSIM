@@ -43,6 +43,8 @@ final class CronSchedule
         'request_telemetry_purge' => 1440,
         // Regroupement des mesures de charge et signaux du mod, état de charge, purge (le trafic web le lance déjà toutes les 30 s).
         'platform_watch' => 5,
+        // Photos Discord : une série se ferme après 25 s sans nouvelle photo ; passage chaque minute.
+        'discord_photo_queue' => 1,
         'sse_analytical_nightly' => 1440,
         'sse_analyst_digest' => 1440,
         'member_integration_daily' => 1440,

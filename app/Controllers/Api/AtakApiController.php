@@ -13363,6 +13363,13 @@ class AtakApiController
             ];
             // Cliché confidentiel : message, lien de lecture et note seulement, jamais l'image (salon ouvert à
             // toute la communauté) ; cliché SSE : image floutée. Voir DiscordEventRelayService::notifyQuickPicture.
+            // Photos d'un même joueur dans une même mission : un seul message Discord (file + tâche planifiée).
+            // Si la mise en file échoue (base pas encore migrée…), envoi immédiat de cette photo, comme avant.
+            $discordMeta['author_user_id'] = $gameUserId ?? 0;
+            $discordMeta['batch_id'] = mb_substr(trim((string) ($_POST['batch_id'] ?? $_POST['batchId'] ?? '')), 0, 64);
+            if ((new \App\Services\Integrations\DiscordPhotoQueueService())->enqueue($tenantId, $path, $discordMeta)) {
+                return Response::json($row, 201);
+            }
             register_shutdown_function(static function () use ($tenantId, $path, $discordMeta): void {
                 try {
                     // Réponse rendue au jeu d'abord : l'envoi Discord (photo) ne retarde pas l'accusé d'upload.

@@ -55916,4 +55916,6 @@ return [
     'Votre formule est limitée à %1 offres de recrutement en cours (brouillons compris). Clôturez une offre ou passez à une formule supérieure pour en créer davantage.' => 'Your plan is limited to %1 open recruitment offers (drafts included). Close an offer or upgrade to a higher plan to create more.',
     'Votre formule est limitée à %1 mini-articles. Supprimez un mini-article ou passez à une formule supérieure pour en écrire davantage.' => 'Your plan is limited to %1 mini-articles. Delete one or upgrade to a higher plan to write more.',
     'Votre formule est limitée à %1 modèles de message personnalisés. Supprimez un modèle ou passez à une formule supérieure pour en créer davantage.' => 'Your plan is limited to %1 custom message templates. Delete one or upgrade to a higher plan to create more.',
+    'Discord : photos regroupées en un seul message' => 'Discord: photos grouped into a single message',
+    'Envoie sur Discord les photos prises par un même joueur dans une même mission en un seul message (10 photos au plus). Une photo qui n’a pas pu partir est retentée ; elle reste toujours disponible sur Athena.' => 'Sends the photos taken by the same player in the same mission to Discord as a single message (10 photos at most). A photo that could not be sent is retried; it always stays available on Athena.',
 ];

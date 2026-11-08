@@ -272,6 +272,98 @@ final class DiscordEventRelayService
         }
     }
 
+    /** Vrai si cette photo est du ressort du salon « Quick Picture » (téléphone, tablette, drone). */
+    public static function isQuickPictureDevice(array $meta): bool
+    {
+        $device = strtoupper(trim((string) ($meta['device_type'] ?? '')));
+
+        return $device === '' || in_array($device, ['CTAB', 'TABLET', 'PHONE', 'ATAK'], true)
+            || QuickPictureDiscordEmbed::isDronePhoto($meta);
+    }
+
+    /** Le salon Quick Picture de la communauté est-il réglé ? Sinon rien n'est à envoyer. */
+    public function hasQuickPictureChannel(int $tenantId): bool
+    {
+        return $this->resolveUrl($tenantId, DiscordWebhookCatalog::KEY_QUICK_PICTURE) !== null;
+    }
+
+    /**
+     * Un seul message Discord pour plusieurs photos d'un même joueur dans une même mission (10 au plus) :
+     * le premier embed porte tous les détails, les suivants la photo, la position et la zone.
+     * Confidentiel : sans image ; SSE : image floutée. Rend vrai quand Discord a accepté le message.
+     *
+     * @param list<array{path:string, meta:array<string, mixed>}> $items
+     */
+    public function sendQuickPictureGroup(int $tenantId, array $items): bool
+    {
+        $url = $this->resolveUrl($tenantId, DiscordWebhookCatalog::KEY_QUICK_PICTURE);
+        if ($url === null) {
+            return true;
+        }
+        $items = array_slice(array_values($items), 0, 10);
+        if ($items === []) {
+            return true;
+        }
+        $embeds = [];
+        $files = [];
+        $temps = [];
+        try {
+            $count = count($items);
+            foreach ($items as $i => $item) {
+                $meta = $item['meta'];
+                $path = $item['path'];
+                $mode = QuickPictureDiscordEmbed::mode($meta);
+                $ctx = $this->quickPictureContext($tenantId, $meta);
+                $readUrl = trim((string) ($meta['read_url'] ?? ''));
+                if ($readUrl !== '' && !preg_match('#^https?://#i', $readUrl) && function_exists('url')) {
+                    $readUrl = url(ltrim($readUrl, '/'));
+                }
+                $ctx['read_url'] = preg_match('#^https?://#i', $readUrl) === 1 ? $readUrl : '';
+                $ctx['viewer_url'] = $this->photoViewerUrl($meta, $mode, $ctx['read_url']);
+                $prepared = $mode === QuickPictureDiscordEmbed::MODE_CONFIDENTIAL
+                    ? null
+                    : $this->prepareDiscordPhoto($path, $mode === QuickPictureDiscordEmbed::MODE_SSE);
+                if ($prepared !== null) {
+                    $leaf = 'quick-picture-' . ($i + 1) . '-' . substr(hash('crc32b', $path), 0, 8) . '.jpg';
+                    $files[] = ['path' => $prepared['path'], 'name' => $leaf];
+                    if ($prepared['temp']) {
+                        $temps[] = $prepared['path'];
+                    }
+                    $embed = QuickPictureDiscordEmbed::build($meta, $ctx + ['attachment' => $leaf]);
+                } else {
+                    $embed = QuickPictureDiscordEmbed::build($meta, $ctx + [
+                        'image_url' => $mode === QuickPictureDiscordEmbed::MODE_CLEAR ? $this->publicPhotoUrl($path) : '',
+                    ]);
+                }
+                if ($count > 1) {
+                    $embed['title'] = mb_substr(($i + 1) . '/' . $count . ' · ' . (string) ($embed['title'] ?? ''), 0, 256);
+                    if ($i > 0) {
+                        $embed['fields'] = array_values(array_filter(
+                            is_array($embed['fields'] ?? null) ? $embed['fields'] : [],
+                            static fn (array $f): bool => in_array((string) ($f['name'] ?? ''), ['Position', 'Zone', 'Altitude'], true)
+                        ));
+                        unset($embed['description']);
+                    }
+                }
+                $embeds[] = $embed;
+            }
+            $res = $this->discord->sendEmbedsWithFiles($url, $embeds, $files, 'Athena');
+            if (empty($res['ok'])) {
+                error_log('[discord/quick-picture] envoi groupé refusé : ' . (string) ($res['error'] ?? ''));
+            }
+
+            return !empty($res['ok']);
+        } catch (\Throwable $e) {
+            error_log('[discord/quick-picture] groupé ' . $e->getMessage());
+
+            return false;
+        } finally {
+            foreach ($temps as $t) {
+                @unlink($t);
+            }
+        }
+    }
+
     /**
      * Lien « Ouvrir la photo sur Athena » de l'embed : lecteur d'images du site quand il existe
      * (ReconImageStorage::viewerUrl), sinon la photo elle-même, seulement pour un cliché sans restriction
