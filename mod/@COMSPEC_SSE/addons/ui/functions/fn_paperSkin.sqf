@@ -45,7 +45,8 @@ if (_mode isEqualTo "resolve") exitWith {
     };
     if (_set isEqualTo "" && {_chromeStyle isNotEqualTo "clean"}) exitWith { ["", false] };
 
-    private _text = toLower ((_docs apply { (_x getOrDefault ["title", ""]) + " " + (_x getOrDefault ["summary", ""]) }) joinString " ");
+    // Nature : la première pièce, celle que la feuille présente en tête.
+    private _text = toLower ((_first getOrDefault ["title", ""]) + " " + (_first getOrDefault ["summary", ""]));
     private _has = { params ["_words"]; (_words findIf { (_text find _x) >= 0 }) >= 0 };
     private _kind = switch (true) do {
         case ([["ticket", "reçu", "recu ", "bordereau", "facture", "receipt", "caisse"]] call _has): { "ticket" };
@@ -57,9 +58,8 @@ if (_mode isEqualTo "resolve") exitWith {
     };
     private _code = if (_set in _codes) then { _set } else { call {
         private _ctx = switch (true) do {
-            case (isNull _ent): { "" };
-            case (_ent isKindOf "CAManBase" && {!alive _ent}): { "sale" };
-            case (!(_ent isKindOf "CAManBase") && {(damage _ent) >= 0.9}): { "brule" };
+            case (!isNull _ent && {_ent isKindOf "CAManBase"} && {!alive _ent}): { "sale" };
+            case (!isNull _ent && {!(_ent isKindOf "CAManBase")} && {(damage _ent) >= 0.9}): { "brule" };
             case ((_docs findIf { _x getOrDefault ["noise", false] }) >= 0 && {(_docs findIf { !(_x getOrDefault ["noise", false]) }) < 0}): { "froisse" };
             case ([["document usé", "illisible", "ancien", "archive"]] call _has): { "jauni" };
             default { "" };
