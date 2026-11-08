@@ -62,6 +62,7 @@ FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 d
 - Bloc-notes refait, réponses des IA en texte au-dessus de leur tête (désactivable), nouveaux motifs de fêlures désactivables, menu ORBAT dans le BFT, et plus rien dans OneDrive.
 - Téléphones personnels : chaque téléphone a un propriétaire. Si vous ramassez celui d'un autre, vous choisissez à l'ouverture lequel lire, et vous ne voyez que ce qu'il contient. Code de 4 à 8 chiffres et indice dans Réglages, essais limités ; un code oublié se retire (CODE OUBLIÉ, admin ou Zeus).
 - Nouvelle app Communauté : les consignes reçues d'Athena, les ordres, des tips, et le kit obligatoire : le téléphone vous dit ce qui manque dans votre équipement. Un admin ou un Zeus peut noter pour la partie.
+- Traces civiles des HVT, si la mission ou le Zeus les active : Tinder › DOSSIERS indique quand et dans quelle zone d'un kilomètre une cible était active dans une app, avec du retard. Jamais sa position du moment.
 EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
 - The C2 app is removed: find the group, callsign and units in the Group and BFT apps, and orders in Tasks.
@@ -85,7 +86,10 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 
 - New Community app: instructions received from Athena, orders, tips, and the mandatory kit: the phone tells you what is missing from your gear. An admin or Zeus can post notes for the game.
 
+- HVT civilian traces, if the mission or Zeus enables them: Tinder › FILES shows when and in which one-kilometre area a target was active in an app, with a delay. Never its current position.
+
 ### Détail technique
+- **Traces civiles (PR #1395, lot 3) :** `fn_hvtTrace`. Le serveur note la maille de 1 km d'une HVT puis publie après délai (`COMSPEC_ATAK_HvtTraces`), un contrôle par minute. Désactivé par défaut : `comspec_atak_native_hvt_trace`, `COMSPEC_ATAK_HvtTraceOn`, app Admin. `hvt_trace_role` réserve au renseignement. Avis local dans Recherchés (`COMSPEC_ATAK_WantedLocal`).
 - **App Communauté (PR #1395, lot 2) :** `fn_pageTenant`, `fn_tenantAction`. Consignes : champ `guide` déjà reçu par `GetExperience`. Notes de partie : `COMSPEC_ATAK_TenantNotes`, écrites par la mission ou par admin et Zeus (`fn_adminServer` « tenantNote »). Kit : `COMSPEC_ATAK_RequiredKit` ou réglage `comspec_atak_native_kit_required`, comparé toutes les 30 s. Besoin côté site : `docs/technical/ICD-ATHENA-ATAK.md`, section « Besoin : app Communauté ».
 - **Téléphones personnels (PR #1395, lot 1) :** `fn_phoneOwn` (fiche `COMSPEC_ATAK_Phones` sur le contenant, déplacée par Take et Put, type et bornes vérifiés), `fn_phoneServer` (code, essais, données sur le serveur), `fn_phonePad`, `fn_pagePhones` (seule page permise avec un téléphone d'autrui à l'écran, aucun appel à Athena). `fn_hasDevice` ne compte plus le téléphone d'un autre. Réglages `comspec_atak_native_phone_owner`, `pin_attempts`, `pin_block`. Mécanique de jeu, pas une sécurité. Rien n'a tourné en jeu.
 - **Retours du propriétaire (lot final, à vérifier en jeu)** :
