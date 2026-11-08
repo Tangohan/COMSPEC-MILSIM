@@ -40,7 +40,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ## Centre Zeus, liste des modules rangée, fenêtre de configuration des objets (ATAK natif, version à attribuer)
 
-### Résumé joueur
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : Le Zeus a un Centre Zeus et une liste de modules enfin lisible
 - Un bouton CENTRE ZEUS montre l'état des téléphones de tous les joueurs : batterie, liaison Athena, réseau, haut-parleur, drones et alertes, avec des filtres et des étiquettes au-dessus des joueurs.
@@ -56,7 +56,7 @@ EN : Zeus gets a Zeus Centre and a readable module list
 - Modules : classes inchangées ; catégories COMSPEC_Cat_Atak, COMSPEC_Cat_Sse, COMSPEC_Cat_Identite, COMSPEC_Cat_Mission. COMSPEC_Module_AtakRelay masqué dans Eden (scope 1). Icônes : tools/gen_module_icons.py.
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
-### Résumé joueur
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : App Explosifs refaite et nouveau déclencheur réseau
 - Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.
