@@ -1054,7 +1054,7 @@ switch (_act) do {
             ["banBg", -0.8, -0.66, 1.6, 0.46, [0.13, 0.14, 0.15, 0.97]] call _box;
             ["ban", -0.74, -0.62, 1.48, 0.4, 0.105] call _rich;
             ["frame", "COMSPEC_RscWatchPic", [_x0, _y0, _ww, _size]] call _mk;
-            (_n get "frame") ctrlSetText (((_skin call _tex)) call comspec_atak_native_fnc_tr);
+            (_n get "frame") ctrlSetText (_skin call _tex);
             (_n get "frame") ctrlSetTextColor [1, 1, 1, 1];
             (_n get "frame") ctrlCommit 0;
             { (_n get _x) ctrlShow false; } forEach ["banBg", "ban"];
