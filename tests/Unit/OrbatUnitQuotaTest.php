@@ -21,7 +21,7 @@ final class OrbatUnitQuotaTest extends TestCase
     {
         $plans = Catalog::defaultsByPlanSlug();
 
-        self::assertSame([5, 20, 60, 0], array_map(
+        self::assertSame([10, 20, 60, 0], array_map(
             static fn (string $slug): int => (int) $plans[$slug]['max_orbat_units'],
             ['free', 'standard', 'pro', 'pro_plus']
         ));

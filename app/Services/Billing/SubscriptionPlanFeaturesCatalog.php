@@ -260,7 +260,7 @@ final class SubscriptionPlanFeaturesCatalog
                 'qualification_catalog_bulk_import' => false,
                 'invite_link_custom_slug' => false,
                 'max_members' => 10,
-                'max_orbat_units' => 5,
+                'max_orbat_units' => 10,
                 'max_training_courses' => 5,
                 'max_catalog_qualification_imports' => 10,
                 'max_real_issuer_imports' => 5,
