@@ -36,7 +36,7 @@ final class AtakAntennaKitTest extends TestCase
     {
         $kit = self::read(self::MAIN . 'functions/network/fn_antennaKit.sqf');
         self::assertStringContainsString('["register", [_o,', $kit);
-        self::assertSame(3, substr_count($kit, '["remove", ['), 'Repli, destruction et suppression retirent le relais.');
+        self::assertSame(4, substr_count($kit, '["remove", ['), 'Repli, destruction, suppression et bâtiment perdu retirent le relais.');
         self::assertStringContainsString('"Killed"', $kit);
         self::assertStringContainsString('"Deleted"', $kit);
         self::assertStringNotContainsString('while {', $kit);
@@ -44,6 +44,39 @@ final class AtakAntennaKitTest extends TestCase
         $conv = self::read(self::MAIN . 'functions/network/fn_relayConvert.sqf');
         self::assertStringContainsString('case "register":', $conv);
         self::assertStringContainsString('case "remove":', $conv);
+    }
+
+    public function testInventaireEtAucunEchecMuet(): void
+    {
+        $kit = self::read(self::MAIN . 'functions/network/fn_antennaKit.sqf');
+        self::assertStringContainsString('CBA_fnc_addItemContextMenuOption', $kit);
+        self::assertStringContainsString('ace_common_fnc_displayTextStructured', $kit);
+        self::assertStringContainsString('case "interrupted":', $kit);
+        self::assertStringContainsString('["clientInit"] call comspec_atak_native_fnc_antennaKit;', self::read(self::MAIN . 'XEH_postInitClient.sqf'));
+    }
+
+    public function testMiniAntenneSuitLeBatiment(): void
+    {
+        $cfg = self::read(self::MAIN . 'config.cpp');
+        self::assertStringContainsString('class COMSPEC_ATAK_BuildingAntennaKit: ItemCore', $cfg);
+        self::assertStringContainsString('class COMSPEC_ATAK_DeployedAntenna_Mini: COMSPEC_ATAK_DeployedAntenna_Base', $cfg);
+        self::assertStringContainsString('["hosts"] call comspec_atak_native_fnc_antennaKit;', self::read(self::MAIN . 'functions/network/fn_relayConvert.sqf'));
+        self::assertFileExists(dirname(__DIR__, 2) . '/' . self::MAIN . 'data/item_antkit_mini.paa');
+    }
+
+    public function testToursSansCablesCourbesNiFilet(): void
+    {
+        $data = dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/towers/data/';
+        foreach (['30', '40', '50', 'm12', 'm20'] as $tower) {
+            foreach (['', '_ruin'] as $suffix) {
+                self::assertStringNotContainsString('tower_net_ca', (string) file_get_contents("{$data}relay_tower_{$tower}{$suffix}.p3d"));
+            }
+        }
+        self::assertFileDoesNotExist($data . 'tower_net_ca.paa');
+        $gen = self::read('mod/COMSPEC_ATAK_Native/tools/model_relay_towers.py');
+        foreach (['def sweep(', 'def spline(', 'def camo_net(', 'jumper(', 'bundle('] as $gone) {
+            self::assertStringNotContainsString($gone, $gen);
+        }
     }
 
     public function testReglagesDeclares(): void
