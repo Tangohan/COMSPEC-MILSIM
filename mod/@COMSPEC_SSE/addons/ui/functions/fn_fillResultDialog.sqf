@@ -167,8 +167,9 @@ if (_isDocs && {(count _docs) > 0}) then {
         _muted, _ink, [_uid, "Non identifié" call comspec_sse_fnc_tr] select (_uid isEqualTo "?")
     ];
     if (_isDigital) then {
-        private _ent = missionNamespace getVariable ["comspec_sse_lastResultEntity", objNull];
-        private _enc = !isNull _ent && {_ent getVariable ["comspec_sse_encrypted", false]};
+        // Le relevé le dit (fn_revealDigitalFog) : « chiffré », sans « déchiffré ».
+        private _low = toLower (_lines joinString " ");
+        private _enc = (_low find "chiffr") >= 0 && {(_low find "déchiffr") < 0};
         _html = _html + format ["<t color='%1' size='0.8'>État</t><br/><t color='%2' size='0.95'>%3</t><br/><br/>", _muted, ["#e6efe9", "#f2c94c"] select _enc,
             (["Lisible", "Chiffré : à déchiffrer"] select _enc) call comspec_sse_fnc_tr];
     };

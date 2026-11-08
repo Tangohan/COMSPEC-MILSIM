@@ -635,3 +635,147 @@ trouvé par un joueur	found by a player
 Gardé dans la bibliothèque : à placer en mission, depuis le module Zeus.	Kept in the library: to be placed during the mission, from the Zeus module.
 Fouille : sélectionnez d'abord une personne ou un véhicule.	Search: first select a person or a vehicle.
 Placé dans la mission préparée.	Placed in the prepared mission.
+Papiers de %1 : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité.	%1's papers: %2. ACE menu › Identity check › Check identity.
+Vos papiers, s'il vous plaît.	Your papers, please.
+IA sans papiers (%)	AI without papers (%)
+Part des IA qui n'ont vraiment aucun papier sur elles et l'affirment au contrôle. 0 : toute IA a au moins une identité générée.	Share of AI that really carry no papers and say so when checked. 0: every AI has at least a generated identity.
+Photo d'identité en direct	Live ID photo
+Portrait de la personne rendu en direct sur les papiers. Décoché : portrait de repli, pour les postes modestes ou un PiP coupé.	Portrait of the person rendered live on the papers. Unticked: fallback portrait, for modest PCs or with PiP off.
+Configurer une IA à sa pose (Zeus)	Configure an AI when placed (Zeus)
+Ouvre la fenêtre de configuration (éditeur SSE, IA de la zone) dès qu'un Zeus pose une IA.	Opens the configuration window (SSE editor, AI in the area) as soon as a Zeus places an AI.
+Votre document	Your document
+Document de jeu	Game document
+SCANNER (ATAK)	SCAN (ATAK)
+Résultat	Result
+Conseil	Advice
+Niveaux précédents	Previous levels
+Contrôle	Check
+Signaler	Report
+IA de la zone	AI in the area
+IA DE LA ZONE	AI IN THE AREA
+SSE / IA DE LA ZONE	SSE / AI IN THE AREA
+ENREGISTRER	SAVE
+DÉTECTER	DETECT
+AUTOUR	AROUND
+SÉLECTION ZEUS	ZEUS SELECTION
+SES PAPIERS	THEIR PAPERS
+OUVRIR	OPEN
+MARQUER VRAI	MARK GENUINE
+MARQUER FAUX	MARK FAKE
+AJOUTER CE PAPIER	ADD THIS PAPER
+GARDÉS POUR LES PROCHAINES PARTIES	KEPT FOR THE NEXT GAMES
+RETIRER	REMOVE
+RECHARGER	RELOAD
+CONFIGURATION	SETTINGS
+Profil Athena	Athena profile
+Papiers	Papers
+Nature	Nature
+Comportement au contrôle	Behaviour when checked
+Camp	Side
+CE QUE VERRA LE JOUEUR	WHAT THE PLAYER WILL SEE
+GARDER POUR LES PROCHAINES PARTIES : NON	KEEP FOR THE NEXT GAMES: NO
+GARDER POUR LES PROCHAINES PARTIES : OUI	KEEP FOR THE NEXT GAMES: YES
+APPLIQUER	APPLY
+À SON GROUPE	TO THEIR GROUP
+À TOUTE LA LISTE	TO THE WHOLE LIST
+Selon son camp	According to side
+Aucun	None
+Carte et permis	Card and licence
+Carte et passeport	Card and passport
+Carte militaire et carte	Military card and card
+Lot de papiers	Set of papers
+Vrais papiers	Genuine papers
+Faux papiers	Fake papers
+Selon le contexte	According to context
+Ment avec aplomb	Lies confidently
+S'enfuit	Runs away
+Devient agressif	Turns aggressive
+Ne pas changer	Do not change
+Civils	Civilians
+Indépendants	Independents
+Générer une identité	Generate an identity
+Générer (aucune liste Athena sur ce poste)	Generate (no Athena list on this PC)
+Appliqué à %1 IA.	Applied to %1 AI.
+IA	AI
+Vrai	Genuine
+Faux	Fake
+Pas encore de papier : décidés à la première demande.	No papers yet: decided at the first request.
+Rien de gardé	Nothing kept
+Papiers du profil	Papers of the profile
+Au contrôle	When checked
+Identité générée à la première demande	Identity generated at the first request
+Il répond au-dessus de sa tête. Un contrôle N3 le reconnaît sur Athena si ses papiers viennent du profil.	They answer above their head. An N3 check recognises them on Athena if their papers come from the profile.
+Détectez puis choisissez d'abord une IA.	First detect, then choose an AI.
+Aucune IA ici : élargissez le rayon, ou sélectionnez-les dans le Zeus.	No AI here: widen the radius, or select them in Zeus.
+Aucune IA sélectionnée dans le Zeus : fermez cette fenêtre, sélectionnez-les, puis rouvrez-la.	No AI selected in Zeus: close this window, select them, then reopen it.
+Aucun profil Athena reçu sur ce serveur : créez-en dans le Bureau SSE (Profils IA), ou générez.	No Athena profile received on this server: create some in the SSE Office (AI profiles), or generate.
+Une IA sans nom de variable (posée au Zeus) n'existe plus à la partie suivante : seule une IA de la mission, retrouvée par son nom de variable ou sa classe à moins de 20 m, garde sa configuration.	An AI without a variable name (placed in Zeus) no longer exists in the next game: only a mission AI, found by its variable name or its class within 20 m, keeps its configuration.
+Enregistrement sur Athena impossible (liaison, ou habilitation Confidentiel) : rien n'est gardé.	Could not save on Athena (link, or Confidential clearance): nothing is kept.
+Enregistré sur Athena.	Saved on Athena.
+Enregistré sur Athena	Saved on Athena
+Brouillon sur ce poste	Draft on this PC
+Publié dans cette partie	Published in this game
+Pas encore enregistré	Not saved yet
+DEVENIR LE DOSSIER ACTIF	BECOME THE ACTIVE CASE
+Donnez d'abord un prénom et un nom.	First give a first and last name.
+Type de papier	Type of paper
+Classification	Classification
+Légende (imprimée sur la fiche de la personne)	Legend (printed on the person's sheet)
+Notes (bibliothèque seulement, non envoyées)	Notes (library only, not sent)
+En fouille	In a search
+Au téléphone	To the phone
+Au sol	On the ground
+Sur quelqu'un	On someone
+Annonce	Announcement
+Posés à l'endroit choisi	Placed at the chosen spot
+Une personne ou un véhicule à cliquer	A person or a vehicle to click
+Message au téléphone, aucun papier	Message to the phone, no papers
+Les papiers sont posés au sol à l'endroit choisi, ou remis à la personne visée.	The papers are placed on the ground at the chosen spot, or given to the targeted person.
+Les papiers sont remis à la personne visée, ou dans le véhicule visé.	The papers are given to the targeted person, or placed in the targeted vehicle.
+Un message au téléphone annonce ces papiers : aucun objet n'est posé.	A message to the phone announces these papers: no object is placed.
+Cliquez une personne ou un véhicule. Échap : annuler.	Click a person or a vehicle. Esc: cancel.
+Exemple : Rapport de source. Choisissez un modèle à gauche de « Partir de ».	Example: Source report. Choose a template next to "Start from".
+Exemple : Alexandros Nikolaidis, résident de Charkia.	Example: Alexandros Nikolaidis, resident of Charkia.
+Exemple : carte d'identité d'Alexandros Nikolaidis.	Example: Alexandros Nikolaidis's identity card.
+Exemple : CIBLE-01, dossier actif de la mission.	Example: TARGET-01, active case of the mission.
+Exemple : Alexandros Nikolaidis, carte et passeport.	Example: Alexandros Nikolaidis, card and passport.
+SUPPORT NUMÉRIQUE	DIGITAL MEDIA
+EXPLOITATION NUMÉRIQUE	DIGITAL EXPLOITATION
+Fichiers et traces trouvés	Files and traces found
+Lecture détaillée du support	Detailed reading of the media
+DÉTAIL	DETAIL
+CONTENU DE L'OBJET	CONTENTS OF THE OBJECT
+Ce qui a été trouvé à l'intérieur	What was found inside
+Observé : 	Observed:
+Extrait : 	Extract:
+Probable : 	Probable:
+Hypothèse : 	Hypothesis:
+à exploiter maintenant	to exploit now
+à collecter	to collect
+à consigner	to record
+peu d'intérêt	low interest
+non évalué	not assessed
+faible	low
+moyen	medium
+élevé	high
+intérêt	interest
+confiance	confidence
+Ordinateur	Computer
+Support de stockage (clé USB, disque, carte mémoire)	Storage media (USB stick, disk, memory card)
+Tablette	Tablet
+Radio	Radio
+Document	Document
+Arme	Weapon
+Contenant	Container
+Véhicule	Vehicle
+Bâtiment	Building
+Objet	Object
+Non identifié	Not identified
+Lisible	Readable
+Chiffré : à déchiffrer	Encrypted: to decrypt
+Fichiers et extraits	Files and extracts
+Exploitation complète : Terminal SSE, onglet DOMEX.	Full exploitation: SSE Terminal, DOMEX tab.
+Éléments gardés non retrouvés : %1.	Kept elements not found: %1.
+Éléments gardés : rechargement demandé à Athena.	Kept elements: reload requested from Athena.
+Configurer une IA	Configure an AI
+Éditeur SSE	SSE editor
