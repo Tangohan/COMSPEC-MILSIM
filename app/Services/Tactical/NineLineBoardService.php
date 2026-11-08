@@ -46,6 +46,7 @@ final class NineLineBoardService
         private ?CasNineLineRepository $repo = null,
         private ?MemberNameService $names = null,
         private ?AirBriefService $briefs = null,
+        private ?AirCrewSpecialtyService $specialties = null,
     ) {
     }
 
@@ -71,11 +72,51 @@ final class NineLineBoardService
         } catch (\Throwable) {
             $recipients = [];
         }
+        $authors = $this->authorSpecs($tenantId, $rows);
         $out = [];
         foreach ($rows as $row) {
             $item = $this->present($row, $userId, $manager);
             $item['recipients'] = $recipients[(int) $row['id']] ?? [];
+            $item['author_check'] = $authors[(int) $row['id']] ?? null;
             $out[] = $item;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Auteur de chaque 9-LINE au regard de son dossier : membre reconnu (compte du site, ou nom envoyé par le jeu) et
+     * qualification ou fonction JTAC détectée. Auteur non reconnu : pas de ligne, la page n'affiche rien.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return array<int, array{linked: bool, spec: ?array<string, mixed>}>
+     */
+    private function authorSpecs(int $tenantId, array $rows): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+        $names = [];
+        foreach ($rows as $row) {
+            if ((int) ($row['author_user_id'] ?? 0) < 1) {
+                $names[] = (string) ($row['author'] ?? '');
+            }
+        }
+        $members = $names !== [] ? $this->membersByGameName($tenantId, $names) : [];
+        $byRow = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['author_user_id'] ?? 0);
+            if ($uid < 1) {
+                $uid = (int) ($members[self::key((string) ($row['author'] ?? ''))]['id'] ?? 0);
+            }
+            if ($uid > 0) {
+                $byRow[(int) $row['id']] = $uid;
+            }
+        }
+        $specs = $this->specialties()->forMembers($tenantId, array_values($byRow));
+        $out = [];
+        foreach ($byRow as $rowId => $uid) {
+            $out[$rowId] = ['linked' => true, 'spec' => $specs[$uid][AirCrewSpecialtyService::KIND_JTAC] ?? null];
         }
 
         return $out;
@@ -337,6 +378,11 @@ final class NineLineBoardService
         } catch (\Throwable) {
             $overrides = [];
         }
+        $userIds = [];
+        foreach ($members as $identity) {
+            $userIds[] = (int) ($identity['id'] ?? 0);
+        }
+        $specs = $userIds !== [] ? $this->specialties()->forMembers($tenantId, $userIds) : [];
         $out = [];
         foreach ($rows as $i => $r) {
             $updated = strtotime((string) ($r['updated_at'] ?? '')) ?: 0;
@@ -344,7 +390,7 @@ final class NineLineBoardService
             $crew = [];
             $pilot = null;
             foreach ($crewByRow[$i] as $c) {
-                $person = $this->person((string) ($c['name'] ?? ''), $members);
+                $person = $this->person((string) ($c['name'] ?? ''), $members, $specs);
                 $person['seat'] = (string) ($c['seat'] ?? 'cargo');
                 $person['role'] = (string) ($c['role'] ?? '');
                 $person['player'] = !empty($c['player']);
@@ -355,7 +401,7 @@ final class NineLineBoardService
             }
             $pilotName = trim((string) ($r['pilot'] ?? ''));
             if ($pilot === null && $pilotName !== '' && strcasecmp($pilotName, 'Pilote') !== 0) {
-                $pilot = $this->person($pilotName, $members) + ['seat' => 'driver', 'role' => '', 'player' => false];
+                $pilot = $this->person($pilotName, $members, $specs) + ['seat' => 'driver', 'role' => '', 'player' => false];
             }
             $x = $r['pos_x'] !== null ? (float) $r['pos_x'] : null;
             $y = $r['pos_y'] !== null ? (float) $r['pos_y'] : null;
@@ -405,18 +451,22 @@ final class NineLineBoardService
     }
 
     /**
+     * Qui est à bord, et ce que dit son dossier : spec_pilot et spec_jtac (null : rien au dossier).
+     *
      * @param array<string, array<string, mixed>> $members
-     * @return array{game_name: string, label: string, name: string, callsign: string, linked: bool}
+     * @param array<int, array<string, array<string, mixed>>> $specs
+     * @return array{game_name: string, label: string, name: string, callsign: string, linked: bool, spec_pilot: ?array<string, mixed>, spec_jtac: ?array<string, mixed>}
      */
-    private function person(string $gameName, array $members): array
+    private function person(string $gameName, array $members, array $specs = []): array
     {
         $gameName = trim($gameName);
         $identity = $members[self::key($gameName)] ?? null;
         if ($identity === null) {
-            return ['game_name' => $gameName, 'label' => $gameName, 'name' => '', 'callsign' => '', 'linked' => false];
+            return ['game_name' => $gameName, 'label' => $gameName, 'name' => '', 'callsign' => '', 'linked' => false, 'spec_pilot' => null, 'spec_jtac' => null];
         }
         $label = MemberName::c2($identity);
         $short = MemberName::short($identity);
+        $mine = $specs[(int) ($identity['id'] ?? 0)] ?? [];
 
         return [
             'game_name' => $gameName,
@@ -424,6 +474,8 @@ final class NineLineBoardService
             'name' => $short !== $label ? $short : '',
             'callsign' => MemberName::callsign($identity),
             'linked' => true,
+            'spec_pilot' => $mine[AirCrewSpecialtyService::KIND_PILOT] ?? null,
+            'spec_jtac' => $mine[AirCrewSpecialtyService::KIND_JTAC] ?? null,
         ];
     }
 
@@ -510,6 +562,11 @@ final class NineLineBoardService
         }
 
         return $this->hasAuthorUser;
+    }
+
+    private function specialties(): AirCrewSpecialtyService
+    {
+        return $this->specialties ??= new AirCrewSpecialtyService($this->db());
     }
 
     private function briefs(): AirBriefService

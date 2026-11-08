@@ -87,4 +87,35 @@
   }
 
   document.querySelectorAll('[data-imm-list]').forEach(bindList);
+
+  // Une ancre vers une section repliée l'ouvre (liens des menus, recherche du back-office).
+  function openFromHash() {
+    var id = window.location.hash ? window.location.hash.slice(1) : '';
+    var el = id ? document.getElementById(id) : null;
+    if (el && el.tagName === 'DETAILS') {
+      el.open = true;
+      el.scrollIntoView({ block: 'start' });
+    }
+  }
+  window.addEventListener('hashchange', openFromHash);
+  openFromHash();
+
+  // « Quand un dossier est prêt » : la phrase suit les réglages, avant même d'enregistrer.
+  var sentence = document.querySelector('[data-imm-ready-sentence]');
+  var immForm = document.getElementById('bo-imm-form');
+  if (sentence && immForm) {
+    var syncReady = function () {
+      var get = function (n) { return immForm.elements[n]; };
+      var bits = [
+        'la complétude du dossier atteint ' + (get('rp_eligibility_min_completeness').value || 0) + ' %',
+        'la disponibilité atteint ' + (get('rp_eligibility_min_readiness').value || 0) + ' %'
+      ];
+      if (get('rp_eligibility_require_unit').checked) bits.push('une unité est renseignée');
+      if (get('rp_eligibility_require_callsign').checked) bits.push('un indicatif radio est renseigné');
+      if (get('rp_eligibility_require_tutor').checked) bits.push('un tuteur est désigné');
+      sentence.textContent = 'Un dossier est marqué prêt lorsque ' + bits.join(', ') + '.';
+    };
+    immForm.addEventListener('input', syncReady);
+    immForm.addEventListener('change', syncReady);
+  }
 })();

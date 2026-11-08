@@ -20,6 +20,7 @@ $navOpsImageUrl = $navOpsImageUrl ?? null;
 $navResImageUrl = $navResImageUrl ?? null;
 $portalNav = is_array($c['portal_nav'] ?? null) ? $c['portal_nav'] : [];
 $navAccents = \App\Services\Community\TenantCommunityProfileService::allowedNavAccents();
+$navAccentLabels = ['sky' => 'Bleu ciel', 'amber' => 'Ambre', 'emerald' => 'Émeraude', 'violet' => 'Violet', 'rose' => 'Rose', 'slate' => 'Ardoise'];
 $navStyles = \App\Services\Community\TenantCommunityProfileService::allowedNavSubmenuStyles();
 $navOps = is_array($portalNav['operations'] ?? null) ? $portalNav['operations'] : [];
 $navRes = is_array($portalNav['resources'] ?? null) ? $portalNav['resources'] : [];
@@ -415,17 +416,17 @@ $cpNum = 0;
                         <div class="bcs-field">
                             <label class="bcs-label" for="f-layout">Modèle</label>
                             <p class="bcs-help"><em>Vitrine</em> : pleine page, grandes images, idéal pour recruter. <em>Classique</em> : carte compacte.</p>
-                            <select id="f-layout" name="public_page_layout">
-                                <option value="legacy" <?= $publicLayoutSel === 'legacy' ? 'selected' : '' ?>>Classique (carte compacte)</option>
-                                <option value="showcase" <?= $publicLayoutSel === 'showcase' ? 'selected' : '' ?>>Vitrine (pleine page)</option>
+                            <select id="f-layout" name="public_page_layout" data-bcs-visual="layout">
+                                <option value="legacy" data-hint="Une carte compacte, sans grande image." <?= $publicLayoutSel === 'legacy' ? 'selected' : '' ?>>Classique (carte compacte)</option>
+                                <option value="showcase" data-hint="Pleine page et grandes images : idéal pour recruter." <?= $publicLayoutSel === 'showcase' ? 'selected' : '' ?>>Vitrine (pleine page)</option>
                             </select>
                         </div>
                         <div class="bcs-field">
                             <label class="bcs-label" for="f-audience">Type de fiche</label>
                             <p class="bcs-help">Choisissez « Plateforme » uniquement pour un portail ou un outil : le recrutement y est moins mis en avant.</p>
-                            <select id="f-audience" name="public_audience">
-                                <option value="unit" <?= $publicAudienceSel === 'unit' ? 'selected' : '' ?>>Unité / communauté de jeu</option>
-                                <option value="platform" <?= $publicAudienceSel === 'platform' ? 'selected' : '' ?>>Plateforme / outil</option>
+                            <select id="f-audience" name="public_audience" data-bcs-visual="text">
+                                <option value="unit" data-hint="Le recrutement est mis en avant." <?= $publicAudienceSel === 'unit' ? 'selected' : '' ?>>Unité / communauté de jeu</option>
+                                <option value="platform" data-hint="Portail ou outil : le recrutement passe au second plan." <?= $publicAudienceSel === 'platform' ? 'selected' : '' ?>>Plateforme / outil</option>
                             </select>
                         </div>
                     </div>
@@ -510,7 +511,7 @@ $cpNum = 0;
                                 true
                             ) ? $hlStyleRaw : 'info';
                             ?>
-                            <select id="f-hl-style" name="public_highlight_style">
+                            <select id="f-hl-style" name="public_highlight_style" data-bcs-visual="alert">
                                 <option value="info" <?= $hlStyleSel === 'info' ? 'selected' : '' ?>>Information (bleu)</option>
                                 <option value="warning" <?= $hlStyleSel === 'warning' ? 'selected' : '' ?>>Attention (orange)</option>
                                 <option value="success" <?= $hlStyleSel === 'success' ? 'selected' : '' ?>>Ouverture / bonne nouvelle (vert)</option>
@@ -712,9 +713,9 @@ $cpNum = 0;
                 <div class="bcs-card__body">
                     <div class="bcs-field">
                         <label class="bcs-label" for="f-stats-mode">Mode de calcul</label>
-                        <select id="f-stats-mode" name="public_stats_mode" class="bcs-input--short">
-                            <option value="manual" <?= $statsModeSel === 'manual' ? 'selected' : '' ?>>Saisie manuelle</option>
-                            <option value="computed" <?= $statsModeSel === 'computed' ? 'selected' : '' ?>>Calcul automatique</option>
+                        <select id="f-stats-mode" name="public_stats_mode" class="bcs-input--short" data-bcs-visual="text">
+                            <option value="manual" data-hint="Vous écrivez les quatre chiffres." <?= $statsModeSel === 'manual' ? 'selected' : '' ?>>Saisie manuelle</option>
+                            <option value="computed" data-hint="Effectif et unités viennent de votre organisation." <?= $statsModeSel === 'computed' ? 'selected' : '' ?>>Calcul automatique</option>
                         </select>
                     </div>
                     <div class="bcs-grid">
@@ -971,7 +972,7 @@ $cpNum = 0;
                     <div class="bcs-field">
                         <label class="bcs-label" for="f-registration-mode">Type de candidature</label>
                         <p class="bcs-help"><em>MilSim complet</em> : dossier détaillé (expérience, disponibilités, motivation), réglable en partie 5. <em>Simple</em> : quelques champs. <em>Discord</em> : pseudo + vos questions, la suite se passe sur votre serveur.</p>
-                        <select id="f-registration-mode" name="registration_mode">
+                        <select id="f-registration-mode" name="registration_mode" data-bcs-visual="text">
                             <option value="milsim" <?= $registrationMode === 'milsim' ? 'selected' : '' ?>>MilSim complet (dossier détaillé)</option>
                             <option value="simple" <?= $registrationMode === 'simple' ? 'selected' : '' ?>>Simple (champs réduits, arrivée rapide)</option>
                             <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Via Discord (pseudo et questions personnalisées)</option>
@@ -1280,15 +1281,15 @@ $cpNum = 0;
                     <div class="bcs-grid">
                         <div class="bcs-field">
                             <label class="bcs-label" for="f-nav-<?= $h($slot) ?>-accent">Couleur d’accent</label>
-                            <select id="f-nav-<?= $h($slot) ?>-accent" name="nav_<?= $h($slot) ?>_accent">
+                            <select id="f-nav-<?= $h($slot) ?>-accent" name="nav_<?= $h($slot) ?>_accent" data-bcs-visual="accent">
                                 <?php foreach ($navAccents as $accent): ?>
-                                    <option value="<?= $h((string) $accent) ?>" <?= $cfg['accent'] === $accent ? 'selected' : '' ?>><?= $h(ucfirst((string) $accent)) ?></option>
+                                    <option value="<?= $h((string) $accent) ?>" <?= $cfg['accent'] === $accent ? 'selected' : '' ?>><?= $h($navAccentLabels[(string) $accent] ?? ucfirst((string) $accent)) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="bcs-field">
                             <label class="bcs-label" for="f-nav-<?= $h($slot) ?>-style">Présentation des liens</label>
-                            <select id="f-nav-<?= $h($slot) ?>-style" name="nav_<?= $h($slot) ?>_submenu_style">
+                            <select id="f-nav-<?= $h($slot) ?>-style" name="nav_<?= $h($slot) ?>_submenu_style" data-bcs-visual="submenu">
                                 <option value="standard" <?= $cfg['style'] === 'standard' ? 'selected' : '' ?>>Standard</option>
                                 <option value="cards" <?= $cfg['style'] === 'cards' ? 'selected' : '' ?>>Cartes</option>
                                 <option value="minimal" <?= $cfg['style'] === 'minimal' ? 'selected' : '' ?>>Minimal</option>
@@ -1341,7 +1342,7 @@ $cpNum = 0;
         <div class="bcs-modal__dialog">
             <div class="bcs-modal__head">
                 <h2 id="presentation-recap-title" class="bcs-modal__title">Vérifier avant d’enregistrer</h2>
-                <p class="bcs-help">Les changements faits depuis l’ouverture de la page.</p>
+                <p class="bcs-help" id="presentation-recap-sum">Les changements faits depuis l’ouverture de la page.</p>
             </div>
             <div id="presentation-recap-body" class="bcs-modal__body"></div>
             <p id="presentation-recap-empty" class="bcs-modal__body bcs-help" hidden>Aucune modification détectée depuis l’ouverture de la page. Vous pouvez tout de même enregistrer.</p>
@@ -1352,6 +1353,7 @@ $cpNum = 0;
         </div>
     </div>
 </div>
+<script src="<?= $h(asset_url('assets/js/community-presentation-pickers.js')) ?>"></script>
 <script>
 (function () {
     var form = document.getElementById('community-presentation-form');
@@ -1450,39 +1452,134 @@ $cpNum = 0;
         if (e.target && e.target.closest && e.target.closest('button[type="button"]')) scheduleDock();
     });
 
+    /** Ce que le visiteur de cette fenêtre comprend : le libellé du choix, pas sa valeur technique. */
+    function readable(el, values) {
+        var list = (values || []).filter(function (v) { return v !== ''; });
+        if (el && el.type === 'checkbox') return list.indexOf(el.value) !== -1 ? 'Activé' : 'Désactivé';
+        if (el && el.type === 'file') return list.length ? 'Nouveau fichier : ' + list.join(', ') : '';
+        if (el && el.tagName === 'SELECT') {
+            return list.map(function (v) {
+                for (var i = 0; i < el.options.length; i++) {
+                    if (el.options[i].value === v) return el.options[i].textContent.trim();
+                }
+                return v;
+            }).join(', ');
+        }
+        return list.join(', ');
+    }
+    function panelOf(el) {
+        var panel = el && el.closest ? el.closest('[data-cp-panel]') : null;
+        var id = panel ? panel.getAttribute('data-cp-panel') : '';
+        var tab = id ? document.querySelector('[data-cp-tab="' + cssEsc(id) + '"]') : null;
+        var title = panel ? panel.querySelector('.bcs-intro__title') : null;
+        return { id: id, tab: tab, title: clean(title ? title.textContent : (tab ? tab.textContent : 'Autres réglages')) };
+    }
+    /** Un seul champ porte ce nom (hors champ caché d'accompagnement) : on sait le remettre comme avant. */
+    function revertable(name) {
+        var list = Array.prototype.filter.call(form.querySelectorAll('[name="' + cssEsc(name) + '"]'), function (x) { return x.type !== 'hidden'; });
+        if (!list.length) return null;
+        if (list[0].type === 'radio') return list;
+        return list.length === 1 && list[0].type !== 'file' ? list : null;
+    }
+    function revert(name) {
+        var list = revertable(name);
+        if (!list) return;
+        var was = initialState[name] || [];
+        list.forEach(function (el) {
+            if (el.type === 'checkbox' || el.type === 'radio') el.checked = was.indexOf(el.value) !== -1;
+            else el.value = was.length ? was[0] : '';
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    }
+    function goToField(el, panel) {
+        closeModal();
+        if (panel.tab) panel.tab.click();
+        var target = el;
+        if (el && el.tagName === 'SELECT' && el.nextElementSibling && el.nextElementSibling.classList.contains('bcs-vpick')) target = el.nextElementSibling;
+        if (target && target.scrollIntoView) target.scrollIntoView({ block: 'center' });
+        var focus = target && target.matches && target.matches('input, select, textarea') ? target : (target ? target.querySelector('button, input, select, textarea') : null);
+        if (focus) focus.focus({ preventScroll: true });
+    }
+    function plural(n, one, many) { return n + ' ' + (n > 1 ? many : one); }
+
     function openModal() {
         var diff = changedNames();
         var changes = diff.names;
         var cur = diff.cur;
+        var sum = document.getElementById('presentation-recap-sum');
         bodyEl.innerHTML = '';
         if (changes.length === 0) {
             emptyEl.hidden = false;
             bodyEl.hidden = true;
+            if (sum) sum.textContent = 'Les changements faits depuis l’ouverture de la page.';
         } else {
             emptyEl.hidden = true;
             bodyEl.hidden = false;
-            var ul = document.createElement('ul');
-            ul.className = 'bcs-recap';
+            var groups = {};
+            var order = [];
             changes.forEach(function (name) {
                 var el = getRepresentativeElement(name);
-                var before = truncate((initialState[name] || []).filter(Boolean).join(', ') || '—', 120);
-                var after = truncate((cur[name] || []).filter(Boolean).join(', ') || '—', 120);
-                var li = document.createElement('li');
-                var pTitle = document.createElement('p');
-                pTitle.className = 'bcs-recap__name';
-                pTitle.textContent = fieldLabel(el);
-                var pBefore = document.createElement('p');
-                pBefore.className = 'bcs-recap__before';
-                pBefore.textContent = 'Avant : ' + before;
-                var pAfter = document.createElement('p');
-                pAfter.className = 'bcs-recap__after';
-                pAfter.textContent = 'Après : ' + after;
-                li.appendChild(pTitle);
-                li.appendChild(pBefore);
-                li.appendChild(pAfter);
-                ul.appendChild(li);
+                var panel = panelOf(el);
+                if (!groups[panel.title]) {
+                    groups[panel.title] = [];
+                    order.push(panel.title);
+                }
+                groups[panel.title].push({ name: name, el: el, panel: panel });
             });
-            bodyEl.appendChild(ul);
+            if (sum) sum.textContent = plural(changes.length, 'changement', 'changements') + ' dans ' + plural(order.length, 'partie', 'parties') + '. Rien n’est publié avant votre confirmation.';
+            order.forEach(function (title) {
+                var h = document.createElement('h3');
+                h.className = 'bcs-recap__group';
+                h.textContent = title;
+                bodyEl.appendChild(h);
+                var ul = document.createElement('ul');
+                ul.className = 'bcs-recap';
+                groups[title].forEach(function (item) {
+                    var li = document.createElement('li');
+                    var pTitle = document.createElement('p');
+                    pTitle.className = 'bcs-recap__name';
+                    pTitle.textContent = fieldLabel(item.el);
+                    var row = document.createElement('p');
+                    row.className = 'bcs-recap__change';
+                    var before = document.createElement('span');
+                    before.className = 'bcs-recap__before';
+                    before.textContent = truncate(readable(item.el, initialState[item.name]) || 'Vide', 120);
+                    var arrow = document.createElement('span');
+                    arrow.className = 'bcs-recap__arrow';
+                    arrow.setAttribute('aria-label', 'devient');
+                    arrow.textContent = '→';
+                    var after = document.createElement('span');
+                    after.className = 'bcs-recap__after';
+                    after.textContent = truncate(readable(item.el, cur[item.name]) || 'Vide', 120);
+                    row.appendChild(before);
+                    row.appendChild(arrow);
+                    row.appendChild(after);
+                    var acts = document.createElement('p');
+                    acts.className = 'bcs-recap__acts';
+                    var see = document.createElement('button');
+                    see.type = 'button';
+                    see.textContent = 'Voir le champ';
+                    see.addEventListener('click', function () { goToField(item.el, item.panel); });
+                    acts.appendChild(see);
+                    if (revertable(item.name)) {
+                        var undo = document.createElement('button');
+                        undo.type = 'button';
+                        undo.textContent = 'Remettre comme avant';
+                        undo.addEventListener('click', function () {
+                            revert(item.name);
+                            refreshDock();
+                            openModal();
+                        });
+                        acts.appendChild(undo);
+                    }
+                    li.appendChild(pTitle);
+                    li.appendChild(row);
+                    li.appendChild(acts);
+                    ul.appendChild(li);
+                });
+                bodyEl.appendChild(ul);
+            });
         }
         modal.hidden = false;
         document.body.style.overflow = 'hidden';
