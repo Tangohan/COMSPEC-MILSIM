@@ -29,21 +29,18 @@ final class RhCareerInboxAssetTest extends TestCase
         self::assertStringContainsString('function recordCorrectionApplied', $writer);
 
         self::assertStringContainsString('class RhActionInboxService', $inbox);
-        self::assertStringContainsString('Corrections à traiter', $inbox);
-        self::assertStringContainsString('Élévations à examiner', $inbox);
+        self::assertStringContainsString('Corrections de fiche à valider', $inbox);
+        self::assertStringContainsString('Propositions d’élévation', $inbox);
         self::assertStringContainsString('Dossiers incomplets', $inbox);
+        self::assertStringContainsString('À traiter maintenant', $inbox);
+        self::assertStringContainsString('À surveiller', $inbox);
+        self::assertStringContainsString('Informations', $inbox);
 
         self::assertStringContainsString('À traiter', $view);
-        self::assertStringContainsString('File d’actions', $view);
         self::assertStringContainsString('Le système propose ; vous décidez', $view);
-        self::assertStringContainsString('Confirmer applique ces changements au dossier', $view);
-        self::assertStringContainsString('Actuellement', $view);
-        self::assertStringContainsString('Proposé', $view);
-        self::assertStringNotContainsString("change['value']", $view);
-
-        self::assertStringContainsString('function lines', (string) file_get_contents($root . '/app/Services/Personnel/PersonnelFieldValueFormatter.php'));
-        self::assertStringContainsString('PersonnelFieldValueFormatter', $inbox);
-        self::assertStringNotContainsString("'nouvelle valeur'", $inbox);
+        self::assertStringContainsString('?onglet=', $view);
+        self::assertStringContainsString('data-dialog-open', $view);
+        self::assertStringContainsString('rh-card__count', $view);
 
         self::assertStringContainsString("['rh_inbox', 'À traiter', 'a-traiter'", $shell);
         self::assertStringContainsString("effectifs_workspace_url('a-traiter')", $shell);

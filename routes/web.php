@@ -703,6 +703,7 @@ return function (Router $router) {
     $router->post('/personnel/{id}/correction/{requestId}/annuler', [\App\Controllers\Web\PersonnelCorrectionController::class, 'cancelOwn'], [AuthMiddleware::class]);
     $router->get('/back-office/personnel/corrections', [\App\Controllers\Web\PersonnelCorrectionController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/back-office/personnel/corrections/appliquer', [\App\Controllers\Web\PersonnelCorrectionController::class, 'applyDirect'], [AuthMiddleware::class]);
+    $router->post('/back-office/personnel/corrections/lot', [\App\Controllers\Web\PersonnelCorrectionController::class, 'decideBatch'], [AuthMiddleware::class]);
     $router->post('/back-office/personnel/corrections/{id}/decide', [\App\Controllers\Web\PersonnelCorrectionController::class, 'decide'], [AuthMiddleware::class]);
     $router->get('/admin/system/advanced-fiche-edit', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/advanced-fiche-edit/grant', [\App\Controllers\Web\AdvancedFicheEditGrantController::class, 'grant'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

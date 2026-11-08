@@ -4284,7 +4284,7 @@ class EffectifsWorkspaceController
             'integrationOpenCount' => $extras['integrationOpenCount'],
             'phaseGateCount' => $extras['phaseGateCount'],
             'phaseAutoErrorCount' => $extras['phaseAutoErrorCount'],
-            'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
+            'viewerName' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? ''),
             'communityName' => $referenceOnly ? '' : $this->communityNameForTenant($tenantId),
         ], $extra));
     }

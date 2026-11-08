@@ -16,11 +16,17 @@ use App\Services\Personnel\RoleplayFollowupSettings;
  */
 final class EffectifsWorkspaceShellExtras
 {
+    /** Une seule lecture par communauté et par requête (la page « À traiter » et le bandeau les réutilisent). */
+    private static array $memo = [];
+
     /**
      * @return array{roleplayDueCount: int, integrationOpenCount: int, phaseGateCount: int, phaseAutoErrorCount: int}
      */
     public static function counts(int $tenantId): array
     {
+        if (isset(self::$memo[$tenantId])) {
+            return self::$memo[$tenantId];
+        }
         $roleplayDue = 0;
         $integrationOpen = 0;
         $phaseGateCount = 0;
@@ -71,7 +77,7 @@ final class EffectifsWorkspaceShellExtras
             $phaseAutoErrorCount = 0;
         }
 
-        return [
+        return self::$memo[$tenantId] = [
             'roleplayDueCount' => $roleplayDue,
             'integrationOpenCount' => $integrationOpen,
             'phaseGateCount' => $phaseGateCount,

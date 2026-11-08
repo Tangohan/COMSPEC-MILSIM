@@ -24,7 +24,7 @@ final class PersonnelHrDeskAssetTest extends TestCase
         $pdfService = (string) file_get_contents($root . '/app/Support/PersonnelHrPdfService.php');
 
         self::assertStringContainsString("'rh_roleplay', 'Roleplay'", $shell);
-        self::assertStringContainsString("'rh_alerts', 'Alertes', 'a-traiter?onglet=alertes'", $shell);
+        self::assertStringNotContainsString("'rh_alerts'", $shell, 'les alertes sont dans « À traiter »');
         self::assertStringContainsString("'rh_settings', 'Réglages'", $shell);
 
         self::assertStringContainsString('effectifs/documents-rh/etablir', $routes);

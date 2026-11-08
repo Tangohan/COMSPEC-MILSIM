@@ -75,12 +75,13 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('Documents RH', $rail);
         self::assertStringContainsString('Vivier', $rail);
         self::assertStringContainsString('Alertes RH', $rail);
+        self::assertStringContainsString('a-traiter?onglet=surveiller', $rail);
 
         $offboarding = (string) file_get_contents($root . '/app/Services/Effectifs/MemberOffboardingService.php');
         self::assertStringContainsString('function archiveDossier', $offboarding);
         self::assertStringContainsString('function reinstate', $offboarding);
 
-        foreach (['rh_documents.php', 'rh_mobility.php', 'rh_succession.php', 'rh_alerts.php'] as $view) {
+        foreach (['rh_documents.php', 'rh_mobility.php', 'rh_succession.php', 'rh_inbox.php', 'rh_identity_papers.php'] as $view) {
             self::assertFileExists($root . '/views/admin/effectifs_workspace/' . $view);
         }
 
@@ -88,14 +89,13 @@ final class RhDossierIndividuelAssetTest extends TestCase
         $helpers = (string) file_get_contents($root . '/views/admin/effectifs_workspace/partials/rh_ui_helpers.php');
         $mob = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_mobility.php');
         $viv = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_succession.php');
-        $alerts = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_alerts.php');
         $css = (string) file_get_contents($root . '/public/assets/css/effectifs_lms.css');
         $agg = (string) file_get_contents($root . '/app/Services/Effectifs/RhAlertAggregatorService.php');
 
         self::assertStringContainsString('class="edr"', $docs);
         self::assertStringContainsString('eff-rh-hero', $mob);
         self::assertStringContainsString('eff-rh-hero', $viv);
-        self::assertStringContainsString('eff-rh-hero', $alerts);
+        self::assertFileDoesNotExist($root . '/views/admin/effectifs_workspace/rh_alerts.php', 'les alertes sont dans « À traiter »');
         self::assertStringContainsString('eff-rh-tip', $helpers);
         self::assertStringContainsString('$rhTip(', $docs);
         self::assertStringContainsString('Visible du membre', $docs);
@@ -110,7 +110,6 @@ final class RhDossierIndividuelAssetTest extends TestCase
         self::assertStringContainsString('.eff-rh-deposit', $css);
         self::assertStringContainsString('Approuver', $mob);
         self::assertStringContainsString('eff-rh-pill', $viv);
-        self::assertStringContainsString('eff-rh-tile', $alerts);
         self::assertStringContainsString('eff-rh-tip__pop', $css);
         self::assertStringContainsString('Organigramme', $agg);
         self::assertStringNotContainsString("'ORBAT'", $agg);

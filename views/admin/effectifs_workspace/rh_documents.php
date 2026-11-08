@@ -36,7 +36,7 @@ $monthKey = date('Y-m');
 $monthLabel = \App\Support\LocalizedCalendar::month((int) date('n')) . ' ' . date('Y');
 
 $memberName = static function (array $u): string {
-    return trim((string) ($u['display_name'] ?? '')) ?: (string) ($u['email'] ?? '');
+    return trim((string) ($u['display_name'] ?? '')) ?: (trim((string) ($u['callsign'] ?? '')) ?: 'Membre');
 };
 $usersById = [];
 foreach ($users as $u) {
@@ -96,6 +96,7 @@ $typeOrder = array_keys($typeLabels);
     <symbol id="edr-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
 </svg>
 
+<?php $rhDocsTab = 'coffre'; require base_path('views/admin/effectifs_workspace/partials/rh_documents_tabs.php'); ?>
 <div class="edr" data-edr>
     <header class="edr-ph">
         <div class="edr-ph__copy">
@@ -206,7 +207,7 @@ $typeOrder = array_keys($typeLabels);
                 $id = (int) ($d['id'] ?? 0);
                 $uid = (int) ($d['user_id'] ?? 0);
                 $u = $usersById[$uid] ?? null;
-                $name = trim((string) ($d['user_display_name'] ?? '')) ?: (string) ($d['user_email'] ?? 'Membre');
+                $name = trim((string) ($d['user_display_name'] ?? '')) ?: 'Membre';
                 $callsign = trim((string) ($u['callsign'] ?? ''));
                 $unit = $u !== null ? (string) ($unitNames[(int) ($u['unit_id'] ?? 0)] ?? '') : '';
                 $sub = $unit !== '' ? $unit : $callsign;

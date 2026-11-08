@@ -40,7 +40,7 @@ $profileGapInitials = static function (string $name): string {
         <div>
             <p class="org-dash__kicker">À traiter</p>
             <h2 id="org-profile-gaps-heading" class="org-dash__section-title">Profils à compléter</h2>
-            <p class="org-dash__section-lead">Membres actifs auxquels il manque une fonction, un grade, un rôle, une image opérateur, ou dont l’absence n’est pas indiquée.</p>
+            <p class="org-dash__section-lead">Membres actifs auxquels il manque une fonction, un grade, un rôle, une image opérateur.</p>
         </div>
         <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Effectifs →</a>
     </div>
@@ -68,7 +68,6 @@ $profileGapInitials = static function (string $name): string {
                     'rank' => 'Grade',
                     'role' => 'Rôle',
                     'operator_image' => 'Image',
-                    'absence' => 'Absence',
                 ];
                 foreach ($gapFilters as $fkey => $flabel):
                     $fcount = $fkey === 'all' ? $profileGapTotal : (int) ($profileGapCounts[$fkey] ?? 0);
@@ -95,15 +94,14 @@ $profileGapInitials = static function (string $name): string {
                         <th>Grade</th>
                         <th>Rôle</th>
                         <th>Image opérateur</th>
-                        <th>Absence</th>
                         <th class="num">Fiche</th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php if ($profileGapError !== '' && $profileGapRows === []): ?>
-                    <tr><td colspan="8" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Liste temporairement indisponible.</td></tr>
+                    <tr><td colspan="7" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Liste temporairement indisponible.</td></tr>
                 <?php elseif ($profileGapRows === []): ?>
-                    <tr><td colspan="8" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Tous les profils actifs ont une fonction, un grade, un rôle, une image opérateur et une absence indiquée.</td></tr>
+                    <tr><td colspan="7" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Tous les profils actifs ont une fonction, un grade, un rôle, une image opérateur.</td></tr>
                 <?php else: ?>
                     <?php foreach ($profileGapRows as $i => $grow):
                         if (!is_array($grow)) {
@@ -121,8 +119,6 @@ $profileGapInitials = static function (string $name): string {
                         [$rkLab, $rkClass] = $profileGapCell(!empty($grow['missing_rank']), (string) ($grow['rank_label'] ?? ''), 'Manquant');
                         [$rlLab, $rlClass] = $profileGapCell(!empty($grow['missing_role']), (string) ($grow['role_label'] ?? ''), 'Manquant');
                         [$imLab, $imClass] = $profileGapCell(!empty($grow['missing_operator_image']), 'Présente', 'Manquante');
-                        $absenceOk = !empty($grow['has_active_absence']) ? 'Déclarée' : 'Indiquée';
-                        [$abLab, $abClass] = $profileGapCell(!empty($grow['missing_absence']), $absenceOk, 'Non indiquée');
                         $ficheUrl = trim((string) ($grow['fiche_url'] ?? ''));
                         ?>
                         <tr x-show="filter === 'all' || '<?= $filterAttr ?>'.split(',').includes(filter)">
@@ -155,9 +151,6 @@ $profileGapInitials = static function (string $name): string {
                             </td>
                             <td>
                                 <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($imClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($imLab, ENT_QUOTES, 'UTF-8') ?></span>
-                            </td>
-                            <td>
-                                <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($abClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($abLab, ENT_QUOTES, 'UTF-8') ?></span>
                             </td>
                             <td class="num">
                                 <?php if ($ficheUrl !== ''): ?>
