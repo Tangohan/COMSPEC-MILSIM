@@ -91,6 +91,12 @@ class RscTitles {
         idd=-1; duration=1e+011; fadein=0; fadeout=0;
         onLoad="[_this select 0, false] call comspec_atak_native_fnc_displayLoad";
     };
+    // GPS de poignet (fn_wristGps) : contrôles créés par le code.
+    class COMSPEC_RscTitleWristGps {
+        idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
+        onLoad="uiNamespace setVariable ['COMSPEC_ATAK_WristGpsDisplay', _this select 0]";
+        class controls {};
+    };
     // Montre Garmin au poignet (fn_watch, touche Montre du jeu) : contrôles créés par le code.
     // Les boîtiers 1024 sont déclarés ici. Posés seulement après coup, ils ne s'affichent pas : il ne reste que le disque.
     class COMSPEC_RscTitleGarmin {

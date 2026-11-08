@@ -762,6 +762,21 @@
             <English>Password</English>
             <French>Mot de passe</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_1718E44F87">
+            <Original>Wrist GPS</Original>
+            <English>Wrist GPS</English>
+            <French>GPS de poignet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_771E48ED06">
+            <Original>Wrist GPS (item)</Original>
+            <English>Wrist GPS (item)</English>
+            <French>GPS de poignet (objet)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C1B2239C3E">
+            <Original>Standalone GPS with a monochrome screen: position, compass, waypoints and routes. Ctrl+Shift+G to turn it on.</Original>
+            <English>Standalone GPS with a monochrome screen: position, compass, waypoints and routes. Ctrl+Shift+G to turn it on.</English>
+            <French>GPS autonome à écran monochrome : position, boussole, points et routes. Ctrl+Maj+G pour l'allumer.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_957A6195AE">
             <Original>Garmin watch</Original>
             <English>Garmin watch</English>

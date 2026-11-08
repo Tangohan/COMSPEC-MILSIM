@@ -1005,6 +1005,20 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["GarminJump", "Montre Garmin : Jumpmaster", "Écran de saut (HALO / HAHO) : règle l'altitude d'ouverture et arme les alertes, ou les désarme.", { ["jump"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]],
     ["GarminStealth", "Montre Garmin : mode furtif", "Coupe le Bluetooth de la montre et met l'écran au minimum.", { ["stealth"] call comspec_atak_native_fnc_watch }, {}, [0, [false, false, false]]]
 ];
+// GPS de poignet (fn_wristGps) : touches CBA, prises seulement si l'appareil est porté.
+{
+    _x params ["_id", "_title", "_help", "_down", "_def"];
+    ["COMSPEC ATAK", _id, [_title, _help], _down, {}, _def, false] call CBA_fnc_addKeybind;
+} forEach [
+    ["WristGpsToggle", "GPS de poignet : allumer / éteindre", "Allume ou éteint le GPS de poignet.", { ["toggle"] call comspec_atak_native_fnc_wristGps }, [0x22, [true, true, false]]],
+    ["WristGpsBig", "GPS de poignet : vue agrandie", "Le GPS en grand au milieu de l'écran, boutons cliquables. Échap pour revenir au poignet.", { ["big"] call comspec_atak_native_fnc_wristGps }, [0x22, [false, true, true]]],
+    ["WristGpsPage", "GPS de poignet : PAGE", "Page suivante.", { ["page"] call comspec_atak_native_fnc_wristGps }, [0, [false, false, false]]],
+    ["WristGpsEnter", "GPS de poignet : ENTER", "Valide la ligne : arrêter la navigation, effacer un point, suivre une route.", { ["enter"] call comspec_atak_native_fnc_wristGps }, [0, [false, false, false]]],
+    ["WristGpsUp", "GPS de poignet : UP", "Ligne précédente.", { ["up"] call comspec_atak_native_fnc_wristGps }, [0, [false, false, false]]],
+    ["WristGpsDown", "GPS de poignet : DOWN", "Ligne suivante.", { ["down"] call comspec_atak_native_fnc_wristGps }, [0, [false, false, false]]],
+    ["WristGpsGoto", "GPS de poignet : GOTO", "Navigue vers le point ou la route choisis.", { ["goto"] call comspec_atak_native_fnc_wristGps }, [0, [false, false, false]]],
+    ["WristGpsMark", "GPS de poignet : MARK", "Enregistre ma position.", { ["mark"] call comspec_atak_native_fnc_wristGps }, [0, [false, false, false]]]
+];
 // App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
 [{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call COMSPEC_ATAK_PfhSpread;
 // Distances et heures de vol : relais du joueur quand le serveur n'arrive pas à envoyer à Athena (COMSPEC_ATAK_SrvPlayOK faux).
