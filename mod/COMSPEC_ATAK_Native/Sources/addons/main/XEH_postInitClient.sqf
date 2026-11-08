@@ -1179,7 +1179,12 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
 // Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
 // (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
 [{ time > 0 && {!isNull (findDisplay 46)} }, {
-    diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arrivée en jeu : %1 ms depuis le preInit", round ((diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime])) * 1000)];
+    // Découpage : preInit -> postInit (chargement du monde et des autres mods, hors de nos mains), postInit -> première
+    // image de jeu (synchro JIP, attente du joueur). Le 08/11 : 46 s au total, dont 38 s avant notre postInit.
+    private _t0 = uiNamespace getVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
+    private _t1 = uiNamespace getVariable ["COMSPEC_ATAK_PerfPostInitAt", diag_tickTime];
+    diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arrivée en jeu : %1 ms depuis le preInit (preInit -> postInit %2 ms, moteur et autres mods ; postInit -> jeu %3 ms)",
+        round ((diag_tickTime - _t0) * 1000), round ((_t1 - _t0) * 1000), round ((diag_tickTime - _t1) * 1000)];
     [{
         private _dt = diag_deltaTime;
         // Images lentes (plus de 50 ms, moins de 20 img/s) : comptées pour le bilan des 30 s (fn_perfAcc).
@@ -1187,13 +1192,17 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
             private _sl = missionNamespace getVariable ["COMSPEC_ATAK_PerfSlow", [0, 0]];
             missionNamespace setVariable ["COMSPEC_ATAK_PerfSlow", [(_sl select 0) + 1, (_sl select 1) max _dt]];
         };
+        // Temps mesuré dans les boucles du mod depuis le passage précédent (fn_perfAcc, une image environ) : part de
+        // l'image figée qui nous revient ; le reste est au moteur et aux autres mods (ACRE, ACE, textures…).
+        private _mine = missionNamespace getVariable ["COMSPEC_ATAK_PerfFrame", 0];
+        missionNamespace setVariable ["COMSPEC_ATAK_PerfFrame", 0];
         if (_dt < 0.4) exitWith {};
         private _arsenal = !isNull (uiNamespace getVariable ["ace_arsenal_display", displayNull]) || {!isNull (uiNamespace getVariable ["BIS_fnc_arsenal_display", displayNull])};
         // Contexte combat pour corréler freezes au tir (suppression / comportement) — mesure réelle dès qu’Arma tourne.
-        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms (arsenal %2, téléphone %3, carte %4, drone %5, cibles marquées %6, page %7, combat %8, suppression %9)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap,
+        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms, dont environ %10 ms dans les boucles du mod (arsenal %2, téléphone %3, carte %4, drone %5, cibles marquées %6, page %7, combat %8, suppression %9)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap,
             ["aucun", "appairé"] select !isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]), count (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]),
             (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""],
-            behaviour player, round ((getSuppression player) * 100)];
+            behaviour player, round ((getSuppression player) * 100), round (_mine * 1000)];
     }, 0] call COMSPEC_ATAK_PfhSpread;
     // Bilan des boucles du téléphone (drone, marquage, carte, pages) et des images lentes, toutes les 30 s.
     [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread;
@@ -1235,4 +1244,5 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
             if (isNull _box) then { "aucune" } else { typeOf _box }];
     }, _this, 1] call comspec_atak_native_fnc_waitAndExec;
 }] call CBA_fnc_addEventHandler;
+uiNamespace setVariable ["COMSPEC_ATAK_PerfPostInitAt", diag_tickTime];
 diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "postInit client", round ((diag_tickTime - _perfT0) * 1000)];
