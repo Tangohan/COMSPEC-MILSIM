@@ -106,6 +106,22 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             <span class="ath-topbar__crumb-sep" aria-hidden="true">/</span>
             <span class="ath-topbar__crumb-current"><?= $h($pageTitle) ?></span>
         </nav>
+        <?php
+        // Étoile de la page courante (même formulaire que le menu : #ath-fav-form, rendu par back_office_sidebar.php).
+        $topFavReturn = isset($athFavReturn) ? (string) $athFavReturn : '';
+        $topFavKey = $topFavReturn !== '' ? \App\Services\BackOffice\Menu\FavoritesList::normalizePath($topFavReturn) : null;
+        ?>
+        <?php if (!empty($isBackOfficeShell) && $topFavKey !== null && isset($athMenu) && is_array($athMenu)): ?>
+            <?php $topFavOn = in_array($topFavKey, (array) ($athMenu['fav_keys'] ?? []), true); ?>
+            <button type="submit" form="ath-fav-form" name="op" value="<?= $h('toggle|' . $topFavKey . '|' . str_replace('|', ' ', $pageTitle)) ?>"
+                class="ath-topbar__fav ath-fav-star<?= $topFavOn ? ' is-on' : '' ?>"
+                data-ath-fav-path="<?= $h($topFavKey) ?>" data-ath-fav-label="<?= $h($pageTitle) ?>"
+                aria-pressed="<?= $topFavOn ? 'true' : 'false' ?>"
+                aria-label="<?= $h($topFavOn ? 'Retirer cette page des favoris' : 'Ajouter cette page aux favoris') ?>"
+                title="<?= $h($topFavOn ? 'Retirer cette page des favoris' : 'Ajouter cette page aux favoris') ?>">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"></path></svg>
+            </button>
+        <?php endif; ?>
         <div class="ath-topbar__spacer" aria-hidden="true"></div>
         <label class="ath-topbar__search" for="ath-top-search">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
