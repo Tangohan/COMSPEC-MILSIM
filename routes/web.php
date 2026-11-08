@@ -761,6 +761,9 @@ return function (Router $router) {
     $router->get('/m/radio', [\App\Controllers\Web\AtakMobileAppsController::class, 'radio']);
     $router->get('/m/radio/prives', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioPrivate']);
     $router->get('/m/radio/absent', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioAbsent']);
+    $router->get('/m/radio/sms', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioSms']);
+    $router->get('/m/radio/mpu', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioMpu']);
+    $router->get('/m/musique', [\App\Controllers\Web\AtakMobileAppsController::class, 'musique']);
     $router->get('/m/radio/canal/{key}', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioChannel']);
     $router->get('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debrief']);
     $router->post('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debriefSubmit']);
