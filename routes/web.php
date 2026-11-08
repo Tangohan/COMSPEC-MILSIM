@@ -766,6 +766,14 @@ return function (Router $router) {
     $router->post('/m/api/briefs/{id}/reponse', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefRespond']);
     $router->get('/m/api/suivi/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'noticeStatus']);
     $router->post('/m/quitter', [\App\Controllers\Web\AtakMobileAppsController::class, 'logout']);
+    // Espace d'administration ouvert par QR code depuis l'app Admin du téléphone en jeu (gestion de la communauté).
+    $router->get('/m/admin', [\App\Controllers\Web\AtakMobileAdminController::class, 'home']);
+    $router->get('/m/admin/joueurs', [\App\Controllers\Web\AtakMobileAdminController::class, 'players']);
+    $router->get('/m/admin/joueurs/{id}', [\App\Controllers\Web\AtakMobileAdminController::class, 'player']);
+    $router->get('/m/admin/sessions', [\App\Controllers\Web\AtakMobileAdminController::class, 'sessions']);
+    $router->get('/m/admin/cr', [\App\Controllers\Web\AtakMobileAdminController::class, 'report']);
+    $router->post('/m/admin/action', [\App\Controllers\Web\AtakMobileAdminController::class, 'act']);
+    $router->post('/m/admin/quitter', [\App\Controllers\Web\AtakMobileAdminController::class, 'logout']);
     $router->get('/m/{token}', [\App\Controllers\Web\AtakMobileAppsController::class, 'open']);
     // Connexion téléphone ATAK — URL courte (/connect) + alias historique (/atak/connect)
     $router->get('/connect', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeForm']);
