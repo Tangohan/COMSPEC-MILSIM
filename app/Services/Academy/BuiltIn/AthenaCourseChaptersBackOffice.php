@@ -957,7 +957,7 @@ EN;
 :::etapes
 **OPÉRATIONS › Événements** › **Nouveau créneau** : « Aube rouge », samedi 21 h, type Opération › **Publier le créneau**.
 Sur l’événement, **Postes de mission** : chef de section, deux chefs de groupe, un infirmier, un JTAC › Ajouter le poste.
-Le soir même, **ROLEPLAY › Sessions Arma** › **Nouvelle session** › Créer la session, puis Démarrer ; à la fin, Clôturer.
+Le soir même, **Agenda et sessions de jeu › Sessions de jeu** › **Nouvelle session** › Créer la session, puis Démarrer ; à la fin, Clôturer.
 Sur l’événement, **Pointer présence**. Le lendemain, le compte rendu post-op est rédigé et les remontées des joueurs sont lues.
 :::
 :::analyse Ce que la présence alimente

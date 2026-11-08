@@ -186,6 +186,17 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
             </div>
         <?php endif; ?>
 
+            <?php $linkedSession = is_array($eventLinkedSession ?? null) ? $eventLinkedSession : null; ?>
+            <section class="bo-events__panel bo-events__panel--static">
+                <h2>Session de jeu</h2>
+                <?php if ($linkedSession !== null): ?>
+                    <p>Le temps de jeu et le pointage de cet événement sont suivis dans sa session.</p>
+                    <p><a class="bo-events__btn bo-events__btn--ghost" href="<?= htmlspecialchars(url('back-office/roleplay/sessions/' . (int) ($linkedSession['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>">Ouvrir la session</a></p>
+                <?php else: ?>
+                    <p>Aucune session liée. Créez-la pour compter le temps de jeu de cet événement.</p>
+                    <p><a class="bo-events__btn bo-events__btn--ghost" href="<?= htmlspecialchars(url('back-office/roleplay/sessions') . '#nouvelle', ENT_QUOTES, 'UTF-8') ?>">Créer la session</a></p>
+                <?php endif; ?>
+            </section>
         <?php if (!empty($event['description'])): ?>
             <section class="bo-events__panel bo-events__panel--static">
                 <div class="bo-events__panel-static-head">

@@ -230,6 +230,7 @@ final class CommunityEventsAdminController
             'boPageActionUrl' => url('back-office/events') . '?vue=calendrier#nouveau',
             'boPageQuick' => [
                 ['label' => 'Calendrier', 'href' => url('back-office/events') . '?vue=calendrier'],
+                ['label' => 'Sessions de jeu', 'href' => url('back-office/roleplay/sessions')],
                 ['label' => 'À venir', 'href' => url('back-office/events') . '?vue=a_venir'],
                 ['label' => 'Passées', 'href' => url('back-office/events') . '?vue=passes'],
                 ['label' => 'Annulées', 'href' => url('back-office/events') . '?vue=annules'],
@@ -761,6 +762,16 @@ final class CommunityEventsAdminController
         }
     }
 
+    /** Session de jeu rattachée à cet événement, s'il y en a une. @return array<string, mixed>|null */
+    private function linkedGameSession(int $tenantId, int $eventId): ?array
+    {
+        try {
+            return \App\Core\Container::get(\App\Repositories\RoleplayGameSessionRepository::class)->findLatestForEvent($tenantId, $eventId);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function show(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
@@ -844,6 +855,7 @@ final class CommunityEventsAdminController
             'eventEndless' => (new EventAutomationRepository())->isEndless($tenantId, (string) ($event['series_id'] ?? '')),
             'eventDiscord' => (new EventAutomationRepository())->discord($tenantId, $id),
             'eventSeriesUpcoming' => $this->events->upcomingInSeries($tenantId, (string) ($event['series_id'] ?? ''), (string) ($event['starts_at'] ?? '')),
+            'eventLinkedSession' => $this->linkedGameSession($tenantId, $id),
             'content' => 'admin.organization.event_show',
             'isBackOfficeShell' => true,
             'boPageGroup' => 'Opérations',
