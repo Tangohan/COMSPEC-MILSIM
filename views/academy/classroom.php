@@ -268,7 +268,8 @@ $examJust = in_array($feedbackFlag, ['passed', 'failed'], true) && $lastAttempt 
 <section class="acr-cert">
 <div class="l1"><p class="k"><?= $h($t('validation')) ?></p><h2><?= $h($t($validationEntry ? 'validated' : 'pending')) ?></h2><p><?= $h($validationEntry ? $t('step_validated') : $t('pending_text')) ?></p>
 <ul class="acr-reqs"><li class="y"><i>✓</i><?= $h($t('req_exam')) ?></li><li class="y"><i>✓</i><?= $h($t('req_debrief')) ?></li><li class="<?= $validationEntry ? 'y' : 'n' ?>"><i><?= $validationEntry ? '✓' : '' ?></i><?= $h($t('req_instructor')) ?></li></ul>
-<?php if ($validationEntry): ?><p class="acr-comment"><b><?= $h($t('instructor_comment')) ?></b><?= nl2br($h($validationEntry['comment'] ?? '')) ?></p><?php endif ?></div>
+<?php if ($validationEntry && !empty($validationEntry['auto'])): ?><p class="acr-comment"><b><?= $h($t('auto_badge')) ?></b><?= $h(sprintf($t('auto_trace'), (int) ($validationEntry['hours'] ?? 72))) ?></p>
+<?php elseif ($validationEntry): ?><p class="acr-comment"><b><?= $h($t('instructor_comment')) ?></b><?= nl2br($h($validationEntry['comment'] ?? '')) ?></p><?php endif ?></div>
 <div class="r1" style="--img:url('<?= $h($imageFor($viewC + 2)) ?>')"></div>
 </section>
 <?php if (!empty($chapter['validation']['brief'])): ?><div class="acr-box"><div class="lesson-text rt"><?= $rich($chapter['validation']['brief']) ?></div></div><?php endif ?>

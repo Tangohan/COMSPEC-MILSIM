@@ -93,6 +93,17 @@ $audienceKey = static function (array $course): string {
 <?php endforeach ?></ul><?php endif ?>
 </section>
 
+<?php $autoSet = $autoSettings ?? ['enabled' => false, 'hours' => 72, 'excluded' => []]; ?>
+<section class="ins-sec" id="validation-auto" aria-labelledby="acc-auto"><div class="ins-sec__head"><h2 id="acc-auto"><?= $h($t('auto_set_title')) ?></h2></div>
+<p class="muted"><?= $h($t('auto_set_help')) ?></p>
+<form method="post" action="<?= $h($link('action/auto_validation_save')) ?>" class="acc-form"><?= $csrfField ?><input type="hidden" name="course" value="academy">
+<label class="acc-choice"><input type="checkbox" name="enabled" value="1"<?= !empty($autoSet['enabled']) ? ' checked' : '' ?>><span><b><?= $h($t('auto_set_enabled')) ?></b><small><?= $h($t('auto_set_enabled_help')) ?></small></span></label>
+<label><span><?= $h($t('auto_set_hours')) ?></span><input type="number" name="hours" min="1" max="720" value="<?= (int) $autoSet['hours'] ?>" required></label>
+<fieldset><legend><?= $h($t('auto_set_excluded')) ?></legend><p class="hint"><?= $h($t('auto_set_excluded_help')) ?></p>
+<?php foreach ($rightsCourses as $autoCourse): ?><label class="acc-choice"><input type="checkbox" name="excluded[]" value="<?= $h($autoCourse['key']) ?>"<?= in_array($autoCourse['key'], $autoSet['excluded'], true) ? ' checked' : '' ?>><span><?= $h($local($autoCourse['title']) ?: $t('untitled_course')) ?></span></label><?php endforeach ?></fieldset>
+<div class="buttons"><button class="button"><?= $h($t('auto_set_save')) ?></button></div></form>
+</section>
+
 <section class="ins-sec" aria-labelledby="acc-qualif"><div class="ins-sec__head"><h2 id="acc-qualif"><?= $h($t('rights_qualifications')) ?></h2></div>
 <p class="muted"><?= $h($t('rights_qualifications_help')) ?></p>
 <div class="buttons"><a class="text-link" href="<?= $h(url('formation/certificates')) ?>"><?= $h($t('certificates_tool')) ?> ↗</a><?php if (!empty($rightsAdmin)): ?><a class="text-link" href="<?= $h(url('back-office/referentiels/qualifications/emetteurs')) ?>"><?= $h($t('rights_issuers_link')) ?> ↗</a><a class="text-link" href="<?= $h(url('back-office/roles-functions')) ?>"><?= $h($t('rights_roles_link')) ?> ↗</a><?php endif ?></div>

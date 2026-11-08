@@ -10,14 +10,17 @@ namespace App\Services\Academy;
  * celle du serveur (validation de chapitre, réponse aux demandes d'inscription, décision sur une qualification proposée).
  *
  * Types : chapter (débriefing à valider), exam (évaluation échouée à reprendre), enrollment (demande d'inscription),
- * proposal (qualification ou brevet proposé automatiquement, à approuver), stalled (stagiaire sans activité).
+ * proposal (qualification ou brevet proposé automatiquement, à approuver), stalled (stagiaire sans activité),
+ * auto (chapitre validé automatiquement par Athena ces derniers jours : suivi, le formateur peut l'annuler).
  */
 final class AcademyInstructorQueue
 {
-    public const TYPES = ['chapter', 'proposal', 'enrollment', 'exam', 'stalled'];
+    public const TYPES = ['chapter', 'proposal', 'enrollment', 'exam', 'stalled', 'auto'];
     /** Types qui demandent une décision (badge « à traiter ») ; les autres sont du suivi. */
     public const ACTIONABLE = ['chapter', 'proposal', 'enrollment'];
     public const STALLED_DAYS = 14;
+    /** Une validation automatique reste dans la file (pour être annulée) pendant ce nombre de jours. */
+    public const AUTO_DAYS = 14;
 
     /**
      * @param list<array<string, mixed>> $learners lignes AcademyRepository::learners() (déjà filtrées sur ce que l'on suit)
@@ -33,6 +36,11 @@ final class AcademyInstructorQueue
             $state = is_array($row['state'] ?? null) ? $row['state'] : [];
             $key = (string) ($row['course_key'] ?? '');
             $uid = (int) ($row['user_id'] ?? 0);
+            if ($key !== '' && $uid > 0) {
+                foreach (self::autoValidated($state, $uid, $key, $row, $teaches, $me, $now) as $auto) {
+                    $items[] = $auto;
+                }
+            }
             // Formation terminée ou stagiaire dispensé (tableau de suivi) : plus rien à suivre.
             if ($key === '' || $uid < 1 || !empty($state['completed']) || !empty($state['exempt'])) {
                 continue;
@@ -47,7 +55,8 @@ final class AcademyInstructorQueue
             if ((int) ($state['stage'] ?? 0) === 6 && isset($chapters[$chapter])) {
                 $final = $chapter + 1 >= count($chapters);
                 $can = $uid === $me ? 'own' : (!$teaches($key) ? 'not_allowed' : ($final && !$certify ? 'needs_certify' : 'ok'));
-                $items[] = $base + ['id' => 'chapter-' . $uid . '-' . $key, 'type' => 'chapter', 'since' => $updated, 'final' => $final, 'can' => $can, 'row' => $row];
+                $items[] = $base + ['id' => 'chapter-' . $uid . '-' . $key, 'type' => 'chapter', 'since' => $updated, 'final' => $final, 'can' => $can, 'row' => $row,
+                    'auto_check' => is_array($state['auto_check'] ?? null) && (int) ($state['auto_check']['chapter'] ?? -1) === $chapter ? $state['auto_check'] : null];
                 continue;
             }
             $attempts = is_array($state['attempts'] ?? null) ? $state['attempts'] : [];
@@ -84,6 +93,39 @@ final class AcademyInstructorQueue
         }
 
         return ['items' => $items, 'counts' => $counts, 'total' => self::actionable($items)];
+    }
+
+    /**
+     * Chapitres validés par Athena (et non annulés) ces derniers jours, que l'encadrement peut encore annuler.
+     *
+     * @param array<string, mixed> $state
+     * @param array<string, mixed> $row
+     * @param callable(string):bool $teaches
+     * @return list<array<string, mixed>>
+     */
+    private static function autoValidated(array $state, int $uid, string $key, array $row, callable $teaches, int $me, int $now): array
+    {
+        $out = [];
+        $chapters = is_array($state['snapshot']['chapters'] ?? null) ? $state['snapshot']['chapters'] : [];
+        foreach (is_array($state['validations'] ?? null) ? $state['validations'] : [] as $index => $entry) {
+            if (!is_array($entry) || empty($entry['auto']) || (int) ($entry['at'] ?? 0) < $now - self::AUTO_DAYS * 86400) {
+                continue;
+            }
+            try {
+                AcademyCurriculum::revokeAutoValidation($state, (int) $index, 1, $now);
+                $revocable = true;
+            } catch (\DomainException) {
+                $revocable = false;
+            }
+            $out[] = [
+                'id' => 'auto-' . $uid . '-' . $key . '-' . (int) $index, 'type' => 'auto', 'course_key' => $key,
+                'course_title' => $state['snapshot']['title'] ?? '', 'learner_id' => $uid, 'chapter' => (int) $index,
+                'chapter_title' => $chapters[$index]['title'] ?? '', 'since' => (int) $entry['at'], 'hours' => (int) ($entry['hours'] ?? 0),
+                'revocable' => $revocable, 'can' => $uid === $me ? 'own' : (!$teaches($key) ? 'not_allowed' : 'ok'), 'row' => $row,
+            ];
+        }
+
+        return $out;
     }
 
     /**

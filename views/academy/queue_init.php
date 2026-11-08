@@ -25,9 +25,10 @@ $qDate = static fn (int $since): string => $since > 0 ? (new DateTimeImmutable('
 $qDetail = static function (array $item) use ($t, $local): string {
     $chapter = $t('chapter') . ' ' . ((int) ($item['chapter'] ?? 0) + 1) . (is_array($item['chapter_title'] ?? null) && $local($item['chapter_title']) !== '' ? ' · ' . $local($item['chapter_title']) : '');
     return match ($item['type']) {
-        'chapter' => $chapter . (!empty($item['final']) ? ' · ' . $t('ins_task_final') : ''),
+        'chapter' => $chapter . (!empty($item['final']) ? ' · ' . $t('ins_task_final') : '') . (!empty($item['auto_check']) ? ' · ' . $t('auto_q_flag') : ''),
         'exam' => $chapter . ' · ' . (!empty($item['attempt']['expired']) ? $t('ins_exam_expired') : sprintf($t('ins_exam_score'), (int) ($item['attempt']['score'] ?? 0))),
         'stalled' => $chapter,
+        'auto' => $chapter . ' · ' . sprintf($t('auto_q_detail'), (int) ($item['hours'] ?? 0)),
         'enrollment' => $t('q_detail_enrollment'),
         'proposal' => $t('q_detail_proposal'),
         default => '',

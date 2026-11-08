@@ -10,6 +10,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AcademyAutoValidationRepository;
 use App\Repositories\AcademyRepository;
 use App\Repositories\AcademyCourseShareRepository;
 use App\Repositories\AcademyAccessRepository;
@@ -252,6 +253,12 @@ final class AcademyController
             if (in_array($action, ['rights_save', 'rights_reset'], true)) {
                 return $this->rightsAction($request, $rights, $action, $tenantId, $userId);
             }
+            if ($action === 'auto_validation_save') {
+                return $this->autoValidationSettingsAction($request, $repository, $rights, $tenantId, $userId);
+            }
+            if ($action === 'revoke_auto') {
+                return $this->revokeAutoAction($request, $rights, $key, $tenantId, $userId);
+            }
             if ($action === 'course_access_save') {
                 return $this->courseAccessAction($request, $repository, $rights, $key, $tenantId, $userId);
             }
@@ -355,7 +362,7 @@ final class AcademyController
             if ($e->getMessage() === 'certify_required') {
                 return $this->error('certify_required', 403);
             }
-            return $this->error(in_array($e->getMessage(), ['locked', 'reflection_required', 'not_enrolled', 'already_enrolled'], true) ? $e->getMessage() : 'invalid_content', 422);
+            return $this->error(in_array($e->getMessage(), ['locked', 'reflection_required', 'not_enrolled', 'already_enrolled', 'progress_started'], true) ? $e->getMessage() : 'invalid_content', 422);
         } catch (\PDOException) {
             return $this->error('unavailable', 503);
         }
@@ -1002,9 +1009,51 @@ final class AcademyController
         return Response::view('academy.space', [
             'space' => 'droits', 'staff' => true, 'states' => [], 'courses' => [], 'selected' => null, 'state' => null, 'learners' => [], 'preview' => false, 'tenant' => Container::get(TenantRepository::class)->findById($tenantId),
             'account' => ['display_name' => (string) Session::get('display_name', ''), 'callsign' => (string) Session::get('callsign', '')],
-            'notice' => $notice, 'rightsReady' => $access->ready(), 'matrix' => $matrix, 'options' => $options, 'rightsCourses' => $courses,
+            'notice' => $notice, 'autoSettings' => (new AcademyAutoValidationRepository())->settings($tenantId), 'rightsReady' => $access->ready(), 'matrix' => $matrix, 'options' => $options, 'rightsCourses' => $courses,
             'rightsPreview' => $preview, 'rightsAdmin' => $rights->isAdmin(), 'editing' => $request->queryString('modifier'), 'editingCourse' => $request->queryString('cours'),
         ])->header('Cache-Control', 'private, no-store');
+    }
+
+    /**
+     * Réglages de la vérification automatique par Athena (activation, délai en heures, cours exclus) : administrateurs
+     * de la communauté et responsables de la formation. Les cours exclus sont limités à ceux de la communauté.
+     */
+    private function autoValidationSettingsAction(Request $request, AcademyRepository $repository, AcademyRights $rights, int $tenantId, int $userId): Response
+    {
+        if (!$rights->canManageRights()) {
+            return $this->error('rights_forbidden', 403);
+        }
+        $known = array_map(static fn (array $course): string => (string) $course['key'], AcademyBuiltInCourses::all());
+        foreach ($repository->studioList($tenantId) as $item) {
+            $known[] = (string) $item['key'];
+        }
+        $asked = $request->input('excluded', []);
+        $excluded = array_values(array_intersect(is_array($asked) ? array_map('strval', $asked) : [], $known));
+        $enabled = $request->inputString('enabled') === '1';
+        $hours = max(AcademyAutoValidationRepository::MIN_HOURS, min(AcademyAutoValidationRepository::MAX_HOURS, (int) $request->input('hours', AcademyCurriculum::AUTO_DEFAULT_HOURS)));
+        $store = new AcademyAutoValidationRepository();
+        $before = $store->settings($tenantId);
+        $store->saveSettings($tenantId, $enabled, $hours, $excluded, $userId ?: null);
+        $this->audit('academy.auto_validation.settings', $tenantId, 'academy', ['before' => $before, 'after' => ['enabled' => $enabled, 'hours' => $hours, 'excluded' => $excluded]]);
+        Session::set('academy_notice', 'auto_saved');
+
+        return Response::redirect(url('academy/droits') . '#validation-auto', 303);
+    }
+
+    /** Un formateur annule la validation automatique d'un chapitre : il redevient en attente de validation. */
+    private function revokeAutoAction(Request $request, AcademyRights $rights, string $key, int $tenantId, int $userId): Response
+    {
+        if (!$rights->canTeach($key)) {
+            return $this->error('forbidden', 403);
+        }
+        $learnerId = (int) $request->input('learner', 0);
+        if ($learnerId < 1 || $learnerId === $userId) {
+            return $this->error('self_validation', 403);
+        }
+        (new \App\Services\Academy\AcademyAutoValidation())->revoke($tenantId, $learnerId, $key, max(0, (int) $request->input('chapter', -1)), $userId);
+        Session::set('academy_notice', 'auto_revoked_done');
+
+        return Response::redirect(url('academy/instructor') . '#file', 303);
     }
 
     /** Enregistrer ou rétablir un droit de la communauté. Chaque changement est inscrit au journal (avant / après). */

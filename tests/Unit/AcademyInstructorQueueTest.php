@@ -60,7 +60,7 @@ final class AcademyInstructorQueueTest extends TestCase
     {
         $queue = self::queue(false);
         $byId = array_column($queue['items'], null, 'id');
-        self::assertSame(['chapter' => 4, 'proposal' => 1, 'enrollment' => 1, 'exam' => 1, 'stalled' => 1], $queue['counts']);
+        self::assertSame(['chapter' => 4, 'proposal' => 1, 'enrollment' => 1, 'exam' => 1, 'stalled' => 1, 'auto' => 0], $queue['counts']);
         self::assertSame('ok', $byId['chapter-9-cours-a']['can']);
         self::assertSame('needs_certify', $byId['chapter-10-cours-a']['can'], 'Dernier chapitre sans le droit « délivrer »');
         self::assertTrue($byId['chapter-10-cours-a']['final']);
