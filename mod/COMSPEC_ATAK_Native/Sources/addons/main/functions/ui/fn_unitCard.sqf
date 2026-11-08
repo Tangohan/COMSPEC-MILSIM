@@ -251,10 +251,16 @@ switch (_mode) do {
             _b ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
             _b ctrlSetFontHeight _fh;
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
-            if (_style isNotEqualTo "main") then { _b ctrlSetBackgroundColor ([_th get "surface2", [0.08, 0.1, 0.09, 0.92]] select _isMap); };
+            // Encres du thème : sur la carte les panneaux restent sombres ; ailleurs le thème jour a des boutons clairs.
+            if (_style isNotEqualTo "main") then {
+                _b ctrlSetBackgroundColor ([_th get "surface2", [0.08, 0.1, 0.09, 0.92]] select _isMap);
+                _b ctrlSetTextColor ([[_th get "off", _th get "mapDim"] select _isMap, [_th get "text", _th get "mapText"] select _isMap] select _on);
+            };
             if (_style isEqualTo "red") then { _b ctrlSetBackgroundColor ([_th get "alert", _th get "mapAlert"] select _isMap); _b ctrlSetTextColor (_th get "onChrome"); };
             _b ctrlEnable _on;
             _b setVariable ["ucKey", _key];
+            _b setVariable ["ucStyle", _style];
+            _b setVariable ["ucMap", _isMap];
             _b setVariable ["ucId", _id];
             _b ctrlAddEventHandler ["ButtonClick", {
                 params ["_c"];
@@ -289,6 +295,7 @@ switch (_mode) do {
             _moreBtn ctrlSetFontHeight _fh;
             _moreBtn ctrlSetTooltip (("Autres actions") call comspec_atak_native_fnc_tr);
             _moreBtn ctrlSetBackgroundColor ([_th get "surface2", [0.08, 0.1, 0.09, 0.92]] select _isMap);
+            _moreBtn ctrlSetTextColor ([_th get "text", _th get "mapText"] select _isMap);
             _allC pushBack _moreBtn;
             _moreBtn setVariable ["ucPanel", _panel];
             _moreBtn ctrlAddEventHandler ["ButtonClick", {
@@ -312,6 +319,10 @@ switch (_mode) do {
                 _b ctrlSetText ((_label) call comspec_atak_native_fnc_tr);
                 _b ctrlEnable _on;
                 _b setVariable ["ucId", _id];
+                if ((_b getVariable ["ucStyle", ""]) isEqualTo "") then {
+                    private _m = _b getVariable ["ucMap", false];
+                    _b ctrlSetTextColor ([[COMSPEC_ATAK_Th get "off", COMSPEC_ATAK_Th get "mapDim"] select _m, [COMSPEC_ATAK_Th get "text", COMSPEC_ATAK_Th get "mapText"] select _m] select _on);
+                };
             };
         } forEach _cat;
         true
