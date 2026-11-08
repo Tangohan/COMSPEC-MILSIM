@@ -13,6 +13,7 @@
  * @var string $lang
  * @var ?string $jtacCallsign
  * @var string $defaultCallsign
+ * @var array<string, array<string, mixed>> $mySpecs pilote et JTAC détectés au dossier de ce membre
  */
 $h = static fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $base = rtrim((string) ($apiBase ?? url('')), '/');
@@ -89,6 +90,7 @@ $loggedIn = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
         <button type="button" class="btn2" id="nl-jtac-save">OK</button>
         <span class="sync" role="status"><i></i><span id="nl-live">connexion…</span></span>
       </div>
+      <p class="me-spec" id="nl-me-spec" aria-live="polite"></p>
       <datalist id="nl-jtac-suggest"><?php foreach ($suggestJtac as $s): ?><option value="<?= $h($s) ?>"><?php endforeach; ?></datalist>
     </div>
   </div>
@@ -107,6 +109,11 @@ $loggedIn = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
       <div class="cb">
         <div class="bar"><label class="chk"><input type="checkbox" id="nl-players-only" checked>Joueurs uniquement</label><span class="meta" id="nl-ai-hidden"></span></div>
         <div id="nl-aircraft" aria-live="polite"></div>
+        <details class="roster" id="nl-roster-box">
+          <summary><svg class="i"><use href="#nl-s-chev"></use></svg>Pilotes et JTAC de la communauté <span class="meta" id="nl-roster-count"></span></summary>
+          <p class="hint">Lu dans les dossiers : qualifications et fonctions attribuées. Les heures de vol viennent du jeu. Une détection informe, elle n’empêche jamais un envoi.</p>
+          <div id="nl-roster"></div>
+        </details>
         <div class="manual">
           <label class="lbl" for="nl-manual-cs">Indicatif saisi à la main</label>
           <div class="jrow">
@@ -204,6 +211,7 @@ $loggedIn = (int) (\App\Core\Session::get('user_id') ?? 0) > 0;
       'required' => $required,
       'jtac' => $jtacCs,
       'jtacDefault' => $defaultCs,
+      'mySpecs' => $mySpecs ?? [],
   ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 </script>
 <script src="<?= $h($base) ?>/assets/js/atak-nine-line.js?v=<?= $h($ver('js/atak-nine-line.js')) ?>" defer></script>

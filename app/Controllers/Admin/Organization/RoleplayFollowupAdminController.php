@@ -67,7 +67,12 @@ final class RoleplayFollowupAdminController
         $today = date('Y-m-d');
         $countEligible = 0;
         $countTracked = 0;
-        foreach ($this->userRepository->allForTenant($tenantId) as $u) {
+        $members = $this->userRepository->allForTenant($tenantId);
+        $memberLabels = [];
+        foreach ($members as $u) {
+            $memberLabels[(int) ($u['id'] ?? 0)] = trim((string) ($u['display_name'] ?? '')) ?: trim((string) ($u['callsign'] ?? ''));
+        }
+        foreach ($members as $u) {
             if ((string) ($u['status'] ?? '') !== 'active') {
                 continue;
             }
@@ -75,7 +80,7 @@ final class RoleplayFollowupAdminController
             if ($uid < 1) {
                 continue;
             }
-            $p = $this->personnelProfileRepository->getByUserId($uid) ?? [];
+            $p = $this->personnelProfileRepository->getByUserId($uid, $tenantId) ?? [];
             $hasTracking = trim((string) ($p['rp_followup_stage'] ?? '')) !== ''
                 || (int) ($p['rp_tutor_user_id'] ?? 0) > 0
                 || trim((string) ($p['rp_recruitment_stream'] ?? '')) !== ''
@@ -92,14 +97,8 @@ final class RoleplayFollowupAdminController
             if (!empty($snapshot['eligible'])) {
                 $countEligible++;
             }
-            $tutorLabel = null;
             $tid = (int) ($p['rp_tutor_user_id'] ?? 0);
-            if ($tid > 0) {
-                $tu = $this->userRepository->findById($tid, $tenantId);
-                if ($tu) {
-                    $tutorLabel = trim((string) ($tu['display_name'] ?? '')) ?: trim((string) ($tu['callsign'] ?? ''));
-                }
-            }
+            $tutorLabel = $tid > 0 ? ($memberLabels[$tid] ?? null) : null;
             $timeline = $this->timelineRepository->listForUser($tenantId, $uid, 1);
             $nextDue = null;
             foreach (['rp_next_interview_date', 'rp_medical_due_date', 'rp_service_rotation_date'] as $k) {
@@ -117,6 +116,7 @@ final class RoleplayFollowupAdminController
             $rpBilanNextDueAt = RoleplayBilanPolicy::nextReviewDueAt($rpJoinedAt, $rpLastReviewAt, $cadence);
             $rows[] = [
                 'user_id' => $uid,
+                'tracked' => $hasTracking,
                 'display_name' => trim((string) ($u['display_name'] ?? '')),
                 'callsign' => trim((string) ($u['callsign'] ?? '')),
                 'stage' => trim((string) ($p['rp_followup_stage'] ?? '')),
@@ -152,7 +152,7 @@ final class RoleplayFollowupAdminController
         });
 
         $tutorChoices = [];
-        foreach ($this->userRepository->allForTenant($tenantId) as $u) {
+        foreach ($members as $u) {
             if ((string) ($u['status'] ?? 'active') !== 'active') {
                 continue;
             }
@@ -160,7 +160,7 @@ final class RoleplayFollowupAdminController
             if ($id < 1) {
                 continue;
             }
-            $label = trim((string) ($u['display_name'] ?? '')) ?: (trim((string) ($u['callsign'] ?? '')) ?: trim((string) ($u['email'] ?? '')));
+            $label = $memberLabels[$id] ?? '';
             if ($label === '') {
                 $label = 'Compte #' . $id;
             }

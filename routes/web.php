@@ -674,6 +674,7 @@ return function (Router $router) {
     $router->get('/9-line/feed', [\App\Controllers\Web\AtakNineLineViewController::class, 'feed'], [AuthMiddleware::class]);
     $router->get('/9-line/qr.png', [\App\Controllers\Web\AtakNineLineViewController::class, 'qr']);
     $router->get('/9-line/appareils', [\App\Controllers\Web\AtakNineLineViewController::class, 'aircraft'], [AuthMiddleware::class]);
+    $router->get('/9-line/equipages', [\App\Controllers\Web\AtakNineLineViewController::class, 'roster'], [AuthMiddleware::class]);
     $router->post('/9-line', [\App\Controllers\Web\AtakNineLineViewController::class, 'store'], [AuthMiddleware::class]);
     $router->post('/9-line/vider', [\App\Controllers\Web\AtakNineLineViewController::class, 'clear'], [AuthMiddleware::class]);
     $router->post('/9-line/indicatif', [\App\Controllers\Web\AtakNineLineViewController::class, 'jtacCallsign'], [AuthMiddleware::class]);

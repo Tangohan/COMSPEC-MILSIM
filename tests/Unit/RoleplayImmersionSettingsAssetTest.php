@@ -27,8 +27,10 @@ final class RoleplayImmersionSettingsAssetTest extends TestCase
 
         self::assertStringContainsString('Suivre l’arrivée d’un membre, pas le jeu', $view);
         self::assertStringContainsString('Après enregistrement, vous verrez', $view);
-        self::assertStringContainsString('Parcours d’immersion', $view);
-        self::assertStringContainsString('Bureau de suivi', $view);
+        self::assertStringContainsString('roleplay_parcours_guide.php', $view);
+        $guide = (string) file_get_contents($root . '/views/admin/organization/partials/roleplay_parcours_guide.php');
+        self::assertStringContainsString('Parcours d’immersion', $guide);
+        self::assertStringContainsString('Bureau de suivi', $guide);
         self::assertStringContainsString('Échéances', $view);
         self::assertStringContainsString('ATAK et Overwatch', $view);
         self::assertStringContainsString('back-office/atak/roleplay', $view);

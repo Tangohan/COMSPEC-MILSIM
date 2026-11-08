@@ -177,6 +177,25 @@ final class AtakNineLineBoardTest extends TestCase
         self::assertSame([], $this->board->aircraft(99, $now), 'aucune donnée : liste vide');
     }
 
+    public function testCrewAndAuthorCarryWhatTheFileSays(): void
+    {
+        $this->pdo->exec('CREATE TABLE personnel_job_roles (id INTEGER PRIMARY KEY, tenant_id INTEGER, name TEXT, slug TEXT)');
+        $this->pdo->exec('CREATE TABLE personnel_profile_job_roles (id INTEGER PRIMARY KEY, tenant_id INTEGER, user_id INTEGER, personnel_job_role_id INTEGER)');
+        $this->pdo->exec("INSERT INTO personnel_job_roles (id, tenant_id, name, slug) VALUES (1, 7, 'Pilote hélicoptère', 'pil'), (2, 7, 'JTAC', 'jtac')");
+        $this->pdo->exec('INSERT INTO personnel_profile_job_roles (tenant_id, user_id, personnel_job_role_id) VALUES (7, 5, 1), (7, 6, 2)');
+        $now = strtotime('2026-11-02 20:00:00');
+        $crew = json_encode([
+            ['name' => 'Viper 1', 'seat' => 'driver', 'role' => '', 'player' => true],
+            ['name' => 'jean martin', 'seat' => 'gunner', 'role' => '', 'player' => true],
+        ]);
+        $this->air(self::OWN, 'HAWG 1', '2026-11-02 19:59:50', $crew, 1250.0, 800.4);
+        $hawg = $this->board->aircraft(self::OWN, $now)[0];
+        self::assertSame('role', $hawg['pilot']['spec_pilot']['status']);
+        self::assertSame('Pilote hélicoptère', $hawg['pilot']['spec_pilot']['label']);
+        self::assertNull($hawg['pilot']['spec_jtac']);
+        self::assertSame('JTAC', $hawg['crew'][1]['spec_jtac']['label']);
+    }
+
     public function testLinesAreCheckedOneByOne(): void
     {
         self::assertSame([4 => 'required', 5 => 'required', 6 => 'required'], NineLineBoardService::validate('cas', []));
