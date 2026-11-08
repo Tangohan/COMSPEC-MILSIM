@@ -340,7 +340,7 @@ final class DonorService
 
     /**
      * Correspondances pour la décoration côté navigateur (public/assets/js/donor-marks.js) :
-     * ids de comptes, slugs de fiche de la communauté courante, communautés soutien. Aucune donnée personnelle.
+     * donateurs visibles seulement (ids, slugs de fiche de la communauté courante), communautés soutien.
      *
      * @return array{u: array<string, string>, s: array<string, string>, t: array<string, string>, ts: array<string, string>}
      */
@@ -356,11 +356,30 @@ final class DonorService
         }
 
         return [
-            'u' => array_map('strval', array_combine(array_map('strval', array_keys($c['users'])), $c['users']) ?: []),
+            'u' => array_map('strval', array_combine(array_map('strval', array_keys($c['public_users'])), $c['public_users']) ?: []),
             's' => array_map('strval', $slugs),
             't' => array_map('strval', array_combine(array_map('strval', array_keys($c['tenants'])), $c['tenants']) ?: []),
             'ts' => $ts,
         ];
+    }
+
+    /**
+     * Slugs de fiche par communauté, pour les seuls donateurs visibles (pur).
+     *
+     * @param array<int, array{slug: string, tenant_id: int}> $profiles
+     * @param array<int, string> $publicUsers publicUserTiers()
+     * @return array<int, array<string, string>>
+     */
+    public static function publicSlugs(array $profiles, array $publicUsers): array
+    {
+        $out = [];
+        foreach ($profiles as $uid => $p) {
+            if ($p['slug'] !== '' && $p['tenant_id'] > 0 && isset($publicUsers[$uid])) {
+                $out[$p['tenant_id']][$p['slug']] = $publicUsers[$uid];
+            }
+        }
+
+        return $out;
     }
 
     /** Choix d'apparaître ou non sur le mur public (par e-mail, donc pour toutes les communautés). */
@@ -456,15 +475,9 @@ final class DonorService
             $tenants[$tid] = $s['kind'];
         }
         $profiles = [];
-        $slugs = [];
         $tenantSlugs = [];
         try {
             $profiles = $this->ledger()->profilesForUserIds(array_keys($users));
-            foreach ($profiles as $uid => $p) {
-                if ($p['slug'] !== '' && $p['tenant_id'] > 0 && isset($users[$uid])) {
-                    $slugs[$p['tenant_id']][$p['slug']] = $users[$uid];
-                }
-            }
             $tenantSlugs = $this->ledger()->tenantSlugs(array_keys($tenants));
         } catch (\Throwable) {
         }
@@ -474,14 +487,15 @@ final class DonorService
             }
         }
         unset($d);
+        $publicUsers = self::publicUserTiers($donors, $o['hidden']);
         $payload = [
             'users' => $users,
             'tenants' => $tenants,
-            'slugs' => $slugs,
+            'slugs' => self::publicSlugs($profiles, $publicUsers),
             'tenant_slugs' => $tenantSlugs,
             'communities' => self::communitiesFromLedger($ledger, $tenants),
             'board' => self::boardFromDonors($donors, $o['hidden'], $profiles),
-            'public_users' => self::publicUserTiers($donors, $o['hidden']),
+            'public_users' => $publicUsers,
             'updated_at' => gmdate('c'),
         ];
         $dir = dirname(self::cachePath());

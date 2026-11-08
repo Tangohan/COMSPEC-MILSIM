@@ -136,6 +136,16 @@ final class PaymentsLedgerTest extends TestCase
         self::assertSame(['Ghost', 'Bravo Six'], array_column($board, 'name'), 'trié par palier');
     }
 
+    public function testPublicSlugsOnlyForVisibleDonors(): void
+    {
+        $profiles = [
+            30 => ['slug' => 'charlie', 'tenant_id' => 5],
+            20 => ['slug' => 'bravo', 'tenant_id' => 5],
+        ];
+
+        self::assertSame([5 => ['charlie' => 'pilier']], DonorService::publicSlugs($profiles, [30 => 'pilier']));
+    }
+
     public function testPublicBadgeOnlyForVisibleDonors(): void
     {
         $ledger = $this->ledger();
