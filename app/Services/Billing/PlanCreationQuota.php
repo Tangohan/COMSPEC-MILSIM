@@ -54,7 +54,7 @@ final class PlanCreationQuota
         return match ($key) {
             self::OFFERS => Container::get(RecruitmentOpeningRepository::class)->countForPlanQuota($tenantId),
             self::ARTICLES => Container::get(TenantMiniArticleRepository::class)->countForPlanQuota($tenantId),
-            self::TEMPLATES => Container::get(TenantEmailTemplateRepository::class)->countCustomForPlanQuota($tenantId),
+            self::TEMPLATES => (new TenantEmailTemplateRepository())->countCustomForPlanQuota($tenantId),
             default => 0,
         };
     }

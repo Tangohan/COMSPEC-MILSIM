@@ -174,7 +174,11 @@ final class SseMrzService
             return self::td3($data + ['doc_code' => 'P']);
         }
 
-        return self::td1($data + ['doc_code' => $type === 'driving_license' ? 'D' : 'I']);
+        return self::td1($data + ['doc_code' => match ($type) {
+            'driving_license' => 'D',
+            'military_id' => 'A',
+            default => 'I',
+        }]);
     }
 
     /**

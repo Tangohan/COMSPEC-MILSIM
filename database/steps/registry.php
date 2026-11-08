@@ -78,5 +78,6 @@ return [
     ['id' => 'platform_watch', 'label' => 'Surveillance de la plateforme : charge par route et par communauté (conservation courte) et alertes d’activité anormale du mod, à décider par un humain', 'group' => 'schema', 'file' => '3980_platform_watch.php', 'rerun' => true],
     ['id' => 'equipment_starter_kits', 'label' => 'Page Équipement : kits de départ proposés à une unité ou à un rôle (unité et origine du kit) et tenues mises en favori par chaque membre', 'group' => 'schema', 'file' => '3990_equipment_starter_kits.php', 'rerun' => true],
     ['id' => 'unit_struct_types', 'label' => 'Types d’entité : types personnalisés créés par chaque communauté pour ses unités', 'group' => 'schema', 'file' => '4010_unit_struct_types.php', 'rerun' => true],
+    ['id' => 'atak_sse_identity_suite', 'label' => 'COMSPEC IDENTITY : clé biométrique des fiches et identités (recoupement des contrôles), réglage d’envoi automatique par communauté, carte militaire pour les pays existants', 'group' => 'schema', 'file' => '4050_atak_sse_identity_suite.php', 'rerun' => true],
     ['id' => 'organization_data_purge_permission', 'label' => 'Droit de supprimer les photos du jeu et les données de renseignement de la communauté (propriétaire et administrateur)', 'group' => 'schema', 'file' => '4030_organization_data_purge_permission.php', 'rerun' => true],
 ];
