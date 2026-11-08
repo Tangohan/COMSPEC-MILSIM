@@ -669,3 +669,12 @@ dialog.jobcat.eqp {
   .eqp-actions .eq-hub__btn:last-child { grid-column: 1 / -1; }
   .eqp-row__label { min-height: 3.6rem; }
 }
+
+/* Contenu de la tenue, du JPC et du sac sur une carte */
+.eqx-card-inv { display: flex; flex-direction: column; gap: .25rem; margin-top: .35rem; }
+.eqx-card-inv__box { display: block; font-size: .75rem; line-height: 1.3; }
+.eqx-card-inv__box b { font-weight: 600; }
+.eqx-card-inv__box small {
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+    font-size: inherit; opacity: .8;
+}

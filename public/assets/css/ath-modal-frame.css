@@ -103,7 +103,7 @@ html.ath-mf-open { overflow: hidden; }
 
 /* Page affichée dans la fenêtre : seulement son contenu, sans menu, barre ni bandeaux. */
 html.ath-in-modal body > *:not(main):not(script):not(style):not(dialog):not(#flash-toast-root) { display: none !important; }
-html.ath-in-modal main > *:not(.bo-shell-row):not(script):not(style):not(#flash-toast-root) { display: none !important; }
+html.ath-in-modal main:has(> .bo-shell-row) > *:not(.bo-shell-row):not(script):not(style):not(#flash-toast-root) { display: none !important; }
 html.ath-in-modal .bo-shell-row > aside,
 html.ath-in-modal .bo-shell-row > .ath-mobile-bar,
 html.ath-in-modal .bo-shell-row > [aria-hidden="true"],

@@ -114,7 +114,7 @@ class COMSPEC_SSE_Editor {
         class HeadTitle: COMSPEC_SSE_EdMono { idc = 94002; text = "SSE / ÉDITEUR"; ED_POS(3.4,0.4,10,1); };
         class HeadStatus: COMSPEC_SSE_EdMono { idc = 94003; style = 1; ED_POS(18,0.4,12.5,1); };
         class HeadNav: COMSPEC_SSE_EdButton { idc = 94004; text = "BIBLIOTHÈQUE"; ED_POS(31,0.35,6,1.1); action = "['toggleLibrary'] call comspec_sse_fnc_editor"; };
-        class HeadClose: COMSPEC_SSE_EdButton { idc = 94005; text = "FERMER"; ED_POS(37.2,0.35,2.4,1.1); action = "closeDialog 2"; };
+        class HeadClose: COMSPEC_SSE_EdButton { idc = 94005; text = "FERMER"; ED_POS(37.2,0.35,2.4,1.1); action = "['close'] call comspec_sse_fnc_editor"; };
 
         // ------------------------------------------------------------ éditeur : 1. que créer ?
         class NavFill: COMSPEC_SSE_EdFill { idc = 94010; ED_POS(0,1.8,6.2,21.4); };

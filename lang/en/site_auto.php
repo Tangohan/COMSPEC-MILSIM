@@ -56306,4 +56306,7 @@ return [
     '%1 n’a pas d’unité : il apparaîtra comme détaché.' => '%1 has no unit: they will appear as detached.',
     '%1 reste affecté à %2 : il apparaîtra comme détaché.' => '%1 stays assigned to %2: they will appear as detached.',
     'Nouveau chef' => 'New commander',
+    'Compte relié et habilitation Confidentiel requis pour la bibliothèque de l’éditeur.' => 'A linked account and Confidential clearance are required for the editor library.',
+    'Bibliothèque indisponible pour le moment.' => 'Library unavailable for the moment.',
+    'Contenu refusé : rien n’a été enregistré.' => 'Content refused: nothing was saved.',
 ];

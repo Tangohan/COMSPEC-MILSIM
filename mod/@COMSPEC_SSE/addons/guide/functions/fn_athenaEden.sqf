@@ -14,6 +14,7 @@
       "open"     [parent]  fenêtre Connexion Athena (état du compte, code, ouverture de la page /lier)
       "track"              démarre le compteur (événements Eden de Cfg3DEN, ouverture du menu)
       "flush"              envoie le temps Eden gardé si le compte est relié (sans appel réseau sinon)
+      "restore"            reprend la session mémorisée (appel réseau), sans fenêtre : éditeur SSE ouvert depuis Eden
       "check" / "pair" / "openPage" / "render" / "loop" : étapes internes
     État de la fenêtre : uiNamespace « comspec_sse_athenaEden » (HashMap) ; temps : « comspec_sse_edenPending »
     (à envoyer), « comspec_sse_edenSession » (compté depuis le lancement du jeu), « comspec_sse_edenSent » (envoyé).
@@ -73,6 +74,7 @@ uiNamespace setVariable ["comspec_sse_athenaEden", _st];
 private _dlg = uiNamespace getVariable ["comspec_sse_athenaEdenDisplay", displayNull];
 
 switch (_mode) do {
+    case "restore": { [true] call _status; };
     case "open": {
         if (!is3DEN && {isNull findDisplay 313}) exitWith { hintSilent (("Connexion Athena : disponible dans l'éditeur Eden (menu COMSPEC SSE).") call comspec_sse_fnc_tr); };
         // Action d'un menu d'Eden : la liste déroulante est encore ouverte, la fenêtre est créée juste après.
