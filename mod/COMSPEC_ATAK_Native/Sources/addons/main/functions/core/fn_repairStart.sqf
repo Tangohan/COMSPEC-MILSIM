@@ -23,8 +23,19 @@ if (!_kit && !_tool) exitWith { ["WARNING", "Kit de réparation ATAK requis · (
 if (player getVariable ["COMSPEC_ATAK_Repairing", false]) exitWith { false };
 player setVariable ["COMSPEC_ATAK_Repairing", true];
 private _time = [20, 12] select _kit;
+// Téléphone en main ou porté avant la réparation : rouvert à la fin (ou à l'interruption), pour que le redémarrage
+// (écran noir puis écran de démarrage, fn_deviceOverlay via le rendu de page) se voie. Avant : rangé par la barre ACE
+// et jamais rouvert, le drapeau du téléphone porté restait à faux ; la réparation semblait sans effet.
+private _wasOpen = !isNull ([] call comspec_atak_native_fnc_display);
+private _wasHand = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false];
+private _hudWanted = uiNamespace getVariable ["COMSPEC_ATAK_HudWanted", false];
+missionNamespace setVariable ["COMSPEC_ATAK_RepairReopen", {
+    params [["_wasOpen", false], ["_wasHand", false], ["_hudWanted", false]];
+    uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", _hudWanted];
+    if (_wasOpen && {isNull ([] call comspec_atak_native_fnc_display)}) then { [_wasHand] call comspec_atak_native_fnc_open; };
+}];
 missionNamespace setVariable ["COMSPEC_ATAK_RepairDone", {
-    params [["_kit", false]];
+    params [["_kit", false], ["_wasOpen", false], ["_wasHand", false], ["_hudWanted", false]];
     player setVariable ["COMSPEC_ATAK_Repairing", false];
     if (_kit) then {
         private _cls = (items player) select { (toLower _x) isEqualTo "comspec_atak_repairkit" };
@@ -33,28 +44,30 @@ missionNamespace setVariable ["COMSPEC_ATAK_RepairDone", {
     };
     ["repair"] call comspec_atak_native_fnc_deviceRepair;
     ["SUCCESS", format ["Téléphone ATAK réparé · %1", ["Caisse à outils utilisée.", "Kit de réparation consommé."] select _kit], 5, 40] call comspec_atak_native_fnc_notify;
+    [_wasOpen, _wasHand, _hudWanted] call (missionNamespace getVariable ["COMSPEC_ATAK_RepairReopen", {}]);
 }];
+private _args = [_kit, _wasOpen, _wasHand, _hudWanted];
 player playActionNow "Medic";
 if (!isNil "ace_common_fnc_progressBar") then {
     // Le téléphone est entre les mains du réparateur : rangé pendant la réparation (la barre ACE est une fenêtre).
     // Sans ACE il reste ouvert : l'annonce et la fin de la réparation s'y lisent.
     uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
     [] call comspec_atak_native_fnc_close;
-    [_time, [_kit], {
+    [_time, _args, {
         (_this select 0) call (missionNamespace getVariable ["COMSPEC_ATAK_RepairDone", {}]);
     }, {
         player setVariable ["COMSPEC_ATAK_Repairing", false];
         ["WARNING", "Réparation du téléphone interrompue.", 4, 30] call comspec_atak_native_fnc_notify;
+        ((_this select 0) select [1, 3]) call (missionNamespace getVariable ["COMSPEC_ATAK_RepairReopen", {}]);
     }, ("Réparation du téléphone ATAK…" call comspec_atak_native_fnc_tr), { alive player }, ["isNotInside", "isNotSitting"]] call ace_common_fnc_progressBar;
 } else {
     ["INFO", format ["Réparation du téléphone ATAK… (%1 s)", _time], 4, 20] call comspec_atak_native_fnc_notify;
     [{
-        params ["_kit"];
         if (!alive player || {lifeState player isEqualTo "INCAPACITATED"}) exitWith {
             player setVariable ["COMSPEC_ATAK_Repairing", false];
             ["WARNING", "Réparation du téléphone interrompue.", 4, 30] call comspec_atak_native_fnc_notify;
         };
-        [_kit] call (missionNamespace getVariable ["COMSPEC_ATAK_RepairDone", {}]);
-    }, [_kit], _time] call comspec_atak_native_fnc_waitAndExec;
+        _this call (missionNamespace getVariable ["COMSPEC_ATAK_RepairDone", {}]);
+    }, _args, _time] call comspec_atak_native_fnc_waitAndExec;
 };
 true

@@ -13,6 +13,8 @@
 [*] App Drone : une photo prise en vision nocturne en plein jour est prise en vision jour (elle sortait presque blanche) ; la distance de vue du flux suit la distance de ce que regarde la nacelle (1500 m au moins, 3000 m au plus, réglable par mission).
 [*] Musique, Réglages et Drone : lancer ou changer de morceau, régler un interrupteur ou changer de vision ne redessine plus toute la page. Une erreur dans un bouton du téléphone ne se répète plus à chaque image.
 [*] Toutes les actions différées du téléphone passent par une file propre au mod : une erreur de script dans l'une d'elles ne bloque plus les autres, ni celles d'ACE, et ne se rejoue plus.
+[*] Réparer le téléphone (kit ou caisse à outils) : il se rouvre tout seul à la fin et son redémarrage se voit ; avant, il restait rangé et la réparation semblait sans effet.
+[*] Batterie : par temps froid (sous 5 °C), elle se vide plus vite, sauf en véhicule. Désactivable par l'admin du serveur (ATAK · Batterie et mémoire).
 [/list]
 
 
@@ -22,6 +24,7 @@
 [*] L'app Recherchés et les apps du SSE qui lisent les avis d'Athena ne font plus attendre le jeu : liste gardée 5 minutes et rafraîchie en arrière-plan.
 [*] Onglet Debug › PERFS : temps passé dans la liaison pour chaque commande (appels, moyenne, p95, pire) et bouton RAZ DLL.
 [*] Les notifications ne recalculent plus l'état du téléphone chaque seconde quand il n'y a rien à afficher.
+[*] Journal (RPT) : l'arrivée en jeu est découpée (chargement du monde et des autres mods, puis synchronisation), et chaque image figée indique la part passée dans le mod. Les journaux relus montrent moins de 0,5 s pour le mod sur une arrivée de 46 s : envoyez vos RPT, téléphone ouvert sur la carte et avec un drone, pour mesurer le reste.
 [b]Publication : 03/11/2026[/b]
 [quote]
 [b]Important :[/b] mettez à jour le pack 3.1.0, quittez Arma 3 complètement, puis relancez. Pour COMSPEC IDENTITY, gardez COMSPEC SSE à jour (1.3.0).

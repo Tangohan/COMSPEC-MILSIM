@@ -486,6 +486,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_battery_vehicle", "SLIDER",
     ["Recharge en véhicule (% par minute)", "Vitesse de recharge dans un véhicule moteur allumé. 0 : pas de recharge en véhicule."],
     _pow, [0, 20, 3, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_battery_cold", "CHECKBOX",
+    ["Froid : batterie moins efficace", "Sous 5 °C (météo ACE si elle est chargée, sinon heure et ciel), la batterie se vide plus vite : de 0,06 % par minute à 5 °C jusqu'à 0,3 % par minute par grand froid, en plus de l'usage. Décochez pour ignorer la température."],
+    _pow, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ram_total", "LIST",
     ["Mémoire vive (RAM) du téléphone", "RAM du téléphone (4 Go sur un S7). Le système en prend environ 1,2 Go ; avec moins de RAM, les apps restées ouvertes en fond se ferment plus vite."],
     _pow, [[2048, 3072, 4096, 6144, 8192, 12288], ["2 Go", "3 Go", "4 Go (S7)", "6 Go", "8 Go", "12 Go"], 2], 1] call comspec_atak_native_fnc_addSetting;

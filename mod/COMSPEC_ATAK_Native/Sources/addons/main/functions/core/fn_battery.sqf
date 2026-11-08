@@ -60,6 +60,12 @@ if ((count _tx) > 0) then { _f pushBack [format ["Envois de données (%1 / min)"
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
 if ((_lq getOrDefault ["sim", true]) && {(_lq getOrDefault ["bars", 4]) <= 1}) then { _f pushBack ["Recherche de réseau", 0.15]; };
 if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap])) > 0) then { _f pushBack ["Guidage GPS", 0.25]; };
+// Froid : une cellule lithium rend moins sous 5 °C (fn_weather : ACE Weather si présent). Réglage serveur
+// comspec_atak_native_battery_cold ; dans un véhicule fermé le téléphone est au chaud.
+if ((missionNamespace getVariable ["comspec_atak_native_battery_cold", true]) && {(vehicle player) isEqualTo player}) then {
+    private _temp = ([] call comspec_atak_native_fnc_weather) select 0;
+    if (_temp < 5) then { _f pushBack [format ["Froid (%1 °C)", _temp], (0.06 + 0.02 * (5 - _temp)) min 0.3]; };
+};
 private _uid = getPlayerUID player;
 private _t = [time, serverTime] select isMultiplayer;
 if (((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) findIf { _x isEqualType [] && {(_x param [2, ""]) isEqualTo _uid} && {(_x param [4, 1e9]) > _t} }) >= 0) then { _f pushBack ["Brouilleur", 0.8]; };
