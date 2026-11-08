@@ -256,13 +256,14 @@ final class AtakCommunityOrbatTest extends TestCase
     public function testActionsSelonEtatEtBoutons(): void
     {
         $bft = self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_pageBft.sqf');
-        // Carte et itinéraire : uniquement avec une piste.
-        self::assertStringContainsString('["CARTE", "center", (count _sel) > 0]', $bft);
-        self::assertStringContainsString('["Y ALLER", "route", (count _sel) > 0]', $bft);
-        self::assertStringContainsString('_meOn && {!_isOff}', $bft);
-        // Boutons sur deux rangées, texte au plancher de 14 px.
-        self::assertStringContainsString('_perRow = [3, 2] select _buzzOn', $bft);
-        self::assertStringContainsString('_b ctrlSetFontHeight (_fs max COMSPEC_ATAK_FontMin)', $bft);
+        // Carte et itinéraire : uniquement avec une piste. Sans piste, la fiche unique ne garde que SMS et vibreur.
+        $card = self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/ui/fn_unitCard.sqf');
+        self::assertStringContainsString('if (_pSt isEqualTo "NOTRACK") then {', $bft);
+        self::assertStringContainsString('_uCtx = "bftp";', $bft);
+        self::assertStringContainsString('if !((_x select 0) in ["sms", "buzz"]) then { _x set [2, false]; };', $card);
+        // Le vibreur suit le réseau et l'état hors ligne ; le texte des boutons reste au plancher de 14 px.
+        self::assertStringContainsString('_net && {_dev} && {!_off}', $card);
+        self::assertStringContainsString('((_l get "fontSmall") * 0.85) max COMSPEC_ATAK_FontMin', $card);
         self::assertStringNotContainsString('_rowAt', $bft);
 
         $act = self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_bftAction.sqf');

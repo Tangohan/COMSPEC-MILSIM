@@ -15,6 +15,8 @@ params [["_act", "center"], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _sid = _s getOrDefault ["bftSel", ""];
 private _e = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]) getOrDefault [_sid, createHashMap];
+// Allié sans piste (calque des alliés masqué, IA filtrée) : entité de passage donnée par la fiche unique (fn_unitCard).
+if ((count _e) isEqualTo 0) then { _e = _s getOrDefault ["bftSelEnt", createHashMap]; };
 if ((count _e) isEqualTo 0 && {(_sid select [0, 2]) isEqualTo "p:"} && {_act in ["sms", "buzz", "buzzSend", "buzzCancel"]}) then {
     private _seen = ["presence"] call comspec_atak_native_fnc_bftOrbat;
     private _o = (_seen select 1) getOrDefault [_sid, objNull];
@@ -89,11 +91,23 @@ switch (_act) do {
         if (isNull _obj) exitWith {};
         _s set ["chatPeer", name _obj];
         _s set ["chatView", "CONV"];
+        _s set ["chatPick", false];
         ["CHAT"] call comspec_atak_native_fnc_navigate;
     };
+    // CARTE : l'unité arrive sélectionnée (crochets et fiche), plus seulement centrée. Depuis une autre app, le centrage
+    // attend que la carte ait pris sa place à l'écran.
     default {
-        ["MAP"] call comspec_atak_native_fnc_navigate;
-        [[_obj, _e getOrDefault ["position", [0, 0, 0]]] select (isNull _obj), 0.03] call comspec_atak_native_fnc_mapCenter;
+        _s set ["selectedEntity", _e];
+        _s set ["selectedMarker", ""];
+        private _target = [_obj, _e getOrDefault ["position", [0, 0, 0]]] select (isNull _obj);
+        if ((_s getOrDefault ["activePage", ""]) isEqualTo "MAP") then {
+            [_target, 0.03] call comspec_atak_native_fnc_mapCenter;
+            ["mapCard"] call comspec_atak_native_fnc_unitCard;
+            [] call comspec_atak_native_fnc_inspectorUpdate;
+        } else {
+            ["MAP"] call comspec_atak_native_fnc_navigate;
+            [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, _target, 0.25] call comspec_atak_native_fnc_waitAndExec;
+        };
     };
 };
 true

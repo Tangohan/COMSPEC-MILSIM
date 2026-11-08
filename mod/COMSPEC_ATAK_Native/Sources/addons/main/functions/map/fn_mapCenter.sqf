@@ -4,7 +4,7 @@
     la cible ailleurs qu'au milieu. On anime, puis on corrige à l'image suivante d'après la position
     réellement affichée.
 */
-params [["_target", player], ["_scale", -1]];
+params [["_target", player], ["_scale", -1], ["_keepFollow", false]];
 disableSerialization;
 private _map = ([] call comspec_atak_native_fnc_mapCtrl);
 if (isNull _map) exitWith { false };
@@ -13,6 +13,8 @@ if ((count _pos) < 2) exitWith { false };
 _pos = [_pos select 0, _pos select 1];
 // Centrage sur un point (alerte, recherche, compte rendu) : le suivi de ma position est coupé, sinon il le reprend.
 if !(_target isEqualTo player) then { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["mapFollow", false]; };
+// Tout autre centrage arrête aussi le suivi d'une unité (fiche de la carte) ; ce suivi lui-même le garde.
+if (!_keepFollow) then { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["mapFollowId", ""]; };
 private _z = if (_scale > 0) then { _scale } else { ctrlMapScale _map };
 // Le décalage entre le point visé et le centre visible est constant à l'écran : on le reprend du dernier recentrage
 // pour viser juste du premier coup (sinon « Suivre ma position » saute puis se recale à chaque seconde).

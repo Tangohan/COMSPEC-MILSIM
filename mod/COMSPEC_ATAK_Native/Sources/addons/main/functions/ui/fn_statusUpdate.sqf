@@ -141,6 +141,8 @@ if (_page isEqualTo "MAP") then {
     [] call comspec_atak_native_fnc_mapOverlayUpdate;
     [] call comspec_atak_native_fnc_routeBanner;
     if (missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]) then { [] call comspec_atak_native_fnc_inspectorUpdate; };
+    ["tick"] call comspec_atak_native_fnc_unitCard;
+    ["mapTick"] call comspec_atak_native_fnc_squadBar;
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
     if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
         // Le suivi image par image (fn_mapOnDraw) prend le relais dès le premier centrage : ici, seulement au besoin
