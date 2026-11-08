@@ -63,6 +63,27 @@ EN : Realistic network by default, on your real radios
 - Rien de tout cela n'a tourné en jeu.
 
 ---
+## À venir : antennes réparées, tours relais épurées, mini-antenne de bâtiment (ATAK natif, version à attribuer)
+
+### À annoncer
+Type : nouveauté
+FR : Antennes déployables plus fiables, tours relais épurées, nouvelle mini-antenne
+- Les antennes transportables se déploient aussi par clic droit dans l'inventaire, et chaque refus s'affiche à l'écran.
+- Les tours relais perdent leurs câbles courbes et le filet de camouflage : un rendu net, sans changer les missions.
+- Nouvelle mini-antenne de bâtiment : visez un mur ou un toit, l'aperçu indique si l'endroit convient, puis Espace pour la poser. Elle prolonge le réseau sur une courte distance.
+- « État du relais » s'affiche aussi téléphone fermé.
+EN : More reliable deployable antennas, cleaner relay towers, new mini antenna
+- Portable antennas can also be deployed by right-clicking them in the inventory, and every refusal is shown on screen.
+- Relay towers lose their curved cables and camouflage net: a clean look, with no change for missions.
+- New building mini antenna: aim at a wall or roof, the preview tells you if the spot is valid, then press Space to place it. It extends the network over a short distance.
+- "Relay status" now also shows with the phone closed.
+
+### Détail technique
+- **Antennes, bug « ça fait rien » (à vérifier en jeu) :** aucun geste ne marchait dans l'inventaire (seul ACE Équipement déployait) et les refus partaient au centre de notifications, invisible téléphone fermé. Ajout du menu d'objet de CBA, messages à l'écran, lignes `[ANTENNE]` au RPT à chaque étape, objet rendu sans réponse du serveur sous 10 s.
+- **Tours relais :** `tools/strip_tower_cables.py` retire des MLOD les tubes courbes (`sweep`), les bagues, le filet et ses perches, et leurs ombres. `model_relay_towers.py` ne les génère plus. Classes inchangées. Aperçus Eden et rendus non régénérés : Blender absent.
+- **Mini-antenne :** `COMSPEC_ATAK_BuildingAntennaKit`, `COMSPEC_ATAK_DeployedAntenna_Mini`, `fn_antennaKit` « aim », réglages `comspec_atak_native_antkit_mini_*`. Bâtiment perdu : retirée sous 15 s.
+- **Fiche du relais :** « État du relais » à l'écran, en lignes (`fn_relayNet` « info »).
+
 ## Centre Zeus, liste des modules rangée, fenêtre de configuration des objets (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

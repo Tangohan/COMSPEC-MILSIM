@@ -602,13 +602,13 @@ private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
         _antCat, [300, 20000, _r, 0], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_gain", _id], "SLIDER", [format ["%1 : gain (dB)", _label], "Multiplie la portée de base : 6 dB la doublent à peu près."],
         _antCat, [0, 20, _g, 1], 1] call comspec_atak_native_fnc_addSetting;
-    [format ["comspec_atak_native_antkit_%1_height", _id], "SLIDER", [format ["%1 : hauteur d'antenne (m)", _label], "Hauteur utilisée par le bilan radio : plus haut, le relief gêne moins. Le modèle affiché ne change pas."],
-        _antCat, [1, 30, _h, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_height", _id], "SLIDER", [format ["%1 : hauteur d'antenne (m)", _label], "Hauteur au-dessus de l'objet posé, utilisée par le bilan radio : plus haut, le relief gêne moins. Le modèle affiché ne change pas."],
+        _antCat, [0.1, 30, _h, 1], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_mbps", _id], "SLIDER", [format ["%1 : débit (Mbit/s)", _label], "Débit maximal du relais."],
         _antCat, [0.5, 100, _m, 1], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_time", _id], "SLIDER", [format ["%1 : temps de déploiement (s)", _label], "Durée de la barre de progression. Replier prend moitié moins de temps."],
         _antCat, [3, 180, _t, 0], 1] call comspec_atak_native_fnc_addSetting;
-} forEach [["sat", "Antenne satellite", 1000, 3, 1.8, 10, 20], ["mast", "Antenne omnidirectionnelle", 1500, 6, 4, 8, 45]];
+} forEach [["sat", "Antenne satellite", 1000, 3, 1.8, 10, 20], ["mast", "Antenne omnidirectionnelle", 1500, 6, 4, 8, 45], ["mini", "Mini-antenne de bâtiment", 500, 3, 0.3, 4, 8]];
 ["comspec_atak_native_antkit_mast_root", "CHECKBOX",
     ["Antenne omnidirectionnelle raccordée", "Décoché : elle répète seulement, il lui faut un relais raccordé à portée, par exemple une antenne satellite. Coché : elle porte le réseau seule."],
     _antCat, false, 1] call comspec_atak_native_fnc_addSetting;

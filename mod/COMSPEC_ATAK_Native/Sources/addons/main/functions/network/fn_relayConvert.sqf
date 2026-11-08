@@ -148,6 +148,8 @@ switch (_mode) do {
         missionNamespace setVariable ["COMSPEC_AtakRelays", (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x && {_x isNotEqualTo _o} }, true];
     };
     case "check": {
+        // Mini-antennes dont le bâtiment est perdu (fn_antennaKit).
+        ["hosts"] call comspec_atak_native_fnc_antennaKit;
         // Antennes MRH (mod facultatif) : suivies ici, avant le décor qui sort plus bas s'il n'y a rien à vérifier.
         private _mrhCls = ["MRH_SatCom_Antenna_Base", "MRH_MT_SatCom_Antenna_Base"] select { isClass (configFile >> "CfgVehicles" >> _x) };
         if (_mrhCls isNotEqualTo []) then {

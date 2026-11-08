@@ -408,6 +408,9 @@ Valeurs de jeu plausibles, calées sur les types du module « ATAK · Relais »,
 
 Antennes MRH Satellite (mod facultatif) : `MRH_SatCom_Antenna_Base` et `MRH_MT_SatCom_Antenna_Base` dépliées deviennent des relais de type terminal satellite (`fn_relayConvert` « check », toutes les 15 s), retirées une fois repliées ou détruites. Réglage `comspec_atak_native_relay_mrh`, coché par défaut, indépendant de « Antennes du jeu = relais ATAK ». Sans MRH : rien n'est cherché, aucune dépendance.
 
+Mini-antenne de bâtiment (`COMSPEC_ATAK_BuildingAntennaKit`, objet posé `COMSPEC_ATAK_DeployedAntenna_Mini`, modèle `PortableLongRangeRadio_F.p3d`, au sol `SurvivalRadio_F.p3d`) : répéteur de 500 m + 3 dB, soit 706 m ; 0,3 m au-dessus de sa position réelle ; 4 Mbit/s ; 6 places ; pose en 8 s. Mode de visée sur un mur ou un toit à moins de 4 m (`Building`), aperçu vert ou rouge, Espace pour poser, Échap pour annuler, 45 s au plus. Bâtiment détruit, remplacé ou supprimé : retirée sous 15 s (`fn_antennaKit` « hosts », appelé par `fn_relayConvert` « check »). Réglages `comspec_atak_native_antkit_mini_<range | gain | height | mbps | time>`.
+
+Déploiement : ACE (Équipement) ou clic droit sur l'objet dans l'inventaire (menu d'objet de CBA). Chaque étape écrit une ligne `[COMSPEC ATAK NATIVE][INFO][ANTENNE]` au RPT, chaque refus s'affiche à l'écran.
 ## 12. Réalisme par défaut et garde-fous radio
 
 Le propriétaire revient sur la décision 5 pour `mpu_real` : coché par défaut. `mpu_voice` reste décoché, ainsi que la décision 17 : la voix n'a jamais été jouée en jeu, et rien ne garantit sans test que l'isolation tienne.
