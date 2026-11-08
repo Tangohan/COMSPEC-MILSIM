@@ -52,6 +52,8 @@ if (_lq getOrDefault ["airplane", false]) then {
 [] call comspec_atak_native_fnc_deviceOverlay;
 // Écran de verrouillage (heure, batterie, verrouillage au rallumage) et volet rapide (batterie, réseau).
 ["tick"] call comspec_atak_native_fnc_lockScreen;
+if (uiNamespace getVariable ["COMSPEC_ATAK_PadUp", false]) then { ["tick"] call comspec_atak_native_fnc_phonePad; };
+if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { ["scan"] call comspec_atak_native_fnc_btAction; };
 ["tick"] call comspec_atak_native_fnc_quickSettings;
 
 private _bat = [] call comspec_atak_native_fnc_battery;

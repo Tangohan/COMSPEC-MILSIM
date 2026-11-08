@@ -168,6 +168,8 @@ switch (_act) do {
         if (_lock) then { ["build"] call comspec_atak_native_fnc_lockScreen; };
         if (_shade) then { ["build"] call comspec_atak_native_fnc_quickSettings; };
         if (_lock || _shade) then { ["front"] call comspec_atak_native_fnc_fx; [] call comspec_atak_native_fnc_overlayFront; };
+        // Réglage du code (Réglages, fn_phoneOwn « pinSetup ») : la page redessinée ne passe pas devant le clavier.
+        if (!_lock && {(["up"] call comspec_atak_native_fnc_phonePad)} && {(uiNamespace getVariable ["COMSPEC_ATAK_Pad", createHashMap]) getOrDefault ["setup", false]}) then { ["draw"] call comspec_atak_native_fnc_phonePad; };
         [] call comspec_atak_native_fnc_toast;
         ["draw"] call comspec_atak_native_fnc_buzzAlert;
         ["draw"] call comspec_atak_native_fnc_fullAlert;

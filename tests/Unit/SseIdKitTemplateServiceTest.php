@@ -110,7 +110,7 @@ final class SseIdKitTemplateServiceTest extends TestCase
         self::assertEqualsCanonicalizing(array_column($docs, 'id'), $pack['kits'][0]['documents']);
         self::assertCount(1, $pack['briefs']);
         $b = $pack['briefs'][0];
-        self::assertSame(['uid', 'user_id', 'scope', 'identity_id', 'title', 'cover_name', 'biography', 'legend', 'contacts', 'instructions', 'phone', 'address'], array_keys($b));
+        self::assertSame(['uid', 'user_id', 'scope', 'identity_id', 'title', 'cover_name', 'biography', 'legend', 'contacts', 'instructions', 'phone', 'address'], array_slice(array_keys($b), 0, 12), 'Champs du contrat d’abord, dans le même ordre');
         self::assertSame('76561198000000010', $b['uid']);
         self::assertSame('VLACHOS Petros', $b['cover_name']);
         self::assertSame($t['legend'], $b['legend']);

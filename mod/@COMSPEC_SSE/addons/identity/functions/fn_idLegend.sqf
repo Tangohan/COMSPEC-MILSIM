@@ -14,7 +14,10 @@
     ["questions", [unité, nombre]] -> [[clé, question, bonne réponse, [leurres…]]…]   questions tirées de la légende
     ["aiAnswer", [unité, clé]] -> [phrase, cohérente]   un PNJ répond selon la qualité de sa couverture
     ["sheet", [unité, zeus]] -> fiche RP (HashMap) pour le seul joueur concerné ; zeus vrai : avec la vérité (nature,
-                                vrai nom, cohérence)
+                                vrai nom, cohérence). En plus de la légende : docs [[type, pays, numéro, fin de validité,
+                                porté]…] (ce qui est imprimé, jamais la nature), source athena | local (brief ou kit du
+                                paquet, sinon né en jeu), athenaAt (date), prepared (couverture ou texte préparé). Le brief
+                                brut, qui porte le Steam ID et l'identifiant du compte, ne part pas.
     ["reset", [unité]]   oublie la légende (papiers changés, couverture donnée par le Zeus)
 */
 params [["_op", "", [""]], ["_a", []]];
@@ -147,7 +150,8 @@ private _build = {
             format ["%1 chez %2 depuis %3 ans.", _prof, _employer, _jobYears], _family
         ]],
         ["brief", createHashMap], ["instructions", ""], ["title", ""], ["cover", _isCover], ["quality", _quality],
-        ["docId", _main getOrDefault ["id", ""]], ["kind", _kind]
+        ["docId", _main getOrDefault ["id", ""]], ["kind", _kind],
+        ["prepared", _isCover || {_kind in ["forged", "alias"]} || {(_main getOrDefault ["legendText", ""]) isNotEqualTo ""}]
     ];
     // Brief RP d'Athena (joueur : Steam ID) : biographie, légende, contacts, consignes, téléphone et adresse saisis.
     private _uid = getPlayerUID _u;
@@ -158,7 +162,10 @@ private _build = {
         if (("address" call _s) isNotEqualTo "") then { _L set ["address", "address" call _s]; };
         if (("phone" call _s) isNotEqualTo "") then { _phone set ["number", "phone" call _s]; };
         if (("biography" call _s) isNotEqualTo "") then { _L set ["biography", "biography" call _s]; };
-        if (("legend" call _s) isNotEqualTo "") then { (_L get "history") insert [0, ["legend" call _s]]; };
+        // Rubriques du texte de légende (site récent) ; un paquet plus ancien n'a que le texte entier.
+        { if ((_x call _s) isNotEqualTo "") then { _L set [_x, _x call _s]; }; } forEach ["employer", "travel", "family", "city", "profession"];
+        private _legendText = [("legend" call _s), ("legend_free" call _s)] select ("legend_free" in _brief);
+        if (_legendText isNotEqualTo "") then { (_L get "history") insert [0, [_legendText]]; };
         if (("contacts" call _s) isNotEqualTo "") then {
             { if ((trim _x) isNotEqualTo "") then { _contacts pushBack [trim _x, "", ""]; }; } forEach (("contacts" call _s) splitString (toString [10, 13] + ";"));
         };
@@ -249,7 +256,28 @@ switch (_op) do {
     case "sheet": {
         private _L = +(call _get);
         _L deleteAt "docsSig";
-        // Zeus : la vérité en plus (nature des papiers, vrai nom, cohérence). Joueur : sa propre fiche seulement.
+        // D'où vient ce qu'il porte : paquet Athena (brief, kit du compte Steam) ou né en jeu. Rien sur les autres joueurs.
+        private _uid = getPlayerUID _u;
+        private _brief = if (_uid isEqualTo "") then { createHashMap } else { (_reg getOrDefault ["briefs", createHashMap]) getOrDefault [_uid, createHashMap] };
+        private _kit = if (_uid isEqualTo "") then { [] } else { (_reg getOrDefault ["kits", createHashMap]) getOrDefault [_uid, []] };
+        _L set ["source", ["local", "athena"] select ((count _brief) > 0 || {_kit isNotEqualTo []})];
+        private _at = _brief getOrDefault ["updated_at", ""];
+        if !(_at isEqualType "") then { _at = ""; };
+        _L set ["athenaAt", [_at, _reg getOrDefault ["packAt", ""]] select (_at isEqualTo "")];
+        _L deleteAt "brief";
+        // Papiers : ce qui est imprimé et s'ils sont sur lui, jamais la nature ni le vrai nom.
+        private _countries = [] call comspec_sse_fnc_idCountries;
+        private _onHim = ([_u, 0] call comspec_sse_fnc_idDocsOf) apply { _x select 0 };
+        _L set ["docs", ((["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry }) apply {
+            [
+                ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_x getOrDefault ["type", ""])) max 0),
+                (_countries getOrDefault [_x getOrDefault ["country", ""], createHashMap]) getOrDefault ["name", _x getOrDefault ["country", ""]],
+                _x getOrDefault ["number", ""], _x getOrDefault ["expires", ""],
+                ((_x getOrDefault ["cls", ""]) isNotEqualTo "") && {(_x getOrDefault ["cls", ""]) in _onHim}
+            ]
+        }];
+        // Zeus : la vérité en plus (nature des papiers, vrai nom, cohérence). Joueur : sa propre fiche seulement, sans la nature.
+        if (_x1 isNotEqualTo true) then { _L deleteAt "kind"; _L deleteAt "quality"; };
         if (_x1 isEqualTo true) then {
             private _d = ["doc", [_L get "docId"]] call comspec_sse_fnc_idRegistry;
             _L set ["trueName", format ["%1 %2", toUpper (_d getOrDefault ["trueLast", ""]), _d getOrDefault ["trueFirst", ""]]];

@@ -227,6 +227,7 @@ final class SseEditorLibraryService
         return [
             'id' => (int) ($row['id'] ?? 0),
             'uid' => (string) ($row['item_uid'] ?? ''),
+            'assignable' => in_array($type, SseEditorAssignmentService::TYPES, true),
             'type_label' => self::TYPE_LABELS[$type] ?? $type,
             'title' => (string) ($row['title'] ?? ''),
             'body' => (string) ($row['body'] ?? ''),

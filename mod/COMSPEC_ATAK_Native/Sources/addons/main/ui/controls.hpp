@@ -57,6 +57,11 @@ class COMSPEC_RscButtonPrimary: COMSPEC_RscButton { colorText[]=ATAK_BG0; colorB
 // focus compris (colorBackground2, avec laquelle le moteur fait clignoter un bouton qui a le focus). Retour de jeu :
 // PERSONNALISER LE GROUPE et les lignes de réglage apparaissaient assombries (tout le dessous à 40 %).
 class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0}; colorBackground2[]={0,0,0,0}; colorFocused[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorBackgroundActive[]={0.36,0.78,0.42,0.18}; colorBorder[]={0,0,0,0}; text=""; };
+// Bouton plat : texte seul, aucun fond ni clignotement de focus. Son fond est un contrôle posé dessous (« face », fn_formRender
+// _flat) : ctrlSetBackgroundColor ne change que colorBackground, et le moteur fait clignoter un bouton qui a le focus entre
+// cette couleur et colorBackground2 (constante de classe, sombre). Un bouton choisi (texte foncé sur l'accent) devenait
+// du noir sur fond sombre : « MES ROUTES », « MA FICHE ». Retour de jeu 4.0.0.
+class COMSPEC_RscButtonFlat: COMSPEC_RscButtonOverlay { colorDisabled[]={0.42,0.46,0.44,0.7}; colorBackgroundActive[]={1,1,1,0.10}; };
 // Touches physiques de la coque : aucune surbrillance (la texture du téléphone suffit).
 class COMSPEC_RscButtonInvisible: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorShadow[]={0,0,0,0}; };
 class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelection[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };

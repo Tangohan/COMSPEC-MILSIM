@@ -71,6 +71,30 @@ final class RoleplayGameSessionRepository
     }
 
     /**
+     * Sessions d'un mois pour le calendrier de l'agenda (annulées exclues). Mois au format AAAA-MM.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function forCalendarMonth(int $tenantId, string $mois): array
+    {
+        $from = $mois . '-01 00:00:00';
+        $untilTs = strtotime($mois . '-01 +1 month');
+        $until = $untilTs !== false ? date('Y-m-d H:i:s', $untilTs) : $mois . '-28 23:59:59';
+        $st = $this->pdo->prepare(
+            "SELECT id, community_event_id, mission_name, session_kind, status, planned_starts_at, started_at, ended_at, created_at
+             FROM roleplay_game_sessions
+             WHERE tenant_id = ? AND status <> 'cancelled'
+               AND COALESCE(started_at, planned_starts_at, created_at) >= ?
+               AND COALESCE(started_at, planned_starts_at, created_at) < ?
+             ORDER BY COALESCE(started_at, planned_starts_at, created_at) ASC
+             LIMIT 300"
+        );
+        $st->execute([$tenantId, $from, $until]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
      * Participants par session : nombre, pointés, comptés pour le suivi et temps retenu.
      *
      * @param list<int> $sessionIds

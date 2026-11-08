@@ -33,6 +33,28 @@ if (_destroy) then { _amount = 1; };
 private _dmg = (_before + _amount) min 1;
 if (_lvl isEqualTo 2) then { _dmg = _dmg min 0.95; };
 _n set ["damage", _dmg];
+// Calques de dégâts (fn_screenFx, tools/gen_damage_fx.py) : tirés ici, à chaque choc, selon sa cause ; gardés avec le téléphone,
+// le dessin ne change donc ni à l'ouverture ni d'une image à l'autre. Oubliés à la réparation (fn_deviceRepair).
+if ((_amount > 0 || {(count _parts) > 0}) && {_dmg < 1}) then {
+    private _w = toLower _why;
+    private _table = switch (true) do {
+        case ((_w find "balle") >= 0): { [["g_bullet", 3], ["g_web", 2], ["l_ink", 3], ["l_band", 2], ["flicker", 1]] };
+        case ((_w find "éclat") >= 0): { [["g_chips", 2], ["g_bullet", 3], ["l_pixels", 2], ["g_scratch", 3], ["l_vlines", 2]] };
+        case ((_w find "chute") >= 0): { [["g_corner", 2], ["g_scratch", 3], ["l_hlines", 2], ["l_pixels", 2], ["shake", 1]] };
+        case ((_w find "accident") >= 0): { [["g_corner", 2], ["g_web", 2], ["l_band", 2], ["l_vlines", 2], ["shake", 1]] };
+        case ((_w find "explosion") >= 0): { [["g_web", 2], ["l_vlines", 2], ["l_hlines", 2], ["tint", 3], ["flicker", 1], ["g_chips", 2]] };
+        case ((_w find "eau") >= 0): { [["l_ink", 3], ["tint", 3], ["flicker", 1], ["l_pixels", 2]] };
+        default { [["g_scratch", 3], ["g_web", 2], ["l_pixels", 2], ["l_hlines", 2], ["tint", 3]] };
+    };
+    private _fxList = _n getOrDefault ["fx", []];
+    for "_i" from 1 to ([1, 2] select (_amount >= 0.2)) do {
+        private _pick = selectRandom _table;
+        if ((count _fxList) < 7 && {(_fxList findIf { (_x select 0) isEqualTo (_pick select 0) }) < 0}) then {
+            _fxList pushBack [_pick select 0, floor random (_pick select 1)];
+        };
+    };
+    _n set ["fx", _fxList];
+};
 // Composants : textes de ce qui vient de lâcher.
 private _what = [];
 private _comp = {

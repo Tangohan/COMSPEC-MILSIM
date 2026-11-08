@@ -327,7 +327,7 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
             </section>
         <?php endif; ?>
 
-        <section class="bo-events__panel bo-events__panel--static">
+        <section class="bo-events__panel bo-events__panel--static" data-ath-quiet-scope="event-slots-<?= $eid ?>">
             <div class="bo-events__panel-static-head bo-events__panel-static-head--row">
                 <div>
                     <h2>Postes de mission</h2>
@@ -336,7 +336,7 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
             </div>
 
             <?php if ($eventStaffActionsEnabled): ?>
-            <form method="post" action="<?= url('back-office/events/' . $eid . '/slots') ?>" class="bo-events__form">
+            <form method="post" data-ath-quiet action="<?= url('back-office/events/' . $eid . '/slots') ?>" class="bo-events__form">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                 <div class="bo-events__form-grid">
                     <div>
@@ -454,7 +454,7 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                                         <td data-label="Actions">
                                             <details>
                                                 <summary class="bo-events__link-btn">Modifier</summary>
-                                                <form method="post" action="<?= url('back-office/events/' . $eid . '/slots/' . $sid) ?>" class="bo-events__form">
+                                                <form method="post" data-ath-quiet action="<?= url('back-office/events/' . $eid . '/slots/' . $sid) ?>" class="bo-events__form">
                                                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                                                     <div class="bo-events__form-grid">
                                                         <div>
@@ -518,7 +518,7 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
             <?php endif; ?>
         </section>
 
-        <section class="bo-events__panel bo-events__panel--static">
+        <section class="bo-events__panel bo-events__panel--static" data-ath-quiet-scope="event-participants-<?= $eid ?>">
             <div class="bo-events__panel-static-head bo-events__panel-static-head--row">
                 <div>
                     <h2>Feuille de présence</h2>
@@ -573,7 +573,7 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                                     </td>
                                     <td data-label="Participation">
                                         <?php if ($eventStaffActionsEnabled): ?>
-                                            <form method="post" action="<?= url('back-office/events/' . $eid . '/participant/rsvp') ?>" class="bo-events__inline-form bo-events__inline-form--stack">
+                                            <form method="post" data-ath-quiet action="<?= url('back-office/events/' . $eid . '/participant/rsvp') ?>" class="bo-events__inline-form bo-events__inline-form--stack">
                                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                                                 <input type="hidden" name="user_id" value="<?= $uid ?>">
                                                 <select name="participation" class="bo-events__select bo-events__select--sm" aria-label="Participation">
@@ -619,7 +619,7 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                                     <?php if ($eventStaffActionsEnabled): ?>
                                         <td data-label="Actions">
                                             <?php if ($canPoint && !$hasCheck): ?>
-                                                <form method="post" action="<?= url('back-office/events/' . $eid . '/participant/presence') ?>">
+                                                <form method="post" data-ath-quiet action="<?= url('back-office/events/' . $eid . '/participant/presence') ?>">
                                                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                                                     <input type="hidden" name="user_id" value="<?= $uid ?>">
                                                     <button type="submit" class="bo-events__action bo-events__action--dark">Pointer présence</button>

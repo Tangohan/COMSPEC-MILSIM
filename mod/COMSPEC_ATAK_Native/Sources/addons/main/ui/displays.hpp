@@ -92,6 +92,15 @@ class RscTitles {
         idd=-1; duration=1e+011; fadein=0; fadeout=0;
         onLoad="[_this select 0, false] call comspec_atak_native_fnc_displayLoad";
     };
+    // Case « RELAIS ATAK » près du cadre de transmission d'ACRE2 (fn_relayTxBadge) : placée par le code.
+    class COMSPEC_RscTitleRelayTx {
+        idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
+        onLoad="uiNamespace setVariable ['COMSPEC_ATAK_RelayTxDisplay', _this select 0]";
+        class controls {
+            class Back: COMSPEC_RscText { idc=7751; x=-2; y=-2; w=0.05; h=0.05; colorBackground[]={0.08,0.06,0.01,0.82}; };
+            class Label: COMSPEC_RscTextCenter { idc=7752; x=-2; y=-2; w=0.05; h=0.05; colorBackground[]={0,0,0,0}; colorText[]={0.92,0.72,0.2,1}; };
+        };
+    };
     // GPS de poignet (fn_wristGps) : contrôles créés par le code.
     class COMSPEC_RscTitleWristGps {
         idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;

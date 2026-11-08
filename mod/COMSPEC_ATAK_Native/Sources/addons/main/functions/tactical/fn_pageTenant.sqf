@@ -8,7 +8,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 private _tab = _s getOrDefault ["tenantTab", "CONSIGNE"];
-private _icon = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
+private _icon = "\z\comspec_atak_native\addons\main\data\app_tenant.paa";
 private _admin = [player] call comspec_atak_native_fnc_adminAllowed;
 ["briefLoad"] call comspec_atak_native_fnc_tenantAction;
 private _notes = ["notes"] call comspec_atak_native_fnc_tenantAction;
