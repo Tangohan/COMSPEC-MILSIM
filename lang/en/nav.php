@@ -763,4 +763,6 @@ return [
     'mods_steam_workshop' => 'Mods (Steam Workshop)',
     'portail_milsim' => 'MILSIM portal',
     'haut_de_page' => 'Back to top',
+    'patch_studio' => 'Patch Studio',
+    'atelier_graphique_et_exports_comspec_atak_formule_pro_minimum' => 'Graphic workshop and COMSPEC ATAK exports — Pro+ plan or higher',
 ];

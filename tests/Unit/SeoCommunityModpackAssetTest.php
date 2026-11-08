@@ -99,6 +99,6 @@ final class SeoCommunityModpackAssetTest extends TestCase
         // L'ancienne aide « recherche portail » n'est pas reprise : la recherche portail
         // (UserRepository::searchForPortal) porte sur le nom de l'emploi, pas sur sa description.
         self::assertStringContainsString('<summary>Description et rattachements', $editor);
-        self::assertStringContainsString('<textarea name="description" rows="3" maxlength="500">', $editor);
+        self::assertStringContainsString('<textarea name="description" rows="4" maxlength="500" placeholder="', $editor);
     }
 }
