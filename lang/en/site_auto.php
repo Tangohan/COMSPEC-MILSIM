@@ -24800,6 +24800,8 @@ return [
     'Kits de droits prêts à l’emploi' => 'Ready-made permission kits',
     'Kits de départ' => 'Starter kits',
     'Kits de départ : formule Pro et plus' => 'Starter kits: Pro plan and above',
+    'Kits de départ de la communauté (proposés à une unité ou à un rôle, copiés par les membres) et assistant de création de tenue d’après l’équipement remonté du jeu. Consulter et créer ses propres tenues reste gratuit.' => 'Community starter kits (offered to a unit or a role, copied by members) and the outfit-building assistant based on the equipment reported from the game. Viewing and creating your own outfits stays free.',
+    'Kits de départ et assistant de tenue' => 'Starter kits and outfit assistant',
     'Kits de présentation' => 'Presentation kits',
     'Kits des joueurs' => 'Player kits',
     'Kits d’accès' => 'Access kits',
