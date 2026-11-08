@@ -65,7 +65,8 @@ final class PlatformUsersTableTest extends TestCase
             self::assertContains($key, ['', 'nom'], 'Tri accepté pour ' . $hostile);
         }
         self::assertSame(['', 'desc'], UserRepository::normalizePlatformDirectorySort('inconnu', 'asc'));
-        self::assertSame(['connexion', 'desc'], UserRepository::normalizePlatformDirectorySort('connexion', 'DESC'));
+        self::assertSame(['connexion_site', 'desc'], UserRepository::normalizePlatformDirectorySort('connexion', 'DESC'), 'Ancienne clé de tri toujours valide.');
+        self::assertSame(['connexion_jeu', 'asc'], UserRepository::normalizePlatformDirectorySort('connexion_jeu', 'asc'));
         self::assertSame(['email', 'asc'], UserRepository::normalizePlatformDirectorySort('email', 'n importe quoi'));
         foreach (UserRepository::PLATFORM_DIRECTORY_SORTS as $key) {
             self::assertSame($key, UserRepository::normalizePlatformDirectorySort($key, 'asc')[0]);
@@ -100,6 +101,36 @@ final class PlatformUsersTableTest extends TestCase
         self::assertStringContainsString("\$dir = \$sortDir === 'desc' ? 'DESC' : 'ASC';", $repo);
         self::assertStringContainsString('self::normalizePlatformDirectorySort(', $repo);
         self::assertStringNotContainsString("ORDER BY {\$options", $repo);
+    }
+
+    public function testOldLoginColumnKeyShowsBothLoginColumnsAndInactifsIsAKnownState(): void
+    {
+        $f = PlatformUsersDirectoryQuery::normalize(['cols_set' => '1', 'cols' => ['connexion', 'email'], 'tri' => 'connexion', 'status' => 'inactifs', 'inactif' => '180']);
+        self::assertSame(['nom', 'email', 'connexion_site', 'connexion_jeu'], $f['cols']);
+        self::assertSame('connexion_site', $f['tri']);
+        self::assertSame('inactifs', $f['status']);
+        self::assertSame('180', $f['inactif']);
+        self::assertContains('inactifs', PlatformUsersDirectoryQuery::STATUSES);
+        self::assertSame(['nom', 'connexion_site', 'connexion_jeu'], PlatformUserColumns::normalize(['connexion']));
+    }
+
+    public function testDirectoryQueryNeverFailsWithA500WhenAnExtraSourceIsRefused(): void
+    {
+        $repo = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/UserRepository.php');
+        // Le tri par volume n'est plus une jointure SQL entre colonnes texte de deux tables.
+        self::assertStringContainsString('function sortPlatformDirectoryByVolume(', $repo);
+        self::assertStringNotContainsString('__vol', $repo);
+        // Toute requête avec jointure de tri ou date de jeu a un repli sans jointure.
+        self::assertStringContainsString('requête complète refusée, repli sur le tri par défaut', $repo);
+        self::assertStringContainsString('return $run(true, $limit);', $repo);
+        // MariaDB refuse l'alias d'un agrégat dans une expression du ORDER BY (1247) : cause de l'erreur 500 des tris.
+        self::assertStringNotContainsString('(sort_at IS NULL)', $repo);
+        self::assertStringContainsString("' IS NULL) ASC, '", $repo);
+        // Collation explicite pour comparer les e-mails de deux tables (1267 sinon).
+        $bans = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Repositories/PlatformAccountBanRepository.php');
+        self::assertStringContainsString('private function collate()', $bans);
+        // Les dates de jeu se joignent sur un entier (users.id), jamais sur du texte.
+        self::assertStringContainsString('__gs ON __gs.user_id = u.id', $repo);
     }
 
     public function testQueryStringKeepsOnlyNonDefaultValuesAndColumns(): void
@@ -222,7 +253,8 @@ final class PlatformUsersTableTest extends TestCase
         ]);
         self::assertStringContainsString('data-col="email"', $slim);
         self::assertStringNotContainsString('data-col="volume"', $slim);
-        self::assertStringNotContainsString('data-col="connexion"', $slim);
+        self::assertStringNotContainsString('data-col="connexion_site"', $slim);
+        self::assertStringNotContainsString('data-col="connexion_jeu"', $slim);
 
         $empty = $this->render('admin/system/users', [
             'platformUserGroups' => [], 'platformUsersTotal' => 0, 'platformUsersFilters' => PlatformUsersDirectoryQuery::normalize([]),

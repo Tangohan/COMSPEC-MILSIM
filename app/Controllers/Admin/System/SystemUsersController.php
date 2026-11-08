@@ -98,8 +98,10 @@ final class SystemUsersController
         $pages = max(1, (int) ceil($total / $perPage));
         $groups = $this->decorateDirectoryGroups(
             is_array($result['groups'] ?? null) ? $result['groups'] : [],
-            in_array('volume', $columns, true)
+            in_array('volume', $columns, true),
+            in_array('connexion_jeu', $columns, true)
         );
+        $inactiveCount = $this->countInactive($filters);
         $realTenants = array_values(array_filter(
             $this->tenants->listOverviewForPlatform(),
             static fn (array $t): bool => !PortalAccessChoice::isPlaceholderTenant($t)
@@ -120,6 +122,7 @@ final class SystemUsersController
             'pendingPurgeRequests' => $this->purgeRequests->listPending(50),
             'pendingPurgeRequestsCount' => $this->purgeRequests->countPending(),
             'platformBansCount' => $this->bans()->countActive(),
+            'platformInactiveCount' => $inactiveCount,
             'platformBanSupportsEnd' => $this->bans()->supportsEndDate(),
         ]);
     }
@@ -179,7 +182,7 @@ final class SystemUsersController
             }
             $groups = array_slice($groups, 0, $limit);
         }
-        $groups = $this->decorateDirectoryGroups($groups, in_array('volume', $columns, true));
+        $groups = $this->decorateDirectoryGroups($groups, in_array('volume', $columns, true), in_array('connexion_jeu', $columns, true));
 
         $header = [];
         foreach ($columns as $col) {
@@ -195,7 +198,8 @@ final class SystemUsersController
                     'email' => (string) ($g['email'] ?? ''),
                     'communautes' => implode(' | ', (array) ($g['community_names'] ?? [])),
                     'etat' => self::STATE_LABELS[(string) ($g['state'] ?? '')] ?? '',
-                    'connexion' => (string) ($g['last_login'] ?? ''),
+                    'connexion_site' => (string) ($g['last_login'] ?? ''),
+                    'connexion_jeu' => (string) ($g['last_game'] ?? ''),
                     'creation' => (string) ($g['created'] ?? ''),
                     'volume' => (int) ($g['volume_bytes'] ?? 0),
                     'sanctions' => (int) ($g['sanctions_count'] ?? 0),
@@ -222,6 +226,33 @@ final class SystemUsersController
             ->header('Content-Disposition', 'attachment; filename="comptes-' . gmdate('Y-m-d') . '.csv"')
             ->header('Cache-Control', 'no-store')
             ->setBody($csv);
+    }
+
+    /**
+     * Nombre de personnes inactives (ni connexion au site ni session de jeu depuis le seuil choisi, 90 jours par
+     * défaut), pour l'onglet « Inactifs ». Null si le calcul échoue : l'onglet s'affiche sans chiffre.
+     *
+     * @param array<string, mixed> $filters
+     */
+    private function countInactive(array $filters): ?int
+    {
+        try {
+            $result = $this->users->listGroupedAccountsForPlatformDirectory(
+                null,
+                'inactifs',
+                (int) $filters['tenant_id'] > 0 ? (int) $filters['tenant_id'] : null,
+                1,
+                10,
+                $filters['inactif'] !== '' ? (string) $filters['inactif'] : null,
+                []
+            );
+
+            return (int) ($result['total'] ?? 0);
+        } catch (\Throwable $e) {
+            error_log('[admin.users] inactifs : ' . $e->getMessage());
+
+            return null;
+        }
     }
 
     /**
@@ -275,11 +306,21 @@ final class SystemUsersController
      * @param list<array<string, mixed>> $groups
      * @return list<array<string, mixed>>
      */
-    private function decorateDirectoryGroups(array $groups, bool $withVolume = false): array
+    private function decorateDirectoryGroups(array $groups, bool $withVolume = false, bool $withGame = false): array
     {
         $emails = array_map(static fn (array $g): string => (string) ($g['email'] ?? ''), $groups);
         $bans = $this->bans()->activeByEmails($emails);
         $counts = $this->bans()->countsByEmails($emails);
+        $games = [];
+        if ($withGame) {
+            $ids = [];
+            foreach ($groups as $group) {
+                foreach ((array) ($group['memberships'] ?? []) as $m) {
+                    $ids[] = (int) ($m['id'] ?? 0);
+                }
+            }
+            $games = $this->users->lastGameSeenByUserIds($ids);
+        }
         $volumes = [];
         if ($withVolume) {
             $steams = [];
@@ -320,10 +361,15 @@ final class SystemUsersController
                 }
             }
             $lastLogin = '';
+            $lastGame = '';
             $created = '';
             $steamSeen = [];
             $volume = 0;
             foreach ($memberships as $m) {
+                $game = (string) ($games[(int) ($m['id'] ?? 0)] ?? '');
+                if ($game !== '' && $game > $lastGame) {
+                    $lastGame = $game;
+                }
                 $login = trim((string) ($m['last_login_at'] ?? ''));
                 if ($login !== '' && $login > $lastLogin) {
                     $lastLogin = $login;
@@ -346,6 +392,7 @@ final class SystemUsersController
             $group['sanctions_count'] = (int) ($counts[$key] ?? 0);
             $group['community_names'] = array_map('strval', array_keys($names));
             $group['last_login'] = $lastLogin;
+            $group['last_game'] = $lastGame;
             $group['created'] = $created;
             $group['volume_bytes'] = $volume;
             $group['has_steam'] = $steamSeen !== [];

@@ -140,7 +140,58 @@ final class PlatformUsersDirectoryMysqlTest extends TestCase
         $desc = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'volume', 'dir' => 'desc']));
         self::assertSame(['zed@example.test', 'amy@example.test'], array_slice($desc, 0, 2));
         $asc = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'volume', 'dir' => 'asc']));
-        self::assertSame('amy@example.test', end($asc) === 'zed@example.test' ? 'amy@example.test' : 'x');
+        self::assertSame(['zed@example.test', 'amy@example.test'], array_slice($asc, -2));
+        // Deuxième page : le tri est global, pas seulement sur la page.
+        $page2 = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 2, 10, null, ['sort' => 'volume', 'dir' => 'desc']));
+        self::assertSame([], $page2);
+    }
+
+    public function testVolumeSortFallsBackToAStableOrderWhenTheSourceIsMissing(): void
+    {
+        $this->pdo->exec('DROP TABLE atak_ingest_player_daily');
+        $this->resetStaticCaches();
+        $repo = new UserRepository($this->pdo);
+        $result = $repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'volume', 'dir' => 'desc']);
+        self::assertSame(4, $result['total']);
+        self::assertCount(4, $result['groups']);
+    }
+
+    public function testBothLoginDatesAreSortableAndTheOldKeyStillWorks(): void
+    {
+        $repo = new UserRepository($this->pdo);
+        $site = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'connexion_site', 'dir' => 'desc']));
+        self::assertSame('zed@example.test', $site[0]);
+        self::assertSame('bob@example.test', end($site), 'Jamais connecté au site : en dernier.');
+        $old = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'connexion', 'dir' => 'desc']));
+        self::assertSame($site, $old);
+        $game = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'connexion_jeu', 'dir' => 'desc']));
+        self::assertSame('eve@example.test', $game[0], 'Seule Eve a une session de jeu.');
+        self::assertSame([4], array_keys($repo->lastGameSeenByUserIds([1, 2, 3, 4])));
+    }
+
+    public function testInactiveCategoryUsesSiteAndGameDatesWithTheExistingThreshold(): void
+    {
+        $repo = new UserRepository($this->pdo);
+        $default = $repo->listGroupedAccountsForPlatformDirectory(null, 'inactifs', null, 1, 50, null, []);
+        self::assertSame(['amy@example.test', 'bob@example.test'], $this->sorted($this->emails($default)), 'Eve a joué récemment, Zed s’est connecté au site.');
+        self::assertSame(2, $default['total']);
+        $thirty = $repo->listGroupedAccountsForPlatformDirectory(null, 'inactifs', null, 1, 50, '30', []);
+        self::assertSame(['amy@example.test', 'bob@example.test'], $this->sorted($this->emails($thirty)));
+        $never = $repo->listGroupedAccountsForPlatformDirectory(null, 'inactifs', null, 1, 50, 'jamais', []);
+        self::assertSame(['bob@example.test'], $this->emails($never), 'Jamais connecté ni au site ni en jeu.');
+        $sorted = $repo->listGroupedAccountsForPlatformDirectory(null, 'inactifs', null, 1, 50, null, ['sort' => 'connexion_jeu', 'dir' => 'asc']);
+        self::assertSame(2, $sorted['total']);
+    }
+
+    public function testInactiveCategoryFallsBackToTheSiteDateWhenGameSessionsAreMissing(): void
+    {
+        $this->pdo->exec('DROP TABLE game_sessions');
+        $this->resetStaticCaches();
+        $repo = new UserRepository($this->pdo);
+        $result = $repo->listGroupedAccountsForPlatformDirectory(null, 'inactifs', null, 1, 50, null, []);
+        self::assertSame(['amy@example.test', 'bob@example.test', 'eve@example.test'], $this->sorted($this->emails($result)));
+        $game = $repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'connexion_jeu']);
+        self::assertSame(4, $game['total']);
     }
 
     public function testFiltersCombineWithSortsOnRealMysql(): void
@@ -148,9 +199,19 @@ final class PlatformUsersDirectoryMysqlTest extends TestCase
         $repo = new UserRepository($this->pdo);
         $r = $repo->listGroupedAccountsForPlatformDirectory(null, 'banned', null, 1, 50, null, ['sort' => 'volume']);
         self::assertSame(['amy@example.test'], $this->emails($r));
-        $r = $repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, '90', ['sort' => 'volume', 'dir' => 'desc', 'created' => '', 'sanctioned' => '']);
+        $r = $repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, '90', ['sort' => 'volume', 'dir' => 'desc']);
         self::assertContains('amy@example.test', $this->emails($r));
         $r = $repo->listGroupedAccountsForPlatformDirectory(null, null, 1, 1, 10, null, ['sort' => 'communautes', 'dir' => 'desc']);
         self::assertSame('zed@example.test', $this->emails($r)[0]);
+        $r = $repo->listGroupedAccountsForPlatformDirectory('zed', null, null, 1, 10, null, ['sort' => 'volume', 'created' => '', 'sanctioned' => '']);
+        self::assertSame(['zed@example.test'], $this->emails($r));
+    }
+
+    /** @param list<string> $list @return list<string> */
+    private function sorted(array $list): array
+    {
+        sort($list);
+
+        return $list;
     }
 }

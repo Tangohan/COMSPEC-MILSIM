@@ -55378,4 +55378,10 @@ return [
     'Volume par jour' => 'Volume per day',
     'non relié' => 'not linked',
     'À lire avant les chiffres' => 'Read before the figures',
+    'Catégories de comptes' => 'Account categories',
+    'Connexion au site' => 'Site sign-in',
+    'Dernière connexion en jeu' => 'Last in-game sign-in',
+    'Ni connexion au site ni session de jeu depuis le seuil choisi (90 jours par défaut, personnes jamais connectées comprises)' => 'No site sign-in and no game session since the chosen threshold (90 days by default, people who never signed in included)',
+    'Personnes sans connexion au site ni session de jeu depuis %1. Le seuil se règle avec « Sans connexion depuis ».' => 'People with no site sign-in and no game session for %1. The threshold is set with "No sign-in for".',
+    'toujours (jamais connectées)' => 'ever (never signed in)',
 ];

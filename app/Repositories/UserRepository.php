@@ -199,7 +199,13 @@ class UserRepository
     public const PLATFORM_CREATED_FILTERS = ['7', '30', '90'];
 
     /** Colonnes triables de l’annuaire plateforme : liste blanche, aucune valeur web n’entre dans le SQL. */
-    public const PLATFORM_DIRECTORY_SORTS = ['nom', 'indicatif', 'email', 'communautes', 'etat', 'connexion', 'creation', 'volume', 'sanctions'];
+    public const PLATFORM_DIRECTORY_SORTS = ['nom', 'indicatif', 'email', 'communautes', 'etat', 'connexion_site', 'connexion_jeu', 'creation', 'volume', 'sanctions'];
+
+    /** Anciennes clés de tri restées valides (liens enregistrés) => clé actuelle. */
+    public const PLATFORM_DIRECTORY_SORT_ALIASES = ['connexion' => 'connexion_site'];
+
+    /** Seuil d'inactivité (jours) de la catégorie « Inactifs » quand aucun seuil n'est choisi. */
+    public const PLATFORM_INACTIVE_DEFAULT_DAYS = 90;
 
     /** Fenêtre (jours) du volume de données affiché par personne dans l’annuaire. */
     public const PLATFORM_VOLUME_DAYS = 30;
@@ -212,6 +218,7 @@ class UserRepository
     public static function normalizePlatformDirectorySort(?string $key, ?string $dir): array
     {
         $key = strtolower(trim((string) $key));
+        $key = self::PLATFORM_DIRECTORY_SORT_ALIASES[$key] ?? $key;
         if (!in_array($key, self::PLATFORM_DIRECTORY_SORTS, true)) {
             return ['', 'desc'];
         }
@@ -223,7 +230,7 @@ class UserRepository
      * Expression SQL agrégée (une valeur par personne) et jointures nécessaires pour une clé de tri validée.
      * Retourne null quand la donnée n’existe pas dans cette base (tri par défaut conservé).
      *
-     * @return array{select: string, join: string}|null
+     * @return array{select: string, join: string, game?: bool}|null
      */
     private function platformDirectorySortSpec(string $key, bool $hasMemberships, bool $hasDeletedAt): ?array
     {
@@ -241,8 +248,11 @@ class UserRepository
                 return ['select' => 'LOWER(TRIM(u.email))', 'join' => ''];
             case 'creation':
                 return ['select' => 'MIN(u.created_at)', 'join' => ''];
-            case 'connexion':
+            case 'connexion_site':
                 return $this->hasLastLoginColumn() ? ['select' => 'MAX(u.last_login_at)', 'join' => ''] : null;
+            case 'connexion_jeu':
+                // Jointure sur un entier (users.id) : aucun risque de collation. Ajoutée par l'appelant (alias __gs).
+                return $this->tableExists('game_sessions') ? ['select' => 'MAX(__gs.g)', 'join' => '', 'game' => true] : null;
             case 'communautes':
                 if (!$hasMemberships) {
                     return ['select' => 'COUNT(DISTINCT u.tenant_id)', 'join' => ''];
@@ -275,16 +285,8 @@ class UserRepository
                     'join' => "LEFT JOIN ({$counts}) __bc ON __bc.email_norm{$collate} = LOWER(TRIM(u.email)){$collate}",
                 ];
             case 'volume':
-                if (!$this->tableExists('atak_ingest_player_daily')) {
-                    return null;
-                }
-                $since = $pdo->quote(gmdate('Y-m-d', time() - (self::PLATFORM_VOLUME_DAYS - 1) * 86400));
-
-                return [
-                    'select' => 'MAX(COALESCE(__vol.b, 0))',
-                    'join' => "LEFT JOIN (SELECT steam_uid, SUM(bytes) AS b FROM atak_ingest_player_daily WHERE day >= {$since} GROUP BY steam_uid) __vol"
-                        . " ON __vol.steam_uid{$collate} = u.steam_id{$collate}",
-                ];
+                // Trié en PHP (voir sortPlatformDirectoryByVolume) : aucune jointure entre colonnes texte de deux tables.
+                return null;
         }
 
         return null;
@@ -3443,54 +3445,135 @@ class UserRepository
         $fromUsers = $hasMemberships
             ? 'FROM users u'
             : 'FROM users u INNER JOIN tenants t ON t.id = u.tenant_id';
-        // Filtre « inactif » : porte sur la dernière connexion de la personne (toutes fiches confondues).
-        $havingParts = $inactivityFilter !== null ? [$inactivityFilter['sql']] : [];
-        $params = array_merge($params, $inactivityFilter['params'] ?? []);
-        if ($createdDays !== '') {
-            // Comptes créés depuis N jours : la plus ancienne fiche de la personne est récente.
-            $havingParts[] = 'MIN(u.created_at) >= ?';
-            $params[] = gmdate('Y-m-d H:i:s', time() - ((int) $createdDays) * 86400);
+        // Catégorie « Inactifs » : ni connexion au site ni session de jeu depuis le seuil (le filtre « inactif »,
+        // 90 jours par défaut). Elle remplace le filtre « inactif » qui, seul, ne regarde que le site.
+        $inactiveTab = $status === 'inactifs';
+        if ($inactiveTab) {
+            $inactivityFilter = null;
         }
-        $having = $havingParts !== [] ? ' HAVING ' . implode(' AND ', $havingParts) : '';
-        $sortSelect = $inactivityFilter !== null ? 'MAX(u.last_login_at) AS sort_at' : 'MAX(u.updated_at) AS sort_at';
-        $sortOrder = $inactivityFilter !== null ? 'sort_at ASC, email_key ASC' : 'sort_at DESC';
-        $sortJoin = '';
-        $explicit = $sortKey !== '' ? $this->platformDirectorySortSpec($sortKey, $hasMemberships, $hasDeletedAt) : null;
-        if ($explicit !== null) {
-            // Tri choisi : l’expression vient uniquement de la liste blanche, jamais de la requête web.
-            $sortSelect = $explicit['select'] . ' AS sort_at';
-            $sortJoin = $explicit['join'];
-            $dir = $sortDir === 'desc' ? 'DESC' : 'ASC';
-            $sortOrder = '(sort_at IS NULL) ASC, sort_at ' . $dir . ', email_key ASC';
-        }
+        $hasGame = $this->tableExists('game_sessions');
+        $hasLastLogin = $this->hasLastLoginColumn();
+        $gameJoinSql = 'LEFT JOIN (SELECT user_id, MAX(COALESCE(last_seen_at, created_at)) AS g FROM game_sessions GROUP BY user_id) __gs ON __gs.user_id = u.id';
 
-        $countStmt = $this->pdo()->prepare(
-            "SELECT COUNT(*) FROM (
-                SELECT 1
-                {$fromUsers}
-                WHERE {$where}
-                GROUP BY LOWER(TRIM(u.email)){$having}
-            ) grouped_accounts"
-        );
-        $countStmt->execute($params);
-        $total = (int) $countStmt->fetchColumn();
-
-        $emailStmt = $this->pdo()->prepare(
-            "SELECT LOWER(TRIM(u.email)) AS email_key, {$sortSelect}
-             {$fromUsers}
-             {$sortJoin}
-             WHERE {$where}
-             GROUP BY LOWER(TRIM(u.email)){$having}
-             ORDER BY {$sortOrder}
-             LIMIT {$perPage} OFFSET {$offset}"
-        );
-        $emailStmt->execute($params);
-        $emailKeys = [];
-        foreach ($emailStmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $er) {
-            $key = strtolower(trim((string) ($er['email_key'] ?? '')));
-            if ($key !== '') {
-                $emailKeys[] = $key;
+        /** HAVING et paramètres, avec ou sans la date de connexion en jeu. */
+        $buildHaving = function (bool $withGame) use ($inactivityFilter, $createdDays, $inactiveTab, $inactivity, $hasLastLogin): array {
+            $parts = $inactivityFilter !== null ? [$inactivityFilter['sql']] : [];
+            $vals = $inactivityFilter['params'] ?? [];
+            if ($createdDays !== '') {
+                // Comptes créés depuis N jours : la plus ancienne fiche de la personne est récente.
+                $parts[] = 'MIN(u.created_at) >= ?';
+                $vals[] = gmdate('Y-m-d H:i:s', time() - ((int) $createdDays) * 86400);
             }
+            if ($inactiveTab) {
+                $site = $hasLastLogin ? 'MAX(u.last_login_at)' : 'NULL';
+                if ($inactivity === 'jamais') {
+                    $parts[] = $site . ' IS NULL';
+                    if ($withGame) {
+                        $parts[] = 'MAX(__gs.g) IS NULL';
+                    }
+                } else {
+                    $days = in_array($inactivity, ['30', '90', '180'], true) ? (int) $inactivity : self::PLATFORM_INACTIVE_DEFAULT_DAYS;
+                    $cut = gmdate('Y-m-d H:i:s', time() - $days * 86400);
+                    $parts[] = '(' . $site . ' IS NULL OR ' . $site . ' < ?)';
+                    $vals[] = $cut;
+                    if ($withGame) {
+                        $parts[] = '(MAX(__gs.g) IS NULL OR MAX(__gs.g) < ?)';
+                        $vals[] = $cut;
+                    }
+                }
+            }
+
+            return [$parts !== [] ? ' HAVING ' . implode(' AND ', $parts) : '', $vals];
+        };
+
+        /**
+         * Une passe : total et e-mails de la page. « Dégradée » = sans jointure de tri ni date de jeu, pour qu'une
+         * source manquante ou refusée par le serveur ne produise jamais d'erreur 500.
+         *
+         * @return array{0: int, 1: list<string>}
+         */
+        $run = function (bool $degraded, string $limit) use (
+            $where, $fromUsers, $params, $buildHaving, $inactivityFilter, $inactiveTab, $hasGame, $gameJoinSql,
+            $sortKey, $sortDir, $hasMemberships, $hasDeletedAt
+        ): array {
+            $withGame = !$degraded && $hasGame;
+            [$having, $havingParams] = $buildHaving($withGame);
+            $bound = array_merge($params, $havingParams);
+            $sortSelect = $inactivityFilter !== null ? 'MAX(u.last_login_at) AS sort_at' : 'MAX(u.updated_at) AS sort_at';
+            $sortOrder = $inactivityFilter !== null ? 'sort_at ASC, email_key ASC' : 'sort_at DESC';
+            $joins = [];
+            $needGame = $inactiveTab && $withGame;
+            $explicit = (!$degraded && $sortKey !== '') ? $this->platformDirectorySortSpec($sortKey, $hasMemberships, $hasDeletedAt) : null;
+            if ($explicit !== null) {
+                // Tri choisi : l'expression vient uniquement de la liste blanche, jamais de la requête web.
+                $sortSelect = $explicit['select'] . ' AS sort_at';
+                if ($explicit['join'] !== '') {
+                    $joins[] = $explicit['join'];
+                }
+                $needGame = $needGame || !empty($explicit['game']);
+                $dir = $sortDir === 'desc' ? 'DESC' : 'ASC';
+                // L'expression est répétée : MariaDB refuse un alias d'agrégat à l'intérieur d'une expression du ORDER BY
+                // (erreur 1247) ; MySQL l'accepte, d'où l'erreur 500 passée inaperçue.
+                $sortOrder = '(' . $explicit['select'] . ' IS NULL) ASC, ' . $explicit['select'] . ' ' . $dir . ', email_key ASC';
+            }
+            if ($needGame) {
+                array_unshift($joins, $gameJoinSql);
+            }
+            $joinSql = implode("\n", $joins);
+
+            $countStmt = $this->pdo()->prepare(
+                "SELECT COUNT(*) FROM (
+                    SELECT 1
+                    {$fromUsers}
+                    {$joinSql}
+                    WHERE {$where}
+                    GROUP BY LOWER(TRIM(u.email)){$having}
+                ) grouped_accounts"
+            );
+            $countStmt->execute($bound);
+            $total = (int) $countStmt->fetchColumn();
+
+            $emailStmt = $this->pdo()->prepare(
+                "SELECT LOWER(TRIM(u.email)) AS email_key, {$sortSelect}
+                 {$fromUsers}
+                 {$joinSql}
+                 WHERE {$where}
+                 GROUP BY LOWER(TRIM(u.email)){$having}
+                 ORDER BY {$sortOrder}
+                 {$limit}"
+            );
+            $emailStmt->execute($bound);
+            $keys = [];
+            foreach ($emailStmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $er) {
+                $key = strtolower(trim((string) ($er['email_key'] ?? '')));
+                if ($key !== '') {
+                    $keys[] = $key;
+                }
+            }
+
+            return [$total, $keys];
+        };
+        $safe = function (string $limit) use ($run): array {
+            try {
+                return $run(false, $limit);
+            } catch (\Throwable $e) {
+                error_log('[annuaire comptes] requête complète refusée, repli sur le tri par défaut : ' . $e->getMessage());
+
+                return $run(true, $limit);
+            }
+        };
+
+        if ($sortKey === 'volume') {
+            // Volume : calculé en PHP sur les e-mails retenus par les filtres (plafond 20 000 personnes).
+            [$total, $allKeys] = $safe('LIMIT 20000');
+            try {
+                $emailKeys = $this->sortPlatformDirectoryByVolume($allKeys, $sortDir, $offset, $perPage);
+            } catch (\Throwable $e) {
+                error_log('[annuaire comptes] tri par volume impossible, ordre par défaut : ' . $e->getMessage());
+                $emailKeys = array_slice($allKeys, $offset, $perPage);
+            }
+        } else {
+            [$total, $emailKeys] = $safe("LIMIT {$perPage} OFFSET {$offset}");
         }
 
         if ($emailKeys === []) {
@@ -3505,6 +3588,86 @@ class UserRepository
             'groups' => $this->groupPlatformDirectoryRows($rows, $emailKeys),
             'total' => $total,
         ];
+    }
+
+    /**
+     * Classe des e-mails (déjà filtrés) par volume de données reçues du jeu sur PLATFORM_VOLUME_DAYS jours, puis
+     * renvoie la page demandée. Deux lectures simples, sans jointure entre colonnes texte de deux tables : le Steam ID
+     * des fiches est rapproché du Steam ID des mesures en PHP. Ex æquo : ordre alphabétique de l'e-mail.
+     *
+     * @param list<string> $allKeys e-mails dans l'ordre par défaut
+     * @return list<string>
+     */
+    private function sortPlatformDirectoryByVolume(array $allKeys, string $dir, int $offset, int $perPage): array
+    {
+        if ($allKeys === [] || !$this->tableExists('atak_ingest_player_daily')) {
+            return array_slice($allKeys, $offset, $perPage);
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT steam_uid, SUM(bytes) AS b FROM atak_ingest_player_daily WHERE day >= ? GROUP BY steam_uid'
+        );
+        $st->execute([gmdate('Y-m-d', time() - (self::PLATFORM_VOLUME_DAYS - 1) * 86400)]);
+        $bytes = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $bytes[trim((string) ($row['steam_uid'] ?? ''))] = (int) ($row['b'] ?? 0);
+        }
+        $perEmail = [];
+        if ($bytes !== []) {
+            $users = $this->pdo()->query("SELECT email, steam_id FROM users WHERE steam_id IS NOT NULL AND steam_id <> ''");
+            foreach ($users ? ($users->fetchAll(PDO::FETCH_ASSOC) ?: []) : [] as $row) {
+                $steam = trim((string) ($row['steam_id'] ?? ''));
+                if ($steam !== '' && isset($bytes[$steam])) {
+                    // Un même Steam ID n'est compté qu'une fois par personne.
+                    $perEmail[strtolower(trim((string) ($row['email'] ?? '')))][$steam] = $bytes[$steam];
+                }
+            }
+        }
+        $total = [];
+        foreach ($allKeys as $key) {
+            $total[$key] = array_sum($perEmail[$key] ?? []);
+        }
+        $sign = $dir === 'desc' ? -1 : 1;
+        usort($allKeys, static function (string $x, string $y) use ($total, $sign): int {
+            $cmp = $total[$x] <=> $total[$y];
+
+            return $cmp !== 0 ? $cmp * $sign : strcmp($x, $y);
+        });
+
+        return array_slice($allKeys, $offset, $perPage);
+    }
+
+    /**
+     * Dernière activité de jeu par fiche : la session de jeu la plus récemment vue (game_sessions.last_seen_at, à
+     * défaut sa création). Une session s'ouvre quand le mod se connecte au compte et se met à jour à chaque usage.
+     *
+     * @param list<int> $userIds
+     * @return array<int, string> user_id => date (UTC)
+     */
+    public function lastGameSeenByUserIds(array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        if ($userIds === [] || !$this->tableExists('game_sessions')) {
+            return [];
+        }
+        $out = [];
+        try {
+            foreach (array_chunk($userIds, 300) as $chunk) {
+                $in = implode(',', array_fill(0, count($chunk), '?'));
+                $st = $this->pdo()->prepare(
+                    "SELECT user_id, MAX(COALESCE(last_seen_at, created_at)) AS g FROM game_sessions WHERE user_id IN ({$in}) GROUP BY user_id"
+                );
+                $st->execute($chunk);
+                foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                    if (trim((string) ($row['g'] ?? '')) !== '') {
+                        $out[(int) $row['user_id']] = (string) $row['g'];
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[annuaire comptes] dernière activité de jeu : ' . $e->getMessage());
+        }
+
+        return $out;
     }
 
     /**
