@@ -94,7 +94,9 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getV
 // efface ici (téléphone, durée écoulée ou carte d'Arma) ; à l'arrivée, ceux de mes canaux sont redemandés au serveur,
 // avec l'heure et l'auteur des marqueurs posés avant moi.
 ["comspec_atak_native_tacMk", { ["recv", _this] call comspec_atak_native_fnc_markerNet; }] call CBA_fnc_addEventHandler;
-addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call comspec_atak_native_fnc_markerNet; }];
+addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call comspec_atak_native_fnc_markerNet; ["gone", _m] call comspec_atak_native_fnc_markerOwned; }];
+// L'interface garde son état d'une mission à l'autre (uiNamespace) : outil de tracé, points en cours et plan ouvert remis à zéro.
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_ZnUi", "COMSPEC_ATAK_RteUi"];
 [{ ["comspec_atak_native_tacMkSrv", ["sync", player]] call CBA_fnc_serverEvent; }, [], 8] call comspec_atak_native_fnc_waitAndExec;
 // Compteur de changements des marqueurs (créé, supprimé, modifié) : la carte du téléphone ne relit les marqueurs de la
 // mission que lorsqu'il bouge (fn_mapGameMarkers, fn_localDataRefresh), au lieu de tout relire chaque seconde.
@@ -206,6 +208,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Radio maillée MPU5 et voix ACRE2 (fn_mpu5) : détection de l'objet, réseau voix publié, qui émet.
 ["init"] call comspec_atak_native_fnc_mpu5;
+// Garde-fous ACRE2 et TFAR (fn_radioGuard) : test de version, restauration à la mort, au respawn, à la déconnexion et en fin de mission.
+["init"] call comspec_atak_native_fnc_radioGuard;
+// Assistant de configuration : proposé une fois à l'admin, le temps que Zeus et #login soient connus.
+[{ ["offer"] call comspec_atak_native_fnc_setupWizard; }, [], 30] call comspec_atak_native_fnc_waitAndExec;
 // Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
 ["init"] call comspec_atak_native_fnc_relayTxBadge;
 // Messages des groupes de conversation (fn_meshGroups).
@@ -495,6 +501,8 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;
+// Antennes transportables (fn_antennaKit) : réponses du serveur et clic droit dans l'inventaire, avec ou sans ACE.
+["clientInit"] call comspec_atak_native_fnc_antennaKit;
 // Socle de recharge CS-10 (fn_dockMenu) : poser, reprendre, état, replier, poser le kit.
 [] call comspec_atak_native_fnc_dockMenu;
 // PC portable de TOC (fn_tocPost) : action ACE / molette, poste le plus proche cherché chaque seconde.

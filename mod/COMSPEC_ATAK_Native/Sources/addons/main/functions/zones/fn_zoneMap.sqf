@@ -349,7 +349,7 @@ switch (_ev) do {
                 _ui set ["tool", "POLY"]; _ui set ["polyMag", true]; _ui set ["polyOpen", _k isEqualTo "MAGO"];
                 _ui set ["polyFor", [["LINE", "AREA"] select ((count ((["get", _id] call _ZA) getOrDefault ["area", []])) isEqualTo 0), "LINE"] select (_k isEqualTo "MAGO")];
                 private _s = ["at", [_p, _ui getOrDefault ["polyR", 30]]] call comspec_atak_native_fnc_zoneSnap;
-                _ui set ["draftPts", [[_p, _s select 0] select ((count _s) > 0)]];
+                _ui set ["draftPts", [_s param [0, _p]]];
                 call _refresh;
             };
             case "CUTL": { ["gp", [_id, "cut", "LINES"]] call _ZA; _ui set ["ztab", "CUT"]; ["#ui", ["gen"]] call comspec_atak_native_fnc_pageZones; };

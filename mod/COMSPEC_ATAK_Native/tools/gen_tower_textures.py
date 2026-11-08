@@ -13,7 +13,6 @@ sauf indication), tirés d'un bruit périodique (FFT) pour qu'aucune couture ne 
   tower_olive   acier peint vert olive militaire (armoires, pylône de 30 m) : farinage, coulures, éclats, rouille
   tower_sign    panneaux (512 x 256, UV propres) : danger électrique / RF, identifiant du site, consignes
   tower_fence   grillage simple torsion de l'enclos (_ca, transparence)
-  tower_net     filet de camouflage (_ca, transparence) : lanières vert / brun / sable sur maille
 Pour chacun (sauf câble et feu) : _nohq (normales) et _smdi (reflets, tenus bas : acier patiné et peinture mates en jeu)
 du shader Super (rvmat tower_<nom>.rvmat).
 
@@ -252,22 +251,6 @@ def sign():
     print("texture tower_sign")
 
 
-def net():
-    """Filet de camouflage (transparence) : lanières découpées aux trois teintes sur une maille sombre, trous."""
-    n1, n2, n3 = noise(1.4), noise(2.4), noise(0.5)
-    col = np.where((n1 > 0.55)[..., None], np.array([0.17, 0.20, 0.11]), np.array([0.27, 0.25, 0.15]))
-    col = np.where((n2 > 0.62)[..., None], np.array([0.46, 0.41, 0.30]), col)
-    col = col * (0.85 + 0.3 * n3)[..., None]
-    ys, xs = np.mgrid[0:N, 0:N]
-    mesh = ((xs % 32) < 3) | ((ys % 32) < 3)
-    garnish = (noise(0.8) + 0.3 * n1) > 0.5
-    alpha = np.where(garnish, 1.0, np.where(mesh, 1.0, 0.0))
-    col = np.where((~garnish & mesh)[..., None], np.array([0.12, 0.12, 0.10]), col)
-    rgba = np.concatenate([np.clip(col, 0, 1), alpha[..., None]], -1)
-    Image.fromarray((rgba * 255).astype(np.uint8), "RGBA").resize((512, 512), Image.LANCZOS).save(os.path.join(RENDER, "tower_net_ca.png"))
-    print("texture tower_net")
-
-
 def fence_mesh():
     """Grillage simple torsion (transparence) : 16 mailles losanges de 6 cm par mètre, fil galvanisé."""
     M = 512
@@ -291,5 +274,4 @@ if __name__ == "__main__":
     light()
     olive()
     sign()
-    net()
     fence_mesh()

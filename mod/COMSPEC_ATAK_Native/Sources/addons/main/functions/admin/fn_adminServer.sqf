@@ -10,6 +10,7 @@
       "hunt"     [actif]   traque des joueurs par l'IA qui a un téléphone (réglage comspec_atak_native_capture_hunt), pour la partie
       "hvtTrace" [actif]   traces civiles des HVT pour la partie (fn_hvtTrace)
       "tenantNote" ["add", [genre, titre, texte]] | ["del", id]   app Communauté, note pour la partie
+      "realismSet" [[[variable, valeur]...], effacer les conditions en jeu]   réglages CBA du serveur (fn_realismCatalog)
       "phonePin" [clé]  retire le code d'un téléphone et ses essais (fn_phoneServer)
       "apps"     [id, "required" | "forbidden" | "free"]   App Store : app obligatoire, interdite ou laissée au choix
                  des joueurs pour la partie (fn_appInstall, variable publique COMSPEC_ATAK_AppPolicy) ; ["", "reset"] : tout libérer
@@ -150,6 +151,10 @@ switch (_act) do {
         ["result", [_ok isEqualTo true, "Notes de la communauté mises à jour."]] call _reply;
     };
     // Remise à zéro du code d'un téléphone (fn_phoneServer) : un propriétaire ne reste jamais dehors.
+    case "realismSet": {
+        // Assistant et panneau Réalisme et réseau : droits déjà vérifiés par l'événement (fn_adminAllowed), liste blanche dans fn_realismCatalog.
+        ["apply", _args param [0, []], _caller, _args param [1, false]] call comspec_atak_native_fnc_realismCatalog;
+    };
     case "phonePin": {
         _args params [["_key", "", [""]]];
         private _ok = ["reset", [_key]] call comspec_atak_native_fnc_phoneServer;

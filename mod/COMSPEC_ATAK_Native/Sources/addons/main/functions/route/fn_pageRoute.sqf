@@ -135,6 +135,7 @@ if (_page isEqualTo "#ui") exitWith {
         };
         // Mode de saisie terminé (Échap, clic droit, TERMINER) : ce qui est posé reste ; ANNULER le retire.
         case "modeEnd": { _ui set ["mode", "SEL"]; _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
+        case "desig": { ["desig", [_id, _v]] call _RA; (_ui get "draft") deleteAt "rteName"; _full = false; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
         case "modeCancel": {
             private _n = (count ((["editInfo"] call _RA) getOrDefault ["undo", []])) - (_ui getOrDefault ["modeMark", 0]);
             for "_k" from 1 to _n do { ["undo"] call _RA; };
@@ -426,7 +427,7 @@ private _editRows = {
         _rows pushBack ["segment", "Type de tracé", (["kinds"] call _RA) apply {
             [toUpper (_x select 1), ["set", ["kind", _x select 0]] call _ui1, (_x select 0) isEqualTo (_r get "kind")]
         }];
-        if ((_r get "kind") isEqualTo "VEH") then {
+        if ((_r get "kind") in ["VEH", "FOOT"]) then {
             _rows pushBack ["switch", "Suivre les routes", _r get "roads", ["toggle", ["roads", "rteRoads"]] call _ui1, "Chaque tronçon passe par le réseau routier (calcul en arrière-plan) ; sinon ligne droite", false, "rteRoads"];
         };
         if ((_r get "kind") isEqualTo "AIR") then {
@@ -436,14 +437,15 @@ private _editRows = {
         _rows pushBack ["lineseg", "", "Couleur", (["colors"] call _RA) apply {
             [_x select 2, ["set", ["color", _x select 0]] call _ui1, (_x select 0) isEqualTo (_r get "color"), _x select 1]
         }, "Couleur du trait, des repères d'Arma et d'Athena"];
-        _rows pushBack ["segment", "Épaisseur", [["FINE", ["set", ["width", 1]] call _ui1, (_r get "width") isEqualTo 1], ["NORMALE", ["set", ["width", 2]] call _ui1, (_r get "width") isEqualTo 2], ["ÉPAISSE", ["set", ["width", 3]] call _ui1, (_r get "width") isEqualTo 3]]];
+        private _rgbR = ["rgba", _r get "color"] call _RA;
+        _rows pushBack ["shapes", "Épaisseur", [["FINE", 1, 2], ["NORMALE", 2, 3.5], ["ÉPAISSE", 3, 5]] apply { _x params ["_t", "_v", "_px"]; [_t, ["set", ["width", _v]] call _ui1, (_r get "width") isEqualTo _v, "", [["", _rgbR, _px]]] }];
         _rows pushBack ["segment", "Style", [["PLEIN", ["set", ["style", "SOLID"]] call _ui1, (_r get "style") isEqualTo "SOLID"], ["POINTILLÉ", ["set", ["style", "DASH"]] call _ui1, (_r get "style") isEqualTo "DASH"], ["FLÈCHES", ["set", ["style", "ARROW"]] call _ui1, (_r get "style") isEqualTo "ARROW", "Flèches de direction sur chaque tronçon"]]];
         _rows pushBack ["field", "rteHh", "Heure H (HH:MM, vide : aucune) : les étapes donnent leur heure prévue", _draft getOrDefault ["rteHh", _r get "hh"], "OK", ["field", ["hh", "rteHh"]] call _ui1, false];
     };
     _rows pushBack ["section", "Affichage", ""];
     _rows pushBack ["switch", "Carte ATAK", _r get "vis", ["toggle", ["vis", "rteVis"]] call _ui1, "Route affichée sur la carte du téléphone", false, "rteVis"];
     if (_mine) then {
-        _rows pushBack ["switch", "Carte d'Arma et Athena", _r get "arma", ["toggle", ["arma", "rteArma"]] call _ui1, "Tracé et étapes en marqueurs, sur le canal du groupe (du camp si partagée au camp), aussi envoyés au site Athena", !(missionNamespace getVariable ["comspec_atak_native_route_arma", true]), "rteArma"];
+        _rows pushBack ["switch", "Carte d'Arma et Athena", _r get "arma", ["toggle", ["arma", "rteArma"]] call _ui1, "Tracé et étapes en marqueurs, sur le canal du groupe (du camp si partagée au camp), aussi envoyés au site Athena ; route non partagée : sur ma carte d'Arma seulement", !(missionNamespace getVariable ["comspec_atak_native_route_arma", true]), "rteArma"];
     };
     _rows pushBack ["switch", "Affichage 3D (JVN uniquement)", _r get "d3", ["toggle", ["d3", "rteD3"]] call _ui1, "Pendant « Suivre la route », JVN allumée : trait et étapes restantes affichés dans le monde (à moins de 1,5 km)", !(missionNamespace getVariable ["comspec_atak_native_route_3d", true]), "rteD3"];
     if (_mine) then {
@@ -457,6 +459,8 @@ private _editRows = {
         if (_sc > 0) then { _rows pushBack ["buttons", [["RETIRER LE PARTAGE", ["unshare"] call _ui1]]]; };
         _rows pushBack ["section", "Route", ""];
         _rows pushBack ["field", "rteName", "Nom", _draft getOrDefault ["rteName", _r get "name"], "RENOMMER", ["field", ["name", "rteName"]] call _ui1, false];
+        private _rw0 = ((_r get "name") splitString " ") param [0, ""];
+        _rows pushBack ["segment", "Désignation", ["MSR", "ASR", "ROUTE"] apply { [_x, ["desig", _x] call _ui1, _rw0 isEqualTo _x] }, "MSR : itinéraire principal, ASR : secondaire ; le nom de code est gardé, ou proposé si la route n'en a pas"];
         _rows pushBack ["buttons", [
             ["DUPLIQUER", ["dup"] call _ui1],
             ["INVERSER", ["reverse"] call _ui1, false, (count _st) > 1, "Parcourir la route dans l'autre sens"],

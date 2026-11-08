@@ -602,13 +602,13 @@ private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
         _antCat, [300, 20000, _r, 0], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_gain", _id], "SLIDER", [format ["%1 : gain (dB)", _label], "Multiplie la portée de base : 6 dB la doublent à peu près."],
         _antCat, [0, 20, _g, 1], 1] call comspec_atak_native_fnc_addSetting;
-    [format ["comspec_atak_native_antkit_%1_height", _id], "SLIDER", [format ["%1 : hauteur d'antenne (m)", _label], "Hauteur utilisée par le bilan radio : plus haut, le relief gêne moins. Le modèle affiché ne change pas."],
-        _antCat, [1, 30, _h, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_height", _id], "SLIDER", [format ["%1 : hauteur d'antenne (m)", _label], "Hauteur au-dessus de l'objet posé, utilisée par le bilan radio : plus haut, le relief gêne moins. Le modèle affiché ne change pas."],
+        _antCat, [0.1, 30, _h, 1], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_mbps", _id], "SLIDER", [format ["%1 : débit (Mbit/s)", _label], "Débit maximal du relais."],
         _antCat, [0.5, 100, _m, 1], 1] call comspec_atak_native_fnc_addSetting;
     [format ["comspec_atak_native_antkit_%1_time", _id], "SLIDER", [format ["%1 : temps de déploiement (s)", _label], "Durée de la barre de progression. Replier prend moitié moins de temps."],
         _antCat, [3, 180, _t, 0], 1] call comspec_atak_native_fnc_addSetting;
-} forEach [["sat", "Antenne satellite", 1000, 3, 1.8, 10, 20], ["mast", "Antenne omnidirectionnelle", 1500, 6, 4, 8, 45]];
+} forEach [["sat", "Antenne satellite", 1000, 3, 1.8, 10, 20], ["mast", "Antenne omnidirectionnelle", 1500, 6, 4, 8, 45], ["mini", "Mini-antenne de bâtiment", 500, 3, 0.3, 4, 8]];
 ["comspec_atak_native_antkit_mast_root", "CHECKBOX",
     ["Antenne omnidirectionnelle raccordée", "Décoché : elle répète seulement, il lui faut un relais raccordé à portée, par exemple une antenne satellite. Coché : elle porte le réseau seule."],
     _antCat, false, 1] call comspec_atak_native_fnc_addSetting;
@@ -656,16 +656,15 @@ private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
     _sim, [0, 15, 4, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_radio_sw_mbps", "SLIDER", ["Radio portative : débit relayé (Mbit/s)", "Débit maximal relayé à l'équipe. Une radio ACRE2 / TFAR transporte bien moins qu'une MPU5 : les photos et vidéos passent lentement."],
     _sim, [0.1, 20, 0.5, 1], 1] call comspec_atak_native_fnc_addSetting;
-// Liaison réaliste téléphone <-> radio de données (fn_mpuLink) : désactivée par défaut (comportement d'avant). Réglages
-// serveur, une mission peut les imposer (cba_settings.sqf de la mission). Seule une MPU5 relie le téléphone : les réglages
-// du repli ACRE2 / TFAR de la 2.9.31 (comspec_atak_native_mpu_tac_*) sont retirés.
+// Liaison réaliste téléphone <-> radio de données (fn_mpuLink) : activée par défaut, le profil Arcade la coupe. Réglages
+// serveur, une mission peut les imposer (cba_settings.sqf de la mission). Les vraies radios ACRE2 et TFAR d'abord (fn_mpu5 "gear").
 private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_real", "CHECKBOX",
-    ["Liaison téléphone-radio réaliste", "Comme sur le terrain, le téléphone n'a pas de réseau tactique à lui : il passe par une MPU5 reliée par câble EUD ou par son Wi-Fi (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Les MPU5 allumées sur le même canal forment un maillage avec les relais de la mission. Sans MPU5 : pas de réseau de données (une radio ACRE2 / TFAR ne relie pas le téléphone). Décoché : comportement d'avant."],
-    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
-["comspec_atak_native_mpu_require", "CHECKBOX",
-    ["Radio de données obligatoire", "Sans MPU5 : pas de réseau de données (une MPU5 reliée et en service est nécessaire ; le Bluetooth entre téléphones et les données déjà reçues restent). Décoché : sans MPU5, le téléphone garde son réseau d'avant ; la MPU5 ne fait que l'améliorer."],
+    ["Liaison téléphone-radio réaliste", "Le téléphone passe par la radio du joueur : ACRE2 ou TFAR d'abord, reliée toute seule avec sa portée réelle, ou une MPU5. Les radios sur le même canal forment un maillage avec les relais de la mission. Sans radio, le téléphone garde son réseau, sauf si « Radio de données obligatoire » est coché. Ne touche jamais à la voix. Décoché, ou profil Arcade : comportement d'avant."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_require", "CHECKBOX",
+    ["Radio de données obligatoire", "Coché : sans radio de données, pas de réseau de données (le Bluetooth entre téléphones et les données déjà reçues restent). À réserver aux missions préparées. Décoché : sans radio, le téléphone garde son réseau d'avant ; la radio ne fait que l'améliorer."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
 // Objet obligatoire pour participer au réseau (fn_netRequire), quel que soit le modèle de réseau. « Radio de données obligatoire » ci-dessus ne vise que la
 // MPU5 en liaison réaliste, « Kit obligatoire » (app Communauté) ne coupe rien : ni l'un ni l'autre ne pouvait porter cette règle.
 ["comspec_atak_native_net_required_items", "EDITBOX",
@@ -697,7 +696,18 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_hop_ms", "SLIDER",
     ["Latence par saut du maillage (ms)", "Délai ajouté par chaque radio traversée jusqu'à la passerelle. La portée (6 W) et le débit d'une MPU5 sont les réglages « Portée de la MPU5 » et « Débit relayé par une MPU5 » (section Simulation)."],
     _mpuCat, [0, 300, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
-// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP, désactivée par défaut.
+// Radio du joueur : source et coupure (fn_radioGuard). Coupure : effet immédiat, sans redémarrage.
+["comspec_atak_native_radio_source", "LIST",
+    ["Radio utilisée", "Détectée automatiquement : ACRE2 ou TFAR s'ils sont chargés. Aucune : le mod ne s'appuie sur aucune radio d'un mod, seulement sur notre MPU5."],
+    _mpuCat, [[0, 1, 2, 3], ["Détectée automatiquement", "ACRE2", "TFAR", "Aucune"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_radio_cut", "CHECKBOX",
+    ["Couper tout lien avec la radio", "Coché : le mod ne lit plus aucune radio et rend tout de suite la fonction de signal d'ACRE2 et les multiplicateurs de TFAR. La voix reste celle d'ACRE2 ou de TFAR, sans le mod. Sans redémarrage."],
+    _mpuCat, false, 1, { if (_this && {hasInterface}) then { [{ ["applyCut"] call comspec_atak_native_fnc_radioGuard; }] call comspec_atak_native_fnc_nextFrame; }; }] call comspec_atak_native_fnc_addSetting;
+// Assistant de configuration (fn_setupWizard) : proposé une fois à l'admin.
+["comspec_atak_native_wizard_offer", "CHECKBOX",
+    ["Proposer l'assistant de configuration", "Une seule fois, à un admin ou un Zeus. L'assistant reste dans le menu Échap, Réalisme et réseau."],
+    _mpuCat, true, 0] call comspec_atak_native_fnc_addSetting;
+// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP. Reste décochée par défaut : jamais jouée, et la voix des joueurs passe avant (voir fn_radioGuard).
 ["comspec_atak_native_mpu_voice", "CHECKBOX",
     ["Voix ACRE/TFAR relayée par le maillage MPU5", "Comme une passerelle radio sur IP : un joueur relie sa radio ACRE2 ou TFAR à sa MPU5 par câble audio (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Entre deux radios ainsi reliées, réglées sur la même fréquence, la voix passe par le maillage (MPU5, relais, pylônes, véhicules) : la distance et le relief ne la coupent plus. Hors maillage : portée radio normale. Nécessite la liaison téléphone-radio réaliste. TFAR : la portée de réception de la radio reliée s'allonge jusqu'au correspondant relié le plus lointain."],
     _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
@@ -725,7 +735,7 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_body_mask", "CHECKBOX",
     ["Masque du corps (Milsim)", "Profil Milsim : perte de 3 dB quand le porteur tourne le dos à son correspondant."],
-    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_mast", "CHECKBOX",
     ["Mât d'antenne de la MPU5", "Une MPU5 posée reliée en Wi-Fi peut déployer un mât (30 s, 8 m), visible de loin."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;

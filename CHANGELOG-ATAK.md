@@ -38,6 +38,80 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : réalisme activé par défaut, vraies radios ACRE et TFAR d'abord, assistant de configuration, garde-fous radio (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Réseau réaliste par défaut, sur vos vraies radios
+- Le téléphone passe tout seul par votre radio ACRE ou TFAR, avec sa portée réelle. Rien à brancher, rien à ajouter à l'inventaire. Sans radio, il garde son réseau.
+- Nouvel assistant de configuration pour les admins : menu Échap, Réalisme et réseau. Le menu liste maintenant tous les réglages, avec leur valeur et qui les impose.
+- Votre voix ACRE et TFAR ne change pas. La voix relayée par le réseau reste à activer par l'admin, et un bouton coupe tout lien avec la radio.
+- Le site montre votre réseau (MPU5) et vos SMS envoyés, si votre compte est lié. Le mode avion coupe cette remontée.
+EN : Realistic network by default, on your real radios
+- The phone goes through your ACRE or TFAR radio by itself, with its real range. Nothing to plug in, nothing to add to your inventory. Without a radio it keeps its network.
+- New setup assistant for admins: Esc menu, Realism and network. The menu now lists every setting, with its value and who enforces it.
+- Your ACRE and TFAR voice does not change. Voice relayed by the network stays an admin choice, and a button cuts every link with the radio.
+- The site shows your network (MPU5) and the SMS you sent, if your account is linked. Airplane mode stops this.
+
+### Détail technique
+- Défauts : `mpu_real` coché, `mesh_body_mask` coché, `mpu_require` décoché (sinon tout joueur sans radio perd le réseau). `mpu_voice` reste décoché : voix jamais jouée en jeu, la sécurité des radios passe avant. Décochés par conception : `mesh_keys`, `hvt_trace`, `mesh_dev`, `mesh_tfar_code`, `relay_only`. Le profil Arcade coupe aussi la liaison réaliste, les dégâts et la saleté.
+- Serveur existant : CBA ne garde que les valeurs différentes du défaut. Une valeur enregistrée, de mission ou de `cba_settings.sqf` reste ; le panneau affiche « Valeur par défaut » ou « Réglage du serveur ».
+- Radios : `fn_mpu5` "gear" (`acre_baseClass`, puissance lue, `tf_parent`, `tf_range`) ; ni câble ni batterie à nous sur une radio de mod.
+- Garde-fous : `fn_radioGuard` (seule porte vers ACRE et TFAR, versions connues, coupe-circuit, coupure), `fn_mpuVoiceSig` (lecture de table seulement), restauration à la mort, au respawn, à la déconnexion et en fin de mission.
+- Assistant `fn_setupWizard`, catalogue `fn_realismCatalog`, panneau `fn_netConfig` refait. Droits : `fn_adminAllowed`.
+- Site : `Iceman_WR_*` locales posées par `fn_mpu5` "site" pour `/m/radio/mpu` ; `fn_p2pArchive` au format `MP|de|à|texte` pour `/m/radio/prives`.
+- Rien de tout cela n'a tourné en jeu.
+
+---
+## À venir : tracé de routes et de zones, suppression, formes de la carte (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Routes et zones : tracé réparé, plus de plans OBJ surprises
+- Le clic droit ne crée plus un plan OBJ à chaque tracé. Un calcul sans résultat le dit et ne laisse rien sur la carte. App Zones, MES PLANS : des boutons nettoient d'un coup les anciens plans vides.
+- Le tracé aimanté fonctionne, et les plans de zones sont enfin sauvegardés et reçus par les autres joueurs.
+- Les noms MSR, ASR et PL ne s'écrivent plus deux fois. Le nommage MIL-STD s'applique dès le tracé.
+- Tout se supprime depuis la carte et les listes, avec ANNULER, et ne revient pas. Une suppression sur Athena ou sur la carte d'Arma s'applique aussi en jeu.
+- Réglages de la carte : nouvelles formes pour toi et tes alliés (pion, triangle ou losange cerclés, carré, croix), avec aperçu.
+EN : Routes and zones: drawing fixed, no more surprise OBJ plans
+- Right-clicking no longer creates an OBJ plan for every drawing. A calculation with no result says so and leaves nothing on the map. Zones app, MY PLANS: buttons clear old empty plans in one go.
+- Magnetic drawing works, and zone plans are now saved and received by other players.
+- MSR, ASR and PL names are no longer written twice. MIL-STD naming applies as soon as you draw.
+- Everything can be deleted from the map and the lists, with UNDO, and stays gone. Deleting on Athena or on the Arma map also applies in game.
+- Map settings: new shapes for you and your allies (pawn, ringed triangle or diamond, square, cross), with a preview.
+
+### Détail
+- Causes relevées dans le RPT : `_C` / `_c` dans `fn_zoneSnap`, `keys` évalué sur une valeur simple dans `pack`. Aussi `_fA` / `_fa` (remplissage invisible). Notes dans `docs/bugs/`.
+- `fn_markerOwned` : un seul chemin pour les marqueurs natifs des tracés, noms réservés sautés par le téléphone, privé en local. Tableau de couverture : `docs/ATAK_TRACES_COUVERTURE.md`.
+- Site : `/api/atak/markers` avec `world_name` signale au jeu les marqueurs retirés sur le web (`game_del`). Pas de migration.
+- Itinéraire et plan de briefing ajoutés à la carte d'Arma. Plans et routes relus du profil : privés jusqu'au prochain envoi.
+- Non testé en jeu.
+
+---
+
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+
+## À venir : antennes réparées, tours relais épurées, mini-antenne de bâtiment (ATAK natif, version à attribuer)
+
+### À annoncer
+Type : nouveauté
+FR : Antennes déployables plus fiables, tours relais épurées, nouvelle mini-antenne
+- Les antennes transportables se déploient aussi par clic droit dans l'inventaire, et chaque refus s'affiche à l'écran.
+- Les tours relais perdent leurs câbles courbes et le filet de camouflage : un rendu net, sans changer les missions.
+- Nouvelle mini-antenne de bâtiment : visez un mur ou un toit, l'aperçu indique si l'endroit convient, puis Espace pour la poser. Elle prolonge le réseau sur une courte distance.
+- « État du relais » s'affiche aussi téléphone fermé.
+EN : More reliable deployable antennas, cleaner relay towers, new mini antenna
+- Portable antennas can also be deployed by right-clicking them in the inventory, and every refusal is shown on screen.
+- Relay towers lose their curved cables and camouflage net: a clean look, with no change for missions.
+- New building mini antenna: aim at a wall or roof, the preview tells you if the spot is valid, then press Space to place it. It extends the network over a short distance.
+- "Relay status" now also shows with the phone closed.
+
+### Détail technique
+- **Antennes, bug « ça fait rien » (à vérifier en jeu) :** aucun geste ne marchait dans l'inventaire (seul ACE Équipement déployait) et les refus partaient au centre de notifications, invisible téléphone fermé. Ajout du menu d'objet de CBA, messages à l'écran, lignes `[ANTENNE]` au RPT à chaque étape, objet rendu sans réponse du serveur sous 10 s.
+- **Tours relais :** `tools/strip_tower_cables.py` retire des MLOD les tubes courbes (`sweep`), les bagues, le filet et ses perches, et leurs ombres. `model_relay_towers.py` ne les génère plus. Classes inchangées. Aperçus Eden et rendus non régénérés : Blender absent.
+- **Mini-antenne :** `COMSPEC_ATAK_BuildingAntennaKit`, `COMSPEC_ATAK_DeployedAntenna_Mini`, `fn_antennaKit` « aim », réglages `comspec_atak_native_antkit_mini_*`. Bâtiment perdu : retirée sous 15 s.
+- **Fiche du relais :** « État du relais » à l'écran, en lignes (`fn_relayNet` « info »).
+
 ## Centre Zeus, liste des modules rangée, fenêtre de configuration des objets (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
