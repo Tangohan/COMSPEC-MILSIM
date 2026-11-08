@@ -1,3 +1,0 @@
-prefix=ATAK_Bridge\
-Mikero=DePbo.dll.9.98
-version=26071820
