@@ -78,5 +78,6 @@ return [
     ['id' => 'platform_watch', 'label' => 'Surveillance de la plateforme : charge par route et par communauté (conservation courte) et alertes d’activité anormale du mod, à décider par un humain', 'group' => 'schema', 'file' => '3980_platform_watch.php', 'rerun' => true],
     ['id' => 'equipment_starter_kits', 'label' => 'Page Équipement : kits de départ proposés à une unité ou à un rôle (unité et origine du kit) et tenues mises en favori par chaque membre', 'group' => 'schema', 'file' => '3990_equipment_starter_kits.php', 'rerun' => true],
     ['id' => 'unit_struct_types', 'label' => 'Types d’entité : types personnalisés créés par chaque communauté pour ses unités', 'group' => 'schema', 'file' => '4010_unit_struct_types.php', 'rerun' => true],
+    ['id' => 'atak_sse_identity_suite', 'label' => 'COMSPEC IDENTITY : clé biométrique des fiches et identités (recoupement des contrôles), réglage d’envoi automatique par communauté, carte militaire pour les pays existants', 'group' => 'schema', 'file' => '4050_atak_sse_identity_suite.php', 'rerun' => true],
     ['id' => 'discord_photo_queue', 'label' => 'Discord : file d’envoi des photos, regroupées en un seul message par joueur et par mission', 'group' => 'schema', 'file' => '4000_discord_photo_queue.php', 'rerun' => true],
 ];

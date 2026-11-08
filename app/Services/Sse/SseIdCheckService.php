@@ -13,7 +13,8 @@ use App\Support\SseIdentityCatalog;
  * Enregistrement d'un contrôle d'identité remonté du terrain (COMSPEC Link SubmitIdCheck → POST /api/sse/identity/checks).
  *
  * Idempotent par clé. Rattachement : papier du registre (identifiant de pack ou pays + type + numéro), puis personne
- * (identifiant de fiche fourni par le mod, sinon fiche de la même unité de jeu sur la carte).
+ * (identifiant de fiche fourni par le mod, sinon fiche de la même unité de jeu sur la carte), puis personne ou identité
+ * de même clé biométrique (SseIdSubjectMatchService). Jamais de fusion de fiches.
  */
 final class SseIdCheckService
 {
@@ -23,10 +24,12 @@ final class SseIdCheckService
         private ?SseIdCheckRepository $checks = null,
         private ?SseIdDocumentRepository $documents = null,
         private ?SsePersonRepository $persons = null,
+        private ?SseIdSubjectMatchService $matches = null,
     ) {
         $this->checks ??= new SseIdCheckRepository();
         $this->documents ??= new SseIdDocumentRepository();
         $this->persons ??= new SsePersonRepository();
+        $this->matches ??= new SseIdSubjectMatchService();
     }
 
     /** Clé d'idempotence acceptée : 4 à 80 caractères, lettres, chiffres et « _ . : - ». */
@@ -88,9 +91,11 @@ final class SseIdCheckService
             $doc = $this->documents->find($docId, $tenantId);
         }
         if ($doc === null && $country !== '' && $number !== '') {
-            $doc = $this->documents->list($tenantId, ['country_code' => $country, 'doc_type' => $type, 'q' => $number, 'limit' => 5])[0] ?? null;
-            if ($doc !== null && $doc['doc_number'] !== $number) {
-                $doc = null;
+            foreach ($this->documents->list($tenantId, ['country_code' => $country, 'doc_type' => $type, 'q' => $number, 'limit' => 5]) as $candidate) {
+                if ($candidate['doc_number'] === $number) {
+                    $doc = $candidate;
+                    break;
+                }
             }
         }
 
@@ -105,6 +110,11 @@ final class SseIdCheckService
             $byNet = $this->persons->findLikelyDuplicate($tenantId, $mapId, ['target_unit_netid' => $netid]);
             $personId = is_array($byNet) && (int) ($byNet['id'] ?? 0) > 0 ? (int) $byNet['id'] : null;
         }
+
+        $bioKey = $str($subject['bio_key'] ?? null, 64);
+        $subjectSteam = ($s = preg_replace('/\D/', '', (string) ($subject['steam_id'] ?? ''))) !== '' ? substr((string) $s, 0, 32) : null;
+        $documentIdentity = isset($doc['identity_id']) ? (int) $doc['identity_id'] : null;
+        $link = $this->matches->resolve($tenantId, $mapId, $bioKey, $personId, $documentIdentity, $str($presented['last'] ?? null, 120));
 
         $levels = [];
         foreach (is_array($body['levels'] ?? null) ? $body['levels'] : [] as $l) {
@@ -134,13 +144,13 @@ final class SseIdCheckService
         $verdict = SseIdentityCatalog::pick(SseIdentityCatalog::VERDICTS, $body['verdict'] ?? null, '');
         $op = $str($body['op'] ?? null, 64);
 
-        return $this->checks->store($tenantId, [
+        $stored = $this->checks->store($tenantId, [
             'context_id' => $mapId,
             'op_key' => $op,
             'idempotency_key' => $key,
             'document_id' => $doc['id'] ?? null,
-            'identity_id' => $doc['identity_id'] ?? null,
-            'person_id' => $personId,
+            'identity_id' => $link['identity_id'],
+            'person_id' => $link['person_id'],
             'doc_type' => $type !== '' ? $type : null,
             'country_code' => $country !== '' ? $country : null,
             'doc_number' => $number !== '' ? $number : null,
@@ -148,8 +158,8 @@ final class SseIdCheckService
             'presented_first' => $str($presented['first'] ?? null, 120),
             'presented_dob' => $str($presented['dob'] ?? null, 16),
             'subject_netid' => $netid,
-            'subject_bio_key' => $str($subject['bio_key'] ?? null, 64),
-            'subject_steam_id' => ($s = preg_replace('/\D/', '', (string) ($subject['steam_id'] ?? ''))) !== '' ? substr((string) $s, 0, 32) : null,
+            'subject_bio_key' => $bioKey,
+            'subject_steam_id' => $subjectSteam,
             'controller_callsign' => $str($controller['callsign'] ?? null, 80),
             'controller_steam_id' => ($s = preg_replace('/\D/', '', (string) ($controller['steam_id'] ?? ''))) !== '' ? substr((string) $s, 0, 32) : null,
             'levels' => $levels !== [] ? implode(',', $levels) : null,
@@ -162,5 +172,10 @@ final class SseIdCheckService
             'game_time' => $str($body['game_time'] ?? null, 32),
             'case_ref' => $str($body['case'] ?? null, 64),
         ]);
+        if (!$stored['duplicate']) {
+            $this->matches->remember($tenantId, $mapId, $bioKey, $link['person_id'], $documentIdentity, $subjectSteam);
+        }
+
+        return $stored;
     }
 }
