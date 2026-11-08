@@ -210,15 +210,16 @@ switch (_tab) do {
         };
         private _q = _m get "queue";
         private _src = createHashMapFromArray [["file", "Fichier local"], ["url", "Lien web"], ["srv", "Serveur"], ["lib", "Athena"]];
-        if (["queue", "File d'attente", format ["%1 morceau(x)", count _q]] call _fold) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_MusicQShown", 0];
+        if (["queue", "File d'attente", format ["%1 morceau(x)", count _q], "musicQueue"] call _fold) then {
             if ((count _q) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>"]; };
             if ((count _q) > 1) then { _rows pushBack ["buttons", [["VIDER LA FILE", ["qClear"] call _act, false, true, "Garde le morceau en cours"]]]; };
             for "_i" from 0 to (((count _q) min 40) - 1) do {
-                (_q select _i) params ["_k", "_r", "_t", ["_len", 0]];
-                private _isCur = _i isEqualTo (_m get "qi") && {_mine};
-                _rows pushBack ["person", _icon, format ["<t %1>%2. %3</t><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4%5</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
-                    _src getOrDefault [_k, ""], ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
-                    [[["JOUER", "EN COURS"] select _isCur, ["jump", _i] call _act, !_isCur, !_isCur], ["MONTER", ["qUp", _i] call _act, false, _i > 0], ["RETIRER", ["qDel", _i] call _act]], [[0.55, 0.6, 0.58, 1], _acc] select _isCur];
+                // Texte, teinte et boutons : fn_musicAction "qRow" (aussi pour MONTER et RETIRER sur place). Les boutons visent une place dans la file, pas un morceau.
+                (["qRow", _i] call comspec_atak_native_fnc_musicAction) params ["_qText", "_qTint", "_qBtns"];
+                _rows pushBack ["person", _icon, _qText,
+                    [[(_qBtns select 0) select 0, ["jump", _i] call _act, (_qBtns select 0) select 2, (_qBtns select 0) select 1], ["MONTER", ["qUp", _i] call _act, false, _i > 0], ["RETIRER", ["qDel", _i] call _act]], _qTint, "", format ["musicQ%1", _i]];
+                uiNamespace setVariable ["COMSPEC_ATAK_MusicQShown", _i + 1];
             };
         };
         if (["favs", "Favoris", format ["%1 morceau(x)", count _favs]] call _fold) then {

@@ -1154,7 +1154,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _t ctrlSetPosition [_pad * 2 + _iw, _y + _pad / 4, _tw, _rowIh]; _t ctrlCommit 0;
                 _bg ctrlSetPosition [_pad, _y, _w, _rowIh + _pad / 2]; _bg ctrlCommit 0;
             };
-            if (_pid isNotEqualTo "") then { _ids set [_pid, createHashMapFromArray [["kind", "person"], ["text", _t], ["pic", _picCtl], ["btns", []]]]; };
+            if (_pid isNotEqualTo "") then { _ids set [_pid, createHashMapFromArray [["kind", "person"], ["text", _t], ["pic", _picCtl], ["btns", []], ["bg", _bg]]]; };
             {
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true], ["_tip", ""]];
                 // « red » à la place de principal : bouton de confirmation (second appui pour supprimer).

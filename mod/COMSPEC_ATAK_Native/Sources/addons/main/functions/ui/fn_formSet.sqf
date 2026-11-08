@@ -5,7 +5,8 @@
       switch : valeur = actif (booléen)
       slider : valeur = [valeur, actif, icône (data\nom, "" : inchangée)]
       fold   : valeur = résumé (texte)
-      person : valeur = [texte structuré, teinte de l'image [r, v, b, a]] (ligne « person » déclarée avec un 7e paramètre)
+      person : valeur = [texte structuré, teinte de l'image [r, v, b, a], boutons [[libellé ("" : inchangé), actif, principal]...]]
+               (ligne « person » déclarée avec un 7e paramètre) ; valeur [] : ligne masquée
       btn    : valeur = [libellé ("" : inchangé), état ("" | "on" | "red")] (bouton de la barre de l'app Drone, 6e élément)
       segment : valeur = l'option choisie (ligne « segment » déclarée avec un id, 5e élément des options)
     Retour : true si la ligne est affichée et a été mise à jour.
@@ -77,7 +78,20 @@ switch (_e get "kind") do {
     case "person": {
         private _t = _e get "text";
         if (isNull _t) exitWith { false };
-        _v params ["_txt", ["_col", [1, 1, 1, 1]]];
+        if (_v isEqualTo []) exitWith {
+            { if (!isNull _x) then { _x ctrlShow false; }; } forEach ([_t, _e get "pic", _e getOrDefault ["bg", controlNull]] + (_e get "btns"));
+            true
+        };
+        _v params ["_txt", ["_col", [1, 1, 1, 1]], ["_set", []]];
+        {
+            _x params [["_lbl", ""], ["_en", true], ["_pri", false]];
+            private _b = (_e get "btns") param [_forEachIndex, controlNull];
+            if (isNull _b) then { continue };
+            if (_lbl isNotEqualTo "") then { _b ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr); };
+            _b ctrlEnable _en;
+            _b ctrlSetBackgroundColor ([(_th get "surface2"), _acc] select _pri);
+            _b ctrlSetTextColor ([[(_th get "off"), (_th get "text")] select _en, (_th get "onAccent")] select _pri);
+        } forEach _set;
         _t ctrlSetStructuredText parseText ((_txt) call comspec_atak_native_fnc_tr);
         private _p = _e get "pic";
         if (!isNull _p) then { _p ctrlSetTextColor _col; };

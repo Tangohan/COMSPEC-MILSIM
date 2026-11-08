@@ -256,6 +256,7 @@ if (_pref isEqualTo "GOOGLE" && {_bridge} && {_gUrl isNotEqualTo ""} && {!(_src 
 // Raison montrée dans la zone d'image quand la diapositive Athena ne peut pas s'afficher (vide : image affichée).
 private _slideWhy = "";
 private _slideLoading = false;
+private _slideKey = "";
 // Présentation FENRIR : image reçue de son serveur (base64), montrée par le navigateur intégré comme le repli Athena.
 private _fid = ["viewed"] call comspec_atak_native_fnc_fenrir;
 private _fst = ["state", _fid] call comspec_atak_native_fnc_fenrir;
@@ -360,10 +361,22 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
             // et la page redessinée relance le téléchargement. Chemin "WEB" : rendu par le navigateur intégré.
             _cache set [_path, [switch (true) do { case (_why isNotEqualTo ""): { "" }; case (_web): { "WEB:" + _path }; default { _use }; }, _why]];
             if ((_loading getOrDefault [_path, -1]) isEqualTo _stamp) then { _loading deleteAt _path; };
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
+            // Image affichable par Arma et page toujours en attente de cette diapositive : posée sur place, sans redessin.
+            [{
+                params ["_key", "_res"];
+                if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING") exitWith {};
+                (uiNamespace getVariable ["COMSPEC_ATAK_SlideWait", ["", controlNull, controlNull]]) params ["_wKey", "_wPic", "_wMsg"];
+                if (_wKey isEqualTo _key && {!isNull _wPic} && {_res isNotEqualTo ""} && {(_res select [0, 4]) isNotEqualTo "WEB:"}) exitWith {
+                    _wPic ctrlSetText _res; // i18n:brut
+                    _wMsg ctrlShow false;
+                    uiNamespace setVariable ["COMSPEC_ATAK_SlideWait", ["", controlNull, controlNull]];
+                };
+                ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
+            }, [_path, (_cache getOrDefault [_path, [""]]) select 0]] call comspec_atak_native_fnc_nextFrame;
         };
     };
     _slideLoading = !(_path in _cache);
+    if (_slideLoading) then { _slideKey = _path; };
     (_cache getOrDefault [_path, ["", ""]]) params [["_p", ""], ["_why", ""]];
     _path = _p;
     _slideWhy = _why;
@@ -459,8 +472,11 @@ if (_total < 1 || {_path isEqualTo ""}) then {
         case (_slideWhy isNotEqualTo ""): { _slideWhy + "<br/>Touchez ACTUALISER pour réessayer." };
         default { "Image indisponible (réseau ou cache).<br/>Touchez ACTUALISER pour réessayer." };
     };
+    // Diapositive en cours de téléchargement : image déjà à sa place dans l'ordre d'affichage, vide jusqu'à la fin du téléchargement.
+    private _wPic = if (_slideKey isNotEqualTo "") then { ["COMSPEC_RscSlide", [_vx, _vy, _vw, _vh], ""] call comspec_atak_native_fnc_pageCtrl } else { controlNull };
     private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.38, _vw - 2 * _pad, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
     _t ctrlSetStructuredText parseText ((format ["<t align='center' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _msg]) call comspec_atak_native_fnc_tr);
+    uiNamespace setVariable ["COMSPEC_ATAK_SlideWait", [_slideKey, _wPic, _t]];
 } else {
     if ((_path select [0, 4]) isEqualTo "WEB:") then {
         // Navigateur intégré : la diapositive (JPEG en base64) centrée sur fond noir (fn_slideWebShow).
