@@ -10,6 +10,9 @@ namespace App\Services\Tactical;
  */
 final class AtakExperienceService
 {
+    /** Message de la communauté à la suite du guide : le jeu lit 4 000 caractères au plus de l'ensemble (fn_tenantAction "guide"). */
+    public const GUIDE_CUSTOM_MAX = 2000;
+
     /**
      * @return list<array{id: string, label: string, description: string, type: string, default: mixed, group: string, surface: string, choices?: list<array{value: string, label: string}>}>
      */
@@ -572,7 +575,7 @@ final class AtakExperienceService
             $out[$row['id']] = $row['default'];
         }
         $out['guide_custom'] = '';
-        // App Communauté du téléphone (AtakCommunityBrief) : texte saisi tel quel, lu seulement par GET /api/atak/community-brief.
+        // App Communauté du téléphone (AtakCommunityBrief) : écrits par Consignes et kit ATAK, lus par GET /api/atak/community-brief.
         $out['community_notes'] = '';
         $out['community_kit'] = '';
         $out['server_control_reviewed'] = false;
@@ -629,6 +632,19 @@ final class AtakExperienceService
     }
 
     /**
+     * Comme put(), mais dit si l'écriture a réussi : un écran qui annonce « enregistré » s'appuie sur cette réponse.
+     *
+     * @param array<string, mixed> $incoming
+     */
+    public function putChecked(int $tenantId, array $incoming): bool
+    {
+        $merged = $this->mergeSettings($this->get($tenantId)['settings'], $incoming);
+        $merged['updated_at'] = gmdate('c');
+
+        return (new \App\Repositories\TenantAtakConfigRepository())->saveExperienceConfig($tenantId, $merged);
+    }
+
+    /**
      * Réglages enregistrés + réglages reçus : seules les clés reçues changent, une valeur hors liste reprend le défaut.
      *
      * @param array<string, mixed> $existing
@@ -662,7 +678,7 @@ final class AtakExperienceService
             $merged['realism'] = false;
         }
         if (array_key_exists('guide_custom', $incoming)) {
-            $merged['guide_custom'] = trim((string) $incoming['guide_custom']);
+            $merged['guide_custom'] = mb_substr(trim((string) $incoming['guide_custom']), 0, self::GUIDE_CUSTOM_MAX);
         }
         foreach (['community_notes', 'community_kit'] as $key) {
             if (array_key_exists($key, $incoming)) {
@@ -741,46 +757,57 @@ final class AtakExperienceService
     }
 
     /**
+     * Guide du joueur : app Communauté du téléphone (onglet Consignes) et journal de mission, à jour pour le mod 4.0.0.
+     * Chaque phrase correspond au mod (COMSPEC_ATAK_Native et COMSPEC Overwatch connect) : touches de
+     * XEH_postInitClient.sqf, liaison de fn_athenaLink et fn_pageAthena, réglages de fn_applyTenantExperience et fn_hasDevice.
+     * Le jeu lit ce texte tel quel : pas de flèche (sa police ne les a pas), et l'ensemble doit tenir avec
+     * les autres réglages dans la réponse de la DLL (MaxOutputBytes), sinon la ligne du guide disparaît en entier.
+     *
      * @param array<string, mixed> $settings
      */
     public function buildGuide(array $settings): string
     {
         $lines = [];
-        $lines[] = '=== Guide de configuration Overwatch (communauté) ===';
+        $lines[] = '=== Guide du téléphone ATAK (communauté) ===';
         $lines[] = '';
-        $lines[] = '1. Lier votre compte';
-        $lines[] = '   • Ouvrez la Tacmap sur le portail et utilisez « Connexion en jeu », ou';
-        $lines[] = '   • Saisissez la clé d’accès et l’identifiant de communauté dans Options → Mods → COMSPEC Overwatch → Connexion.';
+        $lines[] = '1. Relier le jeu à votre compte Athena';
+        $lines[] = '   • Ouvrez l’app Athena du téléphone, onglet CODE, et obtenez votre code.';
+        $lines[] = '   • Si l’app vous le demande, répondez « OUI, MON UNITÉ UTILISE ATHENA ».';
+        $lines[] = '   • Sur athena-comspec.eu/lier, connecté à votre compte, saisissez ce code.';
+        $lines[] = '   • À faire une seule fois : les parties suivantes se connectent seules.';
+        $lines[] = '   • Onglets E-MAIL et STEAM : autres moyens, si votre communauté les autorise.';
         $lines[] = '';
-        $lines[] = '2. Tablette en mission';
-        $lines[] = '   • Touche K : ouvrir la tablette Athena.';
-        $lines[] = '   • Ctrl+K : messagerie tactique.';
-        $lines[] = '   • La liaison doit être « active » (pastille verte) pour synchroniser position, ordres et alertes.';
+        $lines[] = '2. Utiliser le téléphone (touches par défaut)';
+        $lines[] = '   • Ctrl+U : sortir ou ranger le téléphone en miniature, vous continuez à jouer.';
+        $lines[] = '   • Alt+U : le prendre en main avec la souris, ou le reposer.';
+        $lines[] = '   • Maj+U : utiliser la miniature à la souris, sans l’agrandir.';
+        $lines[] = '   • Ctrl+Page haut et Ctrl+Page bas : zoomer et dézoomer la carte.';
+        $lines[] = '   • Changer une touche : app Réglages, ou Options > Contrôles > Configurer les addons > COMSPEC ATAK.';
+        $lines[] = '   • App Communauté : consignes, ordres, tips et kit obligatoire.';
         $lines[] = '';
 
         if (!empty($settings['realism'])) {
-            $lines[] = '3. Mode réalisme — ACTIF pour votre communauté';
-            $lines[] = '   • Moins de messages « confort » à l’écran : restez concentré sur le terrain.';
-            $lines[] = '   • Consultez la tablette (K) pour les alertes médicales, ordres et signalements.';
-            $lines[] = '   • Les anomalies de suivi automatique (immobilité, saut de position) sont désactivées.';
+            $lines[] = '3. Mode réalisme : ACTIF pour votre communauté';
+            $lines[] = '   • Plus de bandeaux d’alerte Athena ni de messages d’aide à l’écran.';
+            $lines[] = '   • Plus d’alertes de suivi automatique (immobilité, déplacement brusque).';
+            $lines[] = '   • La liaison et l’envoi de position continuent ; alertes médicales et ordres arrivent dans le téléphone.';
+            $lines[] = '   • Le réseau simulé et les dégâts du téléphone ont leurs propres réglages : ce mode ne les change pas.';
         } elseif (!empty($settings['troll'])) {
-            $lines[] = '3. Mode troll — ACTIF pour votre communauté';
-            $lines[] = '   • Alertes de suivi visibles : immobilité prolongée, déplacements brusques.';
-            $lines[] = '   • Session décontractée — ne pas utiliser pour un exercice sérieux.';
-            $lines[] = '   • Vous pouvez désactiver les bandeaux à l’écran dans Options → Mods si besoin.';
+            $lines[] = '3. Mode troll : ACTIF pour votre communauté';
+            $lines[] = '   • Alertes de suivi plus sensibles : immobile après 2 min, déplacement brusque dès 150 m (sinon 3 min et 250 m).';
+            $lines[] = '   • À réserver aux sessions décontractées.';
         } else {
-            $lines[] = '3. Réglages personnels';
-            $lines[] = '   • Options → Mods → COMSPEC Overwatch : sons, notifications, équipement requis.';
-            $lines[] = '   • « Mode milsim » coupe les aides d’interface si vous voulez plus d’immersion.';
+            $lines[] = '3. Vos réglages';
+            $lines[] = '   • Réglages d’addons (CBA), catégorie COMSPEC, rubrique Overwatch : « Bandeaux d’alerte à l’écran » et « Mode milsim : moins d’aides à l’écran ».';
         }
         $lines[] = '';
 
-        $lines[] = '4. Consignes de votre état-major';
+        $lines[] = '4. Règles de votre communauté';
         foreach ($this->triStateHints($settings) as $hint) {
             $lines[] = '   • ' . $hint;
         }
 
-        $custom = trim((string) ($settings['guide_custom'] ?? ''));
+        $custom = trim(self::gameText((string) ($settings['guide_custom'] ?? '')));
         if ($custom !== '') {
             $lines[] = '';
             $lines[] = '5. Message de votre communauté';
@@ -792,10 +819,13 @@ final class AtakExperienceService
             }
         }
 
-        $lines[] = '';
-        $lines[] = '— Fin du guide —';
-
         return implode("\n", $lines);
+    }
+
+    /** Flèches saisies par la communauté : la police du jeu les affiche en glyphes barrés. */
+    private static function gameText(string $text): string
+    {
+        return strtr($text, ['→' => '>', '⇒' => '>', '➜' => '>', '➔' => '>', '➡' => '>', '←' => '<', '⇐' => '<', '⬅' => '<']);
     }
 
     /**
@@ -805,40 +835,40 @@ final class AtakExperienceService
     private function triStateHints(array $settings): array
     {
         $hints = [];
+        // Le réalisme et le mode roleplay masquent les bandeaux quoi qu'il arrive (fn_shouldShowScreenNotification).
+        $bannersHidden = !empty($settings['realism']) || (string) ($settings['rp_enabled'] ?? 'player') === 'on';
         $map = [
             'screen_notifications' => [
-                'on' => 'Votre communauté demande d’afficher les notifications à l’écran.',
-                'off' => 'Votre communauté demande de masquer les bandeaux à l’écran (consultez la tablette).',
-            ],
-            'vehicle_detail' => [
-                'on' => 'Le détail véhicule (cap et vitesse) est activé pour la carte.',
-                'off' => 'Le détail véhicule est désactivé pour alléger la carte.',
+                'on' => $bannersHidden ? null : 'Les bandeaux d’alerte Athena sont activés à l’écran (en bas à gauche).',
+                'off' => 'Les bandeaux d’alerte Athena sont masqués : les alertes restent dans le téléphone.',
             ],
             'require_equipment' => [
-                'on' => 'Une tablette ou un GPS en inventaire est requis pour ouvrir Overwatch.',
-                'off' => 'Aucun équipement particulier n’est exigé pour la liaison.',
+                'on' => 'Téléphone obligatoire sur vous (équipé ou dans l’inventaire). Équipage d’aéronef : tablette de bord si le serveur l’autorise.',
+                'off' => 'Aucun objet requis : l’ATAK s’utilise sans téléphone dans l’équipement.',
+                'player' => 'Téléphone obligatoire ou non : c’est le serveur de jeu qui décide.',
+            ],
+            'vehicle_detail' => [
+                'on' => 'En véhicule, l’orientation et la vitesse sont envoyées à la carte Athena.',
+                'off' => 'En véhicule, l’orientation et la vitesse ne sont pas envoyées à la carte Athena.',
             ],
             'show_opfor' => [
-                'on' => 'Les positions adverses sont visibles sur Tacmap pour les observateurs.',
-                'off' => 'Les positions adverses sont masquées sur Tacmap.',
+                'on' => 'Les observateurs sur Athena voient les positions du camp ennemi.',
+                'off' => 'Les observateurs sur Athena ne voient pas les positions du camp ennemi.',
             ],
             'show_independent' => [
-                'on' => 'Les positions indépendantes sont visibles sur Tacmap.',
-                'off' => 'Les positions indépendantes sont masquées sur Tacmap.',
+                'on' => 'Les observateurs sur Athena voient les positions des indépendants.',
+                'off' => 'Les observateurs sur Athena ne voient pas les positions des indépendants.',
             ],
             'show_civilian' => [
-                'on' => 'Les positions civiles sont visibles sur Tacmap.',
-                'off' => 'Les positions civiles sont masquées sur Tacmap.',
+                'on' => 'Les observateurs sur Athena voient les positions des civils.',
+                'off' => 'Les observateurs sur Athena ne voient pas les positions des civils.',
             ],
         ];
         foreach ($map as $key => $labels) {
-            $val = (string) ($settings[$key] ?? 'player');
-            if ($val !== 'player' && isset($labels[$val])) {
-                $hints[] = $labels[$val];
+            $hint = $labels[(string) ($settings[$key] ?? 'player')] ?? null;
+            if ($hint !== null) {
+                $hints[] = $hint;
             }
-        }
-        if ($hints === []) {
-            $hints[] = 'Aucune contrainte supplémentaire imposée — réglages personnels libres.';
         }
 
         return $hints;
