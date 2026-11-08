@@ -84,5 +84,6 @@ return [
     ['id' => 'member_number_unit_templates', 'label' => 'Matricules : modèle de matricule choisi par unité (les autres unités suivent le modèle de la communauté)', 'group' => 'schema', 'file' => '4020_member_number_unit_templates.php', 'rerun' => true],
     ['id' => 'discord_photo_queue', 'label' => 'Discord : file d’envoi des photos, regroupées en un seul message par joueur et par mission', 'group' => 'schema', 'file' => '4000_discord_photo_queue.php', 'rerun' => true],
     ['id' => 'atak_sse_editor_library', 'label' => 'Éditeur SSE : bibliothèque de la communauté (renseignements, identités, papiers, dossiers et kits préparés dans le jeu)', 'group' => 'schema', 'file' => '4070_atak_sse_editor_library.php', 'rerun' => true],
+    ['id' => 'configuration_release_steps', 'label' => 'Mise à niveau : étapes déclarées par version (config/configuration_release_steps.php)', 'group' => 'schema', 'file' => '4130_configuration_release_steps.php', 'rerun' => true],
     ['id' => 'atak_sse_id_cover_link', 'label' => 'Couvertures reliées à Athena : couverture née en jeu remontée au compte du joueur, contenus de la bibliothèque de l’éditeur attribués à un joueur', 'group' => 'schema', 'file' => '4110_atak_sse_id_cover_link.php', 'rerun' => true],
 ];

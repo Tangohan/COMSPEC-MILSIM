@@ -87,8 +87,8 @@ final class AtakCommunityBriefTest extends TestCase
     {
         self::assertStringContainsString("get('/api/atak/community-brief', [AtakApiController::class, 'communityBrief'])", self::read('routes/web.php'));
         self::assertStringContainsString('function communityBrief(', self::read('app/Controllers/Api/AtakApiController.php'));
-        self::assertStringContainsString('name="experience_community_notes"', self::read('views/admin/atak-config/index.php'));
-        self::assertStringContainsString('name="experience_community_kit"', self::read('views/admin/atak-config/index.php'));
+        self::assertStringContainsString('name="note_body"', self::read('views/admin/atak-brief/_live.php'));
+        self::assertStringContainsString('name="class_manual"', self::read('views/admin/atak-brief/_live.php'));
 
         $ext = self::read('mod/UptoDate/COMSPECExtension/Extension.cs');
         self::assertStringContainsString('if (function == "GetCommunityBrief")', $ext);

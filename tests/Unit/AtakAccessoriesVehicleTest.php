@@ -79,7 +79,7 @@ final class AtakAccessoriesVehicleTest extends TestCase
         self::assertStringContainsString('"COMSPEC_ATAK_Wipe"', $menu);
         self::assertStringContainsString('"COMSPEC_ATAK_Acc", "Accessoires"', $menu);
         $set = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
-        self::assertStringContainsString('"lockCode"', $set);
+        self::assertStringContainsString('"pinSetup"', $set);
         self::assertStringContainsString('"COMSPEC_ATAK_LockCode"', $set);
     }
 

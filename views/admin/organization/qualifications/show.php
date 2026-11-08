@@ -122,7 +122,7 @@ $eventLabels = [
         <?php endforeach; ?>
     </div>
 
-    <div class="qfs-grid">
+    <div class="qfs-grid" data-ath-quiet-scope="qualif-fiche-<?= (int) $id ?>">
         <div class="qfs-col">
             <?php if (!empty($b['pending'])): ?>
             <section class="qfs-card" id="a-valider" aria-labelledby="qfs-pending">
@@ -133,7 +133,7 @@ $eventLabels = [
                     <li>
                         <div class="qfs-who"><b translate="no"><?= $h($who($row['member'])) ?></b><small><?= $h(\App\Support\QualificationAdminStatus::label((string) \App\Services\Personnel\QualificationAwardRuleService::adminStatus($award))) ?><?= trim((string) ($award['notes'] ?? '')) !== '' ? ' · ' . $h($award['notes']) : '' ?></small></div>
                         <div class="qfs-acts">
-                            <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/propositions/' . (int) $award['id'])) ?>">
+                            <form method="post" data-ath-quiet action="<?= $h(url('back-office/referentiels/qualifications/propositions/' . (int) $award['id'])) ?>">
                                 <?= \App\Core\Csrf::field() ?>
                                 <input type="hidden" name="definition_id" value="<?= $id ?>">
                                 <button type="submit" name="decision" value="approve" class="qmx-btn qmx-btn--sm qmx-btn--ok">Valider</button>
@@ -171,7 +171,7 @@ $eventLabels = [
                         <span class="qfs-tag qfs-tag--<?= $h($cell === 'ok' ? 'ok' : ($cell === 'soon' ? 'soon' : 'exp')) ?>"><?= $h($cell === 'ok' ? 'Valide' : ($cell === 'soon' ? 'À renouveler' : 'Expirée')) ?></span>
                         <details class="qfs-acts">
                             <summary class="qmx-btn qmx-btn--sm">Retirer</summary>
-                            <form method="post" action="<?= $h(url('back-office/referentiels/qualifications/matrice/case')) ?>">
+                            <form method="post" data-ath-quiet action="<?= $h(url('back-office/referentiels/qualifications/matrice/case')) ?>">
                                 <?= \App\Core\Csrf::field() ?>
                                 <input type="hidden" name="definition_id" value="<?= $id ?>">
                                 <input type="hidden" name="user_id" value="<?= (int) $row['member']['user_id'] ?>">
@@ -232,7 +232,7 @@ $eventLabels = [
                             <?php foreach ($a['attested'] as $uid => $row): ?>
                             <li>
                                 <div class="qfs-who"><b translate="no"><?= $h($who($row['member'])) ?></b><small><?php if ($a['counts']): ?><?= $h(\App\Support\QualificationCriteriaCatalog::formatNumber((float) $row['value'])) ?> <?= $h(\App\Support\QualificationCriteriaCatalog::attestationUnit((string) $criterion['key'])) ?> · <?php endif; ?><?= $h($fd((string) $row['attested_at'])) ?></small><?php if (trim((string) $row['note']) !== ''): ?><small translate="no"><?= $h($row['note']) ?></small><?php endif; ?></div>
-                                <form method="post" action="<?= $h(url($base . '/attestations')) ?>">
+                                <form method="post" data-ath-quiet action="<?= $h(url($base . '/attestations')) ?>">
                                     <?= \App\Core\Csrf::field() ?>
                                     <input type="hidden" name="user_id" value="<?= (int) $uid ?>">
                                     <input type="hidden" name="store_key" value="<?= $h($a['store_key']) ?>">
@@ -244,7 +244,7 @@ $eventLabels = [
                         </ul>
                         <?php endif; ?>
                         <?php if (!empty($attestReady) && !empty($b['candidates'])): ?>
-                        <form class="qfs-deliver" method="post" action="<?= $h(url($base . '/attestations')) ?>">
+                        <form class="qfs-deliver" method="post" data-ath-quiet action="<?= $h(url($base . '/attestations')) ?>">
                             <?= \App\Core\Csrf::field() ?>
                             <input type="hidden" name="store_key" value="<?= $h($a['store_key']) ?>">
                             <div class="qmx-fl"><label for="qfs-att-u<?= (int) $ai ?>">Membre</label>
@@ -316,7 +316,7 @@ $eventLabels = [
             <?php if ($manual && !$archived && !empty($b['candidates'])): ?>
             <section class="qfs-card" aria-labelledby="qfs-deliver">
                 <h3 id="qfs-deliver">Délivrer à un membre</h3>
-                <form class="qfs-deliver qfs-deliver--stack" method="post" action="<?= $h(url('back-office/referentiels/qualifications/matrice/case')) ?>">
+                <form class="qfs-deliver qfs-deliver--stack" method="post" data-ath-quiet action="<?= $h(url('back-office/referentiels/qualifications/matrice/case')) ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <input type="hidden" name="definition_id" value="<?= $id ?>">
                     <input type="hidden" name="target" value="ok">

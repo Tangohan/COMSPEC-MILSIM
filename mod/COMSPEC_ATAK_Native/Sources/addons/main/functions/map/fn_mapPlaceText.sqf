@@ -10,7 +10,8 @@
       TACTICAL  capitales grasses détourées, taille selon le type (par défaut) ;
       TAG       plaque sombre, losange à la couleur du type ;
       QUIET     petit texte clair détouré, casse d'origine ;
-      CLASSIC   couleur et casse de la carte Arma d'avant.
+      CLASSIC   couleur et casse de la carte Arma d'avant ;
+      SMALL     petites capitales claires en monospace au-dessus d'un point turquoise (TACTICAL prend ce rendu sur le fond ARDOISE).
     Désencombrement : villages à partir d'un zoom moyen, lieux-dits et sites en zoom rapproché ; un nom qui chevauche
     une étiquette de repère ou un cartouche d'unité (image précédente), un nom plus important ou le bord de la carte
     n'est pas écrit ; noms coupés proprement au-delà de 28 caractères.
@@ -64,6 +65,8 @@ private _mpx = (_wx1 - _wx0) / _mw;
 private _mpy = (_wy1 - _wy0) / _mh;
 if (_mpx <= 0 || {_mpy <= 0}) exitWith {};
 private _style = toUpper (missionNamespace getVariable ["comspec_atak_native_map_place_style", "tactical"]);
+private _palP = [] call comspec_atak_native_fnc_mapColors;
+if (_style isEqualTo "TACTICAL" && {_palP get "slate"}) then { _style = "SMALL"; };
 private _fill = "#(rgb,8,8,3)color(1,1,1,1)";
 private _none = "#(argb,8,8,3)color(0,0,0,0)";
 private _fB = COMSPEC_ATAK_FontSet select 1;
@@ -74,6 +77,8 @@ private _sizes = switch (_style) do {
     case "QUIET": { [0.027, 0.025, 0.023, 0.023] };
     case "TAG": { [0.025, 0.024, 0.023, 0.023] };
     case "CLASSIC": { [0.034, 0.028, 0.025, 0.025] };
+    // Monospace large : mêmes planchers de lisibilité à mi-zoom que les autres styles (lieux-dits à 0,022 environ de capitale).
+    case "SMALL": { [0.026, 0.024, 0.022, 0.022] };
     // Lieux-dits et villages : 0,020 et 0,025 avant, illisibles à mi-zoom sur le petit écran.
     default { [0.031, 0.028, 0.024, 0.024] };
 } apply { _x * _k };
@@ -83,7 +88,9 @@ private _toW = { params ["_sx", "_sy"]; private _w = _map ctrlMapScreenToWorld [
 // Noms des lieux après les cartouches et les noms des repères (image précédente) : jamais par-dessus (fn_mapLblGrid).
 private _grid = createHashMap;
 { [_grid, _x, 2] call comspec_atak_native_fnc_mapLblGrid; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_LblRects", []]);
-private _tagBg = ([] call comspec_atak_native_fnc_mapColors) get "lblBg";
+private _tagBg = _palP get "lblBg";
+private _smallCols = [[0.80, 0.94, 0.90, 1], [0.72, 0.88, 0.84, 1], [0.62, 0.78, 0.75, 1], [0.98, 0.74, 0.42, 1]];
+private _smallDot = "\z\comspec_atak_native\addons\main\data\map_pawn_disc.paa";
 private _n = 0;
 {
     if (_n >= 60) then { break };
@@ -95,7 +102,8 @@ private _n = 0;
     private _sp = _map ctrlMapWorldToScreen _pos;
     _sp params ["_sx", "_sy"];
     private _fs = _sizes select _cat;
-    private _font = [_fB, _fR] select (_style in ["QUIET", "CLASSIC"]);
+    private _small = _style isEqualTo "SMALL";
+    private _font = [[_fB, _fR] select (_style in ["QUIET", "CLASSIC"]), "EtelkaMonospacePro"] select _small;
     private _t = [toUpper _txt, _txt] select (_style in ["QUIET", "CLASSIC"]);
     private _w = [_t, _font, _fs] call comspec_atak_native_fnc_mapTextW;
     private _tag = _style isEqualTo "TAG";
@@ -104,10 +112,17 @@ private _n = 0;
     private _bw = _w + _dw + _pad * 2;
     private _bh = _fs * ([1.0, 1.35] select _tag);
     private _r = [_sx - _bw / 2, _sy - _bh / 2, _sx + _bw / 2, _sy + _bh / 2];
+    // Petites capitales : texte au-dessus du point, le rectangle couvre les deux.
+    if (_small) then { _r = [_sx - _bw / 2, _sy - _bh * 1.25, _sx + _bw / 2, _sy + _bh * 0.2]; };
     // Nom coupé par le bord de la carte : pas écrit (il réapparaît en déplaçant la carte).
     if ((_r select 0) < _mx || {(_r select 2) > (_mx + _mw)} || {(_r select 1) < _my} || {(_r select 3) > (_my + _mh)}) then { continue };
     if ([_grid, _r, 1] call comspec_atak_native_fnc_mapLblGrid) then { continue };
     switch (_style) do {
+        case "SMALL": {
+            private _ds = 9 * _kt;
+            _map drawIcon [_smallDot, [0.30, 0.85, 0.78, 1], _pos, _ds, _ds, 0, "", 0];
+            _map drawIcon [_none, _smallCols select _cat, [_sx, _sy - _bh * 0.72] call _toW, 0, 0, 0, _t, 1, _fs, _font, "center"];
+        };
         case "TAG": {
             _r params ["_x0", "_y0", "_x1", "_y1"];
             _map drawRectangle [[_sx, _sy] call _toW, (_bw / 2) * _mpx, (_bh / 2) * _mpy, 0, _tagBg, _fill];

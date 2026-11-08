@@ -18,7 +18,11 @@ class RscCheckBox;
 class RscProgress;
 class RscPicture;
 class RscActivePicture;
-class RscMapControl;
+// Sous-classes redéclarées pour le fond ARDOISE (COMSPEC_RscMapAtakSlate) : légende et symboles de la carte recolorés.
+class RscMapControl {
+    class Legend; class Bush; class Tree; class SmallTree; class Rock; class Cross; class Chapel; class Shipwreck;
+    class Bunker; class Fortress; class Fountain; class Ruin; class Stack; class Tourism; class ViewTower;
+};
 class RscXSliderH;
 class RscControlsGroup {
     class VScrollbar;
@@ -52,6 +56,11 @@ class COMSPEC_RscButtonPrimary: COMSPEC_RscButton { colorText[]=ATAK_BG0; colorB
 // focus compris (colorBackground2, avec laquelle le moteur fait clignoter un bouton qui a le focus). Retour de jeu :
 // PERSONNALISER LE GROUPE et les lignes de réglage apparaissaient assombries (tout le dessous à 40 %).
 class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0}; colorBackground2[]={0,0,0,0}; colorFocused[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorBackgroundActive[]={0.36,0.78,0.42,0.18}; colorBorder[]={0,0,0,0}; text=""; };
+// Bouton plat : texte seul, aucun fond ni clignotement de focus. Son fond est un contrôle posé dessous (« face », fn_formRender
+// _flat) : ctrlSetBackgroundColor ne change que colorBackground, et le moteur fait clignoter un bouton qui a le focus entre
+// cette couleur et colorBackground2 (constante de classe, sombre). Un bouton choisi (texte foncé sur l'accent) devenait
+// du noir sur fond sombre : « MES ROUTES », « MA FICHE ». Retour de jeu 4.0.0.
+class COMSPEC_RscButtonFlat: COMSPEC_RscButtonOverlay { colorDisabled[]={0.42,0.46,0.44,0.7}; colorBackgroundActive[]={1,1,1,0.10}; };
 // Touches physiques de la coque : aucune surbrillance (la texture du téléphone suffit).
 class COMSPEC_RscButtonInvisible: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorShadow[]={0,0,0,0}; };
 class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelection[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
@@ -91,6 +100,27 @@ class COMSPEC_RscMapAtakHyb: COMSPEC_RscMapAtakSat {
     colorTracks[]={0.84,0.80,0.66,0.55}; colorTracksFill[]={0.95,0.91,0.78,0.75};
     colorRoads[]={0.80,0.76,0.62,0.75}; colorRoadsFill[]={1,0.96,0.80,0.9};
     colorMainRoads[]={0.85,0.62,0.25,0.85}; colorMainRoadsFill[]={1,0.82,0.42,0.95}; };
+// Fond ARDOISE du téléphone (fn_mapStyle, fn_mapCtrl) : bleu-gris sombre, mer très sombre, routes turquoise fines, courbes et
+// altitudes sourdes, carroyage fin. Les couleurs d'une carte Arma ne se règlent que dans la classe du contrôle, d'où un
+// quatrième contrôle. Le moteur n'expose aucune couleur pour les bâtiments ni pour le relief ombré : ils restent ceux d'Arma.
+#define ATAK_SLATE_ICON(NAME,R,G,B,A) class NAME: NAME { color[]={R,G,B,A}; }
+class COMSPEC_RscMapAtakSlate: COMSPEC_RscMapAtak {
+    colorBackground[]={0.122,0.149,0.165,1}; colorOutside[]={0.035,0.045,0.055,1}; colorSea[]={0.020,0.047,0.074,1};
+    colorForest[]={0.105,0.150,0.155,0.55}; colorForestBorder[]=ATAK_NOCOL; colorRocks[]={0.085,0.110,0.125,0.5}; colorRocksBorder[]=ATAK_NOCOL;
+    colorLevels[]={0.17,0.31,0.30,0.9}; colorMainCountlines[]={0.21,0.40,0.38,0.55}; colorCountlines[]={0.21,0.40,0.38,0.32};
+    colorMainCountlinesWater[]={0.14,0.25,0.31,0.45}; colorCountlinesWater[]={0.14,0.25,0.31,0.25};
+    colorPowerLines[]={0.25,0.36,0.38,0.5}; colorRailWay[]={0.32,0.46,0.46,0.8};
+    colorTracks[]={0.20,0.38,0.36,0.45}; colorTracksFill[]={0.20,0.38,0.36,0.85};
+    colorRoads[]={0.16,0.32,0.30,0.9}; colorRoadsFill[]={0.24,0.48,0.45,1};
+    colorMainRoads[]={0.18,0.36,0.34,1}; colorMainRoadsFill[]={0.30,0.61,0.57,1};
+    colorGrid[]={0.20,0.42,0.40,0.45}; colorGridMap[]={0.20,0.42,0.40,0.45};
+    colorTrails[]={0.20,0.38,0.36,0.3}; colorTrailsFill[]={0.20,0.38,0.36,0.5}; colorNames[]={0.72,0.88,0.84,0.9};
+    class Legend: Legend { colorBackground[]={0.035,0.05,0.055,0.8}; color[]={0.72,0.88,0.84,1}; };
+    ATAK_SLATE_ICON(Bush,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(Tree,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(SmallTree,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(Rock,0.36,0.44,0.46,0.7);
+    ATAK_SLATE_ICON(Cross,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Chapel,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Shipwreck,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Bunker,0.55,0.68,0.66,0.8);
+    ATAK_SLATE_ICON(Fortress,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Fountain,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Ruin,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Stack,0.55,0.68,0.66,0.8);
+    ATAK_SLATE_ICON(Tourism,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(ViewTower,0.55,0.68,0.66,0.8);
+};
 // Carte de la montre Garmin (fn_watch, écran MAP) : zoom très rapproché, où Arma écrit les lieux-dits (« armée »,
 // « military »…) à la taille prévue pour la grande carte, énormes sur le petit cadran. Aucun texte d'Arma ici :
 // densité de textes nulle (ptsPerSquareTxt), noms transparents, tailles minuscules. Mon point et les alliés sont

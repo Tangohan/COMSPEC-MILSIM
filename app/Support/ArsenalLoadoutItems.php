@@ -306,11 +306,11 @@ final class ArsenalLoadoutItems
     }
 
     /**
-     * Remplace les noms de inventory() par les noms vus en jeu, quand ils sont connus.
+     * Remplace les noms de inventory() par les noms vus en jeu, quand ils sont connus, et joint l'icône si elle existe.
      *
      * @param list<array{title: string, count: int, items: list<array{name: string, qty: int, class: string}>}> $inventory
      * @param array<string, array{name?: string, players?: int}> $catalog
-     * @return list<array{title: string, count: int, items: list<array{name: string, qty: int, class: string}>}>
+     * @return list<array{title: string, count: int, items: list<array{name: string, qty: int, class: string, icon?: string}>}>
      */
     public static function inventoryNames(array $inventory, array $catalog): array
     {
@@ -318,7 +318,11 @@ final class ArsenalLoadoutItems
         try {
             foreach ($inventory as &$box) {
                 foreach ($box['items'] as &$it) {
-                    $it['name'] = self::item($it['class'])['name'];
+                    $known = self::item($it['class']);
+                    $it['name'] = $known['name'];
+                    if (isset($known['icon'])) {
+                        $it['icon'] = $known['icon'];
+                    }
                 }
                 unset($it);
             }

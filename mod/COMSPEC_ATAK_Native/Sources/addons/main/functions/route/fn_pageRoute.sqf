@@ -261,6 +261,40 @@ if (_page isEqualTo "#ui") exitWith {
             _full = false;
         };
         case "unshare": { ["unshare", _id] call _RA; ["INFO", "Partage retiré", 2, 10] call comspec_atak_native_fnc_notify; _full = false; };
+        // Ligne de la liste. SUPPRIMER en deux appuis ; route à moi : annulable (barre « Route supprimée »).
+        case "rowDel": {
+            _full = false;
+            private _ck = "row:" + _v;
+            if ((_ui get "confirm") isNotEqualTo _ck) exitWith { _ui set ["confirm", _ck]; ["#refresh"] call comspec_atak_native_fnc_pageRoute; };
+            _ui set ["confirm", ""];
+            private _nm = (["get", _v] call _RA) getOrDefault ["name", ""];
+            private _isM = ["isMine", _v] call _RA;
+            ["trash", _v] call _RA;
+            if (_isM) then { [format [("Route %1 supprimée") call _tr, [_nm] call _esc], "untrash", _v] call _bar; };
+            ["#refresh"] call comspec_atak_native_fnc_pageRoute;
+        };
+        // PARTAGER : ouvre le choix des destinataires sous la ligne.
+        case "rowShare": {
+            _full = false;
+            _ui set ["shareRow", ["", _v] select ((_ui getOrDefault ["shareRow", ""]) isNotEqualTo _v)];
+            ["#refresh"] call comspec_atak_native_fnc_pageRoute;
+        };
+        // Route reçue : le partage part d'une copie à moi (seul son auteur peut renvoyer l'originale).
+        case "rowSend": {
+            _full = false;
+            _v params ["_rid", "_rsc"];
+            if !(["isMine", _rid] call _RA) then { _rid = ["dup", _rid] call _RA; };
+            if (_rid isNotEqualTo "") then { ["share", [_rid, _rsc]] call _RA; };
+            _ui set ["shareRow", ""];
+            ["#refresh"] call comspec_atak_native_fnc_pageRoute;
+        };
+        case "rowUnshare": {
+            _full = false;
+            ["unshare", _v] call _RA;
+            ["INFO", "Partage retiré", 2, 10] call comspec_atak_native_fnc_notify;
+            _ui set ["shareRow", ""];
+            ["#refresh"] call comspec_atak_native_fnc_pageRoute;
+        };
         case "vis": { private _r = ["get", _v] call _RA; if ((count _r) > 0) then { ["set", [_v, "vis", !(_r get "vis")]] call _RA; }; _full = false; };
         case "map": { ["MAP"] call comspec_atak_native_fnc_navigate; _full = false; };
     };
@@ -711,11 +745,28 @@ switch (_view) do {
             private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2 · %3</t><br/>%4 · ~%5%6",
                 [_x2 get "name"] call _esc, (_k select 1) call _tr, format [("%1 étape(s)") call _tr, count (_x2 get "steps")], [_s getOrDefault ["total", 0]] call _fmt, [_s getOrDefault ["dur", 0]] call _dur,
                 ["", format ["<br/><t color='#8fd19a'>%1</t>", _tags joinString " · "]] select ((count _tags) > 0)];
-            _rows pushBack ["person", _k select 2, _txt, [
-                ["OUVRIR", ["open", _x2 get "id"] call _ui1, true],
-                ["SUIVRE", ["follow", _x2 get "id"] call _ui1, false, (count (_x2 get "steps")) > 0],
-                [["AFFICHER", "MASQUER"] select (_x2 get "vis"), ["vis", _x2 get "id"] call _ui1, false, true, "Sur la carte ATAK"]
-            ], ["rgba", _x2 get "color"] call _RA];
+            // Boutons sous le texte, sur toute la largeur (ils passent sur deux lignes si l'écran est étroit) : cinq à droite du
+            // texte ne laissaient plus de place au nom sur le petit écran.
+            private _rid = _x2 get "id";
+            private _delArm = (_ui get "confirm") isEqualTo ("row:" + _rid);
+            private _isMineR = _tab isEqualTo "MINE";
+            _rows pushBack ["person", _k select 2, _txt, [], ["rgba", _x2 get "color"] call _RA];
+            _rows pushBack ["buttons", [
+                ["OUVRIR", ["open", _rid] call _ui1, true],
+                ["SUIVRE", ["follow", _rid] call _ui1, false, (count (_x2 get "steps")) > 0],
+                [["AFFICHER", "MASQUER"] select (_x2 get "vis"), ["vis", _rid] call _ui1, false, true, "Sur la carte ATAK"],
+                ["PARTAGER", ["rowShare", _rid] call _ui1, false, (count (_x2 get "steps")) > 0, ["Envoie une copie à mon équipe, mon groupe ou mon camp", "Choisir à qui envoyer cette route"] select _isMineR],
+                [["SUPPRIMER", "CONFIRMER"] select _delArm, ["rowDel", _rid] call _ui1, ["red", false] select !_delArm, true, "Supprimer la route (deux clics)"]
+            ]];
+            if ((_ui getOrDefault ["shareRow", ""]) isEqualTo _rid) then {
+                private _sc = [0, _x2 get "scope"] select _isMineR;
+                _rows pushBack ["segment", "Envoyer à", [
+                    ["ÉQUIPE", ["rowSend", [_rid, 1]] call _ui1, _sc isEqualTo 1, "Mon équipe de feu (le groupe si je n'en ai pas)"],
+                    ["GROUPE", ["rowSend", [_rid, 2]] call _ui1, _sc isEqualTo 2, "Tout mon groupe"],
+                    ["CAMP", ["rowSend", [_rid, 3]] call _ui1, _sc isEqualTo 3, "Tout mon camp"]
+                ], "Par le réseau ATAK : sans réseau, l'envoi part au retour du signal"];
+                if (_sc > 0) then { _rows pushBack ["buttons", [["RETIRER LE PARTAGE", ["rowUnshare", _rid] call _ui1]]]; };
+            };
         } forEach _list;
     };
 };

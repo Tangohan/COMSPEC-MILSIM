@@ -59,6 +59,48 @@ EN : My cover is clearer and linked to Athena
 - Fiche (`fn_idLegend « sheet »`) : papiers imprimés et portés, source (`athena` ou `local`), date ; le brief brut, la nature et la qualité ne partent plus chez le joueur.
 - Remontée (`fn_idCoverSync`, `kind = cover_report`, ICD-SSE-COVER-001) sur le compte du jeton de jeu, sans nouvelle DLL. Bureau SSE : attribution d'un contenu de la bibliothèque de l'éditeur à un joueur (identité masquée, papiers émis, kit et brief). Mes papiers : état de la couverture. Migration 4110.
 - Sans habilitation Confidentiel, les briefs reliés à une identité n'apparaissent plus dans le Bureau SSE.
+## Écran de verrouillage et code, fonds d'écran du site, Bloc-notes, Bluetooth, onglets lisibles, dégâts variés (version attribuée à la publication)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Nouvel écran de verrouillage, code du téléphone et fonds d'écran du site
+- L'écran de verrouillage est refait : fond d'écran visible, notifications lisibles en entier et défilantes, grand bouton DÉVERROUILLER, raccourcis CARTE et MESSAGES.
+- Le code du téléphone se règle au clavier dans Réglages > Personnalisation (aucun code par défaut) et se tape sur un pavé numérique, avec indice et décompte après trop d'essais.
+- Cinq fonds d'écran du site (aigle et logo Athena, bannières ATAK, SSE et Base SOF), un écran de démarrage au logo du site.
+- Bloc-notes : OUVRIR, ÉDITER, PARTAGER et SUPPRIMER sur chaque note. App Bluetooth refaite. L'onglet choisi reste lisible dans toutes les apps. Beaucoup plus d'effets de dégâts, selon la cause.
+EN : New lock screen, phone code and wallpapers from the website
+- The lock screen is rebuilt: visible wallpaper, full and scrolling notifications, a big UNLOCK button, MAP and MESSAGES shortcuts.
+- The phone code is set on the keypad in Settings > Personalization (no default code) and typed on a number pad, with a hint and a countdown after too many tries.
+- Five wallpapers from the website (Athena eagle and logo, ATAK, SSE and SOF Base banners), a boot screen with the website logo.
+- Notepad: OPEN, EDIT, SHARE and DELETE on each note. Bluetooth app rebuilt. The selected tab stays readable in every app. Many more damage effects, depending on the cause.
+
+### Détail technique
+- `fn_lockScreen` refait (deux colonnes en paysage, liste défilante, cartes mesurées, sans info-bulle). Cause de l'étiquette « Déverrouiller » qui flottait : info-bulle du bouton plein écran. Cause du titre décalé : glyphe « ● » absent de la police.
+- `fn_phonePad` refait ; `fn_phoneOwn` : `pinSetup`, `pinStep`, `fail`, `hasPin`, `setHint`. Les clics ne traversent plus le clavier. Raccourci pris avant le code : l'app s'ouvre après (`COMSPEC_ATAK_LockAfter`). Saisie au clavier physique (`fn_keyBlock`). Comportement d'un téléphone ramassé inchangé.
+- `tools/gen_lock_assets.py` et `tools/gen_damage_fx.py` : PAA dans `items.pbo` (`data/walls`, `data/lock`, `data/dmg`), main.pbo restant près de la limite de GitHub. `fn_wallPath` centralise les chemins. Boot et icônes `app_tenant`, `item_keyloader`, `item_goniometer` dans main.
+- Texte illisible sur un onglet choisi : le moteur fait clignoter un bouton qui a le focus vers `colorBackground2`, constante sombre que `ctrlSetBackgroundColor` ne change pas. Nouvelle classe `COMSPEC_RscButtonFlat` sur une face `RscText` (`fn_formRender` segment, lineseg, person, buttons, bar ; `fn_formSet` ; lanceur ; BFT).
+- Bloc-notes : lecture seule (`COMSPEC_ATAK_NoteRead`), confirmation et partage sur place, format de stockage inchangé.
+- Bluetooth : téléphones détectés (`near`, `scan` toutes les 3 s, redessin seulement si la liste change), progression sur place (`btx_`).
+- Dégâts : 23 calques tirés par `fn_deviceDamage` selon la cause, gardés dans l'état de l'appareil, oubliés à la réparation, dessinés par `fn_screenFx` ; aperçu dans Debug > DÉGÂTS.
+- Test : `tests/Unit/AtakLockscreenUiAssetTest.php`, contrastes calculés depuis `fn_theme`.
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : App Explosifs refaite et nouveau déclencheur réseau
+- Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.
+- Armer, désarmer et mettre à feu passent par le réseau : sans signal, charge trop loin d'un relais ou brouillage, le tir est refusé et l'app dit pourquoi.
+- Chaque charge montre son type, son état, sa distance, son cap et sa minuterie, à jour chaque seconde. Toute mise à feu demande une confirmation, qui prévient si des amis sont trop près.
+- Une mine à plaque ou à fil ne se déclenche plus depuis le téléphone, et une charge au clacker demande le clacker et sa portée. Le bouton Signaler envoie la position de la charge à votre camp.
+EN : Explosives app rebuilt, new network detonator
+- New "Network detonator" item: when placing an ACE charge, pick it in the Trigger menu. The charge is then commanded from the Explosives app, remotely and without a clacker.
+- Arming, disarming and firing go over the network: with no signal, a charge too far from a relay or jamming, firing is refused and the app says why.
+- Each charge shows its type, state, distance, bearing and timer, updated every second. Every firing asks for confirmation, with a warning if friendlies are too close.
+- A pressure or tripwire mine can no longer be fired from the phone, and a clacker charge requires the clacker and its range. The Report button sends the charge position to your side.
+
+### Détail technique
+- `fn_exploNet` : serveur seul juge (UID, armement, `fn_radioLink`, `COMSPEC_ATAK_Jammers`, `fn_relayNet`), détonation par `ace_explosives_fnc_detonateExplosive` côté serveur ; pose par `ace_explosives_fnc_placeExplosive` avec un déclencheur déjà accepté, sans entrée `ACE_Triggers`. Réglages `comspec_atak_native_explo_net_range`, `_delay`, `_consume`.
+- `fn_exploList` : type lu dans `ace_explosives_clackers` ; `fn_exploRow` ; mise à jour sur place (`fn_formSet` « btnrow » par bouton) à 1 Hz, page ouverte seulement.
 
 ---
 

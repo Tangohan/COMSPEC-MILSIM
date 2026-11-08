@@ -176,9 +176,9 @@ _hKey ctrlSetPosition [_hX + _pad * 2 + _hIcH / _ratio, _hY + _hh * 0.14, _hKw, 
 (_l get "body") params ["_bx", "_byy", "_bww", "_bhh"];
 private _isMap = _page isEqualTo "MAP";
 private _inspW = [0, _l get "inspW"] select _isMap;
-// Les trois cartes (topo, satellite, hybride : fn_mapCtrl) à la même place ; seule celle du fond choisi est montrée.
+// Les quatre cartes (topo, satellite, hybride, ardoise : fn_mapCtrl) à la même place ; seule celle du fond choisi est montrée.
 private _mapC = [_d] call comspec_atak_native_fnc_mapCtrl;
-{ [_x, [_bx, _byy, _bww - _inspW, _bhh]] call _set; } forEach [88530, 88532, 88533];
+{ [_x, [_bx, _byy, _bww - _inspW, _bhh]] call _set; } forEach [88530, 88532, 88533, 88534];
 // Zone de contenu : la repositionner remet son défilement en haut. On ne la déplace que si sa place change
 // (chaque bascule des Réglages appelait layoutApply avant le redessin : la page remontait en haut à chaque clic),
 // et le défilement est rendu après un vrai déplacement.
@@ -197,11 +197,10 @@ if (_cgMoved) then {
 [88541, [_bx + _bww - _inspW + _pad, _byy + _pad, (_inspW - 2 * _pad) max 0, (_bhh - 2 * _pad) max 0]] call _set;
 // Fond d'écran de l'accueil (réglage profil : athena, ops ou aucun).
 private _wall = profileNamespace getVariable ["COMSPEC_ATAK_Wallpaper", "topo"];
-private _walls = ["topo", "night", "desert", "olive", "dark", "soar", "athena", "ops"];
-private _blur = ["", "_blur"] select (profileNamespace getVariable ["COMSPEC_ATAK_WallBlur", false]);
+private _wallTex = ["path", [_wall, profileNamespace getVariable ["COMSPEC_ATAK_WallBlur", false], _l get "landscape"]] call comspec_atak_native_fnc_wallPath;
 private _wc = [88542, [_bx, _byy, _bww, _bhh]] call _set;
-_wc ctrlSetText (((["", format ["\z\comspec_atak_native\addons\main\data\wall_%1%3_%2.paa", _wall, ["port", "land"] select (_l get "landscape"), _blur]] select (_wall in _walls))) call comspec_atak_native_fnc_tr);
-_wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in _walls});
+_wc ctrlSetText _wallTex; // i18n:brut
+_wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wallTex isNotEqualTo ""});
 { if (!isNull _x) then { _x ctrlShow (_isMap && {_x isEqualTo _mapC}); }; } forEach ([_d, true] call comspec_atak_native_fnc_mapCtrl);
 (_d displayCtrl 88531) ctrlShow !_isMap;
 (_d displayCtrl 88540) ctrlShow (_isMap && {_inspW > 0});
