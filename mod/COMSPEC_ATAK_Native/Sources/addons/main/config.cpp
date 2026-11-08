@@ -67,7 +67,7 @@ class CfgFunctions {
             class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class musicAthena {}; class pageMusic {};
         };
         class route { file="z\comspec_atak_native\addons\main\functions\route";
-            class routeAction {}; class routeUnpack {}; class routeDraw {}; class route3d {}; class routeMap {}; class pageRoute {};
+            class routeAction {}; class routeUnpack {}; class routeDraw {}; class route3d {}; class routeEcoti {}; class routeMap {}; class pageRoute {};
         };
         class zones { file="z\comspec_atak_native\addons\main\functions\zones";
             class zoneAction {}; class zoneUnpack {}; class zoneGeom {}; class zoneGen {}; class zoneDraw {}; class zoneMap {}; class pageZones {}; class zoneSnap {};
@@ -105,7 +105,7 @@ class CfgFunctions {
         };
         class teams { file="z\comspec_atak_native\addons\main\functions\teams";
             class ftCatalog {}; class ftInfo {}; class ftTeams {}; class ftServer {}; class ftAction {}; class ftRows {}; class ftCenter {};
-            class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {}; class ftRoleSync {}; class displayRole {}; class callsignAction {}; class aiOrder {};
+            class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {}; class ftRoleSync {}; class displayRole {}; class callsignAction {}; class aiOrder {}; class aiBubble {};
         };
         class screen { file="z\comspec_atak_native\addons\main\functions\screen";
             class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {}; class distanceServer {}; class pageDistance {}; class distanceLog {}; class distanceMine {};

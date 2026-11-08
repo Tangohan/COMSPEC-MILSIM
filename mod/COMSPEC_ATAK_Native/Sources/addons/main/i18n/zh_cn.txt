@@ -25654,5 +25654,16 @@
 ["Téléchargement de l'image impossible (%1).", "图像下载失败（%1）。"],
 ["Image reçue au format %1, illisible par Arma (JPEG attendu).", "收到的图像格式为 %1，Arma 无法显示（需要 JPEG）。"],
 ["Le site Athena n'a pas pu en faire une copie JPEG : renvoyez la diapositive en JPG.", "Athena 网站无法生成 JPEG 副本：请以 JPG 格式重新上传幻灯片。"],
-["réponse vide de COMSPEC Link", "COMSPEC Link 返回为空"]
+["réponse vide de COMSPEC Link", "COMSPEC Link 返回为空"],
+["Bulles de réponse des IA", "AI 回复气泡"],
+["Coché par défaut. La réponse d'un groupe IA à un ordre s'affiche en texte au-dessus de la tête de son chef, si vous êtes à portée et si vous le voyez. Hors de vue, ou décoché : le donneur d'ordre la reçoit en notification du jeu.", "默认勾选。AI 小组对命令的回复会以文字显示在其组长头顶，前提是你在范围内且能看到他。看不到或取消勾选时，下达命令者会收到游戏通知。"],
+["Portée des bulles de réponse", "回复气泡范围"],
+["Distance maximale, en mètres, à laquelle vous voyez la réponse au-dessus de la tête d'une IA.", "可以看到 AI 头顶回复的最大距离（米）。"],
+["%1 terminé : %2", "%1 完成：%2"],
+["%1 impossible : %2", "%1 无法执行：%2"],
+["Ordre annulé", "命令已取消"],
+["Votre arsenal et les tenues partagées", "你的军械库和共享配置"],
+["Pas de copie locale", "没有本地副本"],
+["Route suivie dans F-PANO ECOTI", "在 F-PANO ECOTI 中显示跟随路线"],
+["Si le mod F-PANO ECOTI est chargé : les 8 prochaines étapes de la route suivie s'affichent sous JVN dans sa vue, avec le nom et la distance. Sans ce mod, ce réglage ne fait rien.", "如果已加载 F-PANO ECOTI 模组：跟随路线接下来的 8 个路点会在夜视下显示在其视图中，并带有名称和距离。没有该模组时，此设置无效。"]
 ]

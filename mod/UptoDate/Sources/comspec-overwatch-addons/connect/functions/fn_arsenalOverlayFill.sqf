@@ -389,13 +389,13 @@ if (!isNull _status) then {
     private _syncTxt = if (_syncOk) then {
         format ["<t color='#5cc76b'>%1</t>", format [("Copie locale OK (%1)") call comspec_overwatch_connect_fnc_tr, [_syncAt, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] select (_syncAt isEqualTo "")]]
     } else {
-        format ["<t color='#e0a050'>%1</t>", ("Pas encore de copie locale Documents") call comspec_overwatch_connect_fnc_tr]
+        format ["<t color='#e0a050'>%1</t>", ("Pas de copie locale") call comspec_overwatch_connect_fnc_tr]
     };
     _status ctrlSetStructuredText parseText (((format ["<t align='right' size='%4' color='#9fb3a6'>%1<br/>%2 · %3</t>",
         _syncTxt,
         if (_offline) then { format ["<t color='#e0a050'>%1</t>", ("Athena hors ligne") call comspec_overwatch_connect_fnc_tr] } else { format [("Liste du site du %1") call comspec_overwatch_connect_fnc_tr, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] },
         format [("%1 affichée(s) sur %2") call comspec_overwatch_connect_fnc_tr, count _shown, count _rows], 0.7 max _sm])) call comspec_overwatch_connect_fnc_tr);
-    _status ctrlSetTooltip (((if (_syncPath isEqualTo "") then { "" } else { format [("Emplacement : %1") call comspec_overwatch_connect_fnc_tr, _syncPath] })) call comspec_overwatch_connect_fnc_tr);
+    _status ctrlSetTooltip (((if (_syncPath isEqualTo "") then { ["Pas encore de copie locale dans Documents (Actualiser pour la créer)", ""] select _syncOk } else { format [("Emplacement : %1") call comspec_overwatch_connect_fnc_tr, _syncPath] })) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Action groupée : Mes tenues -> envoyer seulement celles qui ne sont pas à jour sur le site (rien n'est renvoyé

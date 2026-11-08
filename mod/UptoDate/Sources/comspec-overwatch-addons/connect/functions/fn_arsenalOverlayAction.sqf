@@ -56,6 +56,8 @@ if (_act isEqualTo "loadoutsOpen") exitWith {
 if (_act isEqualTo "loadoutsClosed") exitWith {
     { _x params ["_c", "_shown"]; if (!isNull _c) then { _c ctrlEnable true; _c ctrlShow _shown; }; } forEach (_d getVariable ["COMSPEC_ArsenalBehindLoadouts", []]);
     _d setVariable ["COMSPEC_ArsenalBehindLoadouts", []];
+    private _gBack = _d getVariable ["COMSPEC_ArsenalOverlay", controlNull];
+    if (!isNull _gBack && {_d getVariable ["COMSPEC_ArsenalOverlayOpen", false]}) then { [_gBack] call (_gBack getVariable ["COMSPEC_ArsenalSettle", {}]); };
     // Une tenue a pu être enregistrée ou supprimée dans l'écran d'ACE : Mes tenues relue si le panneau est ouvert.
     if (_d getVariable ["COMSPEC_ArsenalOverlayOpen", false]) then { [_d] spawn { params ["_d"]; [_d] call comspec_overwatch_connect_fnc_arsenalOverlayRefresh; }; };
 };
@@ -134,6 +136,7 @@ switch (_act) do {
         private _open = !(_d getVariable ["COMSPEC_ArsenalOverlayOpen", false]);
         _d setVariable ["COMSPEC_ArsenalOverlayOpen", _open];
         _g ctrlShow _open;
+        if (_open) then { [_g] call (_g getVariable ["COMSPEC_ArsenalSettle", {}]); };
         private _t = _d getVariable ["COMSPEC_ArsenalToggle", controlNull];
         if (!isNull _t) then { _t ctrlSetText (((["ATHENA · TENUES", "FERMER LES TENUES"] select _open)) call comspec_overwatch_connect_fnc_tr); };
         if (_open) then { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayBeginLoad; } else {
@@ -418,6 +421,8 @@ switch (_act) do {
         (ctrlPosition _g) params ["_gx", "_gy", "_gw", "_gh"];
         _menu ctrlSetPosition [(((_mx - _gx) min (_gw - _menuW - 0.004)) max 0), (((_my - _gy) min (_gh - _mh - 0.004)) max 0), _menuW, _mh];
         _menu ctrlCommit 0;
+        _scrim ctrlSetPosition (_g getVariable ["COMSPEC_ArsenalScrimRect", [0, 0, 0, 0]]);
+        _scrim ctrlCommit 0;
         _scrim ctrlShow true;
         _menu ctrlShow true;
         if (!isNull _first) then { ctrlSetFocus _first; };
@@ -426,11 +431,10 @@ switch (_act) do {
         (_g getVariable ["COMSPEC_ArsenalMenu", []]) params [["_scrim", controlNull], ["_menu", controlNull]];
         (_g getVariable ["COMSPEC_ArsenalAsk", []]) params [["_ask", controlNull]];
         private _askOn = !isNull _ask && {ctrlShown _ask};
-        if ((!isNull _menu && {ctrlShown _menu}) || {_askOn}) then {
-            { if (!isNull _x) then { _x ctrlShow false; }; } forEach [_scrim, _menu, _ask];
-            // Le champ de saisie masqué ne garde pas les raccourcis d'ACE.
-            if (_askOn) then { ace_arsenal_leftSearchbarFocus = false; };
-        };
+        // Toujours, et sans surface : ctrlShown ne dit rien de fiable juste après l'affichage du groupe parent.
+        { if (!isNull _x) then { _x ctrlShow false; _x ctrlSetPosition [0, 0, 0, 0]; _x ctrlCommit 0; }; } forEach [_scrim, _menu, _ask];
+        // Le champ de saisie masqué ne garde pas les raccourcis d'ACE.
+        if (_askOn) then { ace_arsenal_leftSearchbarFocus = false; };
     };
     case "menuDo": {
         ["menuClose"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
@@ -462,6 +466,10 @@ switch (_act) do {
         _g setVariable ["COMSPEC_ArsenalAskKind", _kind];
         _t ctrlSetStructuredText parseText (((format ["<t size='%2' color='#dce8e0'>%1</t>", (_title) call comspec_overwatch_connect_fnc_tr, 0.82 max (_g getVariable ["COMSPEC_ArsenalStMin", 0])])) call comspec_overwatch_connect_fnc_tr);
         _e ctrlSetText _prefill; // i18n:brut
+        _scrim ctrlSetPosition (_g getVariable ["COMSPEC_ArsenalScrimRect", [0, 0, 0, 0]]);
+        _scrim ctrlCommit 0;
+        _ask ctrlSetPosition (_g getVariable ["COMSPEC_ArsenalAskRect", [0, 0, 0, 0]]);
+        _ask ctrlCommit 0;
         _scrim ctrlShow true;
         _ask ctrlShow true;
         ctrlSetFocus _e;

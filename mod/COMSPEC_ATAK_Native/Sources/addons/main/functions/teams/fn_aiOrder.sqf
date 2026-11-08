@@ -112,7 +112,7 @@ switch (_act) do {
         if (unitIsUAV (vehicle leader _g)) exitWith { "Un drone se commande depuis l'app Drone" };
         ""
     };
-    // Réponse d'un groupe IA : toast d'Arma (CfgNotifications, config.cpp), rien dans le centre de notifications du téléphone.
+    // Toast d'Arma (CfgNotifications, config.cpp) : secours des bulles (fn_aiBubble) ; rien dans le centre de notifications du téléphone.
     case "toast": {
         _arg params [["_t", ""], ["_type", "INFO"]];
         if (!hasInterface || {_t isEqualTo ""}) exitWith {};
@@ -408,16 +408,25 @@ switch (_act) do {
         if ((_in getOrDefault ["ackUid", ""]) isEqualTo getPlayerUID player) then {
             [format ["%1 : %2 appliquée", _gn, _in getOrDefault ["ack", ""]]] call _tell;
         };
-        // Donneur d'ordre : en cours, terminé ou impossible (une fois par changement d'état).
-        if ((_e getOrDefault ["uid", ""]) isEqualTo getPlayerUID player && {[_e getOrDefault ["id", ""], _st] isNotEqualTo _was} && {_st isNotEqualTo "NEW"}) then {
+        // Changement d'état : bulle au-dessus du chef du groupe pour les joueurs du camp à portée et en vue (fn_aiBubble).
+        // Donneur d'ordre : ligne d'état du PC du poste ; toast d'Arma seulement si la bulle n'est pas vue (ou désactivée).
+        if (!_replay && {[_e getOrDefault ["id", ""], _st] isNotEqualTo _was} && {_st isNotEqualTo "NEW"}) then {
             private _kl = [_e getOrDefault ["kind", ""]] call _kLabel;
             private _tx = _e getOrDefault ["text", ""];
-            switch (_st) do {
-                case "EXEC": { [format ["%1 · %2 : %3", _gn, _kl, _tx]] call _tell; };
-                case "DONE": { [format ["%1 · %2 terminé : %3", _gn, _kl, _tx], "SUCCESS"] call _tell; };
-                case "FAIL": { [format ["%1 · %2 impossible : %3", _gn, _kl, _tx], "WARNING"] call _tell; };
-                default { [format ["%1 : ordre annulé", _gn]] call _tell; };
+            private _klTr = _kl call comspec_atak_native_fnc_tr;
+            private _txTr = _tx call comspec_atak_native_fnc_tr;
+            (switch (_st) do {
+                case "EXEC": { [format ["%1 · %2 : %3", _gn, _kl, _tx], "INFO", format ["%1 : %2", _klTr, _txTr]] };
+                case "DONE": { [format ["%1 · %2 terminé : %3", _gn, _kl, _tx], "SUCCESS", format [("%1 terminé : %2") call comspec_atak_native_fnc_tr, _klTr, _txTr]] };
+                case "FAIL": { [format ["%1 · %2 impossible : %3", _gn, _kl, _tx], "WARNING", format [("%1 impossible : %2") call comspec_atak_native_fnc_tr, _klTr, _txTr]] };
+                default { [format ["%1 : ordre annulé", _gn], "INFO", ("Ordre annulé") call comspec_atak_native_fnc_tr] };
+            }) params ["_full", "_type", "_said"];
+            private _seen = ["say", [leader _g, _said, _gn, _type]] call comspec_atak_native_fnc_aiBubble;
+            if ((_e getOrDefault ["uid", ""]) isEqualTo getPlayerUID player) then {
+                if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _full] call comspec_atak_native_fnc_tocLaptop; };
+                if !(_seen) then { ["toast", [_full, _type]] call comspec_atak_native_fnc_aiOrder; };
             };
         };
+
     };
 };
