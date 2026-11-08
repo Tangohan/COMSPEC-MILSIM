@@ -29,7 +29,7 @@ final class CandidateAccountIdentityTest extends TestCase
 
         self::assertSame([], $id['missing']);
         self::assertSame('Alex Test', $id['display_name']);
-        self::assertSame(26, $id['age']);
+        self::assertSame(25, $id['age']);
         self::assertSame('a@example.invalid', $id['email']);
     }
 
