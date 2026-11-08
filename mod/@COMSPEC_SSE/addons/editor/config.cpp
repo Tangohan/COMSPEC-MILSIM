@@ -29,6 +29,7 @@ class CfgFunctions {
             class editorLibrary {};
             class editorFound {};
             class editorAi {};
+            class aiConfigOpen {};
             class editorModule {};
         };
     };

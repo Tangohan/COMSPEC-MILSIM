@@ -67,6 +67,10 @@ switch (_op) do {
         // Module posé sur une IA : tout son groupe est listé. Sinon, sélection du Zeus, puis les IA autour.
         private _sel = (curatorSelected param [0, []]) select { _x isKindOf "CAManBase" && {!isPlayer _x} };
         if (!isNull _o && {_o isKindOf "CAManBase"}) then { _sel = units group _o; };
+        // Liste donnée par l'appelant (fn_aiConfigOpen) : elle prime, une seule fois.
+        private _given = uiNamespace getVariable ["comspec_sse_editorAiUnits", []];
+        uiNamespace setVariable ["comspec_sse_editorAiUnits", []];
+        if (_given isNotEqualTo []) then { _sel = _given; };
         if (_sel isNotEqualTo []) then { ["scan", [[], 0, _sel]] call _send; } else { ["scan", [call _ctxPos, 50, []]] call _send; };
     };
     case "scan": { ["scan", [call _ctxPos, parseNumber ([94502] call _data), []]] call _send; };
