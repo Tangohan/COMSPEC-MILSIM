@@ -40,7 +40,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ## À venir : fond de carte ARDOISE et style tactique des marqueurs et traits (ATAK natif, version à attribuer)
 
-### Résumé joueur
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : Carte : nouveau fond ARDOISE et style tactique des marqueurs
 - Réglages › Carte : le fond ARDOISE donne une carte bleu-gris sombre, avec une mer très sombre, des routes turquoise fines, des courbes de niveau discrètes et les noms de villes en petites capitales avec un point turquoise.
