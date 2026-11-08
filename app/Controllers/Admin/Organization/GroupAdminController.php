@@ -94,6 +94,11 @@ class GroupAdminController
             Session::flash('error', 'Cette adresse courte est déjà utilisée.');
             return Response::redirect(url('back-office/organisation/structure?ouvrir=groupe'));
         }
+        $planBlock = \App\Services\Billing\OrbatUnitQuota::blockMessage($tenantId);
+        if ($planBlock !== null) {
+            Session::flash('error', $planBlock);
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=groupe'));
+        }
         $unit = $this->unitRepository->create($tenantId, $data);
         Session::flash('success', 'Groupe créé.');
         $newId = isset($unit['id']) ? (int) $unit['id'] : 0;

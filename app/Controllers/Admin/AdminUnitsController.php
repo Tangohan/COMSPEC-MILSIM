@@ -46,6 +46,11 @@ class AdminUnitsController
             Session::set('error', 'Ce slug existe déjà.');
             return Response::redirect(url('back-office/units/create'));
         }
+        $planBlock = \App\Services\Billing\OrbatUnitQuota::blockMessage((int) $tenantId);
+        if ($planBlock !== null) {
+            Session::set('error', $planBlock);
+            return Response::redirect(url('back-office/units/create'));
+        }
         $this->unitRepository->create((int) $tenantId, $data);
         Session::set('success', 'Unité créée.');
         return Response::redirect(url('back-office/units'));
