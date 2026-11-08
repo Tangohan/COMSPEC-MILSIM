@@ -60,6 +60,7 @@ FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 d
 - Arsenal ACE, écran Tenues : plus de panneaux vides ni de textes superposés à l'ouverture.
 - App Routes : avec le mod F-PANO ECOTI, les prochaines étapes de la route suivie s'affichent sous JVN dans sa vue, avec leur nom et leur distance.
 - Bloc-notes refait, réponses des IA en texte au-dessus de leur tête (désactivable), nouveaux motifs de fêlures désactivables, menu ORBAT dans le BFT, et plus rien dans OneDrive.
+- Téléphones personnels : chaque téléphone a un propriétaire. Si vous ramassez celui d'un autre, vous choisissez à l'ouverture lequel lire, et vous ne voyez que ce qu'il contient. Code de 4 à 8 chiffres et indice dans Réglages, essais limités ; un code oublié se retire (CODE OUBLIÉ, admin ou Zeus).
 EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
 - The C2 app is removed: find the group, callsign and units in the Group and BFT apps, and orders in Tasks.
@@ -79,7 +80,10 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Routes app: with the F-PANO ECOTI mod, the next steps of the followed route appear in its NVG view, with name and distance.
 - Notepad rebuilt, AI replies as text above their head (can be turned off), new crack patterns you can turn off, ORBAT menu in the BFT, and nothing goes to OneDrive any more.
 
+- Personal phones: each phone has an owner. If you pick up someone else's, you choose which one to read when you open it, and you only see what it holds. Code of 4 to 8 digits and a hint in Settings, limited attempts; a forgotten code can be removed (FORGOT CODE, admin or Zeus).
+
 ### Détail technique
+- **Téléphones personnels (PR #1395, lot 1) :** `fn_phoneOwn` (fiche `COMSPEC_ATAK_Phones` sur le contenant, déplacée par Take et Put, type et bornes vérifiés), `fn_phoneServer` (code, essais, données sur le serveur), `fn_phonePad`, `fn_pagePhones` (seule page permise avec un téléphone d'autrui à l'écran, aucun appel à Athena). `fn_hasDevice` ne compte plus le téléphone d'un autre. Réglages `comspec_atak_native_phone_owner`, `pin_attempts`, `pin_block`. Mécanique de jeu, pas une sécurité. Rien n'a tourné en jeu.
 - **Retours du propriétaire (lot final, à vérifier en jeu)** :
   - Carte sur fond sombre, nuit, satellite, classique ou hybride : `lift` lisait une variable locale de `fn_mapColors` absente à l'appel, erreur de script à chaque image et dessin arrêté (`docs/bugs/2026-11-08-atak-carte-marqueurs-images-zones-absentes.md`).
   - App Routes : clic joué au relâchement, rien de supprimé pendant un clic, zone de la barre bloquée, focus rendu (`…-atak-route-clic-gauche-apps-superposees.md`).

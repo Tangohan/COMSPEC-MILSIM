@@ -26,6 +26,7 @@
 [*] Carte : plus de mention « PERDU », noms lisibles à mi-zoom. BFT : menu LISTE et ORBAT.
 [*] Messages, Réglages, favoris, diapositives et source vidéo du drone : moins de pages redessinées.
 [*] Écran abîmé : huit motifs de fêlures et de bris, différents à chaque choc, désactivables (Réglages).
+[*] Téléphones personnels : chaque téléphone a un propriétaire. Ramassez celui d'un autre : vous choisissez lequel ouvrir et ne lisez que ce qu'il contient. Code et indice dans Réglages, essais limités, code oublié récupérable (CODE OUBLIÉ, admin ou Zeus). Désactivable par l'admin du serveur (ATAK · Téléphones personnels).
 [/list]
 
 
