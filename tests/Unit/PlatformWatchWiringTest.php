@@ -98,8 +98,8 @@ final class PlatformWatchWiringTest extends TestCase
     public function testMigrationStepIsTheNextOneAndKeepsDataShort(): void
     {
         $registry = $this->read('database/steps/registry.php');
-        self::assertStringContainsString("'file' => '3970_platform_watch.php', 'rerun' => true", $registry);
-        self::assertFileExists(self::root() . '/database/steps/3970_platform_watch.php');
+        self::assertStringContainsString("'file' => '3980_platform_watch.php', 'rerun' => true", $registry);
+        self::assertFileExists(self::root() . '/database/steps/3980_platform_watch.php');
         self::assertLessThanOrEqual(30, WatchSchema::RETENTION_ALERT_DAYS);
         self::assertLessThanOrEqual(8, WatchSchema::RETENTION_HOUR_DAYS);
         self::assertLessThanOrEqual(3, WatchSchema::RETENTION_MINUTE_DAYS);

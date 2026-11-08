@@ -85,7 +85,8 @@ final class RoleplayImmersionSettingsAssetTest extends TestCase
         self::assertStringContainsString('Parcours d’immersion', $search);
         self::assertStringContainsString('Sessions Arma', $nav);
         self::assertStringContainsString('Parcours RH', $configNav);
-        self::assertStringContainsString('Sessions Arma', $configNav);
+        // 28beeab17 : l'entrée « Sessions Arma » du menu devient « Sessions de jeu », à côté de « Agenda et sessions de jeu ».
+        self::assertStringContainsString("['label' => 'Sessions de jeu', 'path' => 'back-office/roleplay/sessions'", $configNav);
         self::assertStringContainsString('Parcours RH', $search);
         self::assertStringContainsString('Sessions Arma', $search);
         self::assertStringNotContainsString("['label' => 'Réglages d’immersion', 'href' => url('back-office/roleplay/immersion')", $nav);

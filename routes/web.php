@@ -126,6 +126,7 @@ use App\Controllers\Admin\System\SystemStorageController;
 use App\Controllers\Admin\System\SystemIndicatorBlocklistController;
 use App\Controllers\Admin\System\SystemMemberSanctionsController;
 use App\Controllers\Admin\System\SystemUsersController;
+use App\Controllers\Admin\System\SystemUsersDataController;
 use App\Controllers\Admin\System\SystemRecruitmentPortalToolsController;
 use App\Controllers\Admin\System\SystemUserLookupApiController;
 use App\Controllers\Admin\Organization\OrganizationDashboardController;
@@ -1414,6 +1415,9 @@ return function (Router $router) {
     $router->get('/admin/system/administrateurs-site', [SystemUsersController::class, 'platformAdmins'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/platform-admin', [SystemUsersController::class, 'setPlatformAdmin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/person', [SystemUsersController::class, 'showPerson'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/users/donnees', [SystemUsersDataController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/users/export', [SystemUsersController::class, 'exportCsv'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/export', [SystemUsersController::class, 'exportCsv'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/merge', [SystemUsersController::class, 'mergeAccounts'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/users/{id}/edit', [SystemUsersController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/{id}/update', [SystemUsersController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

@@ -155,6 +155,8 @@ final class AuditActionLabel
         'user.purged' => 'Compte supprimé définitivement',
         'user.banned' => 'Personne bannie du site',
         'user.unbanned' => 'Bannissement levé',
+        'user.ban_expired' => 'Sanction temporaire terminée (date de fin atteinte)',
+        'platform.users_exported' => 'Export CSV des comptes (administration du site)',
         'user.membership_removed' => 'Retrait d’une communauté',
         'user.membership_restored' => 'Réintégration dans une communauté',
         'platform.tenant_deleted' => 'Communauté supprimée',

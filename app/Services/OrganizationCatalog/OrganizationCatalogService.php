@@ -30,6 +30,8 @@ final class OrganizationCatalogService
         private ?AuditService $audit = null,
         private ?ConfigurationUpdateService $configurationUpdates = null,
         private ?PDO $pdo = null,
+        /** Unités encore créables pour la communauté (null = illimité) ; par défaut le plafond de la formule. */
+        private ?\Closure $unitQuota = null,
     ) {
         $this->audit ??= new AuditService();
         $this->pdo ??= Database::getPdo();
@@ -543,7 +545,9 @@ final class OrganizationCatalogService
             $keyToId = [];
             $unitRows = is_array($def['units'] ?? null) ? $def['units'] : [];
             $remaining = $unitRows;
-            $unitsLeft = \App\Services\Billing\OrbatUnitQuota::remaining($tenantId);
+            $unitsLeft = $this->unitQuota !== null
+                ? ($this->unitQuota)($tenantId)
+                : \App\Services\Billing\OrbatUnitQuota::remaining($tenantId);
             $guard = 0;
             while ($remaining !== [] && $guard++ < 500) {
                 $next = [];
