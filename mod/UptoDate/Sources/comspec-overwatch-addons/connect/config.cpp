@@ -350,6 +350,7 @@ class CfgFunctions {
             class athenaOfferLink {};
             class ndaOnLoad {};
             class ndaSetLanguage {};
+            class ndaWatch {};
             class ndaAccept {};
             class ndaDecline {};
             class resetBetaNdaAck {};

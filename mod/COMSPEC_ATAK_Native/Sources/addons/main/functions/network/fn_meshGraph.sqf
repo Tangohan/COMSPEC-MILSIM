@@ -26,8 +26,12 @@
       "pass" [camps] (script planifié)                             "view" [réseau, antenne, débit max] (script planifié) -> HashMap
       "graph" [camp] -> [nœuds, voisins, liens, total] ou []
       "peer" [unité] -> [sauts, marge, niveau] si mon graphe récent la joint (messages A vers B, lot 10), sinon []
+      "weak" [antenne] -> [sauts, marge, niveau, nom A, nom B, marge du lien] : chemin vers ce nœud et son maillon faible (ping, fn_meshTools), sinon []
+      "jamAt" [position, brouilleurs, canal] -> part du signal gardée, 0 à 1
       Sans effet, testés par fn_devMeshTest :
       "solve" [voisins, sources, autorisés, plafond, débit max, courbe, ne relaie pas] -> [débits, sauts, vers, marges, sources]
+      "chain" [voisins, vers, nœud] -> liens du chemin, du nœud jusqu'à sa source : [[A, B, marge]...]
+      "weakest" [liens] -> le lien de plus faible marge, ou []
       "curve" -> part du débit gardée selon les sauts (décision 12)
       "gravity" [marge, sauts, plafond] -> niveau 0 à 3            "hyst" [lien bon, marge, débit, état précédent] -> [garder, état, marge, débit]
 */
@@ -51,6 +55,72 @@ switch (_act) do {
         private _m = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
         if (diag_tickTime - (_m getOrDefault ["at", -100]) > 20) exitWith { [] };
         (_m getOrDefault ["voice", createHashMap]) getOrDefault [netId _u, []]
+    };
+    case "chain": {
+        _arg params ["_adj", "_via", "_from"];
+        private _out = [];
+        private _v = _from;
+        // 17 au plus : plafond de sauts réglable jusqu'à 16. « vers » vient de couches différentes : jamais de boucle sans fin.
+        for "_step" from 1 to 17 do {
+            private _u = _via param [_v, -1];
+            if (_u < 0) exitWith {};
+            private _li = (_adj select _u) findIf { (_x select 0) isEqualTo _v };
+            if (_li < 0) exitWith { _out = []; };
+            _out pushBack [_u, _v, ((_adj select _u) select _li) select 1];
+            _v = _u;
+        };
+        _out
+    };
+    case "weakest": {
+        private _best = [];
+        { if (_best isEqualTo [] || {(_x select 2) < (_best select 2)}) then { _best = _x; }; } forEach (_arg param [0, []]);
+        _best
+    };
+    case "weak": {
+        _arg params [["_o", objNull]];
+        private _m = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
+        if (isNull _o || {diag_tickTime - (_m getOrDefault ["at", -100]) > 20}) exitWith { [] };
+        (_m getOrDefault ["path", []]) params [["_nodes", []], ["_adj", []], ["_names", []], ["_me", -1], ["_viaM", []], ["_hopM", []], ["_mgM", []], ["_viaG", []], ["_hopG", []]];
+        private _t = _nodes findIf { (_x select 0) isEqualTo _o };
+        if (_t < 0 || {_t isEqualTo _me}) exitWith { [] };
+        private _hd = _hopM select _t;
+        private _owner = (_nodes select _t) select 1;
+        // Chemin retenu pour la voix et les messages quand le nœud a un porteur ; sinon (relais, passerelle) le chemin direct.
+        private _peer = if (isNull _owner) then { [] } else { (_m getOrDefault ["voice", createHashMap]) getOrDefault [netId _owner, []] };
+        if (_peer isEqualTo [] && {_hd < 0}) exitWith { [] };
+        if (_peer isEqualTo []) then { _peer = [_hd, _mgM select _t, ["gravity", [_mgM select _t, _hd, ["maxHops"] call comspec_atak_native_fnc_meshGraph]] call comspec_atak_native_fnc_meshGraph]; };
+        // Sauts différents du chemin direct : passage par le cœur de réseau, moi vers la passerelle puis passerelle vers lui.
+        private _chain = if (_hd >= 0 && {(_peer select 0) isEqualTo _hd}) then {
+            ["chain", [_adj, _viaM, _t]] call comspec_atak_native_fnc_meshGraph
+        } else {
+            (["chain", [_adj, _viaG, _me]] call comspec_atak_native_fnc_meshGraph) + (["chain", [_adj, _viaG, _t]] call comspec_atak_native_fnc_meshGraph)
+        };
+        private _w = ["weakest", [_chain]] call comspec_atak_native_fnc_meshGraph;
+        private _nameOf = {
+            params ["_i"];
+            private _n = _names param [_i, ""];
+            if (_n isNotEqualTo "") exitWith { _n };
+            format ["Canal %1, %2", (_nodes select _i) select 3, [(_nodes select _i) select 1, true] call comspec_atak_native_fnc_unitCallsign]
+        };
+        if (_w isEqualTo []) exitWith { _peer + ["", "", _peer select 1] };
+        _peer + [[_w select 0] call _nameOf, [_w select 1] call _nameOf, _w select 2]
+    };
+    case "jamAt": {
+        _arg call {
+            params ["_p", "_jams", "_chan"];
+            private _f = 1;
+            {
+                _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
+                // Brouillage GPS seul, ou d'un autre canal (lot 11) : sans effet sur ce nœud.
+                private _jc = _x param [7, 0];
+                if ((_x param [8, ""]) isEqualTo "gps" || {_jc > 0 && {_jc isNotEqualTo _chan}}) then { continue };
+                if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
+                private _d = _p distance2D _jp;
+                private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
+                if (_d < _jr) then { _f = _f * (1 - _js * (1 - (_d / _jr) ^ 2)); };
+            } forEach _jams;
+            _f max 0
+        }
     };
     case "maxHops": {
         private _h = missionNamespace getVariable ["comspec_atak_native_mesh_hops", 6];
@@ -283,21 +353,7 @@ switch (_act) do {
             };
             _l
         };
-        private _jamAt = {
-            params ["_p", "_jams", "_chan"];
-            private _f = 1;
-            {
-                _x params [["_jp", [0, 0, 0]], ["_jr", 500]];
-                // Brouillage GPS seul, ou d'un autre canal (lot 11) : sans effet sur ce nœud.
-                private _jc = _x param [7, 0];
-                if ((_x param [8, ""]) isEqualTo "gps" || {_jc > 0 && {_jc isNotEqualTo _chan}}) then { continue };
-                if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
-                private _d = _p distance2D _jp;
-                private _js = (([_x param [6, 1], 1] select !((_x param [6, 1]) isEqualType 0)) max 0) min 1;
-                if (_d < _jr) then { _f = _f * (1 - _js * (1 - (_d / _jr) ^ 2)); };
-            } forEach _jams;
-            _f
-        };
+        private _jamAt = { ["jamAt", _this] call comspec_atak_native_fnc_meshGraph };
         // Marge d'une paire : bilan radio en cache 30 s par paire de positions arrondies (15 m).
         private _marginOf = {
             params ["_pa", "_pb", "_r", "_cache", "_c"];
@@ -492,7 +548,7 @@ switch (_act) do {
         private _curve = ["curve"] call comspec_atak_native_fnc_meshGraph;
         // Canal large : une radio peut dépasser le débit de base (lot 9), borné par la capacité de chaque nœud.
         (["solve", [_adj, _gws, _allowedG, _maxH, _maxK * 1.5, _curve, _nodes apply { _x select 6 }]] call comspec_atak_native_fnc_meshGraph) params ["_bwG", "_hopG", "_viaG", "_mgG", "_srcG"];
-        (["solve", [_adj, [_me], _allowed, _maxH, _maxK * 1.5, _curve, _nodes apply { _x select 6 }]] call comspec_atak_native_fnc_meshGraph) params ["_bwM", "_hopM", "", "_mgM"];
+        (["solve", [_adj, [_me], _allowed, _maxH, _maxK * 1.5, _curve, _nodes apply { _x select 6 }]] call comspec_atak_native_fnc_meshGraph) params ["_bwM", "_hopM", "_viaM", "_mgM"];
         // Noms et position réelle des passerelles : liste locale des relais, déjà en cache.
         private _relays = ["list"] call comspec_atak_native_fnc_relayNet;
         private _nameOf = {
@@ -555,6 +611,8 @@ switch (_act) do {
             _voice set [netId _owner, [_pick select 0, _pick select 1, _lvl]];
         } forEach _nodes;
         _res set ["voice", _voice];
+        // Pour le ping et la prévision (fn_meshTools), à la demande : de simples références, rien n'est recalculé ni diffusé.
+        _res set ["path", [_nodes, _adj, _names, _me, _viaM, _hopM, _mgM, _viaG, _hopG, _poss]];
         // Part relayée (lot 9, batterie) : nœuds dont le chemin vers la passerelle passe d'abord par moi.
         _res set ["relayed", { _x isEqualTo _me } count _viaG];
         _res set ["mode", _mode];

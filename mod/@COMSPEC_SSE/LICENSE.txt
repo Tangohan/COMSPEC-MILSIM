@@ -1,5 +1,5 @@
 COMSPEC — LICENCE D'UTILISATION / LICENCE OF USE
-Version 1 — © 2026 COMSPEC. Tous droits réservés / All rights reserved.
+Version 2 — © 2026 COMSPEC. Tous droits réservés / All rights reserved.
 Mods concernés / Mods covered : COMSPEC ATAK (Native), COMSPEC SSE, et leurs composants
 (fichiers PBO, scripts, images, textures, sons, bibliothèques DLL).
 
@@ -30,7 +30,20 @@ FRANÇAIS
    Les éléments fournis par des tiers (polices, contenus d'Arma 3, éléments crédités dans
    CREDITS.md) restent soumis à leur propre licence.
 
-5. Acceptation
+5. Données enregistrées par Athéna
+   Uniquement si vous répondez Oui au service Athéna. Si vous répondez Non, le mod reste en
+   local et ne transmet rien à Athéna. Enregistré pour faire fonctionner le service, et sans
+   usage publicitaire :
+   - compte et technique : identité Steam si disponible, nom du joueur, indicatif, adresse IP
+     vue par le serveur, versions du mod, de la DLL et d'Arma ;
+   - pendant la partie : position, cap et rôle, temps de jeu et temps d'écran, équipement
+     synchronisé, et ce que vous envoyez depuis le téléphone (marqueurs, messages, photos,
+     rapports ; avec COMSPEC SSE : contrôles d'identité et éléments de fouille) ;
+   - diagnostic : lignes du journal du mod et rapports d'erreur, envoyés automatiquement.
+     Signaler un problème joint un extrait du journal du mod, sauf si vous décochez la case.
+     Le fichier RPT d'Arma n'est pas envoyé.
+
+6. Acceptation
    Au premier lancement, et à chaque nouvelle version de cette licence, le mod affiche une
    note de service au menu principal. En choisissant « J'accepte », vous acceptez cette
    licence. Sans acceptation, le mod ne doit pas être utilisé.
@@ -63,7 +76,19 @@ ENGLISH
    Material provided by third parties (fonts, Arma 3 content, material credited in
    CREDITS.md) remains under its own licence.
 
-5. Acceptance
+5. Data recorded by Athena
+   Only if you answer Yes to the Athena service. If you answer No, the mod stays local and
+   sends nothing to Athena. Recorded to run the service, and not used for advertising:
+   - account and technical: Steam identity when available, player name, callsign, IP address
+     seen by the server, mod, DLL and Arma versions;
+   - during play: position, heading and role, playtime and screen time, synchronised
+     equipment, and what you send from the phone (markers, messages, photos, reports; with
+     COMSPEC SSE: identity checks and search evidence);
+   - diagnostics: mod log lines and error reports, sent automatically. Report a problem
+     attaches an extract of the mod log unless you untick the box. The Arma RPT file is not
+     sent.
+
+6. Acceptance
    On first launch, and for each new version of this licence, the mod shows a service note
    in the main menu. By selecting "I accept", you accept this licence. Without acceptance,
    the mod must not be used.

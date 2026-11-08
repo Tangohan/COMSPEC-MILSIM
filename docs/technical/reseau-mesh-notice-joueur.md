@@ -26,6 +26,7 @@ Cette notice vaut avec la « Liaison téléphone-radio réaliste », un réglage
 ## Groupes et clés
 
 - **Groupes :** 16 groupes, dans Wave Relay. Votre radio pontée vous abonne à celui de sa fréquence. Vous écoutez plusieurs groupes et émettez sur deux au plus.
+- **Cadenas de la barre d'état :** fermé et vert, ENCRYPTED : liaison chiffrée. Fermé et orange : clé à renouveler. Fermé et rouge : clé compromise. Ouvert, EN CLAIR : liaison non chiffrée, le détail est dans l'info-bulle et dans l'app Wave Relay.
 - **Clés (si le serveur les active) :** sans clé de réseau, vous êtes hors du maillage. Sans clé de groupe, le message s'affiche « [CHIFFRÉ · nom] » et la voix n'a pas de rallonge. ZÉROÏSER efface vos clés.
 - **Compromission :** si l'ennemi ramasse une MPU5, tout le camp est prévenu : demandez une nouvelle époque au poste de commandement.
 

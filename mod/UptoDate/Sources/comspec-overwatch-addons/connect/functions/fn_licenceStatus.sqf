@@ -6,7 +6,7 @@
 */
 params [["_accept", false]];
 
-private _version = "1";
+private _version = "2";
 if (_accept) then {
     profileNamespace setVariable ["comspec_overwatch_licence_ack", _version];
 };

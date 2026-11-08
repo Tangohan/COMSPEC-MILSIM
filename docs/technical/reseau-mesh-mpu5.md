@@ -373,8 +373,8 @@ Décisions du propriétaire reçues : 1 automatique et désactivable ; 2 absence
 - Liaison réaliste décochée : l'ancien `scan` de l'app Wave Relay reste jusqu'au lot 8 (décision 5 : aucun changement tant que le réalisme n'est pas validé).
 - Niveau de gravité calculé pour chaque chemin, mais appliqué à la voix seulement au lot 3. Décision 6 : le niveau 2 n'a pas d'à-coups.
 - Lot 5 : la voix ACRE2 et TFAR reste filtrée par fréquence ; le groupe ne retire la rallonge que sans groupe commun.
-- Lot 6 : cadenas de la barre d'état non fait (`fn_statusUpdate`, hors périmètre réseau) ; notification et état dans l'app Wave Relay. Lot 7 : le détenteur d'une clé compromise relaie dans le graphe de l'autre camp, mais ne le lit pas pour lui-même.
-- Lot 12 : ping donnant la marge du maillon faible, pas son nom ; prévision limitée au relief ; superposition Zeus limitée au graphe calculé sur le serveur.
+- Lot 6 : cadenas et libellé dans la barre d'état et dans l'app Wave Relay, avec l'état réel (`fn_meshKeys` « link ») : ENCRYPTED, CLÉ À RENOUVELER, CLÉ COMPROMISE, NON CHIFFRÉ. Cadenas ouvert tant que le réglage `mesh_keys` reste décoché, ce qui reste le défaut. Notification au chargement, au changement, à l'effacement et à la compromission. Lot 7 : le détenteur d'une clé compromise relaie dans le graphe de l'autre camp, mais ne le lit pas pour lui-même.
+- Lot 12 : le ping nomme le maillon faible (`fn_meshGraph` « weak »). La prévision compte le relief, la météo radio et le brouillage pour tous les nœuds, le feuillage et les bâtiments pour les 16 plus proches ; ni la hauteur par posture, ni le masque du corps, ni le temps d'antenne. Superposition Zeus limitée au graphe calculé sur le serveur.
 - Lot 8 : les profils existants de `fn_netCond` (Milsim, Standard, Arcade) servent de profils de réalisme, sans nouveau réglage.
 - Mouvement seul : graphe refait à l'intervalle normal. Seul un changement de nœud (apparu, tombé, canal, portée) déclenche le recalcul à 2 s.
 

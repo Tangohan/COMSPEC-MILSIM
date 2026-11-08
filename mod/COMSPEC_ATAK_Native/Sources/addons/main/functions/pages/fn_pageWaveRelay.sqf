@@ -187,6 +187,9 @@ switch (_tab) do {
         } else {
             _rows pushBack ["info", "Radio", format ["téléphone seul · portée %1 (sans MPU5)", [_nr] call _dist]];
         };
+        // Chiffrement de ma liaison : cadenas et libellé de la barre d'état, avec le détail (fn_meshKeys "link").
+        (["link"] call comspec_atak_native_fnc_meshKeys) params ["", "", "_lockLong", "_lockWhy", "_lockImg", "", "_lockHex"];
+        _rows pushBack ["info", "Chiffrement", format ["<img image='%1' color='%2'/> <t color='%2'>%3</t> · <t color='%4'>%5</t>", _lockImg, COMSPEC_ATAK_Th get _lockHex, (_lockLong) call comspec_atak_native_fnc_tr, COMSPEC_ATAK_Th get "hexTextMuted", [(_lockWhy) call comspec_atak_native_fnc_tr] call _esc]];
         // Liaison réaliste (fn_mpuLink) : état de la MPU5, réglages dans l'app Réseau. Sans MPU5 : pas de réseau de données.
         private _real = ["active"] call comspec_atak_native_fnc_mpuLink;
         if (_real) then {

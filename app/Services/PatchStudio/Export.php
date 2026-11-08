@@ -45,6 +45,44 @@ final class Export
         $im=imagecreatefromstring($png);
         try { return PaaEncoder::encode($im); } finally { imagedestroy($im); }
     }
+    /**
+     * Carte _smdi : vert = reflet, bleu = brillance, rouge inutilisé. Tissu mat, reflet léger sur les parties claires.
+     * 256 px au plus : un écusson n'a pas besoin de plus, et le calcul reste borné.
+     */
+    public static function smdi(string $png): string
+    {
+        $src=imagecreatefromstring($png); $w=imagesx($src); $h=imagesy($src); $k=1;
+        while (max($w,$h)/$k>256) $k*=2;
+        $nw=max(4,(int)($w/$k)); $nh=max(4,(int)($h/$k));
+        $dst=imagecreatetruecolor($nw,$nh);
+        try {
+            imagealphablending($dst,false); imagesavealpha($dst,true);
+            imagefill($dst,0,0,imagecolorallocatealpha($dst,0,0,0,127));
+            imagecopyresampled($dst,$src,0,0,0,0,$nw,$nh,$w,$h);
+            for ($y=0;$y<$nh;$y++) for ($x=0;$x<$nw;$x++) {
+                $c=imagecolorat($dst,$x,$y);
+                $a=1-(($c>>24)&127)/127;
+                $lum=(0.299*(($c>>16)&255)+0.587*(($c>>8)&255)+0.114*($c&255))/255;
+                imagesetpixel($dst,$x,$y,(255<<16)|((int)round(($a*(16+48*$lum)))<<8)|40);
+            }
+            return PaaEncoder::encode($dst);
+        } finally { imagedestroy($src);imagedestroy($dst); }
+    }
+    /** Matériau de l'écusson : même gabarit Super que mod/.../items/data/items.rvmat, sans relief ; thermique comme \a3\data_f\default.rvmat. */
+    public static function rvmat(string $prefix): string
+    {
+        $uv='uvSource="tex"; class uvTransform { aside[]={1,0,0}; up[]={0,1,0}; dir[]={0,0,0}; pos[]={0,0,0}; };';
+        return "ambient[]={1,1,1,1};\ndiffuse[]={1,1,1,1};\nforcedDiffuse[]={0,0,0,0};\nemmisive[]={0,0,0,1};\nspecular[]={0.2,0.2,0.2,1};\nspecularPower=20;\n"
+            . "PixelShaderID=\"Super\";\nVertexShaderID=\"Super\";\n"
+            . "class Stage1 { texture=\"#(rgb,8,8,3)color(0.5,0.5,1,1,NOHQ)\"; $uv };\n"
+            . "class Stage2 { texture=\"#(argb,8,8,3)color(0.5,0.5,0.5,1,DT)\"; $uv };\n"
+            . "class Stage3 { texture=\"#(argb,8,8,3)color(0,0,0,0,MC)\"; $uv };\n"
+            . "class Stage4 { texture=\"#(argb,8,8,3)color(1,1,1,1,AS)\"; $uv };\n"
+            . "class Stage5 { texture=\"\\$prefix\\patch_smdi.paa\"; $uv };\n"
+            . "class Stage6 { texture=\"#(ai,64,64,1)fresnel(1.3,0.3)\"; uvSource=\"none\"; };\n"
+            . "class Stage7 { texture=\"a3\\data_f\\env_land_co.paa\"; useWorldEnvMap=\"true\"; $uv };\n"
+            . "class StageTI { texture=\"a3\\data_f\\default_vehicle_ti_ca.paa\"; };\n";
+    }
     public static function className(array $p,string $variant,string $hash): string
     {
         return 'athena_' . $p['id'] . '_' . $variant . '_' . substr($hash,0,16);
@@ -56,10 +94,12 @@ final class Export
         $class=self::className($p,$variant,$hash); $prefix=$class;
         $label=str_replace(['"',"\r","\n"],['""',' ',' '],$p['name']);
         $cfg="class CfgPatches { class $class { name=\"ATHENA Patch\"; requiredVersion=2.14; requiredAddons[]={\"A3_Characters_F\"}; units[]={}; weapons[]={}; }; };\n"
-            . "class CfgUnitInsignia { class $class { displayName=\"$label\"; author=\"ATHENA\"; texture=\"\\$prefix\\patch.paa\"; textureVehicle=\"\"; }; };\n"
+            . "class CfgUnitInsignia { class $class { displayName=\"$label\"; author=\"ATHENA\"; texture=\"\\$prefix\\patch.paa\"; material=\"\\$prefix\\patch.rvmat\"; textureVehicle=\"\"; }; };\n"
             . "class CfgAthenaPatches { class $class { projectId=\"{$p['id']}\"; variant=\"$variant\"; hash=\"$hash\"; revision={$p['revision']}; texture=\"\\$prefix\\patch.paa\"; }; };\n";
-        $files=[['name'=>'config.cpp','data'=>$cfg],['name'=>'patch.paa','data'=>$paa]];
-        return ['paa'=>$paa,'config'=>$cfg,'prefix'=>$prefix,'class'=>$class,'pbo'=>AtakTranslationModBuilder::buildPbo($prefix,$files,0)];
+        // BIS_fnc_setUnitInsignia applique « material » puis « texture » : le matériau suit l'insigne sans rien changer côté mod.
+        $smdi=self::smdi($png); $rvmat=self::rvmat($prefix);
+        $files=[['name'=>'config.cpp','data'=>$cfg],['name'=>'patch.paa','data'=>$paa],['name'=>'patch.rvmat','data'=>$rvmat],['name'=>'patch_smdi.paa','data'=>$smdi]];
+        return ['paa'=>$paa,'smdi'=>$smdi,'rvmat'=>$rvmat,'config'=>$cfg,'prefix'=>$prefix,'class'=>$class,'pbo'=>AtakTranslationModBuilder::buildPbo($prefix,$files,0)];
     }
     /**
      * Réglages de vision nocturne reçus du navigateur : gain et contraste déjà appliqués aux pixels du PNG.
@@ -77,10 +117,11 @@ final class Export
     {
         $a=self::addon($p,$variant,$png); $folder='@ATHENA_' . $p['id'] . '/';
         $meta=['project'=>$p['id'],'revision'=>(int)$p['revision'],'variant'=>$variant,'class'=>$a['class'],'paa_sha256'=>hash('sha256',$a['paa']),'png_sha256'=>hash('sha256',$png),'night_mode'=>$variant==='night'?'texture_adjustment':'none',
-            // Seule la texture est livrée : aucun matériau (.rvmat), aucune carte _smdi, aucune réflexion IR propre.
-            'night'=>['ir_material'=>false,'rvmat'=>false,'smdi'=>false,'baked_adjustment'=>$variant==='night'?$nv:null]];
+            // Texture, matériau et carte _smdi livrés. Le moteur n'a pas de canal de réflexion IR : aucune réponse IR propre.
+            'night'=>['ir_material'=>false,'rvmat'=>true,'smdi'=>true,'baked_adjustment'=>$variant==='night'?$nv:null]];
         $files=[
             ['name'=>'patch.png','data'=>$png],['name'=>'patch.paa','data'=>$a['paa']],
+            ['name'=>'patch.rvmat','data'=>$a['rvmat']],['name'=>'patch_smdi.paa','data'=>$a['smdi']],
             ['name'=>'project.json','data'=>json_encode($p['document'],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)],
             ['name'=>'metadata.json','data'=>json_encode($meta,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR)],
             ['name'=>'source/config.cpp','data'=>$a['config']],['name'=>'source/$PBOPREFIX$','data'=>$a['prefix']],
@@ -96,8 +137,9 @@ INSTALLER
 Alternative mission : placez le PAA dans la mission et déclarez CfgUnitInsignia avec le chemin de la mission.
 
 JUMELLES DE VISION NOCTURNE (JVN)
-- Livré : une texture. Pour la version nuit, le gain et le contraste choisis dans le Studio sont déjà appliqués aux pixels du fichier.
-- Non livré : aucun matériau (.rvmat), aucune carte _smdi, aucune réflexion infrarouge propre. Le rendu en JVN dépend donc de la luminosité de la texture et de l'éclairage de la scène.
+- Livré : la texture, un matériau (patch.rvmat) et une carte de reflets (patch_smdi.paa) pour un écusson de tissu mat. Pour la version nuit, le gain et le contraste choisis dans le Studio sont déjà appliqués aux pixels du fichier.
+- Le matériau s'applique aux insignes posés par BIS_fnc_setUnitInsignia (setUnitInsignia, arsenal, mission). Le patch au dos du téléphone ATAK n'utilise que la texture.
+- Non livré : aucune réflexion infrarouge propre, Arma 3 n'a pas de canal pour cela. Le rendu en JVN dépend de la luminosité de la texture, du matériau et de l'éclairage de la scène.
 - Les aperçus verts du Studio simulent une image de JVN : ils ne remplacent pas un essai en jeu.
 
 Le manifeste resources.json associe les identifiants du projet aux fichiers et licences.
