@@ -44,8 +44,8 @@ final class UnitStructTypesWiringTest extends TestCase
 
     public function testMigrationIsRegisteredAndTranslated(): void
     {
-        self::assertStringContainsString('4000_unit_struct_types.php', $this->src('database/steps/registry.php'));
-        self::assertStringContainsString('tenant_unit_struct_types', $this->src('database/steps/4000_unit_struct_types.php'));
+        self::assertStringContainsString('4010_unit_struct_types.php', $this->src('database/steps/registry.php'));
+        self::assertStringContainsString('tenant_unit_struct_types', $this->src('database/steps/4010_unit_struct_types.php'));
         $fr = require dirname(__DIR__, 2) . '/lang/fr/unit_types.php';
         $en = require dirname(__DIR__, 2) . '/lang/en/unit_types.php';
         self::assertSame(array_keys($fr), array_keys($en));
