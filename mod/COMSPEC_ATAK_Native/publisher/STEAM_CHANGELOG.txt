@@ -20,6 +20,7 @@
 [*] App Routes : le clic gauche et les autres apps répondent après une route ; un glisser de carte ne pose plus d'étape.
 [*] Réglages, cartes et captures du mod ne vont plus dans OneDrive : tout reste dans les Documents du disque local (les anciens dossiers sont repris).
 [*] Les réponses des groupes IA s'affichent en texte au-dessus de la tête de leur chef, si vous êtes à portée et le voyez ; sinon en notification d'Arma, plus dans le téléphone. Réglage : ATAK · Affichage.
+[*] Arsenal ACE, écran Tenues : plus de panneaux vides, de fenêtre fantôme ni de textes superposés à l'ouverture.
 [*] Bloc-notes refait : une liste, un clic pour écrire, enregistrement automatique, épingler, ajouter sa grille ou l'heure.
 [*] Carte : plus de mention « PERDU », noms lisibles à mi-zoom. BFT : menu LISTE et ORBAT.
 [*] Messages, Réglages, favoris, diapositives et source vidéo du drone : moins de pages redessinées.

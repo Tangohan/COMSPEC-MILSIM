@@ -25661,5 +25661,7 @@
 ["Distance maximale, en mètres, à laquelle vous voyez la réponse au-dessus de la tête d'une IA.", "可以看到 AI 头顶回复的最大距离（米）。"],
 ["%1 terminé : %2", "%1 完成：%2"],
 ["%1 impossible : %2", "%1 无法执行：%2"],
-["Ordre annulé", "命令已取消"]
+["Ordre annulé", "命令已取消"],
+["Votre arsenal et les tenues partagées", "你的军械库和共享配置"],
+["Pas de copie locale", "没有本地副本"]
 ]

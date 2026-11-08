@@ -193,13 +193,15 @@ private _iw = _w - 2 * _padX;
 
 // En-tête : titre et sous-titre à gauche ; Actualiser, Fermer et l'état de la liste à droite.
 private _hy = _padY;
-[[_padX, _hy, _iw * 0.5, _u * 1.1], "TENUES ATHENA", _fB, _u * 1.05, [0.93, 0.97, 0.94, 1]] call _txt;
-[[_padX, _hy + _u * 1.1, _iw * 0.5, _u * 0.75], "Votre arsenal et les tenues partagées par votre organisation", _fR, _fsXS, _muted] call _txt;
+[[_padX, _hy, _iw * 0.4, _u * 1.1], "TENUES ATHENA", _fB, _u * 1.05, [0.93, 0.97, 0.94, 1]] call _txt;
+[[_padX, _hy + _u * 1.1, _iw * 0.4, _u * 0.75], "Votre arsenal et les tenues partagées", _fR, _fsXS, _muted] call _txt;
 private _sq = _rowH * _pxW / _pxH;
 private _refW = 4.6 * _uw;
 [[_w - _padX - _sq, _hy, _sq, _rowH], "close_ca.paa", "close", "COMSPEC_RscButtonAtak", "Fermer le panneau des tenues"] call _icoBtn;
 private _bReload = [[_w - _padX - _sq - _gap - _refW, _hy, _refW, _rowH], "ACTUALISER", "reload", "COMSPEC_RscButtonAtak", "Recharger la liste des tenues depuis Athena (sinon, celle gardée sur ce PC)", _fB] call _btn;
-private _status = ["RscStructuredText", [_iw * 0.45, _hy + _rowH + 0.002, _w - _padX - _iw * 0.45, _u * 1.0]] call _mk;
+// État de la liste : entre le titre et les boutons, sur toute la hauteur de l'en-tête (coupé quand il tenait sous les boutons).
+private _stX = _padX + _iw * 0.4 + _gap;
+private _status = ["RscStructuredText", [_stX, _hy - _u * 0.1, (_w - _padX - _sq - _refW - 2 * _gap) - _stX - _gap, _u * 2.1]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalStatus", _status];
 private _hb = _hy + _u * 2.0;
 [[_padX, _hb, _iw, _pxH], _line] call _box;
@@ -543,6 +545,10 @@ _grp setVariable ["COMSPEC_ArsenalSetHint", {
 private _scrim = ["COMSPEC_RscArsenalScrim", [0, 0, _w, _h]] call _mk;
 _scrim ctrlAddEventHandler ["ButtonClick", { ["menuClose"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 _scrim ctrlShow false;
+// Fermés, le fond, le menu et la saisie n'ont aucune surface : même réaffichés avec leur groupe, ils ne se voient pas.
+_grp setVariable ["COMSPEC_ArsenalScrimRect", [0, 0, _w, _h]];
+_scrim ctrlSetPosition [0, 0, 0, 0];
+_scrim ctrlCommit 0;
 private _menuW = 12.5 * _uw;
 private _mRowH = _rowH * 0.88;
 private _menu = ["RscControlsGroupNoScrollbars", [0, 0, _menuW, 16 * _mRowH]] call _mk;
@@ -564,6 +570,8 @@ for "_i" from 0 to 5 do {
     _mSeps pushBack _l;
 };
 _menu ctrlShow false;
+_menu ctrlSetPosition [0, 0, 0, 0];
+_menu ctrlCommit 0;
 _grp setVariable ["COMSPEC_ArsenalMenu", [_scrim, _menu, _mRows, _mRowH, _menuW, _mBg, _mSeps]];
 
 // Fenêtre de saisie : titre, champ (Entrée valide), Valider / Annuler.
@@ -592,6 +600,9 @@ private _aBw = (_askW - 2 * _aIp - _gap) / 2;
     _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [_c getVariable "act"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 } forEach [[_aIp, "FERMER", "menuClose", "COMSPEC_RscButtonAtak"], [_aIp + _aBw + _gap, "VALIDER", "askOk", "COMSPEC_RscButtonAtakPrimary"]];
 _ask ctrlShow false;
+_grp setVariable ["COMSPEC_ArsenalAskRect", [(_w - _askW) / 2, (_h - _askH) / 2, _askW, _askH]];
+_ask ctrlSetPosition [0, 0, 0, 0];
+_ask ctrlCommit 0;
 _grp setVariable ["COMSPEC_ArsenalAsk", [_ask, _askTitle, _askEdit]];
 
 // Clavier : un seul gestionnaire sur l'écran de l'arsenal, à côté de celui d'ACE (qui garde la touche pour lui :
@@ -638,6 +649,32 @@ _display setVariable ["COMSPEC_ArsenalKeyEh", _display displayAddEventHandler ["
     [{ _this call comspec_overwatch_connect_fnc_arsenalOverlayAction; }, _do] call CBA_fnc_execNextFrame;
     true
 }]];
+
+// Panneau rendu visible : afficher le groupe réaffiche ses contrôles masqués (panneau du menu, saisie, cartes vides,
+// boutons de sélection empilés, invite sur le nom : capture du propriétaire). Chacun reprend ici son état, sans attendre
+// la liste. Appelé juste après _g ctrlShow true (arsenalOverlayAction « toggle », « loadoutsClosed »).
+_grp setVariable ["COMSPEC_ArsenalSettle", {
+    params ["_g"];
+    ["menuClose"] call comspec_overwatch_connect_fnc_arsenalOverlayAction;
+    { { _x ctrlShow false; } forEach (_x select 12); } forEach (_g getVariable ["COMSPEC_ArsenalCards", []]);
+    {
+        if (!isNull _x) then {
+            _x ctrlShow false;
+            private _p = _x getVariable ["ico", controlNull];
+            if (!isNull _p) then { _p ctrlShow false; };
+        };
+    } forEach ((_g getVariable ["COMSPEC_ArsenalChips", []]) + (_g getVariable ["COMSPEC_ArsenalChipArrows", []]) + (_g getVariable ["COMSPEC_ArsenalPager", []]) + (_g getVariable ["COMSPEC_ArsenalPills", []]) + [_g getVariable ["COMSPEC_ArsenalEmpty", controlNull]]);
+    private _search = _g getVariable ["COMSPEC_ArsenalSearch", controlNull];
+    private _hasText = (ctrlText _search) isNotEqualTo "";
+    (_g getVariable ["COMSPEC_ArsenalSearchPh", controlNull]) ctrlShow !_hasText;
+    private _clr = _g getVariable ["COMSPEC_ArsenalSearchClear", controlNull];
+    _clr ctrlShow _hasText;
+    (_clr getVariable ["ico", controlNull]) ctrlShow _hasText;
+    private _save = _g getVariable ["COMSPEC_ArsenalSaveName", controlNull];
+    (_save getVariable ["ph", controlNull]) ctrlShow ((ctrlText _save) isEqualTo "");
+    [_g] call (_g getVariable ["COMSPEC_ArsenalPickRefresh", {}]);
+    [ctrlParent _g, [], ""] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
+}];
 
 _grp setVariable ["COMSPEC_ArsenalTab", profileNamespace getVariable ["COMSPEC_ArsenalTab", "local"]];
 _grp setVariable ["COMSPEC_ArsenalColl", ""];

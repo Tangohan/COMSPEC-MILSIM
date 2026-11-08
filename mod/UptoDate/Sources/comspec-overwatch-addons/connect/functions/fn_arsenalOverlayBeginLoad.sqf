@@ -7,7 +7,11 @@ params [["_display", displayNull, [displayNull]]];
 if (isNull _display) exitWith {};
 private _grp = _display getVariable ["COMSPEC_ArsenalOverlay", controlNull];
 if (isNull _grp) exitWith {};
-if (missionNamespace getVariable ["COMSPEC_ArsenalOverlayLoadBusy", false]) exitWith {};
+// Chargement déjà en cours (une ouverture précédente) : le panneau rouvert montre ce qui est déjà chargé, jamais des
+// contrôles vides. Au-delà de 30 s, l'ancien chargement est considéré comme perdu.
+if ((missionNamespace getVariable ["COMSPEC_ArsenalOverlayLoadBusy", false]) && {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_ArsenalOverlayLoadAt", -100])) < 30}) exitWith {
+    [_display, ""] call comspec_overwatch_connect_fnc_arsenalOverlayFill;
+};
 {
     _x params ["_hit", "_outer", "_inner", "_stripe", "_pbg", "", "", "_name", "", "_meta", "", "", "_all", "_tW"];
     { _x ctrlShow false; } forEach _all;
@@ -31,6 +35,7 @@ private _empty = _grp getVariable ["COMSPEC_ArsenalEmpty", controlNull];
 if (!isNull _empty) then { _empty ctrlShow false; };
 [_grp, "Chargement depuis Athena…", "busy"] call (_grp getVariable ["COMSPEC_ArsenalSetHint", {}]);
 missionNamespace setVariable ["COMSPEC_ArsenalOverlayLoadBusy", true, false];
+missionNamespace setVariable ["COMSPEC_ArsenalOverlayLoadAt", diag_tickTime, false];
 [_display] spawn {
     params ["_disp"];
     uiSleep 0.05;

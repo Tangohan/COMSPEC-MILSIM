@@ -18808,5 +18808,7 @@
 ["Distance maximale, en mètres, à laquelle vous voyez la réponse au-dessus de la tête d'une IA.", "Maximum distance, in metres, at which you see the reply above an AI's head."],
 ["%1 terminé : %2", "%1 done: %2"],
 ["%1 impossible : %2", "%1 impossible: %2"],
-["Ordre annulé", "Order cancelled"]
+["Ordre annulé", "Order cancelled"],
+["Votre arsenal et les tenues partagées", "Your arsenal and shared loadouts"],
+["Pas de copie locale", "No local copy"]
 ]
