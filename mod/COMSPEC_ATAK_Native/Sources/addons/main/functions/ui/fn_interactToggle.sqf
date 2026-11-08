@@ -21,11 +21,12 @@ if (!isNull _d && {_s getOrDefault ["interactive", false]} && {["covered", _d] c
 // En main -> miniature : fn_displayUnload rouvre le téléphone porté (COMSPEC_ATAK_HudWanted).
 if (!isNull _d && {_s getOrDefault ["interactive", false]}) exitWith {
     ["INFO", "ATAK", "Prendre en main : en main -> miniature"] call comspec_atak_native_fnc_log;
-    uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", true];
+    uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", (missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isEqualTo ""];
     [] call comspec_atak_native_fnc_close;
     false
 };
-private _why = [true] call comspec_atak_native_fnc_canUse;
+// Téléphone d'un autre sur moi (fn_phoneOwn) : choix du téléphone, ou le sien si je n'ai que lui.
+private _why = if ((["prepare"] call comspec_atak_native_fnc_phoneOwn) isEqualTo "") then { [true] call comspec_atak_native_fnc_canUse } else { "" };
 if (_why isNotEqualTo "") exitWith { [_why] call comspec_atak_native_fnc_deviceDenied };
 uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", true];
 // Interaction miniature restée notée (fn_miniInteract) : terminée, sinon le grand s'ouvrait avec la bordure de Maj+U à la

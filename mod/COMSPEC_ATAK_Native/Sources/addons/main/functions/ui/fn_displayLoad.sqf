@@ -21,6 +21,14 @@ uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_BadgeSig", []];
 // Calques Android (fn_lockScreen, fn_quickSettings, fn_toast) : leurs contrôles sont morts avec l'ancien display.
 uiNamespace setVariable ["COMSPEC_ATAK_LockUp", false];
+// Clavier du code (fn_phonePad) : ses contrôles aussi. Téléphone à afficher choisi par fn_interactToggle (fn_phoneOwn) ;
+// sinon celui déjà affiché est gardé quand l'écran est recréé ; porté, c'est toujours le mien.
+uiNamespace setVariable ["COMSPEC_ATAK_PadUp", false];
+uiNamespace setVariable ["COMSPEC_ATAK_PadCtrls", []];
+private _phoneNext = uiNamespace getVariable ["COMSPEC_ATAK_PhoneNext", ""];
+uiNamespace setVariable ["COMSPEC_ATAK_PhoneNext", ""];
+if (_phoneNext isNotEqualTo "") then { missionNamespace setVariable ["COMSPEC_ATAK_PhoneActive", _phoneNext]; };
+if (!_interactive) then { missionNamespace setVariable ["COMSPEC_ATAK_PhoneActive", ""]; };
 uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ShadeOpen", false];
 uiNamespace setVariable ["COMSPEC_ATAK_ShadeCtrls", []];

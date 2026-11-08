@@ -48,6 +48,11 @@ uiNamespace setVariable ["COMSPEC_ATAK_Display", displayNull];
 uiNamespace setVariable ["COMSPEC_ATAK_Ratio", nil];
 ["INFO", "UI", format ["Display closed (%1); handlers cleaned", _exitCode]] call comspec_atak_native_fnc_log;
 
+// Téléphone d'un autre refermé (fn_phoneOwn) : on ne reprend pas le mien en HUD, le prochain affichage redemande.
+if ((missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo "" && {!(_state getOrDefault ["suppressHudRestore", false])}) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_PhoneActive", ""];
+    uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
+};
 // Téléphone reposé (Échap ou Ctrl+Maj+U) : il revient en HUD s'il était sorti.
 if (_wasInteractive && {uiNamespace getVariable ["COMSPEC_ATAK_HudWanted", false]} && {!(_state getOrDefault ["suppressHudRestore", false])}) then {
     [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [false] call comspec_atak_native_fnc_open; }; }] call comspec_atak_native_fnc_nextFrame;

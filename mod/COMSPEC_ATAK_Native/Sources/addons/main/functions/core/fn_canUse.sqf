@@ -10,6 +10,8 @@ params [["_allowBroken", false]];
 if (!alive player || {lifeState player isEqualTo "INCAPACITATED"} || {player getVariable ["ACE_isUnconscious", false]}) exitWith { "down" };
 // Contrôle Zeus (fn_zeusFx) : téléphone désactivé à distance, ou surchauffe critique (arrêt de sécurité).
 if (["off", false] call comspec_atak_native_fnc_zeusFx) exitWith { "zeus" };
+// Téléphone d'un autre à l'écran (fn_phoneOwn) : il a son propre état, l'ATAK du lecteur n'entre pas en compte.
+if ((missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo "") exitWith { "" };
 if ((["heat", 0] call comspec_atak_native_fnc_zeusFx) isEqualTo 3) exitWith { "heat" };
 if ([player] call comspec_atak_native_fnc_aircrewTerminal) exitWith { "" };
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { "item" };

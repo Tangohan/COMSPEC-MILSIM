@@ -114,6 +114,7 @@ switch (_page) do {
     case "MUSIC": { [] call comspec_atak_native_fnc_pageMusic; };
     case "CALC": { [] call comspec_atak_native_fnc_pageCalc; };
     case "NOTES": { [] call comspec_atak_native_fnc_pageNotes; };
+    case "PHONES": { [] call comspec_atak_native_fnc_pagePhones; };
     case "GPS": { [] call comspec_atak_native_fnc_pageGps; };
     case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
     case "DEBUG": { [] call comspec_atak_native_fnc_pageDebug; };

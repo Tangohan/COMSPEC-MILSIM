@@ -25,4 +25,10 @@ if ((count _catalog) isEqualTo 0) exitWith {
     true
 };
 private _set = missionNamespace getVariable ["COMSPEC_ATAK_DeviceCatalogSet", createHashMap];
-(((assignedItems _unit) + (items _unit)) findIf { (toLower _x) in _set }) >= 0
+// Téléphones personnels (fn_phoneOwn) : celui d'un autre ne donne pas accès à l'ATAK, seulement à sa lecture.
+private _foreign = _unit getVariable ["COMSPEC_ATAK_PhoneForeign", 0];
+if !(_foreign isEqualType 0) then { _foreign = 0; };
+if (_foreign <= 0 || {!(missionNamespace getVariable ["comspec_atak_native_phone_owner", true])}) exitWith {
+    (((assignedItems _unit) + (items _unit)) findIf { (toLower _x) in _set }) >= 0
+};
+({ (toLower _x) in _set } count ((assignedItems _unit) + (items _unit))) > _foreign

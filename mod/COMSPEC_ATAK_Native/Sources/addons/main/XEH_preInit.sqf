@@ -769,6 +769,17 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_dating_specials", "LIST",
     ["Tinder : profils HVT et SSE", "À quelle fréquence Tinder glisse, entre deux joueurs, un profil d'IA de la carte (HVT ou personne SSE à moins de 5 km). Zeus peut aussi désigner une IA avec le module « Tinder : profil HVT / SSE »."],
     _sim, [[0, 1, 2, 3], ["Jamais", "Rarement (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call comspec_atak_native_fnc_addSetting;
+// Téléphones personnels (fn_phoneOwn, fn_phoneServer) : propriétaire, lecture du téléphone d'un autre, code.
+private _phones = ["COMSPEC", "ATAK · Téléphones personnels"];
+["comspec_atak_native_phone_owner", "CHECKBOX",
+    ["Téléphones personnels", "Chaque téléphone a un propriétaire. Celui qui ramasse le téléphone d'un autre lit ce téléphone (code demandé s'il en a un), sans l'ATAK ni le compte du lecteur. Décoché : n'importe quel téléphone donne accès à l'ATAK, comme avant."],
+    _phones, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_pin_attempts", "SLIDER",
+    ["Code du téléphone : essais", "Essais avant un blocage temporaire. Un admin ou un Zeus retire le code depuis l'app Admin."],
+    _phones, [3, 10, 5, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_pin_block", "SLIDER",
+    ["Code du téléphone : blocage (s)", "Durée du blocage après le dernier essai. Elle n'est jamais définitive."],
+    _phones, [10, 1800, 120, 0], 1] call comspec_atak_native_fnc_addSetting;
 // Tinder : chasse aux HVT (fn_hvtIntel). Chaque cible peut aussi être réglée à part (module Eden / Zeus « Tinder : profil HVT / SSE »).
 private _hvt = ["COMSPEC", "ATAK · Tinder : chasse aux HVT"];
 ["comspec_atak_native_hvt_tips", "LIST",

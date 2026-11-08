@@ -59,6 +59,8 @@ switch (_act) do {
         true
     };
     case "toggle": {
+        // Téléphone d'un autre à l'écran (fn_phoneOwn) : le volet montre le compte du lecteur.
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo "") exitWith { false };
         [["open", "close"] select (uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false])] call comspec_atak_native_fnc_quickSettings
     };
     case "close": {

@@ -172,13 +172,15 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["COMSPEC_ATAK_IconStyle", "real", "Style des icônes", [["RÉALISTES", "real"], ["PLATES", "flat"]], "RÉALISTES : icônes colorées aux coins arrondis posées sur le fond d'écran, comme un vrai téléphone. PLATES : tuiles d'avant"] call _profSegment,
     ["COMSPEC_ATAK_Brightness", 1, "Luminosité", [["30 %", 0.3], ["50 %", 0.5], ["75 %", 0.75], ["100 %", 1]], "Aussi dans le volet rapide (clic sur l'heure). Moins lumineux : moins visible de nuit et la batterie tient plus"] call _profSegment,
     ["COMSPEC_ATAK_NightMode", "OFF", "Mode nuit", [["NORMAL", "OFF"], ["ROUGE", "RED"], ["SOMBRE", "DIM"]], "Filtre rouge ou écran assombri, économise la batterie. Touche à assigner dans les contrôles COMSPEC ATAK"] call _profSegment,
-    ["section", "Verrouillage et sécurité", "Si vous êtes capturé, l'ennemi peut brancher un câble DL-7 sur votre téléphone. Le code le protège : 3 essais, puis tout est effacé (un code peut être cassé en 2 min)."],
+    ["section", "Verrouillage et sécurité", "Si vous êtes capturé, l'ennemi peut brancher un câble DL-7 sur votre téléphone. Le code le protège : 3 essais, puis tout est effacé (un code peut être cassé en 2 min). Ce code est une mécanique de jeu : n'y mettez jamais un vrai code. Il protège aussi la lecture de votre téléphone par celui qui le ramasse."],
     ["COMSPEC_ATAK_LockScreen", true, "", "Écran de verrouillage", "Heure, date et dernières notifications, quand vous sortez le téléphone la première fois, après une minute rangé ou après un redémarrage"] call _profSwitch,
     ["COMSPEC_ATAK_LockClockStyle", "light", "Heure de l'écran de verrouillage", [["FINE", "light"], ["GRASSE", "bold"], ["MILITAIRE", "mil"]], "MILITAIRE : chiffres façon afficheur, dans la couleur d'accent"] call _profSegment,
-    ["edit", "lockCode", "Code de verrouillage (vide = aucun)", profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]],
+    ["edit", "lockCode", "Code de verrouillage : 4 à 8 chiffres (vide = aucun)", profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]],
+    ["edit", "lockHint", "Indice du code (facultatif, 40 caractères)", profileNamespace getVariable ["COMSPEC_ATAK_LockHint", ""]],
+    ["COMSPEC_ATAK_PinAsk", false, "", "Demander le code au déverrouillage", "Sur l'écran de verrouillage, en main. Code oublié : CODE OUBLIÉ le retire après 5 min, un admin ou un Zeus le retire tout de suite"] call _profSwitch,
     ["buttons", [["ENREGISTRER LE CODE", {
-        private _t = ["lockCode"] call comspec_atak_native_fnc_formValue;
-        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_LockCode", (trim _t) select [0, 12]]; [] call comspec_atak_native_fnc_saveProfile; ["Code de verrouillage enregistré", 2] call comspec_atak_native_fnc_toast; };
+        ["setPin", [["lockCode"] call comspec_atak_native_fnc_formValue, ["lockHint"] call comspec_atak_native_fnc_formValue]] call comspec_atak_native_fnc_phoneOwn;
+        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }], [["EFFACEMENT D'URGENCE", "CONFIRMER L'EFFACEMENT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5), {
         // Deux appuis en moins de 5 s : rien ne s'efface par erreur.
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5) then {

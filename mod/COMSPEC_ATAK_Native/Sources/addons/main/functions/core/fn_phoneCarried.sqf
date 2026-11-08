@@ -8,6 +8,18 @@ params [["_unit", player]];
 private _model = "";
 private _tint = "";
 private _name = "";
+// Téléphones personnels (fn_phoneOwn) : le téléphone affiché, sinon le mien plutôt que celui d'un autre ramassé.
+private _list = (assignedItems _unit) + (items _unit);
+if (_unit isEqualTo player && {(_unit getVariable ["COMSPEC_ATAK_PhoneForeign", 0]) isNotEqualTo 0}) then {
+    private _shown = ["activeRec"] call comspec_atak_native_fnc_phoneOwn;
+    if (_shown isNotEqualTo []) then { _list = [_shown select 1]; } else {
+        {
+            private _skip = _x select 1;
+            private _i = _list findIf { (toLower _x) isEqualTo _skip };
+            if (_i >= 0) then { _list deleteAt _i; };
+        } forEach (["foreign"] call comspec_atak_native_fnc_phoneOwn);
+    };
+};
 {
     if (_x isKindOf ["COMSPEC_ATAK_Phone", configFile >> "CfgWeapons"]) exitWith {
         private _cfg = configFile >> "CfgWeapons" >> _x;
@@ -15,7 +27,7 @@ private _name = "";
         _tint = getText (_cfg >> "comspec_phoneTint");
         _name = getText (_cfg >> "displayName");
     };
-} forEach ((assignedItems _unit) + (items _unit));
+} forEach _list;
 if (_model isEqualTo "") then {
     _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
     _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];

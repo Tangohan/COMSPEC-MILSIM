@@ -506,7 +506,9 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }, [], 1] call comspec_atak_native_fnc_waitAndExec; }];
 ["COMSPEC_AthenaModeChanged", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }] call comspec_atak_native_fnc_nextFrame; }] call CBA_fnc_addEventHandler;
 // Téléphone visible sur le gilet (fn_vestMount), téléphone extractible en cas de capture (fn_phoneSecurity).
-[{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_phoneSecurity; }, 2] call COMSPEC_ATAK_PfhSpread;
+// Téléphones personnels : fiches à jour, relevé sans coût par image (fn_phoneOwn).
+["init"] call comspec_atak_native_fnc_phoneOwn;
+[{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_phoneSecurity; ["tick"] call comspec_atak_native_fnc_phoneOwn; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Terminal de bord (tablette du véhicule, PC mobile) gagné ou perdu : coque redessinée, message à l'arrivée.
 [{
     private _k = [player] call comspec_atak_native_fnc_vehicleTerminal;

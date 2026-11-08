@@ -6,6 +6,8 @@ if (isNull _d) exitWith { false };
 
 // Écran de verrouillage affiché : ni dock ni rail par-dessus (il revient au déverrouillage, fn_lockScreen "unlock").
 if (uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []]; true };
+// Téléphone d'un autre à l'écran (fn_phoneOwn) : pas de raccourcis vers les apps du lecteur.
+if ((missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo "") exitWith { uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []]; true };
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 // Carte en mode PETIT : dock et rail retirés (fn_layoutGet).
 if (((_l get "dockRect") select 3) <= 0 && {((_l get "rail") select 2) <= 0}) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []]; true };

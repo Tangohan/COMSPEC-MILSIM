@@ -17,7 +17,10 @@ disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _interactive = _s getOrDefault ["interactive", false];
-private _enabled = profileNamespace getVariable ["COMSPEC_ATAK_LockScreen", true];
+// Code demandé (fn_phoneOwn) : l'écran de verrouillage s'affiche même si le joueur l'a coupé dans les réglages.
+private _enabled = (profileNamespace getVariable ["COMSPEC_ATAK_LockScreen", true]) || {(profileNamespace getVariable ["COMSPEC_ATAK_PinAsk", false]) isEqualTo true};
+// Téléphone d'un autre à l'écran : fn_pagePhones a son propre clavier ; mon écran de verrouillage n'a rien à y faire.
+if (_act in ["check", "tick"] && {(missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo ""}) exitWith { false };
 private _kill = {
     { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_LockCtrls", []]);
     uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", []];
@@ -73,6 +76,11 @@ switch (_act) do {
         true
     };
     case "unlock": {
+        // Code demandé : clavier d'abord, l'écran reste verrouillé tant que le bon code n'est pas tapé.
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) && {["needPin"] call comspec_atak_native_fnc_phoneOwn}) exitWith {
+            ["ownPad"] call comspec_atak_native_fnc_phoneOwn;
+            false
+        };
         missionNamespace setVariable ["COMSPEC_ATAK_LockPending", false];
         if !(uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) exitWith { false };
         uiNamespace setVariable ["COMSPEC_ATAK_LockUp", false];
@@ -306,8 +314,11 @@ switch (_act) do {
             }];
         } forEach _qa;
         uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", _made];
+        // Clavier du code gardé devant quand l'écran de verrouillage se redessine (notification reçue).
+        if (["up"] call comspec_atak_native_fnc_phonePad) then { ["draw"] call comspec_atak_native_fnc_phonePad; };
         // À l'ouverture : volet rapide refermé, effets d'écran (fêlures, filtre de nuit) remis devant.
         if (_act isEqualTo "show") then {
+            missionNamespace setVariable ["COMSPEC_ATAK_PinOk", false];
             if (uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false]) then { ["close"] call comspec_atak_native_fnc_quickSettings; };
             ["front"] call comspec_atak_native_fnc_fx;
             // Toast et alertes (vibreur, commandement) dessinés avant l'écran de verrouillage (fn_displayLoad : rendu

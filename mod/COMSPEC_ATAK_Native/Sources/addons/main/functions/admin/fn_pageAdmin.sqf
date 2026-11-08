@@ -206,6 +206,7 @@ switch (_tab) do {
             _rows pushBack ["buttons", [
                 ["RÉPARER", compile format ["['zeus', [%1, 'once', ['repair', []]]] call comspec_atak_native_fnc_adminClient;", str _uid], false, _has, "Répare son téléphone (écran, composants)"],
                 ["TOUT RÉTABLIR", compile format ["['zeus', [%1, 'reset']] call comspec_atak_native_fnc_adminClient;", str _uid], false, _fxKeys isNotEqualTo [], "Retire tous les effets Zeus et répare"],
+                ["RETIRER LE CODE", compile format ["['server', ['phonePin', [%1]]] call comspec_atak_native_fnc_adminClient;", str _uid], false, true, "Retire le code du téléphone de ce joueur et remet ses essais à zéro. Il retrouve aussitôt l'accès."],
                 ["FICHE ATHENA", compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set ['admTab', 'ATHENA']; (uiNamespace getVariable 'COMSPEC_ATAK_State') set ['admOpen', %1]; ['fleet', [%2, 0]] call comspec_atak_native_fnc_adminClient; %3", str ("A" + _uid), str _uid, _re], false, _site, "Ouvre sa fiche dans le parc Athena (recherche par Steam)"]
             ]];
             _rows pushBack ["gap"];
