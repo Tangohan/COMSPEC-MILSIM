@@ -19278,7 +19278,7 @@
 ["Modifier le contenu d'une caisse demande ZEN.", "Editing a crate's contents requires ZEN."],
 ["Régler", "Set"],
 ["ATAK : fenêtre indisponible.", "ATAK: window unavailable."],
-["Mât démonté. ACE : Équipement, Déployer. Répéteur : il lui faut un relais raccordé à portée.", "Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range."]
+["Mât démonté. ACE : Équipement, Déployer. Répéteur : il lui faut un relais raccordé à portée.", "Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range."],
 ["Déclencheur réseau", "Network detonator"],
 ["Se lie à une charge ACE au moment de la pose. Armer, désarmer et mettre à feu par l'app Explosifs, tant que la charge et le téléphone sont sur le réseau.", "Links to an ACE charge when it is placed. Arm, disarm and fire from the Explosives app, as long as the charge and the phone are on the network."],
 ["Lier au réseau", "Link to network"],
@@ -19373,4 +19373,9 @@
 ["Temps entre l'ordre validé par le serveur et la détonation.", "Time between the order approved by the server and the detonation."],
 ["Un déclencheur réseau par charge", "One network detonator per charge"],
 ["Coché : l'objet reste sur la charge et sort de l'inventaire. Décoché : il suffit d'en porter un, il sert pour toutes vos charges.", "Ticked: the item stays on the charge and leaves your inventory. Unticked: carrying one is enough, it serves all your charges."],
+["Équiper des IA d'un ATAK", "Give AI an ATAK"],
+["Poser un écran COMSPEC", "Place a COMSPEC screen"],
+["Poser un écran TOC", "Place a TOC screen"],
+["Contrôler un téléphone", "Control a phone"],
+["Poser un brouilleur de zone", "Place an area jammer"]
 ]

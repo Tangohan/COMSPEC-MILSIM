@@ -35,7 +35,7 @@ private _views = [["Carte et flux", "SPLIT"], ["Carte seule (carte en grand)", "
 if (isNull _obj) exitWith {
     private _classes = (["classes"] call comspec_atak_native_fnc_tocScreen) apply { [_x select 0, _x select 1] };
     if ((count _classes) isEqualTo 0) exitWith { ["feedback", ["ATAK : aucun écran du jeu disponible"]] call comspec_atak_native_fnc_zeusMenu; true };
-    ["ATAK · Écran TOC", [
+    ["Poser un écran TOC", [
         ["COMBO", "Écran posé", _classes, (_classes select 0) select 1],
         ["EDIT", "Nom", "TOC"],
         ["COMBO", "Camp affiché", _sides, ""],
@@ -52,7 +52,7 @@ if (isNull _obj) exitWith {
 };
 private _cur = _obj getVariable ["COMSPEC_ATAK_TocScr", []];
 if ((count _cur) >= 8) then { _name = _cur select 0; _side = _cur select 1; _sel = _cur select 2; _view = _cur select 3; _toc = _cur select 6; };
-["ATAK · Écran TOC", [
+["Poser un écran TOC", [
     ["COMBO", "Action", [["Désigner comme écran TOC", "add"], ["Retirer l'écran TOC", "remove"]], ["add", "remove"] select ((count _cur) >= 8)],
     ["EDIT", "Nom", [_name, "TOC"] select (_name isEqualTo "")],
     ["COMBO", "Camp affiché", _sides, _side],

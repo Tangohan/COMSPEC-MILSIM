@@ -189,7 +189,7 @@ switch (_mode) do {
         private _info = _d ctrlCreate ["ctrlStructuredText", -1];
         _info ctrlSetPosition [_x0 + _u, _y0 + _h - 12 * _u, _w - 2 * _u, 5 * _u];
         private _txt = if (_rows isEqualTo []) then {
-            "Aucun relais : posez un pylône (Objets, Structures, Relais ATAK) ou le module ATAK · Relais (Modules, Réseau ATAK)."
+            "Aucun relais : posez un pylône (Objets, Structures, Relais ATAK) ou le module Poser un relais (Modules, Réseau ATAK)."
         } else {
             format ["%1 raccordé(s), %2 répéteur(s)%3. Portées sans relief : la page Réseau du téléphone donne la couverture réelle.",
                 { (_x select 5) } count _rows, { !(_x select 5) } count _rows,

@@ -29,7 +29,7 @@ private _obj = _targets param [0, objNull];
 if (isNull _obj) exitWith { ["feedback", ["ATAK : lâchez le module sur une TV, un écran ou un projecteur"]] call comspec_atak_native_fnc_zeusMenu; true };
 private _cur = _obj getVariable ["COMSPEC_ATAK_Screen", []];
 if ((count _cur) >= 5) then { _vals = +_cur; };
-["ATAK · Écran COMSPEC", [
+["Poser un écran COMSPEC", [
     ["COMBO", "Action", [["Désigner comme écran", "add"], ["Retirer l'écran", "remove"]], "add"],
     ["EDIT", "Nom", _vals select 0],
     ["SLIDER", "Portée de détection (m)", [3, 200, _vals select 1]],

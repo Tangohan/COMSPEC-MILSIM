@@ -31,7 +31,7 @@ if !(_ctx get "zeus") exitWith {
 deleteVehicle _logic;
 private _u = _ctx getOrDefault ["target", objNull];
 if (isNull _u || {!(_u isKindOf "CAManBase")}) exitWith { ["feedback", ["ATAK : lâchez le module sur une unité IA"]] call comspec_atak_native_fnc_zeusMenu; true };
-["ATAK · IA équipées", [
+["Équiper des IA d'un ATAK", [
     ["COMBO", "Action", [["Donner un ATAK à tout son groupe", "group"], ["Donner un ATAK aux chefs de groupe", "leaders"], ["Donner un ATAK à cette unité seulement", "unit"], ["Retirer l'ATAK du groupe", "none"]], "group"]
 ], {
     params ["_v", "_u"];

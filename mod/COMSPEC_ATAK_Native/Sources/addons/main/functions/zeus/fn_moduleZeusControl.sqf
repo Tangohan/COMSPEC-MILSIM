@@ -17,7 +17,7 @@ private _who = [
     ["Camp BLUFOR", "WEST"], ["Camp OPFOR", "EAST"], ["Camp indépendant", "GUER"], ["Civils", "CIV"]
 ];
 if (_under isNotEqualTo []) then { _who = [[format ["Joueur sous le module (%1)", name (_under select 0)], "under"]] + _who; };
-["ATAK · Contrôle Zeus", [
+["Contrôler un téléphone", [
     ["COMBO", "Cible", _who, (_who select 0) select 1],
     ["SLIDER", "Rayon (m)", [10, 2000, 150]],
     ["COMBO", "Action", _actions, "off_on"],
