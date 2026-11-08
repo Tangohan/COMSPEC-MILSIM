@@ -161,5 +161,8 @@ class COMSPEC_RscChip: COMSPEC_RscTextCenter { font=ATAK_FONT_BOLD; colorBackgro
 // téléchargée hors d'un PBO). Contenu local seulement (data\web\slide.html, fn_slideWebShow), aucune adresse externe.
 // Classe sans parent (comme la tablette Overwatch) : rien ne dépend d'une classe du jeu absente selon la version.
 class COMSPEC_RscWebBrowser { type=106; idc=-1; style=0; x=0; y=0; w=0.3; h=0.3; colorBackground[]={0,0,0,1}; colorText[]={1,1,1,1}; allowExternalURL=0; url=""; };
+// Même contrôle avec adresses externes permises : réservé à l'app Vidéo YouTube (fn_pageYoutube), lecteur
+// youtube-nocookie.com/embed/ID lancé par le joueur. NON VÉRIFIÉ en jeu : le sens exact de allowExternalURL.
+class COMSPEC_RscWebBrowserExt: COMSPEC_RscWebBrowser { allowExternalURL=1; };
 class COMSPEC_RscSlider: RscXSliderH { color[]={0.36,0.78,0.42,0.9}; colorActive[]={0.46,0.88,0.52,1}; colorDisabled[]={0.4,0.45,0.42,0.6}; };
 class COMSPEC_RscMapPanel: COMSPEC_RscStructuredText { colorBackground[]={0.025,0.030,0.027,0.78}; };
