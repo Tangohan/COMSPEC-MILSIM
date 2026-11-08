@@ -1,0 +1,25 @@
+{
+  "model": "sonnet",
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.deploy.env)",
+      "Read(./vendor/**)",
+      "Read(./node_modules/**)",
+      "Read(./.worktrees/**)",
+      "Read(./mod/Workshop/**)",
+      "Read(./mod/UptoDate/_tmp_marker_probe/**)",
+      "Read(./server/**)",
+      "Read(./-o/**)",
+      "Read(./tcpdf/**)",
+      "Read(./phpqrcode/**)",
+      "Read(./public/assets/vendor/**)",
+      "Read(./public/assets/images/**)",
+      "Read(./**/*.pbo)",
+      "Read(./**/*.paa)",
+      "Read(./**/*.p3d)",
+      "Read(./**/*.dll)"
+    ]
+  }
+}
