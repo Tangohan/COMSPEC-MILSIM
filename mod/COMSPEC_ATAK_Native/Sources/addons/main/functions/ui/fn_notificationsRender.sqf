@@ -36,6 +36,8 @@ if (!_hidden && {(count _q) > 0}) then {
     _show = if (_cur >= 0 && {((_q select _cur) getOrDefault ["priority", 10]) >= ((_q select _best) getOrDefault ["priority", 10])}) then { _q select _cur } else { _q select _best };
     if ((_show getOrDefault ["expires", -1]) < 0) then { _show set ["expires", _now + (_show getOrDefault ["duration", 5])]; };
 };
+// Le bandeau se pose sur la barre de titre : le titre de l'app est masqué le temps de son affichage (il transparaissait sous « INFO »), rendu ensuite.
+(_d displayCtrl 88518) ctrlShow ((count _show) isEqualTo 0);
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _sig = [_show getOrDefault ["id", -1], count _q, _l get "appbar", _l get "interactive"];
 private _old = uiNamespace getVariable ["COMSPEC_ATAK_ToastControls", []];

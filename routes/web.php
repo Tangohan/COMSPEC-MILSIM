@@ -761,6 +761,9 @@ return function (Router $router) {
     $router->get('/m/radio', [\App\Controllers\Web\AtakMobileAppsController::class, 'radio']);
     $router->get('/m/radio/prives', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioPrivate']);
     $router->get('/m/radio/absent', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioAbsent']);
+    $router->get('/m/radio/sms', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioSms']);
+    $router->get('/m/radio/mpu', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioMpu']);
+    $router->get('/m/musique', [\App\Controllers\Web\AtakMobileAppsController::class, 'musique']);
     $router->get('/m/radio/canal/{key}', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioChannel']);
     $router->get('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debrief']);
     $router->post('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debriefSubmit']);
@@ -1076,6 +1079,7 @@ return function (Router $router) {
     $router->post('/atak/sse/bibliotheque/{id}/etat', [SsePortalController::class, 'textLibraryToggle'], $mwSsePortal);
     $router->post('/atak/sse/bibliotheque/{id}/supprimer', [SsePortalController::class, 'textLibraryDelete'], $mwSsePortal);
     $router->get('/atak/sse/editeur', [\App\Controllers\Web\SseEditorLibraryController::class, 'index'], $mwSsePortal);
+    $router->post('/atak/sse/editeur/{id}/attribuer', [\App\Controllers\Web\SseEditorLibraryController::class, 'assign'], $mwSsePortal);
     $router->get('/atak/sse/presentation', [SsePortalController::class, 'documentPresentationIndex'], $mwSsePortal);
     $router->post('/atak/sse/presentation/actif', [SsePortalController::class, 'documentPresentationActivate'], $mwSsePortal);
     $router->post('/atak/sse/presentation', [SsePortalController::class, 'documentPresentationStore'], $mwSsePortal);
@@ -1596,6 +1600,7 @@ return function (Router $router) {
     $router->post('/back-office/nouveautes-organisation/continuer', [ConfigurationUpdateController::class, 'continueToDashboard'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/mise-a-niveau/demarrer', [ConfigurationUpdateController::class, 'start'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/mise-a-niveau/ignorer', [ConfigurationUpdateController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/mise-a-niveau/terminer', [ConfigurationUpdateController::class, 'complete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/mise-a-niveau/rouvrir', [ConfigurationUpdateController::class, 'reopen'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2461,6 +2466,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/admin/parc-atak/retirer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'retire'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/deconnecter', [\App\Controllers\Admin\AdminAtakFleetController::class, 'disconnect'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/message', [\App\Controllers\Admin\AdminAtakFleetController::class, 'message'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/message/tous', [\App\Controllers\Admin\AdminAtakFleetController::class, 'messageAll'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/message/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'cancelMessage'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/compromission', [\App\Controllers\Admin\AdminAtakFleetController::class, 'compromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/compromission/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'undoCompromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -2475,6 +2481,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/parc-atak/debloquer', [$boFleet, 'unblock'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/deconnecter', [$boFleet, 'disconnect'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/message', [$boFleet, 'message'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/message/tous', [$boFleet, 'messageAll'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/message/annuler', [$boFleet, 'cancelMessage'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/compromission', [$boFleet, 'compromise'], $boFleetMw);
     $router->post('/back-office/atak/parc-atak/compromission/annuler', [$boFleet, 'undoCompromise'], $boFleetMw);
@@ -3067,6 +3074,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->post('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->get('/api/atak/community-brief', [AtakApiController::class, 'communityBrief']);
+    $router->get('/api/atak/community-orbat', [AtakApiController::class, 'communityOrbat']);
     $router->get('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->post('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);

@@ -666,6 +666,22 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_require", "CHECKBOX",
     ["Radio de données obligatoire", "Sans MPU5 : pas de réseau de données (une MPU5 reliée et en service est nécessaire ; le Bluetooth entre téléphones et les données déjà reçues restent). Décoché : sans MPU5, le téléphone garde son réseau d'avant ; la MPU5 ne fait que l'améliorer."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+// Objet obligatoire pour participer au réseau (fn_netRequire), quel que soit le modèle de réseau. « Radio de données obligatoire » ci-dessus ne vise que la
+// MPU5 en liaison réaliste, « Kit obligatoire » (app Communauté) ne coupe rien : ni l'un ni l'autre ne pouvait porter cette règle.
+["comspec_atak_native_net_required_items", "EDITBOX",
+    ["Objet obligatoire pour le réseau", "Sans cet objet, le joueur n'est plus un nœud du réseau : pas de données, pas de relais. Le téléphone reste utilisable et l'app Wave Relay dit ce qui manque. Noms de classe séparés par des virgules (tous requis). Au choix : classeA|classeB. Nombre : classe*2. Exemple : ACRE_MPU5|COMSPEC_ATAK_MPU5. Les radios ACRE2 et TFAR sont reconnues par leur classe de base. Une classe inconnue du modset est ignorée (voir le RPT). Vide : aucun."],
+    _mpuCat, "", 1] call comspec_atak_native_fnc_addSetting;
+// Case « RELAIS ATAK » près du cadre de transmission d'ACRE2 (fn_relayTxBadge) : choix du joueur.
+["comspec_atak_native_relay_tx_badge", "CHECKBOX",
+    ["Case RELAIS ATAK pendant l'émission", "Affichée près du cadre de transmission d'ACRE2 quand votre voix passe réellement par le réseau (voix relayée activée sur le serveur, radio reliée à la MPU5)."],
+    _mpuCat, true, 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_tx_badge_pos", "LIST",
+    ["Position de la case RELAIS ATAK", "Le cadre d'ACRE2 se déplace dans la disposition de l'interface d'Arma : les deux premiers choix le suivent."],
+    _mpuCat, [[0, 1, 2, 3], ["À gauche du cadre ACRE", "Au-dessus du cadre ACRE", "En haut à droite de l'écran", "En bas à gauche de l'écran"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Tutoriel de l'app Wave Relay (fn_waveRelayTuto) : le bouton « ? » reste toujours là.
+["comspec_atak_native_wr_tuto_offer", "CHECKBOX",
+    ["Proposer le tutoriel du réseau", "Une seule fois, à la première ouverture de l'app Wave Relay. Le bouton « ? » de l'app l'ouvre à tout moment."],
+    _mpuCat, true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mpu_cable", "CHECKBOX",
     ["Câble EUD obligatoire", "Il faut l'objet « Câble EUD » dans l'inventaire pour relier le téléphone à la MPU5 par câble."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;

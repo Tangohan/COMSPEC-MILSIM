@@ -13,7 +13,8 @@
     ["suspect", [unité, points, motif]]          soupçons (contrôle raté, mauvaise réponse…) ; au seuil : brûlée
     ["fired", [unité]]                           tir de l'infiltré (FiredMan, relayé par son poste)
     ["answer", [unité, juste]]                   réponse à une question de légende (cohérence)
-    ["score", [unité]] -> [score 0-100, [motifs…]]   cohérence papiers · légende · équipement · comportement
+    ["score", [unité]] -> [score 0-100, [motifs…], [[quoi corriger, points repris]…]]   cohérence papiers · légende ·
+                                                 équipement · comportement ; codes d'actions : app Ma couverture
     ["state", [unité]] -> HashMap (vide hors infiltration)      ["list"] -> états (Zeus)
     ["zone", [position, rayon, nom]] -> [texte, genre]   zone interdite aux couvertures (Zeus) ; rayon 0 : retire la
                                                  plus proche. Marqueurs de mission « comspec_id_interdit… » aussi lus.
@@ -173,28 +174,32 @@ switch (_op) do {
         _a params [["_u", objNull, [objNull]]];
         if (isNull _u) exitWith { [0, []] };
         private _why = [];
+        private _todo = [];
         private _L = ["get", [_u]] call comspec_sse_fnc_idLegend;
         // Papiers (35) : la pièce de la légende, un seul nom, sa qualité.
         private _docs = (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry };
         private _names = [];
         { _names pushBackUnique toUpper format ["%1 %2", _x getOrDefault ["last", ""], _x getOrDefault ["first", ""]]; } forEach _docs;
         private _paper = 0;
-        if (_docs isEqualTo []) then { _why pushBack "sans papiers"; } else {
+        if (_docs isEqualTo []) then { _why pushBack "sans papiers"; _todo pushBack ["sans papiers", 35]; } else {
             _paper = 35 * ((((_L get "quality") max 20) min 100) / 100);
-            if ((count _names) > 1) then { _paper = _paper - 20; _why pushBack "papiers à plusieurs noms"; };
+            if ((35 - _paper) >= 12) then { _todo pushBack ["papiers douteux", round (35 - _paper)]; };
+            if ((count _names) > 1) then { _paper = _paper - 20; _why pushBack "papiers à plusieurs noms"; _todo pushBack ["papiers à plusieurs noms", 20]; };
         };
         // Légende (25) : réponses justes aux questions.
         private _s = [_u] call _stateOf;
         (_s getOrDefault ["answers", [0, 0]]) params ["_g", "_n"];
         private _leg = if (_n > 0) then { 25 * (_g / _n) } else { 25 * (((_L get "quality") max 40) / 100) };
-        if (_n > 0 && {_g < _n}) then { _why pushBack format ["%1 réponse(s) fausse(s) sur %2", _n - _g, _n]; };
+        if (_n > 0 && {_g < _n}) then { _why pushBack format ["%1 réponse(s) fausse(s) sur %2", _n - _g, _n]; _todo pushBack ["réponses fausses", round (25 - _leg)]; };
         // Équipement (25) et comportement (15).
         private _gear = 25;
-        { _x params ["_t", "_p"]; _gear = _gear - (_p min 15); _why pushBack _t; } forEach ([_u] call _visible);
+        // Ce qui se voit encore aujourd'hui seulement ; les points repris s'arrêtent aux 25 de l'équipement.
+        { _x params ["_t", "_p"]; private _lost = (_p min 15) min (_gear max 0); _gear = _gear - (_p min 15); _why pushBack _t; _todo pushBack [_t, _lost]; } forEach ([_u] call _visible);
         private _beh = 15 * (1 - (((_s getOrDefault ["susp", 0]) / (_limit max 1)) min 1));
-        if ([_u] call _inForbidden) then { _beh = _beh - 8; _why pushBack "en zone interdite"; };
+        if ((15 - _beh) >= 1) then { _todo pushBack ["soupçons", round (15 - _beh)]; };
+        if ([_u] call _inForbidden) then { _beh = _beh - 8; _why pushBack "en zone interdite"; _todo pushBack ["en zone interdite", 8]; };
         { _why pushBackUnique _x; } forEach (_s getOrDefault ["why", []]);
-        [round (((_paper max 0) + _leg + (_gear max 0) + (_beh max 0)) max 0 min 100), _why]
+        [round (((_paper max 0) + _leg + (_gear max 0) + (_beh max 0)) max 0 min 100), _why, _todo]
     };
     case "state": { _a params [["_u", objNull]]; [_u] call _stateOf };
     case "list": { values _covers };

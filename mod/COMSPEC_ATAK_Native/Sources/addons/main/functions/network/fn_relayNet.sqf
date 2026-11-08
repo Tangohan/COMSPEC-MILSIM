@@ -177,7 +177,7 @@ switch (_act) do {
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
         {
             (["mpu5", _x] call comspec_atak_native_fnc_meshRead) params [["_up", 0], ["_hp", 0], ["_rg", _mR], ["_rn", "MPU5"]];
-            if (_up <= 0 || {_hp >= 3}) then { continue };
+            if (_up <= 0 || {_hp >= 3} || {["blocked", [_x]] call comspec_atak_native_fnc_netRequire}) then { continue };
             private _ant = (eyePos _x) vectorAdd [0, 0, 0.4];
             private _j = [_ant] call _jamAt;
             private _m = _up * _j;

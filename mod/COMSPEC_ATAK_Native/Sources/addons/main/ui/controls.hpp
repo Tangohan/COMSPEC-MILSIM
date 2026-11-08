@@ -14,6 +14,7 @@ class RscButton;
 class RscEdit;
 class RscCombo;
 class RscListBox;
+class RscListNBox;
 class RscCheckBox;
 class RscProgress;
 class RscPicture;
@@ -56,12 +57,20 @@ class COMSPEC_RscButtonPrimary: COMSPEC_RscButton { colorText[]=ATAK_BG0; colorB
 // focus compris (colorBackground2, avec laquelle le moteur fait clignoter un bouton qui a le focus). Retour de jeu :
 // PERSONNALISER LE GROUPE et les lignes de réglage apparaissaient assombries (tout le dessous à 40 %).
 class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0}; colorBackground2[]={0,0,0,0}; colorFocused[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorBackgroundActive[]={0.36,0.78,0.42,0.18}; colorBorder[]={0,0,0,0}; text=""; };
+// Bouton plat : texte seul, aucun fond ni clignotement de focus. Son fond est un contrôle posé dessous (« face », fn_formRender
+// _flat) : ctrlSetBackgroundColor ne change que colorBackground, et le moteur fait clignoter un bouton qui a le focus entre
+// cette couleur et colorBackground2 (constante de classe, sombre). Un bouton choisi (texte foncé sur l'accent) devenait
+// du noir sur fond sombre : « MES ROUTES », « MA FICHE ». Retour de jeu 4.0.0.
+class COMSPEC_RscButtonFlat: COMSPEC_RscButtonOverlay { colorDisabled[]={0.42,0.46,0.44,0.7}; colorBackgroundActive[]={1,1,1,0.10}; };
 // Touches physiques de la coque : aucune surbrillance (la texture du téléphone suffit).
 class COMSPEC_RscButtonInvisible: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorShadow[]={0,0,0,0}; };
 class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelection[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
 class COMSPEC_RscEditMulti: COMSPEC_RscEdit { style=16; lineSpacing=1; };
 class COMSPEC_RscCombo: RscCombo { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelect[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
 class COMSPEC_RscListBox: RscListBox { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorSelect[]=ATAK_TEXT; colorSelect2[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; colorSelectBackground2[]=ATAK_GREEN_DIM; colorBackground[]={0,0,0,0}; sizeEx="0.024 * safeZoneH"; rowHeight="0.040 * safeZoneH"; };
+// Tableau du BFT : niveaux de l'arbre (3 colonnes), indicatif, état, distance, azimut, âge. lnbSetColumnsPos les place selon
+// l'orientation. La hauteur de ligne ne se règle pas par script : même valeur que COMSPEC_RscListBox.
+class COMSPEC_RscListNBox: RscListNBox { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorSelect[]=ATAK_TEXT; colorSelect2[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; colorSelectBackground2[]=ATAK_GREEN_DIM; colorBackground[]={0,0,0,0}; sizeEx="0.024 * safeZoneH"; rowHeight="0.040 * safeZoneH"; columns[]={0,0.04,0.08,0.12,0.56,0.64,0.80,0.90}; drawSideArrows=0; idcLeft=-1; idcRight=-1; };
 class COMSPEC_RscListBoxDense: COMSPEC_RscListBox { sizeEx="0.021 * safeZoneH"; rowHeight="0.027 * safeZoneH"; };
 class COMSPEC_RscCheckbox: RscCheckBox {};
 class COMSPEC_RscProgress: RscProgress { colorBar[]=ATAK_GREEN; colorFrame[]=ATAK_BORDER; };

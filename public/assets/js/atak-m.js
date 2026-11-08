@@ -810,4 +810,23 @@
       });
     });
   }
+
+  // Musique : un seul morceau à la fois, puis le suivant. Sans script, chaque lecteur natif reste utilisable.
+  if (VIEW === 'musique') {
+    var tracks = $all('[data-mm-tracks] audio');
+    tracks.forEach(function (audio, i) {
+      audio.addEventListener('play', function () {
+        tracks.forEach(function (other) { if (other !== audio) other.pause(); });
+      });
+      audio.addEventListener('ended', function () {
+        var next = tracks[i + 1];
+        if (!next) return;
+        var started = next.play();
+        if (started && started.catch) started.catch(function () {});
+      });
+      audio.addEventListener('error', function () {
+        toast('Ce morceau ne peut pas être lu pour le moment.');
+      });
+    });
+  }
 })();

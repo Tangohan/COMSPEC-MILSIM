@@ -85,7 +85,14 @@ if (_page isEqualTo "FOLDER") then {
     private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
     _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
 };
-(_d displayCtrl 88518) ctrlSetText ((_title) call comspec_atak_native_fnc_tr);
+// Carte ouverte depuis BFT ou Groupe : le titre dit où ramène le retour (« ‹ BFT · CARTE »).
+private _titleTxt = (_title) call comspec_atak_native_fnc_tr;
+if (_page isEqualTo "MAP") then {
+    private _hist = _st getOrDefault ["history", []];
+    private _from = _hist param [(count _hist) - 2, ""];
+    if (_from in ["BFT", "GROUP"]) then { _titleTxt = format ["‹ %1 · %2", (["BFT", "GROUPE"] select (_from isEqualTo "GROUP")) call comspec_atak_native_fnc_tr, _titleTxt]; };
+};
+(_d displayCtrl 88518) ctrlSetText (_titleTxt); // i18n:brut
 
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };
