@@ -5,7 +5,7 @@
 
     doc.faceNetId rempli : caméra attachée à la tête du vrai titulaire (joueur ou IA), elle le suit sans script par image.
     Sinon (faux papier, titulaire disparu) : mannequin local isolé, invisible des autres postes, avec un autre visage du
-    jeu, tiré du nom imprimé : même identité, même visage ; jamais celui du porteur s'il est connu.
+    jeu, tiré du nom imprimé : même identité, même visage ; jamais celui du vrai titulaire s'il est connu.
     Arma n'affiche pas d'image téléchargée sans -filePatching : la photo du site n'apparaît donc pas en jeu.
 */
 params [["_op", "stop", [""]], ["_doc", createHashMap, [createHashMap]]];
