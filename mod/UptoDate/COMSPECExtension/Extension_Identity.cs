@@ -62,6 +62,8 @@ public static partial class Extension
                 var sections = new Dictionary<string, List<JsonElement>>(StringComparer.Ordinal)
                 {
                     ["countries"] = new(), ["identities"] = new(), ["documents"] = new(), ["watch"] = new(), ["revoked"] = new(),
+                    // Papiers remis aux joueurs (fn_idKit) et brief RP du joueur (fn_idLegend).
+                    ["kits"] = new(), ["briefs"] = new(),
                 };
                 var head = new List<KeyValuePair<string, JsonElement>>();
                 var generatedAt = "";
@@ -95,7 +97,7 @@ public static partial class Extension
                         if (root.TryGetProperty(name, out var arr) && arr.ValueKind == JsonValueKind.Array)
                         {
                             // Pays et listes : envoyés avec la première page seulement.
-                            if (page > 0 && name is "countries" or "watch" or "revoked") continue;
+                            if (page > 0 && name is "countries" or "watch" or "revoked" or "kits" or "briefs") continue;
                             foreach (var el in arr.EnumerateArray()) list.Add(el.Clone());
                         }
                     }

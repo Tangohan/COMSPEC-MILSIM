@@ -18997,5 +18997,16 @@
 ["GPS de poignet : GOTO", "Wrist GPS: GOTO"],
 ["Navigue vers le point ou la route choisis.", "Navigates to the selected waypoint or route."],
 ["GPS de poignet : MARK", "Wrist GPS: MARK"],
-["Enregistre ma position.", "Saves my position."]
+["Enregistre ma position.", "Saves my position."],
+["Bibliothèque à jour avec Athena.", "Library up to date with Athena."],
+["Compte Athena non relié ou sans habilitation Confidentiel : bibliothèque de ce poste.", "Athena account not linked or without Confidential clearance: library of this computer."],
+["Contenu trop long pour Athena : gardé sur ce poste.", "Content too long for Athena: kept on this computer."],
+["Athena injoignable : bibliothèque de ce poste.", "Athena unreachable: library of this computer."],
+["copie de ce poste", "copy from this computer"],
+["Rien n'est envoyé aux joueurs avant « Placer et publier ». Le contenu est aussi enregistré sur Athena.", "Nothing is sent to players before ""Place and publish"". The content is also saved on Athena."],
+["Trouvé par un joueur", "Found by a player"],
+["trouvé par un joueur", "found by a player"],
+["Gardé dans la bibliothèque : à placer en mission, depuis le module Zeus.", "Kept in the library: to be placed during the mission, from the Zeus module."],
+["Fouille : sélectionnez d'abord une personne ou un véhicule.", "Search: first select a person or a vehicle."],
+["Placé dans la mission préparée.", "Placed in the prepared mission."]
 ]
