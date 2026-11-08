@@ -16,6 +16,9 @@ private _q = (_s getOrDefault ["notifications", []]) select {
     if (_exp < 0) then { (_now - (_x getOrDefault ["created", _now])) < 30 } else { _exp > _now }
 };
 _s set ["notifications", _q];
+// Rien en file et aucun toast affiché (le cas chaque seconde) : sortie avant l'état du téléphone, le verrou Zeus et la
+// mise en page ; la signature ci-dessous détecte toujours le prochain toast à montrer ou le dernier à retirer.
+if ((count _q) isEqualTo 0 && {(count (uiNamespace getVariable ["COMSPEC_ATAK_ToastControls", []])) isEqualTo 0}) exitWith {};
 // Écran éteint, en animation d'arrêt ou de démarrage : pas de toast.
 private _hidden = ((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) > _now
     || {((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.118";
+    private const string ExtensionVersion = "2.0.119";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -523,6 +523,9 @@ public static partial class Extension
         return $",\"mod_version\":\"{EscapeJson(_modVersion)}\"";
     }
 
+    private sealed record LatestVersionsEntry(string Url, string Result, long AtMs);
+    private static LatestVersionsEntry? _latestVersionsCache;
+
     private static string LatestVersions(string? portal)
     {
         var baseUrl = NormalizeBaseUrl(string.IsNullOrWhiteSpace(portal) ? _baseUrl : portal);
@@ -530,6 +533,10 @@ public static partial class Extension
             return "ERR|" + err;
         // SEC-001 : jamais de requête vers un hôte arbitraire choisi par un script (adresse IP du joueur, réseau local).
         if (!IsSecretSafeUri(uri)) return "ERR|untrusted_host";
+        // Réponse publique et stable : gardée 5 min (le contrôle d'intégrité la redemande à chaque passage par les Réglages).
+        var cached = _latestVersionsCache;
+        if (cached is not null && cached.Url == uri.AbsoluteUri && Environment.TickCount64 - cached.AtMs < 300_000)
+            return cached.Result;
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
@@ -542,7 +549,9 @@ public static partial class Extension
                     ? (v.GetString() ?? "").Replace("|", "").Replace("\r", " ").Replace("\n", " ")
                     : "";
             // 2.0.85 : résumé joueur de la dernière version (FR, EN), montré dans la notification « mise à jour disponible ».
-            return "OK|" + Field("atak_native") + "|" + Field("link") + "|" + Field("summary_fr") + "|" + Field("summary_en");
+            var result = "OK|" + Field("atak_native") + "|" + Field("link") + "|" + Field("summary_fr") + "|" + Field("summary_en");
+            _latestVersionsCache = new LatestVersionsEntry(uri.AbsoluteUri, result, Environment.TickCount64);
+            return result;
         }
         catch (Exception ex)
         {
@@ -1828,7 +1837,7 @@ public static partial class Extension
     private static readonly HashSet<string> NonUplinkCommands = new(StringComparer.Ordinal)
     {
         "Async", "Warmup", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
-        "GetLogTail", "SendQueue.Status", "SyncStats", "MemStats", "GetPendingQueueCount", "GetSessionTenant",
+        "GetLogTail", "SendQueue.Status", "SyncStats", "MemStats", "Perf.Stats", "GetPendingQueueCount", "GetSessionTenant",
         "Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore",
         "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect", "ClientDisconnect",
     };
@@ -2020,7 +2029,7 @@ public static partial class Extension
                 }
                 writer.WriteEndObject();
             }
-            return Encoding.UTF8.GetString(stream.ToArray());
+            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
         }
         catch
         {
@@ -2052,7 +2061,7 @@ public static partial class Extension
                     writer.WriteString("session_token", _sessionToken);
                 writer.WriteEndObject();
             }
-            return Encoding.UTF8.GetString(stream.ToArray());
+            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
         }
         catch
         {
@@ -2797,7 +2806,7 @@ public static partial class Extension
     /// Premier appel : "OK|" vide (le SQF ignore déjà les corps vides / non-OK).
     /// En cas d’erreur réseau après un succès, on conserve le dernier OK.
     /// </summary>
-    private static string ServePollGet(string cacheKey, string url, Func<string, int, string> format)
+    private static string ServePollGet(string cacheKey, string url, Func<string, int, string> format, int minRefreshMs = 1200)
     {
         if (string.IsNullOrEmpty(url))
             return "ERR|invalid_url";
@@ -2811,7 +2820,6 @@ public static partial class Extension
         var slot = PollGetCache.GetOrAdd(cacheKey, static _ => new PollGetSlot());
         slot.Url = url;
         var now = Environment.TickCount64;
-        const int minRefreshMs = 1200;
         var stale = (slot.FetchedAtMs == 0 || (now - slot.FetchedAtMs) >= minRefreshMs)
             && (slot.RefusedUntilMs == 0 || now >= slot.RefusedUntilMs);
         if (stale && Interlocked.CompareExchange(ref slot.InFlight, 1, 0) == 0)
@@ -3025,17 +3033,27 @@ public static partial class Extension
         // Le moteur passe parfois un outputSize plus grand que le tampon réel (~10 240).
         // On copie en octets UTF-8, jamais en s.Length, et jamais au-delà de MaxOutputBytes.
         var cap = Math.Min(outputSize - 1, MaxOutputBytes);
-        var bytes = Encoding.UTF8.GetBytes(data ?? "");
-        var n = Utf8Fit(bytes, cap);
-        if (n > 0) Marshal.Copy(bytes, 0, output, n);
-        Marshal.WriteByte(output, n, 0); // C-string NUL — requis par callExtension Arma
+        data ??= "";
+        // Tampon loué (ArrayPool) : plus un byte[] neuf par réponse (jusqu'à 8 Ko, des dizaines de fois par seconde).
+        var bytes = System.Buffers.ArrayPool<byte>.Shared.Rent(Encoding.UTF8.GetMaxByteCount(data.Length));
+        try
+        {
+            var len = Encoding.UTF8.GetBytes(data, 0, data.Length, bytes, 0);
+            var n = Utf8Fit(bytes, len, cap);
+            if (n > 0) Marshal.Copy(bytes, 0, output, n);
+            Marshal.WriteByte(output, n, 0); // C-string NUL — requis par callExtension Arma
+        }
+        finally { System.Buffers.ArrayPool<byte>.Shared.Return(bytes); }
     }
 
     /// <summary>Longueur d'un préfixe UTF-8 complet ne dépassant pas max octets.</summary>
-    private static int Utf8Fit(byte[] bytes, int max)
+    private static int Utf8Fit(byte[] bytes, int max) => Utf8Fit(bytes, bytes.Length, max);
+
+    /// <summary>Même chose sur les len premiers octets d'un tampon (loué, donc plus grand que son contenu).</summary>
+    private static int Utf8Fit(byte[] bytes, int len, int max)
     {
         if (max <= 0) return 0;
-        if (bytes.Length <= max) return bytes.Length;
+        if (len <= max) return len;
         var n = max;
         while (n > 0 && (bytes[n - 1] & 0xC0) == 0x80)
             n--;
@@ -3063,6 +3081,7 @@ public static partial class Extension
                 KickBackgroundWarmup();
             // Forme chaîne (callExtension "GetUnits", "GetPings"…) : même chemin que RVExtensionArgs, réponse directe
             // d'abord ; sans elle, ces commandes servies par TryGetSyncResponse rendaient toujours "".
+            var perfT0 = System.Diagnostics.Stopwatch.GetTimestamp();
             string? syncResult;
             try
             {
@@ -3072,20 +3091,20 @@ public static partial class Extension
             {
                 syncResult = FormatCaughtError(ex);
             }
-            if (syncResult != null)
+            if (syncResult == null)
             {
-                Output(output, outputSize, syncResult);
-                return;
+                try
+                {
+                    RvExtensionArgsImpl(functionString, []);
+                }
+                catch
+                {
+                    // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+                }
+                syncResult = "";
             }
-            try
-            {
-                RvExtensionArgsImpl(functionString, []);
-            }
-            catch
-            {
-                // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
-            }
-            Output(output, outputSize, "");
+            NotePerf(functionString, [], perfT0);
+            Output(output, outputSize, syncResult);
         }
         catch
         {
@@ -3129,10 +3148,16 @@ public static partial class Extension
     /// en parallèle (extAwait, Async) ne découpent jamais une tenue dans le corps d'une autre.
     private sealed class WardrobeDetailSlot
     {
-        public WardrobeDetailSlot(string id, string body, int chunkSize) { Id = id; Body = body; ChunkSize = chunkSize; }
+        public WardrobeDetailSlot(string id, string body, int chunkSize)
+        {
+            Id = id; Body = body; ChunkSize = chunkSize;
+            // Découpage calculé une fois par tenue (avant : tout le corps reparcouru à chaque morceau demandé).
+            Starts = Utf8ChunkStarts(body, chunkSize);
+        }
         public string Id { get; }
         public string Body { get; }
         public int ChunkSize { get; }
+        public List<int> Starts { get; }
     }
     private static volatile WardrobeDetailSlot? _wardrobeDetail;
 
@@ -3198,6 +3223,7 @@ public static partial class Extension
         // ne doit jamais laisser fuiter d'exception (le runtime .NET fait un fail-fast qui tue le
         // process hôte, c-à-d Arma). Toute exception imprévue devient un ERR| exploitable en SQF
         // plutôt qu'un plantage silencieux ou un retour vide sans diagnostic.
+        var perfT0 = System.Diagnostics.Stopwatch.GetTimestamp();
         string? syncResult;
         try
         {
@@ -3209,22 +3235,113 @@ public static partial class Extension
             syncResult = FormatCaughtError(ex);
         }
 
-        if (syncResult != null)
+        if (syncResult == null)
         {
-            Output(output, outputSize, syncResult);
-            return 0;
+            try
+            {
+                RvExtensionArgsImpl(functionString, argsString);
+            }
+            catch
+            {
+                // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+            }
+            syncResult = "";
         }
+        NotePerf(functionString, argsString, perfT0);
+        Output(output, outputSize, syncResult);
+        return 0;
+    }
 
+    /// <summary>
+    /// Temps passé sous callExtension par commande (Perf.Stats, 2.0.119) : appels, total, pire, et répartition en
+    /// paliers de durée pour un 95e centile sans garder chaque mesure. Lu par l'onglet Debug › PERFS du téléphone.
+    /// </summary>
+    private sealed class PerfSlot
+    {
+        public long Calls, TotalTicks, MaxTicks;
+        public readonly long[] Buckets = new long[PerfBucketUs.Length + 1];
+    }
+
+    /// <summary>Bornes hautes des paliers (µs) ; le dernier palier est « au-delà ».</summary>
+    private static readonly int[] PerfBucketUs = { 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 500000 };
+    private static readonly ConcurrentDictionary<string, PerfSlot> PerfSlots = new(StringComparer.Ordinal);
+    private const int PerfSlotsMax = 96;
+    private static long _perfSinceMs = Environment.TickCount64;
+
+    private static void NotePerf(string? function, string?[] args, long startTs)
+    {
         try
         {
-            RvExtensionArgsImpl(functionString, argsString);
+            var ticks = System.Diagnostics.Stopwatch.GetTimestamp() - startTs;
+            var key = function ?? "";
+            if (key == "Async" && args.Length > 1) key = "Async " + (args[1] ?? "");
+            if (PerfSlots.Count >= PerfSlotsMax && !PerfSlots.ContainsKey(key)) key = "(autres)";
+            var s = PerfSlots.GetOrAdd(key, static _ => new PerfSlot());
+            var us = ticks * 1_000_000 / System.Diagnostics.Stopwatch.Frequency;
+            var b = 0;
+            while (b < PerfBucketUs.Length && us > PerfBucketUs[b]) b++;
+            lock (s)
+            {
+                s.Calls++;
+                s.TotalTicks += ticks;
+                if (ticks > s.MaxTicks) s.MaxTicks = ticks;
+                s.Buckets[b]++;
+            }
         }
-        catch
+        catch { /* mesure best-effort : jamais d'exception vers le point d'entrée natif */ }
+    }
+
+    /// <summary>
+    /// ["Perf.Stats"] → « OK|secondes|appels|moy ms|p95 ms|pire ms » puis une ligne par commande (24 plus coûteuses) :
+    /// commande\tappels\tmoy ms\tp95 ms\tpire ms\ttotal ms. ["Perf.Stats", ["reset"]] remet les compteurs à zéro.
+    /// </summary>
+    private static string PerfStats(string?[] args)
+    {
+        if (args.Length > 0 && args[0] == "reset")
         {
-            // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+            PerfSlots.Clear();
+            _perfSinceMs = Environment.TickCount64;
+            return "OK|reset";
         }
-        Output(output, outputSize, "");
-        return 0;
+        static double Ms(long ticks) => ticks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+        static string F(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+        // p95 = borne haute du palier où 95 % des appels sont atteints (le dernier palier vaut « plus de 500 ms »).
+        static double P95(long[] buckets, long n)
+        {
+            long acc = 0;
+            for (var i = 0; i < buckets.Length; i++)
+            {
+                acc += buckets[i];
+                if (acc * 20 >= n * 19) return i < PerfBucketUs.Length ? PerfBucketUs[i] / 1000.0 : 999;
+            }
+            return 0;
+        }
+        var rows = new List<(string Key, long Calls, long Total, long Max, long[] Buckets)>();
+        foreach (var kv in PerfSlots)
+        {
+            lock (kv.Value) rows.Add((kv.Key, kv.Value.Calls, kv.Value.TotalTicks, kv.Value.MaxTicks, (long[])kv.Value.Buckets.Clone()));
+        }
+        rows.Sort(static (a, b) => b.Total.CompareTo(a.Total));
+        long calls = 0, total = 0, max = 0;
+        var all = new long[PerfBucketUs.Length + 1];
+        foreach (var r in rows)
+        {
+            calls += r.Calls;
+            total += r.Total;
+            if (r.Max > max) max = r.Max;
+            for (var i = 0; i < all.Length; i++) all[i] += r.Buckets[i];
+        }
+        var span = Math.Max(1, (Environment.TickCount64 - _perfSinceMs) / 1000);
+        var sb = new StringBuilder("OK|");
+        sb.Append(span).Append('|').Append(calls).Append('|').Append(F(calls > 0 ? Ms(total) / calls : 0))
+          .Append('|').Append(F(P95(all, calls))).Append('|').Append(F(Ms(max)));
+        foreach (var r in rows.Take(24))
+        {
+            sb.Append('\n').Append(r.Key.Replace('\t', ' ').Replace('\n', ' ')).Append('\t').Append(r.Calls)
+              .Append('\t').Append(F(Ms(r.Total) / r.Calls)).Append('\t').Append(F(P95(r.Buckets, r.Calls)))
+              .Append('\t').Append(F(Ms(r.Max))).Append('\t').Append(F(Ms(r.Total)));
+        }
+        return sb.ToString();
     }
 
     private static readonly object HeaderLock = new();
@@ -3782,6 +3899,9 @@ public static partial class Extension
         // Volume échangé avec Athena par canal (app Réseau du téléphone, bandeau de dépannage) : en mémoire, sans réseau.
         if (function == "SyncStats")
             return SyncStatsForSqf();
+        // Temps passé sous callExtension par commande (onglet Debug › PERFS) : en mémoire, sans réseau.
+        if (function == "Perf.Stats")
+            return PerfStats(args);
         // COMSPEC IDENTITY (2.0.118) : morceau du pack d'identité gardé en mémoire par GetIdentityPack, sans réseau.
         if (function == "GetIdentityPackChunk")
             return IdentityPackChunk(args);
@@ -5530,7 +5650,7 @@ public static partial class Extension
                 }
                 var wslot = new WardrobeDetailSlot(wid, simplified, Math.Max(1024, MaxOutputBytes - 80));
                 _wardrobeDetail = wslot;
-                var chunks = Utf8ChunkStarts(wslot.Body, wslot.ChunkSize).Count;
+                var chunks = wslot.Starts.Count;
                 var t1 = simplified.IndexOf('\t');
                 var t2 = t1 < 0 ? -1 : simplified.IndexOf('\t', t1 + 1);
                 var idPart = t1 > 0 ? simplified.Substring(0, t1) : wid;
@@ -5572,8 +5692,7 @@ public static partial class Extension
                     _wardrobeDetail = wslot;
                 }
                 var wbody = wslot.Body;
-                var chunkSize = wslot.ChunkSize > 0 ? wslot.ChunkSize : (MaxOutputBytes - 80);
-                var starts = Utf8ChunkStarts(wbody, chunkSize);
+                var starts = wslot.Starts;
                 var totalChunks = starts.Count;
                 if (chunkIdx >= totalChunks) return "ERR|chunk_oob";
                 var offset = starts[chunkIdx];
@@ -5924,38 +6043,45 @@ public static partial class Extension
             }
             if (function == "GetWantedNotices")
             {
-                using var resp = SendGet(_baseUrl + "/api/sse/wanted?limit=40", token);
-                var respBody = ReadContentUtf8(resp, token);
-                if (!resp.IsSuccessStatusCode)
+                var wantedUrl = _baseUrl + "/api/sse/wanted?limit=40";
+                static string FormatWanted(string respBody, int code)
                 {
-                    var code = (int)resp.StatusCode;
                     if (code == 401) return "ERR|unauthorized";
                     if (code == 403) return "ERR|forbidden";
-                    return "ERR|http_" + code;
-                }
-                var lines = new StringBuilder();
-                try
-                {
-                    using var doc = JsonDocument.Parse(respBody);
-                    if (doc.RootElement.TryGetProperty("wanted", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                    if (code < 200 || code >= 300) return "ERR|http_" + code;
+                    var lines = new StringBuilder();
+                    var bytes = 0;
+                    try
                     {
-                        foreach (var el in arr.EnumerateArray())
+                        using var doc = JsonDocument.Parse(respBody);
+                        if (doc.RootElement.TryGetProperty("wanted", out var arr) && arr.ValueKind == JsonValueKind.Array)
                         {
-                            string C(string k, int max = 160)
+                            foreach (var el in arr.EnumerateArray())
                             {
-                                if (!el.TryGetProperty(k, out var v)) return "";
-                                var t = v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ValueKind == JsonValueKind.Number ? v.GetRawText() : "";
-                                t = t.Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim();
-                                return t.Length > max ? t.Substring(0, max) + "…" : t;
+                                string C(string k, int max = 160)
+                                {
+                                    if (!el.TryGetProperty(k, out var v)) return "";
+                                    var t = v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ValueKind == JsonValueKind.Number ? v.GetRawText() : "";
+                                    t = t.Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim();
+                                    return t.Length > max ? t.Substring(0, max) + "…" : t;
+                                }
+                                var line = string.Join("\t", C("kind"), C("id"), C("ref"), C("name"), C("alias"), C("level"), C("details", 220), C("photo", 400), C("updated_at"));
+                                // Octets comptés au fil de l'eau (avant : lines.ToString() recopié à chaque avis).
+                                var lineBytes = Encoding.UTF8.GetByteCount(line);
+                                if (bytes + lineBytes + 6 > MaxOutputBytes) break;
+                                lines.Append(line).Append('\n');
+                                bytes += lineBytes + 1;
                             }
-                            var line = string.Join("\t", C("kind"), C("id"), C("ref"), C("name"), C("alias"), C("level"), C("details", 220), C("photo", 400), C("updated_at"));
-                            if (Encoding.UTF8.GetByteCount(lines.ToString()) + Encoding.UTF8.GetByteCount(line) + 6 > MaxOutputBytes) break;
-                            lines.Append(line).Append('\n');
                         }
                     }
+                    catch { return "ERR|bad_json"; }
+                    return "OK|" + lines.ToString();
                 }
-                catch { return "ERR|bad_json"; }
-                return "OK|" + lines.ToString();
+                // Appel direct hors Async (SSE fn_bioWantedCache, sondages) : copie gardée 5 min et rafraîchie en tâche
+                // de fond, jamais d'attente HTTP sur le fil du jeu. Dans Async (app Recherchés « Actualiser ») : lecture fraîche.
+                if (!InAsyncWorker.Value) return ServePollGet("GetWantedNotices", wantedUrl, FormatWanted, 300_000);
+                using var resp = SendGet(wantedUrl, token);
+                return FormatWanted(ReadContentUtf8(resp, token), (int)resp.StatusCode);
             }
             // Présence au briefing (téléphone qui suit le présentateur) : vue sur la page briefing d'Athena.
             // Args : [libellé, clé client] → OK|nombre de présents
@@ -5995,6 +6121,7 @@ public static partial class Extension
                     return "ERR|http_" + code;
                 }
                 var sb = new StringBuilder();
+                var sbBytes = 0;
                 try
                 {
                     using var doc = JsonDocument.Parse(body);
@@ -6005,8 +6132,10 @@ public static partial class Extension
                                 ? (v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.GetRawText()).Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim()
                                 : "";
                             var line = string.Join("\t", C("id"), C("author"), C("created_at"), C("body")) + "\n";
-                            if (Encoding.UTF8.GetByteCount(sb.ToString()) + Encoding.UTF8.GetByteCount(line) > MaxOutputBytes - 8) break;
+                            var lineBytes = Encoding.UTF8.GetByteCount(line);
+                            if (sbBytes + lineBytes > MaxOutputBytes - 8) break;
                             sb.Append(line);
+                            sbBytes += lineBytes;
                         }
                 }
                 catch { return "ERR|bad_json"; }
@@ -7277,14 +7406,13 @@ public static partial class Extension
     /// <summary>
     /// Append une ligne horodatée au journal fichier. Best-effort : tout échec est avalé silencieusement.
     /// </summary>
-    private static bool AppendLogLine(string path, string line)
+    private static bool AppendLogText(string path, string text)
     {
         lock (LogFileLock)
         {
             try
             {
-                var stamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                File.AppendAllText(path, $"[{stamp}] {line}{Environment.NewLine}", Encoding.UTF8);
+                File.AppendAllText(path, text, Encoding.UTF8);
                 return true;
             }
             catch
@@ -7317,8 +7445,16 @@ public static partial class Extension
     {
         try
         {
+            // Lignes en attente écrites d'un bloc : une ouverture du fichier par passage, pas une par ligne
+            // (plusieurs dizaines de lignes par seconde en débogage). Seul consommateur : TryPeek puis TryDequeue sûrs.
             while (PendingLogLines.TryDequeue(out var item))
-                AppendLogLine(item.Path, item.Line);
+            {
+                var sb = new StringBuilder();
+                sb.Append('[').Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")).Append("] ").Append(item.Line).Append(Environment.NewLine);
+                while (PendingLogLines.TryPeek(out var next) && next.Path == item.Path && PendingLogLines.TryDequeue(out next))
+                    sb.Append('[').Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")).Append("] ").Append(next.Line).Append(Environment.NewLine);
+                AppendLogText(item.Path, sb.ToString());
+            }
         }
         finally
         {
@@ -12585,7 +12721,7 @@ public static partial class Extension
                 writer.WriteString("server_ip_source", "launch");
                 writer.WriteEndObject();
             }
-            return Encoding.UTF8.GetString(stream.ToArray());
+            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
         }
         catch
         {
@@ -12854,7 +12990,7 @@ public static partial class Extension
                     writer.WriteString("ui_generation", ClientUiGeneration);
                 writer.WriteEndObject();
             }
-            return Encoding.UTF8.GetString(stream.ToArray());
+            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
         }
         catch
         {
@@ -12980,7 +13116,7 @@ public static partial class Extension
                 }
                 writer.WriteEndObject();
             }
-            return Encoding.UTF8.GetString(stream.ToArray());
+            return Encoding.UTF8.GetString(stream.GetBuffer(), 0, (int)stream.Length);
         }
         catch
         {

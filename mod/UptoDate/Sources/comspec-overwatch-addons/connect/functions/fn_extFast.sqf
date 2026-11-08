@@ -11,7 +11,7 @@ if (isNil "_fast") then {
     _fast = createHashMapFromArray ([
         // Mémoire / état local
         "Ping", "Warmup", "GetExtensionVersion", "GetVersion", "GetAtakFeatures", "GetCapabilities", "SendQueue.Status",
-        "SyncStats", "MemStats", "GetPendingQueueCount", "GetLastPostError", "GetSessionTenant", "GetAuthState",
+        "SyncStats", "MemStats", "Perf.Stats", "GetPendingQueueCount", "GetLastPostError", "GetSessionTenant", "GetAuthState",
         "GetAuthProgress", "SetSteamId", "SetMapId", "SetBloodType", "SetTelemetryBatch", "SetTelemetryMode",
         "GetTelemetryMetrics", "EmitTelemetry", "HashText", "LogWrite", "LogSessionStart", "GetLogTail",
         "OpenAthenaLink", "LoadGoogleDeck", "LoadGoogleSlide", "CancelGoogleDeck", "Logout",
