@@ -48,7 +48,8 @@ if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) ex
 };
 private _floodKey = format ["%1|%2", _owner, _op];
 // Anti-flood des postes distants seulement : les appels internes du serveur (checkpoints IA) passent tous.
-if (isRemoteExecuted && {_op isNotEqualTo "begin"} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
+// La fenêtre du Zeus enchaîne ses demandes (liste, puis papiers de la ligne choisie) : réservée au Zeus, elle n'est pas bridée.
+if (isRemoteExecuted && {!(_op in ["begin", "aiCfg"])} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
 (_reg get "flood") set [_floodKey, time];
 
 private _reply = {

@@ -17,6 +17,8 @@ if (_replay && {isRemoteExecuted}) exitWith { false };
 if (_replay) then { _args = [objNull, _args param [0, createHashMap], _args param [1, []], objNull]; };
 _args params [["_me", objNull, [objNull]], ["_item", createHashMap, [createHashMap]], ["_pos", [], [[]]], ["_target", objNull, [objNull]]];
 if ((isNull _me && {!_replay}) || {(count _item) isEqualTo 0}) exitWith { false };
+// Un envoi au téléphone ne se rejoue pas à chaque partie.
+if (_replay && {(_item getOrDefault ["delivery", 0]) isEqualTo 2}) exitWith { false };
 private _owner = if (isRemoteExecuted) then { remoteExecutedOwner } else { clientOwner };
 if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) exitWith { false };
 if (!_replay && {!([_me] call comspec_sse_fnc_isAuthority)}) exitWith {
