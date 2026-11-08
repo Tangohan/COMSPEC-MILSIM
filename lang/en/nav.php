@@ -768,4 +768,8 @@ return [
     'agenda_et_sessions_de_jeu' => 'Agenda and game sessions',
     'calendrier_reponses_pointage_et_sessions_arma_liees' => 'Calendar, replies, attendance and linked Arma sessions',
     'pointage_et_temps_retenu_des_soirees_de_jeu' => 'Attendance and counted time for game nights',
+    'charge_et_surcharge' => 'Load and overload',
+    'requetes_par_route_et_par_communaute_erreurs_seuils_d_alerte_priorite_des_formules_payantes_sous_charge' => 'Requests per route and per community, errors, alert thresholds, priority of paid plans under load',
+    'activites_suspectes_du_mod' => 'Suspicious mod activity',
+    'envois_anormaux_detectes_alertes_a_decider_aucun_blocage_automatique' => 'Abnormal sends detected, alerts to review (no automatic blocking)',
 ];
