@@ -173,8 +173,8 @@ switch (_act) do {
         // téléphone reçoit d'un relais ou d'une autre MPU5 (au plus 3 bonds, publiés dans COMSPEC_ATAK_Mpu5).
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
         {
-            (_x getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_hp", 0], ["_rg", _mR], ["_rn", "MPU5"]];
-            if (!(_up isEqualType 0) || {_up <= 0} || {_hp >= 3}) then { continue };
+            (["mpu5", _x] call comspec_atak_native_fnc_meshRead) params [["_up", 0], ["_hp", 0], ["_rg", _mR], ["_rn", "MPU5"]];
+            if (_up <= 0 || {_hp >= 3}) then { continue };
             private _ant = (eyePos _x) vectorAdd [0, 0, 0.4];
             private _j = [_ant] call _jamAt;
             private _m = _up * _j;

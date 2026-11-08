@@ -10,8 +10,11 @@ private _tab = _s getOrDefault ["dbgTab", "LOG"];
 private _lvl = _s getOrDefault ["dbgLvl", "ALL"];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['dbgTab', '%1']; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
+// Onglet MAILLAGE : mode développeur seulement (fn_devMesh), jamais montré à un joueur ordinaire.
+private _meshDev = ["allowed"] call comspec_atak_native_fnc_devMesh;
+if (_tab isEqualTo "MESH" && {!_meshDev}) then { _tab = "LOG"; };
 // Onglets soulignés (composant « tabs » du système de design 3.1.0).
-private _rows = [["tabs", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["PERFS", "PERF"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn]]];
+private _rows = [["tabs", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["PERFS", "PERF"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn] + ([[], [["MAILLAGE", "MESH"] call _tabBtn]] select _meshDev)]];
 private _lvlColor = { params ["_v"]; switch (_v) do { case "ERROR": { (COMSPEC_ATAK_Th get "hexAlert") }; case "WARN"; case "WARNING": { (COMSPEC_ATAK_Th get "hexWarn") }; case "DEBUG": { (COMSPEC_ATAK_Th get "hexTextMuted") }; default { (COMSPEC_ATAK_Th get "hexTextMuted") }; } };
 // Journal fusionné : natif [t, niveau, module, message] et Overwatch « t [COMSPEC Overwatch][NIV][Canal] message ».
 private _merged = {
@@ -27,6 +30,7 @@ private _merged = {
     _out
 };
 switch (_tab) do {
+    case "MESH": { _rows append (["tabRows"] call comspec_atak_native_fnc_devMesh); };
     case "PERF": {
         // Dernier bilan de 30 s (fn_perfAcc « report ») : fonctions les plus coûteuses et rendus complets par page.
         (missionNamespace getVariable ["COMSPEC_ATAK_PerfLast", []]) params [["_at", -1], ["_fps", 0], ["_slowN", 0], ["_slowMax", 0], ["_top", []], ["_rend", []], ["_watch", []]];

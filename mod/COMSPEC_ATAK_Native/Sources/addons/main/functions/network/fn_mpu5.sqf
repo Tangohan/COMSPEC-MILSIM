@@ -43,7 +43,7 @@ private _hget = {
 switch (_act) do {
     case "has": {
         private _u = _arg param [0, player];
-        if (_u isNotEqualTo player) exitWith { (_u getVariable ["COMSPEC_ATAK_Mpu5", []]) isNotEqualTo [] };
+        if (_u isNotEqualTo player) exitWith { (["mpu5", _u] call comspec_atak_native_fnc_meshRead) isNotEqualTo [] };
         private _c = uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Has", []];
         if ((count _c) isEqualTo 2 && {diag_tickTime - (_c select 0) < 2}) exitWith { _c select 1 };
         private _extra = ((missionNamespace getVariable ["comspec_atak_native_mpu5_items", ""]) splitString ", ;") apply { toLower _x };
@@ -58,9 +58,9 @@ switch (_act) do {
         private _base = missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000];
         private _u = _arg param [0, player];
         if (_u isNotEqualTo player) exitWith {
-            private _pub = _u getVariable ["COMSPEC_ATAK_Mpu5", []];
+            private _pub = ["mpu5", _u] call comspec_atak_native_fnc_meshRead;
             if (_pub isEqualTo []) exitWith { _base };
-            (_pub param [2, missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000]]) max _base
+            (_pub select 2) max _base
         };
         private _src = ["source"] call comspec_atak_native_fnc_mpu5;
         if (_src isEqualTo []) exitWith { _base };
@@ -221,7 +221,7 @@ switch (_act) do {
             _x params ["_u", "_id", "_t0"];
             if (isNull _u || {!alive _u}) then { continue };
             // Fréquence de l'émetteur : publiée par son téléphone, sinon lue dans les données ACRE2 de sa radio.
-            private _pub = ((_u getVariable ["COMSPEC_ATAK_VoiceNet", []]) select { (_x select 0) isEqualTo _id }) param [0, []];
+            private _pub = ((["voiceNet", _u] call comspec_atak_native_fnc_meshRead) select { (_x select 0) isEqualTo _id }) param [0, []];
             private _f = if (_pub isNotEqualTo []) then { [_pub select 1, _pub select 1, _pub select 2] } else { ["freq", [_id]] call comspec_atak_native_fnc_mpu5 };
             if (_f isEqualTo []) then { continue };
             // Entendue seulement si une de mes radios reçoit cette fréquence (à 1 kHz près).
@@ -237,8 +237,8 @@ switch (_act) do {
         private _talk = (["speakers"] call comspec_atak_native_fnc_mpu5) apply { _x select 0 };
         private _out = [];
         {
-            private _vn = _x getVariable ["COMSPEC_ATAK_VoiceNet", []];
-            private _mpu = (_x getVariable ["COMSPEC_ATAK_Mpu5", []]) isNotEqualTo [];
+            private _vn = ["voiceNet", _x] call comspec_atak_native_fnc_meshRead;
+            private _mpu = (["mpu5", _x] call comspec_atak_native_fnc_meshRead) isNotEqualTo [];
             if (_vn isEqualTo [] && {!_mpu}) then { continue };
             private _fs = _vn apply { [_x select 1, _x select 2] };
             private _same = (_fs findIf { private _f = _x select 0; (_myF findIf { abs (_x - _f) < 0.001 }) >= 0 }) >= 0;

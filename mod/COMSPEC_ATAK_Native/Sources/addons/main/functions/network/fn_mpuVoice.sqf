@@ -141,8 +141,8 @@ switch (_act) do {
         private _o = [_tx] call acre_sys_radio_fnc_getRadioObject;
         // Radio d'un véhicule (rack) ou posée : l'objet n'est pas un joueur ponté, signal normal.
         if (isNil "_o" || {!(_o isEqualType objNull)} || {isNull _o} || {_o isEqualTo player}) exitWith { -1 };
-        private _pp = _o getVariable ["COMSPEC_ATAK_MpuVoice", []];
-        if (!(_pp isEqualType []) || {(count _pp) < 7} || {(_pp select 1) isNotEqualTo _tx}) exitWith { -1 };
+        private _pp = ["voice", _o] call comspec_atak_native_fnc_meshRead;
+        if (_pp isEqualTo [] || {(_pp select 1) isNotEqualTo _tx}) exitWith { -1 };
         [_o, _pp] call _linked
     };
     case "bridge": {
@@ -218,8 +218,8 @@ switch (_act) do {
         if (_pub isNotEqualTo []) then {
             private _api = _pub select 0;
             {
-                private _pp = _x getVariable ["COMSPEC_ATAK_MpuVoice", []];
-                if (!(_pp isEqualType []) || {(count _pp) < 7}) then { continue };
+                private _pp = ["voice", _x] call comspec_atak_native_fnc_meshRead;
+                if (_pp isEqualTo []) then { continue };
                 private _h = [_x, _pp] call _linked;
                 if (_h < 0) then { continue };
                 private _same = switch (true) do {
