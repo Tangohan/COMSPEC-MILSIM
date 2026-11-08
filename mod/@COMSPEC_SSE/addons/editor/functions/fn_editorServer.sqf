@@ -43,6 +43,8 @@ private _authored = {
     _entity setVariable ["comspec_sse_doc1_title", _title, true];
     _entity setVariable ["comspec_sse_doc1_summary", format ["[%1] %2", _marking, _body], true];
     _entity setVariable ["comspec_sse_editorItem", _item getOrDefault ["id", ""], true];
+    // Papier de la visionneuse (fn_paperSkin) : « auto » par défaut ; un contenu enregistré avant les papiers garde la feuille unie.
+    _entity setVariable ["comspec_sse_doc1_paper", _item getOrDefault ["skin", "legacy"], true];
     _entity setVariable ["comspec_sse_editorFoundDone", false];
 };
 private _toPhones = {
