@@ -38,6 +38,9 @@ if (!_hidden && {(count _q) > 0}) then {
 };
 // Le bandeau se pose sur la barre de titre : le titre de l'app est masqué le temps de son affichage (il transparaissait sous « INFO »), rendu ensuite.
 (_d displayCtrl 88518) ctrlShow ((count _show) isEqualTo 0);
+// Icône posée à la place d'un titre trop long (fn_titleFit) : masquée avec lui.
+private _tIc = uiNamespace getVariable ["COMSPEC_ATAK_TitleIcon", controlNull];
+if (!isNull _tIc && {(ctrlText _tIc) isNotEqualTo ""} && {(ctrlText (_d displayCtrl 88518)) isEqualTo ""}) then { _tIc ctrlShow ((count _show) isEqualTo 0); };
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _sig = [_show getOrDefault ["id", -1], count _q, _l get "appbar", _l get "interactive"];
 private _old = uiNamespace getVariable ["COMSPEC_ATAK_ToastControls", []];
@@ -62,7 +65,7 @@ if (_l get "interactive") then {
 // Barre de titre trop étroite (téléphone en portrait, en main : retour et trois boutons à droite) : le bandeau passe sous
 // la barre, sur toute sa largeur, au lieu d'un mot par ligne (« Ante n… », « Firin g »). Le titre de l'app reste alors visible.
 private _under = (_x1 - _x0) < (_aw * 0.6);
-if (_under) then { _x0 = _ax + _pad; _x1 = _ax + _aw - _pad; (_d displayCtrl 88518) ctrlShow true; };
+if (_under) then { _x0 = _ax + _pad; _x1 = _ax + _aw - _pad; (_d displayCtrl 88518) ctrlShow true; if (!isNull _tIc && {(ctrlText _tIc) isNotEqualTo ""} && {(ctrlText (_d displayCtrl 88518)) isEqualTo ""}) then { _tIc ctrlShow true; }; };
 private _w = (_x1 - _x0) max (_aw * 0.4);
 private _h = _ah * 0.78;
 private _y = [_ay + (_ah - _h) / 2, _ay + _ah] select _under;

@@ -73,14 +73,19 @@ uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
 [createHashMap, false] call comspec_atak_native_fnc_layoutApply;
 
 private _title = "APPLICATIONS";
+// Abréviation et icône : utilisées seulement quand le titre complet ne tient pas à 14 px (fn_titleFit).
+private _short = "APPS";
+private _tIcon = "";
 if (_page isNotEqualTo "LAUNCHER") then {
     private _app = ([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page };
     _title = if ((count _app) > 0) then { toUpper ((_app select 0) get "name") } else { _page };
+    _short = if ((count _app) > 0) then { toUpper ((_app select 0) getOrDefault ["short", ""]) } else { "" };
+    _tIcon = if ((count _app) > 0) then { (_app select 0) get "icon" } else { "" };
 };
-if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
-if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; };
-if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; };
-if (_page isEqualTo "MOBILEQR") then { _title = "SUR MON TÉLÉPHONE"; };
+if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; _short = "RÉCENTES"; };
+if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; _short = "NOTIFS"; };
+if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; _short = "PATCH"; };
+if (_page isEqualTo "MOBILEQR") then { _title = "SUR MON TÉLÉPHONE"; _short = "MOBILE"; };
 if (_page isEqualTo "MAP") then {
     private _qv = _st getOrDefault ["quickView", ""];
     if (_qv isNotEqualTo "") then { _title = ["FIRES COURT", "MODE PILOTE"] select (_qv isEqualTo "PILOT"); };
@@ -100,9 +105,10 @@ if (_page isEqualTo "MAP") then {
     private _from = _hist param [(count _hist) - 2, ""];
     if (_from in ["BFT", "GROUP"]) then { _titleTxt = format ["‹ %1 · %2", (["BFT", "GROUPE"] select (_from isEqualTo "GROUP")) call comspec_atak_native_fnc_tr, _titleTxt]; };
 };
-(_d displayCtrl 88518) ctrlSetText (_titleTxt); // i18n:brut
-// Titre plus long que sa place (traduction, téléphone en portrait) : police réduite jusqu'à 65 % plutôt que coupé (« SHORT FI »).
-[_d displayCtrl 88518, ([] call comspec_atak_native_fnc_layoutGet) get "font", true, 0.65] call comspec_atak_native_fnc_textFit;
+if (_titleTxt isNotEqualTo ((_title) call comspec_atak_native_fnc_tr)) then { _short = ""; }; // « ‹ BFT · CARTE » : pas d'abréviation
+// Titre plus long que sa place (traduction, petit format, texte agrandi) : police réduite jusqu'à 14 px, puis bouton de
+// rotation masqué, abréviation, icône de l'app (fn_titleFit). Jamais coupé (« SHORT FI », « DISTANCES » en 4.1.0).
+[([] call comspec_atak_native_fnc_layoutGet) get "font", _titleTxt, [(_short) call comspec_atak_native_fnc_tr, ""] select (_short isEqualTo ""), _tIcon] call comspec_atak_native_fnc_titleFit;
 
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };

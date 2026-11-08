@@ -879,20 +879,24 @@ final class AtakAdminControlRepository
     // ── Messages imposés ────────────────────────────────────────────────────
 
     /**
-     * @param array{tenant_id: int, user_id: ?int, steam_uid: ?string, terminal_uid: ?string, title: string, body: string, level: string, require_ack: bool, expires_at: ?string, actor_id: ?int, kind?: string} $m
+     * @param array{tenant_id: int, user_id: ?int, steam_uid: ?string, terminal_uid: ?string, title: string, body: string, level: string, require_ack: bool, expires_at: ?string, actor_id: ?int, kind?: string, broadcast_key?: ?string} $m
      */
     public function createMessage(array $m): int
     {
         if (!$this->ready() || $m['tenant_id'] < 1) {
             return 0;
         }
+        // Diffusion du centre (back-office/alerts) : clé posée par l'étape 4190, ignorée tant qu'elle manque.
+        $key = isset($m['broadcast_key']) && is_string($m['broadcast_key']) && $m['broadcast_key'] !== '' && $this->hasBroadcastKey()
+            ? substr($m['broadcast_key'], 0, 12) : null;
         $st = $this->pdo()->prepare(
             'INSERT INTO atak_admin_messages
-                (tenant_id, user_id, steam_uid, terminal_uid, kind, title, body, level, require_ack, expires_at, created_by_user_id, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())'
+                (tenant_id, user_id, steam_uid, terminal_uid, kind, title, body, level, require_ack, expires_at, created_by_user_id, created_at'
+                . ($key !== null ? ', broadcast_key' : '') . ')
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP()' . ($key !== null ? ', ?' : '') . ')'
         );
         $kind = (string) ($m['kind'] ?? 'message');
-        $st->execute([
+        $st->execute(array_merge([
             $m['tenant_id'],
             $m['user_id'] ?: null,
             $m['steam_uid'] !== null ? SteamId::normalize($m['steam_uid']) : null,
@@ -904,9 +908,71 @@ final class AtakAdminControlRepository
             $m['require_ack'] ? 1 : 0,
             $m['expires_at'],
             $m['actor_id'],
-        ]);
+        ], $key !== null ? [$key] : []));
 
         return (int) $this->pdo()->lastInsertId();
+    }
+
+    private ?bool $broadcastKey = null;
+
+    public function hasBroadcastKey(): bool
+    {
+        if ($this->broadcastKey !== null) {
+            return $this->broadcastKey;
+        }
+        $rows = $this->rows(
+            "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_admin_messages' AND COLUMN_NAME = 'broadcast_key' LIMIT 1"
+        );
+
+        return $this->broadcastKey = $rows !== [];
+    }
+
+    /**
+     * Messages imposés par la gestion d'une communauté (genre « message », hors avis automatiques), récents d'abord :
+     * le centre de diffusion les regroupe par envoi et compte les accusés (affiché, validé). Dates en UTC.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function broadcastMessagesForTenant(int $tenantId, int $days = 60, int $limit = 3000): array
+    {
+        if ($tenantId < 1 || !$this->ready()) {
+            return [];
+        }
+        $key = $this->hasBroadcastKey() ? 'm.broadcast_key' : 'NULL AS broadcast_key';
+
+        return $this->rows(
+            "SELECT m.id, m.tenant_id, m.user_id, m.title, m.body, m.level, m.require_ack, m.expires_at, m.created_at,
+                    m.delivered_at, m.acked_at, m.cancelled_at, m.created_by_user_id, {$key},
+                    a.display_name AS actor_name, a.callsign AS actor_callsign
+             FROM atak_admin_messages m LEFT JOIN users a ON a.id = m.created_by_user_id
+             WHERE m.tenant_id = ? AND m.kind = 'message' AND m.created_at >= UTC_TIMESTAMP() - INTERVAL " . max(1, min(365, $days)) . ' DAY
+             ORDER BY m.id DESC LIMIT ' . max(1, min(5000, $limit)),
+            [$tenantId]
+        );
+    }
+
+    /**
+     * Retire les messages pas encore validés parmi ceux donnés, dans la communauté donnée seulement.
+     *
+     * @param list<int> $ids
+     */
+    public function cancelMessagesForTenant(int $tenantId, array $ids): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $ids === [] || !$this->ready()) {
+            return 0;
+        }
+        $done = 0;
+        foreach (array_chunk($ids, 500) as $chunk) {
+            $st = $this->pdo()->prepare(
+                'UPDATE atak_admin_messages SET cancelled_at = UTC_TIMESTAMP()
+                 WHERE tenant_id = ? AND cancelled_at IS NULL AND acked_at IS NULL AND id IN (' . implode(',', array_fill(0, count($chunk), '?')) . ')'
+            );
+            $st->execute(array_merge([$tenantId], $chunk));
+            $done += $st->rowCount();
+        }
+
+        return $done;
     }
 
     /**

@@ -272,6 +272,7 @@ $shortSteam = static fn (string $s): string => strlen($s) > 8 ? '…' . substr($
                     <?= $returnFields ?>
                     <p class="paf-hint"><?= $inTenant ? 'Un message par joueur de votre communauté ayant un ATAK connu.' : 'Un message par joueur ayant un ATAK connu, dans la communauté choisie ou dans toutes.' ?></p>
                     <p class="paf-hint">Il apparaît sur son ATAK en jeu, à sa prochaine présence s’il n’est pas connecté.</p>
+                    <?php if ($inTenant): ?><p class="paf-hint">Pour viser une unité, un rôle ou des personnes, ou diffuser aussi sur le site et le téléphone : <a href="<?= $h(url('back-office/alerts')) ?>">centre de diffusion</a>.</p><?php endif; ?>
                     <?php if (!$inTenant): ?>
                     <label class="paf-field"><span class="paf-label">Destinataires</span>
                         <select name="communaute_message">
