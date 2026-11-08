@@ -846,6 +846,15 @@ return function (Router $router) {
     $router->post('/equipment/tenues/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
     $router->get('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'showWardrobe'], [AuthMiddleware::class]);
     $router->post('/equipment/mon-kit/tenue', [ArsenalWardrobeController::class, 'saveMyGameKit'], [AuthMiddleware::class]);
+    $router->get('/equipment/tenues', [ArsenalWardrobeController::class, 'redirectHub'], [AuthMiddleware::class]);
+    $router->post('/equipment/tenues/{id}/favori', [ArsenalWardrobeController::class, 'toggleFavorite'], [AuthMiddleware::class]);
+    $router->get('/equipment/kits', [ArsenalWardrobeController::class, 'redirectKits'], [AuthMiddleware::class]);
+    $router->post('/equipment/kits/depuis-tenue', [ArsenalWardrobeController::class, 'storeKitFromWardrobe'], [AuthMiddleware::class]);
+    $router->post('/equipment/kits/{id}/copier', [ArsenalWardrobeController::class, 'copyKit'], [AuthMiddleware::class]);
+    $router->post('/equipment/kits/{id}/destinataire', [ArsenalWardrobeController::class, 'updateKitAudience'], [AuthMiddleware::class]);
+    $router->post('/equipment/kits/{id}/supprimer', [ArsenalWardrobeController::class, 'destroyKit'], [AuthMiddleware::class]);
+    $router->get('/equipment/assistant', [ArsenalWardrobeController::class, 'assistant'], [AuthMiddleware::class]);
+    $router->post('/equipment/assistant/enregistrer', [ArsenalWardrobeController::class, 'assistantSave'], [AuthMiddleware::class]);
     $router->post('/equipment/fiches', [ArsenalWardrobeController::class, 'storeFiche'], [AuthMiddleware::class]);
     $router->post('/equipment/fiches/{id}', [ArsenalWardrobeController::class, 'updateFiche'], [AuthMiddleware::class]);
     $router->get('/equipment/fiches/{id}', [ArsenalWardrobeController::class, 'showFiche'], [AuthMiddleware::class]);
