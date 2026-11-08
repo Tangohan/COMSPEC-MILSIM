@@ -292,6 +292,7 @@ final class TenantTypeConfig
             'admin/atak' => 'atak',
             'back-office/atak' => 'atak',
             'back-office/ressources/atak-config' => 'atak',
+            'back-office/ressources/atak-consignes' => 'atak',
             'back-office/ressources/atak-mod' => 'atak',
             'back-office/ressources/atak-mod-blocks' => 'atak',
             'back-office/ressources/atak-beta' => 'atak',

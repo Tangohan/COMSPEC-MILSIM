@@ -1,0 +1,9 @@
+# Carte : cercles bleu et vert décalés de mon point GPS
+
+- **Contexte** : retour du propriétaire après la 4.0.0, capture en jeu (triangle TA1, cercle orange, petits cercles bleu et vert 40 px plus bas).
+- **Symptôme** : le petit cercle bleu et vert n'est pas centré sur le point.
+- **Cause prouvée par lecture et par la capture** : le triangle, le cône, le trait jaune et le cercle orange partent déjà de la position affichée : sur la capture, le centre du cercle orange (347 ; 241) tombe sur le triangle. Le cercle vert (téléphone du maillage) et le cercle bleu (passerelle) viennent de `fn_meshDraw`, qui lisait la vraie position (`getPosWorld`). L'écart est donc le décalage GPS simulé, que le correctif `bc12f3005` n'a fait que figer à l'arrêt. S'ajoutaient : `_selfGps` posé après l'appel de `fn_meshDraw` ; `getPosASLVisual player` pour l'icône contre `getPosASL (vehicle player)` pour le suivi ; `getPosATL vehicle player` pour les traits de route et d'étape ; vraie position pour la grille du bandeau.
+- **Correctif** : une seule position par image, `fn_gpsPos` (position visuelle), posée en tête de `fn_mapOnDraw`. Cercles, traits du maillage, relais portés, traits de route et d'étape, grille du bandeau s'y raccordent. Un allié joueur prend dans le maillage son dernier point reçu, comme son symbole. La simulation (`fn_gpsFix`, `fn_ewEffects`) et son rayon ne changent pas.
+- **Fichiers touchés** : `fn_gpsPos.sqf`, `fn_mapOnDraw.sqf`, `fn_meshDraw.sqf`, `fn_routeDraw.sqf`, `fn_wpDraw.sqf`, `fn_mapOverlayUpdate.sqf`.
+- **Vérification** : en jeu, à pied puis en véhicule, sous un toit pour avoir un décalage visible, calques maillage et précision allumés : tout concentrique à tout zoom. Perte de signal et météo : le rayon et le décalage bougent toujours.
+- **Statut** : corrigé à vérifier en jeu.
