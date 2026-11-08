@@ -81,6 +81,14 @@ if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
 if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; };
 if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; };
 if (_page isEqualTo "MOBILEQR") then { _title = "SUR MON TÉLÉPHONE"; };
+if (_page isEqualTo "MAP") then {
+    private _qv = _st getOrDefault ["quickView", ""];
+    if (_qv isNotEqualTo "") then { _title = ["FIRES COURT", "MODE PILOTE"] select (_qv isEqualTo "PILOT"); };
+};
+if (_page isEqualTo "SPACE") then {
+    private _id = uiNamespace getVariable ["COMSPEC_ATAK_SpaceId", ""];
+    _title = toUpper ((((["spaces"] call comspec_atak_native_fnc_appSpaces) select { (_x select 0) isEqualTo _id }) param [0, ["", "Applications"]]) select 1);
+};
 if (_page isEqualTo "FOLDER") then {
     private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
     _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
@@ -97,6 +105,7 @@ if (_page isEqualTo "MAP") then {
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };
     case "FOLDER": { [] call comspec_atak_native_fnc_pageFolder; };
+    case "SPACE": { ["page"] call comspec_atak_native_fnc_pageSpace; };
     case "MAP": { [] call comspec_atak_native_fnc_pageMap; };
     case "CHAT": { [] call comspec_atak_native_fnc_pageChat; };
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };

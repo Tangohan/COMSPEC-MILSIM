@@ -12,7 +12,7 @@ use PDO;
  *
  * - Destinataires (atak_nine_line_recipients) : un par demande et par appareil (indicatif remonté par le jeu ou saisi
  *   à la main), avec l'équipage connu (noms de jeu) pour reconnaître le pilote ; statut sent → received → read →
- *   wilco | unable, jamais en arrière (un accusé « reçu » arrivé après « lu » est ignoré).
+ *   wilco | unable, puis done (mission clôturée par le pilote), jamais en arrière (un accusé « reçu » arrivé après « lu » est ignoré).
  * - Boîte du pilote : GET /api/cas?assignedTo=~air|nom1|nom2 (fonction GetCASForCallsign de la DLL, sans changement),
  *   réponse en tableau SQF (parseSimpleArray) bornée à quelques Ko (la DLL coupe au-delà de 8 000 octets).
  * - Accusés du pilote : POST /api/cas/{ref}/status {"status":"WILCO:HOG 21"} (SendCASState de la DLL), ref = mission_id
@@ -24,10 +24,10 @@ use PDO;
  */
 final class AirBriefService
 {
-    public const STATUSES = ['sent', 'received', 'read', 'wilco', 'unable'];
+    public const STATUSES = ['sent', 'received', 'read', 'wilco', 'unable', 'done'];
 
     /** Rang d'un statut : un accusé ne fait jamais reculer un destinataire. */
-    private const RANK = ['sent' => 0, 'received' => 1, 'read' => 2, 'wilco' => 3, 'unable' => 3];
+    private const RANK = ['sent' => 0, 'received' => 1, 'read' => 2, 'wilco' => 3, 'unable' => 3, 'done' => 4];
 
     /** Préfixe de la boîte du pilote dans assignedTo (les anciens appels gardent l'égalité stricte). */
     public const INBOX_PREFIX = '~air|';
@@ -68,7 +68,7 @@ final class AirBriefService
     public static function parseAck(mixed $status): ?array
     {
         $s = trim(is_scalar($status) ? (string) $status : '');
-        if (!preg_match('/^(RECEIVED|DELIVERED|READ|WILCO|UNABLE)(?:\s*[:|]\s*(.*))?$/i', $s, $m)) {
+        if (!preg_match('/^(RECEIVED|DELIVERED|READ|WILCO|UNABLE|DONE)(?:\s*[:|]\s*(.*))?$/i', $s, $m)) {
             return null;
         }
         $st = strtolower($m[1]) === 'delivered' ? 'received' : strtolower($m[1]);

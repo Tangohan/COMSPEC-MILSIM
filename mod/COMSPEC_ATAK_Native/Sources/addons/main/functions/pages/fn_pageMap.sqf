@@ -9,6 +9,8 @@
     - Bas (réglage « Barre de données sous la carte ») : vitesse, altitude, cap, grille, heure.
 */
 disableSerialization;
+// Mode pilote et FIRES court : écran simplifié à la place des outils de la carte (fn_pageQuickMap).
+if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["quickView", ""]) isNotEqualTo "") exitWith { ["render"] call comspec_atak_native_fnc_pageQuickMap };
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["_bx", "_by", "_bw", "_bh"];
 private _mw = _bw - (_l get "inspW");

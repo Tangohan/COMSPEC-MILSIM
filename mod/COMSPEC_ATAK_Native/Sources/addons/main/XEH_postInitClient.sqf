@@ -195,6 +195,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     ["DroneRtb", "Drone : RTB", "Le drone appairé revient à son point de décollage et s'y pose.", "rth"],
     ["DroneLand", "Drone : ATTERRIR", "Le drone appairé se pose sur place.", "land"]
 ];
+// Mode pilote et FIRES court, téléphone rangé. Aucune touche par défaut.
+["COMSPEC ATAK", "PilotOpen", ["Mode pilote : ouvrir", "Ouvre l'écran pilote : grande carte, appareils alliés, FIRES."], { ["open"] call comspec_atak_native_fnc_pilotMode; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "FiresAim", ["FIRES au viseur", "Premier appui : le point visé (ou le laser de l'appareil) devient la cible. Second appui dans les 5 s : envoi aux pilotes et JTAC."], { ["aim"] call comspec_atak_native_fnc_firesQuick; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "MissionAck", ["Mission : accepter puis clôturer", "Répond à la dernière mission reçue, téléphone rangé : un appui l'accepte, le suivant la clôture."], { ["keyAck"] call comspec_atak_native_fnc_firesQuick; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 // Suivi des cibles marquées : en vue, perdues, neutralisées (deux fois par seconde).
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_lockAction; ["marquage suivi", _t] call comspec_atak_native_fnc_perfAcc; }, 0.5] call COMSPEC_ATAK_PfhSpread;
 // Contrôle Zeus des ATAK : effets reçus du serveur (fn_zeusClient), boucle d'une seconde, menu clic droit ZEN du Zeus.
@@ -202,7 +206,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 // App Store : apps imposées ou interdites changées par la mission ou le Zeus (fn_appInstall), ou par les réglages CBA du
 // serveur : l'app ouverte se ferme si elle devient interdite, l'écran d'accueil et le dock se redessinent.
 ["comspec_atak_native_appPolicy", { ["applied"] call comspec_atak_native_fnc_appInstall; }] call CBA_fnc_addEventHandler;
-["CBA_SettingChanged", { params [["_k", ""]]; if (_k in ["comspec_atak_native_apps_required", "comspec_atak_native_apps_forbidden"]) then { ["applied"] call comspec_atak_native_fnc_appInstall; }; }] call CBA_fnc_addEventHandler;
+["CBA_SettingChanged", { params [["_k", ""]]; if (_k in ["comspec_atak_native_apps_required", "comspec_atak_native_apps_forbidden", "comspec_atak_native_apps_off", "comspec_atak_native_civil_apps", "comspec_atak_native_launcher_spaces", "comspec_atak_native_pilot_mode"]) then { ["applied"] call comspec_atak_native_fnc_appInstall; }; }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_zeusClient; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Positions BFT par points (fn_pli) : un point de position envoyé aux alliés à l'intervalle choisi (10 s en Milsim).
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
@@ -255,6 +259,10 @@ if (!isNil "zen_custom_modules_fnc_register") then {
 // Briefs air (9-LINE, 5-LINE) envoyés aux pilotes et leurs accusés (WILCO, UNABLE) ; boîte Athena relevée à bord d'un aéronef.
 ["comspec_atak_native_airBrief", { if (["hold", ["comspec_atak_native_airBrief", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_airBrief; }] call CBA_fnc_addEventHandler;
 [{ ["poll"] call comspec_atak_native_fnc_airBrief; }, 12] call COMSPEC_ATAK_PfhSpread;
+// Mode pilote : proposition à l'entrée dans un aéronef, HUD discret arrêté hors de l'appareil (une lecture par seconde sinon).
+[{ ["tick"] call comspec_atak_native_fnc_pilotMode; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Profil de rôle choisi : public pour les autres téléphones (FIRES court : pilotes et JTAC du camp) ; rien si aucun profil.
+[{ ["publish"] call comspec_atak_native_fnc_appSpaces; }, 30] call COMSPEC_ATAK_PfhSpread;
 private _eh = addMissionEventHandler ["ExtensionCallback", {
     if !(missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) exitWith { _this call comspec_atak_native_fnc_extensionCallback };
     private _pt = diag_tickTime;
@@ -287,6 +295,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if (_raw isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_TenantApplied", "-"])) exitWith {};
     missionNamespace setVariable ["COMSPEC_ATAK_TenantApplied", _raw];
     [] call comspec_atak_native_fnc_tenantApply;
+    // Apps imposées ou interdites sur Athena : l'app ouverte se ferme si besoin, l'accueil et le dock se redessinent tout de suite.
+    ["applied"] call comspec_atak_native_fnc_appInstall;
     ["INFO", "TENANT", "Réglages communauté appliqués"] call comspec_atak_native_fnc_log;
 }, 5] call COMSPEC_ATAK_PfhSpread;
 

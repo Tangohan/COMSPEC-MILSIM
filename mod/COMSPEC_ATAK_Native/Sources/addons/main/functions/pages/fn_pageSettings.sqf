@@ -452,6 +452,29 @@ private _appsRows = [
 private _imp = { _x in ["required", "forbidden"] } count _appsSt;
 if (_imp > 0) then { _appsRows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1 app(s) imposée(s) ou interdite(s) par l'encadrement</t>", _imp]]; };
 
+// Apps regroupées, profil de rôle et mode pilote (fn_appSpaces, fn_pilotMode). Le serveur peut imposer les deux premiers choix.
+private _spLocked = ["locked"] call comspec_atak_native_fnc_appSpaces;
+_appsRows pushBack ["section", "Lanceur et mode pilote", "Présenter les apps autrement, sans rien désinstaller"];
+_appsRows pushBack ["switch", "Apps regroupées", ["on"] call comspec_atak_native_fnc_appSpaces, { ["setOn", !(["on"] call comspec_atak_native_fnc_appSpaces)] call comspec_atak_native_fnc_appSpaces; },
+    ["Navigation et feux, Renseignement, Spécialités, Messages, Mission et téléphone, avec des sous-groupes", "Imposé par le serveur"] select _spLocked, _spLocked, "spacesOn"];
+private _rolePref = ["rolePref"] call comspec_atak_native_fnc_appSpaces;
+private _roleOpts = ["all", "auto", "pilot", "jtac", "medic", "infantry"] apply {
+    [["roleName", _x] call comspec_atak_native_fnc_appSpaces, compile format ["['setRole', %1] call comspec_atak_native_fnc_appSpaces;", str _x], _x isEqualTo _rolePref, "Le lanceur ne montre que l'utile ; « Toutes les apps » montre le reste"]
+};
+_appsRows pushBack ["segment", "Profil de rôle", _roleOpts select [0, 3]];
+_appsRows pushBack ["segment", "", _roleOpts select [3, 3]];
+if (_rolePref isEqualTo "auto") then {
+    private _det = ["detect"] call comspec_atak_native_fnc_appSpaces;
+    _appsRows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", [("Aucun rôle reconnu avec certitude : toutes les apps restent affichées") call comspec_atak_native_fnc_tr, format [("Rôle reconnu : %1") call comspec_atak_native_fnc_tr, (["roleName", _det] call comspec_atak_native_fnc_appSpaces) call comspec_atak_native_fnc_tr]] select (_det isNotEqualTo "")]];
+};
+private _piLocked = ["locked"] call comspec_atak_native_fnc_pilotMode;
+_appsRows pushBack ["switch", "Mode pilote", ["on"] call comspec_atak_native_fnc_pilotMode, { ["setOn", !(["on"] call comspec_atak_native_fnc_pilotMode)] call comspec_atak_native_fnc_pilotMode; [] call (uiNamespace getVariable ["COMSPEC_ATAK_SettingsRerender", {}]); },
+    ["Proposé en montant dans un aéronef : grande carte, appareils alliés, FIRES en un geste", "Imposé par le serveur"] select _piLocked, _piLocked, "pilotOn"];
+if (["on"] call comspec_atak_native_fnc_pilotMode) then {
+    _appsRows pushBack ["switch", "Ouvrir directement l'écran pilote à bord", profileNamespace getVariable ["COMSPEC_ATAK_PilotAuto", false], { ["COMSPEC_ATAK_PilotAuto", false] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }, "Le téléphone s'ouvre sur l'écran pilote, sans proposition", false, "pilotAuto"];
+    _appsRows pushBack ["switch", "HUD discret", profileNamespace getVariable ["COMSPEC_ATAK_PilotHud", true], { ["COMSPEC_ATAK_PilotHud", true] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }, "Mission en cours et allié le plus proche, en haut de l'écran, téléphone rangé", false, "pilotHud"];
+};
+
 private _rule = ["require_equipment"] call comspec_atak_native_fnc_tenantRule;
 private _require = if (_rule in ["on", "off"]) then { _rule isEqualTo "on" } else { missionNamespace getVariable ["comspec_atak_native_require_item", true] };
 // Accès et touches : deux cartes d'état (item requis, téléphone sur soi), puis les raccourcis par groupe. Chaque

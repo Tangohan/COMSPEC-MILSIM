@@ -21,6 +21,11 @@ if (isNull _d) exitWith { false };
 private _g = _d displayCtrl 88531;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", ""];
+// Apps regroupées (réglage d'addon ou du joueur, fn_appSpaces) : d'autres tuiles ; sinon, le lanceur ci-dessous.
+if (["launcherView"] call comspec_atak_native_fnc_appSpaces) exitWith {
+    uiNamespace setVariable ["COMSPEC_ATAK_LauncherModel", createHashMap];
+    ["launcher"] call comspec_atak_native_fnc_pageSpace
+};
 private _cols = _l get "cols";
 private _pad = (_l get "pad") * 2;
 private _font = _l get "fontSmall";
@@ -33,7 +38,7 @@ private _tw = (_bw - 0.012 - _pad * (_cols + 1)) / _cols;
 private _th = _tw * _ratio * ([0.92, 0.8] select (_l get "mini")); // mode PETIT : tuiles moins hautes, une rangée de plus visible
 private _secH = _font * 1.6;
 private _gw = _bw - 0.012 - 2 * _pad;
-private _apps = ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible };
+private _apps = ["filter", ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible }] call comspec_atak_native_fnc_appSpaces;
 private _interactive = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false];
 // Mode PETIT : champ de recherche compact (hauteur d'un en-tête de section), sans les puces de filtre.
 private _mini = _l get "mini";
@@ -105,6 +110,18 @@ if (_searchOn) then {
     }];
     _srch = [_ed, _hint, _clr];
     _y = _y + _sh + ([_pad, _pad * 0.5] select _mini);
+};
+
+// Profil de rôle ou vue complète (fn_appSpaces) : le bouton pour passer de l'un à l'autre, rien sans profil ni apps regroupées.
+private _viewBar = ["viewBar"] call comspec_atak_native_fnc_appSpaces;
+if (_viewBar isNotEqualTo "") then {
+    private _vh = _font * 1.7;
+    private _vb = ["COMSPEC_RscButton", [_pad, _y, _gw, _vh], _viewBar] call comspec_atak_native_fnc_pageCtrl;
+    _vb ctrlSetFontHeight (_font max COMSPEC_ATAK_FontMin);
+    _vb ctrlSetBackgroundColor (_thm get "surface2");
+    _vb ctrlSetTextColor (_thm get "text");
+    _vb ctrlAddEventHandler ["ButtonClick", { ["toggleAll"] call comspec_atak_native_fnc_appSpaces; }];
+    _y = _y + _vh + _pad * 0.5;
 };
 
 // Filtres (en main, hors mode PETIT) : TOUT, ÉPINGLÉES, une puce par section.

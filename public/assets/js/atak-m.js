@@ -652,7 +652,7 @@
       medevac: ['Position de la LZ', 'Fréquence et indicatif', 'Patients par urgence', 'Équipement spécial', 'Patients (couchés / assis)', 'Sécurité de la LZ', 'Marquage de la LZ', 'Nationalité', 'NRBC et terrain']
     };
     var TITLES = { '9line': 'CAS 9-LINE', '5line': '5-LINE', medevac: 'MEDEVAC 9-LINE' };
-    var STATES = { sent: 'ENVOYÉ', received: 'REÇU', read: 'LU', wilco: 'WILCO', unable: 'UNABLE' };
+    var STATES = { sent: 'ENVOYÉ', received: 'REÇU', read: 'LU', wilco: 'WILCO', unable: 'UNABLE', done: 'CLÔTURÉ' };
     var known = null;
     var briefs = [];
     var openId = 0;

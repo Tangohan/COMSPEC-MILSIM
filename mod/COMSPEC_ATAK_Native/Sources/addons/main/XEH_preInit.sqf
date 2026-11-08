@@ -851,6 +851,14 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décochez pour les retirer de tous les téléphones."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// Lanceur en apps regroupées et mode pilote (fn_appSpaces, fn_pilotMode) : rien ne change tant que personne ne les active.
+private _spc = ["COMSPEC", "ATAK · Lanceur et mode pilote"];
+["comspec_atak_native_launcher_spaces", "LIST",
+    ["Lanceur : apps regroupées", "Le lanceur présente 5 grandes apps (Navigation et feux, Renseignement, Spécialités, Messages, Mission et téléphone), avec des sous-groupes qui ouvrent les apps existantes. Une app retirée ou interdite n'y apparaît pas. Au choix du joueur : coupé tant qu'il ne l'active pas dans Réglages, Applications."],
+    _spc, [[0, 1, 2], ["Au choix du joueur (désactivé par défaut)", "Activé pour tous", "Désactivé pour tous"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_pilot_mode", "LIST",
+    ["Mode pilote", "Écran simplifié proposé en montant dans un aéronef : grande carte, appareils alliés avec altitude et cap, FIRES en un geste, HUD discret. Au choix du joueur : coupé tant qu'il ne l'active pas dans Réglages, Applications."],
+    _spc, [[0, 1, 2], ["Au choix du joueur (désactivé par défaut)", "Proposé à tous", "Coupé pour tous"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dating_specials", "LIST",
     ["Tinder : profils HVT et SSE", "À quelle fréquence Tinder glisse, entre deux joueurs, un profil d'IA de la carte (HVT ou personne SSE à moins de 5 km). Zeus peut aussi désigner une IA avec le module « Tinder : profil HVT / SSE »."],
     _sim, [[0, 1, 2, 3], ["Jamais", "Rarement (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call comspec_atak_native_fnc_addSetting;

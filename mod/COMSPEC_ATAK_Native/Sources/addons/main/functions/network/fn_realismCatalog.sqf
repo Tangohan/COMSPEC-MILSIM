@@ -92,6 +92,8 @@ switch (_act) do {
             [_ph, "Géolocalisation des téléphones", _p + "geoloc_enabled"] call _b,
             [_hv, "Traces civiles des HVT", _p + "hvt_trace"] call _b,
             [_hv, "Traces civiles : renseignement seul", _p + "hvt_trace_role"] call _b,
+            [_ph, "Lanceur : apps regroupées", _p + "launcher_spaces", [0, 1, 2], ["Au choix du joueur", "Activé pour tous", "Désactivé pour tous"]] call _n,
+            [_ph, "Mode pilote", _p + "pilot_mode", [0, 1, 2], ["Au choix du joueur", "Proposé à tous", "Coupé pour tous"]] call _n,
             [_dv, "Outils de développement du maillage", _p + "mesh_dev"] call _b
         ];
         _rows pushBack [_ms, "Objet obligatoire pour le réseau", _p + "net_required_items", "text", [], [], "", ""];
