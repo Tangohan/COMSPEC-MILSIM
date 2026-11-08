@@ -38,6 +38,8 @@ use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
 use App\Services\Analytics\AnalyticsSubjectType;
 use App\Services\Recruitment\RecruitmentOpeningPresentation;
+use App\Services\Recruitment\CandidateAccountIdentity;
+use App\Support\PendingEnlistmentReturn;
 
 class EnlistmentController
 {
@@ -110,7 +112,7 @@ class EnlistmentController
         $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
         $formAction = $this->enlistmentActionUrl($tenant);
         $targetTenantId = (int) $tenant['id'];
-        $enlistmentContext = $this->buildEnlistmentContext($request, $tenant, $targetTenantId);
+        $enlistmentContext = $this->buildEnlistmentContext($request, $tenant, $targetTenantId, $mode === TenantCommunityProfileService::REGISTRATION_MODE_DISCORD);
 
         $selectedRecruitmentOpening = null;
         $ouvertureId = (int) $request->query('ouverture', 0);
@@ -207,14 +209,24 @@ class EnlistmentController
         if (!$request->isPost()) {
             return Response::redirect(url('enlistment'));
         }
+
+        $tenant = $this->resolveTenantForRequest($request, $params);
+
+        // Un compte est nécessaire pour candidater : refus avant toute autre lecture de la requête, quel que soit
+        // le contenu envoyé. L'identité ne vient jamais du navigateur mais du compte connecté (ci-dessous).
+        $user = $this->authService->check() ? $this->authService->user() : null;
+        $uid = is_array($user) ? (int) ($user['id'] ?? 0) : 0;
+        if ($uid < 1) {
+            return $this->refuseWithoutAccount($request, $tenant);
+        }
+
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('enlistment_error', 'Session expirée. Veuillez recharger la page et soumettre à nouveau le formulaire.');
-            $this->flashEnlistmentRetryUrl($this->resolveTenantForRequest($request, $params));
+            $this->flashEnlistmentRetryUrl($tenant);
 
             return Response::redirect(url('enlistment/error'));
         }
 
-        $tenant = $this->resolveTenantForRequest($request, $params);
         if (!$tenant) {
             Session::flash('enlistment_error', 'Organisation non configurée. Merci de réessayer plus tard.');
             Session::flash('enlistment_retry_url', url('enlistment'));
@@ -245,26 +257,45 @@ class EnlistmentController
             return Response::redirect(url('enlistment/error'));
         }
 
-        if ($this->authService->check()) {
-            $user = $this->authService->user();
-            $uid = (int) ($user['id'] ?? 0);
-            $uemail = trim((string) ($user['email'] ?? ''));
-            if ($uid > 0) {
-                $ongoing = $this->enlistmentRepository->findOngoingSubmittedForAccount((int) $tenant['id'], $uid, $uemail);
-                if ($ongoing !== null) {
-                    Session::flash(
-                        'enlistment_error',
-                        'Vous avez déjà une candidature en cours pour cette communauté. Consultez le suivi de votre dossier plutôt que d’en déposer une nouvelle.'
-                    );
-                    Session::flash('enlistment_retry_url', $this->enlistmentFormUrl($tenant) . '#candidature');
+        $uemail = trim((string) ($user['email'] ?? ''));
+        $ongoing = $this->enlistmentRepository->findOngoingSubmittedForAccount((int) $tenant['id'], $uid, $uemail);
+        if ($ongoing !== null) {
+            Session::flash(
+                'enlistment_error',
+                'Vous avez déjà une candidature en cours pour cette communauté. Consultez le suivi de votre dossier plutôt que d’en déposer une nouvelle.'
+            );
+            Session::flash('enlistment_retry_url', $this->enlistmentFormUrl($tenant) . '#candidature');
 
-                    return Response::redirect(url('enlistment/error'));
-                }
-            }
+            return Response::redirect(url('enlistment/error'));
         }
 
-        if ((string) ($communityConfig['registration_mode'] ?? 'milsim') === 'discord') {
-            return $this->storeDiscordEnlistment($request, $tenant);
+        // Identité du compte (jamais lue dans la requête) ; la requête ne fournit que les manques du profil.
+        $isDiscord = (string) ($communityConfig['registration_mode'] ?? 'milsim') === 'discord';
+        $profile = $this->userProfileRepository->getByUserId($uid);
+        $identity = CandidateAccountIdentity::fromAccount($user, $profile, $isDiscord);
+        $completed = CandidateAccountIdentity::complete($identity, $this->identityFormInput($request));
+        if ($completed['error'] !== null) {
+            Session::flash('enlistment_error', $completed['error']);
+
+            return Response::redirect(url('enlistment/error'));
+        }
+        $identity = $completed['identity'];
+        $profileUpdates = $completed['profile_updates'];
+
+        $email = (string) $identity['email'];
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('enlistment_error', 'Adresse email du compte invalide. Mettez-la à jour dans les paramètres.');
+
+            return Response::redirect(url('enlistment/error'));
+        }
+        if (!$request->input('consent_data_sharing')) {
+            Session::flash('enlistment_error', 'Vous devez accepter le partage des données avec l’équipe de la communauté.');
+
+            return Response::redirect(url('enlistment/error'));
+        }
+
+        if ($isDiscord) {
+            return $this->storeDiscordEnlistment($request, $tenant, $identity, $uid, $profileUpdates);
         }
 
         $requireAiAck = array_key_exists('require_ai_ack', $communityConfig) ? (bool) $communityConfig['require_ai_ack'] : true;
@@ -275,7 +306,6 @@ class EnlistmentController
         }
 
         $targetTenantId = (int) $tenant['id'];
-        $flow = trim((string) $request->input('enlistment_flow', 'guest'));
 
         $formModeRaw = trim((string) $request->input('enlistment_form_mode', 'full'));
         $formMode = $formModeRaw === 'compact' ? 'compact' : 'full';
@@ -287,32 +317,16 @@ class EnlistmentController
                 $openingValidForCompact = true;
             }
         }
-        $isCompactAccount = $flow === 'account' && $formMode === 'compact' && $openingValidForCompact;
-
-        if ($flow !== 'account') {
-            $guestEmail = '';
-            if ($request->input('use_platform_email') && $this->authService->check()) {
-                $u = $this->authService->user();
-                $guestEmail = trim((string) ($u['email'] ?? ''));
-            }
-            if ($guestEmail === '') {
-                $guestEmail = trim((string) $request->input('email'));
-            }
-            if ($guestEmail === '' || !filter_var($guestEmail, FILTER_VALIDATE_EMAIL)) {
-                Session::flash('enlistment_error', 'Merci d’indiquer une adresse email valide (ou cochez l’utilisation de l’e-mail du compte si vous êtes connecté).');
-
-                return Response::redirect(url('enlistment/error'));
-            }
-        }
+        $isCompactAccount = $formMode === 'compact' && $openingValidForCompact;
 
         $payload = [
-            'country' => trim((string) $request->input('country')) ?: null,
+            'country' => (string) $identity['nationality'] !== '' ? (string) $identity['nationality'] : null,
             'experience' => trim((string) $request->input('experience')) ?: null,
             'specialty' => trim((string) $request->input('specialty')) ?: null,
             'platform' => trim((string) $request->input('platform')) ?: null,
             'availability' => trim((string) $request->input('availability')) ?: null,
             'notes' => trim((string) $request->input('notes')) ?: null,
-            'age' => $request->input('age'),
+            'age' => $identity['age'],
             'timezone' => EnlistmentTimezoneCatalog::normalize((string) $request->input('timezone')),
             'weekly_availability' => trim((string) $request->input('weekly_availability')) ?: null,
             'system_config' => EnlistmentTimezoneCatalog::normalizePcPerformance((string) $request->input('system_config')),
@@ -324,15 +338,11 @@ class EnlistmentController
             'commitment_effort' => trim((string) $request->input('commitment_effort')) ?: null,
             'availability_wed_sat' => trim((string) $request->input('availability_wed_sat')) ?: null,
             'no_ai_confirmed' => $requireAiAck ? $request->input('no_ai_confirmed') : 1,
-            'submitted_via' => 'guest',
-            'submitter_user_id' => null,
             'recruitment_preset_id' => null,
-            'consent_sharing_at' => null,
-            'shared_fields' => null,
         ];
 
         $milsimPack = EnlistmentMilsimPackService::forCommunity($communityConfig);
-        $configuredSlots = EnlistmentMilsimPackService::normalizeAvailabilitySlots($milsimPack['availability_slots'] ?? []);
+        $configuredSlots = EnlistmentMilsimPackService::slotsOrDefault($milsimPack['availability_slots'] ?? []);
         if ($configuredSlots !== []) {
             $selectedLabels = EnlistmentMilsimPackService::filterCandidateSlotSelection(
                 $configuredSlots,
@@ -352,110 +362,27 @@ class EnlistmentController
             }
         }
 
-        if ($flow === 'account') {
-            if (!$this->authService->check()) {
-                Session::flash('enlistment_error', 'Session expirée. Reconnectez-vous pour envoyer avec votre compte.');
+        if ($isCompactAccount && trim((string) ($payload['motivation_why_join'] ?? '')) === '') {
+            Session::flash('enlistment_error', 'Indiquez en quelques lignes votre motivation pour ce poste.');
 
-                return Response::redirect(url('enlistment/error'));
-            }
-            if (!$request->input('consent_data_sharing')) {
-                Session::flash('enlistment_error', 'Vous devez accepter le partage des données avec le staff de la communauté.');
-
-                return Response::redirect(url('enlistment/error'));
-            }
-
-            // Compte Athena connecté (n’importe quelle communauté) : on rattache le dépôt à
-            // l’utilisateur de session. L’acceptation recrée / relie le membre local si besoin.
-            $user = $this->authService->user();
-            if (!$user || (int) ($user['id'] ?? 0) < 1) {
-                Session::flash('enlistment_error', 'Session expirée. Reconnectez-vous pour envoyer avec votre compte.');
-
-                return Response::redirect(url('enlistment/error'));
-            }
-
-            $uid = (int) $user['id'];
-            $shareName = (bool) $request->input('share_name');
-            // L’e-mail du compte remonte toujours au staff ; la case ne fait que demander un affichage masqué.
-            $maskEmail = (bool) $request->input('mask_email');
-            $profile = $this->userProfileRepository->getByUserId($uid);
-
-            $email = trim((string) ($user['email'] ?? ''));
-            if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                Session::flash('enlistment_error', 'Adresse email du compte invalide. Mettez-la à jour dans les paramètres.');
-
-                return Response::redirect(url('enlistment/error'));
-            }
-
-            if ($shareName) {
-                [$first, $last] = $this->resolveNamePartsFromAccount($user, $profile);
-            } else {
-                $first = '—';
-                $last = '—';
-            }
-
-            if ($isCompactAccount && trim((string) ($payload['motivation_why_join'] ?? '')) === '') {
-                Session::flash('enlistment_error', 'Indiquez en quelques lignes votre motivation pour ce poste.');
-
-                return Response::redirect(url('enlistment/error'));
-            }
-
-            $payload['first_name'] = $first ?: '—';
-            $payload['last_name'] = $last ?: '—';
-            $payload['email'] = $email;
-            $payload['callsign'] = null;
-            $payload['submitter_user_id'] = $uid;
-            $payload['recruitment_preset_id'] = null;
-            $payload['submitted_via'] = 'account';
-            $payload['consent_sharing_at'] = date('Y-m-d H:i:s');
-            $payload['shared_fields'] = [
-                'share_name' => $shareName,
-                'share_email' => true,
-                'mask_email' => $maskEmail,
-                'share_callsign' => false,
-                'form_mode' => $isCompactAccount ? 'compact' : 'full',
-            ];
-        } else {
-            // Identité unique : prénom + nom du personnage (plus de champ « nom unique » legacy).
-            $guestFn = trim((string) $request->input('guest_rp_first_name'));
-            $guestLn = trim((string) $request->input('guest_rp_last_name'));
-            $legacyFull = trim((string) $request->input('full_name'));
-            if ($guestFn === '' && $guestLn === '' && $legacyFull !== '') {
-                $guestFn = $legacyFull;
-                $guestLn = '';
-                if (str_contains($legacyFull, ' ')) {
-                    $pos = strpos($legacyFull, ' ');
-                    $guestFn = trim(substr($legacyFull, 0, $pos));
-                    $guestLn = trim(substr($legacyFull, $pos));
-                }
-            }
-            if ($guestFn === '' && $guestLn === '') {
-                Session::flash('enlistment_error', 'Merci d’indiquer le prénom et le nom du personnage.');
-
-                return Response::redirect(url('enlistment/error'));
-            }
-            $guestBd = CandidateRpSnapshotService::normalizeRpBirthDate((string) $request->input('guest_rp_birth_date'));
-            $guestNat = trim((string) $request->input('guest_rp_nationality'));
-            $guestRp = [
-                'payload_version' => CandidateRpSnapshotService::PAYLOAD_VERSION,
-                'rp' => [
-                    'first_name' => $guestFn,
-                    'last_name' => $guestLn,
-                    'birth_date' => $guestBd,
-                    'nationality' => function_exists('mb_substr') ? mb_substr($guestNat, 0, 100) : substr($guestNat, 0, 100),
-                    'character_name' => '',
-                ],
-                'admin_notes' => '',
-                'availability' => ['schedule' => [], 'timezone_label' => '', 'free_text' => ''],
-            ];
-            $snap = $this->candidateRpSnapshotService->buildRpSnapshotForEnlistment($guestRp);
-            $snap['identity_kind'] = 'rp';
-            $snap['legal_contact_name'] = null;
-            $payload['recruitment_rp_snapshot'] = $snap;
-            $payload['first_name'] = $guestFn !== '' ? $guestFn : '—';
-            $payload['last_name'] = $guestLn !== '' ? $guestLn : '—';
-            $payload['email'] = trim((string) $request->input('email'));
-            $payload['callsign'] = null;
+            return Response::redirect(url('enlistment/error'));
         }
+
+        // Identité, contact et rattachement : toujours ceux du compte connecté. L'e-mail du compte est transmis
+        // au staff sans option de masquage (le masque n'avait aucun effet réel sur les listes et les messages).
+        $payload['first_name'] = (string) $identity['first_name'];
+        $payload['last_name'] = (string) $identity['last_name'];
+        $payload['email'] = $email;
+        $payload['callsign'] = null;
+        $payload['submitter_user_id'] = $uid;
+        $payload['submitted_via'] = 'account';
+        $payload['consent_sharing_at'] = date('Y-m-d H:i:s');
+        $payload['shared_fields'] = [
+            'share_name' => true,
+            'share_email' => true,
+            'share_callsign' => false,
+            'form_mode' => $isCompactAccount ? 'compact' : 'full',
+        ];
 
         if (!$isCompactAccount) {
             $motivationPack = EnlistmentMilsimPackService::forCommunity($communityConfig);
@@ -574,6 +501,8 @@ class EnlistmentController
             $payload['reviewer_comment'] = $refuseHit['staff_note'];
         }
 
+        $this->completeProfile($uid, $profileUpdates);
+
         try {
             $enlistmentId = $this->enlistmentRepository->create((int) $tenant['id'], $payload);
         } catch (\Throwable $e) {
@@ -665,21 +594,17 @@ class EnlistmentController
      *
      * @param array<string, mixed> $tenant
      */
-    private function storeDiscordEnlistment(Request $request, array $tenant): Response
+    private function storeDiscordEnlistment(Request $request, array $tenant, array $identity, int $uid, array $profileUpdates): Response
     {
         $targetTenantId = (int) $tenant['id'];
 
-        $discordPseudo = trim((string) $request->input('discord_pseudo'));
-        $displayName = trim((string) $request->input('display_name'));
-        $email = trim((string) $request->input('email'));
+        // Pseudo Discord, nom et e-mail viennent du compte (le pseudo Discord du profil, ou celui qui le complète).
+        $discordPseudo = (string) $identity['discord_handle'];
+        $displayName = (string) $identity['display_name'];
+        $email = (string) $identity['email'];
 
         if ($discordPseudo === '' || $displayName === '') {
             Session::flash('enlistment_error', 'Merci d’indiquer votre pseudo Discord et votre nom.');
-
-            return Response::redirect(url('enlistment/error'));
-        }
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Session::flash('enlistment_error', 'Merci d’indiquer une adresse email valide (pour le suivi de votre candidature).');
 
             return Response::redirect(url('enlistment/error'));
         }
@@ -712,11 +637,16 @@ class EnlistmentController
         }
 
         $payload = [
-            'first_name' => $displayName,
-            'last_name' => '—',
+            'first_name' => (string) $identity['first_name'] !== '' ? (string) $identity['first_name'] : $displayName,
+            'last_name' => (string) $identity['last_name'] !== '' ? (string) $identity['last_name'] : '—',
             'email' => $email,
             'callsign' => $discordPseudo,
-            'submitted_via' => 'guest',
+            'submitted_via' => 'account',
+            'submitter_user_id' => $uid,
+            'consent_sharing_at' => date('Y-m-d H:i:s'),
+            'shared_fields' => ['share_name' => true, 'share_email' => true, 'share_callsign' => true, 'form_mode' => 'discord'],
+            'age' => $identity['age'],
+            'country' => (string) $identity['nationality'] !== '' ? (string) $identity['nationality'] : null,
             'form_channel' => 'discord',
             'discord_pseudo' => $discordPseudo,
             'discord_answers' => $answers,
@@ -749,6 +679,8 @@ class EnlistmentController
                 $payload['status'] = 'reviewed';
             }
         }
+
+        $this->completeProfile($uid, $profileUpdates);
 
         try {
             $enlistmentId = $this->enlistmentRepository->create($targetTenantId, $payload);
@@ -784,8 +716,8 @@ class EnlistmentController
             }
         }
 
-        $this->recordInviteLinkApplication($targetTenantId, $enlistmentId, 0, $request->ip());
-        $this->enlistmentTimelineRepository->logIntakeFromSubmission($targetTenantId, $enlistmentId, null, 'guest');
+        $this->recordInviteLinkApplication($targetTenantId, $enlistmentId, $uid, $request->ip());
+        $this->enlistmentTimelineRepository->logIntakeFromSubmission($targetTenantId, $enlistmentId, $uid, 'account');
         $this->flagAiLikelihoodIfNeeded($targetTenantId, $enlistmentId, $payload);
         $this->analyticsEventService->record(
             $targetTenantId,
@@ -800,6 +732,83 @@ class EnlistmentController
         $this->notifyStaffNewEnlistment($targetTenantId, $tenant, $enlistmentId, $payload);
 
         return Response::redirect($this->enlistmentSuccessUrl($tenant));
+    }
+
+    /**
+     * Envoi sans compte : refusé. On garde la communauté visée pour y revenir après la connexion ou la création du compte.
+     *
+     * @param array<string, mixed>|null $tenant
+     */
+    private function refuseWithoutAccount(Request $request, ?array $tenant): Response
+    {
+        $slug = trim((string) ($tenant['slug'] ?? ''));
+        if ($slug !== '') {
+            PendingEnlistmentReturn::remember($slug, (int) $request->input('enlistment_opening_id', 0), (string) $request->input('invite_link', ''));
+        }
+        Session::flash('info', 'Un compte est nécessaire pour candidater. Connectez-vous ou créez-en un : vous reviendrez sur le formulaire de la communauté.');
+
+        return Response::redirect(url('login'));
+    }
+
+    /**
+     * Étape « compte » : depuis le bouton de candidature d'un visiteur, mémorise la communauté (et l'offre ou le
+     * lien d'invitation) puis envoie vers la connexion, ou la création de compte si « creer=1 ».
+     */
+    public function accountStep(Request $request, array $params = []): Response
+    {
+        $tenant = $this->resolveTenantForDisplay($request, $params);
+        if (!$tenant) {
+            return Response::redirect(url('communities'));
+        }
+        $slug = trim((string) ($tenant['slug'] ?? ''));
+        $opening = max(0, (int) $request->query('ouverture', 0));
+        $invite = strtolower(trim((string) $request->query('lien', '')));
+        if (!InviteLinkService::isWellFormedCode($invite)) {
+            $invite = '';
+        }
+        $formQuery = ($opening > 0 ? '?ouverture=' . $opening : '') . ($invite !== '' ? (($opening > 0 ? '&' : '?') . 'lien=' . rawurlencode($invite)) : '');
+        if ($this->authService->check()) {
+            return Response::redirect($this->enlistmentFormUrl($tenant) . $formQuery);
+        }
+        PendingEnlistmentReturn::remember($slug, $opening, $invite);
+        $wantsRegister = (string) $request->query('creer', '') === '1';
+        Session::flash('info', 'Connectez-vous' . ($wantsRegister ? '' : ' ou créez un compte') . ' pour candidater : vous reviendrez ensuite sur le formulaire de ' . trim((string) ($tenant['name'] ?? 'la communauté')) . '.');
+
+        return Response::redirect($wantsRegister
+            ? url('register') . ($invite !== '' ? '?invite=' . rawurlencode($invite) : '')
+            : url('login'));
+    }
+
+    /**
+     * Réponses du formulaire aux seuls champs que le profil ne connaît pas.
+     *
+     * @return array<string, mixed>
+     */
+    private function identityFormInput(Request $request): array
+    {
+        $out = [];
+        foreach (CandidateAccountIdentity::FORM_FIELDS as $field) {
+            $out[$field] = $request->input($field, '');
+        }
+
+        return $out;
+    }
+
+    /**
+     * Ce que la candidature a appris sur la personne complète son profil.
+     *
+     * @param array<string, string> $updates
+     */
+    private function completeProfile(int $uid, array $updates): void
+    {
+        if ($updates === []) {
+            return;
+        }
+        try {
+            $this->userProfileRepository->upsert($uid, $updates);
+        } catch (\Throwable) {
+            // La candidature part quand même ; le profil pourra être complété depuis « Mon compte ».
+        }
     }
 
     public function success(Request $request, array $params = []): Response
@@ -1086,18 +1095,10 @@ class EnlistmentController
      * @param array<string,mixed> $tenant
      * @return array<string,mixed>
      */
-    private function buildEnlistmentContext(Request $request, array $tenant, int $targetTenantId): array
+    private function buildEnlistmentContext(Request $request, array $tenant, int $targetTenantId, bool $needsDiscordHandle = false): array
     {
         $slug = trim((string) ($tenant['slug'] ?? ''));
-        $canUseAccount = false;
         $prefill = [
-            'full_name' => '',
-            'guest_rp_first_name' => '',
-            'guest_rp_last_name' => '',
-            'guest_rp_birth_date' => '',
-            'guest_rp_nationality' => '',
-            'email' => '',
-            'age' => '',
             'timezone' => '',
             'weekly_availability' => '',
         ];
@@ -1106,58 +1107,56 @@ class EnlistmentController
                 $prefill[$k] = $v;
             }
         }
-        $switchToTargetUrl = $slug !== '' ? url('c/' . $slug . '/enlistment/enter') : null;
-        $hasMembershipOnTarget = false;
 
-        if ($this->authService->check()) {
-            $sessionTenant = (int) (Session::get('tenant_id') ?? 0);
-            $user = $this->authService->user();
-            // Tout compte Athena connecté peut candidater « avec compte », même si la session
-            // est sur une autre communauté (ex. tenant système « default » après inscription).
-            if ($user && (int) ($user['id'] ?? 0) > 0) {
-                $canUseAccount = true;
-                $uid = (int) $user['id'];
-                $prefill['email'] = (string) ($user['email'] ?? '');
-                $profile = $this->userProfileRepository->getByUserId($uid);
-                [$fn, $ln] = $this->resolveNamePartsFromAccount($user, $profile);
-                if ($fn !== '—' || $ln !== '—') {
-                    $prefill['guest_rp_first_name'] = $fn !== '—' ? $fn : '';
-                    $prefill['guest_rp_last_name'] = $ln !== '—' ? $ln : '';
-                    $prefill['full_name'] = trim($prefill['guest_rp_first_name'] . ' ' . $prefill['guest_rp_last_name']);
-                } else {
-                    $prefill['full_name'] = trim((string) ($user['display_name'] ?? ''));
-                    $prefill['guest_rp_first_name'] = $prefill['full_name'];
-                }
-            }
-            if ($sessionTenant !== $targetTenantId) {
-                $email = (string) (Session::get('email') ?? '');
-                if ($email === '' && $user) {
-                    $email = (string) ($user['email'] ?? '');
-                }
-                if ($email !== '') {
-                    $rows = $this->userRepository->listTenantsForEmail($email);
-                    foreach ($rows as $r) {
-                        if ((int) ($r['tenant_id'] ?? 0) === $targetTenantId) {
-                            $hasMembershipOnTarget = true;
-                            break;
-                        }
-                    }
-                }
-            }
+        $opening = max(0, (int) $request->query('ouverture', 0));
+        $invite = strtolower(trim((string) $request->query('lien', '')));
+        if (!InviteLinkService::isWellFormedCode($invite)) {
+            $invite = '';
         }
+        $stepQuery = [];
+        if ($opening > 0) {
+            $stepQuery[] = 'ouverture=' . $opening;
+        }
+        if ($invite !== '') {
+            $stepQuery[] = 'lien=' . rawurlencode($invite);
+        }
+        $stepBase = $slug !== '' ? url('c/' . rawurlencode($slug) . '/enlistment/connexion') : url('login');
+        $loginStepUrl = $stepBase . ($stepQuery !== [] ? '?' . implode('&', $stepQuery) : '');
+        $registerStepUrl = $stepBase . '?' . implode('&', array_merge($stepQuery, ['creer=1']));
 
-        $platformEmail = '';
-        if ($this->authService->check()) {
-            $u = $this->authService->user();
-            $platformEmail = trim((string) ($u['email'] ?? ''));
+        // Compte connecté : son identité (profil) est reprise telle quelle, seuls les manques sont demandés.
+        $account = null;
+        $user = $this->authService->check() ? $this->authService->user() : null;
+        $uid = is_array($user) ? (int) ($user['id'] ?? 0) : 0;
+        if ($uid > 0) {
+            $profile = $this->userProfileRepository->getByUserId($uid);
+            $identity = CandidateAccountIdentity::fromAccount($user, $profile, $needsDiscordHandle);
+            $tz = EnlistmentTimezoneCatalog::normalize((string) ($profile['timezone'] ?? ''));
+            if ($prefill['timezone'] === '' && $tz !== null) {
+                $prefill['timezone'] = $tz;
+            }
+            $personnel = null;
+            try {
+                $personnel = $this->personnelProfileRepository->getByUserId($uid);
+            } catch (\Throwable) {
+                $personnel = null;
+            }
+            $account = [
+                'display_name' => $identity['display_name'] !== '' ? $identity['display_name'] : 'Mon compte',
+                'portrait_url' => function_exists('user_site_avatar_url') ? (string) user_site_avatar_url($user, $personnel) : '',
+                'profile_url' => url('account'),
+                'missing' => $identity['missing'],
+                'suggest_first_name' => $identity['suggest_first_name'],
+                'suggest_last_name' => $identity['suggest_last_name'],
+            ];
         }
 
         return [
-            'canUseAccount' => $canUseAccount,
+            'isAuthenticated' => $account !== null,
+            'account' => $account,
             'prefill' => $prefill,
-            'platform_email' => $platformEmail,
-            'hasMembershipOnTarget' => $hasMembershipOnTarget,
-            'switchToTargetUrl' => $switchToTargetUrl,
+            'loginStepUrl' => $loginStepUrl,
+            'registerStepUrl' => $registerStepUrl,
         ];
     }
 
@@ -1251,44 +1250,15 @@ class EnlistmentController
      */
     private function sanitizePrefillFromQuery(Request $request): array
     {
-        $limits = [
-            'full_name' => 200,
-            'guest_rp_first_name' => 100,
-            'guest_rp_last_name' => 100,
-            'guest_rp_nationality' => 100,
-            'email' => 254,
-            'timezone' => 64,
-            'weekly_availability' => 300,
-        ];
+        // Identité et e-mail ne se préremplissent plus par l'adresse : ils viennent du compte connecté.
         $out = [];
-        foreach ($limits as $k => $maxLen) {
-            $v = trim((string) $request->query($k, ''));
-            if ($v === '') {
-                continue;
-            }
-            if ($k === 'email' && !filter_var($v, FILTER_VALIDATE_EMAIL)) {
-                continue;
-            }
-            if ($k === 'timezone') {
-                $tz = EnlistmentTimezoneCatalog::normalize($v);
-                if ($tz === null) {
-                    continue;
-                }
-                $out[$k] = $tz;
-                continue;
-            }
-            $out[$k] = mb_substr($v, 0, $maxLen);
+        $tz = EnlistmentTimezoneCatalog::normalize(trim((string) $request->query('timezone', '')));
+        if ($tz !== null) {
+            $out['timezone'] = $tz;
         }
-        $age = trim((string) $request->query('age', ''));
-        if ($age !== '' && ctype_digit($age)) {
-            $a = (int) $age;
-            if ($a >= 16 && $a <= 99) {
-                $out['age'] = (string) $a;
-            }
-        }
-        $bd = CandidateRpSnapshotService::normalizeRpBirthDate((string) $request->query('guest_rp_birth_date', ''));
-        if ($bd !== '') {
-            $out['guest_rp_birth_date'] = $bd;
+        $week = trim((string) $request->query('weekly_availability', ''));
+        if ($week !== '') {
+            $out['weekly_availability'] = mb_substr($week, 0, 300);
         }
 
         return $out;
@@ -1375,27 +1345,6 @@ class EnlistmentController
      * @param array<string,mixed>|null $profile
      * @return array{0:string,1:string}
      */
-    private function resolveNamePartsFromAccount(array $user, ?array $profile): array
-    {
-        $fn = trim((string) ($profile['first_name'] ?? ''));
-        $ln = trim((string) ($profile['last_name'] ?? ''));
-        if ($fn !== '' || $ln !== '') {
-            return [$fn !== '' ? $fn : '—', $ln !== '' ? $ln : '—'];
-        }
-        $dn = trim((string) ($user['display_name'] ?? ''));
-        if ($dn !== '') {
-            if (str_contains($dn, ' ')) {
-                $pos = strpos($dn, ' ');
-
-                return [substr($dn, 0, $pos), trim(substr($dn, $pos))];
-            }
-
-            return [$dn, '—'];
-        }
-
-        return ['—', '—'];
-    }
-
     /**
      * Résolution tenant pour l’affichage : /enlistment sans slug valide ne retombe plus sur un tenant « placeholder ».
      */
@@ -1466,7 +1415,7 @@ class EnlistmentController
         }
 
         return 'Cette communauté n’accepte pas les candidatures des comptes Athena déjà rattachés à une autre communauté. '
-            . 'Les comptes sans communauté restent acceptés. Déconnectez-vous pour candidater sans compte, ou contactez le staff si besoin.';
+            . 'Les comptes sans communauté restent acceptés. Contactez le staff de la communauté si besoin.';
     }
 
     private function resolveTenantForRequest(Request $request, array $params): ?array

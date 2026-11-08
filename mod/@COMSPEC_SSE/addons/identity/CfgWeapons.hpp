@@ -21,6 +21,12 @@ class COMSPEC_ID_Card: COMSPEC_ID_Base {
     picture = "\z\comspec_sse\addons\identity\data\icon_card_ca.paa";
 };
 
+class COMSPEC_ID_MilitaryCard: COMSPEC_ID_Base {
+    scope = 2;
+    displayName = "Carte militaire (SIMULATION)";
+    picture = "\z\comspec_sse\addons\identity\data\icon_military_ca.paa";
+};
+
 class COMSPEC_ID_Passport: COMSPEC_ID_Base {
     scope = 2;
     displayName = "$STR_COMSPEC_SSE_CFG_BBFD0B835C";

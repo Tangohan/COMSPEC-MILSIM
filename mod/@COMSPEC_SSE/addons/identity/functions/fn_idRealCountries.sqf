@@ -18,7 +18,7 @@ _m = createHashMap;
         ["code", _code], ["name", _name], ["nameEn", _nameEn], ["nameNative", _nameNative], ["mrz", _mrz],
         ["number_format", _fmt], ["authority", _auth], ["validity", createHashMapFromArray _validity], ["cities", _cities],
         ["chip", true], ["fictional", false], ["realSim", true], ["zone", _zone], ["theme", "realistic_sim"],
-        ["languages", _langs], ["docTypes", _validity apply { _x select 0 }], ["colors", _colors], ["active", true],
+        ["languages", _langs], ["docTypes", (_validity apply { _x select 0 }) + ["military_id"]], ["colors", _colors], ["active", true],
         ["first", _first], ["firstF", _firstF], ["last", _last], ["lastFSuffix", _fSuffix]
     ]];
 } forEach [

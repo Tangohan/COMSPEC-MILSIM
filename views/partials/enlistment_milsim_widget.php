@@ -29,9 +29,10 @@ $ph = (string) ($m['placeholder'] ?? '');
 $help = trim((string) ($m['help'] ?? ''));
 $pv = (string) ($prefill[$fieldName] ?? '');
 $isRequired = !empty($fieldRequired);
+$fieldId = 'ce-f-' . preg_replace('/[^a-zA-Z0-9_\-]/', '', $fieldName);
 ?>
 <div class="ce-field">
-    <label class="ce-label"><?= htmlspecialchars($label) ?><?php if ($isRequired): ?> <span class="ce-label-hint">(obligatoire)</span><?php endif; ?></label>
+    <label class="ce-label" for="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label) ?><?php if ($isRequired): ?> <span class="ce-label-hint">(obligatoire)</span><?php endif; ?></label>
     <?php if ($help !== ''): ?>
         <p class="ce-label-hint"><?= htmlspecialchars($help) ?></p>
     <?php endif; ?>
@@ -43,19 +44,17 @@ $isRequired = !empty($fieldRequired);
     $aiScanAttr = in_array($fieldName, $aiScanFields, true) ? ' data-ai-scan="1"' : '';
     ?>
     <?php if ($widget === 'textarea'): ?>
-        <textarea name="<?= htmlspecialchars($fieldName) ?>" class="input-field <?= $taH ?> track-field" placeholder="<?= htmlspecialchars($ph) ?>" style="min-height:<?= $fieldName === 'past_milsim_experience' ? '8rem' : '6rem' ?>"<?= $reqAttr . $tenantReqAttr . $aiScanAttr ?>><?= htmlspecialchars($pv) ?></textarea>
+        <textarea id="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>" name="<?= htmlspecialchars($fieldName) ?>" class="input-field <?= $taH ?> track-field" placeholder="<?= htmlspecialchars($ph) ?>" style="min-height:<?= $fieldName === 'past_milsim_experience' ? '8rem' : '6rem' ?>"<?= $reqAttr . $tenantReqAttr . $aiScanAttr ?>><?= htmlspecialchars($pv) ?></textarea>
     <?php elseif ($widget === 'select' || $widget === 'yesno'): ?>
-        <select name="<?= htmlspecialchars($fieldName) ?>" class="input-field track-field"<?= $reqAttr . $tenantReqAttr ?>>
+        <select id="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>" name="<?= htmlspecialchars($fieldName) ?>" class="input-field track-field"<?= $reqAttr . $tenantReqAttr ?>>
             <option value="">Sélectionner</option>
             <?php foreach ($opts as $opt): ?>
                 <?php if ($opt === '') { continue; } ?>
                 <option value="<?= htmlspecialchars($opt) ?>"<?= $pv === $opt ? ' selected' : '' ?>><?= htmlspecialchars($opt) ?></option>
             <?php endforeach; ?>
         </select>
-    <?php elseif ($fieldName === 'age'): ?>
-        <input type="number" name="<?= htmlspecialchars($fieldName) ?>" class="input-field track-field" placeholder="<?= htmlspecialchars($ph) ?>" min="16" max="99" value="<?= htmlspecialchars($pv) ?>"<?= $reqAttr . $tenantReqAttr ?>>
     <?php else: ?>
-        <input type="text" name="<?= htmlspecialchars($fieldName) ?>" class="input-field track-field" placeholder="<?= htmlspecialchars($ph) ?>" value="<?= htmlspecialchars($pv) ?>"<?= $reqAttr . $tenantReqAttr ?>>
+        <input type="text" id="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>" name="<?= htmlspecialchars($fieldName) ?>" class="input-field track-field" placeholder="<?= htmlspecialchars($ph) ?>" value="<?= htmlspecialchars($pv) ?>"<?= $reqAttr . $tenantReqAttr ?>>
     <?php endif; ?>
 </div>
 <?php
