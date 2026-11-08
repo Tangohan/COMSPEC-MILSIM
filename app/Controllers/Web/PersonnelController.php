@@ -1152,8 +1152,9 @@ class PersonnelController
             $personnelActiveAbsences = $this->personnelAbsenceRepository->listActiveForUser((int) $tenantId, $uid);
         }
 
-        $canViewBilans = $isSelf || $canStaffView || $canStaffEdit;
-        $canCreateBilans = $canStaffEdit;
+        $individualBilansOn = \App\Services\Personnel\RoleplayFollowupSettings::individualBilansEnabled($roleplayFollowupConfig);
+        $canViewBilans = $individualBilansOn && ($isSelf || $canStaffView || $canStaffEdit);
+        $canCreateBilans = $individualBilansOn && $canStaffEdit;
         $personnelStageBilans = [];
         $personnelRecruitmentBilans = [];
         $bilanStageOptions = [];
@@ -1617,6 +1618,11 @@ class PersonnelController
         }
         if (!$this->canStaffEditPersonnel()) {
             Session::flash('error', 'Vous n’êtes pas autorisé à enregistrer un bilan sur ce dossier.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+        if (!\App\Services\Personnel\RoleplayFollowupSettings::individualBilansEnabled($this->roleplayFollowupConfig($tenantId))) {
+            Session::flash('error', 'Les bilans individuels sont désactivés pour cette communauté.');
 
             return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
         }
