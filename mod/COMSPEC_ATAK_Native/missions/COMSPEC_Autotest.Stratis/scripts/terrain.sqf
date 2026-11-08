@@ -123,6 +123,7 @@ if ("explo" call AT_fnc_groupe) then {
         // Confirmation puis annulation : aucune détonation.
         ["ask", _cle] call comspec_atak_native_fnc_exploAction;
         uiSleep 1;
+        [uiNamespace getVariable ["COMSPEC_ATAK_ExploConfirmT", controlNull], "décompte de la confirmation"] call AT_fnc_tient;
         ["explo_confirmation"] call AT_fnc_shot;
         ["askNo"] call comspec_atak_native_fnc_exploAction;
         uiSleep 1.5;

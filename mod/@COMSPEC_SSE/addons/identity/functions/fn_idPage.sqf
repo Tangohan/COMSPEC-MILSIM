@@ -186,7 +186,7 @@ if (_tab isEqualTo "history") then {
         ["Joindre à une FRM" call _tr, ["frm"] call _act],
         _aSend call _btn
     ]]]] call _fold;
-    private _shareBtns = [["Photographier" call _tr, ["photo"] call _act, false, true, "Photo du document jointe à la fiche FRM (pièces jointes de l'app FRS)."]];
+    private _shareBtns = [["Relever le document" call _tr, ["photo"] call _act, false, true, "Champs imprimés et bande MRZ ajoutés au texte de la fiche FRM."]];
     if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then {
         _shareBtns append [
             ["Partager" call _tr, ["share"] call _act, false, true, "Fiche du contrôle envoyée en Bluetooth à un équipier appairé."],
@@ -198,7 +198,7 @@ if (_tab isEqualTo "history") then {
     _rows pushBack ["info", "Né(e) le" call _tr, format ["%1 · %2", _d getOrDefault ["dob", ""], [_d getOrDefault ["pob", ""]] call _esc]];
     _rows pushBack ["info", "Expire le" call _tr, _d getOrDefault ["expires", ""]];
     if ((_cur getOrDefault ["subjName", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Contrôlé" call _tr, [_cur get "subjName"] call _esc]; };
-    if ((_cur getOrDefault ["photo", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Photo du document" call _tr, format ["%1 · %2", _cur getOrDefault ["photoClock", ""], "jointe à la FRM" call _tr]]; };
+    if ((_cur getOrDefault ["photo", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Document relevé" call _tr, format ["%1 · %2", _cur getOrDefault ["photoClock", ""], "dans la fiche FRM" call _tr]]; };
 };
 
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;

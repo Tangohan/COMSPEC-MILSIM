@@ -20055,5 +20055,18 @@
 ["Mission : accepter puis clôturer", "Mission: accept then close"],
 ["Répond à la dernière mission reçue, téléphone rangé.", "Answers the latest mission received, phone stowed."],
 ["Répond à la dernière mission reçue, téléphone rangé : un appui l'accepte, le suivant la clôture.", "Answers the latest mission received, phone stowed: one press accepts it, the next closes it."],
-["Cette app vient d'être retirée par le serveur", "This app has just been removed by the server"]
+["Cette app vient d'être retirée par le serveur", "This app has just been removed by the server"],
+["Attention : %1 ami(s) à moins de 30 m", "Warning: %1 friendly unit(s) within 30 m"],
+["Vous êtes à %1 m de la charge", "You are %1 m from the charge"],
+["Relever le document", "Record the document"],
+["Champs imprimés et bande MRZ ajoutés au texte de la fiche FRM.", "Printed fields and MRZ added to the FRM report text."],
+["Document relevé", "Document recorded"],
+["dans la fiche FRM", "in the FRM report"],
+["RELEVER", "RECORD"],
+["Champs imprimés et bande MRZ ajoutés à la fiche FRM (app FRS de l'ATAK)", "Printed fields and MRZ added to the FRM report (ATAK FRS app)"],
+["Aucun contrôle en cours : rien à relever.", "No check in progress: nothing to record."],
+["Document relevé : champs et bande MRZ ajoutés à la fiche FRM.", "Document recorded: fields and MRZ added to the FRM report."],
+["Relevé du document à %1 : %2 %3 n° %4.", "Document recorded at %1: %2 %3 no. %4."],
+["Titulaire : %1 %2, %3, né(e) le %4 à %5 ; délivré le %6, expire le %7.", "Holder: %1 %2, %3, born %4 in %5; issued %6, expires %7."],
+["Grade et force : %1, %2.", "Rank and force: %1, %2."]
 ]

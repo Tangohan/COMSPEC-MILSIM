@@ -101,6 +101,8 @@ if (_page isEqualTo "MAP") then {
     if (_from in ["BFT", "GROUP"]) then { _titleTxt = format ["‹ %1 · %2", (["BFT", "GROUPE"] select (_from isEqualTo "GROUP")) call comspec_atak_native_fnc_tr, _titleTxt]; };
 };
 (_d displayCtrl 88518) ctrlSetText (_titleTxt); // i18n:brut
+// Titre plus long que sa place (traduction, téléphone en portrait) : police réduite jusqu'à 65 % plutôt que coupé (« SHORT FI »).
+[_d displayCtrl 88518, ([] call comspec_atak_native_fnc_layoutGet) get "font", true, 0.65] call comspec_atak_native_fnc_textFit;
 
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };

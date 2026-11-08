@@ -21,7 +21,7 @@ private _conf = _s getOrDefault ["confirm", createHashMap];
 if ((count _conf) > 0) exitWith {
     _rows pushBack ["banner", format ["<t size='1.3' font='COMSPEC_BarlowBold' color='%1'>CONFIRMER LA MISE À FEU</t>", _onAlert], _th get "alert"];
     _rows pushBack ["text", _conf get "text", _surf];
-    _rows pushBack ["text", "", _surf, "COMSPEC_ATAK_ExploConfirmT"];
+    _rows pushBack ["text", format ["<t size='0.85' color='%1'>Annulé dans %2 s si vous ne confirmez pas</t>", _th get "hexTextDim", ceil (((_conf get "until") - diag_tickTime) max 0)], _surf, "COMSPEC_ATAK_ExploConfirmT"];
     _rows pushBack ["big", [["ANNULER", { ["askNo"] call comspec_atak_native_fnc_exploAction; }, "", true, "Rien ne part"]]];
     _rows pushBack ["gap"];
     _rows pushBack ["buttons", [[_conf get "label", { ["askYes"] call comspec_atak_native_fnc_exploAction; }, "red"]], "exploFireRow"];

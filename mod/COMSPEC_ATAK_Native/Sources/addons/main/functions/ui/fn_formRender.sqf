@@ -201,6 +201,9 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _trTxt = (_txt) call comspec_atak_native_fnc_tr;
             _t ctrlSetStructuredText parseText ((_trTxt) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max (_fs * 1.2) max ([_trTxt, _w - 2 * _ix] call _estH);
+            // Texte gardé pour être réécrit sans redessiner la page (décompte de la confirmation d'explosifs…) : il grandit
+            // ensuite sans que sa case suive. Deux lignes réservées d'office (avant : « Cancelled in 10 s unless you » coupé).
+            if (_keep isNotEqualTo "") then { _h = _h max (_fs * 2.5); };
             _t ctrlSetPosition [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _h];
             _t ctrlCommit 0;
             if (_card) then { _cb ctrlSetPosition [_pad, _y, _w, _h + _ix]; _cb ctrlCommit 0; _h = _h + _ix; };

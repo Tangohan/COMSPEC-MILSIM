@@ -51,6 +51,7 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
             private _ok = [_p, 2] call AT_fnc_page;
             [_ok, format ["%1 : page active « %2 », téléphone ouvert %3", _app get "name",
                 (call AT_fnc_etat) getOrDefault ["activePage", ""], !isNull ([] call comspec_atak_native_fnc_display)]] call AT_fnc_check;
+            [([] call comspec_atak_native_fnc_display) displayCtrl 88518, "titre de l'app"] call AT_fnc_tient;
             [format ["app_%1", _p]] call AT_fnc_shot;
             call AT_fnc_done;
         }, 30, [_app]] call AT_fnc_run;
