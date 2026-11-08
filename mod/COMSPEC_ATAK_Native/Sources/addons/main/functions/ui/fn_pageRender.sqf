@@ -24,6 +24,8 @@ if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
     { if (_x in _form) then { _draft set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["email", "otp", "pair"];
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaDraft", _draft];
 };
+// Bloc-notes : la note ouverte s'enregistre avant que la page s'efface (retour, autre app, redessin).
+if ("noteBody" in _form) then { ["autosave"] call comspec_atak_native_fnc_notesAction; };
 // App JTAC : saisie du brief gardée (un appel radio reçu redessine la page).
 if ("j5" in _form || {"jBda" in _form} || {"jL1" in _form} || {"jF1" in _form} || {"aCs" in _form} || {"jCs" in _form}) then { ["save"] call comspec_atak_native_fnc_jtacAction; };
 // Rédacteur d'ordre (TASK) : saisie gardée quand la page se redessine (ordre reçu, retour de liaison, mise en page, redémarrage).
