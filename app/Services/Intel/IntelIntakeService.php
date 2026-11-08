@@ -413,45 +413,51 @@ class IntelIntakeService
     }
 
     /**
-     * Photos de reconnaissance prises avec un compte rendu : celle nommée dans le champ « photo » du CR (numéro de
-     * cliché), puis celles du même auteur sur la même session jouée, prises de 2 h avant à 15 min après l'envoi.
-     * Toujours dans la communauté du CR. Une photo confidentielle passe par sa route authentifiée, jamais par un
-     * chemin public (ReconImageStorage::urlForRow).
+     * Nom du fichier de la photo jointe à un compte rendu : le mod envoie dans le champ « photo » le nom du cliché sur
+     * le poste du joueur, le même que recon_images.source_name à l'envoi de la photo.
+     *
+     * @param array<string, mixed> $structured champs du compte rendu
+     */
+    public static function reportPhotoName(array $structured): string
+    {
+        $name = $structured['photo'] ?? '';
+        if (!is_scalar($name)) {
+            return '';
+        }
+
+        return mb_substr(basename(str_replace('\\', '/', trim((string) $name))), 0, 190);
+    }
+
+    /**
+     * Photo jointe à un compte rendu, dans sa communauté. Deux joueurs peuvent avoir le même nom de fichier : on garde
+     * celle de l'auteur, puis la plus proche de l'envoi. Une photo confidentielle passe par sa route authentifiée
+     * (ReconImageStorage::urlForRow), jamais par un chemin public.
      *
      * @param array<string, mixed> $report ligne atak_tactical_reports
      * @return list<array<string, mixed>>
      */
     private function reconImagesOfReport(int $tenantId, array $report): array
     {
-        $ids = [];
         $structured = json_decode((string) ($report['structured_data'] ?? ''), true);
-        $named = is_array($structured) ? ($structured['photo'] ?? null) : null;
-        if (is_scalar($named) && preg_match('/^\d+$/', trim((string) $named)) === 1) {
-            $ids[] = (int) $named;
+        $name = is_array($structured) ? self::reportPhotoName($structured) : '';
+        if ($name === '' || !$this->hasColumn('recon_images', 'source_name')) {
+            return [];
         }
-        $rows = [];
+        $confidential = $this->hasColumn('recon_images', 'is_confidential') ? 'is_confidential' : '0 AS is_confidential';
+        $alive = $this->hasColumn('recon_images', 'deleted_at') ? ' AND deleted_at IS NULL' : '';
+        $sent = (string) ($report['created_at'] ?? '');
         try {
-            $mission = trim((string) ($report['mission_key'] ?? ''));
-            $author = trim((string) ($report['submitter_callsign'] ?? ''));
-            $sent = (string) ($report['created_at'] ?? '');
-            $sql = 'SELECT id, image_path, caption, captured_at, created_at, is_confidential FROM recon_images WHERE tenant_id = ? AND deleted_at IS NULL AND (';
-            $args = [$tenantId];
-            $or = [];
-            if ($ids !== []) {
-                $or[] = 'id = ?';
-                $args[] = $ids[0];
-            }
-            if ($mission !== '' && $author !== '' && $sent !== '') {
-                $or[] = '(mission_id = ? AND LOWER(author_callsign) = LOWER(?) AND created_at BETWEEN DATE_SUB(?, INTERVAL 120 MINUTE) AND DATE_ADD(?, INTERVAL 15 MINUTE))';
-                array_push($args, $mission, $author, $sent, $sent);
-            }
-            if ($or === []) {
-                return [];
-            }
-            $st = $this->pdo()->prepare($sql . implode(' OR ', $or) . ') ORDER BY created_at, id LIMIT 24');
-            $st->execute($args);
+            $st = $this->pdo()->prepare(
+                "SELECT id, image_path, caption, captured_at, created_at, {$confidential} FROM recon_images
+                 WHERE tenant_id = ? AND source_name = ?{$alive}
+                 ORDER BY (LOWER(author_callsign) = LOWER(?)) DESC, ABS(TIMESTAMPDIFF(SECOND, created_at, ?)) ASC, id DESC
+                 LIMIT 1"
+            );
+            $st->execute([$tenantId, $name, (string) ($report['submitter_callsign'] ?? ''), $sent !== '' ? $sent : date('Y-m-d H:i:s')]);
             $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            error_log('[remontees] photo du compte rendu : ' . mb_substr($e->getMessage(), 0, 300));
+
             return [];
         }
         $out = [];
@@ -460,7 +466,7 @@ class IntelIntakeService
             $out[] = [
                 'id' => (int) $r['id'],
                 'caption' => (string) ($r['caption'] ?? ''),
-                'original_name' => '',
+                'original_name' => $name,
                 'kind_label' => !empty($r['is_confidential']) ? 'Photo de reconnaissance (confidentielle)' : 'Photo de reconnaissance',
                 'url' => $url,
                 'is_image' => $url !== null,

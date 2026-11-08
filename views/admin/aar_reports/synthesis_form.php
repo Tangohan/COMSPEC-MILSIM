@@ -39,7 +39,7 @@ $defaultTitle = 'Synthèse de ' . count($reports) . ' comptes rendus';
     <label class="bo-aar-field" data-synth-pane="conclusion" hidden><span>Conclusion</span>
       <textarea name="conclusion" rows="12" maxlength="20000"><?= $h($draft['conclusion']) ?></textarea></label>
   </section>
-  <div><a class="ath-btn" href="<?= $h($base . '?vue=syntheses') ?>">Annuler</a> <button type="submit" class="ath-btn ath-btn--solid">Enregistrer la synthèse</button></div>
+  <div><a class="ath-btn" href="<?= $h($base . '/syntheses') ?>">Annuler</a> <button type="submit" class="ath-btn ath-btn--solid">Enregistrer la synthèse</button></div>
 </form>
 <script>
 (function () {

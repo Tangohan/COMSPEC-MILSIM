@@ -2,8 +2,8 @@
 
 - **Contexte** : `/back-office/atak/data-inspector`, lectures de `AthenaInspectorMetricsRepository`.
 - **Symptôme** : le bandeau annonce « Sources non disponibles sur cette installation : terminaux » et les sections terminaux restent vides.
-- **Cause** : toutes les lectures « terminaux » interrogent `atak_terminals` (et `atak_terminal_sync`). Ces tables sont créées par des étapes de migration archivées, jamais rejouées sur une installation qui ne les avait pas reçues : la requête échoue, la source est déclarée absente. Aucune requête n'est fausse (colonnes vérifiées dans `bootstrap/atak_realism_registry_migration.php`).
-- **Correctif** : nouvelle étape active `4000_atak_aar_annexes_syntheses.php` qui crée les deux tables si elles manquent (code des migrations d'origine, idempotent).
+- **Cause** : non établie. Hypothèse : `atak_terminals` ou `atak_terminal_sync` absente, leurs étapes de migration étant archivées. Le site crée aussi `atak_terminals` à la demande (`AtakRealismRepository`) : si la table existe déjà en production, cette hypothèse tombe et l'erreur vient d'ailleurs. La lecture des requêtes n'a révélé aucune erreur.
+- **Correctif** : filet seulement. L'étape active `4000_atak_aar_annexes_syntheses.php` crée les deux tables si elles manquent. Rien de plus tant que l'erreur réelle n'est pas connue.
 - **Fichiers touchés** : `database/steps/4000_atak_aar_annexes_syntheses.php`, `database/steps/registry.php`.
-- **Vérification** : cause établie par lecture du code, sans accès à la base de production. Après la migration, le bandeau doit disparaître ; s'il reste, le journal PHP contient `[data-inspector] terminaux : <erreur SQL>` avec la vraie cause.
-- **Statut** : corrigé sous réserve, à vérifier en production.
+- **Vérification** : aucune en base. Après migration, si le bandeau reste, lire dans le journal PHP la ligne `[data-inspector] terminaux : <erreur SQL>` : elle donne la vraie cause.
+- **Statut** : ouvert, à confirmer avec le journal de production.

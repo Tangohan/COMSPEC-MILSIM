@@ -32,7 +32,7 @@ $when = strtotime((string) ($s['created_at'] ?? '')) ?: 0;
     <div data-synth-pane="sources" hidden>
       <ul class="bo-aar-points">
         <?php foreach ($reports as $r): ?>
-          <li><a href="<?= $h($base . '/' . (int) $r['id']) ?>"><?= $h((string) ($r['reference_code'] ?? '')) ?></a> · <?= $h((string) (($r['operation_label'] ?? '') !== '' ? $r['operation_label'] : ($r['title'] ?? ''))) ?></li>
+          <li><?php if (!empty($aarCanOpenReports)): ?><a href="<?= $h($base . '/' . (int) $r['id']) ?>"><?= $h((string) ($r['reference_code'] ?? '')) ?></a><?php else: ?><?= $h((string) ($r['reference_code'] ?? '')) ?><?php endif; ?> · <?= $h((string) (($r['operation_label'] ?? '') !== '' ? $r['operation_label'] : ($r['title'] ?? ''))) ?></li>
         <?php endforeach; ?>
       </ul>
     </div>

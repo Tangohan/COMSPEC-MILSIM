@@ -80,9 +80,10 @@ $filtersOn = ($f['q'] ?? '') !== '' || ($f['status'] ?? '') !== '' || ($f['autho
   </div>
 
   <nav class="bo-aar-tabs" aria-label="Vues">
-    <?php foreach (['rapports' => ['Comptes rendus', count($all)], 'actions' => ['Suivi des actions', (int) ($k['actions_open'] ?? 0)], 'missions' => ['Missions sans retour', count($missing)], 'terrain' => ['Remontées du terrain', null], 'syntheses' => ['Synthèses', null]] as $key => [$label, $n]): ?>
+    <?php foreach (['rapports' => ['Comptes rendus', count($all)], 'actions' => ['Suivi des actions', (int) ($k['actions_open'] ?? 0)], 'missions' => ['Missions sans retour', count($missing)], 'terrain' => ['Remontées du terrain', null]] as $key => [$label, $n]): ?>
       <a href="<?= $h($base . ($key === 'rapports' ? '' : '?vue=' . $key)) ?>" class="bo-aar-tabs__tab<?= $tab === $key ? ' is-active' : '' ?>"<?= $tab === $key ? ' aria-current="page"' : '' ?>><?= $h($label) ?><?= $n !== null ? ' <span class="bo-aar-tabs__n">' . (int) $n . '</span>' : '' ?></a>
     <?php endforeach; ?>
+    <a href="<?= $h($base . '/syntheses') ?>" class="bo-aar-tabs__tab">Synthèses</a>
     <span class="bo-aar-tabs__spacer"></span>
     <a class="ath-btn" href="<?= $h(url('back-office/atak/comptes-rendus?onglet=suivi')) ?>">CR des joueurs (fin d’op)</a>
     <?php if ($canManage): ?>
@@ -90,42 +91,6 @@ $filtersOn = ($f['q'] ?? '') !== '' || ($f['status'] ?? '') !== '' || ($f['autho
       <a class="ath-btn ath-btn--solid" href="<?= $h($base . '/nouveau') ?>">+ Nouveau compte rendu</a>
     <?php endif; ?>
   </nav>
-
-<?php if ($tab === 'syntheses'): $syntheses = is_array($aarSyntheses ?? null) ? $aarSyntheses : []; $canConclude = !empty($aarCanConclude); ?>
-  <section class="ath-table-panel">
-    <div class="ath-table-toolbar"><span class="ath-table-toolbar__title">Synthèses de plusieurs comptes rendus</span><span class="ath-table-toolbar__count"><?= count($syntheses) ?></span></div>
-    <?php if ($syntheses === []): ?>
-      <div class="bo-aar-empty"><p class="ath-panel__lead">Aucune synthèse pour l’instant.</p>
-        <?php if ($canConclude): ?><p class="bo-aar-muted">Choisissez des comptes rendus ci-dessous pour en condenser plusieurs en un seul texte.</p><?php endif; ?></div>
-    <?php else: ?>
-      <table class="ath-table">
-        <thead><tr><th>Titre</th><th>Comptes rendus</th><th>Auteur</th><th>Date</th></tr></thead>
-        <tbody>
-        <?php foreach ($syntheses as $sy): ?>
-          <tr>
-            <td><a href="<?= $h($base . '/syntheses/' . (int) $sy['id']) ?>"><?= $h((string) $sy['title']) ?></a></td>
-            <td><?= count($sy['report_ids']) ?></td>
-            <td><?= $h((string) ($sy['author_name'] ?? '')) ?></td>
-            <td><?= $h($fmt($sy['created_at'] ?? null)) ?></td>
-          </tr>
-        <?php endforeach; ?>
-        </tbody>
-      </table>
-    <?php endif; ?>
-  </section>
-  <?php if ($canConclude): ?>
-  <form method="get" action="<?= $h($base . '/syntheses/nouvelle') ?>" class="ath-panel">
-    <p class="bo-aar-side__t">Nouvelle synthèse : cochez au moins deux comptes rendus</p>
-    <?php if ($all === []): ?><p class="bo-aar-muted">Aucun compte rendu à condenser.</p><?php endif; ?>
-    <div class="bo-aar-annex__list">
-      <?php foreach ($all as $rep): ?>
-        <label class="bo-aar-annex__row"><input type="checkbox" name="ids[]" value="<?= (int) $rep['id'] ?>"> <b><?= $h((string) ($rep['reference_code'] ?? '')) ?></b> <span><?= $h((string) (($rep['operation_label'] ?? '') !== '' ? $rep['operation_label'] : ($rep['title'] ?? ''))) ?></span> <small><?= $h($fmt($rep['reported_at'] ?? null)) ?></small></label>
-      <?php endforeach; ?>
-    </div>
-    <button type="submit" class="ath-btn ath-btn--solid">Condenser en une synthèse</button>
-  </form>
-  <?php endif; ?>
-<?php endif; ?>
 
 <?php if ($tab === 'terrain'): ?>
   <section class="ath-table-panel">

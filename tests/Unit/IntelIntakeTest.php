@@ -10,6 +10,14 @@ use PHPUnit\Framework\TestCase;
 
 final class IntelIntakeTest extends TestCase
 {
+    public function testReportPhotoNameIsTheFileNameSentByTheMod(): void
+    {
+        self::assertSame('2026_11_08_shot.jpg', IntelIntakeService::reportPhotoName(['photo' => '2026_11_08_shot.jpg']));
+        self::assertSame('shot.jpg', IntelIntakeService::reportPhotoName(['photo' => 'C:\\Users\\x\\Screenshots\\shot.jpg']));
+        self::assertSame('', IntelIntakeService::reportPhotoName([]));
+        self::assertSame('', IntelIntakeService::reportPhotoName(['photo' => ['a']]));
+    }
+
     private const RED = ['field' => 'body', 'phrase' => 'chez Karimi', 'clear_level' => 'confidentiel', 'allowed_user_ids' => '[42]'];
 
     public function testRedactedPhraseIsBarredBelowItsLevel(): void

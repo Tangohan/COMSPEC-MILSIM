@@ -2391,10 +2391,12 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}/archiver', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesArchive'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}/reactiver', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesRestore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/comptes-rendus/modeles/{id}/dupliquer', [\App\Controllers\Admin\AdminAarReportsController::class, 'templatesDuplicate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/atak/comptes-rendus/syntheses/nouvelle', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisNew'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/atak/comptes-rendus/syntheses', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisStore'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->get('/back-office/atak/comptes-rendus/syntheses/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisShow'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/atak/comptes-rendus/syntheses/{id}/supprimer', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisDelete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // Synthèses : pas de TenantResourceAdminMiddleware, un adjoint n'a pas forcément de droit d'administration (AarConclusionAccess).
+    $router->get('/back-office/atak/comptes-rendus/syntheses', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisIndex'], [AuthMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/syntheses/nouvelle', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisNew'], [AuthMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/syntheses', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisStore'], [AuthMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/syntheses/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisShow'], [AuthMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/syntheses/{id}/supprimer', [\App\Controllers\Admin\AdminAarReportsController::class, 'synthesisDelete'], [AuthMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/{id}/edit', [\App\Controllers\Admin\AdminAarReportsController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/comptes-rendus/{id}/pdf', [\App\Controllers\Admin\AdminAarReportsController::class, 'pdf'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
