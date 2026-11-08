@@ -47,6 +47,7 @@ final class SseIdWorkshopController
         private ?SseIdCountryRepository $countries = null,
         private ?SseIdKitTemplateRepository $templates = null,
         private ?SseIdOperationRepository $operations = null,
+        private ?\App\Repositories\SseAiProfileRepository $aiProfiles = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->clearance ??= new SseClearanceService($this->access);
@@ -73,6 +74,141 @@ final class SseIdWorkshopController
             'manage' => $sseManage && $command,
             'truth' => $confidential,
         ];
+    }
+
+    // ---------------------------------------------------------------- Profils d'IA
+
+    public function aiProfiles(Request $request, array $params = []): Response
+    {
+        $r = $this->rights();
+        if (!$r['view']) {
+            return $this->denied(url(self::BASE));
+        }
+        $tenantId = $this->tenantId();
+        $filters = ['q' => $request->queryString('q'), 'side' => $request->queryString('side'), 'category' => $request->queryString('category')];
+        $rows = $this->aiRepo()->list($tenantId, $filters);
+        if (!$r['truth']) {
+            $rows = array_values(array_filter($rows, static fn (array $p): bool => !in_array($p['identity_kind'] ?? '', \App\Services\Sse\MemberIdentityPapersService::SECRET, true)));
+        }
+
+        return $this->page('atak.sse.papers.ai_profiles', [
+            'title' => 'Profils IA', 'profiles' => $rows, 'filters' => $filters, 'rights' => $r, 'papersTab' => 'profils-ia',
+        ]);
+    }
+
+    public function aiProfileForm(Request $request, array $params = []): Response
+    {
+        $r = $this->rights();
+        if (!$r['view']) {
+            return $this->denied(url(self::BASE . '/profils-ia'));
+        }
+        $tenantId = $this->tenantId();
+        $id = (int) ($params['id'] ?? 0);
+        $profile = $id > 0 ? $this->aiRepo()->find($id, $tenantId) : null;
+        if ($id > 0 && $profile === null) {
+            return $this->denied(url(self::BASE . '/profils-ia'));
+        }
+        $identity = $profile !== null && $profile['identity_id'] > 0 ? $this->identities->find($profile['identity_id'], $tenantId) : null;
+        if ($identity !== null && !$r['truth'] && in_array($identity['kind'], \App\Services\Sse\MemberIdentityPapersService::SECRET, true)) {
+            return $this->denied(url(self::BASE . '/profils-ia'));
+        }
+        $identities = $this->identities->list($tenantId, ['limit' => 300]);
+        if (!$r['truth']) {
+            $identities = array_values(array_filter($identities, static fn (array $i): bool => !in_array($i['kind'], \App\Services\Sse\MemberIdentityPapersService::SECRET, true)));
+        }
+
+        return $this->page('atak.sse.papers.ai_profile_form', [
+            'title' => $profile !== null ? 'Profil IA ' . $profile['ref'] : 'Nouveau profil IA',
+            'profile' => $profile, 'identity' => $identity, 'identities' => $identities,
+            'documents' => $identity !== null ? $this->documents->list($tenantId, ['identity_id' => (int) $identity['id'], 'limit' => 50]) : [],
+            'maps' => $this->maps(), 'rights' => $r, 'papersTab' => 'profils-ia',
+        ]);
+    }
+
+    public function aiProfileStore(Request $request, array $params = []): Response
+    {
+        return $this->aiProfileSave($request, 0);
+    }
+
+    public function aiProfileUpdate(Request $request, array $params = []): Response
+    {
+        return $this->aiProfileSave($request, (int) ($params['id'] ?? 0));
+    }
+
+    private function aiProfileSave(Request $request, int $id): Response
+    {
+        $r = $this->rights();
+        $back = url(self::BASE . '/profils-ia');
+        if (!$r['manage'] || !$r['truth'] || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied($back);
+        }
+        $tenantId = $this->tenantId();
+        $data = [];
+        foreach (['identity_id', 'context_id', 'op_key', 'label', 'side', 'category', 'faction', 'papers', 'behaviour', 'kit', 'notes'] as $k) {
+            $data[$k] = $request->input($k, '');
+        }
+        // Nouvelle identité saisie ici : elle entre au registre, c'est elle qui reste la référence du nom et des papiers.
+        $last = trim($request->inputString('new_last'));
+        if ((int) $data['identity_id'] <= 0 && $last !== '') {
+            $data['identity_id'] = $this->identities->create($tenantId, [
+                'kind' => $request->inputString('new_kind') ?: 'civil', 'last_name' => $last, 'first_name' => $request->inputString('new_first'), 'sex' => $request->inputString('new_sex'),
+                'birth_date' => $request->inputString('new_birth') ?: null, 'birth_place' => $request->inputString('new_place'), 'nationality' => $request->inputString('new_nat'),
+                'side' => $data['side'], 'category' => $data['category'], 'faction' => $data['faction'],
+            ], $this->userId());
+        }
+        if ((int) $data['identity_id'] > 0 && $this->identities->find((int) $data['identity_id'], $tenantId) === null) {
+            Session::flash('error', 'Identité introuvable dans cette communauté.');
+
+            return Response::redirect($back);
+        }
+        if ($id > 0) {
+            if (!$this->aiRepo()->update($id, $tenantId, $data)) {
+                return $this->denied($back);
+            }
+        } else {
+            $id = $this->aiRepo()->create($tenantId, $data, $this->userId());
+        }
+        SseIdMassGeneratorService::audit($tenantId, $this->userId(), 'ai_profile.save', 'sse_ai_profiles', $id, ['identity' => (int) $data['identity_id']]);
+        Session::flash('success', 'Profil IA enregistré.');
+
+        return Response::redirect(url(self::BASE . '/profils-ia/' . $id));
+    }
+
+    public function aiProfileDuplicate(Request $request, array $params = []): Response
+    {
+        $r = $this->rights();
+        $back = url(self::BASE . '/profils-ia');
+        if (!$r['manage'] || !$r['truth'] || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied($back);
+        }
+        $new = $this->aiRepo()->duplicate((int) ($params['id'] ?? 0), $this->tenantId(), $this->userId());
+        if ($new === null) {
+            return $this->denied($back);
+        }
+        Session::flash('success', 'Profil IA dupliqué.');
+
+        return Response::redirect(url(self::BASE . '/profils-ia/' . $new));
+    }
+
+    public function aiProfileDelete(Request $request, array $params = []): Response
+    {
+        $r = $this->rights();
+        $back = url(self::BASE . '/profils-ia');
+        if (!$r['manage'] || !$r['truth'] || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $this->denied($back);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($this->aiRepo()->archive($id, $this->tenantId())) {
+            SseIdMassGeneratorService::audit($this->tenantId(), $this->userId(), 'ai_profile.delete', 'sse_ai_profiles', $id, []);
+            Session::flash('success', 'Profil IA supprimé. Son identité et ses papiers restent au registre.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    private function aiRepo(): \App\Repositories\SseAiProfileRepository
+    {
+        return $this->aiProfiles ??= new \App\Repositories\SseAiProfileRepository();
     }
 
     // ---------------------------------------------------------------- Atelier

@@ -27,6 +27,16 @@ require __DIR__ . '/_subnav.php';
     </div>
 </div>
 
+<?php
+$aiLinks = [];
+try {
+    $aiLinks = (new \App\Repositories\SseAiProfileRepository())->forIdentity((int) $identity['tenant_id'], (int) $identity['id']);
+} catch (\Throwable) {
+}
+if ($aiLinks !== []): ?>
+    <p class="idp-ai-links">Profils IA reliés : <?php foreach ($aiLinks as $i => $aiP): ?><?= $i > 0 ? ', ' : '' ?><a class="link" href="<?= $h(url('atak/sse/papiers/profils-ia/' . (int) $aiP['id'])) ?>"><?= $h($aiP['ref'] . ' · ' . $aiP['label']) ?></a><?php endforeach; ?></p>
+<?php endif; ?>
+
 <section class="panel">
     <div class="panel-header"><div class="panel-title"><span class="panel-index">01</span> Identité</div></div>
     <div class="panel-body idp-grid">

@@ -114,6 +114,9 @@ final class SseIdentityApiController
         if (in_array($body['kind'] ?? null, SseEditorLibraryService::KINDS, true)) {
             return $this->editorLibraryResponse($tenantId, $body);
         }
+        if (in_array($body['kind'] ?? null, \App\Services\Sse\SseAiProfileService::KINDS, true)) {
+            return $this->aiProfileResponse($tenantId, $mapId, $body);
+        }
 
         // BOLO / HVT nés en jeu (même canal COMSPEC Link SubmitIdCheck, réponse id + ref « WL-… »).
         if (in_array($body['kind'] ?? null, SseIdWatchFromGameService::KINDS, true)) {
@@ -174,6 +177,37 @@ final class SseIdentityApiController
         }
         if (isset($result['error'])) {
             return Response::json(['error' => $result['error'], 'message' => 'Contenu refusé : rien n’a été enregistré.'], 422);
+        }
+
+        return Response::json($result);
+    }
+
+    /**
+     * Profils d'IA et éléments gardés : mêmes droits que la bibliothèque de l'éditeur (compte relié, Confidentiel).
+     *
+     * @param array<string, mixed> $body
+     */
+    private function aiProfileResponse(int $tenantId, int $mapId, array $body): Response
+    {
+        $gameUser = ComspecApiKeyAuth::matchedUserId();
+        $sessionUser = (int) (Session::get('user_id') ?? 0);
+        $keyPresented = ComspecApiKeyAuth::extractPresentedKey() !== '';
+        try {
+            $library = $this->editorLibrary ??= new SseEditorLibraryService();
+            $allowed = match (true) {
+                $gameUser !== null => $library->userAllowed($tenantId, $gameUser),
+                $keyPresented => false,
+                default => $sessionUser > 0 && $this->clearance->allows(SseCaseRepository::CLASS_CONFIDENTIAL),
+            };
+            if (!$allowed) {
+                return Response::json(['error' => 'clearance_required', 'message' => 'Compte relié et habilitation Confidentiel requis pour les profils d’IA.'], 403);
+            }
+            $result = (new \App\Services\Sse\SseAiProfileService())->handle($tenantId, $gameUser ?? ($sessionUser > 0 ? $sessionUser : null), $mapId, $body);
+        } catch (\PDOException) {
+            return Response::json(['error' => 'unavailable', 'message' => 'Profils d’IA indisponibles pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            return Response::json(['error' => $result['error'], 'message' => 'Demande refusée : rien n’a été enregistré.'], 422);
         }
 
         return Response::json($result);

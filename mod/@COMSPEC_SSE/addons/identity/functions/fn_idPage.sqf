@@ -102,7 +102,8 @@ if (_tab isEqualTo "history") then {
         params ["_name", "_lvl", ["_avail", true]];
         if (!_avail) exitWith { [format ["%1 -", _name call _tr], "todo"] };
         private _st0 = _lvl call _stateOf;
-        [[_name call _tr, format ["%1 %2", _name call _tr, ["OK", "?", "!", "!"] select (["done", "now", "hot", "abort"] find _st0)]] select (_st0 isNotEqualTo "todo"), _st0]
+        if (_st0 isEqualTo "todo") exitWith { [_name call _tr, _st0] };
+        [format ["%1 %2", _name call _tr, ["OK", "?", "!", "!"] select (["done", "now", "hot", "abort"] find _st0)], _st0]
     };
     private _stateOf = {
         private _r = _lv getOrDefault [_this, createHashMap];

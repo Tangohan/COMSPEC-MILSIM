@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Sse;
 
 use App\Repositories\SseIdCountryRepository;
+use App\Repositories\SseAiProfileRepository;
 use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SseIdKitRepository;
@@ -42,6 +43,7 @@ final class SseIdentityPackService
         private ?SseIdKitRepository $kits = null,
         private ?SseIdOperationRepository $operations = null,
         private ?SseIdSettingsRepository $settings = null,
+        private ?SseAiProfileRepository $aiProfiles = null,
     ) {
         $this->documents ??= new SseIdDocumentRepository();
         $this->identities ??= new SseIdentityRepository();
@@ -146,7 +148,8 @@ final class SseIdentityPackService
             'wanted' => $offset === 0 ? $this->wanted($tenantId, $mapId, $opKey) : [],
             'briefs' => $offset === 0 ? $this->operations->briefsForPack($tenantId, $mapId, $opKey) : [],
             // Réglage de la communauté, ignoré par un ancien mod.
-            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)],
+            // Profils d'IA et éléments gardés : dans « settings », seul bloc libre que la DLL publiée transmet sans le connaître.
+            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)] + ($offset === 0 ? $this->aiBlocks($tenantId, $mapId, $opKey) : []),
             'paging' => [
                 'offset' => $offset,
                 'limit' => $limit,
@@ -160,6 +163,22 @@ final class SseIdentityPackService
         }
 
         return $pack;
+    }
+
+    /**
+     * Profils d'IA et éléments gardés ; tables pas encore créées : blocs vides, le paquet reste bon.
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private function aiBlocks(int $tenantId, int $mapId, ?string $opKey): array
+    {
+        try {
+            $repo = $this->aiProfiles ?? new SseAiProfileRepository();
+
+            return ['ai_profiles' => $repo->forPack($tenantId, $mapId, $opKey), 'ai_placements' => $repo->placementsForPack($tenantId, $mapId, $opKey)];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
