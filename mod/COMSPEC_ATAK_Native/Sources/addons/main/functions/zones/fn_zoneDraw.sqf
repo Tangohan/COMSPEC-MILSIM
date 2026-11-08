@@ -5,6 +5,8 @@
       - rendu SURLIGNÉ : remplissage léger (couleur de l'état, sinon du type) et contour à la couleur du type ;
         CONTOUR : contour seul (couleur de l'état, sinon du type) ; POINT CENTRÉ : point et nom seulement ;
         une zone qui ferait moins de 6 pixels passe en point ;
+      - style tactique (fn_mapColors « tac ») : rectangles hachurés (brosse du moteur), contour d'au moins 2 px ; les polygones
+        gardent leur remplissage léger ;
       - nom de la zone et état abrégé quand la zone est assez grande à l'écran (ou en point), nombre de signalements ;
       - nom du plan au-dessus de sa boîte ;
       - axes MSR / ASR : bande claire et trait (surligné), trait seul (contour) ou nom seul (point) ; points de contrôle ;
@@ -50,6 +52,9 @@ if ((_tab param [0, ""]) isNotEqualTo (["en", "fr"] select _fr)) then {
 _tab params ["", "_stAb"];
 private _scale = ctrlMapScale _map;
 private _tsz = 0.024 * _ts;
+private _palM = [] call comspec_atak_native_fnc_mapColors;
+private _zTac = _palM get "tac";
+private _rectTex = [_tex, _palM get "hatch"] select _zTac;
 // Couleur d'une classe CfgMarkerColors (palette de l'app Routes), gardée.
 private _ccache = uiNamespace getVariable "COMSPEC_ATAK_ZnCol";
 if (isNil "_ccache") then { _ccache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_ZnCol", _ccache]; };
@@ -105,6 +110,7 @@ private _outline = {
         private _isSel = _isEdit && {_zid isEqualTo _sel};
         private _lc = +([_tc, _scol] select _hasSt);
         private _w = [_wDef, _zw] select (_zw > 0);
+        if (_zTac) then { _w = _w max 2; };
         private _dash = [_dDef, _zd] select (_zd isNotEqualTo "");
         _tc set [3, 0.9 * _a];
         _lc set [3, _a];
@@ -114,7 +120,8 @@ private _outline = {
                 private _fc = +([_tc, _scol] select _hasSt);
                 _fc set [3, ([_fA, _zfa] select (_zfa >= 0)) * ([1, 1.8] select _hasSt) min 0.85];
                 if ((count _rect) isEqualTo 4) then {
-                    _map drawRectangle [[_rect select 0, _rect select 1, 0], _rect select 2, _rect select 3, 0, _fc, _tex];
+                    if (_zTac) then { _fc set [3, 0.8]; };
+                    _map drawRectangle [[_rect select 0, _rect select 1, 0], _rect select 2, _rect select 3, 0, _fc, _rectTex];
                 } else {
                     private _t = _tris getOrDefault [_zid, []];
                     if ((count _t) >= 3) then { _map drawTriangle [_t, _fc, _tex]; };

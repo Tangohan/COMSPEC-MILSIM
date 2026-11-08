@@ -230,6 +230,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 ["aceInit"] call comspec_atak_native_fnc_camAction;
 // Antennes transportables : « Équipement > Déployer » et « Replier l'antenne » sur l'objet posé (fn_antennaKit).
 ["aceInit"] call comspec_atak_native_fnc_antennaKit;
+// Déclencheur réseau : à la pose d'une charge, et « Lier au réseau » sur une charge déjà posée (fn_exploNet).
+["aceInit"] call comspec_atak_native_fnc_exploNet;
 // Écrans du jeu (TV, trépied, projecteur…) : TOC, PIP du poste et diapositives via ACE (fn_tocScreen).
 ["aceInit"] call comspec_atak_native_fnc_tocScreen;
 true

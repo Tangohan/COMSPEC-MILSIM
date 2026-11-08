@@ -10,7 +10,9 @@
     et en mode nuit ou filtre JVN, qui voilent tout l'écran : la teinte claire garde l'écart avec le fond.
     « lift » [couleur, classe] : couleur de marqueur Arma gardée telle quelle ; sur carte sombre, noir, bleu pur et
                    autres couleurs trop sombres -> leur version vive (table par classe). « halo » : contour sous l'icône.
-    Table refaite seulement quand le fond, le mode nuit, les couleurs choisies ou l'opacité changent.
+    Style tactique des marqueurs et traits (Réglages > Carte, COMSPEC_ATAK_MapDrawStyle : AUTO, allumé avec le fond ARDOISE ;
+    TACTICAL toujours ; STANDARD jamais) : « tac » et ses couleurs, lus par les fonctions de dessin sans autre calcul.
+    Table refaite seulement quand le fond, le mode nuit, les couleurs choisies, l'opacité ou le style changent.
     Params : [fond de carte (fn_mapStyle)] -> table ; sans paramètre : la dernière table (fonctions appelées par fn_mapOnDraw).
 */
 params [["_bg", ""]];
@@ -19,9 +21,10 @@ if (_bg isEqualTo "") exitWith { if ((count _pal) > 0) then { _pal } else { [[] 
 private _night = (profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"]) isNotEqualTo "OFF" || {profileNamespace getVariable ["COMSPEC_ATAK_NvgFilter", false]};
 private _bgA = profileNamespace getVariable ["COMSPEC_ATAK_LblBgAlpha", 0.8];
 if !(_bgA isEqualType 0) then { _bgA = 0.8; };
-private _sig = [_bg, _night, profileNamespace getVariable ["COMSPEC_ATAK_AllyColor", "BLUE"], profileNamespace getVariable ["COMSPEC_ATAK_SelfColor", "CYAN"], _bgA];
+private _drawStyle = profileNamespace getVariable ["COMSPEC_ATAK_MapDrawStyle", "AUTO"];
+private _sig = [_bg, _night, profileNamespace getVariable ["COMSPEC_ATAK_AllyColor", "BLUE"], profileNamespace getVariable ["COMSPEC_ATAK_SelfColor", "CYAN"], _bgA, _drawStyle];
 if ((_pal getOrDefault ["sig", []]) isEqualTo _sig) exitWith { _pal };
-private _dark = _bg in ["DARK", "NIGHT", "PHOTO", "SAT", "HYBRID"];
+private _dark = _bg in ["DARK", "NIGHT", "PHOTO", "SAT", "HYBRID", "SLATE"];
 private _hi = _dark || _night;
 // [carte claire, carte sombre ou mode nuit]
 private _pairs = [
@@ -54,6 +57,13 @@ _pal set ["lblLine", [0.86, 0.89, 0.92, 0.6]];
 _pal set ["grid", [[0.05, 0.05, 0.05, 0.95], [0.90, 0.94, 0.91, 0.95]] select _dark];
 _pal set ["gridSh", [0, 2] select _dark];
 _pal set ["dark", _dark];
+_pal set ["slate", _bg isEqualTo "SLATE"];
+_pal set ["tac", _drawStyle isEqualTo "TACTICAL" || {_drawStyle isNotEqualTo "STANDARD" && {_bg isEqualTo "SLATE"}}];
+// Hachures : brosse de marqueur du moteur, tuilée par drawRectangle / drawEllipse (pas de ligne calculée).
+_pal set ["hatch", "\A3\ui_f\data\map\markerbrushes\bdiagonal_ca.paa"];
+_pal set ["tacPlate", [0.035, 0.05, 0.055, 0.9]];
+_pal set ["tacOrange", [1, 0.62, 0.12, 1]];
+_pal set ["tacGreen", [0.45, 0.92, 0.55, 1]];
 // Éclaircissement d'une couleur trop sombre (liseré des plaques d'étiquette, fond toujours sombre).
 private _liftLbl = {
     params ["_c"];
@@ -70,13 +80,15 @@ private _liftLbl = {
 private _vivid = createHashMapFromArray [
     ["colorblack", [0.82, 0.84, 0.84]], ["colorblue", [0.184, 0.42, 1]], ["colorwest", [0.25, 0.55, 1]],
     ["colorblufor", [0.25, 0.55, 1]], ["colorcivilian", [0.78, 0.38, 1]], ["colorciv", [0.78, 0.38, 1]],
-    ["colorbrown", [0.80, 0.52, 0.24]], ["colorunknown", [0.80, 0.80, 0.80]]
+    ["colorbrown", [0.80, 0.52, 0.24]], ["colorunknown", [0.80, 0.80, 0.80]], ["default", [0.82, 0.84, 0.84]]
 ];
 // « lift » s'exécute plus tard, depuis les fonctions de dessin : une variable locale d'ici n'y existe plus. Table lue dans
 // la palette (avant : _vivid indéfinie, erreur de script à chaque image sur fond sombre, dessin de la carte arrêté).
 _pal set ["vivid", _vivid];
 private _lift = {
     params ["_c", ["_cls", ""]];
+    // « Default » : couleur du type (fn_markerColor), gardée sauf si elle est trop sombre pour la carte.
+    if ((toLower _cls) isEqualTo "default" && {((_c select 0) * 0.3 + (_c select 1) * 0.59 + (_c select 2) * 0.11) >= 0.2}) exitWith { _c };
     private _v = ((uiNamespace getVariable ["COMSPEC_ATAK_MapCol", createHashMap]) getOrDefault ["vivid", createHashMap]) getOrDefault [toLower _cls, []];
     if ((count _v) isEqualTo 0) exitWith { _c };
     _v + [_c param [3, 1]]

@@ -127,8 +127,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Style des noms de marqueurs", "Présentation des noms de marqueurs et des cibles verrouillées (LOCK) sur la carte du téléphone. Plaque (par défaut) : étiquette sombre bordée de la couleur du marqueur. Pilule : étiquette sombre aux bords arrondis. Étiquette reliée : encadré à côté du marqueur, relié par un trait, avec distance et azimut. Contour : texte blanc avec contour noir. Classique : texte Arma d'origine."],
     ["COMSPEC", "ATAK · Carte"], [["plate", "pill", "card", "outline", "classic"], ["Plaque", "Pilule", "Étiquette reliée", "Contour", "Classique (Arma)"], 0], 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_map_place_style", "LIST",
-    ["Style des noms de lieux", "Présentation des villes, villages et lieux-dits sur la carte du téléphone. Tactique (par défaut) : majuscules en gras avec contour. Étiquette : étiquette sombre avec un losange de couleur. Discret : petit texte clair. Classique : comme la carte d'Arma."],
-    ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic"], ["Tactique", "Étiquette", "Discret", "Classique (Arma)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+    ["Style des noms de lieux", "Présentation des villes, villages et lieux-dits sur la carte du téléphone. Tactique (par défaut) : majuscules en gras avec contour. Étiquette : étiquette sombre avec un losange de couleur. Discret : petit texte clair. Classique : comme la carte d'Arma. Capitales : petites capitales avec un point turquoise, le rendu de Tactique sur le fond Ardoise."],
+    ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic", "small"], ["Tactique", "Étiquette", "Discret", "Classique (Arma)", "Capitales"], 0], 0] call comspec_atak_native_fnc_addSetting;
 // Diffusion des marqueurs posés depuis le téléphone (fn_markerNet) : canaux d'Arma ou réseau ATAK uniquement.
 ["comspec_atak_native_marker_net", "LIST",
     ["Diffusion des marqueurs ATAK", "Carte d'Arma (par défaut) : un marqueur posé sur le téléphone est un marqueur Arma du canal choisi, donc aussi sur la carte d'Arma de tous les joueurs du canal, avec ou sans ATAK, avec ou sans réseau. Réseau ATAK uniquement : il n'apparaît que sur les téléphones des joueurs du canal qui reçoivent le réseau (sans signal, il arrive au retour du réseau), jamais sur la carte d'Arma des autres. Global vaut alors Camp. Les canaux d'Arma peuvent rester fermés aux marqueurs."],
@@ -142,7 +142,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Carte"], [[0, 1, 2, 3, 4, 5], ["Global", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"], 0], 0] call comspec_atak_native_fnc_addSetting;
 // Nom et numéro des marqueurs posés depuis le téléphone (fn_markerDrop).
 ["comspec_atak_native_marker_name", "EDITBOX",
-    ["Nom des marqueurs posés", "Modèle du nom donné aux marqueurs posés depuis la palette, quand le champ TEXTE de la palette est vide. Vide (par défaut) : camp, type et numéro (« ENI INFANTERIE 3 »). Mots remplacés : {camp} {type} {n} (numéro) {grille} {indicatif} {heure}. Exemple : {indicatif} {type} {n}."],
+    ["Nom des marqueurs posés", "Modèle du nom donné aux marqueurs posés depuis la palette, quand le champ TEXTE de la palette est vide. Vide (par défaut) : numéro de repère (« REP 3 »). Mots remplacés : {camp} {type} {n} (numéro) {grille} {indicatif} {heure}. Exemple : {indicatif} {type} {n}."],
     ["COMSPEC", "ATAK · Carte"], "", 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_marker_numbering", "LIST",
     ["Numérotation des marqueurs", "À la suite (par défaut) : chaque marqueur prend le numéro suivant, même si on en a effacé. Premier numéro libre : un numéro effacé est repris (après 1 et 3, le suivant est 2)."],
@@ -580,6 +580,17 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_relay_mrh", "CHECKBOX",
     ["Antennes MRH Satellite = relais ATAK", "Si le mod MRH Satellite est chargé : une antenne SATCOM dépliée devient un relais du réseau ATAK (type terminal satellite), retiré dès qu'elle est repliée ou détruite. Sans ce mod : aucun effet."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// Déclencheur réseau des explosifs (fn_exploNet) : le serveur décide, ces valeurs sont imposées à tous.
+private _exploCat = ["COMSPEC", "ATAK · Explosifs"];
+["comspec_atak_native_explo_net_range", "SLIDER",
+    ["Portée du déclencheur réseau (m)", "Distance maximale, en liaison dégagée, entre la charge et le relais le plus proche ou le téléphone. Relief, météo et brouillage s'appliquent ensuite."],
+    _exploCat, [100, 10000, 1500, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_explo_net_delay", "SLIDER",
+    ["Délai de transmission (s)", "Temps entre l'ordre validé par le serveur et la détonation."],
+    _exploCat, [0, 5, 0.5, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_explo_net_consume", "CHECKBOX",
+    ["Un déclencheur réseau par charge", "Coché : l'objet reste sur la charge et sort de l'inventaire. Décoché : il suffit d'en porter un, il sert pour toutes vos charges."],
+    _exploCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Antennes transportables (fn_antennaKit) : valeurs de jeu plausibles, à régler selon la mission. Portée du relais = portée de base x 10^(gain / 20).
 private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
 ["comspec_atak_native_antkit_max", "SLIDER",

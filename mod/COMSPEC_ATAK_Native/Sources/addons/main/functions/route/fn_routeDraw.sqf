@@ -4,6 +4,8 @@
     gardé par révision (fn_routeAction "geo") : rien n'est recalculé à chaque image.
       - trait à la couleur, l'épaisseur et le style de la route (plein, pointillé, flèches de direction), liseré sombre ;
       - aérien : couloir de vol en bande claire ; ligne de phase : trait perpendiculaire à la route ;
+      - style tactique (fn_mapColors « tac ») : route à sa couleur d'origine passée en orange, épaisse, halo léger au lieu du
+        liseré sombre, flèche au bout ; couleur choisie par le joueur gardée ;
       - étapes : symbole de leur type, « numéro. nom », nom de la route sur la première ;
       - zoom rapproché : distance et cap de chaque tronçon ;
       - route suivie : tronçon en cours en vert, tirets de ma position à l'étape visée ;
@@ -39,6 +41,14 @@ if ((count _tmap) isEqualTo 0) then {
     { _tmap set [_x select 0, [_x select 3, ["icon", _x select 0] call comspec_atak_native_fnc_routeAction]]; } forEach (["types"] call comspec_atak_native_fnc_routeAction);
     uiNamespace setVariable ["COMSPEC_ATAK_RteTypeMap", _tmap];
 };
+private _pal = [] call comspec_atak_native_fnc_mapColors;
+private _tac = _pal get "tac";
+// Couleur d'origine de chaque genre de route : table fixe, faite une fois.
+private _kindCol = uiNamespace getVariable ["COMSPEC_ATAK_RteKindCol", createHashMap];
+if ((count _kindCol) isEqualTo 0) then {
+    { _kindCol set [_x select 0, _x select 5]; } forEach (["kinds"] call comspec_atak_native_fnc_routeAction);
+    uiNamespace setVariable ["COMSPEC_ATAK_RteKindCol", _kindCol];
+};
 private _rgbaCache = uiNamespace getVariable ["COMSPEC_ATAK_RteRgba", createHashMap];
 if ((count _rgbaCache) isEqualTo 0) then {
     { _rgbaCache set [_x select 0, _x select 1]; } forEach (["colors"] call comspec_atak_native_fnc_routeAction);
@@ -54,9 +64,11 @@ if ((count _rgbaCache) isEqualTo 0) then {
     if (_x1 < _vx0 || {_x0 > _vx1} || {_y1 < _vy0} || {_y0 > _vy1}) then { continue };
     private _isEdit = _id isEqualTo _edit;
     private _col = +(_rgbaCache getOrDefault [_r get "color", [0.15, 0.75, 0.25, 1]]);
+    if (_tac && {(_r get "color") isEqualTo (_kindCol getOrDefault [_r get "kind", ""])}) then { _col = +(_pal get "tacOrange"); };
     // Route d'un autre (reçue) un peu plus discrète que les miennes ; route modifiée bien franche.
     _col set [3, [[0.8, 0.95] select (_id in _mine), 1] select _isEdit];
     private _w = [2, 3.5, 5] select (((_r get "width") - 1) max 0 min 2);
+    if (_tac) then { _w = _w max 3.5; };
     private _style = _r get "style";
     private _kind = _r get "kind";
     // 1. Couloir aérien.
@@ -72,8 +84,13 @@ if ((count _rgbaCache) isEqualTo 0) then {
     // 2. Trait : liseré sombre puis couleur.
     if ((count _pts) >= 2) then {
         private _dash = _style isEqualTo "DASH";
-        ["line", _map, [_pts, [0, 0, 0, 0.45 * (_col select 3)], _w + 2.5, _dash, false, false, _mpx]] call comspec_atak_native_fnc_planGfx;
-        ["line", _map, [_pts, _col, _w, _dash, _style isEqualTo "ARROW", true, _mpx]] call comspec_atak_native_fnc_planGfx;
+        // Style tactique : halo de la couleur de la route, sans jointures (autant de traits qu'avec le liseré sombre).
+        if (_tac) then {
+            ["line", _map, [_pts, [_col select 0, _col select 1, _col select 2, 0.25 * (_col select 3)], _w + 5, _dash, false, false, _mpx, false]] call comspec_atak_native_fnc_planGfx;
+        } else {
+            ["line", _map, [_pts, [0, 0, 0, 0.45 * (_col select 3)], _w + 2.5, _dash, false, false, _mpx]] call comspec_atak_native_fnc_planGfx;
+        };
+        ["line", _map, [_pts, _col, _w, _dash, _style isEqualTo "ARROW" || {_tac && {!_dash}}, true, _mpx]] call comspec_atak_native_fnc_planGfx;
     };
     // 3. Tronçon en cours de la route suivie, et tirets de ma position à l'étape visée.
     if (_id isEqualTo _fid) then {
@@ -84,7 +101,7 @@ if ((count _rgbaCache) isEqualTo 0) then {
             if ((count _path) < 2) then { _path = [(_st select (_fi - 1)) select 0, _tp]; };
             ["line", _map, [_path, [0.36, 0.85, 0.42, 0.95], _w + 1.5, false, false, false, _mpx]] call comspec_atak_native_fnc_planGfx;
         };
-        private _me = getPosATL vehicle player; _me set [2, 0];
+        private _me = [] call comspec_atak_native_fnc_gpsPos; _me set [2, 0];
         ["line", _map, [[_me, [_tp select 0, _tp select 1, 0]], [0.36, 0.85, 0.42, 0.9], 2, true, true, true, _mpx]] call comspec_atak_native_fnc_planGfx;
     };
     // 4. Sens de marche (style FLÈCHES) et étiquettes des tronçons au zoom rapproché.

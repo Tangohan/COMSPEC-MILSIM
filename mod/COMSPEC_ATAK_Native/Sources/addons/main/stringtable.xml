@@ -142,6 +142,11 @@
             <English>DL-7 module and USB-C / RJ45 / serial cable for the COMSPEC ATAK phone. Look at a computer, phone or USB stick, "Plug in the ATAK": the Extraction app downloads its data.</English>
             <French>Module DL-7 et câble USB-C / RJ45 / série pour le téléphone COMSPEC ATAK. Regardez un ordinateur, un téléphone ou une clé, « Brancher l'ATAK » : l'app Extraction télécharge ses données.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_1765700475">
+            <Original>Network detonator</Original>
+            <English>Network detonator</English>
+            <French>Déclencheur réseau</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_19381BB8F9">
             <Original>Many (60 %)</Original>
             <English>Many (60 %)</English>
@@ -561,6 +566,11 @@
             <Original>Windows (blue desktop)</Original>
             <English>Windows (blue desktop)</English>
             <French>Windows (bureau bleu)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_6D92562D68">
+            <Original>Links to an ACE charge when it is placed. Arm, disarm and fire from the Explosives app, as long as the charge and the phone are on the network.</Original>
+            <English>Links to an ACE charge when it is placed. Arm, disarm and fire from the Explosives app, as long as the charge and the phone are on the network.</English>
+            <French>Se lie à une charge ACE au moment de la pose. Armer, désarmer et mettre à feu par l'app Explosifs, tant que la charge et le téléphone sont sur le réseau.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_6E3B29E2C5">
             <Original>Dock ID</Original>
