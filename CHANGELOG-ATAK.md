@@ -40,7 +40,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ## Écran de verrouillage et code, fonds d'écran du site, Bloc-notes, Bluetooth, onglets lisibles, dégâts variés (version attribuée à la publication)
 
-### Résumé joueur
+### Texte prévu pour le résumé joueur (titre à rétablir en « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : Nouvel écran de verrouillage, code du téléphone et fonds d'écran du site
 - L'écran de verrouillage est refait : fond d'écran visible, notifications lisibles en entier et défilantes, grand bouton DÉVERROUILLER, raccourcis CARTE et MESSAGES.
