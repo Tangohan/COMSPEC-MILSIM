@@ -82,10 +82,10 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
   - Comptes rendus et CR fin d'op du téléphone web, CR imposé par le site : préfixe comparé sur 8 caractères au lieu de 7, tout était ignoré (`…-atak-cr-mobile-avis-ignores.md`).
   - DLL : plus d'écriture dans OneDrive (`LocalDocuments.cs`, `…-atak-enregistrements-onedrive.md`) ; à reconstruire.
   - Réponses des IA : toast d'Arma, `CfgNotifications` (`…-atak-reponses-ia-toast.md`). Bloc-notes refait (`…-atak-bloc-notes-refonte.md`).
-  - Carte : plus de mention « PERDU », textes relevés à mi-zoom (`…-atak-carte-perdu-texte-mi-zoom.md`) ; moins de traits entre alliés, menu ORBAT du BFT (`…-atak-bft-orbat-traits-groupe.md`).
+  - Carte : plus de mention « PERDU », textes relevés à mi-zoom (`…-atak-carte-perdu-texte-mi-zoom.md`) ; menu ORBAT du BFT (`…-atak-bft-orbat-traits-groupe.md`).
   - Mises à jour sur place : fil des messages, choix exclusifs des Réglages, favoris, diapositives, source vidéo du drone ; reste listé dans `…-atak-pages-redessinees-file-cba.md`.
   - Huit motifs de fêlures et de bris, désactivables (`…-atak-degats-ecran-motifs.md`).
-  - Non fait : photos multiples regroupées sur Discord (demande le site).
+  - Non fait : photos multiples regroupées sur Discord (demande le site) ; traits de groupe (calque Wave Relay, périmètre réseau).
 - **Version 3.1.0** : `VERSION` / `VERSION_STR` « 3.1.0 », `VERSION_NAME` « 3.1.0.AG - Austin » ; COMSPEC Link 2.0.119.
 - **Haut-parleur** (`fn_musicAction`) : appel `[true] call _sonNow`. Un `call` nu transmettait `_this` et `_sliders` valait `"speaker"`. `fn_formSet` note la valeur du curseur avant de le déplacer.
 - **Carte (lots 1 à 3)** : `fn_gpsFix` (joueur immobile : erreur et décalage gardés, décrochages et sauts conservés) ; `fn_inspectorUpdate` (redessin seulement si la hauteur du texte change : cause probable du clignotement, non confirmée ; ligne Occupants) ; `fn_routeAction` (`_autoName` : plus petit numéro libre, étape renommée exclue) ; `fn_mapOverlayUpdate` (cap du curseur sur 8 points) ; `fn_mapLabels` (noms des 2 à 3 unités regroupées) et `fn_mapOnDraw` (3 indicatifs empilés par case) ; `fn_localDataRefresh` / `fn_symbology` (champ `vtype`, `type` inchangé pour les filtres du BFT) ; `fn_mapGameMarkers` (un symbole par case de 1/16 de la vue dès l'échelle 0,12 avec « +n » ; traits créés vides revus 20 s ; relevé RPT toutes les 30 s) ; appui long du clic gauche 0,6 s = ping (`fn_mapMouseButtonDown/Up`, `fn_mapOnDraw`). Notes `docs/bugs/2026-11-08-atak-*`.

@@ -21,7 +21,7 @@
 [*] Réglages, cartes et captures du mod ne vont plus dans OneDrive : tout reste dans les Documents du disque local (les anciens dossiers sont repris).
 [*] Les réponses des groupes IA s'affichent en notification d'Arma, plus dans le téléphone.
 [*] Bloc-notes refait : une liste, un clic pour écrire, enregistrement automatique, épingler, ajouter sa grille ou l'heure.
-[*] Carte : plus de mention « PERDU », noms lisibles à mi-zoom, moins de traits entre alliés. BFT : menu LISTE et ORBAT.
+[*] Carte : plus de mention « PERDU », noms lisibles à mi-zoom. BFT : menu LISTE et ORBAT.
 [*] Messages, Réglages, favoris, diapositives et source vidéo du drone : moins de pages redessinées.
 [*] Écran abîmé : huit motifs de fêlures et de bris, différents à chaque choc, désactivables (Réglages).
 [/list]

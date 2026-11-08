@@ -53,52 +53,11 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
     private _hops = _mesh getOrDefault ["hops", []];
     // Positions relues à chaque image : les traits suivent les joueurs entre deux calculs.
     private _pos = _nodes apply { [_x select 1, getPosWorld (_x select 0)] select (alive (_x select 0)) };
-    // Moins de traits : un seul chemin (les meilleurs liens) dans chaque groupe, puis un seul entre groupes, au lieu d'un
-    // trait par paire à portée. Ossature entre groupes doublée ; traits internes, plus discrets, seulement pour mon
-    // groupe et en zoom rapproché. Tri refait quand les liens changent (au plus toutes les 3 s, action « scan »).
-    private _lnk = _mesh getOrDefault ["links", []];
-    private _drawn = missionNamespace getVariable ["COMSPEC_ATAK_MeshDrawn", [[], []]];
-    if ((_drawn select 0) isNotEqualTo _lnk) then {
-        private _parent = [];
-        for "_i" from 0 to ((count _nodes) - 1) do { _parent pushBack _i; };
-        private _root = {
-            params ["_i", "_tree"];
-            while { (_tree select _i) isNotEqualTo _i } do { _i = _tree select _i; };
-            _i
-        };
-        private _grpOf = _nodes apply { group (_x select 0) };
-        private _best = _lnk apply { [-(_x select 2), _x select 0, _x select 1] };
-        _best sort true;
-        private _keep = [];
-        {
-            private _inner = _x;
-            {
-                _x params ["_nq", "_a", "_b"];
-                if (_inner isEqualTo ((_grpOf select _a) isEqualTo (_grpOf select _b))) then {
-                    private _ra = [_a, _parent] call _root;
-                    private _rb = [_b, _parent] call _root;
-                    if (_ra isNotEqualTo _rb) then {
-                        _parent set [_ra, _rb];
-                        _keep pushBack [_a, _b, -_nq, _inner];
-                    };
-                };
-            } forEach _best;
-        } forEach [true, false];
-        _drawn = [+_lnk, _keep];
-        missionNamespace setVariable ["COMSPEC_ATAK_MeshDrawn", _drawn];
-    };
-    private _nearZoom = (ctrlMapScale _map) < 0.06;
-    private _myG = group player;
-    private _off2 = _r * 0.3;
     {
-        _x params ["_a", "_b", "_q", "_inner"];
-        if ((count _pos) <= (_a max _b)) then { continue };
-        if (_inner && {!_nearZoom} && {(group ((_nodes select _a) select 0)) isNotEqualTo _myG}) then { continue };
-        private _col = switch (true) do { case (_q >= 60): { [0.36, 0.85, 0.42] }; case (_q >= 30): { [1, 0.65, 0.2] }; default { [0.9, 0.25, 0.2] }; };
-        _col pushBack ([0.95, 0.5] select _inner);
+        _x params ["_a", "_b", "_q"];
+        private _col = switch (true) do { case (_q >= 60): { [0.36, 0.85, 0.42, 0.85] }; case (_q >= 30): { [1, 0.65, 0.2, 0.85] }; default { [0.9, 0.25, 0.2, 0.85] }; };
         _map drawLine [_pos select _a, _pos select _b, _col];
-        if (!_inner) then { _map drawLine [(_pos select _a) vectorAdd [_off2, _off2, 0], (_pos select _b) vectorAdd [_off2, _off2, 0], _col]; };
-    } forEach (_drawn select 1);
+    } forEach (_mesh getOrDefault ["links", []]);
     {
         _x params ["", "", "_name", "_kind"];
         if (_kind isEqualTo "gw") then { continue };
