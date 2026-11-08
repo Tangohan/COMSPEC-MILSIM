@@ -999,14 +999,17 @@ final class SseIdentityRegistryController
             }
 
             $documentIds = array_map(static fn (array $d): int => (int) $d['id'], $documents);
-            // Sans habilitation : ni contrôle d'un papier masqué, ni nom présenté qui trahirait une couverture.
-            $keep = static function (array $checks) use ($truth, $documentIds, $identities): array {
+            // Sans habilitation : ni contrôle d'un papier masqué, ni nom présenté qui trahirait une couverture. Une fiche
+            // sans aucun nom connu n'a rien à trahir : ses contrôles restent lisibles.
+            $person = (new SsePersonRepository())->findById($personId, $tenantId) ?? [];
+            $knownNames = array_merge($identities, trim((string) ($person['last_name'] ?? '')) !== '' ? [$person] : []);
+            $keep = static function (array $checks) use ($truth, $documentIds, $knownNames): array {
                 if ($truth) {
                     return $checks;
                 }
                 $checks = array_values(array_filter($checks, static fn (array $c): bool => (int) ($c['document_id'] ?? 0) === 0 || in_array((int) $c['document_id'], $documentIds, true)));
 
-                return MemberIdentityPapersService::withoutForeignNames($checks, $identities);
+                return $knownNames === [] ? $checks : MemberIdentityPapersService::withoutForeignNames($checks, $knownNames);
             };
             try {
                 $dossier = (new SseIdCheckInsightService())->personDossier($tenantId, $personId, $documentIds, 200, $keep);
