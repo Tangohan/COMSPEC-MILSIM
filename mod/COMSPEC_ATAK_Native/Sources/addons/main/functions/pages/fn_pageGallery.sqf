@@ -240,6 +240,12 @@ if (_tab isEqualTo "LIB") exitWith {
 
 // ---------------------------------------------------------------- ENVOIS
 if (_tab isEqualTo "SENT") exitWith {
+    // Dossier des photos relu en tâche de fond à l'ouverture (une fois par minute au plus, comme Réglages › À propos).
+    private _shot = uiNamespace getVariable ["COMSPEC_ATAK_ShotDirInfo", []];
+    if ((diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_ShotDirAskAt", -1e9])) > 60 && {_shot isEqualTo [] || {(diag_tickTime - (_shot param [10, -1e9])) > 60}}) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_ShotDirAskAt", diag_tickTime];
+        ["check", false] spawn comspec_atak_native_fnc_shotDir;
+    };
     private _lines = [];
     {
         _x params [["_kind", ""], ["_title", ""], ["_text", ""], ["_grid", ""], ["_time", ""]];
@@ -253,7 +259,14 @@ if (_tab isEqualTo "SENT") exitWith {
         ["text", format ["<t size='1.3' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>en cours</t>      <t size='1.3' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%2</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>reçues</t>      <t size='1.3' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%3</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>refusées</t>",
             _pending, count (missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]), count (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []])]],
         _lastRow,
-        ["bar", [["", [_shootBtn, _sendBtn]]]]
+        ["bar", [["", [_shootBtn, _sendBtn]]]],
+        // Dossier des photos : où Arma écrit (taille, limite de 250 Mo) et où le mod garde les photos envoyées.
+        ["section", "Dossier des photos", "Arma écrit dans Screenshots du profil ; le mod garde les photos envoyées dans Documents\Arma 3 - COMSPEC\Captures"],
+        ["text", format ["<t size='0.8'>%1</t>", [["text"] call comspec_atak_native_fnc_shotDir] call _esc]],
+        ["bar", [["", [
+            ["OUVRIR LE DOSSIER CAPTURES", { ["open"] call comspec_atak_native_fnc_shotDir; }, "", "Ouvrir dans l'explorateur Windows le dossier où le mod garde les photos envoyées"],
+            ["VÉRIFIER LE DOSSIER", { ["check", true] spawn comspec_atak_native_fnc_shotDir; }, "", "Relire le dossier des captures : taille, dernière photo, droits"]
+        ]]]]
     ];
     if ((count _watch) > 0) then {
         _rows pushBack ["section", format ["Clichés du drone à suivre (%1)", count _watch], "En cours d'envoi ou refusés par Athena"];

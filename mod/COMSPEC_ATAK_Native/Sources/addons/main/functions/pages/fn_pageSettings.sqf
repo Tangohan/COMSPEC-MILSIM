@@ -667,7 +667,7 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
         // Dossier où les DLL cherchent les photos (réglage CBA « Dossier des captures d'écran », sinon profil Arma).
         ["section", "Photos", "Dossier où le téléphone cherche les captures du jeu"],
         ["text", format ["<t size='0.8'>%1</t>", ((["text"] call comspec_atak_native_fnc_shotDir) regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]]],
-        ["buttons", [["VÉRIFIER LE DOSSIER", { ["check", true] spawn comspec_atak_native_fnc_shotDir; }]]],
+        ["buttons", [["VÉRIFIER LE DOSSIER", { ["check", true] spawn comspec_atak_native_fnc_shotDir; }], ["OUVRIR LE DOSSIER CAPTURES", { ["open"] call comspec_atak_native_fnc_shotDir; }]]],
         ["buttons", [
             ["CRÉDITS", { [{ ["CREDITS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }],
             ["DEBUG", { [{ ["DEBUG"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, (count _anom) > 0],

@@ -1340,3 +1340,10 @@ Activités suspectes du mod	administration de la plateforme, en français seulem
 Charge et surcharge	administration de la plateforme, en français seulement	views/partials/platform_admin_sidebar.php
 Envois anormaux détectés (déplacements, volume, identifiants, versions) : alertes à décider, aucun blocage automatique	administration de la plateforme, en français seulement	views/partials/platform_admin_sidebar.php
 Requêtes par route et par communauté, erreurs, tendance, seuils d’alerte, priorité des formules payantes sous charge	administration de la plateforme, en français seulement	views/partials/platform_admin_sidebar.php
+» aux favoris	fragment du modèle traduit « Ajouter « %1 » aux favoris »	views/partials/ath_sidebar_nav.php
+» des favoris	fragment du modèle traduit « Retirer « %1 » des favoris »	views/partials/ath_sidebar_nav.php
+» des favoris	fragment du modèle traduit « Retirer « %1 » des favoris »	views/partials/back_office_sidebar.php
+favoris sur	fragment du modèle traduit « %1 favoris sur %2 »	views/partials/back_office_sidebar.php
+favoris sur	fragment du modèle traduit « %1 favoris sur %2 »	public/assets/js/back-office-menu.js
+» aux favoris	fragment du modèle traduit « Ajouter « %1 » aux favoris »	public/assets/js/back-office-menu.js
+» des favoris	fragment du modèle traduit « Retirer « %1 » des favoris »	public/assets/js/back-office-menu.js
