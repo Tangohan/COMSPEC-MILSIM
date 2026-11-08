@@ -82,6 +82,14 @@ missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
 // Mesure ACE Vector 21 transmise (azimut + distance) : marqueur sur la carte de l'ATAK (fn_lasePoint).
 ["ace_vector_rangefinderData", { params [["_d", 0], ["_az", 0], ["_inc", 0]]; ["vector", [_d, _az, _inc]] call comspec_atak_native_fnc_lasePoint; }] call CBA_fnc_addEventHandler;
 ["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
+// Paroles radio des IA du jeu : bulle au-dessus de la tête (fn_aiBubble « chat », réglage « Bulles de réponse des IA »).
+// Ne rien renvoyer d'autre que false : un texte ou true modifierait le message.
+addMissionEventHandler ["HandleChatMessage", {
+    if (missionNamespace getVariable ["comspec_atak_native_ai_bubble", true]) then {
+        ["chat", [_this param [4, objNull], _this param [3, ""], _this param [8, true]]] call comspec_atak_native_fnc_aiBubble;
+    };
+    false
+}];
 addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
 // Cartouches ENI de la carte (fn_mapLabels) : heure de pose et auteur de chaque marqueur, notés à sa création
 // (aucun envoi réseau : chaque client voit l'événement). Table locale bornée, nettoyée à la suppression.

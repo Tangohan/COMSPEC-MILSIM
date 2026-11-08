@@ -10,12 +10,18 @@
       dossier        devient le dossier actif (fn_setCaseReference)
 */
 params [["_op", "", [""]], ["_args", [], [[]]]];
-if (!isServer || {_op isNotEqualTo "place"}) exitWith { false };
+if (!isServer || {!(_op in ["place", "replay"])}) exitWith { false };
+// « replay » : élément gardé remis en place par le serveur au démarrage (fn_idAiConfig « restore »), jamais à distance.
+private _replay = _op isEqualTo "replay";
+if (_replay && {isRemoteExecuted}) exitWith { false };
+if (_replay) then { _args = [objNull, _args param [0, createHashMap], _args param [1, []], objNull]; };
 _args params [["_me", objNull, [objNull]], ["_item", createHashMap, [createHashMap]], ["_pos", [], [[]]], ["_target", objNull, [objNull]]];
-if (isNull _me || {(count _item) isEqualTo 0}) exitWith { false };
+if ((isNull _me && {!_replay}) || {(count _item) isEqualTo 0}) exitWith { false };
+// Un envoi au téléphone ne se rejoue pas à chaque partie.
+if (_replay && {(_item getOrDefault ["delivery", 0]) isEqualTo 2}) exitWith { false };
 private _owner = if (isRemoteExecuted) then { remoteExecutedOwner } else { clientOwner };
 if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) exitWith { false };
-if !([_me] call comspec_sse_fnc_isAuthority) exitWith {
+if (!_replay && {!([_me] call comspec_sse_fnc_isAuthority)}) exitWith {
     diag_log text format ["[COMSPEC SSE] Éditeur : pose refusée au poste %1.", _owner];
     false
 };
@@ -26,7 +32,7 @@ private _body = _item getOrDefault ["body", ""];
 private _deliveryIndex = _item getOrDefault ["delivery", 0];
 private _markings = ["NON PROTÉGÉ", "DIFFUSION RESTREINTE", "CONFIDENTIEL"];
 private _marking = _markings param [_item getOrDefault ["marking", 0], _markings select 0];
-if (_pos isEqualTo []) then { _pos = getPosATL _me; };
+if (_pos isEqualTo []) then { _pos = if (isNull _me) then { [0, 0, 0] } else { getPosATL _me }; };
 _pos = [_pos select 0, _pos select 1, 0];
 private _isMan = !isNull _target && {_target isKindOf "CAManBase"};
 private _summary = "";
@@ -102,12 +108,14 @@ switch (_type) do {
         private _paperTypes = ["id_card", "passport", "driving_license", "military_id"];
         private _chosen = switch (_type) do {
             case "paper": { [_paperTypes param [_item getOrDefault ["paper", 0], "id_card"]] };
-            case "kit": { ["id_card", "passport"] };
+            // Lot choisi dans le formulaire (avant : toujours carte et passeport, quel que soit le modèle).
+            case "kit": { [["id_card", "passport"], ["military_id", "id_card"], ["id_card", "driving_license"]] param [_item getOrDefault ["paper", 0], ["id_card", "passport"]] };
             default { ["id_card"] };
         };
         [_chosen] call _papers;
         _summary = format ["%1 : %2 papier(s) posé(s).", _title, count _chosen];
     };
 };
-["placed", [_item getOrDefault ["id", ""], _summary]] remoteExecCall ["comspec_sse_fnc_editor", _owner];
+if (_replay) exitWith { true };
+["placed", [_item getOrDefault ["id", ""], _summary, _pos]] remoteExecCall ["comspec_sse_fnc_editor", _owner];
 true

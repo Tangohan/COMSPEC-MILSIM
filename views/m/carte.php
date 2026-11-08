@@ -10,7 +10,7 @@ declare(strict_types=1);
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/_head.php';
 ?>
-<?php $mapCanAdd = true; $mapMeLabel = 'Moi'; require __DIR__ . '/_map.php'; ?>
+<?php $mapCanAdd = true; $mapMeLabel = 'Moi'; $mapStyleChoice = true; require __DIR__ . '/_map.php'; ?>
     <div class="mm-sheet mm-sheet--low" data-marker-sheet hidden>
       <div class="mm-sheet__bar"><strong data-marker-title>Nouveau marqueur</strong><button type="button" class="mm-btn" data-marker-close>FERMER</button></div>
       <div class="mm-choices mm-choices--seg" data-marker-kinds>

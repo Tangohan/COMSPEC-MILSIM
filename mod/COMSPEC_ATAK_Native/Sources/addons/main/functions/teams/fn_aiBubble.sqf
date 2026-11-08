@@ -2,6 +2,7 @@
     Bulles de texte au-dessus de la tête de l'IA qui répond à un ordre (fn_aiOrder "recv"). Client uniquement.
       "say"   [unité, texte déjà traduit, nom affiché, type INFO | SUCCESS | WARNING | ERROR] -> true si la bulle est vue
               tout de suite (à portée et en ligne de vue) ; false sinon : l'appelant passe alors par le toast d'Arma.
+      "chat"  paroles radio d'une IA du jeu (HandleChatMessage, posé par XEH_postInitClient) : même bulle
       "clear" retire toutes les bulles et le gestionnaire
       "draw"  à chaque image (Draw3D), tant qu'il reste une bulle
 
@@ -142,11 +143,21 @@ switch (_act) do {
         private _seen = [_u, _cam] call _sees;
         _list pushBack [_u, _lines, _name, _col, time, time + _dur, _width * COMSPEC_BUBBLE_TEXT * 0.19, ((count _lines) + 1) * COMSPEC_BUBBLE_LINE_H, _seen, _u selectionPosition "pilot", [0, 1] select _seen];
         missionNamespace setVariable ["COMSPEC_ATAK_AiBubbles", _list];
+        // Vérification en jeu : journal à chaque bulle en niveau de log debug (comspec_overwatch_log_level >= 4).
+        if ((missionNamespace getVariable ["comspec_overwatch_log_level", 3]) >= 4) then {
+            ["DEBUG", "AIBUBBLE", format ["%1 : « %2 » (vue %3, %4 m)", _name, _text, _seen, round (_cam vectorDistance (eyePos _u))]] call comspec_atak_native_fnc_log;
+        };
         if ((missionNamespace getVariable ["COMSPEC_ATAK_AiBubbleEh", -1]) < 0) then {
             missionNamespace setVariable ["COMSPEC_ATAK_AiBubbleLast", time];
             missionNamespace setVariable ["COMSPEC_ATAK_AiBubbleEh", addMissionEventHandler ["Draw3D", { ["draw"] call comspec_atak_native_fnc_aiBubble; }]];
         };
         _seen
+    };
+    case "chat": {
+        // Arma n'a pas d'autre accès à ce que dit une IA (« 2, en position »). Le message n'est jamais modifié.
+        _arg params [["_person", objNull], ["_text", ""], ["_isPlayerMsg", true]];
+        if (_isPlayerMsg || {!(_person isEqualType objNull)} || {isNull _person} || {isPlayer _person} || {_person isEqualTo player} || {!(_person isKindOf "CAManBase")}) exitWith {};
+        ["say", [_person, _text, name _person, "INFO"]] call comspec_atak_native_fnc_aiBubble;
     };
     case "clear": {
         private _eh = missionNamespace getVariable ["COMSPEC_ATAK_AiBubbleEh", -1];

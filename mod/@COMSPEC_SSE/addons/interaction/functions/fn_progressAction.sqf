@@ -35,7 +35,7 @@ if (_target isEqualType 0) then {
     _target = [objNull, _a0] select (_a0 isEqualType objNull);
 };
 if (missionNamespace getVariable ["comspec_sse_progressBusy", false]) exitWith {
-    ["Une action SSE est déjà en cours.", "WARNING"] call comspec_sse_fnc_notify;
+    ["Une action SSE est déjà en cours.", "WARNING"] call comspec_sse_fnc_toast;
     false
 };
 
@@ -75,7 +75,7 @@ private _stop = {
             "Action SSE interrompue : vous vous êtes éloigné de la cible.",
             "Action SSE interrompue : la cible n'est plus là.",
             "Action SSE interrompue : impossible depuis un véhicule."
-        ] select ((["distance", "cible", "véhicule"] find _why) + 1), "WARNING"] call comspec_sse_fnc_notify;
+        ] select ((["distance", "cible", "véhicule"] find _why) + 1), "WARNING"] call comspec_sse_fnc_toast;
     };
 };
 private _ctx = [_target, _range, _hadTarget, _condition, _args];

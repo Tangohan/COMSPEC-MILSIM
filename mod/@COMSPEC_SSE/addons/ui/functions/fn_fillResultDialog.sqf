@@ -70,10 +70,48 @@ private _titleText = if (_isDocs) then {
 (_display displayCtrl 93014) ctrlSetText (((_chrome getOrDefault ["btn_transmit", "TRANSMETTRE"])) call comspec_sse_fnc_tr);
 (_display displayCtrl 93015) ctrlSetText (((_chrome getOrDefault ["btn_close", "FERMER"])) call comspec_sse_fnc_tr);
 
+// Écran selon la nature de la preuve : un support numérique ne s'ouvre pas comme un dossier papier ; un sac, comme un contenu.
+private _natureRaw = toUpper (_fog getOrDefault ["type", ""]);
+private _isDigital = _natureRaw in ["PHONE", "COMPUTER", "MEDIA", "TABLET", "DRIVE", "USB", "SDCARD", "LAPTOP"];
+private _isContent = _natureRaw in ["CONTAINER", "BAG", "LUGGAGE", "VALUABLES"];
 private _ink = "#1f1a14";
 private _muted = "#5a4e3c";
 private _accent = "#6b3a2a";
 private _rule = "#a89878";
+if (_isDigital) then {
+    _ink = "#e6efe9"; _muted = "#9fb0a8"; _accent = "#5cc76b"; _rule = "#22302a";
+    (_display displayCtrl 93019) ctrlSetBackgroundColor [0.039, 0.059, 0.051, 1];
+    (_display displayCtrl 93022) ctrlSetBackgroundColor [0.055, 0.082, 0.071, 1];
+    (_display displayCtrl 93023) ctrlSetBackgroundColor [0.055, 0.082, 0.071, 1];
+    { (_display displayCtrl _x) ctrlShow false; } forEach [93024, 93025, 93026];
+    (_display displayCtrl 93021) ctrlSetBackgroundColor [0.09, 0.157, 0.122, 1];
+    (_display displayCtrl 93011) ctrlSetTextColor [0.914, 0.941, 0.925, 1];
+    (_display displayCtrl 93017) ctrlSetTextColor [0.624, 0.69, 0.659, 1];
+    (_display displayCtrl 93011) ctrlSetText ("SUPPORT NUMÉRIQUE" call comspec_sse_fnc_tr);
+    (_display displayCtrl 93016) ctrlSetText ("EXPLOITATION NUMÉRIQUE" call comspec_sse_fnc_tr);
+    (_display displayCtrl 93017) ctrlSetText ((["Fichiers et traces trouvés", "Lecture détaillée du support"] select (_mode == "feuille")) call comspec_sse_fnc_tr);
+    (_display displayCtrl 93013) ctrlSetText ("DÉTAIL" call comspec_sse_fnc_tr);
+};
+if (_isContent) then {
+    (_display displayCtrl 93011) ctrlSetText ("CONTENU DE L'OBJET" call comspec_sse_fnc_tr);
+    (_display displayCtrl 93017) ctrlSetText ("Ce qui a été trouvé à l'intérieur" call comspec_sse_fnc_tr);
+    (_display displayCtrl 93013) ctrlSetText ("DÉTAIL" call comspec_sse_fnc_tr);
+};
+// Texte humain à l'écran seulement : les rapports et l'API gardent leurs codes.
+private _human = {
+    params ["_l"];
+    { _l = [_l, _x select 0, (_x select 1) call comspec_sse_fnc_tr] call CBA_fnc_replace; } forEach [
+        ["[OBSERVED] ", "Observé : "], ["[EXTRACTED] ", "Extrait : "], ["[PROBABLE] ", "Probable : "], ["[HYPOTHESIS] ", "Hypothèse : "],
+        ["EXPLOIT_NOW", "à exploiter maintenant"], ["COLLECT", "à collecter"], ["DOCUMENT_ONLY", "à consigner"], ["LOW_VALUE", "peu d'intérêt"], ["UNKNOWN", "non évalué"]
+    ];
+    private _vc = _l regexFind ["\\(V(\\d+) C(\\d+)\\)"];
+    if (_vc isNotEqualTo []) then {
+        private _m = _vc select 0;
+        private _word = { private _n = parseNumber _this; (["faible", "moyen", "élevé"] select ((floor (_n / 34)) min 2)) call comspec_sse_fnc_tr };
+        _l = (_l select [0, (_m select 0) select 1]) + format ["(%1 %2, %3 %4)", "intérêt" call comspec_sse_fnc_tr, ((_m select 1) select 0) call _word, "confiance" call comspec_sse_fnc_tr, ((_m select 2) select 0) call _word];
+    };
+    _l regexReplace ["\\(valeur (\\d+)\\)", "(intérêt $1 %)"]
+};
 
 private _html = "";
 
@@ -121,21 +159,32 @@ if (_isDocs && {(count _docs) > 0}) then {
     if (_type != "") then {
         _html = _html + format [
             "<t color='%1' size='0.8'>Nature</t><br/><t color='%2' size='0.95'>%3</t><br/><br/>",
-            _muted, _ink, _type
+            _muted, _ink, ((createHashMapFromArray [["PHONE", "Téléphone"], ["COMPUTER", "Ordinateur"], ["MEDIA", "Support de stockage (clé USB, disque, carte mémoire)"], ["TABLET", "Tablette"], ["RADIO", "Radio"], ["DOCUMENT", "Document"], ["WEAPON", "Arme"], ["CONTAINER", "Contenant"], ["VEHICLE", "Véhicule"], ["BUILDING", "Bâtiment"], ["OBJECT", "Objet"], ["PERSON", "Personne"]]) getOrDefault [toUpper _type, _type]) call comspec_sse_fnc_tr
         ];
     };
     _html = _html + format [
         "<t color='%1' size='0.8'>Identification</t><br/><t color='%2' size='0.9'>%3</t><br/><br/>",
-        _muted, _ink, _uid
+        _muted, _ink, [_uid, "Non identifié" call comspec_sse_fnc_tr] select (_uid isEqualTo "?")
     ];
+    if (_isDigital) then {
+        // Le relevé le dit (fn_revealDigitalFog) : « chiffré », sans « déchiffré ».
+        private _low = toLower (_lines joinString " ");
+        private _enc = (_low find "chiffr") >= 0 && {(_low find "déchiffr") < 0};
+        _html = _html + format ["<t color='%1' size='0.8'>État</t><br/><t color='%2' size='0.95'>%3</t><br/><br/>", _muted, ["#e6efe9", "#f2c94c"] select _enc,
+            (["Lisible", "Chiffré : à déchiffrer"] select _enc) call comspec_sse_fnc_tr];
+    };
     if ((count _lines) > 0) then {
-        _html = _html + format ["<t color='%1' size='0.8'>Extraits</t><br/>", _muted];
+        _html = _html + format ["<t color='%1' size='0.8'>%2</t><br/>", _muted, ((["Extraits", "Fichiers et extraits"] select _isDigital) call comspec_sse_fnc_tr)];
         {
             private _line = if (_x isEqualType "") then { _x } else { str _x };
-            if ((toLower _line) find "documents sse" < 0) then {
-                _html = _html + format ["<t color='%1' size='0.85'>• %2</t><br/>", _ink, _line];
+            // Valeur inconnue (« Véhicule : ? ») : rien à dire, rien à afficher.
+            if ((toLower _line) find "documents sse" < 0 && {(_line select [(count _line) - 3]) isNotEqualTo " : ?"} && {(_line select [(count _line) - 2]) isNotEqualTo ":?"}) then {
+                _html = _html + format ["<t color='%1' size='0.85'>• %2</t><br/>", _ink, [_line] call _human];
             };
         } forEach _lines;
+        if (_isDigital && {(missionNamespace getVariable ["comspec_sse_lastResultEntity", objNull]) getVariable ["comspec_sse_domex_enabled", false]}) then {
+            _html = _html + format ["<br/><t color='%1' size='0.85'>%2</t><br/>", _accent, "Exploitation complète : Terminal SSE, onglet DOMEX." call comspec_sse_fnc_tr];
+        };
     };
 };
 

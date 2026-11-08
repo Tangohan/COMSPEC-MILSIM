@@ -17,6 +17,7 @@ if (!empty($canMemberPapers)) {
 $workshopTabs = !empty($canWorkshop) ? [
     'atelier' => ['atelier', 'Atelier de documents'],
     'kits' => ['kits-types', 'Kits types'],
+    'profils-ia' => ['profils-ia', 'Profils IA'],
     'preparation' => ['preparation', 'Préparation de mission'],
     'briefs' => ['briefs', 'Briefs de couverture'],
     'echanges' => ['echanges', 'Import et export'],

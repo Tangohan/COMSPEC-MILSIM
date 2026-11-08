@@ -33,6 +33,38 @@ class COMSPEC_SSE_Papiers {
                 class CardPassport { name = "$STR_COMSPEC_SSE_CFG_BEF57EAA88"; value = "card_passport"; };
             };
         };
+        // Profil Athena (éditeur : liste de la communauté si la connexion Athena du menu COMSPEC SSE est ouverte, sinon la
+        // dernière liste vue sur ce poste ; sans aucune liste : papiers générés et réglages ci-dessous).
+        class COMSPEC_ID_AiProfile {
+            displayName = "Profil Athena";
+            tooltip = "Identité et papiers d'un profil IA du Bureau SSE. La liste vient de la connexion Athena (menu COMSPEC SSE) ou de la dernière liste vue sur ce poste. Aucune liste : Générer. Profil absent en jeu : papiers générés.";
+            property = "COMSPEC_ID_AiProfile";
+            control = "COMSPEC_SSE_AiProfileCombo";
+            expression = "if (isServer && {_value isNotEqualTo ''}) then { _this setVariable ['COMSPEC_ID_AiProfile', _value]; };";
+            defaultValue = "''";
+            typeName = "STRING";
+            condition = "objectBrain";
+        };
+        class COMSPEC_ID_Behaviour {
+            displayName = "Comportement au contrôle";
+            tooltip = "Réponse de l'IA à « Papiers, s'il vous plaît ». Automatique : selon le contexte (IA réalistes).";
+            property = "COMSPEC_ID_Behaviour";
+            control = "Combo";
+            expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_Behaviour', _value]; };";
+            defaultValue = "'auto'";
+            typeName = "STRING";
+            condition = "objectBrain";
+            class values {
+                class Auto { name = "Automatique"; value = "auto"; default = 1; };
+                class Coopere { name = "Coopère"; value = "coopere"; };
+                class Nerveux { name = "Nerveux"; value = "nerveux"; };
+                class Ment { name = "Ment avec aplomb"; value = "ment"; };
+                class Refuse { name = "Refuse"; value = "refuse"; };
+                class Fuit { name = "S'enfuit"; value = "fuit"; };
+                class Agressif { name = "Devient agressif"; value = "agressif"; };
+                class Rendu { name = "Se rend"; value = "rendu"; };
+            };
+        };
         class COMSPEC_ID_Country {
             displayName = "$STR_COMSPEC_SSE_CFG_6A56979958";
             tooltip = "$STR_COMSPEC_SSE_CFG_3DDBED6623";

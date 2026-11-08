@@ -350,3 +350,51 @@ body[data-view="carte"] .mm-foot { display: none; }
 .mm-layers { bottom: calc(80px + env(safe-area-inset-bottom)); min-width: 260px; }
 .mm-layer { min-height: 52px; font-size: 17px; }
 .mm-layer input { width: 26px; height: 26px; }
+
+/* Symboles du jeu teintés par masque (règle de atak-overwatch-beta.css, feuille absente de /m/) : sans elle, invisibles. */
+.mm-map .arma-marker-paa-mask-wrap, .mm-map .arma-marker-paa-mask { display: block; pointer-events: none; -webkit-mask: no-repeat center / contain; mask: no-repeat center / contain; }
+.mm-map .arma-marker-paa-fallback { align-items: center; justify-content: center; }
+/* Barre d'outils sur 390 px : les six boutons tiennent sans texte coupé, cibles de 48 px. */
+.mm-maptools { gap: 4px; padding: 4px; }
+.mm-maptools .mm-tool { flex: 1 1 auto; min-width: 0; padding: 0 4px; font-size: 12px; letter-spacing: 0; }
+.mm-maptools .mm-tool__zoom .mm-tool, .mm-maptools .mm-tool--full { flex: 0 0 48px; min-width: 48px; font-size: 22px; }
+.mm-maptools .mm-tool--add { white-space: normal; line-height: 1.1; }
+
+/* ---------- Style tactique de la carte (/m/carte, atak-m-tactique.js) : teintes de fn_mapColors, aucune animation ---------- */
+.mm-layers { max-height: calc(100% - 96px); overflow-y: auto; }
+.mm-tac .mm-map { background: #05080a; }
+/* Fond assombri par opacité sur noir (pas de filtre CSS, coûteux au déplacement). Photo du mod plus claire que le plan. */
+.mm-tac .leaflet-tile-pane { opacity: .38; }
+.mm-tac--photo .leaflet-atakAerial-pane { opacity: .55; }
+.mmt { background: transparent; border: 0; overflow: visible; }
+.mmt__g { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.mmt__p {
+  position: absolute; left: 50%; top: calc(50% + var(--gh, 18px) + 2px); transform: translateX(-50%); height: 20px; max-width: 176px; padding: 0 6px;
+  overflow: hidden; white-space: nowrap; pointer-events: none; border-radius: 3px; background: rgba(9, 13, 14, .92); color: #fff;
+  font: 700 12px/20px var(--mm-mono); text-transform: uppercase;
+}
+.mmt--t .mmt__p { top: auto; bottom: calc(50% + var(--gh, 18px) + 2px); }
+.mmt--r .mmt__p { left: calc(50% + var(--gh, 18px) + 4px); top: 50%; transform: translateY(-50%); }
+.mmt--l .mmt__p { left: auto; right: calc(50% + var(--gh, 18px) + 4px); top: 50%; transform: translateY(-50%); }
+.mmt--hide .mmt__p { display: none; }
+.mmt--label { pointer-events: none; }
+.mmt--label .mmt__p { top: 50%; transform: translate(-50%, -50%); }
+.mmt--off-link .mmt__g { opacity: .7; }
+.mmt.is-mine .mmt__g { filter: drop-shadow(0 0 3px var(--mm-green)); }
+/* Pion : anneau d'équipe, lettre, triangle de direction hors de l'anneau. */
+.mmt-pawn { position: relative; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 4px solid var(--c); background: #090d0e; box-shadow: 0 0 0 1px rgba(0,0,0,.75); }
+.mmt-pawn b { color: #fff; font: 800 12px/1 var(--mm-mono); }
+.mmt-tick { position: absolute; inset: -11px; pointer-events: none; }
+.mmt-tick::before { content: ""; position: absolute; top: 0; left: 50%; margin-left: -5px; border: solid transparent; border-width: 0 5px 8px; border-bottom-color: #f4f4f0; }
+.mmt--me .mmt-pawn { box-shadow: 0 0 0 2px #090d0e, 0 0 0 4px var(--mm-orange); }
+.mmt--me .mmt-ring { outline: 2px solid var(--mm-orange); outline-offset: 2px; }
+/* Cercle fin : triangle, losange, point, symbole réel. */
+.mmt-ring { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--c); }
+.mmt-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
+.mmt-diamond { width: 15px; height: 15px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 0 1px rgba(0,0,0,.6); }
+.mmt-tri { width: 0; height: 0; border: solid transparent; border-width: 16px 10px 0; border-top-color: var(--c); }
+.mmt-sym { display: grid; place-items: center; width: 26px; height: 26px; overflow: hidden; }
+.mmt-sym > * { position: static !important; margin: 0 !important; transform: none; max-width: 26px; max-height: 26px; }
+.mmt-arrow { background: transparent; border: 0; pointer-events: none; }
+.mmt-arrow i { display: block; width: 24px; height: 24px; }
+.mmt-arrow i::before { content: ""; position: absolute; top: 0; left: 2px; border: solid transparent; border-width: 0 10px 18px; border-bottom-color: var(--c); }
