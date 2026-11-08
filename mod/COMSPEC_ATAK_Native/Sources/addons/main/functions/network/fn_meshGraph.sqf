@@ -26,7 +26,8 @@
       "pass" [camps] (script planifié)                             "view" [réseau, antenne, débit max] (script planifié) -> HashMap
       "graph" [camp] -> [nœuds, voisins, liens, total] ou []
       Sans effet, testés par fn_devMeshTest :
-      "solve" [voisins, sources, autorisés, plafond, débit max] -> [débits, sauts, vers, marges, sources]
+      "solve" [voisins, sources, autorisés, plafond, débit max, courbe] -> [débits, sauts, vers, marges, sources]
+      "curve" -> part du débit gardée selon les sauts (décision 12)
       "gravity" [marge, sauts, plafond] -> niveau 0 à 3            "hyst" [lien bon, marge, débit, état précédent] -> [garder, état, marge, débit]
 */
 params [["_act", ""], ["_arg", []]];
@@ -53,10 +54,17 @@ switch (_act) do {
         if (_old isEqualTo [] || {(_old select 0) >= 1}) exitWith { [false, [], 0, 0] };
         [true, [1, _old select 1, _old select 2], -1, _old select 2]
     };
+    case "curve": {
+        // Part du débit gardée selon les sauts (index = sauts). Décision 12 : « moitié puis tiers » en Milsim, x 0,8 par saut relayé sinon.
+        private _c = missionNamespace getVariable ["comspec_atak_native_mesh_hop_curve", 0];
+        private _real = if (_c isEqualTo 0) then { (["profile"] call comspec_atak_native_fnc_netCond) isEqualTo 3 } else { _c isEqualTo 1 };
+        if (_real) exitWith { [1, 1, 0.5, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33] };
+        [1, 1, 0.8, 0.64, 0.512, 0.41, 0.328, 0.262, 0.21, 0.168, 0.134, 0.107, 0.086, 0.069, 0.055, 0.044, 0.035]
+    };
     case "solve": {
-        // Plus large chemin à sauts bornés, couche par couche : débit du chemin = plus petit lien x 0,8 par saut relayé (le premier
-        // saut ne coûte rien). Un état moins large et plus long que le meilleur déjà connu d'un nœud ne peut plus rien améliorer.
-        _arg params ["_adj", "_sources", "_allowed", "_maxH", "_maxK"];
+        // Plus large chemin à sauts bornés, couche par couche : débit du chemin = plus petit lien x part gardée selon les sauts. On garde par
+        // couche le meilleur plus petit lien ; un état ni plus court ni plus large qu'un état déjà vu ne peut plus rien améliorer.
+        _arg params ["_adj", "_sources", "_allowed", "_maxH", "_maxK", ["_curve", [1, 1, 0.8, 0.64, 0.512, 0.41, 0.328, 0.262, 0.21, 0.168, 0.134, 0.107, 0.086, 0.069, 0.055, 0.044, 0.035]]];
         private _n = count _adj;
         private _bw = [];
         _bw resize _n;
@@ -64,25 +72,26 @@ switch (_act) do {
         private _hop = +_bw;
         private _via = +_bw;
         private _src = +_bw;
+        private _seen = +_bw;
         private _mg = _bw apply { 40 };
         private _front = [];
         {
             _bw set [_x, _maxK];
+            _seen set [_x, _maxK];
             _hop set [_x, 0];
             _src set [_x, _x];
             _front pushBack [_x, _maxK, 40, _x];
         } forEach _sources;
         for "_h" from 1 to _maxH do {
             if (_front isEqualTo []) then { break };
-            private _layer = +_bw;
+            private _layer = _bw apply { -1 };
             private _entry = _bw apply { [] };
-            private _k = [1, 0.8] select (_h > 1);
             {
                 _x params ["_u", "_ub", "_um", "_us"];
                 {
                     _x params ["_v", "_m", "_kb"];
                     if !(_allowed select _v) then { continue };
-                    private _c = (_ub min _kb) * _k;
+                    private _c = _ub min _kb;
                     if (_c > (_layer select _v)) then {
                         _layer set [_v, _c];
                         _entry set [_v, [_v, _c, _um min _m, _us, _u]];
@@ -90,15 +99,20 @@ switch (_act) do {
                 } forEach (_adj select _u);
             } forEach _front;
             _front = [];
+            private _k = _curve param [_h, 0.03];
             {
                 if (_x isEqualTo []) then { continue };
                 _x params ["_v", "_c", "_m", "_s", "_u"];
-                _bw set [_v, _c];
-                _hop set [_v, _h];
-                _via set [_v, _u];
-                _mg set [_v, _m];
-                _src set [_v, _s];
+                if (_c <= (_seen select _v)) then { continue };
+                _seen set [_v, _c];
                 _front pushBack [_v, _c, _m, _s];
+                if ((_c * _k) > (_bw select _v)) then {
+                    _bw set [_v, _c * _k];
+                    _hop set [_v, _h];
+                    _via set [_v, _u];
+                    _mg set [_v, _m];
+                    _src set [_v, _s];
+                };
             } forEach _entry;
         };
         [_bw, _hop, _via, _mg, _src]
@@ -222,9 +236,34 @@ switch (_act) do {
             _c set [7, 0];
             (missionNamespace getVariable ["COMSPEC_ATAK_MeshPass", -1]) isEqualTo _passId
         };
+        // Hauteur d'antenne : posture en Milsim seulement (décision 15), sinon hauteur debout au moins. Radio posée : mât éventuel (lot 9).
+        private _milsim = (["profile"] call comspec_atak_native_fnc_netCond) isEqualTo 3;
         private _antOf = {
-            params ["_o"];
-            if (_o isKindOf "CAManBase") then { (eyePos _o) vectorAdd [0, 0, 0.4] } else { (getPosASL _o) vectorAdd [0, 0, 0.8] }
+            params ["_o", "_posture"];
+            if (_o isKindOf "CAManBase") exitWith {
+                private _e = (eyePos _o) vectorAdd [0, 0, 0.4];
+                if (_posture) exitWith { _e };
+                [_e select 0, _e select 1, (_e select 2) max (((getPosASL _o) select 2) + 2)]
+            };
+            private _mast = _o getVariable ["COMSPEC_ATAK_MeshMast", 0];
+            if !(_mast isEqualType 0) then { _mast = 0; };
+            (getPosASL _o) vectorAdd [0, 0, 0.8 + ((_mast max 0) min 15)]
+        };
+        // Pertes propres à la paire, hors cache : Milsim seulement. Couché derrière un obstacle proche (réglage mesh_posture) ; porteur entre
+        // son antenne et le correspondant (réglage mesh_body_mask, décoché). Valeurs de jeu, non tirées d'une fiche.
+        private _bodyOn = _milsim && {(missionNamespace getVariable ["comspec_atak_native_mesh_body_mask", false]) isEqualTo true};
+        private _proneOn = _milsim && {(missionNamespace getVariable ["comspec_atak_native_mesh_posture", true]) isEqualTo true};
+        private _pairLoss = {
+            params ["_o", "_from", "_to", "_prone", "_body"];
+            if !(_o isKindOf "CAManBase") exitWith { 0 };
+            private _l = 0;
+            if (_body && {abs ((_o getRelDir _to) - 180) < 60}) then { _l = _l + 3; };
+            if (_prone && {(stance _o) isEqualTo "PRONE"}) then {
+                private _d = (_from distance _to) max 1;
+                private _near = _from vectorAdd ((_to vectorDiff _from) vectorMultiply ((8 / _d) min 1));
+                if ((lineIntersectsSurfaces [_from, _near, _o, objNull, true, 1, "GEOM", "NONE"]) isNotEqualTo []) then { _l = _l + 12; };
+            };
+            _l
         };
         private _jamAt = {
             params ["_p", "_jams"];
@@ -241,8 +280,8 @@ switch (_act) do {
         // Marge d'une paire : bilan radio en cache 30 s par paire de positions arrondies (15 m).
         private _marginOf = {
             params ["_pa", "_pb", "_r", "_cache", "_c"];
-            private _ka = [round ((_pa select 0) / 15), round ((_pa select 1) / 15), round ((_pa select 2) / 5)];
-            private _kb = [round ((_pb select 0) / 15), round ((_pb select 1) / 15), round ((_pb select 2) / 5)];
+            private _ka = [round ((_pa select 0) / 15), round ((_pa select 1) / 15), round (_pa select 2)];
+            private _kb = [round ((_pb select 0) / 15), round ((_pb select 1) / 15), round (_pb select 2)];
             private _k = str ([[_kb, _ka, round _r], [_ka, _kb, round _r]] select ((_ka select 0) < (_kb select 0) || {(_ka select 0) isEqualTo (_kb select 0) && {(_ka select 1) <= (_kb select 1)}}));
             private _hit = _cache getOrDefault [_k, []];
             if ((count _hit) isEqualTo 2 && {diag_tickTime - (_hit select 0) < 30}) exitWith {
@@ -272,7 +311,8 @@ switch (_act) do {
             {
                 (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_key", ""], ["_r", 0], ["_o", objNull]];
                 if (_key isEqualTo "") then { continue };
-                _found pushBack [_o, _x, [1, 0] select (_o isKindOf "CAManBase"), parseNumber (_key select [1]), _r, _maxK, [_o] call _antOf];
+                private _wf = [0.5, 1, 1.5] select (["node", _x] call comspec_atak_native_fnc_meshRead select 3);
+                _found pushBack [_o, _x, [1, 0] select (_o isKindOf "CAManBase"), parseNumber (_key select [1]), _r, _maxK * _wf, [_o, _milsim] call _antOf];
             } forEach ((allPlayers select { alive _x && {str side group _x isEqualTo _side} }) + (["units", [_side]] call comspec_atak_native_fnc_devMeshSim));
             private _total = count _found;
             private _nodes = _found select [0, _maxNodes];
@@ -299,6 +339,9 @@ switch (_act) do {
                         _ct set [2, (_ct select 2) + 1];
                     } else {
                         _m = [_a select 6, _b select 6, _r, _cache, _ct] call _marginOf;
+                        if (_bodyOn || {_proneOn}) then {
+                            _m = _m - ([_a select 0, _a select 6, _b select 6, _proneOn, _bodyOn] call _pairLoss) - ([_b select 0, _b select 6, _a select 6, _proneOn, _bodyOn] call _pairLoss);
+                        };
                         private _jam = (_jf select _i) min (_jf select _j);
                         if (_m >= 0 && {_jam >= 0.1}) then {
                             private _f = [0.06, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1] select (((({ _m >= _x } count [0, 2, 4, 6, 9, 12, 16, 20]) - 1) max 0) min 7);
@@ -332,6 +375,21 @@ switch (_act) do {
             };
             if (_aborted) then { break };
             _hystAll set [_side, [_nodes apply { _x select 0 }, _state]];
+            // Temps d'antenne partagé (lot 9, réglage mesh_airtime) : les voisins d'un même canal se partagent l'émission. La voix n'en dépend pas au-dessus de ses seuils.
+            if ((missionNamespace getVariable ["comspec_atak_native_mesh_airtime", true]) isEqualTo true) then {
+                private _deg = _nodes apply { 0 };
+                for "_q" from 0 to ((count _lf) - 3) step 3 do {
+                    private _pk = _lf select _q;
+                    _deg set [_pk mod 64, (_deg select (_pk mod 64)) + 1];
+                    _deg set [floor (_pk / 64), (_deg select (floor (_pk / 64))) + 1];
+                };
+                for "_q" from 0 to ((count _lf) - 3) step 3 do {
+                    private _pk = _lf select _q;
+                    private _busy = (_deg select (_pk mod 64)) max (_deg select (floor (_pk / 64)));
+                    _lf set [_q + 2, ((_lf select (_q + 2)) / (1 + 0.2 * ((_busy - 1) max 0))) max 1];
+                };
+                _lf = _lf apply { _x };
+            };
             _linkN = _linkN + (count _lf) / 3;
             private _nf = [];
             { _nf append [_x select 0, _x select 1, 100 * (_x select 2) + (_x select 3), round ((_x select 4) / 10), round ((_x select 5) / 100)]; } forEach _nodes;
@@ -401,8 +459,10 @@ switch (_act) do {
         // En mode relais, tous les canaux depuis les passerelles : la voix par le cœur de réseau joint aussi les autres canaux, et un
         // chemin ne gagne rien à passer par une deuxième passerelle, déjà source. Pour mon canal, le résultat est le même.
         private _allowedG = if (_mode isEqualTo "relay") then { _nodes apply { !isNull (_x select 0) } } else { _allowed };
-        (["solve", [_adj, _gws, _allowedG, _maxH, _maxK]] call comspec_atak_native_fnc_meshGraph) params ["_bwG", "_hopG", "_viaG", "_mgG", "_srcG"];
-        (["solve", [_adj, [_me], _allowed, _maxH, _maxK]] call comspec_atak_native_fnc_meshGraph) params ["_bwM", "_hopM", "", "_mgM"];
+        private _curve = ["curve"] call comspec_atak_native_fnc_meshGraph;
+        // Canal large : une radio peut dépasser le débit de base (lot 9), borné par la capacité de chaque nœud.
+        (["solve", [_adj, _gws, _allowedG, _maxH, _maxK * 1.5, _curve]] call comspec_atak_native_fnc_meshGraph) params ["_bwG", "_hopG", "_viaG", "_mgG", "_srcG"];
+        (["solve", [_adj, [_me], _allowed, _maxH, _maxK * 1.5, _curve]] call comspec_atak_native_fnc_meshGraph) params ["_bwM", "_hopM", "", "_mgM"];
         // Noms et position réelle des passerelles : liste locale des relais, déjà en cache.
         private _relays = ["list"] call comspec_atak_native_fnc_relayNet;
         private _nameOf = {
@@ -451,6 +511,8 @@ switch (_act) do {
                 _hc = _h + (_hopG select _forEachIndex);
                 _mc = (_mgG select _me) min (_mgG select _forEachIndex);
             };
+            // Priorité voix (lot 9) : la saturation ralentit d'abord les données ; la voix ne se dégrade qu'en dessous de ces seuils.
+            private _pathKb = if (_hd >= 0) then { _bwM select _forEachIndex } else { (_bwG select _me) min (_bwG select _forEachIndex) };
             private _pick = switch (true) do {
                 case (_hd < 0 && {_hc < 0 || {_hc > _maxH}}): { [] };
                 case (_hd < 0): { [_hc, _mc] };
@@ -458,9 +520,13 @@ switch (_act) do {
                 default { [_hc, _mc] };
             };
             if (_pick isEqualTo []) then { continue };
-            _voice set [netId _owner, [_pick select 0, _pick select 1, ["gravity", [_pick select 1, _pick select 0, _maxH]] call comspec_atak_native_fnc_meshGraph]];
+            private _lvl = ["gravity", [_pick select 1, _pick select 0, _maxH]] call comspec_atak_native_fnc_meshGraph;
+            _lvl = _lvl max (switch (true) do { case (_pathKb < 64): { 2 }; case (_pathKb < 200): { 1 }; default { 0 }; });
+            _voice set [netId _owner, [_pick select 0, _pick select 1, _lvl]];
         } forEach _nodes;
         _res set ["voice", _voice];
+        // Part relayée (lot 9, batterie) : nœuds dont le chemin vers la passerelle passe d'abord par moi.
+        _res set ["relayed", { _x isEqualTo _me } count _viaG];
         _res set ["mode", _mode];
         _res set ["ok", _ok];
         _res set ["reach", _reach];
@@ -473,7 +539,7 @@ switch (_act) do {
         private _self = _meG isEqualTo _me;
         if (_ok) then {
             private _mgMin = (_mgG select _me) max 0;
-            _res set ["kbps", round (_bwG select _me)];
+            _res set ["kbps", round ((_bwG select _me) min ((_nodes select _me) select 5))];
             _res set ["hops", _h];
             _res set ["gw", if (_self) then { "maillage autonome" } else { _names select _meG }];
             _res set ["via", if (_self) then { "" } else { _names select (_viaG select _me) }];

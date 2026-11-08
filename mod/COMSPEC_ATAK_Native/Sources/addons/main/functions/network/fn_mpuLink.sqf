@@ -29,7 +29,7 @@
       "noDirect" -> vrai si le téléphone ne parle plus directement aux relais (fn_relayNet "best")
       "view"     -> HashMap pour l'app Réseau (état de la radio et "status")
       "link"     [mode "cable" | "wifi"] ; "unlink"
-      "power" ; "chan" [+1 | -1] ; "txpower" ; "battery" ; "info"
+      "power" ; "chan" [+1 | -1] ; "txpower" ; "width" ; "mast" ; "battery" ; "info"
       "tick", "mesh" (planifié), "aceInit"
 */
 params [["_act", "status"], ["_arg", []]];
@@ -37,7 +37,7 @@ private _active = { missionNamespace getVariable ["comspec_atak_native_mpu_real"
 private _state = {
     private _s = uiNamespace getVariable "COMSPEC_ATAK_MpuSt";
     if (isNil "_s") then {
-        _s = createHashMapFromArray [["on", true], ["chan", 1], ["pwr", 2], ["link", ""], ["batt", 100], ["holder", objNull], ["at", diag_tickTime], ["warned", 100]];
+        _s = createHashMapFromArray [["on", true], ["chan", 1], ["pwr", 2], ["link", ""], ["batt", 100], ["holder", objNull], ["at", diag_tickTime], ["warned", 100], ["width", 1]];
         uiNamespace setVariable ["COMSPEC_ATAK_MpuSt", _s];
     };
     _s
@@ -72,6 +72,8 @@ private _kick = {
     playSound "ClickSoft";
 };
 private _pwrK = [0.41, 0.71, 1];
+// Largeur de canal (lot 9) : étroit, portée x 1,41 (3 dB) et débit / 2 ; large, portée x 0,71 et débit x 1,5. Choix de jeu.
+private _widK = [1.41, 1, 0.71];
 private _freqOf = { params ["_c"]; 2200 + 20 * (_c - 1) };
 private _hasCable = { !(missionNamespace getVariable ["comspec_atak_native_mpu_cable", true]) || {"COMSPEC_ATAK_EudCable" in (items player)} };
 switch (_act) do {
@@ -105,7 +107,7 @@ switch (_act) do {
         createHashMapFromArray [
             ["carried", _carried], ["posed", !_carried && {[_h] call _holderHas}], ["posedD", [-1, round (player distance _h)] select (!isNull _h)],
             ["on", _st get "on"], ["chan", _st get "chan"], ["freq", [_st get "chan"] call _freqOf], ["pwr", _pwr],
-            ["pwrLabel", ["Faible (1 W)", "Moyenne (3 W)", "Max (6 W)"] select _pwr],
+            ["pwrLabel", ["Faible (1 W)", "Moyenne (3 W)", "Max (6 W)"] select _pwr], ["width", ["Étroit", "Normal", "Large"] select (_st getOrDefault ["width", 1])],
             ["range", round ((missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000]) * (_pwrK select _pwr))],
             ["batt", round (_st get "batt")], ["left", _left], ["link", _st get "link"],
             ["wifi", missionNamespace getVariable ["comspec_atak_native_mpu_wifi", true]], ["wifiR", missionNamespace getVariable ["comspec_atak_native_mpu_wifi_range", 8]],
@@ -176,6 +178,40 @@ switch (_act) do {
         call _kick;
         _p
     };
+    case "width": {
+        private _st = call _state;
+        private _w = ((_st getOrDefault ["width", 1]) + 1) mod 3;
+        _st set ["width", _w];
+        ["INFO", format ["MPU5 : canal %1 (%2)", ["étroit", "normal", "large"] select _w, ["plus de portée, moins de débit", "réglage de base", "plus de débit, moins de portée"] select _w]] call _say;
+        call _kick;
+        _w
+    };
+    case "mast": {
+        // Mât d'antenne sur la MPU5 posée (lot 9, réglage mesh_mast) : classe de décor d'Arma, pas de modèle propre. Se voit de loin.
+        private _st = call _state;
+        private _h = _st getOrDefault ["holder", objNull];
+        private _old = _st getOrDefault ["mast", objNull];
+        if (!isNull _old) exitWith {
+            deleteVehicle _old;
+            _st set ["mast", objNull];
+            if (!isNull _h) then { _h setVariable ["COMSPEC_ATAK_MeshMast", 0, true]; };
+            ["INFO", "Mât replié"] call _say;
+            call _kick;
+            false
+        };
+        if (isNull _h || {!((missionNamespace getVariable ["comspec_atak_native_mesh_mast", true]) isEqualTo true)}) exitWith { ["WARNING", "Mât : il faut une MPU5 posée, reliée en Wi-Fi"] call _say; false };
+        ["INFO", "Déploiement du mât : 30 s"] call _say;
+        [{
+            params ["_holder", "_stt"];
+            if (isNull _holder) exitWith {};
+            private _m = createVehicle ["Land_TTowerSmall_1_F", getPosATL _holder, [], 2, "NONE"];
+            _stt set ["mast", _m];
+            _holder setVariable ["COMSPEC_ATAK_MeshMast", 8, true];
+            uiNamespace setVariable ["COMSPEC_ATAK_MpuMeshAt", -100];
+            ["Mât déployé", 3] call comspec_atak_native_fnc_toast;
+        }, [_h, _st], 30] call comspec_atak_native_fnc_waitAndExec;
+        true
+    };
     case "battery": {
         private _st = call _state;
         if !("COMSPEC_ATAK_RadioBattery" in (items player)) exitWith { ["WARNING", "Aucune batterie de radio dans l'inventaire"] call _say; false };
@@ -226,7 +262,9 @@ switch (_act) do {
         // Batterie : se vide radio allumée (portée ou posée), moins vite à basse puissance.
         if (_present && {_st get "on"} && {(_st get "batt") > 0}) then {
             private _hours = (missionNamespace getVariable ["comspec_atak_native_mpu_hours", 10]) max 0.1;
-            private _b = ((_st get "batt") - _dt * 100 / (_hours * 3600) * ([0.55, 0.75, 1] select (_st get "pwr"))) max 0;
+            // Trafic relayé (lot 9, réglage mesh_traffic_power) : un nœud central se vide plus vite, au plus deux fois.
+            private _relay = if ((missionNamespace getVariable ["comspec_atak_native_mesh_traffic_power", true]) isEqualTo true) then { ((uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["relayed", 0]) min 10 } else { 0 };
+            private _b = ((_st get "batt") - _dt * 100 / (_hours * 3600) * ([0.55, 0.75, 1] select (_st get "pwr")) * (1 + 0.1 * _relay)) max 0;
             _st set ["batt", _b];
             private _w = _st getOrDefault ["warned", 100];
             {
@@ -255,7 +293,8 @@ switch (_act) do {
         // Nœud publié : MPU5 allumée (reliée au téléphone ou non).
         private _on = _present && {_st get "on"} && {(_st get "batt") > 0};
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
-        private _node = [[], [format ["C%1", _st get "chan"], round (_mR * (_pwrK select (_st get "pwr"))), [player, _h] select (!isNull _h)]] select _on;
+        private _wid = _st getOrDefault ["width", 1];
+        private _node = [[], [format ["C%1", _st get "chan"], (round (_mR * (_pwrK select (_st get "pwr")) * (_widK select _wid))) min 20000, [player, _h] select (!isNull _h), _wid]] select _on;
         if (_node isNotEqualTo (player getVariable ["COMSPEC_ATAK_MpuNode", []])) then { player setVariable ["COMSPEC_ATAK_MpuNode", _node, true]; };
         // État vu par le téléphone.
         private _kind = switch (true) do {
