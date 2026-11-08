@@ -9,15 +9,18 @@
 params [["_n", createHashMap]];
 private _t = toUpper (_n getOrDefault ["type", "INFO"]);
 private _sev = switch (_t) do { case "WARNING": { "WARNING" }; case "ERROR"; case "TACTICAL": { "ERROR" }; default { "INFO" }; };
-private _rgb = switch (_t) do {
-    case "WARNING": { [0.95, 0.67, 0.2, 1] };
+// Couleurs de gravité : jetons du thème (fn_theme), lisibles sur les cartes des trois thèmes.
+private _th = [] call comspec_atak_native_fnc_theme;
+private _tok = switch (_t) do {
+    case "WARNING": { "warn" };
     case "ERROR";
-    case "TACTICAL": { [0.9, 0.38, 0.31, 1] };
-    case "MESSAGE": { [0.44, 0.71, 0.91, 1] };
-    case "SUCCESS": { [0.36, 0.78, 0.42, 1] };
-    default { [0.66, 0.78, 0.73, 1] };
+    case "TACTICAL": { "alert" };
+    case "MESSAGE": { "info" };
+    case "SUCCESS": { "ok" };
+    default { "textDim" };
 };
-private _hex = switch (_t) do { case "WARNING": { "#f2ab33" }; case "ERROR"; case "TACTICAL": { "#e5604f" }; case "MESSAGE": { "#6fb6e8" }; case "SUCCESS": { "#5cc76b" }; default { "#a8c7ba" }; };
+private _rgb = _th get _tok;
+private _hex = _th get ("hex" + (toUpper (_tok select [0, 1])) + (_tok select [1]));
 private _label = createHashMapFromArray [["INFO", "Info"], ["SUCCESS", "Réussi"], ["WARNING", "Attention"], ["ERROR", "Erreur"], ["MESSAGE", "Message"], ["TACTICAL", "Tactique"]] getOrDefault [_t, _t];
 
 private _plain = ((_n getOrDefault ["message", ""]) regexReplace ["<[^>]*>", ""]) regexReplace ["[\r\n\t]+", " "];
