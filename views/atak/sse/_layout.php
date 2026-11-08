@@ -52,7 +52,7 @@ if (!isset($canMemberPapers)) {
         $canMemberPapers = false;
     }
 }
-$sseNav = \App\Support\SsePortalNav::sections($canManage, $canGrant, $isGuest, (bool) $canMemberPapers);
+$sseNav = \App\Support\SsePortalNav::sections($canManage, $canGrant, $isGuest, (bool) $canMemberPapers, \App\Controllers\Web\SseEditorLibraryController::allowed());
 $sseNavActive = \App\Support\SsePortalNav::activeId($sseNav, $currentPath, $activeNav);
 $sseNavOpenSection = \App\Support\SsePortalNav::sectionOf($sseNav, $sseNavActive);
 $ssePalette = \App\Support\SsePortalNav::paletteEntries($sseNav, static fn (string $p): string => (string) url($p), $canManage, $isGuest);
