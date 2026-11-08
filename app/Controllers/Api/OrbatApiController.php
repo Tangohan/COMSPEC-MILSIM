@@ -458,10 +458,6 @@ final class OrbatApiController
 
     private function structureCreate(Request $request, int $tenantId): Response
     {
-        $planBlock = \App\Services\Billing\OrbatUnitQuota::blockMessage($tenantId);
-        if ($planBlock !== null) {
-            return Response::json(['success' => false, 'message' => $planBlock, 'error' => 'plan_required'], 403);
-        }
         $name = trim($request->inputString('name', ''));
         if ($name === '' || mb_strlen($name) > 255) {
             return Response::json(['success' => false, 'message' => 'Le nom de l’unité est requis.'], 400);
@@ -496,6 +492,12 @@ final class OrbatApiController
             if (!$commander || (string) ($commander['status'] ?? '') !== 'active') {
                 return Response::json(['success' => false, 'message' => 'Chef d’unité introuvable ou compte inactif'], 400);
             }
+        }
+
+        // Plafond de la formule : contrôlé après la validation des champs, juste avant la création.
+        $planBlock = \App\Services\Billing\OrbatUnitQuota::blockMessage($tenantId);
+        if ($planBlock !== null) {
+            return Response::json(['success' => false, 'message' => $planBlock, 'error' => 'plan_required'], 403);
         }
 
         $slug = $this->unitRepository->uniqueSlugForTenant($tenantId, $name);

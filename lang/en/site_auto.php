@@ -55288,4 +55288,12 @@ return [
     'Une formule Pro+ minimum est requise' => 'A Pro+ plan or higher is required',
     'Votre communauté ne dispose pas actuellement de l’accès au Patch Studio. Une formule Pro+ active ou offerte est nécessaire, dans le respect des permissions de votre organisation.' => 'Your community does not currently have access to Patch Studio. An active or gifted Pro+ plan is required, in line with your organisation\'s permissions.',
     'Impossible de confirmer l’envoi. Consultez l’historique des communications avant de réessayer.' => 'Unable to confirm delivery. Check the communications history before trying again.',
+    'Unités dans l’ORBAT' => 'Units in the ORBAT',
+    'Unités de l’organigramme, hors unités archivées. Celles déjà créées restent utilisables.' => 'Units in the organisation chart, archived units excluded. Units already created stay usable.',
+    'Synchronisation de l’équipement avec le jeu' => 'Equipment sync with the game',
+    'Envoyer ses tenues depuis l’Arsenal et les récupérer en jeu. Les tenues restent consultables sur le site.' => 'Send outfits from the Arsenal and get them back in game. Outfits stay available on the site.',
+    '%1 unité(s) ne seront pas créées : votre formule limite le nombre d’unités de l’ORBAT.' => '%1 unit(s) will not be created: your plan limits the number of ORBAT units.',
+    'Aucune session liée. Créez-la pour compter le temps de jeu de cet événement.' => 'No linked session. Create one to count the game time of this event.',
+    'Le temps de jeu et le pointage de cet événement sont suivis dans sa session.' => 'This event\'s game time and attendance are tracked in its session.',
+    'Session de jeu' => 'Game session',
 ];
