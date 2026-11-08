@@ -112,6 +112,13 @@ final class ConfigurationUpdateController
         }, 'Configuration mise de côté.');
     }
 
+    public function complete(Request $request, array $params = []): Response
+    {
+        return $this->mutate($request, static function (ConfigurationUpdateService $svc, int $tenantId, string $code, ?int $userId): void {
+            $svc->markManualDone($tenantId, $code, $userId);
+        }, 'Étape terminée.');
+    }
+
     public function reopen(Request $request, array $params = []): Response
     {
         return $this->mutate($request, static function (ConfigurationUpdateService $svc, int $tenantId, string $code, ?int $userId): void {

@@ -1599,6 +1599,7 @@ return function (Router $router) {
     $router->post('/back-office/nouveautes-organisation/continuer', [ConfigurationUpdateController::class, 'continueToDashboard'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/mise-a-niveau/demarrer', [ConfigurationUpdateController::class, 'start'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/mise-a-niveau/ignorer', [ConfigurationUpdateController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/mise-a-niveau/terminer', [ConfigurationUpdateController::class, 'complete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/mise-a-niveau/rouvrir', [ConfigurationUpdateController::class, 'reopen'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
