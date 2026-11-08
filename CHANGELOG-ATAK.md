@@ -38,39 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : fond de carte ARDOISE et style tactique des marqueurs et traits (ATAK natif, version à attribuer)
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### Résumé joueur
 Type : nouveauté
-FR : Carte : nouveau fond ARDOISE et style tactique des marqueurs
-- Réglages › Carte : le fond ARDOISE donne une carte bleu-gris sombre, avec une mer très sombre, des routes turquoise fines, des courbes de niveau discrètes et les noms de villes en petites capitales avec un point turquoise.
-- Marqueurs et traits, avec trois choix (AUTO, TACTIQUE, STANDARD) : pions ronds avec lettre d'équipe et triangle de direction, petites plaques de nom, routes orange épaisses, zones hachurées, mesure en tirets verts avec sa distance et cercle fin autour des marqueurs nommés.
-- AUTO allume ce style sur le fond ARDOISE. Les autres fonds de carte et les thèmes SOMBRE, JOUR et NUIT JVN ne changent pas.
-- Les marqueurs à couleur « par défaut » ne sont plus noirs sur la carte : ils reprennent la couleur de leur symbole, sur tous les fonds.
-- Ton point, son cercle de précision et tes cercles du maillage sont dessinés au même endroit, à pied comme en véhicule. La perte de signal et la météo agissent toujours sur le GPS.
-- Carte : maintiens le clic gauche pour pointer. Ton camp voit ton pointeur et ton nom, qui disparaissent quand tu relâches.
-- Carte : le relèvement du curseur donne aussi la direction (« 254 m · 129° SE »). Un marqueur posé sans nom s'appelle maintenant « REP 3 », modifiable à la pose et après, et ne dit plus le type d'unité.
-- App Routes : chaque route de la liste a maintenant PARTAGER et SUPPRIMER. Une route supprimée ne revient plus chez ceux qui l'ont reçue.
-EN : Map: new SLATE background and tactical marker style
-- Settings › Map: the SLATE background gives a dark blue-grey map, with a very dark sea, thin turquoise roads, discreet contour lines and town names in small capitals with a turquoise dot.
-- Markers and lines, with three choices (AUTO, TACTICAL, STANDARD): round pawns with a team letter and direction triangle, small name plates, thick orange routes, hatched zones, a green dashed measuring line with its distance and a thin circle around named markers.
-- AUTO turns this style on with the SLATE background. The other map backgrounds and the DARK, DAY and NIGHT NVG themes do not change.
-- Markers with the “default” colour are no longer black on the map: they take the colour of their symbol, on every background.
-- Your point, its accuracy circle and your mesh circles are drawn at the same place, on foot as in a vehicle. Signal loss and weather still affect the GPS.
-- Map: hold the left mouse button to point. Your side sees your pointer and name, which disappear when you release.
-- Map: the cursor bearing also gives the direction (“254 m · 129° SE”). A marker placed without a name is now called “MK 3”, editable when placing and afterwards, and no longer states the unit type.
-- Routes app: every route in the list now has SHARE and DELETE. A deleted route no longer comes back for those who received it.
+FR : App Explosifs refaite et nouveau déclencheur réseau
+- Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.
+- Armer, désarmer et mettre à feu passent par le réseau : sans signal, charge trop loin d'un relais ou brouillage, le tir est refusé et l'app dit pourquoi.
+- Chaque charge montre son type, son état, sa distance, son cap et sa minuterie, à jour chaque seconde. Toute mise à feu demande une confirmation, qui prévient si des amis sont trop près.
+- Une mine à plaque ou à fil ne se déclenche plus depuis le téléphone, et une charge au clacker demande le clacker et sa portée. Le bouton Signaler envoie la position de la charge à votre camp.
+EN : Explosives app rebuilt, new network detonator
+- New "Network detonator" item: when placing an ACE charge, pick it in the Trigger menu. The charge is then commanded from the Explosives app, remotely and without a clacker.
+- Arming, disarming and firing go over the network: with no signal, a charge too far from a relay or jamming, firing is refused and the app says why.
+- Each charge shows its type, state, distance, bearing and timer, updated every second. Every firing asks for confirmation, with a warning if friendlies are too close.
+- A pressure or tripwire mine can no longer be fired from the phone, and a clacker charge requires the clacker and its range. The Report button sends the charge position to your side.
 
 ### Détail technique
-- Quatrième contrôle carte `COMSPEC_RscMapAtakSlate` (IDC 88534) : les couleurs d'une carte Arma ne se règlent que dans la classe. Écran sans ce contrôle (tablette JPC) : carte topo sous un voile bleu-gris.
-- Moteur : aucune couleur de contrôle pour les bâtiments ni le relief ombré ; noms marins et symboles de sommets colorés par `CfgLocationTypes`, donc inchangés.
-- Style : `COMSPEC_ATAK_MapDrawStyle` lu une fois dans la palette (`fn_mapColors`, clé « tac »). Hachures par la brosse `BDiagonal` du moteur dans `drawRectangle` / `drawEllipse` ; triangle de direction par rotation de texture ; largeur de la plaque de mesure sans nouvelle mesure de texte ; lettre du pion dans le cache d'une seconde de l'unité.
-- Icônes noires : `CfgMarkerColors >> Default` vaut `{0,0,0,1}`, couleur lue telle quelle ; `fn_markerColor` prend alors la couleur du type (CfgMarkers). Présent depuis 2.9.40.
-- Position affichée unique : `fn_gpsPos` (position visuelle), posée en tête de `fn_mapOnDraw` ; cercles de nœud et de passerelle (`fn_meshDraw`) sur le point affiché au lieu de `getPosWorld`.
-- Pointage : appui comparé en écran à `getMousePosition` (la position vue par `MouseMoving` était périmée dès que la carte bougeait sans la souris) ; pointeur à 4 envois par seconde au plus au lieu d'un ping de 10 s.
-- Routes : retrait immédiat au moment de la suppression, révision envoyée avec le retrait, révision relevée au repartage.
-- « armée » en double : texte natif du contrôle carte (`CfgLocationTypes`), non modifié.
-- Polygones des plans de zones sans hachure, polylignes de mission à un pixel : inchangés, pour le coût de dessin et faute de test en jeu de `drawTriangle` texturé.
+- `fn_exploNet` : serveur seul juge (UID, armement, `fn_radioLink`, `COMSPEC_ATAK_Jammers`, `fn_relayNet`), détonation par `ace_explosives_fnc_detonateExplosive` côté serveur ; pose par `ace_explosives_fnc_placeExplosive` avec un déclencheur déjà accepté, sans entrée `ACE_Triggers`. Réglages `comspec_atak_native_explo_net_range`, `_delay`, `_consume`.
+- `fn_exploList` : type lu dans `ace_explosives_clackers` ; `fn_exploRow` ; mise à jour sur place (`fn_formSet` « btnrow » par bouton) à 1 Hz, page ouverte seulement.
 
 ---
 
