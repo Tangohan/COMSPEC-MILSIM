@@ -24,7 +24,7 @@ if (!hasInterface) exitWith {};
         [
             format ["Papiers — %1", name _u],
             [
-                ["LIST", ["Document", "Pièce délivrée à la personne (objet dans son inventaire)."], [["id_card", "passport", "driving_license"], ["Carte d'identité", "Passeport", "Permis de conduire"], 0]],
+                ["LIST", ["Document", "Pièce délivrée à la personne (objet dans son inventaire)."], [["id_card", "passport", "driving_license", "military_id"], ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"], 0]],
                 ["LIST", ["Pays", "Pays fictif (SIMULATION)."], [["auto", "ALT", "TNA", "LVN", "MLD"], ["Pays de la mission", "République d'Altis", "Fédération de Tanoa", "République de Livonie", "République de Malden"], 0]],
                 ["LIST", ["Nature", "Civil : vrais papiers. Couverture : identité préparée qui passe tous les contrôles sauf la biométrie. Faux : défauts selon la qualité."], [["civil", "cover", "forged"], ["Vrais papiers", "Couverture préparée", "Faux papiers"], 0]],
                 ["LIST", ["Procédé du faux", "Seulement pour de faux papiers."], [["", "counterfeit", "altered", "photo_swap", "stolen_blank"], ["Au hasard (selon la qualité)", "Contrefaçon complète", "Vrai document modifié", "Photo substituée", "Vierge volé"], 0]],

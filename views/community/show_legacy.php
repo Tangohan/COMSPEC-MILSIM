@@ -1,177 +1,193 @@
 <?php
+declare(strict_types=1);
+
 /** @var array $tenant */
 /** @var array $memberships */
 /** @var array $communityConfig */
 /** @var array<string, mixed>|null $communityProfile */
 /** @var bool $hasMembershipInTenant */
-$slug = $tenant['slug'] ?? '';
-$name = $tenant['name'] ?? '';
+/** @var array<string, mixed>|null $planBadge */
+/** @var array<string, mixed> $tenantBranding */
+/** @var list<array<string, mixed>> $recruitmentPublishedOpenings */
+$slug = (string) ($tenant['slug'] ?? '');
+$name = (string) ($tenant['name'] ?? '');
 $communityConfig = $communityConfig ?? [];
-$cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig, (string) ($tenant['slug'] ?? ''));
+$cp = $communityProfile ?? \App\Services\Community\TenantCommunityProfileService::getPublicViewModel($communityConfig, $slug);
 $hasMembershipInTenant = $hasMembershipInTenant ?? false;
+$planBadge = is_array($planBadge ?? null) ? $planBadge : null;
+$tenantBranding = is_array($tenantBranding ?? null) ? $tenantBranding : [];
+$openings = is_array($recruitmentPublishedOpenings ?? null) ? $recruitmentPublishedOpenings : [];
 
 $presentationMode = ($cp['presentationMode'] ?? 'simple') === 'military' ? 'military' : 'simple';
-$simpleBody = (string) ($cp['simpleBody'] ?? '');
-$expectations = (string) ($cp['expectations'] ?? '');
-$gameLabel = (string) ($cp['gameLabel'] ?? '');
-$mainMods = (string) ($cp['mainMods'] ?? '');
-$modpackSize = $cp['modpackSize'] ?? null;
+$simpleBody = trim((string) ($cp['simpleBody'] ?? ''));
+$expectations = trim((string) ($cp['expectations'] ?? ''));
+$gameLabel = trim((string) ($cp['gameLabel'] ?? ''));
+$mainMods = trim((string) ($cp['mainMods'] ?? ''));
 $militarySections = is_array($cp['militarySections'] ?? null) ? $cp['militarySections'] : [];
 $styleBadgeLabels = is_array($cp['styleBadgeLabels'] ?? null) ? $cp['styleBadgeLabels'] : [];
-$welcomeText = (string) ($cp['welcomeText'] ?? '');
+$welcomeText = trim((string) ($cp['welcomeText'] ?? ''));
 $registrationMode = (string) ($cp['registrationModeLabel'] ?? 'MilSim complet');
 $isLocked = !empty($cp['isLocked']);
 $discordUrl = (string) ($cp['discordUrl'] ?? '');
-$contactEmail = (string) ($cp['contactEmail'] ?? '');
-$contactIntro = (string) ($cp['contactIntro'] ?? '');
 $contactFormEnabled = !empty($cp['contactFormEnabled']);
+$contactIntro = (string) ($cp['contactIntro'] ?? '');
 $publicAudience = ($cp['publicAudience'] ?? 'unit') === 'platform' ? 'platform' : 'unit';
-$hasContactCta = $discordUrl !== '' || $contactEmail !== '' || $contactFormEnabled;
-$primaryCta = null;
-if (!$isLocked) {
-    $primaryCta = $publicAudience === 'platform' ? 'candidater' : 'rejoindre';
-} elseif ($hasContactCta) {
-    $primaryCta = 'contacter';
-}
-
 $communityCode = trim((string) ($tenant['community_code'] ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
+
+// Présentation : accueil, sinon texte de présentation, sinon première section.
+$lead = $welcomeText !== '' ? $welcomeText : $simpleBody;
+if ($lead === '' && $presentationMode === 'military') {
+    foreach ($militarySections as $sec) {
+        if (is_array($sec) && trim((string) ($sec['body'] ?? '')) !== '') {
+            $lead = trim((string) $sec['body']);
+            break;
+        }
+    }
+}
+
+$logoUrl = trim((string) ($tenantBranding['logo_url'] ?? ''));
+$bannerUrl = trim((string) ($tenantBranding['banner_url'] ?? ''));
+foreach (['logoUrl', 'bannerUrl'] as $k) {
+    $v = $$k;
+    if ($v !== '' && !preg_match('#^(https?:)?//#i', $v)) {
+        $$k = asset_url(ltrim($v, '/'));
+    }
+}
+$primary = trim((string) ($tenantBranding['primary_color'] ?? ''));
+$accent = trim((string) ($tenantBranding['accent_color'] ?? ''));
+$cpStyle = '';
+if (preg_match('/^#[0-9A-Fa-f]{6}$/', $primary) === 1 && \App\Support\ColorContrast::ratio('#041016', $primary) >= \App\Support\ColorContrast::MIN_TEXT_RATIO) {
+    $cpStyle .= '--cp-tenant-primary:' . $primary . ';';
+}
+$cpStyle .= '--cp-tenant-accent-text:' . \App\Support\ColorContrast::readableOn($accent !== '' ? $accent : '#6ee7b7', '#0b1220', '#6ee7b7') . ';';
+
+$enlistUrl = url('c/' . rawurlencode($slug) . '/enlistment');
+$letter = mb_strtoupper(mb_substr(trim($name) !== '' ? trim($name) : 'A', 0, 1));
+$cssHref = url('assets/css/community-public-dark.css') . '?v=' . rawurlencode((string) (@filemtime(base_path('public/assets/css/community-public-dark.css')) ?: 1));
+$openingCount = count($openings);
+$hasContact = $discordUrl !== '' || $contactFormEnabled || ($userId > 0 && $hasMembershipInTenant);
 ?>
-<div class="relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/90 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.2)] max-w-3xl mx-auto px-4 py-10 md:py-14 md:px-8">
-    <div class="pointer-events-none absolute inset-x-0 top-0 h-32 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.12),transparent_55%)]" aria-hidden="true"></div>
-    <div class="relative">
-    <?php if ($flashSuccess): ?>
-        <p class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><?= htmlspecialchars($flashSuccess) ?></p>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="<?= htmlspecialchars($cssHref, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<section class="cp" style="<?= htmlspecialchars($cpStyle, ENT_QUOTES, 'UTF-8') ?>" aria-labelledby="cp-title">
+    <?php if ($bannerUrl !== ''): ?>
+    <div class="cp__bg" aria-hidden="true"><img src="<?= htmlspecialchars($bannerUrl, ENT_QUOTES, 'UTF-8') ?>" alt=""></div>
     <?php endif; ?>
-    <?php if ($flashError): ?>
-        <p class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"><?= htmlspecialchars($flashError) ?></p>
-    <?php endif; ?>
-
-    <div class="flex flex-wrap items-center gap-2 mb-4">
-        <?php foreach ($styleBadgeLabels as $bl): ?>
-            <?php if (is_string($bl) && $bl !== ''): ?>
-                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-900"><?= htmlspecialchars($bl) ?></span>
+    <div class="cp__grid">
+        <div class="cp__main">
+            <?php if ($flashSuccess): ?>
+                <p class="cp__flash cp__flash--ok" role="status"><?= htmlspecialchars((string) $flashSuccess) ?></p>
             <?php endif; ?>
-        <?php endforeach; ?>
-    </div>
-
-    <h1 class="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2"><?= name_blur_html($name) ?></h1>
-    <p class="text-sm text-slate-500 mb-6"><?= $publicAudience === 'platform' ? 'Portail public — fiche de présentation' : 'Page publique — fiche de présentation de la communauté' ?></p>
-
-    <?php if ($gameLabel !== '' || $mainMods !== '' || $modpackSize !== null): ?>
-        <div class="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-sm p-5 mb-8 space-y-2 text-sm shadow-sm">
-            <?php if ($gameLabel !== ''): ?>
-                <p><span class="font-bold text-slate-700">Jeu :</span> <?= htmlspecialchars($gameLabel) ?></p>
+            <?php if ($flashError): ?>
+                <p class="cp__flash cp__flash--err" role="alert"><?= htmlspecialchars((string) $flashError) ?></p>
             <?php endif; ?>
-            <?php if ($mainMods !== ''): ?>
-                <p><span class="font-bold text-slate-700">Mods principaux :</span> <?= nl2br(htmlspecialchars($mainMods)) ?></p>
-            <?php endif; ?>
-            <?php if ($modpackSize !== null && (string) $modpackSize !== ''): ?>
-                <p><span class="font-bold text-slate-700">Taille modpack (indicatif) :</span> <?= htmlspecialchars((string) $modpackSize) ?></p>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
 
-    <?php if ($welcomeText !== ''): ?>
-        <p class="text-sm text-slate-700 mb-6 leading-relaxed border-l-4 border-emerald-500/40 pl-4"><?= nl2br(htmlspecialchars($welcomeText)) ?></p>
-    <?php endif; ?>
-
-    <?php if ($presentationMode === 'simple' && $simpleBody !== ''): ?>
-        <div class="prose prose-slate max-w-none mb-8">
-            <h2 class="text-lg font-black text-slate-900 mb-2">Présentation</h2>
-            <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap"><?= htmlspecialchars($simpleBody) ?></div>
-        </div>
-    <?php elseif ($presentationMode === 'military' && $militarySections !== []): ?>
-        <div class="space-y-6 mb-8">
-            <?php foreach ($militarySections as $sec): ?>
-                <?php if (!is_array($sec)) { continue; } ?>
-                <div class="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm">
-                    <p class="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-700 mb-1"><?= htmlspecialchars((string) ($sec['label'] ?? '')) ?></p>
-                    <?php if (trim((string) ($sec['title'] ?? '')) !== ''): ?>
-                        <h3 class="text-base font-black text-slate-900 mb-2"><?= htmlspecialchars((string) $sec['title']) ?></h3>
+            <div class="cp__brand">
+                <?php if ($logoUrl !== ''): ?>
+                    <img class="cp__logo" src="<?= htmlspecialchars($logoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Emblème de la communauté" width="72" height="72">
+                <?php else: ?>
+                    <div class="cp__mark" aria-hidden="true"><?= htmlspecialchars($letter) ?></div>
+                <?php endif; ?>
+                <div class="cp__chips">
+                    <?php if ($planBadge !== null): ?>
+                        <span class="cp__chip cp__chip--plan">Formule <?= htmlspecialchars((string) $planBadge['name'], ENT_QUOTES, 'UTF-8') ?></span>
                     <?php endif; ?>
-                    <div class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap"><?= htmlspecialchars((string) ($sec['body'] ?? '')) ?></div>
+                    <?php foreach ($styleBadgeLabels as $bl): ?>
+                        <?php if (is_string($bl) && $bl !== ''): ?>
+                            <span class="cp__chip"><?= htmlspecialchars($bl) ?></span>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                 </div>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
+            </div>
 
-    <?php if ($expectations !== ''): ?>
-        <div class="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 mb-8">
-            <h2 class="text-sm font-black uppercase tracking-widest text-amber-900 mb-2">Attentes</h2>
-            <p class="text-sm text-amber-950/90 whitespace-pre-wrap leading-relaxed"><?= htmlspecialchars($expectations) ?></p>
-        </div>
-    <?php endif; ?>
-
-    <?php if ($publicAudience === 'platform'): ?>
-    <p class="text-xs text-slate-500 mb-8">Portail plateforme · accès public : <strong><?= $isLocked ? 'Restreint' : 'Actif' ?></strong></p>
-    <?php else: ?>
-    <p class="text-xs text-slate-500 mb-8">Recrutement : <strong><?= htmlspecialchars($registrationMode) ?></strong>
-        · Statut : <strong><?= $isLocked ? 'Verrouillé' : 'Ouvert' ?></strong></p>
-    <?php endif; ?>
-
-    <div class="flex flex-wrap gap-3 mb-10">
-
-        <?php if ($primaryCta === 'rejoindre' || $primaryCta === 'candidater'): ?>
-            <a href="<?= htmlspecialchars(url('c/' . $slug . '/enlistment')) ?>" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 <?= $primaryCta === 'rejoindre' ? 'bg-emerald-600 text-white hover:bg-emerald-500 border border-emerald-600' : 'border border-dashed border-slate-300 text-slate-700 hover:bg-slate-50' ?> text-xs font-bold uppercase rounded-xl" data-comspec-zone="fiche_classique" data-comspec-cta="<?= $primaryCta ?>"><?= $primaryCta === 'rejoindre' ? 'Rejoindre' : 'Candidater' ?></a>
-        <?php else: ?>
-            <span class="inline-flex items-center px-4 py-2.5 border border-slate-200 text-slate-400 text-xs font-bold uppercase rounded-xl"><?= $publicAudience === 'platform' ? 'Candidatures fermées' : 'Inscription fermée' ?></span>
-        <?php endif; ?>
-        <?php if ($hasContactCta): ?>
-            <a href="#community-contact" class="comspec-analytics-cta inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50" data-comspec-zone="fiche_classique" data-comspec-cta="contacter">Contacter</a>
-        <?php endif; ?>
-
-        <?php if (!\App\Core\Session::get('user_id')): ?>
-            <a href="<?= url('login') ?>" class="inline-flex items-center px-4 py-2.5 border border-slate-300 text-xs font-bold uppercase rounded-xl hover:bg-slate-50">Connexion</a>
-        <?php endif; ?>
-        <a href="<?= url('') ?>" class="inline-flex items-center px-4 py-2.5 text-xs font-bold uppercase text-slate-500">Accueil</a>
-    </div>
-
-    <?php if ($communityCode !== '' && !$isLocked): ?>
-        <p class="text-sm text-slate-600 mb-2">Code pour rejoindre : <code class="bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded font-mono font-bold"><?= htmlspecialchars($communityCode) ?></code>
-            · <a href="<?= url('join') ?>?code=<?= rawurlencode($communityCode) ?>" class="text-emerald-700 underline text-xs font-semibold">Page rejoindre</a></p>
-    <?php elseif ($communityCode !== '' && $isLocked): ?>
-        <p class="text-sm text-slate-500 mb-2">Le recrutement par code est suspendu (communauté verrouillée).</p>
-    <?php else: ?>
-        <p class="text-sm text-slate-500 mb-2">Code communauté : <span class="text-slate-400">non défini</span></p>
-    <?php endif; ?>
-
-    <?php if ($discordUrl !== '' || $contactEmail !== '' || ($userId && $hasMembershipInTenant)): ?>
-        <div id="community-contact" class="mt-10 rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-sm">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900 mb-4">Contact</h2>
-            <?php if ($contactIntro !== ''): ?>
-                <p class="text-sm text-slate-600 mb-4"><?= htmlspecialchars($contactIntro) ?></p>
+            <h1 class="cp__title" id="cp-title"><?= name_blur_html($name) ?></h1>
+            <?php if ($lead !== ''): ?>
+                <p class="cp__lead"><?= htmlspecialchars($lead) ?></p>
             <?php endif; ?>
-            <div class="flex flex-wrap gap-3 mb-6">
-                <?php if ($discordUrl !== ''): ?>
-                    <a href="<?= htmlspecialchars($discordUrl) ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-500">Discord</a>
+
+            <div class="cp__chips" style="margin-top:1.1rem">
+                <?php if ($isLocked): ?>
+                    <span class="cp__chip cp__chip--closed"><?= $publicAudience === 'platform' ? 'Candidatures fermées' : 'Recrutement fermé' ?></span>
+                <?php else: ?>
+                    <span class="cp__chip cp__chip--open">Recrutement ouvert</span>
+                    <?php if ($openingCount > 0): ?>
+                        <span class="cp__chip"><?= $openingCount ?> <?= $openingCount > 1 ? 'postes à pourvoir' : 'poste à pourvoir' ?></span>
+                    <?php endif; ?>
                 <?php endif; ?>
-                <?php if ($contactEmail !== ''): ?>
-                    <a href="mailto:<?= htmlspecialchars($contactEmail) ?>" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50">E-mail</a>
+                <span class="cp__chip"><?= htmlspecialchars($registrationMode) ?></span>
+            </div>
+
+            <div class="cp__cta">
+                <?php if (!$isLocked): ?>
+                    <a href="<?= htmlspecialchars($enlistUrl, ENT_QUOTES, 'UTF-8') ?>" class="cp__btn cp__btn--primary comspec-analytics-cta" data-comspec-zone="fiche_classique" data-comspec-cta="<?= $publicAudience === 'platform' ? 'candidater' : 'rejoindre' ?>"><?= $publicAudience === 'platform' ? 'Candidater' : 'Rejoindre' ?></a>
+                    <a href="<?= htmlspecialchars($enlistUrl, ENT_QUOTES, 'UTF-8') ?>#attentes" class="cp__btn cp__btn--ghost">Ce que nous attendons</a>
+                <?php else: ?>
+                    <span class="cp__btn cp__btn--off">Recrutement fermé</span>
                 <?php endif; ?>
-                <?php if ($userId && $hasMembershipInTenant): ?>
-                    <a href="<?= url('messages') ?>" class="inline-flex items-center gap-2 rounded-xl border border-emerald-500 bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-900 hover:bg-emerald-100">Messagerie interne</a>
+                <?php if (!$userId): ?>
+                    <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="cp__btn cp__btn--ghost">Connexion</a>
                 <?php endif; ?>
             </div>
-            <?php if ($contactFormEnabled): ?>
-                <form method="post" action="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/contact')) ?>" class="space-y-3 border-t border-slate-100 pt-6">
-                    <?= \App\Core\Csrf::field() ?>
-                    <p class="text-xs font-bold text-slate-700">Écrire à l’équipe (réponse par e-mail)</p>
-                    <div>
-                        <label class="block text-xs text-slate-500 mb-1">Votre e-mail</label>
-                        <input type="email" name="from_email" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="vous@exemple.fr">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-500 mb-1">Message</label>
-                        <textarea name="body" rows="4" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Votre message…"></textarea>
-                    </div>
-                    <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-700">Envoyer</button>
-                </form>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
 
+            <p class="cp__foot">
+                <?php if ($communityCode !== '' && !$isLocked): ?>
+                    Vous avez un code ? <a href="<?= htmlspecialchars(url('join') . '?code=' . rawurlencode($communityCode), ENT_QUOTES, 'UTF-8') ?>">Rejoindre avec un code</a>
+                <?php endif; ?>
+                <?php if ($communityCode !== '' && !$isLocked): ?> · <?php endif; ?>
+                <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>">Accueil</a>
+            </p>
+        </div>
+
+        <aside class="cp__side" aria-label="À propos de la communauté">
+            <?php if ($gameLabel !== '' || $mainMods !== ''): ?>
+            <div class="cp__card">
+                <p class="cp__card-title">Jeu et mods</p>
+                <?php if ($gameLabel !== ''): ?>
+                    <p class="cp__card-text"><strong><?= htmlspecialchars($gameLabel) ?></strong></p>
+                <?php endif; ?>
+                <?php if ($mainMods !== ''): ?>
+                    <p class="cp__card-text"><?= htmlspecialchars($mainMods) ?></p>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+            <?php if ($expectations !== ''): ?>
+            <div class="cp__card">
+                <p class="cp__card-title">Ce que nous attendons</p>
+                <p class="cp__card-text"><?= htmlspecialchars($expectations) ?></p>
+            </div>
+            <?php endif; ?>
+            <?php if ($hasContact): ?>
+            <div class="cp__card" id="community-contact">
+                <p class="cp__card-title">Contact</p>
+                <?php if ($contactIntro !== ''): ?>
+                    <p class="cp__card-text"><?= htmlspecialchars($contactIntro) ?></p>
+                <?php endif; ?>
+                <ul class="cp__list">
+                    <?php if ($discordUrl !== ''): ?>
+                        <li><a href="<?= htmlspecialchars($discordUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">Discord de la communauté</a></li>
+                    <?php endif; ?>
+                    <?php if ($userId > 0 && $hasMembershipInTenant): ?>
+                        <li><a href="<?= htmlspecialchars(url('messages'), ENT_QUOTES, 'UTF-8') ?>">Messagerie interne</a></li>
+                    <?php endif; ?>
+                </ul>
+                <?php if ($contactFormEnabled): ?>
+                <details class="cp__details">
+                    <summary class="cp__foot" style="cursor:pointer">Écrire à l’équipe</summary>
+                    <form method="post" action="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/contact'), ENT_QUOTES, 'UTF-8') ?>" style="margin-top:0.75rem;display:grid;gap:0.6rem">
+                        <?= \App\Core\Csrf::field() ?>
+                        <label class="cp__label" for="cp-from-email">Votre e-mail (pour la réponse)</label>
+                        <input class="cp__input" style="text-transform:none;letter-spacing:0;text-align:left;font-size:1rem" id="cp-from-email" type="email" name="from_email" required autocomplete="email">
+                        <label class="cp__label" for="cp-body">Message</label>
+                        <textarea class="cp__input" style="text-transform:none;letter-spacing:0;text-align:left;font-size:1rem" id="cp-body" name="body" rows="3" required></textarea>
+                        <button type="submit" class="cp__btn cp__btn--primary">Envoyer</button>
+                    </form>
+                </details>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+        </aside>
     </div>
-</div>
+</section>

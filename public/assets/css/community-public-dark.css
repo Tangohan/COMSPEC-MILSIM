@@ -1,0 +1,375 @@
+/* Fiche publique d'une communauté et page « Rejoindre » : thème sombre du portail, lisible sans défiler sur ordinateur. */
+.cp {
+  --cp-bg: #020617;
+  --cp-card: rgba(11, 20, 36, 0.88);
+  --cp-line: rgba(255, 255, 255, 0.14);
+  --cp-ink: #e8eef7;
+  --cp-muted: #c5d0de;
+  --cp-dim: #9aa8ba;
+  --cp-primary: var(--cp-tenant-primary, #10b981);
+  --cp-accent-text: var(--cp-tenant-accent-text, #6ee7b7);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: var(--cp-bg);
+  color: var(--cp-ink);
+  font-family: "IBM Plex Sans", Inter, system-ui, sans-serif;
+  min-height: calc(100dvh - 9rem);
+  display: flex;
+  align-items: center;
+}
+
+.cp *,
+.cp *::before,
+.cp *::after {
+  box-sizing: border-box;
+}
+
+.cp a:focus-visible,
+.cp button:focus-visible,
+.cp input:focus-visible,
+.cp textarea:focus-visible {
+  outline: 3px solid var(--cp-accent-text);
+  outline-offset: 2px;
+}
+
+.cp__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.cp__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.34;
+}
+
+.cp__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(2, 6, 23, 0.97) 0%, rgba(2, 6, 23, 0.84) 50%, rgba(2, 6, 23, 0.94) 100%),
+    radial-gradient(circle at 10% 15%, color-mix(in srgb, var(--cp-primary) 22%, transparent), transparent 45%);
+}
+
+.cp__grid {
+  width: min(72rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0;
+  display: grid;
+  gap: 1.75rem 3rem;
+  align-items: center;
+}
+
+@media (min-width: 960px) {
+  .cp__grid {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  }
+}
+
+.cp__flash {
+  margin: 0 0 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.85rem;
+  font-size: 0.95rem;
+}
+
+.cp__flash--ok {
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.14);
+  color: #a7f3d0;
+}
+
+.cp__flash--err {
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  background: rgba(248, 113, 113, 0.14);
+  color: #fecaca;
+}
+
+.cp__brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cp__logo,
+.cp__mark {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: 0 0 auto;
+  border-radius: 1.1rem;
+}
+
+.cp__logo {
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.cp__mark {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--cp-primary) 22%, #0b1220);
+  border: 1px solid color-mix(in srgb, var(--cp-primary) 65%, #fff);
+  color: #ecfdf5;
+  font-weight: 800;
+  font-size: 2rem;
+}
+
+.cp__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cp__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--cp-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cp-ink);
+}
+
+.cp__chip--plan {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.16);
+  color: #fde68a;
+}
+
+.cp__chip--open {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.16);
+  color: #a7f3d0;
+}
+
+.cp__chip--closed {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(248, 113, 113, 0.14);
+  color: #fecaca;
+}
+
+.cp__title {
+  margin: 0.9rem 0 0;
+  font-family: "Barlow Condensed", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+  font-weight: 800;
+  font-size: clamp(2.4rem, 5.2vw, 4rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+
+.cp__lead {
+  margin: 1rem 0 0;
+  max-width: 38rem;
+  font-size: 1.06rem;
+  line-height: 1.6;
+  color: var(--cp-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cp__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.6rem;
+}
+
+.cp__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.85rem 1.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.cp__btn:hover {
+  transform: translateY(-1px);
+}
+
+.cp__btn--primary {
+  background: var(--cp-primary);
+  color: #041016;
+}
+
+.cp__btn--ghost {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.cp__btn--off {
+  border-color: var(--cp-line);
+  background: transparent;
+  color: var(--cp-dim);
+  cursor: default;
+}
+
+.cp__btn--off:hover {
+  transform: none;
+}
+
+.cp__side {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.cp__card {
+  padding: 1.05rem 1.2rem;
+  border: 1px solid var(--cp-line);
+  border-radius: 1rem;
+  background: var(--cp-card);
+}
+
+.cp__card-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cp-accent-text);
+}
+
+.cp__card-text {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--cp-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cp__card-text strong {
+  color: #fff;
+}
+
+.cp__list {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.cp__list a {
+  color: var(--cp-ink);
+  font-weight: 600;
+}
+
+.cp__foot {
+  margin: 1.1rem 0 0;
+  font-size: 0.88rem;
+  color: var(--cp-dim);
+}
+
+.cp__foot a,
+.cp__foot code {
+  color: var(--cp-accent-text);
+  font-weight: 700;
+}
+
+/* Page « Rejoindre » */
+.cp--join {
+  min-height: 100dvh;
+  border-radius: 0;
+  justify-content: center;
+}
+
+.cp__join {
+  width: min(32rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.cp__form {
+  margin-top: 1.4rem;
+  padding: 1.4rem;
+  border: 1px solid var(--cp-line);
+  border-radius: 1.25rem;
+  background: var(--cp-card);
+}
+
+.cp__label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cp-muted);
+}
+
+.cp__input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #64748b;
+  border-radius: 0.85rem;
+  background: #060d1c;
+  color: var(--cp-ink);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  color-scheme: dark;
+}
+
+.cp__input::placeholder {
+  color: var(--cp-dim);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.cp__form .cp__btn {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.cp__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.cp__links .cp__btn {
+  flex: 1 1 10rem;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 959px) {
+  .cp {
+    align-items: flex-start;
+  }
+}

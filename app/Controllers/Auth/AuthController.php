@@ -113,6 +113,11 @@ class AuthController
         if ($after !== null) {
             return $after;
         }
+        // Candidature commencée sans compte : retour sur le formulaire de la communauté visée.
+        $enlistment = \App\Support\PendingEnlistmentReturn::consumeUrl();
+        if ($enlistment !== null) {
+            return $enlistment;
+        }
         // Lien d'invitation ouvert avant l'inscription ou la connexion : retour sur son action.
         $invite = \App\Support\PendingInviteLink::continueUrl();
         if ($invite !== null) {

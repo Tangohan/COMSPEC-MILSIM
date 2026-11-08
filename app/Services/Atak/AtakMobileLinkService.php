@@ -36,11 +36,18 @@ final class AtakMobileLinkService
         'carte' => ['m/carte', 'Carte'],
         'briefs' => ['m/briefs', 'Briefs air'],
         'controle' => ['m/controle', 'Contrôle ID'],
+        // Espace d'administration (app Admin du téléphone en jeu) : réservé à la gestion de la communauté.
+        'admin' => ['m/admin', 'Administration'],
     ];
 
     public const TOKEN_TTL = 300;
 
     public const SESSION_TTL = 28800;
+
+    /** Espace d'administration : jeton de 2 minutes, session d'une heure (pas d'une partie entière). */
+    public const ADMIN_TOKEN_TTL = 120;
+
+    public const ADMIN_SESSION_TTL = 3600;
 
     public const SESSION_KEY = 'atak_mobile_link';
 
@@ -63,6 +70,7 @@ final class AtakMobileLinkService
         private ?QrPngGenerator $qr = null,
         private ?PDO $pdo = null,
         private ?AtakAdminControlRepository $notices = null,
+        private ?AtakGameAdminService $admin = null,
     ) {
     }
 
@@ -129,6 +137,12 @@ final class AtakMobileLinkService
         if (!$repo->ready()) {
             return ['ok' => false, 'error' => 'unavailable'];
         }
+        // L'espace d'administration n'est donné qu'à la gestion de la communauté, jamais sur la seule parole du jeu.
+        if ($app === 'admin' && $this->admin()->role($tenantId, $userId) === null) {
+            $this->audit($tenantId, $userId, null, 'mobile_admin_link_refused');
+
+            return ['ok' => false, 'error' => 'forbidden'];
+        }
         if ($repo->countIssuedSince($tenantId, $userId, gmdate('Y-m-d H:i:s', $now - 600)) >= self::ISSUE_LIMIT) {
             return ['ok' => false, 'error' => 'rate_limited'];
         }
@@ -150,7 +164,7 @@ final class AtakMobileLinkService
             'pos_y' => $y,
             'context_json' => is_string($contextJson) ? $contextJson : null,
             'token_hash' => self::hash($token),
-            'token_expires_at' => gmdate('Y-m-d H:i:s', $now + self::TOKEN_TTL),
+            'token_expires_at' => gmdate('Y-m-d H:i:s', $now + ($app === 'admin' ? self::ADMIN_TOKEN_TTL : self::TOKEN_TTL)),
         ]);
         $url = url('m/' . $token);
         $matrix = $this->qr()->matrix($url) ?? [];
@@ -160,7 +174,7 @@ final class AtakMobileLinkService
             'ok' => true,
             'url' => $url,
             'short_url' => self::shortUrl($url),
-            'expires_in' => self::TOKEN_TTL,
+            'expires_in' => $app === 'admin' ? self::ADMIN_TOKEN_TTL : self::TOKEN_TTL,
             'app' => $app,
             'qr' => $matrix,
         ];
@@ -183,6 +197,11 @@ final class AtakMobileLinkService
         }
         $row = $repo->redeem(self::hash($token), gmdate('Y-m-d H:i:s', $now + self::SESSION_TTL), $ip, $userAgent, $now);
         if ($row !== null) {
+            if ((string) $row['app'] === 'admin') {
+                // Session d'administration courte, à compter du scan.
+                $row['session_expires_at'] = gmdate('Y-m-d H:i:s', $now + self::ADMIN_SESSION_TTL);
+                $repo->shortenSession((int) $row['id'], (string) $row['session_expires_at']);
+            }
             $this->audit((int) $row['tenant_id'], (int) $row['user_id'], (int) $row['id'], 'mobile_link_opened:' . (string) $row['app']);
         }
 
@@ -233,6 +252,42 @@ final class AtakMobileLinkService
         }
 
         return $row;
+    }
+
+    /**
+     * Session d'administration de ce navigateur : liée au compte du QR code, au téléphone qui l'a scanné (même navigateur
+     * qu'au scan) et aux droits que ce compte a MAINTENANT sur le site, relus à chaque requête. Un droit retiré coupe tout.
+     *
+     * @return array{link: array<string, mixed>, role: string, sessions: bool}|null
+     */
+    public function currentAdmin(?string $userAgent = null, ?int $now = null): ?array
+    {
+        $link = $this->current($now);
+        if ($link === null || (string) ($link['app'] ?? '') !== 'admin') {
+            return null;
+        }
+        $ua = mb_substr((string) ($userAgent ?? ($_SERVER['HTTP_USER_AGENT'] ?? '')), 0, 255);
+        if ($ua === '' || !hash_equals((string) ($link['user_agent'] ?? ''), $ua)) {
+            $this->audit((int) $link['tenant_id'], (int) $link['user_id'], (int) $link['id'], 'mobile_admin_session_refused:browser');
+
+            return null;
+        }
+        $tenant = (int) $link['tenant_id'];
+        $user = (int) $link['user_id'];
+        $role = $this->admin()->role($tenant, $user);
+        if ($role === null) {
+            $this->links()->revoke($tenant, $user, (int) $link['id']);
+            self::forget();
+            $this->audit($tenant, $user, (int) $link['id'], 'mobile_admin_session_refused:rights');
+
+            return null;
+        }
+
+        return [
+            'link' => $link,
+            'role' => $role,
+            'sessions' => $this->admin()->can($tenant, $user, ['admin.organization', 'admin.access', 'site.support']),
+        ];
     }
 
     /**
@@ -370,6 +425,11 @@ final class AtakMobileLinkService
     private function notices(): AtakAdminControlRepository
     {
         return $this->notices ??= new AtakAdminControlRepository($this->pdo);
+    }
+
+    private function admin(): AtakGameAdminService
+    {
+        return $this->admin ??= new AtakGameAdminService();
     }
 
     private function qr(): QrPngGenerator
