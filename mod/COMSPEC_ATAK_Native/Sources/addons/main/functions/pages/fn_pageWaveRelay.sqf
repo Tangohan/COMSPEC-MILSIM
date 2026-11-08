@@ -128,8 +128,19 @@ switch (_tab) do {
             private _mhz = { params ["_f"]; [format ["%1 MHz", _f toFixed 3], "?"] select (!(_f isEqualType 0) || {_f <= 0}) };
             // Voix par le réseau (fn_mpuVoice "summary") : état dit en clair, même désactivée, avec la façon de l'activer.
             (["summary"] call comspec_atak_native_fnc_mpuVoice) params ["_vCode", "_vState", "_vHelp"];
+            _rows pushBack ["section", "À quoi sert cet onglet", "En deux mots"];
+            _rows pushBack ["text", format ["<t size='0.9'>%1</t>", "Cet onglet montre qui parle sur les mêmes fréquences radio que vous, et dit si votre voix ACRE peut passer par le réseau MPU5 de vos équipiers. Ex. vous réglez votre radio ACRE sur 40,0 MHz ; si 2 équipiers sont aussi sur 40,0 ils apparaissent ici et vous pouvez les entendre même hors de portée directe, via la MPU5." call comspec_atak_native_fnc_tr], COMSPEC_ATAK_Th get "surface"];
             _rows pushBack ["section", "Voix par le réseau", "Votre voix ACRE2 relayée par le maillage MPU5 vers les radios reliées"];
             _rows pushBack ["info", "État", format ["<t color='%1'>%2</t>", COMSPEC_ATAK_Th get (["hexWarn", "hexOk"] select (_vCode isEqualTo "on")), [_vState] call _esc]];
+            _rows pushBack ["info", "Radio ACRE2", format ["%1 · %2", format ["%1 détectée(s)" call comspec_atak_native_fnc_tr, count (["radios"] call comspec_atak_native_fnc_mpu5)], (["non reliée à la MPU5", "reliée à la MPU5"] apply { _x call comspec_atak_native_fnc_tr }) select (!((missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isEqualTo []))]];
+            _rows pushBack ["text", format ["<t color='%1'>%3</t> %2", COMSPEC_ATAK_Th get "hexInfo", [(createHashMapFromArray [
+                ["off", "un admin ou un Zeus active « Voix relayée par le maillage » dans Échap > Réalisme (section Maillage), puis Appliquer au serveur. Autre chemin : Réglages d'addons > COMSPEC > ATAK."],
+                ["cut", "rétablir le lien radio : Échap > Réalisme, bouton Rétablir le lien radio."],
+                ["noreal", "activer « Liaison téléphone-radio réaliste » dans Échap > Réalisme (section Maillage) et ne pas utiliser le profil Arcade."],
+                ["nobridge", "appuyez sur le bouton RELIER MA RADIO À LA MPU5 (VOIX) ci-dessous."],
+                ["wait", "rapprochez-vous d'un relais ou d'un équipier avec une MPU5 pour rejoindre le maillage."],
+                ["on", "rien à faire. Réglez votre radio sur la fréquence d'un équipier relié."]
+            ] getOrDefault [_vCode, ""]) call comspec_atak_native_fnc_tr] call _esc, "Prochain pas" call comspec_atak_native_fnc_tr]];
             if (_vHelp isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexTextMuted", [_vHelp] call _esc]]; };
             // Geste du joueur, comme l'action ACE : relie ou débranche le pont radio (fn_mpuVoice "bridge"), seulement si le serveur l'autorise.
             if (_vCode in ["nobridge", "wait", "on"] && {["has", [player]] call comspec_atak_native_fnc_mpu5}) then {
@@ -146,9 +157,10 @@ switch (_tab) do {
                     [["", [[_u, true] call comspec_atak_native_fnc_unitCallsign] call _esc] select (_u isNotEqualTo player), "Vous"] select (_u isEqualTo player),
                     [format ["%1 · ", [_lbl] call _esc], ""] select (_lbl isEqualTo ""), [_f] call _mhz, round _since]];
             } forEach _spk;
-            if (_spk isEqualTo []) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Personne n'émet sur vos fréquences.</t>"]; };
+            if (_spk isEqualTo []) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Personne n'émet sur vos fréquences pour l'instant : normal si personne ne parle.</t>"]; };
             private _radios = ["radios"] call comspec_atak_native_fnc_mpu5;
-            _rows pushBack ["section", "Mes radios ACRE2", "Canal, fréquence et alternat (PTT) de chaque radio portée, canal modifiable d'ici"];
+            _rows pushBack ["section", "Fréquences", "Vos radios ACRE2 : canal, fréquence et alternat (PTT), canal modifiable d'ici"];
+            _rows pushBack ["text", format ["<t size='0.85'>%1</t>", "La fréquence est ce que votre radio écoute. Ex. le canal 2 de votre radio est réglé sur 40,0 MHz ; les équipiers sur 40,0 MHz sont ceux que vous entendez. Les boutons - et + changent de canal." call comspec_atak_native_fnc_tr]];
             if ((count _radios) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune radio ACRE2 sur vous.</t>"]; };
             {
                 _x params ["_id", "_name", "_ch", "_lbl", "_tx", "_rx", "_ptt", "_cur", "_on"];
@@ -181,7 +193,7 @@ switch (_tab) do {
                     ["", "  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>ÉMET</t>"] select _talk,
                     [_fl, "pas de radio ACRE2 publiée"] select (_fl isEqualTo ""), [player distance2D _u] call _dist]];
             } forEach _ord;
-            if (_peers isEqualTo []) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun équipier ne publie son réseau voix (téléphone ATAK et radio ACRE2 requis).</t>"]; };
+            if (_peers isEqualTo []) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Personne d'autre ne publie son réseau voix pour l'instant : normal si vous êtes seul ou si personne n'a de radio ACRE2 et de téléphone ATAK.</t>"]; };
             _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vous ne voyez émettre que les fréquences réglées sur vos radios, sans tenir compte de la portée. Les joueurs sans téléphone ATAK n'apparaissent pas.</t>"];
             _rows append (["rows"] call comspec_atak_native_fnc_meshGroups);
         } else {

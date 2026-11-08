@@ -159,9 +159,13 @@ switch (_mode) do {
             {
                 private _row = _x;
                 _row params ["", "_label", "_var", "_kind", "_vals", "_names", "_cond", "_rule"];
-                (["state", _row] call comspec_atak_native_fnc_realismCatalog) params ["_cur", "_txt", "_st", "_sc", "_lock", "_where", "_src"];
+                (["state", _row] call comspec_atak_native_fnc_realismCatalog) params ["_cur", "_txt", "_st", "_sc", "_lock", "_where", "_src", "_dtx"];
                 private _lb = ["ctrlStructuredText", [0, _yy, _inner - _cw - _u, _rowH], _grp] call _mk;
-                _lb ctrlSetStructuredText parseText format ["%1<br/><t size='0.85' color='%2'>%3</t>", _label call _T, _sc, _st];
+                _lb ctrlSetStructuredText parseText format ["%1<br/><t size='0.85' color='%2'>%3</t>%4", _label call _T, _sc, _st, ["html", _var, _dtx] call comspec_atak_native_fnc_realismHelp];
+                // Explication et exemple sous le nom : la ligne grandit avec le texte, rien n'est coupé.
+                private _rh = _rowH max ((ctrlTextHeight _lb) + _u);
+                _lb ctrlSetPosition [0, _yy, _inner - _cw - _u, _rh];
+                _lb ctrlCommit 0;
                 if (_kind in ["bool", "num"]) then {
                     private _cb = ["ctrlCombo", [_inner - _cw, _yy + 0.6 * _u, _cw, safeZoneH * 0.034], _grp] call _mk;
                     if (_kind isEqualTo "bool") then { _vals = [true, false]; _names = ["Actif", "Coupé"]; };
@@ -190,11 +194,11 @@ switch (_mode) do {
                     };
                 } else {
                     // Valeur en lecture seule, retour à la ligne si elle est longue.
-                    private _vt = ["ctrlStructuredText", [_inner - _cw, _yy, _cw, _rowH], _grp] call _mk;
+                    private _vt = ["ctrlStructuredText", [_inner - _cw, _yy, _cw, _rh], _grp] call _mk;
                     _vt ctrlSetStructuredText parseText format ["<t align='right'>%1</t>", _txt];
                     _vt ctrlSetTooltip _txt;
                 };
-                _yy = _yy + _rowH;
+                _yy = _yy + _rh;
             } forEach (_rows select { (_x select 0) isEqualTo _th });
         } forEach _order;
         uiNamespace setVariable ["COMSPEC_ATAK_NetCfgCombos", _combos];

@@ -146,7 +146,8 @@ switch (_act) do {
         private _tx = ["tx"] call comspec_atak_native_fnc_meshGroups;
         private _side = side group player;
         private _peers = allPlayers select { alive _x && {_x isNotEqualTo player} && {side group _x isEqualTo _side} };
-        private _rows = [["section", "Groupes de conversation", format ["%1 écouté(s), émission sur %2", count _mine, count _tx]]];
+        private _rows = [["section", "Groupes de conversation", format ["Vous écoutez %1 groupe(s), vous émettez sur %2" call comspec_atak_native_fnc_tr, count _mine, count _tx]]];
+        _rows pushBack ["text", format ["<t size='0.85'>%1</t>", "Un groupe est un canal de discussion partagé par le maillage. Écouter = vous recevez les messages de ce groupe. Émettre = vos messages de groupe partent vers ses abonnés. Abonné = un équipier qui écoute ce groupe. Ex. si vous écoutez ALPHA et émettez dessus, et qu'ALPHA compte 3 abonnés, ils reçoivent votre message." call comspec_atak_native_fnc_tr]];
         {
             private _idx = _forEachIndex + 1;
             private _cnt = { _idx in (["talkgroup", _x] call comspec_atak_native_fnc_meshRead) } count _peers;
@@ -155,8 +156,8 @@ switch (_act) do {
             private _in = _idx in _mine;
             private _fixed = _in && {!(_idx in _subs)};
             private _btns = [];
-            if (!_fixed) then { _btns pushBack [["ÉCOUTER", "QUITTER"] select _in, compile format ["['toggle', [%1]] call comspec_atak_native_fnc_meshGroups;", _idx], !_in]; };
-            if (_in) then { _btns pushBack [["ÉMETTRE", "N'ÉMET PLUS"] select (_idx in _tx), compile format ["['txToggle', [%1]] call comspec_atak_native_fnc_meshGroups;", _idx]]; };
+            if (!_fixed) then { _btns pushBack [(["[ ] ÉCOUTER", "[x] ÉCOUTÉ · QUITTER"] apply { _x call comspec_atak_native_fnc_tr }) select _in, compile format ["['toggle', [%1]] call comspec_atak_native_fnc_meshGroups;", _idx]]; };
+            if (_in) then { _btns pushBack [(["[ ] ÉMETTRE", "[x] ÉMISSION · ARRÊTER"] apply { _x call comspec_atak_native_fnc_tr }) select (_idx in _tx), compile format ["['txToggle', [%1]] call comspec_atak_native_fnc_meshGroups;", _idx]]; };
             _rows pushBack ["info", format ["%1 · %2", _idx, _x], format ["%1 abonné(s)%2%3", _cnt, ["", " · radio pontée"] select _fixed, ["", " · émission"] select (_idx in _tx)]];
             if (_btns isNotEqualTo []) then { _rows pushBack ["buttons", _btns]; };
         } forEach (["names"] call comspec_atak_native_fnc_meshGroups);

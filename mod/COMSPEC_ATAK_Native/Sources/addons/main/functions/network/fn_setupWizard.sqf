@@ -132,7 +132,10 @@ switch (_act) do {
                 _x params ["_var", "_label", "_vals", "_names"];
                 private _lock = (_s get "locked") getOrDefault [_var, ""];
                 private _lb = ["ctrlStructuredText", [0, _cy, _lw, _line], _grp] call _mk;
-                _lb ctrlSetStructuredText parseText (_label call _T);
+                _lb ctrlSetStructuredText parseText ((_label call _T) + (["html", _var] call comspec_atak_native_fnc_realismHelp));
+                private _lh = _line max (ctrlTextHeight _lb);
+                _lb ctrlSetPosition [0, _cy, _lw, _lh];
+                _lb ctrlCommit 0;
                 private _cb = ["ctrlCombo", [_lw, _cy, _gw - _lw, _line * 0.72], _grp] call _mk;
                 private _now = (_s get "now") get _var;
                 private _vv = +_vals; private _nn = +_names;
@@ -146,7 +149,7 @@ switch (_act) do {
                     (_c getVariable ["w", ["", []]]) params ["_var", "_vv"];
                     ((uiNamespace getVariable "COMSPEC_ATAK_WizS") get "now") set [_var, _vv select (_c lbValue _i)];
                 }];
-                _cy = _cy + _line;
+                _cy = _cy + _lh;
                 if (_lock isNotEqualTo "") then { [format ["<t color='#E0B050'>%1. %2</t>", _lock, "À changer sur le site, dans Contrôle serveur." call _T]] call _para; };
             } forEach _list;
         } else {
