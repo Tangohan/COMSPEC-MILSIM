@@ -98,7 +98,8 @@ final class SeoCommunityModpackAssetTest extends TestCase
         self::assertStringContainsString('eff-access-group__desc', $roles);
         // L'ancienne aide « recherche portail » n'est pas reprise : la recherche portail
         // (UserRepository::searchForPortal) porte sur le nom de l'emploi, pas sur sa description.
-        self::assertStringContainsString('<summary>Description et rattachements', $editor);
+        // Le champ description n'est plus replié dans un <details> : il est affiché directement sous son libellé.
+        self::assertStringContainsString('<label class="eff-jobs-wide">Description<textarea name="description"', $editor);
         self::assertStringContainsString('<textarea name="description" rows="4" maxlength="500" placeholder="', $editor);
     }
 }
