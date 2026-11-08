@@ -194,6 +194,14 @@ private _clu = createHashMap;
         };
     };
 } forEach (_cache select 1);
+// Relevé de diagnostic toutes les 30 s dans le RPT (retour « les images et zones n'apparaissent plus ») : entrées gardées
+// par genre (symbole, trait, rectangle, ellipse) et marqueurs du jeu, pour savoir si le manque vient de la lecture ou du dessin.
+if (_now > (missionNamespace getVariable ["COMSPEC_ATAK_GmDiagAt", 0])) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_GmDiagAt", _now + 30];
+    private _kinds = [0, 0, 0, 0];
+    { if ((count _x) > 0) then { _kinds set [_x select 0, (_kinds select (_x select 0)) + 1]; }; } forEach (_cache select 1);
+    diag_log format ["[COMSPEC ATAK NATIVE][MAP] marqueurs du jeu : %1 au total, gardés : %2 symboles, %3 traits, %4 rectangles, %5 ellipses ; échelle %6", count allMapMarkers, _kinds select 0, _kinds select 1, _kinds select 2, _kinds select 3, ctrlMapScale _map toFixed 3];
+};
 // Nombre de symboles regroupés dans chaque case de la vue éloignée.
 if (_clustOn) then {
     private _clr = "#(argb,8,8,3)color(0,0,0,0)";

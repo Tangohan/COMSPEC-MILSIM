@@ -215,6 +215,29 @@ private _perfT = diag_tickTime;
 ["draw", _map] call comspec_atak_native_fnc_noFly;
 [_map] call comspec_atak_native_fnc_droneDraw;
 ["carte drone (image)", _perfT] call comspec_atak_native_fnc_perfAcc;
+// Appui long du clic gauche (0,6 s, curseur presque immobile) : pointage partagé avec mon camp, comme sur la carte du jeu.
+// Anneau qui se remplit pendant l'appui. Rien à calculer hors appui (deux lectures de table).
+private _holdLc = _state getOrDefault ["mapLc", []];
+if ((count _holdLc) isEqualTo 5 && {_state getOrDefault ["mapLcOk", false]}) then {
+    private _hAge = diag_tickTime - (_state getOrDefault ["mapLcAt", diag_tickTime]);
+    private _hW = _state getOrDefault ["mapLcW", [0, 0, 0]];
+    private _hSp = _map ctrlMapWorldToScreen _hW;
+    private _hCur = _map ctrlMapWorldToScreen ((_state getOrDefault ["cursorPos", _hW]) select [0, 2]);
+    if ((count _hCur) >= 2 && {(count _hSp) >= 2} && {(abs ((_hCur select 0) - (_hSp select 0))) < pixelW * 8} && {(abs ((_hCur select 1) - (_hSp select 1))) < pixelH * 8}) then {
+        if (_hAge >= 0.6) then {
+            _state set ["mapLc", []];
+            _state set ["mapHold", true];
+            ["send", _hW] call comspec_atak_native_fnc_mapPing;
+        } else {
+            if (_hAge > 0.15) then {
+                private _hs = (10 + 40 * (_hAge / 0.6)) * _is;
+                _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.15, 0.4 + 0.5 * (_hAge / 0.6)], _hW, _hs, _hs, 0, "", 0];
+            };
+        };
+    } else {
+        _state set ["mapLcOk", false];
+    };
+};
 ["draw", _map] call comspec_atak_native_fnc_mapPing;
 // Plan de briefing (app Plan) sous les unités : plan partagé du camp et mon brouillon (plus pâle). Affiché par défaut.
 if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {

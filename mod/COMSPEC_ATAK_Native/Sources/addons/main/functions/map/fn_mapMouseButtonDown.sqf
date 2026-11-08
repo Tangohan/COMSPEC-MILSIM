@@ -13,6 +13,12 @@ if (_button isEqualTo 0 && {!_click}) exitWith {
     _s set ["mapLc", []];
     if (!_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {["DOWN", [_world select 0, _world select 1, 0], _ctrl] call comspec_atak_native_fnc_markerStroke}) exitWith { true };
     _s set ["mapLc", [_mx, _my, _shift, _ctrl, _alt]];
+    // Appui long (fn_mapOnDraw) : pointage partagé comme sur la carte du jeu, seulement en sélection, sans outil de pose
+    // ni menu ouvert, sans touche modificatrice.
+    _s set ["mapLcAt", diag_tickTime];
+    _s set ["mapLcW", [_world select 0, _world select 1, 0]];
+    _s set ["mapLcOk", !_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {(_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "SELECT"} && {!_shift && !_ctrl && !_alt}];
+    _s set ["mapHold", false];
     true
 };
 // Menu contextuel ouvert : un clic gauche ailleurs le ferme seulement ; un clic droit le ferme et peut en rouvrir un.
