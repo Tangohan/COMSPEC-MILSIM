@@ -572,6 +572,9 @@ final class AtakExperienceService
             $out[$row['id']] = $row['default'];
         }
         $out['guide_custom'] = '';
+        // App Communauté du téléphone (AtakCommunityBrief) : texte saisi tel quel, lu seulement par GET /api/atak/community-brief.
+        $out['community_notes'] = '';
+        $out['community_kit'] = '';
         $out['server_control_reviewed'] = false;
         $out['net_live'] = [];
         $out['apps_policy'] = [];
@@ -660,6 +663,11 @@ final class AtakExperienceService
         }
         if (array_key_exists('guide_custom', $incoming)) {
             $merged['guide_custom'] = trim((string) $incoming['guide_custom']);
+        }
+        foreach (['community_notes', 'community_kit'] as $key) {
+            if (array_key_exists($key, $incoming)) {
+                $merged[$key] = mb_substr(trim((string) $incoming[$key]), 0, \App\Support\AtakCommunityBrief::MAX_SOURCE);
+            }
         }
         if (!empty($incoming['server_control_reviewed'])) {
             $merged['server_control_reviewed'] = true;

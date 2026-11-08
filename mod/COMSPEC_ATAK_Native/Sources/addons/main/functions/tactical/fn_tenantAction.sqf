@@ -2,15 +2,16 @@
     App Communauté : consignes, ordres, tips et kit obligatoire.
     Sources :
       Consignes d'Athena : le « guide » de la communauté, déjà reçu avec ses réglages (COMSPEC_TenantExperience,
-      GetExperience). Athena n'a pas encore d'API de consignes ni de kit : voir docs/technical/ICD-ATHENA-ATAK.md.
+      GetExperience), puis les notes et le kit saisis sur le site (GetCommunityBrief, relu toutes les 5 min au plus,
+      COMSPEC_ATAK_TenantBrief : [notes, kit], local au joueur).
       Notes de la partie : variable publique COMSPEC_ATAK_TenantNotes : [[id, genre (consigne | ordre | tip), titre, texte]...],
       posée par la mission, ou écrite dans l'app par un admin ou un Zeus (revérifié par fn_adminServer). Perdues en fin de partie.
-      Kit obligatoire : variable publique de mission COMSPEC_ATAK_RequiredKit, sinon réglage comspec_atak_native_kit_required.
+      Kit obligatoire : variable publique de mission COMSPEC_ATAK_RequiredKit, sinon kit d'Athena, sinon réglage comspec_atak_native_kit_required.
       Texte « classe, classe*2, classeA|classeB » ; ou tableau de [[classes acceptées], nombre, libellé].
     Comparaison à l'ouverture de l'app et toutes les 30 s, jamais par image.
     Params : [action, argument]
       "notes" notes valides          "guide" texte du guide      "kit" besoins [[classes, nombre, libellé]...]
-      "missing" [[libellé, manque]...]    "inventory" table classe -> nombre    "tick"
+      "missing" [[libellé, manque]...]    "inventory" table classe -> nombre    "tick"    "briefLoad" : relit Athena (5 min au plus)
       "add" [genre, titre, texte]    "del" id    (client : demande au serveur)
       "srvAdd" [genre, titre, texte, auteur]    "srvDel" id    (serveur, appelé par fn_adminServer)
 */
@@ -23,7 +24,45 @@ private _read = {
 };
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "TENANT") then { ["TENANT"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_act) do {
-    case "notes": { call _read };
+    case "notes": { ((missionNamespace getVariable ["COMSPEC_ATAK_TenantBrief", [[], []]]) select 0) + (call _read) };
+    case "briefLoad": {
+        if (!hasInterface || {!([] call comspec_atak_native_fnc_bridge)} || {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_ATAK_TenantBriefBusy", false]) exitWith {};
+        if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_TenantBriefAt", -1e9]) < 300) exitWith {};
+        missionNamespace setVariable ["COMSPEC_ATAK_TenantBriefBusy", true];
+        missionNamespace setVariable ["COMSPEC_ATAK_TenantBriefAt", diag_tickTime];
+        [] spawn {
+            private _r = ["COMSPECExtension", "GetCommunityBrief", []] call comspec_atak_native_fnc_extAwait;
+            if (_r isEqualType []) then { _r = _r param [0, ""]; };
+            missionNamespace setVariable ["COMSPEC_ATAK_TenantBriefBusy", false];
+            // Erreur, ou DLL sans cette commande : on garde ce qu'on a.
+            if !(_r isEqualType "") exitWith {};
+            if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith {};
+            private _notes = [];
+            private _kit = [];
+            {
+                private _f = _x splitString toString [9];
+                switch (_f param [0, ""]) do {
+                    case "N": {
+                        _f params ["", ["_kind", ""], ["_title", ""], ["_body", ""]];
+                        if (_kind in ["consigne", "ordre", "tip"] && {(count _notes) < 40}) then {
+                            _notes pushBack [format ["A%1", (count _notes) + 1], _kind, (trim _title) select [0, 60], (trim _body) select [0, 600]];
+                        };
+                    };
+                    case "K": {
+                        _f params ["", ["_cls", ""], ["_n", "1"], ["_lbl", ""]];
+                        if ((count _kit) < 40) then {
+                            _kit pushBack [(_cls splitString ",") apply { toLower trim _x }, (parseNumber _n) max 1, (trim _lbl) select [0, 60]];
+                        };
+                    };
+                };
+            } forEach ((_r select [3]) splitString toString [10]);
+            private _next = [_notes, _kit];
+            if (_next isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_TenantBrief", [[], []]])) exitWith {};
+            missionNamespace setVariable ["COMSPEC_ATAK_TenantBrief", _next];
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "TENANT") then { ["TENANT"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
+        };
+    };
     case "guide": {
         private _m = missionNamespace getVariable ["COMSPEC_TenantExperience", createHashMap];
         if !(_m isEqualType createHashMap) exitWith { "" };
@@ -38,6 +77,8 @@ switch (_act) do {
                 [(_cls select { _x isEqualType "" }) apply { toLower _x }, [1, _n max 1] select (_n isEqualType 0), [_lbl, ""] select !(_lbl isEqualType "")]
             }
         };
+        private _athena = (missionNamespace getVariable ["COMSPEC_ATAK_TenantBrief", [[], []]]) select 1;
+        if (_athena isNotEqualTo []) exitWith { _athena };
         private _txt = missionNamespace getVariable ["comspec_atak_native_kit_required", ""];
         if !(_txt isEqualType "") exitWith { [] };
         ((_txt splitString ",;" ) select [0, 40]) apply {
@@ -86,6 +127,7 @@ switch (_act) do {
     case "tick": {
         if (!hasInterface || {isNull player} || {!alive player}) exitWith {};
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+        ["briefLoad"] call comspec_atak_native_fnc_tenantAction;
         private _miss = ["missing"] call comspec_atak_native_fnc_tenantAction;
         if (_miss isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_KitMissSig", []])) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_KitMissSig", _miss];

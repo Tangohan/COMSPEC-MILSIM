@@ -4376,7 +4376,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,GetCommunityBrief,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
         }
 
         if (function == "GetCapabilities")
@@ -5523,6 +5523,22 @@ public static partial class Extension
                     }
                     return PollOkClipped(SimplifyExperienceJson(body));
                 });
+            }
+            // App Communauté (GET /api/atak/community-brief). Lignes : N\tgenre\ttitre\ttexte et K\tclasses séparées par des virgules\tnombre\tlibellé.
+            if (function == "GetCommunityBrief")
+            {
+                var briefUrl = _baseUrl + "/api/atak/community-brief";
+                static string FormatBrief(string respBody, int code)
+                {
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|forbidden";
+                    if (code < 200 || code >= 300) return "ERR|http_" + code;
+                    return PollOkClipped(SimplifyCommunityBriefJson(respBody));
+                }
+                // Hors Async : copie gardée 5 min, jamais d'attente HTTP sur le fil du jeu.
+                if (!InAsyncWorker.Value) return ServePollGet("GetCommunityBrief", briefUrl, FormatBrief, 300_000);
+                using var resp = SendGet(briefUrl, token);
+                return FormatBrief(ReadContentUtf8(resp, token), (int)resp.StatusCode);
             }
             if (function == "GetRoleplayConfig")
             {
@@ -7999,6 +8015,45 @@ public static partial class Extension
     /// Simplifie GET /api/atak/mod-modules pour SQF.
     /// Lignes : id\tenabled(0|1)\tlabel
     /// </summary>
+    private static string SimplifyCommunityBriefJson(string json)
+    {
+        // Champ jamais vide (espace à défaut) : splitString côté jeu saute les champs vides.
+        static string Field(JsonElement o, string k)
+        {
+            if (!o.TryGetProperty(k, out var v) || v.ValueKind != JsonValueKind.String) return " ";
+            var s = (v.GetString() ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Trim();
+            return s.Length == 0 ? " " : s;
+        }
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("notes", out var notes) && notes.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var n in notes.EnumerateArray())
+                {
+                    if (n.ValueKind != JsonValueKind.Object) continue;
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append("N\t").Append(Field(n, "kind")).Append('\t').Append(Field(n, "title")).Append('\t').Append(Field(n, "body"));
+                }
+            }
+            if (doc.RootElement.TryGetProperty("kit", out var kit) && kit.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var k in kit.EnumerateArray())
+                {
+                    if (k.ValueKind != JsonValueKind.Object || !k.TryGetProperty("classes", out var cls) || cls.ValueKind != JsonValueKind.Array) continue;
+                    var names = cls.EnumerateArray().Where(c => c.ValueKind == JsonValueKind.String).Select(c => c.GetString() ?? "").Where(c => c.Length > 0).ToList();
+                    if (names.Count == 0) continue;
+                    var count = k.TryGetProperty("count", out var c0) && c0.ValueKind == JsonValueKind.Number && c0.TryGetInt32(out var c1) ? c1 : 1;
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append("K\t").Append(string.Join(",", names)).Append('\t').Append(count.ToString(CultureInfo.InvariantCulture)).Append('\t').Append(Field(k, "label"));
+                }
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
     private static string SimplifyExperienceJson(string json)
     {
         try

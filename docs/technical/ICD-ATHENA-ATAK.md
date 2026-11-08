@@ -581,13 +581,9 @@ Aliases: `/api/markers`, `/api/units`, `/api/nine-line`, `/api/cas`, `/api/fire-
 - ATHENA C2 Security Architecture — SEC-A3-01
 - ATHENA C2 Capability Registry — REG-A3-01
 
-## Besoin : app Communauté (non implémenté côté site)
+## App Communauté : `GET /api/atak/community-brief`
 
-L'app Communauté du téléphone lit aujourd'hui le seul `guide` de `GET /api/atak/experience`. Le reste vient de la mission ou de notes de partie, perdues en fin de partie.
-
-**Manque :** une lecture par clé de jeu (`requireTenant`), sans session web. La doctrine (`/api/operations/doctrine/documents`) exige une session. La tenue `mandatory` est un badge, sans liste d'objets.
-
-**Proposition :** `GET /api/atak/community-brief`, limité au tenant de la clé :
+Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le contenu se saisit dans Ressources › Configuration ATAK, section Expérience (`community_notes`, `community_kit` dans la configuration d'expérience, sans migration), et se lit par `App\Support\AtakCommunityBrief`. Sans saisie, l'API renvoie des listes vides.
 
 ```json
 {
@@ -597,5 +593,6 @@ L'app Communauté du téléphone lit aujourd'hui le seul `guide` de `GET /api/at
 }
 ```
 
-- Écriture par la gestion de la communauté ; texte brut, sans HTML. Plafonds côté jeu : 40 notes, titre de 60 et texte de 600 caractères, 40 lignes de kit.
-- La DLL n'a pas de commande générique : il faut une commande `GetCommunityBrief` dans `Extension.cs`, donc une DLL reconstruite. Le mod passera alors par `extAwait`, comme `GetWantedNotices`.
+- Écriture par la gestion de la communauté ; texte brut, sans HTML. Plafonds côté site et côté jeu : 40 notes, titre de 60 et texte de 600 caractères, 40 lignes de kit.
+- Côté jeu : commande `GetCommunityBrief` de COMSPEC Link, appelée par `fn_tenantAction` « briefLoad » avec `extAwait`, 5 min au plus entre deux lectures. Réponse : `OK|` puis une ligne par entrée, `N\tgenre\ttitre\ttexte` ou `K\tclasses,séparées\tnombre\tlibellé`.
+- Priorité du kit : mission (`COMSPEC_ATAK_RequiredKit`), puis Athena, puis le réglage `comspec_atak_native_kit_required`.

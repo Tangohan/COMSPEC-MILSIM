@@ -3056,6 +3056,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->post('/api/atak/experience', [AtakApiController::class, 'experience']);
+    $router->get('/api/atak/community-brief', [AtakApiController::class, 'communityBrief']);
     $router->get('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->post('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);

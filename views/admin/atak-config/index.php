@@ -299,6 +299,14 @@ $tabs = [
         <textarea name="experience_guide_custom" rows="4" maxlength="2000" placeholder="Ex. Fréquences : 1re section 41.0, PC 45.5 — Modpack « Opé 2026.10 » obligatoire — Toute demande d’appui passe par un 9-line."><?= $h($experienceGuideCustom ?? '') ?></textarea>
         <small>Affiché en mission (journal de bord et aide de la tablette), à la suite du guide standard.</small>
       </label>
+      <label class="bo-ac-field"><span>App Communauté du téléphone : consignes, ordres et tips</span>
+        <textarea name="experience_community_notes" rows="5" placeholder="ordre | Rassemblement | H-10 au hangar nord"><?= $h($experienceCommunityNotes ?? '') ?></textarea>
+        <small>Une ligne par note : genre (consigne, ordre ou tip), titre et texte, séparés par |. 40 notes au plus, texte brut.</small>
+      </label>
+      <label class="bo-ac-field"><span>App Communauté du téléphone : kit obligatoire</span>
+        <textarea name="experience_community_kit" rows="4" placeholder="ACE_fieldDressing*2 : Pansements"><?= $h($experienceCommunityKit ?? '') ?></textarea>
+        <small>Une entrée par ligne : classe Arma, nombre après *, variantes acceptées séparées par /, libellé après :. Comparé à ce que porte le joueur. Un kit posé par la mission reste prioritaire.</small>
+      </label>
       <?php if (($experienceGuide ?? '') !== ''): ?>
         <details class="bo-ac-howto"><summary><?= $ico('eye', 16) ?> Aperçu du guide reçu par les opérateurs</summary><pre class="bo-ac-pre"><?= $h($experienceGuide) ?></pre></details>
       <?php endif; ?>

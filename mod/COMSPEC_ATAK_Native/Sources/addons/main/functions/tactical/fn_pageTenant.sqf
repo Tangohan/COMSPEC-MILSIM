@@ -10,6 +10,7 @@ private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [
 private _tab = _s getOrDefault ["tenantTab", "CONSIGNE"];
 private _icon = "\z\comspec_atak_native\addons\main\data\app_briefing.paa";
 private _admin = [player] call comspec_atak_native_fnc_adminAllowed;
+["briefLoad"] call comspec_atak_native_fnc_tenantAction;
 private _notes = ["notes"] call comspec_atak_native_fnc_tenantAction;
 private _missing = ["missing"] call comspec_atak_native_fnc_tenantAction;
 private _seg = {
@@ -24,7 +25,8 @@ private _noteRows = {
     {
         _x params ["_id", "", "_title", "_text"];
         private _body = format ["<t font='COMSPEC_BarlowBold'>%1</t><br/>%2", [_title] call _esc, [_text] call _esc];
-        if (_admin) then {
+        // Note du site (identifiant « A… ») : se modifie sur Athena, pas de suppression ici.
+        if (_admin && {(_id select [0, 1]) isNotEqualTo "A"}) then {
             _rows pushBack ["person", "", _body, [["SUPPRIMER", compile format ["['del', %1] call comspec_atak_native_fnc_tenantAction;", str _id], false, true, "Retire cette note pour toute la partie"]]];
         } else {
             _rows pushBack ["text", _body];
@@ -64,7 +66,7 @@ switch (_tab) do {
     case "KIT": {
         private _kit = ["kit"] call comspec_atak_native_fnc_tenantAction;
         if (_kit isEqualTo []) then {
-            _rows pushBack ["empty", _icon, "Aucun kit obligatoire", "La mission ou l'admin du serveur peut en définir un (ATAK · Communauté)."];
+            _rows pushBack ["empty", _icon, "Aucun kit obligatoire", "La communauté sur Athena, la mission ou l'admin du serveur peut en définir un."];
         } else {
             if (_missing isEqualTo []) then {
                 _rows pushBack ["banner", "Kit complet", [0.13, 0.42, 0.22, 1]];

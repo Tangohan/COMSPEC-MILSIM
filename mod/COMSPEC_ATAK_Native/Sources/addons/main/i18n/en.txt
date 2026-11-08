@@ -18953,5 +18953,7 @@
 ["Il n'était valable que %1 min. Régénérez-le, puis scannez le nouveau.", "It was only valid for %1 min. Regenerate it, then scan the new one."],
 ["Réservé à la gestion de la communauté : votre compte Athena n'a pas ce droit.", "Reserved for community management: your Athena account does not have this right."],
 ["Gérer les joueurs, les sessions et les CR depuis votre vrai téléphone (QR code valable 2 minutes, une seule utilisation)", "Manage players, sessions and reports from your real phone (QR code valid for 2 minutes, single use)"],
-["Administration", "Administration"]
+["Administration", "Administration"],
+["Consignes et kit de la communauté", "Community instructions and kit"],
+["La communauté sur Athena, la mission ou l'admin du serveur peut en définir un.", "The community on Athena, the mission or the server admin can define one."]
 ]

@@ -109,6 +109,7 @@ switch (_tab) do {
         private _want = [
             ["ListSseFieldNotes", "Bibliothèque FRS (fiches et images)"],
             ["GetWantedNotices", "Avis de recherche"],
+            ["GetCommunityBrief", "Consignes et kit de la communauté"],
             ["BriefingSlidesNotes", "Notes des diapositives"],
             ["BriefingSlidesOperation", "Opération liée au briefing"],
             ["BriefingPresence", "Présence au briefing sur Athena"],
