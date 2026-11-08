@@ -85,15 +85,12 @@
   function syncUrl() {
     if (!window.history || !window.history.replaceState) return;
     var params = new URLSearchParams(window.location.search);
-    var cols = selectedKeys(state.collections);
-    if (cols.length === 1) params.set('collection', cols[0]);
-    else params.delete('collection');
     if (state.openTenueId) params.set('tenue', String(state.openTenueId));
     else params.delete('tenue');
-    if (state.q) params.set('q', state.q);
-    else params.delete('q');
-    if (state.tab === 'dotation') params.set('tab', state.tab);
-    else params.delete('tab');
+    if (root.getAttribute('data-eq-space') === 'materiel') {
+      if (state.tab === 'dotation') params.set('tab', state.tab);
+      else params.delete('tab');
+    }
     params.delete('edit_collection');
     var qs = params.toString();
     var next = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
@@ -359,8 +356,10 @@
   }
 
   root.querySelectorAll('[data-eq-open]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function (e) {
+      if (e && e.preventDefault) e.preventDefault();
       var which = btn.getAttribute('data-eq-open');
+      if (which === 'kit-new') openDialog(document.getElementById('eq-kit-new'));
       if (which === 'collection-new') openDialog(colDialog);
       if (which === 'tenue-help') openDialog(helpDialog);
       if (which === 'fiche-new') openDialog(ficheNewDialog);
@@ -375,7 +374,9 @@
     });
   });
 
-  [qvDialog, colDialog, colEditDialog, helpDialog, ficheDialog, ficheNewDialog, dotationDialog, dotationNewDialog].forEach(function (dlg) {
+  var kitDialog = document.getElementById('eq-kit-new');
+  var genericDialog = document.getElementById('eq-generic');
+  [qvDialog, colDialog, colEditDialog, helpDialog, ficheDialog, ficheNewDialog, dotationDialog, dotationNewDialog, kitDialog, genericDialog].forEach(function (dlg) {
     if (!dlg) return;
     dlg.addEventListener('click', function (e) {
       if (e.target === dlg) closeDialog(dlg);
@@ -390,7 +391,8 @@
   });
 
   root.querySelectorAll('[data-eq-tab]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function (e) {
+      if (e && e.preventDefault) e.preventDefault();
       setTab(btn.getAttribute('data-eq-tab'));
     });
   });
@@ -769,14 +771,21 @@
       });
   }
 
+  // Cartes, Modifier et ACE sont de vrais liens (adresse de la tenue : utile sans script) : clic simple = fenêtre, Ctrl ou Cmd = lien normal.
+  function plainClick(e) {
+    return !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button > 0);
+  }
+
   root.querySelectorAll('[data-eq-quickview]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function (e) {
+      if (plainClick(e)) e.preventDefault();
       openQuickView(btn.getAttribute('data-eq-quickview'));
     });
   });
 
   root.querySelectorAll('[data-eq-edit-card]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function (e) {
+      if (plainClick(e)) e.preventDefault();
       qvOpenInEdit = true;
       openQuickView(btn.getAttribute('data-eq-edit-card'));
     });
@@ -793,9 +802,10 @@
     copyStatusTimer = text ? setTimeout(function () { copyStatus.hidden = true; }, 7000) : null;
   }
   root.querySelectorAll('[data-eq-ace-copy-card]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function (e) {
       var id = parseInt(btn.getAttribute('data-eq-ace-copy-card'), 10);
-      if (!id) return;
+      if (!id || !plainClick(e)) return;
+      e.preventDefault();
       var base = (catalog.urls && catalog.urls.aceExport) || '/equipment/ace-export';
       var url = base + '?tenue=' + encodeURIComponent(id);
       btn.disabled = true;
@@ -1190,6 +1200,112 @@
   bindSimpleSearch('[data-eq-fiche-search]', '[data-eq-fiche-card]');
   bindSimpleSearch('[data-eq-dotation-search]', '[data-eq-dotation-card]');
 
+  /* ---- Navigation par espaces : favori en un clic, fenêtres, repli sans JavaScript ---- */
+  function announce(text) {
+    var el = root.querySelector('[data-eq-copy-status]');
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+    if (text) setTimeout(function () { el.hidden = true; }, 4000);
+  }
+
+  function bumpCount(key, delta) {
+    var el = root.querySelector('[data-eq-badge="' + key + '"]');
+    if (el) el.textContent = String(Math.max(0, (parseInt(el.textContent, 10) || 0) + delta));
+  }
+
+  root.addEventListener('submit', function (e) {
+    var form = e.target && e.target.closest ? e.target.closest('[data-eq-fav-form]') : null;
+    if (!form || !window.fetch) return;
+    e.preventDefault();
+    var btn = form.querySelector('button[type="submit"]');
+    var onField = form.querySelector('input[name="on"]');
+    var wasOn = onField && onField.value === '0';
+    if (btn) btn.disabled = true;
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (!res.ok || !res.body || !res.body.ok) throw new Error('fav');
+        var on = !!res.body.favorite;
+        if (onField) onField.value = on ? '0' : '1';
+        if (btn) {
+          btn.classList.toggle('is-on', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          var label = on ? btn.getAttribute('data-label-on') : btn.getAttribute('data-label-off');
+          btn.setAttribute('title', label);
+          var star = btn.querySelector('[data-eq-fav-star]');
+          if (star) star.textContent = on ? '★' : '☆';
+          var lab = btn.querySelector('[data-eq-fav-label]');
+          if (lab) lab.textContent = label;
+        }
+        bumpCount('favoris', on ? 1 : -1);
+        // Dans l'espace Favoris, retirer un favori retire la carte (la page reste à jour sans rechargement).
+        if (!on && root.getAttribute('data-eq-space') === 'favoris') {
+          var card = form.closest('[data-eq-card]');
+          if (card) card.remove();
+          if (!root.querySelector('[data-eq-card]')) window.location.reload();
+        }
+        announce(on ? 'Ajoutée aux favoris.' : 'Retirée des favoris.');
+      })
+      .catch(function () {
+        announce('Impossible de modifier le favori. Réessayez.');
+      })
+      .finally(function () {
+        if (btn) btn.disabled = false;
+      });
+  });
+
+  // Détails d'un kit, gestion d'un kit, mon kit en jeu : le <details> de la page (repli) s'ouvre en fenêtre.
+  root.addEventListener('click', function (e) {
+    var summary = e.target && e.target.closest ? e.target.closest('details[data-eq-details-modal] > summary') : null;
+    if (!summary || !genericDialog || typeof genericDialog.showModal !== 'function') return;
+    var details = summary.parentNode;
+    e.preventDefault();
+    var body = genericDialog.querySelector('[data-eq-generic-body]');
+    var title = genericDialog.querySelector('[data-eq-generic-title]');
+    if (!body || !title) return;
+    title.textContent = (summary.textContent || '').trim();
+    body.innerHTML = '';
+    Array.prototype.forEach.call(details.childNodes, function (n) {
+      if (n !== summary) body.appendChild(n.cloneNode(true));
+    });
+    openDialog(genericDialog);
+  });
+
+  // Modifier une collection : fenêtre sur la liste (adresse ?collection=ID&edit_collection=1 conservée en repli).
+  root.querySelectorAll('[data-eq-collection-edit]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      openCollectionEdit(a.getAttribute('data-eq-collection-edit'));
+    });
+  });
+
+  // Recherche et filtres d'un espace : un changement de liste relance la recherche (le bouton Filtrer reste là sans script).
+  root.querySelectorAll('form[data-eq-autosubmit] select').forEach(function (sel) {
+    sel.addEventListener('change', function () {
+      if (sel.form) sel.form.submit();
+    });
+  });
+
+  // Fenêtres ouvertes côté serveur (repli sans JavaScript) : on les passe en vraies fenêtres modales ; blocs de repli retirés.
+  function upgradeFallbacks(params) {
+    root.querySelectorAll('dialog[open]').forEach(function (dlg) {
+      dlg.close();
+      openDialog(dlg);
+    });
+    if (params.get('creer') === 'kit') {
+      openDialog(kitDialog);
+    }
+    root.querySelectorAll('[data-eq-detail-fallback]').forEach(function (el) {
+      el.remove();
+    });
+  }
+
   /* ---- Init from URL ---- */
   (function initFromUrl() {
     var params = new URLSearchParams(window.location.search);
@@ -1201,13 +1317,13 @@
       if (materiel && materiel.scrollIntoView) materiel.scrollIntoView();
     }
     var col = params.get('collection');
-    if (col) state.collections[String(col)] = true;
     var q = params.get('q');
     if (q && searchInput) {
       searchInput.value = q;
       state.q = q.trim().toLowerCase();
     }
     applyFilters();
+    upgradeFallbacks(params);
     var tenue = params.get('tenue');
     if (tenue) openQuickView(tenue);
     if (params.get('edit_collection') === '1' && col) openCollectionEdit(col);

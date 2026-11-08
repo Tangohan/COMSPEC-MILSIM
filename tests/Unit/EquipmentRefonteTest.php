@@ -274,30 +274,61 @@ final class EquipmentRefonteTest extends TestCase
             'vide' => array_merge($base, ['wardrobes' => [], 'mineWardrobes' => [], 'gameWardrobes' => [], 'collections' => [], 'equipmentClasses' => [], 'dotationItems' => [], 'kits' => [], 'myGameKit' => null, 'catalogCount' => 0]),
             'migration absente' => array_merge($base, ['migrationMissing' => true]),
         ];
+        // Un espace à la fois : chaque espace est rendu avec les données que le contrôleur lui prépare.
+        $spaceData = static function (string $space, array $data, array $extra = []): array {
+            $items = match ($space) {
+                'favoris' => array_values(array_filter($data['wardrobes'], static fn (array $x): bool => !empty($x['is_favorite_me']))),
+                'communaute' => array_values(array_filter($data['wardrobes'], static fn (array $x): bool => empty($x['mine']))),
+                'kits' => $data['kits'],
+                'collections' => $data['collections'],
+                default => array_values(array_filter($data['wardrobes'], static fn (array $x): bool => !empty($x['mine']))),
+            };
+            $nav = $extra + [
+                'espace' => $space, 'collection' => 0, 'tab' => 'fiches', 'q' => '', 'type' => '', 'sort' => 'name',
+                'paged' => \App\Support\EquipmentSpaces::paginate($items, 1), 'collection_row' => null, 'detail' => null, 'creer' => false,
+                'counts' => ['mes-tenues' => 1, 'favoris' => 2, 'collections' => 1, 'communaute' => 2, 'kits' => $data['kitsAllowed'] ? 1 : null, 'materiel' => 2],
+            ];
+
+            return array_merge($data, ['nav' => $nav]);
+        };
+        $spaces = array_keys(\App\Support\EquipmentSpaces::SPACES);
         foreach ($states as $label => $data) {
-            $html = Response::view('equipment.hub', $data)->body();
-            self::assertNotSame('', $html, $label);
-            self::assertStringNotContainsString('<script>alert(1)</script>', $html, $label . ' : nom du jeu ou de membre non échappé');
-            if ($label !== 'migration absente') {
-                foreach (['id="mes-tenues"', 'id="communaute"', 'id="kits"', 'id="favoris"', 'id="materiel"'] as $anchor) {
-                    self::assertStringContainsString($anchor, $html, $label);
+            foreach ($spaces as $space) {
+                $html = Response::view('equipment.hub', $spaceData($space, $data))->body();
+                self::assertNotSame('', $html, $label . ' / ' . $space);
+                self::assertStringNotContainsString('<script>alert(1)</script>', $html, $label . ' / ' . $space . ' : nom du jeu ou de membre non échappé');
+                if ($label !== 'migration absente') {
+                    // Les six onglets sont là, chacun avec sa propre adresse, et un seul est la page en cours.
+                    foreach (['', '?espace=favoris', '?espace=collections', '?espace=communaute', '?espace=kits', '?espace=materiel'] as $href) {
+                        self::assertStringContainsString('href="/equipment' . $href . '"', $html, $label . ' / ' . $space);
+                    }
+                    self::assertSame(1, substr_count($html, 'aria-current="page"'), $label . ' / ' . $space . ' : un seul onglet actif');
                 }
             }
         }
-        $locked = Response::view('equipment.hub', $states['sans formule'])->body();
+        $locked = Response::view('equipment.hub', $spaceData('kits', $states['sans formule']))->body();
         self::assertStringContainsString('eqx-offer', $locked, 'présentation de l’offre, pas une erreur');
         self::assertStringNotContainsString('Copier dans mes tenues', $locked);
-        $full = Response::view('equipment.hub', $states['complet'])->body();
+        $full = Response::view('equipment.hub', $spaceData('kits', $states['complet']))->body();
         self::assertStringContainsString('Copier dans mes tenues', $full);
-        $copied = Response::view('equipment.hub', array_merge($base, ['kits' => [array_merge($kit, ['copy_wardrobe_id' => 12])]]))->body();
+        $copiedData = array_merge($base, ['kits' => [array_merge($kit, ['copy_wardrobe_id' => 12])]]);
+        $copied = Response::view('equipment.hub', $spaceData('kits', $copiedData))->body();
         self::assertStringContainsString('Mettre à jour ma copie', $copied);
         self::assertStringContainsString('?tenue=12', $copied);
-        $withCover = Response::view('equipment.hub', array_merge($base, ['wardrobes' => [array_merge($w(1, true, 'x', false), ['cover_url' => '/c.jpg'])]]))->body();
+        $coverData = array_merge($base, ['wardrobes' => [array_merge($w(1, true, 'x', false), ['cover_url' => '/c.jpg'])]]);
+        $withCover = Response::view('equipment.hub', $spaceData('mes-tenues', $coverData))->body();
         self::assertStringContainsString('loading="lazy"', $withCover, 'images chargées à la demande');
-        // Un kit publié en tenue de communauté n'est plus listé deux fois quand la section Kits est ouverte.
-        self::assertStringNotContainsString('id="community-tenue-3"', $full);
-        self::assertStringContainsString('id="community-tenue-3"', $locked);
-
+        // Favori en un clic : chaque carte porte son formulaire (repli sans JavaScript) et l'espace Favoris ne liste que les favoris.
+        $mine = Response::view('equipment.hub', $spaceData('mes-tenues', $base))->body();
+        self::assertStringContainsString('data-eq-fav-form', $mine);
+        self::assertStringContainsString('name="_return"', $mine);
+        $favs = Response::view('equipment.hub', $spaceData('favoris', $base))->body();
+        self::assertStringContainsString('id="favoris-tenue-1"', $favs);
+        self::assertStringContainsString('id="favoris-tenue-3"', $favs);
+        self::assertStringNotContainsString('id="favoris-tenue-2"', $favs);
+        self::assertStringContainsString('aria-pressed="true"', $favs);
+        // Un kit publié en tenue de communauté n'est plus listé deux fois quand la formule des kits est active.
+        self::assertStringContainsString("(string) (\$w['source'] ?? '') === 'role_kit'", $this->read('app/Controllers/Web/ArsenalWardrobeController.php'));
         $asst = [
             'assistantLocked' => false, 'catalogCount' => 10, 'canManageKits' => true, 'wantsKit' => false, 'csrfToken' => 't', 'upgradeUrl' => '/u',
             'roleChoices' => [['id' => 5, 'name' => 'Médecin ' . self::EVIL, 'abbreviation' => '', 'category' => 'Santé ' . self::EVIL]],
@@ -317,7 +348,13 @@ final class EquipmentRefonteTest extends TestCase
             'preview' => ArsenalLoadoutItems::grouped($proposal['payload'], $proposal['names']),
         ]))->body();
         self::assertStringNotContainsString('<script>alert(1)</script>', $html);
-        self::assertStringContainsString('name="slot[primary]"', $html);
+        self::assertStringContainsString('name="slot[primary][]"', $html, 'repli sans JavaScript : une liste par emplacement');
+        // Fenêtre de choix (composant du portail) : une seule, remplie par le script d'après des données JSON échappées.
+        self::assertStringContainsString('class="jobcat eqp"', $html);
+        self::assertStringContainsString('data-eqp-open', $html);
+        self::assertStringContainsString('id="eqp-data"', $html);
+        self::assertStringContainsString('name="slot[primary][]" value="arifle_MX_F"', $html, 'le choix est renvoyé à l’enregistrement');
+        self::assertStringNotContainsString('<script>alert(1)</script>', (string) strstr($html, 'id="eqp-data"'), 'noms d’objets échappés dans les données de la fenêtre');
         self::assertStringContainsString('name="_csrf_token"', $html);
         $guide = Response::view('equipment.assistant', array_merge($asst, ['catalogCount' => 0]))->body();
         self::assertStringContainsString('Envoyer toutes', $guide, 'sans objets remontés, la page explique comment en obtenir');
