@@ -33,6 +33,46 @@ private _nan = sqrt -1;
 [_results, "réseau voix : ligne fausse", ["voiceNet", [["a", 43.5, "CH1"], 3], player] call _read, []] call _expect;
 [_results, "talkgroup correct", ["talkgroup", "ALPHA", player] call _read, "ALPHA"] call _expect;
 [_results, "talkgroup : nombre", ["talkgroup", 3, player] call _read, ""] call _expect;
+// Graphe : chaîne A-B-C-D, passerelle D. Débit = plus petit lien x 0,8 par saut relayé.
+private _chain = [[[1, 10, 10000]], [[0, 10, 10000], [2, 10, 10000]], [[1, 10, 10000], [3, 10, 10000]], [[2, 10, 10000]]];
+private _all = [true, true, true, true];
+private _solve = {
+    params ["_adj", "_src", "_allow", "_hopMax"];
+    ["solve", [_adj, _src, _allow, _hopMax, 20000]] call comspec_atak_native_fnc_meshGraph
+};
+private _s6 = [_chain, [3], _all, 6] call _solve;
+[_results, "chaîne : 3 sauts", (_s6 select 1) select 0, 3] call _expect;
+[_results, "chaîne : débit réduit par saut", round ((_s6 select 0) select 0), 6400] call _expect;
+[_results, "chaîne : premier maillon", (_s6 select 2) select 0, 1] call _expect;
+[_results, "chaîne : passerelle retrouvée", (_s6 select 4) select 0, 3] call _expect;
+[_results, "plafond de 2 sauts : A hors maillage", (([_chain, [3], _all, 2] call _solve) select 1) select 0, -1] call _expect;
+[_results, "nœud interdit (autre canal) : A coupé", (([_chain, [3], [true, false, true, true], 6] call _solve) select 1) select 0, -1] call _expect;
+private _parted = [[[1, 10, 10000]], [[0, 10, 10000]], [[3, 10, 10000]], [[2, 10, 10000]]];
+[_results, "partition : A coupé de D", (([_parted, [3], _all, 6] call _solve) select 1) select 0, -1] call _expect;
+// A-D direct à 1 000 kbit/s, ou A-B-D à 5 000 : le plus large gagne, sauf si le plafond l'interdit.
+private _wide = [[[3, 10, 1000], [1, 10, 5000]], [[0, 10, 5000], [3, 10, 5000]], [], [[0, 10, 1000], [1, 10, 5000]]];
+private _w6 = [_wide, [3], _all, 6] call _solve;
+[_results, "plus large : détour de 2 sauts", (_w6 select 1) select 0, 2] call _expect;
+[_results, "plus large : débit du détour", round ((_w6 select 0) select 0), 4000] call _expect;
+[_results, "plafond de 1 saut : lien direct", (([_wide, [3], _all, 1] call _solve) select 1) select 0, 1] call _expect;
+// Gravité (section 3 du plan).
+{
+    _x params ["_label", "_in", "_want"];
+    [_results, _label, ["gravity", _in] call comspec_atak_native_fnc_meshGraph, _want] call _expect;
+} forEach [
+    ["gravité nominale", [12, 2, 6], 0], ["gravité dégradée, marge", [6, 2, 6], 1], ["gravité dégradée, sauts", [12, 5, 6], 1],
+    ["gravité limite", [2, 2, 6], 2], ["gravité coupée, hors maillage", [12, -1, 6], 3], ["gravité coupée, trop de sauts", [12, 7, 6], 3]
+];
+// Hystérésis : un lien ne tombe qu'au deuxième constat et revient tout de suite.
+private _h1 = ["hyst", [true, 8, 4000, []]] call comspec_atak_native_fnc_meshGraph;
+private _h2 = ["hyst", [false, -3, 0, _h1 select 1]] call comspec_atak_native_fnc_meshGraph;
+private _h3 = ["hyst", [false, -3, 0, _h2 select 1]] call comspec_atak_native_fnc_meshGraph;
+private _h4 = ["hyst", [true, 8, 4000, _h2 select 1]] call comspec_atak_native_fnc_meshGraph;
+[_results, "hystérésis : lien bon gardé", _h1 select 0, true] call _expect;
+[_results, "hystérésis : premier constat, gardé", _h2 select 0, true] call _expect;
+[_results, "hystérésis : premier constat, marge -1", _h2 select 2, -1] call _expect;
+[_results, "hystérésis : deuxième constat, tombé", _h3 select 0, false] call _expect;
+[_results, "hystérésis : retour immédiat", _h4 select 1, [0, 8, 4000]] call _expect;
 private _ok = { _x select 1 } count _results;
 { diag_log format ["[COMSPEC ATAK NATIVE][MESH] Test %1 : %2", _x select 0, ["échoué", "réussi"] select (_x select 1)]; } forEach _results;
 diag_log format ["[COMSPEC ATAK NATIVE][MESH] Tests : %1 réussis sur %2", _ok, count _results];

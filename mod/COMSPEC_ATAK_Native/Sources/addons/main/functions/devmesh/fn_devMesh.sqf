@@ -10,6 +10,7 @@
                     (diag_tickTime) ; vide sans graphe
       "export"   -> écrit le graphe dans le RPT, trié par nom (deux clients comparent leurs exports) ; rend le nombre de lignes
       "perfRows" -> lignes du tableau de performance (onglet MAILLAGE de l'app Debug, fn_formRender)
+      "askServer" : demande au serveur ses compteurs et le journal de l'hystérésis (réponse : événement comspec_atak_native_devMeshStats)
       "tabRows"  -> lignes de tout l'onglet MAILLAGE
 */
 params [["_act", ""], ["_arg", []]];
@@ -53,17 +54,33 @@ switch (_act) do {
         { diag_log _x; } forEach _lk;
         1 + (count _rows) + (count _lk)
     };
+    case "askServer": {
+        if !(["allowed"] call comspec_atak_native_fnc_devMesh) exitWith { false };
+        if !(uiNamespace getVariable ["COMSPEC_ATAK_MeshStatsEh", false]) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_MeshStatsEh", true];
+            ["comspec_atak_native_devMeshStats", {
+                params [["_pairs", []], ["_log", []]];
+                missionNamespace setVariable ["COMSPEC_ATAK_MeshStatsSrv", createHashMapFromArray _pairs];
+                missionNamespace setVariable ["COMSPEC_ATAK_MeshLinkLogSrv", _log];
+            }] call CBA_fnc_addEventHandler;
+        };
+        ["request", ["stats", []]] call comspec_atak_native_fnc_devMeshSim
+    };
     case "perfRows": {
-        private _st = missionNamespace getVariable ["COMSPEC_ATAK_MeshStats", createHashMap];
-        private _out = [];
+        // Le constructeur tourne sur le serveur par défaut : ses compteurs viennent de là. Sur le client : ceux de sa lecture et, sans serveur de référence, de sa passe.
+        private _srv = ["serverBuilt"] call comspec_atak_native_fnc_meshGraph;
+        private _st = missionNamespace getVariable [["COMSPEC_ATAK_MeshStats", "COMSPEC_ATAK_MeshStatsSrv"] select (_srv && {!isServer}), createHashMap];
+        private _out = [["info", "Graphe calculé", ["sur chaque client", "sur le serveur"] select _srv]];
         if ((count _st) isEqualTo 0) then {
             _out pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune passe du constructeur mesurée sur ce client.</t>"];
         } else {
             private _hit = _st getOrDefault ["hits", 0];
             private _tests = _st getOrDefault ["tests", 0];
             _out append [
-                ["info", "Dernière passe", format ["il y a %1 s · %2 ms", round (diag_tickTime - (_st getOrDefault ["at", diag_tickTime])), (_st getOrDefault ["ms", 0]) toFixed 1]],
-                ["info", "Nœuds · liens", format ["%1 · %2", _st getOrDefault ["nodes", 0], _st getOrDefault ["links", 0]]],
+                ["info", "Dernière passe", format ["%1 ms de bout en bout · %2 ms de travail · %3 tranche(s), pire %4 ms", (_st getOrDefault ["ms", 0]) toFixed 1, (_st getOrDefault ["workMs", 0]) toFixed 1, _st getOrDefault ["slices", 0], (_st getOrDefault ["sliceMaxMs", 0]) toFixed 1]],
+                ["info", "Nœuds · liens", format ["%1 · %2 · %3 camp(s) · %4 paire(s) élaguée(s)", _st getOrDefault ["nodes", 0], _st getOrDefault ["links", 0], _st getOrDefault ["sides", 0], _st getOrDefault ["pruned", 0]]],
+                ["info", "Diffusion", format ["%1 fois depuis le début · %2 signes (texte, hors enveloppe réseau)", _st getOrDefault ["pubs", 0], _st getOrDefault ["size", 0]]],
+                ["info", "Images par seconde (machine du graphe)", str (_st getOrDefault ["fps", 0])],
                 ["info", "Bilans radio · cache", format ["%1 calculés · %2 en cache (%3 %%)", _tests, _hit, round (100 * _hit / ((_tests + _hit) max 1))]]
             ];
         };
@@ -86,7 +103,8 @@ switch (_act) do {
             params ["_label", "_a", "_args"];
             [_label, compile format ["['request', [%1, %2]] call comspec_atak_native_fnc_devMeshSim;", str _a, str _args]]
         };
-        private _rows = [["section", "Tableau de performance", "Mesure locale, aucune valeur n'est estimée"]];
+        ["askServer"] call comspec_atak_native_fnc_devMesh;
+        private _rows = [["section", "Tableau de performance", "Mesures, aucune valeur n'est estimée"]];
         _rows append (["perfRows"] call comspec_atak_native_fnc_devMesh);
         _rows pushBack ["section", "Visualisation", format ["Nœuds simulés publiés : %1", count (missionNamespace getVariable ["COMSPEC_ATAK_MeshSimNodes", []])]];
         _rows pushBack ["buttons", [

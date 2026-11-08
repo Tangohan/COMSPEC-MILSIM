@@ -71,6 +71,10 @@ switch (_act) do {
             format ["Profil complet : marge %1 dB", (_full select 0) toFixed 1],
             [_full select 1] call _causes
         ];
+        // Historique de l'hystérésis : journal du constructeur (serveur ou client), en mode développeur.
+        private _log = (missionNamespace getVariable [["COMSPEC_ATAK_MeshLinkLog", "COMSPEC_ATAK_MeshLinkLogSrv"] select ((["serverBuilt"] call comspec_atak_native_fnc_meshGraph) && {!isServer}), []]);
+        private _mine = _log select { [(_x select 1), (_x select 2)] in [[_na select 0, _nb select 0], [_nb select 0, _na select 0]] };
+        _lines pushBack (["Hystérésis : aucun changement récent", (_mine apply { format ["t=%1 : %2 (%3 dB)", _x select 0, _x select 3, (_x select 4) toFixed 1] }) joinString " ; "] select (_mine isNotEqualTo []));
         private _txt = _lines joinString "\n";
         { diag_log format ["[COMSPEC ATAK NATIVE][MESH] Inspecteur : %1", _x]; } forEach _lines;
         _txt

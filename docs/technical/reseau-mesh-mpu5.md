@@ -1,6 +1,6 @@
 # Réseau maillé du téléphone ATAK : plan technique
 
-Statut : plan, révision 2 (ajouts : réalisme radio, guerre électronique, données ATAK, outils ; voir sections 3.6, 4 bis et 6 bis, lots 9 à 12, décisions 11 à 17 ; TFAR vérifié dans son code source). Aucun code touché. Périmètre : `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/` (`network/`, `core/fn_linkQuality.sqf`, `pages/fn_pageWaveRelay.sqf`, `pages/fn_waveRelayAction.sqf`).
+Statut : plan, révision 2 (ajouts : réalisme radio, guerre électronique, données ATAK, outils ; voir sections 3.6, 4 bis et 6 bis, lots 9 à 12, décisions 11 à 17 ; TFAR vérifié dans son code source). Lots 0, 1 et 2 codés, non testés en jeu (section 10). Périmètre : `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/` (`network/`, `core/fn_linkQuality.sqf`, `pages/fn_pageWaveRelay.sqf`, `pages/fn_waveRelayAction.sqf`).
 
 Objectif du propriétaire : un réseau plus poussé, façon MPU5 / Wave Relay, un chiffrement simulé comme un vrai ATAK, et un maillage voix TFAR / ACRE via le téléphone et les relais.
 
@@ -345,3 +345,24 @@ Un lot = une PR, sur main, jamais fusionnée sans le propriétaire. Le numéro d
 | Code ACRE2 2.14.0.1064 | Lu (PBO, SQF clair). |
 | Code TFAR (GitHub, master fce977f, 23/09/2026) | Lu (SQF). Extension C++ du plugin non lue. Pas installé, donc non testé en jeu. |
 | Code ACRE2 (GitHub, master c920bac, 12/08/2026) | Même version 2.14.0.1064 que celle installée ; `setCustomSignalFunc`, `getSignalCore`, `getRadioObject` toujours présents. |
+
+## 10. Mise en œuvre
+
+Décisions du propriétaire reçues : 1 automatique et désactivable ; 2 absence de rallonge d'abord ; 3 plafond de 6 sauts, réglable ; 4 graphe de référence sur le serveur, constructeur capable de tourner aussi sur le client ; 5 `mpu_real` et `mpu_voice` désactivés jusqu'à validation en jeu des lots 1 à 5 ; 6 pas d'à-coups, passage net ; 7 16 groupes, table de la mission sinon déduite ; 8 filtre de groupe d'abord sur messages et voix ; 10 ACRE avant TFAR ; 11 lot 0 avant le lot 2 ; 12 « moitié puis tiers » en Milsim, x 0,8 en Arcade ; 13 30 s puis 3 min, réglables ; 14 goniomètre et analyseur réservés à un rôle ; 15 masque du corps et hauteur par posture en Milsim ; 16 ordre 0, 1, 2, 3, 4, 9, 10, 5, 6, 7, 11, 12, 8 ; 17 code TFAR désactivé par défaut. Livraison groupée dans la PR #1395 (au lieu d'une PR par lot).
+
+| Lot | Fichiers | État |
+|---|---|---|
+| 0 | `functions/devmesh/` (`fn_devMesh`, `fn_devMeshSim`, `fn_devMeshOverlay`, `fn_devLinkInspect`), `missions/COMSPEC_BancMaillage.Stratis`, réglage `mesh_dev` | codé, à tester |
+| 1 | `fn_meshRead`, `fn_devMeshTest` ; tous les consommateurs passent par la lecture sûre | codé, à tester |
+| 2 | `fn_meshGraph` ; `fn_mpuLink` « mesh », `fn_waveRelayAction` « scan » (liaison réaliste), `fn_mpuVoice` ; réglages `mesh_server`, `mesh_hops` | codé, à tester |
+
+Écarts assumés par rapport aux sections ci-dessus :
+
+- Section 6, « chaque client calcule son graphe » : remplacé par la décision 4. Le serveur construit, le client ne fait plus que lire (chemin le plus large sur le graphe reçu, sans bilan radio). Réglage décoché, ou serveur sans le mod : le même constructeur tourne sur le client, sans diffusion.
+- Bornes de lecture : 20 km pour un nœud MPU5, mais 30 km pour `COMSPEC_ATAK_Mpu5` (borne du réglage de radio longue portée) et 100 km pour la portée TFAR publiée, pour ne pas refuser une valeur légitime.
+- Plafond de sauts appliqué aussi au total A + B quand la voix passe par le cœur de réseau.
+- Liaison réaliste décochée : l'ancien `scan` de l'app Wave Relay reste jusqu'au lot 8 (décision 5 : aucun changement tant que le réalisme n'est pas validé).
+- Niveau de gravité calculé pour chaque chemin, mais appliqué à la voix seulement au lot 3. Décision 6 : le niveau 2 n'a pas d'à-coups.
+- Mouvement seul : graphe refait à l'intervalle normal. Seul un changement de nœud (apparu, tombé, canal, portée) déclenche le recalcul à 2 s.
+
+À mesurer au banc d'essai pour trancher la décision 4 (aucun chiffre n'existe à ce jour) : durée de passe et pire tranche à 30 et 60 nœuds, images par seconde du serveur, nombre de diffusions et taille de `COMSPEC_ATAK_MeshRef`, écarts entre exports de deux clients avec le réglage décoché.

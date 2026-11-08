@@ -118,7 +118,11 @@ private _linked = {
     (missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) params [["_me", []], ["_reach", createHashMap]];
     if (_me isEqualTo [] || {(count _pp) < 7}) exitWith { -1 };
     private _mk = _me select 4;
-    if (_mk isNotEqualTo "" && {_mk isEqualTo (_pp select 4)}) exitWith { ((_me select 5) max 0) + ((_pp select 5) max 0) };
+    if (_mk isNotEqualTo "" && {_mk isEqualTo (_pp select 4)}) exitWith {
+        // Par le cœur de réseau : mes sauts plus les siens, sous le même plafond que le reste du graphe (fn_meshGraph).
+        private _sum = ((_me select 5) max 0) + ((_pp select 5) max 0);
+        [-1, _sum] select (_sum <= (["maxHops"] call comspec_atak_native_fnc_meshGraph))
+    };
     _reach getOrDefault [netId _u, -1]
 };
 switch (_act) do {
