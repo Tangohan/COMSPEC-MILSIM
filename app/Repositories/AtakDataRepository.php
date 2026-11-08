@@ -335,7 +335,7 @@ class AtakDataRepository
     private function loadMarkers(int $tenantId, int $mapId, ?string $since): array
     {
         try {
-            $sql = 'SELECT id, layer_id, marker_data, created_at, updated_at FROM atak_markers WHERE tenant_id = ? AND map_id = ?';
+            $sql = 'SELECT id, layer_id, marker_data, arma_name, created_at, updated_at FROM atak_markers WHERE tenant_id = ? AND map_id = ?';
             $params = [$tenantId, $mapId];
             if ($since !== null && $since !== '') {
                 $sql .= ' AND (updated_at >= ? OR created_at >= ?)';
@@ -353,13 +353,19 @@ class AtakDataRepository
                 if ($this->markerDataIsSuppressed($raw)) {
                     continue;
                 }
-                $out[] = [
+                $row = [
                     'id' => (int) $r['id'],
                     'layerId' => (int) $r['layer_id'],
                     'markerData' => $r['marker_data'],
                     'created_at' => $r['created_at'] ?? null,
                     'updated_at' => $r['updated_at'],
                 ];
+                // Tracé du téléphone du jeu (route, plan, itinéraire : nom réservé /77000 de fn_markerOwned). Le nom Arma
+                // reste côté serveur : seul ce drapeau sort, pour dessiner la route en style tactique sur /m/carte.
+                if (str_contains((string) ($r['arma_name'] ?? ''), '/77000')) {
+                    $row['trace'] = true;
+                }
+                $out[] = $row;
             }
 
             return $out;
