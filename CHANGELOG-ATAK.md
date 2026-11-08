@@ -57,6 +57,9 @@ EN : Full texts on the phone in portrait, document record at ID checks
 - `fn_notificationsRender` (bandeau sous la barre), `fn_pageRender` (`fn_textFit` sur le titre), `fn_formRender` (ligne de texte réécrite en direct : deux lignes réservées), `fn_pageQuickMap` (boutons ajustés, en-tête et missions mesurés). `AtakUiTruncationTest` ; autotest : `AT_fnc_tient` sur le titre de chaque app et sur le décompte de la confirmation.
 - `screenshot` n'enregistre jamais l'interface : `fn_idPhoto` fait un relevé (champs imprimés et MRZ, sans les défauts physiques, qui restent à voir) ajouté au texte de la FRM par `fn_idFrm`. Les autres appels (`fn_frsAction`, `fn_photoMode`, `fn_photoCam`, `fn_dronePhoto`, Overwatch connect) photographient la scène, ce qu'ils doivent faire. Exception à vérifier : `fn_mapCapture` en mode « plan » prend une carte d'interface avec `screenshot`.
 - Autotest, étape pilote : appareil sur une aire dégagée, intact et plein, vérifié.
+
+---
+
 ## À venir : thème jour lisible, écran numérique des preuves, éditeur SSE en anglais (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
