@@ -30,7 +30,7 @@ final class SseIdentityWiringAssetTest extends TestCase
             self::assertStringContainsString($needle, $routes);
         }
         // Pages du portail derrière les deux gardes du portail SSE, « nouvelle » / « nouveau » avant /{id}.
-        self::assertSame(23, preg_match_all("#'/atak/sse/papiers[^']*', \\[\\\\App\\\\Controllers\\\\Web\\\\SseIdentityRegistryController::class, '\\w+'\\], \\\$mwSsePortal\\)#", $routes));
+        self::assertSame(24, preg_match_all("#'/atak/sse/papiers[^']*', \\[\\\\App\\\\Controllers\\\\Web\\\\SseIdentityRegistryController::class, '\\w+'\\], \\\$mwSsePortal\\)#", $routes));
         self::assertLessThan(strpos($routes, "'/atak/sse/papiers/identites/{id}'"), strpos($routes, "'/atak/sse/papiers/identites/nouvelle'"));
         self::assertLessThan(strpos($routes, "'/atak/sse/papiers/documents/{id}'"), strpos($routes, "'/atak/sse/papiers/documents/nouveau'"));
         // Pays réels stylisés (univers réaliste-simulation) : import avant /pays/{id}.

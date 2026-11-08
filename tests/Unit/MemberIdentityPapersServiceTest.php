@@ -130,6 +130,56 @@ final class MemberIdentityPapersServiceTest extends TestCase
         self::assertNotEmpty($mine['documents'][0]['mrz']);
     }
 
+    public function testConsultationWithoutClearanceDoesNotUnmaskAnInfiltrator(): void
+    {
+        $s = $this->service();
+        [$primary, , $doc, $coverDoc] = $this->player($s);
+        $alias = $s->createAlias(1, 10, ['kind' => 'alias', 'last_name' => 'Renard', 'first_name' => 'Luc', 'nationality' => 'ALT'], true, 1)['id'];
+        $aliasDoc = $s->saveDocument(1, 10, $s->ownedIdentity(1, 10, $alias, true), null, ['doc_type' => 'id_card', 'country_code' => 'ALT'], true, 1)['id'];
+        self::assertFalse($s->createAlias(1, 10, ['kind' => 'alias', 'last_name' => 'A', 'first_name' => 'B'], false, 1)['ok'], 'alias : Confidentiel requis');
+
+        // Kit fait seulement de papiers masqués : il n'existe pas pour ce responsable.
+        $s->saveKit(1, 10, null, 'OP-MASK', [$coverDoc, $aliasDoc], true, 1);
+        $s->saveKit(1, 10, null, 'OP-MIX', [$doc, $aliasDoc], true, 1);
+
+        $staff = $s->section(1, 10, '76561198000000010', false);
+        self::assertSame([], $staff['aliases']);
+        self::assertSame([$primary], array_column($staff['identities'], 'id'));
+        self::assertSame([$doc], array_column($staff['documents'], 'id'));
+        self::assertNull($s->ownedIdentity(1, 10, $alias, false));
+        self::assertNull($s->ownedDocument(1, 10, $aliasDoc, false));
+        self::assertSame(['OP-MIX'], array_column($staff['kits'], 'op_key'));
+        self::assertSame([$doc], $staff['kits'][0]['document_ids']);
+        $flat = (string) json_encode($staff);
+        foreach (['Renard', 'Markos'] as $needle) {
+            self::assertStringNotContainsString($needle, $flat);
+        }
+
+        $cleared = $s->section(1, 10, '76561198000000010', true);
+        self::assertContains('Renard', array_column($cleared['aliases'], 'last_name'));
+        self::assertCount(2, $cleared['kits']);
+    }
+
+    public function testAControlPresentedUnderAnotherNameIsHiddenWithoutClearance(): void
+    {
+        $identities = [['last_name' => 'Dupont']];
+        $checks = [['presented_last' => 'DUPONT'], ['presented_last' => 'Markos'], ['presented_last' => null]];
+        self::assertSame([$checks[0], $checks[2]], MemberIdentityPapersService::withoutForeignNames($checks, $identities));
+    }
+
+    public function testMilitaryCardIsADocumentTypeWithItsOwnMrzCode(): void
+    {
+        self::assertArrayHasKey('military_id', \App\Support\SseIdentityCatalog::DOC_TYPES);
+        $s = $this->service();
+        [$primary] = $this->player($s);
+        $id = $s->saveDocument(1, 10, $s->ownedIdentity(1, 10, $primary, true), null, ['doc_type' => 'military_id', 'country_code' => 'ALT'], true, 1)['id'];
+        $doc = $s->ownedDocument(1, 10, $id, true);
+        self::assertSame('military_id', $doc['doc_type']);
+        self::assertSame('Carte militaire', $doc['doc_type_label']);
+        $mrz = \App\Services\Sse\SseMrzService::forDocument($doc, $s->ownedIdentity(1, 10, $primary, true), 'ALT');
+        self::assertStringStartsWith('A', $mrz[0]);
+    }
+
     public function testDocumentActionsFollowTheLifecycleAndAreAudited(): void
     {
         $s = $this->service();
