@@ -11,6 +11,7 @@ use App\Repositories\SseCaseRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseClearanceService;
+use App\Services\Sse\SseEditorLibraryService;
 use App\Services\Sse\SseIdCheckService;
 use App\Services\Sse\SseIdDocumentLookupService;
 use App\Services\Sse\SseIdentityPackService;
@@ -24,7 +25,8 @@ use App\Support\HttpJsonBody;
  * - GET  /api/sse/identity/pack               → pack du serveur de jeu (vérité de jeu comprise)
  * - GET  /api/sse/identity/documents/lookup   → contrôle N3 en ligne d'un papier présenté
  * - POST /api/sse/identity/checks             → contrôle remonté du terrain (idempotent) ; avec kind = bolo | hvt :
- *                                                 avis né en jeu (BOLO, HVT désignée), créé ou mis à jour (lots 4 et 5)
+ *                                                 avis né en jeu (BOLO, HVT désignée), créé ou mis à jour (lots 4 et 5) ;
+ *                                                 avec kind = editor_… : bibliothèque de l'éditeur SSE (SseEditorLibraryService)
  *
  * Accès : clé de jeu valable (communauté ou plateforme) — le serveur de jeu garde la vérité pour lui —, ou session du
  * portail avec l'habilitation SSE voulue (Confidentiel pour le pack, Encadrement pour le reste). Sans clé ni session :
@@ -46,6 +48,7 @@ final class SseIdentityApiController
         private ?TenantRepository $tenants = null,
         private ?\Closure $bodyReader = null,
         private ?SseIdWatchFromGameService $gameWatch = null,
+        private ?SseEditorLibraryService $editorLibrary = null,
     ) {
         $this->gameWatch ??= new SseIdWatchFromGameService();
         $this->pack ??= new SseIdentityPackService();
@@ -108,6 +111,10 @@ final class SseIdentityApiController
         $map = $body['map'] ?? $body['mapId'] ?? $request->query('map') ?? $request->query('mapId');
         $mapId = is_numeric($map) && (int) $map > 0 ? (int) $map : self::DEFAULT_MAP_ID;
 
+        if (in_array($body['kind'] ?? null, SseEditorLibraryService::KINDS, true)) {
+            return $this->editorLibraryResponse($tenantId, $body);
+        }
+
         // BOLO / HVT nés en jeu (même canal COMSPEC Link SubmitIdCheck, réponse id + ref « WL-… »).
         if (in_array($body['kind'] ?? null, SseIdWatchFromGameService::KINDS, true)) {
             $watch = $this->gameWatch->store($tenantId, $mapId, $body);
@@ -131,6 +138,45 @@ final class SseIdentityApiController
             'ref' => $result['ref'],
             'duplicate' => $result['duplicate'],
         ], $result['duplicate'] ? 200 : 201);
+    }
+
+    /**
+     * Bibliothèque de l'éditeur SSE. Lire ou écrire demande un compte identifié (jeton de jeu ou session du portail) et
+     * son habilitation : une clé de communauté seule ne dit pas qui appelle, et tout poste relié la reçoit. Elle suffit
+     * pour signaler une découverte, qui ne révèle rien (le serveur de jeu n'a qu'elle).
+     *
+     * @param array<string, mixed> $body
+     */
+    private function editorLibraryResponse(int $tenantId, array $body): Response
+    {
+        $gameUser = ComspecApiKeyAuth::matchedUserId();
+        $sessionUser = (int) (Session::get('user_id') ?? 0);
+        $keyPresented = ComspecApiKeyAuth::extractPresentedKey() !== '';
+        try {
+            $library = $this->editorLibrary ??= new SseEditorLibraryService();
+            if (($body['kind'] ?? '') !== 'editor_found') {
+                $allowed = match (true) {
+                    $gameUser !== null => $library->userAllowed($tenantId, $gameUser),
+                    $keyPresented => false,
+                    default => $sessionUser > 0 && $this->clearance->allows(SseCaseRepository::CLASS_CONFIDENTIAL),
+                };
+                if (!$allowed) {
+                    return Response::json([
+                        'error' => 'clearance_required',
+                        'message' => 'Compte relié et habilitation Confidentiel requis pour la bibliothèque de l’éditeur.',
+                    ], 403);
+                }
+            }
+            $result = $library->handle($tenantId, $gameUser ?? ($sessionUser > 0 ? $sessionUser : null), $body);
+        } catch (\PDOException) {
+            // Étape de migration pas encore passée, base indisponible : le mod reste sur la bibliothèque du poste.
+            return Response::json(['error' => 'unavailable', 'message' => 'Bibliothèque indisponible pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            return Response::json(['error' => $result['error'], 'message' => 'Contenu refusé : rien n’a été enregistré.'], 422);
+        }
+
+        return Response::json($result);
     }
 
     /**

@@ -2502,6 +2502,11 @@
             <English>Lax: lets almost everything through. Strict: searches and detains at the slightest doubt, opens fire on an armed threat.</English>
             <French>Laxiste : laisse passer presque tout. Stricte : fouille et retient au moindre doute, ouvre le feu sur une menace armée.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EDITOR_OPEN">
+            <Original>SSE editor</Original>
+            <English>SSE editor</English>
+            <French>Éditeur SSE</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_79E31EE88D">
             <Original>Athena connection</Original>
             <English>Athena connection</English>
