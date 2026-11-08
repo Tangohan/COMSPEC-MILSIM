@@ -55,6 +55,9 @@ FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 d
 - Réparer le téléphone (kit ou caisse à outils) : il se rouvre tout seul à la fin et vous voyez son redémarrage ; avant, il restait rangé et la réparation semblait sans effet.
 - Batterie : par temps froid (sous 5 °C), elle se vide plus vite, sauf dans un véhicule. L'admin du serveur peut désactiver cet effet dans Réglages des addons › COMSPEC › ATAK · Batterie et mémoire.
 - Fiabilité : une erreur dans une action différée du téléphone (notification, marqueur, rendu d'une page) ne bloque plus les autres ni celles d'ACE, et ne se répète plus.
+- Comptes rendus envoyés depuis le QR code : ils partent enfin en jeu, avec notification aux autres joueurs et entrée dans l'app Comptes rendus.
+- Carte : symboles et zones réparés sur fond sombre, plus de mention PERDU, noms plus lisibles. App Routes : le clic gauche et les autres apps répondent après une route.
+- Bloc-notes refait, réponses des IA en notification d'Arma, nouveaux motifs de fêlures désactivables, menu ORBAT dans le BFT, et plus rien dans OneDrive.
 EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
 - The C2 app is removed: find the group, callsign and units in the Group and BFT apps, and orders in Tasks.
@@ -68,8 +71,21 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Repairing the phone (kit or toolkit): it reopens by itself when done and you see it reboot; before, it stayed stowed and the repair seemed to do nothing.
 - Battery: in cold weather (below 5 °C) it drains faster, except inside a vehicle. The server admin can turn this off in Addon Options › COMSPEC › ATAK · Battery and memory.
 - Reliability: an error in a deferred phone action (notification, marker, page refresh) no longer blocks the others or ACE's, and no longer repeats.
+- Reports sent from the QR code now really go out in game, with a notification to the other players and an entry in the Reports app.
+- Map: symbols and areas fixed on dark backgrounds, no more LOST label, easier-to-read names. Routes app: left click and other apps respond after a route.
+- Notepad rebuilt, AI replies as Arma notifications, new crack patterns you can turn off, ORBAT menu in the BFT, and nothing goes to OneDrive any more.
 
-### Détail technique
+### Détail technique
+- **Retours du propriétaire (lot final, à vérifier en jeu)** :
+  - Carte sur fond sombre, nuit, satellite, classique ou hybride : `lift` lisait une variable locale de `fn_mapColors` absente à l'appel, erreur de script à chaque image et dessin arrêté (`docs/bugs/2026-11-08-atak-carte-marqueurs-images-zones-absentes.md`).
+  - App Routes : clic joué au relâchement, rien de supprimé pendant un clic, zone de la barre bloquée, focus rendu (`…-atak-route-clic-gauche-apps-superposees.md`).
+  - Comptes rendus et CR fin d'op du téléphone web, CR imposé par le site : préfixe comparé sur 8 caractères au lieu de 7, tout était ignoré (`…-atak-cr-mobile-avis-ignores.md`).
+  - DLL : plus d'écriture dans OneDrive (`LocalDocuments.cs`, `…-atak-enregistrements-onedrive.md`) ; à reconstruire.
+  - Réponses des IA : toast d'Arma, `CfgNotifications` (`…-atak-reponses-ia-toast.md`). Bloc-notes refait (`…-atak-bloc-notes-refonte.md`).
+  - Carte : plus de mention « PERDU », textes relevés à mi-zoom (`…-atak-carte-perdu-texte-mi-zoom.md`) ; moins de traits entre alliés, menu ORBAT du BFT (`…-atak-bft-orbat-traits-groupe.md`).
+  - Mises à jour sur place : fil des messages, choix exclusifs des Réglages, favoris, diapositives, source vidéo du drone ; reste listé dans `…-atak-pages-redessinees-file-cba.md`.
+  - Huit motifs de fêlures et de bris, désactivables (`…-atak-degats-ecran-motifs.md`).
+  - Non fait : photos multiples regroupées sur Discord (demande le site).
 - **Version 3.1.0** : `VERSION` / `VERSION_STR` « 3.1.0 », `VERSION_NAME` « 3.1.0.AG - Austin » ; COMSPEC Link 2.0.119.
 - **Haut-parleur** (`fn_musicAction`) : appel `[true] call _sonNow`. Un `call` nu transmettait `_this` et `_sliders` valait `"speaker"`. `fn_formSet` note la valeur du curseur avant de le déplacer.
 - **Carte (lots 1 à 3)** : `fn_gpsFix` (joueur immobile : erreur et décalage gardés, décrochages et sauts conservés) ; `fn_inspectorUpdate` (redessin seulement si la hauteur du texte change : cause probable du clignotement, non confirmée ; ligne Occupants) ; `fn_routeAction` (`_autoName` : plus petit numéro libre, étape renommée exclue) ; `fn_mapOverlayUpdate` (cap du curseur sur 8 points) ; `fn_mapLabels` (noms des 2 à 3 unités regroupées) et `fn_mapOnDraw` (3 indicatifs empilés par case) ; `fn_localDataRefresh` / `fn_symbology` (champ `vtype`, `type` inchangé pour les filtres du BFT) ; `fn_mapGameMarkers` (un symbole par case de 1/16 de la vue dès l'échelle 0,12 avec « +n » ; traits créés vides revus 20 s ; relevé RPT toutes les 30 s) ; appui long du clic gauche 0,6 s = ping (`fn_mapMouseButtonDown/Up`, `fn_mapOnDraw`). Notes `docs/bugs/2026-11-08-atak-*`.

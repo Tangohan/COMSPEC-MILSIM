@@ -15,6 +15,15 @@
 [*] Toutes les actions différées du téléphone passent par une file propre au mod : une erreur de script dans l'une d'elles ne bloque plus les autres, ni celles d'ACE, et ne se rejoue plus.
 [*] Réparer le téléphone (kit ou caisse à outils) : il se rouvre tout seul à la fin et son redémarrage se voit ; avant, il restait rangé et la réparation semblait sans effet.
 [*] Batterie : par temps froid (sous 5 °C), elle se vide plus vite, sauf en véhicule. Désactivable par l'admin du serveur (ATAK · Batterie et mémoire).
+[*] Comptes rendus et CR de fin d'opération envoyés depuis le vrai téléphone (QR code) : ils partent enfin en jeu, avec notification aux autres et entrée dans l'app. Un CR imposé par le site s'ouvre aussi.
+[*] Carte sur fond sombre, nuit, satellite ou hybride : symboles et zones ne provoquent plus d'erreur qui arrêtait le dessin.
+[*] App Routes : le clic gauche et les autres apps répondent après une route ; un glisser de carte ne pose plus d'étape.
+[*] Réglages, cartes et captures du mod ne vont plus dans OneDrive : tout reste dans les Documents du disque local (les anciens dossiers sont repris).
+[*] Les réponses des groupes IA s'affichent en notification d'Arma, plus dans le téléphone.
+[*] Bloc-notes refait : une liste, un clic pour écrire, enregistrement automatique, épingler, ajouter sa grille ou l'heure.
+[*] Carte : plus de mention « PERDU », noms lisibles à mi-zoom, moins de traits entre alliés. BFT : menu LISTE et ORBAT.
+[*] Messages, Réglages, favoris, diapositives et source vidéo du drone : moins de pages redessinées.
+[*] Écran abîmé : huit motifs de fêlures et de bris, différents à chaque choc, désactivables (Réglages).
 [/list]
 
 
