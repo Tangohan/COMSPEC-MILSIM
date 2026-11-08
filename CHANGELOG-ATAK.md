@@ -38,9 +38,9 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+## À venir : App Explosifs refaite, déclencheur réseau
 
-### Résumé joueur
+### À annoncer
 Type : nouveauté
 FR : App Explosifs refaite et nouveau déclencheur réseau
 - Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.
