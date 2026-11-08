@@ -21,7 +21,7 @@ if (_fid isNotEqualTo "" && {missionNamespace getVariable ["comspec_atak_native_
 };
 private _on = (count _r) > 0 && {(count (_r get "steps")) > 0};
 private _fi = _f getOrDefault ["idx", 0];
-private _key = [[], [_fid, _r get "rev", _fi]] select _on;
+private _key = if (_on) then { [_fid, _r get "rev", _fi] } else { [] };
 if (_key isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_RteFpanoKey", []])) then {
     missionNamespace setVariable ["COMSPEC_ATAK_RteFpanoKey", _key];
     { deleteMarkerLocal _x; } forEach (missionNamespace getVariable ["COMSPEC_ATAK_RteFpanoMk", []]);

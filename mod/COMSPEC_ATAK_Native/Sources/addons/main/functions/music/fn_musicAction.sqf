@@ -44,6 +44,21 @@ if (_act isEqualTo "rowText") exitWith {
     [format ["<t %1>%2</t><br/><t size='0.75' color='#8a9a93'>%3%4</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur,
         [_t] call _esc, [_sub] call _esc, ["", format [" · %1", [_len] call _fmt]] select (_len > 0)], [[0.55, 0.6, 0.58, 1], _acc] select _isCur]
 };
+// Ligne de la file : [texte, teinte, boutons [[libellé, actif, principal], MONTER, RETIRER]] (fn_pageMusic, _queueNow).
+if (_act isEqualTo "qRow") exitWith {
+    private _i = _arg;
+    private _q = _m get "queue";
+    (_q select _i) params ["_k", "_r", "_t", ["_len", 0]];
+    ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
+    private _esc = { params ["_s"]; { _s = [_s, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _s };
+    private _fmt = { params ["_s"]; if (_s <= 0) exitWith { "" }; _s = floor _s; format ["%1:%2", floor (_s / 60), [str (_s mod 60), "0" + str (_s mod 60)] select ((_s mod 60) < 10)] };
+    private _src = createHashMapFromArray [["file", "Fichier local"], ["url", "Lien web"], ["srv", "Serveur"], ["lib", "Athena"]];
+    private _isCur = _i isEqualTo (_m get "qi") && {(_m get "kind") isNotEqualTo ""};
+    [format ["<t %1>%2. %3</t><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4%5</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
+        _src getOrDefault [_k, ""], ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
+     [[0.55, 0.6, 0.58, 1], _acc] select _isCur,
+     [[["JOUER", "EN COURS"] select _isCur, !_isCur, !_isCur], ["", _i > 0, false], ["", true, false]]]
+};
 // Section Son et lecteur mis à jour sur place : aucune ligne n'apparaît ni ne disparaît.
 private _sonNow = {
     params [["_sliders", true]];
@@ -79,6 +94,25 @@ private _stateNow = {
         _x params ["_rid", "_key", "_i", "_sub"];
         [_rid, ["rowText", [_key, _i, _sub]] call comspec_atak_native_fnc_musicAction] call comspec_atak_native_fnc_formSet;
     } forEach (uiNamespace getVariable ["COMSPEC_ATAK_MusicRows", []]);
+};
+// File dépliée, MONTER ou RETIRER : les lignes affichées sont réécrites sur place, la dernière masquée si elle est en trop
+// (ses boutons visent une place, pas un morceau). Moins de 2 morceaux (VIDER et le message de file vide changent) ou plus
+// de lignes que le plafond de la page : redessin.
+private _queueNow = {
+    if (!_redraw) exitWith {};
+    [] call _vizNow;
+    private _q = _m get "queue";
+    private _shown = uiNamespace getVariable ["COMSPEC_ATAK_MusicQShown", 0];
+    private _n = count _q;
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MUSIC") exitWith {};
+    if ((_ui getOrDefault ["tab", "PLAY"]) isNotEqualTo "PLAY") exitWith {};
+    if ((_ui getOrDefault ["fold", "son"]) isNotEqualTo "queue") exitWith { ["musicQueue", format ["%1 morceau(x)", _n]] call comspec_atak_native_fnc_formSet; };
+    if (_n < 2 || {_n > _shown} || {_n >= 40}) exitWith { call _rerender; };
+    ["musicQueue", format ["%1 morceau(x)", _n]] call comspec_atak_native_fnc_formSet;
+    for "_i" from 0 to (_shown - 1) do {
+        private _row = if (_i < _n) then { ["qRow", _i] call comspec_atak_native_fnc_musicAction } else { [] };
+        [format ["musicQ%1", _i], _row] call comspec_atak_native_fnc_formSet;
+    };
 };
 private _start = {
     params ["_i"];
@@ -312,7 +346,7 @@ switch (_act) do {
         if (_arg isEqualTo _cur && {_playing}) then {
             if ((count _q) isEqualTo 0) then { ["stop"] call comspec_atak_native_fnc_musicAction; } else { [_cur min ((count _q) - 1)] call _start; };
         };
-        call _rerender;
+        call _queueNow;
     };
     case "qUp": {
         private _q = _m get "queue";
@@ -322,7 +356,7 @@ switch (_act) do {
         _q set [_arg, _a];
         private _cur = _m get "qi";
         if (_cur isEqualTo _arg) then { _m set ["qi", _arg - 1]; } else { if (_cur isEqualTo (_arg - 1)) then { _m set ["qi", _arg]; }; };
-        call _rerender;
+        call _queueNow;
     };
     case "qClear": {
         // Garde la piste en cours, vide le reste.

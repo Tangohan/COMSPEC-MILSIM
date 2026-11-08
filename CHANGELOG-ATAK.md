@@ -92,6 +92,7 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
   - Réponses des IA : bulle au-dessus du chef du groupe (`fn_aiBubble`, un seul Draw3D, absent sans bulle, 6 bulles au plus), toast d'Arma en secours (`…-atak-reponses-ia-bulles.md`). Bloc-notes refait (`…-atak-bloc-notes-refonte.md`).
   - Tenues (Arsenal ACE) : contrôles masqués remis dans leur état à l'affichage du panneau (`COMSPEC_ArsenalSettle`), menu et saisie sans surface une fois fermés (`docs/bugs/2026-11-08-arsenal-tenues-controles-fantomes.md`).
   - F-PANO ECOTI (facultatif, sans dépendance) : `fn_routeEcoti`, route suivie en marqueurs locaux invisibles lus par ce mod ; réglage `comspec_atak_native_route_fpano` (`docs/bugs/2026-11-08-atak-route-fpano-ecoti.md`).
+  - Mises à jour sur place (suite) : MONTER et RETIRER de la file Musique, ligne du contact en tête de la liste des conversations (`fn_chatListRow`), diapositive téléchargée quand Arma peut l'afficher ; reste listé dans `…-atak-pages-redessinees-file-cba.md`.
   - Carte : plus de mention « PERDU », textes relevés à mi-zoom (`…-atak-carte-perdu-texte-mi-zoom.md`) ; menu ORBAT du BFT (`…-atak-bft-orbat-traits-groupe.md`).
   - Mises à jour sur place : fil des messages, choix exclusifs des Réglages, favoris, diapositives, source vidéo du drone ; reste listé dans `…-atak-pages-redessinees-file-cba.md`.
   - Huit motifs de fêlures et de bris, désactivables (`…-atak-degats-ecran-motifs.md`).

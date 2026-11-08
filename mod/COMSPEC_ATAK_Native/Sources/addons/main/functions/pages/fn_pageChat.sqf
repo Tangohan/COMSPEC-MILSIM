@@ -267,6 +267,10 @@ private _convW = _bw - _convX;
 // ================================================================ LISTE DES CONVERSATIONS
 private _drawList = {
     params ["_lx", "_lw"];
+    // Lignes de la liste, pour changer sur place celle du contact en tête quand un SMS arrive (fn_chatListRow).
+    private _listRows = createHashMap;
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatListRows", _listRows];
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatListTop", ["", _peers param [0, ""]] select (!_pick)];
     // Bandeau d'état : où partent les messages, et + CANAL.
     private _sh = _font * 1.7;
     [[_lx, 0, _lw, _sh], _cHdr] call _box;
@@ -367,14 +371,15 @@ private _drawList = {
         private _tw = _gw - _tx - _pad;
         private _timeW = _tw * 0.3;
         ["COMSPEC_RscText", [_tx, _y + _rh * 0.12, _tw - _timeW, _rh * 0.42], _name, _font * 0.92, _cText, true, _grp] call _lbl;
-        ["COMSPEC_RscTextRight", [_tx + _tw - _timeW, _y + _rh * 0.14, _timeW, _rh * 0.4], _time, _fs * 0.82, [_cDim, _acc] select (_unread > 0), _unread > 0, _grp] call _lbl;
+        private _cTime = ["COMSPEC_RscTextRight", [_tx + _tw - _timeW, _y + _rh * 0.14, _timeW, _rh * 0.4], _time, _fs * 0.82, [_cDim, _acc] select (_unread > 0), _unread > 0, _grp] call _lbl;
         private _bdW = [0, ((_fs * 1.25) / _ratio) max ((_fs * 0.55 * (count str _unread) + _fs * 0.6) / _ratio)] select (_unread > 0);
         private _prevTxt = [_last, _sub] select (_last isEqualTo "");
-        ["COMSPEC_RscText", [_tx, _y + _rh * 0.52, _tw - _bdW - _pad * 0.4, _rh * 0.38], _prevTxt select [0, 90], _fs * 0.9, [_cDim, [0.78, 0.84, 0.81, 1]] select (_unread > 0), false, _grp] call _lbl;
-        if (_unread > 0) then {
-            private _b = ["COMSPEC_RscTextCenter", [_tx + _tw - _bdW, _y + _rh * 0.53, _bdW, _fs * 1.15], str (_unread min 99), _fs * 0.78, [0.03, 0.05, 0.04, 1], true, _grp] call _lbl;
-            _b ctrlSetBackgroundColor _acc;
-        };
+        private _cPrev = ["COMSPEC_RscText", [_tx, _y + _rh * 0.52, _tw - _bdW - _pad * 0.4, _rh * 0.38], _prevTxt select [0, 90], _fs * 0.9, [_cDim, [0.78, 0.84, 0.81, 1]] select (_unread > 0), false, _grp] call _lbl;
+        // Pastille toujours créée, masquée sans non-lu : fn_chatListRow l'affiche sans redessiner.
+        private _b = ["COMSPEC_RscTextCenter", [_tx + _tw - _bdW, _y + _rh * 0.53, _bdW max pixelW, _fs * 1.15], str (_unread min 99), _fs * 0.78, [0.03, 0.05, 0.04, 1], true, _grp] call _lbl;
+        _b ctrlSetBackgroundColor _acc;
+        _b ctrlShow (_unread > 0);
+        _listRows set [_key, [_cTime, _cPrev, _b, _tx, _tw, _y, _rh, _fs, _ratio, _pad]];
         [[_tx, _y + _rh - pixelH, _gw - _tx, pixelH], [1, 1, 1, 0.05], _grp] call _box;
         [[0, _y, _gw, _rh], [_key] call _open, _name, _grp] call _hit;
         _y = _y + _rh;
