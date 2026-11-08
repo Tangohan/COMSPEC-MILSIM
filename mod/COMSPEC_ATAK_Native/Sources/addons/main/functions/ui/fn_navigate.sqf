@@ -59,6 +59,12 @@ if (_prevPage isEqualTo "ZONES" && {_page isNotEqualTo "ZONES"}) then {
     if ((_zu getOrDefault ["tool", ""]) isNotEqualTo "") then { diag_log format ["[COMSPEC ATAK][MAP] outil Zones %1 abandonné (app quittée)", _zu get "tool"]; };
     { _zu set _x; } forEach [["tool", ""], ["draftPts", []], ["snap", []], ["vtx", -1], ["alt", false]];
 };
+// App Routes quittée : plus de mode de saisie à la réouverture (ce qui est posé reste).
+if (_prevPage isEqualTo "ROUTE" && {_page isNotEqualTo "ROUTE"}) then {
+    private _ru = uiNamespace getVariable ["COMSPEC_ATAK_RteUi", createHashMap];
+    _ru set ["mode", "SEL"];
+    _ru set ["press", []];
+};
 // Lanceur : apps récentes (profil, gardées d'une partie à l'autre) et apps déjà ouvertes (fin de la pastille NOUVEAU).
 if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER"])}) then {
     private _rec = profileNamespace getVariable ["COMSPEC_ATAK_AppRecent", []];

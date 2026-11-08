@@ -156,8 +156,7 @@ public static partial class Extension
 
     private static string MusicFolder()
     {
-        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        var dir = Path.Combine(docs, "Arma 3", "COMSPEC_Music");
+        var dir = LocalDocumentsPath("Arma 3", "COMSPEC_Music");
         try { Directory.CreateDirectory(dir); } catch { /* lecture seule : on renvoie quand même le chemin */ }
         return dir;
     }

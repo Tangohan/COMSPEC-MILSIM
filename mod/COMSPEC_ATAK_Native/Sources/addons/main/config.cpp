@@ -8,6 +8,20 @@ class CfgPatches {
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
 // (localisation/README.md) : elle apparaît dans le réglage « Langue / Language » sans toucher à ce mod.
+// Toasts d'Arma des réponses des groupes IA (fn_aiOrder « toast ») : %1 = texte de la réponse.
+class CfgNotifications {
+    class COMSPEC_ATAK_AiReply {
+        title = "IA";
+        iconPicture = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\radio_ca.paa";
+        description = "%1";
+        priority = 3;
+        duration = 5;
+    };
+    class COMSPEC_ATAK_AiReplyWarn: COMSPEC_ATAK_AiReply {
+        color[] = {1, 0.75, 0.2, 1};
+        duration = 7;
+    };
+};
 class CfgComspecLanguages {
     class en { name="English"; file="\z\comspec_atak_native\addons\main\i18n\en.txt"; gameLanguage[]={"English"}; };
     // Chinois simplifié : traduction communautaire de RickLeo et MOYA (pack comspec_atak_zh 1.1), intégrée au mod ;

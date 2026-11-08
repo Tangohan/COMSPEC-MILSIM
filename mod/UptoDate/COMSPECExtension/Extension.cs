@@ -2086,9 +2086,7 @@ public static partial class Extension
     {
         try
         {
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            if (string.IsNullOrWhiteSpace(docs)) return null;
-            var dir = Path.Combine(docs, "Arma 3 - COMSPEC", "Sync");
+            var dir = LocalDocumentsPath("Arma 3 - COMSPEC", "Sync");
             Directory.CreateDirectory(dir);
             return dir;
         }
@@ -2287,9 +2285,7 @@ public static partial class Extension
     {
         try
         {
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            if (string.IsNullOrWhiteSpace(docs)) return "";
-            var dir = Path.Combine(docs, "Arma 3 - COMSPEC", "Maps");
+            var dir = LocalDocumentsPath("Arma 3 - COMSPEC", "Maps");
             Directory.CreateDirectory(dir);
             return dir;
         }
@@ -11708,9 +11704,9 @@ public static partial class Extension
         foreach (var dir in EnumeratePhotoLookupDirs())
             if (Under(dir)) return true;
         if (Under(ComspecCaptureDir())) return true;
-        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        if (!string.IsNullOrWhiteSpace(docs))
+        foreach (var docs in new[] { Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), LocalDocumentsRoot() })
         {
+            if (string.IsNullOrWhiteSpace(docs)) continue;
             if (Under(Path.Combine(docs, "Arma 3", "COMSPEC_Music"))) return true;
             if (Under(Path.Combine(docs, "Arma 3", "COMSPEC_Local"))) return true;
             if (Under(Path.Combine(docs, "Arma 3", "COMSPEC"))) return true;
@@ -11945,13 +11941,7 @@ public static partial class Extension
             return _comspecCaptureDir.Length == 0 ? null : _comspecCaptureDir;
         try
         {
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            if (string.IsNullOrWhiteSpace(docs))
-            {
-                _comspecCaptureDir = "";
-                return null;
-            }
-            var dir = Path.Combine(docs, "Arma 3 - COMSPEC", "Captures");
+            var dir = LocalDocumentsPath("Arma 3 - COMSPEC", "Captures");
             Directory.CreateDirectory(dir);
             _comspecCaptureDir = dir;
             return dir;

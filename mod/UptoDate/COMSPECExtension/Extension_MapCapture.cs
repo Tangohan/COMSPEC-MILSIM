@@ -133,9 +133,7 @@ public static partial class Extension
 
     private static string MapCapRoot()
     {
-        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        if (string.IsNullOrWhiteSpace(docs)) docs = AppContext.BaseDirectory;
-        return Path.Combine(docs, "COMSPEC_MapCapture");
+        return LocalDocumentsPath("COMSPEC_MapCapture");
     }
 
     private static string MapCapSafe(string s)
