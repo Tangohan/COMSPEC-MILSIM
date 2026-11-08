@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Centre Zeus, liste des modules rangée, fenêtre de configuration des objets (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le Zeus a un Centre Zeus et une liste de modules enfin lisible
+- Un bouton CENTRE ZEUS montre l'état des téléphones de tous les joueurs : batterie, liaison Athena, réseau, haut-parleur, drones et alertes, avec des filtres et des étiquettes au-dessus des joueurs.
+- Les modules COMSPEC sont rangés dans quatre dossiers (ATAK, Renseignement, Identité, Mission), avec des noms courts, une infobulle et des icônes propres. Les missions déjà enregistrées continuent de marcher.
+- Un écran, une preuve ou une caisse se règle dans une seule fenêtre : double-clic en Zeus, attributs d'objet en Eden pour les écrans.
+EN : Zeus gets a Zeus Centre and a readable module list
+- A ZEUS CENTRE button shows every player's phone status: battery, Athena link, network, speaker, drones and alerts, with filters and labels above the players.
+- COMSPEC modules now sit in four folders (ATAK, Intelligence, Identity, Mission), with short names, a tooltip and clean icons. Saved missions keep working.
+- A screen, evidence or crate is set up in a single window: double-click in Zeus, object attributes in Eden for screens.
+
+### Détail technique
+- Centre : fn_zeusCentre (vue), fn_zeusState (relevé à la demande, serveur seul destinataire et seul expéditeur), fn_zeusObject (fenêtre d'objet qui rappelle les formulaires des modules). Aucune nouvelle variable publique.
+- Modules : classes inchangées ; catégories COMSPEC_Cat_Atak, COMSPEC_Cat_Sse, COMSPEC_Cat_Identite, COMSPEC_Cat_Mission. COMSPEC_Module_AtakRelay masqué dans Eden (scope 1). Icônes : tools/gen_module_icons.py.
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+
 ## À venir : fiche joueur unique, carte, Groupe et BFT plus directs (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

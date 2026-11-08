@@ -196,7 +196,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
     [_x, 0, ["ACE_MainActions"], _k, true] call ace_interact_menu_fnc_addActionToClass;
 } forEach ["LandVehicle", "Ship", "Helicopter"];
 
-// Relais du réseau ATAK (module « ATAK · Relais » ou Overwatch), sur l'objet relais : état, couper, allumer, batterie.
+// Relais du réseau ATAK (module « Poser un relais » ou Overwatch), sur l'objet relais : état, couper, allumer, batterie.
 // Tout le monde peut couper un relais trouvé sur le terrain, ami comme ennemi.
 {
     private _cls = _x;

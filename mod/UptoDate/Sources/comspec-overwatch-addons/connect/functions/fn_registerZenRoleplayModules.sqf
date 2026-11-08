@@ -15,9 +15,9 @@ private _place = {
 
     private _title = switch (_type) do {
         case "no_coverage": { "Zone sans couverture ATAK" };
-        case "interference": { "Zone d'interférence ATAK" };
-        case "degraded": { "Zone de couverture dégradée" };
-        case "jammer": { "Brouilleur ATAK actif" };
+        case "interference": { "Poser une zone d'interférence" };
+        case "degraded": { "Poser une zone dégradée" };
+        case "jammer": { "Poser un brouilleur fixe" };
         default { "Zone ATAK" };
     };
 
@@ -42,8 +42,8 @@ private _place = {
 missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
 
 [
-    "COMSPEC Roleplay",
-    "Zone sans couverture ATAK",
+    "COMSPEC_Cat_Atak",
+    "Poser une zone sans couverture",
     {
         params ["_pos", "_obj"];
         [_pos, _obj, "no_coverage", 200, 100] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
@@ -52,8 +52,8 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
 ] call comspec_overwatch_connect_fnc_zenModule;
 
 [
-    "COMSPEC Roleplay",
-    "Zone d'interférence ATAK",
+    "COMSPEC_Cat_Atak",
+    "Poser une zone d'interférence",
     {
         params ["_pos", "_obj"];
         [_pos, _obj, "interference", 300, 50] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
@@ -62,8 +62,8 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
 ] call comspec_overwatch_connect_fnc_zenModule;
 
 [
-    "COMSPEC Roleplay",
-    "Zone de couverture dégradée",
+    "COMSPEC_Cat_Atak",
+    "Poser une zone dégradée",
     {
         params ["_pos", "_obj"];
         [_pos, _obj, "degraded", 500, 30] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
@@ -72,62 +72,8 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
 ] call comspec_overwatch_connect_fnc_zenModule;
 
 [
-    "COMSPEC Roleplay",
-    "Brouilleur ATAK actif",
-    {
-        params ["_pos", "_obj"];
-        [_pos, _obj, "jammer", 400, 80] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
-    },
-    _icon
-] call comspec_overwatch_connect_fnc_zenModule;
-
-[
-    "COMSPEC Roleplay",
-    "Relais ATAK (mât)",
-    {
-        params ["_pos", "_obj"];
-        if (!(_pos isEqualType []) || {count _pos < 2}) then { _pos = [0, 0, 0]; };
-        if (!isNull _obj) then { _pos = getPosATL _obj; };
-        [
-            "Relais ATAK",
-            [
-                ["EDIT", ["Nom", "Nom affiché sur Relais AT et au poste."], ["Relais Nord"]],
-                ["SLIDER", ["Portée (m)", "Rayon dans lequel un téléphone peut s’appuyer sur ce mât."], [50, 8000, 2000, 0]],
-                ["EDIT", ["Identité", "Indicatif réseau du mât."], ["RLY-01"]],
-                ["EDIT", ["Adresse réseau", "Vide = générée à la pose."], [""]],
-                ["EDIT", ["Passerelle", "Vide = générée à la pose."], [""]],
-                ["EDIT", ["Certificat", "Libellé du certificat de liaison."], ["Certificat de relais — valable mission"]],
-                ["SLIDER", ["Places", "Téléphones simultanés."], [1, 32, 8, 0]],
-                ["SLIDER", ["Puissance (W)", "Passe à zéro si le mât est détruit."], [1, 200, 25, 0]],
-                ["SLIDER", ["Débit (Mbit/s)", "Baisse avec la distance et les dégâts."], [1, 100, 12, 0]],
-                ["SLIDER", ["Fiabilité (%)", "Baisse hors portée ou sous les tirs."], [10, 100, 92, 0]]
-            ],
-            {
-                params ["_values", "_args"];
-                _values params ["_name", "_range", "_identity", "_ip", "_gw", "_cert", "_slots", "_power", "_thru", "_rel"];
-                _args params ["_pos"];
-                if (!(_name isEqualType "") || {_name isEqualTo ""}) then { _name = "Relais ATAK"; };
-                private _meta = createHashMap;
-                _meta set ["identity", _identity];
-                _meta set ["ip", _ip];
-                _meta set ["gateway", _gw];
-                _meta set ["certificate", _cert];
-                _meta set ["slots", _slots];
-                _meta set ["power_w", _power];
-                _meta set ["throughput_mbps", _thru];
-                _meta set ["reliability_pct", _rel];
-                [_pos, _range, _name, _meta] call comspec_overwatch_connect_fnc_placeAtakRelay;
-            },
-            {},
-            [_pos]
-        ] call zen_dialog_fnc_create;
-    },
-    "\A3\ui_f\data\map\markers\military\flag_CA.paa"
-] call comspec_overwatch_connect_fnc_zenModule;
-
-[
-    "COMSPEC Roleplay",
-    "Émetteur RF Fieldwatch",
+    "COMSPEC_Cat_Atak",
+    "Poser un émetteur RF",
     {
         params ["_pos", "_obj"];
         if (!(_pos isEqualType []) || {count _pos < 2}) then { _pos = [0, 0, 0]; };
@@ -163,7 +109,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
             [_pos]
         ] call zen_dialog_fnc_create;
     },
-    "\A3\ui_f\data\IGUI\Cfg\simpleTasks\types\listen_ca.paa"
+    "\z\comspec_atak_native\addons\main\data\mod_net.paa"
 ] call comspec_overwatch_connect_fnc_zenModule;
 
 missionNamespace setVariable ["COMSPEC_ZenRoleplayModulesRegistered", true];
