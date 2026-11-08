@@ -43,9 +43,9 @@ private _clear = "#(argb,8,8,3)color(0,0,0,0)";
 // Réglages > Carte : taille des textes (indicatifs, grilles, libellés) et des symboles. Défaut 1.25 (plus grand qu'avant).
 private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
 private _is = ((profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25]) max 0.8) min 2.2;
-// Étiquettes (cartouches, noms des repères) : un peu plus petites en vue large, un peu plus grandes en zoom rapproché,
-// par paliers de 5 % (taille stable pendant le zoom).
-private _tsL = (round (_ts * (((1.06 - _scale * 0.7) max 0.88) min 1.06) * 20)) / 20;
+// Étiquettes (cartouches, noms des repères) : jamais réduites en vue moyenne ou large (avant : jusqu'à 0,88, texte
+// illisible à mi-zoom) ; un peu plus grandes en zoom rapproché, par paliers de 5 % (taille stable pendant le zoom).
+private _tsL = (round (_ts * (((1.06 - _scale * 0.7) max 1) min 1.06) * 20)) / 20;
 uiNamespace setVariable ["COMSPEC_ATAK_MapTs", _ts];
 uiNamespace setVariable ["COMSPEC_ATAK_MapIs", _is];
 // Marqueurs de la mission (fn_mapGameMarkers) : symbole Arma (32 px pour l'OTAN) ramené à l'échelle de l'écran de l'ATAK,
@@ -215,6 +215,29 @@ private _perfT = diag_tickTime;
 ["draw", _map] call comspec_atak_native_fnc_noFly;
 [_map] call comspec_atak_native_fnc_droneDraw;
 ["carte drone (image)", _perfT] call comspec_atak_native_fnc_perfAcc;
+// Appui long du clic gauche (0,6 s, curseur presque immobile) : pointage partagé avec mon camp, comme sur la carte du jeu.
+// Anneau qui se remplit pendant l'appui. Rien à calculer hors appui (deux lectures de table).
+private _holdLc = _state getOrDefault ["mapLc", []];
+if ((count _holdLc) isEqualTo 5 && {_state getOrDefault ["mapLcOk", false]}) then {
+    private _hAge = diag_tickTime - (_state getOrDefault ["mapLcAt", diag_tickTime]);
+    private _hW = _state getOrDefault ["mapLcW", [0, 0, 0]];
+    private _hSp = _map ctrlMapWorldToScreen _hW;
+    private _hCur = _map ctrlMapWorldToScreen ((_state getOrDefault ["cursorPos", _hW]) select [0, 2]);
+    if ((count _hCur) >= 2 && {(count _hSp) >= 2} && {(abs ((_hCur select 0) - (_hSp select 0))) < pixelW * 8} && {(abs ((_hCur select 1) - (_hSp select 1))) < pixelH * 8}) then {
+        if (_hAge >= 0.6) then {
+            _state set ["mapLc", []];
+            _state set ["mapHold", true];
+            ["send", _hW] call comspec_atak_native_fnc_mapPing;
+        } else {
+            if (_hAge > 0.15) then {
+                private _hs = (10 + 40 * (_hAge / 0.6)) * _is;
+                _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.15, 0.4 + 0.5 * (_hAge / 0.6)], _hW, _hs, _hs, 0, "", 0];
+            };
+        };
+    } else {
+        _state set ["mapLcOk", false];
+    };
+};
 ["draw", _map] call comspec_atak_native_fnc_mapPing;
 // Plan de briefing (app Plan) sous les unités : plan partagé du camp et mon brouillon (plus pâle). Affiché par défaut.
 if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
@@ -250,6 +273,9 @@ private _uy0 = (_uA select 1) min (_uB select 1); private _uy1 = (_uA select 1) 
 // près du bord droit, l'indicatif passe à gauche du symbole (il ne sort plus de la carte).
 private _cluW = ((_ux1 - _ux0) / 14) max 1;
 private _clu = createHashMap;
+// Indicatifs d'une même case : jusqu'à trois, empilés l'un sous l'autre (avant : un seul par case, le second joueur
+// restait sans nom). Hauteur d'une ligne en mètres, mesurée une fois par image.
+private _lineM = ((((_map ctrlMapScreenToWorld [0.5, 0.5]) distance2D (_map ctrlMapScreenToWorld [0.5, 0.6])) / 0.1) * 0.034 * _kt * _tsL);
 private _uxR = _ux1 - (_ux1 - _ux0) * 0.3;
 // Mon point GPS (volet de configuration de la carte, fn_mapPrefs « self ») : réglages préparés au changement.
 private _selfCfg = ["self"] call comspec_atak_native_fnc_mapPrefs;
@@ -279,7 +305,7 @@ if (_selfCfg select 4) then {
         ([_entity] call comspec_atak_native_fnc_symbology) params ["_sIcon","_sColor"];
         private _ci = "";
         private _custom = _entity getOrDefault ["icon",""];
-        if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
+        if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"} && {(_entity getOrDefault ["vtype",""]) isEqualTo ""}) then {
             _ci = _mkIconCache getOrDefault ["~" + _custom, "§"];
             if (_ci isEqualTo "§") then { _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon"); _mkIconCache set ["~" + _custom, _ci]; };
         };
@@ -331,10 +357,13 @@ if (_selfCfg select 4) then {
     // Mon indicatif : AUTO comme les autres unités, ON toujours, OFF jamais (fn_mapPrefs « self »).
     if ((_self && {_selfLbl isEqualTo "ON"}) || {_lblOn && {!_boxOn} && {_scale < 0.25} && {_eniOn || {!_hostile}} && {!_self || {_selfLbl isNotEqualTo "OFF"}}}) then {
         private _cs = _dc select 7;
-        if (_cs isNotEqualTo "" && {_self || {_x isEqualTo _selected} || {
+        private _lrow = 0;
+        if (!_self && {_x isNotEqualTo _selected}) then {
             private _ck = [floor ((_pos select 0) / _cluW), floor ((_pos select 1) / _cluW)];
-            if (_ck in _clu) then { false } else { _clu set [_ck, true]; true }
-        }}) then { _map drawIcon [_clear,[1,1,1,(_color select 3) max 0.6],_pos,_size,_size,0,_cs,2,0.027 * _kt * _tsL,(COMSPEC_ATAK_FontSet select 1),["right", "left"] select ((_pos select 0) > _uxR)]; };
+            _lrow = _clu getOrDefault [_ck, 0];
+            _clu set [_ck, _lrow + 1];
+        };
+        if (_cs isNotEqualTo "" && {_lrow < 3}) then { _map drawIcon [_clear,[1,1,1,(_color select 3) max 0.6],[_pos select 0, (_pos select 1) - _lrow * _lineM, 0],_size,_size,0,_cs,2,0.027 * _kt * _tsL,(COMSPEC_ATAK_FontSet select 1),["right", "left"] select ((_pos select 0) > _uxR)]; };
     };
     if (_ech isNotEqualTo "") then { _map drawIcon [_ech, _color, _pos, _size, _size, 0, "", 0]; };
     // Candidat au cartouche : pas moi (carte « moi »), et pour les autres groupes seulement le chef (un cartouche par

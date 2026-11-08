@@ -33,19 +33,19 @@ switch (_act) do {
             [] call comspec_atak_native_fnc_layoutApply;
             ["tick"] call comspec_atak_native_fnc_vestMount;
             ["grid"] call comspec_atak_native_fnc_pagePatches;
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     case "src": {
         if (_arg isEqualTo "athena") then { ["ensure"] call comspec_atak_native_fnc_patchAthena; };
         uiNamespace setVariable ["COMSPEC_ATAK_PatchSrc", _arg];
         uiNamespace setVariable ["COMSPEC_ATAK_PatchPg", 0];
-        [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call CBA_fnc_execNextFrame;
+        [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     case "pg": {
         uiNamespace setVariable ["COMSPEC_ATAK_PatchPg", (uiNamespace getVariable ["COMSPEC_ATAK_PatchPg", 0]) + _arg];
-        [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call CBA_fnc_execNextFrame;
+        [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     case "query": {
@@ -62,7 +62,7 @@ switch (_act) do {
             if ((uiNamespace getVariable ["COMSPEC_ATAK_PatchTok", -1]) isNotEqualTo _tok) exitWith {};
             uiNamespace setVariable ["COMSPEC_ATAK_PatchPg", 0];
             ["grid"] call comspec_atak_native_fnc_pagePatches;
-        }, [_tok], 0.3] call CBA_fnc_waitAndExecute;
+        }, [_tok], 0.3] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "grid": {
@@ -201,7 +201,7 @@ switch (_act) do {
         _back ctrlAddEventHandler ["ButtonClick", { [{
             private _h = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["history", []];
             if ((count _h) > 1 && {(_h select ((count _h) - 2)) isEqualTo "SETTINGS"}) then { [] call comspec_atak_native_fnc_back; } else { ["SETTINGS"] call comspec_atak_native_fnc_navigate; };
-        }] call CBA_fnc_execNextFrame; }];
+        }] call comspec_atak_native_fnc_nextFrame; }];
         private _hd = ["COMSPEC_RscStructuredText", [_pad + _w * 0.32, _y + (_rowH - _fs * 1.4) / 2, _w * 0.68, _fs * 1.4]] call comspec_atak_native_fnc_pageCtrl;
         ["ensure"] call comspec_atak_native_fnc_patchAthena;
         _hd ctrlSetStructuredText parseText ((format ["<t align='right' font='COMSPEC_BarlowBold'>Patch au dos</t><t align='right' size='0.8' color='#8a9a93'>  %1 insignes d'unité</t>", ["count"] call comspec_atak_native_fnc_patchCatalog]) call comspec_atak_native_fnc_tr);
@@ -223,7 +223,7 @@ switch (_act) do {
             if (!isNull _e) then { _e ctrlSetText (("") call comspec_atak_native_fnc_tr); ctrlSetFocus _e; };
             uiNamespace setVariable ["COMSPEC_ATAK_PatchQuery", ""];
             uiNamespace setVariable ["COMSPEC_ATAK_PatchPg", 0];
-            [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call CBA_fnc_execNextFrame;
+            [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call comspec_atak_native_fnc_nextFrame;
         }];
         _y = _y + _rowH + _pad / 2;
         // Première ouverture : la page qui montre le patch porté.

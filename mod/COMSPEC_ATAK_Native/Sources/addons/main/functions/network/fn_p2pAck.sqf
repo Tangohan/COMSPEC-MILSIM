@@ -12,4 +12,11 @@ private _m = _p2p select _i;
 if ((_rank getOrDefault [_state, 0]) <= (_rank getOrDefault [_m getOrDefault ["status", "SENDING"], 1])) exitWith {};
 _m set ["status", _state];
 _m set ["statusTime", _time];
-if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+// Accusé : seul le fil ouvert est redessiné, jamais toute la page.
+if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then {
+    [{
+        params ["_thisPeer"];
+        private _open = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull]);
+        if (_open && {(uiNamespace getVariable ["COMSPEC_ATAK_ChatThreadPeer", ""]) isEqualTo _thisPeer}) exitWith { [true] call comspec_atak_native_fnc_pageChat; };
+    }, [(_m getOrDefault ["peer", ""])]] call comspec_atak_native_fnc_nextFrame;
+};

@@ -13,7 +13,7 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _lastTick = missionNamespace getVariable ["COMSPEC_ATAK_ResynchTick", -1e9];
 if ((_s getOrDefault ["resynchAuto", ""]) isNotEqualTo (str (_s getOrDefault ["display", displayNull]))) then {
     _s set ["resynchAuto", str (_s getOrDefault ["display", displayNull])];
-    if ((diag_tickTime - _lastTick) > 300) then { [{ [] call comspec_atak_native_fnc_resynchRun; }] call CBA_fnc_execNextFrame; };
+    if ((diag_tickTime - _lastTick) > 300) then { [{ [] call comspec_atak_native_fnc_resynchRun; }] call comspec_atak_native_fnc_nextFrame; };
 };
 private _busy = missionNamespace getVariable ["COMSPEC_ATAK_ResynchBusy", false];
 private _at = missionNamespace getVariable ["COMSPEC_ATAK_ResynchAt", ""];
@@ -48,8 +48,8 @@ private _head = switch (true) do {
 };
 _head params ["_hc", "_ht", "_hs"];
 private _rows = [
-    ["status", _d + "app_resynch.paa", _hc, _ht, [format ["%1<br/><t color='#8a9a93'>%2</t>", _hs, _when], _hs] select _busy],
-    ["text", "<t size='0.82' color='#8a9a93'>À lancer si le poste ne vous voit plus, après une coupure de liaison ou un changement de groupe. Seul ce qui manque à Athena repart : pas de renvoi en double.</t>"],
+    ["status", _d + "app_resynch.paa", _hc, _ht, [format ["%1<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2</t>", _hs, _when], _hs] select _busy],
+    ["text", "<t size='0.82' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>À lancer si le poste ne vous voit plus, après une coupure de liaison ou un changement de groupe. Seul ce qui manque à Athena repart : pas de renvoi en double.</t>"],
     ["buttons", [[[["RELANCER LE RESYNCH", format ["PATIENTEZ %1 S", _wait]] select (_wait > 0), "RENVOI EN COURS…"] select _busy,
         { [] call comspec_atak_native_fnc_resynchRun; }, true, !_busy && {_wait <= 0}, "Renvoie tout vers le poste de commandement"]]],
     ["section", "Compte rendu", ["", _at] select (_at isNotEqualTo "")]
@@ -67,13 +67,13 @@ if (_items isEqualTo []) then {
     };
     _rows pushBack ["cells", _cells, [1, 2] select (_bw > _bh)];
 };
-_rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Les photos déjà transmises ne repartent pas. Les tenues jamais partagées restent sur ce PC : partagez-les depuis Tenues Athena.</t>"];
+_rows pushBack ["text", "<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Les photos déjà transmises ne repartent pas. Les tenues jamais partagées restent sur ce PC : partagez-les depuis Tenues Athena.</t>"];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 // Compte à rebours du bouton : la page se redessine à la fin du délai d'attente.
 // Jeton : seule la dernière chaîne de rafraîchissement continue (un rendu en plus n'en empile pas une autre).
 if (_wait > 0 && {!_busy}) then {
     private _tok = diag_tickTime;
     uiNamespace setVariable ["COMSPEC_ATAK_ResynchTok", _tok];
-    [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_ResynchTok", -1]) isEqualTo _this && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RESYNCH"}) then { ["RESYNCH"] call comspec_atak_native_fnc_pageRender; }; }, _tok, (_wait min 5) max 1] call CBA_fnc_waitAndExecute;
+    [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_ResynchTok", -1]) isEqualTo _this && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RESYNCH"}) then { ["RESYNCH"] call comspec_atak_native_fnc_pageRender; }; }, _tok, (_wait min 5) max 1] call comspec_atak_native_fnc_waitAndExec;
 };
 true

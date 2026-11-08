@@ -65,7 +65,7 @@ if (_kind isEqualTo "DEMSSE") then {
     _rows pushBack ["memo", "text", "Consigne", _d getOrDefault ["text", ""], 3];
 }; };
 private _hint = uiNamespace getVariable ["COMSPEC_ATAK_OrderHint", ""];
-if (_hint isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e8b84a'>%1</t>", _hint]]; };
+if (_hint isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _hint]]; };
 _rows pushBack ["buttons", [["ANNULER", { ['cancel'] call comspec_atak_native_fnc_orderAction; }], ["ENVOYER L'ORDRE", { ['send'] call comspec_atak_native_fnc_orderAction; }, true]]];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

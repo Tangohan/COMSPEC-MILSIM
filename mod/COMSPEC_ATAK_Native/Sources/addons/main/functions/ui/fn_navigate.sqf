@@ -1,8 +1,10 @@
 params [["_page", "LAUNCHER"], ["_push", true]];
 _page = toUpper _page;
+// Téléphone d'un autre à l'écran (fn_phoneOwn) : aucune app, aucun compte du lecteur ; rien d'autre ne s'ouvre.
+if ((missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo "") then { _page = "PHONES"; } else { if (_page isEqualTo "PHONES") then { _page = "LAUNCHER"; }; };
 // Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos), VIEW3D (carte > Vue 3D ici, actuellement W.I.P),
 // MOBILEQR (« Sur mon téléphone » des apps Comptes rendus, CR fin d'op et Carte : fn_mobileQr).
-private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER", "MOBILEQR"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
+private _allowed = ["PHONES", "LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER", "MOBILEQR"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
 if !(_page in _allowed) then { _page = "LAUNCHER"; };
 // Vue 3D de la carte : en chantier (menu carte « Vue 3D ici »). Code conservé dans fn_pageView3d.
 if (_page isEqualTo "VIEW3D") exitWith {
@@ -58,6 +60,12 @@ if (_prevPage isEqualTo "ZONES" && {_page isNotEqualTo "ZONES"}) then {
     private _zu = uiNamespace getVariable ["COMSPEC_ATAK_ZnUi", createHashMap];
     if ((_zu getOrDefault ["tool", ""]) isNotEqualTo "") then { diag_log format ["[COMSPEC ATAK][MAP] outil Zones %1 abandonné (app quittée)", _zu get "tool"]; };
     { _zu set _x; } forEach [["tool", ""], ["draftPts", []], ["snap", []], ["vtx", -1], ["alt", false]];
+};
+// App Routes quittée : plus de mode de saisie à la réouverture (ce qui est posé reste).
+if (_prevPage isEqualTo "ROUTE" && {_page isNotEqualTo "ROUTE"}) then {
+    private _ru = uiNamespace getVariable ["COMSPEC_ATAK_RteUi", createHashMap];
+    _ru set ["mode", "SEL"];
+    _ru set ["press", []];
 };
 // Lanceur : apps récentes (profil, gardées d'une partie à l'autre) et apps déjà ouvertes (fin de la pastille NOUVEAU).
 if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER"])}) then {

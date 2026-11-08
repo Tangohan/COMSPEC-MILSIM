@@ -14,7 +14,7 @@
 */
 params [["_mode", ""], ["_arg", []]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _redraw = { [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_mode) do {
     case "channel": {
         private _c = _s getOrDefault ["markerChannel", missionNamespace getVariable ["comspec_atak_native_marker_channel", 0]];

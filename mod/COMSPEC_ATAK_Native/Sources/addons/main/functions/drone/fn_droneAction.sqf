@@ -144,7 +144,7 @@ private _unitOf = {
     if (_id isEqualTo "") exitWith { objNull };
     objectFromNetId _id
 };
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _send = {
     params ["_cmd", ["_args", []]];
     // Zones interdites au drone (fn_noFly) : un ordre dont le but y tombe est refusé (le retour automatique passe toujours).
@@ -174,7 +174,7 @@ private _send = {
     ["comspec_atak_native_droneCmd", [_d, _cmd, _args], _d] call CBA_fnc_targetEvent;
     true
 };
-private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
 // Charges acceptées : toute grenade (à main, fumigène, assourdissante, 40 mm), roquette, missile ou charge explosive
 // de l'inventaire, quel que soit le mod qui l'apporte (vanilla, ACE, RHS, CUP…), reconnue par la simulation de sa
@@ -338,6 +338,37 @@ private _camFov = {
     };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_DroneFovFn", _camFov];
+// Vision JOUR / NUIT / THERMIQUE : boutons de l'app Drone mis à jour sur place (fn_formSet, "btn"), sans redessiner la
+// page, donc sans refaire l'image du flux. Page redessinée si aucun de ces boutons n'est affiché.
+private _visNow = {
+    private _v = missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0];
+    private _any = ["droneVis", [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _v, ["", "on"] select (_v > 0)]] call comspec_atak_native_fnc_formSet;
+    {
+        private _ok = ["droneVis" + (str _x), ["", ["", "on"] select (_v isEqualTo _x)]] call comspec_atak_native_fnc_formSet;
+        _any = _any || _ok;
+    } forEach [0, 1, 2];
+    if (!_any) then { call _render; };
+};
+// Distance de vue PiP du flux. Elle était plafonnée à 1500 m (COMSPEC_ATAK_DronePipVD) pour la RAM (retour de TTRD,
+// 19/10 : « ça fait vite RAM ») : un drone à 2 km de la zone ne montrait alors plus rien. Désormais : au moins la
+// distance de la nacelle à ce qu'elle regarde (rayon sur le terrain, ou point visé) plus 300 m, au moins la base
+// COMSPEC_ATAK_DronePipVD (1500 m), au plus la borne COMSPEC_ATAK_DronePipVDMax (3000 m, celle de fn_pipCheck) ;
+// arrondie à 250 m, appliquée seulement si elle change. Sans caméra : la base. Rendue au joueur par _camClose.
+private _pipVd = {
+    private _base = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePipVD", 1500]) max 500);
+    private _max = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePipVDMax", 3000]) max _base);
+    private _need = 0;
+    private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+    if (!isNull _cam && {!isNull _d}) then {
+        private _p = getPosASLVisual _cam;
+        private _hit = lineIntersectsSurfaces [_p, _p vectorAdd ((vectorDirVisual _cam) vectorMultiply _max), _d, objNull, true, 1, "VIEW", "NONE"];
+        if ((count _hit) > 0) then { _need = _p distance ((_hit select 0) select 0); };
+        private _aim = missionNamespace getVariable ["COMSPEC_ATAK_DroneAimP", []];
+        if ((count _aim) isEqualTo 3) then { _need = _need max (_p distance _aim); };
+    };
+    private _vd = ((round ((_need + 300) / 250)) * 250) max _base min _max;
+    if ((round getPiPViewDistance) isNotEqualTo _vd) then { setPiPViewDistance _vd; };
+};
 private _camOpen = {
     if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull]) || {isNull _d}) exitWith {};
     // Nacelle posée hors du modèle, du côté où elle regarde (voir la boucle ci-dessous) : sur un Mavic, la caméra
@@ -354,14 +385,10 @@ private _camOpen = {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamT0", time];
     };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", false];
-    // Distance de vue PiP plafonnée tant que la caméra du drone existe (réglage de mission COMSPEC_ATAK_DronePipVD,
-    // 1500 m par défaut) : la caméra rendue dans le téléphone fait charger par le jeu le terrain, les objets et leurs
-    // textures autour du drone, en plus de ceux autour du joueur. fn_pipCheck la remontait jusqu'à 3000 m et elle y
-    // restait ; à 1500 m, quatre fois moins de surface chargée (retour de TTRD, 19/10 : « ça fait vite RAM », celle
-    // du PC). Les capteurs voient à 700 m au plus. Valeur du joueur rendue à la fermeture de la caméra (_camClose).
-    private _pipCap = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePipVD", 1500]) max 500);
+    // Distance de vue PiP réglée tant que la caméra du drone existe (voir _pipVd) ; valeur du joueur rendue à la
+    // fermeture de la caméra (_camClose).
     if (isNil { missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep" }) then { missionNamespace setVariable ["COMSPEC_ATAK_DronePipKeep", getPiPViewDistance]; };
-    if (getPiPViewDistance > _pipCap) then { setPiPViewDistance _pipCap; };
+    call _pipVd;
     call _camMake;
     // Nacelle : chaque image, la caméra vise la cible choisie ou le point observé, sinon regarde devant et en bas.
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", [{ private _perfT = diag_tickTime; call {
@@ -410,7 +437,7 @@ private _camOpen = {
         // coupure soit vue, on recrée la caméra ici et on redessine la page (une fois : camBind remet rendering).
         if (!_direct && {!(([_cam, "rendering", true] call comspec_atak_native_fnc_camVar))}) exitWith {
             ["camBind"] call comspec_atak_native_fnc_droneAction;
-            [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame;
+            [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame;
         };
         if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_DroneExpAt", 0])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_DroneExpAt", diag_tickTime + 1];
@@ -463,6 +490,7 @@ private _camOpen = {
             private _h = (getDirVisual _d) + _cp;
             _dir = [(sin _h) * (cos _ct), (cos _h) * (cos _ct), sin _ct];
             missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", _dir];
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneAimP", []];
         } else {
             private _p = [];
             // Nadir : nacelle à la verticale, sous le drone.
@@ -497,9 +525,12 @@ private _camOpen = {
                 private _h = getDirVisual _d;
                 _dir = [(sin _h) * 0.7986, (cos _h) * 0.7986, -0.6018];
                 missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", []];
+                missionNamespace setVariable ["COMSPEC_ATAK_DroneAimP", []];
             } else {
                 _dir = vectorNormalized (_p vectorDiff _ctr);
                 missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", _dir];
+                // Point visé, lu une fois par seconde par _pipVd (distance de vue PiP).
+                missionNamespace setVariable ["COMSPEC_ATAK_DroneAimP", _p];
             };
         };
         // Repère de l'image : droite horizontale ; à la verticale, le haut de l'image est l'avant du drone.
@@ -542,7 +573,8 @@ private _camClose = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", -1];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", []];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", false];
-    // Distance de vue PiP du joueur rendue (plafonnée pendant le flux, voir _camOpen).
+    // Distance de vue PiP du joueur rendue (réglée pendant le flux, voir _pipVd).
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneAimP", []];
     private _keep = missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep";
     if (!isNil "_keep") then { setPiPViewDistance _keep; missionNamespace setVariable ["COMSPEC_ATAK_DronePipKeep", nil]; };
 };
@@ -893,6 +925,24 @@ switch (_act) do {
     };
     case "player": { _s set ["droneFollowUid", _arg]; call _render; };
     case "alt": { _s set ["droneAlt", _arg]; if (!isNull _d && {call _needLink}) then { ["alt", [_arg]] call _send; }; call _render; };
+    // Vue caméra : palier d'altitude suivant (+1) ou précédent (-1). Boutons changés sur place, l'image reste en place.
+    case "altStep": {
+        private _alt = _s getOrDefault ["droneAlt", 40];
+        private _alts = [[15, 30, 60, 100, 150], [2, 3, 5, 8]] select (!isNull _d && {_d getVariable ["COMSPEC_DroneCqb", false]});
+        private _higher = _alts select { _x > _alt };
+        private _lower = _alts select { _x < _alt };
+        private _to = if (_arg > 0) then { _higher param [0, -1] } else { _lower param [(count _lower) - 1, -1] };
+        if (_to < 0) exitWith {};
+        _s set ["droneAlt", _to];
+        if (!isNull _d && {call _needLink}) then { ["alt", [_to]] call _send; };
+        _higher = _alts select { _x > _to };
+        _lower = _alts select { _x < _to };
+        private _up = _higher param [0, -1];
+        private _dn = _lower param [(count _lower) - 1, -1];
+        private _okUp = ["droneUp", [[format ["MONTER %1 m", _up], "MONTER"] select (_up < 0), "", _up > 0, format ["Altitude actuelle %1 m : monter au palier suivant", _to]]] call comspec_atak_native_fnc_formSet;
+        private _okDn = ["droneDn", [[format ["DESCENDRE %1 m", _dn], "DESCENDRE"] select (_dn < 0), "", _dn > 0, format ["Altitude actuelle %1 m : descendre au palier précédent", _to]]] call comspec_atak_native_fnc_formSet;
+        if (!_okUp || {!_okDn}) then { call _render; };
+    };
     case "speed": { _s set ["droneSpd", _arg]; if (!isNull _d && {call _needLink}) then { ["speed", [_arg]] call _send; }; call _render; };
     case "radius": { _s set ["droneHuntRad", _arg]; call _render; };
     case "arm": {
@@ -1055,18 +1105,34 @@ switch (_act) do {
         private _v = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]) + 1) mod 3;
         missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", _v];
         call _expose;
-        call _render;
+        call _visNow;
     };
     // Mode de vision choisi directement (rangée JOUR / VISION NOCTURNE / THERMIQUE, comme l'app Vidéo Live).
     case "visionSet": {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", ((_arg max 0) min 2)];
         call _expose;
-        call _render;
+        call _visNow;
     };
     case "camBind": { call _camBind };
     // Gain du flux selon la lumière (boucle de la nacelle, une fois par seconde).
-    case "expose": { call _expose };
+    // Distance de vue PiP réglée seulement tant que la valeur du joueur est gardée (caméra ouverte, voir _camClose).
+    case "expose": { call _expose; if (!isNil { missionNamespace getVariable "COMSPEC_ATAK_DronePipKeep" }) then { call _pipVd; }; };
     // Source du flux de la vue caméra : drone, caméra du téléphone, caméra casque (la sienne ou celle d'un équipier).
+    // Bouton de la vue caméra de la carte : source suivante. La caméra suit la source à chaque image (fn_droneAction,
+    // mise à jour de la caméra) : seul le bouton change, sauf autour du casque (bouton CASQUE DE… affiché ou retiré).
+    case "feedNext": {
+        private _cur = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"];
+        private _i = (["DRONE", "PHONE", "HELMET"] find _cur) max 0;
+        private _next = ["PHONE", "HELMET", "DRONE"] select _i;
+        private _btn = uiNamespace getVariable ["COMSPEC_ATAK_DroneFeedBtn", controlNull];
+        if (isNull _btn || {"HELMET" in [_cur, _next]}) exitWith { ["feedSrc", _next] call comspec_atak_native_fnc_droneAction; };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedSrc", _next];
+        _btn ctrlSetText ((["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE"] select (_next isEqualTo "PHONE")) call comspec_atak_native_fnc_tr);
+        _btn ctrlSetBackgroundColor ([[0.08, 0.1, 0.09, 0.9], ((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]] select (_next isEqualTo "DRONE"));
+        private _bw = (ctrlPosition _btn) select 2;
+        private _tw = ctrlTextWidth _btn;
+        if (_tw > _bw * 0.96) then { _btn ctrlSetFontHeight (((ctrlFontHeight _btn) * _bw * 0.96 / _tw) max COMSPEC_ATAK_FontMin); };
+    };
     case "feedSrc": {
         if !(_arg in ["DRONE", "PHONE", "HELMET"]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedSrc", _arg];
@@ -1348,7 +1414,7 @@ switch (_act) do {
             // Manette : en vue directe, les touches de vol pilotent le drone (pilotage en immersion, le joueur ne bouge pas).
             if (["stickKey", [_this select 1, true]] call comspec_atak_native_fnc_droneAction) exitWith { true };
             if ((_this select 1) isNotEqualTo 0x01) exitWith { false };
-            [{ ["directEnd", true] call comspec_atak_native_fnc_droneAction; }] call CBA_fnc_execNextFrame;
+            [{ ["directEnd", true] call comspec_atak_native_fnc_droneAction; }] call comspec_atak_native_fnc_nextFrame;
             true
         }];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectEh", _eh];
@@ -1391,7 +1457,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", objNull];
         if (_arg isEqualTo true && {alive player} && {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}) then {
             [true] call comspec_atak_native_fnc_open;
-            [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+            [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
     // Marquage au viseur de la caméra du drone (appui sur MARQUER ou touche « Marquer la cible »).
@@ -1400,6 +1466,14 @@ switch (_act) do {
         if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith { ["WARNING", "Ouvrez la caméra du drone pour viser"] call _say; };
         ["mark", "DRONE"] call comspec_atak_native_fnc_lockAction;
         call _render;
+    };
+    // Bouton de la vue caméra : vers le sol, ou devant. Seul le bouton change, l'image reste en place.
+    case "camAimToggle": {
+        if (isNull _d) exitWith {};
+        private _nadir = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""]) isNotEqualTo "NADIR";
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ["", "NADIR"] select _nadir];
+        if (_nadir) then { call _camOpen; };
+        if !(["droneNadir", [["CAMÉRA VERS LE SOL", "CAMÉRA DEVANT"] select _nadir, "", true, ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select _nadir]] call comspec_atak_native_fnc_formSet) then { call _render; };
     };
     case "camAim": {
         if (isNull _d) exitWith {};
@@ -1413,7 +1487,7 @@ switch (_act) do {
     case "pickMap": {
         call _saveGrid;
         _s set ["dronePick", "1"];
-        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         ["INFO", "Touchez le point de la tâche sur la carte", 4, 40] call comspec_atak_native_fnc_notify;
     };
     case "picked": {
@@ -1421,7 +1495,7 @@ switch (_act) do {
         _s set ["droneTaskGridVal", [_arg, 10] call comspec_atak_native_fnc_gridRef];
         _s set ["droneTab", "TASK"];
         ["INFO", format ["Point de la tâche : %1", [_arg, 8] call comspec_atak_native_fnc_gridRef], 3, 30] call comspec_atak_native_fnc_notify;
-        [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "taskSend": {
         call _saveGrid;
@@ -1552,7 +1626,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", true];
         ["comspec_atak_native_droneCmd", [_d, "transferIn", [name player, _uid, [], "HELLO"]], _t] call CBA_fnc_targetEvent;
         ["INFO", format ["Liaison avec le téléphone de %1…", name _t]] call _say;
-        [{ missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", false]; ["transferDo", _this] call comspec_atak_native_fnc_droneAction; }, [_d, _t, _uid], 3] call CBA_fnc_waitAndExecute;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", false]; ["transferDo", _this] call comspec_atak_native_fnc_droneAction; }, [_d, _t, _uid], 3] call comspec_atak_native_fnc_waitAndExec;
         call _render;
     };
     case "transferDo": {

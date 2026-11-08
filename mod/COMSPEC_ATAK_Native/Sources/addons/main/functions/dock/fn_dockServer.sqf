@@ -73,7 +73,7 @@ switch (_act) do {
                 params ["_h"];
                 if (isNull _h) exitWith {};
                 ["zeusKit", [_h]] call comspec_atak_native_fnc_dockServer;
-            }, [_h]] call CBA_fnc_execNextFrame;
+            }, [_h]] call comspec_atak_native_fnc_nextFrame;
         }, false, [], false] call CBA_fnc_addClassEventHandler;
         // Filet si le porte-objet n'a pas les événements étendus CBA : création d'entité côté serveur.
         addMissionEventHandler ["EntityCreated", {
@@ -83,7 +83,7 @@ switch (_act) do {
                 params ["_h"];
                 if (isNull _h) exitWith {};
                 ["zeusKit", [_h]] call comspec_atak_native_fnc_dockServer;
-            }, [_h]] call CBA_fnc_execNextFrame;
+            }, [_h]] call comspec_atak_native_fnc_nextFrame;
         }];
         ["comspec_atak_native_dockPut", { ["put", _this] call comspec_atak_native_fnc_dockServer; }] call CBA_fnc_addEventHandler;
         ["comspec_atak_native_dockTake", { ["take", _this] call comspec_atak_native_fnc_dockServer; }] call CBA_fnc_addEventHandler;

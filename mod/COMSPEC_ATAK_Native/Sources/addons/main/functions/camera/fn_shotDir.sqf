@@ -67,7 +67,7 @@ switch (_mode) do {
         };
         // Réglages › À propos ouvert : la ligne « Dossier des captures » se met à jour.
         if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "SETTINGS") then {
-            [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         _txt
     };

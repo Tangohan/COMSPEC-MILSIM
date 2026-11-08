@@ -596,3 +596,19 @@ Aliases: `/api/markers`, `/api/units`, `/api/nine-line`, `/api/cas`, `/api/fire-
 - COMSPEC Overwatch Technical Manual — TM-A3-11
 - ATHENA C2 Security Architecture — SEC-A3-01
 - ATHENA C2 Capability Registry — REG-A3-01
+
+## App Communauté : `GET /api/atak/community-brief`
+
+Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le contenu se saisit dans Ressources › Configuration ATAK, section Expérience (`community_notes`, `community_kit` dans la configuration d'expérience, sans migration), et se lit par `App\Support\AtakCommunityBrief`. Sans saisie, l'API renvoie des listes vides.
+
+```json
+{
+  "notes": [{ "id": 1, "kind": "consigne|ordre|tip", "title": "…", "body": "…", "updated_at": "…" }],
+  "kit": [{ "classes": ["ACE_fieldDressing"], "count": 2, "label": "Pansements" }],
+  "updated_at": "…"
+}
+```
+
+- Écriture par la gestion de la communauté ; texte brut, sans HTML. Plafonds côté site et côté jeu : 40 notes, titre de 60 et texte de 600 caractères, 40 lignes de kit.
+- Côté jeu : commande `GetCommunityBrief` de COMSPEC Link, appelée par `fn_tenantAction` « briefLoad » avec `extAwait`, 5 min au plus entre deux lectures. Réponse : `OK|` puis une ligne par entrée, `N\tgenre\ttitre\ttexte` ou `K\tclasses,séparées\tnombre\tlibellé`.
+- Priorité du kit : mission (`COMSPEC_ATAK_RequiredKit`), puis Athena, puis le réglage `comspec_atak_native_kit_required`.

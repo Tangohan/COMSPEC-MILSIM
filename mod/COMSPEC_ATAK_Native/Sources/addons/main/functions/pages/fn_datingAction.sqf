@@ -19,7 +19,7 @@ params [["_act", ""], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _likes = missionNamespace getVariable ["COMSPEC_ATAK_RencardLikes", []];
 private _passed = missionNamespace getVariable ["COMSPEC_ATAK_RencardPassed", []];
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DATING") then { ["DATING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DATING") then { ["DATING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 // Après chaque choix : nouvelle photo de départ et, parfois, un profil particulier au tour suivant.
 private _next = {
     _s set ["rcShot", 0];
@@ -111,7 +111,7 @@ switch (_act) do {
                     missionNamespace setVariable ["COMSPEC_ATAK_RencardAiChat", _chat];
                     ["SUCCESS", format ["Tinder : c'est un match avec %1 !", _name], 6, 50] call comspec_atak_native_fnc_notify;
                     [] call comspec_atak_native_fnc_vibrate;
-                    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DATING") then { ["DATING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+                    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DATING") then { ["DATING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
                 };
             };
         } else {

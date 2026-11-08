@@ -142,7 +142,7 @@ switch (_mode) do {
             };
         } forEach allDisplays;
         // Descente : une fenêtre de bord encore ouverte 2 s après (mod tiers qui garde souris et clavier) est signalée.
-        if (isNull objectParent player && {!_down}) then { [{ ["leftover"] call comspec_atak_native_fnc_vehicleKeys; }, [], 2] call CBA_fnc_waitAndExecute; };
+        if (isNull objectParent player && {!_down}) then { [{ ["leftover"] call comspec_atak_native_fnc_vehicleKeys; }, [], 2] call comspec_atak_native_fnc_waitAndExec; };
         // Menu d'actions rendu si plus rien n'est affiché (fn_open le réinstalle à la prochaine ouverture).
         if (isNull ([] call comspec_atak_native_fnc_display)) then { { inGameUISetEventHandler [_x, ""]; } forEach ["PrevAction", "NextAction", "Action"]; };
         true
@@ -174,7 +174,7 @@ switch (_mode) do {
             };
             ["Affichage de l'ATAK remis à zéro", 3] call comspec_atak_native_fnc_toast;
             ["INFO", "ATAK", format ["Réparation de l'affichage terminée (miniature %1)", ["rangée", "rouverte"] select _was]] call comspec_atak_native_fnc_log;
-        }, [_was], 0.5] call CBA_fnc_waitAndExecute;
+        }, [_was], 0.5] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "leftover": {
@@ -250,7 +250,7 @@ switch (_mode) do {
         [{
             params ["_hover"];
             [["Commandes de vol à la souris suspendues tant que l'ATAK est en main (clavier actif) · Échap : rendre la main", "Vol stationnaire automatique engagé tant que l'ATAK est en main · Échap : rendre la main"] select _hover, 5] call comspec_atak_native_fnc_toast;
-        }, [_hover]] call CBA_fnc_execNextFrame;
+        }, [_hover]] call comspec_atak_native_fnc_nextFrame;
         true
     };
     case "close": {

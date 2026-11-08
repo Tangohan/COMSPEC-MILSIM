@@ -8,7 +8,7 @@
 params [["_act", ""], ["_arg", ""]];
 private _grp = group player;
 private _isLead = (leader _grp) isEqualTo player || {(count units _grp) isEqualTo 1};
-private _rerender = { [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_act) do {
     case "fold": {
         _arg params [["_k", ""], ["_def", false]];
@@ -70,7 +70,7 @@ switch (_act) do {
         [_grp, _u] remoteExec ["selectLeader", leader _grp];
         ["comspec_atak_native_groupNotice", [format ["%1 prend le commandement de %2", name _u, groupId _grp]], units _grp] call CBA_fnc_targetEvent;
         // Redessin seulement si l'app Groupe est encore ouverte une seconde plus tard.
-        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GROUP") then { ["GROUP"] call comspec_atak_native_fnc_pageRender; }; }, [], 1] call CBA_fnc_waitAndExecute;
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GROUP") then { ["GROUP"] call comspec_atak_native_fnc_pageRender; }; }, [], 1] call comspec_atak_native_fnc_waitAndExec;
     };
 };
 true

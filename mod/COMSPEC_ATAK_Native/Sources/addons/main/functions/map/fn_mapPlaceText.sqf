@@ -71,10 +71,11 @@ private _fR = COMSPEC_ATAK_FontSet select 0;
 private _k = _ts * _kt;
 // Taille, police, couleur par catégorie (ville, village, lieu-dit, site).
 private _sizes = switch (_style) do {
-    case "QUIET": { [0.026, 0.022, 0.019, 0.019] };
-    case "TAG": { [0.023, 0.021, 0.019, 0.019] };
+    case "QUIET": { [0.027, 0.025, 0.023, 0.023] };
+    case "TAG": { [0.025, 0.024, 0.023, 0.023] };
     case "CLASSIC": { [0.034, 0.028, 0.025, 0.025] };
-    default { [0.031, 0.025, 0.020, 0.020] };
+    // Lieux-dits et villages : 0,020 et 0,025 avant, illisibles à mi-zoom sur le petit écran.
+    default { [0.031, 0.028, 0.024, 0.024] };
 } apply { _x * _k };
 private _cols = [[0.98, 0.98, 0.97, 1], [0.93, 0.94, 0.91, 1], [0.86, 0.84, 0.77, 1], [0.98, 0.80, 0.45, 1]];
 private _tagCols = [[0.95, 0.95, 0.95, 1], [0.70, 0.80, 0.75, 1], [0.80, 0.70, 0.50, 1], [0.95, 0.67, 0.20, 1]];
@@ -94,7 +95,7 @@ private _n = 0;
     private _sp = _map ctrlMapWorldToScreen _pos;
     _sp params ["_sx", "_sy"];
     private _fs = _sizes select _cat;
-    private _font = [_fB, _fR] select (_style in ["QUIET", "CLASSIC"] || {_cat >= 2 && {_style isEqualTo "TACTICAL"}});
+    private _font = [_fB, _fR] select (_style in ["QUIET", "CLASSIC"]);
     private _t = [toUpper _txt, _txt] select (_style in ["QUIET", "CLASSIC"]);
     private _w = [_t, _font, _fs] call comspec_atak_native_fnc_mapTextW;
     private _tag = _style isEqualTo "TAG";

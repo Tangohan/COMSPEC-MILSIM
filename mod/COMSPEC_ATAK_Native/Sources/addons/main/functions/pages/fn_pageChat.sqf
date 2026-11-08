@@ -12,8 +12,11 @@
       - En main, en paysage et en plein écran : les deux côte à côte (mode PETIT : une vue à la fois). Porté (sans souris) : la conversation seule, sans saisie.
     Comportement inchangé : canaux, commandes /, raccourcis @grille, SMS et leurs accusés, VIDER, tri, création et
     suppression de canal. Les apps qui ouvrent une conversation posent chatPeer et chatView = "CONV".
+    Fil seul ([true] call fn_pageChat) : message envoyé ou reçu, conversation ouverte sans liste à côté : seul le fil est
+    refait ; en-tête, barre de saisie, focus et texte en cours ne bougent pas. Sinon, rendu complet de la page.
 */
 disableSerialization;
+params [["_threadOnly", false]];
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _pad = (_l get "pad") * 2;
@@ -35,15 +38,15 @@ private _view = if (_interactive) then { _s getOrDefault ["chatView", "LIST"] } 
 if !(_view in ["LIST", "CONV"]) then { _view = "LIST"; };
 
 // Teintes (celles de Reco) et accent choisi dans Réglages > Personnalisation.
-private _cBg = [0.026, 0.031, 0.028, 1];
-private _cHdr = [0.012, 0.015, 0.013, 1];
-private _cTile = [0.065, 0.078, 0.071, 1];
-private _cField = [0.014, 0.017, 0.015, 1];
-private _cLine = [0.16, 0.20, 0.17, 1];
-private _cText = [0.92, 0.95, 0.93, 1];
-private _cDim = [0.55, 0.61, 0.58, 1];
-private _cRed = [0.90, 0.28, 0.23, 1];
-private _cBlue = [0.10, 0.42, 0.82, 1];
+private _cBg = COMSPEC_ATAK_Th get "bg1";
+private _cHdr = COMSPEC_ATAK_Th get "bg0";
+private _cTile = COMSPEC_ATAK_Th get "surface";
+private _cField = COMSPEC_ATAK_Th get "field";
+private _cLine = COMSPEC_ATAK_Th get "border";
+private _cText = COMSPEC_ATAK_Th get "text";
+private _cDim = COMSPEC_ATAK_Th get "textDim";
+private _cRed = COMSPEC_ATAK_Th get "alert";
+private _cBlue = COMSPEC_ATAK_Th get "info";
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
 private _accDark = [(_acc select 0) * 0.30, (_acc select 1) * 0.30, (_acc select 2) * 0.30, 1];
 
@@ -56,7 +59,7 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {dia
         private _before = +(missionNamespace getVariable ["COMSPEC_Comms_Channels", []]);
         [] call comspec_overwatch_connect_fnc_pollChatChannels;
         if ((missionNamespace getVariable ["COMSPEC_Comms_Channels", []]) isNotEqualTo _before) then {
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
 };
@@ -82,6 +85,9 @@ private _netBars = _netQ getOrDefault ["bars", 0];
 private _relay = if ((_netQ getOrDefault ["sim", false]) && {_netBars > 0}) then { (["best"] call comspec_atak_native_fnc_relayNet) param [1, ""] } else { "" };
 if !((_channels findIf { (_x select 0) isEqualTo _peer }) >= 0 || {_peer in _peers}) then { _peer = (_channels select 0) select 0; };
 private _isChannel = _peer isEqualTo "ATHENA" || {(_peer select [0, 3]) isEqualTo "CH:"};
+if (_threadOnly && {_split || {_view isNotEqualTo "CONV"} || {_s getOrDefault ["chatWiki", false]} || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull])} || {(uiNamespace getVariable ["COMSPEC_ATAK_ChatThreadPeer", ""]) isNotEqualTo _peer} || {(_s getOrDefault ["pageDrawn", ""]) isNotEqualTo "CHAT"}}) exitWith {
+    ["CHAT"] call comspec_atak_native_fnc_pageRender;
+};
 _s set ["chatChannel", [_peer select [3], ""] select (_peer isEqualTo "ATHENA")];
 _s set ["chatPeer", _peer];
 private _manage = _bridge && {_interactive};
@@ -96,7 +102,9 @@ private _esc = {
     _t = [_t, "<", "&lt;"] call CBA_fnc_replace;
     [_t, ">", "&gt;"] call CBA_fnc_replace
 };
-private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
+private _mkReal = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
+// Fil seul : l'en-tête n'est que calculé (rien de créé) jusqu'au fil, où _mk redevient le vrai.
+private _mk = [_mkReal, { controlNull }] select _threadOnly;
 // Contrôle dans un groupe défilant (supprimé avec lui).
 private _gmk = {
     params ["_grp", "_c", "_p", ["_t", ""]];
@@ -104,6 +112,8 @@ private _gmk = {
     _o ctrlSetPosition _p;
     if (_t isNotEqualTo "") then { _o ctrlSetText ((_t) call comspec_atak_native_fnc_tr); };
     _o ctrlCommit 0;
+    // Ligne de la liste en cours de dessin (_row) : ses contrôles sont notés pour la déplacer sur place (fn_chatListRow).
+    if (!isNil "_rowCtrls") then { _rowCtrls pushBack _o; };
     _o
 };
 private _box = { params ["_rect", "_rgba", ["_grp", controlNull]]; private _c = if (isNull _grp) then { ["COMSPEC_RscText", _rect] call _mk } else { [_grp, "COMSPEC_RscText", _rect] call _gmk }; _c ctrlSetBackgroundColor _rgba; _c };
@@ -188,7 +198,7 @@ private _avatar = {
     };
     [_rect, _iconPath, _tint, 0.62, _grp] call _icon
 };
-private _rr = "[{ ['CHAT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+private _rr = "[{ ['CHAT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 // Brouillon par conversation : le texte en cours (gardé par fn_pageClear) appartient à la conversation affichée avant.
 private _drafts = uiNamespace getVariable ["COMSPEC_ATAK_ChatDrafts", createHashMap];
 private _dPeer = uiNamespace getVariable ["COMSPEC_ATAK_ChatDraftPeer", ""];
@@ -210,13 +220,13 @@ private _keepScroll = {
     if (_v <= 0) exitWith {};
     _grp ctrlSetScrollValues [_v, -1];
     // Encore à l'image suivante : la hauteur du contenu n'est connue qu'une fois les contrôles posés.
-    [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
+    [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call comspec_atak_native_fnc_nextFrame;
 };
 private _open = { params ["_key"]; compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', %1]; _s set ['chatView', 'CONV']; _s set ['chatDelArm', '']; _s set ['chatWiki', false]; _s set ['chatPick', false]; %2", str _key, _rr] };
 // Molette de la souris : les groupes défilants imbriqués dans la page ne la reçoivent pas d'Arma (retour de TTRD).
 // La page enregistre [groupe, hauteur du contenu] ; un gestionnaire de l'écran (posé une fois) fait défiler celui
 // qui est sous la souris, d'environ un cinquième de sa hauteur par cran.
-uiNamespace setVariable ["COMSPEC_ATAK_WheelGroups", []];
+uiNamespace setVariable ["COMSPEC_ATAK_WheelGroups", [[], (uiNamespace getVariable ["COMSPEC_ATAK_WheelGroups", []]) select { !isNull (_x select 0) }] select _threadOnly];
 private _wheel = {
     params ["_grp", "_contentH"];
     (uiNamespace getVariable ["COMSPEC_ATAK_WheelGroups", []]) pushBack [_grp, _contentH];
@@ -259,6 +269,11 @@ private _convW = _bw - _convX;
 // ================================================================ LISTE DES CONVERSATIONS
 private _drawList = {
     params ["_lx", "_lw"];
+    // Lignes de la liste et ordre des contacts, pour changer sur place la ligne d'un contact quand un SMS arrive et la
+    // remonter en tête (fn_chatListRow). Pendant le choix d'un destinataire : pas d'ordre, redessin.
+    private _listRows = createHashMap;
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatListRows", _listRows];
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatListOrder", [+_peers, []] select _pick];
     // Bandeau d'état : où partent les messages, et + CANAL.
     private _sh = _font * 1.7;
     [[_lx, 0, _lw, _sh], _cHdr] call _box;
@@ -266,17 +281,17 @@ private _drawList = {
     private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
     private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
     private _state = switch (true) do {
-        case (!_bridge): { ["TOC local · SMS directs", "#f2ab33"] };
-        case (!_ready): { ["Athena non connecté", "#f2ab33"] };
-        case (!_net): { [format ["Hors réseau · fil du %1 · envoi différé", (["state"] call comspec_atak_native_fnc_offline) select 1], "#f2ab33"] };
+        case (!_bridge): { ["TOC local · SMS directs", (COMSPEC_ATAK_Th get "hexWarn")] };
+        case (!_ready): { ["Athena non connecté", (COMSPEC_ATAK_Th get "hexWarn")] };
+        case (!_net): { [format ["Hors réseau · fil du %1 · envoi différé", (["state"] call comspec_atak_native_fnc_offline) select 1], (COMSPEC_ATAK_Th get "hexWarn")] };
         default { ["Athena connecté", _accHex] };
     };
-    if (!_bridge && {_netBars isEqualTo 0}) then { _state = ["Hors réseau · SMS en attente du signal", "#f2ab33"]; };
+    if (!_bridge && {_netBars isEqualTo 0}) then { _state = ["Hors réseau · SMS en attente du signal", (COMSPEC_ATAK_Th get "hexWarn")]; };
     if (_relay isNotEqualTo "") then { _state set [0, format ["%1 · via %2", _state select 0, _relay]]; };
     private _nbW = [0, (_font * 4.2 / _ratio) min (_lw * 0.36)] select _manage;
     private _st = ["COMSPEC_RscStructuredText", [_lx + _pad * 0.6, _sh * 0.18, _lw - _nbW - _pad * 1.6, _sh * 0.8]] call _mk;
     _st ctrlSetFontHeight (_fs * 0.95);
-    _st ctrlSetStructuredText parseText ((format ["<t color='%2'>●</t> <t color='#c9d4cf'>%1</t>", _state select 0, _state select 1]) call comspec_atak_native_fnc_tr);
+    _st ctrlSetStructuredText parseText ((format ["<t color='%2'>●</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", _state select 0, _state select 1]) call comspec_atak_native_fnc_tr);
     if (_manage) then {
         private _r = [_lx + _lw - _nbW - _pad * 0.5, _sh * 0.16, _nbW, _sh * 0.68];
         private _on = _s getOrDefault ["chatNewOpen", false];
@@ -313,12 +328,12 @@ private _drawList = {
                     _s set ["chatPeer", "CH:" + (missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"])];
                     _s set ["chatView", "CONV"];
                 };
-                [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+                [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
             };
         }];
         private _no = ["COMSPEC_RscButton", [_lx + _lw - _cw - _pad * 0.5, _y0 + _pad / 2, _cw, _rowH], "ANNULER"] call _mk;
         _no ctrlSetFontHeight _fs;
-        _no ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatNewOpen", false]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+        _no ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatNewOpen", false]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }];
         ctrlSetFocus _ne;
         _y0 = _y0 + _ch;
     };
@@ -349,6 +364,7 @@ private _drawList = {
     // Une ligne : vignette, nom + heure, dernier message + pastille.
     private _row = {
         params ["_key", "_name", "_iconPath", "_tint", "_unit", "_last", "_time", "_unread", ["_sub", ""], ["_ini", ""]];
+        private _rowCtrls = [];
         private _cur = _split && {_key isEqualTo _peer};
         if (_cur) then {
             [[0, _y, _gw, _rh], _cTile, _grp] call _box;
@@ -359,16 +375,17 @@ private _drawList = {
         private _tw = _gw - _tx - _pad;
         private _timeW = _tw * 0.3;
         ["COMSPEC_RscText", [_tx, _y + _rh * 0.12, _tw - _timeW, _rh * 0.42], _name, _font * 0.92, _cText, true, _grp] call _lbl;
-        ["COMSPEC_RscTextRight", [_tx + _tw - _timeW, _y + _rh * 0.14, _timeW, _rh * 0.4], _time, _fs * 0.82, [_cDim, _acc] select (_unread > 0), _unread > 0, _grp] call _lbl;
+        private _cTime = ["COMSPEC_RscTextRight", [_tx + _tw - _timeW, _y + _rh * 0.14, _timeW, _rh * 0.4], _time, _fs * 0.82, [_cDim, _acc] select (_unread > 0), _unread > 0, _grp] call _lbl;
         private _bdW = [0, ((_fs * 1.25) / _ratio) max ((_fs * 0.55 * (count str _unread) + _fs * 0.6) / _ratio)] select (_unread > 0);
         private _prevTxt = [_last, _sub] select (_last isEqualTo "");
-        ["COMSPEC_RscText", [_tx, _y + _rh * 0.52, _tw - _bdW - _pad * 0.4, _rh * 0.38], _prevTxt select [0, 90], _fs * 0.9, [_cDim, [0.78, 0.84, 0.81, 1]] select (_unread > 0), false, _grp] call _lbl;
-        if (_unread > 0) then {
-            private _b = ["COMSPEC_RscTextCenter", [_tx + _tw - _bdW, _y + _rh * 0.53, _bdW, _fs * 1.15], str (_unread min 99), _fs * 0.78, [0.03, 0.05, 0.04, 1], true, _grp] call _lbl;
-            _b ctrlSetBackgroundColor _acc;
-        };
+        private _cPrev = ["COMSPEC_RscText", [_tx, _y + _rh * 0.52, _tw - _bdW - _pad * 0.4, _rh * 0.38], _prevTxt select [0, 90], _fs * 0.9, [_cDim, [0.78, 0.84, 0.81, 1]] select (_unread > 0), false, _grp] call _lbl;
+        // Pastille toujours créée, masquée sans non-lu : fn_chatListRow l'affiche sans redessiner.
+        private _b = ["COMSPEC_RscTextCenter", [_tx + _tw - _bdW, _y + _rh * 0.53, _bdW max pixelW, _fs * 1.15], str (_unread min 99), _fs * 0.78, [0.03, 0.05, 0.04, 1], true, _grp] call _lbl;
+        _b ctrlSetBackgroundColor _acc;
+        _b ctrlShow (_unread > 0);
         [[_tx, _y + _rh - pixelH, _gw - _tx, pixelH], [1, 1, 1, 0.05], _grp] call _box;
         [[0, _y, _gw, _rh], [_key] call _open, _name, _grp] call _hit;
+        _listRows set [_key, [_cTime, _cPrev, _b, _tx, _tw, _y, _rh, _fs, _ratio, _pad, _rowCtrls]];
         _y = _y + _rh;
     };
     // Canaux (masqués pendant le choix d'un destinataire de SMS)
@@ -395,7 +412,7 @@ private _drawList = {
     [["Messages directs", "Nouveau SMS · choisir un destinataire"] select _pick, "SMS"] call _section;
     if ((count _peers) isEqualTo 0) then {
         private _t = ["COMSPEC_RscStructuredText", [_pad, _y, _gw - 2 * _pad, _font * 2.4], "", _fs, _cText, false, _grp] call _lbl;
-        _t ctrlSetStructuredText parseText (("<t color='#8a9a93' size='0.9'>Aucun autre joueur de votre camp en ligne. Les SMS passent de téléphone à téléphone, sans Athena.</t>") call comspec_atak_native_fnc_tr);
+        _t ctrlSetStructuredText parseText (("<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' size='0.9'>Aucun autre joueur de votre camp en ligne. Les SMS passent de téléphone à téléphone, sans Athena.</t>") call comspec_atak_native_fnc_tr);
         _y = _y + _font * 2.4;
     };
     {
@@ -457,7 +474,7 @@ private _drawConv = {
             "Vider l'affichage de cette conversation (sur ce téléphone seulement)", _cText, [1, 1, 1, 0.05], true];
         if (_manage && {_isChannel} && {_peer isNotEqualTo "ATHENA"}) then {
             private _armed = (_s getOrDefault ["chatDelArm", ""]) isEqualTo _curKey;
-            _btns pushBack [_dir + "ui_trash.paa", "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; private _key = (_s getOrDefault ['chatPeer', '']) select [3]; if ((_s getOrDefault ['chatDelArm', '']) isNotEqualTo _key) exitWith { _s set ['chatDelArm', _key]; " + _rr + " }; _s set ['chatDelArm', '']; [_key] spawn { params ['_key']; if ([_key] call comspec_overwatch_connect_fnc_deleteChatChannel) then { private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', 'CH:general']; _s set ['chatView', 'LIST']; }; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'CHAT') then { ['CHAT'] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };",
+            _btns pushBack [_dir + "ui_trash.paa", "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; private _key = (_s getOrDefault ['chatPeer', '']) select [3]; if ((_s getOrDefault ['chatDelArm', '']) isNotEqualTo _key) exitWith { _s set ['chatDelArm', _key]; " + _rr + " }; _s set ['chatDelArm', '']; [_key] spawn { params ['_key']; if ([_key] call comspec_overwatch_connect_fnc_deleteChatChannel) then { private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', 'CH:general']; _s set ['chatView', 'LIST']; }; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'CHAT') then { ['CHAT'] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };",
                 [["Seuls les canaux créés depuis le web ou le terminal se suppriment", "Supprimer ce canal pour tout le monde"] select _custom, "Cliquer encore pour supprimer ce canal pour tout le monde"] select _armed,
                 [_cRed, [1, 1, 1, 1]] select _armed, [[1, 1, 1, 0.05], _cRed] select _armed, _custom];
         };
@@ -481,7 +498,7 @@ private _drawConv = {
     };
     private _tt = ["COMSPEC_RscStructuredText", [_hx, _hh * 0.12, (_bx - _hx) max (_cw * 0.2), _hh * 0.85]] call _mk;
     _tt ctrlSetFontHeight _font;
-    _tt ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.72' color='#8a9a93'>%2</t>", [(_title) call comspec_atak_native_fnc_tr] call _esc, [(_sub) call comspec_atak_native_fnc_tr] call _esc])) call comspec_atak_native_fnc_tr);
+    _tt ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.72' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2</t>", [(_title) call comspec_atak_native_fnc_tr] call _esc, [(_sub) call comspec_atak_native_fnc_tr] call _esc])) call comspec_atak_native_fnc_tr);
     private _topY = _hh;
     // Suppression armée : bandeau de confirmation.
     if (_manage && {(_s getOrDefault ["chatDelArm", ""]) isEqualTo _curKey} && {_isChannel}) then {
@@ -508,8 +525,8 @@ private _drawConv = {
         {
             private _mine = _x get "mine";
             private _urgent = ((_x get "tags") findIf { _x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"] }) >= 0;
-            private _tags = ((_x get "tags") apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"]), [_x] call _esc] }) joinString " ";
-            private _status = switch (_x get "status") do { case "FAILED": { "<t color='#e5483a'>Non transmis</t>" }; case "SENT": { "<t color='#8a9a93'>Envoi…</t>" }; case "PENDING": { "<t color='#f2ab33'>En attente de réseau</t>" }; default { "" }; };
+            private _tags = ((_x get "tags") apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexAlert")] select (_x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"]), [_x] call _esc] }) joinString " ";
+            private _status = switch (_x get "status") do { case "FAILED": { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Non transmis</t>" }; case "SENT": { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Envoi…</t>" }; case "PENDING": { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>En attente de réseau</t>" }; default { "" }; };
             private _stamp = _x getOrDefault ["stamp", ""];
             private _date = [_today, (_stamp splitString " ") select 0] select ((_stamp find "-") > 0);
             _items pushBack [_mine, ["TOC", _x get "author"] select ((_x get "author") isNotEqualTo ""), _x get "time", _date, [_x get "body"] call _esc, _tags,
@@ -523,17 +540,17 @@ private _drawConv = {
                 private _out = (_x getOrDefault ["dir", ""]) isEqualTo "out";
                 ([_x getOrDefault ["body", ""], ""] call comspec_atak_native_fnc_chatParse) params ["", "_ptags", "_ptext"];
                 private _hot = ["URGENT", "FLASH", "IMPORTANT", "CONTACT", "TIC", "MEDEVAC"];
-                private _chips = (_ptags apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in _hot), [_x] call _esc] }) joinString " ";
+                private _chips = (_ptags apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexAlert")] select (_x in _hot), [_x] call _esc] }) joinString " ";
                 // État d'un SMS envoyé : en attente de réseau, envoi, distribué, lu, non transmis (60 s sans accusé).
                 private _st = _x getOrDefault ["status", ""];
                 if (_st isEqualTo "SENDING" && {time - (_x getOrDefault ["sentAt", time]) > 60}) then { _st = "FAILED"; _x set ["status", "FAILED"]; };
                 private _status = if (_out) then { switch (_st) do {
                     case "READ": { format ["<t color='#7fd0ff'>Lu %1</t>", _x getOrDefault ["statusTime", ""]] };
-                    case "DELIVERED": { "<t color='#c9d4cf'>Distribué</t>" };
-                    case "HELD": { "<t color='#f2ab33'>Destinataire hors réseau · remis à son retour</t>" };
-                    case "QUEUED": { "<t color='#f2ab33'>Non transmis · en attente de réseau</t>" };
-                    case "FAILED": { "<t color='#e5483a'>Non transmis · cliquer pour renvoyer</t>" };
-                    case "SENDING": { "<t color='#8a9a93'>Envoi…</t>" };
+                    case "DELIVERED": { "<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Distribué</t>" };
+                    case "HELD": { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Destinataire hors réseau · remis à son retour</t>" };
+                    case "QUEUED": { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Non transmis · en attente de réseau</t>" };
+                    case "FAILED": { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Non transmis · cliquer pour renvoyer</t>" };
+                    case "SENDING": { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Envoi…</t>" };
                     default { "" };
                 } } else { "" };
                 private _unread = !_out && {!(_x getOrDefault ["read", false])};
@@ -570,17 +587,28 @@ private _drawConv = {
     private _threadY = _topY;
     private _threadH = _bh - _threadY - ([0, _barH + _prevH] select _interactive);
     if (_wiki) then { _items = []; };
+    _mk = _mkReal;
+    if (_threadOnly) then {
+        // Ancien fil : position relevée, masqué tout de suite, supprimé à l'image suivante (fn_pageClear).
+        private _oldT = uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull];
+        _scrollMem set ["chatThread:" + _peer, ctrlScrollValues _oldT];
+        _oldT ctrlShow false;
+        _oldT ctrlEnable false;
+        [{ ctrlDelete _this; }, _oldT] call comspec_atak_native_fnc_nextFrame;
+    };
     private _thread = ["COMSPEC_RscControlsGroup", [_cx, _threadY, _cw, _threadH]] call _mk;
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatThread", _thread];
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatThreadPeer", _peer];
     private _tw = _cw - 0.012 - 2 * _pad;
     private _y = _pad * 0.6;
     if (_wiki) then {
         // Mini wiki du tchat
         private _t = [_thread, "COMSPEC_RscStructuredText", [_pad, _y, _tw, _threadH]] call _gmk;
         private _h = { params ["_x"]; format ["<t color='%2' font='COMSPEC_BarlowBold'>%1</t>", _x, _accHex] };
-        private _c = { params ["_k", "_v"]; format ["<t font='EtelkaMonospacePro' color='#f2ab33'>%1</t>  %2", _k, _v] };
+        private _c = { params ["_k", "_v"]; format ["<t font='EtelkaMonospacePro' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>  %2", _k, _v] };
         _t ctrlSetStructuredText parseText ((([
             ["AIDE DU TCHAT"] call _h,
-            "<t color='#8a9a93'>Tapez une ou plusieurs commandes au début du message, puis le texte. L'aperçu au-dessus de la saisie montre ce qui partira.</t>",
+            "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Tapez une ou plusieurs commandes au début du message, puis le texte. L'aperçu au-dessus de la saisie montre ce qui partira.</t>",
             "", ["Priorité"] call _h,
             ["/routine  /r", "message courant (par défaut)"] call _c,
             ["/prioritaire  /p", "à traiter rapidement"] call _c,
@@ -604,7 +632,7 @@ private _drawConv = {
             "", ["Exemples"] call _h,
             "<t font='EtelkaMonospacePro'>/u /contact 2 BMP en approche @grille</t>",
             "<t font='EtelkaMonospacePro'>/sitrep RAS sur la position, en attente</t>",
-            "", "<t color='#8a9a93'>/aide rouvre cette page. Le bouton ? aussi.</t>"
+            "", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>/aide rouvre cette page. Le bouton ? aussi.</t>"
         ] joinString "<br/>")) call comspec_atak_native_fnc_tr);
         _t ctrlSetPosition [_pad, _y, _tw, (ctrlTextHeight _t) max _threadH];
         _t ctrlCommit 0;
@@ -614,7 +642,7 @@ private _drawConv = {
         [[_cx + (_cw - _eh * 1.6 / _ratio) / 2, _threadY + _threadH * 0.28, _eh * 1.6 / _ratio, _eh * 1.6], [_dir + "app_chat.paa", _dir + "app_group.paa"] select !_isChannel, [_cDim select 0, _cDim select 1, _cDim select 2, 0.45], 0.9] call _icon;
         private _t = ["COMSPEC_RscStructuredText", [_cx + _pad, _threadY + _threadH * 0.28 + _eh * 1.8, _cw - 2 * _pad, _font * 3]] call _mk;
         _t ctrlSetFontHeight _fs;
-        _t ctrlSetStructuredText parseText (((["<t color='#8a9a93' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", ["<t color='#8a9a93' align='center'>Aucun message du TOC pour l'instant.</t>", "<t color='#8a9a93' align='center'>Chargement des messages…</t>"] select _booting] select _isChannel)) call comspec_atak_native_fnc_tr);
+        _t ctrlSetStructuredText parseText (((["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' align='center'>Aucun message du TOC pour l'instant.</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' align='center'>Chargement des messages…</t>"] select _booting] select _isChannel)) call comspec_atak_native_fnc_tr);
     };
     // Bulles : les miennes à droite ; les autres à gauche avec la photo de l'opérateur (TOC : logo Athena),
     // une seule fois par série du même auteur. SMS : bulles bleues pour les miennes.
@@ -700,7 +728,7 @@ private _drawConv = {
         private _top = if (_showAv && {_first}) then {
             format ["<t size='0.82' font='COMSPEC_BarlowBold' color='%1'>%2</t>%3<br/>", [_aCol] call _hex, [_author] call _esc, ["", " " + _chips] select (_chips isNotEqualTo "")]
         } else { ["", _chips + "<br/>"] select (_chips isNotEqualTo "") };
-        private _foot = format ["<t align='right' size='0.72' color='%3'>%1%2</t>", _time, ["", "  " + _status] select (_status isNotEqualTo ""), ["#8a9a93", "#d6e4ef"] select (_sms && _mine)];
+        private _foot = format ["<t align='right' size='0.72' color='%3'>%1%2</t>", _time, ["", "  " + _status] select (_status isNotEqualTo ""), [(COMSPEC_ATAK_Th get "hexTextMuted"), "#d6e4ef"] select (_sms && _mine)];
         _b ctrlSetStructuredText parseText ((format ["%1%2<br/>%3", _top, _body, _foot]) call comspec_atak_native_fnc_tr);
         private _h = (ctrlTextHeight _b) + _font * 0.15;
         _b ctrlSetPosition [_bx, _y, _bubbleW, _h];
@@ -731,7 +759,7 @@ private _drawConv = {
         default { 1 };
     };
     ["chatThread:" + _peer, _thread, _target] call _keepScroll;
-    if !(_interactive) exitWith {};
+    if (_threadOnly || {!_interactive}) exitWith {};
 
     // --- Aperçu des commandes : type détecté, puces et texte final ; suggestions pendant qu'on tape une commande.
     private _by = _bh - _barH;
@@ -752,13 +780,13 @@ private _drawConv = {
         if (_typing) exitWith {
             private _all = ["routine", "prioritaire", "urgent", "contact", "tic", "sitrep", "salute", "lace", "medevac", "intel", "ordre", "log", "aide"];
             private _m = _all select { (_x select [0, (count _last) - 1]) isEqualTo (toLower (_last select [1])) };
-            _p ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#8a9a93'>Commandes : </t><t size='0.8' font='EtelkaMonospacePro' color='#f2ab33'>%1</t>", (_m apply { "/" + _x }) joinString "  "]) call comspec_atak_native_fnc_tr);
+            _p ctrlSetStructuredText parseText ((format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Commandes : </t><t size='0.8' font='EtelkaMonospacePro' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", (_m apply { "/" + _x }) joinString "  "]) call comspec_atak_native_fnc_tr);
         };
         ([_txt] call comspec_atak_native_fnc_chatCommand) params ["", "", "_text", "_unknown", "_tags"];
-        private _chips = (_tags apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>[%2]</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "CONTACT", "TIC", "MEDEVAC"]), _x] }) joinString " ";
-        private _bad = ["", format ["  <t color='#e5483a'>inconnu : %1</t>", _unknown joinString " "]] select ((count _unknown) > 0);
+        private _chips = (_tags apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>[%2]</t>", [(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexAlert")] select (_x in ["URGENT", "CONTACT", "TIC", "MEDEVAC"]), _x] }) joinString " ";
+        private _bad = ["", format ["  <t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>inconnu : %1</t>", _unknown joinString " "]] select ((count _unknown) > 0);
         private _safe = [[_text, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace;
-        _p ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#8a9a93'>Aperçu : </t><t size='0.8'>%1 %2</t>%3", _chips, _safe, _bad]) call comspec_atak_native_fnc_tr);
+        _p ctrlSetStructuredText parseText ((format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aperçu : </t><t size='0.8'>%1 %2</t>%3", _chips, _safe, _bad]) call comspec_atak_native_fnc_tr);
     }];
     [uiNamespace getVariable ["COMSPEC_ATAK_ChatDraft", ""]] call (uiNamespace getVariable "COMSPEC_ATAK_ChatPreviewCode");
 
@@ -804,7 +832,7 @@ private _drawConv = {
             if ([_peer, ctrlText _edit] call comspec_atak_native_fnc_p2pSend) then {
                 _edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
                 uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
-                [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ [true] call comspec_atak_native_fnc_pageChat; }] call comspec_atak_native_fnc_nextFrame;
             };
         };
     };

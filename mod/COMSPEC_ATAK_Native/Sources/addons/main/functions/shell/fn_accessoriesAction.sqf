@@ -170,7 +170,7 @@ switch (_act) do {
                 && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""]) isEqualTo "ACCESSORIES"}) then {
                 ["ACCESSORIES"] call comspec_atak_native_fnc_pageRender;
             };
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     default { [] };

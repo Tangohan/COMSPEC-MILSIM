@@ -9,7 +9,7 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 if !([] call comspec_atak_native_fnc_bridge) exitWith {
-    [[["title", "Avis de recherche"], ["text", "<t color='#8a9a93'>Les avis viennent d'Athena par COMSPEC Overwatch, qui n'est pas chargé sur ce serveur.</t>"]], [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    [[["title", "Avis de recherche"], ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Les avis viennent d'Athena par COMSPEC Overwatch, qui n'est pas chargé sur ce serveur.</t>"]], [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -23,7 +23,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_WantedMission" }) then {
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Wanted", []];
 if ((count _data) isEqualTo 0) then {
     uiNamespace setVariable ["COMSPEC_ATAK_Wanted", [[], "", ""]];
-    [{ ["load"] call comspec_atak_native_fnc_wantedAction; }] call CBA_fnc_execNextFrame;
+    [{ ["load"] call comspec_atak_native_fnc_wantedAction; }] call comspec_atak_native_fnc_nextFrame;
     _data = [[], "", ""];
 };
 _data params ["_list", "_at", "_err"];
@@ -32,7 +32,7 @@ private _filter = _s getOrDefault ["wantedFilter", "ALL"];
 private _open = _s getOrDefault ["wantedOpen", ""];
 private _dir = "\z\comspec_atak_native\addons\main\data\";
 private _kindIcon = createHashMapFromArray [["person", "app_wanted.paa"], ["watchlist", "app_intel.paa"], ["interest", "app_sse.paa"]];
-private _kindColor = createHashMapFromArray [["person", "#e05050"], ["watchlist", "#f2ab33"], ["interest", "#7d6ff0"]];
+private _kindColor = createHashMapFromArray [["person", "#e05050"], ["watchlist", (COMSPEC_ATAK_Th get "hexWarn")], ["interest", "#7d6ff0"]];
 private _rows = [];
 
 private _sel = _list param [(_list findIf { format ["%1:%2", _x select 0, _x select 1] isEqualTo _open }), []];
@@ -42,18 +42,18 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     if !(_img isEqualType "") then { _img = ""; };
     _rows append [
         ["title", "AVIS DE RECHERCHE"],
-        ["text", format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t>%2<br/><t color='%3' font='COMSPEC_BarlowBold'>%4</t>  <t color='#8a9a93' size='0.85'>%5</t>",
-            [_name] call _esc, ["", format ["<br/><t color='#c9d4cf'>dit « %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""),
-            _kindColor getOrDefault [_kind, "#c9d4cf"], [toUpper _level] call _esc, [_ref] call _esc]]
+        ["text", format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t>%2<br/><t color='%3' font='COMSPEC_BarlowBold'>%4</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' size='0.85'>%5</t>",
+            [_name] call _esc, ["", format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>dit « %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""),
+            _kindColor getOrDefault [_kind, (COMSPEC_ATAK_Th get "hexTextDim")], [toUpper _level] call _esc, [_ref] call _esc]]
     ];
-    if (_orig isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>Origine : %1</t>", [_orig] call _esc]]; };
+    if (_orig isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Origine : %1</t>", [_orig] call _esc]]; };
     if (_img isNotEqualTo "") then { _rows pushBack ["image", _img]; } else {
-        if (_url isNotEqualTo "") then { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Photo en chargement, ou au format PNG (visible sur Athena seulement).</t>"]; } else { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Aucune photo sur Athena.</t>"]; };
+        if (_url isNotEqualTo "") then { _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Photo en chargement, ou au format PNG (visible sur Athena seulement).</t>"]; } else { _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune photo sur Athena.</t>"]; };
     };
     if (_details isNotEqualTo "") then { _rows append [["section", "Éléments connus", ""], ["text", [_details] call _esc]]; };
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["WANTED", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }]];
     _rows append [
-        ["text", format ["<t size='0.8' color='#8a9a93'>Mis à jour le %1. En cas de contact : contrôle d'identité dans l'app SSE, puis FRS au bureau SSE.</t>", [_upd] call _esc]],
+        ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Mis à jour le %1. En cas de contact : contrôle d'identité dans l'app SSE, puis FRS au bureau SSE.</t>", [_upd] call _esc]],
         ["buttons", [["RETOUR", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }], ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }, true]]]
     ];
 } else {
@@ -68,17 +68,17 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
         ]]
     ];
     if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e0a040'>%1</t>", _err]]; };
-    if (_at isEqualTo "" && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Récupération des avis…</t>"]; };
+    if (_at isEqualTo "" && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Récupération des avis…</t>"]; };
     private _shown = _list select { _filter isEqualTo "ALL" || {(_x select 0) isEqualTo _filter} };
-    if (_at isNotEqualTo "" && {(count _shown) isEqualTo 0} && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun avis de recherche en cours.</t>"]; };
+    if (_at isNotEqualTo "" && {(count _shown) isEqualTo 0} && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun avis de recherche en cours.</t>"]; };
     {
         _x params ["_kind", "_id", "_ref", "_name", "_alias", "_level", "", "", "", ["_orig", ""]];
         private _key = format ["%1:%2", _kind, _id];
         private _img = _imgs getOrDefault [_key, ""];
         if !(_img isEqualType "") then { _img = ""; };
         _rows pushBack ["person", [_dir + (_kindIcon getOrDefault [_kind, "app_intel.paa"]), _img] select (_img isNotEqualTo ""),
-            format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.8' color='%3'>%4</t>  <t size='0.75' color='#8a9a93'>%5</t>",
-                [_name] call _esc, ["", format ["  <t color='#c9d4cf' size='0.85'>« %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""), _kindColor getOrDefault [_kind, "#c9d4cf"], [_level] call _esc, [[_ref, format ["%1 · %2", _ref, _orig]] select (_orig isNotEqualTo "")] call _esc],
+            format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.8' color='%3'>%4</t>  <t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%5</t>",
+                [_name] call _esc, ["", format ["  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "' size='0.85'>« %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""), _kindColor getOrDefault [_kind, (COMSPEC_ATAK_Th get "hexTextDim")], [_level] call _esc, [[_ref, format ["%1 · %2", _ref, _orig]] select (_orig isNotEqualTo "")] call _esc],
             [["FICHE", compile format ["['open', %1] call comspec_atak_native_fnc_wantedAction;", str _key], true]],
             [[0.9, 0.9, 0.9, 1], [1, 1, 1, 1]] select (_img isNotEqualTo "")];
     } forEach _shown;

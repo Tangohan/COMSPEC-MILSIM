@@ -320,7 +320,7 @@ switch (_ev) do {
             _list pushBack _t;
             private _o = _d ctrlCreate ["COMSPEC_RscButtonOverlay", -1];
             _o ctrlSetPosition [_x0, _y0 + pixelH * 3 + _forEachIndex * _rh, _wM, _rh]; _o ctrlCommit 0;
-            _o ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['pick', %1] call comspec_atak_native_fnc_zoneMap; }] call CBA_fnc_execNextFrame;", str _k]];
+            _o ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['pick', %1] call comspec_atak_native_fnc_zoneMap; }] call comspec_atak_native_fnc_nextFrame;", str _k]];
             _list pushBack _o;
         } forEach _rows;
         // Suivis par la page : un rendu complet (changement d'app) les efface aussi.

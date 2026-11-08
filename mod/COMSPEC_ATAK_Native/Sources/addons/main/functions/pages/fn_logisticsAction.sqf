@@ -19,7 +19,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_Logi", _f];
 private _reqs = missionNamespace getVariable ["COMSPEC_ATAK_LogiReqs", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_LogiReqs", _reqs];
 private _now = [time, serverTime] select isMultiplayer;
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "LOGI") then { ["LOGI"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "LOGI") then { ["LOGI"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 // Les champs texte sont relus avant chaque nouveau rendu.
 private _save = {
     private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
@@ -44,7 +44,7 @@ switch (_act) do {
     case "pickMap": {
         call _save;
         _s set ["logiPick", "1"];
-        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         ["INFO", "Touchez le point de livraison sur la carte", 4, 40] call comspec_atak_native_fnc_notify;
     };
     case "picked": {
@@ -53,7 +53,7 @@ switch (_act) do {
         _f set ["pickPos", [_arg select 0, _arg select 1, 0]];
         _s set ["logiTab", "NEW"];
         ["INFO", format ["Point de livraison : %1", [_arg, 8] call comspec_atak_native_fnc_gridRef], 3, 30] call comspec_atak_native_fnc_notify;
-        [{ ["LOGI"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["LOGI"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "items": {
         // Contenu de la demande d'après le formulaire : [[classe, nombre]...], libellé, classe de caisse.
@@ -161,7 +161,7 @@ switch (_act) do {
         private _p = ([_arg] call _get) getOrDefault ["pos", []];
         if ((count _p) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     case "airdrop": {
         private _r = [_arg] call _get;
@@ -176,7 +176,7 @@ switch (_act) do {
         [_arg, "EN_ROUTE"] call _push;
         private _eta = 40 + random 50;
         ["INFO", format ["Largage %1 : avion en route, arrivée dans %2 s environ", _arg, round _eta], 5, 40] call comspec_atak_native_fnc_notify;
-        [{ ["drop", _this] call comspec_atak_native_fnc_logisticsAction; }, _arg, _eta] call CBA_fnc_waitAndExecute;
+        [{ ["drop", _this] call comspec_atak_native_fnc_logisticsAction; }, _arg, _eta] call comspec_atak_native_fnc_waitAndExec;
     };
     case "drop": {
         // Machine du logisticien qui a lancé le largage : caisse sous parachute remplie selon la demande.
@@ -223,7 +223,7 @@ switch (_act) do {
                 if (!isNil "ace_refuel_fnc_makeJerryCan") then { [_can, 20] call ace_refuel_fnc_makeJerryCan; };
                 _trash pushBack _can;
             };
-            [{ ["landed", _this] call comspec_atak_native_fnc_logisticsAction; }, [_id, getPosATL _box]] call CBA_fnc_execNextFrame;
+            [{ ["landed", _this] call comspec_atak_native_fnc_logisticsAction; }, [_id, getPosATL _box]] call comspec_atak_native_fnc_nextFrame;
             // Caisse (et jerrican) oubliés : retirés au bout de 30 min par le serveur, même si le demandeur a quitté la partie.
             ["comspec_atak_native_deleteLater", [_trash, 1800]] call CBA_fnc_serverEvent;
         };
@@ -268,7 +268,7 @@ switch (_act) do {
                 if (_st isEqualTo "LIVREE" && {(_r get "mode") isEqualTo "AIRDROP"} && {_phone} && {(count _pos) >= 2}) then {
                     private _m = createMarkerLocal [format ["COMSPEC_LOGI_%1", _id], _pos];
                     _m setMarkerTypeLocal "mil_pickup"; _m setMarkerColorLocal "ColorGreen"; _m setMarkerTextLocal format ["Largage %1", _id];
-                    [{ deleteMarkerLocal _this; }, _m, 900] call CBA_fnc_waitAndExecute;
+                    [{ deleteMarkerLocal _this; }, _m, 900] call comspec_atak_native_fnc_waitAndExec;
                 };
             };
         };

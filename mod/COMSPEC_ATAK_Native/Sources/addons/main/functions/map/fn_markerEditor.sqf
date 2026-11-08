@@ -7,10 +7,13 @@ if ((count _e) isEqualTo 0) exitWith { false };
 ([] call comspec_atak_native_fnc_markerCatalog) params ["_types", "_colors"];
 private _isNew = (_e get "name") isEqualTo "";
 private _poly = (_e get "shape") isEqualTo "POLYLINE";
+// Fiche en sections (système de design 3.1.0) : en-tête avec la grille, puis Identité, Apparence, Diffusion, actions.
 private _rows = [
-    ["title", [format ["Marqueur · %1", [_e get "pos"] call comspec_atak_native_fnc_gridRef], "Nouveau marqueur"] select _isNew],
+    ["header", ["Marqueur", "Nouveau marqueur"] select _isNew, format ["%1 · %2", [_e get "pos"] call comspec_atak_native_fnc_gridRef, ["point", "tracé"] select _poly], [], {}],
+    ["section", "Identité", "Titre affiché sur la carte, description partagée"],
     ["edit", "text", "Titre", _e get "text"],
-    ["memo", "desc", "Description", _e get "desc", 2]
+    ["memo", "desc", "Description", _e get "desc", 2],
+    ["section", "Apparence", ["Type, couleur, taille, orientation, opacité", "Couleur et opacité du tracé"] select _poly]
 ];
 if !(_poly) then {
     // Liste courte d'abord (palette : tactique, puis chaque camp et son type d'unité), puis la bibliothèque des
@@ -54,11 +57,15 @@ if !(_poly) then {
 _rows pushBack ["combo", "alpha", "Opacité", [["100 %", "1"], ["75 %", "0.75"], ["50 %", "0.5"], ["25 %", "0.25"]], _e get "alpha"];
 if (_isNew) then {
     private _ch = [["Global", "0"], ["Camp", "1"], ["Commandement", "2"], ["Groupe", "3"], ["Véhicule", "4"], ["Direct", "5"]];
+    _rows pushBack ["section", "Diffusion", "Qui voit ce marqueur"];
     _rows pushBack ["combo", "channel", "Canal", _ch apply { [_x select 0, _x select 1] }, _e get "channel"];
 };
-private _btns = [["ENREGISTRER", { [] call comspec_atak_native_fnc_markerEditSave; }, true]];
-if !(_isNew) then { _btns pushBack ["SUPPRIMER", { [((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) get "markerEdit") get "name"] call comspec_atak_native_fnc_markerDelete; }]; };
-_btns pushBack ["ANNULER", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerEdit", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
-_rows pushBack ["buttons", _btns];
+_rows pushBack ["gap"];
+// Actions : ENREGISTRER (principal) et ANNULER côte à côte ; SUPPRIMER en rouge, à part, pour un marqueur existant.
+_rows pushBack ["buttons", [
+    ["ENREGISTRER", { [] call comspec_atak_native_fnc_markerEditSave; }, true],
+    ["ANNULER", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerEdit", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]
+]];
+if !(_isNew) then { _rows pushBack ["buttons", [["SUPPRIMER LE MARQUEUR", { [((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) get "markerEdit") get "name"] call comspec_atak_native_fnc_markerDelete; }, "red", true, "Efface ce marqueur de la carte (Suppr sur le marqueur pointé fait pareil)"]]]; };
 [_rows, _rect, false] call comspec_atak_native_fnc_formRender;
 true

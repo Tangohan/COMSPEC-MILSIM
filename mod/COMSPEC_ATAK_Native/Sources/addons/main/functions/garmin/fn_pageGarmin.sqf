@@ -23,9 +23,9 @@ private _worn = _gm getOrDefault ["worn", true];
 if (!_worn) then { _tab = "NOWATCH"; };
 
 // --- Couleurs (thème sombre de l'app) ---
-private _cBg = [0.065, 0.065, 0.065, 1];
+private _cBg = COMSPEC_ATAK_Th get "bg1";
 private _cCard = [0.145, 0.145, 0.145, 1];
-private _cLine = [0.22, 0.22, 0.22, 1];
+private _cLine = COMSPEC_ATAK_Th get "border";
 private _rgb = {
     params ["_h", ["_a", 1]];
     private _d = "0123456789abcdef";
@@ -49,10 +49,10 @@ private _click = {
     params ["_rect", "_code", ["_inGroup", true]];
     private _b = ["COMSPEC_RscButtonOverlay", _rect, "", _inGroup] call comspec_atak_native_fnc_pageCtrl;
     _b setVariable ["comspec_click", _code];
-    _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ [] call _this; }, _c getVariable ["comspec_click", {}]] call CBA_fnc_execNextFrame; }];
+    _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ [] call _this; }, _c getVariable ["comspec_click", {}]] call comspec_atak_native_fnc_nextFrame; }];
     _b
 };
-private _redraw = { [{ ['GARMIN'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ ['GARMIN'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 
 // --- Mise en forme des nombres ---
 private _thou = {

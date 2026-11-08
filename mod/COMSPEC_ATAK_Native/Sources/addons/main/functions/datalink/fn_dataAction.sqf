@@ -19,7 +19,7 @@ private _len = missionNamespace getVariable ["comspec_atak_native_data_length", 
 private _speed = (missionNamespace getVariable ["comspec_atak_native_data_speed", 1]) max 0.1;
 private _render = {
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DATALINK" && {!isNull ([] call comspec_atak_native_fnc_display)}) then {
-        [{ ["DATALINK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["DATALINK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
 };
 private _end = {
@@ -66,7 +66,7 @@ switch (_act) do {
         if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
             [true] call comspec_atak_native_fnc_open;
         };
-        [{ ["DATALINK"] call comspec_atak_native_fnc_navigate; [] call comspec_atak_native_fnc_dataOverlay; }] call CBA_fnc_execNextFrame;
+        [{ ["DATALINK"] call comspec_atak_native_fnc_navigate; [] call comspec_atak_native_fnc_dataOverlay; }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     case "disconnect": {

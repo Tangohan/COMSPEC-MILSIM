@@ -174,7 +174,7 @@ if (_headOn) then {
     _rows append [
         ["edit", "case", "Rattacher à un dossier (facultatif)", _draft getOrDefault ["case", ""]],
         ["buttons", [
-            ["EFFACER LA FICHE", { uiNamespace setVariable ["COMSPEC_ATAK_FrsDraft", createHashMap]; uiNamespace setVariable ["COMSPEC_ATAK_FrsPieces", []]; uiNamespace setVariable ["COMSPEC_ATAK_FrsHint", ["", false]]; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", true]; [{ ["FRS"] call comspec_atak_native_fnc_pageRender; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", false]; }] call CBA_fnc_execNextFrame; }],
+            ["EFFACER LA FICHE", { uiNamespace setVariable ["COMSPEC_ATAK_FrsDraft", createHashMap]; uiNamespace setVariable ["COMSPEC_ATAK_FrsPieces", []]; uiNamespace setVariable ["COMSPEC_ATAK_FrsHint", ["", false]]; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", true]; [{ ["FRS"] call comspec_atak_native_fnc_pageRender; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", false]; }] call comspec_atak_native_fnc_nextFrame; }],
             ["FERMER", { ["head"] call comspec_atak_native_fnc_frsAction; }, true]
         ]]
     ];
@@ -336,7 +336,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                     _rows pushBack ["text", format ["<t color='#7d6ff0' font='COMSPEC_BarlowBold'>%1</t>  %2  <t color='#9a9a9a'>%3 · %4%5</t><br/><t size='0.85'>%6</t>", _kind, _ref, _time, _status, ["", format [" · %1 pièce(s)", _np]] select (_np > 0), [_excerpt] call _esc]];
                 } forEach (+_sent call { reverse _this; _this });
             } else {
-                if !(_scope in _lib) then { [{ ["load", _this] call comspec_atak_native_fnc_frsLibrary; }, _scope] call CBA_fnc_execNextFrame; };
+                if !(_scope in _lib) then { [{ ["load", _this] call comspec_atak_native_fnc_frsLibrary; }, _scope] call comspec_atak_native_fnc_nextFrame; };
                 (_lib getOrDefault [_scope, [[], "", ""]]) params ["_notes", "_at", "_err"];
                 private _open = _ui getOrDefault ["libOpen", ""];
                 private _note = _notes param [(_notes findIf { (_x select 0) isEqualTo _open }), []];
@@ -352,7 +352,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                         private _imgs = (uiNamespace getVariable ["COMSPEC_ATAK_FrsImg", createHashMap]) getOrDefault [_id, []];
                         if ((count _imgs) isEqualTo 0) then {
                             _rows pushBack ["text", format ["<t size='0.85' color='#9a9a9a'>Chargement de %1 photo(s)…</t>", count _urls]];
-                            [{ ["images", _this] call comspec_atak_native_fnc_frsLibrary; }, _id] call CBA_fnc_execNextFrame;
+                            [{ ["images", _this] call comspec_atak_native_fnc_frsLibrary; }, _id] call comspec_atak_native_fnc_nextFrame;
                         } else {
                             { if (_x isEqualTo "") then { _rows pushBack ["text", "<t size='0.8' color='#9a9a9a'>Photo au format PNG : visible sur Athena seulement.</t>"]; } else { _rows pushBack ["image", _x]; }; } forEach _imgs;
                         };

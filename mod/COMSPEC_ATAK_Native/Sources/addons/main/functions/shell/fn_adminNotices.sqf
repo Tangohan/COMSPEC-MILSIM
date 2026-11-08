@@ -37,7 +37,7 @@ private _keep = {
     _l
 };
 missionNamespace setVariable ["COMSPEC_ATAK_NoticeKeep", _keep];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_act) do {
     case "check": {
         if (!hasInterface) exitWith {};
@@ -86,16 +86,23 @@ switch (_act) do {
                 // Avis déjà validé par le joueur : jamais réaffiché, le COMPRIS repart vers Athena.
                 if (_id isNotEqualTo "" && {_id in _acked}) then { _again pushBackUnique _id; continue };
                 // « Sur mon téléphone » : compte rendu ou CR fin d'op rempli sur le vrai téléphone. Envoyé par cet ATAK
-                // comme s'il avait été rempli ici (image suivante, hors de cette boucle), sans alerte, validé tout de suite.
+                // comme s'il avait été rempli ici (image suivante, hors de cette boucle), sans alerte. Athena note « reçu »
+                // ici (delivered) et « envoyé » (acked) seulement après l'envoi : avant, la page web affichait « Envoyé sur
+                // votre ATAK » alors que la fiche pouvait être refusée ou perdue. Fiche refusée (gardée en brouillon) : reste
+                // « reçu », reproposée à la partie suivante tant que l'avis vit (2 h).
                 if (_kind in ["mobile_report", "mobile_debrief"]) then {
                     if (_id isNotEqualTo "" && {!(_id in _seen)}) then {
                         _seen pushBack _id;
-                        _again pushBackUnique _id;
-                        ["COMSPEC_ATAK_NoticeAck", _id] call _keep;
+                        _new pushBack _id;
                         [{
-                            params ["_kind", "_body"];
+                            params ["_kind", "_body", "_id"];
+                            private _fnKeep = missionNamespace getVariable ["COMSPEC_ATAK_NoticeKeep", {[]}];
+                            missionNamespace setVariable ["COMSPEC_ATAK_MobileSent", false];
                             if (_kind isEqualTo "mobile_report") then { ["mobile", _body] call comspec_atak_native_fnc_reportAction; } else { ["mobile", _body] call comspec_atak_native_fnc_debrief; };
-                        }, [_kind, _body]] call CBA_fnc_execNextFrame;
+                            if !(missionNamespace getVariable ["COMSPEC_ATAK_MobileSent", false]) exitWith {};
+                            ["COMSPEC_ATAK_NoticeAck", _id] call _fnKeep;
+                            [_id] spawn { params ["_id"]; ["COMSPECExtension", "AdminControl.Ack", [_id, "acked", getPlayerUID player]] call comspec_atak_native_fnc_extAwait; };
+                        }, [_kind, _body, _id]] call comspec_atak_native_fnc_nextFrame;
                     };
                     continue;
                 };

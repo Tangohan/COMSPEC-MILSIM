@@ -466,7 +466,8 @@ switch (_tab) do {
         };
         ["stop"] call comspec_atak_native_fnc_datingCam;
         private _keys = ["keys"] call comspec_atak_native_fnc_hvtIntel;
-        private _rows = [["section", "Dossiers HVT", "Position estimée d'après les tuyaux que vous avez confirmés"]];
+        // Traces civiles (fn_hvtTrace) : seulement si la mission ou le Zeus les active et que ce joueur y a droit.
+        private _rows = (["rows"] call comspec_atak_native_fnc_hvtTrace) + [["section", "Dossiers HVT", "Position estimée d'après les tuyaux que vous avez confirmés"]];
         {
             private _k = _x;
             private _d = ["dossier", _k] call comspec_atak_native_fnc_hvtIntel;

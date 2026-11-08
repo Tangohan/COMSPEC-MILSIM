@@ -29,7 +29,7 @@ switch (_act) do {
         ["close"] call comspec_atak_native_fnc_buzzAlert;
         ["MAP"] call comspec_atak_native_fnc_navigate;
         private _p = [_pos, getPosASL _src] select (!isNull _src && {alive _src});
-        if ((count _p) >= 2) then { [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, _p, 0.2] call CBA_fnc_waitAndExecute; };
+        if ((count _p) >= 2) then { [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, _p, 0.2] call comspec_atak_native_fnc_waitAndExec; };
     };
     case "draw": {
         call _clear;
@@ -79,7 +79,7 @@ switch (_act) do {
             _b ctrlSetPosition [(_bx + _pad * 3) + _pad + _forEachIndex * (_bw3 + _pad), _y + _h - _font * 1.6, _bw3, _font * 1.35];
             _b ctrlSetText ((_lab) call comspec_atak_native_fnc_tr);
             _b ctrlSetFontHeight _fs;
-            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ [%1] call comspec_atak_native_fnc_buzzAlert; }] call CBA_fnc_execNextFrame;", str _a]];
+            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ [%1] call comspec_atak_native_fnc_buzzAlert; }] call comspec_atak_native_fnc_nextFrame;", str _a]];
             _ctrls pushBack _b;
         } forEach [["VU", "ack", "COMSPEC_RscButtonPrimary"], ["CARTE", "map", "COMSPEC_RscButton"], ["FERMER", "close", "COMSPEC_RscButton"]];
         { _x ctrlCommit 0; } forEach _ctrls;
@@ -89,7 +89,7 @@ switch (_act) do {
         // Clignotement du bandeau les premières secondes (animé par le moteur, sans boucle par image).
         if ((diag_tickTime - _at) < 6) then {
             {
-                [{ params ["_c", "_f"]; if (!isNull _c) then { _c ctrlSetFade _f; _c ctrlCommit 0.2; }; }, [_band, [0.6, 0] select (_forEachIndex mod 2 isEqualTo 1)], _forEachIndex * 0.4] call CBA_fnc_waitAndExecute;
+                [{ params ["_c", "_f"]; if (!isNull _c) then { _c ctrlSetFade _f; _c ctrlCommit 0.2; }; }, [_band, [0.6, 0] select (_forEachIndex mod 2 isEqualTo 1)], _forEachIndex * 0.4] call comspec_atak_native_fnc_waitAndExec;
             } forEach [0, 1, 2, 3, 4, 5, 6, 7];
         };
     };

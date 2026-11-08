@@ -126,14 +126,14 @@ switch (_mode) do {
         };
         playSound "ClickSoft";
         // À l'image suivante : la carte vient de prendre le focus (fn_mapUnfocus le lui retire), le menu passe devant.
-        [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+        [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "close": {
         [] call _unbindEsc;
         // Contrôles masqués tout de suite, supprimés à l'image suivante (jamais pendant le clic d'un de leurs boutons).
         private _old = uiNamespace getVariable ["COMSPEC_ATAK_MapCtxCtrls", []];
         { if (!isNull _x) then { _x ctrlShow false; _x ctrlEnable false; }; } forEach _old;
-        [{ { ctrlDelete _x; } forEach _this; }, _old] call CBA_fnc_execNextFrame;
+        [{ { ctrlDelete _x; } forEach _this; }, _old] call comspec_atak_native_fnc_nextFrame;
         uiNamespace setVariable ["COMSPEC_ATAK_MapCtxCtrls", []];
         _s set ["mapCtx", createHashMap];
     };
@@ -149,7 +149,7 @@ switch (_mode) do {
         // Supprimer : sous-menu (plusieurs éléments sous le clic), puis deux clics (CONFIRMER), bandeau ANNULER ensuite.
         if (_arg isEqualTo "DELS") exitWith {
             _c set ["sub", "DEL"]; _c set ["at", diag_tickTime]; playSound "ClickSoft";
-            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
         };
         if ((_arg select [0, 4]) isEqualTo "DEL_") exitWith {
             private _i = parseNumber (_arg select [4]);
@@ -157,7 +157,7 @@ switch (_mode) do {
             if ((count _e) isEqualTo 0) exitWith {};
             if ((_c getOrDefault ["delCf", -1]) isNotEqualTo _i) exitWith {
                 _c set ["delCf", _i]; _c set ["at", diag_tickTime]; playSound "ClickSoft";
-                [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+                [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
             };
             ["close"] call comspec_atak_native_fnc_mapCtxMenu;
             playSound "ClickSoft";
@@ -210,7 +210,7 @@ switch (_mode) do {
             _c set ["sub", switch (_arg) do { case "ZNST": { "ZNST" }; case "ZNAX"; case "ZNAX_SUB": { "ZNAX" }; default { "ZN" }; }];
             _c set ["at", diag_tickTime];
             playSound "ClickSoft";
-            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
         };
         if (_arg in ["DRONE", "BACK", "AI", "AIPOST", "AINEXT"]) exitWith {
             // Groupe IA suivant (du plus proche au plus loin du point cliqué).
@@ -227,7 +227,7 @@ switch (_mode) do {
             }];
             _c set ["at", diag_tickTime];
             playSound "ClickSoft";
-            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
         };
         private _pos = _c get "pos";
         private _m = _c getOrDefault ["marker", ""];
@@ -316,7 +316,7 @@ switch (_mode) do {
                 { if ((_x find "COMSPEC_ALERT_") isEqualTo 0 || {(_x find "COMSPEC_PANIC_") isEqualTo 0}) then { deleteMarkerLocal _x; _n = _n + 1; }; } forEach allMapMarkers;
                 _s set ["selectedMarker", ""];
                 ["INFO", format ["%1 alerte(s) effacée(s) de la carte", _n], 2, 20] call comspec_atak_native_fnc_notify;
-                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             };
             case "NOFLY": { ["add", [_pos, 200]] call comspec_atak_native_fnc_noFly; };
             case "NOFLYDEL": {
@@ -360,7 +360,7 @@ switch (_mode) do {
             case "DHUNT";
             case "DHOVER";
             case "DLAND": {
-                [{ ["mapOrder", _this] call comspec_atak_native_fnc_droneAction; }, [_arg select [1], +_pos]] call CBA_fnc_execNextFrame;
+                [{ ["mapOrder", _this] call comspec_atak_native_fnc_droneAction; }, [_arg select [1], +_pos]] call comspec_atak_native_fnc_nextFrame;
             };
             case "CAM": {
                 private _u = objectFromNetId (_c getOrDefault ["unit", ""]);
@@ -396,15 +396,15 @@ switch (_mode) do {
             ["WPADD", "Point de passage", format ["étape %1 · %2", (count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) + 1,
                 toLower (["shareName", profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1]] call comspec_atak_native_fnc_wpAction)], _dir + "app_waypoints.paa", [0.95, 0.75, 0.18, 1]],
             ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
-            ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]],
-            ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
+            ["CENTER", "Centrer ici", "", _dir + "map_center.paa", (COMSPEC_ATAK_Th get "mapText")],
+            ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", (COMSPEC_ATAK_Th get "mapText")],
             ["V3D", "Vue 3D ici", "W.I.P — bientôt disponible", _dir + "app_relief.paa", [0.55, 0.6, 0.57, 1]],
-            ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]]
+            ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", (COMSPEC_ATAK_Th get "mapOk")]
         ];
         // Montre Garmin portée : le point (ou le marqueur pointé) part sur la boussole de la montre (fn_watch "send").
         if (((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0
             || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0}) then {
-            _rows insert [4, [["WATCH", "Envoyer à la montre", "boussole de la montre", _dir + "app_garmin.paa", [0.36, 0.78, 0.42, 1]]]];
+            _rows insert [4, [["WATCH", "Envoyer à la montre", "boussole de la montre", _dir + "app_garmin.paa", (COMSPEC_ATAK_Th get "mapOk")]]];
         };
         // Zone de l'app Zones sous le clic : sa fiche en tête (signaler un ennemi au point, état en un clic).
         private _zh = ["at", [_pos]] call comspec_atak_native_fnc_zoneAction;
@@ -422,7 +422,7 @@ switch (_mode) do {
             private _wpc = (["type", (_wpPts select _wpi) param [2, "WP"]] call comspec_atak_native_fnc_wpAction) select 3;
             _rows insert [0, [
                 ["WPEDIT", "Modifier l'étape", format ["%1. %2", _wpi + 1, _wpn], _dir + "app_waypoints.paa", _wpc],
-                ["WPGO", "Naviguer vers l'étape", _wpn, _dir + "map_route.paa", [0.36, 0.78, 0.42, 1]]
+                ["WPGO", "Naviguer vers l'étape", _wpn, _dir + "map_route.paa", (COMSPEC_ATAK_Th get "mapOk")]
             ]];
             _rows pushBack ["WPDEL", "Supprimer l'étape", _wpn, _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
@@ -436,7 +436,7 @@ switch (_mode) do {
                 ["RPIN", ["Relais préféré", "Choix automatique"] select _pinned, ["garder ce relais", "meilleur relais reçu"] select _pinned, _dir + "app_waverelay.paa", _acc],
                 ["RCOV", "Couverture autour", format ["rayon %1 km", round ((_s getOrDefault ["rcRadius", 5000]) / 1000)], _dir + "app_network.paa", [0.28, 0.70, 1, 1]],
                 ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
-                ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]]
+                ["CENTER", "Centrer ici", "", _dir + "map_center.paa", (COMSPEC_ATAK_Th get "mapText")]
             ];
             if (_card) then { _rows = _relRows; } else { _rows = _relRows + (_rows select { !((_x select 0) in ["ROUTE", "CENTER"]) }); };
         };
@@ -444,8 +444,8 @@ switch (_mode) do {
         if (!isNull _cu && {alive _cu}) then {
             private _cs = [_cu, true] call comspec_atak_native_fnc_unitCallsign;
             _rows insert [0, [
-                ["CAM", "Voir la caméra", _cs, _dir + "app_photos.paa", [0.36, 0.78, 0.42, 1]],
-                ["VIEWU", "Son champ de vision", _cs, _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]],
+                ["CAM", "Voir la caméra", _cs, _dir + "app_photos.paa", (COMSPEC_ATAK_Th get "mapOk")],
+                ["VIEWU", "Son champ de vision", _cs, _dir + "app_relief.paa", (COMSPEC_ATAK_Th get "mapOk")],
                 ["LOCATE", "Localiser par relais", "triangulation", _dir + "app_waverelay.paa", [1, 0.65, 0.2, 1]]
             ]];
         };
@@ -478,7 +478,7 @@ switch (_mode) do {
             _rows pushBack ["MKEDIT", "Modifier le marqueur", "texte, type, couleur, taille", _dir + "map_marker.paa", _acc];
         };
         if (_m isNotEqualTo "") then {
-            _rows pushBack ["COPYMK", "Copier le marqueur", "texte : nom, grille, altitude", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]];
+            _rows pushBack ["COPYMK", "Copier le marqueur", "texte : nom, grille, altitude", _dir + "map_grid.paa", (COMSPEC_ATAK_Th get "mapText")];
             _rows pushBack ["DELETE", ["Supprimer le marqueur", "Effacer cette alerte"] select (([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 2), [([markerText _m] call comspec_atak_native_fnc_markerAutoName), ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
         // Repères d'alerte reçus (CONTACT, WIA, SALUTE, PANIQUE…, locaux à ce téléphone) : tous d'un coup.
@@ -499,7 +499,7 @@ switch (_mode) do {
                 ["DHUNT", "Rechercher", format ["bandes, rayon %1 m", _s getOrDefault ["droneHuntRad", 250]], "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa", _drCol],
                 ["DHOVER", "Stationnaire", "caméra à la verticale", _dir + "app_drone.paa", _drCol],
                 ["DLAND", "Atterrir", "se pose sur le point", "\A3\ui_f\data\igui\cfg\simpletasks\types\land_ca.paa", _drCol],
-                ["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
+                ["BACK", "Retour", "", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
             ];
         };
         // Ordres aux IA (fn_aiOrder) : une ligne, puis les sous-menus ordres et posture.
@@ -528,7 +528,7 @@ switch (_mode) do {
                 ["AI_DISMOUNT", "Débarquer", "", _ti + "getout_ca.paa", _aiCol],
                 ["AIPOST", "Posture", "vitesse, formation", _ti + "scout_ca.paa", _aiCol],
                 ["AI_CANCEL", "Annuler l'ordre", "", _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]],
-                ["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
+                ["BACK", "Retour", "", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
             ] } else { _head + ([
                 ["AWARE", "Prudent"], ["COMBAT", "Combat"], ["STEALTH", "Furtif"],
                 ["LIMITED", "Vitesse lente"], ["NORMAL", "Vitesse normale"], ["FULL", "Vitesse rapide"],
@@ -537,7 +537,7 @@ switch (_mode) do {
                 private _on = (_x select 0) in [_e getOrDefault ["beh", ""], _e getOrDefault ["spd", ""], _e getOrDefault ["frm", ""]];
                 ["AI_" + (_x select 0), _x select 1, ["", "actuel"] select _on, _ti + "scout_ca.paa", _aiCol]
             }) + [
-                ["BACK", "Retour", "ordres", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
+                ["BACK", "Retour", "ordres", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
             ] };
         };
         // Supprimer ce qui est sous le clic : une ligne (un élément) ou un sous-menu (plusieurs) ; CONFIRMER au second clic.
@@ -558,7 +558,7 @@ switch (_mode) do {
         if ((_c getOrDefault ["sub", ""]) isEqualTo "DEL") then {
             private _dr = [];
             for "_i" from 0 to ((count _dels) - 1) do { _dr pushBack ([_i] call _delRow); };
-            _rows = _dr + [["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]];
+            _rows = _dr + [["BACK", "Retour", "", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]];
         } else {
             private _top = (_c getOrDefault ["sub", ""]) isEqualTo "";
             if (_top && {!_card} && {(count _dels) isEqualTo 1}) then { _rows pushBack ([0] call _delRow); };
@@ -566,7 +566,7 @@ switch (_mode) do {
         };
         // Zones : une ligne au menu principal, puis le sous-menu (tout part d'un clic : rien d'automatique).
         private _znSub = _c getOrDefault ["sub", ""];
-        private _znCol = [0.36, 0.78, 0.42, 1];
+        private _znCol = (COMSPEC_ATAK_Th get "mapOk");
         if (_znSub isEqualTo "" && {!_card}) then {
             _rows pushBack ["ZN", "Zones", "découper, plan, état", _dir + "app_zones.paa", _znCol];
         };
@@ -578,7 +578,7 @@ switch (_mode) do {
                 ["ZX_" + (_x select 0), _x select 1, [((_x select 2) splitString ",") select [0, 2] joinString ",", "actuel"] select ((_x select 0) isEqualTo _cur), _dir + "map_route.paa", [_znCol, [1, 0.85, 0.2, 1]] select ((_x select 0) isEqualTo "MIL")]
             }) + [
                 ["ZNAX_SUB", "Sous-thème MIL-STD (changer)", ["themeLabel", _sub] call comspec_atak_native_fnc_zoneAction, _dir + "map_route.paa", [1, 0.85, 0.2, 1]],
-                ["ZN", "Retour", "zones", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
+                ["ZN", "Retour", "zones", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
             ];
         };
         if (_znSub in ["ZN", "ZNST"]) then {
@@ -589,7 +589,7 @@ switch (_mode) do {
             _rows = if (_znSub isEqualTo "ZNST") then {
                 ((["states"] call comspec_atak_native_fnc_zoneAction) apply {
                     ["ZS_" + (_x select 0), _x select 1, ["", "actuel"] select ((_x select 0) isEqualTo (_zz param [6, ""])), _dir + "app_zones.paa", _x select 4]
-                }) + [["ZN", "Retour", "zones", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]]
+                }) + [["ZN", "Retour", "zones", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]]
             } else {
                 private _r = [
                     ["ZN_RAD", "Rayon du découpage", format ["%1 m · changer", _zr], _dir + "app_zones.paa", _znCol],
@@ -617,7 +617,7 @@ switch (_mode) do {
                         ["ZR_POINT", "Rendu : point centré", "cette zone", _dir + "app_zones.paa", _znCol]
                     ]] select _mineZ) + _r;
                 };
-                _r + [["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]]
+                _r + [["BACK", "Retour", "", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]]
             };
         };
         private _rowH = _font * 1.55;
@@ -627,20 +627,20 @@ switch (_mode) do {
         private _stats = [];
         if (_re isNotEqualTo []) then {
             _re params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "_root", "_up", "_fq", "_auto", "_loss", "_hp", "_hl", "_hops", "_co", "_lat"];
-            private _hc = createHashMapFromArray [["nominal", "#5cd96b"], ["dégradé", "#f2ab33"], ["critique", "#f2685c"], ["hors service", "#9aa39e"]];
+            private _hc = createHashMapFromArray [["nominal", "#5cd96b"], ["dégradé", (COMSPEC_ATAK_Th get "hexMapWarn")], ["critique", "#f2685c"], ["hors service", "#9aa39e"]];
             private _km = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
             private _dme = player distance2D _ant;
             private _mine = _o isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_RelayLast", objNull]);
             private _T = { _this call comspec_atak_native_fnc_tr };
-            private _tri = { params ["_v", "_a", "_b"]; ["#5cd96b", "#f2ab33", "#f2685c"] select ((parseNumber (_v > _a)) + (parseNumber (_v > _b))) };
+            private _tri = { params ["_v", "_a", "_b"]; ["#5cd96b", (COMSPEC_ATAK_Th get "hexMapWarn"), "#f2685c"] select ((parseNumber (_v > _a)) + (parseNumber (_v > _b))) };
             _stats = [
                 ["État", format ["<t color='%1'>%2</t>%3", _hc getOrDefault [_hl, "#e6efe9"], _hl call _T, ["", format [" (%1)", _st call _T]] select (!_ok && {_st isNotEqualTo ""})]],
-                ["Fréquence", format ["%1 MHz · %2%3", _fq, ["fixe", "auto"] select _auto call _T, ["", format [" · <t color='#f2ab33'>%1</t>", format ["%1 sur le canal" call _T, _co]]] select (_co > 0)]],
+                ["Fréquence", format ["%1 MHz · %2%3", _fq, ["fixe", "auto"] select _auto call _T, ["", format [" · <t color='" + (COMSPEC_ATAK_Th get "hexMapWarn") + "'>%1</t>", format ["%1 sur le canal" call _T, _co]]] select (_co > 0)]],
                 ["Perte · latence", ["<t color='#9aa39e'>" + ("aucun trafic" call _T) + "</t>", format ["<t color='%1'>%2 %%</t> · %3 ms", [_loss, 12, 40] call _tri, _loss, _lat]] select _ok],
                 ["Débit · portée", format ["%1 Mbit/s · %2", _mb toFixed 1, [_r] call _km]],
                 ["Structure · alim.", format ["<t color='%1'>%2 %%</t> · %3", [100 - _hp, 10, 50] call _tri, _hp,
-                    ["secteur" call _T, format ["<t color='%1'>%2</t>", ["#e6efe9", "#f2ab33"] select (_bt < 25), format ["batterie %1 %%" call _T, round _bt]]] select (_bt >= 0)]],
-                ["Téléphones", [format ["%1 · %2", _u, "illimité" call _T], format ["<t color='%1'>%2</t>", ["#e6efe9", "#f2ab33"] select (_u > _sl), format ["%1 / %2 places" call _T, _u, _sl]]] select (_sl > 0)],
+                    ["secteur" call _T, format ["<t color='%1'>%2</t>", ["#e6efe9", (COMSPEC_ATAK_Th get "hexMapWarn")] select (_bt < 25), format ["batterie %1 %%" call _T, round _bt]]] select (_bt >= 0)]],
+                ["Téléphones", [format ["%1 · %2", _u, "illimité" call _T], format ["<t color='%1'>%2</t>", ["#e6efe9", (COMSPEC_ATAK_Th get "hexMapWarn")] select (_u > _sl), format ["%1 / %2 places" call _T, _u, _sl]]] select (_sl > 0)],
                 ["Liaison", switch (true) do {
                     case (_k isNotEqualTo "relay"): { ["passerelle de véhicule", "poste de commandement"] select (_k isEqualTo "cp") call _T };
                     case (_hops < 0): { "<t color='#f2685c'>" + ("sans liaison" call _T) + "</t>" };
@@ -688,11 +688,11 @@ switch (_mode) do {
         private _hd = ["COMSPEC_RscStructuredText", [_x0 + pixelW * 8, _y0 + pixelH * 5, _w - pixelW * 16, _headH]] call _mk;
         if (_stats isNotEqualTo []) then {
             // Fiche du relais : nom et grille, puis une ligne par donnée (libellé à gauche, valeur à droite).
-            private _lines = _stats apply { format ["<t size='0.8' color='#8a9a93'>%1</t><t size='0.8' align='right' color='#e6efe9'>%2</t>", (_x select 0) call comspec_atak_native_fnc_tr, _x select 1] };
-            _hd ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold' size='1' color='#e6efe9'>%1</t><t size='0.78' align='right' color='#8a9a93'>%2</t><br/>%3",
+            private _lines = _stats apply { format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t><t size='0.8' align='right' color='#e6efe9'>%2</t>", (_x select 0) call comspec_atak_native_fnc_tr, _x select 1] };
+            _hd ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold' size='1' color='#e6efe9'>%1</t><t size='0.78' align='right' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%2</t><br/>%3",
                 ((_re select 2) regexReplace ["[<>&]", ""]) select [0, 26], [_pos, 8] call comspec_atak_native_fnc_gridRef, _lines joinString "<br/>"])) call comspec_atak_native_fnc_tr);
         } else {
-            _hd ctrlSetStructuredText parseText ((format ["<t font='EtelkaMonospaceProBold' size='0.95' color='#e6efe9'>%1</t><br/><t size='0.78' color='#8a9a93'>%2 m · %3 · %4°</t>",
+            _hd ctrlSetStructuredText parseText ((format ["<t font='EtelkaMonospaceProBold' size='0.95' color='#e6efe9'>%1</t><br/><t size='0.78' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%2 m · %3 · %4°</t>",
                 [_pos, 8] call comspec_atak_native_fnc_gridRef, round (getTerrainHeightASL _pos),
                 [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), _az]) call comspec_atak_native_fnc_tr);
         };
@@ -718,7 +718,7 @@ switch (_mode) do {
             // Ligne exécutée à l'image suivante, hors du clic (2.9.40) : « close » supprimait ce bouton pendant son propre
             // gestionnaire et le moteur ne laissait plus passer aucun clic (carte figée après NOMMER LES AXES, tracé
             // impossible après ZONE DEPUIS LE CLIC, carte qui ne répond plus) ; même règle que fn_pageClear.
-            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;", _key]];
+            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;", _key]];
             _ry = _ry + _rowH;
         } forEach _rows;
         // Suivis aussi par la page : un rendu complet (changement d'app) les efface avec le reste.

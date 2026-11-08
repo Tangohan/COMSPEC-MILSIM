@@ -9,7 +9,7 @@
     [true] call comspec_atak_native_fnc_saveProfile;  // tout de suite (fin de mission)
 */
 params [["_now", false]];
-if (_now || {isNil "CBA_fnc_waitAndExecute"}) exitWith {
+if (_now || {isNil "comspec_atak_native_fnc_waitAndExec"}) exitWith {
     missionNamespace setVariable ["COMSPEC_ProfileSavePending", false];
     // Même fichier que l'échéance des sauvegardes périodiques (fn_profileSave) : elle est servie aussi.
     missionNamespace setVariable ["COMSPEC_ATAK_ProfileDirty", false];
@@ -25,4 +25,4 @@ missionNamespace setVariable ["COMSPEC_ProfileSavePending", true];
 [{
     if !(missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) exitWith {};
     [true] call comspec_atak_native_fnc_saveProfile;
-}, [], 60] call CBA_fnc_waitAndExecute;
+}, [], 60] call comspec_atak_native_fnc_waitAndExec;

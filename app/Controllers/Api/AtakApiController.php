@@ -8416,6 +8416,18 @@ class AtakApiController
     /**
      * Expérience Overwatch par communauté (réalisme, troll, guide).
      */
+    /** Consignes, ordres, tips et kit de la communauté de la clé de jeu : app Communauté du téléphone (GetCommunityBrief). */
+    public function communityBrief(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $pack = (new \App\Services\Tactical\AtakExperienceService())->get($r);
+
+        return Response::json(\App\Support\AtakCommunityBrief::payload($pack['settings'], $pack['updated_at']));
+    }
+
     public function experience(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

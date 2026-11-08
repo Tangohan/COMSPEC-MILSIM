@@ -8,7 +8,7 @@
 */
 params [["_from", ""], ["_body", ""], ["_time", "--:--"], ["_id", ""], ["_sender", objNull], ["_date", ""], ["_force", false]];
 if (!hasInterface || {_from isEqualTo ""}) exitWith {};
-if (!_force && {!([] call comspec_atak_native_fnc_p2pReachable)}) exitWith {
+if (!_force && {!([] call comspec_atak_native_fnc_p2pReachable)} && {(["peer", [_sender]] call comspec_atak_native_fnc_meshGraph) isEqualTo []}) exitWith {
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
     if (_id isEqualTo "" || {(_inbox findIf { (_x param [3, ""]) isEqualTo _id }) < 0}) then { _inbox pushBack [_from, _body, _time, _id, _sender, _date]; };
     while {(count _inbox) > 100} do { _inbox deleteAt 0; };
@@ -26,4 +26,13 @@ _data set ["p2p", _p2p];
 if (_id isNotEqualTo "" && {!isNull _sender}) then { ["comspec_atak_native_p2pAck", [_id, "DELIVERED", [dayTime, "HH:MM"] call BIS_fnc_timeToString], _sender] call CBA_fnc_targetEvent; };
 private _preview = [_body, (_body select [0, 60]) + "…"] select ((count _body) > 60);
 ["MESSAGE", format ["%1 : %2", _from, _preview], 5, 40] call comspec_atak_native_fnc_notify;
-if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+// Conversation ouverte sur ce fil : seul le fil est redessiné (fn_pageChat [true]). Liste des conversations : ligne du contact sur place, remontée en tête (fn_chatListRow), redessin complet s'il n'y est pas ; autre fil ouvert : seule la liste voisine (paysage) change.
+if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then {
+    [{
+        params ["_thisPeer"];
+        private _open = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull]);
+        if (_open && {(uiNamespace getVariable ["COMSPEC_ATAK_ChatThreadPeer", ""]) isEqualTo _thisPeer}) exitWith { [true] call comspec_atak_native_fnc_pageChat; };
+        private _inPlace = [_thisPeer] call comspec_atak_native_fnc_chatListRow;
+        if (!_open && {!_inPlace}) then { ["CHAT"] call comspec_atak_native_fnc_pageRender; };
+    }, [_from]] call comspec_atak_native_fnc_nextFrame;
+};

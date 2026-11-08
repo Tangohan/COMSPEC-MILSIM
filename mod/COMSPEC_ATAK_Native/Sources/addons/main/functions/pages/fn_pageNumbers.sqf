@@ -55,7 +55,7 @@ switch (_tab) do {
             };
             private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
             _rows pushBack ["person", [_pic, _d + "app_profile.paa"] select (_pic isEqualTo ""),
-                format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='#8a9a93'>%2</t><br/><t size='0.85'>%3</t>%4",
+                format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2</t><br/><t size='0.85'>%3</t>%4",
                     [name _u] call _esc, [groupId group _u] call _esc, [_main] call _esc,
                     ["", "<br/><t size='0.78'>" + (_lines joinString "<br/>") + "</t>"] select (_lines isNotEqualTo [])],
                 [["SMS", ["sms", name _u] call _act, true, true, "Ouvre la conversation dans Messages"],
@@ -85,7 +85,7 @@ switch (_tab) do {
                 (_x get "type") call _typeOf params ["", "_tl", "_ti", "_tc"];
                 private _k = format ["ct%1", _forEachIndex];
                 _rows pushBack ["person", _ti, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85'>%2</t> <t size='0.78' color='%3'>%4</t>%5",
-                    [_x get "name"] call _esc, [_x get "number"] call _esc, _tc, _tl, ["", format ["<br/><t size='0.75' color='#8a9a93'>%1</t>", [_x get "note"] call _esc]] select ((_x get "note") isNotEqualTo "")],
+                    [_x get "name"] call _esc, [_x get "number"] call _esc, _tc, _tl, ["", format ["<br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", [_x get "note"] call _esc]] select ((_x get "note") isNotEqualTo "")],
                     [["MODIFIER", ["ctEdit", _forEachIndex] call _act],
                      [["SUPPR.", "CONFIRMER"] select (_arm isEqualTo _k), ["ctDel", _forEachIndex] call _act, ["", "red"] select (_arm isEqualTo _k), true, "Deux appuis pour supprimer"]]];
             } forEach _ct;
@@ -96,10 +96,10 @@ switch (_tab) do {
         (["status"] call comspec_atak_native_fnc_localCfg) params ["_src", "_dir", "_err"];
         _rows append [
             ["section", "Configuration locale", "Fichier JSON modifiable à la main"],
-            ["info", "Source", createHashMapFromArray [["file", "<t color='#5cc76b'>config.json</t>"], ["profile", "<t color='#f2ab33'>profil Arma (copie)</t>"], ["default", "<t color='#8a9a93'>valeurs par défaut</t>"]] getOrDefault [_src, _src]],
-            ["info", "Dossier", [[_dir] call _esc, "<t color='#f2ab33'>DLL native à mettre à jour</t>"] select (_dir isEqualTo "")]
+            ["info", "Source", createHashMapFromArray [["file", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>config.json</t>"], ["profile", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>profil Arma (copie)</t>"], ["default", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>valeurs par défaut</t>"]] getOrDefault [_src, _src]],
+            ["info", "Dossier", [[_dir] call _esc, "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>DLL native à mettre à jour</t>"] select (_dir isEqualTo "")]
         ];
-        if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e04038'>config.json illisible : %1</t><br/><t size='0.8' color='#8a9a93'>La copie du profil reste utilisée. Corrigez le fichier puis rechargez-le ; l'ancien est gardé en config.json.bak à chaque enregistrement.</t>", [_err] call _esc], [0.2, 0.06, 0.05, 1]]; };
+        if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e04038'>config.json illisible : %1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>La copie du profil reste utilisée. Corrigez le fichier puis rechargez-le ; l'ancien est gardé en config.json.bak à chaque enregistrement.</t>", [_err] call _esc], [0.2, 0.06, 0.05, 1]]; };
         _rows append [
             ["buttons", [
                 ["OUVRIR LE DOSSIER", ["open"] call _act, false, _dir isNotEqualTo "", "Ouvre Documents\Arma 3\COMSPEC_Local dans l'explorateur"],
@@ -107,8 +107,8 @@ switch (_tab) do {
                 ["ENREGISTRER", ["write"] call _act, true, true, "Écrit config.json avec l'état actuel"]
             ]],
             ["section", "Format du fichier", "config.json"],
-            ["text", "<t size='0.8' color='#c9d4cf'>{<br/>  ""callsign"": ""Viper 2-1"",<br/>  ""phone"": { ""plan"": ""FR"", ""numbers"": [<br/>    { ""number"": ""06 12 34 56 78"", ""type"": ""mobile"", ""label"": ""Perso"", ""primary"": true, ""shared"": true }<br/>  ] },<br/>  ""contacts"": [ { ""name"": ""TOC"", ""number"": ""+8816 1234 5678"", ""type"": ""satellite"", ""note"": """" } ],<br/>  ""toc"": { ""name"": ""TOC"", ""callsign"": ""OVERWATCH"" }<br/>}</t>", [0.05, 0.065, 0.06, 1]],
-            ["text", format ["<t size='0.78' color='#8a9a93'>Types : %1. Plans : FR, US, UK, DE, BE, RU, ES. Les commentaires // sont acceptés à la lecture.</t>", ((["types"] call comspec_atak_native_fnc_localCfg) apply { _x select 0 }) joinString ", "]]
+            ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>{<br/>  ""callsign"": ""Viper 2-1"",<br/>  ""phone"": { ""plan"": ""FR"", ""numbers"": [<br/>    { ""number"": ""06 12 34 56 78"", ""type"": ""mobile"", ""label"": ""Perso"", ""primary"": true, ""shared"": true }<br/>  ] },<br/>  ""contacts"": [ { ""name"": ""TOC"", ""number"": ""+8816 1234 5678"", ""type"": ""satellite"", ""note"": """" } ],<br/>  ""toc"": { ""name"": ""TOC"", ""callsign"": ""OVERWATCH"" }<br/>}</t>", [0.05, 0.065, 0.06, 1]],
+            ["text", format ["<t size='0.78' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Types : %1. Plans : FR, US, UK, DE, BE, RU, ES. Les commentaires // sont acceptés à la lecture.</t>", ((["types"] call comspec_atak_native_fnc_localCfg) apply { _x select 0 }) joinString ", "]]
         ];
     };
     default {
@@ -139,8 +139,8 @@ switch (_tab) do {
                 if !(_x get "primary") then { _btns pushBack ["PRINCIPAL", ["primary", _forEachIndex] call _act, false, true, "En faire mon numéro principal"]; };
                 _btns pushBack ["MODIFIER", ["edit", _forEachIndex] call _act];
                 _btns pushBack [["SUPPR.", "CONFIRMER"] select (_arm isEqualTo _k), ["del", _forEachIndex] call _act, ["", "red"] select (_arm isEqualTo _k), true, "Deux appuis pour supprimer"];
-                _rows pushBack ["person", _ti, format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.8' color='%3'>%4</t><t size='0.8' color='#8a9a93'>%5 · %6</t>",
-                    [_x get "number"] call _esc, ["", "  <t size='0.75' color='#5cc76b'>PRINCIPAL</t>"] select (_x get "primary"), _tc, _tl,
+                _rows pushBack ["person", _ti, format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.8' color='%3'>%4</t><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%5 · %6</t>",
+                    [_x get "number"] call _esc, ["", "  <t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>PRINCIPAL</t>"] select (_x get "primary"), _tc, _tl,
                     ["", format [" · %1", [_x get "label"] call _esc]] select ((_x get "label") isNotEqualTo ""), ["privé", "visible"] select (_x get "shared")], _btns];
             } forEach _nums;
             _rows pushBack ["buttons", [["AJOUTER UN NUMÉRO", ["edit", -1] call _act, true, (count _nums) < 8]]];

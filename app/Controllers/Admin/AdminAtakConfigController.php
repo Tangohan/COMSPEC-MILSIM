@@ -97,6 +97,8 @@ class AdminAtakConfigController
             'experienceCatalog' => $experienceCatalog,
             'experienceGuide' => $experiencePack['guide'],
             'experienceGuideCustom' => trim((string) ($experiencePack['settings']['guide_custom'] ?? '')),
+            'experienceCommunityNotes' => (string) ($experiencePack['settings']['community_notes'] ?? ''),
+            'experienceCommunityKit' => (string) ($experiencePack['settings']['community_kit'] ?? ''),
             'experienceUpdatedAt' => $experiencePack['updated_at'],
             'experienceSchemaReady' => $experienceSchemaReady,
             'photoHud' => $photoHud,
@@ -293,6 +295,8 @@ class AdminAtakConfigController
             }
         }
         $incoming['guide_custom'] = trim((string) $request->input('experience_guide_custom', ''));
+        $incoming['community_notes'] = (string) $request->input('experience_community_notes', '');
+        $incoming['community_kit'] = (string) $request->input('experience_community_kit', '');
         if (!empty($incoming['realism'])) {
             $incoming['troll'] = false;
         }

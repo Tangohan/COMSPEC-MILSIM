@@ -1,6 +1,6 @@
 /* Actions de l'app Profil. Params : [action, argument] */
 params ["_action", ["_arg", ""]];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PROFILE") then { ["PROFILE"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.5] call CBA_fnc_waitAndExecute; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PROFILE") then { ["PROFILE"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.5] call comspec_atak_native_fnc_waitAndExec; };
 // Rôle affiché changé : publié tout de suite (fn_displayRole) et renvoyé à Athena au prochain envoi de position.
 private _applied = {
     private _r = [player] call comspec_atak_native_fnc_displayRole;

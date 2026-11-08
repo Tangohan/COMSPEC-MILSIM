@@ -174,12 +174,23 @@ private _res = call {
     };
     missionNamespace setVariable ["COMSPEC_ATAK_GpsNetAng", nil];
     // Erreur horizontale typique d'un téléphone : 3 à 5 m à découvert, puis selon le nombre de satellites et les reflets.
-    private _base = switch (true) do { case (_sats >= 9): { 3 + random 2 }; case (_sats >= 7): { 4 + random 2 }; case (_sats >= 5): { 6 + random 3 }; default { 9 + random 4 }; };
-    private _err = (_base + _multi * (0.7 + random 0.6)) * _k;
-    _walk = _walk vectorAdd [(random 2 - 1) * 0.25 * _err, (random 2 - 1) * 0.25 * _err, 0];
-    private _m = vectorMagnitude _walk;
-    // Point affiché à au plus la moitié du rayon annoncé : ma vraie position reste toujours dans l'anneau de précision.
-    if (_m > 0.5 * _err && {_m > 0}) then { _walk = _walk vectorMultiply (0.5 * _err / _m); };
+    // Joueur immobile (moins de 2 m, même ciel) : erreur et décalage gardés tels quels, le point ne bouge plus dans son cercle
+    // (avant : tirage et dérive refaits toutes les 2 s, le point se baladait et sortait du cercle). Le ciel qui change
+    // (bâtiment, arbres, relief, véhicule) ou 2 m de marche relancent le tirage ; décrochages et sauts restent actifs.
+    private _still = missionNamespace getVariable ["COMSPEC_ATAK_GpsStill", []];
+    private _err = 0;
+    if (_still isNotEqualTo [] && {((_still select 0) distance _pos) < 2} && {(_still select 1) isEqualTo _sats} && {(_still select 2) isEqualTo _multi} && {(_still select 3) isEqualTo _k}) then {
+        _err = _still select 4;
+        _walk = _still select 5;
+    } else {
+        private _base = switch (true) do { case (_sats >= 9): { 3 + random 2 }; case (_sats >= 7): { 4 + random 2 }; case (_sats >= 5): { 6 + random 3 }; default { 9 + random 4 }; };
+        _err = (_base + _multi * (0.7 + random 0.6)) * _k;
+        _walk = _walk vectorAdd [(random 2 - 1) * 0.25 * _err, (random 2 - 1) * 0.25 * _err, 0];
+        private _m = vectorMagnitude _walk;
+        // Point affiché à au plus la moitié du rayon annoncé : ma vraie position reste toujours dans l'anneau de précision.
+        if (_m > 0.5 * _err && {_m > 0}) then { _walk = _walk vectorMultiply (0.5 * _err / _m); };
+        missionNamespace setVariable ["COMSPEC_ATAK_GpsStill", [_pos, _sats, _multi, _k, _err, _walk]];
+    };
     missionNamespace setVariable ["COMSPEC_ATAK_GpsWalk", _walk];
     // Saut de position en cours : décalage qui revient peu à peu vers zéro, compté dans l'erreur annoncée.
     private _off = _walk;

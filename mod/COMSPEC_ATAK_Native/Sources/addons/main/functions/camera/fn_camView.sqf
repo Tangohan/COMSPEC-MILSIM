@@ -36,14 +36,14 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
         if (isNull _o && {(missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""]) isEqualTo "fixed"}) exitWith {
             [] call comspec_atak_native_fnc_livecamStop;
             ["WARNING", "Live cam : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
-            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         if (isNull _o || {!(_o isKindOf "COMSPEC_ATAK_CameraObj")}) exitWith {};
         private _st = ["status", _o] call comspec_atak_native_fnc_camAction;
         if ((_st select 0) isNotEqualTo "OK") exitWith {
             [] call comspec_atak_native_fnc_livecamStop;
             ["WARNING", format ["%1 : flux perdu (%2)", _o getVariable ["COMSPEC_ATAK_CamName", "Caméra"], toLower (_st select 1)], 3, 30] call comspec_atak_native_fnc_notify;
-            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_LivecamOsd", controlNull];
         if (!isNull _osd) then {

@@ -5,7 +5,7 @@ if (isNull _g1) exitWith {};
 private _g = [] call comspec_atak_native_fnc_routeGuide;
 if ((count _g) isEqualTo 0) exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_RouteBanner", []];
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
 };
 _g params ["_txt", "_dn", "_icon", "_left", "_eta", "_label"];
 private _fmt = { params ["_m"]; switch (true) do { case (_m >= 1000): { format ["%1 km", (_m / 1000) toFixed 1] }; case (_m >= 100): { format ["%1 m", (round (_m / 10)) * 10] }; default { format ["%1 m", round _m] }; } };

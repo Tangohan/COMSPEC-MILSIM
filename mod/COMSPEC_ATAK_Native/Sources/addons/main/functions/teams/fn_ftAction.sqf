@@ -15,7 +15,7 @@ params [["_act", ""], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _send = { params ["_op", ["_args", []]]; ["comspec_atak_native_ft", [player, _op, _args]] call CBA_fnc_serverEvent; };
 private _val = { params ["_k", ["_d", ""]]; [_k, _d] call comspec_atak_native_fnc_formValue };
-private _rerender = { [{ [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "GROUP"]] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "GROUP"]] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_act) do {
     case "create": {
         private _name = trim (["ftName"] call _val);
@@ -53,7 +53,7 @@ switch (_act) do {
         ["roleNew", [_name, ["ftRIcon", "FUS"] call _val]] call _send;
         _s set ["ftRoleNew", false];
         // Envoi à Athena sans attendre la synchro du groupe : le rôle est retenu pour toute la communauté.
-        [{ [true] call comspec_atak_native_fnc_squadSync; }, [], 4] call CBA_fnc_waitAndExecute;
+        [{ [true] call comspec_atak_native_fnc_squadSync; }, [], 4] call comspec_atak_native_fnc_waitAndExec;
     };
     case "roleReload": { ["load"] call comspec_atak_native_fnc_ftRoleSync; ["INFO", "Rôles : lecture d'Athena…", 3, 20] call comspec_atak_native_fnc_notify; };
     case "manage": {

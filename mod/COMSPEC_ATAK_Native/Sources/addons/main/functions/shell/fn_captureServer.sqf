@@ -85,7 +85,7 @@ switch (_act) do {
         if (isNull _ai || {isNull _gh}) exitWith {};
         // IA locale au serveur : l'événement arrive avant l'ouverture de la capture (même image) ; traité à l'image suivante
         // (le contenu du porte-objet créé par une machine distante a aussi eu le temps d'arriver).
-        if !(_later) exitWith { [{ ["giveFail", _this] call comspec_atak_native_fnc_captureServer; }, [_ai, _gh, true]] call CBA_fnc_execNextFrame; };
+        if !(_later) exitWith { [{ ["giveFail", _this] call comspec_atak_native_fnc_captureServer; }, [_ai, _gh, true]] call comspec_atak_native_fnc_nextFrame; };
         if (((_gh distance _ai) > 10) || {([_gh, "holder"] call _items) isEqualTo []}) exitWith {};
         private _caps = missionNamespace getVariable ["COMSPEC_ATAK_Captures", createHashMap];
         private _cid = _ai getVariable ["COMSPEC_ATAK_CapOf", ""];

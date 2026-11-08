@@ -30,10 +30,10 @@ private _add = {
 // Hors du menu du téléphone (aussi sans téléphone COMSPEC : tablette d'équipage) : tout l'affichage et l'interaction de
 // l'ATAK remis à zéro quand il ne s'ouvre plus ou qu'un cadre reste à l'écran (fn_vehicleKeys « repair », 2.9.41).
 [["ACE_SelfActions"], "COMSPEC_ATAK_Repair", "ATAK : réparer l'affichage", "\z\comspec_atak_native\addons\main\data\logo_atak.paa",
-    { [{ ["repair"] call comspec_atak_native_fnc_vehicleKeys; }] call CBA_fnc_execNextFrame; },
+    { [{ ["repair"] call comspec_atak_native_fnc_vehicleKeys; }] call comspec_atak_native_fnc_nextFrame; },
     { _player isEqualTo _target && {([player] call comspec_atak_native_fnc_hasDevice) || {[player] call comspec_atak_native_fnc_aircrewTerminal} || {!isNull ([] call comspec_atak_native_fnc_display)}} }] call _add;
 
-[_root, "COMSPEC_ATAK_Back", "Voir l'arrière", "", { [{ [] call comspec_atak_native_fnc_backView; }] call CBA_fnc_execNextFrame; }] call _add;
+[_root, "COMSPEC_ATAK_Back", "Voir l'arrière", "", { [{ [] call comspec_atak_native_fnc_backView; }] call comspec_atak_native_fnc_nextFrame; }] call _add;
 
 // Antennes : une entrée par antenne portée, plus « Retirer » quand une est vissée.
 [_root, "COMSPEC_ATAK_AntMenu", "Antenne", "\z\comspec_atak_native\addons\main\data\item_antenna_stub.paa", {},
@@ -228,6 +228,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 ["aceInit"] call comspec_atak_native_fnc_mpuLink;
 // Caméras IP fixes : « Caméras > Poser une caméra » et actions sur la caméra posée (fn_camAction).
 ["aceInit"] call comspec_atak_native_fnc_camAction;
+// Antennes transportables : « Équipement > Déployer » et « Replier l'antenne » sur l'objet posé (fn_antennaKit).
+["aceInit"] call comspec_atak_native_fnc_antennaKit;
 // Écrans du jeu (TV, trépied, projecteur…) : TOC, PIP du poste et diapositives via ACE (fn_tocScreen).
 ["aceInit"] call comspec_atak_native_fnc_tocScreen;
 true

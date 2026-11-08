@@ -10,7 +10,7 @@ params [["_action", ""], ["_arg", ""]];
 private _f = [] call comspec_atak_native_fnc_firesState;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 // Redessin seulement si l'app CAS est encore ouverte (ex. 9-line envoyé depuis l'app JTAC : pas de CAS par-dessus).
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FIRES") then { ["FIRES"] call comspec_atak_native_fnc_pageRender; }; (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FIRES") then { ["FIRES"] call comspec_atak_native_fnc_pageRender; }; (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call comspec_atak_native_fnc_nextFrame; };
 private _say = { params ["_t", ["_warn", false]]; _f set ["hint", [_t, _warn]]; };
 private _time = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
 private _me = { private _c = if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then { [] call comspec_overwatch_connect_fnc_getCallsign } else { "" }; if (_c isEqualTo "") then { groupId group player } else { _c } };
@@ -107,7 +107,7 @@ switch (_action) do {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         _s set ["firePick", _arg];
         ["Cliquez la cible sur la carte."] call _say;
-        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         ["INFO", "Cliquez la cible sur la carte", 3, 40] call comspec_atak_native_fnc_notify;
     };
     case "picked": {
@@ -118,7 +118,7 @@ switch (_action) do {
         _f set ["mode", "GRID"];
         _f deleteAt "solution";
         [format ["Cible : %1", _g]] call _say;
-        [{ ["FIRES"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["FIRES"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "prefill9": {
         private _t = _f getOrDefault ["target", []];

@@ -45,7 +45,7 @@ private _myLabel = {
     if (_v isNotEqualTo player && {_v isKindOf "Air"}) exitWith { [_v] call _airCs };
     [player] call comspec_atak_native_fnc_unitCallsign
 };
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "JTAC") then { ["JTAC"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "JTAC") then { ["JTAC"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _fmtName = { params ["_f"]; (createHashMapFromArray [["5", "5-LINE"], ["M", "MEDEVAC"]]) getOrDefault [_f, "9-LINE"] };
 // Accusé du pilote : à l'émetteur en jeu (s'il est encore là) et à Athena, par la liaison du téléphone.
 private _ackOut = {

@@ -9,7 +9,7 @@
 params [["_act", ""], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_Breach", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_Breach", _s];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BREACH") then { ["BREACH"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BREACH") then { ["BREACH"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_act) do {
     case "handle": {
         // Essayer la poignée : seule façon de savoir si la porte est verrouillée.

@@ -31,7 +31,7 @@ if (!isNil "comspec_overwatch_connect_fnc_updateOrderStatus") then {
 private _task = ([] call comspec_atak_native_fnc_tasksAll) getOrDefault [_id, createHashMap];
 if ((count _task) > 0) then {
     _task set ["status", _status];
-    [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 ["SUCCESS", format ["Ordre %1%2", _status, ["", " · pour tout le groupe"] select _forGroup], 3, 30] call comspec_atak_native_fnc_notify;
 true

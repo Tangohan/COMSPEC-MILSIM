@@ -13,9 +13,9 @@ private _labels = createHashMapFromArray [["ACK", "REÇU"], ["EXEC", "EN COURS"]
 private _colorOf = {
     params ["_st"];
     switch (true) do {
-        case (_st in ["DONE", "SUCCEEDED"]): { [[0.36, 0.78, 0.42, 1], "#5cc76b"] };
+        case (_st in ["DONE", "SUCCEEDED"]): { [[0.36, 0.78, 0.42, 1], (COMSPEC_ATAK_Th get "hexOk")] };
         case (_st in ["FAILED", "CANCELED", "CANCELLED"]): { [[0.58, 0.64, 0.60, 1], "#94a399"] };
-        case (_st in ["ACK", "EXEC", "ASSIGNED"]): { [[0.95, 0.67, 0.20, 1], "#f2ab33"] };
+        case (_st in ["ACK", "EXEC", "ASSIGNED"]): { [[0.95, 0.67, 0.20, 1], (COMSPEC_ATAK_Th get "hexWarn")] };
         default { [[0.88, 0.25, 0.22, 1], "#e04038"] };
     }
 };
@@ -55,7 +55,7 @@ _rows append [["section", "Ordres du TOC", ([format ["%1 ordre(s), %2 à traiter
     private _prio = toUpper (_y getOrDefault ["priority", "NORMAL"]);
     private _payload = _y getOrDefault ["payload", ""];
     if !(_payload isEqualType "") then { _payload = str _payload; };
-    _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2' size='0.85'>%3</t>%4<br/><t size='0.8' color='#8a9a93'>De %5 · cible %6</t>%7",
+    _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2' size='0.85'>%3</t>%4<br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>De %5 · cible %6</t>%7",
         [_label] call _esc, _hex, _labels getOrDefault [_st, _st], ["", "  <t color='#e04038' size='0.85'>PRIORITAIRE</t>"] select (_prio in ["HIGH", "URGENT", "FLASH", "PRIORITY"]),
         [_y getOrDefault ["issuer", "TOC"]] call _esc, [_y getOrDefault ["target", "-"]] call _esc,
         ["", format ["<br/><t size='0.85'>%1</t>", [_payload select [0, 220]] call _esc]] select (_payload isNotEqualTo "")], [], _rgb];
@@ -73,7 +73,7 @@ _rows append [["section", "Ordres du TOC", ([format ["%1 ordre(s), %2 à traiter
     private _cnt = createHashMap;
     { private _k = _y select 1; _cnt set [_k, (_cnt getOrDefault [_k, 0]) + 1]; } forEach _acks;
     private _total = (count _who) + (count _extra);
-    private _sum = format ["<t size='0.8' color='#8a9a93'>Vu %1/%5 · reçu %2 · en cours %3 · terminé %4</t>",
+    private _sum = format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vu %1/%5 · reçu %2 · en cours %3 · terminé %4</t>",
         count _acks, (_cnt getOrDefault ["ACK", 0]), (_cnt getOrDefault ["EXEC", 0]), (_cnt getOrDefault ["DONE", 0]) + (_cnt getOrDefault ["FAILED", 0]), _total max (count _acks)];
     private _whoOpen = (_s0 getOrDefault ["taskWho", ""]) isEqualTo _id;
     _rows pushBack ["person", "\a3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa", _sum,
@@ -82,7 +82,7 @@ _rows append [["section", "Ordres du TOC", ([format ["%1 ordre(s), %2 à traiter
         private _list = (_who apply { [getPlayerUID _x, name _x, groupId group _x, _x] }) + (_extra apply { private _a = _acks get _x; [_x, _a select 0, _a select 4, objNull] });
         {
             _x params ["_uid", "_nm", "_gn", "_u"];
-            if (_forEachIndex >= 16) exitWith { _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>… et %1 autre(s)</t>", (count _list) - 16]]; };
+            if (_forEachIndex >= 16) exitWith { _rows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>… et %1 autre(s)</t>", (count _list) - 16]]; };
             private _a = _acks getOrDefault [_uid, []];
             private _st2 = _a param [1, ""];
             ([switch (_st2) do { case "": { "NEW" }; case "SEEN": { "CANCELED" }; default { _st2 }; }] call _colorOf) params ["_rgb2", "_hex2"];
@@ -94,7 +94,7 @@ _rows append [["section", "Ordres du TOC", ([format ["%1 ordre(s), %2 à traiter
             private _pic = "";
             if (!isNull _u) then { _pic = [_u] call comspec_atak_native_fnc_avatarPath; if (_pic isEqualTo "") then { _pic = [_u, "texture"] call BIS_fnc_rankParams; }; };
             if (_pic isEqualTo "") then { _pic = "\a3\ui_f\data\map\vehicleicons\iconman_ca.paa"; };
-            _rows pushBack ["person", _pic, format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2' size='0.85'>%3</t><br/><t size='0.8' color='#8a9a93'>%4%5%6</t>",
+            _rows pushBack ["person", _pic, format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2' size='0.85'>%3</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4%5%6</t>",
                 [_nm] call _esc, _hex2, _stTxt, [_gn] call _esc, ["", format [" · %1", _a param [2, ""]]] select ((_a param [2, ""]) isNotEqualTo ""),
                 ["", format [" · par le chef %1", [_a param [3, ""]] call _esc]] select ((_a param [3, ""]) isNotEqualTo "")], [], [1, 1, 1, 1]];
         } forEach _list;
@@ -120,9 +120,9 @@ _rows pushBack ["section", "Tâches de la mission", [format ["%1 tâche(s)", cou
     private _isCur = _t isEqualTo _curT;
     private _idx = _forEachIndex;
     private _btns = [];
-    if (_has) then { _btns pushBack ["CARTE", compile format ["private _p = taskDestination ((simpleTasks player) select %1); ['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;", _idx]]; };
+    if (_has) then { _btns pushBack ["CARTE", compile format ["private _p = taskDestination ((simpleTasks player) select %1); ['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;", _idx]]; };
     _btns pushBack [["SUIVRE", "SUIVIE"] select _isCur, compile format ["player setCurrentTask ((simpleTasks player) select %1); ['TASK'] call comspec_atak_native_fnc_pageRender;", _idx], !_isCur, !_isCur];
-    _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold' %1>%2</t>  <t color='%3' size='0.85'>%4</t><br/><t size='0.8' color='#8a9a93'>Tâche de mission%5</t>%6",
+    _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold' %1>%2</t>  <t color='%3' size='0.85'>%4</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Tâche de mission%5</t>%6",
         ["", format ["color='%1'", _accHex]] select _isCur, [_desc select 1] call _esc, _hex, _labels getOrDefault [_st, _st], _dist,
         ["", format ["<br/><t size='0.8'>%1</t>", [_body select [0, 200]] call _esc]] select (_body isNotEqualTo "")], _btns, _rgb];
 } forEach _tasks;

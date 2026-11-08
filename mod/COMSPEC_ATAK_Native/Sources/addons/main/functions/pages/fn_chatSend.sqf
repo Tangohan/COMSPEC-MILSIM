@@ -31,7 +31,7 @@ if ((_this param [0, ""]) isEqualTo "recv") exitWith {
     if ([player] call comspec_atak_native_fnc_hasDevice) then {
         ["MESSAGE", format ["%1 : %2", _author, _body select [0, 80]], 5, 40, "CHAT"] call comspec_atak_native_fnc_notify;
     };
-    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [true] call comspec_atak_native_fnc_pageChat; }; }] call comspec_atak_native_fnc_nextFrame;
     true
 };
 disableSerialization;
@@ -44,7 +44,7 @@ if (_message isEqualTo "") exitWith { false };
 if (_help) exitWith {
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatWiki", true];
     _edit ctrlSetText (("") call comspec_atak_native_fnc_tr); uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
-    [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     false
 };
 if ((count _unknown) > 0) exitWith { ["WARNING", format ["Commande inconnue : %1 (tapez /aide)", _unknown joinString " "], 4, 30] call comspec_atak_native_fnc_notify; false };
@@ -89,7 +89,7 @@ if ([] call comspec_atak_native_fnc_bridge) exitWith {
         [_out] call comspec_overwatch_connect_fnc_tabletChatSend;
         missionNamespace setVariable ["COMSPEC_Comms_Priority", _prevPrio];
         if (_ev isNotEqualTo []) then { ["comspec_atak_native_sideEvent", ["comspec_atak_native_chatLocal", _ev, _ev select 5]] call CBA_fnc_serverEvent; };
-        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [true] call comspec_atak_native_fnc_pageChat; }; }] call comspec_atak_native_fnc_nextFrame;
     }, [_out, _prio, _pid, _chan, _ev], "Message", 1] call comspec_atak_native_fnc_netSend;
     if (_r isEqualTo "QUEUED") then {
         private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
@@ -102,7 +102,7 @@ if ([] call comspec_atak_native_fnc_bridge) exitWith {
     _edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
     if (!_ok && {!_local}) then { ["WARNING", "Athena non connecté : message affiché ici seulement", 4, 30] call comspec_atak_native_fnc_notify; };
-    [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [true] call comspec_atak_native_fnc_pageChat; }] call comspec_atak_native_fnc_nextFrame;
     _ok || _local
 };
 private _author = [] call comspec_atak_native_fnc_unitCallsign;
@@ -130,9 +130,9 @@ private _ok = true;
     { if ((_x getOrDefault ["id", ""]) isEqualTo _id) then { _x set ["status", ["FAILED", "SENT"] select _ok]; }; } forEach _outbox;
     ["outbox", _outbox] call comspec_atak_native_fnc_storeSet;
     if !(_ok) then { ["WARNING", "Athena indisponible : message gardé sur le terminal", 4, 30] call comspec_atak_native_fnc_notify; };
-    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [true] call comspec_atak_native_fnc_pageChat; }; }] call comspec_atak_native_fnc_nextFrame;
 }, [_id, _author, _message, _ev], "Message", 1] call comspec_atak_native_fnc_netSend;
 _edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
 uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
-[{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ [true] call comspec_atak_native_fnc_pageChat; }] call comspec_atak_native_fnc_nextFrame;
 _ok

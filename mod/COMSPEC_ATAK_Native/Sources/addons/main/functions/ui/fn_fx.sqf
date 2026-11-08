@@ -51,7 +51,7 @@ switch (_act) do {
             _c ctrlSetPosition [_mx - _r1, _my - _r1 * _ratio, _r1 * 2, _r1 * 2 * _ratio];
             _c ctrlSetFade 1;
             _c ctrlCommit 0.35;
-            [{ ctrlDelete _this; }, _c, 0.4] call CBA_fnc_waitAndExecute;
+            [{ ctrlDelete _this; }, _c, 0.4] call comspec_atak_native_fnc_waitAndExec;
         };
         if (["tapFx"] call comspec_atak_native_fnc_fx) then {
             if !((profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]) || {["mute", false] call comspec_atak_native_fnc_zeusFx}) then { playSound "ClickSoft"; };
@@ -134,7 +134,7 @@ switch (_act) do {
             [_sq, _cx1, _cy1, _s1, 1.25, 0.48] call _place;
             [_gl, _cx1, _cy1, _s1, 0.58, 0.5] call _place;
             { _x ctrlSetFade 1; _x ctrlCommit 0.32; } forEach [_sq, _gl];
-            [{ { ctrlDelete _x; } forEach _this; }, [_sq, _gl], 0.36] call CBA_fnc_waitAndExecute;
+            [{ { ctrlDelete _x; } forEach _this; }, [_sq, _gl], 0.36] call comspec_atak_native_fnc_waitAndExec;
         };
         // Le contrôle focalisé (et son groupe) passe devant tout : focus rendu au bouton hors écran.
         [] call comspec_atak_native_fnc_overlayFront;

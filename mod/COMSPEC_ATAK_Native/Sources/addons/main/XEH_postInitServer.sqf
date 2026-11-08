@@ -24,6 +24,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_zeusServer;
 // CR de fin d'opération imposé en jeu : droits, envoi aux joueurs visés, suivi (fn_debriefServer).
 ["init"] call comspec_atak_native_fnc_debriefServer;
+// Traces civiles des HVT : un contrôle par minute, désactivées par défaut (fn_hvtTrace).
+["initSrv"] call comspec_atak_native_fnc_hvtTrace;
+// Téléphones personnels : codes, essais et données, côté serveur (fn_phoneServer).
+["init"] call comspec_atak_native_fnc_phoneServer;
 // App Admin du téléphone : relevé de la partie et debug de l'IA à la demande d'un Zeus ou d'un gestionnaire (fn_adminServer).
 ["init"] call comspec_atak_native_fnc_adminServer;
 // API brouilleurs pour les missions et les autres mods, objets brouilleurs d'autres mods (fn_jammer).
@@ -34,6 +38,18 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["initServer"] call comspec_atak_native_fnc_tocScreen;
 // IA et ATAK : IA équipées par le réglage ou la mission, leurs points PLI envoyés par le serveur (fn_aiAtak).
 ["init"] call comspec_atak_native_fnc_aiAtak;
+// Graphe de référence du maillage (fn_meshGraph) : une seconde entre deux regards, rien sans la liaison réaliste. La variable dit
+// aux clients que ce serveur a le mod : sans elle, ils calculent le graphe eux-mêmes.
+missionNamespace setVariable ["COMSPEC_ATAK_MeshSrvOn", true, true];
+[{ ["serverTick"] call comspec_atak_native_fnc_meshGraph; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Bilan [PERF] sur un serveur dédié (le client le fait de son côté) : rien n'est écrit si rien n'a été mesuré.
+if (!hasInterface) then { [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread; };
+// Registre des clés du maillage : mécanique de jeu, décochée par défaut (fn_meshKeys).
+["init"] call comspec_atak_native_fnc_meshKeys;
+// Actions Zeus sur le maillage, droits vérifiés ici (fn_meshTools).
+["init"] call comspec_atak_native_fnc_meshTools;
+// Nœuds simulés du maillage : événement refusé tant que le mode développeur est décoché (fn_devMeshSim).
+["init"] call comspec_atak_native_fnc_devMeshSim;
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
 ["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.
@@ -41,13 +57,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 // Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).
 [{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Pylônes relais 3D posés dans Eden dont l'init étendue n'aurait pas tourné : enregistrés comme relais (fn_relayTower).
-[{ ["sweep"] call comspec_atak_native_fnc_relayTower; }, [], 2] call CBA_fnc_waitAndExecute;
+[{ ["sweep"] call comspec_atak_native_fnc_relayTower; }, [], 2] call comspec_atak_native_fnc_waitAndExec;
 // Antennes du jeu (pylônes, mâts, antennes omnidirectionnelles, paraboles ; décor de la carte en option) converties en
 // relais ATAK (fn_relayConvert) : au début, puis toutes les 60 s pour les objets posés par le Zeus ; antennes du décor
-// détruites vérifiées toutes les 15 s.
-[{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, [], 4] call CBA_fnc_waitAndExecute;
+// détruites et antennes MRH (mod facultatif) vérifiées toutes les 15 s.
+[{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, [], 4] call comspec_atak_native_fnc_waitAndExec;
 [{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, 60] call COMSPEC_ATAK_PfhSpread;
 [{ ["check"] call comspec_atak_native_fnc_relayConvert; }, 15] call COMSPEC_ATAK_PfhSpread;
+// Antennes transportables (fn_antennaKit) : événements de déploiement et de repli.
+["init"] call comspec_atak_native_fnc_antennaKit;
 // Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
 [{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Conditions d'activation en code des relais et passerelles : évaluées ici seulement, résultat publié (fn_relayCond "srv").
@@ -271,13 +289,13 @@ COMSPEC_ATAK_FtCheck = {
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     missionNamespace setVariable ["COMSPEC_ATAK_SrvPlayOK", (_r select [0, 3]) isEqualTo "OK|", true];
     ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
-}, [], 15] call CBA_fnc_waitAndExecute;
+}, [], 15] call comspec_atak_native_fnc_waitAndExec;
 // Distances parcourues et heures de pilote de chaque joueur (app Distances), envoyées à Athena toutes les 10 min (fn_distanceServer).
 [{ ["tick"] call comspec_atak_native_fnc_distanceServer; }, 3] call COMSPEC_ATAK_PfhSpread;
 // Ménage différé demandé par un client (caisses larguées...) : fait ici pour survivre à son départ.
 ["comspec_atak_native_deleteLater", {
     params [["_objs", []], ["_delay", 1800]];
-    [{ { if (!isNull _x) then { deleteVehicle _x; }; } forEach _this; }, _objs, _delay] call CBA_fnc_waitAndExecute;
+    [{ { if (!isNull _x) then { deleteVehicle _x; }; } forEach _this; }, _objs, _delay] call comspec_atak_native_fnc_waitAndExec;
 }] call CBA_fnc_addEventHandler;
 addMissionEventHandler ["HandleDisconnect", {
     params [["_unit", objNull], "", "_uid"];

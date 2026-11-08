@@ -4,7 +4,7 @@
       ligne 1 : indicatif en capitales, police condensée grasse (« STAR 4-1 », « ENI INFANTERIE 1 »), coupé au-delà
                 de 16 à 18 caractères ; « +3 » quand d'autres unités sont regroupées sous le même cartouche ;
       ligne 2 : plus petite, chiffres à chasse fixe, en gris : distance et azimut depuis moi (« 48 m · 234° »,
-                « 1,2 km · 034° »), « ANCIEN » / « PERDU » devant pour une piste figée ou perdue ; pour un contact ENI,
+                « 1,2 km · 034° ») ; une piste figée ou perdue s'estompe (alpha, fn_mapOnDraw), sans mention ; pour un contact ENI,
                 heure de pose et auteur (« 15:01 · signalé TA1 », boîte bordée de rouge).
     Couleurs : table de la carte (fn_mapColors) ; fond à l'opacité choisie dans le volet CONFIGURATION.
     Tout est dessiné par la carte (drawRectangle, drawLine, drawIcon) : aucun contrôle créé ni déplacé à chaque image.
@@ -93,8 +93,6 @@ private _padX = _fs1 * 0.42 / _ratio;
 private _padY = _fs1 * 0.2;
 private _ox = _fs1 * 1.1 / _ratio;
 private _oy = _fs1 * 0.9;
-private _tagSt = ("ANCIEN") call comspec_atak_native_fnc_tr;
-private _tagLo = ("PERDU") call comspec_atak_native_fnc_tr;
 
 // Candidats visibles, triés par priorité puis du plus proche au plus loin.
 private _me = [] call comspec_atak_native_fnc_gpsPos;
@@ -112,8 +110,6 @@ private _vis = [];
     // Allié proche (moins de 400 m) : rangé avec mon groupe, devant les contacts ENI.
     if (_prio isEqualTo 3 && {(_c select 1) < 400}) then { _prio = 1; };
     private _l2 = _c select 2;
-    if (_fresh isEqualTo "STALE") then { _l2 = _tagSt + " · " + _l2; };
-    if (_fresh in ["LOST", "OFFLINE"]) then { _l2 = _tagLo + " · " + _l2; };
     _vis pushBack [_prio * 1e6 + (_c select 1), _id, _pos, _sp, _cs, _l2, _hostile, _a, _c select 4];
 } forEach _cands;
 if (_eniOn) then {
@@ -137,7 +133,8 @@ private _keep = [];
     private _sp = _x select 3;
     private _ck = [floor ((_sp select 0) / _cluX), floor ((_sp select 1) / _cluY), _x select 6];
     private _i = _clu getOrDefault [_ck, -1];
-    if (_i < 0) then { _clu set [_ck, count _keep]; _keep pushBack [_x, 0]; } else { (_keep select _i) set [1, ((_keep select _i) select 1) + 1]; };
+    // Unités regroupées : nombre et noms gardés (deux joueurs côte à côte n'affichaient qu'un nom, « +1 » sans dire qui).
+    if (_i < 0) then { _clu set [_ck, count _keep]; _keep pushBack [_x, 0, []]; } else { private _kp = _keep select _i; _kp set [1, (_kp select 1) + 1]; (_kp select 2) pushBack [_x select 4, _x select 8]; };
 } forEach _vis;
 
 // Place occupée : bandeau d'information, mon symbole et celui de la sélection (aucun cartouche dessus).
@@ -166,11 +163,20 @@ private _line = _pal get "lblLine";
 private _edge = _pal get "lblEdge";
 {
     if (_n >= _max) then { break };
-    _x params ["_e", "_more"];
+    _x params ["_e", "_more", ["_mNames", []]];
     _e params ["", "_id", "_pos", "_sp", "_l1", "_l2", "_hostile", "_a", "_w1"];
     _sp params ["_sx", "_sy"];
     _w1 = _w1 * _k1;
-    if (_more > 0) then { _l1 = format ["%1 +%2", _l1, _more]; _w1 = _w1 + (2 + count str _more) * _fs1 * 0.5 / _ratio; };
+    if (_more > 0) then {
+        // Deux ou trois unités groupées (noms courts) : les noms sont écrits, « +N » seulement au-delà.
+        private _chars = count _l1;
+        { _chars = _chars + 3 + (count (_x select 0)); } forEach _mNames;
+        if (_more <= 2 && {_chars <= 44}) then {
+            { _l1 = _l1 + " · " + (_x select 0); _w1 = _w1 + (_x select 1) * _k1 + 3 * _fs1 * 0.5 / _ratio; } forEach _mNames;
+        } else {
+            _l1 = format ["%1 +%2", _l1, _more]; _w1 = _w1 + (2 + count str _more) * _fs1 * 0.5 / _ratio;
+        };
+    };
     private _w = (_w1 max ([0, (count _l2) * _cw2] select _two)) + _padX * 2;
     private _h = _fs1 * 1.05 + ([0, _fs2 * 1.1] select _two) + _padY * 2;
     // Haut droite, haut gauche, bas droite, bas gauche : première place libre dans la carte.

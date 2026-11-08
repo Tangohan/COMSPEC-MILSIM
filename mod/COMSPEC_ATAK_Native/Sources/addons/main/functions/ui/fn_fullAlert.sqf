@@ -28,7 +28,7 @@ if (_this isEqualTo ["draw"]) exitWith {
         _cur set [7, _shown];
         [] call comspec_atak_native_fnc_vibrate;
         // Fin de l'alerte : retirée si c'est toujours la même.
-        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_FullAlert", []]) param [5, -1]) isEqualTo _this) then { ["close"] call comspec_atak_native_fnc_fullAlert; }; }, _at, _dur] call CBA_fnc_waitAndExecute;
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_FullAlert", []]) param [5, -1]) isEqualTo _this) then { ["close"] call comspec_atak_native_fnc_fullAlert; }; }, _at, _dur] call comspec_atak_native_fnc_waitAndExec;
     };
     private _left = (_dur - (diag_tickTime - _shown)) max 0.1;
     private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -55,7 +55,7 @@ if (_this isEqualTo ["draw"]) exitWith {
     _ok ctrlSetPosition [_ax + _w * 0.3, _y + _h - _font * 1.7, _w * 0.4, _font * 1.35];
     _ok ctrlSetText (("OK") call comspec_atak_native_fnc_tr);
     _ok ctrlSetFontHeight _fs;
-    _ok ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_fullAlert; }] call CBA_fnc_execNextFrame; }];
+    _ok ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_fullAlert; }] call comspec_atak_native_fnc_nextFrame; }];
     private _ctrls = [_bg, _bar, _t, _ok];
     { _x ctrlCommit 0; } forEach _ctrls;
     // La barre blanche se vide pendant le temps restant.

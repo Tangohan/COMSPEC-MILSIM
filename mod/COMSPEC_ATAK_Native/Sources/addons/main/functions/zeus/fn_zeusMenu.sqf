@@ -78,7 +78,7 @@ switch (_act) do {
                     if (_m isEqualTo "") exitWith { ["feedback", ["ATAK : texte vide, rien n'est envoyé."]] call comspec_atak_native_fnc_zeusMenu; };
                     ["apply", ["dbf_read", _units, -1, 0, _m]] call comspec_atak_native_fnc_zeusMenu;
                 }, _units, format ["%1 joueur(s) : %2", count _units, (_units apply { name _x }) joinString ", "]] call comspec_atak_native_fnc_zeusForm;
-            }, [_units], 0.15] call CBA_fnc_waitAndExecute;
+            }, [_units], 0.15] call comspec_atak_native_fnc_waitAndExec;
         };
         if (_id in ["dbf_fill", "dbf_read", "dbf_lift"]) exitWith {
             switch (_id) do {
@@ -101,7 +101,7 @@ switch (_act) do {
                     if (_m isEqualTo "") then { _m = ["Comportement signalé au commandement.", "Contactez votre chef de groupe."] select (_id isEqualTo "lock_on"); };
                     ["apply", [_id, _units, _int, (_vals select 1) * 60, (_m) call comspec_atak_native_fnc_tr]] call comspec_atak_native_fnc_zeusMenu;
                 }, [_id, _units, _int], format ["%1 joueur(s) : %2", count _units, (_units apply { name _x }) joinString ", "]] call comspec_atak_native_fnc_zeusForm;
-            }, [_title, _id, _units, _int], 0.15] call CBA_fnc_waitAndExecute;
+            }, [_title, _id, _units, _int], 0.15] call comspec_atak_native_fnc_waitAndExec;
         };
         _msg = _msg trim [" ", 0];
         private _i = [_int, 50] select (_int < 0);

@@ -34,7 +34,7 @@ private _list = missionNamespace getVariable ["COMSPEC_ATAK_Reports", createHash
 missionNamespace setVariable ["COMSPEC_ATAK_Reports", _list];
 private _drafts = missionNamespace getVariable ["COMSPEC_ATAK_RepDrafts", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_RepDrafts", _drafts];
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "REPORTS") then { ["REPORTS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "REPORTS") then { ["REPORTS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _types = [] call comspec_atak_native_fnc_reportTypes;
 private _def = { params ["_code"]; private _i = _types findIf { (_x select 0) isEqualTo _code }; if (_i < 0) then { [] } else { _types select _i } };
 private _textKinds = ["edit", "memo", "num", "dtg", "grid", "combo"];
@@ -350,7 +350,7 @@ switch (_act) do {
         // « mobile_report » (fn_adminNotices) : ["MCR1", code, [[clé, valeur]...]], lu par parseSimpleArray (aucun code
         // exécuté). Envoyée par « send » comme une fiche remplie ici ; la fiche en cours du joueur est gardée telle quelle.
         if !(_arg isEqualType "") exitWith {};
-        if ((_arg select [0, 8]) isNotEqualTo "[""MCR1""") exitWith {};
+        if ((_arg select [0, 7]) isNotEqualTo "[""MCR1""") exitWith {};
         private _a = parseSimpleArray _arg;
         if !(_a isEqualType []) exitWith {};
         _a params ["", ["_code", ""], ["_pairs", []]];
@@ -377,6 +377,8 @@ switch (_act) do {
         private _before = count _list;
         ["send"] call comspec_atak_native_fnc_reportAction;
         private _sent = (count _list) > _before;
+        // Accusé « envoyé » vers Athena (fn_adminNotices) : seulement si la fiche est partie.
+        missionNamespace setVariable ["COMSPEC_ATAK_MobileSent", _sent];
         _ui set ["mobile", false];
         _keepUi params ["_kType", "_kVals", "_kAuto", "_kTouched", "_kErr", "_kTab", "_kOpen", "_kPick"];
         { _ui set [_x select 0, _x select 1]; } forEach [["type", _kType], ["vals", _kVals], ["auto", _kAuto], ["touched", _kTouched], ["errors", _kErr], ["tab", _kTab], ["open", _kOpen], ["photoPick", _kPick]];
@@ -438,7 +440,7 @@ switch (_act) do {
         private _p = (_list getOrDefault [_arg, createHashMap]) getOrDefault ["pos", []];
         if ((count _p) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     case "del": { _list deleteAt _arg; call _rerender; };
     case "web": {

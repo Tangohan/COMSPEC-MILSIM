@@ -105,7 +105,7 @@ switch (_act) do {
         // Pistes figées prises à l'entrée dans le mode (y compris à l'arrivée en partie).
         if ((count _on) > 0 && {!_was} && {isNil "COMSPEC_ATAK_CompSnap"}) then { call _snapshot; };
         if (_was isNotEqualTo ((count _on) > 0) && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP"}) then {
-            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
     case "get": { missionNamespace getVariable ["COMSPEC_ATAK_CompActive", createHashMap] };

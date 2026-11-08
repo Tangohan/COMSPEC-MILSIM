@@ -15,7 +15,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ChatNewEdit", controlNull];
 // la réouverture du téléphone (retour de TTRD, 25/10, app Drone). Même raison que le clic différé de fn_formRender.
 private _old = uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []];
 { if (!isNull _x) then { _x ctrlShow false; _x ctrlEnable false; }; } forEach _old;
-[{ { ctrlDelete _x; } forEach _this; }, _old] call CBA_fnc_execNextFrame;
+[{ { ctrlDelete _x; } forEach _this; }, _old] call comspec_atak_native_fnc_nextFrame;
 uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 // Cartouches de marqueurs de la carte : cachés hors carte (la carte les réaffiche à son prochain dessin).
 { if (!isNull _x) then { _x ctrlShow false; }; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []]);

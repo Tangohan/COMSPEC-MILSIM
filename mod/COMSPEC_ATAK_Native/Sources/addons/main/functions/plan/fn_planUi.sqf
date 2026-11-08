@@ -25,7 +25,7 @@ if (_mode isEqualTo "key") exitWith {
     private _f = focusedCtrl _disp;
     // Saisie dans un champ : Entrée valide le champ, le reste est à la saisie (fn_keyBlock garde les lettres).
     if (!isNull _f && {(ctrlType _f) isEqualTo 2}) exitWith {
-        if (_key in [28, 156]) exitWith { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; true };
+        if (_key in [28, 156]) exitWith { [{ [] call comspec_atak_native_fnc_overlayFront; }] call comspec_atak_native_fnc_nextFrame; true };
         _arg call comspec_atak_native_fnc_keyBlock
     };
     private _menuOpen = (_ui get "menu") isNotEqualTo "" || {(count (_ui get "ctx")) > 0};
@@ -100,7 +100,7 @@ private _btn = {
     _b ctrlEnable _enabled;
     _b ctrlAddEventHandler ["ButtonClick", _code];
     // Le focus resté sur le bouton le dessinait devant les effets d'écran : il revient au bouton hors écran.
-    _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
+    _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call comspec_atak_native_fnc_nextFrame; }];
     _b
 };
 private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_planAction;", str _a, str _v] };
@@ -199,7 +199,7 @@ if (_ui get "pal") then {
         private _b = ["COMSPEC_RscButtonOverlay", _r] call _mk;
         _b ctrlSetTooltip ((_def select 2) call comspec_atak_native_fnc_tr);
         _b ctrlAddEventHandler ["ButtonClick", ["tool", _x] call _act];
-        _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
+        _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call comspec_atak_native_fnc_nextFrame; }];
     } forEach _keys;
 };
 
@@ -247,7 +247,7 @@ private _swatches = {
         _c ctrlSetBackgroundColor (_colors get _x);
         _c ctrlSetTextColor ([[1, 1, 1, 1], [0, 0, 0, 1]] select (_x in ["WHITE", "YELLOW", "GREEN", "CYAN"]));
         _c ctrlAddEventHandler ["ButtonClick", [_x] call _codeFor];
-        _c ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
+        _c ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call comspec_atak_native_fnc_nextFrame; }];
         _cx = _cx + _sw + _gap / 2;
     } forEach (_cat get "colorOrder");
     _cx = _cx + _gap;
@@ -297,7 +297,7 @@ switch (true) do {
         private _e2 = [[_cx, _yb, _dw, _rowH], _desc, "Description : détails pour le briefing (300 caractères), reprise dans le texte exporté", { params ["_c"]; ["selSet", ["desc", ctrlText _c]] call comspec_atak_native_fnc_planAction; }] call _edit;
         if (_desc isEqualTo "") then { _e2 ctrlSetTooltip (("Description (vide) : détails pour le briefing, reprise dans le texte exporté") call comspec_atak_native_fnc_tr); };
         _cx = _cx + _dw + _gap;
-        if (uiNamespace getVariable ["COMSPEC_ATAK_PlanFocusEdit", false]) then { uiNamespace setVariable ["COMSPEC_ATAK_PlanFocusEdit", false]; [{ ctrlSetFocus _this; }, _e1] call CBA_fnc_execNextFrame; };
+        if (uiNamespace getVariable ["COMSPEC_ATAK_PlanFocusEdit", false]) then { uiNamespace setVariable ["COMSPEC_ATAK_PlanFocusEdit", false]; [{ ctrlSetFocus _this; }, _e1] call comspec_atak_native_fnc_nextFrame; };
         private _canSel = ["can", _ui get "selLayer"] call comspec_atak_native_fnc_planAction;
         _sw = _rowH * 0.8 / _ratio;
         [_ck, { params ["_k"]; ["selSet", ["color", _k]] call _act }] call _swatches;
@@ -359,7 +359,7 @@ private _menu = {
         private _b = ["COMSPEC_RscButtonOverlay", [_x0, _ry, _w, _rh]] call _mk;
         private _run = [_code] call _once;
         _b ctrlAddEventHandler ["ButtonClick", _run];
-        _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
+        _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call comspec_atak_native_fnc_nextFrame; }];
         _hits pushBack [[_x0, _ry, _w, _rh], _run];
         _ry = _ry + _rh;
     } forEach _rows;

@@ -58,7 +58,7 @@ private _addAction = {
     player setVariable ["COMSPEC_ATAK_DataActLang", missionNamespace getVariable ["COMSPEC_ATAK_Lang", ""]];
 };
 call _addAction;
-player addEventHandler ["Respawn", { [{ player setVariable ["COMSPEC_ATAK_DataActions", nil]; [] call (missionNamespace getVariable ["COMSPEC_ATAK_DataAddAction", {}]); }, [], 1] call CBA_fnc_waitAndExecute; }];
+player addEventHandler ["Respawn", { [{ player setVariable ["COMSPEC_ATAK_DataActions", nil]; [] call (missionNamespace getVariable ["COMSPEC_ATAK_DataAddAction", {}]); }, [], 1] call comspec_atak_native_fnc_waitAndExec; }];
 missionNamespace setVariable ["COMSPEC_ATAK_DataAddAction", _addAction];
 
 // ACE : action sur chaque support, posée dès qu'il apparaît dans la liste du serveur.

@@ -11,7 +11,7 @@ private _say = {
     // Fiche partie : on vide le brouillon sans que le redessin ne reprenne les champs affichés.
     if (_clear) then { uiNamespace setVariable ["COMSPEC_ATAK_FrsDraft", createHashMap]; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", true]; };
     // Réponse lente (appel en spawn) : on ne redessine que si l'app FRS est encore ouverte.
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FRS") then { ["FRS"] call comspec_atak_native_fnc_pageRender; }; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", false]; }] call CBA_fnc_execNextFrame;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FRS") then { ["FRS"] call comspec_atak_native_fnc_pageRender; }; uiNamespace setVariable ["COMSPEC_ATAK_FrsClearing", false]; }] call comspec_atak_native_fnc_nextFrame;
 };
 private _body = trim (_d getOrDefault ["body", ""]);
 if ((count _body) > (_cat getOrDefault ["body_max", 1000])) then { _body = _body select [0, _cat getOrDefault ["body_max", 1000]]; };

@@ -40,5 +40,5 @@ uiNamespace setVariable ["COMSPEC_ATAK_RaiseQueued", true];
     uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
     [] call comspec_atak_native_fnc_deviceOverlay;
     uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
-}] call CBA_fnc_execNextFrame;
+}] call comspec_atak_native_fnc_nextFrame;
 true

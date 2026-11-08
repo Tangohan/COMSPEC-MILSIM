@@ -29,7 +29,7 @@ private _ui = uiNamespace getVariable ["COMSPEC_ATAK_DbfUi", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_DbfUi", _ui];
 private _cfg = missionNamespace getVariable ["COMSPEC_ATAK_DbfCfg", createHashMap];
 private _now = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DEBRIEF") then { ["DEBRIEF"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DEBRIEF") then { ["DEBRIEF"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _server = { params ["_a", ["_x", []]]; ["comspec_atak_native_debrief", [player, _a, _x]] call CBA_fnc_serverEvent; };
 // Questionnaire intégré (même liste que AtakDebriefSpec::BUILTIN sur le site) : traduit à l'affichage.
 private _builtin = [
@@ -44,7 +44,7 @@ private _builtin = [
 private _parse = {
     params ["_body"];
     if !(_body isEqualType "") exitWith { [] };
-    if ((_body select [0, 8]) isNotEqualTo "[""DBF1""") exitWith { [] };
+    if ((_body select [0, 7]) isNotEqualTo "[""DBF1""") exitWith { [] };
     private _a = parseSimpleArray _body;
     if !(_a isEqualType []) exitWith { [] };
     _a params ["", ["_mode", "fill"], ["_title", ""], ["_intro", ""], ["_read", ""], ["_qs", []]];
@@ -83,7 +83,7 @@ private _web = {
         if (_r isEqualType []) then { _r = _r param [0, ""]; };
         if !(_r isEqualType "") then { _r = str _r; };
         private _ok = ((toUpper _r) find "OK") >= 0 && {((toUpper _r) find "ERR") < 0};
-        [{ params ["_then", "_ok"]; [_ok] call _then; }, [_then, _ok]] call CBA_fnc_execNextFrame;
+        [{ params ["_then", "_ok"]; [_ok] call _then; }, [_then, _ok]] call comspec_atak_native_fnc_nextFrame;
     };
     true
 };
@@ -194,7 +194,7 @@ switch (_act) do {
         if (isNull ([] call comspec_atak_native_fnc_display)) then {
             if (!_busy) then { [true] call comspec_atak_native_fnc_open; };
         };
-        [{ if !(isNull ([] call comspec_atak_native_fnc_display)) then { ["DEBRIEF"] call comspec_atak_native_fnc_navigate; }; }, [], 0.4] call CBA_fnc_waitAndExecute;
+        [{ if !(isNull ([] call comspec_atak_native_fnc_display)) then { ["DEBRIEF"] call comspec_atak_native_fnc_navigate; }; }, [], 0.4] call comspec_atak_native_fnc_waitAndExec;
     };
     case "tick": {
         if (!hasInterface) exitWith {};
@@ -253,7 +253,7 @@ switch (_act) do {
         // reçue par l'avis « mobile_debrief » (fn_adminNotices) : ["MDB1", id, [[question, réponse]...], send | read],
         // lu par parseSimpleArray (aucun code exécuté). Remise par « send » / « read » comme si elle était faite ici.
         if !(_arg isEqualType "") exitWith {};
-        if ((_arg select [0, 8]) isNotEqualTo "[""MDB1""") exitWith {};
+        if ((_arg select [0, 7]) isNotEqualTo "[""MDB1""") exitWith {};
         private _a = parseSimpleArray _arg;
         if !(_a isEqualType []) exitWith {};
         _a params ["", ["_id", ""], ["_pairs", []], ["_how", "send"]];
@@ -261,7 +261,7 @@ switch (_act) do {
         if ((count _e) isEqualTo 0) exitWith {
             ["WARNING", "CR fin d'op reçu de votre téléphone, mais cette fiche n'est plus dans ce téléphone", 6, 40, "DEBRIEF"] call comspec_atak_native_fnc_notify;
         };
-        if ((_e get "state") isEqualTo "done") exitWith {};
+        if ((_e get "state") isEqualTo "done") exitWith { missionNamespace setVariable ["COMSPEC_ATAK_MobileSent", true]; };
         private _vals = _e get "vals";
         if (_pairs isEqualType []) then {
             { if (_x isEqualType [] && {(_x param [0, 0]) isEqualType ""} && {(_x param [1, 0]) isEqualType ""}) then { _vals set [_x select 0, _x select 1]; }; } forEach _pairs;
@@ -270,6 +270,8 @@ switch (_act) do {
         _ui set ["open", _id];
         _ui set ["mobile", true];
         [["send", "read"] select (_how isEqualTo "read")] call comspec_atak_native_fnc_debrief;
+        // Accusé « envoyé » vers Athena (fn_adminNotices) : seulement si la fiche est remise.
+        missionNamespace setVariable ["COMSPEC_ATAK_MobileSent", (_e get "state") isEqualTo "done"];
         _ui set ["mobile", false];
         if (_keepOpen isNotEqualTo "") then { _ui set ["open", _keepOpen]; };
     };

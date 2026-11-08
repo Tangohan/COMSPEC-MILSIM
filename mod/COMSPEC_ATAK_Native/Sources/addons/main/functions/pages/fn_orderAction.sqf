@@ -12,7 +12,7 @@ private _keep = {
     { if (_x in _form) then { _d set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["target", "grid", "text", "sit", "mis", "exe", "sup", "cmd", "sseCase"];
     uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", _d];
 };
-private _redraw = { [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 switch (toLower _action) do {
     case "open": {
         // Sans COMSPEC Link ou en ATAK local : ordres envoyés au camp sans Athena (fn_orderLocal).

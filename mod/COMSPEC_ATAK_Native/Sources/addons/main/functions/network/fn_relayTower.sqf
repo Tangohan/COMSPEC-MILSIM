@@ -50,4 +50,4 @@ if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     _list pushBackUnique _o;
     missionNamespace setVariable ["COMSPEC_AtakRelays", _list, true];
     if (!isNil "comspec_overwatch_connect_fnc_syncAtakRelay") then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
-}, [_o]] call CBA_fnc_execNextFrame;
+}, [_o]] call comspec_atak_native_fnc_nextFrame;

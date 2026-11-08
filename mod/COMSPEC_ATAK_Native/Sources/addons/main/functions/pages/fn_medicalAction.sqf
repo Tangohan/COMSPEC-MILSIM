@@ -39,7 +39,7 @@ private _save = {
     uiNamespace setVariable ["COMSPEC_ATAK_Medevac", _m];
     _m
 };
-private _render = { [{ ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_action) do {
     case "set": { (call _save) set [_v, _id]; call _render; };
     case "auto": {
@@ -107,7 +107,7 @@ switch (_action) do {
         private _r = _reqs getOrDefault [_v, createHashMap];
         if ((count _r) isEqualTo 0) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, _r get "pos"] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, _r get "pos"] call comspec_atak_native_fnc_nextFrame;
     };
     case "lzHere": { (call _save) set ["mLz", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef]; call _render; };
     case "medevac": {
@@ -143,14 +143,14 @@ switch (_action) do {
         private _pos = _p param [0, []];
         if ((count _pos) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_pos select 0, _pos select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     case "triage": {
         [_v, _id] spawn {
             params ["_v", "_id"];
             [_v, _id] call comspec_overwatch_connect_fnc_medicalTriage;
             [] call comspec_overwatch_connect_fnc_pollMedicalAlerts;
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MEDICAL") then { ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MEDICAL") then { ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
 };

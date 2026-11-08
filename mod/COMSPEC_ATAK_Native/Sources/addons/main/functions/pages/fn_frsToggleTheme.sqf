@@ -10,4 +10,4 @@ if (_code in _themes) then { _themes deleteAt (_themes find _code); } else {
 };
 _draft set ["themes", _themes];
 uiNamespace setVariable ["COMSPEC_ATAK_FrsDraft", _draft];
-[{ ["FRS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ ["FRS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;

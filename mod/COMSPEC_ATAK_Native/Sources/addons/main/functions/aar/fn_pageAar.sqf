@@ -21,7 +21,7 @@ if !(missionNamespace getVariable ["COMSPEC_ATAK_AarUiFresh", false]) then {
 private _p = uiNamespace getVariable ["COMSPEC_ATAK_AarPlay", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_AarPlay", _p];
 if ((count _log) < 2) exitWith {
-    [[["title", "Rejeu de mission"], ["text", format ["<t color='#8a9a93'>Le téléphone enregistre les positions de votre camp toutes les 10 secondes depuis le début de la mission. Revenez dans un instant (%1 image%2 pour l'instant).</t>", count _log, ["", "s"] select ((count _log) > 1)]]], [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    [[["title", "Rejeu de mission"], ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Le téléphone enregistre les positions de votre camp toutes les 10 secondes depuis le début de la mission. Revenez dans un instant (%1 image%2 pour l'instant).</t>", count _log, ["", "s"] select ((count _log) > 1)]]], [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
 private _last = (count _log) - 1;

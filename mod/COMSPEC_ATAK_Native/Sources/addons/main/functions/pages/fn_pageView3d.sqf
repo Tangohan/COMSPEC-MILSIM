@@ -10,7 +10,7 @@
 disableSerialization;
 // W.I.P : filet si pageRender est encore appelé avec VIEW3D (historique / redessin). Toast déjà géré à l'ouverture.
 if (true) exitWith {
-    [{ ["MAP", false] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    [{ ["MAP", false] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     true
 };
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -60,7 +60,7 @@ private _set = {
         case "north": { _d = 0; };
     };
     _st set ["v3d", [_p, _d, _r, _h]];
-    [{ ["VIEW3D", false] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    [{ ["VIEW3D", false] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
 };
 missionNamespace setVariable ["COMSPEC_ATAK_V3dSet", _set];
 private _rows = [
@@ -76,7 +76,7 @@ private _bw4 = (_vw - 3 * _pad / 2) / 4;
         _b ctrlSetFontHeight _fs;
         _b ctrlAddEventHandler ["ButtonClick", compile ([
             format ["%1 call (missionNamespace getVariable 'COMSPEC_ATAK_V3dSet');", _code],
-            "[{ ['MAP', false] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;"
+            "[{ ['MAP', false] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;"
         ] select (_code isEqualTo ""))];
     } forEach _x;
 } forEach _rows;

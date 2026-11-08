@@ -10,7 +10,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 if ((count _rect) isEqualTo 4) then { _bw = _rect select 2; _bh = _rect select 3; };
 private _st = uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
-private _na = "<t color='#8a9a93'>non renseigné</t>";
+private _na = "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>non renseigné</t>";
 private _val = { params ["_v"]; if (_v isEqualType "" && {(trim _v) isNotEqualTo ""}) then { [_v] call _esc } else { _na } };
 private _icon = "\z\comspec_atak_native\addons\main\data\app_linkally.paa";
 private _phase = _st getOrDefault ["phase", ""];
@@ -31,12 +31,12 @@ switch (_phase) do {
             private _on = ""; private _off = "";
             for "_i" from 1 to _n do { _on = _on + "● "; };
             for "_i" from 1 to (10 - _n) do { _off = _off + "○ "; };
-            format ["<t size='1.2'>%1</t>  <t font='COMSPEC_BarlowBold'>%2 %%</t>", format ["<t color='#5cc76b'>%1</t><t color='#4a5a53'>%2</t>", _on, _off], round (_p * 100)]
+            format ["<t size='1.2'>%1</t>  <t font='COMSPEC_BarlowBold'>%2 %%</t>", format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1</t><t color='#4a5a53'>%2</t>", _on, _off], round (_p * 100)]
         };
         uiNamespace setVariable ["COMSPEC_ATAK_LinkAllyBarTxt", _barTxt];
         _rows append [
             ["title", "Liaison en cours"],
-            ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · gardez le contact (2 m)</t>", [name _target] call _esc,
+            ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · gardez le contact (2 m)</t>", [name _target] call _esc,
                 ["Lien NFC : posez votre téléphone contre le sien", "Câble USB-C branché : lecture directe de la mémoire"] select ((_st getOrDefault ["mode", "NFC"]) isNotEqualTo "NFC")], [], [0.36, 0.78, 0.42, 1]],
             ["text", [_st] call _barTxt, [], "COMSPEC_ATAK_LinkAllyBar"],
             ["buttons", [["ANNULER", { ["unlink"] call comspec_atak_native_fnc_linkAllyAction; }]]]
@@ -51,11 +51,11 @@ switch (_phase) do {
         // État masqué (Réglages > Réalisme, fn_medShow) : seul le décès reste visible.
         private _showState = ["state", "nfc"] call comspec_atak_native_fnc_medShow;
         private _stateTxt = switch (true) do {
-            case (_dead): { "<t color='#e5483a' font='COMSPEC_BarlowBold'>KIA</t>" };
+            case (_dead): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "' font='COMSPEC_BarlowBold'>KIA</t>" };
             case (!_showState): { "" };
-            case (_uncon): { "<t color='#f2ab33' font='COMSPEC_BarlowBold'>INCONSCIENT</t>" };
-            case ((_target getVariable ["ace_medical_woundBleeding", 0]) > 0 || {(damage _target) > 0.1}): { "<t color='#e8b84a' font='COMSPEC_BarlowBold'>BLESSÉ</t>" };
-            default { "<t color='#5cc76b' font='COMSPEC_BarlowBold'>VALIDE</t>" };
+            case (_uncon): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "' font='COMSPEC_BarlowBold'>INCONSCIENT</t>" };
+            case ((_target getVariable ["ace_medical_woundBleeding", 0]) > 0 || {(damage _target) > 0.1}): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "' font='COMSPEC_BarlowBold'>BLESSÉ</t>" };
+            default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "' font='COMSPEC_BarlowBold'>VALIDE</t>" };
         };
         (_target getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], "", ["_dev", ""]];
         private _devTxt = createHashMapFromArray [["OK", "intact"], ["CRACKED", "écran fêlé"], ["OFF", "éteint"], ["BROKEN", "détruit"]] getOrDefault [_dev, "état inconnu"];
@@ -67,15 +67,15 @@ switch (_phase) do {
         if (_cs isEqualTo "") then { _cs = [_target, true] call comspec_atak_native_fnc_unitCallsign; };
         // En-tête : l'équipier, son état, son téléphone et le type de lien.
         _rows append [
-            ["person", _icon, format ["<t size='1.15' font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 · téléphone %4 · lien %5 depuis %6</t>",
+            ["person", _icon, format ["<t size='1.15' font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3 · téléphone %4 · lien %5 depuis %6</t>",
                 [_name] call _esc, _stateTxt, [[_cs] call _esc, "sans indicatif"] select (_cs isEqualTo ""), _devTxt, _st getOrDefault ["mode", "NFC"], _st getOrDefault ["linkedAt", ""]], [],
                 [[0.36, 0.78, 0.42, 1], [0.9, 0.28, 0.23, 1]] select _dead]
         ];
         private _srcTxt = switch (_src) do {
-            case "LIVE": { format ["<t size='0.8' color='#5cc76b'>Mémoire du téléphone lue à %1.</t>", _data getOrDefault ["readAt", ""]] };
-            case "WAIT": { "<t size='0.8' color='#f2ab33'>Lecture de la mémoire du téléphone…</t>" };
-            case "MIRROR": { format ["<t size='0.8' color='#f2ab33'>Joueur déconnecté : dernière sauvegarde de l'appareil (%1). Les envois en file ne peuvent plus repartir, seule leur liste est lue.</t>", _st getOrDefault ["mirrorAt", "?"]] };
-            default { "<t size='0.8' color='#e5483a'>Mémoire illisible : aucune sauvegarde de cet appareil. Identité lue sur la plaque et l'équipement.</t>" };
+            case "LIVE": { format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Mémoire du téléphone lue à %1.</t>", _data getOrDefault ["readAt", ""]] };
+            case "WAIT": { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Lecture de la mémoire du téléphone…</t>" };
+            case "MIRROR": { format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Joueur déconnecté : dernière sauvegarde de l'appareil (%1). Les envois en file ne peuvent plus repartir, seule leur liste est lue.</t>", _st getOrDefault ["mirrorAt", "?"]] };
+            default { "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Mémoire illisible : aucune sauvegarde de cet appareil. Identité lue sur la plaque et l'équipement.</t>" };
         };
         _rows pushBack ["text", _srcTxt];
 
@@ -130,13 +130,13 @@ switch (_phase) do {
         (_data getOrDefault ["frs", []]) params [["_fk", ""], "", "", ["_fb", ""]];
         (_data getOrDefault ["reco", []]) params [["_rt", ""], "", ["_rx", ""]];
         private _items = [];
-        { _items pushBack format ["%1 <t size='0.8' color='#8a9a93'>· %2 Ko · en file sans réseau</t>", [_x select 0] call _esc, _x param [1, 1]]; } forEach _queue;
-        { _items pushBack format ["Photo %1 <t size='0.8' color='#8a9a93'>· refusée par Athena</t>", [_x] call _esc]; } forEach _failed;
-        if ((trim _fb) isNotEqualTo "") then { _items pushBack format ["Brouillon FRS %1 <t size='0.8' color='#8a9a93'>· « %2 »</t>", [_fk] call _esc, [[_fb, (_fb select [0, 70]) + "…"] select ((count _fb) > 70)] call _esc]; };
-        if ((trim _rx) isNotEqualTo "") then { _items pushBack format ["Note de reco %1 <t size='0.8' color='#8a9a93'>· « %2 »</t>", [_rt] call _esc, [[_rx, (_rx select [0, 70]) + "…"] select ((count _rx) > 70)] call _esc]; };
+        { _items pushBack format ["%1 <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>· %2 Ko · en file sans réseau</t>", [_x select 0] call _esc, _x param [1, 1]]; } forEach _queue;
+        { _items pushBack format ["Photo %1 <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>· refusée par Athena</t>", [_x] call _esc]; } forEach _failed;
+        if ((trim _fb) isNotEqualTo "") then { _items pushBack format ["Brouillon FRS %1 <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>· « %2 »</t>", [_fk] call _esc, [[_fb, (_fb select [0, 70]) + "…"] select ((count _fb) > 70)] call _esc]; };
+        if ((trim _rx) isNotEqualTo "") then { _items pushBack format ["Note de reco %1 <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>· « %2 »</t>", [_rt] call _esc, [[_rx, (_rx select [0, 70]) + "…"] select ((count _rx) > 70)] call _esc]; };
         _rows pushBack ["section", "Données non transmises", [format ["%1 élément(s) à renvoyer, crédités « récupéré sur l'ATAK de %2 »", count _items, _name], "Rien en attente sur cet appareil"] select ((count _items) isEqualTo 0)];
         { _rows pushBack ["text", format ["• %1", _x]]; } forEach _items;
-        if (_pending > 0) then { _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>%1 photo(s) encore en cours d'envoi par COMSPEC Link sur son poste.</t>", _pending]]; };
+        if (_pending > 0) then { _rows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1 photo(s) encore en cours d'envoi par COMSPEC Link sur son poste.</t>", _pending]]; };
         private _rec = _sent getOrDefault ["recover", ""];
         if ((count _items) > 0) then {
             _rows pushBack ["buttons", [[["RENVOYER TOUT", format ["RENVOYÉ À %1", _rec]] select (_rec isNotEqualTo ""), { ["recover"] call comspec_atak_native_fnc_linkAllyAction; }, true, _rec isEqualTo "" && {_src in ["LIVE", "MIRROR"]}]]];
@@ -160,22 +160,22 @@ switch (_phase) do {
         private _ready = count _c;
         _rows append [
             ["hero", _icon, format ["<t size='1.15' font='COMSPEC_BarlowBold'>Liaison ATAK</t><br/>%1", [
-                format ["<t color='#5cc76b'>%1 appareil(s) à portée de lien</t>", _ready],
-                ["<t color='#8a9a93'>Aucun équipier à moins de 2 m</t>", format ["<t color='#f2ab33'>%1 équipier(s) à moins de 50 m : approchez-vous</t>", count _near]] select ((count _near) > 0)
+                format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1 appareil(s) à portée de lien</t>", _ready],
+                ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun équipier à moins de 2 m</t>", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1 équipier(s) à moins de 50 m : approchez-vous</t>", count _near]] select ((count _near) > 0)
             ] select (_ready isEqualTo 0)]],
-            ["text", "<t size='0.85' color='#c9d4cf'><t color='#5cc76b' font='COMSPEC_BarlowBold'>1</t>  Approchez-vous à 2 m du blessé, du corps ou de son téléphone tombé<br/><t color='#5cc76b' font='COMSPEC_BarlowBold'>2</t>  RELIER, puis gardez le contact pendant la liaison<br/><t color='#5cc76b' font='COMSPEC_BarlowBold'>3</t>  Lisez son identité, envoyez son rapport, renvoyez ses données</t>"]
+            ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'><t color='" + (COMSPEC_ATAK_Th get "hexOk") + "' font='COMSPEC_BarlowBold'>1</t>  Approchez-vous à 2 m du blessé, du corps ou de son téléphone tombé<br/><t color='" + (COMSPEC_ATAK_Th get "hexOk") + "' font='COMSPEC_BarlowBold'>2</t>  RELIER, puis gardez le contact pendant la liaison<br/><t color='" + (COMSPEC_ATAK_Th get "hexOk") + "' font='COMSPEC_BarlowBold'>3</t>  Lisez son identité, envoyez son rapport, renvoyez ses données</t>"]
         ];
         if (_ready > 0) then { _rows pushBack ["section", "À portée de lien", "Moins de 2 m"]; };
         {
             _x params ["_obj", "_owner", "_dist", "_what"];
             private _st2 = switch (true) do {
-                case (!alive _owner): { "<t color='#e5483a'>KIA</t>" };
+                case (!alive _owner): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>KIA</t>" };
                 case !(["state", "nfc"] call comspec_atak_native_fnc_medShow): { "" };
-                case (lifeState _owner isEqualTo "INCAPACITATED" || {_owner getVariable ["ACE_isUnconscious", false]}): { "<t color='#f2ab33'>inconscient</t>" };
-                default { "<t color='#5cc76b'>valide</t>" };
+                case (lifeState _owner isEqualTo "INCAPACITATED" || {_owner getVariable ["ACE_isUnconscious", false]}): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>inconscient</t>" };
+                default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>valide</t>" };
             };
             (_owner getVariable ["COMSPEC_ATAK_Pub", []]) params ["", "", ["_dev", ""]];
-            _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 · %4 m · téléphone %5</t>",
+            _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3 · %4 m · téléphone %5</t>",
                 [name _owner] call _esc, _st2, _what, _dist toFixed 1, createHashMapFromArray [["OK", "intact"], ["CRACKED", "fêlé"], ["OFF", "éteint"], ["BROKEN", "détruit"]] getOrDefault [_dev, "?"]],
                 [["RELIER", compile format ["['link', objectFromNetId '%1'] call comspec_atak_native_fnc_linkAllyAction;", netId _obj], true]]];
         } forEach _c;
@@ -183,8 +183,8 @@ switch (_phase) do {
             _rows pushBack ["section", "À proximité", "Équipiers avec un téléphone, à moins de 50 m"];
             {
                 private _down = !alive _x || {lifeState _x isEqualTo "INCAPACITATED"} || {_x getVariable ["ACE_isUnconscious", false]};
-                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 m · approchez-vous à 2 m</t>",
-                    [name _x] call _esc, ["", "<t color='#f2ab33'>à terre</t>"] select (_down && {["state", "nfc"] call comspec_atak_native_fnc_medShow}), round (player distance _x)],
+                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3 m · approchez-vous à 2 m</t>",
+                    [name _x] call _esc, ["", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>à terre</t>"] select (_down && {["state", "nfc"] call comspec_atak_native_fnc_medShow}), round (player distance _x)],
                     [["TROP LOIN", {}, false, false]], [0.55, 0.6, 0.58, 1]];
             } forEach (_near select [0, 6]);
         };

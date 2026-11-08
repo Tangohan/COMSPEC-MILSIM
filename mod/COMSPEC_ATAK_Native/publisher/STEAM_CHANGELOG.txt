@@ -1,3 +1,80 @@
+[h1]COMSPEC ATAK — Mise à jour 4.0.0.AG - Washington[/h1]
+[b]Publication : 08/11/2026[/b]
+[quote]
+[b]Important :[/b] ce pack contient COMSPEC Link 2.0.120 : mettez à jour le pack 4.0.0, quittez Arma 3 complètement, puis relancez.
+[/quote]
+
+[h2]Correctifs et changements[/h2]
+[list]
+[*] App Musique : activer le haut-parleur ne provoque plus d'erreur de script ni d'alternance oui/non.
+[*] L'app C2 est retirée : groupe, indicatif et unités se retrouvent dans Groupe et BFT, les ordres dans Tâches.
+[*] Carte : deux joueurs côte à côte gardent chacun leur nom ; un joueur en véhicule, avion ou hélico a une icône d'engin et la liste de ses occupants ; les symboles se regroupent au dézoom ; les traits tracés sur la carte du jeu s'affichent.
+[*] Carte : maintenir le clic gauche pointe un endroit pour tout le camp ; le point GPS ne bouge plus à l'arrêt ; la fiche d'une unité sélectionnée ne fait plus recharger la carte ; noms d'étapes de l'app Routes corrigés ; cap du curseur avec N, NE, E…
+[*] App Drone : une photo prise en vision nocturne en plein jour est prise en vision jour (elle sortait presque blanche) ; la distance de vue du flux suit la distance de ce que regarde la nacelle (1500 m au moins, 3000 m au plus, réglable par mission).
+[*] Musique, Réglages et Drone : lancer ou changer de morceau, régler un interrupteur ou changer de vision ne redessine plus toute la page. Une erreur dans un bouton du téléphone ne se répète plus à chaque image.
+[*] Toutes les actions différées du téléphone passent par une file propre au mod : une erreur de script dans l'une d'elles ne bloque plus les autres, ni celles d'ACE, et ne se rejoue plus.
+[*] Réparer le téléphone (kit ou caisse à outils) : il se rouvre tout seul à la fin et son redémarrage se voit ; avant, il restait rangé et la réparation semblait sans effet.
+[*] Batterie : par temps froid (sous 5 °C), elle se vide plus vite, sauf en véhicule. Désactivable par l'admin du serveur (ATAK · Batterie et mémoire).
+[*] Comptes rendus et CR de fin d'opération envoyés depuis le vrai téléphone (QR code) : ils partent enfin en jeu, avec notification aux autres et entrée dans l'app. Un CR imposé par le site s'ouvre aussi.
+[*] Carte sur fond sombre, nuit, satellite ou hybride : symboles et zones ne provoquent plus d'erreur qui arrêtait le dessin.
+[*] App Routes : le clic gauche et les autres apps répondent après une route ; un glisser de carte ne pose plus d'étape.
+[*] Réglages, cartes et captures du mod ne vont plus dans OneDrive : tout reste dans les Documents du disque local (les anciens dossiers sont repris).
+[*] Les réponses des groupes IA s'affichent en texte au-dessus de la tête de leur chef, si vous êtes à portée et le voyez ; sinon en notification d'Arma, plus dans le téléphone. Réglage : ATAK · Affichage.
+[*] Arsenal ACE, écran Tenues : plus de panneaux vides, de fenêtre fantôme ni de textes superposés à l'ouverture.
+[*] Nouvelles [b]antennes transportables[/b] (satellite, omnidirectionnelle sur mât) : à déployer par ACE, elles servent de relais au réseau ATAK.
+[*] Nouveau [b]GPS de poignet[/b], autonome, à écran monochrome : position, boussole, points et routes de l'ATAK (Ctrl+Maj+G).
+[*] App Routes : avec le mod F-PANO ECOTI, les prochaines étapes de la route suivie s'affichent sous JVN dans sa vue (réglage ATAK · Routes).
+[*] Bloc-notes refait : une liste, un clic pour écrire, enregistrement automatique, épingler, ajouter sa grille ou l'heure.
+[*] Carte : plus de mention « PERDU », noms lisibles à mi-zoom. BFT : menu LISTE et ORBAT.
+[*] Messages, Réglages, favoris, file Musique, diapositives et source vidéo du drone : moins de pages redessinées.
+[*] Écran abîmé : huit motifs de fêlures et de bris, différents à chaque choc, désactivables (Réglages).
+[*] Téléphones personnels : chaque téléphone a un propriétaire. Ramassez celui d'un autre : vous choisissez lequel ouvrir et ne lisez que ce qu'il contient. Code et indice dans Réglages, essais limités, code oublié récupérable (CODE OUBLIÉ, admin ou Zeus). Désactivable par l'admin du serveur (ATAK · Téléphones personnels).
+[*] Nouvelle app Communauté : consignes d'Athena, ordres, tips et kit obligatoire, avec ce qui manque dans votre équipement. L'admin du serveur règle le kit (ATAK · Communauté) ; une mission peut définir le sien.
+[*] Traces civiles des HVT (désactivées par défaut, activées par la mission ou le Zeus) : Tinder › DOSSIERS donne l'heure et la zone d'un kilomètre où une cible était active dans une app, avec du retard, jamais sa position du moment. Option : réservées au renseignement.
+[/list]
+
+
+[h2]Optimisation[/h2]
+[list]
+[*] Réseau maillé MPU5 : largeur de canal, perte par saut réaliste, temps d'antenne partagé, mât d'antenne (avec la liaison réaliste, désactivée par défaut).
+[*] Réseau maillé MPU5 : positions périmées grises puis retirées, gros fichiers par blocs avec reprise, messages sans passerelle (avec la liaison réaliste, désactivée par défaut).
+[*] Réseau maillé MPU5 : 16 groupes de conversation dans l'app Wave Relay, messages de groupe aux abonnés joignables.
+[*] Réseau maillé MPU5 : clés simulées (mécanique de jeu, désactivée par défaut) : chargeur, effacement, messages chiffrés à l'écran.
+[*] Réseau maillé MPU5 : goniomètre et analyseur de spectre pour le spécialiste, modes de discrétion, brouillage par canal.
+[*] Réseau maillé MPU5 : topologie, ping et prévision de couverture dans Wave Relay ; module Eden et clic droit Zeus.
+[*] Réseau maillé MPU5 : une seule variable diffusée par joueur, notice joueur disponible.
+[*] Réseau maillé MPU5 (avec la liaison réaliste, désactivée par défaut) : un seul graphe pour l'écran, les données et la voix, calculé sur le serveur, avec un plafond de sauts réglable.
+[*] La liaison COMSPEC Link fait moins de travail à chaque échange avec le téléphone et écrit son journal par paquets.
+[*] L'app Recherchés et les apps du SSE qui lisent les avis d'Athena ne font plus attendre le jeu : liste gardée 5 minutes et rafraîchie en arrière-plan.
+[*] Onglet Debug › PERFS : temps passé dans la liaison pour chaque commande (appels, moyenne, p95, pire) et bouton RAZ DLL.
+[*] Les notifications ne recalculent plus l'état du téléphone chaque seconde quand il n'y a rien à afficher.
+[*] Journal (RPT) : l'arrivée en jeu est découpée (chargement du monde et des autres mods, puis synchronisation), et chaque image figée indique la part passée dans le mod. Les journaux relus montrent moins de 0,5 s pour le mod sur une arrivée de 46 s : envoyez vos RPT, téléphone ouvert sur la carte et avec un drone, pour mesurer le reste.
+[b]Publication : 03/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 3.1.0, quittez Arma 3 complètement, puis relancez. Pour COMSPEC IDENTITY, gardez COMSPEC SSE à jour (1.3.0).
+[/quote]
+
+[h2]Interface du téléphone refaite[/h2]
+[list]
+[*] Toutes les apps partagent les mêmes couleurs, tailles de texte, boutons, onglets, listes et bandeaux : plus aucun texte minuscule (14 px au moins sur tout écran), les bandeaux de notification et les petits messages trop longs passent sur deux lignes au lieu d'être coupés.
+[*] Trois thèmes, Réglages › Personnalisation › Thème ou tuile Thème du volet rapide : SOMBRE, JOUR (surfaces claires pour le plein soleil) et NUIT JVN (vert phosphore à faible luminance, compatible jumelles de vision nocturne).
+[*] Écran de verrouillage : notifications groupées par app avec leur nombre, point sur le non lu, raccourcis CARTE et MESSAGES. Centre de notifications : onglets avec compteurs, groupes par app, bouton RÉGLER LES ALERTES.
+[*] Lanceur : vraie loupe de recherche, épingle sur les apps épinglées, en-têtes lisibles sur tout fond d'écran. Réglages : liste de catégories avec chevrons, en-tête avec retour, recherche par Entrée. Fiche de marqueur en sections, SUPPRIMER en rouge à part. Debug et Groupe : onglets soulignés.
+[/list]
+
+[h2]Rappel 3.0.4[/h2]
+[list]
+[*] Correctif : plus de plantage du jeu après « Lier » une caméra IP.
+[*] Optimisation : moins de travail à chaque image (carte, synchronisation, liaison), téléphone plus fluide en mission longue.
+[/list]
+
+[h2]Composants[/h2]
+[list]
+[*] Téléphone ATAK 3.1.0.AG - Austin
+[*] COMSPEC Link 2.0.119
+[*] Overwatch connect 1.6.34 · Overwatch main 1.4.8
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 3.0.3.AG - Austin[/h1]
 [b]Publication : 03/11/2026[/b]
 [quote]

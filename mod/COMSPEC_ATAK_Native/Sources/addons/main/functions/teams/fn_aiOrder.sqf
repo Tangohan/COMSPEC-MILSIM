@@ -112,13 +112,19 @@ switch (_act) do {
         if (unitIsUAV (vehicle leader _g)) exitWith { "Un drone se commande depuis l'app Drone" };
         ""
     };
+    // Toast d'Arma (CfgNotifications, config.cpp) : secours des bulles (fn_aiBubble) ; rien dans le centre de notifications du téléphone.
+    case "toast": {
+        _arg params [["_t", ""], ["_type", "INFO"]];
+        if (!hasInterface || {_t isEqualTo ""}) exitWith {};
+        [["COMSPEC_ATAK_AiReply", "COMSPEC_ATAK_AiReplyWarn"] select (_type in ["WARNING", "ERROR"]), [((_t) call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", " "]]] call BIS_fnc_showNotification;
+    };
     case "send": {
         _arg params [["_g", grpNull], ["_k", ""], ["_pos", []], ["_toc", false]];
         if !(_g isEqualType grpNull) then { _g = grpNull; };
-        // PC du poste ouvert : ligne d'état du PC ; sinon notification du téléphone.
+        // PC du poste ouvert : ligne d'état du PC ; sinon toast d'Arma (jamais les notifications du téléphone).
         private _say = {
             params ["_t", ["_type", "WARNING"]];
-            if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; } else { [_type, _t, 4, 30] call comspec_atak_native_fnc_notify; };
+            if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; } else { ["toast", [_t, _type]] call comspec_atak_native_fnc_aiOrder; };
             false
         };
         private _why = ["why", _g] call comspec_atak_native_fnc_aiOrder;
@@ -156,8 +162,8 @@ switch (_act) do {
             if ((missionNamespace getVariable ["comspec_overwatch_log_level", 3]) >= 4) then { ["DEBUG", "AIORDER", format ["%1 : aucune réponse du serveur après 30 s", _id]] call comspec_atak_native_fnc_log; };
             private _t = format ["%1 · %2 : pas de réponse du serveur. Réessayez ; si ça recommence, le serveur n'a sans doute pas la même version du mod ATAK", _gn, _kl];
             if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; };
-            ["WARNING", _t, 6, 40] call comspec_atak_native_fnc_notify;
-        }, [_id], 30] call CBA_fnc_waitAndExecute;
+            ["toast", [_t, "WARNING"]] call comspec_atak_native_fnc_aiOrder;
+        }, [_id], 30] call comspec_atak_native_fnc_waitAndExec;
         [format ["%1 · %2 : ordre envoyé", groupId _g, [_k] call _kLabel], "INFO"] call _say;
         true
     };
@@ -376,7 +382,7 @@ switch (_act) do {
             params ["_t", ["_type", "INFO"]];
             if (_replay) exitWith {};
             if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; };
-            [_type, _t, 6, 50, "MAP"] call comspec_atak_native_fnc_notify;
+            ["toast", [_t, _type]] call comspec_atak_native_fnc_aiOrder;
         };
         private _in = createHashMapFromArray _pairs;
         // Réponse du serveur reçue : plus d'alerte « pas de réponse » pour cet ordre (fn_aiOrder "send").
@@ -402,16 +408,25 @@ switch (_act) do {
         if ((_in getOrDefault ["ackUid", ""]) isEqualTo getPlayerUID player) then {
             [format ["%1 : %2 appliquée", _gn, _in getOrDefault ["ack", ""]]] call _tell;
         };
-        // Donneur d'ordre : en cours, terminé ou impossible (une fois par changement d'état).
-        if ((_e getOrDefault ["uid", ""]) isEqualTo getPlayerUID player && {[_e getOrDefault ["id", ""], _st] isNotEqualTo _was} && {_st isNotEqualTo "NEW"}) then {
+        // Changement d'état : bulle au-dessus du chef du groupe pour les joueurs du camp à portée et en vue (fn_aiBubble).
+        // Donneur d'ordre : ligne d'état du PC du poste ; toast d'Arma seulement si la bulle n'est pas vue (ou désactivée).
+        if (!_replay && {[_e getOrDefault ["id", ""], _st] isNotEqualTo _was} && {_st isNotEqualTo "NEW"}) then {
             private _kl = [_e getOrDefault ["kind", ""]] call _kLabel;
             private _tx = _e getOrDefault ["text", ""];
-            switch (_st) do {
-                case "EXEC": { [format ["%1 · %2 : %3", _gn, _kl, _tx]] call _tell; };
-                case "DONE": { [format ["%1 · %2 terminé : %3", _gn, _kl, _tx], "SUCCESS"] call _tell; };
-                case "FAIL": { [format ["%1 · %2 impossible : %3", _gn, _kl, _tx], "WARNING"] call _tell; };
-                default { [format ["%1 : ordre annulé", _gn]] call _tell; };
+            private _klTr = _kl call comspec_atak_native_fnc_tr;
+            private _txTr = _tx call comspec_atak_native_fnc_tr;
+            (switch (_st) do {
+                case "EXEC": { [format ["%1 · %2 : %3", _gn, _kl, _tx], "INFO", format ["%1 : %2", _klTr, _txTr]] };
+                case "DONE": { [format ["%1 · %2 terminé : %3", _gn, _kl, _tx], "SUCCESS", format [("%1 terminé : %2") call comspec_atak_native_fnc_tr, _klTr, _txTr]] };
+                case "FAIL": { [format ["%1 · %2 impossible : %3", _gn, _kl, _tx], "WARNING", format [("%1 impossible : %2") call comspec_atak_native_fnc_tr, _klTr, _txTr]] };
+                default { [format ["%1 : ordre annulé", _gn], "INFO", ("Ordre annulé") call comspec_atak_native_fnc_tr] };
+            }) params ["_full", "_type", "_said"];
+            private _seen = ["say", [leader _g, _said, _gn, _type]] call comspec_atak_native_fnc_aiBubble;
+            if ((_e getOrDefault ["uid", ""]) isEqualTo getPlayerUID player) then {
+                if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _full] call comspec_atak_native_fnc_tocLaptop; };
+                if !(_seen) then { ["toast", [_full, _type]] call comspec_atak_native_fnc_aiOrder; };
             };
         };
+
     };
 };

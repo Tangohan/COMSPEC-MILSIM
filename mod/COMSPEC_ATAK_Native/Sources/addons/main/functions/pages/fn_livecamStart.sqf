@@ -77,7 +77,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
             private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             private _pg = _st getOrDefault ["activePage", ""];
             if (_pg isEqualTo "MAP") then { _st set ["mapCam", ""]; };
-            if (_pg in ["LIVECAM", "MAP"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _pg] call CBA_fnc_execNextFrame; };
+            if (_pg in ["LIVECAM", "MAP"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _pg] call comspec_atak_native_fnc_nextFrame; };
         };
         if (isNull _cam || {isNull _u} || {_u isKindOf "COMSPEC_ATAK_CameraObj"}) exitWith {};
         // Relais dans la mission (fn_videoLink) : le flux du porteur passe en direct (maillage, 3 km) ou par les relais.
@@ -97,7 +97,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
             private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             private _pg = _st getOrDefault ["activePage", ""];
             if (_pg isEqualTo "MAP") then { _st set ["mapCam", ""]; };
-            if (_pg in ["LIVECAM", "MAP"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _pg] call CBA_fnc_execNextFrame; };
+            if (_pg in ["LIVECAM", "MAP"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _pg] call comspec_atak_native_fnc_nextFrame; };
         };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_LivecamOsd", controlNull];
         if (!isNull _osd) then {

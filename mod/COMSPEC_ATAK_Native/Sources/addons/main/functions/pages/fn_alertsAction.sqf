@@ -1,7 +1,7 @@
 /* Actions des apps Alertes et SALUTE. Params : [action, argument] */
 params ["_action", ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _render = { [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["ALERTS", "SALUTE"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["ALERTS", "SALUTE"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 uiNamespace setVariable ["COMSPEC_ATAK_AlertsRerender", _render];
 private _bridge = [] call comspec_atak_native_fnc_bridge && {!isNil "comspec_overwatch_connect_fnc_sendTacticalAlert"};
 private _me = [player, true] call comspec_atak_native_fnc_unitCallsign;
@@ -19,7 +19,7 @@ switch (_action) do {
             _s set ["panicArmedUntil", diag_tickTime + 5];
             call _saveDraft;
             call _render;
-            [{ call (uiNamespace getVariable ["COMSPEC_ATAK_AlertsRerender", {}]); }, [], 5.1] call CBA_fnc_waitAndExecute;
+            [{ call (uiNamespace getVariable ["COMSPEC_ATAK_AlertsRerender", {}]); }, [], 5.1] call comspec_atak_native_fnc_waitAndExec;
         };
         _s set ["panicArmedUntil", -1];
         // Téléphones alliés du camp : alerte immédiate, même sans Athena.
@@ -72,7 +72,7 @@ switch (_action) do {
         [{
             [_this, 0.05] call comspec_atak_native_fnc_mapCenter;
             ["recv", [[_this select 0, _this select 1, 0], "ALERTE", player]] call comspec_atak_native_fnc_mapPing;
-        }, [(_e select 2) select 0, (_e select 2) select 1], 0.15] call CBA_fnc_waitAndExecute;
+        }, [(_e select 2) select 0, (_e select 2) select 1], 0.15] call comspec_atak_native_fnc_waitAndExec;
     };
     case "clearLog": { missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []]; call _render; };
     case "saluteClear": {

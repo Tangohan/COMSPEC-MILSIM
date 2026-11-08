@@ -15,4 +15,4 @@ if (_ok isEqualTo true) then {
     uiNamespace setVariable ["COMSPEC_ATAK_RecoHint", ["Note non envoyée (voir le message à l'écran).", true]];
 };
 uiNamespace setVariable ["COMSPEC_ATAK_RecoClearing", true];
-[{ ["RECO"] call comspec_atak_native_fnc_pageRender; uiNamespace setVariable ["COMSPEC_ATAK_RecoClearing", false]; }] call CBA_fnc_execNextFrame;
+[{ ["RECO"] call comspec_atak_native_fnc_pageRender; uiNamespace setVariable ["COMSPEC_ATAK_RecoClearing", false]; }] call comspec_atak_native_fnc_nextFrame;

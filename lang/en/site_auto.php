@@ -6,6 +6,12 @@ declare(strict_types=1);
 // Tenu par tools/i18n/site_i18n.py (extract, merge). %1, %2... : valeurs insérées par la vue.
 
 return [
+    'App Communauté du téléphone : consignes, ordres et tips' => 'Phone Community app: instructions, orders and tips',
+    'App Communauté du téléphone : kit obligatoire' => 'Phone Community app: mandatory kit',
+    'Une ligne par note : genre (consigne, ordre ou tip), titre et texte, séparés par |. 40 notes au plus, texte brut.' => 'One line per note: kind (consigne, ordre or tip), title and text, separated by |. 40 notes at most, plain text.',
+    'Une entrée par ligne : classe Arma, nombre après *, variantes acceptées séparées par /, libellé après :. Comparé à ce que porte le joueur. Un kit posé par la mission reste prioritaire.' => 'One entry per line: Arma class, count after *, accepted variants separated by /, label after :. Compared with what the player carries. A kit set by the mission takes priority.',
+    'ordre | Rassemblement | H-10 au hangar nord' => 'ordre | Assembly | H-10 at the north hangar',
+    'ACE_fieldDressing*2 : Pansements' => 'ACE_fieldDressing*2 : Bandages',
     'Envoyer ce compte rendu à tous les joueurs connectés ?' => 'Send this report to all connected players?',
     'Envoyer un compte rendu de fin d’opération' => 'Send an end-of-operation report',
     'Le lire' => 'Read it',

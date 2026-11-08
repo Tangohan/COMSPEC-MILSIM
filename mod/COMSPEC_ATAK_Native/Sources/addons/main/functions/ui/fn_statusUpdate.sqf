@@ -35,7 +35,7 @@ private _put = {
     params ["_c", "_k", "_v"];
     if ((_c getVariable [_k, 0]) isEqualTo _v) exitWith {};
     _c setVariable [_k, _v];
-    switch (_k) do { case "cs_t": { _c ctrlSetText _v; }; case "cs_tt": { _c ctrlSetTooltip _v; }; default { _c ctrlSetTextColor _v; }; };
+    switch (_k) do { case "cs_t": { _c ctrlSetText ((_v) call comspec_atak_native_fnc_tr); }; case "cs_tt": { _c ctrlSetTooltip ((_v) call comspec_atak_native_fnc_tr); }; default { _c ctrlSetTextColor _v; }; };
 };
 private _sigT = ((_dir + format ["sig_%1.paa", _bars])) call comspec_atak_native_fnc_tr;
 private _sigC = switch (true) do { case (_bars >= 3): { [0.36, 0.78, 0.42, 1] }; case (_bars >= 1): { [0.95, 0.67, 0.20, 1] }; default { [0.88, 0.25, 0.22, 1] }; };
@@ -113,7 +113,7 @@ if (_page isEqualTo "ATHENA") then {
     private _hint = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHint", ["", false, 0]];
     private _hintExpired = ((_old param [3, ""]) isNotEqualTo "") && {diag_tickTime - (_hint param [2, 0]) > 30};
     if (_hintExpired || {(_old select [0, 3]) isNotEqualTo _sig}) then {
-        [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
 };
 // Service Athena choisi mais pas connecté au compte : bandeau qui ouvre l'app Athena (touché), après 25 s puis au plus

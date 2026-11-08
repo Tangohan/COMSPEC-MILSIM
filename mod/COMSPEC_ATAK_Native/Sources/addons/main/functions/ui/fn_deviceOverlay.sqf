@@ -11,8 +11,10 @@
     Mode nuit (profil COMSPEC_ATAK_NightMode) : filtre rouge (RED) ou écran assombri (DIM) par-dessus le contenu ;
     filtre d'écran JVN (fn_screenGlow) : film sombre en plus.
     Contrôles de page (hors zone de contenu) recréés à chaque rendu pour rester au-dessus ; mis à jour chaque seconde.
-    Par-dessus les textures : fêlures procédurales (éclats en étoile autour d'un ou deux impacts, graine tirée au
-    premier choc), différentes d'un appareil et d'un choc à l'autre.
+    Par-dessus les textures : fêlures procédurales, graine et motif tirés au premier choc, différents d'un appareil et d'un
+    choc à l'autre : étoile, coin écrasé, balle (anneaux), fissure traversante, toile, gravillons, verre en éclats,
+    rayures ; un deuxième motif s'ajoute à partir du niveau 3. Un contrôle fixe par trait, créés une fois par signature
+    et plafonnés (40 à 130 selon les dégâts). Réglages > « Fêlures détaillées » (profil COMSPEC_ATAK_CrackFx) : les retire.
     Premier plan : Arma dessine le contrôle qui a le focus (zone de contenu après un clic) devant tout le reste ;
     tant qu'un effet est affiché, le focus est rendu au bouton invisible hors écran (sauf saisie de texte ou liste
     déroulante) pour que les fêlures, le filtre de nuit et les écrans d'arrêt / démarrage restent devant l'app.
@@ -99,6 +101,7 @@ if (_lvl isEqualTo 0 && {!_broken}) then {
 } else {
     if !("crackVar" in _look) then { _look set ["crackVar", floor random 3]; };
     if !("seed" in _look) then { _look set ["seed", floor random 10000]; };
+    if !("crackKind" in _look) then { _look set ["crackKind", floor random 8]; };
     if (_lvl >= 2 && {_dmg > (_look getOrDefault ["damage", -1])}) then { _look set ["glitchVar", floor random 2]; };
     if (_broken && {!("shatterVar" in _look)}) then { _look set ["shatterVar", floor random 2]; };
     _look set ["damage", _dmg];
@@ -108,12 +111,12 @@ uiNamespace setVariable ["COMSPEC_ATAK_DevLook", _look];
 private _showCrack = _lvl > 0 && {!_broken};
 _crack ctrlShow _showCrack;
 if (_showCrack) then {
-    _crack ctrlSetText (format ["crack_%1_%2", _lvl, _look get "crackVar"] call _tex);
+    _crack ctrlSetText (((format ["crack_%1_%2", _lvl, _look get "crackVar"] call _tex)) call comspec_atak_native_fnc_tr);
     _crack ctrlSetTextColor [1, 1, 1, [0.85, 0.9, 1] select (_lvl - 1)];
 };
 // Verre noir éclaté : appareil détruit.
 _shatter ctrlShow _broken;
-if (_broken) then { _shatter ctrlSetText (format ["shatter_%1", _look get "shatterVar"] call _tex); };
+if (_broken) then { _shatter ctrlSetText (((format ["shatter_%1", _look get "shatterVar"] call _tex)) call comspec_atak_native_fnc_tr); };
 // Lignes mortes : fixes et discrètes au niveau 2, scintillantes (changement de trame ~1 fois/s) quand c'est grave.
 private _showGlitch = (_lvl >= 2 || _broken) && {_state isNotEqualTo "OFF"};
 _glitch ctrlShow _showGlitch;
@@ -122,13 +125,13 @@ if (_showGlitch) then {
     if (_lvl >= 3 || {_dmg >= 0.85} || _broken) then {
         private _frame = ((_look getOrDefault ["frame", 0]) + 1 + floor random 2) mod 3;
         _look set ["frame", _frame];
-        _glitch ctrlSetText (format ["glitch_%1_%2", _gv, _frame] call _tex);
+        _glitch ctrlSetText (((format ["glitch_%1_%2", _gv, _frame] call _tex)) call comspec_atak_native_fnc_tr);
         _glitch ctrlSetTextColor [1, 1, 1, [0.9, 0.55] select _broken];
         // Battement : la trame apparaît d'un coup puis pâlit avant la suivante ; parfois l'écran « décroche ».
         _glitch ctrlSetFade ([0, 0.85] select (random 1 < 0.15)); _glitch ctrlCommit 0;
         _glitch ctrlSetFade (0.25 + random 0.45); _glitch ctrlCommit (0.5 + random 0.4);
     } else {
-        _glitch ctrlSetText (format ["glitch_%1_0", _gv] call _tex);
+        _glitch ctrlSetText (((format ["glitch_%1_0", _gv] call _tex)) call comspec_atak_native_fnc_tr);
         _glitch ctrlSetTextColor [1, 1, 1, 0.35];
         _glitch ctrlSetFade 0; _glitch ctrlCommit 0;
     };
@@ -148,7 +151,7 @@ if (_off) then {
     _black ctrlShow true; _black ctrlSetFade 0; _black ctrlCommit 0;
     if (_booting) then {
         private _p = (1 - _left / _bootLen) max 0 min 1;
-        _boot ctrlSetText ("boot" call _tex);
+        _boot ctrlSetText ((("boot" call _tex)) call comspec_atak_native_fnc_tr);
         // La barre rejoint la valeur de la seconde suivante en une seconde : progression continue.
         (ctrlPosition _barBg) params ["_bx", "_by", "_bw", "_bh"];
         _bar ctrlSetPosition [_bx, _by, _bw * _p, _bh]; _bar ctrlCommit 0;
@@ -204,12 +207,13 @@ if (_sig isNotEqualTo _deadSig) then {
 // Fêlures procédurales : éclats en étoile (rayons brisés, ramifications) autour d'un impact, deux quand c'est grave.
 // Graine tirée au premier choc (COMSPEC_ATAK_DevLook) : même dessin d'une seconde à l'autre, nouveau après réparation.
 private _fxOn = ((_fx param [1, -1]) > diag_tickTime);
-private _lsig = format ["%1|%2|%3|%4|%5", _look getOrDefault ["seed", -1], _lvl, _broken, _ori, _rect];
+private _crackFx = profileNamespace getVariable ["COMSPEC_ATAK_CrackFx", true];
+private _lsig = format ["%1|%2|%3|%4|%5|%6", _look getOrDefault ["seed", -1], _lvl, _broken, _ori, _rect, _crackFx];
 if (_lsig isNotEqualTo _lineSig) then {
     { ctrlDelete _x; } forEach _lines;
     _lines = [];
     _lineSig = _lsig;
-    if (_lvl > 0 || _broken) then {
+    if ((_lvl > 0 || _broken) && {_crackFx}) then {
         _rect params ["_rx", "_ry", "_rw", "_rh"];
         private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
         private _seed = _look getOrDefault ["seed", 0];
@@ -218,9 +222,12 @@ if (_lsig isNotEqualTo _lineSig) then {
         private _rnd = { _n = _n + 1; private _v = (sin (_seed * 0.917 + _n * 113.37)) * 4375.85; _v - floor _v };
         private _sev = [_lvl, 4] select _broken;
         private _thick = pixelH * ([1.2, 1.6] select (_sev >= 3));
+        // Plafond de traits (un contrôle chacun) : coût borné quel que soit le motif.
+        private _maxSeg = [0, 40, 70, 100, 130] select _sev;
         // Segment de (x, y), angle en degrés (0 = droite, sens horaire), longueur en unités verticales ; coupé au bord de l'écran.
         private _seg = {
             params ["_x1", "_y1", "_a", "_len", "_alpha"];
+            if ((count _lines) >= _maxSeg) exitWith { [_x1, _y1] };
             private _x2 = _x1 + (cos _a) * _len / _ratio;
             private _y2 = _y1 + (sin _a) * _len;
             private _k = 1;
@@ -237,14 +244,15 @@ if (_lsig isNotEqualTo _lineSig) then {
             _lines pushBack _c;
             [_x2, _y2]
         };
-        for "_i" from 1 to ([1, 2] select (_sev >= 3)) do {
-            private _px = _rx + _rw * (0.12 + 0.76 * call _rnd);
-            private _py = _ry + _rh * (0.08 + 0.84 * call _rnd);
-            private _rays = [0, 5, 8, 11, 14] select _sev;
+        // Point au hasard sur l'écran, loin des bords.
+        private _spot = { [_rx + _rw * (0.12 + 0.76 * call _rnd), _ry + _rh * (0.08 + 0.84 * call _rnd)] };
+        // Étoile : [x, y, rayons, facteur de longueur, anneau d'éclats].
+        private _star = {
+            params ["_px", "_py", "_rays", "_lenK", "_ringOn"];
             private _a0 = 360 * call _rnd;
             for "_j" from 0 to (_rays - 1) do {
                 private _a = _a0 + _j * 360 / _rays + (call _rnd - 0.5) * (300 / _rays);
-                private _len = _rh * (0.06 + 0.30 * call _rnd) * (0.55 + 0.2 * _sev);
+                private _len = _rh * (0.06 + 0.30 * call _rnd) * (0.55 + 0.2 * _sev) * _lenK;
                 private _alpha = 0.35 + 0.35 * call _rnd;
                 // Rayon brisé : deux tronçons, le second dévié ; ramification courte au coude dès le niveau 2.
                 private _mid = [_px, _py, _a, _len * (0.4 + 0.2 * call _rnd), _alpha] call _seg;
@@ -255,7 +263,7 @@ if (_lsig isNotEqualTo _lineSig) then {
                 };
             };
             // Anneau d'éclats autour de l'impact (verre écrasé), niveau 2 et plus.
-            if (_sev >= 2) then {
+            if (_ringOn) then {
                 private _r = _rh * (0.025 + 0.02 * call _rnd);
                 private _k = 5 + floor (4 * call _rnd);
                 for "_j" from 0 to (_k - 1) do {
@@ -264,6 +272,109 @@ if (_lsig isNotEqualTo _lineSig) then {
                 };
             };
         };
+        // Ligne brisée : [x, y, angle, longueur totale, tronçons, déviation en degrés, alpha, chance de ramification].
+        private _zig = {
+            params ["_zx", "_zy", "_za", "_total", "_steps", "_wob", "_alpha", "_branch"];
+            private _p = [_zx, _zy];
+            for "_j" from 1 to _steps do {
+                private _aj = _za + (call _rnd - 0.5) * _wob;
+                _p = [_p select 0, _p select 1, _aj, (_total / _steps) * (0.7 + 0.6 * call _rnd), _alpha] call _seg;
+                if (call _rnd < _branch) then {
+                    [_p select 0, _p select 1, _aj + ([-1, 1] select (call _rnd < 0.5)) * (30 + 35 * call _rnd), (_total / _steps) * (0.3 + 0.5 * call _rnd), _alpha * 0.7] call _seg;
+                };
+            };
+        };
+        // Trait entre deux points de l'écran.
+        private _chord = {
+            params ["_p1", "_p2", "_alpha"];
+            private _dx = ((_p2 select 0) - (_p1 select 0)) * _ratio;
+            private _dy = (_p2 select 1) - (_p1 select 1);
+            [_p1 select 0, _p1 select 1, _dy atan2 _dx, sqrt (_dx * _dx + _dy * _dy), _alpha] call _seg;
+        };
+        private _drawKind = {
+            params ["_kind"];
+            switch (_kind) do {
+                // Coin écrasé (chute) : éventail depuis un coin vers le centre.
+                case 1: {
+                    private _cx = [_rx + _rw * 0.03, _rx + _rw * 0.97] select (call _rnd < 0.5);
+                    private _cy = [_ry + _rh * 0.03, _ry + _rh * 0.97] select (call _rnd < 0.5);
+                    private _toC = ((_ry + _rh / 2 - _cy)) atan2 ((_rx + _rw / 2 - _cx) * _ratio);
+                    private _n = 3 + 2 * _sev;
+                    for "_i" from 0 to (_n - 1) do {
+                        [_cx, _cy, _toC - 45 + 90 * (_i + 0.5) / _n + (call _rnd - 0.5) * 10, _rh * (0.3 + 0.35 * call _rnd) * (0.6 + 0.2 * _sev), 3, 26, 0.35 + 0.3 * call _rnd, 0.25] call _zig;
+                    };
+                };
+                // Balle : anneaux serrés autour d'un petit trou, courts rayons.
+                case 2: {
+                    (call _spot) params ["_px", "_py"];
+                    for "_ring" from 1 to (1 + ceil (_sev / 2)) do {
+                        private _r = _rh * 0.018 * _ring;
+                        private _k = 7 + 2 * _ring;
+                        for "_j" from 0 to (_k - 1) do {
+                            private _a = 360 * (_j + call _rnd * 0.4) / _k;
+                            [_px + (cos _a) * _r / _ratio, _py + (sin _a) * _r, _a + 90 + (call _rnd - 0.5) * 24, _r * 6 / _k, 0.45 + 0.2 * call _rnd] call _seg;
+                        };
+                    };
+                    for "_j" from 1 to (5 + 2 * _sev) do {
+                        [_px, _py, 360 * call _rnd, _rh * (0.05 + 0.12 * call _rnd), 2, 30, 0.4, 0.15] call _zig;
+                    };
+                };
+                // Fissure traversante : du haut au bas de l'écran.
+                case 3: {
+                    for "_i" from 1 to (1 + floor (_sev / 2)) do {
+                        [_rx + _rw * (0.08 + 0.84 * call _rnd), _ry + pixelH, 90 + (call _rnd - 0.5) * 50, _rh * 1.15, 5 + _sev, 42, 0.45 + 0.25 * call _rnd, 0.25] call _zig;
+                    };
+                };
+                // Toile : rayons et cercles brisés reliés de rayon en rayon.
+                case 4: {
+                    (call _spot) params ["_px", "_py"];
+                    private _n = 6 + 2 * _sev;
+                    private _L = _rh * (0.14 + 0.09 * _sev);
+                    private _dirs = [];
+                    for "_j" from 0 to (_n - 1) do { _dirs pushBack (360 * (_j + (call _rnd - 0.5) * 0.5) / _n); };
+                    { [_px, _py, _x, _L * (0.8 + 0.4 * call _rnd), 0.55] call _seg; } forEach _dirs;
+                    {
+                        private _kr = _L * _x;
+                        private _pts = _dirs apply { [_px + (cos _x) * _kr * (0.85 + 0.3 * call _rnd) / _ratio, _py + (sin _x) * _kr * (0.85 + 0.3 * call _rnd)] };
+                        for "_j" from 0 to (_n - 1) do { [_pts select _j, _pts select ((_j + 1) mod _n), 0.4] call _chord; };
+                    } forEach ([[0.4, 0.7], [0.3, 0.55, 0.85]] select (_sev >= 3));
+                };
+                // Gravillons : petits impacts éparpillés.
+                case 5: {
+                    for "_i" from 1 to (3 + 2 * _sev) do {
+                        (call _spot) params ["_px", "_py"];
+                        [_px, _py, 4 + floor (3 * call _rnd), 0.22, false] call _star;
+                    };
+                };
+                // Verre en éclats : grandes cassures qui se croisent, un impact au milieu.
+                case 6: {
+                    for "_i" from 1 to (3 + 2 * _sev) do {
+                        (call _spot) params ["_px", "_py"];
+                        [_px, _py, 360 * call _rnd, _rh * (0.4 + 0.4 * call _rnd), 2, 16, 0.3 + 0.25 * call _rnd, 0.1] call _zig;
+                    };
+                    (call _spot) params ["_qx", "_qy"];
+                    [_qx, _qy, 6, 0.6, true] call _star;
+                };
+                // Rayures : traits parallèles, discrets.
+                case 7: {
+                    private _a = 360 * call _rnd;
+                    (call _spot) params ["_px", "_py"];
+                    for "_i" from 1 to (4 + 2 * _sev) do {
+                        [_px + (_i - 3) * _rw * 0.04 + (call _rnd - 0.5) * _rw * 0.02, _py + (call _rnd - 0.5) * _rh * 0.2, _a + (call _rnd - 0.5) * 8, _rh * (0.2 + 0.35 * call _rnd), 0.2 + 0.2 * call _rnd] call _seg;
+                    };
+                };
+                // Étoile, un ou deux impacts.
+                default {
+                    for "_i" from 1 to ([1, 2] select (_sev >= 3)) do {
+                        (call _spot) params ["_px", "_py"];
+                        [_px, _py, [0, 5, 8, 11, 14] select _sev, 1, _sev >= 2] call _star;
+                    };
+                };
+            };
+        };
+        private _kind = _look getOrDefault ["crackKind", 0];
+        [_kind] call _drawKind;
+        if (_sev >= 3) then { [(_kind + 3) mod 8] call _drawKind; };
     };
 };
 { _x ctrlShow (!_off && !_fxOn); } forEach _lines;
@@ -300,6 +411,6 @@ private _wasOff = uiNamespace getVariable ["COMSPEC_ATAK_DevWasOff", false];
 uiNamespace setVariable ["COMSPEC_ATAK_DevWasOff", _off];
 if (_wasOff && {!_off}) then {
     ["INFO", "Téléphone redémarré", 3, 20] call comspec_atak_native_fnc_notify;
-    [{ [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 true

@@ -60,6 +60,14 @@ private _fontS = _l get "fontSmall";
 private _devOld = ctrlPosition (_d displayCtrl 88510);
 [88510, _l get "device"] call _set;
 [88511, _l get "status"] call _set;
+// Thème (fn_theme, 3.1.0) : fond de l'écran et de la page au thème choisi ; barres système (état, app, dock, rail)
+// toujours sombres (« chrome »), titre et textes fixes dans la couleur des barres.
+private _th = [] call comspec_atak_native_fnc_theme;
+(_d displayCtrl 88510) ctrlSetBackgroundColor (_th get "bg1");
+(_d displayCtrl 88540) ctrlSetBackgroundColor (_th get "bg1");
+{ (_d displayCtrl _x) ctrlSetBackgroundColor (_th get "chrome"); } forEach [88511, 88515, 88516, 88520];
+{ (_d displayCtrl _x) ctrlSetTextColor (_th get "onChrome"); } forEach [88513, 88518, 88524, 88525, 88528];
+(_d displayCtrl 88531) ctrlSetBackgroundColor (_th get "bg1");
 
 // Barre d'état : batterie | météo ........ heure ........ GPS | réseau
 private _ih = _sh * 0.8;
@@ -304,6 +312,6 @@ if (_overlays && {!_dragging}) then {
         private _s2 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         if ((count (_s2 getOrDefault ["drag", []])) > 0) exitWith {};
         [_s2 getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender;
-    }, [uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]] call CBA_fnc_execNextFrame;
+    }, [uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]] call comspec_atak_native_fnc_nextFrame;
 };
 true

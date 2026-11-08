@@ -12,7 +12,7 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _re = "[{ ['STORE'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+private _re = "[{ ['STORE'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 private _setS = { params ["_k", "_v"]; compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set [%1, %2]; %3", str _k, str _v, _re] };
 private _tab = _s getOrDefault ["storeTab", "ALL"];
 private _query = _s getOrDefault ["storeQuery", ""];
@@ -34,19 +34,19 @@ private _nOut = { (_x get "st") isEqualTo "removed" } count _apps;
 private _imposed = _apps select { (_x get "st") in ["required", "forbidden"] };
 
 private _rows = [];
-_rows pushBack ["strip", "<t font='COMSPEC_BarlowBold'>APP STORE</t>  <t color='#8a9a93'>COMSPEC ATAK</t>",
-    format ["<t align='right' color='#8a9a93'>%1 installée(s) · %2 à installer</t>", _nIn, _nOut], [0.09, 0.12, 0.11, 1]];
+_rows pushBack ["strip", "<t font='COMSPEC_BarlowBold'>APP STORE</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>COMSPEC ATAK</t>",
+    format ["<t align='right' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1 installée(s) · %2 à installer</t>", _nIn, _nOut], [0.09, 0.12, 0.11, 1]];
 if ((count _imposed) > 0) then {
     private _who = [];
     { { _who pushBackUnique _x; } forEach ((["source", _x get "id"] call comspec_atak_native_fnc_appInstall) splitString " +"); } forEach _imposed;
-    _rows pushBack ["text", format ["<t size='0.85' color='#e8b84a'>%1 app(s) obligatoire(s) et %2 interdite(s) par l'encadrement (%3)</t>",
+    _rows pushBack ["text", format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1 app(s) obligatoire(s) et %2 interdite(s) par l'encadrement (%3)</t>",
         { (_x get "st") isEqualTo "required" } count _imposed, { (_x get "st") isEqualTo "forbidden" } count _imposed, _who joinString ", "], [0.16, 0.13, 0.06, 0.9]];
 };
 private _search = {
     private _q = ["storeSearch"] call comspec_atak_native_fnc_formValue;
     if !(_q isEqualType "") then { _q = ""; };
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["storeQuery", trim _q];
-    [{ ['STORE'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ['STORE'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 _rows pushBack ["field", "storeSearch", "Rechercher une app", _query, "CHERCHER", _search, true];
 if (_query isNotEqualTo "") then { _rows pushBack ["buttons", [["EFFACER LA RECHERCHE", ["storeQuery", ""] call _setS]]]; };
@@ -90,18 +90,18 @@ private _row = {
     };
     private _tags = [];
     switch (_st) do {
-        case "system": { _tags pushBack "<t size='0.7' color='#8a9a93'>SYSTÈME</t>"; };
-        case "required": { _tags pushBack "<t size='0.7' color='#e8b84a'>OBLIGATOIRE</t>"; };
-        case "forbidden": { _tags pushBack "<t size='0.7' color='#e5483a'>INTERDITE</t>"; };
-        case "installed": { _tags pushBack "<t size='0.7' color='#5cc76b'>INSTALLÉE</t>"; };
+        case "system": { _tags pushBack "<t size='0.7' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>SYSTÈME</t>"; };
+        case "required": { _tags pushBack "<t size='0.7' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>OBLIGATOIRE</t>"; };
+        case "forbidden": { _tags pushBack "<t size='0.7' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>INTERDITE</t>"; };
+        case "installed": { _tags pushBack "<t size='0.7' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>INSTALLÉE</t>"; };
     };
-    if ((_a getOrDefault ["new", false]) && {!(_page in _seen)}) then { _tags pushBack "<t size='0.7' color='#f2ab33'>NOUVEAU</t>"; };
-    if (_wip) then { _tags pushBack "<t size='0.7' color='#d99a1f'>W.I.P</t>"; };
+    if ((_a getOrDefault ["new", false]) && {!(_page in _seen)}) then { _tags pushBack "<t size='0.7' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>NOUVEAU</t>"; };
+    if (_wip) then { _tags pushBack "<t size='0.7' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>W.I.P</t>"; };
     private _sub = [_a get "section"];
     if ((_a get "desc") isNotEqualTo "") then { _sub pushBack (_a get "desc"); };
     if (_src isNotEqualTo "") then { _sub pushBack format ["imposé par : %1", _src]; };
     if (_why isNotEqualTo "") then { _sub pushBack _why; };
-    private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.78' color='#8a9a93'>%3</t>", _a get "name", _tags joinString " ", _sub joinString " · "];
+    private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.78' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3</t>", _a get "name", _tags joinString " ", _sub joinString " · "];
     private _open = ["OUVRIR", compile format ["[%1] call comspec_atak_native_fnc_navigate;", str _page], true, !_wip && {_why isEqualTo ""}, "Ouvre l'app"];
     private _btns = switch (true) do {
         case (_busy isEqualTo _id): { [["INSTALLATION…", {}, false, false, "Installation en cours"]] };
@@ -116,7 +116,7 @@ private _row = {
                 [{
                     (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['storeBusy', ''];
                     if (['install', _this select 0] call comspec_atak_native_fnc_appInstall) then { [(_this select 1) + ' installée', 2] call comspec_atak_native_fnc_toast; };
-                }, [%1, %3], 1.2] call CBA_fnc_waitAndExecute;", str _id, _re, str (_a get "name")], true, _busy isEqualTo "" && {_why isEqualTo ""}, "Ajoute l'app à l'écran d'accueil"]]
+                }, [%1, %3], 1.2] call comspec_atak_native_fnc_waitAndExec;", str _id, _re, str (_a get "name")], true, _busy isEqualTo "" && {_why isEqualTo ""}, "Ajoute l'app à l'écran d'accueil"]]
         };
         default {
             // Désinstallation en deux appuis : le premier arme, le second retire l'app de l'écran d'accueil.
@@ -160,7 +160,7 @@ if (_nOut > 0) then {
     _rows pushBack ["gap"];
     _rows pushBack ["buttons", [["TOUT RÉINSTALLER", compile format ["private _n = ['installAll'] call comspec_atak_native_fnc_appInstall; [(str _n) + ' app(s) réinstallée(s)', 2] call comspec_atak_native_fnc_toast; %1", _re], false, true, "Remet toutes les apps permises sur l'écran d'accueil"]]];
 };
-_rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Désinstaller une app la retire seulement de l'écran d'accueil et du dock : ce qu'elle fait en fond (BFT, messages reçus, alertes) continue. Vos choix sont gardés d'une partie à l'autre.</t>"];
+_rows pushBack ["text", "<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Désinstaller une app la retire seulement de l'écran d'accueil et du dock : ce qu'elle fait en fond (BFT, messages reçus, alertes) continue. Vos choix sont gardés d'une partie à l'autre.</t>"];
 
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

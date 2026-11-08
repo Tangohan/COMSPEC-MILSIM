@@ -29,5 +29,5 @@ switch (_act) do {
     case "wind": { _s set ["windManual", _arg]; };
     case "from": { _s set ["windFrom", _arg]; };
 };
-[{ ["SNIPER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ ["SNIPER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 true

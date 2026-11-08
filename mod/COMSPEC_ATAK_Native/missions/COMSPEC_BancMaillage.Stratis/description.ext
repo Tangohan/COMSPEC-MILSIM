@@ -1,0 +1,11 @@
+author = "COMSPEC";
+onLoadName = "Banc d'essai du réseau maillé";
+onLoadMission = "Outils de développement du maillage MPU5 : mode développeur forcé.";
+enableDebugConsole = 1;
+respawn = "BASE";
+respawnDelay = 3;
+class Header {
+    gameType = "Coop";
+    minPlayers = 1;
+    maxPlayers = 4;
+};

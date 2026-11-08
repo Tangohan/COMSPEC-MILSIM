@@ -36,7 +36,7 @@ private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
 if !(_lib isEqualType []) then { _lib = []; };
 private _store = { profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _lib]; [] call comspec_atak_native_fnc_saveProfile; };
 // Page redessinée : app Drone, ou app Galerie ( : les clichés du drone y sont envoyés et supprimés aussi).
-private _render = { [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
 // Texte libre : sans retour à la ligne, barre verticale ni guillemets (légende transmise en champ de la DLL).
 private _clean = { params ["_t", ["_max", 80]]; (trim (toString ((toArray _t) select { !(_x in [10, 13, 34, 124]) }))) select [0, _max] };
@@ -208,6 +208,14 @@ switch (_act) do {
             _shot camSetFov (0.7 / _zoom);
             _shot camCommit 0;
             private _vision = missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0];
+            // Le cliché est une capture de l'écran : la vision nocturne (intensification de lumière) en plein jour le
+            // blanchit (blanc presque total, sources brûlées ; retour d'un serveur partenaire, photos « CAMÉRA AÉRIENNE »,
+            // 06:13-06:15). Même seuil de lumière que le gain du flux (_expose de fn_droneAction) : en plein jour, le
+            // cliché est pris en vision jour. THERMIQUE et nuit réelle ne changent pas. Valeurs relevées dans le journal.
+            private _lux = (getLightingAt _d) param [1, 0];
+            private _asked = _vision;
+            if (_vision isEqualTo 1 && {sunOrMoon >= 0.5} && {_lux >= 40}) then { _vision = 0; };
+            ["INFO", "DRONE", format ["Cliché : vision demandée %1, utilisée %2, lumière %3, soleil/lune %4, distance de vue %5 m, PiP %6 m", _asked, _vision, round _lux, (sunOrMoon toFixed 2), round viewDistance, round getPiPViewDistance]] call comspec_atak_native_fnc_log;
             if (_vision isEqualTo 1) then { camUseNVG true; };
             if (_vision isEqualTo 2) then { true setCamUseTI 0; };
             showHUD false;
@@ -272,7 +280,7 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_DroneShotBusy", false];
             if (!_ok) exitWith {
                 ["WARNING", "Cliché refusé par le jeu : passez la qualité HDR au moins sur Moyen (options vidéo), puis recommencez", 6, 40] call comspec_atak_native_fnc_notify;
-                [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             };
             playSound "ClickSoft";
             private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
@@ -293,7 +301,7 @@ switch (_act) do {
             if !(_s getOrDefault ["interactive", false]) then {
                 ["INFO", "Cliché pris : prenez le téléphone en main (Ctrl+Maj+U) pour compléter sa fiche et l'envoyer", 6, 40] call comspec_atak_native_fnc_notify;
             } else { ["SUCCESS", "Cliché pris : complétez sa fiche, puis ENVOYER", 4, 40] call comspec_atak_native_fnc_notify; };
-            [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
     // Fenêtre de transmission plein écran (à la place de toute la page Drone) : aperçu en grand, champs lisibles,
@@ -483,7 +491,7 @@ switch (_act) do {
             if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select (_ok isEqualTo true)]; [] call comspec_atak_native_fnc_saveProfile; };
             [["WARNING", "SUCCESS"] select (_ok isEqualTo true), ["Cliché du drone non envoyé : voir le détail dans Photos", "Cliché du drone en cours d'envoi vers Athena"] select (_ok isEqualTo true), 4, 30] call comspec_atak_native_fnc_notify;
             ["log", format ["Cliché %1 : %2", _file, ["envoi refusé", "envoyé vers Athena"] select (_ok isEqualTo true)], ["#e5483a", "#5cc76b"] select (_ok isEqualTo true)] call comspec_atak_native_fnc_droneAction;
-            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         }, [_e select 0, [[_e] call _caption, [_e] call _shortCaption] select _withMeta, _feed, _meta], "Cliché drone", 600] call comspec_atak_native_fnc_netSend;
         ["INFO", "Cliché du drone : envoi lancé"] call _say;
         call _render;

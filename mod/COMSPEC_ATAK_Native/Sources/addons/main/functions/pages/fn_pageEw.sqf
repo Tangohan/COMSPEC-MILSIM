@@ -14,14 +14,14 @@ private _mine = missionNamespace getVariable ["COMSPEC_ATAK_EwMine", []];
 private _active = (count _mine) > 0 && {(_mine select 4) >= _now};
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _km = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['ewTab', '%1']; [{ ['EW'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['ewTab', '%1']; [{ ['EW'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _rows = [["segment", "", [["BROUILLAGE", "JAM"] call _tabBtn, ["GONIO", "DF"] call _tabBtn, ["GÉOLOC", "GEO"] call _tabBtn, ["ÉTAT", "FX"] call _tabBtn]], ["gap"]];
 private _seg = {
     params ["_label", "_key", "_def", "_opts"];
     private _v = _f getOrDefault [_key, _def];
     ["segment", _label, _opts apply { [_x select 0, compile format ["['set', '%1', '%2'] call comspec_atak_native_fnc_ewAction;", _key, _x select 1], (_x select 1) isEqualTo _v] }]
 };
-private _locked = "<t color='#f2ab33'>Réservé aux opérateurs de guerre électronique sur cette mission.</t>";
+private _locked = "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Réservé aux opérateurs de guerre électronique sur cette mission.</t>";
 
 switch (_tab) do {
     case "DF": {
@@ -29,27 +29,27 @@ switch (_tab) do {
         if !(_allowed) exitWith { _rows pushBack ["text", _locked]; };
         private _next = (uiNamespace getVariable ["COMSPEC_ATAK_EwScanNext", 0]) - diag_tickTime;
         _rows append [
-            ["text", "<t size='0.8' color='#8a9a93'>Relèvement approximatif (erreur plus grande au loin) et bande de distance, jamais de position exacte. Balayer émet aussi : la goniométrie ennemie vous voit pendant 20 s.</t>"],
+            ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Relèvement approximatif (erreur plus grande au loin) et bande de distance, jamais de position exacte. Balayer émet aussi : la goniométrie ennemie vous voit pendant 20 s.</t>"],
             ["buttons", [[[format ["RÉCEPTEUR EN RECHARGE (%1 s)", ceil _next], "BALAYER"] select (_next <= 0), { ['scan'] call comspec_atak_native_fnc_ewAction; }, true], ["EFFACER", { ['clear'] call comspec_atak_native_fnc_ewAction; }]]]
         ];
         private _b = missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []];
         for "_i" from ((count _b) - 1) to 0 step -1 do {
             (_b select _i) params ["_from", "_brg", "_b0", "_b1", "_kind", "_t", "_err", ["_hour", ""]];
-            private _col = createHashMapFromArray [["BROUILLEUR", "#d940f2"], ["GONIO", "#e5483a"]] getOrDefault [_kind, "#f2ab33"];
-            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='1.1'>%3° %4</t>  <t color='#8a9a93'>à %5° près</t><br/><t size='0.8' color='#8a9a93'>%6 · relevé à %7 · il y a %8 min</t>",
+            private _col = createHashMapFromArray [["BROUILLEUR", "#d940f2"], ["GONIO", (COMSPEC_ATAK_Th get "hexAlert")]] getOrDefault [_kind, (COMSPEC_ATAK_Th get "hexWarn")];
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='1.1'>%3° %4</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>à %5° près</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%6 · relevé à %7 · il y a %8 min</t>",
                 _col, _kind, round _brg, [_brg] call _card, round _err,
                 [format ["moins de %1", [_b1] call _km], format ["entre %1 et %2", [_b0] call _km, [_b1] call _km]] select (_b0 > 0),
                 _hour, floor ((time - _t) / 60)]];
             _rows pushBack ["buttons", [["VOIR SUR LA CARTE", compile format ["['locate', %1] call comspec_atak_native_fnc_ewAction;", _i]]]];
         };
-        if ((count _b) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun relèvement.</t>"]; };
+        if ((count _b) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun relèvement.</t>"]; };
     };
     case "GEO": {
         _rows pushBack ["section", "Géolocalisation", "Numéro, IMEI ou adresse MAC"];
         (["geoAllowed"] call comspec_atak_native_fnc_ewAction) params ["_ok", "_why"];
-        if !(_ok) exitWith { _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t>", _why]]; };
+        if !(_ok) exitWith { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _why]]; };
         _rows append [
-            ["text", "<t size='0.8' color='#8a9a93'>Requête à l'opérateur : position par triangulation des antennes, avec une marge d'erreur. Un téléphone éteint, sans réseau ou changé ne répond plus. Batterie vide : sa carte SIM passe en mode secours et reste localisable par les relais, même pour un allié.</t>"],
+            ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Requête à l'opérateur : position par triangulation des antennes, avec une marge d'erreur. Un téléphone éteint, sans réseau ou changé ne répond plus. Batterie vide : sa carte SIM passe en mode secours et reste localisable par les relais, même pour un allié.</t>"],
             ["edit", "geoq", "Numéro (06 12 34 56 78), IMEI (35-…) ou MAC (A4:5E:…)", _f getOrDefault ["geoq", ""]],
             ["buttons", [["LOCALISER", { ['geoLocate'] call comspec_atak_native_fnc_ewAction; }, true]]]
         ];
@@ -61,19 +61,19 @@ switch (_tab) do {
             private _p = _e getOrDefault ["pos", []];
             private _st = _e getOrDefault ["status", ""];
             private _stTxt = switch (_st) do {
-                case "OK": { "<t color='#5cc76b'>en ligne</t>" };
-                case "OFF": { "<t color='#f2ab33'>éteint ou hors réseau</t>" };
-                case "SOS": { format ["<t color='#f2ab33'>batterie vide · secours SIM (%1)</t>", [format ["%1 relais", _e getOrDefault ["relays", 0]], "antennes"] select ((_e getOrDefault ["relays", 0]) isEqualTo 0)] };
-                case "SOSNOREL": { "<t color='#f2ab33'>batterie vide · aucun relais ne l'entend</t>" };
-                default { "<t color='#e5483a'>abonné introuvable</t>" };
+                case "OK": { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>en ligne</t>" };
+                case "OFF": { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>éteint ou hors réseau</t>" };
+                case "SOS": { format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>batterie vide · secours SIM (%1)</t>", [format ["%1 relais", _e getOrDefault ["relays", 0]], "antennes"] select ((_e getOrDefault ["relays", 0]) isEqualTo 0)] };
+                case "SOSNOREL": { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>batterie vide · aucun relais ne l'entend</t>" };
+                default { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>abonné introuvable</t>" };
             };
-            private _where = if ((count _p) < 2) then { "<t color='#8a9a93'>aucune position</t>" } else {
-                format ["%1 · à %2 m près · %3 · <t color='#8a9a93'>relevé à %4, il y a %5 min</t>", [_p, 8] call comspec_atak_native_fnc_gridRef, _e get "rad",
+            private _where = if ((count _p) < 2) then { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>aucune position</t>" } else {
+                format ["%1 · à %2 m près · %3 · <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>relevé à %4, il y a %5 min</t>", [_p, 8] call comspec_atak_native_fnc_gridRef, _e get "rad",
                     [format ["%1 m", round (player distance2D _p)], format ["%1 km", ((player distance2D _p) / 1000) toFixed 1]] select ((player distance2D _p) >= 1000),
                     _e get "hour", floor ((time - (_e get "t")) / 60)]
             };
-            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='#f2ab33'>%1</t>  <t size='1.05'>%2</t>  %3%4<br/><t size='0.85'>%5</t>",
-                _e get "kind", _e get "q", _stTxt, ["", "  <t color='#5cc76b'>● SUIVI</t>"] select (_e getOrDefault ["track", false]), _where]];
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>  <t size='1.05'>%2</t>  %3%4<br/><t size='0.85'>%5</t>",
+                _e get "kind", _e get "q", _stTxt, ["", "  <t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● SUIVI</t>"] select (_e getOrDefault ["track", false]), _where]];
             _rows pushBack ["buttons", [
                 ["CARTE", compile format ["['geoMap', %1] call comspec_atak_native_fnc_ewAction;", _i]],
                 [["SUIVRE", "ARRÊTER LE SUIVI"] select (_e getOrDefault ["track", false]), compile format ["['geoTrack', %1] call comspec_atak_native_fnc_ewAction;", _i]],
@@ -91,9 +91,9 @@ switch (_tab) do {
         private _q = [] call comspec_atak_native_fnc_linkQuality;
         _rows append [
             ["section", "Effets subis", "Brouillage à votre position"],
-            ["info", "Brouillage", [format ["<t color='#e5483a'>%1 %%</t>", round (_k * 100)], "<t color='#5cc76b'>aucun</t>"] select (_err isEqualTo 0)],
+            ["info", "Brouillage", [format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1 %%</t>", round (_k * 100)], "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>aucun</t>"] select (_err isEqualTo 0)],
             ["info", "Erreur GPS", [format ["environ %1 m", _err], "nominale"] select (_err isEqualTo 0)],
-            ["info", "Suivi des forces (BFT)", ["<t color='#5cc76b'>normal</t>", "<t color='#f2ab33'>dégradé, positions périmées</t>"] select _bft],
+            ["info", "Suivi des forces (BFT)", ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>normal</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>dégradé, positions périmées</t>"] select _bft],
             ["info", "Réseau", format ["%1 · %2 kbit/s · perte %3 %%", _q get "label", _q get "kbps", _q get "loss"]]
         ];
         // Brouilleurs connus de mon camp.
@@ -103,12 +103,12 @@ switch (_tab) do {
         {
             _x params ["_pos", "_rad", "", "", ["_until", 1e9], ["_exempt", false]];
             if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
-            _rows pushBack ["text", format ["%1 · rayon %2 m · %3 · <t color='#8a9a93'>reste %4 min%5</t>",
+            _rows pushBack ["text", format ["%1 · rayon %2 m · %3 · <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>reste %4 min%5</t>",
                 [_pos, 6] call comspec_atak_native_fnc_gridRef, _rad, [player distance2D _pos] call _km, ceil ((_until - _now) / 60), ["", ", alliés filtrés"] select _exempt]];
         } forEach _own;
     };
     default {
-        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_ew.paa", "<t size='1.2' font='COMSPEC_BarlowBold'>Brouilleur</t><br/><t color='#8a9a93'>Coupe le réseau des téléphones dans le rayon et fausse leur GPS. Visible à la goniométrie ennemie tant qu'il émet.</t>"];
+        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_ew.paa", "<t size='1.2' font='COMSPEC_BarlowBold'>Brouilleur</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Coupe le réseau des téléphones dans le rayon et fausse leur GPS. Visible à la goniométrie ennemie tant qu'il émet.</t>"];
         if !(_allowed) exitWith { _rows pushBack ["text", _locked]; };
         if (_active) then {
             _mine params ["_pos", "_rad", "", "", "_until", "_exempt"];
@@ -137,6 +137,7 @@ if (_tab isEqualTo "DF" && {_allowed}) then {
     [[0, 0, _bw, _vh]] call comspec_atak_native_fnc_vizSpectrum;
     [_rows, [0, _vh, _bw, _bh - _vh]] call comspec_atak_native_fnc_formRender;
 } else {
+    if (_tab isEqualTo "DF") then { _rows append (["rows"] call comspec_atak_native_fnc_meshEW); };
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 };
 true

@@ -7,14 +7,11 @@ private _pad = (_l get "pad") * 2;
 private _rowH = (_l get "font") * 1.6;
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _h = { params ["_t"]; format ["<t color='#5cc76b' size='0.85'>%1</t>", _t] };
+private _h = { params ["_t"]; format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "' size='0.85'>%1</t>", _t] };
 private _body = "";
 private _buttons = [];
 
 switch (_page) do {
-    case "C2": {
-        _body = format ["%1<br/>Unités suivies : %2<br/>Ordres : %3<br/>Marqueurs : %4<br/><br/>La carte reste la vue opérationnelle principale.", ["SITUATION C2"] call _h, count (_data getOrDefault ["units", createHashMap]), count ([] call comspec_atak_native_fnc_tasksAll), count (_data getOrDefault ["markers", createHashMap])];
-    };
     case "BFT": {
         private _lines = [["BLUE FORCE TRACKING"] call _h];
         {

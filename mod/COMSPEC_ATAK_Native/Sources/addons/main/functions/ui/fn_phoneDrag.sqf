@@ -89,7 +89,7 @@ switch (_event) do {
         _b ctrlSetText (("TERMINÉ") call comspec_atak_native_fnc_tr);
         _b ctrlSetFontHeight (_l get "fontSmall");
         _b ctrlCommit 0;
-        _b ctrlAddEventHandler ["ButtonClick", { [{ ["ARRANGE_OFF"] call comspec_atak_native_fnc_phoneDrag; }] call CBA_fnc_execNextFrame; }];
+        _b ctrlAddEventHandler ["ButtonClick", { [{ ["ARRANGE_OFF"] call comspec_atak_native_fnc_phoneDrag; }] call comspec_atak_native_fnc_nextFrame; }];
         _made pushBack _b;
         uiNamespace setVariable ["COMSPEC_ATAK_ArrangeCtrls", _made];
         true

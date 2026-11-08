@@ -1,0 +1,9 @@
+# App Drone : zone à 2 km invisible dans le flux (distance de vue PiP plafonnée)
+
+- **Contexte** : même retour partenaire : « le drone envoie le flux PiP de l'IA au lieu de la distance de vue du joueur », zone à environ 2 km du drone.
+- **Symptôme** : à plus de 1500 m, le terrain et les objets de la zone observée ne sont pas dessinés dans le flux du téléphone.
+- **Cause** : `fn_droneAction` (`_camOpen`) ramenait la distance de vue PiP à `COMSPEC_ATAK_DronePipVD` (1500 m par défaut, choisi pour la RAM) tant que la caméra existait, quelle que soit la distance de ce que la nacelle regarde. Une PiP sous la distance du drone à la zone ne dessine rien (sol compris).
+- **Correctif** : nouveau `_pipVd`, appelé à l'ouverture puis chaque seconde : distance de la nacelle à ce qu'elle regarde (rayon sur le terrain, ou point visé : `COMSPEC_ATAK_DroneAimP`) plus 300 m, arrondie à 250 m, au moins la base `COMSPEC_ATAK_DronePipVD` (1500 m), au plus la borne `COMSPEC_ATAK_DronePipVDMax` (3000 m, réglable par mission, même borne que `fn_pipCheck`). La valeur du joueur est gardée (`COMSPEC_ATAK_DronePipKeep`) et rendue à la fermeture (`_camClose`, aussi pour `camPark`).
+- **Fichiers touchés** : `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/drone/fn_droneAction.sqf`.
+- **Vérification** : à tester en jeu : drone à 2 km de la zone, nacelle vers la zone (point cliqué ou cible marquée) : le terrain apparaît dans le flux ; le RPT « Flux caméra ouvert » et « état » donnent la distance de vue PiP ; fermer la caméra et relire `getPiPViewDistance` (valeur d'origine). Surveiller la RAM et les images par seconde (la PiP peut monter à 3000 m). Si `lineIntersectsSurfaces` ne renvoie rien à longue portée, seule la base ou le point visé s'applique : à noter dans le RPT.
+- **Statut** : corrigé à vérifier en jeu (ATAK 3.1.0).

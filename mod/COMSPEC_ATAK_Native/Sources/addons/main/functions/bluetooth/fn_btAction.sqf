@@ -54,7 +54,7 @@ private _now = [time, serverTime] select isMultiplayer;
 private _range = missionNamespace getVariable ["comspec_atak_native_bt_range", 15];
 private _nfcRange = missionNamespace getVariable ["comspec_atak_native_bt_nfc_range", 2];
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 30] call comspec_atak_native_fnc_notify; };
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { ["BLUETOOTH"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { ["BLUETOOTH"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _usable = { (_bt get "on") && {([] call comspec_atak_native_fnc_canUse) isEqualTo ""} };
 private _byUid = {
     params ["_uid"];
@@ -163,7 +163,7 @@ switch (_act) do {
         [{
             ["publish"] call comspec_atak_native_fnc_btAction;
             if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { ["BLUETOOTH"] call comspec_atak_native_fnc_pageRender; };
-        }, [], 121] call CBA_fnc_waitAndExecute;
+        }, [], 121] call comspec_atak_native_fnc_waitAndExec;
     };
     case "hideCode": { _bt set ["code", ""]; call _publish; call _rerender; };
     case "enterCode": {
@@ -226,7 +226,7 @@ switch (_act) do {
     case "idcOpen": {
         _ui set ["idcView", _arg];
         if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { call _rerender; } else {
-            [{ ["BLUETOOTH"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+            [{ ["BLUETOOTH"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
     case "idcClose": { _ui set ["idcView", ""]; call _rerender; };
@@ -255,7 +255,7 @@ switch (_act) do {
         if ((count _c) isEqualTo 0) exitWith {};
         private _vl = createHashMapFromArray [["ras", "RAS"], ["signale", "signalé"], ["recherche", "recherché"], ["hvt", "cible prioritaire"], ["inconnu", "inconnu des fichiers"],
             ["revoque", "papier annulé"], ["vole", "papier volé ou perdu"], ["expire", "papier expiré"], ["faux", "faux document"], ["doute", "doute"]];
-        private _type = createHashMapFromArray [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"]] getOrDefault [_c get "docType", "Document"];
+        private _type = createHashMapFromArray [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"], ["military_id", "Carte militaire"]] getOrDefault [_c get "docType", "Document"];
         private _lines = [
             format ["Contrôle d'identité %1 au %2 : %3 %4%5.", _c get "time", _c get "grid", toUpper (_c get "last"), _c get "first", ["", format [", né(e) le %1", _c get "dob"]] select ((_c get "dob") isNotEqualTo "")],
             format ["Document : %1 %2 n° %3%4.", _type, _c get "docCountry", _c get "docNumber", ["", format [", expire le %1", _c get "expires"]] select ((_c get "expires") isNotEqualTo "")],
@@ -281,7 +281,7 @@ switch (_act) do {
         _draft set ["idCheck", [_c get "ref", _c get "key"] select ((_c get "ref") isEqualTo "")];
         uiNamespace setVariable ["COMSPEC_ATAK_FrsDraft", _draft];
         ["INFO", "Fiche FRM pré-remplie avec le contrôle", 3, 20] call comspec_atak_native_fnc_notify;
-        [{ ["FRS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["FRS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "idcMap": {
         private _c = ["idcGet", _arg] call comspec_atak_native_fnc_btItems;
@@ -291,7 +291,7 @@ switch (_act) do {
         [{
             [_this, 0.05] call comspec_atak_native_fnc_mapCenter;
             ["recv", [[_this select 0, _this select 1, 0], "CONTRÔLE ID", player]] call comspec_atak_native_fnc_mapPing;
-        }, [(_c get "pos") select 0, (_c get "pos") select 1], 0.15] call CBA_fnc_waitAndExecute;
+        }, [(_c get "pos") select 0, (_c get "pos") select 1], 0.15] call comspec_atak_native_fnc_waitAndExec;
     };
     case "accept";
     case "refuse": {

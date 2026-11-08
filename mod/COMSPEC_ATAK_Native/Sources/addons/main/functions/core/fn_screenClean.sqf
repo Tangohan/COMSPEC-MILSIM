@@ -52,6 +52,6 @@ if (!isNil "ace_common_fnc_progressBar" && {isNull ([] call comspec_atak_native_
     [{
         if (!alive player) exitWith { player setVariable ["COMSPEC_ATAK_Cleaning", false]; };
         call (missionNamespace getVariable ["COMSPEC_ATAK_CleanDone", {}]);
-    }, [], _time] call CBA_fnc_waitAndExecute;
+    }, [], _time] call comspec_atak_native_fnc_waitAndExec;
 };
 true

@@ -7,7 +7,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _patch = {
     params ["_cls"];
     private _c = configFile >> "CfgPatches" >> _cls;
-    if !(isClass _c) exitWith { "<t color='#8a9a93'>non chargé</t>" };
+    if !(isClass _c) exitWith { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>non chargé</t>" };
     private _v = getText (_c >> "versionStr");
     if (_v isEqualTo "") then { _v = (getArray (_c >> "versionAr")) apply { str _x } joinString "."; };
     if (_v isEqualTo "") then { _v = str getNumber (_c >> "version"); };
@@ -20,18 +20,18 @@ private _want = missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", ""];
 private _cfg = ["comspec_atak_native_main"] call _patch;
 private _code = missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"];
 private _dll = switch (true) do {
-    case (_ext isEqualTo ""): { "<t color='#e5483a'>absente ou trop ancienne : relancez build_mod.bat</t>" };
-    case (_bridge && {_want isNotEqualTo ""} && {_ext isNotEqualTo _want}): { format ["<t color='#f2ab33'>%1 (attendue : %2, relancez build_mod.bat)</t>", _ext, _want] };
+    case (_ext isEqualTo ""): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>absente ou trop ancienne : relancez build_mod.bat</t>" };
+    case (_bridge && {_want isNotEqualTo ""} && {_ext isNotEqualTo _want}): { format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1 (attendue : %2, relancez build_mod.bat)</t>", _ext, _want] };
     default { _ext };
 };
 private _game = productVersion;
 private _rows = [
-    ["hero", "\z\comspec_atak_native\addons\main\data\logo_atak.paa", format ["<t size='1.5' font='COMSPEC_BarlowBold'>COMSPEC ATAK</t><br/><t color='#5cc76b'>Version %1</t><br/><t size='0.9' color='#8a9a93'>Terminal tactique pour Arma 3</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]]],
+    ["hero", "\z\comspec_atak_native\addons\main\data\logo_atak.paa", format ["<t size='1.5' font='COMSPEC_BarlowBold'>COMSPEC ATAK</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Version %1</t><br/><t size='0.9' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Terminal tactique pour Arma 3</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]]],
     ["section", "Équipe", ""],
     ["info", "Équipe", "<t font='COMSPEC_BarlowBold'>SOAR</t>"],
     ["info", "Développeur", "<t font='COMSPEC_BarlowBold'>NewPI</t>"],
     ["section", "Versions", "Composants chargés sur ce poste"],
-    ["info", "COMSPEC ATAK", [_code, format ["<t color='#e5483a'>%1 (config %2 : deux main.pbo chargés ?)</t>", _code, _cfg]] select (_code isNotEqualTo _cfg)],
+    ["info", "COMSPEC ATAK", [_code, format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1 (config %2 : deux main.pbo chargés ?)</t>", _code, _cfg]] select (_code isNotEqualTo _cfg)],
     ["info", "Interface", missionNamespace getVariable ["COMSPEC_ATAK_UI_GENERATION", "?"]],
     ["info", ["DLL native", "COMSPEC Link (DLL)"] select _bridge, _dll],
     ["info", "Addon Overwatch connect", ["comspec_overwatch_connect"] call _patch],
@@ -44,7 +44,7 @@ private _rows = [
     ["section", "Traductions communautaires", ""],
     ["text", "<t size='0.9'>Chinois simplifié : RickLeo et MOYA (traduction et création complète du pack).</t>"],
     ["section", "Licence", ""],
-    ["text", "<t size='0.9' color='#8a9a93'>© COMSPEC, tous droits réservés : usage personnel depuis le Steam Workshop officiel ; copie, modification et redistribution interdites sans autorisation écrite (LICENSE.txt).</t>"]
+    ["text", "<t size='0.9' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>© COMSPEC, tous droits réservés : usage personnel depuis le Steam Workshop officiel ; copie, modification et redistribution interdites sans autorisation écrite (LICENSE.txt).</t>"]
 ];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

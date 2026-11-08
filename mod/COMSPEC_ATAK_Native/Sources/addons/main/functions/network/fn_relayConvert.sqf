@@ -14,18 +14,24 @@
     Décor de la carte : un objet invisible (Land_HelipadEmpty_F) au pied de l'antenne porte le relais ; il est retiré
     quand l'antenne du décor est détruite (vérifié toutes les 15 s), les téléphones reçoivent « Relais perdu ».
     Objets de mission : mêmes variables que fn_relayTower, posées sur l'objet ; détruit = relais « détruit » (fn_relayNet).
+    Antennes MRH Satellite (mod facultatif, réglage comspec_atak_native_relay_mrh, coché par défaut, indépendant du
+    niveau ci-dessus) : antenne dépliée = terminal satellite ; repliée (objet supprimé) ou détruite : retirée du réseau.
+    Rien ne dépend de MRH : sans ses classes, rien n'est cherché. Elles sont en thingX : entities les trouve, toutes les 15 s.
+    Antennes transportables du mod (fn_antennaKit) : mêmes variables, par "register" et "remove".
     Serveur seulement.
       ["sweep"] call comspec_atak_native_fnc_relayConvert   (début de mission, puis toutes les 60 s : objets créés depuis)
-      ["check"] call ...                                     (antennes du décor détruites)
+      ["check"] call ...                                     (antennes du décor détruites, antennes MRH)
+      ["register", [objet, nom, type, portée m, Mbit/s, hauteur m, places, camp, raccordé, classe source]] call ...
+      ["remove", [objet]] call ...                           (retiré du réseau tout de suite, sans état « détruit »)
 */
-params [["_mode", "sweep"]];
+params [["_mode", "sweep"], ["_arg", []]];
 if (!isServer) exitWith {};
 private _level = (missionNamespace getVariable ["comspec_atak_native_relay_convert", 0]) max 0 min 2;
 private _keys = ["ttower", "communication", "vysilac", "telek", "antenna", "transmitter", "radiotower", "radio_tower", "radiomast"];
 private _match = {
     params ["_cls"];
     private _l = toLower _cls;
-    !("comspec" in _l) && {(_keys findIf { _x in _l }) >= 0}
+    !("comspec" in _l) && {!("mrh_" in _l)} && {(_keys findIf { _x in _l }) >= 0}
 };
 // Préréglage d'un relais d'après la classe et la hauteur : [type, portée m, Mbit/s, hauteur antenne m, places].
 private _preset = {
@@ -34,27 +40,25 @@ private _preset = {
     // Portée et débit de base : réglages addon par type (comspec_atak_native_relay_<type>_range / _mbps).
     private _rg = { params ["_k", "_d"]; missionNamespace getVariable [format ["comspec_atak_native_relay_%1_range", _k], _d] };
     private _db = { params ["_k", "_d"]; missionNamespace getVariable [format ["comspec_atak_native_relay_%1_mbps", _k], _d] };
-    if ("satellite" in _l || {"dish" in _l}) exitWith { ["satellite", ["satellite", 1000] call _rg, ["satellite", 10] call _db, (_h * 0.9) max 2, 16] };
+    if ("satellite" in _l || {"dish" in _l} || {"satcom" in _l}) exitWith { ["satellite", ["satellite", 1000] call _rg, ["satellite", 10] call _db, (_h * 0.9) max 2, 16] };
     if (_h >= 30) exitWith { ["tour", ["tour", 6000] call _rg, ["tour", 20] call _db, _h * 0.9, 64] };
     if (_h >= 12) exitWith { ["mat", round ((["mat", 3000] call _rg) + (_h - 12) * 110), ["mat", 8] call _db, _h * 0.9, 24] };
     ["antenne", ["portable", 1500] call _rg, ["portable", 4] call _db, (_h * 0.9) max 2.5, 8]
 };
-private _register = {
-    params ["_o", "_src", "_cls", "_h"];
-    ([_cls, _h] call _preset) params ["_kind", "_range", "_mb", "_ant", "_slots"];
-    private _p = getPosATL _src;
-    private _n = format ["%1 %2", ["Antenne", "Tour relais", "Mât", "Parabole"] select (["antenne", "tour", "mat", "satellite"] find _kind), mapGridPosition _p];
+// Variables du relais sur l'objet, puis ajout à la liste locale : à diffuser ensuite (une fois par balayage).
+private _publish = {
+    params ["_o", "_p", "_n", "_kind", "_range", "_mb", "_ant", "_slots", "_side", "_root", "_cls"];
     _o setVariable ["COMSPEC_AtakRelay", true, true];
     _o setVariable ["COMSPEC_AtakRelayName", _n, true];
     _o setVariable ["COMSPEC_AtakRelayIdentity", _n, true];
     _o setVariable ["COMSPEC_AtakRelayUid", format ["relay_conv_%1_%2", round (_p select 0), round (_p select 1)], true];
-    _o setVariable ["COMSPEC_AtakRelayKind", [_kind, "mat"] select (_kind isEqualTo "antenne"), true];
+    _o setVariable ["COMSPEC_AtakRelayKind", _kind, true];
     _o setVariable ["COMSPEC_AtakRelayRange", _range, true];
     _o setVariable ["COMSPEC_AtakRelayThroughput", _mb, true];
     _o setVariable ["COMSPEC_AtakRelayHeight", _ant, true];
     _o setVariable ["COMSPEC_AtakRelaySlots", _slots, true];
-    _o setVariable ["COMSPEC_AtakRelaySide", "", true];
-    _o setVariable ["COMSPEC_AtakRelayRoot", true, true];
+    _o setVariable ["COMSPEC_AtakRelaySide", _side, true];
+    _o setVariable ["COMSPEC_AtakRelayRoot", _root, true];
     _o setVariable ["COMSPEC_AtakRelayOn", true, true];
     _o setVariable ["COMSPEC_AtakRelayFreq", 0, true];
     // Antenne existante : sur le secteur, pas de batterie.
@@ -68,6 +72,13 @@ private _register = {
     // Liste locale ici : diffusée une seule fois après le balayage (pas une fois par objet converti).
     missionNamespace setVariable ["COMSPEC_AtakRelays", _list];
     if (!isNil "comspec_overwatch_connect_fnc_syncAtakRelay") then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
+};
+private _register = {
+    params ["_o", "_src", "_cls", "_h"];
+    ([_cls, _h] call _preset) params ["_kind", "_range", "_mb", "_ant", "_slots"];
+    private _p = getPosATL _src;
+    private _n = format ["%1 %2", ["Antenne", "Tour relais", "Mât", "Parabole"] select (["antenne", "tour", "mat", "satellite"] find _kind), mapGridPosition _p];
+    [_o, _p, _n, [_kind, "mat"] select (_kind isEqualTo "antenne"), _range, _mb, _ant, _slots, "", true, _cls] call _publish;
 };
 private _height = {
     params ["_o"];
@@ -124,7 +135,40 @@ switch (_mode) do {
         if (_proxies isNotEqualTo []) then { missionNamespace setVariable ["COMSPEC_AtakRelays", missionNamespace getVariable ["COMSPEC_AtakRelays", []], true]; };
         ["INFO", "RELAIS", format ["%1 antenne(s) du décor converties en relais ATAK", count _proxies]] call comspec_atak_native_fnc_log;
     };
+    case "register": {
+        _arg params ["_o", "_n", "_kind", "_range", "_mb", "_ant", "_slots", "_side", "_root", "_cls"];
+        [_o, getPosATL _o, _n, _kind, _range, _mb, _ant, _slots, _side, _root, _cls] call _publish;
+        missionNamespace setVariable ["COMSPEC_AtakRelays", missionNamespace getVariable ["COMSPEC_AtakRelays", []], true];
+    };
+    case "remove": {
+        _arg params [["_o", objNull, [objNull]]];
+        if (isNull _o || {!(_o getVariable ["COMSPEC_AtakRelay", false])}) exitWith {};
+        if (!isNil "comspec_overwatch_connect_fnc_syncAtakRelay") then { [_o, false] call comspec_overwatch_connect_fnc_syncAtakRelay; };
+        _o setVariable ["COMSPEC_AtakRelay", false, true];
+        missionNamespace setVariable ["COMSPEC_AtakRelays", (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x && {_x isNotEqualTo _o} }, true];
+    };
     case "check": {
+        // Antennes MRH (mod facultatif) : suivies ici, avant le décor qui sort plus bas s'il n'y a rien à vérifier.
+        private _mrhCls = ["MRH_SatCom_Antenna_Base", "MRH_MT_SatCom_Antenna_Base"] select { isClass (configFile >> "CfgVehicles" >> _x) };
+        if (_mrhCls isNotEqualTo []) then {
+            private _mrhOn = missionNamespace getVariable ["comspec_atak_native_relay_mrh", true];
+            private _old = missionNamespace getVariable ["COMSPEC_ATAK_ConvMrh", []];
+            private _keep = [];
+            {
+                if (isNull _x) then { continue };
+                if (alive _x && {_mrhOn}) then { _keep pushBack _x; } else { ["remove", [_x]] call comspec_atak_native_fnc_relayConvert; };
+            } forEach _old;
+            private _new = [];
+            if (_mrhOn) then {
+                _new = (entities [_mrhCls, [], false, true]) select { !(_x getVariable ["COMSPEC_AtakRelay", false]) };
+                { [_x, _x, typeOf _x, [_x] call _height] call _register; } forEach _new;
+            };
+            private _all = _keep + _new;
+            if ((count _all) isNotEqualTo (count _old) || {_new isNotEqualTo []}) then {
+                missionNamespace setVariable ["COMSPEC_ATAK_ConvMrh", _all];
+                missionNamespace setVariable ["COMSPEC_AtakRelays", (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x }, true];
+            };
+        };
         private _proxies = missionNamespace getVariable ["COMSPEC_ATAK_ConvProxies", []];
         if (_proxies isEqualTo []) exitWith {};
         private _keep = [];

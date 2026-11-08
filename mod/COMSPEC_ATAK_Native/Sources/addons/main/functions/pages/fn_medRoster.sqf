@@ -13,7 +13,7 @@
 */
 params [["_act", "load"], ["_arg", false]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MEDICAL") then { ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MEDICAL") then { ["MEDICAL"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_act) do {
     case "find": { (uiNamespace getVariable ["COMSPEC_ATAK_MedRosterBy", createHashMap]) getOrDefault [_arg, []] };
     case "scope": { _s set ["medRosterScope", _arg]; call _render; };

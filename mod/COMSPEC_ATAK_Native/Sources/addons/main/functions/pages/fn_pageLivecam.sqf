@@ -9,7 +9,8 @@
     Le flux suit le réseau (fn_feedLink) : liaison montante de la source et descendante du téléphone, relais compris.
     « Ma caméra » est un rendu local (HD, sans pertes ni voile « SIGNAL INSTABLE »). Les autres flux : HD / SD / BAS /
     MINIMAL selon le débit ; décrochages espacés (pas de clignotement en bâtiment). Sans liaison, pas d'image.
-    Qualité réévaluée toutes les 3 s (page redessinée si le palier change).
+    Qualité réévaluée toutes les 3 s. Changement de palier, de vision, de source du même genre et RENOMMER : sur place
+    (fn_livecamLive), sans passer par fn_pageClear qui détruit la caméra à chaque redessin.
     Drones du camp (fn_livecamUav) : la nacelle d'un drone allié en vol, piloté au terminal UAV ou par un téléphone,
     comme le flux de BCE ; l'image passe par la station de son opérateur. Lecture seule : réticule, point visé, cadres
     sur les cibles, MARQUER LA CIBLE (LOCK suivi) et MARQUER LE POINT (marqueur de la palette), sans commande du drone.
@@ -27,6 +28,8 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _gw = _bw - 0.012;
 private _rowH = _font * 1.5;
 private _land = _l get "landscape";
+// Contrôles de l'image en cours (fn_livecamLive) : vides tant que la page n'a pas posé d'image.
+uiNamespace setVariable ["COMSPEC_ATAK_LivecamView", createHashMap];
 
 // Porteurs d'ATAK du camp (sauf moi), vivants, dont la caméra m'est partagée ; ma propre caméra en tête, pour la partager.
 private _shareOn = ["required"] call comspec_atak_native_fnc_camShare;
@@ -103,7 +106,8 @@ _list ctrlAddEventHandler ["LBSelChanged", {
     _st set ["livecamPan", 0];
     _st set ["livecamRename", false];
     _st set ["livecamShare", false];
-    [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    // Source du même genre, liaison bonne : la caméra se rattache, rien n'est redessiné.
+    [{ if !(["target"] call comspec_atak_native_fnc_livecamLive) then { ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _canShare = ["canShare", _unit] call comspec_atak_native_fnc_camShare;
 private _sharing = _shareOn && {_canShare} && {_s getOrDefault ["livecamShare", false]};
@@ -117,7 +121,7 @@ if (_shareOn) then {
     _sb ctrlAddEventHandler ["ButtonClick", {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         _st set ["livecamShare", !(_st getOrDefault ["livecamShare", false])];
-        [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }];
 };
 
@@ -157,7 +161,7 @@ if (_sharing) exitWith {
         _b ctrlSetFontHeight _fs;
         if (_code isEqualTo _m) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
         _b ctrlAddEventHandler ["ButtonClick", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['shareMethod', '%1'];
-            [{ ['LIVECAM'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _code]];
+            [{ ['LIVECAM'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _code]];
     } forEach _methods;
     _y = _y + _btnH + _pad / 2;
     // Principe de la méthode, et ce qui manque à mon téléphone.
@@ -208,14 +212,14 @@ if (_sharing) exitWith {
     _send ctrlAddEventHandler ["ButtonClick", {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         ["send", [objectFromNetId (_st getOrDefault ["livecamTarget", ""]), _st getOrDefault ["shareMethod", "NFC"], _st getOrDefault ["shareTo", "ALL"]]] call comspec_atak_native_fnc_camShare;
-        [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }];
     if (_owner && {(count _acc) > 0}) then {
         private _rv = ["COMSPEC_RscButton", [_vx + _pad + _bw2, _by, _bw2, _btnH], "RETIRER LES ACCÈS"] call comspec_atak_native_fnc_pageCtrl;
         _rv ctrlSetFontHeight _fs;
         _rv ctrlAddEventHandler ["ButtonClick", {
             ["revoke", objectFromNetId ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["livecamTarget", ""])] call comspec_atak_native_fnc_camShare;
-            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }];
     };
     true
@@ -251,7 +255,7 @@ if ((_link get "res") isEqualTo 0) exitWith {
         if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "LIVECAM") exitWith {};
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _l = ["eval", objectFromNetId (_st getOrDefault ["livecamTarget", ""])] call comspec_atak_native_fnc_feedLink;
-        if ((_l get "res") > 0) then { [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+        if ((_l get "res") > 0) then { [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
     }, 3] call CBA_fnc_addPerFrameHandler];
     true
 };
@@ -272,16 +276,16 @@ _drop ctrlSetStructuredText parseText ((format ["<br/><br/><t align='center' fon
 _drop ctrlShow false;
 uiNamespace setVariable ["COMSPEC_ATAK_FeedDrop", _drop];
 // Bandeau de liaison : palier, débit, pertes, relais de la source et du téléphone.
-(_link get "up") params ["", "", "_upRelay"];
-(_link get "down") params ["", "", "_downRelay"];
-private _path = (([_upRelay, _downRelay] select { _x isNotEqualTo "" }) arrayIntersect ([_upRelay, _downRelay] select { _x isNotEqualTo "" })) joinString " » ";
-private _tierCol = createHashMapFromArray [["HD", "#5bc76b"], ["SD", "#c9d4cf"], ["BAS", "#f2ab33"], ["MINIMAL", "#e5483a"]];
 private _netBar = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _vh - _rowH * 1.1, _vw - _pad, _rowH]] call comspec_atak_native_fnc_pageCtrl;
 _netBar ctrlSetFontHeight (_fs * 0.85);
-_netBar ctrlSetStructuredText parseText ((format ["<t align='right'><t font='COMSPEC_BarlowBold' color='%1'>%2</t> <t color='#c9d4cf'>· %3 · perte %4 %%%5</t></t>",
-    _tierCol getOrDefault [_link get "tier", "#c9d4cf"], _link get "tier",
-    [format ["%1 kbit/s", _link get "kbps"], format ["%1 Mbit/s", ((_link get "kbps") / 1000) toFixed 1]] select ((_link get "kbps") >= 1000),
-    _link get "loss", ["", format [" · via %1", _path]] select (_path isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+_netBar ctrlSetStructuredText parseText (["barText", _link] call comspec_atak_native_fnc_livecamLive);
+private _feedArgs = [_link get "drop", _link get "tier", diag_tickTime + 3, 0];
+private _view = createHashMapFromArray [
+    ["pic", _pic], ["bar", _netBar], ["drop", _drop], ["res", _res], ["kind", ["unit", "fixed"] select _fixed], ["list", _list],
+    ["canShare", _canShare], ["args", _feedArgs], ["modes", []], ["rename", []]
+];
+if (_isUav) then { _view set ["kind", "uav"]; };
+uiNamespace setVariable ["COMSPEC_ATAK_LivecamView", _view];
 // Décrochage : tirage espacé, avec un temps minimal d'image stable pour éviter le clignotement en bâtiment.
 // Flux local (ma caméra) : drop à 0, le voile ne s'affiche jamais.
 missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
@@ -313,9 +317,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
     if ((_l get "tier") isNotEqualTo _tier && {!(_st getOrDefault ["livecamRename", false])}) then {
         _args set [1, _l get "tier"];
         // Pas de notification ici : le changement de palier est déjà annoncé par la boucle du Live cam (fn_videoLink "adapt").
-        [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ params ["_lk"]; if !(["tier", _lk] call comspec_atak_native_fnc_livecamLive) then { ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }; }, [_l]] call comspec_atak_native_fnc_nextFrame;
     };
-}, 0.5, [_link get "drop", _link get "tier", diag_tickTime + 3, 0]] call CBA_fnc_addPerFrameHandler];
+}, 0.5, _feedArgs] call CBA_fnc_addPerFrameHandler];
 private _osd = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _pad / 2, _vw - _pad, _rowH * 2.3]] call comspec_atak_native_fnc_pageCtrl;
 if (_isUav) then {
     _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
@@ -383,30 +387,23 @@ if (_fixed) then {
             private _c = missionNamespace getVariable ['COMSPEC_ATAK_LivecamCam', objNull];
             if (!isNull _c) then { private _p = _s get 'livecamPan'; _c setVectorDirAndUp [[sin _p, cos _p, 0], [0, 0, 1]]; };", _step]];
     } forEach [["<", _vx + _pad / 2, -30], [">", _vx + _vw - _bs - _pad / 2, 30]];
-    private _ren = _s getOrDefault ["livecamRename", false];
-    if (_ren) then {
-        private _ew = _vw * 0.55;
-        private _e = ["COMSPEC_RscEdit", [_vx + _pad / 2, _vy + _vh - _btnH - _pad / 2, _ew, _btnH], _unit getVariable ["COMSPEC_ATAK_CamName", ""]] call comspec_atak_native_fnc_pageCtrl;
-        uiNamespace setVariable ["COMSPEC_ATAK_CamNameEdit", _e];
-        ctrlSetFocus _e;
-        private _ok = ["COMSPEC_RscButtonPrimary", [_vx + _pad + _ew, _vy + _vh - _btnH - _pad / 2, _vw * 0.2, _btnH], "OK"] call comspec_atak_native_fnc_pageCtrl;
-        _ok ctrlSetFontHeight _fs;
-        _ok ctrlAddEventHandler ["ButtonClick", {
-            private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-            private _e = uiNamespace getVariable ["COMSPEC_ATAK_CamNameEdit", controlNull];
-            if (!isNull _e) then { ["setName", objectFromNetId (_s getOrDefault ["livecamTarget", ""]), ctrlText _e] call comspec_atak_native_fnc_camAction; };
-            _s set ["livecamRename", false];
-            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
-        }];
-    } else {
-        private _rb = ["COMSPEC_RscButton", [_vx + _vw - _vw * 0.25 - _pad / 2, _vy + _vh - _btnH - _pad / 2, _vw * 0.25, _btnH], "RENOMMER"] call comspec_atak_native_fnc_pageCtrl;
-        _rb ctrlSetFontHeight _fs;
-        _rb ctrlSetBackgroundColor [0, 0, 0, 0.45];
-        _rb ctrlAddEventHandler ["ButtonClick", {
-            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["livecamRename", true];
-            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
-        }];
-    };
+    // RENOMMER : le champ et son OK sont posés masqués, le bouton les montre sur place (fn_livecamLive « renameShow »).
+    private _ew = _vw * 0.55;
+    private _e = ["COMSPEC_RscEdit", [_vx + _pad / 2, _vy + _vh - _btnH - _pad / 2, _ew, _btnH], _unit getVariable ["COMSPEC_ATAK_CamName", ""]] call comspec_atak_native_fnc_pageCtrl;
+    uiNamespace setVariable ["COMSPEC_ATAK_CamNameEdit", _e];
+    private _ok = ["COMSPEC_RscButtonPrimary", [_vx + _pad + _ew, _vy + _vh - _btnH - _pad / 2, _vw * 0.2, _btnH], "OK"] call comspec_atak_native_fnc_pageCtrl;
+    _ok ctrlSetFontHeight _fs;
+    _ok ctrlAddEventHandler ["ButtonClick", {
+        ["renamed"] call comspec_atak_native_fnc_livecamLive;
+    }];
+    private _rb = ["COMSPEC_RscButton", [_vx + _vw - _vw * 0.25 - _pad / 2, _vy + _vh - _btnH - _pad / 2, _vw * 0.25, _btnH], "RENOMMER"] call comspec_atak_native_fnc_pageCtrl;
+    _rb ctrlSetFontHeight _fs;
+    _rb ctrlSetBackgroundColor [0, 0, 0, 0.45];
+    _rb ctrlAddEventHandler ["ButtonClick", {
+        ["renameShow", true] call comspec_atak_native_fnc_livecamLive;
+    }];
+    _view set ["rename", [_e, _ok, _rb]];
+    ["renameShow", _s getOrDefault ["livecamRename", false]] call comspec_atak_native_fnc_livecamLive;
 };
 uiNamespace setVariable ["COMSPEC_ATAK_LivecamOsd", _osd];
 
@@ -466,8 +463,9 @@ private _mw = (_vw - _pad) / 3;
     _x params ["_t", "_v"];
     private _b = ["COMSPEC_RscButton", [_vx + _forEachIndex * (_mw + _pad / 2), _vy + _vh + _pad, _mw, _btnH], _t] call comspec_atak_native_fnc_pageCtrl;
     _b ctrlSetFontHeight _fs;
-    if (_v isEqualTo _mode) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-    _b ctrlAddEventHandler ["ButtonClick", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['livecamMode', %1]; 'comspec_livecam' setPiPEffect [%1];
-        [{ ['LIVECAM'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _v]];
+    (_view get "modes") pushBack [_b, _v];
+    // Vision changée sur place : le flux ne se recrée pas.
+    _b ctrlAddEventHandler ["ButtonClick", compile format ["['mode', %1] call comspec_atak_native_fnc_livecamLive;", _v]];
 } forEach _modes;
+["modeMark", _mode] call comspec_atak_native_fnc_livecamLive;
 true

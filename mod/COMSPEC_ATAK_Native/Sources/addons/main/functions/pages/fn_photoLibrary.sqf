@@ -46,7 +46,7 @@ switch (_action) do {
                 [] spawn {
                     ["list"] call comspec_atak_native_fnc_photoLibrary;
                     uiNamespace setVariable ["COMSPEC_ATAK_PhotoListBusy", -100];
-                    [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg isNotEqualTo "") then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+                    [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg isNotEqualTo "") then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
                 };
             };
             uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []]
@@ -62,7 +62,7 @@ switch (_action) do {
             [] spawn {
                 ["check"] call comspec_atak_native_fnc_photoLibrary;
                 uiNamespace setVariable ["COMSPEC_ATAK_PhotoCheckBusy", -100];
-                [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+                [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
             };
         };
         _out
@@ -89,8 +89,8 @@ switch (_action) do {
         // Premier appui : le bouton passe en CONFIRMER pendant 4 s.
         if ((_armed select 0) isNotEqualTo _key || {diag_tickTime - (_armed select 1) > 4}) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", [_key, diag_tickTime]];
-            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
-            [{ if (diag_tickTime - ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]]) select 1) >= 4 && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GALLERY"}) then { ["GALLERY"] call comspec_atak_native_fnc_pageRender; }; }, [], 4.1] call CBA_fnc_waitAndExecute;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
+            [{ if (diag_tickTime - ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]]) select 1) >= 4 && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GALLERY"}) then { ["GALLERY"] call comspec_atak_native_fnc_pageRender; }; }, [], 4.1] call comspec_atak_native_fnc_waitAndExec;
             true
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
@@ -128,7 +128,7 @@ switch (_action) do {
             private _fail = (count _todo) - _done;
             [["SUCCESS", "WARNING"] select (_fail > 0), if (_fail > 0) then { format ["%1 photo(s) supprimée(s), %2 refusée(s) (fichier hors des dossiers COMSPEC ou déjà ouvert).", _done, _fail] } else { format ["%1 photo(s) supprimée(s) du poste.", _done] }, 4, 20] call comspec_atak_native_fnc_notify;
             ["list"] call comspec_atak_native_fnc_photoLibrary;
-            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
         true
     };
@@ -140,7 +140,7 @@ switch (_action) do {
             params ["_rec", "_fnc_send"];
             private _ok = _rec call _fnc_send;
             [["INFO", "WARNING"] select !_ok, ["Photo transmise vers Athena.", "Retransmission refusée : voir le détail dans l'app Galerie."] select !_ok, 4, 20] call comspec_atak_native_fnc_notify;
-            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         }, [_lib select _arg, _fnc_send], "Photo", 600] call comspec_atak_native_fnc_netSend;
         true
     };
@@ -157,7 +157,7 @@ switch (_action) do {
         [_lib, _fnc_send] spawn {
             params ["_lib", "_fnc_send"];
             { [{ (_this select 0) call (_this select 1); }, [_x, _fnc_send], format ["Photo %1/%2", _forEachIndex + 1, count _lib], 600] call comspec_atak_native_fnc_netSend; uiSleep 2; } forEach _lib;
-            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["PHOTOS", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
         true
     };

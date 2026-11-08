@@ -72,7 +72,7 @@ private _collapse = {
         private _dc = (ctrlParent _crt) displayCtrl 88510;
         if (!isNull _dc) then { (ctrlPosition _dc) params ["_nx", "_ny", "_nw", "_nh"]; _cx = _nx; _cy = _ny; _cw = _nw; _ch = _nh; };
         _crt ctrlSetPosition [_cx + _cw * 0.5, _cy + _ch * 0.496, 0, _ch * 0.008]; _crt ctrlSetFade 0.6; _crt ctrlCommit 0.16;
-    }, [_crt, _cx, _cy, _cw, _ch], 0.2] call CBA_fnc_waitAndExecute;
+    }, [_crt, _cx, _cy, _cw, _ch], 0.2] call comspec_atak_native_fnc_waitAndExec;
 };
 private _steps = switch (_kind) do {
     case "empty": {[
@@ -118,7 +118,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_PowerCollapse", _collapse];
         private _dc = (ctrlParent (_c select 0)) displayCtrl 88510;
         if (!isNull _dc) then { _r = ctrlPosition _dc; };
         [_c, _r, _f] call _code;
-    }, [_code, _ctrls, [_rx, _ry, _rw, _rh], _font], _t] call CBA_fnc_waitAndExecute;
+    }, [_code, _ctrls, [_rx, _ry, _rw, _rh], _font], _t] call comspec_atak_native_fnc_waitAndExec;
 } forEach _steps;
 // Fin : contrôles supprimés ; batterie vide : téléphone rangé ; casse : écran éclaté (fn_deviceOverlay).
 [{
@@ -132,5 +132,5 @@ uiNamespace setVariable ["COMSPEC_ATAK_PowerCollapse", _collapse];
     } else {
         [] call comspec_atak_native_fnc_deviceOverlay;
     };
-}, [_kind, _ctrls], _dur] call CBA_fnc_waitAndExecute;
+}, [_kind, _ctrls], _dur] call comspec_atak_native_fnc_waitAndExec;
 true

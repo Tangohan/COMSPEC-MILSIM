@@ -122,7 +122,7 @@ switch (_event) do {
         { deleteMarker _x; [_x, true] call comspec_atak_native_fnc_markerWeb; } forEach _l;
         missionNamespace setVariable ["COMSPEC_ATAK_StrokeMine", []];
         ["INFO", format ["%1 trait(s) effacé(s)", count _l], 2, 10] call comspec_atak_native_fnc_notify;
-        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     default { false };

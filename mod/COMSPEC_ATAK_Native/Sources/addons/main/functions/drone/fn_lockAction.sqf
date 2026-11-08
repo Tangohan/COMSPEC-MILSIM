@@ -437,9 +437,10 @@ switch (_act) do {
                 // 0 calque retiré, marqueur gardé · 1 calque retiré, marqueur effacé après délai · 2 tout effacé · 3 tout gardé (cadre fantôme).
                 if (_mode isEqualTo 2) then { _drop pushBack [_key, ""]; continue; };
                 if (_mode isEqualTo 3) then { _e set ["ghost", true]; };
+                // Le marqueur garde son nom : « perdu » n'est plus écrit sur la carte (retour 2026-11-08), il s'estompe
+                // seulement ; l'état reste affiché dans l'app Drone.
                 if (_m isNotEqualTo "" && {(markerShape _m) isNotEqualTo ""}) then {
                     _m setMarkerAlphaLocal 0.55;
-                    _m setMarkerText format ["LOCK %1 · %2 %3 %4", _num, _e get "name", "perdu" call comspec_atak_native_fnc_tr, [dayTime, "HH:MM"] call BIS_fnc_timeToString];
                 };
             };
             if ((_e get "state") isEqualTo "LOST" && {_mode isEqualTo 1} && {(time - (_e get "lostAt")) > _keep}) then { _drop pushBack [_key, "marqueur effacé (perdue depuis trop longtemps)"]; };

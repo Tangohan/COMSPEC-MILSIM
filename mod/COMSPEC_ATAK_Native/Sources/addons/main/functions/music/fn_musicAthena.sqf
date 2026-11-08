@@ -19,7 +19,7 @@
 params [["_act", "load"], ["_view", "global"]];
 private _ath = uiNamespace getVariable ["COMSPEC_ATAK_MusicAth", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_MusicAth", _ath];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _prev = _ath getOrDefault [_view, [[], "", "", false, -1e9, -1e9]];
 // Chargement en cours depuis trop longtemps (ou d'une ancienne mission / version) : perdu.
 private _stale = (_prev select 3) && {diag_tickTime - (_prev param [5, -1e9]) > BUSY_MAX};
@@ -41,7 +41,7 @@ call _render;
         _ath set [_view, [_s select 0, _s select 1, "Athena n'a pas répondu à temps. Réessayez avec ACTUALISER (nouvel essai automatique dans 20 s).", false, diag_tickTime, _start]];
         call _render;
     };
-}, [_ath, _view, _start, _render], BUSY_MAX + 1] call CBA_fnc_waitAndExecute;
+}, [_ath, _view, _start, _render], BUSY_MAX + 1] call comspec_atak_native_fnc_waitAndExec;
 [_view, _ath, _render, _start] spawn {
     params ["_view", "_ath", "_render", "_start"];
     private _res = { params ["_r"]; if (!isNil "comspec_overwatch_connect_fnc_extResult") then { [_r] call comspec_overwatch_connect_fnc_extResult } else { _r } };

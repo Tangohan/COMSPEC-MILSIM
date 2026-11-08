@@ -29,6 +29,7 @@
 [*]Ordres aux IA depuis la carte ou le PC du poste TOC.
 [*]Écrans TOC, TV et vidéoprojecteur : carte, diapositives, caméras.
 [*]Montre Garmin, batterie et socle de recharge, JVN tactiques, 9 téléphones et tablettes.
+[*][b]Nouveau en 3.1 :[/b] interface refaite, lisible sur tout écran, trois thèmes (sombre, jour, nuit JVN compatible jumelles de vision nocturne), écran de verrouillage et centre de notifications groupés par app.
 [*]Profils de réalisme Milsim / Standard / Arcade ; un ATAK perdu peut être ramassé par l'IA ennemie et trahir l'équipe.
 [/list]
 
@@ -76,6 +77,7 @@ Bug : lancez [b]Envoyer_mes_logs.bat[/b] et postez le zip sur le [url=https://di
 [*]AI orders from the map or the TOC laptop.
 [*]TOC screens, TVs and projector: map, slides, cameras.
 [*]Garmin watch, battery and charging dock, NVG tactical overlay, 9 phones and tablets.
+[*][b]New in 3.1:[/b] redesigned interface, readable on any screen, three themes (dark, day, NVG night for night-vision goggles), lock screen and notification centre grouped by app.
 [*]Milsim / Standard / Arcade realism profiles; a lost ATAK can be picked up by enemy AI and betray the team.
 [/list]
 

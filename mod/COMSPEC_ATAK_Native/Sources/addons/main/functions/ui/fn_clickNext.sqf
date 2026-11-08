@@ -12,5 +12,12 @@ _b setVariable ["comspec_click", _code];
 if (!isNil "_args") then { _b setVariable ["comspec_clickArgs", _args]; };
 _b ctrlAddEventHandler ["ButtonClick", {
     params ["_c"];
-    [{ params ["_c", "_code", "_a"]; _a call _code; }, [_c, _c getVariable ["comspec_click", {}], _c getVariable ["comspec_clickArgs", [_c]]]] call CBA_fnc_execNextFrame;
+    // Une seule exécution : une erreur de script dans _code interrompt CBA_fnc_onFrame avant le vidage du tampon
+    // « image suivante », qui serait alors rejoué à chaque image (voir fn_formRender).
+    [{
+        params ["_c", "_code", "_a", "_done"];
+        if (_done select 0) exitWith {};
+        _done set [0, true];
+        _a call _code;
+    }, [_c, _c getVariable ["comspec_click", {}], _c getVariable ["comspec_clickArgs", [_c]], [false]]] call comspec_atak_native_fnc_nextFrame;
 }];

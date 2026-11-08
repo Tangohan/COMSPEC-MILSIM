@@ -14,7 +14,7 @@
 */
 params [["_action", ""], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _rerender = { [{ ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 // Saisie en cours gardée : chaque action redessine la page.
 private _keepDraft = {
     if (!isNull ((uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["briefUrl", controlNull])) then {
@@ -160,7 +160,7 @@ switch (_action) do {
                     };
                 };
                 ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
-            }] call CBA_fnc_execNextFrame;
+            }] call comspec_atak_native_fnc_nextFrame;
         };
         true
     };

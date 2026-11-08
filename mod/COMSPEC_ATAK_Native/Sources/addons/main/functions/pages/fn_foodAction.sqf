@@ -9,7 +9,7 @@ params [["_act", "menu"], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _cart = _s getOrDefault ["foodCart", createHashMap];
 _s set ["foodCart", _cart];
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FOOD") then { ["FOOD"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FOOD") then { ["FOOD"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 // Le catalogue renvoie une valeur : traité hors du switch (la fonction finit par true, ce qui vidait la page).
 if (_act isEqualTo "menu") exitWith {
     call {
@@ -72,8 +72,8 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_FoodOrder", createHashMapFromArray [["step", "PREP"], ["items", _items], ["eta", time + _prep + _fly], ["launch", time + _prep], ["ref", format ["RX-%1", 1000 + floor random 9000]]]];
             missionNamespace setVariable ["COMSPEC_ATAK_FoodNextAt", time + 600];
             ["SUCCESS", format ["Commande acceptée : livraison dans %1 min environ", ceil ((_prep + _fly) / 60)], 4, 30] call comspec_atak_native_fnc_notify;
-            [{ ["launch"] call comspec_atak_native_fnc_foodAction; }, [], _prep] call CBA_fnc_waitAndExecute;
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FOOD") then { ["FOOD"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ ["launch"] call comspec_atak_native_fnc_foodAction; }, [], _prep] call comspec_atak_native_fnc_waitAndExec;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FOOD") then { ["FOOD"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         }, [_items, _oid], "Commande UberEats", 2, 1, "food"] call comspec_atak_native_fnc_netSend;
         call _rerender;
     };
@@ -82,7 +82,7 @@ switch (_act) do {
         if ((_o getOrDefault ["step", ""]) isNotEqualTo "PREP") exitWith {};
         _o set ["step", "FLIGHT"];
         ["INFO", "UberEats : le drone est parti, restez dans la zone", 4, 30] call comspec_atak_native_fnc_notify;
-        [{ ["drop"] call comspec_atak_native_fnc_foodAction; }, [], ((_o get "eta") - time) max 5] call CBA_fnc_waitAndExecute;
+        [{ ["drop"] call comspec_atak_native_fnc_foodAction; }, [], ((_o get "eta") - time) max 5] call comspec_atak_native_fnc_waitAndExec;
         call _rerender;
     };
     case "drop": {
@@ -113,7 +113,7 @@ switch (_act) do {
         _o set ["pos", _pos];
         private _m = createMarkerLocal [format ["COMSPEC_FOOD_%1", _o get "ref"], _pos];
         _m setMarkerTypeLocal "mil_pickup"; _m setMarkerColorLocal "ColorPink"; _m setMarkerTextLocal format ["UberEats %1", _o get "ref"];
-        [{ deleteMarkerLocal _this; }, _m, 900] call CBA_fnc_waitAndExecute;
+        [{ deleteMarkerLocal _this; }, _m, 900] call comspec_atak_native_fnc_waitAndExec;
         ["SUCCESS", format ["UberEats : livré à %1 m (fumée violette), bon appétit !", round (player distance2D _pos)], 6, 40] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_vibrate;
         call _rerender;

@@ -45,7 +45,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
     private _mode = ["tout le monde", "chefs de groupe, Zeus et admins", "Zeus et admins"] select ((missionNamespace getVariable ["comspec_atak_native_plan_edit", 1]) max 0 min 2);
     private _rows = [
         ["section", "Plan du camp", format ["%1 élément(s)%2 · modifiable par : %3%4", count _sh, ["", format [" · « %1 »", [_sharedName] call _esc]] select (_sharedName isNotEqualTo ""), _mode, ["", " (vous : lecture seule)"] select !_can]],
-        ["text", format ["<t size='0.85' color='#8a9a93'>%1</t>", ["state"] call comspec_atak_native_fnc_planWeb]],
+        ["text", format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", ["state"] call comspec_atak_native_fnc_planWeb]],
         ["buttons", [["EXPORTER", ["export", "S"] call _act], ["ENREGISTRER", { ["save", "S"] call comspec_atak_native_fnc_planAction; }]]],
         ["section", "Brouillon local", format ["%1 élément(s), gardé dans votre profil : préparez le plan à l'avance, puis ajoutez-le quand le groupe se réunit", count _dr]],
         ["buttons", [["AJOUTER AU CAMP", { ["publish", ["D", false]] call comspec_atak_native_fnc_planAction; }, true, _can], ["REMPLACER LE CAMP", { ["publish", ["D", true]] call comspec_atak_native_fnc_planAction; }, false, _can]]],
@@ -63,7 +63,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
     ];
     {
         _x params ["_n", "_w", "_its", ["_when", ""]];
-        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 · %3 élément(s) · %4</t>", [_n] call _esc, _w, count _its, _when]];
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · %3 élément(s) · %4</t>", [_n] call _esc, _w, count _its, _when]];
         private _i = _forEachIndex;
         _rows pushBack ["buttons", [
             ["APERÇU", compile format ["['preview', %1] call comspec_atak_native_fnc_planAction;", _i]],
@@ -86,7 +86,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
         ["switch", "Fond assombri (façon image ISR)", profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true], {
             profileNamespace setVariable ["COMSPEC_ATAK_PlanDim", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true])]; [] call comspec_atak_native_fnc_saveProfile; ["rerender"] call comspec_atak_native_fnc_planAction;
         }, "Les couleurs du plan ressortent mieux"],
-        ["buttons", [["REVOIR LE TUTORIEL", { ["view", "MAP"] call comspec_atak_native_fnc_planAction; [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.2] call CBA_fnc_waitAndExecute; }]]]
+        ["buttons", [["REVOIR LE TUTORIEL", { ["view", "MAP"] call comspec_atak_native_fnc_planAction; [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.2] call comspec_atak_native_fnc_waitAndExec; }]]]
     ];
     [_rows, [0, _pad + _rowH, _bw, _bh - _pad - _rowH]] call comspec_atak_native_fnc_formRender;
     true
@@ -132,6 +132,6 @@ if (!isNull _disp && {(_disp getVariable ["COMSPEC_PlanKeyEh", -1]) < 0}) then {
 // Premier lancement : tutoriel pas à pas (rejouable depuis l'aide ou la vue PLANS).
 if ((profileNamespace getVariable ["COMSPEC_ATAK_PlanTuto", 0]) < 1 && {(_ui get "tuto") < 0} && {!(uiNamespace getVariable ["COMSPEC_ATAK_PlanTutoShown", false])}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_PlanTutoShown", true];
-    [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.4] call CBA_fnc_waitAndExecute;
+    [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.4] call comspec_atak_native_fnc_waitAndExec;
 };
 true

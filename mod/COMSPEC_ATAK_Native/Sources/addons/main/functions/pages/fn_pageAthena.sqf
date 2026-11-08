@@ -29,7 +29,7 @@ if (_logged) then { private _av = [player] call comspec_atak_native_fnc_avatarPa
 
 // Connecté : la carte (photo, indicatif) ouvre l'app Profil.
 private _rows = [["status", _logo, _st get "color", _st get "title", _st get "text", _st get "action", [{}, { ["PROFILE"] call comspec_atak_native_fnc_navigate; }] select _logged]];
-if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#9fd3c0", "#f2c66b"] select _hWarn, _hText], [0.06, 0.075, 0.07, 1]]; };
+if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#9fd3c0", (COMSPEC_ATAK_Th get "hexWarn")] select _hWarn, _hText], [0.06, 0.075, 0.07, 1]]; };
 
 // Bouton qui règle la situation, sous la carte d'état.
 private _btns = switch (true) do {
@@ -37,11 +37,11 @@ private _btns = switch (true) do {
     case (_logged): { [["RECONNECTER", { ["reconnect"] call comspec_atak_native_fnc_athenaAction; }, false, true, "Relance la liaison avec Athena et le poste"], ["DÉCONNEXION", { ["logout"] call comspec_atak_native_fnc_athenaAction; }]] };
     default {
         switch (_st get "fix") do {
-            case "service": { [["ACTIVER LE SERVICE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]] };
+            case "service": { [["ACTIVER LE SERVICE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, true]] };
             // Service Athéna pas encore choisi : la réponse se donne ici, plus dans l'ancienne fenêtre d'Overwatch.
             case "choose": { [
-                ["OUI, MON UNITÉ UTILISE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true],
-                ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+                ["OUI, MON UNITÉ UTILISE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, true],
+                ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]
             ] };
             case "reconnect": { [["RECONNECTER", { ["reconnect"] call comspec_atak_native_fnc_athenaAction; }, true, true, "Relance la liaison avec Athena"]] };
             default { [] };
@@ -57,7 +57,7 @@ private _open = uiNamespace getVariable ["COMSPEC_ATAK_AthenaSteps", !_logged];
 uiNamespace setVariable ["COMSPEC_ATAK_AthenaStepsNow", _open];
 _rows pushBack ["fold", "ÉTAPES DE LA LIAISON", format ["%1 sur %2 en ordre", _okN, count _steps], _open, {
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaSteps", !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaStepsNow", true])];
-    [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 if (_open) then {
     { _rows pushBack (["check", _x select 1, _x select 0, _x select 2, _x select 3]); } forEach _steps;
@@ -77,7 +77,7 @@ if (_logged) then {
             ["info", "Communauté", ["comspec_tenant_name", "—"] call _v],
             ["info", "Identifiant ATAK", ["COMSPEC_AtakId", "—"] call _v],
             ["gap"],
-            ["text", "<t size='0.8' color='#a9b8b1'>Rôle affiché, qualifications, certificat et batterie : app Profil.</t>"],
+            ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Rôle affiché, qualifications, certificat et batterie : app Profil.</t>"],
             ["buttons", [["MON PROFIL", { ["PROFILE"] call comspec_atak_native_fnc_navigate; }, true, true, "Ouvrir l'app Profil"]]]
         ];
     };
@@ -104,7 +104,7 @@ if (_logged) then {
                     ["password", "password", "Mot de passe"],
                     ["buttons", [["SE CONNECTER", { profileNamespace setVariable ["COMSPEC_ATAK_Email", ["email"] call comspec_atak_native_fnc_formValue]; ["password"] call comspec_atak_native_fnc_athenaAction; }, true]]],
                     ["gap"],
-                    ["text", "<t color='#c9d4cf'>Mot de passe oublié ou pas de mot de passe : recevez un code par e-mail.</t>"],
+                    ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Mot de passe oublié ou pas de mot de passe : recevez un code par e-mail.</t>"],
                     ["edit", "otp", "Code reçu par e-mail", _draft getOrDefault ["otp", ""]],
                     ["buttons", [
                         ["RECEVOIR LE CODE", { profileNamespace setVariable ["COMSPEC_ATAK_Email", ["email"] call comspec_atak_native_fnc_formValue]; ["otp_ask"] call comspec_atak_native_fnc_athenaAction; }],
@@ -114,9 +114,9 @@ if (_logged) then {
             };
             case "steam": {
                 _rows append [
-                    ["text", format ["<t color='#c9d4cf'>Connexion avec le compte Steam déjà relié à votre profil Athena.</t><br/><t size='0.85' color='#a9b8b1'>Steam : %1</t>", getPlayerUID player]],
+                    ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Connexion avec le compte Steam déjà relié à votre profil Athena.</t><br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Steam : %1</t>", getPlayerUID player]],
                     ["buttons", [["CONNEXION STEAM", { ["steam"] call comspec_atak_native_fnc_athenaAction; }, true]]],
-                    ["text", "<t size='0.85' color='#a9b8b1'>Steam pas encore relié ? Onglet CODE.</t>"]
+                    ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Steam pas encore relié ? Onglet CODE.</t>"]
                 ];
             };
             default {
@@ -127,8 +127,8 @@ if (_logged) then {
                 switch (_ls) do {
                     case "pending": {
                         _rows append [
-                            ["text", format ["<t color='#c9d4cf'>1. Sur votre ordinateur ou votre téléphone, connecté à votre compte Athena, ouvrez</t><br/><t size='1.2' font='COMSPEC_BarlowBold' color='#8fe39b'>%1</t>", _short], _card],
-                            ["text", format ["<t color='#c9d4cf'>2. Saisissez ce code :</t><br/><t size='2.3' font='COMSPEC_BarlowBold' align='center'>%1</t><br/><t size='0.85' align='center' color='#a9b8b1'>En attente de votre accord · valable encore %2 min</t>", _lc, ceil ((_lu - diag_tickTime) / 60)], _card],
+                            ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>1. Sur votre ordinateur ou votre téléphone, connecté à votre compte Athena, ouvrez</t><br/><t size='1.2' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1</t>", _short], _card],
+                            ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>2. Saisissez ce code :</t><br/><t size='2.3' font='COMSPEC_BarlowBold' align='center'>%1</t><br/><t size='0.85' align='center' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>En attente de votre accord · valable encore %2 min</t>", _lc, ceil ((_lu - diag_tickTime) / 60)], _card],
                             ["buttons", [
                                 ["OUVRIR LA PAGE", { ["open"] call comspec_atak_native_fnc_athenaLink; }, true, true, "Ouvre la page dans votre navigateur, code déjà rempli"],
                                 ["NOUVEAU CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }]
@@ -137,14 +137,14 @@ if (_logged) then {
                             // connecté à Athena, quand le PC n'a pas de navigateur sous la main (plein écran, second écran).
                             ["section", "Sur votre vrai téléphone", "Scannez ce QR code : la page Lier le jeu s'ouvre, saisissez-y le code ci-dessus."],
                             ["image", "\z\comspec_atak_native\addons\main\data\athena_link_qr_ca.paa"],
-                            ["text", format ["<t size='0.85' align='center' color='#8a9a93'>%1</t>", _short]]
+                            ["text", format ["<t size='0.85' align='center' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _short]]
                         ];
                     };
-                    case "asking": { _rows pushBack ["text", "<t color='#c9d4cf'>Demande d'un code à Athena…</t>", _card]; };
-                    case "approved": { _rows pushBack ["text", "<t color='#8fe39b'>Compte autorisé : synchronisation de votre profil…</t>", _card]; };
+                    case "asking": { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Demande d'un code à Athena…</t>", _card]; };
+                    case "approved": { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Compte autorisé : synchronisation de votre profil…</t>", _card]; };
                     case "expired": {
                         _rows append [
-                            ["text", "<t color='#f2c66b'>Ce code a expiré sans être autorisé.</t>", _card],
+                            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Ce code a expiré sans être autorisé.</t>", _card],
                             ["buttons", [["NOUVEAU CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
                         ];
                     };
@@ -152,26 +152,26 @@ if (_logged) then {
                         _rows append [
                             ["text", if (_ld isEqualTo "maintenance") then {
                                 // Athena en maintenance (HTTP 503) : nouvel essai automatique toutes les 60 s, app ouverte.
-                                "<t color='#f2c66b' font='COMSPEC_BarlowBold'>Athena est en maintenance.</t><br/><t color='#c9d4cf'>Le site est fermé le temps d'une mise à jour : aucun code ne peut être donné pour l'instant. Gardez l'app ouverte : nouvel essai automatique toutes les minutes.</t>"
+                                "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "' font='COMSPEC_BarlowBold'>Athena est en maintenance.</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Le site est fermé le temps d'une mise à jour : aucun code ne peut être donné pour l'instant. Gardez l'app ouverte : nouvel essai automatique toutes les minutes.</t>"
                             } else { if ((_ld find "http_4") isEqualTo 0 || {_ld isEqualTo "client_untrusted"}) then {
                                 // Athena a répondu mais refuse : cause et action lues dans fn_athenaStatus.
-                                format ["<t color='#f2c66b'>%1</t><br/><t color='#c9d4cf'>%2</t>", _st getOrDefault ["text", ""], _st getOrDefault ["action", ""]]
+                                format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2</t>", _st getOrDefault ["text", ""], _st getOrDefault ["action", ""]]
                             } else {
-                                format ["<t color='#f2c66b'>Athena n'a pas donné de code (%1). Vérifiez la connexion internet du jeu.</t>", _ld]
+                                format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Athena n'a pas donné de code (%1). Vérifiez la connexion internet du jeu.</t>", _ld]
                             } }, _card],
                             ["buttons", [["RÉESSAYER", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
                         ];
                     };
                     default {
                         _rows append [
-                            ["text", "<t color='#c9d4cf'>Un code s'affiche, vous l'autorisez sur le site Athena, et tout se synchronise : profil, communauté, réglages. Aucune clé ni identifiant de communauté à saisir.</t>"],
+                            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Un code s'affiche, vous l'autorisez sur le site Athena, et tout se synchronise : profil, communauté, réglages. Aucune clé ni identifiant de communauté à saisir.</t>"],
                             ["buttons", [["OBTENIR MON CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
                         ];
                         // App ouverte sans session ni code : le code est demandé tout de suite.
                         if (_mode isEqualTo "on") then { ["start"] call comspec_atak_native_fnc_athenaLink; };
                     };
                 };
-                _rows pushBack ["text", "<t size='0.85' color='#a9b8b1'>Pas d'accès au site ? Onglet E-MAIL. Votre Steam est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.</t>"];
+                _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Pas d'accès au site ? Onglet E-MAIL. Votre Steam est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.</t>"];
             };
         };
     };
@@ -179,18 +179,18 @@ if (_logged) then {
     private _help = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHelp", false];
     _rows append [
         ["gap"],
-        ["fold", "AIDE À LA CONNEXION", "Problèmes courants", _help, { uiNamespace setVariable ["COMSPEC_ATAK_AthenaHelp", !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaHelp", false])]; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+        ["fold", "AIDE À LA CONNEXION", "Problèmes courants", _help, { uiNamespace setVariable ["COMSPEC_ATAK_AthenaHelp", !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaHelp", false])]; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]
     ];
     if (_help) then {
         _rows append [
-            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>1.</t> <t color='#c9d4cf'>Il faut un compte sur <t color='#8fe39b'>athena-comspec.eu</t> (gratuit), membre de votre communauté.</t>"],
-            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>2.</t> <t color='#c9d4cf'>Onglet CODE : OBTENIR MON CODE. Sur votre PC ou votre téléphone, connecté au site, ouvrez <t color='#8fe39b'>athena-comspec.eu/lier</t> et saisissez le code.</t>"],
-            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>3.</t> <t color='#c9d4cf'>Autorisez : le téléphone se connecte seul en quelques secondes, et les parties suivantes aussi (Steam associé).</t>"],
-            ["text", "<t color='#f2c66b'>Pas de code ?</t> <t color='#c9d4cf'>Vérifiez la connexion internet du jeu et que COMSPEC Link est autorisé (BattlEye, pare-feu). Puis RÉESSAYER.</t>"],
-            ["text", "<t color='#f2c66b'>Code expiré ?</t> <t color='#c9d4cf'>Il ne dure que quelques minutes : NOUVEAU CODE.</t>"],
-            ["text", "<t color='#f2c66b'>Non lié ?</t> <t color='#c9d4cf'>Le serveur répond mais ce jeu n'est relié à aucun compte : OBTENIR MON CODE, puis autorisez-le sur le site.</t>"],
-            ["text", "<t color='#f2c66b'>Pack non reconnu ?</t> <t color='#c9d4cf'>Athena n'accepte que la version officielle : abonnez-vous à COMSPEC ATAK sur le Steam Workshop (ou mettez-le à jour), retirez les copies locales ou modifiées du mod, puis relancez Arma complètement.</t>"],
-            ["text", "<t color='#f2c66b'>Toujours bloqué ?</t> <t color='#c9d4cf'>Onglet E-MAIL (mot de passe ou code reçu par e-mail). Sinon, prévenez votre staff.</t>"]
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexText") + "' font='COMSPEC_BarlowBold'>1.</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Il faut un compte sur <t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>athena-comspec.eu</t> (gratuit), membre de votre communauté.</t>"],
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexText") + "' font='COMSPEC_BarlowBold'>2.</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Onglet CODE : OBTENIR MON CODE. Sur votre PC ou votre téléphone, connecté au site, ouvrez <t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>athena-comspec.eu/lier</t> et saisissez le code.</t>"],
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexText") + "' font='COMSPEC_BarlowBold'>3.</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Autorisez : le téléphone se connecte seul en quelques secondes, et les parties suivantes aussi (Steam associé).</t>"],
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Pas de code ?</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Vérifiez la connexion internet du jeu et que COMSPEC Link est autorisé (BattlEye, pare-feu). Puis RÉESSAYER.</t>"],
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Code expiré ?</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Il ne dure que quelques minutes : NOUVEAU CODE.</t>"],
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Non lié ?</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Le serveur répond mais ce jeu n'est relié à aucun compte : OBTENIR MON CODE, puis autorisez-le sur le site.</t>"],
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Pack non reconnu ?</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Athena n'accepte que la version officielle : abonnez-vous à COMSPEC ATAK sur le Steam Workshop (ou mettez-le à jour), retirez les copies locales ou modifiées du mod, puis relancez Arma complètement.</t>"],
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Toujours bloqué ?</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Onglet E-MAIL (mot de passe ou code reçu par e-mail). Sinon, prévenez votre staff.</t>"]
         ];
     };
 };

@@ -13,6 +13,12 @@ if (_button isEqualTo 0 && {!_click}) exitWith {
     _s set ["mapLc", []];
     if (!_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {["DOWN", [_world select 0, _world select 1, 0], _ctrl] call comspec_atak_native_fnc_markerStroke}) exitWith { true };
     _s set ["mapLc", [_mx, _my, _shift, _ctrl, _alt]];
+    // Appui long (fn_mapOnDraw) : pointage partagé comme sur la carte du jeu, seulement en sélection, sans outil de pose
+    // ni menu ouvert, sans touche modificatrice.
+    _s set ["mapLcAt", diag_tickTime];
+    _s set ["mapLcW", [_world select 0, _world select 1, 0]];
+    _s set ["mapLcOk", !_picking && {(count (_s getOrDefault ["mapCtx", createHashMap])) isEqualTo 0} && {(_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "SELECT"} && {!_shift && !_ctrl && !_alt}];
+    _s set ["mapHold", false];
     true
 };
 // Menu contextuel ouvert : un clic gauche ailleurs le ferme seulement ; un clic droit le ferme et peut en rouvrir un.
@@ -59,11 +65,11 @@ if (_button isEqualTo 0) exitWith {
         private _m = [_map,[_mx,_my]] call comspec_atak_native_fnc_markerAt;
         if (_m isNotEqualTo "") exitWith {
             _s set ["selectedMarker",_m];
-            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         if ((_s getOrDefault ["selectedMarker",""]) isNotEqualTo "") then {
             _s set ["selectedMarker",""];
-            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         [_world,_shift,_ctrl,_alt,_map] call comspec_atak_native_fnc_mapSelect;
     } else {
@@ -77,7 +83,7 @@ if (_button isEqualTo 1) exitWith {
     if (!((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER","WP"]) || {(count (_s getOrDefault ["drawStroke",[]])) > 0}) then {
         _s set ["drawStroke",[]];
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
-        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         _s set ["mapRc", []];
     } else {
         // Sélection : clic droit armé, le menu contextuel s'ouvre au relâchement s'il n'y a pas eu de glisser (fn_mapMouseButtonUp).

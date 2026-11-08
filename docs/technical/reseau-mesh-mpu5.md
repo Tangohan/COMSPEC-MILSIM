@@ -1,6 +1,6 @@
 # Réseau maillé du téléphone ATAK : plan technique
 
-Statut : plan, révision 2 (ajouts : réalisme radio, guerre électronique, données ATAK, outils ; voir sections 3.6, 4 bis et 6 bis, lots 9 à 12, décisions 11 à 17 ; TFAR vérifié dans son code source). Aucun code touché. Périmètre : `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/` (`network/`, `core/fn_linkQuality.sqf`, `pages/fn_pageWaveRelay.sqf`, `pages/fn_waveRelayAction.sqf`).
+Statut : plan, révision 2 (ajouts : réalisme radio, guerre électronique, données ATAK, outils ; voir sections 3.6, 4 bis et 6 bis, lots 9 à 12, décisions 11 à 17 ; TFAR vérifié dans son code source). Tous les lots codés, aucun testé en jeu (section 10). Périmètre : `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/` (`network/`, `core/fn_linkQuality.sqf`, `pages/fn_pageWaveRelay.sqf`, `pages/fn_waveRelayAction.sqf`).
 
 Objectif du propriétaire : un réseau plus poussé, façon MPU5 / Wave Relay, un chiffrement simulé comme un vrai ATAK, et un maillage voix TFAR / ACRE via le téléphone et les relais.
 
@@ -345,3 +345,59 @@ Un lot = une PR, sur main, jamais fusionnée sans le propriétaire. Le numéro d
 | Code ACRE2 2.14.0.1064 | Lu (PBO, SQF clair). |
 | Code TFAR (GitHub, master fce977f, 23/09/2026) | Lu (SQF). Extension C++ du plugin non lue. Pas installé, donc non testé en jeu. |
 | Code ACRE2 (GitHub, master c920bac, 12/08/2026) | Même version 2.14.0.1064 que celle installée ; `setCustomSignalFunc`, `getSignalCore`, `getRadioObject` toujours présents. |
+
+## 10. Mise en œuvre
+
+Décisions du propriétaire reçues : 1 automatique et désactivable ; 2 absence de rallonge d'abord ; 3 plafond de 6 sauts, réglable ; 4 graphe de référence sur le serveur, constructeur capable de tourner aussi sur le client ; 5 `mpu_real` et `mpu_voice` désactivés jusqu'à validation en jeu des lots 1 à 5 ; 6 pas d'à-coups, passage net ; 7 16 groupes, table de la mission sinon déduite ; 8 filtre de groupe d'abord sur messages et voix ; 10 ACRE avant TFAR ; 11 lot 0 avant le lot 2 ; 12 « moitié puis tiers » en Milsim, x 0,8 en Arcade ; 13 30 s puis 3 min, réglables ; 14 goniomètre et analyseur réservés à un rôle ; 15 masque du corps et hauteur par posture en Milsim ; 16 ordre 0, 1, 2, 3, 4, 9, 10, 5, 6, 7, 11, 12, 8 ; 17 code TFAR désactivé par défaut. Livraison groupée dans la PR #1395 (au lieu d'une PR par lot).
+
+| Lot | Fichiers | État |
+|---|---|---|
+| 0 | `functions/devmesh/` (`fn_devMesh`, `fn_devMeshSim`, `fn_devMeshOverlay`, `fn_devLinkInspect`), `missions/COMSPEC_BancMaillage.Stratis`, réglage `mesh_dev` | codé, à tester |
+| 1 | `fn_meshRead`, `fn_devMeshTest` ; tous les consommateurs passent par la lecture sûre | codé, à tester |
+| 2 | `fn_meshGraph` ; `fn_mpuLink` « mesh », `fn_waveRelayAction` « scan » (liaison réaliste), `fn_mpuVoice` ; réglages `mesh_server`, `mesh_hops` | codé, à tester |
+| 3 | `fn_mpuVoice` « sigMap », `fn_meshGraph` « view » → `voice`, `fn_linkQuality` ; `mesh_gravity` | codé, à tester |
+| 4 | `fn_mpuVoice` « tfBefore », « tfAfter », « tfRx » ; `mesh_tfar_ptt` | codé d'après le source de TFAR, tout à confirmer en jeu |
+| 9 | `fn_meshGraph` (courbe, temps d'antenne, posture, masque), `fn_mpuLink` (largeur, mât, batterie) ; `mesh_hop_curve`, `mesh_airtime`, `mesh_posture`, `mesh_body_mask`, `mesh_mast`, `mesh_traffic_power` | codé, à tester |
+| 10 | `fn_localDataRefresh`, `fn_pli`, `fn_meshChunks`, `fn_netSend`, `fn_p2pSend`, `fn_p2pReceive` ; `mesh_stale_s`, `mesh_hide_s`, `mesh_pli_adaptive`, `mesh_chunks`, `mesh_p2p` | codé, à tester |
+| 5 | `fn_meshGroups`, app Wave Relay ; `mesh_groups` | codé, à tester |
+| 6, 7 | `fn_meshKeys`, chargeur `COMSPEC_ATAK_KeyLoader` ; `mesh_keys`, `mesh_keys_auto`, `mesh_compromise_auto`, `mesh_tfar_code` | codé, à tester |
+| 11 | `fn_meshEW`, goniomètre `COMSPEC_ATAK_Goniometer` ; `mesh_ew`, `mesh_ew_role`, `mesh_backup_channel`, `mesh_backup_delay` | codé, à tester |
+| 12 | `fn_meshTools`, `fn_moduleMesh`, module `COMSPEC_ATAK_Module_Mesh` ; `mesh_tools` | codé, à tester |
+| 8 | une seule variable publique par joueur, `COMSPEC_ATAK_MeshNode` ; notice `docs/technical/reseau-mesh-notice-joueur.md` | codé, à tester |
+
+Écarts assumés par rapport aux sections ci-dessus :
+
+- Section 6, « chaque client calcule son graphe » : remplacé par la décision 4. Le serveur construit, le client ne fait plus que lire (chemin le plus large sur le graphe reçu, sans bilan radio). Réglage décoché, ou serveur sans le mod : le même constructeur tourne sur le client, sans diffusion.
+- Bornes de lecture : 20 km pour un nœud MPU5, mais 30 km pour `COMSPEC_ATAK_Mpu5` (borne du réglage de radio longue portée) et 100 km pour la portée TFAR publiée, pour ne pas refuser une valeur légitime.
+- Plafond de sauts appliqué aussi au total A + B quand la voix passe par le cœur de réseau.
+- Liaison réaliste décochée : l'ancien `scan` de l'app Wave Relay reste jusqu'au lot 8 (décision 5 : aucun changement tant que le réalisme n'est pas validé).
+- Niveau de gravité calculé pour chaque chemin, mais appliqué à la voix seulement au lot 3. Décision 6 : le niveau 2 n'a pas d'à-coups.
+- Lot 5 : la voix ACRE2 et TFAR reste filtrée par fréquence ; le groupe ne retire la rallonge que sans groupe commun.
+- Lot 6 : cadenas de la barre d'état non fait (`fn_statusUpdate`, hors périmètre réseau) ; notification et état dans l'app Wave Relay. Lot 7 : le détenteur d'une clé compromise relaie dans le graphe de l'autre camp, mais ne le lit pas pour lui-même.
+- Lot 12 : ping donnant la marge du maillon faible, pas son nom ; prévision limitée au relief ; superposition Zeus limitée au graphe calculé sur le serveur.
+- Lot 8 : les profils existants de `fn_netCond` (Milsim, Standard, Arcade) servent de profils de réalisme, sans nouveau réglage.
+- Mouvement seul : graphe refait à l'intervalle normal. Seul un changement de nœud (apparu, tombé, canal, portée) déclenche le recalcul à 2 s.
+
+À mesurer au banc d'essai pour trancher la décision 4 (aucun chiffre n'existe à ce jour) : durée de passe et pire tranche à 30 et 60 nœuds, images par seconde du serveur, nombre de diffusions et taille de `COMSPEC_ATAK_MeshRef`, écarts entre exports de deux clients avec le réglage décoché.
+
+## 11. Antennes transportables (`fn_antennaKit`)
+
+Objets d'inventaire à déployer et replier par ACE (Équipement > Déployer ; « Replier l'antenne » sur l'objet posé, moitié moins de temps). Le serveur crée l'objet et l'enregistre par `fn_relayConvert` « register » : c'est alors un relais ordinaire de `fn_relayNet`, réservé au camp de celui qui l'a posée, vu par la carte réseau et le maillage. Détruite, supprimée par le Zeus ou repliée : `fn_relayConvert` « remove », retirée du réseau tout de suite. Aucune boucle : événements CBA et gestionnaires `Killed` et `Deleted` sur le serveur. Sans ACE : objets présents, aucune action.
+
+Portée du relais = portée de base × 10^(gain / 20) : `fn_radioLink` donne 0 dB de marge à la portée, donc 6 dB la doublent à peu près. Le bilan radio s'applique ensuite depuis la hauteur d'antenne.
+
+| | Antenne satellite portable | Antenne omnidirectionnelle sur mât |
+|---|---|---|
+| Objet d'inventaire | `COMSPEC_ATAK_SatAntennaKit` | `COMSPEC_ATAK_MastAntennaKit` |
+| Objet posé | `COMSPEC_ATAK_DeployedAntenna_Sat` | `COMSPEC_ATAK_DeployedAntenna_Omni` |
+| Modèle posé (Arma) | `\A3\Props_F_Exp\Military\Camps\SatelliteAntenna_01_F.p3d` | `\A3\Props_F_Enoch\Military\Equipment\OmniDirectionalAntenna_01_F.p3d` |
+| Modèle au sol (Arma) | `SatellitePhone_F.p3d` | `PortableLongRangeRadio_F.p3d` |
+| Portée de base, gain, portée du relais | 1 000 m, 3 dB, 1 413 m | 1 500 m, 6 dB, 2 993 m |
+| Hauteur d'antenne | 1,8 m | 4 m |
+| Débit, places | 10 Mbit/s, 16 | 8 Mbit/s, 24 |
+| Liaison | raccordée | répéteur (`antkit_mast_root` pour la raccorder) |
+| Déploiement | 20 s | 45 s |
+
+Valeurs de jeu plausibles, calées sur les types du module « ATAK · Relais », pas une étude réaliste. Toutes réglables : `comspec_atak_native_antkit_<sat | mast>_<range | gain | height | mbps | time>`, `comspec_atak_native_antkit_max` (12 par camp), `comspec_atak_native_antkit_mast_root`. Hauteurs par défaut : celles des modèles, lues dans `verticalOffset` de leur classe d'Arma.
+
+Antennes MRH Satellite (mod facultatif) : `MRH_SatCom_Antenna_Base` et `MRH_MT_SatCom_Antenna_Base` dépliées deviennent des relais de type terminal satellite (`fn_relayConvert` « check », toutes les 15 s), retirées une fois repliées ou détruites. Réglage `comspec_atak_native_relay_mrh`, coché par défaut, indépendant de « Antennes du jeu = relais ATAK ». Sans MRH : rien n'est cherché, aucune dépendance.

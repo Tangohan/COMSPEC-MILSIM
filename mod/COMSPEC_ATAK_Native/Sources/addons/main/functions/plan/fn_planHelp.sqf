@@ -47,7 +47,7 @@ private _btn = {
     [_b, (_fs * 0.86) max COMSPEC_ATAK_FontMin] call comspec_atak_native_fnc_textFit;
     if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
     _b ctrlAddEventHandler ["ButtonClick", _code];
-    _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
+    _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call comspec_atak_native_fnc_nextFrame; }];
     _b
 };
 private _card = {

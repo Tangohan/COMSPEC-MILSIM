@@ -79,7 +79,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_TocLaptops", _laptops];
         // Sans ACE (ou objet désigné par la mission, sans menu ACE) : action de la molette, remise à chaque réapparition.
         ["action"] call comspec_atak_native_fnc_tocPost;
-        player addEventHandler ["Respawn", { [{ ["action"] call comspec_atak_native_fnc_tocPost; }, [], 1] call CBA_fnc_waitAndExecute; }];
+        player addEventHandler ["Respawn", { [{ ["action"] call comspec_atak_native_fnc_tocPost; }, [], 1] call comspec_atak_native_fnc_waitAndExec; }];
     };
     case "action": {
         player addAction ["<t color='#7fd0b0'>PC du poste TOC</t>", { ["open", cursorObject] call comspec_atak_native_fnc_tocPost; }, nil, 1.3, false, true, "",

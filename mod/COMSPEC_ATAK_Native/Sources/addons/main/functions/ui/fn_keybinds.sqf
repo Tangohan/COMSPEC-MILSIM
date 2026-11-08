@@ -66,7 +66,7 @@ private _info = {
 };
 private _rerender = {
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "SETTINGS") then {
-        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
 };
 // Touche nulle (DIK 0 ou Échap) = pas de touche, comme dans CBA.
@@ -136,7 +136,7 @@ switch (_mode) do {
             [] call comspec_atak_native_fnc_saveProfile;
         };
         // Pastille « prendre en main » du téléphone porté (fn_layoutApply) : affiche la nouvelle touche.
-        if (!isNull ([] call comspec_atak_native_fnc_display)) then { [{ [] call comspec_atak_native_fnc_layoutApply; }] call CBA_fnc_execNextFrame; };
+        if (!isNull ([] call comspec_atak_native_fnc_display)) then { [{ [] call comspec_atak_native_fnc_layoutApply; }] call comspec_atak_native_fnc_nextFrame; };
         ["INFO", "KEYS", format ["%1 -> %2", _a, ["name", _b] call comspec_atak_native_fnc_keybinds]] call comspec_atak_native_fnc_log;
         true
     };
@@ -163,7 +163,7 @@ switch (_mode) do {
                 if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "SETTINGS") then {
                     ["SETTINGS"] call comspec_atak_native_fnc_pageRender;
                 };
-            }, _cap, 10.1] call CBA_fnc_waitAndExecute;
+            }, _cap, 10.1] call comspec_atak_native_fnc_waitAndExec;
         };
         true
     };

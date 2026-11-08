@@ -8,6 +8,9 @@
       "capture"  [id, "validate" | "dismiss" | "stopHunt" | "recover"]   téléphone aux mains de l'IA :
                  valider ou rejeter la compromission, arrêter la traque de ses groupes, reprendre le téléphone au porteur
       "hunt"     [actif]   traque des joueurs par l'IA qui a un téléphone (réglage comspec_atak_native_capture_hunt), pour la partie
+      "hvtTrace" [actif]   traces civiles des HVT pour la partie (fn_hvtTrace)
+      "tenantNote" ["add", [genre, titre, texte]] | ["del", id]   app Communauté, note pour la partie
+      "phonePin" [clé]  retire le code d'un téléphone et ses essais (fn_phoneServer)
       "apps"     [id, "required" | "forbidden" | "free"]   App Store : app obligatoire, interdite ou laissée au choix
                  des joueurs pour la partie (fn_appInstall, variable publique COMSPEC_ATAK_AppPolicy) ; ["", "reset"] : tout libérer
     Réponse au demandeur : comspec_atak_native_adminData [genre, données] ("debug" | "result" | "denied").
@@ -129,6 +132,29 @@ switch (_act) do {
         missionNamespace setVariable ["comspec_atak_native_capture_hunt", _on, true];
         ["INFO", "ADMIN", format ["Traque par l'IA %1 par %2 (app Admin)", ["coupée", "rétablie"] select _on, name _caller]] call comspec_atak_native_fnc_log;
         ["result", [true, ["Traque par l'IA coupée pour la partie.", "Traque par l'IA rétablie."] select _on]] call _reply;
+    };
+    // Traces civiles des HVT pour la partie (fn_hvtTrace). Le réglage de mission, s'il est coché, reste prioritaire.
+    case "hvtTrace": {
+        _args params [["_on", false, [false]]];
+        missionNamespace setVariable ["COMSPEC_ATAK_HvtTraceOn", _on, true];
+        diag_log format ["[COMSPEC ATAK NATIVE][INFO][ADMIN] Traces civiles HVT %1 par %2", ["coupées", "activées"] select _on, name _caller];
+        ["result", [true, ["Traces civiles coupées pour la partie.", "Traces civiles activées pour la partie."] select _on]] call _reply;
+    };
+    // App Communauté : note d'un admin ou d'un Zeus pour la partie (fn_tenantAction).
+    case "tenantNote": {
+        _args params [["_how", ""], ["_val", []]];
+        private _ok = if (_how isEqualTo "del") then { ["srvDel", _val] call comspec_atak_native_fnc_tenantAction } else {
+            _val params [["_k", "consigne"], ["_t", ""], ["_x2", ""]];
+            ["srvAdd", [_k, _t, _x2, name _caller]] call comspec_atak_native_fnc_tenantAction
+        };
+        ["result", [_ok isEqualTo true, "Notes de la communauté mises à jour."]] call _reply;
+    };
+    // Remise à zéro du code d'un téléphone (fn_phoneServer) : un propriétaire ne reste jamais dehors.
+    case "phonePin": {
+        _args params [["_key", "", [""]]];
+        private _ok = ["reset", [_key]] call comspec_atak_native_fnc_phoneServer;
+        diag_log format ["[COMSPEC ATAK NATIVE][INFO][ADMIN] Code de téléphone %1 retiré par %2", _key, name _caller];
+        ["result", [_ok isEqualTo true, "Code du téléphone retiré."]] call _reply;
     };
     case "apps": {
         _args params [["_id", ""], ["_rule", "free"]];

@@ -28,7 +28,7 @@ private _live = _state in ["asking", "pending"] && {diag_tickTime < _until || {_
 
 private _redraw = {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-    if ((_s getOrDefault ["activePage", ""]) isEqualTo "ATHENA") then { [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+    if ((_s getOrDefault ["activePage", ""]) isEqualTo "ATHENA") then { [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 };
 
 switch (_action) do {
@@ -42,7 +42,7 @@ switch (_action) do {
         if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
             [true] call comspec_atak_native_fnc_open;
         };
-        [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "watch": {
         if (!hasInterface || {([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on"}) exitWith {};

@@ -140,7 +140,7 @@ private _bindBigInput = {
             _ww set ["big", false];
             _ww set ["built", ""];
             ("COMSPEC_ATAK_Watch" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleGarmin", "PLAIN", 0, false];
-            [{ ["tick"] call comspec_atak_native_fnc_watch; }] call CBA_fnc_execNextFrame;
+            [{ ["tick"] call comspec_atak_native_fnc_watch; }] call comspec_atak_native_fnc_nextFrame;
         };
     }];
     _d displayAddEventHandler ["KeyDown", {
@@ -165,7 +165,7 @@ private _bindBigInput = {
             private _z = _ww getOrDefault ["zoom", 1];
             _ww set ["zoom", (_z + ([-1, 1] select (_dz < 0))) max 0 min 3];
             _ww set ["built", ""];
-            [{ ["tick"] call comspec_atak_native_fnc_watch; }] call CBA_fnc_execNextFrame;
+            [{ ["tick"] call comspec_atak_native_fnc_watch; }] call comspec_atak_native_fnc_nextFrame;
         } else {
             [[ "prev", "next"] select (_dz < 0)] call comspec_atak_native_fnc_watch;
         };
@@ -469,7 +469,7 @@ switch (_act) do {
             params ["_t0"];
             private _w = uiNamespace getVariable ["COMSPEC_ATAK_Watch", createHashMap];
             if ((_w getOrDefault ["lightDown", -1]) isEqualTo _t0) then { ["lightHold"] call comspec_atak_native_fnc_watch; };
-        }, [_t0], 0.6] call CBA_fnc_waitAndExecute;
+        }, [_t0], 0.6] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "lightHold": {
@@ -573,8 +573,8 @@ switch (_act) do {
         if !(call _has) exitWith { false };
         ["TOP ! Heure H", _hh select 1, 8] call _toast;
         call _buzz;
-        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.6] call CBA_fnc_waitAndExecute;
-        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 1.2] call CBA_fnc_waitAndExecute;
+        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.6] call comspec_atak_native_fnc_waitAndExec;
+        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 1.2] call comspec_atak_native_fnc_waitAndExec;
         call _redraw;
         true
     };
@@ -599,8 +599,8 @@ switch (_act) do {
             _m set ["jStage", 2];
             ["OUVREZ !", format ["%1 m sol", round _agl], 6] call _toast;
             call _buzz;
-            [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.4] call CBA_fnc_waitAndExecute;
-            [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.8] call CBA_fnc_waitAndExecute;
+            [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.4] call comspec_atak_native_fnc_waitAndExec;
+            [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.8] call comspec_atak_native_fnc_waitAndExec;
         };
         if ((_m getOrDefault ["jFall", false]) && {isTouchingGround player || {_agl < 1.5}} && {(vehicle player) isEqualTo player}) then {
             _m set ["jArm", false];
@@ -700,8 +700,8 @@ switch (_act) do {
         if !(call _has) exitWith { false };
         ["Minuteur terminé", [_m get "tdur"] call _fmtT, 8] call _toast;
         call _buzz;
-        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.8] call CBA_fnc_waitAndExecute;
-        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 1.6] call CBA_fnc_waitAndExecute;
+        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 0.8] call comspec_atak_native_fnc_waitAndExec;
+        [{ ["buzz"] call comspec_atak_native_fnc_watch; }, [], 1.6] call comspec_atak_native_fnc_waitAndExec;
         call _redraw;
         true
     };
@@ -840,7 +840,7 @@ switch (_act) do {
             private _pic = {
                 params ["_key", "_t", "_u", "_v", "_s", ["_col", [1, 1, 1, 1]]];
                 private _c = [_key, "COMSPEC_RscWatchPic", [_u, _v, _s, _s] call _P] call _mk;
-                _c ctrlSetText (_t call _tex);
+                _c ctrlSetText (((_t call _tex)) call comspec_atak_native_fnc_tr);
                 _c ctrlSetTextColor (_col call _tone);
                 _c ctrlCommit 0;
                 _c

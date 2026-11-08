@@ -42,6 +42,11 @@ private _rate = (["pliRate"] call comspec_atak_native_fnc_netCond) max 1;
 private _tNow = ["now"] call comspec_atak_native_fnc_pli;
 private _liveAge = [5, _rate * 1.6 + 2] select _pli;
 private _staleAge = [20, _rate * 4 + 10] select _pli;
+// Liaison réaliste (lot 10, décision 13) : gris après 30 s, retiré de la carte après 3 min, réglables (0 : comportement d'avant).
+private _meshStale = missionNamespace getVariable ["comspec_atak_native_mesh_stale_s", 30];
+private _meshHide = missionNamespace getVariable ["comspec_atak_native_mesh_hide_s", 180];
+private _meshAges = _meshStale > 0 && {_meshHide > _meshStale} && {["active"] call comspec_atak_native_fnc_mpuLink};
+if (_meshAges) then { _liveAge = _meshStale; _staleAge = _meshHide; };
 
 // Personne n'apparaît sans téléphone ATAK : un allié (joueur ou IA) n'est visible que s'il en porte un
 // (résultat gardé 10 s par unité). Les ennemis n'apparaissent (réglage « ennemis ») que repérés par mon camp.
@@ -105,6 +110,12 @@ private _metaCs = createHashMap;
     } else {
         if (_obj isKindOf "Air") then {"air"} else {if (_obj isKindOf "Tank") then {"armor"} else {"vehicle"}}
     };
+    // Joueur ou IA à bord d'un véhicule, d'un avion ou d'un hélico : classe de l'engin dans « vtype » (icône de véhicule sur
+    // la carte, fn_symbology). « type » reste « infantry » : les filtres du BFT (masquer les véhicules) ne doivent pas
+    // cacher l'équipage. Rien à bord : champ vide.
+    private _veh = vehicle _obj;
+    private _vtype = "";
+    if (_veh isNotEqualTo _obj) then { _vtype = if (_veh isKindOf "Air") then {"air"} else {if (_veh isKindOf "Tank") then {"armor"} else {"vehicle"}}; };
     // Indicatif d'abord ; sinon celui de l'unité Athena au même endroit (qu'on masque pour ne pas doubler) ;
     // le pseudo ne sert que sans indicatif ni liaison.
     private _callsign = [_obj,true] call comspec_atak_native_fnc_unitCallsign;
@@ -175,6 +186,7 @@ private _metaCs = createHashMap;
         };
         private _age = diag_tickTime - _upd;
         _fr = if (!_on) then { "OFFLINE" } else { switch (true) do { case (_age < _liveAge): { "LIVE" }; case (_age < _staleAge): { "STALE" }; default { "LOST" }; } };
+        if (_meshAges && {_fr isEqualTo "LOST"}) then { continue };
     };
     // Réutiliser la piste déjà en mémoire (SQF-002 / SQF-C03) : n’allouer un HashMap qu’à la première vue.
     private _track = _trk get _id;
@@ -188,6 +200,7 @@ private _metaCs = createHashMap;
     _track set ["heading", _hd];
     _track set ["affiliation", _affiliation];
     _track set ["type", _type];
+    _track set ["vtype", _vtype];
     _track set ["freshness", _fr];
     _track set ["updated", _upd];
     _track set ["acc", _acc];

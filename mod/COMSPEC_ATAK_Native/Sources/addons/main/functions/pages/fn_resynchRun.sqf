@@ -18,7 +18,7 @@ if (isNil "comspec_overwatch_connect_fnc_forceSyncData") exitWith {
     false
 };
 missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];
-[{ ["RESYNCH"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ ["RESYNCH"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 [] spawn {
     private _at0 = missionNamespace getVariable ["COMSPEC_ForceSyncAt", -1e9];
     [] call comspec_overwatch_connect_fnc_forceSyncData;
@@ -115,6 +115,6 @@ missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];
     missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", false, false];
     [{
         if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RESYNCH") then { ["RESYNCH"] call comspec_atak_native_fnc_pageRender; };
-    }] call CBA_fnc_execNextFrame;
+    }] call comspec_atak_native_fnc_nextFrame;
 };
 true

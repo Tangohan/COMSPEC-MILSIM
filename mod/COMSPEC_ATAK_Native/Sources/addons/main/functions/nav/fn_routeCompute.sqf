@@ -61,7 +61,7 @@ if (!_quiet && {_live}) then {
     ["SUCCESS", format ["Itinéraire vers %1 : %2", _label, [format ["%1 m", round _t], format ["%1 km", (_t / 1000) toFixed 1]] select (_t >= 1000)], 4, 30] call comspec_atak_native_fnc_notify;
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     _s set ["mapFollow", true];
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
 };
 private _pending = missionNamespace getVariable ["COMSPEC_ATAK_RoutePending", []];
 if ((count _pending) isEqualTo 2) then {

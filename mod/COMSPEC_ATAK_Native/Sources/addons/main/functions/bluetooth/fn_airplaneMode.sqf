@@ -23,6 +23,6 @@ if (_new) then {
 if (!isNull ([] call comspec_atak_native_fnc_display)) then {
     [] call comspec_atak_native_fnc_statusUpdate;
     private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
-    if (_page in ["SETTINGS", "BLUETOOTH", "NOTIFS", "NETWORK", "STATUS"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame; };
+    if (_page in ["SETTINGS", "BLUETOOTH", "NOTIFS", "NETWORK", "STATUS"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame; };
 };
 _new

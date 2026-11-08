@@ -7,6 +7,8 @@ COMSPEC_ATAK_FontMin = 0;
 COMSPEC_ATAK_FontBody = 0; // taille de base du texte structuré des pages (fn_layoutGet, fn_fontApply)
 // Police du téléphone (Réglages > Police) : familles courante, grasse et légère, avant tout dessin.
 [] call comspec_atak_native_fnc_fontSet;
+// Thème (fn_theme, 3.1.0) : jetons de couleurs COMSPEC_ATAK_Th posés avant tout dessin (pages et codes compilés).
+[] call comspec_atak_native_fnc_theme;
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
@@ -22,6 +24,9 @@ diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Lin
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
+// File d'image du mod (fn_frameQueue) : rappels « image suivante » et « attendre puis exécuter » hors du gestionnaire de
+// CBA, pour qu'une erreur de script dans un rappel ne soit jamais rejouée à chaque image (téléphone et Arsenal perdus).
+["init"] call comspec_atak_native_fnc_frameQueue;
 // Boucles périodiques des postInit (client et serveur, une cinquantaine) : chacune démarre avec un décalage tiré au
 // hasard (5 s au plus) au lieu de toutes à la même image. Avant, les boucles de 1, 2, 5 et 10 s tombaient ensemble à
 // chaque multiple de 10 s (à-coup régulier) et toutes partaient dans les premières secondes de l'arrivée en jeu.
@@ -29,7 +34,7 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 COMSPEC_ATAK_PfhSpread = {
     params ["_code", ["_delay", 0], ["_args", []]];
     if (_delay <= 0) exitWith { [_code, _delay, _args] call CBA_fnc_addPerFrameHandler; nil };
-    [{ _this call CBA_fnc_addPerFrameHandler; }, [_code, _delay, _args], random (_delay min 5)] call CBA_fnc_waitAndExecute;
+    [{ _this call CBA_fnc_addPerFrameHandler; }, [_code, _delay, _args], random (_delay min 5)] call comspec_atak_native_fnc_waitAndExec;
     nil
 };
 
@@ -57,7 +62,7 @@ private _langs = ([] call comspec_atak_native_fnc_langList) select { (_x select 
         [{
             private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];
             if (_p isNotEqualTo "" && {!isNull ([] call comspec_atak_native_fnc_display)}) then { [] call comspec_atak_native_fnc_layoutApply; [_p] call comspec_atak_native_fnc_pageRender; };
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
     }] call CBA_fnc_addSetting;
 // Langue dans laquelle les menus CBA COMSPEC sont déclarés (fn_addSetting, fn_trMenu) : fn_menuRelang ne retraduit
 // que si elle change.
@@ -108,6 +113,14 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Affichage"], true, 0,
     { missionNamespace setVariable ["COMSPEC_ATAK_ForeignNext", 0]; }] call comspec_atak_native_fnc_addSetting;
 
+// Réponses des IA : bulle de texte au-dessus de la tête de l'IA qui parle (par joueur, fn_aiBubble). Décoché : toast d'Arma.
+["comspec_atak_native_ai_bubble", "CHECKBOX",
+    ["Bulles de réponse des IA", "Coché par défaut. La réponse d'un groupe IA à un ordre s'affiche en texte au-dessus de la tête de son chef, si vous êtes à portée et si vous le voyez. Hors de vue, ou décoché : le donneur d'ordre la reçoit en notification du jeu."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0,
+    { if !(_this) then { ["clear"] call comspec_atak_native_fnc_aiBubble; }; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ai_bubble_range", "SLIDER",
+    ["Portée des bulles de réponse", "Distance maximale, en mètres, à laquelle vous voyez la réponse au-dessus de la tête d'une IA."],
+    ["COMSPEC", "ATAK · Affichage"], [10, 150, 50, 0], 0] call comspec_atak_native_fnc_addSetting;
 // Étiquettes de la carte du téléphone (par joueur, enregistrées dans le profil par CBA), aussi dans Réglages > Carte
 // et CALQUES : style des noms de repères (fn_mapMarkerText) et des lieux (fn_mapPlaceText), catégories masquables.
 ["comspec_atak_native_map_marker_style", "LIST",
@@ -152,6 +165,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_route_arma", "CHECKBOX",
     ["Routes sur la carte d'Arma et Athena", "Option « Carte d'Arma et Athena » d'une route : tracé et étapes posés en marqueurs sur le canal du groupe (du camp si la route est partagée au camp) et envoyés au site Athena comme les autres dessins. Décoché : les routes restent sur les téléphones."],
     ["COMSPEC", "ATAK · Routes"], true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_route_fpano", "CHECKBOX",
+    ["Route suivie dans F-PANO ECOTI", "Si le mod F-PANO ECOTI est chargé : les 8 prochaines étapes de la route suivie s'affichent sous JVN dans sa vue, avec le nom et la distance. Sans ce mod, ce réglage ne fait rien."],
+    ["COMSPEC", "ATAK · Routes"], true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_route_max", "SLIDER",
     ["Étapes par route au plus", "Nombre d'étapes d'une route (40 par défaut)."],
     ["COMSPEC", "ATAK · Routes"], [5, 80, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
@@ -239,7 +255,7 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_shot_dir", "EDITBOX",
     ["Dossier des captures d'écran", "Réglage personnel, vide par défaut (automatique) : le téléphone cherche vos photos dans le dossier Screenshots de votre profil Arma (Documents\Arma 3\Screenshots, ou Documents\Arma 3 - Other Profiles\(nom du profil)\Screenshots). Si vos photos ne sont jamais trouvées (profil déplacé, lancement avec -profiles, Documents déplacé par OneDrive), collez ici le chemin complet du dossier où Arma range vos captures, par exemple D:\Arma\Profils\Screenshots. Dossier de ce PC uniquement (pas de dossier réseau) ; le téléphone n'y fait que lire. Pour voir le dossier utilisé : cochez « Vérifier le dossier des captures » ci-dessous, ou Réglages du téléphone › À propos."],
     ["COMSPEC", "ATAK · Photo"], "", 0,
-    { [{ ["apply"] call comspec_atak_native_fnc_shotDir; }] call CBA_fnc_execNextFrame; }] call comspec_atak_native_fnc_addSetting;
+    { [{ ["apply"] call comspec_atak_native_fnc_shotDir; }] call comspec_atak_native_fnc_nextFrame; }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_shot_check", "CHECKBOX",
     ["Vérifier le dossier des captures", "Cochez puis validez (OK) : le dossier où le téléphone cherche vos photos s'affiche à l'écran, avec le nombre d'images et la dernière capture trouvée. La case se décoche toute seule."],
     ["COMSPEC", "ATAK · Photo"], false, 0,
@@ -248,7 +264,7 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
         [{
             ["comspec_atak_native_shot_check", false, 0, "client"] call CBA_settings_fnc_set;
             ["check", true] spawn comspec_atak_native_fnc_shotDir;
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
     }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_gesture_finger", "CHECKBOX",
     ["Geste du doigt d'honneur", "Décoché par défaut. Coché : les touches « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » font le geste. À assigner dans Options > Contrôles > Configurer les addons > COMSPEC ATAK."],
@@ -292,7 +308,7 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
         [{
             private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];
             if (_p isNotEqualTo "" && {!isNull ([] call comspec_atak_native_fnc_display)}) then { [] call comspec_atak_native_fnc_layoutApply; [_p] call comspec_atak_native_fnc_pageRender; };
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
     }] call comspec_atak_native_fnc_addSetting;
 {
     _x params ["_k", "_name", "_def"];
@@ -481,6 +497,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_battery_vehicle", "SLIDER",
     ["Recharge en véhicule (% par minute)", "Vitesse de recharge dans un véhicule moteur allumé. 0 : pas de recharge en véhicule."],
     _pow, [0, 20, 3, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_battery_cold", "CHECKBOX",
+    ["Froid : batterie moins efficace", "Sous 5 °C (météo ACE si elle est chargée, sinon heure et ciel), la batterie se vide plus vite : de 0,06 % par minute à 5 °C jusqu'à 0,3 % par minute par grand froid, en plus de l'usage. Décochez pour ignorer la température."],
+    _pow, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ram_total", "LIST",
     ["Mémoire vive (RAM) du téléphone", "RAM du téléphone (4 Go sur un S7). Le système en prend environ 1,2 Go ; avec moins de RAM, les apps restées ouvertes en fond se ferment plus vite."],
     _pow, [[2048, 3072, 4096, 6144, 8192, 12288], ["2 Go", "3 Go", "4 Go (S7)", "6 Go", "8 Go", "12 Go"], 2], 1] call comspec_atak_native_fnc_addSetting;
@@ -545,6 +564,30 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_relay_convert", "LIST",
     ["Antennes du jeu = relais ATAK", "Les pylônes, mâts et tours de transmission, antennes omnidirectionnelles et paraboles du jeu deviennent des relais du réseau ATAK (portée et débit selon leur hauteur : tour 6 km, mât 3 à 5 km, antenne 1,5 km, parabole 1 km). Objets de la mission : ceux posés dans Eden ou par le Zeus. Décor de la carte en plus : les antennes de la carte elle-même (60 au plus, les plus hautes) ; une antenne détruite coupe son relais."],
     _sim, [[0, 1, 2], ["Non", "Objets de la mission (Eden, Zeus)", "Mission et décor de la carte"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_mrh", "CHECKBOX",
+    ["Antennes MRH Satellite = relais ATAK", "Si le mod MRH Satellite est chargé : une antenne SATCOM dépliée devient un relais du réseau ATAK (type terminal satellite), retiré dès qu'elle est repliée ou détruite. Sans ce mod : aucun effet."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// Antennes transportables (fn_antennaKit) : valeurs de jeu plausibles, à régler selon la mission. Portée du relais = portée de base x 10^(gain / 20).
+private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
+["comspec_atak_native_antkit_max", "SLIDER",
+    ["Antennes déployées par camp", "Nombre maximal d'antennes transportables en place en même temps dans un camp. Au-delà, le déploiement est refusé et l'antenne reste dans l'inventaire."],
+    _antCat, [1, 60, 12, 0], 1] call comspec_atak_native_fnc_addSetting;
+{
+    _x params ["_id", "_label", "_r", "_g", "_h", "_m", "_t"];
+    [format ["comspec_atak_native_antkit_%1_range", _id], "SLIDER", [format ["%1 : portée de base (m)", _label], "Portée sans le gain, sur un lien dégagé. Le bilan radio (relief, feuillage, bâtiments, météo) s'applique ensuite."],
+        _antCat, [300, 20000, _r, 0], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_gain", _id], "SLIDER", [format ["%1 : gain (dB)", _label], "Multiplie la portée de base : 6 dB la doublent à peu près."],
+        _antCat, [0, 20, _g, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_height", _id], "SLIDER", [format ["%1 : hauteur d'antenne (m)", _label], "Hauteur utilisée par le bilan radio : plus haut, le relief gêne moins. Le modèle affiché ne change pas."],
+        _antCat, [1, 30, _h, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_mbps", _id], "SLIDER", [format ["%1 : débit (Mbit/s)", _label], "Débit maximal du relais."],
+        _antCat, [0.5, 100, _m, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_time", _id], "SLIDER", [format ["%1 : temps de déploiement (s)", _label], "Durée de la barre de progression. Replier prend moitié moins de temps."],
+        _antCat, [3, 180, _t, 0], 1] call comspec_atak_native_fnc_addSetting;
+} forEach [["sat", "Antenne satellite", 1000, 3, 1.8, 10, 20], ["mast", "Antenne omnidirectionnelle", 1500, 6, 4, 8, 45]];
+["comspec_atak_native_antkit_mast_root", "CHECKBOX",
+    ["Antenne omnidirectionnelle raccordée", "Décoché : elle répète seulement, il lui faut un relais raccordé à portée, par exemple une antenne satellite. Coché : elle porte le réseau seule."],
+    _antCat, false, 1] call comspec_atak_native_fnc_addSetting;
 // Relais par type (module « ATAK · Relais », fn_moduleRelay) : portée et débit quand le module garde la valeur du type.
 ["comspec_atak_native_relay_portable_range", "SLIDER",
     ["Relais radio portable : portée (m)", "Portée d'un relais « radio portable » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],
@@ -618,6 +661,86 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_voice", "CHECKBOX",
     ["Voix ACRE/TFAR relayée par le maillage MPU5", "Comme une passerelle radio sur IP : un joueur relie sa radio ACRE2 ou TFAR à sa MPU5 par câble audio (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Entre deux radios ainsi reliées, réglées sur la même fréquence, la voix passe par le maillage (MPU5, relais, pylônes, véhicules) : la distance et le relief ne la coupent plus. Hors maillage : portée radio normale. Nécessite la liaison téléphone-radio réaliste. TFAR : la portée de réception de la radio reliée s'allonge jusqu'au correspondant relié le plus lointain."],
     _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+// Graphe unique du maillage (fn_meshGraph) : calculé sur le serveur par défaut, plafond de sauts réglable.
+["comspec_atak_native_mesh_server", "CHECKBOX",
+    ["Graphe du maillage calculé sur le serveur", "Coché : une seule vérité pour tous, calculée par le serveur et diffusée sur changement, au plus toutes les 2 s. Décoché : chaque client calcule le graphe de son camp, sans diffusion mais avec des écarts possibles. N'agit qu'avec la liaison réaliste."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_hops", "SLIDER",
+    ["Plafond de sauts du maillage", "Au-delà de ce nombre de radios traversées, le nœud est hors du maillage. Choix de jeu : les sources publiques de la MPU5 ne chiffrent aucun plafond."],
+    _mpuCat, [1, 16, 6, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_gravity", "CHECKBOX",
+    ["Gravité de coupure du maillage", "Le signal et les pertes suivent le pire lien du chemin : nominal, dégradé, limite, puis coupure nette vers la portée normale de la radio. Décoché : signal fixe quel que soit le lien."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_tfar_ptt", "CHECKBOX",
+    ["TFAR : rallonge pendant l'émission seulement", "Portée d'émission allongée à l'appui sur l'alternat de la radio pontée, portée de réception allongée pendant l'émission d'un correspondant ponté. Décoché : réception allongée en permanence, comme avant. Sans TFAR : sans effet."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_hop_curve", "LIST",
+    ["Perte de débit par saut", "Une radio à une seule voie émet et relaie sur le même canal. Choix de jeu : aucune source publique de la MPU5 ne chiffre cette perte."],
+    _mpuCat, [[0, 1, 2], ["Selon le profil (Milsim : moitié puis tiers ; sinon x 0,8)", "Moitié puis tiers", "x 0,8 par saut"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_airtime", "CHECKBOX",
+    ["Temps d'antenne partagé", "Les nœuds voisins d'un même canal se partagent le temps d'émission : changer de canal a un vrai intérêt."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_posture", "CHECKBOX",
+    ["Antenne selon la posture (Milsim)", "Profil Milsim : hauteur d'antenne selon la posture, et un porteur couché derrière un obstacle proche perd la liaison."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_body_mask", "CHECKBOX",
+    ["Masque du corps (Milsim)", "Profil Milsim : perte de 3 dB quand le porteur tourne le dos à son correspondant."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_mast", "CHECKBOX",
+    ["Mât d'antenne de la MPU5", "Une MPU5 posée reliée en Wi-Fi peut déployer un mât (30 s, 8 m), visible de loin."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_traffic_power", "CHECKBOX",
+    ["Batterie selon le trafic relayé", "Un nœud qui relaie beaucoup se vide plus vite, jusqu'à deux fois."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_stale_s", "SLIDER",
+    ["Position périmée : gris après (s)", "Liaison réaliste : un ami sans nouvelle position passe en gris. 0 : comportement d'avant."],
+    _mpuCat, [0, 600, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_hide_s", "SLIDER",
+    ["Position périmée : retirée après (s)", "Liaison réaliste : passé ce délai, le marqueur disparaît de la carte. 0 : comportement d'avant."],
+    _mpuCat, [0, 1800, 180, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_pli_adaptive", "CHECKBOX",
+    ["Cadence de position adaptative", "Liaison réaliste : position envoyée moins souvent à l'arrêt et sur un chemin dégradé."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_chunks", "CHECKBOX",
+    ["Gros fichiers par blocs", "Liaison réaliste : photos et paquets partent par blocs de 128 Ko, avec progression et reprise après coupure."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_p2p", "CHECKBOX",
+    ["Messages par le maillage", "Liaison réaliste : un message passe de joueur à joueur par le maillage, même sans passerelle."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_groups", "CHECKBOX",
+    ["Groupes de conversation du maillage", "16 groupes : abonnement par la fréquence de la radio pontée ou dans l'app Wave Relay. Pas de rallonge voix hors groupe commun, messages de groupe aux seuls abonnés."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_keys", "CHECKBOX",
+    ["Clés du maillage (mécanique de jeu)", "Clés de réseau et de groupe simulées : étiquettes et époques, aucune sécurité réelle. Clé absente ou périmée : hors du graphe, message chiffré à l'écran, voix sans rallonge."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_keys_auto", "CHECKBOX",
+    ["Clés chargées automatiquement", "Coché : chaque MPU5 reçoit les clés de son camp au démarrage. Décoché : chargeur de clés ou poste de commandement."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_compromise_auto", "CHECKBOX",
+    ["Compromission automatique des clés", "Une clé passe compromise quand un joueur d'un autre camp ramasse une MPU5 ou un chargeur. Le camp est prévenu ; une nouvelle époque l'exclut."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_tfar_code", "CHECKBOX",
+    ["TFAR : clé de groupe en code de radio", "Radio pontée réglée sur le code de la clé de son groupe : sans la clé, rien ne s'entend, même en direct. Peut gêner une mission qui gère déjà ses codes. À confirmer en jeu."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_ew", "CHECKBOX",
+    ["Goniomètre et analyseur de spectre", "Outils de guerre électronique du maillage dans l'app Guerre électronique, onglet GONIO."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_ew_role", "CHECKBOX",
+    ["Goniomètre réservé au spécialiste", "Coché : rôle de mission de guerre électronique, ou variable d'unité COMSPEC_ATAK_EwOperator. Décoché : ouvert à tous."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_backup_channel", "SLIDER",
+    ["Canal de secours (0 : aucun)", "Sous brouillage de son canal, la MPU5 bascule toute seule sur ce canal."],
+    _mpuCat, [0, 16, 0, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_backup_delay", "SLIDER",
+    ["Délai avant le canal de secours (s)", "Temps de brouillage subi avant la bascule."],
+    _mpuCat, [2, 60, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_tools", "CHECKBOX",
+    ["Outils du maillage (Zeus et joueurs)", "Clic droit Zeus « ATAK · Maillage » ; topologie, ping et prévision de couverture dans l'app Wave Relay."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+// Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
+["comspec_atak_native_mesh_dev", "CHECKBOX",
+    ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s, et les pertes alliées, pour revoir la mission dans l'app Rejeu. Décochez pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -681,8 +804,36 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_dating_specials", "LIST",
     ["Tinder : profils HVT et SSE", "À quelle fréquence Tinder glisse, entre deux joueurs, un profil d'IA de la carte (HVT ou personne SSE à moins de 5 km). Zeus peut aussi désigner une IA avec le module « Tinder : profil HVT / SSE »."],
     _sim, [[0, 1, 2, 3], ["Jamais", "Rarement (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call comspec_atak_native_fnc_addSetting;
+// App Communauté (fn_tenantAction) : kit obligatoire, comparé toutes les 30 s.
+["comspec_atak_native_kit_required", "EDITBOX",
+    ["Kit obligatoire", "Objets exigés, noms de classe séparés par des virgules. Nombre : classe*2. Au choix : classeA|classeB. Vide : aucun. Une mission peut définir COMSPEC_ATAK_RequiredKit à la place."],
+    ["COMSPEC", "ATAK · Communauté"], "", 1] call comspec_atak_native_fnc_addSetting;
+// Téléphones personnels (fn_phoneOwn, fn_phoneServer) : propriétaire, lecture du téléphone d'un autre, code.
+private _phones = ["COMSPEC", "ATAK · Téléphones personnels"];
+["comspec_atak_native_phone_owner", "CHECKBOX",
+    ["Téléphones personnels", "Chaque téléphone a un propriétaire. Celui qui ramasse le téléphone d'un autre lit ce téléphone (code demandé s'il en a un), sans l'ATAK ni le compte du lecteur. Décoché : n'importe quel téléphone donne accès à l'ATAK, comme avant."],
+    _phones, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_pin_attempts", "SLIDER",
+    ["Code du téléphone : essais", "Essais avant un blocage temporaire. Un admin ou un Zeus retire le code depuis l'app Admin."],
+    _phones, [3, 10, 5, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_pin_block", "SLIDER",
+    ["Code du téléphone : blocage (s)", "Durée du blocage après le dernier essai. Elle n'est jamais définitive."],
+    _phones, [10, 1800, 120, 0], 1] call comspec_atak_native_fnc_addSetting;
 // Tinder : chasse aux HVT (fn_hvtIntel). Chaque cible peut aussi être réglée à part (module Eden / Zeus « Tinder : profil HVT / SSE »).
 private _hvt = ["COMSPEC", "ATAK · Tinder : chasse aux HVT"];
+// Traces civiles (fn_hvtTrace) : décochées par défaut, jamais de position exacte ni de suivi en direct.
+["comspec_atak_native_hvt_trace", "CHECKBOX",
+    ["Traces civiles des HVT", "Les apps civiles (Tinder, UberEats) révèlent quand et dans quelle zone d'1 km une HVT était active, avec du retard. Jamais sa position du moment. La mission ou le Zeus peut aussi les activer."],
+    _hvt, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_hvt_trace_role", "CHECKBOX",
+    ["Traces civiles : renseignement seul", "Coché : réservé aux rôles de renseignement (renseign, intel, s2, g2 dans le rôle), à COMSPEC_ATAK_IntelOperator, au Zeus et à l'admin."],
+    _hvt, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_hvt_trace_every", "SLIDER",
+    ["Traces civiles : intervalle (min)", "Temps moyen entre deux relevés d'une cible. Tous ne donnent pas une trace."],
+    _hvt, [1, 60, 5, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_hvt_trace_delay", "SLIDER",
+    ["Traces civiles : retard (min)", "Âge minimal d'une trace à sa publication. Jamais moins de 2 min."],
+    _hvt, [2, 60, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_hvt_tips", "LIST",
     ["Tinder : tuyaux sur les HVT", "Chasse aux HVT dans Tinder : à quelle fréquence les informateurs likent (envoient un tuyau, vrai ou faux) sur les HVT de la carte. Plus de civils autour du joueur, plus de tuyaux. Jamais = pas de tuyaux ni de dossiers."],
     _hvt, [[0, 1, 2, 3], ["Jamais", "Rarement", "Normal", "Souvent"], 2], 1] call comspec_atak_native_fnc_addSetting;
@@ -912,7 +1063,7 @@ if (hasInterface) then {
             (missionNamespace getVariable ["COMSPEC_ATAK_PlanAsk", createHashMap]) set [_var, false];
             private _want = (missionNamespace getVariable ["COMSPEC_ATAK_PlanWant", createHashMap]) getOrDefault [_var, 0];
             if (((missionNamespace getVariable [_var, [0]]) param [0, 0]) < _want) then { [_var] call COMSPEC_ATAK_PlanAskFull; };
-        }, [_var], 3] call CBA_fnc_waitAndExecute;
+        }, [_var], 3] call comspec_atak_native_fnc_waitAndExec;
     };
     ["comspec_atak_native_planPatch", {
         params ["_var", "_rev", "_del", "_put", "_name", "_uid", "_creator"];

@@ -24,6 +24,8 @@ if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
     { if (_x in _form) then { _draft set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["email", "otp", "pair"];
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaDraft", _draft];
 };
+// Bloc-notes : la note ouverte s'enregistre avant que la page s'efface (retour, autre app, redessin).
+if ("noteBody" in _form) then { ["autosave"] call comspec_atak_native_fnc_notesAction; };
 // App JTAC : saisie du brief gardée (un appel radio reçu redessine la page).
 if ("j5" in _form || {"jBda" in _form} || {"jL1" in _form} || {"jF1" in _form} || {"aCs" in _form} || {"jCs" in _form}) then { ["save"] call comspec_atak_native_fnc_jtacAction; };
 // Rédacteur d'ordre (TASK) : saisie gardée quand la page se redessine (ordre reçu, retour de liaison, mise en page, redémarrage).
@@ -105,7 +107,6 @@ switch (_page) do {
     case "DRONEDETECT": { [] call comspec_atak_native_fnc_pageDroneDetect; };
     case "DRONE": { [] call comspec_atak_native_fnc_pageDrone; };
     case "AAR": { [] call comspec_atak_native_fnc_pageAar; };
-    case "C2": { [] call comspec_atak_native_fnc_pageC2; };
     case "EXPLO": { [] call comspec_atak_native_fnc_pageExplo; };
     case "BREACH": { [] call comspec_atak_native_fnc_pageBreach; };
     case "SNIPER": { [] call comspec_atak_native_fnc_pageSniper; };
@@ -113,6 +114,7 @@ switch (_page) do {
     case "MUSIC": { [] call comspec_atak_native_fnc_pageMusic; };
     case "CALC": { [] call comspec_atak_native_fnc_pageCalc; };
     case "NOTES": { [] call comspec_atak_native_fnc_pageNotes; };
+    case "PHONES": { [] call comspec_atak_native_fnc_pagePhones; };
     case "GPS": { [] call comspec_atak_native_fnc_pageGps; };
     case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
     case "DEBUG": { [] call comspec_atak_native_fnc_pageDebug; };
@@ -185,7 +187,7 @@ if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv selec
         private _d2 = [] call comspec_atak_native_fnc_display;
         if (isNull _d2 || {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""]) isNotEqualTo _page}) exitWith {};
         (_d2 displayCtrl 88531) ctrlSetScrollValues [_v, -1];
-    }, [_page, _sv select 0]] call CBA_fnc_execNextFrame;
+    }, [_page, _sv select 0]] call comspec_atak_native_fnc_nextFrame;
 };
 if (_focusKey isNotEqualTo "") then {
     private _nf = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault [_focusKey, controlNull];

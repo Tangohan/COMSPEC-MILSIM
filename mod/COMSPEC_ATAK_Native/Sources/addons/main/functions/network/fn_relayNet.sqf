@@ -17,6 +17,7 @@
                    répéteur qui doit voir un relais raccordé). Débit : dégâts, brouilleurs, relais voisins sur le même canal
                    (interférences), chaîne des répéteurs, saturation. La perte du relais cumule les mêmes causes.
                    Réseau exclusivement par relais (fn_relayNet "only") : sans relais reçu, aucun réseau.
+                   ["list", [camp]] : même liste pour ce camp, sans les radios des équipiers (constructeur du graphe, serveur compris).
       "best"     : meilleur relais reçu par le téléphone (fn_linkQuality, page Réseau). Relais utilisé perdu : toast
                    « Relais perdu : X (raison), liaison dégradée » ou « bascule sur Y ».
                  Relais préféré (fiche du relais sur la carte, uiNamespace COMSPEC_ATAK_RelayPin) : gardé tant qu'il est reçu.
@@ -49,15 +50,17 @@ private _now = [time, serverTime] select isMultiplayer;
 switch (_act) do {
     case "list": {
         // Recalcul au plus toutes les 2 s (appelé à chaque image par le calque de la carte).
-        private _cache = missionNamespace getVariable ["COMSPEC_ATAK_RelayCache", []];
+        private _forSide = if (_arg isEqualType [] && {(_arg param [0, 0]) isEqualType ""}) then { _arg select 0 } else { "" };
+        private _cacheVar = "COMSPEC_ATAK_RelayCache" + _forSide;
+        private _cache = missionNamespace getVariable [_cacheVar, []];
         if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 2} && {_arg isNotEqualTo "force"}) exitWith { _cache select 1 };
         private _out = [];
         private _defR = 2000;
         if (!isNil "ATHENA_fnc_getRealismParam") then { _defR = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam; };
-        private _side = str side group player;
+        private _side = if (_forSide isEqualTo "") then { str side group player } else { _forSide };
         private _num = { params ["_v", "_d"]; [_d, _v] select (_v isEqualType 0) };
         // Brouilleurs actifs (mêmes règles que fn_linkQuality) : facteur de débit à une position.
-        private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _now) && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} };
+        private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _now) && {(_x param [7, 0]) isEqualTo 0} && {(_x param [8, ""]) isNotEqualTo "gps"} && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} };
         private _jamAt = {
             params ["_p"];
             private _m = 1;
@@ -168,13 +171,13 @@ switch (_act) do {
             _out pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, ["gw", "cp"] select (_m isEqualTo "cp"), _r, [0, _mb] select (_cond select 0), _cond select 0, _cond select 1, 0, 0, -1, true, objNull,
                 4985, false, 0, round (100 * (1 - damage _o)), "", 0, 0, 0];
             _jf pushBack 1;
-        } forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);
+        } forEach (if (_forSide isEqualTo "") then { ["list"] call comspec_atak_native_fnc_vehicleGateway } else { ["list", _forSide] call comspec_atak_native_fnc_vehicleGateway });
         // Radios maillées MPU5 des équipiers, ou radio ACRE2/TFAR où leur téléphone est branché (fn_mpu5) : relais portés qui redistribuent le débit montant que leur
         // téléphone reçoit d'un relais ou d'une autre MPU5 (au plus 3 bonds, publiés dans COMSPEC_ATAK_Mpu5).
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
         {
-            (_x getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_hp", 0], ["_rg", _mR], ["_rn", "MPU5"]];
-            if (!(_up isEqualType 0) || {_up <= 0} || {_hp >= 3}) then { continue };
+            (["mpu5", _x] call comspec_atak_native_fnc_meshRead) params [["_up", 0], ["_hp", 0], ["_rg", _mR], ["_rn", "MPU5"]];
+            if (_up <= 0 || {_hp >= 3}) then { continue };
             private _ant = (eyePos _x) vectorAdd [0, 0, 0.4];
             private _j = [_ant] call _jamAt;
             private _m = _up * _j;
@@ -182,7 +185,7 @@ switch (_act) do {
             _out pushBack [_x, _ant, format ["%1 %2", ["Radio", "MPU5"] select (_rn isEqualTo "MPU5"), [_x, true] call comspec_atak_native_fnc_unitCallsign], "mpu5", _rg, _m, _st isEqualTo "", _st, 0, 0, -1, false, objNull,
                 4990, false, 0, round (100 * (1 - damage _x)), "", _hp, 0, 0];
             _jf pushBack _j;
-        } forEach (allPlayers select { alive _x && {_x isNotEqualTo player} && {str side group _x isEqualTo _side} });
+        } forEach (allPlayers select { _forSide isEqualTo "" && {alive _x} && {_x isNotEqualTo player} && {str side group _x isEqualTo _side} });
         // Saturation : au-delà de ses places, le débit du relais se partage entre les téléphones à portée.
         // Aucun relais en service : pas de comptage des téléphones (hasDevice sur chaque joueur, toutes les 2 s).
         private _users = if ((_out findIf { _x select 6 }) < 0) then { [] } else {
@@ -214,7 +217,7 @@ switch (_act) do {
                 default { "nominal" };
             }];
         } forEach _out;
-        missionNamespace setVariable ["COMSPEC_ATAK_RelayCache", [diag_tickTime, _out]];
+        missionNamespace setVariable [_cacheVar, [diag_tickTime, _out]];
         _out
     };
     case "best": {
@@ -450,7 +453,7 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_CoverageBusy", false];
             profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
             ["SUCCESS", format ["Couverture calculée : %1 %% du terrain reçoit le réseau sur %2 km", _pct, round (_radius / 1000)], 4, 30] call comspec_atak_native_fnc_notify;
-            if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+            if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
         };
     };
     case "at": {
@@ -486,7 +489,7 @@ switch (_act) do {
             if (((missionNamespace getVariable ["COMSPEC_ATAK_TrilatPending", []]) param [1, -1]) isNotEqualTo _token) exitWith {};
             missionNamespace setVariable ["COMSPEC_ATAK_TrilatPending", []];
             ["locate", _id] call comspec_atak_native_fnc_relayNet;
-        }, [_id, _token], _dur] call CBA_fnc_waitAndExecute;
+        }, [_id, _token], _dur] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "locate": {

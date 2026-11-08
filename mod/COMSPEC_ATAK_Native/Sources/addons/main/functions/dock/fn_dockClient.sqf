@@ -53,14 +53,14 @@ switch (_act) do {
         ["comspec_atak_native_dockPut", [_dock, player, _slot, _item, _lv, [[], (keys _dev) apply { [_x, _dev get _x] }] select (_dev isEqualType createHashMap),
             (getText (configFile >> "CfgWeapons" >> _item >> "comspec_phoneTint"))]] call CBA_fnc_serverEvent;
         playSound "ClickSoft";
-        [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call comspec_atak_native_fnc_waitAndExec;
     };
     case "take": {
         _a params ["_dock", "_slot"];
         if (missionNamespace getVariable ["COMSPEC_ATAK_DockBusy", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", true];
         ["comspec_atak_native_dockTake", [_dock, player, _slot]] call CBA_fnc_serverEvent;
-        [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call comspec_atak_native_fnc_waitAndExec;
     };
     case "status": {
         // Fiche sur une ligne, dans le téléphone (bandeau + centre de notifications) ; sans téléphone, l'état se lit
@@ -99,14 +99,14 @@ switch (_act) do {
         player playActionNow "PutDown";
         // L'avant du socle (voyants, écrans) face au joueur.
         ["comspec_atak_native_dockDeploy", [player, _pos, (_dir + 180) % 360]] call CBA_fnc_serverEvent;
-        [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call comspec_atak_native_fnc_waitAndExec;
     };
     case "pack": {
         _a params ["_dock"];
         if (missionNamespace getVariable ["COMSPEC_ATAK_DockBusy", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", true];
         ["comspec_atak_native_dockPack", [_dock, player]] call CBA_fnc_serverEvent;
-        [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call CBA_fnc_waitAndExecute;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_DockBusy", false]; }, [], 5] call comspec_atak_native_fnc_waitAndExec;
     };
     case "result": {
         _a params ["_what", "_ok", "_msg", ["_data", []]];

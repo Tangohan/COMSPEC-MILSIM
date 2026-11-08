@@ -21,12 +21,12 @@ switch (_act) do {
             if (isNull _old) exitWith {};
             private _pref = _old getVariable ["COMSPEC_FTRolePref", ""];
             if (_pref isNotEqualTo "") then { _new setVariable ["COMSPEC_FTRolePref", _pref, true]; };
-            [{ ["respawn", _this] call comspec_atak_native_fnc_ftRoleSync; }, [_old getVariable ["COMSPEC_FT", ""], _old getVariable ["COMSPEC_FTRole", ""]], 2] call CBA_fnc_waitAndExecute;
+            [{ ["respawn", _this] call comspec_atak_native_fnc_ftRoleSync; }, [_old getVariable ["COMSPEC_FT", ""], _old getVariable ["COMSPEC_FTRole", ""]], 2] call comspec_atak_native_fnc_waitAndExec;
         }];
         private _p = profileNamespace getVariable ["COMSPEC_ATAK_MyRole", ""];
         if (_p isNotEqualTo "" && {_p isNotEqualTo "NONE"}) then { player setVariable ["COMSPEC_FTRolePref", _p, true]; };
         // Après le contrôle d'arrivée du serveur (ftCheck, 5 s).
-        [{ ["load"] call comspec_atak_native_fnc_ftRoleSync; }, [], 8] call CBA_fnc_waitAndExecute;
+        [{ ["load"] call comspec_atak_native_fnc_ftRoleSync; }, [], 8] call comspec_atak_native_fnc_waitAndExec;
     };
     case "load": {
         [] spawn {
@@ -98,7 +98,7 @@ switch (_act) do {
     case "respawn": {
         _arg params [["_tid", ""], ["_r", ""]];
         if (_tid isNotEqualTo "" || {_r isNotEqualTo ""}) then { ["comspec_atak_native_ft", [player, "restore", [_tid, _r]]] call CBA_fnc_serverEvent; };
-        [{ ["auto"] call comspec_atak_native_fnc_ftRoleSync; }, [], 3] call CBA_fnc_waitAndExecute;
+        [{ ["auto"] call comspec_atak_native_fnc_ftRoleSync; }, [], 3] call comspec_atak_native_fnc_waitAndExec;
     };
 };
 true

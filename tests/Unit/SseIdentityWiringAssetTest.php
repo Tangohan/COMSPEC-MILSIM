@@ -60,6 +60,9 @@ final class SseIdentityWiringAssetTest extends TestCase
         self::assertStringContainsString('if (function is "GetIdentityPack" or "QueryIdDocument" or "SubmitIdCheck")', $ext);
 
         $id = self::read('mod/UptoDate/COMSPECExtension/Extension_Identity.cs');
+        // Blocs du paquet lus par fn_idAthenaPack : un nom absent ici n'arrive jamais en jeu.
+        self::assertStringContainsString('or "since" or "settings")', $id);
+        self::assertStringContainsString('["kits"] = new(), ["briefs"] = new(),', $id);
         self::assertStringContainsString('"/api/sse/identity/pack?map="', $id);
         self::assertStringContainsString('"/api/sse/identity/documents/lookup"', $id);
         self::assertStringContainsString('"/api/sse/identity/checks"', $id);

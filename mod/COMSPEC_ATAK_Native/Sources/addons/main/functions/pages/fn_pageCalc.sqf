@@ -12,7 +12,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 // Une rangée = un « bar » (sinon plusieurs groupes se collent côte à côte sur écran large).
 private _rows = [
     ["hero", "\z\comspec_atak_native\addons\main\data\app_calc.paa", format [
-        "<t size='0.85' color='#8a9a93' align='right'>%1</t><br/><t size='1.8' font='EtelkaMonospaceProBold' align='right'>%2</t>",
+        "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' align='right'>%1</t><br/><t size='1.8' font='EtelkaMonospaceProBold' align='right'>%2</t>",
         [_expr, " "] select (_expr isEqualTo ""),
         _disp
     ]],

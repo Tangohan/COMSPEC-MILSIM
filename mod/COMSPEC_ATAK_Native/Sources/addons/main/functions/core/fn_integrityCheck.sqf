@@ -58,7 +58,7 @@ private _code = missionNamespace getVariable ["COMSPEC_ATAK_CodeVersion", ""];
 
 switch (toLower _mode) do {
     case "start": {
-        [{ ["local"] call comspec_atak_native_fnc_integrityCheck; }, [], 15] call CBA_fnc_waitAndExecute;
+        [{ ["local"] call comspec_atak_native_fnc_integrityCheck; }, [], 15] call comspec_atak_native_fnc_waitAndExec;
         [] spawn {
             sleep 30;
             // Service Athéna pas encore choisi : on attend son choix ; « Non » : aucun appel réseau. La boucle suit le

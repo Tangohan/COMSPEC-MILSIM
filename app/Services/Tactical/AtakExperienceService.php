@@ -479,7 +479,6 @@ final class AtakExperienceService
             ['id' => 'Group', 'name' => 'Groupe', 'description' => 'Composition du groupe, rôles et indicatifs', 'section' => 'Communication'],
             ['id' => 'Bft', 'name' => 'BFT', 'description' => 'Suivi des forces amies (Blue Force Tracking)', 'section' => 'Communication'],
             ['id' => 'InterTeam', 'name' => 'Inter-team', 'description' => 'Liaison entre équipes et fire teams', 'section' => 'Communication'],
-            ['id' => 'C2', 'name' => 'C2', 'description' => 'Commandement : ordres, situation et unités', 'section' => 'Communication'],
             ['id' => 'WaveRelay', 'name' => 'Wave Relay', 'description' => 'Réseau maillé radio : relais et qualité de liaison', 'section' => 'Communication'],
             ['id' => 'Numbers', 'name' => 'Numéros', 'description' => 'Annuaire des numéros de téléphone', 'section' => 'Communication'],
             ['id' => 'Discord', 'name' => 'Discord', 'description' => 'Messages du Discord de la communauté', 'section' => 'Communication'],
@@ -573,6 +572,9 @@ final class AtakExperienceService
             $out[$row['id']] = $row['default'];
         }
         $out['guide_custom'] = '';
+        // App Communauté du téléphone (AtakCommunityBrief) : texte saisi tel quel, lu seulement par GET /api/atak/community-brief.
+        $out['community_notes'] = '';
+        $out['community_kit'] = '';
         $out['server_control_reviewed'] = false;
         $out['net_live'] = [];
         $out['apps_policy'] = [];
@@ -661,6 +663,11 @@ final class AtakExperienceService
         }
         if (array_key_exists('guide_custom', $incoming)) {
             $merged['guide_custom'] = trim((string) $incoming['guide_custom']);
+        }
+        foreach (['community_notes', 'community_kit'] as $key) {
+            if (array_key_exists($key, $incoming)) {
+                $merged[$key] = mb_substr(trim((string) $incoming[$key]), 0, \App\Support\AtakCommunityBrief::MAX_SOURCE);
+            }
         }
         if (!empty($incoming['server_control_reviewed'])) {
             $merged['server_control_reviewed'] = true;

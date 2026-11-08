@@ -156,6 +156,6 @@ if (_manual) then {
     } else {
         ["INFO", format ["Détecteur : aucune liaison drone%1", ["", " (brouillage : sensibilité réduite)"] select (_jam > 0.05)], 4, 30] call comspec_atak_native_fnc_notify;
     };
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONEDETECT") then { ["DRONEDETECT"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONEDETECT") then { ["DRONEDETECT"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
 };
 _heard

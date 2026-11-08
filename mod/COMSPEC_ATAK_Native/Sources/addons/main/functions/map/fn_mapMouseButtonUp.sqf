@@ -22,6 +22,8 @@ private _w = _map ctrlMapScreenToWorld [_mx,_my];
 // Clic gauche armé à l'appui (fn_mapMouseButtonDown) : il n'agit que si le curseur n'a presque pas bougé, sinon c'était
 // un glisser pour déplacer la carte et l'outil reste comme il était.
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
+// Pointage par appui long déjà envoyé (fn_mapOnDraw) : le relâchement ne fait rien de plus.
+if (_s getOrDefault ["mapHold", false]) exitWith { _s set ["mapHold", false]; _s set ["mapLc", []]; false };
 private _lc = _s getOrDefault ["mapLc", []];
 _s set ["mapLc", []];
 if ((count _lc) isEqualTo 5) exitWith {

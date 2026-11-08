@@ -27,7 +27,7 @@
 */
 params [["_act", ""], ["_k", ""], ["_v", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _render = { if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RELIEF") then { [{ ["RELIEF"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }; };
+private _render = { if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RELIEF") then { [{ ["RELIEF"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }; };
 // Nature d'un objet touché par une ligne de vue.
 private _kind = {
     params ["_o"];
@@ -165,11 +165,11 @@ switch (_act) do {
         private _target = if ((count _vs) > 7 && {(_vs select 7) >= 0}) then { ((_vs select 2) select (_vs select 7)) select 0 } else { player };
         if (_k isEqualTo "center" && {(count _vs) > 0}) then { _target = _vs select 0; };
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ _this call comspec_atak_native_fnc_mapCenter; }, [_target, 0.06]] call CBA_fnc_execNextFrame;
+        [{ _this call comspec_atak_native_fnc_mapCenter; }, [_target, 0.06]] call comspec_atak_native_fnc_nextFrame;
     };
     case "focus": {
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ _this call comspec_atak_native_fnc_mapCenter; }, [_k, 0.04]] call CBA_fnc_execNextFrame;
+        [{ _this call comspec_atak_native_fnc_mapCenter; }, [_k, 0.04]] call comspec_atak_native_fnc_nextFrame;
     };
     case "los": {
         // Ligne de vue de ma position (mes yeux) vers le point : coordonnées saisies (gardées dans rlGrid) ou point touché sur la carte.
@@ -218,7 +218,7 @@ switch (_act) do {
     };
     case "losMap": {
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ ["LOS"] call comspec_atak_native_fnc_mapToolSet; ["INFO", "Touchez la carte : ligne de vue depuis mes yeux vers ce point", 4, 20] call comspec_atak_native_fnc_notify; }] call CBA_fnc_execNextFrame;
+        [{ ["LOS"] call comspec_atak_native_fnc_mapToolSet; ["INFO", "Touchez la carte : ligne de vue depuis mes yeux vers ce point", 4, 20] call comspec_atak_native_fnc_notify; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "losClear": {
         missionNamespace setVariable ["COMSPEC_ATAK_ReliefLos", nil];

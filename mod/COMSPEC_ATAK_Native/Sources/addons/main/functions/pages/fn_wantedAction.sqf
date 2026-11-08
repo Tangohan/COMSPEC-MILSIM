@@ -8,13 +8,13 @@
 */
 params [["_act", "load"], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WANTED") then { ["WANTED"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WANTED") then { ["WANTED"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _res = { params ["_r"]; if (!isNil "comspec_overwatch_connect_fnc_extResult") then { [_r] call comspec_overwatch_connect_fnc_extResult } else { _r } };
 switch (_act) do {
     case "filter": { _s set ["wantedFilter", _arg]; _s set ["wantedOpen", ""]; call _render; };
     case "open": { _s set ["wantedOpen", _arg]; call _render; };
     case "load": {
-        // Hors contexte suspendable (CBA_fnc_execNextFrame, clic de formulaire) fn_extAwait appelait la DLL en direct
+        // Hors contexte suspendable (comspec_atak_native_fnc_nextFrame, clic de formulaire) fn_extAwait appelait la DLL en direct
         // et figeait le jeu le temps de la requête Athena : relancé dans un spawn pour passer par « Async ».
         // Une seule requête à la fois (ACTUALISER répété, redessin) ; repère daté, périmé après 30 s.
         if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_WantedBusy", -100]) < 30) exitWith {};

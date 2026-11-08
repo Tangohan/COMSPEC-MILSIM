@@ -89,7 +89,7 @@ switch (_mode) do {
         ["comspec_atak_native_tocScreen", { _this call comspec_atak_native_fnc_tocScreen; }] call CBA_fnc_addEventHandler;
         ["init"] call comspec_atak_native_fnc_tocFeed;
         // Écrans gardés de la partie précédente : remis une fois les modules Eden passés.
-        [{ ["restore"] call comspec_atak_native_fnc_tocPersist; }, [], 3] call CBA_fnc_waitAndExecute;
+        [{ ["restore"] call comspec_atak_native_fnc_tocPersist; }, [], 3] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "classes": {

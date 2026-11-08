@@ -80,7 +80,7 @@ private _ensure = {
         // Changement de modèle pendant que l'écran est ouvert : on le referme et on le rouvre sur le nouveau.
         if (!isNull _cur && {call _isOpen}) then {
             ["close"] call comspec_atak_native_fnc_jpcScreen;
-            [{ [false] call comspec_atak_native_fnc_open; }] call CBA_fnc_execNextFrame;
+            [{ [false] call comspec_atak_native_fnc_open; }] call comspec_atak_native_fnc_nextFrame;
         };
         if (!isNull _cur) then { deleteVehicle _cur; };
         _cur = createSimpleObject [_cls, getPosASL player, false];
@@ -184,7 +184,7 @@ switch (_act) do {
         [] call comspec_atak_native_fnc_close;
         _s set ["suppressHudRestore", false];
         uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", true];
-        [{ [false] call comspec_atak_native_fnc_open; }] call CBA_fnc_execNextFrame;
+        [{ [false] call comspec_atak_native_fnc_open; }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     default {
@@ -193,7 +193,7 @@ switch (_act) do {
         if (call _isOpen && {!(call _usable) || {_style isNotEqualTo "jpc"}}) then {
             private _wanted = uiNamespace getVariable ["COMSPEC_ATAK_HudWanted", false];
             [] call comspec_atak_native_fnc_close;
-            if (_wanted && {alive player}) then { [{ [false] call comspec_atak_native_fnc_open; }] call CBA_fnc_execNextFrame; };
+            if (_wanted && {alive player}) then { [{ [false] call comspec_atak_native_fnc_open; }] call comspec_atak_native_fnc_nextFrame; };
         };
         if !(_style isEqualTo "jpc" && _usable) exitWith { call _remove; false };
         private _obj = call _ensure;
@@ -203,7 +203,7 @@ switch (_act) do {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         if (!isNull _disp && {!(_st getOrDefault ["interactive", false])} && {!(_st getOrDefault ["texture", false])}) then {
             [] call comspec_atak_native_fnc_close;
-            [{ [false] call comspec_atak_native_fnc_open; }] call CBA_fnc_execNextFrame;
+            [{ [false] call comspec_atak_native_fnc_open; }] call comspec_atak_native_fnc_nextFrame;
         };
         // Luminosité de l'écran ouvert : jour / nuit.
         if (call _isOpen) then {

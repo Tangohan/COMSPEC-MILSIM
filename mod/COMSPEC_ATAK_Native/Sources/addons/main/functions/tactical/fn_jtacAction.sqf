@@ -40,7 +40,7 @@ private _isActive = { ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHas
 private _render = { [{
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "JTAC") then { ["JTAC"] call comspec_atak_native_fnc_pageRender; };
     (uiNamespace getVariable ["COMSPEC_ATAK_Jtac", createHashMap]) set ["clearing", false];
-}] call CBA_fnc_execNextFrame; };
+}] call comspec_atak_native_fnc_nextFrame; };
 private _me = { private _c = [player] call comspec_atak_native_fnc_unitCallsign; if (_c isEqualTo "") then { groupId group player } else { _c } };
 // Indicatif du JTAC (réglable dans l'onglet 9/5-LINE, fn_airBrief) : appels et briefs du JTAC.
 private _jcs = { ["jtacCs"] call comspec_atak_native_fnc_airBrief };
@@ -149,7 +149,7 @@ switch (_act) do {
         _f deleteAt "solution";
         ["FIRES"] call comspec_atak_native_fnc_navigate;
         // Champs de l'app CAS déjà affichés (ancienne cible) pas relus pendant ce redessin (fn_firesSave).
-        [{ (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call CBA_fnc_execNextFrame;
+        [{ (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "ipAuto": { _s set ["ipAuto", true]; _s set ["jIp", ""]; call _render; };
     case "pickIn": {
@@ -198,7 +198,7 @@ switch (_act) do {
     case "pick": {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         _st set ["jtacPick", _arg];
-        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         ["INFO", ["Cliquez l'IP sur la carte", "Cliquez la cible sur la carte"] select (_arg isEqualTo "tgt"), 3, 40] call comspec_atak_native_fnc_notify;
     };
     case "picked": {
@@ -213,7 +213,7 @@ switch (_act) do {
             if ((_s getOrDefault ["jIp", ""]) isEqualTo "") then { _s set ["jIp", format ["IP %1", [_asl, 6] call comspec_atak_native_fnc_gridRef]]; };
             _s set ["tab", "BRIEF"];
         };
-        [{ ["JTAC"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["JTAC"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "air": {
         private _a = _arg call BIS_fnc_objectFromNetId;
@@ -237,7 +237,7 @@ switch (_act) do {
         private _p = _s getOrDefault ["target", []];
         if ((count _p) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     case "brief": {
         private _air = _s getOrDefault ["air", objNull];
@@ -382,14 +382,14 @@ switch (_act) do {
         private _p = _b param [6, []];
         if ((count _p) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     // ------------------------------------------------ Briefs air (fn_airBrief), format, saisie libre, indicatifs
     case "fmt": { _s set ["fmt", _arg]; call _render; };
     case "free": { _s set ["free", !(_s getOrDefault ["free", false])]; call _render; };
     case "medevac": {
         (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["medTab", "MEDEVAC"];
-        [{ ["MEDICAL"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["MEDICAL"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "setCs": {
         ["setJtacCs", _s getOrDefault ["jCs", ""]] call comspec_atak_native_fnc_airBrief;

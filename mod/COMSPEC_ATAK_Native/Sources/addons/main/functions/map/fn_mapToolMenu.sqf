@@ -28,5 +28,5 @@ switch (_key) do {
         if (_key isNotEqualTo "MARKER") then { _s set ["mapToolsOpen", false]; };
     };
 };
-[{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 true

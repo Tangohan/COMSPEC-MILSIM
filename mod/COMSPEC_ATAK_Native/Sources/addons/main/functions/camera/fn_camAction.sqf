@@ -232,7 +232,7 @@ switch (_mode) do {
             _s set ["livecamPan", 0];
             _s set ["livecamRename", true];
             ["LIVECAM"] call comspec_atak_native_fnc_navigate;
-        }, _a] call CBA_fnc_execNextFrame;
+        }, _a] call comspec_atak_native_fnc_nextFrame;
         true
     };
     case "aceInit": {

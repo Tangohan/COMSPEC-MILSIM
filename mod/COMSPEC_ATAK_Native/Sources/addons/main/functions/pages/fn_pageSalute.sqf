@@ -24,15 +24,15 @@ private _d = uiNamespace getVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap]
 private _hint = _s getOrDefault ["saluteHint", ""];
 private _bridge = [] call comspec_atak_native_fnc_bridge && {!isNil "comspec_overwatch_connect_fnc_sendTacticalAlert"};
 
-private _cBg = [0.026, 0.031, 0.028, 1];
-private _cHdr = [0.012, 0.015, 0.013, 1];
-private _cTile = [0.065, 0.078, 0.071, 1];
-private _cField = [0.014, 0.017, 0.015, 1];
-private _cLine = [0.16, 0.20, 0.17, 1];
-private _cBlue = [0.30, 0.62, 0.98, 1];
-private _cText = [0.92, 0.95, 0.93, 1];
-private _cDim = [0.55, 0.61, 0.58, 1];
-private _cInk = [0.02, 0.04, 0.07, 1];
+private _cBg = COMSPEC_ATAK_Th get "bg1";
+private _cHdr = COMSPEC_ATAK_Th get "bg0";
+private _cTile = COMSPEC_ATAK_Th get "surface";
+private _cField = COMSPEC_ATAK_Th get "field";
+private _cLine = COMSPEC_ATAK_Th get "border";
+private _cBlue = COMSPEC_ATAK_Th get "info";
+private _cText = COMSPEC_ATAK_Th get "text";
+private _cDim = COMSPEC_ATAK_Th get "textDim";
+private _cInk = COMSPEC_ATAK_Th get "onState";
 
 private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
 private _box = { params ["_rect", "_rgba"]; private _c = ["COMSPEC_RscText", _rect] call _mk; _c ctrlSetBackgroundColor _rgba; _c };
@@ -223,7 +223,7 @@ for "_i" from ((count _log) - 1) to (((count _log) - 8) max 0) step -1 do {
     _ci ctrlSetTextColor _cBlue;
     private _cx = _pad * 2.2 + _ch * 0.56 / _ratio;
     private _c = ["COMSPEC_RscStructuredText", [_cx, _y + _ch * 0.08, _w - (_cx - _pad) - _pad, _ch * 0.9]] call _mk;
-    _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#4d9ffa'>%1</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%2 · %3</t><br/><t size='0.85'>%4</t>",
+    _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#4d9ffa'>%1</t>  <t font='EtelkaMonospacePro' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · %3</t><br/><t size='0.85'>%4</t>",
         [_who] call _esc, _hour, [_lg] call _esc, [[_text, "—"] select (_text isEqualTo "")] call _esc]) call comspec_atak_native_fnc_tr);
     _c ctrlSetFontHeight _fs;
     _y = _y + _ch + _pad * 0.4;

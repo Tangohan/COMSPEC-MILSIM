@@ -21,6 +21,7 @@ if (_op isEqualTo "draw") exitWith {
         drawIcon3D [_ic, [_c select 0, _c select 1, _c select 2, (_c select 3) * _a], _p, 0.7, 0.7, 0, format ["%1  %2", _t, [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000)], 2, 0.032, "RobotoCondensed", "center", false];
     } forEach _tags;
 };
+private _fpano = [] call comspec_atak_native_fnc_routeEcoti;
 private _ok = missionNamespace getVariable ["comspec_atak_native_route_3d", true];
 private _f = missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap];
 private _fid = _f getOrDefault ["id", ""];
@@ -36,7 +37,7 @@ if ((count _list) isEqualTo 0) exitWith {
 };
 private _me = getPosATL vehicle player;
 // Liste refaite seulement si une route a changé (révision, couleur, étape visée) ou après 20 m parcourus.
-private _key = [_list apply { [_x get "id", _x get "rev", _x get "color"] }, _f getOrDefault ["id", ""], _f getOrDefault ["idx", -1]];
+private _key = [_list apply { [_x get "id", _x get "rev", _x get "color"] }, _f getOrDefault ["id", ""], _f getOrDefault ["idx", -1], _fpano];
 private _last = missionNamespace getVariable ["COMSPEC_ATAK_Rte3dKey", []];
 if (_eh >= 0 && {(_last param [0, []]) isEqualTo _key} && {(_me distance2D (_last param [1, [-1e6, -1e6, 0]])) < 20}) exitWith {};
 missionNamespace setVariable ["COMSPEC_ATAK_Rte3dKey", [_key, _me]];
@@ -68,7 +69,8 @@ private _agl = { params ["_p", ["_h", 1.2]]; [_p select 0, _p select 1, _h] };
     };
     {
         _x params ["_p", "_k", "_n"];
-        if (_forEachIndex < _fi || {(_me distance2D _p) > 4000}) then { continue };
+        // F-PANO ECOTI affiche déjà les étapes (fn_routeEcoti) : ici le trait seul.
+        if (_fpano || {_forEachIndex < _fi} || {(_me distance2D _p) > 4000}) then { continue };
         private _c = [_col, [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _fi);
         _tags pushBack [[_p, 3] call _agl, ["icon", _k] call comspec_atak_native_fnc_routeAction, _c, format ["%1. %2", _forEachIndex + 1, [_n] call comspec_atak_native_fnc_markerAutoName]];
     } forEach (_r get "steps");

@@ -130,7 +130,7 @@ switch (_ev) do {
         [{
             private _d = [] call comspec_atak_native_fnc_display;
             if (!isNull _d && {(focusedCtrl _d) isEqualTo ((uiNamespace getVariable ["COMSPEC_ATAK_PlanCtrls", createHashMap]) getOrDefault ["map", controlNull])}) then { ctrlSetFocus (_d displayCtrl 88543); };
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
         if (_btn isEqualTo 1) exitWith { ["rclick", [_map, [_mx, _my]]] call comspec_atak_native_fnc_planMap; };
         if (_btn isEqualTo 0 && {_ui getOrDefault ["drawing", false]}) then {
             _ui set ["drawing", false];

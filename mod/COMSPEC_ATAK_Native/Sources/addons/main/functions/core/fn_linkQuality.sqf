@@ -94,6 +94,11 @@ if (_mesh) then {
     _kbps = (_mpu get "kbps") max 1;
     _lat = _lat + (_mpu get "lat");
     _loss = _loss max (_mpu get "loss");
+    // Gravité de coupure (fn_meshGraph) : chemin en limite de portée, pertes en rafales.
+    if ((_mpu getOrDefault ["level", 0]) >= 2 && {missionNamespace getVariable ["comspec_atak_native_mesh_gravity", true]}) then {
+        _loss = _loss max 25;
+        _f pushBack ["Maillage en limite de portée", "pertes en rafales"];
+    };
     private _ms = uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap];
     private _lk = _mpu get "link";
     _f pushBack [format ["MPU5 canal %1 (%2)", _ms getOrDefault ["chan", 1], ["câble EUD", "Wi-Fi"] select (_lk isEqualTo "wifi")],
@@ -190,7 +195,7 @@ private _jamM = 1;
         };
         _jamM = _jamM min _m;
     };
-} forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
+} forEach ((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { (_x param [7, 0]) isEqualTo 0 && {(_x param [8, ""]) isNotEqualTo "gps"} });
 if (_jamM < 1) then {
     _mul = _mul * _jamM; _loss = _loss max (round ((1 - _jamM) * 80)); _f pushBack ["Brouillage", format ["-%1 %%", round ((1 - _jamM) * 100)]];
 };

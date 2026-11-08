@@ -28,5 +28,5 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 _s set ["selectedMarker", ""];
 _s set ["markerEdit", createHashMap];
 ["INFO", ["Marqueur supprimé", "Alerte effacée de la carte"] select (_kind isEqualTo 2), 2, 10] call comspec_atak_native_fnc_notify;
-[{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 true

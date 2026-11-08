@@ -14,7 +14,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_FrsUi", _ui];
 private _pieces = uiNamespace getVariable ["COMSPEC_ATAK_FrsPieces", []];
 uiNamespace setVariable ["COMSPEC_ATAK_FrsPieces", _pieces];
 private _max = 4;
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FRS") then { ["FRS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FRS") then { ["FRS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _full = { if ((count _pieces) >= _max) exitWith { ["WARNING", format ["%1 pièces jointes au maximum par fiche", _max], 3, 20] call comspec_atak_native_fnc_notify; true }; false };
 switch (_act) do {
     case "head": { _ui set ["head", !(_ui getOrDefault ["head", false])]; _ui set ["pj", false]; _ui set ["fab", false]; call _render; };
@@ -67,12 +67,12 @@ switch (_act) do {
             uiNamespace setVariable ["COMSPEC_ATAK_FrsPieces", _pieces];
             ["SUCCESS", "Capture jointe à la fiche", 2, 20] call comspec_atak_native_fnc_notify;
             // Redessin seulement si la fiche est encore à l'écran (autre app ouverte pendant la prise).
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FRS") then { ["FRS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FRS") then { ["FRS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
     case "del": { if (_arg isEqualType 0 && {_arg >= 0} && {_arg < count _pieces}) then { _pieces deleteAt _arg; }; call _render; };
-    case "home": { [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; };
-    case "full": { [{ [] call comspec_atak_native_fnc_modeToggle; }] call CBA_fnc_execNextFrame; };
+    case "home": { [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; };
+    case "full": { [{ [] call comspec_atak_native_fnc_modeToggle; }] call comspec_atak_native_fnc_nextFrame; };
     case "send": {
         // POST HTTP hors de l'image (extAwait en Async dans un spawn), sinon le jeu fige ; un seul envoi à la fois.
         if (missionNamespace getVariable ["COMSPEC_ATAK_FrsSending", false]) exitWith { ["INFO", "Envoi en cours…", 3, 20] call comspec_atak_native_fnc_notify; };

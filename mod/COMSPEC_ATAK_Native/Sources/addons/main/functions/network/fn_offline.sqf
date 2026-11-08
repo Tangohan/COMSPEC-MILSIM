@@ -104,7 +104,7 @@ switch (toLower _act) do {
                     { _x params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; } forEach (_q select [0, 10]);
                     missionNamespace setVariable ["COMSPEC_ATAK_NetReplay", false];
                     _q deleteRange [0, 10];
-                    if (_q isNotEqualTo []) then { [_drain, [_q, _drain]] call CBA_fnc_execNextFrame; };
+                    if (_q isNotEqualTo []) then { [_drain, [_q, _drain]] call comspec_atak_native_fnc_nextFrame; };
                 };
                 [+_held, _drain] call _drain;
                 // Débit recalculé et données relues maintenant.
@@ -130,7 +130,7 @@ switch (toLower _act) do {
                 };
                 if (!isNull ([] call comspec_atak_native_fnc_display)) then {
                     private _page = _s getOrDefault ["activePage", ""];
-                    if (_page in ["CHAT", "TASK", "ALERTS", "NETWORK", "REPORTS", "MEDICAL"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame; };
+                    if (_page in ["CHAT", "TASK", "ALERTS", "NETWORK", "REPORTS", "MEDICAL"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame; };
                 };
             };
             case (_on): { _st set ["sync", call _hhmm]; };

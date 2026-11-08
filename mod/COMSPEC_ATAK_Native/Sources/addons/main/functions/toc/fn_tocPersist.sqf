@@ -18,7 +18,7 @@ switch (_mode) do {
         if (!_on || {!(missionNamespace getVariable ["COMSPEC_ATAK_TocRestored", false])}) exitWith {};
         if (missionNamespace getVariable ["COMSPEC_ATAK_TocSaveQueued", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocSaveQueued", true];
-        [{ ["write"] call comspec_atak_native_fnc_tocPersist; }, [], 10] call CBA_fnc_waitAndExecute;
+        [{ ["write"] call comspec_atak_native_fnc_tocPersist; }, [], 10] call comspec_atak_native_fnc_waitAndExec;
     };
     case "write": {
         missionNamespace setVariable ["COMSPEC_ATAK_TocSaveQueued", false];

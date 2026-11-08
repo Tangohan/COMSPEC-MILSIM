@@ -22,7 +22,7 @@ params [["_op", ""], ["_arg", []]];
 private _prof = profileNamespace;
 private _redraw = {
     [] call comspec_atak_native_fnc_saveProfile;
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
 };
 // CURDIST (2.9.36, bandeau NOUVEAU) : distance et gisement vers le curseur dans le bandeau ; absent par défaut (la flèche
 // et le cap donnent alors la vue du personnage, le gisement vers le curseur reste dans l'étiquette de survol).

@@ -30,6 +30,35 @@ if (_act isEqualTo "sonSub") exitWith {
     private _spkVol = _m getOrDefault ["spkVol", 70];
     [format ["Écouteurs %1", [(str _vol) + " %", "MUET"] select (_vol isEqualTo 0)], format ["Haut-parleur %1", [(str _spkVol) + " %", "MUET"] select (_spkVol isEqualTo 0)]] select (_m get "speaker")
 };
+// Texte et teinte d'une ligne de piste des listes (fn_pageMusic et mise à jour sur place) : [clé de liste, index, sous-titre]
+// → [texte structuré, teinte de l'image]. La piste en cours est en gras à la couleur d'accent.
+if (_act isEqualTo "rowText") exitWith {
+    _arg params ["_key", "_i", ["_sub", ""]];
+    private _items = (uiNamespace getVariable ["COMSPEC_ATAK_MusicLists", createHashMap]) getOrDefault [_key, []];
+    if (_i < 0 || {_i >= count _items}) exitWith { ["", [1, 1, 1, 1]] };
+    (_items select _i) params ["_k", "_r", "_t", ["_len", 0], "", ["_id", ""]];
+    ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
+    private _esc = { params ["_s"]; { _s = [_s, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _s };
+    private _fmt = { params ["_s"]; if (_s <= 0) exitWith { "" }; _s = floor _s; format ["%1:%2", floor (_s / 60), [str (_s mod 60), "0" + str (_s mod 60)] select ((_s mod 60) < 10)] };
+    private _isCur = (_m get "kind") isEqualTo _k && {(_m get "ref") isEqualTo _r || {_id isNotEqualTo "" && {((_m get "queue") param [_m get "qi", []]) param [5, ""] isEqualTo _id}}};
+    [format ["<t %1>%2</t><br/><t size='0.75' color='#8a9a93'>%3%4</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur,
+        [_t] call _esc, [_sub] call _esc, ["", format [" · %1", [_len] call _fmt]] select (_len > 0)], [[0.55, 0.6, 0.58, 1], _acc] select _isCur]
+};
+// Ligne de la file : [texte, teinte, boutons [[libellé, actif, principal], MONTER, RETIRER]] (fn_pageMusic, _queueNow).
+if (_act isEqualTo "qRow") exitWith {
+    private _i = _arg;
+    private _q = _m get "queue";
+    (_q select _i) params ["_k", "_r", "_t", ["_len", 0]];
+    ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
+    private _esc = { params ["_s"]; { _s = [_s, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _s };
+    private _fmt = { params ["_s"]; if (_s <= 0) exitWith { "" }; _s = floor _s; format ["%1:%2", floor (_s / 60), [str (_s mod 60), "0" + str (_s mod 60)] select ((_s mod 60) < 10)] };
+    private _src = createHashMapFromArray [["file", "Fichier local"], ["url", "Lien web"], ["srv", "Serveur"], ["lib", "Athena"]];
+    private _isCur = _i isEqualTo (_m get "qi") && {(_m get "kind") isNotEqualTo ""};
+    [format ["<t %1>%2. %3</t><br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4%5</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
+        _src getOrDefault [_k, ""], ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
+     [[0.55, 0.6, 0.58, 1], _acc] select _isCur,
+     [[["JOUER", "EN COURS"] select _isCur, !_isCur, !_isCur], ["", _i > 0, false], ["", true, false]]]
+};
 // Section Son et lecteur mis à jour sur place : aucune ligne n'apparaît ni ne disparaît.
 private _sonNow = {
     params [["_sliders", true]];
@@ -48,7 +77,49 @@ private _vizNow = {
     call (uiNamespace getVariable ["COMSPEC_ATAK_PlayerVizModes", {}]);
     call (uiNamespace getVariable ["COMSPEC_ATAK_PlayerVizUpd", {}]);
 };
-private _rerender = { if (!_redraw) exitWith {}; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { if (!_redraw) exitWith {}; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
+// Changement de piste, arrêt ou saut : lecteur et pastille lecture / pause mis à jour sur place (fn_vizPlayer) ; dans
+// les listes (ATHENA, FICHIERS, SERVEUR, LIEN) la piste en cours change de teinte sans redessin (lignes « musicRow… »,
+// fn_formSet "person"). Page LECTEUR : file dépliée : lignes réécrites sur place (_queueNow) ; redessinée seulement si
+// les favoris sont dépliés ou si la file a changé (paramètre vrai) ; elle ne montre sinon aucune ligne de piste.
+private _stateNow = {
+    params [["_queueChanged", false]];
+    if (!_redraw) exitWith {};
+    [] call _vizNow;
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MUSIC") exitWith {};
+    if ((_ui getOrDefault ["tab", "PLAY"]) isEqualTo "PLAY") exitWith {
+        if (_queueChanged || {(_ui getOrDefault ["fold", "son"]) isEqualTo "favs"}) exitWith { call _rerender; };
+        if ((_ui getOrDefault ["fold", "son"]) isEqualTo "queue") then { call _queueNow; };
+    };
+    {
+        _x params ["_rid", "_key", "_i", "_sub"];
+        [_rid, ["rowText", [_key, _i, _sub]] call comspec_atak_native_fnc_musicAction] call comspec_atak_native_fnc_formSet;
+    } forEach (uiNamespace getVariable ["COMSPEC_ATAK_MusicRows", []]);
+};
+// File dépliée, MONTER, RETIRER ou VIDER : les lignes affichées sont réécrites sur place, celles en trop masquées (leurs
+// boutons visent une place, pas un morceau). VIDER LA FILE disparaît sous 2 morceaux ; file vide : la première ligne
+// porte le message, sans image ni boutons. Plus de lignes que la page n'en a dessiné ou que son plafond : redessin.
+private _queueNow = {
+    if (!_redraw) exitWith {};
+    [] call _vizNow;
+    private _q = _m get "queue";
+    private _shown = uiNamespace getVariable ["COMSPEC_ATAK_MusicQShown", 0];
+    private _n = count _q;
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MUSIC") exitWith {};
+    if ((_ui getOrDefault ["tab", "PLAY"]) isNotEqualTo "PLAY") exitWith {};
+    if ((_ui getOrDefault ["fold", "son"]) isNotEqualTo "queue") exitWith { ["musicQueue", format ["%1 morceau(x)", _n]] call comspec_atak_native_fnc_formSet; };
+    if (_n > _shown || {_n >= 40}) exitWith { call _rerender; };
+    ["musicQueue", format ["%1 morceau(x)", _n]] call comspec_atak_native_fnc_formSet;
+    ["musicQClear", _n > 1] call comspec_atak_native_fnc_formSet;
+    for "_i" from 0 to (_shown - 1) do {
+        private _row = switch (true) do {
+            case (_i < _n): { ["qRow", _i] call comspec_atak_native_fnc_musicAction };
+            case (_i isEqualTo 0): { ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>", [0, 0, 0, 0], [["", false, false, false], ["", false, false, false], ["", false, false, false]]] };
+            default { [] };
+        };
+        [format ["musicQ%1", _i], _row] call comspec_atak_native_fnc_formSet;
+    };
+};
 private _start = {
     params ["_i"];
     private _q = _m get "queue";
@@ -73,7 +144,7 @@ private _volTick = {
         uiNamespace setVariable ["COMSPEC_ATAK_MusicVolAt", diag_tickTime];
         [] call comspec_atak_native_fnc_musicTick;
     };
-    [{ [] call comspec_atak_native_fnc_musicTick; }, [], 0.15] call CBA_fnc_waitAndExecute;
+    [{ [] call comspec_atak_native_fnc_musicTick; }, [], 0.15] call comspec_atak_native_fnc_waitAndExec;
 };
 switch (_act) do {
     case "playList": {
@@ -95,19 +166,19 @@ switch (_act) do {
             _i = 0;
         };
         [_i] call _start;
-        call _rerender;
+        [true] call _stateNow;
     };
     case "enqueue": {
         private _q = _m get "queue";
         _q pushBack _arg;
         ["INFO", format ["Ajouté à la file : %1", _arg select 2], 2, 20] call comspec_atak_native_fnc_notify;
         if ((_m get "kind") isEqualTo "" && {call _usable}) then { [(count _q) - 1] call _start; };
-        call _rerender;
+        [true] call _stateNow;
     };
-    case "jump": { if (call _usable) then { [_arg] call _start; call _rerender; }; };
+    case "jump": { if (call _usable) then { [_arg] call _start; [false] call _stateNow; }; };
     case "toggle": {
         if ((_m get "kind") isEqualTo "") exitWith {
-            if ((count (_m get "queue")) > 0 && {call _usable}) then { [_m get "qi"] call _start; call _rerender; };
+            if ((count (_m get "queue")) > 0 && {call _usable}) then { [_m get "qi"] call _start; [false] call _stateNow; };
         };
         if (_m get "paused") then {
             _m set ["start", _now - (_m get "pausedAt")]; _m set ["paused", false];
@@ -120,21 +191,21 @@ switch (_act) do {
     case "stop": {
         _m set ["kind", ""]; _m set ["paused", false]; _m set ["status", ["idle", 0, 0, "", ""]];
         [] call comspec_atak_native_fnc_musicTick;
-        call _rerender;
+        [false] call _stateNow;
     };
     case "next";
     case "prev": {
         private _q = _m get "queue";
         if ((count _q) isEqualTo 0) exitWith {};
         // Précédent après 5 s de lecture : on reprend la piste au début.
-        if (_act isEqualTo "prev" && {(_now - (_m get "start")) > 5} && {!(_m get "paused")}) exitWith { [_m get "qi"] call _start; call _rerender; };
+        if (_act isEqualTo "prev" && {(_now - (_m get "start")) > 5} && {!(_m get "paused")}) exitWith { [_m get "qi"] call _start; [false] call _stateNow; };
         private _wrap = (_m get "repeat") isNotEqualTo "off";
         private _i = (_m get "qi") + ([1, -1] select (_act isEqualTo "prev"));
         if (_i >= (count _q)) then { _i = [-1, 0] select _wrap; };
         if (_act isEqualTo "prev" && {_i < 0}) then { _i = [0, (count _q) - 1] select _wrap; };
         if (_i < 0) exitWith { ["stop"] call comspec_atak_native_fnc_musicAction; };
         [_i] call _start;
-        call _rerender;
+        [false] call _stateNow;
     };
     case "ended": {
         // Fin de piste (appelé par musicTick) : répéter, suivante, ou fin de file.
@@ -148,7 +219,7 @@ switch (_act) do {
             } else { ["stop"] call comspec_atak_native_fnc_musicAction; };
         };
         [_i] call _start;
-        call _rerender;
+        [false] call _stateNow;
     };
     case "vol": {
         private _v = (round (if (_arg isEqualType "") then { parseNumber _arg } else { _arg })) max 0 min 100;
@@ -176,7 +247,9 @@ switch (_act) do {
         _m set ["speaker", !(_m get "speaker")];
         ["INFO", ["Haut-parleur coupé : vous seul entendez", format ["Haut-parleur : audible à %1 m", round (missionNamespace getVariable ["comspec_atak_native_music_range", 30])]] select (_m get "speaker"), 3, 20] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_musicTick;
-        call _sonNow;
+        // Arguments explicites : un « call » nu transmet _this (["speaker", ""]) et _sliders valait "speaker", d'où une
+        // erreur de script dans la file d'image suivante de CBA, rejouée à chaque image.
+        [true] call _sonNow;
     };
     case "hear": { _m set ["hear", !(_m get "hear")]; profileNamespace setVariable ["COMSPEC_ATAK_MusicHear", _m get "hear"]; [] call comspec_atak_native_fnc_musicTick; [false] call _sonNow; };
     case "shuffle": { _m set ["shuffle", !(_m get "shuffle")]; profileNamespace setVariable ["COMSPEC_ATAK_MusicShuffle", _m get "shuffle"]; call _vizNow; };
@@ -253,14 +326,14 @@ switch (_act) do {
             private _p = ((_m get "pausedAt") + _arg) max 0;
             if (_len > 0) then { _p = _p min (_len - 1); };
             _m set ["pausedAt", _p];
-            call _rerender;
+            [false] call _stateNow;
         };
         private _pos = ((_now - (_m get "start")) + _arg) max 0;
         if (_len > 0 && {_pos >= _len - 1}) exitWith { ["next"] call comspec_atak_native_fnc_musicAction; };
         _m set ["start", _now - _pos];
         _m set ["tok", (_m getOrDefault ["tok", 0]) + 1];
         [] call comspec_atak_native_fnc_musicTick;
-        call _rerender;
+        [false] call _stateNow;
     };
     case "seekFrac": {
         // Barre de progression : position visée moins position actuelle, puis le même chemin que « seek ».
@@ -279,7 +352,7 @@ switch (_act) do {
         if (_arg isEqualTo _cur && {_playing}) then {
             if ((count _q) isEqualTo 0) then { ["stop"] call comspec_atak_native_fnc_musicAction; } else { [_cur min ((count _q) - 1)] call _start; };
         };
-        call _rerender;
+        call _queueNow;
     };
     case "qUp": {
         private _q = _m get "queue";
@@ -289,7 +362,7 @@ switch (_act) do {
         _q set [_arg, _a];
         private _cur = _m get "qi";
         if (_cur isEqualTo _arg) then { _m set ["qi", _arg - 1]; } else { if (_cur isEqualTo (_arg - 1)) then { _m set ["qi", _arg]; }; };
-        call _rerender;
+        call _queueNow;
     };
     case "qClear": {
         // Garde la piste en cours, vide le reste.
@@ -297,7 +370,7 @@ switch (_act) do {
         if ((_m get "kind") isNotEqualTo "" && {(_m get "qi") < count _q}) then {
             _m set ["queue", [_q select (_m get "qi")]]; _m set ["qi", 0];
         } else { _m set ["queue", []]; _m set ["qi", 0]; };
-        call _rerender;
+        call _queueNow;
     };
     case "fav": {
         _arg params ["_k", "_r", "_t", ["_len", 0]];
@@ -313,7 +386,20 @@ switch (_act) do {
             ["INFO", format ["Ajouté aux favoris : %1", _t], 2, 20] call comspec_atak_native_fnc_notify;
         };
         profileNamespace setVariable ["COMSPEC_ATAK_MusicFavs", _favs select [0, 100]];
-        call _rerender;
+        // Page LECTEUR (liste des favoris : la ligne disparaît) : rendu nécessaire. Ailleurs : le bouton FAV change sur place.
+        if ((_ui getOrDefault ["tab", ""]) isEqualTo "PLAY") then { call _rerender; } else {
+            private _favOn = _i < 0;
+            private _favTh = [] call comspec_atak_native_fnc_theme;
+            {
+                _x params ["_favRow", "_favKey", "_favIdx"];
+                (((uiNamespace getVariable ["COMSPEC_ATAK_MusicLists", createHashMap]) getOrDefault [_favKey, []]) param [_favIdx, []]) params [["_favK", ""], ["_favR", ""]];
+                if (_favK isEqualTo _k && {_favR isEqualTo _r}) then {
+                    private _favB = (((uiNamespace getVariable ["COMSPEC_ATAK_FormIds", createHashMap]) getOrDefault [_favRow, createHashMap]) getOrDefault ["btns", []]) param [2, controlNull];
+                    _favB ctrlSetBackgroundColor ([_favTh get "surface2", _favTh get "accent"] select _favOn);
+                    _favB ctrlSetTextColor ([_favTh get "text", _favTh get "onAccent"] select _favOn);
+                };
+            } forEach (uiNamespace getVariable ["COMSPEC_ATAK_MusicRows", []]);
+        };
     };
     case "ath": {
         _ui set ["ath", _arg];

@@ -7,7 +7,7 @@
 params [["_a", ""], ["_v", ""]];
 private _draft = uiNamespace getVariable ["COMSPEC_ATAK_TocDraft", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_TocDraft", _draft];
-private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "TOC") then { ["TOC"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "TOC") then { ["TOC"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _keep = {
     private _f = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
     if (!isNull (_f getOrDefault ["tocMsg", controlNull])) then { _draft set ["msg", ["tocMsg"] call comspec_atak_native_fnc_formValue]; };
@@ -45,7 +45,7 @@ switch (_a) do {
         _od set ["target", ["all||Tous", format ["group|%1|%1", _v]] select (_v isNotEqualTo "")];
         uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", _od];
         ["TASK"] call comspec_atak_native_fnc_navigate;
-        [{ ["open"] call comspec_atak_native_fnc_orderAction; }] call CBA_fnc_execNextFrame;
+        [{ ["open"] call comspec_atak_native_fnc_orderAction; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "sms": {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];

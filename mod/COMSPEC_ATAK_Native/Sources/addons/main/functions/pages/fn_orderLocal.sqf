@@ -93,7 +93,7 @@ switch (_act) do {
             if !(_pg in ["TASK", "TOC"]) exitWith {};
             // Rédacteur d'ordre ouvert : la saisie en cours est gardée par fn_pageRender avant le redessin.
             [_pg] call comspec_atak_native_fnc_pageRender;
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     default { false };

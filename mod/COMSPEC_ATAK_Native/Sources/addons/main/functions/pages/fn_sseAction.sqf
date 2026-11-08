@@ -14,7 +14,7 @@ private _target = {
     if (isNull _c || {!(_c isKindOf "CAManBase")} || {_c isEqualTo player} || {(player distance _c) > 6}) exitWith { objNull };
     _c
 };
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "SSE") then { ["SSE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "SSE") then { ["SSE"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 if (_act isEqualTo "") exitWith { call _target };
 // Dossier partagé : tenu par COMSPEC Link (addon connect). ATAK seul : message au lieu d'une erreur de script.
 if (_act in ["case", "clear"] && {isNil "comspec_overwatch_connect_fnc_sseActiveCase"}) exitWith {
@@ -59,7 +59,7 @@ switch (_act) do {
         _ui set ["view", ""];
         uiNamespace setVariable ["COMSPEC_ATAK_FrsUi", _ui];
         ["INFO", format ["Fiche %1%2%3", _kind, ["", format [" · dossier %1", _case]] select (_case isNotEqualTo ""), ["", " (brouillon en cours gardé)"] select _keep], 3, 20] call comspec_atak_native_fnc_notify;
-        [{ ["FRS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["FRS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "face": {
         private _t = call _target;
@@ -76,17 +76,17 @@ switch (_act) do {
             [_t] call comspec_overwatch_connect_fnc_sseCaptureFacePhoto;
             [{ !(missionNamespace getVariable ["COMSPEC_SsePerson_PhotoBusy", false]) }, {
                 [] call comspec_atak_native_fnc_open;
-                [{ ["SSE"] call comspec_atak_native_fnc_navigate; }, [], 0.1] call CBA_fnc_waitAndExecute;
+                [{ ["SSE"] call comspec_atak_native_fnc_navigate; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec;
             }, [], 5, {
                 [] call comspec_atak_native_fnc_open;
             }] call CBA_fnc_waitUntilAndExecute;
-        }, [_t], 0.15] call CBA_fnc_waitAndExecute;
+        }, [_t], 0.15] call comspec_atak_native_fnc_waitAndExec;
     };
     case "open": {
         private _t = call _target;
         // Le terminal SEEK est un écran à part : on range l'ATAK pour lui laisser la souris.
         [] call comspec_atak_native_fnc_close;
-        [{ _this call comspec_overwatch_connect_fnc_sseOpenTerminal; }, [_t, _arg], 0.1] call CBA_fnc_waitAndExecute;
+        [{ _this call comspec_overwatch_connect_fnc_sseOpenTerminal; }, [_t, _arg], 0.1] call comspec_atak_native_fnc_waitAndExec;
     };
 };
 true

@@ -10,7 +10,7 @@ private _f = uiNamespace getVariable ["COMSPEC_ATAK_BdaForm", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_BdaForm", _f];
 private _list = missionNamespace getVariable ["COMSPEC_ATAK_BdaList", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_BdaList", _list];
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BDA") then { ["BDA"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BDA") then { ["BDA"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _save = { { _f set [_x, [_x, _f getOrDefault [_x, ""]] call comspec_atak_native_fnc_formValue]; } forEach ["ekia", "equip", "ammo", "grid", "rem"]; };
 switch (_act) do {
     case "set": { call _save; _f set [_arg, _val]; call _rerender; };
@@ -62,7 +62,7 @@ switch (_act) do {
         private _p = (_list getOrDefault [_arg, createHashMap]) getOrDefault ["pos", []];
         if ((count _p) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     case "del": { _list deleteAt _arg; call _rerender; };
 };

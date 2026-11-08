@@ -40,7 +40,7 @@ private _active = { ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashM
 private _rerender = { [{
     if ((uiNamespace getVariable ["COMSPEC_ATAK_ZnDrawnAt", -1]) isEqualTo diag_frameNo) exitWith {};
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ZONES") then { ["ZONES"] call comspec_atak_native_fnc_pageRender; };
-}] call CBA_fnc_execNextFrame; };
+}] call comspec_atak_native_fnc_nextFrame; };
 private _refresh = { ["#refresh"] call comspec_atak_native_fnc_pageZones; };
 private _ui1 = { params ["_op", ["_v", ""]]; compile format ["['#ui', [%1, %2]] call comspec_atak_native_fnc_pageZones;", str _op, str _v] };
 // Bandeau « … · ANNULER » (8 s) : [texte, opération d'annulation, valeur].
@@ -54,7 +54,7 @@ private _bar = {
             _u set ["undoBar", []];
             if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ZONES") then { ["#refresh"] call comspec_atak_native_fnc_pageZones; };
         };
-    }, _at, 8] call CBA_fnc_waitAndExecute;
+    }, _at, 8] call comspec_atak_native_fnc_waitAndExec;
 };
 // Fin d'un tracé de polygone : zone de travail, ou contour / trait du plan.
 private _finish = {
@@ -99,11 +99,11 @@ if (_page isEqualTo "#key") exitWith {
     if (!isNull _f && {(ctrlType _f) isEqualTo 2}) exitWith {
         // Entrée dans le champ « Effectif » de la fiche : signalement envoyé.
         if (_key in [28, 156] && {_f isEqualTo ((uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["znSize", controlNull])}) exitWith {
-            [{ ["#ui", ["report", ""]] call comspec_atak_native_fnc_pageZones; }] call CBA_fnc_execNextFrame; true
+            [{ ["#ui", ["report", ""]] call comspec_atak_native_fnc_pageZones; }] call comspec_atak_native_fnc_nextFrame; true
         };
         false
     };
-    private _later = { [{ ["#ui", _this] call comspec_atak_native_fnc_pageZones; }, _this] call CBA_fnc_execNextFrame; true };
+    private _later = { [{ ["#ui", _this] call comspec_atak_native_fnc_pageZones; }, _this] call comspec_atak_native_fnc_nextFrame; true };
     switch (true) do {
         case (_ctrl && {_key in [0x2C, 0x11]} && {!_shift}): { ["undo"] call _later };
         case (_ctrl && {_key isEqualTo 0x15 || {_shift && {_key in [0x2C, 0x11]}}}): { ["redo"] call _later };
@@ -370,12 +370,12 @@ if (_page isEqualTo "#ui") exitWith {
             ["sit", [_id, _ui get "zid", _v, [["znNat", "UNK"] call _form, ["znSize", ""] call _form, ["znTxt", ""] call _form, _p]]] call _ZA;
             { (_ui get "draft") deleteAt _x; } forEach ["znSize", "znTxt"];
             _ui set ["repPos", []];
-            { private _c = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault [_x, controlNull]; if (!isNull _c) then { _c ctrlSetText ""; }; } forEach ["znSize", "znTxt"];
+            { private _c = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault [_x, controlNull]; if (!isNull _c) then { _c ctrlSetText (("") call comspec_atak_native_fnc_tr); }; } forEach ["znSize", "znTxt"];
             [("Signalement enregistré") call _tr, 2] call comspec_atak_native_fnc_toast;
             call _refresh;
         };
         case "repClear": {
-            { (_ui get "draft") deleteAt _x; private _c = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault [_x, controlNull]; if (!isNull _c) then { _c ctrlSetText ""; }; } forEach ["znSize", "znTxt"];
+            { (_ui get "draft") deleteAt _x; private _c = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault [_x, controlNull]; if (!isNull _c) then { _c ctrlSetText (("") call comspec_atak_native_fnc_tr); }; } forEach ["znSize", "znTxt"];
             _ui set ["repPos", []];
             call _refresh;
         };
@@ -401,7 +401,7 @@ if (_page isEqualTo "#ui") exitWith {
             if ((count _z) isEqualTo 0) exitWith {};
             ["MAP"] call comspec_atak_native_fnc_navigate;
             (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["mapFollow", false];
-            [{ [[(_this select 0), (_this select 1), 0]] call comspec_atak_native_fnc_mapCenter; }, _z select 3, 0.3] call CBA_fnc_waitAndExecute;
+            [{ [[(_this select 0), (_this select 1), 0]] call comspec_atak_native_fnc_mapCenter; }, _z select 3, 0.3] call comspec_atak_native_fnc_waitAndExec;
         };
         case "zoneField": { _v params ["_k", "_fk"]; ["zoneSet", [_id, _ui get "zid", _k, [_fk, ""] call _form]] call _ZA; (_ui get "draft") deleteAt _fk; };
         case "zoneSet": { _v params ["_k", "_val"]; ["zoneSet", [_id, _ui get "zid", _k, _val]] call _ZA; playSound "ClickSoft"; };
@@ -462,10 +462,10 @@ private _panelRows = {
     };
     (_ui get "undoBar") params [["_ubT", ""], ["_ubOp", ""], ["_ubV", ""], ["_ubAt", -1]];
     if (_ubT isNotEqualTo "" && {(diag_tickTime - _ubAt) < 8}) then {
-        _rows pushBack ["person", "", format ["<t color='#f2ab33'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1], "!"];
+        _rows pushBack ["person", "", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1], "!"];
     };
     if (!_mineB) then {
-        _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t>", format [("Plan reçu de %1 (%2) : vous pouvez donner l'état des zones et signaler ; le découpage appartient à son auteur.") call _tr, [_b get "from"] call _esc, ["scopeName", _b get "scope"] call _ZA]], [0.10, 0.09, 0.05, 1]];
+        _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", format [("Plan reçu de %1 (%2) : vous pouvez donner l'état des zones et signaler ; le découpage appartient à son auteur.") call _tr, [_b get "from"] call _esc, ["scopeName", _b get "scope"] call _ZA]], [0.10, 0.09, 0.05, 1]];
     };
     // Fiche d'une zone.
     if ((_ui get "panel") isEqualTo "ZONE" && {(count _zone) > 0}) exitWith {
@@ -473,8 +473,8 @@ private _panelRows = {
         private _sr = ["state", _zst] call _ZA;
         private _scol = (_pal get "state") getOrDefault [_zst, _sr select 4];
         _rows pushBack ["buttons", [["◀ RETOUR", ["panel", "TAB"] call _ui1], ["CITER", ["cite"] call _ui1, false, true, "Copie « B-04 (OBJ BRAVO) grille · état » et l'ouvre dans Messages"], ["APP CARTE", ["showMap"] call _ui1, false, true, "Montre la zone sur l'app Carte"]]];
-        _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' size='1.15'>%1</t>  <t color='#a9b6b0'>%2</t><br/><t color='%3'>%4</t>%5",
-            [_zn] call _esc, [_b get "name"] call _esc, [_scol] call _hex, (_sr select 1) call _tr, ["", format [" <t color='#a9b6b0'>· %1 · %2</t>", [_zby] call _esc, [_zstamp] call _ago]] select (_zby isNotEqualTo "")], [], _scol, (_zn select [0, 3])];
+        _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' size='1.15'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2</t><br/><t color='%3'>%4</t>%5",
+            [_zn] call _esc, [_b get "name"] call _esc, [_scol] call _hex, (_sr select 1) call _tr, ["", format [" <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>· %1 · %2</t>", [_zby] call _esc, [_zstamp] call _ago]] select (_zby isNotEqualTo "")], [], _scol, (_zn select [0, 3])];
         _rows pushBack ["info", "Grille", [[_lp select 0, _lp select 1, 0], 8] call comspec_atak_native_fnc_gridRef];
         _rows pushBack ["info", "Type", ((["type", _zt] call _ZA) select 1) call _tr];
         _rows pushBack ["info", "Surface", format ["%1 m²", round (abs (["area", [_zp]] call comspec_atak_native_fnc_zoneGeom))]];
@@ -488,10 +488,10 @@ private _panelRows = {
         _rows pushBack ["section", format [("Signalements (%1)") call _tr, count _zreps], ""];
         private _rl = _zreps apply { [_x select 1, _x] };
         _rl sort false;
-        if ((count _rl) isEqualTo 0) then { _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", ("Aucun signalement dans cette zone.") call _tr]]; };
+        if ((count _rl) isEqualTo 0) then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Aucun signalement dans cette zone.") call _tr]]; };
         {
             (_x select 1) params ["", "_t", "_hh", "_who", "_nat", "_size", "_txt"];
-            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='#f2ab33'>%1</t>  %2%3%4<br/><t color='#a9b6b0' size='0.9'>%5 · %6</t>",
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>  %2%3%4<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "' size='0.9'>%5 · %6</t>",
                 _hh, ["natureName", _nat] call _ZA, ["", " · " + ([_size] call _esc)] select (_size isNotEqualTo ""), ["", "<br/>" + ([_txt] call _esc)] select (_txt isNotEqualTo ""), [_who] call _esc, [_t] call _ago], [0.06, 0.075, 0.07, 1]];
         } forEach _rl;
         if (_mineB) then {
@@ -529,7 +529,7 @@ private _panelRows = {
     };
     switch (_ui get "ztab") do {
         case "CUT": {
-            if (!_mineB) exitWith { _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", ("Le découpage appartient à l'auteur du plan.") call _tr]]; };
+            if (!_mineB) exitWith { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Le découpage appartient à l'auteur du plan.") call _tr]]; };
             private _cut = _gp getOrDefault ["cut", "GRID"];
             _rows pushBack ["section", "Découpage", [("Nommer et numéroter les zones") call _tr, format [("%1 zone(s)") call _tr, count _zs]] select ((count _zs) > 0)];
             _rows pushBack ["segment", "Méthode", [
@@ -555,7 +555,7 @@ private _panelRows = {
                 };
                 case "LINES": {
                     private _nl = count (_b getOrDefault ["lines", []]);
-                    _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#a9b6b0", "#f2ab33"] select (_nl isEqualTo 0), [format [("%1 trait(s) ou contour(s) découperont la zone de travail.") call _tr, _nl], ("Aucun trait : outil POLYGONE, OUVERT (TRAIT), tracez à travers la zone de travail.") call _tr] select (_nl isEqualTo 0)]];
+                    _rows pushBack ["text", format ["<t color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexTextDim"), (COMSPEC_ATAK_Th get "hexWarn")] select (_nl isEqualTo 0), [format [("%1 trait(s) ou contour(s) découperont la zone de travail.") call _tr, _nl], ("Aucun trait : outil POLYGONE, OUVERT (TRAIT), tracez à travers la zone de travail.") call _tr] select (_nl isEqualTo 0)]];
                     private _ma = _gp getOrDefault ["minA", 2500];
                     _rows pushBack ["segment", "Surface minimale d'une zone", [1000, 2500, 5000, 10000] apply { [format ["%1 M²", _x], ["gp", ["minA", _x]] call _ui1, _x isEqualTo _ma] }];
                 };
@@ -580,7 +580,7 @@ private _panelRows = {
             _rows pushBack ["field", "znPre", "Préfixe des noms (B : B-01, B-C4 ; vide : aucun)", _draft getOrDefault ["znPre", _gp getOrDefault ["prefix", ""]], "OK", ["gpField", ["prefix", "znPre"]] call _ui1, false];
             // Aperçu (traits fins sur la carte, avant GÉNÉRER).
             if ((count (_b get "area")) isEqualTo 0) then {
-                _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t>", ("Tracez d'abord la zone de travail (onglet TRACER ou barre d'outils de la carte).") call _tr]];
+                _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", ("Tracez d'abord la zone de travail (onglet TRACER ou barre d'outils de la carte).") call _tr]];
             } else {
                 if (_cut in ["GRID", "RADIAL", "SINGLE"]) then {
                     private _np = count (["preview", _b] call _ZA);
@@ -589,7 +589,7 @@ private _panelRows = {
             };
             if (_busy isNotEqualTo "") then {
                 _rows pushBack ["buttons", [["ANNULER LE CALCUL", ["genCancel"] call _ui1, "red", true, "Le calcul en cours est jeté : rien ne change"]]];
-                _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t>", [("Recherche des axes…") call _tr, ("Découpage en cours…") call _tr] select (_busy isEqualTo "GEN")]];
+                _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", [("Recherche des axes…") call _tr, ("Découpage en cours…") call _tr] select (_busy isEqualTo "GEN")]];
             } else {
                 private _confirm = (_ui get "confirm") isEqualTo "gen";
                 _rows pushBack ["buttons", [[[["GÉNÉRER LES ZONES", "REMPLACER LES ZONES"] select ((count _zs) > 0), "CONFIRMER : LES ZONES ACTUELLES SONT REMPLACÉES"] select _confirm, ["gen"] call _ui1, [true, "red"] select _confirm, true, "Calcul en arrière-plan ; ANNULER ensuite revient à l'ancien découpage"]]];
@@ -604,7 +604,7 @@ private _panelRows = {
                 _x params ["_aid", "_an", "_cls", "", "_len"];
                 private _ncp = { (_x select 3) isEqualTo _an } count (_b get "cps");
                 _rows pushBack ["person", "\a3\ui_f\data\igui\cfg\simpletasks\types\car_ca.paa",
-                    format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#a9b6b0'>%2 · %3</t>", [_an] call _esc, [_len] call _fmt, format [("%1 CP") call _tr, _ncp]],
+                    format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2 · %3</t>", [_an] call _esc, [_len] call _fmt, format [("%1 CP") call _tr, _ncp]],
                     [["ROUTE", ["axisRoute", _aid] call _ui1, true, true, "Crée cette route dans l'app Routes (véhicule, par les routes, CP en étapes)"], ["X", ["axisDel", _aid] call _ui1, false, true, "Retirer l'axe (ANNULER ensuite)"]],
                     [[0.35, 0.85, 0.40, 1], [0.30, 0.58, 1, 1]] select (_cls isEqualTo "MSR")];
             } forEach _ax;
@@ -632,7 +632,7 @@ private _panelRows = {
                     _x params ["_aid", "_an", "_cls", "", "_len"];
                     private _btnA = [];
                     if (_mil) then { _btnA pushBack [("ABRÉV. ›") call _tr, ["abbr", ["axis", _aid]] call _ui1, false, true, "Abréviation suivante : MSR, ASR, ROUTE, PL, LD, LOA, FSCL, CFL"]; };
-                    _rows pushBack ["person", "\a3\ui_f\data\igui\cfg\simpletasks\types\car_ca.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#a9b6b0'>%2</t>", [_an] call _esc, [_len] call _fmt], _btnA,
+                    _rows pushBack ["person", "\a3\ui_f\data\igui\cfg\simpletasks\types\car_ca.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2</t>", [_an] call _esc, [_len] call _fmt], _btnA,
                         [[0.35, 0.85, 0.40, 1], [0.30, 0.58, 1, 1]] select (_cls isEqualTo "MSR")];
                     _rows pushBack ["field", "znAx_" + _aid, "Renommer l'axe", _draft getOrDefault ["znAx_" + _aid, _an], "RENOMMER", ["axisName", _aid] call _ui1, false];
                 } forEach _axN;
@@ -651,7 +651,7 @@ private _panelRows = {
             private _list = [];
             { if (_fd isEqualTo "" || {((toLower (_x select 1)) find _fd) >= 0}) then { _list pushBack [[_forEachIndex, toLower (_x select 1), _order find (_x select 6)] select (["NUM", "NAME", "STATE"] find _so), _forEachIndex, _x]; }; } forEach _zs;
             _list sort true;
-            if ((count _list) isEqualTo 0) then { _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", [("Aucune zone de ce nom.") call _tr, ("Aucune zone : onglet DÉCOUPER, GÉNÉRER.") call _tr] select ((count _zs) isEqualTo 0)]]; };
+            if ((count _list) isEqualTo 0) then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", [("Aucune zone de ce nom.") call _tr, ("Aucune zone : onglet DÉCOUPER, GÉNÉRER.") call _tr] select ((count _zs) isEqualTo 0)]]; };
             {
                 (_x select 2) params ["_zid", "_zn", "", "", "_zt", "", "_zst", "", "", "_zreps", "_zb"];
                 private _sr = ["state", _zst] call _ZA;
@@ -659,11 +659,11 @@ private _panelRows = {
                 private _extra = [((["type", _zt] call _ZA) select 1) call _tr];
                 if ((count _zreps) > 0) then { _extra pushBack format [("%1 signalement(s)") call _tr, count _zreps]; };
                 if ((count _zb) > 0) then { _extra pushBack format [("%1 bâtiment(s)") call _tr, count _zb]; };
-                _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='%3'>%4</t><br/><t color='#a9b6b0'>%5</t>",
-                    ["#e6ece8", "#5cc76b"] select (_zid isEqualTo (_ui get "zid")), [_zn] call _esc, [_sc] call _hex, (_sr select 1) call _tr, _extra joinString " · "],
+                _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='%3'>%4</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%5</t>",
+                    ["#e6ece8", (COMSPEC_ATAK_Th get "hexOk")] select (_zid isEqualTo (_ui get "zid")), [_zn] call _esc, [_sc] call _hex, (_sr select 1) call _tr, _extra joinString " · "],
                     [["FICHE", ["zone", _zid] call _ui1, false, true, "État, signalements, bâtiments"]], _sc, (_zn select [0, 3])];
             } forEach (_list select [0, 120]);
-            if ((count _list) > 120) then { _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", format [("… et %1 autres : cherchez-les par leur nom") call _tr, (count _list) - 120]]]; };
+            if ((count _list) > 120) then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", format [("… et %1 autres : cherchez-les par leur nom") call _tr, (count _list) - 120]]]; };
         };
         case "STYLE": {
             private _st = _b getOrDefault ["st", createHashMap];
@@ -714,7 +714,7 @@ private _panelRows = {
                 _rows pushBack ["segment", "Trait", [["", "PLAN"], ["SOLID", "PLEIN"], ["DASH", "TIRETS"], ["DOT", "POINTILLÉ"]] apply { [_x select 1, ["zstyle", [3, _x select 0]] call _ui1, (_zsty param [3, ""]) isEqualTo (_x select 0)] }];
                 _rows pushBack ["buttons", [["À TOUTES LES ZONES DE CE TYPE", ["zstyle", [-1, "TYPE"]] call _ui1, false, true, "Le style de cette zone va à toutes les zones du même type"], ["STYLE DU PLAN", ["zstyle", [-1, "RESET"]] call _ui1, false, true, "Cette zone reprend le style du plan"]]];
             } else {
-                _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", ("Cliquez une zone sur la carte pour lui donner son propre style.") call _tr]];
+                _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Cliquez une zone sur la carte pour lui donner son propre style.") call _tr]];
             };
         };
         case "SIT": {
@@ -724,7 +724,7 @@ private _panelRows = {
                 _rows pushBack ["lineseg", "", "État", [_zid, _zst] call _stateSeg, "Un clic : l'état part dans 5 s (ANNULER entre-temps)"];
                 _rows pushBack ["buttons", [["FICHE / SIGNALER", ["zone", _zid] call _ui1, true], ["PLUS DE ZONE CHOISIE", ["zoneSel", _zid] call _ui1]]];
             } else {
-                _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", ("Cliquez une zone sur la carte : son état en un clic.") call _tr]];
+                _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Cliquez une zone sur la carte : son état en un clic.") call _tr]];
             };
             private _cnt = createHashMap;
             { _cnt set [_x select 6, (_cnt getOrDefault [_x select 6, 0]) + 1]; } forEach _zs;
@@ -751,7 +751,7 @@ private _panelRows = {
         };
         default {
             // TRACER : zone de travail, polygone (aimanté, fermé / ouvert), contours et traits.
-            if (!_mineB) exitWith { _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", ("Le tracé appartient à l'auteur du plan.") call _tr]]; };
+            if (!_mineB) exitWith { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Le tracé appartient à l'auteur du plan.") call _tr]]; };
             (["areaPoly", _b] call _ZA) params ["_ap", "_ak", "_ac", "_ar"];
             private _aTxt = switch (_ak) do {
                 case "RECT": { (["bbox", [_ap]] call comspec_atak_native_fnc_zoneGeom) params ["_x0", "_y0", "_x1", "_y1"]; format [("rectangle %1 x %2") call _tr, [_x1 - _x0] call _fmt, [_y1 - _y0] call _fmt] };
@@ -775,12 +775,12 @@ private _panelRows = {
             // Contours et traits.
             private _ls = _b getOrDefault ["lines", []];
             _rows pushBack ["section", format [("Contours et traits (%1)") call _tr, count _ls], ("Clic sur un trait de la carte : le choisir") call _tr];
-            if ((count _ls) isEqualTo 0) then { _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", ("Aucun : outil POLYGONE, puis UN DESSIN DU PLAN ou OUVERT (TRAIT).") call _tr]]; };
+            if ((count _ls) isEqualTo 0) then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Aucun : outil POLYGONE, puis UN DESSIN DU PLAN ou OUVERT (TRAIT).") call _tr]]; };
             {
                 _x params ["_lid", "_ln", "_lp", "_closed", ["_lsty", []]];
                 private _isL = _lid isEqualTo (_ui get "lid");
                 private _lc = if ((_lsty param [0, ""]) isNotEqualTo "") then { ["rgba", _lsty select 0] call comspec_atak_native_fnc_routeAction } else { (_pal get "type") getOrDefault [_b get "aff", [1, 1, 1, 1]] };
-                _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='#a9b6b0'>%3 · %4</t>", ["#e6ece8", "#5cc76b"] select _isL, [_ln] call _esc, [("trait ouvert") call _tr, ("contour fermé") call _tr] select _closed, format [("%1 sommet(s)") call _tr, count _lp]],
+                _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%3 · %4</t>", ["#e6ece8", (COMSPEC_ATAK_Th get "hexOk")] select _isL, [_ln] call _esc, [("trait ouvert") call _tr, ("contour fermé") call _tr] select _closed, format [("%1 sommet(s)") call _tr, count _lp]],
                     [[["CHOISIR", "CHOISI"] select _isL, ["line", _lid] call _ui1, _isL, true, "Montre ses sommets : clic sur un sommet puis sur la carte pour le déplacer, Suppr pour le retirer"]], _lc, ["/", "#"] select _closed];
                 if (_isL) then {
                     _rows pushBack ["field", "znLName", "Nom", _draft getOrDefault ["znLName", _ln], "RENOMMER", ["lineSet", ["name"]] call _ui1, false];
@@ -829,9 +829,9 @@ private _panel = {
         _bt ctrlSetBackgroundColor ([[0.12, 0.145, 0.13, 0.96], [0.36, 0.78, 0.42, 0.95]] select _on);
         _bt ctrlSetTextColor ([[0.92, 0.96, 0.93, 1], [0.03, 0.05, 0.04, 1]] select _on);
         if (_red) then { _bt ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _bt ctrlSetTextColor [1, 1, 1, 1]; };
-        if (_tip isNotEqualTo "") then { _bt ctrlSetTooltip ((_tip) call _tr); };
+        if (_tip isNotEqualTo "") then { _bt ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr); };
         _bt setVariable ["comspec_click", _code];
-        _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+        _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call comspec_atak_native_fnc_nextFrame; }];
         _list pushBack _bt;
         _bt
     };
@@ -847,7 +847,7 @@ private _panel = {
     if (_pz) then {
         private _ay = _ry + _rh - _abH;
         private _bgA = ["COMSPEC_RscText", [_rx, _ay, _rw, _abH]] call comspec_atak_native_fnc_pageCtrl;
-        _bgA ctrlSetBackgroundColor [0.05, 0.065, 0.058, 1];
+        _bgA ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "surface");
         _list pushBack _bgA;
         private _w3 = (_rw - _pad * 2) / 3;
         [[_rx + _pad * 0.5, _ay + _abH * 0.15, _w3 * 1.25, _abH * 0.7], "SIGNALER UN ENNEMI", ["report", "ENY"] call _ui1, false, "La zone passe « ennemi signalé » avec ce signalement (part tout de suite)", true, true] call _mkBtn;
@@ -864,7 +864,7 @@ private _panel = {
     private _sv = (_ui get "scroll") getOrDefault [_nk, 0];
     if (_sv > 0) then {
         _ng ctrlSetScrollValues [_sv, -1];
-        [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_ng, _sv]] call CBA_fnc_execNextFrame;
+        [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_ng, _sv]] call comspec_atak_native_fnc_nextFrame;
     };
     // Barre d'outils de la carte (absolue, devant la carte) : sélection, rectangle, polygone, cercle, annuler, rétablir.
     _mr params ["_mx", "_my", "_mw", "_mh"];
@@ -884,9 +884,9 @@ private _panel = {
             _pic ctrlSetTextColor ([[0.92, 0.96, 0.93, 1], [0.03, 0.05, 0.04, 1]] select _on);
             _list pushBack _pic;
             private _ov = ["COMSPEC_RscButtonOverlay", [_mx + _pad * 0.5, _y, _iw, _ih], "", false] call comspec_atak_native_fnc_pageCtrl;
-            _ov ctrlSetTooltip ((_tip) call _tr);
+            _ov ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr);
             _ov setVariable ["comspec_click", switch (_k) do { case "#UNDO": { ["undo"] call _ui1 }; case "#REDO": { ["redo"] call _ui1 }; default { ["tool", _k] call _ui1 }; }];
-            _ov ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+            _ov ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call comspec_atak_native_fnc_nextFrame; }];
             _list pushBack _ov;
         } forEach [
             ["", "\z\comspec_atak_native\addons\main\data\ui_hand.paa", "Sélection : clic sur une zone ou un trait ; Suppr le supprime"],
@@ -934,7 +934,7 @@ private _panel = {
     private _nb = [0, 2] select (_tool isNotEqualTo "" || _next);
     private _bwB = (_ow * 0.18) max (_font * 4);
     private _bgH = ["COMSPEC_RscText", [_x0, _hy, _ow, _hh], "", false] call comspec_atak_native_fnc_pageCtrl;
-    _bgH ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.82];
+    _bgH ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "bg0") select [0, 3]) + [0.82]);
     _list pushBack _bgH;
     private _ht = ["COMSPEC_RscStructuredText", [_x0 + _pad * 0.3, _hy + _hh * 0.12, _ow - _nb * (_bwB + _pad * 0.3) - _pad * 0.4, _hh * 0.9], "", false] call comspec_atak_native_fnc_pageCtrl;
     _ht ctrlSetStructuredText parseText format ["<t size='0.82'>%1</t>", _help]; // i18n:brut
@@ -982,9 +982,9 @@ switch (_view) do {
             _bt ctrlSetFontHeight ((_fs * 0.95) max COMSPEC_ATAK_FontMin);
             if ((ctrlTextWidth _bt) > (_rect select 2) * 0.92) then { _bt ctrlSetFontHeight (((_fs * 0.95) * (_rect select 2) * 0.92 / (ctrlTextWidth _bt)) max COMSPEC_ATAK_FontMin); };
             if (_on) then { _bt ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _bt ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-            if (_tip isNotEqualTo "") then { _bt ctrlSetTooltip ((_tip) call _tr); };
+            if (_tip isNotEqualTo "") then { _bt ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr); };
             _bt setVariable ["comspec_click", _code];
-            _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+            _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call comspec_atak_native_fnc_nextFrame; }];
             _bt
         };
         // Barre du haut : retour, nom du plan, GÉNÉRER et PARTAGER en évidence.
@@ -992,7 +992,7 @@ switch (_view) do {
         [[_pad, _pad / 2, _bw4 * 0.7, _rowH], "◀ PLANS", ["view", "LIST"] call _ui1, false, "Retour à la liste (valide le plan)"] call _btn;
         private _sc = _b get "scope";
         private _tt = ["COMSPEC_RscStructuredText", [_pad + _bw4 * 0.75, _pad / 2, _bw4 * 1.55, _rowH]] call comspec_atak_native_fnc_pageCtrl;
-        _tt ctrlSetStructuredText parseText (format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t><br/><t size='0.85' color='#a9b6b0'>%2 · %3</t>", [_b get "name"] call _esc,
+        _tt ctrlSetStructuredText parseText (format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t><br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2 · %3</t>", [_b get "name"] call _esc,
             format [("%1 zone(s) · %2 axe(s)") call _tr, count (_b get "zones"), count (_b get "axes")], [("privé") call _tr, (["scopeName", _sc] call _ZA)] select (_sc > 0)]); // i18n:brut
         if (_mineB) then {
             [[_pad + _bw4 * 2.35, _pad / 2, _bw4 * 0.8, _rowH], "GÉNÉRER", compile "['#ui', ['ztab', 'CUT']] call comspec_atak_native_fnc_pageZones; ['#ui', ['gen']] call comspec_atak_native_fnc_pageZones;", true, "Découpe la zone de travail (onglet DÉCOUPER)"] call _btn;
@@ -1047,7 +1047,7 @@ switch (_view) do {
         ]];
         (_ui get "undoBar") params [["_ubT", ""], ["_ubOp", ""], ["_ubV", ""], ["_ubAt", -1]];
         if (_ubT isNotEqualTo "" && {(diag_tickTime - _ubAt) < 8}) then {
-            _rows pushBack ["person", "", format ["<t color='#f2ab33'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1], "!"];
+            _rows pushBack ["person", "", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1], "!"];
         };
         _rows pushBack ["switch", "Zones sur la carte ATAK", profileNamespace getVariable ["COMSPEC_ATAK_ZonesShow", true], ["show"] call _ui1, "Bascule de tous les plans sur la carte de l'app Carte", false, "znShow"];
         _rows pushBack ["buttons", [["+ NOUVEAU PLAN", ["new"] call _ui1, true], ["SIGNALER ICI", ["here"] call _ui1, false, true, "Ouvre la zone sous ma position pour signaler"]]];
@@ -1090,18 +1090,18 @@ switch (_view) do {
                 {
                     _x params ["_t", "", "_bb", "_z"];
                     private _sr = ["state", _z select 6] call _ZA;
-                    _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='#a9b6b0'>%3</t><br/>%4%5",
+                    _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%3</t><br/>%4%5",
                         [_sr select 4] call _hex, [_z select 1] call _esc, [_bb get "name"] call _esc, (_sr select 1) call _tr, ["", format [" · %1 · %2", [_z select 8] call _esc, [_t] call _ago]] select ((_z select 8) isNotEqualTo "")],
                         [["OUVRIR", ["openZone", [_bb get "id", _z select 0]] call _ui1, true]], _sr select 4, ((_z select 1) select [0, 2])];
                 } forEach (_hot select [0, 20]);
             };
             _reps sort false;
             _rows pushBack ["section", "Derniers signalements", ["", format [("%1 au total") call _tr, count _reps]] select ((count _reps) > 0)];
-            if ((count _reps) isEqualTo 0) then { _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", ("Aucun signalement : donnez l'état d'une zone ou signalez depuis sa fiche.") call _tr]]; };
+            if ((count _reps) isEqualTo 0) then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Aucun signalement : donnez l'état d'une zone ou signalez depuis sa fiche.") call _tr]]; };
             {
                 _x params ["_t", "", "_bb", "_z", "_r"];
                 _r params ["", "", "_hh", "_who", "_nat", "_size", "_txt"];
-                _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' color='#f2ab33'>%1</t>  <t font='COMSPEC_BarlowBold'>%2</t> <t color='#a9b6b0'>(%3)</t><br/>%4%5%6 · <t color='#a9b6b0'>%7</t>",
+                _rows pushBack ["person", "", format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>  <t font='COMSPEC_BarlowBold'>%2</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>(%3)</t><br/>%4%5%6 · <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%7</t>",
                     _hh, [_z select 1] call _esc, [_bb get "name"] call _esc, ["natureName", _nat] call _ZA, ["", " · " + ([_size] call _esc)] select (_size isNotEqualTo ""), ["", " · " + ([_txt select [0, 60]] call _esc)] select (_txt isNotEqualTo ""), [_who] call _esc],
                     [["VOIR", ["openZone", [_bb get "id", _z select 0]] call _ui1]], [1, 0.6, 0.12, 1], ((_z select 1) select [0, 2])];
             } forEach (_reps select [0, 15]);
@@ -1122,9 +1122,9 @@ switch (_view) do {
                 if ((_x2 get "scope") > 0) then { _tags pushBack ([format [("partagé : %1") call _tr, ["scopeName", _x2 get "scope"] call _ZA], format [("de %1 · %2") call _tr, [_x2 get "from"] call _esc, ["scopeName", _x2 get "scope"] call _ZA]] select (_tab isNotEqualTo "MINE")); };
                 if (_x2 get "arma") then { _tags pushBack (("carte d'Arma") call _tr); };
                 if !(_x2 get "vis") then { _tags pushBack (("masqué") call _tr); };
-                private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#a9b6b0'>%2 · %3</t>%4%5",
+                private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2 · %3</t>%4%5",
                     [_x2 get "name"] call _esc, format [("%1 zone(s)") call _tr, count _zs], format [("%1 axe(s)") call _tr, count (_x2 get "axes")],
-                    ["", format ["<br/><t color='#e5483a'>%1</t>", format [("%1 zone(s) avec contact") call _tr, _nE]]] select (_nE > 0),
+                    ["", format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", format [("%1 zone(s) avec contact") call _tr, _nE]]] select (_nE > 0),
                     ["", format ["<br/><t color='#8fd19a'>%1</t>", _tags joinString " · "]] select ((count _tags) > 0)];
                 _rows pushBack ["person", _icon, _txt, [
                     ["OUVRIR", ["open", _x2 get "id"] call _ui1, true],

@@ -82,5 +82,5 @@ _cap ctrlSetStructuredText parseText ((format [
 { _x ctrlSetFade 1; _x ctrlCommit 0; _x ctrlSetFade 0; _x ctrlCommit 0.25; } forEach (allControls _d);
 _d displayAddEventHandler ["MouseButtonDown", { (_this select 0) closeDisplay 1; }];
 _d displayAddEventHandler ["KeyDown", { (_this select 0) closeDisplay 1; true }];
-[{ (_this select 0) closeDisplay 1; }, [_d], 12] call CBA_fnc_waitAndExecute;
+[{ (_this select 0) closeDisplay 1; }, [_d], 12] call comspec_atak_native_fnc_waitAndExec;
 true

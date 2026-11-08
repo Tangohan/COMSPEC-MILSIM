@@ -47,6 +47,9 @@ _c set [0, (_c select 0) + 1];
 _c set [1, (_c select 1) + _dt];
 if (_dt > (_c select 2)) then { _c set [2, _dt]; };
 missionNamespace setVariable ["COMSPEC_ATAK_PerfAcc", _acc];
+// Temps mesuré dans l'image en cours, toutes clés confondues : la ligne « Image figée » (XEH_postInitClient) dit
+// ainsi quelle part de l'image figée a été passée dans les boucles du mod (le reste : moteur, autres mods).
+missionNamespace setVariable ["COMSPEC_ATAK_PerfFrame", (missionNamespace getVariable ["COMSPEC_ATAK_PerfFrame", 0]) + _dt];
 // Mode profilage : ce qui a tourné pendant l'image (saccades) et les pics de plus de 5 ms (20 par bilan).
 if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then {
     COMSPEC_ATAK_ProfFrame pushBack [_key, _dt];
