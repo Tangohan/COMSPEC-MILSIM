@@ -6694,6 +6694,8 @@ class AtakApiController
         if ($coordsOk instanceof Response) {
             return $coordsOk;
         }
+        // Détecteurs du mod : une ligne de tampon (déplacement, coordonnées), analysée plus tard par lots.
+        \App\Services\Watch\ModSignals::position($tenantId, is_string($steamNorm) ? $steamNorm : null, $mapId, $posX, $posY);
         // Altitude ASL (getPosASL Z) — top-level ou extra ; stockée en JSON extra (pas de migration)
         $posZRaw = $body['asl_z'] ?? $body['pos_z'] ?? $body['altitude']
             ?? (isset($body['pos']) && is_array($body['pos']) ? ($body['pos'][2] ?? null) : null);

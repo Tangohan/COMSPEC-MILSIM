@@ -9,6 +9,9 @@ class Router
     private array $routes = [];
     private Request $request;
 
+    /** Motif de la route retenue pour la requête (« /api/atak/units/{id} »), null si aucune : mesure de charge par route. */
+    public static ?string $lastMatchedPath = null;
+
     public function __construct(Request $request)
     {
         $this->request = $request;
@@ -76,12 +79,14 @@ class Router
     {
         $method = $this->request->method();
         $path = $this->request->path();
+        self::$lastMatchedPath = null;
 
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {
                 continue;
             }
             if (preg_match($route['pattern'], $path, $matches)) {
+                self::$lastMatchedPath = $route['path'];
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
                 $handler = $route['handler'];
                 $middleware = $route['middleware'] ?? [];

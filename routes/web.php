@@ -1238,6 +1238,13 @@ return function (Router $router) {
     $router->get('/admin/system/donnees/correlations', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'correlations'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/donnees/action', [\App\Controllers\Admin\System\SystemDataRegistryController::class, 'action'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Charge de l'application (requêtes par route et par communauté, erreurs, tendance), seuils d'alerte et priorité sous charge.
+    $router->get('/admin/system/surcharge', [\App\Controllers\Admin\System\SystemLoadController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/surcharge/reglages', [\App\Controllers\Admin\System\SystemLoadController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Activités anormales détectées dans les envois du mod : alertes à décider par un humain, jamais de blocage automatique.
+    $router->get('/admin/system/alertes-mod', [\App\Controllers\Admin\System\SystemModAlertsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/alertes-mod/reglages', [\App\Controllers\Admin\System\SystemModAlertsController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/alertes-mod/{id}/traiter', [\App\Controllers\Admin\System\SystemModAlertsController::class, 'handle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/retours-interface', [SystemUxFeedbackController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/avis-plateforme', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
