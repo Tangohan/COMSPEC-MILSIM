@@ -7,6 +7,8 @@ return [
     'subtitle' => 'Créez les types propres à votre communauté (par exemple « Forces spéciales » ou « Peloton ») et choisissez-les à la création d’une unité.',
     'tab_own' => 'Vos types',
     'tab_base' => 'Types de base',
+    'stat_units' => 'Unités concernées',
+    'empty_title' => 'Aucun type personnalisé',
     'add' => 'Ajouter un type',
     'rename' => 'Renommer',
     'delete' => 'Supprimer',

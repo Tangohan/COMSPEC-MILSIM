@@ -14,18 +14,7 @@ $usage = static fn (int $n): string => $n === 0 ? __('unit_types.unused') : ($n 
 $action = url('back-office/organisation/types-entite/enregistrer');
 $js = static fn (string $v): string => (string) json_encode($v, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
 ?>
-<div class="bo-catalog bo-unit-types">
-    <header class="bo-catalog__hero">
-        <p class="bo-catalog__kicker">Organisation</p>
-        <h1 class="bo-catalog__title"><?= $h(__('unit_types.title')) ?></h1>
-        <p class="bo-catalog__lead"><?= $h(__('unit_types.subtitle')) ?></p>
-        <div class="bo-catalog__hero-actions">
-            <button type="button" class="ath-btn ath-btn--solid" data-ut-add <?= $ready ? '' : 'disabled' ?>><?= $h(__('unit_types.add')) ?></button>
-            <a class="ath-btn" href="<?= $h(url('back-office/organisation/catalogue')) ?>"><?= $h(__('unit_types.back')) ?></a>
-            <a class="ath-btn" href="<?= $h(url('orbat')) ?>"><?= $h(__('unit_types.open_orbat')) ?></a>
-        </div>
-    </header>
-
+<div class="bo-org bo-unit-types">
     <?php if ($flashOk !== ''): ?>
         <p class="ath-flash ath-flash--ok" role="status"><?= $h($flashOk) ?></p>
     <?php endif; ?>
@@ -36,69 +25,93 @@ $js = static fn (string $v): string => (string) json_encode($v, JSON_UNESCAPED_U
         <p class="ath-flash ath-flash--err" role="alert"><?= $h(__('unit_types.not_ready')) ?></p>
     <?php endif; ?>
 
-    <div role="tablist" class="bo-ut-tabs">
-        <button type="button" role="tab" class="ath-btn ath-btn--solid" id="ut-tab-own" aria-selected="true" aria-controls="ut-own" data-ut-tab="own"><?= $h(__('unit_types.tab_own')) ?> (<?= (int) count($own) ?>)</button>
-        <button type="button" role="tab" class="ath-btn" id="ut-tab-base" aria-selected="false" aria-controls="ut-base" data-ut-tab="base"><?= $h(__('unit_types.tab_base')) ?> (<?= (int) count($base) ?>)</button>
+    <div class="bo-org-stats">
+        <div class="bo-org-stat bo-org-stat--ok"><span class="bo-org-stat__label"><?= $h(__('unit_types.tab_own')) ?></span><span class="bo-org-stat__value"><?= (int) count($own) ?></span></div>
+        <div class="bo-org-stat"><span class="bo-org-stat__label"><?= $h(__('unit_types.tab_base')) ?></span><span class="bo-org-stat__value"><?= (int) count($base) ?></span></div>
+        <div class="bo-org-stat"><span class="bo-org-stat__label"><?= $h(__('unit_types.stat_units')) ?></span><span class="bo-org-stat__value"><?= (int) array_sum(array_column($rows, 'used')) ?></span></div>
     </div>
 
-    <section id="ut-own" role="tabpanel" aria-labelledby="ut-tab-own" class="bo-catalog__section">
-        <?php if ($own === []): ?>
-            <p class="bo-catalog__section-lead"><?= $h(__('unit_types.empty_own')) ?></p>
-        <?php else: ?>
-            <ul class="bo-ut-list">
-                <?php foreach ($own as $r): ?>
-                    <li class="bo-ut-row">
-                        <strong><?= $h($r['label']) ?></strong>
-                        <span class="bo-ut-use"<?= $r['used'] > 0 ? ' title="' . $h(__('unit_types.in_use_hint')) . '"' : '' ?>><?= $h($usage((int) $r['used'])) ?></span>
-                        <button type="button" class="ath-btn" data-ut-rename="<?= $h($r['id']) ?>" data-label="<?= $h($r['label']) ?>"><?= $h(__('unit_types.rename')) ?></button>
-                        <form method="post" action="<?= $h($action) ?>" data-ut-delete>
-                            <?= \App\Core\Csrf::field() ?>
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="slug" value="<?= $h($r['id']) ?>">
-                            <button type="submit" class="ath-btn" <?= $r['used'] > 0 ? 'disabled' : '' ?>><?= $h(__('unit_types.delete')) ?></button>
-                        </form>
+    <section class="bo-org-panel">
+        <div role="tablist" class="bo-org-tabs">
+            <button type="button" role="tab" class="bo-org-tab" id="ut-tab-own" aria-selected="true" aria-controls="ut-own" data-ut-tab="own"><?= $h(__('unit_types.tab_own')) ?><span><?= (int) count($own) ?></span></button>
+            <button type="button" role="tab" class="bo-org-tab" id="ut-tab-base" aria-selected="false" aria-controls="ut-base" data-ut-tab="base"><?= $h(__('unit_types.tab_base')) ?><span><?= (int) count($base) ?></span></button>
+        </div>
+
+        <div id="ut-own" role="tabpanel" aria-labelledby="ut-tab-own">
+            <div class="bo-org-panel__head">
+                <div class="bo-org-panel__titles">
+                    <h2 class="bo-org-panel__title"><?= $h(__('unit_types.tab_own')) ?></h2>
+                    <p class="bo-org-panel__hint"><?= $h(__('unit_types.subtitle')) ?></p>
+                </div>
+                <?php if ($own !== []): ?>
+                <div class="bo-org-panel__acts">
+                    <button type="button" class="ath-btn ath-btn--solid" data-ut-add <?= $ready ? '' : 'disabled' ?>>+ <?= $h(__('unit_types.add')) ?></button>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php if ($own === []): ?>
+                <div class="bo-org-empty">
+                    <p class="bo-org-empty__title"><?= $h(__('unit_types.empty_title')) ?></p>
+                    <p class="bo-org-empty__text"><?= $h(__('unit_types.empty_own')) ?></p>
+                    <button type="button" class="ath-btn ath-btn--solid" data-ut-add <?= $ready ? '' : 'disabled' ?>>+ <?= $h(__('unit_types.add')) ?></button>
+                </div>
+            <?php else: ?>
+                <ul class="bo-org-list">
+                    <?php foreach ($own as $r): ?>
+                        <li class="bo-org-item">
+                            <span class="bo-org-item__name"><?= $h($r['label']) ?></span>
+                            <span class="ath-tag <?= $r['used'] > 0 ? 'ath-tag--info' : 'ath-tag--neut' ?>"<?= $r['used'] > 0 ? ' title="' . $h(__('unit_types.in_use_hint')) . '"' : '' ?>><?= $h($usage((int) $r['used'])) ?></span>
+                            <div class="bo-org-item__acts">
+                                <button type="button" class="ath-btn" data-ut-rename="<?= $h($r['id']) ?>" data-label="<?= $h($r['label']) ?>"><?= $h(__('unit_types.rename')) ?></button>
+                                <form method="post" action="<?= $h($action) ?>" data-ut-delete>
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="slug" value="<?= $h($r['id']) ?>">
+                                    <button type="submit" class="ath-btn ath-btn--danger" <?= $r['used'] > 0 ? 'disabled' : '' ?>><?= $h(__('unit_types.delete')) ?></button>
+                                </form>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+
+        <div id="ut-base" role="tabpanel" aria-labelledby="ut-tab-base" hidden>
+            <div class="bo-org-panel__head">
+                <div class="bo-org-panel__titles">
+                    <h2 class="bo-org-panel__title"><?= $h(__('unit_types.tab_base')) ?></h2>
+                    <p class="bo-org-panel__hint"><?= $h(__('unit_types.base_help')) ?></p>
+                </div>
+            </div>
+            <ul class="bo-org-list">
+                <?php foreach ($base as $r): ?>
+                    <li class="bo-org-item">
+                        <span class="bo-org-item__name"><?= $h($r['label']) ?></span>
+                        <span class="ath-tag <?= $r['used'] > 0 ? 'ath-tag--info' : 'ath-tag--neut' ?>"><?= $h($usage((int) $r['used'])) ?></span>
                     </li>
                 <?php endforeach; ?>
             </ul>
-        <?php endif; ?>
+        </div>
     </section>
 
-    <section id="ut-base" role="tabpanel" aria-labelledby="ut-tab-base" class="bo-catalog__section" hidden>
-        <p class="bo-catalog__section-lead"><?= $h(__('unit_types.base_help')) ?></p>
-        <ul class="bo-ut-list">
-            <?php foreach ($base as $r): ?>
-                <li class="bo-ut-row"><strong><?= $h($r['label']) ?></strong><span class="bo-ut-use"><?= $h($usage((int) $r['used'])) ?></span></li>
-            <?php endforeach; ?>
-        </ul>
-    </section>
-
-    <dialog id="ut-modal" class="bo-ut-modal">
+    <dialog id="ut-modal" class="bo-org-dialog">
         <form method="post" action="<?= $h($action) ?>">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="action" value="create" id="ut-action">
             <input type="hidden" name="slug" value="" id="ut-slug">
-            <h2 id="ut-modal-title"><?= $h(__('unit_types.modal_add')) ?></h2>
-            <div class="bo-catalog__field">
+            <div class="bo-org-dialog__head"><h2 id="ut-modal-title"><?= $h(__('unit_types.modal_add')) ?></h2></div>
+            <div class="bo-org-dialog__body">
                 <label for="ut-label"><?= $h(__('unit_types.name')) ?></label>
-                <input type="text" name="label" id="ut-label" maxlength="120" required autocomplete="off">
+                <input type="text" class="ath-field__input" name="label" id="ut-label" maxlength="120" required autocomplete="off">
                 <small><?= $h(__('unit_types.name_help')) ?></small>
             </div>
-            <div class="bo-ut-actions">
+            <div class="bo-org-panel__foot">
                 <button type="button" class="ath-btn" data-ut-close><?= $h(__('unit_types.cancel')) ?></button>
                 <button type="submit" class="ath-btn ath-btn--solid"><?= $h(__('unit_types.save')) ?></button>
             </div>
         </form>
     </dialog>
 </div>
-<style>
-.bo-ut-tabs{display:flex;gap:.5rem;margin:1rem 0}
-.bo-ut-list{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
-.bo-ut-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
-.bo-ut-row strong{flex:1 1 12rem}
-.bo-ut-use{opacity:.7;font-size:.9em}
-.bo-ut-modal{max-width:28rem;width:calc(100% - 2rem)}
-.bo-ut-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
-</style>
 <script>
 (function () {
   var modal = document.getElementById('ut-modal');
@@ -128,8 +141,7 @@ $js = static fn (string $v): string => (string) json_encode($v, JSON_UNESCAPED_U
         document.getElementById('ut-' + k).hidden = !on;
         var t = document.getElementById('ut-tab-' + k);
         t.setAttribute('aria-selected', on ? 'true' : 'false');
-        t.classList.toggle('ath-btn--solid', on);
-      });
+              });
     });
   });
 })();
