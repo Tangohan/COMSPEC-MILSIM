@@ -17,8 +17,10 @@ use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SsePersonRepository;
 use App\Services\Sse\SseAccessCodeService;
+use App\Services\Sse\MemberIdentityPapersService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdCheckInsightService;
+use App\Services\Sse\SseIdSubjectMatchService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Services\Sse\SseMrzService;
 use App\Support\SseIdCountryCatalog;
@@ -732,7 +734,7 @@ final class SseIdentityRegistryController
             $personId = 0;
         }
         $kind = $request->inputString('kind');
-        if (!$this->canSeeTruth() && in_array($kind, ['cover', 'forged'], true)) {
+        if (!$this->canSeeTruth() && in_array($kind, MemberIdentityPapersService::SECRET, true)) {
             $kind = 'civil';
         }
         $id = $this->identities->create($tenantId, [
@@ -957,11 +959,11 @@ final class SseIdentityRegistryController
     /**
      * Bloc « Documents et contrôles » de la fiche personne SSE (identités rattachées, papiers, contrôles reçus).
      *
-     * @return array{identities: list<array<string, mixed>>, documents: list<array<string, mixed>>, checks: list<array<string, mixed>>, dossier?: array{total: int, photos: int, groups: list<array<string, mixed>>}, truth: bool}
+     * @return array{identities: list<array<string, mixed>>, documents: list<array<string, mixed>>, checks: list<array<string, mixed>>, dossier?: array{total: int, photos: int, groups: list<array<string, mixed>>}, suggestions: list<array{type: string, id: int, name: string, ref: string}>, truth: bool}
      */
     public static function personPapers(int $tenantId, int $personId): array
     {
-        $empty = ['identities' => [], 'documents' => [], 'checks' => [], 'truth' => false];
+        $empty = ['identities' => [], 'documents' => [], 'checks' => [], 'suggestions' => [], 'truth' => false];
         if ($tenantId < 1 || $personId < 1) {
             return $empty;
         }
@@ -969,17 +971,26 @@ final class SseIdentityRegistryController
             $truth = (new SseClearanceService())->allows(SseCaseRepository::CLASS_CONFIDENTIAL);
             $identities = (new SseIdentityRepository())->listForPerson($tenantId, $personId);
             if (!$truth) {
-                // Couvertures et faux rattachés à la personne : vérité de jeu, réservée à l'habilitation Confidentiel.
-                $identities = array_values(array_filter($identities, static fn (array $i): bool => !in_array($i['kind'], ['cover', 'forged'], true)));
+                // Alias, couvertures et faux rattachés à la personne : vérité de jeu, réservée à l'habilitation Confidentiel.
+                $identities = array_values(array_filter($identities, static fn (array $i): bool => !in_array($i['kind'], MemberIdentityPapersService::SECRET, true)));
             }
             $documents = (new SseIdDocumentRepository())->list($tenantId, ['holder_person_id' => $personId, 'limit' => 50]);
             if (!$truth) {
-                $documents = array_values(array_filter($documents, static fn (array $d): bool => !in_array($d['identity']['kind'], ['cover', 'forged'], true)
-                    && !in_array($d['st_origin'], ['cover', 'forged'], true)));
+                $documents = array_values(array_filter($documents, static fn (array $d): bool => !MemberIdentityPapersService::docIsSecret($d)));
             }
 
+            $documentIds = array_map(static fn (array $d): int => (int) $d['id'], $documents);
+            // Sans habilitation : ni contrôle d'un papier masqué, ni nom présenté qui trahirait une couverture.
+            $keep = static function (array $checks) use ($truth, $documentIds, $identities): array {
+                if ($truth) {
+                    return $checks;
+                }
+                $checks = array_values(array_filter($checks, static fn (array $c): bool => (int) ($c['document_id'] ?? 0) === 0 || in_array((int) $c['document_id'], $documentIds, true)));
+
+                return MemberIdentityPapersService::withoutForeignNames($checks, $identities);
+            };
             try {
-                $dossier = (new SseIdCheckInsightService())->personDossier($tenantId, $personId, array_map(static fn (array $d): int => (int) $d['id'], $documents));
+                $dossier = (new SseIdCheckInsightService())->personDossier($tenantId, $personId, $documentIds, 200, $keep);
             } catch (\Throwable) {
                 $dossier = ['total' => 0, 'photos' => 0, 'groups' => []];
             }
@@ -987,8 +998,10 @@ final class SseIdentityRegistryController
             return [
                 'identities' => $identities,
                 'documents' => $documents,
-                'checks' => (new SseIdCheckRepository())->list($tenantId, ['person_id' => $personId, 'limit' => 30]),
+                'checks' => $keep((new SseIdCheckRepository())->list($tenantId, ['person_id' => $personId, 'limit' => 30])),
                 'dossier' => $dossier,
+                // Le recoupement relève de la vérité de jeu : il relierait une fiche à une identité d'emprunt.
+                'suggestions' => $truth ? (new SseIdSubjectMatchService())->suggestionsForPerson($tenantId, $personId) : [],
                 'truth' => $truth,
             ];
         } catch (\Throwable) {

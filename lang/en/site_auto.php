@@ -55783,4 +55783,10 @@ return [
     'Télécharger pour ACE (.txt)' => 'Download for ACE (.txt)',
     'Vos tenues, celles de la communauté et les kits de départ, prêts à enfiler en jeu.' => 'Your outfits, the community\'s outfits and the starter kits, ready to wear in game.',
     'Nom de l’emploi ou catégorie…' => 'Job name or category…',
+    'Carte militaire' => 'Military ID',
+    'Une identité d’emprunt demande l’habilitation Confidentiel.' => 'An assumed identity requires Confidential clearance.',
+    'Aucune identité d’emprunt visible.' => 'No visible assumed identity.',
+    'Les alias et identités de couverture ne sont visibles qu’avec l’habilitation Confidentiel.' => 'Aliases and cover identities are only visible with Confidential clearance.',
+    'Possiblement la même personne' => 'Possibly the same person',
+    'Même clé biométrique relevée lors de contrôles. À vérifier : rien n’est fusionné automatiquement.' => 'Same biometric key recorded during checks. To be verified: nothing is merged automatically.',
 ];
