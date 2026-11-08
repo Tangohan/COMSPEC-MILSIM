@@ -37,7 +37,7 @@ final class PlatformAbuseAlertRepositoryTest extends TestCase
         return ['kind' => Repo::KIND_MOD, 'rule' => 'position_impossible', 'tenant_id' => 7, 'steam_uid' => $steam, 'key' => '7:' . $steam, 'measured' => $measured];
     }
 
-    private function count(): int
+    private function countAlerts(): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM platform_abuse_alerts')->fetchColumn();
     }
@@ -64,16 +64,16 @@ final class PlatformAbuseAlertRepositoryTest extends TestCase
         self::assertSame('created', $this->repo->raise($this->detection(), self::NOW));
         self::assertSame('merged', $this->repo->raise($this->detection('76561190000000001', ['sauts' => 5]), self::NOW + 600));
         self::assertSame('merged', $this->repo->raise($this->detection(), self::NOW + 1200));
-        self::assertSame(1, $this->count());
+        self::assertSame(1, $this->countAlerts());
         $row = $this->repo->recent('open')[0];
         self::assertSame(3, (int) $row['occurrences']);
         self::assertSame(gmdate('Y-m-d H:i:s', self::NOW + 1200), $row['last_seen_at']);
         // Un autre joueur reste une autre alerte.
         self::assertSame('created', $this->repo->raise($this->detection('76561190000000002'), self::NOW + 1300));
-        self::assertSame(2, $this->count());
+        self::assertSame(2, $this->countAlerts());
         // Après plus de deux heures sans nouvelle, un nouvel épisode.
         self::assertSame('created', $this->repo->raise($this->detection(), self::NOW + 1200 + Repo::MERGE_ACTIVE_SECONDS + 1));
-        self::assertSame(3, $this->count());
+        self::assertSame(3, $this->countAlerts());
     }
 
     public function testDismissedCaseStaysSilentForADayThenComesBack(): void
@@ -82,9 +82,9 @@ final class PlatformAbuseAlertRepositoryTest extends TestCase
         $id = (int) $this->repo->recent('open')[0]['id'];
         self::assertTrue($this->repo->setStatus($id, Repo::STATUS_DISMISSED, 5, self::NOW + 10));
         self::assertSame('skipped', $this->repo->raise($this->detection(), self::NOW + 3600));
-        self::assertSame(1, $this->count());
+        self::assertSame(1, $this->countAlerts());
         self::assertSame('created', $this->repo->raise($this->detection(), self::NOW + Repo::MERGE_DISMISSED_SECONDS + 60));
-        self::assertSame(2, $this->count());
+        self::assertSame(2, $this->countAlerts());
     }
 
     public function testHumanDecisionIsRecordedAndNothingElseHappens(): void
