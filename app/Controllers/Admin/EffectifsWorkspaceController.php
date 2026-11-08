@@ -1380,7 +1380,10 @@ class EffectifsWorkspaceController
             ? $this->personnelOrgHistoryRepository->listForUser($tenantId, $id, 30)
             : [];
         $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($id, 40);
-        $stageBilans = $this->personnelStageBilanRepository->tableExists()
+        $individualBilansOn = \App\Services\Personnel\RoleplayFollowupSettings::individualBilansEnabled(
+            \App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId)
+        );
+        $stageBilans = $individualBilansOn && $this->personnelStageBilanRepository->tableExists()
             ? $this->personnelStageBilanRepository->listForUser($tenantId, $id, 40)
             : [];
         $dutyPosition = '';
@@ -1498,6 +1501,7 @@ class EffectifsWorkspaceController
             'memberOrgHistory' => $orgHistory,
             'memberServiceHistory' => $serviceHistory,
             'memberStageBilans' => $stageBilans,
+            'memberIndividualBilansOn' => $individualBilansOn,
             'dutyPosition' => $dutyPosition,
             'remainingTrainingDays' => $remainingTrainingDays,
             'memberCommandChain' => $commandChain,

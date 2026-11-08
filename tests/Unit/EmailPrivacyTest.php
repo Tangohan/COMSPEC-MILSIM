@@ -28,10 +28,10 @@ final class EmailPrivacyTest extends TestCase
     public function testDisplayNeverRevealsThroughAPlatformWideGrant(): void
     {
         Gate::getInstance()->setPermissions(['admin.organization']);
-        self::assertSame('je***@exemple.fr', EmailPrivacy::display('jean.dupont@exemple.fr'));
+        self::assertSame('—', EmailPrivacy::display('jean.dupont@exemple.fr'));
 
         Gate::getInstance()->setPermissions(['admin.system']);
-        self::assertSame('je***@exemple.fr', EmailPrivacy::display('jean.dupont@exemple.fr'));
+        self::assertSame('—', EmailPrivacy::display('jean.dupont@exemple.fr'));
     }
 
     public function testMaskViewDataHidesOtherMembersButNotFormPrefill(): void
@@ -51,8 +51,26 @@ final class EmailPrivacyTest extends TestCase
 
         self::assertSame('admin.organization.users.show', $data['content']);
         self::assertSame('invite@exemple.fr', $data['email']);
-        self::assertSame('je***@exemple.fr', $data['user']['email']);
-        self::assertSame('je***@exemple.fr', $data['boPageSubtitle']);
+        self::assertSame('', $data['user']['email']);
+        self::assertSame('', $data['boPageSubtitle']);
+    }
+
+    public function testLabelsCarryingAnAddressAreCleaned(): void
+    {
+        Gate::getInstance()->setPermissions(['admin.organization']);
+        $data = EmailPrivacy::maskViewData([
+            'content' => 'admin.organization.training',
+            'rows' => [['id' => 3, 'label' => 'jean.dupont@exemple.fr', 'name' => 'Jean · jean.dupont@exemple.fr']],
+        ]);
+        self::assertSame('', $data['rows'][0]['label']);
+        self::assertSame('Jean', $data['rows'][0]['name']);
+    }
+
+    public function testOwnAccountKeepsItsAddressAndJsonIsCleaned(): void
+    {
+        Gate::getInstance()->setPermissions(['admin.organization']);
+        $json = EmailPrivacy::maskJsonData(['users' => [['id' => 4, 'display_name' => 'Ana', 'email' => 'ana@exemple.fr']]]);
+        self::assertSame('', $json['users'][0]['email']);
     }
 
     public function testPersonnelFileEmailIsSiteAdminOnly(): void

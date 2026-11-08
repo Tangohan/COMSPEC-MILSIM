@@ -13,6 +13,8 @@ use App\Core\Session;
  */
 final class EmailPrivacy
 {
+    private const EMAIL_PATTERN = '/[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}/';
+
     /** Clés de vue à ne pas parcourir (noms de templates, HTML brut). */
     private const SKIP_KEYS = [
         'content' => true,
@@ -21,6 +23,10 @@ final class EmailPrivacy
         'body' => true,
         'csrf' => true,
         '_csrf_token' => true,
+        'old' => true,
+        'input' => true,
+        'form' => true,
+        'errors' => true,
     ];
 
     public static function viewerCanSeeEmails(): bool
@@ -64,7 +70,59 @@ final class EmailPrivacy
             return $email;
         }
 
-        return self::mask($email);
+        return '—';
+    }
+
+    /**
+     * Retire toute adresse e-mail d’une chaîne (libellés du type « Nom · prenom@exemple.fr »).
+     * Sans effet pour l’administration du site.
+     */
+    public static function scrub(string $text): string
+    {
+        if (!str_contains($text, '@') || self::viewerCanSeeEmails()) {
+            return $text;
+        }
+
+        return self::scrubAlways($text);
+    }
+
+    private static function scrubAlways(string $text): string
+    {
+        if (!str_contains($text, '@')) {
+            return $text;
+        }
+        $out = preg_replace(self::EMAIL_PATTERN, '', $text);
+        $out = is_string($out) ? $out : $text;
+
+        // Reste « Nom · » ou « Nom () » après retrait.
+        return trim((string) preg_replace(['/\s*[·—\-–]\s*$/u', '/\(\s*\)/u', '/\s{2,}/u'], ['', '', ' '], $out));
+    }
+
+    /**
+     * Nettoie une réponse JSON destinée à un navigateur : aucune adresse e-mail hors administration
+     * du site, sauf pour le titulaire sur ses propres routes (compte, préférences, connexion).
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public static function maskJsonData(array $data): array
+    {
+        if (self::viewerCanSeeEmails()) {
+            return $data;
+        }
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $path = (string) parse_url($uri, PHP_URL_PATH);
+        if (preg_match('#/(api/)?(me|account|auth|login|register|register-|password|verify|mfa|enlistment|invitations?|invite|newsletter)(/|$|-)#i', $path) === 1) {
+            return $data;
+        }
+        $viewerId = 0;
+        try {
+            $viewerId = (int) Session::get('user_id');
+        } catch (\Throwable) {
+            $viewerId = 0;
+        }
+
+        return self::walk($data, $viewerId);
     }
 
     /**
@@ -98,8 +156,8 @@ final class EmailPrivacy
     private static function walk(mixed $value, int $viewerId, string $key = ''): mixed
     {
         if (!is_array($value)) {
-            if (is_string($value) && $key === 'boPageSubtitle' && self::stringIsEmail($value)) {
-                return self::mask($value);
+            if (is_string($value) && $key !== '' && !isset(self::SKIP_KEYS[$key]) && str_contains($value, '@')) {
+                return self::scrubAlways($value);
             }
 
             return $value;
@@ -113,8 +171,17 @@ final class EmailPrivacy
                 $out[$k] = $child;
                 continue;
             }
+            if ($skipEmailKeys && is_string($child)) {
+                $out[$k] = $child;
+                continue;
+            }
             if (!$skipEmailKeys && is_string($child) && self::shouldMaskKey($kStr, $value) && self::stringIsEmail($child)) {
-                $out[$k] = self::mask($child);
+                $out[$k] = '';
+                continue;
+            }
+            // Champ « email » hors fiche de personne : valeur saisie par l’utilisateur (préremplissage de formulaire).
+            if (is_string($child) && in_array(strtolower($kStr), ['email', 'mail'], true)) {
+                $out[$k] = $child;
                 continue;
             }
             $out[$k] = self::walk($child, $viewerId, $kStr);
