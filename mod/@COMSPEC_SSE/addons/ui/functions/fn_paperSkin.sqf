@@ -2,7 +2,7 @@
     Papier de la visionneuse SSE (textures addons\ui\data\paper, dessinées par tools\gen_paper_textures.py).
       ["list"] call comspec_sse_fnc_paperSkin                     -> [[code, libellé], ...] (ordre de l'éditeur)
       ["texture", [code, nuit]] call …                            -> chemin de la texture
-      ["resolve", [_fog, _entité]] call …                         -> [code, manuscrit]  (code "" : ancien rendu uni)
+      ["resolve", [_fog, _entité, graine]] call …                 -> [code, manuscrit]  (code "" : ancien rendu uni)
       ["apply", [_display, code, nuit]] call …                    -> true
     Choix, du plus fort au plus faible :
       1. papier choisi dans l'éditeur (variable comspec_sse_doc1_paper de l'objet, ou clé « paper » du document) ;
@@ -31,7 +31,7 @@ if (_mode isEqualTo "texture") exitWith {
 };
 
 if (_mode isEqualTo "resolve") exitWith {
-    _args params [["_fog", createHashMap, [createHashMap]], ["_ent", objNull, [objNull]]];
+    _args params [["_fog", createHashMap, [createHashMap]], ["_ent", objNull, [objNull]], ["_seedArg", "", [""]]];
     private _docs = (_fog getOrDefault ["docs", []]) select { _x isEqualType createHashMap };
     private _first = _docs param [0, createHashMap];
     private _set = toLower (_first getOrDefault ["paper", ""]);
@@ -73,7 +73,10 @@ if (_mode isEqualTo "resolve") exitWith {
             ["form", ["formulaire", "carbone"]],
             ["other", ["uni", "ligne", "quadrille", "seyes", "froisse", "jauni", "sale"]]
         ]) get _kind;
+        // Pièce de l'éditeur : son numéro (toutes ses pièces ont le même identifiant de document). Aperçu : graine donnée.
         private _seed = _first getOrDefault ["uid", _fog getOrDefault ["uid", ""]];
+        if (!isNull _ent && {(_ent getVariable ["comspec_sse_editorItem", ""]) isNotEqualTo ""}) then { _seed = _ent getVariable ["comspec_sse_editorItem", ""]; };
+        if (_seedArg isNotEqualTo "") then { _seed = _seedArg; };
         if !(_seed isEqualType "") then { _seed = str _seed; };
         _pool select (([0, "paper:" + _seed] call comspec_sse_fnc_hash) mod (count _pool))
     } };

@@ -141,6 +141,9 @@ class COMSPEC_SSE_Editor {
         class ComboMain: COMSPEC_SSE_EdCombo { idc = 94043; ED_POS(16.9,5.9,8,1.15); onLBSelChanged = "['preview'] call comspec_sse_fnc_editor"; };
         class Combo2Label: COMSPEC_SSE_EdText { idc = 94044; text = "Nature"; ED_POS(20.9,5.15,4,0.8); ED_TXT(0.72); };
         class Combo2: COMSPEC_SSE_EdCombo { idc = 94045; ED_POS(20.9,5.9,4,1.15); onLBSelChanged = "['preview'] call comspec_sse_fnc_editor"; };
+        // Papier d'un renseignement (comspec_sse_fnc_paperSkin) : chaque ligne montre sa feuille en vignette.
+        class SkinLabel: COMSPEC_SSE_EdText { idc = 94056; text = "Papier"; ED_POS(20.9,5.15,4,0.8); ED_TXT(0.72); };
+        class SkinCombo: COMSPEC_SSE_EdCombo { idc = 94057; ED_POS(20.9,5.9,4,1.15); onLBSelChanged = "['preview'] call comspec_sse_fnc_editor"; };
         class BodyLabel: COMSPEC_SSE_EdText { idc = 94046; text = "Contenu"; ED_POS(8.7,7.15,16.2,0.8); ED_TXT(0.72); };
         class BodyEdit: COMSPEC_SSE_EdEdit { idc = 94047; style = 16; lineSpacing = 1; ED_POS(8.7,7.9,16.2,8.6); onKeyUp = "['preview'] call comspec_sse_fnc_editor"; };
         class DeliveryTitle: COMSPEC_SSE_EdMono { idc = 94048; text = "2. COMMENT LES JOUEURS L'OBTIENNENT"; ED_POS(8.7,16.7,16.2,0.9); };
@@ -153,6 +156,7 @@ class COMSPEC_SSE_Editor {
         class SideTitle: COMSPEC_SSE_EdMono { idc = 94051; text = "APERÇU EN JEU"; ED_POS(25.7,2.1,6,0.9); };
         class SideWho: COMSPEC_SSE_EdText { idc = 94052; style = 1; text = "Vu comme : le joueur qui le trouve"; colorText[] = ED_GREEN; ED_POS(31,2.1,8.5,0.9); ED_TXT(0.68); };
         class Paper: COMSPEC_SSE_EdText { idc = 94053; colorBackground[] = {0.91,0.894,0.847,1}; ED_POS(25.7,3.1,13.8,17.5); };
+        class PaperSkin: COMSPEC_SSE_EdPicture { idc = 94058; style = 48; ED_POS(25.7,3.1,13.8,17.5); };
         class PaperText: RscStructuredText { idc = 94054; colorBackground[] = {0, 0, 0, 0}; ED_POS(26.2,3.5,12.8,16.7); size = SSE_Q(SSE_GH * 0.8); };
         class SideNote: COMSPEC_SSE_EdText { idc = 94055; colorText[] = ED_MUTED; ED_POS(25.7,20.9,13.8,1.8); ED_TXT(0.68); };
 

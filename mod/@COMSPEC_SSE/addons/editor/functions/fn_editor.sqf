@@ -41,6 +41,10 @@ private _kitSets = ["Carte et passeport", "Carte militaire et carte", "Carte et 
 private _markings = ["NON PROTÉGÉ", "DIFFUSION RESTREINTE", "CONFIDENTIEL"];
 private _papers = [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"], ["military_id", "Carte militaire"]];
 private _natures = [["civil", "Vraie"], ["cover", "Couverture"], ["forged", "Faux"]];
+// Papier d'un renseignement : automatique (nature, contexte, graine : fn_paperSkin), un des papiers, ou la feuille unie d'avant
+// (contenu enregistré avant les papiers, sans clé « skin »).
+private _skins = [["auto", "Automatique (selon la pièce)"]] + (if (isNil "comspec_sse_fnc_paperSkin") then { [] } else { ["list"] call comspec_sse_fnc_paperSkin }) + [["legacy", "Feuille unie (ancien rendu)"]];
+private _skinCodes = _skins apply { _x select 0 };
 private _dir = "\z\comspec_sse\addons\editor\data\";
 private _st = uiNamespace getVariable ["comspec_sse_editorState", createHashMap];
 private _d = uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull];
@@ -52,7 +56,7 @@ private _library = {
         // Premier lancement : modèles réutilisables.
         {
             _x params ["_type", "_title", "_body"];
-            _lib pushBack createHashMapFromArray [["id", format ["M%1", _forEachIndex]], ["type", _type], ["title", _title], ["body", [_body] call _newlines], ["marking", 0], ["paper", 0], ["nature", 0], ["delivery", 0], ["state", "Modèle"], ["op", "Réutilisable"], ["when", ""], ["version", 1], ["history", []], ["link", ""], ["found", []], ["dirty", false]];
+            _lib pushBack createHashMapFromArray [["id", format ["M%1", _forEachIndex]], ["type", _type], ["title", _title], ["body", [_body] call _newlines], ["marking", 0], ["paper", 0], ["skin", "auto"], ["nature", 0], ["delivery", 0], ["state", "Modèle"], ["op", "Réutilisable"], ["when", ""], ["version", 1], ["history", []], ["link", ""], ["found", []], ["dirty", false]];
         } forEach [["kit", "Kit infiltration, papiers et légende", "Identité de couverture et papiers."], ["intel", "Rapport de source", "Source :\nFiabilité :\n\nCe qui a été observé :\n\nÀ vérifier :"], ["case", "Dossier cible", "Personne suivie :\nObjectif :"]];
         profileNamespace setVariable ["comspec_sse_editorLib", _lib];
     };
@@ -69,6 +73,7 @@ private _who = { if (isNull player) then { profileName } else { name player } };
 private _editorIdcs = [94063, 94010, 94011, 94020, 94021, 94022, 94030, 94031, 94032, 94040, 94041, 94042, 94043, 94046, 94047, 94048, 94050, 94051, 94052, 94053, 94054, 94055, 94060, 94061, 94062];
 { private _b = _x; for "_i" from 0 to 4 do { _editorIdcs pushBack (_b + _i); }; } forEach [94100, 94110, 94120, 94130, 94140, 94200, 94210, 94220];
 private _aiIdcs = [];
+_editorIdcs append [94056, 94057, 94058];
 for "_i" from 94500 to 94548 do { _aiIdcs pushBack _i; };
 private _libIdcs = [94300, 94320, 94321, 94322, 94323, 94330, 94331, 94332, 94333, 94334, 94335, 94336, 94337, 94338, 94339, 94340, 94310, 94311, 94312, 94313, 94314, 94315, 94316, 94317];
 
@@ -80,6 +85,7 @@ private _read = {
     private _main = (lbCurSel (_d displayCtrl 94043)) max 0;
     if ((_it get "type") in ["paper", "kit"]) then { _it set ["paper", _main]; } else { _it set ["marking", _main]; };
     _it set ["nature", (lbCurSel (_d displayCtrl 94045)) max 0];
+    if ((_it get "type") isEqualTo "intel") then { _it set ["skin", _skinCodes param [(lbCurSel (_d displayCtrl 94057)) max 0, "auto"]]; };
 };
 private _preview = {
     private _it = _st get "item";
@@ -98,6 +104,19 @@ private _preview = {
         _example = (createHashMapFromArray [["intel", "Exemple : Rapport de source. Choisissez un modèle à gauche de « Partir de »."], ["identity", "Exemple : Alexandros Nikolaidis, résident de Charkia."], ["paper", "Exemple : carte d'identité d'Alexandros Nikolaidis."], ["case", "Exemple : CIBLE-01, dossier actif de la mission."], ["kit", "Exemple : Alexandros Nikolaidis, carte et passeport."]]) get _type;
     };
     private _ref = _it get "id";
+    // Feuille de l'aperçu : le papier que verra le joueur (automatique : même calcul que la visionneuse, graine = numéro).
+    private _skinPic = _d displayCtrl 94058;
+    private _skin = _it getOrDefault ["skin", "legacy"];
+    if (_type isEqualTo "intel" && {_skin isNotEqualTo "legacy"} && {!isNil "comspec_sse_fnc_paperSkin"}) then {
+        if (_skin isEqualTo "auto") then {
+            private _doc = createHashMapFromArray [["title", _it get "title"], ["summary", _it get "body"], ["paper", ""]];
+            _skin = (["resolve", [createHashMapFromArray [["docs", [_doc]]], objNull, [_ref, "NOUVEAU"] select (_ref isEqualTo "")]] call comspec_sse_fnc_paperSkin) select 0;
+        };
+        _skinPic ctrlSetText (["texture", [_skin, false]] call comspec_sse_fnc_paperSkin);
+        _skinPic ctrlShow (_skin isNotEqualTo "");
+    } else {
+        _skinPic ctrlShow false;
+    };
     (_d displayCtrl 94054) ctrlSetStructuredText parseText format [
         "<t font='EtelkaMonospacePro' size='0.72' color='#4a4c45'>RÉF. SSE-%1</t><t align='right' size='0.95' font='PuristaBold' color='#a32a1e'>%2</t><br/><br/><t font='PuristaBold' size='1.5' color='#1b1c19'>%3</t><br/><br/><t color='#1b1c19'>%4</t>",
         [_ref, "NOUVEAU"] select (_ref isEqualTo ""), [_stampText] call _esc, [_titleShown] call _esc, [_text, format ["<t color='#7a7c75'>%1</t>", [_example call comspec_sse_fnc_tr] call _esc]] select (_example isNotEqualTo "")
@@ -190,7 +209,7 @@ private _form = {
     [_d displayCtrl 94040, 8.7, _tw] call _setX;
     [_d displayCtrl 94041, 8.7, _tw] call _setX;
     private _mx = 8.7 + _tw + 0.2;
-    private _mw = if (_nat) then { 5.8 } else { 8 };
+    private _mw = if (_nat) then { 5.8 } else { [8, 3.9] select (_type isEqualTo "intel") };
     [_d displayCtrl 94042, _mx, _mw] call _setX;
     [_main, _mx, _mw] call _setX;
     [_d displayCtrl 94044, 20.8, 4.1] call _setX;
@@ -198,6 +217,16 @@ private _form = {
     (_d displayCtrl 94046) ctrlSetText (([["Contenu", "Légende (imprimée sur la fiche de la personne)"] select (_type in ["identity", "kit"]), "Notes (bibliothèque seulement, non envoyées)"] select (_type in ["case", "paper"])) call comspec_sse_fnc_tr);
     // Libellés des modes de remise selon le type (renseignement ou papiers).
     { private _b = 94200 + _forEachIndex * 10; (_d displayCtrl (_b + 2)) ctrlSetText ((_x select 0) call comspec_sse_fnc_tr); (_d displayCtrl (_b + 3)) ctrlSetText ((_x select 1) call comspec_sse_fnc_tr); } forEach ([_deliveryLabels, _deliveryPapers] select (_type isNotEqualTo "intel"));
+    // Papier : renseignement seulement, liste avec la vignette de chaque feuille.
+    private _skinList = _d displayCtrl 94057;
+    lbClear _skinList;
+    {
+        private _row = _skinList lbAdd ((_x select 1) call comspec_sse_fnc_tr);
+        if !((_x select 0) in ["auto", "legacy"]) then { _skinList lbSetPicture [_row, ["texture", [_x select 0, false]] call comspec_sse_fnc_paperSkin]; };
+    } forEach _skins;
+    _skinList lbSetCurSel ((_skinCodes find (_it getOrDefault ["skin", "legacy"])) max 0);
+    (_d displayCtrl 94056) ctrlShow (_type isEqualTo "intel");
+    _skinList ctrlShow (_type isEqualTo "intel");
     private _second = _d displayCtrl 94045;
     lbClear _second;
     { _second lbAdd ((_x select 1) call comspec_sse_fnc_tr); } forEach _natures;
@@ -232,8 +261,7 @@ private _page = {
     params ["_show", ["_ai", false]];
     _st set ["page", if (_ai) then { "ai" } else { ["editor", "library"] select _show }];
     { (_d displayCtrl _x) ctrlShow (!_show && {!_ai}); (_d displayCtrl _x) ctrlEnable (!_show && {!_ai}); } forEach _editorIdcs;
-    (_d displayCtrl 94044) ctrlShow false;
-    (_d displayCtrl 94045) ctrlShow false;
+    { (_d displayCtrl _x) ctrlShow false; } forEach [94044, 94045, 94056, 94057, 94058];
     { [_x, _show && {!_ai}] call _vis; } forEach _libIdcs;
     { [_x, _ai] call _vis; } forEach _aiIdcs;
     (_d displayCtrl 94002) ctrlSetText ((if (_ai) then { "SSE / IA DE LA ZONE" } else { ["SSE / ÉDITEUR", "SSE / BIBLIOTHÈQUE"] select _show }) call comspec_sse_fnc_tr);
