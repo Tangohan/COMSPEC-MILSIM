@@ -205,6 +205,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Radio maillée MPU5 et voix ACRE2 (fn_mpu5) : détection de l'objet, réseau voix publié, qui émet.
 ["init"] call comspec_atak_native_fnc_mpu5;
+// Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
+["init"] call comspec_atak_native_fnc_relayTxBadge;
 // Messages des groupes de conversation (fn_meshGroups).
 ["init"] call comspec_atak_native_fnc_meshGroups;
 // Mode de discrétion imposé par le chef (fn_meshEW).

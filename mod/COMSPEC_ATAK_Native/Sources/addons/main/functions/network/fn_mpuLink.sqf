@@ -291,7 +291,9 @@ switch (_act) do {
         };
         if (_drop isNotEqualTo "") then { _link = ""; _st set ["link", ""]; ["WARNING", _drop] call _say; };
         // Nœud publié : MPU5 allumée (reliée au téléphone ou non).
-        private _on = _present && {_st get "on"} && {(_st get "batt") > 0};
+        // Objet obligatoire manquant (fn_netRequire) : plus de nœud publié, plus de réseau, sauf le Bluetooth et les données déjà reçues.
+        private _den = ["denied"] call comspec_atak_native_fnc_netRequire;
+        private _on = _present && {_st get "on"} && {(_st get "batt") > 0} && {_den isEqualTo []};
         private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
         private _wid = _st getOrDefault ["width", 1];
         // Discrétion (lot 11, fn_meshEW) : 0 normal, 1 puissance réduite, 2 écoute seule. Activité arrondie : puissance et trafic relayé.
@@ -312,7 +314,9 @@ switch (_act) do {
         private _s = createHashMapFromArray [["active", true], ["kind", _kind], ["link", _link], ["ok", false], ["why", ""], ["kbps", 0], ["lat", 0], ["loss", 0],
             ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", _wd], ["wifiQ", _wq], ["level", 3]];
         private _need = false;
+        if (_den isNotEqualTo []) then { _kind = "denied"; _s set ["kind", ""]; };
         switch (_kind) do {
+            case "denied": { _s set ["why", format ["objet requis manquant : %1", ["labels", [_den]] call comspec_atak_native_fnc_netRequire]]; };
             case "": { _s set ["why", "sans MPU5 : pas de réseau de données"]; };
             case "veh": { _s set ["ok", true]; _s set ["why", "radio du véhicule"]; };
             default {

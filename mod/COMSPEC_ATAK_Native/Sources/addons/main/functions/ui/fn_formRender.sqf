@@ -602,17 +602,18 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _card ctrlSetPosition [_pad, _y, _w, _h];
             _card ctrlCommit 0;
             private _ph = _fs * 1.35;
-            private _pill = ["COMSPEC_RscTextCenter", [_pad + _w - _pillW - _pad / 2, _y + (_h - _ph) / 2, _pillW, _ph], [["NON", "OUI"] select _on, format ["IMPOSÉ · %1", ["NON", "OUI"] select _on]] select _locked] call _mk;
+            // Interrupteur libre : la pastille est le bouton. Un bouton transparent posé sur toute la ligne l'assombrissait en jeu, malgré ses couleurs à 0 :
+            // les lignes libres paraissaient grisées et les lignes imposées, sans lui, claires (l'inverse du sens).
+            private _pill = [["COMSPEC_RscButton", "COMSPEC_RscTextCenter"] select _locked, [_pad + _w - _pillW - _pad / 2, _y + (_h - _ph) / 2, _pillW, _ph], [["NON", "OUI"] select _on, format ["IMPOSÉ · %1", ["NON", "OUI"] select _on]] select _locked] call _mk;
             _pill ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
             [_pill, _pillW, (_fs * 0.85) max COMSPEC_ATAK_FontMin] call _fit;
             _pill ctrlSetBackgroundColor ([[(_th get "off"), _acc] select _on, (_th get "warnDim")] select _locked);
             _pill ctrlSetTextColor ([(_th get "text"), (_th get "onAccent")] select (_on && {!_locked}));
             if (_id isNotEqualTo "") then { _ids set [_id, createHashMapFromArray [["kind", "switch"], ["pill", _pill], ["locked", _locked], ["w", _pillW], ["fh", (_fs * 0.85) max COMSPEC_ATAK_FontMin]]]; };
             if !(_locked) then {
-                private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;
-                [_b, _code] call _click;
+                [_pill, _code] call _click;
             } else {
-                _card ctrlSetTooltip (("Réglé par votre communauté sur Athena (Contrôle serveur)") call comspec_atak_native_fnc_tr);
+                _card ctrlSetTooltip (("Valeur imposée : la ligne dit par qui. Non modifiable ici.") call comspec_atak_native_fnc_tr);
             };
             _y = _y + _h + _pad / 3;
         };
