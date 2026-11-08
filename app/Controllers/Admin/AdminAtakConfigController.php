@@ -97,8 +97,6 @@ class AdminAtakConfigController
             'experienceCatalog' => $experienceCatalog,
             'experienceGuide' => $experiencePack['guide'],
             'experienceGuideCustom' => trim((string) ($experiencePack['settings']['guide_custom'] ?? '')),
-            'experienceCommunityNotes' => (string) ($experiencePack['settings']['community_notes'] ?? ''),
-            'experienceCommunityKit' => (string) ($experiencePack['settings']['community_kit'] ?? ''),
             'experienceUpdatedAt' => $experiencePack['updated_at'],
             'experienceSchemaReady' => $experienceSchemaReady,
             'photoHud' => $photoHud,
@@ -282,6 +280,22 @@ class AdminAtakConfigController
         }
 
         $svc = new AtakExperienceService();
+        $incoming = self::experienceFormInput($svc, $request);
+        $svc->put((int) $tenantId, $incoming);
+        Session::flash('success', 'Expérience Overwatch enregistrée. Les opérateurs en liaison récupèrent les réglages sous environ une minute.');
+
+        return Response::redirect(url('back-office/ressources/atak-config'));
+    }
+
+    /**
+     * Réglages envoyés par le formulaire Expérience. Les consignes et le kit de l'app Communauté n'en font plus partie
+     * (Consignes et kit ATAK) : mergeSettings ne change que les clés reçues, et une clé absente garde sa valeur.
+     * Une page restée ouverte depuis l'ancienne version peut encore les envoyer : on les ignore.
+     *
+     * @return array<string, mixed>
+     */
+    public static function experienceFormInput(AtakExperienceService $svc, Request $request): array
+    {
         $incoming = [];
         foreach ($svc->catalog() as $row) {
             if (($row['surface'] ?? 'experience') !== 'experience') {
@@ -295,15 +309,11 @@ class AdminAtakConfigController
             }
         }
         $incoming['guide_custom'] = trim((string) $request->input('experience_guide_custom', ''));
-        $incoming['community_notes'] = (string) $request->input('experience_community_notes', '');
-        $incoming['community_kit'] = (string) $request->input('experience_community_kit', '');
         if (!empty($incoming['realism'])) {
             $incoming['troll'] = false;
         }
-        $svc->put((int) $tenantId, $incoming);
-        Session::flash('success', 'Expérience Overwatch enregistrée. Les opérateurs en liaison récupèrent les réglages sous environ une minute.');
 
-        return Response::redirect(url('back-office/ressources/atak-config'));
+        return $incoming;
     }
 
     public function storeGameExperience(Request $request, array $params = []): Response

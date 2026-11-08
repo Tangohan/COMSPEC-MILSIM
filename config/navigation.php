@@ -354,6 +354,7 @@ return [
                     'slot' => 'secondary',
                     'links' => [
                         ['label' => 'Configuration ATAK', 'path' => 'back-office/ressources/atak-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Consignes et kit ATAK', 'path' => 'back-office/ressources/atak-consignes', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Consignes, ordres, tips et kit obligatoire de l’app Communauté du téléphone'],
                         ['label' => 'Renseignement — codes d’accès', 'path' => 'back-office/renseignement/codes', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'atak.sse.grant'], 'description' => 'Délivrer des codes temporaires au portail de renseignement classifié'],
                         ['label' => 'Cycle de mission', 'path' => 'back-office/atak/cycle-mission', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Créer, ouvrir et clôturer une mission (briefing → carte → après-action)'],
                         ['label' => 'Comptes rendus (AAR)', 'path' => 'back-office/atak/comptes-rendus', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Rapports post-opération, points relevés et actions de suivi'],
