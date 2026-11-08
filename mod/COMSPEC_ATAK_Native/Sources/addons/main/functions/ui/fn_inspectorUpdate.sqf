@@ -89,6 +89,7 @@ if ((uiNamespace getVariable ["COMSPEC_ATAK_InspSelKey", ""]) isNotEqualTo (["",
     && {missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]}
     && {(_s getOrDefault ["pageDrawn", ""]) isEqualTo "MAP"} && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _e getOrDefault ["callsign", "CONTACT"]] select ((count _e) > 0)];
+    uiNamespace setVariable ["COMSPEC_ATAK_InspTh", -1];
     [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 };
 private _ctl = uiNamespace getVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
@@ -96,8 +97,14 @@ if (isNull _ctl) exitWith {};
 _ctl ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
 // Le volet est posé à la hauteur du texte du rendu : une fiche qui gagne ou perd des lignes (montée en véhicule,
 // téléphone abîmé) redessine la carte pour que rien ne soit coupé ni ne laisse un trou (au plus toutes les 2 s).
-private _dh = (ctrlTextHeight _ctl) - ((ctrlPosition _ctl) select 3);
-if ((abs _dh) > (([] call comspec_atak_native_fnc_layoutGet) get "fontSmall") * 0.5 && {diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_InspReflow", 0])}) then {
+// Hauteur du texte déjà « refaite » gardée : si le volet ne peut pas atteindre la hauteur du texte (plafond, fiche d'une
+// unité sélectionnée plus longue), l'écart restait et la carte était redessinée toutes les 2 s (clignotement régulier,
+// unité sélectionnée). Redessin seulement quand la hauteur du texte change vraiment.
+private _th = ctrlTextHeight _ctl;
+private _dh = _th - ((ctrlPosition _ctl) select 3);
+if ((abs _dh) > (([] call comspec_atak_native_fnc_layoutGet) get "fontSmall") * 0.5 && {diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_InspReflow", 0])}
+    && {(abs (_th - (uiNamespace getVariable ["COMSPEC_ATAK_InspTh", -1]))) > (([] call comspec_atak_native_fnc_layoutGet) get "fontSmall") * 0.25}) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_InspTh", _th];
     uiNamespace setVariable ["COMSPEC_ATAK_InspReflow", diag_tickTime + 2];
     [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 };

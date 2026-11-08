@@ -145,14 +145,20 @@ private _changed = {
     };
     call _refresh;
 };
-// Nom automatique d'une étape (CP 3, RP 1, SP…) d'après les étapes déjà posées.
+// Nom automatique d'une étape (CP 3, RP 1, SP…) : le plus petit numéro que les autres étapes n'utilisent pas encore
+// (SP et FIN : sans numéro tant qu'ils sont libres). Avant : nombre d'étapes du même type + 1, d'où des doublons après
+// une suppression et un numéro décalé quand l'étape changeait de type (elle se comptait elle-même). _skip : index de
+// l'étape renommée (-1 : étape pas encore posée).
 private _autoName = {
-    params ["_r", "_k"];
+    params ["_r", "_k", ["_skip", -1]];
     private _pre = ([_k] call _typeRow) select 4;
     if (_pre isEqualTo "FIN" && {(missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isNotEqualTo "fr"}) then { _pre = "END"; };
-    private _n = { (_x select 1) isEqualTo _k } count (_r get "steps");
-    if (_k in ["SP", "END"] && {_n isEqualTo 0}) exitWith { _pre };
-    format ["%1 %2", _pre, _n + 1]
+    private _used = [];
+    { if (_forEachIndex isNotEqualTo _skip) then { _used pushBack (toUpper (_x select 2)); }; } forEach (_r get "steps");
+    if (_k in ["SP", "END"] && {!(_pre in _used)}) exitWith { _pre };
+    private _n = 1;
+    while { (format ["%1 %2", _pre, _n]) in _used } do { _n = _n + 1; };
+    format ["%1 %2", _pre, _n]
 };
 // Calcul par les routes (véhicule) relancé si besoin, sinon tracé droit.
 private _legsFix = {
@@ -351,7 +357,7 @@ switch (_act) do {
             private _oldPre = ([_s select 1] call _typeRow) select 4;
             if ((_s select 1) isNotEqualTo _type && {_name isEqualTo (_s select 2)} && {((_name find _oldPre) isEqualTo 0) || {_name in ["FIN", "END"]}} && {(count _name) <= (count _oldPre) + 3}) then {
                 _s set [1, _type];
-                _name = [_r, _type] call _autoName;
+                _name = [_r, _type, _i] call _autoName;
             };
             _s set [1, _type];
         };
