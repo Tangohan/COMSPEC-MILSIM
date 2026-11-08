@@ -109,6 +109,7 @@ la DLL du mod y lit une pause de toute la liaison) :
 - ne limitez pas `/admin` plus que le reste : un administrateur doit pouvoir agir pendant un incident ;
 - `limit_req` ne suffit pas pour les connexions lentes : garder `client_header_timeout`, `client_body_timeout` et `send_timeout` courts (10 à 20 s) et `keepalive_timeout` modéré ;
 - après un `reload`, relire `error.log` : les refus apparaissent avec « limiting requests », zone et adresse.
+- photos du mod : `client_max_body_size 100m;` dans le `server {}` d'Athena (une capture PNG d'Arma dépasse souvent 17 Mo, parfois 70 Mo). Sans cette ligne, nginx répond 413 au-delà de 1 Mo et le joueur voit « PhotoUpload — http_413 ». Vérifier sur le VPS : `nginx -T | grep client_max_body_size`.
 
 ### Pour mesurer avant de régler
 
