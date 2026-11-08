@@ -80,7 +80,7 @@ private _grant = {
 private _label = {
     params ["_d"];
     if ((count _d) isEqualTo 0) exitWith { "Document vierge" };
-    format ["%1 %2 · %3 %4", ["Carte d'identité", "Passeport", "Permis"] select ((["id_card", "passport", "driving_license"] find (_d get "type")) max 0),
+    format ["%1 %2 · %3 %4", ["Carte d'identité", "Passeport", "Permis", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d get "type")) max 0),
         _d get "country", toUpper (_d get "last"), _d get "first"]
 };
 // Document imprimé (ce que voit celui qui le tient) : jamais la vérité.
@@ -88,7 +88,7 @@ private _pub = {
     params ["_d"];
     private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [_d get "country", createHashMap];
     private _p = createHashMap;
-    { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["id", "type", "country", "number", "last", "first", "sex", "dob", "pob", "nat", "profession", "issued", "expires", "authority", "address"];
+    { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["id", "type", "country", "number", "last", "first", "sex", "dob", "pob", "nat", "profession", "issued", "expires", "authority", "address", "rank", "force"];
     _p set ["countryName", _c getOrDefault ["name", _d get "country"]];
     _p set ["countryNameEn", _c getOrDefault ["nameEn", ""]];
     // Pays réel stylisé : gabarit générique de sa zone (europe | americas | other), jamais un vrai modèle.
@@ -100,6 +100,13 @@ private _pub = {
     _p set ["holo", !("holo" in _f)];
     _p set ["font", "font" in _f];
     _p set ["photo", "photo" in _f];
+    // Visage de la photo : le vrai titulaire, en direct (fn_idFace), s'il est encore de ce monde. Faux papier : un autre
+    // visage, tiré par le poste à partir du nom imprimé. Le poste ne reçoit jamais la vérité, seulement quoi filmer.
+    private _forged = (_d getOrDefault ["kind", ""]) isEqualTo "forged";
+    private _holderUnit = ["owner", _d getOrDefault ["holderKey", ""]] call comspec_sse_fnc_bioRegistry;
+    _p set ["faceNetId", if (_forged || {isNull _holderUnit}) then { "" } else { netId _holderUnit }];
+    _p set ["faceAvoid", if (isNull _holderUnit) then { "" } else { face _holderUnit }];
+    _p set ["photoSwap", (_d getOrDefault ["forgeryKind", ""]) isEqualTo "photo_swap"];
     _p
 };
 // Poignée -> [document, porteur (unité / conteneur / objNull), autorisé, sujet (personne contrôlée ou objNull)].
@@ -312,6 +319,17 @@ switch (_op) do {
             _res set ["query", [_d get "country", _d get "type", _d get "number", _d get "last", _d get "first", _d get "dob"]];
             _res set ["athenaId", _d getOrDefault ["athenaId", ""]];
         };
+        // Fiche Athena de la personne : celle de l'unité ; sinon celle du papier, seulement si elle en est le vrai titulaire
+        // (un papier volé ne rattache pas son porteur à la fiche du titulaire).
+        private _personId = if (isNull _subj) then { "" } else { _subj getVariable ["comspec_sse_athenaPersonId", ""] };
+        if (_personId isEqualTo "" && {!isNull _subj} && {(_d getOrDefault ["holderKey", ""]) isEqualTo ([_subj] call comspec_sse_fnc_bioPersonKey)}) then {
+            private _pack = (_reg get "athena") getOrDefault [format ["%1|%2|%3", _d get "country", _d get "type", _d get "number"], createHashMap];
+            _personId = _pack getOrDefault ["holder_person_id", ""];
+            if (_personId in ["", 0]) then { _personId = (_pack getOrDefault ["identity", createHashMap]) getOrDefault ["person_id", ""]; };
+        };
+        if !(_personId isEqualType "") then { _personId = str _personId; };
+        if (_personId in ["0", "any", "<null>"]) then { _personId = ""; };
+        _res set ["personId", _personId];
         [_d, _res, _lvl, _subj] call _noteCheck;
         ["comspec_sse_idChecked", [_me, _d get "id", _lvl, _res]] call CBA_fnc_localEvent;
         ["result", [_d get "id", _lvl, _res]] call _reply;
@@ -333,10 +351,8 @@ switch (_op) do {
             private _from = (([_t, 3] call comspec_sse_fnc_idDocsOf) select { (_x select 0) isEqualTo _cls }) param [0, []];
             if (_from isEqualTo []) exitWith { [_me, "Le document n'est plus là.", "WARNING"] call _tell; };
             [_cls, _from select 1, _me] call comspec_sse_fnc_idTransfer;
-            if (!isNil "comspec_sse_fnc_custody") then {
-                private _remark = format ["Saisie du document %1 n° %2", _d getOrDefault ["type", "?"], _d getOrDefault ["number", "?"]];
-                if (((["piece", [_t]] call comspec_sse_fnc_custody)) isEqualTo "") then { ["open", [_t, _me, _remark]] call comspec_sse_fnc_custody; } else { ["event", [_t, "SAISIE", _me, _remark]] call comspec_sse_fnc_custody; };
-            };
+            // Le papier devient une pièce du module evidence, sous chaîne de possession, rattachée au dossier en cours.
+            ["seize", [_d, _t, _me]] call comspec_sse_fnc_idEvidence;
             ["seized", [_t, _cls, _d getOrDefault ["id", ""]]] call _reply;
             ["add", ["SAISIE", format ["%1 n° %2 saisi par %3 au %4", [_d] call _label, _d getOrDefault ["number", "?"], name _me, mapGridPosition _me],
                 format ["seize|%1", _d getOrDefault ["id", _cls]]]] call comspec_sse_fnc_idAar;
@@ -350,6 +366,7 @@ switch (_op) do {
         if !(["return", _t] call _took) exitWith {};
         if !(_cls in (([_me, 0] call comspec_sse_fnc_idDocsOf) apply { _x select 0 })) exitWith {};
         [_cls, _me, _t] call comspec_sse_fnc_idTransfer;
+        ["return", [["ofClass", [_cls]] call comspec_sse_fnc_idRegistry, _t, _me]] call comspec_sse_fnc_idEvidence;
         ["returned", [_t, _cls]] call _reply;
         if (isPlayer _t) then { [_t, format ["%1 vous rend un document.", name _me]] call _tell; };
     };

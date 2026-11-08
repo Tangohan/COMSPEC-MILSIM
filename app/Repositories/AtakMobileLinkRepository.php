@@ -101,6 +101,13 @@ class AtakMobileLinkRepository
         return is_array($row) ? $row : null;
     }
 
+    /** Raccourcit la session d'un lien (espace d'administration : une heure). Jamais plus long qu'avant. */
+    public function shortenSession(int $id, string $expiresAt): void
+    {
+        $this->pdo()->prepare('UPDATE atak_mobile_links SET session_expires_at = ? WHERE id = ? AND session_expires_at > ?')
+            ->execute([$expiresAt, $id, $expiresAt]);
+    }
+
     public function touch(int $id): void
     {
         $this->pdo()->prepare('UPDATE atak_mobile_links SET last_seen_at = ? WHERE id = ?')->execute([gmdate('Y-m-d H:i:s'), $id]);

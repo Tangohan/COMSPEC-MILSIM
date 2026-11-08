@@ -3,7 +3,7 @@
 
     Variables écrites sur le SERVEUR seulement, sans diffusion : la nature des papiers (couverture, faux) et leur
     qualité font partie de la vérité, que les joueurs ne doivent pas pouvoir lire sur l'unité.
-      COMSPEC_ID_Carry    auto | none | card | passport | license | card_license | card_passport
+      COMSPEC_ID_Carry    auto | none | card | passport | license | card_license | card_passport | military
       COMSPEC_ID_Country  auto | ALT | TNA | LVN | MLD          COMSPEC_ID_Kind  civil | cover | forged
       COMSPEC_ID_Quality  0-100 (faux)          COMSPEC_ID_Profile  auto | civil | insurge | hvt | agent | policier (IA réalistes)
       COMSPEC_ID_Undercover  vrai : infiltré dès le début (couverture, fn_idCover)
@@ -29,6 +29,7 @@ class COMSPEC_SSE_Papiers {
                 class Passport { name = "$STR_COMSPEC_SSE_CFG_0D7912ADCF"; value = "passport"; };
                 class License { name = "$STR_COMSPEC_SSE_CFG_D1E45DF088"; value = "license"; };
                 class CardLicense { name = "$STR_COMSPEC_SSE_CFG_D430406714"; value = "card_license"; };
+                class MilitaryCard { name = "Carte militaire"; value = "military"; };
                 class CardPassport { name = "$STR_COMSPEC_SSE_CFG_BEF57EAA88"; value = "card_passport"; };
             };
         };
