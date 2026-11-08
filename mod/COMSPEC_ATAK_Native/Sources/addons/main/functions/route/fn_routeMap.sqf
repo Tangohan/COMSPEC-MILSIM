@@ -3,8 +3,13 @@
     Params : [événement, arguments de l'événement de la carte]
       "draw" [carte]               routes (fn_routeDraw), route modifiée au premier plan, aperçu sous le curseur
       "move" [carte, x, y]         curseur
-      "down" [carte, bouton, x, y] clic gauche : sur une étape, la choisir ; sinon selon le mode de l'app : ajouter en fin,
-                                   insérer après l'étape choisie, déplacer l'étape choisie. Clic droit : plus d'étape choisie.
+      "down" [carte, bouton, x, y] clic gauche armé (sauf sous la barre du mode), clic droit joué à l'image suivante
+      "up"   [carte, bouton, x, y] focus rendu ; clic gauche sans glisser joué à l'image suivante
+      "click" [carte, x, y]        sur une étape, la choisir ; sinon selon le mode de l'app : ajouter en fin, insérer après
+                                   l'étape choisie, déplacer l'étape choisie.
+      "rclick" []                  sort du mode de saisie, sinon plus d'étape choisie.
+    La carte reçoit aussi les clics faits sur la barre posée par-dessus, et rien ne doit être supprimé pendant l'appui :
+    le moteur perd alors la capture de la souris et ne laisse plus passer de clic (2026-11-02, menu de la carte).
     Vue : une carte neuve montre d'abord le coin du monde avant son animation ; la vue (COMSPEC_ATAK_RteView) n'est
     enregistrée qu'une fois la carte calée sur le but posé par fn_pageRoute (même calage que l'app Plan).
     Après un clic, seule la fiche est refaite (fn_pageRoute "#refresh") : la carte garde sa vue.
@@ -49,16 +54,44 @@ switch (_ev) do {
     };
     case "down": {
         _a params ["_map", "_btn", "_mx", "_my"];
+        _ui set ["press", []];
+        // Le relâchement du clic droit n'arrive pas toujours à la carte (Arma le garde pour le glisser) : joué sans l'attendre.
+        if (_btn isEqualTo 1) exitWith { [{ ["rclick"] call comspec_atak_native_fnc_routeMap; }] call comspec_atak_native_fnc_nextFrame; };
+        if (_btn isNotEqualTo 0) exitWith {};
+        (uiNamespace getVariable ["COMSPEC_ATAK_RteMapBarRect", []]) params [["_bx", -1], ["_by", -1], ["_bw", 0], ["_bh", 0]];
+        if (_mx >= _bx && {_mx <= _bx + _bw} && {_my >= _by} && {_my <= _by + _bh}) exitWith {};
+        _ui set ["press", [_mx, _my]];
+    };
+    case "up": {
+        _a params ["_map", "_btn", "_mx", "_my"];
+        // Carte focalisée : Arma la dessine devant le reste ; le focus revient au bouton hors écran (comme fn_mapUnfocus).
+        [{
+            private _d = [] call comspec_atak_native_fnc_display;
+            if (!isNull _d && {(focusedCtrl _d) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_RteMapCtrl", controlNull])}) then { ctrlSetFocus (_d displayCtrl 88543); };
+        }] call comspec_atak_native_fnc_nextFrame;
+        if (_btn isNotEqualTo 0) exitWith {};
+        private _pr = _ui getOrDefault ["press", []];
+        _ui set ["press", []];
+        // Glisser : la carte se déplace, rien n'est posé.
+        if ((count _pr) < 2 || {(abs (_mx - (_pr select 0))) >= pixelW * 8} || {(abs (_my - (_pr select 1))) >= pixelH * 8}) exitWith {};
+        [{ if (!isNull (_this select 0)) then { ["click", _this] call comspec_atak_native_fnc_routeMap; }; }, [_map, _pr select 0, _pr select 1]] call comspec_atak_native_fnc_nextFrame;
+    };
+    case "rclick": {
+        private _d = [] call comspec_atak_native_fnc_display;
+        if (!isNull _d && {(focusedCtrl _d) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_RteMapCtrl", controlNull])}) then { ctrlSetFocus (_d displayCtrl 88543); };
+        if (isNull (uiNamespace getVariable ["COMSPEC_ATAK_RteMapCtrl", controlNull])) exitWith {};
+        private _r = ["get", _ui getOrDefault ["id", ""]] call comspec_atak_native_fnc_routeAction;
+        if ((count _r) isEqualTo 0) exitWith {};
+        // Sort du mode de saisie (ce qui est posé reste), sinon plus d'étape choisie.
+        if ((_ui getOrDefault ["mode", "SEL"]) isNotEqualTo "SEL") exitWith { ["#ui", ["modeEnd"]] call comspec_atak_native_fnc_pageRoute; };
+        _ui set ["sel", -1];
+        ["#refresh"] call comspec_atak_native_fnc_pageRoute;
+    };
+    case "click": {
+        _a params ["_map", "_mx", "_my"];
         private _id = _ui getOrDefault ["id", ""];
         private _r = ["get", _id] call comspec_atak_native_fnc_routeAction;
         if ((count _r) isEqualTo 0) exitWith {};
-        // Clic droit : sort du mode de saisie (ce qui est posé reste), sinon plus d'étape choisie.
-        if (_btn isEqualTo 1) exitWith {
-            if ((_ui getOrDefault ["mode", "SEL"]) isNotEqualTo "SEL") exitWith { ["#ui", ["modeEnd"]] call comspec_atak_native_fnc_pageRoute; };
-            _ui set ["sel", -1];
-            ["#refresh"] call comspec_atak_native_fnc_pageRoute;
-        };
-        if (_btn isNotEqualTo 0) exitWith {};
         private _st = _r get "steps";
         // Étape sous le clic (14 pixels) : choisie.
         private _hit = -1;

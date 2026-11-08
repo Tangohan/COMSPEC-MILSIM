@@ -435,8 +435,12 @@ private _editRows = {
 // Barre du mode de saisie, sur la carte de l'app (AJOUTER, INSÉRER, DÉPLACER) : consigne, TERMINER, ANNULER. Refaite
 // sans rendu de page (fiche refaite seule) ; rien en mode CHOISIR.
 private _mapBar = {
-    { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_RteMapBar", []]);
+    // Masqués tout de suite, supprimés à l'image suivante (même raison que fn_pageClear : jamais pendant un clic).
+    private _oldBar = uiNamespace getVariable ["COMSPEC_ATAK_RteMapBar", []];
+    { _x ctrlShow false; _x ctrlEnable false; } forEach (_oldBar select { !isNull _x });
+    [{ { ctrlDelete _x; } forEach _this; }, _oldBar] call comspec_atak_native_fnc_nextFrame;
     uiNamespace setVariable ["COMSPEC_ATAK_RteMapBar", []];
+    uiNamespace setVariable ["COMSPEC_ATAK_RteMapBarRect", []];
     private _mr = uiNamespace getVariable ["COMSPEC_ATAK_RteMapRect", []];
     private _mode = _ui get "mode";
     if ((count _mr) < 4 || {!_mine} || {_mode isEqualTo "SEL"} || {(_ui get "view") isNotEqualTo "EDIT"}) exitWith {};
@@ -452,6 +456,7 @@ private _mapBar = {
     private _bwB = (_mw * 0.2) max (_font * 4.2);
     private _nB = [2, 1] select (_mode isEqualTo "MOVE");
     private _list = [];
+    uiNamespace setVariable ["COMSPEC_ATAK_RteMapBarRect", [_mx + _pad * 0.5, _y, _mw - _pad, _h]];
     private _bgc = ["COMSPEC_RscText", [_mx + _pad * 0.5, _y, _mw - _pad, _h], "", false] call comspec_atak_native_fnc_pageCtrl;
     _bgc ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.9];
     _list pushBack _bgc;
@@ -488,8 +493,9 @@ if (_page isEqualTo "#refresh") exitWith {
     if ((_draft getOrDefault ["rteName", ""]) isEqualTo (_r get "name")) then { _draft deleteAt "rteName"; };
     private _sv = (ctrlScrollValues _grp) select 0;
     private _bg = _grp getVariable ["bg", controlNull];
-    ctrlDelete _grp;
-    if (!isNull _bg) then { ctrlDelete _bg; };
+    // Ancienne fiche masquée tout de suite, supprimée à l'image suivante (jamais pendant un clic, fn_pageClear).
+    { if (!isNull _x) then { _x ctrlShow false; _x ctrlEnable false; }; } forEach [_grp, _bg];
+    [{ { ctrlDelete _x; } forEach _this; }, [_grp, _bg]] call comspec_atak_native_fnc_nextFrame;
     uiNamespace setVariable ["COMSPEC_ATAK_RteDrawnAt", diag_frameNo];
     private _ng = [call _editRows, _rect] call comspec_atak_native_fnc_formRender;
     uiNamespace setVariable ["COMSPEC_ATAK_RteForm", _ng];
@@ -533,6 +539,7 @@ switch (_view) do {
         uiNamespace setVariable ["COMSPEC_ATAK_RteMapCtrl", _map];
         _map ctrlAddEventHandler ["Draw", { private _t = diag_tickTime; ["draw", _this] call comspec_atak_native_fnc_routeMap; ["carte Routes (image)", _t] call comspec_atak_native_fnc_perfAcc; }];
         _map ctrlAddEventHandler ["MouseButtonDown", { ["down", _this] call comspec_atak_native_fnc_routeMap; }];
+        _map ctrlAddEventHandler ["MouseButtonUp", { ["up", _this] call comspec_atak_native_fnc_routeMap; }];
         _map ctrlAddEventHandler ["MouseMoving", { ["move", _this] call comspec_atak_native_fnc_routeMap; }];
         // Vue gardée d'un rendu à l'autre ; première ouverture : sur la route, sinon sur moi.
         private _v = uiNamespace getVariable ["COMSPEC_ATAK_RteView", []];
