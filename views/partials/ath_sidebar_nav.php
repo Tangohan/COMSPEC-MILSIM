@@ -130,6 +130,8 @@ $membersChildren = array_values(array_filter([
         : null,
     ['label' => 'Départs', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')],
     ['label' => 'Comptes en double', 'href' => effectifs_workspace_url('doublons'), 'active' => $navAt($effPath . '/doublons')],
+    ['label' => 'Personnes sans compte', 'href' => effectifs_workspace_url('sans-comptes'), 'active' => $navAt($effPath . '/sans-comptes')],
+    ['label' => 'Tableaux de données', 'href' => effectifs_workspace_url('tableaux'), 'active' => $navAt($effPath . '/tableaux')],
     // Profils sans recrutement : les invitations quittent le bloc « Recrutement » (masqué) pour rester sous la main.
     !$isFullTenant
         ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')]

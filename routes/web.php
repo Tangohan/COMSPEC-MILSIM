@@ -2097,6 +2097,17 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/nouveau/verifier', [\App\Controllers\Admin\EffectifsInvitesController::class, 'checkNewMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/invitations', [EffectifsWorkspaceController::class, 'invitations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Personnes sans compte (liste, création, correction, rattachement, import) et tableaux de données de tout.
+    $router->get('/back-office/ressources/effectifs/sans-comptes', [EffectifsWorkspaceController::class, 'sansComptes'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/creer', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/importer', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'import'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/{id}/modifier', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/{id}/rattacher', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'attach'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/tableaux', [EffectifsWorkspaceController::class, 'tableaux'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/tableaux/export.csv', [\App\Controllers\Admin\EffectifsTablesController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/tableaux/enregistrer', [\App\Controllers\Admin\EffectifsTablesController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/tableaux/tableur', [\App\Controllers\Admin\EffectifsTablesController::class, 'toSheet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/tableaux/{id}/supprimer', [\App\Controllers\Admin\EffectifsTablesController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/invitations', [\App\Controllers\Admin\EffectifsInvitesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/invitations/{inviteId}/{action}', [\App\Controllers\Admin\EffectifsInvitesController::class, 'act'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/export', [EffectifsWorkspaceController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
