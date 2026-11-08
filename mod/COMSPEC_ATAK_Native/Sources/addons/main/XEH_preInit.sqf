@@ -567,6 +567,17 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_relay_mrh", "CHECKBOX",
     ["Antennes MRH Satellite = relais ATAK", "Si le mod MRH Satellite est chargé : une antenne SATCOM dépliée devient un relais du réseau ATAK (type terminal satellite), retiré dès qu'elle est repliée ou détruite. Sans ce mod : aucun effet."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// Déclencheur réseau des explosifs (fn_exploNet) : le serveur décide, ces valeurs sont imposées à tous.
+private _exploCat = ["COMSPEC", "ATAK · Explosifs"];
+["comspec_atak_native_explo_net_range", "SLIDER",
+    ["Portée du déclencheur réseau (m)", "Distance maximale, en liaison dégagée, entre la charge et le relais le plus proche ou le téléphone. Relief, météo et brouillage s'appliquent ensuite."],
+    _exploCat, [100, 10000, 1500, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_explo_net_delay", "SLIDER",
+    ["Délai de transmission (s)", "Temps entre l'ordre validé par le serveur et la détonation."],
+    _exploCat, [0, 5, 0.5, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_explo_net_consume", "CHECKBOX",
+    ["Un déclencheur réseau par charge", "Coché : l'objet reste sur la charge et sort de l'inventaire. Décoché : il suffit d'en porter un, il sert pour toutes vos charges."],
+    _exploCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Antennes transportables (fn_antennaKit) : valeurs de jeu plausibles, à régler selon la mission. Portée du relais = portée de base x 10^(gain / 20).
 private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
 ["comspec_atak_native_antkit_max", "SLIDER",

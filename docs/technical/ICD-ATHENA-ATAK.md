@@ -224,6 +224,8 @@ GET query: `limit` (default 100), `after` (id), `callsign` / `for_callsign` (MP 
 }
 ```
 
+Un ping dont le message commence par une étiquette contenant « super » (`[Super ping]`) disparaît seul : `GET /api/pings` le retire de la base 15 s après sa création.
+
 Coords validated. 201 + activity log `TYPE_PING`.
 
 ---
@@ -619,7 +621,7 @@ Lecture par session de jeu : la clé commune du serveur ne dit pas qui joue (`40
 
 ## App Communauté : `GET /api/atak/community-brief`
 
-Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le contenu se saisit dans Ressources › Configuration ATAK, section Expérience (`community_notes`, `community_kit` dans la configuration d'expérience, sans migration), et se lit par `App\Support\AtakCommunityBrief`. Sans saisie, l'API renvoie des listes vides.
+Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le contenu se saisit dans Ressources › Consignes et kit ATAK (`/back-office/ressources/atak-consignes`), reste rangé dans la configuration d'expérience (`community_notes`, `community_kit`, sans migration) et se lit par `App\Support\AtakCommunityBrief`. La DLL coupe sa réponse à 7 996 octets, notes d'abord puis kit : le back-office affiche ce volume et refuse de le dépasser. Sans saisie, l'API renvoie des listes vides.
 
 ```json
 {
