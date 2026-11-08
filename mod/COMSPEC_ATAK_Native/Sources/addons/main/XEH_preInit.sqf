@@ -83,6 +83,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_startup_report", "CHECKBOX",
     ["Envoyer le rapport de démarrage", "Coché par défaut. Une seule fois, au premier lancement : quand vous vous connectez à Athena en jeu (ou si la connexion échoue), un rapport sur l'état du mod est posté dans le salon de debug du Discord Athena, avec votre pseudo et votre indicatif : versions, DLL, connexion, numéro et IMEI du téléphone, appareil porté, FPS, erreurs. Ça aide l'équipe à vous dépanner. Pour le renvoyer : menu Échap > Dépannage liaison > Renvoyer le check de démarrage. Aucun UID Steam ni adresse IP. Décochez pour ne rien envoyer."],
     ["COMSPEC", "ATAK · Debug"], true, 0] call comspec_atak_native_fnc_addSetting;
+// Garde-fou du téléphone (fn_deviceGuard), par joueur : réparation à chaque lancement, pour un téléphone qui plante encore.
+["comspec_atak_native_purge_camlinks", "CHECKBOX",
+    ["Réparer mes données à chaque lancement", "Décoché par défaut. À chaque lancement de mission, le téléphone met de côté ses caches et efface sa dernière page au lieu de les rejouer. Ne touche jamais au mode compromis ni à l'identifiant de l'appareil."],
+    ["COMSPEC", "ATAK · Debug"], false, 0] call comspec_atak_native_fnc_addSetting;
 // Mode profilage (fn_profiler), par joueur, désactivé par défaut : temps de chaque tâche de fond dans le RPT toutes les 10 s.
 ["comspec_atak_native_profiling", "CHECKBOX",
     ["Profilage (saccades)", "Décoché par défaut. Coché : toutes les 10 s, le journal du jeu (fichier RPT) note le temps pris par chaque tâche de fond (COMSPEC et autres mods), les pics de plus de 5 ms et chaque saccade avec ce qui tournait à ce moment. Cochez-le si le jeu saccade, jouez 10 minutes, puis envoyez le RPT à l'équipe. Coûte un peu de performance : décochez ensuite."],

@@ -11,7 +11,11 @@
                          code de verrouillage, effacé]
       "event" [genre, ligne] : "new" | "activity" | "validated" | "dismissed" (du serveur)
       "revoke" [id, terminal, indicatif] : appel COMSPEC Link puis compte rendu au serveur
-      "ownerReset"     : mon téléphone a été compromis : nouvel IMEI sur le prochain
+      "ownerReset" [id, terminal] : mon téléphone a été compromis : nouvel IMEI et nouvel identifiant sur le prochain
+      "newDevice" [ref, raison, terminal] : l'identifiant du terminal change ; l'ancien reste exclu sur Athena, seul le nouveau s'enregistre
+      "deviceTick"     : à chaque tour de la barre d'état : enregistre le nouvel appareil dès qu'un téléphone est sur moi
+      "deviceStatus"   : [titre, texte] pour l'app Alertes ([] : rien en cours)
+      "boot"           : IMEI gardé après un respawn, compromission validée pendant mon absence
       "can" ligne      : puis-je valider ?        "validate" id    "dismiss" id    "map" id
       "mine"           : compromissions de mon camp (plus récentes d'abord)
 */
@@ -45,7 +49,9 @@ switch (_act) do {
         // jusqu'à sa levée par Athena. Pas pour un événement rejoué à l'arrivée en partie.
         if (_kind isEqualTo "validated" && {(_r select 10) isEqualTo getPlayerUID player} && {!(missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false])}) then {
             ["set", createHashMapFromArray [["origin", "auto"], ["source", "field"], ["state", "compromised"], ["match", "terminal"], ["imei", _r select 4],
-                ["reason", format ["Capturé par l'ennemi vers %1", _r select 5]], ["by", _r select 8], ["ref", _r select 0], ["revoked", "1"]]] call comspec_atak_native_fnc_compromiseView;
+                ["reason", format ["Capturé par l'ennemi vers %1", _r select 5]], ["by", _r select 8], ["ref", _r select 0], ["revoked", "1"],
+                // Identifiant déjà changé par « ownerReset » : le mode compromis reste sur l'ancien, jamais sur le nouvel appareil.
+                ["terminal", ["previous", _r select 0] call comspec_atak_native_fnc_compromise]]] call comspec_atak_native_fnc_compromiseView;
         };
         // L'alerte arrive sur l'ATAK : sans téléphone, rien.
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
@@ -90,8 +96,86 @@ switch (_act) do {
         };
     };
     case "ownerReset": {
-        player setVariable ["COMSPEC_ATAK_PhoneGen", (player getVariable ["COMSPEC_ATAK_PhoneGen", 0]) + 1, true];
-        ["WARNING", "Votre ATAK capturé est exclu du réseau. Votre prochain téléphone aura un nouvel IMEI.", 8, 70] call comspec_atak_native_fnc_notify;
+        _arg params [["_id", ""], ["_term", ""]];
+        private _gen = (player getVariable ["COMSPEC_ATAK_PhoneGen", 0]) + 1;
+        player setVariable ["COMSPEC_ATAK_PhoneGen", _gen, true];
+        // Dans le profil : une variable d'unité disparaît au respawn, et l'ancien IMEI revenait avec le téléphone suivant.
+        profileNamespace setVariable ["COMSPEC_ATAK_PhoneGenSaved", _gen];
+        ["newDevice", [_id, "capture validée", _term]] call comspec_atak_native_fnc_compromise;
+    };
+    case "newDevice": {
+        _arg params [["_ref", ""], ["_why", ""], ["_term", ""]];
+        private _cur = profileNamespace getVariable ["comspec_overwatch_terminal_uid", ""];
+        if !(_cur isEqualType "") then { _cur = ""; };
+        // Ordre pour un autre identifiant que le mien (déjà remplacé, autre poste) : le terminal actif ne change pas.
+        if (_term isNotEqualTo "" && {_term isNotEqualTo _cur}) exitWith {
+            ["INFO", "CAPTURE", format ["Remplacement de l'appareil %1 ignoré : terminal actif %2", _term, _cur]] call comspec_atak_native_fnc_log;
+            false
+        };
+        private _gen = profileNamespace getVariable ["comspec_overwatch_terminal_gen", 0];
+        if !(_gen isEqualType 0) then { _gen = 0; };
+        profileNamespace setVariable ["comspec_overwatch_terminal_gen", _gen + 1];
+        profileNamespace setVariable ["comspec_overwatch_terminal_uid", ""];
+        private _new = if (isNil "comspec_overwatch_connect_fnc_getTerminalUid") then { "" } else { [] call comspec_overwatch_connect_fnc_getTerminalUid };
+        profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", [_cur, _ref, _why, "pending"]];
+        [true] call comspec_atak_native_fnc_saveProfile;
+        uiNamespace setVariable ["COMSPEC_ATAK_NewDeviceAt", -1e9];
+        ["WARN", "CAPTURE", format ["Appareil remplacé (%1, %2) : %3 reste exclu, nouveau terminal %4", _why, _ref, _cur, _new]] call comspec_atak_native_fnc_log;
+        ["WARNING", "Votre ancien ATAK est exclu du réseau. Prenez un téléphone : il recevra son propre identifiant et retrouvera l'accès tout seul.", 10, 80, "ALERTS"] call comspec_atak_native_fnc_notify;
+        call _render;
+        true
+    };
+    case "previous": {
+        // Terminal qui portait la compromission _arg ("" : l'actif, le mode compromis prend alors le mien).
+        (profileNamespace getVariable ["COMSPEC_ATAK_NewDevice", []]) params [["_old", ""], ["_ref", ""]];
+        [_old, ""] select !(_ref isEqualTo _arg)
+    };
+    case "deviceTick": {
+        private _st = profileNamespace getVariable ["COMSPEC_ATAK_NewDevice", []];
+        if !(_st isEqualType [] && {(_st param [3, ""]) isEqualTo "pending"}) exitWith {};
+        if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_NewDeviceAt", -1e9]) < 20) exitWith {};
+        if (isNil "comspec_overwatch_connect_fnc_syncAtakRealism" || {!([player, true] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
+        if ((missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isNotEqualTo "linked") exitWith {};
+        uiNamespace setVariable ["COMSPEC_ATAK_NewDeviceAt", diag_tickTime];
+        [] spawn {
+            private _ok = ["", true] call comspec_overwatch_connect_fnc_syncAtakRealism;
+            if !(_ok isEqualTo true) exitWith {
+                ["WARN", "CAPTURE", format ["Nouvel appareil non enregistré : %1", missionNamespace getVariable ["COMSPEC_AtakRealismLastError", ""]]] call comspec_atak_native_fnc_log;
+            };
+            private _s = profileNamespace getVariable ["COMSPEC_ATAK_NewDevice", []];
+            if ((count _s) >= 4) then { _s set [3, "done"]; profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", _s]; };
+            [] call comspec_atak_native_fnc_saveProfile;
+            ["SUCCESS", "Nouvel appareil enregistré : vous êtes de nouveau sur le réseau.", 8, 70, "ALERTS"] call comspec_atak_native_fnc_notify;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
+        };
+    };
+    case "deviceStatus": {
+        private _st = profileNamespace getVariable ["COMSPEC_ATAK_NewDevice", []];
+        if !(_st isEqualType [] && {(count _st) >= 4}) exitWith { [] };
+        if ((_st select 3) isEqualTo "done") exitWith { ["Nouvel appareil actif", "L'ancien ATAK reste exclu du réseau."] };
+        if !([player, true] call comspec_atak_native_fnc_hasDevice) exitWith { ["Ancien ATAK exclu", "Prenez un téléphone : il recevra son propre identifiant."] };
+        ["Nouvel appareil", "Enregistrement en cours auprès d'Athena…"]
+    };
+    case "boot": {
+        if (!hasInterface) exitWith {};
+        private _restore = {
+            params ["_u"];
+            private _g = profileNamespace getVariable ["COMSPEC_ATAK_PhoneGenSaved", 0];
+            if (_g isEqualType 0 && {_g > (_u getVariable ["COMSPEC_ATAK_PhoneGen", 0])}) then { _u setVariable ["COMSPEC_ATAK_PhoneGen", _g, true]; };
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_PhoneGenRestore", _restore];
+        [player] call _restore;
+        player addEventHandler ["Respawn", { params ["_u"]; [_u] call (missionNamespace getVariable ["COMSPEC_ATAK_PhoneGenRestore", {}]); }];
+        // Compromission validée pendant que j'étais déconnecté (plantage, reconnexion) : l'ordre du serveur n'a pas pu m'arriver.
+        [{
+            private _done = (profileNamespace getVariable ["COMSPEC_ATAK_NewDevice", []]) param [1, ""];
+            {
+                _x params ["_id", "", "", "", "", "", "", "_state", "", "", "_ouid"];
+                if (_state isEqualTo "validated" && {_ouid isEqualTo getPlayerUID player} && {_id isNotEqualTo _done}) exitWith {
+                    ["ownerReset", [_id, ""]] call comspec_atak_native_fnc_compromise;
+                };
+            } forEach (missionNamespace getVariable ["COMSPEC_ATAK_CaptureList", []]);
+        }, [], 30] call comspec_atak_native_fnc_waitAndExec;
     };
     case "can": {
         private _r = _arg;

@@ -23,7 +23,7 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
+private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _re = "[{ ['ADMIN'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 private _setS = { params ["_k", "_v"]; compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set [%1, %2]; %3", str _k, str _v, _re] };
 private _inGame = [player] call comspec_atak_native_fnc_adminAllowed;
@@ -67,6 +67,8 @@ if (_inGame && {isNil { uiNamespace getVariable "COMSPEC_ATAK_AdminPfh" }}) then
         };
         // Message en cours de saisie : pas de relevé (le redessin effacerait le texte).
         if ((_st getOrDefault ["admMsgFor", 0]) isNotEqualTo 0) exitWith {};
+        // Parc Athena et règles des apps : rien à relever. Chaque joueur répondait au relevé et redessinait toute la liste.
+        if ((_st getOrDefault ["admTab", "GAME"]) in ["ATHENA", "APPS"]) exitWith {};
         ["scan"] call comspec_atak_native_fnc_adminClient;
     }, 10] call CBA_fnc_addPerFrameHandler];
 };
@@ -259,6 +261,8 @@ switch (_tab) do {
             _rows pushBack ["info", "Temps de jeu", format ["%1 h", _play]];
             if (_blocked) then { _rows pushBack ["info", "Blocage", [_breason, "sans motif"] select (_breason isEqualTo "")]; };
             private _act = { params ["_a", ["_extra", "[]"]]; format ["['site', [%1, createHashMapFromArray ([['terminal_id', %2]] + %3)]] call comspec_atak_native_fnc_adminClient;", str _a, _id, _extra] };
+            // Mon propre ATAK : le déclarer compromis depuis son téléphone couperait l'app en pleine action (refusé aussi par le site).
+            private _mine = _steam isEqualTo getPlayerUID player;
             _rows pushBack ["section", "Accès", "Blocage, sessions et message imposé"];
             _rows pushBack ["buttons", [
                 if (_blocked) then {
@@ -272,9 +276,14 @@ switch (_tab) do {
             ]];
             _rows pushBack ["section", "Compromission", "Téléphone aux mains de l'ennemi ou plus digne de confiance"];
             _rows pushBack ["buttons", [
-                ["DÉCLARER CAPTURÉ", "cap:" + _id, ["compromise", "[['state', 'captured']]"] call _act, "L'ATAK est aux mains de l'ennemi (certificats gardés)", !_compd] call _confirmBtn,
-                ["DÉCLARER COMPROMIS", "comp:" + _id, ["compromise", "[['state', 'compromised']]"] call _act, "Révoque ses certificats : il n'est plus reconnu sur le réseau", _comp isNotEqualTo "compromised"] call _confirmBtn,
+                ["DÉCLARER CAPTURÉ", "cap:" + _id, ["compromise", "[['state', 'captured']]"] call _act, ["L'ATAK est aux mains de l'ennemi (certificats gardés)", "C'est votre propre ATAK : à faire depuis le site"] select _mine, !_compd && {!_mine}] call _confirmBtn,
+                ["DÉCLARER COMPROMIS", "comp:" + _id, ["compromise", "[['state', 'compromised']]"] call _act, ["Révoque ses certificats : il n'est plus reconnu sur le réseau", "C'est votre propre ATAK : à faire depuis le site"] select _mine, _comp isNotEqualTo "compromised" && {!_mine}] call _confirmBtn,
                 ["LEVER LA COMPROMISSION", "undo:" + _id, ["undo_compromise"] call _act, "L'ATAK repasse sous contrôle, certificats rétablis", _compd] call _confirmBtn
+            ]];
+            _rows pushBack ["section", "Remise en service", "Joueur bloqué ou téléphone qui plante : sans passer par le site"];
+            _rows pushBack ["buttons", [
+                ["REMPLACER L'APPAREIL", "repl:" + _id, ["replace_device"] call _act, "L'ancien ATAK reste exclu ; son téléphone suivant reçoit un nouvel identifiant et retrouve l'accès tout seul", _compd] call _confirmBtn,
+                ["RÉPARER SES DONNÉES", "fix:" + _id, ["repair_data"] call _act, "Demande à son jeu de nettoyer ses données locales, même sans téléphone sur lui"] call _confirmBtn
             ]];
             _rows pushBack ["gap"];
             if ((_s getOrDefault ["admMsgFor", 0]) isEqualTo (parseNumber _id)) then {

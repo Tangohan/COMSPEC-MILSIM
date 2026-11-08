@@ -185,6 +185,13 @@ _st ctrlSetFontHeight _fs;
 [[_pad, _y, _w, _rh], { ["SALUTE"] call comspec_atak_native_fnc_navigate; }, "Ouvrir l'app SALUTE"] call _hit;
 _y = _y + _rh + _pad;
 
+// ---------- MON APPAREIL ----------
+// Après une compromission validée : où en est le joueur (ancien appareil exclu, nouvel appareil en cours ou actif).
+private _devSt = ["deviceStatus"] call comspec_atak_native_fnc_compromise;
+if (_devSt isNotEqualTo []) then {
+    _y = [_pad, _y, _w, _devSt select 0, _devSt select 1, _cDim] call _sec;
+};
+
 // ---------- COMPROMISSIONS ----------
 // ATAK du camp ramassés par l'ennemi (fn_captureServer) : à valider par un chef de groupe, le propriétaire ou un Zeus.
 private _caps = ["mine"] call comspec_atak_native_fnc_compromise;

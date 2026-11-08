@@ -53,7 +53,9 @@ switch (_act) do {
     case "set": {
         if (!hasInterface || {!(_arg isEqualType createHashMap)}) exitWith {};
         ([] call _myIds) params ["_tuid", "_imei"];
-        private _old = createHashMapFromArray ((profileNamespace getVariable [_key, []]) param [1, []]);
+        private _oldRow = (profileNamespace getVariable [_key, []]) param [1, []];
+        if !(_oldRow isEqualType []) then { _oldRow = []; };
+        private _old = createHashMapFromArray (_oldRow select { _x isEqualType [] && {(count _x) isEqualTo 2} });
         private _h = +_arg;
         if ((_h getOrDefault ["terminal", ""]) isEqualTo "") then { _h set ["terminal", _tuid]; };
         if ((_h getOrDefault ["imei", ""]) isEqualTo "") then { _h set ["imei", _imei]; };
@@ -80,8 +82,8 @@ switch (_act) do {
         if ([player, true] call comspec_atak_native_fnc_hasDevice) then {
             ([] call _myIds) params ["_tuid", "_imei"];
             private _st = profileNamespace getVariable [_key, []];
-            if ((count _st) >= 2) then {
-                private _h = createHashMapFromArray (_st select 1);
+            if (_st isEqualType [] && {(count _st) >= 2} && {(_st select 1) isEqualType []}) then {
+                private _h = createHashMapFromArray ((_st select 1) select { _x isEqualType [] && {(count _x) isEqualTo 2} });
                 private _ok = if ((_st select 0) isEqualTo "imei") then { (_h getOrDefault ["imei", ""]) isEqualTo _imei } else {
                     private _t = _h getOrDefault ["terminal", ""];
                     _t isEqualTo "" || {_t isEqualTo _tuid}

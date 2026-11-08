@@ -40,7 +40,7 @@ private _upOf = {
 switch (_mode) do {
     case "listAll": {
         private _side = str side group player;
-        (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {(_x getVariable ["COMSPEC_ATAK_CamSide", ""]) isEqualTo _side} }
+        (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { _x isEqualType objNull && {!isNull _x} && {(_x getVariable ["COMSPEC_ATAK_CamSide", ""]) isEqualTo _side} }
     };
     case "list": { (["listAll"] call _fn) select { ["can", _x] call comspec_atak_native_fnc_camShare } };
     case "dead": {
@@ -103,6 +103,8 @@ switch (_mode) do {
     case "placeNow": {
         _a params ["_pos", "_n", "_o"];
         if !(CAM_ITEM in (items player)) exitWith { false };
+        // Registre public borné : 64 caméras par camp au plus.
+        if ((count (["listAll"] call _fn)) >= 64) exitWith { ["WARNING", "Trop de caméras posées pour ce camp (64 au plus)", 4, 30] call comspec_atak_native_fnc_notify; false };
         _n = vectorNormalized _n;
         private _look = vectorDir player;
         _look set [2, 0];
@@ -199,6 +201,8 @@ switch (_mode) do {
                 { _x addCuratorEditableObjects [[_a], true]; } forEach allCurators;
             };
         };
+        // Variable publique bornée : 256 objets au plus, les plus anciens sortent du registre.
+        _list = _list select [((count _list) - 256) max 0, 256];
         missionNamespace setVariable ["COMSPEC_ATAK_Cams", _list, true];
         true
     };
@@ -215,7 +219,8 @@ switch (_mode) do {
     };
     case "setName": {
         if (isNull _a || {!(_b isEqualType "")}) exitWith { false };
-        private _t = _b trim [" ", 0];
+        // Variable publique lue dans des textes structurés : ni balise ni entité.
+        private _t = ((_b splitString "<>&""'") joinString "") trim [" ", 0];
         if (_t isEqualTo "") exitWith { false };
         if ((count _t) > 16) then { _t = _t select [0, 16]; };
         _a setVariable ["COMSPEC_ATAK_CamName", _t, true];

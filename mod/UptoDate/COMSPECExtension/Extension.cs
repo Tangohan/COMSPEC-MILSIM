@@ -1839,7 +1839,7 @@ public static partial class Extension
         "Async", "Warmup", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
         "GetLogTail", "SendQueue.Status", "SyncStats", "MemStats", "Perf.Stats", "GetPendingQueueCount", "GetSessionTenant",
         "Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore",
-        "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect", "ClientDisconnect",
+        "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect", "ClientDisconnect", "RepairLocalData",
     };
 
     private static void NoteGameCommand(string? function)
@@ -2161,6 +2161,83 @@ public static partial class Extension
         }
     }
 
+    private const long MaxDiskQueueBytes = 32L * 1024 * 1024;
+    private const long MaxDiskPositionBytes = 1024 * 1024;
+    private const int RepairFoldersKept = 3;
+
+    /// <summary>Code d'erreur du corps d'un refus 409 d'Athena, limité aux valeurs connues.</summary>
+    private static string TerminalConflictCode(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String
+                && e.GetString() is "terminal_compromised" or "terminal_uid_taken")
+                return e.GetString()!;
+        }
+        catch (JsonException) { /* corps illisible */ }
+        return "http_409";
+    }
+
+    /// <summary>Déplace un fichier de cache dans Sync\_repair\date ; true si le fichier a été déplacé.</summary>
+    private static bool MoveCacheFileToRepair(string dir, string file, string stamp)
+    {
+        try
+        {
+            if (!File.Exists(file)) return false;
+            var target = Path.Combine(dir, "_repair", stamp);
+            Directory.CreateDirectory(target);
+            File.Move(file, Path.Combine(target, Path.GetFileName(file)), true);
+            return true;
+        }
+        catch (IOException) { return false; }
+        catch (UnauthorizedAccessException) { return false; }
+    }
+
+    private static void QuarantineOversizedCache(string dir, string file, long maxBytes)
+    {
+        try
+        {
+            if (File.Exists(file) && new FileInfo(file).Length > maxBytes)
+                MoveCacheFileToRepair(dir, file, DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture));
+        }
+        catch (IOException) { /* illisible : la lecture suivante est protégée */ }
+        catch (UnauthorizedAccessException) { /* idem */ }
+    }
+
+    /// <summary>
+    /// « Réparer mes données » (Réglages, ou demandé par la gestion sur Athena) : les caches du dossier
+    /// Documents\Arma 3 - COMSPEC\Sync sont mis de côté dans Sync\_repair (jamais supprimés, 3 derniers gardés).
+    /// Renvoie OK|nombre de fichiers déplacés. Aucune requête réseau.
+    /// </summary>
+    private static string RepairLocalData()
+    {
+        var dir = SyncStoreDir();
+        if (dir is null) return "ERR|no_docs";
+        var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+        var moved = 0;
+        lock (DiskQueueLock)
+        {
+            foreach (var name in new[] { "queue.jsonl", "position.json", "wardrobes.json", "medical_roster.json" })
+            {
+                if (MoveCacheFileToRepair(dir, Path.Combine(dir, name), stamp)) moved++;
+            }
+        }
+        try
+        {
+            var root = new DirectoryInfo(Path.Combine(dir, "_repair"));
+            if (root.Exists)
+            {
+                foreach (var old in root.GetDirectories().OrderByDescending(d => d.Name, StringComparer.Ordinal).Skip(RepairFoldersKept))
+                    old.Delete(true);
+            }
+        }
+        catch (IOException) { /* nettoyage au prochain passage */ }
+        catch (UnauthorizedAccessException) { /* idem */ }
+        return "OK|" + moved.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     private static void LoadQueueFromDisk()
     {
         if (System.Threading.Interlocked.Exchange(ref _diskQueueLoaded, 1) != 0) return;
@@ -2170,6 +2247,9 @@ public static partial class Extension
             if (dir is null) return;
             var fifo = Path.Combine(dir, "queue.jsonl");
             var pos = Path.Combine(dir, "position.json");
+            // Fichier hors de toute taille normale : mis de côté, jamais lu en mémoire (500 lignes au plus en temps normal).
+            QuarantineOversizedCache(dir, fifo, MaxDiskQueueBytes);
+            QuarantineOversizedCache(dir, pos, MaxDiskPositionBytes);
             if (File.Exists(fifo))
             {
                 foreach (var line in File.ReadLines(fifo))
@@ -4327,6 +4407,11 @@ public static partial class Extension
                 }
             }
             catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        if (function == "RepairLocalData")
+        {
+            return RepairLocalData();
         }
 
         if (function == "SetMapId")
@@ -6694,6 +6779,8 @@ public static partial class Extension
                     if (code == 401 || code == 403) return "ERR|unauthorized";
                     if (code == 422) return "ERR|pairing_invalid";
                     if (code == 503) return "ERR|unavailable";
+                    // Refus d'Athena sur cet identifiant : terminal_compromised ou terminal_uid_taken (le mod réagit à chacun).
+                    if (code == 409) return "ERR|" + TerminalConflictCode(respBody);
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyTerminalRegisterJson(respBody);

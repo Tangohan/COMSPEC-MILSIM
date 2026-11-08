@@ -341,7 +341,7 @@ switch (_act) do {
         // Propriétaire : nouvel IMEI sur son prochain téléphone.
         private _uid = (_c get "tag") param [0, ""];
         private _i = allPlayers findIf { (getPlayerUID _x) isEqualTo _uid };
-        if (_i >= 0) then { ["comspec_atak_native_compromise", ["ownerReset", [_id]], allPlayers select _i] call CBA_fnc_targetEvent; };
+        if (_i >= 0) then { ["comspec_atak_native_compromise", ["ownerReset", [_id, _term]], allPlayers select _i] call CBA_fnc_targetEvent; };
         ["INFO", "CAPTURE", format ["%1 : compromission validée par %2", _id, _who]] call comspec_atak_native_fnc_log;
     };
     case "athena": {

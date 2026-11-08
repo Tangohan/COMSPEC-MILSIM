@@ -15,6 +15,10 @@ if (!isNil "comspec_overwatch_connect_fnc_log") then {
 ["start"] call comspec_atak_native_fnc_integrityCheck;
 // Check de démarrage posté dans le salon Discord de debug d'Athena (une seule fois, au premier lancement ; réglage CBA pour refuser).
 [] call comspec_atak_native_fnc_startupCheck;
+// Garde-fou (fn_deviceGuard) : marqueur laissé par un plantage, données du profil vérifiées. Avant toute ouverture du téléphone.
+["boot"] call comspec_atak_native_fnc_deviceGuard;
+// Identité de l'appareil : IMEI gardé après un remplacement, compromission validée pendant une absence (fn_compromise).
+[{ !isNull player }, { ["boot"] call comspec_atak_native_fnc_compromise; }] call CBA_fnc_waitUntilAndExecute;
 // Arsenal ACE : bouton COMSPEC (colonne de droite) qui regroupe les objets de nos mods (ATAK, Overwatch, SSE).
 if (!isNil "ace_arsenal_fnc_addRightPanelButton") then {
     // Liste faite au lancement du jeu (XEH_preStart) : plus de parcours de tout CfgWeapons à l'arrivée.
@@ -1213,7 +1217,8 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 [{ ["prefetch"] call comspec_atak_native_fnc_photoMap; }, [], 15] call comspec_atak_native_fnc_waitAndExec;
 // Profil : les écritures regroupées (fn_saveProfile, une par minute au plus) sont vidées en fin de mission.
 {
-    addMissionEventHandler [_x, { if (missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
+    // Fin de mission normale : le marqueur d'étape à risque (fn_deviceGuard) ne doit pas passer pour un plantage.
+    addMissionEventHandler [_x, { ["end"] call comspec_atak_native_fnc_deviceGuard; if ((missionNamespace getVariable ["COMSPEC_ProfileSavePending", false]) || {missionNamespace getVariable ["COMSPEC_ATAK_ProfileDirty", false]}) then { [true] call comspec_atak_native_fnc_saveProfile; }; }];
 } forEach ["Ended", "MPEnded"];
 // Relais des distances : fin de mission côté serveur seulement (MPEnded), sinon perdu jusqu'à 10 min de compteurs.
 addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_distanceServer; }];

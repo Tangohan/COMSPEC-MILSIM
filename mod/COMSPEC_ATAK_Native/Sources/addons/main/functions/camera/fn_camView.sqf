@@ -5,6 +5,9 @@
 */
 params ["_obj", ["_mode", 0], ["_pan", 0]];
 if (isNull _obj) exitWith { false };
+// Source vérifiée avant toute caméra (fn_deviceGuard) ; marqueur sur le disque avant de créer caméra et texture.
+if !(["camOk", [_obj, "fixed"]] call comspec_atak_native_fnc_deviceGuard) exitWith { false };
+["begin", ["CAMERA", "LIVECAM"]] call comspec_atak_native_fnc_deviceGuard;
 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
 if (isNull _cam) then {
     _cam = "camera" camCreate (getPosATL _obj);
