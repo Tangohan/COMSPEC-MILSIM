@@ -23,6 +23,10 @@ use App\Services\Admin\PlatformUserProfileService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Identity\UserIdentityMergeService;
+use App\Services\Admin\PlatformDataVolumeService;
+use App\Support\CsvSafe;
+use App\Support\PlatformUserColumns;
+use App\Support\PlatformUsersDirectoryQuery;
 use App\Support\PortalAccessChoice;
 use App\Repositories\AccountPurgeRequestRepository;
 use App\Repositories\LoginAttemptRepository;
@@ -59,33 +63,43 @@ final class SystemUsersController
         return $this->accountPurge ??= new AccountPurgeService();
     }
 
+    /** États d’une personne dans le tableau (clé => libellé). Le bannissement l’emporte sur tout le reste. */
+    public const STATE_LABELS = [
+        'banni' => 'Banni du site',
+        'actif' => 'Actif',
+        'verif' => 'E-mail pas encore vérifié',
+        'suspendu' => 'Accès suspendu',
+        'anonymise' => 'Compte anonymisé',
+    ];
+
+    /** Nombre maximal de lignes d’un export CSV. */
+    private const EXPORT_MAX_ROWS = 5000;
+
     public function index(Request $request, array $params = []): Response
     {
-        $q = trim((string) $request->query('q', ''));
-        $status = trim((string) $request->query('status', ''));
-        $tenantFilter = (int) $request->query('tenant_id', 0);
-        $page = max(1, (int) $request->query('page', 1));
-        $perPage = 50;
-        $allowedStatus = ['active', 'inactive', 'pending_verification', 'deleted', 'no_org', 'banned'];
-        if ($status !== '' && !in_array($status, $allowedStatus, true)) {
-            $status = '';
-        }
-        $inactivity = trim((string) $request->query('inactif', ''));
-        if (!in_array($inactivity, UserRepository::PLATFORM_INACTIVITY_FILTERS, true)) {
-            $inactivity = '';
-        }
+        // Sanctions temporaires échues : les fiches sont remises en état avant d’afficher l’état des comptes.
+        $this->banService()->expireDue(null, 50);
+
+        $filters = PlatformUsersDirectoryQuery::normalize($request->queryParams());
+        $columns = $filters['cols'] ?? PlatformUserColumns::DEFAULT;
+        $page = $filters['page'];
+        $perPage = $filters['par'];
 
         $result = $this->users->listGroupedAccountsForPlatformDirectory(
-            $q !== '' ? $q : null,
-            $status !== '' ? $status : null,
-            $tenantFilter > 0 ? $tenantFilter : null,
+            $filters['q'] !== '' ? $filters['q'] : null,
+            $filters['status'] !== '' ? $filters['status'] : null,
+            $filters['tenant_id'] > 0 ? $filters['tenant_id'] : null,
             $page,
             $perPage,
-            $inactivity !== '' ? $inactivity : null
+            $filters['inactif'] !== '' ? $filters['inactif'] : null,
+            $this->directoryOptions($filters)
         );
         $total = (int) ($result['total'] ?? 0);
         $pages = max(1, (int) ceil($total / $perPage));
-        $groups = $this->decorateDirectoryGroups(is_array($result['groups'] ?? null) ? $result['groups'] : []);
+        $groups = $this->decorateDirectoryGroups(
+            is_array($result['groups'] ?? null) ? $result['groups'] : [],
+            in_array('volume', $columns, true)
+        );
         $realTenants = array_values(array_filter(
             $this->tenants->listOverviewForPlatform(),
             static fn (array $t): bool => !PortalAccessChoice::isPlaceholderTenant($t)
@@ -97,35 +111,192 @@ final class SystemUsersController
             'isPlatformAdminShell' => true,
             'backOfficePageCss' => ['platform-admin-users.css'],
             'platformUserGroups' => $groups,
-            'platformUsers' => [], // rétrocompat partielle si une vue externe lit encore la clé
             'platformUsersTotal' => $total,
             'platformUsersPage' => $page,
             'platformUsersPages' => $pages,
-            'platformUsersQ' => $q,
-            'platformUsersStatus' => $status,
-            'platformUsersTenantId' => $tenantFilter,
-            'platformUsersInactivity' => $inactivity,
+            'platformUsersFilters' => $filters,
+            'platformUserColumns' => $columns,
             'platformTenants' => $realTenants,
             'pendingPurgeRequests' => $this->purgeRequests->listPending(50),
             'pendingPurgeRequestsCount' => $this->purgeRequests->countPending(),
             'platformBansCount' => $this->bans()->countActive(),
+            'platformBanSupportsEnd' => $this->bans()->supportsEndDate(),
         ]);
     }
 
     /**
+     * Export CSV des comptes : mêmes filtres et colonnes que l’écran (GET), ou les personnes cochées (POST).
+     * Données personnelles : même droit que la page (administration du site), cellules protégées contre les
+     * formules de tableur, et chaque export est inscrit au journal d’audit.
+     */
+    public function exportCsv(Request $request, array $params = []): Response
+    {
+        $selected = [];
+        if ($request->isPost()) {
+            if (!Csrf::validate($request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+
+                return Response::redirect(url('admin/users'));
+            }
+            $raw = $request->input('emails', []);
+            foreach (is_array($raw) ? $raw : [] as $email) {
+                if (is_string($email) && filter_var(strtolower(trim($email)), FILTER_VALIDATE_EMAIL) !== false) {
+                    $selected[] = strtolower(trim($email));
+                }
+            }
+            if ($selected === []) {
+                Session::flash('error', 'Cochez au moins une personne à exporter.');
+
+                return Response::redirect($this->backUrl($request));
+            }
+        }
+        $filters = PlatformUsersDirectoryQuery::normalize($request->all());
+        $columns = $filters['cols'] ?? PlatformUserColumns::DEFAULT;
+
+        $groups = [];
+        if ($selected !== []) {
+            $groups = $this->users->platformDirectoryGroupsByEmails($selected);
+        } else {
+            $limit = self::EXPORT_MAX_ROWS;
+            for ($page = 1; count($groups) < $limit; $page++) {
+                $result = $this->users->listGroupedAccountsForPlatformDirectory(
+                    $filters['q'] !== '' ? $filters['q'] : null,
+                    $filters['status'] !== '' ? $filters['status'] : null,
+                    $filters['tenant_id'] > 0 ? $filters['tenant_id'] : null,
+                    $page,
+                    500,
+                    $filters['inactif'] !== '' ? $filters['inactif'] : null,
+                    $this->directoryOptions($filters) + ['max_per_page' => 500]
+                );
+                $chunk = is_array($result['groups'] ?? null) ? $result['groups'] : [];
+                if ($chunk === []) {
+                    break;
+                }
+                array_push($groups, ...$chunk);
+                if (count($chunk) < 500) {
+                    break;
+                }
+            }
+            $groups = array_slice($groups, 0, $limit);
+        }
+        $groups = $this->decorateDirectoryGroups($groups, in_array('volume', $columns, true));
+
+        $header = [];
+        foreach ($columns as $col) {
+            $header[] = $col === 'volume' ? 'Données reçues 30 jours (octets)' : PlatformUserColumns::LABELS[$col];
+        }
+        $rows = [];
+        foreach ($groups as $g) {
+            $line = [];
+            foreach ($columns as $col) {
+                $line[] = match ($col) {
+                    'nom' => $this->groupDisplayName($g),
+                    'indicatif' => trim((string) ($g['callsign'] ?? '')),
+                    'email' => (string) ($g['email'] ?? ''),
+                    'communautes' => implode(' | ', (array) ($g['community_names'] ?? [])),
+                    'etat' => self::STATE_LABELS[(string) ($g['state'] ?? '')] ?? '',
+                    'connexion' => (string) ($g['last_login'] ?? ''),
+                    'creation' => (string) ($g['created'] ?? ''),
+                    'volume' => (int) ($g['volume_bytes'] ?? 0),
+                    'sanctions' => (int) ($g['sanctions_count'] ?? 0),
+                    default => '',
+                };
+            }
+            $rows[] = $line;
+        }
+        $csv = CsvSafe::build($header, $rows);
+
+        AuditService::logPlatformAction(AuditAction::PLATFORM_USERS_EXPORTED, [
+            'mode' => $selected !== [] ? 'selection' : 'filtre',
+            'lignes' => count($rows),
+            'colonnes' => $columns,
+            'filtres' => array_keys(array_filter(
+                ['recherche' => $filters['q'], 'etat' => $filters['status'], 'communaute' => $filters['tenant_id'], 'inactivite' => $filters['inactif'], 'creation' => $filters['cree'], 'sanctions' => $filters['sanction']],
+                static fn ($v): bool => $v !== '' && $v !== 0
+            )),
+        ]);
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="comptes-' . gmdate('Y-m-d') . '.csv"')
+            ->header('Cache-Control', 'no-store')
+            ->setBody($csv);
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array{sort: string, dir: string, created: string, sanctioned: string}
+     */
+    private function directoryOptions(array $filters): array
+    {
+        return [
+            'sort' => (string) $filters['tri'],
+            'dir' => (string) $filters['sens'],
+            'created' => (string) $filters['cree'],
+            'sanctioned' => (string) $filters['sanction'],
+        ];
+    }
+
+    /** @param array<string, mixed> $group */
+    private function groupDisplayName(array $group): string
+    {
+        $name = trim((string) ($group['display_name'] ?? ''));
+
+        return $name !== '' ? $name : trim((string) ($group['callsign'] ?? ''));
+    }
+
+    /**
+     * État d’une personne d’après ses fiches (hors bannissement, ajouté par l’appelant).
+     *
+     * @param list<array<string, mixed>> $memberships
+     */
+    public static function stateFromMemberships(array $memberships): string
+    {
+        $live = array_values(array_filter(
+            $memberships,
+            static fn (array $m): bool => empty($m['deleted_at']) && (string) ($m['status'] ?? '') !== 'merged'
+        ));
+        if ($live === []) {
+            return $memberships === [] ? 'actif' : 'anonymise';
+        }
+        $statuses = array_map(static fn (array $m): string => (string) ($m['status'] ?? ''), $live);
+        if (in_array('active', $statuses, true)) {
+            return 'actif';
+        }
+
+        return in_array('pending_verification', $statuses, true) ? 'verif' : 'suspendu';
+    }
+
+    /**
      * Prépare l’affichage : le sas « pas d’organisation » n’est jamais présenté comme une communauté,
-     * on note les bannissements en cours et les adresses réseau connues (pour le bannissement).
+     * on note les bannissements en cours, les sanctions passées et, si la colonne est demandée, le volume de données.
      *
      * @param list<array<string, mixed>> $groups
      * @return list<array<string, mixed>>
      */
-    private function decorateDirectoryGroups(array $groups): array
+    private function decorateDirectoryGroups(array $groups, bool $withVolume = false): array
     {
-        $bans = $this->bans()->activeByEmails(array_map(
-            static fn (array $g): string => (string) ($g['email'] ?? ''),
-            $groups
-        ));
-        $attempts = $this->loginAttempts();
+        $emails = array_map(static fn (array $g): string => (string) ($g['email'] ?? ''), $groups);
+        $bans = $this->bans()->activeByEmails($emails);
+        $counts = $this->bans()->countsByEmails($emails);
+        $volumes = [];
+        if ($withVolume) {
+            $steams = [];
+            foreach ($groups as $group) {
+                foreach ((array) ($group['memberships'] ?? []) as $m) {
+                    $steam = trim((string) ($m['steam_id'] ?? ''));
+                    if ($steam !== '') {
+                        $steams[] = $steam;
+                    }
+                }
+            }
+            try {
+                $volumes = (new PlatformDataVolumeService())->bytesBySteam($steams, UserRepository::PLATFORM_VOLUME_DAYS);
+            } catch (\Throwable $e) {
+                error_log('[admin.users] volume : ' . $e->getMessage());
+            }
+        }
         foreach ($groups as &$group) {
             $memberships = is_array($group['memberships'] ?? null) ? $group['memberships'] : [];
             $real = [];
@@ -138,10 +309,33 @@ final class SystemUsersController
                 }
             }
             $hasLive = false;
+            $names = [];
             foreach ($real as $m) {
                 if (empty($m['deleted_at']) && (string) ($m['membership_status'] ?? 'active') === 'active') {
                     $hasLive = true;
-                    break;
+                    $name = trim((string) ($m['tenant_name'] ?? ''));
+                    if ($name !== '') {
+                        $names[$name] = true;
+                    }
+                }
+            }
+            $lastLogin = '';
+            $created = '';
+            $steamSeen = [];
+            $volume = 0;
+            foreach ($memberships as $m) {
+                $login = trim((string) ($m['last_login_at'] ?? ''));
+                if ($login !== '' && $login > $lastLogin) {
+                    $lastLogin = $login;
+                }
+                $made = trim((string) ($m['created_at'] ?? ''));
+                if ($made !== '' && ($created === '' || $made < $created)) {
+                    $created = $made;
+                }
+                $steam = trim((string) ($m['steam_id'] ?? ''));
+                if ($steam !== '' && !isset($steamSeen[$steam])) {
+                    $steamSeen[$steam] = true;
+                    $volume += (int) ($volumes[$steam] ?? 0);
                 }
             }
             $group['memberships'] = $real;
@@ -149,14 +343,13 @@ final class SystemUsersController
             $group['no_org'] = !$hasLive;
             $key = strtolower(trim((string) ($group['email'] ?? '')));
             $group['ban'] = $bans[$key] ?? null;
-            $group['known_ips'] = [];
-            if ($attempts !== null && $key !== '') {
-                try {
-                    $group['known_ips'] = $attempts->listRecentSuccessIpsForEmail($key, 180, 6);
-                } catch (\Throwable) {
-                    $group['known_ips'] = [];
-                }
-            }
+            $group['sanctions_count'] = (int) ($counts[$key] ?? 0);
+            $group['community_names'] = array_map('strval', array_keys($names));
+            $group['last_login'] = $lastLogin;
+            $group['created'] = $created;
+            $group['volume_bytes'] = $volume;
+            $group['has_steam'] = $steamSeen !== [];
+            $group['state'] = $group['ban'] !== null ? 'banni' : self::stateFromMemberships($memberships);
         }
         unset($group);
 
@@ -304,7 +497,10 @@ final class SystemUsersController
         return Response::redirect($this->backUrl($request));
     }
 
-    /** Bannit la personne de tout le site (voir PlatformAccountBanService). */
+    /**
+     * Bannit la personne de tout le site (voir PlatformAccountBanService), pour toujours ou jusqu’à une date.
+     * Le motif est obligatoire et la case de confirmation doit être cochée : sans elles rien n’est fait.
+     */
     public function ban(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -313,19 +509,34 @@ final class SystemUsersController
             return Response::redirect($this->backUrl($request));
         }
         $actorId = (int) Session::get('user_id');
-        $email = strtolower(trim((string) $request->input('email', '')));
+        $email = strtolower($request->inputString('email'));
+        $email = trim($email);
+        if ($request->inputString('confirm_ban') !== '1') {
+            Session::flash('error', 'Cochez la case de confirmation : le bannissement n’a pas été appliqué.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $end = PlatformAccountBanService::resolveEnd($request->inputString('duree', 'definitif'), $request->inputString('fin'));
+        if (!$end['ok']) {
+            Session::flash('error', (string) ($end['error'] ?? 'Durée de sanction invalide.'));
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $endsAt = $end['endsAt'] ?? null;
         $ips = $request->input('block_ips', []);
-        $ips = is_array($ips) ? array_map('strval', $ips) : [(string) $ips];
-        $extra = trim((string) $request->input('extra_ips', ''));
+        $ips = is_array($ips) ? array_map('strval', array_filter($ips, 'is_scalar')) : [];
+        $extra = trim($request->inputString('extra_ips'));
         if ($extra !== '') {
             $ips[] = $extra;
         }
+        $reason = trim($request->inputString('reason'));
         $result = $this->banService()->ban(
             $email,
-            (string) $request->input('reason', ''),
+            $reason,
             $ips,
-            (string) $request->input('block_steam', '') === '1',
-            $actorId
+            $request->inputString('block_steam') === '1',
+            $actorId,
+            $endsAt
         );
         if (!$result['ok']) {
             Session::flash('error', (string) ($result['error'] ?? 'Bannissement impossible.'));
@@ -343,7 +554,8 @@ final class SystemUsersController
             [
                 'email' => $email,
                 'ban_id' => (int) ($result['ban_id'] ?? 0),
-                'reason' => mb_substr(trim((string) $request->input('reason', '')), 0, 500),
+                'reason' => mb_substr($reason, 0, 500),
+                'ends_at' => $endsAt?->format('Y-m-d H:i:s'),
                 'blocked_ips' => (int) ($result['blocked_ips'] ?? 0),
                 'steam_blocked' => !empty($result['steam_blocked']),
             ],
@@ -356,7 +568,10 @@ final class SystemUsersController
         if ((int) ($result['blocked_ips'] ?? 0) > 0) {
             $bits[] = (int) $result['blocked_ips'] . ' adresse(s) réseau bloquée(s)';
         }
-        Session::flash('success', 'Personne bannie du site : ' . implode(', ', $bits) . '. Ses sessions ouvertes sont fermées.');
+        $until = $endsAt !== null
+            ? ' Sanction temporaire : elle prend fin le ' . $endsAt->setTimezone(new \DateTimeZone('Europe/Paris'))->format('d/m/Y à H:i') . ' (heure de Paris).'
+            : ' Sanction sans date de fin.';
+        Session::flash('success', 'Personne bannie du site : ' . implode(', ', $bits) . '. Ses sessions ouvertes sont fermées.' . $until);
 
         return Response::redirect($this->backUrl($request));
     }
@@ -369,8 +584,9 @@ final class SystemUsersController
             return Response::redirect($this->backUrl($request));
         }
         $actorId = (int) Session::get('user_id');
-        $email = strtolower(trim((string) $request->input('email', '')));
-        $result = $this->banService()->lift($email, $actorId);
+        $email = strtolower(trim($request->inputString('email')));
+        $note = mb_substr(trim($request->inputString('note')), 0, 500);
+        $result = $this->banService()->lift($email, $actorId, $note !== '' ? $note : null);
         if (!$result['ok']) {
             Session::flash('error', (string) ($result['error'] ?? 'Levée impossible.'));
 
@@ -383,7 +599,7 @@ final class SystemUsersController
             'user',
             0,
             ['email' => $email, 'banned' => true],
-            ['email' => $email, 'banned' => false, 'restored_accounts' => (int) ($result['restored'] ?? 0)],
+            ['email' => $email, 'banned' => false, 'restored_accounts' => (int) ($result['restored'] ?? 0), 'note' => $note],
         );
         Session::flash('success', 'Bannissement levé : la personne peut de nouveau se connecter, ses fiches ont retrouvé leur état d’avant.');
 
@@ -515,6 +731,9 @@ final class SystemUsersController
             return Response::redirect(url('admin/users'));
         }
 
+        // Sanction temporaire échue : on remet les fiches en état avant d'afficher le dossier.
+        $this->banService()->expireDue($email);
+
         $memberships = $this->users->listAllMembershipsByEmail($email);
         if ($memberships === []) {
             Session::flash('error', 'Aucune appartenance trouvée pour cette adresse.');
@@ -635,6 +854,9 @@ final class SystemUsersController
             'personMergePreview' => $mergePreview,
             'personIsPlatformAdmin' => $this->users->emailHasPlatformAdmin($email),
             'personBan' => $this->bans()->findActiveForEmail($email),
+            'personBanHistory' => $this->bans()->historyForEmail($email),
+            'personBanSupportsEnd' => $this->bans()->supportsEndDate(),
+            'personLiveFiches' => count($this->users->listIdsByEmailNormalized($email)),
             'personKnownIps' => $this->knownIpsWithBlockState($email),
             'isPlatformAdminShell' => true,
             'backOfficePageCss' => ['platform-admin-users.css'],
@@ -1361,29 +1583,22 @@ final class SystemUsersController
         if ($person !== '' && filter_var($person, FILTER_VALIDATE_EMAIL)) {
             return url('admin/users/person') . '?email=' . rawurlencode($person);
         }
-        $q = trim((string) $request->input('return_q', ''));
-        $status = trim((string) $request->input('return_status', ''));
-        $tenantId = (int) $request->input('return_tenant_id', 0);
-        $inactivity = trim((string) $request->input('return_inactif', ''));
-        $page = max(1, (int) $request->input('return_page', 1));
-        $bits = [];
-        if ($q !== '') {
-            $bits[] = 'q=' . rawurlencode($q);
+        // Retour sur la même vue du tableau : filtres, tri, page et colonnes viennent de listes blanches.
+        $src = [];
+        $returnQs = $request->inputString('return_qs');
+        if ($returnQs !== '' && strlen($returnQs) <= 1500) {
+            parse_str($returnQs, $src);
+        } else {
+            $src = [
+                'q' => $request->inputString('return_q'),
+                'status' => $request->inputString('return_status'),
+                'tenant_id' => $request->inputString('return_tenant_id'),
+                'inactif' => $request->inputString('return_inactif'),
+                'page' => $request->inputString('return_page'),
+            ];
         }
-        if ($status !== '') {
-            $bits[] = 'status=' . rawurlencode($status);
-        }
-        if ($tenantId > 0) {
-            $bits[] = 'tenant_id=' . $tenantId;
-        }
-        if (in_array($inactivity, UserRepository::PLATFORM_INACTIVITY_FILTERS, true)) {
-            $bits[] = 'inactif=' . rawurlencode($inactivity);
-        }
-        if ($page > 1) {
-            $bits[] = 'page=' . $page;
-        }
-        $qs = $bits !== [] ? ('?' . implode('&', $bits)) : '';
+        $query = PlatformUsersDirectoryQuery::query(PlatformUsersDirectoryQuery::normalize($src));
 
-        return url('admin/users') . $qs;
+        return url('admin/users') . ($query !== '' ? '?' . $query : '');
     }
 }

@@ -195,6 +195,101 @@ class UserRepository
     /** Filtres « inactif » de l’annuaire plateforme : nombre de jours sans connexion, ou jamais connecté. */
     public const PLATFORM_INACTIVITY_FILTERS = ['30', '90', '180', 'jamais'];
 
+    /** Filtres « créés depuis N jours » de l’annuaire plateforme. */
+    public const PLATFORM_CREATED_FILTERS = ['7', '30', '90'];
+
+    /** Colonnes triables de l’annuaire plateforme : liste blanche, aucune valeur web n’entre dans le SQL. */
+    public const PLATFORM_DIRECTORY_SORTS = ['nom', 'indicatif', 'email', 'communautes', 'etat', 'connexion', 'creation', 'volume', 'sanctions'];
+
+    /** Fenêtre (jours) du volume de données affiché par personne dans l’annuaire. */
+    public const PLATFORM_VOLUME_DAYS = 30;
+
+    /**
+     * Normalise un tri demandé : clé de la liste blanche ou chaîne vide (tri par défaut), sens asc|desc.
+     *
+     * @return array{0: string, 1: 'asc'|'desc'}
+     */
+    public static function normalizePlatformDirectorySort(?string $key, ?string $dir): array
+    {
+        $key = strtolower(trim((string) $key));
+        if (!in_array($key, self::PLATFORM_DIRECTORY_SORTS, true)) {
+            return ['', 'desc'];
+        }
+
+        return [$key, strtolower(trim((string) $dir)) === 'desc' ? 'desc' : 'asc'];
+    }
+
+    /**
+     * Expression SQL agrégée (une valeur par personne) et jointures nécessaires pour une clé de tri validée.
+     * Retourne null quand la donnée n’existe pas dans cette base (tri par défaut conservé).
+     *
+     * @return array{select: string, join: string}|null
+     */
+    private function platformDirectorySortSpec(string $key, bool $hasMemberships, bool $hasDeletedAt): ?array
+    {
+        $pdo = $this->pdo();
+        $mysql = SqlText::isMysqlFamily($pdo);
+        $collate = $mysql ? ' COLLATE ' . SqlText::COLLATION : '';
+        $bans = new PlatformAccountBanRepository($pdo);
+
+        switch ($key) {
+            case 'nom':
+                return ['select' => "MIN(NULLIF(TRIM(u.display_name), ''))", 'join' => ''];
+            case 'indicatif':
+                return ['select' => "MIN(NULLIF(TRIM(u.callsign), ''))", 'join' => ''];
+            case 'email':
+                return ['select' => 'LOWER(TRIM(u.email))', 'join' => ''];
+            case 'creation':
+                return ['select' => 'MIN(u.created_at)', 'join' => ''];
+            case 'connexion':
+                return $this->hasLastLoginColumn() ? ['select' => 'MAX(u.last_login_at)', 'join' => ''] : null;
+            case 'communautes':
+                if (!$hasMemberships) {
+                    return ['select' => 'COUNT(DISTINCT u.tenant_id)', 'join' => ''];
+                }
+
+                return [
+                    'select' => 'SUM(COALESCE(__mc.n, 0))',
+                    'join' => "LEFT JOIN (SELECT user_id, COUNT(*) AS n FROM user_community_memberships WHERE status = 'active' GROUP BY user_id) __mc ON __mc.user_id = u.id",
+                ];
+            case 'etat':
+                $active = $bans->sqlActiveBanEmailsDerived();
+                $rank = "CASE u.status WHEN 'active' THEN 0 WHEN 'pending_verification' THEN 1 ELSE 2 END";
+                $deleted = $hasDeletedAt ? 'WHEN u.deleted_at IS NOT NULL THEN 4 ' : '';
+                if ($active === null) {
+                    return ['select' => $deleted === '' ? "MAX({$rank})" : "MAX(CASE {$deleted}ELSE {$rank} END)", 'join' => ''];
+                }
+
+                return [
+                    'select' => "MAX(CASE WHEN __pb.email_norm IS NOT NULL THEN 3 {$deleted}ELSE {$rank} END)",
+                    'join' => "LEFT JOIN ({$active}) __pb ON __pb.email_norm{$collate} = LOWER(TRIM(u.email)){$collate}",
+                ];
+            case 'sanctions':
+                $counts = $bans->sqlBanCountsDerived();
+                if ($counts === null) {
+                    return null;
+                }
+
+                return [
+                    'select' => 'MAX(COALESCE(__bc.n, 0))',
+                    'join' => "LEFT JOIN ({$counts}) __bc ON __bc.email_norm{$collate} = LOWER(TRIM(u.email)){$collate}",
+                ];
+            case 'volume':
+                if (!$this->tableExists('atak_ingest_player_daily')) {
+                    return null;
+                }
+                $since = $pdo->quote(gmdate('Y-m-d', time() - (self::PLATFORM_VOLUME_DAYS - 1) * 86400));
+
+                return [
+                    'select' => 'MAX(COALESCE(__vol.b, 0))',
+                    'join' => "LEFT JOIN (SELECT steam_uid, SUM(bytes) AS b FROM atak_ingest_player_daily WHERE day >= {$since} GROUP BY steam_uid) __vol"
+                        . " ON __vol.steam_uid{$collate} = u.steam_id{$collate}",
+                ];
+        }
+
+        return null;
+    }
+
     /**
      * Clause HAVING (annuaire groupé par e-mail) pour un filtre d’inactivité ; null si filtre absent,
      * inconnu ou colonne last_login_at absente.
@@ -3259,11 +3354,21 @@ class UserRepository
         ?int $tenantId = null,
         int $page = 1,
         int $perPage = 50,
-        ?string $inactivity = null
+        ?string $inactivity = null,
+        array $options = []
     ): array {
         $page = max(1, $page);
-        $perPage = max(10, min(100, $perPage));
+        $perPage = max(10, min(max(100, min(500, (int) ($options['max_per_page'] ?? 100))), $perPage));
         $offset = ($page - 1) * $perPage;
+        [$sortKey, $sortDir] = self::normalizePlatformDirectorySort(
+            isset($options['sort']) ? (string) $options['sort'] : null,
+            isset($options['dir']) ? (string) $options['dir'] : null
+        );
+        $createdDays = (string) ($options['created'] ?? '');
+        if (!in_array($createdDays, self::PLATFORM_CREATED_FILTERS, true)) {
+            $createdDays = '';
+        }
+        $sanctionedOnly = (string) ($options['sanctioned'] ?? '') === 'passee';
         $pdo = $this->pdo();
         $inactivityFilter = self::platformInactivityHaving($inactivity, $this->hasLastLoginColumn());
         $hasMemberships = $this->hasCommunityMembershipTable();
@@ -3329,16 +3434,35 @@ class UserRepository
             $banned = (new PlatformAccountBanRepository($pdo))->sqlActiveBanExists('u.email');
             $parts[] = $banned ?? '1 = 0';
         }
+        if ($sanctionedOnly) {
+            // Personnes déjà sanctionnées au moins une fois (en cours, levées ou échues).
+            $parts[] = (new PlatformAccountBanRepository($pdo))->sqlAnyBanExists('u.email') ?? '1 = 0';
+        }
 
         $where = implode(' AND ', $parts);
         $fromUsers = $hasMemberships
             ? 'FROM users u'
             : 'FROM users u INNER JOIN tenants t ON t.id = u.tenant_id';
         // Filtre « inactif » : porte sur la dernière connexion de la personne (toutes fiches confondues).
-        $having = $inactivityFilter !== null ? ' HAVING ' . $inactivityFilter['sql'] : '';
+        $havingParts = $inactivityFilter !== null ? [$inactivityFilter['sql']] : [];
         $params = array_merge($params, $inactivityFilter['params'] ?? []);
+        if ($createdDays !== '') {
+            // Comptes créés depuis N jours : la plus ancienne fiche de la personne est récente.
+            $havingParts[] = 'MIN(u.created_at) >= ?';
+            $params[] = gmdate('Y-m-d H:i:s', time() - ((int) $createdDays) * 86400);
+        }
+        $having = $havingParts !== [] ? ' HAVING ' . implode(' AND ', $havingParts) : '';
         $sortSelect = $inactivityFilter !== null ? 'MAX(u.last_login_at) AS sort_at' : 'MAX(u.updated_at) AS sort_at';
         $sortOrder = $inactivityFilter !== null ? 'sort_at ASC, email_key ASC' : 'sort_at DESC';
+        $sortJoin = '';
+        $explicit = $sortKey !== '' ? $this->platformDirectorySortSpec($sortKey, $hasMemberships, $hasDeletedAt) : null;
+        if ($explicit !== null) {
+            // Tri choisi : l’expression vient uniquement de la liste blanche, jamais de la requête web.
+            $sortSelect = $explicit['select'] . ' AS sort_at';
+            $sortJoin = $explicit['join'];
+            $dir = $sortDir === 'desc' ? 'DESC' : 'ASC';
+            $sortOrder = '(sort_at IS NULL) ASC, sort_at ' . $dir . ', email_key ASC';
+        }
 
         $countStmt = $this->pdo()->prepare(
             "SELECT COUNT(*) FROM (
@@ -3354,6 +3478,7 @@ class UserRepository
         $emailStmt = $this->pdo()->prepare(
             "SELECT LOWER(TRIM(u.email)) AS email_key, {$sortSelect}
              {$fromUsers}
+             {$sortJoin}
              WHERE {$where}
              GROUP BY LOWER(TRIM(u.email)){$having}
              ORDER BY {$sortOrder}
@@ -3376,6 +3501,48 @@ class UserRepository
             ? $this->fetchPlatformDirectoryMembershipRowsByEmails($emailKeys, $pack)
             : $this->fetchPlatformDirectoryLegacyRowsByEmails($emailKeys, $tenantId, $hasDeletedAt, $pack);
 
+        return [
+            'groups' => $this->groupPlatformDirectoryRows($rows, $emailKeys),
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * Fiches de personnes précises (sélection de l’annuaire), dans l’ordre donné, au même format que la liste.
+     *
+     * @param list<string> $emails
+     * @return list<array<string, mixed>>
+     */
+    public function platformDirectoryGroupsByEmails(array $emails): array
+    {
+        $keys = [];
+        foreach ($emails as $email) {
+            $key = strtolower(trim((string) $email));
+            if ($key !== '') {
+                $keys[$key] = true;
+            }
+        }
+        $emailKeys = array_map('strval', array_slice(array_keys($keys), 0, 500));
+        if ($emailKeys === []) {
+            return [];
+        }
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $rows = $this->hasCommunityMembershipTable()
+            ? $this->fetchPlatformDirectoryMembershipRowsByEmails($emailKeys, $pack)
+            : $this->fetchPlatformDirectoryLegacyRowsByEmails($emailKeys, null, $this->hasDeletedAtColumn(), $pack);
+
+        return $this->groupPlatformDirectoryRows($rows, $emailKeys);
+    }
+
+    /**
+     * Regroupe les lignes (une par fiche) en une entrée par personne, dans l’ordre des e-mails demandés.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @param list<string> $emailKeys
+     * @return list<array<string, mixed>>
+     */
+    private function groupPlatformDirectoryRows(array $rows, array $emailKeys): array
+    {
         $byEmail = [];
         foreach ($rows as $row) {
             if (function_exists('community_display_name')) {
@@ -3418,10 +3585,7 @@ class UserRepository
             }
         }
 
-        return [
-            'groups' => $groups,
-            'total' => $total,
-        ];
+        return $groups;
     }
 
     /**
@@ -3487,6 +3651,7 @@ class UserRepository
         $pdo = $this->pdo();
         $hasDeletedAt = $this->hasDeletedAtColumn();
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
+        $lastLoginSelect = $this->hasLastLoginColumn() ? 'u.last_login_at' : 'NULL AS last_login_at';
         $emailIn = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($emailKeys));
         $params = array_merge($emailKeys, $pack['params']);
 
@@ -3494,7 +3659,7 @@ class UserRepository
                        COALESCE(p.display_name, u.display_name) AS display_name,
                        COALESCE(p.callsign, u.callsign) AS callsign,
                        COALESCE(p.status, u.status) AS status,
-                       u.created_at, u.updated_at, {$deletedSelect},
+                       u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect}, {$deletedSelect},
                        t.name AS tenant_name, t.slug AS tenant_slug,
                        r.name AS role_name,
                        m.status AS membership_status, m.left_at AS membership_left_at
@@ -3522,7 +3687,7 @@ class UserRepository
         $fallbackIn = SqlText::normalizedInPlaceholders($pdo, 'u.email', count($missing));
         $fallbackParams = array_merge($missing, $pack['params']);
         $fallbackSql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status,
-                               u.created_at, u.updated_at, {$deletedSelect},
+                               u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect}, {$deletedSelect},
                                t.name AS tenant_name, t.slug AS tenant_slug,
                                r.name AS role_name
                         FROM users u
@@ -3563,7 +3728,8 @@ class UserRepository
         }
         $memberWhereSql = implode(' AND ', $memberParts);
         $deletedSelect = $hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at';
-        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at,
+        $lastLoginSelect = $this->hasLastLoginColumn() ? 'u.last_login_at' : 'NULL AS last_login_at';
+        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at, u.steam_id, {$lastLoginSelect},
                        {$deletedSelect},
                        t.name AS tenant_name, t.slug AS tenant_slug,
                        r.name AS role_name
@@ -4133,6 +4299,27 @@ class UserRepository
     }
 
     /**
+     * Sanction temporaire arrivée à échéance : les fiches de la personne redeviennent actives avant qu’on
+     * cherche ses comptes de connexion. Toutes les connexions (site, jeu, vérification d’e-mail) passent ici.
+     * Ne lève jamais : une panne ne doit pas empêcher de se connecter.
+     */
+    private function settleExpiredPlatformBans(string $email): void
+    {
+        if ($email === '') {
+            return;
+        }
+        try {
+            (new \App\Services\Account\PlatformAccountBanService(
+                $this,
+                new PlatformAccountBanRepository($this->pdo()),
+                pdo: $this->pdo()
+            ))->expireDue($email);
+        } catch (\Throwable $e) {
+            error_log('[login] fin de sanction : ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Connexion : actifs + en attente de vérification e-mail.
      *
      * @return list<array<string, mixed>>
@@ -4140,6 +4327,7 @@ class UserRepository
     public function listUsersForLoginByEmail(string $email): array
     {
         $email = strtolower(trim($email));
+        $this->settleExpiredPlatformBans($email);
         $emailEq = SqlText::normalizedEquals($this->pdo(), 'u.email');
         $statusIn = SqlText::inLiterals($this->pdo(), 'u.status', ['active', 'pending_verification']);
         $membershipStatus = SqlText::inLiterals($this->pdo(), 'm.status', ['active']);

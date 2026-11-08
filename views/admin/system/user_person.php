@@ -20,6 +20,7 @@ $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $csrf = $h(\App\Core\Csrf::token());
 $selectedSurvivorId = (int) ($_GET['survivor_id'] ?? $suggestedSurvivorId);
 $ban = is_array($personBan ?? null) ? $personBan : null;
+$banHistory = is_array($personBanHistory ?? null) ? $personBanHistory : [];
 $knownIps = is_array($personKnownIps ?? null) ? $personKnownIps : [];
 $isPlatformAdmin = !empty($personIsPlatformAdmin);
 $flashOk = \App\Core\Session::getFlash('success');
@@ -28,6 +29,17 @@ $fmtDate = static function (string $v): string {
     $ts = strtotime($v);
 
     return $ts ? date('d/m/Y H:i', $ts) : '—';
+};
+/** Date de fin d une sanction, a l heure de Paris. */
+$fmtParis = static function (string $v): string {
+    if ($v === "") {
+        return "—";
+    }
+    try {
+        return (new \DateTimeImmutable($v, new \DateTimeZone("UTC")))->setTimezone(new \DateTimeZone("Europe/Paris"))->format("d/m/Y à H:i");
+    } catch (\Throwable) {
+        return "—";
+    }
 };
 $empty = static function (?string $v) use ($h): string {
     $t = trim((string) $v);
@@ -137,19 +149,26 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
         <section id="bannissement" class="rounded-xl border <?= $ban !== null ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white' ?> p-5 shadow-sm space-y-3">
             <h2 class="text-base font-bold text-slate-900">Bannissement du site</h2>
             <?php if ($ban !== null): ?>
+                <?php $banEndsRaw = trim((string) ($ban['ends_at'] ?? '')); ?>
                 <p class="text-sm text-rose-900">
-                    Bannie le <?= $h($fmtDate((string) ($ban['created_at'] ?? ''))) ?>.
+                    Bannie le <?= $h($fmtDate((string) ($ban['created_at'] ?? ''))) ?>,
+                    <?= $banEndsRaw !== '' ? 'jusqu’au ' . $h($fmtParis($banEndsRaw)) . ' (heure de Paris)' : 'sans date de fin' ?>.
                     Motif : <strong><?= $h((string) ($ban['reason'] ?? '')) ?></strong>
                 </p>
                 <p class="text-sm text-slate-600">
                     Ses fiches sont inactives, son adresse e-mail est refusée à la connexion et à l’inscription.
                     Lever le bannissement remet chaque fiche dans l’état d’avant et retire les blocages créés à ce moment.
+                    <?= $banEndsRaw !== '' ? 'Sans action de votre part, la sanction se termine toute seule à la date indiquée.' : '' ?>
                 </p>
-                <form method="post" action="<?= $h(url('admin/users/lever-bannissement')) ?>"
+                <form method="post" action="<?= $h(url('admin/users/lever-bannissement')) ?>" class="space-y-2"
                       onsubmit="return confirm('Lever le bannissement de cette personne ?');">
                     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                     <input type="hidden" name="email" value="<?= $h($email) ?>">
                     <input type="hidden" name="return_person" value="<?= $h($email) ?>">
+                    <label class="pu-dialog__field">
+                        <span>Note de levée (facultatif, gardée dans l’historique)</span>
+                        <input type="text" name="note" maxlength="500" placeholder="Ex. excuses reçues, erreur de modération">
+                    </label>
                     <button type="submit" class="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900">Lever le bannissement</button>
                 </form>
             <?php elseif ($isPlatformAdmin): ?>
@@ -159,29 +178,86 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
                     Bannir ferme ses sessions, rend toutes ses fiches inactives et refuse son adresse e-mail sur tout le site.
                     Rien n’est effacé : le bannissement peut être levé plus tard.
                 </p>
-                <form method="post" action="<?= $h(url('admin/users/bannir')) ?>" class="space-y-3"
-                      onsubmit="return confirm('Bannir cette personne de tout le site ?');">
+                <form method="post" action="<?= $h(url('admin/users/bannir')) ?>" class="pu-dialog__form" style="padding:0">
                     <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                     <input type="hidden" name="email" value="<?= $h($email) ?>">
                     <input type="hidden" name="return_person" value="<?= $h($email) ?>">
-                    <label class="block text-sm font-semibold text-slate-800">Motif (gardé dans le journal)
-                        <input type="text" name="reason" required maxlength="500" class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                    </label>
-                    <?php if ($steamId !== ''): ?>
-                        <label class="flex items-center gap-2 text-sm text-slate-800">
-                            <input type="checkbox" name="block_steam" value="1" checked>
-                            Bloquer aussi son Steam ID dans le mod (<span class="font-mono text-xs"><?= $h($steamId) ?></span>)
-                        </label>
-                    <?php endif; ?>
-                    <?php foreach ($knownIps as $row): ?>
-                        <?php if (!empty($row['blocked'])) { continue; } ?>
-                        <label class="flex items-center gap-2 text-sm text-slate-800">
-                            <input type="checkbox" name="block_ips[]" value="<?= $h((string) $row['ip']) ?>">
-                            Bloquer l’adresse réseau <span class="font-mono text-xs"><?= $h((string) $row['ip']) ?></span>
-                        </label>
-                    <?php endforeach; ?>
-                    <button type="submit" class="rounded-lg bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800">Bannir du site</button>
+                    <?php
+                    $banForm = [
+                        'id' => 'pu-ban-person',
+                        'label' => $displayName !== '' ? $displayName : ($callsign !== '' ? $callsign : $email),
+                        'email' => $email,
+                        'fiches' => (int) ($personLiveFiches ?? 0),
+                        'prior' => count($banHistory),
+                        'history_url' => '#historique-sanctions',
+                        'supports_end' => !empty($personBanSupportsEnd),
+                        'steam_id' => $steamId,
+                        'known_ips' => $knownIps,
+                        'shared' => false,
+                    ];
+                    echo '<div class="pa pu pu-embed">';
+                    require base_path('views/admin/system/partials/platform_ban_form.php');
+                    echo '</div>';
+                    ?>
+                    <div class="pu-dialog__buttons" style="justify-content:flex-start">
+                        <button type="submit" class="rounded-lg bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800">Bannir du site</button>
+                    </div>
                 </form>
+            <?php endif; ?>
+        </section>
+
+        <section id="historique-sanctions" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+            <h2 class="text-base font-bold text-slate-900">Historique des sanctions du site</h2>
+            <?php if ($banHistory === []): ?>
+                <p class="text-sm text-slate-600">Aucune sanction du site n’a jamais été prise contre cette personne.</p>
+            <?php else: ?>
+                <p class="text-sm text-slate-600">Du plus récent au plus ancien : qui a décidé, quand, pour quel motif, et comment la sanction s’est terminée.</p>
+                <div class="pa pu pu-embed">
+                <ol class="pu-history">
+                    <?php foreach ($banHistory as $item): ?>
+                        <?php
+                        $itemEnds = trim((string) ($item['ends_at'] ?? ''));
+                        $itemLifted = trim((string) ($item['lifted_at'] ?? ''));
+                        $itemLiftedBy = trim((string) ($item['lifted_by_user_id'] ?? ''));
+                        $itemNow = gmdate('Y-m-d H:i:s');
+                        $itemCurrent = $itemLifted === '' && ($itemEnds === '' || $itemEnds > $itemNow);
+                        $who = static function (?string $name, ?string $call, string $fallback): string {
+                            $name = trim((string) $name);
+                            $call = trim((string) $call);
+
+                            return $call !== '' ? $call : ($name !== '' ? $name : $fallback);
+                        };
+                        ?>
+                        <li class="pu-history__item<?= $itemCurrent ? ' is-current' : '' ?>">
+                            <div class="pu-history__head">
+                                <span><?= $h($fmtDate((string) ($item['created_at'] ?? ''))) ?></span>
+                                <?php if ($itemCurrent): ?>
+                                    <span class="pa-pill pa-pill--rose">En cours</span>
+                                <?php elseif ($itemLifted !== '' && $itemLiftedBy === ''): ?>
+                                    <span class="pa-pill pa-pill--slate">Terminée (date de fin atteinte)</span>
+                                <?php elseif ($itemLifted !== ''): ?>
+                                    <span class="pa-pill pa-pill--mint">Levée</span>
+                                <?php else: ?>
+                                    <span class="pa-pill pa-pill--slate">Terminée (date de fin atteinte)</span>
+                                <?php endif; ?>
+                                <span class="pu-muted"><?= $itemEnds !== '' ? 'Temporaire, jusqu’au ' . $h($fmtParis($itemEnds)) : 'Sans date de fin' ?></span>
+                            </div>
+                            <p>Motif : <strong><?= $h((string) ($item['reason'] ?? '')) ?></strong></p>
+                            <p class="pu-muted">
+                                Décidée par <?= $h($who($item['banned_by_name'] ?? null, $item['banned_by_callsign'] ?? null, 'un administrateur')) ?>.
+                                <?php if ($itemLifted !== '' && $itemLiftedBy !== ''): ?>
+                                    Levée le <?= $h($fmtDate($itemLifted)) ?> par <?= $h($who($item['lifted_by_name'] ?? null, $item['lifted_by_callsign'] ?? null, 'un administrateur')) ?>.
+                                <?php elseif ($itemLifted !== ''): ?>
+                                    Terminée le <?= $h($fmtDate($itemLifted)) ?>.
+                                <?php endif; ?>
+                                <?php if (trim((string) ($item['lift_note'] ?? '')) !== '' && $itemLiftedBy !== ''): ?>
+                                    Note : <?= $h((string) $item['lift_note']) ?>
+                                <?php endif; ?>
+                            </p>
+                        </li>
+                    <?php endforeach; ?>
+                </ol>
+                </div>
             <?php endif; ?>
         </section>
 
@@ -402,3 +478,4 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
         </p>
     </div>
 </div>
+<script src="<?= $h(asset_url('assets/js/platform-users-sheet.js')) ?>" defer></script>
