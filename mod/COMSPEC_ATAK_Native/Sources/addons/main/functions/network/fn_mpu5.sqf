@@ -279,7 +279,7 @@ switch (_act) do {
         // pour ne pas laisser l'équipe sur un débit périmé.
         private _mOld = player getVariable ["COMSPEC_ATAK_Mpu5", []];
         if (_pub isEqualTo _mOld) then { uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", []]; } else {
-            private _soft = (count _mOld) isEqualTo 2 && {(count _pub) isEqualTo 2} && {(_mOld select 1) isEqualTo (_pub select 1)} && {(_mOld select 0) > 0} && {(_pub select 0) > 0};
+            private _soft = (count _mOld) isEqualTo 4 && {(count _pub) isEqualTo 4} && {(_mOld select [1, 3]) isEqualTo (_pub select [1, 3])} && {(_mOld select 0) > 0} && {(_pub select 0) > 0};
             (uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Pend", []]) params [["_pend", []], ["_pendN", 0]];
             if (_soft && {_pub isNotEqualTo _pend} && {_pendN < 2}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", [_pub, _pendN + 1]];
