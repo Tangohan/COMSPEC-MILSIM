@@ -55803,4 +55803,7 @@ return [
     'Archive impossible à préparer (lot inconnu ou compression indisponible).' => 'Archive could not be prepared (unknown set or compression unavailable).',
     'Lot de données inconnu.' => 'Unknown data set.',
     'Supprimer les photos du jeu et les données de renseignement de la communauté' => 'Delete the community\'s game photos and intelligence data',
+    '%1 élément(s)' => '%1 item(s)',
+    'au total, dont %1 de fichiers partagés (%2 fichier(s), à gérer dans la page Fichiers).' => 'in total, including %1 of shared files (%2 file(s), managed in the Files page).',
+    'élément(s) et' => 'item(s) and',
 ];
