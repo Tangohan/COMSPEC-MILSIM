@@ -166,7 +166,7 @@ final class EffectifsShellRenderTest extends TestCase
         self::assertStringContainsString('data-confidential="staff_hidden"', $html);
         // Écriture inchangée : même envoi commanders[unité], jeton CSRF, tableau complet conservé.
         self::assertStringContainsString('name="commanders[2]"', $html);
-        self::assertStringContainsString('data-chain-quick', $html);
+        self::assertStringContainsString('data-chain-dialog', $html);
         self::assertStringContainsString('name="_csrf_token" value="tok"', $html);
         self::assertStringContainsString('"chain":[7]', $html);
         self::assertStringNotContainsString('<script type="application/json" id="eff-chain-data">{"units":{"1":{"name":"Escadron","chef":7,"members":[7]},"2":{"name":"Groupe <1>', $html);

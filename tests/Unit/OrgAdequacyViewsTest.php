@@ -106,8 +106,8 @@ final class OrgAdequacyViewsTest extends TestCase
         self::assertStringContainsString('Filtré : personnes avec un écart d’adéquation', $filtered);
         self::assertStringContainsString('id="eff-chain-people-panel" open', $filtered);
         // Mercer (capitaine, commandant de compagnie) sans écart propre : retiré du tableau filtré.
-        self::assertSame(0, preg_match('~<tr>\s*<td>\s*<a href="[^"]*membres/7">Mercer</a>~', $filtered));
-        self::assertSame(1, preg_match('~<tr>\s*<td>\s*<a href="[^"]*membres/8">Hale</a>~', $filtered));
+        self::assertSame(0, preg_match('~<tr>\s*<td[^>]*>\s*<a href="[^"]*membres/7">Mercer</a>~', $filtered));
+        self::assertSame(1, preg_match('~<tr>\s*<td[^>]*>\s*<a href="[^"]*membres/8">Hale</a>~', $filtered));
 
         // Contrôle désactivé ou indisponible : la page reste celle d’avant.
         $plain = $this->render('admin/effectifs_workspace/shell.php', array_replace($vars, ['chainAdequacy' => null]));

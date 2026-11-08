@@ -97,7 +97,7 @@ if (!function_exists('adq_e')) {
     function adq_issue_html(array $issue, array $people, callable $memberUrl, bool $withActions = true): string
     {
         $tone = (string) ($issue['tone'] ?? 'info');
-        $out = '<li class="adq-issue is-' . adq_e($tone) . '" data-adq-code="' . adq_e((string) ($issue['code'] ?? '')) . '">'
+        $out = '<li class="adq-issue is-' . adq_e($tone) . '" data-adq-code="' . adq_e((string) ($issue['code'] ?? '')) . '" data-adq-unit="' . (int) ($issue['unit_id'] ?? 0) . '">'
             . '<b class="adq-issue__t">' . adq_e((string) ($issue['title'] ?? '')) . '</b>'
             . '<span class="adq-issue__x">' . adq_e((string) ($issue['text'] ?? '')) . '</span>';
         $cands = array_values(array_filter(array_map('intval', is_array($issue['candidates'] ?? null) ? $issue['candidates'] : [])));
