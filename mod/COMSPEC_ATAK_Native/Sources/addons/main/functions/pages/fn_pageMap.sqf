@@ -532,7 +532,7 @@ if (_interactive) then {
             _rows pushBack ["fold", "Bandeau du curseur", (createHashMapFromArray [["NEW", "NOUVEAU"], ["CLASSIC", "CLASSIQUE"], ["COMPACT", "COMPACT"], ["HIDDEN", "MASQUÉ"]]) get (_bcNow get "style"), _bandOpen, "band" call _foldCode];
             if (_bandOpen) then { _rows append (["rows", "band"] call comspec_atak_native_fnc_mapPrefs); };
             private _meOpen = _full || {"me" in _folds};
-            _rows pushBack ["fold", "Mon point GPS", (createHashMapFromArray [["ARROW", "FLÈCHE"], ["CHEVRON", "CHEVRON"], ["DOT", "POINT"], ["CIRCLE", "CERCLE"], ["TRIANGLE", "TRIANGLE"], ["NATO", "AMI APP-6"]]) getOrDefault [(["self"] call comspec_atak_native_fnc_mapPrefs) select 6, "FLÈCHE"], _meOpen, "me" call _foldCode];
+            _rows pushBack ["fold", "Mon point GPS", ["label", (["self"] call comspec_atak_native_fnc_mapPrefs) select 6] call comspec_atak_native_fnc_mapShape, _meOpen, "me" call _foldCode];
             if (_meOpen) then { _rows append (["rows", "self"] call comspec_atak_native_fnc_mapPrefs); };
             // Calques par thème : [clé, titre, [[libellé, espace (P profil, M mission, C réglage CBA du joueur), variable,
             // défaut, clé communauté (verrou Athena) ou "", explication affichée en vue CONFIGURATION]...]]

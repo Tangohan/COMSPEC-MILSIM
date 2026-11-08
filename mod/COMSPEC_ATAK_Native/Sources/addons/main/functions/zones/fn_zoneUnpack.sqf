@@ -88,7 +88,7 @@ if (_rawL isEqualType []) then {
     } forEach (_rawL select [0, 40]);
 };
 // Style du plan.
-private _st = createHashMapFromArray [["theme", "NATO"], ["fillA", -1], ["width", -1], ["dash", "SOLID"], ["lblSize", 1], ["lblBg", false], ["lblPos", "C"], ["lblMode", "NAME_ST"], ["tcol", createHashMap], ["scol", createHashMap]];
+private _st = createHashMapFromArray [["theme", "NATO"], ["fillA", -1], ["width", -1], ["dash", "SOLID"], ["lblSize", 1], ["lblBg", false], ["lblPos", "C"], ["lblMode", "NAME_ST"], ["hatch", false], ["ring", false], ["tcol", createHashMap], ["scol", createHashMap]];
 private _rs = _in getOrDefault ["st", []];
 if (_rs isEqualType []) then {
     private _m = createHashMap;
@@ -101,6 +101,8 @@ if (_rs isEqualType []) then {
     _st set ["lblBg", [_m getOrDefault ["lblBg", false], false] call _bool];
     _st set ["lblPos", [_m getOrDefault ["lblPos", "C"], ["C", "N"], "C"] call _pick];
     _st set ["lblMode", [_m getOrDefault ["lblMode", "NAME_ST"], ["NAME_ST", "NAME", "NUM", "NONE"], "NAME_ST"] call _pick];
+    _st set ["hatch", [_m getOrDefault ["hatch", false], false] call _bool];
+    _st set ["ring", [_m getOrDefault ["ring", false], false] call _bool];
     {
         private _key = _x;
         private _ok = [_types, _states] select (_key isEqualTo "scol");
@@ -139,5 +141,6 @@ createHashMapFromArray [
     ["area", _area], ["gp", _gp], ["zones", _zones], ["axes", _axes], ["cps", _cps], ["lines", _lines], ["st", _st],
     ["from", [_in getOrDefault ["from", ""]] call _txt],
     ["side", [_in getOrDefault ["side", ""], 12] call _txt], ["grp", [_in getOrDefault ["grp", ""], 24] call _txt], ["ft", [_in getOrDefault ["ft", ""], 24] call _txt],
+    ["auto", [_in getOrDefault ["auto", ""], ["GEN", "AXES", "DRAW"], ""] call _pick],
     ["mk", []]
 ]

@@ -59,6 +59,8 @@
       ["tabs", [[libellé, code, choisi, pastille]...]]   barre d'onglets soulignés (l'onglet choisi en accent)
       ["row", icône, titre, sous-titre, texte à droite, code, couleur d'icône, lettre, liseré]   ligne de liste haute avec
           filet et chevron (navigation) ; icône "" + lettre : pastille de lettre
+      ["shapes", libellé, [[texte, code, choisie, aide, couches [[texture ("" : trait), couleur, échelle (trait : épaisseur en px)]...]]...], aide]
+          choix à aperçu : le dessin réel sur un fond de carte, le choix encadré
       ["chips", [[texte, couleur RGBA, code]...]]   pastilles d'état ou d'étiquette, passage à la ligne
       ["skeleton", n, texte]   squelette de chargement (n lignes grises) en attendant des données
       ["toggle", libellé, actif, code]   bascule compacte (carte + pastille OUI / NON), même dessin que « switch »
@@ -1190,6 +1192,52 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _t ctrlSetPosition [_pad * 2 + _iw, _y, _w - _iw - _pad, _h];
             _t ctrlCommit 0;
             _y = _y + _h + _pad;
+        };
+        case "shapes": {
+            _row params ["", "_label", "_opts", ["_help", ""]];
+            if (_label isNotEqualTo "") then {
+                private _lb = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.3]] call _mk;
+                _lb ctrlSetStructuredText parseText ((format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='" + _hTD + "'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+                _y = _y + _fs * 1.35;
+            };
+            private _per = (ceil ((_w / (_fs * 5.2 * pixelW / pixelH)))) max 3 min 6;
+            private _cw = _w / _per;
+            private _ch = _rowH * 1.25;
+            private _lh = _fs * 1.05;
+            private _ratioS = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            private _icoH = _ch * 0.8;
+            {
+                _x params ["_text", "_code", ["_active", false], ["_tip", ""], ["_layers", []]];
+                private _cx = _pad + (_forEachIndex mod _per) * _cw;
+                private _cy = _y + (floor (_forEachIndex / _per)) * (_ch + _lh + _pad / 3);
+                private _cwi = _cw - _pad / 4;
+                private _fr = ["COMSPEC_RscText", [_cx, _cy, _cwi, _ch + _lh]] call _mk;
+                _fr ctrlSetBackgroundColor ([_th get "surface2", _acc] select _active);
+                private _bgP = ["COMSPEC_RscPicture", [_cx + pixelW, _cy + pixelH, _cwi - 2 * pixelW, _ch - pixelH], "\z\comspec_atak_native\addons\main\data\map_preview_bg.paa"] call _mk;
+                _bgP ctrlSetTextColor [1, 1, 1, 1];
+                {
+                    _x params ["_tx", "_tc", ["_sc", 1]];
+                    if (_tx isEqualTo "") then {
+                        // Trait : barre horizontale à l'épaisseur réelle (px).
+                        private _bar = ["COMSPEC_RscText", [_cx + _cwi * 0.12, _cy + (_ch - _sc * pixelH) / 2, _cwi * 0.76, _sc * pixelH]] call _mk;
+                        _bar ctrlSetBackgroundColor _tc;
+                    } else {
+                        private _ih = _icoH * _sc;
+                        private _iw = _ih / _ratioS;
+                        private _pic = ["COMSPEC_RscPicture", [_cx + (_cwi - _iw) / 2, _cy + (_ch - _ih) / 2, _iw, _ih], _tx] call _mk;
+                        _pic ctrlSetTextColor _tc;
+                    };
+                } forEach _layers;
+                private _tl = ["COMSPEC_RscText", [_cx, _cy + _ch, _cwi, _lh], _text] call _mk;
+                _tl ctrlSetFontHeight ((_fs * 0.72) max COMSPEC_ATAK_FontMin);
+                _tl ctrlSetBackgroundColor [0, 0, 0, 0];
+                _tl ctrlSetTextColor (_th get "text");
+                private _o = ["COMSPEC_RscButtonOverlay", [_cx, _cy, _cwi, _ch + _lh]] call _mk;
+                if (_tip isNotEqualTo "") then { _o ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
+                [_o, _code] call _click;
+            } forEach _opts;
+            private _rowsS = ceil ((count _opts) / _per) max 1;
+            _y = _y + _rowsS * (_ch + _lh + _pad / 3) + _pad / 2;
         };
         case "image": {
             // Photo en pleine largeur (format 16/9 à l'écran, proportions conservées).
