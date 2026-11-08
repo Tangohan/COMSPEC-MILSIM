@@ -6,6 +6,11 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Le masquage de l'e-mail « à l'affichage » n'avait aucun effet réel (la fiche du dossier affichait l'adresse
+ * complète à côté du masque, les listes et les messages au staff l'affichent en clair) : l'option est retirée, l'e-mail
+ * du compte est transmis à l'équipe et le consentement le dit.
+ */
 final class EnlistmentMaskEmailAssetTest extends TestCase
 {
     public function testMaskEmailHelperUsesStars(): void
@@ -18,34 +23,38 @@ final class EnlistmentMaskEmailAssetTest extends TestCase
         self::assertSame('—', mask_email_for_display(''));
     }
 
-    public function testEnlistmentFormOffersMaskInsteadOfOptionalShare(): void
+    public function testNoCandidateFormOffersTheMaskOption(): void
     {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/enlistment.php');
-
-        self::assertStringContainsString('name="mask_email"', $view);
-        self::assertStringContainsString('Masquer mon', $view);
-        self::assertStringContainsString('toujours transmis au staff', $view);
-        self::assertStringNotContainsString('name="share_email"', $view);
+        $root = dirname(__DIR__, 2);
+        foreach (['views/enlistment.php', 'views/enlistment/simple.php', 'views/enlistment/discord.php', 'views/enlistment/_account_identity.php', 'views/enlistment/_account_consent.php'] as $file) {
+            $view = (string) file_get_contents($root . '/' . $file);
+            self::assertStringNotContainsString('name="mask_email"', $view, $file);
+            self::assertStringNotContainsString('name="share_email"', $view, $file);
+        }
     }
 
-    public function testSimpleEnlistmentFormOffersMaskWithoutRequiredShare(): void
+    public function testConsentNamesTheCommunityAndTheEmailTransmission(): void
     {
-        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/enlistment/simple.php');
+        $consent = (string) file_get_contents(dirname(__DIR__, 2) . '/views/enlistment/_account_consent.php');
 
-        self::assertStringContainsString('name="mask_email"', $view);
-        self::assertStringContainsString('Masquer mon', $view);
-        self::assertStringNotContainsString('name="share_email"', $view);
-        self::assertStringNotContainsString('share_email" value="1" checked class="rounded border-slate-300" x-bind:disabled="flow !== \'account\'" required', $view);
+        self::assertStringContainsString('l’e-mail de mon compte', $consent);
+        self::assertStringContainsString('$tenantName', $consent);
+        self::assertStringContainsString('name="consent_data_sharing"', $consent);
     }
 
-    public function testAccountFlowAlwaysStoresEmailAndMaskPreference(): void
+    public function testControllerNoLongerReadsOrStoresTheMaskPreference(): void
     {
         $controller = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/EnlistmentController.php');
 
-        self::assertStringContainsString("input('mask_email')", $controller);
-        self::assertStringContainsString("'mask_email' => \$maskEmail", $controller);
+        self::assertStringNotContainsString("input('mask_email')", $controller);
+        self::assertStringNotContainsString("'mask_email' => \$maskEmail", $controller);
         self::assertStringContainsString("'share_email' => true", $controller);
-        self::assertStringNotContainsString('Une adresse email de contact est requise (partage email)', $controller);
-        self::assertStringNotContainsString('$email = $shareEmail ? trim((string) ($user[\'email\'] ?? \'\')) : \'\'', $controller);
+    }
+
+    public function testStaffDossierStillReadsTheMaskOfOlderApplications(): void
+    {
+        $show = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/recruitments/show.php');
+
+        self::assertStringContainsString("sharedFields['mask_email']", $show);
     }
 }

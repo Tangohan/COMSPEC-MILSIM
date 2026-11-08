@@ -744,6 +744,7 @@ return function (Router $router) {
     $router->post('/enlistment', [EnlistmentController::class, 'store']);
     $router->get('/c/{slug}/enlistment', [EnlistmentController::class, 'show']);
     $router->post('/c/{slug}/enlistment', [EnlistmentController::class, 'store']);
+    $router->get('/c/{slug}/enlistment/connexion', [EnlistmentController::class, 'accountStep']);
     $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
     $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
     $router->get('/enlistment/suivi/{token}', [EnlistmentCandidatePortalController::class, 'show']);
