@@ -55859,6 +55859,8 @@ return [
     'Télécharger pour ACE (.txt)' => 'Download for ACE (.txt)',
     'Vos tenues, celles de la communauté et les kits de départ, prêts à enfiler en jeu.' => 'Your outfits, the community\'s outfits and the starter kits, ready to wear in game.',
     'Nom de l’emploi ou catégorie…' => 'Job name or category…',
+    'Formule payante' => 'Paid plan',
+    'communauté bénéficiaire :' => 'beneficiary community:',
     'Saisissez le code communauté donné par votre équipe (invitation, brief, message). Vous passez ensuite à la bonne étape : connexion ou création de compte.' => 'Enter the community code your team gave you (invitation, briefing, message). You then move on to the right step: sign in or create an account.',
     'Ce que nous attendons' => 'What we expect',
     'Jeu et mods' => 'Game and mods',
