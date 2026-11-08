@@ -86,6 +86,7 @@ switch (_act) do {
         private _target = [_obj, _e getOrDefault ["position", [0, 0, 0]]] select (isNull _obj);
         if ((_s getOrDefault ["activePage", ""]) isEqualTo "MAP") then {
             [_target, 0.03] call comspec_atak_native_fnc_mapCenter;
+            ["mapCard"] call comspec_atak_native_fnc_unitCard;
             [] call comspec_atak_native_fnc_inspectorUpdate;
         } else {
             ["MAP"] call comspec_atak_native_fnc_navigate;

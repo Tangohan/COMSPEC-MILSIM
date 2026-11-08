@@ -47,15 +47,9 @@ switch (_tool) do {
             };
         } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["units",createHashMap]);
         _s set ["selectedEntity",_best];
-        // Écran réduit (pas de panneau SITUATION) : un seul bandeau par clic sur une unité, jamais au rafraîchissement.
-        if ((count _best) > 0 && {([] call comspec_atak_native_fnc_layoutGet) get "mini"}) then {
-            ["INFO", format ["%1 · %2", _best getOrDefault ["callsign", "CONTACT"], [_best getOrDefault ["position", [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef], 4, 20] call comspec_atak_native_fnc_notify;
-        };
-        // Unité cliquée : on ouvre le panneau SITUATION (en plein écran) pour afficher sa fiche.
-        if ((count _best) > 0 && {!(missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false])} && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
-            [] call comspec_atak_native_fnc_inspToggle;
-            [{ [] call comspec_atak_native_fnc_inspectorUpdate; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec;
-        };
+        // La fiche flottante (fn_unitCard), aussi en petit format : la carte ne change ni de taille ni de rendu. Le panneau
+        // SITUATION reste ouvert par son onglet et garde la fiche longue.
+        ["mapCard"] call comspec_atak_native_fnc_unitCard;
         [] call comspec_atak_native_fnc_inspectorUpdate;
     };
 };

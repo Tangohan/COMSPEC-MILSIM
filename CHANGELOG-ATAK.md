@@ -46,16 +46,20 @@ FR : Une seule fiche joueur partout, et la carte ne saute plus quand on touche u
 - Les actions sur un joueur (carte, y aller, SMS, vibrer, ping, caméra, suivre) ont le même nom et le même ordre sur la carte, dans le BFT et dans Groupe.
 - Le bouton CARTE du BFT et de Groupe sélectionne maintenant le joueur à l'arrivée, et le BFT rejoint le dock.
 - Groupe gagne RALLIEMENT SUR MOI, SMS AU GROUPE et CADRER LE GROUPE ; passer le commandement demande une confirmation.
+- Carte : toucher un joueur ouvre une fiche flottante avec ses actions, ◀ ▶ passe d'un équipier à l'autre et SUIVRE garde la carte sur lui. Barre d'outils réordonnée, PING visible, touches 1 à 9 pour les outils.
 EN : One player card everywhere, and the map no longer jumps when you touch a teammate
 - Actions on a player (map, go there, SMS, vibrate, ping, camera, follow) have the same name and order on the map, in BFT and in Group.
 - The MAP button in BFT and Group now selects the player on arrival, and BFT joins the dock.
 - Group gains RALLY ON ME, SMS TO GROUP and FRAME THE GROUP; handing over command asks for confirmation.
+- Map: touching a player opens a floating card with their actions, ◀ ▶ moves between teammates and FOLLOW keeps the map on them. Toolbar reordered, PING visible, keys 1 to 9 for the tools.
 
 ### Détail technique
 - `fn_unitCard` : catalogue unique des actions (ordre, libellés, règles d'activation), rangées `fn_formRender` et barre en contrôles libres, surplus derrière ⋯ sans redessin ; état médical commun (Groupe, BFT, panneau SITUATION).
 - `fn_bftAction` : CARTE pose `selectedEntity` ; `fn_pageRender` : titre « ‹ BFT · CARTE » ; `config.cpp` : `Bft` au dock.
 - `fn_groupAction` : `rally` (un seul `netSend` vers tous les téléphones), `smsGroup`, `frameGroup` ; CHEF retiré des lignes, passage du commandement en deux temps dans la fiche.
-- Coût par image : aucun ajout sur ces écrans.
+- `fn_mapSelect` n'ouvre plus le panneau SITUATION (plus de `layoutApply` + `pageRender` au clic) ; fiche flottante `mapCard`, texte réécrit à 1 Hz (`tick`, `fn_statusUpdate`), `mapFollowId` dans le glissement existant de `fn_mapOnDraw`.
+- `fn_pageMap` : barre CENTRER/SUIVRE, ZOOM, MARQUEUR, PING, CALQUES, OUTILS ; indicatifs et « Sur mon téléphone » dans OUTILS > AFFICHAGE ; touches 1 à 9 (`fn_displayLoad`, `fn_mapToolMenu`).
+- Coût par image : une lecture de table seulement pendant le suivi d'une unité ; aucun autre ajout.
 ## À venir : fond de carte ARDOISE et style tactique des marqueurs et traits (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

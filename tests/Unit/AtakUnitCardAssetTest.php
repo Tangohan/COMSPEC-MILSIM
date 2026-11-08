@@ -116,6 +116,63 @@ final class AtakUnitCardAssetTest extends TestCase
         self::assertStringNotContainsString('netSend; } forEach', $rally);
     }
 
+    public function testUnitClickShowsAFloatingCardWithoutReflow(): void
+    {
+        $select = $this->read('functions/map/fn_mapSelect.sqf');
+        self::assertStringContainsString('["mapCard"] call comspec_atak_native_fnc_unitCard', $select);
+        self::assertStringNotContainsString('inspToggle', $select);
+        // Plus de bandeau de 4 s en petit format : la fiche le remplace.
+        self::assertStringNotContainsString('comspec_atak_native_fnc_notify', $select);
+        $card = $this->read('functions/ui/fn_unitCard.sqf');
+        foreach (['case "mapCard"', 'case "tick"', 'case "step"', 'ui_back.paa', 'ui_chevron_right.paa', 'ui_close.paa'] as $s) {
+            self::assertStringContainsString($s, $card);
+        }
+        // Rafraîchi une fois par seconde par fn_statusUpdate, jamais dans le dessin de la carte.
+        self::assertStringContainsString('["tick"] call comspec_atak_native_fnc_unitCard', $this->read('functions/ui/fn_statusUpdate.sqf'));
+        self::assertStringNotContainsString('fnc_unitCard', $this->read('functions/map/fn_mapOnDraw.sqf'));
+    }
+
+    public function testFollowingAUnitReusesTheFollowPathAndAnyOtherCentreStopsIt(): void
+    {
+        $draw = $this->read('functions/map/fn_mapOnDraw.sqf');
+        self::assertStringContainsString('_state getOrDefault ["mapFollowId", ""]', $draw);
+        // Aucune lecture d'objet de plus : la position vient des pistes.
+        self::assertStringContainsString('getOrDefault [_fwId, createHashMap]) getOrDefault ["position", []]', $draw);
+        $centre = $this->read('functions/map/fn_mapCenter.sqf');
+        self::assertStringContainsString('["_keepFollow", false]', $centre);
+        self::assertStringContainsString('set ["mapFollowId", ""]', $centre);
+    }
+
+    public function testToolbarOrderPingVisibleAndNothingLost(): void
+    {
+        $map = $this->read('functions/pages/fn_pageMap.sqf');
+        $order = [];
+        foreach (['["center", "map_center"', '["zoomin", "map_zoomin"', '["zoomout", "map_zoomout"', '["MARKER", "map_marker"', '["PING", ', '["layers", "map_grid"', '["menu", "map_tools"'] as $k) {
+            $pos = strpos($map, $k);
+            self::assertNotFalse($pos, $k);
+            $order[] = $pos;
+        }
+        $sorted = $order;
+        sort($sorted);
+        self::assertSame($sorted, $order);
+        // Indicatifs et « Sur mon téléphone » ne disparaissent pas : OUTILS > AFFICHAGE.
+        self::assertStringContainsString('["LABELS", "map_labels"', $map);
+        self::assertStringContainsString('["PHONE", "app_athena"', $map);
+        $menu = $this->read('functions/map/fn_mapToolMenu.sqf');
+        self::assertStringContainsString('case "LABELS"', $menu);
+        self::assertStringContainsString('["open", "carte"] call comspec_atak_native_fnc_mobileQr', $menu);
+        // Un seul bouton OUTILS, dans la barre.
+        self::assertStringNotContainsString('private _tlb', $map);
+    }
+
+    public function testNumberKeysFollowTheToolMenu(): void
+    {
+        $menu = $this->read('functions/map/fn_mapToolMenu.sqf');
+        self::assertStringContainsString('["ROUTE", "WP", "SEARCH", "MEASURE", "HEIGHT", "LOS", "FLAT", "IPTGT", "LINE"]', $menu);
+        self::assertStringContainsString('["key", _key - 1] call comspec_atak_native_fnc_mapToolMenu', $this->read('functions/ui/fn_displayLoad.sqf'));
+        self::assertStringContainsString('["numbered"] call comspec_atak_native_fnc_mapToolMenu', $this->read('functions/pages/fn_pageMap.sqf'));
+    }
+
     public function testNewLabelsAreTranslated(): void
     {
         $en = $this->read('i18n/en.txt');

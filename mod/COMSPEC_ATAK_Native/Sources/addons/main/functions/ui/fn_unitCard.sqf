@@ -2,7 +2,7 @@
     Fiche joueur unique : les mêmes actions, dans le même ordre et avec les mêmes libellés partout (carte, panneau
     SITUATION, BFT, Groupe, Inter-team). Une cible est une entité BFT (HashMap), son identifiant, ou un objet joueur.
     Ordre fixe : CARTE · Y ALLER · SMS · VIBRER · PING · CAMÉRA · SUIVRE · PASSER LE COMMANDEMENT · CHAMP DE VISION ·
-    LOCALISER · FICHE BFT. Sur la carte, où centrer sert moins, SUIVRE prend la première place et CARTE passe derrière ⋯.
+    LOCALISER · FICHE BFT. Sur la carte, où centrer sert moins, SUIVRE prend la première place et CARTE passe derrière « … ».
     Règles communes : grisé sans téléphone, « HORS LIGNE » à la place de VIBRER pour une piste hors ligne, CAMÉRA seulement
     si elle m'est partagée, passage du commandement réservé au chef et en deux temps (fn_groupAction « lead » au second appui).
     Modes :
@@ -14,10 +14,13 @@
       ["do", [clé, identifiant]]      -> exécute l'action (par fn_bftAction, fn_groupAction, fn_reliefAction, fn_relayNet)
       ["rows", [cible, contexte]]     -> lignes « buttons » de fn_formRender, par rangées de 3 (portrait mini) ou 5, hauteur tap
       ["bar", [cible, contexte, x, y, largeur, dans la zone de contenu]] -> rangée de boutons en contrôles libres, le surplus
-                                         derrière ⋯ (montré ou caché sans redessin). Renvoie un HashMap : h, keys, btns, more.
+                                         derrière « … » (montré ou caché sans redessin). Renvoie un HashMap : h, keys, btns, more.
       ["barUpdate", [barre, cible, contexte]] -> réécrit la rangée sur place ; false si l'ensemble des actions a changé.
       ["select", cible]               -> pose la sélection de la carte (crochets et fiche)
       ["refresh"]                     -> redessine la fiche ouverte après un changement d'état (commandement armé, suivi)
+      ["mapCard"]                     -> (re)crée la fiche flottante de la carte pour la sélection ; renvoie la hauteur prise
+      ["tick"]                        -> réécrit la fiche flottante (fn_statusUpdate, une fois par seconde), si elle change
+      ["step", 1 ou -1]               -> équipier suivant / précédent, sans viser, sans redessiner la carte
     Aucun coût par image : contrôles créés au rendu, réécrits au plus une fois par seconde.
 */
 params [["_mode", "catalog"], ["_arg", []]];
@@ -83,6 +86,22 @@ private _catalog = {
     if (_ctx isEqualTo "map") exitWith { [_sui] + _all + [_cam, _car] + _tail };
     [_car] + _all + [_cam, _sui] + _tail
 };
+// Revue au pouce : mon groupe puis les alliés à moins d'un kilomètre, chacun du plus proche au plus loin.
+private _peerList = {
+    private _mine = [];
+    private _near = [];
+    private _gp = group player;
+    {
+        if ((_y getOrDefault ["affiliation", ""]) isEqualTo "friend" && {!(_y getOrDefault ["self", false])}) then {
+            private _d = player distance2D (_y getOrDefault ["position", [0, 0, 0]]);
+            private _ob = _y getOrDefault ["object", objNull];
+            if (!isNull _ob && {group _ob isEqualTo _gp}) then { _mine pushBack [_d, _x]; } else { if (_d < 1000) then { _near pushBack [_d, _x]; }; };
+        };
+    } forEach _units;
+    _mine sort true;
+    _near sort true;
+    (_mine + _near) apply { _units get (_x select 1) }
+};
 private _perRow = {
     private _l = [] call comspec_atak_native_fnc_layoutGet;
     [5, 3] select ((_l get "mini") && {!(_l get "landscape")})
@@ -127,6 +146,8 @@ switch (_mode) do {
     };
     case "refresh": {
         private _page = _s getOrDefault ["activePage", ""];
+        // Carte sans panneau ouvert : la fiche seule, pas de rendu de la page.
+        if (_page isEqualTo "MAP" && {!(missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false])}) exitWith { [{ ["mapCard"] call comspec_atak_native_fnc_unitCard; }] call comspec_atak_native_fnc_nextFrame; true };
         if (_page in ["BFT", "GROUP", "MAP"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame; };
         true
     };
@@ -167,7 +188,7 @@ switch (_mode) do {
                 } else {
                     // Premier appui : le bouton passe à CONFIRMER, six secondes, puis revient.
                     _s set ["unitLeadArm", [_eid, diag_tickTime]];
-                    [{ ["refresh"] call comspec_atak_native_fnc_unitCard; }, [], 6.2] call comspec_atak_native_fnc_waitAndExec;
+                    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["unitLeadArm", []]) isNotEqualTo []) then { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["unitLeadArm", []]; ["refresh"] call comspec_atak_native_fnc_unitCard; }; }, [], 6.2] call comspec_atak_native_fnc_waitAndExec;
                 };
                 ["refresh"] call comspec_atak_native_fnc_unitCard;
             };
@@ -238,8 +259,10 @@ switch (_mode) do {
             _b
         };
         private _btns = [];
+        private _allC = [];
         { _btns pushBack ([_x, _x0 + _forEachIndex * (_cw + _gap), _y0, _cw] call _make); } forEach (_cat select [0, _per]);
-        // Le surplus : un panneau au-dessus de la rangée, montré ou caché par ⋯ sans redessiner la page.
+        _allC append _btns;
+        // Le surplus : un panneau au-dessus de la rangée, montré ou caché par « … » sans redessiner la page.
         private _moreBtn = controlNull;
         if (_more) then {
             private _rest = _cat select [_per];
@@ -257,10 +280,12 @@ switch (_mode) do {
                 _panel pushBack _b;
             } forEach _rest;
             { _x ctrlShow false; } forEach _panel;
-            _moreBtn = ["COMSPEC_RscButton", [_x0 + _per * (_cw + _gap), _y0, _cw, _h], "⋯", _inGroup] call comspec_atak_native_fnc_pageCtrl;
+            _allC append _panel;
+            _moreBtn = ["COMSPEC_RscButton", [_x0 + _per * (_cw + _gap), _y0, _cw, _h], "…", _inGroup] call comspec_atak_native_fnc_pageCtrl;
             _moreBtn ctrlSetFontHeight _fh;
             _moreBtn ctrlSetTooltip (("Autres actions") call comspec_atak_native_fnc_tr);
             _moreBtn ctrlSetBackgroundColor ([_th get "surface2", [0.08, 0.1, 0.09, 0.92]] select _isMap);
+            _allC pushBack _moreBtn;
             _moreBtn setVariable ["ucPanel", _panel];
             _moreBtn ctrlAddEventHandler ["ButtonClick", {
                 params ["_c"];
@@ -269,7 +294,7 @@ switch (_mode) do {
                 { _x ctrlShow _show; } forEach _panel;
             }];
         };
-        createHashMapFromArray [["h", _h], ["keys", _cat apply { _x select 0 }], ["btns", _btns], ["more", _moreBtn]]
+        createHashMapFromArray [["h", _h], ["keys", _cat apply { _x select 0 }], ["btns", _btns], ["more", _moreBtn], ["all", _allC]]
     };
     case "barUpdate": {
         _arg params ["_bar", "_t", ["_ctx", "bft"]];
@@ -285,6 +310,173 @@ switch (_mode) do {
                 _b setVariable ["ucId", _id];
             };
         } forEach _cat;
+        true
+    };
+    // ---- Fiche flottante de la carte (bas au centre, au-dessus du bandeau) : créée au clic, jamais par image.
+    case "mapCard": {
+        { ctrlDelete _x; } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_UnitCard", createHashMap]) getOrDefault ["ctrls", []]);
+        uiNamespace setVariable ["COMSPEC_ATAK_UnitCard", createHashMap];
+        private _geo = uiNamespace getVariable ["COMSPEC_ATAK_UnitCardGeom", []];
+        private _e = [_s getOrDefault ["selectedEntity", createHashMap]] call _resolve;
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _mini = _l get "mini";
+        // Un seul occupant du bas : marqueur sélectionné, édition, palette ou menu ouvert en petit format : pas de fiche.
+        if ((count _geo) < 7 || {(count _e) isEqualTo 0} || {!(_l get "interactive")}
+            || {(_s getOrDefault ["activePage", ""]) isNotEqualTo "MAP"}
+            || {(_s getOrDefault ["selectedMarker", ""]) isNotEqualTo ""}
+            || {(count (_s getOrDefault ["markerEdit", createHashMap])) > 0}
+            || {(_s getOrDefault ["mapMode", "SELECT"]) in ["MARKER", "WP"]}
+            || {_mini && {_s getOrDefault ["mapToolsOpen", false]}}) exitWith { 0 };
+        _geo params ["_bx", "_by", "_mw", "_mh", "_panH", "_pad", "_toolCol"];
+        private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+        private _fs = _l get "fontSmall";
+        private _font = _l get "font";
+        private _tap = _l get "tap";
+        private _th = COMSPEC_ATAK_Th;
+        private _dir = "\z\comspec_atak_native\addons\main\data\";
+        private _in = _pad * 0.8;
+        private _lineH = _fs * 1.15;
+        private _pw = (((_mw * 0.55) max (_font * 14 / _ratio)) min (_mw - _toolCol - 2 * _pad)) max (_font * 8 / _ratio);
+        private _px = ((_bx + (_mw - _pw) / 2) min (_bx + _mw - _toolCol - _pad - _pw)) max (_bx + _pad);
+        private _ph = _in + _tap + ([_lineH * 2 + _in * 0.4, 0] select _mini) + _in * 0.6 + _tap + _in;
+        // Au-dessus du bandeau et de RECHERCHER.
+        private _py = _by + _mh - _panH - _pad * 2 - _fs * 1.9 - _pad - _ph;
+        private _made = [];
+        private _mk = { params ["_class", "_pos", ["_text", ""]]; private _c = [_class, _pos, _text, false] call comspec_atak_native_fnc_pageCtrl; _made pushBack _c; _c };
+        ([_e] call comspec_atak_native_fnc_symbology) params ["_icon", "_color"];
+        if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO") then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
+        private _o = _e getOrDefault ["object", objNull];
+        if (!isNull _o && {(_e getOrDefault ["affiliation", ""]) isEqualTo "friend"}) then {
+            private _ft = [_o] call comspec_atak_native_fnc_ftInfo;
+            if ((_ft get "id") isNotEqualTo "") then { _color = _ft get "rgba"; };
+        };
+        private _rgb = [_color select 0, _color select 1, _color select 2, 1];
+        private _brd = ["COMSPEC_RscText", [_px - pixelW, _py - pixelH, _pw + pixelW * 2, _ph + pixelH * 2]] call _mk;
+        _brd ctrlSetBackgroundColor [0.30, 0.36, 0.32, 0.9];
+        private _cbg = ["COMSPEC_RscText", [_px, _py, _pw, _ph]] call _mk;
+        _cbg ctrlSetBackgroundColor [0.035, 0.042, 0.038, 0.97];
+        private _edge = ["COMSPEC_RscText", [_px, _py, pixelW * 4, _ph]] call _mk;
+        _edge ctrlSetBackgroundColor _rgb;
+        // Pastille : le symbole de l'unité dans sa couleur.
+        private _x0 = _px + pixelW * 4 + _in / _ratio * 0.6;
+        private _chipW = _tap / _ratio;
+        private _chip = ["COMSPEC_RscText", [_x0, _py + _in, _chipW, _tap]] call _mk;
+        _chip ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.16];
+        private _ic = ["COMSPEC_RscIcon", [_x0 + _chipW * 0.15, _py + _in + _tap * 0.15, _chipW * 0.7, _tap * 0.7], _icon] call _mk;
+        _ic ctrlSetTextColor _rgb;
+        // Passer en revue : précédent, n/m, suivant ; puis fermer. Cibles de la hauteur tactile.
+        private _peers = call _peerList;
+        private _at = _peers findIf { (_x getOrDefault ["id", ""]) isEqualTo (_e getOrDefault ["id", ""]) };
+        private _xR = _px + _pw - _in / _ratio * 0.6;
+        private _bW = _tap / _ratio;
+        private _close = ["COMSPEC_RscIconButton", [_xR - _bW, _py + _in, _bW, _tap], _dir + "ui_close.paa"] call _mk;
+        _close ctrlSetTooltip (("Fermer la fiche") call comspec_atak_native_fnc_tr);
+        _close ctrlSetTextColor (_th get "mapDim");
+        _close ctrlAddEventHandler ["ButtonClick", {
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["selectedEntity", createHashMap];
+            [{ ["mapCard"] call comspec_atak_native_fnc_unitCard; [] call comspec_atak_native_fnc_inspectorUpdate; }] call comspec_atak_native_fnc_nextFrame;
+        }];
+        private _xT = _xR - _bW;
+        if ((count _peers) > 0) then {
+            private _cntW = _fs * 2.6 / _ratio;
+            private _showCnt = _pw > (_chipW + _bW * 3 + _cntW + _font * 5 / _ratio);
+            private _nx = ["COMSPEC_RscIconButton", [_xT - _bW, _py + _in, _bW, _tap], _dir + "ui_chevron_right.paa"] call _mk;
+            _nx ctrlSetTooltip (("Équipier suivant") call comspec_atak_native_fnc_tr);
+            _nx ctrlSetTextColor (_th get "mapText");
+            _nx ctrlAddEventHandler ["ButtonClick", { [{ ["step", 1] call comspec_atak_native_fnc_unitCard; }] call comspec_atak_native_fnc_nextFrame; }];
+            _xT = _xT - _bW;
+            if (_showCnt) then {
+                private _cnt = ["COMSPEC_RscTextCenter", [_xT - _cntW, _py + _in, _cntW, _tap], format ["%1/%2", _at + 1, count _peers]] call _mk;
+                _cnt ctrlSetFont "EtelkaMonospacePro";
+                _cnt ctrlSetFontHeight (((_fs * 0.85) max COMSPEC_ATAK_FontMin));
+                _cnt ctrlSetTextColor (_th get "mapDim");
+                _xT = _xT - _cntW;
+            };
+            private _pv = ["COMSPEC_RscIconButton", [_xT - _bW, _py + _in, _bW, _tap], _dir + "ui_back.paa"] call _mk;
+            _pv ctrlSetTooltip (("Équipier précédent") call comspec_atak_native_fnc_tr);
+            _pv ctrlSetTextColor (_th get "mapText");
+            _pv ctrlAddEventHandler ["ButtonClick", { [{ ["step", -1] call comspec_atak_native_fnc_unitCard; }] call comspec_atak_native_fnc_nextFrame; }];
+            _xT = _xT - _bW;
+        };
+        private _tx0 = _x0 + _chipW + _in / _ratio * 0.6;
+        private _title = ["COMSPEC_RscStructuredText", [_tx0, _py + _in + (_tap - _fs * 1.35) / 2, (_xT - _tx0 - pixelW * 2) max (_chipW), _fs * 1.35]] call _mk;
+        _title ctrlSetFontHeight _fs;
+        private _detail = controlNull;
+        if (!_mini) then {
+            _detail = ["COMSPEC_RscStructuredText", [_x0, _py + _in + _tap + _in * 0.2, _pw - (_x0 - _px) - _in / _ratio * 0.6, _lineH * 2 + _in * 0.2]] call _mk;
+            _detail ctrlSetFontHeight _fs;
+        };
+        private _bar = ["bar", [_e, "map", _x0, _py + _ph - _in - _tap, _pw - (_x0 - _px) - _in / _ratio * 0.6, false]] call comspec_atak_native_fnc_unitCard;
+        _made append (_bar get "all");
+        private _card = createHashMapFromArray [["ctrls", _made], ["title", _title], ["detail", _detail], ["bar", _bar], ["id", _e getOrDefault ["id", ""]], ["texts", ["", ""]]];
+        uiNamespace setVariable ["COMSPEC_ATAK_UnitCard", _card];
+        ["tick"] call comspec_atak_native_fnc_unitCard;
+        _ph + _fs * 1.9 + _pad
+    };
+    // Rafraîchi une fois par seconde (fn_statusUpdate) : textes écrits seulement s'ils changent, boutons sur place.
+    case "tick": {
+        private _card = uiNamespace getVariable ["COMSPEC_ATAK_UnitCard", createHashMap];
+        if ((count _card) isEqualTo 0) exitWith { false };
+        private _e = [_card get "id"] call _resolve;
+        // Unité disparue des pistes : la fiche se referme ; autre unité sélectionnée ailleurs : elle est refaite.
+        if ((count _e) isEqualTo 0) exitWith {
+            _s set ["selectedEntity", createHashMap];
+            ["mapCard"] call comspec_atak_native_fnc_unitCard;
+            false
+        };
+        private _sz = ((COMSPEC_ATAK_FontMin / ((([] call comspec_atak_native_fnc_layoutGet) get "fontSmall") max 0.001)) max 0.85) toFixed 2;
+        private _esc = { [[(_this regexReplace ["&", "&amp;"]), "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
+        private _th = COMSPEC_ATAK_Th;
+        private _st = ["state", [_e, true]] call comspec_atak_native_fnc_unitCard;
+        private _o = _e getOrDefault ["object", objNull];
+        private _friend = (_e getOrDefault ["affiliation", ""]) isEqualTo "friend";
+        private _t1 = format ["<t font='COMSPEC_BarlowBold' size='1.15' color='%1'>%2</t>  <t size='%3' color='%4'>● %5</t>", _th get "hexMapText", (_e getOrDefault ["callsign", "CONTACT"]) call _esc, _sz, _st select 2, toUpper ((_st select 1) call comspec_atak_native_fnc_tr)];
+        private _t2 = "";
+        if (!isNull (_card get "detail")) then {
+            private _parts = [];
+            if (_friend && {!isNull _o}) then {
+                private _ft = [_o] call comspec_atak_native_fnc_ftInfo;
+                if ((_ft get "name") isNotEqualTo "") then { _parts pushBack ((_ft get "name") call _esc); };
+                if ((_ft get "roleShort") isNotEqualTo "") then { _parts pushBack ((_ft get "roleShort") call _esc); };
+                if (isPlayer _o) then { _parts pushBack ((name _o) call _esc); };
+            };
+            if (!_friend) then { _parts pushBack ((_e getOrDefault ["affiliation", "unknown"]) call comspec_atak_native_fnc_tr); };
+            if (!isNull _o && {(vehicle _o) isNotEqualTo _o}) then { _parts pushBack format [("à bord %1") call comspec_atak_native_fnc_tr, (getText (configOf vehicle _o >> "displayName")) call _esc]; };
+            private _p = _e getOrDefault ["position", [0, 0, 0]];
+            private _dd = player distance2D _p;
+            private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
+            _t2 = format ["<t size='%1' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='%1' color='%2'>%4 · %5 · %6° · %7</t>", _sz, _th get "hexMapDim", _parts joinString " · ",
+                [_p, 8] call comspec_atak_native_fnc_gridRef, [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000),
+                [(round (player getDir _p)) mod 360, 3] call CBA_fnc_formatNumber, [format ["%1 s", _age], format ["%1 min", floor (_age / 60)]] select (_age >= 60)];
+        };
+        private _texts = [_t1, _t2];
+        if (_texts isNotEqualTo (_card get "texts")) then {
+            _card set ["texts", _texts];
+            (_card get "title") ctrlSetStructuredText parseText _t1; // i18n:brut
+            if (!isNull (_card get "detail")) then { (_card get "detail") ctrlSetStructuredText parseText _t2; }; // i18n:brut
+        };
+        if !(["barUpdate", [_card get "bar", _e, "map"]] call comspec_atak_native_fnc_unitCard) then { ["mapCard"] call comspec_atak_native_fnc_unitCard; };
+        true
+    };
+    // Équipier suivant ou précédent : mon groupe, puis les alliés à moins d'un kilomètre, du plus proche au plus loin.
+    case "step": {
+        private _peers = call _peerList;
+        if ((count _peers) isEqualTo 0) exitWith { false };
+        private _id = (_s getOrDefault ["selectedEntity", createHashMap]) getOrDefault ["id", ""];
+        private _at = _peers findIf { (_x getOrDefault ["id", ""]) isEqualTo _id };
+        private _n = count _peers;
+        private _next = _peers select ([(_at + _arg + _n) mod _n, [_n - 1, 0] select (_arg > 0)] select (_at < 0));
+        _s set ["selectedEntity", _next];
+        // La carte ne bouge que si l'équipier est hors de la vue, et jamais pendant un suivi.
+        private _map = [] call comspec_atak_native_fnc_mapCtrl;
+        if (!isNull _map && {(_s getOrDefault ["mapFollowId", ""]) isEqualTo ""} && {!(_s getOrDefault ["mapFollow", false])}) then {
+            private _p = _next getOrDefault ["position", [0, 0, 0]];
+            private _sp = _map ctrlMapWorldToScreen _p;
+            (ctrlPosition _map) params ["_mx", "_my", "_mw", "_mh"];
+            if ((_sp select 0) < _mx || {(_sp select 0) > (_mx + _mw)} || {(_sp select 1) < _my} || {(_sp select 1) > (_my + _mh)}) then { [_p, -1, true] call comspec_atak_native_fnc_mapCenter; };
+        };
+        ["mapCard"] call comspec_atak_native_fnc_unitCard;
+        [] call comspec_atak_native_fnc_inspectorUpdate;
         true
     };
     default { false };

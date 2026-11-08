@@ -19092,5 +19092,17 @@
 ["Ralliement envoyé à %1 téléphone(s)", "Rally sent to %1 phone(s)"],
 ["Pas de réseau : le ralliement partira au retour du signal", "No network: the rally will go out when the signal returns"],
 ["Message vide", "Empty message"],
-["SMS envoyé à %1 joueur(s)", "SMS sent to %1 player(s)"]
+["SMS envoyé à %1 joueur(s)", "SMS sent to %1 player(s)"],
+["Équipier suivant", "Next teammate"],
+["Équipier précédent", "Previous teammate"],
+["à bord %1", "aboard %1"],
+["Sur mon téléphone (QR code)", "On my phone (QR code)"],
+["Centrer sur moi ; second appui : suivre ma position ; appui suivant : arrêter le suivi", "Centre on me; second press: follow my position; next press: stop following"],
+["Ping : cliquez sur la carte, visible de tout le camp", "Ping: click on the map, visible to your whole side"],
+["PING : clic sur la carte, visible de tout le camp", "PING: click on the map, visible to your whole side"],
+["Calques de la carte", "Map layers"],
+["friend", "friend"],
+["hostile", "hostile"],
+["neutral", "neutral"],
+["unknown", "unknown"]
 ]
