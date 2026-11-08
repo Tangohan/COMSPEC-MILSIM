@@ -24,7 +24,7 @@ final class AtakGameAdminService
     /** Fiches renvoyées par page (la réponse passe par le rappel de la DLL, qui doit rester court). */
     public const PAGE = 40;
 
-    public const ACTIONS = ['block', 'unblock', 'disconnect', 'message', 'compromise', 'undo_compromise'];
+    public const ACTIONS = ['block', 'unblock', 'disconnect', 'message', 'compromise', 'undo_compromise', 'replace_device', 'repair_data'];
 
     /** Comptes sans accès (users.status). */
     private const CLOSED = ['banned', 'deleted', 'disabled', 'suspended', 'inactive'];
@@ -263,7 +263,25 @@ final class AtakGameAdminService
 
                 return ['ok' => true, 'message' => 'Message envoyé : il s’affiche dans l’ATAK du joueur (30 s au plus).'];
 
+            case 'replace_device':
+                $done = $this->fleet->replaceDevice($terminal, $actorId, $actorLabel);
+
+                return ['ok' => $done, 'message' => $done
+                    ? 'Appareil remplacé : l’ancien reste exclu, le téléphone suivant du joueur retrouve l’accès tout seul.'
+                    : 'Seul un ATAK capturé ou compromis se remplace.'];
+
+            case 'repair_data':
+                $done = $this->fleet->requestDataRepair($terminal, $actorId, $actorLabel);
+
+                return ['ok' => $done, 'message' => $done
+                    ? 'Réparation demandée : son jeu nettoie ses données locales à la prochaine relève (30 s au plus), même sans téléphone.'
+                    : 'Demande non enregistrée : ce joueur n’a ni compte ni Steam connu.'];
+
             case 'compromise':
+                // Son propre ATAK : l'app Admin serait coupée en pleine action. Depuis le site.
+                if ($actorId !== null && $actorId > 0 && (int) ($terminal['user_id'] ?? 0) === $actorId) {
+                    return ['ok' => false, 'message' => 'C’est votre propre ATAK : déclarez-le depuis le site.'];
+                }
                 $state = ($in['state'] ?? '') === 'compromised' ? 'compromised' : 'captured';
                 $reason = $text('reason', 255);
                 $done = $this->fleet->markCompromised($terminal, $state, $reason, $state === 'compromised', $actorId, $actorLabel, 'ingame');

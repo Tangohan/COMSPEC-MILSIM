@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : téléphone qui plante après une caméra IP, compromission et nouvel appareil (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Téléphone qui plante en boucle, et retour sur le réseau après une compromission
+- Si le jeu s'arrête pendant le chargement du téléphone, il repart en mode sans échec pour les caméras et propose de nettoyer. Nouveau bouton Réparer mes données dans Réglages, À propos : plus besoin de supprimer un dossier à la main. La gestion peut le demander depuis le site ou l'app Admin, même si le joueur n'a pas de téléphone sur lui.
+- Quand un chef valide la compromission de ton téléphone, l'ancien reste exclu du réseau. Le téléphone suivant reçoit son propre identifiant et retrouve l'accès tout seul ; l'app Alertes te dit où tu en es.
+- App Admin : le parc Athena ne se redessine plus à chaque réponse d'un joueur, et un nouveau bouton Remplacer l'appareil règle le cas d'un joueur bloqué.
+EN : Phone crashing in a loop, and back on the network after a compromise
+- If the game stops while the phone is loading, it restarts with cameras in safe mode and offers to clean up. New Repair my data button in Settings, About: no more deleting a folder by hand. Community staff can request it from the website or the Admin app, even if the player has no phone on him.
+- When a leader validates the compromise of your phone, the old one stays excluded from the network. Your next phone gets its own identifier and regains access by itself; the Alerts app tells you where you stand.
+- Admin app: the Athena fleet no longer redraws at every player reply, and a new Replace the device button settles the case of a locked-out player.
+
+### Détail technique
+- **Le « correctif 3.0.4 » n'a jamais été sur `main`** : `fn_deviceGuard` et ses appels n'existent que non validés dans `.worktrees/atak-hotfix-camlink` ; ni commit, ni note `docs/bugs/`, ni trace dans `main.pbo`. La ligne « Rappel 3.0.4 » du changelog Steam annonce donc un correctif absent des versions construites depuis `main`. Repris ici et complété.
+- **Garde-fou** (`core/fn_deviceGuard`) : page caméra jamais rouverte seule ; marqueur écrit sur le disque avant une étape à risque (`[true] fn_saveProfile`, l'écriture regroupée du 3.0.4 ne survivait pas au plantage), effacé après 20 s ; retrouvé au lancement : mode sans échec caméra, proposition de réparer. `sweep` et `offlineOk` vérifient le profil ; `camOk`, `r2t`, `camName` les sources vidéo ; lignes d'Athena vérifiées dans `fn_adminNotices` et `fn_adminClient`. Entrée illisible ignorée avec une ligne `[WARN]`.
+- **Réparer mes données** : Réglages › À propos, ACE, app Vidéo live en mode sans échec, réglage CBA par joueur, app Admin et fiche ATAK du site (`/parc-atak/reparer`, avis `repair_data` relevé même sans téléphone, `AdminControl.Poll` et `.Ack` sortent de `fn_uplinkHold`). DLL : commande `RepairLocalData` (caches de `Documents\Arma 3 - COMSPEC\Sync` déplacés dans `_repair`, 3 derniers gardés) ; fichier de cache hors taille mis de côté avant lecture. Jamais le mode compromis ni l'identifiant.
+- **Compromission** : l'identifiant du terminal était déterministe, le nouvel appareil reprenait donc la fiche et le mode compromis. `fn_compromise` « ownerReset » / « newDevice » : nouvelle génération d'identifiant (`comspec_overwatch_terminal_gen`), IMEI gardé après le respawn (`COMSPEC_ATAK_PhoneGenSaved`), reprise si la validation a eu lieu pendant une absence.
+- **Sécurité côté site** (`AtakCompromisePolicy`) : une position « none » effaçait la compromission validée à la remontée suivante, et le mod se refaisait délivrer un certificat. Depuis le jeu : plus de levée (sauf effet Zeus), plus de réenregistrement ni de certificat pour une fiche compromise (409 `terminal_compromised`). La fiche compromise n'est plus fusionnée avec le nouvel appareil (`listOperatorPhysicalTwins`). Identifiant d'un autre compte : 409 `terminal_uid_taken`, le mod en prend un autre (l'ancienne formule additionnait les caractères).
+- **App Admin** : plus de relevé ni de redessin sur les onglets ATHENA et APPS, un redessin par seconde au plus ailleurs, une action à la fois, `&` échappé, fiches illisibles écartées, actions REMPLACER L'APPAREIL et RÉPARER SES DONNÉES ; son propre ATAK ne se déclare plus compromis depuis le jeu. Avis de compromission sans terminal : ne verrouille plus le téléphone qui le reçoit.
+- **Pas de migration** : `atak_admin_messages.kind` est un `varchar(24)`. Pas de changement de version.
+- **Non testé en jeu** : rien ne peut l'être ici. Étapes `tel_garde_fou` et `tel_nouvel_appareil` dans l'autotest. Notes : `docs/bugs/2026-11-08-atak-plantage-camera-ip-boucle.md`, `docs/bugs/2026-11-08-atak-compromission-nouvel-appareil.md`.
 ## À venir : mode pilote, FIRES court, apps regroupées et profils de rôle (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

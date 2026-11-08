@@ -30,7 +30,7 @@ private _render = {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         // Message imposé en cours de saisie : pas de redessin (il effacerait le texte).
         if ((_st getOrDefault ["activePage", ""]) isEqualTo "ADMIN" && {(_st getOrDefault ["admMsgFor", 0]) isEqualTo 0}) then { ["ADMIN"] call comspec_atak_native_fnc_pageRender; };
-    }, [], 0.3] call comspec_atak_native_fnc_waitAndExec;
+    }, [], 1] call comspec_atak_native_fnc_waitAndExec;
 };
 private _ext = {
     params ["_cmd", "_payload"];
@@ -78,6 +78,8 @@ switch (_act) do {
                 ["WARNING", "Le serveur refuse : il faut être Zeus, admin du serveur ou gestionnaire désigné.", 6, 40, "ADMIN"] call comspec_atak_native_fnc_notify;
             };
         };
+        // Relevé de la partie : l'onglet du parc Athena n'en dépend pas, pas de redessin de sa liste à chaque réponse de joueur.
+        if (_kind in ["player", "debug"] && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["admTab", "GAME"]) in ["ATHENA", "APPS"]}) exitWith {};
         call _render;
     };
     case "scan": {
@@ -106,6 +108,10 @@ switch (_act) do {
             if (_act isEqualTo "probe") exitWith {};
             // COMSPEC Link écrit « - » pour un champ vide (splitString avalerait la colonne).
             private _rows = (_lines select [1]) apply { (_x splitString toString [9]) apply { ["", _x] select (_x isNotEqualTo "-") } };
+            // Fiche d'Athena vérifiée avant usage : 14 colonnes et un identifiant, sinon ignorée avec une ligne [WARN].
+            private _nRows = count _rows;
+            _rows = _rows select { (count _x) >= 14 && {(parseNumber (_x select 0)) > 0} };
+            if ((count _rows) isNotEqualTo _nRows) then { ["WARN", "ATHENA", format ["Parc ATAK : %1 fiche(s) illisible(s) ignorée(s)", _nRows - (count _rows)]] call comspec_atak_native_fnc_log; };
             uiNamespace setVariable ["COMSPEC_ATAK_AdminFleet", [diag_tickTime, _role, parseNumber (_head param [1, "0"]), _rows,
                 ["", _out select [4]] select !_ok, _q, _off]];
             call _render;
@@ -113,10 +119,14 @@ switch (_act) do {
     };
     case "site": {
         _arg params [["_a", ""], ["_p", createHashMap]];
+        // Une action à la fois : un second appui pendant la réponse n'envoie rien de plus.
+        if (uiNamespace getVariable ["COMSPEC_ATAK_AdminSiteBusy", false]) exitWith { ["INFO", "Action déjà en cours…", 3, 30, "ADMIN"] call comspec_atak_native_fnc_notify; };
+        uiNamespace setVariable ["COMSPEC_ATAK_AdminSiteBusy", true];
         _p set ["action", _a];
         [_p, _ext] spawn {
             params ["_p", "_ext"];
             private _out = ["GameAdmin.Action", _p] call _ext;
+            uiNamespace setVariable ["COMSPEC_ATAK_AdminSiteBusy", false];
             private _ok = (_out select [0, 3]) isEqualTo "OK|";
             private _msg = _out select [[4, 3] select _ok];
             // Réponse vide : COMSPEC Link trop ancien (sans « GameAdmin »).

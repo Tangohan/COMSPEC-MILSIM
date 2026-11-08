@@ -5,7 +5,8 @@
     Chaque nouvel avis : alerte de la couleur du genre dans l'écran du téléphone (jamais sur l'écran de jeu), notification, et carte en tête de l'app Alertes
     jusqu'à ce que le joueur appuie sur COMPRIS (validé sur Athena par « AdminControl.Ack »).
     Params : [action, argument]
-      "check"        client : demande les avis à Athena (toutes les 30 s au plus)
+      "check"        client : demande les avis à Athena (toutes les 30 s au plus). Sans téléphone sur le joueur, seule la
+                     demande de réparation est traitée : un joueur dont le jeu plante en prenant un téléphone n'en a pas
       "show" ligne   alerte, notification et vibration pour un avis
       "ack" id       COMPRIS : retire la carte et prévient Athena
       "list"         avis non validés, plus récents d'abord
@@ -45,8 +46,9 @@ switch (_act) do {
         private _every = [30, 10] select ((missionNamespace getVariable ["COMSPEC_ATAK_MobileUntil", -1]) > diag_tickTime);
         if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_AdminNoticesAt", -1e9]) < _every) exitWith {};
         if !([] call comspec_atak_native_fnc_bridge) exitWith {};
-        // L'avis attend que le joueur ait un téléphone sur lui.
-        if (isNull player || {!([player] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
+        if (isNull player) exitWith {};
+        // Les autres avis attendent que le joueur ait un téléphone sur lui.
+        private _noPhone = !([player] call comspec_atak_native_fnc_hasDevice);
         if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith {};
         if (isNil "comspec_overwatch_connect_fnc_hashMapToJson") exitWith {};
         if (missionNamespace getVariable ["COMSPEC_ATAK_AdminNoticesNo", false]) exitWith {};
@@ -57,8 +59,8 @@ switch (_act) do {
         if !(_tuid isEqualType "") then { _tuid = ""; };
         // « caps » : ce téléphone sait ouvrir le CR de fin d'opération imposé par le site (fn_debrief).
         private _json = [createHashMapFromArray [["player_uid", getPlayerUID player], ["terminal_uid", _tuid], ["caps", "debrief"]]] call comspec_overwatch_connect_fnc_hashMapToJson;
-        [_json] spawn {
-            params ["_json"];
+        [_json, _noPhone] spawn {
+            params ["_json", "_noPhone"];
             private _r = ["COMSPECExtension", "AdminControl.Poll", [_json]] call comspec_atak_native_fnc_extAwait;
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             missionNamespace setVariable ["COMSPEC_ATAK_AdminNoticesBusy", false];
@@ -75,6 +77,14 @@ switch (_act) do {
             private _again = [];
             {
                 (_x splitString toString [9]) params [["_id", ""], ["_kind", "message"], ["_level", "info"], ["_title", ""], ["_body", ""], ["_ack", "1"], ["_meta", ""]];
+                // Ligne d'Athena vérifiée avant usage : identifiant numérique attendu, sinon ignorée avec une ligne [WARN].
+                if (_id isEqualTo "" || {(parseNumber _id) < 1}) then {
+                    ["WARN", "ATHENA", format ["Avis illisible ignoré : %1", _x select [0, 60]]] call comspec_atak_native_fnc_log;
+                    continue;
+                };
+                if (_noPhone && {_kind isNotEqualTo "repair_data"}) then { continue; };
+                _title = _title select [0, 160];
+                _body = _body select [0, 2000];
                 // Réglages du CR de fin d'opération (ligne « debrief_cfg », redonnée à chaque relève) : sans alerte.
                 if (_kind isEqualTo "debrief_cfg") then {
                     if (_id isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DbfCfgId", ""])) then {
@@ -90,6 +100,16 @@ switch (_act) do {
                 // ici (delivered) et « envoyé » (acked) seulement après l'envoi : avant, la page web affichait « Envoyé sur
                 // votre ATAK » alors que la fiche pouvait être refusée ou perdue. Fiche refusée (gardée en brouillon) : reste
                 // « reçu », reproposée à la partie suivante tant que l'avis vit (2 h).
+                // Demande de réparation (site ou app Admin) : appliquée une fois, sans bandeau, validée aussitôt.
+                if (_kind isEqualTo "repair_data") then {
+                    if !(_id in _seen) then {
+                        _seen pushBack _id;
+                        ["COMSPEC_ATAK_NoticeAck", _id] call _keep;
+                        _again pushBackUnique _id;
+                        [{ ["repair", "demande de la gestion"] call comspec_atak_native_fnc_deviceGuard; }] call comspec_atak_native_fnc_nextFrame;
+                    };
+                    continue;
+                };
                 if (_kind in ["mobile_report", "mobile_debrief"]) then {
                     if (_id isNotEqualTo "" && {!(_id in _seen)}) then {
                         _seen pushBack _id;
@@ -149,6 +169,7 @@ switch (_act) do {
             case "reset": { [_title, "Vos données ATAK ont été réinitialisées puis régénérées : l'ATAK se réenregistre auprès d'Athena.", [0.70, 0.40, 0.04, 0.94], "WARNING"] };
             case "certificate": { [_title, "Le certificat de votre ATAK a changé.", [0.70, 0.40, 0.04, 0.94], "WARNING"] };
             case "phone": { [_title, "Votre téléphone a reçu un nouveau numéro.", [0.12, 0.32, 0.62, 0.94], "INFO"] };
+            case "device_replaced": { [_title, "Votre ancien ATAK reste exclu. Ce téléphone reçoit un nouvel identifiant et retrouve l'accès tout seul.", [0.70, 0.40, 0.04, 0.94], "WARNING"] };
             default {
                 private _lv = (["info", "warning", "critical"] find _level) max 0;
                 [_title, _body, [[0.12, 0.32, 0.62, 0.94], [0.70, 0.40, 0.04, 0.94], [0.62, 0.07, 0.06, 0.94]] select _lv, ["INFO", "WARNING", "ERROR"] select _lv]
@@ -164,7 +185,15 @@ switch (_act) do {
         private _m = ["meta", _meta] call comspec_atak_native_fnc_compromiseView;
         private _from = switch (_m getOrDefault ["source", "admin"]) do { case "gestion": { "Gestion de la communauté" }; case "web": { "Poste de commandement" }; default { "Administration ATHENA" }; };
         switch (_kind) do {
+            case "device_replaced": {
+                // L'identifiant change seulement si l'ordre vise bien le terminal actif de ce poste (fn_compromise « newDevice »).
+                if (_act isEqualTo "show") then { ["newDevice", ["N" + _id, "remplacement décidé par la gestion", _m getOrDefault ["terminal", "?"]]] call comspec_atak_native_fnc_compromise; };
+            };
             case "compromise": {
+                // Sans terminal désigné, l'avis ne peut pas verrouiller ce téléphone : c'est peut-être celui d'un autre.
+                if ((_m getOrDefault ["terminal", ""]) isEqualTo "") exitWith {
+                    ["WARN", "CAPTURE", format ["Avis de compromission %1 sans terminal : téléphone non verrouillé", _id]] call comspec_atak_native_fnc_log;
+                };
                 ["set", createHashMapFromArray [["origin", "manual"], ["source", _m getOrDefault ["source", "admin"]],
                     ["state", _m getOrDefault ["state", ["compromised", "captured"] select ((_title find "aptur") >= 0)]],
                     ["reason", _body], ["by", _m getOrDefault ["by", _from]], ["revoked", _m getOrDefault ["revoked", "0"]],

@@ -87,6 +87,8 @@ private _linkOk = if ([] call comspec_atak_native_fnc_bridge) then {
 };
 // Terminal compromis (fn_compromiseView) : logo rouge clignotant, même relié (certificats révoqués, liaison refusée).
 ["refresh"] call comspec_atak_native_fnc_compromiseView;
+// Nouvel appareil après une compromission validée : enregistré dès qu'un téléphone est sur le joueur.
+["deviceTick"] call comspec_atak_native_fnc_compromise;
 private _comp = ["get"] call comspec_atak_native_fnc_compromiseView;
 private _logo = _d displayCtrl 88549;
 if ((count _comp) > 0) then {
