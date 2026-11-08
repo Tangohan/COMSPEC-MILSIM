@@ -326,7 +326,8 @@ final class AtakModReportDiscordTicketService
     /** @param array<string, mixed> $report */
     public static function threadName(array $report): string
     {
-        $name = '#' . (int) ($report['id'] ?? 0) . ' · ' . str_replace('\\', '', AtakStartupCheckService::clean((string) ($report['message'] ?? ''), 90));
+        $cause = AtakModReportCause::label((string) ($report['message'] ?? ''), (string) ($report['detail_text'] ?? ''));
+        $name = '#' . (int) ($report['id'] ?? 0) . ' · ' . ($cause !== '' ? $cause . ' · ' : '') . str_replace('\\', '', AtakStartupCheckService::clean((string) ($report['message'] ?? ''), 90));
 
         return mb_substr($name, 0, 100);
     }

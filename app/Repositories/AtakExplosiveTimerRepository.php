@@ -151,6 +151,12 @@ class AtakExplosiveTimerRepository
      * @param array<string, mixed> $data
      * @return array<string, mixed>|null
      */
+    /** La charge a-t-elle déjà été enregistrée sur cette carte ? */
+    public function chargeExists(int $tenantId, int $mapId, string $chargeId): bool
+    {
+        return $this->tablesReady() && $this->findByCharge($tenantId, $mapId, trim($chargeId)) !== null;
+    }
+
     public function upsert(int $tenantId, int $mapId, array $data): ?array
     {
         if (!$this->tablesReady()) {
