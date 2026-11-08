@@ -23,6 +23,7 @@ class COMSPEC_RscDisplayATAK {
         // Mêmes cartes en fond satellite et hybride : une seule des trois est affichée (fn_mapCtrl).
         class MapSat: COMSPEC_RscMapAtakSat { idc=COMSPEC_ATAK_IDC_MAP_SAT; ATAK_POS; onDraw="private _perfT = diag_tickTime; _this call comspec_atak_native_fnc_mapOnDraw; ['carte (image)', _perfT] call comspec_atak_native_fnc_perfAcc"; onMouseButtonDown="_this call comspec_atak_native_fnc_mapMouseButtonDown"; onMouseMoving="_this call comspec_atak_native_fnc_mapMouseMoving"; onMouseButtonUp="_this call comspec_atak_native_fnc_mapMouseButtonUp"; onMouseButtonDblClick="_this call comspec_atak_native_fnc_mapDblClick"; };
         class MapHyb: COMSPEC_RscMapAtakHyb { idc=COMSPEC_ATAK_IDC_MAP_HYB; ATAK_POS; onDraw="private _perfT = diag_tickTime; _this call comspec_atak_native_fnc_mapOnDraw; ['carte (image)', _perfT] call comspec_atak_native_fnc_perfAcc"; onMouseButtonDown="_this call comspec_atak_native_fnc_mapMouseButtonDown"; onMouseMoving="_this call comspec_atak_native_fnc_mapMouseMoving"; onMouseButtonUp="_this call comspec_atak_native_fnc_mapMouseButtonUp"; onMouseButtonDblClick="_this call comspec_atak_native_fnc_mapDblClick"; };
+        class MapSlate: COMSPEC_RscMapAtakSlate { idc=COMSPEC_ATAK_IDC_MAP_SLATE; ATAK_POS; onDraw="private _perfT = diag_tickTime; _this call comspec_atak_native_fnc_mapOnDraw; ['carte (image)', _perfT] call comspec_atak_native_fnc_perfAcc"; onMouseButtonDown="_this call comspec_atak_native_fnc_mapMouseButtonDown"; onMouseMoving="_this call comspec_atak_native_fnc_mapMouseMoving"; onMouseButtonUp="_this call comspec_atak_native_fnc_mapMouseButtonUp"; onMouseButtonDblClick="_this call comspec_atak_native_fnc_mapDblClick"; };
         class Content: COMSPEC_RscControlsGroup { idc=COMSPEC_ATAK_IDC_CONTENT; ATAK_POS; };
         class InspectorText: COMSPEC_RscStructuredText { idc=COMSPEC_ATAK_IDC_INSPECTOR_TEXT; ATAK_POS; text=""; };
         class Battery: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_BATTERY; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\bat_100.paa"; };
@@ -90,6 +91,15 @@ class RscTitles {
     class COMSPEC_RscTitleATAK: COMSPEC_RscDisplayATAK {
         idd=-1; duration=1e+011; fadein=0; fadeout=0;
         onLoad="[_this select 0, false] call comspec_atak_native_fnc_displayLoad";
+    };
+    // Case « RELAIS ATAK » près du cadre de transmission d'ACRE2 (fn_relayTxBadge) : placée par le code.
+    class COMSPEC_RscTitleRelayTx {
+        idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
+        onLoad="uiNamespace setVariable ['COMSPEC_ATAK_RelayTxDisplay', _this select 0]";
+        class controls {
+            class Back: COMSPEC_RscText { idc=7751; x=-2; y=-2; w=0.05; h=0.05; colorBackground[]={0.08,0.06,0.01,0.82}; };
+            class Label: COMSPEC_RscTextCenter { idc=7752; x=-2; y=-2; w=0.05; h=0.05; colorBackground[]={0,0,0,0}; colorText[]={0.92,0.72,0.2,1}; };
+        };
     };
     // GPS de poignet (fn_wristGps) : contrôles créés par le code.
     class COMSPEC_RscTitleWristGps {

@@ -60,6 +60,46 @@ EN : Licence to read again, network padlock, clearer ping, patches with a materi
 - Lot 12 : `fn_meshGraph` « weak », « chain », « weakest », « jamAt ». Prévision en mode `full` pour les 16 nœuds les plus proches.
 - Patch Studio : `patch.rvmat`, `patch_smdi.paa`, `material` dans `CfgUnitInsignia` (lu par `BIS_fnc_setUnitInsignia`). Aucune réponse IR propre : le moteur n'a pas ce canal.
 - Rien n'a été testé en jeu.
+## App Réseau : état d'un coup d'œil, tutoriel, objet obligatoire, case RELAIS ATAK (version attribuée à la publication)
+
+À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
+
+Type : nouveauté
+FR : L'app Wave Relay dit ce qui ne va pas et quoi faire
+- MON NŒUD affiche l'état du réseau (bon, dégradé, coupé), la cause principale et l'action à faire, puis tout ce qui change votre débit, du plus gênant au moins gênant.
+- Un tutoriel en cinq écrans est proposé à la première ouverture et reste accessible par le bouton « ? ».
+- Les serveurs peuvent exiger un objet pour rejoindre le réseau : l'app dit lequel, et le réseau repart dès qu'il est équipé. Le téléphone reste utilisable.
+- Quand votre voix passe vraiment par le réseau, une case RELAIS ATAK s'affiche près du cadre d'émission d'ACRE.
+- Réglages > Réalisme dit qui impose chaque valeur, et les lignes libres ne paraissent plus grisées.
+EN : The Wave Relay app says what is wrong and what to do
+- MY NODE shows the network status (good, degraded, down), the main cause and what to do, then everything that changes your speed, worst first.
+- A five-screen tutorial is offered the first time you open the app and stays available from the « ? » button.
+- Servers can require an item to join the network: the app says which one, and the network comes back as soon as it is equipped. The phone stays usable.
+- When your voice really goes through the network, an ATAK RELAY box appears next to the ACRE transmission frame.
+- Settings > Realism says who enforces each value, and free rows no longer look greyed out.
+
+### Détail technique
+- `fn_netRequire`, réglage serveur `comspec_atak_native_net_required_items` (vide par défaut) ; `fn_waveRelayStatus`, `fn_waveRelayTuto`, `fn_relayTxBadge` et réglages joueur `comspec_atak_native_relay_tx_badge`, `_badge_pos`, `comspec_atak_native_wr_tuto_offer`.
+- Bandeau de notification : le titre de l'app est masqué le temps de son affichage. Interrupteurs des formulaires : la pastille est le bouton, plus de bouton transparent sur la ligne.
+- Rien n'a été testé en jeu.
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+
+### Résumé joueur
+Type : nouveauté
+FR : App Explosifs refaite et nouveau déclencheur réseau
+- Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.
+- Armer, désarmer et mettre à feu passent par le réseau : sans signal, charge trop loin d'un relais ou brouillage, le tir est refusé et l'app dit pourquoi.
+- Chaque charge montre son type, son état, sa distance, son cap et sa minuterie, à jour chaque seconde. Toute mise à feu demande une confirmation, qui prévient si des amis sont trop près.
+- Une mine à plaque ou à fil ne se déclenche plus depuis le téléphone, et une charge au clacker demande le clacker et sa portée. Le bouton Signaler envoie la position de la charge à votre camp.
+EN : Explosives app rebuilt, new network detonator
+- New "Network detonator" item: when placing an ACE charge, pick it in the Trigger menu. The charge is then commanded from the Explosives app, remotely and without a clacker.
+- Arming, disarming and firing go over the network: with no signal, a charge too far from a relay or jamming, firing is refused and the app says why.
+- Each charge shows its type, state, distance, bearing and timer, updated every second. Every firing asks for confirmation, with a warning if friendlies are too close.
+- A pressure or tripwire mine can no longer be fired from the phone, and a clacker charge requires the clacker and its range. The Report button sends the charge position to your side.
+
+### Détail technique
+- `fn_exploNet` : serveur seul juge (UID, armement, `fn_radioLink`, `COMSPEC_ATAK_Jammers`, `fn_relayNet`), détonation par `ace_explosives_fnc_detonateExplosive` côté serveur ; pose par `ace_explosives_fnc_placeExplosive` avec un déclencheur déjà accepté, sans entrée `ACE_Triggers`. Réglages `comspec_atak_native_explo_net_range`, `_delay`, `_consume`.
+- `fn_exploList` : type lu dans `ace_explosives_clackers` ; `fn_exploRow` ; mise à jour sur place (`fn_formSet` « btnrow » par bouton) à 1 Hz, page ouverte seulement.
 
 ---
 

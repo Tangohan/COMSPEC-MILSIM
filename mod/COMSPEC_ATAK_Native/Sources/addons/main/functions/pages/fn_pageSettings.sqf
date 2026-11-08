@@ -38,7 +38,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ProfSet", {
     // Modèle : la liste déroulante CBA (comspec_atak_native_phone_model) suit le choix fait dans le téléphone.
     if (_var isEqualTo "COMSPEC_ATAK_PhoneModel") then { ["comspec_atak_native_phone_model", _val, false, "client"] call CBA_settings_fnc_set; };
     // Réglages lus au prochain dessin, sans effet sur la page ni sur la mise en page : le bouton change sur place.
-    if (_var in ["COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_SelfIcon", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_PhotoRelief", "COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_Wallpaper"]
+    if (_var in ["COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_SelfIcon", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_PhotoRelief", "COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_MapDrawStyle", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_Wallpaper"]
         && {["seg_" + _var, _val] call comspec_atak_native_fnc_formSet}) exitWith {};
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
@@ -66,7 +66,17 @@ private _cbaSwitch = {
     private _rule = [_tenantKey] call comspec_atak_native_fnc_tenantRule;
     private _locked = _rule in ["on", "off"];
     if (_locked) then { _v = _rule isEqualTo "on"; };
-    ["switch", _label, _v, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaToggle');", _k], _help, _locked, "cba_" + _k]
+    // Source de la valeur, dite sur la ligne : communauté (Athena), serveur ou mission (CBA forcé), Athena pour cette partie (zones, réseau roleplay), sinon le joueur.
+    private _srcCba = if (isNil "CBA_settings_fnc_priority") then { "client" } else { [_k] call CBA_settings_fnc_priority };
+    private _src = switch (true) do {
+        case (_locked): { format ["Imposé par %1 sur Athena", ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")] };
+        case (_srcCba isEqualTo "server"): { "Imposé par le serveur" };
+        case (_srcCba isEqualTo "mission"): { "Imposé par la mission" };
+        case (_v && {!isNil "CBA_settings_fnc_get"} && {([_k, "client"] call CBA_settings_fnc_get) isEqualTo false}): { "Activé pour cette partie par Athena" };
+        default { "Votre choix" };
+    };
+    private _forced = _locked || {_srcCba in ["server", "mission"]};
+    ["switch", _label, _v, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaToggle');", _k], [_help, [_src, format ["%1 · %2", _help, _src]] select (_help isNotEqualTo "")] select ((_k select [0, 18]) isEqualTo "comspec_overwatch_"), _forced, "cba_" + _k]
 };
 // Choix exclusif enregistré en réglage CBA côté joueur (étiquettes de la carte) : le même que dans le menu CBA.
 uiNamespace setVariable ["COMSPEC_ATAK_CbaSet", {
@@ -290,7 +300,8 @@ private _map = [
     ["COMSPEC_ATAK_LabelStyle", "FULL", "Étiquettes des unités", [["COMPLET", "FULL"], ["INDICATIF SEUL", "CALLSIGN"], ["AUCUN", "NONE"]], "Encadré à côté de l'icône : indicatif, puis distance et azimut depuis vous en zoom rapproché. Contacts ennemis bordés de rouge, avec l'heure et qui les a signalés"] call _profSegment,
     ["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Coordonnées des marqueurs", "Nom et coordonnées sous le marqueur, en zoom rapproché"] call _profSwitch,
     ["comspec_atak_native_map_marker_style", "plate", "Noms des marqueurs", [["PLAQUE", "plate"], ["PILULE", "pill"], ["CARTOUCHE", "card"], ["CONTOUR", "outline"], ["CLASSIQUE", "classic"]], "Marqueurs et cibles verrouillées (LOCK) : plaque, pilule, étiquette reliée avec distance et azimut, texte avec contour ou texte Arma d'origine"] call _cbaSegment,
-    ["comspec_atak_native_map_place_style", "tactical", "Noms des lieux", [["TACTIQUE", "tactical"], ["ÉTIQUETTE", "tag"], ["DISCRET", "quiet"], ["CLASSIQUE", "classic"]], "Villes, villages, lieux-dits et sites : majuscules avec contour, étiquette sombre, petit texte clair ou couleurs de la carte Arma"] call _cbaSegment,
+    ["comspec_atak_native_map_place_style", "tactical", "Noms des lieux", [["TACTIQUE", "tactical"], ["ÉTIQUETTE", "tag"], ["DISCRET", "quiet"], ["CLASSIQUE", "classic"], ["CAPITALES", "small"]], "Villes, villages, lieux-dits et sites : majuscules avec contour, étiquette sombre, petit texte clair, couleurs de la carte Arma ou petites capitales avec un point turquoise (TACTIQUE s'affiche ainsi sur le fond ARDOISE)"] call _cbaSegment,
+    ["COMSPEC_ATAK_MapDrawStyle", "AUTO", "Marqueurs et traits", [["AUTO", "AUTO"], ["TACTIQUE", "TACTICAL"], ["STANDARD", "STANDARD"]], "TACTIQUE : pions ronds avec lettre d'équipe, petites plaques à chasse fixe, routes orange épaisses, zones hachurées, mesure en tirets verts, cercle fin autour des marqueurs nommés. STANDARD : symboles OTAN et style choisi ci-dessus. AUTO : TACTIQUE sur le fond ARDOISE, STANDARD sur les autres"] call _profSegment,
     ["comspec_atak_native_map_show_marker_text", "", "Afficher les noms des marqueurs", "Les icônes restent, seul le texte disparaît (aussi dans CALQUES)", true] call _cbaSwitch,
     ["comspec_atak_native_map_show_cities", "", "Afficher les villes", "", true] call _cbaSwitch,
     ["comspec_atak_native_map_show_villages", "", "Afficher les villages", "", true] call _cbaSwitch,
@@ -312,14 +323,14 @@ private _map = [
     ["slider", "Icônes de la carte", round (100 * (profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25])), { profileNamespace setVariable ["COMSPEC_ATAK_MapIconScale", (_this select 0) / 100]; }, "Unités, marqueurs, charges, points de passage", false, "", {}, "", [80, 220]],
     ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "Fond de carte", [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]], ""] call _profSegment,
     // Deuxième rangée : vues satellite (texture du terrain, capture HD là où elle existe) et capture seule.
-    ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "", [["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]] + ([[], [["SATELLITE", "PHOTO"]]] select ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo [])), "Carte topo d'Arma, version claire, sombre, bleu nuit, classique (vue satellite du terrain d'Arma), hybride (classique avec routes et pistes), ou satellite (la vraie photo de la carte, capturée par COMSPEC : mod COMSPEC ATAK Photo ou téléchargée depuis Athena)"] call _profSegment,
+    ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "", [["ARDOISE", "SLATE"], ["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]] + ([[], [["SATELLITE", "PHOTO"]]] select ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo [])), "Carte topo d'Arma, version claire, sombre, bleu nuit, ardoise (bleu-gris sombre, routes turquoise), classique (vue satellite du terrain d'Arma), hybride (classique avec routes et pistes), ou satellite (la vraie photo de la carte, capturée par COMSPEC : mod COMSPEC ATAK Photo ou téléchargée depuis Athena)"] call _profSegment,
     ["COMSPEC_ATAK_PhotoRelief", true, "Relief des bâtiments", [["OUI", true], ["NON", false]], "Fond SATELLITE : ombre portée et contour de chaque bâtiment aux zooms proches"] call _profSegment,
     // Réglages de la carte gardés dans le profil, remis par défaut en deux appuis (les réglages CBA et mon icône, vue
     // par les autres, ne bougent pas).
     ["buttons", [[["RÉTABLIR LA CARTE PAR DÉFAUT", "CONFIRMER : CARTE PAR DÉFAUT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MapResetArm", -10]) < 5), {
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MapResetArm", -10]) < 5) then {
             uiNamespace setVariable ["COMSPEC_ATAK_MapResetArm", -10];
-            { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Labels", "COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_MarkerTags", "COMSPEC_ATAK_Compass", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_MapTextScale", "COMSPEC_ATAK_MapIconScale", "COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_LblEni", "COMSPEC_ATAK_LblGrid", "COMSPEC_ATAK_LblBgAlpha"];
+            { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Labels", "COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_MarkerTags", "COMSPEC_ATAK_Compass", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_MapTextScale", "COMSPEC_ATAK_MapIconScale", "COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_MapDrawStyle", "COMSPEC_ATAK_LblEni", "COMSPEC_ATAK_LblGrid", "COMSPEC_ATAK_LblBgAlpha"];
             [] call comspec_atak_native_fnc_saveProfile;
             ["Réglages de la carte rétablis", 2] call comspec_atak_native_fnc_toast;
         } else {
@@ -363,17 +374,17 @@ private _real = [];
 private _live = [];
 if (_bridge) then {
     _real append [
-        ["section", "Réalisme", ["Réglages roleplay de la communauté", format ["%1 réglage(s) imposé(s) par %2 sur Athena", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)],
-        ["comspec_overwatch_roleplay_enabled", "rp_enabled", "Mode roleplay", "Active les simulations ci-dessous"] call _cbaSwitch,
+        ["section", "Réalisme", ["Réglages roleplay de la communauté", format ["%1 réglage(s) imposé(s) par %2, toutes rubriques confondues. Athena : Configuration ATAK, Contrôle serveur.", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)],
+        ["comspec_overwatch_roleplay_enabled", "rp_enabled", "Mode roleplay", "Autorise les simulations cochées ci-dessous : chacune garde sa propre valeur"] call _cbaSwitch,
         ["comspec_overwatch_roleplay_network_failures", "rp_network_failures", "Coupures réseau", "Selon le terrain et les relais"] call _cbaSwitch,
-        ["comspec_overwatch_roleplay_sensor_failures", "rp_sensor_failures", "Défauts des capteurs médicaux"] call _cbaSwitch,
+        ["comspec_overwatch_roleplay_sensor_failures", "rp_sensor_failures", "Défauts des capteurs médicaux", "Sans effet pour l'instant : aucune simulation ne lit ce réglage"] call _cbaSwitch,
         ["comspec_overwatch_roleplay_visual_effects", "rp_visual_effects", "Effets visuels de dégradation", "Écran parasité quand la liaison faiblit", true] call _cbaSwitch,
         ["comspec_overwatch_link_degrade_sim", "rp_link_degrade", "Liaison instable simulée", "Retards et petites coupures"] call _cbaSwitch,
         ["comspec_overwatch_show_link_strip", "rp_data_bar", "Barre d'infos sous la carte", "Vitesse, altitude, direction, coordonnées"] call _cbaSwitch
     ];
     private _dmg = ["atak_realism"] call comspec_atak_native_fnc_tenantRule;
     private _lvl = missionNamespace getVariable ["comspec_overwatch_atak_realism", 0];
-    _real pushBack ["info", "Dégâts au téléphone", format ["%1%2", ["aucun", "peut s'éteindre", "écran destructible", "téléphone destructible"] param [_lvl, str _lvl], [" <t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>· imposé</t>", ""] select (_dmg isEqualTo "player")]];
+    _real pushBack ["check", "off", "Dégâts au téléphone", ["aucun", "peut s'éteindre", "écran destructible", "téléphone destructible"] param [_lvl, str _lvl], [format ["Imposé par %1 sur Athena", ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")], "Réglage du serveur"] select (_dmg isEqualTo "player")];
     if !(_tenantOn) then { _real pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Réglages de la communauté pas encore reçus : connectez-vous à Athena.</t>"]; };
 };
 // Téléphone (dégâts, saleté) et données médicales affichées (fn_medShow) : choix du joueur, sauf si le serveur

@@ -1,0 +1,11 @@
+# Carte : icônes de marqueurs noires, « armée » écrit deux fois
+
+- **Contexte** : retour du propriétaire, capture de la 4.0.0 en jeu, fond PHOTO (UAV GCS, Z ENT MÉDICALE, HANGAR DU 160TH).
+- **Symptôme** : symboles OTAN noirs, pavé noir à cadre clair à la place de l'icône ; lieu « ARMÉE » doublé d'un grand texte « armée » rouge sombre.
+- **Cause prouvée par lecture (icônes)** : `CfgMarkerColors >> Default >> color` vaut `{0,0,0,1}` dans `ui_f` (config relue). `fn_mapGameMarkers`, `fn_mapOnDraw` et `fn_mapMarkerText` ne passaient à la couleur du type (`CfgMarkers`) que si la couleur faisait moins de 4 valeurs, ce qui n'arrive pas pour `Default`. `Default` n'est pas dans la table `vivid` : aucun éclaircissement, et `haloLight` dessine le cadre clair. Présent depuis 2.9.40 (la correction « la couleur choisie est respectée » a retiré le mélange vers le blanc qui masquait le défaut).
+- **Supposé** : ces marqueurs sont bien en couleur `Default` ; l'hypothèse tient avec le cadre clair et le fait que `ColorBlack` est déjà éclairci. Le relevé `[MAP] marqueurs du jeu` ne donne pas les couleurs.
+- **Correctif** : `fn_markerColor` lit une fois par classe et par type, comme le moteur. `Default` trop sombre pour la carte (trait, zone, point noir) passe au gris clair sur fond sombre. Aucun calcul ajouté par image.
+- **« armée » en double** : rendu natif du contrôle carte, pas notre dessin. `fn_mapPlaceText` écrit « ARMÉE » seul ; le lieu-dit natif garde sa taille et sa couleur de `CfgLocationTypes`, que `sizeExNames` ne réduit pas (constat déjà noté pour la montre dans `ui/controls.hpp`). Non modifié : la méthode de la montre (`ptsPerSquareTxt`, `colorNames`) peut aussi retirer les noms marins et, peut-être, les altitudes, et demande un essai en jeu.
+- **Fichiers touchés** : `fn_markerColor.sqf`, `fn_mapColors.sqf`, `fn_mapGameMarkers.sqf`, `fn_mapMarkerText.sqf`, `fn_mapOnDraw.sqf`, `config.cpp`.
+- **Vérification** : en jeu, fonds TOPO, SOMBRE, PHOTO, ARDOISE : symbole OTAN couleur par défaut au couleur du camp, `ColorBlack` lisible, couleur choisie gardée. Vérifier si « armée » reste doublé.
+- **Statut** : icônes corrigées à vérifier en jeu ; texte natif signalé, non traité.

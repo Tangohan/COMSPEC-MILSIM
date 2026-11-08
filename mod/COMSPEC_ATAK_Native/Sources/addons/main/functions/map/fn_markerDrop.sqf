@@ -6,8 +6,9 @@
     la couleur posés vont en tête des RÉCENTS de la palette (profil COMSPEC_ATAK_MarkerRecent).
     Nom : TEXTE de la palette (state markerText ; numéroté seulement avec « Plusieurs marqueurs »), sinon modèle du réglage
     d'addon « Nom des marqueurs posés » (comspec_atak_native_marker_name : {camp} {type} {n} {grille} {indicatif} {heure}),
-    sinon « camp type n ». Numéro : à la suite (compteur de la mission) ou premier libre (réglage
-    comspec_atak_native_marker_numbering « fill » : après « ENI INFANTERIE 1, 3 », le suivant est 2).
+    sinon un numéro de repère neutre, « REP 3 » (« MK 3 » en anglais) : le nom ne dit plus le type d'unité, le symbole le
+    montre déjà. Numéro : à la suite (compteur de la mission) ou premier libre (réglage
+    comspec_atak_native_marker_numbering « fill » : après « REP 1, 3 », le suivant est 2).
 */
 params ["_pos", ["_kind", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -25,7 +26,6 @@ if (_aff isEqualTo "lib") then { _label = ([] call comspec_atak_native_fnc_marke
 // sur le téléphone (fn_markerAutoName).
 private _isFr = (missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr";
 _label = toUpper (_label call comspec_atak_native_fnc_tr);
-private _prefix = if (_aff in ["mil", "lib"]) then { _label } else { format ["%1 %2", ([["ENY", "FRD", "NEU", "UNK"], ["ENI", "AMI", "NEU", "INC"]] select _isFr) select ((["o", "b", "n", "u"] find _aff) max 0), _label] };
 private _size = _s getOrDefault ["markerSize", 1];
 private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
 missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
@@ -47,7 +47,7 @@ private _tpl = switch (true) do {
         ];
         (trim (_t regexReplace ["\s+", " "])) regexReplace ["\{N\}", "{n}"]
     };
-    default { _prefix + " {n}" };
+    default { (["MK", "REP"] select _isFr) + " {n}" };
 };
 private _num = _index;
 if ((_tpl find "{n}") >= 0 && {(missionNamespace getVariable ["comspec_atak_native_marker_numbering", "next"]) isEqualTo "fill"}) then {

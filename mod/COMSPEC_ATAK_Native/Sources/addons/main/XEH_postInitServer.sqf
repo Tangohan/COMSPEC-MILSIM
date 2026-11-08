@@ -42,6 +42,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 // aux clients que ce serveur a le mod : sans elle, ils calculent le graphe eux-mêmes.
 missionNamespace setVariable ["COMSPEC_ATAK_MeshSrvOn", true, true];
 [{ ["serverTick"] call comspec_atak_native_fnc_meshGraph; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Objet obligatoire pour le réseau (fn_netRequire) : le serveur lit les inventaires, rien à faire quand le réglage est vide.
+[{ ["serverTick"] call comspec_atak_native_fnc_netRequire; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Bilan [PERF] sur un serveur dédié (le client le fait de son côté) : rien n'est écrit si rien n'a été mesuré.
 if (!hasInterface) then { [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread; };
 // Registre des clés du maillage : mécanique de jeu, décochée par défaut (fn_meshKeys).
@@ -66,6 +68,8 @@ if (!hasInterface) then { [{ ["report"] call comspec_atak_native_fnc_perfAcc; },
 [{ ["check"] call comspec_atak_native_fnc_relayConvert; }, 15] call COMSPEC_ATAK_PfhSpread;
 // Antennes transportables (fn_antennaKit) : événements de déploiement et de repli.
 ["init"] call comspec_atak_native_fnc_antennaKit;
+// Déclencheur réseau des explosifs (fn_exploNet) : suivi des poses, liste publique des charges liées.
+["init"] call comspec_atak_native_fnc_exploNet;
 // Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
 [{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Conditions d'activation en code des relais et passerelles : évaluées ici seulement, résultat publié (fn_relayCond "srv").

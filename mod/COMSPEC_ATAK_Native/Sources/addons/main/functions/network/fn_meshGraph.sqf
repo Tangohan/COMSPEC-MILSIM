@@ -390,6 +390,8 @@ switch (_act) do {
             {
                 (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_key", ""], ["_r", 0], ["_o", objNull], ["_wid", 1], ["_nk", -2], ["_activity", 5]];
                 if (_key isEqualTo "") then { continue };
+                // Objet obligatoire manquant (fn_netRequire) : hors du graphe, quoi que le client publie.
+                if (["blocked", [_x]] call comspec_atak_native_fnc_netRequire) then { continue };
                 // Clé de réseau absente ou périmée : hors du graphe (lot 6, sans effet réglage décoché).
                 if !(["authorized", [_side, _nk]] call comspec_atak_native_fnc_meshKeys) then { continue };
                 private _wf = [0.5, 1, 1.5] select _wid;

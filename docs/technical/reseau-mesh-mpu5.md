@@ -380,6 +380,12 @@ Décisions du propriétaire reçues : 1 automatique et désactivable ; 2 absence
 
 À mesurer au banc d'essai pour trancher la décision 4 (aucun chiffre n'existe à ce jour) : durée de passe et pire tranche à 30 et 60 nœuds, images par seconde du serveur, nombre de diffusions et taille de `COMSPEC_ATAK_MeshRef`, écarts entre exports de deux clients avec le réglage décoché.
 
+## 10 bis. Objet obligatoire et case RELAIS ATAK
+
+Objet obligatoire (`fn_netRequire`, réglage serveur `comspec_atak_native_net_required_items`, vide par défaut) : syntaxe de `comspec_atak_native_kit_required`. `comspec_atak_native_mpu_require` ne vise que la MPU5 en liaison réaliste et `kit_required` ne coupe rien : réglage distinct. Vaut pour les deux modèles de réseau. Instances reconnues par la config : héritage, `acre_baseClass`, `tf_parent`. Le serveur lit les inventaires toutes les 2 s, publie `COMSPEC_ATAK_NetDenied` et écarte le joueur du graphe.
+
+Case RELAIS ATAK (`fn_relayTxBadge`) : ACRE2 calcule le signal chez le récepteur et prend le meilleur du direct et du maillage (`fn_mpuVoice` « signal »). Seul le récepteur sait donc si le maillage a servi : il l'accuse à l'émetteur (`comspec_atak_native_meshVoiceAck`), au plus toutes les 2 s par paire. TFAR : la case suit l'allongement réel de la portée d'émission (`tfBefore`), à confirmer en jeu. Athena ne transporte pas la voix : la case ne le mentionne pas. Rien de tout cela n'est testé en jeu.
+
 ## 11. Antennes transportables (`fn_antennaKit`)
 
 Objets d'inventaire à déployer et replier par ACE (Équipement > Déployer ; « Replier l'antenne » sur l'objet posé, moitié moins de temps). Le serveur crée l'objet et l'enregistre par `fn_relayConvert` « register » : c'est alors un relais ordinaire de `fn_relayNet`, réservé au camp de celui qui l'a posée, vu par la carte réseau et le maillage. Détruite, supprimée par le Zeus ou repliée : `fn_relayConvert` « remove », retirée du réseau tout de suite. Aucune boucle : événements CBA et gestionnaires `Killed` et `Deleted` sur le serveur. Sans ACE : objets présents, aucune action.

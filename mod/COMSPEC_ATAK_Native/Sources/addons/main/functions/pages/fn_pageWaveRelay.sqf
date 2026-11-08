@@ -3,7 +3,7 @@
     Onglets MON NŒUD (débit, sauts jusqu'à la passerelle, voisins directs), RÉSEAU (tous les nœuds, LOCALISER un équipier
     par triangulation), COUVERTURE (carte de débit des relais, liste des relais) et VOIX avec ACRE2 (qui émet sur mes fréquences,
     canal, fréquence et alternat de mes radios, équipiers connectés : fn_mpu5), sinon TALKGROUPS (talkgroup data choisi sur le téléphone).
-    MON NŒUD montre aussi la radio maillée MPU5 portée (fn_mpu5).
+    MON NŒUD montre aussi la radio maillée MPU5 portée (fn_mpu5). État bon, dégradé ou coupé, cause et action : fn_waveRelayStatus. Tutoriel, bouton « ? » : fn_waveRelayTuto.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -14,7 +14,7 @@ private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _dist = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000) };
 private _qCol = { params ["_q"]; switch (true) do { case (_q >= 60): { (COMSPEC_ATAK_Th get "hexOk") }; case (_q >= 30): { (COMSPEC_ATAK_Th get "hexWarn") }; default { (COMSPEC_ATAK_Th get "hexAlert") }; } };
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['wrTab', '%1']; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['wrTab', '%1']; (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['wrTuto', -1]; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
 private _nodes = _mesh get "nodes";
 private _links = _mesh get "links";
@@ -22,7 +22,20 @@ private _hops = _mesh get "hops";
 private _gw = _mesh get "gw";
 private _myHops = _hops select 0;
 private _acre = !isNil "acre_api_fnc_getCurrentRadioList";
-private _rows = [["segment", "", [["MON NŒUD", "NODE"] call _tabBtn, [format ["RÉSEAU (%1)", count _nodes], "MESH"] call _tabBtn, ["COUVERTURE", "COV"] call _tabBtn, [["TALKGROUPS", "VOIX"] select _acre, "TG"] call _tabBtn]]];
+private _rows = [["segment", "", [["MON NŒUD", "NODE"] call _tabBtn, [format ["RÉSEAU (%1)", count _nodes], "MESH"] call _tabBtn, ["COUVERTURE", "COV"] call _tabBtn, [["TALKGROUPS", "VOIX"] select _acre, "TG"] call _tabBtn, ["?", { ["set", [0, -1] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["wrTuto", -1]) >= 0)] call comspec_atak_native_fnc_waveRelayTuto; }, false, "Tutoriel du réseau"]]]];
+// Tutoriel (fn_waveRelayTuto) : à la place de l'onglet, sur le bouton « ? ».
+private _tuto = _s getOrDefault ["wrTuto", -1];
+if (_tuto >= 0) exitWith {
+    _rows append (["rows", _tuto] call comspec_atak_native_fnc_waveRelayTuto);
+    [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    true
+};
+_rows append (["offer"] call comspec_atak_native_fnc_waveRelayTuto);
+// Objet obligatoire manquant (fn_netRequire) : dit sur tous les onglets.
+private _denied = ["denied"] call comspec_atak_native_fnc_netRequire;
+if (_denied isNotEqualTo [] && {_tab isNotEqualTo "NODE"}) then {
+    _rows pushBack ["text", format ["<t color='%1'>Vous n'êtes plus un nœud du réseau : il manque %2.</t>", COMSPEC_ATAK_Th get "hexAlert", ["labels", [_denied]] call comspec_atak_native_fnc_netRequire], COMSPEC_ATAK_Th get "surface"];
+};
 private _refresh = ["buttons", [
     ["ACTUALISER", { [] spawn { ["scan", "force"] call comspec_atak_native_fnc_waveRelayAction; if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }; }; }],
     ["VOIR SUR LA CARTE", { if !(profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then { profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true]; }; ["MAP"] call comspec_atak_native_fnc_navigate; }]
@@ -164,17 +177,36 @@ switch (_tab) do {
     };
     default {
         private _q = [] call comspec_atak_native_fnc_linkQuality;
-        private _kbps = _q getOrDefault ["kbps", 0];
-        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t><br/><t color='%2'>%3</t> · %4<br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Latence %5 ms · perte %6 %%</t>",
-            [(_nodes select 0) select 2] call _esc,
-            [[(COMSPEC_ATAK_Th get "hexAlert"), (COMSPEC_ATAK_Th get "hexOk")] select (_myHops >= 0), (COMSPEC_ATAK_Th get "hexInfo")] select (_gw isEqualTo 0),
-            switch (true) do { case (_gw isEqualTo 0): { "Je suis la passerelle" }; case (_myHops < 0): { "Coupé de la passerelle" }; default { format ["%1 saut(s) jusqu'à la passerelle", _myHops] }; },
-            [format ["%1 kbit/s", _kbps], format ["%1 Mbit/s", (_kbps / 1000) toFixed 1]] select (_kbps >= 1000),
-            _q getOrDefault ["latency", 0], _q getOrDefault ["loss", 0]]];
+        // Carte d'état : bon, dégradé ou coupé, cause principale, action. Ses chiffres changent ensuite sur place (fn_waveRelayStatus "live").
+        private _st = ["read", _q] call comspec_atak_native_fnc_waveRelayStatus;
+        uiNamespace setVariable ["COMSPEC_ATAK_WrStatusSig", _st get "sig"];
+        uiNamespace setVariable ["COMSPEC_ATAK_WrStatusText", _st get "text"];
+        _rows pushBack ["text", _st get "text", COMSPEC_ATAK_Th get "surface", "COMSPEC_ATAK_WrStatusCtl"];
+        // Objet obligatoire manquant : ce qu'il faut, et rien d'autre à régler ici.
+        if (_denied isNotEqualTo []) exitWith {
+            _rows pushBack ["section", "Objets requis par ce serveur", "Le téléphone reste utilisable. Le réseau repart dès que l'objet est équipé."];
+            _rows append (["rows"] call comspec_atak_native_fnc_netRequire);
+        };
+        // Ce qui change le débit, du plus gênant au moins gênant, avant les boutons : la liste n'est plus coupée en bas de page.
+        private _factorRows = _st get "rows";
+        if (_factorRows isNotEqualTo []) then {
+            _rows pushBack ["section", "Ce qui change votre débit", "Du plus gênant au moins gênant"];
+            _rows append _factorRows;
+        };
+        _rows pushBack _refresh;
+        _rows pushBack ["section", "Mon nœud", (_nodes select 0) select 2];
+        // Passerelle : seul et sans relais, le joueur est sa propre passerelle (chef de son groupe). Rien ne passe alors par lui : le débit est celui de son téléphone.
+        private _selfGw = _gw isEqualTo 0;
         _rows append [
-            ["info", "Passerelle", [[_mesh get "gwLabel"] call _esc, "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>aucune</t>"] select (_gw < 0)],
+            ["info", "Passerelle", switch (true) do {
+                case (_gw < 0): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>aucune</t>" };
+                case (_selfGw): { format ["vous-même · %1", [_mesh get "gwLabel"] call _esc] };
+                case (_myHops < 0): { format ["%1 · <t color='%2'>coupé d'elle</t>", [_mesh get "gwLabel"] call _esc, COMSPEC_ATAK_Th get "hexAlert"] };
+                default { format ["%1 · %2 saut(s)", [_mesh get "gwLabel"] call _esc, _myHops] };
+            }],
             ["info", "Signal", format ["%1 (%2/4)", _q getOrDefault ["label", "?"], _q getOrDefault ["bars", 0]]]
         ];
+        if (_selfGw) then { _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Pas de relais reçu : vous êtes votre propre passerelle, sans lien vers un relais. Le débit affiché est celui de votre téléphone, après les pertes listées au-dessus.</t>"]; };
         // Radio maillée MPU5 (objet d'inventaire, fn_mpu5) : portée du nœud, gain sur la liaison, débit relayé à l'équipe.
         private _nr = ["range", [player]] call comspec_atak_native_fnc_mpu5;
         private _src = ["source"] call comspec_atak_native_fnc_mpu5;
@@ -182,7 +214,7 @@ switch (_tab) do {
             (player getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_uh", 0]];
             _rows append [
                 ["info", "Radio", format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%3</t> · portée %1 · +%2 dB", [_nr] call _dist, _src select 3, [_src select 1] call _esc]],
-                ["info", "Relais pour l'équipe", [format ["%1 Mbit/s relayés%2", _up toFixed 1, ["", format [" (%1 bond(s) MPU5)", _uh]] select (_uh > 0)], "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>aucun relais reçu, rien à relayer</t>"] select (_up <= 0)]
+                ["info", "Partage avec l'équipe", [format ["%1 Mbit/s partagés%2", _up toFixed 1, ["", format [" (%1 bond(s) MPU5)", _uh]] select (_uh > 0)], "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>rien à partager : aucun relais reçu</t>"] select (_up <= 0)]
             ];
         } else {
             _rows pushBack ["info", "Radio", format ["téléphone seul · portée %1 (sans MPU5)", [_nr] call _dist]];
@@ -224,7 +256,7 @@ switch (_tab) do {
             if (_b isEqualTo 0) then { _nb pushBack [_lq, _a]; };
         } forEach _links;
         _nb sort false;
-        _rows pushBack ["section", format ["Voisins directs (%1)", count _nb], "Nœuds joints sans relais intermédiaire"];
+        _rows pushBack ["section", format ["Voisins directs (%1)", count _nb], "Téléphones et radios joints sans intermédiaire"];
         {
             _x params ["_lq", "_i"];
             (_nodes select _i) params ["_o", "_p", "_name", "_kind"];
@@ -233,13 +265,7 @@ switch (_tab) do {
                 [_lq] call _qCol, [_name] call _esc, _lq, [player distance2D _p] call _dist, [player getDir _p] call _card, round (player getDir _p),
                 switch (true) do { case (_kind isEqualTo "gw" || {_i isEqualTo _gw}): { "passerelle" }; case (_h < 0): { "isolé" }; default { format ["%1 saut(s) de la passerelle", _h] }; }]];
         } forEach _nb;
-        if ((count _nb) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun voisin à portée : montez sur un point haut ou rapprochez-vous d'un nœud.</t>"]; };
-        private _factors = _q getOrDefault ["factors", []];
-        if ((count _factors) > 0) then {
-            _rows pushBack ["section", "Facteurs de débit", ""];
-            { _rows pushBack ["info", _x select 0, _x select 1]; } forEach _factors;
-        };
-        _rows pushBack _refresh;
+        if ((count _nb) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Personne à portée : montez sur un point haut ou rapprochez-vous d'un équipier.</t>"]; };
     };
 };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;

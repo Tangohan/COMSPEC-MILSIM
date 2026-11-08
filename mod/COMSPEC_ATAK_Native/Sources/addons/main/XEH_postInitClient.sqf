@@ -205,6 +205,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Radio maillée MPU5 et voix ACRE2 (fn_mpu5) : détection de l'objet, réseau voix publié, qui émet.
 ["init"] call comspec_atak_native_fnc_mpu5;
+// Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
+["init"] call comspec_atak_native_fnc_relayTxBadge;
 // Messages des groupes de conversation (fn_meshGroups).
 ["init"] call comspec_atak_native_fnc_meshGroups;
 // Mode de discrétion imposé par le chef (fn_meshEW).
@@ -1162,16 +1164,28 @@ addMissionEventHandler ["MarkerCreated", {
 ["comspec_atak_native_breach", { _this call comspec_atak_native_fnc_breachTop; }] call CBA_fnc_addEventHandler;
 // Carte : ping d'un membre de mon camp (menu clic droit, fn_mapPing).
 ["comspec_atak_native_mapPing", { ["recv", _this] call comspec_atak_native_fnc_mapPing; }] call CBA_fnc_addEventHandler;
+// Carte : pointeur d'un membre de mon camp (appui maintenu, fn_mapPing), sans bandeau ni vibration.
+["comspec_atak_native_mapPoint", { ["pointRecv", _this] call comspec_atak_native_fnc_mapPing; }] call CBA_fnc_addEventHandler;
 // App Explosifs : ordre et heure de pose de chaque charge du joueur (minuteries : temps restant).
 ["ace_explosives_place", {
     params ["_e", "", "", "_unit"];
     if (isNull _e || {_unit isNotEqualTo player}) exitWith {};
     _e setVariable ["COMSPEC_ATAK_PlacedAt", time];
+    // Minuterie ACE : son dialogue est encore ouvert à cet instant, et c'est le seul endroit où lire la durée choisie.
+    private _timerUi = uiNamespace getVariable ["ace_explosives_timerDisplay", displayNull];
+    if (!isNull _timerUi) then { _e setVariable ["COMSPEC_ATAK_Fuse", floor (sliderPosition (_timerUi displayCtrl 8505))]; };
     private _mine = (missionNamespace getVariable ["COMSPEC_ATAK_MyCharges", []]) select { !isNull _x && {alive _x} };
     _mine pushBack _e;
     missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", _mine];
     uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
 }] call CBA_fnc_addEventHandler;
+// Déclencheur réseau (fn_exploNet) : réponses du serveur. Respawn : comme ACE vide les clackers, le joueur perd ses charges.
+["clientInit"] call comspec_atak_native_fnc_exploNet;
+player addEventHandler ["Respawn", {
+    missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", []];
+    ["cmd", ["release", []]] call comspec_atak_native_fnc_exploNet;
+    ["changed"] call comspec_atak_native_fnc_exploAction;
+}];
 // Signaux du poste (SMS, alerte plein écran, vibration) : Overwatch appelle ces crochets du module atak_athena,
 // absent avec le mod natif ; on les fournit seulement s'ils ne sont pas déjà définis.
 if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
