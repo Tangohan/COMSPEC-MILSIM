@@ -1,7 +1,6 @@
 /*
-    Configurateur « Réalisme et réseau » du menu Échap : régler la simulation de tout le serveur en cours de partie
-    (profil de réalisme, débit simulé, réalisme radio, météo, surcharge, pertes de paquets, latence, relais, positions
-    BFT par points, GPS, batterie), voir les conditions du moment.
+    Configurateur « Réalisme et réseau » du menu Échap : tous les réglages de réalisme (fn_realismCatalog) rangés par thème, valeur en vigueur et source,
+    boutons de l'assistant (fn_setupWizard) et de coupure du lien radio, conditions du moment.
     Profil : le choisir remet chaque liste à la valeur du profil ; Appliquer n'envoie que le profil et les réglages qui
     s'en écartent, pour qu'un changement de profil plus tard les reprenne tous.
       - tout le monde l'ouvre (bouton « Conditions réseau » du menu Échap) et voit les valeurs en vigueur et leur source ;
@@ -18,7 +17,7 @@ disableSerialization;
 private _T = { _this call comspec_atak_native_fnc_tr };
 switch (_mode) do {
     case "canEdit": {
-        !isMultiplayer || {isServer} || {serverCommandAvailable "#kick"} || {!isNull (getAssignedCuratorLogic player)}
+        !isMultiplayer || {isServer} || {[player] call comspec_atak_native_fnc_adminAllowed}
     };
     case "expect": {
         // Valeur de chaque condition avec ce profil, sans conditions appliquées en jeu (profil, sinon réglage CBA).
@@ -90,7 +89,7 @@ switch (_mode) do {
         private _ok = !isMultiplayer || {_owner in [0, 2, clientOwner]} || {(admin _owner) > 0};
         if (!_ok) then {
             private _u = allPlayers select { owner _x isEqualTo _owner };
-            _ok = _u isNotEqualTo [] && {!isNull (getAssignedCuratorLogic (_u select 0))};
+            _ok = _u isNotEqualTo [] && {[_u select 0] call comspec_atak_native_fnc_adminAllowed};
         };
         if (!_ok) exitWith { ["WARNING", "NET", format ["Conditions réseau refusées (client %1 sans droits)", _owner]] call comspec_atak_native_fnc_log; };
         // Valeurs gardées seulement si la clé existe et le type correspond.
@@ -108,17 +107,19 @@ switch (_mode) do {
         private _d = _parent createDisplay "RscDisplayEmpty";
         if (isNull _d) exitWith {};
         private _edit = ["canEdit"] call comspec_atak_native_fnc_netConfig;
-        private _defs = ["defs"] call comspec_atak_native_fnc_netCond;
-        private _eff = ["refresh"] call comspec_atak_native_fnc_netCond;
-        private _w = safeZoneW * 0.62;
-        private _h = safeZoneH * 0.8;
+        ["refresh"] call comspec_atak_native_fnc_netCond;
+        // Même largeur réelle en 16:9 et en 21:9 : la largeur suit la hauteur de l'écran. Texte et listes à hauteur fixe, quelle que soit la taille d'interface.
+        private _w = (safeZoneH * 1.28) min (safeZoneW * 0.96);
+        private _h = safeZoneH * 0.86;
         private _x0 = safeZoneX + (safeZoneW - _w) / 2;
         private _y0 = safeZoneY + (safeZoneH - _h) / 2 + safeZoneH * 0.015;
         private _u = safeZoneH * 0.006;
+        private _fh = safeZoneH * 0.021;
         private _mk = {
             params ["_cls", "_pos", ["_grp", controlNull], ["_idc", -1]];
             private _c = if (isNull _grp) then { _d ctrlCreate [_cls, _idc] } else { _d ctrlCreate [_cls, _idc, _grp] };
             _c ctrlSetPosition _pos;
+            _c ctrlSetFontHeight _fh;
             _c ctrlCommit 0;
             _c
         };
@@ -126,72 +127,93 @@ switch (_mode) do {
         (["ctrlStatic", [_x0, _y0, _w, _h]] call _mk) ctrlSetBackgroundColor [0.12, 0.13, 0.12, 0.98];
         private _title = ["ctrlStatic", [_x0, _y0 - 5 * _u, _w, 5 * _u]] call _mk;
         _title ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
-        _title ctrlSetText (((("  COMSPEC ATAK · Réalisme et réseau du serveur") call _T)) call comspec_atak_native_fnc_tr);
+        _title ctrlSetText ("  COMSPEC ATAK · Réalisme et réseau du serveur" call _T);
 
-        // Colonne de gauche : une ligne par condition (libellé, source, liste de valeurs).
-        private _lw = _w * 0.56;
-        private _grp = ["ctrlControlsGroup", [_x0 + _u, _y0 + 9 * _u, _lw, _h - 18 * _u]] call _mk;
+        // Colonne de gauche : réglages par thème (libellé, valeur et source, liste de valeurs).
+        private _lw = _w * 0.66;
         private _head = ["ctrlStructuredText", [_x0 + _u, _y0 + _u, _lw, 8 * _u]] call _mk;
         private _held = (missionNamespace getVariable ["COMSPEC_ATAK_NetCond", [[], "", 0]]);
-        private _who = if ((_held select 0) isEqualTo []) then { "Réglages du serveur (CBA), aucune condition appliquée en jeu." call _T } else {
+        private _who = if ((_held select 0) isEqualTo []) then { "Aucune condition appliquée en jeu." call _T } else {
             format ["Conditions appliquées en jeu par %1 à %2." call _T, _held select 1, [(_held select 2) param [3, 0], (_held select 2) param [4, 0]] apply { [str _x, "0" + str _x] select (_x < 10) } joinString ":"]
         };
-        _head ctrlSetStructuredText parseText ((format ["<t size='0.9' color='#C9D2CB'>%1</t><br/><t size='0.8' color='#9AA59C'>%2</t>",
-            [("Lecture seule : seul un administrateur du serveur (#login), l'hôte ou un Zeus peut appliquer des conditions." call _T), ("Choisissez les conditions puis Appliquer au serveur : tous les joueurs les reçoivent tout de suite." call _T)] select _edit, _who]) call comspec_atak_native_fnc_tr);
-        _head ctrlCommit 0;
-        private _labels = createHashMapFromArray [
-            ["sim", "Réseau réaliste"], ["realism", "Niveau de réalisme radio"], ["weather", "La météo gêne le réseau"],
-            ["weatherK", "Intensité de la météo"], ["congestion", "Saturation du réseau"], ["bgLoad", "Réseau déjà occupé"],
-            ["loss", "Envois perdus"], ["lossFloor", "Pertes minimum"], ["latencyAdd", "Délai ajouté"],
-            ["relayOnly", "Réseau uniquement par les relais"], ["gateways", "Véhicules relais et PC mobile"],
-            ["offlineHold", "Mode hors connexion"], ["videoRelays", "Vidéo dépendante des relais"],
-            ["profile", "Profil de réalisme"], ["pli", "Positions BFT par points (PLI)"], ["pliRate", "Intervalle des positions BFT"],
-            ["gps", "GPS réaliste"], ["gpsK", "Force des erreurs GPS"], ["gpsFix", "Attente des satellites"], ["gpsLoss", "Pertes de fix GPS"], ["gpsRel", "Fiabilité du GPS"], ["battery", "Batterie réaliste"]
-        ];
-        private _srcTxt = createHashMapFromArray [["site", ["Imposé par le site", "#E0B050"]], ["server", ["Appliqué en jeu", "#7ED38A"]], ["profile", ["Valeur du profil", "#7FB6E6"]], ["cba", ["Réglage serveur", "#9AA59C"]]];
-        private _rowH = 6.4 * _u;
-        private _cw = _lw * 0.42;
+        _head ctrlSetStructuredText parseText format ["%1<br/><t color='#9AA59C'>%2</t>",
+            [("Lecture seule : seuls un admin, un Zeus ou un gestionnaire désigné peuvent changer ces réglages." call _T), ("Choisissez puis Appliquer au serveur : tous les joueurs les reçoivent tout de suite." call _T)] select _edit, _who];
+        private _grp = ["ctrlControlsGroup", [_x0 + _u, _y0 + 9 * _u, _lw, _h - 18 * _u]] call _mk;
+        private _inner = _lw - safeZoneW * 0.012;
+        private _rowH = safeZoneH * 0.052;
+        private _cw = _inner * 0.36;
         private _combos = [];
+        private _cbaCombos = [];
+        private _order = ["Profil", "Réseau", "Radio et voix", "Maillage", "Positions et GPS", "Brouillage et clés", "Batterie", "Téléphone et dégâts", "Traces HVT", "Développement"];
+        private _rows = ["rows"] call comspec_atak_native_fnc_realismCatalog;
+        private _yy = 0;
         {
-            _x params ["_key", "_cba", "_sk", "_kind", "_def", "_vals", "_names"];
-            private _y = _forEachIndex * _rowH;
-            private _src = ["source", _key] call comspec_atak_native_fnc_netCond;
-            (_srcTxt get _src) params ["_st", "_sc"];
-            private _lb = ["ctrlStructuredText", [0, _y, _lw - _cw - 2 * _u, _rowH], _grp] call _mk;
-            _lb ctrlSetStructuredText parseText ((format ["<t size='0.9'>%1</t><br/><t size='0.72' color='%2'>%3</t>", (_labels getOrDefault [_key, _key]) call _T, _sc, _st call _T]) call comspec_atak_native_fnc_tr);
-            private _cb = ["ctrlCombo", [_lw - _cw - _u, _y + 0.8 * _u, _cw, 4.4 * _u], _grp, 200 + _forEachIndex] call _mk;
-            if (_kind isEqualTo "bool") then { _vals = [true, false]; _names = ["Actif", "Coupé"]; };
-            private _cur = _eff getOrDefault [_key, _def];
-            if !(_cur in _vals) then { _vals = _vals + [_cur]; _names = _names + [str _cur]; };
-            { private _i = _cb lbAdd ((((_names select _forEachIndex) call _T)) call comspec_atak_native_fnc_tr); _cb lbSetData [_i, str _x]; } forEach _vals;
-            _cb lbSetCurSel (_vals find _cur);
-            _cb ctrlEnable (_edit && {_src isNotEqualTo "site"});
-            if (_src isEqualTo "site") then { _cb ctrlSetTooltip ((("Imposé par la communauté sur le site (Contrôle serveur). À changer depuis le site." call _T)) call comspec_atak_native_fnc_tr); };
-            _combos pushBack [_key, _cb, _kind];
-            // Profil choisi : chaque liste modifiable reprend la valeur du profil (ou son réglage CBA hors profil).
-            if (_key isEqualTo "profile") then {
-                _cb ctrlAddEventHandler ["LBSelChanged", {
-                    params ["_c", "_i"];
-                    private _set = ["expect", parseNumber (_c lbData _i)] call comspec_atak_native_fnc_netConfig;
-                    {
-                        _x params ["_key", "_cb"];
-                        if (_key isEqualTo "profile" || {!ctrlEnabled _cb}) then { continue };
-                        private _v = _set get _key;
-                        for "_j" from 0 to (lbSize _cb) - 1 do { if ((_cb lbData _j) isEqualTo str _v) exitWith { _cb lbSetCurSel _j; }; };
-                    } forEach (uiNamespace getVariable ["COMSPEC_ATAK_NetCfgCombos", []]);
-                }];
-            };
-        } forEach _defs;
+            private _th = _x;
+            private _hd = ["ctrlStatic", [0, _yy, _inner, safeZoneH * 0.03], _grp] call _mk;
+            _hd ctrlSetText (_th call _T);
+            _hd ctrlSetTextColor [0.49, 0.83, 0.54, 1];
+            _hd ctrlSetBackgroundColor [0.08, 0.09, 0.08, 1];
+            _yy = _yy + safeZoneH * 0.034;
+            {
+                private _row = _x;
+                _row params ["", "_label", "_var", "_kind", "_vals", "_names", "_cond", "_rule"];
+                (["state", _row] call comspec_atak_native_fnc_realismCatalog) params ["_cur", "_txt", "_st", "_sc", "_lock", "_where", "_src"];
+                private _lb = ["ctrlStructuredText", [0, _yy, _inner - _cw - _u, _rowH], _grp] call _mk;
+                _lb ctrlSetStructuredText parseText format ["%1<br/><t size='0.85' color='%2'>%3</t>", _label call _T, _sc, _st];
+                if (_kind in ["bool", "num"]) then {
+                    private _cb = ["ctrlCombo", [_inner - _cw, _yy + 0.6 * _u, _cw, safeZoneH * 0.034], _grp] call _mk;
+                    if (_kind isEqualTo "bool") then { _vals = [true, false]; _names = ["Actif", "Coupé"]; };
+                    if !(_cur in _vals) then { _vals = _vals + [_cur]; _names = _names + [str _cur]; };
+                    { private _i = _cb lbAdd ((_names select _forEachIndex) call _T); _cb lbSetData [_i, str _x]; } forEach _vals;
+                    _cb lbSetCurSel (_vals find _cur);
+                    _cb ctrlEnable (_edit && {!_lock});
+                    if (_lock) then { _cb ctrlSetTooltip _where; };
+                    if (_cond isNotEqualTo "") then {
+                        _combos pushBack [_cond, _cb, _kind];
+                        if (_cond isEqualTo "profile") then {
+                            // Profil choisi : chaque liste modifiable reprend la valeur du profil (ou son réglage CBA hors profil).
+                            _cb ctrlAddEventHandler ["LBSelChanged", {
+                                params ["_c", "_i"];
+                                private _set = ["expect", parseNumber (_c lbData _i)] call comspec_atak_native_fnc_netConfig;
+                                {
+                                    _x params ["_key", "_cb"];
+                                    if (_key isEqualTo "profile" || {!ctrlEnabled _cb}) then { continue };
+                                    private _v = _set get _key;
+                                    for "_j" from 0 to (lbSize _cb) - 1 do { if ((_cb lbData _j) isEqualTo str _v) exitWith { _cb lbSetCurSel _j; }; };
+                                } forEach (uiNamespace getVariable ["COMSPEC_ATAK_NetCfgCombos", []]);
+                            }];
+                        };
+                    } else {
+                        _cbaCombos pushBack [_var, _cb, _kind, str _cur];
+                    };
+                } else {
+                    // Valeur en lecture seule, retour à la ligne si elle est longue.
+                    private _vt = ["ctrlStructuredText", [_inner - _cw, _yy, _cw, _rowH], _grp] call _mk;
+                    _vt ctrlSetStructuredText parseText format ["<t align='right'>%1</t>", _txt];
+                    _vt ctrlSetTooltip _txt;
+                };
+                _yy = _yy + _rowH;
+            } forEach (_rows select { (_x select 0) isEqualTo _th });
+        } forEach _order;
         uiNamespace setVariable ["COMSPEC_ATAK_NetCfgCombos", _combos];
+        uiNamespace setVariable ["COMSPEC_ATAK_NetCfgCba", _cbaCombos];
 
-        // Colonne de droite : modèles, conditions du moment.
+        // Colonne de droite : assistant, lien radio, modèles, conditions du moment.
         private _rx = _x0 + _lw + 3 * _u;
         private _rw = _w - _lw - 4 * _u;
-        private _pl = ["ctrlStatic", [_rx, _y0 + _u, _rw, 4 * _u]] call _mk;
-        _pl ctrlSetText ((("Modèles de conditions" call _T)) call comspec_atak_native_fnc_tr);
-        private _pc = ["ctrlCombo", [_rx, _y0 + 5 * _u, _rw, 4.4 * _u], controlNull, 300] call _mk;
-        _pc lbAdd ((("Choisir un modèle…" call _T)) call comspec_atak_native_fnc_tr);
-        { _pc lbAdd ((((_x select 0) call _T)) call comspec_atak_native_fnc_tr); } forEach (["presets"] call comspec_atak_native_fnc_netConfig);
+        private _wz = ["ctrlButton", [_rx, _y0 + _u, _rw, 5 * _u]] call _mk;
+        _wz ctrlSetText ("Assistant de configuration" call _T);
+        _wz ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
+        _wz ctrlAddEventHandler ["ButtonClick", { ["open", ctrlParent (_this select 0)] call comspec_atak_native_fnc_setupWizard; }];
+        private _rc = ["ctrlButton", [_rx, _y0 + 7 * _u, _rw, 5 * _u]] call _mk;
+        private _linked = ["read"] call comspec_atak_native_fnc_radioGuard;
+        _rc ctrlSetText ((["Rétablir le lien radio", "Couper le lien radio"] select _linked) call _T);
+        _rc ctrlSetTooltip ("Le mod ne touche plus aux radios ACRE2 et TFAR : voix normale, effet immédiat, pour tous les joueurs" call _T);
+        _rc ctrlEnable _edit;
+        _rc ctrlAddEventHandler ["ButtonClick", { ["cut", [["read"] call comspec_atak_native_fnc_radioGuard]] call comspec_atak_native_fnc_radioGuard; (ctrlParent (_this select 0)) closeDisplay 1; }];
+        private _pc = ["ctrlCombo", [_rx, _y0 + 13 * _u, _rw, 5 * _u], controlNull, 300] call _mk;
+        _pc lbAdd ("Choisir un modèle de conditions…" call _T);
+        { _pc lbAdd ((_x select 0) call _T); } forEach (["presets"] call comspec_atak_native_fnc_netConfig);
         _pc lbSetCurSel 0;
         _pc ctrlEnable _edit;
         _pc ctrlAddEventHandler ["LBSelChanged", {
@@ -206,14 +228,14 @@ switch (_mode) do {
                 for "_j" from 0 to (lbSize _cb) - 1 do { if ((_cb lbData _j) isEqualTo str _v) exitWith { _cb lbSetCurSel _j; }; };
             } forEach (uiNamespace getVariable ["COMSPEC_ATAK_NetCfgCombos", []]);
         }];
-        private _live = ["ctrlStructuredText", [_rx, _y0 + 11 * _u, _rw, _h - 20 * _u], controlNull, 301] call _mk;
+        private _live = ["ctrlStructuredText", [_rx, _y0 + 19 * _u, _rw, _h - 28 * _u], controlNull, 301] call _mk;
         _live ctrlSetBackgroundColor [0.08, 0.09, 0.08, 1];
 
         // Boutons.
         private _bw = _w * 0.2;
         private _by = _y0 + _h - 7 * _u;
         private _ap = ["ctrlButton", [_x0 + _u, _by, _bw, 5 * _u]] call _mk;
-        _ap ctrlSetText ((("Appliquer au serveur" call _T)) call comspec_atak_native_fnc_tr);
+        _ap ctrlSetText ("Appliquer au serveur" call _T);
         _ap ctrlSetBackgroundColor [0.10, 0.40, 0.20, 1];
         _ap ctrlEnable _edit;
         _ap ctrlAddEventHandler ["ButtonClick", {
@@ -233,15 +255,25 @@ switch (_mode) do {
                 _pairs pushBack [_key, _v];
             } forEach _combos;
             ["apply", _pairs] call comspec_atak_native_fnc_netConfig;
+            // Réglages sans condition (maillage, clés, dégâts...) : réglages CBA du serveur, seulement ceux qui ont changé.
+            private _cba = [];
+            {
+                _x params ["_var", "_cb", "_kind", "_was"];
+                if (!ctrlEnabled _cb) then { continue };
+                private _s = _cb lbData (lbCurSel _cb);
+                if (_s isEqualTo _was) then { continue };
+                _cba pushBack [_var, if (_kind isEqualTo "bool") then { _s isEqualTo "true" } else { parseNumber _s }];
+            } forEach (uiNamespace getVariable ["COMSPEC_ATAK_NetCfgCba", []]);
+            if (_cba isNotEqualTo []) then { ["comspec_atak_native_admin", [player, "realismSet", [_cba, false]]] call CBA_fnc_serverEvent; };
             (ctrlParent (_this select 0)) closeDisplay 1;
         }];
         private _rs = ["ctrlButton", [_x0 + 2 * _u + _bw, _by, _bw, 5 * _u]] call _mk;
-        _rs ctrlSetText ((("Revenir aux réglages serveur" call _T)) call comspec_atak_native_fnc_tr);
-        _rs ctrlSetTooltip ((("Efface les conditions appliquées en jeu : les réglages CBA du serveur reprennent (les règles du site restent)." call _T)) call comspec_atak_native_fnc_tr);
+        _rs ctrlSetText ("Revenir aux réglages serveur" call _T);
+        _rs ctrlSetTooltip ("Efface les conditions appliquées en jeu : les réglages CBA du serveur reprennent (les règles du site restent)." call _T);
         _rs ctrlEnable _edit;
         _rs ctrlAddEventHandler ["ButtonClick", { ["apply", []] call comspec_atak_native_fnc_netConfig; (ctrlParent (_this select 0)) closeDisplay 1; }];
         private _cl = ["ctrlButton", [_x0 + _w - _bw * 0.7 - _u, _by, _bw * 0.7, 5 * _u]] call _mk;
-        _cl ctrlSetText ((("Fermer" call _T)) call comspec_atak_native_fnc_tr);
+        _cl ctrlSetText ("Fermer" call _T);
         _cl ctrlAddEventHandler ["ButtonClick", { (ctrlParent (_this select 0)) closeDisplay 2; }];
 
         // Conditions du moment, rafraîchies chaque seconde tant que la fenêtre est ouverte.
@@ -253,17 +285,18 @@ switch (_mode) do {
                 private _live = _d displayCtrl 301;
                 private _q = [] call comspec_atak_native_fnc_linkQuality;
                 private _w = vectorMagnitude wind;
-                private _html = format ["<t size='1.05' color='#7ED38A' font='RobotoCondensedBold'>%1</t><br/>", "Conditions du moment" call _T];
-                _html = _html + format ["<t size='0.85'>%1 : %2 · %3 kbit/s · %4 ms · %5 %%</t><br/>", "Mon téléphone" call _T, (_q getOrDefault ["label", ""]) call _T, _q getOrDefault ["kbps", 0], _q getOrDefault ["latency", 0], _q getOrDefault ["loss", 0]];
-                _html = _html + format ["<t size='0.85'>%1 : %2 %% · %3 : %4 km/h · %5 : %6 %% · %7 : %8 %%</t><br/><br/>",
+                private _html = format ["<t color='#7ED38A' font='RobotoCondensedBold'>%1</t><br/>", "Conditions du moment" call _T];
+                _html = _html + format ["%1 : %2 · %3 kbit/s · %4 ms · %5 %%<br/>", "Mon téléphone" call _T, (_q getOrDefault ["label", ""]) call _T, _q getOrDefault ["kbps", 0], _q getOrDefault ["latency", 0], _q getOrDefault ["loss", 0]];
+                _html = _html + format ["%1 : %2 %% · %3 : %4 km/h · %5 : %6 %% · %7 : %8 %%<br/>",
                     "Pluie" call _T, round (rain * 100), "Vent" call _T, round (_w * 3.6), "Orage" call _T, round (lightnings * 100), "Brouillard" call _T, round (fog * 100)];
-                _html = _html + format ["<t size='0.85' color='#C9D2CB'>%1</t><br/>", "Ce qui coûte du signal en ce moment" call _T];
+                _html = _html + format ["<t color='#7FB6E6'>%1</t><br/><br/>", (["text"] call comspec_atak_native_fnc_radioGuard) call _T];
+                _html = _html + format ["<t color='#C9D2CB'>%1</t><br/>", "Ce qui coûte du signal en ce moment" call _T];
                 {
                     _x params ["_n", "_e"];
-                    _html = _html + format ["<t size='0.8'>• %1 <t color='#E0B050'>%2</t></t><br/>", _n call _T, _e call _T];
+                    _html = _html + format ["• %1 <t color='#E0B050'>%2</t><br/>", _n call _T, _e call _T];
                     if (_forEachIndex >= 10) exitWith {};
                 } forEach (_q getOrDefault ["factors", []]);
-                _live ctrlSetStructuredText parseText ((_html) call comspec_atak_native_fnc_tr);
+                _live ctrlSetStructuredText parseText _html;
                 uiSleep 1;
             };
         };

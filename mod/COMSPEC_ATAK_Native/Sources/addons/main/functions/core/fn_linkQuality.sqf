@@ -35,7 +35,7 @@ if ((count _cache) isNotEqualTo 2) then { uiNamespace setVariable ["COMSPEC_ATAK
 private _q = createHashMap;
 private _mpu = ["status"] call comspec_atak_native_fnc_mpuLink;
 private _mesh = (_mpu get "active") && {_mpu get "ok"} && {(_mpu get "kind") isEqualTo "mpu"};
-if ((_mpu get "active") && {!(_mpu get "ok")} && {missionNamespace getVariable ["comspec_atak_native_mpu_require", true]}) exitWith {
+if ((_mpu get "active") && {!(_mpu get "ok")} && {missionNamespace getVariable ["comspec_atak_native_mpu_require", false]}) exitWith {
     private _why = _mpu getOrDefault ["why", ""];
     _q = createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", ["Radio sans réseau", "Sans MPU5"] select ((_mpu get "kind") isEqualTo "")],
         ["factors", [[["MPU5 : " + _why, "Sans MPU5 : pas de réseau de données (reliez une MPU5 par câble EUD ou Wi-Fi)"] select ((_mpu get "kind") isEqualTo ""), "aucun réseau"]]], ["sim", true], ["tx", false], ["margin", -1], ["jitter", 0]];

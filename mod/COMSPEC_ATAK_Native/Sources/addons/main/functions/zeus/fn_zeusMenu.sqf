@@ -160,6 +160,9 @@ switch (_act) do {
         private _icon = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
         private _root = ["comspec_atak_zeus", "ATAK · Contrôle Zeus", _icon, {}, { (_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusTargets")) isNotEqualTo [] }] call comspec_atak_native_fnc_zenAction;
         [_root, [], 7] call zen_context_menu_fnc_addAction;
+        // Sans joueur visé : assistant de configuration et coupure du lien radio.
+        [["comspec_atak_wizard", "ATAK · Assistant de configuration", _icon, { [{ ["open"] call comspec_atak_native_fnc_setupWizard; }] call comspec_atak_native_fnc_nextFrame; }, { true }] call comspec_atak_native_fnc_zenAction, [], 6] call zen_context_menu_fnc_addAction;
+        [["comspec_atak_radiocut", "ATAK · Couper ou rétablir le lien radio", _icon, { ["cut", [["read"] call comspec_atak_native_fnc_radioGuard]] call comspec_atak_native_fnc_radioGuard; }, { true }] call comspec_atak_native_fnc_zenAction, [], 5] call zen_context_menu_fnc_addAction;
         private _groups = [];
         {
             _x params ["_id", "_grp", "_label", "", ["_modOnly", false]];

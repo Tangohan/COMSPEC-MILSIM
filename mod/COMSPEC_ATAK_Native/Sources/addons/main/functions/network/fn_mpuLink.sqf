@@ -1,6 +1,9 @@
 /*
-    Liaison réaliste téléphone <-> radio de données (réglage serveur comspec_atak_native_mpu_real, désactivé par défaut :
-    rien ne change, le téléphone garde son ancien réseau et fn_mpu5 son rôle d'avant).
+    Liaison réaliste téléphone <-> radio de données (réglage serveur comspec_atak_native_mpu_real, coché par défaut ; décoché ou profil
+    Arcade : le téléphone garde son ancien réseau et fn_mpu5 son rôle d'avant).
+    Radios : les vrais objets du joueur d'abord (fn_mpu5 "gear" : MPU5 d'un mod radio, longue portée, portative ACRE2 ou TFAR, avec leur portée et leur puissance), reliées toutes seules,
+    sans câble ni batterie à nous. Notre MPU5 n'est qu'un complément, ou le matériel d'une partie sans mod radio.
+    Sans radio : le téléphone garde son réseau d'avant, sauf si « Radio de données obligatoire » est coché (décoché par défaut).
     Comme sur le terrain, l'EUD (téléphone ATAK) n'a pas de réseau tactique propre : il passe par une radio de données
     reliée par le câble EUD (USB-C) ou par le Wi-Fi local de la radio, à quelques mètres.
       - MPU5 (Wave Relay, objet COMSPEC_ATAK_MPU5 ou toute classe « MPU5 », fn_mpu5 "has") : nœud d'un réseau maillé
@@ -10,10 +13,7 @@
         réglage comspec_atak_native_mpu5_range à 6 W), relief (fn_radioLink "coarse", en cache 30 s), brouilleurs.
         Batterie propre (autonomie comspec_atak_native_mpu_hours à 6 W, moins à basse puissance), objet
         COMSPEC_ATAK_RadioBattery pour la changer. Posée au sol (Wi-Fi seulement), elle reste un nœud à sa place.
-    Sans MPU5 : pas de réseau de données (le Bluetooth entre téléphones et les données déjà reçues restent). Les radios
-    ACRE2 / TFAR ne relient pas le téléphone : le branchement de l'ancien modèle (fn_mpu5 "plug", réglage
-    comspec_atak_native_radio_data) est ignoré ici. Le repli ACRE2 / TFAR en données de la 2.9.31 est retiré : une
-    telle liaison restée en mémoire est remise à « aucune radio reliée » au tick suivant, avec une notification.
+    Le branchement de l'ancien modèle (fn_mpu5 "plug", réglage comspec_atak_native_radio_data) est ignoré ici.
     Passerelle du maillage : relais de la mission en service ; sans relais, la MPU5 du chef de groupe (sur le même canal) ;
     sinon la radio du joueur elle-même (maillage autonome de l'équipe, solo).
     Calculs : "tick" toutes les 2 s (aucun calcul par image). Graphe unique de fn_meshGraph (sur le serveur par défaut), relu
@@ -33,7 +33,8 @@
       "tick", "mesh" (planifié), "aceInit"
 */
 params [["_act", "status"], ["_arg", []]];
-private _active = { missionNamespace getVariable ["comspec_atak_native_mpu_real", false] };
+// Le profil Arcade coupe tout, même réglage coché.
+private _active = { (missionNamespace getVariable ["comspec_atak_native_mpu_real", false]) isEqualTo true && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1} };
 private _state = {
     private _s = uiNamespace getVariable "COMSPEC_ATAK_MpuSt";
     if (isNil "_s") then {
@@ -75,7 +76,10 @@ private _pwrK = [0.41, 0.71, 1];
 // Largeur de canal (lot 9) : étroit, portée x 1,41 (3 dB) et débit / 2 ; large, portée x 0,71 et débit x 1,5. Choix de jeu.
 private _widK = [1.41, 1, 0.71];
 private _freqOf = { params ["_c"]; 2200 + 20 * (_c - 1) };
-private _hasCable = { !(missionNamespace getVariable ["comspec_atak_native_mpu_cable", true]) || {"COMSPEC_ATAK_EudCable" in (items player)} };
+private _gear = { ["gear"] call comspec_atak_native_fnc_mpu5 };
+// Radio d'un mod (ACRE2, TFAR) : aucun objet à nous n'est exigé.
+private _isRadioMod = { ((call _gear) param [7, ""]) isNotEqualTo "" };
+private _hasCable = { !(missionNamespace getVariable ["comspec_atak_native_mpu_cable", true]) || {"COMSPEC_ATAK_EudCable" in (items player)} || {call _isRadioMod} };
 switch (_act) do {
     case "active": { call _active };
     case "status": {
@@ -85,7 +89,7 @@ switch (_act) do {
             _off
         };
         private _s = uiNamespace getVariable "COMSPEC_ATAK_MpuStatus";
-        if (isNil "_s") then { _s = createHashMapFromArray [["active", true], ["kind", ""], ["link", ""], ["ok", false], ["why", "sans MPU5 : pas de réseau de données"], ["kbps", 0], ["lat", 0], ["loss", 0], ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", -1], ["wifiQ", 0], ["level", 3]]; };
+        if (isNil "_s") then { _s = createHashMapFromArray [["active", true], ["kind", ""], ["link", ""], ["ok", false], ["why", "sans radio de données"], ["kbps", 0], ["lat", 0], ["loss", 0], ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", -1], ["wifiQ", 0], ["level", 3]]; };
         _s
     };
     case "noDirect": {
@@ -95,7 +99,7 @@ switch (_act) do {
         if (_k isEqualTo "veh") exitWith { false };
         // Radio en service : tout passe par elle. Radio obligatoire : jamais de liaison directe. Sinon (radio
         // facultative, sans réseau) : le téléphone garde sa liaison d'avant.
-        (_k isEqualTo "mpu" && {_s getOrDefault ["ok", false]}) || {missionNamespace getVariable ["comspec_atak_native_mpu_require", true]}
+        (_k isEqualTo "mpu" && {_s getOrDefault ["ok", false]}) || {missionNamespace getVariable ["comspec_atak_native_mpu_require", false]}
     };
     case "view": {
         private _st = call _state;
@@ -108,7 +112,8 @@ switch (_act) do {
             ["carried", _carried], ["posed", !_carried && {[_h] call _holderHas}], ["posedD", [-1, round (player distance _h)] select (!isNull _h)],
             ["on", _st get "on"], ["chan", _st get "chan"], ["freq", [_st get "chan"] call _freqOf], ["pwr", _pwr],
             ["pwrLabel", ["Faible (1 W)", "Moyenne (3 W)", "Max (6 W)"] select _pwr], ["width", ["Étroit", "Normal", "Large"] select (_st getOrDefault ["width", 1])],
-            ["range", round ((missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000]) * (_pwrK select _pwr))],
+            ["gear", call _gear],
+            ["range", round (((call _gear) param [4, missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000]]) * ([_pwrK select _pwr, 1] select (call _isRadioMod)))],
             ["batt", round (_st get "batt")], ["left", _left], ["link", _st get "link"],
             ["wifi", missionNamespace getVariable ["comspec_atak_native_mpu_wifi", true]], ["wifiR", missionNamespace getVariable ["comspec_atak_native_mpu_wifi_range", 8]],
             ["cable", "COMSPEC_ATAK_EudCable" in (items player)], ["cableReq", missionNamespace getVariable ["comspec_atak_native_mpu_cable", true]],
@@ -145,10 +150,12 @@ switch (_act) do {
     case "unlink": {
         private _st = call _state;
         private _was = _st get "link";
+        // Geste du joueur : la radio d'un mod ne se relie plus toute seule tant qu'il ne l'a pas rangée.
+        _st set ["autoOff", true];
         _st set ["link", ""];
         _st set ["holder", objNull];
         if (_was isNotEqualTo "") then {
-            ["INFO", ["Téléphone débranché de la MPU5", "Téléphone débranché de la MPU5 : sans MPU5, pas de réseau de données"] select (missionNamespace getVariable ["comspec_atak_native_mpu_require", true])] call _say;
+            ["INFO", ["Téléphone débranché de la radio", "Téléphone débranché de la radio : sans radio, pas de réseau de données"] select (missionNamespace getVariable ["comspec_atak_native_mpu_require", false])] call _say;
         };
         call _kick;
         true
@@ -249,6 +256,15 @@ switch (_act) do {
         private _dt = ((_now - (_st getOrDefault ["at", _now])) max 0) min 30;
         _st set ["at", _now];
         private _carried = ["has", [player]] call comspec_atak_native_fnc_mpu5;
+        private _gr = call _gear;
+        private _radioMod = (_gr param [7, ""]) isNotEqualTo "";
+        // Radio ACRE2 ou TFAR sur le joueur : reliée toute seule, sans objet à nous. Un débranchement à la main reste jusqu'à ce qu'il range la radio.
+        if (!_radioMod) then { _st set ["autoOff", false]; };
+        if (_radioMod && {(_st get "link") isEqualTo ""} && {!(_st getOrDefault ["autoOff", false])}) then {
+            _st set ["link", "cable"];
+            _st set ["holder", objNull];
+            ["SUCCESS", format ["Réseau par votre radio %1", _gr select 3]] call _say;
+        };
         private _link = _st get "link";
         private _wr = missionNamespace getVariable ["comspec_atak_native_mpu_wifi_range", 8];
         private _drop = "";
@@ -260,7 +276,8 @@ switch (_act) do {
         _st set ["holder", _h];
         private _present = _carried || {!isNull _h};
         // Batterie : se vide radio allumée (portée ou posée), moins vite à basse puissance.
-        if (_present && {_st get "on"} && {(_st get "batt") > 0}) then {
+        // ACRE2 et TFAR n'ont pas de batterie : seule notre MPU5 en a une.
+        if (_present && {!_radioMod} && {_st get "on"} && {(_st get "batt") > 0}) then {
             private _hours = (missionNamespace getVariable ["comspec_atak_native_mpu_hours", 10]) max 0.1;
             // Trafic relayé (lot 9, réglage mesh_traffic_power) : un nœud central se vide plus vite, au plus deux fois.
             private _relay = if ((missionNamespace getVariable ["comspec_atak_native_mesh_traffic_power", true]) isEqualTo true) then { ((uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["relayed", 0]) min 10 } else { 0 };
@@ -291,14 +308,14 @@ switch (_act) do {
         };
         if (_drop isNotEqualTo "") then { _link = ""; _st set ["link", ""]; ["WARNING", _drop] call _say; };
         // Nœud publié : MPU5 allumée (reliée au téléphone ou non).
-        private _on = _present && {_st get "on"} && {(_st get "batt") > 0};
-        private _mR = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
+        private _on = _present && {_st get "on"} && {_radioMod || {(_st get "batt") > 0}};
+        private _mR = _gr param [4, missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000]];
         private _wid = _st getOrDefault ["width", 1];
         // Discrétion (lot 11, fn_meshEW) : 0 normal, 1 puissance réduite, 2 écoute seule. Activité arrondie : puissance et trafic relayé.
         private _mode = _st getOrDefault ["mode", 0];
         if (_mode isEqualTo 1) then { _st set ["pwr", 0]; };
         private _activity = if (_mode isEqualTo 2) then { 0 } else { ((1 + (_st get "pwr") * 2 + floor (((uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["relayed", 0]) / 2)) min 9) };
-        private _node = [[], [format ["C%1", _st get "chan"], (round (_mR * (_pwrK select (_st get "pwr")) * (_widK select _wid))) min 20000, [player, _h] select (!isNull _h), _wid, ["nodeKey"] call comspec_atak_native_fnc_meshKeys, _activity]] select _on;
+        private _node = [[], [format ["C%1", _st get "chan"], (round (_mR * ([_pwrK select (_st get "pwr"), 1] select _radioMod) * (_widK select _wid))) min 20000, [player, _h] select (!isNull _h), _wid, ["nodeKey"] call comspec_atak_native_fnc_meshKeys, _activity]] select _on;
         ["tick"] call comspec_atak_native_fnc_meshEW;
         ["tick"] call comspec_atak_native_fnc_meshKeys;
         if (_node isNotEqualTo (player getVariable ["COMSPEC_ATAK_MpuNode", []])) then { player setVariable ["COMSPEC_ATAK_MpuNode", _node]; };
@@ -313,12 +330,12 @@ switch (_act) do {
             ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", _wd], ["wifiQ", _wq], ["level", 3]];
         private _need = false;
         switch (_kind) do {
-            case "": { _s set ["why", "sans MPU5 : pas de réseau de données"]; };
+            case "": { _s set ["why", ["sans radio de données : réseau du téléphone", "sans radio de données : pas de réseau de données"] select (missionNamespace getVariable ["comspec_atak_native_mpu_require", false])]; };
             case "veh": { _s set ["ok", true]; _s set ["why", "radio du véhicule"]; };
             default {
                 private _down = switch (true) do {
-                    case !(_st get "on"): { "MPU5 éteinte" };
-                    case ((_st get "batt") <= 0): { "batterie de la MPU5 vide" };
+                    case !(_st get "on"): { "radio éteinte" };
+                    case (!_radioMod && {(_st get "batt") <= 0}): { "batterie de la MPU5 vide" };
                     case (_link isEqualTo "wifi" && {_wq <= 0}): { format ["hors de portée Wi-Fi de la MPU5 (%1 m)", round _wd] };
                     default { "" };
                 };
@@ -345,7 +362,7 @@ switch (_act) do {
         };
         uiNamespace setVariable ["COMSPEC_ATAK_MpuStatus", _s];
         // Voix radio pontée sur la MPU5 portée (fn_mpuVoice) : maillage calculé même sans téléphone relié.
-        if (!_need && {_on} && {_carried} && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isNotEqualTo []} && {missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]}) then { _need = true; };
+        if (!_need && {_on} && {_carried} && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isNotEqualTo []} && {["enabled"] call comspec_atak_native_fnc_mpuVoice}) then { _need = true; };
         // Outils de développement (fn_devMesh) : graphe calculé même téléphone débranché.
         if (!_need && {_on} && {["on"] call comspec_atak_native_fnc_devMesh}) then { _need = true; };
         // App Wave Relay ou carte ouverte (fn_waveRelayAction "scan") : graphe relu même téléphone débranché.
@@ -357,7 +374,7 @@ switch (_act) do {
             if (_drop isEqualTo "" && {count _old > 0}) then {
                 if (_s get "ok") then {
                     if ((_s get "kind") isEqualTo "mpu") then {
-                        ["SUCCESS", [format ["Réseau par la MPU5 : %1 saut(s) jusqu'à %2", _s get "hops", _s get "gw"], "Réseau par la MPU5 : maillage autonome de l'équipe"] select ((_s get "hops") <= 0)] call _say;
+                        ["SUCCESS", [format ["Réseau par la radio : %1 saut(s) jusqu'à %2", _s get "hops", _s get "gw"], "Réseau par la radio : maillage autonome de l'équipe"] select ((_s get "hops") <= 0)] call _say;
                     };
                 } else {
                     if (_wasOk && {(_s get "why") isNotEqualTo "connexion au maillage en cours"}) then { ["WARNING", format ["Réseau perdu : %1", _s get "why"]] call _say; };
@@ -369,7 +386,7 @@ switch (_act) do {
         if (_need && {_now - (uiNamespace getVariable ["COMSPEC_ATAK_MpuMeshAt", -100]) >= (["every"] call comspec_atak_native_fnc_meshGraph)} && {_now - (uiNamespace getVariable ["COMSPEC_ATAK_MpuMeshBusy", -100]) > 20}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_MpuMeshBusy", _now];
             uiNamespace setVariable ["COMSPEC_ATAK_MpuMeshAt", _now];
-            private _max = (missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20]) * 1000;
+            private _max = (_gr param [6, missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20]]) * 1000;
             [_node select 0, _node select 1, _node select 2, _max] spawn {
                 ["mesh", _this] call comspec_atak_native_fnc_mpuLink;
                 uiNamespace setVariable ["COMSPEC_ATAK_MpuMeshBusy", -100];
@@ -397,11 +414,11 @@ switch (_act) do {
             _x params ["_id", "_name", "_code", "_cond"];
             ["CAManBase", 1, _path, [_id, _name, "", _code, _cond] call comspec_atak_native_fnc_aceAction, true] call ace_interact_menu_fnc_addActionToClass;
         } forEach [
-            ["COMSPEC_ATAK_MpuCable", "Relier le téléphone à la MPU5 (câble)", { ["link", ["cable"]] call comspec_atak_native_fnc_mpuLink; },
+            ["COMSPEC_ATAK_MpuCable", "Relier le téléphone à la radio (câble)", { ["link", ["cable"]] call comspec_atak_native_fnc_mpuLink; },
                 { ((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["link", ""]) isNotEqualTo "cable" && {["has", [player]] call comspec_atak_native_fnc_mpu5} }],
-            ["COMSPEC_ATAK_MpuWifi", "Relier le téléphone à la MPU5 (Wi-Fi)", { ["link", ["wifi"]] call comspec_atak_native_fnc_mpuLink; },
+            ["COMSPEC_ATAK_MpuWifi", "Relier le téléphone à la radio (Wi-Fi)", { ["link", ["wifi"]] call comspec_atak_native_fnc_mpuLink; },
                 { (missionNamespace getVariable ["comspec_atak_native_mpu_wifi", true]) && {((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["link", ""]) isNotEqualTo "wifi"} }],
-            ["COMSPEC_ATAK_MpuUnlink", "Débrancher le téléphone de la MPU5", { ["unlink"] call comspec_atak_native_fnc_mpuLink; },
+            ["COMSPEC_ATAK_MpuUnlink", "Débrancher le téléphone de la radio", { ["unlink"] call comspec_atak_native_fnc_mpuLink; },
                 { ((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["link", ""]) isNotEqualTo "" }],
             ["COMSPEC_ATAK_MpuOn", "Allumer la MPU5", { ["power"] call comspec_atak_native_fnc_mpuLink; },
                 { !((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["on", true]) && {["has", [player]] call comspec_atak_native_fnc_mpu5} }],
@@ -415,8 +432,8 @@ switch (_act) do {
         ];
         // Pont radio (fn_mpuVoice) : la radio active ACRE2 / TFAR reliée à la MPU5 par câble audio, nom de la radio dans l'action.
         ["CAManBase", 1, _path, ["COMSPEC_ATAK_MpuVoiceOn", "Relier ma radio à la MPU5 (voix)", "", { ["bridge"] call comspec_atak_native_fnc_mpuVoice; },
-            { (missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isEqualTo []}
-                && {!isNil "acre_api_fnc_getCurrentRadioList" || {!isNil "TFAR_fnc_activeSwRadio"}} && {["has", [player]] call comspec_atak_native_fnc_mpu5} },
+            { (["enabled"] call comspec_atak_native_fnc_mpuVoice) && {(missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isEqualTo []}
+                && {["has", [player]] call comspec_atak_native_fnc_mpu5} },
             {}, [], [0, 0, 0], 2, [false, false, false, false, false], {
                 params ["", "", "", "_ad"];
                 private _p = ["preferred"] call comspec_atak_native_fnc_mpuVoice;
