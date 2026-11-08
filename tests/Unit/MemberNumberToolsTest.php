@@ -288,6 +288,21 @@ final class MemberNumberToolsTest extends TestCase
         ], $ctx);
     }
 
+    public function testImportFileWithMemberIdIsRead(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'mn');
+        file_put_contents($file, "nom;indicatif;id_membre;tenant_member_number
+Alpha;A;12;G-0001
+");
+        try {
+            $parsed = OrganizationMemberNumberController::parseImportCsv($file);
+        } finally {
+            unlink($file);
+        }
+
+        self::assertSame([['line' => 2, 'member_id' => 12, 'email' => '', 'number' => 'G-0001']], $parsed['rows']);
+    }
+
     public function testImportFileIsReadForThePreview(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'mn');
@@ -300,8 +315,8 @@ final class MemberNumberToolsTest extends TestCase
 
         self::assertArrayNotHasKey('error', $parsed);
         self::assertSame([
-            ['line' => 2, 'email' => 'a@x.fr', 'number' => 'G-0001'],
-            ['line' => 4, 'email' => 'b@x.fr', 'number' => ''],
+            ['line' => 2, 'member_id' => 0, 'email' => 'a@x.fr', 'number' => 'G-0001'],
+            ['line' => 4, 'member_id' => 0, 'email' => 'b@x.fr', 'number' => ''],
         ], $parsed['rows']);
 
         $bad = tempnam(sys_get_temp_dir(), 'mn');
