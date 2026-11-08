@@ -245,7 +245,8 @@ class UserRepository
             case 'indicatif':
                 return ['select' => "MIN(NULLIF(TRIM(u.callsign), ''))", 'join' => ''];
             case 'email':
-                return ['select' => 'LOWER(TRIM(u.email))', 'join' => ''];
+                // MIN(...) : sous ONLY_FULL_GROUP_BY, MySQL ne reconnaît pas LOWER(TRIM(u.email)) répété dans un ORDER BY.
+                return ['select' => 'MIN(LOWER(TRIM(u.email)))', 'join' => ''];
             case 'creation':
                 return ['select' => 'MIN(u.created_at)', 'join' => ''];
             case 'connexion_site':

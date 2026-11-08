@@ -140,7 +140,7 @@ final class PlatformUsersDirectoryMysqlTest extends TestCase
         $desc = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'volume', 'dir' => 'desc']));
         self::assertSame(['zed@example.test', 'amy@example.test'], array_slice($desc, 0, 2));
         $asc = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 1, 50, null, ['sort' => 'volume', 'dir' => 'asc']));
-        self::assertSame(['zed@example.test', 'amy@example.test'], array_slice($asc, -2));
+        self::assertSame(['amy@example.test', 'zed@example.test'], array_slice($asc, -2));
         // Deuxième page : le tri est global, pas seulement sur la page.
         $page2 = $this->emails($repo->listGroupedAccountsForPlatformDirectory(null, null, null, 2, 10, null, ['sort' => 'volume', 'dir' => 'desc']));
         self::assertSame([], $page2);
