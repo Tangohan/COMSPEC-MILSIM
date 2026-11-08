@@ -122,6 +122,12 @@ final class AuditAction
     /** Levée d’un bannissement site : fiches remises dans leur état d’avant. */
     public const USER_UNBANNED = 'user.unbanned';
 
+    /** Fin d’une sanction temporaire : date d’échéance atteinte, fiches remises dans leur état d’avant. */
+    public const USER_BAN_EXPIRED = 'user.ban_expired';
+
+    /** Export CSV de l’annuaire des comptes (données personnelles) par l’administration du site. */
+    public const PLATFORM_USERS_EXPORTED = 'platform.users_exported';
+
     /** Retrait d’une personne d’une communauté (réversible, fiche conservée). */
     public const USER_MEMBERSHIP_REMOVED = 'user.membership_removed';
 
