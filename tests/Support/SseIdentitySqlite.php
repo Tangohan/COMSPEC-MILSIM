@@ -58,6 +58,10 @@ final class SseIdentitySqlite
         $images($pdo, static function (string $m) use (&$out): void {
             $out .= $m;
         });
+        $suite = require dirname(__DIR__, 2) . '/bootstrap/atak_sse_identity_suite_migration.php';
+        $suite($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
 
         return $out;
     }

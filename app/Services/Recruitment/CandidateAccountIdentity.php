@@ -146,7 +146,7 @@ final class CandidateAccountIdentity
         if ($birthDate === '') {
             return null;
         }
-        $d = \DateTimeImmutable::createFromFormat('Y-m-d', $birthDate);
+        $d = \DateTimeImmutable::createFromFormat('!Y-m-d', $birthDate);
         if ($d === false) {
             return null;
         }
