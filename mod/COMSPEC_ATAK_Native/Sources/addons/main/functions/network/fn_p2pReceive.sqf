@@ -8,7 +8,7 @@
 */
 params [["_from", ""], ["_body", ""], ["_time", "--:--"], ["_id", ""], ["_sender", objNull], ["_date", ""], ["_force", false]];
 if (!hasInterface || {_from isEqualTo ""}) exitWith {};
-if (!_force && {!([] call comspec_atak_native_fnc_p2pReachable)}) exitWith {
+if (!_force && {!([] call comspec_atak_native_fnc_p2pReachable)} && {(["peer", [_sender]] call comspec_atak_native_fnc_meshGraph) isEqualTo []}) exitWith {
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
     if (_id isEqualTo "" || {(_inbox findIf { (_x param [3, ""]) isEqualTo _id }) < 0}) then { _inbox pushBack [_from, _body, _time, _id, _sender, _date]; };
     while {(count _inbox) > 100} do { _inbox deleteAt 0; };

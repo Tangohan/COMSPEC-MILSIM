@@ -21,6 +21,7 @@
 [h2]Optimisation[/h2]
 [list]
 [*] Réseau maillé MPU5 : largeur de canal, perte par saut réaliste, temps d'antenne partagé, mât d'antenne (avec la liaison réaliste, désactivée par défaut).
+[*] Réseau maillé MPU5 : positions périmées grises puis retirées, gros fichiers par blocs avec reprise, messages sans passerelle (avec la liaison réaliste, désactivée par défaut).
 [*] Réseau maillé MPU5 (avec la liaison réaliste, désactivée par défaut) : un seul graphe pour l'écran, les données et la voix, calculé sur le serveur, avec un plafond de sauts réglable.
 [*] La liaison COMSPEC Link fait moins de travail à chaque échange avec le téléphone et écrit son journal par paquets.
 [*] L'app Recherchés et les apps du SSE qui lisent les avis d'Athena ne font plus attendre le jeu : liste gardée 5 minutes et rafraîchie en arrière-plan.

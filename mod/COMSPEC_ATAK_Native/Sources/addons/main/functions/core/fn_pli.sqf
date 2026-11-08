@@ -22,6 +22,11 @@ private _st = missionNamespace getVariable ["COMSPEC_ATAK_PliState", [-1e9, [0, 
 _st params ["_at", "_lastPos", "_k"];
 private _age = diag_tickTime - _at;
 private _moved = (getPosASL player) distance2D _lastPos;
+// Liaison réaliste (lot 10, réglage mesh_pli_adaptive) : moins souvent à l'arrêt et sur un chemin mauvais : la carte des autres traîne.
+if ((missionNamespace getVariable ["comspec_atak_native_mesh_pli_adaptive", true]) isEqualTo true && {["active"] call comspec_atak_native_fnc_mpuLink}) then {
+    private _lvl = ((["status"] call comspec_atak_native_fnc_mpuLink) getOrDefault ["level", 0]) min 2;
+    _rate = _rate * ([1, 1.5, 3] select _lvl) * ([1, 2] select (_moved < 5));
+};
 if (_age < _rate * _k && {_age < (_rate / 2) || {_moved < 50}}) exitWith {};
 // Prochain point à l'intervalle, à ±15 % près (les téléphones ne partent pas tous à la même seconde).
 missionNamespace setVariable ["COMSPEC_ATAK_PliState", [diag_tickTime, getPosASL player, 0.85 + random 0.3]];
