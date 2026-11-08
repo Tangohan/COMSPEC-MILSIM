@@ -35,6 +35,9 @@ class CfgFunctions {
         class plan { file="z\comspec_atak_native\addons\main\functions\plan";
             class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {}; class planUi {}; class planHelp {};
         };
+        class devmesh { file="z\comspec_atak_native\addons\main\functions\devmesh";
+            class devMesh {}; class devMeshSim {}; class devMeshOverlay {}; class devLinkInspect {};
+        };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayConvert {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
