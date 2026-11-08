@@ -29,6 +29,7 @@ private _refresh = ["buttons", [
 ]];
 switch (_tab) do {
     case "MESH": {
+        _rows append (["playerRows"] call comspec_atak_native_fnc_meshTools);
         _rows pushBack ["section", "Nœuds du maillage", format ["%1 nœud(s), %2 lien(s) · portée nominale %3", count _nodes, count _links, [_mesh get "range"] call _dist]];
         // Tri : passerelle, puis par nombre de sauts, les nœuds isolés à la fin.
         private _order = [];

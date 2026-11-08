@@ -3,7 +3,7 @@
     qui publient un enregistrement de nœud comme un joueur. On teste ainsi un graphe de 60 nœuds seul, sans 60 joueurs et
     sans le coût de 60 IA, qui fausserait la mesure du constructeur.
     Variables : COMSPEC_ATAK_MeshSimNodes (publique, liste d'objets), sur chaque objet COMSPEC_ATAK_MeshSim (camp) et
-    COMSPEC_ATAK_MpuNode. Un relais simulé est un vrai relais de mission (COMSPEC_AtakRelays), retiré par "clear".
+    COMSPEC_ATAK_MeshNode. Un relais simulé est un vrai relais de mission (COMSPEC_AtakRelays), retiré par "clear".
       "units"    [camp] -> nœuds simulés de ce camp ; [] sans le mode développeur (toujours appelé par le maillage : une seule
                  lecture de réglage dans ce cas)
       "request"  [action, arguments] (client) : envoie la demande au serveur, qui vérifie le réglage et les droits
@@ -72,13 +72,13 @@ private _spawn = {
         _o allowDamage false;
         _o setPosASL _pos;
         _o setVariable ["COMSPEC_ATAK_MeshSim", _side, true];
-        _o setVariable ["COMSPEC_ATAK_MpuNode", [_key, round _range, _o], true];
+        _o setVariable ["COMSPEC_ATAK_MeshNode", [[_key, round _range, _o], [], [], [], []], true];
         _o setVariable ["COMSPEC_ATAK_CsCustom", format ["SIM-%1", (count _list) + _i], true];
         _made pushBack _o;
     };
     if (_withRelay) then {
         private _last = _made deleteAt ((count _made) - 1);
-        _last setVariable ["COMSPEC_ATAK_MpuNode", [], true];
+        _last setVariable ["COMSPEC_ATAK_MeshNode", [], true];
         _last setVariable ["COMSPEC_ATAK_MeshSim", "", true];
         _last setVariable ["COMSPEC_AtakRelayRange", round _range, true];
         _last setVariable ["COMSPEC_AtakRelayName", "Relais simulé", true];
@@ -134,7 +134,7 @@ switch (_act) do {
     };
     case "kill": {
         private _o = (missionNamespace getVariable ["COMSPEC_ATAK_MeshSimNodes", []]) param [_arg param [0, -1], objNull];
-        if (!isNull _o) then { _o setVariable ["COMSPEC_ATAK_MpuNode", [], true]; };
+        if (!isNull _o) then { _o setVariable ["COMSPEC_ATAK_MeshNode", [], true]; };
     };
     case "clear": { call _clear; };
     case "stats": {

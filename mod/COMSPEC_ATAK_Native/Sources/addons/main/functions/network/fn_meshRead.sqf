@@ -3,6 +3,8 @@
     section 6). Une variable publiée par un autre client n'est pas fiable : tout consommateur passe par cette fonction,
     qui vérifie le type, la taille et les bornes, et rend un enregistrement vide au moindre écart (nombre non fini compris).
     C'est un garde-fou contre les valeurs absurdes, pas une sécurité : un client modifié peut publier une valeur plausible.
+    Lot 8 : une seule variable publique par joueur, COMSPEC_ATAK_MeshNode = [nœud, MPU5, voix, réseau voix, groupes], écrite par ["publish"] au plus toutes
+    les 2 s et sur changement. Les variables COMSPEC_ATAK_MpuNode, Mpu5, MpuVoice, VoiceNet et Talkgroup restent, sans diffusion, sur le seul joueur local.
       ["node", unité]      COMSPEC_ATAK_MpuNode -> [réseau "C1".."C16", portée 1..20 000 m, objet antenne (l'unité ou une radio
                            posée au sol), largeur de canal 0 étroit | 1 normal | 2 large, clé de réseau publiée (id x 1000 + époque, -2 sans clés), activité d'émission 0 (écoute seule) à 9] ou []
       ["mpu5", unité]      COMSPEC_ATAK_Mpu5 -> [débit 0..100 Mbit/s, bonds 0..64, portée 1..30 000 m, nom] ou []
@@ -11,9 +13,18 @@
                            "" | "R…" | "L…", sauts 0..64, nom] ou [] (100 000 m : certaines radios TFAR dépassent 20 km)
       ["voiceNet", unité]  COMSPEC_ATAK_VoiceNet -> [[id radio, MHz 0..100 000, nom du canal]...], 32 au plus, ou []
       ["talkgroup", unité] COMSPEC_ATAK_Talkgroup -> groupes écoutés : 16 numéros de 1 à 16 au plus, ou []
+      ["publish"] : (client, tick de 2 s) diffuse l'enregistrement s'il a changé
       ["check", [genre, valeur, unité]] : même contrôle sur une valeur donnée (sans effet, pour fn_devMeshTest)
 */
 params [["_kind", ""], ["_arg", objNull]];
+if (_kind isEqualTo "publish") exitWith {
+    if (!hasInterface || {isNull player}) exitWith {};
+    private _rec = ["COMSPEC_ATAK_MpuNode", "COMSPEC_ATAK_Mpu5", "COMSPEC_ATAK_MpuVoice", "COMSPEC_ATAK_VoiceNet", "COMSPEC_ATAK_Talkgroup"] apply { player getVariable [_x, []] };
+    if (_rec isEqualTo (player getVariable ["COMSPEC_ATAK_MeshNode", []])) exitWith {};
+    if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MeshNodeAt", -100]) < 2) exitWith {};
+    uiNamespace setVariable ["COMSPEC_ATAK_MeshNodeAt", diag_tickTime];
+    player setVariable ["COMSPEC_ATAK_MeshNode", _rec, true];
+};
 private _raw = [];
 private _unit = objNull;
 if (_kind isEqualTo "check") then {
@@ -23,7 +34,9 @@ if (_kind isEqualTo "check") then {
 } else {
     _unit = _arg;
     if !(_unit isEqualType objNull) exitWith {};
-    _raw = _unit getVariable [["COMSPEC_ATAK_MpuNode", "COMSPEC_ATAK_Mpu5", "COMSPEC_ATAK_MpuVoice", "COMSPEC_ATAK_VoiceNet", "COMSPEC_ATAK_Talkgroup"] param [["node", "mpu5", "voice", "voiceNet", "talkgroup"] find _kind, ""], []];
+    private _rec = _unit getVariable ["COMSPEC_ATAK_MeshNode", []];
+    if (!(_rec isEqualType []) || {(count _rec) > 5}) then { _rec = []; };
+    _raw = _rec param [["node", "mpu5", "voice", "voiceNet", "talkgroup"] find _kind, []];
 };
 if (_kind isEqualTo "talkgroup") exitWith {
     if (!(_raw isEqualType []) || {(count _raw) > 16} || {(_raw findIf { !(_x isEqualType 0) || {!finite _x} || {_x < 1} || {_x > 16} }) >= 0}) then { [] } else { _raw }

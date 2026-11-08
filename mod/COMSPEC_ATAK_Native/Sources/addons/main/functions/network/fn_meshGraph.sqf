@@ -190,9 +190,8 @@ switch (_act) do {
         if (_now - (missionNamespace getVariable ["COMSPEC_ATAK_MeshBusyAt", -100]) < 20) exitWith {};
         // Signature des nœuds : le graphe est à refaire dès qu'un nœud apparaît, tombe, change de canal ou de puissance.
         private _sim = [[], missionNamespace getVariable ["COMSPEC_ATAK_MeshSimNodes", []]] select (["on"] call comspec_atak_native_fnc_devMesh);
-        private _sig = ((allPlayers + _sim) select { alive _x && {(_x getVariable ["COMSPEC_ATAK_MpuNode", []]) isNotEqualTo []} }) apply {
-            [_x, _x getVariable ["COMSPEC_ATAK_MeshSim", str side group _x], _x getVariable ["COMSPEC_ATAK_MpuNode", []]]
-        };
+        private _sig = ((allPlayers + _sim) select { alive _x }) apply { [_x, _x getVariable ["COMSPEC_ATAK_MeshSim", str side group _x], ["node", _x] call comspec_atak_native_fnc_meshRead] };
+        _sig = _sig select { (_x select 2) isNotEqualTo [] };
         private _dirty = _sig isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_MeshSig", []]);
         if (_sig isEqualTo [] && {(_pub param [1, []]) isEqualTo []}) exitWith { missionNamespace setVariable ["COMSPEC_ATAK_MeshSig", []]; };
         private _since = _now - (missionNamespace getVariable ["COMSPEC_ATAK_MeshLastAt", -100]);
@@ -213,9 +212,8 @@ switch (_act) do {
             [_normal, 0] select (((missionNamespace getVariable ["COMSPEC_ATAK_MeshRef", []]) param [0, -1]) isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_MeshViewSeq", -2]))
         };
         private _side = str side group player;
-        private _sig = ((allPlayers + (["units", [_side]] call comspec_atak_native_fnc_devMeshSim)) select { alive _x && {(_x getVariable ["COMSPEC_ATAK_MpuNode", []]) isNotEqualTo []} && {(_x getVariable ["COMSPEC_ATAK_MeshSim", str side group _x]) isEqualTo _side} }) apply {
-            [_x, _x getVariable ["COMSPEC_ATAK_MpuNode", []]]
-        };
+        private _sig = ((allPlayers + (["units", [_side]] call comspec_atak_native_fnc_devMeshSim)) select { alive _x && {(_x getVariable ["COMSPEC_ATAK_MeshSim", str side group _x]) isEqualTo _side} }) apply { [_x, ["node", _x] call comspec_atak_native_fnc_meshRead] };
+        _sig = _sig select { (_x select 1) isNotEqualTo [] };
         if (_sig isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_MeshSigLocal", []])) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_MeshSigLocal", _sig];
             0
@@ -231,6 +229,8 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_MeshBusyAt", _t0];
         missionNamespace setVariable ["COMSPEC_ATAK_MeshLastAt", _t0];
         private _maxNodes = 64;
+        private _wxForce = missionNamespace getVariable ["COMSPEC_ATAK_MeshWxForce", 0];
+        if (!(_wxForce isEqualType 0) || {!finite _wxForce}) then { _wxForce = 0; };
         private _sliceTests = 150;
         private _maxK = (missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20]) * 1000;
         private _server = ["serverBuilt"] call comspec_atak_native_fnc_meshGraph;
@@ -364,6 +364,8 @@ switch (_act) do {
                         _ct set [2, (_ct select 2) + 1];
                     } else {
                         _m = [_a select 6, _b select 6, _r, _cache, _ct] call _marginOf;
+                        // Météo radio forcée par Zeus (fn_meshTools).
+                        _m = _m - _wxForce;
                         if (_bodyOn || {_proneOn}) then {
                             _m = _m - ([_a select 0, _a select 6, _b select 6, _proneOn, _bodyOn] call _pairLoss) - ([_b select 0, _b select 6, _a select 6, _proneOn, _bodyOn] call _pairLoss);
                         };
@@ -421,6 +423,10 @@ switch (_act) do {
         } forEach _sides;
         if (_aborted) exitWith { false };
         missionNamespace setVariable ["COMSPEC_ATAK_MeshHyst", _hystAll];
+        // Journal de réseau : changement du nombre de nœuds ou de liens (reformation, partition).
+        (missionNamespace getVariable ["COMSPEC_ATAK_MeshLogLast", [-1, -1]]) params ["_ln", "_ll"];
+        if (_ln isNotEqualTo _nodeN) then { ["log", ["graphe", format ["%1 nœuds, %2 liens (avant : %3, %4)", _nodeN, _linkN, _ln, _ll]]] call comspec_atak_native_fnc_meshGraph; };
+        missionNamespace setVariable ["COMSPEC_ATAK_MeshLogLast", [_nodeN, _linkN]];
         if (_devOn) then { missionNamespace setVariable ["COMSPEC_ATAK_MeshLinkLog", _log]; };
         private _lastDt = diag_tickTime - (_ct select 6);
         ["maillage constructeur (tranche)", _ct select 6] call comspec_atak_native_fnc_perfAcc;

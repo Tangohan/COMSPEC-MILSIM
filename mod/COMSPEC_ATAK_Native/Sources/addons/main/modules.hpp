@@ -581,6 +581,62 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
     };
 };
 // Écran COMSPEC (fn_moduleScreen, fn_screenCast) : objets synchronisés où l'app Briefing diffuse ses diapositives.
+class COMSPEC_ATAK_Module_Mesh: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 1;
+    category = "COMSPEC_ATAK_Network";
+    displayName = "ATAK · Maillage (clés, groupes, fréquences)";
+    icon = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+    function = "comspec_atak_native_fnc_moduleMesh";
+    class Attributes {
+        class Keys {
+            displayName = "Clés de groupe";
+            tooltip = "nom:camp;nom:camp. Exemple : K-ALPHA:WEST;K-BRAVO:WEST. Mécanique de jeu, avec le réglage des clés.";
+            property = "COMSPEC_ATAK_Module_Mesh_Keys";
+            control = "Edit";
+            expression = "_this setVariable ['Keys',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Groups {
+            displayName = "Groupes";
+            tooltip = "numéro:nom:clé;... Exemple : 1:CMD:K-ALPHA;2:ALPHA:";
+            property = "COMSPEC_ATAK_Module_Mesh_Groups";
+            control = "Edit";
+            expression = "_this setVariable ['Groups',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Freq {
+            displayName = "Fréquence vers groupe";
+            tooltip = "MHz:groupe;... Exemple : 43.5:2;44:3. Vide : groupe déduit de la fréquence.";
+            property = "COMSPEC_ATAK_Module_Mesh_Freq";
+            control = "Edit";
+            expression = "_this setVariable ['Freq',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Backup {
+            displayName = "Canal de secours";
+            tooltip = "1 à 16. 0 : réglage du serveur.";
+            property = "COMSPEC_ATAK_Module_Mesh_Backup";
+            control = "EditShort";
+            expression = "_this setVariable ['Backup',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+        };
+        class Profile {
+            displayName = "Profil de réalisme";
+            tooltip = "-1 : réglage du serveur. 3 Milsim, 2 Standard, 1 Arcade.";
+            property = "COMSPEC_ATAK_Module_Mesh_Profile";
+            control = "EditShort";
+            expression = "_this setVariable ['Profile',_value,true];";
+            defaultValue = "-1";
+            typeName = "NUMBER";
+        };
+    };
+};
 class COMSPEC_ATAK_Module_Screen: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 2;

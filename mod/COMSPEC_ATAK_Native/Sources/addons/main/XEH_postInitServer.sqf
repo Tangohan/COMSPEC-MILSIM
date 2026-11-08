@@ -42,6 +42,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_MeshSrvOn", true, true];
 if (!hasInterface) then { [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread; };
 // Registre des clés du maillage : mécanique de jeu, décochée par défaut (fn_meshKeys).
 ["init"] call comspec_atak_native_fnc_meshKeys;
+// Actions Zeus sur le maillage, droits vérifiés ici (fn_meshTools).
+["init"] call comspec_atak_native_fnc_meshTools;
 // Nœuds simulés du maillage : événement refusé tant que le mode développeur est décoché (fn_devMeshSim).
 ["init"] call comspec_atak_native_fnc_devMeshSim;
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).

@@ -285,12 +285,14 @@ switch (_act) do {
                 uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", [_pub, _pendN + 1]];
             } else {
                 uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Pend", []];
-                player setVariable ["COMSPEC_ATAK_Mpu5", _pub, true];
+                player setVariable ["COMSPEC_ATAK_Mpu5", _pub];
             };
         };
         // Réseau voix publié pour les autres téléphones : fréquence d'émission et nom du canal de chaque radio ACRE2.
         private _vn = (["radios"] call comspec_atak_native_fnc_mpu5) select { (_x select 4) > 0 } apply { [_x select 0, parseNumber ((_x select 4) toFixed 4), _x select 3] };
-        if (_vn isNotEqualTo (player getVariable ["COMSPEC_ATAK_VoiceNet", []])) then { player setVariable ["COMSPEC_ATAK_VoiceNet", _vn, true]; };
+        if (_vn isNotEqualTo (player getVariable ["COMSPEC_ATAK_VoiceNet", []])) then { player setVariable ["COMSPEC_ATAK_VoiceNet", _vn]; };
+        // Une seule variable diffusée pour tout le maillage (fn_meshRead, lot 8).
+        ["publish"] call comspec_atak_native_fnc_meshRead;
         // Émissions restées ouvertes (événement de fin perdu, joueur parti) : retirées au bout de 60 s.
         private _heard = (uiNamespace getVariable ["COMSPEC_ATAK_PttHeard", []]) select { !isNull (_x select 0) && {diag_tickTime - (_x select 2) < 60} };
         uiNamespace setVariable ["COMSPEC_ATAK_PttHeard", _heard];

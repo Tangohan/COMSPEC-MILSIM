@@ -10,7 +10,7 @@ params [["_act", "toggle"]];
 switch (_act) do {
     case "toggle": {
         if ((missionNamespace getVariable ["COMSPEC_ATAK_MeshOverlayEh", -1]) >= 0) exitWith { ["stop"] call comspec_atak_native_fnc_devMeshOverlay; false };
-        if !(["allowed"] call comspec_atak_native_fnc_devMesh) exitWith { false };
+        if (!(["allowed"] call comspec_atak_native_fnc_devMesh) && {isNull (getAssignedCuratorLogic player)}) exitWith { false };
         ["refresh"] call comspec_atak_native_fnc_devMeshOverlay;
         missionNamespace setVariable ["COMSPEC_ATAK_MeshOverlayEh", addMissionEventHandler ["Draw3D", {
             (missionNamespace getVariable ["COMSPEC_ATAK_MeshOverlayData", [[], []]]) params ["_lines", "_labels"];
@@ -27,8 +27,10 @@ switch (_act) do {
         true
     };
     case "refresh": {
-        if !(["allowed"] call comspec_atak_native_fnc_devMesh) exitWith { ["stop"] call comspec_atak_native_fnc_devMeshOverlay; };
-        private _s = ["snapshot"] call comspec_atak_native_fnc_devMesh;
+        // Zeus (fn_meshTools) : lecture seule du graphe du camp choisi, même sans le mode développeur.
+        private _zeus = !isNull (getAssignedCuratorLogic player);
+        if (!(["allowed"] call comspec_atak_native_fnc_devMesh) && {!_zeus}) exitWith { ["stop"] call comspec_atak_native_fnc_devMeshOverlay; };
+        private _s = if (_zeus) then { ["zeusSnapshot"] call comspec_atak_native_fnc_meshTools } else { ["snapshot"] call comspec_atak_native_fnc_devMesh };
         private _lines = [];
         private _labels = [];
         if ((count _s) > 0) then {

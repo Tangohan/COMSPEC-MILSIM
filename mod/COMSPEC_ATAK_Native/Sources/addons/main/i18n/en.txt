@@ -9334,6 +9334,8 @@
 ["Graphe du maillage calculé sur le serveur", "Mesh graph computed on the server"],
 ["Coché : une seule vérité pour tous, calculée par le serveur et diffusée sur changement, au plus toutes les 2 s. Décoché : chaque client calcule le graphe de son camp, sans diffusion mais avec des écarts possibles. N'agit qu'avec la liaison réaliste.", "Checked: one truth for everyone, computed by the server and broadcast on change, at most every 2 s. Unchecked: each client computes its side's graph, with no broadcast but possible differences. Only applies with the realistic link."],
 ["Plafond de sauts du maillage", "Mesh hop limit"],
+["Clic droit Zeus « ATAK · Maillage » ; topologie, ping et prévision de couverture dans l'app Wave Relay.", "Zeus right-click “ATAK · Mesh”; topology, ping and coverage forecast in the Wave Relay app."],
+["Outils du maillage (Zeus et joueurs)", "Mesh tools (Zeus and players)"],
 ["Temps de brouillage subi avant la bascule.", "Time under jamming before switching."],
 ["Délai avant le canal de secours (s)", "Delay before backup channel (s)"],
 ["Sous brouillage de son canal, la MPU5 bascule toute seule sur ce canal.", "When its channel is jammed, the MPU5 switches to this channel by itself."],

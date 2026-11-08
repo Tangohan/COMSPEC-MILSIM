@@ -283,7 +283,7 @@ switch (_act) do {
             _pub = [_api, _key, _ti select 0, _ti select 1, _m getOrDefault ["vkey", ""], (_m getOrDefault ["hops", 0]) max 0, _name];
         };
         if (_drop isNotEqualTo "") then { missionNamespace setVariable ["COMSPEC_ATAK_VoiceBridge", []]; ["WARNING", _drop] call _say; };
-        if (_pub isNotEqualTo (player getVariable ["COMSPEC_ATAK_MpuVoice", []])) then { player setVariable ["COMSPEC_ATAK_MpuVoice", _pub, true]; };
+        if (_pub isNotEqualTo (player getVariable ["COMSPEC_ATAK_MpuVoice", []])) then { player setVariable ["COMSPEC_ATAK_MpuVoice", _pub]; };
         // Joueurs pontés joignables par le maillage : [nom, sauts, distance m, même fréquence TFAR (ou ACRE2 : vrai)].
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceMe", [_pub, _reach, _why, [], _mode]];
         private _peers = [];

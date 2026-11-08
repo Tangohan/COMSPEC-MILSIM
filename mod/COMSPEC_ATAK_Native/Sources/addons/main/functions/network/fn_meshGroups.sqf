@@ -81,7 +81,7 @@ switch (_act) do {
             if (_g > 0) then { _pub pushBackUnique _g; };
         };
         _pub sort true;
-        if (_pub isNotEqualTo (player getVariable ["COMSPEC_ATAK_Talkgroup", []])) then { player setVariable ["COMSPEC_ATAK_Talkgroup", _pub, true]; };
+        if (_pub isNotEqualTo (player getVariable ["COMSPEC_ATAK_Talkgroup", []])) then { player setVariable ["COMSPEC_ATAK_Talkgroup", _pub]; };
     };
     case "shared": {
         if !(["on"] call comspec_atak_native_fnc_meshGroups) exitWith { true };

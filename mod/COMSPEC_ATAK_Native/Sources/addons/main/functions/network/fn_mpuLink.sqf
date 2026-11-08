@@ -232,7 +232,7 @@ switch (_act) do {
         if (!hasInterface) exitWith {};
         private _t0 = diag_tickTime;
         if !(call _active) exitWith {
-            if ((player getVariable ["COMSPEC_ATAK_MpuNode", []]) isNotEqualTo []) then { player setVariable ["COMSPEC_ATAK_MpuNode", [], true]; };
+            if ((player getVariable ["COMSPEC_ATAK_MpuNode", []]) isNotEqualTo []) then { player setVariable ["COMSPEC_ATAK_MpuNode", []]; };
             uiNamespace setVariable ["COMSPEC_ATAK_MpuStatus", nil];
         };
         private _st = call _state;
@@ -301,7 +301,7 @@ switch (_act) do {
         private _node = [[], [format ["C%1", _st get "chan"], (round (_mR * (_pwrK select (_st get "pwr")) * (_widK select _wid))) min 20000, [player, _h] select (!isNull _h), _wid, ["nodeKey"] call comspec_atak_native_fnc_meshKeys, _activity]] select _on;
         ["tick"] call comspec_atak_native_fnc_meshEW;
         ["tick"] call comspec_atak_native_fnc_meshKeys;
-        if (_node isNotEqualTo (player getVariable ["COMSPEC_ATAK_MpuNode", []])) then { player setVariable ["COMSPEC_ATAK_MpuNode", _node, true]; };
+        if (_node isNotEqualTo (player getVariable ["COMSPEC_ATAK_MpuNode", []])) then { player setVariable ["COMSPEC_ATAK_MpuNode", _node]; };
         // État vu par le téléphone.
         private _kind = switch (true) do {
             case (_link in ["cable", "wifi"]): { "mpu" };

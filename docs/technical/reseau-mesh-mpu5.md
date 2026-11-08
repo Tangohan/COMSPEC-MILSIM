@@ -1,6 +1,6 @@
 # Réseau maillé du téléphone ATAK : plan technique
 
-Statut : plan, révision 2 (ajouts : réalisme radio, guerre électronique, données ATAK, outils ; voir sections 3.6, 4 bis et 6 bis, lots 9 à 12, décisions 11 à 17 ; TFAR vérifié dans son code source). Lots 0, 1 et 2 codés, non testés en jeu (section 10). Périmètre : `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/` (`network/`, `core/fn_linkQuality.sqf`, `pages/fn_pageWaveRelay.sqf`, `pages/fn_waveRelayAction.sqf`).
+Statut : plan, révision 2 (ajouts : réalisme radio, guerre électronique, données ATAK, outils ; voir sections 3.6, 4 bis et 6 bis, lots 9 à 12, décisions 11 à 17 ; TFAR vérifié dans son code source). Tous les lots codés, aucun testé en jeu (section 10). Périmètre : `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/` (`network/`, `core/fn_linkQuality.sqf`, `pages/fn_pageWaveRelay.sqf`, `pages/fn_waveRelayAction.sqf`).
 
 Objectif du propriétaire : un réseau plus poussé, façon MPU5 / Wave Relay, un chiffrement simulé comme un vrai ATAK, et un maillage voix TFAR / ACRE via le téléphone et les relais.
 
@@ -355,6 +355,15 @@ Décisions du propriétaire reçues : 1 automatique et désactivable ; 2 absence
 | 0 | `functions/devmesh/` (`fn_devMesh`, `fn_devMeshSim`, `fn_devMeshOverlay`, `fn_devLinkInspect`), `missions/COMSPEC_BancMaillage.Stratis`, réglage `mesh_dev` | codé, à tester |
 | 1 | `fn_meshRead`, `fn_devMeshTest` ; tous les consommateurs passent par la lecture sûre | codé, à tester |
 | 2 | `fn_meshGraph` ; `fn_mpuLink` « mesh », `fn_waveRelayAction` « scan » (liaison réaliste), `fn_mpuVoice` ; réglages `mesh_server`, `mesh_hops` | codé, à tester |
+| 3 | `fn_mpuVoice` « sigMap », `fn_meshGraph` « view » → `voice`, `fn_linkQuality` ; `mesh_gravity` | codé, à tester |
+| 4 | `fn_mpuVoice` « tfBefore », « tfAfter », « tfRx » ; `mesh_tfar_ptt` | codé d'après le source de TFAR, tout à confirmer en jeu |
+| 9 | `fn_meshGraph` (courbe, temps d'antenne, posture, masque), `fn_mpuLink` (largeur, mât, batterie) ; `mesh_hop_curve`, `mesh_airtime`, `mesh_posture`, `mesh_body_mask`, `mesh_mast`, `mesh_traffic_power` | codé, à tester |
+| 10 | `fn_localDataRefresh`, `fn_pli`, `fn_meshChunks`, `fn_netSend`, `fn_p2pSend`, `fn_p2pReceive` ; `mesh_stale_s`, `mesh_hide_s`, `mesh_pli_adaptive`, `mesh_chunks`, `mesh_p2p` | codé, à tester |
+| 5 | `fn_meshGroups`, app Wave Relay ; `mesh_groups` | codé, à tester |
+| 6, 7 | `fn_meshKeys`, chargeur `COMSPEC_ATAK_KeyLoader` ; `mesh_keys`, `mesh_keys_auto`, `mesh_compromise_auto`, `mesh_tfar_code` | codé, à tester |
+| 11 | `fn_meshEW`, goniomètre `COMSPEC_ATAK_Goniometer` ; `mesh_ew`, `mesh_ew_role`, `mesh_backup_channel`, `mesh_backup_delay` | codé, à tester |
+| 12 | `fn_meshTools`, `fn_moduleMesh`, module `COMSPEC_ATAK_Module_Mesh` ; `mesh_tools` | codé, à tester |
+| 8 | une seule variable publique par joueur, `COMSPEC_ATAK_MeshNode` ; notice `docs/technical/reseau-mesh-notice-joueur.md` | codé, à tester |
 
 Écarts assumés par rapport aux sections ci-dessus :
 
@@ -363,6 +372,10 @@ Décisions du propriétaire reçues : 1 automatique et désactivable ; 2 absence
 - Plafond de sauts appliqué aussi au total A + B quand la voix passe par le cœur de réseau.
 - Liaison réaliste décochée : l'ancien `scan` de l'app Wave Relay reste jusqu'au lot 8 (décision 5 : aucun changement tant que le réalisme n'est pas validé).
 - Niveau de gravité calculé pour chaque chemin, mais appliqué à la voix seulement au lot 3. Décision 6 : le niveau 2 n'a pas d'à-coups.
+- Lot 5 : la voix ACRE2 et TFAR reste filtrée par fréquence ; le groupe ne retire la rallonge que sans groupe commun.
+- Lot 6 : cadenas de la barre d'état non fait (`fn_statusUpdate`, hors périmètre réseau) ; notification et état dans l'app Wave Relay. Lot 7 : le détenteur d'une clé compromise relaie dans le graphe de l'autre camp, mais ne le lit pas pour lui-même.
+- Lot 12 : ping donnant la marge du maillon faible, pas son nom ; prévision limitée au relief ; superposition Zeus limitée au graphe calculé sur le serveur.
+- Lot 8 : les profils existants de `fn_netCond` (Milsim, Standard, Arcade) servent de profils de réalisme, sans nouveau réglage.
 - Mouvement seul : graphe refait à l'intervalle normal. Seul un changement de nœud (apparu, tombé, canal, portée) déclenche le recalcul à 2 s.
 
 À mesurer au banc d'essai pour trancher la décision 4 (aucun chiffre n'existe à ce jour) : durée de passe et pire tranche à 30 et 60 nœuds, images par seconde du serveur, nombre de diffusions et taille de `COMSPEC_ATAK_MeshRef`, écarts entre exports de deux clients avec le réglage décoché.

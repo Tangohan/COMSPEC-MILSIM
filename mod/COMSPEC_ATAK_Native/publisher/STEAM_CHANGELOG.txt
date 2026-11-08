@@ -34,6 +34,8 @@
 [*] Réseau maillé MPU5 : 16 groupes de conversation dans l'app Wave Relay, messages de groupe aux abonnés joignables.
 [*] Réseau maillé MPU5 : clés simulées (mécanique de jeu, désactivée par défaut) : chargeur, effacement, messages chiffrés à l'écran.
 [*] Réseau maillé MPU5 : goniomètre et analyseur de spectre pour le spécialiste, modes de discrétion, brouillage par canal.
+[*] Réseau maillé MPU5 : topologie, ping et prévision de couverture dans Wave Relay ; module Eden et clic droit Zeus.
+[*] Réseau maillé MPU5 : une seule variable diffusée par joueur, notice joueur disponible.
 [*] Réseau maillé MPU5 (avec la liaison réaliste, désactivée par défaut) : un seul graphe pour l'écran, les données et la voix, calculé sur le serveur, avec un plafond de sauts réglable.
 [*] La liaison COMSPEC Link fait moins de travail à chaque échange avec le téléphone et écrit son journal par paquets.
 [*] L'app Recherchés et les apps du SSE qui lisent les avis d'Athena ne font plus attendre le jeu : liste gardée 5 minutes et rafraîchie en arrière-plan.
