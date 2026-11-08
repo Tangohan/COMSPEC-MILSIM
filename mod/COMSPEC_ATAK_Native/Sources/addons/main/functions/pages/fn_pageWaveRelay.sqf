@@ -3,7 +3,8 @@
     Onglets MON NŒUD (débit, sauts jusqu'à la passerelle, voisins directs), RÉSEAU (tous les nœuds, LOCALISER un équipier
     par triangulation), COUVERTURE (carte de débit des relais, liste des relais) et VOIX avec ACRE2 (qui émet sur mes fréquences,
     canal, fréquence et alternat de mes radios, équipiers connectés : fn_mpu5), sinon TALKGROUPS (talkgroup data choisi sur le téléphone).
-    MON NŒUD montre aussi la radio maillée MPU5 portée (fn_mpu5). État bon, dégradé ou coupé, cause et action : fn_waveRelayStatus. Tutoriel, bouton « ? » : fn_waveRelayTuto.
+    MON NŒUD montre aussi la radio de données détectée (fn_mpu5 "detected", même source que le facteur de débit) et, avec ACRE2,
+    la radio ACRE2 reconnue et l'état de la voix par le réseau (fn_mpuVoice "summary"), redit en tête de l'onglet VOIX. État bon, dégradé ou coupé, cause et action : fn_waveRelayStatus. Tutoriel, bouton « ? » : fn_waveRelayTuto.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -125,6 +126,18 @@ switch (_tab) do {
             // Voix ACRE2 (fn_mpu5) : qui émet sur mes fréquences, mes radios (canal, fréquence, alternat), le réseau voix
             // publié par les téléphones du camp. Rendu à nouveau à chaque début ou fin d'émission.
             private _mhz = { params ["_f"]; [format ["%1 MHz", _f toFixed 3], "?"] select (!(_f isEqualType 0) || {_f <= 0}) };
+            // Voix par le réseau (fn_mpuVoice "summary") : état dit en clair, même désactivée, avec la façon de l'activer.
+            (["summary"] call comspec_atak_native_fnc_mpuVoice) params ["_vCode", "_vState", "_vHelp"];
+            _rows pushBack ["section", "Voix par le réseau", "Votre voix ACRE2 relayée par le maillage MPU5 vers les radios reliées"];
+            _rows pushBack ["info", "État", format ["<t color='%1'>%2</t>", COMSPEC_ATAK_Th get (["hexWarn", "hexOk"] select (_vCode isEqualTo "on")), [_vState] call _esc]];
+            if (_vHelp isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexTextMuted", [_vHelp] call _esc]]; };
+            // Geste du joueur, comme l'action ACE : relie ou débranche le pont radio (fn_mpuVoice "bridge"), seulement si le serveur l'autorise.
+            if (_vCode in ["nobridge", "wait", "on"] && {["has", [player]] call comspec_atak_native_fnc_mpu5}) then {
+                _rows pushBack ["buttons", [[["RELIER MA RADIO À LA MPU5 (VOIX)", "DÉBRANCHER MA RADIO (VOIX)"] select (_vCode isNotEqualTo "nobridge"), {
+                    if (((missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isEqualTo [])) then { ["bridge"] call comspec_atak_native_fnc_mpuVoice; } else { ["unbridge"] call comspec_atak_native_fnc_mpuVoice; };
+                    [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+                }, _vCode isEqualTo "nobridge"]]];
+            };
             private _spk = ["speakers"] call comspec_atak_native_fnc_mpu5;
             _rows pushBack ["section", format ["En émission (%1)", count _spk], "Alternats ouverts sur les fréquences que vos radios reçoivent"];
             {
@@ -207,23 +220,56 @@ switch (_tab) do {
             ["info", "Signal", format ["%1 (%2/4)", _q getOrDefault ["label", "?"], _q getOrDefault ["bars", 0]]]
         ];
         if (_selfGw) then { _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Pas de relais reçu : vous êtes votre propre passerelle, sans lien vers un relais. Le débit affiché est celui de votre téléphone, après les pertes listées au-dessus.</t>"]; };
-        // Radio maillée MPU5 (objet d'inventaire, fn_mpu5) : portée du nœud, gain sur la liaison, débit relayé à l'équipe.
+        // Radio de données : même source que le facteur « … canal N (câble EUD) » au-dessus (fn_mpu5 "detected"). Liaison réaliste :
+        // la radio de fn_mpuLink (« source » y est toujours vide : la ligne disait « sans MPU5 » sous un facteur MPU5, 4.1.0).
+        private _real = ["active"] call comspec_atak_native_fnc_mpuLink;
         private _nr = ["range", [player]] call comspec_atak_native_fnc_mpu5;
-        private _src = ["source"] call comspec_atak_native_fnc_mpu5;
-        if (_src isNotEqualTo []) then {
-            (player getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_uh", 0]];
-            _rows append [
-                ["info", "Radio", format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%3</t> · portée %1 · +%2 dB", [_nr] call _dist, _src select 3, [_src select 1] call _esc]],
-                ["info", "Partage avec l'équipe", [format ["%1 Mbit/s partagés%2", _up toFixed 1, ["", format [" (%1 bond(s) MPU5)", _uh]] select (_uh > 0)], "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>rien à partager : aucun relais reçu</t>"] select (_up <= 0)]
-            ];
+        private _det = ["detected"] call comspec_atak_native_fnc_mpu5;
+        private _muted = { format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexTextMuted", _this] };
+        if (_det isNotEqualTo []) then {
+            _det params ["_dn", "_dc", "_dr", "_dl", "_dm"];
+            private _lkTxt = switch (_dl) do {
+                case "cable": { "câble EUD" };
+                case "wifi": { "Wi-Fi" };
+                case "porte": { "portée sur vous" };
+                case "branche": { "téléphone branché" };
+                default { format ["<t color='%1'>non reliée au téléphone</t>", COMSPEC_ATAK_Th get "hexWarn"] };
+            };
+            _rows pushBack ["info", "Radio", format ["<t color='%1'>%2</t> · portée %3 · %4", COMSPEC_ATAK_Th get "hexOk", [_dn] call _esc, [_dr] call _dist, _lkTxt]];
+            if (_dc isNotEqualTo "") then {
+                _rows pushBack ["info", "Objet détecté", format ["%1 · %2", [_dc] call _esc, createHashMapFromArray [["acre", "radio ACRE2"], ["tfar", "radio TFAR"], ["mod", "objet d'un autre mod"]] getOrDefault [_dm, "objet COMSPEC"]]];
+            };
+            if (_real && {_dl isEqualTo ""}) then {
+                _rows pushBack ["text", "Radio vue, mais pas reliée au téléphone : menu ACE Téléphone ATAK &gt; Radio de données &gt; Relier le téléphone à la radio (câble)." call _muted];
+            };
+            if (!_real) then {
+                (player getVariable ["COMSPEC_ATAK_Mpu5", []]) params [["_up", 0], ["_uh", 0]];
+                _rows pushBack ["info", "Partage avec l'équipe", [format ["%1 Mbit/s partagés%2", _up toFixed 1, ["", format [" (%1 bond(s) MPU5)", _uh]] select (_uh > 0)], "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>rien à partager : aucun relais reçu</t>"] select (_up <= 0)];
+            };
         } else {
-            _rows pushBack ["info", "Radio", format ["téléphone seul · portée %1 (sans MPU5)", [_nr] call _dist]];
+            _rows pushBack ["info", "Radio", format ["téléphone seul · portée %1 (aucune radio de données sur vous)", [_nr] call _dist]];
+        };
+        // Message ACRE2 : la radio ACRE2 reconnue, sa portée, et la voix par le réseau (fn_mpuVoice "summary"), dite même désactivée.
+        if (_acre) then {
+            (["summary"] call comspec_atak_native_fnc_mpuVoice) params ["_vCode", "_vState", "_vHelp"];
+            private _vCol = COMSPEC_ATAK_Th get (["hexWarn", "hexOk"] select (_vCode isEqualTo "on"));
+            private _aRad = if ((_det param [4, ""]) isEqualTo "acre") then {
+                format ["Radio ACRE détectée : %1 · portée %2", [_det select 0] call _esc, [_det select 2] call _dist]
+            } else {
+                private _nAcre = count (["radios"] call comspec_atak_native_fnc_mpu5);
+                ["Radio ACRE détectée : aucune radio de données (MPU5, 117F, 152, 148…) sur vous", format ["Radio ACRE détectée : aucune radio de données parmi vos %1 radio(s) ACRE2", _nAcre]] select (_nAcre > 0)
+            };
+            _rows pushBack ["section", "ACRE2", "Lu dans vos radios ACRE2, sans jamais les régler"];
+            _rows pushBack ["text", format ["%1<br/>Voix par le réseau : <t color='%2'>%3</t>", _aRad, _vCol, [_vState] call _esc]];
+            if (_vHelp isNotEqualTo "") then { _rows pushBack ["text", ([_vHelp] call _esc) call _muted]; };
         };
         // Chiffrement de ma liaison : cadenas et libellé de la barre d'état, avec le détail (fn_meshKeys "link").
-        (["link"] call comspec_atak_native_fnc_meshKeys) params ["", "", "_lockLong", "_lockWhy", "_lockImg", "", "_lockHex"];
+        (["link"] call comspec_atak_native_fnc_meshKeys) params ["_lockCode", "", "_lockLong", "_lockWhy", "_lockImg", "", "_lockHex"];
         _rows pushBack ["info", "Chiffrement", format ["<img image='%1' color='%2'/> <t color='%2'>%3</t> · <t color='%4'>%5</t>", _lockImg, COMSPEC_ATAK_Th get _lockHex, (_lockLong) call comspec_atak_native_fnc_tr, COMSPEC_ATAK_Th get "hexTextMuted", [(_lockWhy) call comspec_atak_native_fnc_tr] call _esc]];
+        if (_lockCode isEqualTo "clear") then {
+            _rows pushBack ["text", "« EN CLAIR » (cadenas ouvert, en haut de l'écran) : vos données passent sans chiffrement de jeu. La raison et le remède sont sur la ligne Chiffrement." call _muted];
+        };
         // Liaison réaliste (fn_mpuLink) : état de la MPU5, réglages dans l'app Réseau. Sans MPU5 : pas de réseau de données.
-        private _real = ["active"] call comspec_atak_native_fnc_mpuLink;
         if (_real) then {
             private _ms = ["status"] call comspec_atak_native_fnc_mpuLink;
             private _mv = ["view"] call comspec_atak_native_fnc_mpuLink;
