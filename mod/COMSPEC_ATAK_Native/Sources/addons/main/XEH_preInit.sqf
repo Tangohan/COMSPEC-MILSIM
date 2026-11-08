@@ -564,6 +564,30 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_relay_convert", "LIST",
     ["Antennes du jeu = relais ATAK", "Les pylônes, mâts et tours de transmission, antennes omnidirectionnelles et paraboles du jeu deviennent des relais du réseau ATAK (portée et débit selon leur hauteur : tour 6 km, mât 3 à 5 km, antenne 1,5 km, parabole 1 km). Objets de la mission : ceux posés dans Eden ou par le Zeus. Décor de la carte en plus : les antennes de la carte elle-même (60 au plus, les plus hautes) ; une antenne détruite coupe son relais."],
     _sim, [[0, 1, 2], ["Non", "Objets de la mission (Eden, Zeus)", "Mission et décor de la carte"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_mrh", "CHECKBOX",
+    ["Antennes MRH Satellite = relais ATAK", "Si le mod MRH Satellite est chargé : une antenne SATCOM dépliée devient un relais du réseau ATAK (type terminal satellite), retiré dès qu'elle est repliée ou détruite. Sans ce mod : aucun effet."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// Antennes transportables (fn_antennaKit) : valeurs de jeu plausibles, à régler selon la mission. Portée du relais = portée de base x 10^(gain / 20).
+private _antCat = ["COMSPEC", "ATAK · Antennes transportables"];
+["comspec_atak_native_antkit_max", "SLIDER",
+    ["Antennes déployées par camp", "Nombre maximal d'antennes transportables en place en même temps dans un camp. Au-delà, le déploiement est refusé et l'antenne reste dans l'inventaire."],
+    _antCat, [1, 60, 12, 0], 1] call comspec_atak_native_fnc_addSetting;
+{
+    _x params ["_id", "_label", "_r", "_g", "_h", "_m", "_t"];
+    [format ["comspec_atak_native_antkit_%1_range", _id], "SLIDER", [format ["%1 : portée de base (m)", _label], "Portée sans le gain, sur un lien dégagé. Le bilan radio (relief, feuillage, bâtiments, météo) s'applique ensuite."],
+        _antCat, [300, 20000, _r, 0], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_gain", _id], "SLIDER", [format ["%1 : gain (dB)", _label], "Multiplie la portée de base : 6 dB la doublent à peu près."],
+        _antCat, [0, 20, _g, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_height", _id], "SLIDER", [format ["%1 : hauteur d'antenne (m)", _label], "Hauteur utilisée par le bilan radio : plus haut, le relief gêne moins. Le modèle affiché ne change pas."],
+        _antCat, [1, 30, _h, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_mbps", _id], "SLIDER", [format ["%1 : débit (Mbit/s)", _label], "Débit maximal du relais."],
+        _antCat, [0.5, 100, _m, 1], 1] call comspec_atak_native_fnc_addSetting;
+    [format ["comspec_atak_native_antkit_%1_time", _id], "SLIDER", [format ["%1 : temps de déploiement (s)", _label], "Durée de la barre de progression. Replier prend moitié moins de temps."],
+        _antCat, [3, 180, _t, 0], 1] call comspec_atak_native_fnc_addSetting;
+} forEach [["sat", "Antenne satellite", 1000, 3, 1.8, 10, 20], ["mast", "Antenne omnidirectionnelle", 1500, 6, 4, 8, 45]];
+["comspec_atak_native_antkit_mast_root", "CHECKBOX",
+    ["Antenne omnidirectionnelle raccordée", "Décoché : elle répète seulement, il lui faut un relais raccordé à portée, par exemple une antenne satellite. Coché : elle porte le réseau seule."],
+    _antCat, false, 1] call comspec_atak_native_fnc_addSetting;
 // Relais par type (module « ATAK · Relais », fn_moduleRelay) : portée et débit quand le module garde la valeur du type.
 ["comspec_atak_native_relay_portable_range", "SLIDER",
     ["Relais radio portable : portée (m)", "Portée d'un relais « radio portable » posé avec la portée du type (module Eden ou Zeus « ATAK · Relais »)."],

@@ -228,6 +228,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 ["aceInit"] call comspec_atak_native_fnc_mpuLink;
 // Caméras IP fixes : « Caméras > Poser une caméra » et actions sur la caméra posée (fn_camAction).
 ["aceInit"] call comspec_atak_native_fnc_camAction;
+// Antennes transportables : « Équipement > Déployer » et « Replier l'antenne » sur l'objet posé (fn_antennaKit).
+["aceInit"] call comspec_atak_native_fnc_antennaKit;
 // Écrans du jeu (TV, trépied, projecteur…) : TOC, PIP du poste et diapositives via ACE (fn_tocScreen).
 ["aceInit"] call comspec_atak_native_fnc_tocScreen;
 true

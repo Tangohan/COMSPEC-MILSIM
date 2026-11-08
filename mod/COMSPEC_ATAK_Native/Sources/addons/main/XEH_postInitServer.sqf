@@ -60,10 +60,12 @@ if (!hasInterface) then { [{ ["report"] call comspec_atak_native_fnc_perfAcc; },
 [{ ["sweep"] call comspec_atak_native_fnc_relayTower; }, [], 2] call comspec_atak_native_fnc_waitAndExec;
 // Antennes du jeu (pylônes, mâts, antennes omnidirectionnelles, paraboles ; décor de la carte en option) converties en
 // relais ATAK (fn_relayConvert) : au début, puis toutes les 60 s pour les objets posés par le Zeus ; antennes du décor
-// détruites vérifiées toutes les 15 s.
+// détruites et antennes MRH (mod facultatif) vérifiées toutes les 15 s.
 [{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, [], 4] call comspec_atak_native_fnc_waitAndExec;
 [{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, 60] call COMSPEC_ATAK_PfhSpread;
 [{ ["check"] call comspec_atak_native_fnc_relayConvert; }, 15] call COMSPEC_ATAK_PfhSpread;
+// Antennes transportables (fn_antennaKit) : événements de déploiement et de repli.
+["init"] call comspec_atak_native_fnc_antennaKit;
 // Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
 [{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Conditions d'activation en code des relais et passerelles : évaluées ici seulement, résultat publié (fn_relayCond "srv").

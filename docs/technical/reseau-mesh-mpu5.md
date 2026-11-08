@@ -379,3 +379,25 @@ Décisions du propriétaire reçues : 1 automatique et désactivable ; 2 absence
 - Mouvement seul : graphe refait à l'intervalle normal. Seul un changement de nœud (apparu, tombé, canal, portée) déclenche le recalcul à 2 s.
 
 À mesurer au banc d'essai pour trancher la décision 4 (aucun chiffre n'existe à ce jour) : durée de passe et pire tranche à 30 et 60 nœuds, images par seconde du serveur, nombre de diffusions et taille de `COMSPEC_ATAK_MeshRef`, écarts entre exports de deux clients avec le réglage décoché.
+
+## 11. Antennes transportables (`fn_antennaKit`)
+
+Objets d'inventaire à déployer et replier par ACE (Équipement > Déployer ; « Replier l'antenne » sur l'objet posé, moitié moins de temps). Le serveur crée l'objet et l'enregistre par `fn_relayConvert` « register » : c'est alors un relais ordinaire de `fn_relayNet`, réservé au camp de celui qui l'a posée, vu par la carte réseau et le maillage. Détruite, supprimée par le Zeus ou repliée : `fn_relayConvert` « remove », retirée du réseau tout de suite. Aucune boucle : événements CBA et gestionnaires `Killed` et `Deleted` sur le serveur. Sans ACE : objets présents, aucune action.
+
+Portée du relais = portée de base × 10^(gain / 20) : `fn_radioLink` donne 0 dB de marge à la portée, donc 6 dB la doublent à peu près. Le bilan radio s'applique ensuite depuis la hauteur d'antenne.
+
+| | Antenne satellite portable | Antenne omnidirectionnelle sur mât |
+|---|---|---|
+| Objet d'inventaire | `COMSPEC_ATAK_SatAntennaKit` | `COMSPEC_ATAK_MastAntennaKit` |
+| Objet posé | `COMSPEC_ATAK_DeployedAntenna_Sat` | `COMSPEC_ATAK_DeployedAntenna_Omni` |
+| Modèle posé (Arma) | `\A3\Props_F_Exp\Military\Camps\SatelliteAntenna_01_F.p3d` | `\A3\Props_F_Enoch\Military\Equipment\OmniDirectionalAntenna_01_F.p3d` |
+| Modèle au sol (Arma) | `SatellitePhone_F.p3d` | `PortableLongRangeRadio_F.p3d` |
+| Portée de base, gain, portée du relais | 1 000 m, 3 dB, 1 413 m | 1 500 m, 6 dB, 2 993 m |
+| Hauteur d'antenne | 1,8 m | 4 m |
+| Débit, places | 10 Mbit/s, 16 | 8 Mbit/s, 24 |
+| Liaison | raccordée | répéteur (`antkit_mast_root` pour la raccorder) |
+| Déploiement | 20 s | 45 s |
+
+Valeurs de jeu plausibles, calées sur les types du module « ATAK · Relais », pas une étude réaliste. Toutes réglables : `comspec_atak_native_antkit_<sat | mast>_<range | gain | height | mbps | time>`, `comspec_atak_native_antkit_max` (12 par camp), `comspec_atak_native_antkit_mast_root`. Hauteurs par défaut : celles des modèles, lues dans `verticalOffset` de leur classe d'Arma.
+
+Antennes MRH Satellite (mod facultatif) : `MRH_SatCom_Antenna_Base` et `MRH_MT_SatCom_Antenna_Base` dépliées deviennent des relais de type terminal satellite (`fn_relayConvert` « check », toutes les 15 s), retirées une fois repliées ou détruites. Réglage `comspec_atak_native_relay_mrh`, coché par défaut, indépendant de « Antennes du jeu = relais ATAK ». Sans MRH : rien n'est cherché, aucune dépendance.

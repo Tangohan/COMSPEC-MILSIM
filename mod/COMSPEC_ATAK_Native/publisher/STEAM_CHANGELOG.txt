@@ -21,6 +21,7 @@
 [*] Réglages, cartes et captures du mod ne vont plus dans OneDrive : tout reste dans les Documents du disque local (les anciens dossiers sont repris).
 [*] Les réponses des groupes IA s'affichent en texte au-dessus de la tête de leur chef, si vous êtes à portée et le voyez ; sinon en notification d'Arma, plus dans le téléphone. Réglage : ATAK · Affichage.
 [*] Arsenal ACE, écran Tenues : plus de panneaux vides, de fenêtre fantôme ni de textes superposés à l'ouverture.
+[*] Nouvelles [b]antennes transportables[/b] (satellite, omnidirectionnelle sur mât) : à déployer par ACE, elles servent de relais au réseau ATAK.
 [*] Nouveau [b]GPS de poignet[/b], autonome, à écran monochrome : position, boussole, points et routes de l'ATAK (Ctrl+Maj+G).
 [*] App Routes : avec le mod F-PANO ECOTI, les prochaines étapes de la route suivie s'affichent sous JVN dans sa vue (réglage ATAK · Routes).
 [*] Bloc-notes refait : une liste, un clic pour écrire, enregistrement automatique, épingler, ajouter sa grille ou l'heure.

@@ -177,6 +177,11 @@
             <English>First name or nickname</English>
             <French>Prénom ou surnom</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_218DBBCEE0">
+            <Original>Deployed omnidirectional antenna</Original>
+            <English>Deployed omnidirectional antenna</English>
+            <French>Antenne omnidirectionnelle déployée</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_21A3E6F5BD">
             <Original>Image (path in mission)</Original>
             <English>Image (path in mission)</English>
@@ -672,6 +677,11 @@
             <English>Screen image</English>
             <French>Image de l'écran</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_806771440B">
+            <Original>Omnidirectional antenna on mast</Original>
+            <English>Omnidirectional antenna on mast</English>
+            <French>Antenne omnidirectionnelle sur mât</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_814EE34AA5">
             <Original>ATAK repair kit</Original>
             <English>ATAK repair kit</English>
@@ -767,6 +777,11 @@
             <English>Wrist GPS</English>
             <French>GPS de poignet</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_73914D30DF">
+            <Original>Portable satellite antenna</Original>
+            <English>Portable satellite antenna</English>
+            <French>Antenne satellite portable</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_771E48ED06">
             <Original>Wrist GPS (item)</Original>
             <English>Wrist GPS (item)</English>
@@ -781,6 +796,11 @@
             <Original>Garmin watch</Original>
             <English>Garmin watch</English>
             <French>Montre Garmin</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_95C2508574">
+            <Original>Deployed satellite antenna</Original>
+            <English>Deployed satellite antenna</English>
+            <French>Antenne satellite déployée</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_96A9436FE5">
             <Original>Audio (CfgSounds or path)</Original>
@@ -876,6 +896,11 @@
             <Original>C 4,965 MHz</Original>
             <English>C 4,965 MHz</English>
             <French>C 4 965 MHz</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AB1F663389">
+            <Original>Folded antenna. ACE: Equipment, Deploy. Relay with an uplink, short local range.</Original>
+            <English>Folded antenna. ACE: Equipment, Deploy. Relay with an uplink, short local range.</English>
+            <French>Antenne pliée. ACE : Équipement, Déployer. Relais raccordé, courte portée locale.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_AB5C9325A0">
             <Original>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</Original>
@@ -1131,6 +1156,11 @@
             <Original>Average (35 %)</Original>
             <English>Average (35 %)</English>
             <French>Moyenne (35 %)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D812B7C04B">
+            <Original>Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range.</Original>
+            <English>Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range.</English>
+            <French>Mât démonté. ACE : Équipement, Déployer. Répéteur : il lui faut un relais raccordé à portée.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_D875FDECAE">
             <Original>Desk TOC monitor (COMSPEC)</Original>
