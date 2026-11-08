@@ -56627,4 +56627,10 @@ return [
     'Recherche…' => 'Searching…',
     'Aucun objet ne correspond. S’il n’a pas encore été vu en jeu, utilisez l’option avancée.' => 'No item matches. If it has not been seen in game yet, use the advanced option.',
     'Le catalogue de la communauté est vide : utilisez l’option avancée.' => 'The community catalogue is empty: use the advanced option.',
+    'Profils IA de ce titulaire :' => 'AI profiles of this holder:',
+    'Profils IA reliés :' => 'Linked AI profiles:',
+    'Nom, libellé' => 'Name, label',
+    'Réf. ATH-SSE-IDENT-PRF' => 'Ref. ATH-SSE-IDENT-PRF',
+    'Falsifiée' => 'Forged',
+    'Civile' => 'Civilian',
 ];
