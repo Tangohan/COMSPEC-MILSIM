@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantMiniArticleRepository;
+use App\Services\Billing\PlanCreationQuota;
 use App\Support\MiniArticleHtml;
 
 final class TenantMiniArticlesController
@@ -46,6 +47,13 @@ final class TenantMiniArticlesController
             return Response::redirect(url('dashboard'));
         }
 
+        $planBlock = PlanCreationQuota::blockMessage($tenantId, PlanCreationQuota::ARTICLES);
+        if ($planBlock !== null) {
+            Session::flash('error', $planBlock);
+
+            return Response::redirect(url('back-office/articles'));
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.mini_articles_form',
             'title' => 'Nouveau mini-article',
@@ -67,6 +75,13 @@ final class TenantMiniArticlesController
         }
         if (!$this->articles->schemaReady()) {
             Session::flash('error', 'Le module mini-articles n’est pas encore installé. Lancez les migrations.');
+
+            return Response::redirect(url('back-office/articles'));
+        }
+
+        $planBlock = PlanCreationQuota::blockMessage($tenantId, PlanCreationQuota::ARTICLES);
+        if ($planBlock !== null) {
+            Session::flash('error', $planBlock);
 
             return Response::redirect(url('back-office/articles'));
         }
