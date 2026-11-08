@@ -29,7 +29,10 @@ $creating = $canManageKits && !empty($eqNav['creer']);
 </div>
 <?php else: ?>
 <div class="eqx-spacehead">
-    <p class="eqx-intro">Des tenues prêtes à l’emploi, proposées par votre communauté à une unité, à un rôle ou à tous. Copiez-en une dans vos tenues pour la modifier.</p>
+    <div>
+        <h2><?= $h($tabLabels[$space] ?? '') ?></h2>
+        <p class="eqx-intro">Des tenues prêtes à l’emploi, proposées par votre communauté à une unité, à un rôle ou à tous. Copiez-en une dans vos tenues pour la modifier.</p>
+    </div>
     <?php if ($canManageKits): ?>
     <a class="eq-hub__btn" href="<?= $h(url('equipment') . '?espace=kits&creer=kit') ?>" data-eq-open="kit-new">Créer un kit</a>
     <?php endif; ?>
@@ -46,7 +49,7 @@ $toolbarPlaceholder = 'Rechercher un kit, une unité, un rôle…';
 require __DIR__ . '/_space_toolbar.php';
 ?>
 <?php if ($paged['items'] === []): ?>
-<div class="eqx-empty">
+<div class="eqx-empty<?= (string) ($eqNav['q'] ?? '') !== '' ? '' : ' eqx-empty--hero' ?>">
     <?php if ((string) ($eqNav['q'] ?? '') !== ''): ?>
     <p><strong>Aucun kit ne correspond à cette recherche.</strong></p>
     <?php else: ?>

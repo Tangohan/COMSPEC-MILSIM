@@ -22,9 +22,9 @@ declare(strict_types=1);
                     <div class="eq-hub__qv-thumbs" data-eq-qv-thumbs hidden></div>
                 </div>
                 <div class="eq-hub__qv-panel">
-                    <h2 id="eq-qv-title" data-eq-qv-title>Tenue</h2>
-                    <button type="button" class="eq-hub__badge" data-eq-qv-collection hidden></button>
-                    <p class="eq-hub__qv-desc" data-eq-qv-desc hidden></p>
+                    <h2 id="eq-qv-title" data-eq-qv-title translate="no">Tenue</h2>
+                    <button type="button" class="eq-hub__badge" data-eq-qv-collection translate="no" hidden></button>
+                    <p class="eq-hub__qv-desc" data-eq-qv-desc translate="no" hidden></p>
                     <p class="eq-hub__qv-hint" data-eq-qv-hint></p>
                     <div class="eq-hub__qv-items" data-eq-qv-items></div>
                     <p class="eq-hub__qv-ace-status" data-eq-qv-ace-status role="status" hidden></p>
