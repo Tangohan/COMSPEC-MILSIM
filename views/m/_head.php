@@ -28,7 +28,7 @@ if (!empty($showBriefs)) {
 // Les pages d'un espace allument l'onglet de l'espace.
 $activeTab = match ($mobileView ?? '') {
     'cr_list', 'cr_read' => 'cr',
-    'radio_thread', 'radio_absent' => 'radio',
+    'radio_thread', 'radio_sms', 'radio_mpu', 'musique' => 'radio',
     default => (string) ($mobileView ?? ''),
 };
 $player = trim((string) ($mobileLink['player_name'] ?? ''));
