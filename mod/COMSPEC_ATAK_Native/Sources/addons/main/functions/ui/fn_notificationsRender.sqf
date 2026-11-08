@@ -59,9 +59,13 @@ if (_l get "interactive") then {
     _x0 = _ax + _pad * 2 + _bw * 1.2;
     _x1 = _ax + _aw - _pad - _bw - _bw * 1.7 * 2 - _pad;
 };
+// Barre de titre trop étroite (téléphone en portrait, en main : retour et trois boutons à droite) : le bandeau passe sous
+// la barre, sur toute sa largeur, au lieu d'un mot par ligne (« Ante n… », « Firin g »). Le titre de l'app reste alors visible.
+private _under = (_x1 - _x0) < (_aw * 0.6);
+if (_under) then { _x0 = _ax + _pad; _x1 = _ax + _aw - _pad; (_d displayCtrl 88518) ctrlShow true; };
 private _w = (_x1 - _x0) max (_aw * 0.4);
 private _h = _ah * 0.78;
-private _y = _ay + (_ah - _h) / 2;
+private _y = [_ay + (_ah - _h) / 2, _ay + _ah] select _under;
 
 private _t = _show getOrDefault ["type", "INFO"];
 // Couleur de gravité et fond : jetons du thème (fn_theme), les mêmes que le centre de notifications.

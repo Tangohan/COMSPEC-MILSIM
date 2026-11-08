@@ -79,9 +79,11 @@ private _askText = {
     private _lines = (_list select [0, 6]) apply {
         private _e = _x get "obj";
         private _d = round (player distance _e);
-        private _near = { alive _x && {((side group _x) getFriend (side group player)) >= 0.6} } count (_e nearEntities ["CAManBase", 30]);
+        private _near = { alive _x && {_x isNotEqualTo player} && {((side group _x) getFriend (side group player)) >= 0.6} } count (_e nearEntities ["CAManBase", 30]);
+        private _me = _d < 30;
         format ["<t font='COMSPEC_BarlowBold'>%1</t> · <t color='%2'>%3 · %4 m · %5°</t>%6", _x get "label", _dim, _x get "grid", _d, round (player getDir _e),
-            ["", format ["<br/><t color='%1' font='COMSPEC_BarlowBold'>Attention : %2 ami(s) à moins de 30 m, vous compris</t>", _th get "hexAlert", _near]] select (_near > 0)]
+            (["", format ["<br/><t color='%1' font='COMSPEC_BarlowBold'>Attention : %2 ami(s) à moins de 30 m</t>", _th get "hexAlert", _near]] select (_near > 0))
+            + (["", format ["<br/><t color='%1' font='COMSPEC_BarlowBold'>Vous êtes à %2 m de la charge</t>", _th get "hexAlert", _d]] select _me)]
     };
     (_lines joinString "<br/>") + _extra
 };

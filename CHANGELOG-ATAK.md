@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : textes entiers en portrait, relevé du document au contrôle d'identité (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Textes entiers sur le téléphone en portrait, relevé du document au contrôle
+- Les bandeaux de notification passent sous la barre de titre quand elle est trop étroite, au lieu d'un mot coupé par ligne.
+- Titres d'apps, confirmation d'explosifs et FIRES court : les textes tiennent dans leur case, plus de mots coupés ni de boutons qui se chevauchent.
+- L'alerte d'explosifs ne vous compte plus parmi les alliés proches : elle donne votre propre distance à part.
+- Contrôle d'identité : le bouton RELEVER recopie les champs du document et sa bande MRZ dans la fiche FRM, à la place d'une photo qui ne montrait que le décor.
+EN : Full texts on the phone in portrait, document record at ID checks
+- Notification banners move below the title bar when it is too narrow, instead of one cut word per line.
+- App titles, explosives confirmation and short FIRES: texts fit in their box, no more cut words or overlapping buttons.
+- The explosives warning no longer counts you among nearby friendlies: it gives your own distance separately.
+- ID check: the RECORD button copies the document fields and its MRZ into the FRM report, instead of a photo that only showed the scenery.
+
+### Détail technique
+- `fn_notificationsRender` (bandeau sous la barre), `fn_pageRender` (`fn_textFit` sur le titre), `fn_formRender` (ligne de texte réécrite en direct : deux lignes réservées), `fn_pageQuickMap` (boutons ajustés, en-tête et missions mesurés). `AtakUiTruncationTest` ; autotest : `AT_fnc_tient` sur le titre de chaque app et sur le décompte de la confirmation.
+- `screenshot` n'enregistre jamais l'interface : `fn_idPhoto` fait un relevé (champs imprimés et MRZ, sans les défauts physiques, qui restent à voir) ajouté au texte de la FRM par `fn_idFrm`. Les autres appels (`fn_frsAction`, `fn_photoMode`, `fn_photoCam`, `fn_dronePhoto`, Overwatch connect) photographient la scène, ce qu'ils doivent faire. Exception à vérifier : `fn_mapCapture` en mode « plan » prend une carte d'interface avec `screenshot`.
+- Autotest, étape pilote : appareil sur une aire dégagée, intact et plein, vérifié.
+
+---
+
 ## À venir : note de service et licence v2, cadenas du réseau, ping et prévision, matériau des patchs
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
