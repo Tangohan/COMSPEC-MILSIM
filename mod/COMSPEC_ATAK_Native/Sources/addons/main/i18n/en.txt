@@ -18755,5 +18755,7 @@
 ["Aucune note trouvée", "No note found"],
 ["Une grille, un rappel, un message à garder hors liaison : tout reste sur ce poste.", "A grid, a reminder, a message to keep offline: everything stays on this device."],
 ["Écrivez d'abord la note", "Write the note first"],
-["60 notes au plus : texte non enregistré", "60 notes at most: text not saved"]
+["60 notes au plus : texte non enregistré", "60 notes at most: text not saved"],
+["Fêlures détaillées", "Detailed cracks"],
+["Écran abîmé : motifs de fêlures et de bris, différents à chaque choc (coin écrasé, balle, toile, éclats…). Désactivé : seules les textures simples restent", "Damaged screen: crack and shatter patterns, different with each hit (crushed corner, bullet, web, shards…). Off: only the simple textures remain"]
 ]

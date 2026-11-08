@@ -195,6 +195,7 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages", "Les pages arrivent en fondu (sans flash sombre). Désactivé : changement de page immédiat, et les deux réglages suivants sont sans effet"] call _profSwitch,
     ["COMSPEC_ATAK_OpenSplash", true, "", "Ouverture depuis l'icône", "L'icône de l'app grandit vers le centre de l'écran à l'ouverture (icônes réalistes)"] call _profSwitch,
     ["COMSPEC_ATAK_TitleSlide", true, "", "Titre qui glisse", "Le titre de l'app arrive de la droite à l'ouverture et de la gauche au retour"] call _profSwitch,
+    ["COMSPEC_ATAK_CrackFx", true, "", "Fêlures détaillées", "Écran abîmé : motifs de fêlures et de bris, différents à chaque choc (coin écrasé, balle, toile, éclats…). Désactivé : seules les textures simples restent"] call _profSwitch,
     ["COMSPEC_ATAK_PressFx", true, "", "Icône qui s'enfonce à l'appui", "L'icône d'une app s'enfonce légèrement sous le doigt"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Petit clic et légère vibration à chaque appui (sans son en mode discrétion)"] call _profSwitch,
     ["COMSPEC_ATAK_HandHint", true, "", "Rappel « prendre en main » quand le téléphone est porté", "Petite icône de main et Ctrl+Maj+U dans la barre du téléphone porté. Désactivé : écran sans indication, plus immersif"] call _profSwitch,
