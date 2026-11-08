@@ -389,7 +389,7 @@ class CfgWeapons {
     class COMSPEC_ATAK_SatAntennaKit: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_73914D30DF";
-        descriptionShort="$STR_COMSPEC_ATAK_CFG_AB1F663389";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_D95AFE36A0";
         picture="\z\comspec_atak_native\addons\main\data\item_antkit_sat.paa";
         model="\A3\Structures_F\Items\Electronics\SatellitePhone_F.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -398,7 +398,7 @@ class CfgWeapons {
     class COMSPEC_ATAK_MastAntennaKit: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_806771440B";
-        descriptionShort="$STR_COMSPEC_ATAK_CFG_D812B7C04B";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_957788330C";
         picture="\z\comspec_atak_native\addons\main\data\item_antkit_mast.paa";
         model="\A3\Structures_F\Items\Electronics\PortableLongRangeRadio_F.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";

@@ -907,10 +907,10 @@
             <English>C 4,965 MHz</English>
             <French>C 4 965 MHz</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_AB1F663389">
-            <Original>Folded antenna. ACE: Equipment, Deploy. Relay with an uplink, short local range.</Original>
-            <English>Folded antenna. ACE: Equipment, Deploy. Relay with an uplink, short local range.</English>
-            <French>Antenne pliée. ACE : Équipement, Déployer. Relais raccordé, courte portée locale.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D95AFE36A0">
+            <Original>Folded antenna. Right-click here or ACE, Equipment: Deploy. Relay with an uplink, short local range.</Original>
+            <English>Folded antenna. Right-click here or ACE, Equipment: Deploy. Relay with an uplink, short local range.</English>
+            <French>Antenne pliée. Clic droit ici ou ACE, Équipement : Déployer. Relais raccordé, courte portée locale.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_AB5C9325A0">
             <Original>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</Original>
@@ -1167,10 +1167,10 @@
             <English>Average (35 %)</English>
             <French>Moyenne (35 %)</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_D812B7C04B">
-            <Original>Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range.</Original>
-            <English>Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range.</English>
-            <French>Mât démonté. ACE : Équipement, Déployer. Répéteur : il lui faut un relais raccordé à portée.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_957788330C">
+            <Original>Dismantled mast. Right-click here or ACE, Equipment: Deploy. Repeater: it needs a relay with an uplink in range.</Original>
+            <English>Dismantled mast. Right-click here or ACE, Equipment: Deploy. Repeater: it needs a relay with an uplink in range.</English>
+            <French>Mât démonté. Clic droit ici ou ACE, Équipement : Déployer. Répéteur : il lui faut un relais raccordé à portée.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_D875FDECAE">
             <Original>Desk TOC monitor (COMSPEC)</Original>

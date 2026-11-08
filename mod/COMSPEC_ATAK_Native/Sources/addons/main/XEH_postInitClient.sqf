@@ -492,6 +492,8 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;
+// Antennes transportables (fn_antennaKit) : réponses du serveur et clic droit dans l'inventaire, avec ou sans ACE.
+["clientInit"] call comspec_atak_native_fnc_antennaKit;
 // Socle de recharge CS-10 (fn_dockMenu) : poser, reprendre, état, replier, poser le kit.
 [] call comspec_atak_native_fnc_dockMenu;
 // PC portable de TOC (fn_tocPost) : action ACE / molette, poste le plus proche cherché chaque seconde.

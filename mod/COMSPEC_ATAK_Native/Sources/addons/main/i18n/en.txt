@@ -19058,8 +19058,8 @@
 ["Antenne omnidirectionnelle sur mât", "Omnidirectional antenna on mast"],
 ["Antenne satellite déployée", "Deployed satellite antenna"],
 ["Antenne omnidirectionnelle déployée", "Deployed omnidirectional antenna"],
-["Antenne pliée. ACE : Équipement, Déployer. Relais raccordé, courte portée locale.", "Folded antenna. ACE: Equipment, Deploy. Relay with an uplink, short local range."],
-["Mât démonté. ACE : Équipement, Déployer. Répéteur : il lui faut un relais raccordé à portée.", "Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range."]
+["Antenne pliée. Clic droit ici ou ACE, Équipement : Déployer. Relais raccordé, courte portée locale.", "Folded antenna. Right-click here or ACE, Equipment: Deploy. Relay with an uplink, short local range."],
+["Mât démonté. Clic droit ici ou ACE, Équipement : Déployer. Répéteur : il lui faut un relais raccordé à portée.", "Dismantled mast. Right-click here or ACE, Equipment: Deploy. Repeater: it needs a relay with an uplink in range."]
 ["Déclencheur réseau", "Network detonator"],
 ["Se lie à une charge ACE au moment de la pose. Armer, désarmer et mettre à feu par l'app Explosifs, tant que la charge et le téléphone sont sur le réseau.", "Links to an ACE charge when it is placed. Arm, disarm and fire from the Explosives app, as long as the charge and the phone are on the network."],
 ["Lier au réseau", "Link to network"],
@@ -19153,5 +19153,17 @@
 ["Délai de transmission (s)", "Transmission delay (s)"],
 ["Temps entre l'ordre validé par le serveur et la détonation.", "Time between the order approved by the server and the detonation."],
 ["Un déclencheur réseau par charge", "One network detonator per charge"],
-["Coché : l'objet reste sur la charge et sort de l'inventaire. Décoché : il suffit d'en porter un, il sert pour toutes vos charges.", "Ticked: the item stays on the charge and leaves your inventory. Unticked: carrying one is enough, it serves all your charges."],
+["Coché : l'objet reste sur la charge et sort de l'inventaire. Décoché : il suffit d'en porter un, il sert pour toutes vos charges.", "Ticked: the item stays on the charge and leaves your inventory. Unticked: carrying one is enough, it serves all your charges."],,
+["Déploiement refusé : antenne inconnue", "Deployment refused: unknown antenna"],
+["Déploiement refusé : l'antenne n'est plus dans l'inventaire", "Deployment refused: the antenna is no longer in the inventory"],
+["Déploiement refusé : descendez du véhicule", "Deployment refused: get out of the vehicle"],
+["Déploiement refusé : ACE est nécessaire", "Deployment refused: ACE is required"],
+["Déploiement refusé : antenne absente ou joueur en véhicule", "Deployment refused: antenna missing or player in a vehicle"],
+["Aucune réponse du serveur : vérifiez qu'il a la même version du mod", "No answer from the server: check that it has the same mod version"],
+["Déploiement interrompu : l'antenne reste dans l'inventaire", "Deployment interrupted: the antenna stays in the inventory"],
+["Repli impossible : cet objet n'est pas une antenne transportable", "Cannot fold: this object is not a portable antenna"],
+["Refusé par le serveur : demande invalide", "Refused by the server: invalid request"],
+["Refusé par le serveur : position trop éloignée", "Refused by the server: position too far away"],
+["Refusé par le serveur : son mod est d'une autre version", "Refused by the server: its mod is a different version"],
+["Refusé par le serveur : objet non créé", "Refused by the server: object not created"]
 ]

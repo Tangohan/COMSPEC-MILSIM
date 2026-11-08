@@ -11,8 +11,11 @@
     comspec_atak_native_antkit_<sat | mast>_<range | gain | height | mbps | time>.
       Antenne satellite : raccordée (porte le réseau seule), courte portée locale, comme le terminal satellite du module.
       Antenne omnidirectionnelle : répéteur, doit voir un relais raccordé (réglage antkit_mast_root pour la raccorder).
-    Modèles d'Arma, aucun nouveau modèle ; rien ne dépend d'un autre mod. Sans ACE : objets présents, aucune action.
-      Joueur  : ["aceInit"], ["deploy", [kit]], ["deployNow", [kit]], ["fold", [antenne]], ["result", [genre, kit, texte]]
+    Modèles d'Arma, aucun nouveau modèle ; rien ne dépend d'un autre mod. Sans ACE : objets présents, déploiement refusé avec un message.
+    Deux voies pour déployer : ACE (Équipement > Déployer) et clic droit sur l'objet dans l'inventaire (menu d'objet de CBA).
+    Jamais d'échec muet : chaque refus s'affiche à l'écran (le téléphone fermé ne montre rien) et chaque étape écrit une ligne
+    [COMSPEC ATAK NATIVE][INFO][ANTENNE] dans le RPT, côté joueur et côté serveur.
+      Joueur  : ["clientInit"], ["aceInit"], ["deploy", [kit]], ["deployNow", [kit]], ["fold", [antenne]], ["result", [genre, kit, texte]]
       Serveur : ["init"], ["srvDeploy", [unité, kit, position ASL, cap]], ["srvFold", [unité, antenne]]
 */
 params [["_act", ""], ["_a", []]];
@@ -27,15 +30,33 @@ private _defs = [
 ];
 private _defOf = { params ["_kit"]; _defs param [_defs findIf { (_x select 1) isEqualTo _kit }, []] };
 private _set = { params ["_id", "_key", "_def"]; missionNamespace getVariable [format ["comspec_atak_native_antkit_%1_%2", _id, _key], _def] };
+private _log = { params ["_txt"]; ["INFO", "ANTENNE", _txt] call comspec_atak_native_fnc_log; };
+// À l'écran de jeu : une notification du téléphone ne se voit que téléphone ouvert. Gardée aussi au centre de notifications.
 private _say = {
     params ["_type", "_msg"];
-    if !([_msg, 5] call comspec_atak_native_fnc_toast) then { [_type, _msg, 5, 30] call comspec_atak_native_fnc_notify; };
+    private _shown = _msg call comspec_atak_native_fnc_tr;
+    if (isNil "ace_common_fnc_displayTextStructured") then { hintSilent _shown; } else { [_shown, 1.5, player, 14] call ace_common_fnc_displayTextStructured; };
+    [_type, _msg, 5, 30] call comspec_atak_native_fnc_notify;
 };
 private _answer = { params ["_unit", "_what", "_kit", "_msg"]; ["comspec_atak_native_antKitResult", [_what, _kit, _msg], _unit] call CBA_fnc_targetEvent; };
 switch (_act) do {
+    case "clientInit": {
+        if (!hasInterface) exitWith { false };
+        ["comspec_atak_native_antKitResult", { ["result", _this] call KIT_FN; }] call CBA_fnc_addEventHandler;
+        // Clic droit sur l'objet, dans l'inventaire (CBA) : l'objet n'a sinon aucune action à cet endroit.
+        if (isNil "CBA_fnc_addItemContextMenuOption") exitWith { ["menu d'inventaire de CBA absent"] call _log; false };
+        {
+            _x params ["_id", "_kit", "", "", "", "", "", "", "", "", "", "_label"];
+            [_kit, ["CONTAINER"], _label call comspec_atak_native_fnc_tr, [], format ["\z\comspec_atak_native\addons\main\data\item_antkit_%1.paa", _id],
+                { isNull objectParent (_this select 0) }, {
+                    [{ ["deploy", _this] call KIT_FN; }, [_this select 2]] call comspec_atak_native_fnc_nextFrame;
+                    false
+                }] call CBA_fnc_addItemContextMenuOption;
+        } forEach _defs;
+        true
+    };
     case "aceInit": {
         if (!hasInterface || {isNil "ace_interact_menu_fnc_createAction"}) exitWith { false };
-        ["comspec_atak_native_antKitResult", { ["result", _this] call KIT_FN; }] call CBA_fnc_addEventHandler;
         {
             _x params ["_id", "_kit", "_cls", "", "", "", "", "", "", "", "", "_label"];
             private _icon = format ["\z\comspec_atak_native\addons\main\data\item_antkit_%1.paa", _id];
@@ -51,15 +72,19 @@ switch (_act) do {
     case "deploy": {
         _a params ["_kit"];
         private _d = [_kit] call _defOf;
-        if (_d isEqualTo []) exitWith { false };
-        [[_d select 0, "time", _d select 10] call _set, [_kit], { ["deployNow", _this select 0] call KIT_FN; }, {},
+        [format ["déployer demandé : %1, dans l'inventaire : %2", _kit, _kit in (items player)]] call _log;
+        if (_d isEqualTo []) exitWith { ["WARNING", "Déploiement refusé : antenne inconnue"] call _say; false };
+        if !(_kit in (items player)) exitWith { ["WARNING", "Déploiement refusé : l'antenne n'est plus dans l'inventaire"] call _say; false };
+        if (!isNull objectParent player) exitWith { ["WARNING", "Déploiement refusé : descendez du véhicule"] call _say; false };
+        if (isNil "ace_common_fnc_progressBar") exitWith { ["WARNING", "Déploiement refusé : ACE est nécessaire"] call _say; false };
+        [[_d select 0, "time", _d select 10] call _set, [_kit], { ["deployNow", _this select 0] call KIT_FN; }, { ["interrupted", [(_this select 0) select 0, _this select 3]] call KIT_FN; },
             ((_d select 12) call comspec_atak_native_fnc_tr), { alive player && {(((_this select 0) select 0) in (items player))} && {isNull objectParent player} },
             ["isNotInside", "isNotSitting"]] call ace_common_fnc_progressBar;
         true
     };
     case "deployNow": {
         _a params ["_kit"];
-        if (!alive player || {!(_kit in (items player))} || {!isNull objectParent player}) exitWith { false };
+        if (!alive player || {!(_kit in (items player))} || {!isNull objectParent player}) exitWith { ["WARNING", "Déploiement refusé : antenne absente ou joueur en véhicule"] call _say; ["fin de barre refusée"] call _log; false };
         // 2,5 m devant le joueur, sur le premier sol rencontré en descendant (toit, dalle, sinon le terrain).
         private _dir = getDir player;
         private _top = (getPosASL player) vectorAdd [2.5 * sin _dir, 2.5 * cos _dir, 2];
@@ -68,20 +93,50 @@ switch (_act) do {
         if (surfaceIsWater _pos && {(_pos select 2) < 0.5}) exitWith { ["WARNING", "Pas de déploiement dans l'eau"] call _say; false };
         // Objet retiré d'abord, rendu si le serveur refuse : jamais de doublon.
         player removeItem _kit;
+        [format ["envoi au serveur : %1 en %2", _kit, _pos]] call _log;
+        uiNamespace setVariable ["COMSPEC_ATAK_AntKitPending", _kit];
         ["comspec_atak_native_antKitDeploy", [player, _kit, _pos, _dir]] call CBA_fnc_serverEvent;
+        // Sans réponse (serveur sans le mod ou d'une autre version) : objet rendu, plutôt qu'une antenne perdue sans un mot.
+        [{
+            params ["_kit"];
+            if ((uiNamespace getVariable ["COMSPEC_ATAK_AntKitPending", ""]) isNotEqualTo _kit) exitWith {};
+            ["late", ["refund", _kit, "Aucune réponse du serveur : vérifiez qu'il a la même version du mod"]] call KIT_FN;
+        }, [_kit], 10] call comspec_atak_native_fnc_waitAndExec;
         true
+    };
+    case "interrupted": {
+        _a params ["_kit", "_code"];
+        [format ["barre interrompue : %1, code ACE %2 (1 annulé, 2 mort ou changement d'unité, 3 condition, 4 interaction impossible)", _kit, _code]] call _log;
+        ["WARNING", "Déploiement interrompu : l'antenne reste dans l'inventaire"] call _say;
+    };
+    case "late": {
+        _a params ["_what", "_kit", "_msg"];
+        uiNamespace setVariable ["COMSPEC_ATAK_AntKitPending", ""];
+        [format ["sans réponse du serveur : %1 rendu", _kit]] call _log;
+        ["result", [_what, _kit, _msg, true]] call KIT_FN;
     };
     case "fold": {
         _a params ["_o"];
         private _d = [_o getVariable ["COMSPEC_AtakRelayKit", ""]] call _defOf;
-        if (_d isEqualTo []) exitWith { false };
+        if (_d isEqualTo []) exitWith { ["WARNING", "Repli impossible : cet objet n'est pas une antenne transportable"] call _say; false };
         // Replier prend moitié moins de temps que déployer.
         [(([_d select 0, "time", _d select 10] call _set) / 2) max 3, [_o], { ["comspec_atak_native_antKitFold", [player, (_this select 0) select 0]] call CBA_fnc_serverEvent; }, {},
             ((_d select 13) call comspec_atak_native_fnc_tr), { alive player && {alive ((_this select 0) select 0)} }, ["isNotInside", "isNotSitting"]] call ace_common_fnc_progressBar;
+        [format ["repli demandé : %1", typeOf _o]] call _log;
         true
     };
     case "result": {
-        _a params ["_what", "_kit", "_msg"];
+        _a params ["_what", "_kit", "_msg", ["_local", false]];
+        [format ["réponse : %1, %2, %3", _what, _kit, _msg]] call _log;
+        // Réponse après le délai d'attente : l'objet a déjà été rendu (refus : rien à faire ; posée quand même : on le reprend).
+        if (!_local && {_what in ["refund", "deployed"]}) then {
+            private _late = (uiNamespace getVariable ["COMSPEC_ATAK_AntKitPending", ""]) isNotEqualTo _kit;
+            uiNamespace setVariable ["COMSPEC_ATAK_AntKitPending", ""];
+            if (_late) then {
+                if (_what isEqualTo "deployed") then { player removeItem _kit; };
+                if (_what isEqualTo "refund") then { _what = "none"; _msg = ""; };
+            };
+        };
         if (_what in ["refund", "give"]) then {
             if (player canAdd _kit) then {
                 player addItem _kit;
@@ -104,17 +159,23 @@ switch (_act) do {
     case "srvDeploy": {
         _a params [["_unit", objNull, [objNull]], ["_kit", "", [""]], ["_pos", [], [[]], 3], ["_dir", 0, [0]]];
         private _d = [_kit] call _defOf;
-        if (!isServer || {isNull _unit} || {_d isEqualTo []} || {_pos isEqualTo []}) exitWith {};
+        if (!isServer) exitWith {};
+        [format ["serveur, demande : %1, %2 en %3", _unit, _kit, _pos]] call _log;
+        if (isNull _unit) exitWith { ["serveur, refus : unité nulle"] call _log; };
+        if (_d isEqualTo [] || {_pos isEqualTo []}) exitWith { ["serveur, refus : données invalides"] call _log; [_unit, "refund", _kit, "Refusé par le serveur : demande invalide"] call _answer; };
         _d params ["_id", "", "_cls", "_kind", "_name", "_slots", "_r0", "_g0", "_h0", "_m0"];
-        if (!alive _unit || {((getPosASL _unit) distance _pos) > 15}) exitWith { [_unit, "refund", _kit, "Déploiement impossible ici"] call _answer; };
+        if (!alive _unit || {((getPosASL _unit) distance _pos) > 15}) exitWith { ["serveur, refus : trop loin"] call _log; [_unit, "refund", _kit, "Refusé par le serveur : position trop éloignée"] call _answer; };
+        if !(isClass (configFile >> "CfgVehicles" >> _cls)) exitWith { ["serveur, refus : classe absente, mod du serveur à une autre version"] call _log; [_unit, "refund", _kit, "Refusé par le serveur : son mod est d'une autre version"] call _answer; };
         private _side = str side group _unit;
         private _max = missionNamespace getVariable ["comspec_atak_native_antkit_max", 12];
         private _mine = { (_x getVariable ["COMSPEC_AtakRelayKit", ""]) isNotEqualTo "" && {(_x getVariable ["COMSPEC_AtakRelaySide", ""]) isEqualTo _side} } count ((missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x });
-        if (_mine >= _max) exitWith { [_unit, "refund", _kit, format ["Déjà %1 antennes déployées dans votre camp : repliez-en une", _mine]] call _answer; };
+        if (_mine >= _max) exitWith { ["serveur, refus : plafond du camp"] call _log; [_unit, "refund", _kit, format ["Déjà %1 antennes déployées dans votre camp : repliez-en une", _mine]] call _answer; };
         private _o = createVehicle [_cls, [0, 0, 0], [], 0, "CAN_COLLIDE"];
         _o setDir _dir;
         _o setPosASL _pos;
         _o setVectorUp [0, 0, 1];
+        if (isNull _o) exitWith { ["serveur, refus : objet non créé"] call _log; [_unit, "refund", _kit, "Refusé par le serveur : objet non créé"] call _answer; };
+        [format ["serveur, créé : %1, modèle %2, en %3", typeOf _o, (getModelInfo _o) select 0, getPosASL _o]] call _log;
         // La portée du bilan radio (0 dB de marge) porte le gain de l'antenne.
         private _range = round ((([_id, "range", _r0] call _set) * 10 ^ (([_id, "gain", _g0] call _set) / 20)) min 30000);
         private _mb = [_id, "mbps", _m0] call _set;
@@ -141,6 +202,7 @@ switch (_act) do {
         if (_kit isEqualTo "") exitWith {};
         ["remove", [_o]] call comspec_atak_native_fnc_relayConvert;
         deleteVehicle _o;
+        ["serveur, antenne repliée"] call _log;
         [_unit, "give", _kit, "Antenne repliée"] call _answer;
     };
 };
