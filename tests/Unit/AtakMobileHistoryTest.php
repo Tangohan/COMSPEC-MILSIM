@@ -132,10 +132,34 @@ final class AtakMobileHistoryTest extends TestCase
         self::assertNotContains('Pas pour toi', array_column($private, 'text'));
     }
 
-    public function testWhatTheGameDoesNotSendIsSaidNotInvented(): void
+    public function testMpuBoardShowsOnlyMySideAndOnlyWhatTheGameSends(): void
     {
-        $labels = array_column(AtakMobileHistoryService::unavailable(), 'label');
-        self::assertSame(['SMS entre joueurs', 'Radio MPU5', 'Lecteur de musique'], $labels);
+        $unit = static fn (string $cs, string $uid, string $side, array $more = [], string $status = 'linked'): array => [
+            'call_sign' => $cs,
+            'status' => $status,
+            'extra' => ['steam_uid' => $uid, 'side' => $side] + $more,
+        ];
+        $board = AtakMobileHistoryService::mpuBoard([
+            $unit('MOI', '111', 'WEST', ['radio_net' => 'ALPHA', 'radio_channel' => '3']),
+            $unit('AMI', '222', 'WEST', ['wr_mpu5' => true, 'wr_node' => 'N2', 'wr_tg' => 4]),
+            $unit('SANS', '333', 'WEST'),
+            $unit('ENI', '444', 'EAST', ['wr_mpu5' => true]),
+            $unit('PARTI', '555', 'WEST', ['wr_mpu5' => true], 'offline'),
+        ], '111');
+
+        self::assertSame('ALPHA', $board['me']['radio_net']);
+        self::assertFalse($board['me']['mpu'], 'pas de MPU5 inventée');
+        self::assertSame(['AMI'], array_column($board['peers'], 'callsign'));
+    }
+
+    public function testMpuBoardWithoutMyUnitShowsNobody(): void
+    {
+        $board = AtakMobileHistoryService::mpuBoard([
+            ['call_sign' => 'AMI', 'status' => 'linked', 'extra' => ['steam_uid' => '222', 'side' => 'WEST', 'wr_mpu5' => true]],
+        ], '');
+
+        self::assertNull($board['me']);
+        self::assertSame([], $board['peers']);
     }
 
     public function testPhoneReportsComeFirstEvenBehindTwentyOlderPendingNotices(): void
@@ -156,11 +180,11 @@ final class AtakMobileHistoryTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
-        foreach (["'/m/cr/envoyes'", "'/m/cr/recus'", "'/m/cr/lire/{id}'", "'/m/radio'", "'/m/radio/prives'", "'/m/radio/absent'", "'/m/radio/canal/{key}'"] as $r) {
+        foreach (["'/m/cr/envoyes'", "'/m/cr/recus'", "'/m/cr/lire/{id}'", "'/m/radio'", "'/m/radio/prives'", "'/m/radio/absent'", "'/m/radio/sms'", "'/m/radio/mpu'", "'/m/musique'", "'/m/radio/canal/{key}'"] as $r) {
             self::assertStringContainsString($r, $routes);
             self::assertLessThan(strpos($routes, "'/m/{token}'"), strpos($routes, $r), 'pages avant le jeton');
         }
-        foreach (['cr_list', 'cr_read', 'radio', 'radio_thread', 'radio_absent', '_sub'] as $v) {
+        foreach (['cr_list', 'cr_read', 'radio', 'radio_thread', 'radio_sms', 'radio_mpu', 'musique', '_sub'] as $v) {
             $file = (string) file_get_contents($root . '/views/m/' . $v . '.php');
             self::assertStringContainsString('declare(strict_types=1);', $file, $v);
         }

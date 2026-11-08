@@ -5,14 +5,15 @@
         ME indicatif et position, ZONE zone de l'app Zones) ; grille MGRS (complète, précision des Réglages) | 8 | 10
         chiffres | LL latitude-longitude ; unités M (m, km) | IMP (ft, mi) ; position BOTTOM | TOP ; opacité du fond
         (-1 : celle du style) ; taille du texte ;
-      - mon point GPS : forme ARROW (symbole d'unité, par défaut) | CHEVRON | DOT | CIRCLE | TRIANGLE | NATO (ami APP-6),
+      - mon point GPS : forme ARROW (symbole d'unité, par défaut) | CHEVRON | DOT | CIRCLE | TRIANGLE | NATO (ami APP-6) | PAWN |
+        TRI_RING | DIAMOND_RING | SQUARE | CROSS (fn_mapShape, même jeu pour les alliés : COMSPEC_ATAK_AllyShape, AUTO par défaut),
         couleur (Réglages > Carte « Ma couleur », la même), taille, cône de cap, trace (fil d'Ariane) et sa durée,
         indicatif AUTO (comme avant) | ON | OFF.
     Tout est préparé au changement de réglage (uiNamespace COMSPEC_ATAK_BandCfg / COMSPEC_ATAK_SelfDraw) : rien de plus
     par image.
     Params : [opération, argument]
       "band"                -> HashMap du bandeau          "bandSet" [clé, valeur] | "bandShow" élément (bascule)
-      "self"                -> [icône ("" : symbole d'unité), orientée, facteur de taille, cône, trace, indicatif]
+      "self"                -> [icône ("" : symbole d'unité), orientée, facteur de taille, cône, trace, indicatif, forme, forme des alliés]
       "selfSet" [clé, valeur]
       "trail"               relevé de la trace (toutes les 2 s, XEH_postInitClient) ; "trailPts" -> points [x, y, 0]
       "rows" "band" | "self" -> lignes de fn_formRender pour le volet de l'app Carte
@@ -77,7 +78,11 @@ switch (_op) do {
     case "self": {
         private _c = uiNamespace getVariable ["COMSPEC_ATAK_SelfDraw", []];
         if ((count _c) > 0) exitWith { _c };
+        // Valeur illisible d'un ancien profil : forme par défaut, sans erreur.
         private _shape = _prof getVariable ["COMSPEC_ATAK_SelfShape", "ARROW"];
+        if !(_shape isEqualType "") then { _shape = "ARROW"; };
+        private _allyS = _prof getVariable ["COMSPEC_ATAK_AllyShape", "AUTO"];
+        if !(_allyS isEqualType "") then { _allyS = "AUTO"; };
         private _m = "\A3\ui_f\data\map\markers\military\";
         (switch (_shape) do {
             case "CHEVRON": { [_m + "arrow2_CA.paa", true] };
@@ -91,13 +96,13 @@ switch (_op) do {
         if !(_sz isEqualType 0) then { _sz = 1; };
         private _lbl = _prof getVariable ["COMSPEC_ATAK_SelfLabel", "AUTO"];
         if !(_lbl in ["AUTO", "ON", "OFF"]) then { _lbl = "AUTO"; };
-        _c = [_icon, _orient, (_sz max 0.6) min 2, _prof getVariable ["COMSPEC_ATAK_SelfCone", false], _prof getVariable ["COMSPEC_ATAK_SelfTrail", false], _lbl, _shape];
+        _c = [_icon, _orient, (_sz max 0.6) min 2, _prof getVariable ["COMSPEC_ATAK_SelfCone", false], _prof getVariable ["COMSPEC_ATAK_SelfTrail", false], _lbl, _shape, _allyS];
         uiNamespace setVariable ["COMSPEC_ATAK_SelfDraw", _c];
         _c
     };
     case "selfSet": {
         _arg params ["_k", "_v"];
-        private _var = createHashMapFromArray [["shape", "COMSPEC_ATAK_SelfShape"], ["size", "COMSPEC_ATAK_SelfSize"], ["cone", "COMSPEC_ATAK_SelfCone"], ["trail", "COMSPEC_ATAK_SelfTrail"], ["trailMin", "COMSPEC_ATAK_SelfTrailMin"], ["label", "COMSPEC_ATAK_SelfLabel"], ["color", "COMSPEC_ATAK_SelfColor"]];
+        private _var = createHashMapFromArray [["shape", "COMSPEC_ATAK_SelfShape"], ["size", "COMSPEC_ATAK_SelfSize"], ["cone", "COMSPEC_ATAK_SelfCone"], ["trail", "COMSPEC_ATAK_SelfTrail"], ["trailMin", "COMSPEC_ATAK_SelfTrailMin"], ["label", "COMSPEC_ATAK_SelfLabel"], ["color", "COMSPEC_ATAK_SelfColor"], ["allyShape", "COMSPEC_ATAK_AllyShape"], ["markerType", "COMSPEC_ATAK_LastMarkerType"]];
         if !(_k in _var) exitWith {};
         _prof setVariable [_var get _k, _v];
         uiNamespace setVariable ["COMSPEC_ATAK_SelfDraw", []];
@@ -177,13 +182,27 @@ switch (_op) do {
                 _rows pushBack ["segment", "Texte", ["bandSet", "text", _c get "text", [["PETIT", 0.85], ["NORMAL", 1], ["GRAND", 1.2], ["TRÈS GRAND", 1.4]]] call _seg];
             };
         } else {
-            (["self"] call comspec_atak_native_fnc_mapPrefs) params ["", "", "_sz", "_cone", "_trail", "_lbl", "_shape"];
-            _rows pushBack ["segment", "Forme", ["selfSet", "shape", _shape, [
-                ["FLÈCHE", "ARROW", "Symbole d'unité orienté (par défaut)"], ["CHEVRON", "CHEVRON"], ["POINT", "DOT"], ["CERCLE", "CIRCLE"], ["TRIANGLE", "TRIANGLE"], ["AMI APP-6", "NATO", "Symbole ami de la symbologie"]
-            ]] call _seg];
-            _rows pushBack ["segment", "Couleur", ["selfSet", "color", profileNamespace getVariable ["COMSPEC_ATAK_SelfColor", "CYAN"], [
-                ["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ORANGE", "ORANGE"], ["ROSE", "PINK"]
-            ]] call _seg];
+            (["self"] call comspec_atak_native_fnc_mapPrefs) params ["", "", "_sz", "_cone", "_trail", "_lbl", "_shape", "_allyS"];
+            private _palS = [] call comspec_atak_native_fnc_mapColors;
+            // Lignes à aperçu : chaque choix montre le dessin, à sa couleur, sur un fond de carte.
+            private _cells = {
+                params ["_list", "_key", "_now", "_col"];
+                _list apply {
+                    _x params ["_k", "_t", ["_tip", ""]];
+                    [_t, format ["['selfSet', [%1, %2]] call comspec_atak_native_fnc_mapPrefs;", str _key, str _k], _k isEqualTo _now, _tip, ["preview", [_k, _col]] call comspec_atak_native_fnc_mapShape]
+                }
+            };
+            _rows pushBack ["shapes", "Forme", [["self"] call comspec_atak_native_fnc_mapShape, "shape", _shape, _palS get "self"] call _cells];
+            private _selfNow = profileNamespace getVariable ["COMSPEC_ATAK_SelfColor", "CYAN"];
+            _rows pushBack ["lineseg", "", "Couleur", [["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ORANGE", "ORANGE"], ["ROSE", "PINK"]] apply {
+                [_x select 0, format ["['selfSet', ['color', %1]] call comspec_atak_native_fnc_mapPrefs;", str (_x select 1)], (_x select 1) isEqualTo _selfNow, _palS getOrDefault [_x select 1, [1, 1, 1, 1]]]
+            }];
+            _rows pushBack ["shapes", "Forme des alliés", [["ally"] call comspec_atak_native_fnc_mapShape, "allyShape", _allyS, _palS get "friend"] call _cells, "Couleur : Réglages > Carte, « Couleur des alliés »"];
+            // Repères posés depuis le téléphone : symboles du moteur, lisibles aussi sur la carte d'Arma et sur Athena.
+            private _mkNow = profileNamespace getVariable ["COMSPEC_ATAK_LastMarkerType", "mil_dot"];
+            _rows pushBack ["shapes", "Forme de mes nouveaux repères", [["mil_dot", "POINT"], ["mil_triangle", "TRIANGLE"], ["mil_box", "CARRÉ"], ["mil_destroy", "CROIX"], ["mil_circle", "CERCLE"], ["mil_objective", "OBJECTIF"]] apply {
+                [_x select 1, format ["['selfSet', ['markerType', %1]] call comspec_atak_native_fnc_mapPrefs;", str (_x select 0)], (_x select 0) isEqualTo _mkNow, "", [[getText (configFile >> "CfgMarkers" >> (_x select 0) >> "icon"), [1, 0.82, 0.25, 1], 0.7]]]
+            }, "Aussi sur la carte d'Arma et sur Athena ; modifiable sur chaque repère"];
             _rows pushBack ["segment", "Taille", ["selfSet", "size", _sz, [["PETIT", 0.8], ["NORMAL", 1], ["GRAND", 1.3], ["TRÈS GRAND", 1.6]]] call _seg];
             _rows pushBack ["segment", "Cône de cap", ["selfSet", "cone", _cone, [["NON", false], ["OUI", true, "Cône clair dans la direction où je regarde"]]] call _seg];
             _rows pushBack ["segment", "Trace", ["selfSet", "trail", _trail, [["NON", false], ["OUI", true, "Fil d'Ariane de mes positions"]]] call _seg];

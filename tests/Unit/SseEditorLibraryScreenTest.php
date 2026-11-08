@@ -162,8 +162,8 @@ final class SseEditorLibraryScreenTest extends TestCase
     {
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
         self::assertStringContainsString("get('/atak/sse/editeur', [\\App\\Controllers\\Web\\SseEditorLibraryController::class, 'index'], \$mwSsePortal)", $routes);
-        // Lecture seule : aucune écriture sur cet écran.
-        self::assertStringNotContainsString("post('/atak/sse/editeur", $routes);
+        // Le contenu ne s'écrit pas ici : la seule écriture est l'attribution à un joueur (SseIdCoverLinkTest).
+        self::assertSame(1, substr_count($routes, "post('/atak/sse/editeur"));
 
         $paths = static function (array $sections): array {
             return array_merge(...array_map(static fn (array $s): array => array_column($s['items'], 'path'), $sections));

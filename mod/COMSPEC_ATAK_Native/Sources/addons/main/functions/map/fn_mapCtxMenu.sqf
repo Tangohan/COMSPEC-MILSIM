@@ -111,6 +111,18 @@ switch (_mode) do {
                 if (_zm) then { _dels pushBack ["ZONE", [_zb get "id", _zz select 0], _zz select 1, true]; };
                 _dels pushBack ["PLAN", _zb get "id", _zb get "name", _zm];
             };
+            // Axes, traits et points de contrôle sous le clic ; plan sans zones (seul moyen de le viser) ; étape d'une de mes routes.
+            {
+                _x params ["_ek", "_eb", "_eid", "_en"];
+                private _em = ["isMine", _eb] call comspec_atak_native_fnc_zoneAction;
+                if (_ek isEqualTo "PLAN") then {
+                    if ((_dels findIf { (_x select 0) isEqualTo "PLAN" && {(_x select 1) isEqualTo _eb} }) < 0) then { _dels pushBack ["PLAN", _eb, _en, _em]; };
+                } else {
+                    if (_em) then { _dels pushBack [_ek, [_eb, _eid], _en, true]; };
+                };
+            } forEach ((["elemAt", [_map, _screen]] call comspec_atak_native_fnc_zoneAction) select [0, 6]);
+            private _sh = ["stepAt", [_map, _screen]] call comspec_atak_native_fnc_routeAction;
+            if ((count _sh) > 0) then { _dels pushBack ["STEP", [_sh select 0, _sh select 1], _sh select 2, true]; };
         };
         _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["unit", [netId _who, ""] select (isNull _who)], ["at", diag_tickTime],
             ["relay", _rl], ["card", _card], ["wp", _wpi], ["aiG", _aiG], ["aiWhy", _aiWhy], ["dels", _dels], ["delCf", -1]]];
@@ -182,6 +194,18 @@ switch (_mode) do {
                     _v params ["_bid", "_zid"];
                     private _r = ["zoneCut", [_bid, _zid]] call comspec_atak_native_fnc_zoneAction;
                     if ((count _r) > 0) then { [format [("Zone %1 supprimée") call _T, _n], compile format ["['zoneRestore', %1] call comspec_atak_native_fnc_zoneAction;", str ([_bid] + _r)]] call comspec_atak_native_fnc_undoSnack; };
+                };
+                case "AXIS";
+                case "LINE";
+                case "CP": {
+                    _v params ["_bid", "_eid"];
+                    private _r = ["elemCut", [_bid, _k, _eid]] call comspec_atak_native_fnc_zoneAction;
+                    if ((count _r) > 0) then { [format [("%1 supprimé") call _T, _n], compile format ["['elemRestore', %1] call comspec_atak_native_fnc_zoneAction;", str ([_bid] + _r)]] call comspec_atak_native_fnc_undoSnack; };
+                };
+                case "STEP": {
+                    _v params ["_rid", "_si"];
+                    private _r = ["stepCut", [_rid, _si]] call comspec_atak_native_fnc_routeAction;
+                    if ((count _r) > 0) then { [format [("Étape %1 supprimée") call _T, _n], compile format ["['stepRestore', %1] call comspec_atak_native_fnc_routeAction;", str ([_rid] + _r)]] call comspec_atak_native_fnc_undoSnack; };
                 };
                 case "PLAN": {
                     if (_mineE) then {
@@ -551,6 +575,10 @@ switch (_mode) do {
                 case "ROUTE": { [format [("Supprimer la route %1") call comspec_atak_native_fnc_tr, _n], format [("Masquer chez moi la route %1") call comspec_atak_native_fnc_tr, _n]] select _hide };
                 case "PLAN": { [format [("Supprimer le plan %1") call comspec_atak_native_fnc_tr, _n], format [("Masquer chez moi le plan %1") call comspec_atak_native_fnc_tr, _n]] select _hide };
                 case "ZONE": { format [("Supprimer la zone %1") call comspec_atak_native_fnc_tr, _n] };
+                case "AXIS": { format [("Supprimer l'axe %1") call comspec_atak_native_fnc_tr, _n] };
+                case "LINE": { format [("Supprimer le trait %1") call comspec_atak_native_fnc_tr, _n] };
+                case "CP": { format [("Supprimer le point de contrôle %1") call comspec_atak_native_fnc_tr, _n] };
+                case "STEP": { format [("Supprimer l'étape %1") call comspec_atak_native_fnc_tr, _n] };
                 default { format [("Effacer %1") call comspec_atak_native_fnc_tr, _n] };
             };
             ["DEL_" + str _i, [_what, ("CONFIRMER") call comspec_atak_native_fnc_tr] select (_delCf isEqualTo _i), ["deux clics, puis ANNULER", "second clic : c'est fait"] select (_delCf isEqualTo _i), _dir + "ui_trash.paa", [0.95, 0.30, 0.25, 1]]
@@ -572,7 +600,7 @@ switch (_mode) do {
         };
         if (_znSub isEqualTo "ZNAX") then {
             // Thèmes des noms des axes : MSR / ASR + nom du thème ; MIL-STD : nom de son sous-thème (ligne suivante).
-            private _cur = profileNamespace getVariable ["COMSPEC_ATAK_ZnNameTheme", "CITY"];
+            private _cur = profileNamespace getVariable ["COMSPEC_ATAK_ZnNameTheme", "MIL"];
             private _sub = profileNamespace getVariable ["COMSPEC_ATAK_ZnNameSub", "CITY"];
             _rows = ((["themeRows"] call comspec_atak_native_fnc_zoneAction) apply {
                 ["ZX_" + (_x select 0), _x select 1, [((_x select 2) splitString ",") select [0, 2] joinString ",", "actuel"] select ((_x select 0) isEqualTo _cur), _dir + "map_route.paa", [_znCol, [1, 0.85, 0.2, 1]] select ((_x select 0) isEqualTo "MIL")]
@@ -599,7 +627,7 @@ switch (_mode) do {
                     ["ZG_BLOCK", "Découper ici : îlots", "par les routes", _dir + "app_zones.paa", _znCol],
                     ["ZG_RADIAL", "Découper ici : secteurs", "N, NE… et anneaux", _dir + "app_zones.paa", _znCol],
                     ["ZG_NEW", "Nouveau plan à partir d'ici", "ouvre l'app Zones", _dir + "app_zones.paa", _znCol],
-                    ["ZG_MAGC", "Contour aimanté à partir d'ici", "polygone, app Zones", _dir + "app_zones.paa", [1, 0.85, 0.2, 1]],
+                    ["ZG_MAGC", "Contour aimanté à partir d'ici", "à la route, app Zones", _dir + "app_zones.paa", [1, 0.85, 0.2, 1]],
                     ["ZG_MAGO", "Trait aimanté à partir d'ici", "pour découper, app Zones", _dir + "app_zones.paa", [1, 0.85, 0.2, 1]],
                     ["ZNAX", "Nommer les axes autour", "thème des noms ›", _dir + "map_route.paa", _znCol]
                 ];

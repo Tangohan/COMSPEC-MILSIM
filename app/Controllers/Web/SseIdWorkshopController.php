@@ -769,7 +769,7 @@ final class SseIdWorkshopController
                 $wanted = array_values(array_filter($wanted, static fn (array $w): bool => !in_array($w['kind'], \App\Services\Sse\MemberIdentityPapersService::SECRET, true)));
             }
             $batches = $this->operations->listBatches($tenantId, $ctx, $op);
-            $briefs = $this->operations->listBriefs($tenantId, $ctx, $op);
+            $briefs = self::visibleBriefs($this->operations->listBriefs($tenantId, $ctx, $op), $r['truth']);
             $visibility = [];
             foreach (SseIdWorkshopCatalog::SIDES as $side => $label) {
                 $visibility[$side] = [
@@ -895,6 +895,18 @@ final class SseIdWorkshopController
 
     // ----------------------------------------------------------------- Briefs
 
+    /**
+     * Sans habilitation Confidentiel : pas de brief relié à une identité d'emprunt. Il dirait qui est infiltré et sous quel
+     * nom, alors que la fiche du membre masque déjà ces identités (MemberIdentityPapersService).
+     *
+     * @param list<array<string, mixed>> $briefs
+     * @return list<array<string, mixed>>
+     */
+    public static function visibleBriefs(array $briefs, bool $truth): array
+    {
+        return $truth ? $briefs : array_values(array_filter($briefs, static fn (array $b): bool => $b['identity_id'] === null));
+    }
+
     public function briefsIndex(Request $request, array $params = []): Response
     {
         $r = $this->rights();
@@ -914,7 +926,7 @@ final class SseIdWorkshopController
 
         return $this->page('atak.sse.papers.briefs', [
             'title' => 'Briefs de couverture',
-            'briefs' => $this->operations->listBriefs($tenantId),
+            'briefs' => self::visibleBriefs($this->operations->listBriefs($tenantId), $r['truth']),
             'members' => $members,
             'edit' => $edit,
             'maps' => $this->maps(),

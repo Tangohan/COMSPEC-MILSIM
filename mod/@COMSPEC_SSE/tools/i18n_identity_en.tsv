@@ -779,3 +779,67 @@ Exploitation complète : Terminal SSE, onglet DOMEX.	Full exploitation: SSE Term
 Éléments gardés : rechargement demandé à Athena.	Kept elements: reload requested from Athena.
 Configurer une IA	Configure an AI
 Éditeur SSE	SSE editor
+ZEUS	ZEUS
+Tient la route	Holds up
+Fragile	Fragile
+Ne tiendra pas un contrôle	Will not survive a check
+Trouver des papiers	Find papers
+Vous n'avez aucun papier. Demandez-en au Zeus ou à vos responsables sur Athena (kit de mission), ou récupérez une pièce.	You have no papers. Ask the Zeus or your leaders on Athena (mission kit), or get hold of a document.
+Ne garder qu'un seul nom	Keep a single name
+Laissez ailleurs les papiers qui portent un autre nom que votre couverture.	Leave elsewhere any papers bearing a name other than your cover.
+Trouver de meilleurs papiers	Find better papers
+Ces papiers résistent mal à un contrôle poussé. Évitez les contrôles ou demandez une pièce mieux faite.	These papers do not hold up to a thorough check. Avoid checks or ask for a better document.
+Ranger l'arme	Put your weapon away
+Une arme visible fait sauter la couverture dès qu'un ennemi vous voit.	A visible weapon blows your cover as soon as an enemy sees you.
+Cacher l'arme longue	Hide the long gun
+Mettez-la dans un sac ou un véhicule.	Put it in a bag or a vehicle.
+Changer de tenue	Change clothes
+Portez des vêtements civils.	Wear civilian clothes.
+Retirer le gilet	Take off the vest
+Un civil ne porte pas de gilet pare-balles.	A civilian does not wear a bulletproof vest.
+Retirer le casque	Take off the helmet
+Portez un couvre-chef civil, ou rien.	Wear civilian headgear, or none.
+Retirer les jumelles de vision nocturne	Take off the night vision goggles
+Rangez-les dans votre sac.	Put them in your bag.
+Quitter la zone interdite	Leave the forbidden zone
+Votre légende ne justifie pas votre présence ici.	Your legend does not explain why you are here.
+Relire votre légende	Reread your legend
+Vos réponses ne collent pas à vos papiers : apprenez ce qu'il y a dans « À retenir ».	Your answers do not match your papers: learn what is under "Remember".
+Se faire discret	Keep a low profile
+Les soupçons retombent si rien ne vous trahit pendant un moment.	Suspicion fades if nothing gives you away for a while.
+Identité prévue, sans papier	Planned identity, no papers
+Ce que disent mes papiers	What my papers say
+Aucun papier sur vous : rien ne prouve encore l'identité ci-dessous à un contrôle.	No papers on you: nothing proves the identity below at a check yet.
+Vos papiers ne sont pas sur vous : rien ne prouve l'identité ci-dessous à un contrôle.	Your papers are not on you: nothing proves the identity below at a check.
+valable jusqu'au	valid until
+pas sur vous	not on you
+À retenir	Remember
+Ce qu'on vous demandera à un contrôle	What you will be asked at a check
+Brief	Brief
+Compte Athena	Athena account
+Lié	Linked
+Non lié	Not linked
+Ouvrez l'app Athena du téléphone pour relier votre compte.	Open the phone's Athena app to link your account.
+Compte Steam	Steam account
+Sur Athena, liez votre compte Steam : sans lui, le serveur ne peut pas vous remettre une couverture préparée.	On Athena, link your Steam account: without it, the server cannot hand you a prepared cover.
+Compte non lié	Account not linked
+Compte lié	Account linked
+Reçue d'Athena	Received from Athena
+Mise à jour le	Updated on
+Créée en jeu, envoyée à Athena	Created in game, sent to Athena
+Retrouvez-la sur Athena, dans Mes papiers.	Find it on Athena, under My papers.
+Envoi à Athena…	Sending to Athena…
+Locale	Local
+Reliez votre compte Athena : elle partira toute seule ensuite.	Link your Athena account: it will then be sent on its own.
+Athena n'a pas répondu. Nouvel essai quand vous actualisez.	Athena did not answer. It will try again when you refresh.
+Sans liaison COMSPEC Link, elle reste sur ce poste. Vérifiez l'app Athena.	Without a COMSPEC Link connection, it stays on this computer. Check the Athena app.
+Envoyée	Sent
+Aucune préparée	None prepared
+Attribuez-la sur Athena (Bureau SSE) ou demandez-la au Zeus. Déjà attribuée ? Demandez la mise à jour.	Assign it on Athena (SSE Office) or ask the Zeus. Already assigned? Request the update.
+Aucune couverture	No cover
+Liaison Athena	Athena link
+Demander la mise à jour	Request the update
+Recharge le paquet d'identité du serveur (au plus une fois toutes les 2 minutes).	Reloads the server's identity pack (at most once every 2 minutes).
+Mon histoire	My story
+Contacts	Contacts
+Fiche personnelle : visible de vous seul (et du Zeus).	Personal sheet: visible to you only (and Zeus).

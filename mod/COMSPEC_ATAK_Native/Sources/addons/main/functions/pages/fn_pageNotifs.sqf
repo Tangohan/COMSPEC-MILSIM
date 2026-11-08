@@ -136,7 +136,7 @@ private _ago = {
     _x params ["_n", "_m", "_idx"];
     private _times = _n getOrDefault ["count", 1];
     private _new = _idx < _fresh;
-    private _meta = format ["%1%2%3", ["", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>●</t>  "] select _new, [_n] call _ago, ["", format ["  ·  ×%1", _times]] select (_times > 1)];
+    private _meta = format ["%1%2%3", ["", "<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexAccent") + "'>" + (("NOUVEAU") call comspec_atak_native_fnc_tr) + "</t>  ·  "] select _new, [_n] call _ago, ["", format ["  ·  ×%1", _times]] select (_times > 1)];
     private _page = _m get "page";
     private _open = if (_page isEqualTo "") then { {} } else { compile format ["['%1'] call comspec_atak_native_fnc_navigate;", _page] };
     // Fermer : par identifiant (fn_notify), à défaut par texte et heure (entrées d'avant la mise à jour).
@@ -147,7 +147,7 @@ private _ago = {
         [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;",
         _n getOrDefault ["id", -1], str (_n getOrDefault ["message", ""]), str (_n getOrDefault ["time", ""])];
     _rows pushBack ["notif", _m get "icon", _m get "rgb", _m get "title", _meta, _m get "body", _open, _close,
-        ["", format ["Ouvrir %1", _m get "title"]] select (_page isNotEqualTo "")];
+        ["", format ["Ouvrir %1", _m get "title"]] select (_page isNotEqualTo ""), _new];
 } forEach _shown;
 
 if ((count _all) isEqualTo 0) then {

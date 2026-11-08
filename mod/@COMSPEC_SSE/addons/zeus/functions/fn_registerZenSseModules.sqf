@@ -7,15 +7,15 @@ if (!hasInterface) exitWith {};
 if (isNil "zen_custom_modules_fnc_register") exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ZenSseModulesRegistered", false]) exitWith {};
 
-private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
+private _icon = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
 
 // Dossier SSE actif : pas d'entrée ZEN, le module Zeus « Référence de dossier SSE » (CfgVehicles) fait la même chose
 // (trois points d'entrée pour la même action auparavant).
 
 // --- Profil d'identité ---------------------------------------------------
 [
-    "COMSPEC SSE · Personnes",
-    "Profil d'identité SSE",
+    "COMSPEC_Cat_Sse",
+    "Définir l'identité",
     {
         params ["_pos", "_obj"];
 
@@ -68,8 +68,8 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 
 // --- Biométrie du sujet (moteur du pack SSE) ------------------------------
 [
-    "COMSPEC SSE · Personnes",
-    "Biométrie du sujet",
+    "COMSPEC_Cat_Sse",
+    "Régler la biométrie",
     {
         params ["_pos", "_obj"];
         if (isNil "comspec_sse_fnc_bioSetProfile") exitWith {
@@ -126,13 +126,13 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             [_obj]
         ] call comspec_sse_fnc_zenDialog;
     },
-    "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa"
+    "\z\comspec_sse\addons\zeus\data\mod_evidence.paa"
 ] call comspec_sse_fnc_zenModule;
 
 // --- Doter en terminal SEEK ----------------------------------------------
 [
-    "COMSPEC SSE · Mission",
-    "Doter en terminal SEEK",
+    "COMSPEC_Cat_Mission",
+    "Doter d'un terminal SEEK",
     {
         params ["_pos", "_obj"];
 
@@ -164,13 +164,13 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             [_pos]
         ] call comspec_sse_fnc_zenDialog;
     },
-    "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"
+    "\z\comspec_sse\addons\zeus\data\mod_doc.paa"
 ] call comspec_sse_fnc_zenModule;
 
 // --- Présentation des documents / fiches --------------------------------
 [
-    "COMSPEC SSE · Mission",
-    "Présentation des documents",
+    "COMSPEC_Cat_Mission",
+    "Régler la présentation des documents",
     {
         private _current = missionNamespace getVariable ["COMSPEC_SSE_DocChrome", createHashMap];
         private _prefab = if (_current isEqualType createHashMap) then {
@@ -241,7 +241,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
             []
         ] call comspec_sse_fnc_zenDialog;
     },
-    "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"
+    "\z\comspec_sse\addons\zeus\data\mod_doc.paa"
 ] call comspec_sse_fnc_zenModule;
 
 missionNamespace setVariable ["COMSPEC_ZenSseModulesRegistered", true];

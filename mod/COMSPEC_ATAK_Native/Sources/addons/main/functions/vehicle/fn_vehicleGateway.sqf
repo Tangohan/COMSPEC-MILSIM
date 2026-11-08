@@ -10,7 +10,7 @@
     serveur : COMSPEC_ATAK_Gateways. Portées réglables par mission : COMSPEC_ATAK_GwRange = [relay, cp] en mètres.
     Réglage serveur comspec_atak_native_vehicle_gateways (désactivé par défaut) : coupé, aucune passerelle ni action ACE,
     celles déjà ouvertes sont refermées au balayage suivant. Un véhicule relais voulu par la mission se pose avec le
-    module « ATAK · Relais » synchronisé au véhicule (fn_moduleRelay).
+    module « Poser un relais » synchronisé au véhicule (fn_moduleRelay).
     Params : [action, véhicule]
       "can" v        : le joueur peut-il commander la passerelle (équipage à bord, ou à moins de 6 m dehors) ?
       "state" v      : "" | "relay" | "cp"

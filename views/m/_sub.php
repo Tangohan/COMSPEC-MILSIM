@@ -18,7 +18,9 @@ $all = [
     'radio' => [
         'channels' => ['m/radio', 'Canaux'],
         'private' => ['m/radio/prives', 'Privés'],
-        'absent' => ['m/radio/absent', 'SMS, MPU, musique'],
+        'sms' => ['m/radio/sms', 'SMS'],
+        'mpu' => ['m/radio/mpu', 'MPU5'],
+        'music' => ['m/musique', 'Musique'],
     ],
 ];
 ?>

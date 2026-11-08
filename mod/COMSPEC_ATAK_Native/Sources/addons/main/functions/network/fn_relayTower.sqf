@@ -3,7 +3,7 @@
     sa pose (Eden, Zeus, script). Serveur seulement.
     Valeurs de la classe (comspec_atak_relayRange, Height, Throughput, Slots) ; attributs Eden (nom, camp, liaison,
     bande de fréquence, allumé, indestructible) posés sur l'objet sous COMSPEC_TowerName, Side, Uplink, Freq, On, Indestructible.
-    Un module « ATAK · Relais » synchronisé passe avant (il remplace ces valeurs).
+    Un module « Poser un relais » synchronisé passe avant (il remplace ces valeurs).
     Détruit (ruine, fn_relayTowerRuin) : fn_relayNet le voit « détruit », les téléphones qui l'utilisaient reçoivent « Relais perdu ».
       [objet] call comspec_atak_native_fnc_relayTower      enregistrement (image suivante, après les attributs Eden)
       ["sweep"] call ...                                   pylônes de la mission pas encore enregistrés (fin d'init serveur)
@@ -15,7 +15,7 @@ if (_o isEqualType "") exitWith {
 };
 if (isNull _o) exitWith {};
 // Destruction : la ruine (pylône plié, équipements arrachés) reste au sol (fn_relayTowerRuin), aussi pour les tours
-// créées par le module « ATAK · Relais » (déjà enregistrées comme relais par lui).
+// créées par le module « Poser un relais » (déjà enregistrées comme relais par lui).
 if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     _o setVariable ["COMSPEC_TowerKilledEh", true];
     _o addEventHandler ["Killed", { [_this select 0] call comspec_atak_native_fnc_relayTowerRuin; }];

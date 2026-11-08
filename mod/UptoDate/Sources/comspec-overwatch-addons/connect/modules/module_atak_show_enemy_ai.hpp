@@ -10,8 +10,8 @@
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 0;
-        category = "COMSPEC_Outils";
-        displayName = "$STR_COMSPEC_OW_CFG_C2A0D7DA8A";
+        category = "COMSPEC_Cat_Atak";
+        displayName = "$STR_COMSPEC_OW_CFG_5FA03B3DF8";
         function = "comspec_overwatch_connect_fnc_moduleAtakShowEnemyAi";
         functionPriority = 1;
         isGlobal = 1;
@@ -22,8 +22,8 @@
         canSetArea = 0;
         canSetAreaHeight = 0;
         canSetAreaShape = 0;
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\attack_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\attack_ca.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_ai.paa";
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_ai.paa";
 
         class Attributes
         {

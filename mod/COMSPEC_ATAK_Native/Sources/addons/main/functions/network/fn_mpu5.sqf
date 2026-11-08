@@ -138,6 +138,8 @@ switch (_act) do {
     case "source": {
         // Liaison réaliste (fn_mpuLink) : la radio ne sert plus de relais « porté » de l'ancien modèle.
         if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith { [] };
+        // Objet obligatoire manquant (fn_netRequire) : ni MPU5 ni radio ne relaient plus rien.
+        if ((["denied"] call comspec_atak_native_fnc_netRequire) isNotEqualTo []) exitWith { [] };
         if (["has", [player]] call comspec_atak_native_fnc_mpu5) exitWith {
             ["MPU5", "MPU5", missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000],
                 missionNamespace getVariable ["comspec_atak_native_mpu5_gain", 8], missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20]]
@@ -247,6 +249,9 @@ switch (_act) do {
         _out
     };
     case "tick": {
+        ["tick"] call comspec_atak_native_fnc_netRequire;
+        // Carte d'état de l'app Wave Relay ouverte sur MON NŒUD : chiffres à jour sans redessiner la page.
+        ["live"] call comspec_atak_native_fnc_waveRelayStatus;
         private _src = ["source"] call comspec_atak_native_fnc_mpu5;
         private _has = _src isNotEqualTo [];
         private _was = uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Was", false];
@@ -254,8 +259,8 @@ switch (_act) do {
             uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Was", [false, _src param [0, ""]] select _has];
             uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", nil];
             uiNamespace setVariable ["COMSPEC_ATAK_Mesh", nil];
-            ["INFO", [["Radio retirée : le téléphone repasse sur sa propre antenne", "MPU5 retirée : le téléphone repasse sur sa propre antenne"] select (_was isEqualTo "MPU5"),
-                ["Données relayées par la radio", "MPU5 détectée : le téléphone passe par la radio maillée"] select ((_src param [0, ""]) isEqualTo "MPU5")] select _has, 4, 20] call comspec_atak_native_fnc_notify;
+            if ((["denied"] call comspec_atak_native_fnc_netRequire) isEqualTo []) then { ["INFO", [["Radio retirée : le téléphone repasse sur sa propre antenne", "MPU5 retirée : le téléphone repasse sur sa propre antenne"] select (_was isEqualTo "MPU5"),
+                ["Données relayées par la radio", "MPU5 détectée : le téléphone passe par la radio maillée"] select ((_src param [0, ""]) isEqualTo "MPU5")] select _has, 4, 20] call comspec_atak_native_fnc_notify; };
         };
         // État publié : débit montant reçu d'un relais (ou d'une autre MPU5, au plus 3 bonds) que la MPU5 relaie à l'équipe.
         private _pub = [];

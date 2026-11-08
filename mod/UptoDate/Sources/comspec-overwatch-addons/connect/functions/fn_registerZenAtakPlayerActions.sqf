@@ -124,7 +124,7 @@ if (
     && {!isNil "zen_custom_modules_fnc_register"}
 ) then {
     [
-        "COMSPEC Roleplay",
+        "COMSPEC_Cat_Atak",
         "ATAK — Éditer joueur",
         {
             params ["_pos", "_obj"];
@@ -158,7 +158,7 @@ if (
     && {!isNil "zen_custom_modules_fnc_register"}
 ) then {
     [
-        "COMSPEC Roleplay",
+        "COMSPEC_Cat_Atak",
         "Doter du terminal SEEK",
         {
             params ["_pos", "_obj"];
@@ -238,7 +238,7 @@ if (
     };
     private _root = [
         "comspec_atak_zeus_root",
-        "COMSPEC ATAK",
+        "COMSPEC_Cat_Atak",
         "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa",
         {},
         _hasPlayer

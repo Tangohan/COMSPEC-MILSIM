@@ -92,6 +92,7 @@ class CfgFunctions {
             class idCover {};
             class idQuestion {};
             class idCoverPage {};
+            class idCoverSync {};
             class idBio {};
             class idHvt {};
             class idAiConfig {};

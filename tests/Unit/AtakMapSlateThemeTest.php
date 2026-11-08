@@ -128,7 +128,7 @@ final class AtakMapSlateThemeTest extends TestCase
         }
         $action = $this->read('functions/route/fn_routeAction.sqf');
         // Retirée partout dès la suppression, pierre tombale même sans réception préalable, repartage en révision supérieure.
-        self::assertStringContainsString('_bin set [_arg, [_r, _tok, _sc0]];', $action);
+        self::assertStringContainsString('_bin set [_arg, [_r, _tok, _sc0, _arma0]];', $action);
         self::assertStringContainsString('[_arg, _to, _r getOrDefault ["rev", 0]], "Route", 1, 1,', $action);
         self::assertStringContainsString('if !(_pk in _rx) exitWith {};', $action);
         self::assertStringContainsString('if ((_r get "scope") isEqualTo 0) then { _r set ["rev"', $action);

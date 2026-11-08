@@ -134,9 +134,13 @@ switch (_op) do {
     };
     case "coverSheet": {
         _a params [["_net", ""], ["_sheet", createHashMap]];
-        (missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap]) set [_net, _sheet];
-        missionNamespace setVariable ["comspec_sse_idCoverSheets", missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap]];
-        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCOVER") then { ["IDCOVER"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+        private _all = missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap];
+        missionNamespace setVariable ["comspec_sse_idCoverSheets", _all];
+        private _old = _all getOrDefault [_net, createHashMap];
+        _all set [_net, _sheet];
+        // Couverture née en jeu : remontée à Athena par le compte relié de ce poste (fn_idCoverSync).
+        if (_net isEqualTo netId player) then { ["push", _sheet] call comspec_sse_fnc_idCoverSync; };
+        ["act", "received", [_old, _sheet]] call comspec_sse_fnc_idCoverPage;
     };
     case "coverList": {
         _a params [["_l", []]];
@@ -156,6 +160,8 @@ switch (_op) do {
         };
         if (_state in ["off", "burnt"] && {_eh >= 0}) then { player removeEventHandler ["FiredMan", _eh]; player setVariable ["comspec_sse_idFiredEh", -1]; };
         (missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap]) deleteAt (netId player);
+        // Infiltration ouverte : la fiche est demandée tout de suite, pour que la couverture remonte sans ouvrir l'app.
+        if (_state isEqualTo "on") then { ["send", ["coverSheet", [player, player]]] call comspec_sse_fnc_idClient; };
         private _msg = switch (_state) do {
             case "on": { "Vous êtes infiltré : votre couverture tient tant que rien ne vous trahit (ATAK › Ma couverture)." };
             case "off": { "Infiltration levée." };

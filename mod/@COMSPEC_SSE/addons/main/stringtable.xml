@@ -215,7 +215,7 @@
         <Key ID="STR_COMSPEC_SSE_CFG_099DA36626">
             <Original>&lt;t color='#7fd08a'&gt;What is a dataset?&lt;/t&gt;&lt;br/&gt;A ready-to-play scenario: a list of named roles (leader, bomb maker, courier...), the links between them and a fixed seed. The same roles always give the same names, aliases, phone numbers, documents and fingerprints, from one session to the next and from one server to another.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Available datasets&lt;/t&gt;&lt;br/&gt;FALCON, Iraqi cell 2012 (seed FALCON-IQ-2012-A), six roles: sector leader ABU KARIM (HVT), IED technician « L'INGÉNIEUR », border courier « LE CHAUFFEUR », financial relay « LE CHANGEUR », safehouse keeper « LE LOCATAIRE », a civilian shopkeeper. The list can also be read in Zeus (Scenario director, List datasets) and on Athena (SSE Office, Mission models, Mission kits).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Reveal levels&lt;/t&gt;&lt;br/&gt;0 Surface: the leader under his alias and the civilian.&lt;br/&gt;1 Tactical: + IED technician and courier (recommended).&lt;br/&gt;2 Field: + financial relay and safehouse keeper.&lt;br/&gt;3 Full truth: everything, for a debrief or the Zeus.&lt;br/&gt;The level decides which roles are handed out: you need at least as many people in the radius (FALCON: 2, 4, then 6).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Step by step (Eden)&lt;/t&gt;&lt;br/&gt;1. Place the cell members, grouped, away from the players.&lt;br/&gt;2. Place the Scenario director module (category 3. Mission and scenario) in the middle.&lt;br/&gt;3. Action: Apply the dataset. Dataset: FALCON. Level: 1. Radius: big enough to cover the group.&lt;br/&gt;4. At start, the person closest to the module becomes the leader, then the next ones in role order.&lt;br/&gt;To force a role on a specific person: their attributes, COMSPEC SSE — Intelligence, Mission dataset and Role in the dataset.</Original>
             <English>&lt;t color='#7fd08a'&gt;What is a dataset?&lt;/t&gt;&lt;br/&gt;A ready-to-play scenario: a list of named roles (leader, bomb maker, courier...), the links between them and a fixed seed. The same roles always give the same names, aliases, phone numbers, documents and fingerprints, from one session to the next and from one server to another.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Available datasets&lt;/t&gt;&lt;br/&gt;FALCON, Iraqi cell 2012 (seed FALCON-IQ-2012-A), six roles: sector leader ABU KARIM (HVT), IED technician « L'INGÉNIEUR », border courier « LE CHAUFFEUR », financial relay « LE CHANGEUR », safehouse keeper « LE LOCATAIRE », a civilian shopkeeper. The list can also be read in Zeus (Scenario director, List datasets) and on Athena (SSE Office, Mission models, Mission kits).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Reveal levels&lt;/t&gt;&lt;br/&gt;0 Surface: the leader under his alias and the civilian.&lt;br/&gt;1 Tactical: + IED technician and courier (recommended).&lt;br/&gt;2 Field: + financial relay and safehouse keeper.&lt;br/&gt;3 Full truth: everything, for a debrief or the Zeus.&lt;br/&gt;The level decides which roles are handed out: you need at least as many people in the radius (FALCON: 2, 4, then 6).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Step by step (Eden)&lt;/t&gt;&lt;br/&gt;1. Place the cell members, grouped, away from the players.&lt;br/&gt;2. Place the Scenario director module (category 3. Mission and scenario) in the middle.&lt;br/&gt;3. Action: Apply the dataset. Dataset: FALCON. Level: 1. Radius: big enough to cover the group.&lt;br/&gt;4. At start, the person closest to the module becomes the leader, then the next ones in role order.&lt;br/&gt;To force a role on a specific person: their attributes, COMSPEC SSE — Intelligence, Mission dataset and Role in the dataset.</English>
-            <French>&lt;t color='#7fd08a'&gt;Un dataset, c'est quoi ?&lt;/t&gt;&lt;br/&gt;Un scénario prêt à jouer : une liste de rôles nommés (chef, artificier, courrier...), les liens entre eux et une graine fixe. Les mêmes rôles donnent toujours les mêmes noms, alias, numéros de téléphone, documents et empreintes, d'une partie à l'autre et d'un serveur à l'autre.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Datasets disponibles&lt;/t&gt;&lt;br/&gt;FALCON, cellule irakienne de 2012 (graine FALCON-IQ-2012-A), six rôles : chef de secteur ABU KARIM (HVT), technicien IED « L'INGÉNIEUR », courrier frontière « LE CHAUFFEUR », relais financier « LE CHANGEUR », gardien de planque « LE LOCATAIRE », un civil commerçant. La liste se lit aussi au Zeus (Directeur de scénario, Lister les datasets) et sur Athena (Bureau SSE, Modèles de mission, Kits mission).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Les niveaux de révélation&lt;/t&gt;&lt;br/&gt;0 Surface : le chef sous son alias et le civil.&lt;br/&gt;1 Tactique : + technicien IED et courrier (conseillé).&lt;br/&gt;2 Terrain : + relais financier et gardien de planque.&lt;br/&gt;3 Vérité complète : tout, pour un débriefing ou le Zeus.&lt;br/&gt;Le niveau décide quels rôles sont distribués : il faut au moins autant de personnes dans le rayon (FALCON : 2, 4, puis 6).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Pas à pas (Eden)&lt;/t&gt;&lt;br/&gt;1. Posez les personnes de la cellule, groupées, loin des joueurs.&lt;br/&gt;2. Posez le module Directeur de scénario (catégorie 3. Mission et scénario) au milieu.&lt;br/&gt;3. Action : Appliquer le dataset. Dataset : FALCON. Niveau : 1. Rayon : assez grand pour couvrir le groupe.&lt;br/&gt;4. Au lancement, la personne la plus proche du module devient le chef, puis les suivantes dans l'ordre des rôles.&lt;br/&gt;Pour imposer un rôle à une personne précise : ses attributs, COMSPEC SSE — Renseignement, Dataset mission et Rôle dans le dataset.</French>
+            <French>&lt;t color='#7fd08a'&gt;Un dataset, c'est quoi ?&lt;/t&gt;&lt;br/&gt;Un scénario prêt à jouer : une liste de rôles nommés (chef, artificier, courrier...), les liens entre eux et une graine fixe. Les mêmes rôles donnent toujours les mêmes noms, alias, numéros de téléphone, documents et empreintes, d'une partie à l'autre et d'un serveur à l'autre.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Datasets disponibles&lt;/t&gt;&lt;br/&gt;FALCON, cellule irakienne de 2012 (graine FALCON-IQ-2012-A), six rôles : chef de secteur ABU KARIM (HVT), technicien IED « L'INGÉNIEUR », courrier frontière « LE CHAUFFEUR », relais financier « LE CHANGEUR », gardien de planque « LE LOCATAIRE », un civil commerçant. La liste se lit aussi au Zeus (Directeur de scénario, Lister les datasets) et sur Athena (Bureau SSE, Modèles de mission, Kits mission).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Les niveaux de révélation&lt;/t&gt;&lt;br/&gt;0 Surface : le chef sous son alias et le civil.&lt;br/&gt;1 Tactique : + technicien IED et courrier (conseillé).&lt;br/&gt;2 Terrain : + relais financier et gardien de planque.&lt;br/&gt;3 Vérité complète : tout, pour un débriefing ou le Zeus.&lt;br/&gt;Le niveau décide quels rôles sont distribués : il faut au moins autant de personnes dans le rayon (FALCON : 2, 4, puis 6).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Pas à pas (Eden)&lt;/t&gt;&lt;br/&gt;1. Posez les personnes de la cellule, groupées, loin des joueurs.&lt;br/&gt;2. Posez le module Directeur de scénario (catégorie COMSPEC · Mission) au milieu.&lt;br/&gt;3. Action : Appliquer le dataset. Dataset : FALCON. Niveau : 1. Rayon : assez grand pour couvrir le groupe.&lt;br/&gt;4. Au lancement, la personne la plus proche du module devient le chef, puis les suivantes dans l'ordre des rôles.&lt;br/&gt;Pour imposer un rôle à une personne précise : ses attributs, COMSPEC SSE — Renseignement, Dataset mission et Rôle dans le dataset.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_09E57A77DF">
             <Original>Optional, shown to checked players (e.g. CP North).</Original>
@@ -2770,7 +2770,7 @@
         <Key ID="STR_COMSPEC_SSE_CFG_85EE05467D">
             <Original>&lt;t color='#7fd08a'&gt;What it is for&lt;/t&gt;&lt;br/&gt;The records players transmit (checked persons, biometric captures, sites) reach Athena, in the SSE Office. The case reference tells which case to file them in, for example SSE-2026-0007.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Where to find it&lt;/t&gt;&lt;br/&gt;Athena, SSE Office (SSE Portal button on the ATAK page), menu 04 Validated cases: the reference is on each row and at the top of the case page.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;How to create one&lt;/t&gt;&lt;br/&gt;Same page, Open a case button. You need the SSE Office management right (managers and leadership). The reference is assigned automatically: SSE, the year, then a number.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;In the mission&lt;/t&gt;&lt;br/&gt;SSE case reference module (3. Mission and scenario): copy the reference, place the module anywhere. In Zeus, the same module switches case during the game. Other way: CBA setting COMSPEC SSE, Network, SSE case reference.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Without a reference&lt;/t&gt;&lt;br/&gt;Each record goes to the only open case if there is just one, otherwise to a daily case « Checks of ... (to sort) ».</Original>
             <English>&lt;t color='#7fd08a'&gt;What it is for&lt;/t&gt;&lt;br/&gt;The records players transmit (checked persons, biometric captures, sites) reach Athena, in the SSE Office. The case reference tells which case to file them in, for example SSE-2026-0007.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Where to find it&lt;/t&gt;&lt;br/&gt;Athena, SSE Office (SSE Portal button on the ATAK page), menu 04 Validated cases: the reference is on each row and at the top of the case page.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;How to create one&lt;/t&gt;&lt;br/&gt;Same page, Open a case button. You need the SSE Office management right (managers and leadership). The reference is assigned automatically: SSE, the year, then a number.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;In the mission&lt;/t&gt;&lt;br/&gt;SSE case reference module (3. Mission and scenario): copy the reference, place the module anywhere. In Zeus, the same module switches case during the game. Other way: CBA setting COMSPEC SSE, Network, SSE case reference.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Without a reference&lt;/t&gt;&lt;br/&gt;Each record goes to the only open case if there is just one, otherwise to a daily case « Checks of ... (to sort) ».</English>
-            <French>&lt;t color='#7fd08a'&gt;À quoi elle sert&lt;/t&gt;&lt;br/&gt;Les fiches que les joueurs transmettent (personnes contrôlées, relevés biométriques, sites) arrivent sur Athena, dans le Bureau SSE. La référence de dossier dit dans quelle affaire les ranger, par exemple SSE-2026-0007.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Où la trouver&lt;/t&gt;&lt;br/&gt;Athena, Bureau SSE (bouton Portail SSE de la page ATAK), menu 04 Dossiers validés : la référence figure sur chaque ligne et en tête de la page de l'affaire.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Comment en créer une&lt;/t&gt;&lt;br/&gt;Même page, bouton Ouvrir une affaire. Il faut le droit de gestion du Bureau SSE (gestionnaires et encadrement). La référence est attribuée automatiquement : SSE, l'année, puis un numéro.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Dans la mission&lt;/t&gt;&lt;br/&gt;Module Référence de dossier SSE (3. Mission et scénario) : recopiez la référence, posez le module n'importe où. Au Zeus, le même module change de dossier en cours de partie. Autre moyen : réglage CBA COMSPEC SSE, Réseau, Référence dossier SSE.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Sans référence&lt;/t&gt;&lt;br/&gt;Chaque fiche va dans la seule affaire ouverte s'il n'y en a qu'une, sinon dans une affaire du jour « Contrôles du ... (à trier) ».</French>
+            <French>&lt;t color='#7fd08a'&gt;À quoi elle sert&lt;/t&gt;&lt;br/&gt;Les fiches que les joueurs transmettent (personnes contrôlées, relevés biométriques, sites) arrivent sur Athena, dans le Bureau SSE. La référence de dossier dit dans quelle affaire les ranger, par exemple SSE-2026-0007.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Où la trouver&lt;/t&gt;&lt;br/&gt;Athena, Bureau SSE (bouton Portail SSE de la page ATAK), menu 04 Dossiers validés : la référence figure sur chaque ligne et en tête de la page de l'affaire.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Comment en créer une&lt;/t&gt;&lt;br/&gt;Même page, bouton Ouvrir une affaire. Il faut le droit de gestion du Bureau SSE (gestionnaires et encadrement). La référence est attribuée automatiquement : SSE, l'année, puis un numéro.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Dans la mission&lt;/t&gt;&lt;br/&gt;Module Référence de dossier SSE (COMSPEC · Mission) : recopiez la référence, posez le module n'importe où. Au Zeus, le même module change de dossier en cours de partie. Autre moyen : réglage CBA COMSPEC SSE, Réseau, Référence dossier SSE.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Sans référence&lt;/t&gt;&lt;br/&gt;Chaque fiche va dans la seule affaire ouverte s'il n'y en a qu'une, sinon dans une affaire du jour « Contrôles du ... (à trier) ».</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_865E727F4F">
             <Original>Document file title (optional)</Original>
@@ -3768,9 +3768,9 @@
             <French>Fréquence</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BB03B66639">
-            <Original>&lt;t color='#7fd08a'&gt;1. Sites and objects&lt;/t&gt;&lt;br/&gt;Generate an SSE profile: identity, phone, documents and biometrics on synced people or objects.&lt;br/&gt;Create a full SSE site: links everything in the radius into one network.&lt;br/&gt;Make exploitable: marks an object as searchable; its content is generated on first inspection.&lt;br/&gt;Place an intelligence object: creates the object (computer, phone, file...) and makes it exploitable.&lt;br/&gt;Apply an SSE model: applies a ready-made generation recipe (see Models).&lt;br/&gt;SSE training site: a full generated site for practice.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. People and links&lt;/t&gt;&lt;br/&gt;Subject identity: what the SEEK terminal will answer (unknown, flagged, wanted), name, alias.&lt;br/&gt;Organisation: declares a network, a cell, a clan; sync its members and the objects it owns.&lt;br/&gt;Link SSE entities: draws links on the link chart (chain or star).</Original>
-            <English>&lt;t color='#7fd08a'&gt;1. Sites and objects&lt;/t&gt;&lt;br/&gt;Generate an SSE profile: identity, phone, documents and biometrics on synced people or objects.&lt;br/&gt;Create a full SSE site: links everything in the radius into one network.&lt;br/&gt;Make exploitable: marks an object as searchable; its content is generated on first inspection.&lt;br/&gt;Place an intelligence object: creates the object (computer, phone, file...) and makes it exploitable.&lt;br/&gt;Apply an SSE model: applies a ready-made generation recipe (see Models).&lt;br/&gt;SSE training site: a full generated site for practice.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. People and links&lt;/t&gt;&lt;br/&gt;Subject identity: what the SEEK terminal will answer (unknown, flagged, wanted), name, alias.&lt;br/&gt;Organisation: declares a network, a cell, a clan; sync its members and the objects it owns.&lt;br/&gt;Link SSE entities: draws links on the link chart (chain or star).</English>
-            <French>&lt;t color='#7fd08a'&gt;1. Sites et objets&lt;/t&gt;&lt;br/&gt;Générer un profil SSE : identité, téléphone, documents et biométrie sur les personnes ou objets synchronisés.&lt;br/&gt;Créer un site SSE complet : relie au même réseau tout ce qui est dans le rayon.&lt;br/&gt;Rendre exploitable : marque un objet comme fouillable ; son contenu est généré au premier examen.&lt;br/&gt;Poser un objet de renseignement : crée l'objet (ordinateur, téléphone, dossier...) et le rend exploitable.&lt;br/&gt;Appliquer un modèle SSE : applique une recette de génération toute prête (voir Modèles).&lt;br/&gt;Site d'entraînement SSE : un site complet généré pour s'exercer.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. Personnes et liens&lt;/t&gt;&lt;br/&gt;Identité d'un sujet : ce que le terminal SEEK répondra (inconnu, signalé, recherché), nom, alias.&lt;br/&gt;Organisation : déclare un réseau, une cellule, un clan ; synchronisez ses membres et les objets qui lui appartiennent.&lt;br/&gt;Lier des entités SSE : trace des liens au tableau des liens (chaîne ou étoile).</French>
+            <Original>&lt;t color='#7fd08a'&gt;1. Sites and objects&lt;/t&gt;&lt;br/&gt;Generate an SSE profile: identity, phone, documents and biometrics on synced people or objects.&lt;br/&gt;Create a full SSE site: links everything in the radius into one network.&lt;br/&gt;Make exploitable: marks an object as searchable; its content is generated on first inspection.&lt;br/&gt;Place an intelligence object: creates the object (computer, phone, file...) and makes it exploitable.&lt;br/&gt;Apply an SSE model: applies a ready-made generation recipe (see Models).&lt;br/&gt;SSE training site: a full generated site for practice.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;People and links&lt;/t&gt;&lt;br/&gt;Subject identity: what the SEEK terminal will answer (unknown, flagged, wanted), name, alias.&lt;br/&gt;Organisation: declares a network, a cell, a clan; sync its members and the objects it owns.&lt;br/&gt;Link SSE entities: draws links on the link chart (chain or star).</Original>
+            <English>&lt;t color='#7fd08a'&gt;1. Sites and objects&lt;/t&gt;&lt;br/&gt;Generate an SSE profile: identity, phone, documents and biometrics on synced people or objects.&lt;br/&gt;Create a full SSE site: links everything in the radius into one network.&lt;br/&gt;Make exploitable: marks an object as searchable; its content is generated on first inspection.&lt;br/&gt;Place an intelligence object: creates the object (computer, phone, file...) and makes it exploitable.&lt;br/&gt;Apply an SSE model: applies a ready-made generation recipe (see Models).&lt;br/&gt;SSE training site: a full generated site for practice.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;People and links&lt;/t&gt;&lt;br/&gt;Subject identity: what the SEEK terminal will answer (unknown, flagged, wanted), name, alias.&lt;br/&gt;Organisation: declares a network, a cell, a clan; sync its members and the objects it owns.&lt;br/&gt;Link SSE entities: draws links on the link chart (chain or star).</English>
+            <French>&lt;t color='#7fd08a'&gt;1. Sites et objets&lt;/t&gt;&lt;br/&gt;Générer un profil SSE : identité, téléphone, documents et biométrie sur les personnes ou objets synchronisés.&lt;br/&gt;Créer un site SSE complet : relie au même réseau tout ce qui est dans le rayon.&lt;br/&gt;Rendre exploitable : marque un objet comme fouillable ; son contenu est généré au premier examen.&lt;br/&gt;Poser un objet de renseignement : crée l'objet (ordinateur, téléphone, dossier...) et le rend exploitable.&lt;br/&gt;Appliquer un modèle SSE : applique une recette de génération toute prête (voir Modèles).&lt;br/&gt;Site d'entraînement SSE : un site complet généré pour s'exercer.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Personnes et liens&lt;/t&gt;&lt;br/&gt;Identité d'un sujet : ce que le terminal SEEK répondra (inconnu, signalé, recherché), nom, alias.&lt;br/&gt;Organisation : déclare un réseau, une cellule, un clan ; synchronisez ses membres et les objets qui lui appartiennent.&lt;br/&gt;Lier des entités SSE : trace des liens au tableau des liens (chaîne ou étoile).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BBA6DAA8E0">
             <Original>FALCON · IED technician « L'INGÉNIEUR »</Original>
@@ -4898,9 +4898,9 @@
             <French>Jamais</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F42128454E">
-            <Original>&lt;t color='#7fd08a'&gt;1. Campaign&lt;/t&gt; "SSE Campaign" module (Mission): ID, type, autosave.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. People&lt;/t&gt; Unit attributes: COMSPEC SSE categories (identity, biometrics, fixed ID for a recurring character) and Organization (organization, cell, role, nom de guerre, what players know).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organizations&lt;/t&gt; "Organization" module (People): sync people or a group leader; roles entered or generated into cells; also sync the objects that belong to it.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objects&lt;/t&gt; Any object can be SSE: COMSPEC SSE attributes (enforced nature, richness), "Attached to the organization", DL-7 Extraction.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; Sites and objects modules to generate a complete site.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. End&lt;/t&gt; "SSE Campaign: save" module synced to a trigger.</Original>
-            <English>&lt;t color='#7fd08a'&gt;1. Campaign&lt;/t&gt; "SSE Campaign" module (Mission): ID, type, autosave.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. People&lt;/t&gt; Unit attributes: COMSPEC SSE categories (identity, biometrics, fixed ID for a recurring character) and Organization (organization, cell, role, nom de guerre, what players know).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organizations&lt;/t&gt; "Organization" module (People): sync people or a group leader; roles entered or generated into cells; also sync the objects that belong to it.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objects&lt;/t&gt; Any object can be SSE: COMSPEC SSE attributes (enforced nature, richness), "Attached to the organization", DL-7 Extraction.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; Sites and objects modules to generate a complete site.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. End&lt;/t&gt; "SSE Campaign: save" module synced to a trigger.</English>
-            <French>&lt;t color='#7fd08a'&gt;1. Campagne&lt;/t&gt; Module « Campagne SSE » (Mission) : identifiant, type, sauvegarde automatique.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. Personnes&lt;/t&gt; Attributs d'une unité : catégories COMSPEC SSE (identité, biométrie, identifiant fixé pour un personnage récurrent) et Organisation (organisation, cellule, rôle, nom de guerre, ce que les joueurs savent).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organisations&lt;/t&gt; Module « Organisation » (Personnes) : synchronisez des personnes ou le chef d'un groupe ; rôles saisis ou générés en cellules ; synchronisez aussi les objets qui lui appartiennent.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objets&lt;/t&gt; Tout objet peut être SSE : attributs COMSPEC SSE (nature imposée, richesse), « Rattaché à l'organisation », Extraction DL-7.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; Modules Sites et objets pour générer un site complet.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. Fin&lt;/t&gt; Module « Campagne SSE : sauvegarder » synchronisé à un déclencheur.</French>
+            <Original>&lt;t color='#7fd08a'&gt;1. Campaign&lt;/t&gt; "SSE Campaign" module (Mission): ID, type, autosave.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. People&lt;/t&gt; Unit attributes: COMSPEC SSE categories (identity, biometrics, fixed ID for a recurring character) and Organization (organization, cell, role, nom de guerre, what players know).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organizations&lt;/t&gt; "Organization" module (People): sync people or a group leader; roles entered or generated into cells; also sync the objects that belong to it.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objects&lt;/t&gt; Any object can be SSE: COMSPEC SSE attributes (enforced nature, richness), "Attached to the organization", DL-7 Extraction.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; COMSPEC · Intelligence (SSE) modules to generate a complete site.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. End&lt;/t&gt; "SSE Campaign: save" module synced to a trigger.</Original>
+            <English>&lt;t color='#7fd08a'&gt;1. Campaign&lt;/t&gt; "SSE Campaign" module (Mission): ID, type, autosave.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. People&lt;/t&gt; Unit attributes: COMSPEC SSE categories (identity, biometrics, fixed ID for a recurring character) and Organization (organization, cell, role, nom de guerre, what players know).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organizations&lt;/t&gt; "Organization" module (People): sync people or a group leader; roles entered or generated into cells; also sync the objects that belong to it.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objects&lt;/t&gt; Any object can be SSE: COMSPEC SSE attributes (enforced nature, richness), "Attached to the organization", DL-7 Extraction.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; COMSPEC · Intelligence (SSE) modules to generate a complete site.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. End&lt;/t&gt; "SSE Campaign: save" module synced to a trigger.</English>
+            <French>&lt;t color='#7fd08a'&gt;1. Campagne&lt;/t&gt; Module « Campagne SSE » (Mission) : identifiant, type, sauvegarde automatique.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. Personnes&lt;/t&gt; Attributs d'une unité : catégories COMSPEC SSE (identité, biométrie, identifiant fixé pour un personnage récurrent) et Organisation (organisation, cellule, rôle, nom de guerre, ce que les joueurs savent).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organisations&lt;/t&gt; Module « Organisation » (Personnes) : synchronisez des personnes ou le chef d'un groupe ; rôles saisis ou générés en cellules ; synchronisez aussi les objets qui lui appartiennent.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objets&lt;/t&gt; Tout objet peut être SSE : attributs COMSPEC SSE (nature imposée, richesse), « Rattaché à l'organisation », Extraction DL-7.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; Modules de COMSPEC · Renseignement (SSE) pour générer un site complet.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. Fin&lt;/t&gt; Module « Campagne SSE : sauvegarder » synchronisé à un déclencheur.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F4731FA7D1">
             <Original>Every 10 minutes</Original>
@@ -5116,6 +5116,186 @@
             <Original>Lives under a cover identity from the start: cover papers and legend, captive while the cover holds (setting), blown by a visible weapon, military clothing, shooting, a restricted zone or a failed check.</Original>
             <English>Lives under a cover identity from the start: cover papers and legend, captive while the cover holds (setting), blown by a visible weapon, military clothing, shooting, a restricted zone or a failed check.</English>
             <French>Vit sous une identité de couverture dès le début : papiers « couverture » et légende, captif tant que la couverture tient (réglage), brûlée par une arme visible, une tenue militaire, un tir, une zone interdite ou un contrôle raté.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_012F5A523B">
+            <Original>Set the active case (legacy)</Original>
+            <English>Set the active case (legacy)</English>
+            <French>Fixer le dossier actif (ancien)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_11D3D530AA">
+            <Original>Place a site</Original>
+            <English>Place a site</English>
+            <French>Poser un site</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_174E6AE6E9">
+            <Original>Set a subject's identity</Original>
+            <English>Set a subject's identity</English>
+            <French>Définir l'identité d'un sujet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1B575B0C65">
+            <Original>Create an organisation</Original>
+            <English>Create an organisation</English>
+            <French>Créer une organisation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_271C15D369">
+            <Original>Prepare cable data</Original>
+            <English>Prepare cable data</English>
+            <French>Préparer des données au câble</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_272C408CC9">
+            <Original>Create a full site</Original>
+            <English>Create a full site</English>
+            <French>Créer un site complet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2A0021C018">
+            <Original>Direct the scenario</Original>
+            <English>Direct the scenario</English>
+            <French>Diriger le scénario</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2DF5FE9362">
+            <Original>Save the campaign</Original>
+            <English>Save the campaign</English>
+            <French>Sauvegarder la campagne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_346FC10FF6">
+            <Original>Save a template</Original>
+            <English>Save a template</English>
+            <French>Enregistrer un modèle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_42055C212F">
+            <Original>Clear cable data</Original>
+            <English>Clear cable data</English>
+            <French>Vider les données du câble</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_49726C8B32">
+            <Original>Load a campaign</Original>
+            <English>Load a campaign</English>
+            <French>Charger une campagne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_54D4DE8143">
+            <Original>Issue a SEEK terminal</Original>
+            <English>Issue a SEEK terminal</English>
+            <French>Doter d'un terminal SEEK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_56D46DDD87">
+            <Original>Make exploitable</Original>
+            <English>Make exploitable</English>
+            <French>Rendre exploitable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_58CA32DD5B">
+            <Original>Add a cable file</Original>
+            <English>Add a cable file</English>
+            <French>Ajouter un fichier au câble</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5D70B0860D">
+            <Original>Set the case reference</Original>
+            <English>Set the case reference</English>
+            <French>Fixer la référence du dossier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_69CF391658">
+            <Original>COMSPEC · Identity</Original>
+            <English>COMSPEC · Identity</English>
+            <French>COMSPEC · Identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6D67710BE6">
+            <Original>Set document styling</Original>
+            <English>Set document styling</English>
+            <French>Régler la présentation des documents</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_73AFB9F42D">
+            <Original>Place an AI checkpoint</Original>
+            <English>Place an AI checkpoint</English>
+            <French>Poser un checkpoint IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_77D98D1EDB">
+            <Original>Mark a digital device</Original>
+            <English>Mark a digital device</English>
+            <French>Marquer un support numérique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7EE0E7173F">
+            <Original>Inspect (debug)</Original>
+            <English>Inspect (debug)</English>
+            <French>Inspecter (debug)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7F949A745E">
+            <Original>Manage sites</Original>
+            <English>Manage sites</English>
+            <French>Gérer les sites</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_818F614847">
+            <Original>View the data</Original>
+            <English>View the data</English>
+            <French>Consulter les données</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_92BC2D3879">
+            <Original>Link entities</Original>
+            <English>Link entities</English>
+            <French>Lier des entités</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_93DA6975DB">
+            <Original>Clear data</Original>
+            <English>Clear data</English>
+            <French>Effacer des données</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9DA2B9007F">
+            <Original>Link several sites</Original>
+            <English>Link several sites</English>
+            <French>Relier plusieurs sites</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A23260FA5A">
+            <Original>Reset a site</Original>
+            <English>Reset a site</English>
+            <French>Réinitialiser un site</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B8DF81D74D">
+            <Original>Apply a template</Original>
+            <English>Apply a template</English>
+            <French>Appliquer un modèle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BF752EC697">
+            <Original>COMSPEC · Mission</Original>
+            <English>COMSPEC · Mission</English>
+            <French>COMSPEC · Mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C5EC76ED19">
+            <Original>Create a training site</Original>
+            <English>Create a training site</English>
+            <French>Créer un site d'entraînement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D25FA458B2">
+            <Original>Open the after-action report</Original>
+            <English>Open the after-action report</English>
+            <French>Ouvrir le compte rendu (AAR)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D87E995DD7">
+            <Original>COMSPEC · Intelligence (SSE)</Original>
+            <English>COMSPEC · Intelligence (SSE)</English>
+            <French>COMSPEC · Renseignement (SSE)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D9683CFF8B">
+            <Original>Generate from a brief</Original>
+            <English>Generate from a brief</English>
+            <French>Générer depuis un brief</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DB1284E64B">
+            <Original>Open the SSE panel</Original>
+            <English>Open the SSE panel</English>
+            <French>Ouvrir le panneau SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DD45C0174C">
+            <Original>Compare known and truth</Original>
+            <English>Compare known and truth</English>
+            <French>Comparer connu et vérité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F4613359A7">
+            <Original>Generate a profile</Original>
+            <English>Generate a profile</English>
+            <French>Générer un profil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F6A86AD2A7">
+            <Original>List templates</Original>
+            <English>List templates</English>
+            <French>Lister les modèles</French>
         </Key>
     </Package>
 </Project>

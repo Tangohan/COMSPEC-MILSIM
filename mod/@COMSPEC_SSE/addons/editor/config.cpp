@@ -4,7 +4,7 @@
 /*
     Éditeur SSE (maquette validée) : créer un renseignement, une identité, un papier, un dossier ou un kit, le voir tel
     que les joueurs le verront, le retrouver dans une bibliothèque, le poser dans le monde.
-    Ouvert par le module Zeus « COMSPEC SSE · Éditeur » et le menu COMSPEC SSE d'Eden. Icônes et logo : tools/gen_editor_assets.py.
+    Ouvert par le module Zeus « COMSPEC · Renseignement (SSE) » et le menu COMSPEC SSE d'Eden. Icônes et logo : tools/gen_editor_assets.py.
 */
 class CfgPatches {
     class comspec_sse_editor {
