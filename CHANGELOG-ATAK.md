@@ -60,6 +60,39 @@ EN : Found documents finally look like real paper
 - Autotest : étape `sse_papiers`, une capture par papier.
 
 ---
+## Pack 4.1.0 Washington : verrouillage et code, carte tactique, mode pilote, réseau réaliste, profils IA, licence (ATAK natif 4.1.0.AG - Washington, COMSPEC Link 2.0.121, SSE 1.5.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.1.0 Washington : écran de verrouillage, carte tactique, mode pilote, réseau réaliste et profils d'IA
+- **Écran de verrouillage et code** : écran refait, code à 4 à 8 chiffres avec indice, fonds d'écran, Bloc-notes (ouvrir, éditer, partager, supprimer), Bluetooth refait et dégâts d'écran variés.
+- **Carte** : fond ARDOISE, style tactique, point GPS aligné avec ses cercles, pointage par appui long, icônes lisibles, suppression et partage des routes.
+- **Tracés** : routes et zones réparées, plus d'objectif créé à chaque tracé, noms au format militaire, formes et suppression partout, sur le web et la carte du jeu.
+- **Mode pilote, FIRES court et apps regroupées** : réglages d'addon, désactivés par défaut.
+- **BFT** : l'ORBAT du site et les joueurs hors ligne. **Écran et poste TOC** refaits, diapositives corrigées.
+- **Explosifs** : app refaite et déclencheur réseau, avec confirmation avant le tir.
+- **Réseau** : réalisme activé par défaut, vraies radios ACRE et TFAR en priorité, objet obligatoire réglable, tutoriel, assistant de configuration, garde-fous pour ne jamais gêner ACRE et TFAR. La voix relayée reste à activer par l'admin.
+- **Antennes et tours** : déploiement réparé, tours relais épurées, mini-antennes de bâtiment.
+- **Zeus** : Centre Zeus, modules rangés en 4 catégories, fenêtre de configuration des objets.
+- **SSE 1.5.0** : profils d'IA reliés à Athena, papiers aux IA, réponses au-dessus de la tête, couverture reliée à Athena, éditeur utilisable pour les 5 types.
+- **Licence** : nouvelle note de service, à relire et accepter une fois.
+- **Corrections** : traductions anglaises, plantage en boucle après une caméra IP, appareil compromis, texte coupé en petit format.
+EN : ATAK 4.1.0 Washington: lock screen, tactical map, pilot mode, realistic network and AI profiles
+- **Lock screen and code**: redesigned lock screen, 4 to 8 digit code with hint, wallpapers, Notepad (open, edit, share, delete), redesigned Bluetooth and varied screen damage.
+- **Map**: SLATE background, tactical style, GPS dot aligned with its circles, press-and-hold pointer, readable icons, delete and share for routes.
+- **Drawing**: routes and zones repaired, no more objective created at every stroke, military-style names, shapes and deletion everywhere, on the web and the in-game map.
+- **Pilot mode, short FIRES and grouped apps**: addon settings, off by default.
+- **BFT**: the site ORBAT and offline players. **TOC screen and post** redesigned, slides fixed.
+- **Explosives**: redesigned app and network detonator, with confirmation before firing.
+- **Network**: realism on by default, real ACRE and TFAR radios first, configurable required item, tutorial, setup assistant, safeguards so the mod never gets in the way of ACRE or TFAR. Relayed voice stays opt-in for the admin.
+- **Antennas and towers**: deployment fixed, cleaner relay towers, building mini antennas.
+- **Zeus**: Zeus Centre, modules sorted into 4 categories, object configuration window.
+- **SSE 1.5.0**: AI profiles linked to Athena, papers for AIs, replies above heads, cover linked to Athena, editor usable for all 5 types.
+- **Licence**: new service note, to read and accept once.
+- **Fixes**: English translations, looping crash after an IP camera, compromised device, text cut off at small sizes.
+
+### Détail technique
+Les entrées « À venir » qui suivent détaillent chaque lot de cette version ; leur numéro est celui de ce pack. COMSPEC Link 2.0.121 : `GetCommunityOrbat`, `RepairLocalData`, plus aucune requête vers Athena tant que la liaison n'est pas autorisée.
 
 ## À venir : textes entiers en portrait, relevé du document au contrôle d'identité (ATAK natif et SSE, version à attribuer)
 
