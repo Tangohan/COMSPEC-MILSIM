@@ -51,14 +51,14 @@ $visibilityLabel = static function (string $v): string {
         default => 'Personnel',
     };
 };
-$nav = is_array($nav ?? null) ? $nav : [];
-$space = \App\Support\EquipmentSpaces::normalize($nav['espace'] ?? 'mes-tenues');
-$counts = is_array($nav['counts'] ?? null) ? $nav['counts'] : [];
-$detail = is_array($nav['detail'] ?? null) ? $nav['detail'] : null;
+$eqNav = is_array($eqNav ?? null) ? $eqNav : [];
+$space = \App\Support\EquipmentSpaces::normalize($eqNav['espace'] ?? 'mes-tenues');
+$counts = is_array($eqNav['counts'] ?? null) ? $eqNav['counts'] : [];
+$detail = is_array($eqNav['detail'] ?? null) ? $eqNav['detail'] : null;
 // Adresse de l'espace en cours (retour des formulaires : favori, filtres).
 $spaceQuery = [
-    'espace' => $space, 'collection' => (int) ($nav['collection'] ?? 0), 'q' => (string) ($nav['q'] ?? ''), 'type' => (string) ($nav['type'] ?? ''),
-    'tri' => (string) ($nav['sort'] ?? 'name'), 'tab' => $space === 'materiel' ? (string) ($nav['tab'] ?? 'fiches') : '', 'page' => (int) ($nav['paged']['page'] ?? 1),
+    'espace' => $space, 'collection' => (int) ($eqNav['collection'] ?? 0), 'q' => (string) ($eqNav['q'] ?? ''), 'type' => (string) ($eqNav['type'] ?? ''),
+    'tri' => (string) ($eqNav['sort'] ?? 'name'), 'tab' => $space === 'materiel' ? (string) ($eqNav['tab'] ?? 'fiches') : '', 'page' => (int) ($eqNav['paged']['page'] ?? 1),
 ];
 $returnUrl = \App\Support\EquipmentSpaces::url($spaceQuery);
 

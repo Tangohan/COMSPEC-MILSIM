@@ -71,6 +71,7 @@ $sourceLabel = match ((string) ($w['source'] ?? '')) {
             <?php if ($previewNames !== ''): ?>
             <small class="eq-hub__card-items" translate="no"><?= $h($previewNames) ?></small>
             <?php endif; ?>
+            <?php $inventoryBoxes = is_array($w['inventory'] ?? null) ? $w['inventory'] : []; require __DIR__ . '/_inventory_line.php'; ?>
             <?php if ($sourceLabel !== ''): ?>
             <small class="eqx-tag"><?= $h($sourceLabel) ?></small>
             <?php endif; ?>

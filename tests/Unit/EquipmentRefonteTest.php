@@ -289,7 +289,7 @@ final class EquipmentRefonteTest extends TestCase
                 'counts' => ['mes-tenues' => 1, 'favoris' => 2, 'collections' => 1, 'communaute' => 2, 'kits' => $data['kitsAllowed'] ? 1 : null, 'materiel' => 2],
             ];
 
-            return array_merge($data, ['nav' => $nav]);
+            return array_merge($data, ['eqNav' => $nav]);
         };
         $spaces = array_keys(\App\Support\EquipmentSpaces::SPACES);
         foreach ($states as $label => $data) {
@@ -401,5 +401,36 @@ final class EquipmentRefonteTest extends TestCase
         }
 
         return $out;
+    }
+
+    /** Le portail remplace $nav par son menu avant d'inclure la vue : sans cela, ?espace= revenait sur Mes tenues. */
+    public function testHubVariableIsNotOverwrittenByThePortalMenu(): void
+    {
+        $root = dirname(__DIR__, 2);
+        self::assertStringContainsString('$nav = build_navigation_menu()', (string) file_get_contents($root . '/views/partials/header_portal.php'));
+        foreach ((array) glob($root . '/views/equipment/*.php') as $file) {
+            self::assertDoesNotMatchRegularExpression('/\$nav\b/', (string) file_get_contents((string) $file), (string) $file);
+        }
+        self::assertStringContainsString("'eqNav' => $nav", (string) file_get_contents($root . '/app/Controllers/Web/ArsenalWardrobeController.php'));
+    }
+
+    public function testInventoryListsContainersContents(): void
+    {
+        $payload = (string) json_encode([
+            [], [], [],
+            ['U_Test', [['FirstAidKit', 2], ['30Rnd_Mag', 3, 30]]],
+            ['V_Test', [['30Rnd_Mag', 4, 30]]],
+            ['B_Test', [[['arifle_Test', '', '', '', [], [], ''], 1]]],
+            '', '', [], ['', '', '', '', '', ''],
+        ]);
+        $boxes = \App\Support\ArsenalLoadoutItems::inventory($payload);
+
+        self::assertSame(['Tenue', 'JPC', 'Sac'], array_column($boxes, 'title'));
+        self::assertSame([5, 4], [$boxes[0]['count'], $boxes[1]['count']], 'le conteneur lui-même ne compte pas');
+        self::assertSame('arifle_Test', $boxes[2]['items'][0]['class']);
+        self::assertSame([], \App\Support\ArsenalLoadoutItems::inventory('illisible'));
+
+        $named = \App\Support\ArsenalLoadoutItems::inventoryNames($boxes, ['firstaidkit' => ['name' => 'Bandage']]);
+        self::assertSame('Bandage', $named[0]['items'][0]['name']);
     }
 }

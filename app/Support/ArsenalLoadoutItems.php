@@ -286,6 +286,51 @@ final class ArsenalLoadoutItems
     }
 
     /**
+     * Ce que contiennent la tenue, le JPC et le sac (le conteneur lui-même n'est pas compté).
+     *
+     * @return list<array{title: string, count: int, items: list<array{name: string, qty: int, class: string}>}>
+     */
+    public static function inventory(string $payload): array
+    {
+        $lo = self::parse($payload);
+        $out = [];
+        foreach ([3 => 'Tenue', 4 => 'JPC', 5 => 'Sac'] as $slot => $title) {
+            $items = is_array($lo[$slot] ?? null) ? self::mergeQty(self::cargoItems($lo[$slot][1] ?? [])) : [];
+            if ($items !== []) {
+                $count = (int) array_sum(array_map(static fn (array $it): int => (int) ($it['qty'] ?? 1), $items));
+                $out[] = ['title' => $title, 'count' => $count, 'items' => $items];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Remplace les noms de inventory() par les noms vus en jeu, quand ils sont connus.
+     *
+     * @param list<array{title: string, count: int, items: list<array{name: string, qty: int, class: string}>}> $inventory
+     * @param array<string, array{name?: string, players?: int}> $catalog
+     * @return list<array{title: string, count: int, items: list<array{name: string, qty: int, class: string}>}>
+     */
+    public static function inventoryNames(array $inventory, array $catalog): array
+    {
+        self::$catalog = $catalog;
+        try {
+            foreach ($inventory as &$box) {
+                foreach ($box['items'] as &$it) {
+                    $it['name'] = self::item($it['class'])['name'];
+                }
+                unset($it);
+            }
+            unset($box);
+
+            return $inventory;
+        } finally {
+            self::$catalog = [];
+        }
+    }
+
+    /**
      * Lignes d’aperçu (nom, classe, icône) pour une liste de classes, avec les noms vus en jeu si connus.
      *
      * @param list<string> $classes
@@ -722,8 +767,10 @@ final class ArsenalLoadoutItems
             }
             $first = $entry[0] ?? null;
             if (is_array($first)) {
-                $nested = self::weaponItems($entry);
-                foreach ($nested as $row) {
+                // Arme rangée dans un conteneur : [[classe, accessoires…], quantité].
+                $count = max(1, (int) ($entry[1] ?? 1));
+                foreach (self::weaponItems($first) as $row) {
+                    $row['qty'] = (int) $row['qty'] * $count;
                     $items[] = $row;
                 }
                 continue;

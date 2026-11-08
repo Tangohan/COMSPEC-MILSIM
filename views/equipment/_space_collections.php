@@ -4,13 +4,13 @@ declare(strict_types=1);
  * Espace Collections : la liste des collections (cartes), ou, avec ?collection=ID, le contenu d'une collection.
  * Création et modification dans des fenêtres (_dialogs.php) ; adresses ?collection=ID conservées.
  */
-if (is_array($nav['collection_row'] ?? null)) {
+if (is_array($eqNav['collection_row'] ?? null)) {
     require __DIR__ . '/_space_wardrobes.php';
 
     return;
 }
-$paged = is_array($nav['paged'] ?? null) ? $nav['paged'] : ['items' => [], 'page' => 1, 'pages' => 1, 'total' => 0];
-$filtersActive = (string) ($nav['q'] ?? '') !== '';
+$paged = is_array($eqNav['paged'] ?? null) ? $eqNav['paged'] : ['items' => [], 'page' => 1, 'pages' => 1, 'total' => 0];
+$filtersActive = (string) ($eqNav['q'] ?? '') !== '';
 ?>
 <div class="eqx-spacehead">
     <p class="eqx-intro">Rangez vos tenues en collections pour les retrouver et les partager par thème.</p>
