@@ -10,10 +10,13 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UserRepository;
+use App\Services\Audit\AuditService;
 use App\Services\Media\MissingUserMediaScanner;
+use App\Services\Organization\CommunityDataStorageService;
 use App\Services\Organization\OrbatBilletService;
 use App\Support\BilletOccupancyType;
 use App\Support\OrgDomainModel;
+use Throwable;
 
 /**
  * Centre Qualité des données ORBAT — anomalies, mouvements, corbeille, snapshots.
@@ -23,7 +26,10 @@ final class OrganizationDataQualityController
     public function __construct(
         private OrbatBilletService $billetService,
         private ?UserRepository $users = null,
+        private ?CommunityDataStorageService $dataStorage = null,
     ) {}
+
+    public const CONFIRM_WORD = 'SUPPRIMER';
 
     public function index(Request $request, array $params = []): Response
     {
@@ -69,6 +75,9 @@ final class OrganizationDataQualityController
             'schemaReady' => $this->billetService->schemaReady(),
             'csrfToken' => Csrf::token(),
             'missingMediaUsers' => $this->missingMediaUsers($tenantId),
+            'storage' => $this->storage()->overview($tenantId),
+            'canPurge' => $gate->allows('organization.data.purge'),
+            'confirmWord' => self::CONFIRM_WORD,
         ]);
     }
 
@@ -199,5 +208,102 @@ final class OrganizationDataQualityController
         );
 
         return Response::redirect(url('back-office/organisation/qualite-donnees'));
+    }
+
+    private function storage(): CommunityDataStorageService
+    {
+        return $this->dataStorage ??= new CommunityDataStorageService();
+    }
+
+    /** Télécharge un lot de données de la communauté (ZIP). Réservé aux gestionnaires. */
+    public function downloadData(Request $request, array $params = []): Response
+    {
+        $back = Response::redirect(url('back-office/organisation/qualite-donnees') . '#dq-stockage');
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $actorId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $back;
+        }
+        $gate = Gate::getInstance();
+        if (!$gate->allows('admin.organization') && !$gate->allows('admin.access') && !$gate->allows('organization.data.purge')) {
+            Session::flash('error', 'Droits insuffisants pour télécharger ces données.');
+
+            return $back;
+        }
+        $key = (string) ($params['key'] ?? '');
+        $archive = $this->storage()->buildArchive($tenantId, $key);
+        if ($archive === null) {
+            Session::flash('error', 'Archive impossible à préparer (lot inconnu ou compression indisponible).');
+
+            return $back;
+        }
+        $this->audit('community_data.downloaded', $tenantId, $actorId, $key, ['rows' => $archive['rows'], 'files' => $archive['files']]);
+        $response = new Response();
+        $response->header('Content-Type', 'application/zip');
+        $response->header('Content-Disposition', 'attachment; filename="' . preg_replace('/[^a-z0-9_-]/i', '', $key) . '-' . date('Ymd') . '.zip"');
+        $response->setBody((string) file_get_contents($archive['path']));
+        @unlink($archive['path']);
+
+        return $response;
+    }
+
+    /** Supprime un lot de données de la communauté après confirmation écrite. Droit dédié requis. */
+    public function purgeData(Request $request, array $params = []): Response
+    {
+        $back = Response::redirect(url('back-office/organisation/qualite-donnees') . '#dq-stockage');
+        $tenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $actorId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $back;
+        }
+        if (!Gate::getInstance()->allows('organization.data.purge')) {
+            Session::flash('error', 'Droits insuffisants pour supprimer ces données.');
+
+            return $back;
+        }
+        if (trim((string) $request->input('confirm', '')) !== self::CONFIRM_WORD) {
+            Session::flash('error', 'Suppression annulée : tapez ' . self::CONFIRM_WORD . ' pour confirmer.');
+
+            return $back;
+        }
+        $key = (string) ($params['key'] ?? '');
+        $result = $this->storage()->purge($tenantId, $key);
+        if ($result === null) {
+            Session::flash('error', 'Lot de données inconnu.');
+
+            return $back;
+        }
+        $this->audit('community_data.purged', $tenantId, $actorId, $key, $result);
+        Session::flash('success', $result['rows'] . ' élément(s) et ' . $result['files'] . ' fichier(s) supprimé(s).');
+
+        return $back;
+    }
+
+    /** @param array<string, mixed> $details */
+    private function audit(string $action, int $tenantId, int $actorId, string $key, array $details): void
+    {
+        try {
+            (new AuditService())->log(
+                $action,
+                $tenantId,
+                $actorId,
+                'community_data',
+                null,
+                null,
+                (string) json_encode(['set' => $key] + $details, JSON_UNESCAPED_UNICODE)
+            );
+        } catch (Throwable) {
+            // Le journal indisponible ne doit pas masquer le résultat.
+        }
     }
 }
