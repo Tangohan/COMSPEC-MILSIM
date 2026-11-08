@@ -174,7 +174,7 @@ switch (_op) do {
         };
         private _b = [_spec, "BOLO", _key] call _addBolo;
         // Alias seul : avis sur l'alias (liste papier des checkpoints).
-        if ((_b get "last") isEqualTo "" && {(_b get "alias") isNotEqualTo ""}) then { (_reg get "watch") pushBack [_b get "alias", "", _b get "alias", _b get "level", _b get "ref"]; };
+        if ((_b get "last") isEqualTo "" && {(_b get "alias") isNotEqualTo ""}) then { (_reg get "watch") pushBack ["", "", _b get "alias", _b get "level", _b get "ref"]; };
         [format ["BOLO %1 : %2%3.", _b get "ref", trim format ["%1 %2", toUpper (_b get "last"), _b get "first"], ["", format [" « %1 »", _b get "alias"]] select ((_b get "alias") isNotEqualTo "")]] call _broadcast;
         [_b] call _boloAthena;
         ["add", ["BOLO", format ["BOLO %1 diffusé : %2 %3 (%4)", _b get "ref", toUpper (_b get "last"), _b get "first", _b get "level"], format ["bolo|%1", _b get "ref"]]] call comspec_sse_fnc_idAar;

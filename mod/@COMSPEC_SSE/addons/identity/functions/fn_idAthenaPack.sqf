@@ -84,6 +84,12 @@ switch (_op) do {
         };
         private _top = [_root, ["version", "generated_at", "map", "op", "countries", "identities", "documents", "watch", "kits"]] call _rec;
         private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        // Réglage de la communauté (Bureau SSE d'Athena) : l'emporte sur le réglage CBA, diffusé aux postes des contrôleurs.
+        private _settings = [_top getOrDefault ["settings", []], ["auto_transmit"]] call _rec;
+        if ("auto_transmit" in _settings) then {
+            private _at = _settings get "auto_transmit";
+            missionNamespace setVariable ["comspec_sse_id_autoTransmitCommunity", _at isEqualTo true || {_at isEqualTo 1}, true];
+        };
         private _nC = 0; private _nD = 0; private _nW = 0;
         {
             private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional", "name_en", "authority", "theme", "languages", "doc_types", "colors", "active", "real_sim", "zone", "name_native", "validity"]] call _rec;
@@ -205,7 +211,8 @@ switch (_op) do {
             private _ref = (_w getOrDefault ["ref", ""]) call _str;
             if (_ref isEqualTo "" || {_l isEqualTo "" && {_al isEqualTo ""}}) then { continue; };
             // Avis local limité aux camps autorisés (6e champ : camps, vide = tous).
-            (_reg get "watch") pushBack [[_l, _al] select (_l isEqualTo ""), _f, _al, _lv, _ref, _sides];
+            // Nom vide : avis sur l'alias seul, jamais recopié dans le champ nom (fn_idEvaluate le compare à part).
+            (_reg get "watch") pushBack [_l, _f, _al, _lv, _ref, _sides];
             _nW = _nW + 1;
             // Papiers émis connus (ids du paquet ; absent = ignoré) : numéros à surveiller.
             private _wd = _w getOrDefault ["documents", []];

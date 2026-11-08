@@ -265,6 +265,10 @@ class CommunityController
         $recruitmentPublishedOpenings = [];
         $recruitmentProspectionRef = '';
         $recruitmentListUpdatedAt = '';
+        if ($publicLayout !== 'showcase' && $this->recruitmentOpeningRepository->tablesExist()) {
+            // Fiche simple : seuls les postes publiés (nombre et intitulés) alimentent l'état du recrutement.
+            $recruitmentPublishedOpenings = $this->recruitmentOpeningRepository->listPublishedForTenant($tid);
+        }
         if ($publicLayout === 'showcase' && $this->recruitmentOpeningRepository->tablesExist()) {
             $recruitmentPublishedOpenings = $this->recruitmentOpeningRepository->listPublishedForTenant($tid);
             $recruitmentProspectionRef = TenantRecruitmentSettings::prospectionDocumentRef($settings);
@@ -299,6 +303,21 @@ class CommunityController
         $mediaViewerUserId = $this->authService->check() && Session::get('user_id')
             ? (int) Session::get('user_id')
             : null;
+        if ($publicLayout !== 'showcase') {
+            $tenantBranding = $this->tenantBrandingRepository->mergeWithTenantLogo($tenant, $this->tenantBrandingRepository->findByTenantId($tid));
+        }
+        // Formule réellement appliquée à la communauté (offerte, abonnement, essai) : mise en valeur sans aucun montant.
+        $planBadge = null;
+        try {
+            $planSlug = \App\Support\PlanGift::effectivePlanSlug($tenant);
+            if ($planSlug !== '' && $planSlug !== 'free') {
+                $plan = \App\Core\Container::get(\App\Repositories\SubscriptionPlanRepository::class)->findBySlug($planSlug);
+                $planName = is_array($plan) ? trim((string) ($plan['name'] ?? '')) : '';
+                $planBadge = ['slug' => $planSlug, 'name' => $planName !== '' ? $planName : ucfirst($planSlug)];
+            }
+        } catch (\Throwable) {
+            $planBadge = null;
+        }
         if ($publicLayout === 'showcase') {
             $publicMediaItems = $this->communityMediaRepository->attachLikeState(
                 $this->communityMediaRepository->listPublicPageItems($tid),
@@ -389,6 +408,7 @@ class CommunityController
             'mediaLikesEnabled' => $this->communityMediaRepository->likesTableExists(),
             'mediaViewerCanLike' => $mediaViewerUserId !== null && $mediaViewerUserId > 0,
             'tenantBranding' => $tenantBranding,
+            'planBadge' => $planBadge,
             'pageLayout' => $pageLayout,
             'pageEditor' => $pageEditor,
             'meta_description' => $seoDesc,

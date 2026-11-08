@@ -46,6 +46,27 @@ final class EnlistmentMilsimPackService
     }
 
     /**
+     * Créneaux proposés au candidat : ceux de la communauté, à défaut le catalogue courant. Le candidat coche toujours
+     * des cases, il n'a jamais à deviner un texte libre.
+     *
+     * @param mixed $raw
+     * @return list<array{id: string, label: string}>
+     */
+    public static function slotsOrDefault(mixed $raw): array
+    {
+        $slots = self::normalizeAvailabilitySlots($raw);
+        if ($slots !== []) {
+            return $slots;
+        }
+        $rows = [];
+        foreach (self::suggestedAvailabilitySlots() as $id => $label) {
+            $rows[] = ['id' => $id, 'label' => $label];
+        }
+
+        return self::normalizeAvailabilitySlots($rows);
+    }
+
+    /**
      * Lignes d’ambiance du rail « Avancement » (affichage uniquement).
      *
      * @param mixed $raw

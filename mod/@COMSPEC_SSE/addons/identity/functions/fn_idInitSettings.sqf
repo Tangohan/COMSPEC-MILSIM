@@ -22,7 +22,7 @@ private _realNames = _realCodes apply { format ["%1 (simulation)", (([] call com
 ["comspec_sse_id_civComply", "SLIDER", ["Civils qui présentent leurs papiers (%)", "Part des civils qui tendent leurs papiers quand on les leur demande."], [0, 100, 90, 0]] call _add;
 ["comspec_sse_id_forgedRate", "SLIDER", ["Insurgés porteurs de faux papiers (%)", "Part des combattants ennemis qui ont de faux papiers. Les autres n'en ont pas."], [0, 100, 60, 0]] call _add;
 ["comspec_sse_id_tokenTime", "SLIDER", ["Durée d'une présentation (s)", "Temps pendant lequel un document présenté peut être contrôlé par celui à qui on l'a tendu."], [30, 600, 120, 0]] call _add;
-["comspec_sse_id_autoTransmit", "CHECKBOX", ["Transmission automatique à Athena", "Chaque contrôle terminé part tout seul vers Athena. Décoché : bouton Transmettre de l'app Contrôle ID."], false] call _add;
+["comspec_sse_id_autoTransmit", "CHECKBOX", ["Transmission automatique à Athena", "Chaque contrôle terminé part tout seul vers Athena (file d'attente sans liaison). Décoché : bouton Transmettre de l'app Contrôle ID. Le réglage de votre communauté sur Athena (Bureau SSE, Contrôles), reçu avec le paquet, l'emporte."], true] call _add;
 ["comspec_sse_id_athenaPack", "CHECKBOX", ["Documents et avis d'Athena", "Avec la liaison, les documents délivrés et les personnes signalées de votre communauté sont chargés au début de la mission."], true] call _add;
 ["comspec_sse_id_opKey", "EDITBOX", ["Opération Athena", "Facultatif : clé de l'opération Athena dont on charge les documents. Vide : documents de la carte seulement."], ""] call _add;
 // IA réalistes et checkpoints IA (Lot 3).
