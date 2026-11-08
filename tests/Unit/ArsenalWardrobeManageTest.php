@@ -222,7 +222,8 @@ final class ArsenalWardrobeManageTest extends TestCase
         $js = (string) file_get_contents($root . '/public/assets/js/equipment-catalog.js');
 
         self::assertStringContainsString('data-eq-ace-copy-card="<?= $wid ?>" aria-label="Copier pour ACE"', $card);
-        self::assertStringContainsString('L’import de l’arsenal ACE ne prend qu’une tenue à la fois', $hub);
+        self::assertStringContainsString('L’import de l’arsenal ACE ne prend qu’une tenue à la fois', $dialogs, 'l’aide ACE est dans la fenêtre d’aide de la page');
+        self::assertStringContainsString('data-eq-ace-export', $hub);
         // Modifier / Supprimer : sur ses propres tenues seulement.
         $mineBlock = substr($card, (int) strpos($card, '<?php if ($isMine): ?>', (int) strpos($card, 'data-eq-ace-copy-card')), 900);
         self::assertStringContainsString('data-eq-edit-card=', $mineBlock);
