@@ -197,7 +197,9 @@ final class AtakWikiTest extends TestCase
         $outsideFences = (string) preg_replace('/^```.*?^```[ \t]*$/ms', '', $md);
         self::assertCount(preg_match_all('/^### Résumé joueur/m', $outsideFences), $releases);
         self::assertGreaterThan(preg_match_all('/^### Résumé joueur/m', $outsideFences), preg_match_all('/^### Résumé joueur/m', $md));
-        self::assertSame($m[1], $releases[0]['version']);
+        // Entrées en attente d'un numéro (« version à attribuer ») : la première version numérotée fait foi.
+        $numbered = array_values(array_filter($releases, static fn (array $r): bool => $r['version'] !== ''));
+        self::assertSame($m[1], $numbered[0]['version']);
         self::assertNotSame('', $releases[0]['en']['title']);
         self::assertNotSame($releases[0]['fr']['title'], $releases[0]['en']['title']);
         $news = $this->body($controller->news(new Request(), []));

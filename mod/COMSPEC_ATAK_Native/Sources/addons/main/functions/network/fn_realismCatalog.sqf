@@ -94,8 +94,7 @@ switch (_act) do {
             [_hv, "Traces civiles : renseignement seul", _p + "hvt_trace_role"] call _b,
             [_dv, "Outils de développement du maillage", _p + "mesh_dev"] call _b
         ];
-        // Le réglage d'objet obligatoire peut manquer selon la version : ligne seulement s'il existe.
-        if !(isNil {missionNamespace getVariable (_p + "net_required_items")}) then { _rows pushBack [_ms, "Objet obligatoire pour le réseau", _p + "net_required_items", "text", [], [], "", ""]; };
+        _rows pushBack [_ms, "Objet obligatoire pour le réseau", _p + "net_required_items", "text", [], [], "", ""];
         // Réglages de COMSPEC Overwatch : lus, jamais écrits ici.
         _rows append [
             [_ph, "Dégâts au téléphone (Overwatch)", "comspec_overwatch_atak_realism", "ro", [0, 1, 2, 3], ["Aucun", "Peut s'éteindre", "Écran destructible", "Téléphone destructible"], "", "atak_realism"],

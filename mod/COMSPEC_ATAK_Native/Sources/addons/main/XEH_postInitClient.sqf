@@ -209,6 +209,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["init"] call comspec_atak_native_fnc_radioGuard;
 // Assistant de configuration : proposé une fois à l'admin, le temps que Zeus et #login soient connus.
 [{ ["offer"] call comspec_atak_native_fnc_setupWizard; }, [], 30] call comspec_atak_native_fnc_waitAndExec;
+// Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
+["init"] call comspec_atak_native_fnc_relayTxBadge;
 // Messages des groupes de conversation (fn_meshGroups).
 ["init"] call comspec_atak_native_fnc_meshGroups;
 // Mode de discrétion imposé par le chef (fn_meshEW).

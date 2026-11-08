@@ -33,6 +33,14 @@ if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < ([6, 2] s
 // Cache vidé exprès (antenne, dégâts, mode avion, brouillage, test de débit…) : le meilleur relais est recalculé aussi.
 if ((count _cache) isNotEqualTo 2) then { uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", []]; };
 private _q = createHashMap;
+// Objet obligatoire pour le réseau (fn_netRequire) : aucun réseau sans lui, même simulation coupée ; les envois partent en file comme sans signal.
+private _den = ["denied"] call comspec_atak_native_fnc_netRequire;
+if (_den isNotEqualTo []) exitWith {
+    _q = createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", "Objet requis manquant"],
+        ["factors", [[format ["Objet requis manquant : %1", ["labels", [_den]] call comspec_atak_native_fnc_netRequire], "aucun réseau"]]], ["sim", true], ["tx", false], ["margin", -1], ["jitter", 0]];
+    uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", [diag_tickTime, _q]];
+    _q
+};
 private _mpu = ["status"] call comspec_atak_native_fnc_mpuLink;
 private _mesh = (_mpu get "active") && {_mpu get "ok"} && {(_mpu get "kind") isEqualTo "mpu"};
 if ((_mpu get "active") && {!(_mpu get "ok")} && {missionNamespace getVariable ["comspec_atak_native_mpu_require", false]}) exitWith {

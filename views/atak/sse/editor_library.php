@@ -11,6 +11,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var int $editorPage */
 /** @var int $editorPages */
 /** @var bool $editorUnavailable */
+/** @var bool $editorCanAssign */
+/** @var list<array{id:int,name:string}> $editorMembers */
+/** @var list<array{code:string,name:string}> $editorCountries */
+/** @var list<array{id:int,label:string}> $editorMaps */
+$editorCanAssign = (bool) ($editorCanAssign ?? false);
 $editorPageUrl = static fn (int $p): string => url('atak/sse/editeur') . '?' . http_build_query(array_filter($editorFilters + ['page' => $p > 1 ? $p : ''], static fn ($v): bool => $v !== ''));
 $sseExtraScripts = '<script src="' . $h(asset_url('assets/js/sse-case-modals.js')) . '"></script>';
 ?>
@@ -25,6 +30,10 @@ $sseExtraScripts = '<script src="' . $h(asset_url('assets/js/sse-case-modals.js'
 .el-history { margin: 0; padding: 0; list-style: none; }
 .el-history li { padding: .4rem 0; border-top: 1px solid rgba(148, 163, 184, .12); overflow-wrap: anywhere; }
 .el-history small { display: block; color: #94a3b8; }
+.el-assign { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .6rem 1rem; margin: 0 0 .6rem; }
+.el-assign label { display: block; color: #94a3b8; font-size: .78rem; }
+.el-assign input, .el-assign select { width: 100%; }
+.el-assign__note { margin: 0 0 .6rem; color: #94a3b8; font-size: .85rem; }
 .el-pages { display: flex; align-items: center; justify-content: flex-end; gap: .6rem; margin-top: .8rem; }
 </style>
 <div class="breadcrumb">Athena / SSE / <strong>Bibliothèque de l’éditeur</strong></div>
@@ -33,7 +42,7 @@ $sseExtraScripts = '<script src="' . $h(asset_url('assets/js/sse-case-modals.js'
     <div>
         <div class="page-heading-overline">Préparation // Éditeur SSE</div>
         <h1>Bibliothèque de l’éditeur</h1>
-        <p>Les contenus enregistrés par la communauté depuis l’éditeur SSE du jeu. Lecture seule : ils se créent et se modifient dans le jeu.</p>
+        <p>Les contenus enregistrés par la communauté depuis l’éditeur SSE du jeu. Ils se créent et se modifient dans le jeu ; une identité, un papier ou un kit peut être attribué ici à un joueur.</p>
     </div>
     <div class="page-reference"><strong><?= (int) $editorTotal ?> contenu(s)</strong> Réf. ATH-SSE-EDIT-BIB</div>
 </div>
@@ -104,6 +113,9 @@ $sseExtraScripts = '<script src="' . $h(asset_url('assets/js/sse-case-modals.js'
     </div>
 </section>
 
+<?php if ($editorCanAssign): ?>
+    <datalist id="el-members"><?php foreach ($editorMembers as $m): ?><option value="<?= $h($m['name'] . ' (#' . $m['id'] . ')') ?>"></option><?php endforeach; ?></datalist>
+<?php endif; ?>
 <?php foreach ($editorItems as $it): ?>
     <dialog class="sse-modal el-fiche" id="el-fiche-<?= (int) $it['id'] ?>" aria-labelledby="el-fiche-<?= (int) $it['id'] ?>-t">
         <div class="sse-modal__card">
@@ -132,6 +144,31 @@ $sseExtraScripts = '<script src="' . $h(asset_url('assets/js/sse-case-modals.js'
                     <p class="muted">Aucun texte.</p>
                 <?php else: ?>
                     <div class="el-body" translate="no"><?= $h($it['body']) ?></div>
+                <?php endif; ?>
+                <?php if ($it['assignable'] && ($it['assignments'] !== [] || $editorCanAssign)): ?>
+                    <p class="sse-modal__label">Attribué à</p>
+                    <?php if ($it['assignments'] === []): ?>
+                        <p class="muted">Personne pour le moment.</p>
+                    <?php else: ?>
+                        <ul class="el-history">
+                            <?php foreach ($it['assignments'] as $a): ?>
+                                <li><span translate="no"><?= $h($a['name']) ?></span><?php if (!$a['steam_linked']): ?> <span class="badge">Steam non lié</span><?php endif; ?><small translate="no"><?= $h(($a['op_key'] !== '' ? $a['op_key'] . ' · ' : '') . $a['updated']) ?></small></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                    <?php if ($editorCanAssign): ?>
+                        <form method="post" action="<?= $h(url('atak/sse/editeur/' . rawurlencode($it['uid']) . '/attribuer')) ?>">
+                            <?= \App\Core\Csrf::field() ?>
+                            <div class="el-assign">
+                                <div><label for="el-m-<?= (int) $it['id'] ?>">Membre</label><input id="el-m-<?= (int) $it['id'] ?>" name="member" list="el-members" required autocomplete="off" placeholder="Nom du joueur"></div>
+                                <div><label for="el-c-<?= (int) $it['id'] ?>">Pays émetteur</label><select id="el-c-<?= (int) $it['id'] ?>" name="country"><?php foreach ($editorCountries as $c): ?><option value="<?= $h($c['code']) ?>"><?= $h($c['name']) ?></option><?php endforeach; ?></select></div>
+                                <div><label for="el-p-<?= (int) $it['id'] ?>">Carte</label><select id="el-p-<?= (int) $it['id'] ?>" name="context_id"><option value="0">Toutes les cartes</option><?php foreach ($editorMaps as $mp): ?><option value="<?= (int) $mp['id'] ?>"><?= $h($mp['label']) ?></option><?php endforeach; ?></select></div>
+                                <div><label for="el-o-<?= (int) $it['id'] ?>">Opération (code)</label><input id="el-o-<?= (int) $it['id'] ?>" name="op_key" maxlength="64" placeholder="Aucune"></div>
+                            </div>
+                            <p class="el-assign__note">Le joueur reçoit les papiers et la légende avec le paquet d’identité. Son kit de mission et son brief pour cette portée sont remplacés. Seuls lui et les habilités Confidentiel voient cette identité.</p>
+                            <button class="btn" type="submit">Attribuer au joueur</button>
+                        </form>
+                    <?php endif; ?>
                 <?php endif; ?>
                 <p class="sse-modal__label">Historique</p>
                 <?php if ($it['found_by'] === '' && $it['history'] === []): ?>

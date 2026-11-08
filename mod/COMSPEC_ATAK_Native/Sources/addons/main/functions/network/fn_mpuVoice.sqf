@@ -210,6 +210,12 @@ switch (_act) do {
         _u setVariable ["tf_sendingDistanceMultiplicator", _v];
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceTx", [_u, _base, _v, _targets, _hadTx]];
         { ["comspec_atak_native_meshTfTx", [_u, true], _x] call CBA_fnc_targetEvent; } forEach _targets;
+        // Portée vraiment allongée pour joindre un correspondant ponté : case RELAIS ATAK (fn_relayTxBadge). Sauts : le plus court des correspondants sur cette fréquence.
+        if (_v > _base) then {
+            private _hs = (((missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) param [3, []]) select { _x select 3 }) apply { _x select 1 };
+            _hs sort true;
+            ["show", [_hs param [0, 0]]] call comspec_atak_native_fnc_relayTxBadge;
+        };
     };
     case "tfAfter": {
         _arg params ["_u", "", "", "", ["_down", false]];
@@ -220,6 +226,7 @@ switch (_act) do {
         [_u, "tf_sendingDistanceMultiplicator", _base, _hadTx, _v] call _tfPut;
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceTx", []];
         { ["comspec_atak_native_meshTfTx", [_u, false], _x] call CBA_fnc_targetEvent; } forEach _targets;
+        ["stop"] call comspec_atak_native_fnc_relayTxBadge;
     };
     case "tfRx": {
         _arg params [["_from", objNull], ["_down", false]];
@@ -303,6 +310,7 @@ switch (_act) do {
             _b params ["_key", "_api", "_name"];
             if (((call _radios) findIf { (_x select 0) isEqualTo _key }) < 0) exitWith { _drop = format ["Radio %1 plus sur vous : pont radio retiré", _name]; };
             if !(["has", [player]] call comspec_atak_native_fnc_mpu5) exitWith { _drop = "MPU5 plus sur vous : pont radio retiré"; };
+            if ((["denied"] call comspec_atak_native_fnc_netRequire) isNotEqualTo []) exitWith { _why = "objet requis manquant"; };
             private _node = player getVariable ["COMSPEC_ATAK_MpuNode", []];
             if (_node isEqualTo [] || {(_node param [2, objNull]) isNotEqualTo player}) exitWith { _why = "MPU5 éteinte ou batterie vide"; };
             private _m = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
@@ -343,7 +351,7 @@ switch (_act) do {
                 // Niveau tiré du graphe unique ; porteur absent du graphe : aucun lien, signal d'origine.
                 if (_api isEqualTo "acre") then {
                     private _vg = _voiceG getOrDefault [netId _x, []];
-                    if (_vg isNotEqualTo [] && {(_pp select 1) isEqualType ""}) then { _pairs set [_pp select 1, [_vg select 0, _vg select 2]]; };
+                    if (_vg isNotEqualTo [] && {(_pp select 1) isEqualType ""}) then { _pairs set [_pp select 1, [_vg select 0, _vg select 2, _x]]; };
                 };
                 private _d = player distance _x;
                 _peers pushBack [[_x, true] call comspec_atak_native_fnc_unitCallsign, _h, round _d, _same];
@@ -357,7 +365,13 @@ switch (_act) do {
             _peers = [_peers, [], { _x select 1 }] call BIS_fnc_sortBy;
         };
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceMe", [_pub, _reach, _why, _peers, _mode, _targets, _far]];
-        missionNamespace setVariable ["COMSPEC_ATAK_VoicePairMap", [_pairs]];
+        // Case RELAIS ATAK (fn_relayTxBadge) : accusés notés par fn_mpuVoiceSig, envoyés ici, hors du chemin voix. Le maillage bat le signal direct : la voix passe vraiment par lui.
+        (missionNamespace getVariable ["COMSPEC_ATAK_VoicePairMap", []]) params [["_oldPairs", createHashMap], ["_oldAcks", createHashMap]];
+        {
+            private _who = (_oldPairs getOrDefault [_x, []]) param [2, objNull];
+            if (isPlayer _who) then { ["comspec_atak_native_meshVoiceAck", [_x, _y], _who] call CBA_fnc_targetEvent; };
+        } forEach _oldAcks;
+        missionNamespace setVariable ["COMSPEC_ATAK_VoicePairMap", [_pairs, createHashMap]];
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceRx", [_pub param [1, ""], ""] select ((_pub param [0, ""]) isNotEqualTo "acre")];
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceLive", _b isNotEqualTo []];
         ["tick"] call comspec_atak_native_fnc_meshGroups;

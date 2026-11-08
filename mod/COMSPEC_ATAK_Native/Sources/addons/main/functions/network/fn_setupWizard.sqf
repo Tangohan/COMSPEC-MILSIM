@@ -24,17 +24,17 @@ switch (_act) do {
         private _yn = [[true, false], ["Activé", "Coupé"]];
         // Objets proposés : d'abord les vrais objets du mod radio présent, instances reconnues par leur classe de base.
         private _kits = [""]; private _kitN = ["Aucun objet exigé"];
+        if (isClass (configFile >> "CfgWeapons" >> "ACRE_MPU5")) then { _kits pushBack "ACRE_MPU5"; _kitN pushBack "La MPU5 d'ACRE2"; };
         if (_acre) then { _kits pushBack "ACRE_PRC343|ACRE_PRC148|ACRE_PRC152|ACRE_PRC117F"; _kitN pushBack "Une radio ACRE2 (343, 148, 152 ou 117F)"; };
         if (_tfar) then { _kits pushBack "TFAR_anprc152|TFAR_anprc148jem|TFAR_rf7800str|TFAR_fadak"; _kitN pushBack "Une radio portative TFAR"; };
         if (!_acre && {!_tfar}) then { _kits pushBack "COMSPEC_ATAK_MPU5"; _kitN pushBack "Notre MPU5 (pas de mod radio ici)"; };
-        private _reqOk = !isNil {missionNamespace getVariable (_p + "net_required_items")};
         [
             ["Profil de réalisme", "Le profil règle d'un coup le réseau, le GPS et la batterie. Milsim : tout à sa valeur réelle. Standard : les mêmes simulations en plus doux. Arcade : réseau parfait, GPS exact, batterie infinie, dégâts coupés, liaison radio coupée. Le moyen simple de tout désactiver.",
                 [[_p + "realism_profile", "Profil", [3, 2, 1], ["Milsim", "Standard", "Arcade"]]]],
             ["Radio utilisée", _det + " Le mod s'appuie d'abord sur les vraies radios du joueur : ACRE2 ou TFAR, avec leur portée. Notre MPU5 ne sert qu'en complément ou sans mod radio. La voix relayée par le maillage n'a jamais été testée en jeu : laissez-la coupée tant que ce n'est pas fait.",
                 [[_p + "radio_source", "Radio", [0, 1, 2, 3], ["Détectée automatiquement", "ACRE2", "TFAR", "Aucune"]], [_p + "mpu_real", "Liaison téléphone-radio réaliste", _yn select 0, _yn select 1], [_p + "mpu_voice", "Voix relayée par le maillage", _yn select 0, _yn select 1]]],
-            ["Objets obligatoires", ["Sans cet objet, le joueur n'est plus un nœud du réseau : le téléphone reste utilisable, la voix aussi. Ne l'exigez que si vos joueurs l'ont vraiment dans leur équipement.", "Le réglage d'objet obligatoire n'existe pas encore dans cette version du mod. « Radio de données obligatoire » coupe le réseau du téléphone sans radio : laissez-le coupé sans préparation de mission."] select !_reqOk,
-                ([[[_p + "net_required_items", "Objet obligatoire", _kits, _kitN]], []] select !_reqOk) + [[_p + "mpu_require", "Radio de données obligatoire", _yn select 0, _yn select 1]]],
+            ["Objets obligatoires", "Sans cet objet, le joueur n'est plus un nœud du réseau : le téléphone reste utilisable, la voix aussi. Ne l'exigez que si vos joueurs l'ont vraiment dans leur équipement. « Radio de données obligatoire » coupe le réseau du téléphone sans radio : à réserver aux missions préparées.",
+                [[_p + "net_required_items", "Objet obligatoire", _kits, _kitN], [_p + "mpu_require", "Radio de données obligatoire", _yn select 0, _yn select 1]]],
             ["Brouillage et clés", "Les brouilleurs gênent le téléphone, jamais la portée radio d'ACRE2 ou TFAR. Les clés demandent une préparation de mission : sans clé chargée, un joueur sort du maillage. Clés chargées automatiquement : chaque radio reçoit celles de son camp.",
                 [[_p + "jam_tfar", "Brouillage des scripts TFAR", _yn select 0, _yn select 1], [_p + "zeus_crows", "Brouilleurs Crows Electronic Warfare", _yn select 0, _yn select 1], [_p + "mesh_keys", "Clés du maillage", _yn select 0, _yn select 1], [_p + "mesh_keys_auto", "Clés chargées automatiquement", _yn select 0, _yn select 1]]],
             ["Batterie", "La batterie du téléphone se vide à l'usage et se recharge dans un véhicule moteur allumé. À 0 %, le téléphone s'éteint. Les radios ACRE2 et TFAR n'ont pas de batterie chez nous.",

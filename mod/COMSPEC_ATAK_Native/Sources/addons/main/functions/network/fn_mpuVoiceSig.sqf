@@ -13,13 +13,17 @@ if (isNil "_r" || {!(_r isEqualType [])} || {(count _r) < 2}) exitWith { [0, -99
 if !(missionNamespace getVariable ["COMSPEC_ATAK_VoiceLive", false]) exitWith { _r };
 missionNamespace setVariable ["COMSPEC_ATAK_GuardIn", (missionNamespace getVariable ["COMSPEC_ATAK_GuardIn", 0]) + 1];
 private _out = _r;
-private _e = (missionNamespace getVariable ["COMSPEC_ATAK_VoicePairMap", []]) param [0, []];
+(missionNamespace getVariable ["COMSPEC_ATAK_VoicePairMap", []]) params [["_e", []], ["_acks", []]];
 _this params ["", "", ["_rx", ""], ["_tx", ""]];
 if (_e isEqualType createHashMap && {_rx isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_VoiceRx", ""])}) then {
     private _p = _e getOrDefault [_tx, []];
     if (_p isNotEqualTo []) then {
         private _m = ["sigMap", [_r select 0, _r select 1, _p select 0, _p select 1, (missionNamespace getVariable ["comspec_atak_native_mesh_gravity", true]) isEqualTo true]] call comspec_atak_native_fnc_mpuVoice;
-        if (!isNil "_m" && {_m isEqualTypeArray [0, 0]} && {finite (_m select 0)} && {finite (_m select 1)}) then { _out = _m; } else {
+        if (!isNil "_m" && {_m isEqualTypeArray [0, 0]} && {finite (_m select 0)} && {finite (_m select 1)}) then {
+            _out = _m;
+            // Le maillage bat le signal direct : accusé envoyé par le tick, jamais d'ici. -992 : ACRE2 n'a pas encore de résultat.
+            if ((_r select 1) > -992 && {(_m select 0) > (_r select 0) || {(_m select 1) > (_r select 1)}} && {_acks isEqualType createHashMap}) then { _acks set [_tx, _p select 0]; };
+        } else {
             missionNamespace setVariable ["COMSPEC_ATAK_GuardBad", (missionNamespace getVariable ["COMSPEC_ATAK_GuardBad", 0]) + 1];
         };
     };

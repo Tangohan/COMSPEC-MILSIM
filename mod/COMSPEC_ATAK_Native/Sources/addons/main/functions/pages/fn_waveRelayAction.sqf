@@ -20,6 +20,13 @@ params [["_act", "scan"], ["_k", ""], ["_v", 0]];
 private _render = { if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }; };
 switch (_act) do {
     case "scan": {
+        // Objet obligatoire manquant (fn_netRequire) : je ne suis plus un nœud, l'écran ne montre que moi.
+        if ((["denied"] call comspec_atak_native_fnc_netRequire) isNotEqualTo []) exitWith {
+            createHashMapFromArray [
+                ["nodes", [[player, (eyePos player) vectorAdd [0, 0, 0.5], [player, true] call comspec_atak_native_fnc_unitCallsign, "me", missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000]]]],
+                ["links", []], ["hops", [-1]], ["me", 0], ["gw", -1], ["gwLabel", ""], ["range", missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000]]
+            ]
+        };
         // Liaison réaliste : aucun calcul propre, l'écran lit le graphe des données et de la voix (fn_meshGraph, fn_mpuLink "mesh").
         if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_MeshScanAt", diag_tickTime];
@@ -59,7 +66,7 @@ switch (_act) do {
         };
         private _range = missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000];
         private _side = side group player;
-        private _units = (allPlayers select { alive _x && {side group _x isEqualTo _side} && {_x isNotEqualTo player} && {[_x] call comspec_atak_native_fnc_hasDevice} }) select [0, 63];
+        private _units = (allPlayers select { alive _x && {side group _x isEqualTo _side} && {_x isNotEqualTo player} && {[_x] call comspec_atak_native_fnc_hasDevice} && {!(["blocked", [_x]] call comspec_atak_native_fnc_netRequire)} }) select [0, 63];
         private _ant = { params ["_u"]; (eyePos _u) vectorAdd [0, 0, 0.5] };
         // Radio maillée MPU5 portée (fn_mpu5) : portée du nœud relevée (réglage comspec_atak_native_mpu5_range).
         private _nodes = [[player, [player] call _ant, [player, true] call comspec_atak_native_fnc_unitCallsign, "me", ["range", [player]] call comspec_atak_native_fnc_mpu5]];

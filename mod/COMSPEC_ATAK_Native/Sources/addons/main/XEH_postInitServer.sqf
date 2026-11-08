@@ -44,6 +44,8 @@ if (!hasInterface) then { ["init"] call comspec_atak_native_fnc_radioGuard; };
 // aux clients que ce serveur a le mod : sans elle, ils calculent le graphe eux-mêmes.
 missionNamespace setVariable ["COMSPEC_ATAK_MeshSrvOn", true, true];
 [{ ["serverTick"] call comspec_atak_native_fnc_meshGraph; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Objet obligatoire pour le réseau (fn_netRequire) : le serveur lit les inventaires, rien à faire quand le réglage est vide.
+[{ ["serverTick"] call comspec_atak_native_fnc_netRequire; }, 2] call COMSPEC_ATAK_PfhSpread;
 // Bilan [PERF] sur un serveur dédié (le client le fait de son côté) : rien n'est écrit si rien n'a été mesuré.
 if (!hasInterface) then { [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread; };
 // Registre des clés du maillage : mécanique de jeu, décochée par défaut (fn_meshKeys).
