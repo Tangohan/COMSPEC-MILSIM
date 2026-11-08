@@ -57,7 +57,7 @@ class IntelPlayerFeedService
         'atak_intel_photos' => ['cat' => 'photo', 'label' => 'Photo renseignement', 'time' => 'created_at', 'callsign' => ['author'], 'sub_const' => 'Photo ATAK',
             'cols' => ['filename', 'path', 'pos_x', 'pos_y']],
         'recon_images' => ['cat' => 'photo', 'label' => 'Image de reconnaissance', 'time' => 'created_at', 'callsign' => ['author_callsign'], 'sub_const' => 'Image recon', 'not_null' => ['deleted_at'],
-            'cols' => ['title', 'caption', 'image_path', 'thumb_path', 'grid_ref', 'pos_x', 'pos_y', 'mission_id', 'is_blurred']],
+            'cols' => ['title', 'caption', 'image_path', 'thumb_path', 'grid_ref', 'pos_x', 'pos_y', 'mission_id', 'is_blurred', 'is_confidential']],
         'sse_field_photos' => ['cat' => 'photo', 'label' => 'Photo SSE', 'time' => 'created_at', 'callsign' => ['author_callsign'], 'sub_const' => 'Photo SSE',
             'cols' => ['photo_type', 'caption', 'image_path', 'grid_reference', 'target_ref', 'pos_x', 'pos_y']],
         'recon_notes' => ['cat' => 'photo', 'label' => 'Note de reconnaissance', 'time' => 'created_at', 'steam' => 'author_uid', 'callsign' => ['author'], 'sub_const' => 'Note recon',
@@ -459,7 +459,17 @@ class IntelPlayerFeedService
                 $item['title'] = $v('title') !== '' ? $v('title') : 'Image de reconnaissance';
                 $item['summary'] = $clip($v('caption'));
                 $item['grid'] = $v('grid_ref');
-                $item['image'] = $media($v('thumb_path') !== '' ? $v('thumb_path') : $v('image_path'));
+                // Les chemins recon_images sont « recon/<fichier> » : jamais via user_media_public_url
+                // (donnerait /public/recon/…, introuvable). ReconImageStorage connaît la bonne adresse
+                // et garde les clichés confidentiels derrière leur route authentifiée.
+                $reconPath = $v('thumb_path') !== '' && !ReconImageStorage::isPrivatePath($v('thumb_path')) && empty($r['is_confidential'])
+                    ? $v('thumb_path')
+                    : $v('image_path');
+                $item['image'] = ReconImageStorage::urlForRow([
+                    'id' => $id,
+                    'image_path' => $reconPath,
+                    'is_confidential' => $r['is_confidential'] ?? 0,
+                ]);
                 $item['blurred'] = !empty($r['is_blurred']);
                 break;
             case 'sse_field_photos':
