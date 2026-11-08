@@ -3,13 +3,19 @@
     En-tête : ma position (grille, cap, altitude) et l'état des pistes (direct / ancienne / perdue).
     Filtres : TOUS, MON ÉQUIPE (équipe de feu), MON GROUPE, VÉHICULES, PERDUS. Tri par distance.
     Équipes de feu : l'icône de chaque piste prend la couleur de son équipe, nom de l'équipe et rôle dans la fiche.
-    Chaque piste : symbole, indicatif, distance et gisement, temps de trajet, âge de la dernière position.
+    Tableau à colonnes (RscListNBox) : niveau de l'arbre et symbole, indicatif, état (une forme, pas seulement une couleur),
+    distance, azimut, âge ; batterie faible ou signal nul du téléphone après l'indicatif ; le trajet en infobulle et dans la fiche.
     Une piste hors ligne (téléphone éteint, cassé ou sans signal) reste figée à sa dernière position connue,
     et sans réseau toutes les pistes vieillissent.
     Piste choisie : fiche (trajet, rapprochement, itinéraire GPS) et actions (carte, GPS, SMS, faire vibrer, voir sa caméra).
-    Vues (profil COMSPEC_ATAK_BftView) : LISTE (tableau trié par distance) ou ORBAT (arbre repliable :
-    formation (ORBAT Athena abrégé, sinon préfixe de l'indicatif « Star 4 » → STAR) › groupe (chef, échelon, effectif,
-    distance au chef) › équipe de feu › membres). Repli mémorisé dans uiNamespace COMSPEC_ATAK_BftOrbatOpen.
+    Vues (profil COMSPEC_ATAK_BftView) : LISTE (tableau trié par distance) ou ORBAT : arbre repliable de l'ORBAT du site
+    (fn_bftOrbat : unité › postes et membres, en ligne ou non, postes vacants), puis section « Hors ORBAT du site » :
+    les pistes et les joueurs de mon camp absents de cet ORBAT, en formation (ORBAT Athena abrégé, sinon préfixe de l'indicatif
+    « Star 4 » → STAR) › groupe (chef, échelon, effectif, distance au chef) › équipe de feu › membres.
+    Sans ORBAT du site : un message et cette seconde partie seule. Repli mémorisé dans uiNamespace COMSPEC_ATAK_BftOrbatOpen.
+    État d'un membre de l'ORBAT : piste (distance, gisement), en jeu sans piste, hors ligne (absent du serveur), identité
+    protégée, moi ; rapprochement par empreinte du Steam ID, jamais par le nom ; un joueur d'en face n'est jamais rapproché.
+    Les compteurs du bandeau comptent les membres de l'ORBAT absents du serveur dans « hors ligne » (sauf filtre hors ligne).
     FILTRES : tiroir de réglages persistants (fn_bftFilter : IA, aériens, véhicules, pistes anciennes, hors ligne,
     mon groupe / mon unité, distance max), appliqués aussi à la carte.
 */
@@ -29,7 +35,7 @@ private _filter = _s getOrDefault ["bftFilter", "ALL"];
 private _selId = _s getOrDefault ["bftSel", ""];
 private _view = profileNamespace getVariable ["COMSPEC_ATAK_BftView", "LIST"];
 private _filtersOpen = _s getOrDefault ["bftFiltersOpen", false];
-private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
+private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[[_t, "&", "&amp;"] call CBA_fnc_replace, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 // Temps de trajet : ma vitesse si je bouge, sinon la marche (5 km/h).
 private _mySpd = vectorMagnitude velocity vehicle player;
 private _walk = 5 / 3.6;
@@ -90,12 +96,63 @@ if ((count _drop) > 0) then {
     _tracks = _kept;
 };
 private _labelOf = { params ["_id", "_e"]; _labels getOrDefault [_id, _e getOrDefault ["callsign", _id]] };
+// ORBAT du site : relu en tâche de fond (5 min au plus entre deux lectures), jamais d'attente ici.
+["load"] call comspec_atak_native_fnc_bftOrbat;
+private _orb = ["store"] call comspec_atak_native_fnc_bftOrbat;
+private _oUnits = _orb get "units";
+private _oPeople = _orb get "people";
+private _hasOrb = (count _oUnits) > 0;
+(["presence"] call comspec_atak_native_fnc_bftOrbat) params ["", "_onKey", "_strays"];
+private _hideOff = profileNamespace getVariable ["COMSPEC_ATAK_BftHideOffline", false];
+private _tidOf = { params ["_o"]; private _i = netId _o; if (_i isEqualTo "0:0") then { _i = str _o; }; _i };
+private _trackById = createHashMapFromArray (_tracks apply { [_x select 1, _x] });
+// Piste → personne de l'ORBAT, et joueurs de mon camp hors ORBAT sans piste (les autres sont dans les pistes).
+private _trackKey = createHashMap;
+{ _trackKey set [[_y] call _tidOf, _x]; } forEach _onKey;
+private _strayKey = createHashMap;
+{
+    private _tid = [_x] call _tidOf;
+    if !(_tid in _trackById) then { _strayKey set ["p:s" + _tid, [_x, [_x, true] call comspec_atak_native_fnc_unitCallsign]]; };
+} forEach _strays;
+// État d'une personne de l'ORBAT : [état, joueur, piste].
+private _stOf = {
+    params ["_key"];
+    private _so = _strayKey getOrDefault [_key, []];
+    if ((count _so) > 0) exitWith { ["NOTRACK", _so select 0, []] };
+    private _kind = (_oPeople getOrDefault [_key, [0, 0, 0, 0, 0]]) select 4;
+    if (_kind isEqualTo 2) exitWith { ["VACANT", objNull, []] };
+    if (_kind isEqualTo 1) exitWith { ["ANON", objNull, []] };
+    private _o = _onKey getOrDefault [_key, objNull];
+    if (isNull _o) exitWith { ["OFFLINE", objNull, []] };
+    if (_o isEqualTo player) exitWith { ["ME", _o, []] };
+    private _t = _trackById getOrDefault [[_o] call _tidOf, []];
+    [["NOTRACK", "TRACK"] select ((count _t) > 0), _o, _t]
+};
+private _myFtP = player getVariable ["COMSPEC_FT", ""];
+// Filtres du BFT appliqués à une personne de l'ORBAT. Poste vacant et identité protégée : seulement dans TOUS.
+private _passes = {
+    params ["_st", "_o", "_t"];
+    if (_hideOff && {_st isEqualTo "OFFLINE"}) exitWith { false };
+    switch (_filter) do {
+        case "GROUP": { !isNull _o && {group _o isEqualTo group player} };
+        case "FT": { !isNull _o && {group _o isEqualTo group player} && {_myFtP isNotEqualTo ""} && {(_o getVariable ["COMSPEC_FT", ""]) isEqualTo _myFtP} };
+        case "VEH": { !isNull _o && {(vehicle _o) isNotEqualTo _o} };
+        case "LOST": { _st in ["OFFLINE", "NOTRACK"] || {(count _t) > 0 && {((_t select 2) getOrDefault ["freshness", "LIVE"]) in ["LOST", "OFFLINE"]}} };
+        default { true };
+    }
+};
+// Personne choisie qui retrouve une piste : la piste prend sa place (même ligne, actions complètes).
+if ((_selId select [0, 2]) isEqualTo "p:") then {
+    ([_selId] call _stOf) params ["_sst", "", "_stk"];
+    if (_sst isEqualTo "TRACK") then { _selId = _stk select 1; _s set ["bftSel", _selId]; };
+};
 private _counts = [0, 0, 0, 0];
 {
     private _k = ["LIVE", "STALE", "LOST", "OFFLINE"] find ((_x select 2) getOrDefault ["freshness", "LIVE"]);
     if (_k < 0) then { _k = 2; };
     _counts set [_k, (_counts select _k) + 1];
 } forEach _tracks;
+if (_hasOrb && {!_hideOff}) then { _counts set [3, (_counts select 3) + (((_orb get "total") - count _onKey) max 0)]; };
 private _myFt = player getVariable ["COMSPEC_FT", ""];
 _tracks = _tracks select {
     private _e = _x select 2;
@@ -114,14 +171,21 @@ private _y = 0;
 private _meOn = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0;
 private _hbW = _bw * ([0.24, 0.16] select _land);
 private _head = if (_upd) then { (_live get "ctrls") select 0 } else {
-    private _c = ["COMSPEC_RscCard", [0, 0, _bw - _hbW - _pad / 2, _font * 2.6]] call comspec_atak_native_fnc_pageCtrl;
+    private _c = ["COMSPEC_RscCard", [0, 0, _bw - _hbW - _pad / 2, _font * 1.35]] call comspec_atak_native_fnc_pageCtrl;
     _c ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "surface");
     _c
 };
-_head ctrlSetStructuredText parseText ((format [
-    "<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexInfo") + "'> MOI </t><t font='EtelkaMonospacePro' size='0.9'>%1</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>cap</t> %2° %3  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>alt</t> %4 m  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>vit</t> %9 km/h%10<br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexInfo") + "'> PISTES </t><t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● %5 direct</t>   <t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● %6 ancienne(s)</t>   <t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>● %7 perdue(s)</t>   <t color='#8a948f'>○ %8 hors ligne</t>",
-    [player, 8] call comspec_atak_native_fnc_gridRef, round getDir player, [getDir player] call _card, round (_me select 2), _counts select 0, _counts select 1, _counts select 2, _counts select 3,
-    round (_mySpd * 3.6), ["  <t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>● PAS DE RÉSEAU : pistes figées</t>", ""] select _meOn]) call comspec_atak_native_fnc_tr);
+// En une ligne : ma grille, mon cap, ma vitesse (en portrait étroit : la grille seule), puis quatre pastilles : deux lettres et
+// le nombre, jamais la couleur seule (DI direct, AN ancienne, PE perdue, HL hors ligne) ; le détail est dans l'infobulle.
+private _pill = { params ["_w", "_n", "_hex"]; format ["<t color='%1'>%2 %3</t>", _hex, (_w) call comspec_atak_native_fnc_tr, _n] };
+private _hMute = COMSPEC_ATAK_Th get "hexTextMuted";
+private _meTxt = if (_land || {!(_l get "mini")}) then { format ["<t color='%1'>·</t> %2° %3 <t color='%1'>·</t> %4 km/h", _hMute, round getDir player, [getDir player] call _card, round (_mySpd * 3.6)] } else { "" };
+_head ctrlSetStructuredText parseText (format ["<t font='EtelkaMonospacePro' size='0.9'>%1</t> %2  %3 %4 %5 %6%7",
+    [player, 8] call comspec_atak_native_fnc_gridRef, _meTxt,
+    ["DI", _counts select 0, COMSPEC_ATAK_Th get "hexOk"] call _pill, ["AN", _counts select 1, COMSPEC_ATAK_Th get "hexWarn"] call _pill,
+    ["PE", _counts select 2, COMSPEC_ATAK_Th get "hexAlert"] call _pill, ["HL", _counts select 3, _hMute] call _pill,
+    ["  <t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>" + (("PAS DE RÉSEAU") call comspec_atak_native_fnc_tr) + "</t>", ""] select _meOn]); // i18n:brut
+_head ctrlSetTooltip (format [("Altitude %1 m · %2 direct · %3 ancienne(s) · %4 perdue(s) · %5 hors ligne%6") call comspec_atak_native_fnc_tr, round (_me select 2), _counts select 0, _counts select 1, _counts select 2, _counts select 3, ["", (" · PAS DE RÉSEAU : pistes figées") call comspec_atak_native_fnc_tr] select !_meOn]);
 // À droite de l'en-tête : vue LISTE / ORBAT et tiroir des filtres (nombre de filtres actifs).
 private _nFilt = ({ profileNamespace getVariable [_x, false] } count ["COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_BftHideAir", "COMSPEC_ATAK_BftHideVeh", "COMSPEC_ATAK_BftHideLost", "COMSPEC_ATAK_BftHideOffline"])
     + ([0, 1] select ((profileNamespace getVariable ["COMSPEC_ATAK_AllyFilter", "ALL"]) isNotEqualTo "ALL"))
@@ -132,7 +196,7 @@ if (!_upd) then {
     _x params ["_vLbl", "_vKey", "_vX", "_vTip"];
     private _vf = ["COMSPEC_RscText", [_bw - _hbW + _vX, 0, _hbW / 2 - pixelW, _font * 1.25]] call comspec_atak_native_fnc_pageCtrl;
     private _vb = ["COMSPEC_RscButtonFlat", [_bw - _hbW + _vX, 0, _hbW / 2 - pixelW, _font * 1.25], _vLbl] call comspec_atak_native_fnc_pageCtrl;
-    _vb ctrlSetFontHeight (_fs * 0.9);
+    _vb ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
     _vb ctrlSetTooltip ((_vTip) call comspec_atak_native_fnc_tr);
     _vf ctrlSetBackgroundColor ([COMSPEC_ATAK_Th get "surface2", COMSPEC_ATAK_Th get "accent"] select (_view isEqualTo _vKey));
     _vb ctrlSetTextColor ([COMSPEC_ATAK_Th get "text", COMSPEC_ATAK_Th get "onAccent"] select (_view isEqualTo _vKey));
@@ -145,10 +209,23 @@ if (!_upd) then {
         [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }];
 } forEach [["LISTE", "LIST", 0, "Tableau des pistes, triées par distance"], ["ORBAT", "ORBAT", _hbW / 2, "Arbre ORBAT : formation, groupe, équipe, membres"]];
-private _fb = ["COMSPEC_RscButton", [_bw - _hbW, _font * 1.35, _hbW, _font * 1.25], ["FILTRES", format ["FILTRES (%1)", _nFilt]] select (_nFilt > 0)] call comspec_atak_native_fnc_pageCtrl;
-_fb ctrlSetFontHeight (_fs * 0.9);
-if (_filtersOpen || {_nFilt > 0}) then { _fb ctrlSetBackgroundColor ([[0.18, 0.32, 0.50, 1], [0.28, 0.55, 0.85, 1]] select _filtersOpen); _fb ctrlSetTextColor [1, 1, 1, 1]; };
-_fb ctrlSetTooltip (("Masquer IA, aériens, véhicules, pistes anciennes ou hors ligne ; distance max (aussi sur la carte)") call comspec_atak_native_fnc_tr);
+// Tiroir des filtres : l'entonnoir au bout de la rangée des puces, avec le nombre de filtres actifs.
+private _fbH = _font * 1.4;
+private _fbW = _fbH / (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
+private _fbX = _bw - _fbW - _pad;
+private _fbY = _font * 1.35 + _pad / 2;
+if (_filtersOpen || {_nFilt > 0}) then {
+    private _fbg = ["COMSPEC_RscText", [_fbX, _fbY, _fbW, _fbH]] call comspec_atak_native_fnc_pageCtrl;
+    _fbg ctrlSetBackgroundColor ([COMSPEC_ATAK_Th get "surfaceHi", COMSPEC_ATAK_Th get "accent"] select _filtersOpen);
+};
+if (_nFilt > 0) then {
+    private _fbn = ["COMSPEC_RscTextRight", [_fbX, _fbY + _fbH * 0.5, _fbW, _fbH * 0.5], str _nFilt] call comspec_atak_native_fnc_pageCtrl;
+    _fbn ctrlSetFontHeight COMSPEC_ATAK_FontMin;
+    _fbn ctrlSetTextColor ([COMSPEC_ATAK_Th get "text", COMSPEC_ATAK_Th get "onAccent"] select _filtersOpen);
+};
+private _fb = ["COMSPEC_RscIconButton", [_fbX, _fbY, _fbW, _fbH], "\z\comspec_atak_native\addons\main\data\ui_filter.paa"] call comspec_atak_native_fnc_pageCtrl;
+_fb ctrlSetTextColor ([COMSPEC_ATAK_Th get "text", COMSPEC_ATAK_Th get "onAccent"] select _filtersOpen);
+_fb ctrlSetTooltip ((["Masquer IA, aériens, véhicules, pistes anciennes ou hors ligne ; distance max (aussi sur la carte)", format ["FILTRES (%1)", _nFilt]] select (_nFilt > 0)) call comspec_atak_native_fnc_tr);
 _fb ctrlAddEventHandler ["ButtonClick", {
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     _st set ["bftFiltersOpen", !(_st getOrDefault ["bftFiltersOpen", false])];
@@ -156,35 +233,62 @@ _fb ctrlAddEventHandler ["ButtonClick", {
     [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 };
-_y = _font * 2.6 + _pad / 2;
+_y = _font * 1.35 + _pad / 2;
 
 // Filtres
 if (!_upd) then {
-private _opts = [["TOUS", "ALL"], ["MON ÉQUIPE", "FT"], ["MON GROUPE", "GROUP"], ["VÉHICULES", "VEH"], ["PERDUS", "LOST"]];
-private _fw = (_bw - _pad * 2) / 5;
+private _opts = [["TOUS", "ALL"], ["ÉQUIPE", "FT"], ["GROUPE", "GROUP"], ["VÉHICULES", "VEH"], ["PERDUS", "LOST"]];
+private _fw = (_bw - _pad * 2 - _font * 1.4 / (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW])) / 5;
 {
     _x params ["_t", "_k"];
     private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _fw, _y, _fw - _pad / 4, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
-    _b ctrlSetFontHeight (_fs * 0.9);
-    if (_k isEqualTo _filter) then { _b ctrlSetBackgroundColor [0.28, 0.55, 0.85, 1]; _b ctrlSetTextColor [1, 1, 1, 1]; };
+    _b ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
+    if (_k isEqualTo _filter) then { _b ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "accent"); _b ctrlSetTextColor (COMSPEC_ATAK_Th get "onAccent"); };
     _b ctrlAddEventHandler ["ButtonClick", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['bftFilter', '%1']; [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k]];
 } forEach _opts;
 };
 _y = _y + _font * 1.4 + _pad / 2;
 
+// Message important de l'ORBAT du site (compte non lié, Athena injoignable…) : sur plusieurs lignes au-dessus du tableau, où
+// une cellule le couperait. Touché, il relit l'ORBAT quand c'est possible. Un autre message : rendu complet.
+(if (_view isEqualTo "ORBAT") then { ["notice"] call comspec_atak_native_fnc_bftOrbat } else { ["", "muted", false] }) params ["_nTxt", "_nTone", "_nRetry"];
+private _noteOn = _view isEqualTo "ORBAT" && {!_filtersOpen} && {_nTone in ["warn", "alert"]};
+private _noteTxt = ["", _nTxt] select _noteOn;
+if (_upd && {_noteTxt isNotEqualTo (_live getOrDefault ["note", ""])}) exitWith { false };
+if (_noteOn) then {
+    private _noteH = _fs * 2.5;
+    if (!_upd) then {
+        private _nc = ["COMSPEC_RscStructuredText", [_pad, _y, ([_bw, _bw * 0.58] select _land) - _pad, _noteH]] call comspec_atak_native_fnc_pageCtrl;
+        _nc ctrlSetStructuredText parseText (format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get (["hexWarn", "hexAlert"] select (_nTone isEqualTo "alert")), [(_nTxt) call comspec_atak_native_fnc_tr] call _esc]); // i18n:brut
+        if (_nRetry) then {
+            private _nb = ["COMSPEC_RscButtonOverlay", [_pad, _y, ([_bw, _bw * 0.58] select _land) - _pad, _noteH]] call comspec_atak_native_fnc_pageCtrl;
+            _nb ctrlSetTooltip (("Clic : relire l'ORBAT du site") call comspec_atak_native_fnc_tr);
+            _nb ctrlAddEventHandler ["ButtonClick", { ["load", true] call comspec_atak_native_fnc_bftOrbat; }];
+        };
+    };
+    _y = _y + _noteH;
+};
+
 // Tableau des pistes (à gauche en paysage, en haut en portrait) et fiche de la piste choisie.
 private _detailH = [_bh * 0.36, 0] select _land;
 private _listW = [_bw, _bw * 0.58] select _land;
 private _listH = _bh - _y - _detailH - _pad / 2;
+// Colonnes du tableau, en fraction de sa largeur : portrait et paysage ; trois colonnes de niveau dans l'arbre, une seule dans la liste.
+private _colPos = if (_view isEqualTo "ORBAT") then { [[0, 0.05, 0.10, 0.15, 0.60, 0.68, 0.88, 0.995], [0, 0.035, 0.07, 0.105, 0.56, 0.63, 0.79, 0.89]] select _land } else { [[0, 0.075, 0.076, 0.077, 0.56, 0.65, 0.85, 0.995], [0, 0.05, 0.051, 0.052, 0.52, 0.59, 0.76, 0.87]] select _land };
 if (!_upd) then {
-private _cols = ["COMSPEC_RscMono", [_pad, _y, _listW - _pad, _fs * 1.2], ""] call comspec_atak_native_fnc_pageCtrl;
-_cols ctrlSetText (((switch (true) do {
-    case _filtersOpen: { "  FILTRES DU BFT (aussi appliqués à la carte)" };
-    case (_view isEqualTo "ORBAT"): { "  FORMATION › GROUPE › ÉQUIPE › MEMBRE        DISTANCE · GISEMENT · TRAJET · ÂGE" };
-    default { "  INDICATIF                 DISTANCE · GISEMENT · TRAJET · ÂGE" };
-})) call comspec_atak_native_fnc_tr);
-_cols ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
-_cols ctrlSetTextColor [0.55, 0.61, 0.58, 1];
+// En-têtes alignés sur les colonnes du tableau (une seule ligne de filtres quand le tiroir est ouvert).
+{
+    _x params ["_ht", "_hx", "_hw"];
+    private _cols = ["COMSPEC_RscText", [_hx, _y, _hw, _fs * 1.2], _ht] call comspec_atak_native_fnc_pageCtrl;
+    _cols ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
+    _cols ctrlSetTextColor (COMSPEC_ATAK_Th get "textMuted");
+} forEach (if (_filtersOpen) then { [["FILTRES DU BFT (aussi appliqués à la carte)", _pad, _listW - _pad]] } else {
+    [[["INDICATIF", "UNITÉ › POSTE › MEMBRE"] select (_view isEqualTo "ORBAT"), _listW * (_colPos select 3), _listW * ((_colPos select 4) - (_colPos select 3))],
+     ["ÉTAT", _listW * (_colPos select 4), _listW * ((_colPos select 5) - (_colPos select 4))],
+     ["DIST", _listW * (_colPos select 5), _listW * ((_colPos select 6) - (_colPos select 5))],
+     ["AZ", _listW * (_colPos select 6), _listW * ((_colPos select 7) - (_colPos select 6))],
+     ["ÂGE", _listW * (_colPos select 7), _listW * (1 - (_colPos select 7))]]
+});
 };
 _y = _y + _fs * 1.2;
 _listH = _listH - _fs * 1.2;
@@ -284,61 +388,189 @@ if (_filtersOpen) then {
     uiNamespace setVariable ["COMSPEC_ATAK_PageControls", _pc];
 } else {
 if (_upd) then { _list = (_live get "ctrls") select 1; } else {
-_list = ["COMSPEC_RscListBox", [0, _y, _listW, _listH]] call comspec_atak_native_fnc_pageCtrl;
-_list ctrlSetFontHeight _font;
+_list = ["COMSPEC_RscListNBox", [0, _y, _listW, _listH]] call comspec_atak_native_fnc_pageCtrl;
+// Plafonnée à la hauteur de ligne de la classe (0,040 × safeZoneH), jamais sous le plancher de 14 px.
+_list ctrlSetFontHeight ((_font min (safeZoneH * 0.038)) max COMSPEC_ATAK_FontMin);
 _list ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "bg1");
+_list lnbSetColumnsPos _colPos;
 };
-// Ligne suivante du tableau : réécrite sur place en mise à jour (sans lbClear, le défilement reste), ajoutée sinon.
+// Ligne suivante du tableau : réécrite sur place en mise à jour (sans vider le tableau, le défilement reste), ajoutée sinon.
+// Colonnes : 0 à 2 niveau de l'arbre (chevron ou symbole, dans la colonne de sa profondeur), 3 texte, 4 état, 5 distance, 6 azimut, 7 âge.
+// Ligne identique au passage précédent (membre hors ligne, poste vacant, en-tête) : aucune commande d'affichage.
 private _rowN = 0;
-private _rowAt = {
-    params ["_t"];
+private _sigs = if (_upd) then { uiNamespace getVariable ["COMSPEC_ATAK_BftRowSigs", []] } else { [] };
+private _sigOut = [];
+private _cRow = COMSPEC_ATAK_Th get "text";
+private _cMute = COMSPEC_ATAK_Th get "textMuted";
+private _cDim = COMSPEC_ATAK_Th get "textDim";
+private _put = {
+    params ["_t", ["_right", ""], ["_rgba", _cRow], ["_pic", ""], ["_picRgba", _cRow], ["_tip", ""], ["_depth", 0], ["_stPic", ""], ["_stRgba", _cRow], ["_az", ""], ["_ageT", ""]];
     private _i = _rowN;
-    if (_i < lbSize _list) then { _list lbSetText (([_i, _t]) call comspec_atak_native_fnc_tr); _list lbSetPicture [_i, ""]; _list lbSetTextRight [_i, ""]; _list lbSetTooltip (([_i, ""]) call comspec_atak_native_fnc_tr); } else { _i = _list lbAdd ((_t) call comspec_atak_native_fnc_tr); };
     _rowN = _rowN + 1;
+    private _sig = [_t, _right, _rgba, _pic, _picRgba, _tip, _depth, _stPic, _stRgba, _az, _ageT];
+    _sigOut pushBack _sig;
+    private _nRow = (lnbSize _list) select 0;
+    if (_i < (count _sigs) && {(_sigs select _i) isEqualTo _sig} && {_i < _nRow}) exitWith { _i };
+    if (_i < _nRow) then { _list lnbSetText [[_i, 3], (_t) call comspec_atak_native_fnc_tr]; } else { _i = _list lnbAddRow ["", "", "", (_t) call comspec_atak_native_fnc_tr, "", "", "", ""]; };
+    { _list lnbSetPicture [[_i, _x], ""]; } forEach [0, 1, 2];
+    if (_pic isNotEqualTo "") then {
+        private _pc = _depth min 2;
+        _list lnbSetPicture [[_i, _pc], _pic];
+        _list lnbSetPictureColor [[_i, _pc], _picRgba];
+        _list lnbSetPictureColorSelected [[_i, _pc], _cRow];
+    };
+    _list lnbSetPicture [[_i, 4], _stPic];
+    if (_stPic isNotEqualTo "") then { _list lnbSetPictureColor [[_i, 4], _stRgba]; _list lnbSetPictureColorSelected [[_i, 4], _stRgba]; };
+    _list lnbSetColor [[_i, 3], _rgba];
+    _list lnbSetTextRight [[_i, 5], (_right) call comspec_atak_native_fnc_tr];
+    _list lnbSetText [[_i, 6], _az];
+    _list lnbSetText [[_i, 7], _ageT];
+    { _list lnbSetColor [[_i, _x], _cDim]; } forEach [5, 6, 7];
+    _list lnbSetTooltip [[_i, 3], (_tip) call comspec_atak_native_fnc_tr];
     _i
 };
-// Une ligne de piste (tableau et ORBAT). Params : [piste, retrait, mention après l'indicatif]
+// État d'une ligne : l'image dit l'état par sa forme (coche apte, triangle blessé, croix hors de combat, point hors ligne,
+// horloge pour une position ancienne), la teinte le redit.
+private _dirI = "\z\comspec_atak_native\addons\main\data\";
+// Une ligne de piste (tableau et ORBAT). Params : [piste, profondeur, mention après l'indicatif, libellé de l'ORBAT du site]
 private _addMember = {
-    params ["_t", ["_indent", ""], ["_extra", ""]];
+    params ["_t", ["_depth", 0], ["_extra", ""], ["_orbLabel", ""]];
     _t params ["_dist", "_id", "_e", "_obj", "_pos"];
     private _f = _e getOrDefault ["freshness", "LIVE"];
     private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
     ([_e] call comspec_atak_native_fnc_symbology) params ["_icon", "_color"];
     if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO") then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
     // État médical masqué (Réglages > Réalisme, fn_medShow) : seul le décès compte.
-    private _dead = !isNull _obj && {!alive _obj || {lifeState _obj isEqualTo "INCAPACITATED" && {["state", "allies"] call comspec_atak_native_fnc_medShow}}};
+    (["state", _e] call comspec_atak_native_fnc_unitCard) params ["_sc", "_sLbl", "", "_sRgba"];
+    private _dead = _sc >= 2;
+    private _old = _sc in [0, -1] && {_f in ["STALE", "LOST"]};
+    private _stPic = _dirI + (switch (true) do { case _dead: { "ui_close" }; case (_sc isEqualTo 1): { "ui_warning" }; case (_sc isEqualTo -2): { "ui_dot" }; case _old: { "ui_clock" }; case (_sc isEqualTo 0): { "ui_check" }; default { "ui_dot" }; }) + ".paa";
+    private _stRgba = [_sRgba, COMSPEC_ATAK_Th get (["textMuted", "warn"] select (_f isEqualTo "STALE"))] select _old;
+    // Batterie faible ou signal nul du téléphone de l'équipier (publié par son téléphone) : après l'indicatif.
+    private _phone = "";
+    if (!isNull _obj) then {
+        (_obj getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], ["_bars", -1]];
+        if (_bat >= 0 && {_bat <= 15}) then { _phone = format ["  %1 %%", _bat]; };
+        if (_bars isEqualTo 0) then { _phone = _phone + "  " + (("sans signal") call comspec_atak_native_fnc_tr); };
+    };
     // Équipe de feu (camp ami) : couleur de l'icône et nom de l'équipe après l'indicatif.
     private _ft = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftName = _ft getOrDefault ["name", ""];
     if (_ftName isNotEqualTo "") then { _color = _ft get "rgba"; };
-    private _i = [(format ["%5%1%2%3%4%6", [_id, _e] call _labelOf, ["", format ["  · %1%2", _ftName, ["", " " + (_ft get "roleShort")] select ((_ft getOrDefault ["roleShort", ""]) isNotEqualTo "")]] select (_ftName isNotEqualTo ""), ["", "  (blessé)"] select _dead, ["", "  (hors ligne)"] select (_f isEqualTo "OFFLINE"), _indent, _extra]) call comspec_atak_native_fnc_tr] call _rowAt;
-    _list lbSetPicture [_i, _icon];
-    _list lbSetPictureColor [_i, [_color, [0.45, 0.50, 0.55, 1]] select (_f in ["LOST", "OFFLINE"])];
-    _list lbSetPictureColorSelected [_i, [1, 1, 1, 1]];
-    _list lbSetTextRight [_i, format ["%1 · %2° %3 · %4 · %5", [_dist] call _distTxt, round (player getDir _pos), [player getDir _pos] call _card, [_dist, _mySpd max _walk] call _etaTxt, [format ["%1 s", _age], format ["%1 min", floor (_age / 60)]] select (_age >= 60)]];
-    _list lbSetColor [_i, switch (true) do { case _dead: { [0.88, 0.25, 0.22, 1] }; case (_f isEqualTo "LIVE"): { [0.90, 0.94, 0.91, 1] }; case (_f isEqualTo "STALE"): { [0.95, 0.67, 0.20, 1] }; default { [0.55, 0.60, 0.58, 1] }; }];
-    _list lbSetColorRight [_i, [0.62, 0.70, 0.66, 1]];
-    _list lbSetTooltip (([_i, format ["%1 · %2 · trajet %3 %4", (_fresh getOrDefault [_f, [_f]]) select 0, mapGridPosition _pos, [_dist, _mySpd max _walk] call _etaTxt, ["à pied", "à ma vitesse"] select (_mySpd > _walk)]]) call comspec_atak_native_fnc_tr);
+    private _ageTxt = [format ["%1 s", _age], format ["%1 min", floor (_age / 60)]] select (_age >= 60);
+    private _i = [
+        format ["%1%2%3%4", [_orbLabel, [_id, _e] call _labelOf] select (_orbLabel isEqualTo ""), ["", format ["  · %1%2", _ftName, ["", " " + (_ft get "roleShort")] select ((_ft getOrDefault ["roleShort", ""]) isNotEqualTo "")]] select (_ftName isNotEqualTo ""), _extra, _phone],
+        [_dist] call _distTxt,
+        switch (true) do { case _dead: { COMSPEC_ATAK_Th get "alert" }; case (_f isEqualTo "LIVE"): { _cRow }; case (_f isEqualTo "STALE"): { COMSPEC_ATAK_Th get "warn" }; default { _cMute }; },
+        _icon,
+        [_color, _cMute] select (_f in ["LOST", "OFFLINE"]),
+        format ["%5 · %1 · %2 · %6 · trajet %3 %4", (_fresh getOrDefault [_f, [_f]]) select 0, mapGridPosition _pos, [_dist, _mySpd max _walk] call _etaTxt, ["à pied", "à ma vitesse"] select (_mySpd > _walk), (_sLbl) call comspec_atak_native_fnc_tr, [player getDir _pos] call _card],
+        _depth, _stPic, _stRgba,
+        format ["%1°", [(round (player getDir _pos)) mod 360, 3] call CBA_fnc_formatNumber],
+        _ageTxt
+    ] call _put;
     _ids pushBack _id;
     _rows pushBack ["m", _id];
     if (_firstRow < 0) then { _firstRow = _i; };
     if (_id isEqualTo _selId) then { _selIdx = _i; };
 };
-// Ligne d'en-tête de l'ORBAT (clic : replier / déplier).
+// Ligne d'en-tête de l'ORBAT : un chevron (ouvert ou fermé) dans la colonne de sa profondeur, clic : replier / déplier.
+// Réglette en texte (fn_squadBar) et effectif à droite, le détail en infobulle.
 private _addHead = {
-    params ["_key", "_text", "_right", "_rgba"];
-    private _i = [(_text) call comspec_atak_native_fnc_tr] call _rowAt;
-    _list lbSetColor [_i, _rgba];
-    _list lbSetTextRight [_i, _right];
-    _list lbSetColorRight [_i, [0.62, 0.70, 0.66, 1]];
-    _list lbSetTooltip (([_i, "Clic : replier / déplier"]) call comspec_atak_native_fnc_tr);
+    params ["_key", "_text", "_right", "_rgba", ["_depth", 0], ["_more", ""]];
+    private _on = (uiNamespace getVariable ["COMSPEC_ATAK_BftOrbatOpen", createHashMap]) getOrDefault [_key, true];
+    [_text, _right, _rgba, _dirI + (["ui_chevron_right", "ui_chevron_down"] select _on) + ".paa", _rgba,
+        [(("Clic : replier / déplier") call comspec_atak_native_fnc_tr), format ["%1 · %2", (_more) call comspec_atak_native_fnc_tr, (("Clic : replier / déplier") call comspec_atak_native_fnc_tr)]] select (_more isNotEqualTo ""), _depth] call _put;
     _rows pushBack ["h", _key];
     _ids pushBack "";
 };
 if (_view isEqualTo "ORBAT") then {
     private _open = uiNamespace getVariable ["COMSPEC_ATAK_BftOrbatOpen", createHashMap];
     uiNamespace setVariable ["COMSPEC_ATAK_BftOrbatOpen", _open];
-    private _sign = { params ["_k"]; ["+ ", "- "] select (_open getOrDefault [_k, true]) };
+    // Message de l'ORBAT du site, sans gravité : une ligne ; les autres sont au-dessus du tableau.
+    if (!_noteOn) then {
+        [_nTxt, "", _cMute, "", _cMute, _nTxt] call _put;
+        _rows pushBack ["", ""];
+        _ids pushBack "";
+    };
+    // Réglette d'une liste d'unités, en texte, pour une ligne d'en-tête.
+    private _ruler = { params ["_us"]; ["text", ["cells", _us] call comspec_atak_native_fnc_squadBar] call comspec_atak_native_fnc_squadBar };
+    private _fold = (_orb get "total") > 60;
+    // Une personne : ligne de piste si elle en a une, sinon son état.
+    private _addPerson = {
+        params ["_key", "_depth", "_prefix"];
+        ([_key] call _stOf) params ["_st", "_o", "_t"];
+        if !([_st, _o, _t] call _passes) exitWith {};
+        private _pe = _oPeople getOrDefault [_key, []];
+        private _label = if ((count _pe) > 0) then { _pe select 0 } else { (_strayKey getOrDefault [_key, ["", ""]]) select 1 };
+        if (_st isEqualTo "TRACK") exitWith { [_t, _depth, "", _prefix + _label] call _addMember; };
+        private _lk = switch (_st) do {
+            case "ME": { ["moi", COMSPEC_ATAK_Th get "accentInk", "ui_gps"] };
+            case "NOTRACK": { ["en jeu, sans piste", COMSPEC_ATAK_Th get "warn", "ui_warning"] };
+            case "ANON": { ["état non communiqué", _cMute, "ui_help"] };
+            case "VACANT": { ["poste vacant", _cMute, ""] };
+            default { ["hors ligne", _cMute, "ui_dot"] };
+        };
+        private _word = (_lk select 0) call comspec_atak_native_fnc_tr;
+        private _i = [format ["%1%2 · %3", _prefix, _label, _word], "", _lk select 1, "", _cRow, _word, _depth, [_dirI + (_lk select 2) + ".paa", ""] select ((_lk select 2) isEqualTo ""), _lk select 1] call _put;
+        _ids pushBack _key;
+        _rows pushBack ["p", _key];
+        if (_firstRow < 0 && {_st in ["OFFLINE", "NOTRACK"]}) then { _firstRow = _i; };
+        if (_selIdx < 0 && {_key isEqualTo _selId}) then { _selIdx = _i; };
+    };
+    if (_hasOrb) then {
+        // Filtre actif : une unité n'apparaît que si elle (ou une sous-unité) a une ligne retenue.
+        private _vis = _oUnits apply {
+            _filter isEqualTo "ALL" || {((_x select 4) findIf { ([_x select 1] call _stOf) call _passes }) >= 0}
+        };
+        if (_filter isNotEqualTo "ALL") then {
+            private _pend = [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false];
+            for "_i" from ((count _oUnits) - 1) to 0 step -1 do {
+                private _d = (_oUnits select _i) select 1;
+                private _own = _vis select _i;
+                for "_k" from (_d + 1) to 15 do { if (_pend select _k) then { _own = true; _pend set [_k, false]; }; };
+                if (_own) then { _vis set [_i, true]; _pend set [_d, true]; };
+            };
+        };
+        private _skip = -1;
+        {
+            _x params ["_uId", "_d", "_uName", "_uCode", "_uRows", "_uRestricted"];
+            if (_skip >= 0 && {_d > _skip}) then { continue };
+            _skip = -1;
+            if !(_vis select _forEachIndex) then { _skip = _d; continue };
+            private _uk = format ["u:%1", _uId];
+            // Grosse communauté : seul le premier niveau est ouvert au départ.
+            // La valeur de départ est notée : le premier clic sur l'en-tête inverse bien ce qui est affiché.
+            if !(_uk in _open) then { _open set [_uk, !_fold || {_d < 1}]; };
+            private _isOpen = _open get _uk;
+            private _on = 0;
+            private _tot = 0;
+            private _vac = 0;
+            {
+                if ((_x select 0) isEqualTo "v") then { _vac = _vac + (_x select 3); } else {
+                    if (((_oPeople getOrDefault [_x select 1, [0, 0, 0, 0, 0]]) select 4) isEqualTo 0) then { _tot = _tot + 1; if ((_x select 1) in _onKey) then { _on = _on + 1; }; };
+                };
+            } forEach _uRows;
+            private _inGame = (_uRows select { (_x select 0) isNotEqualTo "v" }) apply { _onKey getOrDefault [_x select 1, objNull] };
+            _inGame = _inGame select { !isNull _x };
+            [_uk, format ["%1%2%3%4", _uName, ["", format ["  (%1)", _uCode]] select (_uCode isNotEqualTo ""), ["", "  · restreinte"] select _uRestricted, ["", "  " + ([_inGame] call _ruler)] select ((count _inGame) > 0)],
+                format ["%1/%2", _on, _tot], COMSPEC_ATAK_Th get (["text", "info"] select (_d isEqualTo 0)), _d min 2,
+                format ["%1 / %2 en jeu%3", _on, _tot, ["", format [" · %1 vacant(s)", _vac]] select (_vac > 0)]] call _addHead;
+            if (!_isOpen) then { _skip = _d; continue };
+            {
+                [_x select 1, _d + 1, ["", (_x select 2) + " : "] select ((_x select 2) isNotEqualTo "" && {(_x select 0) isEqualTo "p"})] call _addPerson;
+            } forEach _uRows;
+        } forEach _oUnits;
+    };
+    // Tout ce qui n'est pas dans l'ORBAT du site : pistes (IA comprises) et joueurs de mon camp sans piste.
+    private _others = if (_hasOrb) then { _tracks select { !((_x select 1) in _trackKey) } } else { _tracks };
+    private _strayShown = (keys _strayKey) select { ([_x] call _stOf) call _passes };
+    private _outOpen = true;
+    if (_hasOrb && {(count _others) > 0 || {(count _strayShown) > 0}}) then {
+        _outOpen = _open getOrDefault ["o:hors", true];
+        ["o:hors", "HORS ORBAT DU SITE", str ((count _others) + (count _strayShown)), COMSPEC_ATAK_Th get "info", 0, format ["%1 joueur(s) ou piste(s)", (count _others) + (count _strayShown)]] call _addHead;
+    };
+    if (!_outOpen) then { _others = []; _strayShown = []; };
     // Préfixe d'un indicatif de groupe : « Star 4 » → « Star », « Shadow 2-1 » → « Shadow ».
     private _prefix = { params ["_n"]; private _p = trim (_n regexReplace ["[ -]*[0-9][0-9 ./-]*$", ""]); [_p, _n] select (_p isEqualTo "") };
     // Formation › groupe › pistes.
@@ -355,7 +587,7 @@ if (_view isEqualTo "ORBAT") then {
         (_gEntry select 2) pushBack _x;
         _groups set [_gKey, _gEntry];
         _forms set [_form, _groups];
-    } forEach _tracks;
+    } forEach _others;
     private _formNames = keys _forms;
     _formNames sort true;
     {
@@ -364,7 +596,7 @@ if (_view isEqualTo "ORBAT") then {
         private _fk = "f:" + _form;
         private _nf = 0;
         { _nf = _nf + count ((_groups get _x) select 2); } forEach (keys _groups);
-        [_fk, format ["%1%2", [_fk] call _sign, _form], format ["%1 piste(s)", _nf], [0.50, 0.72, 0.92, 1]] call _addHead;
+        [_fk, _form, str _nf, COMSPEC_ATAK_Th get "info", 0, format ["%1 piste(s)", _nf]] call _addHead;
         if (_open getOrDefault [_fk, true]) then {
             private _gKeys = (keys _groups) apply { [toLower ((_groups get _x) select 0), _x] };
             _gKeys sort true;
@@ -382,8 +614,12 @@ if (_view isEqualTo "ORBAT") then {
                     default { format ["chef à %1", [player distance2D _ldr] call _distTxt] };
                 };
                 private _gKey2 = "g:" + _gk;
-                [_gKey2, format ["   %1%2  ·  %3%4", [_gKey2] call _sign, _gName, _ech, ["", "  (mon groupe)"] select (_grp isEqualTo group player)],
-                    format ["%1 membre(s)%2", _n, ["", "  ·  " + _ldrTxt] select (_ldrTxt isNotEqualTo "")], [0.86, 0.90, 0.88, 1]] call _addHead;
+                // Effectif : aptes sur total, la réglette du groupe en texte après son nom ; le chef en infobulle.
+                private _gCells = if (isNull _grp) then { [] } else { ["cells", _grp] call comspec_atak_native_fnc_squadBar };
+                private _gCnt = if (isNull _grp) then { [_n, _n] } else { ["count", _gCells] call comspec_atak_native_fnc_squadBar };
+                [_gKey2, format ["%1  ·  %2%3%4", _gName, _ech, ["", "  (mon groupe)"] select (_grp isEqualTo group player), ["", "  " + (["text", _gCells] call comspec_atak_native_fnc_squadBar)] select ((count _gCells) > 0)],
+                    format ["%1/%2", _gCnt select 0, _gCnt select 1], _cRow, 1,
+                    format ["%1 membre(s)%2", _n, ["", "  ·  " + _ldrTxt] select (_ldrTxt isNotEqualTo "")]] call _addHead;
                 if (_open getOrDefault [_gKey2, true]) then {
                     // Chef d'abord, puis par distance.
                     _mem = _mem apply { [[1, 0] select (!isNull _ldr && {(_x select 3) isEqualTo _ldr}), _x select 0, _x] };
@@ -413,28 +649,33 @@ if (_view isEqualTo "ORBAT") then {
                     {
                         (_teams get _x) params ["_tName", "_tRgba", "_tMem"];
                         private _tk = "t:" + _gk + "|" + _x;
-                        [_tk, format ["      %1%2", [_tk] call _sign, _tName], format ["%1", count _tMem], _tRgba] call _addHead;
-                        if (_open getOrDefault [_tk, true]) then { { [_x, "         ", [_x] call _tag] call _addMember; } forEach _tMem; };
+                        [_tk, _tName, format ["%1", count _tMem], _tRgba, 2] call _addHead;
+                        if (_open getOrDefault [_tk, true]) then { { [_x, 2, [_x] call _tag] call _addMember; } forEach _tMem; };
                     } forEach _tIds;
-                    { [_x, "      ", [_x] call _tag] call _addMember; } forEach _free;
+                    { [_x, 2, [_x] call _tag] call _addMember; } forEach _free;
                 };
             } forEach _gKeys;
         };
     } forEach _formNames;
+    { [_x, 1, ""] call _addPerson; } forEach _strayShown;
 } else {
     { [_x] call _addMember; } forEach _tracks;
 };
-if ((count _tracks) isEqualTo 0) then {
-    private _i = [((["Aucune piste amie suivie.", "Aucune piste pour ce filtre."] select (_filter isNotEqualTo "ALL" || {_nFilt > 0}))) call comspec_atak_native_fnc_tr] call _rowAt;
-    _list lbSetColor [_i, [0.55, 0.60, 0.58, 1]];
+// Rien à montrer : pas la ligne vide de la capture, un message. Dans TOUS, un ORBAT sans membre garde ses unités.
+if (_firstRow < 0 && {!(_hasOrb && {_filter isEqualTo "ALL"} && {_view isEqualTo "ORBAT"})}) then {
+    [(["Aucune piste amie suivie.", "Aucune piste pour ce filtre."] select (_filter isNotEqualTo "ALL" || {_nFilt > 0})), "", _cMute] call _put;
     _rows pushBack ["", ""];
+    _ids pushBack "";
 };
-while { (lbSize _list) > _rowN } do { _list lbDelete ((lbSize _list) - 1); };
+while { ((lnbSize _list) select 0) > _rowN } do { _list lnbDeleteRow (((lnbSize _list) select 0) - 1); };
+uiNamespace setVariable ["COMSPEC_ATAK_BftRowSigs", _sigOut];
 uiNamespace setVariable ["COMSPEC_ATAK_BftIds", _ids];
 uiNamespace setVariable ["COMSPEC_ATAK_BftRows", _rows];
-// Piste choisie absente (filtrée) : la première de la liste ; repliée dans l'ORBAT : elle reste choisie.
-if (_selIdx < 0 && {_firstRow >= 0} && {(_tracks findIf { (_x select 1) isEqualTo _selId }) < 0}) then { _selIdx = _firstRow; _selId = _ids select _firstRow; _s set ["bftSel", _selId]; };
-if (_selIdx >= 0 && {(lbCurSel _list) isNotEqualTo _selIdx}) then { _list lbSetCurSel _selIdx; };
+// Piste choisie absente (filtrée) : la première de la liste ; repliée dans l'ORBAT : elle reste choisie, comme une personne de l'arbre.
+private _selKept = _view isEqualTo "ORBAT" && {_selId in _oPeople || {_selId in _strayKey}} && {([_selId] call _stOf) call _passes};
+if (_selIdx < 0 && {_firstRow >= 0} && {!_selKept} && {(_tracks findIf { (_x select 1) isEqualTo _selId }) < 0}) then { _selIdx = _firstRow; _selId = _ids select _firstRow; _s set ["bftSel", _selId]; };
+// Replier un en-tête ne prend pas la sélection : elle revient à la piste choisie.
+if (_selIdx >= 0 && {(lnbCurSelRow _list) isNotEqualTo _selIdx}) then { _list lnbSetCurSelRow _selIdx; };
 if (!_upd) then {
 // Défilement du tableau retrouvé après un rendu complet de la même page (clic, sélection) : avant, retour en haut.
 // Ancien tableau (masqué par fn_pageClear, supprimé à l'image suivante) : sa position est relue.
@@ -454,7 +695,8 @@ _list ctrlAddEventHandler ["LBSelChanged", {
         uiNamespace setVariable ["COMSPEC_ATAK_BftOrbatOpen", _open];
         [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
-    if (_k isNotEqualTo "m" || {_v isEqualTo (_s getOrDefault ["bftSel", ""])}) exitWith {};
+    if !(_k in ["m", "p"]) exitWith {};
+    if (_v isEqualTo (_s getOrDefault ["bftSel", ""])) exitWith {};
     _s set ["bftSel", _v];
     [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
@@ -470,13 +712,45 @@ _list ctrlAddEventHandler ["LBDblClick", {
 private _dRect = if (_land) then { [_listW + _pad / 2, _y - _fs * 1.2, _bw - _listW - _pad / 2, _bh - _y + _fs * 1.2] } else { [0, _y + _listH + _pad / 2, _bw, _detailH] };
 _dRect params ["_dx", "_dy", "_dw", "_dh"];
 private _sel = (_tracks select { (_x select 1) isEqualTo _selId }) param [0, []];
+// Personne de l'ORBAT sans piste (hors ligne, en jeu sans piste, moi, poste vacant, identité protégée).
+private _pSt = "";
+private _pObj = objNull;
+if ((count _sel) isEqualTo 0 && {_view isEqualTo "ORBAT"} && {_selId in _oPeople || {_selId in _strayKey}}) then {
+    ([_selId] call _stOf) params ["_ps", "_po"];
+    _pSt = _ps;
+    _pObj = _po;
+};
+private _buzzOn = (_selId isNotEqualTo "") && {(_s getOrDefault ["bftBuzz", ""]) isEqualTo _selId} && {(count _sel) > 0 || {_pSt isEqualTo "NOTRACK"}};
+// Vibreur ouvert sur une personne partie ou une autre ligne choisie : refermé (sinon plus de mise à jour sur place).
+if (!_buzzOn && {(_s getOrDefault ["bftBuzz", ""]) isNotEqualTo ""}) then { _s set ["bftBuzz", ""]; };
+// Rangée d'actions de la fiche unique (fn_unitCard) : boutons à la hauteur tactile, le surplus derrière « … ».
+private _barH = (_l get "tap") + _pad / 2;
 private _det = if (_upd) then { (_live get "ctrls") select 2 } else {
-    private _c = ["COMSPEC_RscCard", [_dx, _dy, _dw, _dh - _font * 1.6], ""] call comspec_atak_native_fnc_pageCtrl;
+    private _c = ["COMSPEC_RscCard", [_dx, _dy, _dw, _dh - _barH], ""] call comspec_atak_native_fnc_pageCtrl;
     _c ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "surface");
     _c
 };
+private _hxMute = COMSPEC_ATAK_Th get "hexTextMuted";
 if ((count _sel) isEqualTo 0) then {
-    _det ctrlSetStructuredText parseText (("<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Choisissez une piste dans le tableau.</t>") call comspec_atak_native_fnc_tr);
+    if (_pSt isEqualTo "") then {
+        _det ctrlSetStructuredText parseText (("<t color='" + _hxMute + "'>" + (["Choisissez une piste dans le tableau.", "Choisissez un membre dans l'arbre."] select (_view isEqualTo "ORBAT")) + "</t>") call comspec_atak_native_fnc_tr);
+    } else {
+        private _pe = _oPeople getOrDefault [_selId, []];
+        private _label = if ((count _pe) > 0) then { _pe select 0 } else { (_strayKey getOrDefault [_selId, ["", ""]]) select 1 };
+        (switch (_pSt) do {
+            case "ME": { ["MOI", COMSPEC_ATAK_Th get "hexAccent", "Votre position est dans le bandeau."] };
+            case "NOTRACK": { ["EN JEU, SANS PISTE", COMSPEC_ATAK_Th get "hexWarn", "Présent sur le serveur, sans téléphone ATAK ou piste masquée par un filtre : position inconnue."] };
+            case "ANON": { ["IDENTITÉ PROTÉGÉE", _hxMute, "Fiche confidentielle : sa présence en jeu n'est pas communiquée."] };
+            case "VACANT": { ["POSTE VACANT", _hxMute, "Aucun titulaire sur ce poste."] };
+            default { ["HORS LIGNE", _hxMute, "Absent du serveur : aucune position, ni message ni vibreur possibles."] };
+        }) params ["_stTxt", "_stHex", "_stHelp"];
+        private _lines = (_pe param [5, []]) apply {
+            format ["<t color='" + _hxMute + "'>Unité</t> %1%2", [_x select 0] call _esc, ["", format ["  ·  <t color='" + _hxMute + "'>Poste</t> %1", [_x select 1] call _esc]] select ((_x select 1) isNotEqualTo "" && {_pSt isNotEqualTo "VACANT"})]
+        };
+        _det ctrlSetStructuredText parseText ((format [
+            "<t size='1.15' font='COMSPEC_BarlowBold'>%1</t>  <t color='%2'>● %3</t><br/>%4<t color='" + _hxMute + "'>%5</t>",
+            [_label] call _esc, _stHex, _stTxt, (_lines select [0, 6]) apply { _x + "<br/>" } joinString "", _stHelp]) call comspec_atak_native_fnc_tr);
+    };
 } else {
     _sel params ["_dist", "_id", "_e", "_obj", "_pos"];
     private _f = _e getOrDefault ["freshness", "LIVE"];
@@ -512,13 +786,22 @@ if ((count _sel) isEqualTo 0) then {
         case (!_isLive): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Dernière position il y a %1</t>", _ageTxt] };
         default { "" };
     };
-    private _health = if (isNull _obj) then { "—" } else { if (_f isEqualTo "OFFLINE") then { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>inconnu</t>" } else { switch (true) do { case (!alive _obj): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Mort</t>" }; case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>—</t>" }; case (lifeState _obj isEqualTo "INCAPACITATED"): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Inconscient</t>" }; case ((damage _obj) > 0.25): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Blessé</t>" }; default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Apte</t>" }; } } };
+    private _hs = ["state", _e] call comspec_atak_native_fnc_unitCard;
+    private _health = format ["<t color='%1'>%2</t>", _hs select 2, _hs select 1];
     private _grp = if (isNull _obj) then { "Athena" } else { groupId group _obj };
     private _ftI = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftTxt = switch (true) do {
         case ((_ftI getOrDefault ["name", ""]) isNotEqualTo ""): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Équipe</t> <t color='%1' font='COMSPEC_BarlowBold'>● %2</t>%3", _ftI get "hex", [_ftI get "name"] call _esc, ["", format [" · %1", _ftI get "roleLabel"]] select ((_ftI get "roleLabel") isNotEqualTo "")] };
         case ((_ftI getOrDefault ["roleLabel", ""]) isNotEqualTo ""): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Rôle</t> %1", _ftI get "roleLabel"] };
         default { "" };
+    };
+    // Fiche de l'ORBAT du site du joueur de cette piste.
+    private _trkKey = _trackKey getOrDefault [_id, ""];
+    if (_trkKey isNotEqualTo "") then {
+        private _pe = _oPeople getOrDefault [_trkKey, []];
+        _ftTxt = format ["<br/><t color='" + _hxMute + "'>ORBAT</t> %1", [_pe param [0, ""]] call _esc] + (((_pe param [5, []]) select [0, 3]) apply {
+            format ["<br/><t color='" + _hxMute + "'>Unité</t> %1%2", [_x select 0] call _esc, ["", format ["  ·  <t color='" + _hxMute + "'>Poste</t> %1", [_x select 1] call _esc]] select ((_x select 1) isNotEqualTo "")]
+        } joinString "") + _ftTxt;
     };
     private _crew = if (!isNull _obj && {vehicle _obj isNotEqualTo _obj}) then { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Dans</t> %1", getText (configOf vehicle _obj >> "displayName")] } else { "" };
     _det ctrlSetStructuredText parseText ((format [
@@ -529,9 +812,8 @@ if ((count _sel) isEqualTo 0) then {
         _speed, round (_e getOrDefault ["heading", 0]), round (_pos select 2), _health, _eta, _close, _offTxt, _ftTxt]) call comspec_atak_native_fnc_tr);
 };
 // Vibreur : composition du message (alerte à l'écran de son téléphone, avec mon texte) à la place de la fiche.
-private _buzzOn = (count _sel) > 0 && {(_s getOrDefault ["bftBuzz", ""]) isEqualTo (_sel select 1)};
 if (_buzzOn) then {
-    private _who = [[(_sel select 1), (_sel select 2)] call _labelOf] call _esc;
+    private _who = if ((count _sel) > 0) then { [[(_sel select 1), (_sel select 2)] call _labelOf] call _esc } else { [((_oPeople getOrDefault [_selId, []]) param [0, (_strayKey getOrDefault [_selId, ["", ""]]) select 1])] call _esc };
     _det ctrlSetStructuredText parseText ((format ["<t size='1.1' font='COMSPEC_BarlowBold'>VIBREUR · %1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Son téléphone vibre et affiche une alerte avec votre message, même rangé. Message rapide, ou texte libre puis ENVOYER.</t>", _who]) call comspec_atak_native_fnc_tr);
     private _presets = ["RALLIEMENT", "CONTACT", "STOP", "BESOIN D'AIDE", "APPELEZ-MOI", "RAS"];
     private _pw = (_dw - _pad * 4) / 3;
@@ -546,32 +828,33 @@ if (_buzzOn) then {
     _ed ctrlSetTooltip (("Texte libre (80 caractères)") call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_BuzzEdit", _ed];
 };
-private _bw3 = (_dw - _pad * 4) / 5;
-private _btns = [];
-{
-    _x params ["_t", "_act", "_on"];
-    if (_upd) then { private _b = (_live get "btns") param [_forEachIndex, controlNull]; _b ctrlSetText ((_t) call comspec_atak_native_fnc_tr); _b ctrlEnable _on; continue };
-    private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 1), [_dx + _forEachIndex * (_bw3 + _pad), _dy + _dh - _font * 1.5, _bw3, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
-    _b ctrlSetFontHeight _fs;
-    _b ctrlEnable _on;
-    _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call comspec_atak_native_fnc_nextFrame;", _act]];
-    _btns pushBack _b;
-} forEach ([[
-    ["CARTE", "center", (count _sel) > 0],
-    ["Y ALLER", "route", (count _sel) > 0],
-    ["SMS", "sms", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)}],
-    [["VIBRER", "HORS LIGNE"] select ((count _sel) > 0 && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isEqualTo "OFFLINE"}), "buzz",
-        _meOn && {(count _sel) > 0} && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {(_sel select 3) isNotEqualTo player} && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isNotEqualTo "OFFLINE"}],
-    // Caméra poitrine de l'équipier, en petite fenêtre sur la carte (Live cam).
-    ["VOIR CAMÉRA", "cam", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {alive (_sel select 3)} && {(_sel select 3) isNotEqualTo player} && {[_sel select 3] call comspec_atak_native_fnc_hasDevice}]
-], [
-    ["ANNULER", "buzzCancel", true],
-    ["ENVOYER", "buzzSend", _meOn]
-]] select _buzzOn);
-// Contrôles gardés pour la mise à jour sur place (tableau seulement, hors tiroir des filtres et vibreur).
+// Cible de la fiche : la piste choisie. Personne de l'ORBAT en jeu sans piste : SMS et vibreur seulement (position inconnue) ;
+// hors ligne : HORS LIGNE à la place de VIBRER. Sinon les actions restent à leur place, grisées.
+private _unit = [createHashMap, _sel param [2, createHashMap]] select ((count _sel) > 0);
+private _uCtx = "bft";
+if (_pSt isEqualTo "NOTRACK") then { _unit = ["resolve", _pObj] call comspec_atak_native_fnc_unitCard; _uCtx = "bftp"; };
+if (_pSt isEqualTo "OFFLINE") then { _unit = createHashMapFromArray [["freshness", "OFFLINE"]]; };
+// Mise à jour sur place : ensemble d'actions changé (commandement passé) : rendu complet.
+if (_upd && {!(["barUpdate", [_live get "bar", _unit, _uCtx]] call comspec_atak_native_fnc_unitCard)}) exitWith { false };
+private _bar = createHashMap;
 if (!_upd) then {
+    private _barY = _dy + _dh - _barH + _pad / 2;
+    if (_buzzOn) then {
+        // Composition du vibreur : ANNULER et ENVOYER à la place de la rangée d'actions.
+        private _bw3 = (_dw - _pad) / 2;
+        {
+            _x params ["_t", "_act", "_on"];
+            private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 1), [_dx + _forEachIndex * (_bw3 + _pad), _barY, _bw3, _l get "tap"], _t] call comspec_atak_native_fnc_pageCtrl;
+            _b ctrlSetFontHeight _fs;
+            _b ctrlEnable _on;
+            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call comspec_atak_native_fnc_nextFrame;", _act]];
+        } forEach [["ANNULER", "buzzCancel", true], ["ENVOYER", "buzzSend", _meOn]];
+    } else {
+        _bar = ["bar", [_unit, _uCtx, _dx, _barY, _dw, true]] call comspec_atak_native_fnc_unitCard;
+    };
+    // Contrôles gardés pour la mise à jour sur place (tableau seulement, hors tiroir des filtres et vibreur).
     uiNamespace setVariable ["COMSPEC_ATAK_BftLive", [createHashMap, createHashMapFromArray [
-        ["key", [_view, _filter, _land, _bw, _bh]], ["ctrls", [_head, _list, _det]], ["btns", _btns], ["drawnSeq", uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]
+        ["key", [_view, _filter, _land, _bw, _bh]], ["ctrls", [_head, _list, _det]], ["bar", _bar], ["note", _noteTxt], ["drawnSeq", uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]
     ]] select (!_filtersOpen && {!_buzzOn} && {!isNull _list})];
 };
 true

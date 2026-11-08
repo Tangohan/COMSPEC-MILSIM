@@ -1,6 +1,7 @@
 /*
     Actions de l'app Poste TOC (fn_pageToc).
       "prio" niveau | "send" (message au camp) | "order" clé de groupe ("" : tous) | "sms" nom | "nav" page | "saveCs"
+      "screen" [netId, contenu]  contenu d'un écran du poste (fn_tocScreen "show")
       "recv" [indicatif, texte, heure, priorité, camp, id, émetteur, destinataire (UID ; "" : tout le camp)]
              message du poste reçu (événement comspec_atak_native_tocMsg ; le PC du poste, fn_tocLaptop, écrit aussi à un chef)
 */
@@ -55,6 +56,11 @@ switch (_a) do {
         ["CHAT"] call comspec_atak_native_fnc_navigate;
     };
     case "nav": { [_v] call comspec_atak_native_fnc_navigate; };
+    case "screen": {
+        _v params [["_id", ""], ["_k", "SPLIT"]];
+        ["show", [objectFromNetId _id, _k]] call comspec_atak_native_fnc_tocScreen;
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "TOC") then { ["TOC"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.6] call comspec_atak_native_fnc_waitAndExec;
+    };
     case "saveCs": {
         private _cs = toUpper trim (["tocCs"] call comspec_atak_native_fnc_formValue);
         if (_cs isEqualTo "") exitWith { ["WARNING", "Indicatif vide", 3, 30] call comspec_atak_native_fnc_notify; };

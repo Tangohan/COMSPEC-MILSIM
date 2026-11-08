@@ -65,6 +65,8 @@ if (_button isEqualTo 0) exitWith {
         private _m = [_map,[_mx,_my]] call comspec_atak_native_fnc_markerAt;
         if (_m isNotEqualTo "") exitWith {
             _s set ["selectedMarker",_m];
+            // Un seul occupant du bas de la carte : la fiche du marqueur remplace celle de l'unité.
+            _s set ["selectedEntity",createHashMap];
             [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         if ((_s getOrDefault ["selectedMarker",""]) isNotEqualTo "") then {
