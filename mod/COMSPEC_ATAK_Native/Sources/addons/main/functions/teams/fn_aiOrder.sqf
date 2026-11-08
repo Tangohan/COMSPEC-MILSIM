@@ -112,13 +112,19 @@ switch (_act) do {
         if (unitIsUAV (vehicle leader _g)) exitWith { "Un drone se commande depuis l'app Drone" };
         ""
     };
+    // Réponse d'un groupe IA : toast d'Arma (CfgNotifications, config.cpp), rien dans le centre de notifications du téléphone.
+    case "toast": {
+        _arg params [["_t", ""], ["_type", "INFO"]];
+        if (!hasInterface || {_t isEqualTo ""}) exitWith {};
+        [["COMSPEC_ATAK_AiReply", "COMSPEC_ATAK_AiReplyWarn"] select (_type in ["WARNING", "ERROR"]), [((_t) call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", " "]]] call BIS_fnc_showNotification;
+    };
     case "send": {
         _arg params [["_g", grpNull], ["_k", ""], ["_pos", []], ["_toc", false]];
         if !(_g isEqualType grpNull) then { _g = grpNull; };
-        // PC du poste ouvert : ligne d'état du PC ; sinon notification du téléphone.
+        // PC du poste ouvert : ligne d'état du PC ; sinon toast d'Arma (jamais les notifications du téléphone).
         private _say = {
             params ["_t", ["_type", "WARNING"]];
-            if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; } else { [_type, _t, 4, 30] call comspec_atak_native_fnc_notify; };
+            if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; } else { ["toast", [_t, _type]] call comspec_atak_native_fnc_aiOrder; };
             false
         };
         private _why = ["why", _g] call comspec_atak_native_fnc_aiOrder;
@@ -156,7 +162,7 @@ switch (_act) do {
             if ((missionNamespace getVariable ["comspec_overwatch_log_level", 3]) >= 4) then { ["DEBUG", "AIORDER", format ["%1 : aucune réponse du serveur après 30 s", _id]] call comspec_atak_native_fnc_log; };
             private _t = format ["%1 · %2 : pas de réponse du serveur. Réessayez ; si ça recommence, le serveur n'a sans doute pas la même version du mod ATAK", _gn, _kl];
             if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; };
-            ["WARNING", _t, 6, 40] call comspec_atak_native_fnc_notify;
+            ["toast", [_t, "WARNING"]] call comspec_atak_native_fnc_aiOrder;
         }, [_id], 30] call comspec_atak_native_fnc_waitAndExec;
         [format ["%1 · %2 : ordre envoyé", groupId _g, [_k] call _kLabel], "INFO"] call _say;
         true
@@ -376,7 +382,7 @@ switch (_act) do {
             params ["_t", ["_type", "INFO"]];
             if (_replay) exitWith {};
             if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; };
-            [_type, _t, 6, 50, "MAP"] call comspec_atak_native_fnc_notify;
+            ["toast", [_t, _type]] call comspec_atak_native_fnc_aiOrder;
         };
         private _in = createHashMapFromArray _pairs;
         // Réponse du serveur reçue : plus d'alerte « pas de réponse » pour cet ordre (fn_aiOrder "send").
