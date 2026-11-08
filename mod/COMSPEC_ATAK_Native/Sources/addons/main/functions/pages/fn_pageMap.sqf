@@ -911,7 +911,7 @@ if (_dv isNotEqualTo "OFF") then {
                 ["CAMÉRA DEVANT", ["camAim", ""] call _act, "", "Remet la caméra du drone droit devant", 1.2],
                 ["|"],
                 // Vidéo affichée : drone → caméra du téléphone → caméra casque (ici seulement : l'app Drone montre toujours le drone).
-                [["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE", "VIDÉO DU CASQUE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0), ["feedSrc", ["PHONE", "HELMET", "DRONE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0)] call _act, ["on", ""] select (_fsrc isEqualTo "DRONE"), "Choisit la vidéo affichée : drone » caméra du téléphone (devant vous) » caméra casque", 1.5]
+                [["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE", "VIDÉO DU CASQUE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0), ["feedNext"] call _act, ["on", ""] select (_fsrc isEqualTo "DRONE"), "Choisit la vidéo affichée : drone » caméra du téléphone (devant vous) » caméra casque", 1.5]
             ] + ([[], [
                 [format ["CASQUE DE %1", [name _fu, "MOI"] select (_fu isEqualTo player)], compile format ["['feedUnit', %1] call comspec_atak_native_fnc_droneAction;", str ([netId _fn, getPlayerUID _fn] select (isPlayer _fn))], "", "Porteur de la caméra casque : vous, puis les équipiers du groupe à moins de 3 km (appui suivant)", 1.4]
             ]] select (_fsrc isEqualTo "HELMET")) + [
@@ -934,6 +934,7 @@ if (_dv isNotEqualTo "OFF") then {
                 _b ctrlSetBackgroundColor (switch (_state) do { case "on": { (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]) }; case "red": { (COMSPEC_ATAK_Th get "mapAlert") }; default { [0.08, 0.1, 0.09, 0.9] }; });
                 _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
+                if ((_lbl select [0, 8]) isEqualTo "VIDÉO DU") then { uiNamespace setVariable ["COMSPEC_ATAK_DroneFeedBtn", _b]; };
                 _made pushBack [_b, ctrlTextWidth _b, _forEachIndex];
             } forEach _btns;
             private _avail = _mw - _pad * 2 - _gap * ({ (count _x) isEqualTo 1 } count _btns) - (_pad / 3) * (count _made);

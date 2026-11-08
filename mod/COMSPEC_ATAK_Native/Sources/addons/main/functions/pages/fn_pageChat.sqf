@@ -12,8 +12,11 @@
       - En main, en paysage et en plein écran : les deux côte à côte (mode PETIT : une vue à la fois). Porté (sans souris) : la conversation seule, sans saisie.
     Comportement inchangé : canaux, commandes /, raccourcis @grille, SMS et leurs accusés, VIDER, tri, création et
     suppression de canal. Les apps qui ouvrent une conversation posent chatPeer et chatView = "CONV".
+    Fil seul ([true] call fn_pageChat) : message envoyé ou reçu, conversation ouverte sans liste à côté : seul le fil est
+    refait ; en-tête, barre de saisie, focus et texte en cours ne bougent pas. Sinon, rendu complet de la page.
 */
 disableSerialization;
+params [["_threadOnly", false]];
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _pad = (_l get "pad") * 2;
@@ -82,6 +85,9 @@ private _netBars = _netQ getOrDefault ["bars", 0];
 private _relay = if ((_netQ getOrDefault ["sim", false]) && {_netBars > 0}) then { (["best"] call comspec_atak_native_fnc_relayNet) param [1, ""] } else { "" };
 if !((_channels findIf { (_x select 0) isEqualTo _peer }) >= 0 || {_peer in _peers}) then { _peer = (_channels select 0) select 0; };
 private _isChannel = _peer isEqualTo "ATHENA" || {(_peer select [0, 3]) isEqualTo "CH:"};
+if (_threadOnly && {_split || {_view isNotEqualTo "CONV"} || {_s getOrDefault ["chatWiki", false]} || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull])} || {(uiNamespace getVariable ["COMSPEC_ATAK_ChatThreadPeer", ""]) isNotEqualTo _peer} || {(_s getOrDefault ["pageDrawn", ""]) isNotEqualTo "CHAT"}}) exitWith {
+    ["CHAT"] call comspec_atak_native_fnc_pageRender;
+};
 _s set ["chatChannel", [_peer select [3], ""] select (_peer isEqualTo "ATHENA")];
 _s set ["chatPeer", _peer];
 private _manage = _bridge && {_interactive};
@@ -96,7 +102,9 @@ private _esc = {
     _t = [_t, "<", "&lt;"] call CBA_fnc_replace;
     [_t, ">", "&gt;"] call CBA_fnc_replace
 };
-private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
+private _mkReal = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
+// Fil seul : l'en-tête n'est que calculé (rien de créé) jusqu'au fil, où _mk redevient le vrai.
+private _mk = [_mkReal, { controlNull }] select _threadOnly;
 // Contrôle dans un groupe défilant (supprimé avec lui).
 private _gmk = {
     params ["_grp", "_c", "_p", ["_t", ""]];
@@ -216,7 +224,7 @@ private _open = { params ["_key"]; compile format ["private _s = uiNamespace get
 // Molette de la souris : les groupes défilants imbriqués dans la page ne la reçoivent pas d'Arma (retour de TTRD).
 // La page enregistre [groupe, hauteur du contenu] ; un gestionnaire de l'écran (posé une fois) fait défiler celui
 // qui est sous la souris, d'environ un cinquième de sa hauteur par cran.
-uiNamespace setVariable ["COMSPEC_ATAK_WheelGroups", []];
+uiNamespace setVariable ["COMSPEC_ATAK_WheelGroups", [[], (uiNamespace getVariable ["COMSPEC_ATAK_WheelGroups", []]) select { !isNull (_x select 0) }] select _threadOnly];
 private _wheel = {
     params ["_grp", "_contentH"];
     (uiNamespace getVariable ["COMSPEC_ATAK_WheelGroups", []]) pushBack [_grp, _contentH];
@@ -570,7 +578,18 @@ private _drawConv = {
     private _threadY = _topY;
     private _threadH = _bh - _threadY - ([0, _barH + _prevH] select _interactive);
     if (_wiki) then { _items = []; };
+    _mk = _mkReal;
+    if (_threadOnly) then {
+        // Ancien fil : position relevée, masqué tout de suite, supprimé à l'image suivante (fn_pageClear).
+        private _oldT = uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull];
+        _scrollMem set ["chatThread:" + _peer, ctrlScrollValues _oldT];
+        _oldT ctrlShow false;
+        _oldT ctrlEnable false;
+        [{ ctrlDelete _this; }, _oldT] call comspec_atak_native_fnc_nextFrame;
+    };
     private _thread = ["COMSPEC_RscControlsGroup", [_cx, _threadY, _cw, _threadH]] call _mk;
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatThread", _thread];
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatThreadPeer", _peer];
     private _tw = _cw - 0.012 - 2 * _pad;
     private _y = _pad * 0.6;
     if (_wiki) then {
@@ -731,7 +750,7 @@ private _drawConv = {
         default { 1 };
     };
     ["chatThread:" + _peer, _thread, _target] call _keepScroll;
-    if !(_interactive) exitWith {};
+    if (_threadOnly || {!_interactive}) exitWith {};
 
     // --- Aperçu des commandes : type détecté, puces et texte final ; suggestions pendant qu'on tape une commande.
     private _by = _bh - _barH;
@@ -804,7 +823,7 @@ private _drawConv = {
             if ([_peer, ctrlText _edit] call comspec_atak_native_fnc_p2pSend) then {
                 _edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
                 uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
-                [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+                [{ [true] call comspec_atak_native_fnc_pageChat; }] call comspec_atak_native_fnc_nextFrame;
             };
         };
     };

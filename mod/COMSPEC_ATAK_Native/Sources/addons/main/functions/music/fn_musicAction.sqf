@@ -346,7 +346,20 @@ switch (_act) do {
             ["INFO", format ["Ajouté aux favoris : %1", _t], 2, 20] call comspec_atak_native_fnc_notify;
         };
         profileNamespace setVariable ["COMSPEC_ATAK_MusicFavs", _favs select [0, 100]];
-        call _rerender;
+        // Page LECTEUR (liste des favoris : la ligne disparaît) : rendu nécessaire. Ailleurs : le bouton FAV change sur place.
+        if ((_ui getOrDefault ["tab", ""]) isEqualTo "PLAY") then { call _rerender; } else {
+            private _favOn = _i < 0;
+            private _favTh = [] call comspec_atak_native_fnc_theme;
+            {
+                _x params ["_favRow", "_favKey", "_favIdx"];
+                (((uiNamespace getVariable ["COMSPEC_ATAK_MusicLists", createHashMap]) getOrDefault [_favKey, []]) param [_favIdx, []]) params [["_favK", ""], ["_favR", ""]];
+                if (_favK isEqualTo _k && {_favR isEqualTo _r}) then {
+                    private _favB = (((uiNamespace getVariable ["COMSPEC_ATAK_FormIds", createHashMap]) getOrDefault [_favRow, createHashMap]) getOrDefault ["btns", []]) param [2, controlNull];
+                    _favB ctrlSetBackgroundColor ([_favTh get "surface2", _favTh get "accent"] select _favOn);
+                    _favB ctrlSetTextColor ([_favTh get "text", _favTh get "onAccent"] select _favOn);
+                };
+            } forEach (uiNamespace getVariable ["COMSPEC_ATAK_MusicRows", []]);
+        };
     };
     case "ath": {
         _ui set ["ath", _arg];

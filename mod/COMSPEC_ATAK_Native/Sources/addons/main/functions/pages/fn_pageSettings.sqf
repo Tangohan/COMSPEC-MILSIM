@@ -37,6 +37,9 @@ uiNamespace setVariable ["COMSPEC_ATAK_ProfSet", {
     [] call comspec_atak_native_fnc_saveProfile;
     // Modèle : la liste déroulante CBA (comspec_atak_native_phone_model) suit le choix fait dans le téléphone.
     if (_var isEqualTo "COMSPEC_ATAK_PhoneModel") then { ["comspec_atak_native_phone_model", _val, false, "client"] call CBA_settings_fnc_set; };
+    // Réglages lus au prochain dessin, sans effet sur la page ni sur la mise en page : le bouton change sur place.
+    if (_var in ["COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_SelfIcon", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_PhotoRelief", "COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_Wallpaper"]
+        && {["seg_" + _var, _val] call comspec_atak_native_fnc_formSet}) exitWith {};
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _profSegment = {
@@ -44,8 +47,8 @@ private _profSegment = {
     private _cur = profileNamespace getVariable [_var, _def];
     ["segment", _label, _opts apply {
         _x params ["_t", "_v"];
-        [_t, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_ProfSet');", _var, str _v], _v isEqualTo _cur]
-    }, _help]
+        [_t, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_ProfSet');", _var, str _v], _v isEqualTo _cur, "", _v]
+    }, _help, "seg_" + _var]
 };
 // Réglage roleplay Overwatch (CBA côté joueur) : verrouillé si la communauté ou le serveur l'impose.
 uiNamespace setVariable ["COMSPEC_ATAK_CbaToggle", {
@@ -69,6 +72,8 @@ private _cbaSwitch = {
 uiNamespace setVariable ["COMSPEC_ATAK_CbaSet", {
     params ["_k", "_v"];
     [_k, _v, false, "client"] call CBA_settings_fnc_set;
+    // Styles des noms de la carte : lus au dessin, le bouton change sur place.
+    if (["cseg_" + _k, _v] call comspec_atak_native_fnc_formSet) exitWith {};
     [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _cbaSegment = {
@@ -76,8 +81,8 @@ private _cbaSegment = {
     private _cur = missionNamespace getVariable [_k, _def];
     ["segment", _label, _opts apply {
         _x params ["_t", "_v"];
-        [_t, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaSet');", _k, str _v], _v isEqualTo _cur]
-    }, _help]
+        [_t, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaSet');", _k, str _v], _v isEqualTo _cur, "", _v]
+    }, _help, "cseg_" + _k]
 };
 
 // Emplacement du mini : remet à zéro le décalage glissé pour partir du nouveau coin.
