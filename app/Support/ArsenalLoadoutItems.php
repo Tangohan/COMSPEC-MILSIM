@@ -767,8 +767,10 @@ final class ArsenalLoadoutItems
             }
             $first = $entry[0] ?? null;
             if (is_array($first)) {
-                $nested = self::weaponItems($entry);
-                foreach ($nested as $row) {
+                // Arme rangée dans un conteneur : [[classe, accessoires…], quantité].
+                $count = max(1, (int) ($entry[1] ?? 1));
+                foreach (self::weaponItems($first) as $row) {
+                    $row['qty'] = (int) $row['qty'] * $count;
                     $items[] = $row;
                 }
                 continue;
