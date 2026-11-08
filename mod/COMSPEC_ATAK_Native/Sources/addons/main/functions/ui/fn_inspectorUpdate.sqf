@@ -70,6 +70,16 @@ if ((count _e) isEqualTo 0) then {
         private _v = vehicle _o;
         _lines pushBack format ["%1 %2 km/h · cap %3°%4", "Mouvement :" call _dim, round ((speed _v) max 0), round getDir _v,
             ["", format [" · à bord : %1", (getText (configOf _v >> "displayName")) call _esc]] select (_v isNotEqualTo _o)];
+        // Occupants de l'engin (joueur ou IA à bord) : indicatif et poste, 8 au plus.
+        if (_v isNotEqualTo _o) then {
+            private _air = _v isKindOf "Air";
+            private _roles = createHashMapFromArray [["driver", ["conducteur", "pilote"] select _air], ["commander", "chef de bord"], ["gunner", "tireur"], ["cargo", "passager"], ["turret", "tourelle"]];
+            private _occ = (fullCrew [_v, "", false]) select [0, 8] apply {
+                _x params ["_cu", "_cr"];
+                format ["%1 (%2)", ([_cu, true] call comspec_atak_native_fnc_unitCallsign) call _esc, (_roles getOrDefault [_cr, _cr]) call comspec_atak_native_fnc_tr]
+            };
+            if ((count _occ) > 0) then { _lines pushBack format ["%1 %2", "Occupants :" call _dim, _occ joinString ", "]; };
+        };
     };
     if (!isNull _o && {_aff isEqualTo "friend"} && {isPlayer _o}) then {
         (_o getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], ["_bars", -1], ["_st", ""]];

@@ -18689,5 +18689,12 @@
 ["❌ Échec de resynchronisation de %1", "❌ Failed to resync %1"],
 ["📍 TÉLÉPORTER", "📍 TELEPORT"],
 ["📡 Tableau de bord relais ATAK", "📡 ATAK relay dashboard"],
-["🔄 RESYNC TOUS", "🔄 RESYNC ALL"]
+["🔄 RESYNC TOUS", "🔄 RESYNC ALL"],
+["Occupants :", "Occupants:"],
+["conducteur", "driver"],
+["pilote", "pilot"],
+["chef de bord", "vehicle commander"],
+["tireur", "gunner"],
+["passager", "passenger"],
+["tourelle", "turret"]
 ]

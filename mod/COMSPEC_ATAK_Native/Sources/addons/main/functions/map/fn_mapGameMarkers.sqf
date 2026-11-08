@@ -26,9 +26,21 @@ private _dirty = missionNamespace getVariable ["COMSPEC_ATAK_MkDirtyGm", createH
 // relecture complète.
 private _pal = [] call comspec_atak_native_fnc_mapColors;
 private _lift = _pal get "lift";
+// Traits en attente : un trait tracé sur la carte du jeu est créé vide puis rempli (markerPolyline), sans nouvel événement
+// de marqueur : son entrée restait vide jusqu'à la relecture complète de 5 min. Les traits créés sans points sont revus
+// toutes les 0,5 s pendant 20 s (rien à faire quand la liste est vide).
+private _pend = missionNamespace getVariable "COMSPEC_ATAK_GmPend";
+if (isNil "_pend") then { _pend = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_GmPend", _pend]; };
+private _dead = missionNamespace getVariable "COMSPEC_ATAK_GmDead";
+if (isNil "_dead") then { _dead = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_GmDead", _dead]; };
+private _pendDue = (count _pend) > 0 && {_now > (missionNamespace getVariable ["COMSPEC_ATAK_GmPendAt", 0])};
 private _full = _now > (_cache select 0) || {"" in _dirty} || {(_cache param [3, false]) isNotEqualTo (_pal get "dark")};
-if (_full || {(count _dirty) > 0}) then {
+if (_full || {(count _dirty) > 0} || {_pendDue}) then {
     missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyGm", createHashMap];
+    if (_pendDue) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_GmPendAt", _now + 0.5];
+        { _dirty set [_x, true]; if (_now > (_pend get _x)) then { _pend deleteAt _x; _dead set [_x, true]; }; } forEach (keys _pend);
+    };
     private _cfg = uiNamespace getVariable "COMSPEC_ATAK_GmCfg";
     if (isNil "_cfg") then { _cfg = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_GmCfg", _cfg]; };
     private _rgbOf = {
@@ -76,7 +88,8 @@ if (_full || {(count _dirty) > 0}) then {
             };
             case "POLYLINE": {
                 private _flat = markerPolyline _x;
-                if ((count _flat) < 4) exitWith { [] };
+                if ((count _flat) < 4) exitWith { if !(_x in _pend || {_x in _dead}) then { _pend set [_x, _now + 20]; }; [] };
+                _pend deleteAt _x;
                 private _c = [markerColor _x, ""] call _rgbOf;
                 _c set [3, (_c select 3) * _a];
                 private _pts = [];
@@ -108,6 +121,7 @@ if (_full || {(count _dirty) > 0}) then {
     };
     if (_full) then {
         // Relecture complète : au premier dessin, si trop de marqueurs ont changé d'un coup, et toutes les 5 min par sécurité (les EH marqueurs couvrent le reste).
+        _dead = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_GmDead", _dead];
         private _list = [];
         private _index = createHashMap;
         {
@@ -140,6 +154,11 @@ private _off = {
     params ["_bb"];
     (count _bb) > 3 && {(_bb select 2) < (_view select 0) || {(_bb select 0) > (_view select 2)} || {(_bb select 3) < (_view select 1)} || {(_bb select 1) > (_view select 3)}}
 };
+// Vue éloignée : un symbole par case (1/16 de la vue) avec « +n » pour les autres, au lieu d'un tas de symboles qui se
+// recouvrent (ou de rien). Case comptée à chaque image (une opération de table par symbole visible), rien en vue proche.
+private _clustOn = (ctrlMapScale _map) >= 0.12;
+private _cw = (((_view select 2) - (_view select 0)) / 16) max 1;
+private _clu = createHashMap;
 {
     if ((count _x) isEqualTo 0) then { continue };
     switch (_x select 0) do {
@@ -147,6 +166,12 @@ private _off = {
             _x params ["", "_m", "_icon", "_c", "_w", "_h", "_dir", "_shadow", ["_halo", []]];
             private _pos = getMarkerPos _m;
             if ((_pos select 0) < (_view select 0) || {(_pos select 0) > (_view select 2)} || {(_pos select 1) < (_view select 1)} || {(_pos select 1) > (_view select 3)}) then { continue };
+            if (_clustOn) then {
+                private _ck = [floor ((_pos select 0) / _cw), floor ((_pos select 1) / _cw)];
+                private _cc = _clu getOrDefault [_ck, []];
+                if ((count _cc) > 0) then { _cc set [0, (_cc select 0) + 1]; continue };
+                _clu set [_ck, [1, _pos, _c]];
+            };
             private _iw = (_w * _mk) max 7; private _ih = (_h * _mk) max 7;
             if ((count _halo) > 0) then { _map drawIcon [_icon, _halo, _pos, _iw * 1.3, _ih * 1.3, _dir, "", 0]; };
             _map drawIcon [_icon, _c, _pos, _iw, _ih, _dir, "", _shadow];
@@ -169,3 +194,11 @@ private _off = {
         };
     };
 } forEach (_cache select 1);
+// Nombre de symboles regroupés dans chaque case de la vue éloignée.
+if (_clustOn) then {
+    private _clr = "#(argb,8,8,3)color(0,0,0,0)";
+    private _cs = 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1.25]);
+    {
+        if ((_y select 0) > 1) then { _map drawIcon [_clr, [1, 1, 1, 1], _y select 1, 8, 8, 0, format ["+%1", (_y select 0) - 1], 2, _cs, COMSPEC_ATAK_FontSet select 1, "right"]; };
+    } forEach _clu;
+};

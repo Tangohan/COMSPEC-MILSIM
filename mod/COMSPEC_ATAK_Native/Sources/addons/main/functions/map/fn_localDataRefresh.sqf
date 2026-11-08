@@ -105,6 +105,12 @@ private _metaCs = createHashMap;
     } else {
         if (_obj isKindOf "Air") then {"air"} else {if (_obj isKindOf "Tank") then {"armor"} else {"vehicle"}}
     };
+    // Joueur ou IA à bord d'un véhicule, d'un avion ou d'un hélico : classe de l'engin dans « vtype » (icône de véhicule sur
+    // la carte, fn_symbology). « type » reste « infantry » : les filtres du BFT (masquer les véhicules) ne doivent pas
+    // cacher l'équipage. Rien à bord : champ vide.
+    private _veh = vehicle _obj;
+    private _vtype = "";
+    if (_veh isNotEqualTo _obj) then { _vtype = if (_veh isKindOf "Air") then {"air"} else {if (_veh isKindOf "Tank") then {"armor"} else {"vehicle"}}; };
     // Indicatif d'abord ; sinon celui de l'unité Athena au même endroit (qu'on masque pour ne pas doubler) ;
     // le pseudo ne sert que sans indicatif ni liaison.
     private _callsign = [_obj,true] call comspec_atak_native_fnc_unitCallsign;
@@ -188,6 +194,7 @@ private _metaCs = createHashMap;
     _track set ["heading", _hd];
     _track set ["affiliation", _affiliation];
     _track set ["type", _type];
+    _track set ["vtype", _vtype];
     _track set ["freshness", _fr];
     _track set ["updated", _upd];
     _track set ["acc", _acc];
