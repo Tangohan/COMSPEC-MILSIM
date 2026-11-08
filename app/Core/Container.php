@@ -639,6 +639,7 @@ class Container
                 \App\Core\Database::getPdo()
             ),
             \App\Services\Cron\Jobs\PlatformWatchCronJob::class => new \App\Services\Cron\Jobs\PlatformWatchCronJob(),
+            \App\Services\Cron\Jobs\DiscordPhotoQueueCronJob::class => new \App\Services\Cron\Jobs\DiscordPhotoQueueCronJob(),
             \App\Services\Cron\Jobs\PhotoCompressCronJob::class => new \App\Services\Cron\Jobs\PhotoCompressCronJob(),
             \App\Services\Cron\Jobs\PlanEndWarningCronJob::class => new \App\Services\Cron\Jobs\PlanEndWarningCronJob(),
             \App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob::class => new \App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob(),
@@ -712,6 +713,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\CooperationRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlatformWatchCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\DiscordPhotoQueueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlayerDataRetentionCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class),
                     self::get(\App\Services\Cron\Jobs\SseAnalyticalNightlyCronJob::class),

@@ -105,6 +105,74 @@ final class DiscordWebhookService
     }
 
     /**
+     * Un seul message avec plusieurs embeds et jusqu'à 10 images jointes (photos d'un même joueur dans une même mission).
+     * Ne retombe PAS en texte seul : l'appelant décide du repli.
+     *
+     * @param list<array<string, mixed>> $embeds 10 au plus ; chaque embed peut citer attachment://<nom>
+     * @param list<array{path:string, name:string}> $files 10 au plus, chacun sous la limite de taille de Discord
+     * @return array{ok:bool, status:int, error?:string}
+     */
+    public function sendEmbedsWithFiles(string $webhookUrl, array $embeds, array $files, ?string $username = null, int $timeoutSeconds = 25): array
+    {
+        if (!$this->isValidWebhookUrl($webhookUrl)) {
+            return ['ok' => false, 'status' => 0, 'error' => 'Lien Discord invalide.'];
+        }
+        $embeds = array_slice(array_values($embeds), 0, 10);
+        $files = array_slice(array_values($files), 0, 10);
+        $total = 0;
+        $fields = [];
+        $attachments = [];
+        foreach ($files as $i => $f) {
+            $size = is_file($f['path']) && is_readable($f['path']) ? (int) @filesize($f['path']) : 0;
+            if ($size < 32 || $size > self::MAX_ATTACHMENT_BYTES) {
+                return ['ok' => false, 'status' => 0, 'error' => 'Photo introuvable ou trop lourde pour Discord.'];
+            }
+            $total += $size;
+            $attachments[] = ['id' => $i, 'filename' => $f['name']];
+            $ext = strtolower((string) pathinfo($f['name'], PATHINFO_EXTENSION));
+            $mime = match ($ext) {
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                'gif' => 'image/gif',
+                default => 'image/jpeg',
+            };
+            $fields['files[' . $i . ']'] = new \CURLFile($f['path'], $mime, $f['name']);
+        }
+        if ($total > self::MAX_ATTACHMENT_BYTES) {
+            return ['ok' => false, 'status' => 0, 'error' => 'Photos trop lourdes pour un seul message Discord.'];
+        }
+        $payload = ['embeds' => $embeds, 'allowed_mentions' => ['parse' => []]];
+        if ($attachments !== []) {
+            $payload['attachments'] = $attachments;
+        }
+        $username = trim((string) $username);
+        if ($username !== '') {
+            $payload['username'] = mb_substr($username, 0, 80);
+        }
+        $timeout = max(4, min(30, $timeoutSeconds));
+        $ch = curl_init($webhookUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => ['payload_json' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)] + $fields,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => min(5, $timeout),
+        ]);
+        curl_exec($ch);
+        $errno = curl_errno($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($errno !== 0) {
+            return ['ok' => false, 'status' => 0, 'error' => 'Discord injoignable pour le moment.'];
+        }
+        if ($status < 200 || $status >= 300) {
+            return ['ok' => false, 'status' => $status, 'error' => 'Discord a refusé les photos (code ' . $status . ').'];
+        }
+
+        return ['ok' => true, 'status' => $status];
+    }
+
+    /**
      * Embed brut (déjà construit), sans pièce jointe.
      *
      * @param array<string, mixed> $embed
