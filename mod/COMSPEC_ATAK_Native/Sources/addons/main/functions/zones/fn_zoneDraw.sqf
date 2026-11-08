@@ -8,8 +8,12 @@
       - style tactique (fn_mapColors « tac ») : rectangles hachurés (brosse du moteur), contour d'au moins 2 px ; les polygones
         gardent leur remplissage léger ;
       - nom de la zone et état abrégé quand la zone est assez grande à l'écran (ou en point), nombre de signalements ;
-      - nom du plan au-dessus de sa boîte ;
-      - axes MSR / ASR : bande claire et trait (surligné), trait seul (contour) ou nom seul (point) ; points de contrôle ;
+      - nom du plan au-dessus de sa boîte, s'il a des zones (carte de l'app : toujours) : jamais d'étiquette seule, un plan
+        sans zones n'est qu'un conteneur d'axes ou de traits, qui portent leur nom ;
+      - axes MSR / ASR : bande claire et trait (surligné), trait seul (contour) ou nom seul (point) ; nom sur le trait, plaque
+        sombre, texte blanc, liseré à la couleur de l'axe ; points de contrôle ;
+      - lignes de phase et traits : nom à chaque bout (PL, LD, LOA…), comme sur un calque MIL-STD-2525 / APP-6 ;
+      - hachures (style du plan) : brosse du moteur sur les cases ; cercle autour du point d'étiquette ;
       - bâtiments numérotés : zone choisie ou zoom rapproché ;
       - carte de l'app : zone choisie cerclée de blanc, zone de travail en tirets ;
       - couleurs et style (2.9.38) : thème du plan (OTAN, contraste élevé, vision nocturne) et couleurs choisies par type
@@ -88,6 +92,9 @@ private _outline = {
     private _lSz = _tsz * (_pal get "lblSize");
     private _lBg = _pal get "lblBg";
     private _lN = (_pal get "lblPos") isEqualTo "N";
+    private _texR = [_rectTex, _palM get "hatch"] select (_pal get "hatch");
+    private _hatched = _zTac || {_pal get "hatch"};
+    private _ringOn = _pal get "ring";
     private _tris = createHashMap;
     if (_render isEqualTo "FILL" || {((_b get "zones") findIf { (_x select 5) isEqualTo "FILL" }) >= 0}) then { _tris = ["tri", _b] call comspec_atak_native_fnc_zoneAction; };
     // Zone de travail (carte de l'app) : tirets blancs.
@@ -104,6 +111,8 @@ private _outline = {
         if (_sizePx < 6) then { _rm = "POINT"; };
         _zs params [["_zc", ""], ["_zfa", -1], ["_zw", -1], ["_zd", ""]];
         private _tc = if (_zc isNotEqualTo "") then { [_zc] call _rgb } else { +(_tyTab getOrDefault [_ty, [1, 1, 1, 1]]) };
+        // « Repère » du thème OTAN (presque noir) illisible sur fond sombre : clair sur satellite, ardoise, nuit.
+        if (_ty isEqualTo "GEN" && {_zc isEqualTo ""} && {_palM get "dark"} && {((_tc select 0) + (_tc select 1) + (_tc select 2)) < 0.9}) then { _tc = [0.92, 0.93, 0.92, 1]; };
         private _scol = _stTab getOrDefault [_st, [0.62, 0.66, 0.64, 1]];
         private _sab = _stAb getOrDefault [_st, ""];
         private _hasSt = _st isNotEqualTo "UNREC";
@@ -120,8 +129,8 @@ private _outline = {
                 private _fc = +([_tc, _scol] select _hasSt);
                 _fc set [3, ([_fA, _zfa] select (_zfa >= 0)) * ([1, 1.8] select _hasSt) min 0.85];
                 if ((count _rect) isEqualTo 4) then {
-                    if (_zTac) then { _fc set [3, 0.8]; };
-                    _map drawRectangle [[_rect select 0, _rect select 1, 0], _rect select 2, _rect select 3, 0, _fc, _rectTex];
+                    if (_hatched) then { _fc set [3, 0.8]; };
+                    _map drawRectangle [[_rect select 0, _rect select 1, 0], _rect select 2, _rect select 3, 0, _fc, _texR];
                 } else {
                     private _t = _tris getOrDefault [_zid, []];
                     if ((count _t) >= 3) then { _map drawTriangle [_t, _fc, _tex]; };
@@ -139,6 +148,7 @@ private _outline = {
         if (_isSel) then {
             ["poly", _map, [_p3 select _forEachIndex, [1, 1, 1, 0.95], 3, false, 0, _mpx]] call comspec_atak_native_fnc_planGfx;
         };
+        if (_ringOn && {_sizePx > 34}) then { _map drawIcon ["\z\comspec_atak_native\addons\main\data\map_keyring.paa", _lc, _c3, 44 * _sc, 44 * _sc, 0, "", 0]; };
         // Étiquette : assez de place à l'écran, ou point centré ; contenu, taille, fond et place selon le style du plan.
         if (_lMode isNotEqualTo "NONE" && {_rm isEqualTo "POINT" || {_sizePx > 34} || {_isSel}}) then {
             private _t = if (_lMode isEqualTo "NUM") then { str (_forEachIndex + 1) } else { _name };
@@ -176,7 +186,7 @@ private _outline = {
             ["line", _map, [_p3a, _col, [3, 4] select (_cls isEqualTo "MSR"), false, false, false, _mpx]] call comspec_atak_native_fnc_planGfx;
         };
         private _mid = _p3a select (floor ((count _p3a) / 2));
-        ["label", _map, [_mid, _name, _col, _tsz, _mpx, [0, 14], true]] call comspec_atak_native_fnc_planGfx;
+        ["label", _map, [_mid, _name, [1, 1, 1, _a], _tsz, _mpx, [0, 0], true, _col]] call comspec_atak_native_fnc_planGfx;
     } forEach (_b get "axes");
     {
         _x params ["", "_lbl", "_p"];
@@ -208,12 +218,17 @@ private _outline = {
                 _map drawIcon [_ring, [1, 1, 1, 0.7], _m, 9 * _sc, 9 * _sc, 0, "", 0];
             };
         };
-        if (_isL || {_isEdit} || {_scale < 0.02}) then {
-            ["label", _map, [_q select (floor ((count _q) / 2)), _ln, _col, _tsz * 0.9, _mpx, [0, 12], true]] call comspec_atak_native_fnc_planGfx;
+        // Nom du trait dès le zoom moyen ; ligne de contrôle ouverte (PL, LD, LOA…) : à chaque bout.
+        if (_isL || {_isEdit} || {_scale < 0.12}) then {
+            if (!_closed && {(count _q) >= 2} && {((_ln splitString " ") param [0, ""]) in ["PL", "LD", "LOA", "FSCL", "CFL"]}) then {
+                { ["label", _map, [_x, _ln, [1, 1, 1, _a], _tsz * 0.9, _mpx, [0, 0], true, _col]] call comspec_atak_native_fnc_planGfx; } forEach [_q select 0, _q select -1];
+            } else {
+                ["label", _map, [_q select (floor ((count _q) / 2)), _ln, [1, 1, 1, _a], _tsz * 0.9, _mpx, [0, 0], true, _col]] call comspec_atak_native_fnc_planGfx;
+            };
         };
     } forEach (_b getOrDefault ["lines", []]);
     // Nom du plan au-dessus de sa boîte.
-    if (((_X1 - _X0) / _mpx) > 40) then {
+    if (((_X1 - _X0) / _mpx) > 40 && {_isEdit || {(count (_b get "zones")) > 0}}) then {
         ["label", _map, [[(_X0 + _X1) / 2, _Y1, 0], _b get "name", [1, 1, 1, 0.95 * _a], _tsz * 1.05, _mpx, [0, -14], true]] call comspec_atak_native_fnc_planGfx;
     };
 } forEach _list;

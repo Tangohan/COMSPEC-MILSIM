@@ -24,6 +24,7 @@
       check    [moi, _h, 4]              N4 : comparaison du visage (fn_idBio ; durée réglable, matériel « face »)
       coverSheet [moi, personne]         fiche RP (la sienne ; le Zeus : celle de tous) · coverList [moi]  infiltrés (Zeus)
       coverFired [moi]                   tir d'un infiltré (FiredMan de son poste)
+      coverPull [moi]                    recharge le paquet Athena (app Ma couverture, au plus une fois par 2 min, tous postes)
       answer   [moi, qid, index]         réponse à une question de légende (fn_idQuestion)
       aiQuestion [moi, cible, clé]       je pose une question de légende à un PNJ
       pid      [moi, sujet]              confirmation PID d'une HVT identifiée (fn_idHvt)
@@ -504,9 +505,10 @@ switch (_op) do {
         private _cs = ["state", [_t]] call comspec_sse_fnc_idCover;
         _sheet set ["state", ["off", ["on", "burnt"] select (_cs getOrDefault ["burnt", false])] select ((count _cs) > 0)];
         _sheet set ["burnWhy", _cs getOrDefault ["burnWhy", ""]];
-        (["score", [_t]] call comspec_sse_fnc_idCover) params ["_sc", "_why"];
+        (["score", [_t]] call comspec_sse_fnc_idCover) params ["_sc", "_why", ["_todo", []]];
         _sheet set ["score", _sc];
         _sheet set ["why", _why];
+        _sheet set ["todo", _todo];
         ["coverSheet", [netId _t, _sheet]] call _reply;
     };
     case "coverList": {
@@ -522,6 +524,11 @@ switch (_op) do {
         ["coverList", [_l]] call _reply;
     };
     case "coverFired": { ["fired", [_me]] call comspec_sse_fnc_idCover; };
+    case "coverPull": {
+        if ((time - (_reg getOrDefault ["packPullAt", -1000])) < 120) exitWith {};
+        _reg set ["packPullAt", time];
+        ["load"] call comspec_sse_fnc_idAthenaPack;
+    };
     case "answer": {
         _args params ["", ["_qid", ""], ["_i", -1, [0]]];
         ["answer", [_me, _qid, _i]] call comspec_sse_fnc_idQuestion;

@@ -341,6 +341,7 @@ class CfgFunctions {
             class ndaTexts {};
             class licenceStatus {};
             class athenaMode {};
+            class uplinkOff {};
             class athenaApply {};
             class athenaChoiceShow {};
             class athenaChoiceOnLoad {};
@@ -863,25 +864,7 @@ class CfgWeapons
 class CfgFactionClasses
 {
     class NO_CATEGORY;
-    class COMSPEC_Roleplay : NO_CATEGORY
-    {
-        displayName = "$STR_COMSPEC_OW_CFG_72D54FC9E9";
-        priority = 2;
-        side = 7;
-    };
-    class COMSPEC_Outils : NO_CATEGORY
-    {
-        displayName = "$STR_COMSPEC_OW_CFG_00AE881D17";
-        priority = 2;
-        side = 7;
-    };
-    class COMSPEC_ATAK : NO_CATEGORY
-    {
-        displayName = "$STR_COMSPEC_OW_CFG_AE461ABCB5";
-        priority = 2;
-        side = 7;
-        icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
-    };
+    class COMSPEC_Cat_Atak: NO_CATEGORY { displayName = "$STR_COMSPEC_OW_CFG_8A1AE40616"; priority = 2; side = 7; };
 };
 
 #include "ui_base.hpp"
@@ -938,10 +921,11 @@ class CfgVehicles
     
     // Modules Zeus pour gestion des relais en jeu
     class COMSPEC_ModuleScanRelays: Module_F {
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
         scope = 2;
-        displayName = "$STR_COMSPEC_OW_CFG_D04248E677";
-        icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
-        category = "COMSPEC_ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_0A1C8C304A";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
+        category = "COMSPEC_Cat_Atak";
         function = "comspec_overwatch_connect_fnc_zeusModuleScanRelays";
         functionPriority = 1;
         isGlobal = 0;
@@ -972,10 +956,11 @@ class CfgVehicles
     // Ancien tableau des relais (fenêtre par-dessus le jeu au lancement) : masqué dans Eden, remplacé par le module
     // ATAK · Relais et le tableau TBR de l'ATAK natif. Les missions qui l'ont déjà posé se chargent toujours.
     class COMSPEC_ModuleRelayDashboard: Module_F {
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
         scope = 1;
-        displayName = "$STR_COMSPEC_OW_CFG_5A2FEC5375";
-        icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
-        category = "COMSPEC_ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_AFB0D2C1B8";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
+        category = "COMSPEC_Cat_Atak";
         function = "comspec_overwatch_connect_fnc_openRelayDashboard";
         functionPriority = 1;
         isGlobal = 0;
@@ -989,10 +974,11 @@ class CfgVehicles
     };
     
     class COMSPEC_ModuleResyncRelay: Module_F {
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
         scope = 2;
-        displayName = "$STR_COMSPEC_OW_CFG_9BE0C2885D";
-        icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\upload_ca.paa";
-        category = "COMSPEC_ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_7B3F12C07F";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_relay.paa";
+        category = "COMSPEC_Cat_Atak";
         function = "comspec_overwatch_connect_fnc_zeusResyncRelay";
         functionPriority = 1;
         isGlobal = 0;

@@ -10,11 +10,11 @@
 params [["_cmd", ""]];
 if (!hasInterface) exitWith { false };
 if (_cmd in ["LogWrite", "LogSessionStart", "HashText", "GetExtensionVersion", "GetVersion", "Ping", "Async"]) exitWith { false };
-private _off = !(missionNamespace getVariable ["comspec_overwatch_enabled", true])
-    || {([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off"};
-if (_off) exitWith {
+if ([] call comspec_overwatch_connect_fnc_uplinkOff) exitWith {
     if !(missionNamespace getVariable ["COMSPEC_UplinkHoldOff", false]) then {
         missionNamespace setVariable ["COMSPEC_UplinkHoldOff", true];
+        // « Oui » puis « Non » en cours de session : la DLL oublie adresse et clés, sa file ne repart plus.
+        "COMSPECExtension" callExtension ["UplinkOff", []];
         ["INFO", "Athena", "Liaison Athena désactivée : mod en local, aucune transmission"] call comspec_overwatch_connect_fnc_log;
     };
     true

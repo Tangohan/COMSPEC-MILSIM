@@ -121,6 +121,8 @@ switch (_act) do {
         call _rerender;
         // Partage ouvert (ou élargi) : les autres reçoivent tout de suite l'itinéraire en cours.
         if (_arg > _was && {(count _pts) > 0}) then { ["sync"] call comspec_atak_native_fnc_wpAction; };
+        // Redevenu « moi seul » : marqueurs publics retirés.
+        if (_arg isEqualTo 0) then { ["wpMk"] call comspec_atak_native_fnc_wpAction; };
         true
     };
     case "series": {
@@ -257,9 +259,37 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_WpSyncTok", _tok];
         [{ if (_this isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_WpSyncTok", 0])) then { ["syncNow"] call comspec_atak_native_fnc_wpAction; }; }, _tok, 1] call comspec_atak_native_fnc_waitAndExec;
     };
+    // Carte d'Arma et Athena : tracé et étapes de MON itinéraire partagé (pas celui reçu d'un autre, ni « moi seul »).
+    case "wpMk": {
+        { ["del", _x] call comspec_atak_native_fnc_markerOwned; } forEach (missionNamespace getVariable ["COMSPEC_ATAK_WpMk", []]);
+        private _mk = [];
+        missionNamespace setVariable ["COMSPEC_ATAK_WpMk", _mk];
+        private _share = profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1];
+        if (_share <= 0 || {(count _pts) isEqualTo 0} || {(_w getOrDefault ["from", ""]) isNotEqualTo ""}) exitWith {};
+        private _ch = [3, 1] select (_share >= 2);
+        if ((count _pts) >= 2) then {
+            private _flat = [];
+            { _flat append [round ((_x select 0) select 0), round ((_x select 0) select 1)]; } forEach (_pts select [0, 200]);
+            private _m = ["make", [_share, _ch, (_pts select 0) select 0]] call comspec_atak_native_fnc_markerOwned;
+            if (_m isNotEqualTo "") then { _m setMarkerShapeLocal "POLYLINE"; _m setMarkerPolylineLocal _flat; ["paint", [_m, "ColorYellow"]] call comspec_atak_native_fnc_markerOwned; _mk pushBack _m; };
+        };
+        {
+            _x params ["_p", ["_n", ""], ["_k", "WP"]];
+            private _m = ["make", [_share, _ch, _p]] call comspec_atak_native_fnc_markerOwned;
+            if (_m isNotEqualTo "") then {
+                _m setMarkerTypeLocal ((["type", _k] call comspec_atak_native_fnc_wpAction) select 2);
+                _m setMarkerSizeLocal [0.75, 0.75];
+                _m setMarkerTextLocal _n;
+                ["paint", [_m, "ColorYellow"]] call comspec_atak_native_fnc_markerOwned;
+                _mk pushBack _m;
+            };
+        } forEach (_pts select [0, 30]);
+        { [_x] call comspec_atak_native_fnc_markerWeb; } forEach _mk;
+    };
     case "syncNow";
     case "push": {
         private _push = _act isEqualTo "push";
+        ["wpMk"] call comspec_atak_native_fnc_wpAction;
         private _share = profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1];
         if (_push && {(count _pts) isEqualTo 0}) exitWith {};
         if (!_push && {_share isEqualTo 0}) exitWith {};

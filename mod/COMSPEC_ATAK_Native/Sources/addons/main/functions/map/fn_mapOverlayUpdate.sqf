@@ -373,9 +373,20 @@ private _mode = _s getOrDefault ["mapMode", "SELECT"];
     private _b = _ov getOrDefault ["tool_" + _key, controlNull];
     if (!isNull _b) then { _b ctrlSetTextColor ([_off, _on] select _active); };
 } forEach [
-    ["follow", _s getOrDefault ["mapFollow", false]],
+    ["center", _s getOrDefault ["mapFollow", false]],
     ["MARKER", _mode isEqualTo "MARKER"],
-    ["menu", _s getOrDefault ["mapToolsOpen", false]],
-    ["labels", (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0]
+    ["PING", _mode isEqualTo "PING"],
+    ["menu", _s getOrDefault ["mapToolsOpen", false]]
 ];
+// Bouton à deux états : centrer, ou suivre (moi ou une unité choisie sur sa fiche) : icône, couleur et fond le disent.
+private _cb = _ov getOrDefault ["tool_center", controlNull];
+if (!isNull _cb) then {
+    private _fw = (_s getOrDefault ["mapFollow", false]) || {(_s getOrDefault ["mapFollowId", ""]) isNotEqualTo ""};
+    if (_fw isNotEqualTo (_ov getOrDefault ["centerFw", false])) then {
+        _ov set ["centerFw", _fw];
+        _cb ctrlSetText (["\z\comspec_atak_native\addons\main\data\map_center.paa", "\z\comspec_atak_native\addons\main\data\map_follow.paa"] select _fw); // i18n:brut
+        (_ov getOrDefault ["tool_centerBg", controlNull]) ctrlShow _fw;
+    };
+    _cb ctrlSetTextColor ([_off, _on] select _fw);
+};
 true

@@ -17,6 +17,7 @@ profileNamespace setVariable ["COMSPEC_AthenaMode", _mode];
 
 if (_mode isEqualTo "off") then {
     missionNamespace setVariable ["comspec_overwatch_enabled", false];
+    "COMSPECExtension" callExtension ["UplinkOff", []];
     missionNamespace setVariable ["comspec_overwatch_auth_state", "DISABLED", false];
     missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];

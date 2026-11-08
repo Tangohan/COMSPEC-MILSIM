@@ -15,6 +15,7 @@ use App\Services\Sse\SseEditorLibraryService;
 use App\Services\Sse\SseIdCheckService;
 use App\Services\Sse\SseIdDocumentLookupService;
 use App\Services\Sse\SseIdentityPackService;
+use App\Services\Sse\SseIdGameCoverService;
 use App\Services\Sse\SseIdWatchFromGameService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\HttpJsonBody;
@@ -26,7 +27,8 @@ use App\Support\HttpJsonBody;
  * - GET  /api/sse/identity/documents/lookup   → contrôle N3 en ligne d'un papier présenté
  * - POST /api/sse/identity/checks             → contrôle remonté du terrain (idempotent) ; avec kind = bolo | hvt :
  *                                                 avis né en jeu (BOLO, HVT désignée), créé ou mis à jour (lots 4 et 5) ;
- *                                                 avec kind = editor_… : bibliothèque de l'éditeur SSE (SseEditorLibraryService)
+ *                                                 avec kind = editor_… : bibliothèque de l'éditeur SSE (SseEditorLibraryService) ;
+ *                                                 avec kind = cover_report : couverture née en jeu (SseIdGameCoverService)
  *
  * Accès : clé de jeu valable (communauté ou plateforme) — le serveur de jeu garde la vérité pour lui —, ou session du
  * portail avec l'habilitation SSE voulue (Confidentiel pour le pack, Encadrement pour le reste). Sans clé ni session :
@@ -49,6 +51,7 @@ final class SseIdentityApiController
         private ?\Closure $bodyReader = null,
         private ?SseIdWatchFromGameService $gameWatch = null,
         private ?SseEditorLibraryService $editorLibrary = null,
+        private ?SseIdGameCoverService $gameCovers = null,
     ) {
         $this->gameWatch ??= new SseIdWatchFromGameService();
         $this->pack ??= new SseIdentityPackService();
@@ -115,6 +118,10 @@ final class SseIdentityApiController
             return $this->editorLibraryResponse($tenantId, $body);
         }
 
+        if (($body['kind'] ?? null) === SseIdGameCoverService::KIND) {
+            return $this->gameCoverResponse($tenantId, $body);
+        }
+
         // BOLO / HVT nés en jeu (même canal COMSPEC Link SubmitIdCheck, réponse id + ref « WL-… »).
         if (in_array($body['kind'] ?? null, SseIdWatchFromGameService::KINDS, true)) {
             $watch = $this->gameWatch->store($tenantId, $mapId, $body);
@@ -174,6 +181,27 @@ final class SseIdentityApiController
         }
         if (isset($result['error'])) {
             return Response::json(['error' => $result['error'], 'message' => 'Contenu refusé : rien n’a été enregistré.'], 422);
+        }
+
+        return Response::json($result);
+    }
+
+    /**
+     * Couverture née en jeu : le compte est celui du jeton de jeu, jamais une donnée du corps. Sans jeton, rien n'est
+     * écrit et le mod l'indique au joueur (« unlinked »).
+     *
+     * @param array<string, mixed> $body
+     */
+    private function gameCoverResponse(int $tenantId, array $body): Response
+    {
+        try {
+            $result = ($this->gameCovers ??= new SseIdGameCoverService())->store($tenantId, ComspecApiKeyAuth::matchedUserId(), $body);
+        } catch (\PDOException) {
+            // Étape de migration 4110 pas encore passée, base indisponible : le mod garde la couverture sur le poste.
+            return Response::json(['error' => 'unavailable', 'message' => 'Couverture non enregistrée pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            return Response::json(['error' => $result['error'], 'message' => 'Couverture illisible : rien n’a été enregistré.'], 422);
         }
 
         return Response::json($result);

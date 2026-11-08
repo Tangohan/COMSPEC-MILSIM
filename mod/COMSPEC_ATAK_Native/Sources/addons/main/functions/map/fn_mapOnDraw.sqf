@@ -17,13 +17,18 @@ uiNamespace setVariable ["COMSPEC_ATAK_SelfGpsPos", _selfGps];
 [false, true] call comspec_atak_native_fnc_mapOverlayUpdate;
 // Téléphone porté (ou « Suivre ma position ») : la carte suit le joueur à chaque image, sans à-coup.
 // fn_mapCenter pose le premier centrage et son décalage (comspec_lastAim) ; ensuite on glisse du même écart que le joueur.
-if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
+// Suivi d'une autre unité (fiche de la carte, en main) : même glissement, vers sa position déjà connue des pistes.
+private _fwPos = _selfGps;
+private _fwId = _state getOrDefault ["mapFollowId", ""];
+if (_fwId isNotEqualTo "") then {
+    private _fwP = ((_data getOrDefault ["units", createHashMap]) getOrDefault [_fwId, createHashMap]) getOrDefault ["position", []];
+    if ((count _fwP) < 2 || {!(_state getOrDefault ["interactive", false])} || {_state getOrDefault ["mapFollow", false]}) then { _state set ["mapFollowId", ""]; _fwId = ""; } else { _fwPos = _fwP; };
+};
+if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]} || {_fwId isNotEqualTo ""}) then {
     private _fwLast = _map getVariable ["comspec_lastAim", []];
     if ((count _fwLast) isEqualTo 2 && {ctrlMapAnimDone _map} && {diag_tickTime - (_map getVariable ["comspec_centerAt", -1]) > 0.6}) then {
         (ctrlPosition _map) params ["_fwX", "_fwY", "_fwW", "_fwH"];
         private _fwVis = _map ctrlMapScreenToWorld [_fwX + _fwW / 2, _fwY + _fwH / 2];
-        // Position GPS affichée (fn_gpsPos) : la carte suit mon point et ses anneaux, pas ma position exacte.
-        private _fwPos = _selfGps;
         private _fwDx = (_fwPos select 0) - (_fwVis select 0);
         private _fwDy = (_fwPos select 1) - (_fwVis select 1);
         if ((abs _fwDx) + (abs _fwDy) > 0.25) then {
@@ -297,6 +302,11 @@ private _uxR = _ux1 - (_ux1 - _ux0) * 0.3;
 // Mon point GPS (volet de configuration de la carte, fn_mapPrefs « self ») : réglages préparés au changement.
 private _selfCfg = ["self"] call comspec_atak_native_fnc_mapPrefs;
 private _selfLbl = _selfCfg select 5;
+// Formes choisies (fn_mapShape) : préparées au changement de réglage, comparées par unité.
+private _shapeSelf = _selfCfg param [6, "ARROW"];
+private _shapeAlly = _selfCfg param [7, "AUTO"];
+private _shapeSelfNew = ["isNew", _shapeSelf] call comspec_atak_native_fnc_mapShape;
+private _shapeAllyNew = ["isNew", _shapeAlly] call comspec_atak_native_fnc_mapShape;
 // Trace (fil d'Ariane) de mes positions, sous les symboles.
 if (_selfCfg select 4) then {
     private _tp = ["trailPts"] call comspec_atak_native_fnc_mapPrefs;
@@ -376,6 +386,9 @@ if (_selfCfg select 4) then {
     // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
     private _acc = _entity getOrDefault ["acc", 0];
     if (!_self && {_acc >= 10} && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", false]}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
+    if ((_self && {_shapeSelfNew}) || {!_self && {_shapeAllyNew} && {(_entity getOrDefault ["affiliation", ""]) isEqualTo "friend"}}) then {
+        ["draw", [_map, [_shapeAlly, _shapeSelf] select _self, _pos, _size * 1.35, _color, _entity getOrDefault ["heading", 0], _dc select 8]] call comspec_atak_native_fnc_mapShape;
+    } else {
     if (_tacP) then {
         // Pion : disque sombre, anneau à la couleur de l'unité, lettre d'équipe, triangle de direction (texture tournée par
         // drawIcon : aucune position à calculer). Textures fixes, 3 à 4 dessins par unité visible.
@@ -387,6 +400,7 @@ if (_selfCfg select 4) then {
         if ("heading" in _entity) then { _map drawIcon [_tacTick, [1, 1, 1, _pa], _pos, _ps * 1.5, _ps * 1.5, _entity get "heading", "", 0]; };
     } else {
         _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
+    };
     };
     // Mon indicatif : AUTO comme les autres unités, ON toujours, OFF jamais (fn_mapPrefs « self »).
     if ((_self && {_selfLbl isEqualTo "ON"}) || {_lblOn && {!_boxOn} && {_scale < 0.25} && {_eniOn || {!_hostile}} && {!_self || {_selfLbl isNotEqualTo "OFF"}}}) then {
@@ -457,7 +471,7 @@ if ((count _mkLists) < 4 || {(_mkLists select 0) isNotEqualTo _mkRev} || {diag_t
     {
         private _lc = _y getOrDefault ["local",false];
         if (!_lc) then { _rem pushBack [_x,_y]; };
-        if ((_y getOrDefault ["text",""]) isNotEqualTo "" && {!_lc || {((_y getOrDefault ["id",_x]) find "_USER_DEFINED") >= 0}} && {!((toUpper (_y getOrDefault ["shape","ICON"])) in ["POLYLINE","RECTANGLE","ELLIPSE"])}) then { _tag pushBack [_x,_y]; };
+        if ((_y getOrDefault ["text",""]) isNotEqualTo "" && {((_y getOrDefault ["id",_x]) find "/77000") < 0} && {!_lc || {((_y getOrDefault ["id",_x]) find "_USER_DEFINED") >= 0}} && {!((toUpper (_y getOrDefault ["shape","ICON"])) in ["POLYLINE","RECTANGLE","ELLIPSE"])}) then { _tag pushBack [_x,_y]; };
     } forEach (_data getOrDefault ["markers",createHashMap]);
     // Sécurité 10 s (avant 2 s) : la révision du magasin change déjà à chaque marqueur créé, modifié ou supprimé.
     _mkLists = [_mkRev, diag_tickTime + 10, _rem, _tag];

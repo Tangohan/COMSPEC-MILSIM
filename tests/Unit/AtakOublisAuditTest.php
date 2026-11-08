@@ -65,6 +65,21 @@ final class AtakOublisAuditTest extends TestCase
         self::assertMatchesRegularExpression('/comspec_atak_native_mesh_keys", "CHECKBOX",\s*\[[^\]]*\],\s*_mpuCat, false, 1\]/u', $this->read(self::MAIN . 'XEH_preInit.sqf'));
     }
 
+    public function testNothingLeavesWithoutTheUplink(): void
+    {
+        $dll = $this->read('mod/UptoDate/COMSPECExtension/Extension.cs');
+        self::assertStringNotContainsString('string.IsNullOrEmpty(_baseUrl) ? "https://athena.ttrd.fr"', $dll);
+        self::assertStringContainsString('function == "UplinkOff"', $dll);
+        self::assertStringContainsString('fnc_uplinkOff', $this->read(self::CONNECT . 'functions/fn_uplinkHold.sqf'));
+        self::assertStringContainsString('class uplinkOff {};', $this->read(self::CONNECT . 'config.cpp'));
+        foreach (['guide/functions/fn_dashSite.sqf', 'guide/functions/fn_athenaEden.sqf', 'network/functions/fn_extensionCall.sqf'] as $file) {
+            self::assertStringContainsString('fnc_uplinkOff', $this->read('mod/@COMSPEC_SSE/addons/' . $file));
+        }
+        foreach (['mod/UptoDate/COMSPECExtension/BetaNoticeWindow.cs', 'mod/UptoDate/COMSPECExtension/Extension.cs'] as $file) {
+            self::assertStringNotContainsString('techniques limitées', $this->read($file));
+        }
+    }
+
     public function testPingNamesTheWeakestLink(): void
     {
         self::assertStringContainsString('case "weak":', $this->read(self::MAIN . 'functions/network/fn_meshGraph.sqf'));

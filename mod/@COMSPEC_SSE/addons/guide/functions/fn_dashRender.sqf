@@ -616,7 +616,7 @@ switch (_tab) do {
         private _l = [["Mission dans Eden"] call _hd];
         { _x params ["_lbl", "_v"]; if (_v isNotEqualTo "") then { _l pushBack format ["%1 : %2", _lbl, [_v] call _esc]; }; } forEach [["Fichier", _file], ["Carte", _world], ["Titre", _title], ["Auteur", _author]];
         private _mm = _mods select { ((_ents get _x) get "cat") isEqualTo "COMSPEC_SSE_Mission" };
-        if (_mm isEqualTo []) then { _l pushBack ""; _l pushBack ("Aucun module de mission SSE (Modules › COMSPEC SSE · Mission)." call _dim); };
+        if (_mm isEqualTo []) then { _l pushBack ""; _l pushBack ("Aucun module de mission SSE (Modules › COMSPEC · Mission)." call _dim); };
         {
             private _p = _ents get _x;
             _l pushBack "";

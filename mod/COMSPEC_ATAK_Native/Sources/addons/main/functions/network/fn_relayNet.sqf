@@ -1,6 +1,6 @@
 /*
     Relais du réseau ATAK : liste, carte de couverture (débit, perte) et triangulation d'un appareil par les relais qui l'entendent.
-      "list"     : relais (COMSPEC_AtakRelays : module « ATAK · Relais » ou Overwatch, du camp ou sans camp) puis
+      "list"     : relais (COMSPEC_AtakRelays : module « Poser un relais » ou Overwatch, du camp ou sans camp) puis
                    passerelles de véhicule et PC mobiles du camp (si le réglage serveur les autorise), puis radios MPU5
                    des équipiers qui reçoivent un relais (fn_mpu5). Caché 2 s ("force" : non).
                    [[objet, position antenne ASL, nom, type ("relay" | "gw" | "cp" | "mpu5"), portée m, Mbit/s reçus du réseau,
@@ -24,7 +24,7 @@
       "power"    : [relais, "on" | "off" | "battery"] ; "info" : [relais] fiche en notification ; "sweep" : batteries (serveur).
       "entry"    : [relais] -> son entrée de "list" ou [].
       "only"     : vrai si le réseau passe exclusivement par les relais (réglage serveur comspec_atak_native_relay_only,
-                   case « Réseau exclusivement par relais » d'un module « ATAK · Relais », ou mode réaliste d'Athena).
+                   case « Réseau exclusivement par relais » d'un module « Poser un relais », ou mode réaliste d'Athena).
       "required" : vrai si les relais sont obligatoires (mode « only » ou case « Relais obligatoires »).
       "pin"      : [relais ou objNull] préfère ce relais (objNull : retour au choix automatique).
       "link"     : [position antenne ASL, portée, Mbit/s, position ASL visée, mode, objets ignorés, gain dB]
@@ -77,7 +77,7 @@ switch (_act) do {
         private _jf = [];
         {
             if (isNull _x || {!(_x getVariable ["COMSPEC_AtakRelay", false])}) then { continue };
-            // Relais réservé à un camp (module « ATAK · Relais ») : invisible pour les autres.
+            // Relais réservé à un camp (module « Poser un relais ») : invisible pour les autres.
             private _rs = _x getVariable ["COMSPEC_AtakRelaySide", ""];
             if (_rs isEqualType "" && {_rs isNotEqualTo ""} && {_rs isNotEqualTo _side}) then { continue };
             // Dégâts : débit puis portée baissent petit à petit (réglage comspec_atak_native_relay_damage, perte à 100 % de dégâts).
@@ -357,6 +357,16 @@ switch (_act) do {
         private _e = ((["list", "force"] call comspec_atak_native_fnc_relayNet) select { (_x select 0) isEqualTo _o }) param [0, []];
         if (_e isEqualTo []) exitWith { ["INFO", "Relais d'un autre réseau : aucune information", 3, 20] call comspec_atak_native_fnc_notify; };
         _e params ["", "", "_n", "", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "_root", "", "_fq", "_auto", "_loss", "_hp", "_hl"];
+        if (!isNil "ace_common_fnc_displayTextStructured") then {
+            private _lines = [
+                _n,
+                format ["%1 : %2", "État" call comspec_atak_native_fnc_tr, ([_hl, _st] select !_ok) call comspec_atak_native_fnc_tr],
+                format ["%1 : %2 m · %3 Mbit/s", "Portée" call comspec_atak_native_fnc_tr, round _r, _mb toFixed 1],
+                format ["%1 : %2 %% · %3 MHz · %4 : %5 %%", "Perte" call comspec_atak_native_fnc_tr, _loss, _fq, "Structure" call comspec_atak_native_fnc_tr, _hp],
+                format ["%1 · %2", (["sur secteur", format ["batterie %1 %%", round _bt]] select (_bt >= 0)) call comspec_atak_native_fnc_tr, (["répéteur", "raccordé"] select _root) call comspec_atak_native_fnc_tr]
+            ];
+            [_lines joinString "<br/>", 1.5, player, 14] call ace_common_fnc_displayTextStructured;
+        };
         ["INFO", format ["%1 : %2 · %9 MHz · perte %10 %% · structure %11 %% · portée %3 m · %4 Mbit/s · %5 téléphone(s)%6 · %7 · %8",
             _n, [_hl, _st] select !_ok, round _r, _mb toFixed 1, _u, ["", format [" / %1 places", _sl]] select (_sl > 0),
             ["sur secteur", format ["batterie %1 %%", round _bt]] select (_bt >= 0), ["répéteur", "raccordé"] select _root,

@@ -59,6 +59,8 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
     };
     // Entrée de dessin d'un marqueur ; [] : rien à dessiner (supprimé, transparent, sans image).
     private _entry = {
+        // Marqueurs natifs des routes et plans (fn_markerOwned) : le tracé est déjà dessiné par fn_routeDraw / fn_zoneDraw.
+        if ((_x find "/77000") > 0 || {(_x find "comspec_shape_prv_") isEqualTo 0}) exitWith { [] };
         private _a = markerAlpha _x;
         if (_a <= 0.02) exitWith { [] };
         private _shape = markerShape _x;

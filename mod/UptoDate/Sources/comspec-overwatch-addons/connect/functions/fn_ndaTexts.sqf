@@ -5,7 +5,7 @@
     Texte juridique, à valider par TTRD à chaque changement de fond : tenir LICENSE (mod/COMSPEC_ATAK_Native, @COMSPEC_ATAK_Native,
     @COMSPEC_SSE) cohérent, et monter la version (fn_licenceStatus).
     La section « Données » décrit ce que le code envoie, preuves : fn_registerBetaClient, fn_reportAllyPosition, fn_reportDiag,
-    fn_uplinkHold (rien ne part avec le service sur « Non »), LogWrite et device-logs dans COMSPECExtension.
+    fn_serverPresence, fn_startupCheck, fn_uplinkHold et fn_uplinkOff (rien ne part avec le service sur « Non »), LogWrite et device-logs dans COMSPECExtension.
     Le paragraphe « Votre choix » suit le second bouton réel (fn_ndaSetLanguage, fn_ndaDecline).
     Param : "fr" | "en"
     Retour : [titleHtml, subtitleHtml, bodyHtml, acceptLabel, declineLabel, footerHtml, legalHtml,
@@ -50,10 +50,10 @@ if (_lang isEqualTo "en") exitWith {
             format [_h, "5. Community packs"] +
             "A pack that includes the mod needs written permission from COMSPEC. Without it, ask your players to subscribe to the official Workshop page. The full text is in LICENSE.txt, in the mod folder.<br/><br/>" +
             format [_h, "6. Data recorded by Athena"] +
-            "Only if you answer Yes to the Athena service. If you answer No, the mod stays local and sends nothing to Athena. Recorded to run the service, and not used for advertising:<br/>" +
+            "Only if you answer Yes to the Athena service. If you answer No, your game stays local and sends nothing to Athena. This choice covers your game, not a server linked to Athena. Recorded to run the service, and not used for advertising:<br/>" +
             _dot + format [_em, "Account and technical:"] + " Steam identity when available, player name, callsign, IP address seen by the server, mod, DLL and Arma versions.<br/>" +
-            _dot + format [_em, "During play:"] + " position, heading and role, playtime and screen time, synchronised equipment, and what you send from the phone (markers, messages, photos, reports).<br/>" +
-            _dot + format [_em, "Diagnostics:"] + " mod log lines and error reports, sent automatically. Report a problem attaches an extract of the mod log unless you untick the box. The Arma RPT file is not sent.<br/><br/>" +
+            _dot + format [_em, "During play:"] + " position, heading and role, playtime and screen time, synchronised equipment, server name and address, mission and map, and what you send from the phone (markers, messages, photos, reports).<br/>" +
+            _dot + format [_em, "Diagnostics:"] + " mod log lines, error reports and the mod start-up check, sent automatically. Report a problem attaches an extract of the mod log unless you untick the box. The Arma RPT file is not sent.<br/><br/>" +
             format [_h, "7. Report a problem"] +
             "In game, ACE self-interaction menu &gt; " + format [_em, "Report a problem"] + ". Describe what happened and when.<br/><br/>" +
             format [_h, "8. Your choice"] +
@@ -73,7 +73,7 @@ if (_lang isEqualTo "en") exitWith {
         "<t size='0.74' color='#d8e2dc'>" + format ["<t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>", "THE ESSENTIALS"] +
             _dot + "Personal use, installed from the official Steam Workshop.<br/>" +
             _no + "No copying, repacking, modifying or commercial use without written permission from COMSPEC.<br/>" +
-            _dot + "With Athena, game and technical data are recorded (section 6). Without Athena, nothing is sent to it.<br/>" +
+            _dot + "With Athena, game and technical data are recorded (section 6). If you answer No, your game sends it nothing.<br/>" +
             _dot + "Without your agreement, the mod must not be used." +
         "</t>",
         "I accept (read to the end first)",
@@ -107,10 +107,10 @@ private _choice = switch (true) do {
         format [_h, "5. Packs de communauté"] +
         "Un pack qui inclut le mod doit avoir l’autorisation écrite de COMSPEC. Sans elle, demandez à vos joueurs de s’abonner à la page officielle du Workshop. Le texte complet est dans LICENSE.txt, dans le dossier du mod.<br/><br/>" +
         format [_h, "6. Données enregistrées par Athéna"] +
-        "Uniquement si vous répondez Oui au service Athéna. Si vous répondez Non, le mod reste en local et ne transmet rien à Athéna. Enregistré pour faire fonctionner le service, et sans usage publicitaire :<br/>" +
+        "Uniquement si vous répondez Oui au service Athéna. Si vous répondez Non, votre jeu reste en local et ne transmet rien à Athéna. Ce choix vaut pour votre jeu, pas pour un serveur relié à Athéna. Enregistré pour faire fonctionner le service, et sans usage publicitaire :<br/>" +
         _dot + format [_em, "Compte et technique :"] + " identité Steam si disponible, nom du joueur, indicatif, adresse IP vue par le serveur, versions du mod, de la DLL et d’Arma.<br/>" +
-        _dot + format [_em, "Pendant la partie :"] + " position, cap et rôle, temps de jeu et temps d’écran, équipement synchronisé, et ce que vous envoyez depuis le téléphone (marqueurs, messages, photos, rapports).<br/>" +
-        _dot + format [_em, "Diagnostic :"] + " lignes du journal du mod et rapports d’erreur, envoyés automatiquement. Signaler un problème joint un extrait du journal du mod, sauf si vous décochez la case. Le fichier RPT d’Arma n’est pas envoyé.<br/><br/>" +
+        _dot + format [_em, "Pendant la partie :"] + " position, cap et rôle, temps de jeu et temps d’écran, équipement synchronisé, nom et adresse du serveur, mission et carte, et ce que vous envoyez depuis le téléphone (marqueurs, messages, photos, rapports).<br/>" +
+        _dot + format [_em, "Diagnostic :"] + " lignes du journal du mod, rapports d’erreur et contrôle de démarrage du mod, envoyés automatiquement. Signaler un problème joint un extrait du journal du mod, sauf si vous décochez la case. Le fichier RPT d’Arma n’est pas envoyé.<br/><br/>" +
         format [_h, "7. Signaler un problème"] +
         "En jeu, menu d’interaction ACE &gt; " + format [_em, "Signaler un problème"] + ". Décrivez ce qui s’est passé et quand.<br/><br/>" +
         format [_h, "8. Votre choix"] +
@@ -130,7 +130,7 @@ private _choice = switch (true) do {
     "<t size='0.74' color='#d8e2dc'>" + format ["<t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>", "L’ESSENTIEL"] +
         _dot + "Usage personnel, installé depuis le Steam Workshop officiel.<br/>" +
         _no + "Ni copie, ni ré-empaquetage, ni modification, ni usage commercial sans l’autorisation écrite de COMSPEC.<br/>" +
-        _dot + "Avec Athéna, des données de jeu et techniques sont enregistrées (section 6). Sans Athéna, rien ne lui est transmis.<br/>" +
+        _dot + "Avec Athéna, des données de jeu et techniques sont enregistrées (section 6). Si vous répondez Non, votre jeu ne lui transmet rien.<br/>" +
         _dot + "Sans votre accord, le mod ne doit pas être utilisé." +
     "</t>",
     "J’accepte (lisez d’abord jusqu’à la fin)",

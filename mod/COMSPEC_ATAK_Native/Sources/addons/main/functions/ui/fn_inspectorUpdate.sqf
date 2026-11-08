@@ -3,14 +3,15 @@
     sa fiche ATAK : indicatif, nom, grade et fonction, groupe, état, position, distance et gisement, déplacement,
     téléphone (en ligne, batterie, signal), identité ORBAT. Le texte vit dans la section « Situation » du volet
     (fn_pageMap, contrôle COMSPEC_ATAK_InspTextCtrl) ; fond de carte et calques sont les sections suivantes.
-    Params : [texte seul] : true renvoie le texte (non traduit) sans rien afficher, pour le rendu du volet.
+    Params : [texte seul, entité] : true renvoie le texte (non traduit) sans rien afficher, pour le rendu du volet ;
+    entité (facultative) : fiche longue de cette unité plutôt que de la sélection (fiche dépliée de l'app Groupe).
 */
-params [["_build", false]];
+params [["_build", false], ["_ent", createHashMap]];
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d && {!_build}) exitWith {};
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _e = _s getOrDefault ["selectedEntity", createHashMap];
+private _e = [_s getOrDefault ["selectedEntity", createHashMap], _ent] select ((count _ent) > 0);
 private _dim = { format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _this] };
 private _fmt = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
@@ -55,13 +56,9 @@ if ((count _e) isEqualTo 0) then {
         private _rk = createHashMapFromArray [["PRIVATE", "Soldat"], ["CORPORAL", "Caporal"], ["SERGEANT", "Sergent"], ["LIEUTENANT", "Lieutenant"], ["CAPTAIN", "Capitaine"], ["MAJOR", "Commandant"], ["COLONEL", "Colonel"]] getOrDefault [rank _o, rank _o];
         _lines pushBack ([format ["%1 %2 · %3", "Rang :" call _dim, _rk, _role call _esc], format ["%1 %2", "Rang :" call _dim, _rk]] select (_role isEqualTo ""));
         if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, ([_o, true] call comspec_atak_native_fnc_unitGroup) call _esc, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
-        private _life = switch (true) do {
-            case (!alive _o): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>mort</t>" };
-            case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>—</t>" };
-            case ((lifeState _o) isEqualTo "INCAPACITATED"): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>inconscient</t>" };
-            case ((damage _o) > 0.4): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>blessé</t>" };
-            default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>valide</t>" };
-        };
+        // Même état partout : fiche unique, Groupe, BFT (fn_unitCard).
+        private _lf = ["state", _o] call comspec_atak_native_fnc_unitCard;
+        private _life = format ["<t color='%1'>%2</t>", _lf select 2, _lf select 1];
         _lines pushBack format ["%1 %2", "État :" call _dim, _life];
     };
     _lines pushBack format ["%1 <t font='EtelkaMonospacePro'>%2</t> · %3 m", "Position :" call _dim, [_p, 8] call comspec_atak_native_fnc_gridRef, round (_p select 2)];

@@ -4560,6 +4560,23 @@ class AtakApiController
             }
         }
         $out = $this->applyIntelScramble($request, $tenantId, $mapId, 'marker', $out);
+        // Relevé du jeu (world_name, seul COMSPEC Link l'envoie) : marqueurs du jeu retirés sur le site, en tête (la réponse peut
+        // être coupée à 8 Ko), pour que le relais les retire aussi en jeu. Colonne « text » : nom Arma ; « source » : game_del.
+        if ($world !== '') {
+            try {
+                $gone = array_map(static fn (array $g): array => [
+                    'id' => 'del:' . $g['id'],
+                    'layerId' => 1,
+                    'markerData' => json_encode([
+                        'pos' => $g['pos'], 'type' => 'comspec_del', 'text' => $g['arma_name'], 'color' => '', 'source' => 'game_del',
+                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'updated_at' => null,
+                ], $this->atak->recentlySuppressedGameMarkers($tenantId, $mapId));
+                $out = array_merge($gone, $out);
+            } catch (\Throwable) {
+                // La liste des marqueurs reste servie sans ce complément.
+            }
+        }
 
         return Response::json($out);
     }
@@ -8426,6 +8443,32 @@ class AtakApiController
         $pack = (new \App\Services\Tactical\AtakExperienceService())->get($r);
 
         return Response::json(\App\Support\AtakCommunityBrief::payload($pack['settings'], $pack['updated_at']));
+    }
+
+    /**
+     * ORBAT du site, vu comme un simple membre : onglet ORBAT du BFT (GetCommunityOrbat).
+     * La clé commune du serveur ne dit pas qui joue : la session de jeu d'un membre autorisé est exigée.
+     */
+    public function communityOrbat(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $userId = ComspecApiKeyAuth::matchedUserId();
+        if ($userId === null) {
+            return Response::json(['error' => 'session_required'], 403);
+        }
+        if (!\App\Services\Atak\AtakCommunityOrbatService::viewerMayRead($r, $userId, $this->userRepository)) {
+            return Response::json(['error' => 'forbidden'], 403);
+        }
+        try {
+            return Response::json((new \App\Services\Atak\AtakCommunityOrbatService($this->unitRepository))->forTenant($r));
+        } catch (\Throwable $e) {
+            error_log('[atak-orbat] ' . $e->getMessage());
+
+            return Response::json(['error' => 'unavailable'], 503);
+        }
     }
 
     public function experience(Request $request, array $params = []): Response

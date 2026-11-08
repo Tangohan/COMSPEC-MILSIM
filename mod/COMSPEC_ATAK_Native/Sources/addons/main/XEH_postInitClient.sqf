@@ -94,7 +94,9 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getV
 // efface ici (téléphone, durée écoulée ou carte d'Arma) ; à l'arrivée, ceux de mes canaux sont redemandés au serveur,
 // avec l'heure et l'auteur des marqueurs posés avant moi.
 ["comspec_atak_native_tacMk", { ["recv", _this] call comspec_atak_native_fnc_markerNet; }] call CBA_fnc_addEventHandler;
-addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call comspec_atak_native_fnc_markerNet; }];
+addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call comspec_atak_native_fnc_markerNet; ["gone", _m] call comspec_atak_native_fnc_markerOwned; }];
+// L'interface garde son état d'une mission à l'autre (uiNamespace) : outil de tracé, points en cours et plan ouvert remis à zéro.
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_ZnUi", "COMSPEC_ATAK_RteUi"];
 [{ ["comspec_atak_native_tacMkSrv", ["sync", player]] call CBA_fnc_serverEvent; }, [], 8] call comspec_atak_native_fnc_waitAndExec;
 // Compteur de changements des marqueurs (créé, supprimé, modifié) : la carte du téléphone ne relit les marqueurs de la
 // mission que lorsqu'il bouge (fn_mapGameMarkers, fn_localDataRefresh), au lieu de tout relire chaque seconde.
@@ -142,6 +144,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["COMSPEC ATAK", "PhonePanic", "Bouton PANIQUE (deux appuis)", { if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false }; ["panic"] call comspec_atak_native_fnc_alertsAction; if (diag_tickTime < ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["panicArmedUntil", -1])) then { ["WARNING", "PANIQUE : appuyez encore pour envoyer", 5, 60] call comspec_atak_native_fnc_notify; }; true }, "", [0, [false,false,false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "GestureFinger", ["Doigt d'honneur", "Geste du bras gauche (marche aussi fusil en main). Il faut cocher le réglage d'addon « Gestes doigt d'honneur »."], { [player] call comspec_atak_native_fnc_gestureFinger }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "GestureFingerAim", ["Doigt d'honneur libre (maintenir)", "Tant que la touche est maintenue : bras gauche tendu, majeur levé, qui suit le joueur visé ou le plus proche du centre de l'écran, sinon le curseur."], { ["start"] call comspec_atak_native_fnc_gestureFingerAim; true }, { ["stop"] call comspec_atak_native_fnc_gestureFingerAim; true }, [0, [false, false, false]], false] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "ZeusCentre", ["Centre Zeus", "Écran Zeus ouvert : état des ATAK, actions et outils."], { if (isNull (findDisplay 312)) exitWith { false }; ["toggle"] call comspec_atak_native_fnc_zeusCentre; true }, "", [66, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneNight", "Mode nuit du téléphone (normal / rouge / sombre)", {
     private _m = profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"];
     private _n = ["OFF", "RED", "DIM"] select ((((["OFF", "RED", "DIM"] find _m) max 0) + 1) mod 3);
@@ -223,7 +226,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["register"] call comspec_atak_native_fnc_meshTools;
 // Module Zeus (ZEN) « Capture de la carte » : tuiles satellite, 3D ou plan de la carte (fn_mapCapture, tools/map_stitch.py).
 if (!isNil "zen_custom_modules_fnc_register") then {
-    ["COMSPEC ATAK", "Capture de la carte", { params ["_pos"]; ["zeus", _pos] call comspec_atak_native_fnc_mapCapture; }, "\a3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa"] call comspec_atak_native_fnc_zenModule;
+    ["COMSPEC_Cat_Atak", "Capturer la carte", { params ["_pos"]; ["zeus", _pos] call comspec_atak_native_fnc_mapCapture; }, "\z\comspec_atak_native\addons\main\data\mod_map.paa"] call comspec_atak_native_fnc_zenModule;
 };
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).
 [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_battery; }; }, 10] call COMSPEC_ATAK_PfhSpread;
@@ -494,6 +497,8 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;
+// Antennes transportables (fn_antennaKit) : réponses du serveur et clic droit dans l'inventaire, avec ou sans ACE.
+["clientInit"] call comspec_atak_native_fnc_antennaKit;
 // Socle de recharge CS-10 (fn_dockMenu) : poser, reprendre, état, replier, poser le kit.
 [] call comspec_atak_native_fnc_dockMenu;
 // PC portable de TOC (fn_tocPost) : action ACE / molette, poste le plus proche cherché chaque seconde.

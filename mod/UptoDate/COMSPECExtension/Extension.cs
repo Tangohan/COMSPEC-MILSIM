@@ -1836,7 +1836,7 @@ public static partial class Extension
     /// <summary>Commandes que fn_uplinkHold laisse passer ou purement locales : elles ne rouvrent pas les envois.</summary>
     private static readonly HashSet<string> NonUplinkCommands = new(StringComparer.Ordinal)
     {
-        "Async", "Warmup", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
+        "Async", "Warmup", "UplinkOff", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
         "GetLogTail", "SendQueue.Status", "SyncStats", "MemStats", "Perf.Stats", "GetPendingQueueCount", "GetSessionTenant",
         "Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore",
         "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect", "ClientDisconnect",
@@ -2985,11 +2985,12 @@ public static partial class Extension
                 "Bienvenue dans la bêta publique de COMSPEC Overwatch.\n\n" +
                 "Ce pack est encore en phase de test. Certaines fonctions peuvent évoluer, " +
                 "être temporairement indisponibles ou se comporter de façon inattendue.\n\n" +
-                "Pour signaler un problème en jeu : Échap → gestion du mod → Signaler un problème.\n" +
+                "Pour signaler un problème en jeu : menu d’interaction ACE > Signaler un problème.\n" +
                 "Suivez les nouveautés et le journal des changements sur la page Steam Workshop.\n\n" +
-                "En continuant, des informations techniques limitées (identifiant Steam, " +
-                "version du pack, détails clients associés) peuvent être enregistrées pour " +
-                "faire tourner la bêta et Athena.\n\n" +
+                "Avec le service Athéna, sont enregistrés pour le faire fonctionner : identité Steam si disponible, " +
+                "nom du joueur, indicatif, adresse IP vue par le serveur, versions, position, cap et rôle, temps de jeu " +
+                "et d’écran, équipement synchronisé, ce que vous envoyez depuis le téléphone, journal du mod et rapports " +
+                "d’erreur. Détail dans la note de service. Si vous répondez Non au service, votre jeu ne transmet rien à Athéna.\n\n" +
                 "Utilisez ce pack de façon responsable pendant les sessions organisées.\n\n" +
                 "OK = j’ai lu (ce message ne réapparaîtra plus)";
 
@@ -3109,6 +3110,7 @@ public static partial class Extension
     }
 
     private static int _warmupStarted;
+    private static int _warmupQueueLoaded;
 
     /// <summary>
     /// Premier « Warmup » (chargement du mod) : hors du thread du jeu, relit la file d'envoi sur disque et ouvre
@@ -3117,13 +3119,17 @@ public static partial class Extension
     /// </summary>
     private static void KickBackgroundWarmup()
     {
+        if (Interlocked.Exchange(ref _warmupQueueLoaded, 1) == 0)
+            _ = Task.Run(static () => { try { LoadQueueFromDisk(); } catch { /* best effort */ } });
+        // Aucune requête tant que la liaison n'est pas autorisée : _baseUrl n'est posé que par Init, Connect et consorts,
+        // qui passent par fn_uplinkHold. Avant : HEAD vers le portail à chaque chargement du mod, même en mode local.
+        var baseUrl = _baseUrl;
+        if (string.IsNullOrEmpty(baseUrl)) return;
         if (Interlocked.Exchange(ref _warmupStarted, 1) != 0) return;
-        _ = Task.Run(static async () =>
+        _ = Task.Run(async () =>
         {
-            try { LoadQueueFromDisk(); } catch { /* best effort */ }
             try
             {
-                var baseUrl = string.IsNullOrEmpty(_baseUrl) ? "https://athena.ttrd.fr" : _baseUrl;
                 if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var u)) return;
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
                 using var req = new HttpRequestMessage(HttpMethod.Head, new Uri(u.GetLeftPart(UriPartial.Authority) + "/"));
@@ -3901,6 +3907,17 @@ public static partial class Extension
         // COMSPEC IDENTITY (2.0.118) : morceau du pack d'identité gardé en mémoire par GetIdentityPack, sans réseau.
         if (function == "GetIdentityPackChunk")
             return IdentityPackChunk(args);
+        if (function == "GetCommunityOrbatChunk")
+            return CommunityOrbatChunk(args);
+        // Service Athéna sur « Non » (fn_uplinkHold) : plus d'adresse ni d'authentification en mémoire. La file ne part plus
+        // (DrainQueue attend une authentification), elle reste sur disque pour un retour à « Oui ». Aucune requête.
+        if (function == "UplinkOff")
+        {
+            _baseUrl = "";
+            _apiKey = "";
+            ClearGameBearerForCommunityLink();
+            return "OK|off";
+        }
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
@@ -4376,7 +4393,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,GetCommunityBrief,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,GetCommunityBrief,GetCommunityOrbat,GetCommunityOrbatChunk,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
         }
 
         if (function == "GetCapabilities")
@@ -6219,6 +6236,9 @@ public static partial class Extension
             // (Extension_Identity.cs).
             if (function is "GetIdentityPack" or "QueryIdDocument" or "SubmitIdCheck")
                 return IdentityCommand(function, args, token);
+            // ORBAT du site pour le BFT (Extension_CommunityOrbat.cs) : jamais sur le fil du jeu, une requête à la fois.
+            if (function == "GetCommunityOrbat")
+                return CommunityOrbatCommand(token);
             if (function == "JoinFireTeam" && args.Length >= 1)
             {
                 var teamId = (args[0] ?? "").Trim();

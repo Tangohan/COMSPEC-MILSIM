@@ -225,36 +225,7 @@ private _invokeOpener = {
 };
 uiNamespace setVariable ["COMSPEC_SSE_DomexInvokeOpener", _invokeOpener];
 
-if (!isNil "zen_custom_modules_fnc_register") then {
-    private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
-    [
-        "COMSPEC SSE · Numérique",
-        "Ajouter un renseignement",
-        {
-            (["COMSPEC_SSE_DomexOpenAddIntel"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
-        },
-        _icon
-    ] call comspec_sse_fnc_zenModule;
-
-    [
-        "COMSPEC SSE · Numérique",
-        "Fixer le palier d’accès",
-        {
-            (["COMSPEC_SSE_DomexOpenStage"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
-        },
-        "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa"
-    ] call comspec_sse_fnc_zenModule;
-
-    [
-        "COMSPEC SSE · Numérique",
-        "Poser un point carte",
-        {
-            (["COMSPEC_SSE_DomexOpenMapPoint"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
-        },
-        "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa"
-    ] call comspec_sse_fnc_zenModule;
-};
-
+// Modules ZEN « Ajouter un renseignement », « Fixer le palier », « Poser un point carte » retirés : doublons des modules de config de même nom.
 if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_addAction"}) then {
     private _hasObj = {
         private _pool = [] call comspec_sse_fnc_curatorSelectedObjects;

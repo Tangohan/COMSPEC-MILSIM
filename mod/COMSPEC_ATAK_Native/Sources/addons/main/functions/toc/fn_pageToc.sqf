@@ -28,6 +28,17 @@ private _rows = [
 private _scr = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {(player distance _x) < 30} && {((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", str side group player]} };
 if ((count _scr) > 0) then {
     private _srcs = ["sources"] call comspec_atak_native_fnc_tocCam;
+    _rows pushBack ["section", "Contenu des écrans du poste", "Choisissez ce qu'affiche chaque écran devant le poste"];
+    {
+        private _id = netId _x;
+        private _cur = (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""];
+        private _casting = (count (_x getVariable ["COMSPEC_ATAK_ScreenCast", []])) >= 5;
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>", [(_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"]] call _esc]];
+        _rows pushBack ["buttons", ([["CARTE", "SPLIT"], ["ORBAT", "ORBAT"], ["RÉSEAU", "NET"], ["DIAPOSITIVE", "SLIDES"]]) apply {
+            _x params ["_lb", "_k"];
+            [_lb, compile format ["['screen', ['%1', '%2']] call comspec_atak_native_fnc_tocAction;", _id, _k], (_k isEqualTo _cur && {!_casting}) || {_k isEqualTo "SLIDES" && {_casting}}, true, ""]
+        }];
+    } forEach _scr;
     _rows pushBack ["section", "Caméra sur les écrans du poste", "Image en direct pour les joueurs devant l'écran"];
     if ((count _srcs) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune caméra du camp à afficher : drone du camp en vol, caméra fixe ou caméra de téléphone partagée avec vous.</t>"]; };
     {

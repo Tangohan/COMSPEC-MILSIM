@@ -7,6 +7,8 @@ declare(strict_types=1);
  * @var array{identities: list<array<string, mixed>>, documents: list<array<string, mixed>>, kits: list<array<string, mixed>>, checks: list<array<string, mixed>>, steam_linked: bool} $papers
  * @var list<array{id: int, label: string}> $maps
  * @var list<array<string, mixed>> $briefs fiches de couverture (SseIdOperationRepository::briefsForUser)
+ * @var list<array<string, mixed>> $gameCovers couvertures nées en jeu (SseIdGameCoverService::forUser)
+ * @var array{steam_linked: bool, source: string, updated_at: string, todo: string} $coverStatus
  */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $docById = [];
@@ -26,6 +28,41 @@ $scopeLabels = ['default' => 'Par défaut', 'map' => 'Pour une carte', 'operatio
 ?>
 <div class="bo-member-situation">
     <p class="idm-sim"><strong>SIMULATION</strong> Papiers fictifs pour le jeu, émis par des pays imaginaires. Aucune valeur réelle.</p>
+
+    <section class="idm-cover" aria-labelledby="idm-cover-title">
+        <h2 id="idm-cover-title">Ma couverture</h2>
+        <ul class="idm-cover__state">
+            <li class="<?= $coverStatus['steam_linked'] ? 'is-ok' : 'is-warn' ?>"><span>Compte Steam</span><b><?= $coverStatus['steam_linked'] ? 'Lié' : 'Non lié' ?></b></li>
+            <li class="<?= $coverStatus['source'] === 'none' ? 'is-off' : 'is-ok' ?>"><span>Couverture</span><b><?= $h(['athena' => 'Préparée sur Athena', 'game' => 'Créée en jeu', 'none' => 'Aucune'][$coverStatus['source']] ?? '') ?></b></li>
+            <?php if ($coverStatus['updated_at'] !== ''): ?><li class="is-off"><span>Mise à jour</span><b translate="no"><?= $h(substr($coverStatus['updated_at'], 0, 16)) ?></b></li><?php endif; ?>
+        </ul>
+        <p class="idm-cover__todo"><?= $h($coverStatus['todo']) ?><?php if (!$coverStatus['steam_linked']): ?> <a href="<?= $h(url('account/steam/connect')) ?>">Lier mon compte Steam</a><?php endif; ?></p>
+        <?php foreach ($gameCovers as $gc): ?>
+            <div class="idm-doc">
+                <div class="idm-doc__head">
+                    <b translate="no"><?= $h($gc['name']) ?></b>
+                    <span>Reçue du jeu — <?= $h($gc['op_key'] !== null ? 'opération ' . $gc['op_key'] : $mapLabel($gc['context_id'])) ?></span>
+                    <span translate="no"><?= $h(substr((string) $gc['updated_at'], 0, 16)) ?></span>
+                </div>
+                <dl class="idm-brief">
+                    <?php foreach (['dob' => 'Né(e) le', 'pob' => 'Lieu de naissance', 'country' => 'Pays', 'address' => 'Adresse', 'profession' => 'Profession', 'employer' => 'Employeur', 'phone' => 'Téléphone (simulé)', 'travel' => 'Motif du déplacement'] as $k => $label): ?>
+                        <?php if (($gc[$k] ?? '') !== ''): ?>
+                            <dt><?= $h($label) ?></dt>
+                            <dd style="margin:0 0 6px" translate="no"><?= $h($gc[$k]) ?></dd>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    <?php if (($gc['contacts'] ?? []) !== []): ?>
+                        <dt>Contacts</dt>
+                        <dd style="margin:0 0 6px" translate="no"><?= $h(implode(' · ', array_map(static fn (array $c): string => trim(implode(' ', array_filter($c))), $gc['contacts']))) ?></dd>
+                    <?php endif; ?>
+                    <?php if (($gc['docs'] ?? []) !== []): ?>
+                        <dt>Papiers sur vous</dt>
+                        <dd style="margin:0 0 6px" translate="no"><?= $h(implode(' · ', array_map(static fn (array $d): string => trim(implode(' ', array_filter($d))), $gc['docs']))) ?></dd>
+                    <?php endif; ?>
+                </dl>
+            </div>
+        <?php endforeach; ?>
+    </section>
 
     <?php if ($papers['identities'] === []): ?>
         <p class="bo-member-situation__lead">Vous n’avez pas encore de papiers de jeu. Ils sont créés par les responsables de votre communauté, à partir de la fiche de votre personnage.</p>

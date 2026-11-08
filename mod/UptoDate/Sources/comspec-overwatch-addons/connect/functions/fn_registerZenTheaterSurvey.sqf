@@ -4,7 +4,7 @@
 */
 if (!hasInterface) exitWith {};
 
-private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
+private _icon = "\z\comspec_atak_native\addons\main\data\mod_map.paa";
 private _open = {
     [true] call comspec_overwatch_connect_fnc_theaterSurveyShow;
 };
@@ -19,7 +19,7 @@ if (
     }, _icon] call ace_zeus_fnc_addModule;
     ["COMSPEC Outils", "Relever routes et villes", {
         ["zeus"] call comspec_overwatch_connect_fnc_moduleGeoNetwork;
-    }, "\A3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa"] call ace_zeus_fnc_addModule;
+    }, "\z\comspec_atak_native\addons\main\data\mod_map.paa"] call ace_zeus_fnc_addModule;
     missionNamespace setVariable ["COMSPEC_AceTheaterSurveyRegistered", true];
 };
 
@@ -27,7 +27,7 @@ if (isNil "zen_custom_modules_fnc_register") exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ZenTheaterSurveyRegistered", false]) exitWith {};
 
 [
-    "COMSPEC Outils",
+    "COMSPEC_Cat_Atak",
     "Relever la carte du théâtre",
     {
         [] call (missionNamespace getVariable ["COMSPEC_ZeusOpenTheaterSurvey", {}]);
@@ -37,12 +37,12 @@ if (missionNamespace getVariable ["COMSPEC_ZenTheaterSurveyRegistered", false]) 
 
 // Routes et villes seulement, sans le relevé complet (bâtiments, forêts, relief).
 [
-    "COMSPEC Outils",
+    "COMSPEC_Cat_Atak",
     "Relever routes et villes",
     {
         ["zeus"] call comspec_overwatch_connect_fnc_moduleGeoNetwork;
     },
-    "\A3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa"
+    "\z\comspec_atak_native\addons\main\data\mod_map.paa"
 ] call comspec_overwatch_connect_fnc_zenModule;
 
 if (!isNil "zen_context_menu_fnc_createAction" && {!isNil "zen_context_menu_fnc_addAction"}) then {

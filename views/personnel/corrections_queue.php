@@ -100,6 +100,7 @@ $waiting = static function (?int $days): void {
   </nav>
 
 <?php if ($vue === 'a-traiter'): ?>
+  <div data-ath-quiet-scope="rh-corr-queue">
   <p class="rh-corr__count" aria-live="polite">
     <?php if ($pendingCount < 1): ?>
       Aucune demande à traiter.
@@ -117,7 +118,7 @@ $waiting = static function (?int $days): void {
   </div>
   <?php else: ?>
     <?php if ($canBatch && count($requests) > 1): ?>
-    <form method="post" action="<?= $h($base . '/lot') ?>" id="rh-corr-batch" class="rh-corr__batch" data-rh-batch>
+    <form method="post" data-ath-quiet action="<?= $h($base . '/lot') ?>" id="rh-corr-batch" class="rh-corr__batch" data-rh-batch>
       <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
       <label class="rh-corr__check">
         <input type="checkbox" data-rh-batch-all>
@@ -178,13 +179,13 @@ $waiting = static function (?int $days): void {
       <?php $renderChanges($changes); ?>
 
       <div class="rh-corr__actions">
-        <form method="post" action="<?= $h($base . '/' . $id . '/decide') ?>" class="rh-corr__approve">
+        <form method="post" data-ath-quiet action="<?= $h($base . '/' . $id . '/decide') ?>" class="rh-corr__approve">
           <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
           <button type="submit" name="decision" value="approved" class="rh-corr__btn rh-corr__btn--ok">Valider</button>
         </form>
         <details class="rh-corr__refuse">
           <summary class="rh-corr__btn rh-corr__btn--no">Refuser</summary>
-          <form method="post" action="<?= $h($base . '/' . $id . '/decide') ?>" class="rh-corr__refuse-form">
+          <form method="post" data-ath-quiet action="<?= $h($base . '/' . $id . '/decide') ?>" class="rh-corr__refuse-form">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
             <label for="rh-corr-motif-<?= $id ?>">Motif du refus (le membre le recevra)</label>
             <input type="text" id="rh-corr-motif-<?= $id ?>" name="resolution_note" maxlength="1000" required placeholder="Expliquez en une phrase pourquoi la fiche reste telle quelle">
@@ -199,6 +200,7 @@ $waiting = static function (?int $days): void {
     <p class="rh-corr__more">Les <?= count($requests) ?> plus anciennes sont affichées. Traitez-les : les suivantes apparaîtront ensuite.</p>
   <?php endif; ?>
   <?php endif; ?>
+  </div>
 <?php endif; ?>
 
 <?php if ($vue === 'historique'): ?>

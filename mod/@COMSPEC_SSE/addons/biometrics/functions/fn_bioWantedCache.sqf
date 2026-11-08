@@ -15,7 +15,7 @@ private _phone = uiNamespace getVariable ["COMSPEC_ATAK_Wanted", []];
 if (_phone isEqualType [] && {(count _phone) > 0} && {(_phone select 0) isEqualType []} && {(_phone select 0) isNotEqualTo []}) then {
     _list = (_phone select 0) apply { _x select [0, 7] };
 } else {
-    private _raw = "COMSPECExtension" callExtension ["GetWantedNotices", []];
+    private _raw = if (!isNil "comspec_overwatch_connect_fnc_uplinkOff" && {[] call comspec_overwatch_connect_fnc_uplinkOff}) then { "" } else { "COMSPECExtension" callExtension ["GetWantedNotices", []] };
     if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
     if (!isNil "comspec_overwatch_connect_fnc_extResult") then { _raw = [_raw] call comspec_overwatch_connect_fnc_extResult; };
     if (_raw isEqualType "" && {(_raw select [0, 3]) isEqualTo "OK|"}) then {

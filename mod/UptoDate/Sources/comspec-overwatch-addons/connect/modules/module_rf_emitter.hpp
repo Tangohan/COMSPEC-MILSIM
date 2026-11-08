@@ -3,8 +3,8 @@
         author = "COMSPEC";
         scope = 2;
         scopeCurator = 0;
-        displayName = "$STR_COMSPEC_OW_CFG_C24C84F979";
-        category = "COMSPEC_Roleplay";
+        displayName = "$STR_COMSPEC_OW_CFG_5967D8EA2F";
+        category = "COMSPEC_Cat_Atak";
         function = "comspec_overwatch_connect_fnc_moduleRfEmitter";
         functionPriority = 1;
         isGlobal = 1;
@@ -15,8 +15,8 @@
         canSetArea = 0;
         canSetAreaHeight = 0;
         canSetAreaShape = 0;
-        icon = "\A3\ui_f\data\IGUI\Cfg\simpleTasks\types\listen_ca.paa";
-        portrait = "\A3\ui_f\data\IGUI\Cfg\simpleTasks\types\listen_ca.paa";
+        icon = "\z\comspec_atak_native\addons\main\data\mod_net.paa";
+        portrait = "\z\comspec_atak_native\addons\main\data\mod_net.paa";
 
         class Attributes
         {

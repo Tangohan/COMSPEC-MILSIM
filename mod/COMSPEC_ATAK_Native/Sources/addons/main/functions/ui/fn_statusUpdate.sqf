@@ -52,6 +52,8 @@ if (_lq getOrDefault ["airplane", false]) then {
 [] call comspec_atak_native_fnc_deviceOverlay;
 // Écran de verrouillage (heure, batterie, verrouillage au rallumage) et volet rapide (batterie, réseau).
 ["tick"] call comspec_atak_native_fnc_lockScreen;
+if (uiNamespace getVariable ["COMSPEC_ATAK_PadUp", false]) then { ["tick"] call comspec_atak_native_fnc_phonePad; };
+if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BLUETOOTH") then { ["scan"] call comspec_atak_native_fnc_btAction; };
 ["tick"] call comspec_atak_native_fnc_quickSettings;
 
 private _bat = [] call comspec_atak_native_fnc_battery;
@@ -153,6 +155,8 @@ if (_page isEqualTo "MAP") then {
     [] call comspec_atak_native_fnc_mapOverlayUpdate;
     [] call comspec_atak_native_fnc_routeBanner;
     if (missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]) then { [] call comspec_atak_native_fnc_inspectorUpdate; };
+    ["tick"] call comspec_atak_native_fnc_unitCard;
+    ["mapTick"] call comspec_atak_native_fnc_squadBar;
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
     if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
         // Le suivi image par image (fn_mapOnDraw) prend le relais dès le premier centrage : ici, seulement au besoin
@@ -204,7 +208,7 @@ private _pageSig = switch (_page) do {
     // (la page se rafraîchit d'elle-même toutes les 5 s).
     case "NETWORK": { [_lq get "bars", ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };
     case "DEBUG": { [count (missionNamespace getVariable ["COMSPEC_ATAK_Log", []]), count (missionNamespace getVariable ["COMSPEC_DiagLog", []]), count (missionNamespace getVariable ["COMSPEC_ATAK_NetLog", []])] };
-    case "BFT": { ((values (_data getOrDefault ["units", createHashMap])) select { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" }) apply { [_x getOrDefault ["freshness", ""], round (((_x getOrDefault ["position", [0,0,0]]) distance2D player) / 50), alive (_x getOrDefault ["object", objNull])] } };
+    case "BFT": { (((values (_data getOrDefault ["units", createHashMap])) select { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" }) apply { [_x getOrDefault ["freshness", ""], round (((_x getOrDefault ["position", [0,0,0]]) distance2D player) / 50), alive (_x getOrDefault ["object", objNull])] }) + [["sig"] call comspec_atak_native_fnc_bftOrbat] };
     case "GPS": {
         // Le texte saisi est gardé avant un éventuel re-rendu.
         (uiNamespace getVariable ["COMSPEC_ATAK_Gps", createHashMap]) set ["grid", ["gpsGrid", ""] call comspec_atak_native_fnc_formValue];
