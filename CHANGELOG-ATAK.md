@@ -62,7 +62,8 @@ EN : The Wave Relay app says what is wrong and what to do
 - Rien n'a été testé en jeu.
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
-### Résumé joueur
+À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
+
 Type : nouveauté
 FR : App Explosifs refaite et nouveau déclencheur réseau
 - Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.
