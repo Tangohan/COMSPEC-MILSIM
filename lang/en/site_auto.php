@@ -57076,4 +57076,5 @@ return [
     'Sans trigramme (%1)' => 'Without trigram (%1)',
     'Uniquement là où le grade n’est pas déjà affiché à côté.' => 'Only where the rank is not already shown next to it.',
     'Utiliser les trigrammes' => 'Use trigrams',
+    'Enregistrer ce tableau' => 'Save this table',
 ];
