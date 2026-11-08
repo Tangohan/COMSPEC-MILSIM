@@ -6,7 +6,8 @@
     le cliché part tout seul une demi-seconde après l'affichage.
     Défauts physiques d'un faux rendus tels quels (hologramme absent, police différente, photo rapportée) : un
     contrôleur attentif les voit ; le constat écrit (N0) dépend de sa compétence et de la lumière.
-    Photo : rendu en direct (fn_idFace), silhouette en dessous si le PiP est désactivé ou le temps de la première image.
+    Photo : portrait en direct d'une scène dédiée (fn_idFace), portrait de repli en dessous si le PiP est coupé. La lumière
+    de la scène ne noircit pas la photo : le constat « Trop sombre » reste (fn_idEvaluate), c'est un conseil.
 */
 params [["_op", "render"], ["_disp", displayNull]];
 disableSerialization;
@@ -84,7 +85,7 @@ private _put = {
     private _c = _d ctrlCreate ["RscStructuredText", -1];
     _c ctrlSetPosition [_cx + _fx * _cw, _cy + _fy * _ch, _fw * _cw, _fh * _ch * 1.5];
     _c ctrlSetBackgroundColor [0, 0, 0, 0];
-    _c ctrlSetStructuredText parseText format ["<t size='%1' font='%2' color='%3'>%4</t>", (_fh * _ch) / _base, _font, _color, _txt call _esc];
+    _c ctrlSetStructuredText parseText format ["<t size='%1' font='%2' color='%3' shadow='0'>%4</t>", (_fh * _ch) / _base, _font, _color, _txt call _esc];
     _c ctrlCommit 0;
     _ctrls pushBack _c;
 };
@@ -131,7 +132,7 @@ switch (_kind) do {
         [0.47, 0.475, 0.22, _vh, "nat" call _g] call _put;
         [0.72, 0.475, 0.26, _vh, ("dob" call _g) call _dmy] call _put;
         [0.35, 0.595, 0.6, _vh, "pob" call _g] call _put;
-        [0.35, 0.715, 0.34, _vh, "number" call _g, "EtelkaMonospaceProBold", "#7a1010"] call _put;
+        [0.35, 0.715, 0.34, _vh, "number" call _g, "RobotoCondensedBold", "#8c1414"] call _put;
         [0.72, 0.715, 0.26, _vh, ("expires" call _g) call _dmy] call _put;
     };
     case "military_recto": {
@@ -142,7 +143,7 @@ switch (_kind) do {
         [0.35, 0.475, 0.28, _vh, "rank" call _g] call _put;
         [0.65, 0.475, 0.32, _vh, ("dob" call _g) call _dmy] call _put;
         [0.35, 0.595, 0.6, _vh, "force" call _g] call _put;
-        [0.35, 0.715, 0.34, _vh, "number" call _g, "EtelkaMonospaceProBold", "#7a1010"] call _put;
+        [0.35, 0.715, 0.34, _vh, "number" call _g, "RobotoCondensedBold", "#8c1414"] call _put;
         [0.72, 0.715, 0.26, _vh, ("expires" call _g) call _dmy] call _put;
     };
     case "card_verso": {
@@ -157,7 +158,7 @@ switch (_kind) do {
         [0.22, 0.5, 0.14] call _holo;
         [0.36, 0.16, 0.09, _vh, "P"] call _put;
         [0.46, 0.16, 0.14, _vh, "country" call _g] call _put;
-        [0.62, 0.16, 0.36, _vh, "number" call _g, "EtelkaMonospaceProBold", "#7a1010"] call _put;
+        [0.62, 0.16, 0.36, _vh, "number" call _g, "RobotoCondensedBold", "#8c1414"] call _put;
         [0.36, 0.27, 0.62, _vh, toUpper ("last" call _g), _nameFont] call _put;
         [0.36, 0.38, 0.62, _vh, "first" call _g, _nameFont] call _put;
         [0.36, 0.49, 0.28, _vh, "nat" call _g] call _put;
@@ -177,7 +178,7 @@ switch (_kind) do {
         [0.35, 0.565, 0.25, _vh, ("issued" call _g) call _dmy] call _put;
         [0.62, 0.565, 0.3, _vh, ("expires" call _g) call _dmy] call _put;
         [0.35, 0.675, 0.62, _vh * 0.9, "authority" call _g] call _put;
-        [0.35, 0.785, 0.34, _vh, "number" call _g, "EtelkaMonospaceProBold", "#7a1010"] call _put;
+        [0.35, 0.785, 0.34, _vh, "number" call _g, "RobotoCondensedBold", "#8c1414"] call _put;
         [0.70, 0.785, 0.2, _vh, "B"] call _put;
     };
     case "license_verso": {
@@ -197,9 +198,12 @@ if (_zoned && {_kind isNotEqualTo "license_verso"} && {_kind isNotEqualTo "card_
 uiNamespace setVariable ["comspec_sse_idViewerCtrls", _ctrls];
 
 // Bandeau, constat N0, boutons.
-private _title = format ["<t align='center' size='1.1' font='PuristaSemibold'>%1</t><br/><t align='center' size='0.85' color='#b8c2cc'>%2 · %3</t>",
+private _sub = ["", "Votre document"] select (_st get "own");
+// Mention discrète seulement pour un pays réel stylisé (_zoned) ; un pays du jeu n'en porte aucune.
+if (_zoned) then { _sub = [_sub, "Document de jeu"] select (_sub isEqualTo ""); };
+private _title = format ["<t align='center' size='1.1' font='PuristaSemibold'>%1</t><br/><t align='center' size='0.85' color='#b8c2cc'>%2%3</t>",
     (["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find _type) max 0)) call comspec_sse_fnc_tr,
-    ([_doc getOrDefault ["countryName", ""], _doc getOrDefault ["countryNameEn", ""]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr" && {(_doc getOrDefault ["countryNameEn", ""]) isNotEqualTo ""})) call _esc, (["SIMULATION · document fictif", "SIMULATION · votre document"] select (_st get "own")) call comspec_sse_fnc_tr];
+    ([_doc getOrDefault ["countryName", ""], _doc getOrDefault ["countryNameEn", ""]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr" && {(_doc getOrDefault ["countryNameEn", ""]) isNotEqualTo ""})) call _esc, ["", " · " + (_sub call comspec_sse_fnc_tr)] select (_sub isNotEqualTo "")];
 (_d displayCtrl 93704) ctrlSetStructuredText parseText _title;
 (_d displayCtrl 93704) ctrlSetPosition [_cx, _cy - safezoneH * 0.075, _cw, safezoneH * 0.07];
 (_d displayCtrl 93704) ctrlCommit 0;
@@ -212,14 +216,17 @@ private _rem = if ((count _n0) > 0) then {
 (_d displayCtrl 93705) ctrlShow (_rem isNotEqualTo "");
 (_d displayCtrl 93705) ctrlCommit 0;
 private _by = _cy + _ch + safezoneH * 0.07;
-private _bw = (_cw - 0.04) / 5;
+// Boutons affichés seulement, côte à côte et de même largeur (aucun trou quand un bouton est masqué).
+private _btns = [[93710, _type isNotEqualTo "passport"], [93711, true], [93712, !(_st get "own")], [93714, !(_st get "own")], [93713, true]];
+{ (_d displayCtrl (_x select 0)) ctrlShow (_x select 1); } forEach _btns;
+_btns = _btns select { _x select 1 };
+private _nb = count _btns;
+private _bw = (_cw - 0.01 * (_nb - 1)) / _nb;
 {
-    _x params ["_idc", "_show"];
-    private _b = _d displayCtrl _idc;
+    private _b = _d displayCtrl (_x select 0);
     _b ctrlSetPosition [_cx + _forEachIndex * (_bw + 0.01), _by, _bw, safezoneH * 0.045];
-    _b ctrlShow _show;
     _b ctrlCommit 0;
-} forEach [[93710, _type isNotEqualTo "passport"], [93711, true], [93712, !(_st get "own")], [93714, !(_st get "own")], [93713, true]];
+} forEach _btns;
 if ((_st getOrDefault ["auto", false]) && {!(_st getOrDefault ["shot", false])}) then {
     _st set ["shot", true];
     [{ ["shoot"] call comspec_sse_fnc_idPhoto; }, [], 0.5] call CBA_fnc_waitAndExecute;

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Visuels du contrôle d'identité (addon identity) : gabarits de documents FICTIFS, icônes, silhouette, app ATAK.
 
-Tous les documents portent la mention « SIMULATION » et des pays imaginaires (codes hors ISO : ALT, TNA, LVN, MLD).
+Pays imaginaires (codes hors ISO : ALT, TNA, LVN, MLD) : aucune mention sur le document, ce sont des papiers de jeu.
 Pays réels stylisés (univers réaliste-simulation) : trois gabarits GÉNÉRIQUES par zone de style (EU bordeaux, AM bleu,
 OT vert), sans nom de pays (posé en jeu), sans armoiries ni motif officiel, emblème « SIM » inventé, mention
-« SIMULATION — DOCUMENT DE JEU » dans le bandeau et en pied de page.
+« SIMULATION — DOCUMENT DE JEU » dans le bandeau, discrète en pied de page.
 Les champs (nom, dates, MRZ…) ne sont PAS peints : ils sont posés en jeu par dialogs/idViewer.hpp
 (fn_idViewerOnLoad, mêmes coordonnées que LAYOUT ci-dessous, en fraction du document).
 
@@ -41,7 +41,7 @@ COUNTRIES = {
 }
 ZONES = ("EU", "AM", "OT")
 GAME_MENTION = "SIMULATION — DOCUMENT DE JEU"
-GAME_FOOTER = "SIMULATION — DOCUMENT DE JEU — SANS VALEUR · GAME DOCUMENT — NO VALUE"
+GAME_FOOTER = "DOCUMENT DE JEU, SANS VALEUR · GAME DOCUMENT, NO VALUE"
 
 # Libellés peints : (x, y) en fraction du document ; la valeur est posée en jeu juste dessous (y + 0.035).
 LAYOUT = {
@@ -116,19 +116,11 @@ def emblem(d, cx, cy, r, col, code):
     d.text((cx, cy + r * 0.78), code, fill=col, font=f, anchor="mm")
 
 
-def watermark(img, text="SIMULATION", alpha=38, color=(200, 30, 30)):
-    w, h = img.size
-    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    ld = ImageDraw.Draw(layer)
-    f = font("bahnschrift.ttf", int(h * 0.22))
-    ld.text((w / 2, h / 2), text, fill=color + (alpha,), font=f, anchor="mm")
-    layer = layer.rotate(18, resample=Image.BICUBIC, center=(w / 2, h / 2))
-    img.alpha_composite(layer)
-
-
-def footer(d, w, h, text="SIMULATION — DOCUMENT FICTIF SANS VALEUR — FICTITIOUS DOCUMENT, NO VALUE"):
-    d.rectangle((0, int(h * 0.94), w, h), fill=(170, 24, 24))
-    d.text((w / 2, int(h * 0.97)), text, fill=(255, 255, 255), font=font("bahnschrift.ttf", int(h * 0.035)), anchor="mm")
+def footer(d, w, h, code, col=(90, 96, 104)):
+    # Pays réel stylisé seulement : mention discrète, sans bandeau. Pays imaginaire : rien.
+    if code not in ZONES:
+        return
+    d.text((w / 2, int(h * 0.97)), GAME_FOOTER, fill=col, font=font("arial.ttf", int(h * 0.024)), anchor="mm")
 
 
 def labels(d, w, h, kind, col):
@@ -148,10 +140,6 @@ def chip_logo(d, cx, cy, s, col):
     d.ellipse((cx - s * 0.32, cy - s * 0.32, cx + s * 0.32, cy + s * 0.32), outline=col, width=3)
     d.line((cx - s, cy, cx - s * 0.32, cy), fill=col, width=3)
     d.line((cx + s * 0.32, cy, cx + s, cy), fill=col, width=3)
-
-
-def foot(code):
-    return GAME_FOOTER if code in ZONES else "SIMULATION — DOCUMENT FICTIF SANS VALEUR — FICTITIOUS DOCUMENT, NO VALUE"
 
 
 def header(d, w, h, code, title_fr, title_en, hb=0.17):
@@ -182,8 +170,7 @@ def card_recto(code):
     photo_frame(d, w, h, (0.04, 0.21, 0.27, 0.62), col)
     labels(d, w, h, "card_recto", col)
     chip_logo(d, int(w * 0.93), int(h * 0.27), int(h * 0.035), col)
-    watermark(img)
-    footer(d, w, h, foot(code))
+    footer(d, w, h, code)
     return img
 
 
@@ -193,8 +180,7 @@ def card_verso(code):
     emblem(d, int(w * 0.86), int(h * 0.24), int(h * 0.15), col, "SIM" if code in ZONES else code)
     # Zone MRZ (3 lignes posées en jeu).
     d.rectangle((0, int(h * 0.58), w, int(h * 0.94)), fill=(250, 250, 246, 255))
-    watermark(img, alpha=26)
-    footer(d, w, h, foot(code))
+    footer(d, w, h, code)
     return img
 
 
@@ -205,8 +191,7 @@ def passport(code):
     labels(d, w, h, "passport", col)
     chip_logo(d, int(w * 0.93), int(h * 0.055), int(h * 0.03), (255, 255, 255))
     d.rectangle((0, int(h * 0.78), w, int(h * 0.94)), fill=(250, 250, 246, 255))
-    watermark(img)
-    footer(d, w, h, foot(code))
+    footer(d, w, h, code)
     return img
 
 
@@ -216,8 +201,7 @@ def military_recto(code):
     photo_frame(d, w, h, (0.04, 0.21, 0.27, 0.62), col)
     labels(d, w, h, "military_recto", col)
     chip_logo(d, int(w * 0.93), int(h * 0.27), int(h * 0.035), col)
-    watermark(img)
-    footer(d, w, h, foot(code))
+    footer(d, w, h, code)
     return img
 
 
@@ -226,8 +210,7 @@ def license_recto(code):
     header(d, w, h, code, "PERMIS DE CONDUIRE", "DRIVING LICENCE")
     photo_frame(d, w, h, (0.04, 0.21, 0.27, 0.62), col)
     labels(d, w, h, "license_recto", col)
-    watermark(img)
-    footer(d, w, h, foot(code))
+    footer(d, w, h, code)
     return img
 
 
@@ -248,41 +231,37 @@ def license_verso():
         d.text((w * 0.05, y + h * 0.010), cat, fill=(90, 30, 55), font=fs)
     # Zone MRZ (gabarit TD1, code « D< », comme le site) posée en jeu.
     d.rectangle((0, int(h * 0.62), w, int(h * 0.94)), fill=(250, 250, 246, 255))
-    watermark(img, alpha=30)
-    footer(d, w, h)
     return img
 
 
 def silhouette():
+    # Portrait de repli (rendu en direct coupé ou indisponible) : fond clair uni, jamais de rectangle noir.
     s = 256
-    img = Image.new("RGBA", (s, s), (205, 214, 224, 255))
+    img = Image.new("RGBA", (s, s), (232, 236, 240, 255))
     d = ImageDraw.Draw(img)
-    for y in range(s):
-        v = int(214 - 30 * (y / s))
-        d.line((0, y, s, y), fill=(v - 8, v, v + 8, 255))
     # Étirée à l'affichage en 35 x 45 : dessin pré-compressé en largeur.
-    sil = (92, 98, 108, 255)
-    d.ellipse((s * 0.30, s * 0.14, s * 0.70, s * 0.56), fill=sil)
-    d.rectangle((s * 0.42, s * 0.50, s * 0.58, s * 0.66), fill=sil)
-    d.ellipse((s * 0.04, s * 0.60, s * 0.96, s * 1.30), fill=sil)
-    img = img.filter(ImageFilter.GaussianBlur(1.2))
-    ImageDraw.Draw(img).text((s * 0.5, s * 0.93), "SIMULATION", fill=(230, 60, 60, 255), font=font("bahnschrift.ttf", 22), anchor="mm")
-    return img
+    sil = (128, 136, 146, 255)
+    d.ellipse((s * 0.32, s * 0.16, s * 0.68, s * 0.56), fill=sil)
+    d.rectangle((s * 0.43, s * 0.50, s * 0.57, s * 0.66), fill=sil)
+    d.ellipse((s * 0.08, s * 0.62, s * 0.92, s * 1.30), fill=sil)
+    return img.filter(ImageFilter.GaussianBlur(1.0))
 
 
 def hologram():
+    # Sceau discret, à peine visible sur la photo : son absence reste le défaut d'un faux (fn_idEvaluate).
     s = 256
     img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    for i in range(36):
-        a0 = i * 10
-        hue = i / 36.0
-        r = int(127 + 127 * math.sin(2 * math.pi * hue))
-        g = int(127 + 127 * math.sin(2 * math.pi * (hue + 1 / 3)))
-        b = int(127 + 127 * math.sin(2 * math.pi * (hue + 2 / 3)))
-        d.arc((12, 12, s - 12, s - 12), a0, a0 + 10, fill=(r, g, b, 120), width=26)
-    d.ellipse((70, 70, s - 70, s - 70), outline=(220, 230, 255, 110), width=6)
-    return img.filter(ImageFilter.GaussianBlur(1.5))
+    c = s / 2
+    for i in range(12):
+        hue = i / 12.0
+        r = int(190 + 60 * math.sin(2 * math.pi * hue))
+        g = int(190 + 60 * math.sin(2 * math.pi * (hue + 1 / 3)))
+        b = int(190 + 60 * math.sin(2 * math.pi * (hue + 2 / 3)))
+        a = 2 * math.pi * i / 12
+        d.line((c + 22 * math.cos(a), c + 22 * math.sin(a), c + 100 * math.cos(a), c + 100 * math.sin(a)), fill=(r, g, b, 70), width=5)
+    d.ellipse((c - 100, c - 100, c + 100, c + 100), outline=(255, 255, 255, 60), width=3)
+    return img.filter(ImageFilter.GaussianBlur(1.0))
 
 
 def icon(kind):
@@ -337,6 +316,9 @@ def app_icon():
 
 def to_paa(png, paa):
     hemtt = shutil.which("hemtt")
+    # HEMTT refuse d'écraser un fichier sans le dire (code de sortie 0) : les gabarits restaient ceux d'avant.
+    if os.path.exists(paa):
+        os.remove(paa)
     if hemtt:
         r = subprocess.run([hemtt, "utils", "paa", "convert", png, paa], capture_output=True, text=True)
         if r.returncode == 0 and os.path.exists(paa):

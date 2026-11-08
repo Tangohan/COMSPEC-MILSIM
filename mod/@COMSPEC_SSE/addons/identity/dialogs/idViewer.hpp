@@ -49,7 +49,7 @@ class COMSPEC_SSE_IdViewer {
         };
         class BtnScan: RscButton {
             idc = 93712;
-            text = "Scanner avec l'ATAK";
+            text = "SCANNER (ATAK)";
             x = 0.46; y = 0.75; w = 0.2; h = 0.045;
             action = "['scan'] call comspec_sse_fnc_idViewerOnLoad";
             colorBackground[] = {0.1, 0.3, 0.5, 1};

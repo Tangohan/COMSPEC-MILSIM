@@ -18930,7 +18930,7 @@
 ["Fêlures détaillées", "Detailed cracks"],
 ["Écran abîmé : motifs de fêlures et de bris, différents à chaque choc (coin écrasé, balle, toile, éclats…). Désactivé : seules les textures simples restent", "Damaged screen: crack and shatter patterns, different with each hit (crushed corner, bullet, web, shards…). Off: only the simple textures remain"],
 ["Bulles de réponse des IA", "AI reply bubbles"],
-["Coché par défaut. La réponse d'un groupe IA à un ordre s'affiche en texte au-dessus de la tête de son chef, si vous êtes à portée et si vous le voyez. Hors de vue, ou décoché : le donneur d'ordre la reçoit en notification du jeu.", "Ticked by default. An AI group's reply to an order appears as text above its leader's head, if you are in range and can see them. Out of sight, or unticked: whoever gave the order gets it as a game notification."],
+["Coché par défaut. Ce que disent les IA (réponse à un ordre, parole radio, contrôle d'identité) s'affiche en texte au-dessus de leur tête, si vous êtes à portée et si vous les voyez. Hors de vue, ou décoché : vous la recevez en notification du jeu.", "Ticked by default. What AI say (reply to an order, radio line, identity check) appears as text above their head, if you are in range and can see them. Out of sight, or unticked: you get it as a game notification."],
 ["Portée des bulles de réponse", "Reply bubble range"],
 ["Distance maximale, en mètres, à laquelle vous voyez la réponse au-dessus de la tête d'une IA.", "Maximum distance, in metres, at which you see the reply above an AI's head."],
 ["%1 terminé : %2", "%1 done: %2"],

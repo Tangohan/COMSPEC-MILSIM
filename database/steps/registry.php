@@ -86,4 +86,5 @@ return [
     ['id' => 'atak_sse_editor_library', 'label' => 'Éditeur SSE : bibliothèque de la communauté (renseignements, identités, papiers, dossiers et kits préparés dans le jeu)', 'group' => 'schema', 'file' => '4070_atak_sse_editor_library.php', 'rerun' => true],
     ['id' => 'configuration_release_steps', 'label' => 'Mise à niveau : étapes déclarées par version (config/configuration_release_steps.php)', 'group' => 'schema', 'file' => '4130_configuration_release_steps.php', 'rerun' => true],
     ['id' => 'atak_sse_id_cover_link', 'label' => 'Couvertures reliées à Athena : couverture née en jeu remontée au compte du joueur, contenus de la bibliothèque de l’éditeur attribués à un joueur', 'group' => 'schema', 'file' => '4110_atak_sse_id_cover_link.php', 'rerun' => true],
+    ['id' => 'atak_sse_ai_profiles', 'label' => 'Profils d’IA du Bureau SSE (identité, camp, papiers, comportement) reliés aux IA en jeu, et éléments gardés d’une partie à l’autre', 'group' => 'schema', 'file' => '4120_atak_sse_ai_profiles.php', 'rerun' => true],
 ];
