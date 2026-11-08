@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : réalisme activé par défaut, vraies radios ACRE et TFAR d'abord, assistant de configuration, garde-fous radio (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Réseau réaliste par défaut, sur vos vraies radios
+- Le téléphone passe tout seul par votre radio ACRE ou TFAR, avec sa portée réelle. Rien à brancher, rien à ajouter à l'inventaire. Sans radio, il garde son réseau.
+- Nouvel assistant de configuration pour les admins : menu Échap, Réalisme et réseau. Le menu liste maintenant tous les réglages, avec leur valeur et qui les impose.
+- Votre voix ACRE et TFAR ne change pas. La voix relayée par le réseau reste à activer par l'admin, et un bouton coupe tout lien avec la radio.
+- Le site montre votre réseau (MPU5) et vos SMS envoyés, si votre compte est lié. Le mode avion coupe cette remontée.
+EN : Realistic network by default, on your real radios
+- The phone goes through your ACRE or TFAR radio by itself, with its real range. Nothing to plug in, nothing to add to your inventory. Without a radio it keeps its network.
+- New setup assistant for admins: Esc menu, Realism and network. The menu now lists every setting, with its value and who enforces it.
+- Your ACRE and TFAR voice does not change. Voice relayed by the network stays an admin choice, and a button cuts every link with the radio.
+- The site shows your network (MPU5) and the SMS you sent, if your account is linked. Airplane mode stops this.
+
+### Détail technique
+- Défauts : `mpu_real` coché, `mesh_body_mask` coché, `mpu_require` décoché (sinon tout joueur sans radio perd le réseau). `mpu_voice` reste décoché : voix jamais jouée en jeu, la sécurité des radios passe avant. Décochés par conception : `mesh_keys`, `hvt_trace`, `mesh_dev`, `mesh_tfar_code`, `relay_only`. Le profil Arcade coupe aussi la liaison réaliste, les dégâts et la saleté.
+- Serveur existant : CBA ne garde que les valeurs différentes du défaut. Une valeur enregistrée, de mission ou de `cba_settings.sqf` reste ; le panneau affiche « Valeur par défaut » ou « Réglage du serveur ».
+- Radios : `fn_mpu5` "gear" (`acre_baseClass`, puissance lue, `tf_parent`, `tf_range`) ; ni câble ni batterie à nous sur une radio de mod.
+- Garde-fous : `fn_radioGuard` (seule porte vers ACRE et TFAR, versions connues, coupe-circuit, coupure), `fn_mpuVoiceSig` (lecture de table seulement), restauration à la mort, au respawn, à la déconnexion et en fin de mission.
+- Assistant `fn_setupWizard`, catalogue `fn_realismCatalog`, panneau `fn_netConfig` refait. Droits : `fn_adminAllowed`.
+- Site : `Iceman_WR_*` locales posées par `fn_mpu5` "site" pour `/m/radio/mpu` ; `fn_p2pArchive` au format `MP|de|à|texte` pour `/m/radio/prives`.
+- Rien de tout cela n'a tourné en jeu.
+
+---
 ## À venir : tracé de routes et de zones, suppression, formes de la carte (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

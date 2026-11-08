@@ -13,7 +13,7 @@
     lui laisse la main) ; un appareil détruit ici est recopié dans son état (COMSPEC_AtakState) pour rester cohérent.
 */
 params [["_amount", 0], ["_why", "Choc"], ["_off", 0], ["_parts", createHashMap], ["_where", ""]];
-if !(missionNamespace getVariable ["comspec_atak_native_damage_sim", true]) exitWith { false };
+if !((missionNamespace getVariable ["comspec_atak_native_damage_sim", true]) && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1}) exitWith { false };
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false };
 // Réglage addon « Téléphone rangé : peut être détruit » décoché : rangé (ni en main ni en miniature), il ne s'abîme pas.
 if (!(missionNamespace getVariable ["comspec_atak_native_stowed_damage", true]) && {isNull ([] call comspec_atak_native_fnc_display)}) exitWith { false };

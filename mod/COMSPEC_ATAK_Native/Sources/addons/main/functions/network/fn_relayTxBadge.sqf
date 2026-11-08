@@ -19,7 +19,7 @@ switch (_act) do {
         if (!hasInterface) exitWith {};
         ["acre_startedSpeaking", {
             params ["_u", ["_r", false], ["_id", ""]];
-            if (_u isNotEqualTo player || {!(_r isEqualTo true)} || {!(_id isEqualType "")}) exitWith {};
+            if (_u isNotEqualTo player || {!(_r isEqualTo true)} || {!(_id isEqualType "")} || {!(["read"] call comspec_atak_native_fnc_radioGuard)}) exitWith {};
             ["start", [_id]] call comspec_atak_native_fnc_relayTxBadge;
         }] call CBA_fnc_addEventHandler;
         ["acre_stoppedSpeaking", {

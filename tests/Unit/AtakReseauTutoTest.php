@@ -91,8 +91,8 @@ final class AtakReseauTutoTest extends TestCase
         self::assertStringContainsString('IGUI_grid_ACRE_notification_X', $badge);
 
         $voice = $this->read('functions/network/fn_mpuVoice.sqf');
-        self::assertStringContainsString('["comspec_atak_native_meshVoiceAck", [_tx, _h], _o] call CBA_fnc_targetEvent', $voice);
-        self::assertStringContainsString('(_r select 1) > -992', $voice);
+        self::assertStringContainsString('["comspec_atak_native_meshVoiceAck", [_x, _y], _who] call CBA_fnc_targetEvent', $voice);
+        self::assertStringContainsString('(_r select 1) > -992', $this->read('functions/network/fn_mpuVoiceSig.sqf'));
         self::assertStringNotContainsString('"acre_', (string) preg_replace('/.*requiredAddons\[\]\s*=\s*\{([^}]*)\}.*/su', '$1', $this->read('config.cpp')));
     }
 
