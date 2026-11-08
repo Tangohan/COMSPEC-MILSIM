@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## App Réseau : état d'un coup d'œil, tutoriel, objet obligatoire, case RELAIS ATAK (version attribuée à la publication)
+
+À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
+
+Type : nouveauté
+FR : L'app Wave Relay dit ce qui ne va pas et quoi faire
+- MON NŒUD affiche l'état du réseau (bon, dégradé, coupé), la cause principale et l'action à faire, puis tout ce qui change votre débit, du plus gênant au moins gênant.
+- Un tutoriel en cinq écrans est proposé à la première ouverture et reste accessible par le bouton « ? ».
+- Les serveurs peuvent exiger un objet pour rejoindre le réseau : l'app dit lequel, et le réseau repart dès qu'il est équipé. Le téléphone reste utilisable.
+- Quand votre voix passe vraiment par le réseau, une case RELAIS ATAK s'affiche près du cadre d'émission d'ACRE.
+- Réglages > Réalisme dit qui impose chaque valeur, et les lignes libres ne paraissent plus grisées.
+EN : The Wave Relay app says what is wrong and what to do
+- MY NODE shows the network status (good, degraded, down), the main cause and what to do, then everything that changes your speed, worst first.
+- A five-screen tutorial is offered the first time you open the app and stays available from the « ? » button.
+- Servers can require an item to join the network: the app says which one, and the network comes back as soon as it is equipped. The phone stays usable.
+- When your voice really goes through the network, an ATAK RELAY box appears next to the ACRE transmission frame.
+- Settings > Realism says who enforces each value, and free rows no longer look greyed out.
+
+### Détail technique
+- `fn_netRequire`, réglage serveur `comspec_atak_native_net_required_items` (vide par défaut) ; `fn_waveRelayStatus`, `fn_waveRelayTuto`, `fn_relayTxBadge` et réglages joueur `comspec_atak_native_relay_tx_badge`, `_badge_pos`, `comspec_atak_native_wr_tuto_offer`.
+- Bandeau de notification : le titre de l'app est masqué le temps de son affichage. Interrupteurs des formulaires : la pastille est le bouton, plus de bouton transparent sur la ligne.
+- Rien n'a été testé en jeu.
+## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
+
+À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
+
 ## Ma couverture reliée à Athena (version à attribuer)
 
 ### À annoncer
