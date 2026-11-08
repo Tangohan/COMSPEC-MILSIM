@@ -14,6 +14,7 @@ class RscButton;
 class RscEdit;
 class RscCombo;
 class RscListBox;
+class RscListNBox;
 class RscCheckBox;
 class RscProgress;
 class RscPicture;
@@ -62,6 +63,9 @@ class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBac
 class COMSPEC_RscEditMulti: COMSPEC_RscEdit { style=16; lineSpacing=1; };
 class COMSPEC_RscCombo: RscCombo { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelect[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
 class COMSPEC_RscListBox: RscListBox { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorSelect[]=ATAK_TEXT; colorSelect2[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; colorSelectBackground2[]=ATAK_GREEN_DIM; colorBackground[]={0,0,0,0}; sizeEx="0.024 * safeZoneH"; rowHeight="0.040 * safeZoneH"; };
+// Tableau du BFT : niveaux de l'arbre (3 colonnes), indicatif, état, distance, azimut, âge. lnbSetColumnsPos les place selon
+// l'orientation. La hauteur de ligne ne se règle pas par script : même valeur que COMSPEC_RscListBox.
+class COMSPEC_RscListNBox: RscListNBox { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorSelect[]=ATAK_TEXT; colorSelect2[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; colorSelectBackground2[]=ATAK_GREEN_DIM; colorBackground[]={0,0,0,0}; sizeEx="0.024 * safeZoneH"; rowHeight="0.040 * safeZoneH"; columns[]={0,0.04,0.08,0.12,0.56,0.64,0.80,0.90}; drawSideArrows=0; idcLeft=-1; idcRight=-1; };
 class COMSPEC_RscCheckbox: RscCheckBox {};
 class COMSPEC_RscProgress: RscProgress { colorBar[]=ATAK_GREEN; colorFrame[]=ATAK_BORDER; };
 class COMSPEC_RscControlsGroup: RscControlsGroup {

@@ -37,6 +37,8 @@
       ["linecombo", numéro, libellé, clé, [[texte, donnée]...], donnée choisie, aide, en rouge]   ligne de fiche dont
           la valeur est une liste déroulante (lue par fnc_formValue comme une ligne "combo").
       ["strip", texte gauche, texte droit, couleur du fond]   bandeau de terminal pleine largeur (texte structuré).
+      ["squad", cases (fn_squadBar « cells »), texte gauche, texte droit, code du clic sur une case (format, %1 : netId)]
+          réglette d'effectif : une case par membre, l'état par la forme ; les cases passent à la ligne.
       ["steps", [[libellé, état]...]]   frise d'étapes en cases : état "done" | "now" | "hot" | "abort" | "todo".
       ["banner", texte structuré, couleur du fond]   bandeau d'état en gros caractères, centré.
       ["big", [[libellé, code, couleur, actif, aide]...]]   gros boutons tactiles ; couleur "red" | "amber" | "green" | "".
@@ -216,6 +218,25 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             { private _txH = (ctrlTextHeight _x) min _hh; _x ctrlSetPositionY (_y + (_hh - _txH) / 2); _x ctrlSetPositionH _txH; _x ctrlCommit 0; } forEach _parts;
             _sb ctrlSetPositionH _hh; _sb ctrlCommit 0;
             _y = _y + _hh + pixelH * 2;
+        };
+        case "squad": {
+            _row params ["", "_cells", ["_left", ""], ["_right", ""], ["_onCell", ""]];
+            private _sqH = _fs * 1.35;
+            if (_left isNotEqualTo "" || {_right isNotEqualTo ""}) then {
+                private _st1 = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.25]] call _mk;
+                _st1 ctrlSetStructuredText parseText ((format ["%1<t align='right'>%2</t>", _left, _right]) call comspec_atak_native_fnc_tr);
+                _y = _y + _fs * 1.25;
+            };
+            (["prims", [_cells, _pad, _y, _w, _sqH, true, false, _onCell isNotEqualTo ""]] call comspec_atak_native_fnc_squadBar) params ["_sqUsed", "_sqPrims"];
+            {
+                _x params ["_class", "_pos", "_text", "_back", "_inkC", "_fh", "_nid"];
+                private _c = [_class, _pos, _text] call _mk;
+                if ((count _back) > 0) then { _c ctrlSetBackgroundColor _back; };
+                if ((count _inkC) > 0) then { _c ctrlSetTextColor _inkC; };
+                if (_fh > 0) then { _c ctrlSetFontHeight _fh; };
+                if (_nid isNotEqualTo "") then { [_c, compile format [_onCell, str _nid]] call _click; };
+            } forEach _sqPrims;
+            _y = _y + _sqUsed + _pad / 2;
         };
         case "steps": {
             // Frise de la mission en cases accolées (deux rangées si les cases deviennent trop étroites).

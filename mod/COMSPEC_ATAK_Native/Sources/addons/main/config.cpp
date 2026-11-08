@@ -104,7 +104,7 @@ class CfgFunctions {
             class reportTypes {}; class reportAction {}; class pageReports {}; class reportForm {}; class reportAuto {};
         };
         class teams { file="z\comspec_atak_native\addons\main\functions\teams";
-            class ftCatalog {}; class ftInfo {}; class ftTeams {}; class ftServer {}; class ftAction {}; class ftRows {}; class ftCenter {};
+            class ftCatalog {}; class ftInfo {}; class ftTeams {}; class ftServer {}; class ftAction {}; class squadBar {}; class ftRows {}; class ftCenter {};
             class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {}; class ftRoleSync {}; class displayRole {}; class callsignAction {}; class aiOrder {}; class aiBubble {};
         };
         class screen { file="z\comspec_atak_native\addons\main\functions\screen";

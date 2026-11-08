@@ -215,6 +215,16 @@ private _panH = [0, _bandH] select (!_bTop && {_bandH > 0});
 if (_bandH > 0) then { _hud pushBack [_px0 - _bx, _py0 - _by, _px0 + _stripW - _bx, _py0 + _bandH - _by]; };
 private _hdC = _ov getOrDefault ["heading", controlNull];
 if (!isNull _hdC) then { (ctrlPosition _hdC) params ["_hx", "_hy", "_hw", "_hh"]; _hud pushBack [_hx - _bx, _hy - _by, _hx + _hw - _bx, _hy + _hh - _by]; };
+// Réglette d'effectif sous la boussole (fn_squadBar, rafraîchie une fois par seconde). Le menu OUTILS, la recherche, les outils,
+// leurs palettes et la caméra d'un équipier prennent cette place : elle s'efface.
+private _sqRect = [];
+if (!(_interactive && {(_s getOrDefault ["mapToolsOpen", false]) || {_searchOpen} || {(_s getOrDefault ["mapMode", "SELECT"]) isNotEqualTo "SELECT"}}) && {(_s getOrDefault ["mapCam", ""]) isEqualTo ""}) then {
+    private _sqY = if (!isNull _hdC) then { (ctrlPosition _hdC) params ["", "_hy", "", "_hh"]; _hy + _hh + pixelH * 3 } else { _by + _pad + ([0, _fs * 1.6] select (!isNull (_ov getOrDefault ["compassTape", controlNull]))) };
+    _sqRect = [_bx + _pad, _sqY, ((_mw - _toolCol - 2 * _pad) min (_mw * 0.6)) max (_font * 6 / _ratio), _fs * 1.2];
+    if ((count units group player) > 1) then { _hud pushBack [(_sqRect select 0) - _bx, _sqY - _by, (_sqRect select 0) + (_sqRect select 2) - _bx, _sqY + (_sqRect select 3) - _by]; };
+};
+uiNamespace setVariable ["COMSPEC_ATAK_SquadRect", _sqRect];
+uiNamespace setVariable ["COMSPEC_ATAK_SquadSig", [[], []]];
 uiNamespace setVariable ["COMSPEC_ATAK_MapHudRects", [[_mw, _mh], _hud]];
 
 if (_interactive) then {
@@ -1095,6 +1105,7 @@ if !(_s getOrDefault ["mapCentered", false]) then {
     [player, uiNamespace getVariable ["COMSPEC_ATAK_MapScale", 0.08]] call comspec_atak_native_fnc_mapCenter;
 };
 [] call comspec_atak_native_fnc_mapOverlayUpdate;
+["mapTick"] call comspec_atak_native_fnc_squadBar;
 if !(_l get "mini") then { [] call comspec_atak_native_fnc_inspectorUpdate; };
 [] call comspec_atak_native_fnc_mapUnfocus;
 true

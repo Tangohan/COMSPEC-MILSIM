@@ -47,11 +47,13 @@ FR : Une seule fiche joueur partout, et la carte ne saute plus quand on touche u
 - Le bouton CARTE du BFT et de Groupe sélectionne maintenant le joueur à l'arrivée, et le BFT rejoint le dock.
 - Groupe gagne RALLIEMENT SUR MOI, SMS AU GROUPE et CADRER LE GROUPE ; passer le commandement demande une confirmation.
 - Carte : toucher un joueur ouvre une fiche flottante avec ses actions, ◀ ▶ passe d'un équipier à l'autre et SUIVRE garde la carte sur lui. Barre d'outils réordonnée, PING visible, touches 1 à 9 pour les outils.
+- Une réglette montre l'état du groupe d'un coup d'œil dans Groupe, dans l'ORBAT du BFT et sous la boussole. Le BFT devient un tableau à colonnes, avec des chevrons dans l'ORBAT.
 EN : One player card everywhere, and the map no longer jumps when you touch a teammate
 - Actions on a player (map, go there, SMS, vibrate, ping, camera, follow) have the same name and order on the map, in BFT and in Group.
 - The MAP button in BFT and Group now selects the player on arrival, and BFT joins the dock.
 - Group gains RALLY ON ME, SMS TO GROUP and FRAME THE GROUP; handing over command asks for confirmation.
 - Map: touching a player opens a floating card with their actions, ◀ ▶ moves between teammates and FOLLOW keeps the map on them. Toolbar reordered, PING visible, keys 1 to 9 for the tools.
+- A roster bar shows your squad at a glance in Group, in the BFT ORBAT and under the compass. BFT is now a column table with chevrons in the ORBAT.
 
 ### Détail technique
 - `fn_unitCard` : catalogue unique des actions (ordre, libellés, règles d'activation), rangées `fn_formRender` et barre en contrôles libres, surplus derrière ⋯ sans redessin ; état médical commun (Groupe, BFT, panneau SITUATION).
@@ -59,6 +61,8 @@ EN : One player card everywhere, and the map no longer jumps when you touch a te
 - `fn_groupAction` : `rally` (un seul `netSend` vers tous les téléphones), `smsGroup`, `frameGroup` ; CHEF retiré des lignes, passage du commandement en deux temps dans la fiche.
 - `fn_mapSelect` n'ouvre plus le panneau SITUATION (plus de `layoutApply` + `pageRender` au clic) ; fiche flottante `mapCard`, texte réécrit à 1 Hz (`tick`, `fn_statusUpdate`), `mapFollowId` dans le glissement existant de `fn_mapOnDraw`.
 - `fn_pageMap` : barre CENTRER/SUIVRE, ZOOM, MARQUEUR, PING, CALQUES, OUTILS ; indicatifs et « Sur mon téléphone » dans OUTILS > AFFICHAGE ; touches 1 à 9 (`fn_displayLoad`, `fn_mapToolMenu`).
+- `fn_squadBar` : réglette d'effectif (primitives communes, cases en contrôles), signature à 1 Hz sur la carte, rendu texte dans l'ORBAT.
+- `fn_pageBft` : `COMSPEC_RscListNBox` (lignes réécrites par signature, sans vider le tableau), état en image, en-tête compact ; messages d'ORBAT importants au-dessus du tableau.
 - Coût par image : une lecture de table seulement pendant le suivi d'une unité ; aucun autre ajout.
 ## À venir : fond de carte ARDOISE et style tactique des marqueurs et traits (ATAK natif, version à attribuer)
 
@@ -97,7 +101,7 @@ EN : Map: new SLATE background and tactical marker style
 ---
 ## BFT : l'ORBAT du site et les joueurs hors ligne ; écran et PC du poste TOC (version à attribuer)
 
-### Résumé joueur
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : Le BFT affiche l'ORBAT de votre communauté, hors ligne compris
 - Onglet ORBAT du BFT : l'arbre de votre ORBAT Athena, avec chaque membre et son état : en jeu avec distance et gisement, en jeu sans piste, hors ligne, poste vacant.

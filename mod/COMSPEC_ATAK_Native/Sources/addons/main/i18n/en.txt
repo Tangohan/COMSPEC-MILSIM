@@ -19140,5 +19140,18 @@
 ["friend", "friend"],
 ["hostile", "hostile"],
 ["neutral", "neutral"],
-["unknown", "unknown"]
+["unknown", "unknown"],
+["Altitude %1 m · %2 direct · %3 ancienne(s) · %4 perdue(s) · %5 hors ligne%6", "Altitude %1 m · %2 live · %3 old · %4 lost · %5 offline%6"],
+[" · PAS DE RÉSEAU : pistes figées", " · NO NETWORK: tracks frozen"],
+["PAS DE RÉSEAU", "NO NETWORK"],
+["DIRECT", "LIVE"],
+["PERDUE", "LOST"],
+["INDICATIF", "CALLSIGN"],
+["DIST", "DIST"],
+["AZ", "AZ"],
+["sans signal", "no signal"],
+["DI", "LV"],
+["AN", "OL"],
+["PE", "LS"],
+["HL", "OF"]
 ]

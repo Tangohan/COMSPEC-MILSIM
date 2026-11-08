@@ -173,6 +173,46 @@ final class AtakUnitCardAssetTest extends TestCase
         self::assertStringContainsString('["numbered"] call comspec_atak_native_fnc_mapToolMenu', $this->read('functions/pages/fn_pageMap.sqf'));
     }
 
+    public function testSquadBarIsDrawnInTheThreePlacesAtOneHertz(): void
+    {
+        $bar = $this->read('functions/teams/fn_squadBar.sqf');
+        foreach (['case "cells"', 'case "count"', 'case "text"', 'case "prims"', 'case "mapTick"'] as $c) {
+            self::assertStringContainsString($c, $bar);
+        }
+        // La forme avant la couleur, plancher de 14 px, signature : rien de refait tant que rien ne change.
+        self::assertStringContainsString('private _half = _code isEqualTo 1', $bar);
+        self::assertStringContainsString('"✕"] select _hc', $bar);
+        self::assertStringContainsString('COMSPEC_ATAK_FontMin max (_h * 0.72)', $bar);
+        self::assertStringContainsString('COMSPEC_ATAK_SquadSig', $bar);
+        self::assertStringContainsString('class squadBar {};', $this->read('config.cpp'));
+        self::assertStringContainsString('case "squad": {', $this->read('functions/ui/fn_formRender.sqf'));
+        self::assertStringContainsString('["squad", ["cells", _grp]', $this->read('functions/pages/fn_pageGroup.sqf'));
+        self::assertStringContainsString('["mapTick"] call comspec_atak_native_fnc_squadBar', $this->read('functions/ui/fn_statusUpdate.sqf'));
+        self::assertStringNotContainsString('squadBar', $this->read('functions/map/fn_mapOnDraw.sqf'));
+        self::assertStringContainsString('fnc_squadBar', $this->read('functions/pages/fn_pageBft.sqf'));
+    }
+
+    public function testBftIsAColumnTableWithChevronsAndStateAsAShape(): void
+    {
+        self::assertStringContainsString('class COMSPEC_RscListNBox: RscListNBox', $this->read('ui/controls.hpp'));
+        $bft = $this->read('functions/pages/fn_pageBft.sqf');
+        self::assertStringContainsString('["COMSPEC_RscListNBox", [0, _y, _listW, _listH]]', $bft);
+        self::assertStringContainsString('_list lnbSetColumnsPos _colPos', $bft);
+        self::assertStringContainsString('["ui_chevron_right", "ui_chevron_down"] select _on', $bft);
+        foreach (['ui_close', 'ui_warning', 'ui_clock', 'ui_check'] as $icon) {
+            self::assertStringContainsString('"' . $icon . '"', $bft, $icon);
+            self::assertFileExists(self::MAIN . '/data/' . $icon . '.paa');
+        }
+        // Plus de retraits en espaces ni de « + » / « - », ni de liste à une colonne.
+        self::assertStringNotContainsString('_sign', $bft);
+        self::assertStringNotContainsString('lbSetTextRight', $bft);
+        self::assertStringNotContainsString('"      "', $bft);
+        // Le mode « update » réécrit sur place : la signature de ligne reste, sans vider le tableau.
+        self::assertStringContainsString('(_sigs select _i) isEqualTo _sig', $bft);
+        self::assertStringContainsString('_list lnbSetText [[_i, 3]', $bft);
+        self::assertStringNotContainsString('lnbClear', $bft);
+    }
+
     public function testNewLabelsAreTranslated(): void
     {
         $en = $this->read('i18n/en.txt');

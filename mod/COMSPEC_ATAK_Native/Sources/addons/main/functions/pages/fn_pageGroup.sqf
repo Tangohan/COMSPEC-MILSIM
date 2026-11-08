@@ -34,7 +34,6 @@ private _nTeams = count (_grp getVariable ["COMSPEC_FireTeams", []]);
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['grpTab', '%1']; [{ ['GROUP'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 // Onglets soulignés (composant « tabs », 3.1.0) : compteurs en pastille à côté du libellé.
 private _rows = [["tabs", [(["MON GROUPE", "MINE"] call _tabBtn) + [count units _grp], (["ÉQUIPES", "FT"] call _tabBtn) + [_nTeams], (["GROUPES", "ALL"] call _tabBtn) + [count _others]]]];
-private _showMed = ["state", "allies"] call comspec_atak_native_fnc_medShow;
 // État d'un membre : [code, texte coloré]. Code : 0 apte, 1 blessé, 2 hors de combat (inconscient ou mort), -1 inconnu.
 private _state = {
     params ["_u"];
@@ -54,17 +53,13 @@ if (_tab isEqualTo "MINE") then {
         [[name leader _grp] call _esc, format ["%1 (moi)", [name leader _grp] call _esc]] select ((leader _grp) isEqualTo player),
         ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● Ouvert</t>", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Fermé</t>"] select _locked]];
 
-    // Bilan en un bandeau : aptes, blessés, hors de combat (si l'état médical des alliés est visible) et distance du plus loin.
+    // Bilan : la réglette d'effectif (fn_squadBar), le même dessin que sur la carte et dans l'ORBAT, et la distance du plus loin.
+    // Un clic sur une case déplie la fiche de ce membre.
     private _far = 0;
     { _far = _far max (_x distance2D player); } forEach _units;
-    private _left = if (_showMed) then {
-        private _c = [0, 0, 0];
-        { private _k = ([_x] call _state) select 0; if (_k >= 0) then { _c set [_k, (_c select _k) + 1]; }; } forEach _units;
-        format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>APTES %1</t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>  ·  </t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>BLESSÉS %2</t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>  ·  </t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>HORS DE COMBAT %3</t>", _c select 0, _c select 1, _c select 2]
-    } else {
-        format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1 MEMBRE(S)</t>", count _units]
-    };
-    _rows pushBack ["strip", _left, ["", format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Le plus loin : %1</t>", [_far] call _dist]] select ((count _units) > 1)];
+    _rows pushBack ["squad", ["cells", _grp] call comspec_atak_native_fnc_squadBar, format ["<t font='COMSPEC_BarlowBold'>%1</t>", [groupId _grp] call _esc],
+        ["", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Le plus loin : %1</t>", [_far] call _dist]] select ((count _units) > 1),
+        "['card', %1] call comspec_atak_native_fnc_groupAction;"];
 
     // Actions de groupe : un geste au lieu de huit. Ralliement réservé au chef ; il part en un seul envoi.
     private _many = (count _units) > 1;
