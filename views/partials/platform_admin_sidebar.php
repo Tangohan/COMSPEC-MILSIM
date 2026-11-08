@@ -124,9 +124,11 @@ $platformNav = [
         ['path' => 'admin/parc-atak', 'label' => 'Parc ATAK des joueurs', 'icon' => 'phone', 'access' => 'system', 'desc' => 'Tous les ATAK, chiffres de jeu, blocage, retrait, messages imposés'],
         ['path' => 'admin/atak-beta', 'label' => 'Accès anticipé', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Joueurs inscrits au pack bêta, toutes communautés'],
         ['path' => 'admin/atak-mod-reports', 'label' => 'Rapports d’erreurs du mod', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Erreurs remontées par le pack, toutes communautés'],
+        ['path' => 'admin/system/alertes-mod', 'label' => 'Activités suspectes du mod', 'icon' => 'ban', 'access' => 'system', 'desc' => 'Envois anormaux détectés (déplacements, volume, identifiants, versions) : alertes à décider, aucun blocage automatique'],
     ]],
     ['key' => 'exploitation', 'label' => 'Exploitation', 'items' => [
         ['path' => 'admin/system/donnees', 'label' => 'Registre des données', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Comptes, joueurs, ATAK, mods proches, sessions : recherche Steam par profil, corrélations, export, purge'],
+        ['path' => 'admin/system/surcharge', 'label' => 'Charge et surcharge', 'icon' => 'chart', 'access' => 'system', 'desc' => 'Requêtes par route et par communauté, erreurs, tendance, seuils d’alerte, priorité des formules payantes sous charge'],
         ['path' => 'admin/system/storage', 'label' => 'Espace disque', 'icon' => 'disk', 'access' => 'system', 'desc' => 'Occupation et vidage des historiques'],
         ['path' => 'admin/maintenance', 'label' => 'Maintenance des données', 'icon' => 'wrench', 'access' => 'system', 'desc' => 'Fenêtres de maintenance planifiées'],
         ['path' => 'admin/audit', 'label' => 'Journal d’audit', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Toutes les actions sensibles'],

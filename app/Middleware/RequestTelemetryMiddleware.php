@@ -40,6 +40,12 @@ final class RequestTelemetryMiddleware
                 return $response;
             }
 
+            // Requête ralentie sous charge (LoadShedMiddleware) : comptée par la mesure de charge, pas en base ici, sinon
+            // chaque refus ajouterait une ligne SQL au moment où le site sature.
+            if ($response->headerValue('X-Athena-Load') === 'shed') {
+                return $response;
+            }
+
             $statusCode = $response->statusCode();
             if (!$this->shouldRecord($statusCode, $elapsedMs)) {
                 return $response;
