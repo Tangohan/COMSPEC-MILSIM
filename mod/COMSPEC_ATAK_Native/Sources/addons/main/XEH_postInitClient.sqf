@@ -1167,11 +1167,21 @@ addMissionEventHandler ["MarkerCreated", {
     params ["_e", "", "", "_unit"];
     if (isNull _e || {_unit isNotEqualTo player}) exitWith {};
     _e setVariable ["COMSPEC_ATAK_PlacedAt", time];
+    // Minuterie ACE : son dialogue est encore ouvert à cet instant, et c'est le seul endroit où lire la durée choisie.
+    private _timerUi = uiNamespace getVariable ["ace_explosives_timerDisplay", displayNull];
+    if (!isNull _timerUi) then { _e setVariable ["COMSPEC_ATAK_Fuse", floor (sliderPosition (_timerUi displayCtrl 8505))]; };
     private _mine = (missionNamespace getVariable ["COMSPEC_ATAK_MyCharges", []]) select { !isNull _x && {alive _x} };
     _mine pushBack _e;
     missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", _mine];
     uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
 }] call CBA_fnc_addEventHandler;
+// Déclencheur réseau (fn_exploNet) : réponses du serveur. Respawn : comme ACE vide les clackers, le joueur perd ses charges.
+["clientInit"] call comspec_atak_native_fnc_exploNet;
+player addEventHandler ["Respawn", {
+    missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", []];
+    ["cmd", ["release", []]] call comspec_atak_native_fnc_exploNet;
+    ["changed"] call comspec_atak_native_fnc_exploAction;
+}];
 // Signaux du poste (SMS, alerte plein écran, vibration) : Overwatch appelle ces crochets du module atak_athena,
 // absent avec le mod natif ; on les fournit seulement s'ils ne sont pas déjà définis.
 if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
