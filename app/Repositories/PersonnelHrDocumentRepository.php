@@ -86,7 +86,7 @@ final class PersonnelHrDocumentRepository
         }
         $limit = max(1, min(100, $limit));
         $st = $this->pdo->prepare(
-            "SELECT d.*, u.display_name AS user_display_name, u.email AS user_email
+            "SELECT d.*, u.display_name AS user_display_name
              FROM personnel_hr_documents d
              LEFT JOIN users u ON u.id = d.user_id
              WHERE d.tenant_id = ? AND d.archived_at IS NULL

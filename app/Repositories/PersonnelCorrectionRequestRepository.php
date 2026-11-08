@@ -68,8 +68,8 @@ final class PersonnelCorrectionRequestRepository
         $limit = max(1, min(300, $limit));
         $stmt = $this->pdo->prepare(
             "SELECT r.*,
-                    tu.display_name AS target_display_name, tu.email AS target_email,
-                    ru.display_name AS requester_display_name, ru.email AS requester_email
+                    tu.display_name AS target_display_name, tu.callsign AS target_callsign,
+                    ru.display_name AS requester_display_name, ru.callsign AS requester_callsign
              FROM personnel_correction_requests r
              LEFT JOIN users tu ON tu.id = r.target_user_id
              LEFT JOIN users ru ON ru.id = r.requested_by
@@ -81,6 +81,43 @@ final class PersonnelCorrectionRequestRepository
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         return array_map(fn (array $row): array => $this->hydrate($row), $rows);
+    }
+
+    /**
+     * Demandes déjà traitées (acceptées, refusées ou annulées), les plus récentes d'abord : l'historique.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listResolvedForTenant(int $tenantId, int $limit = 100): array
+    {
+        $limit = max(1, min(300, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT r.*,
+                    tu.display_name AS target_display_name, tu.callsign AS target_callsign,
+                    ru.display_name AS requester_display_name, ru.callsign AS requester_callsign,
+                    du.display_name AS resolver_display_name, du.callsign AS resolver_callsign
+             FROM personnel_correction_requests r
+             LEFT JOIN users tu ON tu.id = r.target_user_id
+             LEFT JOIN users ru ON ru.id = r.requested_by
+             LEFT JOIN users du ON du.id = r.resolved_by
+             WHERE r.tenant_id = ? AND r.status <> 'pending'
+             ORDER BY COALESCE(r.resolved_at, r.updated_at, r.created_at) DESC, r.id DESC
+             LIMIT {$limit}"
+        );
+        $stmt->execute([$tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(fn (array $row): array => $this->hydrate($row), $rows);
+    }
+
+    public function countResolvedForTenant(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM personnel_correction_requests WHERE tenant_id = ? AND status <> 'pending'"
+        );
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
     }
 
     /** @return list<array<string, mixed>> */

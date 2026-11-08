@@ -20,6 +20,11 @@ use App\Services\Personnel\PersonnelCorrectionRequestService;
 
 final class PersonnelCorrectionController
 {
+    /** Demandes en attente affichées d'un coup (les plus anciennes d'abord). */
+    private const QUEUE_LIMIT = 60;
+
+    private const HISTORY_LIMIT = 100;
+
     public function __construct(
         private AuthService $authService,
         private UserRepository $userRepository,
@@ -140,7 +145,10 @@ final class PersonnelCorrectionController
         return Response::redirect(url('personnel/' . $targetId));
     }
 
-    /** GET /back-office/personnel/corrections */
+    /**
+     * GET /back-office/personnel/corrections
+     * Onglets (?vue=) : « a-traiter » (défaut), « historique », « corriger » (dossier corrigé sans demande, ?membre=).
+     */
     public function index(Request $request, array $params = []): Response
     {
         $ctx = $this->authContext();
@@ -153,71 +161,173 @@ final class PersonnelCorrectionController
             return Response::redirect(url('dashboard'));
         }
         [$tenantId] = $ctx;
-        $open = $this->correctionRepository->listOpenForTenant($tenantId, 150);
-        foreach ($open as &$row) {
-            $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
-            $before = is_array($row['before'] ?? null) ? $row['before'] : [];
-            $row['proposed_display'] = [];
-            $row['before_display'] = [];
-            $row['proposed_lines'] = [];
-            $row['before_lines'] = [];
-            foreach ($proposed as $key => $val) {
-                $key = (string) $key;
-                $row['proposed_lines'][$key] = $this->correctionService->displayFieldLines($key, $val, $tenantId);
-                $row['before_lines'][$key] = $this->correctionService->displayFieldLines($key, $before[$key] ?? '', $tenantId);
-                $row['proposed_display'][$key] = $this->correctionService->displayFieldValue($key, $val, $tenantId);
-                $row['before_display'][$key] = $this->correctionService->displayFieldValue($key, $before[$key] ?? '', $tenantId);
-            }
-        }
-        unset($row);
-
-        $members = [];
-        foreach ($this->userRepository->listForTenant($tenantId, null, 'active', null, null, null, true) as $u) {
-            $id = (int) ($u['id'] ?? 0);
-            if ($id < 1) {
-                continue;
-            }
-            $members[] = ['id' => $id, 'label' => $this->memberLabel($u)];
-        }
-        usort($members, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
-
         $directTargetId = (int) $request->query('membre', 0);
-        $directTarget = $directTargetId > 0 ? $this->userRepository->findById($directTargetId, $tenantId) : null;
-        $directSnapshot = [];
-        $directPending = [];
-        $directHasOpen = false;
-        $directProfile = [];
-        $choices = PersonnelCorrectionRequestService::choiceCatalog();
-        if (is_array($directTarget)) {
-            $directSnapshot = $this->correctionService->currentSnapshot((int) $directTarget['id']);
-            $directPending = $this->correctionRepository->listForTarget($tenantId, (int) $directTarget['id'], 5);
-            $directHasOpen = $this->correctionRepository->hasPendingForTarget($tenantId, (int) $directTarget['id']);
-            $directProfile = (new PersonnelProfileRepository())->getByUserId((int) $directTarget['id']) ?? [];
-            $choices = $this->correctionChoices($tenantId, $directSnapshot, true, false);
-            $choices['tutors'] = [];
-            foreach ($members as $m) {
-                $choices['tutors'][] = ['value' => (string) $m['id'], 'label' => $m['label']];
-            }
+        $vue = (string) $request->query('vue', '');
+        if (!in_array($vue, ['a-traiter', 'historique', 'corriger'], true)) {
+            $vue = $directTargetId > 0 ? 'corriger' : 'a-traiter';
         }
 
-        return Response::view('layout.main', [
-            'title' => 'Corrections RH en attente',
+        $data = [
+            'title' => 'Corrections RH',
             'content' => 'personnel.corrections_queue',
-            'requests' => $open,
+            'vue' => $vue,
             'fieldLabels' => PersonnelCorrectionRequestService::fieldLabels(true),
             'csrf' => Csrf::token(),
-            'pendingCount' => count($open),
-            'directMembers' => $members,
-            'directTarget' => $directTarget,
-            'directSnapshot' => $directSnapshot,
-            'directPending' => $directPending,
-            'directHasOpen' => $directHasOpen,
-            'directFieldCatalog' => PersonnelCorrectionRequestService::fieldCatalog(true),
-            'directFieldGroups' => PersonnelCorrectionRequestService::FIELD_GROUPS,
-            'directChoiceCatalog' => $choices,
-            'personnelProfile' => $directProfile,
+            'pendingCount' => $this->correctionRepository->countPendingForTenant($tenantId),
+            'resolvedCount' => $this->correctionRepository->countResolvedForTenant($tenantId),
+            'canBatch' => $this->canBatch(),
+            'batchMax' => PersonnelCorrectionRequestService::BATCH_MAX,
+            'requests' => [],
+            'history' => [],
+            'directMembers' => [],
+            'directTarget' => null,
+            'directSnapshot' => [],
+            'directPending' => [],
+            'directHasOpen' => false,
+            'directFieldCatalog' => [],
+            'directFieldGroups' => [],
+            'directChoiceCatalog' => [],
+            'personnelProfile' => [],
             'backOfficePageCss' => ['back-office-corrections.css', 'personnel-dossier.css'],
-        ]);
+        ];
+
+        if ($vue === 'a-traiter') {
+            $data['requests'] = $this->presentRequests($this->correctionRepository->listOpenForTenant($tenantId, self::QUEUE_LIMIT), $tenantId, true);
+        } elseif ($vue === 'historique') {
+            $data['history'] = $this->presentRequests($this->correctionRepository->listResolvedForTenant($tenantId, self::HISTORY_LIMIT), $tenantId, false);
+        } else {
+            $members = [];
+            foreach ($this->userRepository->listForTenant($tenantId, null, 'active', null, null, null, true) as $u) {
+                $id = (int) ($u['id'] ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+                $members[] = ['id' => $id, 'label' => $this->memberLabel($u)];
+            }
+            usort($members, static fn (array $a, array $b): int => strcasecmp($a['label'], $b['label']));
+
+            $directTarget = $directTargetId > 0 ? $this->userRepository->findById($directTargetId, $tenantId) : null;
+            $choices = PersonnelCorrectionRequestService::choiceCatalog();
+            if (is_array($directTarget)) {
+                $directSnapshot = $this->correctionService->currentSnapshot((int) $directTarget['id']);
+                $data['directSnapshot'] = $directSnapshot;
+                $data['directPending'] = $this->correctionRepository->listForTarget($tenantId, (int) $directTarget['id'], 5);
+                $data['directHasOpen'] = $this->correctionRepository->hasPendingForTarget($tenantId, (int) $directTarget['id']);
+                $data['personnelProfile'] = (new PersonnelProfileRepository())->getByUserId((int) $directTarget['id']) ?? [];
+                $choices = $this->correctionChoices($tenantId, $directSnapshot, true, false);
+                $choices['tutors'] = [];
+                foreach ($members as $m) {
+                    $choices['tutors'][] = ['value' => (string) $m['id'], 'label' => $m['label']];
+                }
+            }
+            $data['directMembers'] = $members;
+            $data['directTarget'] = $directTarget;
+            $data['directFieldCatalog'] = PersonnelCorrectionRequestService::fieldCatalog(true);
+            $data['directFieldGroups'] = PersonnelCorrectionRequestService::FIELD_GROUPS;
+            $data['directChoiceCatalog'] = $choices;
+        }
+
+        return Response::view('layout.main', $data);
+    }
+
+    /**
+     * Prépare l'affichage : qui demande quoi, depuis quand, valeur actuelle et valeur proposée côte à côte.
+     * Pour les demandes en attente, la valeur « actuelle » est relue sur la fiche au moment de l'affichage.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function presentRequests(array $rows, int $tenantId, bool $live): array
+    {
+        $labels = PersonnelCorrectionRequestService::fieldLabels(true);
+        $snapshots = [];
+        $today = strtotime(date('Y-m-d')) ?: time();
+        $out = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $targetId = (int) ($row['target_user_id'] ?? 0);
+            $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
+            $before = is_array($row['before'] ?? null) ? $row['before'] : [];
+            $current = $before;
+            if ($live && $targetId > 0) {
+                $snapshots[$targetId] ??= $this->correctionService->currentSnapshot($targetId);
+                $current = $snapshots[$targetId] + $before;
+            }
+            $changes = [];
+            $same = 0;
+            foreach ($proposed as $key => $value) {
+                $key = (string) $key;
+                $oldLines = $this->correctionService->displayFieldLines($key, $current[$key] ?? '', $tenantId);
+                $newLines = $this->correctionService->displayFieldLines($key, $value, $tenantId);
+                if ($oldLines === $newLines) {
+                    ++$same;
+                }
+                $changes[] = [
+                    'label' => $labels[$key] ?? 'Information du dossier',
+                    'before' => $oldLines,
+                    'after' => $newLines,
+                    'blank' => PersonnelCorrectionRequestService::emptyFieldPhrase($key),
+                ];
+            }
+            $createdTs = strtotime((string) ($row['created_at'] ?? ''));
+            $row['target_label'] = $this->nameOf((string) ($row['target_display_name'] ?? ''), (string) ($row['target_callsign'] ?? ''), $targetId);
+            $row['requester_label'] = $this->nameOf((string) ($row['requester_display_name'] ?? ''), (string) ($row['requester_callsign'] ?? ''), (int) ($row['requested_by'] ?? 0));
+            $row['resolver_label'] = $this->nameOf((string) ($row['resolver_display_name'] ?? ''), (string) ($row['resolver_callsign'] ?? ''), (int) ($row['resolved_by'] ?? 0));
+            $row['self_request'] = (int) ($row['requested_by'] ?? 0) === $targetId;
+            $row['waiting_days'] = $createdTs !== false ? max(0, (int) floor(($today - strtotime(date('Y-m-d', $createdTs))) / 86400)) : null;
+            $row['changes'] = $changes;
+            $row['already_applied'] = $live && $changes !== [] && $same === count($changes);
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    private function nameOf(string $displayName, string $callsign, int $userId): string
+    {
+        $displayName = trim($displayName);
+        if ($displayName !== '') {
+            return $displayName;
+        }
+        $callsign = trim($callsign);
+        if ($callsign !== '') {
+            return $callsign;
+        }
+
+        return $userId > 0 ? 'Membre n° ' . $userId : '';
+    }
+
+    /** POST /back-office/personnel/corrections/lot — même décision pour plusieurs demandes. */
+    public function decideBatch(Request $request, array $params = []): Response
+    {
+        $ctx = $this->authContext();
+        if ($ctx === null) {
+            return Response::redirect(url('login'));
+        }
+        if (!$this->canBatch()) {
+            Session::flash('error', 'Droits insuffisants pour traiter plusieurs demandes à la fois.');
+
+            return Response::redirect(url('back-office/personnel/corrections'));
+        }
+        [$tenantId, $viewer] = $ctx;
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/personnel/corrections'));
+        }
+        $ids = $request->input('ids', []);
+        $result = $this->correctionService->decideBatch(
+            $tenantId,
+            is_array($ids) ? $ids : [],
+            (int) $viewer['id'],
+            (string) $request->input('decision', ''),
+            (string) $request->input('resolution_note', '')
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(url('back-office/personnel/corrections'));
     }
 
     /** POST /back-office/personnel/corrections/appliquer */
@@ -332,11 +442,23 @@ final class PersonnelCorrectionController
 
     private function canStaffManage(): bool
     {
+        return $this->allowsAny(PersonnelCorrectionRequestService::STAFF_PERMISSIONS);
+    }
+
+    /** Traitement par lot : réservé aux droits qui modifient les dossiers de toute la communauté. */
+    private function canBatch(): bool
+    {
+        return $this->allowsAny(PersonnelCorrectionRequestService::BATCH_PERMISSIONS);
+    }
+
+    /** @param list<string> $slugs */
+    private function allowsAny(array $slugs): bool
+    {
         if ($this->authService->user() === null) {
             return false;
         }
         $gate = Gate::getInstance();
-        foreach (['personnel.profile.update', 'admin.organization', 'admin.access', 'personnel.grades.manage', 'personnel.assignments.manage', 'personnel.status.manage'] as $slug) {
+        foreach ($slugs as $slug) {
             if ($gate->allows($slug)) {
                 return true;
             }
@@ -446,9 +568,8 @@ final class PersonnelCorrectionController
         if ($cs !== '') {
             return $cs;
         }
-        $em = trim((string) ($user['email'] ?? ''));
 
-        return $em !== '' ? $em : 'Membre';
+        return 'Membre';
     }
 
     /** @return list<array{value: string, label: string}> */

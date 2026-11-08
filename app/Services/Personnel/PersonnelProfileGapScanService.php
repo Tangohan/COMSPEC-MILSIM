@@ -18,8 +18,12 @@ final class PersonnelProfileGapScanService
 
     public const FETCH_CAP = 400;
 
-    /** @var list<string> */
-    public const ISSUE_KEYS = ['function', 'rank', 'role', 'operator_image', 'absence'];
+    /**
+     * Une absence est purement déclarative : elle ne figure jamais parmi les manques d'un dossier.
+     *
+     * @var list<string>
+     */
+    public const ISSUE_KEYS = ['function', 'rank', 'role', 'operator_image'];
 
     /** @var array<string, string> */
     public const ISSUE_LABELS = [
@@ -27,7 +31,6 @@ final class PersonnelProfileGapScanService
         'rank' => 'Grade',
         'role' => 'Rôle',
         'operator_image' => 'Image opérateur',
-        'absence' => 'Absence',
     ];
 
     private PDO $pdo;
@@ -49,7 +52,7 @@ final class PersonnelProfileGapScanService
      *   total: int,
      *   shown: int,
      *   truncated: bool,
-     *   counts: array{function: int, rank: int, role: int, operator_image: int, absence: int},
+     *   counts: array{function: int, rank: int, role: int, operator_image: int},
      *   error: string|null
      * }
      */
@@ -60,7 +63,6 @@ final class PersonnelProfileGapScanService
             'rank' => 0,
             'role' => 0,
             'operator_image' => 0,
-            'absence' => 0,
         ];
         $empty = [
             'rows' => [],
@@ -143,7 +145,7 @@ final class PersonnelProfileGapScanService
     /**
      * @param array<string, mixed> $row
      * @return array{
-     *   missing: array{function: bool, rank: bool, role: bool, operator_image: bool, absence: bool},
+     *   missing: array{function: bool, rank: bool, role: bool, operator_image: bool},
      *   issue_count: int,
      *   issue_keys: list<string>,
      *   function_label: string,
@@ -174,16 +176,12 @@ final class PersonnelProfileGapScanService
         $hasTenantRole = (int) ($row['has_tenant_role'] ?? 0) > 0;
         $missingRole = !$hasRoleId && !$hasTenantRole;
         $missingOperatorImage = self::isBlankLabel($row['character_portrait_path'] ?? null);
-        $hasActiveAbsence = (int) ($row['has_active_absence'] ?? 0) === 1;
-        $readiness = (int) ($row['readiness_score'] ?? 0);
-        $missingAbsence = !$hasActiveAbsence && $readiness <= 0;
 
         $missing = [
             'function' => $missingFunction,
             'rank' => $missingRank,
             'role' => $missingRole,
             'operator_image' => $missingOperatorImage,
-            'absence' => $missingAbsence,
         ];
         $keys = [];
         foreach (self::ISSUE_KEYS as $key) {
@@ -282,13 +280,11 @@ final class PersonnelProfileGapScanService
             'missing_rank' => !empty($missing['rank']),
             'missing_role' => !empty($missing['role']),
             'missing_operator_image' => !empty($missing['operator_image']),
-            'missing_absence' => !empty($missing['absence']),
             'function_label' => (string) ($issues['function_label'] ?? ''),
             'rank_label' => (string) ($issues['rank_label'] ?? ''),
             'role_label' => (string) ($issues['role_label'] ?? ''),
             'issue_keys' => is_array($issues['issue_keys'] ?? null) ? $issues['issue_keys'] : [],
             'issue_count' => (int) ($issues['issue_count'] ?? 0),
-            'has_active_absence' => (int) ($row['has_active_absence'] ?? 0) === 1,
         ];
     }
 
@@ -311,9 +307,6 @@ final class PersonnelProfileGapScanService
         $primaryRoleSelect = $this->columnExists('personnel_profiles', 'primary_role')
             ? 'pp.primary_role'
             : "'' AS primary_role";
-        $readinessSelect = $this->columnExists('personnel_profiles', 'readiness_score')
-            ? 'pp.readiness_score'
-            : '0 AS readiness_score';
         $gradeIdSelect = $this->columnExists('users', 'grade_id')
             ? 'u.grade_id'
             : 'NULL AS grade_id';
@@ -332,16 +325,6 @@ final class PersonnelProfileGapScanService
                     WHERE tur.user_id = u.id AND tur.tenant_id = u.tenant_id
                ) THEN 1 ELSE 0 END AS has_tenant_role'
             : '0 AS has_tenant_role';
-        $absenceSelect = $this->tableExists('personnel_absences')
-            ? 'CASE WHEN EXISTS (
-                    SELECT 1 FROM personnel_absences pa
-                    WHERE pa.user_id = u.id AND pa.tenant_id = u.tenant_id
-                      AND pa.status = \'active\'
-                      AND pa.starts_on <= CURDATE()
-                      AND (pa.ends_on IS NULL OR pa.ends_on >= CURDATE())
-               ) THEN 1 ELSE 0 END AS has_active_absence'
-            : '0 AS has_active_absence';
-
         // Un seul dossier par membre : les anciennes lignes sans communauté (tenant_id NULL)
         // multipliaient chaque membre dans « À traiter » (400 lignes pour 4 membres).
         $profileJoin = $this->columnExists('personnel_profiles', 'tenant_id')
@@ -362,10 +345,8 @@ final class PersonnelProfileGapScanService
                        ' . $rankOverrideSelect . ',
                        ' . $primaryRoleSelect . ',
                        ' . $portraitSelect . ',
-                       ' . $readinessSelect . ',
                        ' . $job['select'] . ',
-                       ' . $hasTenantRoleSelect . ',
-                       ' . $absenceSelect . '
+                       ' . $hasTenantRoleSelect . '
                 FROM users u
                 ' . $profileJoin . '
                 ' . $roleJoin . '

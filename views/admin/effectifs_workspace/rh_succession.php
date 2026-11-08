@@ -24,7 +24,7 @@ $readinessTone = [
 ?>
 <section class="eff-rh-hero">
     <div class="eff-pg__actions">
-        <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('a-traiter?onglet=alertes')) ?>">Postes à pourvoir</a>
+        <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('a-traiter?onglet=infos') . '#carte-vacant') ?>">Postes à pourvoir</a>
         <a class="eff-catalog__btn" href="<?= $h(effectifs_workspace_url('mobilite')) ?>">Mobilité interne</a>
     </div>
     <p class="eff-page-kicker">Dossier RH</p>

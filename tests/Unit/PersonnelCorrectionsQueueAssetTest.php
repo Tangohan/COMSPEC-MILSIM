@@ -19,7 +19,11 @@ final class PersonnelCorrectionsQueueAssetTest extends TestCase
         self::assertStringContainsString('Corrections de fiches', $pages);
         self::assertStringContainsString('back-office-corrections.css', $pages);
         self::assertStringContainsString('rh-corr__empty', $view);
-        self::assertStringContainsString('Confirmer', $view);
+        self::assertStringContainsString('Valider', $view);
+        self::assertStringContainsString('Confirmer le refus', $view);
+        self::assertStringContainsString('required', $view, 'le motif d’un refus est obligatoire');
+        self::assertStringContainsString('?vue=historique', $view);
+        self::assertStringContainsString('data-rh-batch', $view);
         self::assertStringContainsString('Refuser', $view);
         self::assertStringContainsString('Actuellement', $view);
         self::assertStringContainsString('Proposé', $view);
@@ -33,7 +37,8 @@ final class PersonnelCorrectionsQueueAssetTest extends TestCase
         self::assertStringContainsString('72rem', $css);
         self::assertStringNotContainsString('text-white', $view);
         self::assertStringNotContainsString('bg-slate-900', $view);
-        self::assertStringContainsString('#0f172a', $css);
+        self::assertStringContainsString('var(--ath-ink', $css, 'thème sombre par les jetons du portail');
+        self::assertDoesNotMatchRegularExpression('/background:\s*#fff/', $css);
         self::assertStringContainsString('.rh-corr__empty', $css);
     }
 }
