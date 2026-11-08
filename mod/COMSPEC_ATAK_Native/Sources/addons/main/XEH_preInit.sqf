@@ -675,6 +675,12 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_groups", "CHECKBOX",
     ["Groupes de conversation du maillage", "16 groupes : abonnement par la fréquence de la radio pontée ou dans l'app Wave Relay. Pas de rallonge voix hors groupe commun, messages de groupe aux seuls abonnés."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_keys", "CHECKBOX",
+    ["Clés du maillage (mécanique de jeu)", "Clés de réseau et de groupe simulées : étiquettes et époques, aucune sécurité réelle. Clé absente ou périmée : hors du graphe, message chiffré à l'écran, voix sans rallonge."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_keys_auto", "CHECKBOX",
+    ["Clés chargées automatiquement", "Coché : chaque MPU5 reçoit les clés de son camp au démarrage. Décoché : chargeur de clés ou poste de commandement."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
 ["comspec_atak_native_mesh_dev", "CHECKBOX",
     ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],

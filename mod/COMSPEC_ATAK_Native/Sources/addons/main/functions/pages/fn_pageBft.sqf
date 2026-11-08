@@ -127,15 +127,23 @@ private _nFilt = ({ profileNamespace getVariable [_x, false] } count ["COMSPEC_A
     + ([0, 1] select ((profileNamespace getVariable ["COMSPEC_ATAK_AllyFilter", "ALL"]) isNotEqualTo "ALL"))
     + ([0, 1] select ((profileNamespace getVariable ["COMSPEC_ATAK_BftMaxDist", 0]) isNotEqualTo 0));
 if (!_upd) then {
-private _vb = ["COMSPEC_RscButton", [_bw - _hbW, 0, _hbW, _font * 1.25], ["VUE : LISTE", "VUE : ORBAT"] select (_view isEqualTo "ORBAT")] call comspec_atak_native_fnc_pageCtrl;
-_vb ctrlSetFontHeight (_fs * 0.9);
-_vb ctrlSetTooltip (("Basculer entre le tableau des pistes et l'arbre ORBAT (formation, groupe, équipe)") call comspec_atak_native_fnc_tr);
-_vb ctrlAddEventHandler ["ButtonClick", {
-    profileNamespace setVariable ["COMSPEC_ATAK_BftView", ["ORBAT", "LIST"] select ((profileNamespace getVariable ["COMSPEC_ATAK_BftView", "LIST"]) isEqualTo "ORBAT")];
-    [] call comspec_atak_native_fnc_saveProfile;
-    (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bftFiltersOpen", false];
-    [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
-}];
+// Menu de la vue : LISTE (tableau des pistes) ou ORBAT (arbre formation, groupe, équipe), la vue choisie en couleur.
+{
+    _x params ["_vLbl", "_vKey", "_vX", "_vTip"];
+    private _vb = ["COMSPEC_RscButton", [_bw - _hbW + _vX, 0, _hbW / 2 - pixelW, _font * 1.25], _vLbl] call comspec_atak_native_fnc_pageCtrl;
+    _vb ctrlSetFontHeight (_fs * 0.9);
+    _vb ctrlSetTooltip ((_vTip) call comspec_atak_native_fnc_tr);
+    _vb ctrlSetBackgroundColor ([COMSPEC_ATAK_Th get "surface2", COMSPEC_ATAK_Th get "accent"] select (_view isEqualTo _vKey));
+    _vb ctrlSetTextColor ([COMSPEC_ATAK_Th get "text", COMSPEC_ATAK_Th get "onAccent"] select (_view isEqualTo _vKey));
+    _vb setVariable ["comspec_view", _vKey];
+    _vb ctrlAddEventHandler ["ButtonClick", {
+        params ["_c"];
+        profileNamespace setVariable ["COMSPEC_ATAK_BftView", _c getVariable ["comspec_view", "LIST"]];
+        [] call comspec_atak_native_fnc_saveProfile;
+        (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bftFiltersOpen", false];
+        [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+    }];
+} forEach [["LISTE", "LIST", 0, "Tableau des pistes, triées par distance"], ["ORBAT", "ORBAT", _hbW / 2, "Arbre ORBAT : formation, groupe, équipe, membres"]];
 private _fb = ["COMSPEC_RscButton", [_bw - _hbW, _font * 1.35, _hbW, _font * 1.25], ["FILTRES", format ["FILTRES (%1)", _nFilt]] select (_nFilt > 0)] call comspec_atak_native_fnc_pageCtrl;
 _fb ctrlSetFontHeight (_fs * 0.9);
 if (_filtersOpen || {_nFilt > 0}) then { _fb ctrlSetBackgroundColor ([[0.18, 0.32, 0.50, 1], [0.28, 0.55, 0.85, 1]] select _filtersOpen); _fb ctrlSetTextColor [1, 1, 1, 1]; };

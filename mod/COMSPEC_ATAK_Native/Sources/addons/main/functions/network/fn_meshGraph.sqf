@@ -36,6 +36,15 @@ switch (_act) do {
     case "serverBuilt": {
         ((missionNamespace getVariable ["comspec_atak_native_mesh_server", true]) isEqualTo true) && {!isNil "COMSPEC_ATAK_MeshSrvOn"}
     };
+    case "log": {
+        // Journal de réseau (serveur, 200 lignes) : [heure, genre, texte].
+        if (!isServer) exitWith {};
+        _arg params [["_kind", ""], ["_text", ""]];
+        private _l = missionNamespace getVariable ["COMSPEC_ATAK_MeshLog", []];
+        _l pushBack [round ([time, serverTime] select isMultiplayer), _kind, _text];
+        if ((count _l) > 200) then { _l deleteAt 0; };
+        missionNamespace setVariable ["COMSPEC_ATAK_MeshLog", _l];
+    };
     case "peer": {
         _arg params [["_u", objNull]];
         if (isNull _u || {!((missionNamespace getVariable ["comspec_atak_native_mesh_p2p", true]) isEqualTo true)} || {!(["active"] call comspec_atak_native_fnc_mpuLink)}) exitWith { [] };
@@ -310,6 +319,8 @@ switch (_act) do {
         private _log = missionNamespace getVariable ["COMSPEC_ATAK_MeshLinkLog", []];
         {
             private _side = _x;
+            // Clé de réseau compromise (lot 7) : son détenteur d'un autre camp reste dans ce graphe jusqu'à la nouvelle époque.
+            private _compNk = ["compromisedNk", [_side]] call comspec_atak_native_fnc_meshKeys;
             // Nœuds : [antenne, porteur, type, canal, portée, débit max, position]. Passerelles d'abord.
             private _found = [];
             {
@@ -317,11 +328,13 @@ switch (_act) do {
                 if (_ok && {_k isNotEqualTo "mpu5"}) then { _found pushBack [_o, objNull, 2, 0, _r, (_mb * 1000) min _maxK, _ap]; };
             } forEach (["list", [_side]] call comspec_atak_native_fnc_relayNet);
             {
-                (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_key", ""], ["_r", 0], ["_o", objNull], ["_wid", 1]];
+                (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_key", ""], ["_r", 0], ["_o", objNull], ["_wid", 1], ["_nk", -2]];
                 if (_key isEqualTo "") then { continue };
+                // Clé de réseau absente ou périmée : hors du graphe (lot 6, sans effet réglage décoché).
+                if !(["authorized", [_side, _nk]] call comspec_atak_native_fnc_meshKeys) then { continue };
                 private _wf = [0.5, 1, 1.5] select _wid;
                 _found pushBack [_o, _x, [1, 0] select (_o isKindOf "CAManBase"), parseNumber (_key select [1]), _r, _maxK * _wf, [_o, _milsim] call _antOf];
-            } forEach ((allPlayers select { alive _x && {str side group _x isEqualTo _side} }) + (["units", [_side]] call comspec_atak_native_fnc_devMeshSim));
+            } forEach ((allPlayers select { alive _x && {str side group _x isEqualTo _side || {_compNk >= 0 && {((["node", _x] call comspec_atak_native_fnc_meshRead) param [4, -2]) isEqualTo _compNk}}} }) + (["units", [_side]] call comspec_atak_native_fnc_devMeshSim));
             private _total = count _found;
             private _nodes = _found select [0, _maxNodes];
             private _n = count _nodes;

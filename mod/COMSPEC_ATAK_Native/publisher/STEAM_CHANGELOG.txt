@@ -15,6 +15,15 @@
 [*] Toutes les actions différées du téléphone passent par une file propre au mod : une erreur de script dans l'une d'elles ne bloque plus les autres, ni celles d'ACE, et ne se rejoue plus.
 [*] Réparer le téléphone (kit ou caisse à outils) : il se rouvre tout seul à la fin et son redémarrage se voit ; avant, il restait rangé et la réparation semblait sans effet.
 [*] Batterie : par temps froid (sous 5 °C), elle se vide plus vite, sauf en véhicule. Désactivable par l'admin du serveur (ATAK · Batterie et mémoire).
+[*] Comptes rendus et CR de fin d'opération envoyés depuis le vrai téléphone (QR code) : ils partent enfin en jeu, avec notification aux autres et entrée dans l'app. Un CR imposé par le site s'ouvre aussi.
+[*] Carte sur fond sombre, nuit, satellite ou hybride : symboles et zones ne provoquent plus d'erreur qui arrêtait le dessin.
+[*] App Routes : le clic gauche et les autres apps répondent après une route ; un glisser de carte ne pose plus d'étape.
+[*] Réglages, cartes et captures du mod ne vont plus dans OneDrive : tout reste dans les Documents du disque local (les anciens dossiers sont repris).
+[*] Les réponses des groupes IA s'affichent en notification d'Arma, plus dans le téléphone.
+[*] Bloc-notes refait : une liste, un clic pour écrire, enregistrement automatique, épingler, ajouter sa grille ou l'heure.
+[*] Carte : plus de mention « PERDU », noms lisibles à mi-zoom. BFT : menu LISTE et ORBAT.
+[*] Messages, Réglages, favoris, diapositives et source vidéo du drone : moins de pages redessinées.
+[*] Écran abîmé : huit motifs de fêlures et de bris, différents à chaque choc, désactivables (Réglages).
 [/list]
 
 
@@ -23,6 +32,7 @@
 [*] Réseau maillé MPU5 : largeur de canal, perte par saut réaliste, temps d'antenne partagé, mât d'antenne (avec la liaison réaliste, désactivée par défaut).
 [*] Réseau maillé MPU5 : positions périmées grises puis retirées, gros fichiers par blocs avec reprise, messages sans passerelle (avec la liaison réaliste, désactivée par défaut).
 [*] Réseau maillé MPU5 : 16 groupes de conversation dans l'app Wave Relay, messages de groupe aux abonnés joignables.
+[*] Réseau maillé MPU5 : clés simulées (mécanique de jeu, désactivée par défaut) : chargeur, effacement, messages chiffrés à l'écran.
 [*] Réseau maillé MPU5 (avec la liaison réaliste, désactivée par défaut) : un seul graphe pour l'écran, les données et la voix, calculé sur le serveur, avec un plafond de sauts réglable.
 [*] La liaison COMSPEC Link fait moins de travail à chaque échange avec le téléphone et écrit son journal par paquets.
 [*] L'app Recherchés et les apps du SSE qui lisent les avis d'Athena ne font plus attendre le jeu : liste gardée 5 minutes et rafraîchie en arrière-plan.
