@@ -151,7 +151,8 @@ switch (_act) do {
             ["comspec_atak_native_meshKeysSrv", [player, "request", [false]]] call CBA_fnc_serverEvent;
         };
         // Code TFAR (décision 17) : radio pontée sur la clé de son groupe ; valeur d'origine rendue sinon.
-        if ((missionNamespace getVariable ["comspec_atak_native_mesh_tfar_code", false]) isEqualTo true && {!isNil "TFAR_fnc_setSwRadioCode"}) then {
+        // Retire la voix directe sans la clé : décoché par défaut, coupé par le coupe-circuit, valeur d'origine rendue par "tfRestore".
+        if ((missionNamespace getVariable ["comspec_atak_native_mesh_tfar_code", false]) isEqualTo true && {["voice"] call comspec_atak_native_fnc_radioGuard} && {["has", ["TFAR_fnc_setSwRadioCode"]] call comspec_atak_native_fnc_radioGuard}) then {
             (missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) params [["_me", []]];
             private _want = "";
             if (_me isNotEqualTo [] && {(_me select 0) in ["sw", "lr"]}) then {
@@ -161,15 +162,23 @@ switch (_act) do {
             (uiNamespace getVariable ["COMSPEC_ATAK_MeshTfCode", []]) params [["_radio", ""], ["_code", ""], ["_orig", ""]];
             if (_code isNotEqualTo _want) then {
                 private _isLr = (_me param [0, ""]) isEqualTo "lr";
-                private _target = if (_want isEqualTo "") then { _radio } else { [_me select 1, call TFAR_fnc_activeLrRadio] select _isLr };
+                private _target = if (_want isEqualTo "") then { _radio } else { if (_isLr) then { ["api", ["TFAR_fnc_activeLrRadio", [], []]] call comspec_atak_native_fnc_radioGuard } else { _me select 1 } };
                 if (_want isNotEqualTo "" && {_code isEqualTo ""}) then {
-                    _orig = if (_isLr) then { _target call TFAR_fnc_getLrRadioCode } else { _target call TFAR_fnc_getSwRadioCode };
+                    _orig = ["api", [["TFAR_fnc_getSwRadioCode", "TFAR_fnc_getLrRadioCode"] select _isLr, _target, ""]] call comspec_atak_native_fnc_radioGuard;
                 };
                 private _set = if (_target isEqualType "") then { "TFAR_fnc_setSwRadioCode" } else { "TFAR_fnc_setLrRadioCode" };
-                [_target, [_want, _orig] select (_want isEqualTo "")] call (missionNamespace getVariable [_set, {}]);
+                ["api", [_set, [_target, [_want, _orig] select (_want isEqualTo "")], false]] call comspec_atak_native_fnc_radioGuard;
                 uiNamespace setVariable ["COMSPEC_ATAK_MeshTfCode", [[[], _target] select (_want isNotEqualTo ""), _want, _orig]];
             };
         };
+    };
+    case "tfRestore": {
+        // Code de la radio rendu tel qu'il était (fn_mpuVoice "release").
+        (uiNamespace getVariable ["COMSPEC_ATAK_MeshTfCode", []]) params [["_radio", ""], ["_code", ""], ["_orig", ""]];
+        if (_code isEqualTo "") exitWith {};
+        private _set = if (_radio isEqualType "") then { "TFAR_fnc_setSwRadioCode" } else { "TFAR_fnc_setLrRadioCode" };
+        ["api", [_set, [_radio, _orig], false]] call comspec_atak_native_fnc_radioGuard;
+        uiNamespace setVariable ["COMSPEC_ATAK_MeshTfCode", []];
     };
     case "request": {
         // Client : demande de chargement (chargeur de clés, poste de commandement). Le serveur vérifie.

@@ -16,6 +16,7 @@
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
       kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
       give / report / truth / pack       Zeus (curateur) : donner des papiers, signaler, vraie identité, paquet Athena
+      aiCfg    [moi, sous-op, args]      Zeus : fenêtre de configuration des IA (fn_idAiConfig, éditeur SSE › IA)
       fsmForce [moi, ia, état]           Zeus : impose un état à une IA (automate des IA réalistes, fn_idAiFsm)
       cpCreate [moi, position, réglages] · cpTrigger [moi, personne, réglages] · cpRemove [moi, position]
                                          Zeus : checkpoint IA posé, contrôle déclenché, checkpoint retiré (fn_idCheckpoint)
@@ -48,7 +49,8 @@ if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) ex
 };
 private _floodKey = format ["%1|%2", _owner, _op];
 // Anti-flood des postes distants seulement : les appels internes du serveur (checkpoints IA) passent tous.
-if (isRemoteExecuted && {_op isNotEqualTo "begin"} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
+// La fenêtre du Zeus enchaîne ses demandes (liste, puis papiers de la ligne choisie) : réservée au Zeus, elle n'est pas bridée.
+if (isRemoteExecuted && {!(_op in ["begin", "aiCfg"])} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
 (_reg get "flood") set [_floodKey, time];
 
 private _reply = {
@@ -158,6 +160,12 @@ switch (_op) do {
         _args params ["", ["_name", ""], ["_target", objNull, [objNull, ""]]];
         if !(_name in _dur) exitWith {};
         (_reg get "begin") set [format ["%1|%2|%3", _owner, _name, (if (_target isEqualType "") then { _target } else { netId _target })], time];
+        // « Papiers, s'il vous plaît » : l'IA s'arrête tout de suite. Sinon elle s'éloigne pendant les 2 s de la barre, et
+        // la demande s'interrompt à plus de 4 m (cause d'une demande sans effet sur une IA qui marche).
+        if (_name isEqualTo "ask" && {_target isEqualType objNull} && {!isNull _target} && {alive _target} && {!isPlayer _target} && {[_me, _target, 8] call _near}) then {
+            ["engage", [_target, _me]] call comspec_sse_fnc_idAiFsm;
+            if !(missionNamespace getVariable ["comspec_sse_id_aiFsm", true]) then { ["comspec_sse_bioAnimSubject", [_target, _me, ""], _target] call CBA_fnc_targetEvent; };
+        };
     };
 
     case "ask": {
@@ -225,7 +233,7 @@ switch (_op) do {
         if (_mode isEqualTo "give") then { [_cls, _me, _to] call comspec_sse_fnc_idTransfer; };
         if (isPlayer _to) then {
             ["token", [_me, _d get "id", [_d] call _label, time + _tokenTime], _toOwner] call _reply;
-            [_to, format [["%1 vous présente : %2.", "%1 vous remet : %2."] select (_mode isEqualTo "give"), name _me, [_d] call _label]] call _tell;
+            if (_mode isEqualTo "give") then { [_to, format ["%1 vous remet : %2.", name _me, [_d] call _label]] call _tell; };
         };
         ["comspec_sse_idPresented", [_me, _d get "id", _to]] call CBA_fnc_localEvent;
     };
@@ -571,6 +579,50 @@ switch (_op) do {
             default { ["zone", [_x1, _x2, _x3]] call comspec_sse_fnc_idCover };
         };
         ["zeus", _r] call _reply;
+    };
+
+    case "aiCfg": {
+        // Fenêtre du Zeus (éditeur SSE › IA) : réservée au Zeus ou à l'administrateur.
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {
+            diag_log text format ["[COMSPEC SSE] Identité : configuration d'IA refusée au poste %1.", _owner];
+        };
+        _args params ["", ["_sub", ""], ["_x1", []]];
+        private _tell2 = { ["aiCfg", _this] call _reply; };
+        switch (_sub) do {
+            case "scan": {
+                _x1 params [["_pos", []], ["_radius", 50], ["_list", []]];
+                ["rows", ["scan", [_pos, _radius, _list]] call comspec_sse_fnc_idAiConfig, ["list"] call comspec_sse_fnc_idAiConfig,
+                    ((_reg getOrDefault ["aiPlacements", []]) apply { [_x getOrDefault ["id", 0], _x getOrDefault ["label", ""]] })] call _tell2;
+            };
+            case "apply": {
+                _x1 params [["_units", []], ["_spec", createHashMap]];
+                private _n = ["apply", [_units, _spec]] call comspec_sse_fnc_idAiConfig;
+                ["applied", _n, _units apply { ["row", [_x]] call comspec_sse_fnc_idAiConfig }] call _tell2;
+            };
+            case "docs": { ["docs", ["docs", [_x1 param [0, objNull]]] call comspec_sse_fnc_idAiConfig] call _tell2; };
+            case "docAdd": {
+                ["docAdd", _x1] call comspec_sse_fnc_idAiConfig;
+                ["docs", ["docs", [_x1 param [0, objNull]]] call comspec_sse_fnc_idAiConfig] call _tell2;
+            };
+            case "docMark": {
+                ["docMark", _x1] call comspec_sse_fnc_idAiConfig;
+                ["docs", ["docs", [_x1 param [0, objNull]]] call comspec_sse_fnc_idAiConfig] call _tell2;
+            };
+            case "docOpen": {
+                // Lecture par le Zeus : le papier imprimé, jamais la vérité, comme un joueur qui le tient.
+                private _d = ["doc", [_x1 param [0, ""]]] call comspec_sse_fnc_idRegistry;
+                if ((count _d) > 0) then { ["doc", [[_d] call _pub, createHashMap, objNull, true, ""]] call _reply; };
+            };
+            case "reload": {
+                _reg set ["aiKeptDone", createHashMap];
+                ["load"] call comspec_sse_fnc_idAthenaPack;
+                ["zeus", ["Éléments gardés : rechargement demandé à Athena.", "info"]] call _reply;
+            };
+            case "forget": {
+                private _idK = _x1 param [0, 0];
+                _reg set ["aiPlacements", (_reg getOrDefault ["aiPlacements", []]) select { (_x getOrDefault ["id", 0]) isNotEqualTo _idK }];
+            };
+        };
     };
 
     case "pack": {

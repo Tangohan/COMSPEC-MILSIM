@@ -41,7 +41,9 @@ private _send = {
     params ["_it", "_where", "_target"];
     ["place", [player, _it, _where, _target]] remoteExecCall ["comspec_sse_fnc_editorServer", 2];
 };
-if (_pos isNotEqualTo [] || {!isNull _obj} || {(_item get "type") isEqualTo "case"} || {(_item get "delivery") isEqualTo 2}) exitWith {
+// « En fouille » sans cible : la position du module ne suffit pas, il faut cliquer une personne ou un véhicule.
+private _needsTarget = (_item get "delivery") isEqualTo 1 && {(_item get "type") isNotEqualTo "case"} && {isNull _obj};
+if (!_needsTarget && {_pos isNotEqualTo [] || {!isNull _obj} || {(_item get "type") isEqualTo "case"} || {(_item get "delivery") isEqualTo 2}}) exitWith {
     [_item, _pos, _obj] call _send;
     true
 };
@@ -50,7 +52,7 @@ disableSerialization;
 private _zeus = findDisplay 312;
 private _display = [findDisplay 46, _zeus] select (!isNull _zeus);
 if (isNull _display) exitWith { false };
-["Cliquez dans le monde pour placer. Échap : annuler.", "INFO"] call comspec_sse_fnc_notify;
+[(["Cliquez dans le monde pour placer. Échap : annuler.", "Cliquez une personne ou un véhicule. Échap : annuler."] select _needsTarget), "INFO"] call comspec_sse_fnc_toast;
 uiNamespace setVariable ["comspec_sse_editorPlacing", [_item, _display, _send]];
 private _finish = {
     (uiNamespace getVariable ["comspec_sse_editorPlacingEh", [displayNull, -1, -1]]) params ["_dsp", "_mouse", "_key"];
@@ -77,7 +79,7 @@ private _key = _display displayAddEventHandler ["KeyDown", {
     params ["", "_code"];
     if (_code isNotEqualTo 1) exitWith { false };
     call (uiNamespace getVariable ["comspec_sse_editorPlacingEnd", {}]);
-    ["Placement annulé.", "INFO"] call comspec_sse_fnc_notify;
+    ["Placement annulé.", "INFO"] call comspec_sse_fnc_toast;
     true
 }];
 uiNamespace setVariable ["comspec_sse_editorPlacingEh", [_display, _mouse, _key]];

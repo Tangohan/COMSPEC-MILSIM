@@ -155,6 +155,8 @@ switch (_tab) do {
         _rows pushBack ["segment", "Afficher", [["TOUS", "ALL"] call _fBtn, [format ["ALERTES (%1)", _nAlert], "ALERT"] call _fBtn, [format ["ZEUS (%1)", _nFx], "FX"] call _fBtn]];
         _rows pushBack ["buttons", [
             ["ACTUALISER", { ["scan"] call comspec_atak_native_fnc_adminClient; }, true, true, "Redemande l'état de chaque ATAK (relevé auto toutes les 10 s)"],
+            ["ASSISTANT", { [{ ["open"] call comspec_atak_native_fnc_setupWizard; }] call comspec_atak_native_fnc_nextFrame; }, false, true, "Assistant de configuration du réalisme"],
+            [["COUPER LE LIEN RADIO", "RÉTABLIR LE LIEN RADIO"] select !(["read"] call comspec_atak_native_fnc_radioGuard), { ["cut", [["read"] call comspec_atak_native_fnc_radioGuard]] call comspec_atak_native_fnc_radioGuard; }, false, true, "Le mod ne touche plus aux radios ACRE2 et TFAR : voix normale, effet immédiat, pour tous les joueurs"],
             ["TOUT RÉTABLIR", "resetAll", format ["{ ['zeus', [getPlayerUID _x, 'reset']] call comspec_atak_native_fnc_adminClient; } forEach (allPlayers select { (_x getVariable ['COMSPEC_ATAK_ZeusFx', []]) isNotEqualTo [] });"], "Retire les effets Zeus de tous les joueurs", _nFx > 0] call _confirmBtn
         ]];
         private _shown = switch (_filter) do {

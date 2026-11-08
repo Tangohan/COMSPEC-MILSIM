@@ -1,6 +1,6 @@
 # Réseau maillé MPU5 : notice joueur
 
-Cette notice vaut avec la « Liaison téléphone-radio réaliste », un réglage du serveur, désactivé par défaut. Le chiffrement décrit est une mécanique de jeu : il ne protège rien.
+Cette notice vaut avec la « Liaison téléphone-radio réaliste », un réglage du serveur, activé par défaut (le profil Arcade la coupe). Le chiffrement décrit est une mécanique de jeu : il ne protège rien.
 
 ## Se relier
 

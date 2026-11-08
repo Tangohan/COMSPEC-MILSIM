@@ -61,6 +61,32 @@ public static partial class Extension
     private static string _pendingPairDeviceCode = "";
     private static DateTimeOffset _pendingPairExpiresAt = DateTimeOffset.MinValue;
     private static int _pendingPairPollSeconds = 2;
+    /// <summary>Vrai après UplinkOff : plus aucune requête vers Athena, quel que soit le chemin dans la DLL.</summary>
+    private static volatile bool _uplinkCut;
+
+    private sealed class UplinkCutHandler : DelegatingHandler
+    {
+        public UplinkCutHandler(HttpMessageHandler inner) : base(inner) { }
+
+        private static void Check(HttpRequestMessage request)
+        {
+            if (_uplinkCut && request.RequestUri is { } uri && IsSecretSafeUri(uri))
+                throw new HttpRequestException("uplink_off");
+        }
+
+        protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Check(request);
+            return base.Send(request, cancellationToken);
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Check(request);
+            return base.SendAsync(request, cancellationToken);
+        }
+    }
+
     private static readonly HttpClient HttpClient = CreateHttpClient(SyncTimeoutSeconds);
     /// <summary>Client dédié aux photos (PNG volumineux + liaison dégradée).</summary>
     private static readonly HttpClient UploadHttpClient = CreateHttpClient(UploadTimeoutSeconds);
@@ -150,7 +176,7 @@ public static partial class Extension
             PooledConnectionLifetime = TimeSpan.FromMinutes(5),
             PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
         };
-        var client = new HttpClient(handler)
+        var client = new HttpClient(new UplinkCutHandler(handler))
         {
             Timeout = TimeSpan.FromSeconds(timeoutSeconds),
             // Corps mis en mémoire au plus 64 Mo (2 Go par défaut) : un Content-Length plus grand est refusé avant
@@ -3621,6 +3647,7 @@ public static partial class Extension
     {
         normalized = NormalizeBaseUrl(candidate);
         if (!IsSecretSafeUri(normalized)) return false;
+        _uplinkCut = false;
         _baseUrl = normalized;
         return true;
     }
@@ -3909,11 +3936,12 @@ public static partial class Extension
             return IdentityPackChunk(args);
         if (function == "GetCommunityOrbatChunk")
             return CommunityOrbatChunk(args);
-        // Service Athéna sur « Non » (fn_uplinkHold) : plus d'adresse ni d'authentification en mémoire. La file ne part plus
-        // (DrainQueue attend une authentification), elle reste sur disque pour un retour à « Oui ». Aucune requête.
+        // Service Athéna sur « Non » (fn_uplinkHold) : plus d'authentification en mémoire, et UplinkCutHandler refuse toute
+        // requête vers Athena. La file ne part plus (DrainQueue attend une authentification), elle reste sur disque pour un
+        // retour à « Oui » : TrySetSqfBaseUrl, atteint seulement par les commandes admises par fn_uplinkHold, rouvre.
         if (function == "UplinkOff")
         {
-            _baseUrl = "";
+            _uplinkCut = true;
             _apiKey = "";
             ClearGameBearerForCommunityLink();
             return "OK|off";

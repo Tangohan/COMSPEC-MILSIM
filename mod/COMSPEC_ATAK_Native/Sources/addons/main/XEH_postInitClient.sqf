@@ -78,6 +78,14 @@ missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
 // Mesure ACE Vector 21 transmise (azimut + distance) : marqueur sur la carte de l'ATAK (fn_lasePoint).
 ["ace_vector_rangefinderData", { params [["_d", 0], ["_az", 0], ["_inc", 0]]; ["vector", [_d, _az, _inc]] call comspec_atak_native_fnc_lasePoint; }] call CBA_fnc_addEventHandler;
 ["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
+// Paroles radio des IA du jeu : bulle au-dessus de la tête (fn_aiBubble « chat », réglage « Bulles de réponse des IA »).
+// Ne rien renvoyer d'autre que false : un texte ou true modifierait le message.
+addMissionEventHandler ["HandleChatMessage", {
+    if (missionNamespace getVariable ["comspec_atak_native_ai_bubble", true]) then {
+        ["chat", [_this param [4, objNull], _this param [3, ""], _this param [8, true]]] call comspec_atak_native_fnc_aiBubble;
+    };
+    false
+}];
 addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
 // Cartouches ENI de la carte (fn_mapLabels) : heure de pose et auteur de chaque marqueur, notés à sa création
 // (aucun envoi réseau : chaque client voit l'événement). Table locale bornée, nettoyée à la suppression.
@@ -208,6 +216,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Radio maillée MPU5 et voix ACRE2 (fn_mpu5) : détection de l'objet, réseau voix publié, qui émet.
 ["init"] call comspec_atak_native_fnc_mpu5;
+// Garde-fous ACRE2 et TFAR (fn_radioGuard) : test de version, restauration à la mort, au respawn, à la déconnexion et en fin de mission.
+["init"] call comspec_atak_native_fnc_radioGuard;
+// Assistant de configuration : proposé une fois à l'admin, le temps que Zeus et #login soient connus.
+[{ ["offer"] call comspec_atak_native_fnc_setupWizard; }, [], 30] call comspec_atak_native_fnc_waitAndExec;
 // Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
 ["init"] call comspec_atak_native_fnc_relayTxBadge;
 // Messages des groupes de conversation (fn_meshGroups).

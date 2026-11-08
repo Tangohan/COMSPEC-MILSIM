@@ -26,7 +26,7 @@
     Rendu : fn_screenSurface. Rien n'est envoyé sur le réseau.
 */
 params [["_mode", "tick"], ["_v", 0]];
-private _on = (missionNamespace getVariable ["comspec_atak_native_dirt_sim", true]) && {(["COMSPEC_ATAK_DirtFx", true, "native_dirt"] call comspec_atak_native_fnc_pref) select 0};
+private _on = (missionNamespace getVariable ["comspec_atak_native_dirt_sim", true]) && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1} && {(["COMSPEC_ATAK_DirtFx", true, "native_dirt"] call comspec_atak_native_fnc_pref) select 0};
 if (_mode isEqualTo "enabled") exitWith { _on };
 if (_mode isEqualTo "stainsCount") exitWith { count ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["stains", []]) };
 if (!_on || {!hasInterface} || {!alive player}) exitWith { false };

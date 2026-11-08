@@ -1,5 +1,16 @@
 # COMSPEC SSE — historique des versions
 
+## À venir · Profils d'IA, éditeur SSE en Zeus, papiers et contrôle (version attribuée à la publication)
+
+- **Papiers, s'il vous plaît :** la réponse de l'IA s'affiche au-dessus de sa tête (bulle de l'ATAK), ou en toast hors de vue : plus rien dans le centre de notifications. L'IA s'arrête dès le début de la demande. Une IA sans papiers reçoit une identité générée (réglage « IA sans papiers », 0 % par défaut).
+- **Photo d'identité :** portrait de face dans une scène dédiée, éclairée, sur fond clair, de jour comme de nuit ; portrait de repli sans PiP.
+- **Papiers :** plus de mention SIMULATION sur les pays du jeu, textes sans halo, colonnes lisibles, sceau discret. Mention discrète gardée pour les pays réels stylisés.
+- **App Contrôle ID :** verdict et état des niveaux d'abord, une seule action principale, le reste replié (Contrôle, Signaler, Partager).
+- **Profils IA :** Bureau SSE › Profils IA. Un profil se relie à une IA en Zeus (éditeur SSE › IA de la zone) ou en Eden (attribut, aussi par groupe) ; le lien est gardé par le serveur.
+- **Le profil et les papiers, une seule source :** changer le profil d'identité SSE met à jour les papiers ; un faux ou une couverture reste faux et détectable.
+- **Éditeur SSE :** les cinq types marchent (clics perdus à cause d'une virgule dans une macro), mise en page refaite, état clair (brouillon, enregistré, publié), « Garder pour les prochaines parties ». Module Zeus aussi sans ZEN.
+- **Preuves :** un support numérique s'ouvre sur un écran numérique, plus sur une feuille ; textes humains à la place des codes.
+
 ## 1.4.0 — 08/11/2026 · Identité : photo en direct, carte militaire, preuves, éditeur SSE
 
 **Relancer Arma complètement.** Nouveau PBO `comspec_sse_editor`. Aucun changement du main.pbo de l'ATAK ni de la DLL

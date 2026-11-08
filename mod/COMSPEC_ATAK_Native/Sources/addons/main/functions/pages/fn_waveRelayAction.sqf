@@ -136,9 +136,10 @@ switch (_act) do {
         _res
     };
     case "channel": {
-        if (isNil "acre_api_fnc_setRadioChannel") exitWith {};
+        // Geste explicite du joueur dans l'app, le seul endroit où le mod change un réglage de radio.
+        if !(["read"] call comspec_atak_native_fnc_radioGuard) exitWith {};
         private _ch = (round _v) max 1;
-        private _ok = [_k, _ch] call acre_api_fnc_setRadioChannel;
+        private _ok = ["api", ["acre_api_fnc_setRadioChannel", [_k, _ch], true]] call comspec_atak_native_fnc_radioGuard;
         if (_ok isEqualType true && {!_ok}) then { ["WARNING", format ["Canal %1 indisponible sur cette radio", _ch], 3, 20] call comspec_atak_native_fnc_notify; };
         [{ call _this; }, _render, 0.3] call comspec_atak_native_fnc_waitAndExec;
     };

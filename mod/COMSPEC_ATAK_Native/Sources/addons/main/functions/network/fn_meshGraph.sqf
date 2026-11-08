@@ -252,7 +252,7 @@ switch (_act) do {
     case "serverTick": {
         if (!isServer) exitWith {};
         private _pub = missionNamespace getVariable ["COMSPEC_ATAK_MeshRef", []];
-        if !((missionNamespace getVariable ["comspec_atak_native_mpu_real", false]) isEqualTo true && {(missionNamespace getVariable ["comspec_atak_native_mesh_server", true]) isEqualTo true}) exitWith {
+        if !((["active"] call comspec_atak_native_fnc_mpuLink) && {(missionNamespace getVariable ["comspec_atak_native_mesh_server", true]) isEqualTo true}) exitWith {
             // Réglage décoché en cours de partie : les clients ne gardent pas un graphe périmé.
             if ((_pub param [1, []]) isNotEqualTo []) then { missionNamespace setVariable ["COMSPEC_ATAK_MeshRef", [(_pub select 0) + 1, []], true]; };
         };

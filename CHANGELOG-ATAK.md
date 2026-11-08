@@ -59,8 +59,51 @@ EN : Licence to read again, network padlock, clearer ping, patches with a materi
 - Clés du maillage : `fn_meshKeys` « link », `net_lock_*_ca.paa`, ligne Chiffrement de l'app Wave Relay. `mesh_keys` reste décoché par défaut.
 - Lot 12 : `fn_meshGraph` « weak », « chain », « weakest », « jamAt ». Prévision en mode `full` pour les 16 nœuds les plus proches.
 - Patch Studio : `patch.rvmat`, `patch_smdi.paa`, `material` dans `CfgUnitInsignia` (lu par `BIS_fnc_setUnitInsignia`). Aucune réponse IR propre : le moteur n'a pas ce canal.
-- Service Athéna sur « Non » : plus aucune requête vers Athena. `KickBackgroundWarmup` envoyait un HEAD à chaque chargement du mod ; commande `UplinkOff` à la coupure en cours de session ; appels directs du SSE soumis à `fn_uplinkOff`. Fenêtre Windows de repli alignée sur la note.
+- Service Athéna sur « Non » : plus aucune requête vers Athena. `KickBackgroundWarmup` envoyait un HEAD à chaque chargement du mod ; commande `UplinkOff` et garde des requêtes dans la DLL à la coupure en cours de session ; appels directs du SSE soumis à `fn_uplinkOff`. Fenêtre Windows de repli alignée sur la note.
 - Rien n'a été testé en jeu.
+## À venir : profils d'IA, éditeur SSE en Zeus, réponses des IA au-dessus de la tête (SSE, ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Profils d'IA, éditeur SSE réparé, IA qui répondent au-dessus de leur tête
+- Les réponses des IA pendant un contrôle s'affichent au-dessus de leur tête, plus dans les notifications du téléphone.
+- Le Bureau SSE gère des profils d'IA : Zeus et Eden les relient à une IA, qui en porte l'identité et les papiers.
+- L'éditeur SSE fonctionne pour ses cinq types, et une configuration peut être gardée pour les prochaines parties.
+- Papiers sans mention SIMULATION pour les pays du jeu, photo d'identité refaite, app Contrôle ID allégée.
+EN : AI profiles, SSE editor fixed, AI answering above their heads
+- AI replies during a check appear above their heads, no longer in the phone's notifications.
+- The SSE Office manages AI profiles: Zeus and Eden link them to an AI, which carries the identity and papers.
+- The SSE editor works for all five types, and a configuration can be kept for the next games.
+- Papers without the SIMULATION mention for game countries, ID photo redone, lighter ID Check app.
+
+### Détail
+Rien de testé en jeu au moment de l'écriture : voir les tests en jeu de la PR #1460. Détail : mod/@COMSPEC_SSE/docs/CHANGELOG.md.
+
+## À venir : réalisme activé par défaut, vraies radios ACRE et TFAR d'abord, assistant de configuration, garde-fous radio (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Réseau réaliste par défaut, sur vos vraies radios
+- Le téléphone passe tout seul par votre radio ACRE ou TFAR, avec sa portée réelle. Rien à brancher, rien à ajouter à l'inventaire. Sans radio, il garde son réseau.
+- Nouvel assistant de configuration pour les admins : menu Échap, Réalisme et réseau. Le menu liste maintenant tous les réglages, avec leur valeur et qui les impose.
+- Votre voix ACRE et TFAR ne change pas. La voix relayée par le réseau reste à activer par l'admin, et un bouton coupe tout lien avec la radio.
+- Le site montre votre réseau (MPU5) et vos SMS envoyés, si votre compte est lié. Le mode avion coupe cette remontée.
+EN : Realistic network by default, on your real radios
+- The phone goes through your ACRE or TFAR radio by itself, with its real range. Nothing to plug in, nothing to add to your inventory. Without a radio it keeps its network.
+- New setup assistant for admins: Esc menu, Realism and network. The menu now lists every setting, with its value and who enforces it.
+- Your ACRE and TFAR voice does not change. Voice relayed by the network stays an admin choice, and a button cuts every link with the radio.
+- The site shows your network (MPU5) and the SMS you sent, if your account is linked. Airplane mode stops this.
+
+### Détail technique
+- Défauts : `mpu_real` coché, `mesh_body_mask` coché, `mpu_require` décoché (sinon tout joueur sans radio perd le réseau). `mpu_voice` reste décoché : voix jamais jouée en jeu, la sécurité des radios passe avant. Décochés par conception : `mesh_keys`, `hvt_trace`, `mesh_dev`, `mesh_tfar_code`, `relay_only`. Le profil Arcade coupe aussi la liaison réaliste, les dégâts et la saleté.
+- Serveur existant : CBA ne garde que les valeurs différentes du défaut. Une valeur enregistrée, de mission ou de `cba_settings.sqf` reste ; le panneau affiche « Valeur par défaut » ou « Réglage du serveur ».
+- Radios : `fn_mpu5` "gear" (`acre_baseClass`, puissance lue, `tf_parent`, `tf_range`) ; ni câble ni batterie à nous sur une radio de mod.
+- Garde-fous : `fn_radioGuard` (seule porte vers ACRE et TFAR, versions connues, coupe-circuit, coupure), `fn_mpuVoiceSig` (lecture de table seulement), restauration à la mort, au respawn, à la déconnexion et en fin de mission.
+- Assistant `fn_setupWizard`, catalogue `fn_realismCatalog`, panneau `fn_netConfig` refait. Droits : `fn_adminAllowed`.
+- Site : `Iceman_WR_*` locales posées par `fn_mpu5` "site" pour `/m/radio/mpu` ; `fn_p2pArchive` au format `MP|de|à|texte` pour `/m/radio/prives`.
+- Rien de tout cela n'a tourné en jeu.
+
+---
 ## À venir : tracé de routes et de zones, suppression, formes de la carte (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

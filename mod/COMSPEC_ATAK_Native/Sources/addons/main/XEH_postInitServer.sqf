@@ -22,6 +22,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_dockServer;
 // Contrôle Zeus des ATAK : effets par joueur, brouilleurs de zone, report à la réapparition (fn_zeusServer).
 ["init"] call comspec_atak_native_fnc_zeusServer;
+// Serveur dédié : événements du coupe-circuit radio (hôte : fn_radioGuard est déjà initialisé côté client).
+if (!hasInterface) then { ["init"] call comspec_atak_native_fnc_radioGuard; };
 // CR de fin d'opération imposé en jeu : droits, envoi aux joueurs visés, suivi (fn_debriefServer).
 ["init"] call comspec_atak_native_fnc_debriefServer;
 // Traces civiles des HVT : un contrôle par minute, désactivées par défaut (fn_hvtTrace).
