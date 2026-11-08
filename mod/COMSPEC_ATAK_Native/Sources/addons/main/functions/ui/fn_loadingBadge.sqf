@@ -20,20 +20,20 @@ private _logoW = _logoH * pixelW / pixelH;
 private _padW = _pad * pixelW / pixelH;
 private _textW = 0.135 * safeZoneW;
 private _w = _padW * 3 + _logoW + _textW;
-private _x = safeZoneX + safeZoneW - _w - 0.014 * safeZoneW;
-private _y = safeZoneY + safeZoneH - _h - 0.07 * safeZoneH;
+private _bx = safeZoneX + safeZoneW - _w - 0.014 * safeZoneW;
+private _by = safeZoneY + safeZoneH - _h - 0.07 * safeZoneH;
 private _panel = _display ctrlCreate ["RscText", -1];
 _panel ctrlSetBackgroundColor [0.035, 0.05, 0.045, 0.72];
-_panel ctrlSetPosition [_x, _y, _w, _h];
+_panel ctrlSetPosition [_bx, _by, _w, _h];
 private _line = _display ctrlCreate ["RscText", -1];
 _line ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95];
-_line ctrlSetPosition [_x, _y, _w, pixelH * 2];
+_line ctrlSetPosition [_bx, _by, _w, pixelH * 2];
 private _logo = _display ctrlCreate ["RscPicture", -1];
 _logo ctrlSetText (_data + "brand_athena_ca.paa"); // i18n:brut (image, ou déjà traduit par _tr)
 _logo ctrlSetTextColor [1, 1, 1, 0.96];
-_logo ctrlSetPosition [_x + _padW, _y + _pad, _logoW, _logoH];
+_logo ctrlSetPosition [_bx + _padW, _by + _pad, _logoW, _logoH];
 private _txt = _display ctrlCreate ["RscStructuredText", -1];
-_txt ctrlSetPosition [_x + _padW * 2 + _logoW, _y + _pad * 0.75, _textW, _h - _pad * 1.2];
+_txt ctrlSetPosition [_bx + _padW * 2 + _logoW, _by + _pad * 0.75, _textW, _h - _pad * 1.2];
 _txt ctrlSetStructuredText parseText ((format [
     "<t font='PuristaSemibold' size='1.05' color='#f2f6f3'>COMSPEC ATAK</t><br/><t font='PuristaLight' size='0.8' color='#a9b8b1'>Plateforme Athena</t><br/><t font='EtelkaMonospacePro' size='0.72' color='#5cc76b'>%1</t>",
     ["", "v" + _ver] select (_ver isNotEqualTo "")
