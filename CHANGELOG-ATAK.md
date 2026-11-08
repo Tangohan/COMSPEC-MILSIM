@@ -66,7 +66,7 @@ EN : Routes and zones: drawing fixed, no more surprise OBJ plans
 
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
-### Résumé joueur
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : App Explosifs refaite et nouveau déclencheur réseau
 - Nouvel objet « Déclencheur réseau » : à la pose d'une charge ACE, choisissez-le dans le menu Déclencheur. La charge se commande ensuite depuis l'app Explosifs, sans clacker et à distance.
