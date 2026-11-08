@@ -30,6 +30,10 @@ param(
     [ValidateSet('Auto', 'Init', 'Autotest')][string]$Lancement = 'Auto',
     [switch]$PleinEcran,
     [switch]$AvecSon,
+    # Vérification de la licence (« ne transmet rien » si le joueur répond Non) : sans le proxy mort, toute connexion vers Athena
+    # donne un échec. Sans ce paramètre, le proxy bloque les DLL du mod et le test ne prouve rien sur ce point.
+    [switch]$SansProxy,
+    [int]$LargeurCapture = 1280,
     [string]$Sortie = ''
 )
 $ErrorActionPreference = 'Stop'
@@ -137,7 +141,107 @@ foreach ($f in $partages) {
         $sauvegardes[$f] = $copie
     }
 }
-$dirsCaptures = @((Join-Path $Docs "Arma 3 - Other Profiles\$Profil\Screenshots"), (Join-Path $Docs 'Arma 3\Screenshots'))
+
+# ---------- Captures ----------
+# La commande screenshot d'Arma n'enregistre que la scène 3D, sans aucune interface (téléphone compris), en PNG de 17 Mo avec un
+# plafond de 250 Mo par dossier : la mission écrit AUTOTEST|SHOT|nom au RPT, ce script capture la fenêtre réelle en JPEG.
+$dossierCaptures = Join-Path $Sortie 'captures'
+[void](New-Item -ItemType Directory -Force -Path $dossierCaptures)
+Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Linq;
+using System.Runtime.InteropServices;
+public static class AtCap {
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int L, T, R, B; }
+    [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
+    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr h);
+    [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr h, int c);
+    [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
+    [DllImport("user32.dll")] static extern bool GetClientRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll")] static extern bool ClientToScreen(IntPtr h, ref POINT p);
+    [DllImport("user32.dll")] static extern bool PrintWindow(IntPtr h, IntPtr dc, uint f);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, IntPtr p);
+    [DllImport("user32.dll")] static extern bool AttachThreadInput(uint a, uint b, bool f);
+    [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+    [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+    public static void Init() { SetProcessDPIAware(); }
+    public static bool Front(IntPtr h) {
+        if (GetForegroundWindow() == h) return true;
+        if (IsIconic(h)) ShowWindow(h, 9);
+        uint me = GetCurrentThreadId();
+        uint fg = GetWindowThreadProcessId(GetForegroundWindow(), IntPtr.Zero);
+        uint tg = GetWindowThreadProcessId(h, IntPtr.Zero);
+        AttachThreadInput(me, fg, true); AttachThreadInput(me, tg, true);
+        BringWindowToTop(h); SetForegroundWindow(h);
+        AttachThreadInput(me, fg, false); AttachThreadInput(me, tg, false);
+        System.Threading.Thread.Sleep(80);
+        return GetForegroundWindow() == h;
+    }
+    // Rend "premierplan|printwindow, largeur x hauteur, UNIE si l'image est d'une seule teinte (rendu noir)".
+    public static string Capture(IntPtr h, string path, int maxW) {
+        bool front = Front(h);
+        RECT r; GetClientRect(h, out r);
+        int w = r.R - r.L, ht = r.B - r.T;
+        if (w <= 0 || ht <= 0) return "ECHEC|fenêtre vide";
+        POINT o = new POINT(); ClientToScreen(h, ref o);
+        using (Bitmap b = new Bitmap(w, ht, PixelFormat.Format24bppRgb)) {
+            using (Graphics g = Graphics.FromImage(b)) {
+                if (front) { g.CopyFromScreen(o.X, o.Y, 0, 0, new Size(w, ht)); }
+                else { IntPtr dc = g.GetHdc(); PrintWindow(h, dc, 3); g.ReleaseHdc(dc); }
+            }
+            int tw = Math.Min(maxW, w), th = (int)(ht * ((double)tw / w));
+            using (Bitmap s = new Bitmap(tw, th, PixelFormat.Format24bppRgb)) {
+                using (Graphics g2 = Graphics.FromImage(s)) { g2.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic; g2.DrawImage(b, 0, 0, tw, th); }
+                double sum = 0, sq = 0; int n = 0;
+                for (int y = 0; y < th; y += Math.Max(1, th / 32)) for (int x = 0; x < tw; x += Math.Max(1, tw / 32)) { Color c = s.GetPixel(x, y); double v = c.R + c.G + c.B; sum += v; sq += v * v; n++; }
+                double sd = Math.Sqrt(Math.Max(0, sq / n - (sum / n) * (sum / n)));
+                ImageCodecInfo jpg = ImageCodecInfo.GetImageEncoders().First(e => e.FormatID == ImageFormat.Jpeg.Guid);
+                EncoderParameters ep = new EncoderParameters(1); ep.Param[0] = new EncoderParameter(Encoder.Quality, 82L);
+                s.Save(path, jpg, ep);
+                return (front ? "premierplan" : "printwindow") + "|" + w + "x" + ht + (sd < 6 ? "|UNIE" : "");
+            }
+        }
+    }
+    // Planches contact : vignettes étiquetées, pour tout regarder d'un coup.
+    public static void Planche(string[] files, string path, int cols, int thumbW) {
+        int thumbH = (int)(thumbW * 0.75), lab = 22, rows = (int)Math.Ceiling(files.Length / (double)cols);
+        using (Bitmap b = new Bitmap(cols * thumbW, rows * (thumbH + lab), PixelFormat.Format24bppRgb))
+        using (Graphics g = Graphics.FromImage(b))
+        using (Font f = new Font("Arial", 11f, FontStyle.Bold)) {
+            g.Clear(Color.Black);
+            for (int i = 0; i < files.Length; i++) {
+                int x = (i % cols) * thumbW, y = (i / cols) * (thumbH + lab);
+                using (Image im = Image.FromFile(files[i])) {
+                    double k = Math.Min((double)thumbW / im.Width, (double)thumbH / im.Height);
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    g.DrawImage(im, x, y + lab, (int)(im.Width * k), (int)(im.Height * k));
+                }
+                g.DrawString(System.IO.Path.GetFileNameWithoutExtension(files[i]), f, Brushes.Yellow, x + 2, y + 2);
+            }
+            ImageCodecInfo jpg = ImageCodecInfo.GetImageEncoders().First(e => e.FormatID == ImageFormat.Jpeg.Guid);
+            EncoderParameters ep = new EncoderParameters(1); ep.Param[0] = new EncoderParameter(Encoder.Quality, 85L);
+            b.Save(path, jpg, ep);
+        }
+    }
+}
+'@
+[AtCap]::Init()
+$journalCaptures = New-Object System.Collections.ArrayList
+function Invoke-Capture($P, [string]$Nom) {
+    $propre = $Nom -replace '[^\w\-]', '_'
+    $chemin = Join-Path $dossierCaptures "$propre.jpg"
+    $h = $P.MainWindowHandle
+    if ($h -eq [IntPtr]::Zero) { $P.Refresh(); $h = $P.MainWindowHandle }
+    $info = 'ECHEC|pas de fenêtre'
+    if ($h -ne [IntPtr]::Zero) {
+        try { $info = [AtCap]::Capture($h, $chemin, $LargeurCapture) } catch { $info = "ECHEC|$($_.Exception.Message)" }
+    }
+    [void]$journalCaptures.Add("$Nom|$info")
+}
 
 # ---------- Lancement ----------
 function Get-ArgsArma([string]$Plan, [string]$AutotestCfg) {
@@ -161,8 +265,10 @@ function Start-Arma([string]$Arguments) {
     $psi.UseShellExecute = $false
     # Proxy mort pour ce seul processus : les DLL du mod (.NET, HttpClient.DefaultProxy) ne joignent plus Internet.
     # Le mod lui-même ouvre une connexion à Athena au chargement (Warmup), même en mode hors ligne.
-    foreach ($v in 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY') { $psi.EnvironmentVariables[$v] = 'http://127.0.0.1:9' }
-    $psi.EnvironmentVariables['NO_PROXY'] = '127.0.0.1,localhost'
+    if (-not $SansProxy) {
+        foreach ($v in 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY') { $psi.EnvironmentVariables[$v] = 'http://127.0.0.1:9' }
+        $psi.EnvironmentVariables['NO_PROXY'] = '127.0.0.1,localhost'
+    }
     return [Diagnostics.Process]::Start($psi)
 }
 
@@ -184,11 +290,26 @@ function Read-Partage([string]$Chemin) {
     try { $r = New-Object IO.StreamReader($fs, [Text.Encoding]::UTF8); return $r.ReadToEnd() } finally { $fs.Dispose() }
 }
 
+# Connexions du processus : première vue et nom d'hôte d'après le cache DNS de Windows (le relevé d'adresse seul ne dit pas qui c'est).
 $connexions = @{}
+$debutRelevé = Get-Date
+function Get-NomsDns {
+    @(Get-DnsClientCache -ErrorAction SilentlyContinue | ForEach-Object { "$($_.Entry)=$($_.Data)" })
+}
+$dnsAvant = @{}
+foreach ($n in (Get-NomsDns)) { $dnsAvant[$n] = $true }
 function Note-Connexions([int]$ProcId) {
     Get-NetTCPConnection -OwningProcess $ProcId -State Established -ErrorAction SilentlyContinue |
         Where-Object { $_.RemoteAddress -notmatch '^(127\.|::1|0\.0\.0\.0)' } |
-        ForEach-Object { $connexions["$($_.RemoteAddress):$($_.RemotePort)"] = $true }
+        ForEach-Object {
+            $cle = "$($_.RemoteAddress):$($_.RemotePort)"
+            if (-not $connexions.ContainsKey($cle)) {
+                $ip = $_.RemoteAddress
+                $nom = @(Get-DnsClientCache -ErrorAction SilentlyContinue | Where-Object { $_.Data -eq $ip } | ForEach-Object { $_.Entry } | Select-Object -Unique) -join ','
+                $connexions[$cle] = @{ Ip = $ip; Vu = [int]((Get-Date) - $debutRelevé).TotalSeconds; Nom = $nom; Fin = 0 }
+            }
+            $connexions[$cle].Fin = [int]((Get-Date) - $debutRelevé).TotalSeconds
+        }
 }
 
 function Invoke-Plan([string]$Plan) {
@@ -210,6 +331,7 @@ function Invoke-Plan([string]$Plan) {
     Write-Host "Lancement ($Plan) : $ArmaExe $arguments"
     Add-Content -LiteralPath (Join-Path $Sortie 'lancement.txt') -Value ("[{0}] {1} {2}" -f $debut, $ArmaExe, $arguments) -Encoding UTF8
     $parent = Start-Arma $arguments
+    $debutRelevé = $debut
     $relance = $false
     $etat = 'EN_COURS'
     $rpt = $null
@@ -217,19 +339,48 @@ function Invoke-Plan([string]$Plan) {
     $limiteDebut = $debut.AddSeconds($DemarrageMaxSecondes)
     $finVueA = $null
     $vuDebut = $false
+    $vuFin = $false
+    $pos = [int64]0
+    $reste = ''
+    $prochainReleve = Get-Date
     try {
         while ($true) {
-            Start-Sleep -Seconds 5
+            Start-Sleep -Milliseconds 150
             $p = Get-NotreArma $parent
             if ($p -and $parent.HasExited) { $relance = $true }
-            if ($p) { Note-Connexions $p.Id }
+            if ($p -and (Get-Date) -ge $prochainReleve) { Note-Connexions $p.Id; $prochainReleve = (Get-Date).AddSeconds(3) }
             if (-not $rpt) {
                 $rpt = Get-ChildItem -LiteralPath $RptDir -Filter '*.rpt' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -ge $debut } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
             }
-            $texteRpt = ''
-            if ($rpt) { try { $texteRpt = Read-Partage $rpt.FullName } catch { $texteRpt = '' } }
-            if (-not $vuDebut -and $texteRpt -match 'AUTOTEST\|DEBUT') { $vuDebut = $true; Write-Host 'Mission démarrée.' }
-            if ($texteRpt -match 'AUTOTEST\|FIN') {
+            # Lignes nouvelles du RPT seulement : la mission attend la capture quelques instants.
+            $neuf = ''
+            if ($rpt) {
+                try {
+                    $fs = [IO.File]::Open($rpt.FullName, 'Open', 'Read', 'ReadWrite,Delete')
+                    try {
+                        if ($fs.Length -gt $pos) {
+                            [void]$fs.Seek($pos, 'Begin')
+                            $buf = New-Object byte[] ($fs.Length - $pos)
+                            $n = $fs.Read($buf, 0, $buf.Length)
+                            $pos += $n
+                            $neuf = [Text.Encoding]::UTF8.GetString($buf, 0, $n)
+                        }
+                    } finally { $fs.Dispose() }
+                } catch { $neuf = '' }
+            }
+            if ($neuf) {
+                $tout = $reste + $neuf
+                $i = $tout.LastIndexOf("`n")
+                if ($i -ge 0) {
+                    $reste = $tout.Substring($i + 1)
+                    foreach ($ligne in $tout.Substring(0, $i).Split("`n")) {
+                        if ($ligne -match 'AUTOTEST\|SHOT\|([^"\r]+)') { if ($p) { Invoke-Capture $p $Matches[1] } }
+                        elseif ($ligne -match 'AUTOTEST\|DEBUT') { if (-not $vuDebut) { $vuDebut = $true; Write-Host 'Mission démarrée.'; if ($p) { [void][AtCap]::Front($p.MainWindowHandle) } } }
+                        elseif ($ligne -match 'AUTOTEST\|FIN') { $vuFin = $true }
+                    }
+                } else { $reste = $tout }
+            }
+            if ($vuFin) {
                 if (-not $finVueA) { $finVueA = Get-Date; Write-Host 'Mission terminée : fermeture du jeu.' }
                 if (-not $p -or ((Get-Date) - $finVueA).TotalSeconds -gt 20) { $etat = 'FINI'; break }
             }
@@ -352,29 +503,61 @@ L ''
 L 'À contrôler à l''œil sur les captures :'
 foreach ($x in $visuel) { L "  $x" }
 L ''
-$dossierCaptures = Join-Path $Sortie 'captures'
-[void](New-Item -ItemType Directory -Force -Path $dossierCaptures)
-$copiees = 0
-foreach ($d in $dirsCaptures) {
-    if (Test-Path -LiteralPath $d) {
-        Get-ChildItem -LiteralPath $d -Filter 'CAT_*.png' -ErrorAction SilentlyContinue | Where-Object { $res.Debut -and $_.LastWriteTime -ge $res.Debut } | ForEach-Object {
-            Copy-Item -LiteralPath $_.FullName -Destination $dossierCaptures -Force
-            $copiees++
-        }
-    }
+$journalCaptures | Set-Content -LiteralPath (Join-Path $Sortie 'captures.txt') -Encoding UTF8
+$imgs = @(Get-ChildItem -LiteralPath $dossierCaptures -Filter '*.jpg' | Sort-Object Name)
+$ratees = @($journalCaptures | Where-Object { $_ -match '\|ECHEC|\|UNIE|\|printwindow' })
+L "Captures : $($imgs.Count) fichiers sur $($shots.Count) demandés, dans $dossierCaptures"
+foreach ($x in ($ratees | Select-Object -First 20)) { L "  $x" }
+# Planches contact : 12 vignettes par planche.
+$dossierPlanches = Join-Path $Sortie 'planches'
+[void](New-Item -ItemType Directory -Force -Path $dossierPlanches)
+$np = 0
+for ($k = 0; $k -lt $imgs.Count; $k += 12) {
+    $np++
+    $lot = @($imgs | Select-Object -Skip $k -First 12 | ForEach-Object { $_.FullName })
+    try { [AtCap]::Planche([string[]]$lot, (Join-Path $dossierPlanches ('planche_{0:00}.jpg' -f $np)), 3, 640) } catch { L "  Planche $np impossible : $($_.Exception.Message)" }
 }
-L "Captures : $copiees fichiers sur $($shots.Count) demandés, dans $dossierCaptures"
+L "Planches contact : $np, dans $dossierPlanches"
+L ''
+$figees = @($perf | ForEach-Object { if ($_ -match 'Image figée : (\d+) ms, dont environ (\d+) ms.*page (\w*),') { [pscustomobject]@{ Ms = [int]$Matches[1]; Mod = [int]$Matches[2]; Page = $Matches[3] } } })
+if ($figees.Count) {
+    L ("Images figées : {0}, pire {1} ms, part mesurée dans les boucles du mod au plus {2} ms" -f $figees.Count, ($figees | Measure-Object Ms -Maximum).Maximum, ($figees | Measure-Object Mod -Maximum).Maximum)
+    foreach ($g in ($figees | Group-Object Page | Sort-Object Count -Descending | Select-Object -First 8)) { L ("  {0} : {1} fois, pire {2} ms" -f $g.Name, $g.Count, ($g.Group | Measure-Object Ms -Maximum).Maximum) }
+}
+$bilans = @($perf | ForEach-Object { if ($_ -match 'Boucles 30 s : (\d+) img/s') { [int]$Matches[1] } })
+if ($bilans.Count) { L ("Bilans de 30 s : {0}, de {1} à {2} img/s" -f $bilans.Count, ($bilans | Measure-Object -Minimum).Minimum, ($bilans | Measure-Object -Maximum).Maximum) }
 L ''
 $ts = Get-Process -Name 'ts3client_win64', 'ts3client_win32', 'TeamSpeak' -ErrorAction SilentlyContinue
 L ("TeamSpeak pendant le test : {0}" -f $(if ($ts) { 'lancé (le test ne l''utilise pas)' } else { 'absent : ACRE tourne sans plugin, aucun son ni parole testés' }))
 if ($res.Relance) { L '[ATTENTION] Arma s''est relancé (Steam ?) : proxy et paramètres d''environnement peut-être perdus, voir les connexions ci-dessous.' }
-L ("Connexions Internet du processus Arma observées (toutes les 5 s) : {0}" -f $(if ($connexions.Count) { ($connexions.Keys -join ', ') } else { 'aucune' }))
+$cAthena = @()
+L ("Proxy mort sur les DLL du mod : {0}" -f $(if ($SansProxy) { 'NON (-SansProxy)' } else { 'oui' }))
+if ($connexions.Count) {
+    L 'Connexions Internet du processus Arma (relevé toutes les 3 s, depuis le lancement) :'
+    foreach ($c in ($connexions.Keys | Sort-Object)) {
+        $e = $connexions[$c]
+        L ("  {0}  de {1} s à {2} s  nom DNS : {3}" -f $c, $e.Vu, $e.Fin, $(if ($e.Nom) { $e.Nom } else { '(inconnu)' }))
+    }
+} else { L 'Connexions Internet du processus Arma : aucune vue' }
+$dnsApres = @(Get-NomsDns | Where-Object { -not $dnsAvant.ContainsKey($_) })
+L "Noms résolus par Windows pendant le test (tout le PC, $($dnsApres.Count)) :"
+foreach ($x in ($dnsApres | Select-Object -First 40)) { L "  $x" }
+$ipAthena = @()
+foreach ($hote in 'athena.ttrd.fr', 'comspec.ttrd.fr', 'ttrd.fr') { try { $ipAthena += [Net.Dns]::GetHostAddresses($hote) | ForEach-Object { $_.ToString() } } catch { } }
+$cAthena = @($connexions.Keys | Where-Object { ($ipAthena -contains $connexions[$_].Ip) -or ($connexions[$_].Nom -match 'ttrd\.fr') })
+$dnsAthena = @($dnsApres | Where-Object { $_ -match 'ttrd\.fr' })
+if ($SansProxy) {
+    if ($cAthena.Count -or $dnsAthena.Count) { L ("LICENCE KO : le jeu a joint Athena, réponse Non : {0} {1}" -f ($cAthena -join ', '), ($dnsAthena -join ', ')) }
+    else { L 'LICENCE OK : aucune connexion ni résolution DNS vers Athena, réponse Non, proxy retiré' }
+} else {
+    L 'Licence « ne transmet rien » : NON vérifiée par ce passage (proxy mort). Relancer avec -SansProxy une fois #1461 fusionnée.'
+}
 if ($rendus.Count) { L ("Fichiers partagés restaurés depuis la sauvegarde : {0}" -f ($rendus -join ', ')) }
 L "Profil de test : $(Join-Path $Docs "Arma 3 - Other Profiles\$Profil") (profil $Profil, à supprimer à volonté)"
 
 $code = 0
 if ($res.Etat -ne 'FINI') { $code = 2 }
-elseif ($ko.Count -gt 0 -or $erreurs.Count -gt 0) { $code = 1 }
+elseif ($ko.Count -gt 0 -or $erreurs.Count -gt 0 -or ($SansProxy -and ($cAthena.Count -gt 0 -or $dnsAthena.Count -gt 0))) { $code = 1 }
 L ''
 L "Code de sortie : $code (0 bon, 1 KO ou erreur COMSPEC, 2 mission non terminée)"
 $fichierRapport = Join-Path $Sortie 'rapport.txt'

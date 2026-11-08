@@ -47,10 +47,29 @@ if (_loaded isNotEqualTo _lang) then {
         _langs select { ((_x select 0) isEqualTo "en") || {(_x select 0) isEqualTo _lang} }
     };
     private _merged = createHashMap;
+    // Lu ligne à ligne (une paire par ligne, virgule de fin facultative) : une virgule oubliée après une fusion de branches
+    // ne coûte rien, une ligne cassée ne perd qu'elle. Lu d'un bloc, parseSimpleArray s'arrête à la première faute et toute la
+    // suite du dictionnaire est perdue. Fichier écrit autrement (tout sur une ligne, paires sur plusieurs lignes) : lecture d'un bloc.
+    private _parseLang = {
+        params ["_raw"];
+        if (_raw isEqualTo "") exitWith { [] };
+        private _rows = [];
+        {
+            private _l = trim _x;
+            private _len = count _l;
+            if (_len > 0 && {(_l select [_len - 1]) isEqualTo ","}) then { _l = trim (_l select [0, _len - 1]); _len = count _l; };
+            if (_len > 4 && {(_l select [0, 2]) isEqualTo "["""} && {(_l select [_len - 2]) isEqualTo """]"}) then {
+                private _row = parseSimpleArray _l;
+                if (!isNil "_row" && {_row isEqualType []}) then { _rows pushBack _row; };
+            };
+        } forEach (_raw splitString (toString [13, 10]));
+        if (_rows isNotEqualTo []) exitWith { _rows };
+        private _all = parseSimpleArray _raw;
+        if (isNil "_all" || {!(_all isEqualType [])}) exitWith { [] };
+        _all
+    };
     {
-        private _raw = loadFile (_x select 2);
-        private _arr = if (_raw isEqualTo "") then { [] } else { parseSimpleArray _raw };
-        if !(_arr isEqualType []) then { _arr = []; };
+        private _arr = [loadFile (_x select 2)] call _parseLang;
         private _n = 0;
         {
             // Une ligne = ["français", "traduction"] ; une 3e colonne (rappel de l'anglais pour les traducteurs) est

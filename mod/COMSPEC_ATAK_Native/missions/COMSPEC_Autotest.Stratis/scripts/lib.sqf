@@ -22,12 +22,11 @@ AT_fnc_visuel = { diag_log format ["AUTOTEST|VISUEL|%1|%2", AT_Nom, _this]; };
 
 AT_fnc_shot = {
     params ["_nom"];
-    uiSleep 0.5;
+    // La commande screenshot n'enregistre pas l'interface : tools/ingame_test.ps1 surveille le RPT et capture la fenêtre.
+    uiSleep 1.2; // la page a le temps d'être dessinée
     AT_Shots = AT_Shots + 1;
-    private _file = format ["CAT_%1_%2.png", [AT_Shots, 3] call CBA_fnc_formatNumber, _nom];
-    private _ok = screenshot _file;
-    diag_log format ["AUTOTEST|SHOT|%1|%2|%3", AT_Nom, _file, _ok];
-    uiSleep 0.7;
+    diag_log format ["AUTOTEST|SHOT|%1_%2", [AT_Shots, 3] call CBA_fnc_formatNumber, _nom];
+    uiSleep 1.2; // la capture a le temps de partir
 };
 
 AT_fnc_wait = {

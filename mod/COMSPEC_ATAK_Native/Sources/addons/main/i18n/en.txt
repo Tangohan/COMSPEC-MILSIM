@@ -19179,7 +19179,7 @@
 ["Antenne satellite déployée", "Deployed satellite antenna"],
 ["Antenne omnidirectionnelle déployée", "Deployed omnidirectional antenna"],
 ["Antenne pliée. Clic droit ici ou ACE, Équipement : Déployer. Relais raccordé, courte portée locale.", "Folded antenna. Right-click here or ACE, Equipment: Deploy. Relay with an uplink, short local range."],
-["Mât démonté. Clic droit ici ou ACE, Équipement : Déployer. Répéteur : il lui faut un relais raccordé à portée.", "Dismantled mast. Right-click here or ACE, Equipment: Deploy. Repeater: it needs a relay with an uplink in range."]
+["Mât démonté. Clic droit ici ou ACE, Équipement : Déployer. Répéteur : il lui faut un relais raccordé à portée.", "Dismantled mast. Right-click here or ACE, Equipment: Deploy. Repeater: it needs a relay with an uplink in range."],
 ["Antenne pliée. ACE : Équipement, Déployer. Relais raccordé, courte portée locale.", "Folded antenna. ACE: Equipment, Deploy. Relay with an uplink, short local range."],
 ["Mât démonté. ACE : Équipement, Déployer. Répéteur : il lui faut un relais raccordé à portée.", "Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range."],
 ["CENTRE ZEUS", "ZEUS CENTRE"],
@@ -20010,5 +20010,5 @@
 ["Mission : accepter puis clôturer", "Mission: accept then close"],
 ["Répond à la dernière mission reçue, téléphone rangé.", "Answers the latest mission received, phone stowed."],
 ["Répond à la dernière mission reçue, téléphone rangé : un appui l'accepte, le suivant la clôture.", "Answers the latest mission received, phone stowed: one press accepts it, the next closes it."],
-["Cette app vient d'être retirée par le serveur", "This app has just been removed by the server"],
+["Cette app vient d'être retirée par le serveur", "This app has just been removed by the server"]
 ]
