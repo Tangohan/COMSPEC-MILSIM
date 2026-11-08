@@ -66,6 +66,7 @@ $requiredPbos = @(
     'comspec_sse_digital.pbo',
     'comspec_sse_biometrics.pbo',
     'comspec_sse_identity.pbo',
+    'comspec_sse_editor.pbo',
     'comspec_sse_analysis.pbo',
     'comspec_sse_campaign.pbo',
     'comspec_sse_guide.pbo',

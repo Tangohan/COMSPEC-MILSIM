@@ -75,7 +75,8 @@ switch (_op) do {
             if (!isNil "comspec_atak_native_fnc_vibrate") then { [] call comspec_atak_native_fnc_vibrate; };
             [format ["Contrôle ID : %1 — %2", toUpper (_rec get "verdict"), _rec get "subjName"], "WARNING", "", "IDCHECK"] call comspec_sse_fnc_notify;
         };
-        if (_lvl isEqualTo 3 && {missionNamespace getVariable ["comspec_sse_id_autoTransmit", false]}) then { [_rec] call comspec_sse_fnc_idAthenaSubmit; };
+        // Réglage de la communauté (paquet Athena), sinon réglage CBA de la mission.
+        if (_lvl isEqualTo 3 && {missionNamespace getVariable ["comspec_sse_id_autoTransmitCommunity", missionNamespace getVariable ["comspec_sse_id_autoTransmit", true]]}) then { [_rec] call comspec_sse_fnc_idAthenaSubmit; };
         call _render;
     };
 };

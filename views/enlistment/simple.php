@@ -1,19 +1,13 @@
 <?php
+declare(strict_types=1);
+
 $tenant = $tenant ?? [];
 $formAction = $formAction ?? url('enlistment');
 $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
 $communityConfig = $communityConfig ?? [];
 $requireAiAck = array_key_exists('require_ai_ack', $communityConfig) ? (bool) $communityConfig['require_ai_ack'] : true;
-$ctx = $enlistmentContext ?? [];
-$canUseAccount = !empty($ctx['canUseAccount']);
-$prefill = array_merge(
-    ['full_name' => '', 'email' => ''],
-    is_array($ctx['prefill'] ?? null) ? $ctx['prefill'] : []
-);
-$platformEmail = trim((string) ($ctx['platform_email'] ?? ''));
-$showPlatformEmailOption = $platformEmail !== '';
-$hasMembershipOnTarget = !empty($ctx['hasMembershipOnTarget']);
-$switchToTargetUrl = $ctx['switchToTargetUrl'] ?? null;
+$enlistmentContext = is_array($enlistmentContext ?? null) ? $enlistmentContext : [];
+$isAuthenticated = !empty($enlistmentContext['isAuthenticated']);
 $showMilsimUnavailableNotice = $showMilsimUnavailableNotice ?? false;
 $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
 $selectedRecruitmentOpening = is_array($selectedRecruitmentOpening ?? null) ? $selectedRecruitmentOpening : null;
@@ -27,28 +21,11 @@ $simpleMotivationLabel = (string) ($simpleMotivation['why_join']['label'] ?? 'Mo
 $simpleMotivationPlaceholder = (string) ($simpleMotivation['why_join']['placeholder'] ?? 'Pourquoi souhaitez-vous rejoindre la communauté ?');
 $simpleMotivationHelp = trim((string) ($simpleMotivation['why_join']['help'] ?? ''));
 $simpleMotivationRequired = !empty($simpleMotivation['why_join']['required']);
+$accountTheme = 'light';
 ?>
-<script>
-document.addEventListener('alpine:init', function () {
-    Alpine.data('simpleEnlistmentForm', function () {
-        return {
-            flow: <?= json_encode($canUseAccount ? 'account' : 'guest', JSON_UNESCAPED_UNICODE) ?>,
-            showConsentModal: false,
-            usePlatformEmail: false,
-            platformEmail: <?= json_encode($platformEmail, JSON_UNESCAPED_UNICODE) ?>,
-            prefillEmail: <?= json_encode($prefill['email'] ?? '', JSON_UNESCAPED_UNICODE) ?>,
-            syncGuestEmail: function () {
-                var el = document.querySelector('#simple-enlist-email');
-                if (!el) return;
-                el.value = this.usePlatformEmail ? this.platformEmail : this.prefillEmail;
-            },
-        };
-    });
-});
-</script>
-<div class="max-w-2xl mx-auto px-4 py-12" x-data="simpleEnlistmentForm">
+<div class="max-w-2xl mx-auto px-4 py-12">
     <h1 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Inscription — <?= htmlspecialchars($tenantName) ?></h1>
-    <p class="text-sm text-slate-500 mb-6">Mode simple activé : formulaire condensé pour onboarding rapide.</p>
+    <p class="text-sm text-slate-600 mb-6">Formulaire condensé pour une inscription rapide.</p>
 
     <?php if ($showMilsimUnavailableNotice): ?>
         <div class="mb-6 p-5 rounded-2xl bg-amber-50 border border-amber-300 text-sm text-amber-950 shadow-sm">
@@ -57,24 +34,9 @@ document.addEventListener('alpine:init', function () {
         </div>
     <?php endif; ?>
 
-    <?php if ($canUseAccount): ?>
-        <div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900">
-            <p class="font-bold">Compte Athena détecté</p>
-            <p class="mt-1 text-emerald-800/90">Vous pouvez envoyer la candidature avec les données de votre compte (après consentement) ou remplir en invité.</p>
-        </div>
-    <?php elseif ($hasMembershipOnTarget && $switchToTargetUrl): ?>
-        <div class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-sm text-amber-950">
-            <p class="font-bold">Autre communauté active</p>
-            <p class="mt-1">Vous avez un compte sur cette communauté : basculez le contexte pour utiliser le dossier membre local (optionnel si le mode compte est déjà proposé).</p>
-            <a href="<?= htmlspecialchars($switchToTargetUrl) ?>" class="mt-3 inline-flex text-xs font-black uppercase tracking-widest text-amber-950 underline">Basculer et continuer</a>
-        </div>
+    <?php if (!$isAuthenticated): ?>
+        <?php require base_path('views/enlistment/_account_gate.php'); ?>
     <?php else: ?>
-        <div class="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-700">
-            <p class="font-bold">Compte Athena</p>
-            <p class="mt-1">Vous avez déjà un compte ? <a href="<?= htmlspecialchars(url('login')) ?>" class="font-semibold text-slate-900 underline">Connectez-vous</a> pour l’associer à votre candidature. Sinon, continuez en invité.</p>
-        </div>
-    <?php endif; ?>
-
     <form id="formulaire-inscription-simple" method="post" action="<?= htmlspecialchars($simpleEnlistmentUrl) ?>" class="space-y-5 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <?= \App\Core\Csrf::field() ?>
         <?php require base_path('views/enlistment/_invite_link.php'); ?>
@@ -89,95 +51,24 @@ document.addEventListener('alpine:init', function () {
                 <?php require base_path('views/partials/enlistment_member_opening_insight.php'); ?>
             <?php endif; ?>
         <?php endif; ?>
-        <input type="hidden" name="enlistment_flow" :value="flow">
 
-        <?php if ($canUseAccount): ?>
-            <div class="flex rounded-xl border border-slate-200 p-1 bg-slate-50">
-                <button type="button" @click="flow = 'account'" :class="flow === 'account' ? 'bg-white shadow text-slate-900' : 'text-slate-500'"
-                    class="flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition">Compte Athena</button>
-                <button type="button" @click="flow = 'guest'" :class="flow === 'guest' ? 'bg-white shadow text-slate-900' : 'text-slate-500'"
-                    class="flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-lg transition">Invité</button>
-            </div>
-        <?php else: ?>
-            <input type="hidden" name="enlistment_flow" value="guest">
-        <?php endif; ?>
-
-        <div x-show="flow === 'guest'" class="space-y-5" x-cloak>
-            <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Nom complet</label>
-                <input type="text" name="full_name" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm guest-req" placeholder="Prénom Nom"
-                    value="<?= htmlspecialchars($prefill['full_name'] ?? '') ?>"
-                    x-bind:disabled="flow !== 'guest'">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Email</label>
-                <input type="email" name="email" id="simple-enlist-email" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm guest-req" placeholder="email@exemple.com"
-                    value="<?= htmlspecialchars($prefill['email'] ?? '') ?>"
-                    x-bind:disabled="flow !== 'guest'"
-                    x-bind:readonly="flow === 'guest' && usePlatformEmail"
-                    autocomplete="email">
-                <?php if ($showPlatformEmailOption): ?>
-                <label class="mt-3 flex items-start gap-2.5 text-sm text-slate-700 cursor-pointer">
-                    <input type="checkbox" name="use_platform_email" value="1" class="mt-0.5 rounded border-slate-300"
-                        x-bind:disabled="flow !== 'guest'"
-                        x-model="usePlatformEmail"
-                        @change="syncGuestEmail()">
-                    <span>Utiliser l’e-mail enregistré sur la plateforme (<span class="font-mono text-xs"><?= htmlspecialchars($platformEmail, ENT_QUOTES, 'UTF-8') ?></span>)</span>
-                </label>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <div x-show="flow === 'account'" class="space-y-5" x-cloak>
-            <?php if ($canUseAccount): ?>
-                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Partage avec le staff recrutement</p>
-                    <?php
-                    $simpleAccountEmail = trim((string) ($prefill['email'] ?? $platformEmail ?? ''));
-                    $simpleEmailMasked = $simpleAccountEmail !== ''
-                        ? mask_email_for_display($simpleAccountEmail)
-                        : 'je***@exemple.fr';
-                    ?>
-                    <p class="text-xs text-slate-500 mb-3">Votre e-mail de connexion est toujours transmis au staff. Cochez seulement pour un affichage masqué.</p>
-                    <label class="flex items-center gap-2 mb-2">
-                        <input type="checkbox" name="mask_email" value="1" class="rounded border-slate-300" x-bind:disabled="flow !== 'account'">
-                        <span>Masquer mon <strong>email</strong> à l’affichage (<span class="font-mono text-xs"><?= htmlspecialchars($simpleEmailMasked, ENT_QUOTES, 'UTF-8') ?></span>)</span>
-                    </label>
-                    <label class="flex items-center gap-2 mb-2">
-                        <input type="checkbox" name="share_name" value="1" checked class="rounded border-slate-300" x-bind:disabled="flow !== 'account'">
-                        <span>Partager mon <strong>nom</strong> (affichage / dossier)</span>
-                    </label>
-                </div>
-
-                <div class="rounded-xl border border-dashed border-slate-200 p-4">
-                    <p class="text-xs text-slate-500 mb-2">Aperçu identité (non modifiable ici)</p>
-                    <p class="text-sm font-mono text-slate-800"><?= htmlspecialchars($prefill['email'] ?? '') ?></p>
-                    <p class="text-sm text-slate-600 mt-1"><?= htmlspecialchars($prefill['full_name'] ?: '—') ?></p>
-                </div>
-
-                <div class="rounded-xl bg-slate-900 text-white p-4">
-                    <label class="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" name="consent_data_sharing" value="1" class="mt-1 rounded border-white/30" x-bind:disabled="flow !== 'account'" required>
-                        <span class="text-sm leading-relaxed">J’accepte que les informations cochées ci-dessus et le contenu de ma candidature soient transmis au staff de <strong><?= htmlspecialchars($tenantName) ?></strong> pour traitement du recrutement.</span>
-                    </label>
-                    <button type="button" @click="showConsentModal = true" class="mt-3 text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300">Détails du traitement</button>
-                </div>
-            <?php endif; ?>
-        </div>
+        <?php require base_path('views/enlistment/_account_identity.php'); ?>
 
         <div class="space-y-5">
             <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Disponibilité</label>
-                <input type="text" name="availability" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Soirs, week-end...">
+                <label class="block text-xs font-bold text-slate-700 mb-1" for="simple-availability">Disponibilité</label>
+                <input type="text" id="simple-availability" name="availability" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm" placeholder="Soirs, week-end...">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1"><?= htmlspecialchars($simpleMotivationLabel) ?><?php if ($simpleMotivationRequired): ?> <span class="font-normal text-slate-400">(obligatoire)</span><?php endif; ?></label>
+                <label class="block text-xs font-bold text-slate-700 mb-1" for="simple-motivation"><?= htmlspecialchars($simpleMotivationLabel) ?><?php if ($simpleMotivationRequired): ?> <span class="font-normal text-slate-500">(obligatoire)</span><?php endif; ?></label>
                 <?php if ($simpleMotivationHelp !== ''): ?>
-                    <p class="text-xs text-slate-500 mb-1"><?= htmlspecialchars($simpleMotivationHelp) ?></p>
+                    <p class="text-xs text-slate-600 mb-1"><?= htmlspecialchars($simpleMotivationHelp) ?></p>
                 <?php endif; ?>
-                <textarea name="motivation_why_join" rows="4" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="<?= htmlspecialchars($simpleMotivationPlaceholder) ?>"<?= $simpleMotivationRequired ? ' required' : '' ?>></textarea>
+                <textarea id="simple-motivation" name="motivation_why_join" rows="4" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm" placeholder="<?= htmlspecialchars($simpleMotivationPlaceholder) ?>"<?= $simpleMotivationRequired ? ' required' : '' ?>></textarea>
             </div>
         </div>
+
+        <?php require base_path('views/enlistment/_account_consent.php'); ?>
 
         <?php if ($requireAiAck): ?>
             <label class="flex items-start gap-3 text-sm text-slate-700">
@@ -190,28 +81,5 @@ document.addEventListener('alpine:init', function () {
 
         <button type="submit" class="w-full py-3.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-600">Soumettre la candidature</button>
     </form>
-
-    <div x-show="showConsentModal" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60" x-cloak style="display: none;" @click.self="showConsentModal = false">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200" @click.stop>
-            <h2 class="text-lg font-black text-slate-900 uppercase tracking-tight mb-3">Données transmises</h2>
-            <p class="text-sm text-slate-600 leading-relaxed mb-4">Les données que vous validez servent uniquement à la cellule de recrutement de cette communauté. Elles sont conservées le temps nécessaire à l’instruction de votre dossier, conformément aux usages du service.</p>
-            <p class="text-sm text-slate-600 leading-relaxed mb-6">Vous pouvez retirer votre consentement avant envoi en fermant cette page ; après soumission, contactez le staff pour toute demande liée à vos données.</p>
-            <button type="button" class="w-full py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-xl" @click="showConsentModal = false">Compris</button>
-        </div>
-    </div>
+    <?php endif; ?>
 </div>
-
-<style>[x-cloak]{display:none!important}</style>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var form = document.querySelector('form[action*="enlistment"]');
-    if (!form) return;
-    form.addEventListener('submit', function () {
-        var flowInput = form.querySelector('input[name="enlistment_flow"]');
-        var flow = flowInput ? flowInput.value : 'guest';
-        document.querySelectorAll('.guest-req').forEach(function (el) {
-            el.required = (flow === 'guest');
-        });
-    });
-});
-</script>
