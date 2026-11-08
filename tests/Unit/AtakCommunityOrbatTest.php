@@ -83,6 +83,19 @@ final class AtakCommunityOrbatTest extends TestCase
         self::assertSame('Bravo 2', $u['members'][0]['callsign']);
     }
 
+    public function testSymboleDeLUniteRepriParLeTelephone(): void
+    {
+        $root = self::unit(1, [
+            'echelon' => 'section', 'symbolFunction' => 'medical', 'sidc' => 'SFGPUSM---A----',
+            'children' => [self::unit(2, ['isAnonymizedUnit' => true, 'echelon' => 'groupe', 'symbolFunction' => 'infantry', 'sidc' => 'SFGPUCI---A----'])],
+        ]);
+        $units = self::payload($root)['units'];
+
+        self::assertSame(['section', ''], array_column($units, 'echelon'));
+        self::assertSame(['medical', ''], array_column($units, 'function'));
+        self::assertSame([true, false], array_column($units, 'hq'));
+    }
+
     public function testAucunEmailNiSteamNiChampInterne(): void
     {
         $root = self::unit(1, [

@@ -40,6 +40,7 @@
     groupe ; "" : maillage local seulement), sauts jusqu'à la passerelle, nom de la radio] ou [] ; publiée seulement quand
     elle change.
       "enabled"  -> vrai si le réglage et la liaison réaliste sont actifs
+      "summary"  -> [code, état court, aide] : état de la voix par le réseau en clair (app Wave Relay)
       "radios"   -> radios ACRE2 / TFAR portées : [[clé, type, nom]...]
       "preferred"-> radio à ponter par défaut (active) : [clé, type, nom] ou []
       "bridge" [clé] ; "unbridge"
@@ -238,6 +239,26 @@ switch (_act) do {
         ["tick"] call comspec_atak_native_fnc_mpuVoice;
     };
     case "enabled": { call _enabled };
+    case "summary": {
+        // Voix par le réseau, en clair, pour l'app Wave Relay (MON NŒUD, VOIX) : jamais un écran muet.
+        // -> [code ("off" | "cut" | "noreal" | "nobridge" | "wait" | "on"), état court, aide]
+        if !((missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) isEqualTo true) exitWith {
+            ["off", "désactivée (réglage admin)", "Pour l'activer, un admin coche « Voix ACRE/TFAR relayée par le maillage MPU5 » (Réglages d'addons > COMSPEC > ATAK · Radio de données (MPU5)). Ensuite, chaque joueur relie sa radio à sa MPU5 : onglet VOIX, ou menu ACE Téléphone ATAK > Radio de données."]
+        };
+        if !(["voice"] call comspec_atak_native_fnc_radioGuard) exitWith { ["cut", "coupée", ["text"] call comspec_atak_native_fnc_radioGuard] };
+        if !(["active"] call comspec_atak_native_fnc_mpuLink) exitWith {
+            ["noreal", "désactivée (liaison réaliste coupée)", "La voix par le réseau demande le réglage admin « Liaison téléphone-radio réaliste », hors profil Arcade."]
+        };
+        private _b = missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []];
+        if (_b isEqualTo []) exitWith {
+            ["nobridge", "radio non reliée à la MPU5", "Reliez votre radio à votre MPU5 : onglet VOIX, ou menu ACE Téléphone ATAK > Radio de données > Relier ma radio à la MPU5 (voix)."]
+        };
+        (missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) params [["_me", []], "", ["_why", ""], ["_peers", []]];
+        if (_me isEqualTo []) exitWith {
+            ["wait", format ["en attente (%1)", [_why, "hors du maillage"] select (_why isEqualTo "")], format ["Radio %1 reliée : sa voix passera par le réseau dès que la MPU5 aura rejoint le maillage.", _b select 2]]
+        };
+        ["on", format ["active · %1 · %2 correspondant(s) relié(s)", _b select 2, count _peers], "La case RELAIS ATAK s'affiche près du cadre d'émission d'ACRE2 quand votre voix passe vraiment par le réseau. Correspondant relié sur la même fréquence requis."]
+    };
     case "radios": { call _radios };
     case "preferred": {
         private _rl = call _radios;

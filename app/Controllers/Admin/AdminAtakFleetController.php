@@ -804,32 +804,14 @@ class AdminAtakFleetController
         $level = (string) $request->input('niveau', 'info');
         $hours = max(0, min(24 * 90, (int) $request->input('validite_heures', 72)));
         [$actorId, $actorLabel] = $this->actor();
-        $done = 0;
-        $seen = [];
-        foreach ($terminals as $t) {
-            // Un message par joueur, même s'il a plusieurs ATAK cochés.
-            $who = (int) $t['tenant_id'] . ':' . ((int) ($t['user_id'] ?? 0) ?: ((string) $t['terminal_uid'] ?: (string) ($t['steam_id'] ?? '')));
-            if (isset($seen[$who])) {
-                continue;
-            }
-            $seen[$who] = true;
-            $id = $this->fleet->createMessage([
-                'tenant_id' => (int) $t['tenant_id'],
-                'user_id' => ((int) ($t['user_id'] ?? 0)) ?: null,
-                'steam_uid' => trim((string) ($t['steam_id'] ?? '')) ?: null,
-                'terminal_uid' => (string) $t['terminal_uid'] !== '' ? (string) $t['terminal_uid'] : null,
-                'title' => $title,
-                'body' => $body,
-                'level' => $level,
-                'require_ack' => $request->input('validation') !== '0',
-                'expires_at' => $hours > 0 ? gmdate('Y-m-d H:i:s', time() + $hours * 3600) : null,
-                'actor_id' => $actorId,
-            ]);
-            if ($id > 0) {
-                $done++;
-                $this->fleet->log($t, 'message', $title, $actorId, $actorLabel);
-            }
-        }
+        // Un message par joueur, même s'il a plusieurs ATAK cochés (même envoi que le centre de diffusion).
+        $done = (new \App\Services\Atak\AtakPlayerMessageSender($this->fleet))->send($terminals, [
+            'title' => $title,
+            'body' => $body,
+            'level' => $level,
+            'require_ack' => $request->input('validation') !== '0',
+            'expires_at' => $hours > 0 ? gmdate('Y-m-d H:i:s', time() + $hours * 3600) : null,
+        ], $actorId, $actorLabel);
 
         return $this->back(
             $request,

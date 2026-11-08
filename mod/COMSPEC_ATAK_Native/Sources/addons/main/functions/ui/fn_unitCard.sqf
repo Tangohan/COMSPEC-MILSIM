@@ -359,7 +359,7 @@ switch (_mode) do {
         private _made = [];
         private _mk = { params ["_class", "_pos", ["_text", ""]]; private _c = [_class, _pos, _text, false] call comspec_atak_native_fnc_pageCtrl; _made pushBack _c; _c };
         ([_e] call comspec_atak_native_fnc_symbology) params ["_icon", "_color"];
-        if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO") then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
+        if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) in ["NATO", "MILSTD"]) then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
         private _o = _e getOrDefault ["object", objNull];
         if (!isNull _o && {(_e getOrDefault ["affiliation", ""]) isEqualTo "friend"}) then {
             private _ft = [_o] call comspec_atak_native_fnc_ftInfo;

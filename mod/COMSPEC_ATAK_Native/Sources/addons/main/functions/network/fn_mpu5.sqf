@@ -1,8 +1,11 @@
 /*
     Radio maillée MPU5 (Wave Relay) et voix ACRE2 dans le téléphone. Pas de modèle 3D : la radio est un objet d'inventaire.
-    Détection : objet COMSPEC_ATAK_MPU5, toute classe dont le nom contient « MPU5 » (objets d'autres mods), ou classes du
-    réglage CBA comspec_atak_native_mpu5_items. ACRE2 n'a pas de radio maillée : la voix reste sur les radios ACRE2 du
-    joueur, l'app Wave Relay en montre les canaux, fréquences, alternats (PTT) et qui émet.
+    Détection ("isMpu", seule règle, aussi pour fn_mpuLink) : objet COMSPEC_ATAK_MPU5, toute classe dont le nom contient « MPU5 »
+    (ACRE_MPU5 du mod « MPU-5 Persistent Systems » et ses instances ACRE_MPU5_ID_n), classe de base ACRE2 « MPU5 »
+    (acre_baseClass), marque Iceman_WR_isMPU5, ou classes du réglage CBA comspec_atak_native_mpu5_items. La voix reste sur les
+    radios ACRE2 du joueur, l'app Wave Relay en montre les canaux, fréquences, alternats (PTT) et qui émet.
+      "isMpu"    : [classe] -> vrai si c'est une MPU5.
+      "detected" : radio de données affichée (app Wave Relay, fn_linkQuality) : [nom, classe, portée m, liaison, mod, type] ou [].
       "has"      : [unité] -> vrai si elle porte une MPU5 (joueur : inventaire ; autre joueur : état publié par son téléphone).
       "range"    : [unité] -> portée maillage m (réglage comspec_atak_native_mpu5_range avec MPU5, sinon COMSPEC_ATAK_MeshRange).
       "gain"     : gain dB de la MPU5 du joueur sur ses liaisons (réglage comspec_atak_native_mpu5_gain), 0 sans MPU5.
@@ -51,13 +54,53 @@ switch (_act) do {
         if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith { (["gear"] call comspec_atak_native_fnc_mpu5) isNotEqualTo [] };
         private _c = uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Has", []];
         if ((count _c) isEqualTo 2 && {diag_tickTime - (_c select 0) < 2}) exitWith { _c select 1 };
-        private _extra = ((missionNamespace getVariable ["comspec_atak_native_mpu5_items", ""]) splitString ", ;") apply { toLower _x };
-        private _has = (((items player) + (assignedItems player)) findIf {
-            private _l = toLower _x;
-            ((_l find "mpu5") >= 0) || {_l in _extra}
-        }) >= 0;
+        private _has = (((items player) + (assignedItems player)) findIf { ["isMpu", [_x]] call comspec_atak_native_fnc_mpu5 }) >= 0;
         uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Has", [diag_tickTime, _has]];
         _has
+    };
+    case "isMpu": {
+        // Radio de données MPU5, quelle que soit sa classe : nom (COMSPEC_ATAK_MPU5, ACRE_MPU5 du mod « MPU-5 Persistent Systems »
+        // et ses instances ACRE_MPU5_ID_n), classe de base ACRE2 (acre_baseClass), marque Iceman_WR_isMPU5 de ce mod, ou réglage
+        // comspec_atak_native_mpu5_items. Lecture de la config seulement.
+        private _cls = _arg param [0, ""];
+        if (!(_cls isEqualType "") || {_cls isEqualTo ""}) exitWith { false };
+        private _l = toLower _cls;
+        if ((_l find "mpu5") >= 0) exitWith { true };
+        if (_l in (((missionNamespace getVariable ["comspec_atak_native_mpu5_items", ""]) splitString ", ;") apply { toLower _x })) exitWith { true };
+        private _cfg = configFile >> "CfgWeapons" >> _cls;
+        if !(isClass _cfg) exitWith { false };
+        (getNumber (_cfg >> "Iceman_WR_isMPU5")) > 0 || {((toLower getText (_cfg >> "acre_baseClass")) find "mpu5") >= 0}
+    };
+    case "detected": {
+        // Radio de données montrée par l'app Wave Relay (ligne « Radio », message ACRE2) et par le facteur de débit (fn_linkQuality) :
+        // une seule source, pour qu'elles ne se contredisent plus. Liaison réaliste : la radio de fn_mpuLink ("gear", ou MPU5 posée).
+        // Ancien modèle : la source de "source". -> [nom lisible, classe, portée m, liaison ("cable" | "wifi" | "" non reliée |
+        // "porte" | "branche"), mod ("acre" | "tfar" | "mod" | ""), type ("RADIOMPU" | "LR" | "SW" | "PERSO" | "MPU")] ou []
+        if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith {
+            private _v = ["view"] call comspec_atak_native_fnc_mpuLink;
+            private _g = _v get "gear";
+            private _lk = (_v get "status") getOrDefault ["link", ""];
+            if (_g isNotEqualTo []) exitWith { [_g select 3, _g select 1, _v get "range", _lk, _g select 7, _g select 2] };
+            if (_v get "posed") exitWith { ["MPU5 posée", "", _v get "range", _lk, "", "MPU"] };
+            []
+        };
+        private _src = ["source"] call comspec_atak_native_fnc_mpu5;
+        if (_src isEqualTo []) exitWith { [] };
+        if ((_src select 0) isEqualTo "MPU5") exitWith {
+            private _it = (((items player) + (assignedItems player)) select { ["isMpu", [_x]] call comspec_atak_native_fnc_mpu5 }) param [0, ""];
+            private _cfg = configFile >> "CfgWeapons" >> _it;
+            private _n = getText (_cfg >> "displayName");
+            private _l = toLower _it;
+            private _mod = switch (true) do {
+                case ((_l find "comspec_") isEqualTo 0): { "" };
+                case ((_l find "acre_") isEqualTo 0 || {(getText (_cfg >> "acre_baseClass")) isNotEqualTo ""}): { "acre" };
+                case ((getText (_cfg >> "tf_parent")) isNotEqualTo "" || {(getNumber (_cfg >> "tf_range")) > 0}): { "tfar" };
+                default { "mod" };
+            };
+            [[_n, "MPU5"] select (_n isEqualTo ""), _it, ["range", [player]] call comspec_atak_native_fnc_mpu5, "porte", _mod, ["RADIOMPU", "MPU"] select (_mod isEqualTo "")]
+        };
+        private _p = ["plugged"] call comspec_atak_native_fnc_mpu5;
+        [_src select 1, _p param [0, ""], ["range", [player]] call comspec_atak_native_fnc_mpu5, "branche", ["tfar", "acre"] select _acre, _src select 0]
     };
     case "gear": {
         // Radio qui porte le réseau du joueur, ses vrais objets d'abord : MPU5 d'un mod radio, longue portée, portative, puis notre MPU5 (complément), puis la radio personnelle.
@@ -68,7 +111,6 @@ switch (_act) do {
         private _srcMod = missionNamespace getVariable ["comspec_atak_native_radio_source", 0];
         private _useA = _read && {_srcMod in [0, 1]};
         private _useT = _read && {_srcMod in [0, 2]};
-        private _extra = ((missionNamespace getVariable ["comspec_atak_native_mpu5_items", ""]) splitString ", ;") apply { toLower _x };
         private _lrR = missionNamespace getVariable ["comspec_atak_native_radio_lr_range", 10000];
         private _swR = missionNamespace getVariable ["comspec_atak_native_radio_sw_range", 2000];
         // ACRE2 n'a pas de portée fixe (modèle de propagation) : portée de données au prorata de la racine de la puissance. Puissances d'usine lues dans ACRE2 2.14.
@@ -89,11 +131,15 @@ switch (_act) do {
             private _cfg = configFile >> "CfgWeapons" >> _cls;
             private _name = getText (_cfg >> "displayName");
             if (_name isEqualTo "") then { _name = _cls; };
-            if ((_low find "mpu5") >= 0 || {_low in _extra}) then {
+            // MPU5 de toute classe (fn_mpu5 "isMpu") : ACRE_MPU5 et ses instances ACRE_MPU5_ID_n comprises.
+            if (["isMpu", [_cls]] call comspec_atak_native_fnc_mpu5) then {
                 private _ours = (_low find "comspec_") isEqualTo 0;
-                if (!_ours && {!_useA} && {(_low find "acre_") isEqualTo 0}) then { continue };
+                private _isA = (_low find "acre_") isEqualTo 0 || {(getText (_cfg >> "acre_baseClass")) isNotEqualTo ""};
+                private _isT = (getText (_cfg >> "tf_parent")) isNotEqualTo "" || {(getNumber (_cfg >> "tf_range")) > 0};
+                if (!_ours && {(_isA && {!_useA}) || {_isT && {!_useT}}}) then { continue };
                 [[0, 3] select _ours, _cls, ["RADIOMPU", "MPU"] select _ours, _name, missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000],
-                    missionNamespace getVariable ["comspec_atak_native_mpu5_gain", 8], missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20], ["", ["tfar", "acre"] select ((_low find "acre_") isEqualTo 0)] select !_ours] call _offer;
+                    missionNamespace getVariable ["comspec_atak_native_mpu5_gain", 8], missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20],
+                    switch (true) do { case (_ours): { "" }; case (_isA): { "acre" }; case (_isT): { "tfar" }; default { "mod" }; }] call _offer;
                 continue
             };
             if (_useA) then {

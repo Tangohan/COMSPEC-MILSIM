@@ -6,8 +6,12 @@
       ["apply"] call comspec_atak_native_fnc_shotDir   réglage et profil transmis aux deux DLL (mémoire, immédiat)
       ["check", afficher] spawn comspec_atak_native_fnc_shotDir   vérification du dossier (disque, hors fil du jeu)
       ["text"] call comspec_atak_native_fnc_shotDir    dernière vérification en une ligne (Réglages › À propos)
+      ["open"] call comspec_atak_native_fnc_shotDir    ouvre Documents\Arma 3 - COMSPEC\Captures dans l'explorateur
+    Les photos du mod sont recopiées dans Documents\Arma 3 - COMSPEC\Captures et envoyées de là ; une fois reçues par
+    Athena, leur original est retiré de Screenshots (Arma n'écrit plus de capture au-delà de 250 Mo par dossier).
     Résultat de la vérification : uiNamespace COMSPEC_ATAK_ShotDirInfo =
-      [origine, dossier, existe, lisible, nombre d'images, dernière capture, âge en s, refus du réglage, réglage, dossiers, instant].
+      [origine, dossier, existe, lisible, nombre d'images, dernière capture, âge en s, refus du réglage, réglage, dossiers, instant,
+       taille du dossier en Mo (-1 inconnue), dossier Captures (« - » : impossible à créer)].
 */
 params [["_mode", "apply"], ["_show", false]];
 if (!hasInterface) exitWith { "" };
@@ -56,18 +60,26 @@ switch (_mode) do {
             if (_show) then { hint (("Vérification du dossier des captures impossible : DLL du téléphone absente ou bloquée.") call comspec_atak_native_fnc_tr); };
             ""
         };
-        (((_raw select [3]) splitString "|")) params [["_src", "none"], ["_dir", "-"], ["_ex", "0"], ["_rd", "0"], ["_n", "0"], ["_last", "-"], ["_age", "-1"], ["_uerr", "-"], ["_user", "-"], ["_dirs", "-"]];
-        private _info = [_src, _dir, _ex isEqualTo "1", _rd isEqualTo "1", parseNumber _n, _last, parseNumber _age, _uerr, _user, _dirs, diag_tickTime];
+        (((_raw select [3]) splitString "|")) params [["_src", "none"], ["_dir", "-"], ["_ex", "0"], ["_rd", "0"], ["_n", "0"], ["_last", "-"], ["_age", "-1"], ["_uerr", "-"], ["_user", "-"], ["_dirs", "-"], ["_mb", "-1"], ["_cap", "?"]];
+        private _info = [_src, _dir, _ex isEqualTo "1", _rd isEqualTo "1", parseNumber _n, _last, parseNumber _age, _uerr, _user, _dirs, diag_tickTime, parseNumber _mb, _cap];
         uiNamespace setVariable ["COMSPEC_ATAK_ShotDirInfo", _info];
         private _txt = ["text"] call comspec_atak_native_fnc_shotDir;
         ["INFO", "PHOTO", format ["Dossier des captures : %1 (%2) existe=%3 lisible=%4 images=%5 dernière=%6 refus=%7 · ordre : %8", _dir, _src, _ex, _rd, _n, _last, _uerr, _dirs]] call comspec_atak_native_fnc_log;
         if (_show) then {
             hint ((_txt) call comspec_atak_native_fnc_tr);
-            [["WARNING", "INFO"] select (_ex isEqualTo "1" && {_rd isEqualTo "1"}), _txt, 10, 40, "SETTINGS"] call comspec_atak_native_fnc_notify;
+            [["WARNING", "INFO"] select (_ex isEqualTo "1" && {_rd isEqualTo "1"} && {(parseNumber _mb) < 200} && {_cap isNotEqualTo "-"}), _txt, 10, 40, "SETTINGS"] call comspec_atak_native_fnc_notify;
+        } else {
+            // Dossier près de la limite d'Arma (250 Mo) : prévenir une fois par partie, même sans vérification demandée.
+            if ((parseNumber _mb) >= 200 && {!(uiNamespace getVariable ["COMSPEC_ATAK_ShotDirFullWarned", false])}) then {
+                uiNamespace setVariable ["COMSPEC_ATAK_ShotDirFullWarned", true];
+                ["WARNING", format ["Dossier des captures presque plein : %1 Mo sur 250. Arma n'y écrira plus de photo au-delà : videz %2.", round (parseNumber _mb), _dir], 12, 40, "PHOTOS"] call comspec_atak_native_fnc_notify;
+            };
         };
         // Réglages › À propos ouvert : la ligne « Dossier des captures » se met à jour.
-        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "SETTINGS") then {
-            [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+        // Réglages › À propos ou Galerie ouverts : la ligne du dossier se met à jour.
+        private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
+        if (_page in ["SETTINGS", "GALLERY"]) then {
+            [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame;
         };
         _txt
     };
@@ -75,7 +87,7 @@ switch (_mode) do {
         private _info = uiNamespace getVariable ["COMSPEC_ATAK_ShotDirInfo", nil];
         if (isNil "_info") exitWith { "pas encore vérifié" };
         if (_info isEqualTo []) exitWith { "vérification impossible (DLL du téléphone absente)" };
-        _info params ["_src", "_dir", "_ex", "_rd", "_n", "_last", "_age", "_uerr", "_user"];
+        _info params ["_src", "_dir", "_ex", "_rd", "_n", "_last", "_age", "_uerr", "_user", "", "", ["_mb", -1], ["_cap", "?"]];
         private _from = switch (_src) do {
             case "user": { "dossier du réglage" };
             case "profile": { format ["profil Arma « %1 »", profileName] };
@@ -102,7 +114,26 @@ switch (_mode) do {
         if (_uerr isNotEqualTo "-" && {_user isNotEqualTo "-"}) then {
             _parts pushBack format ["Réglage « %1 » non retenu : %2", _user, [_uerr] call _whyText];
         };
+        // Taille (limite d'Arma 250 Mo par dossier) et dossier Captures (absent avec une DLL plus ancienne : « ? »).
+        if (_mb >= 200) then { _parts pushBack format ["Presque plein : %1 Mo sur 250, Arma n'y écrira plus de photo au-delà", round _mb]; } else {
+            if (_mb >= 0) then { _parts pushBack format ["%1 Mo sur 250", round _mb]; };
+        };
+        if (_cap isEqualTo "-") then {
+            _parts pushBack "Dossier Captures COMSPEC impossible à créer (Documents en lecture seule ?) : envoi depuis Screenshots";
+        } else {
+            if (_cap isNotEqualTo "?") then { _parts pushBack format ["Photos envoyées gardées dans %1", _cap]; };
+        };
         _parts joinString " · "
+    };
+    case "open": {
+        private _r = ["Shots.OpenCaptures"] call comspec_atak_native_fnc_extensionCall;
+        if !(_r isEqualType "") then { _r = ""; };
+        if ((_r select [0, 3]) isEqualTo "OK|") then {
+            ["INFO", format ["Dossier des photos ouvert : %1", _r select [3]], 6, 40, "PHOTOS"] call comspec_atak_native_fnc_notify;
+        } else {
+            ["WARNING", "Dossier Captures COMSPEC indisponible (Documents en lecture seule ou DLL du téléphone trop ancienne).", 8, 40, "PHOTOS"] call comspec_atak_native_fnc_notify;
+        };
+        _r
     };
     default { "" };
 };

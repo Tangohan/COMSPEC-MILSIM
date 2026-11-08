@@ -72,6 +72,49 @@ final class AtakThemeContrastTest extends TestCase
         }
     }
 
+    /**
+     * Bouton tonal de l'écran de verrouillage (4.1.1) : encre d'accent sur fond teinté d'accent, au repos et survolé,
+     * pour les six accents du joueur (fn_accent) et les trois thèmes. Les formules sont celles de fn_theme (vérifiées ci-dessous).
+     */
+    public function testBoutonTonalLisibleAvecChaqueAccent(): void
+    {
+        $theme = str_replace("\r\n", "\n", (string) file_get_contents(self::MAIN . '/functions/ui/fn_theme.sqf'));
+        foreach ([
+            'case "DAY": { [[1, 1, 1, 1], _acc, 0.20] call _mix };',
+            'case "NVG": { [[0, 0, 0, 1], _acc, 0.16] call _mix };',
+            'default { [_th get "surface", _acc, 0.26] call _mix };',
+            'case "DAY": { [[1, 1, 1, 1], _acc, 0.34] call _mix };',
+            'case "NVG": { [[0, 0, 0, 1], _acc, 0.26] call _mix };',
+            'default { [_th get "surface", _acc, 0.40] call _mix };',
+            'case "DAY": { [_acc, 0.36] call _mul };',
+            'case "NVG": { _th get "text" };',
+            'default { [_acc, 0.62] call _lift };',
+        ] as $line) {
+            self::assertStringContainsString($line, $theme);
+        }
+        $accSrc = (string) file_get_contents(self::MAIN . '/functions/ui/fn_accent.sqf');
+        preg_match_all('/\[\[([0-9.]+), ([0-9.]+), ([0-9.]+), 1\], "#/', $accSrc, $m, PREG_SET_ORDER);
+        self::assertCount(6, $m);
+        $mix = static fn (array $a, array $b, float $k): array => [$a[0] + ($b[0] - $a[0]) * $k, $a[1] + ($b[1] - $a[1]) * $k, $a[2] + ($b[2] - $a[2]) * $k];
+        $dark = $this->tokens('default {');
+        $nvg = $this->tokens('case "NVG"');
+        foreach ($m as $row) {
+            $acc = [(float) $row[1], (float) $row[2], (float) $row[3]];
+            $cases = [
+                'sombre' => [$mix($dark['surface'], $acc, 0.26), $mix($dark['surface'], $acc, 0.40), array_map(static fn (float $v): float => $v + (1 - $v) * 0.62, $acc)],
+                'jour' => [$mix([1, 1, 1], $acc, 0.20), $mix([1, 1, 1], $acc, 0.34), array_map(static fn (float $v): float => $v * 0.36, $acc)],
+                'nuit JVN' => [$mix([0, 0, 0], [0.36, 0.78, 0.42], 0.16), $mix([0, 0, 0], [0.36, 0.78, 0.42], 0.26), $nvg['text']],
+            ];
+            foreach ($cases as $name => [$soft, $hi, $ink]) {
+                self::assertGreaterThanOrEqual(4.5, round(self::contrast($ink, $soft), 2), "{$name}, accent {$row[0]} : repos");
+                self::assertGreaterThanOrEqual(4.5, round(self::contrast($ink, $hi), 2), "{$name}, accent {$row[0]} : survol");
+            }
+        }
+        $lock = (string) file_get_contents(self::MAIN . '/functions/ui/fn_lockScreen.sqf');
+        self::assertStringContainsString('_ul ctrlSetTextColor (_th get "onAccentSoft");', $lock);
+        self::assertStringNotContainsString('["pill", _unlockRect, _th get "accent"] call _tex;', $lock);
+    }
+
     public function testPictogrammesEtTitresDEtatSuiventLeTheme(): void
     {
         $src = (string) file_get_contents(self::MAIN . '/functions/ui/fn_formRender.sqf');

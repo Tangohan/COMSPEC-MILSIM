@@ -2889,6 +2889,32 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\Integrations\DiscordWebhookService::class),
             ),
+            // Centre de diffusion (/back-office/alerts) : lit et écrit dans les tables de chaque canal.
+            \App\Services\Broadcast\BroadcastCenterService::class => new \App\Services\Broadcast\BroadcastCenterService(
+                self::get(\App\Repositories\TenantAlertRepository::class),
+                self::get(\App\Repositories\UserAlertDismissalRepository::class),
+                self::get(\App\Services\Tactical\AtakCommunityBriefService::class),
+                self::get(\App\Repositories\AtakAdminControlRepository::class),
+                self::get(\App\Repositories\AtakOrderRepository::class),
+                new \App\Services\Integrations\DiscordEventRelayService(
+                    self::get(TenantRepository::class),
+                    self::get(\App\Services\Integrations\DiscordWebhookService::class),
+                ),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                new \App\Repositories\TenantEmailRecipientGroupRepository(),
+                self::get(\App\Repositories\FireTeamRepository::class),
+                self::get(\App\Services\Audit\AuditService::class),
+                // Destinataire d'un ordre lisible par le jeu : même résolution que la Tacmap (AtakApiController).
+                static fn (int $tenantId, int $mapId, string $type, string $ref): array => self::get(\App\Controllers\Api\AtakApiController::class)
+                    ->resolveOrderTargetLabel($tenantId, $mapId, $type, $ref, '', ''),
+            ),
+            \App\Controllers\Admin\Organization\BroadcastCenterController::class => new \App\Controllers\Admin\Organization\BroadcastCenterController(
+                self::get(\App\Services\Broadcast\BroadcastCenterService::class),
+                self::get(AuthService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+            ),
             \App\Controllers\Api\AlertDismissController::class => new \App\Controllers\Api\AlertDismissController(
                 self::get(\App\Repositories\UserAlertDismissalRepository::class),
                 self::get(\App\Repositories\PlatformAlertRepository::class),

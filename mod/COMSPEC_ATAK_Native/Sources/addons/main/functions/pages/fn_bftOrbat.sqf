@@ -9,8 +9,9 @@
       "load" forcer       relit l'API si l'échéance est passée (forcer : au plus toutes les 10 s) ; ne bloque jamais
       "receive" réponse   (tâche de fond) traite la réponse de la DLL
       "store"             table : state (IDLE | OK | NOLINK | FORBID | DOWN | DLL | OFF), units, people, tags, total, okAt, truncated
-                            units : [id, profondeur, nom, code, lignes, restreinte] à plat, parent avant enfants
-                            lignes : ["p", clé, poste] personne, ["v", clé, poste, nombre] poste vacant
+                            units : [id, profondeur, nom, code, lignes, restreinte, échelon, fonction MIL-STD, QG, id du parent]
+                                    à plat, parent avant enfants (les quatre derniers : symboles de fn_milSym)
+                            lignes : ["p", clé, poste, "commander" | "deputy" | ""] personne, ["v", clé, poste, nombre] poste vacant
                             people : clé -> [libellé, nom, grade, indicatif, genre (0 personne, 1 anonymisée, 2 vacant), [[unité, poste]...]]
       "presence"          [instant, clé de personne -> joueur de mon camp, joueurs de mon camp absents de l'ORBAT] (relu toutes les 2 s)
       "notice"            [texte, ton (ok | warn | alert | muted), réessayer] du bandeau de l'onglet
@@ -132,7 +133,8 @@ switch (_act) do {
                 private _pm = [_x] call _h;
                 private _title = [_pm, "title"] call _str;
                 private _idx = _forEachIndex;
-                { _rows pushBack ["p", [_x, _name, _title] call _addP, _title]; } forEach ([_pm, "holders"] call _arr);
+                private _kind = [_pm, "key"] call _str;
+                { _rows pushBack ["p", [_x, _name, _title] call _addP, _title, _kind]; } forEach ([_pm, "holders"] call _arr);
                 private _vac = [_pm, "vacant"] call _num;
                 if (_vac > 0) then {
                     private _key = format ["p:v%1_%2", _id, _idx];
@@ -141,7 +143,8 @@ switch (_act) do {
                 };
             } forEach ([_u, "posts"] call _arr);
             { _rows pushBack ["p", [_x, _name, ""] call _addP, ""]; } forEach ([_u, "members"] call _arr);
-            [_id, _d, _name, [_u, "code"] call _str, _rows, (_u getOrDefault ["restricted", false]) isEqualTo true]
+            [_id, _d, _name, [_u, "code"] call _str, _rows, (_u getOrDefault ["restricted", false]) isEqualTo true,
+                [_u, "echelon"] call _str, [_u, "function"] call _str, (_u getOrDefault ["hq", false]) isEqualTo true, [_u, "parent"] call _num]
         };
         _store set ["units", _units];
         _store set ["people", _people];

@@ -3,7 +3,8 @@
     (tools/gen_map_pawn.py), colorées par drawIcon : 1 à 4 dessins par symbole, rien d'autre à calculer.
     Couches d'une forme : [texture, rôle (COL couleur | DARK fond sombre | WHITE blanc), échelle, tourne avec le cap, lettre].
     Formes d'origine (FLÈCHE, CHEVRON, POINT, CERCLE, TRIANGLE, AMI APP-6) : gardées par fn_mapPrefs « self », un ancien
-    profil garde la sienne ; AUTO (alliés) : symbole d'unité, comme avant.
+    profil garde la sienne ; AUTO (alliés) : symbole d'unité, comme avant. MS / MS:<pictogramme> (moi) et MILSTD (alliés) :
+    symboles 2525D dessinés par fn_milDraw depuis fn_mapOnDraw (pas par « draw » ici).
     Params : [opération, argument]
       "draw" [carte, forme, position, taille px, couleur, cap, lettre]  (à chaque image : traité avant tout le reste)
       "isNew" forme -> vrai si cette fonction la dessine
@@ -38,20 +39,27 @@ switch (_op) do {
     case "self": { [
         ["ARROW", "FLÈCHE", "Symbole d'unité orienté (par défaut)"], ["CHEVRON", "CHEVRON", ""], ["DOT", "POINT", ""], ["CIRCLE", "CERCLE", ""], ["TRIANGLE", "TRIANGLE", ""], ["NATO", "AMI APP-6", "Symbole ami de la symbologie"],
         ["PAWN", "PION", "Anneau, lettre d'équipe et petit triangle de direction"], ["TRI_RING", "TRIANGLE CERCLÉ", "Triangle plein orienté dans un cercle fin"],
-        ["DIAMOND_RING", "LOSANGE CERCLÉ", "Losange dans un cercle fin"], ["SQUARE", "CARRÉ", ""], ["CROSS", "CROIX", ""]
-    ] };
+        ["DIAMOND_RING", "LOSANGE CERCLÉ", "Losange dans un cercle fin"], ["SQUARE", "CARRÉ", ""], ["CROSS", "CROIX", ""],
+        // Symboles MIL-STD-2525D (fn_milSym / fn_milDraw) : déduit de mes données, ou pictogramme choisi.
+        ["MS", "AUTO 2525", "Symbole ami 2525D déduit de mon rôle, de mon véhicule et de l'ORBAT du site"]
+    ] + ((["pictos"] call comspec_atak_native_fnc_milSym) apply { ["MS:" + (_x select 0), _x select 1, _x select 2] }) };
     case "ally": { [
         ["AUTO", "AUTO", "Symbole d'unité, ou symbole OTAN selon « Icônes des unités » (par défaut)"],
         ["PAWN", "PION", "Anneau, lettre d'équipe et petit triangle de direction"], ["TRI_RING", "TRIANGLE CERCLÉ", "Triangle plein orienté dans un cercle fin"],
-        ["DIAMOND_RING", "LOSANGE CERCLÉ", "Losange dans un cercle fin"], ["SQUARE", "CARRÉ", ""], ["CROSS", "CROIX", ""]
+        ["DIAMOND_RING", "LOSANGE CERCLÉ", "Losange dans un cercle fin"], ["SQUARE", "CARRÉ", ""], ["CROSS", "CROIX", ""],
+        ["MILSTD", "2525D", "Symbole 2525D de chaque allié : type, échelon et QG d'après ses données réelles"]
     ] };
     case "label": {
-        private _i = ((["self"] call comspec_atak_native_fnc_mapShape) + [["AUTO", "AUTO", ""]]) select { (_x select 0) isEqualTo _a };
+        private _i = ((["self"] call comspec_atak_native_fnc_mapShape) + [["AUTO", "AUTO", ""], ["MILSTD", "2525D", ""]]) select { (_x select 0) isEqualTo _a };
         (_i param [0, ["", "FLÈCHE"]]) select 1
     };
     case "preview": {
         _a params ["_k", "_c"];
         private _m = "\A3\ui_f\data\map\markers\military\";
+        if ((_k select [0, 2]) isEqualTo "MS") exitWith {
+            ["preview", [["self", _k select [3]] call comspec_atak_native_fnc_milSym, ["manual", ["f", _k select [3]]] call comspec_atak_native_fnc_milSym] select ((_k select [3]) isNotEqualTo "")] call comspec_atak_native_fnc_milDraw
+        };
+        if (_k isEqualTo "MILSTD") exitWith { ["preview", ["manual", ["f", "inf", "sq"]] call comspec_atak_native_fnc_milSym] call comspec_atak_native_fnc_milDraw };
         if (_k in _tb) exitWith {
             (_tb get _k) apply {
                 _x params ["_tex", "_role", "_sc"];

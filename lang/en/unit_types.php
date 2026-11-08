@@ -7,6 +7,8 @@ return [
     'subtitle' => 'Create the types specific to your community (for example "Special forces" or "Platoon") and pick them when you create a unit.',
     'tab_own' => 'Your types',
     'tab_base' => 'Standard types',
+    'stat_units' => 'Units concerned',
+    'empty_title' => 'No custom type yet',
     'add' => 'Add a type',
     'rename' => 'Rename',
     'delete' => 'Delete',

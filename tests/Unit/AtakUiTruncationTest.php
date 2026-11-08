@@ -29,7 +29,27 @@ final class AtakUiTruncationTest extends TestCase
 
     public function testTitreDeLAppAjuste(): void
     {
-        self::assertStringContainsString('[_d displayCtrl 88518, ([] call comspec_atak_native_fnc_layoutGet) get "font", true, 0.65] call comspec_atak_native_fnc_textFit;', $this->read('ui/fn_pageRender.sqf'));
+        // 4.1.1 : la police ne descend plus à 65 % (sous 14 px) ; abréviation puis icône quand rien ne tient.
+        $render = $this->read('ui/fn_pageRender.sqf');
+        self::assertStringContainsString('call comspec_atak_native_fnc_titleFit;', $render);
+        self::assertStringNotContainsString('[_d displayCtrl 88518, ([] call comspec_atak_native_fnc_layoutGet) get "font", true, 0.65] call comspec_atak_native_fnc_textFit;', $render);
+        $fit = $this->read('ui/fn_titleFit.sqf');
+        self::assertStringContainsString('COMSPEC_ATAK_FontMin max (pixelH * 14)', $fit);
+        self::assertStringContainsString('[_short, _tw, false]', $fit);
+        // Place du titre : jusqu'au premier bouton de droite affiché, plus « écran − 4 pas ».
+        $layout = $this->read('ui/fn_layoutApply.sqf');
+        self::assertStringNotContainsString('_dw - _step * 4', $layout);
+        self::assertStringContainsString('[88518, [_tx, _ay, (_tEnd - _tx) max 0, _ah]] call _set;', $layout);
+        self::assertStringContainsString('[_font] call comspec_atak_native_fnc_titleFit;', $layout);
+    }
+
+    public function testLesTitresLongsOntUneAbreviation(): void
+    {
+        $cfg = (string) file_get_contents(self::F . '/../config.cpp');
+        foreach (['Distance' => 'Dist', 'Chat' => 'Msg', 'InterTeam' => 'I-team', 'Reports' => 'CR', 'Tracking' => 'Tracking'] as $class => $short) {
+            self::assertMatchesRegularExpression('/class ' . $class . ' +\{ name="[^"]*"; short="' . preg_quote($short, '/') . '";/', $cfg);
+        }
+        self::assertStringContainsString('["short", getText (_cfg >> "short")],', $this->read('ui/fn_appList.sqf'));
     }
 
     public function testTexteReecritEnDirectAPlaceDeDeuxLignes(): void

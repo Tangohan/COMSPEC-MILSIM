@@ -22,6 +22,13 @@ private _tex = ("true" configClasses (configFile >> "COMSPEC_ATAK_Apps")) apply 
     "ui_vibrate", "ui_weather", "ui_wind", "ui_chevron_down", "ui_chevron_up", "ui_dot", "ui_headphones", "ui_mute", "ui_next",
     "ui_pause_circle", "ui_play_circle", "ui_prev", "ui_repeat", "ui_repeat_one", "ui_shuffle", "ui_speaker", "sig_0", "sig_1", "sig_2", "sig_3", "sig_4", "bat_10", "bat_25", "bat_50", "bat_75", "bat_100"
 ];
+// Symboles MIL-STD et curseurs GPS les plus courants (tools/gen_milstd.py, items.pbo) : pas de symbole vide à leur
+// première apparition sur la carte. Les autres (cadres hostiles, pictogrammes rares) se chargent à la demande.
+{ _tex pushBack ("\z\comspec_atak_native\addons\items\data\milstd\" + _x + "_ca.paa"); } forEach [
+    "f_fl_fill", "f_fl_line", "f_fl_dash", "f_fa_fill", "f_fa_line", "p_inf_fl", "p_mech_fl", "p_mot_fl", "p_arm_fl", "p_med_fl",
+    "p_rec_fl", "p_sni_fl", "p_eng_fl", "p_at_fl", "p_avr_fl", "p_avr_fa", "e_tm_fl", "e_sq_fl", "e_pl_fl", "e_co_fl", "hq_fl", "bar_fl", "dir",
+    "g_nav_fill", "g_nav_line", "g_chev_fill", "g_chev_line", "g_cone", "g_rose", "g_needle", "g_ret", "g_dot", "g_dot_ring"
+];
 _tex = (_tex select { _x isNotEqualTo "" }) arrayIntersect (_tex select { _x isNotEqualTo "" });
 // Chargées par lots de 8 images par image de jeu (une centaine d'icônes d'un coup à l'arrivée : à-coup au spawn).
 _d setVariable ["COMSPEC_ATAK_TexKeep", count _tex];

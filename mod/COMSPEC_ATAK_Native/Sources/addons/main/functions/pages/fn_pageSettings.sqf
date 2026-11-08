@@ -319,7 +319,7 @@ private _map = [
     ["COMSPEC_ATAK_CompassStyle", "CLASSIC", "Style de la boussole", [["CLASSIQUE", "CLASSIC"], ["CADRAN", "CARD"], ["FLÈCHE", "ARROW"], ["BANDEAU", "TAPE"]], "CLASSIQUE : boussole fixe, l'aiguille indique votre direction. CADRAN : le cadran tourne, le haut est toujours devant vous. FLÈCHE : l'aiguille seule. BANDEAU : réglette graduée en haut à gauche"] call _profSegment,
     ["COMSPEC_ATAK_AllyFilter", "ALL", "Alliés affichés", [["TOUS", "ALL"], ["MON GROUPE", "GROUP"], ["MON ORBAT", "ORBAT"]], ["", format ["ORBAT : %1", missionNamespace getVariable ["comspec_profile_unit", ""]]] select ((missionNamespace getVariable ["comspec_profile_unit", ""]) isNotEqualTo "")] call _profSegment,
     ["COMSPEC_ATAK_HideAllyAi", false, "", "Masquer les IA alliées", "Seuls les joueurs alliés restent sur la carte et le BFT, pas les IA"] call _profSwitch,
-    ["COMSPEC_ATAK_UnitSymbols", "NATO", "Icônes des unités", [["OTAN MIL-STD", "NATO"], ["POINTS", "DOTS"]], "Symboles OTAN (MIL-STD-2525 / APP-6) : cadre et type d'unité (infanterie, véhicule, sanitaire, PC, reco...), et niveau des chefs"] call _profSegment,
+    ["COMSPEC_ATAK_UnitSymbols", "NATO", "Icônes des unités", [["OTAN MIL-STD", "NATO"], ["2525D", "MILSTD"], ["POINTS", "DOTS"]], "OTAN : symboles du jeu (cadre et type d'unité, niveau des chefs). 2525D : symboles complets (affiliation, dimension, type d'après le rôle, le véhicule et l'ORBAT du site, échelon, QG, état, textes en vue rapprochée)"] call _profSegment,
     ["COMSPEC_ATAK_AllyColor", "BLUE", "Couleur des alliés", [["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ROSE", "PINK"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfColor", "CYAN", "Ma couleur", [["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["ORANGE", "ORANGE"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfIcon", "", "Mon icône (vue par tous)", [["FLÈCHE", ""], ["INF", "b_inf"], ["RECO", "b_recon"], ["MÉDIC", "b_med"], ["PC", "b_hq"], ["SOUTIEN", "b_support"]]] call _profSegment,
@@ -667,7 +667,7 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
         // Dossier où les DLL cherchent les photos (réglage CBA « Dossier des captures d'écran », sinon profil Arma).
         ["section", "Photos", "Dossier où le téléphone cherche les captures du jeu"],
         ["text", format ["<t size='0.8'>%1</t>", ((["text"] call comspec_atak_native_fnc_shotDir) regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]]],
-        ["buttons", [["VÉRIFIER LE DOSSIER", { ["check", true] spawn comspec_atak_native_fnc_shotDir; }]]],
+        ["buttons", [["VÉRIFIER LE DOSSIER", { ["check", true] spawn comspec_atak_native_fnc_shotDir; }], ["OUVRIR LE DOSSIER CAPTURES", { ["open"] call comspec_atak_native_fnc_shotDir; }]]],
         ["buttons", [
             ["CRÉDITS", { [{ ["CREDITS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }],
             ["DEBUG", { [{ ["DEBUG"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, (count _anom) > 0],

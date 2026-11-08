@@ -21,6 +21,7 @@ Faire le build d'abord (`build_mod.bat`) : le test charge les PBO de `@COMSPEC_A
 | `-AtakDir`, `-SseDir`, `-AcreDir` | Dossiers des mods. ACRE par défaut : Workshop `751965892`. |
 | `-Mods` | Liste complète, remplace CBA, ACE, ACRE, ATAK, SSE. |
 | `-SansAcre`, `-SansSse` | Retire ce mod. |
+| `-SansAcreMpu5` | Ne charge pas `ACRE_MPU5.pbo` (MPU-5 d'ACRE), copié seul depuis le pack `3026491672` pour le groupe `acre`. |
 | `-Groupes` | `fonctions telephone carte antennes gps explo sse zeus acre reseau` (vide : tous). |
 | `-DureeMaxMinutes` | Défaut 45. Au-delà, le jeu est fermé. |
 | `-DemarrageMaxSecondes` | Défaut 300. Sans première ligne `AUTOTEST`, on passe au plan suivant. |
@@ -54,7 +55,7 @@ Lignes au RPT : `AUTOTEST|OK|nom`, `AUTOTEST|KO|nom|motif`, `AUTOTEST|SKIP|nom|m
 - **Fichiers partagés** : `Documents\Arma 3\Arma3.cfg` et `COMSPEC_Local\config.json` sont sauvegardés, puis restaurés s'ils ont changé.
 - **Réseau** : `cba_settings.sqf` force le mode local ; le processus reçoit un proxy mort (`HTTPS_PROXY`), car la DLL fait une requête `HEAD` vers Athena au chargement, même en mode local (`KickBackgroundWarmup`, corrigé par #1461). Pas de jeton, rien de publié. Le rapport liste les connexions vues, avec leur nom d'après le cache DNS de Windows.
 - **Licence** : `-SansProxy` retire le proxy et rend le test KO si le jeu joint Athena (`LICENCE OK` ou `LICENCE KO` au rapport). C'est le seul passage qui vérifie « ne transmet rien si le joueur répond Non » ; à lancer une fois #1461 fusionnée. Sans ce paramètre, le test ne prouve rien sur ce point. Une connexion courte entre deux relevés de 3 s peut échapper au relevé d'adresses, pas au relevé DNS, sauf si le nom était déjà en cache.
-- **ACRE** : lectures et fonction pure seulement. La voix par le maillage reste coupée, y compris au banc.
+- **ACRE** : lectures et fonction pure seulement. La voix par le maillage reste coupée, y compris au banc. L'étape `acre_radio_detectee` donne au joueur de test une `ACRE_MPU5`, une 152 puis une 343, vérifie la ligne « Radio » de l'app Wave Relay et la capture ; elle ne règle aucune radio.
 - **Publication** : `missions/` et `tools/` ne sont dans aucun PBO. `build_mod.bat` n'empaquette que `Sources\addons\*`. Les réglages du mode développeur ne sont forcés que dans la mission.
 
 ## Non couvert

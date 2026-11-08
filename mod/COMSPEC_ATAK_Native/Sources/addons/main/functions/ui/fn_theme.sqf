@@ -17,7 +17,8 @@
       bg0 écran et fond des bandeaux ; bg1 fond de page ; surface carte ou ligne ; surfaceAlt ligne alternée ;
       surface2 bouton secondaire, relief ; surfaceHi survol, choisi ; border filet ; chrome barres système (toujours
       sombres) ; onChrome texte des barres ; text, textDim (aides), textMuted (légendes) ; accent (fond), accentInk
-      (accent en texte, assombri en thème jour), onAccent (texte sur accent), accentDim, accentHi ; ok, warn, alert,
+      (accent en texte, assombri en thème jour), onAccent (texte sur accent), accentDim, accentHi ; accentSoft,
+      accentSoftHi (survol, pressé) et onAccentSoft : bouton tonal teinté d'accent ; ok, warn, alert,
       info, off ; warnDim (fond « imposé ») ; friend, hostile, neutral, unknown, civil ; field (champ de saisie) ;
       veil (voile sombre) ; rail (pastille neutre) ; onState (texte sur un fond d'état) ; scrollbar.
     Jetons hexadécimaux (balises <t color=…>) : hexText, hexTextDim, hexTextMuted, hexAccent (= accentInk), hexOnAccent,
@@ -110,6 +111,25 @@ if (_ck isNotEqualTo _key) then {
     _th set ["onAccent", [[0.03, 0.05, 0.04, 1], [0, 0.06, 0.02, 1]] select (_theme isEqualTo "NVG")];
     _th set ["accentDim", [_acc, 0.30] call _mul];
     _th set ["accentHi", [_acc, 0.45] call _lift];
+    // Bouton tonal (4.1.1, déverrouillage) : fond teinté d'accent, sobre, encre d'accent lisible dessus (AA, 4,5).
+    // Sombre : accent fondu à 26 % dans la surface, encre éclaircie ; jour : 20 % dans le blanc, encre très assombrie ;
+    // nuit JVN : vert à 16 % dans le noir, encre au vert du texte (jamais de blanc).
+    private _mix = { params ["_a", "_b", "_k"]; [(_a select 0) + ((_b select 0) - (_a select 0)) * _k, (_a select 1) + ((_b select 1) - (_a select 1)) * _k, (_a select 2) + ((_b select 2) - (_a select 2)) * _k, 1] };
+    _th set ["accentSoft", switch (_theme) do {
+        case "DAY": { [[1, 1, 1, 1], _acc, 0.20] call _mix };
+        case "NVG": { [[0, 0, 0, 1], _acc, 0.16] call _mix };
+        default { [_th get "surface", _acc, 0.26] call _mix };
+    }];
+    _th set ["accentSoftHi", switch (_theme) do {
+        case "DAY": { [[1, 1, 1, 1], _acc, 0.34] call _mix };
+        case "NVG": { [[0, 0, 0, 1], _acc, 0.26] call _mix };
+        default { [_th get "surface", _acc, 0.40] call _mix };
+    }];
+    _th set ["onAccentSoft", switch (_theme) do {
+        case "DAY": { [_acc, 0.36] call _mul };
+        case "NVG": { _th get "text" };
+        default { [_acc, 0.62] call _lift };
+    }];
     _th set ["warnDim", [_th get "warn", 0.58] call _mul];
     _th set ["scrollbar", _acc];
     // Calques posés sur la carte (bandeau du curseur, menu et barre d'outils, cartouches) : panneaux toujours sombres,

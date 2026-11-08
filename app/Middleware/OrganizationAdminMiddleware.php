@@ -145,6 +145,14 @@ class OrganizationAdminMiddleware
                 || $gate->allows('organization.orbat.view')
             )) {
                 $scopedOrgAccess = true;
+            } elseif (in_array(rtrim($path, '/'), ['/back-office/alerts', '/back-office/alerts/apercu', '/back-office/alerts/diffuser', '/back-office/alerts/centre/modifier', '/back-office/alerts/centre/retirer'], true) && (
+                // Centre de diffusion : les responsables y envoient ordres et alertes de l'app Tâches (comme l'alerte
+                // plein écran de la Tacmap). Les autres canaux et le formulaire complet du bandeau restent à la gestion :
+                // BroadcastCenterController vérifie chaque canal.
+                $gate->allows('atak.command.alert')
+                || $gate->allows('atak.mission_cycle.manage')
+            )) {
+                $scopedOrgAccess = true;
             }
         }
         if (!$scopedOrgAccess) {

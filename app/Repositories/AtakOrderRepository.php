@@ -253,6 +253,45 @@ class AtakOrderRepository
     }
 
     /**
+     * Ordres émis depuis le site (Tacmap, Overwatch, centre de diffusion), toutes cartes, récents d'abord, sans les
+     * signaux techniques (vibreur, photo du casque, géolocalisation) : liste du centre de diffusion du back-office.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listWebForTenant(int $tenantId, int $days = 60, int $limit = 200): array
+    {
+        if ($tenantId < 1 || !$this->tablesReady()) {
+            return [];
+        }
+        $signals = array_values(array_diff(self::TERMINAL_SIGNAL_TYPES, ['NOTIFY', 'NOTIFY_FULL']));
+        $stmt = $this->pdo()->prepare(
+            "SELECT * FROM atak_orders WHERE tenant_id = ? AND source = 'web'
+               AND UPPER(order_type) NOT IN (" . implode(',', array_fill(0, count($signals), '?')) . ')
+               AND created_at >= NOW() - INTERVAL ' . max(1, min(365, $days)) . ' DAY
+             ORDER BY id DESC LIMIT ' . max(1, min(500, $limit))
+        );
+        $stmt->execute(array_merge([$tenantId], $signals));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Ordres d'une même diffusion du centre (identifiants ORD-W-<clé> et ORD-W-<clé>-n).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listByBroadcastKey(int $tenantId, string $key): array
+    {
+        if ($tenantId < 1 || preg_match('/^[a-z0-9]{12}$/', $key) !== 1 || !$this->tablesReady()) {
+            return [];
+        }
+        $stmt = $this->pdo()->prepare("SELECT * FROM atak_orders WHERE tenant_id = ? AND (external_id = ? OR external_id LIKE ?) ORDER BY id ASC");
+        $stmt->execute([$tenantId, 'ORD-W-' . $key, 'ORD-W-' . $key . '-%']);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
      * Même référence métier sur une autre carte (décalage workspace / mapId client).
      *
      * @return array<string, mixed>|null

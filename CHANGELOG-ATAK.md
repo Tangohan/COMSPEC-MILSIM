@@ -38,6 +38,69 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : De vrais symboles militaires sur la carte du téléphone
+- Réglages > Carte, « Icônes des unités » : nouveau choix 2525D. Chaque unité a son vrai symbole OTAN : cadre selon le camp, type (infanterie, mécanisée, blindé, reco, artillerie, santé, génie, drone, hélico...), niveau (équipe, groupe, section, compagnie), poste de commandement et état.
+- Le symbole se déduit de ce que fait vraiment l'unité : son rôle, son véhicule et sa place dans l'ORBAT du site. Sans information, le cadre reste vide plutôt que de deviner.
+- « Mon point GPS » et « Forme des alliés » proposent aussi ces symboles : votre symbole automatique ou celui que vous choisissez.
+EN : Real military symbols on the phone map
+- Settings > Map, "Unit icons": new 2525D choice. Every unit gets its real NATO symbol: frame by side, type (infantry, mechanized, armor, recon, artillery, medical, engineer, drone, helicopter...), echelon (team, squad, platoon, company), command post and status.
+- The symbol comes from what the unit really is: its role, its vehicle and its place in the site ORBAT. With no information, the frame stays empty instead of guessing.
+- "My GPS point" and "Ally shape" offer these symbols too: your automatic symbol or the one you pick.
+
+### Détail technique
+- `tools/gen_milstd.py` : 189 textures 128 px DXT5 (ImageToPAA, ancien PAA supprimé avant conversion, en-tête DXT5 vérifié) dans `items/data/milstd` (+4,5 Mo dans items.pbo, main.pbo inchangé). Couches blanches colorées par `drawIcon` (thèmes clair, sombre, nuit sans texture en plus).
+- `fn_milSym` (association, règle dans `docs/ATAK_SYMBOLES_MILSTD.md`, code 2525D pour le site), `fn_milDraw` (3 à 7 `drawIcon` par symbole, couches gardées par descripteur et thème). `fn_mapOnDraw` : mode `MILSTD`, formes `MS` / `MS:<pictogramme>` (moi) et `MILSTD` (alliés).
+- ORBAT du site (`/api/atak/community-orbat`) : `function` et `hq` par unité ; `fn_bftOrbat` garde échelon, fonction, QG, parent et le type de poste des titulaires.
+## À venir : bouton de déverrouillage et titres des apps (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Écran de verrouillage plus sobre, titres des apps jamais coupés
+- Le bouton « Déverrouiller » est un bouton net, aux proportions fixes, dans la couleur d'accent choisie dans Réglages > Personnalisation, aligné avec CARTE et MESSAGES. Il réagit au survol et à l'appui.
+- Le rappel « Sans code : réglez-en un… » ne s'affiche plus qu'une fois.
+- Les titres des apps ne sont plus coupés en petit format : le titre prend toute la place libre de la barre, puis passe à une abréviation (« MSG », « DIST », « CR »…) ou à l'icône de l'app, sans jamais descendre sous 14 px.
+EN : Cleaner lock screen, app titles never cut off
+- The "Unlock" button is a clean button with fixed proportions, in the accent colour chosen in Settings > Personalisation, aligned with MAP and MESSAGES. It reacts to hover and press.
+- The "No code: set one in…" reminder now shows only once.
+- App titles are no longer cut off on a small phone: the title uses all the free room of the bar, then switches to a short form ("MSG", "DIST", "RPT"…) or to the app icon, never below 14 px.
+
+### Détail technique
+- Cause du bouton : texture `items/data/lock/pill.paa` étirée en style 48 sur un rectangle d'environ 15:1 (46 % de la rangée en paysage) : ses bouts arrondis devenaient une ellipse aplatie. Couleur : jeton `accent` plein, c'est-à-dire l'accent du profil (`COMSPEC_ATAK_Accent`, ici BLEU), seule grande surface vive de l'écran.
+- `fn_lockScreen` : rectangles (fond + filet d'un pixel) sans texture, largeur plafonnée (12 hauteurs de police pour le bouton, 8 pour les raccourcis), rangée centrée en paysage, deux rangées centrées en portrait. Bouton tonal : nouveaux jetons `accentSoft`, `accentSoftHi`, `onAccentSoft` (`fn_theme`), états survol, focus clavier et pressé. Rappel « sans code » : profil `COMSPEC_ATAK_LockPinTip`, marqué au premier déverrouillage. Comportement de déverrouillage et de code inchangé.
+- Cause des titres coupés : largeur du titre `_dw - 4 pas de bouton`, sans lien avec les boutons réellement affichés (le pas suit la police, pas l'écran) : 3 à 65 px en mini réduit ou texte agrandi ; `fn_textFit` s'arrêtait à 65 % (et à 85 % de 14 px) puis coupait. « ITINÉRAIRE » passait, « DISTANCES » non : seuls les titres les plus larges parmi ceux testés tombaient.
+- `fn_layoutApply` : le titre va jusqu'au premier bouton de droite affiché ; boutons resserrés quand la barre est étroite ; pastille « main + touche » prise en compte. Nouveau `fn_titleFit` : police jusqu'à 14 px, puis bouton de rotation masqué (sens dans Réglages > Emplacement), abréviation (attribut `short` de `COMSPEC_ATAK_Apps`, 25 apps), icône de l'app.
+- Tests : `AtakThemeContrastTest` (bouton tonal, 6 accents x 3 thèmes, AA 4,5), `AtakUiTruncationTest`. Autotest : étape `tel_verrouillage_themes` (3 thèmes, portrait et paysage).
+
+---
+
+## À venir : photos du téléphone bloquées, dossier des captures plein (ATAK natif, Overwatch connect et COMSPEC Link, version à attribuer)
+## À venir : radio ACRE2 reconnue dans l'app Wave Relay (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : L'app Wave Relay reconnaît votre radio ACRE2
+- La ligne « Radio » de MON NŒUD donne la radio réellement détectée (par exemple la MPU-5 d'ACRE), sa portée et sa liaison (câble EUD ou Wi-Fi) ; elle ne dit plus « sans MPU5 » quand une MPU5 est reliée.
+- Avec ACRE2, une nouvelle section dit la radio ACRE reconnue et l'état de la voix par le réseau, même désactivée, avec la façon de l'activer. L'onglet VOIX le redit et propose de relier votre radio quand le serveur l'autorise.
+- Le cadenas « EN CLAIR » explique pourquoi la liaison n'est pas chiffrée : chiffrement inactif par défaut, ou clé non chargée.
+EN : The Wave Relay app recognises your ACRE2 radio
+- The "Radio" line in MY NODE shows the radio actually detected (for example the ACRE MPU-5), its range and its link (EUD cable or Wi-Fi); it no longer says "no MPU5" while an MPU5 is linked.
+- With ACRE2, a new section shows the ACRE radio recognised and the state of voice over the network, even when it is off, with how to turn it on. The VOICE tab repeats it and offers to link your radio when the server allows it.
+- The "CLEAR" padlock explains why the link is not encrypted: encryption off by default, or key not loaded.
+
+### Détail technique
+- Cause (4.1.0) : avec la liaison réaliste (`comspec_atak_native_mpu_real`, cochée par défaut), `fn_mpu5 "source"` renvoie toujours `[]` ; la ligne « Radio » de `fn_pageWaveRelay` le lisait et affichait « téléphone seul · portée 3.0 km (sans MPU5) » (portée de repli `COMSPEC_ATAK_MeshRange`), alors que le facteur de débit de `fn_linkQuality` lisait `fn_mpuLink "status"` (MPU5 reliée par câble). L'`ACRE_MPU5_ID_n` était bien détectée.
+- `fn_mpu5 "isMpu"` : seule règle de reconnaissance (nom « MPU5 », `acre_baseClass`, `Iceman_WR_isMPU5`, réglage `mpu5_items`), utilisée par "has", "gear" et `fn_mpuLink`. `fn_mpu5 "detected"` : seule source de la ligne « Radio », de l'objet détecté et du nom du facteur de débit.
+- `fn_mpuVoice "summary"` : état de la voix par le réseau en clair (réglage admin, coupe-circuit, liaison réaliste, pont, maillage). Section ACRE2 sur MON NŒUD, en tête de l'onglet VOIX, bouton de pont (même geste que l'action ACE).
+- `fn_meshKeys "link"` : détails du cadenas réécrits (cause et remède) ; ligne d'explication « EN CLAIR » dans l'app.
+- Autotest : étape `acre_radio_detectee` (groupe `acre`) avec `ACRE_MPU5`, 152 et 343, captures MON NŒUD et VOIX ; `ingame_test.ps1` charge `ACRE_MPU5.pbo` seul (`-SansAcreMpu5` pour l'éviter).
+- Note : `docs/bugs/2026-11-08-atak-wave-relay-radio-acre-mpu5.md`.
+
+---
+
 ## À venir : papiers variés pour les documents SSE (SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
