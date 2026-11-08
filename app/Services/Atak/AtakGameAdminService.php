@@ -82,6 +82,72 @@ final class AtakGameAdminService
         $terminals = $this->fleet->listTerminals($search, $tenantId, 2000);
         $total = count($terminals);
         $terminals = array_slice($terminals, max(0, $offset), self::PAGE);
+        $rows = $this->present($terminals, $tenantId);
+
+        return ['total' => $total, 'rows' => $rows];
+    }
+
+    /**
+     * Une fiche ATAK de la communauté, présentée comme dans la liste (null si elle n'existe pas ou n'est pas de cette communauté).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function one(int $tenantId, int $terminalId): ?array
+    {
+        $this->fleet->ready();
+        $t = $this->fleet->findTerminal($terminalId);
+        if ($t === null || (int) $t['tenant_id'] !== $tenantId) {
+            return null;
+        }
+
+        return $this->present([$t], $tenantId)[0] ?? null;
+    }
+
+    /**
+     * Le joueur a-t-il l'un de ces droits dans la communauté ? Membre actif de la communauté exigé : l'administrateur de la
+     * plateforme sans rôle dans la communauté n'est pas compté (comme le menu « Organisation » du back-office).
+     *
+     * @param list<string> $permissions
+     */
+    public function can(int $tenantId, ?int $userId, array $permissions): bool
+    {
+        if ($tenantId < 1 || $userId === null || $userId < 1) {
+            return false;
+        }
+        $users = $this->users ??= new UserRepository();
+        $raw = $users->findById($userId);
+        if ($raw === null || in_array((string) ($raw['status'] ?? 'active'), self::CLOSED, true)) {
+            return false;
+        }
+        $member = $users->findById($userId, $tenantId);
+        if ($member === null) {
+            return false;
+        }
+        $gate = Gate::getInstance();
+        $before = [$gate->permissionSlugs(), $gate->getUnitPermissionMap(), $gate->isPlatformAdmin()];
+        try {
+            (new RbacService())->setPermissionsForGateFromUserRow($member + ['tenant_id' => $tenantId], $users);
+            foreach ($permissions as $p) {
+                if ($gate->allows($p)) {
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (\Throwable) {
+            return false;
+        } finally {
+            $gate->setFullRbacState($before[0], $before[1]);
+            $gate->setPlatformAdmin($before[2]);
+        }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $terminals
+     * @return list<array<string, mixed>>
+     */
+    private function present(array $terminals, int $tenantId): array
+    {
         $metrics = $this->fleet->metricsForUsers(array_map(static fn (array $t): int => (int) ($t['user_id'] ?? 0), $terminals));
         $blocks = $this->fleet->activeBlocks();
         $pending = $this->fleet->pendingCountByUser();
@@ -109,7 +175,8 @@ final class AtakGameAdminService
             ];
         }
 
-        return ['total' => $total, 'rows' => $rows];
+
+        return $rows;
     }
 
     /**
