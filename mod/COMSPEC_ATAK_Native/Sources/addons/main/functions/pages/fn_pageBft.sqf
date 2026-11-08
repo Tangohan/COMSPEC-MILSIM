@@ -130,10 +130,11 @@ if (!_upd) then {
 // Menu de la vue : LISTE (tableau des pistes) ou ORBAT (arbre formation, groupe, équipe), la vue choisie en couleur.
 {
     _x params ["_vLbl", "_vKey", "_vX", "_vTip"];
-    private _vb = ["COMSPEC_RscButton", [_bw - _hbW + _vX, 0, _hbW / 2 - pixelW, _font * 1.25], _vLbl] call comspec_atak_native_fnc_pageCtrl;
+    private _vf = ["COMSPEC_RscText", [_bw - _hbW + _vX, 0, _hbW / 2 - pixelW, _font * 1.25]] call comspec_atak_native_fnc_pageCtrl;
+    private _vb = ["COMSPEC_RscButtonFlat", [_bw - _hbW + _vX, 0, _hbW / 2 - pixelW, _font * 1.25], _vLbl] call comspec_atak_native_fnc_pageCtrl;
     _vb ctrlSetFontHeight (_fs * 0.9);
     _vb ctrlSetTooltip ((_vTip) call comspec_atak_native_fnc_tr);
-    _vb ctrlSetBackgroundColor ([COMSPEC_ATAK_Th get "surface2", COMSPEC_ATAK_Th get "accent"] select (_view isEqualTo _vKey));
+    _vf ctrlSetBackgroundColor ([COMSPEC_ATAK_Th get "surface2", COMSPEC_ATAK_Th get "accent"] select (_view isEqualTo _vKey));
     _vb ctrlSetTextColor ([COMSPEC_ATAK_Th get "text", COMSPEC_ATAK_Th get "onAccent"] select (_view isEqualTo _vKey));
     _vb setVariable ["comspec_view", _vKey];
     _vb ctrlAddEventHandler ["ButtonClick", {

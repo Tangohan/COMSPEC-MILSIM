@@ -37,7 +37,7 @@ class CfgFunctions {
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class formSet {}; class clickNext {}; class keyBlock {}; class keyPass {}; class keybinds {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class fontSet {}; class fontApply {}; class fontText {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class textFit {}; class texUsable {}; class tileCreate {}; class iconTint {}; class appList {}; class appBadge {}; class appFolders {}; class chatUnread {}; class dockRender {}; class launcherRender {}; class launcherFilter {}; class deviceOverlay {}; class appVisible {}; class appInstall {}; class accent {}; class theme {};
             class statusUpdate {}; class mobileQr {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class notifMeta {}; class powerFx {}; class overlayFront {}; class overlayRaise {}; class screenFx {}; class foreignHud {}; class screenSurface {};
-            class fx {}; class toast {}; class undoSnack {}; class miniInteract {}; class vehicleKeys {}; class buzzAlert {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {}; class keyRelang {};
+            class fx {}; class toast {}; class undoSnack {}; class miniInteract {}; class vehicleKeys {}; class buzzAlert {}; class quickSettings {}; class lockScreen {}; class wallPath {}; class tr {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {}; class keyRelang {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
             class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapHudRects {}; class mapMarkerText {}; class mapPlaceText {}; class mapGameMarkers {}; class mapTextW {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerNet {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerPlace {}; class markerDeletable {}; class markerLabels {}; class markerAutoName {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class gridParse {}; class mapStyle {}; class mapCtrl {}; class photoMap {}; class photoRelief {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {}; class roadPath {}; class cardinal {}; class mapPrefs {};
@@ -186,7 +186,7 @@ class COMSPEC_ATAK_Apps {
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; desc="Tâches et ordres reçus"; };
     class Reports     { name="Comptes rendus"; page="REPORTS"; section="Mission"; order=202; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; desc="Comptes rendus de fin de mission"; };
     class Debrief     { name="CR fin d'op"; page="DEBRIEF"; function="comspec_atak_native_fnc_pageDebrief"; section="Mission"; order=203; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; desc="Compte rendu de fin d'opération à remplir ou à lire"; };
-    class Tenant      { name="Communauté"; page="TENANT"; new=1; function="comspec_atak_native_fnc_pageTenant"; section="Mission"; order=204; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; desc="Consignes, ordres, tips et kit obligatoire de votre communauté"; };
+    class Tenant      { name="Communauté"; page="TENANT"; new=1; function="comspec_atak_native_fnc_pageTenant"; section="Mission"; order=204; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_tenant.paa"; desc="Consignes, ordres, tips et kit obligatoire de votre communauté"; };
     class Briefing    { name="Briefing"; page="BRIEFING"; section="Mission"; order=205; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; desc="Diapositives et consignes de la mission"; };
     class Academy     { name="Academy"; page="ACADEMY"; new=1; function="comspec_atak_native_fnc_pageAcademy"; section="Mission"; order=207; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_notes.paa"; desc="Cours COMSPEC Academy : lire ses leçons et les présenter sur les écrans"; };
     class Plan        { name="Plan"; page="PLAN"; function="comspec_atak_native_fnc_pagePlan"; section="Mission"; order=206; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_plan.paa"; desc="Plan de manœuvre et phases"; };
@@ -259,21 +259,21 @@ class CfgWeapons {
     };
     // Batterie de rechange de la MPU5 (fn_mpuLink "battery", action ACE « Changer la batterie de la MPU5 »). Modèle de la
     // batterie du téléphone. Le nom de classe ne contient pas « MPU5 » (fn_mpu5 "has" la prendrait pour une radio).
-    // Chargeur de clés du maillage (fn_meshKeys, mécanique de jeu) : modèle et icône de la batterie de radio, pas de modèle propre.
+    // Chargeur de clés du maillage (fn_meshKeys, mécanique de jeu) : modèle de la batterie de radio, icône propre.
     class COMSPEC_ATAK_KeyLoader: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="Chargeur de clés (ATAK)";
         descriptionShort="Charge les clés du maillage dans une MPU5. Mécanique de jeu.";
-        picture="\z\comspec_atak_native\addons\main\data\item_battery.paa";
+        picture="\z\comspec_atak_native\addons\main\data\item_keyloader.paa";
         model="\z\comspec_atak_native\addons\items\data\item3d_battery.p3d";
         class ItemInfo: InventoryItem_Base_F { mass=4; };
     };
-    // Goniomètre portable (fn_meshEW) : modèle et icône de la batterie de radio, pas de modèle propre.
+    // Goniomètre portable (fn_meshEW) : modèle de la batterie de radio, icône propre.
     class COMSPEC_ATAK_Goniometer: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="Goniomètre portable (ATAK)";
         descriptionShort="Donne une direction approximative vers les émetteurs actifs d'un canal.";
-        picture="\z\comspec_atak_native\addons\main\data\item_battery.paa";
+        picture="\z\comspec_atak_native\addons\main\data\item_goniometer.paa";
         model="\z\comspec_atak_native\addons\items\data\item3d_battery.p3d";
         class ItemInfo: InventoryItem_Base_F { mass=8; };
     };
