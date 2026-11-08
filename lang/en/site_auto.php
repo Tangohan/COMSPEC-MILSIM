@@ -55783,4 +55783,7 @@ return [
     'Télécharger pour ACE (.txt)' => 'Download for ACE (.txt)',
     'Vos tenues, celles de la communauté et les kits de départ, prêts à enfiler en jeu.' => 'Your outfits, the community\'s outfits and the starter kits, ready to wear in game.',
     'Nom de l’emploi ou catégorie…' => 'Job name or category…',
+    'Proposer les bilans individuels' => 'Offer individual reviews',
+    'Si décoché, l’onglet « Bilans » disparaît des fiches des membres et plus aucun bilan ne peut être saisi. Les bilans déjà enregistrés sont conservés.' => 'If unchecked, the "Reviews" tab disappears from member files and no new review can be entered. Reviews already saved are kept.',
+    'Les bilans individuels sont désactivés pour cette communauté.' => 'Individual reviews are turned off for this community.',
 ];
