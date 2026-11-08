@@ -273,7 +273,13 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
     if ((count _planDraft) > 0) then { [_map, _planDraft, 0.55] call comspec_atak_native_fnc_planDraw; };
 };
 
-private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
+// « Icônes des unités » : NATO (textures OTAN d'Arma, comme avant), MILSTD (symboles 2525D complets, fn_milSym / fn_milDraw)
+// ou DOTS. Le mode est gardé dans le cache de chaque unité (index 6) : changer de réglage refait les symboles.
+private _symMode = profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"];
+private _nato = _symMode isEqualTo "NATO";
+private _milU = _symMode isEqualTo "MILSTD";
+// Thème des symboles MIL-STD (clair, sombre, nuit) d'après le fond de carte : lu par fn_milDraw, posé une fois par image.
+uiNamespace setVariable ["COMSPEC_ATAK_MilTheme", ["L", "D", "N"] select ([[0, 1] select (_pal getOrDefault ["dark", false]), 2] select (_bgStyle isEqualTo "NIGHT"))];
 // Terminal compromis (fn_compromiseView) : flux BFT coupé, seule ma position GPS reste en direct (pistes figées dessinées à la fin).
 private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
 private _tacDisc = "\z\comspec_atak_native\addons\main\data\map_pawn_disc.paa";
@@ -307,6 +313,11 @@ private _shapeSelf = _selfCfg param [6, "ARROW"];
 private _shapeAlly = _selfCfg param [7, "AUTO"];
 private _shapeSelfNew = ["isNew", _shapeSelf] call comspec_atak_native_fnc_mapShape;
 private _shapeAllyNew = ["isNew", _shapeAlly] call comspec_atak_native_fnc_mapShape;
+// Symboles MIL-STD : les miens (« MS » déduit, « MS:<pictogramme> » choisi), ceux des alliés (forme MILSTD) ou de toutes
+// les unités (Icônes des unités MILSTD). Hampe, échelon et textes compris ; textes seulement en vue rapprochée.
+private _msSelf = (_shapeSelf select [0, 2]) isEqualTo "MS";
+private _msAlly = _shapeAlly isEqualTo "MILSTD";
+private _msText = _scale < 0.06 && {_lblOn};
 // Trace (fil d'Ariane) de mes positions, sous les symboles.
 if (_selfCfg select 4) then {
     private _tp = ["trailPts"] call comspec_atak_native_fnc_mapPrefs;
@@ -328,7 +339,7 @@ if (_selfCfg select 4) then {
     // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s par unité (table à part, COMSPEC_ATAK_MapDrawCache) :
     // refaits à chaque image et pour chaque unité avant. Plus dans la piste : fn_localDataRefresh la refait 4 fois par seconde.
     private _dc = _dcAll getOrDefault [_x, []];
-    if ((count _dc) < 9 || {diag_tickTime > (_dc select 0)} || {(_dc select 6) isNotEqualTo _nato}) then {
+    if ((count _dc) < 10 || {diag_tickTime > (_dc select 0)} || {(_dc select 6) isNotEqualTo _symMode}) then {
         ([_entity] call comspec_atak_native_fnc_symbology) params ["_sIcon","_sColor"];
         private _ci = "";
         private _custom = _entity getOrDefault ["icon",""];
@@ -344,7 +355,19 @@ if (_selfCfg select 4) then {
         private _ls = ((_lo getVariable ["COMSPEC_ftDrawCache", []]) param [1, createHashMap]) getOrDefault ["name", ""];
         if (_ls isEqualTo "" && {!isNull _lo}) then { _ls = groupId group _lo; };
         if (_ls isEqualTo "") then { _ls = _entity getOrDefault ["callsign", ""]; };
-        _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _nato, ["cut", _entity getOrDefault ["callsign", ""], 16] call comspec_atak_native_fnc_mapFmt, toUpper (toString ((toArray _ls) select [0, 1]))];
+        // Symbole MIL-STD (index 9) : [descripteur, textes] seulement s'il sert ; mes symboles choisis à part (fn_milSym « self »).
+        private _ms = [];
+        if (_self && {_msSelf}) then {
+            _ms = [["self", _shapeSelf select [3]] call comspec_atak_native_fnc_milSym];
+        } else {
+            if (!_self && {_milU || {_msAlly && {(_entity getOrDefault ["affiliation", ""]) isEqualTo "friend"}}}) then { _ms = [["unit", _entity] call comspec_atak_native_fnc_milSym]; };
+        };
+        if ((count _ms) > 0) then {
+            // Désignation (code d'unité de l'ORBAT, sinon groupe Arma) et unité supérieure (ORBAT) : données réelles seulement.
+            private _orb = (["orbat"] call comspec_atak_native_fnc_milSym) getOrDefault [_lo, []];
+            _ms pushBack [[_orb param [3, ""], groupId group _lo] select ((_orb param [3, ""]) isEqualTo "" && {!isNull _lo}), _orb param [4, ""]];
+        };
+        _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _symMode, ["cut", _entity getOrDefault ["callsign", ""], 16] call comspec_atak_native_fnc_mapFmt, toUpper (toString ((toArray _ls) select [0, 1])), _ms];
         _dcAll set [_x, _dc];
     };
     private _icon = _dc select 1;
@@ -386,6 +409,14 @@ if (_selfCfg select 4) then {
     // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
     private _acc = _entity getOrDefault ["acc", 0];
     if (!_self && {_acc >= 10} && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", false]}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
+    if ((count (_dc select 9)) > 0) then {
+        (_dc select 9) params ["_msD", "_msT"];
+        // Cap : flèche de direction seulement en mouvement (vitesse réelle de l'unité) ; vitesse en texte en vue rapprochée.
+        private _mo = _entity getOrDefault ["object", objNull];
+        private _spd = if (isNull _mo) then { 0 } else { speed (vehicle _mo) };
+        private _txt = if (_msText) then { [_msT select 0, [_msT select 1, format ["%1 km/h", round _spd]] select (_spd > 5 && {(_msT select 1) isEqualTo ""})] } else { [] };
+        ["draw", [_map, _msD, _pos, _size * ([2.1, 2.3] select _self), _color select 3, [-1, _entity getOrDefault ["heading", 0]] select (_spd > 5), _txt]] call comspec_atak_native_fnc_milDraw;
+    } else {
     if ((_self && {_shapeSelfNew}) || {!_self && {_shapeAllyNew} && {(_entity getOrDefault ["affiliation", ""]) isEqualTo "friend"}}) then {
         ["draw", [_map, [_shapeAlly, _shapeSelf] select _self, _pos, _size * 1.35, _color, _entity getOrDefault ["heading", 0], _dc select 8]] call comspec_atak_native_fnc_mapShape;
     } else {
@@ -402,6 +433,7 @@ if (_selfCfg select 4) then {
         _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
     };
     };
+    };
     // Mon indicatif : AUTO comme les autres unités, ON toujours, OFF jamais (fn_mapPrefs « self »).
     if ((_self && {_selfLbl isEqualTo "ON"}) || {_lblOn && {!_boxOn} && {_scale < 0.25} && {_eniOn || {!_hostile}} && {!_self || {_selfLbl isNotEqualTo "OFF"}}}) then {
         private _cs = _dc select 7;
@@ -413,7 +445,7 @@ if (_selfCfg select 4) then {
         };
         if (_cs isNotEqualTo "" && {_lrow < 3}) then { _map drawIcon [_clear,[1,1,1,(_color select 3) max 0.6],[_pos select 0, (_pos select 1) - _lrow * _lineM, 0],_size,_size,0,_cs,2,0.027 * _kt * _tsL,_fontU,["right", "left"] select ((_pos select 0) > _uxR)]; };
     };
-    if (_ech isNotEqualTo "") then { _map drawIcon [_ech, _color, _pos, _size, _size, 0, "", 0]; };
+    if (_ech isNotEqualTo "" && {(count (_dc select 9)) isEqualTo 0}) then { _map drawIcon [_ech, _color, _pos, _size, _size, 0, "", 0]; };
     // Candidat au cartouche : pas moi (carte « moi »), et pour les autres groupes seulement le chef (un cartouche par
     // groupe, pas un par équipier) ; les unités Athena sans objet et l'unité sélectionnée gardent toujours le leur.
     // Priorité (fn_mapLabels) : sélection 0, mon groupe 1 (et alliés proches, rangés là par fn_mapLabels), ENI 2, autres 3.
