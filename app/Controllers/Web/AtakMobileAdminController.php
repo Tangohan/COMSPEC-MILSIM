@@ -140,7 +140,14 @@ final class AtakMobileAdminController
      */
     private function page(string $view, array $ctx, array $data = [], int $status = 200): Response
     {
-        $response = Response::view('m.' . $view, $data + [
+        $template = match ($view) {
+            'admin_players' => 'm.admin_players',
+            'admin_player' => 'm.admin_player',
+            'admin_sessions' => 'm.admin_sessions',
+            'admin_cr' => 'm.admin_cr',
+            default => 'm.admin_home',
+        };
+        $response = Response::view($template, $data + [
             'title' => 'Administration — Athena',
             'adminView' => $view,
             'adminLink' => $ctx['link'],
