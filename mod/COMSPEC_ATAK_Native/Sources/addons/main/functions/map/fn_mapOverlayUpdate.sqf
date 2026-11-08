@@ -133,7 +133,7 @@ if (!isNull _cur && {!_tapeOnly}) then {
     private _big = { format ["<t font='EtelkaMonospaceProBold' size='1.2'>%1</t>", _this select 0] };
     private _zoneTxt = ["", format ["<t font='EtelkaMonospacePro' size='0.85' color='#b7c1bc'>%1</t> ", _zone select 1]] select _mgrs;
     private _val = { format ["<t font='EtelkaMonospaceProBold' color='#eef2ef'>%1</t>", _this select 0] };
-    private _brg = { params ["_az"]; format ["%1 %2", [format ["%1°", [_az] call _az3]] call _val, format ["<t font='EtelkaMonospacePro' color='#b7c1bc'>%1</t>", [_az] call _cardinal]] };
+    private _brg = { params ["_az"]; format ["%1 %2", [format ["%1°", [_az] call _az3]] call _val, format ["<t font='EtelkaMonospacePro' color='#b7c1bc'>%1</t>", [_az, 8] call comspec_atak_native_fnc_cardinal]] };
     private _nl = "<br/>";
     // Zone de l'app Zones sous le curseur (ou sous moi en porté) : nom à la couleur de son état, plan, état (fn_zoneAction).
     private _zq = [_p, getPosASL (vehicle player)] select !_inter;
