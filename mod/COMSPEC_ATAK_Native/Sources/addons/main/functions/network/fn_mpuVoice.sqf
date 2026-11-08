@@ -145,6 +145,8 @@ private _linked = {
     if (_me isEqualTo [] || {(count _pp) < 7}) exitWith { -1 };
     // Hors de tout groupe commun : pas de rallonge (fn_meshGroups).
     if !(["shared", [_u]] call comspec_atak_native_fnc_meshGroups) exitWith { -1 };
+    // Sans la clé du groupe de ma radio : relais possible, voix sans rallonge (décision 2).
+    if !(["voiceOk"] call comspec_atak_native_fnc_meshKeys) exitWith { -1 };
     private _mk = _me select 4;
     if (_mk isNotEqualTo "" && {_mk isEqualTo (_pp select 4)}) exitWith {
         // Par le cœur de réseau : mes sauts plus les siens, sous le même plafond que le reste du graphe (fn_meshGraph).

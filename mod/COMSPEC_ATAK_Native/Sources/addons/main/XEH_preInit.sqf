@@ -681,6 +681,12 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_keys_auto", "CHECKBOX",
     ["Clés chargées automatiquement", "Coché : chaque MPU5 reçoit les clés de son camp au démarrage. Décoché : chargeur de clés ou poste de commandement."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_compromise_auto", "CHECKBOX",
+    ["Compromission automatique des clés", "Une clé passe compromise quand un joueur d'un autre camp ramasse une MPU5 ou un chargeur. Le camp est prévenu ; une nouvelle époque l'exclut."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_tfar_code", "CHECKBOX",
+    ["TFAR : clé de groupe en code de radio", "Radio pontée réglée sur le code de la clé de son groupe : sans la clé, rien ne s'entend, même en direct. Peut gêner une mission qui gère déjà ses codes. À confirmer en jeu."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
 // Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
 ["comspec_atak_native_mesh_dev", "CHECKBOX",
     ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],
