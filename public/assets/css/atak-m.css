@@ -37,10 +37,10 @@ a { color: var(--mm-green); }
 .mm-top__app { font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mm-top__who { text-align: right; font: 500 13px var(--mm-mono); display: flex; flex-direction: column; }
 .mm-top__who small { color: var(--mm-muted); font-size: 11px; }
-.mm-tabs { display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; background: #000; border-bottom: 1px solid var(--mm-line); }
+.mm-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; padding: 8px 12px; background: #000; border-bottom: 1px solid var(--mm-line); }
 .mm-tab {
-  flex: 1 0 auto; text-align: center; padding: 12px 14px; border-radius: 3px; min-height: 48px;
-  background: var(--mm-panel); color: var(--mm-text); text-decoration: none; font-weight: 600; font-size: 15px;
+  display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px 4px; border-radius: 3px; min-height: 52px;
+  background: var(--mm-panel); color: var(--mm-text); text-decoration: none; font-weight: 700; font-size: 15px;
   border: 1px solid var(--mm-line);
 }
 .mm-tab.is-active { background: var(--mm-green); color: var(--mm-ink); border-color: var(--mm-green); }
@@ -279,3 +279,60 @@ body[data-view="carte"] .mm-foot { display: none; }
 .mm-idc__form { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .mm-idc__label { font-size: 14px; color: var(--mm-muted); }
 .mm-idc__form textarea { width: 100%; min-height: 64px; padding: 12px; border-radius: 3px; border: 1px solid var(--mm-line); background: #070a09; color: var(--mm-text); font: 16px/1.4 Inter, system-ui, sans-serif; }
+
+/* Espaces (comptes rendus, radio) : un écran à la fois, boutons larges. */
+.mm-tiles--2 { grid-template-columns: 1fr 1fr; }
+.mm-tiles--home { grid-template-columns: 1fr 1fr; flex: 1; align-content: stretch; grid-auto-rows: minmax(110px, 1fr); }
+.mm-tiles--home .mm-tile { justify-content: center; }
+.mm-tiles--home .mm-tile:nth-last-child(1):nth-child(odd) { grid-column: 1 / -1; }
+.mm-sub { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+.mm-sub__btn {
+  display: flex; align-items: center; justify-content: center; text-align: center; min-height: 52px; padding: 6px 8px; border-radius: 3px;
+  background: var(--mm-panel2); border: 1px solid var(--mm-line); color: var(--mm-text); text-decoration: none; font-weight: 800; font-size: 14px;
+}
+.mm-sub__btn.is-active { background: var(--mm-field); color: var(--mm-green); border-color: rgba(52,211,153,.6); }
+.mm-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mm-row-card {
+  display: flex; flex-direction: column; gap: 6px; min-height: 72px; padding: 14px 16px; border-radius: 4px; text-decoration: none; color: var(--mm-text);
+  background: var(--mm-panel2); border: 1px solid var(--mm-line); border-left: 6px solid var(--mm-line);
+}
+.mm-row-card.is-unread { border-left-color: var(--mm-green); }
+.mm-row-card__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mm-row-card__top strong { font-size: 18px; }
+.mm-row-card__text { font-size: 15px; color: var(--mm-text); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.mm-row-card__meta { font-size: 12.5px; color: var(--mm-muted); }
+.mm-badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font: 800 11px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; background: var(--mm-field); color: var(--mm-green2); }
+.mm-badge--hot { background: rgba(248,113,113,.18); color: var(--mm-red); }
+.mm-badge--new { background: var(--mm-green); color: var(--mm-ink); }
+.mm-read { font-size: 17px; line-height: 1.5; margin: 12px 0; overflow-wrap: anywhere; }
+.mm-dl { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 8px 12px; margin: 12px 0; font-size: 15px; }
+.mm-dl dt { color: var(--mm-muted); }
+.mm-dl dd { margin: 0; overflow-wrap: anywhere; }
+.mm-thread-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.mm-thread { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: calc(100dvh - 260px); min-height: 160px; overscroll-behavior: contain; }
+.mm-msg { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 4px; background: var(--mm-panel2); border: 1px solid var(--mm-line); max-width: 92%; align-self: flex-start; }
+.mm-msg.is-mine { align-self: flex-end; background: var(--mm-field); border-color: rgba(52,211,153,.4); }
+.mm-msg__head { font-size: 12px; color: var(--mm-muted); }
+.mm-msg__text { font-size: 17px; line-height: 1.4; overflow-wrap: anywhere; }
+
+/* Carte lisible sur téléphone : symboles, étiquettes et boutons plus grands (le pouce, en plein soleil). */
+.mm-map { --ow-icon-size: 16px; --ow-label-size: 14px; }
+.mm-map .ow-marker div { gap: 7px; }
+.mm-map .ow-marker .ow-cs, .mm-map .ow-marker span { padding: 4px 8px; border-width: 2px; background: #050505; color: #fff; font-weight: 800; }
+.mm-map .ow-marker.ow-mark-dot i { width: 14px; height: 14px; }
+.mm-map .ow-marker.ow-mark-nato i { width: 18px; height: 18px; }
+.mm-map .ow-marker.is-me i { width: 18px; height: 18px; }
+.mm-map .ow-geo-label span, .mm-map .ow-jtac-geo-label span { font-size: 13px; padding: 3px 6px; }
+.mm-map .leaflet-tooltip { font-size: 14px; padding: 6px 9px; }
+.mm-map .ow-air-label, .mm-map .ow-gps-label { font-size: 13px; }
+.mm-map .ow-air-glyph { font-size: 20px; }
+.mm-map .ow-jtac-geo-target span { width: 18px; height: 18px; margin: 0; }
+.mm-mapchip { font-size: 14px; padding: 8px 12px; }
+.mm-mapbar { top: 56px; font-size: 15px; padding: 10px 12px; }
+.mm-maptools { gap: 6px; padding: 6px; }
+.mm-tool { min-height: 56px; min-width: 56px; font-size: 13px; padding: 0 10px; }
+.mm-tool--full { flex: 0 0 56px; font-size: 24px; }
+.mm-tool__zoom .mm-tool { flex: 0 0 56px; font-size: 26px; }
+.mm-layers { bottom: calc(80px + env(safe-area-inset-bottom)); min-width: 260px; }
+.mm-layer { min-height: 52px; font-size: 17px; }
+.mm-layer input { width: 26px; height: 26px; }

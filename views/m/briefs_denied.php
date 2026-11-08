@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 require __DIR__ . '/_head.php';
 ?>
     <section class="mm-card mm-card--warn">

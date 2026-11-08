@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * CR de fin d'opération ouvert dans le téléphone en jeu (app CR fin d'op), à remplir ou à lire sur le vrai téléphone.
  *

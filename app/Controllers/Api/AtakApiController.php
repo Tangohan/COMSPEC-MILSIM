@@ -7478,6 +7478,19 @@ class AtakApiController
                 'meta' => $meta,
             ];
         }
+        // Réponse bornée : COMSPEC Link ne relit qu'une réponse courte (environ 10 Ko). Les avis sont déjà triés (comptes
+        // rendus du téléphone d'abord) : on s'arrête avant de couper un avis en deux, ce qui le rendait illisible.
+        $budget = 0;
+        $kept = [];
+        foreach ($messages as $m) {
+            $size = strlen((string) $m['title']) + strlen((string) $m['body']) + strlen((string) $m['meta']) + 60;
+            if ($kept !== [] && $budget + $size > self::ADMIN_POLL_BUDGET) {
+                continue;
+            }
+            $budget += $size;
+            $kept[] = $m;
+        }
+        $messages = $kept;
         // CR de fin d'opération : fiche dans le texte de l'avis et réglages de la communauté, pour un ATAK qui sait les lire.
         $caps = (string) ($this->jsonBody($request)['caps'] ?? '');
         try {
@@ -7832,6 +7845,9 @@ class AtakApiController
     }
 
     /** Fenêtre lue en base par relève de tchat avec curseur (le dépôt borne de son côté à 200). */
+    /** Octets d'avis (titre, texte, méta) renvoyés à une relève de l'ATAK ; un seul avis plus gros passe seul. */
+    private const ADMIN_POLL_BUDGET = 6000;
+
     private const CHAT_FETCH_MAX = 200;
 
     /**

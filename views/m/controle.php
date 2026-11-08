@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Contrôle ID (COMSPEC IDENTITY) sur le vrai téléphone : contrôles d'identité faits par le joueur dans la partie,
  * le plus récent d'abord. Chaque contrôle se déplie : papier présenté, détail par niveau (N0 visuel, N1 bande MRZ,

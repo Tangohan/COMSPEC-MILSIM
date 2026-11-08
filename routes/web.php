@@ -753,6 +753,14 @@ return function (Router $router) {
     $router->get('/m', [\App\Controllers\Web\AtakMobileAppsController::class, 'home']);
     $router->get('/m/cr', [\App\Controllers\Web\AtakMobileAppsController::class, 'cr']);
     $router->post('/m/cr', [\App\Controllers\Web\AtakMobileAppsController::class, 'crSubmit']);
+    $router->get('/m/cr/envoyes', [\App\Controllers\Web\AtakMobileAppsController::class, 'crSent']);
+    $router->get('/m/cr/recus', [\App\Controllers\Web\AtakMobileAppsController::class, 'crReceived']);
+    $router->get('/m/cr/lire/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'crRead']);
+    $router->post('/m/cr/lire/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'crMarkRead']);
+    $router->get('/m/radio', [\App\Controllers\Web\AtakMobileAppsController::class, 'radio']);
+    $router->get('/m/radio/prives', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioPrivate']);
+    $router->get('/m/radio/absent', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioAbsent']);
+    $router->get('/m/radio/canal/{key}', [\App\Controllers\Web\AtakMobileAppsController::class, 'radioChannel']);
     $router->get('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debrief']);
     $router->post('/m/compte-rendu', [\App\Controllers\Web\AtakMobileAppsController::class, 'debriefSubmit']);
     $router->get('/m/carte', [\App\Controllers\Web\AtakMobileAppsController::class, 'carte']);

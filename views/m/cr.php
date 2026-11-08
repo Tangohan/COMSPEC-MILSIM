@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Compte rendu rapide (app Comptes rendus de l'ATAK) : fiche choisie, remplie au pouce, confiée à l'ATAK en jeu.
  *
@@ -7,7 +9,10 @@
  * @var string $myGrid
  */
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$subSet = 'cr';
+$subActive = 'new';
 require __DIR__ . '/_head.php';
+require __DIR__ . '/_sub.php';
 ?>
     <section class="mm-step" data-cr-pick>
       <h1 class="mm-h1">Nouveau compte rendu</h1>
@@ -75,6 +80,7 @@ require __DIR__ . '/_head.php';
       <h2 class="mm-h1">Compte rendu confié à votre ATAK</h2>
       <p class="mm-state" data-state>En attente de votre ATAK…</p>
       <p class="mm-muted">Votre téléphone en jeu l’envoie à votre camp et à Athena dès qu’il le reçoit (moins de 30 secondes, téléphone allumé et relié à Athena).</p>
+      <a class="mm-btn" href="<?= $h(url('m/cr/envoyes')) ?>">VOIR L’HISTORIQUE</a>
       <button type="button" class="mm-btn" data-cr-again>NOUVEAU COMPTE RENDU</button>
     </section>
 

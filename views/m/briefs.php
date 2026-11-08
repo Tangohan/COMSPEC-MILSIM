@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Briefs air du pilote ou de l'équipage : 9-LINE reçus par son appareil, lus ligne par ligne, WILCO / UNABLE ;
  * carte Overwatch en encart (mon appareil, cible du brief avec IP/BP et cap, amis proches), en plein écran au besoin.

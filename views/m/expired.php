@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /** @var string $why */
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $mobileView = 'expired';
