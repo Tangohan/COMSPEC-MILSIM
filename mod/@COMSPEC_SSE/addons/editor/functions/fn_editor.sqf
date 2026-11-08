@@ -2,7 +2,8 @@
     Éditeur SSE (client) : formulaire, aperçu, bibliothèque, guidage. Aucun script par image : tout part d'un clic ou d'une
     frappe dans un champ (dialogs/editor.hpp). Placement : fn_editorPlace, puis fn_editorServer.
     [_op, _arg] call comspec_sse_fnc_editor
-      open [pos, objet]   ouvre l'éditeur (module Zeus, menu Eden)        load display / unload / close
+      open [pos, objet, page]   ouvre l'éditeur (module Zeus, menu Eden) ; page « ai » : IA de la zone        load display / unload / close
+      aiPage              page « IA de la zone » (fn_editorAi)
       type i · delivery i · model i · preview · save · publish
       toggleLibrary · filter i · libFill · libSelect · libEdit · libDuplicate · libPlace · libArchive · libLink
       guideNext · placed [id, résumé] · receive [titre, texte] · found [id, joueur, quand] · status [texte, en ligne] · libRefresh
@@ -24,15 +25,19 @@ private _headings = [
     ["Nouveau dossier", "Devient le dossier actif de la mission."],
     ["Nouveau kit", "Identité et papiers pour une personne."]
 ];
+// Modèle : [libellé, titre, contenu, nature (0 vraie, 1 couverture, 2 faux), papier ou lot]. Avant, nature et papier ne suivaient pas.
 private _models = createHashMapFromArray [
     ["intel", [["Rapport de source", "Rapport de source", "Source :\nFiabilité :\n\nCe qui a été observé :\n\nÀ vérifier :"], ["Carnet manuscrit", "Carnet retrouvé", "Pages déchirées, écriture rapide.\n\n"], ["Ordre intercepté", "Ordre intercepté", "De :\nÀ :\n\nOrdre :"]]],
-    ["identity", [["Résident", "Prénom Nom", "Résident de la région, sans lien avec les forces en présence."], ["Couverture", "Prénom Nom", "Adresse :\nEmployeur :\nRaison du déplacement :"], ["Cible", "Prénom Nom", "Recherché pour :\nDernière position connue :"]]],
-    ["paper", [["Papier civil", "Prénom Nom", ""], ["Papier de couverture", "Prénom Nom", ""], ["Faux grossier", "Prénom Nom", ""]]],
+    ["identity", [["Résident", "Prénom Nom", "Résident de la région, sans lien avec les forces en présence.", 0], ["Couverture", "Prénom Nom", "Adresse :\nEmployeur :\nRaison du déplacement :", 1], ["Cible", "Prénom Nom", "Recherché pour :\nDernière position connue :", 0]]],
+    ["paper", [["Papier civil", "Prénom Nom", "", 0], ["Papier de couverture", "Prénom Nom", "", 1], ["Faux grossier", "Prénom Nom", "", 2]]],
     ["case", [["Cible", "CIBLE-01", "Personne suivie :\nObjectif :"], ["Site", "SITE-01", "Site :\nCe qu'on y cherche :"], ["Réseau", "RESEAU-01", "Réseau suivi :\nPersonnes connues :"]]],
-    ["kit", [["Infiltration", "Prénom Nom", "Identité de couverture et papiers."], ["Militaire", "Prénom Nom", "Carte militaire et carte d'identité."], ["Journaliste", "Prénom Nom", "Passeport et carte d'identité."]]]
+    ["kit", [["Infiltration", "Prénom Nom", "Identité de couverture et papiers.", 1, 0], ["Militaire", "Prénom Nom", "Carte militaire et carte d'identité.", 0, 1], ["Journaliste", "Prénom Nom", "Passeport et carte d'identité.", 0, 0]]]
 ];
 private _deliveries = ["pickup", "search", "send"];
-private _deliveryLabels = [["À ramasser", "Sur un objet choisi dans le monde", "Les joueurs le ramassent sur l'objet placé."], ["À trouver en fouille", "Sur une personne ou dans un véhicule", "Il apparaît lors d'une fouille."], ["Envoyé au téléphone", "À un groupe ou à un joueur", "Il arrive directement dans l'ATAK des destinataires."]];
+private _deliveryLabels = [["À ramasser", "Sur un objet choisi dans le monde", "Les joueurs le ramassent sur l'objet placé."], ["En fouille", "Sur une personne ou dans un véhicule", "Il apparaît lors d'une fouille."], ["Au téléphone", "À un groupe ou à un joueur", "Il arrive directement dans l'ATAK des destinataires."]];
+// Identité, papier, kit : mêmes modes, mais ce sont des papiers. Le téléphone n'en reçoit que l'annonce.
+private _deliveryPapers = [["Au sol", "Posés à l'endroit choisi", "Les papiers sont posés au sol à l'endroit choisi, ou remis à la personne visée."], ["Sur quelqu'un", "Une personne ou un véhicule à cliquer", "Les papiers sont remis à la personne visée, ou dans le véhicule visé."], ["Annonce", "Message au téléphone, aucun papier", "Un message au téléphone annonce ces papiers : aucun objet n'est posé."]];
+private _kitSets = ["Carte et passeport", "Carte militaire et carte", "Carte et permis"];
 private _markings = ["NON PROTÉGÉ", "DIFFUSION RESTREINTE", "CONFIDENTIEL"];
 private _papers = [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"], ["military_id", "Carte militaire"]];
 private _natures = [["civil", "Vraie"], ["cover", "Couverture"], ["forged", "Faux"]];
@@ -63,6 +68,8 @@ private _who = { if (isNull player) then { profileName } else { name player } };
 
 private _editorIdcs = [94063, 94010, 94011, 94020, 94021, 94022, 94030, 94031, 94032, 94040, 94041, 94042, 94043, 94046, 94047, 94048, 94050, 94051, 94052, 94053, 94054, 94055, 94060, 94061, 94062];
 { private _b = _x; for "_i" from 0 to 4 do { _editorIdcs pushBack (_b + _i); }; } forEach [94100, 94110, 94120, 94130, 94140, 94200, 94210, 94220];
+private _aiIdcs = [];
+for "_i" from 94500 to 94548 do { _aiIdcs pushBack _i; };
 private _libIdcs = [94300, 94320, 94321, 94322, 94323, 94330, 94331, 94332, 94333, 94334, 94335, 94336, 94337, 94338, 94339, 94340, 94310, 94311, 94312, 94313, 94314, 94315, 94316, 94317];
 
 // Valeurs du formulaire -> brouillon en cours.
@@ -71,21 +78,39 @@ private _read = {
     _it set ["title", ctrlText (_d displayCtrl 94041)];
     _it set ["body", ctrlText (_d displayCtrl 94047)];
     private _main = (lbCurSel (_d displayCtrl 94043)) max 0;
-    if ((_it get "type") isEqualTo "paper") then { _it set ["paper", _main]; } else { _it set ["marking", _main]; };
+    if ((_it get "type") in ["paper", "kit"]) then { _it set ["paper", _main]; } else { _it set ["marking", _main]; };
     _it set ["nature", (lbCurSel (_d displayCtrl 94045)) max 0];
 };
 private _preview = {
     private _it = _st get "item";
     private _text = [[[_it get "body"] call _esc, toString [13], ""] call CBA_fnc_replace, toString [10], "<br/>"] call CBA_fnc_replace;
     private _type = _it get "type";
-    private _stampText = if (_type isEqualTo "paper") then { toUpper ((_papers select (_it get "paper")) select 1) } else { _markings select (_it get "marking") };
+    private _stampText = switch (_type) do {
+        case "paper": { toUpper ((_papers select (_it get "paper")) select 1) };
+        case "kit": { toUpper (_kitSets param [_it get "paper", _kitSets select 0]) };
+        case "intel": { _markings select (_it get "marking") };
+        default { "" };
+    };
+    private _titleShown = _it get "title";
+    // Aperçu vide : un exemple utile, en gris, plutôt qu'une page blanche.
+    private _example = "";
+    if ((trim _titleShown) isEqualTo "" && {(trim (_it get "body")) isEqualTo ""}) then {
+        _example = (createHashMapFromArray [["intel", "Exemple : Rapport de source. Choisissez un modèle à gauche de « Partir de »."], ["identity", "Exemple : Alexandros Nikolaidis, résident de Charkia."], ["paper", "Exemple : carte d'identité d'Alexandros Nikolaidis."], ["case", "Exemple : CIBLE-01, dossier actif de la mission."], ["kit", "Exemple : Alexandros Nikolaidis, carte et passeport."]]) get _type;
+    };
     private _ref = _it get "id";
     (_d displayCtrl 94054) ctrlSetStructuredText parseText format [
         "<t font='EtelkaMonospacePro' size='0.72' color='#4a4c45'>RÉF. SSE-%1</t><t align='right' size='0.95' font='PuristaBold' color='#a32a1e'>%2</t><br/><br/><t font='PuristaBold' size='1.5' color='#1b1c19'>%3</t><br/><br/><t color='#1b1c19'>%4</t>",
-        [_ref, "NOUVEAU"] select (_ref isEqualTo ""), [_stampText] call _esc, [_it get "title"] call _esc, _text
+        [_ref, "NOUVEAU"] select (_ref isEqualTo ""), [_stampText] call _esc, [_titleShown] call _esc, [_text, format ["<t color='#7a7c75'>%1</t>", [_example call comspec_sse_fnc_tr] call _esc]] select (_example isNotEqualTo "")
     ];
     private _del = _it get "delivery";
-    (_d displayCtrl 94055) ctrlSetText (if (_type isEqualTo "case") then { "Devient le dossier actif : les pièces et fiches suivantes y sont rattachées." } else { (_deliveryLabels select _del) select 2 });
+    (_d displayCtrl 94055) ctrlSetText (if (_type isEqualTo "case") then { "Devient le dossier actif : les pièces et fiches suivantes y sont rattachées." } else { (([_deliveryLabels, _deliveryPapers] select (_type isNotEqualTo "intel")) select _del) select 2 });
+    // État clair : brouillon local, enregistré sur Athena, publié dans cette partie.
+    private _stateTxt = if ((_it get "id") isEqualTo "") then { "Pas encore enregistré" } else {
+        if ((_it get "state") isEqualTo "Placé en mission") exitWith { "Publié dans cette partie" };
+        ["Enregistré sur Athena", "Brouillon sur ce poste"] select (_it getOrDefault ["dirty", true])
+    };
+    if !(_st getOrDefault ["statusHold", false]) then { (_d displayCtrl 94003) ctrlSetText (_stateTxt call comspec_sse_fnc_tr); };
+    (_d displayCtrl 94062) ctrlSetText (((["PLACER ET PUBLIER", "DEVENIR LE DOSSIER ACTIF"] select (_type isEqualTo "case")) call comspec_sse_fnc_tr));
 };
 private _highlight = {
     private _it = _st get "item";
@@ -117,15 +142,44 @@ private _form = {
     (_d displayCtrl 94040) ctrlSetText (if (_type in ["identity", "paper", "kit"]) then { "Prénom et nom" } else { ["Titre", "Référence du dossier"] select (_type isEqualTo "case") });
     private _main = _d displayCtrl 94043;
     lbClear _main;
-    if (_type isEqualTo "paper") then {
-        (_d displayCtrl 94042) ctrlSetText "Type de papier";
-        { _main lbAdd (_x select 1); } forEach _papers;
-        _main lbSetCurSel (_it get "paper");
-    } else {
-        (_d displayCtrl 94042) ctrlSetText "Classification";
-        { _main lbAdd _x; } forEach _markings;
-        _main lbSetCurSel (_it get "marking");
+    switch (_type) do {
+        case "paper": {
+            (_d displayCtrl 94042) ctrlSetText ("Type de papier" call comspec_sse_fnc_tr);
+            { _main lbAdd ((_x select 1) call comspec_sse_fnc_tr); } forEach _papers;
+            _main lbSetCurSel (_it get "paper");
+        };
+        case "kit": {
+            (_d displayCtrl 94042) ctrlSetText ("Lot de papiers" call comspec_sse_fnc_tr);
+            { _main lbAdd (_x call comspec_sse_fnc_tr); } forEach _kitSets;
+            _main lbSetCurSel ((_it get "paper") min 2);
+        };
+        default {
+            (_d displayCtrl 94042) ctrlSetText ("Classification" call comspec_sse_fnc_tr);
+            { _main lbAdd _x; } forEach _markings;
+            _main lbSetCurSel (_it get "marking");
+        };
     };
+    // Classification : n'a d'effet que sur un renseignement. Identité et dossier : pas de liste.
+    private _showMain = _type in ["intel", "paper", "kit"];
+    (_d displayCtrl 94042) ctrlShow _showMain;
+    _main ctrlShow _showMain;
+    // Colonnes selon ce qui est affiché. Mêmes valeurs que la grille de ui_macros.hpp (40 x 25 cases).
+    private _gw = ((safezoneW / safezoneH) min 1.2) / 40;
+    private _gx = safezoneX + (safezoneW - _gw * 40) / 2;
+    private _setX = { params ["_c", "_cx", "_cw"]; private _p = ctrlPosition _c; _c ctrlSetPosition [_gx + _cx * _gw, _p select 1, _cw * _gw, _p select 3]; _c ctrlCommit 0; };
+    private _nat = _type in ["identity", "paper", "kit"];
+    private _tw = if (_nat) then { [11.9, 6.0] select _showMain } else { [16.2, 8] select _showMain };
+    [_d displayCtrl 94040, 8.7, _tw] call _setX;
+    [_d displayCtrl 94041, 8.7, _tw] call _setX;
+    private _mx = 8.7 + _tw + 0.2;
+    private _mw = if (_nat) then { 5.8 } else { 8 };
+    [_d displayCtrl 94042, _mx, _mw] call _setX;
+    [_main, _mx, _mw] call _setX;
+    [_d displayCtrl 94044, 20.8, 4.1] call _setX;
+    [_d displayCtrl 94045, 20.8, 4.1] call _setX;
+    (_d displayCtrl 94046) ctrlSetText (([["Contenu", "Légende (imprimée sur la fiche de la personne)"] select (_type in ["identity", "kit"]), "Notes (bibliothèque seulement, non envoyées)"] select (_type in ["case", "paper"])) call comspec_sse_fnc_tr);
+    // Libellés des modes de remise selon le type (renseignement ou papiers).
+    { private _b = 94200 + _forEachIndex * 10; (_d displayCtrl (_b + 2)) ctrlSetText ((_x select 0) call comspec_sse_fnc_tr); (_d displayCtrl (_b + 3)) ctrlSetText ((_x select 1) call comspec_sse_fnc_tr); } forEach ([_deliveryLabels, _deliveryPapers] select (_type isNotEqualTo "intel"));
     private _second = _d displayCtrl 94045;
     lbClear _second;
     { _second lbAdd (_x select 1); } forEach _natures;
@@ -141,15 +195,32 @@ private _form = {
     call _highlight;
     call _preview;
 };
+// Contrôle d'une page cachée : masqué, désactivé et sorti de l'écran (plusieurs pages se superposent : aucun clic ne doit
+// pouvoir atterrir sur un contrôle masqué).
+private _vis = {
+    params ["_idc", "_on"];
+    private _c = _d displayCtrl _idc;
+    private _home = _st getOrDefault ["home", createHashMap];
+    _st set ["home", _home];
+    if !(_idc in _home) then { _home set [_idc, ctrlPosition _c]; };
+    private _p = _home get _idc;
+    _c ctrlShow _on;
+    _c ctrlEnable _on;
+    _c ctrlSetPosition ([[-9, -9, _p select 2, _p select 3], _p] select _on);
+    _c ctrlCommit 0;
+};
 private _page = {
-    params ["_show"];
-    _st set ["page", ["editor", "library"] select _show];
-    { (_d displayCtrl _x) ctrlShow !_show; } forEach _editorIdcs;
+    params ["_show", ["_ai", false]];
+    _st set ["page", if (_ai) then { "ai" } else { ["editor", "library"] select _show }];
+    { (_d displayCtrl _x) ctrlShow (!_show && {!_ai}); (_d displayCtrl _x) ctrlEnable (!_show && {!_ai}); } forEach _editorIdcs;
     (_d displayCtrl 94044) ctrlShow false;
     (_d displayCtrl 94045) ctrlShow false;
-    { (_d displayCtrl _x) ctrlShow _show; } forEach _libIdcs;
-    (_d displayCtrl 94002) ctrlSetText (["SSE / ÉDITEUR", "SSE / BIBLIOTHÈQUE"] select _show);
-    (_d displayCtrl 94004) ctrlSetText (["BIBLIOTHÈQUE", "NOUVEAU"] select _show);
+    { [_x, _show && {!_ai}] call _vis; } forEach _libIdcs;
+    { [_x, _ai] call _vis; } forEach _aiIdcs;
+    (_d displayCtrl 94002) ctrlSetText ((if (_ai) then { "SSE / IA DE LA ZONE" } else { ["SSE / ÉDITEUR", "SSE / BIBLIOTHÈQUE"] select _show }) call comspec_sse_fnc_tr);
+    (_d displayCtrl 94004) ctrlSetText ((["BIBLIOTHÈQUE", "NOUVEAU"] select (_show || {_ai})) call comspec_sse_fnc_tr);
+    (_d displayCtrl 94006) ctrlShow !is3DEN;
+    if (_ai) exitWith { ["load"] call comspec_sse_fnc_editorAi; };
     if (_show) then { ["libFill"] call comspec_sse_fnc_editor; } else { call _form; };
 };
 private _selected = {
@@ -176,8 +247,10 @@ private _store = {
 
 switch (_op) do {
     case "open": {
-        _arg params [["_pos", []], ["_obj", objNull]];
-        uiNamespace setVariable ["comspec_sse_editorState", createHashMapFromArray [["item", call _blank], ["page", "editor"], ["filter", 0], ["ctx", [_pos, _obj]], ["guide", 0]]];
+        _arg params [["_pos", []], ["_obj", objNull], ["_startPage", ""]];
+        // Module posé sur une personne vivante, IA : on sait quoi configurer.
+        if (_startPage isEqualTo "" && {!isNull _obj} && {_obj isKindOf "CAManBase"} && {!isPlayer _obj} && {alive _obj}) then { _startPage = "ai"; };
+        uiNamespace setVariable ["comspec_sse_editorState", createHashMapFromArray [["item", call _blank], ["page", "editor"], ["filter", 0], ["ctx", [_pos, _obj]], ["guide", 0], ["startPage", _startPage]]];
         if (is3DEN) then { (findDisplay 313) createDisplay "COMSPEC_SSE_Editor"; } else { createDialog "COMSPEC_SSE_Editor"; };
     };
     case "load": {
@@ -196,7 +269,7 @@ switch (_op) do {
             (_d displayCtrl (_b + 3)) ctrlSetText ((_deliveryLabels select _forEachIndex) select 1);
         } forEach _deliveries;
         (_d displayCtrl 94322) lnbSetColumnsPos [0, 0.05, 0.5, 0.66, 0.84];
-        [false] call _page;
+        if ((_st getOrDefault ["startPage", ""]) isEqualTo "ai") then { [false, true] call _page; } else { [false] call _page; };
         // Guidage au premier lancement seulement.
         private _seen = profileNamespace getVariable ["comspec_sse_editorGuided", false];
         { (_d displayCtrl _x) ctrlShow !_seen; } forEach [94400, 94401, 94402, 94403];
@@ -224,7 +297,12 @@ switch (_op) do {
         (_d displayCtrl 94402) ctrlSetStructuredText parseText format ["<t font='PuristaBold' size='1.3'>%1</t><br/><br/>%2", [_t] call _esc, [_b] call _esc];
         (_d displayCtrl 94403) ctrlSetText (["SUIVANT", "COMMENCER"] select (_n isEqualTo ((count _steps) - 1)));
     };
+    case "aiPage": {
+        if ((_st getOrDefault ["page", ""]) isEqualTo "editor") then { call _read; };
+        [false, true] call _page;
+    };
     case "type": {
+        if (missionNamespace getVariable ["comspec_sse_id_editorDebug", false]) then { diag_log text format ["[COMSPEC SSE] Éditeur : type %1.", _arg]; };
         call _read;
         (_st get "item") set ["type", _types select _arg];
         call _form;
@@ -237,16 +315,22 @@ switch (_op) do {
     };
     case "model": {
         private _it = _st get "item";
-        ((_models get (_it get "type")) select _arg) params ["", "_title", "_body"];
+        ((_models get (_it get "type")) select _arg) params ["", "_title", "_body", ["_nature", -1], ["_set", -1]];
         _it set ["title", _title];
         _it set ["body", [_body] call _newlines];
+        if (_nature >= 0) then { _it set ["nature", _nature]; };
+        if ((_it get "type") isEqualTo "kit") then { _it set ["paper", [_arg, _set] select (_set >= 0)]; };
         call _form;
     };
     case "preview": { if !(_st getOrDefault ["busy", false]) then { call _read; call _preview; }; };
     case "save": {
         call _read;
         private _it = _st get "item";
-        if ((trim (_it get "title")) isEqualTo "") exitWith { (_d displayCtrl 94003) ctrlSetText "Donnez d'abord un titre."; };
+        if ((trim (_it get "title")) isEqualTo "") exitWith {
+            private _need = (["Donnez d'abord un titre.", "Donnez d'abord un prénom et un nom."] select ((_it get "type") in ["identity", "paper", "kit"])) call comspec_sse_fnc_tr;
+            (_d displayCtrl 94003) ctrlSetText _need;
+            [_need, "WARNING"] call comspec_sse_fnc_toast;
+        };
         [_it, format ["Version %1 enregistrée", (_it get "version") + 1]] call _store;
         (_d displayCtrl 94003) ctrlSetText format ["Brouillon enregistré à %1", [dayTime, "HH:MM"] call BIS_fnc_timeToString];
         call _preview;
@@ -259,6 +343,7 @@ switch (_op) do {
         [_it, _st get "ctx"] call comspec_sse_fnc_editorPlace;
     };
     case "toggleLibrary": {
+        if ((_st get "page") isEqualTo "ai") exitWith { _st set ["item", call _blank]; [false] call _page; };
         if ((_st get "page") isEqualTo "library") then {
             _st set ["item", call _blank];
             [false] call _page;
@@ -272,6 +357,7 @@ switch (_op) do {
     case "status": {
         _arg params [["_text", ""], ["_online", false]];
         (_d displayCtrl 94003) ctrlSetText _text;
+        if (_online && {(_st getOrDefault ["item", createHashMap]) isNotEqualTo createHashMap}) then { (_st get "item") set ["dirty", false]; };
         (_d displayCtrl 94060) ctrlSetText ((["Rien n'est envoyé aux joueurs avant « Placer et publier ». Le contenu reste enregistré sur ce poste.", "Rien n'est envoyé aux joueurs avant « Placer et publier ». Le contenu est aussi enregistré sur Athena."] select _online) call comspec_sse_fnc_tr);
     };
     case "filter": {
@@ -367,7 +453,7 @@ switch (_op) do {
         [_it, [[], objNull]] call comspec_sse_fnc_editorPlace;
     };
     case "placed": {
-        _arg params [["_id", ""], ["_summary", ""]];
+        _arg params [["_id", ""], ["_summary", ""], ["_where", []]];
         private _i = (call _library) findIf { (_x get "id") isEqualTo _id };
         if (_i >= 0) then {
             private _it = (call _library) select _i;
@@ -377,8 +463,10 @@ switch (_op) do {
             _it set ["dirty", true];
             saveProfileNamespace;
             ["push", [_it]] call comspec_sse_fnc_editorLibrary;
+            // « Garder pour les prochaines parties » : enregistré sur Athena, remis en place par le serveur au démarrage.
+            if ((_it getOrDefault ["keep", false]) && {_where isNotEqualTo []} && {!is3DEN}) then { ["keepItem", [_it, _where]] call comspec_sse_fnc_editorAi; };
         };
-        if (is3DEN) then { [_summary call comspec_sse_fnc_tr, 0] call BIS_fnc_3DENNotification; } else { [_summary, "SUCCESS"] call comspec_sse_fnc_notify; };
+        if (is3DEN) then { [_summary call comspec_sse_fnc_tr, 0] call BIS_fnc_3DENNotification; } else { [_summary, "SUCCESS"] call comspec_sse_fnc_toast; };
     };
     case "found": {
         _arg params [["_id", ""], ["_player", ""], ["_when", ""]];

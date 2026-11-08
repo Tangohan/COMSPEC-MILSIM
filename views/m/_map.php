@@ -8,6 +8,7 @@ declare(strict_types=1);
  * @var bool|null $mapCanAdd bouton « + Marqueur » (carte)
  * @var string|null $mapMeLabel libellé du bouton de recentrage
  * @var bool|null $mapInset carte en encart (briefs air)
+ * @var bool|null $mapStyleChoice choix du style Tactique ou Classique, et calque des pings (carte)
  */
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $layers = [
@@ -17,6 +18,9 @@ $layers = [
     'air' => 'Aéronefs',
     'jtac' => 'Appuis 9-LINE / 5-LINE',
 ];
+if (!empty($mapStyleChoice)) {
+    $layers['pings'] = 'Pings';
+}
 ?>
     <section class="mm-mapwrap<?= !empty($mapInset) ? ' mm-mapwrap--inset' : '' ?>" data-mapwrap>
       <div class="mm-map" id="mm-map" aria-label="Carte"></div>
@@ -26,6 +30,11 @@ $layers = [
       </div>
       <div class="mm-mapbar" data-map-hint hidden>Touchez la carte pour placer le marqueur <button type="button" class="mm-btn" data-map-cancel>ANNULER</button></div>
       <div class="mm-layers" data-layers-panel hidden>
+        <?php if (!empty($mapStyleChoice)): ?>
+        <strong>Style</strong>
+        <label class="mm-layer"><input type="radio" name="mm-map-style" value="tactique" data-map-style checked> <span>Tactique</span></label>
+        <label class="mm-layer"><input type="radio" name="mm-map-style" value="classique" data-map-style> <span>Classique</span></label>
+        <?php endif; ?>
         <strong>Calques</strong>
         <?php foreach ($layers as $key => $label): ?>
           <label class="mm-layer"><input type="checkbox" data-layer="<?= $h($key) ?>" checked> <span><?= $h($label) ?></span></label>

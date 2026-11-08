@@ -61,6 +61,23 @@ EN : Pilot mode, short FIRES and grouped apps
 - À tester en jeu : voir le corps de la PR. Rien n'a pu être testé en jeu.
 
 ---
+## À venir : profils d'IA, éditeur SSE en Zeus, réponses des IA au-dessus de la tête (SSE, ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Profils d'IA, éditeur SSE réparé, IA qui répondent au-dessus de leur tête
+- Les réponses des IA pendant un contrôle s'affichent au-dessus de leur tête, plus dans les notifications du téléphone.
+- Le Bureau SSE gère des profils d'IA : Zeus et Eden les relient à une IA, qui en porte l'identité et les papiers.
+- L'éditeur SSE fonctionne pour ses cinq types, et une configuration peut être gardée pour les prochaines parties.
+- Papiers sans mention SIMULATION pour les pays du jeu, photo d'identité refaite, app Contrôle ID allégée.
+EN : AI profiles, SSE editor fixed, AI answering above their heads
+- AI replies during a check appear above their heads, no longer in the phone's notifications.
+- The SSE Office manages AI profiles: Zeus and Eden link them to an AI, which carries the identity and papers.
+- The SSE editor works for all five types, and a configuration can be kept for the next games.
+- Papers without the SIMULATION mention for game countries, ID photo redone, lighter ID Check app.
+
+### Détail
+Rien de testé en jeu au moment de l'écriture : voir les tests en jeu de la PR #1460. Détail : mod/@COMSPEC_SSE/docs/CHANGELOG.md.
 
 ## À venir : réalisme activé par défaut, vraies radios ACRE et TFAR d'abord, assistant de configuration, garde-fous radio (ATAK natif, version à attribuer)
 

@@ -115,7 +115,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 
 // Réponses des IA : bulle de texte au-dessus de la tête de l'IA qui parle (par joueur, fn_aiBubble). Décoché : toast d'Arma.
 ["comspec_atak_native_ai_bubble", "CHECKBOX",
-    ["Bulles de réponse des IA", "Coché par défaut. La réponse d'un groupe IA à un ordre s'affiche en texte au-dessus de la tête de son chef, si vous êtes à portée et si vous le voyez. Hors de vue, ou décoché : le donneur d'ordre la reçoit en notification du jeu."],
+    ["Bulles de réponse des IA", "Coché par défaut. Ce que disent les IA (réponse à un ordre, parole radio, contrôle d'identité) s'affiche en texte au-dessus de leur tête, si vous êtes à portée et si vous les voyez. Hors de vue, ou décoché : vous la recevez en notification du jeu."],
     ["COMSPEC", "ATAK · Affichage"], true, 0,
     { if !(_this) then { ["clear"] call comspec_atak_native_fnc_aiBubble; }; }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ai_bubble_range", "SLIDER",

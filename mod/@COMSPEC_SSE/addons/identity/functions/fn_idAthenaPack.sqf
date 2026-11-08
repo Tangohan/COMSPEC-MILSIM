@@ -93,6 +93,8 @@ switch (_op) do {
             private _at = _settings get "auto_transmit";
             missionNamespace setVariable ["comspec_sse_id_autoTransmitCommunity", _at isEqualTo true || {_at isEqualTo 1}, true];
         };
+        // Profils d'IA et éléments gardés : dans « settings » (la DLL publiée le transmet sans connaître ces blocs).
+        if ("ai_profiles" in _settings) then { ["ingest", [_settings get "ai_profiles", _settings getOrDefault ["ai_placements", []]]] call comspec_sse_fnc_idAiConfig; };
         private _nC = 0; private _nD = 0; private _nW = 0;
         {
             private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional", "name_en", "authority", "theme", "languages", "doc_types", "colors", "active", "real_sim", "zone", "name_native", "validity"]] call _rec;
@@ -257,6 +259,8 @@ switch (_op) do {
         if ((count _briefs) > 0) then {
             [{ { ["auto", [_x]] call comspec_sse_fnc_idCover; } forEach (allPlayers select { alive _x && {!(_x isKindOf "HeadlessClient_F")} }); }, [], 4] call CBA_fnc_waitAndExecute;
         };
+        // Éléments gardés : remis en place une fois les unités de la mission apparues (une seule fois par élément).
+        [{ ["restore"] call comspec_sse_fnc_idAiConfig; }, [], 5] call CBA_fnc_waitAndExecute;
         if ((count _kits) > 0) then {
             [{ { [_x] call comspec_sse_fnc_idKit; } forEach (allPlayers select { alive _x && {!(_x isKindOf "HeadlessClient_F")} }); }, [], 1] call CBA_fnc_waitAndExecute;
         };

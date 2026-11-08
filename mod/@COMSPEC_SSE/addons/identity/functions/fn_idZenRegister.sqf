@@ -25,7 +25,7 @@ if (!hasInterface) exitWith {};
             format ["Papiers — %1", name _u],
             [
                 ["LIST", ["Document", "Pièce délivrée à la personne (objet dans son inventaire)."], [["id_card", "passport", "driving_license", "military_id"], ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"], 0]],
-                ["LIST", ["Pays", "Pays fictif (SIMULATION)."], [["auto", "ALT", "TNA", "LVN", "MLD"], ["Pays de la mission", "République d'Altis", "Fédération de Tanoa", "République de Livonie", "République de Malden"], 0]],
+                ["LIST", ["Pays", "Pays fictif."], [["auto", "ALT", "TNA", "LVN", "MLD"], ["Pays de la mission", "République d'Altis", "Fédération de Tanoa", "République de Livonie", "République de Malden"], 0]],
                 ["LIST", ["Nature", "Civil : vrais papiers. Couverture : identité préparée qui passe tous les contrôles sauf la biométrie. Faux : défauts selon la qualité."], [["civil", "cover", "forged"], ["Vrais papiers", "Couverture préparée", "Faux papiers"], 0]],
                 ["LIST", ["Procédé du faux", "Seulement pour de faux papiers."], [["", "counterfeit", "altered", "photo_swap", "stolen_blank"], ["Au hasard (selon la qualité)", "Contrefaçon complète", "Vrai document modifié", "Photo substituée", "Vierge volé"], 0]],
                 ["SLIDER", ["Qualité du faux", "0 : grossier, vu au premier coup d'œil. 100 : excellent, seule la base ou la biométrie le trahit."], [0, 100, 50, 0]],
@@ -117,6 +117,11 @@ if (!hasInterface) exitWith {};
             { params ["_v", "_args"]; ["send", ["fsmForce", [player, _args select 0, _v select 0]]] call comspec_sse_fnc_idClient; }, {}, [_u]
         ] call comspec_sse_fnc_zenDialog;
     }, "\z\comspec_sse\addons\zeus\data\mod_person.paa"] call comspec_sse_fnc_zenModule;
+
+    [_cat, "Configurer une IA", {
+        params ["_pos", "_obj"];
+        ["open", [ASLToATL _pos, _obj, "ai"]] call comspec_sse_fnc_editor;
+    }, "\z\comspec_sse\addons\identity\data\icon_card_ca.paa"] call comspec_sse_fnc_zenModule;
 
     [_cat, "Imposer un couvre-feu", {
         params ["_pos", "_obj"];

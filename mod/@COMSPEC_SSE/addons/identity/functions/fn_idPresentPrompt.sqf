@@ -16,7 +16,7 @@ switch (_op) do {
         _pend = _pend select { (_x select 0) isNotEqualTo _c };
         _pend pushBack [_c, time + 60];
         missionNamespace setVariable ["comspec_sse_idPending", _pend];
-        [format ["%1 vous demande vos papiers. Menu ACE personnel › Mes papiers : présenter ou refuser.", name _c], "WARNING", "", "IDCHECK"] call comspec_sse_fnc_notify;
+        ["Vos papiers, s'il vous plaît.", "WARNING", [_c, objNull] select (isPlayer _c), format [("%1 vous demande vos papiers. Menu ACE personnel › Mes papiers : présenter ou refuser." call comspec_sse_fnc_tr), name _c]] call comspec_sse_fnc_toast;
         // Alerte discrète : la coque vibre ; le son suit le réglage discrétion de l'ATAK (COMSPEC_ATAK_Silent).
         if (!isNil "comspec_atak_native_fnc_vibrate") then { [] call comspec_atak_native_fnc_vibrate; };
     };

@@ -523,7 +523,8 @@
     /**
      * Marqueurs du théâtre (/api/atak/markers) : icônes, couleurs et libellés du jeu (ArmaMapMarkers).
      * store : { id: couche } gardé par l'appelant. hooks.enabled(), hooks.skip(data, latlng, buildingLike),
-     * hooks.bind(layer, id, title, row, isNew).
+     * hooks.bind(layer, id, title, row, isNew). hooks.icon(data, existing) : icône de remplacement, null si inchangée ;
+     * hooks.shape(data, latlng, row) : couche de remplacement d'un tracé (style tactique du téléphone).
      */
     function syncArmaMarkers(store, rows, hooks) {
       hooks = hooks || {};
@@ -559,7 +560,8 @@
         if (existing) {
           if (existing.setLatLng) existing.setLatLng(latlng);
           if (!buildingLike && helper.leafletDivIcon && existing.setIcon && !area) {
-            existing.setIcon(helper.leafletDivIcon(L, data));
+            var nextIcon = hooks.icon ? hooks.icon(data, existing) : helper.leafletDivIcon(L, data);
+            if (nextIcon) existing.setIcon(nextIcon);
           }
           if (buildingLike && existing.setStyle && helper.buildingFootprintStyle) {
             existing.setStyle(helper.buildingFootprintStyle());
@@ -571,9 +573,9 @@
         }
         var layer = null;
         if (area && helper.leafletShapeLayer) {
-          layer = helper.leafletShapeLayer(L, data, latlng);
+          layer = hooks.shape ? hooks.shape(data, latlng, row) : helper.leafletShapeLayer(L, data, latlng);
         } else if (helper.leafletDivIcon) {
-          layer = L.marker(latlng, { icon: helper.leafletDivIcon(L, data), keyboard: false });
+          layer = L.marker(latlng, { icon: hooks.icon ? hooks.icon(data, null) : helper.leafletDivIcon(L, data), keyboard: false });
         }
         if (!layer) return;
         if (tip && layer.bindTooltip) layer.bindTooltip(tip, { permanent: false, direction: 'top' });

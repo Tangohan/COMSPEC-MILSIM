@@ -20,6 +20,7 @@ class CfgFunctions {
             class edenApplyAttributes {};
             class edenWriteField {};
             class edenInitEntity {};
+            class edenAiProfiles {};
             class domexGetNode {};
             class domexApplyObject {};
         };
@@ -44,6 +45,72 @@ class Extended_InitPost_EventHandlers {
 };
 
 class Cfg3DEN {
+    // Liste des profils Athena : remplie à l'ouverture de la fenêtre des attributs (comspec_sse_fnc_edenAiProfiles).
+    class Attributes {
+        class Default;
+        class Title: Default { class Controls { class Title; }; };
+        class Combo: Title { class Controls: Controls { class Title: Title {}; class Value; }; };
+        class COMSPEC_SSE_AiProfileCombo: Combo {
+            attributeLoad = "['load', [_this controlsGroupCtrl 100, _value]] call comspec_sse_fnc_edenAiProfiles";
+            attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenAiProfiles";
+            class Controls: Controls { class Title: Title {}; class Value: Value {}; };
+        };
+    };
+    // Groupe entier : même réglage pour chaque unité, repris à son apparition (fn_idRegistry « kit »).
+    class Group {
+        class AttributeCategories {
+            class COMSPEC_SSE_GroupPapiers {
+                displayName = "COMSPEC SSE · Papiers du groupe";
+                collapsed = 1;
+                class Attributes {
+                    class COMSPEC_ID_GroupProfile {
+                        displayName = "Profil Athena";
+                        tooltip = "Identité et papiers d'un profil IA, pour tout le groupe (chaque unité reçoit ses exemplaires).";
+                        property = "COMSPEC_ID_GroupProfile";
+                        control = "COMSPEC_SSE_AiProfileCombo";
+                        expression = "if (isServer && {_value isNotEqualTo ''}) then { _this setVariable ['COMSPEC_ID_GroupProfile', _value]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                    class COMSPEC_ID_GroupCarry {
+                        displayName = "Papiers";
+                        tooltip = "Automatique : selon le camp de chaque IA.";
+                        property = "COMSPEC_ID_GroupCarry";
+                        control = "Combo";
+                        expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_GroupCarry', _value]; };";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
+                        class values {
+                            class Auto { name = "Automatique"; value = "auto"; default = 1; };
+                            class None { name = "Aucun"; value = "none"; };
+                            class Card { name = "Carte d'identité"; value = "card"; };
+                            class Passport { name = "Passeport"; value = "passport"; };
+                            class Military { name = "Carte militaire"; value = "military"; };
+                        };
+                    };
+                    class COMSPEC_ID_GroupBehaviour {
+                        displayName = "Comportement au contrôle";
+                        tooltip = "Réponse à « Papiers, s'il vous plaît ». Automatique : selon le contexte (IA réalistes).";
+                        property = "COMSPEC_ID_GroupBehaviour";
+                        control = "Combo";
+                        expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_GroupBehaviour', _value]; };";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
+                        class values {
+                            class Auto { name = "Automatique"; value = "auto"; default = 1; };
+                            class Coopere { name = "Coopère"; value = "coopere"; };
+                            class Nerveux { name = "Nerveux"; value = "nerveux"; };
+                            class Ment { name = "Ment avec aplomb"; value = "ment"; };
+                            class Refuse { name = "Refuse"; value = "refuse"; };
+                            class Fuit { name = "S'enfuit"; value = "fuit"; };
+                            class Agressif { name = "Devient agressif"; value = "agressif"; };
+                            class Rendu { name = "Se rend"; value = "rendu"; };
+                        };
+                    };
+                };
+            };
+        };
+    };
     class Object {
         class AttributeCategories {
             class COMSPEC_SSE {

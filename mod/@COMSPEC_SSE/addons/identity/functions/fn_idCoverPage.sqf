@@ -306,5 +306,5 @@ if (_tab isEqualTo "zeus") then {
     [_s] call _sheetRows;
 };
 _rows pushBack ["buttons", [["Actualiser" call _tr, ["refresh"] call _act]]];
-_rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", _hDim, ("Fiche personnelle : visible de vous seul (et du Zeus). SIMULATION." call _tr) call _esc]];
+_rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", _hDim, ("Fiche personnelle : visible de vous seul (et du Zeus)." call _tr) call _esc]];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
