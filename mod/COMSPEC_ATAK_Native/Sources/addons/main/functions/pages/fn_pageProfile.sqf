@@ -17,21 +17,21 @@ if (_unitFull isEqualTo "") then { _unitShort = ""; };
 // Opérateur
 private _logo = [player] call comspec_atak_native_fnc_avatarPath;
 if (_logo isEqualTo "") then { _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa"; };
-_rows pushBack ["hero", _logo, format ["<t size='1.3' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t size='1.05'>%2</t><br/><t color='#c9d4cf'>%3 · %4</t><br/><t size='0.85' color='#8a9a93'>%5</t>",
+_rows pushBack ["hero", _logo, format ["<t size='1.3' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1</t>  <t size='1.05'>%2</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%3 · %4</t><br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%5</t>",
     ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v, ["comspec_profile_name", name player] call _v,
     ["comspec_profile_grade"] call _v, [[[player] call comspec_atak_native_fnc_displayRole, "—"] select (([player] call comspec_atak_native_fnc_displayRole) isEqualTo ""), [_unitFull]] call comspec_atak_native_fnc_abbrev, ["comspec_tenant_name", "Hors ligne"] call _v]];
 // Unité et fonction abrégées (règle Athena) ; le nom complet suit quand il diffère.
 _rows pushBack ["info", "Unité (ORBAT)", [_unitShort, "—"] select (_unitShort isEqualTo "")];
-if (_unitShort isNotEqualTo _unitFull) then { _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>%1</t>", _unitFull]]; };
+if (_unitShort isNotEqualTo _unitFull) then { _rows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _unitFull]]; };
 // Rôle affiché (fn_displayRole) : fonction de la communauté par défaut, rôle du slot ou rôle personnalisé.
 ([player, "sources"] call comspec_atak_native_fnc_displayRole) params ["_rMode", "_rCustom", "_rFn", "_rSlot", "_rForced"];
 private _ab = { params ["_t"]; [[_t, [_unitFull]] call comspec_atak_native_fnc_abbrev, "—"] select (_t isEqualTo "") };
 private _shown = [player] call comspec_atak_native_fnc_displayRole;
 _rows pushBack ["info", "Fonction (Athena)", [_rFn] call _ab];
-_rows pushBack ["info", "Rôle affiché", ["<t color='#8a9a93'>aucun</t>", [_shown] call _ab] select (_shown isNotEqualTo "")];
+_rows pushBack ["info", "Rôle affiché", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>aucun</t>", [_shown] call _ab] select (_shown isNotEqualTo "")];
 private _setMode = { params ["_m"]; compile format ["['roleMode', '%1'] call comspec_atak_native_fnc_profileAction;", _m] };
 if (_rForced) then {
-    _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Le serveur impose la fonction de la communauté comme rôle affiché.</t>"];
+    _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Le serveur impose la fonction de la communauté comme rôle affiché.</t>"];
 } else {
     _rows pushBack ["segment", "Choisir le rôle affiché", [
         [format ["ATHENA : %1", [_rFn] call _ab], ["athena"] call _setMode, _rMode isEqualTo "athena", "Fonction de la communauté (Athena)"],
@@ -64,15 +64,15 @@ _rows append [
 private _quals = (uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap]) getOrDefault [getPlayerUID player, []];
 _rows pushBack ["section", "Qualifications", "Attributions en cours sur Athena"];
 switch (true) do {
-    case (!_bridge): { _rows pushBack ["text", "<t color='#8a9a93'>Liaison Athena (COMSPEC Link) requise.</t>"]; };
-    case (_quals isEqualTo "olddll"): { _rows pushBack ["text", "<t color='#8a9a93'>Mettez à jour la DLL COMSPEC Link pour afficher les qualifications.</t>"]; };
-    case ((count _quals) isEqualTo 0): { _rows pushBack ["text", "<t color='#8a9a93'>Aucune qualification en cours (ou profil en cours de chargement).</t>"]; };
+    case (!_bridge): { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Liaison Athena (COMSPEC Link) requise.</t>"]; };
+    case (_quals isEqualTo "olddll"): { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Mettez à jour la DLL COMSPEC Link pour afficher les qualifications.</t>"]; };
+    case ((count _quals) isEqualTo 0): { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune qualification en cours (ou profil en cours de chargement).</t>"]; };
     default {
         {
             _x params ["_name", "_lvl", "_state", "_exp"];
-            private _st = createHashMapFromArray [["expiring_soon", ["expire bientôt", "#f2ab33"]], ["expired_grace", ["période de grâce", "#e5483a"]]] getOrDefault [_state, ["valide", "#5cc76b"]];
+            private _st = createHashMapFromArray [["expiring_soon", ["expire bientôt", (COMSPEC_ATAK_Th get "hexWarn")]], ["expired_grace", ["période de grâce", (COMSPEC_ATAK_Th get "hexAlert")]]] getOrDefault [_state, ["valide", (COMSPEC_ATAK_Th get "hexOk")]];
             _rows pushBack ["info", [_name, format ["%1 · %2", _name, _lvl]] select (_lvl isNotEqualTo ""),
-                format ["<t color='%1'>%2</t>%3", _st select 1, _st select 0, ["", format ["  <t color='#8a9a93'>jusqu'au %1</t>", _exp]] select (_exp isNotEqualTo "")]];
+                format ["<t color='%1'>%2</t>%3", _st select 1, _st select 0, ["", format ["  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>jusqu'au %1</t>", _exp]] select (_exp isNotEqualTo "")]];
         } forEach _quals;
     };
 };
@@ -83,24 +83,24 @@ if (_bridge) then {
     private _exp = ["COMSPEC_CertExpires", ""] call _v;
     private _label = if (!isNil "comspec_overwatch_connect_fnc_certStatusLabel") then { [_st, _exp] call comspec_overwatch_connect_fnc_certStatusLabel } else { _st };
     private _comp = missionNamespace getVariable ["COMSPEC_CompromiseState", "none"];
-    private _col = switch (true) do { case (_comp in ["captured", "compromised"]): { "#e5483a" }; case (_st in ["active", "issued"]): { "#5cc76b" }; default { "#f2ab33" }; };
+    private _col = switch (true) do { case (_comp in ["captured", "compromised"]): { (COMSPEC_ATAK_Th get "hexAlert") }; case (_st in ["active", "issued"]): { (COMSPEC_ATAK_Th get "hexOk") }; default { (COMSPEC_ATAK_Th get "hexWarn") }; };
     _rows append [
         ["section", "Certificat du terminal", "Chiffrement de la liaison avec le poste"],
         ["info", "État", format ["<t color='%1'>%2</t>", _col, [_label, "aucun"] select (_label isEqualTo "")]],
         ["info", "Référence", ["COMSPEC_CertRef"] call _v],
         ["info", "Échéance", [_exp, "—"] select (_exp isEqualTo "")],
-        ["info", "Compromission", ["aucune", "<t color='#e5483a'>appareil capturé</t>", "<t color='#e5483a'>clé compromise</t>"] select ((["none", "captured", "compromised"] find _comp) max 0)]
+        ["info", "Compromission", ["aucune", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>appareil capturé</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>clé compromise</t>"] select ((["none", "captured", "compromised"] find _comp) max 0)]
     ];
     if (_st in ["", "missing", "expired", "revoked"]) then {
         _rows pushBack ["buttons", [["DEMANDER UN CERTIFICAT", { ["cert"] call comspec_atak_native_fnc_profileAction; }, true]]];
     };
-    if (_comp in ["captured", "compromised"]) then { _rows pushBack ["text", "<t size='0.8' color='#e5483a'>Trafic illisible : seul le poste (Zeus ou web) peut régénérer la clé.</t>"]; };
+    if (_comp in ["captured", "compromised"]) then { _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Trafic illisible : seul le poste (Zeus ou web) peut régénérer la clé.</t>"]; };
 };
 
 // État du téléphone (réalisme Overwatch)
 private _fn = if (_bridge && {!isNil "comspec_overwatch_connect_fnc_isAtakFunctional"}) then { [] call comspec_overwatch_connect_fnc_isAtakFunctional } else { createHashMap };
 if (_fn isEqualType createHashMap && {(count _fn) > 0}) then {
-    private _ok = { params ["_b", "_t", "_f"]; format ["<t color='%1'>%2</t>", ["#e5483a", "#5cc76b"] select _b, [_f, _t] select _b] };
+    private _ok = { params ["_b", "_t", "_f"]; format ["<t color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexAlert"), (COMSPEC_ATAK_Th get "hexOk")] select _b, [_f, _t] select _b] };
     private _destroyed = _fn getOrDefault ["device_destroyed", false];
     _rows append [
         ["section", "État du téléphone", format ["Réalisme niveau %1", missionNamespace getVariable ["comspec_overwatch_atak_realism", 0]]],
@@ -115,7 +115,7 @@ if (_fn isEqualType createHashMap && {(count _fn) > 0}) then {
             ["RÉPARER L'ÉCRAN", { ["repair", "screen"] call comspec_atak_native_fnc_profileAction; }],
             ["RÉVISION COMPLÈTE", { ["repair", "full"] call comspec_atak_native_fnc_profileAction; }]
         ]];
-        _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Écran et révision : kit de réparation ATAK (consommé, 12 s) ou caisse à outils (20 s).</t>"];
+        _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Écran et révision : kit de réparation ATAK (consommé, 12 s) ou caisse à outils (20 s).</t>"];
     };
 };
 
@@ -141,7 +141,7 @@ private _left = switch (true) do {
 private _spares = [player, true] call comspec_atak_native_fnc_batteryItem;
 _rows append [
     ["section", "Batterie", ["Simulation coupée (réglages)", "Recharge : véhicule moteur allumé, batterie externe ou socle CS-10"] select (profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true])],
-    ["info", "Niveau", format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_bat / 25)) min 2), round _bat]],
+    ["info", "Niveau", format ["<t color='%1'>%2 %%</t>", [(COMSPEC_ATAK_Th get "hexAlert"), (COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexOk")] select ((floor (_bat / 25)) min 2), round _bat]],
     ["info", "Autonomie", _left],
     ["info", "Batteries de rechange", str _spares],
     ["buttons", [["CHANGER LA BATTERIE", { ["battery"] call comspec_atak_native_fnc_profileAction; }, _spares > 0]]]
@@ -154,10 +154,10 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay"}) the
     if (_r isEqualType createHashMap && {(count _r) > 0}) then {
         _rows append [
             ["info", "Relais", format ["%1 · %2", _r getOrDefault ["name", "?"], _r getOrDefault ["grid", ""]]],
-            ["info", "Distance", format ["%1 m / portée %2 m %3", round (_r getOrDefault ["dist", 0]), round (_r getOrDefault ["range", 0]), ["<t color='#e5483a'>hors portée</t>", "<t color='#5cc76b'>à portée</t>"] select (_r getOrDefault ["in_range", false])]],
+            ["info", "Distance", format ["%1 m / portée %2 m %3", round (_r getOrDefault ["dist", 0]), round (_r getOrDefault ["range", 0]), ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>hors portée</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>à portée</t>"] select (_r getOrDefault ["in_range", false])]],
             ["info", "Charge", format ["%1 / %2 postes · %3 %%", _r getOrDefault ["used", 0], _r getOrDefault ["slots", 0], _r getOrDefault ["reliability_pct", 100]]]
         ];
-    } else { _rows pushBack ["text", "<t color='#8a9a93'>Aucun relais déployé.</t>"]; };
+    } else { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun relais déployé.</t>"]; };
 };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

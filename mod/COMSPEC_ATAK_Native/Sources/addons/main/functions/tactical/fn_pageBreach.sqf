@@ -13,7 +13,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_Breach", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_Breach", _s];
-private _grey = "#8a9a93";
+private _grey = (COMSPEC_ATAK_Th get "hexTextMuted");
 private _icon = "\z\comspec_atak_native\addons\main\data\app_breach.paa";
 private _contact = [] call comspec_atak_native_fnc_breachBuilding;
 private _near = ["near"] call comspec_atak_native_fnc_breachBuilding;
@@ -66,17 +66,17 @@ if ((count _near) > 0) then {
         private _isContact = _k isEqualTo _contactKey;
         private _isTarget = _k isEqualTo _target;
         private _st = switch (true) do {
-            case _open: { "<t color='#5cc76b'>● ouverte</t>" };
-            case (_lock isEqualTo "locked"): { "<t color='#e5483a'>● fermée · VERROUILLÉE</t>" };
-            case (_lock isEqualTo "free"): { "<t color='#e8b84a'>● fermée · non verrouillée</t>" };
-            default { format ["<t color='#f2ab33'>● fermée</t> <t color='%1'>· verrou inconnu</t>", _grey] };
+            case _open: { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● ouverte</t>" };
+            case (_lock isEqualTo "locked"): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>● fermée · VERROUILLÉE</t>" };
+            case (_lock isEqualTo "free"): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● fermée · non verrouillée</t>" };
+            default { format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● fermée</t> <t color='%1'>· verrou inconnu</t>", _grey] };
         };
         private _col = switch (true) do { case _open: { [0.36, 0.78, 0.42, 1] }; case (_lock isEqualTo "locked"): { [0.9, 0.28, 0.23, 1] }; default { [0.95, 0.67, 0.2, 1] }; };
         private _btns = [];
         if (_isContact && {!_open}) then { _btns pushBack ["POIGNÉE", { ['handle'] call comspec_atak_native_fnc_breachAction; }, _lock isEqualTo ""]; };
         _btns pushBack [["CIBLER", "● CIBLE"] select _isTarget, compile format ["['target', %1] call comspec_atak_native_fnc_breachAction;", str _k], _isTarget];
         _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>Porte %1</t>  <t size='0.85' color='%2'>%3 · %4 m %5%6</t><br/><t size='0.85'>%7</t>",
-            _i, _grey, [_f] call _floorTxt, _d toFixed 1, [player getDir (ASLToAGL _p)] call _card, ["", "  <t color='#5cc76b'>· au contact</t>"] select _isContact, _st], _btns, _col];
+            _i, _grey, [_f] call _floorTxt, _d toFixed 1, [player getDir (ASLToAGL _p)] call _card, ["", "  <t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>· au contact</t>"] select _isContact, _st], _btns, _col];
     } forEach (_doors select [0, 8]);
 };
 
@@ -103,18 +103,18 @@ _rows pushBack ["section", "Charge", format ["%1 · estimation d'entraînement, 
 _rows pushBack ["segment", "Matériau de la porte", [["BOIS", "WOOD"], ["RENFORCÉ", "WOODR"], ["MÉTAL", "METAL"], ["BLINDÉE", "ARMOR"]] apply { [_x select 0, compile format ["['mat', '%1'] call comspec_atak_native_fnc_breachAction;", _x select 1], (_x select 1) isEqualTo _mat] }];
 _rows pushBack ["segment", "Méthode", ["LOCK", "STRIP", "FRAME", "WATER"] apply { [[_methNames get _x, (_methNames get _x) + " ★"] select (_x isEqualTo _recMeth), compile format ["['meth', '%1'] call comspec_atak_native_fnc_breachAction;", _x], _x isEqualTo _meth] }, "★ recommandée"];
 switch (true) do {
-    case (_tState select 1): { _rows pushBack ["text", "<t color='#5cc76b' font='COMSPEC_BarlowBold'>Porte ouverte : pas de charge nécessaire.</t>"]; };
-    case ((_tState select 0) isEqualTo "free"): { _rows pushBack ["text", "<t color='#e8b84a' font='COMSPEC_BarlowBold'>Porte non verrouillée : entrée manuelle possible, pas de charge.</t>"]; };
+    case (_tState select 1): { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "' font='COMSPEC_BarlowBold'>Porte ouverte : pas de charge nécessaire.</t>"]; };
+    case ((_tState select 0) isEqualTo "free"): { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "' font='COMSPEC_BarlowBold'>Porte non verrouillée : entrée manuelle possible, pas de charge.</t>"]; };
     default {};
 };
 if (_g <= 0) then {
-    _rows pushBack ["text", format ["<t color='#e5483a'>Méthode inadaptée à cette porte.</t> <t color='%1'>Recommandé : %2.</t>", _grey, _methNames get _recMeth]];
+    _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Méthode inadaptée à cette porte.</t> <t color='%1'>Recommandé : %2.</t>", _grey, _methNames get _recMeth]];
 } else {
     // Distance de sécurité : k · (masse en kg)^(1/3), plus large à découvert.
     private _cube = (_g / 1000) ^ (1 / 3);
     private _cover = (9 * _cube) max 3;
     private _openAir = (14 * _cube) max 5;
-    _rows pushBack ["text", format ["<t size='1.6' font='COMSPEC_BarlowBold' color='#f2ab33'>%1 g</t><t color='%2'> TNT · %3</t><br/><t size='1.15' font='COMSPEC_BarlowBold'>%4 m</t><t color='%2'> derrière un mur   </t><t size='1.15' font='COMSPEC_BarlowBold'>%5 m</t><t color='%2'> à découvert</t>",
+    _rows pushBack ["text", format ["<t size='1.6' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1 g</t><t color='%2'> TNT · %3</t><br/><t size='1.15' font='COMSPEC_BarlowBold'>%4 m</t><t color='%2'> derrière un mur   </t><t size='1.15' font='COMSPEC_BarlowBold'>%5 m</t><t color='%2'> à découvert</t>",
         _g, _grey, _methNames get _meth, ceil _cover, ceil _openAir]];
     _rows pushBack ["text", format ["<t size='0.8' color='%1'>Colonne du côté des gonds, hors de l'axe de la porte. Protection auditive et lunettes. Vérifier la cible derrière la porte.</t>", _grey]];
 };
@@ -139,9 +139,9 @@ private _armed = (uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap])
 _rows pushBack ["section", "Top synchronisé", "Compte à rebours sur l'écran de chaque membre du groupe"];
 _rows pushBack ["segment", "Compte à rebours", [3, 5, 10] apply { [format ["%1 s", _x], compile format ["['countdown', %1] call comspec_atak_native_fnc_breachAction;", _x], _x isEqualTo _cd] }];
 _rows pushBack ["switch", "Mettre à feu les charges au top", _withCharges, { ['charges'] call comspec_atak_native_fnc_breachAction; },
-    format ["%1 charge(s) cochée(s) dans l'app Explosifs · %2", _nSel, ["<t color='#e5483a'>sécurité en place</t>", "<t color='#5cc76b'>sécurité levée</t>"] select _armed]];
+    format ["%1 charge(s) cochée(s) dans l'app Explosifs · %2", _nSel, ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>sécurité en place</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>sécurité levée</t>"] select _armed]];
 if (_withCharges && {_nSel isEqualTo 0 || {!_armed}}) then {
-    _rows pushBack ["text", "<t size='0.85' color='#e5483a'>Charges non prêtes : cochez-les et levez la sécurité dans l'app Explosifs.</t>"];
+    _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Charges non prêtes : cochez-les et levez la sécurité dans l'app Explosifs.</t>"];
 };
 _rows pushBack ["buttons", [[format ["TOP AU GROUPE · %1 s%2", _cd, ["", " · FEU"] select _withCharges], { ['go'] call comspec_atak_native_fnc_breachAction; }, true]]];
 _rows pushBack ["buttons", [["APP EXPLOSIFS", { ["EXPLO"] call comspec_atak_native_fnc_navigate; }]]];

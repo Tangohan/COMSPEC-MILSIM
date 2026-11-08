@@ -20,10 +20,13 @@ private _mk = {
     _c
 };
 
+private _th = [] call comspec_atak_native_fnc_theme;
 private _bg = ["COMSPEC_RscTile", [_x0, _y0, _w, _h]] call _mk;
 // Style réaliste (fn_iconTint, Réglages > Personnalisation) : icône sur un carré arrondi coloré, posée sur le fond
 // d'écran comme sur un vrai lanceur (plus de tuile plate derrière) ; le dock et le rail gardent leur fond.
 private _real = ["on"] call comspec_atak_native_fnc_iconTint;
+// Tuile plate : relief du thème ; dock et rail (sans libellé) : barres système, toujours sombres.
+_bg ctrlSetBackgroundColor ([_th get "chrome", _th get "surface2"] select (_label isNotEqualTo ""));
 if (_real && {_label isNotEqualTo ""}) then { _bg ctrlSetBackgroundColor [0, 0, 0, 0]; };
 // Libellé : une ligne à la taille du lanceur, réduite jusqu'à 70 % si elle dépasse (« Guerre électronique »), sans
 // descendre sous le plancher des légendes (fn_layoutGet). Encore trop long à ce plancher : deux lignes, coupées à
@@ -100,26 +103,33 @@ if (_labelH > 0) then {
     private _t = [["COMSPEC_RscTextCenter", "COMSPEC_RscTextCenterMulti"] select _two, [_x0 + _w * 0.03, _y0 + _h - _labelH - _h * 0.06, _w * 0.94, _labelH]] call _mk;
     _t ctrlSetFontHeight _fh;
     _t ctrlSetText _labelTxt; // i18n:brut (déjà traduit)
-    if (_wip) then { _t ctrlSetTextColor [0.6, 0.64, 0.62, 0.6]; };
+    // Libellé sur fond d'écran (style réaliste) : toujours clair avec son ombre ; sur tuile plate : texte du thème.
+    _t ctrlSetTextColor ([_th get "text", [0.93, 0.97, 0.94, 1]] select _real);
+    if (_wip) then { _t ctrlSetTextColor (_th get "off"); };
 };
 if (_wip) then {
     private _rh = _font * 1.05;
     private _r = ["COMSPEC_RscTextCenter", [_x0 + _w * 0.12, _y0 + (_h - _labelH - _rh) / 2, _w * 0.76, _rh]] call _mk;
-    _r ctrlSetBackgroundColor [0.85, 0.6, 0.12, 0.92];
-    _r ctrlSetTextColor [0.06, 0.06, 0.05, 1];
+    _r ctrlSetBackgroundColor (_th get "warn");
+    _r ctrlSetTextColor (_th get "onState");
     _r ctrlSetFontHeight (_font * 0.85);
     _r ctrlSetText (("W.I.P") call comspec_atak_native_fnc_tr);
 };
 if (_pinned) then {
+    // Épinglée : liseré d'accent en haut et petite épingle dans le coin (3.1.0 : le liseré seul passait inaperçu).
     private _pl = ["COMSPEC_RscText", [_x0, _y0, _w, pixelH * 2]] call _mk;
-    _pl ctrlSetBackgroundColor (((([] call comspec_atak_native_fnc_accent) select 0) select [0, 3]) + [0.9]);
+    _pl ctrlSetBackgroundColor (((_th get "accent") select [0, 3]) + [0.9]);
     _pl ctrlEnable false;
+    private _ps = _font * 0.8;
+    private _pi = ["COMSPEC_RscPicture", [_x0 + _w - _ps * pixelW / pixelH - _w * 0.04, _y0 + _h * 0.05, _ps * pixelW / pixelH, _ps], "\z\comspec_atak_native\addons\main\data\ui_pin.paa"] call _mk;
+    _pi ctrlSetTextColor (((_th get "accent") select [0, 3]) + [0.95]);
+    _pi ctrlEnable false;
 };
 if (_new && {!_wip}) then {
     private _nh = _font * 0.95;
     private _n = ["COMSPEC_RscTextCenter", [_x0 + _w * 0.04, _y0 + _h * 0.05, _w * 0.42, _nh]] call _mk;
-    _n ctrlSetBackgroundColor (((([] call comspec_atak_native_fnc_accent) select 0) select [0, 3]) + [0.95]);
-    _n ctrlSetTextColor [0.04, 0.06, 0.05, 1];
+    _n ctrlSetBackgroundColor (((_th get "accent") select [0, 3]) + [0.95]);
+    _n ctrlSetTextColor (_th get "onAccent");
     _n ctrlSetFontHeight ((_font * 0.75) max COMSPEC_ATAK_FontMin);
     _n ctrlSetText (("NOUVEAU") call comspec_atak_native_fnc_tr);
     _n ctrlEnable false;

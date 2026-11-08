@@ -20,12 +20,17 @@ private _w = _bw * 0.9;
 private _x0 = _bx + (_bw - _w) / 2;
 private _y0 = _by + _pad;
 private _list = [];
+// Bandeau d'attention (fn_theme) : fond relief, liseré et texte à la couleur « attention ».
+private _th = [] call comspec_atak_native_fnc_theme;
 private _bg = _d ctrlCreate ["COMSPEC_RscText", -1];
-_bg ctrlSetPosition [_x0, _y0, _w, _h]; _bg ctrlSetBackgroundColor [0.10, 0.09, 0.05, 0.96]; _bg ctrlCommit 0;
+_bg ctrlSetPosition [_x0, _y0, _w, _h]; _bg ctrlSetBackgroundColor ((((_th get "surfaceHi") select [0, 3]) apply { _x + 0.03 }) + [0.97]); _bg ctrlCommit 0;
 _list pushBack _bg;
+private _rim = _d ctrlCreate ["COMSPEC_RscText", -1];
+_rim ctrlSetPosition [_x0, _y0, pixelW * 4, _h]; _rim ctrlSetBackgroundColor (_th get "warn"); _rim ctrlCommit 0;
+_list pushBack _rim;
 private _t = _d ctrlCreate ["COMSPEC_RscStructuredText", -1];
 _t ctrlSetPosition [_x0 + _pad, _y0 + (_h - _font) / 2, _w * 0.68, _h]; _t ctrlCommit 0;
-_t ctrlSetStructuredText parseText format ["<t color='#f2ab33' font='COMSPEC_BarlowBold'>%1</t>", ((_text) call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", ""]]; // i18n:brut
+_t ctrlSetStructuredText parseText format ["<t color='%2' font='COMSPEC_BarlowBold'>%1</t>", ((_text) call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", ""], _th get "hexWarn"]; // i18n:brut
 _list pushBack _t;
 private _b = _d ctrlCreate ["COMSPEC_RscButtonPrimary", -1];
 _b ctrlSetPosition [_x0 + _w * 0.72, _y0 + _h * 0.15, _w * 0.26, _h * 0.7]; _b ctrlCommit 0;

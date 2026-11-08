@@ -17,9 +17,9 @@ private _bat = round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]
 ([_net] call {
     params ["_n"];
     switch (_n) do {
-        case "CONNECTED": { ["EN LIGNE", "#5cc76b", "Liaison Athena établie"] };
-        case "DEGRADED": { ["DÉGRADÉ", "#f2ab33", "Liaison instable : envois retardés"] };
-        default { ["HORS LIGNE", "#e5483a", "Le terminal et la carte restent utilisables hors ligne"] };
+        case "CONNECTED": { ["EN LIGNE", (COMSPEC_ATAK_Th get "hexOk"), "Liaison Athena établie"] };
+        case "DEGRADED": { ["DÉGRADÉ", (COMSPEC_ATAK_Th get "hexWarn"), "Liaison instable : envois retardés"] };
+        default { ["HORS LIGNE", (COMSPEC_ATAK_Th get "hexAlert"), "Le terminal et la carte restent utilisables hors ligne"] };
     }
 }) params ["_pill", "_pillHex", "_pillTxt"];
 private _ago = {
@@ -32,10 +32,10 @@ private _ago = {
 private _units = count (_data getOrDefault ["units", createHashMap]);
 private _orders = count ([] call comspec_atak_native_fnc_tasksAll);
 private _rows = [
-    ["hero", "\z\comspec_atak_native\addons\main\data\app_status.paa", format ["<t size='1.35' font='COMSPEC_BarlowBold'>STATUT</t>  <t color='%1' font='COMSPEC_BarlowBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>", _pillHex, _pill, _pillTxt]],
+    ["hero", "\z\comspec_atak_native\addons\main\data\app_status.paa", format ["<t size='1.35' font='COMSPEC_BarlowBold'>STATUT</t>  <t color='%1' font='COMSPEC_BarlowBold'>● %2</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' size='0.85'>%3</t>", _pillHex, _pill, _pillTxt]],
     ["section", "Liaison", ["Session propre au terminal", "Session Athena de COMSPEC Link"] select _bridge],
     ["info", "Athena", format ["<t color='%1'>%2</t>", _pillHex, toLower _pill]],
-    ["info", "Canal poste", ["<t color='#e5483a'>fermé</t>", "<t color='#5cc76b'>ouvert</t>"] select _ready],
+    ["info", "Canal poste", ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>fermé</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>ouvert</t>"] select _ready],
     ["info", "Signal", format ["%1/4 · %2 kbit/s · %3", _q getOrDefault ["bars", 0], _q getOrDefault ["kbps", 0], _q getOrDefault ["label", "—"]]],
     ["info", "Latence · perte", format ["%1 ms · %2 %%", _q getOrDefault ["latency", 0], _q getOrDefault ["loss", 0]]],
     ["info", "Attente avant renvoi", format ["%1 s", missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0]]],
@@ -45,10 +45,10 @@ private _rows = [
     ["info", "Unités sur la carte", str _units],
     ["info", "Ordres reçus", str _orders],
     ["section", "Terminal", ""],
-    ["info", "Batterie", format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_bat / 30)) min 2), _bat]],
+    ["info", "Batterie", format ["<t color='%1'>%2 %%</t>", [(COMSPEC_ATAK_Th get "hexAlert"), (COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexOk")] select ((floor (_bat / 30)) min 2), _bat]],
     // Mémoire vive simulée (fn_ramUsage) : total, puis la part de chaque poste.
-    ["info", "Mémoire vive", ([] call comspec_atak_native_fnc_ramUsage) call { format ["<t color='%1'>%2 / %3 Mo (%4 %5)</t>", switch (true) do { case ((_this get "pct") >= 90): { "#e5483a" }; case ((_this get "pct") >= 75): { "#f2ab33" }; default { "#5cc76b" }; }, _this get "used", _this get "total", _this get "pct", "%"] }],
-    ["text", format ["<t size='0.8' color='#8a9a93'>%1</t>", ((missionNamespace getVariable ["COMSPEC_ATAK_Ram", createHashMap]) getOrDefault ["parts", []]) apply { format ["%1 : %2 Mo", _x select 0, _x select 1] } joinString " · "]],
+    ["info", "Mémoire vive", ([] call comspec_atak_native_fnc_ramUsage) call { format ["<t color='%1'>%2 / %3 Mo (%4 %5)</t>", switch (true) do { case ((_this get "pct") >= 90): { (COMSPEC_ATAK_Th get "hexAlert") }; case ((_this get "pct") >= 75): { (COMSPEC_ATAK_Th get "hexWarn") }; default { (COMSPEC_ATAK_Th get "hexOk") }; }, _this get "used", _this get "total", _this get "pct", "%"] }],
+    ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", ((missionNamespace getVariable ["COMSPEC_ATAK_Ram", createHashMap]) getOrDefault ["parts", []]) apply { format ["%1 : %2 Mo", _x select 0, _x select 1] } joinString " · "]],
     ["info", "Version du mod", ["COMSPEC_ATAK_NativeBuild", "?"] call _str],
     ["info", "Extension", ["DLL native", "DLL COMSPEC Link embarquée"] select _bridge],
     ["buttons", [

@@ -22,9 +22,9 @@ private _put = {
     _c ctrlSetStructuredText parseText _txt; // i18n:brut (libellés déjà traduits)
 };
 // Libellé discret (vert par défaut) devant une valeur, et sous-libellé gris des lignes de détail.
-private _lbl = { params ["_t", ["_c", "#5cc76b"]]; format ["<t size='0.78' color='%2'>%1</t> ", (_t) call comspec_atak_native_fnc_tr, _c] };
-private _key = { params ["_t"]; format ["<t color='#7f8c86'>%1</t> ", (_t) call comspec_atak_native_fnc_tr] };
-private _sepDot = "<t color='#7f8c86'> · </t>";
+private _lbl = { params ["_t", ["_c", (COMSPEC_ATAK_Th get "hexMapOk")]]; format ["<t size='0.78' color='%2'>%1</t> ", (_t) call comspec_atak_native_fnc_tr, _c] };
+private _key = { params ["_t"]; format ["<t color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t> ", (_t) call comspec_atak_native_fnc_tr] };
+private _sepDot = "<t color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'> · </t>";
 // Azimut sur trois chiffres (« 085° ») et distance en m puis en km.
 private _az3 = { params ["_a"]; private _t = str ((round _a) mod 360); while {(count _t) < 3} do { _t = "0" + _t; }; _t };
 private _distTxt = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 2]] select (_d >= 1000) };
@@ -48,26 +48,26 @@ private _meUpdate = {
         // Indicatif tel quel (jamais traduit), raccourci proprement s'il est long.
         private _cs = ([player] call comspec_atak_native_fnc_unitCallsign) regexReplace ["[<>&]", ""];
         if ((count _cs) > 12) then { _cs = (_cs select [0, 11]) + "…"; };
-        _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", _cs, ["#5cc76b", _ft get "hex"] select _inFt];
+        _l2 = format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t>", _cs, [(COMSPEC_ATAK_Th get "hexMapOk"), _ft get "hex"] select _inFt];
         if (_inFt) then {
             private _fn = (toUpper ((_ft get "name") call comspec_atak_native_fnc_tr)) regexReplace ["[<>&]", ""];
             if ((count _fn) > 8) then { _fn = _fn select [0, 8]; };
             _l2 = _l2 + format [" <t color='%2'>%1</t>", _fn, _ft get "hex"];
         };
         if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
-            _l2 = _l2 + _sepDot + format ["<t font='EtelkaMonospacePro' color='#c9d2cd'>%1</t>", ["grid", [getPosASL player, ""]] call comspec_atak_native_fnc_mapPrefs];
+            _l2 = _l2 + _sepDot + format ["<t font='EtelkaMonospacePro' color='" + (COMSPEC_ATAK_Th get "hexMapText") + "'>%1</t>", ["grid", [getPosASL player, ""]] call comspec_atak_native_fnc_mapPrefs];
         };
         _ov set ["meL2", _l2];
     };
     if !("ME" in _bShow) then { _l2 = ""; };
     private _hdgOn = "HDG" in _bShow;
     if (_bStyle isEqualTo "CLASSIC") exitWith {
-        private _hd = if (_hdgOn) then { format ["<t font='EtelkaMonospaceProBold' size='1.2'>%1°</t> <t font='EtelkaMonospacePro' size='0.85' color='#b7c1bc'>%2</t>", [_h] call _az3, [_h, 8] call comspec_atak_native_fnc_cardinal] } else { "" };
-        [_me, ([_hd, format ["<t size='0.85' color='#b7c1bc'>%1</t>", _l2]] select { _x isNotEqualTo "" && {_x isNotEqualTo "<t size='0.85' color='#b7c1bc'></t>"} }) joinString "<br/>"] call _put;
+        private _hd = if (_hdgOn) then { format ["<t font='EtelkaMonospaceProBold' size='1.2'>%1°</t> <t font='EtelkaMonospacePro' size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%2</t>", [_h] call _az3, [_h, 8] call comspec_atak_native_fnc_cardinal] } else { "" };
+        [_me, ([_hd, format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", _l2]] select { _x isNotEqualTo "" && {_x isNotEqualTo "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'></t>"} }) joinString "<br/>"] call _put;
     };
     private _hd = if (_hdgOn) then {
-        format ["%1<t font='EtelkaMonospaceProBold' size='1.2'>%2°</t> <t font='EtelkaMonospacePro' size='0.95' color='#b7c1bc'>%3</t>",
-            format ["<t size='0.78' color='#5cc76b'>%1</t> ", ["HDG", "CAP"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")], [_h] call _az3, [_h] call _cardinal]
+        format ["%1<t font='EtelkaMonospaceProBold' size='1.2'>%2°</t> <t font='EtelkaMonospacePro' size='0.95' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%3</t>",
+            format ["<t size='0.78' color='" + (COMSPEC_ATAK_Th get "hexMapOk") + "'>%1</t> ", ["HDG", "CAP"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")], [_h] call _az3, [_h] call _cardinal]
     } else { _l2 };
     // NOUVEAU sans CURDIST : le cap (celui de ma vue) est déjà à gauche avec la flèche ; cette case garde l'indicatif.
     if !("CURDIST" in _bShow) then { _hd = _l2; _hdgOn = false; };
@@ -131,9 +131,9 @@ if (!isNull _cur && {!_tapeOnly}) then {
         ["grid", [_q, ""]] call comspec_atak_native_fnc_mapPrefs
     };
     private _big = { format ["<t font='EtelkaMonospaceProBold' size='1.2'>%1</t>", _this select 0] };
-    private _zoneTxt = ["", format ["<t font='EtelkaMonospacePro' size='0.85' color='#b7c1bc'>%1</t> ", _zone select 1]] select _mgrs;
-    private _val = { format ["<t font='EtelkaMonospaceProBold' color='#eef2ef'>%1</t>", _this select 0] };
-    private _brg = { params ["_az"]; format ["%1 %2", [format ["%1°", [_az] call _az3]] call _val, format ["<t font='EtelkaMonospacePro' color='#b7c1bc'>%1</t>", [_az, 8] call comspec_atak_native_fnc_cardinal]] };
+    private _zoneTxt = ["", format ["<t font='EtelkaMonospacePro' size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t> ", _zone select 1]] select _mgrs;
+    private _val = { format ["<t font='EtelkaMonospaceProBold' color='" + (COMSPEC_ATAK_Th get "hexMapText") + "'>%1</t>", _this select 0] };
+    private _brg = { params ["_az"]; format ["%1 %2", [format ["%1°", [_az] call _az3]] call _val, format ["<t font='EtelkaMonospacePro' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", [_az, 8] call comspec_atak_native_fnc_cardinal]] };
     private _nl = "<br/>";
     // Zone de l'app Zones sous le curseur (ou sous moi en porté) : nom à la couleur de son état, plan, état (fn_zoneAction).
     private _zq = [_p, getPosASL (vehicle player)] select !_inter;
@@ -144,8 +144,8 @@ if (!isNull _cur && {!_tapeOnly}) then {
         private _cv = ["at", _p] call comspec_atak_native_fnc_relayNet;
         if (_cv isNotEqualTo []) then {
             _net = [
-                (["RÉSEAU"] call _key) + ([format ["%1 Mbit/s", (_cv select 0) toFixed 1]] call _val) + format [" <t color='#b7c1bc'>%1 %%</t>", _cv select 1],
-                format ["<t color='#e5483a'>%1</t>", ("ZONE BLANCHE") call comspec_atak_native_fnc_tr]
+                (["RÉSEAU"] call _key) + ([format ["%1 Mbit/s", (_cv select 0) toFixed 1]] call _val) + format [" <t color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1 %%</t>", _cv select 1],
+                format ["<t color='" + (COMSPEC_ATAK_Th get "hexMapAlert") + "'>%1</t>", ("ZONE BLANCHE") call comspec_atak_native_fnc_tr]
             ] select ((_cv select 0) <= 0);
         };
     };
@@ -158,14 +158,14 @@ if (!isNull _cur && {!_tapeOnly}) then {
             switch (true) do {
                 case ((count _measure) >= 2): {
                     _measure params ["_a", "_b"];
-                    _parts pushBack ((["A-B", "#f2ab33"] call _lbl) + ([[_a distance2D _b] call _dT] call _val) + " " + ([_a getDir _b] call _brg));
+                    _parts pushBack ((["A-B", (COMSPEC_ATAK_Th get "hexMapWarn")] call _lbl) + ([[_a distance2D _b] call _dT] call _val) + " " + ([_a getDir _b] call _brg));
                 };
                 case (!_inter): {
                     private _pp = getPosASL (vehicle player);
                     if ("GRID" call _on) then { _parts pushBack ((["MOI"] call _lbl) + _zoneTxt + ([[_pp, (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) max 8] call _gT] call _val)); };
                     if ("ALT" call _on) then { _parts pushBack ((["ALT"] call _key) + ([[_pp select 2] call _aT] call _val)); };
                 };
-                case ((count _p) < 2): { _parts pushBack ((["CURSEUR"] call _lbl) + format ["<t color='#8a9a93'>%1</t>", ("survolez la carte") call comspec_atak_native_fnc_tr]); };
+                case ((count _p) < 2): { _parts pushBack ((["CURSEUR"] call _lbl) + format ["<t color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", ("survolez la carte") call comspec_atak_native_fnc_tr]); };
                 default {
                     if ("GRID" call _on) then { _parts pushBack (_zoneTxt + ([[_p] call _gT] call _val)); };
                     if ("DIST" call _on) then { _parts pushBack (([[player distance2D _p] call _dT] call _val) + " " + ([player getDir _p] call _brg)); };
@@ -181,14 +181,14 @@ if (!isNull _cur && {!_tapeOnly}) then {
             // Rendu d'avant 2.9.34, un seul texte : valeur en grand puis détails gris (corrigé : libellés seuls traduits,
             // « ALT 17 m », point cardinal jamais pris pour un mot).
             private _wrap = _ov getOrDefault ["cursorWrap", false];
-            private _sub = { format ["<br/><t size='0.85' color='#b7c1bc'>%1</t>", _this select 0] };
+            private _sub = { format ["<br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", _this select 0] };
             private _card8 = { [_this select 0, 8] call comspec_atak_native_fnc_cardinal };
             private _txt = switch (true) do {
                 case ((count _measure) >= 2): {
                     _measure params ["_a", "_b"];
                     private _azm = _a getDir _b;
                     private _dAlt = round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a));
-                    format ["<t font='EtelkaMonospacePro'>%1%2  %3° %4%5</t>", ["A-B", "#f2ab33"] call _lbl, [[_a distance2D _b] call _dT] call _big, [_azm] call _az3, [_azm] call _card8,
+                    format ["<t font='EtelkaMonospacePro'>%1%2  %3° %4%5</t>", ["A-B", (COMSPEC_ATAK_Th get "hexMapWarn")] call _lbl, [[_a distance2D _b] call _dT] call _big, [_azm] call _az3, [_azm] call _card8,
                         [(["Δ ALT"] call _key) + format ["%1%2", ["", "+"] select (_dAlt > 0), [_dAlt] call _aT]] call _sub]
                 };
                 case (!_inter): {
@@ -200,7 +200,7 @@ if (!isNull _cur && {!_tapeOnly}) then {
                     if (_zn isNotEqualTo "") then { _det pushBack _zn; };
                     format ["<t font='EtelkaMonospacePro'>%1%2%3</t>", ["MOI"] call _lbl, [["", _g8] select ("GRID" call _on)] call _big, ["", [_det joinString " · "] call _sub] select ((count _det) > 0)]
                 };
-                case ((count _p) < 2): { format ["<t font='EtelkaMonospacePro'>%1<t color='#8a9a93'>%2</t></t>", ["CURSEUR"] call _lbl, ("survolez la carte") call comspec_atak_native_fnc_tr] };
+                case ((count _p) < 2): { format ["<t font='EtelkaMonospacePro'>%1<t color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%2</t></t>", ["CURSEUR"] call _lbl, ("survolez la carte") call comspec_atak_native_fnc_tr] };
                 default {
                     _az = player getDir _p;
                     private _g = [_p] call _gT;
@@ -239,7 +239,7 @@ if (!isNull _cur && {!_tapeOnly}) then {
                     _measure params ["_a", "_b"];
                     _az = _a getDir _b;
                     private _dAlt = round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a));
-                    _line1 = (["A-B", "#f2ab33"] call _lbl) + ([[_a distance2D _b] call _dT] call _big);
+                    _line1 = (["A-B", (COMSPEC_ATAK_Th get "hexMapWarn")] call _lbl) + ([[_a distance2D _b] call _dT] call _big);
                     _line2 = ([_az] call _brg) + _sepDot + (["Δ ALT"] call _key) + ([format ["%1%2", ["", "+"] select (_dAlt > 0), [_dAlt] call _aT]] call _val);
                 };
                 case (!_inter): {
@@ -256,7 +256,7 @@ if (!isNull _cur && {!_tapeOnly}) then {
                     _line2 = _l2 joinString _sepDot;
                 };
                 case ((count _p) < 2): {
-                    _line1 = (["CURSEUR"] call _lbl) + format ["<t color='#8a9a93'>%1</t>", ("survolez la carte") call comspec_atak_native_fnc_tr];
+                    _line1 = (["CURSEUR"] call _lbl) + format ["<t color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", ("survolez la carte") call comspec_atak_native_fnc_tr];
                 };
                 default {
                     _az = player getDir _p;
@@ -316,7 +316,7 @@ if (!isNull _wa) then {
         private _b = player getDir _p;
         _wa ctrlSetAngle [_b - _h, 0.5, 0.5];
         private _d = player distance2D _p;
-        (_ov getOrDefault ["wpText", controlNull]) ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t> <t size='0.8' color='#8a9a93'>%2/%3</t><br/><t size='0.95'>%4</t> <t size='0.8' color='#8a9a93'>%5°</t>",
+        (_ov getOrDefault ["wpText", controlNull]) ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%2/%3</t><br/><t size='0.95'>%4</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%5°</t>",
             _n, (_w getOrDefault ["idx", 0]) + 1, count _pts, [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000), round _b]) call comspec_atak_native_fnc_tr);
     };
 };
@@ -332,11 +332,11 @@ if (!isNull _tape) then {
         params ["_a"];
         _a = (round _a) mod 360;
         switch (_a) do {
-            case 0: { "<t color='#e5483a' font='COMSPEC_BarlowBold'>N</t>" };
+            case 0: { "<t color='" + (COMSPEC_ATAK_Th get "hexMapAlert") + "' font='COMSPEC_BarlowBold'>N</t>" };
             case 90: { "<t font='COMSPEC_BarlowBold'>E</t>" };
             case 180: { "<t font='COMSPEC_BarlowBold'>S</t>" };
             case 270: { format ["<t font='COMSPEC_BarlowBold'>%1</t>", _west] };
-            default { format ["<t color='#c5ccc8'>%1</t>", _a] };
+            default { format ["<t color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", _a] };
         };
     };
     private _lo = (floor (_h / 10)) * 10;
@@ -345,7 +345,7 @@ if (!isNull _tape) then {
     private _right = [_hi, _hi + 10, _hi + 20] apply { [_x mod 360] call _lbl };
     // Graduations et lettres déjà dans la langue (O / W) : pas de traduction, une lettre seule y serait prise pour un mot.
     _tape ctrlSetStructuredText parseText (format [ // i18n:brut
-        "<t align='center' font='EtelkaMonospaceProBold' size='0.85'>%1  %2  %3 <t color='#5cc76b' size='1.05'>│%4°│</t> %5  %6  %7</t>",
+        "<t align='center' font='EtelkaMonospaceProBold' size='0.85'>%1  %2  %3 <t color='" + (COMSPEC_ATAK_Th get "hexMapOk") + "' size='1.05'>│%4°│</t> %5  %6  %7</t>",
         _left select 0, _left select 1, _left select 2, round _h, _right select 0, _right select 1, _right select 2]);
 };
 if (_tapeOnly) exitWith { true };
@@ -365,8 +365,8 @@ if (!isNull _bar) then {
 };
 
 // Outils bascule : vert quand actifs.
-private _on = [0.36, 0.78, 0.42, 1];
-private _off = [0.90, 0.94, 0.91, 1];
+private _on = (COMSPEC_ATAK_Th get "mapOk");
+private _off = (COMSPEC_ATAK_Th get "mapText");
 private _mode = _s getOrDefault ["mapMode", "SELECT"];
 {
     _x params ["_key", "_active"];

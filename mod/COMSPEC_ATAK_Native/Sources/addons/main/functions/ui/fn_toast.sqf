@@ -40,41 +40,59 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["_bx", "_by", "_bw", "_bh"];
 private _pad = _l get "pad";
 private _fs = _l get "fontSmall";
+private _th = [] call comspec_atak_native_fnc_theme;
 private _bg = _d ctrlCreate ["COMSPEC_RscText", -1];
 private _tx = _d ctrlCreate ["COMSPEC_RscTextCenter", -1];
 { _x ctrlEnable false; } forEach [_bg, _tx];
-_bg ctrlSetBackgroundColor [0.20, 0.22, 0.21, 0.94];
+// Bulle : un gris-vert un cran plus clair que le relief des cartes, texte du thème (lisible en jour comme en nuit JVN).
+private _sb = _th get "surfaceHi";
+_bg ctrlSetBackgroundColor [(_sb select 0) + 0.06, (_sb select 1) + 0.06, (_sb select 2) + 0.06, 0.96];
 _tx ctrlSetFontHeight _fs;
-_tx ctrlSetTextColor [0.95, 0.97, 0.95, 1];
+_tx ctrlSetTextColor (_th get "text");
 // Traduit une fois : la coupe se fait sur le texte affiché (chaque morceau coupé passait par fn_tr et son cache).
 private _shown = (_text) call comspec_atak_native_fnc_tr;
 _tx ctrlSetText _shown; // i18n:brut
 private _maxW = _bw * 0.86;
-// Trop long : coupé au dernier caractère qui tient, avec « … ».
-if ((ctrlTextWidth _tx) > _maxW - _pad * 4) then {
-    private _codes = toArray _shown;
-    private _n = floor ((count _codes) * (_maxW - _pad * 4) / (ctrlTextWidth _tx)) max 1;
-    while {_n > 1} do {
-        _tx ctrlSetText ((toString (_codes select [0, _n])) + "…"); // i18n:brut
-        if ((ctrlTextWidth _tx) <= _maxW - _pad * 4) exitWith {};
-        _n = _n - 2;
-    };
-};
-private _w = ((ctrlTextWidth _tx) + _pad * 5) min _maxW;
 private _h = _fs * 1.9;
+// Trop long (3.1.0) : la bulle passe sur deux lignes (texte structuré, centré) au lieu d'être coupée ; au-delà de deux
+// lignes, coupée avec « … ».
+if ((ctrlTextWidth _tx) > _maxW - _pad * 4) then {
+    ctrlDelete _tx;
+    _tx = _d ctrlCreate ["COMSPEC_RscStructuredText", -1];
+    _tx ctrlEnable false;
+    _tx ctrlSetFontHeight _fs;
+    _tx ctrlSetPosition [_bx, _by, _maxW - _pad * 4, _fs * 3];
+    _tx ctrlCommit 0;
+    private _put = { params ["_s"]; _tx ctrlSetStructuredText parseText (format ["<t align='center' color='%2'>%1</t>", (_s regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"], _th get "hexText"]); }; // i18n:brut
+    [_shown] call _put;
+    private _two = _fs * 2.45;
+    if ((ctrlTextHeight _tx) > _two) then {
+        private _codes = toArray _shown;
+        private _n = (floor ((count _codes) * _two / (ctrlTextHeight _tx))) max 1;
+        while {_n > 1} do {
+            [(toString (_codes select [0, _n])) + "…"] call _put;
+            if ((ctrlTextHeight _tx) <= _two) exitWith {};
+            _n = _n - 3;
+        };
+    };
+    _h = (ctrlTextHeight _tx) + _fs * 0.9;
+};
+private _w = [((ctrlTextWidth _tx) + _pad * 5) min _maxW, _maxW] select ((ctrlType _tx) isEqualTo 13);
 private _px = _bx + (_bw - _w) / 2;
 private _y = _by + _bh - _h - _pad * 4;
 private _anim = _new && {["anim"] call comspec_atak_native_fnc_fx};
 {
+    // Texte structuré (deux lignes) : centré dans la bulle, marges intérieures ; texte simple : la bulle entière.
+    private _p = [[_px, _y, _w, _h], [_px + _pad * 2, _y + _fs * 0.45, _w - _pad * 4, _h - _fs * 0.9]] select (_x isEqualTo _tx && {(ctrlType _tx) isEqualTo 13});
     if (_anim) then {
-        _x ctrlSetPosition [_px, _y + _h * 0.5, _w, _h];
+        _x ctrlSetPosition [_p select 0, (_p select 1) + _h * 0.5, _p select 2, _p select 3];
         _x ctrlSetFade 1;
         _x ctrlCommit 0;
-        _x ctrlSetPosition [_px, _y, _w, _h];
+        _x ctrlSetPosition _p;
         _x ctrlSetFade 0;
         _x ctrlCommit 0.15;
     } else {
-        _x ctrlSetPosition [_px, _y, _w, _h];
+        _x ctrlSetPosition _p;
         _x ctrlCommit 0;
     };
 } forEach [_bg, _tx];

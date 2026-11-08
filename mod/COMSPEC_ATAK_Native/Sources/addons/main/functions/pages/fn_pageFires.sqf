@@ -47,7 +47,7 @@ if !(_tab in ["nine", "five"]) exitWith {
 };
 private _rows = [["buttons", [["9-LINE", "nine"] call _tabBtn, ["5-LINE", "five"] call _tabBtn, ["APPEL DE FEU", "cff"] call _tabBtn]]];
 private _hint = _f getOrDefault ["hint", ["", false]];
-if ((_hint select 0) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select (_hint select 1), _hint select 0]]; };
+if ((_hint select 0) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", (COMSPEC_ATAK_Th get "hexWarn")] select (_hint select 1), _hint select 0]]; };
 private _v = { params ["_k", ["_d", ""]]; _f getOrDefault [_k, _d] };
 private _tgt = _f getOrDefault ["target", []];
 private _tgtGrid = if ((count _tgt) >= 2) then { [_tgt, 8] call comspec_atak_native_fnc_gridRef } else { "" };
@@ -56,7 +56,7 @@ switch (_tab) do {
     case "nine": {
         private _laser = player getVariable ["ace_laser_code", -1];
         _rows append [
-            ["text", "<t color='#8a9a93'>Pré-rempli depuis la cible pointée (bouton CIBLE SUR LA CARTE) et votre position.</t>"],
+            ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Pré-rempli depuis la cible pointée (bouton CIBLE SUR LA CARTE) et votre position.</t>"],
             ["buttons", [["CIBLE SUR LA CARTE", { ["pick", "nine"] call comspec_atak_native_fnc_firesAction; }], ["PRÉ-REMPLIR", { ["prefill9"] call comspec_atak_native_fnc_firesAction; }]]],
             ["edit", "n1", "1. IP / BP", ["n1"] call _v],
             ["edit", "n2", "2. Cap IP » cible (°)", ["n2"] call _v],

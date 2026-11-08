@@ -10,11 +10,14 @@ private _rows = [["section", "Apps récentes", ["Aucune app ouverte.", format ["
 {
     private _p = _x;
     private _a = (_apps select { (_x get "page") isEqualTo _p }) param [0, createHashMap];
-    _rows pushBack ["person", _a getOrDefault ["icon", ""], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _a getOrDefault ["name", _p], _a getOrDefault ["section", ""]],
-        [["OUVRIR", compile format ["[{ ['%1'] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;", _p], true],
-         ["FERMER", compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['history', (_s getOrDefault ['history', []]) - ['%1']]; [{ ['RECENTS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _p]]],
-        [0.90, 0.94, 0.91, 1]];
+    // Ligne de liste (composant « row », 3.1.0) : toute la ligne rouvre l'app ; FERMER à part, dessous à droite.
+    _rows pushBack ["row", _a getOrDefault ["icon", ""], _a getOrDefault ["name", _p], _a getOrDefault ["section", ""], "",
+        compile format ["[{ ['%1'] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;", _p], ["color", _p] call comspec_atak_native_fnc_iconTint];
+    _rows pushBack ["buttons", [["FERMER", compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['history', (_s getOrDefault ['history', []]) - ['%1']]; [{ ['RECENTS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _p], false, true, "Retirer cette app des apps récentes"]]];
 } forEach _seen;
+if ((count _seen) isEqualTo 0) then {
+    _rows pushBack ["empty", "\z\comspec_atak_native\addons\main\data\ui_apps.paa", "Aucune app ouverte", "Les apps que vous ouvrez apparaîtront ici, la plus récente en tête.", ["TOUTES LES APPS", { [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }]];
+};
 if ((count _seen) > 0) then {
     _rows pushBack ["buttons", [["TOUT FERMER", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["history", ["LAUNCHER"]]; [{ ["LAUNCHER", false] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }]]];
 };

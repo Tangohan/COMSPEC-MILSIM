@@ -21,7 +21,7 @@ private _rows = [
     ["edit", "grid", "Grille de la cible", _f getOrDefault ["grid", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef]],
     ["buttons", [["MA POSITION", { ['here'] call comspec_atak_native_fnc_bdaAction; }]]],
     ["Reprise", "reatk", "NO", [["PAS DE REPRISE", "NO"], ["REPRISE REQUISE", "YES"]]] call _seg,
-    ["text", "<t size='0.8' color='#8a9a93'>Reprise : faut-il frapper la cible à nouveau ? « Pas de reprise » = objectif atteint ; « Reprise requise » = la cible est encore active, une nouvelle frappe ou un nouveau tir est demandé.</t>"],
+    ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Reprise : faut-il frapper la cible à nouveau ? « Pas de reprise » = objectif atteint ; « Reprise requise » = la cible est encore active, une nouvelle frappe ou un nouveau tir est demandé.</t>"],
     ["edit", "rem", "Remarques", _f getOrDefault ["rem", ""]],
     ["buttons", [["TRANSMETTRE LE BILAN", { ['send'] call comspec_atak_native_fnc_bdaAction; }, true]]]
 ];
@@ -29,7 +29,7 @@ private _list = values (missionNamespace getVariable ["COMSPEC_ATAK_BdaList", cr
 _list = _list apply { [_x getOrDefault ["time", ""], _x] };
 _list sort false;
 _rows pushBack ["section", "Bilans du camp", format ["%1 bilan(s)", count _list]];
-if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun bilan pour l'instant.</t>"]; };
+if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun bilan pour l'instant.</t>"]; };
 {
     private _r = _x select 1;
     ([_r] call comspec_atak_native_fnc_bdaLabels) params ["_tgt", "_res", "_reatk"];
@@ -37,10 +37,10 @@ if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93
     if ((_r getOrDefault ["ekia", ""]) isNotEqualTo "") then { _bits pushBack format ["EKIA %1", _r get "ekia"]; };
     if ((_r getOrDefault ["equip", ""]) isNotEqualTo "") then { _bits pushBack (_r get "equip"); };
     if ((_r getOrDefault ["ammo", ""]) isNotEqualTo "") then { _bits pushBack (_r get "ammo"); };
-    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2 %3</t>  <t color='#8a9a93'>%4 · %5 · %6</t><br/><t size='0.9'>%7%8</t>%9",
-        ["#5cc76b", "#e5483a"] select ((_r getOrDefault ["reatk", "NO"]) isEqualTo "YES"), _tgt, _res, _r getOrDefault ["by", "?"], _r getOrDefault ["time", ""], _r getOrDefault ["grid", ""],
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2 %3</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 · %5 · %6</t><br/><t size='0.9'>%7%8</t>%9",
+        [(COMSPEC_ATAK_Th get "hexOk"), (COMSPEC_ATAK_Th get "hexAlert")] select ((_r getOrDefault ["reatk", "NO"]) isEqualTo "YES"), _tgt, _res, _r getOrDefault ["by", "?"], _r getOrDefault ["time", ""], _r getOrDefault ["grid", ""],
         _bits joinString " · ", format ["%1%2", ["", " · "] select ((count _bits) > 0), _reatk],
-        ["", format ["<br/><t size='0.85' color='#c9d4cf'>%1</t>", _r get "rem"]] select ((_r getOrDefault ["rem", ""]) isNotEqualTo "")]];
+        ["", format ["<br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", _r get "rem"]] select ((_r getOrDefault ["rem", ""]) isNotEqualTo "")]];
     _rows pushBack ["buttons", [["CARTE", compile format ["['map', %1] call comspec_atak_native_fnc_bdaAction;", str (_r get "id")]], ["RETIRER", compile format ["['del', %1] call comspec_atak_native_fnc_bdaAction;", str (_r get "id")]]]];
 } forEach _list;
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;

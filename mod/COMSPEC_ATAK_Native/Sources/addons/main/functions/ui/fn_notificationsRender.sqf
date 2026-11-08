@@ -60,13 +60,15 @@ private _h = _ah * 0.78;
 private _y = _ay + (_ah - _h) / 2;
 
 private _t = _show getOrDefault ["type", "INFO"];
+// Couleur de gravité et fond : jetons du thème (fn_theme), les mêmes que le centre de notifications.
+private _th = [] call comspec_atak_native_fnc_theme;
 private _color = switch (_t) do {
-    case "WARNING": { [0.95, 0.67, 0.20, 1] };
+    case "WARNING": { _th get "warn" };
     case "ERROR";
-    case "TACTICAL": { [0.90, 0.38, 0.31, 1] };
-    case "MESSAGE": { [0.44, 0.71, 0.91, 1] };
-    case "SUCCESS": { [0.36, 0.78, 0.42, 1] };
-    default { [0.66, 0.78, 0.73, 1] };
+    case "TACTICAL": { _th get "alert" };
+    case "MESSAGE": { _th get "info" };
+    case "SUCCESS": { _th get "ok" };
+    default { _th get "onChromeDim" };
 };
 private _label = createHashMapFromArray [["INFO", "INFO"], ["SUCCESS", "OK"], ["WARNING", "ALERTE"], ["ERROR", "ERREUR"], ["MESSAGE", "MESSAGE"], ["TACTICAL", "TACTIQUE"]] getOrDefault [_t, _t];
 private _msg = _show getOrDefault ["message", ""];
@@ -87,7 +89,7 @@ private _mk = {
     _c
 };
 private _bg = ["COMSPEC_RscText", [_x0, _y, _w, _h]] call _mk;
-_bg ctrlSetBackgroundColor [0.05, 0.065, 0.06, 0.97];
+_bg ctrlSetBackgroundColor (_th get "chromeHi");
 // Bandeau sous les bris d'écran, comme le reste de l'affichage (fn_overlayRaise, à l'image suivante).
 [] call comspec_atak_native_fnc_overlayRaise;
 private _bar = ["COMSPEC_RscText", [_x0, _y, _pad * 0.6, _h]] call _mk;
@@ -103,26 +105,43 @@ _lb ctrlCommit 0;
 // Compteur des toasts en attente, à droite.
 private _more = (count _q) - 1;
 private _cw = 0;
+private _cnt = controlNull;
 if (_more > 0) then {
-    private _cnt = ["COMSPEC_RscTextRight", [_x0, _y, _w - _pad, _h], format ["+%1", _more]] call _mk;
+    _cnt = ["COMSPEC_RscTextRight", [_x0, _y, _w - _pad, _h], format ["+%1", _more]] call _mk;
     _cnt ctrlSetFontHeight _fs;
-    _cnt ctrlSetTextColor [0.54, 0.60, 0.58, 1];
+    _cnt ctrlSetTextColor (_th get "onChromeDim");
     _cw = (ctrlTextWidth _cnt) + _pad;
 };
 private _mx = _tx + _lw;
 private _mw = (_x0 + _w - _pad - _cw) - _mx;
 private _m = ["COMSPEC_RscText", [_mx, _y, _mw, _h], _plain] call _mk;
 _m ctrlSetFontHeight _fs;
-// Coupe au dernier mot qui tient, avec « … ».
+_m ctrlSetTextColor (_th get "onChrome");
+// Texte plus long que la place (3.1.0, retour de jeu « bandeaux INFO tronqués ») : le bandeau passe sur deux lignes et
+// déborde sous la barre d'app, sur le haut de la page, le temps de l'affichage ; au-delà de deux lignes, coupé avec
+// « … » (texte complet en info-bulle). Avant : coupé au dernier mot qui tenait, même quand le message faisait une phrase.
 if ((ctrlTextWidth _m) > _mw) then {
-    // Coupe sur le texte déjà traduit (chaque morceau passait sinon par fn_tr et remplissait son cache).
-    private _codes = toArray ((_plain) call comspec_atak_native_fnc_tr);
-    private _n = floor ((count _codes) * _mw / (ctrlTextWidth _m)) max 1;
-    while {_n > 1} do {
-        _m ctrlSetText ((toString (_codes select [0, _n])) + "…"); // i18n:brut
-        if ((ctrlTextWidth _m) <= _mw) exitWith {};
-        _n = _n - 2;
+    private _shown = (_plain) call comspec_atak_native_fnc_tr;
+    ctrlDelete _m;
+    _made deleteAt (_made find _m);
+    _m = ["COMSPEC_RscStructuredText", [_mx, _y, _mw, _h]] call _mk;
+    _m ctrlSetFontHeight _fs;
+    _m ctrlSetStructuredText parseText ((_shown regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]); // i18n:brut (déjà traduit)
+    private _two = _fs * 2.45;
+    if ((ctrlTextHeight _m) > _two) then {
+        // Coupe sur le texte déjà traduit jusqu'à tenir sur deux lignes.
+        private _codes = toArray _shown;
+        private _n = (floor ((count _codes) * _two / (ctrlTextHeight _m))) max 1;
+        while {_n > 1} do {
+            _m ctrlSetStructuredText parseText ((((toString (_codes select [0, _n])) + "…") regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]); // i18n:brut
+            if ((ctrlTextHeight _m) <= _two) exitWith {};
+            _n = _n - 3;
+        };
     };
+    _h = ((ctrlTextHeight _m) + _pad * 1.2) max _h;
+    { _x ctrlSetPositionH _h; _x ctrlCommit 0; } forEach ([_bg, _bar, _lb, _cnt] select { !isNull _x });
+    _m ctrlSetPosition [_mx, _y + (_h - (ctrlTextHeight _m)) / 2, _mw, ctrlTextHeight _m];
+    _m ctrlCommit 0;
 };
 // Bouton invisible sur tout le toast : clic = masquer ; info-bulle = texte complet.
 private _btn = ["COMSPEC_RscButtonInvisible", [_x0, _y, _w, _h]] call _mk;

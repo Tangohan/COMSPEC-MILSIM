@@ -13,7 +13,9 @@ params [["_id", ""], ["_v", false]];
 disableSerialization;
 private _e = (uiNamespace getVariable ["COMSPEC_ATAK_FormIds", createHashMap]) getOrDefault [_id, createHashMap];
 if ((count _e) isEqualTo 0) exitWith { false };
-([] call comspec_atak_native_fnc_accent) params ["_acc"];
+// Couleurs du thème (fn_theme) : mêmes jetons que fn_formRender.
+private _th = [] call comspec_atak_native_fnc_theme;
+private _acc = _th get "accent";
 switch (_e get "kind") do {
     case "switch": {
         private _pill = _e get "pill";
@@ -23,8 +25,8 @@ switch (_e get "kind") do {
         _pill ctrlSetFontHeight (_e get "fh");
         private _tw = ctrlTextWidth _pill;
         if (_tw > (_e get "w") * 0.9) then { _pill ctrlSetFontHeight (((_e get "fh") * (_e get "w") * 0.9 / _tw) max COMSPEC_ATAK_FontMin); };
-        _pill ctrlSetBackgroundColor ([[[0.30, 0.34, 0.32, 1], _acc] select _v, [0.55, 0.38, 0.08, 1]] select _locked);
-        _pill ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select (_v && {!_locked}));
+        _pill ctrlSetBackgroundColor ([[(_th get "off"), _acc] select _v, (_th get "warnDim")] select _locked);
+        _pill ctrlSetTextColor ([(_th get "text"), (_th get "onAccent")] select (_v && {!_locked}));
         true
     };
     case "slider": {
@@ -40,13 +42,13 @@ switch (_e get "kind") do {
         private _vt = _e get "value";
         if (!isNull _vt) then {
             _vt ctrlSetText (([(str _val) + " %", "MUET"] select (_min <= 0 && {_val <= 0})) call comspec_atak_native_fnc_tr);
-            _vt ctrlSetTextColor ([[0.86, 0.91, 0.88, 1], _acc] select _active);
+            _vt ctrlSetTextColor ([(_th get "text"), (_th get "accentInk")] select _active);
         };
         private _rim = _e get "rim";
         if (!isNull _rim) then { _rim ctrlShow _active; };
         private _ic = _e get "icon";
         if (!isNull _ic) then {
-            _ic ctrlSetTextColor ([[0.62, 0.68, 0.65, 1], _acc] select _active);
+            _ic ctrlSetTextColor ([(_th get "textDim"), (_th get "accentInk")] select _active);
             if (_icon isNotEqualTo "") then { _ic ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]) call comspec_atak_native_fnc_tr); };
         };
         true
@@ -54,8 +56,8 @@ switch (_e get "kind") do {
     case "fold": {
         private _t = _e get "text";
         if (isNull _t) exitWith { false };
-        _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>%2", toUpper (_e get "title"),
-            ["", format ["<t align='right' size='0.85' color='#c9d4ce'>%1</t>", _v]] select (_v isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+        _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='" + (_th get "hexText") + "'>%1</t>%2", toUpper (_e get "title"),
+            ["", format ["<t align='right' size='0.85' color='" + (_th get "hexTextDim") + "'>%1</t>", _v]] select (_v isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
         true
     };
     case "person": {

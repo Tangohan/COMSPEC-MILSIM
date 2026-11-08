@@ -52,7 +52,7 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
         };
         case "TAPE": {
             private _tape = ["COMSPEC_RscStructuredText", [_bx + _pad, _by + _pad, _cw, _ch]] call _mk;
-            _tape ctrlSetBackgroundColor [0.02, 0.025, 0.03, 0.78];
+            _tape ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapPanel");
             _ov set ["compassTape", _tape];
         };
         case "ARROW": {
@@ -73,8 +73,8 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
     private _hd = ["COMSPEC_RscTextCenter", [_bx + _pad, _by + _pad + _ch + pixelH * 2, _cw max (_font * 3.6 * 0.7 / _ratio), _fs * 1.15]] call _mk;
     _hd ctrlSetFont "EtelkaMonospaceProBold";
     _hd ctrlSetFontHeight (_fs * 0.9);
-    _hd ctrlSetBackgroundColor [0.02, 0.025, 0.03, 0.78];
-    _hd ctrlSetTextColor [0.95, 0.97, 0.96, 1];
+    _hd ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapPanel");
+    _hd ctrlSetTextColor (COMSPEC_ATAK_Th get "mapText");
     _ov set ["heading", _hd];
 };
 
@@ -123,7 +123,7 @@ private _place = {
     private _bg = ["COMSPEC_RscText", [_px0, _py0, _stripW, _bandH]] call _mk;
     _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, [_bc get "alpha", _defAlpha] select ((_bc get "alpha") < 0)];
     private _edge = ["COMSPEC_RscText", [_px0, _py0, pixelW * 3, _bandH]] call _mk;
-    _edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9];
+    _edge ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]);
     if (_sepX > 0) then {
         private _sep = ["COMSPEC_RscText", [_px0 + _sepX, _py0 + _panIn, pixelW, _bandH - _panIn * 2]] call _mk;
         _sep ctrlSetBackgroundColor [0.55, 0.62, 0.58, 0.35];
@@ -189,7 +189,7 @@ switch (_bStyle) do {
         private _arW = [0, _arS / _ratio] select _arOn;
         if (_arOn) then {
             private _arw = ["COMSPEC_RscIcon", [_cx1, _ly2 + (_l2H - _arS) / 2, _arW, _arS], _dir + "nav_straight.paa"] call _mk;
-            _arw ctrlSetTextColor [0.36, 0.85, 0.42, 1];
+            _arw ctrlSetTextColor (COMSPEC_ATAK_Th get "mapOk");
             _arw ctrlShow false;
             _ov set ["cursorArrow", _arw];
         };
@@ -224,13 +224,13 @@ if (_interactive) then {
     private _tby = _by + _mh - _panH - _pad * 2 - _th;
     private _tbw = (_tw + _fs * 4 / _ratio) min _panW;
     private _tbg = ["COMSPEC_RscMapPanel", [_bx + _pad, _tby, _tbw, _th]] call _mk;
-    if (_toolsOpen) then { _tbg ctrlSetBackgroundColor [0.10, 0.20, 0.12, 0.92]; };
+    if (_toolsOpen) then { _tbg ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapActive"); };
     private _tic = ["COMSPEC_RscIcon", [_bx + _pad, _tby, _tw, _th], _dir + "map_tools.paa"] call _mk;
-    _tic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _toolsOpen);
+    _tic ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _toolsOpen);
     private _tlb = ["COMSPEC_RscText", [_bx + _pad + _tw, _tby, _tbw - _tw, _th], "OUTILS"] call _mk;
     _tlb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
     _tlb ctrlSetFontHeight _fs;
-    _tlb ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _toolsOpen);
+    _tlb ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _toolsOpen);
     private _tb = ["COMSPEC_RscButtonOverlay", [_bx + _pad, _tby, _tbw, _th]] call _mk;
     _tb ctrlSetTooltip (("Outils carte") call comspec_atak_native_fnc_tr);
     _tb ctrlAddEventHandler ["ButtonClick", {
@@ -244,13 +244,13 @@ if (_interactive) then {
     private _sx0 = _bx + _pad + _tbw + _pad / 2;
     private _sbw = (_tw + _fs * 5.8 / _ratio) min _panW;
     private _sbg = ["COMSPEC_RscMapPanel", [_sx0, _tby, _sbw, _th]] call _mk;
-    if (_searchOpen) then { _sbg ctrlSetBackgroundColor [0.10, 0.20, 0.12, 0.92]; };
+    if (_searchOpen) then { _sbg ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapActive"); };
     private _sic = ["COMSPEC_RscIcon", [_sx0, _tby, _tw, _th], _dir + "app_osint.paa"] call _mk;
-    _sic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _searchOpen);
+    _sic ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _searchOpen);
     private _slb = ["COMSPEC_RscText", [_sx0 + _tw, _tby, _sbw - _tw, _th], "RECHERCHER"] call _mk;
     _slb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
     _slb ctrlSetFontHeight _fs;
-    _slb ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _searchOpen);
+    _slb ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _searchOpen);
     private _sbt = ["COMSPEC_RscButtonOverlay", [_sx0, _tby, _sbw, _th]] call _mk;
     _sbt ctrlSetTooltip (("Rechercher et localiser : IMEI, numéro de téléphone, balise GPS, indicatif ou nom") call comspec_atak_native_fnc_tr);
     _sbt ctrlAddEventHandler ["ButtonClick", { ["toggle"] call comspec_atak_native_fnc_mapSearch; }];
@@ -306,9 +306,9 @@ if (_interactive) then {
                 private _h = ["COMSPEC_RscText", [_bx + _pad * 1.5, _y0 + _rh * 0.25, _mwid - _pad * 2, _rh * 0.75], _label] call _mk;
                 _h ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
                 _h ctrlSetFontHeight (_fs * 0.78);
-                _h ctrlSetTextColor [0.54, 0.60, 0.58, 1];
+                _h ctrlSetTextColor (COMSPEC_ATAK_Th get "mapDim");
                 private _ln = ["COMSPEC_RscText", [_bx + _pad * 1.5, _y0 + _rh - pixelH, _mwid - _pad * 2, pixelH]] call _mk;
-                _ln ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.25];
+                _ln ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.25]);
                 continue;
             };
             private _active = switch (_key) do {
@@ -321,13 +321,13 @@ if (_interactive) then {
             };
             if (_active && {_key isEqualTo _mode}) then {
                 private _hl = ["COMSPEC_RscText", [_bx + _pad, _y0, _mwid, _rh]] call _mk;
-                _hl ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.16];
+                _hl ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.16]);
             };
             private _ic = ["COMSPEC_RscIcon", [_bx + _pad * 1.5, _y0 + _rh * 0.15, _rh * 0.7 / _ratio, _rh * 0.7], _dir + _icon + ".paa"] call _mk;
-            _ic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _active);
+            _ic ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _active);
             private _t = ["COMSPEC_RscText", [_bx + _pad * 2.5 + _rh * 0.7 / _ratio, _y0, _mwid - _pad * 2 - _rh * 0.7 / _ratio, _rh], _label] call _mk;
             _t ctrlSetFontHeight _fs;
-            _t ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _active);
+            _t ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _active);
             private _b = ["COMSPEC_RscButtonOverlay", [_bx + _pad, _y0, _mwid, _rh]] call _mk;
             _b setVariable ["key", _key];
             _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [_c getVariable "key"] call comspec_atak_native_fnc_mapToolMenu; }];
@@ -382,12 +382,12 @@ if (_interactive) then {
         // Pas de place sous la barre d'outils (drone appairé, petit écran) : l'œil passe à sa gauche, en haut.
         if (!_open && {_sy + _sh > _by + _mh - _pad}) then { _sx = _tx - _iw - _pad; _sy = _ty0 - _pad / 2; };
         private _sbg = ["COMSPEC_RscMapPanel", [_sx, _sy, _sw, _sh]] call _mk;
-        if (_open) then { _sbg ctrlSetBackgroundColor [0.10, 0.20, 0.12, 0.92]; };
+        if (_open) then { _sbg ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapActive"); };
         private _sic = ["COMSPEC_RscIcon", [_sx + (_si * 0.15), _sy + (_sh * 0.15), _si * 0.7, _sh * 0.7], _dir + "app_intel.paa"] call _mk;
-        _sic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _open);
+        _sic ctrlSetTextColor ([(COMSPEC_ATAK_Th get "mapText"), (COMSPEC_ATAK_Th get "mapOk")] select _open);
         if (_open) then {
             private _slb = ["COMSPEC_RscStructuredText", [_sx + _si, _sy + _sh * 0.2, _sw - _si, _sh * 0.8]] call _mk;
-            _slb ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold' size='0.85' color='#5cc76b'>SITUATION</t><t size='0.85' color='#8a9a93' align='right'>REPLIER</t>") call comspec_atak_native_fnc_tr);
+            _slb ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold' size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapOk") + "'>SITUATION</t><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "' align='right'>REPLIER</t>") call comspec_atak_native_fnc_tr);
         };
         private _sb = ["COMSPEC_RscButtonOverlay", [_sx, _sy, _sw, _sh]] call _mk;
         _sb ctrlSetTooltip (((["Afficher le panneau SITUATION (unités, contacts, sélection)", "Replier le panneau SITUATION"] select _open)) call comspec_atak_native_fnc_tr);
@@ -490,7 +490,7 @@ if (_interactive) then {
             private _sitOpen = !("sit" in _folds);
             // Résumés d'en-tête courts (le volet est étroit) : alliés en bleu · contacts (en rouge s'il y en a), ou l'indicatif.
             _rows pushBack ["fold", ["Situation", "Unité sélectionnée"] select ((count _sel) > 0),
-                [format ["<t color='#47b3ff'>%1</t> · <t color='%3'>%2</t>", _fr, _ho, ["#c9d4ce", "#e5483a"] select (_ho > 0)], _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0),
+                [format ["<t color='#47b3ff'>%1</t> · <t color='%3'>%2</t>", _fr, _ho, [(COMSPEC_ATAK_Th get "hexMapDim"), (COMSPEC_ATAK_Th get "hexMapAlert")] select (_ho > 0)], _sel getOrDefault ["callsign", "CONTACT"]] select ((count _sel) > 0),
                 _sitOpen, "sit" call _foldCode];
             // Texte du résumé ou de la fiche : rafraîchi chaque seconde par fn_inspectorUpdate dans ce même contrôle.
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
@@ -662,14 +662,14 @@ if (_interactive) then {
         private _bg = ["COMSPEC_RscMapPanel", [_hx, _by + _pad, _hw, _hh]] call _mk;
         _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.94];
         private _edge = ["COMSPEC_RscText", [_hx, _by + _pad, pixelW * 3, _hh]] call _mk;
-        _edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 1];
+        _edge ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapOk");
         private _ic = ["COMSPEC_RscIcon", [_hx + pixelW * 6, _by + _pad + _hh * 0.15, _hh * 0.7 / _ratio, _hh * 0.7], _dir + _icon + ".paa"] call _mk;
-        _ic ctrlSetTextColor [0.36, 0.78, 0.42, 1];
+        _ic ctrlSetTextColor (COMSPEC_ATAK_Th get "mapOk");
         private _xw = _hh / _ratio;
         private _tx0 = _hx + pixelW * 10 + _hh * 0.7 / _ratio;
         private _txt = ["COMSPEC_RscStructuredText", [_tx0, _by + _pad + _hh * 0.12, (_hw - (_tx0 - _hx) - _xw) max 0, _hh * 0.88]] call _mk;
         _txt ctrlSetFontHeight (_fs * 0.92);
-        _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#e6efe9'>%2</t>  <t size='0.85' color='#8a9a93'>%3</t>",
+        _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexMapOk") + "'>%1</t>  <t color='#e6efe9'>%2</t>  <t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%3</t>",
             _name, _what, "glisser : déplacer la carte · clic droit : quitter" call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
         private _xb = ["COMSPEC_RscButton", [_hx + _hw - _xw, _by + _pad, _xw, _hh], "✕"] call _mk;
         _xb ctrlSetFontHeight _fs;
@@ -749,7 +749,7 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
     private _py = _by + _mh - _panH - _pad * 2 - _ph;
     // Couleur du marqueur (CfgMarkerColors), claire par défaut (marqueur sans couleur ou noir sur fond sombre).
     private _rgba = (getArray (configFile >> "CfgMarkerColors" >> (markerColor _sel) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
-    if ((count _rgba) isNotEqualTo 4 || {((_rgba select 0) + (_rgba select 1) + (_rgba select 2)) < 0.3}) then { _rgba = [0.86, 0.91, 0.88, 1]; };
+    if ((count _rgba) isNotEqualTo 4 || {((_rgba select 0) + (_rgba select 1) + (_rgba select 2)) < 0.3}) then { _rgba = (COMSPEC_ATAK_Th get "mapText"); };
     _rgba = [_rgba select 0, _rgba select 1, _rgba select 2, 1];
     { private _o = ["COMSPEC_RscText", [_px + pixelW * _x, _py + pixelH * _x, _pw, _ph]] call _mk; _o ctrlSetBackgroundColor [0, 0, 0, 0.22]; } forEach [2, 4];
     private _brd = ["COMSPEC_RscText", [_px - pixelW, _py - pixelH, _pw + pixelW * 2, _ph + pixelH * 2]] call _mk;
@@ -778,13 +778,13 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
     private _mp = getMarkerPos _sel;
     private _dd = player distance2D _mp;
     private _kindTxt = ["MISSION", "JOUEUR", "ALERTE"] select _kind;
-    private _kindCol = ["#8a9a93", "#5cc76b", "#f2a33a"] select _kind;
+    private _kindCol = [(COMSPEC_ATAK_Th get "hexMapDim"), (COMSPEC_ATAK_Th get "hexMapOk"), "#f2a33a"] select _kind;
     private _txX = _tx0 + _tW + _in / _ratio * 0.6;
     private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _tH + ([0, _lineH] select (_stamp isNotEqualTo "")) + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
-    _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15' color='#e6efe9'>%1</t>  <t size='0.72' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='0.82' color='#8a9a93'>%4 · %5 · %6°</t>%7%8",
+    _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15' color='#e6efe9'>%1</t>  <t size='0.72' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='0.82' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%4 · %5 · %6°</t>%7%8",
         ([([markerText _sel] call comspec_atak_native_fnc_markerAutoName), "(sans titre)"] select ((markerText _sel) isEqualTo "")) regexReplace ["[<>&]", ""], _kindCol, _kindTxt,
         [_mp, 8] call comspec_atak_native_fnc_gridRef, [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000), round (player getDir _mp),
-        ["", format ["<br/><t size='0.78' color='#8a9a93'>%1</t>", _stamp regexReplace ["[<>&]", ""]]] select (_stamp isNotEqualTo ""),
+        ["", format ["<br/><t size='0.78' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", _stamp regexReplace ["[<>&]", ""]]] select (_stamp isNotEqualTo ""),
         ["", format ["<br/><t size='0.85' color='#c9d3cd'>%1</t>", (_note regexReplace ["[<>&]", ""]) select [0, 90]]] select (_note isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
     _txt ctrlSetFontHeight _fs;
     // Actions : une rangée en bas de la fiche.
@@ -806,7 +806,7 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
         private _b = [_cls, [_ax0 + _forEachIndex * (_aw + _pad * 0.5), _ay, _aw, _btnH], _lbl] call _mk;
         _b ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
-        if (_lbl in ["SUPPRIMER", "EFFACER"]) then { _b ctrlSetTextColor [0.95, 0.42, 0.36, 1]; };
+        if (_lbl in ["SUPPRIMER", "EFFACER"]) then { _b ctrlSetTextColor (COMSPEC_ATAK_Th get "mapAlert"); };
         _b ctrlAddEventHandler ["ButtonClick", _code];
     } forEach _acts;
     if (_kind > 0) then {
@@ -835,7 +835,7 @@ if (_wpn getOrDefault ["nav", false] && {(count (_wpn getOrDefault ["pts", []]))
     private _abg = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ah]] call _mk;
     _abg ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.88];
     private _arr = ["COMSPEC_RscIcon", [_px, _py, _aw, _ah], _dir + "nav_straight.paa"] call _mk;
-    _arr ctrlSetTextColor [0.36, 0.85, 0.42, 1];
+    _arr ctrlSetTextColor (COMSPEC_ATAK_Th get "mapOk");
     private _atx = ["COMSPEC_RscStructuredText", [_px + _aw, _py + _ah * 0.1, _pw - _aw, _ah * 0.9]] call _mk;
     _ov set ["wpArrow", _arr];
     _ov set ["wpText", _atx];
@@ -866,7 +866,7 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
     if (_interactive) then {
         _stop = ["COMSPEC_RscButton", [_gx + _gw - _sw - _pad / 2, _gy + _h1 + _h2 * 0.12, _sw, _h2 * 0.76], "ARRÊTER"] call _mk;
         _stop ctrlSetFontHeight (((_fs * 0.85) min (_h2 * 0.6)) max COMSPEC_ATAK_FontMin);
-        _stop ctrlSetBackgroundColor [0.75, 0.18, 0.15, 1];
+        _stop ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapAlert");
         _stop ctrlAddEventHandler ["ButtonClick", { missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
     };
     uiNamespace setVariable ["COMSPEC_ATAK_RouteBanner", [_g1, _g2, _g3]];
@@ -931,7 +931,7 @@ if (_dv isNotEqualTo "OFF") then {
                 _x params ["_lbl", "_code", "_state", "_tip"];
                 private _b = ["COMSPEC_RscButton", [_bx, _by + _mh - _bh2 - _pad / 2, _mw, _bh2], _lbl] call _mk;
                 _b ctrlSetFontHeight _fh0;
-                _b ctrlSetBackgroundColor (switch (_state) do { case "on": { [0.36, 0.78, 0.42, 0.9] }; case "red": { [0.75, 0.18, 0.15, 0.95] }; default { [0.08, 0.1, 0.09, 0.9] }; });
+                _b ctrlSetBackgroundColor (switch (_state) do { case "on": { (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]) }; case "red": { (COMSPEC_ATAK_Th get "mapAlert") }; default { [0.08, 0.1, 0.09, 0.9] }; });
                 _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
                 _made pushBack [_b, ctrlTextWidth _b, _forEachIndex];
@@ -981,7 +981,7 @@ if (_dv isNotEqualTo "OFF") then {
                 _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach [
-                ["MARQUER", ["lock"] call _act, [0.75, 0.18, 0.15, 0.95], "Marque la cible sous le réticule (LOCK suivi sur la carte)"],
+                ["MARQUER", ["lock"] call _act, (COMSPEC_ATAK_Th get "mapAlert"), "Marque la cible sous le réticule (LOCK suivi sur la carte)"],
                 [["GRANDE VUE", "AGRANDIR"] select _mini, ["view", "FULL"] call _act, [0.08, 0.1, 0.09, 0.9], "La vue du drone remplace la carte"],
                 [["FERMER LA VUE", "FERMER"] select _mini, ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9], "Ferme la vue du drone"]
             ];
@@ -1012,14 +1012,14 @@ if (_camId isNotEqualTo "") then {
     private _cx2 = _bx + _pad * 2 + ((((_mh * 0.24) min (_font * 3.6)) / _ratio) * ([1, 0] select _mini));
     private _cy2 = _by + _pad;
     private _cbg = ["COMSPEC_RscText", [_cx2 - pixelW, _cy2 - pixelH, _cw2 + pixelW * 2, _ch2 + pixelH * 2]] call _mk;
-    _cbg ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9];
+    _cbg ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]);
     private _cblack = ["COMSPEC_RscText", [_cx2, _cy2, _cw2, _ch2]] call _mk;
     _cblack ctrlSetBackgroundColor [0, 0, 0, 1];
     ["COMSPEC_RscPhone", [_cx2, _cy2, _cw2, _ch2], "#(argb,1024,1024,1)r2t(comspec_livecam,1.7778)"] call _mk;
     // Incrustation (indicatif, grille, distance, cap) : tenue à jour chaque seconde par la boucle du Live cam.
     private _cosd = ["COMSPEC_RscStructuredText", [_cx2 + pixelW * 4, _cy2 + pixelH * 3, _cw2 - pixelW * 8, _fs * 3.2]] call _mk;
     _cosd ctrlSetFontHeight ((_fs * ([0.85, 0.7] select _mini)) max COMSPEC_ATAK_FontMin);
-    _cosd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t>",
+    _cosd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexMapAlert") + "'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t>",
         [_cu, true] call comspec_atak_native_fnc_unitCallsign]) call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_LivecamOsd", _cosd];
     if (_interactive) then {

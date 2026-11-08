@@ -6,7 +6,7 @@
 */
 params ["", "_rect"];
 disableSerialization;
-private _grey = "#8a9a93";
+private _grey = (COMSPEC_ATAK_Th get "hexTextMuted");
 private _rows = [];
 private _st = uiNamespace getVariable ["COMSPEC_ATAK_DataLink", createHashMap];
 private _phase = _st getOrDefault ["phase", ""];
@@ -71,10 +71,10 @@ if (_phase isNotEqualTo "") exitWith {
             private _hint = _cfg getOrDefault ["hint", ""];
             if (_hint isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.85' color='%1'>Indice : %2</t>", _grey, [_hint] call _esc]]; };
             private _msg = _st getOrDefault ["msg", ""];
-            if (_msg isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", _msg]]; };
+            if (_msg isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", _msg]]; };
             if (_max > 0) then {
                 private _left = (_max - _tries) max 0;
-                _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2 essai(s) restant(s) avant %3</t>", ["#e5a03a", "#e5483a"] select (_left <= 1), _left,
+                _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2 essai(s) restant(s) avant %3</t>", ["#e5a03a", (COMSPEC_ATAK_Th get "hexAlert")] select (_left <= 1), _left,
                     switch (_cfg getOrDefault ["onFail", "lock"]) do { case "wipe": { "effacement des données" }; case "alarm": { "déclenchement de l'alarme" }; case "none": { "rien" }; default { "verrouillage" }; }]];
             };
             _rows pushBack ["buttons", [
@@ -83,7 +83,7 @@ if (_phase isNotEqualTo "") exitWith {
             ]];
         };
         case "LOCKED": {
-            _rows pushBack ["text", format ["<t font='%1' size='1.1' color='#e5483a'>ACCÈS VERROUILLÉ</t><br/><t size='0.85' color='%2'>Trop d'essais. %3</t>", _font, _grey,
+            _rows pushBack ["text", format ["<t font='%1' size='1.1' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>ACCÈS VERROUILLÉ</t><br/><t size='0.85' color='%2'>Trop d'essais. %3</t>", _font, _grey,
                 ["Le forçage n'est pas possible sur ce support.", "Seul un forçage peut encore ouvrir le support."] select (_cfg getOrDefault ["crack", true])]];
             _rows pushBack ["buttons", [["FORCER L'ACCÈS", { ["crack"] call comspec_atak_native_fnc_dataAction; }, true, _cfg getOrDefault ["crack", true]]]];
         };
@@ -100,7 +100,7 @@ if (_phase isNotEqualTo "") exitWith {
             _rows pushBack ["text", [_p, _acc] call _bar];
         };
         case "WIPED": {
-            _rows pushBack ["text", format ["<t font='%1' size='1.1' color='#e5483a'>SUPPORT VIDE</t><br/><t size='0.85' color='%2'>Les données ont été effacées. Aucun fichier exploitable.</t>", _font, _grey]];
+            _rows pushBack ["text", format ["<t font='%1' size='1.1' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>SUPPORT VIDE</t><br/><t size='0.85' color='%2'>Les données ont été effacées. Aucun fichier exploitable.</t>", _font, _grey]];
         };
         case "BROWSE": {
             private _sel = _st getOrDefault ["sel", []];
@@ -137,7 +137,7 @@ if (_phase isNotEqualTo "") exitWith {
         };
         case "DONE": {
             private _queue = _st getOrDefault ["queue", []];
-            _rows pushBack ["text", format ["<t font='%1' size='1.1' color='#5cc76b'>TRANSFERT TERMINÉ</t><br/><t size='0.85' color='%2'>%3 fichier(s) dans « Données récupérées ». Débranchez le câble pour les consulter.</t>", _font, _grey, count _queue]];
+            _rows pushBack ["text", format ["<t font='%1' size='1.1' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>TRANSFERT TERMINÉ</t><br/><t size='0.85' color='%2'>%3 fichier(s) dans « Données récupérées ». Débranchez le câble pour les consulter.</t>", _font, _grey, count _queue]];
         };
         default {};
     };
@@ -189,8 +189,8 @@ private _need = missionNamespace getVariable ["comspec_atak_native_data_cable", 
 private _has = "COMSPEC_ATAK_DataCable" in (items player);
 _rows pushBack ["section", "Extraction de données", format ["Câble DL-7 de %1 m : branchez-vous sur un ordinateur, un téléphone, une clé…", _len]];
 _rows pushBack ["info", "Câble DL-7", switch (true) do {
-    case _has: { "<t color='#5cc76b'>dans l'équipement</t>" };
-    case _need: { "<t color='#e5483a'>absent : obligatoire sur ce serveur</t>" };
+    case _has: { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>dans l'équipement</t>" };
+    case _need: { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>absent : obligatoire sur ce serveur</t>" };
     default { format ["<t color='%1'>non requis sur ce serveur</t>", _grey] };
 }];
 private _nodes = ["nodes"] call comspec_atak_native_fnc_dataAction;
@@ -200,10 +200,10 @@ if (_nodes isEqualTo []) then { _rows pushBack ["text", format ["<t color='%1'>A
     _x params ["_o", "_d"];
     private _cfg = createHashMapFromArray (_o getVariable ["COMSPEC_ATAK_Data", []]);
     private _state = switch (true) do {
-        case (_o getVariable ["COMSPEC_ATAK_DataWiped", false]): { "<t color='#e5483a'>effacé</t>" };
-        case (_o getVariable ["COMSPEC_ATAK_DataLocked", false]): { "<t color='#e5483a'>verrouillé</t>" };
+        case (_o getVariable ["COMSPEC_ATAK_DataWiped", false]): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>effacé</t>" };
+        case (_o getVariable ["COMSPEC_ATAK_DataLocked", false]): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>verrouillé</t>" };
         case ((_cfg getOrDefault ["pwHash", ""]) isNotEqualTo ""): { "<t color='#e5a03a'>protégé</t>" };
-        default { "<t color='#5cc76b'>libre</t>" };
+        default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>libre</t>" };
     };
     _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_datalink.paa",
         format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85' color='%2'>%3 m · %4</t> %5", [_cfg getOrDefault ["name", "Support"]] call _esc, _grey, round _d, _cfg getOrDefault ["kind", ""], _state],

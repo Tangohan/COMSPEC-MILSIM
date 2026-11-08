@@ -7,22 +7,22 @@ private _cart = _s getOrDefault ["foodCart", createHashMap];
 private _menu = ["menu"] call comspec_atak_native_fnc_foodAction;
 private _o = missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
 private _step = _o getOrDefault ["step", ""];
-private _rows = [["hero", "\z\comspec_atak_native\addons\main\data\app_food.paa", "<t size='1.3' font='COMSPEC_BarlowBold' color='#ff7a59'>UberEats</t><br/><t color='#8a9a93'>Livré par drone-cargo, partout sur le théâtre.<br/>6 articles maximum, une commande toutes les 10 min.</t>"]];
+private _rows = [["hero", "\z\comspec_atak_native\addons\main\data\app_food.paa", "<t size='1.3' font='COMSPEC_BarlowBold' color='#ff7a59'>UberEats</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Livré par drone-cargo, partout sur le théâtre.<br/>6 articles maximum, une commande toutes les 10 min.</t>"]];
 if (_step in ["PREP", "FLIGHT"]) then {
     private _left = round ((_o get "eta") - time) max 0;
     _rows append [
         ["section", format ["Commande %1", _o get "ref"], ["En préparation en cuisine", "Drone en vol vers vous"] select (_step isEqualTo "FLIGHT")],
-        ["text", format ["<t size='0.85'><t color='#ff7a59'>ACCEPTÉE</t>  ·  <t color='%1'>EN CUISINE</t>  ·  <t color='%2'>DRONE EN VOL</t>  ·  <t color='#5c6b65'>LIVRÉE</t></t><br/><t size='1.4' font='COMSPEC_BarlowBold'>%3 min %4 s</t>  <t color='#8a9a93'>avant l'arrivée</t><br/><t size='0.8' color='#8a9a93'>%5 article(s) · restez à l'extérieur, une fumée violette marquera le colis.</t>",
+        ["text", format ["<t size='0.85'><t color='#ff7a59'>ACCEPTÉE</t>  ·  <t color='%1'>EN CUISINE</t>  ·  <t color='%2'>DRONE EN VOL</t>  ·  <t color='#5c6b65'>LIVRÉE</t></t><br/><t size='1.4' font='COMSPEC_BarlowBold'>%3 min %4 s</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>avant l'arrivée</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%5 article(s) · restez à l'extérieur, une fumée violette marquera le colis.</t>",
             ["#5c6b65", "#ff7a59"] select (_step isEqualTo "PREP"), ["#5c6b65", "#ff7a59"] select (_step isEqualTo "FLIGHT"),
             floor (_left / 60), [str (_left mod 60), "0" + str (_left mod 60)] select ((_left mod 60) < 10), count (_o get "items")]]
     ];
     if (_step isEqualTo "PREP") then { _rows pushBack ["buttons", [["ANNULER LA COMMANDE", { ["cancel"] call comspec_atak_native_fnc_foodAction; }]]]; };
 };
 if (_step isEqualTo "DONE") then {
-    _rows pushBack ["text", format ["<t color='#5cc76b'>Commande %1 livrée</t> à %2 m de vous.", _o get "ref", round (player distance2D (_o getOrDefault ["pos", getPosATL player]))]];
+    _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Commande %1 livrée</t> à %2 m de vous.", _o get "ref", round (player distance2D (_o getOrDefault ["pos", getPosATL player]))]];
 };
 if ((count _menu) isEqualTo 0) exitWith {
-    _rows pushBack ["text", "<t color='#f2ab33'>Aucune ration disponible : le mod ACE (Field Rations) n'est pas chargé sur ce serveur.</t>"];
+    _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Aucune ration disponible : le mod ACE (Field Rations) n'est pas chargé sur ce serveur.</t>"];
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };

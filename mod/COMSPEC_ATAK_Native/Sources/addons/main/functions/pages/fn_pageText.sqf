@@ -7,7 +7,7 @@ private _pad = (_l get "pad") * 2;
 private _rowH = (_l get "font") * 1.6;
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _h = { params ["_t"]; format ["<t color='#5cc76b' size='0.85'>%1</t>", _t] };
+private _h = { params ["_t"]; format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "' size='0.85'>%1</t>", _t] };
 private _body = "";
 private _buttons = [];
 

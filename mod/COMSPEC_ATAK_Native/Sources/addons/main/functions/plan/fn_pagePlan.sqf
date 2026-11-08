@@ -45,7 +45,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
     private _mode = ["tout le monde", "chefs de groupe, Zeus et admins", "Zeus et admins"] select ((missionNamespace getVariable ["comspec_atak_native_plan_edit", 1]) max 0 min 2);
     private _rows = [
         ["section", "Plan du camp", format ["%1 élément(s)%2 · modifiable par : %3%4", count _sh, ["", format [" · « %1 »", [_sharedName] call _esc]] select (_sharedName isNotEqualTo ""), _mode, ["", " (vous : lecture seule)"] select !_can]],
-        ["text", format ["<t size='0.85' color='#8a9a93'>%1</t>", ["state"] call comspec_atak_native_fnc_planWeb]],
+        ["text", format ["<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", ["state"] call comspec_atak_native_fnc_planWeb]],
         ["buttons", [["EXPORTER", ["export", "S"] call _act], ["ENREGISTRER", { ["save", "S"] call comspec_atak_native_fnc_planAction; }]]],
         ["section", "Brouillon local", format ["%1 élément(s), gardé dans votre profil : préparez le plan à l'avance, puis ajoutez-le quand le groupe se réunit", count _dr]],
         ["buttons", [["AJOUTER AU CAMP", { ["publish", ["D", false]] call comspec_atak_native_fnc_planAction; }, true, _can], ["REMPLACER LE CAMP", { ["publish", ["D", true]] call comspec_atak_native_fnc_planAction; }, false, _can]]],
@@ -63,7 +63,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
     ];
     {
         _x params ["_n", "_w", "_its", ["_when", ""]];
-        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 · %3 élément(s) · %4</t>", [_n] call _esc, _w, count _its, _when]];
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2 · %3 élément(s) · %4</t>", [_n] call _esc, _w, count _its, _when]];
         private _i = _forEachIndex;
         _rows pushBack ["buttons", [
             ["APERÇU", compile format ["['preview', %1] call comspec_atak_native_fnc_planAction;", _i]],

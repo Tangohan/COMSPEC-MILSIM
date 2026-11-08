@@ -25,7 +25,10 @@ private _cols = _l get "cols";
 private _pad = (_l get "pad") * 2;
 private _font = _l get "fontSmall";
 private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
-([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
+// Thème (fn_theme, 3.1.0) : accent, textes et fonds des en-têtes, puces et feuille d'actions.
+private _thm = [] call comspec_atak_native_fnc_theme;
+private _acc = _thm get "accent";
+private _accHex = _thm get "hexAccent";
 private _tw = (_bw - 0.012 - _pad * (_cols + 1)) / _cols;
 private _th = _tw * _ratio * ([0.92, 0.8] select (_l get "mini")); // mode PETIT : tuiles moins hautes, une rangée de plus visible
 private _secH = _font * 1.6;
@@ -44,19 +47,22 @@ private _srch = [controlNull, controlNull, controlNull];
 if (_searchOn) then {
     private _sh = _font * ([1.7, 1.3] select _mini);
     private _sbg = ["COMSPEC_RscText", [_pad, _y, _gw, _sh]] call comspec_atak_native_fnc_pageCtrl;
-    _sbg ctrlSetBackgroundColor [0.05, 0.06, 0.055, 0.82];
+    private _sf = _thm get "field";
+    _sbg ctrlSetBackgroundColor [_sf select 0, _sf select 1, _sf select 2, 0.86];
     _sbg ctrlEnable false;
-    private _ic = ["COMSPEC_RscPicture", [_pad * 1.6, _y + _sh * 0.2, _sh * 0.6 / _ratio, _sh * 0.6], "\z\comspec_atak_native\addons\main\data\map_zoomin.paa"] call comspec_atak_native_fnc_pageCtrl;
-    _ic ctrlSetTextColor [0.62, 0.7, 0.66, 1];
+    // Loupe de recherche (icône ui_search, 3.1.0 : avant, la loupe « zoom avant » de la carte avec son « + »).
+    private _ic = ["COMSPEC_RscPicture", [_pad * 1.6, _y + _sh * 0.2, _sh * 0.6 / _ratio, _sh * 0.6], "\z\comspec_atak_native\addons\main\data\ui_search.paa"] call comspec_atak_native_fnc_pageCtrl;
+    _ic ctrlSetTextColor (_thm get "textDim");
     _ic ctrlEnable false;
     private _ex = _pad * 2.4 + _sh * 0.6 / _ratio;
     private _hint = ["COMSPEC_RscText", [_ex, _y, _gw - _ex, _sh], "Rechercher une app"] call comspec_atak_native_fnc_pageCtrl;
     _hint ctrlSetFontHeight (_font * ([0.95, 0.85] select _mini));
-    _hint ctrlSetTextColor [0.5, 0.57, 0.53, 1];
+    _hint ctrlSetTextColor (_thm get "textMuted");
     _hint ctrlEnable false;
     _hint ctrlShow (_filter isEqualTo "");
     private _ed = ["COMSPEC_RscEdit", [_ex, _y + _sh * 0.1, _gw - _ex - _sh * 1.2, _sh * 0.8], _filter] call comspec_atak_native_fnc_pageCtrl;
     _ed ctrlSetBackgroundColor [0, 0, 0, 0];
+    _ed ctrlSetTextColor (_thm get "text");
     _ed ctrlSetFontHeight (_font * ([0.95, 0.85] select _mini));
     // Repéré par fn_keyBlock : Échap efface la recherche au lieu de ranger le téléphone.
     _ed setVariable ["launcherSearch", true];
@@ -87,6 +93,7 @@ if (_searchOn) then {
     uiNamespace setVariable ["COMSPEC_ATAK_LauncherEdit", _ed];
     private _clr = ["COMSPEC_RscButtonOverlay", [_pad + _gw - _sh * 1.1, _y, _sh * 1.1, _sh], "×"] call comspec_atak_native_fnc_pageCtrl;
     _clr ctrlSetFontHeight _font;
+    _clr ctrlSetTextColor (_thm get "text");
     _clr ctrlSetTooltip (("Effacer la recherche") call comspec_atak_native_fnc_tr);
     _clr ctrlShow (_filter isNotEqualTo "");
     _clr ctrlAddEventHandler ["ButtonClick", {
@@ -147,8 +154,8 @@ if (_chipsOn) then {
         _c ctrlSetText _txt; // i18n:brut (déjà traduit)
         // Libellé encore trop long pour sa case (deux colonnes en portrait) : réduit, jamais sous le plancher.
         _c ctrlSetFontHeight ((_cf * ((_cw / _maxW) min 1)) max COMSPEC_ATAK_FontMin);
-        _c ctrlSetBackgroundColor ([[0.09, 0.11, 0.1, 0.9], ((_acc select [0, 3]) apply { _x * 0.5 }) + [1]] select _on);
-        _c ctrlSetTextColor ([[0.78, 0.84, 0.81, 1], [1, 1, 1, 1]] select _on);
+        _c ctrlSetBackgroundColor ([(_thm get "surface2"), _acc] select _on);
+        _c ctrlSetTextColor ([(_thm get "text"), (_thm get "onAccent")] select _on);
         _c setVariable ["key", _key];
         _c ctrlAddEventHandler ["ButtonClick", {
             params ["_c"];
@@ -165,7 +172,7 @@ if (_chipsOn) then {
     if ((count _pins) isEqualTo 0) then {
         private _hint = ["COMSPEC_RscText", [_pad, _y - _pad * 0.4, _gw, _font * 1.2], "Astuce : clic droit sur une app pour l'épingler ou l'ajouter à un groupe"] call comspec_atak_native_fnc_pageCtrl;
         _hint ctrlSetFontHeight ((_font * 0.8) max COMSPEC_ATAK_FontMin);
-        _hint ctrlSetTextColor [0.6, 0.68, 0.64, 1];
+        _hint ctrlSetTextColor (_thm get "textMuted");
         _hint ctrlEnable false;
         _y = _y + _font * 1.2;
     };
@@ -184,7 +191,8 @@ if ((_sheetMode isEqualTo "pick" && {_sheetPage isEqualTo ""}) || {_sheetMode is
 if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pick"]}}) then {
     private _sheetH = _font * 7.2;
     private _sbg = ["COMSPEC_RscText", [_pad, _y, _gw, _sheetH]] call comspec_atak_native_fnc_pageCtrl;
-    _sbg ctrlSetBackgroundColor [0.05, 0.07, 0.065, 0.96];
+    private _ss = _thm get "surface";
+    _sbg ctrlSetBackgroundColor [_ss select 0, _ss select 1, _ss select 2, 0.97];
     _sbg ctrlEnable false;
     private _by = _y + _font * 1.8;
     private _bw3 = (_gw - _pad * 2.8) / 3;
@@ -192,7 +200,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
         params ["_x0", "_label", "_code", ["_pri", false]];
         private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _pri, [_x0, _by, _bw3, _font * 1.6], _label] call comspec_atak_native_fnc_pageCtrl;
         _b ctrlSetFontHeight (_font * 0.85);
-        if (!_pri) then { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; };
+        if (!_pri) then { _b ctrlSetBackgroundColor (_thm get "surface2"); _b ctrlSetTextColor (_thm get "text"); };
         _b setVariable ["code", _code];
         _b ctrlAddEventHandler ["ButtonClick", {
             params ["_c"];
@@ -204,7 +212,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
     if (_sheetPage isNotEqualTo "" && {!(_mode in ["new", "pick"])}) then {
         private _appNm = (((_apps select { (_x get "page") isEqualTo _sheetPage }) param [0, createHashMap]) getOrDefault ["name", _sheetPage]) call comspec_atak_native_fnc_tr;
         private _st = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y + _pad * 0.4, _gw - _pad * 2, _font * 1.5]] call comspec_atak_native_fnc_pageCtrl;
-        _st ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>Que faire avec cette app ?</t>", _appNm]) call comspec_atak_native_fnc_tr);
+        _st ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%2'>%1</t><br/><t size='0.8' color='%3'>Que faire avec cette app ?</t>", _appNm, _thm get "hexText", _thm get "hexTextDim"]) call comspec_atak_native_fnc_tr);
         _st ctrlEnable false;
         private _pinned = _sheetPage in _pins;
         [_pad * 1.4, ["Épingler", "Désépingler"] select _pinned, {
@@ -235,7 +243,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
     } else {
         if (_mode isEqualTo "new") then {
             private _st = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y + _pad * 0.4, _gw - _pad * 2, _font * 1.5]] call comspec_atak_native_fnc_pageCtrl;
-            _st ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold'>Nouveau groupe</t><br/><t size='0.8' color='#8a9a93'>Donnez un nom court (ex. Terrain, Ops).</t>") call comspec_atak_native_fnc_tr);
+            _st ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%1'>Nouveau groupe</t><br/><t size='0.8' color='%2'>Donnez un nom court (ex. Terrain, Ops).</t>", _thm get "hexText", _thm get "hexTextDim"]) call comspec_atak_native_fnc_tr);
             _st ctrlEnable false;
         };
     };
@@ -244,14 +252,15 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
         private _fy = _by + _font * 1.9;
         private _flbl = ["COMSPEC_RscText", [_pad * 1.4, _fy, _gw - _pad * 2, _font * 1.1], "Choisir un groupe :"] call comspec_atak_native_fnc_pageCtrl;
         _flbl ctrlSetFontHeight (_font * 0.85);
-        _flbl ctrlSetTextColor [0.7, 0.78, 0.74, 1];
+        _flbl ctrlSetTextColor (_thm get "textDim");
         _flbl ctrlEnable false;
         _fy = _fy + _font * 1.2;
         {
             _x params ["_fid", "_fnm"];
             private _fb = ["COMSPEC_RscButton", [_pad * 1.4, _fy, _gw - _pad * 2.8, _font * 1.45], _fnm] call comspec_atak_native_fnc_pageCtrl;
             _fb ctrlSetFontHeight (_font * 0.9);
-            _fb ctrlSetBackgroundColor [0.1, 0.13, 0.12, 1];
+            _fb ctrlSetBackgroundColor (_thm get "surface2");
+            _fb ctrlSetTextColor (_thm get "text");
             _fb setVariable ["fid", _fid];
             _fb ctrlAddEventHandler ["ButtonClick", {
                 params ["_c"];
@@ -279,7 +288,8 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
         }];
         private _cb = ["COMSPEC_RscButton", [_pad * 1.8 + _nbw, _fy, (_gw - _pad * 3.2) - _nbw, _font * 1.45], "Annuler"] call comspec_atak_native_fnc_pageCtrl;
         _cb ctrlSetFontHeight (_font * 0.85);
-        _cb ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1];
+        _cb ctrlSetBackgroundColor (_thm get "surface2");
+        _cb ctrlSetTextColor (_thm get "text");
         _cb ctrlAddEventHandler ["ButtonClick", {
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
@@ -314,7 +324,8 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
             }];
             private _cx = ["COMSPEC_RscButton", [_pad * 1.4 + _gw * 0.75, _ny, _gw * 0.16, _font * 1.5], "Annuler"] call comspec_atak_native_fnc_pageCtrl;
             _cx ctrlSetFontHeight (_font * 0.85);
-            _cx ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1];
+            _cx ctrlSetBackgroundColor (_thm get "surface2");
+            _cx ctrlSetTextColor (_thm get "text");
             _cx ctrlAddEventHandler ["ButtonClick", {
                 uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
                 uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
@@ -382,27 +393,29 @@ private _track = {
     // En-tête : bandeau, barre d'accent, titre, nombre (et non-lus si repliée), chevron, filet ; cliquable pour replier.
     private _hdr = [];
     private _band = ["COMSPEC_RscText", [_pad, _y0, _gw, _secH]] call comspec_atak_native_fnc_pageCtrl;
-    _band ctrlSetBackgroundColor ([[0.03, 0.04, 0.035, 0.55], [0.06, 0.075, 0.068, 0.75]] select _isFolded);
+    // Bandeau d'en-tête : fond de page (lisible sur tout fond d'écran), plus marqué quand la section est repliée.
+    private _bb = [_thm get "bg0", _thm get "surface"] select _isFolded;
+    _band ctrlSetBackgroundColor [_bb select 0, _bb select 1, _bb select 2, [0.62, 0.8] select _isFolded];
     _band ctrlEnable false;
     _hdr pushBack _band;
     private _bar = ["COMSPEC_RscText", [_pad, _y0 + _secH * 0.22, pixelW * 3, _secH * 0.56]] call comspec_atak_native_fnc_pageCtrl;
-    _bar ctrlSetBackgroundColor ([_acc, [0.55, 0.62, 0.58, 1]] select (_key in ["*REC"]));
+    _bar ctrlSetBackgroundColor ([_acc, _thm get "rail"] select (_key in ["*REC"]));
     _bar ctrlEnable false;
     _hdr pushBack _bar;
-    private _extra = if (_isFolded && {_unread > 0}) then { format ["  <t size='0.75' color='#f2ab33'>● %1 non lu(s)</t>", _unread] } else { "" };
+    private _extra = if (_isFolded && {_unread > 0}) then { format ["  <t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● %1 non lu(s)</t>", _unread] } else { "" };
     private _cnt = if (_key isEqualTo "*FOLD") then { count (["list"] call comspec_atak_native_fnc_appFolders) } else { count _items };
     private _lbl = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y0 + _secH * 0.12, _gw - _pad - _secH * 1.4, _secH]] call comspec_atak_native_fnc_pageCtrl;
     _lbl ctrlEnable false;
     _hdr pushBack _lbl;
     private _line = ["COMSPEC_RscText", [_pad, _y0 + _secH - pixelH, _gw, pixelH]] call comspec_atak_native_fnc_pageCtrl;
-    _line ctrlSetBackgroundColor [1, 1, 1, 0.08];
+    _line ctrlSetBackgroundColor (_thm get "border");
     _line ctrlEnable false;
     _hdr pushBack _line;
     if (_key isNotEqualTo "") then {
         private _cs = _secH * 0.5;
         private _cw = _cs / _ratio;
         private _cv = ["COMSPEC_RscPicture", [_pad + _gw - _cw - _pad * 0.6, _y0 + (_secH - _cs) / 2, _cw, _cs], format [_chev, ["ui_chevron_up", "ui_chevron_down"] select _isFolded]] call comspec_atak_native_fnc_pageCtrl;
-        _cv ctrlSetTextColor [0.85, 0.9, 0.87, 1];
+        _cv ctrlSetTextColor (_thm get "text");
         _cv ctrlEnable false;
         _hdr pushBack _cv;
         private _hb = ["COMSPEC_RscButtonOverlay", [_pad, _y0, _gw, _secH]] call comspec_atak_native_fnc_pageCtrl;
@@ -462,7 +475,7 @@ private _track = {
             if ((count _items) isEqualTo 0) then {
                 _none = ["COMSPEC_RscText", [_pad, _y0, _gw, _font * 1.4], "Aucune app ne correspond."] call comspec_atak_native_fnc_pageCtrl;
                 _none ctrlSetFontHeight _font;
-                _none ctrlSetTextColor [0.55, 0.62, 0.58, 1];
+                _none ctrlSetTextColor (_thm get "textMuted");
             };
             {
                 private _page = _x get "page";
@@ -496,9 +509,9 @@ private _track = {
 // Recherche sans résultat.
 private _empty = controlNull;
 if (_searchOn) then {
-    _empty = ["COMSPEC_RscText", [_pad, _y0, _gw, _font * 1.4], "Aucune app ne correspond."] call comspec_atak_native_fnc_pageCtrl;
+    _empty = ["COMSPEC_RscText", [_pad, _y0, _gw, _font * 1.4], "Aucune app ne correspond : essayez un autre mot, ou Échap pour effacer."] call comspec_atak_native_fnc_pageCtrl;
     _empty ctrlSetFontHeight _font;
-    _empty ctrlSetTextColor [0.55, 0.62, 0.58, 1];
+    _empty ctrlSetTextColor (_thm get "textMuted");
     _empty ctrlEnable false;
     _empty ctrlShow false;
 };

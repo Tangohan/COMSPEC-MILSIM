@@ -120,8 +120,10 @@ if (_fontFam isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_FontFam",
 private _textScale = (profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1]) max 0.8 min 1.35;
 private _px = [pixelH, 0] select _texture; // texture UI (JPC) : coordonnées de texture, pas de plancher en pixels
 private _font = (((_sh * ([[[0.040, 0.060] select _land, 0.036] select !_mini, 0.052] select _texture)) max ([safeZoneH * 0.015, 0.03] select _texture)) * _textScale) max (_px * 16);
-private _fontSmall = (_font * 0.82) max (_px * 15);
-private _fontCaption = (_font * 0.68) max (_px * 13);
+// 3.1.0 : petite police à 0,86 du corps (au niveau du texte de l'app Réseau corrigée en 2.9.34), légendes à 0,70 avec
+// un plancher de 14 px : plus aucun texte sous cette taille, quel que soit l'écran.
+private _fontSmall = (_font * 0.86) max (_px * 15);
+private _fontCaption = (_font * 0.70) max (_px * 14);
 COMSPEC_ATAK_FontMin = [_fontCaption, 0] select _texture; // texture : coordonnées propres, pas de plancher
 // Taille de base du texte structuré des pages (fn_fontApply) : un peu au-dessus du corps des champs, pour que
 // <t size='0.8'> (aides, sous-titres) reste au niveau des légendes. Texture (JPC) : taille de la classe, inchangée.
@@ -162,6 +164,13 @@ createHashMapFromArray [
     ["fontCaption", _fontCaption],
     ["fontTitle", _font * 1.2],
     ["fontDisplay", _font * 1.9],
+    ["fontHero", _font * 3.4],
+    // Jetons de mise en page (système de design 3.1.0, docs/ui/atak-design-system.md) : hauteur d'une ligne de
+    // formulaire (rowH), d'une ligne de liste haute (listH), cible tactile minimale (tap), espacements sp1 à sp4.
+    ["rowH", _font * 1.55],
+    ["listH", _font * 2.4],
+    ["tap", _font * 1.9],
+    ["sp1", _pad], ["sp2", _pad * 2], ["sp3", _pad * 3], ["sp4", _pad * 4],
     ["cols", (([[6, 5] select _mini, 3] select (!_land)) + (profileNamespace getVariable ["COMSPEC_ATAK_IconDensity", 0])) max 2],
     ["pad", _pad]
 ]

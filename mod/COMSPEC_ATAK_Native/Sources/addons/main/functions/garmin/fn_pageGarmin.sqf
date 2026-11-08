@@ -23,9 +23,9 @@ private _worn = _gm getOrDefault ["worn", true];
 if (!_worn) then { _tab = "NOWATCH"; };
 
 // --- Couleurs (thème sombre de l'app) ---
-private _cBg = [0.065, 0.065, 0.065, 1];
+private _cBg = COMSPEC_ATAK_Th get "bg1";
 private _cCard = [0.145, 0.145, 0.145, 1];
-private _cLine = [0.22, 0.22, 0.22, 1];
+private _cLine = COMSPEC_ATAK_Th get "border";
 private _rgb = {
     params ["_h", ["_a", 1]];
     private _d = "0123456789abcdef";

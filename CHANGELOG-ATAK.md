@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## Pack 3.1.0 : haut-parleur de l'app Musique corrigé, app C2 retirée (ATAK natif 3.1.0.AG - Austin)
+## Pack 3.1.0 : haut-parleur de l'app Musique corrigé, app C2 retirée, interface refaite, liaison optimisée (ATAK natif 3.1.0.AG - Austin, COMSPEC Link 2.0.119)
 
 ### Résumé joueur
 Type : correctif
@@ -49,6 +49,9 @@ FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 d
 - Carte : le point GPS ne bouge plus quand vous êtes immobile, la fiche d'une unité sélectionnée ne fait plus recharger la carte, les noms d'étapes de l'app Routes sont justes et le cap du curseur affiche N, NE, E…
 - App Drone : une photo prise en vision nocturne en plein jour est prise en vision jour (elle sortait presque blanche), et le flux reste visible jusqu'à la zone observée, au plus loin que la borne de distance de vue le permet.
 - Musique, Réglages et Drone : lancer ou changer de morceau, régler un interrupteur ou changer de vision ne redessine plus toute la page. Une erreur dans un bouton du téléphone ne se répète plus à chaque image.
+- Interface : toutes les apps partagent le même style, le texte est plus lisible, avec trois thèmes : SOMBRE, JOUR et NUIT JVN.
+- Écran de verrouillage, lanceur, Réglages et notifications sont réorganisés et plus clairs.
+- Performances : COMSPEC Link 2.0.119 fait moins de travail à chaque échange, Recherchés ne fait plus attendre le jeu : quittez Arma 3 complètement après la mise à jour.
 EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
 - The C2 app is removed: find the group, callsign and units in the Group and BFT apps, and orders in Tasks.
@@ -56,9 +59,12 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Map: the GPS dot no longer moves while you stand still, the sheet of a selected unit no longer reloads the map, Routes app step names are correct and the cursor heading shows N, NE, E…
 - Drone app: a photo taken in night vision in full daylight is now taken in day vision (it came out almost white), and the feed stays visible out to the observed area, as far as the view distance limit allows.
 - Music, Settings and Drone: starting or changing a track, flipping a switch or changing vision no longer redraws the whole page. A script error in a phone button no longer repeats on every frame.
+- Interface: every app shares the same style, text is easier to read, with three themes: DARK, DAY and NVG NIGHT.
+- Lock screen, launcher, Settings and notifications are reorganised and clearer.
+- Performance: COMSPEC Link 2.0.119 does less work on every exchange, Wanted no longer makes the game wait: fully quit Arma 3 after updating.
 
 ### Détail technique
-- **Version 3.1.0** : `VERSION` / `VERSION_STR` « 3.1.0 », `VERSION_NAME` « 3.1.0.AG - Austin » ; COMSPEC Link inchangé.
+- **Version 3.1.0** : `VERSION` / `VERSION_STR` « 3.1.0 », `VERSION_NAME` « 3.1.0.AG - Austin » ; COMSPEC Link 2.0.119.
 - **Haut-parleur** (`fn_musicAction`) : appel `[true] call _sonNow`. Un `call` nu transmettait `_this` et `_sliders` valait `"speaker"`. `fn_formSet` note la valeur du curseur avant de le déplacer.
 - **Carte (lots 1 à 3)** : `fn_gpsFix` (joueur immobile : erreur et décalage gardés, décrochages et sauts conservés) ; `fn_inspectorUpdate` (redessin seulement si la hauteur du texte change : cause probable du clignotement, non confirmée ; ligne Occupants) ; `fn_routeAction` (`_autoName` : plus petit numéro libre, étape renommée exclue) ; `fn_mapOverlayUpdate` (cap du curseur sur 8 points) ; `fn_mapLabels` (noms des 2 à 3 unités regroupées) et `fn_mapOnDraw` (3 indicatifs empilés par case) ; `fn_localDataRefresh` / `fn_symbology` (champ `vtype`, `type` inchangé pour les filtres du BFT) ; `fn_mapGameMarkers` (un symbole par case de 1/16 de la vue dès l'échelle 0,12 avec « +n » ; traits créés vides revus 20 s ; relevé RPT toutes les 30 s) ; appui long du clic gauche 0,6 s = ping (`fn_mapMouseButtonDown/Up`, `fn_mapOnDraw`). Notes `docs/bugs/2026-11-08-atak-*`.
 - **Carte, non fait** : régression « images et zones absentes » depuis 3.0.1 (cause non établie, relevé RPT ajouté), « clic gauche impossible après une route » et « apps superposées » (cause non trouvée), lisibilité du texte à mi-zoom, marqueurs « PERDU » (semble venir des cibles LOCK du drone), personnalisation et suppression d'un marqueur (déjà dans la fiche : MODIFIER, SUPPRIMER avec tombstone web via `fn_markerWeb`).
@@ -109,6 +115,40 @@ EN : ATAK 3.0.5: the Athena link does less work and can be measured
 - **Non fait, volontairement** : regroupement des boucles de 1 et 2 s (≈ 30 réveils/s, chacune sort tôt) ; `fn_tocPost` (`nearestObjects` à 4,5 m chaque seconde : requête spatiale bon marché) ; HTTP/2 (multipart PHP) ; `AutomaticDecompression` (gzip déjà géré par `SendTimed` avec comptage des octets) ; `LocalGet` / `ClipGet` / `BtFileRead` restent synchrones (lectures locales de quelques Ko, à la demande du joueur).
 - **Tests** : `ComspecLinkWorkflowOptTest` et `AtakReleaseInfoTest` (ExtensionVersion = csproj = `LINK_VERSION_STR` = 2.0.119, `VERSION_NAME` 3.0.5.) ; `hemtt check` : 2 erreurs connues, inchangées.
 - **À tester en jeu** : Debug › PERFS après quelques instants (sections DLL native et COMSPEC Link, appels / moy / p95 / pire, bouton RAZ DLL ; téléphone en anglais : RESET DLL) ; app Recherchés « Actualiser » (liste fraîche) et terminal SEEK / biométrie du SSE (liste servie sans attente, à jour en 5 min) ; journal COMSPEC_*.log toujours écrit (lignes horodatées) ; tenue Athena volumineuse (morceaux) ; notification reçue puis expirée (toast affiché puis retiré) ; Réglages › contrôle d'intégrité (versions, « DLL d'une autre version » absent).
+## Pack 3.1.0 (suite) : interface du téléphone refaite, un seul système de design, thèmes sombre / jour / nuit JVN (ATAK natif 3.1.0.AG - Austin)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 3.1.0 : le téléphone est plus lisible, cohérent d'une app à l'autre, avec trois thèmes
+- Toutes les apps partagent maintenant les mêmes couleurs, tailles de texte, boutons, onglets, listes et bandeaux : plus aucun texte minuscule (14 px au moins quel que soit l'écran), les bandeaux de notification trop longs passent sur deux lignes au lieu d'être coupés, les petits messages du bas aussi.
+- Réglages › Personnalisation › Thème, et une tuile Thème dans le volet rapide : SOMBRE (comme avant), JOUR (surfaces claires pour le plein soleil) et NUIT JVN (vert phosphore à faible luminance, compatible jumelles de vision nocturne, le rouge d'alerte conservé).
+- Écran de verrouillage : les notifications sont regroupées par app avec leur nombre, un point marque celles que vous n'avez pas lues, et deux raccourcis CARTE et MESSAGES déverrouillent directement dans l'app. Centre de notifications : onglets avec compteurs, notifications groupées par app, bouton RÉGLER LES ALERTES quand tout est calme.
+- Lanceur : vraie loupe de recherche, épingle visible sur les apps épinglées, en-têtes de section lisibles sur tout fond d'écran, message clair quand aucune app ne correspond. Réglages : liste de catégories avec chevrons, en-tête de catégorie avec retour, recherche validée par Entrée. Fiche de marqueur : sections Identité / Apparence / Diffusion, SUPPRIMER en rouge à part. Debug et Groupe : onglets soulignés avec compteurs.
+EN : ATAK 3.1.0: the phone is easier to read, consistent from app to app, with three themes
+- Every app now shares the same colours, text sizes, buttons, tabs, lists and banners: no more tiny text (14 px at least on any screen), long notification banners wrap onto two lines instead of being cut, and so do the small messages at the bottom.
+- Settings › Customisation › Theme, and a Theme tile in the quick panel: DARK (as before), DAY (light surfaces for bright sunlight) and NVG NIGHT (low-luminance phosphor green, night-vision friendly, alert red kept).
+- Lock screen: notifications are grouped by app with their count, a dot marks the ones you have not read, and two shortcuts MAP and MESSAGES unlock straight into the app. Notification centre: tabs with counters, notifications grouped by app, an ALERT SETTINGS button when all is quiet.
+- Launcher: a real search magnifier, a visible pin on pinned apps, section headers readable on any wallpaper, a clear message when no app matches. Settings: category list with chevrons, category header with back, search validated with Enter. Marker card: Identity / Appearance / Sharing sections, DELETE in red on its own. Debug and Group: underlined tabs with counters.
+
+### Détail technique
+- **Version 3.1.0** : `VERSION` / `VERSION_STR` « 3.1.0 », `VERSION_NAME` « 3.1.0.AG - Austin » ; COMSPEC Link et Overwatch connect inchangés.
+- **Système de design** (`docs/ui/atak-design-system.md`) : `fn_theme` (nouveau, `class theme {}`) rend les jetons de couleur du thème choisi (profil `COMSPEC_ATAK_Theme` : DARK | DAY | NVG) fondus avec l'accent du joueur : `bg0`, `bg1`, `surface`, `surfaceAlt`, `surface2`, `surfaceHi`, `border`, `chrome` / `onChrome` (barres système, toujours sombres), `text` / `textDim` / `textMuted`, `accent` / `accentInk` / `onAccent` / `accentDim` / `accentHi`, états `ok` / `warn` / `alert` / `info` / `off`, affiliations `friend` / `hostile` / `neutral` / `unknown` / `civil`, calques de carte `mapPanel` / `mapText` / `mapDim` / `mapOk` / `mapWarn` / `mapAlert` / `mapActive`, et leurs versions `hex…` ; actions `set`, `list`, `hex`, `state`, `aff`. Cache par thème + accent (`COMSPEC_ATAK_ThemeCache`), global `COMSPEC_ATAK_Th` posé au preInit et refait à chaque changement (lisible depuis les codes compilés plus tard). `fn_layoutApply` teinte le fond, la page et les barres ; `fn_layoutGet` ajoute `fontHero`, `rowH`, `listH`, `tap`, `sp1`…`sp4`, petite police à 0,86 du corps (0,82) et légendes à 0,70 avec un plancher de 14 px (13).
+- **`fn_formRender`** : toutes les couleurs tirées de `fn_theme` ; nouvelles lignes `header` (titre, sous-titre, actions, retour), `tabs` (onglets soulignés, pastille de compteur), `row` (ligne de liste haute, chevron, filet), `chips`, `skeleton` ; `toggle` redessiné comme `switch` ; `buttons` accepte `"red"` (destructif) ; `field` : Entrée appuie sur le bouton ; `empty` : bouton d'action facultatif ; `info` : filet sous chaque ligne. `fn_formSet` suit le thème.
+- **Bandeaux** : `fn_notificationsRender` passe sur deux lignes (texte structuré, hauteur recalculée, coupe au-delà) au lieu de couper au dernier mot ; `fn_toast` idem ; `fn_undoSnack` au thème (liseré « attention »).
+- **Lanceur** (`fn_launcherRender`, `fn_launcherFilter`, `fn_tileCreate`, `fn_dockRender`) : icône `ui_search`, puces, feuille d'actions, en-têtes et tuiles au thème, épingle `ui_pin` sur les tuiles épinglées, libellé des tuiles plates au thème.
+- **Écran de verrouillage** (`fn_lockScreen`) : groupes par source (`fn_notifMeta` « title »), compteur, point d'accent sur le non lu (`notifUnread`), actions rapides CARTE / MESSAGES (déverrouillent puis `fn_navigate`). **Centre** (`fn_pageNotifs`) : filtres en `tabs` avec compteurs, groupes par app en vue TOUTES (plus de 3 notifications), état vide avec RÉGLER LES ALERTES.
+- **Volet rapide** (`fn_quickSettings`) : couleurs du thème (jour : tuile allumée en accent plein), tuile Thème qui fait tourner sombre → jour → nuit JVN. **Réglages** : segment Thème (Personnalisation › Thème et écran), thèmes rapides qui posent aussi le thème (NUIT = nuit JVN, DÉSERT = jour), catégories en `row`, en-tête de catégorie `header` avec retour, réinitialisation de l'apparence qui remet le thème.
+- **Pages** : couleurs hexadécimales et constantes de couleur (`_cBg`, `_cTile`, `_cText`…) de 100 pages remplacées par `COMSPEC_ATAK_Th` (Chat, Alertes, SALUTE, Reco, BFT, Zones, Routes, Comptes rendus, Profil, Debug, Réseau…) ; calques de la carte (`fn_pageMap`, `fn_mapOverlayUpdate`, `fn_mapCtxMenu`) sur les jetons `map…` ; `fn_markerEditor` en sections avec `header` et SUPPRIMER rouge ; `fn_pageDebug` et `fn_pageGroup` en `tabs` ; `fn_pageRecents` en `row` avec état vide ; `fn_mapSearch` et `fn_pageFrs` : fond de formulaire au thème.
+- **Icônes** (`tools/gen_assets.py`) : `ui_chevron_right`, `ui_search`, `ui_pin`, `ui_theme`, `ui_info`, `ui_warning`, `ui_error`, `ui_filter`, `ui_eye`, `ui_clock` ; repli sur resvg-py quand la bibliothèque cairo de CairoSVG manque.
+- i18n : 35 entrées FR / EN (`tools/i18n.py merge`). Correctifs 2.9.40 / 2.9.41 (clics carte, pages superposées, cockpit) et `fn_statusUpdate`, `fn_mapOnDraw`, `fn_schedulerTick`, `fn_localDataRefresh`, `fn_remoteSync` intacts.
+
+### À tester en jeu
+- **Thèmes** : Réglages › Personnalisation › Thème : SOMBRE, JOUR, NUIT JVN ; chaque page (Réglages, Profil, Réseau, Messages, BFT, Carte, Zones, Comptes rendus) lisible dans les trois, barres d'état et d'app toujours sombres, bandeau du curseur de la carte lisible ; volet rapide › tuile Thème qui tourne ; thèmes rapides OPÉRATIONS / NUIT / DÉSERT / ATHENA.
+- **Tailles** : mini et plein écran, portrait et paysage, Taille du texte PETIT à TRÈS GRAND, écran 1080p et 1440p : aucun texte sous 14 px, boutons et onglets qui passent à la ligne plutôt que de se couper.
+- **Bandeaux** : notification longue (« Non connecté à votre compte Athena : touchez ici… ») sur deux lignes, texte complet ; petit message long en bas sur deux lignes.
+- **Verrouillage** : plusieurs notifications de la même app → une carte avec « ×n » et le point de non lu ; CARTE et MESSAGES ouvrent l'app après déverrouillage. **Centre de notifications** : onglets avec compteurs, groupes par app, croix et TOUT EFFACER ; vide : RÉGLER LES ALERTES ouvre Réglages › Alertes.
+- **Lanceur** : recherche (loupe, Entrée, Échap, message sans résultat), épingle sur les tuiles épinglées, en-têtes repliables. **Réglages** : liste de catégories cliquable sur toute la ligne, en-tête avec retour, recherche avec Entrée. **Carte** : double clic sur un marqueur : fiche en sections, SUPPRIMER LE MARQUEUR en rouge. **Debug › PERFS**, **Groupe** : onglets soulignés. **Apps récentes** : lignes cliquables, FERMER, état vide.
+- **Performance** : Debug › PERFS après 2 min sur la carte en mini et sur l'accueil : aucun rendu de page supplémentaire par rapport à 3.0.3 (le thème ne redessine qu'au changement).
 
 ## Pack 3.0.3 : suivi de COMSPEC IDENTITY, téléphone traduit pour les apps du SSE, Recherchés garde les BOLO locaux (ATAK natif 3.0.3.AG - Austin)
 

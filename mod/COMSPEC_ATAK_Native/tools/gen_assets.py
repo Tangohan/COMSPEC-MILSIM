@@ -9,7 +9,22 @@ Dépendances : Pillow, CairoSVG, HEMTT (hemtt utils paa convert).
 """
 import io, json, os, subprocess, sys, tempfile
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
-import cairosvg
+# Rendu SVG : CairoSVG quand sa bibliothèque cairo est disponible, sinon resvg (pip install resvg-py), même signature
+# svg2png(bytestring, output_width, output_height) pour tout le fichier.
+try:
+    import cairosvg
+except (ImportError, OSError):
+    import resvg_py
+
+    class cairosvg:  # noqa: N801 - même nom que le module remplacé
+        @staticmethod
+        def svg2png(bytestring=b"", output_width=None, output_height=None, **_):
+            kw = {}
+            if output_width:
+                kw["width"] = int(output_width)
+            if output_height:
+                kw["height"] = int(output_height)
+            return bytes(resvg_py.svg_to_bytes(svg_string=bytestring.decode("utf-8"), **kw))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
@@ -237,6 +252,18 @@ ICONS = {
     "ui_mute": '<path d="M3.5 9.3h3.6L11.8 5v14l-4.7-4.3H3.5z" fill="#fff"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/>',
     # Sections repliables (app Musique) : chevron bas = repliée, haut = dépliée.
     "ui_chevron_down": '<path d="M6 9.5l6 6 6-6" stroke-width="2.4"/>',
+    # Système de design 3.1.0 : chevron de navigation (lignes de liste), loupe de recherche, épingle, thème (soleil / lune),
+    # pastilles d'état (info, attention, alerte), filtre, œil (calques), et horloge (heure d'une notification).
+    "ui_chevron_right": '<path d="M9.5 6l6 6-6 6" stroke-width="2.4"/>',
+    "ui_search": '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/>',
+    "ui_pin": '<path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/><path d="M12 14v7"/>',
+    "ui_theme": '<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
+    "ui_info": '<circle cx="12" cy="12" r="9.2"/><path d="M12 11v6" stroke-width="2.2"/><circle cx="12" cy="7.6" r="1.2" fill="#fff" stroke="none"/>',
+    "ui_warning": '<path d="M12 3.5L21.5 20h-19z"/><path d="M12 9.5v5" stroke-width="2.2"/><circle cx="12" cy="17.3" r="1.2" fill="#fff" stroke="none"/>',
+    "ui_error": '<path d="M8 2.5h8l5.5 5.5v8L16 21.5H8L2.5 16V8z"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/>',
+    "ui_filter": '<path d="M3.5 5h17l-6.5 8v6l-4 2v-8z"/>',
+    "ui_eye": '<path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+    "ui_clock": '<circle cx="12" cy="12" r="9.2"/><path d="M12 7v5.5l3.5 2"/>',
     "ui_chevron_up": '<path d="M6 14.5l6-6 6 6" stroke-width="2.4"/>',
     "ui_dot": '<circle cx="12" cy="12" r="10" fill="#fff" stroke="none"/>',
     # App Garmin : montre (cadran rond et bracelet) avec un cœur, puis les pictos de l'app façon Garmin Connect.

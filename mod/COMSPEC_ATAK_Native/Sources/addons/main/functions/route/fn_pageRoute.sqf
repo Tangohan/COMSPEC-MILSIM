@@ -67,19 +67,19 @@ private _rerender = { [{
 // Texte du guidage (vue FOLLOW, mis à jour chaque seconde).
 private _liveText = {
     private _fi = ["followInfo"] call _RA;
-    if ((count _fi) isEqualTo 0) exitWith { format ["<t color='#a9b6b0'>%1</t>", ("Aucune route suivie.") call _tr] };
+    if ((count _fi) isEqualTo 0) exitWith { format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Aucune route suivie.") call _tr] };
     private _r = _fi get "route";
     (_fi get "step") params ["", "_k", "_n", ["_note", ""], ["_hp", -1], ["_ac", ""]];
     private _tl = (["type", _k] call _RA) select 1;
-    private _l1 = format ["<t font='COMSPEC_BarlowBold' size='1.3'>%1</t>  <t color='#a9b6b0'>%2 · %3 / %4</t>", [[_n] call comspec_atak_native_fnc_markerAutoName] call _esc, (_tl) call _tr, (_fi get "idx") + 1, _fi get "n"];
-    private _l2 = format ["<t font='EtelkaMonospaceProBold' size='1.6' color='#5cc76b'>%1</t>   <t font='EtelkaMonospacePro' size='1.25'>%2</t>", [_fi get "dist"] call _fmt, [_fi get "brg"] call _card];
+    private _l1 = format ["<t font='COMSPEC_BarlowBold' size='1.3'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2 · %3 / %4</t>", [[_n] call comspec_atak_native_fnc_markerAutoName] call _esc, (_tl) call _tr, (_fi get "idx") + 1, _fi get "n"];
+    private _l2 = format ["<t font='EtelkaMonospaceProBold' size='1.6' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1</t>   <t font='EtelkaMonospacePro' size='1.25'>%2</t>", [_fi get "dist"] call _fmt, [_fi get "brg"] call _card];
     private _pl = [_r, _hp] call _plan;
     private _l3 = format ["%1 %2 (%3)%4", ("Arrivée à l'étape :") call _tr, [_fi get "etaNext"] call _dur, [_fi get "etaNext"] call _clock, ["", format [" · %1 %2", ("prévu") call _tr, _pl]] select (_pl isNotEqualTo "")];
     private _l4 = format ["%1 %2 · %3 %4 (%5) · %6 %%", ("Reste :") call _tr, [_fi get "rest"] call _fmt, ("fin") call _tr, [_fi get "etaEnd"] call _dur, [_fi get "etaEnd"] call _clock, round ((_fi get "prog") * 100)];
     private _what = [];
-    if (_ac isNotEqualTo "") then { _what pushBack format ["<t color='#f2ab33'>%1</t> %2", ("Action :") call _tr, (["actName", _ac] call _RA) call _tr]; };
-    if (_note isNotEqualTo "") then { _what pushBack format ["<t color='#f2ab33'>%1</t> %2", ("Consigne :") call _tr, [_note select [0, 90]] call _esc]; };
-    private _l5 = [format ["<t color='#a9b6b0'>%1</t>", ("Pas d'action ni de consigne à cette étape.") call _tr], _what joinString "<br/>"] select ((count _what) > 0);
+    if (_ac isNotEqualTo "") then { _what pushBack format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t> %2", ("Action :") call _tr, (["actName", _ac] call _RA) call _tr]; };
+    if (_note isNotEqualTo "") then { _what pushBack format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t> %2", ("Consigne :") call _tr, [_note select [0, 90]] call _esc]; };
+    private _l5 = [format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Pas d'action ni de consigne à cette étape.") call _tr], _what joinString "<br/>"] select ((count _what) > 0);
     format ["%1<br/>%2<br/><t size='0.95'>%3<br/>%4</t><br/><t size='0.95'>%5</t>", _l1, _l2, _l3, _l4, _l5]
 };
 
@@ -321,7 +321,7 @@ private _editRows = {
     private _draft = _ui get "draft";
     private _kindRow = ["kind", _r get "kind"] call _RA;
     if (!_mine) then {
-        _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t>", format [("Route reçue de %1 (%2) : lecture seule. DUPLIQUER pour en faire une copie modifiable.") call _tr, [_r get "from"] call _esc, ["scopeName", _r get "scope"] call _RA]], [0.10, 0.09, 0.05, 1]];
+        _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", format [("Route reçue de %1 (%2) : lecture seule. DUPLIQUER pour en faire une copie modifiable.") call _tr, [_r get "from"] call _esc, ["scopeName", _r get "scope"] call _RA]], [0.10, 0.09, 0.05, 1]];
         _rows pushBack ["buttons", [["DUPLIQUER", ["dup"] call _ui1, true], ["SUIVRE", ["follow", _r get "id"] call _ui1]]];
     } else {
         // Édition : annuler, rétablir, valider (un seul envoi), annuler les modifications.
@@ -341,7 +341,7 @@ private _editRows = {
         ]];
         (_ui get "undoBar") params [["_ubT", ""], ["_ubOp", ""], ["_ubV", ""], ["_ubAt", -1]];
         if (_ubT isNotEqualTo "" && {(diag_tickTime - _ubAt) < 8}) then {
-            _rows pushBack ["person", "", format ["<t color='#f2ab33'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1]];
+            _rows pushBack ["person", "", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1]];
         };
         _rows pushBack ["segment", "Clic sur la carte", [
             ["CHOISIR", ["mode", "SEL"] call _ui1, (_ui get "mode") isEqualTo "SEL", "Un clic choisit une étape, sans rien poser"],
@@ -359,12 +359,12 @@ private _editRows = {
     private _sub = format ["%1 · %2 %3", [_s getOrDefault ["total", 0]] call _fmt, ("à") call _tr, format ["%1 km/h", _r get "speed"]];
     _rows pushBack ["section", format [("Étapes (%1)") call _tr, count _st], _sub];
     if ((count _st) isEqualTo 0) then {
-        _rows pushBack ["text", format ["<t color='#a9b6b0'>%1</t>", ("Aucune étape : cliquez sur la carte, ajoutez ma position, un marqueur ou une grille.") call _tr]];
+        _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", ("Aucune étape : cliquez sur la carte, ajoutez ma position, un marqueur ou une grille.") call _tr]];
     } else {
         _rows pushBack ["info", "Distance totale", [_s get "total"] call _fmt];
         _rows pushBack ["info", "Durée estimée", format ["%1 (%2, %3 km/h)", [_s get "dur"] call _dur, ((_kindRow select 1)) call _tr, _r get "speed"]];
         _rows pushBack ["info", "Arrivée si départ maintenant", [_s get "dur"] call _clock];
-        if (_r getOrDefault ["busy", false]) then { _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t>", ("Calcul du tracé par les routes…") call _tr]]; };
+        if (_r getOrDefault ["busy", false]) then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", ("Calcul du tracé par les routes…") call _tr]]; };
     };
     {
         _x params ["_p", "_k", "_n", ["_note", ""], ["_hp", -1], ["_ac", ""]];
@@ -376,9 +376,9 @@ private _editRows = {
         if (_pl isNotEqualTo "") then { _extra pushBack _pl; };
         if (_ac isNotEqualTo "") then { _extra pushBack ((["actName", _ac] call _RA) call _tr); };
         if (_note isNotEqualTo "") then { _extra pushBack format ["« %1 »", [_note select [0, 40]] call _esc]; };
-        private _txt = format ["<t font='COMSPEC_BarlowBold' color='%1'>%2. %3</t>  <t color='#a9b6b0'>%4</t><br/>%5%6",
-            ["#e6ece8", "#5cc76b"] select (_i isEqualTo _sel), _i + 1, [[_n] call comspec_atak_native_fnc_markerAutoName] call _esc, (_tRow select 1) call _tr, _leg,
-            ["", format ["<br/><t color='#f2ab33'>%1</t>", _extra joinString " · "]] select ((count _extra) > 0)];
+        private _txt = format ["<t font='COMSPEC_BarlowBold' color='%1'>%2. %3</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%4</t><br/>%5%6",
+            ["#e6ece8", (COMSPEC_ATAK_Th get "hexOk")] select (_i isEqualTo _sel), _i + 1, [[_n] call comspec_atak_native_fnc_markerAutoName] call _esc, (_tRow select 1) call _tr, _leg,
+            ["", format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _extra joinString " · "]] select ((count _extra) > 0)];
         private _btns = if (_mine) then { [
             ["FICHE", ["step", _i] call _ui1, false, true, "Nom, type, action, H+, consigne"],
             ["▲", ["stepUp", _i] call _ui1, false, _i > 0, "Monter"],
@@ -456,14 +456,14 @@ private _mapBar = {
     _bgc ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.9];
     _list pushBack _bgc;
     private _t = ["COMSPEC_RscStructuredText", [_mx + _pad, _y + _h * 0.08, _mw - _pad * 2 - _nB * (_bwB + _pad * 0.4), _h * 0.9], "", false] call comspec_atak_native_fnc_pageCtrl;
-    _t ctrlSetStructuredText parseText format ["<t size='0.95' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#a9b6b0'>%2</t>", _txt, ("Échap ou clic droit : terminer · Ctrl+Z : annuler") call _tr]; // i18n:brut
+    _t ctrlSetStructuredText parseText format ["<t size='0.95' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2</t>", _txt, ("Échap ou clic droit : terminer · Ctrl+Z : annuler") call _tr]; // i18n:brut
     _list pushBack _t;
     private _bx0 = _mx + _mw - _pad * 0.9 - _bwB;
     {
         _x params ["_lbl", "_code", "_main", "_tip"];
         private _b = ["COMSPEC_RscButton", [_bx0, _y + _h * 0.15, _bwB, _h * 0.7], _lbl, false] call comspec_atak_native_fnc_pageCtrl;
         _b ctrlSetFontHeight ((_fs * 0.95) max COMSPEC_ATAK_FontMin);
-        _b ctrlSetTooltip ((_tip) call _tr);
+        _b ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr);
         if (_main) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
         _b setVariable ["comspec_click", _code];
         _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
@@ -524,7 +524,7 @@ switch (_view) do {
         private _bw3 = (_bw - _pad * 2 - _pad) / 3;
         [[_pad, _pad / 2, _bw3 * 0.8, _rowH], "◀ MES ROUTES", ["view", "LIST"] call _ui1] call _btn;
         private _tt = ["COMSPEC_RscStructuredText", [_pad + _bw3 * 0.8 + _pad / 2, _pad / 2, _bw3 * 1.4, _rowH]] call comspec_atak_native_fnc_pageCtrl;
-        _tt ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t><br/><t size='0.85' color='#a9b6b0'>%2</t>", [_r get "name"] call _esc, ((["kind", _r get "kind"] call _RA) select 1) call _tr])) call comspec_atak_native_fnc_tr);
+        _tt ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t><br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2</t>", [_r get "name"] call _esc, ((["kind", _r get "kind"] call _RA) select 1) call _tr])) call comspec_atak_native_fnc_tr);
         private _isF = ((missionNamespace getVariable ["COMSPEC_ATAK_RteFollow", createHashMap]) getOrDefault ["id", ""]) isEqualTo (_r get "id");
         [[_bw - _pad - _bw3 * 0.8, _pad / 2, _bw3 * 0.8, _rowH], ["SUIVRE", "GUIDAGE"] select _isF, [["follow", _r get "id"] call _ui1, ["view", "FOLLOW"] call _ui1] select _isF, true] call _btn;
         private _mapRect = if (_land) then { [_bx, _by + _topH, _bw * 0.56, _bh - _topH] } else { [_bx, _by + _topH, _bw, (_bh - _topH) * 0.46] };
@@ -599,7 +599,7 @@ switch (_view) do {
             _rows pushBack ["info", "Action attendue", (["actName", _ac] call _RA) call _tr];
             private _pl = [_r, _hp] call _plan;
             if (_pl isNotEqualTo "") then { _rows pushBack ["info", "Heure prévue", _pl]; };
-            if (_note isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t> %2", ("Consigne :") call _tr, [_note] call _esc]]; };
+            if (_note isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t> %2", ("Consigne :") call _tr, [_note] call _esc]]; };
             _rows pushBack ["buttons", [["SUIVRE D'ICI", compile format ["['#ui', ['follow', [%1, %2]]] call comspec_atak_native_fnc_pageRoute;", str (_r get "id"), _i]]]];
         };
         (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["ROUTE", { ['#ui', ['view', 'EDIT']] call comspec_atak_native_fnc_pageRoute; }]];
@@ -615,7 +615,7 @@ switch (_view) do {
             _x params ["_d", "_m"];
             private _t = markerText _m;
             if (_t isEqualTo "") then { _t = getText (configFile >> "CfgMarkers" >> markerType _m >> "name"); };
-            _rows pushBack ["person", getText (configFile >> "CfgMarkers" >> markerType _m >> "icon"), format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t color='#a9b6b0'>%2 · %3</t>", [_t select [0, 40]] call _esc, [_d] call _fmt, [markerPos _m, 8] call comspec_atak_native_fnc_gridRef],
+            _rows pushBack ["person", getText (configFile >> "CfgMarkers" >> markerType _m >> "icon"), format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2 · %3</t>", [_t select [0, 40]] call _esc, [_d] call _fmt, [markerPos _m, 8] call comspec_atak_native_fnc_gridRef],
                 [["AJOUTER", ["addMarker", _m] call _ui1, true]]];
         } forEach (_mk select [0, 25]);
         (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["ROUTE", { ['#ui', ['view', 'EDIT']] call comspec_atak_native_fnc_pageRoute; }]];
@@ -641,7 +641,7 @@ switch (_view) do {
             ["SUIV. ▶", { ["next"] call comspec_atak_native_fnc_routeAction; }, false, _i < ((count _st) - 1)]
         ]];
         _rows pushBack ["buttons", [["VOIR SUR LA CARTE", ["map"] call _ui1], ["ROUTE", ["open", _fr get "id"] call _ui1]]];
-        _rows pushBack ["text", format ["<t color='#a9b6b0' size='0.9'>%1</t>", ("Le téléphone vibre à chaque étape atteinte ; la montre Garmin (boussole) pointe l'étape visée.") call _tr]];
+        _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "' size='0.9'>%1</t>", ("Le téléphone vibre à chaque étape atteinte ; la montre Garmin (boussole) pointe l'étape visée.") call _tr]];
     };
     default {
         // Liste.
@@ -657,12 +657,12 @@ switch (_view) do {
         // Bandeau « … supprimé(e) · ANNULER » (8 s).
         (_ui get "undoBar") params [["_ubT", ""], ["_ubOp", ""], ["_ubV", ""], ["_ubAt", -1]];
         if (_ubT isNotEqualTo "" && {(diag_tickTime - _ubAt) < 8}) then {
-            _rows pushBack ["person", "", format ["<t color='#f2ab33'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1]];
+            _rows pushBack ["person", "", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _ubT], [["ANNULER", [_ubOp, _ubV] call _ui1, true]], [0.95, 0.67, 0.2, 1]];
         };
         if (_following) then {
             private _fi = ["followInfo"] call _RA;
             if ((count _fi) > 0) then {
-                _rows pushBack ["text", format ["<t color='#5cc76b' font='COMSPEC_BarlowBold'>%1</t> %2 · %3 %4 · %5", ("SUIVI EN COURS") call _tr, [(_fi get "route") get "name"] call _esc,
+                _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "' font='COMSPEC_BarlowBold'>%1</t> %2 · %3 %4 · %5", ("SUIVI EN COURS") call _tr, [(_fi get "route") get "name"] call _esc,
                     ("cap sur") call _tr, [[(_fi get "step") select 2] call comspec_atak_native_fnc_markerAutoName] call _esc, [_fi get "dist"] call _fmt], [0.06, 0.11, 0.07, 1]];
                 _rows pushBack ["buttons", [["GUIDAGE", ["view", "FOLLOW"] call _ui1, true], ["ARRÊTER", ["unfollow"] call _ui1]]];
             };
@@ -676,7 +676,7 @@ switch (_view) do {
                 private _ck = "itin" + _k;
                 private _cf = (_ui get "confirm") isEqualTo _ck;
                 _rows pushBack ["person", ["\z\comspec_atak_native\addons\main\data\app_waypoints.paa", "\z\comspec_atak_native\addons\main\data\map_route.paa"] select (_k isEqualTo "GPS"),
-                    format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t color='#a9b6b0'>%2</t>", [_n] call _esc, _d],
+                    format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2</t>", [_n] call _esc, _d],
                     ([[], [["COPIER DANS LES ROUTES", ["import"] call _ui1, false, true, "Reprend ses étapes dans une nouvelle route"]]] select (_k isEqualTo "WP")) + [
                         [["SUPPRIMER", "CONFIRMER"] select _cf, ["itinDel", _k] call _ui1, ["red", false] select !_cf, true, ["Arrête le guidage et efface la ligne (deux clics)", "Efface l'itinéraire, aussi chez ceux qui le partagent (deux clics)"] select (_k isEqualTo "WP")]
                     ], [[0.95, 0.75, 0.18, 1], [1, 0.85, 0.15, 1]] select (_k isEqualTo "GPS")];
@@ -701,7 +701,7 @@ switch (_view) do {
             if (_x2 get "arma") then { _tags pushBack (("carte d'Arma") call _tr); };
             if (_x2 get "d3") then { _tags pushBack "3D"; };
             if !(_x2 get "vis") then { _tags pushBack (("masquée") call _tr); };
-            private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#a9b6b0'>%2 · %3</t><br/>%4 · ~%5%6",
+            private _txt = format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%2 · %3</t><br/>%4 · ~%5%6",
                 [_x2 get "name"] call _esc, (_k select 1) call _tr, format [("%1 étape(s)") call _tr, count (_x2 get "steps")], [_s getOrDefault ["total", 0]] call _fmt, [_s getOrDefault ["dur", 0]] call _dur,
                 ["", format ["<br/><t color='#8fd19a'>%1</t>", _tags joinString " · "]] select ((count _tags) > 0)];
             _rows pushBack ["person", _k select 2, _txt, [

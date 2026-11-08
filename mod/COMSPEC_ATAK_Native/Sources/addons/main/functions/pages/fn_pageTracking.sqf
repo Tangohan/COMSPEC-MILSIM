@@ -27,15 +27,15 @@ _rows pushBack ["segment", "Afficher", [
 ]];
 private _shown = _locks select { _filter isEqualTo "ALL" || {((_x select 1) get "state") isEqualTo _filter} };
 if ((count _shown) isEqualTo 0) then {
-    _rows pushBack ["text", format ["<t color='#8a9a93'>%1</t>", ["Aucune cible dans ce filtre.", "Aucune cible marquée. Visez une personne ou un véhicule avec la caméra du drone ou l'appareil photo, puis appuyez sur « Marquer la cible »."] select ((count _locks) isEqualTo 0)]];
+    _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", ["Aucune cible dans ce filtre.", "Aucune cible marquée. Visez une personne ou un véhicule avec la caméra du drone ou l'appareil photo, puis appuyez sur « Marquer la cible »."] select ((count _locks) isEqualTo 0)]];
 };
 {
     _x params ["_k", "_e"];
     private _st = _e get "state";
-    private _hex = (createHashMapFromArray [["TRACK", "#e5483a"], ["LOST", "#8a9a93"], ["DOWN", "#5cc76b"]]) getOrDefault [_st, "#c9d4cf"];
+    private _hex = (createHashMapFromArray [["TRACK", (COMSPEC_ATAK_Th get "hexAlert")], ["LOST", (COMSPEC_ATAK_Th get "hexTextMuted")], ["DOWN", (COMSPEC_ATAK_Th get "hexOk")]]) getOrDefault [_st, (COMSPEC_ATAK_Th get "hexTextDim")];
     private _ago = round (time - (_e get "seen"));
     private _p = _e get "pos";
-    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>LOCK %1 · %2</t>  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 m · %7 · marqué à %8 (%9)</t>",
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>LOCK %1 · %2</t>  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%5 · %6 m · %7 · marqué à %8 (%9)</t>",
         [_e get "num", 3] call CBA_fnc_formatNumber, [_e get "name"] call _esc, _hex,
         (createHashMapFromArray [["TRACK", "ACCROCHÉE"], ["LOST", "PERDUE"], ["DOWN", "NEUTRALISÉE"]]) getOrDefault [_st, _st],
         [_p, 8] call comspec_atak_native_fnc_gridRef, round (player distance2D _p), [format ["vue il y a %1 s", _ago], "en vue"] select (_ago < 2),
@@ -55,10 +55,10 @@ if ((count _locks) > 0) then {
 // Zones interdites au drone (camp du joueur).
 private _zones = ["list"] call comspec_atak_native_fnc_noFly;
 _rows pushBack ["section", format ["Zones interdites au drone : %1", count _zones], "Clic droit sur la carte > « Zone interdite au drone ». Un drone du camp qui y entre en ressort aussitôt ; un ordre qui y mène est refusé."];
-if ((count _zones) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune zone interdite.</t>"]; };
+if ((count _zones) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune zone interdite.</t>"]; };
 {
     _x params ["_id", "_c", "_r", "_who"];
-    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#8a9a93'>rayon %2 m · à %3 m · posée par %4</t>",
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>rayon %2 m · à %3 m · posée par %4</t>",
         [_c, 8] call comspec_atak_native_fnc_gridRef, _r, round (player distance2D _c), [_who] call _esc]];
     _rows pushBack ["buttons", [
         ["CARTE", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.05] call comspec_atak_native_fnc_mapCenter;", _c select 0, _c select 1], false, true],

@@ -1,7 +1,7 @@
 [h1]COMSPEC ATAK — Mise à jour 3.1.0.AG - Austin[/h1]
 [b]Publication : à renseigner à la sortie[/b]
 [quote]
-[b]Important :[/b] mettez à jour le pack 3.1.0, quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] ce pack contient COMSPEC Link 2.0.119 : mettez à jour le pack 3.1.0, quittez Arma 3 complètement, puis relancez.
 [/quote]
 
 [h2]Correctifs et changements[/h2]
@@ -12,11 +12,8 @@
 [*] Carte : maintenir le clic gauche pointe un endroit pour tout le camp ; le point GPS ne bouge plus à l'arrêt ; la fiche d'une unité sélectionnée ne fait plus recharger la carte ; noms d'étapes de l'app Routes corrigés ; cap du curseur avec N, NE, E…
 [*] App Drone : une photo prise en vision nocturne en plein jour est prise en vision jour (elle sortait presque blanche) ; la distance de vue du flux suit la distance de ce que regarde la nacelle (1500 m au moins, 3000 m au plus, réglable par mission).
 [*] Musique, Réglages et Drone : lancer ou changer de morceau, régler un interrupteur ou changer de vision ne redessine plus toute la page. Une erreur dans un bouton du téléphone ne se répète plus à chaque image.
-[h1]COMSPEC ATAK — Mise à jour 3.0.5.AG - Austin[/h1]
-[b]Publication : 03/11/2026[/b]
-[quote]
-[b]Important :[/b] ce pack contient COMSPEC Link 2.0.119 : mettez à jour le pack 3.0.5, quittez Arma 3 complètement, puis relancez.
-[/quote]
+[/list]
+
 
 [h2]Optimisation[/h2]
 [list]
@@ -24,16 +21,28 @@
 [*] L'app Recherchés et les apps du SSE qui lisent les avis d'Athena ne font plus attendre le jeu : liste gardée 5 minutes et rafraîchie en arrière-plan.
 [*] Onglet Debug › PERFS : temps passé dans la liaison pour chaque commande (appels, moyenne, p95, pire) et bouton RAZ DLL.
 [*] Les notifications ne recalculent plus l'état du téléphone chaque seconde quand il n'y a rien à afficher.
+[b]Publication : 03/11/2026[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 3.1.0, quittez Arma 3 complètement, puis relancez. Pour COMSPEC IDENTITY, gardez COMSPEC SSE à jour (1.3.0).
+[/quote]
+
+[h2]Interface du téléphone refaite[/h2]
+[list]
+[*] Toutes les apps partagent les mêmes couleurs, tailles de texte, boutons, onglets, listes et bandeaux : plus aucun texte minuscule (14 px au moins sur tout écran), les bandeaux de notification et les petits messages trop longs passent sur deux lignes au lieu d'être coupés.
+[*] Trois thèmes, Réglages › Personnalisation › Thème ou tuile Thème du volet rapide : SOMBRE, JOUR (surfaces claires pour le plein soleil) et NUIT JVN (vert phosphore à faible luminance, compatible jumelles de vision nocturne).
+[*] Écran de verrouillage : notifications groupées par app avec leur nombre, point sur le non lu, raccourcis CARTE et MESSAGES. Centre de notifications : onglets avec compteurs, groupes par app, bouton RÉGLER LES ALERTES.
+[*] Lanceur : vraie loupe de recherche, épingle sur les apps épinglées, en-têtes lisibles sur tout fond d'écran. Réglages : liste de catégories avec chevrons, en-tête avec retour, recherche par Entrée. Fiche de marqueur en sections, SUPPRIMER en rouge à part. Debug et Groupe : onglets soulignés.
 [/list]
 
 [h2]Rappel 3.0.4[/h2]
 [list]
 [*] Correctif : plus de plantage du jeu après « Lier » une caméra IP.
+[*] Optimisation : moins de travail à chaque image (carte, synchronisation, liaison), téléphone plus fluide en mission longue.
 [/list]
 
 [h2]Composants[/h2]
 [list]
-[*] Téléphone ATAK 3.0.5.AG - Austin
+[*] Téléphone ATAK 3.1.0.AG - Austin
 [*] COMSPEC Link 2.0.119
 [*] Overwatch connect 1.6.34 · Overwatch main 1.4.8
 [/list]
