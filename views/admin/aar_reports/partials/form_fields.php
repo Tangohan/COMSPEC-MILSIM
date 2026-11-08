@@ -144,3 +144,4 @@ $missingIds = array_map(static fn ($m) => (int) $m['id'], $missing);
 <?php endif; ?>
 
 <?php require base_path('views/admin/aar_reports/partials/actions_fields.php'); ?>
+<?php require base_path('views/admin/aar_reports/partials/annexes_fields.php'); ?>
