@@ -380,6 +380,12 @@ Décisions du propriétaire reçues : 1 automatique et désactivable ; 2 absence
 
 À mesurer au banc d'essai pour trancher la décision 4 (aucun chiffre n'existe à ce jour) : durée de passe et pire tranche à 30 et 60 nœuds, images par seconde du serveur, nombre de diffusions et taille de `COMSPEC_ATAK_MeshRef`, écarts entre exports de deux clients avec le réglage décoché.
 
+## 10 bis. Objet obligatoire et case RELAIS ATAK
+
+Objet obligatoire (`fn_netRequire`, réglage serveur `comspec_atak_native_net_required_items`, vide par défaut) : syntaxe de `comspec_atak_native_kit_required`. `comspec_atak_native_mpu_require` ne vise que la MPU5 en liaison réaliste et `kit_required` ne coupe rien : réglage distinct. Vaut pour les deux modèles de réseau. Instances reconnues par la config : héritage, `acre_baseClass`, `tf_parent`. Le serveur lit les inventaires toutes les 2 s, publie `COMSPEC_ATAK_NetDenied` et écarte le joueur du graphe.
+
+Case RELAIS ATAK (`fn_relayTxBadge`) : ACRE2 calcule le signal chez le récepteur et prend le meilleur du direct et du maillage (`fn_mpuVoice` « signal »). Seul le récepteur sait donc si le maillage a servi : il l'accuse à l'émetteur (`comspec_atak_native_meshVoiceAck`), au plus toutes les 2 s par paire. TFAR : la case suit l'allongement réel de la portée d'émission (`tfBefore`), à confirmer en jeu. Athena ne transporte pas la voix : la case ne le mentionne pas. Rien de tout cela n'est testé en jeu.
+
 ## 11. Antennes transportables (`fn_antennaKit`)
 
 Objets d'inventaire à déployer et replier par ACE (Équipement > Déployer ; « Replier l'antenne » sur l'objet posé, moitié moins de temps). Le serveur crée l'objet et l'enregistre par `fn_relayConvert` « register » : c'est alors un relais ordinaire de `fn_relayNet`, réservé au camp de celui qui l'a posée, vu par la carte réseau et le maillage. Détruite, supprimée par le Zeus ou repliée : `fn_relayConvert` « remove », retirée du réseau tout de suite. Aucune boucle : événements CBA et gestionnaires `Killed` et `Deleted` sur le serveur. Sans ACE : objets présents, aucune action.
@@ -401,3 +407,7 @@ Portée du relais = portée de base × 10^(gain / 20) : `fn_radioLink` donne 0 d
 Valeurs de jeu plausibles, calées sur les types du module « ATAK · Relais », pas une étude réaliste. Toutes réglables : `comspec_atak_native_antkit_<sat | mast>_<range | gain | height | mbps | time>`, `comspec_atak_native_antkit_max` (12 par camp), `comspec_atak_native_antkit_mast_root`. Hauteurs par défaut : celles des modèles, lues dans `verticalOffset` de leur classe d'Arma.
 
 Antennes MRH Satellite (mod facultatif) : `MRH_SatCom_Antenna_Base` et `MRH_MT_SatCom_Antenna_Base` dépliées deviennent des relais de type terminal satellite (`fn_relayConvert` « check », toutes les 15 s), retirées une fois repliées ou détruites. Réglage `comspec_atak_native_relay_mrh`, coché par défaut, indépendant de « Antennes du jeu = relais ATAK ». Sans MRH : rien n'est cherché, aucune dépendance.
+
+Mini-antenne de bâtiment (`COMSPEC_ATAK_BuildingAntennaKit`, objet posé `COMSPEC_ATAK_DeployedAntenna_Mini`, modèle `PortableLongRangeRadio_F.p3d`, au sol `SurvivalRadio_F.p3d`) : répéteur de 500 m + 3 dB, soit 706 m ; 0,3 m au-dessus de sa position réelle ; 4 Mbit/s ; 6 places ; pose en 8 s. Mode de visée sur un mur ou un toit à moins de 4 m (`Building`), aperçu vert ou rouge, Espace pour poser, Échap pour annuler, 45 s au plus. Bâtiment détruit, remplacé ou supprimé : retirée sous 15 s (`fn_antennaKit` « hosts », appelé par `fn_relayConvert` « check »). Réglages `comspec_atak_native_antkit_mini_<range | gain | height | mbps | time>`.
+
+Déploiement : ACE (Équipement) ou clic droit sur l'objet dans l'inventaire (menu d'objet de CBA). Chaque étape écrit une ligne `[COMSPEC ATAK NATIVE][INFO][ANTENNE]` au RPT, chaque refus s'affiche à l'écran.

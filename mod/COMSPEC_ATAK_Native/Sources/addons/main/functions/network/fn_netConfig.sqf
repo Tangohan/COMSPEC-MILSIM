@@ -73,7 +73,9 @@ switch (_mode) do {
             {
                 _x params ["_key", "", "_sk", "_kind", "_def"];
                 private _v = _srv getOrDefault [_key, missionNamespace getVariable [_x select 1, _def]];
-                _cond set [_sk, [str _v, ["off", "on"] select _v] select (_kind isEqualTo "bool")];
+                // Pas de tableau [a, b] select : ses deux valeurs sont évaluées, et ["off", "on"] select 3 (profil Milsim) ou 100 (météo) sort du tableau.
+                // L'erreur retirait du rapport au site toute condition chiffrée à partir de 2.
+                _cond set [_sk, if (_kind isEqualTo "bool") then { ["off", "on"] select (_v isEqualTo true) } else { str _v }];
             } forEach (["defs"] call comspec_atak_native_fnc_netCond);
             private _p = createHashMapFromArray [
                 ["conditions", _cond], ["applied_by", name player], ["mission", missionName], ["world", worldName],

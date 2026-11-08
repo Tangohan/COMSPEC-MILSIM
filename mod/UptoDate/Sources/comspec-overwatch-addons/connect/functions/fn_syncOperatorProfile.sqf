@@ -119,6 +119,13 @@ if ("mods" in _payload) then { _extras pushBack "liste des mods"; };
 if (_extras isNotEqualTo []) then { _what = _what + " · avec " + (_extras joinString " et "); };
 
 private _cmd = if ((toLower _event) isEqualTo "register") then { "OperatorRegister" } else { "OperatorSync" };
+// Enregistrement déjà fait ou en cours : le rappel différé de fn_initOperatorProfileSync et le contrôle de fn_operatorProfileTick (8 s tous les deux) partaient
+// chacun dans leur script, la fiche complète (14,7 Ko) était envoyée deux fois de suite. Vérifié ici, juste avant l'envoi, car bâtir la fiche laisse la main.
+if ((toLower _event) isEqualTo "register" && {!_forceEff}) then {
+    if ((missionNamespace getVariable ["COMSPEC_OperatorRegistered", false]) || {diag_tickTime - (missionNamespace getVariable ["COMSPEC_OperatorRegisterAt", -100]) < 30}) then { _event = ""; };
+};
+if (_event isEqualTo "") exitWith { false };
+if ((toLower _event) isEqualTo "register") then { missionNamespace setVariable ["COMSPEC_OperatorRegisterAt", diag_tickTime, false]; };
 private _parsed = [
     _cmd,
     [_json, _steam],

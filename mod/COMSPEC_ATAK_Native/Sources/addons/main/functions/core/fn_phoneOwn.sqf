@@ -17,7 +17,9 @@
       "active" téléphone d'autrui affiché ?       "activeRec" sa fiche
       "pick" "" (le mien) | id                    "try" chiffres    "claim"    "state" réponse du serveur
       "snap" données de mon téléphone             "hash" [clé, chiffres]
-      "setPin" [chiffres, indice]    "needPin"    "ownPad"    "ownTry" chiffres    "forget"    "cleared"    "padForeign"
+      "setPin" [chiffres, indice]    "setHint" indice    "needPin"    "hasPin"    "ownPad"    "ownTry" chiffres    "forget"
+      "cleared"    "padForeign"    "pinSetup" "set" | "remove" (Réglages : au clavier, code actuel, nouveau, confirmation)
+      "pinStep" [étape, chiffres]
 */
 params [["_act", ""], ["_arg", []]];
 private _myKey = {
@@ -300,7 +302,7 @@ switch (_act) do {
                 private _was = _view getOrDefault ["status", ""];
                 _view set ["status", "LOCKED"];
                 _view set ["blockMsg", format ["Téléphone bloqué pendant %1 s.", ceil _wait]];
-                if (_was isEqualTo "WAIT") then { call _render; } else { ["msg", _view get "blockMsg"] call comspec_atak_native_fnc_phonePad; };
+                if (_was isEqualTo "WAIT") then { call _render; } else { ["count", [diag_tickTime + _wait, "Téléphone bloqué pendant %1 s."]] call comspec_atak_native_fnc_phonePad; };
             };
             default { _view set ["status", "LOCKED"]; _view set ["blockMsg", ""]; call _render; };
         };
@@ -362,6 +364,79 @@ switch (_act) do {
         [["Code retiré", "Code enregistré"] select (_code isNotEqualTo ""), 2] call comspec_atak_native_fnc_toast;
         true
     };
+    case "setHint": {
+        if !(_arg isEqualType "") exitWith { false };
+        private _hint = (trim _arg) select [0, 40];
+        profileNamespace setVariable ["COMSPEC_ATAK_LockHint", _hint];
+        [] call comspec_atak_native_fnc_saveProfile;
+        ["register"] call comspec_atak_native_fnc_phoneOwn;
+        ["Indice enregistré", 2] call comspec_atak_native_fnc_toast;
+        true
+    };
+    case "hasPin": { [profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]] call _digitsOk };
+    // Réglages : le code se choisit au clavier, sans jamais s'afficher ; le code actuel d'abord s'il y en a un.
+    case "pinSetup": {
+        uiNamespace setVariable ["COMSPEC_ATAK_PinFlow", [_arg, ""]];
+        ["pinStep", [["new", "verify"] select (["hasPin"] call comspec_atak_native_fnc_phoneOwn), ""]] call comspec_atak_native_fnc_phoneOwn;
+    };
+    case "pinStep": {
+        _arg params [["_step", ""], ["_dg", ""]];
+        (uiNamespace getVariable ["COMSPEC_ATAK_PinFlow", ["set", ""]]) params ["_mode", "_first"];
+        private _show = {
+            params ["_st", "_title", "_sub", ["_msg", ""]];
+            ["show", createHashMapFromArray [
+                ["title", _title], ["sub", _sub], ["msg", _msg], ["setup", true],
+                ["ok", compile format ["params ['_d']; ['pinStep', ['%1', _d]] call comspec_atak_native_fnc_phoneOwn;", _st]],
+                ["buttons", [["ANNULER", { ["close"] call comspec_atak_native_fnc_phonePad; }]]]
+            ]] call comspec_atak_native_fnc_phonePad;
+        };
+        private _newPad = { params [["_msg", ""]]; ["new", "Nouveau code", "4 à 8 chiffres", _msg] call _show; };
+        private _done = {
+            ["close"] call comspec_atak_native_fnc_phonePad;
+            [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+        };
+        switch (_step) do {
+            case "verify": {
+                if (_dg isEqualTo "") exitWith { ["verify", "Code actuel", ["Pour le changer", "Pour le retirer"] select (_mode isEqualTo "remove")] call _show; };
+                private _until = missionNamespace getVariable ["COMSPEC_ATAK_PinBlock", -1];
+                if (diag_tickTime < _until) exitWith { ["count", [_until, "Bloqué pendant %1 s."]] call comspec_atak_native_fnc_phonePad; };
+                if (_dg isNotEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""])) exitWith { ["fail"] call comspec_atak_native_fnc_phoneOwn; };
+                missionNamespace setVariable ["COMSPEC_ATAK_PinTries", 0];
+                if (_mode isEqualTo "remove") exitWith {
+                    ["setPin", ["", ""]] call comspec_atak_native_fnc_phoneOwn;
+                    call _done;
+                };
+                [""] call _newPad;
+            };
+            case "new": {
+                if (_dg isEqualTo "") exitWith { [""] call _newPad; };
+                if !([_dg] call _digitsOk) exitWith { ["msg", "Le code fait 4 à 8 chiffres"] call comspec_atak_native_fnc_phonePad; };
+                uiNamespace setVariable ["COMSPEC_ATAK_PinFlow", [_mode, _dg]];
+                ["confirm", "Confirmez le code", "Saisissez-le une seconde fois"] call _show;
+            };
+            case "confirm": {
+                if (_dg isNotEqualTo _first) exitWith { ["Les deux codes diffèrent"] call _newPad; };
+                private _hint = profileNamespace getVariable ["COMSPEC_ATAK_LockHint", ""];
+                if !(_hint isEqualType "") then { _hint = ""; };
+                ["setPin", [_dg, _hint]] call comspec_atak_native_fnc_phoneOwn;
+                call _done;
+            };
+        };
+    };
+    // Code faux sur mon téléphone : essais comptés, puis blocage avec décompte à l'écran.
+    case "fail": {
+        private _n = (missionNamespace getVariable ["COMSPEC_ATAK_PinTries", 0]) + 1;
+        private _max = (missionNamespace getVariable ["comspec_atak_native_pin_attempts", 5]) max 1;
+        if (_n >= _max) then {
+            private _b = (missionNamespace getVariable ["comspec_atak_native_pin_block", 120]) max 10;
+            missionNamespace setVariable ["COMSPEC_ATAK_PinTries", 0];
+            missionNamespace setVariable ["COMSPEC_ATAK_PinBlock", diag_tickTime + _b];
+            ["count", [diag_tickTime + _b, "Bloqué pendant %1 s."]] call comspec_atak_native_fnc_phonePad;
+        } else {
+            missionNamespace setVariable ["COMSPEC_ATAK_PinTries", _n];
+            ["msg", format ["Code faux. %1 essai(s) restant(s).", _max - _n]] call comspec_atak_native_fnc_phonePad;
+        };
+    };
     case "needPin": {
         (profileNamespace getVariable ["COMSPEC_ATAK_PinAsk", false]) isEqualTo true
             && {[profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]] call _digitsOk}
@@ -374,17 +449,22 @@ switch (_act) do {
         ["show", createHashMapFromArray [
             ["title", "Code du téléphone"],
             ["sub", if (_hint isEqualTo "") then { "" } else { format ["Indice : %1", _hint] }],
-            ["msg", if (_fa >= 0) then { format ["Code retiré dans %1 s.", ceil (_fa - diag_tickTime)] } else { "" }],
+            ["msg", ""],
             ["ok", { params ["_d"]; ["ownTry", _d] call comspec_atak_native_fnc_phoneOwn; }],
             ["buttons", [
                 ["CODE OUBLIÉ", { ["forget"] call comspec_atak_native_fnc_phoneOwn; }],
-                ["RETOUR", { ["close"] call comspec_atak_native_fnc_phonePad; }]
+                ["RETOUR", { uiNamespace setVariable ["COMSPEC_ATAK_LockAfter", ""]; ["close"] call comspec_atak_native_fnc_phonePad; }]
             ]]
         ]] call comspec_atak_native_fnc_phonePad;
+        // Blocage ou code oublié en cours (mission) : le décompte reprend à la réouverture.
+        private _bl = missionNamespace getVariable ["COMSPEC_ATAK_PinBlock", -1];
+        if (diag_tickTime < _bl) then { ["count", [_bl, "Bloqué pendant %1 s."]] call comspec_atak_native_fnc_phonePad; } else {
+            if (_fa >= 0) then { ["count", [_fa, "Code retiré dans %1 s."]] call comspec_atak_native_fnc_phonePad; };
+        };
     };
     case "ownTry": {
         private _until = missionNamespace getVariable ["COMSPEC_ATAK_PinBlock", -1];
-        if (diag_tickTime < _until) exitWith { ["msg", format ["Bloqué pendant %1 s.", ceil (_until - diag_tickTime)]] call comspec_atak_native_fnc_phonePad; };
+        if (diag_tickTime < _until) exitWith { ["count", [_until, "Bloqué pendant %1 s."]] call comspec_atak_native_fnc_phonePad; };
         if (_arg isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""])) exitWith {
             missionNamespace setVariable ["COMSPEC_ATAK_PinOk", true];
             missionNamespace setVariable ["COMSPEC_ATAK_PinTries", 0];
@@ -392,22 +472,12 @@ switch (_act) do {
             ["close"] call comspec_atak_native_fnc_phonePad;
             ["unlock"] call comspec_atak_native_fnc_lockScreen;
         };
-        private _n = (missionNamespace getVariable ["COMSPEC_ATAK_PinTries", 0]) + 1;
-        private _max = (missionNamespace getVariable ["comspec_atak_native_pin_attempts", 5]) max 1;
-        if (_n >= _max) then {
-            private _b = (missionNamespace getVariable ["comspec_atak_native_pin_block", 120]) max 10;
-            missionNamespace setVariable ["COMSPEC_ATAK_PinTries", 0];
-            missionNamespace setVariable ["COMSPEC_ATAK_PinBlock", diag_tickTime + _b];
-            ["msg", format ["Bloqué pendant %1 s.", round _b]] call comspec_atak_native_fnc_phonePad;
-        } else {
-            missionNamespace setVariable ["COMSPEC_ATAK_PinTries", _n];
-            ["msg", format ["Code faux. %1 essai(s) restant(s).", _max - _n]] call comspec_atak_native_fnc_phonePad;
-        };
+        ["fail"] call comspec_atak_native_fnc_phoneOwn;
     };
     // Le propriétaire ne reste jamais dehors : sans admin ni Zeus, le code tombe après un délai.
     case "forget": {
         if ((missionNamespace getVariable ["COMSPEC_ATAK_PinForgotAt", -1]) < 0) then { missionNamespace setVariable ["COMSPEC_ATAK_PinForgotAt", diag_tickTime + 300]; };
-        ["msg", format ["Code retiré dans %1 s. Un admin ou un Zeus peut le retirer tout de suite.", ceil ((missionNamespace getVariable ["COMSPEC_ATAK_PinForgotAt", 0]) - diag_tickTime)]] call comspec_atak_native_fnc_phonePad;
+        ["count", [missionNamespace getVariable ["COMSPEC_ATAK_PinForgotAt", 0], "Code retiré dans %1 s. Un admin ou un Zeus peut le retirer tout de suite."]] call comspec_atak_native_fnc_phonePad;
     };
     // Code retiré : délai du « code oublié », ou admin et Zeus (fn_phoneServer « reset »).
     case "cleared": {

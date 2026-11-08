@@ -1,7 +1,7 @@
 /*
     Relais dans l'éditeur Eden.
       ["watch"] call comspec_atak_native_fnc_relayEden
-          Aperçu à la pose : un module « ATAK · Relais » de type « Tour fixe » sans objet synchronisé crée la tour de 40 m
+          Aperçu à la pose : un module « Poser un relais » de type « Tour fixe » sans objet synchronisé crée la tour de 40 m
           au lancement ; dans Eden on la voit déjà à sa place (objet local, ni sauvé ni exporté), elle suit le module
           déplacé ou tourné et disparaît avec lui ou quand il change de type ou reçoit un objet synchronisé.
           Lancé par Cfg3DEN (ouverture / nouvelle mission) et par l'attribut Type du module ; une seule boucle.
@@ -189,7 +189,7 @@ switch (_mode) do {
         private _info = _d ctrlCreate ["ctrlStructuredText", -1];
         _info ctrlSetPosition [_x0 + _u, _y0 + _h - 12 * _u, _w - 2 * _u, 5 * _u];
         private _txt = if (_rows isEqualTo []) then {
-            "Aucun relais : posez un pylône (Objets, Structures, Relais ATAK) ou le module ATAK · Relais (Modules, Réseau ATAK)."
+            "Aucun relais : posez un pylône (Objets, Structures, Relais ATAK) ou le module Poser un relais (Modules, Réseau ATAK)."
         } else {
             format ["%1 raccordé(s), %2 répéteur(s)%3. Portées sans relief : la page Réseau du téléphone donne la couverture réelle.",
                 { (_x select 5) } count _rows, { !(_x select 5) } count _rows,

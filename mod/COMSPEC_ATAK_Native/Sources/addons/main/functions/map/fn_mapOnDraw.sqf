@@ -17,13 +17,18 @@ uiNamespace setVariable ["COMSPEC_ATAK_SelfGpsPos", _selfGps];
 [false, true] call comspec_atak_native_fnc_mapOverlayUpdate;
 // Téléphone porté (ou « Suivre ma position ») : la carte suit le joueur à chaque image, sans à-coup.
 // fn_mapCenter pose le premier centrage et son décalage (comspec_lastAim) ; ensuite on glisse du même écart que le joueur.
-if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
+// Suivi d'une autre unité (fiche de la carte, en main) : même glissement, vers sa position déjà connue des pistes.
+private _fwPos = _selfGps;
+private _fwId = _state getOrDefault ["mapFollowId", ""];
+if (_fwId isNotEqualTo "") then {
+    private _fwP = ((_data getOrDefault ["units", createHashMap]) getOrDefault [_fwId, createHashMap]) getOrDefault ["position", []];
+    if ((count _fwP) < 2 || {!(_state getOrDefault ["interactive", false])} || {_state getOrDefault ["mapFollow", false]}) then { _state set ["mapFollowId", ""]; _fwId = ""; } else { _fwPos = _fwP; };
+};
+if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]} || {_fwId isNotEqualTo ""}) then {
     private _fwLast = _map getVariable ["comspec_lastAim", []];
     if ((count _fwLast) isEqualTo 2 && {ctrlMapAnimDone _map} && {diag_tickTime - (_map getVariable ["comspec_centerAt", -1]) > 0.6}) then {
         (ctrlPosition _map) params ["_fwX", "_fwY", "_fwW", "_fwH"];
         private _fwVis = _map ctrlMapScreenToWorld [_fwX + _fwW / 2, _fwY + _fwH / 2];
-        // Position GPS affichée (fn_gpsPos) : la carte suit mon point et ses anneaux, pas ma position exacte.
-        private _fwPos = _selfGps;
         private _fwDx = (_fwPos select 0) - (_fwVis select 0);
         private _fwDy = (_fwPos select 1) - (_fwVis select 1);
         if ((abs _fwDx) + (abs _fwDy) > 0.25) then {

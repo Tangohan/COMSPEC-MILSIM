@@ -223,7 +223,7 @@ final class AtakMobileLinkTest extends TestCase
         self::assertStringContainsString('"MOBILEQR"', (string) file_get_contents($nat . '/functions/ui/fn_navigate.sqf'));
         self::assertStringContainsString('case "MOBILEQR"', (string) file_get_contents($nat . '/functions/ui/fn_pageRender.sqf'));
         self::assertStringContainsString('case "qr":', (string) file_get_contents($nat . '/functions/ui/fn_formRender.sqf'));
-        foreach (['reports/fn_pageReports.sqf' => '"cr"', 'debrief/fn_pageDebrief.sqf' => '"compte-rendu"', 'pages/fn_pageMap.sqf' => '"carte"', 'tactical/fn_pageJtac.sqf' => '"briefs"'] as $f => $app) {
+        foreach (['reports/fn_pageReports.sqf' => '"cr"', 'debrief/fn_pageDebrief.sqf' => '"compte-rendu"', 'map/fn_mapToolMenu.sqf' => '"carte"', 'tactical/fn_pageJtac.sqf' => '"briefs"'] as $f => $app) {
             self::assertStringContainsString('["open", ' . $app . '] call comspec_atak_native_fnc_mobileQr', (string) file_get_contents($nat . '/functions/' . $f), $f);
         }
         self::assertStringContainsString('"MobileLink.Create"', (string) file_get_contents($nat . '/functions/ui/fn_mobileQr.sqf'));

@@ -126,6 +126,7 @@ final class ConfigurationUpdateService
                 'configure_url' => $this->buildUrl((string) ($sys['configure_path'] ?? $def->configurePath)),
                 'estimate_minutes' => isset($sys['estimate_minutes']) ? (int) $sys['estimate_minutes'] : $def->estimateMinutes,
                 'dismissible' => (bool) ($sys['dismissible'] ?? $def->dismissible),
+                'manual_done' => $def->manualDone,
                 'blocking' => (bool) ($sys['blocking'] ?? $def->blocking),
                 'is_new' => $isNew && $seenAt === null,
                 'completed_at' => isset($state['completed_at']) ? (string) $state['completed_at'] : null,
@@ -248,6 +249,17 @@ final class ConfigurationUpdateService
     public function markCompleted(int $tenantId, string $code, ?int $userId = null, ?array $metadata = null): void
     {
         $this->transition($tenantId, $code, self::STATUS_COMPLETED, $userId, AuditAction::CONFIGURATION_UPDATE_COMPLETED, null, $metadata);
+    }
+
+    /** Bouton « C'est fait » : seulement pour une étape sans détection automatique. */
+    public function markManualDone(int $tenantId, string $code, ?int $userId = null): bool
+    {
+        if (($this->catalog->find($code)?->manualDone) !== true) {
+            return false;
+        }
+        $this->markCompleted($tenantId, $code, $userId);
+
+        return true;
     }
 
     public function dismiss(int $tenantId, string $code, ?int $userId = null, ?string $remindAt = null): void

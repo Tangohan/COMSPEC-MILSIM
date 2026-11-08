@@ -266,6 +266,38 @@ $shortSteam = static fn (string $s): string => strlen($s) > 8 ? '…' . substr($
                 </div>
             </form>
 
+            <details class="paf-act paf-global">
+                <summary>Message global à tous les joueurs</summary>
+                <form method="post" action="<?= $h($base . '/message/tous') ?>" class="paf-act__body">
+                    <?= $returnFields ?>
+                    <p class="paf-hint"><?= $inTenant ? 'Un message par joueur de votre communauté ayant un ATAK connu.' : 'Un message par joueur ayant un ATAK connu, dans la communauté choisie ou dans toutes.' ?></p>
+                    <p class="paf-hint">Il apparaît sur son ATAK en jeu, à sa prochaine présence s’il n’est pas connecté.</p>
+                    <?php if (!$inTenant): ?>
+                    <label class="paf-field"><span class="paf-label">Destinataires</span>
+                        <select name="communaute_message">
+                            <option value="0">Toutes les communautés</option>
+                            <?php foreach ($tenants as $opt): ?>
+                            <option value="<?= (int) ($opt['id'] ?? 0) ?>"<?= (int) ($opt['id'] ?? 0) === (int) $tenantFilter ? ' selected' : '' ?>><?= $h((string) ($opt['name'] ?? '')) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <?php endif; ?>
+                    <label class="paf-field"><span class="paf-label">Titre</span><input type="text" name="titre" maxlength="120" required></label>
+                    <label class="paf-field"><span class="paf-label">Texte</span><textarea name="texte" rows="3" maxlength="2000" required></textarea></label>
+                    <div class="paf-row">
+                        <label class="paf-field"><span class="paf-label">Niveau</span>
+                            <select name="niveau"><?php foreach (Fleet::LEVELS as $v => $l): ?><option value="<?= $h($v) ?>"><?= $h($l) ?></option><?php endforeach; ?></select>
+                        </label>
+                        <label class="paf-field"><span class="paf-label">Valable</span>
+                            <select name="validite_heures"><option value="24">24 h</option><option value="72" selected>3 jours</option><option value="168">7 jours</option></select>
+                        </label>
+                    </div>
+                    <label class="paf-check"><input type="hidden" name="validation" value="0"><input type="checkbox" name="validation" value="1" checked> <span>Le joueur doit valider pour fermer</span></label>
+                    <label class="paf-check"><input type="checkbox" name="confirmation_globale" value="1" required> <span>Je confirme l’envoi à tous ces joueurs</span></label>
+                    <button type="submit" class="pa-btn pa-btn--sm pa-btn--mint">Envoyer à tous</button>
+                </form>
+            </details>
+
             <?php if ($rows === []): ?>
                 <div class="pa-empty-state">
                     <p><strong><?= $hasFilters ? 'Aucun ATAK pour ce filtre.' : 'Aucun ATAK enregistré pour le moment.' ?></strong></p>

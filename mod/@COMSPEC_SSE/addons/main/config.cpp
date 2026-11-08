@@ -40,22 +40,10 @@ class CfgMods {
 
 class CfgFactionClasses {
     class NO_CATEGORY;
-    // Une famille de catégories, numérotées dans l'ordre d'une préparation de mission.
-    class COMSPEC_SSE: NO_CATEGORY {
-        displayName = "$STR_COMSPEC_SSE_CFG_378C13828D";
-        priority = 2;
-        side = 7;
-    };
-    class COMSPEC_SSE_People: NO_CATEGORY {
-        displayName = "$STR_COMSPEC_SSE_CFG_206D673475";
-        priority = 2;
-        side = 7;
-    };
-    class COMSPEC_SSE_Mission: NO_CATEGORY {
-        displayName = "$STR_COMSPEC_SSE_CFG_5E9801F32C";
-        priority = 2;
-        side = 7;
-    };
+    // Rangement par usage, le même dans Zeus et Eden.
+    class COMSPEC_Cat_Sse: NO_CATEGORY { displayName = "$STR_COMSPEC_SSE_CFG_D87E995DD7"; priority = 2; side = 7; };
+    class COMSPEC_Cat_Identite: NO_CATEGORY { displayName = "$STR_COMSPEC_SSE_CFG_69CF391658"; priority = 2; side = 7; };
+    class COMSPEC_Cat_Mission: NO_CATEGORY { displayName = "$STR_COMSPEC_SSE_CFG_BF752EC697"; priority = 2; side = 7; };
 };
 
 class CfgEditorCategories {

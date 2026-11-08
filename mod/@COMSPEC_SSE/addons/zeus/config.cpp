@@ -60,25 +60,6 @@ class CfgPatches {
     };
 };
 
-class CfgFactionClasses {
-    class NO_CATEGORY;
-    class COMSPEC_SSE_Tools: NO_CATEGORY {
-        displayName = "$STR_COMSPEC_SSE_CFG_543C09E508";
-        priority = 2;
-        side = 7;
-    };
-    class COMSPEC_SSE_Domex: NO_CATEGORY {
-        displayName = "$STR_COMSPEC_SSE_CFG_722625B3ED";
-        priority = 2;
-        side = 7;
-    };
-    class COMSPEC_SSE_Sites: NO_CATEGORY {
-        displayName = "$STR_COMSPEC_SSE_CFG_D191D931CF";
-        priority = 2;
-        side = 7;
-    };
-};
-
 class CfgFunctions {
     class comspec_sse {
         tag = "comspec_sse";
@@ -157,25 +138,25 @@ class CfgVehicles {
         author = "COMSPEC";
         scope = 1;
         scopeCurator = 1;
-        category = "COMSPEC_SSE";
+        category = "COMSPEC_Cat_Sse";
         functionPriority = 1;
         isGlobal = 1;
         isTriggerActivated = 0;
         isDisposable = 1;
         is3DEN = 0;
         curatorCanAttach = 1;
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
     };
 
     class COMSPEC_SSE_Module_GenerateData: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_7F2A68EF59";
-        category = "COMSPEC_SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_F4613359A7";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleGenerateData";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_person.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_person.paa";
 
         class Attributes {
             class Profile {
@@ -286,11 +267,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_GenerateSite: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_742F4979BD";
-        category = "COMSPEC_SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_272C408CC9";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleGenerateSite";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
         canSetArea = 1;
         canSetAreaHeight = 0;
         canSetAreaShape = 1;
@@ -403,11 +384,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_InitTarget: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_6E5970A28A";
-        category = "COMSPEC_SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_56D46DDD87";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleInitTarget";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
 
         class Attributes {
             class EntityType {
@@ -478,10 +459,10 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 2;
         displayName = "$STR_COMSPEC_SSE_CFG_D51F236499";
-        category = "COMSPEC_SSE";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_modulePlaceEvidence";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_evidence.paa";
 
         class Attributes {
             class ObjectClass {
@@ -560,11 +541,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ApplyModel: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_0EBEB492CC";
-        category = "COMSPEC_SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_B8DF81D74D";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleApplyModel";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\upload_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\upload_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
 
         class Attributes {
             class ModelId {
@@ -623,11 +604,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_SaveModel: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_105C4BC7ED";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_346FC10FF6";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleSaveModel";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_save.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_save.paa";
 
         class Attributes {
             class ModelName {
@@ -650,11 +631,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_GenerateBrief: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_D70012B745";
-        category = "COMSPEC_SSE_Mission";
+        displayName = "$STR_COMSPEC_SSE_CFG_D9683CFF8B";
+        category = "COMSPEC_Cat_Mission";
         function = "comspec_sse_fnc_moduleGenerateBrief";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
 
         class Attributes {
             class Brief {
@@ -716,11 +697,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ScenarioDirector: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_B528BC522D";
-        category = "COMSPEC_SSE_Mission";
+        displayName = "$STR_COMSPEC_SSE_CFG_2A0021C018";
+        category = "COMSPEC_Cat_Mission";
         function = "comspec_sse_fnc_moduleScenarioDirector";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_flag.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_flag.paa";
 
         class Attributes {
             class Action {
@@ -793,11 +774,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_SandboxSite: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_AE206F9F36";
-        category = "COMSPEC_SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_C5EC76ED19";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleSandboxSite";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\box_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\box_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
 
         class Attributes {
             class Pack {
@@ -847,11 +828,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_LinkEntities: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_5FA266FD79";
-        category = "COMSPEC_SSE_People";
+        displayName = "$STR_COMSPEC_SSE_CFG_92BC2D3879";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleLinkEntities";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_net.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_net.paa";
 
         class Attributes {
             class Relation {
@@ -908,11 +889,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_CaseReference: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_EA0F6EC944";
-        category = "COMSPEC_SSE_Mission";
+        displayName = "$STR_COMSPEC_SSE_CFG_5D70B0860D";
+        category = "COMSPEC_Cat_Mission";
         function = "comspec_sse_fnc_moduleCaseReference";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
 
         class Attributes {
             class Reference {
@@ -934,11 +915,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ZeusControl: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_EC5E30D840";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_DB1284E64B";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleZeusControl";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\interact_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\interact_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_tool.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_tool.paa";
 
         class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_1F0DF0186D";
@@ -949,11 +930,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ViewData: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_8ECD3BB5A9";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_818F614847";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleViewData";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
 
         class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_7543C45D49";
@@ -964,11 +945,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_SpoilView: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_F0B768C43B";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_DD45C0174C";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleSpoilView";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
 
         class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_576B2E731F";
@@ -979,11 +960,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_SiteManager: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_A881B9C0E8";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_7F949A745E";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleSiteManager";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_site.paa";
 
         class Attributes {
             class Radius {
@@ -1014,11 +995,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_AfterAction: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_FAE0B0104A";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_D25FA458B2";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleAfterAction";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
 
         class Attributes {
             class Radius {
@@ -1058,11 +1039,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ListModels: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_3D7D0F8FD5";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_F6A86AD2A7";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleListModels";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
 
         class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_A709CD819D";
@@ -1072,11 +1053,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ClearData: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_54550F2C93";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_93DA6975DB";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleClearData";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\danger_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\danger_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_trash.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_trash.paa";
 
         class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_3FC684B6E2";
@@ -1087,11 +1068,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ResetSite: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_11BBF23CE8";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_A23260FA5A";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleResetSite";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\danger_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\danger_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_trash.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_trash.paa";
 
         class Attributes {
             class Radius {
@@ -1122,11 +1103,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_DebugInspector: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_24401FD1CC";
-        category = "COMSPEC_SSE_Tools";
+        displayName = "$STR_COMSPEC_SSE_CFG_7EE0E7173F";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleDebugInspector";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\target_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\target_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_tool.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_tool.paa";
 
         class Attributes {
             class DrawLinks {
@@ -1148,11 +1129,11 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_DomexMark: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "$STR_COMSPEC_SSE_CFG_BE09B59B17";
-        category = "COMSPEC_SSE_Domex";
+        displayName = "$STR_COMSPEC_SSE_CFG_77D98D1EDB";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleDomexMark";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_digital.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_digital.paa";
 
         class Attributes {
             class NodeId {
@@ -1325,10 +1306,10 @@ class CfgVehicles {
         scope = 1;
         scopeCurator = 2;
         displayName = "$STR_COMSPEC_SSE_CFG_32A649EB94";
-        category = "COMSPEC_SSE_Domex";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleDomexAddIntel";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_digital.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_digital.paa";
 
         class ModuleDescription {
             description = "$STR_COMSPEC_SSE_CFG_B27FD8908E";
@@ -1340,10 +1321,10 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 2;
         displayName = "$STR_COMSPEC_SSE_CFG_123BDC155F";
-        category = "COMSPEC_SSE_Domex";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleDomexSetStage";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_digital.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_digital.paa";
 
         class Attributes {
             class Stage {
@@ -1374,10 +1355,10 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 2;
         displayName = "$STR_COMSPEC_SSE_CFG_A847407C06";
-        category = "COMSPEC_SSE_Domex";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_moduleDomexMapPoint";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_map.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_map.paa";
 
         class Attributes {
             class Label {

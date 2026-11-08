@@ -36,6 +36,8 @@ if ((count _appOf) > 0 && {!((_appOf get "id") in ["Admin", "Toc"])}) then {
 if (_page isEqualTo "") exitWith { false };
 
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Réglage du code en cours (touche de la coque) : abandonné, il ne doit pas rester par-dessus l'app ouverte.
+if ((uiNamespace getVariable ["COMSPEC_ATAK_PadUp", false]) && {(uiNamespace getVariable ["COMSPEC_ATAK_Pad", createHashMap]) getOrDefault ["setup", false]}) then { ["close"] call comspec_atak_native_fnc_phonePad; };
 // Touche accueil (coque ou barre d'app) sur l'écran de verrouillage : déverrouille.
 if (_page isEqualTo "LAUNCHER" && {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]}) then { ["unlock"] call comspec_atak_native_fnc_lockScreen; };
 // Téléphone verrouillé : aucune app ne s'ouvre par-dessus l'écran de verrouillage (dock, raccourci, notification).

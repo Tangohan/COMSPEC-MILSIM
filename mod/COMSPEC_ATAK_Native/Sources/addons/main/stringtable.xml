@@ -242,6 +242,11 @@
             <English>Indestructible</English>
             <French>Indestructible</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_29F3E19649">
+            <Original>Placed mini antenna</Original>
+            <English>Placed mini antenna</English>
+            <French>Mini-antenne posée</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_2AABFEE2EC">
             <Original>HVT (high-value target)</Original>
             <English>HVT (high-value target)</English>
@@ -707,6 +712,11 @@
             <English>Video projector (COMSPEC)</English>
             <French>Vidéoprojecteur (COMSPEC)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_825ED058A0">
+            <Original>Small repeater. Right-click here or ACE, Equipment: place on an aimed wall or roof. It needs a relay with an uplink in range.</Original>
+            <English>Small repeater. Right-click here or ACE, Equipment: place on an aimed wall or roof. It needs a relay with an uplink in range.</English>
+            <French>Petit répéteur. Clic droit ici ou ACE, Équipement : poser sur un mur ou un toit visé. Il lui faut un relais raccordé à portée.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_838F8C2B63">
             <Original>#rrggbb, empty = theme colour.</Original>
             <English>#rrggbb, empty = theme colour.</English>
@@ -907,10 +917,10 @@
             <English>C 4,965 MHz</English>
             <French>C 4 965 MHz</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_AB1F663389">
-            <Original>Folded antenna. ACE: Equipment, Deploy. Relay with an uplink, short local range.</Original>
-            <English>Folded antenna. ACE: Equipment, Deploy. Relay with an uplink, short local range.</English>
-            <French>Antenne pliée. ACE : Équipement, Déployer. Relais raccordé, courte portée locale.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D95AFE36A0">
+            <Original>Folded antenna. Right-click here or ACE, Equipment: Deploy. Relay with an uplink, short local range.</Original>
+            <English>Folded antenna. Right-click here or ACE, Equipment: Deploy. Relay with an uplink, short local range.</English>
+            <French>Antenne pliée. Clic droit ici ou ACE, Équipement : Déployer. Relais raccordé, courte portée locale.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_AB5C9325A0">
             <Original>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</Original>
@@ -1167,10 +1177,10 @@
             <English>Average (35 %)</English>
             <French>Moyenne (35 %)</French>
         </Key>
-        <Key ID="STR_COMSPEC_ATAK_CFG_D812B7C04B">
-            <Original>Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range.</Original>
-            <English>Dismantled mast. ACE: Equipment, Deploy. Repeater: it needs a relay with an uplink in range.</English>
-            <French>Mât démonté. ACE : Équipement, Déployer. Répéteur : il lui faut un relais raccordé à portée.</French>
+        <Key ID="STR_COMSPEC_ATAK_CFG_957788330C">
+            <Original>Dismantled mast. Right-click here or ACE, Equipment: Deploy. Repeater: it needs a relay with an uplink in range.</Original>
+            <English>Dismantled mast. Right-click here or ACE, Equipment: Deploy. Repeater: it needs a relay with an uplink in range.</English>
+            <French>Mât démonté. Clic droit ici ou ACE, Équipement : Déployer. Répéteur : il lui faut un relais raccordé à portée.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_D875FDECAE">
             <Original>Desk TOC monitor (COMSPEC)</Original>
@@ -1311,6 +1321,11 @@
             <Original>Share of false tips</Original>
             <English>Share of false tips</English>
             <French>Part de faux tuyaux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F47D68C4C9">
+            <Original>Building mini antenna</Original>
+            <English>Building mini antenna</English>
+            <French>Mini-antenne de bâtiment</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_F4C0E14202">
             <Original>MPU5 radio battery</Original>
@@ -1746,6 +1761,151 @@
             <Original>V2 Enhanced with COMSPEC ATAK installed.</Original>
             <English>V2 Enhanced with COMSPEC ATAK installed.</English>
             <French>V2 Enhanced, ATAK COMSPEC installé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0CDE42EDFD">
+            <Original>Control a phone</Original>
+            <English>Control a phone</English>
+            <French>Contrôler un téléphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_271C15D369">
+            <Original>Prepare cable data</Original>
+            <English>Prepare cable data</English>
+            <French>Préparer des données au câble</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_290D25EB85">
+            <Original>Create a Tinder profile</Original>
+            <English>Create a Tinder profile</English>
+            <French>Créer un profil Tinder</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_42055C212F">
+            <Original>Clear cable data</Original>
+            <English>Clear cable data</English>
+            <French>Vider les données du câble</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_52480F19F2">
+            <Original>Place a COMSPEC screen</Original>
+            <English>Place a COMSPEC screen</English>
+            <French>Poser un écran COMSPEC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_58CA32DD5B">
+            <Original>Add a cable file</Original>
+            <English>Add a cable file</English>
+            <French>Ajouter un fichier au câble</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_66CE91022B">
+            <Original>Place an area jammer</Original>
+            <English>Place an area jammer</English>
+            <French>Poser un brouilleur de zone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_82FD73321A">
+            <Original>Configure the mesh</Original>
+            <English>Configure the mesh</English>
+            <French>Régler le maillage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8A1AE40616">
+            <Original>COMSPEC · ATAK</Original>
+            <English>COMSPEC · ATAK</English>
+            <French>COMSPEC · ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C90663322F">
+            <Original>Place a TOC screen</Original>
+            <English>Place a TOC screen</English>
+            <French>Poser un écran TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D7DEF53FF6">
+            <Original>Give AI an ATAK</Original>
+            <English>Give AI an ATAK</English>
+            <French>Équiper des IA d'un ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F5DA918AFE">
+            <Original>Place a relay</Original>
+            <English>Place a relay</English>
+            <French>Poser un relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_05AE3C3891">
+            <Original>Screen side</Original>
+            <English>Screen side</English>
+            <French>Camp de l'écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_1224A25545">
+            <Original>Screen use</Original>
+            <English>Screen use</English>
+            <French>Usage de l'écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_27C3139B5E">
+            <Original>COMSPEC screen: side that drives it. TOC screen: side shown.</Original>
+            <English>COMSPEC screen: side that drives it. TOC screen: side shown.</English>
+            <French>Écran COMSPEC : camp qui le pilote. Écran TOC : camp affiché.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4593B0D445">
+            <Original>Map and feed</Original>
+            <English>Map and feed</English>
+            <French>Carte et flux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_496B2073F0">
+            <Original>Civilian</Original>
+            <English>Civilian</English>
+            <French>Civil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_49AE0FA484">
+            <Original>Empty: automatic name.</Original>
+            <English>Empty: automatic name.</English>
+            <French>Vide : nom automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4B5864205B">
+            <Original>COMSPEC screen: shows slides. TOC screen: shows the side's network.</Original>
+            <English>COMSPEC screen: shows slides. TOC screen: shows the side's network.</English>
+            <French>Écran COMSPEC : diffuse les diapositives. Écran TOC : affiche le réseau du camp.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5ADFA17BF2">
+            <Original>Post PIP</Original>
+            <English>Post PIP</English>
+            <French>PIP du poste</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7B35D19C6C">
+            <Original>Feed only</Original>
+            <English>Feed only</English>
+            <French>Flux seul</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_92A2324457">
+            <Original>TOC screen only.</Original>
+            <English>TOC screen only.</English>
+            <French>Écran TOC seulement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B2ED82F1BF">
+            <Original>None</Original>
+            <English>None</English>
+            <French>Aucun</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B5CDDC62D2">
+            <Original>TOC screen</Original>
+            <English>TOC screen</English>
+            <French>Écran TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B90B587171">
+            <Original>Map only</Original>
+            <English>Map only</English>
+            <French>Carte seule</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B97AE3B4F9">
+            <Original>All</Original>
+            <English>All</English>
+            <French>Tous</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C0CD82FB3D">
+            <Original>Screen name</Original>
+            <English>Screen name</English>
+            <French>Nom de l'écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_DE8D4F953A">
+            <Original>Independent</Original>
+            <English>Independent</English>
+            <French>Indépendant</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F498CD766E">
+            <Original>TOC display</Original>
+            <English>TOC display</English>
+            <French>Affichage TOC</French>
         </Key>
     </Package>
 </Project>

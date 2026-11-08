@@ -13,5 +13,8 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 if (!(_s getOrDefault ["interactive", false]) || {_s getOrDefault ["mapFollow", false]}) exitWith {
     [player, _z] call comspec_atak_native_fnc_mapCenter
 };
+// Unité suivie (fiche de la carte) : le zoom reste sur elle.
+private _fwP = (((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]) getOrDefault [_s getOrDefault ["mapFollowId", ""], createHashMap]) getOrDefault ["position", []];
+if ((count _fwP) >= 2) exitWith { [_fwP, _z, true] call comspec_atak_native_fnc_mapCenter };
 (ctrlPosition _m) params ["_x", "_y", "_w", "_h"];
 [_m ctrlMapScreenToWorld [_x + _w / 2, _y + _h / 2], _z] call comspec_atak_native_fnc_mapCenter

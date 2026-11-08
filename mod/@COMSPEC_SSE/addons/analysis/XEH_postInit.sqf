@@ -56,7 +56,7 @@ if (!hasInterface) exitWith {};
     // Tableau des liens, registre et pièces détenues : app « SSE terrain » du téléphone ATAK (onglets SITE et SCELLÉS).
     // Remise des pièces à un équipier : inscrite au journal de chacune.
     private _give = [
-        "COMSPEC_SSE_GiveSeals", "Remettre mes pièces scellées", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
+        "COMSPEC_SSE_GiveSeals", "Remettre mes pièces scellées", "\z\comspec_sse\addons\zeus\data\mod_check.paa",
         {
             params ["_target", "_player"];
             [5, "Remise des scellés, émargement...", {
@@ -83,20 +83,20 @@ if (!hasInterface) exitWith {};
     };
     missionNamespace setVariable ["comspec_sse_anaZenSel", _sel];
     {
-        _x params ["_cat", "_name", "_code", "_icon"];
+        _x params ["_cat", "_name", "_code", ["_icon", "\z\comspec_sse\addons\zeus\data\mod_net.paa"]];
         [_cat, _name, _code, _icon] call comspec_sse_fnc_zenModule;
     } forEach [
-        ["COMSPEC SSE · Personnes", "Organisation : affecter", { params ["_pos", "_obj"]; ["assign", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
-        ["COMSPEC SSE · Personnes", "Organisation : générer un réseau", { params ["_pos", "_obj"]; private _s = [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel"); if (count _s == 1 && {(_s select 0) isKindOf "CAManBase"}) then { _s = units group (_s select 0); }; ["generate", _s] call comspec_sse_fnc_orgZeusForm; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
-        ["COMSPEC SSE · Personnes", "Organisation : rattacher des objets", { params ["_pos", "_obj"]; ["link", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa"],
-        ["COMSPEC SSE · Personnes", "Organisation : révéler aux joueurs", { params ["_pos", "_obj"]; ["reveal", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa"],
-        ["COMSPEC SSE · Personnes", "Organisation : retirer", { params ["_pos", "_obj"]; ["remove", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\exit_ca.paa"],
-        ["COMSPEC SSE · Personnes", "Tableau des liens (vue Zeus)", { [true] call comspec_sse_fnc_chartOpen; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
-        ["COMSPEC SSE · Mission", "Scellé : altérer le journal (exercice)", {
+        ["COMSPEC_Cat_Sse", "Affecter à une organisation", { params ["_pos", "_obj"]; ["assign", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
+        ["COMSPEC_Cat_Sse", "Générer un réseau", { params ["_pos", "_obj"]; private _s = [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel"); if (count _s == 1 && {(_s select 0) isKindOf "CAManBase"}) then { _s = units group (_s select 0); }; ["generate", _s] call comspec_sse_fnc_orgZeusForm; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
+        ["COMSPEC_Cat_Sse", "Rattacher des objets", { params ["_pos", "_obj"]; ["link", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa"],
+        ["COMSPEC_Cat_Sse", "Révéler une organisation", { params ["_pos", "_obj"]; ["reveal", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\z\comspec_sse\addons\zeus\data\mod_evidence.paa"],
+        ["COMSPEC_Cat_Sse", "Retirer d'une organisation", { params ["_pos", "_obj"]; ["remove", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\z\comspec_sse\addons\zeus\data\mod_trash.paa"],
+        ["COMSPEC_Cat_Sse", "Ouvrir le tableau des liens", { [true] call comspec_sse_fnc_chartOpen; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
+        ["COMSPEC_Cat_Mission", "Altérer un scellé (exercice)", {
             params ["_pos", "_obj"];
             private _done = 0;
             { if ((_x getVariable ["COMSPEC_SSE_PieceId", ""]) isNotEqualTo "") then { ["tamper", [_x]] call comspec_sse_fnc_custody; _done = _done + 1; }; } forEach ([_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel"));
             [[format ["%1 journal(aux) altéré(s) : la vérification du registre le signalera.", _done], "Aucune pièce saisie dans la sélection."] select (_done isEqualTo 0)] call comspec_sse_fnc_zeusNotify;
-        }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\danger_ca.paa"]
+        }, "\z\comspec_sse\addons\zeus\data\mod_trash.paa"]
     ];
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

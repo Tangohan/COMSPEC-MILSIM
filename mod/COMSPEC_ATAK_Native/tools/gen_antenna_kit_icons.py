@@ -5,6 +5,7 @@ Icônes d'inventaire des antennes transportables, dessinées ici : aucune photo,
     python gen_antenna_kit_icons.py DOSSIER
     hemtt utils paa convert DOSSIER/item_antkit_sat.png ../Sources/addons/main/data/item_antkit_sat.paa
     hemtt utils paa convert DOSSIER/item_antkit_mast.png ../Sources/addons/main/data/item_antkit_mast.paa
+    hemtt utils paa convert DOSSIER/item_antkit_mini.png ../Sources/addons/main/data/item_antkit_mini.paa
 """
 import os
 import sys
@@ -46,6 +47,18 @@ def mast():
     return im
 
 
+def mini():
+    im = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    # Mur, patte de fixation, boîtier et fouet.
+    d.rectangle((20, 20, 62, 240), fill=METAL, outline=DARK)
+    d.rectangle((62, 138, 104, 156), fill=DARK)
+    d.rounded_rectangle((104, 104, 190, 216), radius=10, fill=OLIVE, outline=DARK, width=5)
+    d.rectangle((142, 14, 152, 104), fill=DARK)
+    return im
+
+
 out = sys.argv[1]
 satellite().save(os.path.join(out, "item_antkit_sat.png"))
 mast().save(os.path.join(out, "item_antkit_mast.png"))
+mini().save(os.path.join(out, "item_antkit_mini.png"))

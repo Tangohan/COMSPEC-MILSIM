@@ -1,5 +1,5 @@
 /*
-    Module « ATAK · Relais » (Eden et Zeus) : pose un relais du réseau ATAK natif.
+    Module « Poser un relais » (Eden et Zeus) : pose un relais du réseau ATAK natif.
     Eden : le cercle du module est la portée (étirez-le) ; objets synchronisés = ce qui porte l'antenne (mât, bâtiment,
     véhicule qui devient relais mobile). Sans objet synchronisé, le module crée l'objet du type choisi à sa place.
     Zeus : formulaire à la pose, module lâché sur un objet ou un véhicule pour l'équiper. Lâché sur un relais existant

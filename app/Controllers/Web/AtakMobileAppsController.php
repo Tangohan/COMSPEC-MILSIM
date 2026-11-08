@@ -48,7 +48,9 @@ final class AtakMobileAppsController
         'cr_read' => 'Compte rendu',
         'radio' => 'Radio et messages',
         'radio_thread' => 'Radio et messages',
-        'radio_absent' => 'Non transmis par le jeu',
+        'radio_sms' => 'Radio et messages',
+        'radio_mpu' => 'Radio et MPU5',
+        'musique' => 'Musique',
     ];
 
     public function __construct(
@@ -230,14 +232,50 @@ final class AtakMobileAppsController
         ]);
     }
 
+    /** Ancienne adresse de la page des données absentes : SMS seuls désormais, MPU5 et musique ont leur page. */
     public function radioAbsent(Request $request, array $params = []): Response
+    {
+        return Response::redirect(url('m/radio/sms'));
+    }
+
+    public function radioSms(Request $request, array $params = []): Response
     {
         $link = $this->links()->current();
         if ($link === null) {
             return $this->expired();
         }
 
-        return $this->page('radio_absent', $link, ['absent' => AtakMobileHistoryService::unavailable()]);
+        return $this->page('radio_sms', $link, ['privateCount' => count($this->history()->privateMessages($link))]);
+    }
+
+    public function radioMpu(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+        $units = $this->atak()->getUnits((int) $link['tenant_id'], (int) $link['map_id']);
+
+        return $this->page('radio_mpu', $link, AtakMobileHistoryService::mpuBoard($units, (string) ($link['steam_uid'] ?? '')));
+    }
+
+    public function musique(Request $request, array $params = []): Response
+    {
+        $link = $this->links()->current();
+        if ($link === null) {
+            return $this->expired();
+        }
+        $vue = mb_substr(trim((string) ($request->query('vue') ?? 'global')), 0, 32);
+        $q = mb_substr(trim((string) ($request->query('q') ?? '')), 0, 80);
+        $data = ['vue' => $vue, 'heading' => '', 'tracks' => [], 'playlists' => [], 'q' => $q, 'failed' => false];
+        try {
+            $service = new \App\Services\Atak\AtakMobileMusicService(new \App\Repositories\MusicLibraryRepository());
+            $data = $service->view((int) $link['tenant_id'], (int) $link['user_id'], $vue, $q) + $data;
+        } catch (\Throwable) {
+            $data['failed'] = true;
+        }
+
+        return $this->page('musique', $link, $data);
     }
 
     public function debrief(Request $request, array $params = []): Response
@@ -719,7 +757,9 @@ final class AtakMobileAppsController
             'cr_read' => 'm.cr_read',
             'radio' => 'm.radio',
             'radio_thread' => 'm.radio_thread',
-            'radio_absent' => 'm.radio_absent',
+            'radio_sms' => 'm.radio_sms',
+            'radio_mpu' => 'm.radio_mpu',
+            'musique' => 'm.musique',
             default => 'm.home',
         };
         $response = Response::view($template, $data + [

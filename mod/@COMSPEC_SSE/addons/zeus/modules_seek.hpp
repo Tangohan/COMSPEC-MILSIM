@@ -15,7 +15,7 @@
         author = "COMSPEC";
         scope = 1;
         scopeCurator = 0;
-        category = "COMSPEC_SSE";
+        category = "COMSPEC_Cat_Mission";
         functionPriority = 1;
         isGlobal = 1;
         isTriggerActivated = 0;
@@ -25,16 +25,18 @@
         canSetArea = 0;
         canSetAreaHeight = 0;
         canSetAreaShape = 0;
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
     };
 
     class COMSPEC_Module_SSE_Case: COMSPEC_Module_SSE_Base
     {
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
         scope = 1;
         scopeCurator = 0;
-        category = "COMSPEC_SSE_Mission";
-        displayName = "$STR_COMSPEC_SSE_CFG_08EFE8648A";
+        category = "COMSPEC_Cat_Mission";
+        displayName = "$STR_COMSPEC_SSE_CFG_012F5A523B";
         function = "comspec_sse_fnc_moduleCaseReference";
 
         class Attributes
@@ -74,10 +76,12 @@
 
     class COMSPEC_Module_SSE_Profile: COMSPEC_Module_SSE_Base
     {
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_id.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_id.paa";
         scope = 2;
         scopeCurator = 0;
-        category = "COMSPEC_SSE_People";
-        displayName = "$STR_COMSPEC_SSE_CFG_2D8C8F1C55";
+        category = "COMSPEC_Cat_Identite";
+        displayName = "$STR_COMSPEC_SSE_CFG_174E6AE6E9";
         function = "comspec_sse_fnc_moduleSubjectProfile";
 
         class Attributes
@@ -213,11 +217,11 @@
     {
         scope = 2;
         scopeCurator = 0;
-        category = "COMSPEC_SSE_Mission";
-        displayName = "$STR_COMSPEC_SSE_CFG_74968C997F";
+        category = "COMSPEC_Cat_Mission";
+        displayName = "$STR_COMSPEC_SSE_CFG_54D4DE8143";
         function = "comspec_sse_fnc_moduleEquipSeek";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_id.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_id.paa";
 
         class Attributes
         {
@@ -260,11 +264,11 @@
     {
         scope = 2;
         scopeCurator = 0;
-        category = "COMSPEC_SSE_Mission";
-        displayName = "$STR_COMSPEC_SSE_CFG_C3162D0B05";
+        category = "COMSPEC_Cat_Mission";
+        displayName = "$STR_COMSPEC_SSE_CFG_6D67710BE6";
         function = "comspec_sse_fnc_moduleDocChrome";
-        icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
-        portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
+        icon = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
+        portrait = "\z\comspec_sse\addons\zeus\data\mod_doc.paa";
 
         class Attributes
         {
