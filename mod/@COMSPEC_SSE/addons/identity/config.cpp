@@ -94,6 +94,7 @@ class CfgFunctions {
             class idCoverPage {};
             class idBio {};
             class idHvt {};
+            class idAiConfig {};
         };
     };
 };

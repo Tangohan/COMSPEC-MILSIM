@@ -28,9 +28,9 @@ private _at = time max (_unit getVariable ["comspec_sse_toastFree", 0]);
 _unit setVariable ["comspec_sse_toastFree", _at + 2];
 private _go = {
     params ["_line", "_type", "_unit", "_tip", "_showToast"];
-    private _seen = !isNull _unit && {["say", [_unit, _line, name _unit, _type]] call comspec_atak_native_fnc_aiBubble};
+    private _seen = !isNull _unit && {["say", [_unit, _line, _unit getVariable ["comspec_sse_idName", name _unit], _type]] call comspec_atak_native_fnc_aiBubble};
     // Bulle vue : l'indice seul en toast. Sinon la phrase, avec son auteur, et l'indice.
-    private _parts = if (_seen) then { [_tip] } else { [format ["%1 : %2", [name _unit, "?"] select (isNull _unit), _line], _tip] };
+    private _parts = if (_seen) then { [_tip] } else { [format ["%1 : %2", [_unit getVariable ["comspec_sse_idName", name _unit], "?"] select (isNull _unit), _line], _tip] };
     [((_parts select { _x isNotEqualTo "" }) joinString " · "), _type] call _showToast;
     _seen
 };

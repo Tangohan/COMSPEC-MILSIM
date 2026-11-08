@@ -118,6 +118,11 @@ if (!hasInterface) exitWith {};
         ] call comspec_sse_fnc_zenDialog;
     }, "\A3\ui_f\data\igui\cfg\simpletasks\types\talk_ca.paa"] call comspec_sse_fnc_zenModule;
 
+    [_cat, "Configurer une IA", {
+        params ["_pos", "_obj"];
+        ["open", [ASLToATL _pos, _obj, "ai"]] call comspec_sse_fnc_editor;
+    }, "\z\comspec_sse\addons\identity\data\icon_card_ca.paa"] call comspec_sse_fnc_zenModule;
+
     [_cat, "Couvre-feu", {
         params ["_pos", "_obj"];
         [

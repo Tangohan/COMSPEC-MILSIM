@@ -47,6 +47,7 @@ private _tokens = missionNamespace getVariable ["comspec_sse_idTokens", createHa
 missionNamespace setVariable ["comspec_sse_idTokens", _tokens];
 
 switch (_op) do {
+    case "aiCfg": { ["aiReply", _a] call comspec_sse_fnc_editorAi; };
     case "notify": { _a params [["_t", ""], ["_type", "INFO"]]; [_t, _type] call _say; };
     case "zeus": { _a params [["_t", ""], ["_k", "info"]]; [_t, _k] call comspec_sse_fnc_zeusNotify; };
     case "request": { _a params [["_c", objNull]]; ["request", [_c]] call comspec_sse_fnc_idPresentPrompt; };
