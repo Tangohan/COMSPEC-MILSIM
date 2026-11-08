@@ -6868,8 +6868,7 @@ class AtakApiController
             try {
                 $realism = new \App\Repositories\AtakRealismRepository();
                 $existing = $realism->findTerminalByUid($tenantId, $terminalUidPos);
-                $prev = strtolower((string) ($existing['compromise_state'] ?? 'none'));
-                if ($existing !== null && $prev !== $compromisePos) {
+                if (\App\Support\AtakCompromisePolicy::positionMayChange($existing, $compromisePos)) {
                     $updated = $realism->setTerminalCompromise(
                         $tenantId,
                         $terminalUidPos,
@@ -7480,7 +7479,7 @@ class AtakApiController
             // Compromission : origine, état et certificats révoqués pour le mode « terminal compromis » de l'ATAK.
             $meta = '';
             $uid = trim((string) ($m['terminal_uid'] ?? ''));
-            if (in_array((string) ($m['kind'] ?? ''), ['compromise', 'compromise_cleared'], true)) {
+            if (in_array((string) ($m['kind'] ?? ''), ['compromise', 'compromise_cleared', 'device_replaced'], true)) {
                 $events[$uid] ??= $uid !== '' ? $fleet->compromiseEventsFor($tenantId, $uid, 10) : [];
                 $meta = \App\Support\AtakCompromiseNoticeMeta::build($m, $events[$uid]);
             }

@@ -26,7 +26,7 @@ if !(_seen isEqualType []) then { _seen = []; };
 
 // Admin (selon les droits) et Poste TOC (au PC de TOC) ne passent pas par le Store.
 // Copies : l'état de chaque app (clé st) ne doit pas rester dans le cache de fn_appList.
-private _apps = (([] call comspec_atak_native_fnc_appList) select { !((_x get "id") in ["Admin", "Toc"]) }) apply { +_x };
+private _apps = (([] call comspec_atak_native_fnc_appList) select { !((_x get "id") in ["Admin", "Toc"]) && {(_x get "id") isNotEqualTo "Pilot" || {["on"] call comspec_atak_native_fnc_pilotMode}} }) apply { +_x };
 { _x set ["st", ["state", _x get "id"] call comspec_atak_native_fnc_appInstall]; } forEach _apps;
 private _isIn = { (_this get "st") in ["system", "required", "installed"] };
 private _nIn = { _x call _isIn } count _apps;

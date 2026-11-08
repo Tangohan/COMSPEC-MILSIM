@@ -13,6 +13,7 @@ use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Repositories\UserRepository;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Support\AtakCompromisePolicy;
 use App\Services\ConfigSchemaService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\SteamId;
@@ -195,6 +196,16 @@ final class AtakRealismApiController
             if ($blocked !== null) {
                 return $blocked;
             }
+            // Appareil compromis : il reste exclu, seul un nouvel identifiant s'enregistre. Identifiant d'un autre compte :
+            // le mod en prend un autre (l'ancienne formule donnait le même à deux joueurs).
+            $refusal = AtakCompromisePolicy::registrationRefusal(
+                $this->realismRepository->findTerminalByUid($tenantId, trim((string) ($body['terminal_uid'] ?? ''))),
+                (int) ($body['user_id'] ?? 0),
+                in_array('uid_retry', explode(',', (string) ($body['caps'] ?? '')), true)
+            );
+            if ($refusal !== null) {
+                return Response::json(['ok' => false, 'error' => $refusal], 409);
+            }
         }
         $body = $this->tagWebSessionIfNeeded($tenantId, $pairingToken, $body);
         $body['last_client_ip'] = AtakRealismRepository::extractClientIp($request->ip());
@@ -265,6 +276,13 @@ final class AtakRealismApiController
             $body['duration_days'] = (int) ($defaults['certificate_duration_days'] ?? 365);
         }
         $body['user_id'] = $this->resolveUserId($tenantId, $body);
+        // Certificat redemandé par un appareil compromis (le mod le fait tout seul à chaque certificat révoqué) : refusé.
+        if ($this->isGameClient() && (int) ($body['terminal_id'] ?? 0) > 0) {
+            $target = $this->realismRepository->findTerminalById($tenantId, (int) $body['terminal_id']);
+            if (!AtakCompromisePolicy::gameMayChange($target)) {
+                return Response::json(['ok' => false, 'error' => 'terminal_compromised'], 409);
+            }
+        }
         if (($body['status'] ?? '') === '') {
             $body['status'] = 'active';
         }
@@ -341,6 +359,13 @@ final class AtakRealismApiController
             $state = 'captured';
         }
         $reason = trim((string) ($body['reason'] ?? $request->input('reason', '')));
+        // Depuis le jeu : pas de changement sur une compromission décidée par un chef ou par l'administration.
+        if ($this->isGameClient()) {
+            $current = $this->realismRepository->findTerminalByUid($tenantId, $terminalUid);
+            if (!AtakCompromisePolicy::gameMayChange($current)) {
+                return Response::json(['ok' => false, 'error' => 'terminal_compromised'], 409);
+            }
+        }
         $terminal = $this->realismRepository->setTerminalCompromise(
             $tenantId,
             $terminalUid,

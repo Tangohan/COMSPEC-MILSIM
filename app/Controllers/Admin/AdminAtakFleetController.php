@@ -714,6 +714,42 @@ class AdminAtakFleetController
         return $this->back($request, 'success', $closed . ' session(s) de jeu fermée(s). Le jeu se reconnectera tout seul s’il n’est pas bloqué.');
     }
 
+    /** Nouvel identifiant pour le téléphone suivant du joueur ; la fiche compromise reste exclue. */
+    public function replaceDevice(Request $request, array $params = []): Response
+    {
+        if (($guard = $this->guard($request)) !== null) {
+            return $guard;
+        }
+        $terminal = $this->terminal((int) $request->input('terminal_id', 0));
+        if ($terminal === null) {
+            return $this->back($request, 'error', 'ATAK introuvable.');
+        }
+        [$actorId, $actorLabel] = $this->actor();
+        if (!$this->fleet->replaceDevice($terminal, $actorId, $actorLabel)) {
+            return $this->back($request, 'error', 'Seul un ATAK capturé ou compromis se remplace.');
+        }
+
+        return $this->back($request, 'success', 'Appareil remplacé : l’ancien reste exclu, le téléphone suivant du joueur retrouve l’accès tout seul.');
+    }
+
+    /** Demande au jeu du joueur de nettoyer ses données locales, même sans téléphone sur lui. */
+    public function repairData(Request $request, array $params = []): Response
+    {
+        if (($guard = $this->guard($request)) !== null) {
+            return $guard;
+        }
+        $terminal = $this->terminal((int) $request->input('terminal_id', 0));
+        if ($terminal === null) {
+            return $this->back($request, 'error', 'ATAK introuvable.');
+        }
+        [$actorId, $actorLabel] = $this->actor();
+        if (!$this->fleet->requestDataRepair($terminal, $actorId, $actorLabel)) {
+            return $this->back($request, 'error', 'Demande non enregistrée : ce joueur n’a ni compte ni Steam connu.');
+        }
+
+        return $this->back($request, 'success', 'Réparation demandée : son jeu nettoie ses données locales à la prochaine relève (30 s au plus), même sans téléphone.');
+    }
+
     /** Message imposé au joueur en jeu (un ou plusieurs ATAK). */
     public function message(Request $request, array $params = []): Response
     {

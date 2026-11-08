@@ -20,6 +20,9 @@ switch (true) do {
     case (_c isEqualTo "pairing_invalid"): {
         "Code de connexion téléphone expiré ou invalide — générez-en un nouveau."
     };
+    case (_c isEqualTo "terminal_compromised"): {
+        "Cet appareil a été déclaré compromis : il reste exclu du réseau. Un nouvel appareil recevra son propre identifiant."
+    };
     case (_c isEqualTo "pairing_disabled"): {
         "L’enregistrement automatique du terminal est désactivé par votre communauté."
     };

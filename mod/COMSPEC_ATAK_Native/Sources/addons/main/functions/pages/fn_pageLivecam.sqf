@@ -76,7 +76,7 @@ private _hdr = _list lbAdd (("CAMÉRAS FIXES") call comspec_atak_native_fnc_tr);
 _list lbSetColor [_hdr, [0.36, 0.78, 0.42, 1]];
 {
     private _st = ["status", _x] call comspec_atak_native_fnc_camAction;
-    private _i = _list lbAdd ((format ["%1 · %2 m · %3", _x getVariable ["COMSPEC_ATAK_CamName", "CAM"], round (player distance _x), _st select 1]) call comspec_atak_native_fnc_tr);
+    private _i = _list lbAdd ((format ["%1 · %2 m · %3", ["camName", _x] call comspec_atak_native_fnc_deviceGuard, round (player distance _x), _st select 1]) call comspec_atak_native_fnc_tr);
     _list lbSetData [_i, netId _x];
     _list lbSetColor [_i, _st select 2];
     _list lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\item_camera.paa"];
@@ -137,7 +137,7 @@ if (_sharing) exitWith {
     _pbg ctrlSetBackgroundColor [0.05, 0.07, 0.06, 1];
     private _m = _s getOrDefault ["shareMethod", "NFC"];
     private _methods = ["methods"] call comspec_atak_native_fnc_camShare;
-    private _name = if (_unit isEqualTo player) then { "ma caméra" } else { _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"] };
+    private _name = if (_unit isEqualTo player) then { "ma caméra" } else { ["camName", _unit] call comspec_atak_native_fnc_deviceGuard };
     private _acc = ["access", _unit] call comspec_atak_native_fnc_camShare;
     private _accTxt = if ((count _acc) isEqualTo 0) then { "aucun (vous seul)" } else {
         (_acc apply {
@@ -226,6 +226,18 @@ if (_sharing) exitWith {
 };
 private _bg = ["COMSPEC_RscPanel", [_vx, _vy, _vw, _vh]] call comspec_atak_native_fnc_pageCtrl;
 _bg ctrlSetBackgroundColor [0, 0, 0, 1];
+// Mode sans échec (fn_deviceGuard) : le jeu s'est arrêté pendant une étape caméra. Aucune caméra, le joueur choisit.
+if (["safe"] call comspec_atak_native_fnc_deviceGuard) exitWith {
+    private _t = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh * 0.2, _vw, _rowH * 4]] call comspec_atak_native_fnc_pageCtrl;
+    _t ctrlSetStructuredText parseText (("<t align='center' font='COMSPEC_BarlowBold' color='#e0a33a'>MODE SANS ÉCHEC</t><br/><t align='center' size='0.85' color='#8a9a93'>Le jeu s'est arrêté pendant le chargement d'une caméra. Les flux restent coupés tant que vous ne les réactivez pas.</t>") call comspec_atak_native_fnc_tr);
+    private _rep = ["COMSPEC_RscButtonPrimary", [_vx + _pad, _vy + _vh * 0.6, (_vw - _pad * 3) / 2, _btnH], "RÉPARER MES DONNÉES"] call comspec_atak_native_fnc_pageCtrl;
+    _rep ctrlSetFontHeight _fs;
+    _rep ctrlAddEventHandler ["ButtonClick", { [{ ["repair", "bouton Vidéo live"] call comspec_atak_native_fnc_deviceGuard; }] call comspec_atak_native_fnc_nextFrame; }];
+    private _on = ["COMSPEC_RscButton", [_vx + _pad * 2 + (_vw - _pad * 3) / 2, _vy + _vh * 0.6, (_vw - _pad * 3) / 2, _btnH], "RÉACTIVER LES CAMÉRAS"] call comspec_atak_native_fnc_pageCtrl;
+    _on ctrlSetFontHeight _fs;
+    _on ctrlAddEventHandler ["ButtonClick", { [{ ["safeOff"] call comspec_atak_native_fnc_deviceGuard; ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }];
+    true
+};
 if (isNull _unit) exitWith {
     private _t = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh * 0.4, _vw, _rowH * 2]] call comspec_atak_native_fnc_pageCtrl;
     _t ctrlSetStructuredText parseText (("<t align='center' color='#8a9a93'>Pas de flux : aucun porteur d'ATAK du camp en ligne ni caméra fixe posée.</t>") call comspec_atak_native_fnc_tr);
@@ -241,7 +253,7 @@ if ((_camSt select 0) isNotEqualTo "OK") exitWith {
     };
     private _t = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh * 0.35, _vw, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
     _t ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#e0a33a'>%1 · %2</t><br/><t align='center' size='0.85' color='#8a9a93'>%3</t>",
-        _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"], toUpper (_camSt select 1), _why]) call comspec_atak_native_fnc_tr);
+        ["camName", _unit] call comspec_atak_native_fnc_deviceGuard, toUpper (_camSt select 1), _why]) call comspec_atak_native_fnc_tr);
     true
 };
 // Liaison du flux à travers les relais : sans elle, pas d'image.
@@ -250,7 +262,9 @@ if ((_link get "res") isEqualTo 0) exitWith {
     private _t = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh * 0.35, _vw, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
     _t ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#e0a33a'>FLUX COUPÉ</t><br/><t align='center' size='0.85' color='#8a9a93'>%1</t>",
         _link get "why"]) call comspec_atak_native_fnc_tr);
-    // On guette le retour de la liaison.
+    // On guette le retour de la liaison (une seule boucle : l'ancienne est retirée, jamais empilée).
+    private _oldFp = missionNamespace getVariable "COMSPEC_ATAK_FeedPfh";
+    if (!isNil "_oldFp") then { [_oldFp] call CBA_fnc_removePerFrameHandler; };
     missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
         if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "LIVECAM") exitWith {};
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -261,13 +275,20 @@ if ((_link get "res") isEqualTo 0) exitWith {
 };
 private _mode = _s getOrDefault ["livecamMode", 0];
 private _pan = _s getOrDefault ["livecamPan", 0];
-switch (true) do {
-    case _fixed: { [_unit, _mode, _pan] call comspec_atak_native_fnc_camView; };
-    case _isUav: { [_unit, _mode] call comspec_atak_native_fnc_livecamUav; };
-    default { [_unit, _mode] call comspec_atak_native_fnc_livecamStart; };
+private _feedOk = switch (true) do {
+    case _fixed: { [_unit, _mode, _pan] call comspec_atak_native_fnc_camView };
+    case _isUav: { [_unit, _mode] call comspec_atak_native_fnc_livecamUav };
+    default { [_unit, _mode] call comspec_atak_native_fnc_livecamStart };
 };
-// Définition de l'image selon le débit (512 px en HD jusqu'à 64 px au minimum : image nettement pixelisée).
-private _res = _link get "res";
+// Source refusée (fn_deviceGuard « camOk » : objet absent ou détruit, arsenal ouvert…) : aucune texture r2t, un message.
+if !(_feedOk isEqualTo true) exitWith {
+    private _t = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh * 0.4, _vw, _rowH * 2]] call comspec_atak_native_fnc_pageCtrl;
+    _t ctrlSetStructuredText parseText (("<t align='center' color='#e0a33a'>Flux refusé : source invalide. Choisissez une autre caméra.</t>") call comspec_atak_native_fnc_tr);
+    true
+};
+// Définition de l'image selon le débit (512 px en HD jusqu'à 64 px au minimum : image nettement pixelisée) ;
+// côté vérifié (puissance de 2 entre 64 et 1024, fn_deviceGuard) avant de créer la texture.
+private _res = ["r2t", _link get "res"] call comspec_atak_native_fnc_deviceGuard;
 private _pic = ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], format ["#(argb,%1,%1,1)r2t(comspec_livecam,1.0)", _res]] call comspec_atak_native_fnc_pageCtrl;
 // Décrochage : voile noir « image perdue » posé par moments, d'autant plus souvent que la liaison est mauvaise.
 private _drop = ["COMSPEC_RscStructuredText", [_vx, _vy, _vw, _vh]] call comspec_atak_native_fnc_pageCtrl;
@@ -287,7 +308,9 @@ private _view = createHashMapFromArray [
 if (_isUav) then { _view set ["kind", "uav"]; };
 uiNamespace setVariable ["COMSPEC_ATAK_LivecamView", _view];
 // Décrochage : tirage espacé, avec un temps minimal d'image stable pour éviter le clignotement en bâtiment.
-// Flux local (ma caméra) : drop à 0, le voile ne s'affiche jamais.
+// Flux local (ma caméra) : drop à 0, le voile ne s'affiche jamais. Une seule boucle : l'ancienne est retirée.
+private _oldFp2 = missionNamespace getVariable "COMSPEC_ATAK_FeedPfh";
+if (!isNil "_oldFp2") then { [_oldFp2] call CBA_fnc_removePerFrameHandler; };
 missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
     params ["_args"];
     _args params ["_dropP", "_tier", "_next", "_clearUntil"];
@@ -373,7 +396,7 @@ if (!_fixed && {!_isUav}) then {
 // (retour de TTRD, 19/10 : « carré noir à gauche et à droite »).
 if (_fixed) then {
     _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
-        _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"], [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit)]) call comspec_atak_native_fnc_tr);
+        ["camName", _unit] call comspec_atak_native_fnc_deviceGuard, [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit)]) call comspec_atak_native_fnc_tr);
     private _bs = _btnH * 1.2;
     {
         _x params ["_txt", "_dx", "_step"];

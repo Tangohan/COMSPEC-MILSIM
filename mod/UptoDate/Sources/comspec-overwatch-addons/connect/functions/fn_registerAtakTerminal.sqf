@@ -41,6 +41,19 @@ private _raw = [[
 ] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 
 private _parts = _raw splitString "|";
+// Identifiant déjà pris par un autre compte de la communauté : nouvel identifiant, un seul essai de plus.
+if ((_parts param [1, ""]) isEqualTo "terminal_uid_taken") then {
+    diag_log format ["[COMSPEC][WARN] Terminal %1 déjà pris par un autre compte : nouvel identifiant", _terminalUid];
+    profileNamespace setVariable ["comspec_overwatch_terminal_gen", (profileNamespace getVariable ["comspec_overwatch_terminal_gen", 0]) + 1];
+    profileNamespace setVariable ["comspec_overwatch_terminal_uid", ""];
+    _terminalUid = [] call comspec_overwatch_connect_fnc_getTerminalUid;
+    _raw = [[
+        "COMSPECExtension",
+        "RegisterTerminal",
+        [_terminalUid, _label, "tablet", _callsign, _pairingToken, "active", _platform]
+    ] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+    _parts = _raw splitString "|";
+};
 if ((count _parts) < 2 || {(_parts select 0) isNotEqualTo "OK"}) exitWith {
     private _code = if (count _parts >= 2) then { _parts select 1 } else { _raw };
     missionNamespace setVariable [

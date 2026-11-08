@@ -137,6 +137,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_OwRepair", _ow];
         [_s get "powered_on", "Éteint"] call _ok, [_s get "screen_ok", "Détruit"] call _ok, [_s get "connection_ok", "Coupée"] call _ok,
         ["", " · Téléphone détruit"] select (_s get "device_destroyed")], 8, 40] call comspec_atak_native_fnc_notify;
 }, { call (missionNamespace getVariable "COMSPEC_ATAK_OwRepair") }] call _add;
+// Téléphone qui plante dès qu'on le sort : réparation sans avoir à l'ouvrir (fn_deviceGuard). Sans condition d'appareil.
+[_care, "COMSPEC_ATAK_DevReset", "Réparer mes données", "", { ["repair", "action ACE"] call comspec_atak_native_fnc_deviceGuard; }, { true }] call _add;
 // Les mêmes actions posées par Overwatch dans « Équipement » sont retirées une fois en place (doublons).
 [{ missionNamespace getVariable ["COMSPEC_AtakRepairReady", false] }, {
     {

@@ -144,6 +144,8 @@ switch (toLower _act) do {
             _st set ["restored", _key];
             private _sv = profileNamespace getVariable ["COMSPEC_ATAK_OfflineSave", []];
             if !(_sv isEqualType [] && {(_sv param [0, ""]) isEqualTo _key}) exitWith {};
+            // Forme vérifiée avant usage (fn_deviceGuard) : sauvegarde illisible ignorée avec une ligne [WARN].
+            if !(["offlineOk", _sv] call comspec_atak_native_fnc_deviceGuard) exitWith {};
             _sv params ["", ["_at", ""], ["_p2p", []], ["_msgs", []], ["_inbox", []], ["_tasks", []], ["_alerts", []]];
             private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
             private _n = 0;

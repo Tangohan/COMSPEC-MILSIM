@@ -22,7 +22,7 @@
                    « Relais perdu : X (raison), liaison dégradée » ou « bascule sur Y ».
                  Relais préféré (fiche du relais sur la carte, uiNamespace COMSPEC_ATAK_RelayPin) : gardé tant qu'il est reçu.
       "power"    : [relais, "on" | "off" | "battery"] ; "info" : [relais] fiche en notification ; "sweep" : batteries (serveur).
-      "entry"    : [relais] -> son entrée de "list" ou [].
+      "entry"    : relais (l'objet, sans crochets) -> son entrée de "list" ou [].
       "only"     : vrai si le réseau passe exclusivement par les relais (réglage serveur comspec_atak_native_relay_only,
                    case « Réseau exclusivement par relais » d'un module « Poser un relais », ou mode réaliste d'Athena).
       "required" : vrai si les relais sont obligatoires (mode « only » ou case « Relais obligatoires »).

@@ -35,7 +35,11 @@ private _order = {
 };
 
 switch (_action) do {
-    case "tab": { _f set ["tab", _arg]; _f set ["hint", ["", false]]; };
+    case "tab": {
+        // COURT : FIRES court (fn_firesQuick), écran à part ; le 9-LINE et l'appel de feu ne changent pas.
+        if (_arg isEqualTo "quick") exitWith { ["open"] call comspec_atak_native_fnc_firesQuick; };
+        _f set ["tab", _arg]; _f set ["hint", ["", false]];
+    };
     case "mode": { _f set ["mode", _arg]; };
     case "gun": { _f set ["gun", _arg]; _f deleteAt "solution"; };
     case "ammo": { _f set ["ammo", _arg]; _f deleteAt "solution"; };

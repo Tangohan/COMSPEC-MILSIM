@@ -61,6 +61,93 @@ EN : Licence to read again, network padlock, clearer ping, patches with a materi
 - Patch Studio : `patch.rvmat`, `patch_smdi.paa`, `material` dans `CfgUnitInsignia` (lu par `BIS_fnc_setUnitInsignia`). Aucune réponse IR propre : le moteur n'a pas ce canal.
 - Service Athéna sur « Non » : plus aucune requête vers Athena. `KickBackgroundWarmup` envoyait un HEAD à chaque chargement du mod ; commande `UplinkOff` et garde des requêtes dans la DLL à la coupure en cours de session ; appels directs du SSE soumis à `fn_uplinkOff`. Fenêtre Windows de repli alignée sur la note.
 - Rien n'a été testé en jeu.
+## À venir : thème jour lisible, écran numérique des preuves, éditeur SSE en anglais (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Thème jour lisible, preuves numériques sur leur propre écran, plus de boîte d'erreur de texture
+- Thème JOUR : les textes gris clair et les pictogrammes blancs sur fond blanc sont redevenus lisibles, sur toutes les pages.
+- Téléphone tenu en portrait : les écrans vides (GPS sans guidage, Explosifs, Brouilleur) ne coupent plus les mots au milieu.
+- Une clé USB, un disque, une carte mémoire, un téléphone, un ordinateur ou une tablette s'exploitent sur l'écran numérique, plus sur la feuille de papier.
+- Éditeur SSE : libellés traduits en anglais et ajustés à leur case. Fini la boîte « Cannot load texture » des objets d'inventaire et des pylônes.
+EN : Readable day theme, digital evidence on its own screen, no more texture error box
+- DAY theme: light grey texts and white icons on a white background are readable again, on every page.
+- Phone held in portrait: empty screens (GPS without guidance, Explosives, Jammer) no longer cut words in half.
+- A USB drive, disk, memory card, phone, computer or tablet is exploited on the digital screen, no longer on the paper sheet.
+- SSE editor: labels translated into English and fitted to their box. No more "Cannot load texture" box for inventory items and relay towers.
+
+### Détail technique
+- Cause de « Cannot load texture …items_nohq.paa » : chemin des textures des rvmat écrit avec un « \ » de tête (`texture="\z\…"`), alors que le fichier était bien dans le PBO, identique octet pour octet et lisible par Pal2PacE. Les rvmat d'ACE et les chemins des p3d, sans « \ », se chargent. Corrigé dans `items.rvmat` et les 7 rvmat des pylônes ; `AtakRvmatTexturesTest`. Le passage par ImageToPAA de #1471 n'était pas la cause. À confirmer en jeu.
+- `fn_theme` : jetons du thème jour (textMuted, ok, warn, neutral, unknown, off) et de la nuit JVN (textMuted, off) relevés au contraste WCAG ; `fn_formRender` : pictogrammes et titres d'état suivent le thème ; ligne « hero » empilée quand la colonne de texte est étroite. `AtakThemeContrastTest`.
+- SSE : `fn_openDigitalPanel` marque l'écran numérique ; `fn_fillResultDialog` reconnaît aussi SMARTPHONE, HARDDRIVE, DEVICE (types réels du générateur, qui ouvraient la feuille beige). Éditeur : `call comspec_sse_fnc_tr` sur les libellés oubliés, police réduite quand le texte dépasse, 150 traductions.
+
+---
+
+## À venir : traduction anglaise et textures des objets (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Traduction anglaise complète et objets d'inventaire mieux rendus
+- En anglais, les textes ajoutés depuis la 4.0.0 s'affichent à nouveau traduits, en particulier ceux des dernières apps et des antennes.
+- Une erreur dans un fichier de langue ne fait plus perdre le reste de la traduction.
+- Les objets d'inventaire en 3D retrouvent leur relief et leurs reflets.
+EN : Complete English translation and better-looking inventory items
+- In English, texts added since 4.0.0 are translated again, in particular those of the latest apps and of the antennas.
+- An error in a language file no longer loses the rest of the translation.
+- 3D inventory items get their relief and reflections back.
+
+### Détail technique
+- `en.txt` : 7 virgules manquantes et 1 doublée, nées de fusions après la 4.0.0 (publiée valide) : parseSimpleArray s'arrêtait à la première faute (ligne 19 521 sur main, 492 phrases perdues). `fn_langApply` lit désormais ligne à ligne ; `AtakI18nFormatTest` valide le format strict.
+- `items_nohq.paa` et `items_smdi.paa` refaits avec ImageToPAA depuis `tools/render` (la cause du refus était ailleurs : voir l'entrée du thème jour).
+- Autotest : captures de la fenêtre réelle, `-SansProxy` pour la licence, vrais appels pour les antennes et les papiers (`tools/INGAME_TEST.md`).
+
+---
+
+## À venir : téléphone qui plante après une caméra IP, compromission et nouvel appareil (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Téléphone qui plante en boucle, et retour sur le réseau après une compromission
+- Si le jeu s'arrête pendant le chargement du téléphone, il repart en mode sans échec pour les caméras et propose de nettoyer. Nouveau bouton Réparer mes données dans Réglages, À propos : plus besoin de supprimer un dossier à la main. La gestion peut le demander depuis le site ou l'app Admin, même si le joueur n'a pas de téléphone sur lui.
+- Quand un chef valide la compromission de ton téléphone, l'ancien reste exclu du réseau. Le téléphone suivant reçoit son propre identifiant et retrouve l'accès tout seul ; l'app Alertes te dit où tu en es.
+- App Admin : le parc Athena ne se redessine plus à chaque réponse d'un joueur, et un nouveau bouton Remplacer l'appareil règle le cas d'un joueur bloqué.
+EN : Phone crashing in a loop, and back on the network after a compromise
+- If the game stops while the phone is loading, it restarts with cameras in safe mode and offers to clean up. New Repair my data button in Settings, About: no more deleting a folder by hand. Community staff can request it from the website or the Admin app, even if the player has no phone on him.
+- When a leader validates the compromise of your phone, the old one stays excluded from the network. Your next phone gets its own identifier and regains access by itself; the Alerts app tells you where you stand.
+- Admin app: the Athena fleet no longer redraws at every player reply, and a new Replace the device button settles the case of a locked-out player.
+
+### Détail technique
+- **Le « correctif 3.0.4 » n'a jamais été sur `main`** : `fn_deviceGuard` et ses appels n'existent que non validés dans `.worktrees/atak-hotfix-camlink` ; ni commit, ni note `docs/bugs/`, ni trace dans `main.pbo`. La ligne « Rappel 3.0.4 » du changelog Steam annonce donc un correctif absent des versions construites depuis `main`. Repris ici et complété.
+- **Garde-fou** (`core/fn_deviceGuard`) : page caméra jamais rouverte seule ; marqueur écrit sur le disque avant une étape à risque (`[true] fn_saveProfile`, l'écriture regroupée du 3.0.4 ne survivait pas au plantage), effacé après 20 s ; retrouvé au lancement : mode sans échec caméra, proposition de réparer. `sweep` et `offlineOk` vérifient le profil ; `camOk`, `r2t`, `camName` les sources vidéo ; lignes d'Athena vérifiées dans `fn_adminNotices` et `fn_adminClient`. Entrée illisible ignorée avec une ligne `[WARN]`.
+- **Réparer mes données** : Réglages › À propos, ACE, app Vidéo live en mode sans échec, réglage CBA par joueur, app Admin et fiche ATAK du site (`/parc-atak/reparer`, avis `repair_data` relevé même sans téléphone, `AdminControl.Poll` et `.Ack` sortent de `fn_uplinkHold`). DLL : commande `RepairLocalData` (caches de `Documents\Arma 3 - COMSPEC\Sync` déplacés dans `_repair`, 3 derniers gardés) ; fichier de cache hors taille mis de côté avant lecture. Jamais le mode compromis ni l'identifiant.
+- **Compromission** : l'identifiant du terminal était déterministe, le nouvel appareil reprenait donc la fiche et le mode compromis. `fn_compromise` « ownerReset » / « newDevice » : nouvelle génération d'identifiant (`comspec_overwatch_terminal_gen`), IMEI gardé après le respawn (`COMSPEC_ATAK_PhoneGenSaved`), reprise si la validation a eu lieu pendant une absence.
+- **Sécurité côté site** (`AtakCompromisePolicy`) : une position « none » effaçait la compromission validée à la remontée suivante, et le mod se refaisait délivrer un certificat. Depuis le jeu : plus de levée (sauf effet Zeus), plus de réenregistrement ni de certificat pour une fiche compromise (409 `terminal_compromised`). La fiche compromise n'est plus fusionnée avec le nouvel appareil (`listOperatorPhysicalTwins`). Identifiant d'un autre compte : 409 `terminal_uid_taken`, le mod en prend un autre (l'ancienne formule additionnait les caractères).
+- **App Admin** : plus de relevé ni de redessin sur les onglets ATHENA et APPS, un redessin par seconde au plus ailleurs, une action à la fois, `&` échappé, fiches illisibles écartées, actions REMPLACER L'APPAREIL et RÉPARER SES DONNÉES ; son propre ATAK ne se déclare plus compromis depuis le jeu. Avis de compromission sans terminal : ne verrouille plus le téléphone qui le reçoit.
+- **Pas de migration** : `atak_admin_messages.kind` est un `varchar(24)`. Pas de changement de version.
+- **Non testé en jeu** : rien ne peut l'être ici. Étapes `tel_garde_fou` et `tel_nouvel_appareil` dans l'autotest. Notes : `docs/bugs/2026-11-08-atak-plantage-camera-ip-boucle.md`, `docs/bugs/2026-11-08-atak-compromission-nouvel-appareil.md`.
+## À venir : mode pilote, FIRES court, apps regroupées et profils de rôle (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Mode pilote, FIRES court et apps regroupées
+- FIRES court : touchez la cible sur la carte, choisissez la munition, envoyez. Ping et marqueur partent tout seuls, les pilotes et JTAC du camp reçoivent la demande et répondent sans menu. Le 9-LINE complet ne change pas.
+- Mode pilote, à activer : grande carte, appareils alliés avec altitude et cap, missions à accepter et clôturer d'un geste, HUD discret, même téléphone rangé.
+- Apps regroupées, à activer par l'admin ou le joueur : 5 grandes apps avec des sous-groupes, plus un profil de rôle (pilote, JTAC, médecin, fantassin). « Toutes les apps » montre toujours tout.
+- Une app retirée par le serveur disparaît tout de suite, et le site permet d'interdire toutes les apps du téléphone.
+EN : Pilot mode, short FIRES and grouped apps
+- Short FIRES: touch the target on the map, pick the munition, send. Ping and marker go out on their own; your side's pilots and JTACs get the request and answer without menus. The full 9-LINE does not change.
+- Pilot mode, to enable: large map, friendly aircraft with altitude and heading, missions accepted and closed in one gesture, discreet HUD, even with the phone stowed.
+- Grouped apps, to enable by the admin or the player: 5 large apps with subgroups, plus a role profile (pilot, JTAC, medic, infantry). "All apps" always shows everything.
+- An app removed by the server disappears right away, and the site can now forbid every phone app.
+
+### Détail technique
+- Réglages CBA serveur : `comspec_atak_native_launcher_spaces` et `comspec_atak_native_pilot_mode` (0 au choix du joueur, coupé par défaut ; proposés par l'assistant de configuration et le panneau Réalisme et réseau).
+- Nouvelles fonctions : `fn_appSpaces`, `fn_pageSpace`, `fn_firesQuick`, `fn_pageQuickMap`, `fn_pilotMode`. Nouvelles apps : `FiresQuick` et `Pilot` (tuile seulement si le mode est actif).
+- FIRES court passe par les briefs air (`fn_airBrief`, 5-LINE en saisie libre) ; statut `DONE` ajouté (mod et `AirBriefService`).
+- Désactivation par communauté : cache de `fn_appList` lié à « Apps retirées », règle Athena appliquée sans attendre, 9 apps ajoutées à Contrôle serveur, Réglages et App Store protégés (voir docs/bugs).
+- À tester en jeu : voir le corps de la PR. Rien n'a pu être testé en jeu.
+
+---
 ## À venir : profils d'IA, éditeur SSE en Zeus, réponses des IA au-dessus de la tête (SSE, ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

@@ -128,7 +128,8 @@
   /**
    * Calques de l'Overwatch sur la carte du téléphone, lus aux mêmes adresses que l'Overwatch (session du téléphone) :
    * amis, marqueurs du théâtre, tracés et zones, appareils, appuis 9-LINE / 5-LINE. Rafraîchis toutes les 5 s.
-   * opts : { markerBind(layer, row, data), aircraft: () => [indicatifs de mon appareil], highlight(row), onData(state) }
+   * opts : { markerBind(layer, row, data), aircraft: () => [indicatifs de mon appareil], highlight(row), onData(state),
+   *          tactical: style tactique proposé (atak-m-tactique.js), placing(): pose d'un marqueur en cours }
    */
   function mountMap(wrap, opts) {
     opts = opts || {};
@@ -141,8 +142,8 @@
     var panel = $('[data-layers-panel]', wrap);
     var layersBtn = $('[data-map-layers]', wrap);
     var fbtn = $('[data-map-full]', wrap);
-    var state = { me: null, units: [], markers: [], shapes: [], air: [], cas: [], nine: [], myAircraft: [] };
-    var stores = { units: {}, markers: {}, air: {} };
+    var state = { me: null, units: [], markers: [], shapes: [], air: [], cas: [], nine: [], pings: [], myAircraft: [] };
+    var stores = { units: {}, markers: {}, air: {}, pings: {} };
     var shapeLayers = {};
     var shapeSig = '';
     var jtacLayer = null;
@@ -150,7 +151,7 @@
     var centered = '';
     var lastOk = 0;
     var LAYER_KEY = 'mm-map-layers';
-    var shown = { units: true, markers: true, shapes: true, air: true, jtac: true };
+    var shown = { units: true, markers: true, shapes: true, air: true, jtac: true, pings: true };
     try { var saved = JSON.parse(sessionStorage.getItem(LAYER_KEY) || 'null'); if (saved) Object.keys(shown).forEach(function (k) { if (typeof saved[k] === 'boolean') shown[k] = saved[k]; }); } catch (e) {}
     $all('[data-layer]', wrap).forEach(function (box) {
       var k = box.getAttribute('data-layer');
@@ -163,6 +164,20 @@
     });
     if (!kit) return null;
     var map = kit.map;
+    var tac = opts.tactical && window.MMTactique ? window.MMTactique.create(kit, wrap, { grid: grid, placing: opts.placing }) : null;
+    if (tac) {
+      $all('[data-map-style]', wrap).forEach(function (radio) {
+        radio.checked = radio.value === tac.name();
+        radio.addEventListener('change', function () {
+          if (!radio.checked) return;
+          tac.setStyle(radio.value);
+          // Autre habillage : joueurs, marqueurs et tracés refaits une fois, puis seulement ce qui change.
+          kit.clearStore(stores.units);
+          kit.clearStore(stores.markers);
+          render();
+        });
+      });
+    }
 
     function list(payload, key) {
       if (Array.isArray(payload)) return payload;
@@ -231,6 +246,10 @@
           });
           seen[id] = true;
           var ll = kit.worldToLatLng(x, y);
+          if (tac && tac.isOn()) {
+            tac.syncUnit(stores.units, id, u, ll, { me: !!me, disc: disc });
+            return;
+          }
           if (stores.units[id]) {
             stores.units[id].setLatLng(ll);
             stores.units[id].setIcon(icon);
@@ -246,6 +265,8 @@
     function renderMarkers() {
       kit.syncArmaMarkers(stores.markers, state.markers, {
         enabled: function () { return shown.markers; },
+        icon: tac && tac.isOn() ? tac.markerIcon : null,
+        shape: tac && tac.isOn() ? tac.markerShape : null,
         bind: function (layer, id, title, row) {
           var data = Kit.parseMarkerData(row);
           var mine = Number(data.mobile_user || 0) > 0 && Number(data.mobile_user) === Number(window.MM_USER_ID || -1);
@@ -255,7 +276,7 @@
       });
     }
     function renderShapes() {
-      var sig = shown.shapes ? JSON.stringify(state.shapes.map(function (s) { return [s.id, s.updated_at, s.geometry, s.meta, s.color, s.label]; })) : '';
+      var sig = shown.shapes ? (tac ? tac.name() : '') + JSON.stringify(state.shapes.map(function (s) { return [s.id, s.updated_at, s.geometry, s.meta, s.color, s.label]; })) : '';
       if (sig === shapeSig) return;
       shapeSig = sig;
       Object.keys(shapeLayers).forEach(function (id) { map.removeLayer(shapeLayers[id]); delete shapeLayers[id]; });
@@ -265,6 +286,10 @@
         if (!id) return;
         var built = kit.shapeLayer(shape);
         if (!built) return;
+        if (tac && tac.isOn()) {
+          shapeLayers[id] = tac.styleShape(shape, built).addTo(map);
+          return;
+        }
         built.layer.addTo(map);
         kit.labelShape(shape, built);
         shapeLayers[id] = built.layer;
@@ -328,6 +353,10 @@
       renderAir();
       renderJtac();
       renderMe();
+      if (tac) {
+        tac.syncPings(stores.pings, state.pings, shown.pings);
+        if (tac.isOn()) tac.declutter();
+      }
       if (opts.onData) opts.onData(state);
     }
 
@@ -344,14 +373,15 @@
         read('/api/atak/air-assets' + q, 'items'),
         read('/api/cas' + q, 'items'),
         read('/api/nine-line' + q, 'items'),
-        opts.aircraft ? opts.aircraft() : Promise.resolve(null)
+        opts.aircraft ? opts.aircraft() : Promise.resolve(null),
+        Promise.resolve(null)
       ]).then(function (r) {
         busy = false;
         var j = r[0];
         if (j && j._status === 401) { setNet('Session terminée : régénérez le QR code dans le jeu.'); return; }
         var anyOk = !!(j && j.ok);
         if (anyOk) state.me = j.me || null;
-        [['units', 1], ['markers', 2], ['shapes', 3], ['air', 4], ['cas', 5], ['nine', 6]].forEach(function (p) {
+        [['units', 1], ['markers', 2], ['shapes', 3], ['air', 4], ['cas', 5], ['nine', 6], ['pings', 8]].forEach(function (p) {
           var res = r[p[1]];
           if (res && res.rows) { state[p[0]] = res.rows; anyOk = true; }
         });
@@ -556,6 +586,8 @@
     };
     var closeSheet = function () { msheet.hidden = true; editing = null; };
     var mm = mountMap($('[data-mapwrap]'), {
+      tactical: true,
+      placing: function () { return !!mode; },
       // Mes marqueurs (posés depuis ce téléphone) : fiche de modification ; les autres : leur nom et leur grille.
       markerBind: function (layer, row, data, mine) {
         layer._mmRow = row;
@@ -563,8 +595,9 @@
         if (layer._mmBound) return;
         layer._mmBound = true;
         layer.on('click', function (e) {
-          if (mode) return;
           L.DomEvent.stopPropagation(e);
+          // Pose ou déplacement en cours : toucher un symbole place le marqueur à cet endroit.
+          if (mode) { mm.map.fire('click', { latlng: e.latlng }); return; }
           var d = Kit.parseMarkerData(layer._mmRow);
           var w = Kit.markerWorld(d) || (window.ArmaMapMarkers && window.ArmaMapMarkers.parsePos(d));
           if (!w) return;
@@ -652,7 +685,7 @@
       medevac: ['Position de la LZ', 'Fréquence et indicatif', 'Patients par urgence', 'Équipement spécial', 'Patients (couchés / assis)', 'Sécurité de la LZ', 'Marquage de la LZ', 'Nationalité', 'NRBC et terrain']
     };
     var TITLES = { '9line': 'CAS 9-LINE', '5line': '5-LINE', medevac: 'MEDEVAC 9-LINE' };
-    var STATES = { sent: 'ENVOYÉ', received: 'REÇU', read: 'LU', wilco: 'WILCO', unable: 'UNABLE' };
+    var STATES = { sent: 'ENVOYÉ', received: 'REÇU', read: 'LU', wilco: 'WILCO', unable: 'UNABLE', done: 'CLÔTURÉ' };
     var known = null;
     var briefs = [];
     var openId = 0;

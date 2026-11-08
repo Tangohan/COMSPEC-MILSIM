@@ -72,7 +72,10 @@ private _titleText = if (_isDocs) then {
 
 // Écran selon la nature de la preuve : un support numérique ne s'ouvre pas comme un dossier papier ; un sac, comme un contenu.
 private _natureRaw = toUpper (_fog getOrDefault ["type", ""]);
-private _isDigital = _natureRaw in ["PHONE", "COMPUTER", "MEDIA", "TABLET", "DRIVE", "USB", "SDCARD", "LAPTOP"];
+// Support numérique : écran sombre « exploitation numérique », jamais la feuille de papier. Tout ce qui passe par
+// fn_openDigitalPanel (téléphone, ordinateur, clé USB, disque, carte mémoire, tablette) est marqué « screen » ; la liste des
+// types couvre les appels directs. Avant, SMARTPHONE, HARDDRIVE ou DEVICE (types réels du générateur) ouvraient la feuille beige.
+private _isDigital = ((_fog getOrDefault ["screen", ""]) isEqualTo "digital") || {_natureRaw in ["PHONE", "SMARTPHONE", "FEATUREPHONE", "COMPUTER", "LAPTOP", "DESKTOP", "MEDIA", "TABLET", "DRIVE", "HARDDRIVE", "HDD", "SSD", "USB", "SDCARD", "MEMORYCARD", "DEVICE", "DEV"]};
 private _isContent = _natureRaw in ["CONTAINER", "BAG", "LUGGAGE", "VALUABLES"];
 private _ink = "#1f1a14";
 private _muted = "#5a4e3c";
@@ -159,7 +162,7 @@ if (_isDocs && {(count _docs) > 0}) then {
     if (_type != "") then {
         _html = _html + format [
             "<t color='%1' size='0.8'>Nature</t><br/><t color='%2' size='0.95'>%3</t><br/><br/>",
-            _muted, _ink, ((createHashMapFromArray [["PHONE", "Téléphone"], ["COMPUTER", "Ordinateur"], ["MEDIA", "Support de stockage (clé USB, disque, carte mémoire)"], ["TABLET", "Tablette"], ["RADIO", "Radio"], ["DOCUMENT", "Document"], ["WEAPON", "Arme"], ["CONTAINER", "Contenant"], ["VEHICLE", "Véhicule"], ["BUILDING", "Bâtiment"], ["OBJECT", "Objet"], ["PERSON", "Personne"]]) getOrDefault [toUpper _type, _type]) call comspec_sse_fnc_tr
+            _muted, _ink, ((createHashMapFromArray [["PHONE", "Téléphone"], ["SMARTPHONE", "Téléphone"], ["FEATUREPHONE", "Téléphone"], ["LAPTOP", "Ordinateur portable"], ["USB", "Clé USB"], ["SDCARD", "Carte mémoire"], ["HARDDRIVE", "Disque dur"], ["DEVICE", "Appareil numérique"], ["COMPUTER", "Ordinateur"], ["MEDIA", "Support de stockage (clé USB, disque, carte mémoire)"], ["TABLET", "Tablette"], ["RADIO", "Radio"], ["DOCUMENT", "Document"], ["WEAPON", "Arme"], ["CONTAINER", "Contenant"], ["VEHICLE", "Véhicule"], ["BUILDING", "Bâtiment"], ["OBJECT", "Objet"], ["PERSON", "Personne"]]) getOrDefault [toUpper _type, _type]) call comspec_sse_fnc_tr
         ];
     };
     _html = _html + format [

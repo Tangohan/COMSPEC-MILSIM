@@ -117,6 +117,9 @@ switch (_mode) do {
     };
     case "send": {
         _a params [["_src", objNull], ["_m", "RELAY"], ["_to", ""]];
+        // Envoi borné : un partage toutes les 2 s au plus, jamais de rafale sur le réseau.
+        if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_CamShareAt", -10]) < 2) exitWith { ["WARNING", "Partage trop rapproché : attendez un instant.", 3, 20] call comspec_atak_native_fnc_notify; 0 };
+        uiNamespace setVariable ["COMSPEC_ATAK_CamShareAt", diag_tickTime];
         if !(["canShare", _src] call _fn) exitWith { ["WARNING", "Vous n'avez pas accès à cette caméra : impossible de la partager.", 4, 30] call comspec_atak_native_fnc_notify; 0 };
         private _mine = ["mine", _m] call _fn;
         if (_mine isNotEqualTo "") exitWith { ["WARNING", _mine, 4, 30] call comspec_atak_native_fnc_notify; 0 };
@@ -140,10 +143,13 @@ switch (_mode) do {
         private _ids = if (_all) then { ["ALL"] } else { _targets apply { [_x] call _uidOf } };
         _acc = _acc select { !((_x param [0, ""]) in _ids) };
         { _acc pushBack [_x, _m, _me, _at]; } forEach _ids;
+        // Liste d'accès publiée sur l'objet : bornée (64 entrées), jamais une variable publique qui grossit sans fin.
+        if ((count _acc) > 64) exitWith { ["WARNING", "Liste d'accès pleine (64) : retirez des accès avant d'en ajouter.", 4, 30] call comspec_atak_native_fnc_notify; 0 };
         // Copie locale immédiate ; le serveur fusionne et publie (deux partages simultanés ne s'écrasent plus).
         _src setVariable ["COMSPEC_ATAK_ShareAcc", _acc];
-        ["srvAcc", [_src, _ids apply { [_x, _m, _me, _at] }]] remoteExecCall ["comspec_atak_native_fnc_camShare", 2];
+        ["srvAcc", [_src, (_ids select [0, 64]) apply { [_x, _m, _me, _at] }]] remoteExecCall ["comspec_atak_native_fnc_camShare", 2];
         if (_all) then { _targets = _cands apply { _x select 0 }; };
+        _targets = _targets select [0, 64];
         if ((count _targets) > 0) then { ["comspec_atak_native_camShare", [netId _src, [_src] call _nameOf, _m, _me], _targets] call CBA_fnc_targetEvent; };
         playSound "ClickSoft";
         ["SUCCESS", format ["%1 partagée par %2 avec %3", [_src] call _nameOf, _label,
@@ -163,9 +169,12 @@ switch (_mode) do {
         _a params [["_src", objNull, [objNull]], ["_add", [], [[]]]];
         if (isNull _src) exitWith { false };
         private _acc = if (_add isEqualTo []) then { [] } else {
-            private _new = _add select { _x isEqualType [] && {(count _x) isEqualTo 4} && {(_x select 0) isEqualType ""} };
+            // Entrées vérifiées et bornées : 4 champs texte courts, 64 ajouts et 64 entrées publiées au plus.
+            private _new = (_add select [0, 64]) select { _x isEqualType [] && {(count _x) isEqualTo 4} && {(_x findIf { !(_x isEqualType "") }) < 0} && {(count (_x select 0)) <= 32} };
+            _new = _new apply { [_x select 0, (_x select 1) select [0, 8], (_x select 2) select [0, 48], (_x select 3) select [0, 8]] };
             private _ids = _new apply { _x select 0 };
-            ((["access", _src] call _fn) select { !((_x param [0, ""]) in _ids) }) + _new
+            private _merged = ((["access", _src] call _fn) select { !((_x param [0, ""]) in _ids) }) + _new;
+            _merged select [((count _merged) - 64) max 0, 64]
         };
         _src setVariable ["COMSPEC_ATAK_ShareAcc", _acc, true];
         true

@@ -300,6 +300,7 @@ switch (_mode) do {
         };
         switch (_arg) do {
             case "PING": { ["send", _pos] call comspec_atak_native_fnc_mapPing; };
+            case "FIRESQ": { ["open", _pos] call comspec_atak_native_fnc_firesQuick; };
             // App Zones : fiche de la zone cliquée (état en un clic, signaler un ennemi au point cliqué).
             case "ZONE": {
                 (_c getOrDefault ["zone", []]) params [["_zbid", ""], ["_zzid", ""]];
@@ -425,6 +426,8 @@ switch (_mode) do {
             ["V3D", "Vue 3D ici", "W.I.P — bientôt disponible", _dir + "app_relief.paa", [0.55, 0.6, 0.57, 1]],
             ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", (COMSPEC_ATAK_Th get "mapOk")]
         ];
+        // FIRES court au point cliqué (fn_firesQuick) : cible posée, reste la munition et l'envoi.
+        if (["can"] call comspec_atak_native_fnc_firesQuick) then { _rows insert [1, [["FIRESQ", "FIRES ici", "munition, envoi aux pilotes", _dir + "app_fires.paa", COMSPEC_ATAK_Th get "mapAlert"]]]; };
         // Montre Garmin portée : le point (ou le marqueur pointé) part sur la boussole de la montre (fn_watch "send").
         if (((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0
             || {((items player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatchItem", configFile >> "CfgWeapons"] }) >= 0}) then {

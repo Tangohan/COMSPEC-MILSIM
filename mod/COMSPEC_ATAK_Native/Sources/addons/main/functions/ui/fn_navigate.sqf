@@ -4,7 +4,7 @@ _page = toUpper _page;
 if ((missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo "") then { _page = "PHONES"; } else { if (_page isEqualTo "PHONES") then { _page = "LAUNCHER"; }; };
 // Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos), VIEW3D (carte > Vue 3D ici, actuellement W.I.P),
 // MOBILEQR (« Sur mon téléphone » des apps Comptes rendus, CR fin d'op et Carte : fn_mobileQr).
-private _allowed = ["PHONES", "LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER", "MOBILEQR"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
+private _allowed = ["PHONES", "LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER", "SPACE", "MOBILEQR"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
 if !(_page in _allowed) then { _page = "LAUNCHER"; };
 // Vue 3D de la carte : en chantier (menu carte « Vue 3D ici »). Code conservé dans fn_pageView3d.
 if (_page isEqualTo "VIEW3D") exitWith {
@@ -33,9 +33,27 @@ if ((count _appOf) > 0 && {!((_appOf get "id") in ["Admin", "Toc"])}) then {
         _page = "STORE";
     };
 };
+// Poste TOC interdit, ou apps civiles coupées par le serveur : pas d'ouverture par un raccourci ou une notification non plus.
+if (_page isNotEqualTo "" && {(count _appOf) > 0} && {((_appOf get "id") isEqualTo "Toc" && {(["state", "Toc"] call comspec_atak_native_fnc_appInstall) isEqualTo "forbidden"})
+    || {(_appOf get "section") isEqualTo "Civil" && {!(missionNamespace getVariable ["comspec_atak_native_civil_apps", true])}}}) then {
+    ["Cette app est interdite par l'encadrement", 2.5] call comspec_atak_native_fnc_toast;
+    _page = "";
+};
 if (_page isEqualTo "") exitWith { false };
 
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Mode pilote et FIRES court (fn_pageQuickMap) : écran posé sur la page MAP, même carte et mêmes pistes. L'app Carte ouverte
+// normalement retire cet écran ; un retour arrière ou un redessin (sans empilement) le garde.
+private _qv = (createHashMapFromArray [["PILOT", "PILOT"], ["FIRESQ", "FIRES"]]) getOrDefault [_page, ""];
+if (_qv isNotEqualTo "") then {
+    private _seenQv = profileNamespace getVariable ["COMSPEC_ATAK_AppSeen", []];
+    if (_seenQv isEqualType [] && {!(_page in _seenQv)}) then { _seenQv pushBack _page; profileNamespace setVariable ["COMSPEC_ATAK_AppSeen", _seenQv]; };
+    _s set ["quickView", _qv];
+    missionNamespace setVariable ["COMSPEC_ATAK_InspOpen", false];
+    _page = "MAP";
+} else {
+    if (_page isEqualTo "MAP" && {_push}) then { _s set ["quickView", ""]; };
+};
 // Réglage du code en cours (touche de la coque) : abandonné, il ne doit pas rester par-dessus l'app ouverte.
 if ((uiNamespace getVariable ["COMSPEC_ATAK_PadUp", false]) && {(uiNamespace getVariable ["COMSPEC_ATAK_Pad", createHashMap]) getOrDefault ["setup", false]}) then { ["close"] call comspec_atak_native_fnc_phonePad; };
 // Touche accueil (coque ou barre d'app) sur l'écran de verrouillage : déverrouille.
@@ -70,7 +88,7 @@ if (_prevPage isEqualTo "ROUTE" && {_page isNotEqualTo "ROUTE"}) then {
     _ru set ["press", []];
 };
 // Lanceur : apps récentes (profil, gardées d'une partie à l'autre) et apps déjà ouvertes (fin de la pastille NOUVEAU).
-if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER"])}) then {
+if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", "FOLDER", "SPACE"])}) then {
     private _rec = profileNamespace getVariable ["COMSPEC_ATAK_AppRecent", []];
     if !(_rec isEqualType []) then { _rec = []; };
     _rec = [_page] + (_rec - [_page]);

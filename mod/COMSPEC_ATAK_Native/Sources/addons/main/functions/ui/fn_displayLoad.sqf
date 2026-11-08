@@ -164,7 +164,10 @@ if (_interactive) then {
 [] call comspec_atak_native_fnc_schedulerStart;
 // HUD des autres mods (F-PANO / ECOTI...) masqué sous le téléphone tant qu'il est affiché (fn_foreignHud).
 ["start"] call comspec_atak_native_fnc_foreignHud;
-private _page = profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"];
+// Dernière page relue par le garde-fou (fn_deviceGuard) : jamais une page caméra ni une page en quarantaine.
+private _page = ["restorePage"] call comspec_atak_native_fnc_deviceGuard;
+// Mode pilote choisi « à l'ouverture » : à bord, le téléphone s'ouvre sur l'écran pilote (fn_pilotMode).
+if (["wantView"] call comspec_atak_native_fnc_pilotMode) then { _page = "PILOT"; };
 // Première sortie en main de la mission, jeu pas encore relié à un compte Athena (service Athena « Oui ») :
 // le téléphone s'ouvre sur l'app Athena, onglet COMPTE, avec un code déjà demandé, à saisir sur le site (/lier).
 // Réglage CBA « Proposer la liaison Athena à la sortie du téléphone » (comspec_atak_native_link_offer) pour s'en passer.
@@ -180,7 +183,10 @@ if (_interactive && {missionNamespace getVariable ["comspec_atak_native_link_off
         ["INFO", "ATHENA", "Première sortie du téléphone sans compte Athena : app Athena ouverte avec un code"] call comspec_atak_native_fnc_log;
     };
 };
+private _guardT0 = diag_tickTime;
 [_page] call comspec_atak_native_fnc_navigate;
+// Dessin d'arrivée chronométré ; trop long deux fois : page en quarantaine (fn_deviceGuard).
+["opened", [_page, _guardT0]] call comspec_atak_native_fnc_deviceGuard;
 // Écran de verrouillage : première sortie de la mission, après une minute rangé ou un redémarrage (fn_lockScreen).
 // Avant fn_statusUpdate, qui note l'heure du dernier affichage.
 ["check"] call comspec_atak_native_fnc_lockScreen;
