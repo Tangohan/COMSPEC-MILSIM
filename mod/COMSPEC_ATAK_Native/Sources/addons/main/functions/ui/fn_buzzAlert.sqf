@@ -1,12 +1,13 @@
 /*
     Alerte du vibreur BFT à l'écran du téléphone : grand bandeau qui clignote (orange), indicatif de l'appelant, son
-    message, sa grille et sa distance, avec VU (accusé renvoyé à l'appelant), CARTE (centre la carte sur lui) et FERMER.
+    message, sa grille et sa distance, avec VU (accusé renvoyé à l'appelant), CARTE (centre la carte sur lui et le
+    sélectionne), SMS (lui répondre) et FERMER.
     Gardée deux minutes (uiNamespace COMSPEC_ATAK_BuzzAlert) : téléphone rangé, elle s'affiche à la prochaine
     ouverture ; elle est redessinée devant après chaque rendu de page (fn_fx « raise »).
     Params :
       ["show", [indicatif, grille, texte, position ASL, émetteur]]  nouvelle alerte (remplace la précédente)
       ["draw"]                                                     redessine l'alerte en cours (sinon rien)
-      ["ack"] / ["map"] / ["close"]                                 boutons
+      ["ack"] / ["map"] / ["sms"] / ["close"]                       boutons
 */
 params [["_act", "draw"], ["_arg", []]];
 disableSerialization;
@@ -27,9 +28,15 @@ switch (_act) do {
     case "map": {
         _cur params ["", "", "", ["_pos", []], ["_src", objNull]];
         ["close"] call comspec_atak_native_fnc_buzzAlert;
+        if (!isNull _src) then { ["select", _src] call comspec_atak_native_fnc_unitCard; };
         ["MAP"] call comspec_atak_native_fnc_navigate;
         private _p = [_pos, getPosASL _src] select (!isNull _src && {alive _src});
         if ((count _p) >= 2) then { [{ [_this, 0.03] call comspec_atak_native_fnc_mapCenter; }, _p, 0.2] call comspec_atak_native_fnc_waitAndExec; };
+    };
+    case "sms": {
+        _cur params ["", "", "", "", ["_src", objNull]];
+        ["close"] call comspec_atak_native_fnc_buzzAlert;
+        if (!isNull _src) then { ["do", ["sms", "o:" + netId _src]] call comspec_atak_native_fnc_unitCard; };
     };
     case "draw": {
         call _clear;
@@ -71,7 +78,7 @@ switch (_act) do {
         _t ctrlSetStructuredText parseText ((format ["<t size='1.2' font='COMSPEC_BarlowBold' color='#1a0f05'>VIBREUR · %1</t><br/><br/><t size='1.5' font='COMSPEC_BarlowBold' color='#ffffff'>%2</t><br/><t size='0.85' color='#f2c18a'>%3 · grille %4%5</t>",
             [_from] call _esc, [[_txt] call _esc, "Il vous appelle"] select (_txt isEqualTo ""), _hh, [_grid] call _esc, ["", format [" · %1 m", _dist]] select (_dist >= 0)]) call comspec_atak_native_fnc_tr);
         private _ctrls = [_bg, _band, _t];
-        private _bw3 = (_w - _pad * 4) / 3;
+        private _bw3 = (_w - _pad * 5) / 4;
         {
             _x params ["_lab", "_a", "_cls"];
             private _b = _d ctrlCreate [_cls, -1];
@@ -81,7 +88,7 @@ switch (_act) do {
             _b ctrlSetFontHeight _fs;
             _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ [%1] call comspec_atak_native_fnc_buzzAlert; }] call comspec_atak_native_fnc_nextFrame;", str _a]];
             _ctrls pushBack _b;
-        } forEach [["VU", "ack", "COMSPEC_RscButtonPrimary"], ["CARTE", "map", "COMSPEC_RscButton"], ["FERMER", "close", "COMSPEC_RscButton"]];
+        } forEach [["VU", "ack", "COMSPEC_RscButtonPrimary"], ["CARTE", "map", "COMSPEC_RscButton"], ["SMS", "sms", "COMSPEC_RscButton"], ["FERMER", "close", "COMSPEC_RscButton"]];
         { _x ctrlCommit 0; } forEach _ctrls;
         uiNamespace setVariable ["COMSPEC_ATAK_BuzzCtrls", _ctrls];
         // Bandeau sous les bris d'écran et les effets, comme les notifications (fn_overlayRaise, à l'image suivante).

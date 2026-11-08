@@ -262,12 +262,19 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _btns = _row select 1;
             private _n = count _btns;
             private _bh2 = _rowH * 1.55;
-            private _bw2 = (_w - (_n - 1) * _pad / 2) / (_n max 1);
+            // Colonne étroite : les boutons passent à la rangée suivante plutôt que de couper leur libellé.
+            private _bigF = (_fs * 1.05) max COMSPEC_ATAK_FontMin;
+            private _bigLon = 0;
+            { _bigLon = _bigLon max (count (((_x select 0) call comspec_atak_native_fnc_tr) splitString "")); } forEach _btns;
+            private _bigNeed = _bigLon * _bigF * 0.62 * pixelW / pixelH;
+            private _bigPer = _n max 1;
+            while { _bigPer > 1 && {_bigNeed > ((_w - (_bigPer - 1) * _pad / 2) / _bigPer)} } do { _bigPer = _bigPer - 1; };
+            private _bw2 = (_w - (_bigPer - 1) * _pad / 2) / _bigPer;
             {
                 _x params ["_label", "_code", ["_col", ""], ["_enabled", true], ["_tip", ""]];
-                private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_bw2 + _pad / 2), _y, _bw2, _bh2], _label] call _mk;
+                private _b = ["COMSPEC_RscButton", [_pad + (_forEachIndex mod _bigPer) * (_bw2 + _pad / 2), _y + (floor (_forEachIndex / _bigPer)) * (_bh2 + _pad / 2), _bw2, _bh2], _label] call _mk;
                 _b ctrlSetFont "EtelkaMonospaceProBold";
-                _b ctrlSetFontHeight (_fs * 1.05);
+                _b ctrlSetFontHeight _bigF;
                 private _bgc = switch (_col) do {
                     case "red": { (_th get "alert") };
                     case "amber": { (_th get "warn") };
@@ -281,7 +288,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _b ctrlEnable _enabled;
                 [_b, _code] call _click;
             } forEach _btns;
-            _y = _y + _bh2 + _pad / 2;
+            _y = _y + (ceil (_n / _bigPer)) * (_bh2 + _pad / 2);
         };
         case "edit";
         case "memo": {
@@ -1124,7 +1131,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             // 6e paramètre : lettre montrée dans une pastille teintée (_picColor) quand il n'y a pas d'image (_pic "") :
             // joueur sans photo lisible par Arma.
             // 7e paramètre : identifiant, pour changer texte et teinte de l'image sur place (fn_formSet, lignes de piste de l'app Musique).
-            _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]], ["_ini", ""], ["_pid", ""]];
+            // 8e paramètre : couleur du liseré d'état à gauche (système de design §1 règle 2), [] : pas de liseré.
+            _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]], ["_ini", ""], ["_pid", ""], ["_edge", []]];
             private _picCtl = controlNull;
             private _ih = _font * 2.2;
             private _iw = _ih * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
@@ -1153,6 +1161,10 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             if (_rowIh > _ih) then {
                 _t ctrlSetPosition [_pad * 2 + _iw, _y + _pad / 4, _tw, _rowIh]; _t ctrlCommit 0;
                 _bg ctrlSetPosition [_pad, _y, _w, _rowIh + _pad / 2]; _bg ctrlCommit 0;
+            };
+            if ((count _edge) isEqualTo 4) then {
+                private _rim = ["COMSPEC_RscText", [_pad, _y, pixelW * 4, _rowIh + _pad / 2]] call _mk;
+                _rim ctrlSetBackgroundColor _edge;
             };
             if (_pid isNotEqualTo "") then { _ids set [_pid, createHashMapFromArray [["kind", "person"], ["text", _t], ["pic", _picCtl], ["btns", []], ["bg", _bg]]]; };
             {
@@ -1275,6 +1287,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             // 3e élément : identifiant, pour masquer ou montrer la rangée sur place (fn_formSet « btnrow »).
             private _rowBtns = [];
             private _rowId = _row param [2, ""];
+            // 4e élément : hauteur minimale des boutons (jeton tap, fiche unique fn_unitCard).
+            private _bRowH = _rowH max (_row param [3, 0]);
             if (_rowId isEqualType "" && {_rowId isNotEqualTo ""}) then { _ids set [_rowId, createHashMapFromArray [["kind", "btnrow"], ["btns", _rowBtns]]]; };
             // Comme « segment » : colonne étroite, les boutons dont le libellé ne tiendrait pas passent à la rangée suivante.
             private _minF = COMSPEC_ATAK_FontMin max (_fs * 0.6);
@@ -1289,7 +1303,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 // « red » à la place de principal : bouton destructif (supprimer, effacer), rouge, texte blanc.
                 private _red = _primary isEqualTo "red";
                 if !(_primary isEqualType true) then { _primary = false; };
-                private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + (_forEachIndex mod _per) * (_bw + _pad / 2), _y + (floor (_forEachIndex / _per)) * (_rowH + _pad / 4), _bw, _rowH], _label] call _mk;
+                private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + (_forEachIndex mod _per) * (_bw + _pad / 2), _y + (floor (_forEachIndex / _per)) * (_bRowH + _pad / 4), _bw, _bRowH], _label] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight _btnFs;
                 [_b, _bw, _btnFs] call _fit;
@@ -1300,7 +1314,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 [_b, _code] call _click;
             } forEach _btns;
             private _bRows = ceil (_n / _per) max 1;
-            _y = _y + _bRows * _rowH + (_bRows - 1) * _pad / 4 + _pad / 2;
+            _y = _y + _bRows * _bRowH + (_bRows - 1) * _pad / 4 + _pad / 2;
         };
         case "bar": {
             // Groupes titrés côte à côte (titre gris souligné de vert), passage à la ligne si les boutons deviennent

@@ -469,8 +469,10 @@ _list ctrlAddEventHandler ["LBDblClick", {
 private _dRect = if (_land) then { [_listW + _pad / 2, _y - _fs * 1.2, _bw - _listW - _pad / 2, _bh - _y + _fs * 1.2] } else { [0, _y + _listH + _pad / 2, _bw, _detailH] };
 _dRect params ["_dx", "_dy", "_dw", "_dh"];
 private _sel = (_tracks select { (_x select 1) isEqualTo _selId }) param [0, []];
+// Rangée d'actions de la fiche unique (fn_unitCard) : boutons à la hauteur tactile, le surplus derrière ⋯.
+private _barH = (_l get "tap") + _pad / 2;
 private _det = if (_upd) then { (_live get "ctrls") select 2 } else {
-    private _c = ["COMSPEC_RscCard", [_dx, _dy, _dw, _dh - _font * 1.6], ""] call comspec_atak_native_fnc_pageCtrl;
+    private _c = ["COMSPEC_RscCard", [_dx, _dy, _dw, _dh - _barH], ""] call comspec_atak_native_fnc_pageCtrl;
     _c ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "surface");
     _c
 };
@@ -511,7 +513,8 @@ if ((count _sel) isEqualTo 0) then {
         case (!_isLive): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Dernière position il y a %1</t>", _ageTxt] };
         default { "" };
     };
-    private _health = if (isNull _obj) then { "—" } else { if (_f isEqualTo "OFFLINE") then { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>inconnu</t>" } else { switch (true) do { case (!alive _obj): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Mort</t>" }; case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>—</t>" }; case (lifeState _obj isEqualTo "INCAPACITATED"): { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Inconscient</t>" }; case ((damage _obj) > 0.25): { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Blessé</t>" }; default { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Apte</t>" }; } } };
+    private _hs = ["state", _e] call comspec_atak_native_fnc_unitCard;
+    private _health = format ["<t color='%1'>%2</t>", _hs select 2, _hs select 1];
     private _grp = if (isNull _obj) then { "Athena" } else { groupId group _obj };
     private _ftI = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftTxt = switch (true) do {
@@ -545,32 +548,29 @@ if (_buzzOn) then {
     _ed ctrlSetTooltip (("Texte libre (80 caractères)") call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_BuzzEdit", _ed];
 };
-private _bw3 = (_dw - _pad * 4) / 5;
-private _btns = [];
-{
-    _x params ["_t", "_act", "_on"];
-    if (_upd) then { private _b = (_live get "btns") param [_forEachIndex, controlNull]; _b ctrlSetText ((_t) call comspec_atak_native_fnc_tr); _b ctrlEnable _on; continue };
-    private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 1), [_dx + _forEachIndex * (_bw3 + _pad), _dy + _dh - _font * 1.5, _bw3, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
-    _b ctrlSetFontHeight _fs;
-    _b ctrlEnable _on;
-    _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call comspec_atak_native_fnc_nextFrame;", _act]];
-    _btns pushBack _b;
-} forEach ([[
-    ["CARTE", "center", (count _sel) > 0],
-    ["Y ALLER", "route", (count _sel) > 0],
-    ["SMS", "sms", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)}],
-    [["VIBRER", "HORS LIGNE"] select ((count _sel) > 0 && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isEqualTo "OFFLINE"}), "buzz",
-        _meOn && {(count _sel) > 0} && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {(_sel select 3) isNotEqualTo player} && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isNotEqualTo "OFFLINE"}],
-    // Caméra poitrine de l'équipier, en petite fenêtre sur la carte (Live cam).
-    ["VOIR CAMÉRA", "cam", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {alive (_sel select 3)} && {(_sel select 3) isNotEqualTo player} && {[_sel select 3] call comspec_atak_native_fnc_hasDevice}]
-], [
-    ["ANNULER", "buzzCancel", true],
-    ["ENVOYER", "buzzSend", _meOn]
-]] select _buzzOn);
-// Contrôles gardés pour la mise à jour sur place (tableau seulement, hors tiroir des filtres et vibreur).
+// Cible de la fiche : la piste choisie (sans piste, les actions restent à leur place, grisées).
+private _unit = [createHashMap, _sel param [2, createHashMap]] select ((count _sel) > 0);
+// Mise à jour sur place : ensemble d'actions changé (commandement passé) : rendu complet.
+if (_upd && {!(["barUpdate", [_live get "bar", _unit, "bft"]] call comspec_atak_native_fnc_unitCard)}) exitWith { false };
+private _bar = createHashMap;
 if (!_upd) then {
+    private _barY = _dy + _dh - _barH + _pad / 2;
+    if (_buzzOn) then {
+        // Composition du vibreur : ANNULER et ENVOYER à la place de la rangée d'actions.
+        private _bw3 = (_dw - _pad) / 2;
+        {
+            _x params ["_t", "_act", "_on"];
+            private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 1), [_dx + _forEachIndex * (_bw3 + _pad), _barY, _bw3, _l get "tap"], _t] call comspec_atak_native_fnc_pageCtrl;
+            _b ctrlSetFontHeight _fs;
+            _b ctrlEnable _on;
+            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call comspec_atak_native_fnc_nextFrame;", _act]];
+        } forEach [["ANNULER", "buzzCancel", true], ["ENVOYER", "buzzSend", _meOn]];
+    } else {
+        _bar = ["bar", [_unit, "bft", _dx, _barY, _dw, true]] call comspec_atak_native_fnc_unitCard;
+    };
+    // Contrôles gardés pour la mise à jour sur place (tableau seulement, hors tiroir des filtres et vibreur).
     uiNamespace setVariable ["COMSPEC_ATAK_BftLive", [createHashMap, createHashMapFromArray [
-        ["key", [_view, _filter, _land, _bw, _bh]], ["ctrls", [_head, _list, _det]], ["btns", _btns], ["drawnSeq", uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]
+        ["key", [_view, _filter, _land, _bw, _bh]], ["ctrls", [_head, _list, _det]], ["bar", _bar], ["drawnSeq", uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]
     ]] select (!_filtersOpen && {!_buzzOn} && {!isNull _list})];
 };
 true

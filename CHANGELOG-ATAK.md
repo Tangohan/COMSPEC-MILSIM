@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Prochaine version : fiche joueur unique, carte, Groupe et BFT plus directs (numéro attribué à la livraison)
+
+### Résumé joueur
+Type : nouveauté
+FR : Une seule fiche joueur partout, et la carte ne saute plus quand on touche un équipier
+- Les actions sur un joueur (carte, y aller, SMS, vibrer, ping, caméra, suivre) ont le même nom et le même ordre sur la carte, dans le BFT et dans Groupe.
+- Le bouton CARTE du BFT et de Groupe sélectionne maintenant le joueur à l'arrivée, et le BFT rejoint le dock.
+- Groupe gagne RALLIEMENT SUR MOI, SMS AU GROUPE et CADRER LE GROUPE ; passer le commandement demande une confirmation.
+EN : One player card everywhere, and the map no longer jumps when you touch a teammate
+- Actions on a player (map, go there, SMS, vibrate, ping, camera, follow) have the same name and order on the map, in BFT and in Group.
+- The MAP button in BFT and Group now selects the player on arrival, and BFT joins the dock.
+- Group gains RALLY ON ME, SMS TO GROUP and FRAME THE GROUP; handing over command asks for confirmation.
+
+### Détail technique
+- `fn_unitCard` : catalogue unique des actions (ordre, libellés, règles d'activation), rangées `fn_formRender` et barre en contrôles libres, surplus derrière ⋯ sans redessin ; état médical commun (Groupe, BFT, panneau SITUATION).
+- `fn_bftAction` : CARTE pose `selectedEntity` ; `fn_pageRender` : titre « ‹ BFT · CARTE » ; `config.cpp` : `Bft` au dock.
+- `fn_groupAction` : `rally` (un seul `netSend` vers tous les téléphones), `smsGroup`, `frameGroup` ; CHEF retiré des lignes, passage du commandement en deux temps dans la fiche.
+- Coût par image : aucun ajout sur ces écrans.
+
 ## Pack 4.0.0 Washington : nouveaux objets, réseau plus réaliste, interface refaite, app C2 retirée (ATAK natif 4.0.0.AG - Washington, COMSPEC Link 2.0.120)
 
 ### Résumé joueur
