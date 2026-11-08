@@ -7,6 +7,8 @@ params [
     ["_target", objNull, [objNull]]
 ];
 
+// Écran numérique (fn_fillResultDialog), quel que soit le type du support.
+_fog set ["screen", "digital"];
 missionNamespace setVariable ["comspec_sse_lastDigitalResult", _fog];
 missionNamespace setVariable ["comspec_sse_lastResult", _fog];
 

@@ -105,7 +105,8 @@ if ("explo" call AT_fnc_groupe) then {
         if !([_champ isNotEqualTo [], "aucun champ vide trouvé autour de la base"] call AT_fnc_check) exitWith { call AT_fnc_done; };
         player setPosATL [_champ select 0, _champ select 1, 0];
         uiSleep 1;
-        private _vide = (nearestObjects [player, ["House", "Building", "LandVehicle", "Man"], 60]) - [player];
+        // Animaux d'ambiance (serpents, lapins, oiseaux) exclus : ils apparaissent partout, la charge ne vise personne.
+        private _vide = ((nearestObjects [player, ["House", "Building", "LandVehicle", "Man"], 60]) - [player]) select { !(_x isKindOf "Animal") };
         [_vide isEqualTo [], format ["zone non vide : %1", _vide apply { typeOf _x }]] call AT_fnc_check;
         player addItem "COMSPEC_ATAK_NetDetonator";
         player addMagazine _mag;

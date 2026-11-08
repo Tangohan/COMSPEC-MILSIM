@@ -95,6 +95,13 @@ private _accInk = _th get "accentInk";
 private _accHex = _th get "hexAccent";
 private _accLine = (_acc select [0, 3]) + [0.45];
 private _okDim = (((_th get "ok") select [0, 3]) apply { _x * 0.38 }) + [1];
+// Pictogrammes blancs de l'addon (app_*, ui_*) : encre du thème sur le fond clair du thème jour, sinon blancs (avant : blancs
+// sur blanc, invisibles). Logos et images hors addon (photo Athena) : couleurs d'origine.
+private _picTint = {
+    params ["_p"];
+    if ((_th get "dark") || {(_p find "\addons\main\data\") < 0} || {(_p find "logo") >= 0}) exitWith { [1, 1, 1, 1] };
+    _th get "text"
+};
 if ((count _bgColor) isNotEqualTo 4) then { _bgColor = _th get "bg1"; };
 private _font = _l get "font";
 private _fs = _l get "fontSmall";
@@ -1105,7 +1112,10 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             if (_pic isNotEqualTo "" && {(_pic select [0, 1]) isNotEqualTo "\"}) then {
                 ["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], "\z\comspec_atak_native\addons\main\data\logo_athena.paa"] call _mk;
             };
-            if (_pic isNotEqualTo "") then { (["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], _pic] call _mk) ctrlSetTextColor [1, 1, 1, 1]; };
+            if (_pic isNotEqualTo "") then { (["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], _pic] call _mk) ctrlSetTextColor ([_pic] call _picTint); };
+            // Titre de la couleur de l'état : couleurs vives faites pour un fond sombre, assombries sur le fond clair du thème jour
+            // (gris 0,6 sur blanc : contraste 2,4, illisible).
+            if !(_th get "dark") then { _col = [(_col select 0) * 0.55, (_col select 1) * 0.55, (_col select 2) * 0.55, 1]; };
             private _hex = (_col select [0, 3]) apply { private _v = round ((_x max 0 min 1) * 255); (["0123456789abcdef" select [floor (_v / 16), 1], "0123456789abcdef" select [_v mod 16, 1]]) joinString "" };
             private _tx = _pad + _ip * 2 + _iw;
             private _tw = _w - _iw - _ip * 3;
@@ -1224,6 +1234,19 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _row params ["", "_pic", "_text"];
             private _ih = _font * 3.2;
             private _iw = _ih * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]); // carré à l'écran
+            // Colonne de texte trop étroite à côté de l'image (téléphone en portrait, miniature) : image centrée au-dessus, texte sur
+            // toute la largeur. Avant, une à deux syllabes par ligne et des mots coupés au milieu (« detonato r », « Jamm er »).
+            if ((_w - _iw - _pad) < (_font * 11 * _ratioG)) exitWith {
+                private _p = ["COMSPEC_RscPicture", [_pad + (_w - _iw) / 2, _y, _iw, _ih], _pic] call _mk;
+                _p ctrlSetTextColor ([_pic] call _picTint);
+                _y = _y + _ih + _pad / 2;
+                private _t = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _ih]] call _mk;
+                _t ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
+                private _h = ctrlTextHeight _t;
+                _t ctrlSetPosition [_pad, _y, _w, _h];
+                _t ctrlCommit 0;
+                _y = _y + _h + _pad;
+            };
             // Image hors addon (photo Athena téléchargée sur le disque) : le logo ATAK reste dessous. Si Arma ne peut pas
             // charger le fichier, le logo reste visible au lieu d'un cadre vide (le logo « disparaissait » après connexion).
             if (_pic isNotEqualTo "" && {(_pic select [0, 1]) isNotEqualTo "\"}) then {
@@ -1231,7 +1254,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _under ctrlSetTextColor [1, 1, 1, 1];
             };
             private _p = ["COMSPEC_RscPicture", [_pad, _y, _iw, _ih], _pic] call _mk;
-            _p ctrlSetTextColor [1, 1, 1, 1];
+            _p ctrlSetTextColor ([_pic] call _picTint);
             private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y, _w - _iw - _pad, _ih]] call _mk;
             _t ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max _ih;
