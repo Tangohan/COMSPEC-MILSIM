@@ -5,6 +5,8 @@
 if (!hasInterface) exitWith {};
 
 private _display = uiNamespace getVariable ["COMSPEC_NDA_Display", displayNull];
+// Bouton grisé tant que la note n'est pas lue jusqu'à la fin (fn_ndaWatch).
+if (!(uiNamespace getVariable ["COMSPEC_NDA_ReadDone", true])) exitWith {};
 
 [true] call comspec_overwatch_connect_fnc_licenceStatus;
 profileNamespace setVariable ["comspec_overwatch_beta_note_ack", true];

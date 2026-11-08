@@ -97,6 +97,28 @@ if (isNull _ram || {(ctrlParent _ram) isNotEqualTo _d}) then {
 };
 private _rx0 = _dx + _dw * 0.58 + _pad * 2 + 2 * _ih / _ratio;
 private _rx1 = _dx + _dw - _pad * 3 - _iw - ([0, _ih / _ratio] select _interactive);
+// Cadenas et libellé du chiffrement (fn_meshKeys "link", mis à jour par fn_statusUpdate) : après le logo de liaison. Le libellé passe avant la mémoire vive.
+private _lock = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrl", controlNull];
+private _lockTxt = uiNamespace getVariable ["COMSPEC_ATAK_LockTxt", controlNull];
+if (isNull _lock || {(ctrlParent _lock) isNotEqualTo _d}) then {
+    _lock = _d ctrlCreate ["COMSPEC_RscIcon", -1];
+    _lockTxt = _d ctrlCreate ["COMSPEC_RscText", -1];
+    uiNamespace setVariable ["COMSPEC_ATAK_LockCtrl", _lock];
+    uiNamespace setVariable ["COMSPEC_ATAK_LockTxt", _lockTxt];
+};
+_lock ctrlSetPosition [_rx0, _iy, _ih / _ratio, _ih];
+_lock ctrlCommit 0;
+_rx0 = _rx0 + _ih / _ratio;
+_lockTxt ctrlSetFontHeight (_fontS * 0.8);
+_lockTxt ctrlSetText (("COMPROMISE") call comspec_atak_native_fnc_tr);
+// Texte de mesure, le plus long : fn_statusUpdate réécrit le vrai libellé au prochain passage.
+_lockTxt setVariable ["cs_t", 0];
+private _lockW = (ctrlTextWidth _lockTxt) * 1.08;
+_lockTxt ctrlSetText "";
+private _lockFits = (_rx1 - _rx0) >= _lockW;
+_lockTxt ctrlSetPosition [_rx0, _sy, _lockW, _sh];
+_lockTxt ctrlCommit 0;
+if (_lockFits) then { _rx0 = _rx0 + _lockW; };
 _ram ctrlSetPosition [_rx0, _sy, (_rx1 - _rx0) max 0, _sh];
 _ram ctrlSetFontHeight (_fontS * 0.9);
 _ram ctrlCommit 0;
@@ -105,6 +127,7 @@ if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText (("RAM 00%") call coms
 private _slimBar = (_l get "mini") && {!(_l get "texture")};
 { (_d displayCtrl _x) ctrlShow !_slimBar; } forEach [88514, 88523, 88524];
 _ram ctrlShow (!_slimBar && {(ctrlTextWidth _ram) <= (_rx1 - _rx0)});
+_lockTxt ctrlShow (!_slimBar && {_lockFits});
 (_d displayCtrl 88525) ctrlSetFontHeight _font;
 
 // Barre d'app : retour | titre ........ rotation | mini/plein | apps

@@ -99,11 +99,13 @@ Réel (change le fichier exporté) :
 
 Aperçu seulement (jamais exporté) : vert monochrome, grain, bord sombre, lumière ambiante (nuit noire, étoilée, clair de lune) et verdict de lisibilité (`patch-studio-night.js`).
 
-Non produit par le Studio : matériau `.rvmat`, carte `_smdi`, réflexion infrarouge propre, fil réfléchissant. Le pack ne livre que la texture `patch.paa` déclarée dans `CfgUnitInsignia`.
+Matériau : le PBO et le ZIP livrent `patch.rvmat` (shader Super, tissu mat) et `patch_smdi.paa` (256 px au plus, reflet léger sur les parties claires), déclarés par `material` dans `CfgUnitInsignia`. `BIS_fnc_setUnitInsignia` lit ce champ (vérifié dans `functions_f.pbo`), donc rien ne change côté mod pour un insigne d'uniforme. Le patch au dos du téléphone (`fn_vestMount`, `setObjectTexture`) garde le matériau de son modèle.
+
+Non produit par le Studio : réflexion infrarouge propre, fil réfléchissant. Arma 3 n'a pas de canal de réflexion IR dans ses matériaux : le `.rvmat` règle la réponse à la lumière, pas une signature IR. Thermique : la carte `StageTI` est celle de `\a3\data_f\default.rvmat`.
 
 À tester en jeu (Arma 3, de nuit, avec JVN) :
 1. un patch jour exporté, porté en JVN par une nuit noire, étoilée puis au clair de lune : lisible ou non ;
 2. le même emplacement avec la version nuit (gain et contraste par défaut, puis réglés) ;
 3. l'IR visuel face à un IR réel (stroboscope, lampe IR) : le patch n'a aucune réponse IR propre, la différence attendue vient de sa seule luminosité ;
 4. l'écusson vu à 5, 15 et 50 m en JVN ;
-5. selon le résultat, décider si un `.rvmat` ou une carte `_smdi` est nécessaire (non implémenté).
+5. le matériau : l'écusson reste visible et non noir, de jour et de nuit, avec la transparence des coins intacte. En cas de défaut, retirer la ligne `material` de `CfgUnitInsignia` rend le matériau par défaut du jeu.

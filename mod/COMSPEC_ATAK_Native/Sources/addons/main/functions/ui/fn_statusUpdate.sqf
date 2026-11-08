@@ -71,6 +71,20 @@ if (!isNull _ramCtrl) then {
     [_ramCtrl, "cs_tt", (format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire · estimation du téléphone, pas la mémoire du PC", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr] call _put;
 };
 
+// Cadenas et libellé du chiffrement : état réel de ma liaison (fn_meshKeys "link"), ouvert tant qu'elle n'est pas chiffrée.
+(["link"] call comspec_atak_native_fnc_meshKeys) params ["_lockCode", "_lockShort", "_lockLong", "_lockWhy", "_lockImg", "_lockCol"];
+private _lockCtrl = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrl", controlNull];
+if (!isNull _lockCtrl) then {
+    private _lockTt = (format ["%1 : %2", (_lockLong) call comspec_atak_native_fnc_tr, (_lockWhy) call comspec_atak_native_fnc_tr]);
+    [_lockCtrl, "cs_t", _lockImg] call _put;
+    [_lockCtrl, "cs_c", _lockCol] call _put;
+    [_lockCtrl, "cs_tt", _lockTt] call _put;
+    private _lockTxt = uiNamespace getVariable ["COMSPEC_ATAK_LockTxt", controlNull];
+    [_lockTxt, "cs_t", _lockShort] call _put;
+    [_lockTxt, "cs_c", _lockCol] call _put;
+    [_lockTxt, "cs_tt", _lockTt] call _put;
+};
+
 ([] call comspec_atak_native_fnc_weather) params ["_temp", "_speed", "_card"];
 [_d displayCtrl 88524, "cs_t", (format ["%1°C   %2 %3", _temp, _card, round _speed]) call comspec_atak_native_fnc_tr] call _put;
 [_d displayCtrl 88524, "cs_tt", (format ["Vent du %1, %2 m/s", _card, round _speed]) call comspec_atak_native_fnc_tr] call _put;
@@ -204,6 +218,7 @@ private _pageSig = switch (_page) do {
         private _rt = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
         [count _rt, _rt getOrDefault ["idx", 0], round (((getPosASL player) select 0) / 25), round (((getPosASL player) select 1) / 25), missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]]
     };
+    case "WAVERELAY": { [_lockCode] };
     case "GROUP": { (units group player) apply { [name _x, alive _x, lifeState _x, round ((damage _x) * 4)] } };
     default { [] };
 };

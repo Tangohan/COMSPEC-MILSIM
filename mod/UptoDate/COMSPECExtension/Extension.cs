@@ -61,6 +61,32 @@ public static partial class Extension
     private static string _pendingPairDeviceCode = "";
     private static DateTimeOffset _pendingPairExpiresAt = DateTimeOffset.MinValue;
     private static int _pendingPairPollSeconds = 2;
+    /// <summary>Vrai après UplinkOff : plus aucune requête vers Athena, quel que soit le chemin dans la DLL.</summary>
+    private static volatile bool _uplinkCut;
+
+    private sealed class UplinkCutHandler : DelegatingHandler
+    {
+        public UplinkCutHandler(HttpMessageHandler inner) : base(inner) { }
+
+        private static void Check(HttpRequestMessage request)
+        {
+            if (_uplinkCut && request.RequestUri is { } uri && IsSecretSafeUri(uri))
+                throw new HttpRequestException("uplink_off");
+        }
+
+        protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Check(request);
+            return base.Send(request, cancellationToken);
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Check(request);
+            return base.SendAsync(request, cancellationToken);
+        }
+    }
+
     private static readonly HttpClient HttpClient = CreateHttpClient(SyncTimeoutSeconds);
     /// <summary>Client dédié aux photos (PNG volumineux + liaison dégradée).</summary>
     private static readonly HttpClient UploadHttpClient = CreateHttpClient(UploadTimeoutSeconds);
@@ -150,7 +176,7 @@ public static partial class Extension
             PooledConnectionLifetime = TimeSpan.FromMinutes(5),
             PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
         };
-        var client = new HttpClient(handler)
+        var client = new HttpClient(new UplinkCutHandler(handler))
         {
             Timeout = TimeSpan.FromSeconds(timeoutSeconds),
             // Corps mis en mémoire au plus 64 Mo (2 Go par défaut) : un Content-Length plus grand est refusé avant
@@ -1836,7 +1862,7 @@ public static partial class Extension
     /// <summary>Commandes que fn_uplinkHold laisse passer ou purement locales : elles ne rouvrent pas les envois.</summary>
     private static readonly HashSet<string> NonUplinkCommands = new(StringComparer.Ordinal)
     {
-        "Async", "Warmup", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
+        "Async", "Warmup", "UplinkOff", "Ping", "GetExtensionVersion", "GetVersion", "HashText", "LogWrite", "LogSessionStart",
         "GetLogTail", "SendQueue.Status", "SyncStats", "MemStats", "Perf.Stats", "GetPendingQueueCount", "GetSessionTenant",
         "Init", "Connect", "AuthSteam", "AuthPassword", "RequestOtp", "VerifyOtp", "RestoreSession", "GetSessionRestore",
         "SetSteamId", "LinkBySteam", "RedeemGameLink", "GetClientIp", "Logout", "Disconnect", "ClientDisconnect", "RepairLocalData",
@@ -3065,11 +3091,12 @@ public static partial class Extension
                 "Bienvenue dans la bêta publique de COMSPEC Overwatch.\n\n" +
                 "Ce pack est encore en phase de test. Certaines fonctions peuvent évoluer, " +
                 "être temporairement indisponibles ou se comporter de façon inattendue.\n\n" +
-                "Pour signaler un problème en jeu : Échap → gestion du mod → Signaler un problème.\n" +
+                "Pour signaler un problème en jeu : menu d’interaction ACE > Signaler un problème.\n" +
                 "Suivez les nouveautés et le journal des changements sur la page Steam Workshop.\n\n" +
-                "En continuant, des informations techniques limitées (identifiant Steam, " +
-                "version du pack, détails clients associés) peuvent être enregistrées pour " +
-                "faire tourner la bêta et Athena.\n\n" +
+                "Avec le service Athéna, sont enregistrés pour le faire fonctionner : identité Steam si disponible, " +
+                "nom du joueur, indicatif, adresse IP vue par le serveur, versions, position, cap et rôle, temps de jeu " +
+                "et d’écran, équipement synchronisé, ce que vous envoyez depuis le téléphone, journal du mod et rapports " +
+                "d’erreur. Détail dans la note de service. Si vous répondez Non au service, votre jeu ne transmet rien à Athéna.\n\n" +
                 "Utilisez ce pack de façon responsable pendant les sessions organisées.\n\n" +
                 "OK = j’ai lu (ce message ne réapparaîtra plus)";
 
@@ -3189,6 +3216,7 @@ public static partial class Extension
     }
 
     private static int _warmupStarted;
+    private static int _warmupQueueLoaded;
 
     /// <summary>
     /// Premier « Warmup » (chargement du mod) : hors du thread du jeu, relit la file d'envoi sur disque et ouvre
@@ -3197,13 +3225,17 @@ public static partial class Extension
     /// </summary>
     private static void KickBackgroundWarmup()
     {
+        if (Interlocked.Exchange(ref _warmupQueueLoaded, 1) == 0)
+            _ = Task.Run(static () => { try { LoadQueueFromDisk(); } catch { /* best effort */ } });
+        // Aucune requête tant que la liaison n'est pas autorisée : _baseUrl n'est posé que par Init, Connect et consorts,
+        // qui passent par fn_uplinkHold. Avant : HEAD vers le portail à chaque chargement du mod, même en mode local.
+        var baseUrl = _baseUrl;
+        if (string.IsNullOrEmpty(baseUrl)) return;
         if (Interlocked.Exchange(ref _warmupStarted, 1) != 0) return;
-        _ = Task.Run(static async () =>
+        _ = Task.Run(async () =>
         {
-            try { LoadQueueFromDisk(); } catch { /* best effort */ }
             try
             {
-                var baseUrl = string.IsNullOrEmpty(_baseUrl) ? "https://athena.ttrd.fr" : _baseUrl;
                 if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var u)) return;
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
                 using var req = new HttpRequestMessage(HttpMethod.Head, new Uri(u.GetLeftPart(UriPartial.Authority) + "/"));
@@ -3695,6 +3727,7 @@ public static partial class Extension
     {
         normalized = NormalizeBaseUrl(candidate);
         if (!IsSecretSafeUri(normalized)) return false;
+        _uplinkCut = false;
         _baseUrl = normalized;
         return true;
     }
@@ -3983,6 +4016,16 @@ public static partial class Extension
             return IdentityPackChunk(args);
         if (function == "GetCommunityOrbatChunk")
             return CommunityOrbatChunk(args);
+        // Service Athéna sur « Non » (fn_uplinkHold) : plus d'authentification en mémoire, et UplinkCutHandler refuse toute
+        // requête vers Athena. La file ne part plus (DrainQueue attend une authentification), elle reste sur disque pour un
+        // retour à « Oui » : TrySetSqfBaseUrl, atteint seulement par les commandes admises par fn_uplinkHold, rouvre.
+        if (function == "UplinkOff")
+        {
+            _uplinkCut = true;
+            _apiKey = "";
+            ClearGameBearerForCommunityLink();
+            return "OK|off";
+        }
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {

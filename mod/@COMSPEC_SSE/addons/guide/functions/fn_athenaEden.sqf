@@ -26,6 +26,8 @@ disableSerialization;
 private _url = "https://athena-comspec.eu/public";
 private _call = {
     params ["_cmd", ["_a", []]];
+    // Service Athéna sur « Non » : rien ne part, même sur un bouton du Bureau.
+    if (!isNil "comspec_overwatch_connect_fnc_uplinkOff" && {[] call comspec_overwatch_connect_fnc_uplinkOff}) exitWith { "ERR|uplink_off" };
     private _r = "COMSPECExtension" callExtension [_cmd, _a];
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     if !(_r isEqualType "") then { _r = str _r; };

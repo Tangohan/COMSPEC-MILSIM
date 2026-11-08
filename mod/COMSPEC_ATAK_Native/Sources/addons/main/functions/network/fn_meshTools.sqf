@@ -2,8 +2,9 @@
     Outils du maillage pour Zeus, les créateurs de missions et les joueurs (lot 12, réglage comspec_atak_native_mesh_tools).
     Zeus (ZEN, clic droit) : brouilleur large bande, de canal ou GPS ; couper un nœud ; compromettre ou renouveler la clé de réseau d'un camp ; météo radio forcée ;
     graphe d'un camp en lecture seule (superposition 3D, graphe du serveur) ; journal de réseau. Actions vérifiées sur le serveur (fn_adminAllowed).
-    Joueur (app Wave Relay, onglet RÉSEAU) : topologie, ping / chemin, prévision « si je pose un relais ici ». Lisent le graphe ; seule la prévision fait des bilans :
-    à la demande, 64 au plus, une fois toutes les 10 s, dans un script planifié.
+    Joueur (app Wave Relay, onglet RÉSEAU) : topologie, ping / chemin avec le nom du maillon faible, prévision « si je pose un relais ici ». Lisent le graphe ;
+    seule la prévision fait des bilans : à la demande, 64 au plus, une fois toutes les 10 s, dans un script planifié. Relief, météo radio et brouillage pour tous ;
+    feuillage et bâtiments pour les 16 nœuds les plus proches, les seuls bilans coûteux. Hauteur par posture et masque du corps ne sont pas estimés.
       "register" (client) ; "init" (serveur) ; "zeusAct" [action, arguments] (serveur) ; "off" : coupure de ma MPU5 ordonnée par Zeus
       "zeusSnapshot" -> graphe pour la superposition de Zeus, ou HashMap vide
       "playerRows" -> lignes de l'app ; "ping" [nom] ; "forecast"
@@ -116,31 +117,58 @@ switch (_act) do {
         private _i = _nodes findIf { ((toLower (_x select 2)) find _q) >= 0 };
         if (_i < 0) exitWith { ["INFO", format ["%1 : introuvable dans mon réseau", _q], 4, 20] call comspec_atak_native_fnc_notify; };
         private _o = (_nodes select _i) select 0;
-        private _p = ["peer", [_o]] call comspec_atak_native_fnc_meshGraph;
         private _name = (_nodes select _i) select 2;
+        private _p = ["weak", [_o]] call comspec_atak_native_fnc_meshGraph;
         if (_p isEqualTo []) exitWith { ["WARNING", format ["%1 : injoignable par le maillage", _name], 5, 20] call comspec_atak_native_fnc_notify; };
-        _p params ["_h", "_m", "_lvl"];
-        ["INFO", format ["%1 : %2 saut(s), environ %3 ms, maillon faible : marge %4 dB, niveau %5", _name, _h, round (5 + _h * (missionNamespace getVariable ["comspec_atak_native_mpu_hop_ms", 15]) + 60 * (1 - (((_m max 0) / 20) min 1))), round _m, _lvl], 8, 30] call comspec_atak_native_fnc_notify;
+        _p params ["_h", "_m", "_lvl", "_wa", "_wb", "_wm"];
+        private _ms = round (5 + _h * (missionNamespace getVariable ["comspec_atak_native_mpu_hop_ms", 15]) + 60 * (1 - (((_m max 0) / 20) min 1)));
+        if (_wa isEqualTo "") exitWith { ["INFO", format ["%1 : %2 saut(s), environ %3 ms, maillon faible : marge %4 dB, niveau %5", _name, _h, _ms, round _m, _lvl], 8, 30] call comspec_atak_native_fnc_notify; };
+        ["INFO", format ["%1 : %2 saut(s), environ %3 ms, maillon faible : %4 > %5, marge %6 dB, niveau %7", _name, _h, _ms, _wa, _wb, round _wm, _lvl], 8, 30] call comspec_atak_native_fnc_notify;
     };
     case "forecast": {
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MeshFcAt", -100]) < 10) exitWith { ["Prévision : attendez quelques secondes", 3] call comspec_atak_native_fnc_toast; };
         uiNamespace setVariable ["COMSPEC_ATAK_MeshFcAt", diag_tickTime];
         [] spawn {
-            private _scr = (uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["screen", createHashMap];
-            private _nodes = (_scr getOrDefault ["nodes", []]) select [0, 64];
-            private _hops = _scr getOrDefault ["hops", []];
+            private _mesh = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
+            (_mesh getOrDefault ["path", []]) params [["_nodes", []], "", "", "", "", "", "", "", ["_hopG", []], ["_poss", []]];
             private _at = (getPosASL player) vectorAdd [0, 0, 4];
             private _r = missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000];
+            private _chan = parseNumber ((_mesh getOrDefault ["key", "C0"]) select [1]);
+            private _wx = missionNamespace getVariable ["COMSPEC_ATAK_MeshWxForce", 0];
+            private _now = [time, serverTime] select isMultiplayer;
+            private _side = str side group player;
+            private _jams = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _now) && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} };
+            private _jamHere = ["jamAt", [_at, _jams, _chan]] call comspec_atak_native_fnc_meshGraph;
+            // Mon canal seulement, les plus proches d'abord : passerelles exclues, comme le lien réel d'un relais.
+            private _cand = [];
+            {
+                _x params ["_o", "", "_type", "_c", "_nr"];
+                private _rr = _r min _nr;
+                if (isNull _o || {_type isEqualTo 2} || {_c isNotEqualTo _chan} || {((_poss select _forEachIndex) distance _at) > _rr}) then { continue };
+                _cand pushBack [(_poss select _forEachIndex) distance _at, _forEachIndex, _rr];
+            } forEach (_nodes select [0, 64]);
+            _cand sort true;
             private _seen = 0;
             private _cut = 0;
+            private _worst = [0, ""];
             {
-                if ((_x select 3) isEqualTo "gw" || {((_x select 1) distance _at) > _r}) then { continue };
-                if ((([_at, _x select 1, _r, "coarse"] call comspec_atak_native_fnc_radioLink) select 0) >= 0) then {
+                _x params ["", "_i", "_rr"];
+                private _full = _forEachIndex < 16;
+                ([_at, _poss select _i, _rr, ["coarse", "full"] select _full, [player, (_nodes select _i) select 0]] call comspec_atak_native_fnc_radioLink) params ["_mg", "_loss"];
+                _mg = _mg - _wx;
+                private _jam = _jamHere min (["jamAt", [_poss select _i, _jams, _chan]] call comspec_atak_native_fnc_meshGraph);
+                if (_mg >= 0 && {_jam >= 0.1}) then {
                     _seen = _seen + 1;
-                    if ((_hops param [_forEachIndex, -1]) < 0) then { _cut = _cut + 1; };
+                    if ((_hopG param [_i, -1]) < 0) then { _cut = _cut + 1; };
+                } else {
+                    if (_jam < 0.1) then { _loss = _loss + [["Brouillage", 50]]; };
+                    if (_wx > 0) then { _loss = _loss + [["Météo radio forcée", _wx]]; };
+                    { if ((_x select 1) > (_worst select 0)) then { _worst = [_x select 1, _x select 0]; }; } forEach _loss;
                 };
-            } forEach _nodes;
-            ["INFO", format ["Un relais ici (4 m) joindrait %1 nœud(s), dont %2 aujourd'hui coupé(s). Estimation : relief seulement.", _seen, _cut], 8, 30] call comspec_atak_native_fnc_notify;
+                if (_full) then { uiSleep 0.02; };
+            } forEach _cand;
+            private _why = if ((_worst select 1) isEqualTo "") then { "" } else { format [" Principal obstacle : %1.", (_worst select 1) call comspec_atak_native_fnc_tr] };
+            ["INFO", format ["Un relais ici (4 m) joindrait %1 nœud(s) sur %2, dont %3 aujourd'hui coupé(s).%4 Estimation : relief, météo et brouillage ; feuillage et bâtiments pour les 16 plus proches.", _seen, count _cand, _cut, _why], 10, 30] call comspec_atak_native_fnc_notify;
         };
     };
 };

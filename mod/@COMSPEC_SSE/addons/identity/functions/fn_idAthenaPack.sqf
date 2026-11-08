@@ -35,6 +35,7 @@ switch (_op) do {
         private _have = missionNamespace getVariable "comspec_sse_idDll";
         if (!isNil "_have") exitWith { _have };
         private _call = {
+            if (!isNil "comspec_overwatch_connect_fnc_uplinkOff" && {[] call comspec_overwatch_connect_fnc_uplinkOff}) exitWith { "ERR|uplink_off" };
             private _r = "COMSPECExtension" callExtension _this;
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             if !(_r isEqualType "") then { _r = str _r; };

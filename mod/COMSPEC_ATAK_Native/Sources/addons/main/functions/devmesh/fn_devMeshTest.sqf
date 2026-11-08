@@ -89,6 +89,15 @@ private _crossed = ["cross", [[0, 0, 0], 45, [1000, 0, 0], 315]] call comspec_at
 [_results, "croisement de deux relevés", _crossed apply { round _x }, [500, 500]] call _expect;
 [_results, "relevés parallèles : aucun point", ["cross", [[0, 0, 0], 45, [1000, 0, 0], 45]] call comspec_atak_native_fnc_meshEW, []] call _expect;
 [_results, "écoute seule : ne relaie pas", (((["solve", [_chain, [3], _all, 6, 20000, [1, 1, 0.8, 0.64], [false, true, false, false]]] call comspec_atak_native_fnc_meshGraph) select 1) select 0), -1] call _expect;
+// Ping : chemin et maillon faible (A <- B <- C, 3 est la source).
+private _weakAdj = [[[1, 12, 1000]], [[0, 12, 1000], [2, 3, 1000]], [[1, 3, 1000], [3, 8, 1000]], [[2, 8, 1000]]];
+private _weakVia = (["solve", [_weakAdj, [3], [true, true, true, true], 6, 20000]] call comspec_atak_native_fnc_meshGraph) select 2;
+private _weakChain = ["chain", [_weakAdj, _weakVia, 0]] call comspec_atak_native_fnc_meshGraph;
+[_results, "chemin : 3 liens", count _weakChain, 3] call _expect;
+[_results, "maillon faible : lien 2-1, 3 dB", ["weakest", [_weakChain]] call comspec_atak_native_fnc_meshGraph, [2, 1, 3]] call _expect;
+[_results, "chemin : boucle bornée", count (["chain", [[[[1, 5, 1]], [[0, 5, 1]]], [1, 0], 0]] call comspec_atak_native_fnc_meshGraph), 17] call _expect;
+[_results, "brouillage : hors zone", ["jamAt", [[2000, 0, 0], [[[0, 0, 0], 500]], 1]] call comspec_atak_native_fnc_meshGraph, 1] call _expect;
+[_results, "brouillage : autre canal", ["jamAt", [[0, 0, 0], [[[0, 0, 0], 500, 0, "", 1e9, false, 1, 2, ""]], 1]] call comspec_atak_native_fnc_meshGraph, 1] call _expect;
 private _ok = { _x select 1 } count _results;
 { diag_log format ["[COMSPEC ATAK NATIVE][MESH] Test %1 : %2", _x select 0, ["échoué", "réussi"] select (_x select 1)]; } forEach _results;
 diag_log format ["[COMSPEC ATAK NATIVE][MESH] Tests : %1 réussis sur %2", _ok, count _results];
