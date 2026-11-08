@@ -38,7 +38,7 @@ final class AtakZeusCentreAssetTest extends TestCase
             . $this->read(self::MAIN . 'functions/zeus/fn_zeusCentre.sqf');
         $code = (string) preg_replace('~/\*.*?\*/~s', '', $code);
         // Forme à trois éléments : diffusion à tous.
-        self::assertDoesNotMatchRegularExpression('/setVariable \["[^"]*", [^,[]]+, true\]/', $code);
+        self::assertDoesNotMatchRegularExpression('/setVariable \["[^"]*", [^,\[\]]+, true\]/', $code);
         self::assertStringNotContainsString('publicVariable', $code);
         foreach (['COMSPEC_ATAK_LockCode', 'IMEI', 'PhoneTag', 'COMSPEC_ATAK_AlertLog', 'notesAction', 'messagesAll'] as $private) {
             self::assertStringNotContainsString($private, $code);
