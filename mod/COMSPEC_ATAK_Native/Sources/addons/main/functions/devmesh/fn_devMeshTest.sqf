@@ -33,8 +33,11 @@ private _nan = sqrt -1;
 [_results, "voix : type inconnu", ["voice", ["zz", "k", "87.5", 5000, "", 2, "PRC"], player] call _read, []] call _expect;
 [_results, "réseau voix correct", ["voiceNet", [["a", 43.5, "CH1"]], player] call _read, [["a", 43.5, "CH1"]]] call _expect;
 [_results, "réseau voix : ligne fausse", ["voiceNet", [["a", 43.5, "CH1"], 3], player] call _read, []] call _expect;
-[_results, "talkgroup correct", ["talkgroup", "ALPHA", player] call _read, "ALPHA"] call _expect;
-[_results, "talkgroup : nombre", ["talkgroup", 3, player] call _read, ""] call _expect;
+[_results, "groupes corrects", ["talkgroup", [1, 3], player] call _read, [1, 3]] call _expect;
+[_results, "groupes : numéro 17", ["talkgroup", [17], player] call _read, []] call _expect;
+[_results, "groupes : texte", ["talkgroup", "ALPHA", player] call _read, []] call _expect;
+[_results, "fréquence : même groupe", ["ofFreq", [43.5]] call comspec_atak_native_fnc_meshGroups, ["ofFreq", ["43.5"]] call comspec_atak_native_fnc_meshGroups] call _expect;
+[_results, "fréquence nulle : aucun groupe", ["ofFreq", [0]] call comspec_atak_native_fnc_meshGroups, 0] call _expect;
 // Graphe : chaîne A-B-C-D, passerelle D. Débit = plus petit lien x 0,8 par saut relayé.
 private _chain = [[[1, 10, 10000]], [[0, 10, 10000], [2, 10, 10000]], [[1, 10, 10000], [3, 10, 10000]], [[2, 10, 10000]]];
 private _all = [true, true, true, true];

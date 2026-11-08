@@ -9334,6 +9334,8 @@
 ["Graphe du maillage calculé sur le serveur", "Mesh graph computed on the server"],
 ["Coché : une seule vérité pour tous, calculée par le serveur et diffusée sur changement, au plus toutes les 2 s. Décoché : chaque client calcule le graphe de son camp, sans diffusion mais avec des écarts possibles. N'agit qu'avec la liaison réaliste.", "Checked: one truth for everyone, computed by the server and broadcast on change, at most every 2 s. Unchecked: each client computes its side's graph, with no broadcast but possible differences. Only applies with the realistic link."],
 ["Plafond de sauts du maillage", "Mesh hop limit"],
+["16 groupes : abonnement par la fréquence de la radio pontée ou dans l'app Wave Relay. Pas de rallonge voix hors groupe commun, messages de groupe aux seuls abonnés.", "16 groups: subscribed by the bridged radio's frequency or in the Wave Relay app. No voice extension without a shared group, group messages to subscribers only."],
+["Groupes de conversation du maillage", "Mesh talkgroups"],
 ["Liaison réaliste : un message passe de joueur à joueur par le maillage, même sans passerelle.", "Realistic link: a message goes player to player over the mesh, even without a gateway."],
 ["Messages par le maillage", "Messages over the mesh"],
 ["Liaison réaliste : photos et paquets partent par blocs de 128 Ko, avec progression et reprise après coupure.", "Realistic link: photos and packages go in 128 KB blocks, with progress and resume after a cut."],

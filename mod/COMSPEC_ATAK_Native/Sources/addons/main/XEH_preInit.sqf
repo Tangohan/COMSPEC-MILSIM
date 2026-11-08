@@ -672,6 +672,9 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_p2p", "CHECKBOX",
     ["Messages par le maillage", "Liaison réaliste : un message passe de joueur à joueur par le maillage, même sans passerelle."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_groups", "CHECKBOX",
+    ["Groupes de conversation du maillage", "16 groupes : abonnement par la fréquence de la radio pontée ou dans l'app Wave Relay. Pas de rallonge voix hors groupe commun, messages de groupe aux seuls abonnés."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
 ["comspec_atak_native_mesh_dev", "CHECKBOX",
     ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],

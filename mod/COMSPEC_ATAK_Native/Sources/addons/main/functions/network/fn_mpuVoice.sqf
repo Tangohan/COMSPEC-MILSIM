@@ -143,6 +143,8 @@ private _linked = {
     params ["_u", "_pp"];
     (missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) params [["_me", []], ["_reach", createHashMap]];
     if (_me isEqualTo [] || {(count _pp) < 7}) exitWith { -1 };
+    // Hors de tout groupe commun : pas de rallonge (fn_meshGroups).
+    if !(["shared", [_u]] call comspec_atak_native_fnc_meshGroups) exitWith { -1 };
     private _mk = _me select 4;
     if (_mk isNotEqualTo "" && {_mk isEqualTo (_pp select 4)}) exitWith {
         // Par le cœur de réseau : mes sauts plus les siens, sous le même plafond que le reste du graphe (fn_meshGraph).
@@ -314,6 +316,7 @@ switch (_act) do {
             _peers = [_peers, [], { _x select 1 }] call BIS_fnc_sortBy;
         };
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceMe", [_pub, _reach, _why, _peers, _mode, _targets, _far]];
+        ["tick"] call comspec_atak_native_fnc_meshGroups;
         // TFAR : événements d'émission, enregistrés une fois. Émission en cours mais pont retiré : valeur d'origine rendue.
         if (_ptt && {!(missionNamespace getVariable ["COMSPEC_ATAK_TfEhSet", false])}) then {
             missionNamespace setVariable ["COMSPEC_ATAK_TfEhSet", true];

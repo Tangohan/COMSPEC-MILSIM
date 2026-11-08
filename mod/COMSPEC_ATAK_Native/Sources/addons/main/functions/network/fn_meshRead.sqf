@@ -10,7 +10,7 @@
       ["voice", unité]     COMSPEC_ATAK_MpuVoice -> [type "acre" | "sw" | "lr", clé de radio, fréquence, portée 0..100 000 m, réseau
                            "" | "R…" | "L…", sauts 0..64, nom] ou [] (100 000 m : certaines radios TFAR dépassent 20 km)
       ["voiceNet", unité]  COMSPEC_ATAK_VoiceNet -> [[id radio, MHz 0..100 000, nom du canal]...], 32 au plus, ou []
-      ["talkgroup", unité] COMSPEC_ATAK_Talkgroup -> texte de 32 signes au plus, ou ""
+      ["talkgroup", unité] COMSPEC_ATAK_Talkgroup -> groupes écoutés : 16 numéros de 1 à 16 au plus, ou []
       ["check", [genre, valeur, unité]] : même contrôle sur une valeur donnée (sans effet, pour fn_devMeshTest)
 */
 params [["_kind", ""], ["_arg", objNull]];
@@ -26,7 +26,7 @@ if (_kind isEqualTo "check") then {
     _raw = _unit getVariable [["COMSPEC_ATAK_MpuNode", "COMSPEC_ATAK_Mpu5", "COMSPEC_ATAK_MpuVoice", "COMSPEC_ATAK_VoiceNet", "COMSPEC_ATAK_Talkgroup"] param [["node", "mpu5", "voice", "voiceNet", "talkgroup"] find _kind, ""], []];
 };
 if (_kind isEqualTo "talkgroup") exitWith {
-    if (_raw isEqualType "") then { _raw select [0, 32] } else { "" }
+    if (!(_raw isEqualType []) || {(count _raw) > 16} || {(_raw findIf { !(_x isEqualType 0) || {!finite _x} || {_x < 1} || {_x > 16} }) >= 0}) then { [] } else { _raw }
 };
 if (_raw isEqualTo [] || {!(_raw isEqualType [])}) exitWith { [] };
 private _inRange = {

@@ -156,21 +156,9 @@ switch (_tab) do {
             } forEach _ord;
             if (_peers isEqualTo []) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun équipier ne publie son réseau voix (téléphone ATAK et radio ACRE2 requis).</t>"]; };
             _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vous ne voyez émettre que les fréquences réglées sur vos radios, sans tenir compte de la portée. Les joueurs sans téléphone ATAK n'apparaissent pas.</t>"];
+            _rows append (["rows"] call comspec_atak_native_fnc_meshGroups);
         } else {
-            private _tgs = [["CMD", "Commandement"], ["ALPHA", "Section Alpha"], ["BRAVO", "Section Bravo"], ["CHARLIE", "Section Charlie"], ["FEUX", "Appui feux"], ["LOG", "Logistique"], ["SAN", "Santé / MEDEVAC"], ["AIR", "Air / sol"]];
-            private _mine = player getVariable ["COMSPEC_ATAK_Talkgroup", ""];
-            private _side = side group player;
-            private _peers = allPlayers select { alive _x && {side group _x isEqualTo _side} };
-            _rows pushBack ["section", "Talkgroups data", ["Aucun talkgroup choisi : vous recevez tout le maillage", format ["Vous êtes sur %1", _mine]] select (_mine isNotEqualTo "")];
-            {
-                _x params ["_k", "_label"];
-                private _cnt = { (["talkgroup", _x] call comspec_atak_native_fnc_meshRead) isEqualTo _k } count _peers;
-                private _on = _k isEqualTo _mine;
-                _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%3</t><br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 membre(s)</t>",
-                    ["#e6ece8", (COMSPEC_ATAK_Th get "hexOk")] select _on, _k, _label, _cnt],
-                    [[["REJOINDRE", "QUITTER"] select _on, compile format ["['talkgroup', '%1'] call comspec_atak_native_fnc_waveRelayAction;", ["" , _k] select !_on], !_on]], [[0.6, 0.65, 0.62, 1], [0.36, 0.78, 0.42, 1]] select _on];
-            } forEach _tgs;
-            _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>ACRE2 non chargé : le talkgroup ne sert qu'à regrouper les échanges data du maillage.</t>"];
+            _rows append (["rows"] call comspec_atak_native_fnc_meshGroups);
         };
     };
     default {
@@ -220,8 +208,8 @@ switch (_tab) do {
             private _gp = (_nodes select _gw) select 1;
             _rows pushBack ["info", "Distance passerelle", format ["%1 %2", [player distance2D _gp] call _dist, [player getDir _gp] call _card]];
         };
-        private _talk = if (_acre) then { "" } else { player getVariable ["COMSPEC_ATAK_Talkgroup", ""] };
-        if (_talk isNotEqualTo "") then { _rows pushBack ["info", "Talkgroup", _talk]; };
+        private _talk = (["mine"] call comspec_atak_native_fnc_meshGroups) apply { ["name", [_x]] call comspec_atak_native_fnc_meshGroups };
+        if (_talk isNotEqualTo []) then { _rows pushBack ["info", "Groupes", _talk joinString ", "]; };
         _rows pushBack ["switch", "Liens du maillage sur la carte", profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false], { ["mapLinks"] call comspec_atak_native_fnc_waveRelayAction; }, "Traits colorés selon la qualité du lien"];
         // Voisins directs : liens partant de mon nœud (index 0), les meilleurs d'abord.
         private _nb = [];

@@ -11,7 +11,7 @@
                     Passerelles : tous les relais Overwatch intacts et passerelles de véhicule / PC mobiles (fn_relayNet,
                     sans les MPU5 des équipiers, déjà nœuds du maillage) ;
                     la principale est le relais le plus proche, sinon la passerelle de véhicule, sinon le chef de groupe.
-      "talkgroup" : choisit le talkgroup data (variable publique COMSPEC_ATAK_Talkgroup) quand ACRE2 est absent.
+      Groupes de conversation (remplacent l'ancien talkgroup décoratif) : fn_meshGroups.
       "channel"   : [id radio ACRE, canal] change le canal d'une radio ACRE2.
       "mapLinks"  : affiche / masque les liens du maillage sur la carte.
       "mapRelays" : affiche / masque le calque Relais (pastilles des relais) sur la carte.
@@ -127,11 +127,6 @@ switch (_act) do {
         private _res = createHashMapFromArray [["nodes", _nodes], ["links", _links], ["hops", _hops], ["me", 0], ["gw", _gw], ["gwLabel", _gwLabel], ["range", _range]];
         uiNamespace setVariable ["COMSPEC_ATAK_Mesh", [diag_tickTime, _res]];
         _res
-    };
-    case "talkgroup": {
-        player setVariable ["COMSPEC_ATAK_Talkgroup", _k, true];
-        ["INFO", ["Talkgroup quitté", format ["Talkgroup %1", _k]] select (_k isNotEqualTo ""), 3, 20] call comspec_atak_native_fnc_notify;
-        call _render;
     };
     case "channel": {
         if (isNil "acre_api_fnc_setRadioChannel") exitWith {};

@@ -12,6 +12,17 @@ if ((count _unknown) > 0) exitWith { ["WARNING", format ["Commande inconnue : %1
 if (_text isEqualTo "") exitWith { false };
 _body = ((_tags apply { format ["[%1]", _x] }) joinString "") + ([" ", ""] select ((count _tags) isEqualTo 0)) + _text;
 if ((count _body) > 400) then { _body = _body select [0, 400]; };
+// Fil d'un groupe de conversation : réponse au groupe, s'il est encore écouté.
+if ((_peer find "GROUPE ") isEqualTo 0) exitWith {
+    private _gi = (["names"] call comspec_atak_native_fnc_meshGroups) find (_peer select [7]);
+    if (_gi >= 0 && {(_gi + 1) in (["mine"] call comspec_atak_native_fnc_meshGroups)}) then {
+        private _keep = uiNamespace getVariable ["COMSPEC_ATAK_MeshTx", []];
+        uiNamespace setVariable ["COMSPEC_ATAK_MeshTx", [_gi + 1]];
+        ["send", [_body]] call comspec_atak_native_fnc_meshGroups;
+        uiNamespace setVariable ["COMSPEC_ATAK_MeshTx", _keep];
+    };
+    true
+};
 private _target = objNull;
 { if ((name _x) isEqualTo _peer) exitWith { _target = _x; }; } forEach allPlayers;
 // Réponse à un message du poste (« TOC · OVERWATCH », fn_tocAction) : remise à l'opérateur assis au PC de TOC de mon camp.
