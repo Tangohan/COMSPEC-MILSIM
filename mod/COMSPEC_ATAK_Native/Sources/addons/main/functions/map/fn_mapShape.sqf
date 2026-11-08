@@ -8,8 +8,7 @@
       "draw" [carte, forme, position, taille px, couleur, cap, lettre]  (à chaque image : traité avant tout le reste)
       "isNew" forme -> vrai si cette fonction la dessine
       "self" -> [[clé, libellé, aide]...]     "ally" -> idem      "label" clé -> libellé
-      "preview" clé -> couches [[texture, couleur, échelle]...] pour une ligne « shapes » de fn_formRender
-      "cell" [clé, libellé, code, choisie, aide, couleur] -> cellule d'une ligne « shapes »
+      "preview" [clé, couleur] -> couches [[texture, couleur, échelle]...] pour une ligne « shapes » de fn_formRender
 */
 params [["_op", ""], ["_a", []]];
 private _d = "\z\comspec_atak_native\addons\main\data\";
