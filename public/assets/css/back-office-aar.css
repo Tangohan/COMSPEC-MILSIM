@@ -339,3 +339,11 @@ fieldset.bo-aar-step { margin: 0; }
   .bo-aar-act .bo-aar-x { grid-column: 2; grid-row: 1; }
 }
 .bo-aar-field[hidden] { display: none; }
+
+/* Annexes et synthèses */
+.bo-aar-annex__list { display: grid; gap: 6px; max-height: 320px; overflow: auto; margin: 10px 0; }
+.bo-aar-annex__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; padding: 6px 8px; border: 1px solid var(--ath-line, #d8dee4); border-radius: 8px; cursor: pointer; }
+.bo-aar-annex__note { display: grid; gap: 6px; margin: 10px 0; }
+.bo-aar-annex { border: 1px solid var(--ath-line, #d8dee4); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+.bo-aar-annex summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+[data-synth-pane][hidden], [data-annex-pane][hidden] { display: none; }

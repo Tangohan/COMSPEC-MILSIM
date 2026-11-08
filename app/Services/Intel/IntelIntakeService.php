@@ -413,6 +413,73 @@ class IntelIntakeService
     }
 
     /**
+     * Nom du fichier de la photo jointe à un compte rendu : le mod envoie dans le champ « photo » le nom du cliché sur
+     * le poste du joueur, le même que recon_images.source_name à l'envoi de la photo.
+     *
+     * @param array<string, mixed> $structured champs du compte rendu
+     */
+    public static function reportPhotoName(array $structured): string
+    {
+        $name = $structured['photo'] ?? '';
+        if (!is_scalar($name)) {
+            return '';
+        }
+
+        return mb_substr(basename(str_replace('\\', '/', trim((string) $name))), 0, 190);
+    }
+
+    /**
+     * Photo jointe à un compte rendu, dans sa communauté. Deux joueurs peuvent avoir le même nom de fichier : on garde
+     * celle de l'auteur, puis la plus proche de l'envoi. Une photo confidentielle passe par sa route authentifiée
+     * (ReconImageStorage::urlForRow), jamais par un chemin public.
+     *
+     * @param array<string, mixed> $report ligne atak_tactical_reports
+     * @return list<array<string, mixed>>
+     */
+    private function reconImagesOfReport(int $tenantId, array $report): array
+    {
+        $structured = json_decode((string) ($report['structured_data'] ?? ''), true);
+        $name = is_array($structured) ? self::reportPhotoName($structured) : '';
+        if ($name === '' || !$this->hasColumn('recon_images', 'source_name')) {
+            return [];
+        }
+        $confidential = $this->hasColumn('recon_images', 'is_confidential') ? 'is_confidential' : '0 AS is_confidential';
+        $alive = $this->hasColumn('recon_images', 'deleted_at') ? ' AND deleted_at IS NULL' : '';
+        $sent = (string) ($report['created_at'] ?? '');
+        try {
+            $st = $this->pdo()->prepare(
+                "SELECT id, image_path, caption, captured_at, created_at, {$confidential} FROM recon_images
+                 WHERE tenant_id = ? AND source_name = ?{$alive}
+                 ORDER BY (LOWER(author_callsign) = LOWER(?)) DESC, ABS(TIMESTAMPDIFF(SECOND, created_at, ?)) ASC, id DESC
+                 LIMIT 1"
+            );
+            $st->execute([$tenantId, $name, (string) ($report['submitter_callsign'] ?? ''), $sent !== '' ? $sent : date('Y-m-d H:i:s')]);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            error_log('[remontees] photo du compte rendu : ' . mb_substr($e->getMessage(), 0, 300));
+
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $url = \App\Support\ReconImageStorage::urlForRow($r);
+            $out[] = [
+                'id' => (int) $r['id'],
+                'caption' => (string) ($r['caption'] ?? ''),
+                'original_name' => $name,
+                'kind_label' => !empty($r['is_confidential']) ? 'Photo de reconnaissance (confidentielle)' : 'Photo de reconnaissance',
+                'url' => $url,
+                'is_image' => $url !== null,
+                'blurred' => false,
+                'taken_at' => (string) ($r['captured_at'] ?? $r['created_at'] ?? ''),
+                'readonly' => true,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Une remontée complète : données d'origine, suivi, fil, caviardages, lectures, pièces jointes.
      *
      * @return array<string, mixed>|null
@@ -477,6 +544,7 @@ class IntelIntakeService
                 }
             } catch (\Throwable) {
             }
+            array_push($attachments, ...$this->reconImagesOfReport($tenantId, $row));
         }
         $structured = [];
         if ($source === 'cr' && !empty($row['structured_data'])) {
