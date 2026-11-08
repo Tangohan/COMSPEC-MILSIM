@@ -43,11 +43,8 @@ private _state = {
     };
     _s
 };
-private _isMpu = {
-    params ["_c"];
-    private _l = toLower _c;
-    ((_l find "mpu5") >= 0) || {_l in (((missionNamespace getVariable ["comspec_atak_native_mpu5_items", ""]) splitString ", ;") apply { toLower _x })}
-};
+// Même règle que partout (fn_mpu5 "isMpu") : ACRE_MPU5_ID_n et classes de base comprises.
+private _isMpu = { ["isMpu", [_this select 0]] call comspec_atak_native_fnc_mpu5 };
 private _holderHas = { params ["_h"]; !isNull _h && {((itemCargo _h) findIf { [_x] call _isMpu }) >= 0} };
 private _findPosed = {
     params ["_rad"];

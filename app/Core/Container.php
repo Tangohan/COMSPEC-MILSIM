@@ -2353,6 +2353,15 @@ class Container
                 self::get(\App\Repositories\GameEquipmentRepository::class),
                 self::get(\App\Services\GameEquipment\DotationOverviewService::class)
             ),
+            \App\Repositories\BackOfficeNavPrefsRepository::class => new \App\Repositories\BackOfficeNavPrefsRepository(),
+            \App\Services\BackOffice\Menu\BackOfficeMenuBadges::class => new \App\Services\BackOffice\Menu\BackOfficeMenuBadges(),
+            \App\Services\BackOffice\Menu\BackOfficeMenuState::class => new \App\Services\BackOffice\Menu\BackOfficeMenuState(
+                self::get(\App\Repositories\BackOfficeNavPrefsRepository::class),
+                self::get(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::class)
+            ),
+            \App\Controllers\Admin\BackOfficeMenuController::class => new \App\Controllers\Admin\BackOfficeMenuController(
+                self::get(\App\Services\BackOffice\Menu\BackOfficeMenuState::class)
+            ),
             \App\Repositories\AthenaTacticalRepository::class => new \App\Repositories\AthenaTacticalRepository(),
             \App\Controllers\Admin\AdminAthenaTacticalMapController::class => new \App\Controllers\Admin\AdminAthenaTacticalMapController(
                 self::get(\App\Repositories\AtakMapRepository::class)

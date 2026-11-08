@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : radio ACRE2 reconnue dans l'app Wave Relay (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : L'app Wave Relay reconnaît votre radio ACRE2
+- La ligne « Radio » de MON NŒUD donne la radio réellement détectée (par exemple la MPU-5 d'ACRE), sa portée et sa liaison (câble EUD ou Wi-Fi) ; elle ne dit plus « sans MPU5 » quand une MPU5 est reliée.
+- Avec ACRE2, une nouvelle section dit la radio ACRE reconnue et l'état de la voix par le réseau, même désactivée, avec la façon de l'activer. L'onglet VOIX le redit et propose de relier votre radio quand le serveur l'autorise.
+- Le cadenas « EN CLAIR » explique pourquoi la liaison n'est pas chiffrée : chiffrement inactif par défaut, ou clé non chargée.
+EN : The Wave Relay app recognises your ACRE2 radio
+- The "Radio" line in MY NODE shows the radio actually detected (for example the ACRE MPU-5), its range and its link (EUD cable or Wi-Fi); it no longer says "no MPU5" while an MPU5 is linked.
+- With ACRE2, a new section shows the ACRE radio recognised and the state of voice over the network, even when it is off, with how to turn it on. The VOICE tab repeats it and offers to link your radio when the server allows it.
+- The "CLEAR" padlock explains why the link is not encrypted: encryption off by default, or key not loaded.
+
+### Détail technique
+- Cause (4.1.0) : avec la liaison réaliste (`comspec_atak_native_mpu_real`, cochée par défaut), `fn_mpu5 "source"` renvoie toujours `[]` ; la ligne « Radio » de `fn_pageWaveRelay` le lisait et affichait « téléphone seul · portée 3.0 km (sans MPU5) » (portée de repli `COMSPEC_ATAK_MeshRange`), alors que le facteur de débit de `fn_linkQuality` lisait `fn_mpuLink "status"` (MPU5 reliée par câble). L'`ACRE_MPU5_ID_n` était bien détectée.
+- `fn_mpu5 "isMpu"` : seule règle de reconnaissance (nom « MPU5 », `acre_baseClass`, `Iceman_WR_isMPU5`, réglage `mpu5_items`), utilisée par "has", "gear" et `fn_mpuLink`. `fn_mpu5 "detected"` : seule source de la ligne « Radio », de l'objet détecté et du nom du facteur de débit.
+- `fn_mpuVoice "summary"` : état de la voix par le réseau en clair (réglage admin, coupe-circuit, liaison réaliste, pont, maillage). Section ACRE2 sur MON NŒUD, en tête de l'onglet VOIX, bouton de pont (même geste que l'action ACE).
+- `fn_meshKeys "link"` : détails du cadenas réécrits (cause et remède) ; ligne d'explication « EN CLAIR » dans l'app.
+- Autotest : étape `acre_radio_detectee` (groupe `acre`) avec `ACRE_MPU5`, 152 et 343, captures MON NŒUD et VOIX ; `ingame_test.ps1` charge `ACRE_MPU5.pbo` seul (`-SansAcreMpu5` pour l'éviter).
+- Note : `docs/bugs/2026-11-08-atak-wave-relay-radio-acre-mpu5.md`.
+
+---
+
 ## À venir : papiers variés pour les documents SSE (SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

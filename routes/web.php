@@ -1486,6 +1486,10 @@ return function (Router $router) {
     $router->get('/admin/ops-center', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin')), [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Back-office communauté (tenant) — préfixe /back-office
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, ConfigurationUpdateIntroMiddleware::class]);
+    // Menu latéral : pastilles (JSON) et favoris. Ouverts à toute personne connectée qui a un menu back-office ;
+    // chaque compteur et chaque favori est vérifié contre ses droits dans la communauté de la session.
+    $router->get('/back-office/menu/pastilles', [\App\Controllers\Admin\BackOfficeMenuController::class, 'badges'], [AuthMiddleware::class]);
+    $router->post('/back-office/menu/favoris', [\App\Controllers\Admin\BackOfficeMenuController::class, 'favorite'], [AuthMiddleware::class]);
     $router->get('/back-office/ma-situation/carnet-de-vol', [PilotLogbookController::class, 'mine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/ajouter', [PilotLogbookController::class, 'add'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/modifier', [PilotLogbookController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

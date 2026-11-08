@@ -284,6 +284,9 @@ private _eh = addMissionEventHandler ["ExtensionCallback", {
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Dossier des captures (réglage du joueur) et nom du profil Arma transmis aux DLL : elles savent où chercher les photos.
 ["apply"] call comspec_atak_native_fnc_shotDir;
+// Taille du dossier relue 20 s après le chargement : le joueur est prévenu avant qu'Arma n'atteigne 250 Mo et cesse
+// d'écrire les photos (« exceeded size limit (250MB) »).
+[{ ["check", false] spawn comspec_atak_native_fnc_shotDir; }, [], 20] call comspec_atak_native_fnc_waitAndExec;
 // Service Athéna changé (Oui / Non) : apps Athena affichées ou masquées tout de suite.
 ["COMSPEC_AthenaModeChanged", { [{ if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_dockRender; }; }] call comspec_atak_native_fnc_nextFrame; }] call CBA_fnc_addEventHandler;
 ["COMSPEC_AthenaLinkChanged", { params ["_state"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["networkState", toUpper _state]; }] call CBA_fnc_addEventHandler;

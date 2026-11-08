@@ -85,13 +85,14 @@ switch (_act) do {
             params ["_why"];
             ["clear", "EN CLAIR", "NON CHIFFRÉ", _why, _dir + "net_lock_open_ca.paa", [0.62, 0.70, 0.66, 1], "hexTextMuted"]
         };
-        if (!_on) exitWith { ["Clés du maillage désactivées sur ce serveur"] call _clear };
-        if !(["active"] call comspec_atak_native_fnc_mpuLink) exitWith { ["Liaison réaliste désactivée sur ce serveur"] call _clear };
+        // Détail lu dans l'infobulle du cadenas et dans l'app Wave Relay : pourquoi la liaison est en clair, et ce qu'il faut faire.
+        if (!_on) exitWith { ["Chiffrement inactif par défaut, ce n'est pas une panne : un admin l'active avec le réglage « Clés du maillage »"] call _clear };
+        if !(["active"] call comspec_atak_native_fnc_mpuLink) exitWith { ["Chiffrement inactif : il demande la liaison téléphone-radio réaliste (réglage admin)"] call _clear };
         private _row = [str side group player] call _netRow;
-        if (_row isEqualTo []) exitWith { ["Clé de réseau pas encore créée"] call _clear };
+        if (_row isEqualTo []) exitWith { ["Clé de réseau pas encore créée : touchez CHARGER LES CLÉS dans l'app Wave Relay"] call _clear };
         _row params ["_id", "_name", "_ep"];
         private _st = ["state", [_id]] call comspec_atak_native_fnc_meshKeys;
-        if (_st isEqualTo "absente") exitWith { [format ["Clé %1 non chargée", _name]] call _clear };
+        if (_st isEqualTo "absente") exitWith { [format ["Clé %1 non chargée : touchez CHARGER LES CLÉS dans l'app Wave Relay", _name]] call _clear };
         if (_st isEqualTo "compromise") exitWith { ["comp", "COMPROMISE", "CLÉ COMPROMISE", format ["Clé %1 compromise : changez-la", _name], _dir + "net_lock_closed_ca.paa", [0.88, 0.25, 0.22, 1], "hexAlert"] };
         if (_st isEqualTo "à renouveler") exitWith { ["stale", "PÉRIMÉE", "CLÉ À RENOUVELER", format ["Clé %1 périmée : le réseau est à l'époque %2", _name, _ep], _dir + "net_lock_closed_ca.paa", [0.95, 0.67, 0.20, 1], "hexWarn"] };
         if !((uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["ok", false]) exitWith { ["Clé valide, mais hors du maillage"] call _clear };

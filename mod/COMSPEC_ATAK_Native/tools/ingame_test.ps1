@@ -21,6 +21,8 @@ param(
     [string[]]$Mods = @(),
     [switch]$SansAcre,
     [switch]$SansSse,
+    # MPU-5 d'ACRE (ACRE_MPU5.pbo seul, tiré du pack 3026491672) pour l'étape acre_radio_detectee : retiré avec ce paramètre.
+    [switch]$SansAcreMpu5,
     # Groupes de la mission (vide : tous) : fonctions telephone carte antennes gps explo sse zeus acre reseau
     [string[]]$Groupes = @(),
     [int]$DureeMaxMinutes = 45,
@@ -125,6 +127,19 @@ if (-not $Sortie) { $Sortie = Join-Path $env:TEMP "comspec_autotest\$stamp" }
 $MissionRun = Join-Path $Sortie "mission\$NomMission"
 [void](New-Item -ItemType Directory -Force -Path (Split-Path -Parent $MissionRun))
 Copy-Item -LiteralPath $MissionSrc -Destination $MissionRun -Recurse
+# MPU-5 d'ACRE (mod « MPU-5 Persistent Systems », classe ACRE_MPU5) : seul son PBO est copié dans le dossier du passage, le reste du
+# pack 3026491672 masquerait le build testé. Sans lui, l'étape acre_radio_detectee teste la 152 et la 343 et note la MPU-5 en INFO.
+if ($Mods.Count -eq 0 -and -not $SansAcre -and -not $SansAcreMpu5 -and ($listeMods -contains $AcreDir) -and ($Groupes.Count -eq 0 -or $Groupes -contains 'acre')) {
+    $pboMpu = Join-Path $WorkshopDir '3026491672\addons\ACRE_MPU5.pbo'
+    if (Test-Path -LiteralPath $pboMpu) {
+        $dirMpu = Join-Path $Sortie 'mods\@ACRE_MPU5\addons'
+        [void](New-Item -ItemType Directory -Force -Path $dirMpu)
+        Copy-Item -LiteralPath $pboMpu -Destination $dirMpu
+        $listeMods += (Split-Path -Parent $dirMpu)
+    } else {
+        [void]$avert.Add("ACRE_MPU5.pbo introuvable ($pboMpu) : l'étape acre_radio_detectee ne teste pas la MPU-5 d'ACRE.")
+    }
+}
 $sqfGroupes = ($Groupes | ForEach-Object { '"' + $_ + '"' }) -join ', '
 [IO.File]::WriteAllText((Join-Path $MissionRun 'autotest_params.sqf'), "AT_Groupes = [$sqfGroupes];`r`nAT_Quitter = true;`r`n", (New-Object Text.UTF8Encoding($false)))
 

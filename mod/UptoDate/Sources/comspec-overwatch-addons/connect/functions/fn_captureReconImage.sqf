@@ -25,6 +25,9 @@ params [
 ];
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!hasInterface) exitWith { false };
+// Aperçu automatique d'un flux (casque, drone) : flux donné par l'appelant et pas de fiche. Le téléphone passe un flux
+// vide et une fiche : c'est une photo prise par le joueur.
+private _autoFeed = _feedId isNotEqualTo "" && {_photoMeta isEqualTo []};
 
 // Sans session Athena, NotifyNewPhoto échoue (not_connected) puis un retry
 // reclichait un PNG toutes les ~2 s — spam journal + disque.
@@ -544,8 +547,11 @@ if (_path isNotEqualTo "") exitWith {
 
 // Pas de fichier : un PNG Arma, sans second cliché IceMan.
 if (_path isEqualTo "") exitWith {
+    // Pause de 5 min après un file_not_found : aperçus automatiques des flux seulement. Une photo prise par le joueur
+    // (téléphone : flux vide, fiche remplie) part toujours : avant, une vieille photo Photo Library absente du disque
+    // bloquait toutes les photos du téléphone pendant 5 min (feed_backoff, sans message au joueur).
     private _failUntil = missionNamespace getVariable ["COMSPEC_FeedSnapFailUntil", 0];
-    if (_failUntil isEqualType 0 && {diag_tickTime < _failUntil}) exitWith {
+    if (_autoFeed && {_failUntil isEqualType 0} && {diag_tickTime < _failUntil}) exitWith {
         missionNamespace setVariable ["COMSPEC_LastReconUploadOk", false, false];
         missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", "ERR|feed_backoff", false];
         false
