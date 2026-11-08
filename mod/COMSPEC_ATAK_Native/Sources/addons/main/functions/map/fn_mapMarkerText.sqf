@@ -45,6 +45,9 @@ if (_now > (_cand select 0) && {(_cand param [2, -1]) isNotEqualTo _cRev || {_no
         private _m = _y;
         private _txt = _m getOrDefault ["text", ""];
         if (_txt isEqualTo "") then { continue };
+        // Marqueurs natifs des routes et plans (fn_markerOwned) : leur nom est déjà écrit par fn_routeDraw / fn_zoneDraw.
+        private _mid0 = _m getOrDefault ["id", _x];
+        if ((_mid0 find "/77000") > 0 || {(_mid0 find "comspec_shape_prv_") isEqualTo 0}) then { continue };
         // Nom posé automatiquement (palette, LOCK…) : relu dans la langue du mod, quelle que soit celle de son auteur.
         _txt = [_txt] call comspec_atak_native_fnc_markerAutoName;
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) isNotEqualTo "ICON") then { continue };

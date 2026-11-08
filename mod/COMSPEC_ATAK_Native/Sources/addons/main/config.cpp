@@ -41,13 +41,13 @@ class CfgFunctions {
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
             class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapHudRects {}; class mapMarkerText {}; class mapPlaceText {}; class mapGameMarkers {}; class mapTextW {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerNet {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerPlace {}; class markerDeletable {}; class markerLabels {}; class markerAutoName {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class gridParse {}; class mapStyle {}; class mapCtrl {}; class photoMap {}; class photoRelief {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {}; class roadPath {}; class cardinal {}; class mapPrefs {};
-            class mapColors {}; class mapFmt {}; class mapLblGrid {}; class markerColor {};
+            class mapColors {}; class mapFmt {}; class mapLblGrid {}; class markerColor {}; class markerOwned {}; class mapShape {};
         };
         class gestures { file="z\comspec_atak_native\addons\main\functions\gestures";
             class gestureFinger {}; class gestureFingerAim {}; class gestureSelfie {};
         };
         class plan { file="z\comspec_atak_native\addons\main\functions\plan";
-            class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {}; class planUi {}; class planHelp {};
+            class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class planNative {}; class pagePlan {}; class planUi {}; class planHelp {};
         };
         class devmesh { file="z\comspec_atak_native\addons\main\functions\devmesh";
             class devMesh {}; class devMeshSim {}; class devMeshOverlay {}; class devLinkInspect {}; class devMeshTest {};

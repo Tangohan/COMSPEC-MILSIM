@@ -4560,6 +4560,23 @@ class AtakApiController
             }
         }
         $out = $this->applyIntelScramble($request, $tenantId, $mapId, 'marker', $out);
+        // Relevé du jeu (world_name, seul COMSPEC Link l'envoie) : marqueurs du jeu retirés sur le site, en tête (la réponse peut
+        // être coupée à 8 Ko), pour que le relais les retire aussi en jeu. Colonne « text » : nom Arma ; « source » : game_del.
+        if ($world !== '') {
+            try {
+                $gone = array_map(static fn (array $g): array => [
+                    'id' => 'del:' . $g['id'],
+                    'layerId' => 1,
+                    'markerData' => json_encode([
+                        'pos' => $g['pos'], 'type' => 'comspec_del', 'text' => $g['arma_name'], 'color' => '', 'source' => 'game_del',
+                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'updated_at' => null,
+                ], $this->atak->recentlySuppressedGameMarkers($tenantId, $mapId));
+                $out = array_merge($gone, $out);
+            } catch (\Throwable) {
+                // La liste des marqueurs reste servie sans ce complément.
+            }
+        }
 
         return Response::json($out);
     }

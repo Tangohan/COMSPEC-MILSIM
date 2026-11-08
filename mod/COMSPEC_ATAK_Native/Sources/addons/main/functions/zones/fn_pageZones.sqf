@@ -327,6 +327,29 @@ if (_page isEqualTo "#ui") exitWith {
             _ui set ["id", ""]; _ui set ["view", "LIST"]; _ui set ["confirm", ""]; _full = true;
         };
         case "untrash": { if (["untrash", _v] call _ZA) then { ["INFO", "Plan rétabli", 2, 10] call comspec_atak_native_fnc_notify; }; _ui set ["undoBar", []]; _full = (_ui get "view") isNotEqualTo "EDIT"; };
+        // Croix d'une ligne de la liste : mon plan supprimé partout (ANNULER ensuite), plan reçu retiré de ma liste.
+        case "delRow": {
+            if ((_ui get "confirm") isNotEqualTo ("row" + _v)) exitWith { _ui set ["confirm", "row" + _v]; _full = true; };
+            _ui set ["confirm", ""];
+            private _nm = (["get", _v] call _ZA) getOrDefault ["name", ""];
+            if (["isMine", _v] call _ZA) then {
+                ["trash", _v] call _ZA;
+                [format [("Plan %1 supprimé") call _tr, [_nm] call _esc], "untrash", _v] call _bar;
+            } else {
+                ["del", _v] call _ZA;
+                [format [("Plan %1 retiré de ma liste") call _tr, [_nm] call _esc], 3] call comspec_atak_native_fnc_toast;
+            };
+            _full = true;
+        };
+        // Nettoyage de la liste (deux clics, ANNULER ensuite) : EMPTY plans sans rien | OBJ noms automatiques sans zone | ALL.
+        case "cleanup": {
+            if ((_ui get "confirm") isNotEqualTo ("cln" + _v)) exitWith { _ui set ["confirm", "cln" + _v]; _full = true; };
+            _ui set ["confirm", ""];
+            private _ids = ["cleanup", _v] call _ZA;
+            if ((count _ids) > 0) then { [format [("%1 plan(s) supprimé(s)") call _tr, count _ids], "untrashAll", _ids] call _bar; };
+            _full = true;
+        };
+        case "untrashAll": { ["untrashAll", _v] call _ZA; ["INFO", "Plans rétablis", 2, 10] call comspec_atak_native_fnc_notify; _ui set ["undoBar", []]; _full = true; };
         case "zone": { _ui set ["zid", _v]; _ui set ["panel", "ZONE"]; _ui set ["repPos", []]; _ui set ["confirm", ""]; call _refresh; };
         case "zoneSel": { _ui set ["zid", [_v, ""] select ((_ui get "zid") isEqualTo _v)]; call _refresh; };
         case "line": { _ui set ["lid", [_v, ""] select ((_ui get "lid") isEqualTo _v)]; _ui set ["vtx", -1]; call _refresh; };
@@ -678,6 +701,8 @@ private _panelRows = {
             private _d = _pal get "dash";
             _rows pushBack ["segment", "Trait", [["PLEIN", ["style", ["dash", "SOLID"]] call _ui1, _d isEqualTo "SOLID"], ["TIRETS", ["style", ["dash", "DASH"]] call _ui1, _d isEqualTo "DASH"], ["POINTILLÉ", ["style", ["dash", "DOT"]] call _ui1, _d isEqualTo "DOT"], ["FLÈCHES", ["style", ["dash", "ARROW"]] call _ui1, _d isEqualTo "ARROW", "Flèche au bout des traits ouverts"]]];
             _rows pushBack ["lineseg", "", "Type des zones", (["types"] call _ZA) apply { [toUpper ((_x select 1) call _tr), ["set", ["aff", _x select 0]] call _ui1, (_x select 0) isEqualTo (_b get "aff"), (_pal get "type") getOrDefault [_x select 0, _x select 2]] }, "Toutes les zones prennent ce type"];
+            _rows pushBack ["segment", "Remplissage des cases", [["PLEIN", ["style", ["hatch", false]] call _ui1, !(_pal get "hatch")], ["HACHURES", ["style", ["hatch", true]] call _ui1, _pal get "hatch", "Hachures du moteur, aussi sur la carte d'Arma"]], "Cases de grille ; les polygones gardent un remplissage léger"];
+            _rows pushBack ["segment", "Cercle autour du nom", [["NON", ["style", ["ring", false]] call _ui1, !(_pal get "ring")], ["OUI", ["style", ["ring", true]] call _ui1, _pal get "ring", "Cercle fin autour du point d'étiquette de chaque zone"]]];
             _rows pushBack ["section", "Étiquettes", ""];
             private _ls = _pal get "lblSize";
             _rows pushBack ["segment", "Taille", [[0.8, "PETITE"], [1, "NORMALE"], [1.3, "GRANDE"]] apply { [_x select 1, ["style", ["lblSize", _x select 0]] call _ui1, (abs (_ls - (_x select 0))) < 0.01] }];
@@ -1051,6 +1076,15 @@ switch (_view) do {
         };
         _rows pushBack ["switch", "Zones sur la carte ATAK", profileNamespace getVariable ["COMSPEC_ATAK_ZonesShow", true], ["show"] call _ui1, "Bascule de tous les plans sur la carte de l'app Carte", false, "znShow"];
         _rows pushBack ["buttons", [["+ NOUVEAU PLAN", ["new"] call _ui1, true], ["SIGNALER ICI", ["here"] call _ui1, false, true, "Ouvre la zone sous ma position pour signaler"]]];
+        if (_tab isEqualTo "MINE" && {(count _mL) > 0}) then {
+            (["cleanup", "count"] call _ZA) params ["_nE", "_nO", "_nA"];
+            private _cf = _ui get "confirm";
+            _rows pushBack ["buttons", [
+                [[format [("PLANS VIDES (%1)") call _tr, _nE], "CONFIRMER"] select (_cf isEqualTo "clnEMPTY"), ["cleanup", "EMPTY"] call _ui1, ["red", false] select (_cf isNotEqualTo "clnEMPTY"), _nE > 0, "Supprime mes plans sans zone, axe ni trait (deux clics, ANNULER ensuite)"],
+                [[format [("OBJ SANS ZONE (%1)") call _tr, _nO], "CONFIRMER"] select (_cf isEqualTo "clnOBJ"), ["cleanup", "OBJ"] call _ui1, ["red", false] select (_cf isNotEqualTo "clnOBJ"), _nO > 0, "Supprime les plans « OBJ ALPHA… » créés automatiquement et sans zone, avec leurs axes (deux clics, ANNULER ensuite)"],
+                [[format [("TOUT SUPPRIMER (%1)") call _tr, _nA], "CONFIRMER"] select (_cf isEqualTo "clnALL"), ["cleanup", "ALL"] call _ui1, ["red", false] select (_cf isNotEqualTo "clnALL"), true, "Supprime tous mes plans, partout (deux clics, ANNULER ensuite)"]
+            ]];
+        };
         // Questions du mode « Proposer » (contact posé dans une zone) : rien ne change sans OUI.
         {
             _x params ["_qid", "_qz", "_qst", "", "_qby", "_qt"];
@@ -1128,7 +1162,8 @@ switch (_view) do {
                     ["", format ["<br/><t color='#8fd19a'>%1</t>", _tags joinString " · "]] select ((count _tags) > 0)];
                 _rows pushBack ["person", _icon, _txt, [
                     ["OUVRIR", ["open", _x2 get "id"] call _ui1, true],
-                    [["AFFICHER", "MASQUER"] select (_x2 get "vis"), ["vis", _x2 get "id"] call _ui1, false, true, "Sur la carte ATAK"]
+                    [["AFFICHER", "MASQUER"] select (_x2 get "vis"), ["vis", _x2 get "id"] call _ui1, false, true, "Sur la carte ATAK"],
+                    [["X", "OK ?"] select ((_ui get "confirm") isEqualTo ("row" + (_x2 get "id"))), ["delRow", _x2 get "id"] call _ui1, ["red", false] select ((_ui get "confirm") isNotEqualTo ("row" + (_x2 get "id"))), true, ["Retirer ce plan de ma liste : il ne revient plus pendant la partie (deux clics)", "Supprimer ce plan, partout (deux clics, ANNULER ensuite)"] select (_tab isEqualTo "MINE")]
                 ]];
             } forEach _list;
         };

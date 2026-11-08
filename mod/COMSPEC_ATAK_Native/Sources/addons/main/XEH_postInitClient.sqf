@@ -94,7 +94,9 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getV
 // efface ici (téléphone, durée écoulée ou carte d'Arma) ; à l'arrivée, ceux de mes canaux sont redemandés au serveur,
 // avec l'heure et l'auteur des marqueurs posés avant moi.
 ["comspec_atak_native_tacMk", { ["recv", _this] call comspec_atak_native_fnc_markerNet; }] call CBA_fnc_addEventHandler;
-addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call comspec_atak_native_fnc_markerNet; }];
+addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["deleted", _m] call comspec_atak_native_fnc_markerNet; ["gone", _m] call comspec_atak_native_fnc_markerOwned; }];
+// L'interface garde son état d'une mission à l'autre (uiNamespace) : outil de tracé, points en cours et plan ouvert remis à zéro.
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_ZnUi", "COMSPEC_ATAK_RteUi"];
 [{ ["comspec_atak_native_tacMkSrv", ["sync", player]] call CBA_fnc_serverEvent; }, [], 8] call comspec_atak_native_fnc_waitAndExec;
 // Compteur de changements des marqueurs (créé, supprimé, modifié) : la carte du téléphone ne relit les marqueurs de la
 // mission que lorsqu'il bouge (fn_mapGameMarkers, fn_localDataRefresh), au lieu de tout relire chaque seconde.
