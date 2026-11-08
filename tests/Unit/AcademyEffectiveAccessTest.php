@@ -80,11 +80,17 @@ final class AcademyEffectiveAccessTest extends TestCase
         self::assertTrue(AcademyAccess::paid($tenant, $this->now()));
     }
 
-    public function testFreeEffectiveGiftCannotUnlockAStoredPaidBasePlan(): void
+    public function testFreeGiftNeverDowngradesAStoredPaidBasePlanNorUnlocksAFreeOne(): void
     {
+        // Une offre inférieure ne fait jamais redescendre la formule déjà attribuée (PlanGift::effectivePlanSlug).
         $tenant = $this->tenant(['settings' => ['plan_gift' => $this->gift('free')]]);
-        self::assertSame('free', PlanGift::effectivePlanSlug($tenant, $this->now()));
-        self::assertFalse(AcademyAccess::paid($tenant, $this->now()));
+        self::assertSame('pro_plus', PlanGift::effectivePlanSlug($tenant, $this->now()));
+        self::assertTrue(AcademyAccess::paid($tenant, $this->now()));
+
+        // Une offre « free » ne débloque rien pour une communauté gratuite.
+        $free = $this->tenant(['plan_slug' => 'free', 'subscription_status' => 'none', 'settings' => ['plan_gift' => $this->gift('free')]]);
+        self::assertSame('free', PlanGift::effectivePlanSlug($free, $this->now()));
+        self::assertFalse(AcademyAccess::paid($free, $this->now()));
     }
 
     public function testExpiredRevokedAndMalformedGiftsDoNotUnlockAFreeTenant(): void

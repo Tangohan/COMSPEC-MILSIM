@@ -28,6 +28,7 @@ Défauts : gratuit / standard / pro / pro+. « Lue » = non : clé enregistrée 
 | feature_key | Groupe | Libellé | Type | Défauts | Lue |
 |-------------|--------|---------|------|---------|-----|
 | `max_members` | Membres et organisation | Nombre max. de membres | quota (membres, 0 = illimité) | 10 / 25 / 50 / 80 | oui |
+| `max_orbat_units` | Membres et organisation | Unités dans l’ORBAT | quota (unités, 0 = illimité) | 10 / 20 / 60 / illimité | oui |
 | `personnel` | Membres et organisation | Effectifs et ORBAT | booléen | oui / oui / oui / oui | **non** |
 | `messages` | Membres et organisation | Messagerie interne | booléen | oui / oui / oui / oui | oui |
 | `events` | Membres et organisation | Événements et calendrier | booléen | — / oui / oui / oui | oui |
@@ -49,6 +50,7 @@ Défauts : gratuit / standard / pro / pro+. « Lue » = non : clé enregistrée 
 | `max_active_invite_links` | Recrutement | Liens d’invitation actifs | quota (liens actifs, 0 = illimité) | 2 / illimité / illimité / illimité | oui |
 | `atak` | ATAK et jeu | Carte tactique ATAK | booléen | — / oui / oui / oui | oui |
 | `atak_link_basic` | ATAK et jeu | Liaison jeu de base | booléen | oui / oui / oui / oui | oui |
+| `equipment_game_sync` | ATAK et jeu | Synchronisation de l’équipement avec le jeu | booléen | — / — / oui / oui | oui |
 | `documents` | Documents et doctrine | Documents | booléen | oui / oui / oui / oui | **non** |
 | `courrier` | Documents et doctrine | Courrier officiel | booléen | — / oui / oui / oui | oui |
 | `equipment` | Documents et doctrine | Équipement | booléen | oui / oui / oui / oui | oui |

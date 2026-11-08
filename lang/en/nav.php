@@ -763,4 +763,9 @@ return [
     'mods_steam_workshop' => 'Mods (Steam Workshop)',
     'portail_milsim' => 'MILSIM portal',
     'haut_de_page' => 'Back to top',
+    'patch_studio' => 'Patch Studio',
+    'atelier_graphique_et_exports_comspec_atak_formule_pro_minimum' => 'Graphic workshop and COMSPEC ATAK exports — Pro+ plan or higher',
+    'agenda_et_sessions_de_jeu' => 'Agenda and game sessions',
+    'calendrier_reponses_pointage_et_sessions_arma_liees' => 'Calendar, replies, attendance and linked Arma sessions',
+    'pointage_et_temps_retenu_des_soirees_de_jeu' => 'Attendance and counted time for game nights',
 ];

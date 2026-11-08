@@ -30,6 +30,8 @@ final class OrganizationCatalogService
         private ?AuditService $audit = null,
         private ?ConfigurationUpdateService $configurationUpdates = null,
         private ?PDO $pdo = null,
+        /** Unités encore créables pour la communauté (null = illimité) ; par défaut le plafond de la formule. */
+        private ?\Closure $unitQuota = null,
     ) {
         $this->audit ??= new AuditService();
         $this->pdo ??= Database::getPdo();
@@ -516,6 +518,7 @@ final class OrganizationCatalogService
         $rolesKept = 0;
         $unitsAddedNames = [];
         $unitsKeptNames = [];
+        $unitsBlockedByPlan = 0;
         $functionsAddedNames = [];
         $functionsKeptNames = [];
         $rolesAddedNames = [];
@@ -542,6 +545,9 @@ final class OrganizationCatalogService
             $keyToId = [];
             $unitRows = is_array($def['units'] ?? null) ? $def['units'] : [];
             $remaining = $unitRows;
+            $unitsLeft = $this->unitQuota !== null
+                ? ($this->unitQuota)($tenantId)
+                : \App\Services\Billing\OrbatUnitQuota::remaining($tenantId);
             $guard = 0;
             while ($remaining !== [] && $guard++ < 500) {
                 $next = [];
@@ -574,6 +580,14 @@ final class OrganizationCatalogService
                         $progress = true;
                         continue;
                     }
+                    if ($unitsLeft === 0) {
+                        $unitsBlockedByPlan++;
+                        $progress = true;
+                        continue;
+                    }
+                    if ($unitsLeft !== null) {
+                        $unitsLeft--;
+                    }
                     if (!$dryRun) {
                         $created = $this->units->create($tenantId, [
                             'name' => $name,
@@ -597,6 +611,8 @@ final class OrganizationCatalogService
                 }
                 $remaining = $next;
             }
+            // Sous-unités d'une unité refusée par la formule : refusées elles aussi.
+            $unitsBlockedByPlan += $unitsBlockedByPlan > 0 ? count($remaining) : 0;
         }
 
         /** @var array<string, int> $catKeyToId */
@@ -751,6 +767,7 @@ final class OrganizationCatalogService
                 'summary' => $summary,
                 'units_added' => $unitsAdded,
                 'units_kept' => $unitsKept,
+                'units_blocked_by_plan' => $unitsBlockedByPlan,
                 'functions_added' => $functionsAdded,
                 'functions_kept' => $functionsKept,
                 'roles_added' => $rolesAdded,

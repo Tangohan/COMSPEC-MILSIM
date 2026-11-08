@@ -92,6 +92,11 @@ class TeamAdminController
             Session::flash('error', 'Cette adresse courte est déjà utilisée.');
             return Response::redirect(url('back-office/organisation/structure?ouvrir=equipe'));
         }
+        $planBlock = \App\Services\Billing\OrbatUnitQuota::blockMessage($tenantId);
+        if ($planBlock !== null) {
+            Session::flash('error', $planBlock);
+            return Response::redirect(url('back-office/organisation/structure?ouvrir=equipe'));
+        }
         $unit = $this->unitRepository->create($tenantId, $data);
         Session::flash('success', 'Équipe créée.');
         $newId = isset($unit['id']) ? (int) $unit['id'] : 0;

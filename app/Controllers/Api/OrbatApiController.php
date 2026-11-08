@@ -494,6 +494,12 @@ final class OrbatApiController
             }
         }
 
+        // Plafond de la formule : contrôlé après la validation des champs, juste avant la création.
+        $planBlock = \App\Services\Billing\OrbatUnitQuota::blockMessage($tenantId);
+        if ($planBlock !== null) {
+            return Response::json(['success' => false, 'message' => $planBlock, 'error' => 'plan_required'], 403);
+        }
+
         $slug = $this->unitRepository->uniqueSlugForTenant($tenantId, $name);
 
         $data = [

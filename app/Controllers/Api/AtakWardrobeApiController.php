@@ -38,6 +38,9 @@ final class AtakWardrobeApiController
         if ($ctx instanceof Response) {
             return $ctx;
         }
+        if ($this->isGameClient() && ($blocked = $this->gameSyncBlocked($ctx['tenant_id'])) !== null) {
+            return $blocked;
+        }
         if (!$this->repo->tablesReady()) {
             return Response::json(['ok' => false, 'error' => 'migration_required'], 503);
         }
@@ -70,6 +73,9 @@ final class AtakWardrobeApiController
         $ctx = $this->resolveContext($request, false);
         if ($ctx instanceof Response) {
             return $ctx;
+        }
+        if ($this->isGameClient() && ($blocked = $this->gameSyncBlocked($ctx['tenant_id'])) !== null) {
+            return $blocked;
         }
         if (!$this->repo->tablesReady()) {
             return Response::json(['ok' => false, 'error' => 'migration_required'], 503);
@@ -106,6 +112,9 @@ final class AtakWardrobeApiController
         $ctx = $this->resolveContext($request, true);
         if ($ctx instanceof Response) {
             return $ctx;
+        }
+        if (($blocked = $this->gameSyncBlocked($ctx['tenant_id'])) !== null) {
+            return $blocked;
         }
         if (!$this->repo->tablesReady()) {
             return Response::json(['ok' => false, 'error' => 'migration_required'], 503);
@@ -205,6 +214,9 @@ final class AtakWardrobeApiController
         $ctx = $this->resolveContext($request, $request->method() !== 'GET');
         if ($ctx instanceof Response) {
             return $ctx;
+        }
+        if ($this->isGameClient() && ($blocked = $this->gameSyncBlocked($ctx['tenant_id'])) !== null) {
+            return $blocked;
         }
         if (!$this->repo->tablesReady()) {
             return Response::json(['ok' => false, 'error' => 'migration_required'], 503);
@@ -374,6 +386,21 @@ final class AtakWardrobeApiController
             ?? ($body['_csrf_token'] ?? null);
 
         return is_string($token) && Csrf::validate($token);
+    }
+
+    /** Synchronisation avec le jeu : réservée aux formules qui l'incluent (Pro et plus par défaut). */
+    private function gameSyncBlocked(int $tenantId): ?Response
+    {
+        $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if ($gate->allowsWithCatalogDefault($tenantId, 'equipment_game_sync')) {
+            return null;
+        }
+
+        return Response::json([
+            'ok' => false,
+            'error' => 'plan_required',
+            'message' => 'La synchronisation de l’équipement avec le jeu demande une formule Pro.',
+        ], 403);
     }
 
     private function isGameClient(): bool

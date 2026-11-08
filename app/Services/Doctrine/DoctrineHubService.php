@@ -546,7 +546,7 @@ final class DoctrineHubService
      * Les tables doctrinales sont créées par migration : une table absente ne doit pas casser la page.
      *
      * @template T
-     * @param callable(): list<T>|array<array-key, T> $fn
+     * @param callable(): array<array-key, T> $fn
      * @return array<array-key, T>
      */
     private function safe(callable $fn): array

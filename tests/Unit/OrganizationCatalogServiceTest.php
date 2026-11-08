@@ -114,7 +114,8 @@ final class OrganizationCatalogServiceTest extends TestCase
             $tenants,
             $audit,
             $config,
-            $pdo
+            $pdo,
+            static fn (): ?int => null // plafond de formule neutralisé : ces tests portent sur la copie du kit, pas sur la formule
         );
 
         $a = $svc->apply(11, OrganizationKitDefinitions::INFANTRY_LIGHT, [], 1);
@@ -127,6 +128,52 @@ final class OrganizationCatalogServiceTest extends TestCase
         self::assertSame([], array_intersect($unitIdsByTenant[11], $unitIdsByTenant[22]));
         self::assertSame([], array_intersect($orgRoleIds[11], $orgRoleIds[22]));
         self::assertStringContainsString('unités ajoutées', (string) ($a['report']['summary'] ?? ''));
+    }
+
+    public function testPlanQuotaLimitsNewUnitsInPreview(): void
+    {
+        $kit = OrganizationKitDefinitions::gamingCommunity();
+        $catalog = $this->createMock(OrganizationCatalogRepository::class);
+        $catalog->method('tablesExist')->willReturn(true);
+        $catalog->method('upsertOfficial')->willReturn(3);
+        $catalog->method('findByCode')->willReturn([
+            'id' => 3,
+            'code' => OrganizationKitDefinitions::GAMING_COMMUNITY,
+            'title' => $kit['title'],
+            'summary' => $kit['summary'],
+            'version' => 1,
+            'visibility' => 'official',
+            'owner_tenant_id' => null,
+            'definition_json' => json_encode($kit),
+        ]);
+        $units = $this->createMock(UnitRepository::class);
+        $units->method('findBySlugForTenant')->willReturn(null);
+        $units->method('allForTenant')->willReturn([]);
+        $units->expects($this->never())->method('create');
+        $jobRoles = $this->createMock(PersonnelJobRoleRepository::class);
+        $jobRoles->method('tablesExist')->willReturn(true);
+        $roles = $this->createMock(RoleRepository::class);
+        $roles->method('getIdBySlug')->willReturn(8);
+        $roles->method('forTenantOrganization')->willReturn([]);
+
+        $svc = new OrganizationCatalogService(
+            $catalog,
+            $units,
+            $jobRoles,
+            $roles,
+            $this->createMock(PermissionRepository::class),
+            $this->createMock(TenantRolePermissionPresetService::class),
+            $this->createMock(TenantRepository::class),
+            $this->createMock(AuditService::class),
+            null,
+            $this->createMock(PDO::class),
+            static fn (): ?int => 1
+        );
+
+        $preview = $svc->preview(7, OrganizationKitDefinitions::GAMING_COMMUNITY, ['orbat' => true]);
+        self::assertTrue($preview['ok']);
+        self::assertSame(1, (int) ($preview['report']['units_added'] ?? -1));
+        self::assertGreaterThan(0, (int) ($preview['report']['units_blocked_by_plan'] ?? 0));
     }
 
     public function testReapplyKeepsExistingUnits(): void
@@ -190,7 +237,8 @@ final class OrganizationCatalogServiceTest extends TestCase
             $this->createMock(TenantRepository::class),
             $this->createMock(AuditService::class),
             null,
-            $this->createMock(PDO::class)
+            $this->createMock(PDO::class),
+            static fn (): ?int => null // plafond de formule neutralisé : ces tests portent sur la copie du kit, pas sur la formule
         );
 
         $preview = $svc->preview(7, OrganizationKitDefinitions::GAMING_COMMUNITY, ['orbat' => true]);
@@ -232,7 +280,8 @@ final class OrganizationCatalogServiceTest extends TestCase
             $this->createMock(TenantRepository::class),
             $this->createMock(AuditService::class),
             null,
-            $this->createMock(PDO::class)
+            $this->createMock(PDO::class),
+            static fn (): ?int => null // plafond de formule neutralisé : ces tests portent sur la copie du kit, pas sur la formule
         );
 
         $rename = $svc->renamePrivate(11, OrganizationKitDefinitions::INFANTRY_LIGHT, 'Autre nom', 1);
@@ -324,7 +373,8 @@ final class OrganizationCatalogServiceTest extends TestCase
             $tenants,
             $this->createMock(AuditService::class),
             $config,
-            $pdo
+            $pdo,
+            static fn (): ?int => null // plafond de formule neutralisé : ces tests portent sur la copie du kit, pas sur la formule
         );
 
         $out = $svc->apply(33, OrganizationKitDefinitions::US_SOF, ['orbat' => true, 'grades' => true, 'functions' => true, 'roles' => true], 8);
@@ -394,7 +444,8 @@ final class OrganizationCatalogServiceTest extends TestCase
             $tenants,
             $this->createMock(AuditService::class),
             $this->createMock(ConfigurationUpdateService::class),
-            $pdo
+            $pdo,
+            static fn (): ?int => null // plafond de formule neutralisé : ces tests portent sur la copie du kit, pas sur la formule
         );
 
         $prefix = \App\Services\OrganizationCatalog\RealUnitKitDefinitions::PREFIX;

@@ -720,6 +720,10 @@ final class AdminAarReportsController
                 'conclusion_text' => $request->input('conclusion_text'),
             ],
         ];
+        // Conclusion du commandement : gestionnaires et adjoints seulement ; pour les autres, la valeur en place est gardée.
+        if (!\App\Services\Aar\AarConclusionAccess::allowsCurrentUser()) {
+            $payload['metrics']['conclusion_text'] = (string) ($existing['conclusion_text'] ?? '');
+        }
         $rows = $request->input('actions', null);
         if (is_array($rows)) {
             $split = AarReportAdminService::actionsFromRows($rows);

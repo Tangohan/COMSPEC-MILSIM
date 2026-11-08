@@ -84,6 +84,7 @@ $stateButton = static function (int $id, string $state, string $label, string $c
         <div class="rps-intro__acts">
             <a class="ath-btn ath-btn--solid" href="#nouvelle">Nouvelle session</a>
             <a class="ath-btn" href="#regles">Règles de comptage</a>
+            <a class="ath-btn" href="<?= $h(url('back-office/events')) ?>">Agenda</a>
         </div>
     </section>
 

@@ -35,6 +35,9 @@ $keptRoles = is_array($report['roles_kept_names'] ?? null) ? $report['roles_kept
         </div>
     </header>
 
+    <?php if ((int) ($report['units_blocked_by_plan'] ?? 0) > 0): ?>
+        <p class="bo-catalog__real-note" role="status"><?= (int) $report['units_blocked_by_plan'] ?> unité(s) ne seront pas créées : votre formule limite le nombre d’unités de l’ORBAT.</p>
+    <?php endif; ?>
     <div class="bo-catalog__tiles" aria-label="Volume du modèle">
         <article class="bo-catalog__tile">
             <span class="bo-catalog__tile-kicker">Organigramme</span>
