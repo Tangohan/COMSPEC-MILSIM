@@ -36,6 +36,18 @@ class TenantMiniArticleRepository
         return self::$tableReady;
     }
 
+    /** Mini-articles comptés dans le plafond de la formule (brouillons compris). */
+    public function countForPlanQuota(int $tenantId): int
+    {
+        if (!$this->schemaReady() || $tenantId < 1) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM tenant_mini_articles WHERE tenant_id = ?');
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /** @return list<array<string, mixed>> */
     public function listForTenant(int $tenantId, int $limit = 100): array
     {

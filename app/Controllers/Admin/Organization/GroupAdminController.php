@@ -51,7 +51,7 @@ class GroupAdminController
             'title' => 'Nouveau groupe',
             'parents' => $parents,
             'users' => $users,
-            'unitTypes' => config('units.types', []),
+            'unitTypes' => $this->unitTypesFor((int) Session::get('tenant_id')),
             'defaultType' => self::TYPE,
         ]);
     }
@@ -153,7 +153,7 @@ class GroupAdminController
             'group' => $unit,
             'parents' => $parents,
             'users' => $users,
-            'unitTypes' => config('units.types', []),
+            'unitTypes' => $this->unitTypesFor((int) Session::get('tenant_id')),
         ]);
     }
 
@@ -227,10 +227,21 @@ class GroupAdminController
         return Response::redirect(url('back-office/groups'));
     }
 
+    /** @return array<string, array{label: string}> */
+    private function unitTypesFor(int $tenantId): array
+    {
+        $out = [];
+        foreach (\App\Support\UnitStructTypes::forTenant($tenantId) as $row) {
+            $out[$row['id']] = ['label' => $row['label']];
+        }
+
+        return $out;
+    }
+
     private function resolveStructType(Request $request, string $fallback): string
     {
         $raw = strtolower(trim((string) $request->input('struct_type', $request->input('type', $fallback))));
-        $allowed = array_keys(config('units.types', []));
+        $allowed = \App\Support\UnitStructTypes::allowedIds((int) Session::get('tenant_id'));
         if ($allowed !== [] && !in_array($raw, $allowed, true)) {
             return $fallback;
         }
