@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SqlText;
 use PDO;
 
 /** Types d'entité ajoutés par une communauté (table tenant_unit_struct_types). */
@@ -51,7 +52,7 @@ final class UnitStructTypeRepository
             return false;
         }
         $stmt = $this->pdo->prepare(
-            'SELECT 1 FROM tenant_unit_struct_types WHERE tenant_id = ? AND slug = ? LIMIT 1'
+            'SELECT 1 FROM tenant_unit_struct_types WHERE tenant_id = ? AND ' . SqlText::equals($this->pdo, 'slug') . ' LIMIT 1'
         );
         $stmt->execute([$tenantId, $slug]);
 
@@ -79,7 +80,7 @@ final class UnitStructTypeRepository
         if (!$this->tableExists() || $label === '') {
             return false;
         }
-        $stmt = $this->pdo->prepare('UPDATE tenant_unit_struct_types SET label = ? WHERE tenant_id = ? AND slug = ?');
+        $stmt = $this->pdo->prepare('UPDATE tenant_unit_struct_types SET label = ? WHERE tenant_id = ? AND ' . SqlText::equals($this->pdo, 'slug'));
         $stmt->execute([mb_substr($label, 0, 120), $tenantId, $slug]);
 
         return $this->exists($tenantId, $slug);
@@ -90,7 +91,7 @@ final class UnitStructTypeRepository
         if (!$this->tableExists()) {
             return false;
         }
-        $stmt = $this->pdo->prepare('DELETE FROM tenant_unit_struct_types WHERE tenant_id = ? AND slug = ?');
+        $stmt = $this->pdo->prepare('DELETE FROM tenant_unit_struct_types WHERE tenant_id = ? AND ' . SqlText::equals($this->pdo, 'slug'));
         $stmt->execute([$tenantId, $slug]);
 
         return $stmt->rowCount() > 0;

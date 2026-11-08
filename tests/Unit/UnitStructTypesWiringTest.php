@@ -37,7 +37,7 @@ final class UnitStructTypesWiringTest extends TestCase
         self::assertStringContainsString('countUnitsUsing', $ctl);
         $repo = $this->src('app/Repositories/UnitStructTypeRepository.php');
         self::assertStringContainsString('WHERE tenant_id = ? AND type = ?', $repo);
-        self::assertStringContainsString('tenant_id = ? AND slug = ?', $repo);
+        self::assertStringContainsString('SqlText::equals', $repo);
         $routes = $this->src('routes/web.php');
         self::assertStringContainsString('/back-office/organisation/types-entite/enregistrer', $routes);
     }
