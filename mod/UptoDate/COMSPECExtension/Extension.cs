@@ -4378,7 +4378,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,GetCommunityBrief,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck,GetCommunityOrbat,GetCommunityOrbatChunk";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,GetCommunityBrief,GetCommunityOrbat,GetCommunityOrbatChunk,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
         }
 
         if (function == "GetCapabilities")
