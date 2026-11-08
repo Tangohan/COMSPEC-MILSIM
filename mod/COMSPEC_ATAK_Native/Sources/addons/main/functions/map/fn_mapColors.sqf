@@ -72,9 +72,12 @@ private _vivid = createHashMapFromArray [
     ["colorblufor", [0.25, 0.55, 1]], ["colorcivilian", [0.78, 0.38, 1]], ["colorciv", [0.78, 0.38, 1]],
     ["colorbrown", [0.80, 0.52, 0.24]], ["colorunknown", [0.80, 0.80, 0.80]]
 ];
+// « lift » s'exécute plus tard, depuis les fonctions de dessin : une variable locale d'ici n'y existe plus. Table lue dans
+// la palette (avant : _vivid indéfinie, erreur de script à chaque image sur fond sombre, dessin de la carte arrêté).
+_pal set ["vivid", _vivid];
 private _lift = {
     params ["_c", ["_cls", ""]];
-    private _v = _vivid getOrDefault [toLower _cls, []];
+    private _v = ((uiNamespace getVariable ["COMSPEC_ATAK_MapCol", createHashMap]) getOrDefault ["vivid", createHashMap]) getOrDefault [toLower _cls, []];
     if ((count _v) isEqualTo 0) exitWith { _c };
     _v + [_c param [3, 1]]
 };
