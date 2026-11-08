@@ -115,6 +115,61 @@ final class AtakThemeContrastTest extends TestCase
         self::assertStringNotContainsString('["pill", _unlockRect, _th get "accent"] call _tex;', $lock);
     }
 
+    /**
+     * App CAS (fn_firesCff, fn_pageFires) : textes des champs, boutons neutres, panneaux et bouton rouge TIR lisibles à 4,5
+     * dans les trois thèmes. L'écran portait des couleurs fixes (encre sombre sur champs sombres, texte noir sur l'accent).
+     */
+    #[DataProvider('themes')]
+    public function testAppCasLisible(string $marker): void
+    {
+        $t = $this->tokens($marker);
+        $dark = $marker !== 'case "DAY"';
+        foreach (['bg0', 'bg1', 'surface', 'surfaceAlt', 'surface2', 'field'] as $bg) {
+            $c = self::contrast($t['text'], $t[$bg]);
+            self::assertGreaterThanOrEqual(4.5, round($c, 2), "text sur {$bg} : contraste " . round($c, 2));
+        }
+        // Libellés d'aide (textDim) sur les panneaux et le fond de page de l'app.
+        foreach (['bg1', 'surface', 'surfaceAlt'] as $bg) {
+            self::assertGreaterThanOrEqual(4.5, round(self::contrast($t['textDim'], $t[$bg]), 2), "textDim sur {$bg}");
+        }
+        // Bouton TIR : fond d'alerte assombri (sombre, JVN) ou tel quel (jour), encre du thème ou blanche (formules de fn_firesCff).
+        $bg = $dark ? array_map(static fn (float $v): float => $v * 0.6, $t['alert']) : $t['alert'];
+        $ink = $dark ? $t['text'] : $t['onState'];
+        self::assertGreaterThanOrEqual(4.5, round(self::contrast($ink, $bg), 2), "TIR : encre sur fond d'alerte");
+    }
+
+    public function testAppCasSansCouleurFixe(): void
+    {
+        $dir = self::MAIN . '/functions/pages/';
+        $cff = (string) file_get_contents($dir . 'fn_firesCff.sqf');
+        $tabs = (string) file_get_contents($dir . 'fn_pageFires.sqf');
+        self::assertStringContainsString('private _cSel = _th get "accentSoftHi";', $cff);
+        self::assertStringContainsString('private _cOnSel = _th get "onAccentSoft";', $cff);
+        self::assertStringContainsString('format ["[%1]", ctrlText _b]', $cff);
+        self::assertStringNotContainsString('_cOnAcc', $cff);
+        self::assertStringNotContainsString('private _cInk = COMSPEC_ATAK_Th get "onState";', $cff);
+        self::assertStringNotContainsString('[0.03, 0.05, 0.04, 1]', $cff . $tabs);
+        self::assertStringContainsString('_th get "onAccentSoft"', $tabs);
+        self::assertStringContainsString('Appuyez sur CALCULER après avoir renseigné la pièce et la cible', $cff);
+    }
+
+    public function testFiresCourtChoixDesDestinataires(): void
+    {
+        $dir = self::MAIN . '/functions/tactical/';
+        $q = (string) file_get_contents($dir . 'fn_firesQuick.sqf');
+        $page = (string) file_get_contents($dir . 'fn_pageQuickMap.sqf');
+        foreach (['case "cands"', 'case "destToggle"', 'case "destAll"', 'case "picker"', 'case "search"'] as $a) {
+            self::assertStringContainsString($a, $q);
+        }
+        self::assertStringContainsString('(netId (_x select 1)) in _sel', $q);
+        self::assertStringContainsString('["picker"] call comspec_atak_native_fnc_firesQuick', $page);
+        self::assertStringContainsString('Aucun pilote ni JTAC avec téléphone en ligne', $page);
+        $en = (string) file_get_contents(self::MAIN . '/i18n/en.txt');
+        foreach (['DESTINATAIRES : AUCUN EN LIGNE', 'AZ : azimut de la cible en mils, ex. 1600', 'Appuyez sur CALCULER après avoir renseigné la pièce et la cible : la solution de tir apparaît ici.'] as $k) {
+            self::assertStringContainsString('["' . $k . '", "', $en);
+        }
+    }
+
     public function testPictogrammesEtTitresDEtatSuiventLeTheme(): void
     {
         $src = (string) file_get_contents(self::MAIN . '/functions/ui/fn_formRender.sqf');

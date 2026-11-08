@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : FIRES court (destinataires) et app CAS lisible (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : FIRES court : choisir l'unité à appeler, et l'app CAS enfin lisible
+- FIRES court : un bouton « Destinataires » ouvre la liste des pilotes et JTAC en ligne, avec recherche. Touchez un nom, ou une unité sur la carte, pour l'appeler seule ; rien de choisi, tous sont appelés comme avant.
+- Si personne n'est en ligne, un message l'explique avec un exemple.
+- App CAS (9-LINE, 5-LINE, APPEL DE FEU, COURT) : textes, champs et boutons suivent le thème sombre, jour ou nuit JVN, avec un contraste lisible. Le bouton choisi est entouré de crochets en plus de sa couleur.
+- Des aides courtes avec exemple (AZ, DIST, X), des messages explicites quand la solution de tir ou le journal sont vides, et un journal en plus grosse police.
+EN : FIRES quick: pick the unit to call, and a readable CAS app
+- FIRES quick: a "Recipients" button opens the list of online pilots and JTACs, with search. Tap a name, or a unit on the map, to call only that one; with nothing picked, everyone is called as before.
+- When nobody is online, a message explains it with an example.
+- CAS app (9-LINE, 5-LINE, CALL FOR FIRE, QUICK): texts, fields and buttons follow the dark, day or NVG theme with readable contrast. The chosen button is wrapped in brackets as well as coloured.
+- Short help lines with examples (AZ, DIST, X), explicit messages when the fire solution or the log is empty, and a larger log font.
+
+### Détail technique
+- Cause (code, non vérifiée en jeu) : `fn_firesQuick` "recipients" calculait la liste (pilotes et JTAC avec téléphone et espace d'app) sans aucun choix, et l'écran n'affichait que « N pilote(s) ou JTAC en ligne ». Aucun sélecteur, et liste vide sans explication si le filtre (téléphone, espace d'app) écartait tout le monde.
+- `fn_firesQuick` : "cands", "dest", "destToggle", "destAll", "picker", "search" ; "recipients" renvoie les choisis encore en ligne, sinon tous ; "target" avec le sélecteur ouvert choisit l'unité à moins de 150 m du toucher. `fn_pageQuickMap` : bouton, panneau de sélection (aide, recherche, 5 lignes).
+- `fn_firesCff`, `fn_pageFires` : plus de couleur fixe, jetons de `fn_theme` ; cause de l'illisible : `onState` (encre sombre) utilisé comme texte des champs et boutons sombres, `accent` + encre 0,03 sur l'état actif, gris pâles. Actif : `accentSoftHi` + `onAccentSoft` (testés à 4,5 dans AtakThemeContrastTest) et crochets. Libellés réduits par `fn_textFit` (plancher 80 %).
+- Autotest : `fires_court_destinataires` (pilote.sqf), `cas_lisibilite_themes` (telephone.sqf), non exécutés.
+
 ## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

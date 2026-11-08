@@ -110,6 +110,58 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     call AT_fnc_done;
 }, 150] call AT_fnc_run;
 
+// App CAS lisible (4 onglets dont COURT, appel de feu rempli ou vide), dans les trois thèmes, en portrait (mini) et en paysage (plein écran).
+["tel_cas_lisibilite_themes", {
+    if (["comspec_atak_native_fnc_pageFires", "comspec_atak_native_fnc_firesCff", "comspec_atak_native_fnc_theme"] call AT_fnc_nil) exitWith {};
+    private _mode0 = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    private _f = [] call comspec_atak_native_fnc_firesState;
+    private _show = { ["FIRES"] call comspec_atak_native_fnc_navigate; uiSleep 0.4; ["FIRES"] call comspec_atak_native_fnc_pageRender; uiSleep 0.6; };
+    {
+        _x params ["_mode", "_orient", "_nom"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        [true] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, format ["téléphone non ouvert (%1)", _nom]] call AT_fnc_check;
+        uiSleep 1.5;
+        {
+            private _th = _x;
+            ["set", _th] call comspec_atak_native_fnc_theme;
+            uiSleep 1;
+            {
+                _f set ["tab", _x];
+                call _show;
+                [format ["cas_%1_%2_%3", toLower _th, _x, _nom]] call AT_fnc_shot;
+            } forEach ["nine", "five", "cff"];
+            // Appel de feu rempli : champs, boutons choisis (crochets), solution calculée.
+            _f set ["tab", "cff"];
+            { _f set _x; } forEach [["mode", "POLAR"], ["from", "ME"], ["az", "1600"], ["dist", "600"], ["rounds", "3"], ["enemy", "infanterie"], ["ammo", "HE"]];
+            call _show;
+            ["compute"] call comspec_atak_native_fnc_firesAction;
+            uiSleep 0.8;
+            [format ["cas_%1_cff_rempli_%2", toLower _th, _nom]] call AT_fnc_shot;
+            ["clearTgt"] call comspec_atak_native_fnc_firesAction;
+            call _show;
+            // FIRES court (carte du téléphone) : sélecteur de destinataires ouvert.
+            if (["can"] call comspec_atak_native_fnc_firesQuick) then {
+                ["FIRESQ"] call comspec_atak_native_fnc_navigate;
+                uiSleep 1.2;
+                ["picker"] call comspec_atak_native_fnc_firesQuick;
+                uiSleep 0.8;
+                [format ["cas_%1_court_%2", toLower _th, _nom]] call AT_fnc_shot;
+                ["picker"] call comspec_atak_native_fnc_firesQuick;
+            };
+        } forEach ["DARK", "DAY", "NVG"];
+    } forEach [["MINI", "PORTRAIT", "portrait"], ["FULL", "LANDSCAPE", "paysage"]];
+    "app CAS : texte lisible sur tous les boutons et champs, onglet actif entre crochets, aides avec exemples, solution vide expliquée, panneau de droite entier, journal lisible" call AT_fnc_visuel;
+    ["set", "DARK"] call comspec_atak_native_fnc_theme;
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode0];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient0];
+    [true] call comspec_atak_native_fnc_open;
+    uiSleep 1;
+    call AT_fnc_done;
+}, 240] call AT_fnc_run;
+
 // Garde-fou du téléphone (fn_deviceGuard) : données reprises vérifiées, page caméra jamais rouverte seule, mode sans échec.
 ["tel_garde_fou", {
     if (["comspec_atak_native_fnc_deviceGuard"] call AT_fnc_nil) exitWith {};

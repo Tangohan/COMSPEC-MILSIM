@@ -22,11 +22,12 @@ if !(_tab in ["nine", "five"]) exitWith {
     private _pad = (_fl get "pad") * 1.6;
     private _hh = _font * 1.6;
     private _top = ["COMSPEC_RscText", [0, 0, _bw, _hh]] call comspec_atak_native_fnc_pageCtrl;
-    _top ctrlSetBackgroundColor [0.020, 0.026, 0.023, 1];
-    private _acc = ([] call comspec_atak_native_fnc_accent) select 0;
+    private _th = COMSPEC_ATAK_Th;
+    _top ctrlSetBackgroundColor (_th get "bg0");
+    private _acc = _th get "accentInk";
     private _topLine = ["COMSPEC_RscText", [0, _hh - pixelH, _bw, pixelH]] call comspec_atak_native_fnc_pageCtrl;
     _topLine ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.45];
-    private _tw = (_bw * 0.13) max (_fs * 5 * pixelH / pixelW);
+    private _tw = (_bw * 0.13) max (_fs * 6.5 * pixelH / pixelW);
     private _topTabs = [["9-LINE", "nine"], ["5-LINE", "five"], ["APPEL DE FEU", "cff"]];
     if (["can"] call comspec_atak_native_fnc_firesQuick) then { _topTabs pushBack ["COURT", "quick"]; };
     {
@@ -34,15 +35,18 @@ if !(_tab in ["nine", "five"]) exitWith {
         private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_tw + _pad / 2), _hh * 0.12, _tw, _hh * 0.76], _t] call comspec_atak_native_fnc_pageCtrl;
         _b ctrlSetFontHeight (_fs * 0.95);
         private _on = _tab isEqualTo _k || {_k isEqualTo "cff" && {!(_tab in ["nine", "five"])}};
-        _b ctrlSetBackgroundColor ([[0.11, 0.135, 0.12, 1], [_acc select 0, _acc select 1, _acc select 2, 1]] select _on);
-        _b ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select _on);
+        // Onglet actif : fond tonal d'accent, encre lisible dessus (4,5) et crochets ; les autres : fond neutre, texte du thème.
+        _b ctrlSetBackgroundColor ([_th get "surface2", _th get "accentSoftHi"] select _on);
+        _b ctrlSetTextColor ([_th get "text", _th get "onAccentSoft"] select _on);
+        if (_on) then { _b ctrlSetText format ["[%1]", ctrlText _b]; };
+        [_b, _fs * 0.95, true, 0.8] call comspec_atak_native_fnc_textFit;
         _b ctrlAddEventHandler ["ButtonClick", compile format ["['tab', '%1'] call comspec_atak_native_fnc_firesAction;", _k]];
     } forEach _topTabs;
     // À droite : ma grille, mon altitude, le vent.
     private _nT = count _topTabs;
     private _info = ["COMSPEC_RscTextRight", [_pad + _nT * (_tw + _pad / 2), 0, _bw - _pad * 2 - _nT * (_tw + _pad / 2), _hh]] call comspec_atak_native_fnc_pageCtrl;
     _info ctrlSetFontHeight (_fs * 0.95);
-    _info ctrlSetTextColor [0.78, 0.86, 0.82, 1];
+    _info ctrlSetTextColor (_th get "text");
     _info ctrlSetText ((format ["%1   %2   %3", [player, 10] call comspec_atak_native_fnc_gridRef,
         format [("ÉLÉV %1 m") call comspec_atak_native_fnc_tr, round ((getPosASL player) select 2)], ([] call comspec_atak_native_fnc_firesWind) select 0]) call comspec_atak_native_fnc_tr);
     [[0, _hh, _bw, _bh - _hh]] call comspec_atak_native_fnc_firesCff;
@@ -50,7 +54,7 @@ if !(_tab in ["nine", "five"]) exitWith {
 };
 private _rows = [["buttons", [["9-LINE", "nine"] call _tabBtn, ["5-LINE", "five"] call _tabBtn, ["APPEL DE FEU", "cff"] call _tabBtn] + ([[], [["COURT", "quick"] call _tabBtn]] select (["can"] call comspec_atak_native_fnc_firesQuick))]];
 private _hint = _f getOrDefault ["hint", ["", false]];
-if ((_hint select 0) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", (COMSPEC_ATAK_Th get "hexWarn")] select (_hint select 1), _hint select 0]]; };
+if ((_hint select 0) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexTextDim"), (COMSPEC_ATAK_Th get "hexWarn")] select (_hint select 1), _hint select 0]]; };
 private _v = { params ["_k", ["_d", ""]]; _f getOrDefault [_k, _d] };
 private _tgt = _f getOrDefault ["target", []];
 private _tgtGrid = if ((count _tgt) >= 2) then { [_tgt, 8] call comspec_atak_native_fnc_gridRef } else { "" };
