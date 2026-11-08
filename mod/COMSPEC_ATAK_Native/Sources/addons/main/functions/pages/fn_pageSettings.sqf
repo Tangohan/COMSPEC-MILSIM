@@ -66,7 +66,17 @@ private _cbaSwitch = {
     private _rule = [_tenantKey] call comspec_atak_native_fnc_tenantRule;
     private _locked = _rule in ["on", "off"];
     if (_locked) then { _v = _rule isEqualTo "on"; };
-    ["switch", _label, _v, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaToggle');", _k], _help, _locked, "cba_" + _k]
+    // Source de la valeur, dite sur la ligne : communauté (Athena), serveur ou mission (CBA forcé), Athena pour cette partie (zones, réseau roleplay), sinon le joueur.
+    private _srcCba = if (isNil "CBA_settings_fnc_priority") then { "client" } else { [_k] call CBA_settings_fnc_priority };
+    private _src = switch (true) do {
+        case (_locked): { format ["Imposé par %1 sur Athena", ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")] };
+        case (_srcCba isEqualTo "server"): { "Imposé par le serveur" };
+        case (_srcCba isEqualTo "mission"): { "Imposé par la mission" };
+        case (_v && {!isNil "CBA_settings_fnc_get"} && {([_k, "client"] call CBA_settings_fnc_get) isEqualTo false}): { "Activé pour cette partie par Athena" };
+        default { "Votre choix" };
+    };
+    private _forced = _locked || {_srcCba in ["server", "mission"]};
+    ["switch", _label, _v, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaToggle');", _k], [_help, [_src, format ["%1 · %2", _help, _src]] select (_help isNotEqualTo "")] select ((_k select [0, 18]) isEqualTo "comspec_overwatch_"), _forced, "cba_" + _k]
 };
 // Choix exclusif enregistré en réglage CBA côté joueur (étiquettes de la carte) : le même que dans le menu CBA.
 uiNamespace setVariable ["COMSPEC_ATAK_CbaSet", {
@@ -372,17 +382,17 @@ private _real = [];
 private _live = [];
 if (_bridge) then {
     _real append [
-        ["section", "Réalisme", ["Réglages roleplay de la communauté", format ["%1 réglage(s) imposé(s) par %2 sur Athena", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)],
-        ["comspec_overwatch_roleplay_enabled", "rp_enabled", "Mode roleplay", "Active les simulations ci-dessous"] call _cbaSwitch,
+        ["section", "Réalisme", ["Réglages roleplay de la communauté", format ["%1 réglage(s) imposé(s) par %2, toutes rubriques confondues. Athena : Configuration ATAK, Contrôle serveur.", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)],
+        ["comspec_overwatch_roleplay_enabled", "rp_enabled", "Mode roleplay", "Autorise les simulations cochées ci-dessous : chacune garde sa propre valeur"] call _cbaSwitch,
         ["comspec_overwatch_roleplay_network_failures", "rp_network_failures", "Coupures réseau", "Selon le terrain et les relais"] call _cbaSwitch,
-        ["comspec_overwatch_roleplay_sensor_failures", "rp_sensor_failures", "Défauts des capteurs médicaux"] call _cbaSwitch,
+        ["comspec_overwatch_roleplay_sensor_failures", "rp_sensor_failures", "Défauts des capteurs médicaux", "Sans effet pour l'instant : aucune simulation ne lit ce réglage"] call _cbaSwitch,
         ["comspec_overwatch_roleplay_visual_effects", "rp_visual_effects", "Effets visuels de dégradation", "Écran parasité quand la liaison faiblit", true] call _cbaSwitch,
         ["comspec_overwatch_link_degrade_sim", "rp_link_degrade", "Liaison instable simulée", "Retards et petites coupures"] call _cbaSwitch,
         ["comspec_overwatch_show_link_strip", "rp_data_bar", "Barre d'infos sous la carte", "Vitesse, altitude, direction, coordonnées"] call _cbaSwitch
     ];
     private _dmg = ["atak_realism"] call comspec_atak_native_fnc_tenantRule;
     private _lvl = missionNamespace getVariable ["comspec_overwatch_atak_realism", 0];
-    _real pushBack ["info", "Dégâts au téléphone", format ["%1%2", ["aucun", "peut s'éteindre", "écran destructible", "téléphone destructible"] param [_lvl, str _lvl], [" <t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>· imposé</t>", ""] select (_dmg isEqualTo "player")]];
+    _real pushBack ["check", "off", "Dégâts au téléphone", ["aucun", "peut s'éteindre", "écran destructible", "téléphone destructible"] param [_lvl, str _lvl], [format ["Imposé par %1 sur Athena", ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")], "Réglage du serveur"] select (_dmg isEqualTo "player")];
     if !(_tenantOn) then { _real pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Réglages de la communauté pas encore reçus : connectez-vous à Athena.</t>"]; };
 };
 // Téléphone (dégâts, saleté) et données médicales affichées (fn_medShow) : choix du joueur, sauf si le serveur

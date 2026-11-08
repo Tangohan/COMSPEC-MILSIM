@@ -3901,6 +3901,8 @@ public static partial class Extension
         // COMSPEC IDENTITY (2.0.118) : morceau du pack d'identité gardé en mémoire par GetIdentityPack, sans réseau.
         if (function == "GetIdentityPackChunk")
             return IdentityPackChunk(args);
+        if (function == "GetCommunityOrbatChunk")
+            return CommunityOrbatChunk(args);
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
@@ -4376,7 +4378,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,GetCommunityBrief,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,GetCommunityBrief,GetCommunityOrbat,GetCommunityOrbatChunk,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
         }
 
         if (function == "GetCapabilities")
@@ -6219,6 +6221,9 @@ public static partial class Extension
             // (Extension_Identity.cs).
             if (function is "GetIdentityPack" or "QueryIdDocument" or "SubmitIdCheck")
                 return IdentityCommand(function, args, token);
+            // ORBAT du site pour le BFT (Extension_CommunityOrbat.cs) : jamais sur le fil du jeu, une requête à la fois.
+            if (function == "GetCommunityOrbat")
+                return CommunityOrbatCommand(token);
             if (function == "JoinFireTeam" && args.Length >= 1)
             {
                 var teamId = (args[0] ?? "").Trim();
