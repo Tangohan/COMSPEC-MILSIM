@@ -282,9 +282,9 @@ final class MemberNumberToolsTest extends TestCase
         }
 
         self::assertSame([
-            10 => ['unit' => 'A1', 'grade' => 'Sgt'],
-            11 => ['unit' => '', 'grade' => ''],
-            12 => ['unit' => '', 'grade' => ''],
+            10 => ['unit' => 'A1', 'grade' => 'Sgt', 'unit_id' => 2],
+            11 => ['unit' => '', 'grade' => '', 'unit_id' => 0],
+            12 => ['unit' => '', 'grade' => '', 'unit_id' => 0],
         ], $ctx);
     }
 

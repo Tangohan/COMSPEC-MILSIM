@@ -1940,11 +1940,12 @@ class UserRepository
                 $st->execute($chunk);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $uid = (int) $row['user_id'];
-                    if (isset($out[$uid]) && $out[$uid]['unit_id'] === 0) {
-                        $out[$uid]['unit_id'] = (int) $row['unit_id'];
-                    }
                     if (isset($out[$uid]) && $out[$uid]['unit'] === '') {
                         $out[$uid]['unit'] = trim((string) ($row['code'] ?? ''));
+                        // L'unité retenue est celle dont le code est utilisé ; à défaut, la première rencontrée.
+                        if ($out[$uid]['unit'] !== '' || $out[$uid]['unit_id'] === 0) {
+                            $out[$uid]['unit_id'] = (int) $row['unit_id'];
+                        }
                     }
                 }
             }
@@ -1960,11 +1961,11 @@ class UserRepository
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $uid = (int) $row['user_id'];
                     $code = trim((string) ($row['code'] ?? ''));
-                    if (isset($out[$uid]) && $out[$uid]['unit_id'] === 0) {
-                        $out[$uid]['unit_id'] = (int) $row['unit_id'];
-                    }
                     if (isset($out[$uid]) && $out[$uid]['unit'] === '' && $code !== '') {
                         $out[$uid]['unit'] = $code;
+                        $out[$uid]['unit_id'] = (int) $row['unit_id'];
+                    } elseif (isset($out[$uid]) && $out[$uid]['unit_id'] === 0) {
+                        $out[$uid]['unit_id'] = (int) $row['unit_id'];
                     }
                 }
             }
