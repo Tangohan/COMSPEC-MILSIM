@@ -55,7 +55,7 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
             call AT_fnc_done;
         }, 30, [_app]] call AT_fnc_run;
     };
-} forEach (if (isNil "comspec_atak_native_fnc_appList") then { [] } else { [] call comspec_atak_native_fnc_appList });
+} forEach (if (isNil "comspec_atak_native_fnc_appList") then { [] } else { ([] call comspec_atak_native_fnc_appList) select { !((_x get "page") in ["PILOT", "FIRESQ"]) } }); // écrans posés sur la carte : scripts\pilote.sqf
 
 ["tel_themes", {
     if (["comspec_atak_native_fnc_theme"] call AT_fnc_nil) exitWith {};

@@ -911,3 +911,5 @@ if (_spanX > 1 && {_spanY > 1} && {profileNamespace getVariable ["COMSPEC_ATAK_L
 
 // Terminal compromis : couches grisées, bandeau, console d'erreurs et pistes figées, au-dessus de tout (fn_compromiseView).
 if (_compSkip) then { ["draw", _map] call comspec_atak_native_fnc_compromiseView; };
+// Mode pilote et FIRES court : altitude et cap des appareils alliés, cibles (rien en dehors de cet écran).
+if ((_state getOrDefault ["quickView", ""]) isNotEqualTo "" && {(_state getOrDefault ["activePage", ""]) isEqualTo "MAP"}) then { ["draw", _map] call comspec_atak_native_fnc_firesQuick; };

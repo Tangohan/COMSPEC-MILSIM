@@ -135,6 +135,11 @@ switch (_mode) do {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _page = _s getOrDefault ["activePage", ""];
         private _app = (([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
+        // App ouverte retirée par le serveur (« Apps retirées ») : retour à l'accueil.
+        if ((count _app) isEqualTo 0 && {(("true" configClasses (configFile >> "COMSPEC_ATAK_Apps")) findIf { (toUpper getText (_x >> "page")) isEqualTo _page }) >= 0}) exitWith {
+            ["Cette app vient d'être retirée par le serveur", 3] call comspec_atak_native_fnc_toast;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
+        };
         if ((count _app) > 0 && {([_app get "id"] call _state) isEqualTo "forbidden"}) then {
             ["Cette app vient d'être interdite par l'encadrement", 3] call comspec_atak_native_fnc_toast;
             [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;

@@ -9,6 +9,8 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _interactive = _s getOrDefault ["interactive", false];
 private _mode = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"]);
 if (!_interactive || {!(_mode in ["MINI", "FULL"])}) then { _mode = "MINI"; };
+// Mode pilote en main : la carte la plus grande, sans changer le choix du joueur pour le reste du téléphone.
+if (_interactive && {(_s getOrDefault ["quickView", ""]) isEqualTo "PILOT"} && {(_s getOrDefault ["activePage", ""]) isEqualTo "MAP"}) then { _mode = "FULL"; };
 private _orient = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"]);
 if (_mode isEqualTo "FULL" || {!(_orient in ["PORTRAIT", "LANDSCAPE"])}) then { _orient = ["PORTRAIT", "LANDSCAPE"] select (_mode isEqualTo "FULL"); };
 // Écran 3D de la tablette sur le JPC (fn_jpcScreen) : texture UI 1024 x 576, toujours horizontale, l'écran la remplit.
