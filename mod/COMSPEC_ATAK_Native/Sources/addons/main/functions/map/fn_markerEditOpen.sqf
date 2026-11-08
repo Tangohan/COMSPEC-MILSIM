@@ -7,7 +7,8 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _notes = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
 private _edit = if (_name isEqualTo "") then {
     createHashMapFromArray [
-        ["name", ""], ["pos", _pos], ["text", ""], ["desc", ""],
+        // Nom proposé, modifiable : numéro de repère neutre (fn_markerDrop), jamais le type d'unité.
+        ["name", ""], ["pos", _pos], ["text", format ["%1 %2", ["MK", "REP"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr"), (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1]], ["desc", ""],
         ["type", profileNamespace getVariable ["COMSPEC_ATAK_LastMarkerType", "mil_dot"]],
         ["color", profileNamespace getVariable ["COMSPEC_ATAK_LastMarkerColor", "ColorRed"]],
         ["size", "1"], ["dir", "0"], ["alpha", "1"], ["channel", str (["channel"] call comspec_atak_native_fnc_markerPlace)], ["shape", "ICON"]

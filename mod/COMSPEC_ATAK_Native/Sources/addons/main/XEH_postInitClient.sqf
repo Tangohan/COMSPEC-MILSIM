@@ -1162,6 +1162,8 @@ addMissionEventHandler ["MarkerCreated", {
 ["comspec_atak_native_breach", { _this call comspec_atak_native_fnc_breachTop; }] call CBA_fnc_addEventHandler;
 // Carte : ping d'un membre de mon camp (menu clic droit, fn_mapPing).
 ["comspec_atak_native_mapPing", { ["recv", _this] call comspec_atak_native_fnc_mapPing; }] call CBA_fnc_addEventHandler;
+// Carte : pointeur d'un membre de mon camp (appui maintenu, fn_mapPing), sans bandeau ni vibration.
+["comspec_atak_native_mapPoint", { ["pointRecv", _this] call comspec_atak_native_fnc_mapPing; }] call CBA_fnc_addEventHandler;
 // App Explosifs : ordre et heure de pose de chaque charge du joueur (minuteries : temps restant).
 ["ace_explosives_place", {
     params ["_e", "", "", "_unit"];
