@@ -20,6 +20,7 @@ private _st = uiNamespace getVariable ["comspec_sse_idApp", createHashMap];
 uiNamespace setVariable ["comspec_sse_idApp", _st];
 private _tab = _st getOrDefault ["tab", "check"];
 private _tr = { _this call comspec_sse_fnc_tr };
+// Une seule action principale (la prochaine étape), le reste en blocs repliables Contrôle, Signaler, Partager (fn_idAction « fold »).
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 private _act = { params ["_a", ["_arg", ""]]; compile format ["['%1', %2] call comspec_sse_fnc_idAction;", _a, str _arg] };
 private _icon = "\z\comspec_sse\addons\identity\data\app_id.paa";
@@ -91,72 +92,112 @@ if (_tab isEqualTo "history") then {
     private _lv = _cur get "levels";
     private _typeTxt = (["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d getOrDefault ["type", ""])) max 0)) call _tr;
     ((_cur get "verdict") call _verdictInfo) params ["_vt", "_vc", "_vbg"];
-    _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",
-        format ["<t size='1.1' font='COMSPEC_BarlowBold'>%1 %2</t><br/><t size='0.8' color='#8b98a7'>%3 · %4 · %5</t>",
-            [toUpper (_d getOrDefault ["last", ""])] call _esc, [_d getOrDefault ["first", ""]] call _esc, _typeTxt, _d getOrDefault ["country", ""], _d getOrDefault ["number", ""]],
-        [["Voir" call _tr, ["view"] call _act]], [1, 1, 1, 1]];
-    _rows pushBack ["info", "Né(e) le" call _tr, format ["%1 · %2", _d getOrDefault ["dob", ""], [_d getOrDefault ["pob", ""]] call _esc]];
-    _rows pushBack ["info", "Expire le" call _tr, _d getOrDefault ["expires", ""]];
-    if ((_cur getOrDefault ["subjName", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Contrôlé" call _tr, [_cur get "subjName"] call _esc]; };
-    if ((_cur getOrDefault ["photo", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Photo du document" call _tr, format ["%1 · %2", _cur getOrDefault ["photoClock", ""], "jointe à la FRM" call _tr]]; };
+    // --- Parcours : verdict et état de chaque niveau d'abord, une seule action principale, le reste replié. -----------------
+    private _bio = missionNamespace getVariable ["comspec_sse_id_bio", true];
+    private _hasMrz = (_d getOrDefault ["mrz", []]) isNotEqualTo [];
+    private _hasChip = _d getOrDefault ["chipLogo", false];
+    private _subjOk = ((_cur getOrDefault ["subj", objNull]) isEqualType objNull) && {!isNull (_cur getOrDefault ["subj", objNull])} && {(_cur get "subj") isNotEqualTo player};
+    // Case d'un niveau : l'état se lit aussi en texte (OK, ?, !, -), jamais par la seule couleur.
+    private _step = {
+        params ["_name", "_lvl", ["_avail", true]];
+        if (!_avail) exitWith { [format ["%1 -", _name call _tr], "todo"] };
+        private _st0 = _lvl call _stateOf;
+        [[_name call _tr, format ["%1 %2", _name call _tr, ["OK", "?", "!", "!"] select (["done", "now", "hot", "abort"] find _st0)]] select (_st0 isNotEqualTo "todo"), _st0]
+    };
     private _stateOf = {
         private _r = _lv getOrDefault [_this, createHashMap];
         if ((count _r) isEqualTo 0) exitWith { "todo" };
         switch (_r getOrDefault ["state", "ok"]) do { case "ok": { "done" }; case "doubt": { "now" }; case "na": { "abort" }; default { "hot" }; }
     };
-    private _bio = missionNamespace getVariable ["comspec_sse_id_bio", true];
-    private _steps = [["N0 VISUEL" call _tr, 0 call _stateOf], ["N1 MRZ" call _tr, 1 call _stateOf], ["N2 PUCE" call _tr, 2 call _stateOf], ["N3 BASE" call _tr, 3 call _stateOf]];
-    if (_bio) then { _steps pushBack ["N4 VISAGE" call _tr, 4 call _stateOf]; };
-    _rows pushBack ["steps", _steps];
+    private _steps = [["N0 VISUEL", 0] call _step, ["N1 MRZ", 1, _hasMrz] call _step, ["N2 PUCE", 2, _hasChip] call _step, ["N3 BASE", 3] call _step];
+    if (_bio) then { _steps pushBack (["N4 VISAGE", 4, _subjOk] call _step); };
     _rows pushBack ["banner", format ["<t color='%1'>%2</t>", _vc, _vt call _tr], _vbg];
-    {
-        _x params ["_lvl", "_name"];
-        private _r = _lv getOrDefault [_lvl, createHashMap];
-        if ((count _r) > 0) then {
-            _rows pushBack ["section", _name call _tr, ""];
-            { _rows pushBack ["text", format ["<t size='0.9'>%1</t>", [_x call _tr] call _esc]]; } forEach (_r getOrDefault ["lines", []]);
-        };
-    } forEach [[0, "N0 · Examen visuel"], [1, "N1 · Bande MRZ"], [2, "N2 · Puce NFC"], [3, "N3 · Base"], [4, "N4 · Visage (biométrie)"]];
-    // Réponses de la personne aux questions de légende (menu ACE › Poser une question).
+    _rows pushBack ["steps", _steps];
+    _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",
+        format ["<t size='1.1' font='COMSPEC_BarlowBold'>%1 %2</t><br/><t size='0.8' color='#8b98a7'>%3 · %4 · %5</t>",
+            [toUpper (_d getOrDefault ["last", ""])] call _esc, [_d getOrDefault ["first", ""]] call _esc, _typeTxt, _d getOrDefault ["country", ""], _d getOrDefault ["number", ""]],
+        [["Voir" call _tr, ["view"] call _act]], [1, 1, 1, 1]];
+    // Toutes les actions : [libellé, code, faisable, aide], reprises dans la bonne catégorie.
+    private _aMrz = ["Lire la MRZ (N1)" call _tr, ["level", 1] call _act, !(1 in _lv) && {_hasMrz}, "Lecture de la bande MRZ du document."];
+    private _aChip = ["Lire la puce (N2)" call _tr, ["level", 2] call _act, !(2 in _lv) && {_hasChip} && {1 in _lv || {!_hasMrz}}, "Lecteur NFC : à moins de 1,5 m du document."];
+    private _aBase = ["Interroger la base (N3)" call _tr, ["level", 3] call _act, !(3 in _lv), "Base du pays hors ligne, Athena en ligne."];
+    private _aFace = ["Comparer le visage (N4)" call _tr, ["level", 4] call _act, !(4 in _lv) && {_subjOk}, "Photo du visage comparée à la base biométrique et à la photo du document (téléphone ou SEEK)."];
+    private _pidDone = _cur getOrDefault ["pid", false];
+    private _aPid = [((["Confirmer le PID", "PID confirmé"] select _pidDone) call _tr), ["pid"] call _act, !_pidDone && {_subjOk}, "Identification positive : tuyaux confirmés à votre groupe (chasse HVT), Zeus et Athena prévenus."];
+    private _wantPid = (_cur get "verdict") in ["hvt", "recherche"];
+    private _dll = ["has"] call comspec_sse_fnc_idAthenaPack;
+    private _sent = _cur getOrDefault ["sent", false];
+    private _aSend = [((["Transmettre à Athena", "Transmis"] select _sent) call _tr), ["transmit"] call _act, !_sent, ["Envoi au portail Athena (file d'attente hors liaison).", "Sans liaison Athena : mis en file d'attente."] select !_dll];
+    // Prochaine étape logique du contrôle, une seule à la fois.
+    private _chain = [_aMrz, _aChip, _aBase];
+    if (_bio) then { _chain pushBack _aFace; };
+    if (_wantPid) then { _chain pushBack _aPid; };
+    _chain pushBack _aSend;
+    private _nextI = _chain findIf { _x select 2 };
+    if (_nextI >= 0) then {
+        (_chain select _nextI) params ["_l0", "_c0", "", "_t0"];
+        _rows pushBack ["big", [[_l0, _c0, "green", true, _t0]]];
+    };
+    // Résultat du dernier niveau lu, puis les précédents repliés. Conseil et résultat bien séparés.
+    private _lineRow = {
+        params ["_txt"];
+        private _advice = (_txt find "Trop sombre") isEqualTo 0;
+        format ["<t size='0.9' color='%1'>%2 : %3</t>", ["#ffffff", "#f2c94c"] select _advice, (["Résultat", "Conseil"] select _advice) call _tr, [_txt call _tr] call _esc]
+    };
+    private _names = [[0, "N0 · Examen visuel"], [1, "N1 · Bande MRZ"], [2, "N2 · Puce NFC"], [3, "N3 · Base"], [4, "N4 · Visage (biométrie)"]];
+    private _doneNames = _names select { (count (_lv getOrDefault [_x select 0, createHashMap])) > 0 };
+    if (_doneNames isNotEqualTo []) then {
+        (_doneNames select -1) params ["_lvlL", "_nameL"];
+        _rows pushBack ["section", _nameL call _tr, ""];
+        { _rows pushBack ["text", [_x] call _lineRow]; } forEach ((_lv get _lvlL) getOrDefault ["lines", []]);
+    };
+    // Blocs repliables : rien ne disparaît, deux gestes au plus.
+    private _fold = {
+        params ["_key", "_title", "_rowsIn", ["_sum", ""]];
+        private _open = _st getOrDefault ["open_" + _key, false];
+        _rows pushBack ["fold", _title call _tr, _sum, _open, ["fold", _key] call _act];
+        if (_open) then { _rows append _rowsIn; };
+    };
+    private _btn = { params ["_l", "_c", "_on", "_tip"]; [_l, _c, false, _on, _tip] };
+    private _older = (_doneNames select [0, ((count _doneNames) - 1) max 0]);
+    if (_older isNotEqualTo []) then {
+        private _inner = [];
+        {
+            _x params ["_lvlO", "_nameO"];
+            _inner pushBack ["section", _nameO call _tr, ""];
+            { _inner pushBack ["text", [_x] call _lineRow]; } forEach ((_lv get _lvlO) getOrDefault ["lines", []]);
+        } forEach _older;
+        ["detail", "Niveaux précédents", _inner, str (count _older)] call _fold;
+    };
     private _talk = _cur getOrDefault ["talk", []];
     if (_talk isNotEqualTo []) then {
-        _rows pushBack ["section", "Questions de légende" call _tr, ""];
-        { _x params ["", "_t", ["_h", ""]]; _rows pushBack ["text", format ["<t size='0.9'>« %1 »%2</t>", [_t call _tr] call _esc, ["", format [" <t color='#f2ab33'>[%1]</t>", [_h call _tr] call _esc]] select (_h isNotEqualTo "")]]; } forEach _talk;
+        private _inner = [];
+        { _x params ["", "_t", ["_h", ""]]; _inner pushBack ["text", format ["<t size='0.9'>« %1 »%2</t>", [_t call _tr] call _esc, ["", format [" <t color='#f2ab33'>[%1]</t>", [_h call _tr] call _esc]] select (_h isNotEqualTo "")]]; } forEach _talk;
+        ["talk", "Questions de légende", _inner, str (count _talk)] call _fold;
     };
-    private _hasMrz = (_d getOrDefault ["mrz", []]) isNotEqualTo [];
-    private _hasChip = _d getOrDefault ["chipLogo", false];
-    _rows pushBack ["buttons", [
-        ["Lire la MRZ (N1)" call _tr, ["level", 1] call _act, !(1 in _lv), _hasMrz],
-        ["Lire la puce (N2)" call _tr, ["level", 2] call _act, !(2 in _lv) && {1 in _lv || {!_hasMrz}}, _hasChip],
-        ["Interroger la base (N3)" call _tr, ["level", 3] call _act, !(3 in _lv)]
-    ]];
-    private _subjOk = ((_cur getOrDefault ["subj", objNull]) isEqualType objNull) && {!isNull (_cur getOrDefault ["subj", objNull])} && {(_cur get "subj") isNotEqualTo player};
-    private _pidRow = [];
-    if (_bio) then { _pidRow pushBack ["Comparer le visage (N4)" call _tr, ["level", 4] call _act, !(4 in _lv), _subjOk, "Photo du visage comparée à la base biométrique et à la photo du document (téléphone ou SEEK)."]; };
-    if ((_cur get "verdict") in ["hvt", "recherche"] && {_subjOk}) then {
-        _pidRow pushBack [((["Confirmer le PID", "PID confirmé"] select (_cur getOrDefault ["pid", false])) call _tr), ["pid"] call _act, true, !(_cur getOrDefault ["pid", false]),
-            "Identification positive : tuyaux confirmés à votre groupe (chasse HVT), Zeus et Athena prévenus."];
-    };
-    if (_pidRow isNotEqualTo []) then { _rows pushBack ["buttons", _pidRow]; };
-    private _dll = ["has"] call comspec_sse_fnc_idAthenaPack;
-    _rows pushBack ["buttons", [
-        [((["Transmettre à Athena", "Transmis"] select (_cur getOrDefault ["sent", false])) call _tr), ["transmit"] call _act, false, !(_cur getOrDefault ["sent", false]),
-            ["Envoi au portail Athena (file d'attente hors liaison).", "Sans liaison Athena : mis en file d'attente."] select !_dll],
-        ["Joindre à une FRM" call _tr, ["frm"] call _act]
-    ]];
-    _rows pushBack ["buttons", [
-        ["Photographier" call _tr, ["photo"] call _act, false, true, "Photo du document jointe à la fiche FRM (pièces jointes de l'app FRS)."],
+    private _ctrlBtns = [_aMrz call _btn, _aChip call _btn, _aBase call _btn];
+    if (_bio) then { _ctrlBtns pushBack (_aFace call _btn); };
+    if (_wantPid) then { _ctrlBtns pushBack (_aPid call _btn); };
+    ["ctrl", "Contrôle", [["buttons", _ctrlBtns]], format ["%1/%2", {_x in _lv} count [1, 2, 3, 4], [3, 4] select _bio]] call _fold;
+    ["sig", "Signaler", [["buttons", [
         ["SALUTE" call _tr, ["salute"] call _act, false, true, "Compte rendu SALUTE pré-rempli avec ce contrôle."],
-        ["SPOTREP" call _tr, ["spotrep"] call _act, false, true, "Compte rendu SPOTREP pré-rempli avec ce contrôle."]
-    ]];
+        ["SPOTREP" call _tr, ["spotrep"] call _act, false, true, "Compte rendu SPOTREP pré-rempli avec ce contrôle."],
+        ["Joindre à une FRM" call _tr, ["frm"] call _act],
+        _aSend call _btn
+    ]]]] call _fold;
+    private _shareBtns = [["Photographier" call _tr, ["photo"] call _act, false, true, "Photo du document jointe à la fiche FRM (pièces jointes de l'app FRS)."]];
     if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) then {
-        _rows pushBack ["buttons", [
+        _shareBtns append [
             ["Partager" call _tr, ["share"] call _act, false, true, "Fiche du contrôle envoyée en Bluetooth à un équipier appairé."],
             ["NFC" call _tr, ["nfc"] call _act, false, true, "Fiche du contrôle tendue au téléphone le plus proche (2 m), sans appairage."],
             ["Sur mon téléphone" call _tr, ["mobile"] call _act, false, true, "QR code : vos contrôles de la partie sur votre vrai téléphone."]
-        ]];
+        ];
     };
-    _rows pushBack ["text", format ["<t size='0.8' color='#8b98a7'>%1</t>", ("SIMULATION : documents et pays fictifs." call _tr) call _esc]];
+    ["share", "Partager", [["buttons", _shareBtns]]] call _fold;
+    _rows pushBack ["info", "Né(e) le" call _tr, format ["%1 · %2", _d getOrDefault ["dob", ""], [_d getOrDefault ["pob", ""]] call _esc]];
+    _rows pushBack ["info", "Expire le" call _tr, _d getOrDefault ["expires", ""]];
+    if ((_cur getOrDefault ["subjName", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Contrôlé" call _tr, [_cur get "subjName"] call _esc]; };
+    if ((_cur getOrDefault ["photo", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Photo du document" call _tr, format ["%1 · %2", _cur getOrDefault ["photoClock", ""], "jointe à la FRM" call _tr]]; };
 };
 
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;

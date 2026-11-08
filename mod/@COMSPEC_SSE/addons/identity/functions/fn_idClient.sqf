@@ -54,20 +54,19 @@ switch (_op) do {
         _a params [["_holder", objNull], ["_id", ""], ["_label", ""], ["_end", 0]];
         // Fin de validité en temps serveur ramenée à l'horloge locale (time diffère d'un poste à l'autre).
         _tokens set [_id, [_holder, _label, time + ((missionNamespace getVariable ["comspec_sse_id_tokenTime", 120]) - 1)]];
-        [format ["%1 vous présente : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité.", [name _holder, "On"] select (isNull _holder), _label]] call _say;
+        ["", "INFO", objNull, format [("Papiers de %1 : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité." call comspec_sse_fnc_tr), [name _holder, "?"] select (isNull _holder), _label]] call comspec_sse_fnc_toast;
     };
     case "say": {
-        _a params [["_n", ""], ["_t", ""], ["_type", "INFO"], ["_hint", ""]];
-        private _p = _t call comspec_sse_fnc_tr;
-        private _line = if ((_t select [0, 1]) isEqualTo "(") then { format ["%1 %2", _n, _p] } else { format ["%1 : « %2 »", _n, _p] };
-        if (_hint isNotEqualTo "") then { _line = _line + format [" [%1]", _hint call comspec_sse_fnc_tr]; };
-        [_line, _type] call _say;
+        _a params [["_n", ""], ["_t", ""], ["_type", "INFO"], ["_hint", ""], ["_u", objNull]];
+        // Bulle au-dessus de sa tête, sinon toast : ce que dit une IA n'a rien à faire dans le centre de notifications.
+        [_t, _type, _u, _hint] call comspec_sse_fnc_toast;
     };
     case "answer": {
         _a params [["_t", objNull], ["_ans", ""], ["_text", ""]];
         // Dernière réponse d'une personne contrôlée : reprise par les comptes rendus SALUTE / SPOTREP (fn_idReport).
         missionNamespace setVariable ["comspec_sse_idLastAnswer", [_t, _ans, _text, time]];
-        [format ["%1 : %2", [name _t, "?"] select (isNull _t), _text call comspec_sse_fnc_tr], ["INFO", "WARNING"] select (_ans in ["refuse", "flee", "none"])] call _say;
+        // Réponse d'une IA : au-dessus de sa tête. Demande faite à un joueur : simple toast.
+        [_text, ["INFO", "WARNING"] select (_ans in ["refuse", "flee", "none"]), [_t, objNull] select (isNull _t || {isPlayer _t})] call comspec_sse_fnc_toast;
     };
     case "docs": {
         _a params [["_t", objNull], ["_list", []]];
@@ -76,8 +75,8 @@ switch (_op) do {
             _x params ["_h", "", "_label"];
             if ((_h select [0, 2]) isEqualTo "ID") then { _tokens set [_h, [_t, _label, time + 110]]; };
         } forEach _list;
-        if (_list isEqualTo []) exitWith { ["Fouille : aucun document trouvé."] call _say; };
-        [format ["Fouille : %1 document(s). Menu ACE › Contrôle d'identité : examiner ou saisir.", count _list]] call _say;
+        if (_list isEqualTo []) exitWith { ["Fouille : aucun document trouvé.", "WARNING"] call comspec_sse_fnc_toast; };
+        ["", "INFO", objNull, format [("Fouille : %1 document(s). Menu ACE › Contrôle d'identité : examiner ou saisir." call comspec_sse_fnc_tr), count _list]] call comspec_sse_fnc_toast;
     };
     case "blank": { ["Document vierge : aucun titulaire, rien d'imprimé.", "WARNING"] call _say; };
     case "doc": {
@@ -112,8 +111,8 @@ switch (_op) do {
     };
     case "vehicle": {
         _a params [["_v", objNull], ["_vop", "vehicle"], ["_out", []]];
-        if (_out isEqualTo []) exitWith { ["Aucun occupant à contrôler."] call _say; };
-        { _x params ["", "_n", "_ans", "_text"]; [format ["%1 : %2", _n, _text], ["INFO", "WARNING"] select (_ans in ["refuse", "flee", "none"])] call _say; } forEach _out;
+        if (_out isEqualTo []) exitWith { ["Aucun occupant à contrôler.", "WARNING"] call comspec_sse_fnc_toast; };
+        { _x params ["_net", "_n", "_ans", "_text"]; [_text, ["INFO", "WARNING"] select (_ans in ["refuse", "flee", "none"]), objectFromNetId _net] call comspec_sse_fnc_toast; } forEach _out;
     };
     case "question": {
         _a params [["_who", ""], ["_list", []], ["_delay", 20]];
@@ -171,9 +170,7 @@ switch (_op) do {
     };
     case "talk": {
         _a params [["_t", objNull], ["_k", ""], ["_txt", ""], ["_hint", ""]];
-        private _line = format ["%1 : « %2 »", [name _t, "?"] select (isNull _t), _txt call comspec_sse_fnc_tr];
-        if (_hint isNotEqualTo "") then { _line = _line + format [" [%1]", _hint call comspec_sse_fnc_tr]; };
-        [_line] call _say;
+        [_txt, "INFO", _t, _hint] call comspec_sse_fnc_toast;
         // Réponse gardée sur la fiche du contrôle en cours (même personne) : reprise par la FRM.
         private _cur = ["current"] call comspec_sse_fnc_idHistory;
         if ((count _cur) > 0 && {(_cur getOrDefault ["subj", objNull]) isEqualTo _t}) then {

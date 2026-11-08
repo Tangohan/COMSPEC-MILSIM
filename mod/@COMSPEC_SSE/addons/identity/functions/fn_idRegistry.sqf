@@ -194,6 +194,15 @@ switch (_op) do {
                 default { [] };
             };
         };
+        // IA sans papiers à l'issue des règles (uniforme civil d'un militaire, tirage) : une identité générée par défaut,
+        // pour que « Papiers, s'il vous plaît » réponde. Seuls le réglage « IA sans papiers (%) » et l'attribut Eden « Aucun »
+        // laissent quelqu'un sans papiers.
+        if (_types isEqualTo [] && {_carry isEqualTo "auto"} && {!isPlayer _u} && {!(_u in playableUnits)} && {!(_u in switchableUnits)}
+            && {missionNamespace getVariable ["comspec_sse_id_aiPapers", true]}
+            && {("nopapers" call _r) * 100 >= (missionNamespace getVariable ["comspec_sse_id_noPapers", 0])}) then {
+            _types = ["id_card"];
+            _kind = "generated";
+        };
         // Faux papiers décidés par la biométrie (fn_bioProfile, faux papiers « oui » ou tirés) : les papiers sont faux.
         if (_types isNotEqualTo [] && {_kind isEqualTo "civil"} && {_carry isEqualTo "auto"} && {(_u getVariable ["COMSPEC_SSE_BioFalsePapers", "auto"]) isNotEqualTo "non"}) then {
             private _prof = [_u, _key] call comspec_sse_fnc_bioProfile;

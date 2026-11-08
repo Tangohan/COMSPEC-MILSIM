@@ -157,6 +157,12 @@ switch (_op) do {
         _args params ["", ["_name", ""], ["_target", objNull, [objNull, ""]]];
         if !(_name in _dur) exitWith {};
         (_reg get "begin") set [format ["%1|%2|%3", _owner, _name, (if (_target isEqualType "") then { _target } else { netId _target })], time];
+        // « Papiers, s'il vous plaît » : l'IA s'arrête tout de suite. Sinon elle s'éloigne pendant les 2 s de la barre, et
+        // la demande s'interrompt à plus de 4 m (cause d'une demande sans effet sur une IA qui marche).
+        if (_name isEqualTo "ask" && {_target isEqualType objNull} && {!isNull _target} && {alive _target} && {!isPlayer _target} && {[_me, _target, 8] call _near}) then {
+            ["engage", [_target, _me]] call comspec_sse_fnc_idAiFsm;
+            if !(missionNamespace getVariable ["comspec_sse_id_aiFsm", true]) then { ["comspec_sse_bioAnimSubject", [_target, _me, ""], _target] call CBA_fnc_targetEvent; };
+        };
     };
 
     case "ask": {
@@ -224,7 +230,7 @@ switch (_op) do {
         if (_mode isEqualTo "give") then { [_cls, _me, _to] call comspec_sse_fnc_idTransfer; };
         if (isPlayer _to) then {
             ["token", [_me, _d get "id", [_d] call _label, time + _tokenTime], _toOwner] call _reply;
-            [_to, format [["%1 vous présente : %2.", "%1 vous remet : %2."] select (_mode isEqualTo "give"), name _me, [_d] call _label]] call _tell;
+            if (_mode isEqualTo "give") then { [_to, format ["%1 vous remet : %2.", name _me, [_d] call _label]] call _tell; };
         };
         ["comspec_sse_idPresented", [_me, _d get "id", _to]] call CBA_fnc_localEvent;
     };
