@@ -122,7 +122,7 @@ final class AtakUnitCardAssetTest extends TestCase
         self::assertStringContainsString('["mapCard"] call comspec_atak_native_fnc_unitCard', $select);
         self::assertStringNotContainsString('inspToggle', $select);
         // Plus de bandeau de 4 s en petit format : la fiche le remplace.
-        self::assertStringNotContainsString('comspec_atak_native_fnc_notify', $select);
+        self::assertStringNotContainsString('format ["%1 · %2", _best getOrDefault', $select);
         $card = $this->read('functions/ui/fn_unitCard.sqf');
         foreach (['case "mapCard"', 'case "tick"', 'case "step"', 'ui_back.paa', 'ui_chevron_right.paa', 'ui_close.paa'] as $s) {
             self::assertStringContainsString($s, $card);
