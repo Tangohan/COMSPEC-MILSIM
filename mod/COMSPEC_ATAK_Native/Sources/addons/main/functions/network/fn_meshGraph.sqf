@@ -380,7 +380,7 @@ switch (_act) do {
         uiNamespace setVariable ["COMSPEC_ATAK_MeshViewSeq", (missionNamespace getVariable [_seqVar, []]) param [0, -1]];
         private _dec = ["graph", [_side]] call comspec_atak_native_fnc_meshGraph;
         private _res = createHashMapFromArray [["key", _key], ["at", diag_tickTime], ["mode", ""], ["ok", false], ["reach", createHashMap], ["vkey", ""],
-            ["kbps", 0], ["hops", -1], ["gw", ""], ["via", ""], ["lat", 0], ["loss", 100], ["why", "connexion au maillage en cours"], ["nodes", []], ["count", 0], ["level", 3]];
+            ["kbps", 0], ["hops", -1], ["gw", ""], ["via", ""], ["lat", 0], ["loss", 100], ["why", "connexion au maillage en cours"], ["nodes", []], ["count", 0], ["level", 3], ["voice", createHashMap]];
         if (_dec isEqualTo []) exitWith { _res };
         _dec params ["_nodes", "_adj", "_links", "_total"];
         private _chan = parseNumber (_key select [1]);
@@ -398,8 +398,11 @@ switch (_act) do {
             if (_lead isNotEqualTo player && {_li >= 0}) then { _gws = [_li]; _mode = "lead"; } else { _gws = [_me]; _mode = "self"; };
         };
         // Depuis les passerelles : ce que voient mes données et l'écran. Depuis moi : qui je joins (voix, liste de l'app Réseau).
-        (["solve", [_adj, _gws, _allowed, _maxH, _maxK]] call comspec_atak_native_fnc_meshGraph) params ["_bwG", "_hopG", "_viaG", "_mgG", "_srcG"];
-        (["solve", [_adj, [_me], _allowed, _maxH, _maxK]] call comspec_atak_native_fnc_meshGraph) params ["_bwM", "_hopM"];
+        // En mode relais, tous les canaux depuis les passerelles : la voix par le cœur de réseau joint aussi les autres canaux, et un
+        // chemin ne gagne rien à passer par une deuxième passerelle, déjà source. Pour mon canal, le résultat est le même.
+        private _allowedG = if (_mode isEqualTo "relay") then { _nodes apply { !isNull (_x select 0) } } else { _allowed };
+        (["solve", [_adj, _gws, _allowedG, _maxH, _maxK]] call comspec_atak_native_fnc_meshGraph) params ["_bwG", "_hopG", "_viaG", "_mgG", "_srcG"];
+        (["solve", [_adj, [_me], _allowed, _maxH, _maxK]] call comspec_atak_native_fnc_meshGraph) params ["_bwM", "_hopM", "", "_mgM"];
         // Noms et position réelle des passerelles : liste locale des relais, déjà en cache.
         private _relays = ["list"] call comspec_atak_native_fnc_relayNet;
         private _nameOf = {
@@ -434,6 +437,30 @@ switch (_act) do {
         {
             if (_forEachIndex isNotEqualTo _me && {!isNull (_x select 1)} && {(_hopM select _forEachIndex) >= 0}) then { _reach set [netId (_x select 1), _hopM select _forEachIndex]; };
         } forEach _nodes;
+        // Voix : par porteur, le meilleur du chemin direct et du passage par le cœur de réseau, sous le plafond de sauts.
+        // [sauts, marge du pire lien, niveau de gravité].
+        private _voice = createHashMap;
+        {
+            private _owner = _x select 1;
+            if (_forEachIndex isEqualTo _me || {isNull _owner}) then { continue };
+            private _hd = _hopM select _forEachIndex;
+            private _md = _mgM select _forEachIndex;
+            private _hc = -1;
+            private _mc = 40;
+            if (_ok && {_mode isNotEqualTo "self"} && {(_hopG select _forEachIndex) >= 0}) then {
+                _hc = _h + (_hopG select _forEachIndex);
+                _mc = (_mgG select _me) min (_mgG select _forEachIndex);
+            };
+            private _pick = switch (true) do {
+                case (_hd < 0 && {_hc < 0 || {_hc > _maxH}}): { [] };
+                case (_hd < 0): { [_hc, _mc] };
+                case (_hc < 0 || {_hc > _maxH} || {_hd <= _hc}): { [_hd, _md] };
+                default { [_hc, _mc] };
+            };
+            if (_pick isEqualTo []) then { continue };
+            _voice set [netId _owner, [_pick select 0, _pick select 1, ["gravity", [_pick select 1, _pick select 0, _maxH]] call comspec_atak_native_fnc_meshGraph]];
+        } forEach _nodes;
+        _res set ["voice", _voice];
         _res set ["mode", _mode];
         _res set ["ok", _ok];
         _res set ["reach", _reach];

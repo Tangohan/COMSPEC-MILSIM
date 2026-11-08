@@ -73,6 +73,12 @@ private _h4 = ["hyst", [true, 8, 4000, _h2 select 1]] call comspec_atak_native_f
 [_results, "hystérésis : premier constat, marge -1", _h2 select 2, -1] call _expect;
 [_results, "hystérésis : deuxième constat, tombé", _h3 select 0, false] call _expect;
 [_results, "hystérésis : retour immédiat", _h4 select 1, [0, 8, 4000]] call _expect;
+// Signal ACRE2 : jamais pire qu'ACRE2, aucune rallonge au niveau 3 ou sans lien.
+private _sig = { params ["_in"]; ["sigMap", _in] call comspec_atak_native_fnc_mpuVoice };
+[_results, "signal : niveau 3, origine", [[0.1, -110, 2, 3, true]] call _sig, [0.1, -110]] call _expect;
+[_results, "signal : sans lien, origine", [[0.1, -110, -1, 0, true]] call _sig, [0.1, -110]] call _expect;
+[_results, "signal : niveau 2", [[0.1, -110, 2, 2, true]] call _sig, [0.45, -95]] call _expect;
+[_results, "signal : direct meilleur gardé", [[0.9, -50, 2, 2, true]] call _sig, [0.9, -50]] call _expect;
 private _ok = { _x select 1 } count _results;
 { diag_log format ["[COMSPEC ATAK NATIVE][MESH] Test %1 : %2", _x select 0, ["échoué", "réussi"] select (_x select 1)]; } forEach _results;
 diag_log format ["[COMSPEC ATAK NATIVE][MESH] Tests : %1 réussis sur %2", _ok, count _results];

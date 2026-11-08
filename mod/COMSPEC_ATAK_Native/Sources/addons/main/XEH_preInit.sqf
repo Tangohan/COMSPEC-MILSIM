@@ -633,6 +633,9 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_hops", "SLIDER",
     ["Plafond de sauts du maillage", "Au-delà de ce nombre de radios traversées, le nœud est hors du maillage. Choix de jeu : les sources publiques de la MPU5 ne chiffrent aucun plafond."],
     _mpuCat, [1, 16, 6, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_gravity", "CHECKBOX",
+    ["Gravité de coupure du maillage", "Le signal et les pertes suivent le pire lien du chemin : nominal, dégradé, limite, puis coupure nette vers la portée normale de la radio. Décoché : signal fixe quel que soit le lien."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
 ["comspec_atak_native_mesh_dev", "CHECKBOX",
     ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],
