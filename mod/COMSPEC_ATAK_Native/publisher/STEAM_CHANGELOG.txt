@@ -1,7 +1,7 @@
-[h1]COMSPEC ATAK — Mise à jour 3.1.0.AG - Austin[/h1]
-[b]Publication : à renseigner à la sortie[/b]
+[h1]COMSPEC ATAK — Mise à jour 4.0.0.AG - Washington[/h1]
+[b]Publication : 08/11/2026[/b]
 [quote]
-[b]Important :[/b] ce pack contient COMSPEC Link 2.0.119 : mettez à jour le pack 3.1.0, quittez Arma 3 complètement, puis relancez.
+[b]Important :[/b] ce pack contient COMSPEC Link 2.0.120 : mettez à jour le pack 4.0.0, quittez Arma 3 complètement, puis relancez.
 [/quote]
 
 [h2]Correctifs et changements[/h2]

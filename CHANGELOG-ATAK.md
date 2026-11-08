@@ -38,11 +38,17 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## Pack 3.1.0 : haut-parleur de l'app Musique corrigé, app C2 retirée, interface refaite, liaison optimisée (ATAK natif 3.1.0.AG - Austin, COMSPEC Link 2.0.119)
+## Pack 4.0.0 Washington : nouveaux objets, réseau plus réaliste, interface refaite, app C2 retirée (ATAK natif 4.0.0.AG - Washington, COMSPEC Link 2.0.120)
 
 ### Résumé joueur
-Type : correctif
-FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 disparaît
+Type : nouveauté
+FR : ATAK 4.0.0 Washington : GPS de poignet, antennes à déployer, interface refaite, app C2 retirée
+- GPS de poignet : un nouvel objet autonome, sans téléphone. Position, boussole, points et routes s'affichent sur un écran monochrome à boutons.
+- Antennes transportables : une antenne satellite et une antenne sur mât se déploient par ACE et servent de relais au réseau. Une antenne MRH déployée compte aussi comme relais.
+- Réseau : portée, débit et temps d'antenne plus réalistes, selon la posture, le relief et les relais.
+- Vidéo Live, VIDER LA FILE, diapositives du navigateur et SMS répondent sans redessiner toute la page dans la plupart des cas. Les commandes MONTER, DESCENDRE et CAMÉRA VERS LE SOL du drone aussi.
+- App Admin : le bouton « Sur mon téléphone » ouvre l'app sur votre vrai téléphone. L'app Communauté affiche le brief de votre communauté.
+- COMSPEC IDENTITY : les kits, briefs, population et avis de recherche préparés sur Athena arrivent en jeu. Une carte militaire rejoint les papiers.
 - Activer le haut-parleur dans l'app Musique ne provoque plus d'erreur de script ni d'alternance oui/non.
 - L'app C2 est retirée : retrouvez le groupe, l'indicatif et les unités dans les apps Groupe et BFT, et les ordres dans Tâches.
 - Carte : deux joueurs côte à côte gardent chacun leur nom, un joueur en véhicule, avion ou hélico a une icône d'engin et la liste de ses occupants, les symboles se regroupent au dézoom, les traits tracés sur la carte du jeu s'affichent, et maintenir le clic gauche pointe un endroit pour tout le camp.
@@ -63,7 +69,13 @@ FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 d
 - Téléphones personnels : chaque téléphone a un propriétaire. Si vous ramassez celui d'un autre, vous choisissez à l'ouverture lequel lire, et vous ne voyez que ce qu'il contient. Code de 4 à 8 chiffres et indice dans Réglages, essais limités ; un code oublié se retire (CODE OUBLIÉ, admin ou Zeus).
 - Nouvelle app Communauté : les consignes reçues d'Athena, les ordres, des tips, et le kit obligatoire : le téléphone vous dit ce qui manque dans votre équipement. Un admin ou un Zeus peut noter pour la partie.
 - Traces civiles des HVT, si la mission ou le Zeus les active : Tinder › DOSSIERS indique quand et dans quelle zone d'un kilomètre une cible était active dans une app, avec du retard. Jamais sa position du moment.
-EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
+EN : ATAK 4.0.0 Washington: wrist GPS, deployable antennas, redesigned interface, C2 app removed
+- Wrist GPS: a new standalone item that needs no phone. Position, compass, waypoints and routes appear on a monochrome screen with buttons.
+- Portable antennas: a satellite antenna and a mast antenna deploy through ACE and act as network relays. A deployed MRH antenna also counts as a relay.
+- Network: range, throughput and airtime are more realistic, depending on stance, terrain and relays.
+- Live Video, CLEAR QUEUE, browser slides and SMS respond without redrawing the whole page in most cases. So do the drone's UP, DOWN and CAMERA TO GROUND controls.
+- Admin app: the "On my phone" button opens the app on your real phone. The Community app shows your community's brief.
+- COMSPEC IDENTITY: kits, briefs, population and wanted notices prepared on Athena now reach the game. A military ID joins the papers.
 - Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
 - The C2 app is removed: find the group, callsign and units in the Group and BFT apps, and orders in Tasks.
 - Map: two players side by side each keep their name, a player in a vehicle, plane or helicopter gets a vehicle icon and a list of occupants, symbols group together when zoomed out, lines drawn on the game map show up, and holding the left click points at a spot for the whole side.
