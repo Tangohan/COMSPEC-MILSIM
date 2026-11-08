@@ -76,13 +76,29 @@
     });
   }
 
+  // « J'ai lu » sur un compte rendu reçu : accusé de lecture, comme dans l'ATAK en jeu.
+  $all('[data-mm-read]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      b.disabled = true;
+      post('/m/cr/lire/' + b.getAttribute('data-mm-read')).then(function (j) {
+        if (j && j.ok) { b.outerHTML = '<p class="mm-state" data-st="acked">Lu ✓</p>'; return; }
+        b.disabled = false;
+        toast(failText(j));
+      }).catch(function () { b.disabled = false; toast(failText(null)); });
+    });
+  });
+
+  // Fil de messages : ouvert sur le plus récent.
+  var thread = $('[data-thread]');
+  if (thread) thread.scrollTop = thread.scrollHeight;
+
   // Suivi d'un envoi confié à l'ATAK du joueur.
   function follow(id, el) {
     var tries = 0;
     var labels = {
       pending: 'En attente de votre ATAK…',
       delivered: 'Reçu par votre ATAK…',
-      acked: 'Envoyé par votre ATAK ✓',
+      acked: 'Pris en charge par votre ATAK ✓ Il l’envoie à Athena : retrouvez-le dans l’historique.',
       unknown: 'Envoi introuvable.'
     };
     (function tick() {

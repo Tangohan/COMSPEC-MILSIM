@@ -938,6 +938,8 @@ final class AtakAdminControlRepository
 
     /**
      * Messages pas encore validés d'un joueur (son ATAK les récupère avec sa session de jeu).
+     * Les comptes rendus faits sur le téléphone (mobile_*) passent en premier : sans cela, vingt avis plus anciens jamais
+     * validés (14 jours) les repoussaient hors de la liste et le compte rendu n'arrivait jamais dans l'ATAK.
      *
      * @return list<array<string, mixed>>
      */
@@ -955,7 +957,7 @@ final class AtakAdminControlRepository
             "SELECT m.* FROM atak_admin_messages m
              WHERE m.tenant_id = ? AND m.acked_at IS NULL AND m.cancelled_at IS NULL
                AND (m.expires_at IS NULL OR m.expires_at > UTC_TIMESTAMP()) AND {$match}
-             ORDER BY m.id ASC LIMIT 20",
+             ORDER BY CASE WHEN m.kind IN ('mobile_report', 'mobile_debrief') THEN 0 ELSE 1 END, m.id ASC LIMIT 20",
             array_merge([$tenantId], $args)
         );
     }

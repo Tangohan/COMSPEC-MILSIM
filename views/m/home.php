@@ -1,19 +1,21 @@
 <?php
-/** @var list<string> $aircrew */
+
+declare(strict_types=1);
+/**
+ * @var list<string> $aircrew
+ * @var int $unread comptes rendus reçus non lus
+ */
 $h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/_head.php';
 ?>
-    <section class="mm-card">
-      <h1 class="mm-h1">Sur mon téléphone</h1>
-      <p class="mm-muted">Vos apps de l’ATAK, sur votre vrai téléphone, pour la partie en cours.</p>
-    </section>
-    <div class="mm-tiles">
-      <a class="mm-tile" href="<?= $h(url('m/cr')) ?>"><strong>Comptes rendus</strong><span>Contact, SALUTE, SPOTREP, blessé…</span></a>
-      <a class="mm-tile" href="<?= $h(url('m/compte-rendu')) ?>"><strong>CR fin d’op</strong><span>Le compte rendu de fin d’opération</span></a>
+    <div class="mm-tiles mm-tiles--home">
+      <a class="mm-tile" href="<?= $h(url('m/cr')) ?>"><strong>Comptes rendus</strong><span>Envoyer, relire l’historique<?php if ($unread > 0): ?> · <b class="mm-badge mm-badge--new"><?= (int) $unread ?> à lire</b><?php endif; ?></span></a>
+      <a class="mm-tile" href="<?= $h(url('m/compte-rendu')) ?>"><strong>Fin d’opération</strong><span>Le compte rendu de fin de partie</span></a>
       <a class="mm-tile" href="<?= $h(url('m/carte')) ?>"><strong>Carte</strong><span>Amis, marqueurs, poser un marqueur</span></a>
-      <a class="mm-tile" href="<?= $h(url('m/controle')) ?>"><strong>Contrôle ID</strong><span>Mes contrôles d’identité de la partie</span></a>
+      <a class="mm-tile" href="<?= $h(url('m/radio')) ?>"><strong>Radio et messages</strong><span>Canaux de tchat, messages privés</span></a>
+      <a class="mm-tile" href="<?= $h(url('m/controle')) ?>"><strong>Contrôle d’identité</strong><span>Mes contrôles de la partie</span></a>
       <?php if ($aircrew !== []): ?>
-        <a class="mm-tile mm-tile--air" href="<?= $h(url('m/briefs')) ?>"><strong>Briefs air</strong><span>9-LINE reçus par <span translate="no"><?= $h(implode(', ', $aircrew)) ?></span></span></a>
+        <a class="mm-tile mm-tile--air" href="<?= $h(url('m/briefs')) ?>"><strong>Briefs air</strong><span>Reçus par <span translate="no"><?= $h(implode(', ', $aircrew)) ?></span></span></a>
       <?php endif; ?>
     </div>
 <?php require __DIR__ . '/_foot.php'; ?>

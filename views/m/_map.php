@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Carte Overwatch du téléphone (/m/carte, /m/briefs) : même carte et mêmes calques que l'Overwatch, barre d'outils
  * flottante en bas (recentrer, calques, zoom, plein écran) qui laisse la carte visible.

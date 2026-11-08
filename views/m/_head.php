@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * En-tête commun des pages « Sur mon téléphone » (/m/…) : plein écran téléphone, thème de /9-line (noir, vert, Inter et JetBrains Mono), menu des apps.
  *
@@ -15,13 +17,20 @@ $ver = rawurlencode(class_exists(\App\Support\BuildVersion::class) ? \App\Suppor
 $needsMap = in_array($mobileView ?? '', ['carte', 'cr', 'briefs'], true);
 $tabs = [
     'cr' => ['m/cr', 'CR'],
-    'compte_rendu' => ['m/compte-rendu', 'CR fin d’op'],
+    'compte_rendu' => ['m/compte-rendu', 'Fin d’op'],
     'carte' => ['m/carte', 'Carte'],
-    'controle' => ['m/controle', 'Contrôle ID'],
+    'radio' => ['m/radio', 'Radio'],
+    'controle' => ['m/controle', 'ID'],
 ];
 if (!empty($showBriefs)) {
-    $tabs['briefs'] = ['m/briefs', 'Briefs air'];
+    $tabs['briefs'] = ['m/briefs', 'Air'];
 }
+// Les pages d'un espace allument l'onglet de l'espace.
+$activeTab = match ($mobileView ?? '') {
+    'cr_list', 'cr_read' => 'cr',
+    'radio_thread', 'radio_absent' => 'radio',
+    default => (string) ($mobileView ?? ''),
+};
 $player = trim((string) ($mobileLink['player_name'] ?? ''));
 $langHref = static fn (string $code): string => function_exists('locale_switch_url') ? (string) locale_switch_url($code) : (string) url('locale/' . $code);
 $curLang = function_exists('locale') ? (string) locale() : 'fr';
@@ -68,7 +77,7 @@ if (!empty($expiresAt)) {
   </header>
   <nav class="mm-tabs" aria-label="Apps">
     <?php foreach ($tabs as $key => [$path, $label]): ?>
-      <a class="mm-tab<?= ($mobileView ?? '') === $key ? ' is-active' : '' ?>" href="<?= $h(url($path)) ?>"><?= $h($label) ?></a>
+      <a class="mm-tab<?= $activeTab === $key ? ' is-active' : '' ?>" href="<?= $h(url($path)) ?>"><?= $h($label) ?></a>
     <?php endforeach; ?>
   </nav>
 <?php endif; ?>
