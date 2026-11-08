@@ -21,6 +21,7 @@ if (!hasInterface) exitWith {};
     // Deuxième sûreté après cba_settings.sqf (profil de test uniquement).
     profileNamespace setVariable ["COMSPEC_AthenaMode", "off"];
     player allowDamage false;
+    player addBackpack "B_Carryall_oli"; // place pour les objets donnés : un addItem sans place échoue sans rien dire
     player setPosATL [(getPosATL player) select 0, (getPosATL player) select 1, 0];
     AT_Base = getPosATL player;
     uiSleep 8; // boucles du mod lancées
