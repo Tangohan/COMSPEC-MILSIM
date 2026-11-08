@@ -73,4 +73,5 @@ return [
     ['id' => 'event_automation', 'label' => 'Séries sans fin et réponses Discord aux événements', 'group' => 'schema', 'file' => '3930_event_automation.php', 'rerun' => true],
     ['id' => 'discord_companion', 'label' => 'ATHENA Companion : serveurs Discord et codes de liaison', 'group' => 'schema', 'file' => '3940_discord_companion.php', 'rerun' => true],
     ['id' => 'patch_studio_workspace', 'label' => 'Patch Studio : projets, ressources privées, versions, setups et vignettes', 'group' => 'schema', 'file' => '3950_patch_studio_workspace.php', 'rerun' => true],
+    ['id' => 'atak_aar_conclude_permission', 'label' => 'Droit de conclusion des comptes rendus pour les gestionnaires et adjoints', 'group' => 'schema', 'file' => '3960_atak_aar_conclude_permission.php', 'rerun' => true],
 ];

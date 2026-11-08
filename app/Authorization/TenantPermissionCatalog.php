@@ -151,6 +151,7 @@ final class TenantPermissionCatalog
             ['slug' => 'atak.mission_cycle.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Piloter le cycle de mission ATAK'],
             ['slug' => 'atak.command.alert', 'module' => 'atak', 'action' => 'manage', 'name' => 'Envoyer une alerte plein écran à tous les opérateurs'],
             ['slug' => 'atak.aar.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les comptes rendus post-opération ATAK'],
+            ['slug' => 'atak.aar.conclude', 'module' => 'atak', 'action' => 'manage', 'name' => 'Écrire la conclusion du commandement des comptes rendus'],
             ['slug' => 'atak.sse.access', 'module' => 'atak', 'action' => 'view', 'name' => 'Accéder au portail de renseignement interpersonnel'],
             ['slug' => 'atak.sse.grant', 'module' => 'atak', 'action' => 'manage', 'name' => 'Délivrer des codes d’accès temporaires au renseignement'],
             ['slug' => 'atak.sse.case.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les dossiers de renseignement interpersonnel'],
