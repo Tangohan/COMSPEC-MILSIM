@@ -68,6 +68,13 @@ switch (_level) do {
                 _lines pushBack "Attitude, tenue ou équipement qui ne collent pas aux papiers."; _codes pushBack "cover_incoherent"; ["doubt", "doute"] call _worse;
             };
         };
+        // Carte militaire : elle se présente en tenue. En civil, elle reste à vérifier.
+        if ((_doc getOrDefault ["type", ""]) isEqualTo "military_id" && {!isNull _subj}) then {
+            private _uc = getText (configFile >> "CfgWeapons" >> uniform _subj >> "ItemInfo" >> "uniformClass");
+            if !(_uc isNotEqualTo "" && {(getNumber (configFile >> "CfgVehicles" >> _uc >> "side")) in [0, 1, 2]}) then {
+                _lines pushBack "Carte militaire, mais la personne est en civil."; _codes pushBack "mil_no_uniform"; ["doubt", "doute"] call _worse;
+            };
+        };
         if (_lines isEqualTo [] || {_lines isEqualTo ["Trop sombre pour bien examiner le document : éclairez-le."]}) then {
             _lines pushBack "Examen visuel : rien d'anormal.";
         };
@@ -135,6 +142,14 @@ switch (_level) do {
             };
         };
         if (_expired) then { _lines pushBack "Document expiré."; _codes pushBack "expired"; ["doubt", "expire"] call _worse; };
+        // Carte militaire : le fichier donne la force et le grade ; une force ennemie du contrôleur est signalée.
+        if ((_doc getOrDefault ["type", ""]) isEqualTo "military_id") then {
+            _lines pushBack format ["Fichier militaire : %1, %2.", _doc getOrDefault ["force", "?"], _doc getOrDefault ["rank", "?"]];
+            private _cardSide = (["east", "west", "guer", "civ"] find (_doc getOrDefault ["cardSide", ""]));
+            if (_cardSide >= 0 && {!isNull _ctrl} && {[side group _ctrl, [east, west, independent, civilian] select _cardSide] call BIS_fnc_sideIsEnemy}) then {
+                _lines pushBack "Force ennemie : personnel militaire adverse."; _codes pushBack "mil_enemy_force"; ["doubt", "signale"] call _worse;
+            };
+        };
         // BOLO : numéro du document à surveiller (diffusé par le commandement).
         (["docFlag", [_doc]] call comspec_sse_fnc_idHvt) params [["_bRef", ""], ["_bLvl", ""]];
         if (_bRef isNotEqualTo "") then {
@@ -144,17 +159,34 @@ switch (_level) do {
         // Avis de recherche (base locale + paquet Athena) : sur le nom imprimé.
         private _L = toUpper (_doc get "last");
         private _F = toUpper (_doc get "first");
+        // Nom et prénom identiques, ou alias égal au nom complet imprimé : avis confirmé. Avis sans prénom, ou alias égal au
+        // seul nom : tout porteur de ce nom y répondrait, simple homonymie possible, à recouper (jamais une alerte).
+        private _full = trim format ["%1 %2", _F, _L];
+        private _fullRev = trim format ["%1 %2", _L, _F];
+        private _cSide = ["east", "west", "guer", "civ"] select (([east, west, independent, civilian] find (side group _ctrl)) max 0);
+        private _homonym = "";
+        private _confirmed = false;
         {
             _x params [["_wl", ""], ["_wf", ""], ["_wa", ""], ["_lvl", "surveillance"], ["_ref", ""], ["_wSides", []]];
             // Recherché de l'opération réservé à certains camps (paquet Athena, wanted[].sides) : invisible des autres.
-            private _cSide = ["east", "west", "guer", "civ"] select (([east, west, independent, civilian] find (side group _ctrl)) max 0);
-            if ((toUpper _wl) isEqualTo _L && {_wf isEqualTo "" || {(toUpper _wf) isEqualTo _F}} && {_wSides isEqualTo [] || {isNull _ctrl} || {_cSide in _wSides}}) exitWith {
+            if !(_wSides isEqualTo [] || {isNull _ctrl} || {_cSide in _wSides}) then { continue; };
+            private _wL = toUpper _wl;
+            private _wA = toUpper _wa;
+            private _sameName = _wL isNotEqualTo "" && {_wL isEqualTo _L};
+            if ((_sameName && {_wf isNotEqualTo ""} && {(toUpper _wf) isEqualTo _F}) || {_wA isNotEqualTo "" && {_wA in [_full, _fullRev]}}) exitWith {
                 private _v = switch (_lvl) do { case "hvt": { "hvt" }; case "prioritaire"; case "recherche": { "recherche" }; default { "signale" }; };
                 _lines pushBack format ["AVIS : personne %1 (réf. %2).", ["sous surveillance", "RECHERCHÉE", "HVT"] select (["signale", "recherche", "hvt"] find _v), _ref];
                 _codes pushBack ("watch_" + _v);
                 [["doubt", "alert"] select (_v isNotEqualTo "signale"), _v] call _worse;
+                _confirmed = true;
             };
+            if (_homonym isEqualTo "" && {(_sameName && {_wf isEqualTo ""}) || {_wA isNotEqualTo "" && {_wA isEqualTo _L}}}) then { _homonym = _ref; };
         } forEach (_reg getOrDefault ["watch", []]);
+        if (!_confirmed && {_homonym isNotEqualTo ""}) then {
+            _lines pushBack format ["Homonyme possible d'un avis sans prénom (réf. %1) : à recouper, visage ou empreintes.", _homonym];
+            _codes pushBack "watch_homonym";
+            ["doubt", "doute"] call _worse;
+        };
         if ((_res get "state") isEqualTo "ok") then { _lines pushBack "Base du pays : document délivré, valide, aucun signalement."; };
         _res set ["athena", true];
     };

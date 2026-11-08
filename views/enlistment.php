@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 $base = url('');
 $success = \App\Core\Session::getFlash('success');
 $error = \App\Core\Session::getFlash('error');
@@ -23,48 +25,31 @@ $fld = static function (string $k) use ($p): array {
     }
     return ['label' => $k, 'placeholder' => '', 'widget' => 'text', 'options' => []];
 };
-$availabilitySlots = \App\Services\Community\EnlistmentMilsimPackService::normalizeAvailabilitySlots($p['availability_slots'] ?? []);
+// Créneaux à cocher : ceux de la communauté, à défaut le catalogue courant.
+$availabilitySlots = \App\Services\Community\EnlistmentMilsimPackService::slotsOrDefault($p['availability_slots'] ?? []);
 $enlistSlug = trim((string) ($tenant['slug'] ?? 'default'));
+
+// Un compte est nécessaire pour candidater : l'identité vient du compte, jamais d'un champ du formulaire.
 $enlistmentContext = $enlistmentContext ?? [];
-$canUseAccount = !empty($enlistmentContext['canUseAccount']);
+$isAuthenticated = !empty($enlistmentContext['isAuthenticated']);
+$loginStepUrl = (string) ($enlistmentContext['loginStepUrl'] ?? url('login'));
 $prefill = array_merge([
-    'full_name' => '',
-    'guest_rp_first_name' => '',
-    'guest_rp_last_name' => '',
-    'guest_rp_birth_date' => '',
-    'guest_rp_nationality' => '',
-    'email' => '',
-    'age' => '',
     'timezone' => '',
     'weekly_availability' => '',
 ], is_array($enlistmentContext['prefill'] ?? null) ? $enlistmentContext['prefill'] : []);
-if (trim((string) ($prefill['guest_rp_first_name'] ?? '')) === '' && trim((string) ($prefill['guest_rp_last_name'] ?? '')) === '') {
-    $legacyFull = trim((string) ($prefill['full_name'] ?? ''));
-    if ($legacyFull !== '') {
-        if (str_contains($legacyFull, ' ')) {
-            $pos = strpos($legacyFull, ' ');
-            $prefill['guest_rp_first_name'] = trim(substr($legacyFull, 0, $pos));
-            $prefill['guest_rp_last_name'] = trim(substr($legacyFull, $pos));
-        } else {
-            $prefill['guest_rp_first_name'] = $legacyFull;
-        }
-    }
-}
 $prefillAvailabilitySelected = [];
-if ($availabilitySlots !== [] && trim((string) ($prefill['weekly_availability'] ?? '')) !== '') {
+if (trim((string) ($prefill['weekly_availability'] ?? '')) !== '') {
     $prefillAvailabilitySelected = \App\Services\Community\EnlistmentMilsimPackService::filterCandidateSlotSelection(
         $availabilitySlots,
         preg_split('/\s*,\s*/', (string) $prefill['weekly_availability']) ?: []
     );
 }
 $timezoneOptions = \App\Support\Profile\EnlistmentTimezoneCatalog::optionsForSelect();
-$hasMembershipOnTarget = !empty($enlistmentContext['hasMembershipOnTarget']);
-$switchToTargetUrl = $enlistmentContext['switchToTargetUrl'] ?? null;
 $tenantSlugForForm = trim((string) ($tenant['slug'] ?? ''));
 $selectedRecruitmentOpening = is_array($selectedRecruitmentOpening ?? null) ? $selectedRecruitmentOpening : null;
 $analyticsBeacon = $analyticsBeacon ?? null;
 $enlistmentMemberOpeningInsight = is_array($enlistmentMemberOpeningInsight ?? null) ? $enlistmentMemberOpeningInsight : null;
-$compactAccountOpening = $canUseAccount && $selectedRecruitmentOpening !== null;
+$compactAccountOpening = $isAuthenticated && $selectedRecruitmentOpening !== null;
 $publishedOpenings = is_array($publishedOpenings ?? null) ? $publishedOpenings : [];
 $tenantBranding = is_array($tenantBranding ?? null) ? $tenantBranding : [];
 $existingCandidature = is_array($existingCandidature ?? null) ? $existingCandidature : null;
@@ -97,16 +82,23 @@ if ($brandBanner !== '' && !preg_match('#^(https?:)?//#i', $brandBanner) && !str
     $brandBanner = asset_url(ltrim($brandBanner, '/'));
 }
 
+// Couleurs de la communauté : jamais au prix de la lisibilité (texte clair sur fond sombre, texte foncé sur les
+// boutons pleins ; seuil de contraste 4,5:1).
+$deckBg = '#0b1220';
 $ceStyle = '';
-if ($brandPrimary !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandPrimary)) {
+if (preg_match('/^#[0-9A-Fa-f]{6}$/', $brandPrimary) === 1
+    && \App\Support\ColorContrast::ratio('#041016', $brandPrimary) >= \App\Support\ColorContrast::MIN_TEXT_RATIO) {
     $ceStyle .= '--ce-tenant-primary:' . $brandPrimary . ';';
 }
-if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
+if (preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent) === 1) {
     $ceStyle .= '--ce-tenant-accent:' . $brandAccent . ';';
 }
+$ceStyle .= '--ce-tenant-accent-text:' . \App\Support\ColorContrast::readableOn($brandAccent !== '' ? $brandAccent : '#6ee7b7', $deckBg, '#6ee7b7') . ';';
 
 $showcaseUrl = $tenantSlugForForm !== '' ? url('c/' . rawurlencode($tenantSlugForForm)) : $base . '/';
 $formAnchor = '#candidature';
+// Bouton « Commencer » : le formulaire pour un compte connecté, la connexion (puis le formulaire) sinon.
+$startHref = $isAuthenticated ? $formAnchor : $loginStepUrl;
 $logoLetter = mb_strtoupper(mb_substr(trim((string) ($p['logo_letter'] ?? 'A')) ?: mb_substr($tenantName, 0, 1) ?: 'A', 0, 1));
 $heroLead = trim((string) ($p['preamble_lead'] ?? ''));
 $roeItems = is_array($p['roe_items'] ?? null) ? array_values(array_filter($p['roe_items'], static fn ($r) => is_string($r) && trim($r) !== '')) : [];
@@ -129,6 +121,12 @@ $dossierRefLabel = '';
 if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) > 0) {
     $dossierRefLabel = 'JTN-' . str_pad((string) (int) $existingCandidature['enlistment_id'], 6, '0', STR_PAD_LEFT);
 }
+// Étapes de la candidature (écrans « Parcours » et « Avant de candidater »).
+$journeySteps = [
+    ['Connectez-vous', 'Votre candidature est rattachée à votre compte : nom, portrait et e-mail sont repris de votre profil.'],
+    ['Remplissez le dossier', 'Disponibilités, matériel et motivation. Répondez avec vos mots : c’est ce que l’équipe lit en premier.'],
+    ['Suivi et décision', 'Vous suivez votre dossier en ligne ; l’équipe vous recontacte si votre profil correspond.'],
+];
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -183,11 +181,11 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
             <span class="ce-topbar__name"><?= htmlspecialchars((string) $p['nav_brand']) ?></span>
         </div>
         <nav class="ce-topbar__links" aria-label="Navigation">
-            <a href="<?= htmlspecialchars($showcaseUrl) ?>">Vitrine</a>
+            <a href="<?= htmlspecialchars($showcaseUrl) ?>">Page de la communauté</a>
             <?php if ($blocksNewCandidature && !empty($existingCandidature['portal_url'])): ?>
             <a href="<?= htmlspecialchars((string) $existingCandidature['portal_url'], ENT_QUOTES, 'UTF-8') ?>">Suivre ma candidature</a>
             <?php else: ?>
-            <a href="<?= $formAnchor ?>"><?= $blocksNewCandidature ? 'Mon dossier' : 'Candidater' ?></a>
+            <a href="<?= htmlspecialchars($startHref, ENT_QUOTES, 'UTF-8') ?>"><?= $blocksNewCandidature ? 'Mon dossier' : 'Candidater' ?></a>
             <?php endif; ?>
             <span id="clock" class="ce-topbar__clock" aria-hidden="true">--:--:--</span>
         </nav>
@@ -236,10 +234,10 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                     <?php elseif ($blocksNewCandidature): ?>
                     <a href="<?= $formAnchor ?>" class="ce-btn ce-btn--primary">Voir le statut de mon dossier</a>
                     <?php else: ?>
-                    <a href="<?= $formAnchor ?>" class="ce-btn ce-btn--primary"><?= htmlspecialchars($candidatePrefix) ?> — démarrer</a>
-                    <a href="#parcours" class="ce-btn ce-btn--ghost">Voir le parcours</a>
+                    <a href="<?= htmlspecialchars($startHref, ENT_QUOTES, 'UTF-8') ?>" class="ce-btn ce-btn--primary ce-btn--lg">Commencer ma candidature</a>
+                    <a href="#attentes" class="ce-btn ce-btn--ghost">Ce que nous attendons</a>
                     <?php endif; ?>
-                    <a href="<?= htmlspecialchars($showcaseUrl) ?>" class="ce-btn ce-btn--ghost">Retour à la vitrine</a>
+                    <a href="<?= htmlspecialchars($showcaseUrl) ?>" class="ce-btn ce-btn--ghost">Page de la communauté</a>
                 </div>
             </div>
         </div>
@@ -252,53 +250,82 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                 <h2 class="ce-title">Trois étapes pour rejoindre</h2>
                 <p class="ce-lead">Un dossier clair, une lecture attentive par l’équipe, puis un retour si votre profil correspond.</p>
                 <div class="ce-steps">
+                    <?php foreach ($journeySteps as $i => $step): ?>
                     <div class="ce-step">
-                        <div class="ce-step__n">01</div>
-                        <h3 class="ce-step__title">Préparez votre dossier</h3>
-                        <p class="ce-step__text">Identité, disponibilités, matériel et motivation. Répondez avec précision : c’est ce que l’équipe lit en premier.</p>
+                        <div class="ce-step__n"><?= str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) ?></div>
+                        <h3 class="ce-step__title"><?= htmlspecialchars($step[0]) ?></h3>
+                        <p class="ce-step__text"><?= htmlspecialchars($step[1]) ?></p>
                     </div>
-                    <div class="ce-step">
-                        <div class="ce-step__n">02</div>
-                        <h3 class="ce-step__title">Envoyez votre candidature</h3>
-                        <p class="ce-step__text">Une fois le formulaire validé, votre dossier entre dans la file de recrutement de <?= htmlspecialchars($tenantName) ?>.</p>
-                    </div>
-                    <div class="ce-step">
-                        <div class="ce-step__n">03</div>
-                        <h3 class="ce-step__title">Suivi et décision</h3>
-                        <p class="ce-step__text">Vous recevez une confirmation, puis un suivi si l’équipe a besoin d’échanger ou de vous accueillir.</p>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
     </section>
 
     <section class="ce-slide" id="attentes" data-ce-label="Attentes" aria-label="Avant de candidater" aria-hidden="true" tabindex="-1">
-        <div class="ce-section ce-section--slide ce-section--alt">
-            <div class="ce-wrap">
-                <p class="ce-kicker"><?= htmlspecialchars((string) $p['roe_title']) ?></p>
-                <h2 class="ce-title">Avant de candidater</h2>
-                <p class="ce-lead"><?= htmlspecialchars((string) $p['op_col1']) ?></p>
-                <?php if ($roeItems !== []): ?>
-                <div class="ce-reqs">
-                    <?php foreach ($roeItems as $i => $rule): ?>
-                    <div class="ce-req">
-                        <span class="ce-req__n"><?= str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) ?></span>
-                        <p class="ce-req__text"><?= htmlspecialchars($rule) ?></p>
+        <div class="ce-section ce-section--slide ce-section--alt ce-att">
+            <?php if ($brandBanner !== ''): ?>
+            <div class="ce-att__bg" aria-hidden="true"><img src="<?= htmlspecialchars($brandBanner, ENT_QUOTES, 'UTF-8') ?>" alt=""></div>
+            <?php endif; ?>
+            <div class="ce-wrap ce-att__grid">
+                <header class="ce-att__head">
+                    <div class="ce-att__brand">
+                        <?php if ($brandLogo !== ''): ?>
+                            <img class="ce-att__logo" src="<?= htmlspecialchars($brandLogo, ENT_QUOTES, 'UTF-8') ?>" alt="Emblème <?= htmlspecialchars($tenantName) ?>" width="72" height="72">
+                        <?php else: ?>
+                            <div class="ce-att__mark" aria-hidden="true"><?= htmlspecialchars($logoLetter) ?></div>
+                        <?php endif; ?>
+                        <p class="ce-att__name"><span class="ce-community-name"><?= htmlspecialchars($tenantName) ?></span></p>
                     </div>
+                    <p class="ce-kicker"><?= htmlspecialchars((string) $p['roe_title']) ?></p>
+                    <h2 class="ce-att__title">Avant de candidater</h2>
+                    <p class="ce-att__lead"><?= htmlspecialchars((string) $p['op_col1']) ?></p>
+                    <div class="ce-att__cta">
+                        <?php if ($blocksNewCandidature): ?>
+                        <a href="<?= $formAnchor ?>" class="ce-btn ce-btn--primary ce-btn--lg">Voir le statut de mon dossier</a>
+                        <?php else: ?>
+                        <a href="<?= htmlspecialchars($startHref, ENT_QUOTES, 'UTF-8') ?>" class="ce-btn ce-btn--primary ce-btn--lg">Commencer ma candidature</a>
+                        <?php if (!$isAuthenticated): ?>
+                        <p class="ce-att__cta-note">Un compte est nécessaire : vous reviendrez ici après la connexion.</p>
+                        <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                </header>
+                <div class="ce-att__main">
+                    <?php if ($roeItems !== []): ?>
+                    <ol class="ce-att__cards">
+                        <?php foreach ($roeItems as $i => $rule): ?>
+                        <li class="ce-att-card">
+                            <span class="ce-att-card__n" aria-hidden="true"><?= str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) ?></span>
+                            <p class="ce-att-card__text"><?= htmlspecialchars($rule) ?></p>
+                        </li>
+                        <?php endforeach; ?>
+                    </ol>
+                    <?php else: ?>
+                    <p class="ce-empty">Aucune consigne particulière n’est affichée pour le moment. Suivez les indications du formulaire de candidature.</p>
+                    <?php endif; ?>
+                    <div class="ce-att__notes">
+                        <aside class="ce-callout ce-callout--ai" role="note">
+                            <p class="ce-callout__title">Aucune IA dans votre dossier</p>
+                            <p class="ce-callout__text"><?= htmlspecialchars((string) $p['op_ai_warning']) ?></p>
+                        </aside>
+                        <aside class="ce-callout" role="note">
+                            <p class="ce-callout__title">Après l’envoi</p>
+                            <p class="ce-callout__text"><?= htmlspecialchars((string) $p['op_col2']) ?> <?= htmlspecialchars((string) $p['archive_note']) ?></p>
+                        </aside>
+                    </div>
+                </div>
+                <ol class="ce-att__steps" aria-label="Étapes de la candidature">
+                    <?php foreach ($journeySteps as $i => $step): ?>
+                    <li class="ce-att-step">
+                        <span class="ce-att-step__n" aria-hidden="true"><?= $i + 1 ?></span>
+                        <div>
+                            <p class="ce-att-step__title"><?= htmlspecialchars($step[0]) ?></p>
+                            <p class="ce-att-step__text"><?= htmlspecialchars($step[1]) ?></p>
+                        </div>
+                    </li>
                     <?php endforeach; ?>
-                </div>
-                <?php else: ?>
-                <p class="ce-empty">Aucune consigne particulière n’est affichée pour le moment. Suivez les indications du formulaire de candidature.</p>
-                <?php endif; ?>
-                <div class="ce-note-grid">
-                    <div>
-                        <p><?= htmlspecialchars((string) $p['op_col2']) ?></p>
-                        <p class="ce-note-grid__warn"><?= htmlspecialchars((string) $p['op_ai_warning']) ?></p>
-                    </div>
-                    <div>
-                        <p><?= htmlspecialchars((string) $p['archive_note']) ?></p>
-                    </div>
-                </div>
+                </ol>
             </div>
         </div>
     </section>
@@ -330,9 +357,16 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                         $otitle = trim((string) ($ro['title'] ?? ''));
                         $ounit = trim((string) ($ro['unit_name'] ?? ''));
                         $isSelected = $selectedRecruitmentOpening !== null && (int) ($selectedRecruitmentOpening['id'] ?? 0) === $oid;
-                        $oUrl = $tenantSlugForForm !== ''
-                            ? url('c/' . rawurlencode($tenantSlugForForm) . '/enlistment?ouverture=' . $oid) . '#candidature'
-                            : url('enlistment?ouverture=' . $oid) . '#candidature';
+                        // Visiteur sans compte : l'offre passe par la connexion, puis revient sur le formulaire.
+                        if ($isAuthenticated) {
+                            $oUrl = $tenantSlugForForm !== ''
+                                ? url('c/' . rawurlencode($tenantSlugForForm) . '/enlistment?ouverture=' . $oid) . '#candidature'
+                                : url('enlistment?ouverture=' . $oid) . '#candidature';
+                        } else {
+                            $oUrl = $tenantSlugForForm !== ''
+                                ? url('c/' . rawurlencode($tenantSlugForForm) . '/enlistment/connexion?ouverture=' . $oid)
+                                : $loginStepUrl;
+                        }
                         ?>
                     <a class="ce-opening" href="<?= htmlspecialchars($oUrl, ENT_QUOTES, 'UTF-8') ?>">
                         <h3 class="ce-opening__title"><?= htmlspecialchars($otitle !== '' ? $otitle : 'Poste ouvert') ?><?= $isSelected ? ' · sélectionné' : '' ?></h3>
@@ -357,7 +391,11 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
         <div class="ce-alert ce-alert--err" role="alert"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
-        <?php if ($blocksNewCandidature && $existingCandidature !== null): ?>
+        <?php if (!$isAuthenticated): ?>
+        <div class="ce-wrap ce-gate-stage">
+            <?php $accountTheme = 'dark'; require base_path('views/enlistment/_account_gate.php'); ?>
+        </div>
+        <?php elseif ($blocksNewCandidature && $existingCandidature !== null): ?>
         <div class="ce-wrap ce-status-layout">
             <article class="ce-status-panel" role="status">
                 <header class="ce-status-panel__head">
@@ -404,7 +442,7 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                         <?php if (!empty($existingCandidature['portal_url'])): ?>
                         <a class="ce-btn ce-btn--primary" href="<?= htmlspecialchars((string) $existingCandidature['portal_url'], ENT_QUOTES, 'UTF-8') ?>">Suivre ma candidature</a>
                         <?php endif; ?>
-                        <a class="ce-btn ce-btn--soft" href="<?= htmlspecialchars($showcaseUrl) ?>">Retour à la vitrine</a>
+                        <a class="ce-btn ce-btn--soft" href="<?= htmlspecialchars($showcaseUrl) ?>">Page de la communauté</a>
                     </div>
                 </div>
             </article>
@@ -450,8 +488,8 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                 </div>
                 <nav class="ce-rail__nav">
                     <p class="ce-rail__nav-label">Parcours dossier</p>
-                    <a href="#ce-sec-mode">01 — Mode de candidature</a>
-                    <a href="#ce-sec-identity">02 — Identité et contact</a>
+                    <a href="#ce-sec-mode">01 — Votre compte</a>
+                    <a href="#ce-sec-identity">02 — Disponibilités</a>
                     <a href="#ce-sec-gear">03 — Matériel et expérience</a>
                     <a href="#ce-sec-motivation">04 — <?= htmlspecialchars($motivationSectionTitle) ?></a>
                     <a href="#ce-sec-commit">05 — Engagement</a>
@@ -494,9 +532,9 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                     </div>
                 </div>
 
-                <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="ce-form<?= $compactAccountOpening ? ' enlist-compact-default' : '' ?>" id="recruitment-form" data-can-use-account="<?= $canUseAccount ? '1' : '0' ?>" data-compact-opening="<?= $compactAccountOpening ? '1' : '0' ?>">
+                <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="ce-form<?= $compactAccountOpening ? ' enlist-compact-default' : '' ?>" id="recruitment-form" data-compact-opening="<?= $compactAccountOpening ? '1' : '0' ?>">
                     <?= \App\Core\Csrf::field() ?>
-                    <?php require base_path('views/enlistment/_invite_link.php'); ?>
+                    <?php $inviteLinkTheme = 'dark'; require base_path('views/enlistment/_invite_link.php'); ?>
                     <?php if ($tenantSlugForForm !== ''): ?>
                         <input type="hidden" name="enlistment_tenant_slug" value="<?= htmlspecialchars($tenantSlugForForm) ?>">
                     <?php endif; ?>
@@ -518,111 +556,26 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                         <strong>À savoir —</strong> <?= htmlspecialchars((string) $p['archive_note']) ?>
                     </div>
 
-                    <?php if ($hasMembershipOnTarget && $switchToTargetUrl): ?>
-                        <div class="ce-banner ce-banner--amber">
-                            <p class="ce-banner__kicker">Compte sur cette communauté</p>
-                            <p class="ce-banner__text">Vous pouvez déjà candidater avec votre compte Athena. Basculer le contexte local est optionnel (dossier membre de cette communauté).</p>
-                            <p class="ce-banner__text" style="margin-top:0.65rem"><a href="<?= htmlspecialchars($switchToTargetUrl) ?>">Basculer et continuer</a></p>
-                        </div>
-                    <?php endif; ?>
-
                     <section class="ce-form-section" id="ce-sec-mode">
-                        <h3 class="ce-section-title"><?= htmlspecialchars((string) ($p['section_0'] ?? 'Comment candidater')) ?></h3>
-                        <?php if ($canUseAccount): ?>
-                            <div class="ce-flow">
-                                <button type="button" id="enlist-btn-flow-account" class="ce-flow-btn is-active enlist-flow-btn">Compte Athena</button>
-                                <button type="button" id="enlist-btn-flow-guest" class="ce-flow-btn enlist-flow-btn">Invité (personnage)</button>
-                            </div>
-                            <input type="hidden" name="enlistment_flow" id="enlistment_flow" value="account">
-                        <?php else: ?>
-                            <input type="hidden" name="enlistment_flow" id="enlistment_flow" value="guest">
-                            <p class="ce-help">La candidature porte sur votre <strong>personnage</strong> (univers fictionnel).</p>
-                            <p class="ce-help">Vous avez déjà un compte Athena ? <a href="<?= htmlspecialchars(url('login')) ?>">Connectez-vous</a> pour l’associer à votre candidature.</p>
-                        <?php endif; ?>
-
-                        <?php if ($canUseAccount): ?>
-                            <div id="enlist-account-panel" class="ce-panel">
-                                <p class="ce-panel__title">Envoi avec le compte connecté</p>
-                                <?php
-                                $accountEmailForMask = trim((string) ($prefill['email'] ?? ''));
-                                $accountEmailMaskedPreview = $accountEmailForMask !== ''
-                                    ? mask_email_for_display($accountEmailForMask)
-                                    : 'je***@exemple.fr';
-                                ?>
-                                <p class="ce-help">Votre e-mail de connexion est toujours transmis au staff recrutement. Vous pouvez seulement demander un affichage masqué.</p>
-                                <div class="ce-check-list">
-                                    <label class="ce-check">
-                                        <input type="checkbox" name="mask_email" value="1" id="enlist-mask-email">
-                                        <span>Masquer mon <strong>e-mail</strong> à l’affichage (<span class="font-mono"><?= htmlspecialchars($accountEmailMaskedPreview, ENT_QUOTES, 'UTF-8') ?></span>)</span>
-                                    </label>
-                                    <label class="ce-check">
-                                        <input type="checkbox" name="share_name" value="1" checked>
-                                        <span>Partager mon <strong>nom</strong> (profil)</span>
-                                    </label>
-                                </div>
-                                <div class="ce-consent">
-                                    <label class="ce-check">
-                                        <input type="checkbox" name="consent_data_sharing" value="1" id="consent_data_sharing">
-                                        <span>J’accepte que les informations cochées et le contenu de ce dossier soient transmis à l’équipe de <strong><?= htmlspecialchars($tenantName) ?></strong>.</span>
-                                    </label>
-                                </div>
-                                <p class="ce-help" style="margin-top:0.85rem;margin-bottom:0">Les champs ci-dessous complètent votre profil pour le recrutement.</p>
-                            </div>
-                        <?php endif; ?>
+                        <h3 class="ce-section-title">Votre compte</h3>
+                        <?php $accountTheme = 'dark'; require base_path('views/enlistment/_account_identity.php'); ?>
 
                         <?php if ($compactAccountOpening): ?>
-                            <div id="enlist-compact-toolbar" class="ce-banner" style="margin-bottom:1.25rem">
+                            <div id="enlist-compact-toolbar" class="ce-banner">
                                 <p class="ce-banner__kicker">Parcours court</p>
                                 <p class="ce-banner__text">Seuls les éléments utiles à une candidature ciblée sont affichés. Vous pouvez à tout moment compléter le dossier comme pour une première inscription.</p>
-                                <p style="margin-top:0.85rem">
+                                <p>
                                     <button type="button" id="enlist-btn-expand-full" class="ce-btn ce-btn--ghost">Fournir le questionnaire complet</button>
                                 </p>
                             </div>
                         <?php endif; ?>
-
-                        <div id="enlist-guest-identity" class="<?= $canUseAccount ? 'hidden' : '' ?>" <?= $canUseAccount ? 'style="display:none"' : '' ?>>
-                            <input type="hidden" name="identity_kind" value="rp">
-                        </div>
                     </section>
 
-                    <section class="ce-form-section" id="ce-sec-identity">
-                        <h3 class="ce-section-title"><?= htmlspecialchars((string) $p['section_1']) ?></h3>
-                        <div id="enlist-guest-names" class="ce-field-grid <?= $canUseAccount ? 'hidden' : '' ?>" <?= $canUseAccount ? 'style="display:none"' : '' ?>>
-                            <div class="ce-field">
-                                <label class="ce-label" for="guest_rp_first_name">Prénom du personnage</label>
-                                <input type="text" name="guest_rp_first_name" id="guest_rp_first_name" class="input-field track-field guest-req-field" maxlength="100" autocomplete="off" placeholder="ex. Jake"
-                                    value="<?= htmlspecialchars((string) ($prefill['guest_rp_first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                            </div>
-                            <div class="ce-field">
-                                <label class="ce-label" for="guest_rp_last_name">Nom du personnage</label>
-                                <input type="text" name="guest_rp_last_name" id="guest_rp_last_name" class="input-field track-field guest-req-field" maxlength="100" autocomplete="off" placeholder="ex. Gyllenhaal"
-                                    value="<?= htmlspecialchars((string) ($prefill['guest_rp_last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                            </div>
-                            <div class="ce-field">
-                                <label class="ce-label" for="guest_rp_birth_date">Date de naissance <span class="ce-label-optional">(optionnel)</span></label>
-                                <input type="date" name="guest_rp_birth_date" id="guest_rp_birth_date" class="input-field track-field" autocomplete="off"
-                                    value="<?= htmlspecialchars((string) ($prefill['guest_rp_birth_date'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                            </div>
-                            <div class="ce-field">
-                                <label class="ce-label" for="guest_rp_nationality">Nationalité <span class="ce-label-optional">(optionnel)</span></label>
-                                <input type="text" name="guest_rp_nationality" id="guest_rp_nationality" class="input-field track-field" maxlength="100" autocomplete="off" placeholder="ex. Française"
-                                    value="<?= htmlspecialchars((string) ($prefill['guest_rp_nationality'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                            </div>
+                    <section class="ce-form-section enlist-full-only" id="ce-sec-identity">
+                        <h3 class="ce-section-title">Disponibilités</h3>
+                        <div class="ce-field-grid" id="ce-identity-meta-grid">
                             <div class="ce-field ce-span-2">
-                                <label class="ce-label" for="input-email"><?= htmlspecialchars($fld('email')['label']) ?></label>
-                                <input type="email" name="email" id="input-email" class="input-field track-field guest-req-field" placeholder="<?= htmlspecialchars($fld('email')['placeholder']) ?>"
-                                    value="<?= htmlspecialchars($prefill['email']) ?>"
-                                    autocomplete="email">
-                            </div>
-                        </div>
-                        <div class="enlist-full-only ce-field-grid" id="ce-identity-meta-grid">
-                            <div class="ce-field">
-                                <label class="ce-label" for="enlist-age"><?= htmlspecialchars($fld('age')['label']) ?></label>
-                                <input type="number" name="age" id="enlist-age" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('age')['placeholder']) ?>" min="16" max="99"
-                                    value="<?= htmlspecialchars($prefill['age']) ?>">
-                            </div>
-                            <div class="ce-field">
-                                <label class="ce-label" for="enlist-timezone"><?= htmlspecialchars($fld('timezone')['label']) ?></label>
+                                <label class="ce-label" for="enlist-timezone"><?= htmlspecialchars((string) $fld('timezone')['label']) ?></label>
                                 <select name="timezone" id="enlist-timezone" class="input-field track-field">
                                     <option value="">Sélectionner</option>
                                     <?php foreach ($timezoneOptions as $tzOpt): ?>
@@ -635,36 +588,31 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="ce-field ce-span-2">
-                                <label class="ce-label"><?= htmlspecialchars($fld('weekly_availability')['label']) ?></label>
-                                <?php if ($availabilitySlots !== []): ?>
-                                    <div class="ce-slot-box">
-                                        <p class="ce-help" style="margin:0">Cochez les créneaux qui vous correspondent.</p>
-                                        <?php foreach ($availabilitySlots as $slot): ?>
-                                            <?php
-                                            $slotId = (string) ($slot['id'] ?? '');
-                                            $slotLabel = (string) ($slot['label'] ?? '');
-                                            if ($slotLabel === '') {
-                                                continue;
-                                            }
-                                            $slotChecked = in_array($slotLabel, $prefillAvailabilitySelected, true);
-                                            ?>
-                                            <label class="ce-check">
-                                                <input type="checkbox"
-                                                       name="availability_slot[]"
-                                                       value="<?= htmlspecialchars($slotId !== '' ? $slotId : $slotLabel, ENT_QUOTES, 'UTF-8') ?>"
-                                                       class="track-field"
-                                                       <?= $slotChecked ? 'checked' : '' ?>>
-                                                <span><?= htmlspecialchars($slotLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                            </label>
-                                        <?php endforeach; ?>
-                                    </div>
-                                    <input type="text" name="weekly_availability_notes" class="input-field track-field" maxlength="300" placeholder="Précisions optionnelles (fuseau, exceptions…)">
-                                <?php else: ?>
-                                    <input type="text" name="weekly_availability" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('weekly_availability')['placeholder']) ?>"
-                                        value="<?= htmlspecialchars($prefill['weekly_availability']) ?>">
-                                <?php endif; ?>
-                            </div>
+                            <fieldset class="ce-field ce-span-2 ce-slots">
+                                <legend class="ce-label"><?= htmlspecialchars((string) $fld('weekly_availability')['label']) ?></legend>
+                                <div class="ce-slot-box">
+                                    <?php foreach ($availabilitySlots as $slot): ?>
+                                        <?php
+                                        $slotId = (string) ($slot['id'] ?? '');
+                                        $slotLabel = (string) ($slot['label'] ?? '');
+                                        if ($slotLabel === '') {
+                                            continue;
+                                        }
+                                        $slotChecked = in_array($slotLabel, $prefillAvailabilitySelected, true);
+                                        ?>
+                                        <label class="ce-check">
+                                            <input type="checkbox"
+                                                   name="availability_slot[]"
+                                                   value="<?= htmlspecialchars($slotId !== '' ? $slotId : $slotLabel, ENT_QUOTES, 'UTF-8') ?>"
+                                                   class="track-field"
+                                                   <?= $slotChecked ? 'checked' : '' ?>>
+                                            <span><?= htmlspecialchars($slotLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                                <label class="ce-label ce-label--sub" for="enlist-availability-notes">Précisions <span class="ce-label-optional">(facultatif)</span></label>
+                                <input type="text" id="enlist-availability-notes" name="weekly_availability_notes" class="input-field track-field" maxlength="300" placeholder="Exceptions, périodes d’absence…">
+                            </fieldset>
                         </div>
                         <?php if ($customBySection['identity'] !== []): ?>
                             <div class="ce-field-stack" style="margin-top:1.1rem">
@@ -741,16 +689,16 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                     <section class="ce-form-section enlist-full-only" id="ce-sec-commit">
                         <h3 class="ce-section-title"><?= htmlspecialchars((string) $p['section_4']) ?></h3>
                         <div class="ce-commit-row">
-                            <span><?= htmlspecialchars((string) $p['commitment_q13']) ?></span>
-                            <select name="commitment_effort" class="input-field track-field">
+                            <label for="enlist-commitment-effort"><?= htmlspecialchars((string) $p['commitment_q13']) ?></label>
+                            <select name="commitment_effort" id="enlist-commitment-effort" class="input-field track-field">
                                 <option value="">Sélectionner</option>
                                 <option value="Oui">Oui</option>
                                 <option value="Non">Non</option>
                             </select>
                         </div>
                         <div class="ce-commit-row">
-                            <span><?= htmlspecialchars((string) $p['availability_q15']) ?></span>
-                            <select name="availability_wed_sat" class="input-field track-field">
+                            <label for="enlist-availability-wed-sat"><?= htmlspecialchars((string) $p['availability_q15']) ?></label>
+                            <select name="availability_wed_sat" id="enlist-availability-wed-sat" class="input-field track-field">
                                 <option value="">Sélectionner</option>
                                 <option value="Oui">Oui</option>
                                 <option value="Non">Non</option>
@@ -804,9 +752,10 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                     </div>
 
                     <div class="ce-submit-zone">
+                        <?php $accountTheme = 'dark'; require base_path('views/enlistment/_account_consent.php'); ?>
                         <?php if ($requireAiAck): ?>
                             <div class="ce-ai-ack">
-                                <input type="checkbox" name="no_ai_confirmed" id="no-ai-check" value="1" class="track-field">
+                                <input type="checkbox" name="no_ai_confirmed" id="no-ai-check" value="1" class="track-field" required>
                                 <label for="no-ai-check"><?= htmlspecialchars((string) $p['ai_checkbox']) ?></label>
                             </div>
                         <?php else: ?>
@@ -823,7 +772,7 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
 
         <footer class="ce-foot">
             <div class="ce-wrap">
-                <a href="<?= htmlspecialchars($showcaseUrl) ?>">Retour à la vitrine <span class="ce-community-name"><?= htmlspecialchars($tenantName) ?></span></a>
+                <a href="<?= htmlspecialchars($showcaseUrl) ?>">Retour à la page de <span class="ce-community-name"><?= htmlspecialchars($tenantName) ?></span></a>
                 · Athena
             </div>
         </footer>
@@ -906,79 +855,19 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
         });
         updateProgress();
 
-        (function enlistmentFlowUi() {
+        (function enlistmentFormUi() {
             var form = document.getElementById('recruitment-form');
             if (!form) return;
-            var canUseAccount = form.getAttribute('data-can-use-account') === '1';
             var compactOpening = form.getAttribute('data-compact-opening') === '1';
-            var flowInput = document.getElementById('enlistment_flow');
             var modeInput = document.getElementById('enlistment_form_mode');
-            var accPanel = document.getElementById('enlist-account-panel');
-            var guestId = document.getElementById('enlist-guest-identity');
-            var guestNames = document.getElementById('enlist-guest-names');
-            var btnAcc = document.getElementById('enlist-btn-flow-account');
-            var btnGuest = document.getElementById('enlist-btn-flow-guest');
             var btnExpand = document.getElementById('enlist-btn-expand-full');
-
-            function setGuestFieldsRequired(isGuest) {
-                document.querySelectorAll('.guest-req-field').forEach(function(el) {
-                    el.required = !!isGuest;
-                });
-            }
 
             function syncMotivationRequired() {
                 var ta = document.querySelector('textarea[name="motivation_why_join"]');
                 if (!ta) return;
                 var tenantRequired = ta.getAttribute('data-tenant-required') === '1';
-                var flow = flowInput ? flowInput.value : 'guest';
                 var compact = form.classList.contains('enlist-compact-default') && !form.classList.contains('enlist-compact-expanded');
-                ta.required = tenantRequired || (flow === 'account' && compact);
-            }
-
-            function syncIdentityKind() {
-                // Identité unique = prénom + nom du personnage (plus de champ « nom unique » legacy).
-            }
-
-            function setFlow(f) {
-                if (!flowInput) return;
-                flowInput.value = f;
-                var guest = (f === 'guest');
-                if (canUseAccount) {
-                    if (accPanel) accPanel.style.display = guest ? 'none' : '';
-                    if (guestId) { guestId.style.display = guest ? '' : 'none'; guestId.classList.toggle('hidden', !guest); }
-                    if (guestNames) { guestNames.style.display = guest ? '' : 'none'; guestNames.classList.toggle('hidden', !guest); }
-                    if (btnAcc && btnGuest) {
-                        btnAcc.classList.toggle('is-active', !guest);
-                        btnGuest.classList.toggle('is-active', guest);
-                    }
-                    document.querySelectorAll('#enlist-account-panel input, #enlist-account-panel select').forEach(function(el) {
-                        if (el.type === 'button') return;
-                        el.disabled = guest;
-                    });
-                }
-                if (guest) {
-                    form.classList.add('enlist-compact-expanded');
-                    if (modeInput) modeInput.value = 'full';
-                } else if (compactOpening) {
-                    form.classList.remove('enlist-compact-expanded');
-                    if (modeInput) modeInput.value = 'compact';
-                } else {
-                    form.classList.remove('enlist-compact-expanded');
-                    if (modeInput) modeInput.value = 'full';
-                }
-                setGuestFieldsRequired(guest || !canUseAccount);
-                syncIdentityKind();
-                syncMotivationRequired();
-            }
-
-            if (canUseAccount && btnAcc && btnGuest) {
-                btnAcc.addEventListener('click', function() { setFlow('account'); });
-                btnGuest.addEventListener('click', function() { setFlow('guest'); });
-                setFlow(flowInput && flowInput.value === 'guest' ? 'guest' : 'account');
-            } else {
-                setGuestFieldsRequired(true);
-                syncIdentityKind();
-                syncMotivationRequired();
+                ta.required = tenantRequired || compact;
             }
 
             if (btnExpand) {
@@ -992,25 +881,9 @@ if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) 
                     } catch (e) {}
                 });
             }
-
-            syncIdentityKind();
-
-            form.addEventListener('submit', function(ev) {
-                var flow = flowInput ? flowInput.value : 'guest';
-                if (flow === 'guest') {
-                    setGuestFieldsRequired(true);
-                } else {
-                    setGuestFieldsRequired(false);
-                }
-                syncMotivationRequired();
-                if (canUseAccount && flow === 'account') {
-                    var c = document.getElementById('consent_data_sharing');
-                    if (c && !c.checked) {
-                        ev.preventDefault();
-                        alert('Veuillez accepter le partage des données avec l’équipe de recrutement.');
-                    }
-                }
-            });
+            if (modeInput) modeInput.value = compactOpening ? 'compact' : 'full';
+            syncMotivationRequired();
+            form.addEventListener('submit', syncMotivationRequired);
         })();
     </script>
     <script src="<?= htmlspecialchars($jsHref) ?>" defer></script>

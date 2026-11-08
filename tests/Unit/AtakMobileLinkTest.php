@@ -140,7 +140,7 @@ final class AtakMobileLinkTest extends TestCase
     public function testIssueNeedsALinkedAccountAKnownAppAndIsRateLimited(): void
     {
         self::assertSame('not_linked', $this->svc->issue(self::OWN, 0, null, '', 1, 'cr', 'Tango')['error']);
-        self::assertSame('bad_app', $this->svc->issue(self::OWN, self::PLAYER, null, '', 1, 'admin', 'Tango')['error']);
+        self::assertSame('bad_app', $this->svc->issue(self::OWN, self::PLAYER, null, '', 1, 'root', 'Tango')['error']);
         for ($i = 0; $i < AtakMobileLinkService::ISSUE_LIMIT; $i++) {
             self::assertTrue($this->issue('cr')['ok']);
         }

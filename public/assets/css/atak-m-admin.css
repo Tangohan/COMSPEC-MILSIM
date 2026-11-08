@@ -1,0 +1,33 @@
+/* Espace d'administration du téléphone (/m/admin) : complète atak-m.css (thème, boutons, cartes, onglets). */
+.mm-tiles { display: grid; gap: 12px; }
+.mm-tiles--home { grid-template-columns: 1fr; flex: 1; align-content: stretch; grid-auto-rows: minmax(110px, 1fr); }
+.mm-tiles--home .mm-tile { justify-content: center; }
+.mm-sub { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+.mm-sub__btn {
+  display: flex; align-items: center; justify-content: center; text-align: center; min-height: 52px; padding: 6px 8px; border-radius: 3px;
+  background: var(--mm-panel2); border: 1px solid var(--mm-line); color: var(--mm-text); text-decoration: none; font-weight: 800; font-size: 14px;
+}
+.mm-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.mm-tab { display: flex; align-items: center; justify-content: center; min-height: 52px; padding: 8px 4px; }
+.mm-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mm-row-card {
+  display: flex; flex-direction: column; gap: 6px; min-height: 72px; padding: 14px 16px; border-radius: 4px; text-decoration: none; color: var(--mm-text);
+  background: var(--mm-panel2); border: 1px solid var(--mm-line); border-left: 6px solid var(--mm-line);
+}
+.mm-row-card.is-alert { border-left-color: var(--mm-red); }
+.mm-row-card__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mm-row-card__top strong { font-size: 18px; }
+.mm-row-card__meta { font-size: 12.5px; color: var(--mm-muted); }
+.mm-badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font: 800 11px Inter, system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; background: var(--mm-field); color: var(--mm-green2); }
+.mm-badge--hot { background: rgba(248,113,113,.18); color: var(--mm-red); }
+.mm-search { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.mm-search .mm-input { min-height: 52px; }
+.mm-acc { background: var(--mm-panel); border: 1px solid var(--mm-line); border-radius: 4px; }
+.mm-acc > summary { list-style: none; cursor: pointer; padding: 16px; min-height: 56px; display: flex; align-items: center; font-weight: 800; font-size: 17px; }
+.mm-acc > summary::-webkit-details-marker { display: none; }
+.mm-acc > summary::after { content: "+"; margin-left: auto; font-size: 24px; color: var(--mm-green); }
+.mm-acc[open] > summary::after { content: "−"; }
+.mm-acc[open] > summary { border-bottom: 1px solid var(--mm-line); }
+.mm-acc > .mm-form, .mm-acc > .mm-muted, .mm-acc > .mm-list { padding: 16px; margin: 0; }
+.mm-acc .mm-input, .mm-card .mm-input { min-height: 52px; }
+.mm-acc textarea.mm-input, .mm-card textarea.mm-input { min-height: 96px; }
