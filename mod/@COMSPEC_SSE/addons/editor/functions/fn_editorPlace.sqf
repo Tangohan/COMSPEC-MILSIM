@@ -21,17 +21,17 @@ if (is3DEN) exitWith {
     };
     if (isNull _target) exitWith { "Fouille : sélectionnez d'abord une personne ou un véhicule." call _notify; false };
     private _marking = ["NON PROTÉGÉ", "DIFFUSION RESTREINTE", "CONFIDENTIEL"] param [_item getOrDefault ["marking", 0], "NON PROTÉGÉ"];
-    private _oneLine = [_item get "body", toString [13, 10], " "] call CBA_fnc_replace;
+    private _oneLine = [[_item get "body", toString [13], ""] call CBA_fnc_replace, toString [10], " "] call CBA_fnc_replace;
     private _vars = [
         ["comspec_sse_documentsMode", "CUSTOM"],
         ["comspec_sse_doc1_title", trim (_item get "title")],
-        ["comspec_sse_doc1_summary", format ["[%1] %2", _marking, _oneLine]],
+        ["comspec_sse_doc1_summary", "[" + _marking + "] " + _oneLine],
         ["comspec_sse_editorItem", _item get "id"]
     ];
     if (_delivery isEqualTo 1) then { _vars pushBack ["comspec_sse_enabled", true]; };
-    private _code = (_vars apply { format ["this setVariable [%1, %2, true];", str (_x select 0), str (_x select 1)] }) joinString " ";
+    private _code = (_vars apply { "this setVariable [" + str (_x select 0) + ", " + str (_x select 1) + ", true];" }) joinString " "; // format coupe les longs textes
     private _init = trim (((_target get3DENAttribute "Init") param [0, ""]));
-    _target set3DENAttribute ["Init", trim format ["%1 if (isServer) then { %2 };", _init, _code]];
+    _target set3DENAttribute ["Init", trim (_init + " if (isServer) then { " + _code + " };")];
     ["placed", [_item get "id", "Placé dans la mission préparée."]] call comspec_sse_fnc_editor;
     true
 };
