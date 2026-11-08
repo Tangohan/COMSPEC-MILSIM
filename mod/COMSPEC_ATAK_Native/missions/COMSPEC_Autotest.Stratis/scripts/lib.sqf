@@ -102,6 +102,14 @@ AT_fnc_page = {
     !isNull ([] call comspec_atak_native_fnc_display)
         && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo _page}
 };
+// Texte qui tient dans son contrôle : largeur pour une ligne (titres, boutons), hauteur pour un texte structuré.
+AT_fnc_tient = {
+    params ["_c", "_nom"];
+    if (isNull _c || {!ctrlShown _c}) exitWith { true };
+    (ctrlPosition _c) params ["", "", "_w", "_h"];
+    private _ok = if ((ctrlType _c) isEqualTo 13) then { (ctrlTextHeight _c) <= _h * 1.05 } else { (ctrlTextWidth _c) <= _w * 1.02 };
+    [_ok, format ["%1 coupé : « %2 »", _nom, ctrlText _c]] call AT_fnc_check
+};
 AT_fnc_etat = { uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap] };
 // Carte centrée sur le joueur, à cette échelle.
 AT_fnc_centre = {

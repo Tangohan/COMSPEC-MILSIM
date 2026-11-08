@@ -240,8 +240,8 @@ internal static class BetaNoticeWindow
                 "1. Organised play — Use the pack responsibly during milsim sessions. Do not abuse connectivity or tools in ways that harm other players, communities, or COMSPEC services.\r\n" +
                 "2. No warranty — The pack is provided as-is, without guarantee of availability, accuracy, or fitness for a particular purpose.\r\n" +
                 "3. Updates — Install Workshop updates so you stay compatible with Athena and organised sessions.\r\n" +
-                "4. Report issues — In game: Esc → COMSPEC Overwatch — mod manager → Report a problem. Describe what happened. Reports go to the team that maintains the pack (not Discord).\r\n" +
-                "5. Limited technical data — Continuing may record limited technical information (Steam identity when available, player name, pack version, related client details) to operate the beta and Athena. This is not used for unrelated advertising.\r\n" +
+                "4. Report issues — In game: ACE self-interaction menu > Report a problem. Describe what happened. Reports go to the team that maintains the pack (not Discord).\r\n" +
+                "5. Data recorded by Athena — Only if you answer Yes to the Athena service; if you answer No, your game sends nothing to Athena. Recorded to run the service, and not used for advertising: Steam identity when available, player name, callsign, IP address seen by the server, mod, DLL and Arma versions; position, heading and role, playtime and screen time, synchronised equipment, what you send from the phone; mod log lines and error reports. Details are in the service note.\r\n" +
                 "6. Acceptance — “I accept the terms” records this notice on your profile. “Later” closes the window; it may appear again on the next launch.\r\n\r\n" +
                 "Thank you for helping improve Overwatch.";
         }
@@ -255,8 +255,8 @@ internal static class BetaNoticeWindow
             "1. Sessions organisées — Utilisez le pack de façon responsable lors des sessions milsim. N’abusez pas de la liaison ni des outils pour nuire à d’autres joueurs, communautés ou services COMSPEC.\r\n" +
             "2. Absence de garantie — Le pack est fourni en l’état, sans promesse de disponibilité, d’exactitude ou d’adéquation à un usage particulier.\r\n" +
             "3. Mises à jour — Installez les mises à jour Workshop pour rester compatible avec Athena et les sessions organisées.\r\n" +
-            "4. Signaler un problème — En jeu : Échap → COMSPEC Overwatch — gestion du mod → Signaler un problème. Décrivez ce qui s’est passé. Les signalements arrivent à l’équipe qui suit le pack (pas sur Discord).\r\n" +
-            "5. Données techniques limitées — En continuant, des informations techniques limitées peuvent être enregistrées (identité Steam lorsqu’elle est disponible, nom du joueur, version du pack, détails clients associés) pour faire tourner la bêta et Athena. Elles ne servent pas à de la publicité non liée.\r\n" +
+            "4. Signaler un problème — En jeu : menu d’interaction ACE > Signaler un problème. Décrivez ce qui s’est passé. Les signalements arrivent à l’équipe qui suit le pack (pas sur Discord).\r\n" +
+            "5. Données enregistrées par Athéna — Uniquement si vous répondez Oui au service Athéna ; si vous répondez Non, votre jeu ne transmet rien à Athéna. Enregistré pour faire fonctionner le service, et sans usage publicitaire : identité Steam si disponible, nom du joueur, indicatif, adresse IP vue par le serveur, versions du mod, de la DLL et d’Arma ; position, cap et rôle, temps de jeu et d’écran, équipement synchronisé, ce que vous envoyez depuis le téléphone ; lignes du journal du mod et rapports d’erreur. Détail dans la note de service.\r\n" +
             "6. Acceptation — « J’accepte les conditions » enregistre cette note sur votre profil. « Plus tard » ferme la fenêtre ; l’avis pourra réapparaître au prochain lancement.\r\n\r\n" +
             "Merci d’aider à améliorer Overwatch.";
     }

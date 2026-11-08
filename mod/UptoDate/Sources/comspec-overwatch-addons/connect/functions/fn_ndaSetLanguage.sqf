@@ -13,7 +13,10 @@ if (isNull _display) exitWith {};
 uiNamespace setVariable ["COMSPEC_NDA_Lang", _lang];
 
 private _pack = [_lang] call comspec_overwatch_connect_fnc_ndaTexts;
-_pack params ["_title", "_subtitle", "_body", "_accept", "_decline", "_footer", "_legal", ["_close", "Fermer"]];
+_pack params ["_title", "_subtitle", "_body", "_accept", "_decline", "_footer", "_legal", ["_close", "Fermer"], "", "", "", "", ["_summary", ""], ["_acceptLocked", ""]];
+uiNamespace setVariable ["COMSPEC_NDA_Pack", _pack];
+// Le texte change de hauteur : fn_ndaWatch recalibre le défilement. Ce qui a déjà été lu reste lu.
+uiNamespace setVariable ["COMSPEC_NDA_Recal", true];
 // Licence déjà acceptée (relecture) ou en mission : le second bouton ferme simplement la note.
 if ((([] call comspec_overwatch_connect_fnc_licenceStatus) select 1) || {!isNull findDisplay 46}) then { _decline = _close; };
 
@@ -21,7 +24,10 @@ if ((([] call comspec_overwatch_connect_fnc_licenceStatus) select 1) || {!isNull
 (_display displayCtrl 9511) ctrlSetStructuredText parseText ((_subtitle) call comspec_overwatch_connect_fnc_tr);
 (_display displayCtrl 9512) ctrlSetStructuredText parseText ((_footer) call comspec_overwatch_connect_fnc_tr);
 (_display displayCtrl 9513) ctrlSetStructuredText parseText ((_legal) call comspec_overwatch_connect_fnc_tr);
-(_display displayCtrl 9501) ctrlSetText ((_accept) call comspec_overwatch_connect_fnc_tr);
+(_display displayCtrl 9518) ctrlSetStructuredText parseText ((_summary) call comspec_overwatch_connect_fnc_tr);
+private _read = uiNamespace getVariable ["COMSPEC_NDA_ReadDone", false];
+(_display displayCtrl 9501) ctrlSetText (([_acceptLocked, _accept] select _read) call comspec_overwatch_connect_fnc_tr);
+(_display displayCtrl 9501) ctrlEnable _read;
 (_display displayCtrl 9502) ctrlSetText ((_decline) call comspec_overwatch_connect_fnc_tr);
 
 private _bodyCtrl = _display displayCtrl 9500;
@@ -38,9 +44,9 @@ _bodyCtrl ctrlCommit 0;
 private _btnFr = _display displayCtrl 9505;
 private _btnEn = _display displayCtrl 9506;
 if (_lang isEqualTo "fr") then {
-    _btnFr ctrlSetBackgroundColor [0.08, 0.32, 0.28, 0.95];
-    _btnEn ctrlSetBackgroundColor [0.05, 0.12, 0.16, 0.95];
+    _btnFr ctrlSetBackgroundColor [0.18, 0.46, 0.24, 1];
+    _btnEn ctrlSetBackgroundColor [0.08, 0.11, 0.095, 1];
 } else {
-    _btnEn ctrlSetBackgroundColor [0.08, 0.32, 0.28, 0.95];
-    _btnFr ctrlSetBackgroundColor [0.05, 0.12, 0.16, 0.95];
+    _btnEn ctrlSetBackgroundColor [0.18, 0.46, 0.24, 1];
+    _btnFr ctrlSetBackgroundColor [0.08, 0.11, 0.095, 1];
 };

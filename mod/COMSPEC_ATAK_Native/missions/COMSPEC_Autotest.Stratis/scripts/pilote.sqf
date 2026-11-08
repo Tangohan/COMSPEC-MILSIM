@@ -96,7 +96,17 @@ if !("pilote" call AT_fnc_groupe) exitWith {};
 ["pilote_hud", {
     if (["comspec_atak_native_fnc_pilotMode"] call AT_fnc_nil) exitWith {};
     ["setOn", true] call comspec_atak_native_fnc_pilotMode;
-    private _h = createVehicle ["B_Heli_Light_01_F", player getPos [15, 180], [], 0, "NONE"];
+    // Aire dégagée (rien à 12 m), sinon l'appareil tombe sur un mur ou un arbre du village : pare-brise fêlé, voyants rouges.
+    private _aire = [AT_Base, 30, 400, 12, 0, 0.15, 0] call BIS_fnc_findSafePos;
+    private _h = createVehicle ["B_Heli_Light_01_F", [_aire select 0, _aire select 1, 0], [], 0, "CAN_COLLIDE"];
+    _h allowDamage false;
+    _h setVectorUp (surfaceNormal getPosATL _h);
+    _h setDamage 0;
+    _h setFuel 1;
+    uiSleep 1;
+    _h setDamage 0;
+    [(damage _h) isEqualTo 0 && {((getAllHitPointsDamage _h) param [2, []]) findIf { _x > 0 } < 0}, "appareil endommagé à l'apparition"] call AT_fnc_check;
+    [(fuel _h) isEqualTo 1, "appareil pas plein"] call AT_fnc_check;
     AT_Heli = _h;
     player moveInDriver _h;
     [[{ (objectParent player) isEqualTo AT_Heli }, 8] call AT_fnc_wait, "pas monté à bord"] call AT_fnc_check;

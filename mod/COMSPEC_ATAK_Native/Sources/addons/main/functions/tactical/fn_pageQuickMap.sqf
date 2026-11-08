@@ -53,6 +53,8 @@ private _btn = {
     params ["_pos", "_label", "_code", ["_main", false], ["_on", true], ["_tip", ""]];
     private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _main, _pos, _label] call _mk;
     _b ctrlSetFontHeight _fs;
+    // Libellé plus large que le bouton (« Rockets », « Missile » qui se touchaient) : police réduite jusqu'à 65 %.
+    [_b, _fs, true, 0.65] call comspec_atak_native_fnc_textFit;
     if (!_main) then { _b ctrlSetBackgroundColor (_th get "mapPanel"); _b ctrlSetTextColor ([_th get "mapDim", _th get "mapText"] select _on); };
     _b ctrlEnable _on;
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip (_tip call comspec_atak_native_fnc_tr); };
@@ -107,7 +109,7 @@ if (_interactive && {_armed}) then {
     private _per = [5, 3] select (_mini && {!(_l get "landscape")});
     private _h = _fs * 1.5 + _tap * (1 + ceil (5 / _per)) + _pad * 1.5;
     private _y = _yB - _h;
-    [[_x0, _y, _w, _h]] call _panel;
+    private _pnl = [[_x0, _y, _w, _h]] call _panel;
     private _tg = _q getOrDefault ["target", []];
     private _n = count (["recipients"] call comspec_atak_native_fnc_firesQuick);
     private _dest = format [("%1 pilote(s) ou JTAC en ligne") call _tr, _n];
@@ -118,11 +120,22 @@ if (_interactive && {_armed}) then {
     } else {
         format ["<t color='%1'>%2</t> <t color='%3'>· %4</t>", _th get "hexMapWarn", ("Touchez la cible sur la carte") call _tr, _th get "hexMapDim", _dest]
     };
-    [[_x0 + _pad * 0.3, _y + _pad * 0.2, _w - _pad * 0.6, _fs * 1.4], _head] call _txt;
+    // En-tête mesuré : sur deux lignes en portrait, il passait sous les boutons de munition (« Touch the target on the… »).
+    private _hd = [[_x0 + _pad * 0.3, _y + _pad * 0.2, _w - _pad * 0.6, _fs * 1.4], _head] call _txt;
+    private _hh = (ctrlTextHeight _hd) max (_fs * 1.4);
+    if (_hh > _fs * 1.45) then {
+        private _more = _hh - _fs * 1.4;
+        _y = _y - _more;
+        _h = _h + _more;
+        _pnl ctrlSetPosition [_x0, _y, _w, _h];
+        _pnl ctrlCommit 0;
+        _hd ctrlSetPosition [_x0 + _pad * 0.3, _y + _pad * 0.2, _w - _pad * 0.6, _hh];
+        _hd ctrlCommit 0;
+    };
     private _list = ["ammoList"] call comspec_atak_native_fnc_firesQuick;
     private _now = ["ammoNow"] call comspec_atak_native_fnc_firesQuick;
     private _cw = (_w - _pad * 0.3 * (_per + 1)) / _per;
-    private _ya = _y + _fs * 1.5 + _pad * 0.3;
+    private _ya = _y + _hh + _fs * 0.1 + _pad * 0.3;
     {
         _x params ["_k", "_lb"];
         private _b = [[_x0 + _pad * 0.3 + (_forEachIndex mod _per) * (_cw + _pad * 0.3), _ya + (floor (_forEachIndex / _per)) * _tap, _cw, _tap], _lb, {
@@ -174,13 +187,21 @@ private _max = [3, 1] select _mini;
     private _parts = (keys _dest) apply { format ["%1 %2", _x, (["label", _dest get _x] call comspec_atak_native_fnc_airBrief) call _tr] };
     _rows pushBack [format ["<t font='COMSPEC_BarlowBold' color='%1'>FIRES %2</t> <t color='%3'>%4</t>", _th get "hexMapWarn", _i select 2, _th get "hexMapText", (_parts joinString ", ") call _esc], _ref, [["CLORE", "CANCEL", false]], []];
 } forEach (["mine"] call comspec_atak_native_fnc_firesQuick);
+private _yRow = _yB;
 {
     _x params ["_html", "_ref", "_acts", "_tp"];
-    private _y = _yB - _rowH * (_forEachIndex + 1);
-    [[_x0, _y, _w, _rowH - _pad * 0.2]] call _panel;
+    // Hauteur de la ligne d'après son texte : « FIRES 0352 0642 · PILOTES » sur deux lignes débordait sur la ligne voisine.
     private _abw = [0, (_fs * 5.2 / _ratio) min (_w * 0.26)] select _interactive;
     private _ax = _x0 + _w - (count _acts) * (_abw + pixelW * 3);
-    [[_x0 + _pad * 0.3, _y + (_rowH - _fs * 1.5) / 2, (_ax - _x0) - _pad * 0.4, _fs * 1.5], _html] call _txt;
+    private _pnl = [[_x0, _yRow - _rowH, _w, _rowH - _pad * 0.2]] call _panel;
+    private _tc = [[_x0 + _pad * 0.3, _yRow - _rowH, (_ax - _x0) - _pad * 0.4, _fs * 1.5], _html] call _txt;
+    private _rh = _rowH max ((ctrlTextHeight _tc) + _pad * 0.6);
+    private _y = _yRow - _rh;
+    _yRow = _y;
+    _pnl ctrlSetPosition [_x0, _y, _w, _rh - _pad * 0.2];
+    _pnl ctrlCommit 0;
+    _tc ctrlSetPosition [_x0 + _pad * 0.3, _y + (_rh - ((ctrlTextHeight _tc) max (_fs * 1.5))) / 2, (_ax - _x0) - _pad * 0.4, (ctrlTextHeight _tc) max (_fs * 1.5)];
+    _tc ctrlCommit 0;
     if (_interactive) then {
         {
             _x params ["_lb", "_code", "_main"];

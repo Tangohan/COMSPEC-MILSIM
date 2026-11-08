@@ -59,6 +59,56 @@ EN : Found documents finally look like real paper
 - Visionneuse : corps dans un groupe à défilement (93028) à la hauteur du texte. Écriture manuscrite : police Caveat du jeu si elle existe (`CfgFontFamilies`), sinon police actuelle.
 - Autotest : étape `sse_papiers`, une capture par papier.
 
+---
+
+## À venir : textes entiers en portrait, relevé du document au contrôle d'identité (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Textes entiers sur le téléphone en portrait, relevé du document au contrôle
+- Les bandeaux de notification passent sous la barre de titre quand elle est trop étroite, au lieu d'un mot coupé par ligne.
+- Titres d'apps, confirmation d'explosifs et FIRES court : les textes tiennent dans leur case, plus de mots coupés ni de boutons qui se chevauchent.
+- L'alerte d'explosifs ne vous compte plus parmi les alliés proches : elle donne votre propre distance à part.
+- Contrôle d'identité : le bouton RELEVER recopie les champs du document et sa bande MRZ dans la fiche FRM, à la place d'une photo qui ne montrait que le décor.
+EN : Full texts on the phone in portrait, document record at ID checks
+- Notification banners move below the title bar when it is too narrow, instead of one cut word per line.
+- App titles, explosives confirmation and short FIRES: texts fit in their box, no more cut words or overlapping buttons.
+- The explosives warning no longer counts you among nearby friendlies: it gives your own distance separately.
+- ID check: the RECORD button copies the document fields and its MRZ into the FRM report, instead of a photo that only showed the scenery.
+
+### Détail technique
+- `fn_notificationsRender` (bandeau sous la barre), `fn_pageRender` (`fn_textFit` sur le titre), `fn_formRender` (ligne de texte réécrite en direct : deux lignes réservées), `fn_pageQuickMap` (boutons ajustés, en-tête et missions mesurés). `AtakUiTruncationTest` ; autotest : `AT_fnc_tient` sur le titre de chaque app et sur le décompte de la confirmation.
+- `screenshot` n'enregistre jamais l'interface : `fn_idPhoto` fait un relevé (champs imprimés et MRZ, sans les défauts physiques, qui restent à voir) ajouté au texte de la FRM par `fn_idFrm`. Les autres appels (`fn_frsAction`, `fn_photoMode`, `fn_photoCam`, `fn_dronePhoto`, Overwatch connect) photographient la scène, ce qu'ils doivent faire. Exception à vérifier : `fn_mapCapture` en mode « plan » prend une carte d'interface avec `screenshot`.
+- Autotest, étape pilote : appareil sur une aire dégagée, intact et plein, vérifié.
+
+---
+
+## À venir : note de service et licence v2, cadenas du réseau, ping et prévision, matériau des patchs
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Licence à relire, cadenas du réseau, ping plus précis, patchs avec matériau
+- Note de service et licence refaites : tout le monde les relit une fois et les accepte à nouveau. J'accepte s'active une fois le texte lu jusqu'à la fin.
+- Barre d'état et app Wave Relay : un cadenas et un libellé disent si la liaison est chiffrée ou non.
+- App Wave Relay : le ping nomme le maillon faible, et la prévision d'un relais compte aussi les arbres, les bâtiments, la météo et le brouillage.
+- Patch Studio : les patchs exportés sont livrés avec un matériau de tissu mat.
+EN : Licence to read again, network padlock, clearer ping, patches with a material
+- Service note and licence redone: everyone reads them once more and accepts them again. I accept unlocks once the text has been read to the end.
+- Status bar and Wave Relay app: a padlock and a label show whether the link is encrypted.
+- Wave Relay app: ping names the weakest link, and the relay forecast also counts trees, buildings, weather and jamming.
+- Patch Studio: exported patches now come with a matte fabric material.
+
+### Détail technique
+- Licence version 2 (`fn_licenceStatus`) : tout profil déjà accepté revoit la note une fois au menu principal. `fn_ndaWatch` : barre de lecture, « J'accepte » actif en bas du texte, une fois par version. Échap suit le second bouton au lieu de fermer sans rien demander. Rien ne bloque davantage en mission ni à la connexion directe.
+- Texte de licence à valider par TTRD : section Données alignée sur le code (IP, position, indicatif, journaux…), « ne peut pas » devenu « ne doit pas », flèches remplacées par `>`. `LICENSE` en version 2 dans les trois copies.
+- Clés du maillage : `fn_meshKeys` « link », `net_lock_*_ca.paa`, ligne Chiffrement de l'app Wave Relay. `mesh_keys` reste décoché par défaut.
+- Lot 12 : `fn_meshGraph` « weak », « chain », « weakest », « jamAt ». Prévision en mode `full` pour les 16 nœuds les plus proches.
+- Patch Studio : `patch.rvmat`, `patch_smdi.paa`, `material` dans `CfgUnitInsignia` (lu par `BIS_fnc_setUnitInsignia`). Aucune réponse IR propre : le moteur n'a pas ce canal.
+- Service Athéna sur « Non » : plus aucune requête vers Athena. `KickBackgroundWarmup` envoyait un HEAD à chaque chargement du mod ; commande `UplinkOff` et garde des requêtes dans la DLL à la coupure en cours de session ; appels directs du SSE soumis à `fn_uplinkOff`. Fenêtre Windows de repli alignée sur la note.
+- Rien n'a été testé en jeu.
+
+---
+
 ## À venir : thème jour lisible, écran numérique des preuves, éditeur SSE en anglais (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

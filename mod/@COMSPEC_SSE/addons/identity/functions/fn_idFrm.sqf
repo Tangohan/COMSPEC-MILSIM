@@ -41,7 +41,10 @@ private _talk = _rec getOrDefault ["talk", []];
 if (_talk isNotEqualTo []) then { _lines pushBack format ["Réponses : %1", (_talk apply { format ["« %1 »", _x select 1] }) joinString " "]; };
 if (_rec getOrDefault ["pid", false]) then { _lines pushBack "PID confirmé par le contrôleur."; };
 private _photo = _rec getOrDefault ["photo", ""];
-if (_photo isNotEqualTo "") then { _lines pushBack format ["Photo du document prise à %1 (pièce jointe).", _rec getOrDefault ["photoClock", ""]]; };
+// Relevé du document (fn_idPhoto) : dans le texte de la fiche, pas en pièce jointe.
+_lines append (_rec getOrDefault ["releve", []]);
+// Ancien contrôle avec un vrai fichier image : pièce jointe comme avant.
+if (_photo isNotEqualTo "" && {_photo isNotEqualTo "releve"}) then { _lines pushBack format ["Photo du document prise à %1 (pièce jointe).", _rec getOrDefault ["photoClock", ""]]; };
 private _block = _lines joinString toString [10];
 
 private _draft = uiNamespace getVariable ["COMSPEC_ATAK_FrsDraft", createHashMap];
@@ -62,7 +65,7 @@ _draft set ["date", format ["%1 %2", _dmy, _rec getOrDefault ["clock", ""]]];
 private _loc = nearestLocations [ASLToAGL _pos, ["NameCityCapital", "NameCity", "NameVillage", "NameLocal"], 1500];
 if ((trim (_draft getOrDefault ["place", ""])) isEqualTo "" && {_loc isNotEqualTo []}) then { _draft set ["place", format ["Contrôle d'identité, %1", text (_loc select 0)]]; };
 // Photo du document : pièce jointe de la fiche (si elle n'y est pas déjà et qu'il reste de la place).
-if (_photo isNotEqualTo "") then {
+if (_photo isNotEqualTo "" && {_photo isNotEqualTo "releve"}) then {
     private _pieces = uiNamespace getVariable ["COMSPEC_ATAK_FrsPieces", []];
     if ((_pieces findIf { (_x select 1) isEqualTo _photo }) < 0 && {(count _pieces) < 4}) then {
         _pieces pushBack ["capture", _photo, format ["Document %1", toUpper (_d getOrDefault ["last", ""])], _grid8, "", format ["Contrôle d'identité %1", _rec getOrDefault ["clock", ""]]];
