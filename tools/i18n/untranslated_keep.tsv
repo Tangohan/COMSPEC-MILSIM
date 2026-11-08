@@ -1251,3 +1251,92 @@ GER DE allemande allemand German Deutschland	mots-clés de recherche FR/EN du s�
 GR Grèce grecque grec Greek Hellas	mots-clés de recherche FR/EN du sélecteur de pays, jamais affichés	public/assets/js/identity-country-picker.js
 US américaine américain American United States	mots-clés de recherche FR/EN du sélecteur de pays, jamais affichés	public/assets/js/identity-country-picker.js
 DOCUMENT DE JEU – SANS VALEUR	mention bilingue incrustée dans l’image exportée du papier de jeu	public/assets/js/sse-id-workshop.js
+(dernière il y a	administration de la plateforme, en français seulement	views/admin/system/load.php
+: trop peu de requêtes dans la dernière minute pour juger la durée et les erreurs	administration de la plateforme, en français seulement	views/admin/system/load.php
+Activités suspectes du mod	administration de la plateforme, en français seulement	views/admin/system/load.php
+Aucune mesure enregistrée sur la période (la tâche « Surveillance » écrit une fois par minute close).	administration de la plateforme, en français seulement	views/admin/system/load.php
+Aucune requête enregistrée sur la période.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Aucune requête rattachée à une communauté sur la période.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Capteur de charge indisponible : aucune mesure récente%1. Dans ce cas, personne n’est ralenti. La mesure reprend avec le prochain passage de la tâche « Surveillance » ou la prochaine visite.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Ce que l’application mesure d’elle-même : requêtes par route et par communauté, erreurs, durée, tendance. Sous saturation avérée, et seulement si vous l’activez, les communautés Gratuit puis Standard sont ralenties avant les formules payantes, sur les seules routes non critiques.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Ce qui est mesuré, et ce qui ne l’est pas	administration de la plateforme, en français seulement	views/admin/system/load.php
+Chaque seuil est comparé à une mesure de la dernière minute. Le palier 1 commence quand l’une des mesures atteint son seuil, le palier 2 à une fois et demie le seuil, le palier 3 à deux fois et demie. Monter demande deux mesures de suite au-dessus, redescendre trois mesures de suite en dessous.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Charge CPU par cœur	administration de la plateforme, en français seulement	views/admin/system/load.php
+Charge du processeur par cœur	administration de la plateforme, en français seulement	views/admin/system/load.php
+Charge et surcharge	administration de la plateforme, en français seulement	views/admin/system/load.php
+Charge élevée	administration de la plateforme, en français seulement	views/admin/system/load.php
+Communautés les plus actives (dernière heure)	administration de la plateforme, en français seulement	views/admin/system/load.php
+Connexion et session, paiements et webhooks, alertes de commandement et sécurité des joueurs (ordres, alertes plein écran, santé, appui, SALUTE, tchat), administration de la plateforme, signalement d’erreurs du mod et sondes de vie, interface opérationnelle (carte ATAK, téléphone) et ressources de page. Les écritures et les appels d’API d’un navigateur ne sont pas ralentis non plus : seuls les envois du mod et les pages ouvertes en lecture le sont.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Dernière mesure	administration de la plateforme, en français seulement	views/admin/system/load.php
+Dernières alertes de charge	administration de la plateforme, en français seulement	views/admin/system/load.php
+Durée p95	administration de la plateforme, en français seulement	views/admin/system/load.php
+Durée p95 d’une requête (ms)	administration de la plateforme, en français seulement	views/admin/system/load.php
+Désactivé par défaut. Palier 1 : communautés Gratuit ; palier 2 : Gratuit et Standard ; palier 3 : Gratuit, Standard et Pro. Pro+ n’est jamais ralenti. Réponse 503 avec « Retry-After » sur les seules routes non critiques. Sans mesure fiable, personne n’est ralenti.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Fenêtre de	administration de la plateforme, en français seulement	views/admin/system/load.php
+Formules effectives relues il y a %1 s (cadeaux compris).	administration de la plateforme, en français seulement	views/admin/system/load.php
+Index des formules pas encore construit.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Jamais ralenti, quelle que soit la charge	administration de la plateforme, en français seulement	views/admin/system/load.php
+Le ralentissement est coupé par la variable d’environnement LOAD_SHED=off du serveur.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Lecture honnête de ces chiffres	administration de la plateforme, en français seulement	views/admin/system/load.php
+Liste exacte des chemins protégés (%1)	administration de la plateforme, en français seulement	views/admin/system/load.php
+Mesure non fiable%1. Tant qu’aucun signal fiable n’existe, le palier reste à zéro et personne n’est ralenti.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Mesuré par l’application :	administration de la plateforme, en français seulement	views/admin/system/load.php
+Moins de 100 : une partie des requêtes passe encore, le ralentissement est progressif.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Non lisible sur ce serveur	administration de la plateforme, en français seulement	views/admin/system/load.php
+Non mesuré :	administration de la plateforme, en français seulement	views/admin/system/load.php
+Part de réponses 5xx (%)	administration de la plateforme, en français seulement	views/admin/system/load.php
+Part des requêtes ralenties pour une formule visée (%)	administration de la plateforme, en français seulement	views/admin/system/load.php
+Personne n’est ralenti.	administration de la plateforme, en français seulement	views/admin/system/load.php
+Ralentir les formules les moins élevées sous saturation avérée	administration de la plateforme, en français seulement	views/admin/system/load.php
+Requêtes (60 s)	administration de la plateforme, en français seulement	views/admin/system/load.php
+Requêtes par minute sur la dernière heure	administration de la plateforme, en français seulement	views/admin/system/load.php
+Rien à ralentir pour l’instant	administration de la plateforme, en français seulement	views/admin/system/load.php
+Route la plus appelée	administration de la plateforme, en français seulement	views/admin/system/load.php
+Routes les plus chargées (15 dernières minutes)	administration de la plateforme, en français seulement	views/admin/system/load.php
+Réglage ci-dessous	administration de la plateforme, en français seulement	views/admin/system/load.php
+Seuil d’alerte %1 %	administration de la plateforme, en français seulement	views/admin/system/load.php
+Seuil d’alerte %1 ms	administration de la plateforme, en français seulement	views/admin/system/load.php
+Seuils d’alerte et priorité sous charge	administration de la plateforme, en français seulement	views/admin/system/load.php
+Tendance : requêtes par heure	administration de la plateforme, en français seulement	views/admin/system/load.php
+Tendance : requêtes par minute, 60 dernières minutes	administration de la plateforme, en français seulement	views/admin/system/load.php
+Vert : normal. Ambre : des requêtes ont été ralenties. Rouge : taux d’erreurs au-dessus du seuil. Survolez une barre pour le détail.	administration de la plateforme, en français seulement	views/admin/system/load.php
+chaque requête qui arrive jusqu’à PHP (route, communauté, code de réponse, temps passé dans PHP), et la charge du processeur du serveur lorsqu’elle est lisible.	administration de la plateforme, en français seulement	views/admin/system/load.php
+cœur(s)	administration de la plateforme, en français seulement	views/admin/system/load.php
+l’état réel du réseau ; ce que nginx, le pare-feu ou l’hébergeur refusent avant PHP ; l’attente dans la file de PHP-FPM avant l’exécution ; un trafic malveillant arrêté en amont. Un site saturé peut donc sembler calme ici. Voir	administration de la plateforme, en français seulement	views/admin/system/load.php
+plus de 3 s	administration de la plateforme, en français seulement	views/admin/system/load.php
+pour les limites nginx, l’état de PHP-FPM et la conduite à tenir en cas d’attaque réseau.	administration de la plateforme, en français seulement	views/admin/system/load.php
+requêtes	administration de la plateforme, en français seulement	views/admin/system/load.php
+État mesuré	administration de la plateforme, en français seulement	views/admin/system/load.php
+Activités suspectes	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Activités suspectes du mod	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Alerte si le seuil est dépassé pendant 2 minutes sur les 5 dernières.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Au-delà, une position est comptée « hors carte » (3 en 10 minutes pour une alerte).	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Aucune alerte dans cet état.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Ce que chaque règle constate	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Ce que dit la règle	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Charge et surcharge	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Des règles simples comparent les envois du mod à l’usage normal. Une alerte dit ce qui a été constaté, avec les valeurs mesurées : elle ne prouve rien. Aucun joueur n’est banni, bloqué ou sanctionné automatiquement ; c’est à vous de décider, ici, au vu des valeurs.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Distance divisée par le temps entre deux positions du même joueur, sur 300 m au moins.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Doublons regroupés	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Détecter les envois anormaux du mod	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Envois par minute et par joueur	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Gardées 30 jours	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Joueur non identifié	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Les mesures sont écrites par lots, sans ralentir le jeu. Les valeurs de départ sont volontairement modestes : un seuil trop bas inonde de faux positifs (téléportation d’une mission, réapparition, carte très grande). Aucune adresse réseau ni e-mail n’est gardé dans les alertes ; elles sont conservées 30 jours.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Nombre de déplacements impossibles en 10 minutes.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Nombre de versions du mod annoncées par un même joueur en 10 minutes.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Nombre d’identifiants Steam différents présentés avec un même jeton en 10 minutes.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Refus des contrôles du serveur (identité, débit, coordonnées…) en une minute.	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Réglage des détecteurs	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Sauts répétés avant alerte	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Silence 24 h pour le même cas	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Steam distincts pour un même jeton	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Valeurs mesurées	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Versions différentes pour un même joueur	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Vitesse jugée impossible (m/s)	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Écritures refusées par minute	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Étendue maximale d’une carte (m)	administration de la plateforme, en français seulement	views/admin/system/mod_alerts.php
+Activités suspectes du mod	administration de la plateforme, en français seulement	views/partials/platform_admin_sidebar.php
+Charge et surcharge	administration de la plateforme, en français seulement	views/partials/platform_admin_sidebar.php
+Envois anormaux détectés (déplacements, volume, identifiants, versions) : alertes à décider, aucun blocage automatique	administration de la plateforme, en français seulement	views/partials/platform_admin_sidebar.php
+Requêtes par route et par communauté, erreurs, tendance, seuils d’alerte, priorité des formules payantes sous charge	administration de la plateforme, en français seulement	views/partials/platform_admin_sidebar.php

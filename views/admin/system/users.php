@@ -29,6 +29,7 @@ $sortDir = (string) ($filters['sens'] ?? 'asc');
 $perPage = (int) ($filters['par'] ?? PlatformUsersDirectoryQuery::DEFAULT_PER_PAGE);
 $tenants = is_array($platformTenants ?? null) ? $platformTenants : [];
 $bansCount = (int) ($platformBansCount ?? 0);
+$inactiveCount = isset($platformInactiveCount) && is_int($platformInactiveCount) ? $platformInactiveCount : null;
 $banSupportsEnd = !empty($platformBanSupportsEnd);
 $pendingPurgeRequests = is_array($pendingPurgeRequests ?? null) ? $pendingPurgeRequests : [];
 $pendingPurgeRequestsCount = (int) ($pendingPurgeRequestsCount ?? count($pendingPurgeRequests));
@@ -48,6 +49,7 @@ $statusOptions = [
     'pending_verification' => 'E-mail pas encore vérifié',
     'no_org' => 'Sans communauté',
     'banned' => 'Bannis du site',
+    'inactifs' => 'Inactifs (ni site ni jeu)',
     'deleted' => 'Comptes anonymisés',
 ];
 $inactivityOptions = [
@@ -74,14 +76,15 @@ $sortOptions = [
     'email' => 'E-mail',
     'communautes' => 'Nombre de communautés',
     'etat' => 'État',
-    'connexion' => 'Dernière connexion',
+    'connexion_site' => 'Dernière connexion au site',
+    'connexion_jeu' => 'Dernière connexion en jeu',
     'creation' => 'Création du compte',
     'volume' => 'Données reçues (30 jours)',
     'sanctions' => 'Sanctions passées',
 ];
 // Premier clic sur une colonne : ordre naturel (A→Z pour le texte, le plus récent ou le plus gros d'abord pour le reste).
-$descFirst = ['connexion', 'creation', 'volume', 'sanctions', 'communautes'];
-$sortable = ['nom', 'indicatif', 'email', 'communautes', 'etat', 'connexion', 'creation', 'volume', 'sanctions'];
+$descFirst = ['connexion_site', 'connexion_jeu', 'creation', 'volume', 'sanctions', 'communautes'];
+$sortable = ['nom', 'indicatif', 'email', 'communautes', 'etat', 'connexion_site', 'connexion_jeu', 'creation', 'volume', 'sanctions'];
 
 $directoryUrl = static function (array $override = []) use ($filters): string {
     $query = PlatformUsersDirectoryQuery::query($filters, $override);
@@ -250,6 +253,15 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                     <?php endforeach; ?>
                 </ul>
             </section>
+        <?php endif; ?>
+
+        <nav class="pu-tabs" aria-label="Catégories de comptes">
+            <a class="pu-tab<?= $statusFilter !== 'inactifs' && $statusFilter !== 'banned' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => '', 'page' => 1])) ?>"<?= $statusFilter !== 'inactifs' && $statusFilter !== 'banned' ? ' aria-current="page"' : '' ?>>Tous les comptes</a>
+            <a class="pu-tab<?= $statusFilter === 'inactifs' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'inactifs', 'page' => 1])) ?>"<?= $statusFilter === 'inactifs' ? ' aria-current="page"' : '' ?> title="Ni connexion au site ni session de jeu depuis le seuil choisi (90 jours par défaut, personnes jamais connectées comprises)">Inactifs<?php if ($inactiveCount !== null): ?> <span class="pu-count-pill"><?= $h($inactiveCount) ?></span><?php endif; ?></a>
+            <a class="pu-tab<?= $statusFilter === 'banned' ? ' is-on' : '' ?>" href="<?= $h($directoryUrl(['status' => 'banned', 'page' => 1])) ?>"<?= $statusFilter === 'banned' ? ' aria-current="page"' : '' ?>>Bannis <span class="pu-count-pill"><?= $h($bansCount) ?></span></a>
+        </nav>
+        <?php if ($statusFilter === 'inactifs'): ?>
+            <p class="pu-muted pu-tabs__note">Personnes sans connexion au site ni session de jeu depuis <?= $inactivityFilter === 'jamais' ? 'toujours (jamais connectées)' : $h($inactivityFilter !== '' ? $inactivityFilter : '90') . ' jours' ?>. Le seuil se règle avec « Sans connexion depuis ».</p>
         <?php endif; ?>
 
         <form method="get" action="<?= $h(url('admin/users')) ?>" class="pa-filters pu-filters" id="pu-filters">
@@ -468,9 +480,12 @@ $exportAllUrl = url('admin/users/export') . '?' . PlatformUsersDirectoryQuery::q
                                         <span class="pu-muted pu-block"><?= $banEnds !== '' ? 'jusqu’au ' . $h($fmtParis($banEnds)) : 'sans date de fin' ?></span>
                                     <?php endif; ?>
                                 </td>
-                            <?php elseif ($col === 'connexion'): ?>
+                            <?php elseif ($col === 'connexion_site'): ?>
                                 <?php $login = (string) ($group['last_login'] ?? ''); ?>
-                                <td data-col="connexion" data-label="Dernière connexion" class="pu-td"><?= $login !== '' ? $h($fmtDateTime($login)) : '<span class="pu-muted">Jamais</span>' ?></td>
+                                <td data-col="connexion_site" data-label="Connexion au site" class="pu-td"><?= $login !== '' ? $h($fmtDateTime($login)) : '<span class="pu-muted">Jamais</span>' ?></td>
+                            <?php elseif ($col === 'connexion_jeu'): ?>
+                                <?php $gameSeen = (string) ($group['last_game'] ?? ''); ?>
+                                <td data-col="connexion_jeu" data-label="Connexion en jeu" class="pu-td"><?= $gameSeen !== '' ? $h($fmtDateTime($gameSeen)) : '<span class="pu-muted">Jamais</span>' ?></td>
                             <?php elseif ($col === 'creation'): ?>
                                 <td data-col="creation" data-label="Création" class="pu-td"><?= $h($fmtDate((string) ($group['created'] ?? ''))) ?></td>
                             <?php elseif ($col === 'volume'): ?>

@@ -17,13 +17,17 @@ final class PlatformUserColumns
         'email' => 'E-mail',
         'communautes' => 'Communautés',
         'etat' => 'État',
-        'connexion' => 'Dernière connexion',
+        'connexion_site' => 'Dernière connexion au site',
+        'connexion_jeu' => 'Dernière connexion en jeu',
         'creation' => 'Création du compte',
         'volume' => 'Données reçues (30 jours)',
         'sanctions' => 'Sanctions passées',
     ];
 
-    public const DEFAULT = ['nom', 'indicatif', 'email', 'communautes', 'etat', 'connexion', 'creation'];
+    public const DEFAULT = ['nom', 'indicatif', 'email', 'communautes', 'etat', 'connexion_site', 'connexion_jeu', 'creation'];
+
+    /** Anciennes clés restées valides (liens enregistrés) => clés actuelles. */
+    public const ALIASES = ['connexion' => ['connexion_site', 'connexion_jeu']];
 
     /**
      * @param mixed $requested valeur brute de la requête (tableau de clés) ; null = colonnes par défaut
@@ -36,7 +40,11 @@ final class PlatformUserColumns
         }
         $wanted = [];
         foreach ($requested as $key) {
-            if (is_string($key) && isset(self::LABELS[$key])) {
+            if (is_string($key) && isset(self::ALIASES[$key])) {
+                foreach (self::ALIASES[$key] as $current) {
+                    $wanted[$current] = true;
+                }
+            } elseif (is_string($key) && isset(self::LABELS[$key])) {
                 $wanted[$key] = true;
             }
         }

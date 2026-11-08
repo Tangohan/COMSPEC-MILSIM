@@ -440,3 +440,22 @@ html[data-bo-theme="dark"] .pu {
 
 /* Blocs du tableau des comptes affichés dans une page en utilitaires (dossier personne) : sans fond ni coupure. */
 .pa.pu.pu-embed { display: block; flex: none; overflow: visible; background: transparent; }
+
+/* ===== Onglets de catégories (Tous, Inactifs, Bannis) ===== */
+.pu-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.8rem; }
+.pu-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 999px;
+  background: var(--pa-surface);
+  color: var(--pa-muted);
+  font-size: 0.85rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+.pu-tab:hover { border-color: var(--pa-mint); color: var(--pa-ink); }
+.pu-tab.is-on { border-color: var(--pa-mint); background: var(--pa-mint-soft); color: var(--pa-ink); }
+.pu-tabs__note { margin: -0.3rem 0 0.8rem; }

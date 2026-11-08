@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Support\Migrations\SchemaInspector;
+use App\Support\SqlText;
 use PDO;
 use WeakMap;
 
@@ -98,6 +99,15 @@ final class PlatformAccountBanRepository
         $col = ($alias !== '' ? $alias . '.' : '') . 'ends_at';
 
         return '(' . $col . ' IS NULL OR ' . $col . ' > ' . $this->quoteNow() . ')';
+    }
+
+    /**
+     * Collation explicite sur MySQL/MariaDB : la table des bannissements est en utf8mb4_unicode_ci alors que users.email
+     * suit la collation par défaut du serveur (erreur 1267 « Illegal mix of collations » sinon).
+     */
+    private function collate(): string
+    {
+        return SqlText::isMysqlFamily($this->pdo()) ? ' COLLATE ' . SqlText::COLLATION : '';
     }
 
     private function quoteNow(): string
@@ -327,7 +337,7 @@ final class PlatformAccountBanRepository
         }
 
         return 'EXISTS (SELECT 1 FROM platform_account_bans __pab WHERE __pab.lifted_at IS NULL AND '
-            . $this->notExpiredSql('__pab') . ' AND __pab.email_norm = LOWER(TRIM(' . $emailColumn . ')))';
+            . $this->notExpiredSql('__pab') . ' AND __pab.email_norm' . $this->collate() . ' = LOWER(TRIM(' . $emailColumn . '))' . $this->collate() . ')';
     }
 
     /** Prédicat SQL « e-mail déjà sanctionné au moins une fois » (null si la table n’existe pas). */
@@ -337,7 +347,7 @@ final class PlatformAccountBanRepository
             return null;
         }
 
-        return 'EXISTS (SELECT 1 FROM platform_account_bans __pab2 WHERE __pab2.email_norm = LOWER(TRIM(' . $emailColumn . ')))';
+        return 'EXISTS (SELECT 1 FROM platform_account_bans __pab2 WHERE __pab2.email_norm' . $this->collate() . ' = LOWER(TRIM(' . $emailColumn . '))' . $this->collate() . ')';
     }
 
     /** Sous-requête « e-mails actuellement bannis » pour une jointure de tri (null si la table n’existe pas). */

@@ -13,7 +13,7 @@ use App\Repositories\UserRepository;
  */
 final class PlatformUsersDirectoryQuery
 {
-    public const STATUSES = ['active', 'inactive', 'pending_verification', 'deleted', 'no_org', 'banned'];
+    public const STATUSES = ['active', 'inactive', 'pending_verification', 'deleted', 'no_org', 'banned', 'inactifs'];
 
     public const PER_PAGE = [25, 50, 100];
 
