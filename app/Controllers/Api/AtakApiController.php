@@ -10902,9 +10902,12 @@ class AtakApiController
     }
 
     /**
+     * Destinataire d’un ordre lisible par le jeu. Aussi utilisé par le centre de diffusion du back-office
+     * (BroadcastCenterService), pour que ses ordres soient filtrés en jeu exactement comme ceux de la Tacmap.
+     *
      * @return array{target: string, target_ref: string, target_label: string, error: string|null}
      */
-    private function resolveOrderTargetLabel(
+    public function resolveOrderTargetLabel(
         int $tenantId,
         int $mapId,
         string $targetType,

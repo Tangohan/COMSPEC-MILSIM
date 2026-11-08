@@ -457,4 +457,42 @@ class TenantAlertRepository
         $stmt = $this->pdo->prepare('DELETE FROM tenant_alerts WHERE id = ? AND tenant_id = ?');
         $stmt->execute([$id, $tenantId]);
     }
+
+    /** Retrait (ou remise en ligne) depuis le centre de diffusion : l'annonce est gardée, seulement désactivée. */
+    public function setActive(int $id, int $tenantId, bool $active): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE tenant_alerts SET is_active = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?');
+        $stmt->execute([$active ? 1 : 0, $id, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /** Relie l'annonce à une diffusion du centre (colonne de l'étape 4190 ; sans elle, rien n'est fait). */
+    public function setBroadcastKey(int $id, int $tenantId, string $key): void
+    {
+        if (!$this->hasBroadcastKeyColumn()) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('UPDATE tenant_alerts SET broadcast_key = ? WHERE id = ? AND tenant_id = ?');
+        $stmt->execute([substr($key, 0, 12), $id, $tenantId]);
+    }
+
+    private static ?bool $hasBroadcastKeyColumn = null;
+
+    public function hasBroadcastKeyColumn(): bool
+    {
+        if (self::$hasBroadcastKeyColumn !== null) {
+            return self::$hasBroadcastKeyColumn;
+        }
+        try {
+            $stmt = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_alerts' AND COLUMN_NAME = 'broadcast_key' LIMIT 1"
+            );
+            self::$hasBroadcastKeyColumn = (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            self::$hasBroadcastKeyColumn = false;
+        }
+
+        return self::$hasBroadcastKeyColumn;
+    }
 }

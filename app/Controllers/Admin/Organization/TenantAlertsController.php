@@ -31,32 +31,8 @@ final class TenantAlertsController
         $this->discordWebhook ??= new DiscordWebhookService();
     }
 
-    public function index(Request $request, array $params = []): Response
-    {
-        $tenantId = (int) Session::get('tenant_id');
-        if ($tenantId <= 0) {
-            return Response::redirect(url('dashboard'));
-        }
-        $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
-        if (!$featureGate->allows($tenantId, 'alerts')) {
-            return \App\Support\PlanFeatureDenial::upgradeView('alerts', 'Standard');
-        }
-
-        $showUpcoming = false;
-        try {
-            $settings = $this->adminSettings()->getForTenant($tenantId);
-            $showUpcoming = !empty($settings['portal']['show_upcoming_alerts']);
-        } catch (\Throwable) {
-            $showUpcoming = false;
-        }
-
-        return Response::view('layout.main', [
-            'content' => 'admin.organization.tenant_alerts_index',
-            'title' => 'Annonces & alertes',
-            'tenantAlerts' => $this->alerts->allForTenantOrdered($tenantId),
-            'tenantAlertsShowUpcoming' => $showUpcoming,
-        ]);
-    }
+    // La liste (/back-office/alerts) est le centre de diffusion : BroadcastCenterController::index.
+    // Ce contrôleur garde le formulaire complet du bandeau (image, bouton, emplacement) et le réglage « À venir ».
 
     /**
      * Active ou désactive l’affichage des annonces programmées sur la page membre
