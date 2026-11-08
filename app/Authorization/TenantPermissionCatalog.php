@@ -363,6 +363,7 @@ final class TenantPermissionCatalog
             ['slug' => 'organization.recruitment.openings.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer les offres publiées et le format des références'],
             ['slug' => 'organization.job_roles.referential.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Gérer le référentiel des emplois métier'],
             ['slug' => 'organization.catalog.manage', 'module' => 'organization', 'action' => 'manage', 'name' => 'Appliquer un modèle d’organisation'],
+            ['slug' => 'organization.data.purge', 'module' => 'organization', 'action' => 'manage', 'name' => 'Supprimer les photos du jeu et les données de renseignement de la communauté'],
         ];
     }
 
