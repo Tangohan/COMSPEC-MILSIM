@@ -55891,4 +55891,8 @@ return [
     'Image PNG (transparente)' => 'PNG image (transparent)',
     'Image Arma 3 (.paa)' => 'Arma 3 image (.paa)',
     'Version nuit actuelle' => 'Current night version',
+    'Afficher cette aide' => 'Show this help',
+    'Changer d’onglet' => 'Switch tab',
+    'Tourner de 1° (Maj : 15°)' => 'Rotate by 1° (Shift: 15°)',
+    'version jour' => 'day version',
 ];
