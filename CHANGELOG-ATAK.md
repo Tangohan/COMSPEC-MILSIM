@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : bouton de déverrouillage et titres des apps (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Écran de verrouillage plus sobre, titres des apps jamais coupés
+- Le bouton « Déverrouiller » est un bouton net, aux proportions fixes, dans la couleur d'accent choisie dans Réglages > Personnalisation, aligné avec CARTE et MESSAGES. Il réagit au survol et à l'appui.
+- Le rappel « Sans code : réglez-en un… » ne s'affiche plus qu'une fois.
+- Les titres des apps ne sont plus coupés en petit format : le titre prend toute la place libre de la barre, puis passe à une abréviation (« MSG », « DIST », « CR »…) ou à l'icône de l'app, sans jamais descendre sous 14 px.
+EN : Cleaner lock screen, app titles never cut off
+- The "Unlock" button is a clean button with fixed proportions, in the accent colour chosen in Settings > Personalisation, aligned with MAP and MESSAGES. It reacts to hover and press.
+- The "No code: set one in…" reminder now shows only once.
+- App titles are no longer cut off on a small phone: the title uses all the free room of the bar, then switches to a short form ("MSG", "DIST", "RPT"…) or to the app icon, never below 14 px.
+
+### Détail technique
+- Cause du bouton : texture `items/data/lock/pill.paa` étirée en style 48 sur un rectangle d'environ 15:1 (46 % de la rangée en paysage) : ses bouts arrondis devenaient une ellipse aplatie. Couleur : jeton `accent` plein, c'est-à-dire l'accent du profil (`COMSPEC_ATAK_Accent`, ici BLEU), seule grande surface vive de l'écran.
+- `fn_lockScreen` : rectangles (fond + filet d'un pixel) sans texture, largeur plafonnée (12 hauteurs de police pour le bouton, 8 pour les raccourcis), rangée centrée en paysage, deux rangées centrées en portrait. Bouton tonal : nouveaux jetons `accentSoft`, `accentSoftHi`, `onAccentSoft` (`fn_theme`), états survol, focus clavier et pressé. Rappel « sans code » : profil `COMSPEC_ATAK_LockPinTip`, marqué au premier déverrouillage. Comportement de déverrouillage et de code inchangé.
+- Cause des titres coupés : largeur du titre `_dw - 4 pas de bouton`, sans lien avec les boutons réellement affichés (le pas suit la police, pas l'écran) : 3 à 65 px en mini réduit ou texte agrandi ; `fn_textFit` s'arrêtait à 65 % (et à 85 % de 14 px) puis coupait. « ITINÉRAIRE » passait, « DISTANCES » non : seuls les titres les plus larges parmi ceux testés tombaient.
+- `fn_layoutApply` : le titre va jusqu'au premier bouton de droite affiché ; boutons resserrés quand la barre est étroite ; pastille « main + touche » prise en compte. Nouveau `fn_titleFit` : police jusqu'à 14 px, puis bouton de rotation masqué (sens dans Réglages > Emplacement), abréviation (attribut `short` de `COMSPEC_ATAK_Apps`, 25 apps), icône de l'app.
+- Tests : `AtakThemeContrastTest` (bouton tonal, 6 accents x 3 thèmes, AA 4,5), `AtakUiTruncationTest`. Autotest : étape `tel_verrouillage_themes` (3 thèmes, portrait et paysage).
+
+---
+
 ## À venir : papiers variés pour les documents SSE (SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

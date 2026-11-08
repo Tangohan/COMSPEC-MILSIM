@@ -136,8 +136,18 @@ private _bh = _ah * 0.62;
 private _bw = _bh / _ratio;
 private _by = _ay + (_ah - _bh) / 2;
 private _step = _bw * 1.7;
+// Titre (4.1.1) : de la droite du bouton retour jusqu'au premier bouton de droite affiché. Avant, sa largeur valait
+// « écran − 4 pas de bouton », pas liés à la place réelle : en petit format (téléphone mini réduit, texte agrandi), il
+// restait 3 à 65 px et « DISTANCES », « MESSAGES », « INTER-TEAM », « APPLICATIONS » étaient coupés même réduits à 65 %.
+private _tx = _dx + _pad * 2 + _bw * 1.2;
+private _nRight = [0, [2, 3] select (_l get "mini")] select _interactive;
+// Barre étroite : boutons de droite resserrés (pas de 1,3 au lieu de 1,7) pour laisser la place au titre.
+if (_nRight > 0 && {(_dx + _dw - _pad - _bw - _step * (_nRight - 1) - _pad - _tx) < _dw * 0.45}) then { _step = _bw * 1.3; };
+private _tEnd = [_dx + _dw - _pad, _dx + _dw - _pad - _bw - _step * (_nRight - 1) - _pad] select (_nRight > 0);
+// Sans le bouton de rotation (mini en main) : place gagnée si le titre ne tient toujours pas (fn_titleFit).
+private _tEnd2 = [_tEnd, _dx + _dw - _pad - _bw - _step - _pad] select (_nRight isEqualTo 3);
 [88517, [_dx + _pad, _by, _bw, _bh]] call _set;
-[88518, [_dx + _pad * 2 + _bw * 1.2, _ay, _dw - _step * 4, _ah]] call _set;
+[88518, [_tx, _ay, (_tEnd - _tx) max 0, _ah]] call _set;
 [88519, [_dx + _dw - _pad - _bw, _by, _bw, _bh]] call _set;
 [88521, [_dx + _dw - _pad - _bw - _step, _by, _bw, _bh]] call _set;
 [88522, [_dx + _dw - _pad - _bw - _step * 2, _by, _bw, _bh]] call _set;
@@ -179,6 +189,10 @@ _hKey ctrlSetPosition [_hX + _pad * 2 + _hIcH / _ratio, _hY + _hh * 0.14, _hKw, 
 { _x ctrlCommit 0; _x ctrlShow _hShow; _x ctrlEnable false; } forEach [_hBg, _hIc, _hKey];
 { (_d displayCtrl _x) ctrlShow _interactive; } forEach [88517, 88519, 88521, 88522, 88526];
 (_d displayCtrl 88522) ctrlShow (_interactive && {_l get "mini"});
+// Téléphone porté : la pastille « main + touche » occupe la droite de la barre, le titre s'arrête avant.
+if (_hShow) then { _tEnd = _tEnd min (_hX - _pad); _tEnd2 = _tEnd; };
+uiNamespace setVariable ["COMSPEC_ATAK_TitleBox", [_tx, _ay, (_tEnd - _tx) max 0, _ah, (_tEnd2 - _tx) max 0]];
+[_font] call comspec_atak_native_fnc_titleFit;
 (_d displayCtrl 88521) ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\ui_%1.paa", ["collapse", "expand"] select (_l get "mini")]) call comspec_atak_native_fnc_tr);
 // Retour actif dans toute app (sans historique, il ramène à l'accueil) et sur un sous-écran (fn_back).
 (_d displayCtrl 88517) ctrlEnable ((count (_s getOrDefault ["history", []])) > 1 || {(_s getOrDefault ["activePage", "LAUNCHER"]) isNotEqualTo "LAUNCHER"});

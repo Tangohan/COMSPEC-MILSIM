@@ -20245,5 +20245,12 @@
 ["confiance", "confidence"],
 ["intérêt", "interest"],
 ["non évalué", "not assessed"],
-["à collecter", "to collect"]
+["à collecter", "to collect"],
+["PILOTE", "PILOT"],
+["LIAISON", "LINK"],
+["CR", "RPT"],
+["RÉCENTES", "RECENT"],
+["ITIN.", "ROUTE"],
+["RECH.", "TGT"],
+["CR FIN", "END-OP"]
 ]
