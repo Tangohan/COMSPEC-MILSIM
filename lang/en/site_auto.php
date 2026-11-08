@@ -55806,4 +55806,7 @@ return [
     '%1 élément(s)' => '%1 item(s)',
     'au total, dont %1 de fichiers partagés (%2 fichier(s), à gérer dans la page Fichiers).' => 'in total, including %1 of shared files (%2 file(s), managed in the Files page).',
     'élément(s) et' => 'item(s) and',
+    'Proposer les bilans individuels' => 'Offer individual reviews',
+    'Si décoché, l’onglet « Bilans » disparaît des fiches des membres et plus aucun bilan ne peut être saisi. Les bilans déjà enregistrés sont conservés.' => 'If unchecked, the "Reviews" tab disappears from member files and no new review can be entered. Reviews already saved are kept.',
+    'Les bilans individuels sont désactivés pour cette communauté.' => 'Individual reviews are turned off for this community.',
 ];
