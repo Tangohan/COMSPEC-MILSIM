@@ -110,6 +110,7 @@ switch (_tab) do {
             ["ListSseFieldNotes", "Bibliothèque FRS (fiches et images)"],
             ["GetWantedNotices", "Avis de recherche"],
             ["GetCommunityBrief", "Consignes et kit de la communauté"],
+            ["GetCommunityOrbat", "ORBAT du site (BFT)"],
             ["BriefingSlidesNotes", "Notes des diapositives"],
             ["BriefingSlidesOperation", "Opération liée au briefing"],
             ["BriefingPresence", "Présence au briefing sur Athena"],

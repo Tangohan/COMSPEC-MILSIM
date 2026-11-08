@@ -6,13 +6,29 @@
       "buzzCancel"  : referme le vibreur
       "vibe"        : vibreur seul, depuis le volet « Unité sélectionnée » de l'app Carte (pas de rendu de l'app BFT)
       "ping"        : ping de carte sur sa position, visible de tout le camp (fn_mapPing)
+    Personne de l'ORBAT du site sans piste (clé « p:… », fn_bftOrbat) : seuls SMS et vibreur, et seulement si elle est en jeu ;
+    jamais de carte, d'itinéraire ni de caméra (position inconnue), rien du tout pour un membre hors ligne.
     Le destinataire reçoit l'événement comspec_atak_native_buzz [indicatif, grille, texte, position, émetteur] :
     vibrations, alerte à l'écran de son téléphone (fn_buzzAlert) et accusé « VU » renvoyé à l'émetteur.
 */
 params [["_act", "center"], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _e = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]) getOrDefault [_s getOrDefault ["bftSel", ""], createHashMap];
-if ((count _e) isEqualTo 0) exitWith { false };
+private _sid = _s getOrDefault ["bftSel", ""];
+private _e = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]) getOrDefault [_sid, createHashMap];
+if ((count _e) isEqualTo 0 && {(_sid select [0, 2]) isEqualTo "p:"} && {_act in ["sms", "buzz", "buzzSend", "buzzCancel"]}) then {
+    private _seen = ["presence"] call comspec_atak_native_fnc_bftOrbat;
+    private _o = (_seen select 1) getOrDefault [_sid, objNull];
+    // Joueur hors ORBAT sans piste : clé « p:s » + identifiant de l'objet.
+    if (isNull _o && {(_sid select [0, 3]) isEqualTo "p:s"}) then { _o = ((_seen select 2) select { (netId _x) isEqualTo (_sid select [3]) }) param [0, objNull]; };
+    if (!isNull _o && {_o isNotEqualTo player} && {[_o] call comspec_atak_native_fnc_hasDevice}) then {
+        _e = createHashMapFromArray [["object", _o], ["callsign", [_o, true] call comspec_atak_native_fnc_unitCallsign]];
+    };
+};
+if ((count _e) isEqualTo 0) exitWith {
+    // Vibreur ouvert sur une personne qui vient de quitter le serveur : on referme.
+    if (_act isEqualTo "buzzCancel") then { _s set ["bftBuzz", ""]; ["BFT"] call comspec_atak_native_fnc_pageRender; };
+    false
+};
 private _obj = _e getOrDefault ["object", objNull];
 switch (_act) do {
     case "route": {

@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## BFT : l'ORBAT du site et les joueurs hors ligne ; écran et PC du poste TOC (version à attribuer)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le BFT affiche l'ORBAT de votre communauté, hors ligne compris
+- Onglet ORBAT du BFT : l'arbre de votre ORBAT Athena, avec chaque membre et son état : en jeu avec distance et gisement, en jeu sans piste, hors ligne, poste vacant.
+- Les joueurs absents de cet ORBAT restent visibles dans une section à part, et le bandeau compte aussi les membres hors ligne.
+- Un message clair remplace l'écran vide quand la communauté n'a pas d'ORBAT, quand le compte n'est pas lié ou quand Athena ne répond pas : le dernier ORBAT reçu reste alors affiché, marqué « pas à jour ».
+- Les boutons du bas ne sont plus coupés, et ils ne proposent que ce qui a un sens pour la personne choisie.
+EN : The BFT shows your community ORBAT, offline members included
+- BFT ORBAT tab: your Athena ORBAT as a tree, with each member and their status: in game with distance and bearing, in game without a track, offline, vacant post.
+- Players who are not in this ORBAT stay visible in a separate section, and the header also counts offline members.
+- A clear message replaces the empty screen when the community has no ORBAT, when the account is not linked or when Athena does not answer: the last ORBAT received then stays on screen, marked as out of date.
+- The bottom buttons are no longer cut off, and they only offer what makes sense for the selected person.
+
+### Détail technique
+- Site : `GET /api/atak/community-orbat` (`AtakCommunityOrbatService`) : vue d'un simple membre, session de jeu exigée, cache de 120 s, taille bornée, ni e-mail ni Steam ID. Contrat dans `docs/technical/ICD-ATHENA-ATAK.md`.
+- DLL : `GetCommunityOrbat` (Async seulement, une requête à la fois) et `GetCommunityOrbatChunk`.
+- Mod : `fn_bftOrbat` (lecture toutes les 5 min au plus, dernier ORBAT gardé en mémoire), `fn_pageBft` (arbre, états, filtres, compteurs, boutons sur deux rangées, lignes réécrites seulement si elles changent), `fn_bftAction` (SMS et vibreur pour un joueur en jeu sans piste). Rapprochement par empreinte du Steam ID, jamais par le nom ; camp adverse jamais rapproché.
+
 ## Pack 4.0.0 Washington : nouveaux objets, réseau plus réaliste, interface refaite, app C2 retirée (ATAK natif 4.0.0.AG - Washington, COMSPEC Link 2.0.120)
 
 ### Résumé joueur
