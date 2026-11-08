@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use App\Services\Atak\AtakMobileOverwatchAccess;
 use PHPUnit\Framework\TestCase;
 
-/** Style tactique de /m/carte : branchement, choix gardé sur l'appareil, texte échappé, droits inchangés sauf /api/pings en lecture. */
+/** Style tactique de /m/carte : branchement, choix gardé sur l'appareil, texte échappé, droits inchangés, pings non lus (pas de filtre de camp). */
 final class AtakMobileMapTacticalTest extends TestCase
 {
     private static function read(string $path): string
@@ -61,8 +61,8 @@ final class AtakMobileMapTacticalTest extends TestCase
 
     public function testPhoneOnlyGainsThePingsReadOfTheMemberOverwatch(): void
     {
-        self::assertContains('/api/pings', AtakMobileOverwatchAccess::READ_PATHS);
-        self::assertTrue(AtakMobileOverwatchAccess::covers('GET', '/api/pings'));
+        self::assertNotContains('/api/pings', AtakMobileOverwatchAccess::READ_PATHS);
+        self::assertFalse(AtakMobileOverwatchAccess::covers('GET', '/api/pings'));
         self::assertFalse(AtakMobileOverwatchAccess::covers('POST', '/api/pings'));
         self::assertFalse(AtakMobileOverwatchAccess::covers('DELETE', '/api/pings'));
     }

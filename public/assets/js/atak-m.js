@@ -374,7 +374,7 @@
         read('/api/cas' + q, 'items'),
         read('/api/nine-line' + q, 'items'),
         opts.aircraft ? opts.aircraft() : Promise.resolve(null),
-        tac ? read('/api/pings' + q, 'items') : Promise.resolve(null)
+        Promise.resolve(null)
       ]).then(function (r) {
         busy = false;
         var j = r[0];
