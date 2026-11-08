@@ -2347,6 +2347,12 @@ class Container
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),
                 self::get(\App\Repositories\AtakMapRepository::class)
             ),
+            \App\Services\Tactical\AtakCommunityBriefService::class => new \App\Services\Tactical\AtakCommunityBriefService(),
+            \App\Controllers\Admin\AdminAtakBriefController::class => new \App\Controllers\Admin\AdminAtakBriefController(
+                self::get(\App\Services\Tactical\AtakCommunityBriefService::class),
+                self::get(\App\Repositories\GameEquipmentRepository::class),
+                self::get(\App\Services\GameEquipment\DotationOverviewService::class)
+            ),
             \App\Repositories\AthenaTacticalRepository::class => new \App\Repositories\AthenaTacticalRepository(),
             \App\Controllers\Admin\AdminAthenaTacticalMapController::class => new \App\Controllers\Admin\AdminAthenaTacticalMapController(
                 self::get(\App\Repositories\AtakMapRepository::class)
