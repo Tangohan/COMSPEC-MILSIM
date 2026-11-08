@@ -57,7 +57,7 @@ private _actions = [
     ["Relais saturé", "changez de relais ou limitez vos envois"],
     ["Surcharge du réseau", "limitez vos envois"],
     ["Maillage en limite", "approchez d'un nœud"],
-    ["Sans MPU5", "reliez une MPU5 par câble EUD ou Wi-Fi"],
+    ["Sans radio", "équipez une radio ACRE2 ou TFAR, ou reliez une MPU5"],
     ["MPU5 :", "vérifiez la MPU5 : allumée, batterie, canal"],
     ["Antenne du téléphone", "réparez le téléphone ou montez une antenne"],
     ["Boîtier du téléphone", "réparez le téléphone"],
