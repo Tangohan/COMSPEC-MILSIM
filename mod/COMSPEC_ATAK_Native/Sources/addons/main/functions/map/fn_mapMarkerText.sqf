@@ -6,7 +6,8 @@
       PILL     pilule sombre arrondie, point de couleur, casse d'origine ;
       CARD     cartouche décalé relié au symbole par un trait, ligne 2 distance · azimut depuis moi ;
       OUTLINE  texte blanc détouré de noir, sans fond ;
-      CLASSIC  texte Arma d'avant : couleur du repère, sans fond.
+      CLASSIC  texte Arma d'avant : couleur du repère, sans fond ;
+      TAC      petite plaque sombre en monospace sous le symbole : prend la place du style choisi en style tactique (fn_mapColors « tac »).
     Repère de cible accrochée (« LOCK 098 · MH-6M Little Bird (drone) ») : LOCK en rouge, nom de la cible à côté.
     Désencombrement : rien en zoom très éloigné sauf les LOCK et le repère sélectionné ; une étiquette qui chevauche
     une autre (ou un cartouche d'unité, mon symbole, le bandeau : fn_mapLblGrid) ou qui sortirait de la carte passe à
@@ -27,6 +28,7 @@ private _grid = createHashMap;
 private _style = toUpper (missionNamespace getVariable ["comspec_atak_native_map_marker_style", "plate"]);
 private _now = diag_tickTime;
 private _pal = [] call comspec_atak_native_fnc_mapColors;
+if (_pal get "tac") then { _style = "TAC"; };
 private _eniOn = profileNamespace getVariable ["COMSPEC_ATAK_LblEni", true];
 
 // Candidats (repères ponctuels titrés et visibles), refaits depuis le magasin des marqueurs quand il change (au plus
@@ -36,8 +38,6 @@ private _cand = missionNamespace getVariable ["COMSPEC_ATAK_MkTextCand", [-1, []
 private _cRev = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["revisions", createHashMap]) getOrDefault ["markers", -1];
 private _cLang = missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"];
 if (_now > (_cand select 0) && {(_cand param [2, -1]) isNotEqualTo _cRev || {_now > (_cand param [3, 0])} || {(_cand param [4, ""]) isNotEqualTo _cLang}}) then {
-    private _colCache = uiNamespace getVariable "COMSPEC_ATAK_MkColorCache";
-    if (isNil "_colCache") then { _colCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MkColorCache", _colCache]; };
     private _sizeCache = uiNamespace getVariable "COMSPEC_ATAK_MkSizeCache";
     if (isNil "_sizeCache") then { _sizeCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MkSizeCache", _sizeCache]; };
     private _list = [];
@@ -53,17 +53,7 @@ if (_now > (_cand select 0) && {(_cand param [2, -1]) isNotEqualTo _cRev || {_no
         if ((toLower _type) isEqualTo "empty") then { continue };
         // Couleur du repère (CfgMarkerColors) ; « Default » prend la couleur de la classe du marqueur.
         private _cls = _m getOrDefault ["color", "ColorGreen"];
-        private _c = _colCache getOrDefault [_cls, []];
-        if (_c isEqualTo []) then {
-            private _a = (getArray (configFile >> "CfgMarkerColors" >> _cls >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
-            _c = [_a];
-            _colCache set [_cls, _c];
-        };
-        _c = +(_c select 0);
-        if ((count _c) < 4) then {
-            _c = (getArray (configFile >> "CfgMarkers" >> _type >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
-            if ((count _c) < 4) then { _c = [0.36, 0.78, 0.42, 1]; };
-        };
+        private _c = [_cls, _type, [0.36, 0.78, 0.42, 1]] call comspec_atak_native_fnc_markerColor;
         _c set [3, 1];
         // Liseré de la plaque (fond sombre) : éclairci s'il est trop sombre ; texte CLASSIQUE : seulement sur carte sombre.
         private _cL = [+_c] call (_pal get "liftLbl");
@@ -115,7 +105,7 @@ private _fR = COMSPEC_ATAK_FontSet select 0;
 // (« Z ENT MÉDICALE ») écrasaient le bandeau d'information et les symboles. Le téléphone porté garde 0,024.
 private _worn = !((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false]);
 // 0,020 en main avant : illisible à mi-zoom.
-private _fs = ([0.023, 0.025] select _worn) * _ts * _kt;
+private _fs = ([0.023, 0.025] select _worn) * _ts * _kt * ([1, 0.92] select (_style isEqualTo "TAC"));
 private _fs2 = _fs * 0.88;
 private _h = _fs * 1.22;
 private _px = pixelW;
@@ -177,6 +167,14 @@ private _n = 0;
             _w1 = [_t1, _f1, _fsC] call _tw;
             _bw = _w1; _bh = _fsC;
         };
+        case "TAC": {
+            _f1 = "EtelkaMonospaceProBold";
+            _t1 = toUpper ([_txt, _lock param [0, ""]] select _isLock);
+            if (_isLock && {!_far}) then { _t2 = toUpper (_lock select 2); };
+            _w1 = [_t1, _f1, _fs] call _tw;
+            if (_t2 isNotEqualTo "") then { _w2 = [_t2, "EtelkaMonospacePro", _fs2] call _tw; };
+            _bw = _pad + _w1 + _pad + ([0, _w2 + _pad] select (_t2 isNotEqualTo ""));
+        };
         case "OUTLINE": {
             _t1 = toUpper ([_txt, format ["%1 · %2", _lock param [0, ""], _lock param [1, ""]]] select _isLock);
             if (_isLock && {_far}) then { _t1 = toUpper (_lock select 0); };
@@ -227,6 +225,12 @@ private _n = 0;
     private _y0 = [_sy - _bh / 2, _sy - _bh - 6 * pixelH] select _card;
     // Ni hors de la carte (à droite : passe à gauche ; en haut, en bas ou à gauche : pas écrite), sauf LOCK et sélection.
     private _x0 = _sx + _off;
+    // Style tactique : plaque centrée sous le symbole quand elle y tient, sinon à droite puis à gauche comme les autres.
+    if (_style isEqualTo "TAC") then {
+        private _xB = _sx - _bw / 2;
+        private _yB = _sy + (_half / _px) * pixelH * 1.3;
+        if (_force || {_xB >= _mx && {(_xB + _bw) <= (_mx + _mw)} && {(_yB + _bh) <= (_my + _mh)} && {!([[_xB, _yB, _xB + _bw, _yB + _bh]] call _hit)}}) then { _x0 = _xB; _y0 = _yB; };
+    };
     private _r = [_x0, _y0, _x0 + _bw, _y0 + _bh];
     if (((_x0 + _bw) > (_mx + _mw)) || {!_force && {[_r] call _hit}}) then {
         _x0 = _sx - _off - _bw;
@@ -241,6 +245,14 @@ private _n = 0;
 
     // 3. Dessin.
     switch (_style) do {
+        case "TAC": {
+            [_x0, _y0, _x1, _y1, _pal get "tacPlate"] call _rect;
+            if (_isLock) then { [_x0, _y0, _x1, _y1, [0.91, 0.28, 0.23, 0.75], ""] call _rect; };
+            if (_id isEqualTo _sel) then { [_x0, _y0, _x1, _y1, _pal get "sel", ""] call _rect; };
+            private _cy = (_y0 + _y1) / 2;
+            _map drawIcon [_none, _tc, [_x0 + _pad, _cy] call _toW, 0, 0, 0, _t1, 0, _fs, _f1, "right"];
+            if (_t2 isNotEqualTo "") then { _map drawIcon [_none, _pal get "lblDim", [_x0 + _pad * 1.5 + _w1, _cy] call _toW, 0, 0, 0, _t2, 0, _fs2, "EtelkaMonospacePro", "right"]; };
+        };
         case "CLASSIC": {
             _map drawIcon [_none, [_c, _cL] select _liftMap, [_x0, _sy] call _toW, 0, 0, 0, _t1, 1, _fsC, _f1, "right"];
         };
