@@ -23,7 +23,7 @@ private _h = getDir (vehicle player);
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _ago = { params ["_s"]; _s = round (_s max 0); [format ["%1 s", _s], format ["%1 min %2 s", floor (_s / 60), _s mod 60]] select (_s >= 60) };
 private _deg3 = { params ["_d"]; private _t = str ((round _d) mod 360); while { (count _t) < 3 } do { _t = "0" + _t; }; _t };
-private _rerender = "[{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'DRONEDETECT') then { ['DRONEDETECT'] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;";
+private _rerender = "[{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'DRONEDETECT') then { ['DRONEDETECT'] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;";
 
 // Ordre : inconnus d'abord, puis les plus forts.
 private _keys = [];
@@ -107,7 +107,7 @@ private _rows = [
 if ((count _list) isEqualTo 0) then {
     _rows pushBack ["text", "<t color='#8a9a93'>Aucune liaison drone entendue. BALAYER pour écouter.</t>"];
 } else {
-    _rows pushBack ["buttons", [["VOIR SUR LA CARTE", { ["MAP"] call comspec_atak_native_fnc_navigate; [{ [player, 0.08] call comspec_atak_native_fnc_mapCenter; }] call CBA_fnc_execNextFrame; }]]];
+    _rows pushBack ["buttons", [["VOIR SUR LA CARTE", { ["MAP"] call comspec_atak_native_fnc_navigate; [{ [player, 0.08] call comspec_atak_native_fnc_mapCenter; }] call comspec_atak_native_fnc_nextFrame; }]]];
 };
 _rows append [
     ["section", "Capteur", ""],

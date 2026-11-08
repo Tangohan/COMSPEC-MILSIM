@@ -62,7 +62,7 @@ private _vizNow = {
     call (uiNamespace getVariable ["COMSPEC_ATAK_PlayerVizModes", {}]);
     call (uiNamespace getVariable ["COMSPEC_ATAK_PlayerVizUpd", {}]);
 };
-private _rerender = { if (!_redraw) exitWith {}; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { if (!_redraw) exitWith {}; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 // Changement de piste, arrêt ou saut : lecteur et pastille lecture / pause mis à jour sur place (fn_vizPlayer) ; dans
 // les listes (ATHENA, FICHIERS, SERVEUR, LIEN) la piste en cours change de teinte sans redessin (lignes « musicRow… »,
 // fn_formSet "person"). Page LECTEUR : redessinée seulement si la file ou les favoris sont dépliés, ou si la file a
@@ -104,7 +104,7 @@ private _volTick = {
         uiNamespace setVariable ["COMSPEC_ATAK_MusicVolAt", diag_tickTime];
         [] call comspec_atak_native_fnc_musicTick;
     };
-    [{ [] call comspec_atak_native_fnc_musicTick; }, [], 0.15] call CBA_fnc_waitAndExecute;
+    [{ [] call comspec_atak_native_fnc_musicTick; }, [], 0.15] call comspec_atak_native_fnc_waitAndExec;
 };
 switch (_act) do {
     case "playList": {

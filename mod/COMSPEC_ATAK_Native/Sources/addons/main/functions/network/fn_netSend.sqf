@@ -104,5 +104,5 @@ if (_delay > 3) then { ["INFO", format ["%1 : envoi en cours, environ %2 s (%3 k
         [_code, _args, _label, _kb, _try + 1, _key] call comspec_atak_native_fnc_netSend;
     };
     _args call _code;
-}, [_code, _args, _label, _kb, _try, _key], _delay] call CBA_fnc_waitAndExecute;
+}, [_code, _args, _label, _kb, _try, _key], _delay] call comspec_atak_native_fnc_waitAndExec;
 "DELAYED"

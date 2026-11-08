@@ -47,7 +47,7 @@ if (_act isEqualTo "set") exitWith {
         if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
         [] call comspec_atak_native_fnc_layoutApply;
         [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender;
-    }] call CBA_fnc_execNextFrame;
+    }] call comspec_atak_native_fnc_nextFrame;
     true
 };
 

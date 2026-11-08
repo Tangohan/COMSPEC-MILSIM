@@ -29,7 +29,7 @@ if (_wasInteractive && {(uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", "
     if ((uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]) isNotEqualTo _this) exitWith {};
     if (!isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
     { inGameUISetEventHandler [_x, ""]; } forEach ["PrevAction", "NextAction", "Action"];
-}, uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]] call CBA_fnc_execNextFrame;
+}, uiNamespace getVariable ["COMSPEC_ATAK_OpenSeq", 0]] call comspec_atak_native_fnc_nextFrame;
 ["stop"] call comspec_atak_native_fnc_foreignHud;
 _state set ["display", displayNull];
 private _chat = uiNamespace getVariable ["COMSPEC_ATAK_ChatEdit", controlNull];
@@ -50,5 +50,5 @@ uiNamespace setVariable ["COMSPEC_ATAK_Ratio", nil];
 
 // Téléphone reposé (Échap ou Ctrl+Maj+U) : il revient en HUD s'il était sorti.
 if (_wasInteractive && {uiNamespace getVariable ["COMSPEC_ATAK_HudWanted", false]} && {!(_state getOrDefault ["suppressHudRestore", false])}) then {
-    [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [false] call comspec_atak_native_fnc_open; }; }] call CBA_fnc_execNextFrame;
+    [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [false] call comspec_atak_native_fnc_open; }; }] call comspec_atak_native_fnc_nextFrame;
 };

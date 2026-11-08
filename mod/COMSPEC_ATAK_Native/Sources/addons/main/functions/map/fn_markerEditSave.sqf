@@ -50,5 +50,5 @@ _s set ["selectedMarker", _name];
 // Confirmation brève : toast Android (notification classique si le téléphone n'est pas affiché).
 private _okMsg = format ["Marqueur %1 enregistré", [_text, "sans titre"] select (_text isEqualTo "")];
 if !(([_okMsg, 2.5] call comspec_atak_native_fnc_toast)) then { ["SUCCESS", _okMsg, 3, 20] call comspec_atak_native_fnc_notify; };
-[{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 true

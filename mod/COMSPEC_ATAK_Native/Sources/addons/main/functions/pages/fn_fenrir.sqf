@@ -76,7 +76,7 @@ switch (_mode) do {
     case "view": {
         uiNamespace setVariable ["COMSPEC_ATAK_BriefFenrir", _a];
         if (_a isNotEqualTo "") then { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["briefTab", "SLIDES"]; };
-        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     case "viewed": {

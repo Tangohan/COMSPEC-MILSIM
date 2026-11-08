@@ -182,10 +182,10 @@ switch (_act) do {
                     _k, round ((_at distance (eyePos player)) * 10) / 10, round (((_at select 2) - getTerrainHeightASL _at) * 10) / 10,
                     round ((_at distance _want) * 10) / 10, (vectorDir _x) apply { (round (_x * 100)) / 100 }]] call comspec_atak_native_fnc_log;
             } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) param [0, []]);
-        }, [], 2] call CBA_fnc_waitAndExecute;
+        }, [], 2] call comspec_atak_native_fnc_waitAndExec;
         ["INFO", "TEST VIDÉO : notez les lettres qui restent noires (fermeture dans 30 s, Échap ferme plus tôt)", 30, 40] call comspec_atak_native_fnc_notify;
-        _top displayAddEventHandler ["Unload", { [{ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []])) > 0) then { ["testEnd"] call comspec_atak_native_fnc_pipCheck; }; }] call CBA_fnc_execNextFrame; }];
-        [{ if (((missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) param [4, -1]) isEqualTo _this) then { ["testEnd"] call comspec_atak_native_fnc_pipCheck; }; }, _seq, 30] call CBA_fnc_waitAndExecute;
+        _top displayAddEventHandler ["Unload", { [{ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []])) > 0) then { ["testEnd"] call comspec_atak_native_fnc_pipCheck; }; }] call comspec_atak_native_fnc_nextFrame; }];
+        [{ if (((missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) param [4, -1]) isEqualTo _this) then { ["testEnd"] call comspec_atak_native_fnc_pipCheck; }; }, _seq, 30] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "testEnd": {
@@ -289,7 +289,7 @@ switch (_act) do {
             } else {
                 ["INFO", format ["%1 : relevé à 2 s (« %2 ») : caméra en place, image visible, texture posée, PiP active. Si la vue reste noire malgré tout, le moteur ne dessine pas la cible de rendu : essayer « Qualité PiP » plus haute et la VUE DIRECTE de l'app Drone, puis envoyer ce RPT.", _src, _name]] call _say;
             };
-        }, [_src, _cam, _name, _tex, _ctrl], 2] call CBA_fnc_waitAndExecute;
+        }, [_src, _cam, _name, _tex, _ctrl], 2] call comspec_atak_native_fnc_waitAndExec;
         true
     };
 };

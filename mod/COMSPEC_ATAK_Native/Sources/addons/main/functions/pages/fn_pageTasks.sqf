@@ -120,7 +120,7 @@ _rows pushBack ["section", "Tâches de la mission", [format ["%1 tâche(s)", cou
     private _isCur = _t isEqualTo _curT;
     private _idx = _forEachIndex;
     private _btns = [];
-    if (_has) then { _btns pushBack ["CARTE", compile format ["private _p = taskDestination ((simpleTasks player) select %1); ['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;", _idx]]; };
+    if (_has) then { _btns pushBack ["CARTE", compile format ["private _p = taskDestination ((simpleTasks player) select %1); ['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;", _idx]]; };
     _btns pushBack [["SUIVRE", "SUIVIE"] select _isCur, compile format ["player setCurrentTask ((simpleTasks player) select %1); ['TASK'] call comspec_atak_native_fnc_pageRender;", _idx], !_isCur, !_isCur];
     _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold' %1>%2</t>  <t color='%3' size='0.85'>%4</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Tâche de mission%5</t>%6",
         ["", format ["color='%1'", _accHex]] select _isCur, [_desc select 1] call _esc, _hex, _labels getOrDefault [_st, _st], _dist,

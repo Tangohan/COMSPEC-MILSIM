@@ -98,7 +98,7 @@ private _notify = {
     [_type, _txt, _dur, _prio, "DATING"] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
 };
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DATING") then { ["DATING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DATING") then { ["DATING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 
 // Estimation d'un dossier : ancre = tuyau le plus sûr (source la mieux cotée, rayon le plus petit), groupe = tuyaux
 // confirmés et frais dont la zone touche celle de l'ancre. Les autres sont des renseignements contradictoires.

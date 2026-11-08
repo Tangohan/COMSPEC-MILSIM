@@ -61,7 +61,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
             [] call comspec_atak_native_fnc_livecamStop;
             ["WARNING", "Live cam : drone perdu", 3, 30] call comspec_atak_native_fnc_notify;
             private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-            if ((_st getOrDefault ["activePage", ""]) isEqualTo "LIVECAM") then { [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+            if ((_st getOrDefault ["activePage", ""]) isEqualTo "LIVECAM") then { [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
         };
         if (isNull _cam || {isNull _u}) exitWith {};
         // Vue regardée au terminal : siège publié par l'opérateur, sinon celui qu'il tient, sinon la nacelle s'il y en a une.
@@ -126,7 +126,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
             [] call comspec_atak_native_fnc_livecamStop;
             ["WARNING", ["Live cam : flux du drone coupé", "Live cam : drone perdu"] select _lost, 3, 30] call comspec_atak_native_fnc_notify;
             private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-            if ((_st getOrDefault ["activePage", ""]) isEqualTo "LIVECAM") then { [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+            if ((_st getOrDefault ["activePage", ""]) isEqualTo "LIVECAM") then { [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
         };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_LivecamOsd", controlNull];
         if (!isNull _osd) then {

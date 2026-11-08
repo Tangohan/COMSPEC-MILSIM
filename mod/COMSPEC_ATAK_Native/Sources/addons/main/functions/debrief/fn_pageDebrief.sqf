@@ -29,7 +29,7 @@ if (_may) then {
 
 if (_tab isEqualTo "CR") then {
     // « Sur mon téléphone » (2.9.39) : la fiche ouverte sur le vrai téléphone, par un QR code (fn_mobileQr).
-    _rows pushBack ["buttons", [["SUR MON TÉLÉPHONE", { [{ ["open", "compte-rendu"] call comspec_atak_native_fnc_mobileQr; }] call CBA_fnc_execNextFrame; }, false, true, "QR code à scanner avec votre vrai téléphone : remplissez le CR dessus, votre ATAK le remet"]]];
+    _rows pushBack ["buttons", [["SUR MON TÉLÉPHONE", { [{ ["open", "compte-rendu"] call comspec_atak_native_fnc_mobileQr; }] call comspec_atak_native_fnc_nextFrame; }, false, true, "QR code à scanner avec votre vrai téléphone : remplissez le CR dessus, votre ATAK le remet"]]];
     private _id = _ui getOrDefault ["open", ""];
     private _e = _all getOrDefault [_id, createHashMap];
     if ((count _e) isEqualTo 0 && {(count _pend) > 0}) then { _e = _pend select ((count _pend) - 1); _ui set ["open", _e get "id"]; };

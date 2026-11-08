@@ -49,10 +49,10 @@ private _click = {
     params ["_rect", "_code", ["_inGroup", true]];
     private _b = ["COMSPEC_RscButtonOverlay", _rect, "", _inGroup] call comspec_atak_native_fnc_pageCtrl;
     _b setVariable ["comspec_click", _code];
-    _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ [] call _this; }, _c getVariable ["comspec_click", {}]] call CBA_fnc_execNextFrame; }];
+    _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ [] call _this; }, _c getVariable ["comspec_click", {}]] call comspec_atak_native_fnc_nextFrame; }];
     _b
 };
-private _redraw = { [{ ['GARMIN'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ ['GARMIN'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 
 // --- Mise en forme des nombres ---
 private _thou = {

@@ -78,7 +78,7 @@ switch (_act) do {
             case "noise": { uiNamespace setVariable ["COMSPEC_ATAK_ZeusNoise", diag_tickTime + ((_a param [0, 15]) max 3 min 120)]; ["tick"] call comspec_atak_native_fnc_zeusClient; };
             case "buzz": {
                 private _n = (_a param [0, 6]) max 1 min 30;
-                for "_i" from 0 to (_n - 1) do { [{ [] call comspec_atak_native_fnc_vibrate; }, [], _i * 1.3] call CBA_fnc_waitAndExecute; };
+                for "_i" from 0 to (_n - 1) do { [{ [] call comspec_atak_native_fnc_vibrate; }, [], _i * 1.3] call comspec_atak_native_fnc_waitAndExec; };
             };
             case "crack": { [((_a param [0, 40]) max 5 min 99) / 100, "Choc", 0, createHashMapFromArray [["scratch", 0.3]]] call comspec_atak_native_fnc_deviceDamage; };
             case "emp": {

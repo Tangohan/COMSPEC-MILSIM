@@ -24,7 +24,7 @@ private _w = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashM
 if ((count _w) isEqualTo 0) then { _w = createHashMapFromArray [["pts", []], ["idx", 0], ["nav", false], ["from", ""]]; missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _w]; };
 private _pts = _w get "pts";
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _rerender = { [{ private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_p in ["WAYPOINTS", "MAP"]) then { [_p] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_p in ["WAYPOINTS", "MAP"]) then { [_p] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 // Modification de l'itinéraire : redessin, puis envoi en direct si l'itinéraire est partagé.
 private _changed = { call _rerender; if ((profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1]) > 0) then { ["sync"] call comspec_atak_native_fnc_wpAction; }; };
 private _types = [
@@ -255,7 +255,7 @@ switch (_act) do {
         // Plusieurs étapes posées d'affilée partent en un seul envoi.
         private _tok = (missionNamespace getVariable ["COMSPEC_ATAK_WpSyncTok", 0]) + 1;
         missionNamespace setVariable ["COMSPEC_ATAK_WpSyncTok", _tok];
-        [{ if (_this isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_WpSyncTok", 0])) then { ["syncNow"] call comspec_atak_native_fnc_wpAction; }; }, _tok, 1] call CBA_fnc_waitAndExecute;
+        [{ if (_this isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_WpSyncTok", 0])) then { ["syncNow"] call comspec_atak_native_fnc_wpAction; }; }, _tok, 1] call comspec_atak_native_fnc_waitAndExec;
     };
     case "syncNow";
     case "push": {

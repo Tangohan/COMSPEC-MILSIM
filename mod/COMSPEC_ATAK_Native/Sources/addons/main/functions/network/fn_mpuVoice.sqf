@@ -63,7 +63,7 @@ private _say = {
 };
 private _rerender = {
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "NETWORK") then {
-        [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
 };
 private _radios = {

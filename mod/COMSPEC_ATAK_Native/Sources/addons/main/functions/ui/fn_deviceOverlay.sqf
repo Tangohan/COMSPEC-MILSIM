@@ -300,6 +300,6 @@ private _wasOff = uiNamespace getVariable ["COMSPEC_ATAK_DevWasOff", false];
 uiNamespace setVariable ["COMSPEC_ATAK_DevWasOff", _off];
 if (_wasOff && {!_off}) then {
     ["INFO", "Téléphone redémarré", 3, 20] call comspec_atak_native_fnc_notify;
-    [{ [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 true

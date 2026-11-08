@@ -9,6 +9,6 @@ if ((count _mods) > 1) then {
     ["WARNING", "BOOT", format ["Deux copies du mod chargées (%1) : gardez seulement le mod COMSPEC ATAK du Workshop", _mods joinString ", "]] call comspec_atak_native_fnc_log;
     [{
         ["WARNING", "Deux copies du mod COMSPEC ATAK sont chargées : gardez seulement celle du Workshop, puis relancez Arma", 10, 60] call comspec_atak_native_fnc_notify;
-    }, [], 20] call CBA_fnc_waitAndExecute;
+    }, [], 20] call comspec_atak_native_fnc_waitAndExec;
 };
 _mods

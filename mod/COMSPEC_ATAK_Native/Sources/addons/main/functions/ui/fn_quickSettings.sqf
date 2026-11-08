@@ -47,7 +47,7 @@ switch (_act) do {
             _pill ctrlSetBackgroundColor [0.62, 0.68, 0.65, 0.75];
             _btn = _d ctrlCreate ["COMSPEC_RscButtonOverlay", -1];
             _btn ctrlSetTooltip (("Volet rapide : luminosité, mode nuit, avion, silencieux…") call comspec_atak_native_fnc_tr);
-            _btn ctrlAddEventHandler ["ButtonClick", { [{ ["toggle"] call comspec_atak_native_fnc_quickSettings; }] call CBA_fnc_execNextFrame; }];
+            _btn ctrlAddEventHandler ["ButtonClick", { [{ ["toggle"] call comspec_atak_native_fnc_quickSettings; }] call comspec_atak_native_fnc_nextFrame; }];
             uiNamespace setVariable ["COMSPEC_ATAK_ShadeHandle", [_btn, _pill]];
         };
         // Batterie, météo et heure (jusqu'à la cloche) : rien de cliquable dessous.
@@ -72,7 +72,7 @@ switch (_act) do {
             if (!isNull _dimB) then { _dimB ctrlEnable false; };
             if (!isNull _grp) then { private _p = ctrlPosition _grp; _p set [3, 0]; _grp ctrlSetPosition _p; _grp ctrlCommit 0.15; };
             if (!isNull _dim) then { _dim ctrlSetFade 1; _dim ctrlCommit 0.15; };
-            [{ { ctrlDelete _x; } forEach _this; }, _ctrls, 0.17] call CBA_fnc_waitAndExecute;
+            [{ { ctrlDelete _x; } forEach _this; }, _ctrls, 0.17] call comspec_atak_native_fnc_waitAndExec;
         } else {
             { ctrlDelete _x; } forEach _ctrls;
         };
@@ -105,7 +105,7 @@ switch (_act) do {
         private _dimB = _d ctrlCreate ["COMSPEC_RscButtonInvisible", -1];
         _dimB ctrlSetPosition [_dx, _dy + _sth, _dw, _dh - _sth];
         _dimB ctrlSetTooltip (("Fermer le volet") call comspec_atak_native_fnc_tr);
-        _dimB ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; }] call CBA_fnc_execNextFrame; }];
+        _dimB ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; }] call comspec_atak_native_fnc_nextFrame; }];
         _dimB ctrlCommit 0;
         _made append [_dim, _dimB];
         private _grp = _d ctrlCreate ["COMSPEC_RscControlsGroup", -1];
@@ -213,7 +213,7 @@ switch (_act) do {
         // Fiche cliquable (photo, indicatif, grade, unité) : ouvre l'app Profil.
         private _pb = ["COMSPEC_RscButtonInvisible", [0, 0, _w * 0.62, _py + _cardH + _pad * 0.5]] call _mk;
         _pb ctrlSetTooltip (("Ouvrir mon profil (rôle affiché, qualifications, téléphone)") call comspec_atak_native_fnc_tr);
-        _pb ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; ["PROFILE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }];
+        _pb ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; ["PROFILE"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }];
         // À droite : heure, date, liaison Athena.
         date params ["_yy", "_mm", "_dd"];
         private _zm = _mm; private _zy = _yy;
@@ -302,7 +302,7 @@ switch (_act) do {
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _y0, _tw, _th]] call _mk;
             _b setVariable ["key", _key];
             _b ctrlSetTooltip ((format ["%1 : %2", _label, _state]) call comspec_atak_native_fnc_tr);
-            _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ ["act", _this] call comspec_atak_native_fnc_quickSettings; }, _c getVariable ["key", ""]] call CBA_fnc_execNextFrame; }];
+            _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ ["act", _this] call comspec_atak_native_fnc_quickSettings; }, _c getVariable ["key", ""]] call comspec_atak_native_fnc_nextFrame; }];
         } forEach _tiles;
         _y = _y + _rows * (_th + _gap);
         // Boutons : Réglages complets (accent), fermer (discret) ; dans la place libre des tuiles, sinon en pied.
@@ -322,13 +322,13 @@ switch (_act) do {
         _b1 ctrlSetFontHeight _fs;
         _b1 ctrlSetBackgroundColor _accDim;
         _b1 ctrlSetTextColor _accHi;
-        _b1 ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }];
+        _b1 ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }];
         private _b2 = ["COMSPEC_RscButton", _p2, "FERMER"] call _mk;
         _b2 ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _b2 ctrlSetFontHeight _fs;
         _b2 ctrlSetBackgroundColor (_thm get "surface");
         _b2 ctrlSetTextColor (_thm get "text");
-        _b2 ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; }] call CBA_fnc_execNextFrame; }];
+        _b2 ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; }] call comspec_atak_native_fnc_nextFrame; }];
         // Poignée en bas du volet.
         private _hp = ["COMSPEC_RscText", [_w * 0.46, _H - _pad * 0.45, _w * 0.08, pixelH * 3]] call _mk;
         _hp ctrlSetBackgroundColor (_thm get "rail");

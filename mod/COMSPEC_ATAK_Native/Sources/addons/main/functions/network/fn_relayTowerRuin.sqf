@@ -22,4 +22,4 @@ _p set [2, 0];
     _r setPosATL _p;
     _r setVectorUp [0, 0, 1];
     { [_x, [[_r], false]] remoteExec ["addCuratorEditableObjects", 2]; } forEach allCurators;
-}, [_cls, _p, getDir _o], 8] call CBA_fnc_waitAndExecute;
+}, [_cls, _p, getDir _o], 8] call comspec_atak_native_fnc_waitAndExec;

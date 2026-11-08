@@ -312,6 +312,6 @@ if (_overlays && {!_dragging}) then {
         private _s2 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         if ((count (_s2 getOrDefault ["drag", []])) > 0) exitWith {};
         [_s2 getOrDefault ["activePage", "LAUNCHER"]] call comspec_atak_native_fnc_pageRender;
-    }, [uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]] call CBA_fnc_execNextFrame;
+    }, [uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]]] call comspec_atak_native_fnc_nextFrame;
 };
 true

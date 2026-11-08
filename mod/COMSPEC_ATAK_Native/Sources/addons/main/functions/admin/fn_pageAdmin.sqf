@@ -24,7 +24,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
-private _re = "[{ ['ADMIN'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+private _re = "[{ ['ADMIN'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 private _setS = { params ["_k", "_v"]; compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set [%1, %2]; %3", str _k, str _v, _re] };
 private _inGame = [player] call comspec_atak_native_fnc_adminAllowed;
 private _role = uiNamespace getVariable ["COMSPEC_ATAK_AdminRole", ""];
@@ -54,7 +54,7 @@ private _sideRgb = createHashMapFromArray [["WEST", [0.30, 0.56, 0.88, 1]], ["EA
 // Bouton GÉRER / FERMER d'une ligne : déplie la fiche (une seule à la fois).
 private _manage = { params ["_key"]; private _o = _open isEqualTo _key; [["GÉRER", "FERMER"] select _o, ["admOpen", ["", _key] select !_o] call _setS, _o, true, ["Afficher la fiche et les actions", "Replier la fiche"] select _o] };
 private _mapBtn = { params ["_pos", ["_lbl", "CARTE"], ["_help", "Centre la carte sur ce point"]];
-    [_lbl, compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.02] call comspec_atak_native_fnc_mapCenter; }, [%1, %2, 0], 0.25] call CBA_fnc_waitAndExecute;", _pos param [0, 0], _pos param [1, 0]], false, _pos isEqualType [] && {(count _pos) >= 2}, _help] };
+    [_lbl, compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.02] call comspec_atak_native_fnc_mapCenter; }, [%1, %2, 0], 0.25] call comspec_atak_native_fnc_waitAndExec;", _pos param [0, 0], _pos param [1, 0]], false, _pos isEqualType [] && {(count _pos) >= 2}, _help] };
 
 // Relevé périodique tant que l'app est à l'écran.
 if (_inGame && {isNil { uiNamespace getVariable "COMSPEC_ATAK_AdminPfh" }}) then {

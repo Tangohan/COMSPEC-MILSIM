@@ -10,7 +10,7 @@ switch (_what) do {
     case "show": {
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
         if (isNull ([] call comspec_atak_native_fnc_display)) then { [true] call comspec_atak_native_fnc_open; };
-        [{ ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "notify": {
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
@@ -32,4 +32,4 @@ switch (_what) do {
         ["INFO", ["Service Athéna désactivé : ATAK local", "Service Athéna activé"] select (_what isEqualTo "on"), 3, 20] call comspec_atak_native_fnc_notify;
     };
 };
-[{ [] call comspec_atak_native_fnc_dockRender; if (!isNull ([] call comspec_atak_native_fnc_display)) then { ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+[{ [] call comspec_atak_native_fnc_dockRender; if (!isNull ([] call comspec_atak_native_fnc_display)) then { ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;

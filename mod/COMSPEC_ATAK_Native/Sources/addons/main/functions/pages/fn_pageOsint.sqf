@@ -7,7 +7,7 @@ private _tab = _s getOrDefault ["osTab", "FEED"];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 (["scan"] call comspec_atak_native_fnc_osintAction) params ["_locs", "_gen"];
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['osTab', '%1']; [{ ['OSINT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['osTab', '%1']; [{ ['OSINT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _rows = [["segment", "", [["FIL PUBLIC", "FEED"] call _tabBtn, ["LOCALITÉS", "LOCS"] call _tabBtn, ["PUBLIER", "POST"] call _tabBtn]]];
 switch (_tab) do {
     case "LOCS": {
@@ -20,7 +20,7 @@ switch (_tab) do {
                 ["", format [" · <t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1 véhicules militaires</t>", _milTxt]] select (_milTxt isNotEqualTo "")], [], [0.9, 0.94, 0.91, 1]];
         } forEach _locs;
         if ((count _locs) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune localité à moins de 5 km.</t>"]; };
-        _rows pushBack ["buttons", [["ACTUALISER", { ["scan", "force"] call comspec_atak_native_fnc_osintAction; [{ ['OSINT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+        _rows pushBack ["buttons", [["ACTUALISER", { ["scan", "force"] call comspec_atak_native_fnc_osintAction; [{ ['OSINT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]]];
     };
     case "POST": {
         _rows append [

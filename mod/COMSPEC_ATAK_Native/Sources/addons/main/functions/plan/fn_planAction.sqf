@@ -38,10 +38,10 @@ if (isNil "_ui") then {
     uiNamespace setVariable ["COMSPEC_ATAK_PlanUi", _ui];
 };
 private _cat = [] call comspec_atak_native_fnc_planCatalog;
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PLAN") then { ["PLAN"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PLAN") then { ["PLAN"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 // Barres, palette et menus redessinés sans toucher la carte (elle garde sa vue, aucun saut ni clignotement).
 private _chrome = {
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PLAN") then { ["build"] call comspec_atak_native_fnc_planUi; }; }] call CBA_fnc_execNextFrame;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PLAN") then { ["build"] call comspec_atak_native_fnc_planUi; }; }] call comspec_atak_native_fnc_nextFrame;
 };
 private _room = uiNamespace getVariable ["COMSPEC_ATAK_PlanRoomId", ""];
 private _varOf = { params ["_layer", ["_r", _room]]; if (_layer isEqualTo "R") then { "COMSPEC_ATAK_PlanRoom_" + _r } else { format ["COMSPEC_ATAK_Plan_%1", side group player] } };
@@ -74,7 +74,7 @@ private _draftSet = {
     // Écriture du profil regroupée (5 s) : un dessin à main levée enregistrait tout le profil à chaque trait.
     if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanSavePending", false]) then {
         missionNamespace setVariable ["COMSPEC_ATAK_PlanSavePending", true];
-        [{ missionNamespace setVariable ["COMSPEC_ATAK_PlanSavePending", false]; [] call comspec_atak_native_fnc_saveProfile; }, [], 5] call CBA_fnc_waitAndExecute;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_PlanSavePending", false]; [] call comspec_atak_native_fnc_saveProfile; }, [], 5] call comspec_atak_native_fnc_waitAndExec;
     };
 };
 private _newId = {
@@ -460,7 +460,7 @@ switch (_act) do {
             uiNamespace setVariable ["COMSPEC_ATAK_PlanClearArm", diag_tickTime];
             ["Appuyez encore pour tout effacer (Ctrl+Z annule)", 3] call comspec_atak_native_fnc_toast;
             call _chrome;
-            [{ if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PlanClearArm", -10]) > 4) then { ["chrome"] call comspec_atak_native_fnc_planAction; }; }, [], 4.2] call CBA_fnc_waitAndExecute;
+            [{ if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PlanClearArm", -10]) > 4) then { ["chrome"] call comspec_atak_native_fnc_planAction; }; }, [], 4.2] call comspec_atak_native_fnc_waitAndExec;
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PlanClearArm", -10];
         // Tracé en cours, brouillon (toujours le mien) et couche partagée visée (camp, ou salle si c'est elle).

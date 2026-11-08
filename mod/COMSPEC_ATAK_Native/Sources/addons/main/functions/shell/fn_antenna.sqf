@@ -20,7 +20,7 @@ private _defs = [
 private _owned = { private _inv = (items player) + (assignedItems player); _defs select { (_x select 1) in _inv } };
 private _refresh = {
     uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []];
-    [{ if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call CBA_fnc_execNextFrame;
+    [{ if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_nextFrame;
 };
 switch (_act) do {
     case "defs": { _defs };

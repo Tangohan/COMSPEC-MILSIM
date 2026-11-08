@@ -83,7 +83,7 @@ private _click = {
     _b setVariable ["comspec_click", _code];
     _b ctrlAddEventHandler ["ButtonClick", {
         params ["_c"];
-        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call comspec_atak_native_fnc_nextFrame;
     }];
 };
 private _lw = pixelW * 2;
@@ -680,7 +680,7 @@ if (_bridge) then {
         };
         _y = _y + _pad * 0.3;
         [[
-            ["MESURER LA LATENCE", { if (!isNil "comspec_overwatch_connect_fnc_measureLatency") then { [] call comspec_overwatch_connect_fnc_measureLatency; }; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+            ["MESURER LA LATENCE", { if (!isNil "comspec_overwatch_connect_fnc_measureLatency") then { [] call comspec_overwatch_connect_fnc_measureLatency; }; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }],
             ["ROUVRIR LE CANAL", { ["enter"] call comspec_atak_native_fnc_athenaAction; }, true]
         ]] call _buttons;
     };
@@ -845,7 +845,7 @@ if (["device", "État du téléphone", _devSum] call _fold) then {
     } forEach _f;
     ["Réparation : action ACE « Réparer le téléphone ATAK » avec une trousse à outils, ou « Changer de téléphone ATAK » avec un appareil de rechange."] call _para;
     [[
-        ["TEST DE DÉBIT", { uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []]; private _q = [] call comspec_atak_native_fnc_linkQuality; ["INFO", format ["Test de débit : %1 kbit/s, %2 ms, perte %3 %%", _q get "kbps", _q get "latency", _q get "loss"], 5, 20] call comspec_atak_native_fnc_notify; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["TEST DE DÉBIT", { uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []]; private _q = [] call comspec_atak_native_fnc_linkQuality; ["INFO", format ["Test de débit : %1 kbit/s, %2 ms, perte %3 %%", _q get "kbps", _q get "latency", _q get "loss"], 5, 20] call comspec_atak_native_fnc_notify; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }],
         ["REDÉMARRER", { ["reboot"] call comspec_atak_native_fnc_deviceRepair; }]
     ]] call _buttons;
 };
@@ -866,7 +866,7 @@ private _netTick = {
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""]) isNotEqualTo "NETWORK") exitWith {};
     private _fc = focusedCtrl _d;
     if ((!isNull _fc && {(ctrlType _fc) isEqualTo 2}) || {(call (uiNamespace getVariable ["COMSPEC_ATAK_NetSigFn", {0}])) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_NetSig", 0])}) exitWith {
-        [uiNamespace getVariable ["COMSPEC_ATAK_NetTick", {}], [_tok], 5] call CBA_fnc_waitAndExecute;
+        [uiNamespace getVariable ["COMSPEC_ATAK_NetTick", {}], [_tok], 5] call comspec_atak_native_fnc_waitAndExec;
     };
     ["NETWORK"] call comspec_atak_native_fnc_pageRender;
 };
@@ -875,5 +875,5 @@ uiNamespace setVariable ["COMSPEC_ATAK_NetTok", _tok];
 uiNamespace setVariable ["COMSPEC_ATAK_NetSigFn", _netSig];
 uiNamespace setVariable ["COMSPEC_ATAK_NetTick", _netTick];
 uiNamespace setVariable ["COMSPEC_ATAK_NetSig", call _netSig];
-[_netTick, [_tok], 5] call CBA_fnc_waitAndExecute;
+[_netTick, [_tok], 5] call comspec_atak_native_fnc_waitAndExec;
 true

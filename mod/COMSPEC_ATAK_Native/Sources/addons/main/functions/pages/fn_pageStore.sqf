@@ -12,7 +12,7 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _re = "[{ ['STORE'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+private _re = "[{ ['STORE'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 private _setS = { params ["_k", "_v"]; compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set [%1, %2]; %3", str _k, str _v, _re] };
 private _tab = _s getOrDefault ["storeTab", "ALL"];
 private _query = _s getOrDefault ["storeQuery", ""];
@@ -46,7 +46,7 @@ private _search = {
     private _q = ["storeSearch"] call comspec_atak_native_fnc_formValue;
     if !(_q isEqualType "") then { _q = ""; };
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["storeQuery", trim _q];
-    [{ ['STORE'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ['STORE'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 _rows pushBack ["field", "storeSearch", "Rechercher une app", _query, "CHERCHER", _search, true];
 if (_query isNotEqualTo "") then { _rows pushBack ["buttons", [["EFFACER LA RECHERCHE", ["storeQuery", ""] call _setS]]]; };
@@ -116,7 +116,7 @@ private _row = {
                 [{
                     (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['storeBusy', ''];
                     if (['install', _this select 0] call comspec_atak_native_fnc_appInstall) then { [(_this select 1) + ' installée', 2] call comspec_atak_native_fnc_toast; };
-                }, [%1, %3], 1.2] call CBA_fnc_waitAndExecute;", str _id, _re, str (_a get "name")], true, _busy isEqualTo "" && {_why isEqualTo ""}, "Ajoute l'app à l'écran d'accueil"]]
+                }, [%1, %3], 1.2] call comspec_atak_native_fnc_waitAndExec;", str _id, _re, str (_a get "name")], true, _busy isEqualTo "" && {_why isEqualTo ""}, "Ajoute l'app à l'écran d'accueil"]]
         };
         default {
             // Désinstallation en deux appuis : le premier arme, le second retire l'app de l'écran d'accueil.

@@ -34,7 +34,7 @@ private _list = missionNamespace getVariable ["COMSPEC_ATAK_Reports", createHash
 missionNamespace setVariable ["COMSPEC_ATAK_Reports", _list];
 private _drafts = missionNamespace getVariable ["COMSPEC_ATAK_RepDrafts", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_RepDrafts", _drafts];
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "REPORTS") then { ["REPORTS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "REPORTS") then { ["REPORTS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _types = [] call comspec_atak_native_fnc_reportTypes;
 private _def = { params ["_code"]; private _i = _types findIf { (_x select 0) isEqualTo _code }; if (_i < 0) then { [] } else { _types select _i } };
 private _textKinds = ["edit", "memo", "num", "dtg", "grid", "combo"];
@@ -438,7 +438,7 @@ switch (_act) do {
         private _p = (_list getOrDefault [_arg, createHashMap]) getOrDefault ["pos", []];
         if ((count _p) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     case "del": { _list deleteAt _arg; call _rerender; };
     case "web": {

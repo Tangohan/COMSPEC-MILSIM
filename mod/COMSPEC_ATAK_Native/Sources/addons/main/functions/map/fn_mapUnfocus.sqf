@@ -8,4 +8,4 @@
     if (isNull _d) exitWith {};
     private _sink = _d displayCtrl 88543;
     if (!isNull _sink && {(focusedCtrl _d) isEqualTo ([_d] call comspec_atak_native_fnc_mapCtrl)}) then { ctrlSetFocus _sink; };
-}] call CBA_fnc_execNextFrame;
+}] call comspec_atak_native_fnc_nextFrame;

@@ -135,7 +135,7 @@ switch (_act) do {
                 _m setMarkerTypeLocal "mil_dot";
                 _m setMarkerColorLocal "ColorBLUFOR";
                 _m setMarkerTextLocal format ["BT %1", _cs];
-                [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
+                [{ deleteMarkerLocal _this; }, _m, 600] call comspec_atak_native_fnc_waitAndExec;
                 format ["position de %1 · %2 (repère 10 min sur la carte)", _cs, [_p, 8] call comspec_atak_native_fnc_gridRef]
             };
             case "wp": {

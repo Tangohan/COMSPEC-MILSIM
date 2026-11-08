@@ -95,7 +95,7 @@ if (_act isEqualTo "load" || {_act isEqualTo "ensure"}) exitWith {
             [_err, 4] call comspec_atak_native_fnc_toast;
         };
         missionNamespace setVariable ["COMSPEC_ATAK_AthenaPatchBusy", false];
-        [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call CBA_fnc_execNextFrame;
+        [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call comspec_atak_native_fnc_nextFrame;
     };
 };
 false

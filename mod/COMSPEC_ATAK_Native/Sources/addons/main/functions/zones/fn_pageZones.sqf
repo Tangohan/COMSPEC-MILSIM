@@ -40,7 +40,7 @@ private _active = { ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashM
 private _rerender = { [{
     if ((uiNamespace getVariable ["COMSPEC_ATAK_ZnDrawnAt", -1]) isEqualTo diag_frameNo) exitWith {};
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ZONES") then { ["ZONES"] call comspec_atak_native_fnc_pageRender; };
-}] call CBA_fnc_execNextFrame; };
+}] call comspec_atak_native_fnc_nextFrame; };
 private _refresh = { ["#refresh"] call comspec_atak_native_fnc_pageZones; };
 private _ui1 = { params ["_op", ["_v", ""]]; compile format ["['#ui', [%1, %2]] call comspec_atak_native_fnc_pageZones;", str _op, str _v] };
 // Bandeau « … · ANNULER » (8 s) : [texte, opération d'annulation, valeur].
@@ -54,7 +54,7 @@ private _bar = {
             _u set ["undoBar", []];
             if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ZONES") then { ["#refresh"] call comspec_atak_native_fnc_pageZones; };
         };
-    }, _at, 8] call CBA_fnc_waitAndExecute;
+    }, _at, 8] call comspec_atak_native_fnc_waitAndExec;
 };
 // Fin d'un tracé de polygone : zone de travail, ou contour / trait du plan.
 private _finish = {
@@ -99,11 +99,11 @@ if (_page isEqualTo "#key") exitWith {
     if (!isNull _f && {(ctrlType _f) isEqualTo 2}) exitWith {
         // Entrée dans le champ « Effectif » de la fiche : signalement envoyé.
         if (_key in [28, 156] && {_f isEqualTo ((uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["znSize", controlNull])}) exitWith {
-            [{ ["#ui", ["report", ""]] call comspec_atak_native_fnc_pageZones; }] call CBA_fnc_execNextFrame; true
+            [{ ["#ui", ["report", ""]] call comspec_atak_native_fnc_pageZones; }] call comspec_atak_native_fnc_nextFrame; true
         };
         false
     };
-    private _later = { [{ ["#ui", _this] call comspec_atak_native_fnc_pageZones; }, _this] call CBA_fnc_execNextFrame; true };
+    private _later = { [{ ["#ui", _this] call comspec_atak_native_fnc_pageZones; }, _this] call comspec_atak_native_fnc_nextFrame; true };
     switch (true) do {
         case (_ctrl && {_key in [0x2C, 0x11]} && {!_shift}): { ["undo"] call _later };
         case (_ctrl && {_key isEqualTo 0x15 || {_shift && {_key in [0x2C, 0x11]}}}): { ["redo"] call _later };
@@ -401,7 +401,7 @@ if (_page isEqualTo "#ui") exitWith {
             if ((count _z) isEqualTo 0) exitWith {};
             ["MAP"] call comspec_atak_native_fnc_navigate;
             (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["mapFollow", false];
-            [{ [[(_this select 0), (_this select 1), 0]] call comspec_atak_native_fnc_mapCenter; }, _z select 3, 0.3] call CBA_fnc_waitAndExecute;
+            [{ [[(_this select 0), (_this select 1), 0]] call comspec_atak_native_fnc_mapCenter; }, _z select 3, 0.3] call comspec_atak_native_fnc_waitAndExec;
         };
         case "zoneField": { _v params ["_k", "_fk"]; ["zoneSet", [_id, _ui get "zid", _k, [_fk, ""] call _form]] call _ZA; (_ui get "draft") deleteAt _fk; };
         case "zoneSet": { _v params ["_k", "_val"]; ["zoneSet", [_id, _ui get "zid", _k, _val]] call _ZA; playSound "ClickSoft"; };
@@ -831,7 +831,7 @@ private _panel = {
         if (_red) then { _bt ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _bt ctrlSetTextColor [1, 1, 1, 1]; };
         if (_tip isNotEqualTo "") then { _bt ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr); };
         _bt setVariable ["comspec_click", _code];
-        _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+        _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call comspec_atak_native_fnc_nextFrame; }];
         _list pushBack _bt;
         _bt
     };
@@ -864,7 +864,7 @@ private _panel = {
     private _sv = (_ui get "scroll") getOrDefault [_nk, 0];
     if (_sv > 0) then {
         _ng ctrlSetScrollValues [_sv, -1];
-        [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_ng, _sv]] call CBA_fnc_execNextFrame;
+        [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_ng, _sv]] call comspec_atak_native_fnc_nextFrame;
     };
     // Barre d'outils de la carte (absolue, devant la carte) : sélection, rectangle, polygone, cercle, annuler, rétablir.
     _mr params ["_mx", "_my", "_mw", "_mh"];
@@ -886,7 +886,7 @@ private _panel = {
             private _ov = ["COMSPEC_RscButtonOverlay", [_mx + _pad * 0.5, _y, _iw, _ih], "", false] call comspec_atak_native_fnc_pageCtrl;
             _ov ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr);
             _ov setVariable ["comspec_click", switch (_k) do { case "#UNDO": { ["undo"] call _ui1 }; case "#REDO": { ["redo"] call _ui1 }; default { ["tool", _k] call _ui1 }; }];
-            _ov ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+            _ov ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call comspec_atak_native_fnc_nextFrame; }];
             _list pushBack _ov;
         } forEach [
             ["", "\z\comspec_atak_native\addons\main\data\ui_hand.paa", "Sélection : clic sur une zone ou un trait ; Suppr le supprime"],
@@ -984,7 +984,7 @@ switch (_view) do {
             if (_on) then { _bt ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _bt ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
             if (_tip isNotEqualTo "") then { _bt ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr); };
             _bt setVariable ["comspec_click", _code];
-            _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+            _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call comspec_atak_native_fnc_nextFrame; }];
             _bt
         };
         // Barre du haut : retour, nom du plan, GÉNÉRER et PARTAGER en évidence.

@@ -134,7 +134,7 @@ _vb ctrlAddEventHandler ["ButtonClick", {
     profileNamespace setVariable ["COMSPEC_ATAK_BftView", ["ORBAT", "LIST"] select ((profileNamespace getVariable ["COMSPEC_ATAK_BftView", "LIST"]) isEqualTo "ORBAT")];
     [] call comspec_atak_native_fnc_saveProfile;
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bftFiltersOpen", false];
-    [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _fb = ["COMSPEC_RscButton", [_bw - _hbW, _font * 1.35, _hbW, _font * 1.25], ["FILTRES", format ["FILTRES (%1)", _nFilt]] select (_nFilt > 0)] call comspec_atak_native_fnc_pageCtrl;
 _fb ctrlSetFontHeight (_fs * 0.9);
@@ -144,7 +144,7 @@ _fb ctrlAddEventHandler ["ButtonClick", {
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     _st set ["bftFiltersOpen", !(_st getOrDefault ["bftFiltersOpen", false])];
     _st set ["bftFiltersAnim", true];
-    [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 };
 _y = _font * 2.6 + _pad / 2;
@@ -158,7 +158,7 @@ private _fw = (_bw - _pad * 2) / 5;
     private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _fw, _y, _fw - _pad / 4, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
     _b ctrlSetFontHeight (_fs * 0.9);
     if (_k isEqualTo _filter) then { _b ctrlSetBackgroundColor [0.28, 0.55, 0.85, 1]; _b ctrlSetTextColor [1, 1, 1, 1]; };
-    _b ctrlAddEventHandler ["ButtonClick", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['bftFilter', '%1']; [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k]];
+    _b ctrlAddEventHandler ["ButtonClick", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['bftFilter', '%1']; [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k]];
 } forEach _opts;
 };
 _y = _y + _font * 1.4 + _pad / 2;
@@ -191,7 +191,7 @@ if (_filtersOpen) then {
         profileNamespace setVariable [_var, _val];
         [] call comspec_atak_native_fnc_saveProfile;
         [] call comspec_atak_native_fnc_localDataRefresh;
-        [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }];
     private _d = [] call comspec_atak_native_fnc_display;
     private _g = _d ctrlCreate ["COMSPEC_RscControlsGroup", -1, _d displayCtrl 88531];
@@ -256,7 +256,7 @@ if (_filtersOpen) then {
     }];
     private _c = ["COMSPEC_RscButtonPrimary", [_pad * 2 + _hw, _fy, _hw, _rh], "FERMER"] call _mkF;
     _c ctrlSetFontHeight _fs;
-    _c ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bftFiltersOpen", false]; [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+    _c ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bftFiltersOpen", false]; [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }];
     _fy = _fy + _rh + _pad;
     _bg ctrlSetPosition [0, 0, _w, _fy max _listH];
     _bg ctrlCommit 0;
@@ -443,16 +443,16 @@ _list ctrlAddEventHandler ["LBSelChanged", {
         private _open = uiNamespace getVariable ["COMSPEC_ATAK_BftOrbatOpen", createHashMap];
         _open set [_v, !(_open getOrDefault [_v, true])];
         uiNamespace setVariable ["COMSPEC_ATAK_BftOrbatOpen", _open];
-        [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
     if (_k isNotEqualTo "m" || {_v isEqualTo (_s getOrDefault ["bftSel", ""])}) exitWith {};
     _s set ["bftSel", _v];
-    [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 _list ctrlAddEventHandler ["LBDblClick", {
     params ["", "_i"];
     if ((((uiNamespace getVariable ["COMSPEC_ATAK_BftRows", []]) param [_i, []]) param [0, ""]) isNotEqualTo "m") exitWith {};
-    [{ ["center"] call comspec_atak_native_fnc_bftAction; }] call CBA_fnc_execNextFrame;
+    [{ ["center"] call comspec_atak_native_fnc_bftAction; }] call comspec_atak_native_fnc_nextFrame;
 }];
 };
 };
@@ -530,7 +530,7 @@ if (_buzzOn) then {
     {
         private _b = ["COMSPEC_RscButton", [_dx + (_forEachIndex mod 3) * (_pw + _pad * 2), _py + (floor (_forEachIndex / 3)) * (_font * 1.5), _pw, _font * 1.35], _x] call comspec_atak_native_fnc_pageCtrl;
         _b ctrlSetFontHeight _fs;
-        _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['buzzSend', %1] call comspec_atak_native_fnc_bftAction; }] call CBA_fnc_execNextFrame;", str _x]];
+        _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['buzzSend', %1] call comspec_atak_native_fnc_bftAction; }] call comspec_atak_native_fnc_nextFrame;", str _x]];
     } forEach _presets;
     private _ed = ["COMSPEC_RscEdit", [_dx, _py + _font * 3.2, _dw, _font * 1.4], uiNamespace getVariable ["COMSPEC_ATAK_BuzzDraft", ""]] call comspec_atak_native_fnc_pageCtrl;
     _ed ctrlSetFontHeight _fs;
@@ -545,7 +545,7 @@ private _btns = [];
     private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 1), [_dx + _forEachIndex * (_bw3 + _pad), _dy + _dh - _font * 1.5, _bw3, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
     _b ctrlSetFontHeight _fs;
     _b ctrlEnable _on;
-    _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call CBA_fnc_execNextFrame;", _act]];
+    _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['%1'] call comspec_atak_native_fnc_bftAction; }] call comspec_atak_native_fnc_nextFrame;", _act]];
     _btns pushBack _b;
 } forEach ([[
     ["CARTE", "center", (count _sel) > 0],

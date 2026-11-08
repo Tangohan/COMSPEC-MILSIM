@@ -176,7 +176,7 @@ switch (_mode) do {
         ["MESSAGE", format ["%1 vous partage %2 (%3) : app Vidéo live", _by, _name, _label], 6, 40, "LIVECAM"] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_vibrate;
         if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "LIVECAM") then {
-            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         true
     };

@@ -113,7 +113,7 @@ if (_page isEqualTo "ATHENA") then {
     private _hint = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHint", ["", false, 0]];
     private _hintExpired = ((_old param [3, ""]) isNotEqualTo "") && {diag_tickTime - (_hint param [2, 0]) > 30};
     if (_hintExpired || {(_old select [0, 3]) isNotEqualTo _sig}) then {
-        [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
 };
 // Service Athena choisi mais pas connecté au compte : bandeau qui ouvre l'app Athena (touché), après 25 s puis au plus

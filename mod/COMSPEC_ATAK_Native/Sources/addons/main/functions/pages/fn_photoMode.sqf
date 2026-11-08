@@ -52,7 +52,7 @@ switch (toUpper _mode) do {
                 if (_key isEqualTo 0x21) exitWith {
                     ["FLASH"] call comspec_atak_native_fnc_photoMode;
                     // Filet : si le jeu a quand même vu F (mode de tir), l'arme est rangée de nouveau.
-                    [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {(currentWeapon player) isNotEqualTo ""}) then { player action ["SwitchWeapon", player, player, 299]; }; }, [], 0.1] call CBA_fnc_waitAndExecute;
+                    [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {(currentWeapon player) isNotEqualTo ""}) then { player action ["SwitchWeapon", player, player, 299]; }; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec;
                     true
                 };
                 // B : type de flou des visages.
@@ -76,7 +76,7 @@ switch (toUpper _mode) do {
         }]];
         // Une boucle par image : objectif (zoom, selfie, transitions), geste du bras, sortie automatique.
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoPFH", [{ ["FRAME"] call comspec_atak_native_fnc_photoMode; }, 0] call CBA_fnc_addPerFrameHandler];
-        [{ ["HUD"] call comspec_atak_native_fnc_photoMode; }] call CBA_fnc_execNextFrame;
+        [{ ["HUD"] call comspec_atak_native_fnc_photoMode; }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     case "FRAME": {
@@ -558,8 +558,8 @@ switch (toUpper _mode) do {
             [{
                 params ["_interactive"];
                 [_interactive] call comspec_atak_native_fnc_open;
-                [{ ["PHOTOS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
-            }, [_interactive || {!_hud}]] call CBA_fnc_execNextFrame;
+                [{ ["PHOTOS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
+            }, [_interactive || {!_hud}]] call comspec_atak_native_fnc_nextFrame;
         };
         true
     };

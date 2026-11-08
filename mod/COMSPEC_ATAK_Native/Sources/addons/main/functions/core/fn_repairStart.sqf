@@ -55,6 +55,6 @@ if (!isNil "ace_common_fnc_progressBar") then {
             ["WARNING", "Réparation du téléphone interrompue.", 4, 30] call comspec_atak_native_fnc_notify;
         };
         [_kit] call (missionNamespace getVariable ["COMSPEC_ATAK_RepairDone", {}]);
-    }, [_kit], _time] call CBA_fnc_waitAndExecute;
+    }, [_kit], _time] call comspec_atak_native_fnc_waitAndExec;
 };
 true

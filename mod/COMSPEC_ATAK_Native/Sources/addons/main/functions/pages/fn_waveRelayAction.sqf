@@ -17,7 +17,7 @@
       "mapRelays" : affiche / masque le calque Relais (pastilles des relais) sur la carte.
 */
 params [["_act", "scan"], ["_k", ""], ["_v", 0]];
-private _render = { if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }; };
+private _render = { if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }; };
 switch (_act) do {
     case "scan": {
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Mesh", []];
@@ -35,7 +35,7 @@ switch (_act) do {
                     uiNamespace setVariable ["COMSPEC_ATAK_MeshBusy", -100];
                     // Premier calcul : l'app Wave Relay ouverte affichait le maillage provisoire, elle se redessine.
                     if (_cold && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY"}) then {
-                        [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                        [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
                     };
                 };
             };
@@ -128,7 +128,7 @@ switch (_act) do {
         private _ch = (round _v) max 1;
         private _ok = [_k, _ch] call acre_api_fnc_setRadioChannel;
         if (_ok isEqualType true && {!_ok}) then { ["WARNING", format ["Canal %1 indisponible sur cette radio", _ch], 3, 20] call comspec_atak_native_fnc_notify; };
-        [{ call _this; }, _render, 0.3] call CBA_fnc_waitAndExecute;
+        [{ call _this; }, _render, 0.3] call comspec_atak_native_fnc_waitAndExec;
     };
     case "mapLinks": {
         profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", !(profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false])];

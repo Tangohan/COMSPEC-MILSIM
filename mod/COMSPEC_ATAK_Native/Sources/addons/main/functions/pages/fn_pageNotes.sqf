@@ -16,7 +16,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 if (_edit isNotEqualTo "") then {
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["NOTES", {
         uiNamespace setVariable ["COMSPEC_ATAK_NoteEdit", ""];
-        [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }]];
     private _note = [];
     if (_edit isEqualTo "*NEW*") then {
@@ -32,7 +32,7 @@ if (_edit isNotEqualTo "") then {
         ["memo", "noteBody", "Texte", _body, 14],
         ["buttons", [
             ["Enregistrer", { ["save"] call comspec_atak_native_fnc_notesAction; }, true],
-            ["Annuler", { uiNamespace setVariable ["COMSPEC_ATAK_NoteEdit", ""]; [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, false]
+            ["Annuler", { uiNamespace setVariable ["COMSPEC_ATAK_NoteEdit", ""]; [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, false]
         ]]
     ];
     if (_nid isNotEqualTo "*NEW*") then {
@@ -47,15 +47,15 @@ if (_edit isNotEqualTo "") then {
         // Lecture : texte entier, police lisible, la page défile.
         (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["NOTES", {
             uiNamespace setVariable ["COMSPEC_ATAK_NoteRead", ""];
-            [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }]];
         _rn params ["_nid", "_title", "_body", ["_upd", 0], ["_from", ""]];
         private _esc = { ((_this regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]) regexReplace [">", "&gt;"] };
         private _txt = ((_body call _esc) splitString (toString [10])) joinString "<br/>";
         [[
             ["buttons", [
-                ["◀ NOTES", { uiNamespace setVariable ["COMSPEC_ATAK_NoteRead", ""]; [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
-                ["MODIFIER", compile format ["uiNamespace setVariable ['COMSPEC_ATAK_NoteRead', '']; uiNamespace setVariable ['COMSPEC_ATAK_NoteEdit', %1]; [{ ['NOTES'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str _nid], true]
+                ["◀ NOTES", { uiNamespace setVariable ["COMSPEC_ATAK_NoteRead", ""]; [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }],
+                ["MODIFIER", compile format ["uiNamespace setVariable ['COMSPEC_ATAK_NoteRead', '']; uiNamespace setVariable ['COMSPEC_ATAK_NoteEdit', %1]; [{ ['NOTES'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", str _nid], true]
             ]],
             ["section", [_title, "Sans titre"] select (_title isEqualTo ""), [("Écrite sur ce poste") call comspec_atak_native_fnc_tr, format [("Reçue de %1") call comspec_atak_native_fnc_tr, _from]] select (_from isNotEqualTo "")],
             ["text", format ["<t size='1.1'>%1</t>", [_txt, "—"] select (_txt isEqualTo "")], [0.06, 0.075, 0.07, 1]],
@@ -76,7 +76,7 @@ if (_edit isNotEqualTo "") then {
         ["buttons", [
             ["Nouvelle note", {
                 uiNamespace setVariable ["COMSPEC_ATAK_NoteEdit", "*NEW*"];
-                [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             }, true]
         ]],
         ["section", "Mes notes", ""]
@@ -108,7 +108,7 @@ if (_edit isNotEqualTo "") then {
             ], [
                 ["Lire", compile format ["['read', %1] call comspec_atak_native_fnc_notesAction;", str _id], true, true, "Lecture de la note entière"],
                 ["Modifier", compile format [
-                    "uiNamespace setVariable ['COMSPEC_ATAK_NoteEdit', '%1']; [{ ['NOTES'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;",
+                    "uiNamespace setVariable ['COMSPEC_ATAK_NoteEdit', '%1']; [{ ['NOTES'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;",
                     _id
                 ], false]
             ]];

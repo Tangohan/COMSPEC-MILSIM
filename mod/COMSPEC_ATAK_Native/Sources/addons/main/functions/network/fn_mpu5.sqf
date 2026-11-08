@@ -300,7 +300,7 @@ switch (_act) do {
         private _rerender = {
             private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             if ((_s getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY" && {(_s getOrDefault ["wrTab", ""]) isEqualTo "TG"}) then {
-                [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             };
         };
         missionNamespace setVariable ["COMSPEC_ATAK_Mpu5Rerender", _rerender];

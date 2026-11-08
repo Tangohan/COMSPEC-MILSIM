@@ -23,7 +23,7 @@ private _locks = missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashM
 private _seq = (missionNamespace getVariable ["COMSPEC_ATAK_DroneSeq", []]) select { _x in _locks };
 missionNamespace setVariable ["COMSPEC_ATAK_DroneSeq", _seq];
 private _run = missionNamespace getVariable ["COMSPEC_ATAK_DroneSeqRun", [false, 0, 0, 0, [], ""]];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
 private _log = { params ["_t", ["_c", "#4da3ff"]]; ["log", _t, _c] call comspec_atak_native_fnc_droneAction; };
 private _numOf = { params ["_k"]; [(_locks getOrDefault [_k, createHashMapFromArray [["num", 0]]]) get "num", 3] call CBA_fnc_formatNumber };

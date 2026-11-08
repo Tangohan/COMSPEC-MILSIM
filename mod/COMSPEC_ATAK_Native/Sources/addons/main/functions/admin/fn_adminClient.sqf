@@ -30,7 +30,7 @@ private _render = {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         // Message imposé en cours de saisie : pas de redessin (il effacerait le texte).
         if ((_st getOrDefault ["activePage", ""]) isEqualTo "ADMIN" && {(_st getOrDefault ["admMsgFor", 0]) isEqualTo 0}) then { ["ADMIN"] call comspec_atak_native_fnc_pageRender; };
-    }, [], 0.3] call CBA_fnc_waitAndExecute;
+    }, [], 0.3] call comspec_atak_native_fnc_waitAndExec;
 };
 private _ext = {
     params ["_cmd", "_payload"];
@@ -138,7 +138,7 @@ switch (_act) do {
         };
         ["INFO", format ["%1 : demande envoyée au serveur", name _u], 3, 30, "ADMIN"] call comspec_atak_native_fnc_notify;
         // Effet visible au prochain relevé (variable publique du joueur).
-        [{ ["scan"] call comspec_atak_native_fnc_adminClient; }, [], 1.5] call CBA_fnc_waitAndExecute;
+        [{ ["scan"] call comspec_atak_native_fnc_adminClient; }, [], 1.5] call comspec_atak_native_fnc_waitAndExec;
     };
     case "server": {
         _arg params [["_a", ""], ["_xa", []]];

@@ -12,7 +12,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_NumDraft", _draft];
 private _cfg = ["get"] call comspec_atak_native_fnc_localCfg;
 private _nums = (_cfg get "phone") get "numbers";
 private _ct = _cfg get "contacts";
-private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "NUMBERS") then { ["NUMBERS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "NUMBERS") then { ["NUMBERS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 // Champs saisis gardés avant un redessin (changement d'interrupteur, numéro généré).
 private _keep = {
     private _f = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
@@ -22,7 +22,7 @@ private _arm = {
     params ["_k"];
     if ((_s getOrDefault ["numDelArm", ""]) isEqualTo _k) exitWith { _s set ["numDelArm", ""]; true };
     _s set ["numDelArm", _k];
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["numDelArm", ""]) isEqualTo _this) then { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["numDelArm", ""]; if ((_st getOrDefault ["activePage", ""]) isEqualTo "NUMBERS") then { ["NUMBERS"] call comspec_atak_native_fnc_pageRender; }; }; }, _k, 4] call CBA_fnc_waitAndExecute;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["numDelArm", ""]) isEqualTo _this) then { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["numDelArm", ""]; if ((_st getOrDefault ["activePage", ""]) isEqualTo "NUMBERS") then { ["NUMBERS"] call comspec_atak_native_fnc_pageRender; }; }; }, _k, 4] call comspec_atak_native_fnc_waitAndExec;
     false
 };
 // Un autre formulaire ouvert désarme la suppression : le redessin différé de _arm effacerait la saisie.
@@ -100,7 +100,7 @@ switch (_a) do {
         _s set ["chatPeer", _v];
         _s set ["chatView", "CONV"];
         _s set ["chatPick", false];
-        [{ ["CHAT"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["CHAT"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "open": { ["open"] call comspec_atak_native_fnc_localCfg; };
     case "reload": { ["reload"] call comspec_atak_native_fnc_localCfg; };

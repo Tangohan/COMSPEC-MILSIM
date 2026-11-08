@@ -26,7 +26,7 @@ _hist pushBack createHashMapFromArray [["id", _hid], ["type", toUpper _type], ["
 while {count _hist > 60} do { _hist deleteAt 0; };
 _s set ["notifHistory", _hist];
 _s set ["notifUnread", (_s getOrDefault ["notifUnread", 0]) + 1];
-if ((_s getOrDefault ["activePage", ""]) isEqualTo "NOTIFS") then { [{ ["NOTIFS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+if ((_s getOrDefault ["activePage", ""]) isEqualTo "NOTIFS") then { [{ ["NOTIFS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 // Vibreur seul : la coque tremble sans son, aucun bandeau (le centre de notifications garde le texte).
 if (_discreet) exitWith { [true] call comspec_atak_native_fnc_vibrate; true };
 if !(profileNamespace getVariable ["COMSPEC_ATAK_Notifications",true]) exitWith {false};

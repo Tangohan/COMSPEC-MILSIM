@@ -184,7 +184,7 @@ if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv selec
         private _d2 = [] call comspec_atak_native_fnc_display;
         if (isNull _d2 || {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""]) isNotEqualTo _page}) exitWith {};
         (_d2 displayCtrl 88531) ctrlSetScrollValues [_v, -1];
-    }, [_page, _sv select 0]] call CBA_fnc_execNextFrame;
+    }, [_page, _sv select 0]] call comspec_atak_native_fnc_nextFrame;
 };
 if (_focusKey isNotEqualTo "") then {
     private _nf = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault [_focusKey, controlNull];

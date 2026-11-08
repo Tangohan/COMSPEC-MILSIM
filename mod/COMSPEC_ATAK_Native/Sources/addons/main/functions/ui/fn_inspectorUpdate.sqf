@@ -100,7 +100,7 @@ if ((uiNamespace getVariable ["COMSPEC_ATAK_InspSelKey", ""]) isNotEqualTo (["",
     && {(_s getOrDefault ["pageDrawn", ""]) isEqualTo "MAP"} && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _e getOrDefault ["callsign", "CONTACT"]] select ((count _e) > 0)];
     uiNamespace setVariable ["COMSPEC_ATAK_InspTh", -1];
-    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 private _ctl = uiNamespace getVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
 if (isNull _ctl) exitWith {};
@@ -116,7 +116,7 @@ if ((abs _dh) > (([] call comspec_atak_native_fnc_layoutGet) get "fontSmall") * 
     && {(abs (_th - (uiNamespace getVariable ["COMSPEC_ATAK_InspTh", -1]))) > (([] call comspec_atak_native_fnc_layoutGet) get "fontSmall") * 0.25}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_InspTh", _th];
     uiNamespace setVariable ["COMSPEC_ATAK_InspReflow", diag_tickTime + 2];
-    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 // Pas de notification ici : ce panneau est redessiné chaque seconde (fn_statusUpdate). Le bandeau « indicatif · grille »
 // de l'écran réduit part une seule fois, au clic sur l'unité (fn_mapSelect).

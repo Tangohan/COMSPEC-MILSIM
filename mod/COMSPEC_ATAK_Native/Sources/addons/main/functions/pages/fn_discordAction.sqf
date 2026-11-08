@@ -10,7 +10,7 @@
 */
 params [["_action", "send"], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DISCORD") then { ["DISCORD"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DISCORD") then { ["DISCORD"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _saveDraft = { private _m = ["msg"] call comspec_atak_native_fnc_formValue; if (_m isEqualType "") then { _s set ["discordDraft", _m]; }; };
 private _hist = missionNamespace getVariable ["COMSPEC_ATAK_DiscordLog", []];
 
@@ -47,7 +47,7 @@ private _post = {
                 private _rest = _detail select [_i + 11];
                 _detail = _rest select [0, (_rest find """") max 0];
             };
-            [{ ["result", _this] call comspec_atak_native_fnc_discordAction; }, [_id, _ok, _detail]] call CBA_fnc_execNextFrame;
+            [{ ["result", _this] call comspec_atak_native_fnc_discordAction; }, [_id, _ok, _detail]] call comspec_atak_native_fnc_nextFrame;
         };
     }, [_id, _json], "Discord", 1] call comspec_atak_native_fnc_netSend;
     call _render;

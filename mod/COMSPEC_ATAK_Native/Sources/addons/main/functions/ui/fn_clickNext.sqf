@@ -19,5 +19,5 @@ _b ctrlAddEventHandler ["ButtonClick", {
         if (_done select 0) exitWith {};
         _done set [0, true];
         _a call _code;
-    }, [_c, _c getVariable ["comspec_click", {}], _c getVariable ["comspec_clickArgs", [_c]], [false]]] call CBA_fnc_execNextFrame;
+    }, [_c, _c getVariable ["comspec_click", {}], _c getVariable ["comspec_clickArgs", [_c]], [false]]] call comspec_atak_native_fnc_nextFrame;
 }];

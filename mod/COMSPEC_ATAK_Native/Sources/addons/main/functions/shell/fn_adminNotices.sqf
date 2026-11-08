@@ -37,7 +37,7 @@ private _keep = {
     _l
 };
 missionNamespace setVariable ["COMSPEC_ATAK_NoticeKeep", _keep];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_act) do {
     case "check": {
         if (!hasInterface) exitWith {};
@@ -95,7 +95,7 @@ switch (_act) do {
                         [{
                             params ["_kind", "_body"];
                             if (_kind isEqualTo "mobile_report") then { ["mobile", _body] call comspec_atak_native_fnc_reportAction; } else { ["mobile", _body] call comspec_atak_native_fnc_debrief; };
-                        }, [_kind, _body]] call CBA_fnc_execNextFrame;
+                        }, [_kind, _body]] call comspec_atak_native_fnc_nextFrame;
                     };
                     continue;
                 };

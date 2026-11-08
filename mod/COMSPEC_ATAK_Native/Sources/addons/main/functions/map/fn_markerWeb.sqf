@@ -15,7 +15,7 @@ if (_deleted && {_name isNotEqualTo ""} && {(markerShape _name) isNotEqualTo ""}
 };
 // Mode « réseau ATAK uniquement » : le marqueur part aussi aux téléphones du canal (fn_markerNet), avec ou sans Athena.
 if (_name isNotEqualTo "") then {
-    [{ ["touch", _this] call comspec_atak_native_fnc_markerNet; }, [_name, _deleted], [0.5, 0] select _deleted] call CBA_fnc_waitAndExecute;
+    [{ ["touch", _this] call comspec_atak_native_fnc_markerNet; }, [_name, _deleted], [0.5, 0] select _deleted] call comspec_atak_native_fnc_waitAndExec;
 };
 // Sans Athena (mode full local, service « Non ») : le marqueur reste en jeu, rien ne part au site ni en file d'attente.
 if (_name isEqualTo "" || {isNil "comspec_overwatch_connect_fnc_syncMapMarker"} || {([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on"}) exitWith { false };
@@ -41,5 +41,5 @@ if (_name isEqualTo "" || {isNil "comspec_overwatch_connect_fnc_syncMapMarker"} 
         };
         if (_msg isNotEqualTo "") then { ["WARNING", _msg, 4, 20] call comspec_atak_native_fnc_notify; };
     }, [_name, _deleted], "Marqueur", 1, 1, "mk:" + _name] call comspec_atak_native_fnc_netSend;
-}, [_name, _deleted], [0.5, 0] select _deleted] call CBA_fnc_waitAndExecute;
+}, [_name, _deleted], [0.5, 0] select _deleted] call comspec_atak_native_fnc_waitAndExec;
 true

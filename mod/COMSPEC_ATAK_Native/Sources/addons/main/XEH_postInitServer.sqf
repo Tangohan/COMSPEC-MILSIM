@@ -41,11 +41,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 // Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).
 [{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Pylônes relais 3D posés dans Eden dont l'init étendue n'aurait pas tourné : enregistrés comme relais (fn_relayTower).
-[{ ["sweep"] call comspec_atak_native_fnc_relayTower; }, [], 2] call CBA_fnc_waitAndExecute;
+[{ ["sweep"] call comspec_atak_native_fnc_relayTower; }, [], 2] call comspec_atak_native_fnc_waitAndExec;
 // Antennes du jeu (pylônes, mâts, antennes omnidirectionnelles, paraboles ; décor de la carte en option) converties en
 // relais ATAK (fn_relayConvert) : au début, puis toutes les 60 s pour les objets posés par le Zeus ; antennes du décor
 // détruites vérifiées toutes les 15 s.
-[{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, [], 4] call CBA_fnc_waitAndExecute;
+[{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, [], 4] call comspec_atak_native_fnc_waitAndExec;
 [{ ["sweep"] call comspec_atak_native_fnc_relayConvert; }, 60] call COMSPEC_ATAK_PfhSpread;
 [{ ["check"] call comspec_atak_native_fnc_relayConvert; }, 15] call COMSPEC_ATAK_PfhSpread;
 // Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
@@ -271,13 +271,13 @@ COMSPEC_ATAK_FtCheck = {
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     missionNamespace setVariable ["COMSPEC_ATAK_SrvPlayOK", (_r select [0, 3]) isEqualTo "OK|", true];
     ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
-}, [], 15] call CBA_fnc_waitAndExecute;
+}, [], 15] call comspec_atak_native_fnc_waitAndExec;
 // Distances parcourues et heures de pilote de chaque joueur (app Distances), envoyées à Athena toutes les 10 min (fn_distanceServer).
 [{ ["tick"] call comspec_atak_native_fnc_distanceServer; }, 3] call COMSPEC_ATAK_PfhSpread;
 // Ménage différé demandé par un client (caisses larguées...) : fait ici pour survivre à son départ.
 ["comspec_atak_native_deleteLater", {
     params [["_objs", []], ["_delay", 1800]];
-    [{ { if (!isNull _x) then { deleteVehicle _x; }; } forEach _this; }, _objs, _delay] call CBA_fnc_waitAndExecute;
+    [{ { if (!isNull _x) then { deleteVehicle _x; }; } forEach _this; }, _objs, _delay] call comspec_atak_native_fnc_waitAndExec;
 }] call CBA_fnc_addEventHandler;
 addMissionEventHandler ["HandleDisconnect", {
     params [["_unit", objNull], "", "_uid"];

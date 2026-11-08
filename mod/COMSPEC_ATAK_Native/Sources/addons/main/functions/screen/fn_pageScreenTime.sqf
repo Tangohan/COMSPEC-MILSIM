@@ -23,7 +23,7 @@ private _bar = {
     for "_i" from 1 to 14 do { if (_i <= _n) then { _on = _on + "|"; } else { _off = _off + "|"; }; };
     format ["<t font='EtelkaMonospaceProBold' color='%1'>%2</t><t font='EtelkaMonospaceProBold' color='#2a3430'>%3</t>", _hex, _on, _off]
 };
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['stTab', '%1']; [{ ['SCREENTIME'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['stTab', '%1']; [{ ['SCREENTIME'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _rows = [["segment", "", [["CETTE MISSION", "MISSION"] call _tabBtn, ["AUJOURD'HUI", "TODAY"] call _tabBtn, ["RÔLES", "ROLES"] call _tabBtn]]];
 if !(missionNamespace getVariable ["comspec_atak_native_screen_time", true]) then {
     _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Le serveur a coupé l'enregistrement du temps d'écran et des temps par rôle.</t>"];
@@ -71,7 +71,7 @@ switch (_tab) do {
             ["info", "Temps de jeu et rôles", ["envoyés par ce téléphone", "envoyés par le serveur, même sans batterie ni réseau"] select (missionNamespace getVariable ["COMSPEC_ATAK_SrvPlayOK", false])],
             ["info", "Dernier envoi", if (_at < 0) then { "jamais" } else { format ["il y a %1 · %2", [diag_tickTime - _at] call _dur, _st] }],
             ["info", "En attente", [_pending] call _dur],
-            ["buttons", [["ENVOYER MAINTENANT", { ["flush"] call comspec_atak_native_fnc_screenTime; [{ ['SCREENTIME'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute; }, true]]]
+            ["buttons", [["ENVOYER MAINTENANT", { ["flush"] call comspec_atak_native_fnc_screenTime; [{ ['SCREENTIME'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call comspec_atak_native_fnc_waitAndExec; }, true]]]
         ];
     };
 };

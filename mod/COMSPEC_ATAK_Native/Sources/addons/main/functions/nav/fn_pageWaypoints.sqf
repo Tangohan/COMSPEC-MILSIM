@@ -15,7 +15,7 @@ private _share = profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1];
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _fmt = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
 private _hex = { params ["_c"]; "#" + (((_c select [0, 3]) apply { private _v = ((round (_x * 255)) max 0) min 255; ("0123456789abcdef" select [floor (_v / 16), 1]) + ("0123456789abcdef" select [_v mod 16, 1]) }) joinString "") };
-private _openMap = { ["MAP"] call comspec_atak_native_fnc_navigate; [{ ["WP"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _openMap = { ["MAP"] call comspec_atak_native_fnc_navigate; [{ ["WP"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 private _tot = 0;
 for "_i" from 1 to ((count _pts) - 1) do { _tot = _tot + (((_pts select (_i - 1)) select 0) distance2D ((_pts select _i) select 0)); };
 private _rows = [["section", "Itinéraire", [
@@ -58,7 +58,7 @@ if ((count _pts) > 0) then {
             [_prevP distance2D _p] call _fmt, ["depuis l'étape précédente", "depuis moi"] select (_forEachIndex isEqualTo 0), round (_prevP getDir _p), [_p, 8] call comspec_atak_native_fnc_gridRef],
             [
                 ["ALLER", compile format ["['goto', %1] call comspec_atak_native_fnc_wpAction;", _forEachIndex], false, true, "Cap sur cette étape"],
-                ["MODIFIER", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [{ ['edit', %1] call comspec_atak_native_fnc_wpAction; }] call CBA_fnc_execNextFrame;", _forEachIndex], false, true, "Renommer, changer le type ou déplacer sur la carte"],
+                ["MODIFIER", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [{ ['edit', %1] call comspec_atak_native_fnc_wpAction; }] call comspec_atak_native_fnc_nextFrame;", _forEachIndex], false, true, "Renommer, changer le type ou déplacer sur la carte"],
                 ["X", compile format ["['del', %1] call comspec_atak_native_fnc_wpAction;", _forEachIndex], false, true, "Supprimer l'étape"]
             ],
             [_tRow select 3, [0.55, 0.60, 0.57, 0.6]] select _done];

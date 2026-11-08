@@ -24,6 +24,9 @@ diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Lin
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
+// File d'image du mod (fn_frameQueue) : rappels « image suivante » et « attendre puis exécuter » hors du gestionnaire de
+// CBA, pour qu'une erreur de script dans un rappel ne soit jamais rejouée à chaque image (téléphone et Arsenal perdus).
+["init"] call comspec_atak_native_fnc_frameQueue;
 // Boucles périodiques des postInit (client et serveur, une cinquantaine) : chacune démarre avec un décalage tiré au
 // hasard (5 s au plus) au lieu de toutes à la même image. Avant, les boucles de 1, 2, 5 et 10 s tombaient ensemble à
 // chaque multiple de 10 s (à-coup régulier) et toutes partaient dans les premières secondes de l'arrivée en jeu.
@@ -31,7 +34,7 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 COMSPEC_ATAK_PfhSpread = {
     params ["_code", ["_delay", 0], ["_args", []]];
     if (_delay <= 0) exitWith { [_code, _delay, _args] call CBA_fnc_addPerFrameHandler; nil };
-    [{ _this call CBA_fnc_addPerFrameHandler; }, [_code, _delay, _args], random (_delay min 5)] call CBA_fnc_waitAndExecute;
+    [{ _this call CBA_fnc_addPerFrameHandler; }, [_code, _delay, _args], random (_delay min 5)] call comspec_atak_native_fnc_waitAndExec;
     nil
 };
 
@@ -59,7 +62,7 @@ private _langs = ([] call comspec_atak_native_fnc_langList) select { (_x select 
         [{
             private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];
             if (_p isNotEqualTo "" && {!isNull ([] call comspec_atak_native_fnc_display)}) then { [] call comspec_atak_native_fnc_layoutApply; [_p] call comspec_atak_native_fnc_pageRender; };
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
     }] call CBA_fnc_addSetting;
 // Langue dans laquelle les menus CBA COMSPEC sont déclarés (fn_addSetting, fn_trMenu) : fn_menuRelang ne retraduit
 // que si elle change.
@@ -241,7 +244,7 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_shot_dir", "EDITBOX",
     ["Dossier des captures d'écran", "Réglage personnel, vide par défaut (automatique) : le téléphone cherche vos photos dans le dossier Screenshots de votre profil Arma (Documents\Arma 3\Screenshots, ou Documents\Arma 3 - Other Profiles\(nom du profil)\Screenshots). Si vos photos ne sont jamais trouvées (profil déplacé, lancement avec -profiles, Documents déplacé par OneDrive), collez ici le chemin complet du dossier où Arma range vos captures, par exemple D:\Arma\Profils\Screenshots. Dossier de ce PC uniquement (pas de dossier réseau) ; le téléphone n'y fait que lire. Pour voir le dossier utilisé : cochez « Vérifier le dossier des captures » ci-dessous, ou Réglages du téléphone › À propos."],
     ["COMSPEC", "ATAK · Photo"], "", 0,
-    { [{ ["apply"] call comspec_atak_native_fnc_shotDir; }] call CBA_fnc_execNextFrame; }] call comspec_atak_native_fnc_addSetting;
+    { [{ ["apply"] call comspec_atak_native_fnc_shotDir; }] call comspec_atak_native_fnc_nextFrame; }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_shot_check", "CHECKBOX",
     ["Vérifier le dossier des captures", "Cochez puis validez (OK) : le dossier où le téléphone cherche vos photos s'affiche à l'écran, avec le nombre d'images et la dernière capture trouvée. La case se décoche toute seule."],
     ["COMSPEC", "ATAK · Photo"], false, 0,
@@ -250,7 +253,7 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
         [{
             ["comspec_atak_native_shot_check", false, 0, "client"] call CBA_settings_fnc_set;
             ["check", true] spawn comspec_atak_native_fnc_shotDir;
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
     }] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_gesture_finger", "CHECKBOX",
     ["Geste du doigt d'honneur", "Décoché par défaut. Coché : les touches « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » font le geste. À assigner dans Options > Contrôles > Configurer les addons > COMSPEC ATAK."],
@@ -294,7 +297,7 @@ private _uiCat = ["COMSPEC", "ATAK · Modèle et items requis"];
         [{
             private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];
             if (_p isNotEqualTo "" && {!isNull ([] call comspec_atak_native_fnc_display)}) then { [] call comspec_atak_native_fnc_layoutApply; [_p] call comspec_atak_native_fnc_pageRender; };
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
     }] call comspec_atak_native_fnc_addSetting;
 {
     _x params ["_k", "_name", "_def"];
@@ -914,7 +917,7 @@ if (hasInterface) then {
             (missionNamespace getVariable ["COMSPEC_ATAK_PlanAsk", createHashMap]) set [_var, false];
             private _want = (missionNamespace getVariable ["COMSPEC_ATAK_PlanWant", createHashMap]) getOrDefault [_var, 0];
             if (((missionNamespace getVariable [_var, [0]]) param [0, 0]) < _want) then { [_var] call COMSPEC_ATAK_PlanAskFull; };
-        }, [_var], 3] call CBA_fnc_waitAndExecute;
+        }, [_var], 3] call comspec_atak_native_fnc_waitAndExec;
     };
     ["comspec_atak_native_planPatch", {
         params ["_var", "_rev", "_del", "_put", "_name", "_uid", "_creator"];

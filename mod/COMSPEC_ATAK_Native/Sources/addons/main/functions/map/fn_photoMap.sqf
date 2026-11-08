@@ -57,7 +57,7 @@ private _have = missionNamespace getVariable "COMSPEC_ATAK_PhotoWebHave";
 if (isNil "_have") then { _have = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_PhotoWebHave", _have]; };
 private _name = getText (configFile >> "CfgWorlds" >> worldName >> "description");
 if (_name isEqualTo "") then { _name = worldName; };
-private _rerender = { [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 
 // Meta d'Athena au démarrage : plus demandée (fond téléchargé désactivé, voir plus haut).
 if (_arg isEqualTo "prefetch") exitWith {};
@@ -129,7 +129,7 @@ if (_arg isEqualTo "rows") exitWith {
             _rows pushBack ["buttons", [["CHERCHER SUR ATHENA", {
                 missionNamespace setVariable ["COMSPEC_ATAK_PhotoWebNext", 0];
                 ["info"] call comspec_atak_native_fnc_photoMap;
-                [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }, [], 1.5] call CBA_fnc_waitAndExecute;
+                [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }, [], 1.5] call comspec_atak_native_fnc_waitAndExec;
             }, false, true, "Redemander à Athena si un fond photo existe pour cette carte"]]];
         };
         default {
@@ -168,7 +168,7 @@ if (_arg isEqualTo "rows") exitWith {
                 [{
                     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
                     if ((_s getOrDefault ["pageDrawn", ""]) isEqualTo "SETTINGS" && {(_s getOrDefault ["setCat", ""]) isEqualTo "MAP"}) then { ["SETTINGS"] call comspec_atak_native_fnc_pageRender; };
-                }, [], 2] call CBA_fnc_waitAndExecute;
+                }, [], 2] call comspec_atak_native_fnc_waitAndExec;
             };
         };
     };

@@ -15,7 +15,7 @@ private _p = uiNamespace getVariable ["COMSPEC_ATAK_AarPlay", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_AarPlay", _p];
 private _log = missionNamespace getVariable ["COMSPEC_ATAK_Aar", []];
 private _last = ((count _log) - 1) max 0;
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "AAR") then { ["AAR"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "AAR") then { ["AAR"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 switch (_act) do {
     case "play": {
         private _on = !(_p getOrDefault ["playing", false]);

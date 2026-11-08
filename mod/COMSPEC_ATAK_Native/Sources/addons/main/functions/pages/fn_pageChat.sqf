@@ -56,7 +56,7 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {dia
         private _before = +(missionNamespace getVariable ["COMSPEC_Comms_Channels", []]);
         [] call comspec_overwatch_connect_fnc_pollChatChannels;
         if ((missionNamespace getVariable ["COMSPEC_Comms_Channels", []]) isNotEqualTo _before) then {
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
 };
@@ -188,7 +188,7 @@ private _avatar = {
     };
     [_rect, _iconPath, _tint, 0.62, _grp] call _icon
 };
-private _rr = "[{ ['CHAT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+private _rr = "[{ ['CHAT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 // Brouillon par conversation : le texte en cours (gardé par fn_pageClear) appartient à la conversation affichée avant.
 private _drafts = uiNamespace getVariable ["COMSPEC_ATAK_ChatDrafts", createHashMap];
 private _dPeer = uiNamespace getVariable ["COMSPEC_ATAK_ChatDraftPeer", ""];
@@ -210,7 +210,7 @@ private _keepScroll = {
     if (_v <= 0) exitWith {};
     _grp ctrlSetScrollValues [_v, -1];
     // Encore à l'image suivante : la hauteur du contenu n'est connue qu'une fois les contrôles posés.
-    [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
+    [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call comspec_atak_native_fnc_nextFrame;
 };
 private _open = { params ["_key"]; compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', %1]; _s set ['chatView', 'CONV']; _s set ['chatDelArm', '']; _s set ['chatWiki', false]; _s set ['chatPick', false]; %2", str _key, _rr] };
 // Molette de la souris : les groupes défilants imbriqués dans la page ne la reçoivent pas d'Arma (retour de TTRD).
@@ -313,12 +313,12 @@ private _drawList = {
                     _s set ["chatPeer", "CH:" + (missionNamespace getVariable ["COMSPEC_Comms_Channel", "general"])];
                     _s set ["chatView", "CONV"];
                 };
-                [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+                [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { ["CHAT"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
             };
         }];
         private _no = ["COMSPEC_RscButton", [_lx + _lw - _cw - _pad * 0.5, _y0 + _pad / 2, _cw, _rowH], "ANNULER"] call _mk;
         _no ctrlSetFontHeight _fs;
-        _no ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatNewOpen", false]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+        _no ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatNewOpen", false]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }];
         ctrlSetFocus _ne;
         _y0 = _y0 + _ch;
     };
@@ -457,7 +457,7 @@ private _drawConv = {
             "Vider l'affichage de cette conversation (sur ce téléphone seulement)", _cText, [1, 1, 1, 0.05], true];
         if (_manage && {_isChannel} && {_peer isNotEqualTo "ATHENA"}) then {
             private _armed = (_s getOrDefault ["chatDelArm", ""]) isEqualTo _curKey;
-            _btns pushBack [_dir + "ui_trash.paa", "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; private _key = (_s getOrDefault ['chatPeer', '']) select [3]; if ((_s getOrDefault ['chatDelArm', '']) isNotEqualTo _key) exitWith { _s set ['chatDelArm', _key]; " + _rr + " }; _s set ['chatDelArm', '']; [_key] spawn { params ['_key']; if ([_key] call comspec_overwatch_connect_fnc_deleteChatChannel) then { private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', 'CH:general']; _s set ['chatView', 'LIST']; }; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'CHAT') then { ['CHAT'] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };",
+            _btns pushBack [_dir + "ui_trash.paa", "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; private _key = (_s getOrDefault ['chatPeer', '']) select [3]; if ((_s getOrDefault ['chatDelArm', '']) isNotEqualTo _key) exitWith { _s set ['chatDelArm', _key]; " + _rr + " }; _s set ['chatDelArm', '']; [_key] spawn { params ['_key']; if ([_key] call comspec_overwatch_connect_fnc_deleteChatChannel) then { private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', 'CH:general']; _s set ['chatView', 'LIST']; }; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'CHAT') then { ['CHAT'] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };",
                 [["Seuls les canaux créés depuis le web ou le terminal se suppriment", "Supprimer ce canal pour tout le monde"] select _custom, "Cliquer encore pour supprimer ce canal pour tout le monde"] select _armed,
                 [_cRed, [1, 1, 1, 1]] select _armed, [[1, 1, 1, 0.05], _cRed] select _armed, _custom];
         };
@@ -804,7 +804,7 @@ private _drawConv = {
             if ([_peer, ctrlText _edit] call comspec_atak_native_fnc_p2pSend) then {
                 _edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
                 uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
-                [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             };
         };
     };

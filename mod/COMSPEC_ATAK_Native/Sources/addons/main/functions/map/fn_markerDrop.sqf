@@ -80,12 +80,12 @@ _m setMarkerSizeLocal [_size, _size];
 _m setMarkerText _text;
 [_m] call comspec_atak_native_fnc_markerWeb;
 // App Zones : marqueur ennemi posé dans une zone (aussi par l'EH MarkerCreated ; une seule fois par marqueur).
-[{ ["markerContact", _this] call comspec_atak_native_fnc_zoneAction; }, _m, 0.3] call CBA_fnc_waitAndExecute;
+[{ ["markerContact", _this] call comspec_atak_native_fnc_zoneAction; }, _m, 0.3] call comspec_atak_native_fnc_waitAndExec;
 // Durée choisie dans la palette (DURÉE) : le marqueur s'efface tout seul à l'échéance, pour tout le canal.
 private _ttl = profileNamespace getVariable ["COMSPEC_ATAK_MarkerTtl", 0];
 if !(_ttl isEqualType 0) then { _ttl = 0; };
 if (_ttl > 0) then {
-    [{ if ((markerShape _this) isNotEqualTo "") then { deleteMarker _this; }; }, _m, _ttl * 60] call CBA_fnc_waitAndExecute;
+    [{ if ((markerShape _this) isNotEqualTo "") then { deleteMarker _this; }; }, _m, _ttl * 60] call comspec_atak_native_fnc_waitAndExec;
 };
 // Récents de la palette : ce camp, ce type et cette couleur en tête (6 au plus, gardés dans le profil).
 private _rec = [_aff, _type, _s getOrDefault ["markerColor", "AUTO"]];

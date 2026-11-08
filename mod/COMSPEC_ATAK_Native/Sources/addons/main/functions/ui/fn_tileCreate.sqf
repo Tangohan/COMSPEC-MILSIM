@@ -171,6 +171,6 @@ _btn ctrlAddEventHandler ["MouseButtonDown", {
 _btn ctrlAddEventHandler ["ButtonClick", {
     params ["_c"];
     if (_c getVariable ["wip", false]) exitWith { ["Application en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast; };
-    [{ [_this] call comspec_atak_native_fnc_navigate; }, _c getVariable ["page", "LAUNCHER"]] call CBA_fnc_execNextFrame;
+    [{ [_this] call comspec_atak_native_fnc_navigate; }, _c getVariable ["page", "LAUNCHER"]] call comspec_atak_native_fnc_nextFrame;
 }];
 _made

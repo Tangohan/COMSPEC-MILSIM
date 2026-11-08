@@ -10,7 +10,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_Gps", _f];
 private _go = {
     params ["_p", "_label"];
     [[_p select 0, _p select 1, 0], _label] spawn comspec_atak_native_fnc_routeCompute;
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GPS") then { ["GPS"] call comspec_atak_native_fnc_pageRender; }; }, [], 1.5] call CBA_fnc_waitAndExecute;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GPS") then { ["GPS"] call comspec_atak_native_fnc_pageRender; }; }, [], 1.5] call comspec_atak_native_fnc_waitAndExec;
 };
 switch (_act) do {
     case "grid": {
@@ -26,7 +26,7 @@ switch (_act) do {
     };
     case "pick": {
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ ["ROUTE"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["ROUTE"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "wp": { ["gps"] call comspec_atak_native_fnc_wpAction; };
     case "marker": { [getMarkerPos _arg, ([markerText _arg] call comspec_atak_native_fnc_markerAutoName)] call _go; };
@@ -40,7 +40,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_RouteGen", (missionNamespace getVariable ["COMSPEC_ATAK_RouteGen", 0]) + 1];
         missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap];
         ["INFO", "Guidage arrêté", 2, 10] call comspec_atak_native_fnc_notify;
-        [{ ["GPS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["GPS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
 };
 true

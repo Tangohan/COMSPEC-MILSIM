@@ -54,7 +54,7 @@ switch (_tool) do {
         // Unité cliquée : on ouvre le panneau SITUATION (en plein écran) pour afficher sa fiche.
         if ((count _best) > 0 && {!(missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false])} && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
             [] call comspec_atak_native_fnc_inspToggle;
-            [{ [] call comspec_atak_native_fnc_inspectorUpdate; }, [], 0.1] call CBA_fnc_waitAndExecute;
+            [{ [] call comspec_atak_native_fnc_inspectorUpdate; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec;
         };
         [] call comspec_atak_native_fnc_inspectorUpdate;
     };

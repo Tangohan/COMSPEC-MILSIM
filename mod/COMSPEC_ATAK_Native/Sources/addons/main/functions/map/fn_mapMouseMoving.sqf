@@ -18,7 +18,7 @@ if (_now - (_s getOrDefault ["cursorPanelAt", -1]) >= 0.05) then {
             _s set ["cursorPanelLate", false];
             _s set ["cursorPanelAt", diag_tickTime];
             [true] call comspec_atak_native_fnc_mapOverlayUpdate;
-        }, [], 0.06] call CBA_fnc_waitAndExecute;
+        }, [], 0.06] call comspec_atak_native_fnc_waitAndExec;
     };
 };
 false

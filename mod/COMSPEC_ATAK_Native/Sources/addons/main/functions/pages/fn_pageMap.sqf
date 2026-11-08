@@ -237,7 +237,7 @@ if (_interactive) then {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         _s set ["mapToolsOpen", !(_s getOrDefault ["mapToolsOpen", false])];
         (uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) set ["open", false];
-        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }];
     _ov set ["tool_menu", _tb];
     // Bouton « RECHERCHER » à côté : localiser un IMEI, un numéro, une balise GPS ou un indicatif (fn_mapSearch).
@@ -350,7 +350,7 @@ if (_interactive) then {
         ["MARKER", "map_marker", "Poser un marqueur (clic sur la carte)", { ["MARKER"] call comspec_atak_native_fnc_mapToolMenu; }],
         ["labels", "map_labels", "Afficher / masquer les indicatifs", { if ((["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 1) exitWith { ["INFO", "Réglage imposé par votre communauté", 3, 20] call comspec_atak_native_fnc_notify; }; profileNamespace setVariable ["COMSPEC_ATAK_Labels", !(profileNamespace getVariable ["COMSPEC_ATAK_Labels", true])]; [] call comspec_atak_native_fnc_mapOverlayUpdate; }],
         // « Sur mon téléphone » (2.9.39) : la carte de la partie sur le vrai téléphone, par un QR code (fn_mobileQr).
-        ["phone", "app_athena", "Sur mon téléphone : la carte de la partie sur votre vrai téléphone (QR code)", { [{ ["open", "carte"] call comspec_atak_native_fnc_mobileQr; }] call CBA_fnc_execNextFrame; }]
+        ["phone", "app_athena", "Sur mon téléphone : la carte de la partie sur votre vrai téléphone (QR code)", { [{ ["open", "carte"] call comspec_atak_native_fnc_mobileQr; }] call comspec_atak_native_fnc_nextFrame; }]
     ];
     // Drone appairé : bascule carte / vue drone plein écran / vue incrustée.
     if (alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
@@ -400,7 +400,7 @@ if (_interactive) then {
                 // Réglage CBA côté joueur (noms sur la carte) : enregistré par CBA, le même que dans le menu CBA.
                 if (_ns isEqualTo "C") exitWith {
                     [_var, !(missionNamespace getVariable [_var, _def]), false, "client"] call CBA_settings_fnc_set;
-                    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
                 };
                 private _n = [profileNamespace, missionNamespace] select (_ns isEqualTo "M");
                 _n setVariable [_var, !(_n getVariable [_var, _def])];
@@ -417,7 +417,7 @@ if (_interactive) then {
                         case "COMSPEC_ATAK_MeshLinks": { ["Traits entre alliés masqués", "Traits entre alliés affichés (liens du maillage, avec le calque Wave Relay)"] select _on };
                         default { ["Trait vers mon relais masqué", "Trait vers mon relais affiché"] select _on };
                     }, 3, 20] call comspec_atak_native_fnc_notify;
-                    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
                 };
                 if (_on) then {
                     private _msg = switch (_var) do {
@@ -459,7 +459,7 @@ if (_interactive) then {
                     };
                     if (_msg isNotEqualTo "") then { ["INFO", _msg, 4, 20] call comspec_atak_native_fnc_notify; };
                 };
-                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             }];
             // Sections repliées (profil) : clé ajoutée ou retirée au clic sur l'en-tête, page redessinée.
             uiNamespace setVariable ["COMSPEC_ATAK_MapPanelFold", {
@@ -619,7 +619,7 @@ if (_interactive) then {
             private _v = (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["scrollGroups", createHashMap]) getOrDefault ["mapPanel", []]) param [0, -1];
             if (_v > 0) then {
                 _grp ctrlSetScrollValues [_v, -1];
-                [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
+                [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call comspec_atak_native_fnc_nextFrame;
             };
         };
     };
@@ -677,7 +677,7 @@ if (_interactive) then {
         _xb ctrlAddEventHandler ["ButtonClick", {
             (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["drawStroke", []];
             ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
-            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }];
     };
     if (_mode in ["LINE", "DRAW"]) then {
@@ -773,7 +773,7 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
     _cl ctrlSetTextColor [0.55, 0.62, 0.58, 1];
     private _clb = ["COMSPEC_RscButtonOverlay", [_cx, _py + _in, _cw / _ratio, _cw]] call _mk;
     _clb ctrlSetTooltip (("Fermer la fiche") call comspec_atak_native_fnc_tr);
-    _clb ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["selectedMarker", ""]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+    _clb ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["selectedMarker", ""]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }];
     // Titre, nature, position ; note s'il y en a une.
     private _mp = getMarkerPos _sel;
     private _dd = player distance2D _mp;
@@ -867,7 +867,7 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
         _stop = ["COMSPEC_RscButton", [_gx + _gw - _sw - _pad / 2, _gy + _h1 + _h2 * 0.12, _sw, _h2 * 0.76], "ARRÊTER"] call _mk;
         _stop ctrlSetFontHeight (((_fs * 0.85) min (_h2 * 0.6)) max COMSPEC_ATAK_FontMin);
         _stop ctrlSetBackgroundColor (COMSPEC_ATAK_Th get "mapAlert");
-        _stop ctrlAddEventHandler ["ButtonClick", { missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+        _stop ctrlAddEventHandler ["ButtonClick", { missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }];
     };
     uiNamespace setVariable ["COMSPEC_ATAK_RouteBanner", [_g1, _g2, _g3]];
     [] call comspec_atak_native_fnc_routeBanner;
@@ -1036,18 +1036,18 @@ if (_camId isNotEqualTo "") then {
             [["JOUR", "VISION NOCT.", "THERMIQUE"] select _cmode, {
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
                 _s set ["livecamMode", ((_s getOrDefault ["livecamMode", 0]) + 1) mod 3];
-                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             }, "Change le mode de la caméra : jour » vision nocturne » thermique"],
             ["GRAND", {
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
                 _s set ["livecamTarget", _s getOrDefault ["mapCam", ""]];
                 _s set ["mapCam", ""];
-                [{ ["LIVECAM"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+                [{ ["LIVECAM"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
             }, "Ouvre la caméra de l'équipier en grand (app Vidéo live)"],
             ["FERMER", {
                 (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["mapCam", ""];
                 [] call comspec_atak_native_fnc_livecamStop;
-                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             }, "Ferme la caméra de l'équipier"]
         ];
     };

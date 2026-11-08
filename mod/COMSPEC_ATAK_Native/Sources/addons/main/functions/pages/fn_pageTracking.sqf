@@ -14,7 +14,7 @@ private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [
 private _filter = _s getOrDefault ["trkFilter", "ALL"];
 private _locks = ["list"] call comspec_atak_native_fnc_lockAction;
 private _drone = !isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]);
-private _re = "[{ ['TRACKING'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+private _re = "[{ ['TRACKING'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 private _count = { params ["_st"]; { ((_x select 1) get "state") isEqualTo _st } count _locks };
 private _rows = [];
 

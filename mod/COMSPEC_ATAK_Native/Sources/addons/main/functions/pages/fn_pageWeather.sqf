@@ -12,7 +12,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _tab = _s getOrDefault ["wxTab", "NOW"];
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['wxTab', '%1']; [{ ['WEATHER'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['wxTab', '%1']; [{ ['WEATHER'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _card = { params ["_deg"]; ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"] select ((round (_deg / 22.5)) mod 16) };
 private _pct = { params ["_v"]; round ((0 max (_v min 1)) * 100) };
 private _hhmm = { params ["_h"]; [(_h + 24) mod 24, "HH:MM"] call BIS_fnc_timeToString };
@@ -193,7 +193,7 @@ switch (_tab) do {
         };
     };
 };
-_rows pushBack ["buttons", [["ACTUALISER", { [{ ['WEATHER'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+_rows pushBack ["buttons", [["ACTUALISER", { [{ ['WEATHER'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]]];
 if (_prevStage isNotEqualTo "done") then {
     _rows insert [1, [["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Le dernier affichage s'est arrêté à l'étape « %1 ». Envoyez cette ligne et le fichier RPT au support.</t>", _prevStage]]]];
 };

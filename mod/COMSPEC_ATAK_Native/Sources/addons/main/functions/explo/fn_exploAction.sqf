@@ -18,7 +18,7 @@ if (isNil "COMSPEC_ATAK_ExploMissionInit") then {
 };
 private _sel = _s getOrDefault ["sel", []];
 _s set ["sel", _sel];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "EXPLO") then { ["EXPLO"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "EXPLO") then { ["EXPLO"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _find = { params ["_k"]; private _l = ([true] call comspec_atak_native_fnc_exploList) select { (_x get "key") isEqualTo _k }; [createHashMap, _l select 0] select ((count _l) > 0) };
 // Charge du jour par sa clé (même résolution que le tir manuel) ; repli sur l'objet mémorisé si la liste l'a perdue.
 private _resolve = {
@@ -66,7 +66,7 @@ switch (_act) do {
         if ((count _c) isEqualTo 0) exitWith {};
         private _p = getPosASL (_c get "obj");
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.02] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.02] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     case "fire": {
         if (call _safe) exitWith {};
@@ -74,7 +74,7 @@ switch (_act) do {
         if ((count _c) isEqualTo 0) exitWith { ["WARNING", "Charge introuvable (déjà sautée ?)", 3, 20] call comspec_atak_native_fnc_notify; call _render; };
         if ([_c] call _boom) then { ["SUCCESS", format ["Mise à feu : %1", _c get "label"], 3, 40] call comspec_atak_native_fnc_notify; };
         uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
-        [{ ["redraw"] call comspec_atak_native_fnc_exploAction; }, [], 1.6] call CBA_fnc_waitAndExecute;
+        [{ ["redraw"] call comspec_atak_native_fnc_exploAction; }, [], 1.6] call comspec_atak_native_fnc_waitAndExec;
     };
     case "redraw": { call _render; };
     case "seq": {
@@ -122,7 +122,7 @@ switch (_act) do {
             _s set ["armed", false];
             _s set ["sel", []];
             ["SUCCESS", "Séquence terminée, sécurité remise", 3, 40] call comspec_atak_native_fnc_notify;
-            [{ ["redraw"] call comspec_atak_native_fnc_exploAction; }, [], 1.6] call CBA_fnc_waitAndExecute;
+            [{ ["redraw"] call comspec_atak_native_fnc_exploAction; }, [], 1.6] call comspec_atak_native_fnc_waitAndExec;
         };
     };
 };

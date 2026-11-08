@@ -39,7 +39,7 @@ switch (_act) do {
         [] call comspec_atak_native_fnc_saveProfile;
         uiNamespace setVariable ["COMSPEC_ATAK_NoteEdit", ""];
         ["Note enregistrée", 2] call comspec_atak_native_fnc_toast;
-        [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "receive": {
         _arg params [["_t", ""], ["_b", ""], ["_from", ""]];
@@ -49,13 +49,13 @@ switch (_act) do {
         _notes pushBack [_id, _t, (_b regexReplace ["[<>]", ""]) select [0, 4000], diag_tickTime, (_from regexReplace ["[<>]", ""]) select [0, 24]];
         profileNamespace setVariable ["COMSPEC_ATAK_Notes", _notes];
         [] call comspec_atak_native_fnc_saveProfile;
-        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "NOTES") then { [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "NOTES") then { [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
         format [("note « %1 » ajoutée au Bloc-notes") call comspec_atak_native_fnc_tr, [_t, ("Sans titre") call comspec_atak_native_fnc_tr] select (_t isEqualTo "")]
     };
     case "read": {
         uiNamespace setVariable ["COMSPEC_ATAK_NoteRead", _arg];
         uiNamespace setVariable ["COMSPEC_ATAK_NoteEdit", ""];
-        [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "team": {
         private _n = (_notes select { (_x select 0) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_NoteRead", ""]) }) param [0, []];
@@ -81,7 +81,7 @@ switch (_act) do {
         [] call comspec_atak_native_fnc_saveProfile;
         uiNamespace setVariable ["COMSPEC_ATAK_NoteEdit", ""];
         ["Note supprimée", 2] call comspec_atak_native_fnc_toast;
-        [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["NOTES"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     };
 };
 true

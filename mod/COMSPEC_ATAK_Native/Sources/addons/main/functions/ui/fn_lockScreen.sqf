@@ -89,7 +89,7 @@ switch (_act) do {
                 _grp ctrlSetPosition [_p select 0, _p select 1, _p select 2, 0];
                 _grp ctrlCommit 0.25;
             };
-            [{ { ctrlDelete _x; } forEach _this; }, _ctrls, 0.27] call CBA_fnc_waitAndExecute;
+            [{ { ctrlDelete _x; } forEach _this; }, _ctrls, 0.27] call comspec_atak_native_fnc_waitAndExec;
         } else {
             { ctrlDelete _x; } forEach _ctrls;
         };
@@ -281,7 +281,7 @@ switch (_act) do {
         // Tout l'écran déverrouille (clic, ou glissé : le relâchement sur le bouton compte comme un clic).
         private _btn = ["COMSPEC_RscButtonInvisible", [0, 0, _dw, _dh]] call _mk;
         _btn ctrlSetTooltip (("Déverrouiller") call comspec_atak_native_fnc_tr);
-        _btn ctrlAddEventHandler ["ButtonClick", { [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; }] call CBA_fnc_execNextFrame; }];
+        _btn ctrlAddEventHandler ["ButtonClick", { [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; }] call comspec_atak_native_fnc_nextFrame; }];
         // Actions rapides (créées après le bouton plein écran : elles passent devant) : icône et libellé, fond relief.
         private _qa = [["app_map", "CARTE", "MAP", "Déverrouiller et ouvrir la carte"], ["app_chat", "MESSAGES", "CHAT", "Déverrouiller et ouvrir la messagerie"]];
         private _qaW = (_cw - _pad) / 2;
@@ -302,7 +302,7 @@ switch (_act) do {
             _qbt setVariable ["page", _qp];
             _qbt ctrlAddEventHandler ["ButtonClick", {
                 params ["_c"];
-                [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; [_this] call comspec_atak_native_fnc_navigate; }, _c getVariable ["page", "LAUNCHER"]] call CBA_fnc_execNextFrame;
+                [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; [_this] call comspec_atak_native_fnc_navigate; }, _c getVariable ["page", "LAUNCHER"]] call comspec_atak_native_fnc_nextFrame;
             }];
         } forEach _qa;
         uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", _made];

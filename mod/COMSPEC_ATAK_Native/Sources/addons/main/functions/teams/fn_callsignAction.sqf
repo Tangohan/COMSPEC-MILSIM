@@ -41,7 +41,7 @@ private _rerender = {
     [{
         private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
         if (_p isEqualTo "GROUP") then { [_p] call comspec_atak_native_fnc_pageRender; };
-    }] call CBA_fnc_execNextFrame;
+    }] call comspec_atak_native_fnc_nextFrame;
 };
 switch (_act) do {
     case "init": {
@@ -55,7 +55,7 @@ switch (_act) do {
         [[profileNamespace getVariable ["COMSPEC_ATAK_MyCallsign", ""]] call _clean] call _publish;
         if !(missionNamespace getVariable ["COMSPEC_ATAK_CsRespawnEh", false]) then {
             missionNamespace setVariable ["COMSPEC_ATAK_CsRespawnEh", true];
-            player addEventHandler ["Respawn", { [{ ["init"] call comspec_atak_native_fnc_callsignAction; }, [], 1] call CBA_fnc_waitAndExecute; }];
+            player addEventHandler ["Respawn", { [{ ["init"] call comspec_atak_native_fnc_callsignAction; }, [], 1] call comspec_atak_native_fnc_waitAndExec; }];
         };
         true
     };

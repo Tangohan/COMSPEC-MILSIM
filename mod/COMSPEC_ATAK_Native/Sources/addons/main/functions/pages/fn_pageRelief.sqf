@@ -56,7 +56,7 @@ private _hit = {
     _b setVariable ["comspec_click", _code];
     _b ctrlAddEventHandler ["ButtonClick", {
         params ["_c"];
-        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call comspec_atak_native_fnc_nextFrame;
     }];
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b
@@ -129,7 +129,7 @@ private _progress = {
     [[_x0, _y0 + _fs * 1.4, _w, _fs * 0.5], _cTile] call _box;
     [[_x0, _y0 + _fs * 1.4, (_w * _p) max pixelW, _fs * 0.5], _cAmber] call _box;
     private _a = _font * 1.5;
-    [[_x0, _y0 + _fs * 2.3, _w, _a], "ACTUALISER", { [{ ['RELIEF'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }] call _btn;
+    [[_x0, _y0 + _fs * 2.3, _w, _a], "ACTUALISER", { [{ ['RELIEF'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }] call _btn;
     _y0 + _fs * 2.3 + _a + _pad * 0.6
 };
 

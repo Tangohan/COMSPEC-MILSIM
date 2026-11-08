@@ -39,10 +39,10 @@ if ((count _scr) > 0) then {
             [["affichage du poste", format ["caméra : %1", ["label", _o] call comspec_atak_native_fnc_tocCam]] select _onCam] call _esc]];
         if ((count _srcs) > 0) then {
             _rows pushBack ["combo", "tocCam" + _id, "Caméra", _srcs apply { [_x select 0, _x select 1] }, _o getVariable ["COMSPEC_ATAK_TocCam", ""],
-                ["AFFICHER", compile format ["params ['_src']; ['set', [objectFromNetId '%1', _src]] call comspec_atak_native_fnc_tocCam; [{ ['TOC'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute;", _id]]];
+                ["AFFICHER", compile format ["params ['_src']; ['set', [objectFromNetId '%1', _src]] call comspec_atak_native_fnc_tocCam; [{ ['TOC'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call comspec_atak_native_fnc_waitAndExec;", _id]]];
         };
         if (_onCam) then {
-            _rows pushBack ["buttons", [["CARTE ET FLUX", compile format ["['ensure', [objectFromNetId '%1', 'SPLIT']] call comspec_atak_native_fnc_tocScreen; [{ ['TOC'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute;", _id], false, true, "L'écran revient à la carte et au flux du poste"]]];
+            _rows pushBack ["buttons", [["CARTE ET FLUX", compile format ["['ensure', [objectFromNetId '%1', 'SPLIT']] call comspec_atak_native_fnc_tocScreen; [{ ['TOC'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call comspec_atak_native_fnc_waitAndExec;", _id], false, true, "L'écran revient à la carte et au flux du poste"]]];
         };
     } forEach _scr;
 };

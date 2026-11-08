@@ -111,7 +111,7 @@ private _restore = {
 private _refresh = {
     if ((missionNamespace getVariable ["COMSPEC_ATAK_RteRefreshAt", -1]) isEqualTo diag_frameNo) exitWith {};
     missionNamespace setVariable ["COMSPEC_ATAK_RteRefreshAt", diag_frameNo];
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ROUTE") then { ["#refresh"] call comspec_atak_native_fnc_pageRoute; }; }] call CBA_fnc_execNextFrame;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ROUTE") then { ["#refresh"] call comspec_atak_native_fnc_pageRoute; }; }] call comspec_atak_native_fnc_nextFrame;
 };
 private _save = {
     private _tok = (missionNamespace getVariable ["COMSPEC_ATAK_RteSaveTok", 0]) + 1;
@@ -121,7 +121,7 @@ private _save = {
         private _m = missionNamespace getVariable ["COMSPEC_ATAK_RteMine", createHashMap];
         profileNamespace setVariable [format ["COMSPEC_ATAK_Rte_%1", worldName], (values _m) apply { ["pack", _x] call comspec_atak_native_fnc_routeAction }];
         [] call comspec_atak_native_fnc_saveProfile;
-    }, _tok, 2] call CBA_fnc_waitAndExecute;
+    }, _tok, 2] call comspec_atak_native_fnc_waitAndExec;
 };
 // Route modifiée : révision (tracé à refaire), profil, page, marqueurs d'Arma et partage en direct, regroupés.
 private _changed = {
@@ -141,7 +141,7 @@ private _changed = {
             if ((count _r) isEqualTo 0 || {_r getOrDefault ["busy", false]}) exitWith {};
             if ((_r get "arma") || {(count (_r getOrDefault ["mk", []])) > 0}) then { ["armaNow", _id] call comspec_atak_native_fnc_routeAction; };
             if ((_r getOrDefault ["live", false]) && {(_r get "scope") > 0}) then { ["share", [_id, _r get "scope", true]] call comspec_atak_native_fnc_routeAction; };
-        }, [_id, _tok], 1.5] call CBA_fnc_waitAndExecute;
+        }, [_id, _tok], 1.5] call comspec_atak_native_fnc_waitAndExec;
     };
     call _refresh;
 };
@@ -765,7 +765,7 @@ switch (_act) do {
             _bin deleteAt _id;
             (missionNamespace getVariable ["COMSPEC_ATAK_RteMine", createHashMap]) set [_id, _e select 0];
             ["del", _id] call comspec_atak_native_fnc_routeAction;
-        }, [_arg, _tok], 8] call CBA_fnc_waitAndExecute;
+        }, [_arg, _tok], 8] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "untrash": {

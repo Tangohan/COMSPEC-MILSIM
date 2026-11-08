@@ -71,13 +71,13 @@ if (_interactive) then {
             _k > 0 && {_k isEqualTo _key} && {_mods isEqualTo [_shift, _ctrl, _alt]}
         };
         if (["PhoneHold", [0x16, [true, true, false]]] call _hit) exitWith {
-            [{ [] call comspec_atak_native_fnc_interactToggle; }] call CBA_fnc_execNextFrame;
+            [{ [] call comspec_atak_native_fnc_interactToggle; }] call comspec_atak_native_fnc_nextFrame;
             true
         };
         if (["PhoneZoomIn", [0xC9, [false, true, false]]] call _hit) exitWith { [0.7] call comspec_atak_native_fnc_mapZoom; true };
         if (["PhoneZoomOut", [0xD1, [false, true, false]]] call _hit) exitWith { [1 / 0.7] call comspec_atak_native_fnc_mapZoom; true };
         if (["PhoneCarry", [0x16, [false, true, false]]] call _hit) exitWith {
-            [{ [] call comspec_atak_native_fnc_hudToggle; }] call CBA_fnc_execNextFrame;
+            [{ [] call comspec_atak_native_fnc_hudToggle; }] call comspec_atak_native_fnc_nextFrame;
             true
         };
         // Touches d'autres mods (alternat radio TFAR / ACRE2…) : leurs raccourcis CBA ne passent pas sans ce relais (fn_keyPass).
@@ -110,7 +110,7 @@ if (_interactive) then {
             if ((count _v) < 4) exitWith { false };
             _v params ["_vx", "_vy", "_vw", "_vh"];
             if (_mx < (_vx - _vw * 0.15) || {_mx > (_vx + _vw * 1.15)} || {_my < (_vy - _vh * 0.15)} || {_my > (_vy + _vh * 1.15)}) then {
-                [{ [] call comspec_atak_native_fnc_miniInteract; }] call CBA_fnc_execNextFrame;
+                [{ [] call comspec_atak_native_fnc_miniInteract; }] call comspec_atak_native_fnc_nextFrame;
             };
             false
         }];
@@ -137,13 +137,13 @@ if (_interactive) then {
         };
         // Volet rapide ou écran de verrouillage affiché : ils repassent devant l'app cliquée.
         if ((uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) || {uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false]}) then {
-            [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame;
+            [{ [] call comspec_atak_native_fnc_overlayFront; }] call comspec_atak_native_fnc_nextFrame;
         };
         false
     }];
     // Après un clic dans une app : effets d'écran (fêlures, filtre de nuit) remis devant (fn_overlayFront).
     _display displayAddEventHandler ["MouseButtonUp", {
-        if (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) then { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; };
+        if (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) then { [{ [] call comspec_atak_native_fnc_overlayFront; }] call comspec_atak_native_fnc_nextFrame; };
         false
     }];
     // Pilote aux commandes d'un aéronef : avertissement discret, vol stationnaire automatique en hélicoptère (fn_vehicleKeys).

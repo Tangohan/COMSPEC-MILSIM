@@ -9,7 +9,7 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _tab = _s getOrDefault ["dbgTab", "LOG"];
 private _lvl = _s getOrDefault ["dbgLvl", "ALL"];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['dbgTab', '%1']; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['dbgTab', '%1']; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 // Onglets soulignés (composant « tabs » du système de design 3.1.0).
 private _rows = [["tabs", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["PERFS", "PERF"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn]]];
 private _lvlColor = { params ["_v"]; switch (_v) do { case "ERROR": { (COMSPEC_ATAK_Th get "hexAlert") }; case "WARN"; case "WARNING": { (COMSPEC_ATAK_Th get "hexWarn") }; case "DEBUG": { (COMSPEC_ATAK_Th get "hexTextMuted") }; default { (COMSPEC_ATAK_Th get "hexTextMuted") }; } };
@@ -52,7 +52,7 @@ switch (_tab) do {
         _rows pushBack ["text", ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun rendu.</t>", format ["<t size='0.8' font='EtelkaMonospacePro'>%1</t>", (_rend apply { format ["%1× %2", _x select 0, [_x select 1] call _esc] }) joinString "<br/>"]] select ((count _rend) > 0)];
         // Temps passé dans les DLL par commande callExtension (Perf.Stats, COMSPEC Link 2.0.119) : fn_perfDll.
         _rows append ([] call comspec_atak_native_fnc_perfDll);
-        _rows pushBack ["buttons", [["ACTUALISER", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true], ["RAZ DLL", { ["reset"] call comspec_atak_native_fnc_perfDll; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, false]]];
+        _rows pushBack ["buttons", [["ACTUALISER", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, true], ["RAZ DLL", { ["reset"] call comspec_atak_native_fnc_perfDll; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, false]]];
     };
     case "NET": {
         private _q = [] call comspec_atak_native_fnc_linkQuality;
@@ -149,7 +149,7 @@ switch (_tab) do {
             _rows pushBack ["info", "Envoi au Discord", [missionNamespace getVariable ["COMSPEC_ATAK_StartupCheckSent", "en cours"]] call _esc];
             { if ((_x select 1) in ["warn", "fail"]) then { _rows pushBack ["text", format ["<t color='%1'>%2 : %3</t>", [(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexAlert")] select ((_x select 1) isEqualTo "fail"), _x select 0, [_x select 2] call _esc]]; }; } forEach _check;
         };
-        _rows pushBack ["buttons", [["RELANCER LE TEST", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
+        _rows pushBack ["buttons", [["RELANCER LE TEST", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, true]]];
     };
     case "TOOLS": {
         _rows append [
@@ -163,11 +163,11 @@ switch (_tab) do {
                 ["MESURER LA LATENCE", { if (isNil "comspec_overwatch_connect_fnc_measureLatency") exitWith { ["WARNING", "Overwatch non chargé", 3, 10] call comspec_atak_native_fnc_notify; }; [] call comspec_overwatch_connect_fnc_measureLatency; }]]],
             ["buttons", [["ÉTAT DANS LE RPT", { [] call comspec_atak_native_fnc_debugDump; ["INFO", "État écrit dans le RPT", 3, 10] call comspec_atak_native_fnc_notify; }],
                 ["RELIRE LES APPS", { uiNamespace setVariable ["COMSPEC_ATAK_AppsCache", []]; uiNamespace setVariable ["COMSPEC_ATAK_FoodMenu", []]; ["INFO", "Caches vidés", 2, 10] call comspec_atak_native_fnc_notify; }]]],
-            ["switch", "Journal détaillé (DEBUG)", missionNamespace getVariable ["COMSPEC_ATAK_LogDebug", false], { missionNamespace setVariable ["COMSPEC_ATAK_LogDebug", !(missionNamespace getVariable ["COMSPEC_ATAK_LogDebug", false])]; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "Affiche aussi les lignes de niveau DEBUG"]
+            ["switch", "Journal détaillé (DEBUG)", missionNamespace getVariable ["COMSPEC_ATAK_LogDebug", false], { missionNamespace setVariable ["COMSPEC_ATAK_LogDebug", !(missionNamespace getVariable ["COMSPEC_ATAK_LogDebug", false])]; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, "Affiche aussi les lignes de niveau DEBUG"]
         ];
     };
     default {
-        private _lvBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['dbgLvl', '%1']; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _lvl isEqualTo _k] };
+        private _lvBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['dbgLvl', '%1']; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _lvl isEqualTo _k] };
         _rows pushBack ["segment", "", [["TOUT", "ALL"] call _lvBtn, ["ALERTES", "WARN"] call _lvBtn, ["ERREURS", "ERROR"] call _lvBtn, ["ATAK", "ATAK"] call _lvBtn, ["OVERWATCH", "OW"] call _lvBtn]];
         private _all = call _merged;
         private _dbg = missionNamespace getVariable ["COMSPEC_ATAK_LogDebug", false];

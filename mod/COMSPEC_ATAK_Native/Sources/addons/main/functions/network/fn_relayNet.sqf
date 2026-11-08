@@ -450,7 +450,7 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_CoverageBusy", false];
             profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
             ["SUCCESS", format ["Couverture calculée : %1 %% du terrain reçoit le réseau sur %2 km", _pct, round (_radius / 1000)], 4, 30] call comspec_atak_native_fnc_notify;
-            if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+            if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
         };
     };
     case "at": {
@@ -486,7 +486,7 @@ switch (_act) do {
             if (((missionNamespace getVariable ["COMSPEC_ATAK_TrilatPending", []]) param [1, -1]) isNotEqualTo _token) exitWith {};
             missionNamespace setVariable ["COMSPEC_ATAK_TrilatPending", []];
             ["locate", _id] call comspec_atak_native_fnc_relayNet;
-        }, [_id, _token], _dur] call CBA_fnc_waitAndExecute;
+        }, [_id, _token], _dur] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "locate": {

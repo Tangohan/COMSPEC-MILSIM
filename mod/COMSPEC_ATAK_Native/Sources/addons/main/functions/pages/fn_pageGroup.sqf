@@ -21,14 +21,14 @@ private _where = { params ["_u"]; format ["%1 %2", [_u distance2D player] call _
 private _ini = { params ["_n"]; toUpper ((((_n splitString " -_.:[]()|") select { _x isNotEqualTo "" }) param [0, "#"]) select [0, 1]) };
 // Ouvre la conversation SMS / centre la carte sur un joueur (boutons des membres).
 private _smsCode = { params ["_u"]; compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', %1]; _s set ['chatView', 'CONV']; _s set ['chatPick', false]; ['CHAT'] call comspec_atak_native_fnc_navigate;", str (name _u)] };
-private _mapCode = { params ["_u"]; compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [{ private _u = objectFromNetId _this; if (!isNull _u) then { [_u] call comspec_atak_native_fnc_mapCenter; }; }, '%1', 0.25] call CBA_fnc_waitAndExecute;", netId _u] };
+private _mapCode = { params ["_u"]; compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [{ private _u = objectFromNetId _this; if (!isNull _u) then { [_u] call comspec_atak_native_fnc_mapCenter; }; }, '%1', 0.25] call comspec_atak_native_fnc_waitAndExec;", netId _u] };
 private _isOpen = { params ["_k", ["_def", false]]; _s getOrDefault [format ["grpFold_%1", _k], _def] };
 private _fold = { params ["_k", "_t", "_sub", ["_def", false]]; ["fold", _t, _sub, [_k, _def] call _isOpen, compile format ["['fold', ['%1', %2]] call comspec_atak_native_fnc_groupAction;", _k, _def]] };
 private _grp = group player;
 private _isLead = (leader _grp) isEqualTo player || {(count units _grp) isEqualTo 1};
 private _others = allGroups select { side _x isEqualTo side _grp && {_x isNotEqualTo _grp} && {(count units _x) > 0} && {((units _x) findIf { isPlayer _x }) >= 0} };
 private _nTeams = count (_grp getVariable ["COMSPEC_FireTeams", []]);
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['grpTab', '%1']; [{ ['GROUP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['grpTab', '%1']; [{ ['GROUP'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 // Onglets soulignés (composant « tabs », 3.1.0) : compteurs en pastille à côté du libellé.
 private _rows = [["tabs", [(["MON GROUPE", "MINE"] call _tabBtn) + [count units _grp], (["ÉQUIPES", "FT"] call _tabBtn) + [_nTeams], (["GROUPES", "ALL"] call _tabBtn) + [count _others]]]];
 private _showMed = ["state", "allies"] call comspec_atak_native_fnc_medShow;

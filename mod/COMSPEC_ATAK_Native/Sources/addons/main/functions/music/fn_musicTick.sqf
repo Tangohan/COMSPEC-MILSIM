@@ -157,4 +157,4 @@ if ((_tgt param [0, ""]) isNotEqualTo (_cur select 0)) then {
 };
 missionNamespace setVariable ["COMSPEC_ATAK_MusicNow", _cur];
 // Piste illisible : on passe à la suivante au prochain passage (pas de récursion).
-if (_m getOrDefault ["skip", false]) then { _m set ["skip", false]; [{ ["ended"] call comspec_atak_native_fnc_musicAction; }] call CBA_fnc_execNextFrame; };
+if (_m getOrDefault ["skip", false]) then { _m set ["skip", false]; [{ ["ended"] call comspec_atak_native_fnc_musicAction; }] call comspec_atak_native_fnc_nextFrame; };

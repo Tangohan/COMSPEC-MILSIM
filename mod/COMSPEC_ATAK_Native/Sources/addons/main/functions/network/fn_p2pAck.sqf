@@ -12,4 +12,4 @@ private _m = _p2p select _i;
 if ((_rank getOrDefault [_state, 0]) <= (_rank getOrDefault [_m getOrDefault ["status", "SENDING"], 1])) exitWith {};
 _m set ["status", _state];
 _m set ["statusTime", _time];
-if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };

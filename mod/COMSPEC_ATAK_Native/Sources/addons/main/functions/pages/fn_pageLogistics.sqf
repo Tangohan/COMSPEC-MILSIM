@@ -18,7 +18,7 @@ private _myReqs = _all select { (_x get "uid") isEqualTo _mine };
 private _open = { (_x get "status") in ["DEMANDEE", "VALIDEE", "EN_ROUTE"] };
 private _inbox = _all select { (_x get "uid") isNotEqualTo _mine };
 private _nIn = { (_x get "status") isEqualTo "DEMANDEE" } count _inbox;
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['logiTab', '%1']; [{ ['LOGI'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['logiTab', '%1']; [{ ['LOGI'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _rows = [["segment", "", [
     ["NOUVELLE", "NEW"] call _tabBtn,
     [["MES DEMANDES", format ["MES DEMANDES (%1)", { call _open } count _myReqs]] select (({ call _open } count _myReqs) > 0), "MINE"] call _tabBtn,

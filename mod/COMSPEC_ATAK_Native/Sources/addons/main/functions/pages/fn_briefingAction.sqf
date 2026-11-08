@@ -24,7 +24,7 @@ private _rerender = { [{
         uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ["briefQ", ""] call comspec_atak_native_fnc_formValue];
     };
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
-}] call CBA_fnc_execNextFrame; };
+}] call comspec_atak_native_fnc_nextFrame; };
 
 switch (_action) do {
     case "mission": {
@@ -171,7 +171,7 @@ switch (_action) do {
                 missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
                 ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
             };
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
 };

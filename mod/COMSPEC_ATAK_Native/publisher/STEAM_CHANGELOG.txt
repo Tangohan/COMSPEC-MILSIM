@@ -12,6 +12,7 @@
 [*] Carte : maintenir le clic gauche pointe un endroit pour tout le camp ; le point GPS ne bouge plus à l'arrêt ; la fiche d'une unité sélectionnée ne fait plus recharger la carte ; noms d'étapes de l'app Routes corrigés ; cap du curseur avec N, NE, E…
 [*] App Drone : une photo prise en vision nocturne en plein jour est prise en vision jour (elle sortait presque blanche) ; la distance de vue du flux suit la distance de ce que regarde la nacelle (1500 m au moins, 3000 m au plus, réglable par mission).
 [*] Musique, Réglages et Drone : lancer ou changer de morceau, régler un interrupteur ou changer de vision ne redessine plus toute la page. Une erreur dans un bouton du téléphone ne se répète plus à chaque image.
+[*] Toutes les actions différées du téléphone passent par une file propre au mod : une erreur de script dans l'une d'elles ne bloque plus les autres, ni celles d'ACE, et ne se rejoue plus.
 [/list]
 
 

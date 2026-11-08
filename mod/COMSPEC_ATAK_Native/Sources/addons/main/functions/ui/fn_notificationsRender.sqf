@@ -152,7 +152,7 @@ _btn ctrlAddEventHandler ["ButtonClick", {
     private _id = _c getVariable ["toastId", -1];
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     _st set ["notifications", (_st getOrDefault ["notifications", []]) select { (_x getOrDefault ["id", -2]) isNotEqualTo _id }];
-    [{ [] call comspec_atak_native_fnc_notificationsRender; }] call CBA_fnc_execNextFrame;
+    [{ [] call comspec_atak_native_fnc_notificationsRender; }] call comspec_atak_native_fnc_nextFrame;
     true
 }];
 _btn ctrlShow (_l get "interactive");

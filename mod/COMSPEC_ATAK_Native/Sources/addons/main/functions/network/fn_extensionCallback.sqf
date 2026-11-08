@@ -14,7 +14,7 @@ if (_function isEqualTo "google_deck_error") then {
     if ((_e param [0, ""]) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefOwnLoad", "-"])) then { uiNamespace setVariable ["COMSPEC_ATAK_BriefGErr", _e]; };
 };
 if (_function isEqualTo "google_deck_ready" && {((parseSimpleArray _payload) param [0, ""]) isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefOwnLoad", "-"])}) then {
-    [{ [{ if (!isNull (findDisplay 9970) && {!isNull ([] call comspec_atak_native_fnc_display)}) then { (findDisplay 9970) closeDisplay 2; }; }] call CBA_fnc_execNextFrame; }] call CBA_fnc_execNextFrame;
+    [{ [{ if (!isNull (findDisplay 9970) && {!isNull ([] call comspec_atak_native_fnc_display)}) then { (findDisplay 9970) closeDisplay 2; }; }] call comspec_atak_native_fnc_nextFrame; }] call comspec_atak_native_fnc_nextFrame;
 };
 // Les deux DLL rappellent sous le même nom : avec Overwatch, ces rappels sont les siens, pas ceux du natif.
 if ([] call comspec_atak_native_fnc_bridge) exitWith {};

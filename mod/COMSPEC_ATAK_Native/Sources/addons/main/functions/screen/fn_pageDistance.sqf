@@ -124,7 +124,7 @@ private _click = {
     params ["_rect", "_code"];
     private _b = ["COMSPEC_RscButtonOverlay", _rect, ""] call comspec_atak_native_fnc_pageCtrl;
     _b setVariable ["comspec_click", _code];
-    _b ctrlAddEventHandler ["ButtonClick", { params ["_o"]; [{ [] call _this; }, _o getVariable ["comspec_click", {}]] call CBA_fnc_execNextFrame; }];
+    _b ctrlAddEventHandler ["ButtonClick", { params ["_o"]; [{ [] call _this; }, _o getVariable ["comspec_click", {}]] call comspec_atak_native_fnc_nextFrame; }];
     _b
 };
 // Barre de progression : piste + remplissage (part de 0 à 1).

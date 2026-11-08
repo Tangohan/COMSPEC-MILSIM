@@ -19,14 +19,14 @@ _s set ["notifFresh", [_unread, (_s getOrDefault ["notifFresh", 0]) + _unread] s
 private _fresh = _s getOrDefault ["notifFresh", 0];
 _s set ["notifUnread", 0];
 _s set ["notifications", []];
-private _rerender = { [{ ["NOTIFS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ ["NOTIFS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 private _data = "\z\comspec_atak_native\addons\main\data\";
 
 // Réglages rapides : une barre compacte, l'état actif en vert.
 private _air = [] call comspec_atak_native_fnc_airplaneMode;
 private _btOn = (["state"] call comspec_atak_native_fnc_btAction) get "on";
 private _silent = profileNamespace getVariable ["COMSPEC_ATAK_Silent", false];
-private _qs = { params ["_k"]; compile format ["['act', '%1'] call comspec_atak_native_fnc_quickSettings; [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k] };
+private _qs = { params ["_k"]; compile format ["['act', '%1'] call comspec_atak_native_fnc_quickSettings; [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k] };
 private _rows = [["bar", [["Réglages rapides", [
     ["MODE AVION", ["airplane"] call _qs, ["", "on"] select _air, "Coupe toutes les liaisons radio du téléphone"],
     ["BLUETOOTH", ["bt"] call _qs, ["", "on"] select _btOn, "Casque et appareils appairés"],
@@ -82,7 +82,7 @@ _rows pushBack ["section", "Notifications", switch (true) do {
 }];
 if ((count _all) > 0) then {
     // Filtres en onglets soulignés (composant « tabs », 3.1.0), avec le nombre de chaque sorte en pastille.
-    private _fBtn = { params ["_label", "_k"]; [_label, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['notifFilter', '%1']; [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _filter isEqualTo _k, _counts get _k] };
+    private _fBtn = { params ["_label", "_k"]; [_label, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['notifFilter', '%1']; [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _filter isEqualTo _k, _counts get _k] };
     private _opts = [["TOUTES", "ALL"] call _fBtn];
     { if ((_counts get (_x select 1)) > 0) then { _opts pushBack (_x call _fBtn); }; } forEach [["MESSAGES", "MSG"], ["MISSIONS", "MISSION"], ["RÉSEAU", "NET"], ["ALERTES", "ALERT"], ["INFOS", "INFO"]];
     if ((count _opts) > 2) then { _rows pushBack ["tabs", _opts]; };
@@ -144,14 +144,14 @@ private _ago = {
         private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap];
         private _id = %1; private _msg = %2; private _tm = %3;
         _s set ['notifHistory', (_s getOrDefault ['notifHistory', []]) select { if (_id >= 0) then { (_x getOrDefault ['id', -1]) isNotEqualTo _id } else { !((_x getOrDefault ['message', '']) isEqualTo _msg && {(_x getOrDefault ['time', '']) isEqualTo _tm}) } }];
-        [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;",
+        [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;",
         _n getOrDefault ["id", -1], str (_n getOrDefault ["message", ""]), str (_n getOrDefault ["time", ""])];
     _rows pushBack ["notif", _m get "icon", _m get "rgb", _m get "title", _meta, _m get "body", _open, _close,
         ["", format ["Ouvrir %1", _m get "title"]] select (_page isNotEqualTo "")];
 } forEach _shown;
 
 if ((count _all) isEqualTo 0) then {
-    _rows pushBack ["empty", _data + "ui_bell.paa", "Tout est calme", "Les alertes, messages et comptes rendus des apps apparaîtront ici.", ["RÉGLER LES ALERTES", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["setCat", "ALERTS"]; [{ ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }]];
+    _rows pushBack ["empty", _data + "ui_bell.paa", "Tout est calme", "Les alertes, messages et comptes rendus des apps apparaîtront ici.", ["RÉGLER LES ALERTES", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["setCat", "ALERTS"]; [{ ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }]];
 } else {
     _rows pushBack ["gap"];
     private _ids = (_shown select { (_x select 0) isNotEqualTo "#" }) apply { (_x select 0) getOrDefault ["id", -1] };
@@ -160,7 +160,7 @@ if ((count _all) isEqualTo 0) then {
         private _f = '%1'; private _ids = %2;
         _s set ['notifHistory', if (_f isEqualTo 'ALL') then { [] } else { (_s getOrDefault ['notifHistory', []]) select { !((_x getOrDefault ['id', -1]) in _ids) } }];
         _s set ['notifFilter', 'ALL'];
-        [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _filter, _ids], false, true, "Les anomalies du mod restent affichées tant qu'elles ne sont pas corrigées"]]];
+        [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _filter, _ids], false, true, "Les anomalies du mod restent affichées tant qu'elles ne sont pas corrigées"]]];
 };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

@@ -46,7 +46,7 @@ if (_how isEqualTo "reboot") exitWith {
         };
         ["shutdown"] call comspec_atak_native_fnc_powerFx;
         [] call comspec_atak_native_fnc_deviceOverlay;
-    }] call CBA_fnc_execNextFrame;
+    }] call comspec_atak_native_fnc_nextFrame;
     true
 };
 [] call comspec_atak_native_fnc_deviceOverlay;

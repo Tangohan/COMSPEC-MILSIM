@@ -22,7 +22,7 @@
 params [["_mode", "ensure"], ["_a", []]];
 private _st = uiNamespace getVariable ["COMSPEC_ATAK_Academy", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_Academy", _st];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ACADEMY") then { ["ACADEMY"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ACADEMY") then { ["ACADEMY"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _lang = ["en", "fr"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isEqualTo "fr");
 // Erreur de la DLL ou du site, en phrase pour le joueur.
 private _why = {
@@ -207,13 +207,13 @@ switch (_mode) do {
         private _l = _st getOrDefault ["lesson", []];
         if ((count _l) < 9 || {isNull _a} || {!(_st getOrDefault ["staff", false])}) exitWith { false };
         private _ok = ["castAcademy", [_a, [_l select 0, _l select 3, format [("Leçon %1 · %2") call comspec_atak_native_fnc_tr, (_l select 2) + 1, _l select 4], (_l select 6) apply { [_x select 0, _x select 2, _x select 3] }], _st getOrDefault ["idx", 0]]] call comspec_atak_native_fnc_screenCast;
-        [{ call _this; }, _render, 0.3] call CBA_fnc_waitAndExecute;
+        [{ call _this; }, _render, 0.3] call comspec_atak_native_fnc_waitAndExec;
         _ok
     };
     case "stop": {
         if (isNull _a) exitWith { false };
         ["stop", _a] call comspec_atak_native_fnc_screenCast;
-        [{ call _this; }, _render, 0.3] call CBA_fnc_waitAndExecute;
+        [{ call _this; }, _render, 0.3] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "slides": {

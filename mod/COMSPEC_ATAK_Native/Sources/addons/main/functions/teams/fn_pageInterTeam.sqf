@@ -17,7 +17,7 @@ private _types = [] call comspec_atak_native_fnc_groupTypes;
 private _mine = group player;
 private _groups = allGroups select { side _x isEqualTo side _mine && {((units _x) findIf { isPlayer _x }) >= 0} };
 _groups = [_mine] + (_groups - [_mine]);
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['itTab', '%1']; [{ ['INTERTEAM'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['itTab', '%1']; [{ ['INTERTEAM'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _nTeams = 0;
 { _nTeams = _nTeams + count (_x getVariable ["COMSPEC_FireTeams", []]); } forEach _groups;
 private _rows = [["segment", "", [[format ["ESCOUADES (%1)", count _groups], "SQUADS"] call _tabBtn, [format ["ÉQUIPES (%1)", _nTeams], "TEAMS"] call _tabBtn, ["SYNCHRO", "SYNC"] call _tabBtn]]];

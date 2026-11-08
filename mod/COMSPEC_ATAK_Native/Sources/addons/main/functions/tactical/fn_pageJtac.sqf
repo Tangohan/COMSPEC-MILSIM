@@ -121,7 +121,7 @@ private _keepScroll = {
     if (_v <= 0) exitWith {};
     _grp ctrlSetScrollValues [_v, -1];
     // Encore à l'image suivante : la hauteur du contenu n'est connue qu'une fois les contrôles posés.
-    [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
+    [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call comspec_atak_native_fnc_nextFrame;
 };
 // Paysage plein écran : carte à gauche, onglets à droite.
 private _split = (_l getOrDefault ["landscape", false]) && {!(_l getOrDefault ["mini", false])};
@@ -186,7 +186,7 @@ if (_view isEqualTo "AIR") exitWith {
         };
         private _n = count _inbox;
         // « Sur mon téléphone » (2.9.39) : les briefs de l'appareil sur le vrai téléphone du pilote (fn_mobileQr).
-        _rows pushBack ["buttons", [["SUR MON TÉLÉPHONE", { [{ ["open", "briefs"] call comspec_atak_native_fnc_mobileQr; }] call CBA_fnc_execNextFrame; }, false, true, "QR code à scanner avec votre vrai téléphone : lisez les briefs en grand et répondez WILCO ou UNABLE dessus"]]];
+        _rows pushBack ["buttons", [["SUR MON TÉLÉPHONE", { [{ ["open", "briefs"] call comspec_atak_native_fnc_mobileQr; }] call comspec_atak_native_fnc_nextFrame; }, false, true, "QR code à scanner avec votre vrai téléphone : lisez les briefs en grand et répondez WILCO ou UNABLE dessus"]]];
         _rows pushBack ["section", "Briefs reçus", [format ["%1 brief(s), %2 non lu(s)", _n, _unread], "9-LINE et 5-LINE des JTAC (jeu ou Athena)"] select (_n isEqualTo 0)];
         if (_n isEqualTo 0) then {
             _rows pushBack ["empty", _ico, "Aucun brief reçu", "Les 9-LINE et 5-LINE envoyés à votre appareil par un JTAC, en jeu ou depuis la page Athena 9-LINE, arrivent ici avec une alerte."];
@@ -455,7 +455,7 @@ switch (_tab) do {
         // Athena /9-line (QR code fixe de l'adresse de production, tools/gen_remote_qr.py), sur le vrai téléphone ou dans
         // une seconde fenêtre du PC.
         _rows pushBack ["buttons", [
-            ["OUTIL CARTE IP » CIBLE", { ["MAP"] call comspec_atak_native_fnc_navigate; [{ ["IPTGT"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, false, true, "Clic sur l'IP puis sur la cible : cap magnétique, distance, altitude, repris ici"],
+            ["OUTIL CARTE IP » CIBLE", { ["MAP"] call comspec_atak_native_fnc_navigate; [{ ["IPTGT"] call comspec_atak_native_fnc_mapToolSet; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, false, true, "Clic sur l'IP puis sur la cible : cap magnétique, distance, altitude, repris ici"],
             ["OUVRIR LA PAGE 9-LINE", {
                 private _url = "https://athena-comspec.eu/public/9-line";
                 private _r = (["COMSPECATAKNativeExtension", "COMSPECExtension"] select ([] call comspec_atak_native_fnc_bridge)) callExtension ["OpenAthenaLink", [_url]];
@@ -641,7 +641,7 @@ if (_tab isEqualTo "MAP") exitWith {
         if (_state isEqualTo "on") then { _bt ctrlSetBackgroundColor [0.95, 0.67, 0.2, 1]; _bt ctrlSetTextColor [0.05, 0.04, 0.02, 1]; } else { _bt ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _bt ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _en); };
         _bt ctrlEnable _en;
         _bt setVariable ["code", _code];
-        _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ [] call _this; }, _c getVariable ["code", {}]] call CBA_fnc_execNextFrame; }];
+        _bt ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ [] call _this; }, _c getVariable ["code", {}]] call comspec_atak_native_fnc_nextFrame; }];
     } forEach _btns;
     true
 };

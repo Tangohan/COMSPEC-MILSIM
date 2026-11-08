@@ -77,7 +77,7 @@ private _hit = {
     _b setVariable ["comspec_click", _code];
     _b ctrlAddEventHandler ["ButtonClick", {
         params ["_c"];
-        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call comspec_atak_native_fnc_nextFrame;
     }];
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b
@@ -92,7 +92,7 @@ private _sec = {
     _y0 + _fs * 1.3 + _pad * 0.6
 };
 // Rendu suivant : la saisie en cours est gardée d'abord.
-private _redo = "[] call comspec_atak_native_fnc_recoDraftSave; %1 [{ ['RECO'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+private _redo = "[] call comspec_atak_native_fnc_recoDraftSave; %1 [{ ['RECO'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 
 private _bg = [[0, 0, _bw, _bh], _cBg] call _box;
 
@@ -241,7 +241,7 @@ private _sh = _font * 1.9;
 private _si = ["COMSPEC_RscPicture", [_xR + _pad, _y + _sh * 0.22, _sh * 0.56 / _ratio, _sh * 0.56], _dir + "ui_send.paa"] call _mk;
 _si ctrlSetTextColor _cInk;
 ["COMSPEC_RscTextCenter", [_xR, _y, _wR, _sh], "ENVOYER LA NOTE", _font, _cInk, true] call _lbl;
-[[_xR, _y, _wR, _sh], { [{ [] call comspec_atak_native_fnc_recoSubmit; }] call CBA_fnc_execNextFrame; }, "Repère d'équipe sur la carte et note envoyée à Athena"] call _hit;
+[[_xR, _y, _wR, _sh], { [{ [] call comspec_atak_native_fnc_recoSubmit; }] call comspec_atak_native_fnc_nextFrame; }, "Repère d'équipe sur la carte et note envoyée à Athena"] call _hit;
 _y = _y + _sh + _pad * 0.5;
 if ((_hint select 0) isNotEqualTo "") then {
     private _h = ["COMSPEC_RscStructuredText", [_xR, _y, _wR, _fs * 2.4]] call _mk;

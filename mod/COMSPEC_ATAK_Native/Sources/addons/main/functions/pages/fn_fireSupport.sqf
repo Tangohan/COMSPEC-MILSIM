@@ -166,7 +166,7 @@ switch (_act) do {
                     params ["_e"];
                     if (_e isKindOf "AllVehicles" && {!(_e isKindOf "CAManBase")} && {missionNamespace getVariable ["comspec_atak_native_fs_enabled", true]}) then {
                         // Image suivante : tourelles et chargeurs posés.
-                        [{ ["add", _this] call comspec_atak_native_fnc_fireSupport; }, _e] call CBA_fnc_execNextFrame;
+                        [{ ["add", _this] call comspec_atak_native_fnc_fireSupport; }, _e] call comspec_atak_native_fnc_nextFrame;
                     };
                 }],
                 addMissionEventHandler ["EntityKilled", {
@@ -357,7 +357,7 @@ switch (_act) do {
                 if ((_e getOrDefault ["text", ""]) isEqualTo "envoyée au serveur" && {((missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]) findIf { ((((_x param [1, []]) param [1, []]) apply { _x param [1, ""] }) find _id) >= 0 }) < 0}) then {
                     ["WARNING", "Appel de feu : pas de réponse du serveur. Réessayez ; si ça recommence, le serveur n'a sans doute pas la même version du mod ATAK", 6, 40, "FIRES"] call comspec_atak_native_fnc_notify;
                 };
-            }, [_id], 30] call CBA_fnc_waitAndExecute;
+            }, [_id], 30] call comspec_atak_native_fnc_waitAndExec;
             _how = ["tir IA", "batterie simulée"] select (_crew isEqualTo "SIM");
         } else {
             _m set ["text", switch (true) do { case (_crew isEqualTo "PLAYER"): { "envoyée au servant" }; case (_noAi): { "tir par l'IA désactivé : demande transmise au camp" }; default { "demande transmise au camp (pas de servant)" }; }];
@@ -580,7 +580,7 @@ switch (_act) do {
             if (_pg in ["TASK", "FIRES"]) then { [_pg] call comspec_atak_native_fnc_pageRender; };
             // Saisie de l'app CAS reprise des champs affichés seulement après ce redessin (fn_firesSave).
             (call comspec_atak_native_fnc_firesState) set ["clearing", false];
-        }] call CBA_fnc_execNextFrame;
+        }] call comspec_atak_native_fnc_nextFrame;
     };
     case "crew": {
         _arg params [["_id", ""], ["_st", "ACK"]];
@@ -613,7 +613,7 @@ switch (_act) do {
             ["active", !((_e getOrDefault ["state", ""]) in ["EOM", "FAIL"])], ["activeGrid", _e getOrDefault ["grid", ""]], ["clearing", true]];
         _f deleteAt "solution";
         ["FIRES"] call comspec_atak_native_fnc_navigate;
-        [{ (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call CBA_fnc_execNextFrame;
+        [{ (call comspec_atak_native_fnc_firesState) set ["clearing", false]; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "rows": {
         // App Tâches : missions de tir du camp (les 6 dernières), réponses du servant ou suivi du demandeur.
@@ -658,7 +658,7 @@ switch (_act) do {
                      ["FIN DE MISSION", compile format ["['eom', %1] call comspec_atak_native_fnc_fireSupport;", str _id], false, _live]]
                 };
                 default {
-                    [["CARTE", compile format ["private _p = ((missionNamespace getVariable ['COMSPEC_ATAK_FsMsns', createHashMap]) getOrDefault [%1, createHashMap]) getOrDefault ['tgt', []]; if ((count _p) >= 2) then { ['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, _p] call CBA_fnc_execNextFrame; };", str _id], false, true]]
+                    [["CARTE", compile format ["private _p = ((missionNamespace getVariable ['COMSPEC_ATAK_FsMsns', createHashMap]) getOrDefault [%1, createHashMap]) getOrDefault ['tgt', []]; if ((count _p) >= 2) then { ['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, _p] call comspec_atak_native_fnc_nextFrame; };", str _id], false, true]]
                 };
             };
             _rows pushBack ["person", "\A3\ui_f\data\map\markers\military\destroy_CA.paa", _txt, _btns, _rgb];

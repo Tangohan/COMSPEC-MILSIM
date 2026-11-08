@@ -33,7 +33,7 @@ private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_
 private _log = { params ["_t", ["_c", ""]]; ["log", _t, _c] call comspec_atak_native_fnc_droneAction; };
 private _name = { params ["_x"]; [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd };
 private _all = { (([_active] select { !isNull _x && {alive _x} }) + (_bg select { alive _x })) };
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _linkOf = {
     params ["_x"];
     if (isNull _x || {!alive _x}) exitWith { [0, 0, false] };

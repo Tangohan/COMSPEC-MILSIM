@@ -14,7 +14,7 @@ params [["_act", ""], ["_arg", []]];
 disableSerialization;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _pts = _s getOrDefault ["jtacTool", []];
-private _redraw = { [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 private _card8 = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] select ((round (_deg / 45)) mod 8) };
 private _ret = true;
 switch (_act) do {
@@ -154,7 +154,7 @@ switch (_act) do {
         _j set ["source", format ["carte · %1", [dayTime, "HH:MM"] call BIS_fnc_timeToString]];
         _j set ["tab", "BRIEF"];
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
-        [{ ["JTAC"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["JTAC"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         ["SUCCESS", "IP et cible repris dans l'app JTAC (9-LINE)", 3, 20] call comspec_atak_native_fnc_notify;
     };
     case "clear": {

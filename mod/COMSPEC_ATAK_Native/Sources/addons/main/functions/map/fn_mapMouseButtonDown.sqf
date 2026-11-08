@@ -65,11 +65,11 @@ if (_button isEqualTo 0) exitWith {
         private _m = [_map,[_mx,_my]] call comspec_atak_native_fnc_markerAt;
         if (_m isNotEqualTo "") exitWith {
             _s set ["selectedMarker",_m];
-            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         if ((_s getOrDefault ["selectedMarker",""]) isNotEqualTo "") then {
             _s set ["selectedMarker",""];
-            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         };
         [_world,_shift,_ctrl,_alt,_map] call comspec_atak_native_fnc_mapSelect;
     } else {
@@ -83,7 +83,7 @@ if (_button isEqualTo 1) exitWith {
     if (!((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER","WP"]) || {(count (_s getOrDefault ["drawStroke",[]])) > 0}) then {
         _s set ["drawStroke",[]];
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
-        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         _s set ["mapRc", []];
     } else {
         // Sélection : clic droit armé, le menu contextuel s'ouvre au relâchement s'il n'y a pas eu de glisser (fn_mapMouseButtonUp).

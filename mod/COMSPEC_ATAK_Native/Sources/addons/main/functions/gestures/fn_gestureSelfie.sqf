@@ -69,13 +69,13 @@ switch (_mode) do {
         [{
             params ["_unit"];
             if ((toLower (gestureState _unit)) find "comspecselfieup" >= 0) then { _unit playActionNow "GestureComspecSelfie"; };
-        }, [_unit], 0.55] call CBA_fnc_waitAndExecute;
+        }, [_unit], 0.55] call comspec_atak_native_fnc_waitAndExec;
     };
     case "exit": {
         if ((_gs find "comspecselfie") >= 0 && {(_gs find "down") < 0}) then { _unit playActionNow "GestureComspecSelfieDown"; };
         // Le téléphone descend avec la main, puis disparaît (rangé).
         missionNamespace setVariable ["COMSPEC_ATAK_SelfiePhone", objNull];
-        if (!isNull _phone) then { [{ deleteVehicle _this; }, _phone, 0.5] call CBA_fnc_waitAndExecute; };
+        if (!isNull _phone) then { [{ deleteVehicle _this; }, _phone, 0.5] call comspec_atak_native_fnc_waitAndExec; };
     };
     default {};
 };

@@ -76,7 +76,7 @@ if (_searchOn) then {
             private _hit = [_t, true] call comspec_atak_native_fnc_launcherFilter;
             if (_hit isNotEqualTo "") then {
                 uiNamespace setVariable ["COMSPEC_ATAK_LauncherFilter", ""];
-                [{ [_this] call comspec_atak_native_fnc_navigate; }, _hit] call CBA_fnc_execNextFrame;
+                [{ [_this] call comspec_atak_native_fnc_navigate; }, _hit] call comspec_atak_native_fnc_nextFrame;
             };
         };
         if (_t isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_LauncherFilter", ""])) exitWith {};
@@ -88,7 +88,7 @@ if (_searchOn) then {
             params ["_tok"];
             if ((uiNamespace getVariable ["COMSPEC_ATAK_LauncherTok", -1]) isNotEqualTo _tok) exitWith {};
             [uiNamespace getVariable ["COMSPEC_ATAK_LauncherFilter", ""]] call comspec_atak_native_fnc_launcherFilter;
-        }, [_tok], 0.1] call CBA_fnc_waitAndExecute;
+        }, [_tok], 0.1] call comspec_atak_native_fnc_waitAndExec;
     }];
     uiNamespace setVariable ["COMSPEC_ATAK_LauncherEdit", _ed];
     private _clr = ["COMSPEC_RscButtonOverlay", [_pad + _gw - _sh * 1.1, _y, _sh * 1.1, _sh], "×"] call comspec_atak_native_fnc_pageCtrl;
@@ -165,7 +165,7 @@ if (_chipsOn) then {
             // entre les filtres et les apps sous SUPPORT ET FEUX et les autres catégories.
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
-            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }];
     } forEach _chips;
     _y = _y + (ceil (_n / _cols)) * (_ch + _gap) - _gap + _pad;
@@ -229,16 +229,16 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
             [] call comspec_atak_native_fnc_saveProfile;
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
-            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }, false] call _mkBtn;
         [_pad * 1.4 + _bw3 + _pad * 0.4, "Au groupe…", {
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", "pick"];
-            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }, true] call _mkBtn;
         [_pad * 1.4 + 2 * (_bw3 + _pad * 0.4), "Fermer", {
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
-            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }, false] call _mkBtn;
     } else {
         if (_mode isEqualTo "new") then {
@@ -273,7 +273,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
                 };
                 uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
                 uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
-                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             }];
             _fy = _fy + _font * 1.55;
         } forEach _folders;
@@ -284,7 +284,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
         _nb ctrlSetFontHeight (_font * 0.9);
         _nb ctrlAddEventHandler ["ButtonClick", {
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", "new"];
-            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }];
         private _cb = ["COMSPEC_RscButton", [_pad * 1.8 + _nbw, _fy, (_gw - _pad * 3.2) - _nbw, _font * 1.45], "Annuler"] call comspec_atak_native_fnc_pageCtrl;
         _cb ctrlSetFontHeight (_font * 0.85);
@@ -293,7 +293,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
         _cb ctrlAddEventHandler ["ButtonClick", {
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
             uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
-            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }];
         _fy = _fy + _font * 1.7;
         _sbg ctrlSetPosition [_pad, _y, _gw, (_fy - _y) + _pad];
@@ -320,7 +320,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
                 };
                 uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
                 uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
-                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             }];
             private _cx = ["COMSPEC_RscButton", [_pad * 1.4 + _gw * 0.75, _ny, _gw * 0.16, _font * 1.5], "Annuler"] call comspec_atak_native_fnc_pageCtrl;
             _cx ctrlSetFontHeight (_font * 0.85);
@@ -329,7 +329,7 @@ if (_interactive && {(_sheetPage isNotEqualTo "") || {_sheetMode in ["new", "pic
             _cx ctrlAddEventHandler ["ButtonClick", {
                 uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
                 uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
-                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             }];
             _sbg ctrlSetPosition [_pad, _y, _gw, _font * 5.2];
             _sbg ctrlCommit 0;
@@ -430,7 +430,7 @@ private _track = {
             if (_k in _f) then { _f = _f - [_k]; } else { _f pushBack _k; };
             profileNamespace setVariable ["COMSPEC_ATAK_LauncherFolded", _f];
             [] call comspec_atak_native_fnc_saveProfile;
-            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         }];
         _hdr pushBack _hb;
     };
@@ -462,7 +462,7 @@ private _track = {
                     if (_c getVariable ["isNewFolder", false]) then {
                         uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", ""];
                         uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", "new"];
-                        [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                        [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
                     } else {
                         uiNamespace setVariable ["COMSPEC_ATAK_FolderId", _c getVariable ["folderId", ""]];
                         ["FOLDER"] call comspec_atak_native_fnc_navigate;
@@ -492,7 +492,7 @@ private _track = {
                     private _p = _c getVariable ["pinPage", ""];
                     uiNamespace setVariable ["COMSPEC_ATAK_AppSheet", _p];
                     uiNamespace setVariable ["COMSPEC_ATAK_AppSheetMode", ""];
-                    [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                    [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
                 }];
                 _tile call _track;
                 // Clé de recherche : nom français, nom traduit et nom de classe, sans casse ni accents (calculée une fois).

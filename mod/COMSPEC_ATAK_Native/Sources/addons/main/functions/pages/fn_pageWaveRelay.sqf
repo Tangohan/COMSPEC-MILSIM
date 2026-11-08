@@ -14,7 +14,7 @@ private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _dist = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000) };
 private _qCol = { params ["_q"]; switch (true) do { case (_q >= 60): { (COMSPEC_ATAK_Th get "hexOk") }; case (_q >= 30): { (COMSPEC_ATAK_Th get "hexWarn") }; default { (COMSPEC_ATAK_Th get "hexAlert") }; } };
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['wrTab', '%1']; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['wrTab', '%1']; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
 private _nodes = _mesh get "nodes";
 private _links = _mesh get "links";
@@ -24,7 +24,7 @@ private _myHops = _hops select 0;
 private _acre = !isNil "acre_api_fnc_getCurrentRadioList";
 private _rows = [["segment", "", [["MON NŒUD", "NODE"] call _tabBtn, [format ["RÉSEAU (%1)", count _nodes], "MESH"] call _tabBtn, ["COUVERTURE", "COV"] call _tabBtn, [["TALKGROUPS", "VOIX"] select _acre, "TG"] call _tabBtn]]];
 private _refresh = ["buttons", [
-    ["ACTUALISER", { [] spawn { ["scan", "force"] call comspec_atak_native_fnc_waveRelayAction; if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }; }; }],
+    ["ACTUALISER", { [] spawn { ["scan", "force"] call comspec_atak_native_fnc_waveRelayAction; if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }; }; }],
     ["VOIR SUR LA CARTE", { if !(profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then { profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true]; }; ["MAP"] call comspec_atak_native_fnc_navigate; }]
 ]];
 switch (_tab) do {
@@ -55,7 +55,7 @@ switch (_tab) do {
         private _cv = missionNamespace getVariable ["COMSPEC_ATAK_Coverage", []];
         private _busy = missionNamespace getVariable ["COMSPEC_ATAK_CoverageBusy", false];
         private _rad = _s getOrDefault ["rcRadius", 5000];
-        private _opt = { params ["_t", "_v"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['rcRadius', %1]; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _v], _v isEqualTo _rad] };
+        private _opt = { params ["_t", "_v"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['rcRadius', %1]; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _v], _v isEqualTo _rad] };
         private _relays = ["list"] call comspec_atak_native_fnc_relayNet;
         _rows append [
             ["section", "Couverture réseau", "Débit reçu à hauteur d'homme autour de moi, d'après les relais et passerelles du camp, relief et brouilleurs compris"],
@@ -63,11 +63,11 @@ switch (_tab) do {
         ];
         if (_busy) then {
             _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>● Calcul en cours : %1 %%</t>", round (100 * (missionNamespace getVariable ["COMSPEC_ATAK_CoverageProgress", 0]))]];
-            _rows pushBack ["buttons", [["ACTUALISER", { [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+            _rows pushBack ["buttons", [["ACTUALISER", { [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]]];
         } else {
             _rows pushBack ["buttons", [
-                ["CALCULER", { ["coverage"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true],
-                ["EFFACER", { ["clear"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+                ["CALCULER", { ["coverage"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, true],
+                ["EFFACER", { ["clear"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]
             ]];
         };
         if ((count _cv) >= 8) then {
@@ -103,7 +103,7 @@ switch (_tab) do {
         if (_tri isNotEqualTo []) then {
             _rows pushBack ["section", "Triangulations", "Localisations par les relais (10 min sur la carte)"];
             { _rows pushBack ["info", _x select 0, [format ["± %1 m · %2 source(s)", _x select 2, count (_x select 3)], "une source"] select ((_x select 1) isEqualTo [])]; } forEach _tri;
-            _rows pushBack ["buttons", [["EFFACER", { ["trilatClear"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+            _rows pushBack ["buttons", [["EFFACER", { ["trilatClear"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]]];
         };
     };
     case "TG": {
@@ -211,7 +211,7 @@ switch (_tab) do {
             private _pl = ["plugged"] call comspec_atak_native_fnc_mpu5;
             _rows pushBack ["buttons", [[["BRANCHER SUR MA RADIO", "DÉBRANCHER LA RADIO"] select (_pl isNotEqualTo []), {
                 ["plug"] call comspec_atak_native_fnc_mpu5;
-                [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             }]]];
         };
         if (_gw > 0) then {

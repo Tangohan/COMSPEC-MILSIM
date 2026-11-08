@@ -37,11 +37,11 @@ private _btns = switch (true) do {
     case (_logged): { [["RECONNECTER", { ["reconnect"] call comspec_atak_native_fnc_athenaAction; }, false, true, "Relance la liaison avec Athena et le poste"], ["DÉCONNEXION", { ["logout"] call comspec_atak_native_fnc_athenaAction; }]] };
     default {
         switch (_st get "fix") do {
-            case "service": { [["ACTIVER LE SERVICE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]] };
+            case "service": { [["ACTIVER LE SERVICE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, true]] };
             // Service Athéna pas encore choisi : la réponse se donne ici, plus dans l'ancienne fenêtre d'Overwatch.
             case "choose": { [
-                ["OUI, MON UNITÉ UTILISE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true],
-                ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+                ["OUI, MON UNITÉ UTILISE ATHENA", { ["on"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, true],
+                ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]
             ] };
             case "reconnect": { [["RECONNECTER", { ["reconnect"] call comspec_atak_native_fnc_athenaAction; }, true, true, "Relance la liaison avec Athena"]] };
             default { [] };
@@ -57,7 +57,7 @@ private _open = uiNamespace getVariable ["COMSPEC_ATAK_AthenaSteps", !_logged];
 uiNamespace setVariable ["COMSPEC_ATAK_AthenaStepsNow", _open];
 _rows pushBack ["fold", "ÉTAPES DE LA LIAISON", format ["%1 sur %2 en ordre", _okN, count _steps], _open, {
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaSteps", !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaStepsNow", true])];
-    [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 if (_open) then {
     { _rows pushBack (["check", _x select 1, _x select 0, _x select 2, _x select 3]); } forEach _steps;
@@ -179,7 +179,7 @@ if (_logged) then {
     private _help = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHelp", false];
     _rows append [
         ["gap"],
-        ["fold", "AIDE À LA CONNEXION", "Problèmes courants", _help, { uiNamespace setVariable ["COMSPEC_ATAK_AthenaHelp", !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaHelp", false])]; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+        ["fold", "AIDE À LA CONNEXION", "Problèmes courants", _help, { uiNamespace setVariable ["COMSPEC_ATAK_AthenaHelp", !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaHelp", false])]; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]
     ];
     if (_help) then {
         _rows append [

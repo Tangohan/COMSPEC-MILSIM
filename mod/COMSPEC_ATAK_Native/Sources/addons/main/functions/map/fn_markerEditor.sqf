@@ -64,7 +64,7 @@ _rows pushBack ["gap"];
 // Actions : ENREGISTRER (principal) et ANNULER côte à côte ; SUPPRIMER en rouge, à part, pour un marqueur existant.
 _rows pushBack ["buttons", [
     ["ENREGISTRER", { [] call comspec_atak_native_fnc_markerEditSave; }, true],
-    ["ANNULER", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerEdit", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+    ["ANNULER", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerEdit", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]
 ]];
 if !(_isNew) then { _rows pushBack ["buttons", [["SUPPRIMER LE MARQUEUR", { [((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) get "markerEdit") get "name"] call comspec_atak_native_fnc_markerDelete; }, "red", true, "Efface ce marqueur de la carte (Suppr sur le marqueur pointé fait pareil)"]]]; };
 [_rows, _rect, false] call comspec_atak_native_fnc_formRender;

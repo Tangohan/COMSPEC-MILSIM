@@ -51,9 +51,9 @@ if ((_l get "mode") isEqualTo "MINI") exitWith {
         default { "<t align='center' font='COMSPEC_BarlowBold'>Appareil photo</t><br/><t align='center' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>La prise de vue passe en plein écran. Espace pour revenir.</t>" };
     }) call comspec_atak_native_fnc_tr);
     private _rows = [
-        ["buttons", [["PHOTO", { [{ ["ENTER", (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["photoCaption", ""]] call comspec_atak_native_fnc_photoMode; }] call CBA_fnc_execNextFrame; }, true, _canShoot],
-            ["SELFIE", { [{ if (["ENTER", ""] call comspec_atak_native_fnc_photoMode) then { [{ ["SELFIE"] call comspec_atak_native_fnc_photoMode; }, [], 0.3] call CBA_fnc_waitAndExecute; }; }] call CBA_fnc_execNextFrame; }, false, _canShoot]]],
-        ["buttons", [[format ["GALERIE (%1)", _nPh], { [{ ["GALLERY"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }]]]
+        ["buttons", [["PHOTO", { [{ ["ENTER", (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["photoCaption", ""]] call comspec_atak_native_fnc_photoMode; }] call comspec_atak_native_fnc_nextFrame; }, true, _canShoot],
+            ["SELFIE", { [{ if (["ENTER", ""] call comspec_atak_native_fnc_photoMode) then { [{ ["SELFIE"] call comspec_atak_native_fnc_photoMode; }, [], 0.3] call comspec_atak_native_fnc_waitAndExec; }; }] call comspec_atak_native_fnc_nextFrame; }, false, _canShoot]]],
+        ["buttons", [[format ["GALERIE (%1)", _nPh], { [{ ["GALLERY"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }]]]
     ];
     private _ry = _bh * 0.08 + _ic + _font * 3.6;
     [_rows, [_pad, _ry, _bw - _pad * 2, _bh - _ry]] call comspec_atak_native_fnc_formRender;
@@ -95,7 +95,7 @@ if (_tex isEqualTo "") then {
         missionNamespace setVariable ["COMSPEC_ATAK_PhotoWatched", _pc getVariable ["r2t", ""]];
         ["watch", ["PHOTO", _pc, _pc getVariable ["r2t", ""], _tex, _vf]] call comspec_atak_native_fnc_pipCheck;
     } else {
-        [{ ["rebind", _this] call comspec_atak_native_fnc_pipCheck; }, [_vf, _tex]] call CBA_fnc_execNextFrame;
+        [{ ["rebind", _this] call comspec_atak_native_fnc_pipCheck; }, [_vf, _tex]] call comspec_atak_native_fnc_nextFrame;
     };
 };
 // Grille des tiers, discrète, et réticule.
@@ -168,7 +168,7 @@ private _bl = (createHashMapFromArray [["gauss", "GAUSSIEN"], ["motion", "MOUVEM
     "Flou des visages sur la photo envoyée. Appuyez pour changer : gaussien, mouvement, pixel, carré noir ou coupé. Le même choix qu'en plein écran.", _bl isNotEqualTo "COUPÉ"] call _chip;
 private _fsW = (_vw * 0.36) max (_font * 5);
 private _full = ["PLEIN ÉCRAN", [_vx + _vw - _fsW - _pad / 2, _cy, _fsW, _chipH],
-    compile format ["%1 private _c = (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['photoCaption', '']; [{ ['ENTER', _this] call comspec_atak_native_fnc_photoMode; }, _c] call CBA_fnc_execNextFrame;", _keep],
+    compile format ["%1 private _c = (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['photoCaption', '']; [{ ['ENTER', _this] call comspec_atak_native_fnc_photoMode; }, _c] call comspec_atak_native_fnc_nextFrame;", _keep],
     "Viseur plein écran : on se déplace normalement, clic gauche pour photographier, Espace pour revenir au téléphone"] call _chip;
 _full ctrlEnable _canShoot;
 private _zw = _chipH * _ratio * 1.2;
@@ -233,7 +233,7 @@ _shoot ctrlEnable _canShoot;
     _b setVariable ["comspec_click", _code];
     _b ctrlAddEventHandler ["ButtonClick", {
         params ["_c"];
-        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call comspec_atak_native_fnc_nextFrame;
     }];
 } forEach [
     [_centers select 1, "ui_gallery.paa", format ["GALERIE (%1)", _nPh], compile format ["%1 ['GALLERY'] call comspec_atak_native_fnc_navigate;", _keep], "Ouvrir l'app Galerie : revoir, envoyer ou supprimer les photos"],

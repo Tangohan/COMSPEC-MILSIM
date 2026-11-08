@@ -126,7 +126,7 @@ private _click = {
             if (_done select 0) exitWith {};
             _done set [0, true];
             [_c] call _code;
-        }, [_c, _c getVariable ["comspec_click", {}], [false]]] call CBA_fnc_execNextFrame;
+        }, [_c, _c getVariable ["comspec_click", {}], [false]]] call comspec_atak_native_fnc_nextFrame;
     }];
 };
 private _mk = {
@@ -311,7 +311,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _e ctrlAddEventHandler ["KeyDown", {
                 params ["_c", "_key"];
                 if !(_key in [28, 156]) exitWith { false };
-                [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_enter", {}]]] call CBA_fnc_execNextFrame;
+                [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_enter", {}]]] call comspec_atak_native_fnc_nextFrame;
                 true
             }];
             private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - _bwF, _y, _bwF, _rowH], _btnLabel] call _mk;
@@ -1239,7 +1239,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _e setVariable ["secretVar", _secretVar];
             private _redraw = {
                 params ["_c"];
-                [{ params ["_c"]; if (!isNull _c) then { _c ctrlSetText (((((uiNamespace getVariable [_c getVariable "secretVar", ""]) splitString "") apply { "•" } joinString "")) call comspec_atak_native_fnc_tr); }; }, [_c]] call CBA_fnc_execNextFrame;
+                [{ params ["_c"]; if (!isNull _c) then { _c ctrlSetText (((((uiNamespace getVariable [_c getVariable "secretVar", ""]) splitString "") apply { "•" } joinString "")) call comspec_atak_native_fnc_tr); }; }, [_c]] call comspec_atak_native_fnc_nextFrame;
             };
             _e setVariable ["redraw", _redraw];
             _e ctrlAddEventHandler ["Char", {
@@ -1365,7 +1365,7 @@ if (_pg isNotEqualTo "" && {_pg isNotEqualTo "CHAT"}) then {
         if (_v > 0) then {
             _grp ctrlSetScrollValues [_v, -1];
             // Encore à l'image suivante, quand la hauteur du contenu est connue.
-            [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
+            [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call comspec_atak_native_fnc_nextFrame;
         };
     };
 };

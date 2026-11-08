@@ -19,7 +19,7 @@ params [["_act", ""], ["_arg", ""]];
 private _q = uiNamespace getVariable ["COMSPEC_ATAK_MobQr", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_MobQr", _q];
 private _labels = createHashMapFromArray [["cr", "Comptes rendus"], ["compte-rendu", "CR fin d'op"], ["carte", "Carte"], ["briefs", "Briefs air"], ["controle", "Contrôle ID"]];
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MOBILEQR") then { ["MOBILEQR"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MOBILEQR") then { ["MOBILEQR"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _fail = {
     params ["_msg", ["_link", false]];
     _q set ["status", "err"];
@@ -125,7 +125,7 @@ switch (_act) do {
                     _q set ["linkFix", (_e find "not_linked") >= 0];
                 };
                 if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MOBILEQR") then { ["MOBILEQR"] call comspec_atak_native_fnc_pageRender; };
-            }, [_r]] call CBA_fnc_execNextFrame;
+            }, [_r]] call comspec_atak_native_fnc_nextFrame;
         };
     };
     case "tick": {
@@ -143,7 +143,7 @@ switch (_act) do {
         private _name = _labels getOrDefault [_app, "Comptes rendus"];
         private _icon = "\z\comspec_atak_native\addons\main\data\app_athena.paa";
         private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_mobileQr;", str _a, str _v] };
-        private _back = { [{ [] call comspec_atak_native_fnc_back; }] call CBA_fnc_execNextFrame; };
+        private _back = { [{ [] call comspec_atak_native_fnc_back; }] call comspec_atak_native_fnc_nextFrame; };
         private _rows = [["strip", format ["<t font='COMSPEC_BarlowBold' color='#35d6a1'>%1</t>  <t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexText") + "'>%2</t>",
             "SUR MON TÉLÉPHONE" call comspec_atak_native_fnc_tr, toUpper (_name call comspec_atak_native_fnc_tr)]]];
         uiNamespace setVariable ["COMSPEC_ATAK_MobQrLeft", controlNull];
@@ -151,7 +151,7 @@ switch (_act) do {
             case "err": {
                 _rows pushBack ["status", _icon, [0.90, 0.28, 0.23, 1], "QR code indisponible", _q getOrDefault ["msg", ""], ""];
                 private _btns = [["RÉESSAYER", ["request"] call _act, true]];
-                if (_q getOrDefault ["linkFix", false]) then { _btns pushBack ["APP ATHENA", { [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, false]; };
+                if (_q getOrDefault ["linkFix", false]) then { _btns pushBack ["APP ATHENA", { [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, false]; };
                 _btns pushBack ["RETOUR", _back, false];
                 _rows pushBack ["buttons", _btns];
             };

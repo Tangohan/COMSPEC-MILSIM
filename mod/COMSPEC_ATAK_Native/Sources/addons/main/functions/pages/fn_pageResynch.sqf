@@ -13,7 +13,7 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _lastTick = missionNamespace getVariable ["COMSPEC_ATAK_ResynchTick", -1e9];
 if ((_s getOrDefault ["resynchAuto", ""]) isNotEqualTo (str (_s getOrDefault ["display", displayNull]))) then {
     _s set ["resynchAuto", str (_s getOrDefault ["display", displayNull])];
-    if ((diag_tickTime - _lastTick) > 300) then { [{ [] call comspec_atak_native_fnc_resynchRun; }] call CBA_fnc_execNextFrame; };
+    if ((diag_tickTime - _lastTick) > 300) then { [{ [] call comspec_atak_native_fnc_resynchRun; }] call comspec_atak_native_fnc_nextFrame; };
 };
 private _busy = missionNamespace getVariable ["COMSPEC_ATAK_ResynchBusy", false];
 private _at = missionNamespace getVariable ["COMSPEC_ATAK_ResynchAt", ""];
@@ -74,6 +74,6 @@ _rows pushBack ["text", "<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexText
 if (_wait > 0 && {!_busy}) then {
     private _tok = diag_tickTime;
     uiNamespace setVariable ["COMSPEC_ATAK_ResynchTok", _tok];
-    [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_ResynchTok", -1]) isEqualTo _this && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RESYNCH"}) then { ["RESYNCH"] call comspec_atak_native_fnc_pageRender; }; }, _tok, (_wait min 5) max 1] call CBA_fnc_waitAndExecute;
+    [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_ResynchTok", -1]) isEqualTo _this && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "RESYNCH"}) then { ["RESYNCH"] call comspec_atak_native_fnc_pageRender; }; }, _tok, (_wait min 5) max 1] call comspec_atak_native_fnc_waitAndExec;
 };
 true

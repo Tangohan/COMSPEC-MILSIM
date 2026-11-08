@@ -159,7 +159,7 @@ if (_redraw && {hasInterface}) then {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     private _page = _s getOrDefault ["activePage", ""];
     if (_page isNotEqualTo "" && {!isNull ([] call comspec_atak_native_fnc_display)}) then {
-        [{ [_this, false] call comspec_atak_native_fnc_navigate; }, _page] call CBA_fnc_execNextFrame;
+        [{ [_this, false] call comspec_atak_native_fnc_navigate; }, _page] call comspec_atak_native_fnc_nextFrame;
     };
 };
 _lang

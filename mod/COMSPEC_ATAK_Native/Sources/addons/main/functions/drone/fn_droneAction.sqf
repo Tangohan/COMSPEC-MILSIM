@@ -144,7 +144,7 @@ private _unitOf = {
     if (_id isEqualTo "") exitWith { objNull };
     objectFromNetId _id
 };
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _send = {
     params ["_cmd", ["_args", []]];
     // Zones interdites au drone (fn_noFly) : un ordre dont le but y tombe est refusé (le retour automatique passe toujours).
@@ -174,7 +174,7 @@ private _send = {
     ["comspec_atak_native_droneCmd", [_d, _cmd, _args], _d] call CBA_fnc_targetEvent;
     true
 };
-private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
 // Charges acceptées : toute grenade (à main, fumigène, assourdissante, 40 mm), roquette, missile ou charge explosive
 // de l'inventaire, quel que soit le mod qui l'apporte (vanilla, ACE, RHS, CUP…), reconnue par la simulation de sa
@@ -437,7 +437,7 @@ private _camOpen = {
         // coupure soit vue, on recrée la caméra ici et on redessine la page (une fois : camBind remet rendering).
         if (!_direct && {!(([_cam, "rendering", true] call comspec_atak_native_fnc_camVar))}) exitWith {
             ["camBind"] call comspec_atak_native_fnc_droneAction;
-            [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame;
+            [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame;
         };
         if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_DroneExpAt", 0])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_DroneExpAt", diag_tickTime + 1];
@@ -1381,7 +1381,7 @@ switch (_act) do {
             // Manette : en vue directe, les touches de vol pilotent le drone (pilotage en immersion, le joueur ne bouge pas).
             if (["stickKey", [_this select 1, true]] call comspec_atak_native_fnc_droneAction) exitWith { true };
             if ((_this select 1) isNotEqualTo 0x01) exitWith { false };
-            [{ ["directEnd", true] call comspec_atak_native_fnc_droneAction; }] call CBA_fnc_execNextFrame;
+            [{ ["directEnd", true] call comspec_atak_native_fnc_droneAction; }] call comspec_atak_native_fnc_nextFrame;
             true
         }];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectEh", _eh];
@@ -1424,7 +1424,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", objNull];
         if (_arg isEqualTo true && {alive player} && {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}) then {
             [true] call comspec_atak_native_fnc_open;
-            [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+            [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
     // Marquage au viseur de la caméra du drone (appui sur MARQUER ou touche « Marquer la cible »).
@@ -1446,7 +1446,7 @@ switch (_act) do {
     case "pickMap": {
         call _saveGrid;
         _s set ["dronePick", "1"];
-        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["MAP"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         ["INFO", "Touchez le point de la tâche sur la carte", 4, 40] call comspec_atak_native_fnc_notify;
     };
     case "picked": {
@@ -1454,7 +1454,7 @@ switch (_act) do {
         _s set ["droneTaskGridVal", [_arg, 10] call comspec_atak_native_fnc_gridRef];
         _s set ["droneTab", "TASK"];
         ["INFO", format ["Point de la tâche : %1", [_arg, 8] call comspec_atak_native_fnc_gridRef], 3, 30] call comspec_atak_native_fnc_notify;
-        [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "taskSend": {
         call _saveGrid;
@@ -1585,7 +1585,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", true];
         ["comspec_atak_native_droneCmd", [_d, "transferIn", [name player, _uid, [], "HELLO"]], _t] call CBA_fnc_targetEvent;
         ["INFO", format ["Liaison avec le téléphone de %1…", name _t]] call _say;
-        [{ missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", false]; ["transferDo", _this] call comspec_atak_native_fnc_droneAction; }, [_d, _t, _uid], 3] call CBA_fnc_waitAndExecute;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", false]; ["transferDo", _this] call comspec_atak_native_fnc_droneAction; }, [_d, _t, _uid], 3] call comspec_atak_native_fnc_waitAndExec;
         call _render;
     };
     case "transferDo": {

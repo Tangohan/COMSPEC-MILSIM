@@ -27,7 +27,7 @@ private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
 // Code commun des boutons qui changent de vue : légende gardée, fiche du cliché drone enregistrée puis refermée.
 private _leave = "private _st0 = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; if ((['caption', '§'] call comspec_atak_native_fnc_formValue) isNotEqualTo '§') then { _st0 set ['photoCaption', ['caption', ''] call comspec_atak_native_fnc_formValue]; }; if (((_st0 getOrDefault ['photoSel', []]) param [0, '']) isEqualTo 'DRONE') then { ['save'] call comspec_atak_native_fnc_dronePhoto; _st0 set ['dronePhEdit', -1]; };";
-private _go = { params ["_tabK", ["_sel", []]]; compile format ["%1 _st0 set ['galTab', '%2']; _st0 set ['photoSel', %3]; if ('%2' isEqualTo 'LIB') then { ['list'] call comspec_atak_native_fnc_photoLibrary; }; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _leave, _tabK, str _sel] };
+private _go = { params ["_tabK", ["_sel", []]]; compile format ["%1 _st0 set ['galTab', '%2']; _st0 set ['photoSel', %3]; if ('%2' isEqualTo 'LIB') then { ['list'] call comspec_atak_native_fnc_photoLibrary; }; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _leave, _tabK, str _sel] };
 
 // Photos du poste et clichés du drone.
 if (_tab isEqualTo "LIB" && {isNil { uiNamespace getVariable "COMSPEC_ATAK_PhotoLibAt" }}) then { ["list"] call comspec_atak_native_fnc_photoLibrary; };
@@ -75,7 +75,7 @@ private _flt = _s getOrDefault ["photoFilter", "ALL"];
 if !(_flt in ["ALL", "PHONE", "DRONE"]) then { _flt = "ALL"; };
 private _fTab = {
     params ["_t", "_k", "_tip"];
-    [_t, compile format ["%1 _st0 set ['galTab', 'LIB']; _st0 set ['photoFilter', '%2']; _st0 set ['photoSel', []]; ['list'] call comspec_atak_native_fnc_photoLibrary; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _leave, _k], _tab isEqualTo "LIB" && {_flt isEqualTo _k}, _tip]
+    [_t, compile format ["%1 _st0 set ['galTab', 'LIB']; _st0 set ['photoFilter', '%2']; _st0 set ['photoSel', []]; ['list'] call comspec_atak_native_fnc_photoLibrary; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _leave, _k], _tab isEqualTo "LIB" && {_flt isEqualTo _k}, _tip]
 };
 private _head = [
     ["segment", "", [
@@ -183,7 +183,7 @@ if (_tab isEqualTo "LIB") exitWith {
                 ["switch", "Confidentiel", _cf, { ["flag", "conf"] call comspec_atak_native_fnc_dronePhoto; }, "Marqué [CONFIDENTIEL] en tête de la légende sur Athena"],
                 ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Légende envoyée : %1</t>", [["caption", _drone select _di] call comspec_atak_native_fnc_dronePhoto] call _esc]],
                 ["bar", [
-                    ["Fiche", [["ENREGISTRER", { ["save"] call comspec_atak_native_fnc_dronePhoto; ["SUCCESS", "Fiche du cliché enregistrée sur le téléphone", 3, 20] call comspec_atak_native_fnc_notify; [{ ["GALLERY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "", "Garder le titre et la description sur le téléphone, sans rien envoyer"]]],
+                    ["Fiche", [["ENREGISTRER", { ["save"] call comspec_atak_native_fnc_dronePhoto; ["SUCCESS", "Fiche du cliché enregistrée sur le téléphone", 3, 20] call comspec_atak_native_fnc_notify; [{ ["GALLERY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, "", "Garder le titre et la description sur le téléphone, sans rien envoyer"]]],
                     ["Athena", [[["ENVOYER À ATHENA", "RENVOYER À ATHENA"] select (_state in ["SENT", "FAILED"]), compile format ["['send', %1] call comspec_atak_native_fnc_dronePhoto;", _di], "main", "Envoyer le cliché avec sa fiche vers Athena (ATAK web), au débit du réseau du téléphone", !_busy]]],
                     ["Téléphone", [[["SUPPRIMER", "CONFIRMER"] select _del,
                         compile format ["private _n = count (profileNamespace getVariable ['COMSPEC_ATAK_DronePhotos', []]); ['forget', %1] call comspec_atak_native_fnc_dronePhoto; if ((count (profileNamespace getVariable ['COMSPEC_ATAK_DronePhotos', []])) < _n) then { ['list'] call comspec_atak_native_fnc_photoLibrary; };", _di],
@@ -213,7 +213,7 @@ if (_tab isEqualTo "LIB") exitWith {
         default {
             _rows pushBack ["bar", [["", [
                 _shootBtn,
-                ["ACTUALISER", { ["list"] call comspec_atak_native_fnc_photoLibrary; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "", "Relire les photos du téléphone et demander à Athena lesquelles elle a déjà", _bridge],
+                ["ACTUALISER", { ["list"] call comspec_atak_native_fnc_photoLibrary; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, "", "Relire les photos du téléphone et demander à Athena lesquelles elle a déjà", _bridge],
                 _sendBtn,
                 [["TOUT SUPPRIMER", "CONFIRMER"] select (["ALL"] call _isArmed), { ["deleteAll"] call comspec_atak_native_fnc_photoLibrary; }, ["", "red"] select (["ALL"] call _isArmed), "Effacer du téléphone toutes ses photos et tous les clichés du drone (second appui pour confirmer). Les photos déjà reçues restent sur Athena.", _bridge && {_total > 0}]
             ]]]];

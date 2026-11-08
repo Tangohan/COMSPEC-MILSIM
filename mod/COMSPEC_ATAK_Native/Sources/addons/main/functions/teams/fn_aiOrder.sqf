@@ -157,7 +157,7 @@ switch (_act) do {
             private _t = format ["%1 · %2 : pas de réponse du serveur. Réessayez ; si ça recommence, le serveur n'a sans doute pas la même version du mod ATAK", _gn, _kl];
             if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _t] call comspec_atak_native_fnc_tocLaptop; };
             ["WARNING", _t, 6, 40] call comspec_atak_native_fnc_notify;
-        }, [_id], 30] call CBA_fnc_waitAndExecute;
+        }, [_id], 30] call comspec_atak_native_fnc_waitAndExec;
         [format ["%1 · %2 : ordre envoyé", groupId _g, [_k] call _kLabel], "INFO"] call _say;
         true
     };

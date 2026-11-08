@@ -93,9 +93,9 @@ if ((_l get "landscape") && {!_mini}) then {
         if (isNull _o) exitWith {};
         if (_k isEqualTo "FLY") exitWith {
             if (_o isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) exitWith {};
-            [{ ["switch", _this] call comspec_atak_native_fnc_droneFleet; }, _o] call CBA_fnc_execNextFrame;
+            [{ ["switch", _this] call comspec_atak_native_fnc_droneFleet; }, _o] call comspec_atak_native_fnc_nextFrame;
         };
-        if (_k isEqualTo "PAIR") then { [{ ["pair", _this] call comspec_atak_native_fnc_droneAction; }, _o] call CBA_fnc_execNextFrame; };
+        if (_k isEqualTo "PAIR") then { [{ ["pair", _this] call comspec_atak_native_fnc_droneAction; }, _o] call comspec_atak_native_fnc_nextFrame; };
     }];
     if (_leftMenus) then {
         // Liste plafonnée au quart de la hauteur (avant : un tiers) : sur un S7 couché, les onglets et réglages du drone
@@ -122,7 +122,7 @@ if (isNull _d) exitWith {
             format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>À %2 m · batterie %3 %%</t>", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)],
             [["APPAIRER", compile format ["['pair', objectFromNetId %1] call comspec_atak_native_fnc_droneAction;", str netId _x], true]]];
     } forEach _near;
-    _rows pushBack ["buttons", [["ACTUALISER", { [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+    _rows pushBack ["buttons", [["ACTUALISER", { [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]]];
     private _lg = missionNamespace getVariable ["COMSPEC_ATAK_DroneLog", []];
     if ((count _lg) > 0) then {
         _rows pushBack ["section", "Journal du dernier vol", format ["%1 événements", count _lg]];

@@ -86,7 +86,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
         ["switch", "Fond assombri (façon image ISR)", profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true], {
             profileNamespace setVariable ["COMSPEC_ATAK_PlanDim", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true])]; [] call comspec_atak_native_fnc_saveProfile; ["rerender"] call comspec_atak_native_fnc_planAction;
         }, "Les couleurs du plan ressortent mieux"],
-        ["buttons", [["REVOIR LE TUTORIEL", { ["view", "MAP"] call comspec_atak_native_fnc_planAction; [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.2] call CBA_fnc_waitAndExecute; }]]]
+        ["buttons", [["REVOIR LE TUTORIEL", { ["view", "MAP"] call comspec_atak_native_fnc_planAction; [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.2] call comspec_atak_native_fnc_waitAndExec; }]]]
     ];
     [_rows, [0, _pad + _rowH, _bw, _bh - _pad - _rowH]] call comspec_atak_native_fnc_formRender;
     true
@@ -132,6 +132,6 @@ if (!isNull _disp && {(_disp getVariable ["COMSPEC_PlanKeyEh", -1]) < 0}) then {
 // Premier lancement : tutoriel pas à pas (rejouable depuis l'aide ou la vue PLANS).
 if ((profileNamespace getVariable ["COMSPEC_ATAK_PlanTuto", 0]) < 1 && {(_ui get "tuto") < 0} && {!(uiNamespace getVariable ["COMSPEC_ATAK_PlanTutoShown", false])}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_PlanTutoShown", true];
-    [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.4] call CBA_fnc_waitAndExecute;
+    [{ ["tuto", 0] call comspec_atak_native_fnc_planAction; }, [], 0.4] call comspec_atak_native_fnc_waitAndExec;
 };
 true

@@ -22,5 +22,5 @@ private _edit = if (_name isEqualTo "") then {
 _s set ["markerEdit", _edit];
 _s set ["selectedMarker", _name];
 _s set ["mapToolsOpen", false];
-[{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 true

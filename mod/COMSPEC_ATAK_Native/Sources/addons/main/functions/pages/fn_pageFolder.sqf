@@ -29,7 +29,7 @@ private _rows = [
         private _id = uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""];
         if (["rename", _id, _n] call comspec_atak_native_fnc_appFolders) then {
             ["Groupe renommé", 2] call comspec_atak_native_fnc_toast;
-            [{ ["FOLDER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["FOLDER"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         } else {
             ["Nom invalide", 2] call comspec_atak_native_fnc_toast;
         };
@@ -47,7 +47,7 @@ if ((count _apps) isEqualTo 0) then {
         _rows pushBack ["person", _app get "icon", format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%2</t>", _nm, _desc], [
             ["Ouvrir", compile format ["['%1'] call comspec_atak_native_fnc_navigate;", _page], true],
             ["Retirer", compile format [
-                "private _id = uiNamespace getVariable ['COMSPEC_ATAK_FolderId', '']; ['remove', _id, '%1'] call comspec_atak_native_fnc_appFolders; ['Retirée du groupe', 2] call comspec_atak_native_fnc_toast; [{ ['FOLDER'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;",
+                "private _id = uiNamespace getVariable ['COMSPEC_ATAK_FolderId', '']; ['remove', _id, '%1'] call comspec_atak_native_fnc_appFolders; ['Retirée du groupe', 2] call comspec_atak_native_fnc_toast; [{ ['FOLDER'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;",
                 _page
             ], false]
         ]];

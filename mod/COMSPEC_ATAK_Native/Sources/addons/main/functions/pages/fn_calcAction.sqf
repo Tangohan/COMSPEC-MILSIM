@@ -7,7 +7,7 @@ if !(_st isEqualType []) then { _st = ["", "0", false]; };
 _st params ["_expr", "_disp", "_just"];
 
 private _redraw = {
-    [{ ["CALC"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["CALC"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 private _set = {
     params ["_e", "_d", ["_j", false]];

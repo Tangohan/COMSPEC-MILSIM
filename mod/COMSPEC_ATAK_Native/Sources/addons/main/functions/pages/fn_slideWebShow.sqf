@@ -39,5 +39,5 @@ _wb ctrlWebBrowserAction ["LoadFile", "z\comspec_atak_native\addons\main\data\we
     private _html = "<html><head><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}::-webkit-scrollbar{display:none}</style></head><body><img src='data:image/" + _m + ";base64," + _b + "' style='position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain'></body></html>";
     private _enc = controlNull ctrlWebBrowserAction ["ToBase64", _html];
     _wb ctrlWebBrowserAction ["OpenDataAsURL", if (_enc isEqualType "" && {_enc isNotEqualTo ""}) then { "data:text/html;base64," + _enc } else { "data:text/html;charset=utf-8," + _html }];
-}, [_wb], 4] call CBA_fnc_waitAndExecute;
+}, [_wb], 4] call comspec_atak_native_fnc_waitAndExec;
 true

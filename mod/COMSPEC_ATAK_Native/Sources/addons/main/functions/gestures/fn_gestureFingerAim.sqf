@@ -29,7 +29,7 @@ switch (toLower _mode) do {
     };
     case "timed": {
         if !(["start"] call comspec_atak_native_fnc_gestureFingerAim) exitWith { false };
-        [{ ["stop"] call comspec_atak_native_fnc_gestureFingerAim; }, [], _arg] call CBA_fnc_waitAndExecute;
+        [{ ["stop"] call comspec_atak_native_fnc_gestureFingerAim; }, [], _arg] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "stop": {

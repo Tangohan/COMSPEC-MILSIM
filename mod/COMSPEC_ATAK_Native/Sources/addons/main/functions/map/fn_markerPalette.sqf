@@ -21,14 +21,14 @@ private _pad = _l get "pad";
 private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _mk = { params ["_class", "_pos", ["_text", ""]]; [_class, _pos, _text, false] call comspec_atak_native_fnc_pageCtrl };
-private _redraw = { [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 uiNamespace setVariable ["COMSPEC_ATAK_MarkerPick", {
     params ["_key", "_val"];
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     _s set [_key, _val];
     if (_key isEqualTo "markerAff") then { _s set ["markerType", ""]; };
     if (_key isEqualTo "markerLibCat") then { _s set ["markerType", ""]; };
-    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 ([] call comspec_atak_native_fnc_markerPaletteData) params ["_affs", "_typesByAff"];
 private _aff = _s getOrDefault ["markerAff", "o"];
@@ -280,7 +280,7 @@ _ed ctrlAddEventHandler ["KeyDown", {
     params ["_c", "_key"];
     if (_key in [28, 156]) exitWith {
         (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerText", (ctrlText _c) select [0, 48]];
-        [{ ["validate"] call comspec_atak_native_fnc_markerPlace; }] call CBA_fnc_execNextFrame;
+        [{ ["validate"] call comspec_atak_native_fnc_markerPlace; }] call comspec_atak_native_fnc_nextFrame;
         true
     };
     false
@@ -306,7 +306,7 @@ private _tw = _w * 0.085;
         "Le marqueur reste jusqu'à ce qu'on l'efface", "Effacé tout seul 10 minutes après la pose",
         "Effacé tout seul 30 minutes après la pose", "Effacé tout seul une heure après la pose"
     ] select _forEachIndex) call comspec_atak_native_fnc_tr);
-    _b ctrlAddEventHandler ["ButtonClick", compile format ["profileNamespace setVariable ['COMSPEC_ATAK_MarkerTtl', %1]; playSound 'ClickSoft'; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _v]];
+    _b ctrlAddEventHandler ["ButtonClick", compile format ["profileNamespace setVariable ['COMSPEC_ATAK_MarkerTtl', %1]; playSound 'ClickSoft'; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _v]];
 } forEach _ttls;
 private _rcX = _x0 + _w * 0.12 + 4 * _tw + _pad;
 ["RÉCENTS", _rcX, _w * 0.1] call _lab;
@@ -331,7 +331,7 @@ private _rcW = _rh / _ratio;
     _ic ctrlSetTextColor _rRgba;
     private _b = ["COMSPEC_RscButtonOverlay", [_xx, _y, _rcW, _rh]] call _mk;
     _b ctrlSetTooltip ((getText (configFile >> "CfgMarkers" >> _rType >> "name")) call comspec_atak_native_fnc_tr);
-    _b ctrlAddEventHandler ["ButtonClick", compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['markerAff', '%1']; _s set ['markerType', '%2']; _s set ['markerColor', '%3']; playSound 'ClickSoft'; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _rAff, _rType, _rCol]];
+    _b ctrlAddEventHandler ["ButtonClick", compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['markerAff', '%1']; _s set ['markerType', '%2']; _s set ['markerColor', '%3']; playSound 'ClickSoft'; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _rAff, _rType, _rCol]];
 } forEach _recent;
 _y = _y + _rh + _pad / 2;
 

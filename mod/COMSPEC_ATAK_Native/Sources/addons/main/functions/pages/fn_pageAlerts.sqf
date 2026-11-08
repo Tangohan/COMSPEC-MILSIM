@@ -49,7 +49,7 @@ private _hit = {
     _b setVariable ["comspec_click", _code];
     _b ctrlAddEventHandler ["ButtonClick", {
         params ["_c"];
-        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call comspec_atak_native_fnc_nextFrame;
     }];
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b

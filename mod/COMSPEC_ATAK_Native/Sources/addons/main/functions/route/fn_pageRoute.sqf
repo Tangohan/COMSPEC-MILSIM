@@ -28,7 +28,7 @@ private _bar = {
     params ["_t", "_op", ["_v", ""]];
     private _at = diag_tickTime;
     _ui set ["undoBar", [_t, _op, _v, _at]];
-    [{ private _u = uiNamespace getVariable ["COMSPEC_ATAK_RteUi", createHashMap]; if (((_u getOrDefault ["undoBar", []]) param [3, -1]) isEqualTo _this) then { _u set ["undoBar", []]; if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ROUTE") then { ["#refresh"] call comspec_atak_native_fnc_pageRoute; }; }; }, _at, 8] call CBA_fnc_waitAndExecute;
+    [{ private _u = uiNamespace getVariable ["COMSPEC_ATAK_RteUi", createHashMap]; if (((_u getOrDefault ["undoBar", []]) param [3, -1]) isEqualTo _this) then { _u set ["undoBar", []]; if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ROUTE") then { ["#refresh"] call comspec_atak_native_fnc_pageRoute; }; }; }, _at, 8] call comspec_atak_native_fnc_waitAndExec;
 };
 private _tr = { _this call comspec_atak_native_fnc_tr };
 private _RA = comspec_atak_native_fnc_routeAction;
@@ -62,7 +62,7 @@ private _plan = {
 private _rerender = { [{
     if ((uiNamespace getVariable ["COMSPEC_ATAK_RteDrawnAt", -1]) isEqualTo diag_frameNo) exitWith {};
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ROUTE") then { ["ROUTE"] call comspec_atak_native_fnc_pageRender; };
-}] call CBA_fnc_execNextFrame; };
+}] call comspec_atak_native_fnc_nextFrame; };
 
 // Texte du guidage (vue FOLLOW, mis à jour chaque seconde).
 private _liveText = {
@@ -279,11 +279,11 @@ if (_page isEqualTo "#key") exitWith {
     private _f = focusedCtrl _disp;
     if (!isNull _f && {(ctrlType _f) isEqualTo 2}) exitWith { false };
     switch (true) do {
-        case (_ctrl && {_key in [0x2C, 0x11]} && {!_shift}): { [{ ["#ui", ["undo"]] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
-        case (_ctrl && {_key isEqualTo 0x15 || {_shift && {_key in [0x2C, 0x11]}}}): { [{ ["#ui", ["redo"]] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
-        case (_key isEqualTo 0x01 && {_view isEqualTo "EDIT"} && {(_ui get "mode") isNotEqualTo "SEL"}): { [{ ["#ui", ["modeEnd"]] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
-        case (_key isEqualTo 0x01 && {(_ui get "confirm") isNotEqualTo ""}): { _ui set ["confirm", ""]; [{ ["#refresh"] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
-        case (_key isEqualTo 0x01 && {_view in ["STEP", "MARKERS"]}): { [{ ["#ui", ["view", "EDIT"]] call comspec_atak_native_fnc_pageRoute; }] call CBA_fnc_execNextFrame; true };
+        case (_ctrl && {_key in [0x2C, 0x11]} && {!_shift}): { [{ ["#ui", ["undo"]] call comspec_atak_native_fnc_pageRoute; }] call comspec_atak_native_fnc_nextFrame; true };
+        case (_ctrl && {_key isEqualTo 0x15 || {_shift && {_key in [0x2C, 0x11]}}}): { [{ ["#ui", ["redo"]] call comspec_atak_native_fnc_pageRoute; }] call comspec_atak_native_fnc_nextFrame; true };
+        case (_key isEqualTo 0x01 && {_view isEqualTo "EDIT"} && {(_ui get "mode") isNotEqualTo "SEL"}): { [{ ["#ui", ["modeEnd"]] call comspec_atak_native_fnc_pageRoute; }] call comspec_atak_native_fnc_nextFrame; true };
+        case (_key isEqualTo 0x01 && {(_ui get "confirm") isNotEqualTo ""}): { _ui set ["confirm", ""]; [{ ["#refresh"] call comspec_atak_native_fnc_pageRoute; }] call comspec_atak_native_fnc_nextFrame; true };
+        case (_key isEqualTo 0x01 && {_view in ["STEP", "MARKERS"]}): { [{ ["#ui", ["view", "EDIT"]] call comspec_atak_native_fnc_pageRoute; }] call comspec_atak_native_fnc_nextFrame; true };
         default { false };
     }
 };
@@ -466,7 +466,7 @@ private _mapBar = {
         _b ctrlSetTooltip ((((_tip) call _tr)) call comspec_atak_native_fnc_tr);
         if (_main) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
         _b setVariable ["comspec_click", _code];
-        _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+        _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call comspec_atak_native_fnc_nextFrame; }];
         _list pushBack _b;
         _bx0 = _bx0 - _bwB - _pad * 0.4;
     } forEach ([[["ANNULER", ["modeCancel"] call _ui1, false, "Sort du mode et retire ce qui a été posé depuis"]],
@@ -495,7 +495,7 @@ if (_page isEqualTo "#refresh") exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_RteForm", _ng];
     if (_sv > 0) then {
         _ng ctrlSetScrollValues [_sv, -1];
-        [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_ng, _sv]] call CBA_fnc_execNextFrame;
+        [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_ng, _sv]] call comspec_atak_native_fnc_nextFrame;
     };
     call _mapBar;
     true
@@ -518,7 +518,7 @@ switch (_view) do {
             _b ctrlSetFontHeight ((_fs * 0.95) max COMSPEC_ATAK_FontMin);
             if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
             _b setVariable ["comspec_click", _code];
-            _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call CBA_fnc_execNextFrame; }];
+            _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ call (_this getVariable ["comspec_click", {}]); }, _c] call comspec_atak_native_fnc_nextFrame; }];
             _b
         };
         private _bw3 = (_bw - _pad * 2 - _pad) / 3;

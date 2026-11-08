@@ -11,7 +11,7 @@
 params [["_action", "candidates"], ["_arg", objNull]];
 private _st = uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_LinkAlly", _st];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "LINKALLY") then { ["LINKALLY"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "LINKALLY") then { ["LINKALLY"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _phoneItems = {
     params ["_o"];
     private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
@@ -95,7 +95,7 @@ switch (_action) do {
         _st set ["src", "WAIT"];
         ["comspec_atak_native_linkAllyQuery", [player, _req], _live] call CBA_fnc_targetEvent;
         // Pas de réponse en 5 s (machine figée, déconnexion en cours) : copie de sauvegarde.
-        [{ params ["_req"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap]; if ((_s getOrDefault ["req", ""]) isEqualTo _req && {(_s getOrDefault ["src", ""]) isEqualTo "WAIT"}) then { ["useMirror"] call comspec_atak_native_fnc_linkAllyAction; }; }, [_req], 5] call CBA_fnc_waitAndExecute;
+        [{ params ["_req"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap]; if ((_s getOrDefault ["req", ""]) isEqualTo _req && {(_s getOrDefault ["src", ""]) isEqualTo "WAIT"}) then { ["useMirror"] call comspec_atak_native_fnc_linkAllyAction; }; }, [_req], 5] call comspec_atak_native_fnc_waitAndExec;
         ["SUCCESS", format ["Liaison %1 établie avec l'ATAK de %2", _st getOrDefault ["mode", "NFC"], name _owner], 3, 30] call comspec_atak_native_fnc_notify;
         if (!isNull ([] call comspec_atak_native_fnc_display)) then { ["LINKALLY"] call comspec_atak_native_fnc_navigate; };
         call _render;
@@ -361,7 +361,7 @@ switch (_action) do {
                         ["EAGLE_DOWN", ["PRIORITY", "ROUTINE"] select (_kind isEqualTo "KIA"), _summary, _details, createHashMapFromArray _fields, ASLToATL _pos] call comspec_overwatch_connect_fnc_submitTacticalReport;
                     };
                     if (!isNil "comspec_overwatch_connect_fnc_sendTacticalAlert") then { ["EAGLE_DOWN", _summary, ASLToATL _pos] call comspec_overwatch_connect_fnc_sendTacticalAlert; };
-                }, [_kind, _summary, _details, _fields, _pos]] call CBA_fnc_execNextFrame;
+                }, [_kind, _summary, _details, _fields, _pos]] call comspec_atak_native_fnc_nextFrame;
             };
         }, [_kind, _summary, _details, _fields, _pos, _grid, _me], ["Rapport de blessure", "Rapport de décès"] select (_kind isEqualTo "KIA"), 2] call comspec_atak_native_fnc_netSend;
         [_kind, "Moi", _pos, _grid, _summary] call comspec_atak_native_fnc_alertsLog;

@@ -119,7 +119,7 @@ private _expose = {
     };
     _lvl
 };
-private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PHOTOS") then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PHOTOS") then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 
 switch (_act) do {
     case "bind": {
@@ -384,7 +384,7 @@ switch (_act) do {
                 [["WARNING", "SUCCESS"] select _ok, ["Photo non envoyée : voir l'app Galerie, onglet ENVOIS", "Photo en cours d'envoi vers Athena"] select _ok, 3, 30] call comspec_atak_native_fnc_notify;
             };
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoLibAt", nil];
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PHOTOS") then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call CBA_fnc_waitAndExecute;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PHOTOS") then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call comspec_atak_native_fnc_waitAndExec;
         };
         true
     };

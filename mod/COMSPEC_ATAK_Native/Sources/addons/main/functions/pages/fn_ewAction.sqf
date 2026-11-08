@@ -20,7 +20,7 @@ private _now = [time, serverTime] select isMultiplayer;
 private _uid = getPlayerUID player;
 if (_uid isEqualTo "") then { _uid = "local"; };
 private _ret = true;
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "EW") then { ["EW"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "EW") then { ["EW"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _publish = {
     params ["_list"];
     missionNamespace setVariable ["COMSPEC_ATAK_Jammers", _list, true];
@@ -277,7 +277,7 @@ switch (_act) do {
         private _p = _e getOrDefault ["pos", []];
         if ((count _p) < 2) exitWith {};
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.06] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.06] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call comspec_atak_native_fnc_nextFrame;
     };
     case "clear": { missionNamespace setVariable ["COMSPEC_ATAK_EwBearings", []]; call _rerender; };
     case "locate": {
@@ -285,7 +285,7 @@ switch (_act) do {
         if ((count _b) < 4) exitWith {};
         private _mid = (_b select 0) getPos [((_b select 2) + (_b select 3)) / 2, _b select 1];
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.08] call comspec_atak_native_fnc_mapCenter; }, [_mid select 0, _mid select 1]] call CBA_fnc_execNextFrame;
+        [{ [_this, 0.08] call comspec_atak_native_fnc_mapCenter; }, [_mid select 0, _mid select 1]] call comspec_atak_native_fnc_nextFrame;
     };
 };
 _ret

@@ -29,7 +29,7 @@ private _ui = uiNamespace getVariable ["COMSPEC_ATAK_DbfUi", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_DbfUi", _ui];
 private _cfg = missionNamespace getVariable ["COMSPEC_ATAK_DbfCfg", createHashMap];
 private _now = { [dayTime, "HH:MM"] call BIS_fnc_timeToString };
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DEBRIEF") then { ["DEBRIEF"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DEBRIEF") then { ["DEBRIEF"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _server = { params ["_a", ["_x", []]]; ["comspec_atak_native_debrief", [player, _a, _x]] call CBA_fnc_serverEvent; };
 // Questionnaire intégré (même liste que AtakDebriefSpec::BUILTIN sur le site) : traduit à l'affichage.
 private _builtin = [
@@ -83,7 +83,7 @@ private _web = {
         if (_r isEqualType []) then { _r = _r param [0, ""]; };
         if !(_r isEqualType "") then { _r = str _r; };
         private _ok = ((toUpper _r) find "OK") >= 0 && {((toUpper _r) find "ERR") < 0};
-        [{ params ["_then", "_ok"]; [_ok] call _then; }, [_then, _ok]] call CBA_fnc_execNextFrame;
+        [{ params ["_then", "_ok"]; [_ok] call _then; }, [_then, _ok]] call comspec_atak_native_fnc_nextFrame;
     };
     true
 };
@@ -194,7 +194,7 @@ switch (_act) do {
         if (isNull ([] call comspec_atak_native_fnc_display)) then {
             if (!_busy) then { [true] call comspec_atak_native_fnc_open; };
         };
-        [{ if !(isNull ([] call comspec_atak_native_fnc_display)) then { ["DEBRIEF"] call comspec_atak_native_fnc_navigate; }; }, [], 0.4] call CBA_fnc_waitAndExecute;
+        [{ if !(isNull ([] call comspec_atak_native_fnc_display)) then { ["DEBRIEF"] call comspec_atak_native_fnc_navigate; }; }, [], 0.4] call comspec_atak_native_fnc_waitAndExec;
     };
     case "tick": {
         if (!hasInterface) exitWith {};

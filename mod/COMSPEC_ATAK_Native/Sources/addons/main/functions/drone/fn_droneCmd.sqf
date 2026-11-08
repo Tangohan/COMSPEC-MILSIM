@@ -64,7 +64,7 @@ if (_cmd isEqualTo "relocal") exitWith {
     private _drv = driver _d;
     if (isNull _drv || {(groupOwner group _drv) isEqualTo (owner _d)}) exitWith {};
     (group _drv) setGroupOwner (owner _d);
-    [{ ["comspec_atak_native_droneCmd", [_this select 0, "force", _this select 1], _this select 0] call CBA_fnc_targetEvent; }, [_d, _args], 1.5] call CBA_fnc_waitAndExecute;
+    [{ ["comspec_atak_native_droneCmd", [_this select 0, "force", _this select 1], _this select 0] call CBA_fnc_targetEvent; }, [_d, _args], 1.5] call comspec_atak_native_fnc_waitAndExec;
 };
 if (isNull _d || {!alive _d} || {!local _d}) exitWith {};
 // Accusé de réception pour la surveillance du téléphone (ordre resté sans effet → reprise).

@@ -33,7 +33,7 @@ switch (_act) do {
     case "push": {
         [true] call comspec_atak_native_fnc_squadSync;
         ["INFO", "Escouade envoyée à Athena", 3] call comspec_atak_native_fnc_notify;
-        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "INTERTEAM") then { ["INTERTEAM"] call comspec_atak_native_fnc_pageRender; }; }, [], 1.5] call CBA_fnc_waitAndExecute;
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "INTERTEAM") then { ["INTERTEAM"] call comspec_atak_native_fnc_pageRender; }; }, [], 1.5] call comspec_atak_native_fnc_waitAndExec;
     };
 };
 true

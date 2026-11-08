@@ -306,7 +306,7 @@ private _bump = { missionNamespace setVariable ["COMSPEC_ATAK_ZnRev", (missionNa
 private _refresh = {
     if ((missionNamespace getVariable ["COMSPEC_ATAK_ZnRefreshAt", -1]) isEqualTo diag_frameNo) exitWith {};
     missionNamespace setVariable ["COMSPEC_ATAK_ZnRefreshAt", diag_frameNo];
-    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ZONES") then { ["#refresh"] call comspec_atak_native_fnc_pageZones; }; }] call CBA_fnc_execNextFrame;
+    [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ZONES") then { ["#refresh"] call comspec_atak_native_fnc_pageZones; }; }] call comspec_atak_native_fnc_nextFrame;
 };
 private _save = {
     private _tok = (missionNamespace getVariable ["COMSPEC_ATAK_ZnSaveTok", 0]) + 1;
@@ -316,7 +316,7 @@ private _save = {
         private _m = missionNamespace getVariable ["COMSPEC_ATAK_ZnMine", createHashMap];
         profileNamespace setVariable [format ["COMSPEC_ATAK_Zn_%1", worldName], (values _m) apply { ["pack", _x] call comspec_atak_native_fnc_zoneAction }];
         [] call comspec_atak_native_fnc_saveProfile;
-    }, _tok, 2] call CBA_fnc_waitAndExecute;
+    }, _tok, 2] call comspec_atak_native_fnc_waitAndExec;
 };
 // Plan modifié : révision (géométrie), profil, page, carte d'Arma et partage en direct, regroupés.
 private _changed = {
@@ -336,7 +336,7 @@ private _changed = {
             if ((count _b) isEqualTo 0 || {_tok isNotEqualTo (_b getOrDefault ["syncTok", -1])}) exitWith {};
             if ((_b get "arma") || {(count (_b getOrDefault ["mk", []])) > 0}) then { ["armaNow", _id] call comspec_atak_native_fnc_zoneAction; };
             if (_resend && {_b getOrDefault ["live", false]} && {(_b get "scope") > 0}) then { ["share", [_id, _b get "scope", true]] call comspec_atak_native_fnc_zoneAction; };
-        }, [_id, _tok, _resend], 1.5] call CBA_fnc_waitAndExecute;
+        }, [_id, _tok, _resend], 1.5] call comspec_atak_native_fnc_waitAndExec;
     };
     call _refresh;
 };
@@ -732,7 +732,7 @@ switch (_act) do {
                 ["WARNING", "ZONES", format ["Calcul sans réponse au bout de 90 s (plan %1)", _id]] call comspec_atak_native_fnc_log;
                 ["#refresh"] call comspec_atak_native_fnc_pageZones;
             };
-        }, [_id, _tok], 90] call CBA_fnc_waitAndExecute;
+        }, [_id, _tok], 90] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     // ANNULER LE CALCUL : le résultat du calcul en cours sera jeté (jeton changé), rien ne change.
@@ -887,7 +887,7 @@ switch (_act) do {
             if ((_e param [2, -1]) isNotEqualTo _tok) exitWith {};
             _q deleteAt _k;
             ["sit", [_id, _zid, _e select 1, []]] call comspec_atak_native_fnc_zoneAction;
-        }, [_id, _zid, _k, _tok], 5] call CBA_fnc_waitAndExecute;
+        }, [_id, _zid, _k, _tok], 5] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "sitUndo": {
@@ -1157,7 +1157,7 @@ switch (_act) do {
             _bin deleteAt _id;
             (missionNamespace getVariable ["COMSPEC_ATAK_ZnMine", createHashMap]) set [_id, _e select 0];
             ["del", _id] call comspec_atak_native_fnc_zoneAction;
-        }, [_arg, _tok], 8] call CBA_fnc_waitAndExecute;
+        }, [_arg, _tok], 8] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "untrash": {
@@ -1584,9 +1584,9 @@ switch (_act) do {
         if ((_b get "scope") > 0) then {
             { [_x] call comspec_atak_native_fnc_markerWeb; } forEach _made;
         } else {
-            [{ { ["touch", [_x, false]] call comspec_atak_native_fnc_markerNet; } forEach _this; }, _made, 0.5] call CBA_fnc_waitAndExecute;
+            [{ { ["touch", [_x, false]] call comspec_atak_native_fnc_markerNet; } forEach _this; }, _made, 0.5] call comspec_atak_native_fnc_waitAndExec;
         };
-        if ((count _todo) > 30) then { [{ ["mkStep", _this] call comspec_atak_native_fnc_zoneAction; }, [_id, _tok, _todo select [30], _ch]] call CBA_fnc_execNextFrame; };
+        if ((count _todo) > 30) then { [{ ["mkStep", _this] call comspec_atak_native_fnc_zoneAction; }, [_id, _tok, _todo select [30], _ch]] call comspec_atak_native_fnc_nextFrame; };
     };
     default { nil };
 };

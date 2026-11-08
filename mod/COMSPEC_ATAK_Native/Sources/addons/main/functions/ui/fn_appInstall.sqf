@@ -61,7 +61,7 @@ private _redraw = {
         [] call comspec_atak_native_fnc_dockRender;
         private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];
         if (_p isNotEqualTo "") then { [_p] call comspec_atak_native_fnc_pageRender; };
-    }] call CBA_fnc_execNextFrame;
+    }] call comspec_atak_native_fnc_nextFrame;
 };
 
 switch (_mode) do {
@@ -137,7 +137,7 @@ switch (_mode) do {
         private _app = (([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
         if ((count _app) > 0 && {([_app get "id"] call _state) isEqualTo "forbidden"}) then {
             ["Cette app vient d'être interdite par l'encadrement", 3] call comspec_atak_native_fnc_toast;
-            [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+            [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
         } else {
             if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call _redraw; };
         };

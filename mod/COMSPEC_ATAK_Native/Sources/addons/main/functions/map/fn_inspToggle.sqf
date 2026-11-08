@@ -8,4 +8,4 @@ if (_what isEqualTo "full") then {
     // Panneau replié : il se rouvrira à sa largeur normale.
     missionNamespace setVariable ["COMSPEC_ATAK_InspFull", false];
 };
-[{ [] call comspec_atak_native_fnc_layoutApply; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+[{ [] call comspec_atak_native_fnc_layoutApply; ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;

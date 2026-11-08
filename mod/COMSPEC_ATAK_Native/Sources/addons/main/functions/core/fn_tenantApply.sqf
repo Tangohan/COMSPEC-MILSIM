@@ -10,7 +10,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_TenantCbaEH" } && {!isNil
         params [["_setting", ""]];
         if (_setting in ["comspec_overwatch_roleplay_enabled", "comspec_overwatch_roleplay_network_failures", "comspec_overwatch_roleplay_sensor_failures",
             "comspec_overwatch_roleplay_visual_effects", "comspec_overwatch_show_link_strip", "comspec_overwatch_link_degrade_sim"]) then {
-            [{ [] call comspec_atak_native_fnc_tenantApply; }] call CBA_fnc_execNextFrame;
+            [{ [] call comspec_atak_native_fnc_tenantApply; }] call comspec_atak_native_fnc_nextFrame;
         };
     }] call CBA_fnc_addEventHandler];
 };

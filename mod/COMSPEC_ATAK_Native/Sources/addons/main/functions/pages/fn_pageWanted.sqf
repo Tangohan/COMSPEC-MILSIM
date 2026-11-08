@@ -23,7 +23,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_WantedMission" }) then {
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Wanted", []];
 if ((count _data) isEqualTo 0) then {
     uiNamespace setVariable ["COMSPEC_ATAK_Wanted", [[], "", ""]];
-    [{ ["load"] call comspec_atak_native_fnc_wantedAction; }] call CBA_fnc_execNextFrame;
+    [{ ["load"] call comspec_atak_native_fnc_wantedAction; }] call comspec_atak_native_fnc_nextFrame;
     _data = [[], "", ""];
 };
 _data params ["_list", "_at", "_err"];

@@ -126,14 +126,14 @@ switch (_mode) do {
         };
         playSound "ClickSoft";
         // À l'image suivante : la carte vient de prendre le focus (fn_mapUnfocus le lui retire), le menu passe devant.
-        [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+        [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "close": {
         [] call _unbindEsc;
         // Contrôles masqués tout de suite, supprimés à l'image suivante (jamais pendant le clic d'un de leurs boutons).
         private _old = uiNamespace getVariable ["COMSPEC_ATAK_MapCtxCtrls", []];
         { if (!isNull _x) then { _x ctrlShow false; _x ctrlEnable false; }; } forEach _old;
-        [{ { ctrlDelete _x; } forEach _this; }, _old] call CBA_fnc_execNextFrame;
+        [{ { ctrlDelete _x; } forEach _this; }, _old] call comspec_atak_native_fnc_nextFrame;
         uiNamespace setVariable ["COMSPEC_ATAK_MapCtxCtrls", []];
         _s set ["mapCtx", createHashMap];
     };
@@ -149,7 +149,7 @@ switch (_mode) do {
         // Supprimer : sous-menu (plusieurs éléments sous le clic), puis deux clics (CONFIRMER), bandeau ANNULER ensuite.
         if (_arg isEqualTo "DELS") exitWith {
             _c set ["sub", "DEL"]; _c set ["at", diag_tickTime]; playSound "ClickSoft";
-            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
         };
         if ((_arg select [0, 4]) isEqualTo "DEL_") exitWith {
             private _i = parseNumber (_arg select [4]);
@@ -157,7 +157,7 @@ switch (_mode) do {
             if ((count _e) isEqualTo 0) exitWith {};
             if ((_c getOrDefault ["delCf", -1]) isNotEqualTo _i) exitWith {
                 _c set ["delCf", _i]; _c set ["at", diag_tickTime]; playSound "ClickSoft";
-                [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+                [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
             };
             ["close"] call comspec_atak_native_fnc_mapCtxMenu;
             playSound "ClickSoft";
@@ -210,7 +210,7 @@ switch (_mode) do {
             _c set ["sub", switch (_arg) do { case "ZNST": { "ZNST" }; case "ZNAX"; case "ZNAX_SUB": { "ZNAX" }; default { "ZN" }; }];
             _c set ["at", diag_tickTime];
             playSound "ClickSoft";
-            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
         };
         if (_arg in ["DRONE", "BACK", "AI", "AIPOST", "AINEXT"]) exitWith {
             // Groupe IA suivant (du plus proche au plus loin du point cliqué).
@@ -227,7 +227,7 @@ switch (_mode) do {
             }];
             _c set ["at", diag_tickTime];
             playSound "ClickSoft";
-            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
         };
         private _pos = _c get "pos";
         private _m = _c getOrDefault ["marker", ""];
@@ -316,7 +316,7 @@ switch (_mode) do {
                 { if ((_x find "COMSPEC_ALERT_") isEqualTo 0 || {(_x find "COMSPEC_PANIC_") isEqualTo 0}) then { deleteMarkerLocal _x; _n = _n + 1; }; } forEach allMapMarkers;
                 _s set ["selectedMarker", ""];
                 ["INFO", format ["%1 alerte(s) effacée(s) de la carte", _n], 2, 20] call comspec_atak_native_fnc_notify;
-                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
             };
             case "NOFLY": { ["add", [_pos, 200]] call comspec_atak_native_fnc_noFly; };
             case "NOFLYDEL": {
@@ -360,7 +360,7 @@ switch (_mode) do {
             case "DHUNT";
             case "DHOVER";
             case "DLAND": {
-                [{ ["mapOrder", _this] call comspec_atak_native_fnc_droneAction; }, [_arg select [1], +_pos]] call CBA_fnc_execNextFrame;
+                [{ ["mapOrder", _this] call comspec_atak_native_fnc_droneAction; }, [_arg select [1], +_pos]] call comspec_atak_native_fnc_nextFrame;
             };
             case "CAM": {
                 private _u = objectFromNetId (_c getOrDefault ["unit", ""]);
@@ -718,7 +718,7 @@ switch (_mode) do {
             // Ligne exécutée à l'image suivante, hors du clic (2.9.40) : « close » supprimait ce bouton pendant son propre
             // gestionnaire et le moteur ne laissait plus passer aucun clic (carte figée après NOMMER LES AXES, tracé
             // impossible après ZONE DEPUIS LE CLIC, carte qui ne répond plus) ; même règle que fn_pageClear.
-            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;", _key]];
+            _b ctrlAddEventHandler ["ButtonClick", compile format ["[{ ['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;", _key]];
             _ry = _ry + _rowH;
         } forEach _rows;
         // Suivis aussi par la page : un rendu complet (changement d'app) les efface avec le reste.

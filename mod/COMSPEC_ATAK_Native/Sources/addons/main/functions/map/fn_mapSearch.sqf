@@ -26,7 +26,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MapSearch", _st];
 private _type = _st getOrDefault ["type", "IMEI"];
 private _hit = _st getOrDefault ["hit", createHashMap];
 private _now = [time, serverTime] select isMultiplayer;
-private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _norm = {
     params ["_q"];
     private _n = toString ((toArray toUpper _q) select { (_x >= 48 && _x <= 57) || {_x >= 65 && _x <= 90} });
@@ -382,7 +382,7 @@ switch (_act) do {
                     private _st = uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap];
                     if !((_st getOrDefault ["hit", createHashMap]) isEqualTo _h && {(_h getOrDefault ["token", -1]) isEqualTo _token}) exitWith {};
                     ["resolved"] call comspec_atak_native_fnc_mapSearch;
-                }, [_h, _token], 3 + random 4] call CBA_fnc_waitAndExecute;
+                }, [_h, _token], 3 + random 4] call comspec_atak_native_fnc_waitAndExec;
                 call _startPfh;
             };
             case "GPS": {
@@ -548,12 +548,12 @@ switch (_act) do {
         [_c, _st getOrDefault ["q", ""]] call _fillList;
         _e ctrlAddEventHandler ["KeyDown", {
             params ["", "_key"];
-            if (_key in [28, 156]) exitWith { [{ ["go"] call comspec_atak_native_fnc_mapSearch; }] call CBA_fnc_execNextFrame; true };
+            if (_key in [28, 156]) exitWith { [{ ["go"] call comspec_atak_native_fnc_mapSearch; }] call comspec_atak_native_fnc_nextFrame; true };
             false
         }];
         _e ctrlAddEventHandler ["KeyUp", { ["filter"] call comspec_atak_native_fnc_mapSearch; false }];
-        _c ctrlAddEventHandler ["LBSelChanged", { [{ ["pick"] call comspec_atak_native_fnc_mapSearch; }] call CBA_fnc_execNextFrame; }];
-        [{ [{ ctrlSetFocus ((uiNamespace getVariable ["COMSPEC_ATAK_MapSearchCtl", [controlNull]]) select 0); }] call CBA_fnc_execNextFrame; }] call CBA_fnc_execNextFrame;
+        _c ctrlAddEventHandler ["LBSelChanged", { [{ ["pick"] call comspec_atak_native_fnc_mapSearch; }] call comspec_atak_native_fnc_nextFrame; }];
+        [{ [{ ctrlSetFocus ((uiNamespace getVariable ["COMSPEC_ATAK_MapSearchCtl", [controlNull]]) select 0); }] call comspec_atak_native_fnc_nextFrame; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "card": {
         if ((count _hit) isEqualTo 0) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", controlNull]; };

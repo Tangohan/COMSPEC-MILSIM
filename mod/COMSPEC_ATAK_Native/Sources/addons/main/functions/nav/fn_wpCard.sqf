@@ -119,7 +119,7 @@ _e ctrlAddEventHandler ["KeyDown", {
         } else {
             ["place"] call comspec_atak_native_fnc_wpAction;
         };
-    }] call CBA_fnc_execNextFrame;
+    }] call comspec_atak_native_fnc_nextFrame;
     true
 }];
 private _hint = ["COMSPEC_RscStructuredText", [_fx + _fw * 0.6 + _pad / 2, _y, _fw * 0.4 - _pad / 2, _rh]] call _mk;

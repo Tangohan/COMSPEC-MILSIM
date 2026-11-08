@@ -47,7 +47,7 @@ private _qn = count ((uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHash
 [[_pad, _pad, _tw - _pad / 6, _rowH], ["DIAPOSITIVES", "DIAPOS"] select (_nTabs > 4), { ["tab", "SLIDES"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SLIDES"] call _btn;
 [[_pad + _tw, _pad, _tw - _pad / 6, _rowH], ["QUESTIONS", format ["QUESTIONS (%1)", _qn]] select (_qn > 0), { ["tab", "QUESTIONS"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "QUESTIONS"] call _btn;
 [[_pad + 2 * _tw, _pad, _tw - _pad / 6, _rowH], "MISSION", { ["tab", "MISSION"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "MISSION"] call _btn;
-[[_pad + 3 * _tw, _pad, _tw - _pad / 6, _rowH], "CARTE", { [{ ["PLAN"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }] call _btn;
+[[_pad + 3 * _tw, _pad, _tw - _pad / 6, _rowH], "CARTE", { [{ ["PLAN"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }] call _btn;
 if (_nTabs > 4) then {
     [[_pad + 4 * _tw, _pad, _tw - _pad / 6, _rowH], format ["ÉCRANS (%1)", _nScreens], { ["tab", "SCREENS"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SCREENS"] call _btn;
 };
@@ -59,7 +59,7 @@ private _gi = ["COMSPEC_RscPicture", [_gx + _gearW * 0.18, _pad + _rowH * 0.18, 
 _gi ctrlSetTextColor ([[0.92, 0.96, 0.93, 1], [0.03, 0.05, 0.04, 1]] select _gearOn);
 private _gb = ["COMSPEC_RscButtonOverlay", [_gx, _pad, _gearW, _rowH]] call comspec_atak_native_fnc_pageCtrl;
 _gb ctrlSetTooltip (("Paramètres du briefing : lien Google Slides, source des diapositives") call comspec_atak_native_fnc_tr);
-_gb ctrlAddEventHandler ["ButtonClick", { [{ [["open", "close"] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["briefTab", "SLIDES"]) isEqualTo "SETTINGS")] call comspec_atak_native_fnc_briefingCfg; }] call CBA_fnc_execNextFrame; }];
+_gb ctrlAddEventHandler ["ButtonClick", { [{ [["open", "close"] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["briefTab", "SLIDES"]) isEqualTo "SETTINGS")] call comspec_atak_native_fnc_briefingCfg; }] call comspec_atak_native_fnc_nextFrame; }];
 private _y0 = _pad * 2 + _rowH;
 
 if (_tab isEqualTo "SETTINGS") exitWith {
@@ -80,7 +80,7 @@ if (_tab isEqualTo "SCREENS") exitWith {
         ];
         if (_total < 1) then { _rows pushBack ["text", ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Aucune diapositive chargée : ouvrez d'abord une présentation dans DIAPOSITIVES.</t>", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Vous regardez une présentation FENRIR : touchez MES DIAPOS pour diffuser les vôtres.</t>"] select (_src isEqualTo "FENRIR")]; };
     };
-    if ((count _screens) > 1 && {_total > 0}) then { _rows pushBack ["buttons", [["DIFFUSER SUR TOUS", { ["castAll"] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call CBA_fnc_waitAndExecute; }, true]]]; };
+    if ((count _screens) > 1 && {_total > 0}) then { _rows pushBack ["buttons", [["DIFFUSER SUR TOUS", { ["castAll"] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call comspec_atak_native_fnc_waitAndExec; }, true]]]; };
     {
         private _o = _x;
         private _cfg = _o getVariable ["COMSPEC_ATAK_Screen", []];
@@ -101,13 +101,13 @@ if (_tab isEqualTo "SCREENS") exitWith {
         private _b = [];
         if ((count _c) >= 5) then {
             _b append [
-                ["«", compile format ["['step', [objectFromNetId '%1', -1]] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call CBA_fnc_waitAndExecute;", _id]],
-                ["»", compile format ["['step', [objectFromNetId '%1', 1]] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call CBA_fnc_waitAndExecute;", _id]],
-                ["ARRÊTER", compile format ["['stop', objectFromNetId '%1'] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call CBA_fnc_waitAndExecute;", _id]]
+                ["«", compile format ["['step', [objectFromNetId '%1', -1]] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call comspec_atak_native_fnc_waitAndExec;", _id]],
+                ["»", compile format ["['step', [objectFromNetId '%1', 1]] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call comspec_atak_native_fnc_waitAndExec;", _id]],
+                ["ARRÊTER", compile format ["['stop', objectFromNetId '%1'] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call comspec_atak_native_fnc_waitAndExec;", _id]]
             ];
         };
         if (_total > 0 && {(_c param [0, objNull]) isNotEqualTo player}) then {
-            _b pushBack [["DIFFUSER", "REPRENDRE"] select ((count _c) >= 5), compile format ["['cast', objectFromNetId '%1'] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call CBA_fnc_waitAndExecute;", _id], true];
+            _b pushBack [["DIFFUSER", "REPRENDRE"] select ((count _c) >= 5), compile format ["['cast', objectFromNetId '%1'] call comspec_atak_native_fnc_screenCast; [{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.3] call comspec_atak_native_fnc_waitAndExec;", _id], true];
         };
         if ((count _b) > 0) then { _rows pushBack ["buttons", _b]; };
     } forEach _screens;
@@ -120,7 +120,7 @@ if (_tab isEqualTo "SCREENS") exitWith {
         private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
         private _viewed = ["viewed"] call comspec_atak_native_fnc_fenrir;
         private _hasG = (profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""]) isNotEqualTo "" || {missionNamespace getVariable ["COMSPEC_GoogleBriefingActive", false]};
-        private _again = "[{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.5] call CBA_fnc_waitAndExecute;";
+        private _again = "[{ if (((uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) getOrDefault ['activePage', '']) isEqualTo 'BRIEFING') then { ['BRIEFING'] call comspec_atak_native_fnc_pageRender; }; }, [], 0.5] call comspec_atak_native_fnc_waitAndExec;";
         {
             _x params ["_fid", "_dist"];
             private _st = ["state", _fid] call comspec_atak_native_fnc_fenrir;
@@ -163,7 +163,7 @@ if (_tab isEqualTo "QUESTIONS") exitWith {
     } else {
         private _q = uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap];
         if ((_q getOrDefault ["slide", -1]) isNotEqualTo (_slide select 0)) then {
-            [{ ["questions", _this] call comspec_atak_native_fnc_briefingAction; }, _slide select 0] call CBA_fnc_execNextFrame;
+            [{ ["questions", _this] call comspec_atak_native_fnc_briefingAction; }, _slide select 0] call comspec_atak_native_fnc_nextFrame;
         };
         private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
         _rows append [
@@ -262,7 +262,7 @@ private _pref = profileNamespace getVariable ["COMSPEC_ATAK_BriefSource", "AUTO"
 private _gUrl = profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""];
 if (_pref isEqualTo "GOOGLE" && {_bridge} && {_gUrl isNotEqualTo ""} && {!(_src in ["GOOGLE", "FENRIR"])} && {(uiNamespace getVariable ["COMSPEC_ATAK_BriefAutoTried", ""]) isNotEqualTo _gUrl}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_BriefAutoTried", _gUrl];
-    [{ ["load", [_this, false]] call comspec_atak_native_fnc_briefingCfg; }, _gUrl] call CBA_fnc_execNextFrame;
+    [{ ["load", [_this, false]] call comspec_atak_native_fnc_briefingCfg; }, _gUrl] call comspec_atak_native_fnc_nextFrame;
 };
 // Raison montrée dans la zone d'image quand la diapositive Athena ne peut pas s'afficher (vide : image affichée).
 private _slideWhy = "";
@@ -371,7 +371,7 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
             // et la page redessinée relance le téléchargement. Chemin "WEB" : rendu par le navigateur intégré.
             _cache set [_path, [switch (true) do { case (_why isNotEqualTo ""): { "" }; case (_web): { "WEB:" + _path }; default { _use }; }, _why]];
             if ((_loading getOrDefault [_path, -1]) isEqualTo _stamp) then { _loading deleteAt _path; };
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
     };
     _slideLoading = !(_path in _cache);
@@ -403,7 +403,7 @@ if (_src isEqualTo "GOOGLE" && {_path isNotEqualTo ""}) then {
             };
             ["INFO", "BRIEFING", format ["Diapositive Google : fichier %1, %2", _path, ["affichée par le navigateur intégré (texture refusée par Arma)", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
             _gCache set [_path, [["WEB:" + _path, ""] select (_why isNotEqualTo ""), ["", "Diapositive Google impossible à afficher : " + _why] select (_why isNotEqualTo "")]];
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
         };
         _st = [diag_tickTime];
     };

@@ -14,7 +14,7 @@ private _mine = missionNamespace getVariable ["COMSPEC_ATAK_EwMine", []];
 private _active = (count _mine) > 0 && {(_mine select 4) >= _now};
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _km = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
-private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['ewTab', '%1']; [{ ['EW'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['ewTab', '%1']; [{ ['EW'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
 private _rows = [["segment", "", [["BROUILLAGE", "JAM"] call _tabBtn, ["GONIO", "DF"] call _tabBtn, ["GÉOLOC", "GEO"] call _tabBtn, ["ÉTAT", "FX"] call _tabBtn]], ["gap"]];
 private _seg = {
     params ["_label", "_key", "_def", "_opts"];

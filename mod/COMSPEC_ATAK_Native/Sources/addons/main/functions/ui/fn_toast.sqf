@@ -112,7 +112,7 @@ if (_new) then {
             { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ToastPill", []]);
             uiNamespace setVariable ["COMSPEC_ATAK_ToastPill", []];
             uiNamespace setVariable ["COMSPEC_ATAK_Toast", []];
-        }, [_seq], 0.32] call CBA_fnc_waitAndExecute;
-    }, [_seq], (_dur - 0.3) max 0.5] call CBA_fnc_waitAndExecute;
+        }, [_seq], 0.32] call comspec_atak_native_fnc_waitAndExec;
+    }, [_seq], (_dur - 0.3) max 0.5] call comspec_atak_native_fnc_waitAndExec;
 };
 true

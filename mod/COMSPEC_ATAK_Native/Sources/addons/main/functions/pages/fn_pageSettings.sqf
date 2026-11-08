@@ -7,7 +7,7 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _bridge = [] call comspec_atak_native_fnc_bridge;
-private _rerender = { [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _rerender = { [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 uiNamespace setVariable ["COMSPEC_ATAK_SettingsRerender", _rerender];
 
 // Réglage profil (bascule) : [variable, défaut, clé communauté, libellé, aide]
@@ -23,7 +23,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ProfToggle", {
         "COMSPEC_ATAK_TapFeedback", "COMSPEC_ATAK_Notifications", "COMSPEC_ATAK_Toasts", "COMSPEC_ATAK_Vibrate", "COMSPEC_ATAK_BftAlerts",
         "COMSPEC_ATAK_Silent", "COMSPEC_ATAK_LauncherSearch", "COMSPEC_ATAK_LockScreen", "COMSPEC_ATAK_DirtFx"]
         && {["set_" + _var, _new] call comspec_atak_native_fnc_formSet}) exitWith {};
-    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _profSwitch = {
     params ["_var", "_def", "_tenantKey", "_label", ["_help", ""]];
@@ -37,7 +37,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ProfSet", {
     [] call comspec_atak_native_fnc_saveProfile;
     // Modèle : la liste déroulante CBA (comspec_atak_native_phone_model) suit le choix fait dans le téléphone.
     if (_var isEqualTo "COMSPEC_ATAK_PhoneModel") then { ["comspec_atak_native_phone_model", _val, false, "client"] call CBA_settings_fnc_set; };
-    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _profSegment = {
     params ["_var", "_def", "_label", "_opts", ["_help", ""]];
@@ -54,7 +54,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_CbaToggle", {
     [_k, _new, false, "client"] call CBA_settings_fnc_set;
     // Étiquettes de la carte (lues au dessin de la carte) : l'interrupteur change sur place, la page n'est pas redessinée.
     if ((_k select [0, 29]) isEqualTo "comspec_atak_native_map_show_" && {["cba_" + _k, _new] call comspec_atak_native_fnc_formSet}) exitWith {};
-    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _cbaSwitch = {
     params ["_k", "_tenantKey", "_label", ["_help", ""], ["_d", false]];
@@ -69,7 +69,7 @@ private _cbaSwitch = {
 uiNamespace setVariable ["COMSPEC_ATAK_CbaSet", {
     params ["_k", "_v"];
     [_k, _v, false, "client"] call CBA_settings_fnc_set;
-    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _cbaSegment = {
     params ["_k", "_def", "_label", "_opts", ["_help", ""]];
@@ -86,7 +86,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_SetAnchor", {
     profileNamespace setVariable ["COMSPEC_ATAK_MiniAnchor", _k];
     { profileNamespace setVariable [_x, [0, 0]]; } forEach ["COMSPEC_ATAK_Offset_MINI_PORTRAIT", "COMSPEC_ATAK_Offset_MINI_LANDSCAPE"];
     [] call comspec_atak_native_fnc_saveProfile;
-    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _anchorNow = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
 private _anchorSeg = { params ["_pairs"]; _pairs apply { [_x select 0, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_SetAnchor');", _x select 1], (_x select 1) isEqualTo _anchorNow] } };
@@ -104,7 +104,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_DockToggle", {
     if (_id in _d) then { _d = _d - [_id]; } else { if ((count _d) < 6) then { _d pushBack _id; } else { ["WARNING", "6 apps au maximum dans le dock", 3, 20] call comspec_atak_native_fnc_notify; }; };
     profileNamespace setVariable ["COMSPEC_ATAK_DockApps", _d];
     [] call comspec_atak_native_fnc_saveProfile;
-    [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _dockNow = profileNamespace getVariable ["COMSPEC_ATAK_DockApps", []];
 if ((count _dockNow) isEqualTo 0) then { _dockNow = (([] call comspec_atak_native_fnc_appList) select { _x get "dock" }) apply { _x get "id" }; };
@@ -115,7 +115,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_SetFold", {
     params ["_k", "_def"];
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     _st set ["setFold_" + _k, !(_st getOrDefault ["setFold_" + _k, _def])];
-    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _foldOpen = { params ["_k", ["_def", false]]; (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["setFold_" + _k, _def] };
 private _fold = {
@@ -132,9 +132,9 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["text", "Le modèle et la couleur sont ceux du téléphone dans vos poches. Samsung S7 coyote, olive ou noir, Samsung S23, iPhone 17 Pro, V2 Enhanced, Xiaomi X3D, Sonim XP8, tablette durcie."],
     ["info", "Téléphone porté", [_wornName, "aucun"] select (_wornName isEqualTo "")],
     ["COMSPEC_ATAK_Shell", "auto", "Coque", [["AUTO", "auto"], ["JOUR", "day"], ["NUIT", "night"]], "AUTO : coque de nuit après le coucher du soleil"] call _profSegment,
-    ["segment", "Antenne (port SMA)", [["AUCUNE", { ["unmount"] call comspec_atak_native_fnc_antenna; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, (["get"] call comspec_atak_native_fnc_antenna) isEqualTo []]]
+    ["segment", "Antenne (port SMA)", [["AUCUNE", { ["unmount"] call comspec_atak_native_fnc_antenna; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, (["get"] call comspec_atak_native_fnc_antenna) isEqualTo []]]
         + ((["owned"] call comspec_atak_native_fnc_antenna) apply {
-            [toUpper ((_x select 2) select [8]), compile format ["['mount', '%1'] call comspec_atak_native_fnc_antenna; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _x select 0],
+            [toUpper ((_x select 2) select [8]), compile format ["['mount', '%1'] call comspec_atak_native_fnc_antenna; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _x select 0],
                 ((["get"] call comspec_atak_native_fnc_antenna) param [0, ""]) isEqualTo (_x select 0)]
         }), "Antenne en plus pour un meilleur réseau, si vous en avez une dans l'inventaire : courte, fouet ou patch (patch : à l'arrêt seulement)"],
     ["COMSPEC_ATAK_VehTablet", true, "", "Tablette dans les véhicules", "Dans un véhicule équipé ou au poste de commandement, la tablette de bord remplace le téléphone"] call _profSwitch,
@@ -183,7 +183,7 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
             uiNamespace setVariable ["COMSPEC_ATAK_WipeArm", diag_tickTime];
             ["WARNING", "Appuyez encore pour tout effacer", 4, 40] call comspec_atak_native_fnc_notify;
         };
-        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }]]],
     ["section", "Animations et sons", "Mouvements, clics et petites vibrations"],
     ["COMSPEC_ATAK_Animations", true, "", "Animations", "Interrupteur général : désactivé, plus aucun mouvement (onde à l'appui, icônes en cascade, volet rapide, transitions)"] call _profSwitch,
@@ -197,15 +197,15 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["section", "Accessoires", "Batterie externe, filtre d'écran JVN, module DL-7"],
     ["switch", format ["Batterie externe sur la plaque%1", ["", format [" (%1 %%)", round (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankCharge", 100])]] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])],
         missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false],
-        { [["attach", "detach"] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])] call comspec_atak_native_fnc_powerBank; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        { [["attach", "detach"] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])] call comspec_atak_native_fnc_powerBank; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }],
     ["switch", "Filtre d'écran JVN", ["filter"] call comspec_atak_native_fnc_screenGlow,
-        { ["toggle"] call comspec_atak_native_fnc_screenGlow; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        { ["toggle"] call comspec_atak_native_fnc_screenGlow; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }],
     // Affichage situation sous JVN (Overwatch connect, fn_ecotiApplyHudSetting) : même case que le menu CBA, profil compris.
     ["switch", "Infos tactiques dans les JVN", (missionNamespace getVariable ["comspec_overwatch_ecoti_hud", false]) isEqualTo true,
         {
             if (isNil "comspec_overwatch_connect_fnc_ecotiApplyHudSetting") exitWith {};
             [!((missionNamespace getVariable ["comspec_overwatch_ecoti_hud", false]) isEqualTo true)] call comspec_overwatch_connect_fnc_ecotiApplyHudSetting;
-            [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
         },
         "Alliés, repères et véhicules dans la vue quand vos JVN sont allumées. Marche aussi sans Athena"],
     ["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7", [["OLIVE", "olive"], ["NOIR", "black"], ["TAN", "tan"]], "Couleur du module de l'app Extraction"] call _profSegment
@@ -220,13 +220,13 @@ if (["patch"] call _foldOpen) then {
         // recherche, sources et vignettes (fn_pagePatches), retour aux Réglages par la touche retour.
         ["person", ([player] call comspec_atak_native_fnc_patchTexture) select 0, format ["<t font='COMSPEC_BarlowBold'>Patch porté : %1</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Recherche, nos patchs, insignes des mods et de la mission</t>",
             (["name", profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"]] call comspec_atak_native_fnc_patchCatalog) regexReplace ["[<>&]", ""]], [], [1, 1, 1, 1]],
-        ["buttons", [[format ["CHOISIR UN INSIGNE (%1 disponibles)", count (["list"] call comspec_atak_native_fnc_patchCatalog)], { [{ ["PATCHES"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, true]]],
+        ["buttons", [[format ["CHOISIR UN INSIGNE (%1 disponibles)", count (["list"] call comspec_atak_native_fnc_patchCatalog)], { [{ ["PATCHES"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, true]]],
         ["edit", "patchText", "Texte du patch nominatif", profileNamespace getVariable ["COMSPEC_ATAK_PatchText", ""]],
         ["buttons", [["ENREGISTRER LE TEXTE", {
             private _t = ["patchText"] call comspec_atak_native_fnc_formValue;
             if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_PatchText", (trim _t) select [0, 14]]; [] call comspec_atak_native_fnc_saveProfile; ["Patch nominatif enregistré", 2] call comspec_atak_native_fnc_toast; };
         }]]],
-        ["buttons", [["VOIR L'ARRIÈRE DU TÉLÉPHONE", { [{ [] call comspec_atak_native_fnc_backView; }] call CBA_fnc_execNextFrame; }]]]
+        ["buttons", [["VOIR L'ARRIÈRE DU TÉLÉPHONE", { [{ [] call comspec_atak_native_fnc_backView; }] call comspec_atak_native_fnc_nextFrame; }]]]
     ];
 };
 // Téléphone accroché au gilet : seulement si le serveur autorise l'ATAK en 3D (désactivé par défaut).
@@ -245,18 +245,18 @@ if (["dock"] call _foldOpen) then {
     {
         _perso pushBack ["switch", _x get "name", (_x get "id") in _dockNow, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_DockToggle');", _x get "id"]];
     } forEach (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible && {!(_x getOrDefault ["wip", false])} });
-    _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+    _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; [] call comspec_atak_native_fnc_saveProfile; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]]];
 };
 _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
     { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Theme", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_CarryStyle", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_IconStyle", "COMSPEC_ATAK_PageFx", "COMSPEC_ATAK_OpenSplash", "COMSPEC_ATAK_TitleSlide", "COMSPEC_ATAK_PressFx", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_HandHint", "COMSPEC_ATAK_LauncherSearch"];
     [] call comspec_atak_native_fnc_saveProfile;
-    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }]]];
 // Taille du plein écran : réglage CBA par joueur (comspec_atak_native_full_scale), le même que dans le menu CBA.
 uiNamespace setVariable ["COMSPEC_ATAK_SetFullScale", {
     params ["_v"];
     ["comspec_atak_native_full_scale", _v, false, "client"] call CBA_settings_fnc_set;
-    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _fullNow = missionNamespace getVariable ["comspec_atak_native_full_scale", 1];
 if !(_fullNow isEqualType 0) then { _fullNow = 1; };
@@ -270,11 +270,11 @@ private _place = [
     ["segment", "Coin de l'écran", [[["HAUT G", "TL"], ["MILIEU G", "ML"], ["BAS G", "BL"]]] call _anchorSeg],
     ["segment", "", [[["HAUT D", "TR"], ["MILIEU D", "MR"], ["BAS D", "BR"]]] call _anchorSeg],
     ["segment", "", [[["HAUT CENTRE", "TC"], ["BAS CENTRE", "BC"]]] call _anchorSeg, "BAS CENTRE : le téléphone est tout en bas de l'écran, au milieu"],
-    ["buttons", [["DÉPLACER À LA SOURIS (MODE DISPOSITION)", { [{ ["ARRANGE_ON"] call comspec_atak_native_fnc_phoneDrag; }] call CBA_fnc_execNextFrame; }, true]]],
+    ["buttons", [["DÉPLACER À LA SOURIS (MODE DISPOSITION)", { [{ ["ARRANGE_ON"] call comspec_atak_native_fnc_phoneDrag; }] call comspec_atak_native_fnc_nextFrame; }, true]]],
     ["buttons", [["REMETTRE LE TÉLÉPHONE EN PLACE", {
         { profileNamespace setVariable [_x, [0, 0]]; } forEach ["COMSPEC_ATAK_Offset_MINI_PORTRAIT", "COMSPEC_ATAK_Offset_MINI_LANDSCAPE", "COMSPEC_ATAK_Offset_FULL_LANDSCAPE"];
         [] call comspec_atak_native_fnc_saveProfile;
-        [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }]]]
 ];
 private _map = [
@@ -317,7 +317,7 @@ private _map = [
         } else {
             uiNamespace setVariable ["COMSPEC_ATAK_MapResetArm", diag_tickTime];
         };
-        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }, false, true, "Indicatifs, couleurs, boussole, coordonnées, tailles et fond de carte reviennent aux réglages d'origine"]]]
 ];
 // Cartes hors ligne : fond PHOTO de la carte en cours téléchargé depuis Athena (état, téléchargement, effacement).
@@ -331,7 +331,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MuteToggle", {
     if (_t in _m) then { _m = _m - [_t]; } else { _m pushBack _t; };
     profileNamespace setVariable ["COMSPEC_ATAK_NotifMuted", _m];
     [] call comspec_atak_native_fnc_saveProfile;
-    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _mutedTypes = profileNamespace getVariable ["COMSPEC_ATAK_NotifMuted", []];
 if !(_mutedTypes isEqualType []) then { _mutedTypes = []; };
@@ -378,7 +378,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MedToggle", {
     if (_k in _h) then { _h = _h - [_k]; } else { _h pushBack _k; };
     profileNamespace setVariable ["COMSPEC_ATAK_MedHide", _h];
     [] call comspec_atak_native_fnc_saveProfile;
-    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 }];
 private _medRow = {
     params ["_k", "_label"];
@@ -401,12 +401,12 @@ private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
 private _hw = [
     ["section", "Connexions", "Mode avion et Bluetooth (aussi dans l'app Bluetooth et le centre de notifications)"],
-    ["switch", "Mode avion", [] call comspec_atak_native_fnc_airplaneMode, { ["toggle"] call comspec_atak_native_fnc_airplaneMode; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "Coupe tout le réseau : ni synchro, ni SMS, ni BFT (les envois attendent le retour du réseau)"],
-    ["switch", "Bluetooth", (["state"] call comspec_atak_native_fnc_btAction) get "on", { ["toggle"] call comspec_atak_native_fnc_btAction; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "Jumelage par code et partage de sons avec les téléphones proches (marche aussi en mode avion)"],
+    ["switch", "Mode avion", [] call comspec_atak_native_fnc_airplaneMode, { ["toggle"] call comspec_atak_native_fnc_airplaneMode; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, "Coupe tout le réseau : ni synchro, ni SMS, ni BFT (les envois attendent le retour du réseau)"],
+    ["switch", "Bluetooth", (["state"] call comspec_atak_native_fnc_btAction) get "on", { ["toggle"] call comspec_atak_native_fnc_btAction; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, "Jumelage par code et partage de sons avec les téléphones proches (marche aussi en mode avion)"],
     ["section", "Matériel et réseau", "Simulations réglées par le serveur (options CBA)"],
     ["info", "Dégâts du téléphone", [ "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>simulation coupée</t>", format ["%1 · usure %2 %%", ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>intact</t>", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _hp get "reason"]] select ((_hp get "state") isNotEqualTo "OK"), round ((_hp get "damage") * 100)]] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])],
-    ["buttons", [["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean],
-        ["NETTOYAGE COMPLET", { [{ ["deep"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean]]],
+    ["buttons", [["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call comspec_atak_native_fnc_nextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean],
+        ["NETTOYAGE COMPLET", { [{ ["deep"] call comspec_atak_native_fnc_screenClean; }] call comspec_atak_native_fnc_nextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean]]],
     ["buttons", [["REDÉMARRER LE TÉLÉPHONE", { ["reboot"] call comspec_atak_native_fnc_deviceRepair; }]]],
     ["info", "Réseau simulé", [ "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>simulation coupée</t>", format ["%1 · %2", _lq get "label", [format ["%1 kbit/s", _lq get "kbps"], format ["%1 Mbit/s", ((_lq get "kbps") / 1000) toFixed 1]] select ((_lq get "kbps") >= 1000)]] select (_lq get "sim")]
 ];
@@ -420,7 +420,7 @@ private _appsRows = [
         ["\z\comspec_atak_native\addons\main\data\ui_check.paa", [0.36, 0.78, 0.42, 1], "Installées", format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1</t>", { _x in ["system", "required", "installed"] } count _appsSt], "Sur l'écran d'accueil et dans le dock"],
         ["\z\comspec_atak_native\addons\main\data\app_store.paa", [0.55, 0.6, 0.57, 1], "À installer", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", { _x isEqualTo "removed" } count _appsSt], "Disponibles dans l'App Store"]
     ], 2],
-    ["buttons", [["OUVRIR L'APP STORE", { [{ ["STORE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, true]]]
+    ["buttons", [["OUVRIR L'APP STORE", { [{ ["STORE"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, true]]]
 ];
 private _imp = { _x in ["required", "forbidden"] } count _appsSt;
 if (_imp > 0) then { _appsRows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1 app(s) imposée(s) ou interdite(s) par l'encadrement</t>", _imp]]; };
@@ -477,7 +477,7 @@ private _changed = 0;
             };
             _access pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon],
                 format ["<t font='COMSPEC_BarlowBold'%3>%1</t>%4%2", _title, _note, ["", " color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'"] select _wip, ["", "  <t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>W.I.P</t>"] select _wip],
-                [_keyBtn, ["DÉFAUT", compile format ["['reset', '%1'] call comspec_atak_native_fnc_keybinds; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _id], false, !_wip && {_cur isNotEqualTo _def},
+                [_keyBtn, ["DÉFAUT", compile format ["['reset', '%1'] call comspec_atak_native_fnc_keybinds; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _id], false, !_wip && {_cur isNotEqualTo _def},
                     format ["Touche par défaut : %1", ["name", _def] call comspec_atak_native_fnc_keybinds]]],
                 [[0.55, 0.6, 0.57, 1], _accent] select (!_wip && {_cur isNotEqualTo []})];
         };
@@ -498,7 +498,7 @@ _access append [
         } else {
             uiNamespace setVariable ["COMSPEC_ATAK_KeyResetArm", diag_tickTime];
         };
-        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }, false, _changed > 0, "Deux appuis : remet toutes les touches de l'ATAK comme à l'installation"]]],
     ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Les touches choisies ici sont les mêmes que dans Échap > Options > Contrôles > Configurer les addons > COMSPEC ATAK. En main, glissez la coque pour l'ajuster à partir du coin choisi.</t>"]
 ];
@@ -567,9 +567,9 @@ if (_athMode isEqualTo "on") then {
         { _athena pushBack ["check", _x select 1, _x select 0, _x select 2, _x select 3]; } forEach _steps;
     };
     _athena pushBack ["buttons", [
-        ["RESYNCH", { [{ ["RESYNCH"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, (_queue > 0) || {_offSync isEqualTo ""}, _bridge, "Renvoie votre position, vos marqueurs, votre groupe et vos messages au poste"],
-        ["APP ATHENA", { [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, !(_st get "logged"), true, "Connexion au compte, fiche opérateur"],
-        ["DÉTAIL", { [{ ["NETWORK"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, false, true, "App Réseau : trafic par canal, envois en attente"]
+        ["RESYNCH", { [{ ["RESYNCH"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, (_queue > 0) || {_offSync isEqualTo ""}, _bridge, "Renvoie votre position, vos marqueurs, votre groupe et vos messages au poste"],
+        ["APP ATHENA", { [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, !(_st get "logged"), true, "Connexion au compte, fiche opérateur"],
+        ["DÉTAIL", { [{ ["NETWORK"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, false, true, "App Réseau : trafic par canal, envois en attente"]
     ]];
 };
 
@@ -612,12 +612,12 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
         ["text", format ["<t size='0.8'>%1</t>", ((["text"] call comspec_atak_native_fnc_shotDir) regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]]],
         ["buttons", [["VÉRIFIER LE DOSSIER", { ["check", true] spawn comspec_atak_native_fnc_shotDir; }]]],
         ["buttons", [
-            ["CRÉDITS", { [{ ["CREDITS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }],
-            ["DEBUG", { [{ ["DEBUG"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, (count _anom) > 0],
+            ["CRÉDITS", { [{ ["CREDITS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }],
+            ["DEBUG", { [{ ["DEBUG"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, (count _anom) > 0],
             // Note de service du menu principal (accès, licence) : on range le téléphone pour lui laisser la souris.
             ["RELIRE LA LICENCE", {
                 [] call comspec_atak_native_fnc_close;
-                [{ if (!isNil "comspec_overwatch_connect_fnc_showBetaAccessNote") then { [true] call comspec_overwatch_connect_fnc_showBetaAccessNote; }; }, [], 0.1] call CBA_fnc_waitAndExecute;
+                [{ if (!isNil "comspec_overwatch_connect_fnc_showBetaAccessNote") then { [true] call comspec_overwatch_connect_fnc_showBetaAccessNote; }; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec;
             }, false, !isNil "comspec_overwatch_connect_fnc_showBetaAccessNote"]
         ]]
     ];
@@ -663,8 +663,8 @@ private _cats = [
     ["ABOUT", "À propos du téléphone", format ["%1 · COMSPEC ATAK %2", _modelName, _build], "ui_help", _about]
 ];
 private _sel = (_cats select { (_x select 0) isEqualTo _cat }) param [0, []];
-private _openCat = { params ["_k"]; compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['setCat', '%1']; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k] };
-private _toHome = { private _st = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _st set ['setCat', '']; _st set ['setQuery', '']; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _openCat = { params ["_k"]; compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['setCat', '%1']; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k] };
+private _toHome = { private _st = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _st set ['setCat', '']; _st set ['setQuery', '']; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
 // Recherche : un mot (français ou langue du téléphone) cherché dans le libellé, l'aide et les choix de chaque réglage.
 private _search = {
     private _q = ["setSearch"] call comspec_atak_native_fnc_formValue;
@@ -672,7 +672,7 @@ private _search = {
     private _st = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap];
     _st set ['setQuery', trim _q];
     _st set ['setCat', ''];
-    [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
 };
 private _rows = [];
 // Touche retour dans une catégorie ou une recherche : revient à l'accueil des Réglages au lieu de quitter l'app.
