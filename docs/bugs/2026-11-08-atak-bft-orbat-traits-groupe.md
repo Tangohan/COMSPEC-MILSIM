@@ -1,0 +1,10 @@
+# BFT : menu ORBAT, traits de groupe, photos multiples sur Discord
+
+- **Contexte** : retours du propriétaire sur l'app BFT et la carte.
+- **Menu ORBAT** : la vue arbre existait déjà, cachée derrière un petit bouton « VUE : LISTE » à bascule. Remplacé par un menu à deux boutons, LISTE et ORBAT, la vue choisie en couleur.
+- **Traits de groupe, cause prouvée par lecture** : `fn_meshDraw` dessine tous les liens de l'action « scan », soit un trait par paire de téléphones à portée. **Supposé** : ce sont les traits décrits par le propriétaire (bascule « Traits entre alliés », seuls traits entre joueurs sur la carte). **Correctif** : un seul chemin par groupe avec les meilleurs liens, puis un seul entre groupes (arbre couvrant) ; ossature doublée ; traits internes plus discrets, affichés pour mon groupe ou en zoom rapproché. Tri refait seulement quand les liens changent. Données de l'action « scan » inchangées.
+- **Photos multiples, non fait, demande le site** : le mod envoie chaque cliché séparément (`fn_dronePhoto` « send », une requête par photo) et `DiscordEventRelayService` publie un message par requête. Besoin côté site : regrouper les clichés d'un même joueur et d'une même mission sur une courte fenêtre (20 à 30 s, ou par `batch_id` envoyé par le mod), puis publier un seul message. Discord accepte 10 fichiers et 10 embeds par message : au-delà, une suite de messages. À traiter avec une file et une tâche planifiée : pas un petit changement.
+- **Pointeur de carte** : déjà livré (`docs/bugs/2026-11-08-atak-carte-pointage-appui-long.md`), à vérifier en jeu.
+- **Fichiers touchés** : `functions/pages/fn_pageBft.sqf`, `functions/map/fn_meshDraw.sqf`.
+- **Vérification** : en jeu : BFT, boutons LISTE et ORBAT, choix gardé à la réouverture ; trois groupes sur la carte, calques Wave Relay et Traits entre alliés : un trait double entre groupes, traits internes pour mon groupe, tous les traits en zoom rapproché, couleurs selon la qualité ; un joueur qui s'éloigne : les traits suivent.
+- **Statut** : corrigé à vérifier en jeu (menu ORBAT, traits) ; identifié, à faire côté site (photos multiples).
