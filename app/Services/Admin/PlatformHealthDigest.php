@@ -28,9 +28,10 @@ final class PlatformHealthDigest
     public function __construct(private ?PDO $pdo = null) {}
 
     /**
+     * @param list<string>|null $only clés à calculer (toutes si null) : les autres ne coûtent aucune requête
      * @return list<array{key: string, label: string, value: string, tone: string, hint: string, href: string}>
      */
-    public function rows(): array
+    public function rows(?array $only = null): array
     {
         $rows = [];
         foreach ([
@@ -45,6 +46,9 @@ final class PlatformHealthDigest
             'disk' => ['Espace disque', 'admin/system/storage', fn () => $this->disk()],
             'backup' => ['Dernière sauvegarde', 'admin?onglet=sauvegardes', fn () => $this->backup()],
         ] as $key => [$label, $href, $fn]) {
+            if ($only !== null && !in_array($key, $only, true)) {
+                continue;
+            }
             try {
                 [$value, $tone, $hint] = $fn() + [2 => ''];
             } catch (\Throwable) {
@@ -232,8 +236,12 @@ final class PlatformHealthDigest
         return [$value, $failed > 0 ? 'warn' : 'ok', ''];
     }
 
-    /** @return array{0: string, 1: string} */
-    private function migrations(): array
+    /**
+     * Étapes de migration pas encore passées avec succès.
+     *
+     * @return array{pending: int, failed: int}
+     */
+    public function migrationCounts(): array
     {
         $steps = MigrationRegistry::load(base_path());
         $results = MigrationRunLog::latestByStep($this->pdo());
@@ -244,6 +252,14 @@ final class PlatformHealthDigest
             $pending += $status !== 'ok' ? 1 : 0;
             $failed += $status === 'error' ? 1 : 0;
         }
+
+        return ['pending' => $pending, 'failed' => $failed];
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function migrations(): array
+    {
+        ['pending' => $pending, 'failed' => $failed] = $this->migrationCounts();
         if ($pending === 0) {
             return ['aucune', 'ok'];
         }
