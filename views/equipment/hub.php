@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * Page /equipment : un bandeau compact, des onglets (un espace visible à la fois, chacun avec son adresse
+ * Page /equipment : un bandeau d'accueil (grand à l'arrivée, réduit ailleurs), des onglets (un espace visible à la fois, chacun avec son adresse
  * ?espace=…), puis l'espace demandé : Mes tenues, Favoris, Collections, Tenues de la communauté, Kits de départ,
  * Matériel. Recherche, filtres et pagination sont côté serveur (liens et formulaires GET : tout marche sans
  * JavaScript, le script ne fait que fermer les allers-retours : fenêtres, favori en un clic).
@@ -143,29 +143,69 @@ $mineCatalog = array_map(static function (array $w): array {
     ];
 }, $mineWardrobes);
 $tabLabels = \App\Support\EquipmentSpaces::SPACES;
+// Grand bandeau seulement à l'arrivée sur la page : ailleurs (autre espace, filtre, page suivante), la liste reste à portée de vue.
+$eqLanding = $returnUrl === \App\Support\EquipmentSpaces::url(['espace' => 'mes-tenues']);
+// Compteurs du bandeau : uniquement des données réelles. Sans donnée (page pas prête, jamais vu en jeu, aucun objet remonté), pas de compteur.
+$eqStats = [];
+if (isset($counts['mes-tenues'])) {
+    $eqStats[] = ['label' => 'Mes tenues', 'value' => (string) (int) $counts['mes-tenues']];
+}
+if ($myGameKit !== null) {
+    $eqWorn = trim((string) ($myGameKit['role'] ?? ''));
+    $eqWornAt = strtotime((string) ($myGameKit['last_seen_at'] ?? '')) ?: null;
+    $eqStats[] = ['label' => 'Kit porté en jeu', 'value' => $eqWorn !== '' ? $eqWorn : 'Mon kit en jeu', 'when' => $eqWornAt !== null ? date('d/m/Y', $eqWornAt) : '', 'raw' => $eqWorn !== '', 'text' => true];
+}
+if (isset($counts['communaute'])) {
+    $eqStats[] = ['label' => 'Communauté', 'value' => (string) (int) $counts['communaute']];
+}
+if ($catalogCount > 0) {
+    $eqStats[] = ['label' => 'Objets suivis', 'value' => (string) $catalogCount];
+}
 ?>
 <div class="eq-hub eqx" id="eq-catalog" data-eq-catalog data-eq-space="<?= $h($space) ?>">
-    <header class="eqx-hero eqx-hero--bar">
+    <noscript><style>.eq-hub__img { opacity: 1; } .eq-hub__skeleton { display: none; }</style></noscript>
+    <header class="eqx-hero eqx-hero--kit<?= $eqLanding ? '' : ' eqx-hero--short' ?>">
         <div class="eqx-hero__inner">
             <div class="eqx-hero__copy">
-                <p class="eqx-hero__kicker">Communauté</p>
-                <h1>Équipement</h1>
-            </div>
-            <p class="eqx-hero__lead">Vos tenues, celles de la communauté et les kits de départ, prêts à enfiler en jeu.</p>
-            <div class="eqx-hero__actions">
-                <a class="eqx-btn eqx-btn--primary" href="<?= $h(url('equipment/assistant')) ?>" data-ath-modal>
-                    Assistant de création<?= $kitsAllowed ? '' : ' <span class="eqx-pill">Pro</span>' ?>
-                </a>
-                <?php if ($myGameKit !== null): ?>
-                <form method="post" action="<?= $h(url('equipment/mon-kit/tenue')) ?>">
-                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                    <button type="submit" class="eqx-btn"><?= $myGameKitWardrobeId > 0 ? 'Mettre à jour mon kit en jeu' : 'Enregistrer mon kit en jeu' ?></button>
-                </form>
+                <p class="eqx-hero__kicker"><i aria-hidden="true"></i>Communauté · Équipement</p>
+                <h1>Votre kit.<br><span>Prêt en jeu.</span></h1>
+                <?php if ($eqLanding): ?>
+                <p class="eqx-hero__lead">Composez une tenue une fois, retrouvez-la à chaque opération. Enfilez-la depuis l’arsenal en jeu, partagez-la avec votre communauté ou exportez-la pour ACE.</p>
                 <?php endif; ?>
-                <a class="eqx-btn eqx-btn--quiet" href="<?= $h(url('equipment/ace-export')) ?>" data-eq-ace-export download>Exporter pour ACE</a>
-                <button type="button" class="eqx-btn eqx-btn--quiet" data-eq-open="tenue-help">Ajouter une tenue ?</button>
+                <div class="eqx-hero__actions">
+                    <a class="eqx-btn eqx-btn--primary" href="<?= $h(url('equipment/assistant')) ?>" data-ath-modal>
+                        Assistant de création<?= $kitsAllowed ? '' : ' <span class="eqx-pill">Pro</span>' ?>
+                    </a>
+                    <?php if ($myGameKit !== null): ?>
+                    <form method="post" action="<?= $h(url('equipment/mon-kit/tenue')) ?>">
+                        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                        <button type="submit" class="eqx-btn"><?= $myGameKitWardrobeId > 0 ? 'Mettre à jour mon kit en jeu' : 'Enregistrer mon kit en jeu' ?></button>
+                    </form>
+                    <?php endif; ?>
+                    <a class="eqx-btn" href="<?= $h(url('equipment/ace-export')) ?>" data-eq-ace-export download>Exporter pour ACE</a>
+                    <button type="button" class="eqx-btn eqx-btn--quiet" data-eq-open="tenue-help">Ajouter une tenue ?</button>
+                </div>
             </div>
+            <?php if ($eqLanding): ?>
+            <ol class="eqx-how">
+                <li><span aria-hidden="true">01</span><div><strong>Composez</strong><p>Depuis l’arsenal en jeu, ou avec l’assistant pas à pas sur le site.</p></div></li>
+                <li><span aria-hidden="true">02</span><div><strong>Rangez et partagez</strong><p>Collections par thème, favoris, et partage à toute la communauté.</p></div></li>
+                <li><span aria-hidden="true">03</span><div><strong>Enfilez en jeu</strong><p>Dans l’arsenal, ouvrez le panneau Tenues d’Athena, choisissez la tenue et cliquez sur Enfiler.</p></div></li>
+            </ol>
+            <?php endif; ?>
         </div>
+        <?php if ($eqStats !== []): ?>
+        <div class="eqx-stats__wrap">
+            <dl class="eqx-stats">
+                <?php foreach ($eqStats as $eqStat): ?>
+                <div>
+                    <dt><?= $h($eqStat['label']) ?></dt>
+                    <dd<?= !empty($eqStat['text']) ? ' class="eqx-stats__text"' : '' ?>><?php if (!empty($eqStat['raw'])): ?><span translate="no"><?= $h($eqStat['value']) ?></span><?php else: ?><?= $h($eqStat['value']) ?><?php endif; ?><?php if (($eqStat['when'] ?? '') !== ''): ?> <small><?= $h($eqStat['when']) ?></small><?php endif; ?></dd>
+                </div>
+                <?php endforeach; ?>
+            </dl>
+        </div>
+        <?php endif; ?>
     </header>
 
     <nav class="eqx-tabs" aria-label="Espaces de la page Équipement">

@@ -1,555 +1,263 @@
 <?php
+declare(strict_types=1);
+
+/*
+ * Bureau de suivi roleplay : la liste dit qui a besoin de quoi, la fenêtre d'un membre regroupe tout le reste.
+ * Une seule fenêtre pour toute la page (les menus d'étape et de tuteur n'y sont écrits qu'une fois).
+ * Comportement : public/assets/js/roleplay-followup-board.js. Styles : public/assets/css/back-office-roleplay-suivi.css.
+ * Aucune adresse e-mail n'est affichée ici.
+ */
+
+use App\Support\RoleplayFollowupBoard;
+
 $rpFeatureEnabled = !empty($rpFeatureEnabled);
 $rpRows = is_array($rpRows ?? null) ? $rpRows : [];
-$rpConfig = is_array($rpConfig ?? null) ? $rpConfig : [];
 $rpTrackedCount = (int) ($rpTrackedCount ?? 0);
 $rpEligibleCount = (int) ($rpEligibleCount ?? 0);
 $rpTotalActiveMembers = (int) ($rpTotalActiveMembers ?? count($rpRows));
 $rpTimelineTableReady = !empty($rpTimelineTableReady);
-$rpStagesOptions = is_array($rpStagesOptions ?? null) ? $rpStagesOptions : [];
-$rpTracksOptions = is_array($rpTracksOptions ?? null) ? $rpTracksOptions : [];
+$rpStagesOptions = is_array($rpStagesOptions ?? null) ? array_values(array_filter(array_map(static fn ($s): string => trim((string) $s), $rpStagesOptions), static fn (string $s): bool => $s !== '')) : [];
 $rpTutorChoices = is_array($rpTutorChoices ?? null) ? $rpTutorChoices : [];
 $rpCsrfToken = (string) ($rpCsrfToken ?? '');
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
+$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$today = date('Y-m-d');
 
-$timelineStatusFr = static function (?string $raw): string {
-    return match (trim((string) $raw)) {
-        'planned' => 'Prévu',
-        'completed' => 'Terminé',
-        'blocked' => 'Bloqué',
-        'cancelled' => 'Annulé',
-        '' => '—',
-        default => trim((string) $raw),
-    };
+$fmtDate = static function (mixed $raw): string {
+    $raw = trim((string) $raw);
+    $ts = $raw !== '' ? strtotime($raw) : false;
+
+    return $ts ? date('d/m/Y', $ts) : '';
 };
+$timelineStatusFr = static fn (?string $raw): string => match (trim((string) $raw)) {
+    'planned' => 'Prévu',
+    'completed' => 'Terminé',
+    'blocked' => 'Bloqué',
+    'cancelled' => 'Annulé',
+    '' => '',
+    default => trim((string) $raw),
+};
+
+$counts = RoleplayFollowupBoard::counts($rpRows, $today);
+$defaultFilter = $counts['a-traiter'] > 0 ? 'a-traiter' : 'tous';
+$filters = [
+    'a-traiter' => ['label' => 'À traiter', 'hint' => 'en retard ou sans tuteur', 'tone' => $counts['a-traiter'] > 0 ? 'warn' : ''],
+    'retard' => ['label' => 'En retard', 'hint' => 'échéance ou bilan dépassé', 'tone' => $counts['retard'] > 0 ? 'bad' : ''],
+    'sans-tuteur' => ['label' => 'Sans tuteur', 'hint' => 'suivis, aucun tuteur', 'tone' => ''],
+    'prets' => ['label' => 'Dossiers prêts', 'hint' => 'minimums atteints', 'tone' => ''],
+    'non-suivis' => ['label' => 'Pas encore suivis', 'hint' => 'rien de renseigné', 'tone' => ''],
+    'tous' => ['label' => 'Tous', 'hint' => 'membres actifs', 'tone' => ''],
+];
 ?>
-<style>
-    .rp-followup-sheets {
-        border: 1px solid #cbd5e1;
-        background: #ffffff;
-        overflow: auto;
-        max-height: min(72vh, 56rem);
-    }
-    .rp-followup-sheets__table {
-        width: 100%;
-        min-width: 86rem;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 0.8125rem;
-        line-height: 1.35;
-    }
-    .rp-followup-sheets__table th,
-    .rp-followup-sheets__table td {
-        border-right: 1px solid #e2e8f0;
-        border-bottom: 1px solid #e2e8f0;
-        padding: 0.35rem 0.5rem;
-        vertical-align: middle;
-    }
-    .rp-followup-sheets__table th:last-child,
-    .rp-followup-sheets__table td:last-child {
-        border-right: 0;
-    }
-    .rp-followup-sheets__table thead th {
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        background: #f1f5f9;
-        color: #475569;
-        font-size: 0.625rem;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        white-space: nowrap;
-        border-bottom: 1px solid #94a3b8;
-        box-shadow: 0 1px 0 #94a3b8;
-    }
-    .rp-followup-sheets__table tbody tr:nth-child(even) td {
-        background: #f8fafc;
-    }
-    .rp-followup-sheets__table tbody tr:hover td {
-        background: #eff6ff;
-    }
-    .rp-followup-sheets__meta {
-        display: block;
-        margin-top: 0.05rem;
-        font-size: 0.6875rem;
-        color: #64748b;
-        font-variant-numeric: tabular-nums;
-    }
-    .rp-followup-sheets__badge {
-        display: inline-flex;
-        align-items: center;
-        border-radius: 0.25rem;
-        border: 1px solid transparent;
-        padding: 0.1rem 0.4rem;
-        font-size: 0.6875rem;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        white-space: nowrap;
-    }
-    .rp-followup-sheets__badge--ok {
-        background: #ecfdf5;
-        border-color: #a7f3d0;
-        color: #065f46;
-    }
-    .rp-followup-sheets__badge--watch {
-        background: #fffbeb;
-        border-color: #fde68a;
-        color: #92400e;
-    }
-    .rp-followup-sheets__badge--late {
-        background: #fff1f2;
-        border-color: #fecdd3;
-        color: #9f1239;
-    }
-    .rp-followup-sheets__badge--muted {
-        background: #f1f5f9;
-        border-color: #e2e8f0;
-        color: #64748b;
-    }
-    .rp-followup-kpi {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.5rem;
-    }
-    @media (min-width: 640px) {
-        .rp-followup-kpi {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-    }
-    .rp-followup-kpi__card {
-        min-width: 0;
-        border-radius: 0.5rem;
-        border: 1px solid #e2e8f0;
-        background: #fff;
-        padding: 0.45rem 0.65rem;
-    }
-    .rp-followup-kpi__label {
-        margin: 0;
-        font-size: 0.5625rem;
-        font-weight: 800;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: #64748b;
-    }
-    .rp-followup-kpi__value {
-        margin: 0.15rem 0 0;
-        font-size: 1.125rem;
-        font-weight: 900;
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -0.02em;
-        color: #0f172a;
-        line-height: 1.15;
-    }
-    .rp-followup-sheets__actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.3rem;
-    }
-    .rp-followup-sheets__actions a,
-    .rp-followup-sheets__actions button,
-    .rp-followup-sheets__actions summary.rp-followup-sheets__chip {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.25rem;
-        height: 1.55rem;
-        padding: 0 0.5rem;
-        border-radius: 0.25rem;
-        border: 1px solid #cbd5e1;
-        background: #fff;
-        color: #0f172a;
-        font-size: 0.6875rem;
-        font-weight: 700;
-        text-decoration: none;
-        white-space: nowrap;
-        cursor: pointer;
-        line-height: 1;
-        font-family: inherit;
-        list-style: none;
-    }
-    .rp-followup-sheets__actions summary.rp-followup-sheets__chip::-webkit-details-marker {
-        display: none;
-    }
-    .rp-followup-sheets__actions a:hover,
-    .rp-followup-sheets__actions button:hover,
-    .rp-followup-sheets__actions summary.rp-followup-sheets__chip:hover {
-        background: #f8fafc;
-        border-color: #94a3b8;
-    }
-    .rp-followup-sheets__actions button.is-primary {
-        background: #0f172a;
-        border-color: #0f172a;
-        color: #fff;
-    }
-    .rp-followup-sheets__actions button.is-primary:hover {
-        background: #1e293b;
-    }
-    .rp-followup-sheets__pop {
-        position: relative;
-    }
-    .rp-followup-sheets__table tbody tr:has(.rp-followup-sheets__pop[open]) td {
-        position: relative;
-        z-index: 6;
-    }
-    .rp-followup-sheets__pop-panel {
-        position: absolute;
-        z-index: 40;
-        top: calc(100% + 0.35rem);
-        right: 0;
-        min-width: min(18rem, 90vw);
-        max-width: min(20rem, 90vw);
-        padding: 0.65rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 0.5rem;
-        background: #fff;
-        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
-        white-space: normal;
-        overflow: visible;
-    }
-    .rp-followup-sheets__table tbody tr:last-child .rp-followup-sheets__pop-panel,
-    .rp-followup-sheets__table tbody tr:nth-last-child(2) .rp-followup-sheets__pop-panel {
-        top: auto;
-        bottom: calc(100% + 0.35rem);
-    }
-    .rp-followup-sheets__pop-panel.is-ported {
-        position: fixed;
-        z-index: 80;
-        right: auto;
-        bottom: auto;
-    }
-    .rp-followup-sheets__pop-form {
-        display: grid;
-        gap: 0.4rem;
-    }
-    .rp-followup-sheets__pop-form label {
-        margin: 0.1rem 0 0;
-        font-size: 0.625rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #64748b;
-    }
-    .rp-followup-sheets__pop-form select {
-        width: 100%;
-        box-sizing: border-box;
-        border: 1px solid #cbd5e1;
-        border-radius: 0.35rem;
-        background: #fff;
-        color: #0f172a;
-        padding: 0.4rem 0.5rem;
-        font-size: 0.75rem;
-        font-family: inherit;
-    }
-    .rp-followup-sheets__due-list {
-        display: grid;
-        gap: 0.1rem;
-        font-size: 0.6875rem;
-        color: #475569;
-    }
-    .rp-followup-sheets__due-list span.is-overdue {
-        color: #9f1239;
-        font-weight: 700;
-    }
-    .rp-followup-sheets__notes {
-        display: block;
-        max-width: 14rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-</style>
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/back-office-roleplay-suivi.css')) ?>">
+<div class="rps-board" data-rps-board data-default-filter="<?= $h($defaultFilter) ?>">
+    <?php if ($err): ?><div class="rps-flash rps-flash--bad" role="alert"><?= $h($err) ?></div><?php endif; ?>
+    <?php if ($ok): ?><div class="rps-flash rps-flash--ok" role="status"><?= $h($ok) ?></div><?php endif; ?>
 
-<div class="rp-followup-bureau flex min-h-0 w-full max-w-none flex-1 flex-col bg-slate-50">
-    <div class="shrink-0 border-b border-slate-200 bg-white px-3 py-2.5 sm:px-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="min-w-0">
-                <h1 class="truncate text-base font-black tracking-tight text-slate-900 sm:text-lg">Suivi roleplay</h1>
-                <p class="text-xs text-slate-500">Tutorat, avancement et échéances — trié par échéance la plus proche.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-1.5">
-                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup?onglet=immersion'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Parcours d’immersion</a>
-                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup/echeances'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Échéances</a>
-                <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Gérer les membres</a>
-            </div>
-        </div>
+    <?php $rpGuideHere = 'suivi'; require base_path('views/admin/organization/partials/roleplay_parcours_guide.php'); ?>
+
+    <?php if (!$rpFeatureEnabled): ?>
+    <div class="rps-flash rps-flash--warn" role="status">
+        <strong>Le suivi est masqué sur les fiches.</strong>
+        Vous pouvez travailler ici, mais les fiches des membres n’en montrent rien.
+        <a href="<?= $h(url('back-office/roleplay-followup?onglet=immersion#activation-options')) ?>">L’afficher</a>
     </div>
-
-    <?php if ($err): ?>
-    <div class="shrink-0 border-b border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-900 sm:px-4"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
-    <?php if ($ok): ?>
-    <div class="shrink-0 border-b border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-900 sm:px-4"><?= htmlspecialchars($ok, ENT_QUOTES, 'UTF-8') ?></div>
-    <?php endif; ?>
-
-    <div class="shrink-0 border-b border-slate-200 bg-slate-50/90 px-3 py-2.5 sm:px-4">
-        <div class="rp-followup-kpi" role="group" aria-label="Indicateurs de suivi">
-            <div class="rp-followup-kpi__card" style="<?= $rpFeatureEnabled ? 'border-color:#a7f3d0;background:#ecfdf5;' : 'border-color:#fecdd3;background:#fff1f2;' ?>">
-                <p class="rp-followup-kpi__label" style="<?= $rpFeatureEnabled ? 'color:#065f46;' : 'color:#9f1239;' ?>">Statut module</p>
-                <p class="rp-followup-kpi__value" style="<?= $rpFeatureEnabled ? 'color:#064e3b;' : 'color:#881337;' ?>"><?= $rpFeatureEnabled ? 'Actif' : 'Désactivé' ?></p>
-            </div>
-            <div class="rp-followup-kpi__card">
-                <p class="rp-followup-kpi__label">Membres actifs</p>
-                <p class="rp-followup-kpi__value"><?= $rpTotalActiveMembers ?></p>
-            </div>
-            <div class="rp-followup-kpi__card">
-                <p class="rp-followup-kpi__label">Dossiers suivis</p>
-                <p class="rp-followup-kpi__value"><?= $rpTrackedCount ?></p>
-            </div>
-            <div class="rp-followup-kpi__card">
-                <p class="rp-followup-kpi__label">Éligibles</p>
-                <p class="rp-followup-kpi__value"><?= $rpEligibleCount ?></p>
-            </div>
-        </div>
-    </div>
-
     <?php if (!$rpTimelineTableReady): ?>
-    <div class="shrink-0 border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950 sm:px-4" role="status">
-        L’historique des événements roleplay n’est pas encore disponible. Demandez à l’équipe technique d’appliquer les mises à jour de la base pour activer cette fonctionnalité.
-    </div>
+    <div class="rps-flash rps-flash--warn" role="status">L’historique des événements roleplay n’est pas encore disponible. Demandez à l’équipe technique d’appliquer les mises à jour de la base pour activer cette fonctionnalité.</div>
     <?php endif; ?>
 
-    <div class="min-h-0 flex-1 px-0">
-        <?php if ($rpRows === []): ?>
-        <div class="m-4 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-12 text-center sm:m-6">
-            <p class="text-sm font-semibold text-slate-800">Aucun membre actif pour cette communauté.</p>
-        </div>
-        <?php else: ?>
-        <div class="rp-followup-sheets" role="region" aria-label="Tableau de suivi roleplay">
-            <table class="rp-followup-sheets__table text-left">
-                <thead>
-                    <tr>
-                        <th>Membre</th>
-                        <th>Tutorat</th>
-                        <th>Avancement</th>
-                        <th>Fonction</th>
-                        <th>Filière</th>
-                        <th>Notes</th>
-                        <th>Échéances</th>
-                        <th>Bilan RP</th>
-                        <th>Éligibilité</th>
-                        <th>Dernier événement</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($rpRows as $row):
-                        $name = trim((string) ($row['display_name'] ?? ''));
-                        if ($name === '') {
-                            $name = trim((string) ($row['callsign'] ?? ''));
-                        }
-                        $nextDue = $row['next_due'] ? date('d/m/Y', strtotime((string) $row['next_due'])) : '—';
-                        $latest = is_array($row['latest_timeline'] ?? null) ? $row['latest_timeline'] : null;
-                        $fnCell = trim((string) ($row['function'] ?? ''));
-                        $originRaw = trim((string) ($row['origin'] ?? ''));
-                        $originFr = match ($originRaw) {
-                            'internal' => 'Interne',
-                            'external' => 'Externe',
-                            default => '',
-                        };
-                        $stageLabel = trim((string) ($row['stage'] ?? ''));
-                        $statusLabel = trim((string) ($row['status'] ?? ''));
-                        $notesCell = trim((string) ($row['notes'] ?? ''));
-                        $dueBadge = !empty($row['next_due_is_overdue'])
-                            ? 'rp-followup-sheets__badge--late'
-                            : 'rp-followup-sheets__badge--muted';
-                        $eligBadge = !empty($row['eligible'])
-                            ? 'rp-followup-sheets__badge--ok'
-                            : 'rp-followup-sheets__badge--watch';
-                        $uid = (int) $row['user_id'];
-                        $todayStr = date('Y-m-d');
-                        $dueEntries = [
-                            'Entretien' => $row['next_interview_date'] ?? null,
-                            'Médical' => $row['medical_due_date'] ?? null,
-                            'Rotation' => $row['service_rotation_date'] ?? null,
-                        ];
-                        $bilanNextDueRaw = $row['rp_bilan_next_due_at'] ?? null;
-                        $bilanNextDue = $bilanNextDueRaw ? date('d/m/Y', strtotime((string) $bilanNextDueRaw)) : '—';
-                        $bilanLastRaw = $row['rp_last_review_at'] ?? null;
-                        $bilanLast = $bilanLastRaw ? date('d/m/Y', strtotime((string) $bilanLastRaw)) : null;
-                        $bilanBadge = !empty($row['rp_bilan_overdue'])
-                            ? 'rp-followup-sheets__badge--late'
-                            : 'rp-followup-sheets__badge--muted';
-                    ?>
-                    <tr>
-                        <td>
-                            <span class="font-semibold text-slate-900"><?= htmlspecialchars($name !== '' ? $name : ('Compte n°' . $uid), ENT_QUOTES, 'UTF-8') ?></span>
-                            <span class="rp-followup-sheets__meta">
-                                Étape : <?= htmlspecialchars($stageLabel !== '' ? $stageLabel : '—', ENT_QUOTES, 'UTF-8') ?>
-                                <?php if ($statusLabel !== ''): ?> · <?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
-                            </span>
-                        </td>
-                        <td class="text-slate-700"><?= htmlspecialchars((string) ($row['tutor_label'] ?: '—'), ENT_QUOTES, 'UTF-8') ?></td>
-                        <td>
-                            <?php if ($row['progress'] !== null): ?>
-                            <div class="min-w-[5.5rem]">
-                                <div class="h-1.5 overflow-hidden rounded-sm bg-slate-100"><div class="h-full bg-emerald-500" style="width: <?= max(0, min(100, (int) $row['progress'])) ?>%"></div></div>
-                                <span class="rp-followup-sheets__meta"><?= (int) $row['progress'] ?> %</span>
-                            </div>
-                            <?php else: ?><span class="text-slate-500">—</span><?php endif; ?>
-                        </td>
-                        <td class="text-slate-700"><?= htmlspecialchars($fnCell !== '' ? $fnCell : '—', ENT_QUOTES, 'UTF-8') ?></td>
-                        <td class="text-slate-700">
-                            <span class="font-medium"><?= htmlspecialchars((string) ($row['track'] !== '' ? $row['track'] : '—'), ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php if ($originFr !== ''): ?><span class="rp-followup-sheets__meta">Profil : <?= htmlspecialchars($originFr, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-                        </td>
-                        <td class="text-slate-700">
-                            <?php if ($notesCell !== ''): ?>
-                            <span class="rp-followup-sheets__notes" title="<?= htmlspecialchars($notesCell, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($notesCell, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php else: ?><span class="text-slate-500">—</span><?php endif; ?>
-                        </td>
-                        <td>
-                            <span class="rp-followup-sheets__badge <?= $dueBadge ?>"><?= htmlspecialchars($nextDue, ENT_QUOTES, 'UTF-8') ?></span>
-                            <div class="rp-followup-sheets__due-list">
-                                <?php foreach ($dueEntries as $dueLabel => $dueRaw): if (!$dueRaw) { continue; } ?>
-                                <span class="<?= $dueRaw < $todayStr ? 'is-overdue' : '' ?>"><?= htmlspecialchars($dueLabel, ENT_QUOTES, 'UTF-8') ?> : <?= htmlspecialchars(date('d/m/Y', strtotime((string) $dueRaw)), ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php endforeach; ?>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="rp-followup-sheets__badge <?= $bilanBadge ?>"><?= htmlspecialchars($bilanNextDue, ENT_QUOTES, 'UTF-8') ?></span>
-                            <div class="rp-followup-sheets__meta"><?= $bilanLast !== null ? 'Dernier bilan : ' . htmlspecialchars($bilanLast, ENT_QUOTES, 'UTF-8') : 'Aucun bilan enregistré' ?></div>
-                        </td>
-                        <td>
-                            <span class="rp-followup-sheets__badge <?= $eligBadge ?>"><?= !empty($row['eligible']) ? 'Éligible' : 'À compléter' ?></span>
-                        </td>
-                        <td class="text-slate-700">
-                            <?php if ($latest): ?>
-                            <span class="font-medium text-slate-800"><?= htmlspecialchars((string) ($latest['title'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></span>
-                            <span class="rp-followup-sheets__meta">
-                                <?= htmlspecialchars($timelineStatusFr((string) ($latest['status'] ?? 'planned')), ENT_QUOTES, 'UTF-8') ?>
-                                <?php if (!empty($latest['event_date'])): ?> · <?= htmlspecialchars(date('d/m/Y', strtotime((string) $latest['event_date'])), ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
-                            </span>
-                            <?php else: ?><span class="text-slate-500">—</span><?php endif; ?>
-                        </td>
-                        <td>
-                            <div class="rp-followup-sheets__actions">
-                                <details class="rp-followup-sheets__pop">
-                                    <summary class="rp-followup-sheets__chip">Étape ▾</summary>
-                                    <div class="rp-followup-sheets__pop-panel">
-                                        <form method="post" action="<?= htmlspecialchars(url('back-office/roleplay-followup/' . $uid . '/stage'), ENT_QUOTES, 'UTF-8') ?>" class="rp-followup-sheets__pop-form">
-                                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($rpCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                            <label for="rp-stage-<?= $uid ?>">Nouvelle étape</label>
-                                            <select name="rp_followup_stage" id="rp-stage-<?= $uid ?>">
-                                                <option value="">— Non définie —</option>
-                                                <?php foreach ($rpStagesOptions as $stOpt): $stOpt = trim((string) $stOpt); if ($stOpt === '') { continue; } ?>
-                                                <option value="<?= htmlspecialchars($stOpt, ENT_QUOTES, 'UTF-8') ?>" <?= $stageLabel === $stOpt ? 'selected' : '' ?>><?= htmlspecialchars($stOpt, ENT_QUOTES, 'UTF-8') ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <button type="submit" class="is-primary">Enregistrer</button>
-                                        </form>
-                                    </div>
-                                </details>
-                                <details class="rp-followup-sheets__pop">
-                                    <summary class="rp-followup-sheets__chip">Tuteur ▾</summary>
-                                    <div class="rp-followup-sheets__pop-panel">
-                                        <form method="post" action="<?= htmlspecialchars(url('back-office/roleplay-followup/' . $uid . '/tutor'), ENT_QUOTES, 'UTF-8') ?>" class="rp-followup-sheets__pop-form">
-                                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($rpCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                            <label for="rp-tutor-<?= $uid ?>">Nouveau tuteur</label>
-                                            <select name="rp_tutor_user_id" id="rp-tutor-<?= $uid ?>">
-                                                <option value="">— Aucun —</option>
-                                                <?php foreach ($rpTutorChoices as $tuOpt): ?>
-                                                <option value="<?= (int) $tuOpt['id'] ?>" <?= (int) ($row['tutor_id'] ?? 0) === (int) $tuOpt['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tuOpt['label'], ENT_QUOTES, 'UTF-8') ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <button type="submit" class="is-primary">Enregistrer</button>
-                                        </form>
-                                    </div>
-                                </details>
-                                <form method="post" action="<?= htmlspecialchars(url('back-office/roleplay-followup/' . $uid . '/validate'), ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($rpCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                    <button type="submit" title="Marquer l’étape actuelle comme validée par l’encadrement">Valider</button>
-                                </form>
-                                <form method="post" action="<?= htmlspecialchars(url('back-office/roleplay-followup/' . $uid . '/bilan'), ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($rpCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                    <button type="submit" title="Marquer le bilan roleplay comme fait aujourd’hui (recalcule la prochaine échéance)">Bilan fait</button>
-                                </form>
-                                <a href="<?= htmlspecialchars(url('personnel/' . $uid . '/edit'), ENT_QUOTES, 'UTF-8') ?>">Dossier</a>
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php endif; ?>
+    <div class="rps-filters" role="group" aria-label="Filtrer les membres">
+        <?php foreach ($filters as $key => $f): ?>
+        <button type="button" class="rps-filter<?= $f['tone'] !== '' ? ' rps-filter--' . $h($f['tone']) : '' ?>" data-rps-filter="<?= $h($key) ?>" aria-pressed="<?= $key === $defaultFilter ? 'true' : 'false' ?>">
+            <b><?= (int) $counts[$key] ?></b>
+            <span><?= $h($f['label']) ?></span>
+            <small><?= $h($f['hint']) ?></small>
+        </button>
+        <?php endforeach; ?>
     </div>
+
+    <div class="rps-tools">
+        <label class="rps-search">
+            <span class="rps-sr">Chercher un membre</span>
+            <input type="search" data-rps-search placeholder="Chercher un membre, un tuteur, une filière…" autocomplete="off">
+        </label>
+        <?php if ($rpStagesOptions !== []): ?>
+        <label class="rps-select">
+            <span class="rps-sr">Filtrer par étape</span>
+            <select data-rps-stage>
+                <option value="">Toutes les étapes</option>
+                <?php foreach ($rpStagesOptions as $st): ?><option value="<?= $h($st) ?>"><?= $h($st) ?></option><?php endforeach; ?>
+            </select>
+        </label>
+        <?php endif; ?>
+        <span class="rps-tools__sp"></span>
+        <a class="ath-btn" href="<?= $h(url('back-office/roleplay-followup/echeances')) ?>">Échéances</a>
+        <a class="ath-btn" href="<?= $h(url('back-office/users')) ?>">Gérer les membres</a>
+    </div>
+
+    <?php if ($rpRows === []): ?>
+    <div class="rps-empty"><strong>Aucun membre actif pour cette communauté.</strong></div>
+    <?php else: ?>
+    <div class="rps-table" role="region" aria-label="Membres et suivi roleplay">
+        <table>
+            <thead>
+                <tr>
+                    <th>Membre</th>
+                    <th>Où il en est</th>
+                    <th>Tuteur</th>
+                    <th>Prochaine action</th>
+                    <th>Dossier</th>
+                    <th><span class="rps-sr">Ouvrir</span></th>
+                </tr>
+            </thead>
+            <tbody data-rps-rows>
+                <?php foreach ($rpRows as $row):
+                    $uid = (int) $row['user_id'];
+                    $name = trim((string) ($row['display_name'] ?? '')) ?: trim((string) ($row['callsign'] ?? '')) ?: ('Compte n°' . $uid);
+                    $stage = trim((string) ($row['stage'] ?? ''));
+                    $pos = RoleplayFollowupBoard::stagePosition($stage, $rpStagesOptions);
+                    $action = RoleplayFollowupBoard::nextAction($row, $today);
+                    $rowFilters = RoleplayFollowupBoard::filtersOf($row, $today);
+                    $tutor = trim((string) ($row['tutor_label'] ?? ''));
+                    $track = trim((string) ($row['track'] ?? ''));
+                    $latest = is_array($row['latest_timeline'] ?? null) ? $row['latest_timeline'] : null;
+                    $sheet = [
+                        'id' => $uid,
+                        'name' => $name,
+                        'stage' => $stage,
+                        'status' => trim((string) ($row['status'] ?? '')),
+                        'progress' => $row['progress'] !== null ? max(0, min(100, (int) $row['progress'])) : null,
+                        'tutorId' => (int) ($row['tutor_id'] ?? 0),
+                        'function' => trim((string) ($row['function'] ?? '')),
+                        'track' => $track,
+                        'origin' => match (trim((string) ($row['origin'] ?? ''))) { 'internal' => 'Interne', 'external' => 'Externe', default => '' },
+                        'notes' => trim((string) ($row['notes'] ?? '')),
+                        'interview' => $fmtDate($row['next_interview_date'] ?? ''),
+                        'interviewLate' => !empty($row['next_interview_date']) && (string) $row['next_interview_date'] < $today,
+                        'medical' => $fmtDate($row['medical_due_date'] ?? ''),
+                        'medicalLate' => !empty($row['medical_due_date']) && (string) $row['medical_due_date'] < $today,
+                        'rotation' => $fmtDate($row['service_rotation_date'] ?? ''),
+                        'rotationLate' => !empty($row['service_rotation_date']) && (string) $row['service_rotation_date'] < $today,
+                        'bilanNext' => $fmtDate($row['rp_bilan_next_due_at'] ?? ''),
+                        'bilanLate' => !empty($row['rp_bilan_overdue']),
+                        'bilanLast' => $fmtDate($row['rp_last_review_at'] ?? ''),
+                        'eligible' => !empty($row['eligible']),
+                        'eventTitle' => $latest ? (string) ($latest['title'] ?? '') : '',
+                        'eventMeta' => $latest ? trim($timelineStatusFr((string) ($latest['status'] ?? 'planned')) . ' · ' . $fmtDate($latest['event_date'] ?? ''), ' ·') : '',
+                        'dossier' => url('personnel/' . $uid . '/edit'),
+                        'urls' => [
+                            'stage' => url('back-office/roleplay-followup/' . $uid . '/stage'),
+                            'tutor' => url('back-office/roleplay-followup/' . $uid . '/tutor'),
+                            'validate' => url('back-office/roleplay-followup/' . $uid . '/validate'),
+                            'bilan' => url('back-office/roleplay-followup/' . $uid . '/bilan'),
+                        ],
+                    ];
+                ?>
+                <tr data-filters="<?= $h(implode(' ', $rowFilters)) ?>"
+                    data-stage="<?= $h($stage) ?>"
+                    data-search="<?= $h(mb_strtolower($name . ' ' . (string) ($row['callsign'] ?? '') . ' ' . $tutor . ' ' . $track . ' ' . (string) ($row['function'] ?? ''))) ?>"
+                    data-sheet="<?= $h((string) json_encode($sheet, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>">
+                    <td>
+                        <button type="button" class="rps-name" data-rps-open><?= $h($name) ?></button>
+                        <?php if ($track !== '' || trim((string) ($row['function'] ?? '')) !== ''): ?>
+                        <small class="rps-meta"><?= $h(implode(' · ', array_filter([trim((string) ($row['function'] ?? '')), $track]))) ?></small>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if ($stage !== ''): ?>
+                        <span class="rps-stage"><?= $h($stage) ?></span>
+                        <?php if ($rpStagesOptions !== []): ?>
+                        <span class="rps-steps" aria-label="<?= $h($pos > 0 ? 'Étape ' . $pos . ' sur ' . count($rpStagesOptions) : 'Étape hors de la liste') ?>">
+                            <?php foreach ($rpStagesOptions as $i => $opt): ?><i class="<?= $i + 1 < $pos ? 'done' : ($i + 1 === $pos ? 'now' : '') ?>"></i><?php endforeach; ?>
+                        </span>
+                        <?php endif; ?>
+                        <?php else: ?>
+                        <span class="rps-none">Pas d’étape</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= $tutor !== '' ? $h($tutor) : '<span class="rps-none">Aucun</span>' ?></td>
+                    <td>
+                        <?php if ($action !== null): ?>
+                        <span class="rps-due<?= $action['overdue'] ? ' is-late' : '' ?>"><?= $h($action['label']) ?> · <?= $h($fmtDate($action['date'])) ?></span>
+                        <?php if ($action['overdue']): ?><small class="rps-meta rps-meta--late">En retard</small><?php endif; ?>
+                        <?php else: ?>
+                        <span class="rps-none">Rien de prévu</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><span class="rps-badge <?= !empty($row['eligible']) ? 'is-ok' : 'is-watch' ?>"><?= !empty($row['eligible']) ? 'Prêt' : 'À compléter' ?></span></td>
+                    <td class="rps-open"><button type="button" class="ath-btn" data-rps-open>Ouvrir</button></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <p class="rps-nomatch" data-rps-nomatch hidden>Aucun membre pour ce filtre. <button type="button" class="rps-link" data-rps-filter="tous">Voir tout le monde</button></p>
+    </div>
+    <p class="rps-foot"><span data-rps-shown><?= count($rpRows) ?></span> sur <?= $rpTotalActiveMembers ?> membres actifs · <?= $rpTrackedCount ?> dossiers suivis · <?= $rpEligibleCount ?> prêts.</p>
+    <?php endif; ?>
 </div>
-<script>
-(function () {
-    var root = document.querySelector('.rp-followup-sheets');
-    if (!root) return;
 
-    function place(panel, anchor) {
-        var r = anchor.getBoundingClientRect();
-        var width = Math.min(320, Math.max(240, window.innerWidth - 16));
-        var left = r.right - width;
-        if (left < 8) left = 8;
-        if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
-        panel.style.width = width + 'px';
-        panel.style.left = left + 'px';
-        panel.style.right = 'auto';
-        var spaceBelow = window.innerHeight - r.bottom - 8;
-        var spaceAbove = r.top - 8;
-        var need = Math.min(Math.max(panel.offsetHeight || 220, 180), window.innerHeight * 0.72);
-        if (spaceBelow < need && spaceAbove > spaceBelow) {
-            panel.style.top = 'auto';
-            panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
-        } else {
-            panel.style.bottom = 'auto';
-            panel.style.top = (r.bottom + 6) + 'px';
-        }
-    }
-
-    function restore(details, panel, marker) {
-        if (marker && marker.parentNode) {
-            marker.parentNode.insertBefore(panel, marker);
-            marker.parentNode.removeChild(marker);
-        }
-        panel.classList.remove('is-ported');
-        panel.style.position = '';
-        panel.style.top = '';
-        panel.style.bottom = '';
-        panel.style.left = '';
-        panel.style.right = '';
-        panel.style.width = '';
-        delete details._rpPopMarker;
-    }
-
-    root.querySelectorAll('.rp-followup-sheets__pop').forEach(function (details) {
-        var panel = details.querySelector('.rp-followup-sheets__pop-panel');
-        var summary = details.querySelector('summary');
-        if (!panel || !summary) return;
-
-        details.addEventListener('toggle', function () {
-            if (!details.open) {
-                restore(details, panel, details._rpPopMarker);
-                return;
-            }
-            root.querySelectorAll('.rp-followup-sheets__pop[open]').forEach(function (other) {
-                if (other !== details) other.removeAttribute('open');
-            });
-            var marker = document.createComment('rp-followup-pop');
-            details._rpPopMarker = marker;
-            details._rpPanel = panel;
-            panel.parentNode.insertBefore(marker, panel);
-            document.body.appendChild(panel);
-            panel.classList.add('is-ported');
-            place(panel, summary);
-        });
-    });
-
-    function relocateOpen() {
-        root.querySelectorAll('.rp-followup-sheets__pop[open]').forEach(function (details) {
-            var panel = details._rpPanel;
-            var summary = details.querySelector('summary');
-            if (panel && summary) place(panel, summary);
-        });
-    }
-    window.addEventListener('resize', relocateOpen);
-    window.addEventListener('scroll', relocateOpen, true);
-    root.addEventListener('scroll', relocateOpen);
-})();
-</script>
+<dialog class="ath-dialog rps-sheet" id="rps-sheet" aria-labelledby="rps-sheet-name">
+    <div class="rps-sheet__head">
+        <div>
+            <span class="rps-guide__kicker">Suivi du membre</span>
+            <h2 id="rps-sheet-name"></h2>
+            <p class="rps-meta" data-sheet-where></p>
+        </div>
+        <button type="button" class="ath-dialog__close" data-rps-close aria-label="Fermer">✕</button>
+    </div>
+    <div class="rps-sheet__body">
+        <div class="rps-sheet__forms">
+            <form method="post" data-sheet-form="stage">
+                <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
+                <label for="rps-stage">Étape</label>
+                <div class="rps-inline">
+                    <select name="rp_followup_stage" id="rps-stage">
+                        <option value="">Non définie</option>
+                        <?php foreach ($rpStagesOptions as $st): ?><option value="<?= $h($st) ?>"><?= $h($st) ?></option><?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button>
+                </div>
+            </form>
+            <form method="post" data-sheet-form="tutor">
+                <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
+                <label for="rps-tutor">Tuteur</label>
+                <div class="rps-inline">
+                    <select name="rp_tutor_user_id" id="rps-tutor">
+                        <option value="">Aucun</option>
+                        <?php foreach ($rpTutorChoices as $tu): ?><option value="<?= (int) $tu['id'] ?>"><?= $h($tu['label']) ?></option><?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="ath-btn ath-btn--solid">Enregistrer</button>
+                </div>
+            </form>
+            <div class="rps-sheet__acts">
+                <form method="post" data-sheet-form="validate">
+                    <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
+                    <button type="submit" class="ath-btn" title="Marquer l’étape actuelle comme validée par l’encadrement">Valider l’étape</button>
+                </form>
+                <form method="post" data-sheet-form="bilan">
+                    <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
+                    <button type="submit" class="ath-btn" title="Marquer le bilan roleplay comme fait aujourd’hui (recalcule la prochaine échéance)">Bilan fait aujourd’hui</button>
+                </form>
+                <a class="ath-btn" data-sheet-dossier href="#">Ouvrir le dossier</a>
+            </div>
+        </div>
+        <dl class="rps-sheet__facts">
+            <div><dt>Avancement</dt><dd data-sheet="progress"></dd></div>
+            <div><dt>Statut</dt><dd data-sheet="status"></dd></div>
+            <div><dt>Fonction</dt><dd data-sheet="function"></dd></div>
+            <div><dt>Filière</dt><dd data-sheet="track"></dd></div>
+            <div><dt>Profil</dt><dd data-sheet="origin"></dd></div>
+            <div><dt>Dossier</dt><dd data-sheet="eligible"></dd></div>
+            <div><dt>Entretien</dt><dd data-sheet="interview"></dd></div>
+            <div><dt>Visite médicale</dt><dd data-sheet="medical"></dd></div>
+            <div><dt>Rotation</dt><dd data-sheet="rotation"></dd></div>
+            <div><dt>Prochain bilan</dt><dd data-sheet="bilanNext"></dd></div>
+            <div><dt>Dernier bilan</dt><dd data-sheet="bilanLast"></dd></div>
+            <div><dt>Dernier événement</dt><dd data-sheet="event"></dd></div>
+            <div class="wide"><dt>Notes</dt><dd data-sheet="notes"></dd></div>
+        </dl>
+    </div>
+</dialog>
+<script src="<?= $h(asset_url('assets/js/roleplay-followup-board.js')) ?>" defer></script>

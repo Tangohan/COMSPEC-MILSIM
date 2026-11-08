@@ -42,6 +42,30 @@ final class PhaseRuleEngine
         ];
     }
 
+    /**
+     * Champs que PhaseFactsLoader et evaluateOne lisent réellement pour chaque type de condition (page Parcours RH).
+     *
+     * @return array<string, list<string>>
+     */
+    public static function conditionFields(): array
+    {
+        return [
+            self::TYPE_QUALIFICATION => ['qualification_id', 'require_validity'],
+            self::TYPE_LMS => ['training_module_id'],
+            self::TYPE_RAW_HOURS => ['threshold_value'],
+            self::TYPE_VALIDATED_HOURS => ['threshold_value'],
+            self::TYPE_CATEGORY_HOURS => ['threshold_value', 'hour_category'],
+            self::TYPE_SESSIONS => ['threshold_value', 'window_days'],
+            self::TYPE_SESSIONS_KIND => ['threshold_value', 'window_days', 'session_kind'],
+            self::TYPE_CHECKED_IN => ['threshold_value', 'window_days'],
+            self::TYPE_ATTENDANCE_RATE => ['threshold_value', 'window_days'],
+            self::TYPE_SENIORITY => ['threshold_value'],
+            self::TYPE_COMPLETENESS => ['threshold_value'],
+            self::TYPE_TUTOR => [],
+            self::TYPE_NO_SANCTION => [],
+        ];
+    }
+
     public static function labelFor(string $type): string
     {
         foreach (self::catalog() as $row) {

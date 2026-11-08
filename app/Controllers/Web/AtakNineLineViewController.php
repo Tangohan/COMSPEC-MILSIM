@@ -12,6 +12,7 @@ use App\Repositories\CasNineLineRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Personnel\MemberNameService;
 use App\Services\Tactical\AirBriefService;
+use App\Services\Tactical\AirCrewSpecialtyService;
 use App\Services\Tactical\NineLineBoardService;
 use App\Services\Qr\QrPngGenerator;
 use App\Support\AtakPlanAccess;
@@ -58,6 +59,7 @@ final class AtakNineLineViewController
             'lang' => function_exists('locale') && str_starts_with((string) locale(), 'fr') ? 'fr' : 'en',
             'jtacCallsign' => self::jtacCallsignFor($tenantId, (int) Session::get('user_id')),
             'defaultCallsign' => self::authorLabel($tenantId, (int) Session::get('user_id')),
+            'mySpecs' => self::specsOf($tenantId, (int) Session::get('user_id')),
         ]);
     }
 
@@ -90,6 +92,22 @@ final class AtakNineLineViewController
         }
 
         return self::noStore(['ok' => true, 'items' => $items, 'maps' => $maps, 'can_clear' => $manager, 'jtac_callsign' => self::jtacCallsignFor($tenantId, $userId) ?? '']);
+    }
+
+    /** Pilotes et JTAC de la communauté d'après les dossiers (qualifications et fonctions). */
+    public function roster(Request $request, array $params = []): Response
+    {
+        $ctx = $this->context();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        try {
+            $items = (new AirCrewSpecialtyService())->roster($ctx[0]);
+        } catch (\Throwable) {
+            $items = [];
+        }
+
+        return self::noStore(['ok' => true, 'items' => $items, 'me' => self::specsOf($ctx[0], $ctx[1])]);
     }
 
     /** Aéronefs avec équipage remontés par le jeu (pilote, équipage, position, fraîcheur). */
@@ -284,6 +302,20 @@ final class AtakNineLineViewController
         }
 
         return [$tenantId, $userId];
+    }
+
+    /**
+     * Ce que le dossier de ce membre dit de lui : pilote, JTAC (clé absente : rien au dossier).
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function specsOf(int $tenantId, int $userId): array
+    {
+        try {
+            return (new AirCrewSpecialtyService())->forMembers($tenantId, [$userId])[$userId] ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /** Auteur d'une demande rédigée ici : l'indicatif JTAC choisi sur la page, sinon celui d'Athena. */

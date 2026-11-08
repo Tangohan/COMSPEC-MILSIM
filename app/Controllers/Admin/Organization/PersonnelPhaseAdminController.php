@@ -200,7 +200,7 @@ final class PersonnelPhaseAdminController
         try {
             $pdo = Database::getPdo();
             $st = $pdo->prepare(
-                'SELECT id, qualification_name AS label FROM personnel_qualifications WHERE tenant_id = ? GROUP BY qualification_name ORDER BY qualification_name ASC'
+                'SELECT MIN(id) AS id, qualification_name AS label FROM personnel_qualifications WHERE tenant_id = ? GROUP BY qualification_name ORDER BY qualification_name ASC'
             );
             $st->execute([$tenantId]);
 

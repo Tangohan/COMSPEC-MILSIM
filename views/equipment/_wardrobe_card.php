@@ -26,6 +26,7 @@ $sourceLabel = match ((string) ($w['source'] ?? '')) {
 ?>
 <li
     id="<?= $h($cardKey) ?>"
+    class="eqx-tcard"
     data-eq-card
     data-id="<?= $wid ?>"
     data-name="<?= $h($lower((string) ($w['name'] ?? ''))) ?>"
@@ -61,6 +62,12 @@ $sourceLabel = match ((string) ($w['source'] ?? '')) {
                     <path d="M28 54h24M32 64h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             </span>
+            <?php endif; ?>
+            <?php if (!empty($w['cover_url']) && $previewNames !== ''): ?>
+            <span class="eqx-tcard__names" translate="no"><?= $h($previewNames) ?></span>
+            <?php endif; ?>
+            <?php if ($isMine && $wid > 0 && $wid === (int) ($myGameKitWardrobeId ?? 0)): ?>
+            <span class="eqx-tcard__worn"><i aria-hidden="true"></i>Mon kit en jeu</span>
             <?php endif; ?>
             <span class="eq-hub__skeleton" aria-hidden="true"></span>
             <span class="eq-hub__quick">Aperçu rapide</span>

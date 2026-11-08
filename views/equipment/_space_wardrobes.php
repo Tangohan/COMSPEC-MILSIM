@@ -29,7 +29,15 @@ $filtersActive = (string) ($eqNav['q'] ?? '') !== '' || (string) ($eqNav['type']
     </div>
 </header>
 <?php else: ?>
-<p class="eqx-intro"><?= $h($intro) ?></p>
+<div class="eqx-spacehead">
+    <div>
+        <h2><?= $h($tabLabels[$space] ?? '') ?></h2>
+        <p class="eqx-intro"><?= $h($intro) ?></p>
+    </div>
+    <?php if ($space === 'mes-tenues'): ?>
+    <a class="eq-hub__btn" href="<?= $h(url('equipment/assistant')) ?>" data-ath-modal>Nouvelle tenue<?= !empty($kitsAllowed) ? '' : ' <span class="eqx-pill">Pro</span>' ?></a>
+    <?php endif; ?>
+</div>
 <?php endif; ?>
 
 <?php if ($space === 'mes-tenues' && $myGameKit !== null): ?>
@@ -67,7 +75,7 @@ require __DIR__ . '/_space_toolbar.php';
 ?>
 
 <?php if ($paged['items'] === []): ?>
-<div class="eqx-empty">
+<div class="eqx-empty<?= $filtersActive ? '' : ' eqx-empty--hero' ?>">
     <?php if ($filtersActive): ?>
     <p><strong>Aucune tenue ne correspond à ces filtres.</strong></p>
     <p><a href="<?= $h(\App\Support\EquipmentSpaces::url(['espace' => $space, 'collection' => (int) ($eqNav['collection'] ?? 0)])) ?>">Effacer les filtres</a></p>
@@ -86,7 +94,7 @@ require __DIR__ . '/_space_toolbar.php';
     <?php endif; ?>
 </div>
 <?php else: ?>
-<ul class="eq-hub__grid eqx-grid" data-eq-grid>
+<ul class="eq-hub__grid eqx-grid eqx-tenues" data-eq-grid>
     <?php foreach ($paged['items'] as $w): ?>
     <?php $cardSection = $space; require __DIR__ . '/_wardrobe_card.php'; ?>
     <?php endforeach; ?>

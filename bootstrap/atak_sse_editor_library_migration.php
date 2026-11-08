@@ -22,7 +22,7 @@ return static function (PDO $pdo, ?callable $log = null): void {
     $sqlite = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite';
     $lines = [
         $sqlite ? 'id INTEGER PRIMARY KEY AUTOINCREMENT' : 'id INT UNSIGNED NOT NULL AUTO_INCREMENT',
-        'tenant_id INT NOT NULL',
+        'tenant_id INT UNSIGNED NOT NULL',
         'item_uid VARCHAR(40) NOT NULL',
         'item_type VARCHAR(16) NOT NULL',
         'title VARCHAR(190) NOT NULL',
@@ -38,7 +38,7 @@ return static function (PDO $pdo, ?callable $log = null): void {
         'history_json TEXT DEFAULT NULL',
         'found_by VARCHAR(80) DEFAULT NULL',
         'found_when VARCHAR(32) DEFAULT NULL',
-        'author_user_id INT DEFAULT NULL',
+        'author_user_id INT UNSIGNED DEFAULT NULL',
         'created_at DATETIME NOT NULL',
         'updated_at DATETIME NOT NULL',
     ];

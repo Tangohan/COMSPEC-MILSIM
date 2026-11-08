@@ -1286,7 +1286,7 @@
   });
 
   // Recherche et filtres d'un espace : un changement de liste relance la recherche (le bouton Filtrer reste là sans script).
-  root.querySelectorAll('form[data-eq-autosubmit] select').forEach(function (sel) {
+  root.querySelectorAll('form[data-eq-autosubmit] select, form[data-eq-autosubmit] input[type="radio"]').forEach(function (sel) {
     sel.addEventListener('change', function () {
       if (sel.form) sel.form.submit();
     });

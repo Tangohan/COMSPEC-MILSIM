@@ -9,6 +9,9 @@
  *   carte de transmission tenue à jour (prête, transmise), texte radio à copier. Indicatif JTAC (POST /9-line/indicatif).
  * - Historique (GET /9-line/feed, toutes les 5 s) : statut de chaque destinataire (envoyé, reçu, lu, WILCO, UNABLE),
  *   reprise dans le formulaire, suppression (auteur ou responsable), vidage (responsable, mot de confirmation).
+ * - Spécialités (GET /9-line/equipages, toutes les 60 s ; champs spec_pilot et spec_jtac des appareils) : qualification ou
+ *   fonction de pilote et de JTAC lue dans les dossiers, signalée sur l'équipage, l'auteur et l'indicatif JTAC. Une
+ *   détection informe : elle ne bloque jamais un envoi.
  * Textes en français : traduits à l'affichage par i18n_dom.js (lang/en/site_auto.php, js-bundle).
  */
 (function () {
@@ -258,7 +261,7 @@
     var count = lineCount(k);
     var req = opts.draft && !isFree() ? (REQUIRED[k] || []) : [];
     var b = '';
-    if (it.author) b += '<div class="tr"><span class="n">›</span><div><span class="k">De</span><span class="v">' + raw(it.author) + '</span></div></div>';
+    if (it.author) b += '<div class="tr"><span class="n">›</span><div><span class="k">De</span><span class="v">' + raw(it.author) + (opts.draft ? '' : authorCheck(it)) + '</span></div></div>';
     for (var n = 1; n <= count; n++) {
       var v = String(it['line' + n] || '').trim();
       var must = req.indexOf(n) !== -1;
@@ -338,12 +341,32 @@
   });
 
   // ---------- Destinataires ----------
-  function person(p, crewKnown) {
+  var SPEC_KIND = { pilot: 'Pilote', jtac: 'JTAC' };
+  var SPEC_STATUS = { qualified: 'qualifié', role: 'fonction', training: 'en formation', expired: 'qualif expirée' };
+  /** Pastille d'une détection : l'infobulle dit d'où elle vient. */
+  function specTag(s) {
+    if (!s) return '';
+    var tip = esc(s.source === 'fonction' ? 'Fonction au dossier' : 'Qualification au dossier') + ' : ' + esc(s.label || '');
+    if (s.expires_at) tip += ' · ' + esc(fmt('valable jusqu’au %1', String(s.expires_at).split('-').reverse().join('/')));
+    if (s.hours) tip += ' · ' + esc(fmt('%1 h de vol', s.hours));
+    return '<span class="tag sp ' + esc(s.status) + '" title="' + tip + '">' + esc(SPEC_KIND[s.kind] || '') + ' · ' + esc(SPEC_STATUS[s.status] || '') + '</span>';
+  }
+  /** Sur un siège : la spécialité attendue, ou le constat qu'un membre connu n'a rien au dossier. */
+  function seatCheck(p, seat) {
+    if (!p || (!p.player && !p.linked)) return '';
+    if (!p.linked) return '<span class="tag sp none" title="' + esc('Ce nom ne correspond à aucun membre de la communauté') + '">' + esc('Non reconnu') + '</span>';
+    if (seat === 'driver') {
+      return p.spec_pilot ? specTag(p.spec_pilot) : '<span class="tag sp none" title="' + esc('Ni qualification ni fonction de pilote au dossier') + '">' + esc('Pilote non qualifié') + '</span>';
+    }
+    return (p.spec_pilot ? specTag(p.spec_pilot) : '') + (p.spec_jtac ? specTag(p.spec_jtac) : '');
+  }
+  function person(p, crewKnown, seat) {
     if (!p) return '';
     var out = raw(p.label || p.game_name || '');
     if (p.name) out += ' ' + raw(p.name);
     if (!p.player && crewKnown) out += ' <span class="tag ia">IA</span>';
-    return out;
+    var check = seatCheck(p, seat);
+    return check ? out + ' ' + check : out;
   }
   function visibleAircraft() {
     return playersBox.checked ? aircraft.filter(function (a) { return a.has_player || selected[a.callsign]; }) : aircraft;
@@ -379,8 +402,8 @@
       var state = !a.live ? '<span class="st lost">Signal perdu</span>'
         : (String(a.status).toUpperCase() === 'IN-FLIGHT' ? '<span class="st air">En vol</span>' : '<span class="st">Au sol</span>');
       var who = [];
-      if (a.pilot) who.push(esc('Pilote') + ' ' + person(a.pilot, a.crew_count > 0));
-      crew.forEach(function (c) { who.push(esc(SEATS[c.seat] || SEATS.cargo) + ' ' + person(c, true)); });
+      if (a.pilot) who.push(esc('Pilote') + ' ' + person(a.pilot, a.crew_count > 0, 'driver'));
+      crew.forEach(function (c) { who.push(esc(SEATS[c.seat] || SEATS.cargo) + ' ' + person(c, true, c.seat)); });
       var rename = renaming === a.callsign
         ? '<span class="rn"><input class="inp" data-rename-input="' + esc(a.callsign) + '" maxlength="32" list="nl-air-suggest" value="' + esc(label) + '">'
           + '<button type="button" class="btn2" data-rename-save="' + esc(a.callsign) + '">OK</button>'
@@ -482,6 +505,50 @@
     renderDest();
   });
 
+  // ---------- Pilotes et JTAC d'après les dossiers ----------
+  function renderMe(specs) {
+    var box = $('nl-me-spec');
+    if (!box) return;
+    var jt = specs && specs.jtac;
+    box.innerHTML = jt
+      ? esc('Votre dossier') + ' ' + specTag(jt)
+      : '<span class="tag sp none">' + esc('Aucune qualification JTAC au dossier') + '</span>';
+  }
+  function renderRoster(list) {
+    var box = $('nl-roster');
+    var pilots = list.filter(function (m) { return m.specs.some(function (s) { return s.kind === 'pilot'; }); }).length;
+    var jtacs = list.filter(function (m) { return m.specs.some(function (s) { return s.kind === 'jtac'; }); }).length;
+    $('nl-roster-count').textContent = fmt('%1 pilote(s), %2 JTAC', pilots, jtacs);
+    if (!list.length) {
+      box.innerHTML = '<div class="empty"><b>Personne de détecté</b><span>Attribuez une qualification ou une fonction de pilote ou de JTAC sur les fiches des membres : elle apparaîtra ici.</span></div>';
+      return;
+    }
+    box.innerHTML = '<ul class="rlist">' + list.map(function (m) {
+      var cs = cleanCs(m.callsign);
+      var isPilot = m.specs.some(function (s) { return s.kind === 'pilot'; });
+      var add = cs && isPilot ? '<button type="button" class="btn2 sm" data-roster-add="' + esc(cs) + '">' + esc(selected[cs] ? 'Ajouté' : 'Destinataire') + '</button>' : '';
+      return '<li><span class="rn2">' + raw(m.label) + (m.name ? ' <small>' + raw(m.name) + '</small>' : '') + '</span>'
+        + '<span class="rs">' + m.specs.map(specTag).join(' ') + '</span>' + add + '</li>';
+    }).join('') + '</ul>';
+  }
+  $('nl-roster').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-roster-add]');
+    if (!b) return;
+    var cs = b.getAttribute('data-roster-add');
+    if (selected[cs]) delete selected[cs];
+    else selected[cs] = { label: cs, manual: true, map: Number(mapInput.value) || 1 };
+    b.textContent = selected[cs] ? 'Ajouté' : 'Destinataire';
+    sent = false;
+    renderAircraft();
+    refresh();
+  });
+  function pollRoster() {
+    return getJson('/9-line/equipages').then(function (j) {
+      renderRoster((j && j.items) || []);
+      renderMe((j && j.me) || {});
+    }).catch(function () {});
+  }
+
   // ---------- Indicatif JTAC ----------
   function saveJtac() {
     var inp = $('nl-jtac-cs');
@@ -518,6 +585,11 @@
     if (n.sent) parts.push(fmt('%1 en attente', n.sent));
     return parts.join(' · ');
   }
+  function authorCheck(it) {
+    var c = it.author_check;
+    if (!c || !c.linked) return '';
+    return ' ' + (c.spec ? specTag(c.spec) : '<span class="tag sp none" title="' + esc('Ni qualification ni fonction de JTAC au dossier') + '">' + esc('Sans qualif JTAC') + '</span>');
+  }
   function renderHistory() {
     var list = $('nl-history');
     $('nl-history-count').textContent = items.length ? fmt('%1 demande(s)', items.length) : 'Aucune demande';
@@ -540,7 +612,7 @@
         + '<button type="button" class="hm" data-show="' + it.id + '">'
         + '<span class="hk" translate="no">' + esc(DEFS[kindOf(it)].tag) + '</span>'
         + '<span class="hw">' + raw(summary(it)) + '</span>'
-        + '<small>' + raw(it.author || 'JTAC') + ' · ' + raw(when(it.updated_at || it.created_at))
+        + '<small>' + raw(it.author || 'JTAC') + authorCheck(it) + ' · ' + raw(when(it.updated_at || it.created_at))
         + (it.assigned_aircraft ? ' · ' + raw(it.assigned_aircraft) : '') + (ak ? ' · ' + esc(ak) : '') + '</small></button>'
         + '<span class="ha"><button type="button" class="btn2 sm" data-reuse="' + it.id + '">Reprendre</button>'
         + (it.can_delete ? '<button type="button" class="btn2 sm dng" data-delete="' + it.id + '">Supprimer</button>' : '')
@@ -843,6 +915,9 @@
   renderAircraft();
   pollFeed();
   pollAircraft();
+  renderMe(cfg.mySpecs || {});
+  pollRoster();
+  setInterval(function () { if (!document.hidden) pollRoster(); }, 60000);
   setInterval(function () { if (!document.hidden) pollFeed(); }, 5000);
   setInterval(function () { if (!document.hidden) pollAircraft(); }, 5000);
 })();

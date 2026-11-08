@@ -78,7 +78,9 @@ $rotationRequireInterview = array_key_exists('require_interview', $rotation) ? !
 $probationAlert = array_key_exists('alert_enabled', $probation) ? !empty($probation['alert_enabled']) : true;
 $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($notifications['email_reminders']) : true;
 ?>
+<link rel="stylesheet" href="<?= $h(asset_url('assets/css/back-office-roleplay-suivi.css')) ?>">
 <div class="bo-imm bo-community-settings">
+    <?php $rpGuideHere = 'immersion'; require base_path('views/admin/organization/partials/roleplay_parcours_guide.php'); ?>
 
     <section class="bo-imm__hero ath-rise" aria-labelledby="bo-imm-hero-title">
         <div class="bo-imm__hero-copy">
@@ -99,43 +101,12 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
         </aside>
     </section>
 
-    <section class="bo-imm__caps" aria-label="Où se trouve chaque capacité">
-        <article class="bo-imm__cap bo-imm__cap--here">
-            <span class="bo-imm__cap-kicker">Cette page</span>
-            <h3>Parcours d’immersion</h3>
-            <p>Activer le suivi, nommer les étapes, choisir les filières et fixer ce qui rend un dossier prêt.</p>
-        </article>
-        <article class="bo-imm__cap">
-            <span class="bo-imm__cap-kicker">Suivi quotidien</span>
-            <h3>Bureau de suivi</h3>
-            <p>Attribuer un tuteur, avancer une étape, noter un bilan et voir qui est déjà suivi.</p>
-            <a href="<?= $h($followupUrl) ?>">Ouvrir le bureau</a>
-        </article>
-        <article class="bo-imm__cap">
-            <span class="bo-imm__cap-kicker">Dates</span>
-            <h3>Échéances</h3>
-            <p>Entretiens, visites médicales et rotations : ce qui est en retard, ce qui arrive.</p>
-            <a href="<?= $h($deadlinesUrl) ?>">Voir le calendrier</a>
-        </article>
-        <article class="bo-imm__cap">
-            <span class="bo-imm__cap-kicker">Parcours RH</span>
-            <h3>Règles de passage</h3>
-            <p>Décidez ce qu’un membre doit avoir fait pour passer à l’étape suivante, et si un responsable valide ou si le passage se fait tout seul.</p>
-            <a href="<?= $h($phaseRulesUrl) ?>">Configurer le parcours</a>
-        </article>
-        <article class="bo-imm__cap">
-            <span class="bo-imm__cap-kicker">En session</span>
-            <h3>Sessions Arma</h3>
-            <p>Types de sessions, catégories d’heures et pointage. Distinct du suivi d’arrivée ci-dessus.</p>
-            <a href="<?= $h($sessionsUrl) ?>">Ouvrir les sessions</a>
-        </article>
-        <article class="bo-imm__cap">
-            <span class="bo-imm__cap-kicker">En session</span>
-            <h3>ATAK et Overwatch</h3>
-            <p>Liaisons dégradées, capteurs et aides de jeu se règlent dans le mode roleplay ATAK, pas sur cette page.</p>
-            <a href="<?= $h($atakRoleplayUrl) ?>">Ouvrir le mode roleplay ATAK</a>
-        </article>
-    </section>
+    <p class="bo-imm__elsewhere">
+        <strong>Ailleurs :</strong>
+        <a href="<?= $h($deadlinesUrl) ?>">Échéances</a> pour le calendrier des entretiens, visites et rotations,
+        <a href="<?= $h($sessionsUrl) ?>">Sessions Arma</a> pour les soirées de jeu et le pointage,
+        <a href="<?= $h($atakRoleplayUrl) ?>">ATAK et Overwatch</a> pour les liaisons dégradées et les aides de jeu.
+    </p>
 
     <div class="bo-imm__status" aria-label="État actuel du suivi">
         <article class="bo-imm__tile <?= $enabled ? 'bo-imm__tile--ok' : 'bo-imm__tile--warn' ?>">
@@ -227,7 +198,7 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
             </div>
         </section>
 
-        <section class="ath-card ath-rise bo-setting-group" id="indicateur">
+        <section class="ath-card ath-rise bo-setting-group" id="indicateur" data-imm-ready>
             <p class="bo-setting-group__kicker">Indicateur</p>
             <h2 class="bo-setting-group__title">Quand un dossier est « prêt »</h2>
             <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
@@ -256,7 +227,7 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
             </div>
             <div class="bo-imm__preview">
                 <span class="bo-imm__preview-label">Résultat sur la fiche</span>
-                <p><?= $h($readySentence) ?></p>
+                <p data-imm-ready-sentence><?= $h($readySentence) ?></p>
             </div>
         </section>
 
@@ -291,9 +262,8 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
             </div>
         </section>
 
-        <section class="ath-card ath-rise bo-setting-group" id="cadences">
-            <p class="bo-setting-group__kicker">Cadences</p>
-            <h2 class="bo-setting-group__title">Bilans périodiques</h2>
+        <details class="ath-card ath-rise bo-setting-group bo-imm-fold" id="cadences">
+            <summary><span><span class="bo-setting-group__kicker">Cadences</span><span class="bo-setting-group__title">Bilans périodiques</span></span><em><?= $bilansEnabled ? (int) ($bilans['first_year_days'] ?? 180) . ' / ' . (int) ($bilans['second_year_days'] ?? 240) . ' / ' . (int) ($bilans['ongoing_days'] ?? 365) . ' jours' : 'Non suivis' ?></em></summary>
             <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
                 Ces délais décident quand un bilan d’étape apparaît sur le bureau et dans les rappels.
                 Ils ne changent pas le parcours de grades.
@@ -350,11 +320,10 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
                     </div>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section class="ath-card ath-rise bo-setting-group" id="echeances-cadence">
-            <p class="bo-setting-group__kicker">Échéances</p>
-            <h2 class="bo-setting-group__title">Entretien, médical et rotation</h2>
+        <details class="ath-card ath-rise bo-setting-group bo-imm-fold" id="echeances-cadence">
+            <summary><span><span class="bo-setting-group__kicker">Échéances</span><span class="bo-setting-group__title">Entretien, médical et rotation</span></span><em><?= implode(', ', array_filter([$interviewVisible ? 'Entretiens' : '', $medicalVisible ? 'Visites' : '', $rotationVisible ? 'Rotations' : ''])) ?: 'Rien d’affiché' ?></em></summary>
             <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
                 Choisissez ce qui apparaît dans le calendrier. Si vous indiquez un délai après « réalisé », la prochaine date est proposée automatiquement.
             </p>
@@ -410,11 +379,10 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
                     </span>
                 </label>
             </div>
-        </section>
+        </details>
 
-        <section class="ath-card ath-rise bo-setting-group" id="essai">
-            <p class="bo-setting-group__kicker">Période d’essai</p>
-            <h2 class="bo-setting-group__title">Durée et alerte</h2>
+        <details class="ath-card ath-rise bo-setting-group bo-imm-fold" id="essai">
+            <summary><span><span class="bo-setting-group__kicker">Période d’essai</span><span class="bo-setting-group__title">Durée et alerte</span></span><em><?= (int) ($probation['duration_days'] ?? 60) ?> jours<?= $probationAlert ? ', avec alerte' : '' ?></em></summary>
             <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
                 L’alerte rappelle au staff les dossiers encore en essai au-delà du délai. Le libellé sert à ouvrir le bon type de bilan.
             </p>
@@ -450,11 +418,10 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
                     </div>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section class="ath-card ath-rise bo-setting-group" id="notifications">
-            <p class="bo-setting-group__kicker">Rappels</p>
-            <h2 class="bo-setting-group__title">Notifications et calendrier</h2>
+        <details class="ath-card ath-rise bo-setting-group bo-imm-fold" id="notifications">
+            <summary><span><span class="bo-setting-group__kicker">Rappels</span><span class="bo-setting-group__title">Notifications et calendrier</span></span><em><?= $emailReminders ? 'E-mails activés' : 'Sans e-mail' ?></em></summary>
             <div class="bo-setting-group__rows" style="margin-top:13px;">
                 <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;">
                     <input type="checkbox" name="rp_notif_email_reminders" value="1" style="margin-top:3px;min-height:auto;" <?= $emailReminders ? 'checked' : '' ?>>
@@ -482,11 +449,10 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
                     </div>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section class="ath-card ath-rise bo-setting-group bo-setting-group--wide" id="types-bilans">
-            <p class="bo-setting-group__kicker">Types</p>
-            <h2 class="bo-setting-group__title">Types de bilans d’étape</h2>
+        <details class="ath-card ath-rise bo-setting-group bo-setting-group--wide bo-imm-fold" id="types-bilans">
+            <summary><span><span class="bo-setting-group__kicker">Types</span><span class="bo-setting-group__title">Types de bilans d’étape</span></span><em><?= count($stageBilanLabels) ?> types</em></summary>
             <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
                 Ces libellés apparaissent dans le menu du bilan sur la fiche. Une ligne = un type.
             </p>
@@ -502,9 +468,9 @@ $emailReminders = array_key_exists('email_reminders', $notifications) ? !empty($
                     </div>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <div class="bo-settings-save">
+        <div class="bo-settings-save bo-imm-save">
             <button type="submit" class="ath-btn ath-btn--solid">Enregistrer le suivi d’immersion</button>
         </div>
     </form>
