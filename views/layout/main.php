@@ -340,6 +340,9 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (is_file(base_path('public/assets/css/back-office-refresh.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-refresh.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/css/back-office-menu.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-menu.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/css/back-office-legacy.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-legacy.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -432,6 +435,9 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
     <?php endif; ?>
     <?php if ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) && is_file(base_path('public/assets/js/back-office-sidebar.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-sidebar.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php endif; ?>
+    <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/js/back-office-menu.js'))): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-menu.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <?php if ((!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) && is_file(base_path('public/assets/js/back-office-theme.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-theme.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

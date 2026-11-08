@@ -316,7 +316,7 @@
           topSearchRef.value = '';
           applyNavFilter();
         } else if (e.key === 'Enter') {
-          var first = nav.querySelector('[data-ath-nav-item]:not([hidden]) .ath-sidebar__child:not([hidden]), [data-ath-nav-item]:not([hidden]) .ath-sidebar__item');
+          var first = nav.querySelector('[data-ath-nav-item]:not([hidden]) [data-ath-child-search]:not([hidden]) > .ath-sidebar__child, [data-ath-nav-item]:not([hidden]) .ath-sidebar__item');
           if (first && first.href) {
             e.preventDefault();
             window.location.href = first.href;

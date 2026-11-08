@@ -87,10 +87,6 @@ $boNavCooperationCreate = !empty($boNavCooperationCreate);
 $boNavCooperationCatalog = !empty($boNavCooperationCatalog);
 $boNavCooperationAnnouncements = !empty($boNavCooperationAnnouncements);
 
-$recBadgeStr = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0
-    ? ($boRecN > 99 ? '99+' : (string) $boRecN)
-    : null;
-
 $fmtNavBadge = static function (int $n): ?string {
     if ($n < 1) {
         return null;
@@ -149,6 +145,7 @@ $recruitChildren = array_values(array_filter([
         : null,
     ['label' => 'Intégration des recrues', 'href' => url('back-office/integration-membres'), 'active' => $boNavOnbMembers],
     ['label' => 'Statistiques', 'href' => url('back-office/ressources/recrutement/analyses'), 'active' => $navAt('back-office/ressources/recrutement/analyses')],
+    ['label' => 'Codes d’invitation prioritaires', 'href' => url('back-office/recruitments/codes-invitation'), 'active' => $navAt('back-office/recruitments/codes-invitation')],
 ], static fn (?array $row): bool => is_array($row)));
 
 $rhChildren = [
@@ -182,6 +179,7 @@ $orbatChildren = [
             ['label' => 'Groupes', 'href' => url('back-office/groups'), 'active' => $navAt('back-office/groups')],
             ['label' => 'Équipes', 'href' => url('back-office/teams'), 'active' => $navAt('back-office/teams')],
             ['label' => 'Catalogue de l’organisation', 'href' => url('back-office/organisation/catalogue'), 'active' => !empty($boNavCatalog)],
+            ['label' => 'Types d’entité', 'href' => url('back-office/organisation/types-entite'), 'active' => $navAt('back-office/organisation/types-entite')],
         ],
     ],
     [
@@ -233,6 +231,7 @@ $metricsChildren = [
 
 $indicatorsChildren = [
     ['label' => 'Indicateurs d’usage', 'href' => url('back-office/analytics'), 'active' => $boNavAnalytics],
+    ['label' => 'Conversion des communautés', 'href' => url('back-office/analytics/conversion'), 'active' => $navAt('back-office/analytics/conversion')],
     ['label' => 'Métriques joueurs', 'children' => $metricsChildren],
     ['label' => 'Qualité des données', 'href' => url('back-office/organisation/qualite-donnees'), 'active' => $navAt('back-office/organisation/qualite-donnees')],
 ];
@@ -254,6 +253,7 @@ $eventsChildren = [
 $aarChildren = [
     ['label' => 'Comptes rendus post-op', 'href' => url('back-office/atak/comptes-rendus'), 'active' => $boNavAar],
     ['label' => 'Remontées des joueurs', 'href' => url('back-office/remontees'), 'active' => $navAt('back-office/remontees')],
+    ['label' => 'Modèles de debriefing', 'href' => url('back-office/atak/comptes-rendus/modeles'), 'active' => $navAt('back-office/atak/comptes-rendus/modeles')],
 ];
 
 // Missions : le portail, le cycle (briefing → exécution → après-action) et les diapositives vues sur le téléphone en jeu.
@@ -336,6 +336,8 @@ $materielChildren = [
 
 $atakResChildren = [
     ['label' => 'Configuration ATAK', 'href' => url('back-office/ressources/atak-config'), 'active' => $navAt('back-office/ressources/atak-config')],
+    // Ce que lit l'app Communauté du téléphone (consignes, ordres, tips, kit obligatoire).
+    ['label' => 'Consignes et kit ATAK', 'href' => url('back-office/ressources/atak-consignes'), 'active' => $navAt('back-office/ressources/atak-consignes')],
     ['label' => 'Serveurs de jeu', 'href' => url('back-office/ressources/serveurs-de-jeu'), 'active' => $navAt('back-office/ressources/serveurs-de-jeu')],
     [
         'label' => 'Mods',
@@ -352,6 +354,7 @@ $doctrineChildren = [
     ['label' => 'Doctrine et SOP', 'href' => url('back-office/doctrine'), 'active' => $navAt('back-office/doctrine') && !$navAt('back-office/doctrine/referentiel')],
     ['label' => 'Référentiel doctrinal', 'href' => url('back-office/doctrine/referentiel'), 'active' => $navAt('back-office/doctrine/referentiel')],
     ['label' => 'Fichiers partagés', 'href' => url('back-office/partage'), 'active' => $navAt('back-office/partage')],
+    ['label' => 'Gestion documentaire', 'href' => url('documents/gestion'), 'active' => $navAt('documents/gestion')],
 ];
 
 // ——— COMMUNAUTÉ ———
@@ -520,15 +523,12 @@ if ($isOperatorBoNav) {
         ],
     ];
 } else {
-    $reportsModBadge = $fmtNavBadge((int) ($boBadges['reports_moderation_total'] ?? 0));
-
+    // Pastilles des pages de gestion : config/back_office_menu.php (MenuDecorator), plus de compteur en dur ici.
     $moderationChildren = [
         [
             'label' => 'Signalements membres',
             'href' => url('back-office/signalements'),
             'active' => $navAt('back-office/signalements'),
-            'badge' => $reportsModBadge,
-            'warn' => $reportsModBadge !== null,
         ],
         ['label' => 'Fichiers en quarantaine', 'href' => url('back-office/content-moderation'), 'active' => $navAt('back-office/content-moderation')],
     ];
@@ -564,8 +564,6 @@ if ($isOperatorBoNav) {
                     'label' => 'Recrutement',
                     'href' => url('back-office/recruitments'),
                     'icon' => 'mail',
-                    'badge' => $recBadgeStr,
-                    'warn' => $recBadgeStr !== null,
                     'children' => $recruitChildren,
                 ],
                 [
@@ -723,8 +721,6 @@ if ($isOperatorBoNav) {
                     'label' => 'Modération',
                     'href' => url('back-office/signalements'),
                     'icon' => 'shield',
-                    'badge' => $reportsModBadge,
-                    'warn' => $reportsModBadge !== null,
                     'children' => $moderationChildren,
                 ],
                 ['label' => 'Musique', 'href' => url('back-office/ressources/musique'), 'icon' => 'radio', 'active' => $navAt('back-office/ressources/musique')],
@@ -741,6 +737,7 @@ if ($isOperatorBoNav) {
                     : null,
                 ['label' => 'Mises à jour', 'href' => url('back-office/mise-a-niveau'), 'icon' => 'rocket', 'active' => $navAt('back-office/mise-a-niveau')],
                 ['label' => 'Traçabilité du courrier', 'href' => url('back-office/courrier/traceabilite'), 'icon' => 'mail', 'active' => $navAt('back-office/courrier/traceabilite')],
+                ['label' => 'Export pour contrôle', 'href' => url('back-office/conformite/export-dossier'), 'icon' => 'audit', 'active' => $navAt('back-office/conformite')],
             ], static fn (?array $row): bool => is_array($row))),
         ],
     ];
@@ -753,27 +750,118 @@ if (function_exists('i18n_translate_nav_item')) {
     $athNavGroups = array_map('i18n_translate_nav_item', $athNavGroups);
 }
 
+/*
+ * Pastilles, pages « Nouveau » et favoris : config/back_office_menu.php. Une pastille n'est calculée que pour une page
+ * déjà autorisée ci-dessus ; un favori dont la page n'est plus autorisée disparaît sans erreur.
+ */
+$athMenu = ['badges' => [], 'new' => [], 'favorites' => [], 'fav_keys' => [], 'poll' => 0, 'max' => \App\Services\BackOffice\Menu\FavoritesList::DEFAULT_MAX];
+$athMenuFavs = [];
+try {
+    $athMenuTid = (int) \App\Core\Session::get('tenant_id');
+    $athMenuUid = (int) \App\Core\Session::get('user_id');
+    if ($athMenuTid > 0 && $athMenuUid > 0) {
+        $athMenuState = \App\Core\Container::get(\App\Services\BackOffice\Menu\BackOfficeMenuState::class);
+        $athMenuFavs = $athMenuState->favorites($athMenuTid, $athMenuUid);
+        $athMenu['max'] = $athMenuState->favoritesMax();
+        $athMenu['poll'] = $athMenuState->badges()->pollSeconds();
+        $athMenu['fav_keys'] = array_map(static fn (array $r): string => $r['path'], $athMenuFavs);
+        $athMenu['new'] = $athMenuState->newPaths($athMenuTid, $athMenuUid, $p);
+        $athMenu['badges'] = $athMenuState->badges()->compute(
+            $athMenuTid,
+            $athMenuUid,
+            static fn (string $perm): bool => $gate->allows($perm),
+            static fn (string $path): bool => $boHrefAllowed(url($path))
+        );
+    }
+} catch (\Throwable $athMenuErr) {
+    error_log('[bo-menu] ' . $athMenuErr->getMessage());
+}
+$athNavGroups = \App\Services\BackOffice\Menu\MenuDecorator::decorate(
+    $athNavGroups,
+    $athMenu['badges'],
+    $athMenu['new'],
+    $athMenu['fav_keys'],
+    static fn (string $href): string => back_office_nav_href_to_path($href)
+);
+$athMenu['favorites'] = \App\Services\BackOffice\Menu\MenuDecorator::favorites(
+    $athNavGroups,
+    $athMenuFavs,
+    static fn (string $path): bool => $boHrefAllowed(url($path)),
+    static fn (string $path): string => \App\Services\BackOffice\Menu\BackOfficeMenuState::pageTitle($path)
+);
+
 $athNavKidsId = static function (string $prefix, array $node): string {
     return $prefix . substr(md5((string) ($node['href'] ?? '') . '|' . (string) ($node['label'] ?? '')), 0, 8);
 };
 
-$renderAthNavLink = static function (array $link, string $searchPrefix = '', bool $deep = false) use ($h): void {
+$athStarSvg = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"></path></svg>';
+
+/** Pastille compteur (1 à 9, puis 9+), rendue même à zéro (masquée) pour la mise à jour sans rechargement. */
+$athMenuBadge = static function (array $node, string $class) use ($h): string {
+    $keys = is_array($node['_badge_keys'] ?? null) ? $node['_badge_keys'] : [];
+    if ($keys === []) {
+        return '';
+    }
+    $n = (int) ($node['_badge_count'] ?? 0);
+    $important = !empty($node['_badge_important']);
+
+    return '<span class="ath-mbadge ' . $h($class) . ($important ? ' ath-mbadge--important' : ' ath-mbadge--notif') . '"'
+        . ' data-ath-badge-keys="' . $h(implode(' ', $keys)) . '"'
+        . ($n > 0 ? ' title="' . $h((string) ($node['_badge_title'] ?? '')) . '"' : ' hidden')
+        . '><span class="ath-sr-only" data-ath-badge-sr>' . $h($important ? 'Important : ' : 'À traiter : ') . '</span>'
+        . '<span data-ath-badge-n>' . $h(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format($n)) . '</span></span>';
+};
+
+$athMenuNew = static function (array $node) use ($h): string {
+    if (!empty($node['_new'])) {
+        return '<span class="ath-mbadge ath-mbadge--new" title="' . $h('Page récente : la marque disparaît après votre visite') . '">' . $h('Nouveau') . '</span>';
+    }
+    if (!empty($node['_has_new'])) {
+        return '<span class="ath-mnew-dot" title="' . $h('Contient une page récente') . '"><span class="ath-sr-only">Contient une page récente</span></span>';
+    }
+
+    return '';
+};
+
+/** Étoile « favori » : bouton du formulaire #ath-fav-form (marche sans JavaScript). */
+$athMenuStar = static function (array $node) use ($h, $athStarSvg): string {
+    $key = (string) ($node['_fav_key'] ?? '');
+    if ($key === '') {
+        return '';
+    }
+    $on = !empty($node['_fav']);
+    $label = (string) ($node['label'] ?? '');
+    $aria = $on ? 'Retirer « ' . $label . ' » des favoris' : 'Ajouter « ' . $label . ' » aux favoris';
+
+    return '<button type="submit" form="ath-fav-form" name="op" value="' . $h('toggle|' . $key) . '"'
+        . ' class="ath-fav-star' . ($on ? ' is-on' : '') . '" data-ath-fav-path="' . $h($key) . '"'
+        . ' data-ath-fav-label="' . $h($label) . '"'
+        . ' aria-pressed="' . ($on ? 'true' : 'false') . '" aria-label="' . $h($aria) . '" title="' . $h($on ? 'Retirer des favoris' : 'Ajouter aux favoris') . '">'
+        . $athStarSvg . '</button>';
+};
+
+$renderAthNavLink = static function (array $link, string $searchPrefix = '', bool $deep = false) use ($h, $athMenuBadge, $athMenuNew, $athMenuStar): void {
     $cActive = !empty($link['active']);
     $cWarn = !empty($link['warn']);
     $cBadge = isset($link['badge']) && (string) $link['badge'] !== '' ? (string) $link['badge'] : null;
     $search = mb_strtolower(trim($searchPrefix . ' ' . (string) $link['label']), 'UTF-8');
     ?>
-                <a href="<?= $h((string) $link['href']) ?>" class="ath-sidebar__child<?= $deep ? ' ath-sidebar__child--deep' : '' ?><?= $cActive ? ' is-active' : '' ?><?= $cWarn && !$cActive ? ' is-warn' : '' ?>"<?= $cActive ? ' aria-current="page"' : '' ?> data-ath-child-search="<?= $h($search) ?>">
+                <div class="ath-sidebar__child-row" data-ath-child-search="<?= $h($search) ?>">
+                <a href="<?= $h((string) $link['href']) ?>" class="ath-sidebar__child<?= $deep ? ' ath-sidebar__child--deep' : '' ?><?= $cActive ? ' is-active' : '' ?><?= $cWarn && !$cActive ? ' is-warn' : '' ?>"<?= $cActive ? ' aria-current="page"' : '' ?>>
                     <span class="ath-sidebar__child-dot" aria-hidden="true"></span>
                     <span class="ath-sidebar__child-label"><?= $h((string) $link['label']) ?></span>
+                    <?= $athMenuNew($link) ?>
                     <?php if ($cBadge !== null): ?>
                     <span class="ath-sidebar__child-badge<?= $cWarn ? ' ath-sidebar__child-badge--warn' : '' ?>"><?= $h($cBadge) ?></span>
                     <?php endif; ?>
+                    <?= $athMenuBadge($link, 'ath-mbadge--child') ?>
                 </a>
+                <?= $athMenuStar($link) ?>
+                </div>
     <?php
 };
 
-$renderAthNavItem = static function (array $item) use ($h, $athIco, $athNavKidsId, $renderAthNavLink): void {
+$renderAthNavItem = static function (array $item) use ($h, $athIco, $athNavKidsId, $renderAthNavLink, $athMenuBadge, $athMenuNew, $athMenuStar): void {
     $children = is_array($item['children'] ?? null) ? $item['children'] : [];
     // `active` = la page courante est cette entrée ou l’une de ses pages ; `current` = cette entrée elle-même.
     $trail = !empty($item['active']);
@@ -791,11 +879,15 @@ $renderAthNavItem = static function (array $item) use ($h, $athIco, $athNavKidsI
             <a href="<?= $h((string) $item['href']) ?>" class="ath-sidebar__item<?= $trail ? ' is-active' : '' ?>"<?= $parentCurrent ? ' aria-current="page"' : '' ?> title="<?= $h($itemLabel) ?>">
                 <?php if ($iconMarkup !== ''): ?><?= $iconMarkup ?><?php endif; ?>
                 <span class="ath-sidebar__item-label"><?= $h($itemLabel) ?></span>
+                <?= $athMenuNew($item) ?>
                 <?php if ($badge !== null): ?>
                     <span class="ath-sidebar__item-badge<?= $warn ? ' ath-sidebar__item-badge--warn' : '' ?><?= $notif ? ' ath-sidebar__item-badge--notif' : '' ?>"><?= $h($badge) ?></span>
                 <?php endif; ?>
+                <?= $athMenuBadge($item, 'ath-mbadge--item') ?>
             </a>
-            <?php if ($children !== []): ?>
+            <?php if ($children === []): ?>
+            <?= $athMenuStar($item) ?>
+            <?php else: ?>
             <button type="button" class="ath-sidebar__kids-toggle" data-ath-kids-toggle aria-controls="<?= $h($kidsId) ?>" aria-expanded="<?= $showKids ? 'true' : 'false' ?>" aria-label="<?= $h(locale() === 'en' ? 'Show the pages of ' . \App\Support\HtmlTranslator::translateText($itemLabel) : 'Afficher les pages de ' . $itemLabel) ?>">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
             </button>
@@ -814,6 +906,8 @@ $renderAthNavItem = static function (array $item) use ($h, $athIco, $athNavKidsI
                     <button type="button" class="ath-sidebar__section-head" data-ath-section-toggle aria-controls="<?= $h($secId) ?>" aria-expanded="<?= $secOpen ? 'true' : 'false' ?>">
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
                         <span class="ath-sidebar__section-label"><?= $h($secLabel) ?></span>
+                        <?= $athMenuNew(['_has_new' => !empty($child['_has_new'])]) ?>
+                        <?= $athMenuBadge($child, 'ath-mbadge--child') ?>
                         <span class="ath-sidebar__section-count" aria-hidden="true"><?= count($child['children']) ?></span>
                     </button>
                     <div class="ath-sidebar__section-body" id="<?= $h($secId) ?>" role="group" aria-label="<?= $h($itemLabel . ' — ' . $secLabel) ?>"<?= $secOpen ? '' : ' hidden' ?>>

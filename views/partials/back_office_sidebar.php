@@ -271,7 +271,72 @@ require __DIR__ . '/ath_sidebar_nav.php';
         <input id="ath-menu-search" type="search" placeholder="Filtrer le menu…" autocomplete="off" spellcheck="false">
     </div>
     <?php endif; ?>
-    <div class="ath-sidebar__nav" id="ath-sidebar-nav">
+    <?php
+    // Favoris : un seul formulaire, les étoiles et les boutons du menu le visent (attribut form) ; sans JavaScript,
+    // l'envoi recharge la page. back-office-menu.js fait la même chose en arrière-plan.
+    $athFavReturn = $p;
+    foreach (['onglet', 'vue'] as $athFavQ) {
+        $athFavV = isset($_GET[$athFavQ]) && is_string($_GET[$athFavQ]) ? $_GET[$athFavQ] : '';
+        if ($athFavV !== '' && preg_match('/^[a-z0-9_-]{1,40}$/i', $athFavV)) {
+            $athFavReturn .= (str_contains($athFavReturn, '?') ? '&' : '?') . $athFavQ . '=' . $athFavV;
+        }
+    }
+    $athFavList = is_array($athMenu['favorites'] ?? null) ? $athMenu['favorites'] : [];
+    $athFavMax = (int) ($athMenu['max'] ?? 12);
+    $athFavN = count($athFavList);
+    ?>
+    <form id="ath-fav-form" method="post" action="<?= $h(url('back-office/menu/favoris')) ?>" data-ath-fav-form hidden>
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="return" value="<?= $h($athFavReturn) ?>">
+    </form>
+    <div class="ath-sidebar__nav" id="ath-sidebar-nav" data-ath-menu data-ath-badges-url="<?= $h(url('back-office/menu/pastilles')) ?>" data-ath-poll="<?= (int) ($athMenu['poll'] ?? 0) ?>">
+        <div class="ath-sidebar__group ath-favs is-open" data-ath-nav-group="favoris" data-ath-favs data-max="<?= $athFavMax ?>">
+            <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true" aria-controls="ath-nav-group-favoris">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#4b524e" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+                <span class="ath-sidebar__group-label">FAVORIS</span>
+                <span class="ath-favs__count" data-ath-favs-count aria-label="<?= $h($athFavN . ' favoris sur ' . $athFavMax) ?>"><?= $athFavN ?>/<?= $athFavMax ?></span>
+            </button>
+            <div class="ath-sidebar__group-body" id="ath-nav-group-favoris">
+                <ol class="ath-favs__list" data-ath-favs-list aria-label="Pages favorites"<?= $athFavList === [] ? ' hidden' : '' ?>>
+                    <?php foreach ($athFavList as $athFavI => $athFav): ?>
+                    <?php
+                    $athFavHref = url($athFav['path']);
+                    $athFavActive = trim((string) strtok($athFav['path'], '?'), '/') === $p;
+                    ?>
+                    <li class="ath-favs__it" data-ath-fav-item data-path="<?= $h($athFav['path']) ?>" draggable="true">
+                        <a href="<?= $h($athFavHref) ?>" class="ath-sidebar__child ath-favs__link<?= $athFavActive ? ' is-active' : '' ?>"<?= $athFavActive ? ' aria-current="page"' : '' ?>>
+                            <span class="ath-favs__grip" aria-hidden="true">⋮⋮</span>
+                            <span class="ath-sidebar__child-label"><?= $h($athFav['label']) ?></span>
+                            <?php if (!empty($athFav['new'])): ?><span class="ath-mbadge ath-mbadge--new">Nouveau</span><?php endif; ?>
+                            <?php if (!empty($athFav['badge_keys'])): ?>
+                            <?php
+                            $athFavCount = 0;
+                            $athFavImportant = false;
+                            foreach ($athFav['badge_keys'] as $athFavK) {
+                                $athFavCount += (int) ($athMenu['badges'][$athFavK]['count'] ?? 0);
+                                $athFavImportant = $athFavImportant || !empty($athMenu['badges'][$athFavK]['important']);
+                            }
+                            ?>
+                            <span class="ath-mbadge ath-mbadge--child <?= $athFavImportant ? 'ath-mbadge--important' : 'ath-mbadge--notif' ?>" data-ath-badge-keys="<?= $h(implode(' ', $athFav['badge_keys'])) ?>"<?= $athFavCount > 0 ? '' : ' hidden' ?>><span data-ath-badge-n><?= $h(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format($athFavCount)) ?></span></span>
+                            <?php endif; ?>
+                        </a>
+                        <span class="ath-favs__tools">
+                            <button type="submit" form="ath-fav-form" name="op" value="<?= $h('up|' . $athFav['path']) ?>" class="ath-favs__btn" data-ath-fav-move="up" aria-label="<?= $h('Monter « ' . $athFav['label'] . ' »') ?>" title="Monter"<?= $athFavI === 0 ? ' disabled' : '' ?>>
+                                <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>
+                            </button>
+                            <button type="submit" form="ath-fav-form" name="op" value="<?= $h('down|' . $athFav['path']) ?>" class="ath-favs__btn" data-ath-fav-move="down" aria-label="<?= $h('Descendre « ' . $athFav['label'] . ' »') ?>" title="Descendre"<?= $athFavI === $athFavN - 1 ? ' disabled' : '' ?>>
+                                <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+                            </button>
+                            <button type="submit" form="ath-fav-form" name="op" value="<?= $h('remove|' . $athFav['path']) ?>" class="ath-favs__btn ath-favs__btn--rm" data-ath-fav-remove aria-label="<?= $h('Retirer « ' . $athFav['label'] . ' » des favoris') ?>" title="Retirer des favoris">
+                                <svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+                            </button>
+                        </span>
+                    </li>
+                    <?php endforeach; ?>
+                </ol>
+                <p class="ath-favs__empty" data-ath-favs-empty<?= $athFavList === [] ? '' : ' hidden' ?>>Survolez une page du menu et cliquez sur l’étoile pour l’épingler ici (<?= $athFavMax ?> au plus).</p>
+            </div>
+        </div>
         <?php foreach ($athNavGroups as $navGroup): ?>
             <div class="ath-sidebar__group is-open" data-ath-nav-group="<?= $h((string) $navGroup['key']) ?>">
                 <button type="button" class="ath-sidebar__group-head" data-ath-group-toggle aria-expanded="true" aria-controls="ath-nav-group-<?= $h((string) $navGroup['key']) ?>">

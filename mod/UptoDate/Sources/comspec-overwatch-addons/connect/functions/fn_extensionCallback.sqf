@@ -21,6 +21,13 @@ private _fnc_shotMissing = {
     params [["_parts", []]];
     private _in = "";
     { if (_x isEqualType "" && {(_x select [0, 3]) isEqualTo "in="}) then { _in = _x select [3]; }; } forEach _parts;
+    // « size=<Mo> » (COMSPEC Link après 2.0.120 ; absent avant : message habituel) : taille du dossier en service.
+    // Arma refuse d'écrire une capture au-delà de 250 Mo par dossier (« exceeded size limit (250MB) » dans le RPT).
+    private _mb = -1;
+    { if (_x isEqualType "" && {(_x select [0, 5]) isEqualTo "size="}) then { _mb = parseNumber (_x select [5]); }; } forEach _parts;
+    if (_mb >= 240) exitWith {
+        format ["Photo non écrite : le dossier des captures est plein (%1 Mo, Arma s'arrête à 250 Mo). Videz ou déplacez les anciennes images de %2, puis reprenez la photo.", round _mb, [_in, "Screenshots"] select (_in isEqualTo "")]
+    };
     if (_in isEqualTo "") exitWith { "Capture introuvable : vérifiez le réglage Dossier des captures d'écran (Options des addons › COMSPEC › ATAK · Photo)." };
     format ["Capture introuvable dans %1 : vérifiez le réglage Dossier des captures d'écran (Options des addons › COMSPEC › ATAK · Photo).", _in]
 };
@@ -506,6 +513,12 @@ switch (_function) do {
             };
         } else {
             if (_status isEqualTo "ERR") then {
+                // Fichier absent qui n'est pas une photo du mod (COMSPEC_…) : ancienne photo Photo Library / BCE effacée
+                // du disque, relancée par le balayage des photos. Rien à faire pour le joueur : avertissement simple,
+                // pas d'échec (ni rapport automatique), pas de notification sur le téléphone. Elle n'est plus renvoyée.
+                private _staleLib = (_detail find "file_not_found") == 0
+                    && {!(_hintLow in ["", "empty_path"])}
+                    && {(_hintLow find "comspec_") != 0};
                 {
                     private _k = _x;
                     _pending = _pending - [_k];
@@ -529,14 +542,19 @@ switch (_function) do {
                         if (_base isNotEqualTo "" && {!(_base in _dead)}) then { _dead pushBack _base; };
                     } forEach _matched;
                     if (_hintLow isNotEqualTo "" && {!(_hintLow in _dead)}) then { _dead pushBack _hintLow; };
-                    while { (count _dead) > 200 } do { _dead deleteAt 0; };
+                    // 600 entrées (2 à 3 par photo) : à 200, un profil Photo Library de plus de ~70 photos disparues
+                    // oubliait les plus anciennes, renvoyées en boucle toutes les 30 s.
+                    while { (count _dead) > 600 } do { _dead deleteAt 0; };
                     profileNamespace setVariable ["COMSPEC_Athena_PhotoDead", _dead];
                     [] call comspec_overwatch_connect_fnc_saveProfile;
-                    // Coupe le spam d’aperçus auto (COMSPEC_AthenaFeed / stems sans fichier).
-                    missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
+                    // Coupe le spam d’aperçus auto (COMSPEC_AthenaFeed / stems sans fichier) ; jamais les photos du joueur.
+                    if (!_staleLib) then {
+                        missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
+                    };
                 };
                 private _txPhase = if (
-                    _planRefused
+                    _staleLib
+                    || {_planRefused}
                     || {(_detail find "http_503") == 0}
                     || {(_detail find "network") == 0}
                     || {(_detail find "http_429") == 0}
@@ -545,6 +563,7 @@ switch (_function) do {
                 ["PhotoUpload", _txPhase, format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
                     case (_planRefused): { "Photo non envoyée. La formule de votre communauté n’inclut pas la carte et les liaisons Athena, prévenez son administrateur." };
+                    case (_staleLib): { format ["Ancienne photo %1 absente du disque (effacée ou déplacée) : ignorée, elle ne sera plus renvoyée. Les nouvelles photos ne sont pas concernées.", _fileHint] };
                     case ((_detail find "file_not_found") == 0): { [_parts] call _fnc_shotMissing };
                     case ((_detail find "file_empty") == 0): { "La capture n’était pas encore prête — reprenez la photo." };
                     case ((_detail find "not_connected") == 0): { "Pas de liaison Athena — reconnectez-vous puis renvoyez." };
@@ -553,12 +572,16 @@ switch (_function) do {
                     case ((_detail find "network") == 0): { "Liaison réseau instable pendant l’envoi de la photo." };
                     default { "Échec d’envoi de la photo vers ATAK web." };
                 };
-                missionNamespace setVariable ["COMSPEC_LastReconUploadResult", ["ERR", _msg, format ["%1 · %2", _detail, _fileHint], [daytime, "HH:MM:SS"] call BIS_fnc_timeToString], false];
+                // Ancienne photo absente : le dernier retour affiché (Galerie du téléphone) reste celui de la vraie
+                // dernière photo, pas cet avertissement de fond.
+                if (!_staleLib) then {
+                    missionNamespace setVariable ["COMSPEC_LastReconUploadResult", ["ERR", _msg, format ["%1 · %2", _detail, _fileHint], [daytime, "HH:MM:SS"] call BIS_fnc_timeToString], false];
+                };
                 // Capture introuvable : dit au joueur où elle a été cherchée (téléphone natif), au lieu d'un échec muet.
-                if ((_detail find "file_not_found") == 0 && {!isNil "comspec_atak_native_fnc_notify"}) then {
+                if ((_detail find "file_not_found") == 0 && {!_staleLib} && {!isNil "comspec_atak_native_fnc_notify"}) then {
                     ["WARNING", _msg, 10, 40, "PHOTOS"] call comspec_atak_native_fnc_notify;
                 };
-                if (!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback") then {
+                if (!_staleLib && {!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback"}) then {
                     private _fbKind = if (
                         _planRefused
                         || {(_detail find "http_503") == 0}
