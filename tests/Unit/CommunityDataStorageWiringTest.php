@@ -43,8 +43,8 @@ final class CommunityDataStorageWiringTest extends TestCase
     public function testPermissionIsCatalogedAndMigrated(): void
     {
         self::assertStringContainsString("'organization.data.purge'", $this->read('app/Authorization/TenantPermissionCatalog.php'));
-        self::assertStringContainsString("'4000_organization_data_purge_permission.php'", $this->read('database/steps/registry.php'));
-        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4000_organization_data_purge_permission.php');
+        self::assertStringContainsString("'4030_organization_data_purge_permission.php'", $this->read('database/steps/registry.php'));
+        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4030_organization_data_purge_permission.php');
     }
 
     public function testEverySourceIsScopedToTheCommunity(): void
