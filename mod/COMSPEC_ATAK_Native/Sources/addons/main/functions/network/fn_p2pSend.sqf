@@ -34,6 +34,13 @@ if (isNull _target) exitWith {
     ["WARNING", format ["%1 n'est plus connecté : SMS non transmis", _peer], 4, 30] call comspec_atak_native_fnc_notify;
     true
 };
+// Liaison réaliste : destinataire joint par le maillage, même sans passerelle (fn_meshGraph "peer", lot 10). Latence du chemin.
+private _path = ["peer", [_target]] call comspec_atak_native_fnc_meshGraph;
+if (_path isNotEqualTo [] && {(_path select 2) < 3}) exitWith {
+    [{ params ["_args", "_target"]; ["comspec_atak_native_p2p", _args, _target] call CBA_fnc_targetEvent; }, [[name player, _body, _time, _id, player, _date], _target],
+        0.1 + (_path select 0) * (missionNamespace getVariable ["comspec_atak_native_mpu_hop_ms", 15]) / 1000] call comspec_atak_native_fnc_waitAndExec;
+    true
+};
 // Débit simulé : le SMS part après la latence ; sans réseau il attend dans la file (« en attente de réseau »).
 private _r = [{ params ["_args", "_target"]; ["comspec_atak_native_p2p", _args, _target] call CBA_fnc_targetEvent; }, [[name player, _body, _time, _id, player, _date], _target], "SMS", 1] call comspec_atak_native_fnc_netSend;
 if (_r isEqualTo "QUEUED") then { _m set ["status", "QUEUED"]; };

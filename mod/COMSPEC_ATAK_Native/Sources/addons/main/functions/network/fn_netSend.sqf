@@ -15,6 +15,10 @@
     Renvoie "SENT" (immédiat), "DELAYED" ou "QUEUED".
 */
 params ["_code", ["_args", []], ["_label", "Message"], ["_kb", 1], ["_try", 1], ["_key", ""]];
+// Gros envoi, liaison réaliste : par blocs, avec reprise (fn_meshChunks, lot 10).
+if (_kb >= 256 && {_try isEqualTo 1} && {(missionNamespace getVariable ["comspec_atak_native_mesh_chunks", true]) isEqualTo true} && {["active"] call comspec_atak_native_fnc_mpuLink}) exitWith {
+    ["start", [_code, _args, _label, _kb, _key]] call comspec_atak_native_fnc_meshChunks
+};
 private _q = [] call comspec_atak_native_fnc_linkQuality;
 // Journal des transferts (app Debug) : [heure, libellé, Ko, état, détail]
 private _trace = {

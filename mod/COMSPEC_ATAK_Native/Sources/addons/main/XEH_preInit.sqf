@@ -657,6 +657,21 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_traffic_power", "CHECKBOX",
     ["Batterie selon le trafic relayé", "Un nœud qui relaie beaucoup se vide plus vite, jusqu'à deux fois."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_stale_s", "SLIDER",
+    ["Position périmée : gris après (s)", "Liaison réaliste : un ami sans nouvelle position passe en gris. 0 : comportement d'avant."],
+    _mpuCat, [0, 600, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_hide_s", "SLIDER",
+    ["Position périmée : retirée après (s)", "Liaison réaliste : passé ce délai, le marqueur disparaît de la carte. 0 : comportement d'avant."],
+    _mpuCat, [0, 1800, 180, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_pli_adaptive", "CHECKBOX",
+    ["Cadence de position adaptative", "Liaison réaliste : position envoyée moins souvent à l'arrêt et sur un chemin dégradé."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_chunks", "CHECKBOX",
+    ["Gros fichiers par blocs", "Liaison réaliste : photos et paquets partent par blocs de 128 Ko, avec progression et reprise après coupure."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_p2p", "CHECKBOX",
+    ["Messages par le maillage", "Liaison réaliste : un message passe de joueur à joueur par le maillage, même sans passerelle."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
 ["comspec_atak_native_mesh_dev", "CHECKBOX",
     ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],

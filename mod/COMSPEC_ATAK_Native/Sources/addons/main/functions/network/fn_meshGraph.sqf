@@ -25,6 +25,7 @@
       "serverTick"  (serveur, chaque seconde)                      "every"   -> s avant la prochaine lecture (0 : le graphe a changé)
       "pass" [camps] (script planifié)                             "view" [réseau, antenne, débit max] (script planifié) -> HashMap
       "graph" [camp] -> [nœuds, voisins, liens, total] ou []
+      "peer" [unité] -> [sauts, marge, niveau] si mon graphe récent la joint (messages A vers B, lot 10), sinon []
       Sans effet, testés par fn_devMeshTest :
       "solve" [voisins, sources, autorisés, plafond, débit max, courbe] -> [débits, sauts, vers, marges, sources]
       "curve" -> part du débit gardée selon les sauts (décision 12)
@@ -34,6 +35,13 @@ params [["_act", ""], ["_arg", []]];
 switch (_act) do {
     case "serverBuilt": {
         ((missionNamespace getVariable ["comspec_atak_native_mesh_server", true]) isEqualTo true) && {!isNil "COMSPEC_ATAK_MeshSrvOn"}
+    };
+    case "peer": {
+        _arg params [["_u", objNull]];
+        if (isNull _u || {!((missionNamespace getVariable ["comspec_atak_native_mesh_p2p", true]) isEqualTo true)} || {!(["active"] call comspec_atak_native_fnc_mpuLink)}) exitWith { [] };
+        private _m = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
+        if (diag_tickTime - (_m getOrDefault ["at", -100]) > 20) exitWith { [] };
+        (_m getOrDefault ["voice", createHashMap]) getOrDefault [netId _u, []]
     };
     case "maxHops": {
         private _h = missionNamespace getVariable ["comspec_atak_native_mesh_hops", 6];
@@ -309,9 +317,9 @@ switch (_act) do {
                 if (_ok && {_k isNotEqualTo "mpu5"}) then { _found pushBack [_o, objNull, 2, 0, _r, (_mb * 1000) min _maxK, _ap]; };
             } forEach (["list", [_side]] call comspec_atak_native_fnc_relayNet);
             {
-                (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_key", ""], ["_r", 0], ["_o", objNull]];
+                (["node", _x] call comspec_atak_native_fnc_meshRead) params [["_key", ""], ["_r", 0], ["_o", objNull], ["_wid", 1]];
                 if (_key isEqualTo "") then { continue };
-                private _wf = [0.5, 1, 1.5] select (["node", _x] call comspec_atak_native_fnc_meshRead select 3);
+                private _wf = [0.5, 1, 1.5] select _wid;
                 _found pushBack [_o, _x, [1, 0] select (_o isKindOf "CAManBase"), parseNumber (_key select [1]), _r, _maxK * _wf, [_o, _milsim] call _antOf];
             } forEach ((allPlayers select { alive _x && {str side group _x isEqualTo _side} }) + (["units", [_side]] call comspec_atak_native_fnc_devMeshSim));
             private _total = count _found;
@@ -386,9 +394,8 @@ switch (_act) do {
                 for "_q" from 0 to ((count _lf) - 3) step 3 do {
                     private _pk = _lf select _q;
                     private _busy = (_deg select (_pk mod 64)) max (_deg select (floor (_pk / 64)));
-                    _lf set [_q + 2, ((_lf select (_q + 2)) / (1 + 0.2 * ((_busy - 1) max 0))) max 1];
+                    _lf set [_q + 2, (round ((_lf select (_q + 2)) / (1 + 0.2 * ((_busy - 1) max 0)))) max 1];
                 };
-                _lf = _lf apply { _x };
             };
             _linkN = _linkN + (count _lf) / 3;
             private _nf = [];
