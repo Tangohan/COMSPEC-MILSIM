@@ -37,6 +37,8 @@ final class AtakAdminControlRepository
         'sessions' => 'Déconnexion forcée',
         'compromise' => 'Compromission déclarée',
         'compromise_undo' => 'Compromission annulée',
+        'device_replaced' => 'Appareil remplacé',
+        'repair_data' => 'Réparation des données',
         'cert_revoke' => 'Certificat révoqué',
         'cert_restore' => 'Certificat rétabli',
         'note' => 'Note interne',
@@ -78,6 +80,10 @@ final class AtakAdminControlRepository
         // envoyé par l'ATAK du joueur comme s'il l'avait rempli en jeu. Sans alerte.
         'mobile_report' => 'info',
         'mobile_debrief' => 'info',
+        // Remise en service (app Admin, fiche ATAK) : nouvel identifiant pour le téléphone suivant du joueur ;
+        // nettoyage de ses données locales, reçu même sans téléphone sur lui.
+        'device_replaced' => 'warning',
+        'repair_data' => 'info',
     ];
 
     /** Filtres d'état de la liste. */
@@ -1300,6 +1306,34 @@ final class AtakAdminControlRepository
             'event_id' => $this->recordCompromise($terminal, $state, $reason, $source, $revoked, $actorId, $actorLabel),
             'revoked' => count($revoked),
         ];
+    }
+
+    /**
+     * Remet un joueur sur le réseau avec un nouvel appareil : son ATAK reçoit l'ordre de prendre un nouvel identifiant.
+     * La fiche compromise ne change pas : état, certificats révoqués et historique restent, elle ne retrouve aucun accès.
+     */
+    public function replaceDevice(array $terminal, ?int $actorId, string $actorLabel): bool
+    {
+        if (!\App\Support\AtakCompromisePolicy::isCompromised($terminal)) {
+            return false;
+        }
+        if ($this->notifyPlayer($terminal, 'device_replaced', 'Appareil remplacé', 'Décidé par ' . $actorLabel, $actorId) < 1) {
+            return false;
+        }
+        $this->log($terminal, 'device_replaced', 'Nouvel identifiant demandé pour le téléphone suivant · ancien appareil toujours exclu', $actorId, $actorLabel);
+
+        return true;
+    }
+
+    /** Demande à l'ATAK du joueur de nettoyer ses données locales (même effet que Réglages > Réparer mes données). */
+    public function requestDataRepair(array $terminal, ?int $actorId, string $actorLabel): bool
+    {
+        if ($this->notifyPlayer($terminal, 'repair_data', 'Réparation des données', 'Décidée par ' . $actorLabel, $actorId) < 1) {
+            return false;
+        }
+        $this->log($terminal, 'repair_data', 'Nettoyage des données locales demandé', $actorId, $actorLabel);
+
+        return true;
     }
 
     /**

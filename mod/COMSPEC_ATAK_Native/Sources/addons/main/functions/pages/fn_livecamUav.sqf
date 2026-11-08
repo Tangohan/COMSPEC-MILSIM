@@ -30,6 +30,9 @@ if (_uav isEqualTo "aim") exitWith {
     ASLToATL ((_hit select 0) select 0)
 };
 if (isNull _uav) exitWith { false };
+// Source vérifiée avant toute caméra (fn_deviceGuard) ; marqueur sur le disque avant de créer caméra et texture.
+if !(["camOk", [_uav, "uav"]] call comspec_atak_native_fnc_deviceGuard) exitWith { false };
+["begin", ["CAMERA", "LIVECAM"]] call comspec_atak_native_fnc_deviceGuard;
 ["check", "LIVE CAM"] call comspec_atak_native_fnc_pipCheck;
 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
 if (isNull _cam) then {

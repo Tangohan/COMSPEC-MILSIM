@@ -1562,6 +1562,11 @@ final class AtakRealismRepository
             if (self::physicalFamily($row) !== $family) {
                 continue;
             }
+            // Appareil compromis : jamais fusionné avec le nouvel appareil du joueur, ni repris ni retiré. Sa fiche,
+            // ses certificats révoqués et son historique restent ; le nouvel identifiant a sa propre fiche.
+            if (\App\Support\AtakCompromisePolicy::isCompromised($row)) {
+                continue;
+            }
             $uid = strtoupper(trim((string) ($row['terminal_uid'] ?? '')));
             if ($uid === '' || $uid === strtoupper($keepUid)) {
                 continue;

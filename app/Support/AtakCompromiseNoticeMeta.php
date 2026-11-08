@@ -13,7 +13,7 @@ namespace App\Support;
  */
 final class AtakCompromiseNoticeMeta
 {
-    private const KINDS = ['compromise', 'compromise_cleared'];
+    private const KINDS = ['compromise', 'compromise_cleared', 'device_replaced'];
 
     /**
      * @param array<string, mixed> $message ligne atak_admin_messages (kind, terminal_uid, created_at)

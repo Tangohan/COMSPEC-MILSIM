@@ -74,3 +74,47 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     ["set", "DARK"] call comspec_atak_native_fnc_theme;
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
+
+// Garde-fou du téléphone (fn_deviceGuard) : données reprises vérifiées, page caméra jamais rouverte seule, mode sans échec.
+["tel_garde_fou", {
+    if (["comspec_atak_native_fnc_deviceGuard"] call AT_fnc_nil) exitWith {};
+    private _lastPage = profileNamespace getVariable "COMSPEC_ATAK_LastPage";
+    private _offline = profileNamespace getVariable "COMSPEC_ATAK_OfflineSave";
+    profileNamespace setVariable ["COMSPEC_ATAK_LastPage", "LIVECAM"];
+    [(["restorePage"] call comspec_atak_native_fnc_deviceGuard) isEqualTo "MAP", "page caméra rouverte toute seule"] call AT_fnc_check;
+    [(profileNamespace getVariable ["COMSPEC_ATAK_GuardStep", []]) isNotEqualTo [], "marqueur d'étape non posé"] call AT_fnc_check;
+    ["end"] call comspec_atak_native_fnc_deviceGuard;
+    [(profileNamespace getVariable ["COMSPEC_ATAK_GuardStep", []]) isEqualTo [], "marqueur d'étape non effacé"] call AT_fnc_check;
+    // Sauvegarde illisible : écartée, pas d'erreur.
+    profileNamespace setVariable ["COMSPEC_ATAK_OfflineSave", ["autotest", "", "pas une liste"]];
+    [(["sweep"] call comspec_atak_native_fnc_deviceGuard) >= 1, "sauvegarde hors ligne illisible gardée"] call AT_fnc_check;
+    // Mode sans échec : aucun flux tant que le joueur ne le lève pas.
+    profileNamespace setVariable ["COMSPEC_ATAK_SafeCam", ["autotest"]];
+    [!(["camOk", [player, "unit"]] call comspec_atak_native_fnc_deviceGuard), "flux accepté en mode sans échec"] call AT_fnc_check;
+    ["safeOff"] call comspec_atak_native_fnc_deviceGuard;
+    [!(["safe"] call comspec_atak_native_fnc_deviceGuard), "mode sans échec non levé"] call AT_fnc_check;
+    [(["r2t", 300] call comspec_atak_native_fnc_deviceGuard) isEqualTo 256, "taille de texture non vérifiée"] call AT_fnc_check;
+    profileNamespace setVariable ["COMSPEC_ATAK_LastPage", _lastPage];
+    profileNamespace setVariable ["COMSPEC_ATAK_OfflineSave", _offline];
+    call AT_fnc_done;
+}, 30] call AT_fnc_run;
+
+// Compromission validée : nouvel identifiant d'appareil, l'ancien n'est plus le terminal actif ; ordre pour un autre terminal ignoré.
+["tel_nouvel_appareil", {
+    if (["comspec_atak_native_fnc_compromise", "comspec_overwatch_connect_fnc_getTerminalUid"] call AT_fnc_nil) exitWith {};
+    private _uid = [] call comspec_overwatch_connect_fnc_getTerminalUid;
+    private _gen = profileNamespace getVariable "comspec_overwatch_terminal_gen";
+    private _kept = profileNamespace getVariable "COMSPEC_ATAK_NewDevice";
+    ["newDevice", ["AUTOTEST", "autotest", "OW-UN-AUTRE"]] call comspec_atak_native_fnc_compromise;
+    [(profileNamespace getVariable ["comspec_overwatch_terminal_uid", ""]) isEqualTo _uid, "ordre pour un autre terminal appliqué"] call AT_fnc_check;
+    ["newDevice", ["AUTOTEST", "autotest", _uid]] call comspec_atak_native_fnc_compromise;
+    private _new = profileNamespace getVariable ["comspec_overwatch_terminal_uid", ""];
+    [_new isNotEqualTo "" && {_new isNotEqualTo _uid}, "identifiant inchangé après le remplacement"] call AT_fnc_check;
+    [(["previous", "AUTOTEST"] call comspec_atak_native_fnc_compromise) isEqualTo _uid, "ancien terminal oublié"] call AT_fnc_check;
+    [(["deviceStatus"] call comspec_atak_native_fnc_compromise) isNotEqualTo [], "aucun message au joueur"] call AT_fnc_check;
+    ["identifiant : " + _uid + " -> " + _new] call AT_fnc_info;
+    profileNamespace setVariable ["comspec_overwatch_terminal_uid", _uid];
+    profileNamespace setVariable ["comspec_overwatch_terminal_gen", _gen];
+    profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", _kept];
+    call AT_fnc_done;
+}, 30] call AT_fnc_run;

@@ -372,6 +372,24 @@ $class = $m !== null ? ($m['game_class'] !== '' ? $m['game_class'] : $m['slot'])
                     </details>
 
                     <details class="paf-act">
+                        <summary><?= $h('Remise en service') ?></summary>
+                        <div class="paf-act__body">
+                            <?php if (\App\Support\AtakCompromisePolicy::isCompromised($terminal)): ?>
+                            <form method="post" action="<?= $h($base . '/remplacer') ?>">
+                                <?= $hidden ?>
+                                <p class="paf-hint"><?= $h('L’ancien appareil reste exclu. Le téléphone suivant du joueur reçoit un nouvel identifiant et retrouve l’accès tout seul.') ?></p>
+                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line"><?= $h('Remplacer l’appareil') ?></button>
+                            </form>
+                            <?php endif; ?>
+                            <form method="post" action="<?= $h($base . '/reparer') ?>">
+                                <?= $hidden ?>
+                                <p class="paf-hint"><?= $h('Téléphone qui plante chez le joueur : son jeu nettoie ses données locales, même sans téléphone sur lui.') ?></p>
+                                <button type="submit" class="pa-btn pa-btn--sm pa-btn--line"><?= $h('Réparer ses données') ?></button>
+                            </form>
+                        </div>
+                    </details>
+
+                    <details class="paf-act">
                         <summary><?= $h($inTenant ? 'Déconnecter' : 'Déconnecter ou retirer') ?></summary>
                         <div class="paf-act__body">
                             <form method="post" action="<?= $h($base . '/deconnecter') ?>">

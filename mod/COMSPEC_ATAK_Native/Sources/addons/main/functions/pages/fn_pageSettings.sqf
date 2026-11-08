@@ -657,6 +657,13 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
         }],
         ["info", "Dernière version publiée", [format ["ATAK %1 · Link %2", _lastAtak, _lastLink], "pas encore vérifiée"] select (_lastAtak isEqualTo "")],
         ["info", "Installation", ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>aucune anomalie</t>", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1 anomalie(s) : voir l'app Debug</t>", count _anom]] select ((count _anom) > 0)],
+        // Dépannage en un bouton (fn_deviceGuard) : plus besoin de supprimer le cache à la main dans Documents.
+        ["section", "Dépannage", "Téléphone qui plante ou se fige : remet ses données locales au propre"],
+        ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", ([
+            "Efface la dernière page, les apps en quarantaine et la sauvegarde hors ligne, et met de côté les caches du dossier Documents. Votre compte, vos réglages et l'identifiant de cet appareil ne changent pas.",
+            "Caméras en mode sans échec : le jeu s'est arrêté pendant le chargement du téléphone. Réparez vos données pour les rétablir."
+        ] select (["safe"] call comspec_atak_native_fnc_deviceGuard)) call comspec_atak_native_fnc_tr]],
+        ["buttons", [["RÉPARER MES DONNÉES", { ["repair", "Réglages"] call comspec_atak_native_fnc_deviceGuard; }, "amber"]]],
         // Dossier où les DLL cherchent les photos (réglage CBA « Dossier des captures d'écran », sinon profil Arma).
         ["section", "Photos", "Dossier où le téléphone cherche les captures du jeu"],
         ["text", format ["<t size='0.8'>%1</t>", ((["text"] call comspec_atak_native_fnc_shotDir) regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]]],

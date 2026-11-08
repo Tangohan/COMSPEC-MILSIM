@@ -36,6 +36,9 @@ if (_unit isEqualTo "fov") exitWith {
     true
 };
 if (isNull _unit) exitWith { false };
+// Source vérifiée avant toute caméra (fn_deviceGuard) ; marqueur sur le disque avant de créer caméra et texture.
+if !(["camOk", [_unit, "unit"]] call comspec_atak_native_fnc_deviceGuard) exitWith { false };
+["begin", ["CAMERA", "LIVECAM"]] call comspec_atak_native_fnc_deviceGuard;
 // PiP coupée (Options > Vidéo) : le direct serait noir ; journal RPT et notification claire (fn_pipCheck).
 ["check", "LIVE CAM"] call comspec_atak_native_fnc_pipCheck;
 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
