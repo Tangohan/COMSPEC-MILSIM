@@ -316,11 +316,11 @@ return function (Router $router) {
     $router->get('/wiki/atak/nouveautes', [\App\Controllers\Web\AtakWikiController::class, 'news']);
     $router->get('/wiki/atak/recherche', [\App\Controllers\Web\AtakWikiController::class, 'search']);
     $router->get('/wiki/atak/{slug}', [\App\Controllers\Web\AtakWikiController::class, 'show']);
-    $router->get('/traduire-atak', [SitePagesController::class, 'translateAtak']);
+    $router->get('/traduire-atak', [SitePagesController::class, 'translateAtak'], [AuthMiddleware::class]);
     $router->get('/traduire-atak/modele.json', [SitePagesController::class, 'translateAtakTemplate']);
     // Packs de langue partagés : la page s'ouvre par le lien (jeton dans le fragment #), l'API lit X-Pack-Token.
-    $router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak']);
-    $router->post('/api/traduire-atak/packs', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'create']);
+    $router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak'], [AuthMiddleware::class]);
+    $router->post('/api/traduire-atak/packs', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'create'], [AuthMiddleware::class]);
     $router->get('/api/traduire-atak/compte', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'mine']);
     $router->post('/api/traduire-atak/compte', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'saveMine']);
     $router->post('/api/traduire-atak/packs/{id}/liens', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'links']);

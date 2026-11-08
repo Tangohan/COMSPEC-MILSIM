@@ -112,8 +112,10 @@ final class PaymentLedgerRepository
             $args = array_merge($args, $atakDonationIds);
         }
         $st = $this->pdo()->prepare(
-            'SELECT e.*, u.display_name AS actor_name FROM payment_events e
+            'SELECT e.*, ' . $this->actorSelect() . ', bt.name AS tenant_name FROM payment_events e
              LEFT JOIN users u ON u.id = e.actor_user_id
+             LEFT JOIN tenants atn ON atn.id = u.tenant_id
+             LEFT JOIN tenants bt ON bt.id = e.tenant_id
              WHERE ' . implode(' OR ', $where) . ' ORDER BY e.created_at ASC, e.id ASC'
         );
         $st->execute($args);
@@ -127,6 +129,19 @@ final class PaymentLedgerRepository
         return $out;
     }
 
+    /**
+     * Libellé de l’auteur d’une action : indicatif, sinon prénom et nom, sinon nom affiché
+     * (plusieurs comptes de gestion portent le même nom générique), suivi de sa communauté.
+     */
+    private function actorSelect(): string
+    {
+        $name = $this->hasColumn('users', 'first_name') && $this->hasColumn('users', 'last_name')
+            ? "COALESCE(NULLIF(u.callsign, ''), NULLIF(TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))), ''), u.display_name)"
+            : "COALESCE(NULLIF(u.callsign, ''), u.display_name)";
+
+        return "CASE WHEN atn.name IS NULL THEN {$name} ELSE CONCAT({$name}, ' (', atn.name, ')') END AS actor_name";
+    }
+
     /** @return list<array<string, mixed>> */
     public function recentEvents(int $limit = 40): array
     {
@@ -134,8 +149,9 @@ final class PaymentLedgerRepository
             return [];
         }
         $st = $this->pdo()->query(
-            'SELECT e.*, u.display_name AS actor_name, t.name AS tenant_name FROM payment_events e
+            'SELECT e.*, ' . $this->actorSelect() . ', t.name AS tenant_name FROM payment_events e
              LEFT JOIN users u ON u.id = e.actor_user_id
+             LEFT JOIN tenants atn ON atn.id = u.tenant_id
              LEFT JOIN tenants t ON t.id = e.tenant_id
              ORDER BY e.created_at DESC, e.id DESC LIMIT ' . max(1, min(200, $limit))
         );
