@@ -50,4 +50,17 @@ final class RoleplayFollowupSettingsTest extends TestCase
         self::assertTrue($patch['enabled']);
         self::assertSame(180, $patch['bilans']['first_year_days']);
     }
+
+    public function testIndividualBilansCanBeTurnedOff(): void
+    {
+        self::assertTrue(RoleplayFollowupSettings::individualBilansEnabled([]));
+        self::assertTrue(RoleplayFollowupSettings::individualBilansEnabled(RoleplayFollowupSettings::defaults()));
+
+        $off = RoleplayFollowupSettings::patchFromImmersionPost(['rp_followup_enabled' => '1']);
+        self::assertFalse($off['individual_bilans']);
+        self::assertFalse(RoleplayFollowupSettings::individualBilansEnabled(RoleplayFollowupSettings::merge([], $off)));
+
+        $on = RoleplayFollowupSettings::patchFromImmersionPost(['rp_individual_bilans' => '1']);
+        self::assertTrue(RoleplayFollowupSettings::individualBilansEnabled(RoleplayFollowupSettings::merge([], $on)));
+    }
 }

@@ -25,6 +25,21 @@ final class ReconImageStorageTest extends TestCase
         self::assertStringNotContainsString('/public/uploads/', $url);
     }
 
+    public function testUrlForRowNeverPrefixesPublicRecon(): void
+    {
+        $url = (string) ReconImageStorage::urlForRow(['id' => 5, 'image_path' => 'recon/recon_20260928_YA1_ab12.jpg']);
+        self::assertStringContainsString('/uploads/recon/recon_20260928_YA1_ab12.jpg', $url);
+        self::assertStringNotContainsString('/public/recon/', $url);
+        $private = (string) ReconImageStorage::urlForRow(['id' => 5, 'image_path' => 'recon-private/abc.jpg']);
+        self::assertStringContainsString('api/recon/images/5/file', $private);
+    }
+
+    public function testIntelFeedUsesReconStorageForImages(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Services/Intel/IntelPlayerFeedService.php');
+        self::assertStringContainsString('ReconImageStorage::urlForRow', $src);
+    }
+
     public function testStoreFallsBackAndIsReadable(): void
     {
         $tmp = tempnam(sys_get_temp_dir(), 'recon_t_');

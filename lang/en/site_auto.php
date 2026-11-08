@@ -55895,4 +55895,7 @@ return [
     'Changer d’onglet' => 'Switch tab',
     'Tourner de 1° (Maj : 15°)' => 'Rotate by 1° (Shift: 15°)',
     'version jour' => 'day version',
+    'Proposer les bilans individuels' => 'Offer individual reviews',
+    'Si décoché, l’onglet « Bilans » disparaît des fiches des membres et plus aucun bilan ne peut être saisi. Les bilans déjà enregistrés sont conservés.' => 'If unchecked, the "Reviews" tab disappears from member files and no new review can be entered. Reviews already saved are kept.',
+    'Les bilans individuels sont désactivés pour cette communauté.' => 'Individual reviews are turned off for this community.',
 ];

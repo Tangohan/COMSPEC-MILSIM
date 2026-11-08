@@ -106,6 +106,9 @@ class Response
         if (defined('JSON_PARTIAL_OUTPUT_ON_ERROR')) {
             $flags |= JSON_PARTIAL_OUTPUT_ON_ERROR;
         }
+        if (class_exists(\App\Support\EmailPrivacy::class)) {
+            $data = \App\Support\EmailPrivacy::maskJsonData($data);
+        }
         $body = json_encode($data, $flags);
         if ($body === false) {
             $body = '{"error":"server_error","message":"Réponse impossible à sérialiser."}';
