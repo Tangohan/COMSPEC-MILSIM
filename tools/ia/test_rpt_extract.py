@@ -1,4 +1,4 @@
-"""Tests de rpt-extract.py (données inventées). Lancer : python3 -I -m unittest discover -s tools/ia -p "test_*.py""""
+"""Tests de rpt-extract.py (données inventées). Lancer : python3 -I -m unittest discover -s tools/ia -p test_*.py"""
 import importlib.util
 import os
 import unittest

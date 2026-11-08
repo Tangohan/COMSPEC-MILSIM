@@ -1,4 +1,4 @@
-"""Tests de session-stats.py (données inventées). Lancer : python3 -I -m unittest discover -s tools/ia -p "test_*.py""""
+"""Tests de session-stats.py (données inventées). Lancer : python3 -I -m unittest discover -s tools/ia -p test_*.py"""
 import importlib.util
 import os
 import unittest
