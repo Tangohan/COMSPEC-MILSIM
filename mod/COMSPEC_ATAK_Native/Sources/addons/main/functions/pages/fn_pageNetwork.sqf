@@ -458,6 +458,7 @@ if (_mpuOn) then {
             [[
                 [["ALLUMER", "ÉTEINDRE"] select (_v get "on"), { ["power"] call comspec_atak_native_fnc_mpuLink; }, !(_v get "on")],
                 ["PUISSANCE", { ["txpower"] call comspec_atak_native_fnc_mpuLink; }],
+                [format ["CANAL %1", toUpper (_v getOrDefault ["width", "Normal"])], { ["width"] call comspec_atak_native_fnc_mpuLink; }],
                 ["CANAL −", { ["chan", [-1]] call comspec_atak_native_fnc_mpuLink; }],
                 ["CANAL +", { ["chan", [1]] call comspec_atak_native_fnc_mpuLink; }]
             ]] call _buttons;
@@ -466,6 +467,7 @@ if (_mpuOn) then {
         if (_lk isNotEqualTo "cable" && {_v get "carried"}) then { _btn pushBack ["CÂBLE EUD", { ["link", ["cable"]] call comspec_atak_native_fnc_mpuLink; }, _lk isEqualTo ""]; };
         if (_lk isNotEqualTo "wifi" && {_v get "wifi"}) then { _btn pushBack ["WI-FI", { ["link", ["wifi"]] call comspec_atak_native_fnc_mpuLink; }]; };
         if (_lk isNotEqualTo "") then { _btn pushBack ["DÉBRANCHER", { ["unlink"] call comspec_atak_native_fnc_mpuLink; }]; };
+        if ((_v get "posed") && {missionNamespace getVariable ["comspec_atak_native_mesh_mast", true]}) then { _btn pushBack ["MÂT", { ["mast"] call comspec_atak_native_fnc_mpuLink; }]; };
         if ((_v get "spare") && {(_v get "batt") < 95}) then { _btn pushBack ["BATTERIE", { ["battery"] call comspec_atak_native_fnc_mpuLink; }]; };
         if (_btn isNotEqualTo []) then { [_btn] call _buttons; };
     };

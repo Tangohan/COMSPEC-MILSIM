@@ -14,7 +14,9 @@ private _read = {
 };
 private _nan = sqrt -1;
 // Lecture sûre : valeurs correctes rendues, valeurs absurdes refusées.
-[_results, "nœud correct", ["node", ["C3", 6000, player], player] call _read, ["C3", 6000, player]] call _expect;
+[_results, "nœud correct", ["node", ["C3", 6000, player], player] call _read, ["C3", 6000, player, 1]] call _expect;
+[_results, "nœud : largeur 5", ["node", ["C3", 6000, player, 5], player] call _read, []] call _expect;
+[_results, "courbe milsim : moitié puis tiers", round (100 * ((["solve", [[[[1, 10, 1000]], [[0, 10, 1000], [2, 10, 1000]], [[1, 10, 1000]]], [2], [true, true, true], 6, 20000, [1, 1, 0.5, 0.33]]] call comspec_atak_native_fnc_meshGraph) select 0 select 0)), 50000] call _expect;
 [_results, "nœud : canal 17", ["node", ["C17", 6000, player], player] call _read, []] call _expect;
 [_results, "nœud : portée 1e9", ["node", ["C1", 1e9, player], player] call _read, []] call _expect;
 [_results, "nœud : portée NaN", ["node", ["C1", _nan, player], player] call _read, []] call _expect;

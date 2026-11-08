@@ -636,6 +636,27 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_gravity", "CHECKBOX",
     ["Gravité de coupure du maillage", "Le signal et les pertes suivent le pire lien du chemin : nominal, dégradé, limite, puis coupure nette vers la portée normale de la radio. Décoché : signal fixe quel que soit le lien."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_tfar_ptt", "CHECKBOX",
+    ["TFAR : rallonge pendant l'émission seulement", "Portée d'émission allongée à l'appui sur l'alternat de la radio pontée, portée de réception allongée pendant l'émission d'un correspondant ponté. Décoché : réception allongée en permanence, comme avant. Sans TFAR : sans effet."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_hop_curve", "LIST",
+    ["Perte de débit par saut", "Une radio à une seule voie émet et relaie sur le même canal. Choix de jeu : aucune source publique de la MPU5 ne chiffre cette perte."],
+    _mpuCat, [[0, 1, 2], ["Selon le profil (Milsim : moitié puis tiers ; sinon x 0,8)", "Moitié puis tiers", "x 0,8 par saut"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_airtime", "CHECKBOX",
+    ["Temps d'antenne partagé", "Les nœuds voisins d'un même canal se partagent le temps d'émission : changer de canal a un vrai intérêt."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_posture", "CHECKBOX",
+    ["Antenne selon la posture (Milsim)", "Profil Milsim : hauteur d'antenne selon la posture, et un porteur couché derrière un obstacle proche perd la liaison."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_body_mask", "CHECKBOX",
+    ["Masque du corps (Milsim)", "Profil Milsim : perte de 3 dB quand le porteur tourne le dos à son correspondant."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_mast", "CHECKBOX",
+    ["Mât d'antenne de la MPU5", "Une MPU5 posée reliée en Wi-Fi peut déployer un mât (30 s, 8 m), visible de loin."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_traffic_power", "CHECKBOX",
+    ["Batterie selon le trafic relayé", "Un nœud qui relaie beaucoup se vide plus vite, jusqu'à deux fois."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Outils de développement du maillage (fn_devMesh) : rien n'existe pour un joueur tant que ce réglage serveur est décoché.
 ["comspec_atak_native_mesh_dev", "CHECKBOX",
     ["Outils de développement du maillage", "Nœuds simulés, superposition 3D, inspecteur de lien, tableau de performance et export du graphe (app Debug, onglet MAILLAGE), pour les seuls admins et Zeus. À laisser décoché en partie normale."],

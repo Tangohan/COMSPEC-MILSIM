@@ -202,6 +202,8 @@ switch (_tab) do {
         private _real = ["active"] call comspec_atak_native_fnc_mpuLink;
         if (_real) then {
             private _ms = ["status"] call comspec_atak_native_fnc_mpuLink;
+            private _mv = ["view"] call comspec_atak_native_fnc_mpuLink;
+            _rows pushBack ["info", "Autonomie estimée · trafic relayé", format ["%1 min · %2 nœud(s)", _mv get "left", (uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["relayed", 0]]];
             _rows pushBack ["info", "Radio de données", format ["%1 · <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>réglages : app Réseau</t>",
                 [format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", [_ms get "why"] call _esc], format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1 saut(s) jusqu'à %2</t>", (_ms get "hops") max 0, [_ms get "gw"] call _esc]] select (_ms get "ok")]];
         };

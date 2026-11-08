@@ -4,7 +4,7 @@
     qui vérifie le type, la taille et les bornes, et rend un enregistrement vide au moindre écart (nombre non fini compris).
     C'est un garde-fou contre les valeurs absurdes, pas une sécurité : un client modifié peut publier une valeur plausible.
       ["node", unité]      COMSPEC_ATAK_MpuNode -> [réseau "C1".."C16", portée 1..20 000 m, objet antenne (l'unité ou une radio
-                           posée au sol)] ou []
+                           posée au sol), largeur de canal 0 étroit | 1 normal | 2 large] ou []
       ["mpu5", unité]      COMSPEC_ATAK_Mpu5 -> [débit 0..100 Mbit/s, bonds 0..64, portée 1..30 000 m, nom] ou []
                            (30 000 m : borne du réglage « portée données » d'une radio longue portée)
       ["voice", unité]     COMSPEC_ATAK_MpuVoice -> [type "acre" | "sw" | "lr", clé de radio, fréquence, portée 0..100 000 m, réseau
@@ -35,14 +35,15 @@ private _inRange = {
 };
 switch (_kind) do {
     case "node": {
-        if ((count _raw) isNotEqualTo 3) exitWith { [] };
-        _raw params [["_key", 0], ["_range", 0], ["_ant", 0]];
+        if !((count _raw) in [3, 4]) exitWith { [] };
+        _raw params [["_key", 0], ["_range", 0], ["_ant", 0], ["_width", 1]];
+        if !(_width in [0, 1, 2]) exitWith { [] };
         if (!(_key isEqualType "") || {(count _key) > 3} || {(_key select [0, 1]) isNotEqualTo "C"}) exitWith { [] };
         if !([parseNumber (_key select [1]), 1, 16] call _inRange) exitWith { [] };
         if !([_range, 1, 20000] call _inRange) exitWith { [] };
         if (!(_ant isEqualType objNull) || {isNull _ant}) exitWith { [] };
         if (_ant isNotEqualTo _unit && {!(_ant isKindOf "WeaponHolder")} && {!(_ant isKindOf "GroundWeaponHolder")} && {!(_ant isKindOf "WeaponHolderSimulated")}) exitWith { [] };
-        [_key, _range, _ant]
+        [_key, _range, _ant, _width]
     };
     case "mpu5": {
         if ((count _raw) isNotEqualTo 4) exitWith { [] };
