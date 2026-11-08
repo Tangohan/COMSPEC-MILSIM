@@ -136,6 +136,26 @@ final class PersonnelCorrectionRequestService
         'personnel.status.manage',
     ];
 
+    /** Droits qui permettent de traiter les corrections de fiches (au moins un). */
+    public const STAFF_PERMISSIONS = [
+        'personnel.profile.update',
+        'admin.organization',
+        'admin.access',
+        'personnel.grades.manage',
+        'personnel.assignments.manage',
+        'personnel.status.manage',
+    ];
+
+    /** Droits qui permettent de traiter plusieurs demandes d'un coup (au moins un). */
+    public const BATCH_PERMISSIONS = [
+        'personnel.profile.update',
+        'admin.organization',
+        'admin.access',
+    ];
+
+    /** Nombre maximal de demandes traitées en un lot. */
+    public const BATCH_MAX = 50;
+
     public function __construct(
         private PersonnelCorrectionRequestRepository $requests,
         private PersonnelProfileRepository $profiles,
@@ -392,6 +412,10 @@ final class PersonnelCorrectionRequestService
         if (mb_strlen($resolutionNote) > 1000) {
             $resolutionNote = mb_substr($resolutionNote, 0, 1000);
         }
+        // Un refus s'explique : le membre reçoit ce motif et l'historique le garde.
+        if ($decision === 'rejected' && $resolutionNote === '') {
+            return ['ok' => false, 'message' => 'Indiquez le motif du refus : le membre le recevra.'];
+        }
 
         if ($decision === 'approved') {
             $proposed = is_array($row['proposed'] ?? null) ? $row['proposed'] : [];
@@ -421,6 +445,56 @@ final class PersonnelCorrectionRequestService
             'message' => $decision === 'approved'
                 ? 'Correction confirmée — la fiche a été mise à jour.'
                 : 'Demande refusée — la fiche n’a pas été modifiée.',
+        ];
+    }
+
+    /**
+     * Traite plusieurs demandes d'un coup avec la même décision (et le même motif pour un refus).
+     * Chaque demande passe par decide() : même contrôle, même notification, même historique.
+     *
+     * @param list<int|string> $requestIds
+     * @return array{ok: bool, done: int, failed: int, message: string}
+     */
+    public function decideBatch(int $tenantId, array $requestIds, int $resolverUserId, string $decision, string $resolutionNote = ''): array
+    {
+        $decision = strtolower(trim($decision));
+        if (!in_array($decision, ['approved', 'rejected'], true)) {
+            return ['ok' => false, 'done' => 0, 'failed' => 0, 'message' => 'Décision invalide.'];
+        }
+        $ids = [];
+        foreach ($requestIds as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        $ids = array_slice(array_values($ids), 0, self::BATCH_MAX);
+        if ($ids === []) {
+            return ['ok' => false, 'done' => 0, 'failed' => 0, 'message' => 'Sélectionnez au moins une demande.'];
+        }
+        if ($decision === 'rejected' && trim($resolutionNote) === '') {
+            return ['ok' => false, 'done' => 0, 'failed' => 0, 'message' => 'Indiquez le motif du refus : les membres le recevront.'];
+        }
+        $done = 0;
+        $failed = 0;
+        foreach ($ids as $id) {
+            $one = $this->decide($tenantId, $id, $resolverUserId, $decision, $resolutionNote);
+            if ($one['ok']) {
+                ++$done;
+            } else {
+                ++$failed;
+            }
+        }
+
+        return [
+            'ok' => $done > 0,
+            'done' => $done,
+            'failed' => $failed,
+            'message' => $failed === 0
+                ? ($decision === 'approved'
+                    ? $done . ' correction' . ($done > 1 ? 's confirmées' : ' confirmée') . '.'
+                    : $done . ' demande' . ($done > 1 ? 's refusées' : ' refusée') . '.')
+                : $done . ' traitée' . ($done > 1 ? 's' : '') . ', ' . $failed . ' ignorée' . ($failed > 1 ? 's' : '') . ' (déjà traitées ou introuvables).',
         ];
     }
 

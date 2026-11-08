@@ -26,6 +26,7 @@ use App\Services\Effectifs\PersonnelAutoAdvancementService;
 use App\Services\Effectifs\PersonnelHrWorkspaceSettings;
 use App\Services\Effectifs\RhAlertAggregatorService;
 use App\Services\Personnel\AssignmentTargetCatalog;
+use App\Services\Personnel\PersonnelCorrectionRequestService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Support\EffectifsLmsAccess;
 use App\Support\EffectifsWorkspaceShellExtras;
@@ -86,6 +87,10 @@ final class RhDossierWorkspaceController
             return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
+        $papersRights = MemberIdentityPapersController::currentRights();
+        if ($request->queryString('vue', '') === 'identite') {
+            return $this->identityPapers($request, $tenantId, $papersRights);
+        }
         $ready = $this->hrDocuments->tableExists();
         // ?user_id= : coffre d’un seul membre (lien « Pièces du dossier RH » de la fiche).
         $scopeId = (int) $request->query('user_id', 0);
@@ -98,7 +103,7 @@ final class RhDossierWorkspaceController
         $docs = [];
         if ($ready && $scopeUser !== null) {
             foreach ($this->hrDocuments->listForUser($tenantId, $scopeId) as $row) {
-                $docs[] = $row + ['user_display_name' => $scopeUser['display_name'] ?? '', 'user_email' => $scopeUser['email'] ?? ''];
+                $docs[] = $row + ['user_display_name' => $scopeUser['display_name'] ?? ''];
             }
         } elseif ($ready) {
             $docs = $this->hrDocuments->listRecentForTenant($tenantId, 100);
@@ -117,7 +122,7 @@ final class RhDossierWorkspaceController
         return $this->shell('admin.effectifs_workspace.rh_documents', [
             'title' => 'Documents RH',
             'effectifsNav' => 'rh_documents',
-            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'effectifs-documents-rh.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'effectifs-documents-rh.css', 'rh-identity-papers.css'],
             'hrDocuments' => $docs,
             'hrDocumentsCount' => $summary['total'],
             'hrDocumentsSummary' => $summary,
@@ -136,6 +141,7 @@ final class RhDossierWorkspaceController
             ),
             'hrWorkspaceSettings' => PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings),
             'hrSchemaReady' => $this->hrDocuments->tableExists(),
+            'rhDocsIdentityTab' => !empty($papersRights['view']),
             'orgUsers' => $orgUsers,
             'csrfToken' => Csrf::token(),
             'canManage' => EffectifsLmsAccess::canEditProfiles(Gate::getInstance()),
@@ -579,40 +585,48 @@ final class RhDossierWorkspaceController
         return Response::redirect(effectifs_workspace_url('vivier'));
     }
 
+    /**
+     * Documents RH > « Documents d'identité » : papiers fictifs de COMSPEC Identity, par membre.
+     * Le droit de voir la section est celui de l'onglet « Identité & papiers » de la fiche ; couvertures, alias et faux
+     * ne sont lus qu'avec l'habilitation Confidentiel (voir RhIdentityPapersOverview).
+     *
+     * @param array{view: bool, manage: bool, truth: bool, cover: bool, sse: bool} $rights
+     */
+    private function identityPapers(Request $request, int $tenantId, array $rights): Response
+    {
+        if (empty($rights['view'])) {
+            Session::flash('error', 'Les documents d’identité sont réservés aux responsables habilités.');
+
+            return Response::redirect(effectifs_workspace_url('documents-rh'));
+        }
+        $overview = (new \App\Services\Effectifs\RhIdentityPapersOverview())->forTenant($tenantId, !empty($rights['truth']));
+
+        return $this->shell('admin.effectifs_workspace.rh_identity_papers', [
+            'title' => 'Documents d’identité',
+            'effectifsNav' => 'rh_documents',
+            'backOfficePageCss' => ['effectifs_lms.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'rh-identity-papers.css'],
+            'rhIdentityPapers' => $overview,
+            'rhIdentityRights' => $rights,
+            'rhIdentityQuery' => mb_substr(trim($request->queryString('q', '')), 0, 80),
+            'rhIdentityRenew' => $request->queryString('renouveler', '') === '1',
+            'rhDocsIdentityTab' => true,
+        ]);
+    }
+
+    /** Ancienne page « Alertes RH » : tout est désormais dans « À traiter », onglet « À surveiller ». */
     public function alerts(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
         if ($denied !== null) {
             return $denied;
         }
-        $tenantId = (int) Session::get('tenant_id');
-        $hr = PersonnelHrWorkspaceSettings::forTenant($tenantId, $this->adminSettings);
-        $inactivity = (int) ($hr['inactivity_days'] ?? RhAlertAggregatorService::INACTIVITY_DAYS);
-        $absence = (int) ($hr['absence_days'] ?? RhAlertAggregatorService::PROLONGED_ABSENCE_DAYS);
-        $summary = $this->rhAlerts->summarize($tenantId, $inactivity, $absence);
-        $adequacy = null;
-        try {
-            $adequacy = (new \App\Services\Organization\OrgAdequacyService())->evaluate($tenantId);
-        } catch (\Throwable) {
-            $adequacy = null;
-        }
 
-        return $this->shell('admin.effectifs_workspace.rh_alerts', [
-            'rhAdequacy' => $adequacy,
-            'title' => 'Alertes RH',
-            'effectifsNav' => 'rh_alerts',
-            'rhAlertSummary' => $summary,
-            'rhMissingCommand' => $this->rhAlerts->listMissingCommand($tenantId),
-            'rhCareerDiscrepancies' => $this->rhAlerts->listCareerDiscrepancies($tenantId),
-            'rhInactiveMembers' => $this->rhAlerts->listInactiveMembers($tenantId, $inactivity),
-            'rhProlongedAbsences' => $this->rhAlerts->listProlongedAbsences($tenantId, 40, $absence),
-            'rhInactivityDays' => $inactivity,
-            'rhProlongedAbsenceDays' => $absence,
-            'rhExpiringQualifications' => $this->rhAlerts->listExpiringQualifications($tenantId, 60, 12),
-            'rhVacantBillets' => $this->rhAlerts->listVacantBillets($tenantId, 20),
-        ]);
+        return Response::redirect(effectifs_workspace_url('a-traiter?onglet=surveiller'));
     }
 
+    /**
+     * « À traiter » : alertes RH rangées par urgence, un onglet par section (?onglet=maintenant|surveiller|infos).
+     */
     public function inbox(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -625,12 +639,39 @@ final class RhDossierWorkspaceController
         $absence = (int) ($hr['absence_days'] ?? RhAlertAggregatorService::PROLONGED_ABSENCE_DAYS);
         $inbox = $this->actionInbox->build($tenantId, $inactivity, $absence);
 
+        $slugToId = [];
+        foreach ($inbox['sections'] as $id => $section) {
+            $slugToId[(string) $section['slug']] = (string) $id;
+        }
+        $active = $slugToId[$request->queryString('onglet', '')] ?? '';
+        if ($active === '') {
+            // Sans onglet demandé : la première section qui a quelque chose à montrer.
+            $active = 'now';
+            foreach ($inbox['sections'] as $id => $section) {
+                if ((int) $section['count'] > 0) {
+                    $active = (string) $id;
+                    break;
+                }
+            }
+        }
+        $gate = Gate::getInstance();
+        $canCorrections = false;
+        foreach (PersonnelCorrectionRequestService::STAFF_PERMISSIONS as $slug) {
+            if ($gate->allows($slug)) {
+                $canCorrections = true;
+                break;
+            }
+        }
+
         return $this->shell('admin.effectifs_workspace.rh_inbox', [
             'title' => 'À traiter',
             'effectifsNav' => 'rh_inbox',
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'rh-a-traiter.css'],
             'rhActionInbox' => $inbox,
+            'rhInboxActive' => $active,
             'rhInboxActionCount' => (int) ($inbox['total'] ?? 0),
-            'csrfToken' => Csrf::token(),
+            'rhInboxCan' => ['corrections' => $canCorrections],
+            'rhInboxDays' => ['inactivity' => $inactivity, 'absence' => $absence],
         ]);
     }
 
@@ -871,7 +912,7 @@ final class RhDossierWorkspaceController
             'integrationOpenCount' => $extras['integrationOpenCount'],
             'phaseGateCount' => $extras['phaseGateCount'],
             'phaseAutoErrorCount' => $extras['phaseAutoErrorCount'],
-            'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
+            'viewerName' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? ''),
         ], $extra));
     }
 

@@ -570,7 +570,7 @@ if ($isOperatorBoNav) {
                 ],
                 [
                     'label' => 'Dossiers RH',
-                    'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
+                    'href' => effectifs_workspace_url('a-traiter?onglet=surveiller'),
                     'icon' => 'path',
                     'children' => $rhChildren,
                 ],

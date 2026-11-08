@@ -10,7 +10,6 @@ $nNoRole = (int) ($counts['no_role'] ?? 0);
 $nElevationOpen = (int) ($elevationOpenCount ?? 0);
 $nQualifExpiring = (int) ($qualificationsExpiringCount ?? 0);
 $nMobilityPending = (int) ($mobilityPendingCount ?? 0);
-$nRhAlerts = (int) ($rhAlertTotalCount ?? 0);
 
 $navClass = static function (string $id) use ($active): string {
     return 'eff-nav-btn' . ($id === $active ? ' active' : '');
@@ -88,9 +87,9 @@ $navClass = static function (string $id) use ($active): string {
                 <b>11</b>
                 <span>Vivier<em>Succession chefs / instructeurs</em></span>
             </a>
-            <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter?onglet=alertes'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_alerts'), ENT_QUOTES, 'UTF-8') ?>">
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('a-traiter?onglet=surveiller'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('rh_inbox_watch'), ENT_QUOTES, 'UTF-8') ?>">
                 <b>12</b>
-                <span>Alertes RH<?= $nRhAlerts > 0 ? ' <i class="eff-nav-badge">' . $nRhAlerts . '</i>' : '' ?><em>Qualifs, absences, inactivité</em></span>
+                <span>Alertes RH<em>À surveiller et informations</em></span>
             </a>
         </nav>
 

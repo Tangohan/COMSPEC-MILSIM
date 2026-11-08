@@ -21,14 +21,13 @@ final class PersonnelProfileGapDashboardAssetTest extends TestCase
         self::assertStringContainsString('org_dashboard_profile_gaps.php', $dash);
         self::assertStringContainsString('Profils à compléter', $partial);
         self::assertStringContainsString('Image opérateur', $partial);
-        self::assertStringContainsString('Non indiquée', $partial);
         self::assertStringContainsString('missing_function', $partial);
         self::assertStringContainsString('missing_rank', $partial);
         self::assertStringContainsString('missing_role', $partial);
         self::assertStringContainsString('missing_operator_image', $partial);
-        self::assertStringContainsString('missing_absence', $partial);
+        self::assertStringNotContainsString('missing_absence', $partial);
         self::assertStringContainsString('character_portrait_path', $service);
-        self::assertStringContainsString('has_active_absence', $service);
+        self::assertStringNotContainsString('personnel_absences', $service, 'une absence est déclarative');
         self::assertStringContainsString('personnel_profile_job_roles', $service);
     }
 }

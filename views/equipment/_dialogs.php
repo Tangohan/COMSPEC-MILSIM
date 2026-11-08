@@ -347,6 +347,14 @@ declare(strict_types=1);
                 <li><strong>Avec votre équipement porté.</strong> Le jeu remonte ce que vous portez : enregistrez-le d’un clic avec « Enregistrer mon kit en jeu ».</li>
                 <li><strong>Avec l’assistant de création</strong> (formule Pro et plus) : choisissez un emploi, l’assistant propose des objets que votre communauté a déjà utilisés en jeu.</li>
             </ol>
+            <p><strong>Arsenal ACE</strong></p>
+            <p><span class="eq-hub__ace-one">L’import de l’arsenal ACE ne prend qu’une tenue à la fois : utilisez le bouton « Copier pour ACE » de la tenue voulue, puis collez-la avec le bouton Importer de l’arsenal.</span></p>
+            <ol class="eqx-steps">
+                <li>Sous la tenue voulue, cliquez sur « Copier pour ACE » : son texte est copié.</li>
+                <li>En jeu, ouvrez l’arsenal ACE et cliquez sur Importer (écran principal) : la tenue s’enfile directement. Enregistrez-la ensuite sous le même nom que sur Athena pour qu’elle soit reconnue comme déjà transmise.</li>
+                <li>Pour une autre tenue, recommencez : l’import ne prend qu’une tenue à la fois.</li>
+                <li>Le bandeau « Athena · Tenues » de l’arsenal fait la même chose sans copier-coller : « Tout basculer dans l’arsenal ACE ».</li>
+            </ol>
             <div class="eqx-actions">
                 <a class="eq-hub__btn" href="<?= $h(url('equipment/assistant')) ?>">Ouvrir l’assistant</a>
                 <button type="button" class="eq-hub__btn eq-hub__btn--outline" data-eq-close>Compris</button>

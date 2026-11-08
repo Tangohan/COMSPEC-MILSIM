@@ -459,3 +459,60 @@ html[data-bo-theme="dark"] .pu {
 .pu-tab:hover { border-color: var(--pa-mint); color: var(--pa-ink); }
 .pu-tab.is-on { border-color: var(--pa-mint); background: var(--pa-mint-soft); color: var(--pa-ink); }
 .pu-tabs__note { margin: -0.3rem 0 0.8rem; }
+
+/* Accueil de l'administration (.ph-*) : à traiter, santé, chiffres clés, accès rapides. Jetons --pa-* : le mode nuit suit. */
+.pa-hero--compact { padding: 14px 20px; }
+.pa-hero--compact .pa-search { margin-top: 8px; }
+.ph-block { margin: 0 0 14px; }
+.ph-block__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ph-block__title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pa-muted);
+}
+.ph-grid { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ph-grid--actions { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+.ph-grid--health { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+.ph-grid--figures { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+.ph-cell { display: flex; min-width: 0; }
+.ph-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 12px 10px;
+  border: 1px solid var(--pa-line);
+  border-left: 4px solid var(--pa-line);
+  border-radius: 10px;
+  background: var(--pa-surface);
+  color: var(--pa-ink);
+  text-decoration: none;
+}
+.ph-tile:hover { border-color: var(--pa-mint); }
+.ph-tile:focus-visible { outline: 2px solid var(--pa-mint); outline-offset: 2px; }
+.ph-tile--ok { border-left-color: var(--pa-mint-bright); }
+.ph-tile--warn { border-left-color: #f2b33d; background: var(--pa-tone-amber-bg); }
+.ph-tile--bad { border-left-color: var(--pa-tone-rose-fg); background: var(--pa-tone-rose-bg); }
+.ph-tile--na { border-left-style: dashed; color: var(--pa-muted); }
+.ph-tile__label { font-size: 12px; font-weight: 750; color: var(--pa-muted); }
+.ph-tile__value {
+  font-family: var(--pa-display);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.ph-tile__text { font-size: 14px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.ph-tile__note { font-size: 12px; line-height: 1.35; color: var(--pa-ink-2); overflow-wrap: anywhere; }
+.ph-quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+@media (max-width: 640px) {
+  .ph-grid--actions, .ph-grid--health, .ph-grid--figures { grid-template-columns: 1fr 1fr; }
+  .ph-tile__value { font-size: 20px; }
+}
+@media (max-width: 380px) {
+  .ph-grid--actions, .ph-grid--health, .ph-grid--figures { grid-template-columns: 1fr; }
+}

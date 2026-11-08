@@ -29,12 +29,6 @@ $items = [
         'hint' => 'Succession',
     ],
     [
-        'id' => 'alertes',
-        'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
-        'title' => 'Alertes RH',
-        'hint' => 'Ce qui demande un suivi',
-    ],
-    [
         'id' => 'doublons',
         'href' => effectifs_workspace_url('doublons'),
         'title' => 'Fiches jumelles',

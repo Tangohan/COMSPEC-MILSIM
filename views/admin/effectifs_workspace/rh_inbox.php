@@ -1,258 +1,240 @@
 <?php
 declare(strict_types=1);
 
+/*
+ * Effectifs > À traiter : les alertes RH rangées par urgence.
+ * Un onglet par section (adresse propre : ?onglet=maintenant, ?onglet=surveiller, ?onglet=infos), des cartes
+ * avec compteur et lien direct vers l'action, le détail des personnes dans une fenêtre.
+ * Aucune adresse e-mail n'est affichée ici.
+ */
+
 require base_path('views/admin/effectifs_workspace/partials/rh_ui_helpers.php');
 
-$inbox = is_array($rhActionInbox ?? null) ? $rhActionInbox : ['total' => 0, 'buckets' => [], 'actions' => []];
-$buckets = is_array($inbox['buckets'] ?? null) ? $inbox['buckets'] : [];
-$actions = is_array($inbox['actions'] ?? null) ? $inbox['actions'] : [];
+$inbox = is_array($rhActionInbox ?? null) ? $rhActionInbox : ['total' => 0, 'attention' => 0, 'sections' => []];
+$sections = is_array($inbox['sections'] ?? null) ? $inbox['sections'] : [];
+$activeId = (string) ($rhInboxActive ?? 'now');
+if (!isset($sections[$activeId])) {
+    $activeId = 'now';
+}
+$can = is_array($rhInboxCan ?? null) ? $rhInboxCan : [];
 $total = (int) ($inbox['total'] ?? 0);
-$csrfToken = (string) ($csrfToken ?? '');
+$attention = (int) ($inbox['attention'] ?? 0);
 
-$bucketLabels = [
-    'corrections' => 'Correction',
-    'elevations' => 'Élévation',
-    'deadlines' => 'Échéance',
-    'incomplete' => 'Dossier incomplet',
-    'mobility' => 'Mobilité',
-    'alerts' => 'Suivi',
-];
-$bucketTone = static fn (string $bucket): string => match ($bucket) {
-    'corrections', 'elevations', 'deadlines' => 'warn',
-    'alerts' => 'danger',
-    default => 'info',
+$tabUrl = static fn (string $slug): string => effectifs_workspace_url('a-traiter?onglet=' . $slug);
+$daysSince = static function (string $raw): ?int {
+    $raw = trim($raw);
+    $ts = $raw !== '' ? strtotime($raw) : false;
+    if ($ts === false) {
+        return null;
+    }
+
+    return max(0, (int) floor((strtotime(date('Y-m-d')) - strtotime(date('Y-m-d', $ts))) / 86400));
 };
-
-// Une carte par membre : toutes ses actions ensemble. Les actions collectives (mobilité, alertes) à part.
-$members = [];
-$collective = [];
-foreach ($actions as $action) {
-    if (!is_array($action)) {
-        continue;
+/** « Demandé il y a N jours » : le nombre est écrit dans la phrase, pour que la traduction reste possible. */
+$asked = static function (string $raw) use ($daysSince): void {
+    $d = $daysSince($raw);
+    if ($d === null) {
+        return;
     }
-    $memberId = (int) ($action['member_id'] ?? 0);
-    if ($memberId < 1) {
-        $collective[] = $action;
-        continue;
+    echo '<span>';
+    if ($d === 0) {
+        ?>Demandé aujourd’hui<?php
+    } elseif ($d === 1) {
+        ?>Demandé hier<?php
+    } else {
+        ?>Demandé il y a <?= $d ?> jours<?php
     }
-    if (!isset($members[$memberId])) {
-        $members[$memberId] = [
-            'id' => $memberId,
-            'label' => (string) ($action['member_label'] ?? 'Membre'),
-            'actions' => [],
-            'buckets' => [],
-        ];
-    }
-    $members[$memberId]['actions'][] = $action;
-    $members[$memberId]['buckets'][(string) ($action['bucket'] ?? '')] = true;
-}
-
-$initials = static function (string $label): string {
-    $parts = preg_split('/\s+/u', trim($label)) ?: [];
-    $out = '';
-    foreach (array_slice($parts, 0, 2) as $part) {
-        $out .= mb_strtoupper(mb_substr($part, 0, 1));
-    }
-
-    return $out !== '' ? $out : '?';
+    echo '</span>';
 };
-$chipCounts = [];
-foreach ($buckets as $bucket) {
-    $chipCounts[(string) ($bucket['id'] ?? '')] = (int) ($bucket['count'] ?? 0);
-}
+$toneLabel = ['danger' => 'Urgent', 'warn' => 'À faire', 'info' => 'À suivre'];
 $dialogs = [];
 ?>
-<div class="eff-inbox" data-ws>
-    <section class="eff-inbox-head">
-        <div class="eff-inbox-head__copy">
+<div class="rh-ib" data-rh-ib>
+    <header class="rh-ib__head">
+        <div class="rh-ib__copy">
             <p class="eff-page-kicker">Bureau effectifs</p>
             <h2 class="eff-page-title">À traiter</h2>
-            <p class="eff-page-lead">Les décisions qui vous attendent, regroupées par membre. Le système propose ; vous décidez.</p>
+            <p class="eff-page-lead">Toutes les alertes RH, rangées par urgence. Le système propose ; vous décidez.</p>
         </div>
-        <div class="eff-inbox-head__total <?= $total > 0 ? 'is-warn' : 'is-ok' ?>">
+        <div class="rh-ib__score <?= $total > 0 ? 'is-warn' : 'is-ok' ?>" role="status">
             <strong><?= $total ?></strong>
-            <span><?= $total > 0 ? 'action' . ($total > 1 ? 's' : '') . ' RH' : 'Tout est à jour' ?></span>
+            <span><?= $total > 0 ? ($total > 1 ? 'points à traiter maintenant' : 'point à traiter maintenant') : 'Rien à traiter maintenant' ?></span>
+            <?php if ($attention > $total): ?>
+                <small><?= $attention - $total ?> de plus à surveiller</small>
+            <?php endif; ?>
         </div>
-    </section>
+    </header>
 
-    <div class="eff-ws-toolbar" role="search">
-        <div class="eff-ws-chips" role="group" aria-label="Filtrer par type">
-            <button type="button" class="eff-ws-chip is-active" data-ws-chip="">Tout <span><?= count($members) + count($collective) ?></span></button>
-            <?php foreach ($buckets as $bucket): ?>
-                <?php $bid = (string) ($bucket['id'] ?? ''); $count = (int) ($bucket['count'] ?? 0); ?>
-                <button type="button" class="eff-ws-chip eff-ws-chip--<?= $h($bucketTone($bid)) ?>" data-ws-chip="<?= $h($bid) ?>" <?= $count === 0 ? 'disabled' : '' ?>>
-                    <?= $h((string) ($bucket['label'] ?? '')) ?> <span><?= $count ?></span>
-                </button>
-            <?php endforeach; ?>
-        </div>
-        <label class="eff-ws-search">
-            <span class="sr-only">Rechercher un membre</span>
-            <input type="search" placeholder="Rechercher un membre ou un sujet…" data-ws-search autocomplete="off">
-        </label>
-    </div>
+    <nav class="rh-ib__tabs" aria-label="Sections par urgence">
+        <?php foreach ($sections as $id => $tabSection): ?>
+            <?php $isActive = (string) $id === $activeId; $n = (int) ($tabSection['count'] ?? 0); ?>
+            <a class="rh-ib__tab rh-ib__tab--<?= $h((string) $id) ?><?= $isActive ? ' is-active' : '' ?>" href="<?= $h($tabUrl((string) $tabSection['slug'])) ?>"<?= $isActive ? ' aria-current="page"' : '' ?>>
+                <span class="rh-ib__tab-label"><?= $h((string) $tabSection['label']) ?></span>
+                <span class="rh-ib__tab-n<?= $n > 0 ? ' is-on' : '' ?>"><?= $n ?></span>
+            </a>
+        <?php endforeach; ?>
+    </nav>
 
-    <section class="eff-inbox-list" id="actions" aria-labelledby="eff-inbox-list-title">
-        <h3 class="eff-ws-section-title" id="eff-inbox-list-title">File d’actions</h3>
-        <?php if ($members === [] && $collective === []): ?>
-            <div class="eff-ws-empty">
-                <p class="eff-ws-empty__title">Rien à traiter</p>
-                <p>Aucune correction, élévation ni échéance en attente. Les dossiers sont à jour pour l’instant.</p>
+    <?php $section = $sections[$activeId] ?? ['cards' => [], 'clear' => [], 'lead' => '', 'label' => '', 'count' => 0]; ?>
+    <section class="rh-ib__panel" id="section-<?= $h($activeId) ?>" aria-labelledby="rh-ib-title">
+        <h3 class="rh-ib__title" id="rh-ib-title"><?= $h((string) $section['label']) ?></h3>
+        <p class="rh-ib__lead"><?= $h((string) $section['lead']) ?></p>
+
+        <?php if (($section['cards'] ?? []) === []): ?>
+            <div class="rh-ib__empty" role="status">
+                <p class="rh-ib__empty-title">Rien à signaler ici</p>
+                <p>Aucune situation de cette section pour le moment.</p>
             </div>
         <?php else: ?>
-            <ul class="eff-inbox-members">
-                <?php foreach ($members as $member): ?>
+            <ul class="rh-ib__cards">
+                <?php foreach ($section['cards'] as $card): ?>
                     <?php
-                    $memberUrl = effectifs_workspace_url('membres/' . $member['id']);
-                    $searchText = $member['label'];
-                    foreach ($member['actions'] as $a) {
-                        $searchText .= ' ' . ($a['title'] ?? '') . ' ' . ($a['detail'] ?? '');
+                    $cid = (string) $card['id'];
+                    $items = is_array($card['items'] ?? null) ? $card['items'] : [];
+                    $gated = (string) ($card['gate'] ?? '') === 'corrections' && empty($can['corrections']);
+                    $href = (string) ($card['href'] ?? '');
+                    $cta = (string) ($card['cta'] ?? '');
+                    $hasLink = $href !== '' && $cta !== '' && !$gated;
+                    $tone = (string) ($card['tone'] ?? 'info');
+                    $days = (int) ($card['days'] ?? 0);
+                    if ($items !== []) {
+                        $dialogs[] = $card;
                     }
                     ?>
-                    <li class="eff-inbox-member" data-ws-item data-ws-tags="<?= $h(implode(' ', array_keys($member['buckets']))) ?>" data-ws-text="<?= $h($searchText) ?>" id="membre-<?= (int) $member['id'] ?>">
-                        <a class="eff-inbox-member__who" href="<?= $h($memberUrl) ?>">
-                            <span class="eff-avatar" aria-hidden="true"><?= $h($initials($member['label'])) ?></span>
-                            <span>
-                                <strong><?= $h($member['label']) ?></strong>
-                                <small><?= count($member['actions']) ?> point<?= count($member['actions']) > 1 ? 's' : '' ?> à traiter</small>
-                            </span>
-                        </a>
-                        <ul class="eff-inbox-member__tasks">
-                            <?php foreach ($member['actions'] as $action): ?>
-                                <?php
-                                $bucket = (string) ($action['bucket'] ?? '');
-                                $actionId = preg_replace('/[^a-z0-9-]/i', '', (string) ($action['id'] ?? '')) ?: ('a' . count($dialogs));
-                                $issues = is_array($action['issues'] ?? null) ? $action['issues'] : [];
-                                $decideUrl = (string) ($action['decide_url'] ?? '');
-                                ?>
-                                <li class="eff-inbox-task">
-                                    <span class="eff-pill eff-pill--<?= $h($bucketTone($bucket)) ?>"><?= $h($bucketLabels[$bucket] ?? 'Action') ?></span>
-                                    <div class="eff-inbox-task__body">
-                                        <p class="eff-inbox-task__title"><?= $h((string) ($action['title'] ?? '')) ?></p>
-                                        <?php if ($issues !== []): ?>
-                                            <p class="eff-inbox-task__fix">
-                                                <span>À compléter :</span>
-                                                <?php foreach ($issues as $issue): ?>
-                                                    <a class="eff-fix-link" href="<?= $h((string) $issue['href']) ?>"><?= $h((string) $issue['label']) ?></a>
-                                                <?php endforeach; ?>
-                                            </p>
-                                        <?php elseif (trim((string) ($action['detail'] ?? '')) !== ''): ?>
-                                            <p class="eff-inbox-task__detail"><?= $h((string) $action['detail']) ?></p>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="eff-inbox-task__cta">
-                                        <?php if ($decideUrl !== ''): ?>
-                                            <?php $dialogs[] = ['id' => 'eff-dlg-' . $actionId, 'action' => $action, 'member' => $member['label']]; ?>
-                                            <button type="button" class="ath-btn ath-btn--solid ath-btn--sm" data-dialog-open="eff-dlg-<?= $h($actionId) ?>">Décider</button>
-                                        <?php elseif ($bucket !== 'incomplete'): ?>
-                                            <a class="ath-btn ath-btn--solid ath-btn--sm" href="<?= $h((string) ($action['href'] ?? $memberUrl)) ?>"><?= $h((string) ($action['cta_label'] ?? 'Traiter')) ?></a>
-                                        <?php endif; ?>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <a class="ath-btn ath-btn--sm eff-inbox-member__open" href="<?= $h($memberUrl) ?>">Ouvrir la fiche</a>
+                    <li class="rh-card rh-card--<?= $h($tone) ?>" id="carte-<?= $h($cid) ?>">
+                        <div class="rh-card__top">
+                            <h4 class="rh-card__title"><?= $h((string) $card['title']) ?></h4>
+                            <span class="rh-card__count"><?= (int) $card['count'] ?></span>
+                        </div>
+                        <p class="rh-card__tone"><?= $h($toneLabel[$tone] ?? '') ?></p>
+                        <p class="rh-card__text"><?= $h((string) $card['text']) ?></p>
+                        <?php if ($days > 0 && $cid === 'absence_long'): ?>
+                            <p class="rh-card__hint">Seuil actuel : <?= $days ?> jours d’absence.</p>
+                        <?php elseif ($days > 0 && $cid === 'inactive'): ?>
+                            <p class="rh-card__hint">Seuil actuel : <?= $days ?> jours sans connexion.</p>
+                        <?php endif; ?>
+                        <div class="rh-card__foot">
+                            <?php if ($hasLink): ?>
+                                <a class="ath-btn ath-btn--solid ath-btn--sm" href="<?= $h($href) ?>"><?= $h($cta) ?></a>
+                            <?php endif; ?>
+                            <?php if ($items !== []): ?>
+                                <button type="button" class="ath-btn ath-btn--sm<?= $hasLink ? '' : ' ath-btn--solid' ?>" data-dialog-open="rh-dlg-<?= $h($cid) ?>" aria-haspopup="dialog">Voir le détail</button>
+                            <?php endif; ?>
+                            <?php if ($gated): ?>
+                                <span class="rh-card__note">Réservé aux responsables des dossiers.</span>
+                            <?php endif; ?>
+                        </div>
                     </li>
                 <?php endforeach; ?>
             </ul>
+        <?php endif; ?>
 
-            <?php if ($collective !== []): ?>
-                <h3 class="eff-ws-section-title">Suivi collectif</h3>
-                <ul class="eff-inbox-collective">
-                    <?php foreach ($collective as $action): ?>
-                        <?php $bucket = (string) ($action['bucket'] ?? ''); ?>
-                        <li class="eff-inbox-collective__item" data-ws-item data-ws-tags="<?= $h($bucket) ?>" data-ws-text="<?= $h(($action['member_label'] ?? '') . ' ' . ($action['title'] ?? '') . ' ' . ($action['detail'] ?? '')) ?>">
-                            <span class="eff-pill eff-pill--<?= $h($bucketTone($bucket)) ?>"><?= $h((string) ($action['member_label'] ?? 'Suivi')) ?></span>
-                            <div class="eff-inbox-task__body">
-                                <p class="eff-inbox-task__title"><?= $h((string) ($action['title'] ?? '')) ?></p>
-                                <p class="eff-inbox-task__detail"><?= $h((string) ($action['detail'] ?? '')) ?></p>
-                            </div>
-                            <a class="ath-btn ath-btn--sm" href="<?= $h((string) ($action['href'] ?? '#')) ?>"><?= $h((string) ($action['cta_label'] ?? 'Voir')) ?></a>
-                        </li>
+        <?php if (($section['clear'] ?? []) !== []): ?>
+            <details class="rh-ib__clear">
+                <summary>Points sans alerte (<?= count($section['clear']) ?>)</summary>
+                <ul>
+                    <?php foreach ($section['clear'] as $clearTitle): ?>
+                        <li><?= $h((string) $clearTitle) ?></li>
                     <?php endforeach; ?>
                 </ul>
-            <?php endif; ?>
-            <div class="eff-ws-empty" data-ws-empty hidden>
-                <p class="eff-ws-empty__title">Aucun résultat</p>
-                <p>Rien ne correspond à ce filtre. Essayez un autre type ou effacez la recherche.</p>
-            </div>
+            </details>
         <?php endif; ?>
     </section>
 </div>
 
-<?php foreach ($dialogs as $dialog): ?>
-    <?php $action = $dialog['action']; $changes = is_array($action['changes'] ?? null) ? $action['changes'] : []; ?>
+<?php foreach ($dialogs as $card): ?>
     <?php
-    $memberNote = trim((string) ($action['member_note'] ?? ''));
-    $requestedBy = trim((string) ($action['requested_by'] ?? ''));
+    $cid = (string) $card['id'];
+    $items = $card['items'];
+    $more = (int) ($card['more'] ?? 0);
+    $href = (string) ($card['href'] ?? '');
+    $gated = (string) ($card['gate'] ?? '') === 'corrections' && empty($can['corrections']);
     ?>
-    <dialog class="eff-dialog eff-dialog--decision" id="<?= $h($dialog['id']) ?>" aria-labelledby="<?= $h($dialog['id']) ?>-t">
-        <form method="post" action="<?= $h((string) $action['decide_url']) ?>" class="eff-dialog__body">
-            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-            <input type="hidden" name="return_to" value="a-traiter">
+    <dialog class="eff-dialog rh-dlg" id="rh-dlg-<?= $h($cid) ?>" aria-labelledby="rh-dlg-<?= $h($cid) ?>-t">
+        <div class="eff-dialog__body">
             <header class="eff-dialog__head">
                 <div>
-                    <p class="eff-page-kicker">Demande de correction</p>
-                    <h2 id="<?= $h($dialog['id']) ?>-t"><?= $h($dialog['member']) ?></h2>
+                    <p class="eff-page-kicker"><?= (int) $card['count'] ?> concerné<?= (int) $card['count'] > 1 ? 's' : '' ?></p>
+                    <h2 id="rh-dlg-<?= $h($cid) ?>-t"><?= $h((string) $card['title']) ?></h2>
                 </div>
                 <button type="button" class="eff-dialog__close" data-dialog-close aria-label="Fermer">×</button>
             </header>
-            <?php if ($requestedBy !== ''): ?>
-                <p class="eff-dialog__meta">Demandé par <?= $h($requestedBy) ?></p>
+            <p class="rh-dlg__lead"><?= $h((string) $card['text']) ?></p>
+            <ul class="rh-dlg__list">
+                <?php foreach ($items as $item): ?>
+                    <?php $itemHref = (string) ($item['href'] ?? ''); ?>
+                    <li class="rh-dlg__item">
+                        <div class="rh-dlg__who">
+                            <?php if ($itemHref !== '' && !$gated): ?>
+                                <a href="<?= $h($itemHref) ?>"><?= $h((string) ($item['label'] ?? '')) ?></a>
+                            <?php else: ?>
+                                <strong><?= $h((string) ($item['label'] ?? '')) ?></strong>
+                            <?php endif; ?>
+                        </div>
+                        <div class="rh-dlg__what">
+                            <?php if ($cid === 'corrections'): ?>
+                                <?php if (trim((string) ($item['by'] ?? '')) !== ''): ?><span>Demandé par <?= $h((string) $item['by']) ?></span><?php endif; ?>
+                                <?php $asked((string) ($item['since'] ?? '')); ?>
+                                <?php foreach ((array) ($item['fields'] ?? []) as $field): ?><em class="rh-chip"><?= $h((string) $field) ?></em><?php endforeach; ?>
+                            <?php elseif ($cid === 'elevations'): ?>
+                                <?php if (trim((string) ($item['by'] ?? '')) !== ''): ?><span>Proposé par <?= $h((string) $item['by']) ?></span><?php endif; ?>
+                                <?php $asked((string) ($item['since'] ?? '')); ?>
+                            <?php elseif ($cid === 'mobility'): ?>
+                                <?php if (trim((string) ($item['kind'] ?? '')) !== ''): ?><span><?= $h((string) $item['kind']) ?></span><?php endif; ?>
+                                <?php if (trim((string) ($item['unit'] ?? '')) !== ''): ?><span><?= $h((string) $item['unit']) ?></span><?php endif; ?>
+                                <?php $asked((string) ($item['since'] ?? '')); ?>
+                            <?php elseif ($cid === 'qualif_urgent' || $cid === 'qualif_soon'): ?>
+                                <span><?= $h((string) ($item['what'] ?? '')) ?></span>
+                                <?php $left = (int) ($item['days_left'] ?? 0); ?>
+                                <?php if ($left < 0): ?>
+                                    <span class="rh-dlg__late">Échue depuis <?= -$left ?> j</span>
+                                <?php else: ?>
+                                    <span>Expire le <?= $h($rhWhen((string) ($item['expires_on'] ?? ''))) ?>, dans <?= $left ?> j</span>
+                                <?php endif; ?>
+                            <?php elseif ($cid === 'vacant_critical' || $cid === 'vacant'): ?>
+                                <?php if (trim((string) ($item['unit'] ?? '')) !== ''): ?><span><?= $h((string) $item['unit']) ?></span><?php endif; ?>
+                                <span>Titulaires : <?= (int) ($item['held'] ?? 0) ?> sur <?= (int) ($item['authorized'] ?? 0) ?></span>
+                            <?php elseif ($cid === 'absence_long'): ?>
+                                <span>Absent depuis <?= (int) ($item['days_open'] ?? 0) ?> jours</span>
+                                <?php if (trim((string) ($item['ends_on'] ?? '')) !== ''): ?>
+                                    <span>Retour prévu le <?= $h($rhWhen((string) $item['ends_on'])) ?></span>
+                                <?php else: ?>
+                                    <span>Sans date de retour</span>
+                                <?php endif; ?>
+                            <?php elseif ($cid === 'inactive'): ?>
+                                <?php $lastLogin = trim((string) ($item['last_login'] ?? '')); ?>
+                                <?php if ($lastLogin === ''): ?>
+                                    <span>Jamais connecté</span>
+                                <?php else: ?>
+                                    <span>Dernière connexion le <?= $h($rhWhen($lastLogin)) ?></span>
+                                <?php endif; ?>
+                            <?php elseif ($cid === 'incomplete'): ?>
+                                <?php foreach ((array) ($item['issues'] ?? []) as $issue): ?>
+                                    <a class="rh-chip rh-chip--link" href="<?= $h((string) ($issue['href'] ?? '#')) ?>"><?= $h((string) ($issue['label'] ?? '')) ?></a>
+                                <?php endforeach; ?>
+                            <?php elseif ($cid === 'missing_command'): ?>
+                                <span>Rattachement attendu : <?= $h((string) ($item['expected'] ?? '')) ?></span>
+                            <?php elseif ($cid === 'career'): ?>
+                                <span><?= $h((string) ($item['source'] ?? '')) ?></span>
+                                <span><?= $h((string) ($item['detail'] ?? '')) ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php if ($more > 0): ?>
+                <p class="rh-dlg__more">Et <?= $more ?> autre<?= $more > 1 ? 's' : '' ?> à consulter depuis la page de l’action.</p>
             <?php endif; ?>
-            <p class="eff-dialog__lead">Confirmer applique ces changements au dossier. Refuser le laisse tel qu’il est.</p>
-            <?php if ($memberNote !== ''): ?>
-                <blockquote class="eff-dialog__quote"><span class="eff-dialog__quote-label">Message du membre</span><?= $h($memberNote) ?></blockquote>
-            <?php endif; ?>
-            <?php if ($changes !== []): ?>
-                <ul class="eff-dialog__changes">
-                    <?php foreach ($changes as $change): ?>
-                        <?php
-                        $beforeLines = is_array($change['before'] ?? null) ? $change['before'] : [];
-                        $afterLines = is_array($change['after'] ?? null) ? $change['after'] : [];
-                        $blank = trim((string) ($change['blank'] ?? 'Non renseigné'));
-                        if ($blank === '') {
-                            $blank = 'Non renseigné';
-                        }
-                        ?>
-                        <li class="eff-dialog__change">
-                            <p class="eff-dialog__change-label"><?= $h((string) ($change['label'] ?? 'Information du dossier')) ?></p>
-                            <p class="eff-dialog__change-row">
-                                <span>Actuellement</span>
-                                <strong>
-                                    <?php if ($beforeLines === []): ?>
-                                        <?= $h($blank) ?>
-                                    <?php else: ?>
-                                        <?php foreach ($beforeLines as $line): ?><span class="eff-dialog__change-line"><?= $h((string) $line) ?></span><?php endforeach; ?>
-                                    <?php endif; ?>
-                                </strong>
-                            </p>
-                            <p class="eff-dialog__change-row eff-dialog__change-row--next">
-                                <span>Proposé</span>
-                                <strong>
-                                    <?php if ($afterLines === []): ?>
-                                        <?= $h($blank) ?>
-                                    <?php else: ?>
-                                        <?php foreach ($afterLines as $line): ?><span class="eff-dialog__change-line"><?= $h((string) $line) ?></span><?php endforeach; ?>
-                                    <?php endif; ?>
-                                </strong>
-                            </p>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-            <label class="eff-dialog__field">
-                Message au membre (facultatif)
-                <input type="text" name="resolution_note" maxlength="1000" placeholder="Ce message lui sera transmis avec votre décision">
-            </label>
             <footer class="eff-dialog__foot">
-                <a class="eff-dialog__link" href="<?= $h((string) ($action['href'] ?? '#')) ?>">Ouvrir la page des corrections</a>
-                <button type="submit" name="decision" value="rejected" class="ath-btn">Refuser</button>
-                <button type="submit" name="decision" value="approved" class="ath-btn ath-btn--solid">Confirmer</button>
+                <span class="eff-dialog__spacer"></span>
+                <?php if ($href !== '' && (string) ($card['cta'] ?? '') !== '' && !$gated): ?>
+                    <a class="ath-btn ath-btn--solid" href="<?= $h($href) ?>"><?= $h((string) $card['cta']) ?></a>
+                <?php endif; ?>
+                <button type="button" class="ath-btn" data-dialog-close>Fermer</button>
             </footer>
-        </form>
+        </div>
     </dialog>
 <?php endforeach; ?>
 
 <?php $rhShortcutCurrent = 'a-traiter'; require base_path('views/admin/effectifs_workspace/partials/rh_shortcuts.php'); ?>
 <script src="<?= $h(asset_url('assets/js/eff-member.js')) ?>" defer></script>
-<script src="<?= $h(asset_url('assets/js/eff-workspace.js')) ?>" defer></script>

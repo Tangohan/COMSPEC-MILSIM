@@ -66,7 +66,7 @@ final class RhAlertAggregatorService
             'severity' => 'Disponibilité',
             'label' => 'Absence prolongée (≥ ' . $absenceDays . ' j)',
             'count' => $absenceCount,
-            'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
+            'href' => effectifs_workspace_url('a-traiter?onglet=surveiller'),
             'tone' => $absenceCount > 0 ? 'warn' : 'ok',
         ];
 
@@ -76,7 +76,7 @@ final class RhAlertAggregatorService
             'severity' => 'Activité',
             'label' => 'Sans activité depuis ' . $inactivityDays . ' j',
             'count' => $inactiveCount,
-            'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
+            'href' => effectifs_workspace_url('a-traiter?onglet=surveiller'),
             'tone' => $inactiveCount > 0 ? 'warn' : 'ok',
         ];
 
@@ -101,7 +101,7 @@ final class RhAlertAggregatorService
             'severity' => 'Organigramme',
             'label' => 'Poste sous-pourvu',
             'count' => $vacantBillets,
-            'href' => effectifs_workspace_url('a-traiter?onglet=alertes'),
+            'href' => effectifs_workspace_url('a-traiter?onglet=surveiller'),
             'tone' => $vacantBillets > 0 ? 'warn' : 'ok',
         ];
 
@@ -111,14 +111,14 @@ final class RhAlertAggregatorService
             'severity' => 'Organigramme',
             'label' => 'Rattachement au commandement manquant',
             'count' => $missingCommand,
-            'href' => effectifs_workspace_url('a-traiter?onglet=alertes') . '#rh-missing-command',
+            'href' => effectifs_workspace_url('a-traiter?onglet=surveiller') . '#carte-missing_command',
             'tone' => $missingCommand > 0 ? 'warn' : 'ok',
         ];
         $careerCount = count($this->listCareerDiscrepancies($tenantId));
         $items[] = [
             'id' => 'career_discrepancies', 'severity' => 'Parcours de carrière',
             'label' => 'Écart entre grade, emploi et qualifications', 'count' => $careerCount,
-            'href' => effectifs_workspace_url('a-traiter?onglet=alertes') . '#career-consistency',
+            'href' => effectifs_workspace_url('a-traiter?onglet=infos') . '#carte-career',
             'tone' => $careerCount > 0 ? 'warn' : 'ok',
         ];
 
@@ -212,7 +212,7 @@ final class RhAlertAggregatorService
         $limit = max(1, min(100, $limit));
         try {
             $st = $this->pdo->prepare(
-                "SELECT u.id, u.display_name, u.email, u.callsign, u.last_login_at
+                "SELECT u.id, u.display_name, u.callsign, u.last_login_at
                  FROM users u
                  WHERE u.tenant_id = ?
                    AND u.status = 'active'
@@ -244,7 +244,7 @@ final class RhAlertAggregatorService
         $days = max(7, min(90, $days ?? self::PROLONGED_ABSENCE_DAYS));
         try {
             $st = $this->pdo->prepare(
-                "SELECT a.*, u.display_name AS user_display_name, u.email AS user_email,
+                "SELECT a.*, u.display_name AS user_display_name,
                         DATEDIFF(CURDATE(), a.starts_on) AS days_open
                  FROM personnel_absences a
                  LEFT JOIN users u ON u.id = a.user_id
@@ -297,17 +297,23 @@ final class RhAlertAggregatorService
             if (!$st || !$st->fetchColumn()) {
                 return [];
             }
+            // MariaDB et MySQL 8 (ONLY_FULL_GROUP_BY) : le nombre de titulaires est calculé dans une table dérivée,
+            // puis filtré et trié sur des colonnes réelles, sans alias dans une expression de tri.
             $q = $this->pdo->prepare(
-                "SELECT b.id, b.title, b.code, b.unit_id, b.authorized_slots, b.is_critical, un.name AS unit_name,
-                        (SELECT COUNT(*) FROM orbat_billet_holders h WHERE h.billet_id = b.id AND (h.ends_at IS NULL OR h.ends_at >= CURDATE())) AS held
-                 FROM orbat_billets b
-                 LEFT JOIN units un ON un.id = b.unit_id
-                 WHERE b.tenant_id = ? AND b.is_active = 1
-                 HAVING held < b.authorized_slots
-                 ORDER BY b.is_critical DESC, (b.authorized_slots - held) DESC, b.title ASC
+                "SELECT t.id, t.title, t.code, t.unit_id, t.authorized_slots, t.is_critical, t.held, un.name AS unit_name
+                 FROM (
+                     SELECT b.id, b.title, b.code, b.unit_id, b.authorized_slots, b.is_critical,
+                            (SELECT COUNT(*) FROM orbat_billet_holders h
+                             WHERE h.billet_id = b.id AND (h.ends_at IS NULL OR h.ends_at >= CURDATE())) AS held
+                     FROM orbat_billets b
+                     WHERE b.tenant_id = ? AND b.is_active = 1
+                 ) t
+                 LEFT JOIN units un ON un.id = t.unit_id AND un.tenant_id = ?
+                 WHERE t.held < t.authorized_slots
+                 ORDER BY t.is_critical DESC, (t.authorized_slots - t.held) DESC, t.title ASC
                  LIMIT {$limit}"
             );
-            $q->execute([$tenantId]);
+            $q->execute([$tenantId, $tenantId]);
             $out = [];
             foreach ($q->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
                 $out[] = [

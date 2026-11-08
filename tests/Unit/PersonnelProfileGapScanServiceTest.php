@@ -19,7 +19,7 @@ final class PersonnelProfileGapScanServiceTest extends TestCase
         self::assertFalse(PersonnelProfileGapScanService::isBlankLabel('SGT'));
     }
 
-    public function testClassifyRowFlagsTheFiveProfileGaps(): void
+    public function testClassifyRowFlagsTheFourProfileGaps(): void
     {
         $issues = PersonnelProfileGapScanService::classifyRow([
             'job_role_name' => '',
@@ -41,9 +41,8 @@ final class PersonnelProfileGapScanServiceTest extends TestCase
         self::assertTrue($issues['missing']['rank']);
         self::assertTrue($issues['missing']['role']);
         self::assertTrue($issues['missing']['operator_image']);
-        self::assertTrue($issues['missing']['absence']);
-        self::assertSame(5, $issues['issue_count']);
-        self::assertSame(['function', 'rank', 'role', 'operator_image', 'absence'], $issues['issue_keys']);
+        self::assertSame(4, $issues['issue_count']);
+        self::assertSame(['function', 'rank', 'role', 'operator_image'], $issues['issue_keys']);
     }
 
     public function testClassifyRowAcceptsFilledDossier(): void
@@ -84,7 +83,6 @@ final class PersonnelProfileGapScanServiceTest extends TestCase
         ]);
 
         self::assertFalse($issues['missing']['rank']);
-        self::assertFalse($issues['missing']['absence']);
         self::assertSame(0, $issues['issue_count']);
     }
 
@@ -103,5 +101,48 @@ final class PersonnelProfileGapScanServiceTest extends TestCase
 
         self::assertFalse($issues['missing']['role']);
         self::assertSame(0, $issues['issue_count']);
+    }
+
+    /**
+     * Non-régression : l'absence est déclarative. Un membre sans absence déclarée et sans score de
+     * disponibilité (ou avec) a un dossier complet dès que fonction, grade, rôle et image sont là.
+     */
+    public function testAbsenceNeverMakesADossierIncomplete(): void
+    {
+        $complete = [
+            'job_role_name' => 'Radio',
+            'grade_id' => 3,
+            'grade_short' => 'CPL',
+            'role_id' => 2,
+            'has_tenant_role' => 0,
+            'character_portrait_path' => 'p.jpg',
+        ];
+        foreach ([[0, 0], [0, 80], [1, 0], [1, 80]] as [$absence, $readiness]) {
+            $issues = PersonnelProfileGapScanService::classifyRow($complete + [
+                'has_active_absence' => $absence,
+                'readiness_score' => $readiness,
+            ]);
+            self::assertSame(0, $issues['issue_count'], 'absence=' . $absence . ' disponibilité=' . $readiness);
+            self::assertSame([], $issues['issue_keys']);
+            self::assertArrayNotHasKey('absence', $issues['missing']);
+        }
+        self::assertNotContains('absence', PersonnelProfileGapScanService::ISSUE_KEYS);
+        self::assertArrayNotHasKey('absence', PersonnelProfileGapScanService::ISSUE_LABELS);
+    }
+
+    public function testDossierCompletenessIgnoresAvailabilityScore(): void
+    {
+        $user = ['display_name' => 'Membre', 'callsign' => 'ALPHA', 'email' => 'a@example.test'];
+        $rich = [
+            'matricule_internal' => 'M-1',
+            'grade_short' => 'CPL',
+            'job_role_display' => 'Radio',
+            'enlistment_date_resolved' => '2024-01-01',
+        ];
+        $without = \App\Support\PersonnelDossierCompleteness::evaluate($user, $rich + ['readiness_score' => 0], true);
+        $with = \App\Support\PersonnelDossierCompleteness::evaluate($user, $rich + ['readiness_score' => 90], true);
+        self::assertSame(100, $without['score']);
+        self::assertSame($with['score'], $without['score']);
+        self::assertSame([], $without['missing']);
     }
 }
