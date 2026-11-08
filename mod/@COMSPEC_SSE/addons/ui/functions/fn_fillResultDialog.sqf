@@ -100,6 +100,21 @@ if (_isContent) then {
     (_display displayCtrl 93017) ctrlSetText ("Ce qui a été trouvé à l'intérieur" call comspec_sse_fnc_tr);
     (_display displayCtrl 93013) ctrlSetText ("DÉTAIL" call comspec_sse_fnc_tr);
 };
+// Papier dessiné (fn_paperSkin) : pièces documentaires seulement ; « » garde l'ancienne feuille unie. Nuit : variante
+// sombre, encre plus foncée. Choisi à l'ouverture, rien ne tourne ensuite.
+private _paper = ["", false];
+private _night = sunOrMoon < 0.5;
+if (_isDocs && {!_isDigital} && {!_isContent} && {!isNil "comspec_sse_fnc_paperSkin"}) then {
+    _paper = ["resolve", [_fog, missionNamespace getVariable ["comspec_sse_lastResultEntity", objNull]]] call comspec_sse_fnc_paperSkin;
+};
+_paper params ["_paperCode", "_handwritten"];
+if (!isNil "comspec_sse_fnc_paperSkin") then { ["apply", [_display, _paperCode, _night]] call comspec_sse_fnc_paperSkin; };
+if (_paperCode isNotEqualTo "") then {
+    if (_night) then { _ink = "#120e0a"; _muted = "#2b241b"; _accent = "#4a1f12"; _rule = "#3a3226"; } else { _muted = "#4a4032"; };
+};
+// Écriture manuscrite : le contenu de la pièce seulement, les intitulés restent imprimés.
+private _handAttr = ["", " font='Caveat'"] select _handwritten;
+private _handSize = ["0.88", "1.15"] select _handwritten;
 // Texte humain à l'écran seulement : les rapports et l'API gardent leurs codes.
 private _human = {
     params ["_l"];
@@ -145,7 +160,7 @@ if (_isDocs && {(count _docs) > 0}) then {
             };
             if (_mode == "feuille" || {_sum != "" && {_q >= 55}}) then {
                 if (_sum != "") then {
-                    _html = _html + format ["<t color='%1' size='0.88'>%2</t><br/>", _ink, _sum];
+                    _html = _html + format ["<t color='%1' size='%3'%4>%2</t><br/>", _ink, _sum, _handSize, _handAttr];
                 };
             };
             if (_grid != "" && {_q >= 70 || {_mode == "feuille"}}) then {
@@ -191,7 +206,11 @@ if (_isDocs && {(count _docs) > 0}) then {
     };
 };
 
-(_display displayCtrl 93012) ctrlSetStructuredText parseText ((_html) call comspec_sse_fnc_tr);
+private _bodyCtrl = _display displayCtrl 93012;
+_bodyCtrl ctrlSetStructuredText parseText ((_html) call comspec_sse_fnc_tr);
+// Le corps prend la hauteur de son texte dans son groupe à défilement : rien n'est coupé.
+_bodyCtrl ctrlSetPositionH ((ctrlTextHeight _bodyCtrl) max ((ctrlPosition (_display displayCtrl 93028)) select 3));
+_bodyCtrl ctrlCommit 0;
 
 private _qLabel = if (_ql != "") then { _ql } else {
     if (_q >= 80) then {"Bonne"} else { if (_q >= 55) then {"Correcte"} else {"Partielle"} };
