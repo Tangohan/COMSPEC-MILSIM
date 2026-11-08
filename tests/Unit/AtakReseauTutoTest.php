@@ -106,6 +106,15 @@ final class AtakReseauTutoTest extends TestCase
         self::assertStringContainsString('[_pill, _code] call _click;', $this->read('functions/ui/fn_formRender.sqf'));
     }
 
+    public function testNetworkReportKeepsNumericConditionsAndRegisterIsSentOnce(): void
+    {
+        $config = $this->read('functions/network/fn_netConfig.sqf');
+        self::assertStringNotContainsString('[str $v', str_replace('_v', '$v', $config));
+        self::assertStringContainsString('else { str _v }', $config);
+        $sync = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_syncOperatorProfile.sqf');
+        self::assertStringContainsString('COMSPEC_OperatorRegisterAt', $sync);
+    }
+
     public function testToastHidesTheAppTitleWhileShown(): void
     {
         self::assertStringContainsString('(_d displayCtrl 88518) ctrlShow ((count _show) isEqualTo 0);', $this->read('functions/ui/fn_notificationsRender.sqf'));
