@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Ma couverture reliée à Athena (version à attribuer)
+
+### Résumé joueur
+Type : nouveauté
+FR : Ma couverture est plus claire et reliée à Athena
+- L'app Ma couverture montre d'abord ce qu'il faut corriger, avec la liste des actions : trouver des papiers, changer de tenue, ranger l'arme.
+- Vous voyez ce que disent vraiment vos papiers, et la légende à retenir pour un contrôle. Contacts, documents et histoire se replient.
+- Une couverture préparée sur Athena arrive dans votre fiche avec ses papiers. Celle créée en jeu remonte dans Mes papiers si votre téléphone est connecté à Athena.
+- Personne d'autre ne voit votre couverture, sauf le Zeus et les habilités Confidentiel.
+EN : My cover is clearer and linked to Athena
+- The My cover app now starts with what needs fixing, with a list of actions: find papers, change clothes, put your weapon away.
+- You see what your papers really say and the legend to remember for a check. Contacts, documents and story can be collapsed.
+- A cover prepared on Athena reaches your sheet with its papers. One created in game appears under My papers if your phone is connected to Athena.
+- Nobody else sees your cover, except the Zeus and Confidential-cleared staff.
+
+### Détail technique
+- App Ma couverture (`fn_idCoverPage`, SSE) : barre d'onglets du système de design (l'onglet choisi d'un « segment » devenait illisible au focus), couleurs tirées de `fn_theme`, sections repliables, note posée sur place et page non redessinée si la fiche n'a pas changé.
+- Cohérence : `fn_idCover « score »` rend aussi la liste de ce qu'il faut corriger et les points repris.
+- Fiche (`fn_idLegend « sheet »`) : papiers imprimés et portés, source (`athena` ou `local`), date ; le brief brut, la nature et la qualité ne partent plus chez le joueur.
+- Remontée (`fn_idCoverSync`, `kind = cover_report`, ICD-SSE-COVER-001) sur le compte du jeton de jeu, sans nouvelle DLL. Bureau SSE : attribution d'un contenu de la bibliothèque de l'éditeur à un joueur (identité masquée, papiers émis, kit et brief). Mes papiers : état de la couverture. Migration 4110.
+- Sans habilitation Confidentiel, les briefs reliés à une identité n'apparaissent plus dans le Bureau SSE.
+
+---
+
 ## Pack 4.0.0 Washington : nouveaux objets, réseau plus réaliste, interface refaite, app C2 retirée (ATAK natif 4.0.0.AG - Washington, COMSPEC Link 2.0.120)
 
 ### Résumé joueur

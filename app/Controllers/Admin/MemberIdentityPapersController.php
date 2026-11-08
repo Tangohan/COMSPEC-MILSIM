@@ -106,6 +106,15 @@ final class MemberIdentityPapersController
             );
             $data['maps'] = self::maps();
             $data['base'] = self::baseUrl($userId, $sse);
+            // Couverture née en jeu : vérité de jeu, habilitation Confidentiel seulement.
+            $data['game_covers'] = [];
+            if ($rights['truth']) {
+                try {
+                    $data['game_covers'] = (new \App\Services\Sse\SseIdGameCoverService())->forUser($tenantId, $userId);
+                } catch (\Throwable $e) {
+                    error_log('Fiche membre : couvertures du jeu indisponibles : ' . $e->getMessage());
+                }
+            }
 
             return $data;
         } catch (\Throwable $e) {
@@ -324,6 +333,14 @@ final class MemberIdentityPapersController
             error_log('Mes papiers : briefs indisponibles : ' . $e->getMessage());
         }
 
+        $gameCovers = [];
+        try {
+            // Couverture née en jeu et remontée par son téléphone : la sienne seulement.
+            $gameCovers = (new \App\Services\Sse\SseIdGameCoverService())->forUser($tenantId, $userId);
+        } catch (\Throwable $e) {
+            error_log('Mes papiers : couvertures du jeu indisponibles : ' . $e->getMessage());
+        }
+
         return Response::view('layout.main', [
             'title' => 'Mes papiers',
             'content' => 'admin.member_situation.mes_papiers',
@@ -336,6 +353,8 @@ final class MemberIdentityPapersController
             'backOfficePageCss' => ['back-office-member-situation.css', 'sse-papers.css', 'back-office-member-papers.css'],
             'papers' => $data,
             'briefs' => $briefs,
+            'gameCovers' => $gameCovers,
+            'coverStatus' => \App\Services\Sse\SseIdGameCoverService::status($data['steam_linked'], $briefs, $data['kits'], $gameCovers),
             'maps' => self::maps(),
         ]);
     }
