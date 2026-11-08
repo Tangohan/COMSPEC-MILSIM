@@ -723,15 +723,47 @@ class AdminAtakFleetController
         if (!$this->fleet->ready()) {
             return $this->back($request, 'error', 'Tables du parc ATAK absentes : lancez run-migrations.php.');
         }
+        // Un message imposé va à un joueur d'une communauté connue.
+        $terminals = array_values(array_filter($this->targets($request, true), static fn (array $t): bool => (int) $t['tenant_id'] > 0));
+
+        return $this->sendMessage($request, $terminals, 'Aucun ATAK sélectionné.');
+    }
+
+    /**
+     * Message global : un message par joueur de la communauté active ; depuis l'administration de la plateforme,
+     * d'une communauté choisie ou de toutes. Même circuit que le message imposé, relevé par chaque ATAK (AdminControl.Poll).
+     */
+    public function messageAll(Request $request, array $params = []): Response
+    {
+        if (($guard = $this->guard($request)) !== null) {
+            return $guard;
+        }
+        if (!$this->fleet->ready()) {
+            return $this->back($request, 'error', 'Tables du parc ATAK absentes : lancez run-migrations.php.');
+        }
+        if ((string) $request->input('confirmation_globale', '') !== '1') {
+            return $this->back($request, 'error', 'Cochez la case de confirmation pour envoyer le message à tous les joueurs.');
+        }
+        $scope = $this->scopeTenantId();
+        $tenantId = $scope > 0 ? $scope : max(0, (int) $request->input('communaute_message', 0));
+        $terminals = array_values(array_filter(
+            $this->fleet->listTerminals('', $tenantId, 2000),
+            static fn (array $t): bool => (int) $t['tenant_id'] > 0
+        ));
+
+        return $this->sendMessage($request, $terminals, 'Aucun ATAK connu pour cet envoi.');
+    }
+
+    /** @param list<array<string, mixed>> $terminals */
+    private function sendMessage(Request $request, array $terminals, string $noTarget): Response
+    {
         $title = mb_substr(trim((string) $request->input('titre', '')), 0, 120);
         $body = mb_substr(trim((string) $request->input('texte', '')), 0, 2000);
         if ($title === '' || $body === '') {
             return $this->back($request, 'error', 'Le titre et le texte du message sont obligatoires.');
         }
-        // Un message imposé va à un joueur d'une communauté connue.
-        $terminals = array_values(array_filter($this->targets($request, true), static fn (array $t): bool => (int) $t['tenant_id'] > 0));
         if ($terminals === []) {
-            return $this->back($request, 'error', 'Aucun ATAK sélectionné.');
+            return $this->back($request, 'error', $noTarget);
         }
         $level = (string) $request->input('niveau', 'info');
         $hours = max(0, min(24 * 90, (int) $request->input('validite_heures', 72)));
@@ -767,7 +799,7 @@ class AdminAtakFleetController
             $request,
             $done > 0 ? 'success' : 'error',
             $done > 0
-                ? $done . ' message(s) enregistré(s). Ils s’afficheront en jeu dès que le mod saura les récupérer (prochaine version de l’ATAK).'
+                ? $done . ' message(s) enregistré(s). Chaque joueur le verra sur son ATAK à sa prochaine présence en jeu.'
                 : 'Message non enregistré.'
         );
     }

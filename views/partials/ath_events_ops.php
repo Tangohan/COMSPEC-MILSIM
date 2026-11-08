@@ -254,6 +254,7 @@ $chipClass = static function (array $ev): string {
         <label class="ath-users-filters__label" for="ops-type-cal">Type</label>
         <select name="type" id="ops-type-cal" class="bo-select">
             <option value="">Tous</option>
+            <option value="session" <?= $filterType === 'session' ? 'selected' : '' ?>>Session de jeu</option>
             <option value="operation" <?= $filterType === 'operation' ? 'selected' : '' ?>>Opération</option>
             <option value="formation" <?= $filterType === 'formation' ? 'selected' : '' ?>>Formation</option>
             <option value="evenement" <?= $filterType === 'evenement' ? 'selected' : '' ?>>Événement</option>
@@ -276,6 +277,7 @@ $chipClass = static function (array $ev): string {
         <span><i class="ath-cal__dot ath-cal__dot--op"></i> Opération</span>
         <span><i class="ath-cal__dot ath-cal__dot--evt"></i> Événement</span>
         <span><i class="ath-cal__dot ath-cal__dot--form"></i> Formation</span>
+        <span><i class="ath-cal__dot ath-cal__dot--session"></i> Session de jeu</span>
         <span class="ath-cal__hint">Les créneaux annulés sont listés dans l’onglet « Annulés ».</span>
     </div>
 
@@ -308,11 +310,13 @@ $chipClass = static function (array $ev): string {
                         $startsRaw = isset($ev['starts_at']) ? (string) $ev['starts_at'] : '';
                         $startsTs = $startsRaw !== '' ? strtotime($startsRaw) : false;
                         $time = $startsTs !== false ? date('H:i', $startsTs) : '';
-                        $href = $eid > 0 ? url('back-office/events/' . $eid) : '#';
+                        $isSession = ($ev['calendar_kind'] ?? '') === \App\Support\RoleplaySessionCalendar::TYPE;
+                        $href = $eid <= 0 ? '#' : url(($isSession ? 'back-office/roleplay/sessions/' : 'back-office/events/') . $eid);
                     ?>
-                    <a class="<?= $h($chipClass($ev)) ?>" id="event-<?= $eid ?>" href="<?= $h($href) ?>" title="<?= $h(($time !== '' ? $time . ' · ' : '') . $title) ?>">
+                    <a class="<?= $h($isSession ? 'ath-cal__chip ath-cal__chip--session' : $chipClass($ev)) ?>" id="<?= $isSession ? 'session' : 'event' ?>-<?= $eid ?>" href="<?= $h($href) ?>" title="<?= $h(($time !== '' ? $time . ' · ' : '') . $title) ?>">
                         <?php if ($time !== ''): ?><span class="ath-cal__time"><?= $h($time) ?></span><?php endif; ?>
                         <span class="ath-cal__name"><?= $h($title) ?></span>
+                        <?php if (!empty($ev['linked_session_id'])): ?><span class="ath-cal__tag">Session</span><?php endif; ?>
                     </a>
                     <?php endforeach; ?>
                     <?php if (count($dayEvents) > 4): ?>

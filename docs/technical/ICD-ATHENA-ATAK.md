@@ -558,6 +558,23 @@ Ligne de `editor_list` : `[id, type, titre, texte, classification, papier, natur
 
 Erreurs : 403 `clearance_required`, 422 `invalid_item` ou `too_large` (plus de 7 000 octets une fois encodé), 503 `unavailable`. Dans tous les cas le mod garde le contenu dans sa bibliothèque locale. Un mod plus ancien n'envoie jamais ces `kind`.
 
+## ICD-SSE-COVER-001 — Couvertures reliées à Athena
+
+Site vers jeu : `GET /api/sse/identity/pack`, bloc `briefs`. Ajouts facultatifs, ignorés par un ancien mod : `legend_free` (texte de la légende sans ses rubriques), `employer`, `travel`, `family`, `city`, `profession` (rubriques « Employeur : … » du texte), `updated_at` (date montrée au joueur). `legend` garde le texte entier.
+
+Jeu vers site : `SubmitIdCheck` de COMSPEC Link (2.0.118 et plus, aucune nouvelle DLL) → `POST /api/sse/identity/checks`, `kind` = `cover_report`, envoyé par le poste du joueur.
+
+| Champ | Contenu |
+|---|---|
+| `map`, `op` | portée (carte, code d'opération) |
+| `cover` | `name`, `dob`, `pob`, `country`, `address`, `city`, `profession`, `employer`, `phone`, `travel`, `family`, `contacts` `[[nom, lien, téléphone]…]`, `docs` `[[type, pays, numéro]…]` |
+
+Compte : celui du jeton de jeu (Bearer), jamais une donnée du corps ; communauté : celle du jeton. Une clé de communauté seule ne dit pas qui appelle : rien n'est écrit.
+
+Réponse `{"id": nombre, "ref": texte}` : `saved;AAAA-MM-JJ HH:MM`, `unchanged;AAAA-MM-JJ HH:MM` (même contenu, date du dernier changement, UTC), `unlinked` (`id` = 0, aucun compte relié). Erreurs : 422 `invalid_cover` (sans nom), 503 `unavailable`. Le corps n'a pas de `idempotency_key` : un site antérieur le refuse en 422 au lieu d'y voir un contrôle. Le mod garde alors la couverture sur le poste et réessaie plus tard.
+
+Confidentialité : ces lignes (`sse_id_game_covers`) ne rejoignent ni le registre des identités, ni les listes de surveillance, ni le paquet. Lecture : le joueur dans Mes papiers, l'habilitation Confidentiel sur la fiche du membre.
+
 ## Web Tacmap poll frequencies (implementation)
 
 | Client | Interval | Target |

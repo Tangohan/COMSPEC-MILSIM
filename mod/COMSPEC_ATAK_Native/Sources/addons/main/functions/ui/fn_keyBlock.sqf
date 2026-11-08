@@ -14,6 +14,14 @@ params ["_disp", "_key", ["_shift", false], ["_ctrl", false], ["_alt", false]];
 // cela, le gestionnaire posé ensuite sur le display 46 rendait la main au jeu (F : mode de tir, l'arme ressortait ;
 // B et H allaient aussi au jeu).
 if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {_key in [0x39, 0x13, 0x21, 0x14, 0x30, 0x23, 0x3B, 0x0D, 0x4E, 0x0C, 0x4A]}) exitWith { true };
+// Clavier du code affiché (fn_phonePad) : chiffres (rangée du haut et pavé), retour arrière et Entrée.
+if (uiNamespace getVariable ["COMSPEC_ATAK_PadUp", false]) then {
+    private _pd = createHashMapFromArray [[2, "1"], [3, "2"], [4, "3"], [5, "4"], [6, "5"], [7, "6"], [8, "7"], [9, "8"], [10, "9"], [11, "0"], [79, "1"], [80, "2"], [81, "3"], [75, "4"], [76, "5"], [77, "6"], [71, "7"], [72, "8"], [73, "9"], [82, "0"]] getOrDefault [_key, ""];
+    if (_pd isNotEqualTo "") exitWith { ["key", _pd] call comspec_atak_native_fnc_phonePad; };
+    if (_key isEqualTo 14) exitWith { ["del"] call comspec_atak_native_fnc_phonePad; };
+    if (_key in [28, 156]) exitWith { ["ok"] call comspec_atak_native_fnc_phonePad; };
+};
+if ((uiNamespace getVariable ["COMSPEC_ATAK_PadUp", false]) && {_key in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 28, 71, 72, 73, 75, 76, 77, 79, 80, 81, 82, 156]}) exitWith { true };
 // Champ qui a le focus : dans le téléphone, ou dans la fenêtre qui reçoit la touche (menu de la carte, plan, recherche).
 // Avant, seul le téléphone « en main » (état interactive) comptait : une saisie dans une fenêtre ouverte par le
 // téléphone, ou juste après un changement de mode, laissait passer A / E (pencher) au personnage (retour de TTRD, 25/10).
