@@ -56891,4 +56891,12 @@ return [
     'Ordre non enregistré.' => 'Order not saved.',
     'Action impossible.' => 'Action not possible.',
     'Types d’entité' => 'Entity types',
+    'Ajouter le grade devant le nom (%1)' => 'Add the rank before the name (%1)',
+    'Aucun membre ne correspond à la recherche.' => 'No member matches the search.',
+    'Avec trigramme' => 'With trigram',
+    'Fiches, organigramme, annuaire, paraphes des documents.' => 'Profiles, org chart, directory, document initials.',
+    'Sans trigramme' => 'Without trigram',
+    'Sans trigramme (%1)' => 'Without trigram (%1)',
+    'Uniquement là où le grade n’est pas déjà affiché à côté.' => 'Only where the rank is not already shown next to it.',
+    'Utiliser les trigrammes' => 'Use trigrams',
 ];
