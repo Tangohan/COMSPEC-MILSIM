@@ -31,9 +31,10 @@ switch (_e get "kind") do {
         _v params [["_val", 0], ["_active", false], ["_icon", ""]];
         private _min = _e get "min";
         _val = round (_val max _min min (_e get "max"));
-        _sl sliderSetPosition _val;
+        // Valeur notée avant de déplacer le curseur : cette mise à jour ne doit pas relancer l'action du curseur.
         private _d = _sl getVariable ["comspec_slide", [{}, controlNull, -1, 0]];
         _sl setVariable ["comspec_slide", [_d select 0, _d select 1, _val, _d param [3, 0]]];
+        _sl sliderSetPosition _val;
         private _vt = _e get "value";
         if (!isNull _vt) then {
             _vt ctrlSetText (([(str _val) + " %", "MUET"] select (_min <= 0 && {_val <= 0})) call comspec_atak_native_fnc_tr);

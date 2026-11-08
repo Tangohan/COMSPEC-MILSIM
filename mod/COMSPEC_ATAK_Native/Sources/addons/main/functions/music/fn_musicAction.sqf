@@ -176,7 +176,9 @@ switch (_act) do {
         _m set ["speaker", !(_m get "speaker")];
         ["INFO", ["Haut-parleur coupé : vous seul entendez", format ["Haut-parleur : audible à %1 m", round (missionNamespace getVariable ["comspec_atak_native_music_range", 30])]] select (_m get "speaker"), 3, 20] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_musicTick;
-        call _sonNow;
+        // Arguments explicites : un « call » nu transmet _this (["speaker", ""]) et _sliders valait "speaker", d'où une
+        // erreur de script dans la file d'image suivante de CBA, rejouée à chaque image.
+        [true] call _sonNow;
     };
     case "hear": { _m set ["hear", !(_m get "hear")]; profileNamespace setVariable ["COMSPEC_ATAK_MusicHear", _m get "hear"]; [] call comspec_atak_native_fnc_musicTick; [false] call _sonNow; };
     case "shuffle": { _m set ["shuffle", !(_m get "shuffle")]; profileNamespace setVariable ["COMSPEC_ATAK_MusicShuffle", _m get "shuffle"]; call _vizNow; };

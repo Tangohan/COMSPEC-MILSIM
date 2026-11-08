@@ -38,6 +38,22 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 3.1.0 : haut-parleur de l'app Musique corrigé, app C2 retirée (ATAK natif 3.1.0.AG - Austin)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 disparaît
+- Activer le haut-parleur dans l'app Musique ne provoque plus d'erreur de script ni d'alternance oui/non.
+- L'app C2 est retirée : retrouvez le groupe, l'indicatif et les unités dans les apps Groupe et BFT, et les ordres dans Tâches.
+EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
+- Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
+- The C2 app is removed: find the group, callsign and units in the Group and BFT apps, and orders in Tasks.
+
+### Détail technique
+- **Version 3.1.0** : `VERSION` / `VERSION_STR` « 3.1.0 », `VERSION_NAME` « 3.1.0.AG - Austin » ; COMSPEC Link inchangé.
+- **Haut-parleur** (`fn_musicAction`) : appel `[true] call _sonNow`. Un `call` nu transmettait `_this` et `_sliders` valait `"speaker"`. `fn_formSet` note la valeur du curseur avant de le déplacer.
+- **App C2** : `fn_pageC2` et sa déclaration retirées, `fn_navigate` renvoie au lanceur pour un ancien raccourci. Retirée aussi de la liste de `AtakExperienceService`.
+
 ## Pack 3.0.3 : suivi de COMSPEC IDENTITY, téléphone traduit pour les apps du SSE, Recherchés garde les BOLO locaux (ATAK natif 3.0.3.AG - Austin)
 
 ### Résumé joueur

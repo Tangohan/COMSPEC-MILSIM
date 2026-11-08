@@ -479,7 +479,6 @@ final class AtakExperienceService
             ['id' => 'Group', 'name' => 'Groupe', 'description' => 'Composition du groupe, rôles et indicatifs', 'section' => 'Communication'],
             ['id' => 'Bft', 'name' => 'BFT', 'description' => 'Suivi des forces amies (Blue Force Tracking)', 'section' => 'Communication'],
             ['id' => 'InterTeam', 'name' => 'Inter-team', 'description' => 'Liaison entre équipes et fire teams', 'section' => 'Communication'],
-            ['id' => 'C2', 'name' => 'C2', 'description' => 'Commandement : ordres, situation et unités', 'section' => 'Communication'],
             ['id' => 'WaveRelay', 'name' => 'Wave Relay', 'description' => 'Réseau maillé radio : relais et qualité de liaison', 'section' => 'Communication'],
             ['id' => 'Numbers', 'name' => 'Numéros', 'description' => 'Annuaire des numéros de téléphone', 'section' => 'Communication'],
             ['id' => 'Discord', 'name' => 'Discord', 'description' => 'Messages du Discord de la communauté', 'section' => 'Communication'],

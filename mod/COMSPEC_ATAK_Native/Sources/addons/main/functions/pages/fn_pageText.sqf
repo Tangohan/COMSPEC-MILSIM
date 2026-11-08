@@ -12,9 +12,6 @@ private _body = "";
 private _buttons = [];
 
 switch (_page) do {
-    case "C2": {
-        _body = format ["%1<br/>Unités suivies : %2<br/>Ordres : %3<br/>Marqueurs : %4<br/><br/>La carte reste la vue opérationnelle principale.", ["SITUATION C2"] call _h, count (_data getOrDefault ["units", createHashMap]), count ([] call comspec_atak_native_fnc_tasksAll), count (_data getOrDefault ["markers", createHashMap])];
-    };
     case "BFT": {
         private _lines = [["BLUE FORCE TRACKING"] call _h];
         {

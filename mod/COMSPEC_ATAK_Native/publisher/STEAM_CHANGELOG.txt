@@ -1,3 +1,15 @@
+[h1]COMSPEC ATAK — Mise à jour 3.1.0.AG - Austin[/h1]
+[b]Publication : à renseigner à la sortie[/b]
+[quote]
+[b]Important :[/b] mettez à jour le pack 3.1.0, quittez Arma 3 complètement, puis relancez.
+[/quote]
+
+[h2]Correctifs et changements[/h2]
+[list]
+[*] App Musique : activer le haut-parleur ne provoque plus d'erreur de script ni d'alternance oui/non.
+[*] L'app C2 est retirée : groupe, indicatif et unités se retrouvent dans Groupe et BFT, les ordres dans Tâches.
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 3.0.3.AG - Austin[/h1]
 [b]Publication : 03/11/2026[/b]
 [quote]

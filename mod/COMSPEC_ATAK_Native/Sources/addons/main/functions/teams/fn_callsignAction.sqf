@@ -7,7 +7,7 @@
       "clear"           : revient à l'indicatif d'Athena (ou à celui de la mission)
       "web" [texte]     : indicatif de la fiche Athena relu à l'arrivée (fn_ftRoleSync, ligne CS de GetFireTeams) : changé sur
                           le site depuis la dernière fois, il remplace celui du téléphone ; sinon le choix du téléphone reste
-      "rows"            : lignes de formulaire « Mon indicatif » (fn_pageC2, fn_pageGroup)
+      "rows"            : lignes de formulaire « Mon indicatif » (fn_pageGroup)
     Profil : COMSPEC_ATAK_MyCallsign (choisi), COMSPEC_ATAK_MyCallsignWeb (dernier indicatif vu sur Athena).
     Avec la configuration locale (fn_localCfg, champ callsign de config.json) : l'indicatif y est aussi écrit, et un
     indicatif modifié à la main dans le fichier est repris à l'arrivée.
@@ -40,7 +40,7 @@ private _cfgSave = {
 private _rerender = {
     [{
         private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
-        if (_p in ["C2", "GROUP"]) then { [_p] call comspec_atak_native_fnc_pageRender; };
+        if (_p isEqualTo "GROUP") then { [_p] call comspec_atak_native_fnc_pageRender; };
     }] call CBA_fnc_execNextFrame;
 };
 switch (_act) do {

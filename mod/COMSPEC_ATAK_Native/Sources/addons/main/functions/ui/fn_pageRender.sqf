@@ -105,7 +105,6 @@ switch (_page) do {
     case "DRONEDETECT": { [] call comspec_atak_native_fnc_pageDroneDetect; };
     case "DRONE": { [] call comspec_atak_native_fnc_pageDrone; };
     case "AAR": { [] call comspec_atak_native_fnc_pageAar; };
-    case "C2": { [] call comspec_atak_native_fnc_pageC2; };
     case "EXPLO": { [] call comspec_atak_native_fnc_pageExplo; };
     case "BREACH": { [] call comspec_atak_native_fnc_pageBreach; };
     case "SNIPER": { [] call comspec_atak_native_fnc_pageSniper; };
