@@ -94,6 +94,27 @@ final class FeatureGateService
     }
 
     /**
+     * Plafond entier d'une clé laissée au propriétaire (SubscriptionPlanFeaturesCatalog::OWNER_DECIDES) : la valeur
+     * enregistrée dans la formule, sinon 0 = illimité tant qu'elle n'a pas été définie dans l'administration.
+     * Paiement en retard sans formule offerte : formule gratuite.
+     */
+    public function intWhenDefined(int $tenantId, string $feature): int
+    {
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!$tenant) {
+            return 0;
+        }
+        $planSlug = $this->isPastDueWithoutGift($tenant) ? 'free' : $this->effectivePlanSlug($tenant);
+        $plan = $this->planRepository->findBySlug($planSlug);
+        $features = $plan ? json_decode((string) ($plan['features_json'] ?? '{}'), true) : null;
+        if (is_array($features) && array_key_exists($feature, $features) && is_numeric($features[$feature])) {
+            return max(0, (int) $features[$feature]);
+        }
+
+        return 0;
+    }
+
+    /**
      * Fonctionnalité de la formule appliquée ; si la formule n'a pas encore la clé (ajoutée après sa création,
      * migration pas relancée), la valeur par défaut du catalogue pour ce palier s'applique.
      */

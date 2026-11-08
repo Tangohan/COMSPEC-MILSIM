@@ -272,7 +272,7 @@ $qs = static function (array $over) use ($f): string {
                   <?php if ($e['declared_at']): ?><li><span class="ap-timeline__dot"></span><b>Déclaré par le payeur</b> <small><?= $h($fmt($e['declared_at'])) ?></small></li><?php endif; ?>
                   <?php if ($e['decided_at'] && $e['status'] !== 'declared'): ?><li><span class="ap-timeline__dot"></span><b><?= $h($tl) ?></b> <small><?= $h($fmt($e['decided_at'])) ?></small></li><?php endif; ?>
                 <?php else: foreach ($evs as $ev): ?>
-                  <li><span class="ap-timeline__dot ap-feed__dot--<?= $h($ev['kind']) ?>"></span><b><?= $h($eventLabels[$ev['kind']] ?? $ev['kind']) ?></b> <small><?= $h($fmt($ev['created_at'])) ?><?= ($ev['actor_name'] ?? '') !== '' ? ' · ' . $h($ev['actor_name']) : '' ?></small><?php if (($ev['note'] ?? '') !== ''): ?><p><?= $h($ev['note']) ?></p><?php endif; ?></li>
+                  <li><span class="ap-timeline__dot ap-feed__dot--<?= $h($ev['kind']) ?>"></span><b><?= $h($eventLabels[$ev['kind']] ?? $ev['kind']) ?></b> <small><?= $h($fmt($ev['created_at'])) ?><?= ($ev['actor_name'] ?? '') !== '' ? ' · par ' . $h($ev['actor_name']) : '' ?><?= ($ev['tenant_name'] ?? '') !== '' ? ' · communauté bénéficiaire : ' . $h($ev['tenant_name']) : '' ?><?= ($e['plan_slug'] ?? '') !== '' ? ' · formule ' . $h($planNames[$e['plan_slug']] ?? $e['plan_slug']) : '' ?></small><?php if (($ev['note'] ?? '') !== ''): ?><p><?= $h($ev['note']) ?></p><?php endif; ?></li>
                 <?php endforeach; endif; ?>
               </ol>
             </div>

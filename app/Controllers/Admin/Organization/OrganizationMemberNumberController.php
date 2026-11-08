@@ -350,9 +350,10 @@ final class OrganizationMemberNumberController
     }
 
     /**
-     * Lecture du fichier : séparateur « ; » ou « , » détecté, colonnes email et tenant_member_number.
+     * Lecture du fichier : séparateur « ; » ou « , » détecté, colonnes id_membre (ou, pour les anciens fichiers,
+     * email) et tenant_member_number.
      *
-     * @return array{error?: string, rows: list<array{line: int, email: string, number: string}>}
+     * @return array{error?: string, rows: list<array{line: int, member_id: int, email: string, number: string}>}
      */
     public static function parseImportCsv(string $path): array
     {
@@ -377,10 +378,10 @@ final class OrganizationMemberNumberController
             $key = strtolower(trim(preg_replace('/^\xEF\xBB\xBF/', '', (string) $col) ?? (string) $col));
             $map[$key] = (int) $i;
         }
-        if (!isset($map['tenant_member_number'], $map['email'])) {
+        if (!isset($map['tenant_member_number']) || !(isset($map['id_membre']) || isset($map['email']))) {
             fclose($fh);
 
-            return ['error' => 'Colonnes attendues : « email » et « tenant_member_number » (celles du fichier exporté).', 'rows' => []];
+            return ['error' => 'Colonnes attendues : « id_membre » et « tenant_member_number » (celles du fichier exporté).', 'rows' => []];
         }
         $rows = [];
         $line = 1;
@@ -389,12 +390,15 @@ final class OrganizationMemberNumberController
             if ($row === [null] || $row === []) {
                 continue;
             }
-            $email = trim((string) ($row[$map['email']] ?? ''));
+            $rawId = isset($map['id_membre']) ? trim((string) ($row[$map['id_membre']] ?? '')) : '';
+            $memberId = ctype_digit($rawId) ? (int) $rawId : 0;
+            // Anciens fichiers : l'adresse e-mail sert encore à retrouver le membre, mais n'est ni exportée ni affichée.
+            $email = isset($map['email']) ? trim((string) ($row[$map['email']] ?? '')) : '';
             $number = trim((string) ($row[$map['tenant_member_number']] ?? ''));
-            if ($email === '' && $number === '') {
+            if ($rawId === '' && $email === '' && $number === '') {
                 continue;
             }
-            $rows[] = ['line' => $line, 'email' => $email, 'number' => $number];
+            $rows[] = ['line' => $line, 'member_id' => $memberId, 'email' => $email, 'number' => $number];
             if (count($rows) >= self::IMPORT_MAX_ROWS) {
                 break;
             }
@@ -407,8 +411,8 @@ final class OrganizationMemberNumberController
     /**
      * Statut de chaque ligne sans rien écrire : ok (sera appliquée), same (déjà ce matricule), error (refusée).
      *
-     * @param list<array{line: int, email: string, number: string}> $rows
-     * @return list<array{line: int, email: string, number: string, user_id: int, name: string, current: string, status: string, message: string}>
+     * @param list<array{line: int, member_id: int, email: string, number: string}> $rows
+     * @return list<array{line: int, number: string, user_id: int, name: string, current: string, status: string, message: string}>
      */
     private function previewImportRows(int $tenantId, array $rows): array
     {
@@ -418,21 +422,24 @@ final class OrganizationMemberNumberController
             if ($r['number'] !== '') {
                 $numberCount[mb_strtolower($r['number'])] = ($numberCount[mb_strtolower($r['number'])] ?? 0) + 1;
             }
-            $emailCount[mb_strtolower($r['email'])] = ($emailCount[mb_strtolower($r['email'])] ?? 0) + 1;
+            $k = self::rowKey($r);
+            $emailCount[$k] = ($emailCount[$k] ?? 0) + 1;
         }
         $out = [];
         foreach ($rows as $r) {
-            $item = $r + ['user_id' => 0, 'name' => '', 'current' => '', 'status' => 'error', 'message' => ''];
-            if ($r['email'] === '' || $r['number'] === '') {
-                $item['message'] = 'Ligne incomplète : il faut l’adresse e-mail et le matricule.';
-            } elseif (($emailCount[mb_strtolower($r['email'])] ?? 0) > 1) {
+            $item = ['line' => $r['line'], 'number' => $r['number']] + ['user_id' => 0, 'name' => '', 'current' => '', 'status' => 'error', 'message' => ''];
+            if (self::rowKey($r) === '' || $r['number'] === '') {
+                $item['message'] = 'Ligne incomplète : il faut l’identifiant du membre et le matricule.';
+            } elseif (($emailCount[self::rowKey($r)] ?? 0) > 1) {
                 $item['message'] = 'Ce membre apparaît plusieurs fois dans le fichier.';
             } elseif (($numberCount[mb_strtolower($r['number'])] ?? 0) > 1) {
                 $item['message'] = 'Ce matricule apparaît plusieurs fois dans le fichier.';
             } else {
-                $user = $this->users->findByEmail($tenantId, $r['email']);
+                $user = $r['member_id'] > 0
+                    ? $this->users->findById($r['member_id'], $tenantId)
+                    : $this->users->findByEmail($tenantId, $r['email']);
                 if ($user === null) {
-                    $item['message'] = 'Aucun membre de la communauté avec cette adresse.';
+                    $item['message'] = 'Aucun membre de la communauté ne correspond à cette ligne.';
                 } else {
                     $uid = (int) $user['id'];
                     $item['user_id'] = $uid;
@@ -455,6 +462,16 @@ final class OrganizationMemberNumberController
         }
 
         return $out;
+    }
+
+    /**
+     * Clé de doublon d'une ligne : identifiant du membre, sinon (ancien fichier) adresse e-mail.
+     *
+     * @param array<string, mixed> $r
+     */
+    private static function rowKey(array $r): string
+    {
+        return (int) ($r['member_id'] ?? 0) > 0 ? 'id:' . (int) $r['member_id'] : mb_strtolower((string) ($r['email'] ?? ''));
     }
 
     private const IMPORT_SESSION_KEY = 'member_number_import_preview';
@@ -485,7 +502,7 @@ final class OrganizationMemberNumberController
     /**
      * CSV « ; » avec BOM (ouvrable dans Excel), colonnes reconnues par l’import.
      *
-     * @param list<array{display_name: string, callsign: string, email: string, tenant_member_number: string, athena_identifier: string}> $members
+     * @param list<array{id?: int, display_name: string, callsign: string, tenant_member_number: string, athena_identifier: string}> $members
      */
     public static function registryCsv(array $members): string
     {
@@ -494,11 +511,11 @@ final class OrganizationMemberNumberController
             return '';
         }
         fwrite($fh, "\xEF\xBB\xBF");
-        fputcsv($fh, ['nom', 'indicatif', 'email', 'tenant_member_number', 'matricule_plateforme'], ';', '"', '\\');
+        fputcsv($fh, ['nom', 'indicatif', 'id_membre', 'tenant_member_number', 'matricule_plateforme'], ';', '"', '\\');
         foreach ($members as $m) {
             fputcsv($fh, array_map(
                 static fn (string $v): string => self::csvSafe($v),
-                [$m['display_name'], $m['callsign'], $m['email'], $m['tenant_member_number'], $m['athena_identifier']]
+                [$m['display_name'], $m['callsign'], (string) ($m['id'] ?? ''), $m['tenant_member_number'], $m['athena_identifier']]
             ), ';', '"', '\\');
         }
         rewind($fh);

@@ -586,7 +586,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
             <h2 class="bo-mn-panel__title" id="mn-import-title">Importer depuis un tableur</h2>
         </header>
         <div class="bo-mn-panel__body">
-            <p class="bo-mn-text">Le plus simple : exportez le registre, complétez la colonne des matricules dans votre tableur, puis réimportez le fichier. Les membres sont reconnus grâce à une colonne du fichier exporté ; doublons, caractères non autorisés et membres inconnus sont signalés.</p>
+            <p class="bo-mn-text">Le plus simple : exportez le registre, complétez la colonne des matricules dans votre tableur, puis réimportez le fichier. Les membres sont reconnus par leur identifiant (colonne « id_membre ») ; les anciens fichiers avec adresse e-mail restent acceptés. Doublons, caractères non autorisés et membres inconnus sont signalés.</p>
             <?php if ($importPreview !== null):
                 $impRows = (array) ($importPreview['rows'] ?? []);
                 $impCount = ['ok' => 0, 'same' => 0, 'error' => 0];
@@ -607,7 +607,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
                         ?>
                             <tr>
                                 <td class="bo-mn-mono"><?= (int) ($ir['line'] ?? 0) ?></td>
-                                <td><?= $h((string) (($ir['name'] ?? '') !== '' ? $ir['name'] : 'Membre non reconnu')) ?></td>
+                                <td><?= $h((string) (($ir['name'] ?? '') !== '' ? $ir['name'] : '—')) ?></td>
                                 <td class="bo-mn-mono"><?= $h((string) (($ir['current'] ?? '') !== '' ? $ir['current'] : '—')) ?></td>
                                 <td class="bo-mn-mono"><b><?= $h((string) (($ir['number'] ?? '') !== '' ? $ir['number'] : '—')) ?></b></td>
                                 <td><span class="ath-tag ath-tag--<?= $it ?>"><?= $h($il) ?></span><?php if ($st === 'error' && (string) ($ir['message'] ?? '') !== ''): ?> <span class="bo-mn-muted"><?= $h((string) $ir['message']) ?></span><?php endif; ?></td>
@@ -637,7 +637,7 @@ $renumNumbering = (string) ($renumber['numbering'] ?? 'keep');
                 <button type="submit" class="ath-btn<?= $importPreview === null ? ' ath-btn--solid' : '' ?>">Vérifier le fichier</button>
             </form>
             <p class="bo-mn-text bo-mn-muted">Le fichier est d’abord vérifié ligne par ligne : vous voyez ce qui sera modifié avant de l’appliquer.</p>
-            <p class="bo-mn-text bo-mn-muted">Séparateur point-virgule ou virgule. Seules les colonnes « email » et « tenant_member_number » du fichier exporté comptent ; les autres sont ignorées.</p>
+            <p class="bo-mn-text bo-mn-muted">Séparateur point-virgule ou virgule. Les colonnes « id_membre » et « tenant_member_number » du fichier exporté sont celles qui comptent ; les autres sont ignorées.</p>
             <a class="ath-btn" href="<?= $h(url('back-office/organisation/matricules/export?filtre=sans')) ?>">Télécharger les membres sans matricule</a>
         </div>
     </section>

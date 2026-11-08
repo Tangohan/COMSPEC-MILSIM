@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 // Atelier public de traduction de l'ATAK natif et du mod SSE (/traduire-atak, /traduire-atak/p/{pack}).
-// Visiteur : travail gardé sur l'appareil. Membre connecté : la même traduction est aussi sur son compte.
+// Compte obligatoire : la traduction est enregistrée sur le serveur, sur le compte du membre.
 // Pack partagé : lien secret, inchangé. Le mod téléchargé est fabriqué dans le navigateur.
 $t = static fn (string $key): string => htmlspecialchars(__('site.atakt_' . $key), ENT_QUOTES, 'UTF-8');
 $accountUserId = (int) (\App\Core\Session::get('user_id') ?? 0);
@@ -82,19 +82,13 @@ $tabActive = 'atelier';
                 <button type="button" class="tw-btn tw-btn--solid" id="tw-download"><?= $icon($icons['down']) ?><span><?= $t('download') ?></span></button>
             </div>
         </header>
-        <?php if ($accountUserId <= 0): ?>
-        <p class="tw-note tw-guest tw-guest-bar"><a href="<?= htmlspecialchars($loginReturn, ENT_QUOTES, 'UTF-8') ?>"><?= $t('account_login') ?></a> <?= $t('account_guest_rest') ?></p>
-        <?php endif; ?>
 
         <div class="tw-loading" id="tw-loading" role="status"><?= $t('js_loading') ?></div>
 
         <div class="tw-setup" id="tw-setup" hidden>
             <div class="tw-card">
                 <h2><?= $t('setup_title') ?></h2>
-                <p><?= $accountOn ? $t('setup_lead_account') : $t('setup_lead') ?></p>
-                <?php if ($accountUserId <= 0): ?>
-                <p class="tw-note tw-guest"><a href="<?= htmlspecialchars($loginReturn, ENT_QUOTES, 'UTF-8') ?>"><?= $t('account_login') ?></a> <?= $t('account_guest_rest') ?></p>
-                <?php endif; ?>
+                <p><?= $t('setup_lead_account') ?></p>
                 <form id="tw-setup-form" class="tw-form" novalidate>
                     <div class="tw-grid">
                         <label class="tw-field"><span><?= $t('field_code') ?></span>

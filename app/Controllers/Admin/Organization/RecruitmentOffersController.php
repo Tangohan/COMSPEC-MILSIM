@@ -15,6 +15,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Services\Billing\PlanCreationQuota;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Recruitment\RecruitmentOpeningPresentation;
@@ -72,6 +73,13 @@ class RecruitmentOffersController
 
     public function create(Request $request, array $params = []): Response
     {
+        $planBlock = PlanCreationQuota::blockMessage((int) Session::get('tenant_id'), PlanCreationQuota::OFFERS);
+        if ($planBlock !== null) {
+            Session::flash('error', $planBlock);
+
+            return Response::redirect(url('back-office/recruitment/offers'));
+        }
+
         return $this->formCreateEdit(null);
     }
 
@@ -98,6 +106,12 @@ class RecruitmentOffersController
             Session::flash('error', 'Unité invalide.');
 
             return Response::redirect(url('back-office/recruitment/offers/create'));
+        }
+        $planBlock = PlanCreationQuota::blockMessage($tenantId, PlanCreationQuota::OFFERS);
+        if ($planBlock !== null) {
+            Session::flash('error', $planBlock);
+
+            return Response::redirect(url('back-office/recruitment/offers'));
         }
         $id = $this->openings->create($tenantId, $userId, $data);
         Session::flash('success', 'Brouillon enregistré. Vous pouvez le publier quand il est prêt.');
