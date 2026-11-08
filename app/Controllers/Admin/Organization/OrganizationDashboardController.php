@@ -290,7 +290,8 @@ class OrganizationDashboardController
             'boSkipPageHead' => true,
             'boPageAction' => 'Publier une annonce',
             'boPageActionUrl' => url('back-office/alerts/create'),
-            'backOfficePageCss' => ['back-office-dashboard.css', 'pilotage-dashboard.css'],
+            'backOfficePageCss' => ['back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css'],
+            'home' => $this->homeData($tenantId, $viewerId, $request->queryString('personnaliser') === '1'),
             'adminKpiBlockError' => $metrics['blockError'],
             'pilotage' => $pilotage,
             'skipGlobalAlertBanners' => true,
@@ -303,6 +304,62 @@ class OrganizationDashboardController
             'orgMessagesRecent' => $orgMessagesRecent,
             'orgProfileGaps' => $orgProfileGaps,
         ]);
+    }
+
+    /**
+     * Accueil personnalisable : disposition de la personne (ou celle de son rôle), tableaux affichés, compteurs du
+     * menu pour le bloc « Tâches en attente ». En cas d'erreur : disposition par défaut, jamais une page cassée.
+     *
+     * @return array<string, mixed>
+     */
+    private function homeData(int $tenantId, int $userId, bool $customize): array
+    {
+        $role = \App\Controllers\Admin\BackOfficeHomeController::role();
+        $home = [
+            'items' => \App\Services\BackOffice\Home\HomeLayout::defaults($role),
+            'readable' => [],
+            'sheets' => [],
+            'tasks' => [],
+            'customize' => $customize,
+            'can_share' => \App\Controllers\Admin\BackOfficeHomeController::canShare(),
+            'catalog' => \App\Services\BackOffice\Home\HomeLayout::catalog(),
+        ];
+        try {
+            $layout = Container::get(\App\Controllers\Admin\BackOfficeHomeController::class)->layoutFor($tenantId, $userId);
+            $home['items'] = $layout['items'];
+            $home['readable'] = $layout['readable'];
+            $sheetRepo = Container::get(\App\Repositories\BoSheetRepository::class);
+            foreach ($home['items'] as $item) {
+                $sid = \App\Services\BackOffice\Home\HomeLayout::sheetId($item['id']);
+                if ($sid > 0 && !$item['hidden']) {
+                    $sheet = $sheetRepo->find($tenantId, $sid);
+                    if ($sheet !== null && ($sheet['owner_user_id'] === $userId || $sheet['shared'])) {
+                        $home['sheets'][$sid] = \App\Controllers\Admin\BackOfficeHomeController::view($sheet, $userId);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[bo-home] ' . $e->getMessage());
+        }
+        try {
+            $gate = Gate::getInstance();
+            $badges = Container::get(\App\Services\BackOffice\Menu\BackOfficeMenuState::class)->badges();
+            $rows = $badges->compute(
+                $tenantId,
+                $userId,
+                static fn (string $perm): bool => $gate->allows($perm),
+                static fn (string $path): bool => \App\Controllers\Admin\BackOfficeMenuController::visible($path)
+            );
+            foreach ($rows as $row) {
+                if ($row['count'] > 0) {
+                    $home['tasks'][] = $row;
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[bo-home] tâches : ' . $e->getMessage());
+        }
+
+        return $home;
     }
 
     /**

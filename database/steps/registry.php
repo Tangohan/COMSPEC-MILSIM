@@ -88,4 +88,5 @@ return [
     ['id' => 'atak_sse_id_cover_link', 'label' => 'Couvertures reliées à Athena : couverture née en jeu remontée au compte du joueur, contenus de la bibliothèque de l’éditeur attribués à un joueur', 'group' => 'schema', 'file' => '4110_atak_sse_id_cover_link.php', 'rerun' => true],
     ['id' => 'atak_sse_ai_profiles', 'label' => 'Profils d’IA du Bureau SSE (identité, camp, papiers, comportement) reliés aux IA en jeu, et éléments gardés d’une partie à l’autre', 'group' => 'schema', 'file' => '4120_atak_sse_ai_profiles.php', 'rerun' => true],
     ['id' => 'bo_user_nav_prefs', 'label' => 'Back-office : favoris du menu, pages nouvelles déjà vues et accueil personnalisé, par compte et par communauté', 'group' => 'schema', 'file' => '4170_bo_user_nav_prefs.php', 'rerun' => true],
+    ['id' => 'bo_sheets', 'label' => 'Back-office : tableaux créés depuis l’accueil (petit tableur, partage en lecture avec la communauté)', 'group' => 'schema', 'file' => '4180_bo_sheets.php', 'rerun' => true],
 ];
