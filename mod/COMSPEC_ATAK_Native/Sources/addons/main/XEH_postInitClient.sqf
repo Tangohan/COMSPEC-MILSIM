@@ -216,6 +216,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_pli; ["positions BFT", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call COMSPEC_ATAK_PfhSpread;
 // Radio maillée MPU5 et voix ACRE2 (fn_mpu5) : détection de l'objet, réseau voix publié, qui émet.
 ["init"] call comspec_atak_native_fnc_mpu5;
+// Garde-fous ACRE2 et TFAR (fn_radioGuard) : test de version, restauration à la mort, au respawn, à la déconnexion et en fin de mission.
+["init"] call comspec_atak_native_fnc_radioGuard;
+// Assistant de configuration : proposé une fois à l'admin, le temps que Zeus et #login soient connus.
+[{ ["offer"] call comspec_atak_native_fnc_setupWizard; }, [], 30] call comspec_atak_native_fnc_waitAndExec;
 // Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
 ["init"] call comspec_atak_native_fnc_relayTxBadge;
 // Messages des groupes de conversation (fn_meshGroups).

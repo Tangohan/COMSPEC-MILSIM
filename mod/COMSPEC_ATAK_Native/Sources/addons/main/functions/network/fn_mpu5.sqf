@@ -27,7 +27,10 @@
     Lecture prudente d'ACRE2 : chaque fonction est testée avant l'appel ; sans ACRE2, seule la partie maillage reste.
 */
 params [["_act", ""], ["_arg", []]];
-private _acre = !isNil "acre_api_fnc_getCurrentRadioList";
+private _read = ["read"] call comspec_atak_native_fnc_radioGuard;
+private _acre = _read && {!isNil "acre_api_fnc_getCurrentRadioList"};
+// Seule porte vers ACRE2 et TFAR (fn_radioGuard) : fonction testée avant chaque appel, valeur de repli sinon.
+private _rg = { params ["_n", ["_a", []], ["_d", false]]; ["api", [_n, _a, _d]] call comspec_atak_native_fnc_radioGuard };
 // Données de canal ACRE2 : HashMap (ACRE2 récent) ou espace de noms (ancien hash ACRE), clés sans casse.
 private _hget = {
     params ["_h", "_k", "_d"];
@@ -44,6 +47,8 @@ switch (_act) do {
     case "has": {
         private _u = _arg param [0, player];
         if (_u isNotEqualTo player) exitWith { (["mpu5", _u] call comspec_atak_native_fnc_meshRead) isNotEqualTo [] };
+        // Liaison réaliste : toute radio de données reconnue (ACRE2 et TFAR d'abord, voir "gear").
+        if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith { (["gear"] call comspec_atak_native_fnc_mpu5) isNotEqualTo [] };
         private _c = uiNamespace getVariable ["COMSPEC_ATAK_Mpu5Has", []];
         if ((count _c) isEqualTo 2 && {diag_tickTime - (_c select 0) < 2}) exitWith { _c select 1 };
         private _extra = ((missionNamespace getVariable ["comspec_atak_native_mpu5_items", ""]) splitString ", ;") apply { toLower _x };
@@ -53,6 +58,107 @@ switch (_act) do {
         }) >= 0;
         uiNamespace setVariable ["COMSPEC_ATAK_Mpu5Has", [diag_tickTime, _has]];
         _has
+    };
+    case "gear": {
+        // Radio qui porte le réseau du joueur, ses vrais objets d'abord : MPU5 d'un mod radio, longue portée, portative, puis notre MPU5 (complément), puis la radio personnelle.
+        // Lecture de la config seulement (acre_baseClass, tf_parent, tf_range), aucune écriture chez ACRE2 ou TFAR. Cache 2 s.
+        // -> [rang, classe, "RADIOMPU" | "LR" | "SW" | "PERSO" | "MPU", nom, portée m, gain dB, débit Mbit/s, "acre" | "tfar" | ""] ou []
+        private _c = uiNamespace getVariable ["COMSPEC_ATAK_GearC", []];
+        if ((count _c) isEqualTo 2 && {diag_tickTime - (_c select 0) < 2}) exitWith { _c select 1 };
+        private _srcMod = missionNamespace getVariable ["comspec_atak_native_radio_source", 0];
+        private _useA = _read && {_srcMod in [0, 1]};
+        private _useT = _read && {_srcMod in [0, 2]};
+        private _extra = ((missionNamespace getVariable ["comspec_atak_native_mpu5_items", ""]) splitString ", ;") apply { toLower _x };
+        private _lrR = missionNamespace getVariable ["comspec_atak_native_radio_lr_range", 10000];
+        private _swR = missionNamespace getVariable ["comspec_atak_native_radio_sw_range", 2000];
+        // ACRE2 n'a pas de portée fixe (modèle de propagation) : portée de données au prorata de la racine de la puissance. Puissances d'usine lues dans ACRE2 2.14.
+        private _acreT = [["acre_prc117f", "LR", 20000], ["acre_prc77", "LR", 3500], ["acre_sem70", "LR", 4000], ["acre_prc152", "SW", 5000], ["acre_prc148", "SW", 5000], ["acre_bf888s", "SW", 5000], ["acre_sem52sl", "SW", 1000], ["acre_prc343", "PERSO", 100]];
+        private _gearOf = {
+            params ["_kind"];
+            [_kind, [missionNamespace getVariable ["comspec_atak_native_radio_sw_gain", 4], missionNamespace getVariable ["comspec_atak_native_radio_lr_gain", 10]] select (_kind isEqualTo "LR"),
+                [missionNamespace getVariable ["comspec_atak_native_radio_sw_mbps", 0.5], missionNamespace getVariable ["comspec_atak_native_radio_lr_mbps", 2]] select (_kind isEqualTo "LR")]
+        };
+        private _best = [];
+        private _offer = {
+            params ["_rank", "_cls", "_kind", "_name", "_range", "_gain", "_mbps", "_mod"];
+            if (_best isEqualTo [] || {_rank < (_best select 0)} || {_rank isEqualTo (_best select 0) && {_range > (_best select 4)}}) then { _best = [_rank, _cls, _kind, _name, _range, _gain, _mbps, _mod]; };
+        };
+        {
+            private _cls = _x;
+            private _low = toLower _cls;
+            private _cfg = configFile >> "CfgWeapons" >> _cls;
+            private _name = getText (_cfg >> "displayName");
+            if (_name isEqualTo "") then { _name = _cls; };
+            if ((_low find "mpu5") >= 0 || {_low in _extra}) then {
+                private _ours = (_low find "comspec_") isEqualTo 0;
+                if (!_ours && {!_useA} && {(_low find "acre_") isEqualTo 0}) then { continue };
+                [[0, 3] select _ours, _cls, ["RADIOMPU", "MPU"] select _ours, _name, missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000],
+                    missionNamespace getVariable ["comspec_atak_native_mpu5_gain", 8], missionNamespace getVariable ["comspec_atak_native_mpu5_mbps", 20], ["", ["tfar", "acre"] select ((_low find "acre_") isEqualTo 0)] select !_ours] call _offer;
+                continue
+            };
+            if (_useA) then {
+                private _b = toLower getText (_cfg >> "acre_baseClass");
+                if (_b isEqualTo "") then { _b = _low; };
+                private _i = _acreT findIf { (_b find (_x select 0)) isEqualTo 0 };
+                if (_i >= 0) exitWith {
+                    (_acreT select _i) params ["", "_kind", "_mw"];
+                    // Puissance réglée sur la radio, si ACRE2 la donne : valeur d'usine sinon.
+                    if ((_low find "_id_") >= 0) then {
+                        private _cd = ["acre_sys_data_fnc_dataEvent", [_cls, "getCurrentChannelData"], createHashMap] call _rg;
+                        private _pw = [_cd, "power", -1] call _hget;
+                        if (_pw isEqualType 0 && {_pw > 0} && {finite _pw}) then { _mw = _pw; };
+                    };
+                    private _ref = [5000, 20000] select (_kind isEqualTo "LR");
+                    private _top = [_swR, _lrR] select (_kind isEqualTo "LR");
+                    ([_kind] call _gearOf) params ["", "_g", "_mb"];
+                    if (_kind isEqualTo "PERSO") then { _mb = 0.1; _g = 0; };
+                    [[2, 1, 4] select (["SW", "LR", "PERSO"] find _kind), _cls, _kind, _name, (round (_top * sqrt (_mw / _ref))) max 300 min 20000, _g, _mb, "acre"] call _offer;
+                };
+            };
+            if (_useT) then {
+                private _r = getNumber (_cfg >> "tf_range");
+                if (_r > 0 || {(getText (_cfg >> "tf_parent")) isNotEqualTo ""}) then {
+                    if (_r <= 0) then { _r = getNumber (configFile >> "CfgWeapons" >> getText (_cfg >> "tf_parent") >> "tf_range"); };
+                    if (_r <= 0) then { _r = _swR; };
+                    (["SW"] call _gearOf) params ["", "_g", "_mb"];
+                    [2, _cls, "SW", _name, _r min 20000, _g, _mb, "tfar"] call _offer;
+                };
+            };
+        } forEach ((items player) + (assignedItems player));
+        // TFAR : la radio longue portée est un sac à dos, sa portée est dans sa config.
+        if (_useT) then {
+            private _bp = backpack player;
+            private _cv = configFile >> "CfgVehicles" >> _bp;
+            private _r = getNumber (_cv >> "tf_range");
+            if (_bp isNotEqualTo "" && {_r > 0}) then {
+                (["LR"] call _gearOf) params ["", "_g", "_mb"];
+                [1, _bp, "LR", getText (_cv >> "displayName"), _r min 20000, _g, _mb, "tfar"] call _offer;
+            };
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_GearC", [diag_tickTime, _best]];
+        _best
+    };
+    case "site": {
+        // Maillage du téléphone vers le site (/m/radio/mpu) : variables locales lues par COMSPEC Link à chaque position (fn_updatePosition, champs wr_*). Jamais diffusées.
+        // ATAK Enhanced chargé : ces variables sont les siennes. Mode avion : rien ne remonte.
+        if (!isNil "Iceman_fnc_wr_onOpened" || {isNull player}) exitWith {};
+        private _real = ["active"] call comspec_atak_native_fnc_mpuLink;
+        private _node = player getVariable ["COMSPEC_ATAK_MpuNode", []];
+        private _legacy = player getVariable ["COMSPEC_ATAK_Mpu5", []];
+        private _on = !(missionNamespace getVariable ["COMSPEC_ATAK_Airplane", false]) && {[_legacy isNotEqualTo [], _node isNotEqualTo []] select _real};
+        if (!_on) exitWith { if (player getVariable ["Iceman_WR_hasMPU5", false]) then { player setVariable ["Iceman_WR_hasMPU5", false]; }; };
+        private _m = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
+        private _tg = player getVariable ["COMSPEC_ATAK_Talkgroup", []];
+        private _chan = parseNumber ((_node param [0, "C1"]) select [1]);
+        private _vn = player getVariable ["COMSPEC_ATAK_VoiceNet", []];
+        private _gear = ["gear"] call comspec_atak_native_fnc_mpu5;
+        private _mode = _m getOrDefault ["mode", ""];
+        player setVariable ["Iceman_WR_activeTG", if (_tg isEqualType [] && {_tg isNotEqualTo []}) then { _tg select 0 } else { -1 }];
+        player setVariable ["Iceman_WR_frequency", if (_vn isNotEqualTo []) then { (_vn select 0) select 1 } else { 2200 + 20 * ((_chan max 1) - 1) }];
+        player setVariable ["Iceman_WR_nodeId", (format ["C%1 %2", _chan max 1, _gear param [3, _legacy param [3, "MPU5"]]]) select [0, 32]];
+        player setVariable ["Iceman_WR_gateway", _real && {_mode isEqualTo "self" || {_mode isEqualTo "lead" && {leader group player isEqualTo player}}}];
+        player setVariable ["Iceman_WR_bridgeActive", ((missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) param [0, []]) isNotEqualTo []];
+        player setVariable ["Iceman_WR_hasMPU5", true];
     };
     case "range": {
         private _base = missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000];
@@ -75,15 +181,15 @@ switch (_act) do {
         _p params ["_id", "_kind"];
         // Radio rangée, jetée ou volée : la liaison tombe.
         private _ok = if (_acre) then {
-            private _l = [] call acre_api_fnc_getCurrentRadioList;
-            !isNil "_l" && {_id in _l}
+            private _l = ["acre_api_fnc_getCurrentRadioList", [], []] call _rg;
+            _l isEqualType [] && {_id in _l}
         } else {
             if (_kind isEqualTo "LR") then {
-                private _lr = if (isNil "TFAR_fnc_activeLrRadio") then { nil } else { call TFAR_fnc_activeLrRadio };
-                !isNil "_lr" && {_lr isEqualType []} && {(count _lr) > 0}
+                private _lr = ["TFAR_fnc_activeLrRadio", [], []] call _rg;
+                _lr isEqualType [] && {(count _lr) > 0}
             } else {
-                private _sw = if (isNil "TFAR_fnc_activeSwRadio") then { nil } else { call TFAR_fnc_activeSwRadio };
-                !isNil "_sw" && {_sw isEqualType ""} && {_sw isNotEqualTo ""}
+                private _sw = ["TFAR_fnc_activeSwRadio", [], ""] call _rg;
+                _sw isEqualType "" && {_sw isNotEqualTo ""}
             };
         };
         if (!_ok) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_RadioPlug", []]; [] };
@@ -92,7 +198,7 @@ switch (_act) do {
     case "plug": {
         // Liaison réaliste (fn_mpuLink) : seule une MPU5 relie le téléphone au réseau, une radio ACRE2 / TFAR ne le relie pas.
         if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith {
-            ["WARNING", "Seule une MPU5 relie le téléphone au réseau. Sans MPU5 : pas de réseau de données", 5, 20] call comspec_atak_native_fnc_notify; false
+            ["INFO", "Liaison réaliste : le téléphone passe seul par votre radio ACRE2, TFAR ou MPU5, rien à brancher", 5, 20] call comspec_atak_native_fnc_notify; false
         };
         if ((["plugged"] call comspec_atak_native_fnc_mpu5) isNotEqualTo []) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_RadioPlug", []];
@@ -106,23 +212,23 @@ switch (_act) do {
         private _lrBase = ["acre_prc117f", "acre_prc77", "acre_sem70", "acre_vrc"];
         private _found = [];
         if (_acre) then {
-            private _l = [] call acre_api_fnc_getCurrentRadioList;
-            if (isNil "_l") then { _l = []; };
+            private _l = ["acre_api_fnc_getCurrentRadioList", [], []] call _rg;
+            if !(_l isEqualType []) then { _l = []; };
             private _all = _l apply {
-                private _b = toLower ([_x] call acre_api_fnc_getBaseRadio);
+                private _b = toLower (["acre_api_fnc_getBaseRadio", [_x], ""] call _rg);
                 [[1, 0] select ((_lrBase findIf { (_b find _x) isEqualTo 0 }) >= 0), _x, ["SW", "LR"] select ((_lrBase findIf { (_b find _x) isEqualTo 0 }) >= 0),
                     getText (configFile >> "CfgWeapons" >> _b >> "displayName")]
             } select { (toLower (_x select 1) find "acre_prc343") < 0 };
             _all sort true;
             if ((count _all) > 0) then { (_all select 0) params ["", "_id", "_k", "_n"]; _found = [_id, _k, [_n, _id] select (_n isEqualTo "")]; };
         } else {
-            private _lr = if (isNil "TFAR_fnc_activeLrRadio") then { nil } else { call TFAR_fnc_activeLrRadio };
-            private _sw = if (isNil "TFAR_fnc_activeSwRadio") then { nil } else { call TFAR_fnc_activeSwRadio };
-            if (!isNil "_lr" && {_lr isEqualType []} && {(count _lr) > 0}) then {
+            private _lr = ["TFAR_fnc_activeLrRadio", [], []] call _rg;
+            private _sw = ["TFAR_fnc_activeSwRadio", [], ""] call _rg;
+            if (_lr isEqualType [] && {(count _lr) > 0}) then {
                 private _o = _lr select 0;
                 _found = ["tfar_lr", "LR", [getText (configFile >> "CfgVehicles" >> typeOf _o >> "displayName"), "Radio longue portée"] select (isNull _o)];
             } else {
-                if (!isNil "_sw" && {_sw isEqualType ""} && {_sw isNotEqualTo ""}) then {
+                if (_sw isEqualType "" && {_sw isNotEqualTo ""}) then {
                     _found = [_sw, "SW", getText (configFile >> "CfgWeapons" >> _sw >> "displayName")];
                 };
             };
@@ -160,9 +266,9 @@ switch (_act) do {
         private _lbl = "";
         // Données vivantes de la radio (fréquence réglée à la main comprise), lisibles pour les radios des autres joueurs
         // si ACRE2 les a synchronisées.
-        if (!isNil "acre_sys_data_fnc_dataEvent") then {
-            private _cd = [_id, "getCurrentChannelData"] call acre_sys_data_fnc_dataEvent;
-            if (!isNil "_cd") then {
+        if (["has", ["acre_sys_data_fnc_dataEvent"]] call comspec_atak_native_fnc_radioGuard) then {
+            private _cd = ["acre_sys_data_fnc_dataEvent", [_id, "getCurrentChannelData"], -1] call _rg;
+            if !(_cd isEqualTo -1) then {
                 _tx = [_cd, "frequencyTX", -1] call _hget;
                 _rx = [_cd, "frequencyRX", _tx] call _hget;
                 { if (_lbl isEqualTo "") then { private _v = [_cd, _x, ""] call _hget; if (_v isEqualType "") then { _lbl = _v; }; }; } forEach ["description", "name", "label"];
@@ -170,42 +276,39 @@ switch (_act) do {
         };
         // Repli : préréglage de la radio au canal courant.
         if (!(_tx isEqualType 0) || {_tx <= 0}) then {
-            if (isNil "acre_api_fnc_getPresetChannelField" || {isNil "acre_api_fnc_getPreset"}) exitWith {};
-            private _base = [_id] call acre_api_fnc_getBaseRadio;
-            private _ch = [_id] call acre_api_fnc_getRadioChannel;
-            if (isNil "_base" || {isNil "_ch"} || {!(_ch isEqualType 0)}) exitWith {};
-            private _pre = [_base] call acre_api_fnc_getPreset;
-            if (isNil "_pre") exitWith {};
-            _tx = [_base, _pre, _ch, "frequencyTX"] call acre_api_fnc_getPresetChannelField;
-            _rx = [_base, _pre, _ch, "frequencyRX"] call acre_api_fnc_getPresetChannelField;
-            if (isNil "_rx" || {!(_rx isEqualType 0)}) then { _rx = _tx; };
+            private _base = ["acre_api_fnc_getBaseRadio", [_id], ""] call _rg;
+            private _ch = ["acre_api_fnc_getRadioChannel", [_id], -1] call _rg;
+            if (_base isEqualTo "" || {!(_ch isEqualType 0)} || {_ch < 0}) exitWith {};
+            private _pre = ["acre_api_fnc_getPreset", [_base], ""] call _rg;
+            if (_pre isEqualTo "") exitWith {};
+            _tx = ["acre_api_fnc_getPresetChannelField", [_base, _pre, _ch, "frequencyTX"], -1] call _rg;
+            _rx = ["acre_api_fnc_getPresetChannelField", [_base, _pre, _ch, "frequencyRX"], -1] call _rg;
+            if !(_rx isEqualType 0) then { _rx = _tx; };
             if (_lbl isEqualTo "") then {
                 {
                     if (_lbl isNotEqualTo "") then { continue };
-                    private _v = [_base, _pre, _ch, _x] call acre_api_fnc_getPresetChannelField;
-                    if (!isNil "_v" && {_v isEqualType ""}) then { _lbl = _v; };
+                    private _v = ["acre_api_fnc_getPresetChannelField", [_base, _pre, _ch, _x], ""] call _rg;
+                    if (_v isEqualType "") then { _lbl = _v; };
                 } forEach ["description", "name", "label"];
             };
         };
-        if (isNil "_tx" || {!(_tx isEqualType 0)} || {_tx <= 0}) exitWith { [] };
+        if (!(_tx isEqualType 0) || {_tx <= 0}) exitWith { [] };
         if (!(_rx isEqualType 0) || {_rx <= 0}) then { _rx = _tx; };
         [_tx, _rx, _lbl]
     };
     case "radios": {
         if (!_acre) exitWith { [] };
-        private _list = [] call acre_api_fnc_getCurrentRadioList;
-        if (isNil "_list" || {!(_list isEqualType [])}) exitWith { [] };
-        private _cur = if (isNil "acre_api_fnc_getCurrentRadio") then { "" } else { [] call acre_api_fnc_getCurrentRadio };
-        if (isNil "_cur") then { _cur = ""; };
-        private _ptt = if (isNil "acre_api_fnc_getMultiPushToTalkAssignment") then { [] } else { [] call acre_api_fnc_getMultiPushToTalkAssignment };
-        if (isNil "_ptt" || {!(_ptt isEqualType [])}) then { _ptt = []; };
+        private _list = ["acre_api_fnc_getCurrentRadioList", [], []] call _rg;
+        if !(_list isEqualType []) exitWith { [] };
+        private _cur = ["acre_api_fnc_getCurrentRadio", [], ""] call _rg;
+        private _ptt = ["acre_api_fnc_getMultiPushToTalkAssignment", [], []] call _rg;
+        if !(_ptt isEqualType []) then { _ptt = []; };
         private _txId = (uiNamespace getVariable ["COMSPEC_ATAK_PttMine", ["", 0]]) select 0;
         _list apply {
-            private _base = [_x] call acre_api_fnc_getBaseRadio;
+            private _base = ["acre_api_fnc_getBaseRadio", [_x], ""] call _rg;
             private _name = getText (configFile >> "CfgWeapons" >> _base >> "displayName");
             if (_name isEqualTo "") then { _name = _base; };
-            private _ch = [_x] call acre_api_fnc_getRadioChannel;
-            if (isNil "_ch") then { _ch = 0; };
+            private _ch = ["acre_api_fnc_getRadioChannel", [_x], 0] call _rg;
             (["freq", [_x]] call comspec_atak_native_fnc_mpu5) params [["_tx", -1], ["_rx", -1], ["_lbl", ""]];
             [_x, _name, _ch, _lbl, _tx, _rx, (_ptt find _x) + 1, _x isEqualTo _cur, _x isEqualTo _txId]
         }
@@ -298,6 +401,8 @@ switch (_act) do {
         if (_vn isNotEqualTo (player getVariable ["COMSPEC_ATAK_VoiceNet", []])) then { player setVariable ["COMSPEC_ATAK_VoiceNet", _vn]; };
         // Une seule variable diffusée pour tout le maillage (fn_meshRead, lot 8).
         ["publish"] call comspec_atak_native_fnc_meshRead;
+        ["site"] call comspec_atak_native_fnc_mpu5;
+        ["flush"] call comspec_atak_native_fnc_p2pArchive;
         // Émissions restées ouvertes (événement de fin perdu, joueur parti) : retirées au bout de 60 s.
         private _heard = (uiNamespace getVariable ["COMSPEC_ATAK_PttHeard", []]) select { !isNull (_x select 0) && {diag_tickTime - (_x select 2) < 60} };
         uiNamespace setVariable ["COMSPEC_ATAK_PttHeard", _heard];
@@ -314,7 +419,9 @@ switch (_act) do {
         private _isRadio = { params ["_r"]; _r isEqualTo true || {_r isEqualTo 1} || {_r isEqualTo "1"} };
         missionNamespace setVariable ["COMSPEC_ATAK_Mpu5IsRadio", _isRadio];
         // Mon émission (alternat ACRE2 sur une radio).
+        // Événements d'ACRE2 : lecture seule, nos seules variables. Tout lien coupé : rien.
         ["acre_startedSpeaking", {
+            if !(["read"] call comspec_atak_native_fnc_radioGuard) exitWith {};
             params ["_u", ["_r", false], ["_id", ""]];
             if (_u isNotEqualTo player || {!([_r] call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5IsRadio"))} || {!(_id isEqualType "")}) exitWith {};
             uiNamespace setVariable ["COMSPEC_ATAK_PttMine", [_id, diag_tickTime]];
@@ -328,6 +435,7 @@ switch (_act) do {
         }] call CBA_fnc_addEventHandler;
         // Émissions des autres joueurs : ACRE2 les signale à chaque client ; le tri « entendue ou non » se fait à l'affichage.
         ["acre_remoteStartedSpeaking", {
+            if !(["read"] call comspec_atak_native_fnc_radioGuard) exitWith {};
             params ["_u", ["_r", false], ["_id", ""]];
             if (isNull _u || {!([_r] call (missionNamespace getVariable "COMSPEC_ATAK_Mpu5IsRadio"))} || {!(_id isEqualType "")} || {_id isEqualTo ""}) exitWith {};
             private _h = (uiNamespace getVariable ["COMSPEC_ATAK_PttHeard", []]) select { (_x select 0) isNotEqualTo _u };
