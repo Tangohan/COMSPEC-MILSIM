@@ -69,7 +69,7 @@ final class AtakUnitCardAssetTest extends TestCase
         self::assertStringContainsString('["rows", [_sel, "panel"]] call comspec_atak_native_fnc_unitCard', $map);
         self::assertStringNotContainsString('"ROUTE VERS"', $map);
         self::assertStringNotContainsString('"CENTRER", ["center"]', $map);
-        self::assertStringContainsString('["bar", [_unit, "bft"', $bft);
+        self::assertStringContainsString('["bar", [_unit, _uCtx,', $bft);
         self::assertStringNotContainsString('"VOIR CAMÉRA"', $bft);
         self::assertStringContainsString('["rows", [_u, "group"]] call comspec_atak_native_fnc_unitCard', $grp);
         self::assertStringNotContainsString('"CHEF", compile', $grp);

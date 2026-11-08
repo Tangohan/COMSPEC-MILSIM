@@ -597,6 +597,26 @@ Aliases: `/api/markers`, `/api/units`, `/api/nine-line`, `/api/cas`, `/api/fire-
 - ATHENA C2 Security Architecture — SEC-A3-01
 - ATHENA C2 Capability Registry — REG-A3-01
 
+## ORBAT du BFT : `GET /api/atak/community-orbat`
+
+Lecture par session de jeu : la clé commune du serveur ne dit pas qui joue (`403 session_required`, « compte non lié » sur le téléphone). Compte fermé ou rôle sans `organization.orbat.view` : `403 forbidden`. `App\Services\Atak\AtakCommunityOrbatService`, réponse identique pour toute la communauté, gardée 120 s.
+
+```json
+{
+  "version": 1, "generated_at": "…", "revision": "sha1 du contenu", "truncated": false, "tag_salt": "…",
+  "units": [{
+    "id": 1, "parent": 0, "name": "…", "code": "…", "echelon": "…", "restricted": false,
+    "posts": [{ "title": "…", "callsign": "…", "key": "commander|deputy|", "vacant": 0, "holders": [{ "user": 12, "tag": "…", "name": "Prénom N.", "grade": "SGT", "callsign": "Alpha 1", "trigram": "", "anonymized": false }] }],
+    "members": []
+  }]
+}
+```
+
+- Vu comme un simple membre, sans droit de cadre : mêmes fiches masquées, unités masquées, anonymisées, restreintes, archivées et inactives que `/orbat`. En plus : unités `show_on_public_page = 0` et leurs sous-unités absentes. Fiche « masquer mes informations personnelles » : indicatif seul.
+- Jamais d'e-mail ni de Steam ID. `tag` : 24 premiers caractères du SHA-256 de `orbat|tag_salt|SteamID64`, recalculé en jeu sur le UID de chaque joueur de mon camp (`HashText`). Compte sans Steam sûr, ou Steam porté par deux comptes : pas de tag, le membre reste « hors ligne » en jeu.
+- Plafonds : 200 unités, 600 postes, 800 lignes de personnes (`truncated: true` au-delà), 60 caractères par texte.
+- Côté jeu : `GetCommunityOrbat` de COMSPEC Link (Async seulement, une lecture à la fois) répond `OK|n|révision|generated_at`, puis `GetCommunityOrbatChunk [i]` en mémoire ; lu par `fn_bftOrbat`, 5 min au plus entre deux lectures, et rien n'est relu si la révision ne change pas. Champs ajoutés plus tard : ignorés par le téléphone.
+
 ## App Communauté : `GET /api/atak/community-brief`
 
 Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le contenu se saisit dans Ressources › Configuration ATAK, section Expérience (`community_notes`, `community_kit` dans la configuration d'expérience, sans migration), et se lit par `App\Support\AtakCommunityBrief`. Sans saisie, l'API renvoie des listes vides.

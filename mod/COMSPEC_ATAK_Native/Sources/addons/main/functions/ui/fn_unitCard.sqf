@@ -10,7 +10,8 @@
       ["state", cible ou [cible, carte]] -> [code, libellé, couleur hex, couleur rgba]. Code : 0 apte, 1 blessé, 2 inconscient,
                                          3 mort, -1 état médical masqué (fn_medShow), -2 hors ligne. carte : encres de la carte.
       ["catalog", [cible, contexte]]  -> [[clé, libellé, actif, aide, style ("" | "main" | "red")]...]
-                                         contexte : "bft" | "map" | "panel" | "group"
+                                         contexte : "bft" | "bftp" (personne de l'ORBAT sans piste : SMS et vibreur seuls,
+                                         sa position reste inconnue) | "map" | "panel" | "group"
       ["do", [clé, identifiant]]      -> exécute l'action (par fn_bftAction, fn_groupAction, fn_reliefAction, fn_relayNet)
       ["rows", [cible, contexte]]     -> lignes « buttons » de fn_formRender, par rangées de 3 (portrait mini) ou 5, hauteur tap
       ["bar", [cible, contexte, x, y, largeur, dans la zone de contenu]] -> rangée de boutons en contrôles libres, le surplus
@@ -53,8 +54,8 @@ private _armed = {
 private _catalog = {
     params ["_t", ["_ctx", "bft"]];
     private _e = [_t] call _resolve;
-    private _has = (count _e) > 0;
     private _id = _e getOrDefault ["id", ""];
+    private _has = _id isNotEqualTo "";
     private _o = _e getOrDefault ["object", objNull];
     private _me = _e getOrDefault ["self", false];
     private _friend = (_e getOrDefault ["affiliation", "friend"]) isEqualTo "friend";
@@ -70,7 +71,7 @@ private _catalog = {
     private _all = [
         ["route", "Y ALLER", _has && {!_me}, "Guidage GPS jusqu'à lui", "main"],
         ["sms", "SMS", _dev && {_al}, ["Pas de téléphone ATAK chez cet allié", "Ouvre Messages avec lui"] select _dev, ""],
-        [["vibe", "buzz"] select (_ctx isEqualTo "bft"), ["VIBRER", "HORS LIGNE"] select _off, _net && {_dev} && {!_off}, ["Pas de téléphone ATAK chez cet allié", "Fait vibrer son téléphone (une fois toutes les 5 s)"] select _dev, ""],
+        [["vibe", "buzz"] select (_ctx in ["bft", "bftp"]), ["VIBRER", "HORS LIGNE"] select _off, _net && {_dev} && {!_off}, ["Pas de téléphone ATAK chez cet allié", "Fait vibrer son téléphone (une fois toutes les 5 s)"] select _dev, ""],
         ["ping", "PING", _has, "Ping sur sa position, visible de tout le camp", ""]
     ];
     if (!_friend) exitWith { [_car] + (_all select { (_x select 0) in ["route", "ping"] }) };
@@ -82,9 +83,11 @@ private _catalog = {
     };
     _tail pushBack ["viewshed", "CHAMP DE VISION", _al, "Ce qu'il voit depuis sa position", ""];
     _tail pushBack ["locate", "LOCALISER", _dev && {_al}, "Localiser son téléphone par les relais (triangulation)", ""];
-    if (_ctx isNotEqualTo "bft") then { _tail pushBack ["bft", "FICHE BFT", _has, "Ouvre l'app BFT sur cette piste", ""]; };
+    if !(_ctx in ["bft", "bftp"]) then { _tail pushBack ["bft", "FICHE BFT", _has, "Ouvre l'app BFT sur cette piste", ""]; };
     if (_ctx isEqualTo "map") exitWith { [_sui] + _all + [_cam, _car] + _tail };
-    [_car] + _all + [_cam, _sui] + _tail
+    private _full = [_car] + _all + [_cam, _sui] + _tail;
+    if (_ctx isEqualTo "bftp") then { { if !((_x select 0) in ["sms", "buzz"]) then { _x set [2, false]; }; } forEach _full; };
+    _full
 };
 // Revue au pouce : mon groupe puis les alliés à moins d'un kilomètre, chacun du plus proche au plus loin.
 private _peerList = {
@@ -157,8 +160,9 @@ switch (_mode) do {
         if ((count _e) isEqualTo 0) exitWith { false };
         private _eid = _e getOrDefault ["id", ""];
         private _o = _e getOrDefault ["object", objNull];
-        // fn_bftAction lit la piste choisie : une entité de passage (allié sans piste, calque masqué) lui est donnée à part.
-        _s set ["bftSel", _eid];
+        // fn_bftAction lit la piste choisie : une entité de passage (allié sans piste, calque masqué) lui est donnée à part,
+        // sans changer la ligne choisie du BFT.
+        if ((_eid select [0, 2]) isNotEqualTo "o:") then { _s set ["bftSel", _eid]; };
         _s set ["bftSelEnt", _e];
         switch (_key) do {
             case "center": { ["center"] call comspec_atak_native_fnc_bftAction; };

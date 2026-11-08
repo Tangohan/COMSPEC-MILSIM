@@ -3060,6 +3060,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->post('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->get('/api/atak/community-brief', [AtakApiController::class, 'communityBrief']);
+    $router->get('/api/atak/community-orbat', [AtakApiController::class, 'communityOrbat']);
     $router->get('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->post('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
