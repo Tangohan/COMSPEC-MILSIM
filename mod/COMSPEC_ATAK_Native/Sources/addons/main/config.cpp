@@ -67,7 +67,7 @@ class CfgFunctions {
             class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class musicAthena {}; class pageMusic {};
         };
         class route { file="z\comspec_atak_native\addons\main\functions\route";
-            class routeAction {}; class routeUnpack {}; class routeDraw {}; class route3d {}; class routeMap {}; class pageRoute {};
+            class routeAction {}; class routeUnpack {}; class routeDraw {}; class route3d {}; class routeEcoti {}; class routeMap {}; class pageRoute {};
         };
         class zones { file="z\comspec_atak_native\addons\main\functions\zones";
             class zoneAction {}; class zoneUnpack {}; class zoneGeom {}; class zoneGen {}; class zoneDraw {}; class zoneMap {}; class pageZones {}; class zoneSnap {};

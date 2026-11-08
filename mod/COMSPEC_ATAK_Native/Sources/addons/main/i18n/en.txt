@@ -18810,5 +18810,7 @@
 ["%1 impossible : %2", "%1 impossible: %2"],
 ["Ordre annulé", "Order cancelled"],
 ["Votre arsenal et les tenues partagées", "Your arsenal and shared loadouts"],
-["Pas de copie locale", "No local copy"]
+["Pas de copie locale", "No local copy"],
+["Route suivie dans F-PANO ECOTI", "Followed route in F-PANO ECOTI"],
+["Si le mod F-PANO ECOTI est chargé : les 8 prochaines étapes de la route suivie s'affichent sous JVN dans sa vue, avec le nom et la distance. Sans ce mod, ce réglage ne fait rien.", "If the F-PANO ECOTI mod is loaded: the next 8 steps of the followed route appear in its view under NVG, with name and distance. Without that mod, this setting does nothing."]
 ]

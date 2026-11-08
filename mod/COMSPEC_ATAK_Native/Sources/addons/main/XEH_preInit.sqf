@@ -165,6 +165,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_route_arma", "CHECKBOX",
     ["Routes sur la carte d'Arma et Athena", "Option « Carte d'Arma et Athena » d'une route : tracé et étapes posés en marqueurs sur le canal du groupe (du camp si la route est partagée au camp) et envoyés au site Athena comme les autres dessins. Décoché : les routes restent sur les téléphones."],
     ["COMSPEC", "ATAK · Routes"], true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_route_fpano", "CHECKBOX",
+    ["Route suivie dans F-PANO ECOTI", "Si le mod F-PANO ECOTI est chargé : les 8 prochaines étapes de la route suivie s'affichent sous JVN dans sa vue, avec le nom et la distance. Sans ce mod, ce réglage ne fait rien."],
+    ["COMSPEC", "ATAK · Routes"], true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_route_max", "SLIDER",
     ["Étapes par route au plus", "Nombre d'étapes d'une route (40 par défaut)."],
     ["COMSPEC", "ATAK · Routes"], [5, 80, 40, 0], 1] call comspec_atak_native_fnc_addSetting;

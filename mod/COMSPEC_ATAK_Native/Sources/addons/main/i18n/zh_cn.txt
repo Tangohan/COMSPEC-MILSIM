@@ -25663,5 +25663,7 @@
 ["%1 impossible : %2", "%1 无法执行：%2"],
 ["Ordre annulé", "命令已取消"],
 ["Votre arsenal et les tenues partagées", "你的军械库和共享配置"],
-["Pas de copie locale", "没有本地副本"]
+["Pas de copie locale", "没有本地副本"],
+["Route suivie dans F-PANO ECOTI", "在 F-PANO ECOTI 中显示跟随路线"],
+["Si le mod F-PANO ECOTI est chargé : les 8 prochaines étapes de la route suivie s'affichent sous JVN dans sa vue, avec le nom et la distance. Sans ce mod, ce réglage ne fait rien.", "如果已加载 F-PANO ECOTI 模组：跟随路线接下来的 8 个路点会在夜视下显示在其视图中，并带有名称和距离。没有该模组时，此设置无效。"]
 ]

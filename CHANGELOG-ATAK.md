@@ -58,6 +58,7 @@ FR : ATAK 3.1.0 : le haut-parleur de l'app Musique ne s'emballe plus, l'app C2 d
 - Comptes rendus envoyés depuis le QR code : ils partent enfin en jeu, avec notification aux autres joueurs et entrée dans l'app Comptes rendus.
 - Carte : symboles et zones réparés sur fond sombre, plus de mention PERDU, noms plus lisibles. App Routes : le clic gauche et les autres apps répondent après une route.
 - Arsenal ACE, écran Tenues : plus de panneaux vides ni de textes superposés à l'ouverture.
+- App Routes : avec le mod F-PANO ECOTI, les prochaines étapes de la route suivie s'affichent sous JVN dans sa vue, avec leur nom et leur distance.
 - Bloc-notes refait, réponses des IA en texte au-dessus de leur tête (désactivable), nouveaux motifs de fêlures désactivables, menu ORBAT dans le BFT, et plus rien dans OneDrive.
 EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Turning on the speaker in the Music app no longer causes a script error or a yes/no flip-flop.
@@ -75,6 +76,7 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
 - Reports sent from the QR code now really go out in game, with a notification to the other players and an entry in the Reports app.
 - Map: symbols and areas fixed on dark backgrounds, no more LOST label, easier-to-read names. Routes app: left click and other apps respond after a route.
 - ACE Arsenal, Loadouts screen: no more empty panels or overlapping text when it opens.
+- Routes app: with the F-PANO ECOTI mod, the next steps of the followed route appear in its NVG view, with name and distance.
 - Notepad rebuilt, AI replies as text above their head (can be turned off), new crack patterns you can turn off, ORBAT menu in the BFT, and nothing goes to OneDrive any more.
 
 ### Détail technique
@@ -85,6 +87,7 @@ EN : ATAK 3.1.0: the Music app speaker no longer goes wild, the C2 app is gone
   - DLL : plus d'écriture dans OneDrive (`LocalDocuments.cs`, `…-atak-enregistrements-onedrive.md`) ; à reconstruire.
   - Réponses des IA : bulle au-dessus du chef du groupe (`fn_aiBubble`, un seul Draw3D, absent sans bulle, 6 bulles au plus), toast d'Arma en secours (`…-atak-reponses-ia-bulles.md`). Bloc-notes refait (`…-atak-bloc-notes-refonte.md`).
   - Tenues (Arsenal ACE) : contrôles masqués remis dans leur état à l'affichage du panneau (`COMSPEC_ArsenalSettle`), menu et saisie sans surface une fois fermés (`docs/bugs/2026-11-08-arsenal-tenues-controles-fantomes.md`).
+  - F-PANO ECOTI (facultatif, sans dépendance) : `fn_routeEcoti`, route suivie en marqueurs locaux invisibles lus par ce mod ; réglage `comspec_atak_native_route_fpano` (`docs/bugs/2026-11-08-atak-route-fpano-ecoti.md`).
   - Carte : plus de mention « PERDU », textes relevés à mi-zoom (`…-atak-carte-perdu-texte-mi-zoom.md`) ; menu ORBAT du BFT (`…-atak-bft-orbat-traits-groupe.md`).
   - Mises à jour sur place : fil des messages, choix exclusifs des Réglages, favoris, diapositives, source vidéo du drone ; reste listé dans `…-atak-pages-redessinees-file-cba.md`.
   - Huit motifs de fêlures et de bris, désactivables (`…-atak-degats-ecran-motifs.md`).
