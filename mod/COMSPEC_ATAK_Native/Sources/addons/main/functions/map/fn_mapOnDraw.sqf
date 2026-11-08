@@ -43,9 +43,9 @@ private _clear = "#(argb,8,8,3)color(0,0,0,0)";
 // Réglages > Carte : taille des textes (indicatifs, grilles, libellés) et des symboles. Défaut 1.25 (plus grand qu'avant).
 private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
 private _is = ((profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25]) max 0.8) min 2.2;
-// Étiquettes (cartouches, noms des repères) : un peu plus petites en vue large, un peu plus grandes en zoom rapproché,
-// par paliers de 5 % (taille stable pendant le zoom).
-private _tsL = (round (_ts * (((1.06 - _scale * 0.7) max 0.88) min 1.06) * 20)) / 20;
+// Étiquettes (cartouches, noms des repères) : jamais réduites en vue moyenne ou large (avant : jusqu'à 0,88, texte
+// illisible à mi-zoom) ; un peu plus grandes en zoom rapproché, par paliers de 5 % (taille stable pendant le zoom).
+private _tsL = (round (_ts * (((1.06 - _scale * 0.7) max 1) min 1.06) * 20)) / 20;
 uiNamespace setVariable ["COMSPEC_ATAK_MapTs", _ts];
 uiNamespace setVariable ["COMSPEC_ATAK_MapIs", _is];
 // Marqueurs de la mission (fn_mapGameMarkers) : symbole Arma (32 px pour l'OTAN) ramené à l'échelle de l'écran de l'ATAK,

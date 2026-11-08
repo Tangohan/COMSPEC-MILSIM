@@ -114,7 +114,8 @@ private _fR = COMSPEC_ATAK_FontSet select 0;
 // Taille relevée (0,021 -> 0,024) pour la petite carte du téléphone porté, puis ramenée à 0,020 en main : les plaques
 // (« Z ENT MÉDICALE ») écrasaient le bandeau d'information et les symboles. Le téléphone porté garde 0,024.
 private _worn = !((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false]);
-private _fs = ([0.020, 0.024] select _worn) * _ts * _kt;
+// 0,020 en main avant : illisible à mi-zoom.
+private _fs = ([0.023, 0.025] select _worn) * _ts * _kt;
 private _fs2 = _fs * 0.88;
 private _h = _fs * 1.22;
 private _px = pixelW;

@@ -4,7 +4,7 @@
       ligne 1 : indicatif en capitales, police condensée grasse (« STAR 4-1 », « ENI INFANTERIE 1 »), coupé au-delà
                 de 16 à 18 caractères ; « +3 » quand d'autres unités sont regroupées sous le même cartouche ;
       ligne 2 : plus petite, chiffres à chasse fixe, en gris : distance et azimut depuis moi (« 48 m · 234° »,
-                « 1,2 km · 034° »), « ANCIEN » / « PERDU » devant pour une piste figée ou perdue ; pour un contact ENI,
+                « 1,2 km · 034° ») ; une piste figée ou perdue s'estompe (alpha, fn_mapOnDraw), sans mention ; pour un contact ENI,
                 heure de pose et auteur (« 15:01 · signalé TA1 », boîte bordée de rouge).
     Couleurs : table de la carte (fn_mapColors) ; fond à l'opacité choisie dans le volet CONFIGURATION.
     Tout est dessiné par la carte (drawRectangle, drawLine, drawIcon) : aucun contrôle créé ni déplacé à chaque image.
@@ -93,8 +93,6 @@ private _padX = _fs1 * 0.42 / _ratio;
 private _padY = _fs1 * 0.2;
 private _ox = _fs1 * 1.1 / _ratio;
 private _oy = _fs1 * 0.9;
-private _tagSt = ("ANCIEN") call comspec_atak_native_fnc_tr;
-private _tagLo = ("PERDU") call comspec_atak_native_fnc_tr;
 
 // Candidats visibles, triés par priorité puis du plus proche au plus loin.
 private _me = [] call comspec_atak_native_fnc_gpsPos;
@@ -112,8 +110,6 @@ private _vis = [];
     // Allié proche (moins de 400 m) : rangé avec mon groupe, devant les contacts ENI.
     if (_prio isEqualTo 3 && {(_c select 1) < 400}) then { _prio = 1; };
     private _l2 = _c select 2;
-    if (_fresh isEqualTo "STALE") then { _l2 = _tagSt + " · " + _l2; };
-    if (_fresh in ["LOST", "OFFLINE"]) then { _l2 = _tagLo + " · " + _l2; };
     _vis pushBack [_prio * 1e6 + (_c select 1), _id, _pos, _sp, _cs, _l2, _hostile, _a, _c select 4];
 } forEach _cands;
 if (_eniOn) then {
