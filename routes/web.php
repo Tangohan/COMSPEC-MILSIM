@@ -1006,6 +1006,8 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}/action', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentAction'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentUpdate'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/kit', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitSave'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateFor'], $mwSsePortal);
+    $router->get('/atak/sse/papiers/membres/{id}/couverture/{exportId}/telecharger', [\App\Controllers\Admin\MemberCoverExportController::class, 'downloadFor'], $mwSsePortal);
     // RENS › Identités & documents (COMSPEC IDENTITY, Lot 6) : atelier, kits types, préparation de mission, briefs, import/export.
     // Chemins fixes (« nouveau », « mrz », sous-actions) avant /{id}.
     $router->get('/atak/sse/papiers/atelier', [\App\Controllers\Web\SseIdWorkshopController::class, 'workshopIndex'], $mwSsePortal);
@@ -1495,6 +1497,8 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/modifier', [PilotLogbookController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/supprimer', [PilotLogbookController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/mes-papiers', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'mine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/mes-papiers/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateMine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/mes-papiers/couverture/{exportId}/telecharger', [\App\Controllers\Admin\MemberCoverExportController::class, 'downloadMine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/liaison-atak', [MemberSituationController::class, 'liaisonAtak'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/appareils', [MemberSituationController::class, 'appareils'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     // Musique (Mon espace) : bibliothèque musicale partagée avec l'app Musique de l'ATAK natif (MusicLibraryController).
