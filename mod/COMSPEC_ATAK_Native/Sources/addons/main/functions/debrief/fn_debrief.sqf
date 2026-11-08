@@ -44,7 +44,7 @@ private _builtin = [
 private _parse = {
     params ["_body"];
     if !(_body isEqualType "") exitWith { [] };
-    if ((_body select [0, 8]) isNotEqualTo "[""DBF1""") exitWith { [] };
+    if ((_body select [0, 7]) isNotEqualTo "[""DBF1""") exitWith { [] };
     private _a = parseSimpleArray _body;
     if !(_a isEqualType []) exitWith { [] };
     _a params ["", ["_mode", "fill"], ["_title", ""], ["_intro", ""], ["_read", ""], ["_qs", []]];
@@ -253,7 +253,7 @@ switch (_act) do {
         // reçue par l'avis « mobile_debrief » (fn_adminNotices) : ["MDB1", id, [[question, réponse]...], send | read],
         // lu par parseSimpleArray (aucun code exécuté). Remise par « send » / « read » comme si elle était faite ici.
         if !(_arg isEqualType "") exitWith {};
-        if ((_arg select [0, 8]) isNotEqualTo "[""MDB1""") exitWith {};
+        if ((_arg select [0, 7]) isNotEqualTo "[""MDB1""") exitWith {};
         private _a = parseSimpleArray _arg;
         if !(_a isEqualType []) exitWith {};
         _a params ["", ["_id", ""], ["_pairs", []], ["_how", "send"]];

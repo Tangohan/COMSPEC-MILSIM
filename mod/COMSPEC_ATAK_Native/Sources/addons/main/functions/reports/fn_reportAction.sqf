@@ -350,7 +350,7 @@ switch (_act) do {
         // « mobile_report » (fn_adminNotices) : ["MCR1", code, [[clé, valeur]...]], lu par parseSimpleArray (aucun code
         // exécuté). Envoyée par « send » comme une fiche remplie ici ; la fiche en cours du joueur est gardée telle quelle.
         if !(_arg isEqualType "") exitWith {};
-        if ((_arg select [0, 8]) isNotEqualTo "[""MCR1""") exitWith {};
+        if ((_arg select [0, 7]) isNotEqualTo "[""MCR1""") exitWith {};
         private _a = parseSimpleArray _arg;
         if !(_a isEqualType []) exitWith {};
         _a params ["", ["_code", ""], ["_pairs", []]];
