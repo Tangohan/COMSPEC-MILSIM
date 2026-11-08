@@ -1,0 +1,206 @@
+/*
+ * Menu latéral du back-office : pastilles (compteur, Nouveau, Important), étoiles des favoris, section Favoris.
+ * Le menu reste sombre dans les deux thèmes ; seule l'étoile de la barre du haut suit le thème clair / nuit.
+ */
+
+/* ——— Lignes de pages : lien + étoile ——— */
+.ath-sidebar__child-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ath-sidebar__child-row[hidden] { display: none !important; }
+.ath-sidebar__child-row > .ath-sidebar__child { flex: 1; min-width: 0; padding-right: 34px; }
+
+/* ——— Pastilles ——— */
+.ath-mbadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-family: var(--ath-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+}
+.ath-mbadge[hidden] { display: none !important; }
+.ath-mbadge--notif { background: #1e6fbf; color: #fff; }
+.ath-mbadge--important { background: #c72e2e; color: #fff; box-shadow: 0 0 0 2px rgba(199, 46, 46, 0.25); }
+.ath-mbadge--new {
+  height: 17px;
+  padding: 0 6px;
+  border: 1px solid #1f7a4d;
+  background: rgba(18, 209, 142, 0.12);
+  color: #5ee6b0;
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ath-mbadge--child { min-width: 17px; height: 17px; font-size: 9.5px; }
+.ath-mnew-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #12d18e;
+  box-shadow: 0 0 0 2px rgba(18, 209, 142, 0.2);
+}
+.ath-sidebar__section-head .ath-mbadge,
+.ath-sidebar__section-head .ath-mnew-dot { margin-left: auto; }
+.ath-sidebar__section-head .ath-mbadge + .ath-sidebar__section-count,
+.ath-sidebar__section-head .ath-mnew-dot + .ath-sidebar__section-count { margin-left: 6px; }
+
+/* Menu replié : la pastille devient un point sur l'icône. */
+.ath-sidebar.is-collapsed .ath-sidebar__item { position: relative; }
+.ath-sidebar.is-collapsed .ath-mbadge--item:not([hidden]) {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  min-width: 8px;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  font-size: 0;
+}
+.ath-sidebar.is-collapsed .ath-mbadge--item [data-ath-badge-n] { display: none; }
+.ath-sidebar.is-collapsed .ath-mbadge--new,
+.ath-sidebar.is-collapsed .ath-mnew-dot,
+.ath-sidebar.is-collapsed .ath-fav-star,
+.ath-sidebar.is-collapsed .ath-favs { display: none !important; }
+
+/* ——— Étoile ——— */
+.ath-fav-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #4d5a55;
+  cursor: pointer;
+  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.ath-fav-star svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.ath-fav-star.is-on { color: #f2b33d; }
+.ath-fav-star.is-on svg { fill: currentColor; }
+.ath-fav-star:hover { color: #f2b33d; background: #1c2327; }
+.ath-fav-star:focus-visible { outline: 2px solid #12d18e; outline-offset: 1px; opacity: 1; }
+.ath-fav-star:disabled { opacity: 0.4; cursor: wait; }
+
+#ath-sidebar-nav .ath-fav-star { position: absolute; right: 8px; top: 50%; margin-top: -13px; }
+.ath-sidebar__item-row > .ath-fav-star { right: 14px; }
+
+/* Au survol (ou au clavier) seulement, sauf si la page est déjà en favori ; toujours visible au toucher. */
+@media (hover: hover) {
+  #ath-sidebar-nav .ath-fav-star:not(.is-on) { opacity: 0; }
+  #ath-sidebar-nav .ath-sidebar__child-row:hover .ath-fav-star,
+  #ath-sidebar-nav .ath-sidebar__item-row:hover .ath-fav-star,
+  #ath-sidebar-nav .ath-fav-star:focus-visible { opacity: 1; }
+}
+
+/* Barre du haut : thème clair et nuit. */
+.ath-topbar__fav { color: #8c979b; margin-left: 4px; }
+.ath-topbar__fav:hover { background: #f1f4f5; color: #c98a12; }
+.ath-topbar__fav.is-on { color: #d99a1e; }
+html[data-bo-theme="dark"] .ath-topbar__fav { color: #6f7b76; }
+html[data-bo-theme="dark"] .ath-topbar__fav:hover { background: #1c2327; color: #f2b33d; }
+html[data-bo-theme="dark"] .ath-topbar__fav.is-on { color: #f2b33d; }
+
+/* ——— Section Favoris ——— */
+.ath-favs .ath-sidebar__group-head { padding-right: 14px; }
+.ath-favs__count {
+  margin-left: auto;
+  font-family: var(--ath-mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #59625d;
+}
+.ath-favs__list { list-style: none; margin: 0; padding: 0; }
+.ath-favs__list[hidden] { display: none; }
+.ath-favs__it {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ath-favs__it.is-dragging { opacity: 0.45; }
+.ath-favs__link { flex: 1; min-width: 0; padding-left: 22px !important; padding-right: 80px !important; }
+.ath-favs__grip {
+  width: 10px;
+  flex-shrink: 0;
+  color: #3b4541;
+  font-size: 10px;
+  letter-spacing: -2px;
+  cursor: grab;
+}
+.ath-favs__tools {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  gap: 2px;
+}
+.ath-favs__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #6b736e;
+  cursor: pointer;
+}
+.ath-favs__btn svg { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.ath-favs__btn:hover:not(:disabled) { background: #1c2327; color: #fff; }
+.ath-favs__btn--rm:hover:not(:disabled) { color: #f08a8a; }
+.ath-favs__btn:disabled { opacity: 0.25; cursor: default; }
+.ath-favs__btn:focus-visible { outline: 2px solid #12d18e; outline-offset: 1px; }
+@media (hover: hover) {
+  .ath-favs__tools { opacity: 0; transition: opacity 0.15s ease; }
+  .ath-favs__it:hover .ath-favs__tools,
+  .ath-favs__tools:focus-within { opacity: 1; }
+}
+.ath-favs__empty {
+  margin: 2px 14px 8px 22px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #6b736e;
+}
+.ath-favs__empty[hidden] { display: none; }
+
+@media (max-width: 1023.98px) {
+  .ath-fav-star, .ath-favs__btn { width: 34px; height: 34px; }
+  #ath-sidebar-nav .ath-fav-star { margin-top: -17px; }
+  .ath-favs__link { padding-right: 116px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ath-fav-star, .ath-favs__tools { transition: none; }
+}
+.ath-sidebar__item-row:has(> .ath-fav-star) .ath-sidebar__item { padding-right: 38px; }
+
+/* Souris : la place de l'étoile et des outils n'est prise qu'au survol (ou si la page est déjà en favori). */
+@media (hover: hover) {
+  .ath-sidebar__child-row > .ath-sidebar__child { padding-right: 14px; }
+  .ath-sidebar__child-row:hover > .ath-sidebar__child,
+  .ath-sidebar__child-row:focus-within > .ath-sidebar__child,
+  .ath-sidebar__child-row:has(> .ath-fav-star.is-on) > .ath-sidebar__child { padding-right: 34px; }
+  .ath-sidebar__item-row:has(> .ath-fav-star) .ath-sidebar__item { padding-right: 10px; }
+  .ath-sidebar__item-row:has(> .ath-fav-star):hover .ath-sidebar__item,
+  .ath-sidebar__item-row:has(> .ath-fav-star):focus-within .ath-sidebar__item,
+  .ath-sidebar__item-row:has(> .ath-fav-star.is-on) .ath-sidebar__item { padding-right: 38px; }
+  .ath-favs__link { padding-right: 14px !important; }
+  .ath-favs__it:hover .ath-favs__link,
+  .ath-favs__it:focus-within .ath-favs__link { padding-right: 80px !important; }
+}
