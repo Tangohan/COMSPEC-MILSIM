@@ -18,6 +18,7 @@ switch (_how) do {
         if (_how isEqualTo "swap") then { player setVariable ["COMSPEC_ATAK_PhoneGen", (player getVariable ["COMSPEC_ATAK_PhoneGen", 0]) + 1, true]; };
     };
 };
+_n deleteAt "fx";
 missionNamespace setVariable ["COMSPEC_ATAK_Device", _n];
 // Réalisme ATAK d'Overwatch : son état (COMSPEC_AtakState, local au joueur) prime dans fn_deviceHealth.
 // Sa propre réparation refuse un appareil détruit (« irréparable ») : la réparation native le remet aussi en état.

@@ -373,7 +373,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
 
 
                 <?php if (!$isDossierClos): ?>
-                <section id="coordination-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
+                <section id="coordination-dossier" data-ath-quiet-scope="dossier-coordination-<?= (int) $id ?>" class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
                     <div class="border-b border-slate-100 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-6 py-5 text-white sm:px-8">
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300/90">Coordination</p>
                         <h2 class="mt-1 text-xl font-black tracking-tight text-white">Qui suit ce dossier<span class="text-emerald-400">?</span></h2>
@@ -461,7 +461,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                                     </div>
                                 </div>
                             <?php else: ?>
-                                <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/recruteur-volontariat'), ENT_QUOTES, 'UTF-8') ?>" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <form method="post" data-ath-quiet action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/recruteur-volontariat'), ENT_QUOTES, 'UTF-8') ?>" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <?= \App\Core\Csrf::field() ?>
                                     <p class="text-sm text-slate-600">Vous pouvez indiquer que vous êtes disponible pour suivre ce dossier.</p>
                                     <button type="submit" class="inline-flex min-h-[2.75rem] shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
@@ -1749,7 +1749,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
             <?php endif; ?>
 
         <?php if (!$isDossierClos): ?>
-        <section id="journal-dossier" class="scroll-mt-28 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm" aria-labelledby="journal-dossier-heading">
+        <section id="journal-dossier" data-ath-quiet-scope="dossier-journal-<?= (int) $id ?>" class="scroll-mt-28 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm" aria-labelledby="journal-dossier-heading">
             <div class="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 px-6 py-6 text-white sm:px-8">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
@@ -1890,7 +1890,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                                 <li><strong class="font-semibold text-slate-800">Où ce n’est pas visible :</strong> jamais sur le lien de suivi candidat, jamais par e-mail automatique au candidat.</li>
                             </ul>
                         </div>
-                        <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/timeline-comment'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-5">
+                        <form method="post" data-ath-quiet action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/timeline-comment'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-5">
                             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                             <div class="grid gap-5 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
                                 <div>

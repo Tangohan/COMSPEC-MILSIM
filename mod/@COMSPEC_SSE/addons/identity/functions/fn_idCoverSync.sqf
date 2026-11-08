@@ -1,0 +1,59 @@
+/*
+    Couverture née en jeu vers Athena (poste du joueur). Le compte relié au téléphone (jeton de jeu) dit à qui elle est :
+    le site n'écrit que pour ce compte, jamais d'après un Steam ID envoyé ici. Canal SubmitIdCheck de COMSPEC Link
+    (kind = cover_report, aucune nouvelle DLL ; contrat : docs/technical/ICD-ATHENA-ATAK.md, ICD-SSE-COVER-001).
+    Pas de clé d'idempotence : un site antérieur refuse ce genre (422) au lieu d'y voir un contrôle.
+    ["push", fiche]   envoie la fiche du joueur si elle est née en jeu (rien pour une couverture reçue d'Athena) et si son
+                      contenu a changé. Sans liaison ou en erreur : gardée sur le poste, nouvel essai 60 s plus tard au plus.
+    Résultat (jamais diffusé) : comspec_sse_idCoverSync, HashMap
+      state  sending | sent | unlinked | error | nolink   at  date Athena (UTC)   sig  contenu envoyé   tried  dernier essai
+    Les contacts et les papiers partent sans vérité de jeu : ni nature, ni vrai nom, ni cohérence.
+*/
+params [["_op", ""], ["_sheet", createHashMap]];
+if (!hasInterface || {_op isNotEqualTo "push"} || {(count _sheet) isEqualTo 0}) exitWith { false };
+if ((_sheet getOrDefault ["source", "local"]) isEqualTo "athena" || {!(_sheet getOrDefault ["prepared", false])}) exitWith { false };
+private _st = missionNamespace getVariable ["comspec_sse_idCoverSync", createHashMap];
+missionNamespace setVariable ["comspec_sse_idCoverSync", _st];
+if ((_st getOrDefault ["state", ""]) isEqualTo "sending" && {(time - (_st getOrDefault ["tried", -100])) < 60}) exitWith { false };
+private _ph = _sheet getOrDefault ["phone", createHashMap];
+private _cover = createHashMapFromArray [
+    ["name", _sheet getOrDefault ["name", ""]], ["dob", _sheet getOrDefault ["dob", ""]], ["pob", _sheet getOrDefault ["pob", ""]],
+    ["country", _sheet getOrDefault ["country", ""]], ["address", _sheet getOrDefault ["address", ""]], ["city", _sheet getOrDefault ["city", ""]],
+    ["profession", _sheet getOrDefault ["profession", ""]], ["employer", _sheet getOrDefault ["employer", ""]],
+    ["phone", _ph getOrDefault ["number", ""]], ["travel", _sheet getOrDefault ["travel", ""]], ["family", _sheet getOrDefault ["family", ""]],
+    ["contacts", _sheet getOrDefault ["contacts", []]],
+    ["docs", (_sheet getOrDefault ["docs", []]) apply { [_x select 0, _x select 1, _x select 2] }]
+];
+private _payload = createHashMapFromArray [
+    ["kind", "cover_report"], ["map", str (missionNamespace getVariable ["COMSPEC_MapId", 1])],
+    ["op", missionNamespace getVariable ["comspec_sse_id_opKey", ""]], ["cover", _cover]
+];
+private _json = [_payload] call comspec_sse_fnc_toJsonApprox;
+if ((_st getOrDefault ["state", ""]) isEqualTo "sent" && {(_st getOrDefault ["sig", ""]) isEqualTo _json}) exitWith { false };
+if ((_st getOrDefault ["sig", ""]) isEqualTo _json && {(time - (_st getOrDefault ["tried", -100])) < 60}) exitWith { false };
+_st set ["sig", _json];
+_st set ["tried", time];
+_st set ["state", "sending"];
+[_st, _json] spawn {
+    params ["_st", "_json"];
+    private _state = "nolink";
+    if (["has"] call comspec_sse_fnc_idAthenaPack) then {
+        private _parts = [];
+        for "_i" from 0 to ((count _json) - 1) step 4000 do { _parts pushBack (_json select [_i, 4000]); };
+        private _raw = ["SubmitIdCheck", _parts] call comspec_sse_fnc_extensionCall;
+        if !(_raw isEqualType "") then { _raw = str _raw; };
+        private _p = _raw splitString "|";
+        _state = "error";
+        if ((_p param [0, ""]) isEqualTo "OK") then {
+            // « saved;date » ou « unchanged;date » ; « unlinked » : clé de communauté seule, aucun compte relié.
+            private _ref = (_p param [2, ""]) splitString ";";
+            _state = ["sent", "unlinked"] select ((_ref param [0, ""]) isEqualTo "unlinked");
+            _st set ["at", _ref param [1, ""]];
+        } else {
+            if ((_p param [1, ""]) in ["unauthorized", "forbidden", "no_tenant"]) then { _state = "unlinked"; };
+        };
+    };
+    _st set ["state", _state];
+    ["act", "synced"] call comspec_sse_fnc_idCoverPage;
+};
+true

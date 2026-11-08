@@ -1,9 +1,9 @@
 /*
  * Atelier de traduction de l'ATAK natif (/traduire-atak, /traduire-atak/p/{pack}).
  * Modèle : GET /traduire-atak/modele.json ([clé, français, anglais, catégorie, fichier], tiré de
- * localisation/template/xx.txt et categories.json). Travail gardé sur l'appareil (localStorage) ou dans un pack
- * partagé (API /api/traduire-atak/packs : lien secret, pseudo libre, propositions, historique, synchronisation par
- * numéro de version). Vérifié à la frappe, puis mod fabriqué sur place : PBO (format BI, en-tête « prefix », SHA-1
+ * localisation/template/xx.txt et categories.json). Travail enregistré sur le compte (pack du compte, /api/traduire-atak/compte)
+ * ou dans un pack partagé (API /api/traduire-atak/packs : lien secret, pseudo libre, propositions, historique,
+ * synchronisation par numéro de version). L'appareil ne garde que ce que le serveur n'a pas encore confirmé. Vérifié à la frappe, puis mod fabriqué sur place : PBO (format BI, en-tête « prefix », SHA-1
  * final), mod.cpp, image d'aperçu, description Workshop, zip. Mêmes règles de fichier que tools/i18n.py (community)
  * et fn_langApply.sqf.
  */
@@ -447,9 +447,28 @@
     function saveLocal() {
         if (!validCode(S.meta.code)) { return; }
         if (S.pack && !S.pack.account) { return; }
+        if (S.pack) { keepUnconfirmed(); return; }
         var ok = storageSet(STORE2 + S.meta.code, JSON.stringify({ meta: S.meta, tr: S.tr, at: Date.now() }));
         storageSet(STORE2 + 'last', S.meta.code);
-        if (!S.pack) { setSync(ok ? tx('saved_local') : tx('save_failed'), ok ? 'ok' : 'bad'); }
+        if (!ok) { setSync(tx('save_failed'), 'bad'); return; }
+        // Compte connecté mais serveur injoignable : pas de succès annoncé, le travail n'est que sur cet appareil.
+        if (ACCOUNT) { setSync(tx('account_unavailable'), 'bad'); } else { setSync(tx('saved_local'), 'ok'); }
+    }
+    /**
+     * Pack du compte : le serveur fait foi. Sur l'appareil ne reste que ce qui n'est pas confirmé, repris à la prochaine
+     * ouverture ; une ancienne copie complète ramènerait des phrases effacées depuis un autre appareil.
+     * S.holdLocal : ancien travail local en cours d'envoi, il reste intact tant que l'envoi n'a pas réussi.
+     */
+    function keepUnconfirmed() {
+        if (S.holdLocal) { return; }
+        var left = {};
+        Object.keys(S.pending).forEach(function (h) { if (S.pending[h].text) { left[h] = S.pending[h].text; } });
+        if (Object.keys(left).length) {
+            storageSet(STORE2 + S.meta.code, JSON.stringify({ meta: S.meta, tr: left, at: Date.now() }));
+        } else {
+            storageDel(STORE2 + S.meta.code);
+            storageDel('comspec-atakt:v1:' + S.meta.code);
+        }
     }
     /** Travail local d'une langue : format v2 (clés), ou v1 (textes français) converti. */
     function loadLocal(code) {
@@ -577,6 +596,7 @@
             if (S.pending[h] !== p) { return; }
             if (p.text !== text) { flush(h); return; }
             delete S.pending[h];
+            if (S.pack && S.pack.account) { scheduleLocalSave(); }
             if (j.ok && j.suggested) {
                 S.rowState[h] = 'suggested';
                 // La proposition revient par la synchronisation ; on l'affiche tout de suite.
@@ -1571,13 +1591,7 @@
         if (saved) { setTranslations(saved.tr); }
         S.meta = { code: code, name: f.name.value.trim(), game: (saved && saved.meta && saved.meta.game) || GAME_BY_CODE[code] || '', author: (saved && saved.meta && saved.meta.author) || '' };
         if (ACCOUNT) {
-            ensureAccount().catch(function () {
-                S.pack = null;
-                saveLocal();
-                history.replaceState(null, '', PAGE + '?local=' + code);
-                showWorkspace();
-                setSync(tx('account_unavailable'), 'bad');
-            });
+            ensureAccount().catch(accountUnavailable);
             return;
         }
         saveLocal();
@@ -1680,25 +1694,47 @@
         MINE = MINE.filter(function (x) { return x.id !== p.id && x.code !== p.code; });
         MINE.unshift(p);
     }
+    /** Envoie au pack du compte ce que l'appareil a de plus, puis libère la copie locale (gardée si l'envoi échoue). */
+    function mergeIntoAccount(localTr) {
+        var missing = {};
+        Object.keys(localTr || {}).forEach(function (h) { if (localTr[h] && !S.tr[h]) { missing[h] = localTr[h]; } });
+        var sent = Object.keys(missing).length ? uploadAll(missing, false).then(function () { return openPack(true); }) : Promise.resolve();
+        return sent.then(function () {
+            S.holdLocal = false;
+            if (S.pack) { saveLocal(); }
+        });
+    }
     function openAccount(id) {
+        var mine = MINE.filter(function (p) { return p.id === id; })[0];
+        // Lu avant l'ouverture : la copie locale ne doit pas être remplacée avant d'avoir été comparée au serveur.
+        var saved = mine && validCode(mine.code) ? loadLocal(mine.code) : null;
+        S.holdLocal = !!saved;
         S.pack = newPackState(id, '', 'owner');
         S.pack.account = true;
         history.replaceState(null, '', PAGE + '?compte=' + encodeURIComponent(id));
         return openPack(true).then(function () {
             if (!S.pack || !validCode(S.meta.code)) { return; }
-            var saved = loadLocal(S.meta.code);
-            if (!saved || !saved.tr) { return; }
-            var missing = {};
-            Object.keys(saved.tr).forEach(function (h) { if (saved.tr[h] && !S.tr[h]) { missing[h] = saved.tr[h]; } });
-            if (!Object.keys(missing).length) { return; }
-            return uploadAll(missing, false).then(function () { return openPack(true); });
-        });
+            return mergeIntoAccount(saved ? saved.tr : {});
+        }).catch(function () { setSync(tx('account_unavailable'), 'bad'); });
+    }
+    var accountRetry = null;
+    /** Compte injoignable : le travail reste sur l'appareil, c'est dit clairement, et l'enregistrement est retenté. */
+    function accountUnavailable() {
+        S.pack = null;
+        S.holdLocal = false;
+        saveLocal();
+        history.replaceState(null, '', PAGE + '?local=' + S.meta.code);
+        showWorkspace();
+        setSync(tx('account_unavailable'), 'bad');
+        clearTimeout(accountRetry);
+        accountRetry = setTimeout(function () { ensureAccount().catch(accountUnavailable); }, 30000);
     }
     function ensureAccount() {
         return accountFetch('POST', { code: S.meta.code, name: S.meta.name, game: S.meta.game, author_label: S.meta.author }).then(function (j) {
             if (!j.ok) { throw new Error(apiError(j)); }
             var localTr = {};
             Object.keys(S.tr).forEach(function (h) { if (S.tr[h]) { localTr[h] = S.tr[h]; } });
+            S.holdLocal = Object.keys(localTr).length > 0;
             S.pack = newPackState(j.public_id, j.owner_token || '', 'owner');
             S.pack.account = true;
             if (j.edit_token) { S.pack.editToken = j.edit_token; }
@@ -1707,14 +1743,14 @@
             if (j.resumed) {
                 return openPack(true).then(function () {
                     if (!S.pack) { return; }
-                    var missing = {};
-                    Object.keys(localTr).forEach(function (h) { if (localTr[h] && !S.tr[h]) { missing[h] = localTr[h]; } });
-                    if (!Object.keys(missing).length) { return; }
-                    return uploadAll(missing, false).then(function () { return openPack(true); });
+                    return mergeIntoAccount(localTr);
                 });
             }
             if (Object.keys(localTr).length) {
-                return uploadAll(localTr, true).then(function () { return openPack(true); });
+                return uploadAll(localTr, true).then(function () { return openPack(true); }).then(function () {
+                    S.holdLocal = false;
+                    if (S.pack) { saveLocal(); }
+                });
             }
             showWorkspace();
             setSync(tx('saved_account'), 'ok');
@@ -1729,11 +1765,7 @@
             S.meta = { code: code, name: (saved2.meta && saved2.meta.name) || '', game: (saved2.meta && saved2.meta.game) || '', author: (saved2.meta && saved2.meta.author) || '' };
             setTranslations(saved2.tr);
             if (ACCOUNT && !q.get('new')) {
-                ensureAccount().catch(function () {
-                    S.pack = null;
-                    showWorkspace();
-                    setSync(tx('saved_local'), 'ok');
-                });
+                ensureAccount().catch(accountUnavailable);
                 return;
             }
             showWorkspace();

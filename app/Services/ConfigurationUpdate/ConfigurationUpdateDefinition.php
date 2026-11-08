@@ -32,5 +32,6 @@ final class ConfigurationUpdateDefinition
         public readonly int $sortOrder,
         public $isApplicable,
         public $isSatisfied,
+        public readonly bool $manualDone = false,
     ) {}
 }

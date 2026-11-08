@@ -19,7 +19,7 @@ use PDO;
  *   sont adressés (atak_report_routing_history). Lire un compte rendu reçu l'acquitte, comme dans l'ATAK.
  * - Tchat : canaux de la partie (atak_chat_messages) et messages privés cTab dont le joueur est l'auteur ou le
  *   destinataire. Les messages privés des autres ne sont jamais renvoyés.
- * - Rien d'autre : le jeu ne remonte ni SMS, ni état MPU5 détaillé, ni historique d'écoute musicale (voir unavailable()).
+ * - Radio et MPU5 : ce que le jeu joint à la position du joueur (voir mpuBoard()). Le jeu ne remonte ni SMS, ni maillage du téléphone, ni écoute musicale.
  * Toutes les lectures sont limitées à la communauté et à la partie du lien (tenant_id, map_id).
  */
 final class AtakMobileHistoryService
@@ -39,16 +39,73 @@ final class AtakMobileHistoryService
     }
 
     /**
-     * Ce que le jeu ne remonte pas (aucune donnée inventée) : intitulé, ce qu'il manque côté jeu.
+     * Page MPU5 : l'état du joueur et les MPU5 de son camp, tirés de ce que le jeu joint à chaque position.
+     * Camp inconnu ou joueur absent de la carte : aucun autre joueur n'est montré.
      *
-     * @return list<array{label: string, why: string}>
+     * @param list<array<string, mixed>> $units unités normalisées de la carte (AtakDataRepository::getUnits)
+     * @return array{me: array<string, mixed>|null, peers: list<array<string, mixed>>}
      */
-    public static function unavailable(): array
+    public static function mpuBoard(array $units, string $steamUid): array
     {
+        $me = null;
+        $mySide = '';
+        $steamUid = trim($steamUid);
+        foreach ($units as $u) {
+            $extra = is_array($u['extra'] ?? null) ? $u['extra'] : [];
+            $uid = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? $extra['player_uid'] ?? ''));
+            if ($steamUid !== '' && strcasecmp($uid, $steamUid) === 0 && (string) ($u['status'] ?? '') !== 'offline') {
+                $me = self::mpuRow($u, $extra);
+                $mySide = strtoupper(trim((string) ($extra['side'] ?? '')));
+                break;
+            }
+        }
+        $peers = [];
+        if ($me !== null && $mySide !== '') {
+            foreach ($units as $u) {
+                $extra = is_array($u['extra'] ?? null) ? $u['extra'] : [];
+                $uid = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? $extra['player_uid'] ?? ''));
+                if (
+                    strcasecmp($uid, $steamUid) === 0
+                    || (string) ($u['status'] ?? '') === 'offline'
+                    || strtoupper(trim((string) ($extra['side'] ?? ''))) !== $mySide
+                    || empty($extra['wr_mpu5'])
+                ) {
+                    continue;
+                }
+                $peers[] = self::mpuRow($u, $extra);
+            }
+        }
+
+        return ['me' => $me, 'peers' => $peers];
+    }
+
+    /**
+     * @param array<string, mixed> $unit
+     * @param array<string, mixed> $extra
+     * @return array<string, mixed>
+     */
+    private static function mpuRow(array $unit, array $extra): array
+    {
+        $tg = $extra['wr_tg'] ?? null;
+
         return [
-            ['label' => 'SMS entre joueurs', 'why' => 'Les SMS passent de téléphone en téléphone dans le jeu. Aucun n’est transmis à Athena, il n’y a donc rien à afficher.'],
-            ['label' => 'Radio MPU5', 'why' => 'Le jeu indique seulement si un joueur porte une MPU5. Les canaux, les fréquences et qui émet ne sont pas transmis à Athena.'],
-            ['label' => 'Lecteur de musique', 'why' => 'Athena connaît la bibliothèque et le nombre d’écoutes par morceau, pas ce que vous avez écouté ni quand.'],
+            'callsign' => (string) ($unit['call_sign'] ?? ''),
+            'link' => match ((string) ($unit['status'] ?? '')) {
+                'linked' => 'En liaison',
+                'delayed' => 'Retardée',
+                default => '',
+            },
+            'radio_module' => !empty($extra['radio_module']),
+            'radio_net' => (string) ($extra['radio_net'] ?? ''),
+            'radio_channel' => (string) ($extra['radio_channel'] ?? ''),
+            'latency_ms' => is_numeric($extra['latency_ms'] ?? null) ? (int) $extra['latency_ms'] : null,
+            'packet_loss' => is_numeric($extra['packet_loss'] ?? null) ? (float) $extra['packet_loss'] : null,
+            'mpu' => !empty($extra['wr_mpu5']),
+            'node' => (string) ($extra['wr_node'] ?? ''),
+            'freq' => (string) ($extra['wr_freq'] ?? ''),
+            'tg' => is_numeric($tg) && (int) $tg >= 0 ? (string) (int) $tg : '',
+            'gateway' => !empty($extra['wr_gateway']),
+            'bridge' => !empty($extra['wr_bridge']),
         ];
     }
 

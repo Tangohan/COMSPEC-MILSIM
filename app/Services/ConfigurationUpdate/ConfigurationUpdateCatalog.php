@@ -17,6 +17,48 @@ final class ConfigurationUpdateCatalog
      */
     public function definitions(): array
     {
+        return [...$this->historicalDefinitions(), ...$this->releaseDefinitions()];
+    }
+
+    /**
+     * Étapes déclarées par version dans config/configuration_release_steps.php, terminées par le responsable.
+     *
+     * @return list<ConfigurationUpdateDefinition>
+     */
+    private function releaseDefinitions(): array
+    {
+        $p = $this->probes;
+        $out = [];
+        foreach (require dirname(__DIR__, 3) . '/config/configuration_release_steps.php' as $i => $step) {
+            $out[] = new ConfigurationUpdateDefinition(
+                code: $step['code'],
+                title: $step['title'],
+                description: $step['description'],
+                level: $step['level'],
+                configurePath: $step['path'],
+                estimateMinutes: $step['minutes'],
+                dismissible: true,
+                blocking: false,
+                dependsOn: [],
+                sortOrder: 200 + (int) $i,
+                isApplicable: match ($step['applies']) {
+                    'atak' => static fn (int $tenantId): bool => $p->atakApplicable($tenantId),
+                    'sse' => static fn (int $tenantId): bool => $p->ssePortalApplicable($tenantId),
+                    default => static fn (int $tenantId): bool => true,
+                },
+                isSatisfied: static fn (int $tenantId): bool => false,
+                manualDone: true,
+            );
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<ConfigurationUpdateDefinition>
+     */
+    private function historicalDefinitions(): array
+    {
         $p = $this->probes;
 
         return [

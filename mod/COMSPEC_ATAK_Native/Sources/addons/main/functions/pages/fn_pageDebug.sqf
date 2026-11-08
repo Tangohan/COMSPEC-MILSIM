@@ -14,7 +14,7 @@ private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getV
 private _meshDev = ["allowed"] call comspec_atak_native_fnc_devMesh;
 if (_tab isEqualTo "MESH" && {!_meshDev}) then { _tab = "LOG"; };
 // Onglets soulignés (composant « tabs » du système de design 3.1.0).
-private _rows = [["tabs", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["PERFS", "PERF"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn] + ([[], [["MAILLAGE", "MESH"] call _tabBtn]] select _meshDev)]];
+private _rows = [["tabs", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["PERFS", "PERF"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn, ["DÉGÂTS", "DMG"] call _tabBtn] + ([[], [["MAILLAGE", "MESH"] call _tabBtn]] select _meshDev)]];
 private _lvlColor = { params ["_v"]; switch (_v) do { case "ERROR": { (COMSPEC_ATAK_Th get "hexAlert") }; case "WARN"; case "WARNING": { (COMSPEC_ATAK_Th get "hexWarn") }; case "DEBUG": { (COMSPEC_ATAK_Th get "hexTextMuted") }; default { (COMSPEC_ATAK_Th get "hexTextMuted") }; } };
 // Journal fusionné : natif [t, niveau, module, message] et Overwatch « t [COMSPEC Overwatch][NIV][Canal] message ».
 private _merged = {
@@ -95,6 +95,32 @@ switch (_tab) do {
             ["info", "Dégâts / débit / apps civiles", format ["%1 / %2 / %3", ["comspec_atak_native_damage_sim", true] call _q, ["comspec_atak_native_net_sim", true] call _q, ["comspec_atak_native_civil_apps", true] call _q]],
             ["info", "Téléphone", (([] call comspec_atak_native_fnc_deviceHealth) get "state") + format [" · batterie %1 %%", round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100])]],
             ["info", "FPS / joueurs", format ["%1 / %2", round diag_fps, count allPlayers]]
+        ];
+    };
+    // Aperçu des calques de dégâts, un par un ou tous : rien n'est écrit sur l'état du téléphone (fn_screenFx).
+    case "DMG": {
+        private _all = [];
+        { _x params ["_nm", "_n"]; for "_v" from 0 to (_n - 1) do { _all pushBack [_nm, _v]; }; } forEach [["g_bullet", 3], ["g_web", 2], ["g_corner", 2], ["g_chips", 2], ["g_scratch", 3], ["l_vlines", 2], ["l_hlines", 2], ["l_band", 2], ["l_pixels", 2], ["l_ink", 3], ["tint", 3], ["flicker", 1], ["shake", 2]];
+        uiNamespace setVariable ["COMSPEC_ATAK_DmgAll", _all];
+        private _cur = uiNamespace getVariable ["COMSPEC_ATAK_DmgIdx", -1];
+        private _set = { params ["_i"]; compile format ["uiNamespace setVariable ['COMSPEC_ATAK_DmgIdx', %1]; [%1] call (uiNamespace getVariable 'COMSPEC_ATAK_DmgShow');", _i] };
+        uiNamespace setVariable ["COMSPEC_ATAK_DmgShow", {
+            params ["_i"];
+            private _list = uiNamespace getVariable ["COMSPEC_ATAK_DmgAll", []];
+            uiNamespace setVariable ["COMSPEC_ATAK_DmgPreview", switch (true) do { case (_i isEqualTo -2): { _list select { (_x select 1) isEqualTo 0 } }; case (_i < 0): { [] }; default { [_list select (_i mod (count _list))] }; }];
+            [] call comspec_atak_native_fnc_deviceOverlay;
+            [{ ["DEBUG"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+        }];
+        private _n = count _all;
+        _rows append [
+            ["section", "Calques de dégâts", format ["%1 motifs : aperçu seulement, le téléphone n'est pas abîmé ; quitter Debug retire l'aperçu", _n]],
+            ["info", "Affiché", switch (true) do { case (_cur isEqualTo -2): { "tous (variante 0)" }; case (_cur < 0): { "aucun" }; default { format ["%1 %2 (%3/%4)", (_all select (_cur mod _n)) select 0, (_all select (_cur mod _n)) select 1, (_cur mod _n) + 1, _n] }; }],
+            ["buttons", [
+                ["PRÉCÉDENT", [((_cur max 0) + _n - 1) mod _n] call _set],
+                ["SUIVANT", [((_cur max -1) + 1) mod _n] call _set, true],
+                ["TOUS", [-2] call _set],
+                ["AUCUN", [-1] call _set]
+            ]]
         ];
     };
     case "DLL": {

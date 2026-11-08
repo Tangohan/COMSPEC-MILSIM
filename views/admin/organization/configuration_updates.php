@@ -56,6 +56,13 @@ $renderRow = static function (array $item, bool $canManage, string $mode) use ($
                         <input type="hidden" name="code" value="<?= $code ?>">
                         <button type="submit" class="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800">Configurer</button>
                     </form>
+                    <?php if (!empty($item['manual_done'])): ?>
+                    <form method="post" action="<?= htmlspecialchars(url('back-office/mise-a-niveau/terminer'), ENT_QUOTES, 'UTF-8') ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <input type="hidden" name="code" value="<?= $code ?>">
+                        <button type="submit" class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">C’est fait</button>
+                    </form>
+                    <?php endif; ?>
                     <?php if (!empty($item['dismissible'])): ?>
                     <form method="post" action="<?= htmlspecialchars(url('back-office/mise-a-niveau/ignorer'), ENT_QUOTES, 'UTF-8') ?>">
                         <?= \App\Core\Csrf::field() ?>
