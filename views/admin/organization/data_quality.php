@@ -22,6 +22,15 @@ $csrfToken = (string) ($csrfToken ?? '');
 /** @var list<array<string, mixed>> $missingMediaUsers */
 $missingMediaUsers = is_array($missingMediaUsers ?? null) ? array_values($missingMediaUsers) : [];
 
+/** @var array<string, mixed> $storage */
+$storage = is_array($storage ?? null) ? $storage : [];
+$storageSets = is_array($storage['sets'] ?? null) ? $storage['sets'] : [];
+$storageShared = is_array($storage['shared_files'] ?? null) ? $storage['shared_files'] : [];
+$storageTotal = (int) ($storage['total_bytes'] ?? 0);
+$canPurge = !empty($canPurge);
+$confirmWord = (string) ($confirmWord ?? 'SUPPRIMER');
+$fmtBytes = static fn (int $b): string => \App\Services\Platform\PlatformStorageService::formatBytes($b);
+
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $reasonLabels = [];
@@ -108,6 +117,7 @@ $nav = [
     ['id' => 'mouvements', 'icon' => 'moves', 'title' => 'Mouvements', 'count' => count($movements)],
     ['id' => 'corbeille', 'icon' => 'trash', 'title' => 'Corbeille des postes', 'count' => count($trash)],
     ['id' => 'versions', 'icon' => 'versions', 'title' => 'Versions de l’ORBAT', 'count' => count($snapshots)],
+    ['id' => 'stockage', 'icon' => 'archive', 'title' => 'Espace et données du jeu', 'count' => count($storageSets)],
     ['id' => 'photos', 'icon' => 'camera', 'title' => 'Photos perdues', 'count' => count($missingMediaUsers), 'tone' => $missingMediaUsers !== [] ? 'warn' : null],
     ['id' => 'reperes', 'icon' => 'model', 'title' => 'Modèle des données'],
 ];
@@ -469,6 +479,44 @@ $nav = [
                 </div>
             </section>
 
+            <!-- Espace utilisé par la communauté, téléchargement et suppression -->
+            <section class="bo-dq-section" id="dq-stockage" data-dq-section="stockage">
+                <header class="bo-dq-section__head">
+                    <span class="bo-dq-section__icon"><?= $icon('archive') ?></span>
+                    <div>
+                        <h2 class="bo-dq-section__title">Espace et données du jeu</h2>
+                        <p class="bo-dq-section__lead">Ce que votre communauté occupe sur le serveur : photos remontées du jeu et données de renseignement. Vous pouvez tout télécharger puis supprimer ; seules les données de votre communauté sont concernées.</p>
+                    </div>
+                </header>
+                <p class="bo-dq-section__lead"><strong><?= $h($fmtBytes($storageTotal)) ?></strong> au total, dont <?= $h($fmtBytes((int) ($storageShared['bytes'] ?? 0))) ?> de fichiers partagés (<?= (int) ($storageShared['count'] ?? 0) ?> fichier(s), à gérer dans la page Fichiers).</p>
+                <ul class="bo-dq-trash">
+                    <?php foreach ($storageSets as $set):
+                        $setKey = (string) ($set['key'] ?? '');
+                        $setBytes = (int) ($set['bytes'] ?? 0);
+                        $pct = $storageTotal > 0 ? (int) round($setBytes * 100 / $storageTotal) : 0;
+                    ?>
+                    <li class="bo-dq-trash__item">
+                        <div class="bo-dq-trash__body">
+                            <p class="bo-dq-trash__title"><?= $h((string) ($set['title'] ?? '')) ?></p>
+                            <p class="bo-dq-trash__meta"><span><?= (int) ($set['rows'] ?? 0) ?> élément(s)</span><span><?= (int) ($set['files'] ?? 0) ?> fichier(s)</span><span><?= $h($fmtBytes($setBytes)) ?></span></p>
+                            <p class="bo-dq-section__lead"><?= $h((string) ($set['blurb'] ?? '')) ?></p>
+                            <progress max="100" value="<?= $pct ?>" aria-label="Part de l’espace utilisé"></progress>
+                        </div>
+                        <form method="post" action="<?= $h(url('back-office/organisation/qualite-donnees/donnees/' . $setKey . '/telecharger')) ?>">
+                            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                            <button type="submit" class="ath-btn"<?= (int) ($set['rows'] ?? 0) < 1 ? ' disabled' : '' ?>>Télécharger</button>
+                        </form>
+                        <?php if ($canPurge): ?>
+                        <button type="button" class="ath-btn" data-dq-purge="<?= $h($setKey) ?>" data-title="<?= $h((string) ($set['title'] ?? '')) ?>" data-rows="<?= (int) ($set['rows'] ?? 0) ?>" data-files="<?= (int) ($set['files'] ?? 0) ?>" data-size="<?= $h($fmtBytes($setBytes)) ?>"<?= (int) ($set['rows'] ?? 0) < 1 ? ' disabled' : '' ?>>Supprimer</button>
+                        <?php endif; ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php if (!$canPurge): ?>
+                <p class="bo-dq-section__lead">La suppression demande un droit particulier, à cocher dans Accès.</p>
+                <?php endif; ?>
+            </section>
+
             <!-- Photos perdues (fichiers absents du disque) -->
             <section class="bo-dq-section" id="dq-photos" data-dq-section="photos">
                 <header class="bo-dq-section__head">
@@ -536,4 +584,20 @@ $nav = [
         </div>
     </div>
 </div>
+<?php if ($canPurge): ?>
+<dialog class="bo-dq-modal" data-dq-modal aria-labelledby="dq-modal-title">
+    <form method="post" data-dq-modal-form action="">
+        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+        <h2 id="dq-modal-title" class="bo-dq-section__title">Supprimer <span data-dq-modal-name></span> ?</h2>
+        <p class="bo-dq-section__lead"><span data-dq-modal-count></span> seront effacés définitivement du serveur. Téléchargez d’abord une copie si vous en avez besoin. L’action est inscrite au journal d’audit.</p>
+        <label>Pour confirmer, tapez <strong translate="no"><?= $h($confirmWord) ?></strong>
+            <input type="text" name="confirm" autocomplete="off" required pattern="<?= $h($confirmWord) ?>">
+        </label>
+        <div class="bo-dq-modal__actions">
+            <button type="button" class="ath-btn" data-dq-modal-cancel>Annuler</button>
+            <button type="submit" class="ath-btn ath-btn--danger">Supprimer définitivement</button>
+        </div>
+    </form>
+</dialog>
+<?php endif; ?>
 <script src="<?= $h(asset_url('assets/js/back-office-data-quality.js')) ?>" defer></script>

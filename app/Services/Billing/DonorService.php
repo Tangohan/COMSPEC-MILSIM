@@ -172,6 +172,31 @@ final class DonorService
     }
 
     /**
+     * Comptes dont le badge peut être montré au public (pur) : seulement les donateurs visibles sur le mur,
+     * c'est-à-dire ni masqués ni issus d'un don saisi sans accord de publication.
+     *
+     * @param array<string, array<string, mixed>> $donors donorsFromLedger() avec user_ids complétés
+     * @param list<string> $hidden e-mails masqués
+     * @return array<int, string> id de compte => palier
+     */
+    public static function publicUserTiers(array $donors, array $hidden): array
+    {
+        $out = [];
+        foreach ($donors as $d) {
+            if (empty($d['public']) || ($d['email'] !== '' && in_array($d['email'], $hidden, true))) {
+                continue;
+            }
+            foreach ($d['user_ids'] as $uid) {
+                if ((int) $uid > 0) {
+                    $out[(int) $uid] = (string) $d['tier'];
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Communautés qui soutiennent Athena (pur) : formule payée en cours, cœur validé depuis moins d'un an, dons rattachés.
      *
      * @param list<array<string, mixed>> $ledger
@@ -272,6 +297,7 @@ final class DonorService
             'tenant_slugs' => array_map('strval', is_array($data['tenant_slugs'] ?? null) ? $data['tenant_slugs'] : []),
             'communities' => array_values(array_filter(is_array($data['communities'] ?? null) ? $data['communities'] : [], 'is_array')),
             'board' => is_array($data['board'] ?? null) ? $data['board'] : [],
+            'public_users' => array_map('strval', is_array($data['public_users'] ?? null) ? $data['public_users'] : []),
             'updated_at' => (string) ($data['updated_at'] ?? ''),
         ];
     }
@@ -282,6 +308,20 @@ final class DonorService
         $t = self::cached()['users'][$userId] ?? null;
 
         return is_string($t) && $t !== '' ? $t : null;
+    }
+
+    /** Palier du compte uniquement s'il accepte d'être vu du public (voir publicUserTiers), sinon null. */
+    public static function publicUserTier(int $userId): ?string
+    {
+        $t = self::cached()['public_users'][$userId] ?? null;
+
+        return is_string($t) && $t !== '' ? $t : null;
+    }
+
+    /** Marque « donateur » pour une page publique : vide si la personne n'est pas visible sur le mur. */
+    public static function publicMark(int $userId): string
+    {
+        return self::publicUserTier($userId) !== null ? self::mark($userId, true) : '';
     }
 
     /** Type de soutien d'une communauté (plan | heart | donation), ou null. */
@@ -300,7 +340,7 @@ final class DonorService
 
     /**
      * Correspondances pour la décoration côté navigateur (public/assets/js/donor-marks.js) :
-     * ids de comptes, slugs de fiche de la communauté courante, communautés soutien. Aucune donnée personnelle.
+     * donateurs visibles seulement (ids, slugs de fiche de la communauté courante), communautés soutien.
      *
      * @return array{u: array<string, string>, s: array<string, string>, t: array<string, string>, ts: array<string, string>}
      */
@@ -316,11 +356,30 @@ final class DonorService
         }
 
         return [
-            'u' => array_map('strval', array_combine(array_map('strval', array_keys($c['users'])), $c['users']) ?: []),
+            'u' => array_map('strval', array_combine(array_map('strval', array_keys($c['public_users'])), $c['public_users']) ?: []),
             's' => array_map('strval', $slugs),
             't' => array_map('strval', array_combine(array_map('strval', array_keys($c['tenants'])), $c['tenants']) ?: []),
             'ts' => $ts,
         ];
+    }
+
+    /**
+     * Slugs de fiche par communauté, pour les seuls donateurs visibles (pur).
+     *
+     * @param array<int, array{slug: string, tenant_id: int}> $profiles
+     * @param array<int, string> $publicUsers publicUserTiers()
+     * @return array<int, array<string, string>>
+     */
+    public static function publicSlugs(array $profiles, array $publicUsers): array
+    {
+        $out = [];
+        foreach ($profiles as $uid => $p) {
+            if ($p['slug'] !== '' && $p['tenant_id'] > 0 && isset($publicUsers[$uid])) {
+                $out[$p['tenant_id']][$p['slug']] = $publicUsers[$uid];
+            }
+        }
+
+        return $out;
     }
 
     /** Choix d'apparaître ou non sur le mur public (par e-mail, donc pour toutes les communautés). */
@@ -416,15 +475,9 @@ final class DonorService
             $tenants[$tid] = $s['kind'];
         }
         $profiles = [];
-        $slugs = [];
         $tenantSlugs = [];
         try {
             $profiles = $this->ledger()->profilesForUserIds(array_keys($users));
-            foreach ($profiles as $uid => $p) {
-                if ($p['slug'] !== '' && $p['tenant_id'] > 0 && isset($users[$uid])) {
-                    $slugs[$p['tenant_id']][$p['slug']] = $users[$uid];
-                }
-            }
             $tenantSlugs = $this->ledger()->tenantSlugs(array_keys($tenants));
         } catch (\Throwable) {
         }
@@ -434,13 +487,15 @@ final class DonorService
             }
         }
         unset($d);
+        $publicUsers = self::publicUserTiers($donors, $o['hidden']);
         $payload = [
             'users' => $users,
             'tenants' => $tenants,
-            'slugs' => $slugs,
+            'slugs' => self::publicSlugs($profiles, $publicUsers),
             'tenant_slugs' => $tenantSlugs,
             'communities' => self::communitiesFromLedger($ledger, $tenants),
             'board' => self::boardFromDonors($donors, $o['hidden'], $profiles),
+            'public_users' => $publicUsers,
             'updated_at' => gmdate('c'),
         ];
         $dir = dirname(self::cachePath());
