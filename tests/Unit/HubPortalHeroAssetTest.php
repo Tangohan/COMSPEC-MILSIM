@@ -23,10 +23,7 @@ final class HubPortalHeroAssetTest extends TestCase
         self::assertStringContainsString('announce_tiles.php', $hub);
         self::assertStringContainsString('hub_announce_items', $ctrl);
         self::assertStringContainsString('AlertPresentationService', $ctrl);
-        self::assertMatchesRegularExpression(
-            "/url\\('dashboard'\\)\\s*\\?>[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
-            $home
-        );
+        // Depuis 31e3970e2, la barre du haut de l'accueil est celle du layout marketing : le lien « Ops » vers le tableau de bord y est vérifié plus bas.
         self::assertDoesNotMatchRegularExpression(
             "/url\\('hub'\\)\\s*\\?>[^>]*>\\s*<\\?= htmlspecialchars\\(__\\('common\\.ops'\\)/",
             $home

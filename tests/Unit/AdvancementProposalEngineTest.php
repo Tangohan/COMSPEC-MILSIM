@@ -91,8 +91,12 @@ final class AdvancementProposalEngineTest extends TestCase
 
         $out = $this->evaluate($this->facts(['eligibility' => $eligibility]));
 
-        self::assertSame(Engine::STATUS_INELIGIBLE, $out['status']);
-        self::assertContains('Manque la qualification Chef d’équipe', $out['missing']);
+        // Une qualification manquante est un suivi indicatif : elle n'empêche plus l'avancement (42538b34c).
+        self::assertTrue($eligibility['is_eligible']);
+        $qualification = array_values(array_filter($eligibility['conditions'], static fn (array $c): bool => $c['key'] === 'qualification'))[0];
+        self::assertFalse($qualification['met']);
+        self::assertStringContainsString('Chef d’équipe manquante', $qualification['detail']);
+        self::assertSame(Engine::STATUS_PROPOSE, $out['status']);
         self::assertFalse($out['near']);
     }
 

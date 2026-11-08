@@ -82,6 +82,8 @@ final class AtakAerialAssetTest extends TestCase
         self::assertStringContainsString("\$pr(571, '2026-09-14'", $catalog);
         self::assertStringContainsString("\$pr(568, '2026-09-14'", $catalog);
         self::assertStringContainsString('photo aérienne', strtolower($catalog));
-        self::assertStringNotContainsString('webp', strtolower(explode('$pr(567,', $catalog)[0]));
+        // Seuls les bulletins 571 à 568 (photo aérienne) sont contrôlés : les bulletins plus récents peuvent citer webp pour d'autres sujets.
+        $aerial = explode('$pr(567,', explode('$pr(571,', $catalog, 2)[1], 2)[0];
+        self::assertStringNotContainsString('webp', strtolower($aerial));
     }
 }

@@ -109,11 +109,11 @@ final class PlatformIntegrationSettingsTest extends TestCase
         self::assertStringNotContainsString('PlatformIntegrationSettings', $orgController);
         self::assertStringNotContainsString('/back-office/integrations/plateforme/', $routes);
 
-        foreach (['', '/discord', '/discord/essai', '/roles-lies', '/emails', '/emails/essai'] as $path) {
+        foreach (['', '/companion', '/discord', '/discord/essai', '/roles-lies', '/emails', '/emails/essai'] as $path) {
             self::assertStringContainsString("'/admin/system/integrations" . $path . "', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class", $routes);
         }
-        self::assertSame(6, substr_count($routes, "SystemPlatformIntegrationsController::class, '"));
-        self::assertSame(6, preg_match_all('#SystemPlatformIntegrationsController::class, \'\w+\'\], \[AuthMiddleware::class, SystemAdminMiddleware::class\]#', $routes));
+        self::assertSame(7, substr_count($routes, "SystemPlatformIntegrationsController::class, '"));
+        self::assertSame(7, preg_match_all('#SystemPlatformIntegrationsController::class, \'\w+\'\], \[AuthMiddleware::class, SystemAdminMiddleware::class\]#', $routes));
         self::assertStringContainsString("'admin/system/integrations'", $sidebar);
         self::assertFileExists($root . '/views/admin/system/platform_integrations.php');
         self::assertFileExists($root . '/public/assets/js/back-office-integrations.js');
