@@ -38,9 +38,9 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## Prochaine version : fiche joueur unique, carte, Groupe et BFT plus directs (numéro attribué à la livraison)
+## À venir : fiche joueur unique, carte, Groupe et BFT plus directs (ATAK natif, version à attribuer)
 
-### Résumé joueur
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : Une seule fiche joueur partout, et la carte ne saute plus quand on touche un équipier
 - Les actions sur un joueur (carte, y aller, SMS, vibrer, ping, caméra, suivre) ont le même nom et le même ordre sur la carte, dans le BFT et dans Groupe.
@@ -56,6 +56,41 @@ EN : One player card everywhere, and the map no longer jumps when you touch a te
 - `fn_bftAction` : CARTE pose `selectedEntity` ; `fn_pageRender` : titre « ‹ BFT · CARTE » ; `config.cpp` : `Bft` au dock.
 - `fn_groupAction` : `rally` (un seul `netSend` vers tous les téléphones), `smsGroup`, `frameGroup` ; CHEF retiré des lignes, passage du commandement en deux temps dans la fiche.
 - Coût par image : aucun ajout sur ces écrans.
+## À venir : fond de carte ARDOISE et style tactique des marqueurs et traits (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Carte : nouveau fond ARDOISE et style tactique des marqueurs
+- Réglages › Carte : le fond ARDOISE donne une carte bleu-gris sombre, avec une mer très sombre, des routes turquoise fines, des courbes de niveau discrètes et les noms de villes en petites capitales avec un point turquoise.
+- Marqueurs et traits, avec trois choix (AUTO, TACTIQUE, STANDARD) : pions ronds avec lettre d'équipe et triangle de direction, petites plaques de nom, routes orange épaisses, zones hachurées, mesure en tirets verts avec sa distance et cercle fin autour des marqueurs nommés.
+- AUTO allume ce style sur le fond ARDOISE. Les autres fonds de carte et les thèmes SOMBRE, JOUR et NUIT JVN ne changent pas.
+- Les marqueurs à couleur « par défaut » ne sont plus noirs sur la carte : ils reprennent la couleur de leur symbole, sur tous les fonds.
+- Ton point, son cercle de précision et tes cercles du maillage sont dessinés au même endroit, à pied comme en véhicule. La perte de signal et la météo agissent toujours sur le GPS.
+- Carte : maintiens le clic gauche pour pointer. Ton camp voit ton pointeur et ton nom, qui disparaissent quand tu relâches.
+- Carte : le relèvement du curseur donne aussi la direction (« 254 m · 129° SE »). Un marqueur posé sans nom s'appelle maintenant « REP 3 », modifiable à la pose et après, et ne dit plus le type d'unité.
+- App Routes : chaque route de la liste a maintenant PARTAGER et SUPPRIMER. Une route supprimée ne revient plus chez ceux qui l'ont reçue.
+EN : Map: new SLATE background and tactical marker style
+- Settings › Map: the SLATE background gives a dark blue-grey map, with a very dark sea, thin turquoise roads, discreet contour lines and town names in small capitals with a turquoise dot.
+- Markers and lines, with three choices (AUTO, TACTICAL, STANDARD): round pawns with a team letter and direction triangle, small name plates, thick orange routes, hatched zones, a green dashed measuring line with its distance and a thin circle around named markers.
+- AUTO turns this style on with the SLATE background. The other map backgrounds and the DARK, DAY and NIGHT NVG themes do not change.
+- Markers with the “default” colour are no longer black on the map: they take the colour of their symbol, on every background.
+- Your point, its accuracy circle and your mesh circles are drawn at the same place, on foot as in a vehicle. Signal loss and weather still affect the GPS.
+- Map: hold the left mouse button to point. Your side sees your pointer and name, which disappear when you release.
+- Map: the cursor bearing also gives the direction (“254 m · 129° SE”). A marker placed without a name is now called “MK 3”, editable when placing and afterwards, and no longer states the unit type.
+- Routes app: every route in the list now has SHARE and DELETE. A deleted route no longer comes back for those who received it.
+
+### Détail technique
+- Quatrième contrôle carte `COMSPEC_RscMapAtakSlate` (IDC 88534) : les couleurs d'une carte Arma ne se règlent que dans la classe. Écran sans ce contrôle (tablette JPC) : carte topo sous un voile bleu-gris.
+- Moteur : aucune couleur de contrôle pour les bâtiments ni le relief ombré ; noms marins et symboles de sommets colorés par `CfgLocationTypes`, donc inchangés.
+- Style : `COMSPEC_ATAK_MapDrawStyle` lu une fois dans la palette (`fn_mapColors`, clé « tac »). Hachures par la brosse `BDiagonal` du moteur dans `drawRectangle` / `drawEllipse` ; triangle de direction par rotation de texture ; largeur de la plaque de mesure sans nouvelle mesure de texte ; lettre du pion dans le cache d'une seconde de l'unité.
+- Icônes noires : `CfgMarkerColors >> Default` vaut `{0,0,0,1}`, couleur lue telle quelle ; `fn_markerColor` prend alors la couleur du type (CfgMarkers). Présent depuis 2.9.40.
+- Position affichée unique : `fn_gpsPos` (position visuelle), posée en tête de `fn_mapOnDraw` ; cercles de nœud et de passerelle (`fn_meshDraw`) sur le point affiché au lieu de `getPosWorld`.
+- Pointage : appui comparé en écran à `getMousePosition` (la position vue par `MouseMoving` était périmée dès que la carte bougeait sans la souris) ; pointeur à 4 envois par seconde au plus au lieu d'un ping de 10 s.
+- Routes : retrait immédiat au moment de la suppression, révision envoyée avec le retrait, révision relevée au repartage.
+- « armée » en double : texte natif du contrôle carte (`CfgLocationTypes`), non modifié.
+- Polygones des plans de zones sans hachure, polylignes de mission à un pixel : inchangés, pour le coût de dessin et faute de test en jeu de `drawTriangle` texturé.
+
+---
 
 ## Pack 4.0.0 Washington : nouveaux objets, réseau plus réaliste, interface refaite, app C2 retirée (ATAK natif 4.0.0.AG - Washington, COMSPEC Link 2.0.120)
 
