@@ -28,8 +28,8 @@ final class Document
         if (isset($doc['render'])) {
             $r = $doc['render'];
             if (!is_array($r)) self::fail('Réglages de rendu invalides.');
-            self::keys($r, ['lightAngle','lightElevation','lightIntensity','relief','contactShadow','quality']);
-            self::optionalNumbers($r, ['lightAngle'=>[-360,360], 'lightElevation'=>[10,90], 'lightIntensity'=>[0,1], 'relief'=>[0,2], 'contactShadow'=>[0,1]]);
+            self::keys($r, ['lightAngle','lightElevation','lightIntensity','relief','contactShadow','quality','nvGain','nvContrast']);
+            self::optionalNumbers($r, ['lightAngle'=>[-360,360], 'lightElevation'=>[10,90], 'lightIntensity'=>[0,1], 'relief'=>[0,2], 'contactShadow'=>[0,1], 'nvGain'=>[0.5,3], 'nvContrast'=>[0.5,2]]);
             if (isset($r['quality'])) self::enum($r['quality'], ['draft','high']);
         }
         if (!is_array($doc['variants'] ?? null) || !isset($doc['variants']['standard'])) self::fail('Composition standard requise.');

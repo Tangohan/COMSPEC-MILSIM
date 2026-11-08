@@ -24,6 +24,146 @@ final class TenantMemberNumberService
     /** Caractères autorisés : alphanumériques, tiret, slash, underscore, point. */
     private const ALLOWED_PATTERN = '/^[A-Za-z0-9][A-Za-z0-9\/\-_\.]*$/';
 
+    /**
+     * Modèles prêts à choisir : nom lisible, explication courte et format du matricule.
+     * Le même catalogue sert à la communauté (règles) et à chaque unité.
+     *
+     * @return array<string, array{label: string, help: string, pattern: string}>
+     */
+    public static function templates(): array
+    {
+        return [
+            'simple' => ['label' => 'Préfixe et numéro', 'help' => 'Le plus courant : un préfixe de votre choix puis un numéro sur 4 chiffres.', 'pattern' => '{PREFIX}-{NUMBER:4}'],
+            'annee' => ['label' => 'Préfixe, année et numéro', 'help' => 'Ajoute l’année d’attribution, pratique pour repérer l’ancienneté.', 'pattern' => '{PREFIX}-{YEAR}-{NUMBER:3}'],
+            'annee_courte' => ['label' => 'Année courte et numéro', 'help' => 'Deux chiffres d’année puis le numéro, sans préfixe.', 'pattern' => '{YEAR:2}-{NUMBER:4}'],
+            'unite' => ['label' => 'Code d’unité et numéro', 'help' => 'Le code de l’unité du membre ouvre le matricule. Sans unité ou sans code, il est simplement omis.', 'pattern' => '{UNIT}-{NUMBER:3}'],
+            'unite_grade' => ['label' => 'Unité, grade et numéro', 'help' => 'Code d’unité et grade du membre, puis le numéro.', 'pattern' => '{UNIT}-{GRADE}-{NUMBER:3}'],
+            'communaute_unite' => ['label' => 'Communauté, unité et numéro', 'help' => 'Nom court de la communauté, code d’unité, puis le numéro.', 'pattern' => '{TENANT}/{UNIT}/{NUMBER:3}'],
+            'communaute' => ['label' => 'Communauté et numéro', 'help' => 'Nom court de la communauté puis le numéro.', 'pattern' => '{TENANT}/{NUMBER:4}'],
+            'numero' => ['label' => 'Numéro seul', 'help' => 'Uniquement un numéro sur 5 chiffres.', 'pattern' => '{NUMBER:5}'],
+        ];
+    }
+
+    /** Clé du modèle prêt à choisir qui correspond à ce format, ou null s’il est personnalisé. */
+    public static function templateKeyFor(string $pattern): ?string
+    {
+        foreach (self::templates() as $key => $t) {
+            if ($t['pattern'] === $pattern) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
+    /** Contrôle un format avant de l’enregistrer pour une unité : message lisible, ou null s’il est utilisable. */
+    public static function checkPattern(string $pattern): ?string
+    {
+        $pattern = trim($pattern);
+        if ($pattern === '') {
+            return 'Le format est vide.';
+        }
+        if (strlen($pattern) > 120) {
+            return 'Le format est trop long (120 caractères au plus).';
+        }
+        if (!self::patternHasNumber($pattern)) {
+            return 'Le format doit contenir le numéro ({NUMBER} ou {NUMBER:4}) : sinon tous les matricules de l’unité seraient identiques.';
+        }
+        if (!preg_match(self::ALLOWED_PATTERN, self::formatPattern($pattern, 'ABC', 7, 'COMM', 'UNIT', 'SGT'))) {
+            return 'Le format contient un élément inconnu ou un caractère non autorisé. Utilisez les boutons d’éléments, des lettres, chiffres, - / _ et point.';
+        }
+
+        return null;
+    }
+
+    /** @var array<int, array<int, string>> */
+    private array $unitTemplateMemo = [];
+
+    /**
+     * Modèle choisi pour chaque unité de la communauté ; une unité absente suit le modèle général.
+     *
+     * @return array<int, string> identifiant d’unité => modèle
+     */
+    public function unitTemplates(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        if (!isset($this->unitTemplateMemo[$tenantId])) {
+            try {
+                $this->unitTemplateMemo[$tenantId] = $this->configRepo->listUnitTemplates($tenantId);
+            } catch (\Throwable $e) {
+                error_log('[matricules] modèles par unité indisponibles : ' . $e->getMessage());
+                $this->unitTemplateMemo[$tenantId] = [];
+            }
+        }
+
+        return $this->unitTemplateMemo[$tenantId];
+    }
+
+    public function unitTemplatesReady(): bool
+    {
+        try {
+            return $this->configRepo->unitTemplatesReady();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Choisit le modèle d’une unité (l’appelant vérifie que l’unité appartient à la communauté).
+     * Un modèle vide remet l’unité sur le modèle général.
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function saveUnitTemplate(int $tenantId, int $unitId, ?string $pattern): array
+    {
+        if (!$this->schemaReady() || $tenantId < 1 || $unitId < 1 || !$this->unitTemplatesReady()) {
+            return ['ok' => false, 'error' => 'Les modèles par unité ne sont pas encore disponibles. Réessayez après la prochaine mise à jour de la plateforme.'];
+        }
+        $pattern = trim((string) $pattern);
+        if ($pattern !== '') {
+            $error = self::checkPattern($pattern);
+            if ($error !== null) {
+                return ['ok' => false, 'error' => $error];
+            }
+        }
+        if (!$this->configRepo->saveUnitTemplate($tenantId, $unitId, $pattern)) {
+            return ['ok' => false, 'error' => 'Échec de l’enregistrement du modèle de l’unité.'];
+        }
+        unset($this->unitTemplateMemo[$tenantId]);
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Modèle applicable à un membre : celui de son unité s’il existe, sinon le modèle général.
+     *
+     * @param array<int, string> $unitTemplates
+     * @param array<string, mixed>|null $ctx
+     */
+    private function patternFor(string $defaultPattern, array $unitTemplates, ?array $ctx): string
+    {
+        $unitId = (int) ($ctx['unit_id'] ?? 0);
+
+        return $unitId > 0 && isset($unitTemplates[$unitId]) ? $unitTemplates[$unitId] : $defaultPattern;
+    }
+
+    /** Exemple de matricule pour un format, un code d’unité et un grade donnés (numéro = prochaine séquence). */
+    public function example(int $tenantId, string $pattern, string $unitCode = '', string $gradeCode = ''): string
+    {
+        $config = $this->getConfig($tenantId);
+
+        return $this->format(
+            $pattern,
+            (string) ($config['prefix'] ?? ''),
+            max(1, (int) ($config['next_sequence'] ?? 1)),
+            $this->resolveTenantSlug($tenantId),
+            self::contextToken($unitCode),
+            self::contextToken($gradeCode)
+        );
+    }
+
     public function __construct(
         private TenantMemberNumberConfigRepository $configRepo,
         private UserRepository $users,
@@ -102,6 +242,11 @@ final class TenantMemberNumberService
 
     public function format(string $pattern, string $prefix, int $number, ?string $tenantSlug = null, ?string $unitCode = null, ?string $gradeCode = null): string
     {
+        return self::formatPattern($pattern, $prefix, $number, $tenantSlug, $unitCode, $gradeCode);
+    }
+
+    public static function formatPattern(string $pattern, string $prefix, int $number, ?string $tenantSlug = null, ?string $unitCode = null, ?string $gradeCode = null): string
+    {
         $year = (int) date('Y');
         $month = date('m');
         $out = $pattern;
@@ -149,7 +294,8 @@ final class TenantMemberNumberService
             (string) ($config['pattern'] ?? '{PREFIX}-{NUMBER:4}'),
             (string) ($config['prefix'] ?? ''),
             $this->resolveTenantSlug($tenantId),
-            (int) ($config['next_sequence'] ?? 1)
+            (int) ($config['next_sequence'] ?? 1),
+            array_values(array_unique($this->unitTemplates($tenantId)))
         );
     }
 
@@ -211,7 +357,7 @@ final class TenantMemberNumberService
      */
     public function contextsFor(int $tenantId, array $userIds, string $pattern): array
     {
-        if (!self::patternUsesContext($pattern) || $userIds === []) {
+        if ($userIds === [] || (!self::patternUsesContext($pattern) && $this->unitTemplates($tenantId) === [])) {
             return [];
         }
         try {
@@ -226,6 +372,7 @@ final class TenantMemberNumberService
             $out[(int) $uid] = [
                 'unit' => self::contextToken((string) ($c['unit'] ?? '')),
                 'grade' => self::contextToken((string) ($c['grade'] ?? '')),
+                'unit_id' => (int) ($c['unit_id'] ?? 0),
             ];
         }
 
@@ -298,7 +445,19 @@ final class TenantMemberNumberService
         $unique = !array_key_exists('unique_required', $config) || !empty($config['unique_required']);
         $scope = $scope === 'all' ? 'all' : 'off';
         $numbering = $numbering === 'next' ? 'next' : 'keep';
-        $regexes = \App\Support\MemberNumberAnalysis::patternRegexes($pattern, $prefix, $slug);
+        $unitTemplates = $this->unitTemplates($tenantId);
+        $withNumber = [];
+        foreach ($members as $m) {
+            if (trim((string) ($m['tenant_member_number'] ?? '')) !== '') {
+                $withNumber[] = (int) $m['id'];
+            }
+        }
+        $ctx = $this->contextsFor($tenantId, $withNumber, $pattern);
+        // Chaque membre est comparé au modèle de son unité (ou au modèle général) ; expressions calculées une fois par modèle.
+        $regexCache = [];
+        $regexesFor = function (string $p) use (&$regexCache, $prefix, $slug): array {
+            return $regexCache[$p] ??= \App\Support\MemberNumberAnalysis::patternRegexes($p, $prefix, $slug);
+        };
 
         $inScope = [];
         $fixed = [];
@@ -309,7 +468,7 @@ final class TenantMemberNumberService
             if ($old === '') {
                 continue;
             }
-            $seqOf = \App\Support\MemberNumberAnalysis::matchSequence($old, $regexes);
+            $seqOf = \App\Support\MemberNumberAnalysis::matchSequence($old, $regexesFor($this->patternFor($pattern, $unitTemplates, $ctx[(int) $m['id']] ?? null)));
             if ($scope === 'all' || $seqOf === null) {
                 $inScope[] = ['id' => (int) $m['id'], 'old' => $old];
             } else {
@@ -317,7 +476,6 @@ final class TenantMemberNumberService
                 $maxFixed = max($maxFixed, $seqOf);
             }
         }
-        $ctx = $this->contextsFor($tenantId, array_column($inScope, 'id'), $pattern);
 
         // Numéro gardé : les chiffres de fin du matricule actuel. Sans chiffres, on numérote après le plus grand
         // numéro déjà présent, pour ne pas retomber sur un numéro gardé.
@@ -334,8 +492,8 @@ final class TenantMemberNumberService
                 $n = $seq++;
             }
             $maxUsed = max($maxUsed, $n);
-            $c = $ctx[$r['id']] ?? ['unit' => '', 'grade' => ''];
-            $new = $this->format($pattern, $prefix, $n, $slug, $c['unit'], $c['grade']);
+            $c = $ctx[$r['id']] ?? ['unit' => '', 'grade' => '', 'unit_id' => 0];
+            $new = $this->format($this->patternFor($pattern, $unitTemplates, $c), $prefix, $n, $slug, $c['unit'], $c['grade']);
             $status = $new === $r['old'] ? 'same' : 'change';
             $reason = '';
             $len = function_exists('mb_strlen') ? mb_strlen($new) : strlen($new);
@@ -380,7 +538,7 @@ final class TenantMemberNumberService
         $changes = count(array_filter($rows, static fn (array $r): bool => $r['status'] === 'change'));
         $conflicts = count(array_filter($rows, static fn (array $r): bool => $r['status'] === 'conflict'));
         $nextAfter = max($seq, $maxUsed + 1, $next);
-        $hash = sha1((string) json_encode([$scope, $numbering, $pattern, $prefix, $nextAfter, array_map(
+        $hash = sha1((string) json_encode([$scope, $numbering, $pattern, $unitTemplates, $prefix, $nextAfter, array_map(
             static fn (array $r): array => [$r['id'], $r['old'], $r['new'], $r['status']],
             $rows
         )]));
@@ -519,7 +677,8 @@ final class TenantMemberNumberService
         }
         $slug = $this->resolveTenantSlug($tenantId);
         $pattern = (string) ($config['pattern'] ?? '{PREFIX}-{NUMBER:4}');
-        $ctx = $this->contextsFor($tenantId, [$userId], $pattern)[$userId] ?? ['unit' => '', 'grade' => ''];
+        $ctx = $this->contextsFor($tenantId, [$userId], $pattern)[$userId] ?? ['unit' => '', 'grade' => '', 'unit_id' => 0];
+        $pattern = $this->patternFor($pattern, $this->unitTemplates($tenantId), $ctx);
         $attempts = 0;
         while ($attempts < 50) {
             ++$attempts;
