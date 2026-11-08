@@ -178,7 +178,8 @@ final class OrbatRosterPayload
         ?bool $canBypassMasks = null,
         ?OrgVisibilityCapabilities $caps = null,
         ?array $adminStatusFilter = null,
-        ?UnitCodeService $unitCodeService = null
+        ?UnitCodeService $unitCodeService = null,
+        int $maxMembersPerUnit = 40
     ): ?array {
         if ($viewerUserId === null) {
             $viewerUserId = (int) Session::get('user_id');
@@ -200,7 +201,7 @@ final class OrbatRosterPayload
         $unitCodes = self::attempt('codes unités', static fn (): array => (array) (($unitCodeService ?? new UnitCodeService())->sync($tenantId)['units'] ?? []), []);
         $memberCounts = self::attempt('effectifs', static fn (): array => $unitRepository->countDistinctMembersByUnitForTenant($tenantId), []);
         $commanderLabels = self::attempt('chefs d’unité', static fn (): array => $unitRepository->commanderLabelByUnitForTenant($tenantId, $flat), []);
-        $rosterByUnit = self::attempt('membres', static fn (): array => $unitRepository->rosterMembersByUnitForTenant($tenantId), []);
+        $rosterByUnit = self::attempt('membres', static fn (): array => $unitRepository->rosterMembersByUnitForTenant($tenantId, $maxMembersPerUnit), []);
         $rosterUserIds = self::collectUserIdsFromRoster($rosterByUnit);
         $visibilityByUser = self::personnelVisibilityOrStrictest(
             static fn (): array => $unitRepository->personnelVisibilityByUserIdsForTenant($tenantId, $rosterUserIds),

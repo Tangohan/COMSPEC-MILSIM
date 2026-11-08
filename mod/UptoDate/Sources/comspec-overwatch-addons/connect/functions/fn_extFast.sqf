@@ -13,7 +13,7 @@ if (isNil "_fast") then {
         "Ping", "Warmup", "GetExtensionVersion", "GetVersion", "GetAtakFeatures", "GetCapabilities", "SendQueue.Status",
         "SyncStats", "MemStats", "Perf.Stats", "GetPendingQueueCount", "GetLastPostError", "GetSessionTenant", "GetAuthState",
         "GetAuthProgress", "SetSteamId", "SetMapId", "SetBloodType", "SetTelemetryBatch", "SetTelemetryMode",
-        "GetTelemetryMetrics", "EmitTelemetry", "HashText", "LogWrite", "LogSessionStart", "GetLogTail",
+        "GetTelemetryMetrics", "EmitTelemetry", "HashText", "LogWrite", "LogSessionStart", "GetLogTail", "GetCommunityOrbatChunk",
         "OpenAthenaLink", "LoadGoogleDeck", "LoadGoogleSlide", "CancelGoogleDeck", "Logout",
         // Bloquants voulus : fenêtres Windows modales (menu principal) ; Disconnect (3 s au plus) en fin de mission ou
         // à la fermeture du jeu, qui doit partir avant l'arrêt du processus

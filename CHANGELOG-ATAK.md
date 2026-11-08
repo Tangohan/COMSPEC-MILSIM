@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## BFT : l'ORBAT du site et les joueurs hors ligne ; écran et PC du poste TOC (ATAK natif, version à attribuer)
+
+### À annoncer
+Type : nouveauté
+FR : Le BFT affiche l'ORBAT de votre communauté, hors ligne compris
+- Onglet ORBAT du BFT : l'arbre de votre ORBAT Athena, avec chaque membre et son état : en jeu avec distance et gisement, en jeu sans piste, hors ligne, poste vacant.
+- Les joueurs absents de cet ORBAT restent visibles dans une section à part, et le bandeau compte aussi les membres hors ligne.
+- Un message clair remplace l'écran vide quand la communauté n'a pas d'ORBAT, quand le compte n'est pas lié ou quand Athena ne répond pas : le dernier ORBAT reçu reste alors affiché, marqué « pas à jour ».
+- Les boutons du bas ne sont plus coupés, et ils ne proposent que ce qui a un sens pour la personne choisie.
+- Écran TOC : les diapositives se diffusent du premier coup, et l'écran écrit la raison s'il ne peut pas les montrer. En-tête propre, symboles regroupés, noms qui ne se chevauchent plus, groupes en colonnes. L'app Poste TOC choisit le contenu : carte, ORBAT, réseau ou diapositive.
+- PC du poste TOC : onglets ORBAT et Réseau, recherche, mesure, pose de marqueur, calques, fiche d'une unité au clic et tri du flux.
+EN : The BFT shows your community ORBAT, offline members included
+- BFT ORBAT tab: your Athena ORBAT as a tree, with each member and their status: in game with distance and bearing, in game without a track, offline, vacant post.
+- Players who are not in this ORBAT stay visible in a separate section, and the header also counts offline members.
+- A clear message replaces the empty screen when the community has no ORBAT, when the account is not linked or when Athena does not answer: the last ORBAT received then stays on screen, marked as out of date.
+- The bottom buttons are no longer cut off, and they only offer what makes sense for the selected person.
+- TOC screen: slides now cast on the first try, and the screen writes the reason when it cannot show them. Clean header, grouped symbols, names that no longer overlap, groups in columns. The Post TOC app picks the content: map, ORBAT, network or slide.
+- TOC post computer: ORBAT and Network tabs, search, measuring, marker placement, layers, unit card on click and feed filtering.
+
+### Détail technique
+- Site : `GET /api/atak/community-orbat` (`AtakCommunityOrbatService`) : vue d'un simple membre, session de jeu exigée, cache de 120 s, taille bornée, ni e-mail ni Steam ID. Contrat dans `docs/technical/ICD-ATHENA-ATAK.md`.
+- DLL : `GetCommunityOrbat` (Async seulement, une requête à la fois) et `GetCommunityOrbatChunk`.
+- Écran TOC : `fn_screenCast` attend la désignation de l'écran (`castWait`) au lieu de refuser, message sur l'écran (`COMSPEC_ATAK_ScreenMsg`), recopie aussi après le repli `data:` ; `fn_tocScreen` : regroupement et placement des plaques, table par pages, affichages `NET` et `ORBAT`, mode `show`. PC du poste : `fn_tocLaptop` (outils, onglets, `fn_markerDrop` et `fn_bftOrbat` réutilisés).
+- Mod : `fn_bftOrbat` (lecture toutes les 5 min au plus, dernier ORBAT gardé en mémoire), `fn_pageBft` (arbre, états, filtres, compteurs, boutons sur deux rangées, lignes réécrites seulement si elles changent), `fn_bftAction` (SMS et vibreur pour un joueur en jeu sans piste). Rapprochement par empreinte du Steam ID, jamais par le nom ; camp adverse jamais rapproché.
 ## App Réseau : état d'un coup d'œil, tutoriel, objet obligatoire, case RELAIS ATAK (version attribuée à la publication)
 
 À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».

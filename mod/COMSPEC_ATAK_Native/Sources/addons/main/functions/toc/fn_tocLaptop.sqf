@@ -12,14 +12,19 @@
         fn_aiOrder) ; état de l'ordre sur la carte ;
       - FLUX : comptes rendus, alertes, MEDEVAC, BDA, ordres et messages du camp ;
       - ORDRES : rédacteur d'ordre (type, destinataire, priorité, consigne, objectif), ordres émis et leurs réponses ;
-      - CAMP : message à tout le camp ou à un chef de groupe (arrive dans Messages), indicatif du poste.
+      - CAMP : message à tout le camp ou à un chef de groupe (arrive dans Messages), indicatif du poste ;
+      - ORBAT : ORBAT du site (fn_bftOrbat), membres en ligne ou non ; mêmes droits que le téléphone (lu avec le compte du joueur) ;
+      - RÉSEAU : état du réseau, météo, contenu des écrans du poste (carte, réseau, ORBAT, diapositive).
+    Outils de la carte, un à la fois : SÉLECTION (clic gauche : fiche du groupe), MESURE (A puis B), MARQUEUR (fn_markerDrop,
+    comme le téléphone : canal, nom et envoi à Athena identiques). Recherche : grille, groupe, indicatif, nom de marqueur.
     Ce que l'opérateur regarde (cadrage de la carte, onglet, sélection) est publié sur son unité
     (COMSPEC_ATAK_TocView, toutes les 2 s au plus quand ça change) : les écrans TOC en affichage « TOC » le reprennent,
     c'est le PIP du TOC sur n'importe quel écran du jeu (fn_tocScreen).
     Modes (client) :
       ["open", objet]   ouvre le PC du poste          ["load", display] / ["unload"] (display COMSPEC_RscTocLaptop)
       ["refresh"]       chaque seconde                ["draw", carte] (Draw de la carte)
-      ["tab", nom]      "GROUPES" | "FLUX" | "ORDRES" | "CAMP"
+      ["tab", nom]      "GROUPES" | "ORBAT" | "FLUX" | "ORDRES" | "CAMP" | "RÉSEAU"
+      ["tool", nom]     "SELECT" | "MEASURE" | "MARKER"     ["layer", clé] "ai" | "ev"     ["search"]     ["left", [x, y]]
       ["frame", quoi]   "net" (tout le réseau) | "me" | "post" | [x, y]
       ["click", [x, y]] objectif de l'ordre           ["act", clé] boutons des onglets
       ["status", texte] ligne d'état du PC (6 s)
@@ -156,23 +161,38 @@ switch (_mode) do {
         _map ctrlAddEventHandler ["MouseButtonClick", {
             params ["_m", "_b", "_mx", "_my"];
             if (_b isEqualTo 1) then { ["click", _m ctrlMapScreenToWorld [_mx, _my]] call comspec_atak_native_fnc_tocLaptop; };
+            if (_b isEqualTo 0) then { ["left", _m ctrlMapScreenToWorld [_mx, _my]] call comspec_atak_native_fnc_tocLaptop; };
         }];
         private _tb = _H * 0.032; private _tw = _W * 0.062; private _tg = _W * 0.004;
         {
             _x params ["_k", "_t", "_tip"];
             [_k, [_xi + _tg + _forEachIndex * (_tw + _tg), _by + _tg, _tw, _tb], _t, compile format ["['frame', %1] call comspec_atak_native_fnc_tocLaptop;", str (_k select [5])], false, _tip] call _btn;
         } forEach [["frame" + "net", "RÉSEAU", "Cadrer tout le réseau du camp"], ["frame" + "me", "POSTE", "Centrer sur le poste"], ["frame" + "sel", "SÉLECTION", "Centrer sur le groupe ou le compte rendu choisi"]];
-        private _hint = ["COMSPEC_RscText", [_xi + _tg, _by + _bh - _H * 0.03, _mw - 2 * _tg, _H * 0.026]] call _mk;
+        // Outils et calques de la carte, à la suite des boutons de cadrage.
+        {
+            _x params ["_k", "_t", "_code", "_tip"];
+            [_k, [_xi + _tg + (3 + _forEachIndex) * (_tw + _tg), _by + _tg, _tw, _tb], _t, _code, false, _tip] call _btn;
+        } forEach [
+            ["toolMEASURE", "MESURE", { ["tool", "MEASURE"] call comspec_atak_native_fnc_tocLaptop; }, "Clic gauche sur A puis sur B"],
+            ["toolMARKER", "MARQUEUR", { ["tool", "MARKER"] call comspec_atak_native_fnc_tocLaptop; }, "Clic gauche : pose un marqueur, comme le téléphone"],
+            ["layerai", "IA", { ["layer", "ai"] call comspec_atak_native_fnc_tocLaptop; }, "Afficher ou masquer les nœuds IA"],
+            ["layerev", "ALERTES", { ["layer", "ev"] call comspec_atak_native_fnc_tocLaptop; }, "Afficher ou masquer les comptes rendus et alertes"]
+        ];
+        private _sx = _xi + _tg + 7 * (_tw + _tg);
+        ["COMSPEC_RscEdit", [_sx, _by + _tg, _W * 0.11, _tb], "search"] call _mk;
+        (_ui get "search") ctrlSetTooltip (("Grille, groupe, indicatif ou nom de marqueur") call comspec_atak_native_fnc_tr);
+        ["searchGo", [_sx + _W * 0.112, _by + _tg, _W * 0.058, _tb], "CHERCHER", { ["search"] call comspec_atak_native_fnc_tocLaptop; }] call _btn;
+        private _hint = ["COMSPEC_RscText", [_xi + _tg, _by + _bh - _H * 0.03, _mw - 2 * _tg, _H * 0.026], "hint"] call _mk;
         _hint ctrlSetBackgroundColor [0, 0, 0, 0.55];
         _hint ctrlSetFontHeight (_H * 0.017);
-        _hint ctrlSetText (("Molette : zoom · clic gauche maintenu : déplacer · clic droit : objectif de l'ordre") call comspec_atak_native_fnc_tr);
+        ["tool", _st getOrDefault ["tool", "SELECT"]] call _fn;
         // Panneau de droite : onglets.
         private _px = _xi + _mw + _W * 0.004; private _pw = _wi - _mw - _W * 0.004;
         (["COMSPEC_RscText", [_px, _by, _pw, _bh]] call _mk) ctrlSetBackgroundColor [0.045, 0.055, 0.048, 1];
-        private _tabs = ["GROUPES", "FLUX", "ORDRES", "CAMP"];
-        private _tabW = _pw / 4;
+        private _tabs = ["GROUPES", "ORBAT", "FLUX", "ORDRES", "CAMP", "RÉSEAU"];
+        private _tabW = _pw / 6;
         {
-            ["tab" + _x, [_px + _forEachIndex * _tabW, _by, _tabW - _W * 0.002, _H * 0.04], _x, compile format ["['tab', %1] call comspec_atak_native_fnc_tocLaptop;", str _x]] call _btn;
+            (["tab" + _x, [_px + _forEachIndex * _tabW, _by, _tabW - _W * 0.002, _H * 0.04], _x, compile format ["['tab', %1] call comspec_atak_native_fnc_tocLaptop;", str _x]] call _btn) ctrlSetFontHeight (_H * 0.0165);
         } forEach _tabs;
         private _m = _W * 0.006;
         private _cx = _px + _m; private _cw = _pw - 2 * _m;
@@ -190,8 +210,25 @@ switch (_mode) do {
         ["gOrder", [_cx, _cy + _ch - _rh, _bw3, _rh], "ORDRE AU GROUPE", { ["act", "gOrder"] call comspec_atak_native_fnc_tocLaptop; }, true] call _btn;
         ["gMsg", [_cx + _bw3 + _m, _cy + _ch - _rh, _bw3, _rh], "MESSAGE AU CHEF", { ["act", "gMsg"] call comspec_atak_native_fnc_tocLaptop; }] call _btn;
         ["gCenter", [_cx + 2 * (_bw3 + _m), _cy + _ch - _rh, _bw3, _rh], "CENTRER", { ['frame', 'sel'] call comspec_atak_native_fnc_tocLaptop; }] call _btn;
+        // ORBAT du site
+        private _bl = ["COMSPEC_RscListBox", [_cx, _cy, _cw, _ch * 0.66], "bList"] call _mk;
+        _bl ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["pick", ["ORBAT", _c lbData _i]] call comspec_atak_native_fnc_tocLaptop; }];
+        ["COMSPEC_RscStructuredText", [_cx, _cy + _ch * 0.68, _cw, _ch * 0.24], "bInfo"] call _mk;
+        ["bMsg", [_cx, _cy + _ch - _rh, _bw3, _rh], "MESSAGE", { ["act", "bMsg"] call comspec_atak_native_fnc_tocLaptop; }, false, "Message à ce membre, s'il est en jeu"] call _btn;
+        ["bCenter", [_cx + _bw3 + _m, _cy + _ch - _rh, _bw3, _rh], "CENTRER", { ["act", "bCenter"] call comspec_atak_native_fnc_tocLaptop; }] call _btn;
+        // RÉSEAU : état, météo, contenu des écrans
+        ["COMSPEC_RscStructuredText", [_cx, _cy, _cw, _ch * 0.74], "rInfo"] call _mk;
+        [[_cx, _cy + _ch * 0.76, _cw, _H * 0.022], "CONTENU DES ÉCRANS DU POSTE", "rL1"] call _lbl;
+        private _rs = ["COMSPEC_RscCombo", [_cx, _cy + _ch * 0.76 + _H * 0.024, _cw - _bw3 - _m, _rh], "rShow"] call _mk;
+        { private _i = _rs lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _rs lbSetData [_i, _x select 1]; } forEach [["Carte et flux", "SPLIT"], ["Carte seule", "MAP"], ["Flux seul", "FEED"], ["Réseau", "NET"], ["ORBAT du site", "ORBAT"], ["PIP du poste", "TOC"], ["Diapositive du Briefing", "SLIDES"]];
+        _rs lbSetCurSel 0;
+        ["rGo", [_cx + _cw - _bw3, _cy + _ch * 0.76 + _H * 0.024, _bw3, _rh], "AFFICHER", { ["act", "rGo"] call comspec_atak_native_fnc_tocLaptop; }, true, "Sur tous les écrans TOC à moins de 30 m du poste"] call _btn;
         // FLUX
-        private _fl = ["COMSPEC_RscListBox", [_cx, _cy, _cw, _ch * 0.66], "fList"] call _mk;
+        private _ff = ["COMSPEC_RscCombo", [_cx, _cy, _cw, _rh], "fFilter"] call _mk;
+        { private _i = _ff lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _ff lbSetData [_i, _x select 1]; } forEach [["Tout le flux", ""], ["Alertes (PANIQUE, TIC, MEDEVAC…)", "A"], ["Comptes rendus", "R"], ["Ordres et messages", "M"]];
+        _ff lbSetCurSel 0;
+        _ff ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; (uiNamespace getVariable ["COMSPEC_ATAK_TocLap", createHashMap]) set ["fKind", _c lbData _i]; (uiNamespace getVariable ["COMSPEC_ATAK_TocLap", createHashMap]) set ["sig", ""]; }];
+        private _fl = ["COMSPEC_RscListBox", [_cx, _cy + _rh + _H * 0.004, _cw, _ch * 0.66 - _rh - _H * 0.004], "fList"] call _mk;
         _fl ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["pick", ["FLUX", _c lbData _i]] call comspec_atak_native_fnc_tocLaptop; }];
         ["COMSPEC_RscStructuredText", [_cx, _cy + _ch * 0.68, _cw, _ch * 0.24], "fInfo"] call _mk;
         ["fCenter", [_cx, _cy + _ch - _rh, _bw3, _rh], "CENTRER", { ['frame', 'sel'] call comspec_atak_native_fnc_tocLaptop; }] call _btn;
@@ -298,16 +335,18 @@ switch (_mode) do {
     };
     case "tab": {
         if ((count _ui) isEqualTo 0) exitWith {};
-        private _t = [_a, "GROUPES"] select !(_a in ["GROUPES", "FLUX", "ORDRES", "CAMP"]);
+        private _t = [_a, "GROUPES"] select !(_a in ["GROUPES", "ORBAT", "FLUX", "ORDRES", "CAMP", "RÉSEAU"]);
         _st set ["tab", _t];
         private _sets = createHashMapFromArray [
             ["GROUPES", ["gList", "gInfo", "gOrder", "gMsg", "gCenter", "gAi", "gAiGo"]],
-            ["FLUX", ["fList", "fInfo", "fCenter"]],
+            ["ORBAT", ["bList", "bInfo", "bMsg", "bCenter"]],
+            ["RÉSEAU", ["rInfo", "rL1", "rShow", "rGo"]],
+            ["FLUX", ["fFilter", "fList", "fInfo", "fCenter"]],
             ["ORDRES", ["oL1", "oL2", "oL3", "oL4", "oL5", "oKind", "oPrio", "oTarget", "oText", "oGrid", "oClear", "oSend", "oInfo"]],
             ["CAMP", ["cL1", "cL2", "cL3", "cDest", "cPrio", "cText", "cSend", "cCs", "cSave", "cL4", "cCam", "cCamGo", "cInfo"]]
         ];
         { private _on = _x isEqualTo _t; { (_ui getOrDefault [_x, controlNull]) ctrlShow _on; } forEach _y; } forEach _sets;
-        { (_ui get ("tab" + _x)) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _t)); } forEach ["GROUPES", "FLUX", "ORDRES", "CAMP"];
+        { (_ui get ("tab" + _x)) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _t)); } forEach ["GROUPES", "ORBAT", "FLUX", "ORDRES", "CAMP", "RÉSEAU"];
         _st set ["sig", ""];
         ["refresh"] call _fn;
     };
@@ -315,6 +354,7 @@ switch (_mode) do {
         // Sélection posée par la reconstruction de la liste : rien à recentrer.
         if (_st getOrDefault ["mute", false]) exitWith {};
         _a params ["_tab", "_v"];
+        if (_tab isEqualTo "ORBAT") exitWith { _st set ["selB", _v]; ["refresh"] call _fn; };
         _st set [["selG", "selF"] select (_tab isEqualTo "FLUX"), _v];
         ["frame", "sel"] call _fn;
         ["refresh"] call _fn;
@@ -348,7 +388,12 @@ switch (_mode) do {
                 if ((count _p) >= 2) then { _ctr = [_p select 0, _p select 1]; _span = 700; } else { _ctr = []; };
             };
         };
-        if ((count _ctr) < 2) exitWith { ["status", "Pas de position connue pour cette sélection"] call _fn; };
+        if ((count _ctr) < 2) exitWith {
+            ["status", [
+                "Choisissez d'abord un groupe ou un compte rendu dans la liste",
+                "Aucun ATAK dans ce groupe sur le réseau, ou compte rendu sans grille : le poste ne connaît pas sa position"
+            ] select (((_st getOrDefault ["selG", ""]) isNotEqualTo "") || {(_st getOrDefault ["selF", ""]) isNotEqualTo ""})] call _fn;
+        };
         _map ctrlMapAnimAdd [0.4, ((_span / (worldSize max 1000)) max 0.008) min 1, [_ctr select 0, _ctr select 1, 0]];
         ctrlMapAnimCommit _map;
     };
@@ -361,6 +406,85 @@ switch (_mode) do {
         ["status", format ["Objectif de l'ordre : grille %1", [[_p select 0, _p select 1, 0], 8] call comspec_atak_native_fnc_gridRef]] call _fn;
     };
     case "status": { [_a] call _setStatus; };
+    case "tool": {
+        // Un outil à la fois ; le même bouton rend la sélection.
+        private _t = [_a, "SELECT"] select ((_st getOrDefault ["tool", "SELECT"]) isEqualTo _a && {(count _ui) > 0} && {(_st getOrDefault ["toolSet", false])});
+        if !(_t in ["SELECT", "MEASURE", "MARKER"]) then { _t = "SELECT"; };
+        _st set ["tool", _t];
+        _st set ["toolSet", true];
+        _st set ["measure", []];
+        { (_ui getOrDefault ["tool" + _x, controlNull]) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _t)); } forEach ["MEASURE", "MARKER"];
+        (_ui getOrDefault ["hint", controlNull]) ctrlSetText ((switch (_t) do {
+            case "MEASURE": { "MESURE : clic gauche sur A, puis sur B · clic droit : objectif de l'ordre" };
+            case "MARKER": { "MARQUEUR : clic gauche pour poser · même marqueur que le téléphone" };
+            default { "Molette : zoom · clic gauche : fiche d'une unité · clic gauche maintenu : déplacer · clic droit : objectif de l'ordre" };
+        }) call comspec_atak_native_fnc_tr);
+    };
+    case "layer": {
+        private _k = "hide" + _a;
+        _st set [_k, !(_st getOrDefault [_k, false])];
+        (_ui getOrDefault ["layer" + _a, controlNull]) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.3, 0.12, 0.1, 1]] select (_st get _k));
+    };
+    case "left": {
+        switch (_st getOrDefault ["tool", "SELECT"]) do {
+            case "MEASURE": {
+                private _ms = _st getOrDefault ["measure", []];
+                if ((count _ms) >= 2) then { _ms = []; };
+                _ms pushBack [_a select 0, _a select 1];
+                _st set ["measure", _ms];
+            };
+            case "MARKER": {
+                [[_a select 0, _a select 1, 0]] call comspec_atak_native_fnc_markerDrop;
+                ["status", format ["Marqueur posé : grille %1", [[_a select 0, _a select 1, 0], 8] call comspec_atak_native_fnc_gridRef]] call _fn;
+                ["tool", "SELECT"] call _fn;
+            };
+            default {
+                // Unité la plus proche du clic (32 pixels environ) : sa fiche, dans l'onglet GROUPES.
+                private _map = _ui getOrDefault ["map", controlNull];
+                if (isNull _map) exitWith {};
+                private _cl = _map ctrlMapWorldToScreen _a;
+                private _best = 0.04;
+                private _g = "";
+                {
+                    private _p = _x select 2;
+                    private _sp = _map ctrlMapWorldToScreen [_p select 0, _p select 1, 0];
+                    private _d = ((_sp select 0) - (_cl select 0)) * ((_sp select 0) - (_cl select 0)) + ((_sp select 1) - (_cl select 1)) * ((_sp select 1) - (_cl select 1));
+                    if (_d < (_best * _best)) then { _best = sqrt _d; _g = _x param [7, ""]; };
+                } forEach ((call _feedOf) param [1, []]);
+                if (_g isNotEqualTo "") then {
+                    _st set ["selG", _g];
+                    ["keep"] call _fn;
+                    ["tab", "GROUPES"] call _fn;
+                };
+            };
+        };
+    };
+    case "search": {
+        private _q = trim (ctrlText (_ui getOrDefault ["search", controlNull]));
+        if (_q isEqualTo "") exitWith { ["status", "Tapez une grille, un groupe, un indicatif ou un nom de marqueur"] call _fn; };
+        private _ql = toLower _q;
+        private _pos = [];
+        private _lbl = "";
+        // Grille d'abord (chiffres seuls), puis nœuds du réseau, groupes, marqueurs.
+        if (((_q splitString "0123456789 -") joinString "") isEqualTo "") then {
+            private _gp = [_q] call comspec_atak_native_fnc_gridParse;
+            if (_gp isEqualType [] && {(count _gp) >= 2}) then { _pos = [_gp select 0, _gp select 1]; _lbl = "grille " + _q; };
+        };
+        if ((count _pos) isEqualTo 0) then {
+            {
+                if (((toLower (_x select 1)) find _ql) >= 0 || {((toLower (_x param [7, ""])) find _ql) >= 0}) exitWith { _pos = _x select 2; _lbl = _x select 1; };
+            } forEach ((call _feedOf) param [1, []]);
+        };
+        if ((count _pos) isEqualTo 0) then {
+            {
+                if (((toLower (markerText _x)) find _ql) >= 0) exitWith { private _mp = getMarkerPos _x; _pos = [_mp select 0, _mp select 1]; _lbl = markerText _x; };
+            } forEach allMapMarkers;
+        };
+        if ((count _pos) isEqualTo 0) exitWith { ["status", format ["Rien trouvé pour « %1 » sur le réseau du poste", _q]] call _fn; };
+        _st set ["found", [_pos, _lbl, diag_tickTime + 15]];
+        ["frame", _pos] call _fn;
+        ["status", format ["Trouvé : %1", _lbl]] call _fn;
+    };
     case "act": {
         ["keep"] call _fn;
         private _nodes = (call _feedOf) param [1, []];
@@ -386,6 +510,26 @@ switch (_mode) do {
                 if (!isPlayer _ld) exitWith { ["Le chef de ce groupe n'est pas un joueur : envoyez un ordre"] call _setStatus; };
                 _draft set ["dest", getPlayerUID _ld];
                 ["tab", "CAMP"] call _fn;
+            };
+            case "bMsg": {
+                private _o = ((["presence"] call comspec_atak_native_fnc_bftOrbat) select 1) getOrDefault [_st getOrDefault ["selB", ""], objNull];
+                if (isNull _o || {_o isEqualTo player}) exitWith { ["Ce membre n'est pas en jeu : message impossible"] call _setStatus; };
+                _draft set ["dest", getPlayerUID _o];
+                ["tab", "CAMP"] call _fn;
+            };
+            case "bCenter": {
+                private _o = ((["presence"] call comspec_atak_native_fnc_bftOrbat) select 1) getOrDefault [_st getOrDefault ["selB", ""], objNull];
+                private _i = if (isNull _o) then { -1 } else { private _gn = groupId group _o; _nodes findIf { (_x param [7, ""]) isEqualTo _gn } };
+                if (_i < 0) exitWith { ["Ce membre n'est pas sur le réseau ATAK : position inconnue du poste"] call _setStatus; };
+                ["frame", (_nodes select _i) select 2] call _fn;
+            };
+            case "rGo": {
+                private _rs = _ui get "rShow";
+                private _k = _rs lbData (lbCurSel _rs);
+                private _scr = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {(player distance _x) < 30} && {((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", _side]} };
+                if ((count _scr) isEqualTo 0) exitWith { ["Aucun écran TOC à moins de 30 m du poste"] call _setStatus; };
+                { ["show", [_x, _k]] call comspec_atak_native_fnc_tocScreen; } forEach _scr;
+                [format ["%1 écran(s) : %2", count _scr, _rs lbText (lbCurSel _rs)]] call _setStatus;
             };
             case "oClear": { _draft set ["grid", ""]; _draft set ["pos", []]; (_ui get "oGrid") ctrlSetText (("") call comspec_atak_native_fnc_tr); };
             case "oSend": {
@@ -465,13 +609,13 @@ switch (_mode) do {
         (_ui get "bar") ctrlSetStructuredText parseText ((format ["<t size='1.05'>  RÉSEAU  <t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t> · <t color='#6f7773'>%4 hors ligne</t>   <t color='#8a9a93'>%5 joueurs · %6 IA · %7 relais · %8 brouilleurs</t>   %10%9</t>",
             _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3, _players, _ais, _relays, _jam,
             ["", format ["   <t color='#7fd0b0'>▶ %1</t>", [_msg select 0] call _esc]] select (diag_tickTime < (_msg select 1)),
-            ["<t color='#6f7773'>écrans du poste : aucun en PIP</t>", format ["<t color='#e0b040'>● PIP sur %1 écran(s) du poste</t>", _pipN]] select (_pipN > 0)]) call comspec_atak_native_fnc_tr);
+            [format ["<t color='%2'>%1 alerte(s) sur 20 min</t>", {(_x param [2, ""]) in ["FLASH", "URGENT"] && {serverTime - (_x param [7, -1e9]) < 1200}} count _events, ["#6f7773", "#e05a4a"] select (({(_x param [2, ""]) in ["FLASH", "URGENT"] && {serverTime - (_x param [7, -1e9]) < 1200}} count _events) > 0)], format ["<t color='#e0b040'>PIP : %1 écran(s)</t>", _pipN]] select (_pipN > 0)]) call comspec_atak_native_fnc_tr);
         private _groupsL = [_nodes] call _groups;
         private _nOrd = count (values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["localTasks", createHashMap]) select { (_x getOrDefault ["issuerUid", ""]) isEqualTo getPlayerUID player });
         {
             _x params ["_k", "_n"];
             (_ui get ("tab" + _k)) ctrlSetText (format ["%1 %2", _k call comspec_atak_native_fnc_tr, ["", format ["(%1)", _n]] select (_n > 0)]); // i18n:brut (déjà traduit)
-        } forEach [["GROUPES", count _groupsL], ["FLUX", count _events], ["ORDRES", _nOrd], ["CAMP", 0]];
+        } forEach [["GROUPES", count _groupsL], ["ORBAT", ((["store"] call comspec_atak_native_fnc_bftOrbat) get "total")], ["FLUX", count _events], ["ORDRES", _nOrd], ["CAMP", 0], ["RÉSEAU", 0]];
         // Listes reconstruites seulement quand leur contenu change (sélection et défilement gardés).
         private _sig = str [_tab, _groupsL apply { [_x select 0, _x select 3, _x select 5, _x select 6] }, count _events, _events param [(count _events) - 1, []]];
         private _changed = _sig isNotEqualTo (_st getOrDefault ["sig", ""]);
@@ -511,8 +655,14 @@ switch (_mode) do {
                 if (_changed) then {
                     _st set ["mute", true];
                     lbClear _lb;
+                    private _fKind = _st getOrDefault ["fKind", ""];
                     for "_k" from ((count _events) - 1) to 0 step -1 do {
                         (_events select _k) params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""], ["_grid", ""], ["_text", ""], ["_p", []], "", ["_old", false]];
+                        private _isAlert = _prio in ["FLASH", "URGENT"] || {_kind in ["TIC", "SOS", "MAN DOWN", "CONTACT", "MEDEVAC", "PANIQUE"]};
+                        private _isMsg = _kind in ["TOC", "ORDRE", "ORDER"];
+                        if (_fKind isEqualTo "A" && {!_isAlert}) then { continue };
+                        if (_fKind isEqualTo "M" && {!_isMsg}) then { continue };
+                        if (_fKind isEqualTo "R" && {_isMsg || {_isAlert}}) then { continue };
                         private _i = _lb lbAdd ((format ["%1  %2%3 · %4%5", _time, _kind, ["", " " + _prio] select (_prio isNotEqualTo "" && {_prio isNotEqualTo "ROUTINE"}), _who, ["", " · " + _grid] select (_grid isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
                         _lb lbSetData [_i, str _k];
                         _lb lbSetColor [_i, switch (true) do { case (_old): { [0.45, 0.48, 0.46, 1] }; case (_prio isEqualTo "FLASH"): { [1, 0.36, 0.3, 1] }; case (_prio isEqualTo "URGENT"): { [0.88, 0.69, 0.25, 1] }; default { [0.85, 0.89, 0.86, 1] }; }];
@@ -529,6 +679,52 @@ switch (_mode) do {
                     format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t> <t size='1.1' color='#8a9a93'>%2 · %3%4%5</t><br/><t size='1.1'>%6</t>",
                         [_kind] call _esc, _time, [_who] call _esc, ["", " · grille " + _grid] select (_grid isNotEqualTo ""), ["", " · partie précédente"] select _old, [_text] call _esc]
                 })) call comspec_atak_native_fnc_tr);
+            };
+            case "ORBAT": {
+                // Même lecture et mêmes droits que le BFT du téléphone : l'API ne répond qu'au compte du joueur.
+                ["load"] call comspec_atak_native_fnc_bftOrbat;
+                private _store = ["store"] call comspec_atak_native_fnc_bftOrbat;
+                (["presence"] call comspec_atak_native_fnc_bftOrbat) params ["", "_onKey"];
+                (["notice"] call comspec_atak_native_fnc_bftOrbat) params ["_nTxt"];
+                private _people = _store get "people";
+                private _lb = _ui get "bList";
+                private _bSig = [_store get "rev", keys _onKey];
+                if (_bSig isNotEqualTo (_st getOrDefault ["bSig", []]) || {(lbSize _lb) isEqualTo 0}) then {
+                    _st set ["bSig", _bSig];
+                    _st set ["mute", true];
+                    lbClear _lb;
+                    {
+                        _x params ["", "_ud", "_uName", "_uCode", "_uRows"];
+                        private _ui0 = _lb lbAdd format ["%1%2%3", ["", "   ", "      ", "         "] select (_ud min 3), _uName, ["", format ["  (%1)", _uCode]] select (_uCode isNotEqualTo "")];
+                        _lb lbSetColor [_ui0, [0.5, 0.72, 0.92, 1]];
+                        private _pad = ["   ", "      ", "         ", "            "] select (_ud min 3);
+                        {
+                            private _pe = _people getOrDefault [_x select 1, []];
+                            private _vac = (_x select 0) isEqualTo "v";
+                            private _on = !_vac && {(_x select 1) in _onKey};
+                            private _r = _lb lbAdd format ["%1%2%3", _pad, ["", (_x select 2) + " : "] select ((_x select 2) isNotEqualTo "" && {!_vac}), _pe param [0, ""]];
+                            _lb lbSetData [_r, _x select 1];
+                            _lb lbSetTextRight [_r, (([["hors ligne", "poste vacant"] select _vac, "en jeu"] select _on)) call comspec_atak_native_fnc_tr];
+                            _lb lbSetColor [_r, [[0.55, 0.6, 0.58, 1], [0.36, 0.85, 0.42, 1]] select _on];
+                        } forEach _uRows;
+                    } forEach (_store get "units");
+                    _st set ["mute", false];
+                };
+                private _pe = _people getOrDefault [_st getOrDefault ["selB", ""], []];
+                (_ui get "bInfo") ctrlSetStructuredText parseText ((if ((count _pe) isEqualTo 0) then {
+                    format ["<t size='1' color='#8a9a93'>%1</t>", [_nTxt] call _esc]
+                } else {
+                    private _o = _onKey getOrDefault [_st getOrDefault ["selB", ""], objNull];
+                    format ["<t size='1.25' font='COMSPEC_BarlowBold'>%1</t><br/><t size='1'>%2</t><br/><t size='1' color='%3'>%4</t>", [_pe select 0] call _esc,
+                        (((_pe select 5) select [0, 3]) apply { [(_x select 0) + (["", " · " + (_x select 1)] select ((_x select 1) isNotEqualTo ""))] call _esc }) joinString "<br/>",
+                        ["#8a9a93", "#5cc76b"] select (!isNull _o), ["Hors ligne ou état non communiqué", "En jeu"] select (!isNull _o)]
+                }) call comspec_atak_native_fnc_tr);
+            };
+            case "RÉSEAU": {
+                private _w = windDir;
+                (_ui get "rInfo") ctrlSetStructuredText parseText ((format ["<t size='1.25' font='COMSPEC_BarlowBold'>RÉSEAU</t><br/><t size='1.05'><t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t> · <t color='#6f7773'>%4 hors ligne</t><br/>%5 joueurs · %6 IA<br/>%7 relais · %8 brouilleurs actifs</t><br/><br/><t size='1.25' font='COMSPEC_BarlowBold'>MÉTÉO</t><br/><t size='1.05'>Nuages %9 %% · pluie %10 %% · brouillard %11 %%<br/>Vent %12 m/s du %13°</t><br/><br/><t size='1' color='#8a9a93'>Carte de couverture, brouilleurs en détail et météo prévue : apps Réseau et Météo du téléphone.</t>",
+                    _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3, _players, _ais, _relays, _jam,
+                    round (overcast * 100), round (rain * 100), round (fog * 100), round (vectorMagnitude wind), round ((_w + 180) mod 360)]) call comspec_atak_native_fnc_tr);
             };
             case "ORDRES": {
                 private _ot = _ui get "oTarget";
@@ -558,6 +754,11 @@ switch (_mode) do {
                 private _want = _draft getOrDefault ["dest", ""];
                 private _opts = [["Tout le camp", ""]];
                 { private _ld = _x select 2; if (isPlayer _ld && {_ld isNotEqualTo player}) then { _opts pushBack [format ["Chef de %1 · %2", _x select 0, name _ld], getPlayerUID _ld]; }; } forEach _groupsL;
+                // Destinataire choisi dans l'onglet ORBAT, pas chef de groupe : ajouté, sinon le message partirait à tout le camp.
+                if (_want isNotEqualTo "" && {(_opts findIf { (_x select 1) isEqualTo _want }) < 0}) then {
+                    private _wu = allPlayers select { (getPlayerUID _x) isEqualTo _want };
+                    if ((count _wu) > 0) then { _opts pushBack [name (_wu select 0), _want]; };
+                };
                 if (_changed || {(lbSize _cd) isEqualTo 0}) then {
                     lbClear _cd;
                     { private _i = _cd lbAdd (((_x select 0)) call comspec_atak_native_fnc_tr); _cd lbSetData [_i, _x select 1]; } forEach _opts;
@@ -607,9 +808,7 @@ switch (_mode) do {
         private _selG = _st getOrDefault ["selG", ""];
         // Poste TOC.
         private _o = _st getOrDefault ["obj", objNull];
-        if (!isNull _o) then {
-            _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_hq.paa", _sideRgb + [1], getPosASL _o, 30, 30, 0, "TOC", 1, _ts, "RobotoCondensedBold", "right"];
-        };
+        private _clear = "#(argb,8,8,3)color(0,0,0,0)";
         // Étiquettes posées une à une : celle qui chevaucherait une étiquette déjà posée n'est pas écrite (icône seule).
         private _taken = [];
         private _lbl = {
@@ -622,11 +821,23 @@ switch (_mode) do {
             _taken pushBack _r;
             _txt
         };
+        // Objectif et poste réservent leur place d'abord ; texte blanc cerné de noir, lisible sur tous les fonds.
+        private _text = {
+            params ["_pos", "_txt", ["_rgba", [1, 1, 1, 1]], ["_w", 30]];
+            if (_txt isNotEqualTo "") then { _map drawIcon [_clear, _rgba, _pos, _w, _w, 0, _txt, 2, _ts, "RobotoCondensedBold", "right"]; };
+        };
+        private _op = _draft getOrDefault ["pos", []];
+        private _opTxt = if ((count _op) >= 2) then { [[_op select 0, _op select 1, 0], "OBJECTIF"] call _lbl } else { "" };
+        if (!isNull _o) then {
+            private _tocPos = getPosASL _o;
+            _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_hq.paa", _sideRgb + [1], _tocPos, 30, 30, 0, "", 0];
+            [_tocPos, [_tocPos, "TOC"] call _lbl] call _text;
+        };
         // Comptes rendus et alertes géolocalisés des 20 dernières minutes : dessinés après les nœuds (les noms d'abord).
         private _evs = [];
         {
             _x params ["", ["_kind", ""], ["_prio", ""], "", "", "", ["_p", []], ["_at", -1e9]];
-            if ((count _p) >= 2 && {serverTime - _at < 1200}) then {
+            if ((count _p) >= 2 && {serverTime - _at < 1200} && {!(_st getOrDefault ["hideev", false])}) then {
                 _evs pushBack [[[1, 0.55, 0.2, 1], [1, 0.3, 0.22, 1]] select (_prio in ["FLASH", "URGENT"]), [_p select 0, _p select 1, 0], _kind];
             };
         } forEach _events;
@@ -635,6 +846,7 @@ switch (_mode) do {
         _nodes = [_nodes, [], { [(_x select 4) min 3, -10] select (((_x param [7, ""]) isEqualTo _selG) && {_selG isNotEqualTo ""}) }, "ASCEND"] call BIS_fnc_sortBy;
         {
             _x params ["", "_cs", "_p", "_dir", "_fr", "_kind", "_ai", ["_grp", ""], ["_n", 1]];
+            if (_ai && {_st getOrDefault ["hideai", false]} && {_grp isNotEqualTo _selG}) then { continue };
             private _tex = format ["\A3\ui_f\data\map\markers\nato\b_%1.paa", (createHashMapFromArray [["veh", "motor_inf"], ["air", "air"], ["boat", "naval"], ["armor", "armor"]]) getOrDefault [_kind, "inf"]];
             private _col = switch (_fr) do {
                 case 0: { _sideRgb + [1] };
@@ -648,18 +860,38 @@ switch (_mode) do {
             };
             // « IA » seulement sur le groupe choisi : la carte n'est plus couverte de suffixes.
             private _txt = _cs + (["", format [" +%1", _n - 1]] select (_n > 1)) + (["", " · IA"] select (_ai && {_grp isEqualTo _selG})) + (["", " · ancien", " · perdu", " · hors ligne"] select (_fr min 3));
-            _map drawIcon [_tex, _col, _pos, 28, 28, 0, [_pos, _txt] call _lbl, 1, _ts, "RobotoCondensedBold", "right"];
+            _map drawIcon [_tex, _col, _pos, 28, 28, 0, "", 0];
+            [_pos, [_pos, _txt] call _lbl] call _text;
             if (_fr < 2) then { _map drawArrow [_pos, _pos getPos [45, _dir], _col]; };
         } forEach _nodes;
-        { _x params ["_c", "_p", "_k"]; _map drawIcon ["\A3\ui_f\data\map\markers\military\warning_CA.paa", _c, _p, 22, 22, 0, [_p, _k, 0.85] call _lbl, 1, _ts * 0.85, "RobotoCondensedBold", "right"]; } forEach _evs;
+        { _x params ["_c", "_p", "_k"]; _map drawIcon ["\A3\ui_f\data\map\markers\military\warning_CA.paa", _c, _p, 22, 22, 0, "", 0]; [_p, [_p, _k, 0.85] call _lbl, _c, 22] call _text; } forEach _evs;
         // Ordres aux groupes IA du camp (fn_aiOrder).
         ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_aiOrder;
         // Appui feu typé (fn_fireSupport) : missions de tir du camp, portées et distance de sécurité.
         ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_fireSupport;
         // Objectif de l'ordre en cours de rédaction (clic droit).
-        private _op = _draft getOrDefault ["pos", []];
         if ((count _op) >= 2) then {
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\objective_CA.paa", [1, 0.85, 0.2, 1], [_op select 0, _op select 1, 0], 34, 34, 0, "OBJECTIF", 1, _ts, "RobotoCondensedBold", "right"];
+            private _opP = [_op select 0, _op select 1, 0];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\objective_CA.paa", [1, 0.85, 0.2, 1], _opP, 34, 34, 0, "", 0];
+            [_opP, _opTxt, [1, 0.9, 0.5, 1], 34] call _text;
+        };
+        // Mesure A-B, et résultat de la recherche (15 s).
+        private _ms = _st getOrDefault ["measure", []];
+        if ((count _ms) >= 1) then {
+            private _pa = [(_ms select 0) select 0, (_ms select 0) select 1, 0];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", [1, 1, 1, 1], _pa, 14, 14, 0, "", 0];
+            if ((count _ms) >= 2) then {
+                private _pb = [(_ms select 1) select 0, (_ms select 1) select 1, 0];
+                _map drawLine [_pa, _pb, [1, 1, 1, 1]];
+                _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", [1, 1, 1, 1], _pb, 14, 14, 0, "", 0];
+                private _dm = _pa distance2D _pb;
+                [_pb, format ["%1 · %2°", [format ["%1 m", round _dm], format ["%1 km", (_dm / 1000) toFixed 2]] select (_dm >= 1000), round (_pa getDir _pb)]] call _text;
+            };
+        };
+        (_st getOrDefault ["found", [[], "", 0]]) params ["_fp", "_fl", "_fu"];
+        if ((count _fp) >= 2 && {diag_tickTime < _fu}) then {
+            private _fpos = [_fp select 0, _fp select 1, 0];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.3, 1], _fpos, 44, 44, 0, "", 0];
         };
     };
 };
