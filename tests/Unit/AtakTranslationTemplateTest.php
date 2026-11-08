@@ -31,13 +31,13 @@ final class AtakTranslationTemplateTest extends TestCase
         self::assertSame([['Dit "bonjour"', 'Says "hello"'], ['%1 m', '']], AtakTranslationTemplate::parse($raw));
     }
 
-    public function testPageIsPublicAndTranslated(): void
+    public function testPageNeedsAccountAndIsTranslated(): void
     {
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
-        self::assertStringContainsString("\$router->get('/traduire-atak', [SitePagesController::class, 'translateAtak']);", $routes);
+        self::assertStringContainsString("\$router->get('/traduire-atak', [SitePagesController::class, 'translateAtak'], [AuthMiddleware::class]);", $routes);
         self::assertStringContainsString("\$router->get('/traduire-atak/modele.json', [SitePagesController::class, 'translateAtakTemplate']);", $routes);
-        self::assertStringContainsString("\$router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak']);", $routes);
+        self::assertStringContainsString("\$router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak'], [AuthMiddleware::class]);", $routes);
         foreach (['create', 'show', 'history', 'write', 'bulk', 'decide', 'revert', 'settings', 'rotate', 'delete'] as $action) {
             self::assertStringContainsString("AtakTranslationPackApiController::class, '" . $action . "']", $routes);
         }

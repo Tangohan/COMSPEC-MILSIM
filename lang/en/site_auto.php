@@ -55784,4 +55784,5 @@ return [
     'Vos tenues, celles de la communauté et les kits de départ, prêts à enfiler en jeu.' => 'Your outfits, the community\'s outfits and the starter kits, ready to wear in game.',
     'Nom de l’emploi ou catégorie…' => 'Job name or category…',
     'Formule payante' => 'Paid plan',
+    'communauté bénéficiaire :' => 'beneficiary community:',
 ];
