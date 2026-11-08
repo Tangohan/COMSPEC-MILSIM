@@ -19,7 +19,7 @@ Audit de COMSPEC IDENTITY. Un infiltré ne doit pas être démasqué par la cons
 - `SseIdSubjectMatchService` : lien automatique seulement sans ambiguïté, apprentissage sur un rattachement sûr (un papier volé n'enseigne rien), suggestions « possiblement la même personne » pour Confidentiel, jamais de fusion.
 
 ## Fichiers touchés
-`app/Services/Sse/MemberIdentityPapersService.php`, `app/Services/Sse/SseIdCheckService.php`, `app/Services/Sse/SseIdSubjectMatchService.php`, `app/Services/Sse/SseIdCheckInsightService.php`, `app/Controllers/Web/SseIdentityRegistryController.php`, `views/admin/effectifs_workspace/partials/member_papers.php`, `views/atak/sse/papers/_person_block.php`, `bootstrap/atak_sse_identity_suite_migration.php`, `database/steps/4000_atak_sse_identity_suite.php`.
+`app/Services/Sse/MemberIdentityPapersService.php`, `app/Services/Sse/SseIdCheckService.php`, `app/Services/Sse/SseIdSubjectMatchService.php`, `app/Services/Sse/SseIdCheckInsightService.php`, `app/Controllers/Web/SseIdentityRegistryController.php`, `views/admin/effectifs_workspace/partials/member_papers.php`, `views/atak/sse/papers/_person_block.php`, `bootstrap/atak_sse_identity_suite_migration.php`, `database/steps/4020_atak_sse_identity_suite.php`.
 
 ## Vérification
 `tests/Unit/MemberIdentityPapersServiceTest.php`, `tests/Unit/SseIdSubjectMatchServiceTest.php`, `MigrationActiveQueueTest`.

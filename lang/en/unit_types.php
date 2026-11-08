@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Entity types',
+    'subtitle' => 'Create the types specific to your community (for example "Special forces" or "Platoon") and pick them when you create a unit.',
+    'tab_own' => 'Your types',
+    'tab_base' => 'Standard types',
+    'add' => 'Add a type',
+    'rename' => 'Rename',
+    'delete' => 'Delete',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'name' => 'Type name',
+    'name_help' => 'This name appears in the "Structure type" list of a unit.',
+    'modal_add' => 'New entity type',
+    'modal_rename' => 'Rename the type',
+    'confirm_delete' => 'Delete this type?',
+    'empty_own' => 'You have not created any type yet. The standard types remain available.',
+    'base_help' => 'These types come with Athena. They are available to every community and cannot be changed.',
+    'used_one' => '1 unit',
+    'used_many' => ':n units',
+    'unused' => 'No unit',
+    'in_use_hint' => 'In use: change the type of these units first to be able to delete it.',
+    'open_orbat' => 'Open the ORBAT',
+    'back' => 'Back to the catalogue',
+    'not_ready' => 'Custom types will be available after the next database update.',
+    'expired' => 'The page has expired: reload it and try again.',
+    'need_name' => 'Enter a name (120 characters at most).',
+    'duplicate' => 'A type with this name already exists.',
+    'created' => 'Type ":name" created.',
+    'renamed' => 'Type renamed to ":name".',
+    'deleted' => 'Type deleted.',
+    'in_use' => 'Some units still use this type: change their type before deleting it.',
+    'not_found' => 'This type was not found or cannot be changed.',
+    'denied' => 'You do not have permission to manage entity types.',
+];

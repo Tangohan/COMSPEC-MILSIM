@@ -131,6 +131,18 @@ class RecruitmentOpeningRepository
         return $row ?: null;
     }
 
+    /** Offres comptées dans le plafond de la formule : brouillons et offres publiées (les offres clôturées ne comptent pas). */
+    public function countForPlanQuota(int $tenantId): int
+    {
+        if (!$this->tablesExist()) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM recruitment_openings WHERE tenant_id = ? AND status IN ('draft', 'published')");
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public function publicSlugExists(int $tenantId, string $slug, ?int $excludeId = null): bool
     {
         if (!$this->tablesExist() || $slug === '') {
