@@ -17,7 +17,7 @@ import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "addons")
 SHARED = [
     ("main/script_mod.hpp", None),
-    ("ui/ui_macros.hpp", ["zeus", "analysis"]),
+    ("ui/ui_macros.hpp", ["zeus", "analysis", "editor"]),
 ]
 HEADER = "// COPIE GÉNÉRÉE de addons/{src} par tools/sync_headers.py : ne pas modifier ici.\n"
 

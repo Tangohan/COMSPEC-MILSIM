@@ -254,7 +254,7 @@ private _levelsFor = {
     params ["_cp", "_d"];
     private _e = _cp get "equip";
     private _l = [0];
-    if (_e >= 1 && {(_d getOrDefault ["type", ""]) in ["id_card", "passport", "driving_license"]}) then { _l pushBack 1; };
+    if (_e >= 1 && {(_d getOrDefault ["type", ""]) in ["id_card", "passport", "driving_license", "military_id"]}) then { _l pushBack 1; };
     if (_e >= 2 && {_d getOrDefault ["chipExpected", false]}) then { _l pushBack 2; };
     if (_e >= 3) then { _l pushBack 3; };
     _l
