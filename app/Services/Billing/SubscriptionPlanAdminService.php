@@ -128,6 +128,7 @@ final class SubscriptionPlanAdminService
             }
         };
         $used['max_members'] = $try(fn () => Container::get(UserRepository::class)->countActiveForTenant($tenantId));
+        $used['max_orbat_units'] = $try(fn () => Container::get(\App\Repositories\UnitRepository::class)->countForPlanQuota($tenantId));
         $used['max_training_courses'] = $try(fn () => Container::get(TrainingCourseRepository::class)->countTenantCatalogCourses($tenantId));
         $used['max_active_invite_links'] = $try(fn () => (new InviteLinkRepository())->countActiveForTenant($tenantId));
         try {

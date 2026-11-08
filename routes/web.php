@@ -533,6 +533,7 @@ return function (Router $router) {
     $router->post('/back-office/tableau-operationnel/{id}/frago', [OperationalBoardController::class, 'createFrago'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/{id}/checklist/{itemId}', [OperationalBoardController::class, 'toggleChecklist'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/{id}/retirer-du-mur', [OperationalBoardController::class, 'retireFromBoard'], $mwOperationalBoardEdit);
+    $router->post('/integrations/companion/v1', [\App\Controllers\Api\DiscordCompanionController::class, 'handle']);
     $router->get('/integrations/v1/evenements', [IntegrationsPublicEventsController::class, 'upcoming'], [IntegrationsApiAuthMiddleware::class]);
     $router->get('/messages', [TenantMessagesController::class, 'index'], $mwMessages);
     $router->post('/messages', [TenantMessagesController::class, 'create'], $mwMessages);
@@ -1198,6 +1199,7 @@ return function (Router $router) {
     $router->post('/admin/system/annuaire/retirer', [\App\Controllers\Admin\System\SystemRegistryController::class, 'unpin'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     // Intégrations de la plateforme (salons Discord de l'équipe, rôles liés de Discord, envoi commun des e-mails).
     $router->get('/admin/system/integrations', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/integrations/companion', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveCompanion'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/integrations/discord', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveDiscord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/integrations/discord/essai', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/integrations/roles-lies', [\App\Controllers\Admin\System\SystemPlatformIntegrationsController::class, 'saveLinkedRoles'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1516,6 +1518,7 @@ return function (Router $router) {
     $router->post('/back-office/organisation/noms/trigramme', [\App\Controllers\Admin\Organization\OrganizationMemberNamesController::class, 'updateMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules', [OrganizationMemberNumberController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/matricules/prefixes', [OrganizationMemberNumberController::class, 'saveOrganigramPrefix'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/import', [OrganizationMemberNumberController::class, 'importCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/matricules/export', [OrganizationMemberNumberController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/matricules/attribuer', [OrganizationMemberNumberController::class, 'assignNext'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1646,6 +1649,7 @@ return function (Router $router) {
     $router->post('/back-office/integrations/discord/organisation', [OrganizationIntegrationsController::class, 'saveDiscordOrganisation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/salons', [OrganizationIntegrationsController::class, 'addDiscordWebhook'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/salons/{webhookId}/supprimer', [OrganizationIntegrationsController::class, 'removeDiscordWebhook'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/discord/nom-salon', [OrganizationIntegrationsController::class, 'refreshDiscordChannel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/tester', [OrganizationIntegrationsController::class, 'testDiscordWebhook'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/discord/modele-invitation', [OrganizationIntegrationsController::class, 'saveInviteTemplate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails', [OrganizationIntegrationsController::class, 'saveMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1693,6 +1697,10 @@ return function (Router $router) {
     $router->get('/api/events/{id}/reponses-nominatives', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/api/events/{id}/reponses-nominatives/export', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/api/events/{id}/reponses-nominatives/{userId}', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'updateMeta'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/companion/pair', [CommunityEventsAdminController::class, 'companionPair'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/discord/bot', [CommunityEventsAdminController::class, 'saveDiscordBot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/discord', [CommunityEventsAdminController::class, 'saveEventDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/series/stop', [CommunityEventsAdminController::class, 'stopSeries'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}', [CommunityEventsAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/details', [CommunityEventsAdminController::class, 'updateDetails'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/rsvp', [CommunityEventsAdminController::class, 'updateParticipantRsvp'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2776,6 +2784,25 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/athena/v2/inspector', [AthenaDataApiController::class, 'dashboard'], $athenaInspectorMw);
     $router->get('/api/athena/inspector/metrics', [\App\Controllers\Api\AthenaInspectorMetricsController::class, 'metrics'], $athenaInspectorMw);
     $router->post('/api/athena/v2/dev/seed', [AthenaDataApiController::class, 'devSeed'], $athenaInspectorMw);
+
+    // ATHENA Patch Studio : même session web, même CSRF, ressources privées.
+    $patchStudio = \App\Controllers\Api\PatchStudioApiController::class;
+    $router->get('/patch-studio', [\App\Controllers\Web\PatchStudioController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/projects', [$patchStudio, 'index'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/projects', [$patchStudio, 'create'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/projects/{id}/preview', [$patchStudio, 'preview'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/projects/{id}/preview', [$patchStudio, 'preview'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/projects/{id}', [$patchStudio, 'show'], [AuthMiddleware::class]);
+    $router->put('/api/patch-studio/projects/{id}', [$patchStudio, 'update'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/projects/{id}/history', [$patchStudio, 'history'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/projects/{id}/share', [$patchStudio, 'share'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/projects/{id}/export', [$patchStudio, 'export'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/variables', [$patchStudio, 'variables'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/assets', [$patchStudio, 'assets'], [AuthMiddleware::class]);
+    $router->post('/api/patch-studio/assets', [$patchStudio, 'upload'], [AuthMiddleware::class]);
+    $router->get('/api/patch-studio/assets/{id}', [$patchStudio, 'asset'], [AuthMiddleware::class]);
+    $router->get('/api/atak/patches', [\App\Controllers\Api\AtakPatchesApiController::class, 'index']);
+    $router->get('/api/atak/patches/{id}/{revision}/{variant}/{format}', [\App\Controllers\Api\AtakPatchesApiController::class, 'file']);
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);

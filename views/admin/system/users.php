@@ -207,7 +207,7 @@ $actionForm = static function (string $action, array $fields, string $label, str
                 <div class="pa-field">
                     <label for="platform-users-status">État</label>
                     <select id="platform-users-status" name="status">
-                        <?php foreach ($statusOptions as $value => $label): ?>
+                        <?php foreach ($statusOptions as $value => $label): $value = (string) $value; ?>
                             <option value="<?= $h($value) ?>" <?= $statusFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -215,7 +215,8 @@ $actionForm = static function (string $action, array $fields, string $label, str
                 <div class="pa-field">
                     <label for="platform-users-inactif">Sans connexion depuis</label>
                     <select id="platform-users-inactif" name="inactif">
-                        <?php foreach ($inactivityOptions as $value => $label): ?>
+                        <?php // Clés '30', '90', '180' : PHP les range en entiers, $h exige une chaîne (strict_types). ?>
+                        <?php foreach ($inactivityOptions as $value => $label): $value = (string) $value; ?>
                             <option value="<?= $h($value) ?>" <?= $inactivityFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option>
                         <?php endforeach; ?>
                     </select>

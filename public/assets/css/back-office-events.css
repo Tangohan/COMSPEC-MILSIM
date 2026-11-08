@@ -1695,3 +1695,7 @@ html[data-bo-theme="dark"] .ath-event-show__series legend { color: #f08585; }
 .ath-cal__add { float: right; border: 0; border-radius: 4px; padding: 0 6px; background: transparent; color: var(--ath-accent, #0b8a5c); cursor: pointer; font-size: 18px; }
 .ath-cal__add:hover, .ath-cal__add:focus-visible { background: #d8f3e5; }
 html[data-bo-theme="dark"] .ev-create-dialog { background: #151e28; color: #e5edf5; }
+
+.ev-discord-settings { padding: 16px; margin: 16px 0; }
+.ev-discord-settings summary { cursor: pointer; font-weight: 600; }
+.ev-discord-settings input[type="password"] { padding: 10px; border: 1px solid var(--ath-border, #d4ddd7); border-radius: 6px; background: transparent; color: inherit; }

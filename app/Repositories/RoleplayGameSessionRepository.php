@@ -30,6 +30,16 @@ final class RoleplayGameSessionRepository
     }
 
     /** @return array<string, mixed>|null */
+    public function findLatestForEvent(int $tenantId, int $eventId): ?array
+    {
+        $st = $this->pdo->prepare('SELECT * FROM roleplay_game_sessions WHERE tenant_id = ? AND community_event_id = ? ORDER BY id DESC LIMIT 1');
+        $st->execute([$tenantId, $eventId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /** @return array<string, mixed>|null */
     public function findById(int $tenantId, int $id): ?array
     {
         $st = $this->pdo->prepare('SELECT * FROM roleplay_game_sessions WHERE tenant_id = ? AND id = ? LIMIT 1');

@@ -103,11 +103,14 @@ final class UnitCodeService
             $this->repo->setNextUnitNumber($tenantId, $next);
         }
 
+        $displayPrefix = $this->repo->displayPrefix($tenantId);
+        $displayPrefix = $displayPrefix !== '' ? $displayPrefix : $tenant['community_code'];
         $out = [];
         foreach ($built as $unitId => $c) {
             $number = $existing[$unitId]['admin_number'] ?? $inserts[$unitId]['admin_number'];
             $out[$unitId] = [
-                'code' => $c['path'],
+                'code' => $displayPrefix . substr($c['path'], strlen($tenant['community_code'])),
+                'administrative_code' => $c['path'],
                 'segment' => $c['segment'],
                 'admin_number' => $number,
                 'admin_id' => UnitCodeBuilder::formatUnitAdminId($tenant['admin_number'], $number),
@@ -116,7 +119,8 @@ final class UnitCodeService
 
         return [
             'community' => [
-                'code' => $tenant['community_code'],
+                'code' => $displayPrefix,
+                'administrative_code' => $tenant['community_code'],
                 'admin_number' => $tenant['admin_number'],
                 'admin_id' => UnitCodeBuilder::formatTenantNumber($tenant['admin_number']),
                 'is_custom' => $tenant['is_custom'],
@@ -158,6 +162,25 @@ final class UnitCodeService
         self::forget($tenantId);
         $this->sync($tenantId);
 
+        return null;
+    }
+
+    /** Personnalise uniquement le préfixe visible dans cette organisation. Vide = défaut. */
+    public function changeDisplayPrefix(int $tenantId, string $raw): ?string
+    {
+        $prefix = UnitCodeBuilder::normalizeInput($raw, 2, 10);
+        if ($prefix === null) {
+            return 'Le préfixe doit compter de 2 à 10 lettres ou chiffres, sans espace ni accent.';
+        }
+        if ($tenantId < 1 || !$this->repo->ensureTables() || $this->repo->ensureTenant($tenantId) === null) {
+            return 'Les codes unité ne sont pas encore disponibles.';
+        }
+        try {
+            $this->repo->saveDisplayPrefix($tenantId, $prefix);
+        } catch (Throwable) {
+            return 'Le préfixe n’a pas pu être enregistré.';
+        }
+        self::forget($tenantId);
         return null;
     }
 

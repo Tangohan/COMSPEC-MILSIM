@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {writeFileSync,readFileSync} from 'node:fs';
+import core from './load-core.mjs';
+const {template,layer,History,group,ungroup,duplicate,compose,resolve,patterns,shapes}=core;
+test('all templates remain editable, with independent objects',()=>{for(const kind of ['name','callsign','unit','circle','ir','pvc','embroidered','blank']){const d=template(kind);assert.equal(d.version,1);assert.equal(d.canvas.width,512);if(kind!=='blank'){assert.ok(d.variants.standard.length>=2);assert.equal(d.variants.standard[1].type,'text');}writeFileSync('/tmp/patch-'+kind+'.svg',compose(d));}});
+test('typography, patterns, background, borders and transforms survive JSON',()=>{const d=template();const t=d.variants.standard[1];Object.assign(t,{fontFamily:'Oswald',fontSize:64,letterSpacing:7,wordSpacing:4,rotation:22,scaleX:1.2,italic:true});t.fill={type:'pattern',pattern:'multicam',scale:.5,rotation:20,opacity:.8};t.stroke={color:'#000000',width:3,opacity:1,position:'center',style:'solid'};const svg=compose(JSON.parse(JSON.stringify(d)));assert.match(svg,/Oswald/);assert.match(svg,/letter-spacing="7"/);assert.match(svg,/word-spacing="4"/);assert.match(svg,/<pattern /);assert.match(svg,/rotate\(22/);assert.match(svg,/stroke="#000000"/);assert.equal(svg,compose(d));});
+test('undo redo branching and bounded memory',()=>{const d=template(),h=new History(d,3);for(let i=1;i<=4;i++){d.canvas.width=512+i;h.push(d);}assert.equal(h.items.length,3);assert.equal(h.undo().canvas.width,515);assert.equal(h.redo().canvas.width,516);h.undo();d.canvas.width=600;h.push(d);assert.equal(h.redo(),undefined);});
+test('group ungroup preserve relative coordinates and identities',()=>{const a=[layer('text',{x:10,y:20}),layer('shape',{x:100,y:80})],before=JSON.stringify(a),g=group(a,a.map(x=>x.id));assert.equal(a.length,1);assert.equal(g.children[1].x,90);assert.equal(ungroup(a,g.id),true);assert.equal(JSON.stringify(a),before);});
+test('duplicates recursively acquire new identities',()=>{const a=layer('group',{children:[layer('text')]});const b=duplicate(a);assert.notEqual(a.id,b.id);assert.notEqual(a.children[0].id,b.children[0].id);assert.equal(a.children[0].content,b.children[0].content);});
+test('variables, substitutions and XML escaping',()=>{assert.equal(resolve('{callsign} {unit}',{callsign:'SABER 1-3'},{unit:'TIGER'}),'SABER 1-3 TIGER');const d=template();d.variants.standard[1].content='<script>&"';const s=compose(d);assert.ok(!s.includes('<script>'));assert.match(s,/&lt;script&gt;/);});
+test('all fill/geometry/border variants serialize',()=>{for(const shape of shapes)for(const position of ['center','inside','outside']){const d=template();d.variants.standard[0].shape=shape;d.variants.standard[0].stroke.position=position;writeFileSync(`/tmp/patch-shape-${shape}-${position}.svg`,compose(d));}for(const pattern of patterns){const d=template();d.variants.standard[1].fill={type:'pattern',pattern,brightness:.7,contrast:1.3};assert.match(compose(d),/<pattern /);}});
+test('night variants are independent and selection export isolated',()=>{const d=template();d.variants.night=JSON.parse(JSON.stringify(d.variants.standard));d.variants.night[1].content='NIGHT';assert.notEqual(compose(d),compose(d,{variant:'night'}));const s=compose(d,{selection:[d.variants.standard[1].id]});assert.ok(!s.includes('data-layer="'+d.variants.standard[0].id+'"'));});
+test('real image texture fills preserve proportions and settings without external rendering resources',()=>{
+ const catalog=JSON.parse(readFileSync(new URL('../../public/assets/textures/patch-studio/catalog.json',import.meta.url),'utf8'));
+ for(const t of catalog.textures){
+  const d=template(),src='data:image/jpeg;base64,'+readFileSync(new URL('../../public/assets/textures/patch-studio/'+t.file,import.meta.url)).toString('base64');
+  d.variants.standard[1].fill={type:'texture',textureId:t.id,scale:.5,rotation:30,offsetX:12,offsetY:24,repeat:true,opacity:.8,brightness:1.1,contrast:1.2};
+  const options={textures:{[t.id]:{...t,src}}};const svg=compose(d,options);
+  assert.match(svg,/<image href="data:image\/jpeg;base64,/);assert.ok(!svg.includes('https://'));
+  assert.match(svg,new RegExp('width="512" height="'+(512*t.height/t.width)+'"'));assert.match(svg,/rotate\(30\) scale\(0.5\)/);assert.match(svg,/<feComponentTransfer>/);
+  assert.equal(compose(JSON.parse(JSON.stringify(d)),options),svg);assert.throws(()=>compose(d),/Texture indisponible/);
+  const legacy=JSON.parse(readFileSync(new URL('project.json',import.meta.url),'utf8'));const bg=legacy.variants.standard[0];bg.fill={type:'texture',textureId:t.id,scale:.5,repeat:false};const old=compose(legacy,options);assert.match(old,new RegExp('width="'+bg.width*2+'" height="'+bg.height*2+'" patternTransform='));assert.ok(!old.includes('viewBox="-'));
+ }
+});

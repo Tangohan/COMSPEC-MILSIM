@@ -69,6 +69,10 @@ private _ours = [
     ["none", "Aucun"], ["fr", "France"], ["fr_sub", "France BD"], ["us", "USA"], ["us_ir", "USA BD"],
     ["skull", "Crâne"], ["crusader", "Croix"], ["alien", "Alien"], ["comspec", "COMSPEC"], ["name", "Nominatif"], ["uniform", "Insigne de l'uniforme"]
 ];
+if (_act isEqualTo "name" && {(_arg select [0,7]) isEqualTo "athena:"}) exitWith {
+    private _r = ["row", _arg] call comspec_atak_native_fnc_patchAthena;
+    if (_r isEqualTo []) then { "ATHENA (indisponible)" } else { _r select 8 }
+};
 if (_act isEqualTo "name") exitWith {
     if !(_arg isEqualType "") exitWith { "Aucun" };
     private _i = _ours findIf { (_x select 0) isEqualTo _arg };
@@ -94,4 +98,12 @@ if (_all isEqualTo []) then {
     { _all pushBack ["ins:" + (_x select 0), _x select 1, _x select 2, "mission", [(_x select 1) + " " + (_x select 0)] call _fold]; } forEach _mis;
     missionNamespace setVariable ["COMSPEC_ATAK_PatchCatalog", _all];
 };
-_all
+// Source distante recalculée à chaque lecture, indépendante du cache mods/mission.
+private _remote = [];
+{
+    private _v = "athena:" + (_x select 0) + ":" + (_x select 1);
+    private _n = (_x select 8) + (["", " (nuit)"] select ((_x select 1) isEqualTo "night"));
+    private _tex = (["texture", _v] call comspec_atak_native_fnc_patchAthena) select 0;
+    _remote pushBack [_v, _n, _tex, "athena", [_n + " " + _v] call _fold];
+} forEach (missionNamespace getVariable ["COMSPEC_ATAK_AthenaPatches", []]);
+_all + _remote

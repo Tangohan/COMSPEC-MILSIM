@@ -458,6 +458,10 @@ final class OrbatApiController
 
     private function structureCreate(Request $request, int $tenantId): Response
     {
+        $planBlock = \App\Services\Billing\OrbatUnitQuota::blockMessage($tenantId);
+        if ($planBlock !== null) {
+            return Response::json(['success' => false, 'message' => $planBlock, 'error' => 'plan_required'], 403);
+        }
         $name = trim($request->inputString('name', ''));
         if ($name === '' || mb_strlen($name) > 255) {
             return Response::json(['success' => false, 'message' => 'Le nom de l’unité est requis.'], 400);

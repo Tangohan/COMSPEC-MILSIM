@@ -219,43 +219,19 @@ final class AdvancementEligibilityService
             ? (int) $target['required_qualification_id']
             : 0;
         if ($requiredQualificationId > 0) {
-            $qualLabel = trim((string) ($target['required_qualification_label'] ?? 'requise'));
-            if ($qualLabel === '') {
-                $qualLabel = 'requise';
-            }
+            $qualLabel = trim((string) ($target['required_qualification_label'] ?? 'requise')) ?: 'requise';
             $award = is_array($input['qualification_award'] ?? null) ? $input['qualification_award'] : null;
-            if ($award === null || !$this->temporal->isEffectivelyActive($award, $today)) {
-                $conditions[] = [
-                    'key' => 'qualification',
-                    'label' => 'Qualification ' . $qualLabel,
-                    'met' => false,
-                    'detail' => 'Qualification ' . $qualLabel . ' manquante',
-                ];
-                $empty['eligibility_reason'] = 'Qualification ' . $qualLabel . ' manquante';
-                $empty['conditions'] = $conditions;
-
-                return $empty;
-            }
-            $requiredLevel = isset($target['required_qualification_level_id']) && $target['required_qualification_level_id'] !== ''
-                ? (int) $target['required_qualification_level_id']
-                : 0;
-            if ($requiredLevel > 0 && empty($input['qualification_level_met'])) {
-                $conditions[] = [
-                    'key' => 'qualification',
-                    'label' => 'Qualification ' . $qualLabel,
-                    'met' => false,
-                    'detail' => 'Niveau de qualification requis non atteint pour ' . $qualLabel . '.',
-                ];
-                $empty['eligibility_reason'] = 'Niveau de qualification requis non atteint pour ' . $qualLabel . '.';
-                $empty['conditions'] = $conditions;
-
-                return $empty;
-            }
+            $active = $award !== null && $this->temporal->isEffectivelyActive($award, $today);
+            $requiredLevel = (int) ($target['required_qualification_level_id'] ?? 0);
+            $levelMet = $requiredLevel < 1 || !empty($input['qualification_level_met']);
+            // Une qualification manquante informe le staff sans empêcher l'avancement.
             $conditions[] = [
                 'key' => 'qualification',
                 'label' => 'Qualification ' . $qualLabel,
-                'met' => true,
-                'detail' => 'Détenue et active.',
+                'met' => $active && $levelMet,
+                'detail' => !$active
+                    ? 'Qualification ' . $qualLabel . ' manquante (suivi indicatif)'
+                    : (!$levelMet ? 'Niveau de qualification requis non atteint pour ' . $qualLabel . ' (suivi indicatif).' : 'Détenue et active.'),
             ];
         }
 

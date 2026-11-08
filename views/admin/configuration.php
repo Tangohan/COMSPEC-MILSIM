@@ -506,8 +506,9 @@ $renderItem = static function (array $item, string $sectionTitle) use ($h, $icon
 
                     <article class="bo-cfg-card">
                         <header class="bo-cfg-card__head">
-                            <h3 class="bo-cfg-card__title">Matricule</h3>
+                            <h3 class="bo-cfg-card__title">Matricule et préfixes</h3>
                         </header>
+                        <p><a href="<?= $h(effectifs_workspace_url('affectations') . '?vue=unites#eff-aff-codes') ?>">Configurer le préfixe visuel des codes unité</a></p>
                         <?php if ($matriculeConfig): ?>
                         <dl class="bo-cfg-kv">
                             <div><dt>Préfixe</dt><dd class="bo-cfg-mono" translate="no"><?= $h($matriculeConfig['prefix'] ?? '—') ?></dd></div>

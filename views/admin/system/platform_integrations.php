@@ -139,6 +139,18 @@ $flashSuccess = \App\Core\Session::getFlash('success');
         </div>
         <?php endif; ?>
 
+        <div class="bo-int-card" id="companion">
+            <h3 class="bo-int-card__title"><?= $h(__('companion.title')) ?></h3>
+            <p class="bo-int-card__desc"><?= $h(__('companion.api_help')) ?></p>
+            <form method="post" action="<?= $h(url('admin/system/integrations/companion')) ?>">
+                <?= \App\Core\Csrf::field() ?>
+                <label class="bo-int-field"><span class="bo-int-field__label"><?= $h(__('companion.api_key')) ?></span>
+                    <input type="password" name="companion_api_key" class="bo-int-input" autocomplete="new-password" minlength="32" maxlength="128" placeholder="<?= $h(__('companion.key_keep')) ?>">
+                </label>
+                <button type="submit" class="bo-int-btn bo-int-btn--solid"><?= $h(__('events.save')) ?></button>
+            </form>
+        </div>
+
         <div class="bo-int-card" id="emails">
             <h3 class="bo-int-card__title"><?= $icon('mail') ?> Envoi commun de la plateforme</h3>
             <p class="bo-int-card__desc">Sert aux e-mails sans communauté (inscription, mot de passe oublié, alertes) et aux communautés qui n’ont pas leur propre compte. Il compte dans le quota de la plateforme (page Envois d’e-mails).</p>

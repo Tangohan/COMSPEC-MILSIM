@@ -138,3 +138,9 @@ html[data-bo-theme="dark"] .bo-mn-issue--info { border-left-color: #5b9bd5; }
 .bo-mn-imp { margin: 0 0 16px; padding: 12px; background: var(--ath-bg, #f6f8f9); border: 1px solid var(--ath-line, #e3e8ea); }
 .bo-mn-imp .ath-form__actions form, .bo-mn-panel .ath-form__actions form { margin: 0; }
 .bo-mn-audit__restore { margin: 6px 0 0; }
+
+.bo-mn-prefix-form, .bo-mn-prefix-row { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 12px; }
+.bo-mn-prefix-row { padding: 12px 0; border-top: 1px solid var(--ath-line, #e3e8ea); }
+.bo-mn-prefix-row > div:first-of-type { flex: 1 1 220px; overflow-wrap: anywhere; }
+.bo-mn-prefix-row code { color: var(--ath-muted, #6d7a80); }
+.bo-mn-prefix-row .ath-field, .bo-mn-prefix-form .ath-field { flex: 0 1 220px; min-width: 0; }

@@ -10,6 +10,11 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AarReportRepository;
 use App\Repositories\CommunityEventRepository;
+use App\Repositories\EventAutomationRepository;
+use App\Repositories\TenantRepository;
+use App\Services\Integrations\DiscordWebhookDirectory;
+use App\Services\Integrations\DiscordEventAttendanceService;
+use App\Support\SecretCipher;
 use App\Repositories\CommunityEventSlotAssignmentRepository;
 use App\Repositories\CommunityEventSlotRepository;
 use App\Repositories\TrainingCourseRepository;
@@ -65,6 +70,107 @@ final class CommunityEventsAdminController
             'required_training_course_id' => $courseId > 0 ? $courseId : null,
             'qualification_enforcement' => $mode,
         ];
+    }
+
+    /** @return array{destination:string, rsvp:bool, locale:string}|string|null */
+    private function discordInput(Request $request, int $tenantId): array|string|null
+    {
+        if ((string) $request->input('discord_publish', '') !== '1') {
+            return null;
+        }
+        $destination = trim((string) $request->input('discord_destination', 'organisation'));
+        $companion = $destination === 'companion' && (new \App\Repositories\DiscordCompanionRepository())->forTenant($tenantId) !== null;
+        if (!$companion && !(new DiscordWebhookDirectory())->exists($tenantId, $destination)) {
+            return __('events.discord_missing_webhook');
+        }
+        $rsvp = (string) $request->input('discord_rsvp', '') === '1';
+        if ($rsvp && !$companion && (new DiscordEventAttendanceService())->botToken($tenantId) === '') {
+            return __('events.discord_missing_bot');
+        }
+
+        return ['destination' => $destination, 'rsvp' => $rsvp, 'locale' => locale() === 'fr' ? 'fr' : 'en'];
+    }
+
+    public function companionPair(Request $request, array $params = []): Response
+    {
+        $tenant = (int) Session::get('tenant_id');
+        if (Csrf::validate($request->input('_csrf_token')) && $this->featureGate->allowsLimitedFeatureModule($tenant, 'events')) {
+            $repo = new \App\Repositories\DiscordCompanionRepository();
+            if ((string) $request->input('unlink', '') === '1') {
+                $repo->unlink($tenant);
+                Session::flash('success', __('companion.unlinked'));
+            } elseif ((new \App\Services\Integrations\DiscordCompanionSettings())->key() !== '') {
+                Session::flash('success', __('companion.pair_code', ['code' => $repo->pairingCode($tenant)]));
+            } else {
+                Session::flash('error', __('companion.not_configured'));
+            }
+        }
+        return Response::redirect(url('back-office/events') . '#event-discord-settings');
+    }
+
+    public function saveDiscordBot(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!Csrf::validate($request->input('_csrf_token')) || !$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $token = trim((string) $request->input('discord_bot_token', ''));
+        if ($token !== '' && preg_match('/^[A-Za-z0-9_.-]{30,200}$/D', $token) !== 1) {
+            Session::flash('error', __('events.invalid_token'));
+            return Response::redirect(url('back-office/events'));
+        }
+        $tenants = new TenantRepository();
+        $settings = $tenants->getSettings($tenantId);
+        $integrations = is_array($settings['integrations'] ?? null) ? $settings['integrations'] : [];
+        if ((string) $request->input('clear_bot', '') === '1') {
+            $integrations['event_discord_bot_token'] = null;
+        } elseif ($token !== '') {
+            $integrations['event_discord_bot_token'] = SecretCipher::encrypt($token);
+        }
+        $tenants->mergeSettings($tenantId, ['integrations' => $integrations]);
+        Session::flash('success', __('events.saved'));
+
+        return Response::redirect(url('back-office/events'));
+    }
+
+    public function saveEventDiscord(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $event = $this->events->findByIdForTenant($id, $tenantId);
+        if (!Csrf::validate($request->input('_csrf_token')) || !$event || !empty($event['cancelled_at']) || !$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $input = $this->discordInput($request, $tenantId);
+        $repo = new EventAutomationRepository();
+        $existing = $repo->discord($tenantId, $id);
+        if (is_string($input)) {
+            Session::flash('error', $input);
+        } elseif ($input === null) {
+            $repo->disableDiscord($tenantId, $id);
+            Session::flash('success', __('events.saved'));
+        } elseif (!empty($existing['message_id']) && $input['destination'] !== $existing['destination']) {
+            Session::flash('error', __('events.discord_locked'));
+        } else {
+            $repo->configureDiscord($tenantId, $id, $input['destination'], $input['rsvp'], $input['locale']);
+            if ($input['destination'] !== 'companion') (new DiscordEventAttendanceService())->sync(['tenant_id' => $tenantId, 'event_id' => $id]);
+            Session::flash('success', __('events.discord_processed'));
+        }
+
+        return Response::redirect(url('back-office/events/' . $id));
+    }
+
+    public function stopSeries(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        $event = $this->events->findByIdForTenant($id, $tenantId);
+        if (Csrf::validate($request->input('_csrf_token')) && $event && $this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            (new EventAutomationRepository())->stopSeries($tenantId, (string) ($event['series_id'] ?? ''));
+            Session::flash('success', __('events.series_stopped'));
+        }
+
+        return Response::redirect(url('back-office/events/' . $id));
     }
 
     public function index(Request $request, array $params = []): Response
@@ -124,6 +230,7 @@ final class CommunityEventsAdminController
             'boPageActionUrl' => url('back-office/events') . '?vue=calendrier#nouveau',
             'boPageQuick' => [
                 ['label' => 'Calendrier', 'href' => url('back-office/events') . '?vue=calendrier'],
+                ['label' => 'Sessions de jeu', 'href' => url('back-office/roleplay/sessions')],
                 ['label' => 'À venir', 'href' => url('back-office/events') . '?vue=a_venir'],
                 ['label' => 'Passées', 'href' => url('back-office/events') . '?vue=passes'],
                 ['label' => 'Annulées', 'href' => url('back-office/events') . '?vue=annules'],
@@ -460,20 +567,32 @@ final class CommunityEventsAdminController
 
             return $this->redirectEventsIndex($listVue);
         }
+        $discord = $this->discordInput($request, $tenantId);
+        if (is_string($discord)) {
+            Session::flash('error', $discord);
+
+            return $this->redirectEventsIndex($listVue);
+        }
+        $endless = $repeat !== '' && $repeatEnd === 'forever';
+        if ($endless && !$this->events->seriesColumnReady()) {
+            Session::flash('error', __('events.series_unavailable'));
+
+            return $this->redirectEventsIndex($listVue);
+        }
         $occurrences = in_array($repeat, EventRecurrence::FREQUENCIES, true)
             ? EventRecurrence::expand(
                 $starts,
                 $ends,
                 $repeat,
                 $repeatEnd === 'until' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $repeatUntil) === 1 ? $repeatUntil : null,
-                $repeatEnd === 'count' ? max(1, $repeatCount) : null,
+                $endless ? 12 : ($repeatEnd === 'count' ? max(1, $repeatCount) : null),
                 $repeatDays
             )
             : [['starts' => $starts, 'ends' => $ends]];
         if ($occurrences === []) {
             $occurrences = [['starts' => $starts, 'ends' => $ends]];
         }
-        $seriesId = count($occurrences) > 1 ? bin2hex(random_bytes(16)) : null;
+        $seriesId = $endless || count($occurrences) > 1 ? bin2hex(random_bytes(16)) : null;
 
         $eventId = 0;
         $created = 0;
@@ -496,6 +615,9 @@ final class CommunityEventsAdminController
                 $eventType
             );
             $this->events->updateDetails($id, $tenantId, $details);
+            if ($discord !== null) {
+                (new EventAutomationRepository())->configureDiscord($tenantId, $id, $discord['destination'], $discord['rsvp'], $discord['locale']);
+            }
             if ($seriesId !== null) {
                 $this->events->assignSeries($id, $tenantId, $seriesId);
             }
@@ -506,19 +628,25 @@ final class CommunityEventsAdminController
             $created++;
         }
 
-        if ($created > 1) {
+        if ($endless && $created > 0 && $seriesId !== null) {
+            (new EventAutomationRepository())->createSeries($seriesId, $tenantId, (int) $user['id'], $repeat, $repeatDays, [
+                'title' => $title, 'description' => $description, 'location' => $location,
+                'campaign_tag' => $campaignTag, 'event_type' => $eventType, 'details' => $details,
+                'duration' => (int) strtotime((string) $ends) - (int) strtotime($starts), 'discord' => $discord,
+            ], $starts, (string) $occurrences[$created - 1]['starts']);
+            Session::flash('success', __('events.endless_created'));
+        } elseif ($created > 1) {
             $lastOcc = $occurrences[$created - 1];
-            Session::flash('success', sprintf(
-                'Série créée : %d occurrences (%s), jusqu’au %s.',
-                $created,
-                EventRecurrence::describe($repeat, $repeat === 'monthly' ? [] : ($repeatDays !== [] ? $repeatDays : [(int) date('N', (int) strtotime($starts))])),
-                date('d/m/Y', (int) strtotime((string) $lastOcc['starts']))
-            ));
+            Session::flash('success', __('events.series_created', [
+                'count' => $created,
+                'frequency' => EventRecurrence::describe($repeat, $repeat === 'monthly' ? [] : ($repeatDays !== [] ? $repeatDays : [(int) date('N', (int) strtotime($starts))])),
+                'date' => date('d/m/Y', (int) strtotime((string) $lastOcc['starts'])),
+            ]));
         } else {
-            Session::flash('success', 'Événement créé.');
+            Session::flash('success', __('events.created'));
         }
         if ($quotaStopped) {
-            Session::flash('error', 'Quota mensuel atteint : la série a été arrêtée après ' . $created . ' occurrence' . ($created > 1 ? 's' : '') . '.');
+            Session::flash('error', __($endless ? 'events.quota_paused' : 'events.quota_stopped', ['count' => $created]));
         }
 
         return $this->redirectEventsIndex($listVue, substr($starts, 0, 7), $eventId);
@@ -634,6 +762,16 @@ final class CommunityEventsAdminController
         }
     }
 
+    /** Session de jeu rattachée à cet événement, s'il y en a une. @return array<string, mixed>|null */
+    private function linkedGameSession(int $tenantId, int $eventId): ?array
+    {
+        try {
+            return \App\Core\Container::get(\App\Repositories\RoleplayGameSessionRepository::class)->findLatestForEvent($tenantId, $eventId);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function show(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
@@ -714,7 +852,10 @@ final class CommunityEventsAdminController
 
         return Response::view('layout.main', [
             'title' => $eventTitle !== '' ? $eventTitle : 'Fiche créneau',
+            'eventEndless' => (new EventAutomationRepository())->isEndless($tenantId, (string) ($event['series_id'] ?? '')),
+            'eventDiscord' => (new EventAutomationRepository())->discord($tenantId, $id),
             'eventSeriesUpcoming' => $this->events->upcomingInSeries($tenantId, (string) ($event['series_id'] ?? ''), (string) ($event['starts_at'] ?? '')),
+            'eventLinkedSession' => $this->linkedGameSession($tenantId, $id),
             'content' => 'admin.organization.event_show',
             'isBackOfficeShell' => true,
             'boPageGroup' => 'Opérations',
@@ -1071,6 +1212,7 @@ final class CommunityEventsAdminController
         if ((string) $request->input('cancel_scope', 'one') === 'series') {
             $event = $this->events->findByIdForTenant($id, $tenantId);
             $seriesId = is_array($event) ? (string) ($event['series_id'] ?? '') : '';
+            (new EventAutomationRepository())->stopSeries($tenantId, $seriesId);
             foreach ($this->events->upcomingInSeries($tenantId, $seriesId, (string) ($event['starts_at'] ?? '')) as $occ) {
                 if ($occ['id'] === $id) {
                     continue;

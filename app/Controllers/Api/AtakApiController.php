@@ -12012,9 +12012,15 @@ class AtakApiController
             $body['pos_y'] = $posY;
             $body['status'] = 'armed';
         }
+        // Fin d'une charge dont l'armement n'a jamais été enregistré : rien à mettre à jour, ce n'est pas une erreur du joueur.
+        $chargeId = trim((string) ($body['charge_id'] ?? ''));
+        if ($status !== 'armed' && $status !== '' && $chargeId !== '' && strlen($chargeId) <= 96
+            && !$this->explosiveTimers()->chargeExists($tenantId, $mapId, $chargeId)) {
+            return Response::json(['ok' => true, 'ignored' => 'unknown_charge']);
+        }
         $row = $this->explosiveTimers()->upsert($tenantId, $mapId, $body);
         if ($row === null) {
-            return Response::json(['error' => 'Enregistrement impossible.'], 422);
+            return Response::json(['error' => 'Identifiant de charge manquant ou invalide.'], 422);
         }
         if (($row['status'] ?? '') === 'armed' && (int) ($row['id'] ?? 0) > 0) {
             $startedTs = strtotime((string) ($row['started_at'] ?? ''));

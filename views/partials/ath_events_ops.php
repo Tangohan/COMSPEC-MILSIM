@@ -212,6 +212,8 @@ $chipClass = static function (array $ev): string {
     <a href="<?= $h(url('back-office/events/insights')) ?>" class="ath-btn">Insights présence</a>
 </div>
 
+<?php require base_path('views/partials/ath_event_discord_settings.php'); ?>
+
 <?php if ($eventsVue === 'calendrier' && is_array($eventsCalendarMonth)): ?>
 <?php
     $cal = $eventsCalendarMonth;

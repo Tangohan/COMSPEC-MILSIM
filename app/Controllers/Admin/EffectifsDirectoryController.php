@@ -78,7 +78,7 @@ class EffectifsDirectoryController
         }
         $tenantId = (int) Session::get('tenant_id');
         $before = (string) ($this->codes->sync($tenantId)['community']['code'] ?? '');
-        $error = $this->codes->changeCommunityCode($tenantId, (string) $request->input('community_code', ''));
+        $error = $this->codes->changeDisplayPrefix($tenantId, (string) $request->input('community_code', ''));
         if ($error !== null) {
             Session::flash('error', $error);
 

@@ -52,7 +52,6 @@ final class OrganizationIntegrationsController
         $discord = new DiscordEventRelayService();
         $directory = new DiscordWebhookDirectory();
         $sse = new SseTransmissionDiscordService();
-        $mailer = new TenantMailSender();
 
         return Response::view('layout.main', [
             'title' => 'Intégrations',
@@ -66,9 +65,7 @@ final class OrganizationIntegrationsController
             'discord_relays' => $sse->publicRelays($tenantId),
             'use_community_relay' => $sse->usesCommunityRelay($tenantId),
             'community_relay_ready' => $sse->communityRelayReady($tenantId),
-            'mail_sender' => $mailer->state($tenantId),
-            'mail_providers' => TenantMailSender::PROVIDERS,
-            'admin_email' => (string) ($user['email'] ?? ''),
+            'mail_kinds' => array_values(array_filter(\App\Support\TenantEmailKind::all(), static fn (string $kind): bool => $gate->allows(\App\Support\TenantEmailKind::permissionForKind($kind)))),
             'discord_org' => $directory->organisation($tenantId),
             'discord_webhooks' => $directory->list($tenantId),
             'invite_template' => $directory->inviteTemplate($tenantId),
@@ -174,6 +171,9 @@ final class OrganizationIntegrationsController
             $relay->saveEvents($tenantId, $all);
             $message .= ' Tous les usages y sont publiés : coupez ceux dont vous ne voulez pas dans la liste ci-dessous.';
         }
+        if ($result['ok'] && !$clear) {
+            $directory->refreshChannel($tenantId, DiscordWebhookDirectory::ORGANISATION);
+        }
         if ($result['ok']) {
             $this->audit($clear ? AuditAction::DISCORD_WEBHOOK_REMOVED : AuditAction::DISCORD_WEBHOOK_SAVED, $tenantId, 'organisation');
         }
@@ -202,11 +202,33 @@ final class OrganizationIntegrationsController
             (string) $request->input('url', '')
         );
         if ($result['ok']) {
+            (new DiscordWebhookDirectory())->refreshChannel($tenantId, (string) ($result['id'] ?? ''));
             $this->audit(AuditAction::DISCORD_WEBHOOK_SAVED, $tenantId, 'salon:' . ($result['id'] ?? ''));
         }
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
         return Response::redirect(url('back-office/integrations') . '#discord-avance');
+    }
+
+    /** Actualise uniquement le nom du salon, sans envoyer de message. */
+    public function refreshDiscordChannel(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            return Response::redirect(url('back-office/integrations'));
+        }
+        $denied = $this->guardOrg();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if ((new \App\Services\Security\FileRateLimiter())->tooManyAttempts('discord_channel_refresh|' . $tenantId, 10, 60)) {
+            Session::flash('error', __('events.discord_rate_limited'));
+        } else {
+            $result = (new DiscordWebhookDirectory())->refreshChannel($tenantId, (string) $request->input('webhook_id', ''));
+            Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+        }
+
+        return Response::redirect(url('back-office/integrations') . '#discord-organisation');
     }
 
     public function removeDiscordWebhook(Request $request, array $params = []): Response

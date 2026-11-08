@@ -114,6 +114,13 @@ final class RhAlertAggregatorService
             'href' => effectifs_workspace_url('a-traiter?onglet=alertes') . '#rh-missing-command',
             'tone' => $missingCommand > 0 ? 'warn' : 'ok',
         ];
+        $careerCount = count($this->listCareerDiscrepancies($tenantId));
+        $items[] = [
+            'id' => 'career_discrepancies', 'severity' => 'Parcours de carrière',
+            'label' => 'Écart entre grade, emploi et qualifications', 'count' => $careerCount,
+            'href' => effectifs_workspace_url('a-traiter?onglet=alertes') . '#career-consistency',
+            'tone' => $careerCount > 0 ? 'warn' : 'ok',
+        ];
 
         $total = 0;
         foreach ($items as $item) {
@@ -134,6 +141,14 @@ final class RhAlertAggregatorService
         $stmt = $this->pdo->prepare('SELECT id, parent_id, slug, name, code FROM units WHERE tenant_id = ? ORDER BY name, id');
         $stmt->execute([$tenantId]);
         return MissingCommandDetector::detect($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    /** @var array<int, list<array<string, mixed>>> */
+    private array $careerMemo = [];
+
+    public function listCareerDiscrepancies(int $tenantId): array
+    {
+        return $this->careerMemo[$tenantId] ??= (new \App\Services\Personnel\CareerConsistencyService($this->pdo))->listForTenant($tenantId);
     }
 
     public function countProlongedAbsences(int $tenantId, ?int $days = null): int

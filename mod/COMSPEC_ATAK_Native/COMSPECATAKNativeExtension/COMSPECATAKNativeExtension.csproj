@@ -37,6 +37,7 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_ItemIcons.cs" Link="Extension_ItemIcons.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapCapture.cs" Link="Extension_MapCapture.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapPhoto.cs" Link="Extension_MapPhoto.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_Patches.cs" Link="Extension_Patches.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\MapTileImage.cs" Link="MapTileImage.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\GameAuth.cs" Link="GameAuth.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\OfficialClientProof.cs" Link="OfficialClientProof.cs" />

@@ -603,6 +603,7 @@ final class RhDossierWorkspaceController
             'effectifsNav' => 'rh_alerts',
             'rhAlertSummary' => $summary,
             'rhMissingCommand' => $this->rhAlerts->listMissingCommand($tenantId),
+            'rhCareerDiscrepancies' => $this->rhAlerts->listCareerDiscrepancies($tenantId),
             'rhInactiveMembers' => $this->rhAlerts->listInactiveMembers($tenantId, $inactivity),
             'rhProlongedAbsences' => $this->rhAlerts->listProlongedAbsences($tenantId, 40, $absence),
             'rhInactivityDays' => $inactivity,

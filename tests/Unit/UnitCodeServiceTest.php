@@ -51,6 +51,25 @@ final class UnitCodeServiceTest extends TestCase
         return new UnitCodeService(new UnitCodeRepository($this->pdo));
     }
 
+    public function testDisplayPrefixPreservesAdministrativeCodesAndOtherTenantSettings(): void
+    {
+        $this->pdo->exec("ALTER TABLE tenants ADD COLUMN settings TEXT");
+        $this->pdo->exec('UPDATE tenants SET settings = \'{"other":{"enabled":true}}\' WHERE id = 14');
+        $service = $this->service();
+        $before = $service->sync(14);
+        self::assertNull($service->changeDisplayPrefix(14, 'JTF'));
+        $after = $service->sync(14);
+        self::assertSame('JTF-B-A-1', $after['units'][3]['code']);
+        self::assertSame('SOAR-B-A-1', $after['units'][3]['administrative_code']);
+        self::assertSame($before['units'][3]['admin_id'], $after['units'][3]['admin_id']);
+        self::assertSame('SOAR-B-A-1', $this->pdo->query('SELECT code_path FROM unit_codes WHERE unit_id = 3')->fetchColumn());
+        $settings = json_decode($this->pdo->query('SELECT settings FROM tenants WHERE id = 14')->fetchColumn(), true);
+        self::assertTrue($settings['other']['enabled']);
+        self::assertNotNull($service->changeDisplayPrefix(14, 'bad-prefix'));
+        self::assertNull($service->changeDisplayPrefix(14, ''));
+        self::assertSame($before['units'][3]['code'], $service->sync(14)['units'][3]['code']);
+    }
+
     public function testSyncAssignsReadableCodesAndStableAdminIdentifiers(): void
     {
         $codes = $this->service()->sync(14);

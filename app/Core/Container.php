@@ -707,6 +707,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\RoleplayBilanDueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PersonnelPhaseAutoCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AttendanceRemindersCronJob::class),
+                    new \App\Services\Cron\Jobs\EventAutomationCronJob(self::get(\App\Services\Platform\FeatureGateService::class)),
                     self::get(\App\Services\Cron\Jobs\CooperationRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlayerDataRetentionCronJob::class),
@@ -2365,6 +2366,11 @@ class Container
             ),
             \App\Controllers\Admin\AdminAtakSquadsController::class => new \App\Controllers\Admin\AdminAtakSquadsController(),
             \App\Controllers\Admin\AdminIntelIntakeController::class => new \App\Controllers\Admin\AdminIntelIntakeController(),
+            \App\Services\Atak\AtakOperatorPersonnelService::class => new \App\Services\Atak\AtakOperatorPersonnelService(
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+            ),
             \App\Controllers\Admin\AdminAtakOperatorsController::class => new \App\Controllers\Admin\AdminAtakOperatorsController(
                 self::get(\App\Repositories\AtakDataRepository::class),
                 self::get(\App\Repositories\AtakMapRepository::class),
