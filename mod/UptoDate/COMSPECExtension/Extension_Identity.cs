@@ -64,6 +64,8 @@ public static partial class Extension
                     ["countries"] = new(), ["identities"] = new(), ["documents"] = new(), ["watch"] = new(), ["revoked"] = new(),
                     // Papiers remis aux joueurs (fn_idKit) et brief RP du joueur (fn_idLegend).
                     ["kits"] = new(), ["briefs"] = new(),
+                    // Population des IA et avis de recherche de l'opération (fn_idAthenaPack).
+                    ["population"] = new(), ["wanted"] = new(),
                 };
                 var head = new List<KeyValuePair<string, JsonElement>>();
                 var generatedAt = "";
@@ -97,7 +99,7 @@ public static partial class Extension
                         if (root.TryGetProperty(name, out var arr) && arr.ValueKind == JsonValueKind.Array)
                         {
                             // Pays et listes : envoyés avec la première page seulement.
-                            if (page > 0 && name is "countries" or "watch" or "revoked" or "kits" or "briefs") continue;
+                            if (page > 0 && name is "countries" or "watch" or "revoked" or "kits" or "briefs" or "population" or "wanted") continue;
                             foreach (var el in arr.EnumerateArray()) list.Add(el.Clone());
                         }
                     }
