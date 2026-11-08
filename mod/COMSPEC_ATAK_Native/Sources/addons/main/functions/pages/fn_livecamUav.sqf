@@ -115,6 +115,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
             _sync set [1, _vm];
             "comspec_livecam" setPiPEffect [_vm];
             (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["livecamMode", _vm];
+            ["modeMark", _vm] call comspec_atak_native_fnc_livecamLive;
         };
         missionNamespace setVariable ["COMSPEC_ATAK_LivecamUavSync", _sync];
         if (diag_tickTime < (_args select 0)) exitWith {};

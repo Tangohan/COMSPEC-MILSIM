@@ -213,7 +213,7 @@ switch (_tab) do {
         uiNamespace setVariable ["COMSPEC_ATAK_MusicQShown", 0];
         if (["queue", "File d'attente", format ["%1 morceau(x)", count _q], "musicQueue"] call _fold) then {
             if ((count _q) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>"]; };
-            if ((count _q) > 1) then { _rows pushBack ["buttons", [["VIDER LA FILE", ["qClear"] call _act, false, true, "Garde le morceau en cours"]]]; };
+            if ((count _q) > 1) then { _rows pushBack ["buttons", [["VIDER LA FILE", ["qClear"] call _act, false, true, "Garde le morceau en cours"]], "musicQClear"]; };
             for "_i" from 0 to (((count _q) min 40) - 1) do {
                 // Texte, teinte et boutons : fn_musicAction "qRow" (aussi pour MONTER et RETIRER sur place). Les boutons visent une place dans la file, pas un morceau.
                 (["qRow", _i] call comspec_atak_native_fnc_musicAction) params ["_qText", "_qTint", "_qBtns"];

@@ -361,18 +361,11 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
             // et la page redessinée relance le téléchargement. Chemin "WEB" : rendu par le navigateur intégré.
             _cache set [_path, [switch (true) do { case (_why isNotEqualTo ""): { "" }; case (_web): { "WEB:" + _path }; default { _use }; }, _why]];
             if ((_loading getOrDefault [_path, -1]) isEqualTo _stamp) then { _loading deleteAt _path; };
-            // Image affichable par Arma et page toujours en attente de cette diapositive : posée sur place, sans redessin.
+            // Page toujours en attente de cette diapositive : image, navigateur ou message posés sur place, sans redessin.
             [{
-                params ["_key", "_res"];
                 if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING") exitWith {};
-                (uiNamespace getVariable ["COMSPEC_ATAK_SlideWait", ["", controlNull, controlNull]]) params ["_wKey", "_wPic", "_wMsg"];
-                if (_wKey isEqualTo _key && {!isNull _wPic} && {_res isNotEqualTo ""} && {(_res select [0, 4]) isNotEqualTo "WEB:"}) exitWith {
-                    _wPic ctrlSetText _res; // i18n:brut
-                    _wMsg ctrlShow false;
-                    uiNamespace setVariable ["COMSPEC_ATAK_SlideWait", ["", controlNull, controlNull]];
-                };
-                ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
-            }, [_path, (_cache getOrDefault [_path, [""]]) select 0]] call comspec_atak_native_fnc_nextFrame;
+                if !(_this call comspec_atak_native_fnc_slideWaitDone) then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; };
+            }, [_path, (_cache getOrDefault [_path, [""]]) select 0, (_cache getOrDefault [_path, ["", ""]]) select 1]] call comspec_atak_native_fnc_nextFrame;
         };
     };
     _slideLoading = !(_path in _cache);
@@ -405,11 +398,15 @@ if (_src isEqualTo "GOOGLE" && {_path isNotEqualTo ""}) then {
             };
             ["INFO", "BRIEFING", format ["Diapositive Google : fichier %1, %2", _path, ["affichée par le navigateur intégré (texture refusée par Arma)", _why] select (_why isNotEqualTo "")]] call comspec_atak_native_fnc_log;
             _gCache set [_path, [["WEB:" + _path, ""] select (_why isNotEqualTo ""), ["", "Diapositive Google impossible à afficher : " + _why] select (_why isNotEqualTo "")]];
-            [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "BRIEFING") then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame;
+            [{
+                if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING") exitWith {};
+                if !(_this call comspec_atak_native_fnc_slideWaitDone) then { ["BRIEFING"] call comspec_atak_native_fnc_pageRender; };
+            }, [_path, (_gCache get _path) select 0, (_gCache get _path) select 1]] call comspec_atak_native_fnc_nextFrame;
         };
         _st = [diag_tickTime];
     };
     _slideLoading = (count _st) < 2;
+    if (_slideLoading) then { _slideKey = _path; };
     _path = if (_slideLoading) then { "" } else { _st select 0 };
     _slideWhy = _st param [1, ""];
 };
@@ -478,6 +475,7 @@ if (_total < 1 || {_path isEqualTo ""}) then {
     _t ctrlSetStructuredText parseText ((format ["<t align='center' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _msg]) call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_SlideWait", [_slideKey, _wPic, _t]];
 } else {
+    uiNamespace setVariable ["COMSPEC_ATAK_SlideWait", ["", controlNull, controlNull]];
     if ((_path select [0, 4]) isEqualTo "WEB:") then {
         // Navigateur intégré : la diapositive (JPEG en base64) centrée sur fond noir (fn_slideWebShow).
         ((uiNamespace getVariable ["COMSPEC_ATAK_SlideWeb", createHashMap]) getOrDefault [_path select [4], ["jpeg", ""]]) params ["_mime", "_b64"];

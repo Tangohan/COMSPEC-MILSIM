@@ -925,6 +925,24 @@ switch (_act) do {
     };
     case "player": { _s set ["droneFollowUid", _arg]; call _render; };
     case "alt": { _s set ["droneAlt", _arg]; if (!isNull _d && {call _needLink}) then { ["alt", [_arg]] call _send; }; call _render; };
+    // Vue caméra : palier d'altitude suivant (+1) ou précédent (-1). Boutons changés sur place, l'image reste en place.
+    case "altStep": {
+        private _alt = _s getOrDefault ["droneAlt", 40];
+        private _alts = [[15, 30, 60, 100, 150], [2, 3, 5, 8]] select (!isNull _d && {_d getVariable ["COMSPEC_DroneCqb", false]});
+        private _higher = _alts select { _x > _alt };
+        private _lower = _alts select { _x < _alt };
+        private _to = if (_arg > 0) then { _higher param [0, -1] } else { _lower param [(count _lower) - 1, -1] };
+        if (_to < 0) exitWith {};
+        _s set ["droneAlt", _to];
+        if (!isNull _d && {call _needLink}) then { ["alt", [_to]] call _send; };
+        _higher = _alts select { _x > _to };
+        _lower = _alts select { _x < _to };
+        private _up = _higher param [0, -1];
+        private _dn = _lower param [(count _lower) - 1, -1];
+        private _okUp = ["droneUp", [[format ["MONTER %1 m", _up], "MONTER"] select (_up < 0), "", _up > 0, format ["Altitude actuelle %1 m : monter au palier suivant", _to]]] call comspec_atak_native_fnc_formSet;
+        private _okDn = ["droneDn", [[format ["DESCENDRE %1 m", _dn], "DESCENDRE"] select (_dn < 0), "", _dn > 0, format ["Altitude actuelle %1 m : descendre au palier précédent", _to]]] call comspec_atak_native_fnc_formSet;
+        if (!_okUp || {!_okDn}) then { call _render; };
+    };
     case "speed": { _s set ["droneSpd", _arg]; if (!isNull _d && {call _needLink}) then { ["speed", [_arg]] call _send; }; call _render; };
     case "radius": { _s set ["droneHuntRad", _arg]; call _render; };
     case "arm": {
@@ -1448,6 +1466,14 @@ switch (_act) do {
         if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith { ["WARNING", "Ouvrez la caméra du drone pour viser"] call _say; };
         ["mark", "DRONE"] call comspec_atak_native_fnc_lockAction;
         call _render;
+    };
+    // Bouton de la vue caméra : vers le sol, ou devant. Seul le bouton change, l'image reste en place.
+    case "camAimToggle": {
+        if (isNull _d) exitWith {};
+        private _nadir = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""]) isNotEqualTo "NADIR";
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ["", "NADIR"] select _nadir];
+        if (_nadir) then { call _camOpen; };
+        if !(["droneNadir", [["CAMÉRA VERS LE SOL", "CAMÉRA DEVANT"] select _nadir, "", true, ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select _nadir]] call comspec_atak_native_fnc_formSet) then { call _render; };
     };
     case "camAim": {
         if (isNull _d) exitWith {};

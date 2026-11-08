@@ -5,9 +5,11 @@
       switch : valeur = actif (booléen)
       slider : valeur = [valeur, actif, icône (data\nom, "" : inchangée)]
       fold   : valeur = résumé (texte)
-      person : valeur = [texte structuré, teinte de l'image [r, v, b, a], boutons [[libellé ("" : inchangé), actif, principal]...]]
+      person : valeur = [texte structuré, teinte de l'image [r, v, b, a], boutons [[libellé ("" : inchangé), actif, principal, visible]...]]
                (ligne « person » déclarée avec un 7e paramètre) ; valeur [] : ligne masquée
-      btn    : valeur = [libellé ("" : inchangé), état ("" | "on" | "red")] (bouton de la barre de l'app Drone, 6e élément)
+      btn    : valeur = [libellé ("" : inchangé), état ("" | "on" | "red"), actif (sans valeur : inchangé), infobulle ("" : inchangée)]
+               (bouton de la barre de l'app Drone, 6e élément)
+      btnrow : valeur = visible (booléen) (ligne « buttons » déclarée avec un id, 3e élément)
       segment : valeur = l'option choisie (ligne « segment » déclarée avec un id, 5e élément des options)
     Retour : true si la ligne est affichée et a été mise à jour.
 */
@@ -84,9 +86,10 @@ switch (_e get "kind") do {
         };
         _v params ["_txt", ["_col", [1, 1, 1, 1]], ["_set", []]];
         {
-            _x params [["_lbl", ""], ["_en", true], ["_pri", false]];
+            _x params [["_lbl", ""], ["_en", true], ["_pri", false], ["_vis", true]];
             private _b = (_e get "btns") param [_forEachIndex, controlNull];
             if (isNull _b) then { continue };
+            _b ctrlShow _vis;
             if (_lbl isNotEqualTo "") then { _b ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr); };
             _b ctrlEnable _en;
             _b ctrlSetBackgroundColor ([(_th get "surface2"), _acc] select _pri);
@@ -100,8 +103,10 @@ switch (_e get "kind") do {
     case "btn": {
         private _b = _e get "btn";
         if (isNull _b) exitWith { false };
-        _v params [["_lbl", ""], ["_state", ""]];
+        _v params [["_lbl", ""], ["_state", ""], ["_enable", -1], ["_tip", ""]];
         if (_lbl isNotEqualTo "") then { _b ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr); };
+        if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
+        if (_enable isEqualType true) then { _e set ["en", _enable]; _b ctrlEnable _enable; };
         private _en = _e get "en";
         switch (_state) do {
             case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
@@ -109,6 +114,11 @@ switch (_e get "kind") do {
             default { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _en); };
         };
         true
+    };
+    case "btnrow": {
+        private _shown = false;
+        { if (!isNull _x) then { _x ctrlShow _v; _shown = true; }; } forEach (_e get "btns");
+        _shown
     };
     default { false };
 };

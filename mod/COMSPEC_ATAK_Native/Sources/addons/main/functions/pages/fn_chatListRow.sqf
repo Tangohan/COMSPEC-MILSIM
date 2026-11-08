@@ -1,16 +1,37 @@
 /*
-    Liste des conversations : SMS reçu du contact déjà en tête de la liste : sa ligne change sur place (heure, dernier
-    message, pastille des non-lus). Aucun contrôle créé ni supprimé.
-    Autre contact : l'ordre de la liste change, l'appelant la redessine (fn_p2pReceive).
+    Liste des conversations : SMS reçu d'un contact déjà listé : sa ligne change sur place (heure, dernier message,
+    pastille des non-lus) et remonte en tête ; les lignes qu'elle dépasse descendent d'un rang. Aucun contrôle créé ni
+    supprimé. Tous les contacts ont la même hauteur de ligne (fn_pageChat, _row).
+    Contact absent de la liste, ou choix d'un destinataire en cours : l'appelant la redessine (fn_p2pReceive).
     Params : [nom du contact]. Retour : true si la ligne a été mise à jour.
 */
 params [["_peer", "", [""]]];
 disableSerialization;
-if (_peer isEqualTo "" || {_peer isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ChatListTop", ""])}) exitWith { false };
-private _row = (uiNamespace getVariable ["COMSPEC_ATAK_ChatListRows", createHashMap]) getOrDefault [_peer, []];
+private _order = uiNamespace getVariable ["COMSPEC_ATAK_ChatListOrder", []];
+private _rank = _order find _peer;
+if (_peer isEqualTo "" || {_rank < 0}) exitWith { false };
+private _rows = uiNamespace getVariable ["COMSPEC_ATAK_ChatListRows", createHashMap];
+private _row = _rows getOrDefault [_peer, []];
 if (_row isEqualTo []) exitWith { false };
+if (isNull (_row select 0) || {isNull (_row select 1)} || {isNull (_row select 2)}) exitWith { false };
+// Remontée en tête : chaque contrôle garde sa place dans sa ligne, seule la ligne change de hauteur.
+if (_rank > 0) then {
+    private _above = _order select [0, _rank];
+    if ((_above findIf { (_rows getOrDefault [_x, []]) isEqualTo [] }) >= 0) exitWith { _rank = -1; };
+    private _move = {
+        params ["_r", "_dy"];
+        { (ctrlPosition _x) params ["_px", "_py", "_pw", "_ph"]; _x ctrlSetPosition [_px, _py + _dy, _pw, _ph]; _x ctrlCommit 0; } forEach (_r param [10, []]);
+        _r set [5, (_r select 5) + _dy];
+    };
+    private _topY = (_rows get (_above select 0)) select 5;
+    { private _r = _rows get _x; [_r, _r select 6] call _move; } forEach _above;
+    [_row, _topY - (_row select 5)] call _move;
+    _order deleteAt _rank;
+    _order = [_peer] + _order;
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatListOrder", _order];
+};
+if (_rank < 0) exitWith { false };
 _row params ["_cTime", "_cPrev", "_cBadge", "_tx", "_tw", "_y", "_rh", "_fs", "_ratio", "_pad"];
-if (isNull _cTime || {isNull _cPrev} || {isNull _cBadge}) exitWith { false };
 private _conv = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["p2p", []]) select { (_x getOrDefault ["peer", ""]) isEqualTo _peer };
 if (_conv isEqualTo []) exitWith { false };
 private _unread = { (_x getOrDefault ["dir", ""]) isEqualTo "in" && {!(_x getOrDefault ["read", false])} } count _conv;

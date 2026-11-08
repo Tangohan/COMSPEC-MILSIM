@@ -80,24 +80,25 @@ private _vizNow = {
 private _rerender = { if (!_redraw) exitWith {}; [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 // Changement de piste, arrêt ou saut : lecteur et pastille lecture / pause mis à jour sur place (fn_vizPlayer) ; dans
 // les listes (ATHENA, FICHIERS, SERVEUR, LIEN) la piste en cours change de teinte sans redessin (lignes « musicRow… »,
-// fn_formSet "person"). Page LECTEUR : redessinée seulement si la file ou les favoris sont dépliés, ou si la file a
-// changé (paramètre vrai) ; elle ne montre sinon aucune ligne de piste.
+// fn_formSet "person"). Page LECTEUR : file dépliée : lignes réécrites sur place (_queueNow) ; redessinée seulement si
+// les favoris sont dépliés ou si la file a changé (paramètre vrai) ; elle ne montre sinon aucune ligne de piste.
 private _stateNow = {
     params [["_queueChanged", false]];
     if (!_redraw) exitWith {};
     [] call _vizNow;
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MUSIC") exitWith {};
     if ((_ui getOrDefault ["tab", "PLAY"]) isEqualTo "PLAY") exitWith {
-        if (_queueChanged || {(_ui getOrDefault ["fold", "son"]) in ["queue", "favs"]}) then { call _rerender; };
+        if (_queueChanged || {(_ui getOrDefault ["fold", "son"]) isEqualTo "favs"}) exitWith { call _rerender; };
+        if ((_ui getOrDefault ["fold", "son"]) isEqualTo "queue") then { call _queueNow; };
     };
     {
         _x params ["_rid", "_key", "_i", "_sub"];
         [_rid, ["rowText", [_key, _i, _sub]] call comspec_atak_native_fnc_musicAction] call comspec_atak_native_fnc_formSet;
     } forEach (uiNamespace getVariable ["COMSPEC_ATAK_MusicRows", []]);
 };
-// File dépliée, MONTER ou RETIRER : les lignes affichées sont réécrites sur place, la dernière masquée si elle est en trop
-// (ses boutons visent une place, pas un morceau). Moins de 2 morceaux (VIDER et le message de file vide changent) ou plus
-// de lignes que le plafond de la page : redessin.
+// File dépliée, MONTER, RETIRER ou VIDER : les lignes affichées sont réécrites sur place, celles en trop masquées (leurs
+// boutons visent une place, pas un morceau). VIDER LA FILE disparaît sous 2 morceaux ; file vide : la première ligne
+// porte le message, sans image ni boutons. Plus de lignes que la page n'en a dessiné ou que son plafond : redessin.
 private _queueNow = {
     if (!_redraw) exitWith {};
     [] call _vizNow;
@@ -107,10 +108,15 @@ private _queueNow = {
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MUSIC") exitWith {};
     if ((_ui getOrDefault ["tab", "PLAY"]) isNotEqualTo "PLAY") exitWith {};
     if ((_ui getOrDefault ["fold", "son"]) isNotEqualTo "queue") exitWith { ["musicQueue", format ["%1 morceau(x)", _n]] call comspec_atak_native_fnc_formSet; };
-    if (_n < 2 || {_n > _shown} || {_n >= 40}) exitWith { call _rerender; };
+    if (_n > _shown || {_n >= 40}) exitWith { call _rerender; };
     ["musicQueue", format ["%1 morceau(x)", _n]] call comspec_atak_native_fnc_formSet;
+    ["musicQClear", _n > 1] call comspec_atak_native_fnc_formSet;
     for "_i" from 0 to (_shown - 1) do {
-        private _row = if (_i < _n) then { ["qRow", _i] call comspec_atak_native_fnc_musicAction } else { [] };
+        private _row = switch (true) do {
+            case (_i < _n): { ["qRow", _i] call comspec_atak_native_fnc_musicAction };
+            case (_i isEqualTo 0): { ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>", [0, 0, 0, 0], [["", false, false, false], ["", false, false, false], ["", false, false, false]]] };
+            default { [] };
+        };
         [format ["musicQ%1", _i], _row] call comspec_atak_native_fnc_formSet;
     };
 };
@@ -364,7 +370,7 @@ switch (_act) do {
         if ((_m get "kind") isNotEqualTo "" && {(_m get "qi") < count _q}) then {
             _m set ["queue", [_q select (_m get "qi")]]; _m set ["qi", 0];
         } else { _m set ["queue", []]; _m set ["qi", 0]; };
-        call _rerender;
+        call _queueNow;
     };
     case "fav": {
         _arg params ["_k", "_r", "_t", ["_len", 0]];

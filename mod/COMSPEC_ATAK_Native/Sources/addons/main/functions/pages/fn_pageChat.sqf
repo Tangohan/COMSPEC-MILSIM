@@ -112,6 +112,8 @@ private _gmk = {
     _o ctrlSetPosition _p;
     if (_t isNotEqualTo "") then { _o ctrlSetText ((_t) call comspec_atak_native_fnc_tr); };
     _o ctrlCommit 0;
+    // Ligne de la liste en cours de dessin (_row) : ses contrôles sont notés pour la déplacer sur place (fn_chatListRow).
+    if (!isNil "_rowCtrls") then { _rowCtrls pushBack _o; };
     _o
 };
 private _box = { params ["_rect", "_rgba", ["_grp", controlNull]]; private _c = if (isNull _grp) then { ["COMSPEC_RscText", _rect] call _mk } else { [_grp, "COMSPEC_RscText", _rect] call _gmk }; _c ctrlSetBackgroundColor _rgba; _c };
@@ -267,10 +269,11 @@ private _convW = _bw - _convX;
 // ================================================================ LISTE DES CONVERSATIONS
 private _drawList = {
     params ["_lx", "_lw"];
-    // Lignes de la liste, pour changer sur place celle du contact en tête quand un SMS arrive (fn_chatListRow).
+    // Lignes de la liste et ordre des contacts, pour changer sur place la ligne d'un contact quand un SMS arrive et la
+    // remonter en tête (fn_chatListRow). Pendant le choix d'un destinataire : pas d'ordre, redessin.
     private _listRows = createHashMap;
     uiNamespace setVariable ["COMSPEC_ATAK_ChatListRows", _listRows];
-    uiNamespace setVariable ["COMSPEC_ATAK_ChatListTop", ["", _peers param [0, ""]] select (!_pick)];
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatListOrder", [+_peers, []] select _pick];
     // Bandeau d'état : où partent les messages, et + CANAL.
     private _sh = _font * 1.7;
     [[_lx, 0, _lw, _sh], _cHdr] call _box;
@@ -361,6 +364,7 @@ private _drawList = {
     // Une ligne : vignette, nom + heure, dernier message + pastille.
     private _row = {
         params ["_key", "_name", "_iconPath", "_tint", "_unit", "_last", "_time", "_unread", ["_sub", ""], ["_ini", ""]];
+        private _rowCtrls = [];
         private _cur = _split && {_key isEqualTo _peer};
         if (_cur) then {
             [[0, _y, _gw, _rh], _cTile, _grp] call _box;
@@ -379,9 +383,9 @@ private _drawList = {
         private _b = ["COMSPEC_RscTextCenter", [_tx + _tw - _bdW, _y + _rh * 0.53, _bdW max pixelW, _fs * 1.15], str (_unread min 99), _fs * 0.78, [0.03, 0.05, 0.04, 1], true, _grp] call _lbl;
         _b ctrlSetBackgroundColor _acc;
         _b ctrlShow (_unread > 0);
-        _listRows set [_key, [_cTime, _cPrev, _b, _tx, _tw, _y, _rh, _fs, _ratio, _pad]];
         [[_tx, _y + _rh - pixelH, _gw - _tx, pixelH], [1, 1, 1, 0.05], _grp] call _box;
         [[0, _y, _gw, _rh], [_key] call _open, _name, _grp] call _hit;
+        _listRows set [_key, [_cTime, _cPrev, _b, _tx, _tw, _y, _rh, _fs, _ratio, _pad, _rowCtrls]];
         _y = _y + _rh;
     };
     // Canaux (masqués pendant le choix d'un destinataire de SMS)

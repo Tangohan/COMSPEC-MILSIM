@@ -207,12 +207,12 @@ if (_view isNotEqualTo "") then {
     private _bVis = [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _vis, ["vision"] call _act, ["", "on"] select (_vis > 0), "Change le mode de la caméra : jour » nuit (intensification de lumière) » thermique", true, "droneVis"];
     // Rangée des modes de vision, comme l'app Vidéo Live : JOUR, VISION NOCTURNE, THERMIQUE (le mode actif en vert).
     private _visRow = [["JOUR", 0], ["VISION NOCTURNE", 1], ["THERMIQUE", 2]] apply { [_x select 0, ["visionSet", _x select 1] call _act, ["", "on"] select (_vis isEqualTo (_x select 1)), "Mode de la caméra du drone", true, format ["droneVis%1", _x select 1]] };
-    private _bNadir = [["CAMÉRA VERS LE SOL", "CAMÉRA DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, "", ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select (_aim isEqualTo "NADIR"), _src isEqualTo "DRONE"];
+    private _bNadir = [["CAMÉRA VERS LE SOL", "CAMÉRA DEVANT"] select (_aim isEqualTo "NADIR"), ["camAimToggle"] call _act, "", ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select (_aim isEqualTo "NADIR"), _src isEqualTo "DRONE", "droneNadir"];
     private _bCenter = ["RECENTRER", { ["recenter"] call comspec_atak_native_fnc_droneAction; ["gimbalHud"] call comspec_atak_native_fnc_droneAction; }, "", "Remet la caméra droit devant le drone, 37° vers le bas", _src isEqualTo "DRONE"];
     private _bMark = [["MARQUER", "CLIQUEZ LA CIBLE"] select _markMode, ["markMode"] call _act, ["", "red"] select _markMode, "Appuyez, puis cliquez sur une personne ou un véhicule dans l'image : il est marqué (LOCK) et suivi sur la carte. Rappuyez pour arrêter de marquer"];
     private _bTargets = [format ["CIBLES (%1)", count _locksAll], ["TARGETS"] call _toTab, ["", "on"] select ((["status"] call comspec_atak_native_fnc_droneSeq) select 0), "Ouvre la liste des cibles marquées : les faire suivre par le drone, dans l'ordre choisi"];
-    private _bUp = [[format ["MONTER %1 m", _up], "MONTER"] select (_up < 0), ["alt", _up] call _act, "", format ["Altitude actuelle %1 m : monter au palier suivant", _alt], _up > 0];
-    private _bDn = [[format ["DESCENDRE %1 m", _dn], "DESCENDRE"] select (_dn < 0), ["alt", _dn] call _act, "", format ["Altitude actuelle %1 m : descendre au palier précédent", _alt], _dn > 0];
+    private _bUp = [[format ["MONTER %1 m", _up], "MONTER"] select (_up < 0), ["altStep", 1] call _act, "", format ["Altitude actuelle %1 m : monter au palier suivant", _alt], _up > 0, "droneUp"];
+    private _bDn = [[format ["DESCENDRE %1 m", _dn], "DESCENDRE"] select (_dn < 0), ["altStep", -1] call _act, "", format ["Altitude actuelle %1 m : descendre au palier précédent", _alt], _dn > 0, "droneDn"];
     private _bHover = ["STATIONNAIRE", ["mode", "hover"] call _act, ["", "on"] select (_m isEqualTo "HOVER"), "Le drone s'arrête et reste en vol stationnaire là où il est"];
     private _bQ = [format ["NETTETÉ : %1", ["BASSE", "HAUTE"] select _q], ["quality", 1 - _q] call _act, "", "Qualité de l'image : basse (512 px, plus fluide) ou haute (1024 px, plus nette, plus lourde)"];
     private _bMenus = [["MENUS DU DRONE", "AGRANDIR L'IMAGE"] select _split, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", ["Réduit l'image et affiche dessous les onglets du drone (vol, tâches, cibles, photos, journal)", "Image à la taille de l'écran, onglets masqués"] select _split];
@@ -587,7 +587,7 @@ if (_view isNotEqualTo "") then {
                 };
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlEnable _en;
-                // Bouton à mettre à jour sur place (fn_formSet, "btn") : VISION JOUR / NUIT / THERMIQUE.
+                // Bouton à mettre à jour sur place (fn_formSet, "btn") : vision, caméra vers le sol, paliers d'altitude.
                 if (_bid isNotEqualTo "") then {
                     private _fids = uiNamespace getVariable ["COMSPEC_ATAK_FormIds", createHashMap];
                     uiNamespace setVariable ["COMSPEC_ATAK_FormIds", _fids];

@@ -1272,6 +1272,10 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         case "buttons": {
             private _btns = _row select 1;
             private _n = count _btns;
+            // 3e élément : identifiant, pour masquer ou montrer la rangée sur place (fn_formSet « btnrow »).
+            private _rowBtns = [];
+            private _rowId = _row param [2, ""];
+            if (_rowId isEqualType "" && {_rowId isNotEqualTo ""}) then { _ids set [_rowId, createHashMapFromArray [["kind", "btnrow"], ["btns", _rowBtns]]]; };
             // Comme « segment » : colonne étroite, les boutons dont le libellé ne tiendrait pas passent à la rangée suivante.
             private _minF = COMSPEC_ATAK_FontMin max (_fs * 0.6);
             private _longest = 0;
@@ -1292,6 +1296,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 if (!_primary) then { _b ctrlSetBackgroundColor (_th get "surface2"); _b ctrlSetTextColor ([(_th get "off"), (_th get "text")] select _enabled); };
                 if (_red) then { _b ctrlSetBackgroundColor (_th get "alert"); _b ctrlSetTextColor [1, 1, 1, 1]; };
                 _b ctrlEnable _enabled;
+                _rowBtns pushBack _b;
                 [_b, _code] call _click;
             } forEach _btns;
             private _bRows = ceil (_n / _per) max 1;
