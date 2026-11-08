@@ -55,7 +55,7 @@ private _meUpdate = {
             _l2 = _l2 + format [" <t color='%2'>%1</t>", _fn, _ft get "hex"];
         };
         if ((_s getOrDefault ["interactive", false]) && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) then {
-            _l2 = _l2 + _sepDot + format ["<t font='EtelkaMonospacePro' color='" + (COMSPEC_ATAK_Th get "hexMapText") + "'>%1</t>", ["grid", [getPosASL player, ""]] call comspec_atak_native_fnc_mapPrefs];
+            _l2 = _l2 + _sepDot + format ["<t font='EtelkaMonospacePro' color='" + (COMSPEC_ATAK_Th get "hexMapText") + "'>%1</t>", ["grid", [[] call comspec_atak_native_fnc_gpsPos, ""]] call comspec_atak_native_fnc_mapPrefs];
         };
         _ov set ["meL2", _l2];
     };

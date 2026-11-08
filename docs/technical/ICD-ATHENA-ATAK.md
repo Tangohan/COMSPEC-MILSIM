@@ -224,6 +224,8 @@ GET query: `limit` (default 100), `after` (id), `callsign` / `for_callsign` (MP 
 }
 ```
 
+Un ping dont le message commence par une étiquette contenant « super » (`[Super ping]`) disparaît seul : `GET /api/pings` le retire de la base 15 s après sa création.
+
 Coords validated. 201 + activity log `TYPE_PING`.
 
 ---
