@@ -6,6 +6,13 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
 private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Guerre électronique et GPS naturel (fn_gpsFix) : position affichée avec l'erreur GPS, pistes BFT dégradées.
+([] call comspec_atak_native_fnc_ewEffects) params ["", "_ewBft", "", "", "", "_ewOff"];
+// Ma position affichée, une seule par image et posée avant tout dessin : suivi, icône, cône, anneaux, cercle de précision,
+// cercles et traits du maillage, trait vers le curseur (avant : fn_meshDraw la lisait avant sa mise à jour, ou lisait la vraie).
+private _selfGps = [] call comspec_atak_native_fnc_gpsPos;
+_selfGps set [2, 0];
+uiNamespace setVariable ["COMSPEC_ATAK_SelfGpsPos", _selfGps];
 // Boussole fluide : aiguille et cadran suivent le cap à chaque image (fn_mapOverlayUpdate, boussole seulement).
 [false, true] call comspec_atak_native_fnc_mapOverlayUpdate;
 // Téléphone porté (ou « Suivre ma position ») : la carte suit le joueur à chaque image, sans à-coup.
@@ -16,7 +23,7 @@ if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapF
         (ctrlPosition _map) params ["_fwX", "_fwY", "_fwW", "_fwH"];
         private _fwVis = _map ctrlMapScreenToWorld [_fwX + _fwW / 2, _fwY + _fwH / 2];
         // Position GPS affichée (fn_gpsPos) : la carte suit mon point et ses anneaux, pas ma position exacte.
-        private _fwPos = [] call comspec_atak_native_fnc_gpsPos;
+        private _fwPos = _selfGps;
         private _fwDx = (_fwPos select 0) - (_fwVis select 0);
         private _fwDy = (_fwPos select 1) - (_fwVis select 1);
         if ((abs _fwDx) + (abs _fwDy) > 0.25) then {
@@ -60,6 +67,10 @@ private _myGroup = group player;
 // Couleurs de la carte (fn_mapColors) : une table pour tout le dessin (affiliations, alliés et moi choisis dans les
 // réglages, états, étiquettes, grille), refaite au changement de fond, de mode nuit ou de réglage.
 private _pal = [_bgStyle] call comspec_atak_native_fnc_mapColors;
+// Style tactique des marqueurs et traits (Réglages > Carte ; allumé par défaut avec le fond ARDOISE) : pions ronds, plaques
+// monospace, zones hachurées, traits à halo, mesure verte. Rien d'autre à calculer quand il est éteint.
+private _tac = _pal get "tac";
+private _fontU = [COMSPEC_ATAK_FontSet select 1, "EtelkaMonospaceProBold"] select _tac;
 if (!_boxOn) then { uiNamespace setVariable ["COMSPEC_ATAK_LblRectsU", []]; };
 // Couleurs et icônes de marqueurs (CfgMarkerColors / CfgMarkers) lues une fois par classe : la carte est redessinée
 // à chaque image, relire la config et compiler les couleurs à chaque marqueur coûtait cher (téléphone en HUD).
@@ -67,14 +78,8 @@ if (!_boxOn) then { uiNamespace setVariable ["COMSPEC_ATAK_LblRectsU", []]; };
 private _mkColorCache = uiNamespace getVariable "COMSPEC_ATAK_MkColorCache";
 if (isNil "_mkColorCache") then { _mkColorCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MkColorCache", _mkColorCache]; };
 private _mkRgba = {
-    params ["_cls", "_def"];
-    private _c = _mkColorCache getOrDefault [_cls, []];
-    if (_c isEqualTo []) then {
-        _c = (getArray (configFile >> "CfgMarkerColors" >> _cls >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
-        if ((count _c) < 4) then { _c = []; };
-        _mkColorCache set [_cls, [_c]];
-    } else { _c = _c select 0; };
-    if ((count _c) < 4) then { +_def } else { +_c }
+    params ["_cls", "_def", ["_type", ""]];
+    [_cls, _type, _def] call comspec_atak_native_fnc_markerColor
 };
 private _mkIconCache = uiNamespace getVariable "COMSPEC_ATAK_MkIconCache";
 if (isNil "_mkIconCache") then { _mkIconCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MkIconCache", _mkIconCache]; };
@@ -91,6 +96,8 @@ private _veil = switch (_bgStyle) do {
     case "LIGHT": { [1, 1, 1, 0.38] };
     case "DARK": { [0.01, 0.012, 0.011, 0.68] };
     case "NIGHT": { [0.02, 0.03, 0.08, 0.58] };
+    // Écran sans carte ardoise (tablette JPC, fn_mapCtrl : carte topo) : voile bleu-gris à la place des couleurs du contrôle.
+    case "SLATE": { [[0.06, 0.08, 0.095, 0.72], []] select ((ctrlIDC _map) isEqualTo 88534) };
     default { [] };
 };
 if ((count _veil) > 0) then {
@@ -183,6 +190,11 @@ if ((count _route) > 0) then {
         _map drawRectangle [[((_a select 0) + (_b select 0)) / 2, ((_a select 1) + (_b select 1)) / 2], _w, _len / 2 + _w * 0.6, _a getDir _b, _c, _tex];
     };
     private _proj = _route getOrDefault ["proj", _pts select 0];
+    // Style tactique : orange épais à halo léger, flèche à l'arrivée (autant de tronçons que le trait bleu bordé de sombre).
+    private _rtH = [[0.05, 0.18, 0.40, 0.9], [1, 0.62, 0.12, 0.28]] select _tac;
+    private _rtC = [[0.26, 0.52, 0.96, 1], _pal get "tacOrange"] select _tac;
+    private _rtWh = _mpu * ([1.45, 2.4] select _tac);
+    private _rtW = _mpu * ([1, 1.25] select _tac);
     // Tronçons hors de la vue sautés (route de plusieurs km : des centaines de tronçons redessinés à chaque image).
     (ctrlPosition _map) params ["_rcx", "_rcy", "_rcw", "_rch"];
     private _rtl = _map ctrlMapScreenToWorld [_rcx, _rcy];
@@ -201,9 +213,12 @@ if ((count _route) > 0) then {
             _a = _proj;
         };
         if (_past) then { [_a, _b, _mpu, [0.45, 0.48, 0.50, 0.75]] call _seg; } else {
-            [_a, _b, _mpu * 1.45, [0.05, 0.18, 0.40, 0.9]] call _seg;
-            [_a, _b, _mpu, [0.26, 0.52, 0.96, 1]] call _seg;
+            [_a, _b, _rtWh, _rtH] call _seg;
+            [_a, _b, _rtW, _rtC] call _seg;
         };
+    };
+    if (_tac && {(count _pts) >= 2}) then {
+        ["head", _map, [_pts select -1, (_pts select -2) getDir (_pts select -1), _rtC, 18, true, 2, _mpu / 0.0035 * pixelW]] call comspec_atak_native_fnc_planGfx;
     };
     _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _k * _is, 26 * _k * _is, 0, (_route getOrDefault ["label", ""]) call comspec_atak_native_fnc_tr, 2, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
@@ -215,27 +230,31 @@ private _perfT = diag_tickTime;
 ["draw", _map] call comspec_atak_native_fnc_noFly;
 [_map] call comspec_atak_native_fnc_droneDraw;
 ["carte drone (image)", _perfT] call comspec_atak_native_fnc_perfAcc;
-// Appui long du clic gauche (0,6 s, curseur presque immobile) : pointage partagé avec mon camp, comme sur la carte du jeu.
-// Anneau qui se remplit pendant l'appui. Rien à calculer hors appui (deux lectures de table).
-private _holdLc = _state getOrDefault ["mapLc", []];
-if ((count _holdLc) isEqualTo 5 && {_state getOrDefault ["mapLcOk", false]}) then {
-    private _hAge = diag_tickTime - (_state getOrDefault ["mapLcAt", diag_tickTime]);
-    private _hW = _state getOrDefault ["mapLcW", [0, 0, 0]];
-    private _hSp = _map ctrlMapWorldToScreen _hW;
-    private _hCur = _map ctrlMapWorldToScreen ((_state getOrDefault ["cursorPos", _hW]) select [0, 2]);
-    if ((count _hCur) >= 2 && {(count _hSp) >= 2} && {(abs ((_hCur select 0) - (_hSp select 0))) < pixelW * 8} && {(abs ((_hCur select 1) - (_hSp select 1))) < pixelH * 8}) then {
-        if (_hAge >= 0.6) then {
-            _state set ["mapLc", []];
-            _state set ["mapHold", true];
-            ["send", _hW] call comspec_atak_native_fnc_mapPing;
-        } else {
-            if (_hAge > 0.15) then {
-                private _hs = (10 + 40 * (_hAge / 0.6)) * _is;
-                _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.15, 0.4 + 0.5 * (_hAge / 0.6)], _hW, _hs, _hs, 0, "", 0];
+// Appui maintenu du clic gauche (0,4 s, curseur immobile à l'écran) : pointeur partagé avec mon camp, comme sur la carte du
+// jeu, tant que le bouton reste appuyé (fn_mapPing « point… »). Un glissement avant ce délai annule. Mesure sur le curseur réel
+// et le point d'appui, en coordonnées d'écran : la dernière position vue par MouseMoving est périmée dès que la carte a bougé
+// sans la souris (zoom, suivi, glissement) et annulait l'appui. Rien à calculer hors appui (deux lectures de table).
+if (_state getOrDefault ["mapHold", false]) then {
+    ["pointTick", _map] call comspec_atak_native_fnc_mapPing;
+} else {
+    private _holdLc = _state getOrDefault ["mapLc", []];
+    if ((count _holdLc) isEqualTo 5 && {_state getOrDefault ["mapLcOk", false]}) then {
+        private _hAge = diag_tickTime - (_state getOrDefault ["mapLcAt", diag_tickTime]);
+        private _hCur = getMousePosition;
+        if ((abs ((_hCur select 0) - (_holdLc select 0))) < pixelW * 8 && {(abs ((_hCur select 1) - (_holdLc select 1))) < pixelH * 8}) then {
+            if (_hAge >= 0.4) then {
+                _state set ["mapLc", []];
+                _state set ["mapHold", true];
+                ["pointStart", _map] call comspec_atak_native_fnc_mapPing;
+            } else {
+                if (_hAge > 0.1) then {
+                    private _hs = (10 + 30 * (_hAge / 0.4)) * _is;
+                    _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.15, 0.4 + 0.5 * (_hAge / 0.4)], _state getOrDefault ["mapLcW", [0, 0, 0]], _hs, _hs, 0, "", 0];
+                };
             };
+        } else {
+            _state set ["mapLcOk", false];
         };
-    } else {
-        _state set ["mapLcOk", false];
     };
 };
 ["draw", _map] call comspec_atak_native_fnc_mapPing;
@@ -249,14 +268,12 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
     if ((count _planDraft) > 0) then { [_map, _planDraft, 0.55] call comspec_atak_native_fnc_planDraw; };
 };
 
-// Guerre électronique et GPS naturel (fn_gpsFix) : position affichée avec l'erreur GPS, pistes BFT dégradées.
-([] call comspec_atak_native_fnc_ewEffects) params ["", "_ewBft", "", "", "", "_ewOff"];
-private _selfGps = (getPosASLVisual player) vectorAdd [_ewOff select 0, _ewOff select 1, 0];
-_selfGps set [2, 0];
-uiNamespace setVariable ["COMSPEC_ATAK_SelfGpsPos", _selfGps];
 private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
 // Terminal compromis (fn_compromiseView) : flux BFT coupé, seule ma position GPS reste en direct (pistes figées dessinées à la fin).
 private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
+private _tacDisc = "\z\comspec_atak_native\addons\main\data\map_pawn_disc.paa";
+private _tacRing = "\z\comspec_atak_native\addons\main\data\map_pawn_ring.paa";
+private _tacTick = "\z\comspec_atak_native\addons\main\data\map_pawn_tick.paa";
 private _dcAll = uiNamespace getVariable "COMSPEC_ATAK_MapDrawCache";
 if (isNil "_dcAll") then { _dcAll = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MapDrawCache", _dcAll]; };
 // Unités parties : entrées périmées retirées de temps en temps (pas de table sans fin).
@@ -301,7 +318,7 @@ if (_selfCfg select 4) then {
     // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s par unité (table à part, COMSPEC_ATAK_MapDrawCache) :
     // refaits à chaque image et pour chaque unité avant. Plus dans la piste : fn_localDataRefresh la refait 4 fois par seconde.
     private _dc = _dcAll getOrDefault [_x, []];
-    if ((count _dc) < 8 || {diag_tickTime > (_dc select 0)} || {(_dc select 6) isNotEqualTo _nato}) then {
+    if ((count _dc) < 9 || {diag_tickTime > (_dc select 0)} || {(_dc select 6) isNotEqualTo _nato}) then {
         ([_entity] call comspec_atak_native_fnc_symbology) params ["_sIcon","_sColor"];
         private _ci = "";
         private _custom = _entity getOrDefault ["icon",""];
@@ -312,7 +329,12 @@ if (_selfCfg select 4) then {
         private _nt = ""; private _ne = "";
         if (_nato && {!_self}) then { ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt0", "_ne0"]; _nt = _nt0; _ne = _ne0; };
         // Indicatif coupé proprement au-delà de 16 caractères (cartouche et indicatif simple).
-        _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _nato, ["cut", _entity getOrDefault ["callsign", ""], 16] call comspec_atak_native_fnc_mapFmt];
+        // Lettre du pion (style tactique) : équipe de feu, sinon groupe, sinon indicatif ; gardée avec le reste.
+        private _lo = _entity getOrDefault ["object", objNull];
+        private _ls = ((_lo getVariable ["COMSPEC_ftDrawCache", []]) param [1, createHashMap]) getOrDefault ["name", ""];
+        if (_ls isEqualTo "" && {!isNull _lo}) then { _ls = groupId group _lo; };
+        if (_ls isEqualTo "") then { _ls = _entity getOrDefault ["callsign", ""]; };
+        _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _nato, ["cut", _entity getOrDefault ["callsign", ""], 16] call comspec_atak_native_fnc_mapFmt, toUpper (toString ((toArray _ls) select [0, 1]))];
         _dcAll set [_x, _dc];
     };
     private _icon = _dc select 1;
@@ -347,13 +369,25 @@ if (_selfCfg select 4) then {
     // Réglages > Carte « Icônes des unités » OTAN : cadre + modificateur MIL-STD-2525 / APP-6 (moi : inchangé),
     // non orienté, un peu plus grand que le point ; échelon (points d'équipe / groupe) au-dessus pour les chefs.
     private _ech = "";
-    if (_nato && {!_self}) then {
+    private _tacP = _tac && {!_self};
+    if (_nato && {!_self} && {!_tacP}) then {
         _icon = _dc select 4; _ech = _dc select 5; _dir = 0; _size = _size * 1.3;
     };
     // Précision annoncée par le point de position de l'allié (fn_pli) : cercle discret au-delà de 10 m.
     private _acc = _entity getOrDefault ["acc", 0];
     if (!_self && {_acc >= 10} && {profileNamespace getVariable ["COMSPEC_ATAK_AccRings", false]}) then { _map drawEllipse [_pos, _acc, _acc, 0, [_color select 0, _color select 1, _color select 2, (_color select 3) * 0.45], ""]; };
-    _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
+    if (_tacP) then {
+        // Pion : disque sombre, anneau à la couleur de l'unité, lettre d'équipe, triangle de direction (texture tournée par
+        // drawIcon : aucune position à calculer). Textures fixes, 3 à 4 dessins par unité visible.
+        private _ps = _size * 1.35;
+        private _pa = _color select 3;
+        _map drawIcon [_tacDisc, [0.03, 0.045, 0.05, _pa], _pos, _ps, _ps, 0, "", 0];
+        _map drawIcon [_tacRing, _color, _pos, _ps, _ps, 0, "", 0];
+        if (_ps >= 14) then { _map drawIcon [_clear, [1, 1, 1, _pa], _pos, 0, 0, 0, _dc select 8, 0, _ps * pixelH * 0.6, "EtelkaMonospaceProBold", "center"]; };
+        if ("heading" in _entity) then { _map drawIcon [_tacTick, [1, 1, 1, _pa], _pos, _ps * 1.5, _ps * 1.5, _entity get "heading", "", 0]; };
+    } else {
+        _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
+    };
     // Mon indicatif : AUTO comme les autres unités, ON toujours, OFF jamais (fn_mapPrefs « self »).
     if ((_self && {_selfLbl isEqualTo "ON"}) || {_lblOn && {!_boxOn} && {_scale < 0.25} && {_eniOn || {!_hostile}} && {!_self || {_selfLbl isNotEqualTo "OFF"}}}) then {
         private _cs = _dc select 7;
@@ -363,7 +397,7 @@ if (_selfCfg select 4) then {
             _lrow = _clu getOrDefault [_ck, 0];
             _clu set [_ck, _lrow + 1];
         };
-        if (_cs isNotEqualTo "" && {_lrow < 3}) then { _map drawIcon [_clear,[1,1,1,(_color select 3) max 0.6],[_pos select 0, (_pos select 1) - _lrow * _lineM, 0],_size,_size,0,_cs,2,0.027 * _kt * _tsL,(COMSPEC_ATAK_FontSet select 1),["right", "left"] select ((_pos select 0) > _uxR)]; };
+        if (_cs isNotEqualTo "" && {_lrow < 3}) then { _map drawIcon [_clear,[1,1,1,(_color select 3) max 0.6],[_pos select 0, (_pos select 1) - _lrow * _lineM, 0],_size,_size,0,_cs,2,0.027 * _kt * _tsL,_fontU,["right", "left"] select ((_pos select 0) > _uxR)]; };
     };
     if (_ech isNotEqualTo "") then { _map drawIcon [_ech, _color, _pos, _size, _size, 0, "", 0]; };
     // Candidat au cartouche : pas moi (carte « moi »), et pour les autres groupes seulement le chef (un cartouche par
@@ -406,7 +440,8 @@ if (_selfCfg select 4) then {
         private _ft = _ftc select 1;
         if ((_ft get "id") isNotEqualTo "") then {
             private _rc = +(_ft get "rgba"); _rc set [3, (_color select 3) max 0.35];
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _rc, _pos, _size * 1.55, _size * 1.55, 0, "", 0];
+            private _rs = _size * ([1.55, 1.9] select _tacP);
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _rc, _pos, _rs, _rs, 0, "", 0];
         };
     };
 } forEach (_data getOrDefault ["units",createHashMap]);
@@ -441,9 +476,11 @@ _perfM = diag_tickTime;
     if (((_pos select 0) + _mr) < _ux0 || {((_pos select 0) - _mr) > _ux1} || {((_pos select 1) + _mr) < _uy0} || {((_pos select 1) - _mr) > _uy1}) then { continue };
     switch _shape do {
         case "RECTANGLE": {
+            if (_tac) then { _map drawRectangle [_pos,_size select 0,_size select 1,_marker getOrDefault ["dir",0],[0.36,0.78,0.42,0.65],_pal get "hatch"]; };
             _map drawRectangle [_pos,_size select 0,_size select 1,_marker getOrDefault ["dir",0],[0.36,0.78,0.42,0.65],""];
         };
         case "ELLIPSE": {
+            if (_tac) then { _map drawEllipse [_pos,_size select 0,_size select 1,_marker getOrDefault ["dir",0],[0.36,0.78,0.42,0.65],_pal get "hatch"]; };
             _map drawEllipse [_pos,_size select 0,_size select 1,_marker getOrDefault ["dir",0],[0.36,0.78,0.42,0.65],""];
         };
         default {
@@ -458,10 +495,10 @@ _perfM = diag_tickTime;
             // leur version vive sur carte sombre) ; halo dessous pour la lisibilité (2.9.40).
             // Couleur et halo gardés par classe et par fond clair / sombre (avant : recalculés à chaque image et par repère).
             private _mcls = _marker getOrDefault ["color","ColorGreen"];
-            private _hk = _mcls + (["|L", "|D"] select (_pal getOrDefault ["dark", false]));
+            private _hk = _mcls + "|" + _type + (["|L", "|D"] select (_pal getOrDefault ["dark", false]));
             private _mch = _mkColorCache getOrDefault [_hk, []];
             if (_mch isEqualTo []) then {
-                private _rg = +([[_mcls, [0.36,0.78,0.42,1]] call _mkRgba, _mcls] call (_pal get "lift"));
+                private _rg = +([[_mcls, [0.36,0.78,0.42,1], _type] call _mkRgba, _mcls] call (_pal get "lift"));
                 _mch = [_rg, [_pal get "halo", _pal get "haloLight"] select (((_rg select 0) * 0.3 + (_rg select 1) * 0.59 + (_rg select 2) * 0.11) < 0.25)];
                 _mkColorCache set [_hk, _mch];
             };
@@ -502,13 +539,15 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
 };
 
 private _amber = [0.95,0.67,0.20,1];
-private _yellow = [1,0.92,0.15,0.95];
+private _yellow = [[1,0.92,0.15,0.95], _pal get "tacGreen"] select _tac;
 // Distance (m / km), azimut sur 3 chiffres, dénivelé et pente : même format pour la mesure A-B et le trait vers le curseur.
 private _measTxt = {
     params ["_a", "_b"];
     private _dz = round ((getTerrainHeightASL _b) - (getTerrainHeightASL [_a select 0, _a select 1]));
     private _dd = _a distance2D _b;
-    format ["%1  %2%3 m (%4 %%)", ["dist", _dd, _a getDir _b] call comspec_atak_native_fnc_mapFmt, ["","+"] select (_dz > 0), _dz, round (100 * _dz / (_dd max 1))]
+    private _az = _a getDir _b;
+    // Point cardinal hors de fn_tr (fn_cardinal) : « 254 m · 129° SE ».
+    format ["%1 %5  %2%3 m (%4 %%)", ["dist", _dd, _az] call comspec_atak_native_fnc_mapFmt, ["","+"] select (_dz > 0), _dz, round (100 * _dz / (_dd max 1)), [_az, 8] call comspec_atak_native_fnc_cardinal]
 };
 private _dot = "\A3\ui_f\data\map\markers\military\dot_CA.paa";
 private _cursor = _state getOrDefault ["cursorPos",[]];
@@ -525,13 +564,15 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     // Table des couleurs par type, créée une fois (avant : recréée à chaque image).
     if (isNil "COMSPEC_ATAK_DZColors") then { COMSPEC_ATAK_DZColors = createHashMapFromArray [["LZ",[0.36,0.85,0.42,1]],["DZ",[0.36,0.85,0.42,1]],["EXTRACT_POINT",[0.36,0.85,0.42,1]],["RALLY_POINT",[0.28,0.70,1,1]],["SAFE_ZONE",[0.28,0.70,1,1]],["OBJECTIVE",[0.95,0.67,0.20,1]],["DANGER_ZONE",[0.95,0.22,0.18,1]],["NO_GO_AREA",[0.95,0.22,0.18,1]],["RESTRICTED_AREA",[0.95,0.5,0.15,1]]]; };
     private _zc = COMSPEC_ATAK_DZColors;
+    private _dzTex = ["#(rgb,8,8,3)color(1,1,1,1)", _pal get "hatch"] select _tac;
+    private _dzA = [0.12, 0.65] select _tac;
     {
         _x params [["_id",""],["_geom","CIRCLE"],["_geo",[]],["_r",0],["_type",""],["_threat",""],["_label",""]];
         private _c = +(_zc getOrDefault [toUpper _type,[0.95,0.67,0.20,1]]);
         if ((toUpper _geom) in ["CIRCLE","RECTANGLE"] && {(count _geo) >= 2}) then {
             private _p = [_geo select 0,_geo select 1,0];
             _map drawEllipse [_p,_r max 20,_r max 20,0,_c,""];
-            _map drawEllipse [_p,_r max 20,_r max 20,0,[_c select 0,_c select 1,_c select 2,0.12],"#(rgb,8,8,3)color(1,1,1,1)"];
+            _map drawEllipse [_p,_r max 20,_r max 20,0,[_c select 0,_c select 1,_c select 2,_dzA],_dzTex];
             _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_p,0,0,0,_label,2,0.028 * _ts,(COMSPEC_ATAK_FontSet select 1),"center"];
         } else {
             if ((count _geo) >= 2 && {(_geo select 0) isEqualType []}) then {
@@ -629,9 +670,23 @@ private _measure = +(_state getOrDefault ["mapMeasure",[]]);
 if ((count _measure) isEqualTo 1 && {(count _cursor) >= 2}) then { _measure pushBack [_cursor select 0,_cursor select 1,0]; };
 if ((count _measure) >= 2) then {
     _measure params ["_a","_b"];
-    _map drawLine [_a,_b,_amber];
-    _map drawIcon [_dot,_amber,_a,14,14,0,"A",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
-    _map drawIcon [_dot,_amber,_b,14,14,0,[_a, _b] call _measTxt,2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),["right", "left"] select ((_b select 0) > _uxR)];
+    private _mc = [_amber, _pal get "tacGreen"] select _tac;
+    if (_tac) then {
+        // Style tactique : tirets verts épais, plaque de distance au milieu. Monospace : largeur = caractères x largeur d'un
+        // chiffre (mesurée une fois, fn_mapTextW), pas de nouvelle mesure quand le curseur bouge.
+        private _mm = ["mpx", _map] call comspec_atak_native_fnc_planGfx;
+        ["line", _map, [[_a, _b], _mc, 2.6, true, false, false, _mm]] call comspec_atak_native_fnc_planGfx;
+        private _dt = ["dist", _a distance2D _b] call comspec_atak_native_fnc_mapFmt;
+        private _fsM = 0.022 * _ts;
+        private _hw = ((count _dt) * (["0", "EtelkaMonospaceProBold", 0.02] call comspec_atak_native_fnc_mapTextW) * _fsM / 0.02 / 2 + 4 * pixelW) * (_mm / pixelW);
+        private _mid = [((_a select 0) + (_b select 0)) / 2, ((_a select 1) + (_b select 1)) / 2, 0];
+        _map drawRectangle [_mid, _hw, _fsM * 0.62 * (_mm / pixelH), 0, _mc, "#(rgb,8,8,3)color(1,1,1,1)"];
+        _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.02, 0.09, 0.05, 1], _mid, 0, 0, 0, _dt, 0, _fsM, "EtelkaMonospaceProBold", "center"];
+    } else {
+        _map drawLine [_a,_b,_amber];
+    };
+    _map drawIcon [_dot,_mc,_a,14,14,0,"A",2,0.03 * _ts,_fontU,"right"];
+    _map drawIcon [_dot,_mc,_b,14,14,0,[_a, _b] call _measTxt,2,0.03 * _ts,_fontU,["right", "left"] select ((_b select 0) > _uxR)];
 };
 
 // Bâtiments numérotés
@@ -721,7 +776,7 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         _title = [_title] call comspec_atak_native_fnc_markerAutoName;
         // Contacts ENI : déjà dans un cartouche rouge (fn_mapLabels), ou masqués (volet CONFIGURATION).
         if ((_boxOn || {!_eniOn}) && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) in ["ENI ", "ENY "]}}) then { continue };
-        private _rgba = [_m getOrDefault ["color", "ColorBlack"], [0.1, 0.1, 0.1, 1]] call _mkRgba;
+        private _rgba = [_m getOrDefault ["color", "ColorBlack"], [0.1, 0.1, 0.1, 1], _m getOrDefault ["type", ""]] call _mkRgba;
         _rgba set [3, 1];
         private _r = (_scale * 900) max 12;
         _map drawEllipse [_pos, _r, _r, 0, _rgba, ""];

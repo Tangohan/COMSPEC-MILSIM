@@ -77,7 +77,7 @@ for "_i" from 1 to ((count _pts) - 1) do {
 };
 // Cap depuis moi vers l'étape active.
 if (_nav && {(count _pts) > 0}) then {
-    private _me = getPosATL vehicle player; _me set [2, 0];
+    private _me = [] call comspec_atak_native_fnc_gpsPos; _me set [2, 0];
     [_me, ((_pts select (_idx min ((count _pts) - 1))) select 0), [0.36, 0.85, 0.42, 0.9]] call _dash;
 };
 

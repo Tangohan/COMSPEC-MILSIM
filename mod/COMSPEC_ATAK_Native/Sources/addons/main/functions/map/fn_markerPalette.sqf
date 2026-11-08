@@ -269,12 +269,12 @@ _eb ctrlSetTooltip (("Ouvrir l'éditeur (titre, description) juste après la pos
 _eb ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; ['markerEditAfter', !(_s getOrDefault ["markerEditAfter", false])] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick'); }];
 _y = _y + _rh + _pad / 2;
 
-// 5 bis. Texte du marqueur : vide = nom automatique (camp, type, numéro) ou modèle du réglage d'addon.
+// 5 bis. Texte du marqueur : vide = numéro de repère neutre ou modèle du réglage d'addon.
 ["TEXTE", _x0, _w * 0.12] call _lab;
 private _txt = _s getOrDefault ["markerText", ""];
 private _ed = ["COMSPEC_RscEdit", [_x0 + _w * 0.12, _y, _w * 0.70, _rh], _txt] call _mk;
 _ed ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
-_ed ctrlSetTooltip (("Nom du marqueur posé. Vide : nom automatique (« ENI INFANTERIE 3 ») ou modèle du réglage d'addon « Nom des marqueurs posés ». Avec « Plusieurs marqueurs », un numéro est ajouté.") call comspec_atak_native_fnc_tr);
+_ed ctrlSetTooltip (("Nom du marqueur posé. Vide : numéro de repère (« REP 3 ») ou modèle du réglage d'addon « Nom des marqueurs posés ». Avec « Plusieurs marqueurs », un numéro est ajouté.") call comspec_atak_native_fnc_tr);
 _ed ctrlAddEventHandler ["KeyUp", { params ["_c"]; (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerText", (ctrlText _c) select [0, 48]]; false }];
 _ed ctrlAddEventHandler ["KeyDown", {
     params ["_c", "_key"];
