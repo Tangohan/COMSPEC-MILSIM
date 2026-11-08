@@ -53,6 +53,7 @@ $pvBand = static function (string $sub, bool $pvTypeLine = false) use ($pvFlag, 
 $pvTypeLine = match ($pvType) {
     'passport' => 'PASSEPORT · PASSPORT',
     'driving_license' => 'PERMIS DE CONDUIRE · DRIVING LICENCE',
+    'military_id' => 'CARTE MILITAIRE · MILITARY ID',
     default => 'CARTE D’IDENTITÉ · IDENTITY CARD',
 };
 $pvMrz = '<div class="idw-mrz" data-f="mrz" translate="no">' . $h(implode("\n", $pv['mrz'])) . '</div>';

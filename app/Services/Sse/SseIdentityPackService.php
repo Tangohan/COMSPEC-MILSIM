@@ -9,6 +9,7 @@ use App\Repositories\SseIdDocumentRepository;
 use App\Repositories\SseIdentityRepository;
 use App\Repositories\SseIdKitRepository;
 use App\Repositories\SseIdOperationRepository;
+use App\Repositories\SseIdSettingsRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\SseWatchlistRepository;
 
@@ -40,6 +41,7 @@ final class SseIdentityPackService
         private ?SsePersonRepository $persons = null,
         private ?SseIdKitRepository $kits = null,
         private ?SseIdOperationRepository $operations = null,
+        private ?SseIdSettingsRepository $settings = null,
     ) {
         $this->documents ??= new SseIdDocumentRepository();
         $this->identities ??= new SseIdentityRepository();
@@ -48,6 +50,7 @@ final class SseIdentityPackService
         $this->persons ??= new SsePersonRepository();
         $this->kits ??= new SseIdKitRepository();
         $this->operations ??= new SseIdOperationRepository();
+        $this->settings ??= new SseIdSettingsRepository();
     }
 
     /**
@@ -142,6 +145,8 @@ final class SseIdentityPackService
             'population' => $offset === 0 ? $this->operations->populationForPack($tenantId, $mapId, $opKey) : [],
             'wanted' => $offset === 0 ? $this->wanted($tenantId, $mapId, $opKey) : [],
             'briefs' => $offset === 0 ? $this->operations->briefsForPack($tenantId, $mapId, $opKey) : [],
+            // Réglage de la communauté, ignoré par un ancien mod.
+            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)],
             'paging' => [
                 'offset' => $offset,
                 'limit' => $limit,
