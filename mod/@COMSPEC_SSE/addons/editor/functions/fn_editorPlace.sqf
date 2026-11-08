@@ -26,7 +26,8 @@ if (is3DEN) exitWith {
         ["comspec_sse_documentsMode", "CUSTOM"],
         ["comspec_sse_doc1_title", trim (_item get "title")],
         ["comspec_sse_doc1_summary", "[" + _marking + "] " + _oneLine],
-        ["comspec_sse_editorItem", _item get "id"]
+        ["comspec_sse_editorItem", _item get "id"],
+        ["comspec_sse_doc1_paper", _item getOrDefault ["skin", "legacy"]]
     ];
     if (_delivery isEqualTo 1) then { _vars pushBack ["comspec_sse_enabled", true]; };
     private _code = (_vars apply { "this setVariable [" + str (_x select 0) + ", " + str (_x select 1) + ", true];" }) joinString " "; // format coupe les longs textes
