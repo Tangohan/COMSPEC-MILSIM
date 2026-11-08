@@ -79,7 +79,7 @@ class CfgFunctions {
             class exploList {}; class exploAction {}; class pageExplo {};
         };
         class tactical { file="z\comspec_atak_native\addons\main\functions\tactical";
-            class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {}; class jtacAir {}; class jtacLines {}; class jtacGeometry {}; class jtacFah {}; class jtacDraw {}; class lasePoint {}; class jtacTool {}; class magBearing {}; class airBrief {};
+            class tenantAction {}; class pageTenant {}; class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {}; class jtacAir {}; class jtacLines {}; class jtacGeometry {}; class jtacFah {}; class jtacDraw {}; class lasePoint {}; class jtacTool {}; class magBearing {}; class airBrief {};
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
@@ -186,6 +186,7 @@ class COMSPEC_ATAK_Apps {
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; desc="Tâches et ordres reçus"; };
     class Reports     { name="Comptes rendus"; page="REPORTS"; section="Mission"; order=202; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; desc="Comptes rendus de fin de mission"; };
     class Debrief     { name="CR fin d'op"; page="DEBRIEF"; function="comspec_atak_native_fnc_pageDebrief"; section="Mission"; order=203; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; desc="Compte rendu de fin d'opération à remplir ou à lire"; };
+    class Tenant      { name="Communauté"; page="TENANT"; new=1; function="comspec_atak_native_fnc_pageTenant"; section="Mission"; order=204; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; desc="Consignes, ordres, tips et kit obligatoire de votre communauté"; };
     class Briefing    { name="Briefing"; page="BRIEFING"; section="Mission"; order=205; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; desc="Diapositives et consignes de la mission"; };
     class Academy     { name="Academy"; page="ACADEMY"; new=1; function="comspec_atak_native_fnc_pageAcademy"; section="Mission"; order=207; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_notes.paa"; desc="Cours COMSPEC Academy : lire ses leçons et les présenter sur les écrans"; };
     class Plan        { name="Plan"; page="PLAN"; function="comspec_atak_native_fnc_pagePlan"; section="Mission"; order=206; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_plan.paa"; desc="Plan de manœuvre et phases"; };

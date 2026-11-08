@@ -780,6 +780,10 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_dating_specials", "LIST",
     ["Tinder : profils HVT et SSE", "À quelle fréquence Tinder glisse, entre deux joueurs, un profil d'IA de la carte (HVT ou personne SSE à moins de 5 km). Zeus peut aussi désigner une IA avec le module « Tinder : profil HVT / SSE »."],
     _sim, [[0, 1, 2, 3], ["Jamais", "Rarement (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call comspec_atak_native_fnc_addSetting;
+// App Communauté (fn_tenantAction) : kit obligatoire, comparé toutes les 30 s.
+["comspec_atak_native_kit_required", "EDITBOX",
+    ["Kit obligatoire", "Objets exigés, noms de classe séparés par des virgules. Nombre : classe*2. Au choix : classeA|classeB. Vide : aucun. Une mission peut définir COMSPEC_ATAK_RequiredKit à la place."],
+    ["COMSPEC", "ATAK · Communauté"], "", 1] call comspec_atak_native_fnc_addSetting;
 // Téléphones personnels (fn_phoneOwn, fn_phoneServer) : propriétaire, lecture du téléphone d'un autre, code.
 private _phones = ["COMSPEC", "ATAK · Téléphones personnels"];
 ["comspec_atak_native_phone_owner", "CHECKBOX",

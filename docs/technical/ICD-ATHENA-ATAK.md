@@ -580,3 +580,22 @@ Aliases: `/api/markers`, `/api/units`, `/api/nine-line`, `/api/cas`, `/api/fire-
 - COMSPEC Overwatch Technical Manual — TM-A3-11
 - ATHENA C2 Security Architecture — SEC-A3-01
 - ATHENA C2 Capability Registry — REG-A3-01
+
+## Besoin : app Communauté (non implémenté côté site)
+
+L'app Communauté du téléphone lit aujourd'hui le seul `guide` de `GET /api/atak/experience`. Le reste vient de la mission ou de notes de partie, perdues en fin de partie.
+
+**Manque :** une lecture par clé de jeu (`requireTenant`), sans session web. La doctrine (`/api/operations/doctrine/documents`) exige une session. La tenue `mandatory` est un badge, sans liste d'objets.
+
+**Proposition :** `GET /api/atak/community-brief`, limité au tenant de la clé :
+
+```json
+{
+  "notes": [{ "id": 1, "kind": "consigne|ordre|tip", "title": "…", "body": "…", "updated_at": "…" }],
+  "kit": [{ "classes": ["ACE_fieldDressing"], "count": 2, "label": "Pansements" }],
+  "updated_at": "…"
+}
+```
+
+- Écriture par la gestion de la communauté ; texte brut, sans HTML. Plafonds côté jeu : 40 notes, titre de 60 et texte de 600 caractères, 40 lignes de kit.
+- La DLL n'a pas de commande générique : il faut une commande `GetCommunityBrief` dans `Extension.cs`, donc une DLL reconstruite. Le mod passera alors par `extAwait`, comme `GetWantedNotices`.
