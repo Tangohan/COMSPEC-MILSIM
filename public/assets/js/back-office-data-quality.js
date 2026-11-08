@@ -39,6 +39,45 @@
     }
     setActive(sections.length ? sections[0].getAttribute('data-dq-section') : '');
 
+    /* ── Onglets : une seule section affichée à la fois (toutes visibles sans JavaScript) ── */
+    function showTab(id) {
+        var known = sections.some(function (s) { return s.getAttribute('data-dq-section') === id; });
+        if (!known) {
+            id = sections.length ? sections[0].getAttribute('data-dq-section') : '';
+        }
+        sections.forEach(function (s) {
+            s.hidden = s.getAttribute('data-dq-section') !== id;
+        });
+        setActive(id);
+    }
+    root.classList.add('bo-dq--tabs');
+    showTab((window.location.hash || '').replace('#dq-', ''));
+    root.addEventListener('click', function (e) {
+        var a = e.target.closest ? e.target.closest('a[href^="#dq-"]') : null;
+        if (a) {
+            e.preventDefault();
+            var id = a.getAttribute('href').replace('#dq-', '');
+            showTab(id);
+            try { history.replaceState(null, '', '#dq-' + id); } catch (err) { /* ignoré */ }
+        }
+    });
+
+    /* ── Confirmation de suppression des données du jeu ── */
+    var modal = document.querySelector('[data-dq-modal]');
+    if (modal && typeof modal.showModal === 'function') {
+        var mForm = modal.querySelector('[data-dq-modal-form]');
+        root.addEventListener('click', function (e) {
+            var btn = e.target.closest ? e.target.closest('[data-dq-purge]') : null;
+            if (!btn) { return; }
+            mForm.action = window.location.pathname.replace(/\/$/, '') + '/donnees/' + encodeURIComponent(btn.getAttribute('data-dq-purge')) + '/supprimer';
+            modal.querySelector('[data-dq-modal-name]').textContent = btn.getAttribute('data-title');
+            modal.querySelector('[data-dq-modal-count]').textContent = btn.getAttribute('data-rows') + ' élément(s) et ' + btn.getAttribute('data-files') + ' fichier(s) (' + btn.getAttribute('data-size') + ')';
+            mForm.elements.confirm.value = '';
+            modal.showModal();
+        });
+        modal.querySelector('[data-dq-modal-cancel]').addEventListener('click', function () { modal.close(); });
+    }
+
     /* ── Filtres des anomalies ── */
     var list = root.querySelector('[data-dq-list]');
     if (!list) {
