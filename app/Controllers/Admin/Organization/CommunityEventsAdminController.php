@@ -1141,7 +1141,7 @@ final class CommunityEventsAdminController
         $rows = $this->events->listRsvpsWithUsersForEvent($id);
         $sep = ';';
         $lines = [];
-        $lines[] = implode($sep, ['Nom affiché', 'Indicatif', 'Adresse e-mail', 'Participation', 'Motif absence', 'Note absence', 'Pointage', 'Inscription', 'Rappel envoyé']);
+        $lines[] = implode($sep, ['Nom affiché', 'Indicatif', 'Participation', 'Motif absence', 'Note absence', 'Pointage', 'Inscription', 'Rappel envoyé']);
         $lab = static function (string $s): string {
             return match ($s) {
                 'yes' => 'Présent',
@@ -1155,7 +1155,6 @@ final class CommunityEventsAdminController
             $lines[] = implode($sep, [
                 '"' . str_replace('"', '""', (string) ($r['display_name'] ?? '')) . '"',
                 '"' . str_replace('"', '""', (string) ($r['callsign'] ?? '')) . '"',
-                '"' . str_replace('"', '""', (string) ($r['email'] ?? '')) . '"',
                 '"' . str_replace('"', '""', $lab((string) ($r['status'] ?? ''))) . '"',
                 '"' . str_replace('"', '""', (string) ($r['absence_reason'] ?? '')) . '"',
                 '"' . str_replace('"', '""', (string) ($r['absence_note'] ?? '')) . '"',

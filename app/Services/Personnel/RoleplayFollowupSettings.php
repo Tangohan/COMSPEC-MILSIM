@@ -33,6 +33,7 @@ final class RoleplayFollowupSettings
             'enabled' => false,
             'optional' => false,
             'cadence_reviewed' => false,
+            'individual_bilans' => true,
             'stages' => self::DEFAULT_STAGES,
             'recruitment_tracks' => [],
             'eligibility' => [
@@ -88,6 +89,7 @@ final class RoleplayFollowupSettings
             'enabled' => self::bool($input['enabled'] ?? $d['enabled']),
             'optional' => self::bool($input['optional'] ?? $d['optional']),
             'cadence_reviewed' => self::bool($input['cadence_reviewed'] ?? false),
+            'individual_bilans' => self::bool($input['individual_bilans'] ?? true),
             'stages' => self::stringList($input['stages'] ?? null, $d['stages']),
             'recruitment_tracks' => self::stringList($input['recruitment_tracks'] ?? null, []),
             'eligibility' => [
@@ -243,6 +245,7 @@ final class RoleplayFollowupSettings
             'enabled' => !empty($post['rp_followup_enabled']),
             'optional' => !empty($post['rp_followup_optional']),
             'cadence_reviewed' => true,
+            'individual_bilans' => !empty($post['rp_individual_bilans']),
             'stages' => $parseLines((string) ($post['rp_followup_stages'] ?? '')),
             'recruitment_tracks' => $parseLines((string) ($post['rp_followup_tracks'] ?? '')),
             'eligibility' => [
@@ -285,6 +288,17 @@ final class RoleplayFollowupSettings
             ],
             'stage_bilan_types' => $bilanTypes,
         ];
+    }
+
+    /**
+     * Les bilans individuels (onglet « Bilans » de la fiche d'un membre) sont-ils proposés ?
+     * Clé absente = oui (comportement historique).
+     *
+     * @param array<string, mixed> $cfg
+     */
+    public static function individualBilansEnabled(array $cfg): bool
+    {
+        return self::bool($cfg['individual_bilans'] ?? true);
     }
 
     /**
