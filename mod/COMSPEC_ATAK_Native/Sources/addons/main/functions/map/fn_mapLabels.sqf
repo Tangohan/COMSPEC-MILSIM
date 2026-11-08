@@ -25,7 +25,7 @@ private _two = _style isEqualTo "FULL" && {_scale < 0.1};
 private _pal = [] call comspec_atak_native_fnc_mapColors;
 private _cache = uiNamespace getVariable "COMSPEC_ATAK_LblCache";
 if (isNil "_cache" || {(count _cache) > 2000}) then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_LblCache", _cache]; };
-private _fB = COMSPEC_ATAK_FontSet select 1;
+private _fB = [COMSPEC_ATAK_FontSet select 1, "EtelkaMonospaceProBold"] select (_pal get "tac");
 
 // Contacts ENI : marqueurs hostiles (classe o_*) ou titrés « ENI … » (palette du téléphone), liste refaite quand le
 // magasin des marqueurs change (au plus une fois par seconde, toutes les 15 s par sécurité) ; avant : chaque seconde,

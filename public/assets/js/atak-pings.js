@@ -25,6 +25,21 @@ window.ATAKPings = (function () {
     return Promise.resolve(window.confirm(message));
   }
 
+  // Super ping : le serveur le retire seul à son terme ; relecture tant qu'il en reste un à l'écran.
+  var SUPER_REFRESH_MS = 5000;
+  var superRefreshTimer = null;
+  function isSuperRow(p) {
+    return !!p && !!window.ATAKSuperPing && typeof window.ATAKSuperPing.isSuperMessage === 'function'
+      && window.ATAKSuperPing.isSuperMessage(p.message);
+  }
+  function refreshWhileSuper(list) {
+    if (superRefreshTimer || !list.some(isSuperRow)) return;
+    superRefreshTimer = window.setTimeout(function () {
+      superRefreshTimer = null;
+      fetchPings();
+    }, SUPER_REFRESH_MS);
+  }
+
   function fetchPings() {
     if (!isNodeConfigured()) return;
     var url = getApiBase() + '/api/pings?mapId=' + getMapId();
@@ -62,6 +77,7 @@ window.ATAKPings = (function () {
         if (window.ATAKMap && typeof window.ATAKMap.setPingsOnMap === 'function') {
           window.ATAKMap.setPingsOnMap(list);
         }
+        refreshWhileSuper(list);
         if (window.ATAKLastPingsError) window.ATAKLastPingsError(null);
       })
       .catch(function (err) {
@@ -107,6 +123,7 @@ window.ATAKPings = (function () {
     if (ping.pos_x != null && ping.pos_y != null && window.ATAKMap && window.ATAKMap.addTemporaryPingMarker) {
       window.ATAKMap.addTemporaryPingMarker(ping.pos_x, ping.pos_y, ping.author, ping.message || '', ping.id);
     }
+    refreshWhileSuper([ping]);
   }
 
   function bindPingList() {

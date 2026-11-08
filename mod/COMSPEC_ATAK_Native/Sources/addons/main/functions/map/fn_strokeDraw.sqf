@@ -2,6 +2,7 @@
     Dessin libre de la carte (fn_mapOnDraw) : traits joueurs épais / fléchés, et tracé en cours.
     Arma dessine les polylignes sur un pixel ; les traits posés avec une épaisseur ou une flèche (variable publique
     COMSPEC_ATAK_SK_<nom> = [épaisseur, flèche, fermé]) sont repassés ici, à leur couleur, identiques pour tous.
+    Style tactique (fn_mapColors « tac ») : trait plus épais, halo léger de sa couleur (sans jointures, plafonné à 300 points), pointe pleine.
     La liste des traits stylés suit les marqueurs changés (pas de parcours de tous les marqueurs à chaque image).
     Params : [carte, position du curseur (monde)]
 */
@@ -74,6 +75,8 @@ private _vx1 = ((_vtl select 0) max (_vbr select 0)) + _vmg;
 private _vy0 = ((_vtl select 1) min (_vbr select 1)) - _vmg;
 private _vy1 = ((_vtl select 1) max (_vbr select 1)) + _vmg;
 if ((count _geo) > 400) then { _geo = createHashMap; };
+private _tac = ([] call comspec_atak_native_fnc_mapColors) get "tac";
+private _wMul = [1.3, 1.9] select _tac;
 missionNamespace setVariable ["COMSPEC_ATAK_SkGeo", _geo];
 {
     _x params ["_m", "_st"];
@@ -96,7 +99,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_SkGeo", _geo];
     if ((_bb select 1) < _vx0 || {(_bb select 0) > _vx1} || {(_bb select 3) < _vy0} || {(_bb select 2) > _vy1}) then { continue };
     private _c = [markerColor _m] call _rgbaOf;
     _c set [3, (_c select 3) * (markerAlpha _m)];
-    ["line", _map, [_pts, _c, (_w max 1 min 3) * 1.3, false, _arrow, false, _mpx]] call comspec_atak_native_fnc_planGfx;
+    private _wDraw = (_w max 1 min 3) * _wMul;
+    if (_tac && {(count _pts) <= 300}) then { ["line", _map, [_pts, [_c select 0, _c select 1, _c select 2, (_c select 3) * 0.25], _wDraw + 5, false, false, false, _mpx, false]] call comspec_atak_native_fnc_planGfx; };
+    ["line", _map, [_pts, _c, _wDraw, false, _arrow, _tac, _mpx]] call comspec_atak_native_fnc_planGfx;
     // Tracé routier : distance et temps estimés au milieu du trait (traduits une fois, gardés avec ses points), écrits
     // seulement quand le trait est assez long à l'écran pour ne pas encombrer la carte dézoomée.
     if (_lbl isEqualType "" && {_lbl isNotEqualTo ""}) then {

@@ -4,7 +4,7 @@
     Les tailles sont en pixels écran (converties en mètres à l'échelle courante) : même rendu à tout zoom.
     Params : [opération, carte, arguments]
       "mpx"   []                                                        -> mètres par pixel à l'échelle courante
-      "line"  [points 3D, couleur, épaisseur px, tirets, flèche, pointe pleine, m/px]   la pointe suit le dernier segment
+      "line"  [points 3D, couleur, épaisseur px, tirets, flèche, pointe pleine, m/px, jointures (true)]   la pointe suit le dernier segment
       "poly"  [points 3D, couleur, épaisseur px, tirets, alpha du remplissage, m/px]    polygone fermé (rempli s'il est convexe)
       "head"  [pointe, cap, couleur, longueur px, pleine, épaisseur px, m/px]           pointe de flèche
       "label" [position, texte, couleur, taille du texte, m/px, [décalage px x, y], encadré]
@@ -34,7 +34,7 @@ private _head = {
 };
 // Polyligne pleine ou en tirets (motif continu d'un segment à l'autre) ; jointures arrondies au-delà de 2 px.
 private _poly = {
-    params ["_pts", "_c", "_wPx", "_dashed", "_mpx"];
+    params ["_pts", "_c", "_wPx", "_dashed", "_mpx", ["_joints", true]];
     private _hw = _wPx * _mpx / 2;
     private _dOn = (7 + _wPx * 2) * _mpx;
     private _dOff = (5 + _wPx) * _mpx;
@@ -68,7 +68,7 @@ private _poly = {
         private _q = _pts select (_i + 1);
         if (!_dashed) then {
             [_p, _q, _hw, _c, _mpx] call _seg;
-            if (_wPx >= 2 && {_i > 0}) then { _map drawEllipse [_p, _hw, _hw, 0, _c, _tex]; };
+            if (_joints && {_wPx >= 2} && {_i > 0}) then { _map drawEllipse [_p, _hw, _hw, 0, _c, _tex]; };
         } else {
             // Découpe du segment au rectangle visible (Liang-Barsky).
             private _dx = (_q select 0) - (_p select 0);
@@ -109,7 +109,7 @@ private _poly = {
 switch (_op) do {
     case "mpx": { ((_map ctrlMapScreenToWorld [0.5, 0.5]) distance2D (_map ctrlMapScreenToWorld [0.5 + pixelW * 100, 0.5])) / 100 };
     case "line": {
-        _a params ["_pts", "_c", ["_wPx", 2], ["_dashed", false], ["_arrow", false], ["_solid", false], ["_mpx", 1]];
+        _a params ["_pts", "_c", ["_wPx", 2], ["_dashed", false], ["_arrow", false], ["_solid", false], ["_mpx", 1], ["_joints", true]];
         if ((count _pts) < 2) exitWith {};
         if (_arrow) then {
             private _n = count _pts;
@@ -125,7 +125,7 @@ switch (_op) do {
             [_body, _c, _wPx, _dashed, _mpx] call _poly;
             [_tip, _h, _c, _lenPx, _solid, _wPx, _mpx] call _head;
         } else {
-            [_pts, _c, _wPx, _dashed, _mpx] call _poly;
+            [_pts, _c, _wPx, _dashed, _mpx, _joints] call _poly;
         };
     };
     case "poly": {

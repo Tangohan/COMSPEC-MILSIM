@@ -2292,6 +2292,13 @@ return function (Router $router) {
     $router->post('/back-office/ressources/atak-diffusion-rapports/simuler', [AdminAtakReportRoutingController::class, 'simulate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/dupliquer', [AdminAtakReportRoutingController::class, 'duplicate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-diffusion-rapports/{id}/supprimer', [AdminAtakReportRoutingController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-consignes', [\App\Controllers\Admin\AdminAtakBriefController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/atak-consignes/catalogue', [\App\Controllers\Admin\AdminAtakBriefController::class, 'catalogue'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-consignes/notes', [\App\Controllers\Admin\AdminAtakBriefController::class, 'saveNote'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-consignes/notes/supprimer', [\App\Controllers\Admin\AdminAtakBriefController::class, 'deleteNote'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-consignes/notes/deplacer', [\App\Controllers\Admin\AdminAtakBriefController::class, 'moveNote'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-consignes/kit', [\App\Controllers\Admin\AdminAtakBriefController::class, 'saveKit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/atak-consignes/kit/supprimer', [\App\Controllers\Admin\AdminAtakBriefController::class, 'deleteKit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
