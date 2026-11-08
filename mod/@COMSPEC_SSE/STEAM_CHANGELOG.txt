@@ -2,6 +2,20 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
+[h1]COMSPEC SSE 1.5.0 — profils d'IA, papiers aux IA, couverture reliée à Athéna (08/11/2026)[/h1]
+[b]Relance Arma complètement.[/b] Demande COMSPEC ATAK 4.1.0.
+
+[list]
+[*] [b]Profils d'IA[/b] : créés sur Athéna, reliés à une IA posée, avec ses papiers. Configuration d'une IA ou d'un groupe depuis Zeus (page « IA de la zone » de l'éditeur) et Eden. Possibilité de garder une IA pour les prochaines parties.
+[*] [b]Papiers[/b] : « Papiers, s'il vous plaît » répond de nouveau, les réponses et gestes des IA s'affichent au-dessus de leur tête ou en toast, plus dans les notifications. Photo d'identité de nuit, mention de simulation retirée pour les pays du jeu, écran de contrôle plus clair.
+[*] [b]Éditeur SSE[/b] : les cinq types (renseignement, identité, papier, dossier, kit) s'ouvrent et se placent depuis Zeus. Textes traduits et non coupés.
+[*] [b]Preuves numériques[/b] : écran dédié pour les clés USB, disques, cartes mémoire, téléphones, ordinateurs et tablettes.
+[*] [b]Ma couverture[/b] : couverture préparée sur Athéna et remise au joueur, avec ses papiers, son kit et son brief. L'app dit où en est le lien.
+[*] [b]Zeus[/b] : modules rangés en catégories claires.
+[/list]
+
+----------------------------------------
+
 [h1]COMSPEC SSE 1.4.0 — photo en direct, carte militaire, preuves, éditeur (08/11/2026)[/h1]
 [b]Relance Arma complètement.[/b]
 
