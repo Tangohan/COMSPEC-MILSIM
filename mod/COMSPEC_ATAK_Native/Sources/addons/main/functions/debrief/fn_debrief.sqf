@@ -261,7 +261,7 @@ switch (_act) do {
         if ((count _e) isEqualTo 0) exitWith {
             ["WARNING", "CR fin d'op reçu de votre téléphone, mais cette fiche n'est plus dans ce téléphone", 6, 40, "DEBRIEF"] call comspec_atak_native_fnc_notify;
         };
-        if ((_e get "state") isEqualTo "done") exitWith {};
+        if ((_e get "state") isEqualTo "done") exitWith { missionNamespace setVariable ["COMSPEC_ATAK_MobileSent", true]; };
         private _vals = _e get "vals";
         if (_pairs isEqualType []) then {
             { if (_x isEqualType [] && {(_x param [0, 0]) isEqualType ""} && {(_x param [1, 0]) isEqualType ""}) then { _vals set [_x select 0, _x select 1]; }; } forEach _pairs;
@@ -270,6 +270,8 @@ switch (_act) do {
         _ui set ["open", _id];
         _ui set ["mobile", true];
         [["send", "read"] select (_how isEqualTo "read")] call comspec_atak_native_fnc_debrief;
+        // Accusé « envoyé » vers Athena (fn_adminNotices) : seulement si la fiche est remise.
+        missionNamespace setVariable ["COMSPEC_ATAK_MobileSent", (_e get "state") isEqualTo "done"];
         _ui set ["mobile", false];
         if (_keepOpen isNotEqualTo "") then { _ui set ["open", _keepOpen]; };
     };

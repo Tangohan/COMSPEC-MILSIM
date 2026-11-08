@@ -118,6 +118,8 @@ _rows pushBack ["segment", "", [
     [format ["ATHENA (%1)", _fTotal], "ATHENA"] call _tabBtn,
     [format ["IA ENNEMIE (%1)", count _caps], "DEBUG"] call _tabBtn
 ] + ([[], [[format ["APPS (%1)", count ((["policy"] call comspec_atak_native_fnc_appInstall) select 0) + count ((["policy"] call comspec_atak_native_fnc_appInstall) select 1)], "APPS"] call _tabBtn]] select _inGame)];
+// « Sur mon téléphone » : espace d'administration sur le vrai téléphone, par un QR code (fn_mobileQr). Athena vérifie le droit.
+_rows pushBack ["buttons", [["SUR MON TÉLÉPHONE", { [{ ["open", "admin"] call comspec_atak_native_fnc_mobileQr; }] call comspec_atak_native_fnc_nextFrame; }, false, true, "Gérer les joueurs, les sessions et les CR depuis votre vrai téléphone (QR code valable 2 minutes, une seule utilisation)"]]];
 
 switch (_tab) do {
     case "APPS": {

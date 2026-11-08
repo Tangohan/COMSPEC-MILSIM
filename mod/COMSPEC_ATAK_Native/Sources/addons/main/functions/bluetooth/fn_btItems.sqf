@@ -46,7 +46,7 @@ private _idcVerdicts = createHashMapFromArray [
     ["doute", ["Doute", "#f2ab33"]]
 ];
 private _idcVerdict = { params ["_v"]; _idcVerdicts getOrDefault [toLower _v, [["Sans verdict", toUpper _v] select (_v isNotEqualTo ""), "#8a9a93"]] };
-private _idcDocType = { params ["_t"]; createHashMapFromArray [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"]] getOrDefault [_t, ["Document", _t] select (_t isNotEqualTo "")] };
+private _idcDocType = { params ["_t"]; createHashMapFromArray [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"], ["military_id", "Carte militaire"]] getOrDefault [_t, ["Document", _t] select (_t isNotEqualTo "")] };
 private _idcLevel = { params ["_l"]; createHashMapFromArray [["N0", "N0 · examen visuel"], ["N1", "N1 · bande MRZ"], ["N2", "N2 · puce NFC"], ["N3", "N3 · fichiers"]] getOrDefault [_l, _l] };
 private _idcWho = { params ["_c"]; trim format ["%1 %2", toUpper (_c getOrDefault ["last", ""]), _c getOrDefault ["first", ""]] };
 private _sheets = {

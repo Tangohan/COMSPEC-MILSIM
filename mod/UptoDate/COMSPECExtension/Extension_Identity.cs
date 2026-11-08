@@ -83,7 +83,8 @@ public static partial class Extension
                     {
                         foreach (var p in root.EnumerateObject())
                         {
-                            if (p.Name is "version" or "generated_at" or "map" or "op" or "since")
+                            // « settings » (réglage de la communauté, fn_idAthenaPack) : objet converti en paires par AppendSqfValue.
+                            if (p.Name is "version" or "generated_at" or "map" or "op" or "since" or "settings")
                                 head.Add(new KeyValuePair<string, JsonElement>(p.Name, p.Value.Clone()));
                         }
                         if (root.TryGetProperty("generated_at", out var g) && g.ValueKind == JsonValueKind.String)

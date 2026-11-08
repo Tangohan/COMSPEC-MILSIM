@@ -377,6 +377,8 @@ switch (_act) do {
         private _before = count _list;
         ["send"] call comspec_atak_native_fnc_reportAction;
         private _sent = (count _list) > _before;
+        // Accusé « envoyé » vers Athena (fn_adminNotices) : seulement si la fiche est partie.
+        missionNamespace setVariable ["COMSPEC_ATAK_MobileSent", _sent];
         _ui set ["mobile", false];
         _keepUi params ["_kType", "_kVals", "_kAuto", "_kTouched", "_kErr", "_kTab", "_kOpen", "_kPick"];
         { _ui set [_x select 0, _x select 1]; } forEach [["type", _kType], ["vals", _kVals], ["auto", _kAuto], ["touched", _kTouched], ["errors", _kErr], ["tab", _kTab], ["open", _kOpen], ["photoPick", _kPick]];

@@ -255,7 +255,7 @@ switch (_act) do {
         if ((count _c) isEqualTo 0) exitWith {};
         private _vl = createHashMapFromArray [["ras", "RAS"], ["signale", "signalé"], ["recherche", "recherché"], ["hvt", "cible prioritaire"], ["inconnu", "inconnu des fichiers"],
             ["revoque", "papier annulé"], ["vole", "papier volé ou perdu"], ["expire", "papier expiré"], ["faux", "faux document"], ["doute", "doute"]];
-        private _type = createHashMapFromArray [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"]] getOrDefault [_c get "docType", "Document"];
+        private _type = createHashMapFromArray [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"], ["military_id", "Carte militaire"]] getOrDefault [_c get "docType", "Document"];
         private _lines = [
             format ["Contrôle d'identité %1 au %2 : %3 %4%5.", _c get "time", _c get "grid", toUpper (_c get "last"), _c get "first", ["", format [", né(e) le %1", _c get "dob"]] select ((_c get "dob") isNotEqualTo "")],
             format ["Document : %1 %2 n° %3%4.", _type, _c get "docCountry", _c get "docNumber", ["", format [", expire le %1", _c get "expires"]] select ((_c get "expires") isNotEqualTo "")],

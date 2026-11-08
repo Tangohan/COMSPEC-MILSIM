@@ -1,13 +1,14 @@
 /*
     « Sur mon téléphone » (2.9.39) : QR code à scanner avec son vrai téléphone pour retrouver une app de l'ATAK en version
-    mobile sur Athena (comptes rendus, CR fin d'op, carte, briefs air), liée au compte, à la communauté et à la partie.
-    Page MOBILEQR, ouverte par le bouton « Sur mon téléphone » des apps Comptes rendus, CR fin d'op et Carte.
+    mobile sur Athena (comptes rendus, CR fin d'op, carte, briefs air, administration), liée au compte, à la communauté et à la partie.
+    Page MOBILEQR, ouverte par le bouton « Sur mon téléphone » des apps Comptes rendus, CR fin d'op, Carte et Admin.
     Le lien vient d'Athena par COMSPEC Link (« MobileLink.Create », 2.0.117) : adresse, adresse courte, validité (5 min,
-    usage unique) et matrice du QR code, dessinée en contrôles par fn_formRender (ligne « qr ») : aucune image.
+    2 min pour l'administration, usage unique) et matrice du QR code, dessinée en contrôles par fn_formRender (ligne « qr ») : aucune image.
+    App « admin » : Athena refuse (forbidden) un compte qui ne gère pas la communauté ; la parole du jeu ne suffit pas.
     Ce qui est fait sur le vrai téléphone revient par les flux du jeu : marqueurs du site (sondés), comptes rendus et
     CR fin d'op par un avis Athena traité dans fn_adminNotices (« mobile_report », « mobile_debrief »).
     Params : [action, argument]
-      "open" app       ouvre la page MOBILEQR pour cette app (cr, compte-rendu, carte, briefs, controle) et demande un lien
+      "open" app       ouvre la page MOBILEQR pour cette app (cr, compte-rendu, carte, briefs, controle, admin) et demande un lien
                        (controle, 3.0.2 : historique des contrôles d'identité du joueur, /m/controle ; ouvert par l'app
                        Contrôle ID du SSE avec ["open", "controle"] call comspec_atak_native_fnc_mobileQr)
       "request"        demande (ou redemande : RÉGÉNÉRER) un lien à Athena
@@ -18,7 +19,7 @@
 params [["_act", ""], ["_arg", ""]];
 private _q = uiNamespace getVariable ["COMSPEC_ATAK_MobQr", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_MobQr", _q];
-private _labels = createHashMapFromArray [["cr", "Comptes rendus"], ["compte-rendu", "CR fin d'op"], ["carte", "Carte"], ["briefs", "Briefs air"], ["controle", "Contrôle ID"]];
+private _labels = createHashMapFromArray [["cr", "Comptes rendus"], ["compte-rendu", "CR fin d'op"], ["carte", "Carte"], ["briefs", "Briefs air"], ["controle", "Contrôle ID"], ["admin", "Administration"]];
 private _rerender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MOBILEQR") then { ["MOBILEQR"] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
 private _fail = {
     params ["_msg", ["_link", false]];
@@ -108,12 +109,14 @@ switch (_act) do {
                     _q set ["status", "ok"];
                     _q set ["url", _url];
                     _q set ["short", [_url] call comspec_atak_native_fnc_athenaShortUrl];
+                    _q set ["secs", (parseNumber _secs) max 30];
                     _q set ["until", diag_tickTime + ((parseNumber _secs) max 30)];
                     _q set ["qr", _rows];
                 } else {
                     private _e = toLower _r;
                     private _msg = switch (true) do {
                         case ((_e find "not_linked") >= 0 || {(_e find "unauthorized") >= 0}): { "Ce jeu n'est relié à aucun compte Athena : reliez-le dans l'app Athena (OBTENIR MON CODE), puis réessayez." };
+                        case ((_e find "forbidden") >= 0 || {(_e find "http_403") >= 0}): { "Réservé à la gestion de la communauté : votre compte Athena n'a pas ce droit." };
                         case ((_e find "rate_limited") >= 0 || {(_e find "http_429") >= 0}): { "Trop de QR codes demandés : patientez quelques minutes avant de régénérer." };
                         case ((_e find "unknown") >= 0 || {(_e find "use_async") >= 0}): { "COMSPEC Link est trop ancien pour cette fonction : mettez à jour le pack, puis relancez Arma." };
                         case ((_e find "uplink_hold") >= 0): { "Pas de liaison de données sur ce téléphone : rapprochez-vous d'un relais, puis réessayez." };
@@ -159,7 +162,7 @@ switch (_act) do {
                 private _left = round ((_q getOrDefault ["until", 0]) - diag_tickTime);
                 if (_left <= 0) then {
                     _rows pushBack ["banner", "<t font='COMSPEC_BarlowBold' size='1.1' color='#140c02'>QR CODE EXPIRÉ</t>", [0.92, 0.6, 0.18, 1]];
-                    _rows pushBack ["text", "<t size='0.9' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>Il n'était valable que 5 minutes. Régénérez-le, puis scannez le nouveau.</t>"];
+                    _rows pushBack ["text", format ["<t size='0.9' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", format [("Il n'était valable que %1 min. Régénérez-le, puis scannez le nouveau.") call comspec_atak_native_fnc_tr, ceil ((_q getOrDefault ["secs", 300]) / 60)]]];
                     _rows pushBack ["buttons", [["RÉGÉNÉRER", ["request"] call _act, true], ["RETOUR", _back, false]]];
                 } else {
                     _rows pushBack ["text", format ["<t size='0.9' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%1</t>", format [("Scannez ce QR code avec l'appareil photo de votre vrai téléphone : l'app %1 s'ouvre sur Athena, liée à votre compte et à cette partie.") call comspec_atak_native_fnc_tr, _name call comspec_atak_native_fnc_tr]]];
