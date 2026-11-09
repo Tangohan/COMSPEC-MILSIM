@@ -1107,6 +1107,9 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_screen_time", "CHECKBOX",
     ["Temps d'écran et temps par rôle", "Compte le temps passé sur le téléphone (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe...). À voir dans l'app Temps d'écran et sur Athena (fiche du membre)."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_youtube", "CHECKBOX",
+    ["Vidéos YouTube dans le téléphone", "Décoché par défaut. Coché : l'app Vidéo YouTube lit un lien YouTube collé par le joueur, dans un navigateur intégré. YouTube (Google) n'est contacté que lorsque le joueur lance une lecture ; le lien n'est partagé avec personne."],
+    _team, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_distance", "CHECKBOX",
     ["Distances parcourues", "Le serveur compte, pour chaque joueur, les pas, les kilomètres à pied, en véhicule, en vol et en parachute, et les heures de vol par appareil. À voir dans l'app Distances et sur Athena (fiche du membre)."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;

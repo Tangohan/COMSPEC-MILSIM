@@ -636,6 +636,13 @@ Lecture par session de jeu : la clé commune du serveur ne dit pas qui joue (`40
 - Plafonds : 200 unités, 600 postes, 800 lignes de personnes (`truncated: true` au-delà), 60 caractères par texte.
 - Côté jeu : `GetCommunityOrbat` de COMSPEC Link (Async seulement, une lecture à la fois) répond `OK|n|révision|generated_at`, puis `GetCommunityOrbatChunk [i]` en mémoire ; lu par `fn_bftOrbat`, 5 min au plus entre deux lectures, et rien n'est relu si la révision ne change pas. Champs ajoutés plus tard : ignorés par le téléphone.
 
+
+## Bilan de l'année : `GET /api/atak/year-review`
+
+- Auth : clé du jeu (comme l'ORBAT) ; le compte vient de la clé (`matchedUserId`), jamais d'un paramètre. Lecture seule.
+- Réponse : `{state: OK | NOT_PUBLISHED, year, tenant, partial, slides: [{key, tone, kicker, name, title, lead, big, big_label, persona, stats: [[libellé, valeur]], bars: [[lettre, 0..100]], boards: [[titre, [[rang, nom, valeur]]]]}]}`. Écrans de `YearReviewStory` (mêmes que `/retrospective`), écran « formule payante » omis, bilan de l'unité seulement si `YearReviewAccess::collectiveAllowed`. Au plus 24 écrans, 128 Ko.
+- Côté jeu : `GetYearReview` puis `GetYearReviewChunk [i]` (COMSPEC Link, comme l'ORBAT) ; lu par `fn_yearReview`, jamais avant `COMSPEC_AthenaReady`.
+
 ## App Communauté : `GET /api/atak/community-brief`
 
 Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le contenu se saisit dans Ressources › Consignes et kit ATAK (`/back-office/ressources/atak-consignes`), reste rangé dans la configuration d'expérience (`community_notes`, `community_kit`, sans migration) et se lit par `App\Support\AtakCommunityBrief`. La DLL coupe sa réponse à 7 996 octets, notes d'abord puis kit : le back-office affiche ce volume et refuse de le dépasser. Sans saisie, l'API renvoie des listes vides.

@@ -857,6 +857,15 @@ final class SseIdentityRegistryController
             return Response::redirect(url(self::BASE . '/membres'));
         }
 
+        $coverPanel = null;
+        if (!empty($rights['manage'])) {
+            try {
+                $coverPanel = (new \App\Services\Sse\SseCoverExportService())->panel($tenantId, (int) $member['id'], true, (int) $member['id'] === (int) $this->userId());
+            } catch (\Throwable $e) {
+                error_log('Papiers membre : couvertures générées indisponibles : ' . $e->getMessage());
+            }
+        }
+
         return $this->view('atak.sse.papers.member', [
             'title' => 'Papiers — ' . (string) ($member['display_name'] ?? ''),
             'memberName' => (string) ($member['display_name'] ?? ''),
@@ -866,6 +875,7 @@ final class SseIdentityRegistryController
             'memberFileUrl' => \App\Support\EffectifsLmsAccess::allows(\App\Core\Gate::getInstance()) ? effectifs_workspace_url('membres/' . (int) $member['id']) : null,
             'csrfToken' => Csrf::token(),
             'papersTab' => 'membres',
+            'coverPanel' => $coverPanel,
         ]);
     }
 

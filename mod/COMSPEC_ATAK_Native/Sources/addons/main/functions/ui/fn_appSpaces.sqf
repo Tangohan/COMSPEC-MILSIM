@@ -173,9 +173,9 @@ switch (_act) do {
                 ["Groupes et réseau", ["Group", "InterTeam", "WaveRelay"]]
             ]],
             ["OPS", "Mission et téléphone", "app_tasks", [
-                ["Mission", ["Tasks", "Briefing", "Plan", "Zones", "Logistics", "Reports", "Debrief", "Aar", "Academy", "Tenant", "Toc"]],
+                ["Mission", ["Tasks", "Briefing", "Plan", "Zones", "Logistics", "Reports", "Debrief", "Aar", "Academy", "Tenant", "Toc", "YearReview"]],
                 ["Téléphone", ["Store", "Settings", "Athena", "Network", "Bluetooth", "Resynch", "Status", "Profile", "Accessories", "ScreenTime", "Debug", "Admin", "Credits"]],
-                ["Civil", ["Music", "Calc", "Notes", "Food", "Dating"]]
+                ["Civil", ["Music", "Youtube", "Calc", "Notes", "Food", "Dating"]]
             ]]
         ];
         private _apps = [(([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible })] call _filter;

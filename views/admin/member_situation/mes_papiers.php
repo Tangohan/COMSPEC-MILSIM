@@ -64,6 +64,16 @@ $scopeLabels = ['default' => 'Par défaut', 'map' => 'Pour une carte', 'operatio
         <?php endforeach; ?>
     </section>
 
+    <?php if (!empty($coverPanel)): ?>
+        <?php
+        $coverSelf = true;
+        $coverPostUrl = url('back-office/ma-situation/mes-papiers/couverture');
+        $coverDownloadBase = $coverPostUrl;
+        $coverCsrf = \App\Core\Csrf::token();
+        require dirname(__DIR__, 2) . '/partials/sse_cover_export.php';
+        ?>
+    <?php endif; ?>
+
     <?php if ($papers['identities'] === []): ?>
         <p class="bo-member-situation__lead">Vous n’avez pas encore de papiers de jeu. Ils sont créés par les responsables de votre communauté, à partir de la fiche de votre personnage.</p>
     <?php endif; ?>
