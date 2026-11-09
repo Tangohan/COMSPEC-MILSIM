@@ -30,7 +30,7 @@ final class PlanAccess
 
     public static function eligible(array $tenant): bool
     {
-        return PlanGift::rank(PlanGift::effectivePlanSlug($tenant)) >= PlanGift::rank('pro_plus');
+        return PlanGift::rank(\App\Services\Platform\EffectivePlan::slugFor($tenant)) >= PlanGift::rank('pro_plus');
     }
 
     public static function deniedJson(): Response

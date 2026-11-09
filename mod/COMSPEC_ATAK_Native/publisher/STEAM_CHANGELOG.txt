@@ -1,3 +1,25 @@
+[h1]COMSPEC ATAK — Mise à jour 4.1.1.AG - Washington[/h1]
+[b]Publication : 09/11/2026[/b]
+[quote]
+[b]Important / Important :[/b] ce pack contient COMSPEC Link 2.0.122 : mettez à jour, quittez Arma 3 complètement, puis relancez. / This pack contains COMSPEC Link 2.0.122: update, fully quit Arma 3, then restart.
+[/quote]
+
+[h2]Français[/h2]
+[list]
+[*] Photos : une ancienne photo effacée ne bloque plus l'envoi des nouvelles. Les photos envoyées sont gardées dans Documents\Arma 3 - COMSPEC\Captures et le dossier Screenshots du jeu ne se remplit plus.
+[*] Radio : l'app Wave Relay reconnaît votre radio ACRE2 (MPU-5), indique l'état de la voix par le réseau et explique le cadenas « EN CLAIR ».
+[*] Écran de verrouillage : bouton « Déverrouiller » net aux proportions fixes. Titres des apps jamais coupés en petit format.
+[*] Carte : nouveau choix d'icônes 2525D dans Réglages > Carte, avec les vrais symboles OTAN (camp, type, niveau).
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] Photos: an old deleted picture no longer blocks new ones. Sent photos are kept in Documents\Arma 3 - COMSPEC\Captures and the game's Screenshots folder no longer fills up.
+[*] Radio: the Wave Relay app recognises your ACRE2 radio (MPU-5), shows the state of voice over the network and explains the "CLEAR" padlock.
+[*] Lock screen: clean "Unlock" button with fixed proportions. App titles never cut off on a small phone.
+[*] Map: new 2525D unit icons in Settings > Map, with real NATO symbols (side, type, echelon).
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 4.1.0.AG - Washington[/h1]
 [b]Publication : 08/11/2026[/b]
 [quote]

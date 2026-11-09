@@ -55,6 +55,8 @@ class Application
             new \App\Middleware\LoadShedMiddleware(),
             new \App\Middleware\RateLimitMiddleware(),
             new \App\Middleware\CsrfPostMiddleware(),
+            // Aperçu de la formule (administrateur de la plateforme) : lecture seule.
+            new \App\Middleware\PlanPreviewReadOnlyMiddleware(),
             // Accès refusé : retour à la page précédente avec un toast, plutôt que vers le tableau de bord.
             new \App\Middleware\AccessDeniedStayMiddleware(),
             // Lazy : ne pas Container::get(DemoNda…) au boot — sinon DemoNdaVisitRepository

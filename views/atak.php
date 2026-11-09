@@ -245,6 +245,7 @@ if ($atakMapConfig) {
   </aside>
 <?php endif; ?>
 <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
+    <?php require base_path('views/partials/plan_preview_banner.php'); ?>
   <?php
   $baseUrl = $base;
   $haloLoaderHint = 'Préparation de la carte tactique…';
