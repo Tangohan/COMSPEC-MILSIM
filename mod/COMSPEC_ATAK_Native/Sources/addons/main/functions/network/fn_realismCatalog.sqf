@@ -50,6 +50,7 @@ switch (_act) do {
             [_rd, "Données par radio (ancien modèle)", _p + "radio_data"] call _b,
             [_ms, "Liaison téléphone-radio réaliste", _p + "mpu_real"] call _b,
             [_ms, "Voix relayée par le maillage", _p + "mpu_voice"] call _b,
+            [_ms, "Voix par le maillage : au moins un relais", _p + "mpu_voice_needRelay"] call _b,
             [_ms, "Radio de données obligatoire", _p + "mpu_require"] call _b,
             [_ms, "Câble EUD obligatoire (notre MPU5)", _p + "mpu_cable"] call _b,
             [_ms, "Wi-Fi de la MPU5", _p + "mpu_wifi"] call _b,

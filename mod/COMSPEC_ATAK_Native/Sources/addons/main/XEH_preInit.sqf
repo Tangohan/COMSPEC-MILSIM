@@ -715,6 +715,10 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mpu_voice", "CHECKBOX",
     ["Voix ACRE/TFAR relayée par le maillage MPU5", "Comme une passerelle radio sur IP : un joueur relie sa radio ACRE2 ou TFAR à sa MPU5 par câble audio (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Entre deux radios ainsi reliées, réglées sur la même fréquence, la voix passe par le maillage (MPU5, relais, pylônes, véhicules) : la distance et le relief ne la coupent plus. Hors maillage : portée radio normale. Nécessite la liaison téléphone-radio réaliste. TFAR : la portée de réception de la radio reliée s'allonge jusqu'au correspondant relié le plus lointain."],
     _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+// Voix par le maillage : exige au moins un relais en service dans la mission (fn_mpuVoice « _relayOk »).
+["comspec_atak_native_mpu_voice_needRelay", "CHECKBOX",
+    ["Voix par le maillage : au moins un relais", "Coché : la voix ne passe par les MPU5 que si la mission a au moins un relais en service pour votre camp (module « Poser un relais », pylône, véhicule passerelle, poste de commandement). Exemple : carte sans aucun relais, deux joueurs avec une MPU5 chacun : leurs radios gardent leur portée normale. Décoché : le maillage d'équipe du chef de groupe et les MPU5 voisines suffisent."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Graphe unique du maillage (fn_meshGraph) : calculé sur le serveur par défaut, plafond de sauts réglable.
 ["comspec_atak_native_mesh_server", "CHECKBOX",
     ["Graphe du maillage calculé sur le serveur", "Coché : une seule vérité pour tous, calculée par le serveur et diffusée sur changement, au plus toutes les 2 s. Décoché : chaque client calcule le graphe de son camp, sans diffusion mais avec des écarts possibles. N'agit qu'avec la liaison réaliste."],

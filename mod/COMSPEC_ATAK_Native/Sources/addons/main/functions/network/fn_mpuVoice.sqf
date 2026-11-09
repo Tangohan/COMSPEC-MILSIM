@@ -57,7 +57,14 @@ if (_act isEqualTo "sigMap") exitWith {
     if (!_grav || {_lvl <= 0}) exitWith { [_px max ((1 - 0.04 * _hops) max 0.6), _dbm max (-60 - 3 * _hops)] };
     [_px max ([0.7, 0.45] select (_lvl >= 2)), _dbm max ([-80, -95] select (_lvl >= 2))]
 };
-private _enabled = { (missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) && {["voice"] call comspec_atak_native_fnc_radioGuard} && {["active"] call comspec_atak_native_fnc_mpuLink} };
+// Réglage « Au moins un relais dans la mission » (coché par défaut) : sans aucun relais en service pour mon camp (module « Poser un
+// relais », pylône, passerelle de véhicule, poste de commandement), la voix ne passe pas par le maillage, même entre deux MPU5 voisines
+// ni dans le maillage d'équipe du chef de groupe : la radio garde sa portée normale.
+private _relayOk = {
+    if !((missionNamespace getVariable ["comspec_atak_native_mpu_voice_needRelay", true]) isEqualTo true) exitWith { true };
+    ((["list", [side group player]] call comspec_atak_native_fnc_relayNet) findIf { (_x select 3) in ["relay", "gw", "cp"] && {(_x select 6) isNotEqualTo false} }) >= 0
+};
+private _enabled = { (missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) && {call _relayOk} && {["voice"] call comspec_atak_native_fnc_radioGuard} && {["active"] call comspec_atak_native_fnc_mpuLink} };
 private _read = ["read"] call comspec_atak_native_fnc_radioGuard;
 private _acre = _read && {!isNil "acre_api_fnc_getCurrentRadioList"};
 private _tfar = _read && {!isNil "TFAR_fnc_activeSwRadio"};
