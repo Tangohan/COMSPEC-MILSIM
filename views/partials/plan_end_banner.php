@@ -9,6 +9,10 @@ use App\Core\Session;
 use App\Support\PlanAccessWindow;
 use App\Support\PlanGift;
 
+if (\App\Services\Platform\EffectivePlan::sessionMatches()) {
+    return;
+}
+
 $planEndUserId = (int) (Session::get('user_id') ?? 0);
 $planEndTenantId = (int) (Session::get('tenant_id') ?? 0);
 if ($planEndUserId < 1 || $planEndTenantId < 2) {
