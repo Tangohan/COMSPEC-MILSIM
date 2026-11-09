@@ -59,6 +59,24 @@ EN : Import the cover you generated on Athena, offline
 - SSE : `fn_idCoverImport` (lecture, nettoyage une seconde fois, profil du joueur, envoi au serveur `coverImport` / `coverForget`), `fn_idLegend` (la couverture importée l'emporte champ par champ sur la légende, après le brief Athena et le texte de l'éditeur), `fn_idCoverSync` (une couverture importée ne repart pas vers Athena), `fn_idCoverPage` (zone Importer ma couverture, ligne Couverture de la liaison Athena). Ni `fn_radioGuard`, ni les profils d'identité du registre SSE, ni les papiers ne sont touchés ; la couverture importée n'ouvre pas l'infiltration.
 - Limite connue : la photo du fichier n'est pas affichée en jeu (Arma ne lit pas une image hors de ses dossiers) ; elle reste dans le fichier.
 - `i18n/en.txt` et `tools/i18n_identity_en.tsv` : 27 textes.
+## À venir : Bilan de l'année sur le téléphone et vidéos YouTube (ATAK natif et COMSPEC Link, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Votre bilan de l'année sur le téléphone, et des vidéos YouTube
+- Nouvelle app « Bilan de l'année » (espace Mission) : la rétrospective du site, écran par écran : heures de jeu, kilomètres, blessures, SSE, comptes rendus, et le bilan de l'unité quand la formule de votre communauté le comprend. Il faut que votre compte Athena soit relié.
+- Nouvelle app « Vidéo YouTube » (espace Civil) : collez un lien YouTube et lancez la lecture dans le téléphone. Désactivée par défaut : l'administrateur du serveur l'active dans les réglages CBA. YouTube n'est contacté que lorsque vous lancez une lecture, et votre lien n'est partagé avec personne.
+EN : Your year in review on the phone, and YouTube videos
+- New "Year in review" app (Mission space): the site's year review, screen by screen: play time, distance, injuries, SSE, reports, and your unit's review when your community's plan includes it. Your Athena account must be linked.
+- New "YouTube video" app (Civil space): paste a YouTube link and play it in the phone. Off by default: the server admin turns it on in the CBA settings. YouTube is only contacted when you start playback, and your link is shared with nobody.
+
+### Détail technique
+- Site : `GET /api/atak/year-review` (`AtakApiController::yearReview`, `AtakYearReviewService`) : mêmes écrans que `/retrospective` (`YearReviewStory`), mêmes droits (calendrier publié, `YearReviewAccess::collectiveAllowed`), joueur relié par la clé du jeu (`matchedUserId`), jamais d'identifiant en paramètre. Lecture seule, écrans payants omis, texte nettoyé et borné. Les textes restent en français (le téléphone ne les traduit pas).
+- COMSPEC Link : `GetYearReview` (Async seulement) et `GetYearReviewChunk` (`Extension_YearReview.cs`), même circuit que `GetCommunityOrbat`. **La DLL doit être recompilée** (non faite dans cette PR) ; sans elle l'app dit « COMSPEC Link trop ancienne ».
+- Mod : `fn_yearReview` (aucune lecture avant `COMSPEC_AthenaReady`, règle de licence), `fn_pageYearReview`, app `YearReview` (`short="Bilan"`, icône `app_reports` existante, aucun nouveau binaire).
+- YouTube : `fn_youtube` (identifiant de 11 caractères `[A-Za-z0-9_-]` validé strictement ; hôtes `youtube.com`, `youtube-nocookie.com`, `youtu.be` ; watch, embed, shorts, live, v), `fn_pageYoutube`, classe `COMSPEC_RscWebBrowserExt` (`allowExternalURL=1`, seulement cette app), réglage `comspec_atak_native_youtube` (décoché, imposé par le serveur). Repli `openYoutubeVideo` (surcouche Steam). Pas de lecture sur les écrans 3D du jeu (voir la PR).
+- Non vérifié sans Arma : le navigateur intégré charge-t-il une adresse externe et lit-il la vidéo, avec le son.
+- Tests : `AtakYearReviewTest`. Autotest : étape `tel_bilan_youtube`.
 
 ## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
 
