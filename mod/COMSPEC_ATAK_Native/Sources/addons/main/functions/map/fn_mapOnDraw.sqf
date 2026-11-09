@@ -6,6 +6,13 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
 private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Zoom mémorisé pour la prochaine ouverture, quelle que soit la façon de zoomer (molette, boutons, glissement) : avant, seuls
+// les boutons + / - l'enregistraient (fn_mapZoom) et le zoom revenait à 0,08 à la réouverture. Seulement une fois la carte centrée
+// à l'ouverture (mapCentered), sinon la première image dessinée écraserait la valeur mémorisée par l'échelle d'arrivée.
+if (_state getOrDefault ["mapCentered", false] && {_scale > 0.0005} && {_scale <= 1}) then {
+    private _kept = uiNamespace getVariable ["COMSPEC_ATAK_MapScale", 0.08];
+    if (abs (_scale - _kept) > (_kept * 0.02)) then { uiNamespace setVariable ["COMSPEC_ATAK_MapScale", _scale]; };
+};
 // Guerre électronique et GPS naturel (fn_gpsFix) : position affichée avec l'erreur GPS, pistes BFT dégradées.
 ([] call comspec_atak_native_fnc_ewEffects) params ["", "_ewBft", "", "", "", "_ewOff"];
 // Ma position affichée, une seule par image et posée avant tout dessin : suivi, icône, cône, anneaux, cercle de précision,

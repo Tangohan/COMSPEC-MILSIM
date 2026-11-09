@@ -38,6 +38,18 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : zoom de la carte du téléphone mémorisé (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Le zoom de la carte du téléphone est gardé quand vous fermez l'ATAK
+- Vous zoomez (molette, boutons ou glissement), vous rangez le téléphone, vous le rouvrez : la carte garde votre zoom au lieu de revenir au zoom par défaut.
+EN : The phone map zoom is kept when you close the ATAK
+- You zoom (wheel, buttons or drag), put the phone away, then reopen it: the map keeps your zoom instead of going back to the default.
+
+### Détail technique
+- `fn_mapOnDraw` : l'échelle de la carte (`ctrlMapScale`) est mémorisée dans `COMSPEC_ATAK_MapScale` dès qu'elle change de plus de 2 %, une fois la carte centrée à l'ouverture (`mapCentered`). Avant, seuls les boutons + / - (`fn_mapZoom`) l'enregistraient : molette et glissement ne comptaient pas et `fn_pageMap` recentrait à 0,08 à chaque ouverture. Non vérifié en jeu.
+
 ## À venir : parler aux IA en texte libre et atelier IA en Eden et en Zeus (COMSPEC SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
