@@ -91,13 +91,16 @@ class ReplayRepository
     /**
      * Sessions jouées (clé de mission de l'ATAK natif) de cette carte, les plus récentes d'abord.
      *
-     * @return list<array{key: string, label: string, from: string, to: string, samples: int}>
+     * Métadonnées du sélecteur de replay (ajoutées sans retirer de champ) : mission et carte tirées de la clé
+     * « nom@carte#AAAAMMJJHHMM », unités distinctes, durée enregistrée et poids estimé des positions.
+     *
+     * @return list<array{key: string, label: string, from: string, to: string, samples: int, mission: string, map: string, units: int, durationSeconds: int, approxBytes: int}>
      */
     public function listSessions(string $missionId, int $limit = 30): array
     {
         try {
             $stmt = $this->pdo->prepare(
-                'SELECT mission_key, MIN(logged_at) AS first_at, MAX(logged_at) AS last_at, COUNT(*) AS samples
+                'SELECT mission_key, MIN(logged_at) AS first_at, MAX(logged_at) AS last_at, COUNT(*) AS samples, COUNT(DISTINCT unit_id) AS units
                  FROM logs_positions
                  WHERE mission_id = ? AND mission_key IS NOT NULL AND mission_key <> \'\'
                  GROUP BY mission_key ORDER BY last_at DESC LIMIT ' . max(1, min(100, $limit))
@@ -113,12 +116,21 @@ class ReplayRepository
         $out = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $key = (string) $row['mission_key'];
+            $base = explode('#', $key, 2)[0];
+            $parts = explode('@', $base, 2);
+            $fromTs = strtotime((string) $row['first_at'] . ' UTC');
+            $toTs = strtotime((string) $row['last_at'] . ' UTC');
             $out[] = [
                 'key' => $key,
                 'label' => AtakMissionKey::label($key),
                 'from' => (string) $row['first_at'],
                 'to' => (string) $row['last_at'],
                 'samples' => (int) $row['samples'],
+                'mission' => $parts[0],
+                'map' => $parts[1] ?? '',
+                'units' => (int) ($row['units'] ?? 0),
+                'durationSeconds' => ($fromTs !== false && $toTs !== false) ? max(0, $toTs - $fromTs) : 0,
+                'approxBytes' => (int) $row['samples'] * 160,
             ];
         }
 
