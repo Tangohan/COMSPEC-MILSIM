@@ -20,6 +20,7 @@ $qDialogId = 'dlg-' . $qi['id'];
 <button type="button" class="q-dialog__close" data-q-close aria-label="<?= $h($t('q_close')) ?>">×</button></div>
 <div class="q-dialog__body ins-review">
 <?php require __DIR__ . '/course_review.php'; ?>
+<?php if (!empty($qi['auto_check'])): ?><div class="notice" role="status"><b><?= $h(sprintf($t('auto_check_title'), (int) ($qi['auto_check']['hours'] ?? 72))) ?></b><ul><?php foreach ((array) ($qi['auto_check']['reasons'] ?? []) as $reason): ?><li><?= $h($t('auto_reason_' . preg_replace('/[^a-z_]/', '', (string) $reason))) ?></li><?php endforeach ?></ul></div><?php endif ?>
 <h4><?= $h($t('submitted_debrief')) ?></h4><p class="lesson-text"><?= nl2br($h($debriefText($reviewState['debriefs'][$qi['chapter']] ?? ''))) ?></p>
 <?php if (!empty($reviewChapter['validation']['brief'])): ?><div class="rt"><?= $rich($reviewChapter['validation']['brief']) ?></div><?php endif ?>
 <?php if (!empty($reviewChapter['validation']['criteria'])): ?><h4><?= $h($t('validation_criteria')) ?></h4><ul class="academy-rubric"><?php foreach ($reviewChapter['validation']['criteria'] as $criterion): ?><li><?= $h($local($criterion)) ?></li><?php endforeach ?></ul><?php endif ?>
